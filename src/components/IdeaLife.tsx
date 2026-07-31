@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import { useExtras } from '../lib/content'
 import { buildIdeaLife, ideaWords, type IdeaLifeRemoteRecord, type IdeaRadarItem, type IdeaUpdateKind, type ImpactNode, type RemoteIdeaUpdate } from '../lib/idea-life'
+import { findIdeaRevisions, type IdeaRevision } from '../lib/idea-revision'
 import { liveLink } from '../lib/dead-links'
 import { staticQuestions } from '../questions-data'
 
@@ -15,7 +16,7 @@ const verifiedEvidence = <T extends { url?: string }>(items?: T[]) => (items || 
   .map((item) => ({ ...item, url: liveLink(item.url) }))
   .filter((item): item is T & { url: string } => Boolean(item.url))
 
-type TabKey = 'test' | 'thread' | 'time' | 'impact'
+type TabKey = 'test' | 'thread' | 'time' | 'impact' | 'revision'
 
 type Props = {
   article: ArticleRecord
@@ -144,6 +145,39 @@ function ThreadPanel({ nodes, close }: { nodes: ThreadNode[]; close: () => void 
         })}
       </ol>
       <p className="mt-6 border-t border-hair pt-4 text-[.72rem] font-light leading-[1.8] text-soft">خيطٌ يقرّب المواد المتجاورة في المعنى، لتستكمل قراءة الفكرة من أكثر من زاوية.</p>
+    </div>
+  )
+}
+
+/* «كيف تغيّر رأيي» — لا يظهر إلا حين يجد النظام موضعاً بدليل (مقتطفان حقيقيان
+   من مقالين منشورين في سنتين مختلفتين). لا وعد بلا مضمون. */
+function RevisionPanel({ revisions, close }: { revisions: IdeaRevision[]; close: () => void }) {
+  return (
+    <div>
+      <SectionTitle index="01" title="رأيٌ راجع نفسه." sub="موضعان من الأرشيف نفسه: ما كتبتُه أولاً، وما صرتُ إليه بعد سنوات." />
+      <ol className="mt-7 grid gap-5">
+        {revisions.map((revision) => (
+          <li key={`${revision.older.slug}-${revision.newer.slug}-${revision.concept}`} className="rounded-2xl border border-hair/70 bg-wash/40 px-4 py-5 md:px-6">
+            <p className="text-[.62rem] font-semibold text-accent">{revision.concept}</p>
+            <p dir="auto" className="mt-2 font-display text-[.95rem] font-medium leading-[1.7] text-ink">{revision.line}</p>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {[revision.older, revision.newer].map((side, index) => (
+                <Link
+                  key={side.slug}
+                  to={`/articles/${side.slug}`}
+                  onClick={close}
+                  className={`group block rounded-xl border px-4 py-4 transition-colors ${index ? 'border-accent/30 bg-accent/[.045]' : 'border-hair bg-canvas'} hover:border-accent/45`}
+                >
+                  <span className="block text-[.62rem] font-semibold text-accent">{index ? 'وصرتُ إليه' : 'كتبتُ أولاً'} · {side.year}</span>
+                  <span dir="auto" className="mt-2 block text-[.78rem] font-light leading-[1.9] text-soft [overflow-wrap:anywhere]">«{side.excerpt}»</span>
+                  <span dir="auto" className="mt-2.5 block line-clamp-2 font-display text-[.8rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{side.title}</span>
+                </Link>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <p className="mt-6 border-t border-hair pt-4 text-[.72rem] font-light leading-[1.8] text-soft">المقتطفان منقولان بحرفهما من المقالين المنشورين؛ لا يُعرض هنا موضعٌ بلا دليل.</p>
     </div>
   )
 }
@@ -389,6 +423,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
   const remote = remoteRecords.find((record) => record.slug === article.slug && (!record.kind || record.kind === 'article'))
   const model = useMemo(() => buildIdeaLife(article, articles, books, papers, media, remote, radar), [article, articles, books, papers, media, remote, radar])
   const threadNodes = useMemo(() => ideaThreadFor(article, books, papers, media), [article, books, papers, media])
+  const revisions = useMemo(() => findIdeaRevisions(article, articles), [article, articles])
   const hasImpactExperience = model.impact.length > 1 || model.timeLinks.length > 0
   const experienceSignature = useMemo(() => `${model.signature}:${threadNodes.map((node) => `${node.kind}:${node.title}`).join('|')}`, [model.signature, threadNodes])
   const availableTabs = useMemo(() => [
@@ -396,7 +431,8 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
     { key: 'thread' as const, label: 'خيط الفكرة', visible: threadNodes.length > 0 },
     { key: 'time' as const, label: 'عبر الزمن', visible: model.updates.length > 0 || model.predictions.length > 0 || model.timeLinks.length > 0 },
     { key: 'impact' as const, label: 'أثر الفكرة', visible: hasImpactExperience },
-  ].filter((tab) => tab.visible), [hasImpactExperience, model, threadNodes])
+    { key: 'revision' as const, label: 'كيف تغيّر رأيي', visible: revisions.length > 0 },
+  ].filter((tab) => tab.visible), [hasImpactExperience, model, revisions, threadNodes])
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<TabKey>('test')
   const [isNew, setIsNew] = useState(false)
@@ -485,6 +521,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
                   {tab === 'thread' && <ThreadPanel nodes={threadNodes} close={() => setOpen(false)} />}
                   {tab === 'time' && <TimePanel article={article} model={model} close={() => setOpen(false)} />}
                   {tab === 'impact' && <ImpactPanel article={article} model={model} close={() => setOpen(false)} />}
+                  {tab === 'revision' && <RevisionPanel revisions={revisions} close={() => setOpen(false)} />}
                 </motion.div>
               </AnimatePresence>
             </div>

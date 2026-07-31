@@ -841,6 +841,22 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
           </div>
         </div>
       </section>
+      {/* «العقل الحي» (/ask) كان مبنياً ويعمل ولا يعرفه أحد: صفحةٌ تحاور الأرشيف
+          كله. البروز هنا سطرٌ واحدٌ بلغة الصفحة نفسها — بلا بطاقةٍ جديدة ولا لون. */}
+      <section className="border-t border-hair px-6 py-10 md:px-11 md:py-[58px]">
+        <div className="mx-auto max-w-shell">
+          <FadeUp>
+            <Link to="/ask" data-hover className="group flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3">
+              <span className="min-w-0">
+                <span className="block text-[.78rem] font-semibold text-accent">العقل الحي</span>
+                <span className="mt-2 block font-display text-[clamp(1.35rem,2.8vw,1.95rem)] font-semibold leading-[1.45] text-ink transition-colors group-hover:text-accent">اسأل الأرشيف سؤالاً حقيقياً.</span>
+                <span className="mt-3 block max-w-xl text-[.95rem] font-light leading-[1.9] text-ink/75">مقالاتٌ وأبحاثٌ وكتبٌ ولقاءات — يجيبك منها لا من خارجها.</span>
+              </span>
+              <span className="shrink-0 border-b-[1.5px] border-accent pb-1 text-[.9rem] font-semibold text-accent">اسأل الآن ←</span>
+            </Link>
+          </FadeUp>
+        </div>
+      </section>
       <section className="border-t border-hair bg-wash px-6 py-10 md:px-11 md:py-[70px]">
         <div className="mx-auto max-w-shell">
           <SectionHead label="المساهمات العلمية" title="من السؤال إلى الدليل." to="/research" cta="عرض الكل" />

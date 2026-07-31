@@ -1843,6 +1843,262 @@ const paintSiliconArabesque: Painter = (s) => {
   return { markup: [rings, traces.join(''), stack, identityFooter(s)].join('') }
 }
 
+
+/* ------------------------------------------------------------------ */
+/*      خمس عائلات تكوين جديدة — لكلٍّ لغةٌ بصرية مستقلة لا شكلٌ مختلف   */
+/* ------------------------------------------------------------------ */
+
+/** ١٨ — الشبكة السويسرية: اثنا عشر عموداً حقيقية، والعنوان يجلس على خط الشبكة
+    لا في وسطٍ تقريبي. الشبكة تُرى خافتةً فتُعلن قانونها، وكل كتلةٍ تبدأ من
+    عمودٍ معلوم — انضباط بازل بحرفٍ عربي. */
+const paintSwissGrid: Painter = (s) => {
+  const { palette: p, w, h, min } = s
+  const gutter = min * .022
+  const left = s.safeX
+  const right = w - s.safeX
+  const span = right - left
+  const colW = (span - gutter * 11) / 12
+  /* الأعمدة تُعدّ من اليمين لأن القراءة عربية: العمود ١ أقصى اليمين. */
+  const colRight = (index: number) => right - index * (colW + gutter)
+  const colLeft = (index: number, spanCols: number) => colRight(index) - spanCols * colW - (spanCols - 1) * gutter
+  const guides = Array.from({ length: 12 }, (_, index) => {
+    const x = colLeft(index, 1)
+    return `<rect x="${round(x)}" y="${round(s.safeY)}" width="${round(colW)}" height="${round(h - s.safeY * 2)}" fill="${p.accent}" opacity=".035"/>`
+  }).join('')
+  /* العنوان يشغل ثمانية أعمدة من اليمين؛ المتن خمسة — نسبةٌ سويسرية كلاسيكية. */
+  const titleZone = colW * 8 + gutter * 7
+  const bodyZone = colW * 5 + gutter * 4
+  const title = fitTitle(s, titleZone, { base: min * .062, maxLines: 4 })
+  const body = fitBody(s, bodyZone, { maxLines: 5 })
+  const points = extractPoints(s.plan, 3)
+  const baselineY = s.safeY + h * .1
+  const rows: string[] = [
+    `<line x1="${round(left)}" y1="${round(baselineY)}" x2="${round(right)}" y2="${round(baselineY)}" stroke="${p.ink}" stroke-width="2" opacity=".85"/>`,
+    s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: colRight(0), y: baselineY - min * .018, size: Math.max(13, min * .019), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
+    /* «العنوان على خط الشبكة»: أعلى كتلة العنوان ملتصقٌ بالخط الأفقي تماماً. */
+    textBlock({ lines: title.lines, x: colRight(0), y: baselineY + title.size * .92, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+  ]
+  const afterTitle = baselineY + title.size * .92 + blockHeight(title.lines, title.size, s.titleLineHeight)
+  let cursor = afterTitle + min * .06
+  if (body.lines.length) {
+    rows.push(textBlock({ lines: body.lines, x: colRight(0), y: cursor, size: body.size, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.66 }))
+    cursor += blockHeight(body.lines, body.size, 1.66) + min * .05
+  }
+  /* النقاط تنزل في عمودٍ ثانٍ (يسار الشبكة) فيظهر قانون الأعمدة عملياً. */
+  if (points.length) {
+    const noteSize = Math.max(12, min * .0195)
+    const noteZone = colW * 4 + gutter * 3
+    points.slice(0, 3).forEach((point, index) => {
+      const wrapped = wrap(point, Math.max(10, noteZone / (noteSize * .555)), 3)
+      /* التقدير وحده كان يسرّب سطراً خارج الحافة اليسرى (لقطة المعاينة): نُعيد
+         القياس الحقيقي ونصغّر عند الحاجة كما تفعل بقية العائلات. */
+      const noteFit = fitted(wrapped, noteSize, noteZone, noteSize * 6, 1.55, .7)
+      const lines = wrapped
+      const y = afterTitle + min * .06 + index * (noteSize * 3.9)
+      rows.push(`<line x1="${round(colLeft(8, 4))}" y1="${round(y - noteSize * .9)}" x2="${round(colRight(8))}" y2="${round(y - noteSize * .9)}" stroke="${p.rule}" stroke-width="1"/>`)
+      rows.push(textBlock({ lines: [arabicIndex(index + 1)], x: colRight(8), y, size: noteSize * .86, fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }))
+      rows.push(textBlock({ lines, x: colRight(8), y: y + noteSize * 1.5, size: noteFit, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.55 }))
+    })
+  }
+  const cta = ctaItem(s, { x: colLeft(0, 12) })
+  if (cta.h) rows.push(cta.draw(Math.min(cursor, h - s.safeY - min * .16)))
+  return { markup: [guides, rows.join(''), identityFooter(s)].join('') }
+}
+
+/** ١٩ — المجلة بعمودين: نصٌّ عربي في عمودين يفصلهما خطٌّ شعري، وحرفٌ استهلالي
+    يفتح العمود الأول. المتن يُقسَم قسمةً حقيقية بين العمودين (لا نسخاً)، فتقرأ
+    من اليمين إلى اليسار كصفحة مجلةٍ لا كبطاقة. */
+const paintMagazineColumns: Painter = (s) => {
+  const { palette: p, w, h, min } = s
+  const gutter = min * .055
+  const colW = (w - s.safeX * 2 - gutter) / 2
+  const title = fitTitle(s, w - s.safeX * 2, { base: min * .058, maxLines: 3 })
+  const headTop = s.safeY + h * .035
+  const titleBase = headTop + title.size * .9
+  const ruleY = titleBase + blockHeight(title.lines, title.size, s.titleLineHeight) + min * .028
+  const bodySize = Math.max(13, min * .0235)
+  const perCol = Math.max(3, Math.floor((h - ruleY - s.safeY - min * .13) / (bodySize * 1.78)))
+  /* العمودان يحتاجان نصاً يملؤهما: المتن المقتطع وحده كان يترك الصفحة خاوية،
+     فنُكمل من نصّ الدكتور الأصلي (لا اختلاق) حتى يمتلئ العمودان. */
+  const trimmedTitle = normalizeForCompare(s.titleText)
+  /* لا يُعاد العنوان في أول العمود: نُسقط الجملة الافتتاحية إن كانت هي العنوان
+     نفسه (كانت تُقرأ مرتين في المعاينة الأولى). */
+  const stripTitle = (value: string) => String(value || '')
+    .split(/(?<=[.؟!])\s+/)
+    .filter((sentence) => normalizeForCompare(sentence) !== trimmedTitle)
+    .join(' ')
+    .trim()
+  const overflow = stripTitle(s.plan.content.original || '')
+  const source = [stripTitle(s.bodyText), stripTitle(s.plan.content.quote), overflow]
+    .filter(Boolean)
+    .reduce((best, item) => item.length > best.length ? item : best, '')
+  const all = wrap(source, Math.max(12, colW / (bodySize * .555)), perCol * 2)
+  const dropChar = (all[0] || source).trim().charAt(0) || ''
+  const dropSize = bodySize * 2.9
+  /* الحرف الاستهلالي يقتطع سطرين من العمود الأول فقط — لا يزاحم العمود الثاني. */
+  /* القسمة نصفان لا «امتلاء الأول ثم الفائض»: العمود الثاني كان يبقى خاوياً
+     كلما استوعب الأولُ النصَّ كلَّه، فتفقد الصفحة معنى العمودين. */
+  const half = Math.ceil(all.length / 2)
+  const rightLines = all.slice(0, half)
+  const leftLines = all.slice(half)
+  const colTop = ruleY + min * .05
+  const indentUnits = lineWidthPx(dropChar || 'ا', dropSize) + min * .014
+  const rightBlocks = rightLines.map((line, index) => {
+    /* سطران فقط بجانب الحرف الاستهلالي — بارتفاعه تماماً فلا يطفو وحيداً. */
+    const narrowed = index < 2
+    return textBlock({ lines: [line], x: w - s.safeX - (narrowed ? indentUnits : 0), y: colTop + bodySize + index * bodySize * 1.78, size: bodySize, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily })
+  }).join('')
+  const leftBlocks = leftLines.map((line, index) => textBlock({
+    lines: [line], x: s.safeX + colW, y: colTop + bodySize + index * bodySize * 1.78, size: bodySize, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily,
+  })).join('')
+  const divider = `<line x1="${round(s.safeX + colW + gutter / 2)}" y1="${round(colTop - min * .01)}" x2="${round(s.safeX + colW + gutter / 2)}" y2="${round(colTop + Math.max(rightLines.length, leftLines.length) * bodySize * 1.78)}" stroke="${p.rule}" stroke-width="1.1" opacity=".95"/>`
+  const drop = dropChar
+    ? textBlock({ lines: [dropChar], x: w - s.safeX, y: colTop + bodySize + bodySize * 1.5, size: dropSize, fill: p.accent, weight: 700, anchor: 'end', family: s.displayFamily })
+    : ''
+  return {
+    markup: [
+      s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: w - s.safeX, y: headTop - min * .012, size: Math.max(12, min * .018), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
+      textBlock({ lines: title.lines, x: w - s.safeX, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+      `<line x1="${round(s.safeX)}" y1="${round(ruleY)}" x2="${round(w - s.safeX)}" y2="${round(ruleY)}" stroke="${p.rule}" stroke-width="1.4"/>`,
+      divider, drop, rightBlocks, leftBlocks,
+      identityFooter(s),
+    ].join(''),
+  }
+}
+
+/** ٢٠ — الملصق التايبوغرافي: بلا صورةٍ ولا زخرفةٍ إطلاقاً. الكلمة نفسها هي
+    التصميم: كلماتُ العنوان تنزل سطراً سطراً بأحجامٍ متدرّجة تملأ العرض، وكلمةٌ
+    واحدة تحمل اللون. لا إطار ولا مدار ولا نمط — الحرف وحده. */
+const paintTypePoster: Painter = (s) => {
+  const { palette: p, w, h, min } = s
+  const zone = w - s.safeX * 2
+  const source = words(s.titleText).slice(0, 7)
+  const heroKey = normalizeForCompare(s.hero)
+  /* كل سطرٍ يُقاس ليملأ العرض: هذا ما يجعل الكتلة تبدو منحوتةً لا مركّبة. */
+  const lines = source.length ? source : words(s.bodyText).slice(0, 5)
+  const raw = lines.map((word) => clamp(zone / Math.max(1, textUnits(word) * .555), min * .045, min * .19))
+  const ctaBlock = ctaItem(s, { align: 'center' })
+  /* الكتلة كلها تُقاس قبل الرسم وتُصغَّر بنسبةٍ واحدة إن تجاوزت الحيّز — بلا
+     ذلك كان آخر سطرٍ يخرج من أسفل اللوحة (لقطة المعاينة الأولى). */
+  const headroom = s.safeY + min * .075
+  const available = h - headroom - s.safeY - min * .09 - (ctaBlock.h ? ctaBlock.h + min * .06 : 0)
+  const rawH = raw.reduce((sum, size) => sum + size * 1.06, 0)
+  const shrink = rawH > available ? available / rawH : 1
+  const sizes = raw.map((size) => size * shrink)
+  const totalH = rawH * shrink
+  const footprint = totalH + (ctaBlock.h ? ctaBlock.h + min * .06 : 0)
+  let y = Math.max(headroom, headroom + (h - headroom - s.safeY - min * .09 - footprint) * .42)
+  const stack = lines.map((word, index) => {
+    const size = sizes[index]
+    const isHero = heroKey && normalizeForCompare(word) === heroKey
+    const markup = textBlock({ lines: [word], x: w / 2, y: y + size * .84, size, fill: isHero ? p.accent : p.ink, weight: 800, anchor: 'middle', family: s.displayFamily })
+    y += size * 1.06
+    return markup
+  }).join('')
+  const kicker = s.kicker
+    ? textBlock({ lines: [toArabicIndic(s.kicker)], x: w / 2, y: s.safeY + min * .035, size: Math.max(12, min * .019), fill: p.muted, weight: 700, anchor: 'middle', family: 'Tajawal' })
+    : ''
+  const cta = ctaBlock.h ? ctaBlock.draw(y + min * .06) : ''
+  return { markup: [kicker, stack, cta, identityFooter(s, { mode: 'center' })].join('') }
+}
+
+/** ٢١ — الحاشية: متنٌ مركزيٌّ صغير محكوم العرض، وهامشٌ واسع على اليسار تسكنه
+    تعليقاتٌ مرقّمة بخطٍّ رفيع — كمخطوطة عالِمٍ يحاور متنه على الطُرّة. */
+const paintMarginalia: Painter = (s) => {
+  const { palette: p, w, h, min } = s
+  /* المتن ثلثا اللوحة من اليمين، والهامش ثلثها — نسبة المخطوطات. */
+  const marginW = (w - s.safeX * 2) * .3
+  const gutter = min * .045
+  const textW = (w - s.safeX * 2) - marginW - gutter
+  const textRight = w - s.safeX
+  const marginRight = textRight - textW - gutter
+  const title = fitTitle(s, textW, { base: min * .05, maxLines: 4 })
+  const body = fitBody(s, textW, { base: min * .026, maxLines: 8 })
+  const top = s.safeY + h * .07
+  const titleBase = top + title.size * .9
+  const bodyTop = titleBase + blockHeight(title.lines, title.size, s.titleLineHeight) + min * .038
+  const notes = extractPoints(s.plan, 4)
+  const noteSize = Math.max(11, min * .0165)
+  const marginParts: string[] = []
+  let noteY = top + noteSize * 1.2
+  notes.slice(0, 4).forEach((note, index) => {
+    const lines = wrap(note, Math.max(8, marginW / (noteSize * .555)), 4)
+    const noteFit = fitted(lines, noteSize, marginW, noteSize * 8, 1.6, .7)
+    marginParts.push(textBlock({ lines: [arabicIndex(index + 1)], x: marginRight, y: noteY, size: noteSize * .92, fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }))
+    marginParts.push(textBlock({ lines, x: marginRight, y: noteY + noteSize * 1.62, size: noteFit, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.6, opacity: .92 }))
+    noteY += noteSize * 1.62 + blockHeight(lines, noteFit, 1.6) + noteSize * 1.5
+  })
+  /* خطّ الطُرّة يفصل المتن عن الحاشية — علامة المخطوطة الأولى. */
+  const rail = `<line x1="${round(textRight - textW - gutter / 2)}" y1="${round(top - min * .02)}" x2="${round(textRight - textW - gutter / 2)}" y2="${round(Math.max(noteY, bodyTop + blockHeight(body.lines, body.size, 1.72)))}" stroke="${p.rule}" stroke-width="1"/>`
+  const cta = ctaItem(s, { x: textRight - textW })
+  return {
+    markup: [
+      rail,
+      s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: textRight, y: top - min * .022, size: Math.max(12, min * .018), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
+      textBlock({ lines: title.lines, x: textRight, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+      body.lines.length ? textBlock({ lines: body.lines, x: textRight, y: bodyTop + body.size, size: body.size, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.72 }) : '',
+      marginParts.join(''),
+      cta.h ? cta.draw(h - s.safeY - min * .17) : '',
+      identityFooter(s),
+    ].join(''),
+  }
+}
+
+/** ٢٢ — الجدول الزمني الرأسي: خطٌّ ينزل من أعلى اللوحة إلى أسفلها، وعليه
+    محطاتٌ مؤرّخة بنقاطٍ ونصٍّ قصير. التواريخ تُلتقط من النص نفسه؛ وحين لا
+    تاريخ، تُرقَّم المحطات ترقيماً عربياً بلا اختلاق زمنٍ لم يُكتب. */
+const paintVerticalTimeline: Painter = (s) => {
+  const { palette: p, w, h, min } = s
+  const title = fitTitle(s, w - s.safeX * 2 - min * .1, { base: min * .05, maxLines: 3 })
+  const top = s.safeY + h * .045
+  const titleBase = top + title.size * .9
+  const railX = w - s.safeX - min * .045
+  const railTop = titleBase + blockHeight(title.lines, title.size, s.titleLineHeight) + min * .055
+  const railBottom = h - s.safeY - min * .11
+  const stations = (() => {
+    const points = extractPoints(s.plan, 5)
+    const slides = s.plan.content.slides.map((slide) => slide.title || slide.body).filter(Boolean)
+    const source = points.length >= 2 ? points : slides.length >= 2 ? slides : points
+    return source.slice(0, 5)
+  })()
+  if (stations.length < 2) {
+    /* بلا محطتين لا جدول زمني: نسقط إلى تكوينٍ رأسيٍّ نظيف بدل خطٍّ فارغ. */
+    const body = fitBody(s, w - s.safeX * 2, { maxLines: 5 })
+    const stack = drawStack([
+      kickerItem(s),
+      textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .04 }),
+      ruleItem(s, { gap: min * .035 }),
+      textItem({ lines: body.lines, x: w - s.safeX, size: body.size, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.68, gap: min * .04 }),
+      ctaItem(s, { gap: min * .05 }),
+    ], contentBand(s), .44)
+    return { markup: [stack, identityFooter(s)].join('') }
+  }
+  const timings = extractTiming(s.plan.content.original || s.bodyText)
+  const gap = (railBottom - railTop) / Math.max(1, stations.length - 1)
+  const labelSize = Math.max(12, min * .0205)
+  const stops = stations.map((station, index) => {
+    const y = railTop + index * gap
+    const stamp = timings[index] ? toArabicIndic(timings[index]) : `المحطة ${toArabicIndic(String(index + 1))}`
+    const labelZone = w - s.safeX * 2 - min * .12
+    const lines = wrap(station, Math.max(10, labelZone / (labelSize * .555)), 2)
+    const labelFit = fitted(lines, labelSize, labelZone, labelSize * 4, 1.5, .72)
+    return [
+      `<circle cx="${round(railX)}" cy="${round(y)}" r="${round(min * (index === 0 ? .011 : .0085))}" fill="${index === 0 ? p.accent : p.surface}" stroke="${p.accent}" stroke-width="2"/>`,
+      textBlock({ lines: [stamp], x: railX - min * .032, y: y + labelSize * .22, size: labelSize * .82, fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }),
+      textBlock({ lines, x: railX - min * .032, y: y + labelSize * 1.75, size: labelFit, fill: p.ink, weight: 500, anchor: 'end', family: s.bodyFamily, lineHeight: 1.5 }),
+    ].join('')
+  }).join('')
+  return {
+    markup: [
+      `<line x1="${round(railX)}" y1="${round(railTop)}" x2="${round(railX)}" y2="${round(railBottom)}" stroke="${p.rule}" stroke-width="1.6"/>`,
+      s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: w - s.safeX, y: top - min * .018, size: Math.max(12, min * .018), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
+      textBlock({ lines: title.lines, x: w - s.safeX, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+      stops,
+      identityFooter(s),
+    ].join(''),
+  }
+}
+
 const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'editorial-axis': paintEditorialAxis,
   'hero-word': paintHeroWord,
@@ -1861,6 +2117,11 @@ const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'ink-veil': paintInkVeil,
   'neural-constellation': paintNeuralConstellation,
   'silicon-arabesque': paintSiliconArabesque,
+  'swiss-grid': paintSwissGrid,
+  'magazine-columns': paintMagazineColumns,
+  'type-poster': paintTypePoster,
+  marginalia: paintMarginalia,
+  'vertical-timeline': paintVerticalTimeline,
 }
 
 /* ------------------------------------------------------------------ */
@@ -2006,16 +2267,21 @@ export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOp
   const s = sceneOf(plan)
   const glow = plan.layout === 'hero-word' || plan.layout === 'quiet-orbit' || plan.layout === 'ink-veil' ? 'center'
     : plan.layout === 'quote-stage' || plan.layout === 'human-note' ? 'top-right'
-      : plan.layout === 'cinematic-window' || plan.layout === 'sadu-weave' || plan.layout === 'neural-constellation' ? 'none'
+      : plan.layout === 'cinematic-window' || plan.layout === 'sadu-weave' || plan.layout === 'neural-constellation'
+        || plan.layout === 'type-poster' || plan.layout === 'swiss-grid' ? 'none'
         : 'top-left'
   const bg = backdrop(s, { glow })
   const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
   /* الصورة البطولية تمرّ عبر رسّام واعٍ بمنطقة النص، لكنه يحترم عائلة الخطة
      نفسها (اقتباس/حدث/كلمة بطلة/سجل معرفة). هكذا لا تتحول كل النتائج إلى
      النافذة السينمائية ذاتها لمجرد وجود صورة. */
-  const painter = heroImage ? paintCinematicWindow : (PAINTERS[plan.layout] || paintEditorialAxis)
+  /* «الملصق التايبوغرافي — بلا صورة إطلاقاً» (شرط الدكتور نصاً): هذه العائلة
+     وحدها لا تُسلَّم لرسّام الصورة ولا تُفرَش تحتها صورةٌ بطولية، فالكلمة نفسها
+     هي التصميم. باقي العائلات على سلوكها القائم بلا مساس. */
+  const typographicOnly = plan.layout === 'type-poster'
+  const painter = heroImage && !typographicOnly ? paintCinematicWindow : (PAINTERS[plan.layout] || paintEditorialAxis)
   const scenePaint = painter(s)
-  const hero = imageUnderlayLayer(s)
+  const hero = typographicOnly ? { defs: '', markup: '' } : imageUnderlayLayer(s)
   const accessible = esc(options.ariaLabel || `${plan.directionLabel}: ${plan.content.title}`)
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}${hero.defs}</defs>${bg.markup}${hero.markup}${frameDecor(s)}${scenePaint.markup}${dnaSignature(s)}${overlaysLayer(s)}${identityLayer(s, options)}</svg>`

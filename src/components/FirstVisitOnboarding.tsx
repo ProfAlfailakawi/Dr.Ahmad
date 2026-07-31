@@ -39,12 +39,30 @@ export default function FirstVisitOnboarding() {
   const [step, setStep] = useState(0)
   const primaryRef = useRef<HTMLButtonElement | null>(null)
 
+  /* الترحيب كان يعلو الافتتاحية بعد ٧٢٠ جزءاً من الثانية، فيقرأ الزائرُ أجمل
+     جملةٍ في الموقع — «أُبقِ الإنسانَ في قلبِ الآلة» — من خلف ضبابٍ رمادي.
+     الدعوة لا تُقدَّم قبل أن يرى صاحبَ الدار. الآن ينتظر أول تمريرة (دليلَ
+     اهتمامٍ حقيقي)، وإن لم يمرّر ظهر بعد ثماني ثوانٍ ليقرأها متمهلاً أولاً. */
   useEffect(() => {
     let seen = false
     try { seen = window.localStorage.getItem(STORAGE_KEY) === '1' } catch { /* noop */ }
     if (seen) return
-    const timer = window.setTimeout(() => setVisible(true), 720)
-    return () => window.clearTimeout(timer)
+    let done = false
+    const reveal = () => {
+      if (done) return
+      done = true
+      window.removeEventListener('scroll', onScroll)
+      window.clearTimeout(timer)
+      setVisible(true)
+    }
+    const onScroll = () => { if (window.scrollY > 120) reveal() }
+    const timer = window.setTimeout(reveal, 8_000)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      done = true
+      window.removeEventListener('scroll', onScroll)
+      window.clearTimeout(timer)
+    }
   }, [])
 
   useEffect(() => {

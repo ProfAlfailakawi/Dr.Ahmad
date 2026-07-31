@@ -20,11 +20,17 @@ const RESERVE = [
   'لا أرى', 'لا ارى', 'مستحيل', 'لا يصح', 'أتحفظ', 'اتحفظ',
 ]
 
-/** ألفاظ التحوّل والإقرار: موقفٌ راجع نفسه. */
+/** **مراجعةٌ صريحة بضمير المتكلم** — لا وصفٌ لتغيّر العالم.
+    هذا هو الدليل الوحيد الذي لا يكذب: أن يقول الدكتور بنفسه إنه كان يرى شيئاً
+    ثم صار يرى غيره. الألفاظ العامة («أصبح/صار/اليوم») وُضعت أولاً فأخرجت
+    مطابقاتٍ زائفة على الأرشيف الحقيقي (١٩ مقالاً، جملةٌ واحدة تُطابق ستةً منها)
+    لأنها تصف تغيّر الواقع لا تغيّر الرأي. */
 const SHIFT = [
-  'أصبح', 'اصبح', 'صار', 'صارت', 'بات', 'باتت', 'لم يعد', 'لم تعد', 'تغير', 'تغيّر',
-  'أدركت', 'ادركت', 'تبين', 'تبيّن', 'اليوم', 'صرنا', 'أصبحنا', 'اصبحنا', 'نضج',
-  'أعدت النظر', 'اعدت النظر', 'راجعت',
+  'كنت أظن', 'كنت اظن', 'كنت أعتقد', 'كنت اعتقد', 'كنت أرى', 'كنت ارى',
+  'كنت أحسب', 'كنت احسب', 'ظننت أن', 'ظننت ان', 'حسبت أن', 'حسبت ان',
+  'أعدت النظر', 'اعدت النظر', 'راجعت رأيي', 'راجعت رايي', 'غيرت رأيي', 'غيرت رايي',
+  'تبين لي', 'تبيّن لي', 'أدركت لاحقا', 'ادركت لاحقا', 'اكتشفت أني', 'اكتشفت اني',
+  'كنت مخطئا', 'كنت مخطئ', 'لم أعد أرى', 'لم اعد ارى', 'صرت أرى', 'صرت ارى',
 ]
 
 export type IdeaRevisionSide = {
@@ -59,14 +65,37 @@ const textOf = (article: ArticleRecord) => clean(`${article.body || ''} ${articl
 const hasAny = (sentence: string, markers: readonly string[]) => markers.some((marker) => sentence.includes(marker))
 
 /** أطول كلمة معنى مشتركة بين جملتين — هي «موضع» الرأي لا كلمةٌ عابرة. */
-const sharedConcept = (left: string, right: string) => {
+const sharedConcept = (left: string, right: string, topical: Set<string>) => {
   const rightWords = new Set(ideaWords(right))
-  return ideaWords(left)
-    .filter((word) => word.length >= 4 && rightWords.has(word))
-    .sort((a, b) => b.length - a.length)[0] || ''
+  const shared = ideaWords(left)
+    .filter((word) => word.length >= 4 && rightWords.has(word) && !CONCEPT_STOPWORDS.has(word))
+  /* **شرط الموضوعية**: المفهوم يجب أن يكون من عنوان أحد المقالين — وإلا فهو
+     كلمةٌ عابرة في المتن لا «موضعُ رأي». هذا وحده أسقط جملاً مغناطيسية كانت
+     تُطابق ستة مقالاتٍ بنصّها. */
+  return shared.filter((word) => topical.has(word)).sort((a, b) => b.length - a.length)[0] || ''
 }
 
 const yearOf = (article: ArticleRecord) => String(article.iso || '').slice(0, 4)
+
+/* كلماتٌ تعبر كل نصٍّ فلا تصلح «موضعَ رأي»: ضمائر وظروف زمن وكمّيات.
+   بلا هذا المنع كان الكاشف يخرج بـ«كنتُ أقف عند **نفسها** بتحفّظٍ» — كلام
+   آلةٍ لا كلام الدكتور (فحص الأرشيف الحقيقي ٣١ يوليو: ١٩ مقالاً أغلبها زائف). */
+const CONCEPT_STOPWORDS = new Set([
+  'نفسها', 'نفسه', 'نفس', 'اليوم', 'امس', 'غدا', 'الان', 'قديما', 'حديثا', 'سابقا', 'لاحقا',
+  'عشرات', 'مئات', 'الاف', 'بعض', 'كثير', 'قليل', 'جميع', 'كل', 'مجرد', 'ايضا', 'حينها',
+  'هناك', 'هنا', 'ذلك', 'هذا', 'هذه', 'التي', 'الذي', 'الذين', 'حيث', 'عندما', 'حين',
+  'شيء', 'امر', 'اشياء', 'امور', 'حال', 'حالة', 'وقت', 'زمن', 'سنة', 'سنوات', 'يوم', 'ايام',
+])
+
+/** المسافة بين المفهوم وعلامة الموقف: الجملة يجب أن تكون **عن** المفهوم. */
+const markerNearConcept = (sentence: string, concept: string, markers: readonly string[]) => {
+  const at = sentence.indexOf(concept)
+  if (at < 0) return false
+  return markers.some((marker) => {
+    const m = sentence.indexOf(marker)
+    return m >= 0 && Math.abs(m - at) <= 60
+  })
+}
 
 /**
  * يُخرج المواضع المدعومة بدليلٍ فقط. مصفوفةٌ فارغة = لا تُعرض واجهةٌ إطلاقاً.
@@ -99,18 +128,38 @@ export function findIdeaRevisions(article: ArticleRecord, articles: readonly Art
     const olderSentences = olderFirst ? sentencesOf(textOf(item)) : own
     const newerSentences = olderFirst ? own : sentencesOf(textOf(item))
 
-    const reserve = olderSentences.find((sentence) => hasAny(sentence, RESERVE))
-    if (!reserve) continue
-    const shift = newerSentences.find((sentence) => hasAny(sentence, SHIFT) && sharedConcept(reserve, sentence))
-    if (!shift) continue
-    const concept = sharedConcept(reserve, shift)
-    if (!concept || usedConcepts.has(concept)) continue
+    /* المفاهيم الموضوعية = كلمات عنواني المقالين. المفهوم لا يُقبل إلا منها. */
+    const topical = new Set([...ideaWords(olderArticle.title), ...ideaWords(newerArticle.title)]
+      .filter((word) => word.length >= 4 && !CONCEPT_STOPWORDS.has(word)))
+    if (!topical.size) continue
+
+    let reserve = ''
+    let shift = ''
+    let concept = ''
+    for (const candidate of olderSentences) {
+      if (!hasAny(candidate, RESERVE)) continue
+      const match = newerSentences.find((sentence) => {
+        if (!hasAny(sentence, SHIFT)) return false
+        const word = sharedConcept(candidate, sentence, topical)
+        /* الجملتان معاً يجب أن تكونا **عن** المفهوم: العلامة قريبةٌ منه في
+           كلٍّ منهما. بلا هذا الشرط تلتقط جملةٌ واحدة عابرة كلَّ المقالات. */
+        return Boolean(word) && markerNearConcept(candidate, word, RESERVE) && markerNearConcept(sentence, word, SHIFT)
+      })
+      if (!match) continue
+      const word = sharedConcept(candidate, match, topical)
+      if (!word || usedConcepts.has(word)) continue
+      reserve = candidate
+      shift = match
+      concept = word
+      break
+    }
+    if (!concept) continue
     usedConcepts.add(concept)
 
     const span = Number(yearOf(newerArticle)) - Number(yearOf(olderArticle))
     found.push({
       concept,
-      line: `كنتُ أقف عند ${concept} بتحفّظٍ، ثم رأيتُ بعد ${span === 1 ? 'سنة' : `${span} سنوات`} أنّ الأمر تغيّر.`,
+      line: `كتبتُ عن ${concept} برأيٍ، ثم راجعتُه بعد ${span === 1 ? 'سنة' : `${span} سنوات`} وقلتُ ذلك صراحةً.`,
       older: { slug: olderArticle.slug, title: olderArticle.title, year: yearOf(olderArticle), excerpt: reserve },
       newer: { slug: newerArticle.slug, title: newerArticle.title, year: yearOf(newerArticle), excerpt: shift },
     })

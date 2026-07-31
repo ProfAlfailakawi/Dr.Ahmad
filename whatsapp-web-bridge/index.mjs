@@ -385,6 +385,15 @@ const client = new Client({
   takeoverOnConflict: true,
   authTimeoutMs: 0, // 0 disables auth timeout during long initial message syncs
   qrMaxRetries: 0,
+  /* ٣١ يوليو: أحدث بناء يقدمه واتساب ويب للإقلاعات الطازجة عطّل حدث ready
+     في 1.34.7 (authenticated + 100٪ ثم صمت أبدي — ثبت بالتجربة على نسختين
+     من الجسر). نثبت لقطة موثوقة من أيام الصحة عبر أرشيف wa-version المجاني؛
+     وإن تعذر جلبها ينحدر wweb تلقائياً للبث الحي كما كان. */
+  webVersionCache: {
+    type: 'remote',
+    remotePath: String(process.env.WHATSAPP_WEB_VERSION_HTML
+      || 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1044124738-alpha.html').trim(),
+  },
 })
 
 // Event: loading_screen (WhatsApp Web loading chats and sync)

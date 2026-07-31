@@ -179,19 +179,26 @@ let reinjectionPromise = null
 let consecutiveDetachedCatchups = 0
 const DETACHED_CONTEXT = /detached\s*Frame|Execution context (?:was )?destroyed|Target closed|webjs-reinjection-timeout|Cannot find context with specified id|Session closed|most likely because of a navigation/i
 
-/* حارس الرد المطابق: النص نفسه لا يُرسل لنفس الجهة مرتين خلال نافذة قصيرة.
-   لقطة ٣١ يوليو: أربع صورٍ متتالية قابلها الرد الجاهز نفسه أربع مرات في
-   الدقيقة نفسها — مزعجٌ ويُفقد البوت هيبته. النافذة في الحي ٩٠ ثانية فقط
-   (سؤالٌ يتكرر عمداً بعدها يستحق جوابه)، وفي الاسترجاع ١٠ دقائق لأن دفعة
-   الانقطاع كلها تصل في لحظة واحدة. حملات البث لا تمر من هنا إطلاقاً. */
+/* حارس الرد المطابق — نسخة ٣١ يوليو الثانية بعد جريمته الأولى.
+   قصد الحارس: أربع صورٍ متتالية لا تُقابَل بالرد الجاهز نفسه أربع مرات.
+   لكنه بلغ عن حسن نية إلى ما لم يُخلق له: الدكتور كتب «لخّصها» فوصله ملخّصٌ
+   مطابقٌ لما رآه قبل ٢١ ثانية — فابتلعه الحارس وصمت البوت في وجه سؤالٍ صريح.
+   القاعدة الصحيحة: **السؤال المكتوب بيدٍ إنسانية يُجاب دائماً**. الكتم يبقى
+   للردود التي لم يطلبها أحد: دفعة الاسترجاع بعد الانقطاع (نافذة ١٠ دقائق)،
+   والردود المولّدة عن وسائط بلا نص (نافذة ٩٠ ثانية). حملات البث خارج هذا كله. */
 const recentBotReplies = new Map()
-function repeatedReplySuppressed(jid, text, source) {
-  const key = `${String(jid || '').trim()}\n${String(text || '').replace(/\s+/g, ' ').trim()}`
-  const windowMs = source === 'catchup' ? 10 * 60_000 : 90_000
+function repeatedReplySuppressed(jid, text, source, { userTyped = false } = {}) {
   const now = Date.now()
   for (const [candidate, seenAt] of recentBotReplies) {
     if (now - seenAt > 10 * 60_000) recentBotReplies.delete(candidate)
   }
+  const key = `${String(jid || '').trim()}\n${String(text || '').replace(/\s+/g, ' ').trim()}`
+  /* رسالةٌ نصية حيّة كتبها إنسان: تُسجَّل ولا تُكتم أبداً. */
+  if (userTyped && source !== 'catchup') {
+    recentBotReplies.set(key, now)
+    return false
+  }
+  const windowMs = source === 'catchup' ? 10 * 60_000 : 90_000
   const seenAt = recentBotReplies.get(key) || 0
   if (now - seenAt < windowMs) return true
   recentBotReplies.set(key, now)
@@ -377,6 +384,35 @@ const puppeteer = {
   ...(config.chromePath ? { executablePath: config.chromePath } : {}),
 }
 
+/* نسخة واتساب ويب التي نُقلع بها: «الحالية» من أرشيف wa-version المجاني.
+   القاعدة المستخلصة بالدم (٣١ يوليو): اللقطة المجمّدة تنجح ثم تُرفض بعد ساعات،
+   والبثّ الحي يقدّم أحياناً بناءً يكسر حدث ready. المتابعة اليومية للأرشيف هي
+   المنطقة الآمنة بينهما. المهلة قصيرة، والفشل يرجع للاحتياطي ثم للبث الحي. */
+const FALLBACK_WEB_VERSION = '2.3000.1044221688-alpha'
+async function resolveWebVersionUrl() {
+  const manual = String(process.env.WHATSAPP_WEB_VERSION_HTML || '').trim()
+  if (manual) return manual
+  const snapshot = (version) => `https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/${version}.html`
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 8_000)
+    const response = await fetch('https://raw.githubusercontent.com/wppconnect-team/wa-version/main/versions.json', { signal: controller.signal })
+      .finally(() => clearTimeout(timer))
+    if (response.ok) {
+      const payload = await response.json()
+      const current = String(payload?.currentVersion || '').trim()
+      if (/^\d+\.\d+\.\d+(?:-\w+)?$/.test(current)) {
+        log('info', 'web_version_resolved', { version: current })
+        return snapshot(current)
+      }
+    }
+  } catch (error) {
+    log('warn', 'web_version_lookup_failed', { error: String(error?.message || error).slice(0, 160) })
+  }
+  return snapshot(FALLBACK_WEB_VERSION)
+}
+const WEB_VERSION_URL = await resolveWebVersionUrl()
+
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: config.deviceId, dataPath: config.sessionDir }),
   puppeteer,
@@ -386,14 +422,12 @@ const client = new Client({
   authTimeoutMs: 0, // 0 disables auth timeout during long initial message syncs
   qrMaxRetries: 0,
   /* ٣١ يوليو: أحدث بناء يقدمه واتساب ويب للإقلاعات الطازجة عطّل حدث ready
-     في 1.34.7 (authenticated + 100٪ ثم صمت أبدي — ثبت بالتجربة على نسختين
-     من الجسر). نثبت لقطة موثوقة من أيام الصحة عبر أرشيف wa-version المجاني؛
-     وإن تعذر جلبها ينحدر wweb تلقائياً للبث الحي كما كان. */
-  webVersionCache: {
-    type: 'remote',
-    remotePath: String(process.env.WHATSAPP_WEB_VERSION_HTML
-      || 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1044124738-alpha.html').trim(),
-  },
+     في 1.34.7 (authenticated + 100٪ ثم صمت أبدي — ثبت بالتجربة على نسختين).
+     والتثبيت على لقطة ثابتة يشفي يوماً ويعطب غداً: اللقطة نفسها رفضها واتساب
+     بعد تسع ساعات فعاد الصمت. لذلك نتبع «النسخة الحالية» من أرشيف wa-version
+     المجاني عند كل إقلاع (resolveWebVersionUrl أعلاه)، فيبقى الجسر محاذياً
+     لواتساب بلا تدخل بشري — ومن أراد تثبيتاً يدوياً يضبط المتغير. */
+  webVersionCache: { type: 'remote', remotePath: WEB_VERSION_URL },
 })
 
 // Event: loading_screen (WhatsApp Web loading chats and sync)
@@ -724,7 +758,9 @@ async function processIncomingMessage(message, source = 'live', allowReply = tru
          رداً واحداً عن آخر رسائله لا وابلاً بعدد ما أرسل أثناء الغياب. */
       if (!allowReply) {
         log('info', 'catchup_backlog_reply_collapsed', { from: message.from, messageId })
-      } else if (repeatedReplySuppressed(message.from, outgoingReply, source)) {
+      } else if (repeatedReplySuppressed(message.from, outgoingReply, source, {
+        userTyped: String(message.body || '').trim().length > 0,
+      })) {
         log('info', 'duplicate_reply_suppressed', { from: message.from, source, messageId })
       } else {
         await sendTextWithRecovery(message.from, outgoingReply)

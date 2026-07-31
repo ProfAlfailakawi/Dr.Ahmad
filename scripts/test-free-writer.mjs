@@ -167,3 +167,31 @@ assert.match(studioPanel, /data-weekly-board-session/, '٥) الجلسة الأ�
 assert.match(studioPanel, /weeklySessionRows/, 'ترتيب الجلسة: المستحق ثم الأقوى')
 
 console.log('المحرك المجاني وإصلاحات الجسر والبث: كل الاختبارات خضراء ✓')
+
+/* ─── جولة ٣١ يوليو الثالثة: صمت «لخّصها»، فهم «كمل»، مصطلح تكنولوجيا ─── */
+const intentEngine = readFileSync(resolve(root, 'whatsapp-agent/intent-engine.mjs'), 'utf8')
+const bridgeR3 = readFileSync(resolve(root, 'whatsapp-web-bridge/index.mjs'), 'utf8')
+const controllerR3 = readFileSync(resolve(root, 'src/server/whatsapp-controller.mjs'), 'utf8')
+
+/* الحارس لا يبتلع سؤالاً كتبه إنسان — جريمة ٠٠:٥٥:٢٢ لا تتكرر */
+assert.match(bridgeR3, /userTyped = false/, 'الحارس يعرف الرسالة المكتوبة')
+assert.match(bridgeR3, /if \(userTyped && source !== 'catchup'\)/, 'المكتوب حياً يُجاب دائماً')
+assert.match(bridgeR3, /userTyped: String\(message\.body \|\| ''\)\.trim\(\)\.length > 0/, 'الوصل مربوط بنص الرسالة')
+
+/* «كمل» نية متابعة لا بحث */
+assert.match(intentEngine, /CONTINUE_READING: 'CONTINUE_READING'/, 'النية معرّفة')
+assert.match(intentEngine, /INTENTS\.CONTINUE_READING, \[\/\^\(\?:كمل/, 'نمط كمل موجود')
+assert.match(intentEngine, /INTENTS\.CONTINUE_READING,\n?\s*INTENTS\.ONE_MINUTE|CONTEXT_ACTION_INTENTS = new Set\(\[\s*INTENTS\.SUMMARY,\s*INTENTS\.CONTINUE_READING/, 'مسجلة كفعل سياقي')
+assert.match(controllerR3, /intent === INTENTS\.CONTINUE_READING/, 'المعالج موجود')
+assert.match(controllerR3, /readCursor/, 'موضع القراءة يُتتبع')
+assert.match(controllerR3, /continue-without-context/, 'بلا مادة: توجيه لا صمت')
+assert.match(controllerR3, /continue-finished/, 'نهاية النص معلنة')
+
+/* مصطلح الواجهة: تكنولوجيا لا تقنية — في ما يكتبه البوت */
+assert.match(controllerR3, /function systemTerminology/, 'مبدّل المصطلح موجود')
+assert.match(controllerR3, /systemTerminology\(bounded\(value, 2_000\)\)/, 'مطبّق على كل رد موقّع')
+
+/* معاينة الحملة تُعرض مصرّفة لا خاماً */
+assert.match(controllerR3, /messagePreview: bounded\(personalizeAudienceText\(row\.message, \{\}\), 500\)/, 'المعاينة مصرّفة')
+
+console.log('جولة الصمت والمتابعة والمصطلح: خضراء ✓')

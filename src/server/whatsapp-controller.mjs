@@ -270,9 +270,24 @@ function isGreetingOnly(text) {
   return Boolean(normalizeArabicMessage(text)) && !stripArabicGreetings(text)
 }
 
+/* مصطلح الواجهة الموحّد (أمر الدكتور ٣١ يوليو، تبعاً لما نُفّذ في الموقع):
+   يقول «تكنولوجيا» لا «تقنية». يُطبَّق على ما يكتبه البوت من عنده — التصنيفات
+   وأبواب الأرشيف والجُمل — دون المساس بعناوين المقالات ونصوصها المنشورة،
+   فتلك كلماته هو في مادةٍ صدرت باسمه ولا تُحرَّر من خلف ظهره. */
+function systemTerminology(value) {
+  return String(value || '')
+    .replace(/التقنيات/g, 'التكنولوجيات')
+    .replace(/تقنيات/g, 'تكنولوجيات')
+    .replace(/للتقنية|للتقنيه/g, 'للتكنولوجيا')
+    .replace(/بالتقنية|بالتقنيه/g, 'بالتكنولوجيا')
+    .replace(/والتقنية|والتقنيه/g, 'والتكنولوجيا')
+    .replace(/التقنية|التقنيه/g, 'التكنولوجيا')
+    .replace(/تقنية|تقنيه/g, 'تكنولوجيا')
+}
+
 function signReply(value, messages = botMessagesNow()) {
   const signature = botSignature(messages)
-  const text = bounded(value, 2_000)
+  const text = systemTerminology(bounded(value, 2_000))
   if (!text || text.includes(signature)) return text
   const humanBoundary = /تريد التواصل مع الدكتور مباشرة|لا أستطيع أن أعدك بموعد رد/.test(text)
   const alreadyInteractive = /قل لي|جرّب|اكتب|شنو يناسب|وش تحب|إذا تحب|وإن أحببت|وأكمل معك|في أمان الله|وإياك|حيّاك/.test(text)
@@ -855,8 +870,50 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
 
   if ([INTENTS.SUMMARY, INTENTS.ONE_MINUTE, INTENTS.READ_SPEED].includes(intent)) {
     return current
-      ? { kind: 'reply', reason: 'context-summary', intent, reply: signReply(excerptReply(current, true), messages), evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0 }
+      ? {
+        kind: 'reply', reason: 'context-summary', intent,
+        reply: signReply(excerptReply(current, true), messages),
+        evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+        /* التلخيص يبدأ رحلة القراءة من أولها: «كمل» بعده تُعطي ما بعد الملخص. */
+        patch: { readCursor: 42, readCursorItemId: current.id },
+      }
       : { kind: 'reply', reason: 'context-missing', intent, reply: signReply('أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أختصرها لك.', messages) }
+  }
+
+  /* «كمل»: يواصل المادة الحاضرة من حيث وقف لا يبحث عن كلمة جديدة (شكوى
+     الدكتور ٣١ يوليو: كتبها بعد الملخص فردّ عليه «ما لقيت مادة مطابقة»). */
+  if (intent === INTENTS.CONTINUE_READING) {
+    if (!current) {
+      return {
+        kind: 'reply', reason: 'continue-without-context', intent,
+        reply: signReply('ما عندي مادة مفتوحة الآن لأكمل منها. قل «آخر مقالة» أو اكتب الموضوع، وبعدها أكمل معك فقرة فقرة.', messages),
+      }
+    }
+    const full = normalizeWhitespace(current.body || current.excerpt || '')
+    const words = full.split(/\s+/).filter(Boolean)
+    const sameItem = String(conversation.readCursorItemId || '') === String(current.id)
+    const cursor = sameItem ? Math.max(0, Number(conversation.readCursor || 0)) : 0
+    if (!words.length || cursor >= words.length) {
+      return {
+        kind: 'reply', reason: 'continue-finished', intent,
+        reply: signReply(`وصلنا آخر ما عندي من نص «${current.title}» هنا. تقرأها كاملة في صفحتها:\n\n${current.url}\n\nأو قل «عطني غيرها» وأفتح لك مادة قريبة.`, messages),
+        evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+        patch: { readCursor: words.length, readCursorItemId: current.id },
+      }
+    }
+    const step = 90
+    const chunk = words.slice(cursor, cursor + step).join(' ')
+    const nextCursor = cursor + step
+    const remaining = Math.max(0, words.length - nextCursor)
+    const tail = remaining > 0
+      ? `\n\nبقي نحو ${arabicNumber(Math.ceil(remaining / 90))} مقطع. قل «كمل» أكمل، أو «المصدر» أعطيك الرابط.`
+      : `\n\nوبهذا اكتمل النص عندي. الصفحة الكاملة:\n${current.url}`
+    return {
+      kind: 'reply', reason: 'continue-reading', intent,
+      reply: signReply(`*${current.title}* — تكملة\n\n${chunk}${remaining > 0 ? '…' : ''}${tail}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: nextCursor, readCursorItemId: current.id },
+    }
   }
   if ([INTENTS.SOURCE_PROOF, INTENTS.READ_ARTICLE, INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA, INTENTS.LISTEN_DIALOGUE].includes(intent)) {
     if (!current) return { kind: 'reply', reason: 'context-missing', intent, reply: signReply(clarifyText(messages, conversation), messages) }
@@ -1809,7 +1866,10 @@ function campaignPublicState(snapshot) {
     intervalSeconds: Math.max(0, Number(row.intervalSeconds || 0)),
     nextAt: bounded(row.nextAt, 80) || null,
     lastError: bounded(row.lastError, 260) || null,
-    messagePreview: bounded(row.message, 500),
+    /* «الرسالة التالية» في اللوحة كانت تعرض القالب خاماً بأقواسه فيقرأ
+       الدكتور «{عزيزي} أهلاً وسهلاً» ويظن الحقل معطوباً (٣١ يوليو). تُعرض
+       الآن مصرَّفةً بصيغة محايدة — نفس ما يصل من لا نعرف اسمه فعلاً. */
+    messagePreview: bounded(personalizeAudienceText(row.message, {}), 500),
     createdAt: bounded(row.createdAt, 80) || null,
     approvedAt: bounded(row.approvedAt, 80) || null,
     startedAt: bounded(row.startedAt, 80) || null,

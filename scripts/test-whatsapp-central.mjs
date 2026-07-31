@@ -3,6 +3,8 @@ import {
   decideGroundedResponse,
   findRuleMatch,
   returningReaderLine,
+  applyTaughtPhrases,
+  readerKindOf,
   buildWhatsAppDiagnostics,
   normalizeArabicMessage,
   isWhatsAppWakePhrase,
@@ -428,6 +430,35 @@ for (const ask of ['قراءة صوتية', 'القراءة الصوتية', 'ق
 assert.notEqual(classify('عندك شي عن القراءة').intent, I.LISTEN_FAHED)
 assert.notEqual(classify('لخصها').intent, I.LISTEN_FAHED)
 assert.equal(classify('الحوار').intent, I.LISTEN_DIALOGUE, 'الحوار يبقى للحوار')
+
+/* ٩) البوت يتعلّم من الدكتور وحده: الصياغة التي أخطأ فيها تُسنَد إلى موضوع،
+   فيُجيب عنها بحثاً في المنشور — ولا يتعلّم شيئاً بلا إسناد صريح. */
+assert.notEqual(decideGroundedResponse({ text: 'شنو رايه في الدمج' }).reason, 'taught-phrase', 'بلا تعليم لا يدّعي فهماً')
+applyTaughtPhrases([{ phrase: 'شنو رايه في الدمج', teachQuery: 'التعليم الدامج' }])
+const taughtReply = decideGroundedResponse({ text: 'شنو رايه في الدمج' })
+assert.equal(taughtReply.reason, 'taught-phrase')
+assert.match(taughtReply.reply, /https:\/\/dr-alfailakawi\.com\//, 'الجواب مادةٌ منشورة لا كلامٌ مولَّد')
+/* العبارة المُعلَّمة تُفهم داخل جملةٍ أطول، ولا تخطف نيةً واضحة */
+applyTaughtPhrases([{ phrase: 'الدمج', teachQuery: 'التعليم الدامج' }])
+assert.equal(decideGroundedResponse({ text: 'ابي اعرف عن الدمج' }).reason, 'taught-phrase')
+assert.equal(decideGroundedResponse({ text: 'آخر مقالة' }).reason, 'latest-content', 'التعليم لا يخطف النيات الواضحة')
+applyTaughtPhrases([])
+assert.notEqual(decideGroundedResponse({ text: 'ابي اعرف عن الدمج' }).reason, 'taught-phrase', 'إلغاء التعليم يُلغي أثره')
+
+/* ١٠) من يسأل؟ الصفة تُستنتج من مفرداته، وتغيّر **الترتيب** لا المحتوى،
+   ولا تُزيح أفضل مطابقةٍ عن مكانها. */
+const kindsOf = (decision) => (decision.evidence || []).map((id) => String(id).split(':')[0])
+const plainAsk = decideGroundedResponse({ text: 'التعلم عن بعد' })
+const scholarAsk = decideGroundedResponse({ text: 'التعلم عن بعد', conversation: { readerSignals: ['researcher', 'researcher'] } })
+assert.equal(kindsOf(scholarAsk)[0], kindsOf(plainAsk)[0], 'أفضل مطابقة لا تُزاح مهما كانت صفة السائل')
+assert.ok(
+  kindsOf(scholarAsk).filter((k) => k === 'paper').length >= kindsOf(plainAsk).filter((k) => k === 'paper').length,
+  'الباحث تُقدَّم له الأوراق المحكّمة ولا تُخفى عنه',
+)
+/* الإشارة تُلتقط من كلامه ولا تُصنّفه من كلمةٍ واحدة */
+assert.deepEqual(decideGroundedResponse({ text: 'عندك شي عن التقويم يفيد طلابي' }).patch?.readerSignals, ['teacher'])
+assert.equal(readerKindOf({ readerSignals: ['teacher'] }), '', 'إشارةٌ واحدة لا تكفي للحكم')
+assert.equal(readerKindOf({ readerSignals: ['teacher', 'teacher'] }), 'teacher')
 
 /* القوالب الحية: تحرير اللوحة يجب أن يصل الردود (كان مسبوكاً عند التحميل) */
 const controllerNow = controllerSource

@@ -133,23 +133,27 @@ export function findIdeaRevisions(article: ArticleRecord, articles: readonly Art
       .filter((word) => word.length >= 4 && !CONCEPT_STOPWORDS.has(word)))
     if (!topical.size) continue
 
+    /* **المرساة هي تصريح الدكتور نفسه**، لا علامةٌ في المقال القديم.
+       الاشتراط السابق (تحفّظٌ صريح في القديم أيضاً) كان يُسقط كل شيء: القديم
+       شاهدٌ على ما كتبه وقتها فحسب، ومن يشهد على تغيّر الرأي هو الجملة التي
+       يقول فيها بنفسه «كنت أظن…». فنبدأ منها ثم نبحث عن شاهدها في الأقدم. */
     let reserve = ''
     let shift = ''
     let concept = ''
-    for (const candidate of olderSentences) {
-      if (!hasAny(candidate, RESERVE)) continue
-      const match = newerSentences.find((sentence) => {
-        if (!hasAny(sentence, SHIFT)) return false
-        const word = sharedConcept(candidate, sentence, topical)
-        /* الجملتان معاً يجب أن تكونا **عن** المفهوم: العلامة قريبةٌ منه في
-           كلٍّ منهما. بلا هذا الشرط تلتقط جملةٌ واحدة عابرة كلَّ المقالات. */
-        return Boolean(word) && markerNearConcept(candidate, word, RESERVE) && markerNearConcept(sentence, word, SHIFT)
-      })
-      if (!match) continue
-      const word = sharedConcept(candidate, match, topical)
-      if (!word || usedConcepts.has(word)) continue
-      reserve = candidate
-      shift = match
+    for (const candidate of newerSentences) {
+      if (!hasAny(candidate, SHIFT)) continue
+      const word = ideaWords(candidate)
+        .filter((item) => item.length >= 4 && topical.has(item) && !CONCEPT_STOPWORDS.has(item))
+        .sort((a, b) => b.length - a.length)[0]
+      /* الجملة يجب أن تكون **عن** المفهوم لا تذكره عرضاً. */
+      if (!word || usedConcepts.has(word) || !markerNearConcept(candidate, word, SHIFT)) continue
+      /* شاهد الأقدم: أطول جملةٍ تتحدث عن المفهوم نفسه — نصٌّ حقيقي بلا تأويل. */
+      const witness = olderSentences
+        .filter((sentence) => sentence.includes(word))
+        .sort((a, b) => b.length - a.length)[0]
+      if (!witness) continue
+      reserve = witness
+      shift = candidate
       concept = word
       break
     }
@@ -159,7 +163,7 @@ export function findIdeaRevisions(article: ArticleRecord, articles: readonly Art
     const span = Number(yearOf(newerArticle)) - Number(yearOf(olderArticle))
     found.push({
       concept,
-      line: `كتبتُ عن ${concept} برأيٍ، ثم راجعتُه بعد ${span === 1 ? 'سنة' : `${span} سنوات`} وقلتُ ذلك صراحةً.`,
+      line: `كتبتُ عن ${concept} سنة ${yearOf(olderArticle)}، ثم راجعتُ رأيي بعد ${span === 1 ? 'سنة' : `${span} سنوات`} وقلتُ ذلك بنفسي.`,
       older: { slug: olderArticle.slug, title: olderArticle.title, year: yearOf(olderArticle), excerpt: reserve },
       newer: { slug: newerArticle.slug, title: newerArticle.title, year: yearOf(newerArticle), excerpt: shift },
     })

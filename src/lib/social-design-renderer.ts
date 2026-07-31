@@ -2245,6 +2245,15 @@ async function rasterizeSvg(svg: string, width: number, height: number, type: 'p
 
 /** يصدّر التصميم؛ وإن كان سلسلة صدّر كل شرائحها ملفاً ملفاً — كما يليق بكاروسيل حقيقي. */
 export async function downloadCompositionRaster(plan: CompositionPlan, type: 'png' | 'jpeg' = 'png') {
+  /* نفس جذر «الخطوط غير جيدة»: ctx/SVG لا يُنزّل خطاً لم تستعمله الصفحة بعد،
+     فيسقط الرسم لخطّ نظام صامتاً. نطلب الأوزان المستعملة صراحةً أولاً. */
+  await Promise.race([
+    Promise.allSettled([
+      '700 64px "El Messiri"', '600 48px "El Messiri"', '400 32px "El Messiri"',
+      '700 40px Tajawal', '500 32px Tajawal', '400 28px Tajawal',
+    ].map((font) => document.fonts?.load(font, 'أ') ?? Promise.resolve())),
+    new Promise((resolve) => window.setTimeout(resolve, 3500)),
+  ])
   await document.fonts?.ready
   const fontCss = await embeddedFontCss()
   const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='

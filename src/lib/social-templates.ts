@@ -675,7 +675,20 @@ export const compositionNameOf = (layout: SocialVisualLayout) => compositionLabe
 
 export async function renderSocialPng(inputTemplate: SocialVisualTemplate) {
   const template: SocialVisualTemplate = { ...inputTemplate, footer: cleanIdentityFooter(inputTemplate.footer) }
-  /* انتظار الخطوط بمهلة: متصفح يعلّق fonts.ready لا يحق له تعليق الرسم كله */
+  /* جذر «الخطوط غير جيدة» (ملاحظة الدكتور ٣١ يوليو): الكانفس يطلب
+     «El Messiri» بوزن ٧٠٠ — لكن المتصفح **لا يُنزّل خطاً لمجرد ذكره في
+     ctx.font**؛ يُنزّله فقط حين يستعمله عنصرٌ في الصفحة. فإن لم يكن الوزن
+     مستعملاً في تلك اللحظة سقط الرسم صامتاً إلى خطّ نظامٍ عام، فتخرج البطاقة
+     بخطٍّ رديء بلا أي خطأ. الحل: نطلب تحميل الأوزان المستعملة صراحةً قبل
+     الرسم، ثم ننتظر fonts.ready — وكلاهما بمهلة كي لا يعلّق متصفحٌ الرسم. */
+  const requiredFonts = [
+    '700 64px "El Messiri"', '600 64px "El Messiri"', '400 32px "El Messiri"',
+    '700 40px Tajawal', '500 32px Tajawal', '400 28px Tajawal',
+  ]
+  await Promise.race([
+    Promise.allSettled(requiredFonts.map((font) => document.fonts?.load(font, 'أ') ?? Promise.resolve())),
+    new Promise((resolve) => window.setTimeout(resolve, 3500)),
+  ])
   await Promise.race([document.fonts?.ready, new Promise((resolve) => window.setTimeout(resolve, 3000))])
   const canvas = document.createElement('canvas')
   canvas.width = template.width

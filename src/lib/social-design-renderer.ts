@@ -311,6 +311,24 @@ interface TextBlockOptions {
 }
 
 /** يحسم الوزن المتاح فعلياً: Tajawal المحلي ينتهي عند 500 فلا نطلب تغليظاً اصطناعياً. */
+/**
+ * جذر «الخط غير جميل» (ملاحظة الدكتور ٣١ يوليو مساءً) — أعمقُ من نسيان
+ * fonts.load: **«Alexandria Variable» لا وجود له في المشروع أصلاً**. لا ملف
+ * ولا ‎@font-face، واسمه لا يظهر إلا في جدول أنماط الطباعة داخل المحرك. وكان
+ * الرسم يُخرج `font-family="Alexandria Variable"` عارياً بلا بديل، فيسقط كل
+ * عنوانٍ صامتاً إلى خطّ النظام. (مسار الكانفس كان سليماً لأنه يكتب سلسلةً
+ * حقيقية: "El Messiri", "Tajawal", sans-serif — ولهذا بدا الخلل في مسارٍ دون
+ * آخر.) الحل: سلسلةُ بدائل عند حافة الكتابة — إن أُضيف الخط يوماً استُعمل،
+ * واليوم يهبط الرسم إلى خط الهوية لا إلى خطّ نظامٍ غريب.
+ */
+const FALLBACK_STACK = `'El Messiri', 'Tajawal', sans-serif`
+const fontStack = (family: string) => {
+  const name = String(family || '').trim()
+  if (!name) return FALLBACK_STACK
+  if (name === 'El Messiri' || name === 'Tajawal') return `'${name}', ${name === 'Tajawal' ? `'El Messiri'` : `'Tajawal'`}, sans-serif`
+  return `'${name}', ${FALLBACK_STACK}`
+}
+
 const resolveWeight = (family: string, weight: number) => family === 'Tajawal' ? Math.min(weight, 500) : weight
 
 /** يبني سطراً مع إبراز كلمة بطولية داخله (tspan متصل يحترم اتجاه العربية). */
@@ -347,7 +365,7 @@ function textBlock(options: TextBlockOptions) {
   const lineHeight = options.lineHeight ?? 1.3
   return lines.map((line, index) => {
     const lineY = y + index * size * lineHeight
-    return `<text x="${round(x)}" y="${round(lineY)}" fill="${fill}" opacity="${options.opacity ?? 1}" font-family="${esc(family)}" font-size="${round(size)}" font-weight="${weight}" text-anchor="${anchor}" direction="${direction}" unicode-bidi="plaintext"${spacing ? ` letter-spacing="${spacing}"` : ''}>${lineContent(line, options)}</text>`
+    return `<text x="${round(x)}" y="${round(lineY)}" fill="${fill}" opacity="${options.opacity ?? 1}" font-family="${esc(fontStack(family))}" font-size="${round(size)}" font-weight="${weight}" text-anchor="${anchor}" direction="${direction}" unicode-bidi="plaintext"${spacing ? ` letter-spacing="${spacing}"` : ''}>${lineContent(line, options)}</text>`
   }).join('')
 }
 
@@ -922,7 +940,7 @@ const paintQuoteStage: Painter = (s) => {
     h: blockHeight(lines, size, 1.66),
     gap: min * .06,
     draw: (top) => [
-      `<text x="${round(w - s.safeX * .82)}" y="${round(top - min * .01)}" fill="${p.accent}" opacity=".16" font-family="${esc(s.displayFamily)}" font-weight="700" font-size="${round(markSize)}" text-anchor="end">”</text>`,
+      `<text x="${round(w - s.safeX * .82)}" y="${round(top - min * .01)}" fill="${p.accent}" opacity=".16" font-family="${esc(fontStack(s.displayFamily))}" font-weight="700" font-size="${round(markSize)}" text-anchor="end">”</text>`,
       textBlock({ lines, x: w - s.safeX, y: top + size * .82, size, fill: p.ink, weight: 500, family: s.displayFamily, lineHeight: 1.58 }),
     ].join(''),
   }
@@ -998,7 +1016,7 @@ const paintEvidenceLedger: Painter = (s) => {
     h: figureSize * 1.24,
     gap: min * .035,
     draw: (top) => [
-      `<text x="${w - s.safeX}" y="${round(top + figureSize * .92)}" text-anchor="end" direction="ltr"><tspan fill="${p.accent}" font-family="Tajawal" font-weight="500" font-size="${round(figureSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(min * .055)}" dx="8">${esc(figure.unit)}</tspan>` : ''}</text>`,
+      `<text x="${w - s.safeX}" y="${round(top + figureSize * .92)}" text-anchor="end" direction="ltr"><tspan fill="${p.accent}" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(figureSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(min * .055)}" dx="8">${esc(figure.unit)}</tspan>` : ''}</text>`,
       `<line x1="${w - s.safeX}" y1="${round(top + figureSize * 1.18)}" x2="${w - s.safeX - min * .14}" y2="${round(top + figureSize * 1.18)}" stroke="${p.accent}" stroke-width="3" opacity=".85"/>`,
     ].join(''),
   } : { h: 0, draw: () => '' }
@@ -1485,7 +1503,7 @@ const paintInfographic: Painter = (s) => {
       const labelLines = statLabel ? wrap(statLabel, Math.max(8, (contentW - numW - min * .05) / (labelSize * .555)), 2) : []
       const labelH = blockHeight(labelLines, labelSize, 1.4)
       return [
-        `<text x="${round(w - s.safeX)}" y="${round(top + figSize * .9)}" text-anchor="end" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        `<text x="${round(w - s.safeX)}" y="${round(top + figSize * .9)}" text-anchor="end" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
         `<rect x="${round(w - s.safeX - numW)}" y="${round(top + figSize * 1.04)}" width="${round(numW)}" height="${round(min * .006)}" rx="${round(min * .003)}" fill="url(#${accGrad})" opacity=".9"/>`,
         labelLines.length ? textBlock({ lines: labelLines, x: w - s.safeX - numW - min * .05, y: top + (figSize * 1.16 - labelH) / 2 + labelSize * .82, size: labelSize, fill: p.muted, weight: 500, family: s.bodyFamily, lineHeight: 1.4 }) : '',
       ].join('')
@@ -1504,7 +1522,7 @@ const paintInfographic: Painter = (s) => {
       return [
         `<g filter="url(#${s.uid}-shadow)"><rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH)}" rx="${round(min * .028)}" fill="url(#${accGrad})"/></g>`,
         `<rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH * .5)}" rx="${round(min * .028)}" fill="#ffffff" opacity=".07"/>`,
-        `<text x="${round(w - s.safeX - pad)}" y="${round(top + cardH / 2 + figSize * .34)}" text-anchor="end" direction="ltr"><tspan fill="#FFFFFF" font-family="Tajawal" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="rgba(255,255,255,.82)" font-family="Tajawal" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        `<text x="${round(w - s.safeX - pad)}" y="${round(top + cardH / 2 + figSize * .34)}" text-anchor="end" direction="ltr"><tspan fill="#FFFFFF" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="rgba(255,255,255,.82)" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
         labelLines.length ? textBlock({ lines: labelLines, x: s.safeX + pad, y: top + cardH / 2 - labelH / 2 + labelSize * .82, size: labelSize, fill: 'rgba(255,255,255,.9)', weight: 500, anchor: 'start', family: s.bodyFamily, lineHeight: 1.35 }) : '',
       ].join('')
     },
@@ -1535,7 +1553,7 @@ const paintInfographic: Painter = (s) => {
           `<path d="${arc}" fill="none" stroke="url(#${arcGrad})" stroke-width="${sw}" stroke-linecap="round" filter="url(#${glowId})" opacity=".55"/>`,
           `<path d="${arc}" fill="none" stroke="url(#${arcGrad})" stroke-width="${sw}" stroke-linecap="round"/>`,
           `<circle cx="${round(sx)}" cy="${round(sy)}" r="${round(sw / 2)}" fill="${hexShade(p.accent, .3)}"/>`,
-          `<text x="${round(cx)}" y="${round(cy + numSize * .34)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal" font-weight="700" font-size="${round(numSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(numSize * .4)}" dx="4">${esc(figure.unit)}</tspan>` : ''}</text>`,
+          `<text x="${round(cx)}" y="${round(cy + numSize * .34)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="700" font-size="${round(numSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(numSize * .4)}" dx="4">${esc(figure.unit)}</tspan>` : ''}</text>`,
           statLabel ? textBlock({ lines: [words(statLabel).slice(0, 4).join(' ')], x: cx, y: cy + R + min * .05, size: Math.max(12, min * .022), fill: p.muted, weight: 500, anchor: 'middle', family: s.bodyFamily }) : '',
         ].join('')
       },
@@ -1575,7 +1593,7 @@ const paintInfographic: Painter = (s) => {
         draw: (top) => {
           const cy = top + rowH / 2
           return [
-            `<text x="${round(w - s.safeX)}" y="${round(cy + ordSize * .35)}" fill="none" stroke="${p.accent}" stroke-width="1.4" font-family="${esc(s.displayFamily)}" font-weight="700" font-size="${round(ordSize)}" text-anchor="end" direction="ltr" opacity=".92">${esc(arabicIndex(index + 1))}</text>`,
+            `<text x="${round(w - s.safeX)}" y="${round(cy + ordSize * .35)}" fill="none" stroke="${p.accent}" stroke-width="1.4" font-family="${esc(fontStack(s.displayFamily))}" font-weight="700" font-size="${round(ordSize)}" text-anchor="end" direction="ltr" opacity=".92">${esc(arabicIndex(index + 1))}</text>`,
             textBlock({ lines, x: w - s.safeX - ordCol, y: top + (rowH - textH) / 2 + rowSize * .82, size: rowSize, fill: p.ink, weight: 500, family: s.bodyFamily, lineHeight: 1.44 }),
           ].join('')
         },
@@ -1643,7 +1661,7 @@ const paintInfographic: Painter = (s) => {
       h: heroSize * .92 + (statLabel ? min * .05 : 0),
       gap: min * .05,
       draw: (top) => [
-        `<text x="${round(w / 2)}" y="${round(top + heroSize * .8)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal" font-weight="700" font-size="${round(heroSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal" font-weight="500" font-size="${round(heroSize * .34)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        `<text x="${round(w / 2)}" y="${round(top + heroSize * .8)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="700" font-size="${round(heroSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(heroSize * .34)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
         statLabel ? textBlock({ lines: [words(statLabel).slice(0, 5).join(' ')], x: w / 2, y: top + heroSize * .8 + min * .05, size: Math.max(13, min * .024), fill: p.muted, weight: 500, anchor: 'middle', family: s.bodyFamily }) : '',
       ].join(''),
     }
@@ -2339,7 +2357,7 @@ function renderCarouselSlideSvg(plan: CompositionPlan, slideIndex: number, optio
   }
 
   const roleDecor = slide.role === 'question'
-    ? `<text x="${round(s.safeX + min * .02)}" y="${round(h * .34)}" fill="${p.accent}" opacity=".12" font-family="${esc(s.displayFamily)}" font-weight="700" font-size="${round(min * .3)}" text-anchor="start">؟</text>`
+    ? `<text x="${round(s.safeX + min * .02)}" y="${round(h * .34)}" fill="${p.accent}" opacity=".12" font-family="${esc(fontStack(s.displayFamily))}" font-weight="700" font-size="${round(min * .3)}" text-anchor="start">؟</text>`
     : slide.role === 'evidence'
       ? `<rect x="${round(w - s.safeX + min * .02)}" y="${round(h * .3)}" width="${round(min * .006)}" height="${round(h * .16)}" rx="3" fill="${p.accent}" opacity=".85" transform="translate(${round(-min * .01)} 0)"/>`
       : ''
@@ -2357,7 +2375,7 @@ function renderCarouselSlideSvg(plan: CompositionPlan, slideIndex: number, optio
     progress,
   ], contentBand(s), .42)
 
-  const ghostIndex = `<text x="${round(s.safeX)}" y="${round(s.safeY + min * .16)}" fill="${p.accent}" opacity=".14" font-family="Tajawal" font-weight="500" font-size="${round(min * .17)}" text-anchor="start">${arabicIndex(slideIndex + 1)}</text>`
+  const ghostIndex = `<text x="${round(s.safeX)}" y="${round(s.safeY + min * .16)}" fill="${p.accent}" opacity=".14" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(min * .17)}" text-anchor="start">${arabicIndex(slideIndex + 1)}</text>`
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
   const accessible = esc(`شريحة ${slideIndex + 1} من ${total}: ${slide.title}`)
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${accessible}</title><defs>${fontStyle}${bg.defs}</defs>${bg.markup}${ghostIndex}${roleDecor}${stack}${identityFooter(s)}${identityLayer(s, options)}</svg>`

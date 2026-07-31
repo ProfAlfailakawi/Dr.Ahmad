@@ -128,5 +128,11 @@ jobs:
             echo "No migration changes to commit."
           else
             git commit -m "chore: move audio assets to Cloudflare R2"
-            git push origin HEAD:main
+            # إعادةُ محاولةٍ فوق أحدث main: التصادم مع دفعةٍ متزامنة عارضٌ لا عطل.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then pushed=1; break; fi
+              sleep $((attempt * 5))
+            done
+            if [ "$pushed" != 1 ]; then echo "::error::تعذّر تثبيت ترحيل الصوت بعد ثلاث محاولات."; exit 1; fi
           fi

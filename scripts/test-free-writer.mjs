@@ -195,3 +195,53 @@ assert.match(controllerR3, /systemTerminology\(bounded\(value, 2_000\)\)/, 'مط
 assert.match(controllerR3, /messagePreview: bounded\(personalizeAudienceText\(row\.message, \{\}\), 500\)/, 'المعاينة مصرّفة')
 
 console.log('جولة الصمت والمتابعة والمصطلح: خضراء ✓')
+
+/* ─── جولة الترقيات: سبع للبوت وأربع للاستوديو (٣١ يوليو مساءً) ─── */
+const brainR4 = readFileSync(resolve(root, 'src/server/whatsapp-controller.mjs'), 'utf8')
+const bridgeR4 = readFileSync(resolve(root, 'whatsapp-web-bridge/index.mjs'), 'utf8')
+const rendererR4 = readFileSync(resolve(root, 'src/lib/social-design-renderer.ts'), 'utf8')
+const studioR4 = readFileSync(resolve(root, 'src/components/admin/SocialDesignStudio.tsx'), 'utf8')
+const agentPanelR4 = readFileSync(resolve(root, 'src/components/admin/WhatsAppAgentPanel.tsx'), 'utf8')
+
+/* حرمة الجسر: البوابة المقدسة وقانون الصمت لم يُمسّا */
+assert.match(brainR4, /wake-phrase-only/, 'سياسة الإيقاظ الحصري باقية')
+assert.match(brainR4, /wakeEpoch:\s*2/, 'حقبة الإيقاظ ٢ باقية')
+assert.match(brainR4, /data\.wakeActive === true/, 'شرط الجلسة المفتوحة باقٍ')
+assert.match(bridgeR4, /if \(userTyped && source !== 'catchup'\)/, 'حارس المكتوب باقٍ')
+assert.match(bridgeR4, /ensureIndividualChatExists/, 'تمهيد المحادثة باقٍ')
+
+/* ١ ذاكرة عبر الأيام */
+assert.match(brainR4, /returningReaderLine/, 'ذاكرة العائد موجودة')
+assert.match(brainR4, /أهلاً بعودتك/, 'ترحيب العائد')
+/* ٢ رشقة الصور */
+assert.match(brainR4, /media-burst-acknowledged/, 'اعتراف الرشقة')
+assert.match(brainR4, /mediaBurstCount/, 'عدّاد الرشقة')
+/* ٣ السؤال المركّب */
+assert.match(brainR4, /parseCompoundFilters/, 'مرشّحات مركّبة')
+assert.match(brainR4, /compound-filter-empty/, 'مصارحة عند غياب المطابق')
+/* ٤ الصوت داخل واتساب */
+assert.match(brainR4, /audioAttachment/, 'مرفق صوتي في القرار')
+assert.match(brainR4, /'send-audio'/, 'أمر الصوت يُصفّ')
+assert.match(bridgeR4, /command\.type === 'send-audio'/, 'فرع الصوت في الجسر')
+assert.match(bridgeR4, /MessageMedia/, 'وسيط واتساب مستورد')
+/* ٥ السؤال المرتد */
+assert.match(brainR4, /قل «نعم» وأكمل معك عليها/, 'سؤال مرتد بدل قائمة')
+/* ٦ التقرير الأسبوعي */
+assert.match(brainR4, /'\/weekly-report'/, 'مسار التقرير')
+assert.match(brainR4, /notFound/, 'ما لم يجده محسوب')
+assert.match(agentPanelR4, /data-weekly-bot-report/, 'بطاقة التقرير في اللوحة')
+/* ٧ خفض التوقيع */
+assert.match(brainR4, /trimSessionSignature/, 'قصّ التوقيع')
+assert.match(brainR4, /lastSignedAt/, 'وسم آخر توقيع')
+
+/* الاستوديو الأربع */
+assert.match(rendererR4, /seasonIdentityFor/, 'بصمة الموسم')
+assert.match(rendererR4, /familySignatureMark/, 'خيط العائلة يُرسم')
+assert.match(rendererR4, /toArabicIndic/, 'الأرقام الهندية')
+assert.match(rendererR4, /elongateArabic/, 'الكشيدة الصحيحة')
+assert.match(rendererR4, /NON_CONNECTING_FORWARD/, 'قاعدة الحروف غير المتصلة')
+assert.match(studioR4, /data-thumbnail-test/, 'اختبار المصغَّر')
+assert.match(studioR4, /thumbnailVerdict/, 'حكم المصغَّر محسوب')
+assert.match(studioR4, /layoutFamily: cleanPlan\.layout/, 'ذاكرة ما نجح تُسجّل العائلة')
+
+console.log('ترقيات البوت السبع والاستوديو الأربع: خضراء ✓')

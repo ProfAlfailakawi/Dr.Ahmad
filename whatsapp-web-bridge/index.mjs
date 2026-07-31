@@ -6,7 +6,7 @@ import process from 'node:process'
 import qrcode from 'qrcode'
 import whatsappWeb from 'whatsapp-web.js'
 
-const { Client, LocalAuth } = whatsappWeb
+const { Client, LocalAuth, MessageMedia } = whatsappWeb
 
 const deviceId = String(process.env.WHATSAPP_BRIDGE_DEVICE_ID || process.env.WHATSAPP_CLIENT_ID || 'primary')
   .replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48) || 'primary'
@@ -1024,6 +1024,21 @@ async function executeCommand(command) {
       rememberDeliveredCommand(command.id)
       await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
       log('info', 'command_message_sent', { jid, commandId: command.id })
+    } else if (command.type === 'send-audio') {
+      /* ترقية ٣١ يوليو — القراءة تُسمع داخل واتساب: فرعٌ جديد تماماً لا يمس
+         مسار الرسائل النصية المثبت. الملف يُجلب من قاعدة النشر نفسها ويُرسل
+         تسجيلاً صوتياً؛ وفشله يُعلَن أمراً فاشلاً وحده — الرد النصي بلينكه
+         وصل قبله، فلا يخسر المستخدم شيئاً. */
+      const jid = command.payload?.jid
+      const url = String(command.payload?.url || '').trim()
+      if (!jid || !/^https:\/\/[\w.-]+\/\S+$/.test(url)) throw new Error('invalid-send-audio-command')
+      await ensureBridgeFunctions()
+      await ensureIndividualChatExists(await resolveSendJid(jid))
+      const media = await MessageMedia.fromUrl(url, { unsafeMime: true })
+      await client.sendMessage(jid, media, { sendAudioAsVoice: false, sendSeen: false })
+      rememberDeliveredCommand(command.id)
+      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      log('info', 'command_audio_sent', { jid: maskAddress(jid), commandId: command.id })
     } else if (command.type === 'send-self-message') {
       const jid = selfChatJid()
       const text = applyMergeFieldSafetyNet(command.payload?.text)

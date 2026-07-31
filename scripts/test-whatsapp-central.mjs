@@ -172,9 +172,15 @@ assert.equal(media.kind, 'reply')
 assert.equal(media.reason, 'media-description-needed')
 assert.match(media.reply, /اكتب المطلوب بجملة واحدة/)
 assert.doesNotMatch(media.reply, /متابعة بشرية|الفريق/)
+/* رشقة الصور (ترقية ٣١ يوليو): الصمت التام كان يبدو عطلاً. الصورة الثانية
+   في النافذة تُقابَل باعترافٍ واحد، وما بعدها يصمت فعلاً — لا فيضان ولا تجاهل. */
 const mediaBurst = decideGroundedResponse({ text: '', hasMedia: true, conversation: { lastMediaReplyAt: new Date().toISOString() } })
-assert.equal(mediaBurst.kind, 'no-reply')
-assert.equal(mediaBurst.reason, 'media-burst-suppressed')
+assert.equal(mediaBurst.kind, 'reply')
+assert.equal(mediaBurst.reason, 'media-burst-acknowledged')
+assert.match(mediaBurst.reply, /وصلتني بقية الصور/)
+const mediaBurstTail = decideGroundedResponse({ text: '', hasMedia: true, conversation: { lastMediaReplyAt: new Date().toISOString(), mediaBurstCount: 2 } })
+assert.equal(mediaBurstTail.kind, 'no-reply')
+assert.equal(mediaBurstTail.reason, 'media-burst-suppressed')
 
 const human = decideGroundedResponse({ text: 'أبي أكلم موظف' })
 assert.equal(human.kind, 'escalate')

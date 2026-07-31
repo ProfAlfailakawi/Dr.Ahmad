@@ -34,6 +34,12 @@ export type GeneratedDesignLibraryAsset = {
   topic?: string
   visualWorld?: string
   campaign?: string
+  /* ذاكرة ما نجح (٣١ يوليو): ما اختاره الدكتور فعلاً — عائلةً ولوحةً ونبرة. */
+  layoutFamily?: string
+  paletteId?: string
+  toneId?: string
+  kindId?: string
+  seasonIdentity?: string
 }
 
 type Props = {

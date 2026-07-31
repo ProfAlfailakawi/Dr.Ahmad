@@ -78,6 +78,14 @@ type Simulation = { willReply?: boolean; why?: string; quietNow?: boolean; inten
    لأن الرصد المركزي يسجل الصياغة وتكرارها فقط (لا تعلّم تلقائياً). */
 type LearningPattern = { id: string | number; phrase: string; hits?: number; intent?: string; confirmations?: number; evidenceSources?: number; evidenceDays?: number; kind?: string; status: 'learned' | 'observing' | 'ignored'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null }
 type LearningState = { total: number; learned: number; observing: number; ignored: number; policy: string; items: LearningPattern[] }
+type WeeklyReport = {
+  days: number
+  conversations: number
+  awakened: number
+  askedAbout: { label: string; count: number }[]
+  notFound: { label: string; count: number }[]
+  note: string
+}
 type AgentScreen = 'live' | 'campaigns' | 'knowledge' | 'conversations' | 'personality' | 'protection'
 type KnowledgePersonality = {
   verbosity: 'brief' | 'layered' | 'detailed'
@@ -198,6 +206,8 @@ export function WhatsAppAgentPanel() {
   const [simulateText, setSimulateText] = useState('')
   const [simulation, setSimulation] = useState<Simulation | null>(null)
   const [learning, setLearning] = useState<LearningState>({ total: 0, learned: 0, observing: 0, ignored: 0, policy: '', items: [] })
+  const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null)
+  const [weeklyBusy, setWeeklyBusy] = useState(false)
   const [learningBusy, setLearningBusy] = useState(false)
   const [screen, setScreen] = useState<AgentScreen>('live')
   const [knowledge, setKnowledge] = useState<KnowledgeState>(EMPTY_KNOWLEDGE)
@@ -963,6 +973,60 @@ export function WhatsAppAgentPanel() {
           )}
         </details>
       )}
+
+      {/* تقرير الدكتور الأسبوعي: ما سأل عنه الناس، وما طلبوه ولم يجده البوت.
+          الثاني قائمة أفكار مقالات جاهزة — تُقرأ بضغطة ولا تُحمَّل بلا طلب. */}
+      <details className={card} data-weekly-bot-report="true" onToggle={(event) => {
+        if ((event.target as HTMLDetailsElement).open && !weeklyReport && !weeklyBusy) {
+          setWeeklyBusy(true)
+          void request<WeeklyReport>('/admin/weekly-report')
+            .then((data) => setWeeklyReport(data))
+            .catch(() => setWeeklyReport({ days: 7, conversations: 0, awakened: 0, askedAbout: [], notFound: [], note: 'تعذّر جلب التقرير في هذه الجلسة.' }))
+            .finally(() => setWeeklyBusy(false))
+        }
+      }}>
+        <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">تقريرك · كل أسبوع</p>
+            <h3 className="mt-1 font-display text-xl font-semibold text-ink">ماذا سأل الناس؟ وما الذي لم يجدوه؟</h3>
+            <p className="mt-1 max-w-2xl text-[.78rem] leading-relaxed text-soft">بلا أسماء ولا أرقام. ما لم يجده البوت هو أثمن ما في الصفحة: كل سطر فكرة مقالٍ ينتظر.</p>
+          </div>
+          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent">＋</span>
+        </summary>
+        <div className="mt-5 grid gap-4">
+          {weeklyBusy && <p className="text-[.78rem] text-soft">أجمع تقرير الأسبوع…</p>}
+          {weeklyReport && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">{weeklyReport.conversations} محادثة</span>
+                <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">{weeklyReport.awakened} أيقظته</span>
+                <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">آخر {weeklyReport.days} أيام</span>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-hair p-4">
+                  <p className="text-[.76rem] font-semibold text-ink">ما سألوا عنه</p>
+                  <div className="mt-2 grid gap-1.5">
+                    {weeklyReport.askedAbout.map((row) => (
+                      <p key={row.label} className="flex items-center justify-between gap-3 text-[.76rem] text-soft"><span className="min-w-0 truncate">{row.label}</span><span className="shrink-0 font-semibold text-accent">{row.count}</span></p>
+                    ))}
+                    {!weeklyReport.askedAbout.length && <p className="text-[.74rem] text-soft">لا محادثات في هذه المدة.</p>}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-accent/30 bg-accent/[.04] p-4">
+                  <p className="text-[.76rem] font-semibold text-ink">ما طلبوه ولم يجده — أفكار تنتظر</p>
+                  <div className="mt-2 grid gap-1.5">
+                    {weeklyReport.notFound.map((row) => (
+                      <p key={row.label} className="flex items-center justify-between gap-3 text-[.76rem] text-soft"><span className="min-w-0 truncate">{row.label}</span><span className="shrink-0 font-semibold text-accent">{row.count}</span></p>
+                    ))}
+                    {!weeklyReport.notFound.length && <p className="text-[.74rem] text-soft">لم يعجز عن شيء هذه المدة.</p>}
+                  </div>
+                </div>
+              </div>
+              <p className="text-[.72rem] leading-relaxed text-soft">{weeklyReport.note}</p>
+            </>
+          )}
+        </div>
+      </details>
 
       {bridge && (
         <details className={card}>

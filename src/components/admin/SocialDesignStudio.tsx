@@ -30,6 +30,7 @@ import {
   renderCompositionSvg,
   infographicVariantOf,
   setRenderPreferences,
+  seasonIdentityFor,
   type BackgroundPattern,
 } from '../../lib/social-design-renderer'
 import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES } from '../../lib/social-design-engine'
@@ -1098,6 +1099,23 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const forecast = useMemo(() => (selected ? predictEngagement(selected) : null), [selected])
   // خريطة الانتباه (٨) وشرح التعثّر (٢٢): محاكاةٌ وتشخيصٌ محليّان للتصميم المختار.
   const attention = useMemo<AttentionMap | null>(() => (selected && attentionOn ? computeAttentionMap(selected) : null), [selected, attentionOn])
+  /* حكم المصغَّر: نقيس أكبر خطٍّ فعلي في المخرج النهائي، ونحسب كم يساوي حين
+     يُعرض التصميم بعرض ٣٠٠ بكسل في خلاصة إنستغرام أو تويتر. تحت ١٣ بكسل لا
+     يقرأ أحد شيئاً مهما كان التصميم جميلاً على الشاشة الكبيرة. */
+  const thumbnailVerdict = useMemo(() => {
+    if (!selected) return { ok: true, note: '' }
+    let largest = 0
+    try {
+      const svg = renderCompositionSvg(selected)
+      for (const match of svg.matchAll(/font-size="([\d.]+)"/g)) largest = Math.max(largest, Number(match[1]) || 0)
+    } catch { return { ok: true, note: 'تعذّر قياس المصغَّر في هذه الجلسة.' } }
+    const width = Number(selected.format?.width || 1080)
+    const effective = Math.round((largest * 300) / Math.max(1, width))
+    if (!largest) return { ok: true, note: 'لا نص كبيراً في هذا التصميم — الحكم البصري يعود لك.' }
+    if (effective >= 18) return { ok: true, note: `العنوان يظهر بنحو ${effective} بكسل في الخلاصة — يُقرأ بوضوح دون فتح الصورة.` }
+    if (effective >= 13) return { ok: true, note: `العنوان يظهر بنحو ${effective} بكسل في الخلاصة — مقروء بالكاد؛ تكبيره قليلاً يرفع التوقف.` }
+    return { ok: false, note: `العنوان يظهر بنحو ${effective} بكسل في الخلاصة — لن يُقرأ وهو يمر. اختصر العنوان أو كبّره قبل النشر.` }
+  }, [selected])
   const explanation = useMemo<DesignExplanation | null>(() => (selected ? explainDesign(selected) : null), [selected])
   const globalCritic = useMemo(() => {
     if (!selected) return null
@@ -1141,7 +1159,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     }
   }, [selected, imageLicense, imageOwner, imageSource])
   // أثناء الرسم لا بعده: المعاينات تقرأ التفضيل في نفس الدورة التي تغيّر فيها
-  useMemo(() => setRenderPreferences({ seal: sealOn, seasonal: seasonalOn && Boolean(activeSeason), pattern: bgPattern }), [sealOn, seasonalOn, activeSeason, bgPattern])
+  /* بصمة الموسم والأرقام الهندية: مفعّلتان دائماً — الأولى تجعل منشورات
+     الفترة عائلةً واحدة، والثانية تجعل التصميم عربياً في تفاصيله لا في نصه فقط. */
+  useMemo(() => setRenderPreferences({ seal: sealOn, seasonal: seasonalOn && Boolean(activeSeason), pattern: bgPattern, familySignature: true, arabicNumerals: true }), [sealOn, seasonalOn, activeSeason, bgPattern])
   useEffect(() => {
     try {
       localStorage.setItem(SEAL_KEY, sealOn ? '1' : '0')
@@ -1267,6 +1287,14 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         visualWorld: cleanPlan.directionLabel || '',
         campaign: /(?:حملة|campaign)/i.test(generationKind) ? generationKind : '',
         createdAtMs,
+        /* ذاكرة ما نجح: العائلة واللوحة ونبرة الفكرة تُحفظ مع كل تصميم معتمد،
+           فيتراكم عند الدكتور دليلٌ حقيقي على ما يليق بأي نوعِ فكرة — بلا
+           ادعاء تعلّم آلي، مجرد إحصاءٍ صادق لما اختاره هو بنفسه. */
+        layoutFamily: cleanPlan.layout || '',
+        paletteId: String(cleanPlan.palette || ''),
+        toneId: analysis?.primaryTone || '',
+        kindId: analysis?.primaryKind || '',
+        seasonIdentity: seasonIdentityFor().label,
       }
       await setDoc(doc(db, 'admin_generated_designs', id), { ...asset, createdAt: serverTimestamp(), archivePolicy: 'latest-approved-only' })
       setGeneratedDesignLibraryAssets([asset])
@@ -4192,6 +4220,18 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     <p className="mt-1 text-[.62rem] text-soft">توازن المحاكاة البصرية: <strong className="text-accent">{attention.balance}٪</strong> — {attention.balance >= 78 ? 'موزّعٌ ناضج' : attention.balance >= 60 ? 'مقبول' : 'مركّزٌ في بؤرةٍ واحدة'}</p>
                   </div>
                 )}
+                {/* اختبار المصغَّر: أغلب التصاميم تموت في الخلاصة حيث تُرى
+                    بعرض ٣٠٠ بكسل لا بعرض الشاشة. هنا نراها كما تُرى هناك،
+                    ومعها حكمٌ محسوب من أكبر خطٍّ فعلي في التصميم. */}
+                <div className="mb-3 grid w-full gap-2 rounded-xl border border-hair bg-paper p-2.5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-center" data-thumbnail-test="true">
+                  <div className="overflow-hidden rounded-lg border border-hair bg-canvas">
+                    <Preview plan={selected} className="w-full" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[.66rem] font-semibold text-ink">اختبار المصغَّر — كما يمر في الخلاصة</p>
+                    <p className={`mt-1 text-[.64rem] leading-relaxed ${thumbnailVerdict.ok ? 'text-soft' : 'text-amber-700 dark:text-amber-400'}`}>{thumbnailVerdict.note}</p>
+                  </div>
+                </div>
                 {phoneView && (
                   <div className="social-editor-phone-preview mx-auto w-full" style={{ '--preview-ratio': selected.format.width / selected.format.height } as CSSProperties}>
                     <div className="relative rounded-[2.4rem] border-[11px] border-ink bg-ink shadow-2xl">

@@ -232,7 +232,9 @@ const REUSE_DIALOGUE = flag('reuse-dialogue')
 /* وضع «بلا Gemini» — بأمر الدكتور للحلقات اليدوية: هو كاتب الحوار فلا حاجة لكاتب،
    والفحص يقوم على أذن Azure STT بعتبات مشدَّدة + كل البوابات التقنية (13ث، الوقفات،
    الذروة، السرعة) + بوابة البشرية التقنية ≥95 — بلا أي استدعاء Gemini يستهلك رصيداً. */
-const NO_GEMINI = flag('no-gemini') || env.PODCAST_NO_GEMINI === '1'
+/* «let» لا «const»: نفادُ رصيد Gemini يُحوّل المحرك إلى هذا الوضع تلقائياً
+   بدل أن يقتل القافلة (انظر بوابة الفوترة في آخر الملف). */
+let NO_GEMINI = flag('no-gemini') || env.PODCAST_NO_GEMINI === '1'
 const MANUAL_EXACT = flag('manual-exact') || env.PODCAST_MANUAL_EXACT === '1'
 const CANARY = flag('canary')
 const BAKEOFF = flag('voice-bakeoff')
@@ -3513,15 +3515,14 @@ async function produce(article, lang) {
     }
     if (inconsistent.length) return quarantine(`اختلاف نطق الكلمة نفسها: ${[...new Set(inconsistent)].join('، ')}`)
 
-    /* ٤) مسار مرخّص للمقدمة والخاتمة العامة، وللجسور التي اعتمدها المحرّر فقط. */
-    let music = null
-    if (existsSync(MUSIC_LIB)) {
-      const library = JSON.parse(readFileSync(MUSIC_LIB, 'utf8'))
-      const track = (library.tracks || []).find((item) => item.licensed && (item.moods || []).includes(script.mood))
-      if (track && existsSync(resolve(ROOT, track.path)))
-        music = { file: resolve(ROOT, track.path) }
-    }
-    if (!music) console.log('  ♪ إخراج بلا موسيقى — لا يوجد مسار مرخّص مطابق')
+    /* ٤) مسار مرخّص للمقدمة والخاتمة العامة، وللجسور التي اعتمدها المحرّر فقط.
+       المزاج يختار المقطوعة، ولا يُلغي الموسيقى: كان البحث يشترط تطابق المزاج
+       بلا بديل، فإذا كتب المحرك مزاجاً خارج المكتبة («جاد ساخر» مثلاً) خرجت
+       الحلقة بلا مقدمةٍ ولا خاتمةٍ ولا جسور وهو خلاف الاتفاق. نُبقي المطابقة
+       أولاً ثم ننزل إلى أول مقطوعةٍ مرخّصة — فالهوية الموسيقية لكل حلقة. */
+    const music = selectLicensedMusic(script.mood)
+    if (!music) console.log('  ♪ إخراج بلا موسيقى — لا توجد مقطوعة مرخّصة في المكتبة')
+    else console.log(`  ♪ الهوية الموسيقية: مقدمة ${music.introSec}ث · خاتمة ${music.outroSec}ث · جسور المحرّر عند [موسيقى]`)
 
     /* ٥) إدراج الجسور المحددة صراحةً فقط، ثم تركيب المقدمة والخاتمة العامتين. */
     let bridged = insertSemanticMusicBridges(segments.map((segment) => ({ ...segment })), transcript, music, TMP)
@@ -3536,10 +3537,20 @@ async function produce(article, lang) {
     const plannedPauseSec = bridged.segments.reduce((total, item) => total
       + Math.max(0, Number(item.pauseAfterMs || 0)) / 1000, 0)
     const bridgeSec = bridged.bridges.reduce((total, item) => total + item.durationSec, 0)
+    /* المقدمة والخاتمة زمنٌ حقيقي في الملف (نحو ٨.٥ث بعد خصم التداخل مع
+       الكلام). كانت نافذةُ المدة تحسب الكلامَ والوقفاتِ والجسورَ وتنسى
+       الهويةَ الموسيقية، فتُعزل أولُ حلقةٍ تحمل موسيقى بتهمة «أطول من
+       المتوقع» — وسقفُ الدقائق الخمس يخصّ الكلام لا الموسيقى. */
+    const musicIdentitySec = assembled.musicIdentity?.intro
+      ? Math.max(0, Number(assembled.musicIdentity.intro.durationSec || 0)
+        - Number(assembled.musicIdentity.intro.overlapWithSpeechMs || 0) / 1000)
+        + Math.max(0, Number(assembled.musicIdentity.outro?.durationSec || 0)
+          - Number(assembled.musicIdentity.outro?.overlapWithSpeechMs || 0) / 1000)
+      : 0
     const expectedDurationSec = dialogueWords / Math.max(122, weightedTargetWpm) * 60
-      + plannedPauseSec + bridgeSec + 0.7
-    const durationRange = { minSec: Math.max(165, expectedDurationSec * 0.84),
-      maxSec: Math.min(310, expectedDurationSec * 1.18), maxLongSilences: 0,
+      + plannedPauseSec + bridgeSec + musicIdentitySec + 0.7
+    const durationRange = { minSec: Math.max(165 + musicIdentitySec, expectedDurationSec * 0.84),
+      maxSec: Math.min(310 + musicIdentitySec, expectedDurationSec * 1.18), maxLongSilences: 0,
       allowedLongSilenceWindows: plannedLongSilenceWindows(assembled.timeline) }
     // الوضع المجاني: الوقفات التأملية المقصودة (حتى 700ms) مع حدود المقاطع قد تتجاوز 800ms طبيعياً؛
     // عتبة «صفر» موجّهة لكشف عطل التركيب لا للوقفات المقصودة. وحدود المدة الضيقة (225–285ث) مضبوطة
@@ -4135,7 +4146,37 @@ if (SELF_TEST) {
   assert(!negation.missing.includes('ليس'), 'ليس↔ليست تكافؤ نفي مسموع')
   assert(compareTexts('نقيس الدقة', 'نقيست الدقه').importantRatio === 1
     || !compareTexts('راح', 'راحه').missing.includes('راح'), 'الاحتواء يبقى محروساً')
-  console.log('✓ اختبارات بوابة البودكاست العربي: 45/45')
+  /* ١٤) الهوية الموسيقية — مقدمة وخاتمة لكل حلقة، وجسرٌ حيث وضع المحرّر [موسيقى].
+     خرجت حلقتان بلا نغمة واحدة ولم يكتشفه اختبارٌ واحد: كان الاختيار يشترط
+     تطابق المزاج بلا بديل، والتركيب لا يُفحص إلا بأذن الدكتور بعد النشر.
+     نُثبتها هنا بملفاتٍ صناعية: المقطوعة تُختار دائماً، والجسر يُدرَج حيث
+     طُلب وحده، والمقدمة والخاتمة تدخلان الشريط فيطول بمقدارهما. */
+  const musicTest = selectLicensedMusic('مزاج لا وجود له في المكتبة')
+  assert(musicTest && existsSync(musicTest.file), 'المزاج غير المطابق لا يُلغي الموسيقى — تُختار مقطوعة مرخّصة')
+  mkdirSync(TMP, { recursive: true })
+  const speechA = resolve(TMP, 'selftest-speech-a.wav')
+  const speechB = resolve(TMP, 'selftest-speech-b.wav')
+  ff(['-f', 'lavfi', '-i', 'sine=frequency=210:duration=1.4', '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', speechA])
+  ff(['-f', 'lavfi', '-i', 'sine=frequency=180:duration=1.6', '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', speechB])
+  const testSegments = [{ file: speechA, pauseAfterMs: 300 }, { file: speechB, pauseAfterMs: 300 }]
+  const testUtterances = [{ musicBridgeAfter: true }, { musicBridgeAfter: false }]
+  const bridgedTest = insertSemanticMusicBridges(testSegments.map((segment) => ({ ...segment })),
+    testUtterances, musicTest, TMP)
+  assert.equal(bridgedTest.bridges.length, 1, 'جسرٌ واحد حيث كتب المحرّر [موسيقى] — لا أكثر ولا أقل')
+  assert(bridgedTest.segments.some((segment) => segment.isMusicBridge), 'الجسر يدخل شريط الحلقة فعلاً')
+  const withMusicMp3 = resolve(TMP, 'selftest-episode-music.mp3')
+  const bareMp3 = resolve(TMP, 'selftest-episode-bare.mp3')
+  const assembledTest = assemble(bridgedTest.segments, withMusicMp3, musicTest)
+  assemble(testSegments.map((segment) => ({ ...segment })), bareMp3, null)
+  assert(assembledTest.musicIdentity.intro?.durationSec > 0, 'لكل حلقة مقدمة موسيقية')
+  assert(assembledTest.musicIdentity.outro?.durationSec > 0, 'ولكل حلقة خاتمة موسيقية')
+  assert(probeDur(withMusicMp3) > probeDur(bareMp3) + 5,
+    'المقدمة والخاتمة والجسر زمنٌ مسموع في الملف المنشور لا وعدٌ في السجلّ')
+  for (const file of [speechA, speechB, withMusicMp3, bareMp3,
+    `${withMusicMp3.replace(/\.mp3$/, '')}.music-intro.wav`,
+    `${withMusicMp3.replace(/\.mp3$/, '')}.music-outro.wav`,
+    resolve(TMP, 'semantic-bridge-1.wav')]) rmSync(file, { force: true })
+  console.log('✓ اختبارات بوابة البودكاست العربي: 46/46')
   process.exit(0)
 }
 
@@ -4495,7 +4536,21 @@ const requiresGeminiNow = !NO_GEMINI && !OFFLINE_DRY && !PREFLIGHT && (BAKEOFF |
   || Boolean(opt('latest')) || flag('nightly'))
 if (requiresGeminiNow) {
   try { await assertGeminiBillingReady() }
-  catch (error) { console.error(`⛔ ${error.message}`); process.exit(4) }
+  catch (error) {
+    /* نفادُ رصيد Gemini كان يقتل القافلة كلها: خروجٌ بالرمز ٤ قبل أن تُنطق
+       كلمة، كل ساعة، بلا أن يصل الخبر إلى أحد (الخطوة continue-on-error).
+       والدكتور كتب الحوارات كلها بيده في manual-dialogues/ — فلا حاجة لكاتبٍ
+       أصلاً. حين يسقط المزوّد المدفوع ننزل إلى وضع «بلا Gemini» ونمضي بنصّه
+       المقفول والبوابات التقنية كاملة. ولا نتوقف إلا إذا لم يكن ثمّة حوارٌ
+       مكتوبٌ يُنتَج بلا كاتب. */
+    const writtenDialogues = existsSync(resolve(ROOT, 'manual-dialogues'))
+      ? readdirSync(resolve(ROOT, 'manual-dialogues')).filter((file) => file.endsWith('.json')).length
+      : 0
+    if (!writtenDialogues) { console.error(`⛔ ${error.message}`); process.exit(4) }
+    console.warn(`⚠ ${error.message}`)
+    console.warn(`↷ أنزل المحرك إلى وضع «بلا Gemini»: ${writtenDialogues} حواراً مكتوباً بيد الدكتور تُنتَج بلا كاتبٍ آلي وبلا أي رصيد مدفوع.`)
+    NO_GEMINI = true
+  }
 }
 if (NO_GEMINI) console.log('⚙ وضع بلا Gemini: STT مشدد عند توفره، وملاذ حصص محصور بالحوار اليدوي المقفول + البوابات التقنية كاملة — بلا أي استهلاك رصيد')
 if (MANUAL_EXACT) console.log('🔒 وضع الحوار المقفول: Firestore هو المصدر الوحيد، والكلمات والمتحدثون لا يتغيرون')
@@ -4942,7 +4997,13 @@ if (!PILOT_MODE && nightly && REQUIRE_PILOT_GATE && !currentPilotGate) {
 }
 
 let queue = []
-if (PILOT_MODE) queue = selectDiversePilotArticles(ARTICLES, PILOT_COUNT)
+/* التجربة الثلاثية تخضع لشرط الوضع نفسه: بلا Gemini لا يُختار للتجربة مقالٌ
+   بلا حوارٍ مكتوب، وإلا فشلت التجربة حتماً (لا كاتب ولا نص) فتعلّقت القافلة
+   كلها في وضع التجربة بلا مخرج. */
+const PILOT_POOL = NO_GEMINI
+  ? ARTICLES.filter((article) => existsSync(resolve(ROOT, 'manual-dialogues', `${article.slug}.json`)))
+  : ARTICLES
+if (PILOT_MODE) queue = selectDiversePilotArticles(PILOT_POOL, PILOT_COUNT)
 else if (targetSlug) queue = ARTICLES.filter((a) => a.slug === targetSlug)
 else if (latest) queue = ARTICLES.slice(0, latest)
 else if (nightly) {

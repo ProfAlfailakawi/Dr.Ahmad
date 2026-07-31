@@ -51,8 +51,8 @@
     "verifiedAt": "2026-07-27T15:13:27.336Z"
   },
   "a-generation-without-rootsarabic.noura.mp3": {
-    "durationSeconds": 208,
-    "bytes": 3334104,
+    "durationSeconds": 240,
+    "bytes": 3366705,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:27.601Z"
   },
@@ -158,13 +158,13 @@
     "verifiedAt": "2026-07-27T19:37:47.961Z"
   },
   "children-who-know-what-is-required-but-do-not-know-whyarabic.mp3": {
-    "durationSeconds": 197,
-    "bytes": 3144768,
+    "durationSeconds": 229,
+    "bytes": 3169010,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:28.369Z"
   },
   "children-who-know-what-is-required-but-do-not-know-whyarabic.noura.mp3": {
-    "bytes": 3179041,
+    "bytes": 3178623,
     "sha256": "8d35b753a7aaeb2a852d3bcefe03cffea86d51f6328b8cc427678ece08810906",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-27T19:37:43.353Z",
@@ -181,13 +181,13 @@
     "sha256": "1f7be107db06d792a0a8d887264883102542f7048a66f0a40254897c546b2938",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T10:26:06.354Z",
-    "durationSeconds": 234,
+    "durationSeconds": 235,
     "sourceHash": "5ecb6f97aed072621a3f3e75e46654d3ad4b8c50efbb89069d7893b6518dd0ed",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T09:04:29.633Z",
-    "bytes": 3749973,
+    "bytes": 3767946,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:28.594Z"
   },
@@ -389,13 +389,13 @@
     "sha256": "33de8ac2d12133a4bd2aa03d559c61abbf2337e693d3311539014496701a0033",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T10:26:06.705Z",
-    "durationSeconds": 196,
+    "durationSeconds": 200,
     "sourceHash": "dfb8a17eba1e74cfb23312be21fc39016e71bd351cfa97892cab17e98f33aa2f",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T08:13:31.946Z",
-    "bytes": 3138499,
+    "bytes": 3199939,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:32.230Z"
   },
@@ -403,13 +403,13 @@
     "sha256": "209668d8a94a26864e816345f43a352f79d2c9b2511760c5df8c494ee7d6a1ab",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T10:26:06.755Z",
-    "durationSeconds": 199,
+    "durationSeconds": 202,
     "sourceHash": "87ab74aa27ba71c7b1f6cefc9208c0fb61cfccd896f3b06012d5ae18afe818f6",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T08:18:05.078Z",
-    "bytes": 3184475,
+    "bytes": 3228360,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:32.553Z"
   },
@@ -451,7 +451,7 @@
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T08:22:33.275Z",
-    "bytes": 3176533,
+    "bytes": 3186564,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:33.273Z"
   },
@@ -459,13 +459,13 @@
     "sha256": "fbd2145cbb65d20c1395e6e12b5fc0c051904bb09000b057c6eeedc94b17ba48",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T10:26:06.855Z",
-    "durationSeconds": 203,
+    "durationSeconds": 204,
     "sourceHash": "eea04af5f9cae9d61fc4bea625455275fe08df948f258a3f229a543fe60ceaab",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T08:27:06.347Z",
-    "bytes": 3255528,
+    "bytes": 3263887,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:33.529Z"
   },
@@ -473,13 +473,13 @@
     "sha256": "a4c49b02050fe2237ce6d9a92b033597ec036c137c95862d1a04d09ef79792ff",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T02:29:37.151Z",
-    "durationSeconds": 180,
+    "durationSeconds": 184,
     "sourceHash": "17f19f6840a96935c6899d1b89283ed4333c0c0db3df1a58fd570e12771288c7",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T02:11:07.639Z",
-    "bytes": 2884798,
+    "bytes": 2913219,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:33.816Z"
   },
@@ -596,7 +596,7 @@
     "verifiedAt": "2026-07-27T17:09:35.824Z"
   },
   "lets-work-towards-scientific-research.mp3": {
-    "bytes": 3362943,
+    "bytes": 3362525,
     "sha256": "d426cf628e441c82b925381aac294f807bd3f205736569295cd114ddb088fb4d",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-27T17:09:24.131Z",
@@ -652,14 +652,14 @@
     "verifiedAt": "2026-07-27T15:13:36.668Z"
   },
   "private-lesson-in-the-age-of-digital-educational-intelligence.mp3": {
-    "durationSeconds": 211,
-    "bytes": 3368795,
+    "durationSeconds": 255,
+    "bytes": 3373392,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:36.939Z"
   },
   "private-lesson-in-the-age-of-digital-educational-intelligence.noura.mp3": {
-    "durationSeconds": 213,
-    "bytes": 3407247,
+    "durationSeconds": 259,
+    "bytes": 3433578,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:37.183Z"
   },
@@ -888,7 +888,7 @@
     "verifiedAt": "2026-07-27T17:09:40.485Z"
   },
   "qabas-201703-001.noura.mp3": {
-    "bytes": 2356915,
+    "bytes": 2356497,
     "sha256": "9ae0f9b96c2577cc11fbd8e9ffd30f65fe8a532e2c5ca3e55cdcbe2763951ea2",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-27T19:37:43.623Z",
@@ -958,7 +958,7 @@
     "verifiedAt": "2026-07-27T17:09:41.473Z"
   },
   "qabas-201704-001.mp3": {
-    "bytes": 3149784,
+    "bytes": 3150202,
     "sha256": "cdc0ea6cf29240fb82e7e5cbb3b9114abfad05af34a2c50bbfa6760485c3d58c",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-27T17:09:25.173Z",
@@ -1524,7 +1524,7 @@
     "verifiedAt": "2026-07-27T21:09:24.375Z"
   },
   "qabas-201712-004.mp3": {
-    "bytes": 2668295,
+    "bytes": 2666623,
     "sha256": "56e93fc584d979acb8c23ceda02c4219c218f1fa5db1c50d8edefc88e3abbbfb",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-25T01:59:10.663Z",
@@ -2105,7 +2105,7 @@
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T07:44:29.183Z",
-    "bytes": 3597000,
+    "bytes": 3608285,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:54.126Z"
   },
@@ -2229,13 +2229,13 @@
     "sha256": "12c0a6f7308bd3b9a35330fdb8cf271da71399c0909bdf0dbdf7b3a4fba0c04f",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T10:26:07.104Z",
-    "durationSeconds": 196,
+    "durationSeconds": 197,
     "sourceHash": "9e6961aa5f151ffeff06487bc5987a9767023ca3e25f9a1578f82e31d80b0de9",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T08:01:24.563Z",
-    "bytes": 3133484,
+    "bytes": 3157307,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:56.192Z"
   },
@@ -2268,14 +2268,14 @@
     "verifiedAt": "2026-07-27T17:09:54.088Z"
   },
   "the-social-media-swamp-and-plastic-surgery-addiction-2.mp3": {
-    "durationSeconds": 209,
-    "bytes": 3345389,
+    "durationSeconds": 248,
+    "bytes": 3377154,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:56.396Z"
   },
   "the-social-media-swamp-and-plastic-surgery-addiction-2.noura.mp3": {
-    "durationSeconds": 209,
-    "bytes": 3345807,
+    "durationSeconds": 252,
+    "bytes": 3360435,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:56.648Z"
   },
@@ -2301,7 +2301,7 @@
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T07:49:08.712Z",
-    "bytes": 3173608,
+    "bytes": 3172772,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:57.286Z"
   },
@@ -2320,14 +2320,14 @@
     "verifiedAt": "2026-07-27T15:13:57.543Z"
   },
   "the-teacher-what-do-you-know-about-the-teacher.mp3": {
-    "durationSeconds": 207,
-    "bytes": 3317386,
+    "durationSeconds": 245,
+    "bytes": 3318639,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:57.806Z"
   },
   "the-teacher-what-do-you-know-about-the-teacher.noura.mp3": {
-    "durationSeconds": 210,
-    "bytes": 3367123,
+    "durationSeconds": 249,
+    "bytes": 3365451,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:58.033Z"
   },
@@ -2360,26 +2360,26 @@
     "verifiedAt": "2026-07-27T17:09:56.403Z"
   },
   "todays-childs-confusion-between-education-and-care.mp3": {
-    "durationSeconds": 197,
-    "bytes": 3160233,
+    "durationSeconds": 237,
+    "bytes": 3186982,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:58.534Z"
   },
   "todays-childs-confusion-between-education-and-care.noura.mp3": {
-    "durationSeconds": 199,
-    "bytes": 3189908,
+    "durationSeconds": 240,
+    "bytes": 3207880,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:58.765Z"
   },
   "turning-video-game-obsession-into-creative-meditation-2.mp3": {
-    "durationSeconds": 204,
-    "bytes": 3259289,
+    "durationSeconds": 245,
+    "bytes": 3259707,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:59.001Z"
   },
   "turning-video-game-obsession-into-creative-meditation-2.noura.mp3": {
-    "durationSeconds": 205,
-    "bytes": 3284367,
+    "durationSeconds": 247,
+    "bytes": 3284785,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:59.382Z"
   },
@@ -2574,17 +2574,5 @@
     "bytes": 2973823,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:02.350Z"
-  },
-  "qabas-201703-001.mp3": {
-    "durationSeconds": 144,
-    "bytes": 2308014,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-07-31T21:23:33.720Z"
-  },
-  "qabas-201709-005.mp3": {
-    "durationSeconds": 137,
-    "bytes": 2188896,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-07-31T21:23:46.185Z"
   }
 }

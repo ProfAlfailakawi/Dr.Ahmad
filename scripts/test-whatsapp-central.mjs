@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {
   decideGroundedResponse,
   findRuleMatch,
+  returningReaderLine,
   buildWhatsAppDiagnostics,
   normalizeArabicMessage,
   isWhatsAppWakePhrase,
@@ -123,6 +124,22 @@ assert.match(bridgeSource, /retries: 2, timeoutMs: 8_000/)
 assert.match(bridgeSource, /sanitizeServerReply/)
 assert.match(bridgeSource, /legacy_duplicate_decision_retrying_as_distinct_turn/)
 assert.match(bridgeSource, /SAFE_CLARIFY_REPLY/)
+
+/* ═══ عقد البصمة: نصفان لا يفترقان ═══
+   الخادم يرفض إقرار النجاح الذي لا تصحبه بصمةُ المستلَم
+   (`recipient-delivery-verification-failed`). فإن نُشر نصفُ الخادم وحده
+   **عُدّت كلُّ رسالةٍ وصلت فاشلةً في لوحة الحملات** — وهو ما وقع فعلاً.
+   يُقفل النصفان هنا معاً: الصيغة واحدة، وكلّ إقرار نجاحٍ يحمل بصمته. */
+assert.match(controllerSource, /recipientFingerprint/, 'الخادم يفحص بصمة المستلَم')
+assert.match(bridgeSource, /delivery: \{ recipientFingerprint:/, 'الجسر يرسل البصمة مع كل إقرار نجاح')
+assert.match(bridgeSource, /wa-recipient:\$\{digits\}/, 'صيغة البصمة في الجسر تطابق الخادم')
+assert.match(controllerSource, /`wa-recipient:\$\{digits\}`/, 'صيغة البصمة في الخادم تطابق الجسر')
+/* كل مسارات إقرار النجاح الثلاثة (إرسال، ذاتية، إقرار متأخّر) تحمل البصمة */
+assert.equal(
+  (bridgeSource.match(/ok: true, delivery: \{ recipientFingerprint:/g) || []).length,
+  3,
+  'المسارات الثلاثة لإقرار النجاح تحمل البصمة — وإلا حُسبت رسائل واصلة فاشلة',
+)
 
 const cloudBridgeSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../whatsapp-bridge/bridge.mjs', import.meta.url), 'utf8'))
 assert.match(cloudBridgeSource, /backfilled_message_quarantined/)
@@ -326,6 +343,78 @@ assert.equal(decideGroundedResponse({ text: 'عطني اقتباس' }).reason, '
 assert.equal(decideGroundedResponse({ text: 'احفظها' }).reason, 'save-context-missing')
 assert.equal(decideGroundedResponse({ text: 'ذكرني بكرة' }).reason, 'reminder-honest')
 assert.equal(decideGroundedResponse({ text: 'أنا اليوم متضايق' }).reason, 'mood-match')
+
+/* ─── عقلٌ يفهم ويحلّل لا يطابق أنماطاً (أول أغسطس ٢٠٢٦) ─── */
+
+/* ١) «لخّص» يجب أن يقصّر فعلاً: كان يعيد أوّل ٤٢ كلمة — وهي بعينها فاتحة
+   المادة التي عُرضت قبل سطرين — فبدا أنه أعاد المادة نفسها بدل تلخيصها. */
+let distillConversation = {}
+const opened = decideGroundedResponse({ text: 'آخر مقالة', conversation: distillConversation })
+distillConversation = { contextItemIds: opened.contextItemIds, contextIndex: 0, seenContentIds: opened.evidence || [] }
+const distilled = decideGroundedResponse({ text: 'لخصها', conversation: distillConversation })
+assert.equal(distilled.reason, 'context-summary')
+const openingRun = String(opened.reply).replace(/[*«»]/g, '').split(/\s+/).slice(3, 13).join(' ')
+assert.ok(openingRun.length > 10, 'the opened card must carry a quotable opening')
+assert.ok(
+  !String(distilled.reply).includes(openingRun),
+  'التلخيص لا يجوز أن يكون فاتحة المادة نفسها — هذا هو العطب الذي شكا منه الدكتور',
+)
+
+/* ٢) المضمر: إيماءةٌ قصيرة على مادةٍ حاضرة تُقرأ طلباً لا بحثاً عن عنوان. */
+assert.equal(decideGroundedResponse({ text: 'ما فهمت', conversation: distillConversation }).reason, 'implied-simplify')
+assert.equal(decideGroundedResponse({ text: 'زدني', conversation: distillConversation }).reason, 'implied-deepen')
+/* وبلا مادةٍ حاضرة لا تُقرأ إيماءةً — فلا تبتلع كلاماً ليس لها. */
+assert.notEqual(decideGroundedResponse({ text: 'ما فهمت' }).reason, 'implied-simplify')
+
+/* ٣) طلبان في نفَسٍ واحد: الفاصلة تُقرأ من النصّ الخام (المطبَّع يمسح الترقيم). */
+const twoAsks = decideGroundedResponse({ text: 'عطني شي عن التقويم، وعن الذكاء الاصطناعي' })
+assert.equal(twoAsks.reason, 'compound-two-asks')
+assert.ok((twoAsks.reply.match(/dr-alfailakawi\.com/g) || []).length >= 2, 'الطلبان يُجابان معاً')
+
+/* ٤) الشكّ يُسأل عنه — وبمقدار: كلمةٌ يحملها عنوانان اثنان لا ثالثَ لهما.
+   والكلمة الواسعة ليست شكّاً: الأرشيف غنيٌّ بها، والقائمة أصدق من سؤال. */
+assert.equal(decideGroundedResponse({ text: 'النجاح' }).reason, 'doubt-clarify')
+for (const broad of ['الحفظ', 'الخوف', 'الوقت', 'التقويم']) {
+  assert.notEqual(decideGroundedResponse({ text: broad }).reason, 'doubt-clarify', `«${broad}» سعةٌ لا التباس`)
+}
+/* وجواب الشكّ يمشي على مسار التنقّل المثبت لا على رقمٍ مجرّد (الرقم لغةُ التحدّي) */
+const doubtTurn = decideGroundedResponse({ text: 'النجاح' })
+assert.match(doubtTurn.reply, /الأولى|الثانية/)
+assert.doesNotMatch(doubtTurn.reply, /اكتب ١ أو ٢/)
+assert.equal(
+  decideGroundedResponse({ text: 'الثانية', conversation: { contextItemIds: doubtTurn.contextItemIds, contextIndex: 0 } }).reason,
+  'context-reference',
+)
+
+/* ٥) ذاكرةٌ تتراكم عبر الجلسات — بلا اسمٍ ولا رقم، ومحدودةُ السقف،
+   ومصفوفةً لا خريطة (merge:true يدمج الخرائط فلا يُنقصها أبداً). */
+let memoryConversation = {}
+for (const ask of ['الذكاء الاصطناعي', 'الذكاء الاصطناعي في التعليم']) {
+  const step = decideGroundedResponse({ text: ask, conversation: memoryConversation })
+  memoryConversation = { ...memoryConversation, ...(step.patch || {}) }
+}
+assert.ok(Array.isArray(memoryConversation.topicMemory), 'الذاكرة مصفوفة تُستبدل لا خريطة تتضخّم')
+const remembered = returningReaderLine({ ...memoryConversation, lastInboundAt: new Date(Date.now() - 3 * 86_400_000).toISOString() })
+assert.match(remembered, /أهلاً بعودتك/)
+assert.match(remembered, /الذكاء/)
+/* ولا يتكرّر الاهتمام الواحد بصورتين («الذكاء وذكاء») */
+assert.doesNotMatch(remembered, /الذكاء وذكاء/)
+/* ومسح البيانات يمسحها فعلاً — خصوصيةٌ لا تُستثنى */
+assert.deepEqual(decideGroundedResponse({ text: 'امسح بياناتي' }).patch.topicMemory, [])
+
+/* ٦) تحليلٌ لا استرجاع: المقارنة تقول ما يجمع الطرفين وما ينفرد به كلٌّ منهما */
+const analysed = decideGroundedResponse({ text: 'قارن بين المعلم والتقنية' })
+assert.equal(analysed.reason, 'compare-topics')
+assert.match(analysed.reply, /الخيط الجامع|ينفرد به/)
+assert.match(analysed.reply, /لا أنسب للدكتور رأياً لم يكتبه/)
+
+/* ٧) مبادرةٌ منضبطة: تُعرض مرّةً ثم تسكت في مهلتها — لا تتحوّل ثرثرة */
+const offered = decideGroundedResponse({ text: 'التقويم' })
+if (/أفتحها لك؟/.test(offered.reply)) {
+  assert.ok(offered.patch?.lastInitiativeAt, 'المبادرة تُؤرَّخ لتنضبط')
+  const again = decideGroundedResponse({ text: 'التقويم', conversation: { lastInitiativeAt: offered.patch.lastInitiativeAt } })
+  assert.doesNotMatch(again.reply, /أفتحها لك؟/, 'لا تتكرّر المبادرة داخل مهلتها')
+}
 
 /* القوالب الحية: تحرير اللوحة يجب أن يصل الردود (كان مسبوكاً عند التحميل) */
 const controllerNow = controllerSource

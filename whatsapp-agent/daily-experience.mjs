@@ -54,6 +54,36 @@ export function extractVerbatimAtSpeed(item, speed = '30s') {
   }
 }
 
+/* ═══ التلخيص الحقيقي — نسخةٌ واحدة لتطبيقَي البوت معاً ═══
+   «لخّص» كان يُقصّ أوّل الكلمات من رأس المتن، وأوّلُ المتن هو بعينه ما تفتح
+   به البطاقةُ الأولى — فيرى القارئ نصّاً يظنّه المادة نفسها معادةً لا ملخّصاً.
+   الملخّص هنا اقتطافُ أكثفِ عبارةٍ دلالةً من كلام الدكتور، لا مقدّمته:
+   نقطع على الشرطة وعلامات الوقف، ونشترط أن تكون العبارة منسوخةً حرفاً بحرف
+   من المتن (isVerbatimFromItem) فلا تحريف ولا اختلاق.
+   **قاعدة الدار:** الوكيل المقيم والعقل المركزي تطبيقان لنفس التصريف — فمتى
+   أُصلح أحدهما أُصلح الآخر. ولذلك تعيش هذه الدالة هنا ويستوردها الاثنان. */
+export function distillItem(item) {
+  const source = String(item?.body || item?.excerpt || '').trim()
+  if (!source) return null
+  const whole = source.replace(/\s+/g, ' ').trim()
+  const clauses = source
+    .split(/\s*[—–]\s*|[.؟!\n؛…]+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length >= 14 && part.length < whole.length && isVerbatimFromItem(item, part))
+  if (!clauses.length) return { text: whole, whole: true }
+  const dense = (text) => {
+    const words = normalizeArabic(text).split(/\s+/).filter((word) => word.length > 2)
+    return new Set(words).size / Math.sqrt(Math.max(6, words.length))
+  }
+  let best = clauses[0]
+  let bestScore = -1
+  for (const clause of clauses) {
+    const score = dense(clause)
+    if (score > bestScore) { bestScore = score; best = clause }
+  }
+  return { text: best, whole: false }
+}
+
 export function selectDailyUnsentContent(db, options = {}) {
   const { jid } = options
   if (!jid) return null

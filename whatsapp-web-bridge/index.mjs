@@ -521,14 +521,36 @@ async function ensureBridgeFunctions() {
   await reinjectionPromise
 }
 
+/* برهان ٣١ يوليو ١٥:٢٣: الإرسال إلى رقمٍ من القائمة انتهى بـ
+   send_completed_without_serialized_message — أي أن واتساب أنهى العملية محلياً
+   ولم يُنشئ رسالةً حقيقية، فبدت الحملة ناجحة ولم يصل أحداً شيء، بينما وصلت
+   محادثة الدكتور نفسه لأنها قائمة أصلاً. السبب: معرّف ‎@c.us مركّبٌ من الأرقام
+   لا تعرفه خريطة واتساب الحديثة، وهي لا تخطئ صراحةً بل تبتلع الرسالة.
+   العلاج: نسأل واتساب نفسه عن المعرّف المعتمد لهذا الرقم (getNumberId) ونرسل
+   إليه هو — أياً كانت صيغته — ولا نقبل إرسالاً بلا رسالةٍ مُسلسَلة. */
+const resolvedJidCache = new Map()
 async function resolveSendJid(rawJid) {
   const jid = String(rawJid || '').trim()
   if (!isIndividualJid(jid)) throw new Error('invalid-individual-jid')
-  // Do not translate a known @c.us chat through getNumberId(). Current
-  // WhatsApp Web may return its private @lid alias; sending to that alias can
-  // resolve locally without reaching the phone. Incoming @lid chats already
-  // carry the correct live address and are kept as-is.
-  return jid
+  // محادثة واردة بعنوان @lid حيّ: عنوانها الصحيح بيدنا أصلاً، لا نترجمها.
+  if (jid.endsWith('@lid')) return jid
+  const cached = resolvedJidCache.get(jid)
+  if (cached) return cached
+  const digits = jid.split('@', 1)[0].replace(/\D/g, '')
+  if (!digits) throw new Error('invalid-individual-jid')
+  let resolved = jid
+  try {
+    const numberId = await client.getNumberId(digits)
+    const serialized = String(numberId?._serialized || '').trim()
+    if (serialized) resolved = serialized
+    else throw new Error('recipient-not-on-whatsapp')
+  } catch (error) {
+    if (String(error?.message || '') === 'recipient-not-on-whatsapp') throw error
+    log('warn', 'number_resolution_failed_using_raw', { jid: maskAddress(jid), error: String(error?.message || error).slice(0, 160) })
+  }
+  resolvedJidCache.set(jid, resolved)
+  if (resolvedJidCache.size > 4_000) resolvedJidCache.delete(resolvedJidCache.keys().next().value)
+  return resolved
 }
 
 /* جذر «Cannot read properties of undefined (reading 'getChat')» في حملات
@@ -584,12 +606,16 @@ async function sendTextWithRecovery(rawJid, rawText) {
         sendSeen: false,
         waitUntilMsgSent: true,
       })
-      if (!sent) log('warn', 'send_completed_without_serialized_message', { jid })
+      /* لا نُصدّق نجاحاً بلا رسالة. الرسالة المُسلسَلة هي الدليل الوحيد على أن
+         واتساب أنشأها فعلاً؛ وغيابها كان يُحسب «ملاحظة توافق» فتُعلَن الحملة
+         ناجحةً وهي لم تصل أحداً. الآن يُعتبر فشلاً صريحاً: تُعاد المحاولة مرة،
+         ثم يُسجَّل تعثراً ظاهراً في اللوحة بدل نجاحٍ كاذب. */
+      if (!sent) throw new Error('send-not-serialized')
       return sent
     } catch (error) {
       lastError = error
       const message = String(error?.message || error)
-      if (attempt > 0 || !/getChat|Execution context|detached|WWebJS|evaluate|reinjection/i.test(message)) break
+      if (attempt > 0 || !/getChat|Execution context|detached|WWebJS|evaluate|reinjection|send-not-serialized/i.test(message)) break
       log('warn', 'send_recovering_webjs_helpers', { jid, error: message })
       try { await client.inject() } catch { /* the serialized preflight retries below */ }
       await new Promise((resolveWait) => setTimeout(resolveWait, 900))

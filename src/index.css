@@ -3197,7 +3197,11 @@ html.serenity-mode body::before { display: none; }
 
 .serenity-controls {
   position: fixed;
-  inset-inline-start: 50%;
+  /* كان التوسيط بـinset-inline-start مع translate سالب: في RTL يصير المرجع
+     الحافة اليمنى فينزاح الشريط ويُقصّ فلا يرى الدكتور إلا أول زر (لقطته
+     ٣١ يوليو: «ورق كريمي» وحده بلا داكن ولا خروج). left ثابتة لا تنقلب
+     مع الاتجاه، فيتوسّط الشريط في اللغتين معاً. */
+  left: 50%;
   bottom: calc(1.2rem + env(safe-area-inset-bottom));
   translate: -50% 0;
   z-index: 300;

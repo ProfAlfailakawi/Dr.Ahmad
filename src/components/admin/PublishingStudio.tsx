@@ -36,7 +36,7 @@ const ghost = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft
 const MIN_ARTICLE_WORDS = 350
 const MAX_GENERATION_WORDS = 4000
 
-type SocialKey = 'x' | 'linkedin' | 'instagram' | 'threads' | 'whatsapp' | 'newsletter'
+type SocialKey = 'x' | 'linkedin' | 'facebook' | 'instagram' | 'threads' | 'whatsapp' | 'newsletter'
 
 type Bundle = {
   title: string
@@ -237,6 +237,9 @@ function editorialCalibrationProfileFromRows(rows: Array<Record<string, any>>, p
 type PerfectSocialPack = {
   x: string[]
   linkedin: string[]
+  /* فيسبوك: منصةٌ ينشر فيها الدكتور فعلاً وكانت غائبة عن الحزمة كلها بينما
+     حضر ما لا ينشر فيه. نبرتها بين رسمية لينكدإن وعفوية X: فقرة تروي لا تبرق. */
+  facebook: string[]
   threads: string[]
   instagramCaptions: string[]
   carouselSlides: { kicker: string; title: string; body: string }[]
@@ -501,6 +504,9 @@ function buildSocial(bundle: Pick<Bundle, 'title' | 'excerpt' | 'body'>, audienc
   return {
     x: `${quote}\n\n${bundle.title}`,
     linkedin: `${bundle.title}\n\n${bundle.excerpt}\n\nالسؤال الذي يستحق النقاش: كيف نحافظ على الإنسان في قلب التطوير؟`,
+    /* فيسبوك يقرأ بعين المتصفّح لا القارئ: فقرة تفتح بمشهد، ثم الفكرة، ثم
+       سؤال يفتح تعليقاً. أطول من X، وأدفأ من لينكدإن. */
+    facebook: `${bundle.title}\n\n${quote}\n\n${bundle.excerpt}\n\nما رأيك أنت؟ أقرأ تعليقاتكم وأتعلّم منها.`,
     instagram: `${bundle.title}\n\n${quote}\n\n#التعليم #الذكاء_الاصطناعي #د_أحمد_الفيلكاوي`,
     threads: `${bundle.excerpt}\n\nأحياناً لا نحتاج إجابة أسرع، بل سؤالاً أعدل.`,
     whatsapp: `مقال جديد: ${bundle.title}\n${bundle.excerpt}`,
@@ -726,9 +732,16 @@ ${language.hashtags.join(' ')}`,
   ], variation).slice(0, 3)
   const generatedAt = new Date().toISOString()
 
+  const facebook = rotateBy([
+    `${thought}\n\n${goal}.\n\n${language.question}`,
+    `${language.insight}\n\n${thought}\n\nما الذي تراه أنت في هذا؟`,
+    `${goal}.\n\n${thought}\n\nأكتب هذا وأنا أنتظر رأيكم — فالنقاش يصحّح ما تفوته الكتابة.`,
+  ], variation).slice(0, 3)
+
   return {
     x,
     linkedin,
+    facebook,
     threads,
     instagramCaptions,
     carouselSlides,
@@ -2100,6 +2113,7 @@ function PerfectSocialPackCard({
           {pack.x.map((text, index) => <SocialCard key={`x-perfect-${index}`} title={`X · صيغة ${index + 1}`} text={text} />)}
           {pack.linkedin.map((text, index) => <SocialCard key={`li-perfect-${index}`} title={`LinkedIn · صيغة ${index + 1}`} text={text} />)}
           {pack.instagramCaptions.map((text, index) => <SocialCard key={`ig-perfect-${index}`} title={`Instagram · Caption ${index + 1}`} text={`${text}\n\n${pack.hashtags.join(' ')}`} />)}
+          {(pack.facebook || []).map((text, index) => <SocialCard key={`fb-perfect-${index}`} title={`فيسبوك · صيغة ${index + 1}`} text={text} />)}
           {pack.threads.map((text, index) => <SocialCard key={`th-perfect-${index}`} title={`Threads · صيغة ${index + 1}`} text={text} />)}
           <SocialCard title="Reel · 45–60 ثانية" text={pack.reelScript} />
           <SocialCard title="WhatsApp" text={pack.whatsapp} />

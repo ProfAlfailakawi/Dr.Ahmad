@@ -460,6 +460,46 @@ assert.deepEqual(decideGroundedResponse({ text: 'عندك شي عن التقوي
 assert.equal(readerKindOf({ readerSignals: ['teacher'] }), '', 'إشارةٌ واحدة لا تكفي للحكم')
 assert.equal(readerKindOf({ readerSignals: ['teacher', 'teacher'] }), 'teacher')
 
+/* ١١) الأرشيف الذي ينتبه — عند الإيقاظ لا قبله (اقتراح الدكتور):
+   بوابةٌ تخصّه بدل بوابة اليوم، **بشرط** اهتمامٍ متكرّر ومادةٍ نُشرت بعد آخر
+   زيارته فعلاً. ولا رسالة تُرسل بلا استدعاء — قانون الإيقاظ لم يُمسّ. */
+{
+  const { buildContentIndex } = await import('../whatsapp-agent/content-index.mjs')
+  const dated = buildContentIndex(process.cwd(), 'https://dr-alfailakawi.com')
+    .filter((item) => /^\d{4}-\d{2}-\d{2}/.test(String(item.date || '')))
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+  assert.ok(dated.length, 'الفهرس فيه موادّ مؤرّخة')
+  const newest = dated[0]
+  const interest = String(newest.title).split(/\s+/).filter((word) => word.length >= 4)[0]
+  const justBefore = new Date(Date.parse(newest.date) - 5 * 86_400_000).toISOString()
+
+  const attentive = decideGroundedResponse({
+    text: 'موقع د. أحمد',
+    conversation: { topicMemory: [interest, interest], lastInboundAt: justBefore, seenContentIds: [] },
+  })
+  assert.match(attentive.reply, /نشر الدكتور بعد آخر زيارتك/, 'من له اهتمامٌ متكرّر وجديدٌ بعده يُستقبل بخبره')
+  assert.match(attentive.reply, /https:\/\/dr-alfailakawi\.com\//)
+
+  /* زائرٌ بلا ذاكرة يبقى على بوابة اليوم — لا ادّعاء بمعرفةٍ لا نملكها */
+  assert.doesNotMatch(decideGroundedResponse({ text: 'موقع د. أحمد' }).reply, /بعد آخر زيارتك/)
+  /* اهتمامٌ بلا جديدٍ بعد زيارته: لا نسمّي القديم جديداً */
+  assert.doesNotMatch(
+    decideGroundedResponse({
+      text: 'موقع د. أحمد',
+      conversation: { topicMemory: [interest, interest], lastInboundAt: new Date().toISOString(), seenContentIds: [] },
+    }).reply,
+    /بعد آخر زيارتك/,
+  )
+  /* وما رآه من قبل لا يُعاد عليه بوصفه جديداً */
+  assert.doesNotMatch(
+    decideGroundedResponse({
+      text: 'موقع د. أحمد',
+      conversation: { topicMemory: [interest, interest], lastInboundAt: justBefore, seenContentIds: [newest.id] },
+    }).reply,
+    new RegExp(String(newest.title).slice(0, 18).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+  )
+}
+
 /* القوالب الحية: تحرير اللوحة يجب أن يصل الردود (كان مسبوكاً عند التحميل) */
 const controllerNow = controllerSource
 assert.match(controllerNow, /getBotMessages/)

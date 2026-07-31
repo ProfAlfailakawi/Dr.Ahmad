@@ -63,14 +63,48 @@ export function returningReaderLine(conversation = {}, at = Date.now()) {
   return `أهلاً بعودتك ${when}.`
 }
 
-function buildWakeWelcome(messages = botMessagesNow(), at = new Date()) {
-  const gate = dailyGateItem(at)
+/* ═══ الأرشيف الذي ينتبه لك ═══
+   الفكرة الأصلية كانت أن يبادر البوت برسالةٍ إلى من سأل قبل شهر — وهي تلمس
+   الناس بلا استدعاء وتخرق قانون الإيقاظ. **اقتراح الدكتور أفضل منها**: تظهر
+   عند الإيقاظ نفسه، حين يفتح هو الباب بيده — فلا رسالةَ لم تُطلب، ولا حارسَ
+   مواعيدَ نحتاجه، ويصل الخبر في اللحظة التي هو منتبهٌ فيها أصلاً.
+   الشرطان اللذان يمنعان الادّعاء: أن يكون الاهتمام **متكرّراً** (إشارتان في
+   ذاكرته لا كلمةً عابرة)، وأن تكون المادة **منشورةً بعد آخر زيارته فعلاً**
+   وبتاريخٍ موثّق — فلا نقول «جديد» لقديم، ولا نُلحّ بما رآه من قبل. */
+function attentiveGateItem(conversation = {}, at = new Date()) {
+  const interests = readerInterests(conversation, 3)
+  if (!interests.length) return null
+  const lastSeen = Date.parse(conversation.lastInboundAt || conversation.updatedAt || '')
+  if (!Number.isFinite(lastSeen)) return null
+  const seen = new Set(Array.isArray(conversation.seenContentIds) ? conversation.seenContentIds : [])
+  const nowMs = at instanceof Date ? at.getTime() : Number(at) || Date.now()
+  const candidates = siteIndex()
+    .filter((item) => !seen.has(item.id))
+    .filter((item) => {
+      const published = Date.parse(String(item.date || ''))
+      return Number.isFinite(published) && published > lastSeen && published <= nowMs
+    })
+    .map((item) => ({ item, ...scoreContent(item, interests) }))
+    .filter((row) => row.matched > 0 && row.score >= 8)
+    .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
+  if (!candidates.length) return null
+  return { item: candidates[0].item, interest: interests[0] }
+}
+
+function buildWakeWelcome(messages = botMessagesNow(), at = new Date(), conversation = {}) {
   const header = `${timeGreeting(at)} · ${messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'}.`
   const options = messages.optionsPrompt || 'شنو يناسب وقتك؟ ٣٠ ثانية · دقيقتان · تعمّق · اختبرني'
-  if (!gate) return { text: `${header}\n\n${options}`, contextItemIds: [], evidence: [] }
+  /* بوابةٌ تخصّه تسبق بوابة اليوم العامة — فما نُشر بعد زيارته في موضوعه هو
+     أولى بوقته مما اخترناه للناس جميعاً. */
+  const attentive = attentiveGateItem(conversation, at)
+  const gate = attentive?.item || dailyGateItem(at)
+  if (!gate) return { text: `${header}\n\n${options}`, contextItemIds: [], evidence: [], attentive: false }
   const quote = normalizeWhitespace(gate.excerpt || gate.body || '').split(/\s+/).slice(0, 26).join(' ')
-  const text = `${header}\n\n${messages.dailyGateLabel || 'بوابة اليوم:'}\n*${gate.title}*\n${quote ? `«${quote}…»\n` : ''}${gate.url}\n\n${options}`
-  return { text, contextItemIds: [gate.id], evidence: [gate.id], lastTopic: gate.title }
+  const label = attentive
+    ? `تسأل عن ${attentive.interest}، ونشر الدكتور بعد آخر زيارتك:`
+    : (messages.dailyGateLabel || 'بوابة اليوم:')
+  const text = `${header}\n\n${label}\n*${gate.title}*\n${quote ? `«${quote}…»\n` : ''}${gate.url}\n\n${options}`
+  return { text, contextItemIds: [gate.id], evidence: [gate.id], lastTopic: gate.title, attentive: Boolean(attentive) }
 }
 function welcomeText(messages = botMessagesNow(), at = new Date()) {
   const line = messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'
@@ -999,7 +1033,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   }
 
   if (PRICE_PATTERNS.some((pattern) => pattern.test(clean)) || isGreetingOnly(text) || intent === INTENTS.WELCOME) {
-    const welcome = buildWakeWelcome(messages)
+    const welcome = buildWakeWelcome(messages, new Date(), conversation)
     return {
       kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'welcome', intent,
       reply: signReply(welcome.text, messages),
@@ -2827,10 +2861,14 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
        فتحها صاحبها بكتابة «موقع د. أحمد» بنفسه. wakeVersion=2 هي نسخة
        الإيقاظ المعتمدة؛ ما فتحه الوضع القديم تلقائياً (نسخة ١) لاغٍ. */
     if (wakePhrase) {
-      const welcome = buildWakeWelcome()
+      const welcome = buildWakeWelcome(botMessagesNow(), new Date(), data)
       /* ترقية ١: العائد بعد غياب يُستقبل باسم ما وقفنا عنده، لا كزائرٍ أول
-         مرة. البوابة نفسها لم تُمس — هذا سطرٌ فوق ترحيبٍ استحقه بإيقاظه. */
-      const returningLine = returningReaderLine(data)
+         مرة. البوابة نفسها لم تُمس — هذا سطرٌ فوق ترحيبٍ استحقه بإيقاظه.
+         وحين تحمل البوابةُ خبرَه هو، يُختصر السطر إلى تحيّةٍ ولا يُسأل
+         «نكمل من هناك؟» — فالجواب أمامه، والتكرار ثرثرة. */
+      const returningLine = welcome.attentive
+        ? returningReaderLine(data).split('.')[0] + (returningReaderLine(data) ? '.' : '')
+        : returningReaderLine(data)
       const signedWelcome = signReply(returningLine ? `${returningLine}\n\n${welcome.text}` : welcome.text)
       await ref.set({
         ...basePatch,

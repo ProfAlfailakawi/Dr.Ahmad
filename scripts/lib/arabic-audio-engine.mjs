@@ -512,11 +512,20 @@ export function humanLikenessGate({ plan, technical, sttComparisons = [], sttUna
        عن نفسك؟﴾» جملةٌ خبرية تنقل سؤالاً، ونبرتُها خبرية لا استفهامية. كانت
        البوابة تُلزمها بنبرة السؤال فتُعزل الحلقة كلها — وتصنيفُ الكاتب أصحّ
        من قاعدةٍ تنظر إلى العلامة وحدها. نحذف المقتبس ثم نسأل. */
+    /* المسموع هو النهاية المفتوحة لا اسمُ السجلّ: عنوانُ المقال («هل وظيفتك
+       مهددة بالانقراض؟») يخطّطه المحرك بسجلّ opening، وجملةُ الختام بسجلّ
+       conclusion — وكلاهما ينتهي open أصلاً. كانت البوابة تطلب الاسم
+       «question» حرفياً فتُسقط كل مقالٍ عنوانه سؤال إسقاطاً حرجاً أبدياً
+       (عشرة مقالات معلّقة). نطلب النبرة المفتوحة، ونقبل سجلّ العنوان والخاتمة. */
     questionDirection: units.filter((unit) => {
       const raw = String(unit.sourceText || unit.text || '')
       const withoutQuoted = raw.replace(/[«"„''][^»"'']*[»"'']/g, ' ')
       return withoutQuoted.includes('؟')
-    }).every((unit) => (unit.type || unit.delivery || unit.deliveryType) === 'question' && unit.ending === 'open'),
+    }).every((unit) => {
+      const register = unit.type || unit.delivery || unit.deliveryType
+      return unit.ending === 'open'
+        && ['question', 'opening', 'conclusion', 'hook'].includes(register)
+    }),
     boundarySilenceRemoved: Number(technical?.silence?.longestSec || 0) <= (dialogue ? 1.05 : 0.95),
     loudnessSafe: Number(technical?.loudness?.integratedLufs) >= -17.2 && Number(technical?.loudness?.integratedLufs) <= -14.8
       && Number(technical?.loudness?.truePeakDbtp) <= -1,
@@ -570,7 +579,10 @@ export function assembleReading({ segments, output, workDir }) {
     filters.push(`[${index}:a]adelay=${delay}|${delay}[s${index}]`)
   })
   const mix = timeline.map((_, index) => `[s${index}]`).join('')
-  filters.push(`${mix}amix=inputs=${timeline.length}:normalize=0,highpass=f=55,acompressor=threshold=-18dB:ratio=1.55:attack=18:release=150,loudnorm=I=-16:TP=-1:LRA=10[out]`)
+  /* هامشُ الذروة: البوابة تشترط ذروةً حقيقية ≤ −1dBTP، وكان الهدف −1 بالضبط
+     فيتجاوزها ترميزُ mp3 بكسورٍ من الديسيبل فتُرفض قراءةٌ سليمة (٩٠/١٠٠).
+     نطلب −1.5 كما في مسار الحوار، فيبقى المقيس تحت الحدّ بيقين. */
+  filters.push(`${mix}amix=inputs=${timeline.length}:normalize=0,highpass=f=55,acompressor=threshold=-18dB:ratio=1.55:attack=18:release=150,loudnorm=I=-16:TP=-1.5:LRA=10[out]`)
   run(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', ...args, '-filter_complex', filters.join(';'), '-map', '[out]',
     '-t', cursor.toFixed(3), '-codec:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', '-ac', '1', output])
   return { timeline, durationSec: cursor }

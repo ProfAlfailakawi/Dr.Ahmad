@@ -249,6 +249,25 @@ function highRiskMissing(comparison, risks) {
   })
 }
 
+/* الوحدة القصيرة جداً — عنوانُ المقال أو شظيةٌ خلّفتها النقاط الثلاث مثل
+   «الإلكتروني…» — لا تُقاس بكلمة/دقيقة: الكلمة العربية الطويلة وحدها تستغرق
+   قرابة الثانية، فتُحسب ٦٠ كلمة/دقيقة أمام هدفٍ ١٣٣، والفجوة ضِعفٌ لا يسدّه
+   تسريعٌ محدودٌ بـ+١٠٪. فتفشل ثلاث محاولات ثم يسقط المقال كله بسبب كلمة.
+   المسطرة الصحيحة لهذه الوحدات زمنُ نطق الكلمة الواحدة: ٠.٢٨–١.٩ ثانية هو
+   المدى البشريّ لأي كلمة عربية مهما طالت. وما دون ذلك أو فوقه عطلٌ حقيقي
+   (صمت أو تلعثم) تردّه البوابة كما كانت. */
+const SHORT_UNIT_WORDS = 8
+const SHORT_UNIT_SECONDS_PER_WORD = [0.28, 1.9]
+
+const isShortUnit = (text) => countArabicWords(text) < SHORT_UNIT_WORDS
+
+function shortUnitPaceOk(measuredWpm) {
+  if (!(Number(measuredWpm) > 0)) return false
+  const secondsPerWord = 60 / Number(measuredWpm)
+  return secondsPerWord >= SHORT_UNIT_SECONDS_PER_WORD[0]
+    && secondsPerWord <= SHORT_UNIT_SECONDS_PER_WORD[1]
+}
+
 async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxAttempts = 3 }) {
   const attempts = []
   let working = applyPronunciationMemory(unit, voice)
@@ -272,10 +291,10 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     const negationMissing = (comparison.missing || []).filter((word) => ['لا', 'لم', 'لن', 'ليس', 'ليست', 'غير', 'دون'].includes(word))
     // A one-line title can only contain a handful of words, so a few hundred
     // milliseconds of Azure prosody variance moves its calculated WPM sharply.
-    // Keep the normal tight gate for real reading units, but avoid rejecting a
-    // natural short unit because of noisy WPM arithmetic.
-    const paceTolerance = countArabicWords(working.pronunciationText) <= 7 ? 20 : 8
-    const pacePass = Math.abs(paceDelta) <= paceTolerance
+    // Keep the normal tight gate for real reading units, but judge a short unit
+    // by how long a single word takes — the only ruler that means anything there.
+    const shortUnit = isShortUnit(working.pronunciationText)
+    const pacePass = shortUnit ? shortUnitPaceOk(measuredWpm) : Math.abs(paceDelta) <= 8
     const sttPass = comparison.ratio >= 0.9 && comparison.importantRatio >= 0.95
       && heard?.consensusPass === true
       && missingRisks.length === 0 && negationMissing.length === 0
@@ -288,8 +307,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
       const probe = probeAudio(trimmed)
       const audioSound = probe.durationSec >= .45
         && statSync(trimmed).size > 4_000
-        && measuredWpm >= 85
-        && measuredWpm <= 195
+        && (shortUnit ? shortUnitPaceOk(measuredWpm) : (measuredWpm >= 85 && measuredWpm <= 195))
       if (audioSound && pacePass) {
         return {
           file: trimmed,
@@ -318,7 +336,9 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
       rmSync(trimmed, { force: true })
     }
     if (attempt < maxAttempts) {
-      const ratioCorrection = target > 0 && measuredWpm > 0 ? ((target / measuredWpm) - 1) * 100 : 0
+      /* لا نطارد هدفاً مستحيلاً في الوحدات القصيرة: تصحيحُ النسبة كان يدفع
+         العنوان إلى أقصى التسريع بلا فائدة فيخرج مبتوراً متعجّلاً. */
+      const ratioCorrection = !shortUnit && target > 0 && measuredWpm > 0 ? ((target / measuredWpm) - 1) * 100 : 0
       const articulationCorrection = sttPass ? 0 : -2
       working.ratePct = clamp(Math.round(working.ratePct + ratioCorrection + articulationCorrection), -16, 10)
       if (!sttPass && working.internalBreaks?.length) {
@@ -335,7 +355,9 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
   if (bestEffort?.file && existsSync(bestEffort.file)) {
     const probe = probeAudio(bestEffort.file)
     const wpm = Number(bestEffort.measuredWpm || 0)
-    const audioSound = probe.durationSec >= 0.45 && statSync(bestEffort.file).size > 4000 && wpm >= 85 && wpm <= 195
+    const shortBest = isShortUnit(bestEffort.unit?.pronunciationText || unit.pronunciationText)
+    const audioSound = probe.durationSec >= 0.45 && statSync(bestEffort.file).size > 4000
+      && (shortBest ? shortUnitPaceOk(wpm) : (wpm >= 85 && wpm <= 195))
     const negationLost = (bestEffort.comparison?.missingImportant || []).some((word) => /^(لا|لم|لن|ليس|ليست|غير|دون)$/.test(word))
     if (audioSound && !negationLost) {
       const sttNote = bestEffort.comparison?.sttUnavailable
@@ -557,7 +579,13 @@ export async function renderHumanReading({
       copyFileSync(candidate, quarantinedAudio)
       audit.quarantinedAudio = quarantinedAudio.replace(`${resolve(quarantineDirectory, '..')}/`, '')
       atomicWriteJson(auditFile, audit)
-      throw new Error(`بوابة الصوت رفضت القراءة: proxy=${proxyGate.score}/100${audioJudge ? `، judge=${audioJudge.minimumDimension}/100` : '، الحكم السمعي غير متاح'}`)
+      /* «proxy=91/100» رقمٌ لا يقول شيئاً: أيُّ مقياسٍ سقط؟ بلا اسمه يُصلح
+         المرء بالظنّ ويبقى المقال معلّقاً أياماً. نُفصح عن الساقط والحرج. */
+      const failedDetail = (proxyGate.failed || []).join('، ')
+      const criticalDetail = (proxyGate.criticalFailed || []).length
+        ? ` · حرجة: ${proxyGate.criticalFailed.join('، ')}` : ''
+      throw new Error(`بوابة الصوت رفضت القراءة: proxy=${proxyGate.score}/100${audioJudge ? `، judge=${audioJudge.minimumDimension}/100` : '، الحكم السمعي غير متاح'}`
+        + `${failedDetail ? ` — سقط: ${failedDetail}` : ''}${criticalDetail}`)
     }
     snapshotLastKnownGood({ currentFile: output, auditFile, directory: lastKnownGoodDirectory })
     stageAcceptedFile({ candidate, output })

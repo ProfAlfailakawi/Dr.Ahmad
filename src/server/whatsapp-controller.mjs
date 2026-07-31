@@ -812,6 +812,76 @@ function compareAnalysis(leftItems, rightItems) {
    المبادرة بلا انضباط ثرثرة. الشرط: أن توجد مادةٌ مرتبطةٌ حقيقةً بما بين
    أيدينا (من `related` المبنيّة في الفهرس لا من تخميننا)، وألّا تكون قد
    عُرضت من قبل، وألّا نبادر مرّتين متتاليتين. سطرٌ واحد، وسؤالٌ يُجاب بنعم. */
+/* ═══ البوت يعرف أنه أخطأ — ويتعلّم منك وحدك ═══
+   الصياغات التي لم تُفهم كانت تُرصد للمراقبة فقط، فيبقى الخطأ يتكرّر إلى
+   الأبد. الآن يعرضها عليك، وتُسنِد أنت الصياغة إلى موضوعٍ من موادّك بنقرة،
+   فتُجاب في المرة القادمة. **لا تعلّمَ آليّاً**: لا شيء يدخل هنا إلا بإسنادك
+   الصريح، والجواب يبقى بحثاً في المنشور لا كلاماً مولَّداً — فالبوّابة
+   المقدّسة (لا يُنسب للدكتور إلا ما نشره) لم تُخترق. */
+const taughtPhrases = new Map()
+let taughtPhrasesAt = 0
+const TAUGHT_TTL_MS = 5 * 60_000
+/* الجزء الخالص مفصولٌ عن الجلب كي يُختبر بلا قاعدة بيانات. */
+export function applyTaughtPhrases(rows = []) {
+  taughtPhrases.clear()
+  for (const row of rows) {
+    const phrase = normalizeArabicMessage(row?.phrase || '')
+    const query = bounded(row?.teachQuery, 160)
+    if (phrase.length >= 2 && query) taughtPhrases.set(phrase, query)
+  }
+  return taughtPhrases.size
+}
+async function primeTaughtPhrases(db, force = false) {
+  const now = Date.now()
+  if (!force && now - taughtPhrasesAt < TAUGHT_TTL_MS) return
+  taughtPhrasesAt = now
+  const snapshot = await db.collection(COLLECTIONS.learning).where('status', '==', 'taught').limit(300).get()
+  applyTaughtPhrases(snapshot.docs.map((doc) => doc.data() || {}))
+}
+function taughtQueryFor(cleanText) {
+  const phrase = String(cleanText || '').trim()
+  if (!phrase) return ''
+  const direct = taughtPhrases.get(phrase)
+  if (direct) return direct
+  /* مطابقةُ الاحتواء للصياغات الطويلة: من علّمتَه «الدمج» يُجيب على «شنو رأيه
+     في الدمج» أيضاً — بشرط أن تكون العبارة المُعلَّمة كلمةً قائمة لا جزءَ كلمة. */
+  for (const [known, query] of taughtPhrases) {
+    if (known.length >= 4 && new RegExp(`(?:^|\\s)${known.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s|$)`).test(phrase)) return query
+  }
+  return ''
+}
+
+/* ═══ من يسأل؟ ═══
+   الذاكرة كانت تعرف الموضوع ولا تعرف صاحبه — مع أن أسلوب السؤال يفضحه.
+   نستنتج صفته من مفرداته هو (لا نسأله عنها أبداً، ولا نعلنها في وجهه)،
+   ونستعملها في **ترتيب ما نقدّمه** لا في تغيير الحقائق: الباحث تُقدَّم له
+   الورقة المحكّمة، وولي الأمر يُقدَّم له المقال. إشارتان على الأقل قبل الحكم،
+   فلا تُصنَّف كلمةٌ عابرة إنساناً. */
+const READER_KINDS = [
+  ['teacher', /(?:^|\s)(?:طلابي|طلبتي|صفي|حصتي|حصه|المنهج|منهجي|تلاميذي|ادرس|تدريسي|مدرستي|الوزاره|الاداره المدرسيه|زملائي المعلمين)(?:\s|$)/],
+  ['parent', /(?:^|\s)(?:ابني|بنتي|ولدي|عيالي|اولادي|بنتي|طفلي|ابنتي|ولد ي|مدرسه ابني|ولي امر)(?:\s|$)/],
+  ['researcher', /(?:^|\s)(?:دراسه|الدراسات|منهجيه|عينه|المراجع|مرجع|اطروحتي|رسالتي|بحثي|الادبيات|استبانه|احصائيا)(?:\s|$)/],
+]
+function readerKindSignal(cleanText) {
+  for (const [kind, pattern] of READER_KINDS) if (pattern.test(cleanText)) return kind
+  return ''
+}
+export function readerKindOf(conversation = {}) {
+  const signals = Array.isArray(conversation.readerSignals) ? conversation.readerSignals : []
+  if (signals.length < 2) return ''
+  const counts = new Map()
+  for (const signal of signals) counts.set(signal, (counts.get(signal) || 0) + 1)
+  const [top] = [...counts.entries()].sort((a, b) => b[1] - a[1])
+  return top && top[1] >= 2 ? top[0] : ''
+}
+/* الترتيب وحده يتغيّر — لا المحتوى ولا الصدق. */
+function kindsForReader(kind) {
+  if (kind === 'researcher') return ['paper', 'book', 'article']
+  if (kind === 'parent') return ['article', 'curated', 'podcast']
+  if (kind === 'teacher') return ['article', 'paper', 'podcast']
+  return []
+}
+
 const INITIATIVE_COOLDOWN_MS = 30 * 60_000
 function initiativeLine(conversation = {}, item = null, previousIds = [], at = Date.now()) {
   if (!item) return ''
@@ -1372,8 +1442,42 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     }
   }
 
-  const rows = scoredSiteResults(query, { kinds, limit: 3, filters })
-  const found = rows.map((row) => row.item)
+  /* ما علّمتَه إيّاه: صياغةٌ أخطأ فيها من قبل، وأسندتَها أنت إلى موضوع.
+     تُقرأ قبل التخمين الأعمى — فالخطأ الذي صُحّح مرّةً لا يتكرّر. */
+  const taught = classification.fallback || intent === INTENTS.UNKNOWN ? taughtQueryFor(clean) : ''
+  if (taught) {
+    const learnedRows = scoredSiteResults(taught, { limit: 3 })
+    if (learnedRows.length) {
+      const learned = learnedRows.map((row) => row.item)
+      return {
+        kind: 'reply', reason: 'taught-phrase', intent,
+        reply: signReply(siteResultReply(learned, 'فهمتها من تصحيح الدكتور لي سابقاً — وهذا ما عنده فيها:'), messages),
+        evidence: learned.map((item) => item.id),
+        contextItemIds: learned.map((item) => item.id), contextIndex: 0, lastTopic: taught,
+      }
+    }
+  }
+
+  /* ترتيبٌ على مقاس من يسأل: الباحث تُقدَّم له الورقة المحكّمة، وولي الأمر
+     المقال. الترتيب وحده يتغيّر — لا المحتوى ولا الصدق ولا ما هو منشور. */
+  const readerKind = readerKindOf(conversation)
+  const readerOrder = kinds.length ? [] : kindsForReader(readerKind)
+  /* **ترتيبٌ لا ترشيح، وأفضلُ مطابقةٍ لا تُزاح.**
+     لو رشّحنا بالنوع لأخفينا عن الباحث مقالاً يفيده. ولو اكتفينا بترتيب
+     الثلاثة الأولى لما رأى الباحثُ ورقةً محكّمةً جاءت رابعةً في الدرجات.
+     فنوسّع النظر إلى خمسةٍ، ونُثبّت أعلى مطابقةٍ في مكانها مهما كان نوعها
+     (فالصلة أصدق من الصفة)، ثم نرتّب البقيّة على مقاسه ونأخذ ثلاثة. */
+  const rows = scoredSiteResults(query, { kinds, limit: readerOrder.length ? 5 : 3, filters })
+  const orderedRows = readerOrder.length && rows.length > 1
+    ? [rows[0], ...rows.slice(1)
+      .map((row, index) => ({ row, index }))
+      .sort((a, b) => {
+        const rank = (item) => { const i = readerOrder.indexOf(item.kind); return i === -1 ? readerOrder.length : i }
+        return rank(a.row.item) - rank(b.row.item) || a.index - b.index
+      })
+      .map((entry) => entry.row)]
+    : rows
+  const found = orderedRows.slice(0, 3).map((row) => row.item)
 
   /* ─── الشكّ يُسأل عنه، ولا يُخمَّن ───
      كلمةٌ واحدة تخميناً + مرشَّحان متقاربان = سؤالٌ واحد. والجواب بـ«الأولى»
@@ -1391,9 +1495,13 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
 
   if (found.length) {
     const offer = found.length === 1 ? initiativeLine(conversation, found[0], previousIds) : ''
+    const signal = readerKindSignal(clean)
     const patch = {
       ...(interestPatch(conversation, query) || {}),
       ...(offer ? { lastInitiativeAt: asIso() } : {}),
+      /* إشاراتٌ لا أحكام: نجمع ما يقوله عن نفسه ضمناً، ولا نصنّفه إلا بإشارتين.
+         مصفوفة محدودة السقف — كذاكرة الاهتمام، ولنفس سبب `merge:true`. */
+      ...(signal ? { readerSignals: [...(Array.isArray(conversation.readerSignals) ? conversation.readerSignals : []), signal].slice(-12) } : {}),
     }
     return {
       kind: 'reply', reason: classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
@@ -2690,6 +2798,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     /* تحديث قوالب اللوحة خلفيّ لا يؤخر رداً: يجلب bot_messages/templates ضمن
        TTL داخلي، فيسري تحرير الدكتور من لوحة «رسائل البوت» خلال دقائق. */
     void refreshBotMessages().catch(() => {})
+    void primeTaughtPhrases(db).catch(() => {})
     const wakePhrase = isWhatsAppWakePhrase(text)
     const manualTakeoverActive = data.mode === 'human'
       || (data.mode === 'silent' && Boolean(data.lastManualAt) && data.wakeActive !== true)
@@ -2934,7 +3043,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           await patternRef.set({
             id: patternId,
             phrase,
-            status: previous.status === 'learned' ? 'learned' : 'observing',
+            /* الصياغة التي علّمتَها لا تعود «قيد المراقبة» لمجرّد تكرارها —
+               وإلا محا التكرارُ تعليمك. المعتمد والمُعلَّم يبقيان. */
+            status: ['learned', 'taught'].includes(previous.status) ? previous.status : 'observing',
             reason: bounded(decision.reason, 60),
             hits: Number(previous.hits || 0) + 1,
             firstSeenAt: previous.firstSeenAt || now,
@@ -3989,20 +4100,23 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       const observed = observedSnapshot.docs.map(serializeDoc).filter(Boolean)
       const observing = observed.filter((row) => row.status === 'observing')
       const ignored = observed.filter((row) => row.status === 'ignored')
+      const taught = observed.filter((row) => row.status === 'taught')
       sendJson(res, 200, {
         total: LEXICON_SIZE + rules.length + observed.length,
         learned: LEXICON_SIZE,
         observing: observing.length,
         ignored: ignored.length,
-        policy: 'القاموس الكويتي والمصطلحات المعتمدة مفعّلة في الفهم الدلالي. الصياغات غير المفهومة تُرصد هنا للمراقبة فقط، ولا يتعلم البوت منها قاعدة أو جواباً بلا اعتمادك الصريح.',
+        taught: taught.length,
+        policy: 'القاموس الكويتي والمصطلحات المعتمدة مفعّلة في الفهم الدلالي. الصياغات غير المفهومة تُرصد هنا، ولا يتعلم البوت منها شيئاً إلا بإسنادك الصريح — وحين تُسنِدها يبحث عن موضوعك في المنشور، ولا يولّد جواباً.',
         items: [
           ...observed.slice(0, 80).map((row) => ({
             id: String(row.id),
             phrase: bounded(row.phrase, 160),
-            status: row.status === 'ignored' ? 'ignored' : 'observing',
+            status: row.status === 'ignored' ? 'ignored' : row.status === 'taught' ? 'taught' : 'observing',
             kind: 'observed-phrase',
             hits: Number(row.hits || 1),
             lastSeenAt: row.lastSeenAt || null,
+            teachQuery: bounded(row.teachQuery, 160) || null,
           })),
           ...rules.slice(0, 40).map((rule) => ({
             id: String(rule.id),
@@ -4018,7 +4132,20 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       const learningAction = path.match(/^\/learning\/([A-Za-z0-9_-]{4,64})\/(observing|ignored)$/)
       if (learningAction && method === 'POST') {
         await db.collection(COLLECTIONS.learning).doc(learningAction[1])
-          .set({ status: learningAction[2], updatedAt: asIso() }, { merge: true })
+          .set({ status: learningAction[2], updatedAt: asIso(), teachQuery: null }, { merge: true })
+        await primeTaughtPhrases(db, true).catch(() => {})
+        return handleAdmin(req, res, new URL('/api/whatsapp/admin/learning', 'http://localhost'), 'GET')
+      }
+      /* التعليم: تُسنِد الصياغة التي أخطأ فيها إلى موضوعٍ من موادّك، فيجيب
+         عنها في المرة القادمة بحثاً في المنشور — لا جواباً مولَّداً. */
+      const teachAction = path.match(/^\/learning\/([A-Za-z0-9_-]{4,64})\/teach$/)
+      if (teachAction && method === 'POST') {
+        const body = await readJson(req)
+        const teachQuery = bounded(body.query, 160).trim()
+        if (!teachQuery) { sendJson(res, 400, { ok: false, error: 'اكتب الموضوع الذي تُسنِد إليه هذه الصياغة.' }); return }
+        await db.collection(COLLECTIONS.learning).doc(teachAction[1])
+          .set({ status: 'taught', teachQuery, taughtAt: asIso(), updatedAt: asIso() }, { merge: true })
+        await primeTaughtPhrases(db, true).catch(() => {})
         return handleAdmin(req, res, new URL('/api/whatsapp/admin/learning', 'http://localhost'), 'GET')
       }
     }

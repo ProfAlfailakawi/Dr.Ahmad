@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import AudienceStudio from './AudienceStudio'
 import { BroadcastStudio } from './BroadcastStudio'
 import { useAdminAuth } from '../../lib/admin-auth'
@@ -76,8 +76,8 @@ type RuleVersion = { id: number; createdAt: string }
 type Simulation = { willReply?: boolean; why?: string; quietNow?: boolean; intent?: string; mode?: string; confidence?: number; needsHuman?: boolean; ruleId?: string | null; ruleName?: string | null; preview?: string }
 /* معرفات الأنماط صارت بصماتٍ نصية من العقل المركزي، وحقول القرائن اختيارية
    لأن الرصد المركزي يسجل الصياغة وتكرارها فقط (لا تعلّم تلقائياً). */
-type LearningPattern = { id: string | number; phrase: string; hits?: number; intent?: string; confirmations?: number; evidenceSources?: number; evidenceDays?: number; kind?: string; status: 'learned' | 'observing' | 'ignored'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null }
-type LearningState = { total: number; learned: number; observing: number; ignored: number; policy: string; items: LearningPattern[] }
+type LearningPattern = { id: string | number; phrase: string; hits?: number; intent?: string; confirmations?: number; evidenceSources?: number; evidenceDays?: number; kind?: string; status: 'learned' | 'observing' | 'ignored' | 'taught'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null; teachQuery?: string | null }
+type LearningState = { total: number; learned: number; observing: number; ignored: number; taught?: number; policy: string; items: LearningPattern[] }
 type WeeklyReport = {
   days: number
   conversations: number
@@ -209,6 +209,9 @@ export function WhatsAppAgentPanel() {
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null)
   const [weeklyBusy, setWeeklyBusy] = useState(false)
   const [learningBusy, setLearningBusy] = useState(false)
+  /* مسوّدة ما تكتبه في خانة التعليم قبل الضغط — بمرجعٍ لا بحالة، كي لا تُعاد
+     تصيير القائمة كلّها مع كل حرفٍ تكتبه. */
+  const teachDraft = useRef<Record<string, string>>({})
   const [screen, setScreen] = useState<AgentScreen>('live')
   const [knowledge, setKnowledge] = useState<KnowledgeState>(EMPTY_KNOWLEDGE)
   const [personality, setPersonality] = useState<KnowledgePersonality>(DEFAULT_PERSONALITY)
@@ -461,6 +464,21 @@ export function WhatsAppAgentPanel() {
   const runSimulator = async () => {
     if (!simulateText.trim()) return setNotice('اكتب رسالة افتراضية للمحاكي.')
     try { setSimulation(await request<Simulation>('/admin/simulate', { method: 'POST', body: JSON.stringify({ text: simulateText, jid: manualJid || 'simulator@s.whatsapp.net' }) })) } catch { setNotice('تعذّر تشغيل المحاكي.') }
+  }
+
+  /* التعليم: الصياغة التي أخطأ فيها تُسنَد إلى موضوعٍ من مواد الدكتور، فيبحث
+     عنه في المنشور مستقبلاً. لا يولّد جواباً ولا يتعلّم شيئاً بلا هذا الإسناد. */
+  const teachLearningPattern = async (id: string | number, query: string) => {
+    setLearningBusy(true)
+    try {
+      const next = await request<LearningState>(`/admin/learning/${id}/teach`, { method: 'POST', body: JSON.stringify({ query }) })
+      setLearning(next)
+      setNotice(`تمام — صار يفهمها ويبحث لك عن «${query}».`)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'تعذّر حفظ التعليم.')
+    } finally {
+      setLearningBusy(false)
+    }
   }
 
   const updateLearningPattern = async (id: string | number, status: 'observing' | 'ignored') => {
@@ -1057,10 +1075,42 @@ export function WhatsAppAgentPanel() {
                       <p className="truncate text-[.84rem] font-semibold text-ink">{item.phrase || 'صياغة مشفّرة'}</p>
                       <p className="mt-1 text-[.7rem] text-soft">{item.status === 'learned'
                         ? (item.kind === 'approved-rule' ? 'قاعدة معتمدة من اللوحة' : `تعلّمها${item.intent ? ` كنية ${item.intent}` : ''}${item.confirmations ? ` · ${item.confirmations} قرائن` : ''}`)
-                        : item.status === 'ignored'
-                          ? 'متجاهلة'
-                          : `تحت المراقبة · ظهرت ${item.hits || 1} ${Number(item.hits || 1) === 1 ? 'مرة' : 'مرات'}${item.lastSeenAt ? ` · آخرها ${new Date(item.lastSeenAt).toLocaleString('ar-KW', { dateStyle: 'short', timeStyle: 'short' })}` : ''}`}</p>
+                        : item.status === 'taught'
+                          ? `علّمتَه إياها ← يبحث عن «${item.teachQuery}»`
+                          : item.status === 'ignored'
+                            ? 'متجاهلة'
+                            : `تحت المراقبة · ظهرت ${item.hits || 1} ${Number(item.hits || 1) === 1 ? 'مرة' : 'مرات'}${item.lastSeenAt ? ` · آخرها ${new Date(item.lastSeenAt).toLocaleString('ar-KW', { dateStyle: 'short', timeStyle: 'short' })}` : ''}`}</p>
                     </div>
+                    {/* التعليم بنقرة: تُسنِد الصياغة التي أخطأ فيها إلى موضوعٍ من
+                        موادّك، فيجيب عنها في المرّة القادمة بحثاً في المنشور. */}
+                    {item.kind === 'observed-phrase' && item.status !== 'ignored' && (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          defaultValue={item.teachQuery || ''}
+                          placeholder="الموضوع الذي تقصده…"
+                          aria-label={`أسنِد «${item.phrase}» إلى موضوع`}
+                          className="min-h-11 w-44 rounded-full border border-hair bg-canvas px-4 text-[.76rem] text-ink"
+                          onKeyDown={(event) => {
+                            if (event.key !== 'Enter') return
+                            const value = (event.target as HTMLInputElement).value.trim()
+                            if (value) void teachLearningPattern(item.id, value)
+                          }}
+                          onBlur={(event) => { teachDraft.current[String(item.id)] = event.target.value }}
+                          onChange={(event) => { teachDraft.current[String(item.id)] = event.target.value }}
+                        />
+                        <button
+                          type="button"
+                          disabled={learningBusy}
+                          className={secondary}
+                          onClick={() => {
+                            const value = (teachDraft.current[String(item.id)] || item.teachQuery || '').trim()
+                            if (!value) { setNotice('اكتب الموضوع أولاً ثم اضغط «علّمه».'); return }
+                            void teachLearningPattern(item.id, value)
+                          }}
+                        >علّمه</button>
+                      </div>
+                    )}
                     <button type="button" disabled={learningBusy} className={secondary} onClick={() => void updateLearningPattern(item.id, item.status === 'ignored' ? 'observing' : 'ignored')}>
                       {item.status === 'ignored' ? 'أعد للمراقبة' : 'لا تتعلمها'}
                     </button>

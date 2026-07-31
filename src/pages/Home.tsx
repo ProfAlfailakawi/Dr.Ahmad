@@ -704,7 +704,11 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
     }
     try { if (typeof window !== 'undefined') window.localStorage.setItem(historyKey, JSON.stringify(nextHistory)) } catch { /* لا يؤثر في التنويع الحالي */ }
     const selected = [
-      article && { type: 'مقال', kind: 'article', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: '', year: article.iso?.slice(0, 4) },
+      /* بطاقة المشاركة المولّدة لكل مقال (١٤٣ بطاقة بهوية الموقع تُبنى في
+         build-static) تصلح غلافاً حقيقياً — فلا يبقى صفُّ «أربع زوايا»
+         نصفَه صوراً ونصفَه حروفاً مجردة. وإن غابت البطاقة سقط الغلاف
+         التحريري المرسوم تلقائياً كما كان (onError في البطاقة). */
+      article && { type: 'مقال', kind: 'article', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: `/og/articles/${article.slug}.jpg`, year: article.iso?.slice(0, 4) },
       book && { type: 'كتاب', kind: 'book', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover, year: '' },
       paper && { type: 'بحث محكّم', kind: 'paper', title: paper.titleAr || paper.title, note: paper.meta, to: `/research/${paper.slug}`, image: '', year: paper.iso?.slice(0, 4) },
       mediaItem && { type: 'ظهور إعلامي', kind: 'media', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.url, image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', external: true, year: '' },
@@ -727,7 +731,15 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
               <div className="group flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/45 md:min-h-[270px]">
                 {item.image ? (
                   <div className={`flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3 md:h-32' : item.external ? 'selected-media-frame h-28 overflow-hidden md:h-32' : 'h-28 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${item.image})` } as CSSProperties) : undefined}>
-                    <img src={item.image} alt="" loading="lazy" className={`${isBook ? 'h-full w-full object-contain' : item.external ? 'selected-media-thumb h-full w-full opacity-95' : 'h-full w-full object-cover opacity-90'}`} />
+                    <img
+                      src={item.image}
+                      alt=""
+                      loading="lazy"
+                      /* بطاقة مقالٍ لم تُبنَ بعد لا تترك مربعاً مكسوراً: يُخفى
+                         الإطار فيظهر بقية الكرت نظيفاً كما كان قبل الصور. */
+                      onError={(event) => { const frame = event.currentTarget.parentElement; if (frame) frame.style.display = 'none' }}
+                      className={`${isBook ? 'h-full w-full object-contain' : item.external ? 'selected-media-thumb h-full w-full opacity-95' : 'h-full w-full object-cover opacity-90'}`}
+                    />
                   </div>
                 ) : (
                   <div className={`archive-editorial-cover archive-editorial-cover--${item.kind}`} aria-hidden="true">

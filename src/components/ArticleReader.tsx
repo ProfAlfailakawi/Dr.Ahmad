@@ -538,8 +538,14 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
           title="اقتباساتي"
           className="reader-quotes-button flex h-11 min-w-11 items-center justify-center px-2 text-ink transition-colors hover:text-accent"
         >
+          {/* كانت هذه الأيقونة مرجعيةً (bookmark) مطابقةً لأيقونة «احفظ لاحقاً»
+              المجاورة، فبدا في شريط المقال زرّا حفظٍ متطابقان بلا فرق ظاهر
+              (ملاحظة الدكتور ٣١ يوليو). صارت علامة اقتباسٍ صريحة: الوظيفة
+              نفسها لم تُمسّ، والعين تفرّق بينهما من أول نظرة. */}
           <svg aria-hidden viewBox="0 0 20 20" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5.6 2.8h8.8a1.4 1.4 0 0 1 1.4 1.4v12.4l-5.8-3.4-5.8 3.4V4.2A1.4 1.4 0 0 1 5.6 2.8Z" />
+            <path d="M8.2 5.4c-2 .5-3.4 2.1-3.4 4.2 0 1.5 1 2.6 2.4 2.6 1.3 0 2.2-.9 2.2-2.1 0-1.2-.8-2-1.9-2-.2 0-.4 0-.6.1.3-1 1.1-1.7 2.1-2Z" fill="currentColor" stroke="none" />
+            <path d="M15.4 5.4c-2 .5-3.4 2.1-3.4 4.2 0 1.5 1 2.6 2.4 2.6 1.3 0 2.2-.9 2.2-2.1 0-1.2-.8-2-1.9-2-.2 0-.4 0-.6.1.3-1 1.1-1.7 2.1-2Z" fill="currentColor" stroke="none" />
+            <path d="M4 15.6h12" opacity=".45" />
           </svg>
         </button>
       </div>

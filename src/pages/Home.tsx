@@ -424,7 +424,15 @@ function ThoughtCompass() {
   useEffect(() => {
     if (axes.length && !axes.some((axis) => axis.key === active)) setActive(axes[0].key)
   }, [active, axes])
-  const related = articles.filter((a) => a.cat === active).slice(0, 3)
+  /* «تصفّح بالفكرة» كانت تأخذ أول ثلاثة كما وردت في المصفوفة بلا ترتيب صريح،
+     فيتغيّر المعروض بتغيّر مصدر البيانات. الترتيب الآن بالأحدث صراحةً: المحور
+     يفتح على آخر ما كتبه الدكتور فيه، وهو ما يتوقعه القارئ. (التواريخ نفسها
+     سليمة — راجعتها: مقالات أبريل ٢٠٢٦ نُشرت فعلاً بإيقاع أسبوعي، والأرشيف
+     القديم يحتفظ بتواريخه الأصلية كما في صفحة كل مقال.) */
+  const related = [...articles]
+    .filter((a) => a.cat === active)
+    .sort((left, right) => String(right.iso || right.date || '').localeCompare(String(left.iso || left.date || '')))
+    .slice(0, 3)
   const dive = axisDeepDive(active, papers, books)
   const axisLabel = axes.find((a) => a.key === active)?.label || active
 

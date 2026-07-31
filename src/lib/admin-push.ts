@@ -44,10 +44,19 @@ export async function registerAdminPush(user: User): Promise<AdminPushRegistrati
      بين الرفض السابق (يحتاج فتح إعدادات الموقع) والإغلاق العابر (يعيد
      المحاولة)، ونكتب له الطريق بالضبط على جهازه. */
   const before = Notification.permission
+  /* آيباد الحديث يعلن نفسه Macintosh، فكان يصله نصُّ الكمبيوتر («اضغط القفل
+     🔒 بجانب العنوان») وهو مستحيلٌ داخل تطبيقٍ مثبّت. */
+  const ua = navigator.userAgent
+  const isIos = /iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && (navigator.maxTouchPoints || 0) > 1)
+  const standalone = typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true)
   const permission = before === 'granted' ? 'granted' : await Notification.requestPermission()
+  /* **بصمة الحالة**: ثلاث ليالٍ من الإصلاحات ضاعت لأن الرسائل كانت تصف ولا
+     تقيس — فلا نعرف أي فرعٍ وصله الدكتور ولا هل ظهرت نافذة الإذن أصلاً.
+     الآن تُلحق بكل عودةٍ غير ناجحة: الإذن قبل←بعد (denied→denied تعني أن
+     النافذة لم تظهر قط؛ default→denied تعني أنها ظهرت ورُفضت)، والوضع
+     (مثبّت/متصفح). لقطةٌ واحدة تكفي للتشخيص بلا تخمين. */
+  const stamp = ` [الإذن: ${before}→${permission} · ${standalone ? 'مثبّت' : 'متصفح'}]`
   if (permission !== 'granted') {
-    const isIos = typeof navigator !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent)
-    const standalone = typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true)
     /* ترتيب الشرطين حاكم (لقطة الدكتور ٣١ يوليو): على آيفون **خارج التطبيق
        المثبّت** تكون الحالة `denied` افتراضاً — لا لأن أحداً رفض، بل لأن iOS
        لا يمنح Push لموقعٍ في سفاري أصلاً. وحين كان فحص «مرفوضة سابقاً» يسبق،
@@ -58,15 +67,22 @@ export async function registerAdminPush(user: User): Promise<AdminPushRegistrati
     if (isIos && !standalone) {
       return { ok: false, message: 'على آيفون لا تعمل الإشعارات إلا من التطبيق المثبّت: افتح سفاري ← زر المشاركة ← «إضافة إلى الشاشة الرئيسية»، ثم افتح الموقع من أيقونته (لا من سفاري) واضغط الزر. الموقع لا يظهر في إعدادات الإشعارات قبل تثبيته.' }
     }
+    /* على آيفون **داخل التطبيق المثبّت** لا تتكرر نافذة الإذن أبداً: واحدةٌ
+       لكل تثبيت. فالعلاج النافع هو إعادة التثبيت لا زيارة الإعدادات (وتطبيقٌ
+       رُفض إذنه قد لا يُدرَج في تلك القائمة أصلاً). ولذلك تُصدَّر إعادةُ
+       التثبيت، وتُذكر الإعدادات بديلاً، مع تحذير تسجيل الدخول لأن حذف
+       الأيقونة يمحو تخزين التطبيق ومنه جلسة الدخول. */
+    const iosReinstall = 'الإذن مرفوض على مستوى النظام، وآيفون لا يسأل مرتين — لديك نافذةٌ واحدة لكل تثبيت. الحل: اضغط مطوّلاً على أيقونة الموقع ← حذف، ثم افتح سفاري على dr-alfailakawi.com ← زر المشاركة ← «إضافة إلى الشاشة الرئيسية»، وافتح من الأيقونة الجديدة واضغط الزر واختر «سماح». (وإن وجدت الموقع في إعدادات الجهاز ← الإشعارات فيمكنك تفعيله من هناك بلا إعادة تثبيت.) تنبيه: إعادة التثبيت تتطلب تسجيل دخولٍ جديد للوحة.'
+    if (isIos && standalone) return { ok: false, message: iosReinstall + stamp }
     if (before === 'denied') {
       return {
         ok: false,
         message: isIos
-          ? 'الإشعارات مرفوضة سابقاً على هذا الجهاز، والمتصفح لا يسأل مرتين. افتح: إعدادات الجهاز ← الإشعارات ← ابحث عن أيقونة الموقع ← فعّل «السماح بالإشعارات»، ثم ارجع واضغط الزر.'
-          : 'الإشعارات مرفوضة سابقاً لهذا الموقع، والمتصفح لا يسأل مرتين. اضغط القفل 🔒 بجانب العنوان ← الإشعارات ← «سماح»، ثم أعد تحميل الصفحة واضغط الزر.',
+          ? iosReinstall + stamp
+          : 'الإشعارات مرفوضة سابقاً لهذا الموقع، والمتصفح لا يسأل مرتين. اضغط القفل 🔒 بجانب العنوان ← الإشعارات ← «سماح»، ثم أعد تحميل الصفحة واضغط الزر.' + stamp,
       }
     }
-    return { ok: false, message: 'أُغلق طلب الإذن قبل الموافقة. اضغط الزر مرة أخرى واختر «سماح» حين يسألك المتصفح.' }
+    return { ok: false, message: 'أُغلق طلب الإذن قبل الموافقة. اضغط الزر مرة أخرى واختر «سماح» حين يسألك المتصفح.' + stamp }
   }
 
   const app = await getFirebaseApp()
@@ -76,7 +92,6 @@ export async function registerAdminPush(user: User): Promise<AdminPushRegistrati
     /* الرسالة العامة لا تُرشد. على آيفون يكون السبب دائماً واحداً من اثنين:
        نظامٌ أقدم من 16.4، أو أيقونةٌ مثبّتة قبل تفعيل الإشعارات فبقيت بلا
        صلاحياتها — وكلاهما له علاجٌ مختلف. */
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
     return {
       ok: false,
       message: isIos
@@ -110,7 +125,7 @@ export async function registerAdminPush(user: User): Promise<AdminPushRegistrati
           : code.includes('token-subscribe-failed') || code.includes('token-subscribe')
             ? 'رفض خادمُ Firebase اشتراكَ هذا الجهاز. غالباً لأن الأيقونة المثبّتة قديمة سابقة لتفعيل الإشعارات — أعد تثبيت الموقع من سفاري.'
             : 'تعذّر إصدار رمز Push على هذا الجهاز.'
-    return { ok: false, configured: Boolean(vapidKey), message: `${explain} (${code || 'بلا رمز'}: ${raw.slice(0, 120)})` }
+    return { ok: false, configured: Boolean(vapidKey), message: `${explain} (${code || 'بلا رمز'}: ${raw.slice(0, 120)})${stamp}` }
   }
   if (!token) return { ok: false, configured: Boolean(vapidKey), message: 'لم يُصدر Firebase رمز Push لهذا الجهاز — ولم يُبلّغ عن سبب. أعد تثبيت الموقع على الشاشة الرئيسية ثم حاول.' }
   const saved = await authorizedJson(user, '/api/admin/push', {

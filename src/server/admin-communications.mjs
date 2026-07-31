@@ -123,7 +123,13 @@ async function sendAdminPush(getFirestore, { title, body, url = '/admin?tab=inbo
     const invalid = []
     response.responses.forEach((result, index) => {
       const code = String(result.error?.code || '')
-      if (!result.success && /registration-token-not-registered|invalid-registration-token|invalid-argument/i.test(code)) invalid.push(rows[index]?.id)
+      /* `invalid-argument` أُخرج من قائمة الحذف عمداً: هو خطأٌ عام تُطلقه FCM
+         لأسبابٍ عابرة (حمولة، مهلة، تهيئة) لا لكون الرمز ميتاً — وحذفُ الرمز
+         عليه يمحو تسجيل جهاز الدكتور **نهائياً وبصمت**، فيسجّل الآيفون ثم لا
+         يصله شيء أبداً بينما يظل الكمبيوتر يعلن النجاح فوقه. لا يُحذف رمزٌ
+         إلا بإقرار FCM الصريح أنه غير مسجَّل. */
+      if (!result.success && /registration-token-not-registered|invalid-registration-token/i.test(code)) invalid.push(rows[index]?.id)
+      else if (!result.success && code) console.warn('[admin-push] رمزٌ فشل ولم يُحذف:', code)
     })
     await Promise.all(invalid.filter(Boolean).map((id) => db.collection('admin_push_tokens').doc(id).delete().catch(() => {})))
     return { sent: response.successCount, failed: response.failureCount, configured: true }

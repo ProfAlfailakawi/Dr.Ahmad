@@ -2110,7 +2110,7 @@ function PerfectSocialPackCard({
   )
 }
 
-export function PublishingStudio({ articles, onTransferToArticles }: { articles: ArticleRecord[]; onTransferToArticles?: (slug: string) => void | Promise<void> }) {
+export function PublishingStudio({ articles, onTransferToArticles, initialView = 'idea' }: { articles: ArticleRecord[]; onTransferToArticles?: (slug: string) => void | Promise<void>; initialView?: PublishingStudioView }) {
   const { isAdmin, refresh, user } = useAdminAuth()
   const [richArticles, setRichArticles] = useState<ArticleRecord[]>(articles)
   const [radar, setRadar] = useState<RadarItem[]>([])
@@ -2133,7 +2133,9 @@ export function PublishingStudio({ articles, onTransferToArticles }: { articles:
   const [currentEvents, setCurrentEvents] = useState<CurrentEvent[]>([])
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
-  const [view, setView] = useState<PublishingStudioView>('idea')
+  /* تبويب «تغريدات ومنشورات» يفتح الاستوديو على المسار السريع مباشرة بدل أن
+     يبحث الدكتور عن خطوةٍ جانبية داخل رحلة المقال. */
+  const [view, setView] = useState<PublishingStudioView>(initialView)
   const [proposalMode, setProposalMode] = useState<'self' | 'received'>('self')
   const voicedArticles = useMemo(
     () => richArticles.filter((article) => Boolean((audioCatalog as Record<string, unknown>)[article.slug])),

@@ -339,6 +339,7 @@ function Panel({ email }: { email: string }) {
     production: <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
     analytics: <div className="grid gap-4"><ReaderPulse /><VisitorJourneySuggestion articles={cms.articles} /><Indicators articles={cms.articles} /></div>,
     studio: <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />,
+    'social-posts': <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} initialView="pulse" />,
     design: <SocialDesignStudio />,
     'image-lab': <ImageLab />,
     launch: <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />,

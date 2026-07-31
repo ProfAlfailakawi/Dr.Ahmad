@@ -1996,11 +1996,29 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   }
   const rankedLayouts = seededOrder(Object.values(LAYOUT_FAMILIES), seed, 'layout-order')
     .sort((left, right) => (layoutFitness(right, analysis, density, format) + preferenceBoost(right.id)) - (layoutFitness(left, analysis, density, format) + preferenceBoost(left.id)))
+  /* «تنويع كل شيء» (طلب الدكتور ٣١ يوليو): كان فرزُ الجدارة يُصعّد العائلات
+     نفسها لكل فكرةٍ من طرازٍ واحد، فتبدو المخرجات إخوةً وإن كانت المكتبة سبع
+     عشرة عائلة. علاجان معاً:
+     ١) فضاء أوسع: تسعة تنويعات لكل عائلة بدل ستة (١٥٣ مرشحاً بدل ١٠٢).
+     ٢) ذاكرة العائلات: ما استُعمل في الجلسات الأخيرة يُخفَّض قليلاً — خفضٌ
+        لطيف لا يكسر الجدارة، لكنه يكفي لتصعيد عائلةٍ جديدة حين تتقارب
+        الدرجات. النتيجة: تنقّلٌ حقيقي بين لغات التكوين لا دورانٌ حول ثلاث. */
+  const recentFamilies = new Map<string, number>()
+  for (const [index, entry] of history.slice(-8).entries()) {
+    const family = String((entry as { layout?: string }).layout || '')
+    if (family) recentFamilies.set(family, Math.max(recentFamilies.get(family) || 0, 8 - index))
+  }
+  const familyFatigue = (layoutId: string) => Math.min(9, (recentFamilies.get(layoutId) || 0) * 1.2)
+
   const candidates: CompositionPlan[] = []
   for (const [layoutIndex, layout] of rankedLayouts.entries()) {
-    for (let variant = 0; variant < 6; variant += 1) {
+    for (let variant = 0; variant < 9; variant += 1) {
       const candidate = makeCandidate(layout, analysis, format, density, seed, layoutIndex * 7 + variant, history, directedRequest.preferPalette, directedRequest.preferTypography, ideaDna)
-      const boosted = preferenceBoost(layout.id) ? { ...candidate, fitness: roundScore(candidate.fitness + preferenceBoost(layout.id)) } : candidate
+      /* الطلب الصريح للعائلة يتقدّم دائماً؛ وإرهاق التكرار لا يُطبَّق عليه
+         أبداً حتى يبقى وعد الزر مطلقاً كما هو. */
+      const explicit = preferenceBoost(layout.id)
+      const adjustment = explicit ? explicit : -familyFatigue(layout.id)
+      const boosted = adjustment ? { ...candidate, fitness: roundScore(candidate.fitness + adjustment) } : candidate
       candidates.push(directedRequest.basePlan ? applyDesignLocks(directedRequest.basePlan, boosted, locks) : boosted)
     }
   }

@@ -590,10 +590,15 @@ async function ensureIndividualChatExists(jid) {
 /* شاهدُ الإرسال حين يعجز واتساب عن تسليم نموذج الرسالة: نقرأ آخر رسائل
    المحادثة (بنفس مسار الاسترجاع القائم) ونبحث عن رسالةٍ منّا بنفس النص خلال
    ٩٠ ثانية. لا استدعاء جديد للصفحة ولا مسار موازٍ. */
-async function confirmSentByBody(jid, text) {
+async function confirmSentByBody(jid, text, since) {
   const wanted = String(text || '').trim()
   if (!wanted) return null
-  const cutoff = Math.floor(Date.now() / 1000) - 90
+  /* **نافذة الشاهد تبدأ من لحظة هذا الإرسال بالذات** (بسماحٍ ثانيتين لفارق
+     ساعة الجهاز). النافذة الثابتة (٩٠ ثانية للخلف) كانت تلتقط **الرسالة
+     السابقة نفسها** حين تُرسل الحملة مرتين بنصٍّ واحد، فتُعلَن الثانية ناجحة
+     ولم يصل أحداً شيء — وهو بالضبط ما رآه الدكتور: «أول مرة يوصل، والثانية
+     ما توصل» (سجلّ ١٩:٠٢ و١٩:٠٣ لنفس الرقم، كلاهما confirmed). */
+  const cutoff = Math.floor((Number(since) || Date.now()) / 1000) - 2
   for (let attempt = 0; attempt < 2; attempt += 1) {
     if (attempt) await new Promise((wait) => setTimeout(wait, 700))
     try {
@@ -624,6 +629,7 @@ async function sendTextWithRecovery(rawJid, rawText) {
       // serialize the resulting message model back to whatsapp-web.js. Waiting
       // for the page send action is authoritative; an empty wrapper result is
       // then a compatibility notice, not a false delivery failure.
+      const startedAt = Date.now()
       const sent = await client.sendMessage(jid, text, {
         sendSeen: false,
         waitUntilMsgSent: true,
@@ -637,7 +643,7 @@ async function sendTextWithRecovery(rawJid, rawText) {
          المحادثة عن رسالةٍ منّا بنفس النص خلال ثوانٍ. وُجدت = وصلت فعلاً،
          لم توجد = فشلٌ حقيقي. لا نجاحَ كاذب ولا تكرارَ على القارئ. */
       if (!sent) {
-        const proof = await confirmSentByBody(jid, text)
+        const proof = await confirmSentByBody(jid, text, startedAt)
         if (proof) {
           log('warn', 'send_completed_without_serialized_message', { jid, confirmed: true })
           return proof
@@ -648,12 +654,11 @@ async function sendTextWithRecovery(rawJid, rawText) {
     } catch (error) {
       lastError = error
       const message = String(error?.message || error)
-      /* `send-not-serialized` خرج من قائمة إعادة المحاولة عمداً: وصولُه إلى
-         هنا يعني أن الفحص أعلاه لم يعثر على الرسالة، لكن احتمال أن تكون قد
-         وصلت قائمٌ — وإعادةُ الإرسال حينها تُضاعف الرسالة على القارئ (لقطة
-         الدكتور ٧:٤٠ م: كل ردّ مكرر مرتين). تعثّرٌ ظاهرٌ في اللوحة أهونُ من
-         رسالتين متطابقتين تصلان إنساناً. */
-      if (attempt > 0 || !/getChat|Execution context|detached|WWebJS|evaluate|reinjection/i.test(message)) break
+      /* عادت `send-not-serialized` إلى إعادة المحاولة — وصارت **آمنة** الآن:
+         الشاهد مقيَّدٌ بلحظة هذا الإرسال، فلو كانت الرسالة قد وصلت فعلاً
+         لعُثر عليها ولما وصلنا إلى هنا أصلاً. أي أن إعادة المحاولة لا تقع إلا
+         حين لم تُنشأ رسالةٌ قط — فلا تكرار على القارئ ولا صمتٌ على الحملة. */
+      if (attempt > 0 || !/getChat|Execution context|detached|WWebJS|evaluate|reinjection|send-not-serialized/i.test(message)) break
       log('warn', 'send_recovering_webjs_helpers', { jid, error: message })
       try { await client.inject() } catch { /* the serialized preflight retries below */ }
       await new Promise((resolveWait) => setTimeout(resolveWait, 900))

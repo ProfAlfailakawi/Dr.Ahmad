@@ -3,6 +3,7 @@ import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
 import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
 import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
+import { distillItem } from '../../whatsapp-agent/daily-experience.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const OWNER_ALERT_FALLBACK = 'طلب صاحب هذه الرسالة التواصل معك مباشرة. افتح محادثات واتساب من جهازك المرتبط.'
@@ -55,6 +56,10 @@ export function returningReaderLine(conversation = {}, at = Date.now()) {
   const current = currentConversationItem(conversation)
   const topic = current?.title || bounded(conversation.lastTopic, 90)
   if (topic) return `أهلاً بعودتك ${when}. آخر مرة وقفنا عند «${topic}» — نكمل منها أم نفتح جديداً؟`
+  /* ذاكرةٌ تتراكم: من لم نحفظ له موضوعاً بعينه قد نكون عرفنا ما يشغله عبر
+     جلساتٍ متفرّقة. سطرٌ واحد يثبت أننا نعرفه، بلا عرضِ بياناتٍ لم يطلبها. */
+  const interests = readerInterests(conversation, 2)
+  if (interests.length) return `أهلاً بعودتك ${when}. أذكر أن ${interests.length > 1 ? 'اهتمامك دار حول' : 'اهتمامك دار حول'} ${interests.join(' و')} — نكمل من هناك أم نفتح جديداً؟`
   return `أهلاً بعودتك ${when}.`
 }
 
@@ -646,6 +651,181 @@ function excerptReply(item, short = false) {
   return `*${item.title}*\n\n${excerpt ? `«${excerpt}${words.length > limit ? '…' : ''}»` : 'هذه المادة متاحة كاملة في موقع الدكتور.'}\n\n${item.url}`
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   عقلٌ يفهم ويحلّل، لا يطابق أنماطاً (أمر الدكتور — أول أغسطس ٢٠٢٦)
+   أربعة أبواب: السؤال المركّب والمضمر · الشكّ الذي يسأل بدل أن يخمّن ·
+   ذاكرةٌ تتراكم عبر الجلسات · تحليلٌ ومقارنةٌ لا استرجاعٌ لقائمة.
+   والحدّ المقدّس باقٍ فوقها كلّها: لا يُنسب للدكتور إلا ما نشره حرفاً بحرف،
+   وما لا نجده نصارح به ولا نخترعه.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── التلخيص: زبدةٌ من متنه، لا مقدّمته ──
+   `excerptReply(item, true)` كان يقصّ أوّل ٤٢ كلمة، وأوّلُ المتن هو بعينه ما
+   تفتح به بطاقةُ المادة — فبدا «لخّص» إعادةً للمادة نفسها (شكوى الدكتور).
+   الزبدة الآن أكثفُ عبارةٍ دلالةً في المتن، منسوخةً حرفاً بحرف. */
+function distilledReply(item) {
+  const distilled = distillItem(item)
+  if (!distilled?.text) return excerptReply(item, true)
+  const words = normalizeWhitespace(distilled.text).split(/\s+/).filter(Boolean)
+  const clipped = words.length > 60 ? `${words.slice(0, 60).join(' ')}…` : words.join(' ')
+  const note = distilled.whole
+    ? 'المادة مختصرةٌ أصلاً، وهذا لبّها بنصّه:'
+    : 'زبدتها في جملةٍ من نصّ الدكتور:'
+  return `*${item.title}*\n\n${note}\n«${clipped}»\n\n${item.url}`
+}
+
+/* ── المضمر: ما يقوله الناس ولا يصوغونه أمراً ──
+   «ما فهمت» ليست بحثاً عن مادةٍ عنوانها «ما فهمت» — هي طلبُ تبسيطٍ لما بين
+   أيدينا. وكان البحث الأعمى يبتلعها فيعود بأقرب العناوين لفظاً، وهو ردٌّ
+   يشبه الآلة. شرطان يمنعان التوسّع: أن تكون بين أيدينا مادةٌ حاضرة، وأن
+   تكون الجملة قصيرة (إيماءةً لا طلباً صريحاً له نمطه الخاص). */
+const IMPLIED_READINGS = [
+  ['simplify', /(?:^|\s)(?:ما|مو|مب|مهوب)\s*(?:فهمت|فاهم|فاهمه|واضح|واضحه)|(?:^|\s)(?:غير|مو)\s*(?:واضح|مفهوم)|ما\s*وضح|(?:^|\s)(?:صعب|صعبه|معقد|معقده|ثقيل|ثقيله|طويل|طويله|طولت|كثير|كثيره)(?:\s|$)|بسطها|بسطه|سهلها|وضحها/],
+  ['deepen', /(?:^|\s)(?:زدني|زد|عمقها|اتعمق|قليل|قليله|ناقص|ما يكفي|ابي اكثر|اكثر من كذا)(?:\s|$)/],
+  ['whyMatters', /^(?:ليش|لماذا|وليش|طيب ليش|ليه)(?:\s+(?:مهم|مهمه|يهمني|تهمني))?\s*[؟?]?$/],
+]
+function impliedReading(cleanText) {
+  const words = String(cleanText || '').split(/\s+/).filter(Boolean)
+  if (!words.length || words.length > 4) return ''
+  for (const [reading, pattern] of IMPLIED_READINGS) if (pattern.test(cleanText)) return reading
+  return ''
+}
+
+/* ── الشكّ الذي يسأل ──
+   حين يكون الطلب تخميناً (fallback) وكلمتُه واحدةً أو كلمتين، ويتقارب أعلى
+   مرشَّحَين تقارباً حقيقياً، فالصوابُ سؤالٌ واحد لا ثلاثةُ روابطَ تُلقى على
+   القارئ. الشكّ يُصرَّح به ولا يُخفى خلف قائمة. */
+function scoredSiteResults(query, options = {}) {
+  const tokens = contentTokens(options.overrideQuery || query).slice(0, 8)
+  if (!tokens.length) return []
+  const excluded = new Set(Array.isArray(options.excludeIds) ? options.excludeIds : [])
+  const kinds = new Set(Array.isArray(options.kinds) ? options.kinds : [])
+  return siteIndex()
+    .filter((item) => matchesCompoundFilters(item, options.filters || null))
+    .filter((item) => !excluded.has(item.id) && (!kinds.size || kinds.has(item.kind)))
+    .map((item) => ({ item, ...scoreContent(item, tokens) }))
+    .filter((row) => {
+      if (tokens.length === 1) return row.score >= 5
+      const neededMatches = Math.min(tokens.length, Math.max(1, Math.ceil(tokens.length * .38)))
+      return row.score >= 7 && row.matched >= neededMatches
+    })
+    .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
+    .slice(0, Math.max(1, Math.min(5, Number(options.limit || 3))))
+}
+/* حدُّ الشكّ الحقيقي — درسٌ من التجربة الأولى:
+   «قرابة الدرجات» ليست شكّاً. الكلمة الواسعة («الحفظ»، «الخوف») تتقارب فيها
+   عشراتُ الموادّ لأن الأرشيف غنيّ لا لأن المعنى ملتبس — والسؤال عندها يُخفي
+   البقيّة ويبدو ارتباكاً. الالتباس الصادق أن **يحمل عنوانان اثنان** الكلمةَ
+   نفسها ولا ثالثَ لهما: «النجاح الذي لا يفرح صاحبه» و«النجاح الذي دمّرنا» —
+   هنا السؤال إنصافٌ للقارئ. فإن كان الأقوياء ثلاثةً فأكثر فالقائمة أصدق،
+   وإن لم يكن فيهم قويٌّ فالمسار المُصارِح القائم (أقرب المواد) هو الصواب. */
+const STRONG_TITLE_SCORE = 20
+function ambiguousRivals(rows, query, isGuess) {
+  if (!isGuess) return null
+  if (contentTokens(query).length > 2) return null
+  const strong = rows.filter((row) => row.score >= STRONG_TITLE_SCORE)
+  if (strong.length !== 2) return null
+  const [top, next] = strong
+  if (next.score / top.score < .85) return null
+  return [top.item, next.item]
+}
+
+/* ── السؤال المركّب: طلبان في نفَسٍ واحد ──
+   «عطني آخر مقالة وبحث عن التقويم» كان يذهب كلّه بحثاً واحداً فيضيع أحد
+   الطلبين بلا اعتذار. الفصل محافظ: لا نقطع إلا على فاصلةٍ صريحة أو واوٍ
+   يتبعها فعلُ طلب — وإلا فالجملة واحدة كما هي.
+   **يُقرأ من النصّ الخام لا من المطبَّع:** `normalizeArabicMessage` يمسح
+   الترقيم، فالفاصلة — وهي أوضح علامةٍ على طلبين — تختفي قبل أن نراها. */
+const COMPOUND_SPLIT = /\s*[،؛,]\s*|\s+ثم\s+|\s*\+\s*|\s+و(?=(?:أبي|ابي|أبغي|ابغي|أبغى|ابغى|أريد|اريد|عطني|أعطني|اعطني|ورني|شنو|وش|ايش|أيش|كذلك|أيضا|ايضا|بعدين|عن)\b)/u
+function splitCompoundAsks(rawText) {
+  const parts = normalizeWhitespace(rawText).split(COMPOUND_SPLIT)
+    .map((part) => normalizeArabicMessage(part).trim())
+    .filter((part) => part.length >= 3)
+  return parts.length === 2 ? parts : null
+}
+
+/* ── ذاكرةٌ تتراكم عبر الجلسات ──
+   `seenContentIds` تحفظ ما عُرض، لا ما يشغل القارئ. هنا نراكم جذور ما يسأل
+   عنه فعلاً — أرقامٌ ولغةٌ فقط، بلا اسمٍ ولا رقمٍ ولا شيءٍ يخصّ شخصه —
+   فيصير الترحيب بعد الغياب معرفةً لا تكراراً، والاختيارُ على مقاسه.
+   **لماذا مصفوفة لا خريطة؟** وثيقة المحادثة تُكتب بـ`merge: true`، وهو يدمج
+   الخرائط المتداخلة مفتاحاً مفتاحاً — فخريطةٌ «مقصوصة» لا تُنقص شيئاً أبداً
+   وتتضخّم مع الشهور. المصفوفة تُستبدل كاملةً عند الدمج، فالسقف سقفٌ حقيقي.
+   والتكرار في المصفوفة هو الوزن: ما يسأل عنه مراراً يتقدّم. */
+const INTEREST_MEMORY_CAP = 40
+function interestMemory(conversation = {}) {
+  return Array.isArray(conversation.topicMemory) ? conversation.topicMemory.filter((token) => typeof token === 'string') : []
+}
+/* نحفظ الصورة الظاهرة للكلمة لا جذرها: `contentTokens` يعيد الاثنين معاً
+   («الذكاء» و«ذكاء») فكان الترحيب يقول «اهتمامك دار حول الذكاء وذكاء». */
+function interestPatch(conversation = {}, query = '') {
+  const tokens = [...new Set(stripArabicGreetings(query).split(' ')
+    .filter((token) => token.length >= 4 && !NOISE_WORDS.has(token)))].slice(0, 3)
+  if (!tokens.length) return null
+  return { topicMemory: [...interestMemory(conversation), ...tokens].slice(-INTEREST_MEMORY_CAP) }
+}
+function readerInterests(conversation = {}, limit = 2) {
+  /* التجميع على الجذر ثم العرض بأشهر صورةٍ ظاهرة: «التعليم» و«تعلم» اهتمامٌ
+     واحد لا اثنان، فلا يُعَدّ مرّتين ولا يظهر مكرّراً في سطر الترحيب. */
+  const byRoot = new Map()
+  for (const token of interestMemory(conversation)) {
+    const root = semanticWord(token) || token
+    const row = byRoot.get(root) || { count: 0, forms: new Map() }
+    row.count += 1
+    row.forms.set(token, (row.forms.get(token) || 0) + 1)
+    byRoot.set(root, row)
+  }
+  return [...byRoot.values()]
+    .filter((row) => row.count >= 2)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+    .map((row) => [...row.forms.entries()].sort((a, b) => b[1] - a[1] || a[0].length - b[0].length)[0][0])
+}
+
+/* ── تحليلٌ لا استرجاع ──
+   المقارنة كانت قائمتين متجاورتين و«الحكم لقراءتك» — وهذا استرجاع. التحليل
+   أن نقول: ما الخيط الجامع بين الطرفين في كلام الدكتور، وما الذي ينفرد به
+   كلٌّ منهما. والمفردات كلّها مستخرجةٌ من عناوينه ومتونه لا من عندنا. */
+function analyticalTokens(items) {
+  const counts = new Map()
+  for (const item of items) {
+    const seen = new Set(contentTokens(`${item.title} ${item.keywords || ''} ${item.excerpt || ''}`)
+      .filter((token) => token.length >= 4))
+    for (const token of seen) counts.set(token, (counts.get(token) || 0) + 1)
+  }
+  return counts
+}
+function compareAnalysis(leftItems, rightItems) {
+  if (!leftItems.length || !rightItems.length) return null
+  const left = analyticalTokens(leftItems)
+  const right = analyticalTokens(rightItems)
+  const shared = [...left.keys()].filter((token) => right.has(token))
+    .sort((a, b) => (right.get(b) + left.get(b)) - (right.get(a) + left.get(a)))
+    .slice(0, 3)
+  const only = (source, other) => [...source.keys()].filter((token) => !other.has(token))
+    .sort((a, b) => source.get(b) - source.get(a))
+    .slice(0, 3)
+  return { shared, leftOnly: only(left, right), rightOnly: only(right, left) }
+}
+
+/* ── مبادرةٌ منضبطة ──
+   المبادرة بلا انضباط ثرثرة. الشرط: أن توجد مادةٌ مرتبطةٌ حقيقةً بما بين
+   أيدينا (من `related` المبنيّة في الفهرس لا من تخميننا)، وألّا تكون قد
+   عُرضت من قبل، وألّا نبادر مرّتين متتاليتين. سطرٌ واحد، وسؤالٌ يُجاب بنعم. */
+const INITIATIVE_COOLDOWN_MS = 30 * 60_000
+function initiativeLine(conversation = {}, item = null, previousIds = [], at = Date.now()) {
+  if (!item) return ''
+  const lastOffered = Date.parse(conversation.lastInitiativeAt || '')
+  if (Number.isFinite(lastOffered) && at - lastOffered < INITIATIVE_COOLDOWN_MS) return ''
+  const related = Array.isArray(item.related) ? item.related : []
+  if (!related.length) return ''
+  const byId = new Map(siteIndex().map((row) => [row.id, row]))
+  const seen = new Set([...previousIds, item.id])
+  const next = related.map((id) => byId.get(id)).find((row) => row && !seen.has(row.id))
+  if (!next) return ''
+  return `\n\nولاحظت أن للدكتور مادةً تمدّ هذه الفكرة: «${next.title}» — أفتحها لك؟`
+}
+
 function intentKinds(intent) {
   if ([INTENTS.LATEST_ARTICLE, INTENTS.LATEST_ARTICLES, INTENTS.MOST_VIEWED_ARTICLE].includes(intent)) return ['article']
   if (intent === INTENTS.LATEST_BOOK) return ['book']
@@ -744,7 +924,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     return {
       kind: 'reply', reason: 'delete-preferences', intent,
       reply: signReply('تم. مسحت ما احتفظت به لهذه المحادثة من سياق وتفضيلات ومحفوظات. نبدأ من صفحة بيضاء متى ما أردت.', messages),
-      patch: { contextItemIds: [], contextIndex: 0, seenContentIds: [], savedItemIds: [], lastTopic: null, challenge: null },
+      patch: { contextItemIds: [], contextIndex: 0, seenContentIds: [], savedItemIds: [], lastTopic: null, challenge: null, topicMemory: [], lastInitiativeAt: null },
     }
   }
 
@@ -856,9 +1036,43 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     }
   }
 
+  /* ─── المضمر: إيماءةٌ قصيرة على مادةٍ حاضرة ───
+     تُقرأ قبل آلة البحث لأن البحث كان يبتلعها: «ما فهمت» تعود بأقرب عنوانٍ
+     يشبهها لفظاً، وهو ردٌّ يفضح أن أحداً لم يقرأ ما قيل. */
+  const implied = current ? impliedReading(clean) : ''
+  if (implied === 'simplify') {
+    return {
+      kind: 'reply', reason: 'implied-simplify', intent,
+      reply: signReply(`واضح، أثقلتك المادة. خذها في سطر:\n\n${distilledReply(current)}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: 42, readCursorItemId: current.id },
+    }
+  }
+  if (implied === 'deepen') {
+    const full = normalizeWhitespace(current.body || current.excerpt || '')
+    const words = full.split(/\s+/).filter(Boolean)
+    const chunk = words.slice(0, 120).join(' ')
+    return {
+      kind: 'reply', reason: 'implied-deepen', intent,
+      reply: signReply(`فهمت، تبي أعمق. هذا نصّ الدكتور موسّعاً:\n\n*${current.title}*\n\n${chunk}${words.length > 120 ? '…' : ''}\n\nوقل «كمل» أواصل، أو «المصدر» أعطيك الرابط:\n${current.url}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: Math.min(words.length, 120), readCursorItemId: current.id },
+    }
+  }
+  if (implied === 'whyMatters') {
+    return {
+      kind: 'reply', reason: 'implied-why', intent,
+      reply: signReply(`لأن هذا لبّها بكلام الدكتور نفسه — والحكم لك بعده:\n\n${distilledReply(current)}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+    }
+  }
+
   /* ─── مقارنة بين فكرتين من المنشور ───
      البنية أصدق من التصنيف هنا: «قارن بين المعلم والتقنية» كان يخطفها نمط
-     «لمعلم» في محرك الشرح، فنُحكِم صيغة المقارنة الصريحة قبل النيات الأخرى. */
+     «لمعلم» في محرك الشرح، فنُحكِم صيغة المقارنة الصريحة قبل النيات الأخرى.
+     وترقية أول أغسطس: قائمتان متجاورتان استرجاعٌ لا مقارنة. نقرأ الطرفين
+     فنقول ما يجمعهما وما ينفرد به كلٌّ منهما — بمفرداتٍ مأخوذةٍ من عناوين
+     الدكتور ومتونه، لا من عندنا، ولا حكمَ ننسبه إليه لم يقله. */
   if (intent === INTENTS.COMPARE || /(?:قارن|الفرق بين|مقارنه بين|ايهما افضل)/.test(clean)) {
     const sides = compareSides(stripped || clean)
     if (sides) {
@@ -868,9 +1082,17 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
           ? `*${label}:*\n${items.map((item) => `• ${item.title}\n${item.url}`).join('\n')}`
           : `*${label}:* ما لقيت مادة منشورة مباشرة عنها.`
         const all = [...leftItems, ...rightItems]
+        const analysis = compareAnalysis(leftItems, rightItems)
+        const readingLines = []
+        if (analysis?.shared.length) readingLines.push(`• الخيط الجامع بينهما في كتابته: ${analysis.shared.join(' · ')}.`)
+        if (analysis?.leftOnly.length) readingLines.push(`• ما ينفرد به «${sides[0]}»: ${analysis.leftOnly.join(' · ')}.`)
+        if (analysis?.rightOnly.length) readingLines.push(`• ما ينفرد به «${sides[1]}»: ${analysis.rightOnly.join(' · ')}.`)
+        const reading = readingLines.length
+          ? `\n\n*قراءتي في الطرفين* (من مفردات الدكتور نفسها):\n${readingLines.join('\n')}\n\nوالحكم النهائي لقراءتك — لا أنسب للدكتور رأياً لم يكتبه.`
+          : '\n\nوالحكم لقراءتك.'
         return {
           kind: 'reply', reason: 'compare-topics', intent,
-          reply: signReply(`جمعت لك طرفي المقارنة من منشورات الدكتور — والحكم لقراءتك:\n\n${block(sides[0], leftItems)}\n\n${block(sides[1], rightItems)}`, messages),
+          reply: signReply(`جمعت لك طرفي المقارنة من منشورات الدكتور:\n\n${block(sides[0], leftItems)}\n\n${block(sides[1], rightItems)}${reading}`, messages),
           evidence: all.map((item) => item.id), contextItemIds: all.map((item) => item.id).slice(0, 12), contextIndex: 0, lastTopic: `${sides[0]} و${sides[1]}`,
         }
       }
@@ -989,7 +1211,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     return current
       ? {
         kind: 'reply', reason: 'context-summary', intent,
-        reply: signReply(excerptReply(current, true), messages),
+        reply: signReply(distilledReply(current), messages),
         evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
         /* التلخيص يبدأ رحلة القراءة من أولها: «كمل» بعده تُعطي ما بعد الملخص. */
         patch: { readCursor: 42, readCursorItemId: current.id },
@@ -1106,9 +1328,19 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   if ([INTENTS.SURPRISE_ME, INTENTS.CONTENT_BY_MOOD, INTENTS.CURATED_PICKS].includes(intent)) {
     const pool = siteIndex().filter((item) => !previousIds.includes(item.id) && ['article', 'curated', 'podcast'].includes(item.kind))
     const signature = Number.parseInt(hash(`${conversation.lastInboundAt || ''}:${text}:${previousIds.join('|')}`).slice(0, 8), 16)
-    const found = pool.length ? [pool[signature % pool.length]] : latestSiteItems([], 1)
+    /* «فاجئني» على مقاس القارئ: من تراكم اهتمامه عبر الجلسات نختار له من
+       داخل اهتمامه أولاً — ومن لا ذاكرة له يبقى الاختيار كما كان. */
+    const interests = readerInterests(conversation, 2)
+    const tailored = interests.length
+      ? pool.filter((item) => scoreContent(item, interests).matched > 0)
+      : []
+    const source = tailored.length ? tailored : pool
+    const intro = tailored.length
+      ? `اخترتها لك من داخل ما تتابعه (${interests.join(' · ')}):`
+      : 'اخترت لك هذه؛ فيها فكرة تستحق الوقوف عندها:'
+    const found = source.length ? [source[signature % source.length]] : latestSiteItems([], 1)
     if (found.length) return {
-      kind: 'reply', reason: 'surprise', intent, reply: signReply(siteResultReply(found, 'اخترت لك هذه؛ فيها فكرة تستحق الوقوف عندها:'), messages),
+      kind: 'reply', reason: 'surprise', intent, reply: signReply(siteResultReply(found, intro), messages),
       evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
     }
   }
@@ -1120,12 +1352,56 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   /* ترقية ٣: شرطا النوع والزمن يُقرآن من نص السؤال نفسه ويُطبَّقان مرشِّحَين. */
   const filters = parseCompoundFilters(text)
   const filterLabel = describeCompoundFilters(filters)
-  const found = exactSiteResults(query, '', { kinds, limit: 3, filters })
-  if (found.length) return {
-    kind: 'reply', reason: classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
-    reply: signReply(siteResultReply(found, filterLabel ? `فهمت شرطك (${filterLabel}). هذا ما يطابقه من موقع الدكتور:` : undefined), messages),
-    evidence: found.map((item) => item.id),
-    contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: query,
+
+  /* ─── طلبان في نفَسٍ واحد ───
+     يُجرَّب قبل البحث الواحد، ولا يُعتمد إلا إذا أثمر الطرفان معاً مادةً
+     منشورة — وإلا فالجملة واحدةٌ كما وردت، بلا تقطيعٍ يشوّه المعنى. */
+  const compoundAsks = splitCompoundAsks(text)
+  if (compoundAsks) {
+    const answered = compoundAsks.map((ask) => ({ ask, items: exactSiteResults(ask, ask, { limit: 2 }) }))
+    if (answered.every((row) => row.items.length)) {
+      const blocks = answered.map(({ ask, items }) => `*${ask}:*\n${items.map((item) => `• ${item.title}\n${item.url}`).join('\n')}`)
+      const all = answered.flatMap((row) => row.items)
+      return {
+        kind: 'reply', reason: 'compound-two-asks', intent,
+        reply: signReply(`فهمت منك طلبين، وهذا جواب كلٍّ منهما من منشور الدكتور:\n\n${blocks.join('\n\n')}`, messages),
+        evidence: all.map((item) => item.id),
+        contextItemIds: all.map((item) => item.id).slice(0, 12), contextIndex: 0, lastTopic: compoundAsks.join(' و'),
+        ...(interestPatch(conversation, `${compoundAsks[0]} ${compoundAsks[1]}`) ? { patch: interestPatch(conversation, `${compoundAsks[0]} ${compoundAsks[1]}`) } : {}),
+      }
+    }
+  }
+
+  const rows = scoredSiteResults(query, { kinds, limit: 3, filters })
+  const found = rows.map((row) => row.item)
+
+  /* ─── الشكّ يُسأل عنه، ولا يُخمَّن ───
+     كلمةٌ واحدة تخميناً + مرشَّحان متقاربان = سؤالٌ واحد. والجواب بـ«الأولى»
+     أو «الثانية» يمشي على مسار التنقّل المثبت (لا برقمٍ مجرّد، فالرقم
+     المفرد لغةُ التحدّي في هذه المحادثة). */
+  const rivals = ambiguousRivals(rows, query, Boolean(classification.fallback))
+  if (rivals) {
+    return {
+      kind: 'reply', reason: 'doubt-clarify', intent,
+      reply: signReply(`كلمتك تحتمل وجهين عند الدكتور، وما أحب أخمّن عليك:\n\n١) *${rivals[0].title}*\n٢) *${rivals[1].title}*\n\nأيّهما تقصد؟ قل «الأولى» أو «الثانية»، أو وضّح بكلمةٍ ثانية.`, messages),
+      evidence: rivals.map((item) => item.id),
+      contextItemIds: rivals.map((item) => item.id), contextIndex: 0, lastTopic: query,
+    }
+  }
+
+  if (found.length) {
+    const offer = found.length === 1 ? initiativeLine(conversation, found[0], previousIds) : ''
+    const patch = {
+      ...(interestPatch(conversation, query) || {}),
+      ...(offer ? { lastInitiativeAt: asIso() } : {}),
+    }
+    return {
+      kind: 'reply', reason: classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
+      reply: signReply(`${siteResultReply(found, filterLabel ? `فهمت شرطك (${filterLabel}). هذا ما يطابقه من موقع الدكتور:` : undefined)}${offer}`, messages),
+      evidence: found.map((item) => item.id),
+      contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: query,
+      ...(Object.keys(patch).length ? { patch } : {}),
+    }
   }
   /* الشرط مفهوم لكن لا مادة تطابقه: نصارح بالشرط ونعرض ما يطابق الموضوع
      وحده — أصدق من الصمت، وأنظف من تقديم مادةٍ تخالف شرطه بلا تنبيه. */

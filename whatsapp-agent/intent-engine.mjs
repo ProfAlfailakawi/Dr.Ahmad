@@ -24,6 +24,7 @@ import {
 import {
   buildFifteenSecondChallenge,
   buildQuietIdeaNetwork,
+  distillItem,
   extractVerbatimAtSpeed,
   isVerbatimFromItem,
   selectDailyUnsentContent,
@@ -1392,27 +1393,9 @@ function correctionReply(db, jid, session, input, correction = null) {
 /* ═══ التلخيص الحقيقي: «اختصرها» يجب أن يقصّر فعلاً لا أن يُعيد النصّ نفسه —
    حتى المختارات القصيرة. نقطف أكثفَ عبارةٍ دلالةً (مقطوعةً على الشرطة وعلامات
    الوقف) بشرط أن تكون منسوخةً حرفاً بحرف من المتن (isVerbatimFromItem) فلا تحريف. */
-function distilledClause(item) {
-  const source = String(item?.body || item?.excerpt || '').trim()
-  if (!source) return null
-  const whole = source.replace(/\s+/g, ' ').trim()
-  const clauses = source
-    .split(/\s*[—–]\s*|[.؟!\n؛…]+/)
-    .map((part) => part.trim())
-    .filter((part) => part.length >= 14 && part.length < whole.length && isVerbatimFromItem(item, part))
-  if (!clauses.length) return { text: whole, whole: true }
-  const dense = (text) => {
-    const words = clean(text).split(/\s+/).filter((word) => word.length > 2)
-    return new Set(words).size / Math.sqrt(Math.max(6, words.length))
-  }
-  let best = clauses[0]
-  let bestScore = -1
-  for (const clause of clauses) {
-    const score = dense(clause)
-    if (score > bestScore) { bestScore = score; best = clause }
-  }
-  return { text: best, whole: false }
-}
+/* التطبيق نفسه انتقل إلى daily-experience.mjs ليستورده العقل المركزي أيضاً —
+   كان العقل يقصّ رأس المتن فيبدو «لخّص» إعادةً للمادة. تطبيقٌ واحدٌ للاثنين. */
+const distilledClause = (item) => distillItem(item)
 
 function summaryReply(db, item) {
   if (!item) return { text: 'اختر مادة أولاً: اكتب آخر مقالاته، ثم قل الأولى أو الثانية.', contentId: null }

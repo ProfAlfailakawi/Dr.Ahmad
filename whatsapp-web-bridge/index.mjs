@@ -168,6 +168,32 @@ function maskAddress(value) {
   return digits.length > 4 ? `${'*'.repeat(Math.max(4, digits.length - 4))}${digits.slice(-4)}` : '****'
 }
 
+/* ═══ بصمة المستلَم: شاهدُ الجسر على أنه سلّم للشخص الذي سُمّي له ═══
+   الخادم صار يفحص (`recipient-delivery-verification-failed`) أن يعود مع كل
+   إقرارِ نجاحٍ بصمةُ من وصلته الرسالة، فإن غابت **عُدّت كلُّ رسالةٍ وصلت
+   فاشلةً في لوحة الحملات**. الصيغة يجب أن تطابق `outboundRecipientFingerprint`
+   في src/server/whatsapp-controller.mjs حرفاً بحرف — أرقام العنوان وحدها،
+   ثم sha256 لـ«wa-recipient:الأرقام». ولا يُرسَل الرقم نفسه قط: البصمة
+   تُثبت المطابقة ولا تُفشي عنواناً. */
+function recipientFingerprint(value) {
+  const digits = String(value || '').split('@', 1)[0].replace(/\D/g, '')
+  if (!/^\d{7,15}$/.test(digits)) return ''
+  return createHash('sha256').update(`wa-recipient:${digits}`).digest('hex')
+}
+
+/* البصمة تُؤخذ من العنوان الذي سُلّم إليه فعلاً — وهو الشاهد الحقيقي. وإن
+   كان العنوان لقباً (‎@lid) لا أرقامَ هاتفٍ فيه، رجعنا إلى العنوان المطلوب:
+   المحادثة بيدنا أصلاً وصاحبها هو المقصود، والبديل أن يُعلن نجاحٌ صادق
+   فشلاً — وهو الضرر الذي نعالجه لا ضرراً نستبدله بآخر. */
+async function deliveredFingerprint(requestedJid) {
+  try {
+    const delivered = await resolveSendJid(requestedJid)
+    return recipientFingerprint(delivered) || recipientFingerprint(requestedJid)
+  } catch {
+    return recipientFingerprint(requestedJid)
+  }
+}
+
 let shuttingDown = false
 let commandBusy = false
 let heartbeatTimer = null
@@ -1068,7 +1094,13 @@ async function executeCommand(command) {
   if (!command?.id || !command.type) return
   try {
     if (deliveredCommandIds.has(String(command.id)) && ['send-message', 'send-self-message'].includes(command.type)) {
-      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 2 })
+      /* الإقرار المتأخّر لأمرٍ سُلّم فعلاً يحتاج البصمة كإقرار الأصل تماماً —
+         وإلا حُسبت رسالةٌ وصلت مرّتين: مرّةً ناجحة ومرّةً «فاشلة». */
+      const deliveredJid = command.type === 'send-self-message' ? selfChatJid() : command.payload?.jid
+      await serverRequest('/api/whatsapp/commands', {
+        body: { commandId: command.id, ok: true, delivery: { recipientFingerprint: await deliveredFingerprint(deliveredJid) } },
+        retries: 2,
+      })
       log('info', 'duplicate_command_acknowledged_without_resend', { commandId: command.id, commandType: command.type })
       return
     }
@@ -1091,7 +1123,10 @@ async function executeCommand(command) {
       if (!jid || !text) throw new Error('invalid-send-message-command')
       await sendTextWithRecovery(jid, text)
       rememberDeliveredCommand(command.id)
-      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      await serverRequest('/api/whatsapp/commands', {
+        body: { commandId: command.id, ok: true, delivery: { recipientFingerprint: await deliveredFingerprint(jid) } },
+        retries: 1,
+      })
       log('info', 'command_message_sent', { jid, commandId: command.id })
     } else if (command.type === 'send-audio') {
       /* ترقية ٣١ يوليو — القراءة تُسمع داخل واتساب: فرعٌ جديد تماماً لا يمس
@@ -1115,7 +1150,10 @@ async function executeCommand(command) {
       if (!text) throw new Error('invalid-self-message-command')
       await sendTextWithRecovery(jid, text)
       rememberDeliveredCommand(command.id)
-      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      await serverRequest('/api/whatsapp/commands', {
+        body: { commandId: command.id, ok: true, delivery: { recipientFingerprint: await deliveredFingerprint(jid) } },
+        retries: 1,
+      })
       log('info', 'command_self_message_sent', { jid, commandId: command.id })
     } else {
       throw new Error(`unsupported-command:${String(command.type).slice(0, 80)}`)

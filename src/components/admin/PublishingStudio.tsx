@@ -2066,6 +2066,10 @@ function PerfectSocialPackCard({
   saveBusy: boolean
 }) {
   const visuals = buildSocialVisuals(pack, article)
+  const standaloneDesigns = useMemo(
+    () => standaloneVisualTemplates(article.title, article.excerpt),
+    [article.title, article.excerpt],
+  )
   return (
     <div className="grid gap-5">
       <section className={card}>
@@ -2106,6 +2110,20 @@ function PerfectSocialPackCard({
           {visuals.stories.map((template) => <VisualTemplateCard key={template.id} template={template} />)}
         </div>
       </section>
+
+      {/* ٢٢ تكويناً كانت مبنيةً كاملةً في standaloneVisualTemplates ولا يستدعيها
+          أحد — فبقي الدكتور يرى ثلاثة تصاميم ويظن المكتبة فقيرة. وُصلت هنا:
+          المداد · الليل · الجريدة · الشريط · المشكاة · التوقيع · المدار …
+          مرتّبةً بحسب شكل الفكرة وموضوعها لا عشوائياً. */}
+      {standaloneDesigns.length > 0 && (
+        <section className={card}>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">مكتبة التكوينات · {standaloneDesigns.length} تصميماً</p>
+          <h3 className="mt-1 font-display text-xl font-semibold text-ink">اختر ما يليق بالفكرة — كلها بهويتك.</h3>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+            {standaloneDesigns.map((template) => <VisualTemplateCard key={template.id} template={template} />)}
+          </div>
+        </section>
+      )}
 
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">النصوص حسب المنصة</p>

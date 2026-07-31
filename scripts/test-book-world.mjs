@@ -7,7 +7,10 @@ import { spawnSync } from 'node:child_process'
 
 const root = resolve(new URL('..', import.meta.url).pathname)
 const out = mkdtempSync(join(tmpdir(), 'book-world-'))
-const compile = spawnSync('tsc', [
+/* «tsc» العالمي غير مضمون على كل جهاز (كان يعيد status=null فيحمرّ
+   الاختبار قبل أن يبدأ) — نسخة المشروع المحلية هي المرجع دائماً. */
+const localTsc = join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'tsc.cmd' : 'tsc')
+const compile = spawnSync(localTsc, [
   'src/lib/book-world-timeline.ts',
   '--target', 'ES2022', '--module', 'ES2022', '--moduleResolution', 'bundler',
   '--skipLibCheck', '--noEmitOnError', '--outDir', out,

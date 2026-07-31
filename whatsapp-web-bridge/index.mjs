@@ -179,6 +179,44 @@ let reinjectionPromise = null
 let consecutiveDetachedCatchups = 0
 const DETACHED_CONTEXT = /detached\s*Frame|Execution context (?:was )?destroyed|Target closed|webjs-reinjection-timeout|Cannot find context with specified id|Session closed|most likely because of a navigation/i
 
+/* حارس الرد المطابق: النص نفسه لا يُرسل لنفس الجهة مرتين خلال نافذة قصيرة.
+   لقطة ٣١ يوليو: أربع صورٍ متتالية قابلها الرد الجاهز نفسه أربع مرات في
+   الدقيقة نفسها — مزعجٌ ويُفقد البوت هيبته. النافذة في الحي ٩٠ ثانية فقط
+   (سؤالٌ يتكرر عمداً بعدها يستحق جوابه)، وفي الاسترجاع ١٠ دقائق لأن دفعة
+   الانقطاع كلها تصل في لحظة واحدة. حملات البث لا تمر من هنا إطلاقاً. */
+const recentBotReplies = new Map()
+function repeatedReplySuppressed(jid, text, source) {
+  const key = `${String(jid || '').trim()}\n${String(text || '').replace(/\s+/g, ' ').trim()}`
+  const windowMs = source === 'catchup' ? 10 * 60_000 : 90_000
+  const now = Date.now()
+  for (const [candidate, seenAt] of recentBotReplies) {
+    if (now - seenAt > 10 * 60_000) recentBotReplies.delete(candidate)
+  }
+  const seenAt = recentBotReplies.get(key) || 0
+  if (now - seenAt < windowMs) return true
+  recentBotReplies.set(key, now)
+  return false
+}
+
+/* شبكة أمان الحقول: لو وصل الجسرَ نصٌّ ما زال يحمل {عزيزي} أو أي حقل دمجٍ
+   لم يصرّفه الخادم (لقطة الدكتور: وصلت «test test {عزيزي}» حرفياً)، تُصرَّف
+   هنا بصيغتها المحايدة ولا يصل قوسٌ معقوفٌ أي إنسانٍ أبداً. */
+function applyMergeFieldSafetyNet(rawText) {
+  const kuwaitHour = Number(new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric', hour12: false, timeZone: 'Asia/Kuwait',
+  }).format(new Date()))
+  return String(rawText || '')
+    .replace(/\{تحية\}/g, kuwaitHour < 12 ? 'صباح الخير' : 'مساء الخير')
+    .replace(/\{ترحيب\}/g, 'أهلاً')
+    .replace(/\{عزيزي\}/g, 'عزيزي')
+    .replace(/\{الأخ\}/g, 'أخي الكريم')
+    .replace(/\{الاسم\}/g, '')
+    .replace(/\{[^{}\n]{1,24}\}/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+([،,.؛:!?؟])/g, '$1')
+    .trim()
+}
+
 /* عطب «الإطار المنفصل» كان يُشفى ذاتياً في مسار أوامر اللوحة فقط، بينما بقي
    مساران أعزلان: ردُّ الرسالة الواردة الحية، واسترجاعُ الفائت كل خمس دقائق.
    فيبدو الجسر متصلاً ونبضُه أخضر وهو أخرس فعلياً. الخروج بالرمز 75 يعيد
@@ -450,10 +488,46 @@ async function resolveSendJid(rawJid) {
   return jid
 }
 
+/* جذر «Cannot read properties of undefined (reading 'getChat')» في حملات
+   البث (٣١ يوليو): رقمٌ لا محادثة سابقة معه يمر على findOrCreateLatestChat
+   وخريطةُ معرفات واتساب ويب لا تعرفه بعد، فينفجر عمق المكتبة. التمهيد هنا:
+   إن كانت المحادثة قائمة فلا شيء يُفعل؛ وإلا نحاول إنشاءها، فإن أبى نستعلم
+   وجودَ الرقم (getNumberId يملأ الخريطة الداخلية) ثم نعيد الإنشاء على معرف
+   ‎@c.us الأصلي — ولا نرسل أبداً إلى أي لقب ‎@lid يعيده الاستعلام (درس
+   الثقب الأسود المحلي). رقمٌ ليس على واتساب يفشل بسببٍ عربيٍّ مفهوم. */
+async function ensureIndividualChatExists(jid) {
+  if (!jid.endsWith('@c.us')) return 'exists'
+  const materialize = (wanted) => client.pupPage.evaluate(async (target) => {
+    try {
+      const wid = window.require('WAWebWidFactory').createWid(target)
+      if (window.require('WAWebCollections').Chat.get(wid)) return 'exists'
+      const found = await window.require('WAWebFindChatAction').findOrCreateLatestChat(wid)
+      return found?.chat ? 'created' : 'missing'
+    } catch (error) {
+      return `error:${String(error?.message || error).slice(0, 160)}`
+    }
+  }, wanted)
+  const first = await materialize(jid)
+  if (first === 'exists' || first === 'created') return first
+  log('warn', 'chat_materialize_first_attempt_failed', { jid: maskAddress(jid), state: first })
+  let numberId = null
+  try {
+    numberId = await client.getNumberId(jid.split('@', 1)[0])
+  } catch (error) {
+    log('warn', 'number_lookup_failed', { jid: maskAddress(jid), error: String(error?.message || error).slice(0, 160) })
+  }
+  if (!numberId) throw new Error('recipient-not-on-whatsapp')
+  const second = await materialize(jid)
+  if (second === 'exists' || second === 'created') return second
+  throw new Error(`chat-create-failed:${second}`)
+}
+
 async function sendTextWithRecovery(rawJid, rawText) {
   const text = String(rawText || '').trim()
   if (!text) throw new Error('empty-message')
   const jid = await resolveSendJid(rawJid)
+  await ensureBridgeFunctions()
+  await ensureIndividualChatExists(jid)
   rememberAutomatedSend(jid, text)
   let lastError = null
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -596,7 +670,7 @@ async function safeGracefulCloseClient() {
   await new Promise((r) => setTimeout(r, 1000))
 }
 
-async function processIncomingMessage(message, source = 'live') {
+async function processIncomingMessage(message, source = 'live', allowReply = true) {
   runtime.lastActivityAt = Date.now()
   if (message.fromMe || message.from === 'status@broadcast' || !isIndividualJid(message.from)) return
   if (isOwnerPrivateChat(message.from)) {
@@ -634,8 +708,16 @@ async function processIncomingMessage(message, source = 'live') {
       : ''
     const outgoingReply = serverReply || localFallback
     if (outgoingReply && (localFallback || ['reply', 'reply-and-escalate'].includes(result?.action))) {
-      await sendTextWithRecovery(message.from, outgoingReply)
-      log('info', source === 'catchup' ? 'catchup_reply_sent' : 'incoming_reply_sent', { from: message.from, action: result.action, reason: result.reason || '', messageId })
+      /* دفعة الانقطاع تُغذّى للعقل كلها (سياقاً وذاكرةً)، لكن الإنسان يستلم
+         رداً واحداً عن آخر رسائله لا وابلاً بعدد ما أرسل أثناء الغياب. */
+      if (!allowReply) {
+        log('info', 'catchup_backlog_reply_collapsed', { from: message.from, messageId })
+      } else if (repeatedReplySuppressed(message.from, outgoingReply, source)) {
+        log('info', 'duplicate_reply_suppressed', { from: message.from, source, messageId })
+      } else {
+        await sendTextWithRecovery(message.from, outgoingReply)
+        log('info', source === 'catchup' ? 'catchup_reply_sent' : 'incoming_reply_sent', { from: message.from, action: result.action, reason: result.reason || '', messageId })
+      }
     } else {
       log('info', source === 'catchup' ? 'catchup_processed_without_reply' : 'incoming_processed_without_reply', { from: message.from, action: result?.action || 'none', reason: result?.reason || '', messageId })
     }
@@ -651,10 +733,10 @@ async function processIncomingMessage(message, source = 'live') {
   }
 }
 
-function enqueueIncomingMessage(message, source = 'live') {
+function enqueueIncomingMessage(message, source = 'live', allowReply = true) {
   const jid = String(message?.from || '').trim()
   const previous = inboundQueues.get(jid) || Promise.resolve()
-  const queued = previous.catch(() => {}).then(() => processIncomingMessage(message, source))
+  const queued = previous.catch(() => {}).then(() => processIncomingMessage(message, source, allowReply))
   inboundQueues.set(jid, queued)
   void queued.finally(() => {
     if (inboundQueues.get(jid) === queued) inboundQueues.delete(jid)
@@ -760,9 +842,18 @@ async function catchUpMissedMessages() {
       }
       stage = 'process-candidates'
       candidates.sort((left, right) => Number(left.timestamp || 0) - Number(right.timestamp || 0))
+      /* آخر رسالة لكل محادثة هي وحدها التي يحق لها الرد؛ ما قبلها يدخل
+         ذاكرة العقل صامتاً. (شكوى ٣١ يوليو: «مليون رد» بعد عودة الجسر.) */
+      const lastReplyEligible = new Map()
       for (const message of candidates) {
+        const key = String(message?.from || '')
+        lastReplyEligible.set(key, messageIdOf(message) || `${key}:${Number(message?.timestamp || 0)}`)
+      }
+      for (const message of candidates) {
+        const key = String(message?.from || '')
+        const marker = messageIdOf(message) || `${key}:${Number(message?.timestamp || 0)}`
         const before = processedInboundIds.has(messageIdOf(message))
-        await enqueueIncomingMessage(message, 'catchup')
+        await enqueueIncomingMessage(message, 'catchup', lastReplyEligible.get(key) === marker)
         if (!before && processedInboundIds.has(messageIdOf(message))) recovered += 1
       }
       inboundCheckpoint.lastTimestamp = Math.max(inboundCheckpoint.lastTimestamp, Math.floor(Date.now() / 1000) - 60)
@@ -879,7 +970,7 @@ async function executeCommand(command) {
       process.exit(76) // Exit code 76 = re-pair
     } else if (command.type === 'send-message') {
       const jid = command.payload?.jid
-      const text = String(command.payload?.text || '').trim()
+      const text = applyMergeFieldSafetyNet(command.payload?.text)
       if (!jid || !text) throw new Error('invalid-send-message-command')
       await sendTextWithRecovery(jid, text)
       rememberDeliveredCommand(command.id)
@@ -887,7 +978,7 @@ async function executeCommand(command) {
       log('info', 'command_message_sent', { jid, commandId: command.id })
     } else if (command.type === 'send-self-message') {
       const jid = selfChatJid()
-      const text = String(command.payload?.text || '').trim()
+      const text = applyMergeFieldSafetyNet(command.payload?.text)
       if (!jid) throw new Error('self-chat-unavailable')
       if (!text) throw new Error('invalid-self-message-command')
       await sendTextWithRecovery(jid, text)
@@ -898,9 +989,18 @@ async function executeCommand(command) {
       throw new Error(`unsupported-command:${String(command.type).slice(0, 80)}`)
     }
   } catch (caught) {
-    const error = caught instanceof Error ? caught.message : String(caught)
+    const rawError = caught instanceof Error ? caught.message : String(caught)
+    /* سبب التعثر يظهر للدكتور في «أسباب الفشل» بلوحة البث — فليكن عربياً
+       مفهوماً لا حطامَ مكتبةٍ داخلية. */
+    const error = rawError.includes('recipient-not-on-whatsapp')
+      ? 'الرقم ليس مسجلاً في واتساب.'
+      : rawError.includes('chat-create-failed')
+        ? 'تعذّر فتح محادثة مع هذا الرقم رغم أنه على واتساب — أعد المحاولة.'
+        : /getChat/i.test(rawError)
+          ? 'واتساب ويب لم يجهّز هذه المحادثة بعد — أعد محاولة الفاشل.'
+          : rawError
     const sendCommand = ['send-message', 'send-self-message'].includes(command.type)
-    const detachedContext = /detached\s*Frame|Execution context.*destroyed|Target closed|webjs-reinjection-timeout|Cannot find context with specified id/i.test(error)
+    const detachedContext = /detached\s*Frame|Execution context.*destroyed|Target closed|webjs-reinjection-timeout|Cannot find context with specified id/i.test(rawError)
     const attempts = Number(command.attempts || 0)
     if (sendCommand && detachedContext && attempts < 3) {
       await serverRequest('/api/whatsapp/commands', {

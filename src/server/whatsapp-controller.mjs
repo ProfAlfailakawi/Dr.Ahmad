@@ -521,7 +521,9 @@ function excerptReply(item, short = false) {
   const words = source.split(/\s+/).filter(Boolean)
   const limit = short ? 42 : 85
   const excerpt = words.slice(0, limit).join(' ')
-  return `*${item.title}*\n${itemMetaLine(item)}\n\n${excerpt || 'هذه المادة متاحة كاملة في موقع الدكتور.'}${words.length > limit ? '…' : ''}\n\n${item.url}`
+  /* أناقة «بوابة اليوم» نفسها (طلب الدكتور ٣١ يوليو): المقتطف اقتباسٌ يتنفس
+     بين «…»، بلا سطر البيانات الوصفية الذي كان يزاحم العنوان. */
+  return `*${item.title}*\n\n${excerpt ? `«${excerpt}${words.length > limit ? '…' : ''}»` : 'هذه المادة متاحة كاملة في موقع الدكتور.'}\n\n${item.url}`
 }
 
 function intentKinds(intent) {
@@ -1051,15 +1053,54 @@ function audienceVocative(row = {}) {
   return [title.trim(), first].filter(Boolean).join(' ')
 }
 
+/* لوحة غرفة البث تعِد نصاً: «{الأخ} تصير الأخ خالد أو الأخت مريم أو السادة في
+   مركز أعيان للتدريب، و{عزيزي} تتصرف كذلك» — وكان المحرك يعرف {الاسم} وحدها،
+   فوصلت الناسَ الأقواسُ حرفيةً (لقطة ٣١ يوليو: «test test {عزيزي}»). التصريف
+   هنا يفي بالوعد كاملاً، ومن لا نعرف اسمه تصله الصيغة المحايدة بلا فراغ. */
+const AUDIENCE_ENTITY_HINT = /مركز|مؤسسة|شركة|معهد|جمعية|فريق|إدارة|مدرسة|جامعة|كلية|قسم|مكتب|ديوان|أكاديمية|مجموعة|لجنة|نادي|وزارة|هيئة|منصة|مبرة|رابطة/u
+const AUDIENCE_FEMALE_NAMES = new Set([
+  'مريم', 'فاطمة', 'نورة', 'نوره', 'سارة', 'ساره', 'عائشة', 'خديجة', 'أمل', 'هند', 'لطيفة', 'منيرة',
+  'شيخة', 'بدرية', 'عبير', 'أسماء', 'زينب', 'حصة', 'دلال', 'منى', 'هدى', 'نوف', 'ريم', 'غدير',
+  'عهود', 'شهد', 'جواهر', 'عذاري', 'طيبة', 'إيمان', 'ايمان', 'أفراح', 'بشاير', 'دانة', 'دانه',
+  'لولوة', 'لولوه', 'أنفال', 'انفال', 'رتاج', 'غلا', 'وضحة', 'موضي', 'سعاد', 'نجاة', 'كوثر',
+  'رقية', 'صفية', 'حفصة', 'سمية', 'ليلى', 'سلمى', 'جميلة', 'كريمة', 'نادية', 'سميرة', 'فوزية',
+])
+const AUDIENCE_MALE_TA_NAMES = new Set(['حمزة', 'أسامة', 'اسامة', 'معاوية', 'عبادة', 'عطية', 'طلحة', 'عبيدة', 'عقبة', 'قتادة', 'حذيفة', 'زكريا'])
+function audienceGender(vocative) {
+  const clean = String(vocative || '').trim()
+  if (/^(?:الدكتورة|دكتورة|الأستاذة|استاذة|الأستاذه|الشيخة|أم|ام)\b/u.test(clean)) return 'female'
+  if (/^(?:أبو|ابو|بن|ابن)\b/u.test(clean)) return 'male'
+  const first = clean.replace(/^(?:(?:د|أ|ا|م)\s*\.|الدكتور|دكتور|الأستاذ|استاذ|الشيخ)\s*/u, '').split(/\s+/)[0] || ''
+  if (AUDIENCE_FEMALE_NAMES.has(first)) return 'female'
+  if (/[ةه]$/u.test(first) && first.length >= 4 && !AUDIENCE_MALE_TA_NAMES.has(first)) return 'female'
+  return 'male'
+}
+function audienceVocativeForms(contact) {
+  const fullName = audienceDisplayName(contact)
+  const nameless = !fullName || /^••\d{0,4}$/.test(fullName)
+  if (!nameless && AUDIENCE_ENTITY_HINT.test(fullName)) {
+    return { name: fullName, dear: `الأعزاء في ${fullName}`, brother: `السادة في ${fullName}` }
+  }
+  const vocative = audienceVocative(contact)
+  if (nameless || !vocative) return { name: '', dear: 'عزيزي', brother: 'أخي الكريم' }
+  return audienceGender(vocative) === 'female'
+    ? { name: vocative, dear: `عزيزتي ${vocative}`, brother: `الأخت ${vocative}` }
+    : { name: vocative, dear: `عزيزي ${vocative}`, brother: `الأخ ${vocative}` }
+}
+
 function personalizeAudienceText(text, contact, at = new Date()) {
   const hour = Number(new Intl.DateTimeFormat('en-US', {
     hour: 'numeric', hour12: false, timeZone: 'Asia/Kuwait',
   }).format(at))
-  const name = audienceVocative(contact)
+  const forms = audienceVocativeForms(contact)
   return bounded(text, 4_000)
     .replace(/\{تحية\}/g, hour < 12 ? 'صباح الخير' : 'مساء الخير')
     .replace(/\{ترحيب\}/g, 'أهلاً')
-    .replace(/\{الاسم\}/g, name)
+    .replace(/\{عزيزي\}/g, forms.dear)
+    .replace(/\{الأخ\}/g, forms.brother)
+    .replace(/\{الاسم\}/g, forms.name)
+    .replace(/\{[^{}\n]{1,24}\}/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
     .replace(/[ \t]+([،,.؛:!?؟])/g, '$1')
     .replace(/^[ \t]*[،,؛:]\s*$/gm, '')
     .replace(/\n{3,}/g, '\n\n')
@@ -2772,7 +2813,17 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         .filter((contact) => !term
           || normalizeAudienceSearch(contact.name).includes(term)
           || contact.tail.includes(term))
-        .sort((left, right) => left.name.localeCompare(right.name, 'ar'))
+        /* أصحاب الأسماء أولاً أبجدياً، ومجهولو الاسم في ذيل الدفتر مرتبين
+           بأرقامهم — كانت المقارنة الأبجدية تقدم «••0007» على الحروف فتفتح
+           الصفحة الأولى على ٢٠٠ رقاقة مبهمة (لقطة ٣١ يوليو). */
+        .sort((left, right) => {
+          const leftNamed = !left.name.startsWith('••')
+          const rightNamed = !right.name.startsWith('••')
+          if (leftNamed !== rightNamed) return leftNamed ? -1 : 1
+          return leftNamed
+            ? left.name.localeCompare(right.name, 'ar')
+            : left.tail.localeCompare(right.tail)
+        })
       sendJson(res, 200, {
         contacts: contacts.slice(offset, offset + limit),
         total: contacts.length,

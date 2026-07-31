@@ -340,14 +340,20 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                   <span key={contact.id}
                     className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-[.78rem] transition-colors ${already ? 'border-hair bg-wash text-soft' : isPicked ? 'border-accent bg-accent text-white' : 'border-hair bg-wash text-ink'}`}>
                     <button type="button" disabled={already} onClick={() => toggle(contact.id)} title={already ? 'في القائمة أصلاً' : 'اختره'}>
-                      {contact.name}{already && ' ✓'}
+                      {/* مجهول الاسم كان يظهر «0007 0 ••0007» — رقمه مرتين وصفرٌ
+                          شارد (لقطة ٣١ يوليو). الآن: تسميةٌ صريحة ورقمٌ واحد. */}
+                      {contact.name.startsWith('••') ? <span className={isPicked ? 'text-white/85' : 'text-soft'}>بلا اسم</span> : contact.name}
+                      {already && ' ✓'}
                       {/* آخر أربعة أرقام بجانب الاسم: الدكتور عنده «أبو خالد»
                           أكثر من واحد، والاسم وحده لا يميّزهم. */}
                       <span className={`mr-1.5 text-[.68rem] ${isPicked ? 'text-white/60' : 'text-soft/70'}`}>••{contact.tail}</span>
-                      {/* في كم قائمةٍ هو؟ الصفر يعني أنه في دفترك ولم يُضَف بعد. */}
-                      <span className={`mr-1.5 text-[.7rem] ${contact.lists ? (isPicked ? 'text-white/80' : 'text-accent') : 'text-soft/70'}`}>
-                        {contact.lists || '٠'}
-                      </span>
+                      {/* عدد قوائمه يُذكر حين يكون في قوائم فعلاً؛ الصفر العاري
+                          كان يُقرأ رقماً شارداً بجانب الأرقام. */}
+                      {contact.lists > 0 && (
+                        <span className={`mr-1.5 text-[.66rem] ${isPicked ? 'text-white/80' : 'text-accent'}`}>
+                          {contact.lists === 1 ? 'في قائمة' : `في ${contact.lists} قوائم`}
+                        </span>
+                      )}
                     </button>
                     <button type="button" className={isPicked ? 'text-white/70' : 'text-soft hover:text-accent'} title="اكتب لقباً" onClick={() => rename(contact.id, contact.nickname)}>✎</button>
                   </span>

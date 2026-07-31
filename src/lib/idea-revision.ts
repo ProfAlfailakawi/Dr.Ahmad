@@ -11,7 +11,23 @@
  * تكرار مطبّعٍ ثانٍ للعربية.
  */
 import type { ArticleRecord } from './cms'
+import curatedRevisions from '../data/idea-revisions.json'
 import { ideaWords } from './idea-life'
+
+/**
+ * المواضع التي أقرّها الدكتور بنفسه. الكشف الآلي لا يستطيع الحكم على تغيّر
+ * الرأي — جرّبناه على الأرشيف كاملاً فأخرج مطابقاتٍ زائفة (مفاهيم كـ«نفسها»،
+ * وجملةٌ واحدة تُطابق ستة مقالات). والحكم هنا حكمُ الدكتور: هو يسمّي المقالين،
+ * والنظام يتحقق أن المقتطفين **موجودان حرفياً** في متنيهما فلا ينحرف شيء.
+ */
+type CuratedRevision = {
+  olderSlug: string
+  newerSlug: string
+  concept: string
+  line: string
+  olderExcerpt: string
+  newerExcerpt: string
+}
 
 /** ألفاظ التحفّظ والقيد: موقفٌ يقف عند حدّ. */
 const RESERVE = [
@@ -100,7 +116,36 @@ const markerNearConcept = (sentence: string, concept: string, markers: readonly 
 /**
  * يُخرج المواضع المدعومة بدليلٍ فقط. مصفوفةٌ فارغة = لا تُعرض واجهةٌ إطلاقاً.
  */
+/** المواضع المقرّة التي تخصّ هذا المقال — بعد التحقق من وجود المقتطفين حرفياً. */
+const curatedFor = (article: ArticleRecord, articles: readonly ArticleRecord[]): IdeaRevision[] => {
+  const rows = curatedRevisions as CuratedRevision[]
+  if (!Array.isArray(rows) || !rows.length) return []
+  const bySlug = new Map(articles.map((item) => [item.slug, item]))
+  const results: IdeaRevision[] = []
+  for (const row of rows) {
+    if (row.olderSlug !== article.slug && row.newerSlug !== article.slug) continue
+    const older = bySlug.get(row.olderSlug)
+    const newer = bySlug.get(row.newerSlug)
+    if (!older || !newer) continue
+    /* صمّام الانحراف: المقتطف يجب أن يكون موجوداً في المتن المنشور اليوم.
+       إن حُرّر المقال فتغيّرت الجملة، يسقط الموضع بصمتٍ بدل أن يُنسب للدكتور
+       كلامٌ لم يعد في مقاله. */
+    const inBody = (item: ArticleRecord, excerpt: string) => clean(`${item.body || ''} ${item.excerpt || ''}`).includes(clean(excerpt))
+    if (!inBody(older, row.olderExcerpt) || !inBody(newer, row.newerExcerpt)) continue
+    results.push({
+      concept: row.concept,
+      line: row.line,
+      older: { slug: older.slug, title: older.title, year: yearOf(older), excerpt: clean(row.olderExcerpt) },
+      newer: { slug: newer.slug, title: newer.title, year: yearOf(newer), excerpt: clean(row.newerExcerpt) },
+    })
+  }
+  return results
+}
+
 export function findIdeaRevisions(article: ArticleRecord, articles: readonly ArticleRecord[], limit = 3): IdeaRevision[] {
+  /* المقرّ من الدكتور يتقدّم دائماً على الكشف الآلي. */
+  const curated = curatedFor(article, articles)
+  if (curated.length) return curated.slice(0, limit)
   const year = yearOf(article)
   if (!year) return []
   const mine = new Set(ideaWords(`${article.title} ${article.excerpt || ''} ${article.cat || ''}`))

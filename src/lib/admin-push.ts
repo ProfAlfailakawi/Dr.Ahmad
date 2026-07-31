@@ -72,16 +72,47 @@ export async function registerAdminPush(user: User): Promise<AdminPushRegistrati
   const app = await getFirebaseApp()
   if (!app) return { ok: false, message: 'Firebase غير متاح في هذه النسخة.' }
   const messagingModule = await import('firebase/messaging')
-  if (!(await messagingModule.isSupported())) return { ok: false, message: 'Push غير مدعوم على هذا الجهاز أو المتصفح.' }
+  if (!(await messagingModule.isSupported())) {
+    /* الرسالة العامة لا تُرشد. على آيفون يكون السبب دائماً واحداً من اثنين:
+       نظامٌ أقدم من 16.4، أو أيقونةٌ مثبّتة قبل تفعيل الإشعارات فبقيت بلا
+       صلاحياتها — وكلاهما له علاجٌ مختلف. */
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    return {
+      ok: false,
+      message: isIos
+        ? 'رفض Firebase تفعيل Push داخل هذا التطبيق المثبّت. تأكّد أن نظام آيفون 16.4 فأحدث، ثم احذف أيقونة الموقع من الشاشة الرئيسية وأعد تثبيتها من سفاري (الأيقونات القديمة تبقى بلا صلاحية إشعارات).'
+        : 'Push غير مدعوم على هذا الجهاز أو المتصفح.',
+    }
+  }
   const config = await authorizedJson(user, '/api/admin/push')
   const vapidKey = String(config.vapidKey || '').trim()
   const registration = await navigator.serviceWorker.ready
   const messaging = messagingModule.getMessaging(app)
-  const token = await messagingModule.getToken(messaging, {
-    serviceWorkerRegistration: registration,
-    ...(vapidKey ? { vapidKey } : {}),
-  })
-  if (!token) return { ok: false, configured: Boolean(vapidKey), message: 'لم يُصدر Firebase رمز Push لهذا الجهاز.' }
+  /* «تعمل على الكمبيوتر ولا تعمل في التطبيق المثبّت» (ملاحظة الدكتور): الخادم
+     والمفتاح مُثبتان سليمين بعمل الكمبيوتر، فالعطب في إصدار الرمز على الجهاز.
+     كان خطأ Firebase يصعد خاماً بالإنجليزية فلا يُفهم منه شيء. الآن يُترجَم
+     برمزه إلى سببٍ وعلاجٍ بالعربية — فتشخّص البطاقة نفسها بدل أن تصف. */
+  let token = ''
+  try {
+    token = await messagingModule.getToken(messaging, {
+      serviceWorkerRegistration: registration,
+      ...(vapidKey ? { vapidKey } : {}),
+    })
+  } catch (error) {
+    const code = String((error as { code?: string })?.code || '')
+    const raw = error instanceof Error ? error.message : String(error)
+    const explain = code.includes('permission-blocked') || code.includes('permission-default')
+      ? 'رفض الجهازُ الإذنَ عند إصدار الرمز. افتح إعدادات الإشعارات لهذا التطبيق وفعّل السماح.'
+      : code.includes('unsupported-browser')
+        ? 'هذه النسخة من النظام لا تدعم Push في التطبيقات المثبّتة. يلزم آيفون بنظام 16.4 فأحدث.'
+        : code.includes('failed-service-worker-registration')
+          ? 'تعذّر تسجيل عامل الخدمة داخل التطبيق المثبّت. احذف الأيقونة من الشاشة الرئيسية وأعد تثبيت الموقع، ثم أعد المحاولة.'
+          : code.includes('token-subscribe-failed') || code.includes('token-subscribe')
+            ? 'رفض خادمُ Firebase اشتراكَ هذا الجهاز. غالباً لأن الأيقونة المثبّتة قديمة سابقة لتفعيل الإشعارات — أعد تثبيت الموقع من سفاري.'
+            : 'تعذّر إصدار رمز Push على هذا الجهاز.'
+    return { ok: false, configured: Boolean(vapidKey), message: `${explain} (${code || 'بلا رمز'}: ${raw.slice(0, 120)})` }
+  }
+  if (!token) return { ok: false, configured: Boolean(vapidKey), message: 'لم يُصدر Firebase رمز Push لهذا الجهاز — ولم يُبلّغ عن سبب. أعد تثبيت الموقع على الشاشة الرئيسية ثم حاول.' }
   const saved = await authorizedJson(user, '/api/admin/push', {
     method: 'POST',
     body: JSON.stringify({ token, platform: (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform || navigator.platform || '' }),

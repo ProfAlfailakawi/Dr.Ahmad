@@ -2583,6 +2583,22 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (passport.negativeSpace === 'left') return 'left'
     if (passport.negativeSpace === 'top') return 'top'
     if (passport.negativeSpace === 'bottom') return 'bottom'
+    /* «متوازنة» لا تعني «اختر عشوائياً»: حين لا تبرز ناحيةٌ هادئة بفارقٍ كبير
+       كان القرار يعود إلى موضع البؤرة أفقياً وحده، فيقع النص أحياناً فوق
+       منطقةٍ مزدحمة (ملاحظة الدكتور ٣١ يوليو: «الكلام مرات في مكان خاطئ»).
+       جواز الصورة يحمل درجة هدوءٍ لكل ناحية — نأخذ أهدأها فعلاً، ونستبعد
+       الناحية التي تسكنها البؤرة كي لا يجلس النص على وجه الصورة. */
+    const scores = passport.zoneScores
+    if (scores) {
+      const focalSide = passport.focalX < .42 ? 'left' : passport.focalX > .58 ? 'right' : ''
+      const focalBand = passport.focalY < .38 ? 'top' : passport.focalY > .62 ? 'bottom' : ''
+      const ranked = (['right', 'left', 'top', 'bottom'] as const)
+        .map((side) => ({ side, score: Number(scores[side] ?? 0) }))
+        .filter((row) => Number.isFinite(row.score))
+        .filter((row) => row.side !== focalSide && row.side !== focalBand)
+        .sort((left, right) => right.score - left.score)
+      if (ranked.length && ranked[0].score > 0) return ranked[0].side
+    }
     return passport.focalX < .46 ? 'right' : 'left'
   }
   const buildImageLedPlan = (

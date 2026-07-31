@@ -256,7 +256,19 @@ export function createAdminCommunications({ getFirestore, verifyAdminRequest }) 
           json(res, 200, { ok: true })
           return true
         }
-        json(res, 405, { error: 'Method Not Allowed' }, { allow: 'GET, POST, DELETE' })
+        if (method === 'PUT') {
+          /* اختبار الإشعار بيد الدكتور: لا ينتظر رسالة قارئ ليعرف أن القناة
+             حيّة. يرسل إلى أجهزته المسجلة نفسها بنفس المسار الحقيقي. */
+          const outcome = await sendAdminPush(getFirestore, {
+            title: 'اختبار الإشعارات ✓',
+            body: 'وصلك هذا الإشعار، فالقناة تعمل — رسائل القراء ستصلك بالطريقة نفسها.',
+            url: '/admin?tab=inbox',
+            tag: 'admin-push-test',
+          })
+          json(res, 200, { ok: Boolean(outcome.sent), ...outcome })
+          return true
+        }
+        json(res, 405, { error: 'Method Not Allowed' }, { allow: 'GET, POST, PUT, DELETE' })
         return true
       }
 

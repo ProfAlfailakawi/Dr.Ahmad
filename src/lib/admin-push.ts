@@ -30,6 +30,11 @@ export async function adminPushStatus(user: User) {
   return authorizedJson(user, '/api/admin/push')
 }
 
+/** إشعار تجريبي فوري إلى أجهزة الدكتور المسجّلة — بنفس مسار الإشعار الحقيقي. */
+export async function sendAdminPushTest(user: User): Promise<{ sent?: number; configured?: boolean }> {
+  return authorizedJson(user, '/api/admin/push', { method: 'PUT' }) as Promise<{ sent?: number; configured?: boolean }>
+}
+
 export async function registerAdminPush(user: User): Promise<AdminPushRegistration> {
   if (typeof window === 'undefined' || typeof Notification === 'undefined' || !('serviceWorker' in navigator)) {
     return { ok: false, message: 'هذا المتصفح لا يدعم Push على الويب.' }

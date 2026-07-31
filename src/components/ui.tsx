@@ -873,6 +873,7 @@ export function Nav() {
           </Link>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle className={`h-11 w-11 ${open ? 'invisible pointer-events-none' : ''}`} />
             <button
               type="button"
               onClick={() => setSearchOpen(true)}

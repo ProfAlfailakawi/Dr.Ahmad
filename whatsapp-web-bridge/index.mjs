@@ -587,6 +587,28 @@ async function ensureIndividualChatExists(jid) {
   throw new Error(`chat-create-failed:${second}`)
 }
 
+/* شاهدُ الإرسال حين يعجز واتساب عن تسليم نموذج الرسالة: نقرأ آخر رسائل
+   المحادثة (بنفس مسار الاسترجاع القائم) ونبحث عن رسالةٍ منّا بنفس النص خلال
+   ٩٠ ثانية. لا استدعاء جديد للصفحة ولا مسار موازٍ. */
+async function confirmSentByBody(jid, text) {
+  const wanted = String(text || '').trim()
+  if (!wanted) return null
+  const cutoff = Math.floor(Date.now() / 1000) - 90
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt) await new Promise((wait) => setTimeout(wait, 700))
+    try {
+      const rows = await cachedMessagesForCatchup(jid, 8)
+      const hit = (rows || []).find((row) => row?.fromMe
+        && String(row?.body || '').trim() === wanted
+        && Number(row?.timestamp || 0) >= cutoff)
+      if (hit) return hit
+    } catch {
+      // فشل الفحص ليس دليل وصول — نُكمل إلى الحكم بالفشل.
+    }
+  }
+  return null
+}
+
 async function sendTextWithRecovery(rawJid, rawText) {
   const text = String(rawText || '').trim()
   if (!text) throw new Error('empty-message')
@@ -606,16 +628,32 @@ async function sendTextWithRecovery(rawJid, rawText) {
         sendSeen: false,
         waitUntilMsgSent: true,
       })
-      /* لا نُصدّق نجاحاً بلا رسالة. الرسالة المُسلسَلة هي الدليل الوحيد على أن
-         واتساب أنشأها فعلاً؛ وغيابها كان يُحسب «ملاحظة توافق» فتُعلَن الحملة
-         ناجحةً وهي لم تصل أحداً. الآن يُعتبر فشلاً صريحاً: تُعاد المحاولة مرة،
-         ثم يُسجَّل تعثراً ظاهراً في اللوحة بدل نجاحٍ كاذب. */
-      if (!sent) throw new Error('send-not-serialized')
+      /* لا نُصدّق نجاحاً بلا رسالة — ولا نُصدّق فشلاً بلا فحص.
+         الغلاف الفارغ كان يُحسب «ملاحظة توافق» فتُعلَن الحملة ناجحةً ولم تصل
+         أحداً؛ ثم صار فشلاً صريحاً فوقع الضرر المعاكس: بناء واتساب الحالي
+         يُسلّم الرسالة ولا يُسلسِل نموذجها، فأُعلن التعثّر مرتين **وأُعيد
+         الإرسال فوصل الدكتورَ نصّان متطابقان** (لقطته ٧:٣٦ م).
+         الحكم الآن من المحادثة نفسها لا من قيمة الإرجاع: نفتّش آخر رسائل
+         المحادثة عن رسالةٍ منّا بنفس النص خلال ثوانٍ. وُجدت = وصلت فعلاً،
+         لم توجد = فشلٌ حقيقي. لا نجاحَ كاذب ولا تكرارَ على القارئ. */
+      if (!sent) {
+        const proof = await confirmSentByBody(jid, text)
+        if (proof) {
+          log('warn', 'send_completed_without_serialized_message', { jid, confirmed: true })
+          return proof
+        }
+        throw new Error('send-not-serialized')
+      }
       return sent
     } catch (error) {
       lastError = error
       const message = String(error?.message || error)
-      if (attempt > 0 || !/getChat|Execution context|detached|WWebJS|evaluate|reinjection|send-not-serialized/i.test(message)) break
+      /* `send-not-serialized` خرج من قائمة إعادة المحاولة عمداً: وصولُه إلى
+         هنا يعني أن الفحص أعلاه لم يعثر على الرسالة، لكن احتمال أن تكون قد
+         وصلت قائمٌ — وإعادةُ الإرسال حينها تُضاعف الرسالة على القارئ (لقطة
+         الدكتور ٧:٤٠ م: كل ردّ مكرر مرتين). تعثّرٌ ظاهرٌ في اللوحة أهونُ من
+         رسالتين متطابقتين تصلان إنساناً. */
+      if (attempt > 0 || !/getChat|Execution context|detached|WWebJS|evaluate|reinjection/i.test(message)) break
       log('warn', 'send_recovering_webjs_helpers', { jid, error: message })
       try { await client.inject() } catch { /* the serialized preflight retries below */ }
       await new Promise((resolveWait) => setTimeout(resolveWait, 900))

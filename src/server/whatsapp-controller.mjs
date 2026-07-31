@@ -1280,7 +1280,12 @@ function audienceGender(vocative) {
 function audienceVocativeForms(contact) {
   const fullName = audienceDisplayName(contact)
   const nameless = !fullName || /^••\d{0,4}$/.test(fullName)
-  if (!nameless && AUDIENCE_ENTITY_HINT.test(fullName)) {
+  /* «الأعزاء في د. عبد اللطيف الهيئة العامة للشباب» (لقطة الدكتور): الاسم
+     المحفوظ إنسانٌ أُلحقت به جهته، وكان يكفي ظهورُ لفظ «الهيئة» في أي موضع
+     ليُحسب الاسمُ كلّه جهةً. الشخص يسبق الجهة: من بدأ اسمه بلقبٍ إنساني
+     (د./الأستاذ/الشيخ…) يُنادى باسمه الأول مهما لحقته جهة. */
+  const personTitled = /^(?:(?:د|أ|ا|م)\s*\.|الدكتور(?:ة)?|دكتور(?:ة)?|الأستاذ(?:ة)?|استاذ(?:ة)?|الشيخ(?:ة)?)\s*\S/u.test(String(fullName || '').trim())
+  if (!nameless && !personTitled && AUDIENCE_ENTITY_HINT.test(fullName)) {
     return { name: fullName, dear: `الأعزاء في ${fullName}`, brother: `السادة في ${fullName}` }
   }
   const vocative = audienceVocative(contact)

@@ -207,9 +207,9 @@ jobs:
             echo "Firebase service account is missing; skipping dialogue podcast generation."
             exit 0
           fi
-          # كل مقال منشور يدخل مسار الحوار تلقائياً. إذا كان للدكتور حوارٌ يدوي
-          # مقفول فهو المصدر الأعلى أولوية ولا يغيّره Gemini؛ وإلا يكتب المحرك
-          # حواراً من المقال نفسه ثم تمر النتيجة عبر بوابات الإسناد والنطق والجودة.
+          # مصدر الحوار واحدٌ لا شريك له: ما كتبه الدكتور بيده في manual-dialogues/
+          # (١٤٤ حواراً). لا كاتبَ آلياً ولا خدمةً مدفوعة — المحرك «بلا Gemini»
+          # افتراضاً، والبوابات التقنية وأذن Azure STT هي الفحص كاملاً.
           if [ -z "$AZURE_SPEECH_KEY" ]; then
             echo "Azure secret is missing; skipping dialogue podcast generation."
             exit 0
@@ -221,12 +221,11 @@ jobs:
           # ينطق حرفاً، وإلا وُلِّدت الحلقة بالنطق القديم ثم احتاجت إعادة توليد.
           node scripts/fetch-lexicon.mjs || echo "::warning::تعذّر سحب قاموس اللوحة؛ نمضي بالقاموس الدائم."
           node scripts/fetch-queued-dialogues.mjs || echo "::warning::تعذّر سحب الحوارات المنتظرة؛ نمضي بما هو موجود."
-          if [ -n "$GEMINI_API_KEY" ] || [ -n "$GOOGLE_API_KEY" ]; then
-            npm run podcast:ar:nightly
-          else
-            echo "::warning::GEMINI_API_KEY/GOOGLE_API_KEY مفقود؛ سأنتج فقط الحوارات اليدوية المقفلة ولن أختلق حواراً آلياً."
-            PODCAST_NO_GEMINI=1 npm run podcast:ar:nightly
-          fi
+          # كان هنا شرطٌ يقيس وجود مفتاح Gemini لا رصيده: فالمفتاح موجود ورصيده
+          # منتهٍ، فيُختار المسار المدفوع ويموت المحرك بالرمز ٤ قبل أن يُنطق حرف،
+          # كل ساعة، ثلاثة أيام، والخطوة continue-on-error فتبدو التشغيلة ناجحة.
+          # لا شرط بعد اليوم: نداءٌ واحد بلا أي مزوّد مدفوع.
+          npm run podcast:ar:nightly
           # الحلقة تُولَّد وتُرفع وتُسجَّل… ثم تبقى لوحةُ الدكتور تقول «مسودة» و«غير
           # مولَّد» إلى الأبد، لأن أحداً لا يُبلّغ Firestore بما جرى: fetch-manual-
           # dialogues يكتب «generating» ولا كاتبَ للنجاح. فيظنّ الدكتور أن التوليد
@@ -237,9 +236,7 @@ jobs:
           [ -n "$SLUGS" ] && (node scripts/report-unknown-words.mjs --slugs="$SLUGS" || echo "::warning::تعذّر الإبلاغ عن الألفاظ المجهولة.")
           node scripts/report-dialogue-status.mjs || echo "::warning::تعذّر تحديث حالة الإنتاج في اللوحة."
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          # لا مفاتيح Gemini هنا إطلاقاً: القافلة لا تعرف مزوّداً مدفوعاً.
           # حلقاتُ الحوار كانت واحدةً في التشغيلة (افتراض المحرّك حين لا يُضبط
           # المتغيّر)، فالـ١٤٣ تحتاج ١٤٣ ساعة. ٥ هو أقصى ما يقبله المحرّك
           # (Math.min(5,…) في podcast-dialogue.mjs) — فيصير المدى ٢٩ تشغيلة.

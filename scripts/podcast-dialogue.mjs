@@ -229,12 +229,17 @@ const SELF_TEST = flag('self-test')
 const PREFLIGHT = flag('preflight')
 const PLAN = flag('plan')
 const REUSE_DIALOGUE = flag('reuse-dialogue')
-/* وضع «بلا Gemini» — بأمر الدكتور للحلقات اليدوية: هو كاتب الحوار فلا حاجة لكاتب،
-   والفحص يقوم على أذن Azure STT بعتبات مشدَّدة + كل البوابات التقنية (13ث، الوقفات،
-   الذروة، السرعة) + بوابة البشرية التقنية ≥95 — بلا أي استدعاء Gemini يستهلك رصيداً. */
-/* «let» لا «const»: نفادُ رصيد Gemini يُحوّل المحرك إلى هذا الوضع تلقائياً
-   بدل أن يقتل القافلة (انظر بوابة الفوترة في آخر الملف). */
-let NO_GEMINI = flag('no-gemini') || env.PODCAST_NO_GEMINI === '1'
+/* وضع «بلا Gemini» هو وضع المحرك المعتمد لا استثناءه — أمرُ الدكتور (١ أغسطس
+   ٢٠٢٦): «احنا ما نستخدم جيمناي… موجود الحوار كامل وما نحتاجه إطلاقاً». فهو
+   كاتب الحوار، فلا كاتبَ آلي، ولا حكمَ سمعياً مدفوعاً، ولا فحصَ فوترة، ولا
+   استدعاءَ واحداً مهما كان المفتاح موجوداً في الأسرار. والفحص كاملٌ بلا تخفيف:
+   أذنُ Azure STT بعتبات مشدَّدة + البوابات التقنية (13ث، الوقفات، الذروة،
+   السرعة) + بوابة البشرية ≥95.
+   ويبقى بابٌ صريح لا يُفتح إلا باليد (--with-gemini أو PODCAST_USE_GEMINI=1)
+   ولا يفتحه المحرك من تلقاء نفسه أبداً؛ و«let» لأن ذلك الباب — إن فُتح يوماً —
+   يُغلق تلقائياً عند نفاد الرصيد بدل أن تموت القافلة (بوابة الفوترة أدناه). */
+const GEMINI_OPT_IN = flag('with-gemini') || env.PODCAST_USE_GEMINI === '1'
+let NO_GEMINI = !GEMINI_OPT_IN || flag('no-gemini') || env.PODCAST_NO_GEMINI === '1'
 const MANUAL_EXACT = flag('manual-exact') || env.PODCAST_MANUAL_EXACT === '1'
 const CANARY = flag('canary')
 const BAKEOFF = flag('voice-bakeoff')
@@ -4552,7 +4557,7 @@ if (requiresGeminiNow) {
     NO_GEMINI = true
   }
 }
-if (NO_GEMINI) console.log('⚙ وضع بلا Gemini: STT مشدد عند توفره، وملاذ حصص محصور بالحوار اليدوي المقفول + البوابات التقنية كاملة — بلا أي استهلاك رصيد')
+if (NO_GEMINI) console.log(`⚙ بلا Gemini${GEMINI_OPT_IN ? '' : ' (الوضع المعتمد)'}: حوار الدكتور نصاً، وأذن Azure STT بعتبات مشدَّدة، والبوابات التقنية كاملة — ولا استدعاء واحد لأي خدمة مدفوعة`)
 if (MANUAL_EXACT) console.log('🔒 وضع الحوار المقفول: Firestore هو المصدر الوحيد، والكلمات والمتحدثون لا يتغيرون')
 const voicesForPreflight = BAKEOFF
   ? [] // الاكتشاف الديناميكي يجري داخل الاختبار قبل اختيار أي صوت
@@ -5023,9 +5028,30 @@ else if (nightly) {
     return Boolean(at) && (Date.now() - new Date(at).getTime()) < cooldownMs
   }
   const failureRank = (slug) => Number(failures[slug]?.attempts || 0)
+  /* المنشورُ الخاطئ قبل المفقود: حلقةٌ في الهواء يسمعها الناس الآن ناقصةً
+     أَولى بالإصلاح من حلقةٍ لم تُولد بعد (الحلقتان الأوليان بلا مقدمةٍ ولا
+     خاتمةٍ ولا جسر، لأنهما سبقتا الهوية الموسيقية بيوم). ومصدرُ الحقيقة هنا
+     سجلُّ المنشور على R2 لا ذاكرةُ المحرك: الذاكرة تضيع مع أي رفعةٍ يدوية
+     (ضاعت فعلاً في ٢٨ يوليو) أما السجلّ فباقٍ. فكلُّ حلقةٍ حيّةٍ لم يُنتجها
+     هذا المحرك بعينه تتقدّم الطابور، وتخرج من التقدّم وحدها فور إعادتها. */
+  let livePublishedDialogues = new Set()
+  try {
+    const publishedMeta = JSON.parse(readFileSync(resolve(ROOT, 'src/data/audio-meta.json'), 'utf8'))
+    livePublishedDialogues = new Set(Object.keys(publishedMeta)
+      .filter((name) => name.endsWith('.dialogue.mp3'))
+      .map((name) => name.replace(/\.dialogue\.mp3$/, '')))
+  } catch { /* لا سجلّ منشوراً بعد: لا تقديم ولا تأخير */ }
+  const liveButNotFromThisEngine = (slug) => {
+    if (!livePublishedDialogues.has(slug)) return false
+    const saved = state.done[`${slug}:ar`]
+    return !(saved?.status === 'accepted_automated' && saved?.pipelineHash === ACTIVE_PIPELINE_HASH)
+  }
   const fairPool = [...nightlyPool].sort((left, right) =>
     (Number(recentlyFailed(left.slug)) - Number(recentlyFailed(right.slug)))
+    || (Number(liveButNotFromThisEngine(right.slug)) - Number(liveButNotFromThisEngine(left.slug)))
     || (failureRank(left.slug) - failureRank(right.slug)))
+  const redoFirst = nightlyPool.filter((article) => liveButNotFromThisEngine(article.slug))
+  if (redoFirst.length) console.log(`↻ إعادة قبل الإضافة: ${redoFirst.length} حلقة منشورة لم يُنتجها هذا المحرك تتقدّم الطابور`)
   queue = fairPool.filter((article) => {
     const sourceHash = createHash('sha256').update(article.body).digest('hex')
     const expected = createHash('sha256').update(`${sourceHash}|ar|${ACTIVE_PIPELINE_HASH}`).digest('hex').slice(0, 16)

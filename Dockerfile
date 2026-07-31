@@ -19,6 +19,9 @@ COPY src/data.ts /app/src/data.ts
 COPY src/data-curated.ts /app/src/data-curated.ts
 COPY src/data/bodies.json /app/src/data/bodies.json
 COPY src/data/audio.json /app/src/data/audio.json
+# معجم المجال (٢٩٠ مفهوماً/١٣٢٢ اسماً): به يفهم البوت المعنى لا اللفظ.
+# قاعدة الدار: كل COPY جديد يقابله سطر سماح في .gcloudignore وإلا فشل البناء.
+COPY src/data/dr-ahmad-domain-glossary.json /app/src/data/dr-ahmad-domain-glossary.json
 COPY src/data/audio-meta.json /app/src/data/audio-meta.json
 COPY src/data/podcast-admin.json /app/src/data/podcast-admin.json
 COPY src/data/research-papers.ts /app/src/data/research-papers.ts
@@ -38,6 +41,7 @@ COPY whatsapp-agent/scholar.mjs /app/whatsapp-agent/scholar.mjs
 COPY whatsapp-agent/knowledge-modes.mjs /app/whatsapp-agent/knowledge-modes.mjs
 COPY whatsapp-agent/conversation-context.mjs /app/whatsapp-agent/conversation-context.mjs
 COPY whatsapp-agent/daily-experience.mjs /app/whatsapp-agent/daily-experience.mjs
+COPY whatsapp-agent/domain-concepts.mjs /app/whatsapp-agent/domain-concepts.mjs
 
 RUN node --check /app/whatsapp-agent/intent-engine.mjs \
  && node --check /app/server.mjs \

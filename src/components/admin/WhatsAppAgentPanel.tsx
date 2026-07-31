@@ -78,6 +78,12 @@ type Simulation = { willReply?: boolean; why?: string; quietNow?: boolean; inten
    لأن الرصد المركزي يسجل الصياغة وتكرارها فقط (لا تعلّم تلقائياً). */
 type LearningPattern = { id: string | number; phrase: string; hits?: number; intent?: string; confirmations?: number; evidenceSources?: number; evidenceDays?: number; kind?: string; status: 'learned' | 'observing' | 'ignored' | 'taught'; firstSeenAt?: string; lastSeenAt?: string; learnedAt?: string | null; teachQuery?: string | null }
 type LearningState = { total: number; learned: number; observing: number; ignored: number; taught?: number; policy: string; items: LearningPattern[] }
+type QualityWeek = { total: number; answered: number; clarified: number; missed: number; escalated: number; concept: number; taught: number; missedPercent: number; answeredPercent: number }
+type QualityState = { week: QualityWeek; note: string; glossary?: { concepts: number; aliases: number } }
+const EMPTY_QUALITY: QualityState = {
+  week: { total: 0, answered: 0, clarified: 0, missed: 0, escalated: 0, concept: 0, taught: 0, missedPercent: 0, answeredPercent: 0 },
+  note: 'لم تُسجَّل ردود بعد.',
+}
 type WeeklyReport = {
   days: number
   conversations: number
@@ -209,6 +215,7 @@ export function WhatsAppAgentPanel() {
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null)
   const [weeklyBusy, setWeeklyBusy] = useState(false)
   const [learningBusy, setLearningBusy] = useState(false)
+  const [quality, setQuality] = useState<QualityState>(EMPTY_QUALITY)
   /* مسوّدة ما تكتبه في خانة التعليم قبل الضغط — بمرجعٍ لا بحالة، كي لا تُعاد
      تصيير القائمة كلّها مع كل حرفٍ تكتبه. */
   const teachDraft = useRef<Record<string, string>>({})
@@ -246,16 +253,18 @@ export function WhatsAppAgentPanel() {
     if (!user) { setNotice('يجب تسجيل الدخول بحساب المشرف لقراءة جهاز واتساب.'); return }
     setBusy(true)
     try {
-      const [nextStatus, nextRules, nextLearning, nextKnowledge, nextEvidence] = await Promise.all([
+      const [nextStatus, nextRules, nextLearning, nextKnowledge, nextEvidence, nextQuality] = await Promise.all([
         request<AgentStatus>('/status', { cache: 'no-store' }),
         request<ReplyRule[]>('/admin/rules'),
         request<LearningState>('/admin/learning').catch(() => ({ total: 0, learned: 0, observing: 0, ignored: 0, policy: '', items: [] })),
         request<KnowledgeState>('/admin/knowledge').catch(() => EMPTY_KNOWLEDGE),
         request<TrustedEvidence[]>('/admin/trusted-evidence?limit=80').catch(() => []),
+        request<QualityState>('/admin/quality').catch(() => EMPTY_QUALITY),
       ])
       setStatus(nextStatus)
       setRules(nextRules)
       setLearning(nextLearning)
+      setQuality(nextQuality)
       setKnowledge(nextKnowledge)
       setPersonality(nextKnowledge.personality || DEFAULT_PERSONALITY)
       setTrustedEvidence(nextEvidence)
@@ -1047,6 +1056,32 @@ export function WhatsAppAgentPanel() {
       </details>
 
       {bridge && (
+        <>
+        {/* الجودة تُقاس لا تُدّعى: أرقام أسبوعٍ واحد تكشف هل الترقيات تنفع. */}
+        <div className={card} data-whatsapp-quality="true">
+          <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">الجودة · مقيسة لا مُدّعاة</p>
+          <h3 className="mt-1 font-display text-xl font-semibold text-ink">كيف أجاب البوت هذا الأسبوع</h3>
+          <p className="mt-1 max-w-2xl text-[.78rem] leading-relaxed text-soft">{quality.note}</p>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            {([
+              ['أُجيب من المنشور', quality.week.answered],
+              ['سأل ليفهم', quality.week.clarified],
+              ['بلا مادة', quality.week.missed],
+              ['وصل للدكتور', quality.week.escalated],
+              ['أنقذه المعجم', quality.week.concept],
+              ['من تعليمك', quality.week.taught],
+            ] as const).map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center">
+                <strong className="block font-display text-2xl text-ink">{value}</strong>
+                <span className="mt-1 block text-[.68rem] leading-tight text-soft">{label}</span>
+              </div>
+            ))}
+          </div>
+          {quality.glossary?.concepts ? (
+            <p className="mt-3 text-[.72rem] text-soft">معجم المجال المستعمل في الفهم: {quality.glossary.concepts} مفهوماً · {quality.glossary.aliases} اسماً بديلاً.</p>
+          ) : null}
+        </div>
+
         <details className={card}>
           <summary className="flex cursor-pointer list-none flex-wrap items-end justify-between gap-3">
             <div>
@@ -1120,6 +1155,7 @@ export function WhatsAppAgentPanel() {
             )}
           </div>
         </details>
+        </>
       )}
 
       {/* حُذفت بطاقة «الحملات المحلية»: كانت تُخفي مسودتك حتى تضغط «اعتماد»، فتظهر

@@ -3215,13 +3215,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     }
   }
 
-  const runZeroDecisionMode = async (requestedMode: StudioVisualMode = visualMode) => {
+  const runZeroDecisionMode = async (requestedMode: StudioVisualMode = visualMode, hop: { fromGenerate?: boolean; fromReady?: boolean } = {}) => {
     if (text.trim().length < 2) {
       setNotice('اكتب الفكرة أولاً، وبعدها اترك كل القرار للمخرج الذكي.')
       textRef.current?.focus()
       return
     }
-    if (zeroDecisionBusy) return
+    if (zeroDecisionBusy && !hop.fromGenerate && !hop.fromReady) return
     setVisualMode(requestedMode)
     setZeroDecisionBusy(true)
     setZeroDecision(null)
@@ -3280,9 +3280,11 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
              فرع التوليد حصراً، فنسقط تلقائياً إلى مسار الصورة الجاهزة الموثقة؛
              وفشل الجاهز نفسه له إعلانه في فرعه. */
           console.warn('studio-generate-fallback:', failure)
+          /* صمام التأرجح: إن كنا أصلاً قادمين من فشل «الجاهز» فلا نرتد إليه. */
+          if (hop.fromReady) throw error
           setVisualFailure('')
           setNotice('تعذّر توليد الصورة الأصلية الآن، فانتقلت تلقائياً إلى صورة جاهزة موثقة المصدر — المشهد يكتمل بلا توقف.')
-          return runZeroDecisionMode('ready')
+          return runZeroDecisionMode('ready', { fromGenerate: true })
         }
         const uniqueGenerated = new Map<string, GeneratedStudioImage>()
         for (const generated of generatedSet) {
@@ -3365,6 +3367,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         const chosen = chosenInspection?.candidate || null
         const resolved = chosenInspection?.resolved || null
         if (!chosen || !resolved) {
+          /* «طريق مسدود بالتصميم» كان يوقف الدكتور تماماً (لقطة ٣١ يوليو).
+             المخرج المحترم لا يقف: الجاهز جاع → توليد أصلي من الصفر (وله
+             احتياطي محلي داخل الاستوديو لا يفشل) — بإعلان صريح لا خلسة.
+             الصمام يمنع التأرجح إن كنا أصلاً ساقطين من فشل التوليد. */
+          if (!hop.fromGenerate) {
+            setVisualFailure('')
+            setNotice('لم أجد صورة جاهزة تليق بالفكرة من المصادر الموثقة، فأنتقل تلقائياً إلى توليد مشهد أصلي من الصفر — المشهد يكتمل بلا توقف.')
+            return runZeroDecisionMode('generate', { fromReady: true })
+          }
           const failure = 'لم أجد صورة جاهزة صالحة وموثقة لهذه الفكرة ضمن المهلة. لم أستبدلها بصورة مولدة أو بتصميم قديم.'
           setVisualOrigin('none')
           setVisualFailure(failure)

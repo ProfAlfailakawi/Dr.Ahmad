@@ -132,4 +132,38 @@ assert.match(serverSource, /callGeminiStructuredDirect/, 'مسار Gemini الم
 assert.match(serverSource, /return callCloudflareStructured\(request, fetchImpl\)/, 'غياب المفتاح يذهب مجاناً مباشرة')
 assert.match(serverSource, /wordTolerance/, 'نطاق قبول العدد موجود')
 
+/* ─── جولة ٣١ يوليو الثانية: باب المتسللين، صمود الاستوديو، أفكار المجلس الخمس ─── */
+const studioPanel = readFileSync(resolve(root, 'src/components/admin/PublishingStudio.tsx'), 'utf8')
+const designStudio = readFileSync(resolve(root, 'src/components/admin/SocialDesignStudio.tsx'), 'utf8')
+const visualSources = readFileSync(resolve(root, 'src/lib/external-visual-sources.ts'), 'utf8')
+const audiencePanelRound2 = readFileSync(resolve(root, 'src/components/admin/AudienceStudio.tsx'), 'utf8')
+
+/* المزامنة لا تُنشئ مجهولين: دفتر هاتفه الحقيقي فقط، والخادم يرفض بلا اسم */
+assert.match(bridge, /isMyContact !== true\) return \[\]/, 'الجسر يزامن جهاته المحفوظة فقط')
+assert.match(controller, /if \(!waName && !displayName\) continue/, 'الخادم لا يوطّن مجهول الاسم')
+assert.match(controller, /autoCaptured/, 'عزل الملتقطين تلقائياً موجود')
+assert.doesNotMatch(controller.slice(controller.indexOf("event === 'contacts-sync'"), controller.indexOf("event === 'contacts-sync'") + 1600), /source: 'whatsapp-sync'/, 'المزامنة توقفت عن دهس حقل المصدر')
+assert.match(audiencePanelRound2, /أرقام التقطها واتساب تلقائياً/, 'قسم المعزولين في اللوحة')
+assert.doesNotMatch(audiencePanelRound2, /delete.*audienceContacts|حذف الرقم/, 'لا حذف لأي رقم')
+
+/* الاستوديو: مهلات المزودين + التدرج المرن + السقوط المتبادل بصمام */
+assert.match(visualSources, /fetchWithDeadline/, 'مهلة صارمة على كل مزود')
+assert.ok(visualSources.split('fetchWithDeadline(').length >= 4, 'المهلة مسلوكة في المزودين الثلاثة')
+assert.match(visualSources, /مطابقة مرنة/, 'التدرج المرن بدل المجاعة')
+assert.match(designStudio, /fromReady: true/, 'الجاهز الجائع يسقط للتوليد')
+assert.match(designStudio, /fromGenerate: true/, 'التوليد الفاشل يسقط للجاهز')
+assert.match(designStudio, /hop\.fromReady\) throw/, 'صمام يمنع التأرجح الأبدي')
+
+/* أفكار المجلس الخمس حاضرة عضوياً */
+assert.match(studioPanel, /data-waiting-room-bell/, '١) جرس غرفة الانتظار')
+assert.match(studioPanel, /snoozeUntil/, 'تأجيل الجرس يُحفظ')
+assert.match(studioPanel, /التقط مقترحاً من صندوق الوارد/, '٢) الوارد بنقرة')
+assert.match(studioPanel, /adoptInboxSuggestion/, 'الوارد يملأ المصدر والسياق')
+assert.match(studioPanel, /stubbornWins/, '٣) معايرة العناد')
+assert.match(studioPanel, /Math\.min\(4, stubbornWins \* 2\)/, 'سقف العناد +٤ داخل ±٨')
+assert.match(studioPanel, /voicedArticles/, '٤) الصوت في المحفظة')
+assert.match(studioPanel, /relatedAudioCount/, 'عدّاد المواد المنطوقة')
+assert.match(studioPanel, /data-weekly-board-session/, '٥) الجلسة الأسبوعية')
+assert.match(studioPanel, /weeklySessionRows/, 'ترتيب الجلسة: المستحق ثم الأقوى')
+
 console.log('المحرك المجاني وإصلاحات الجسر والبث: كل الاختبارات خضراء ✓')

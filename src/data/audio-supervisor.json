@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-31T04:45:39.383Z",
+  "generatedAt": "2026-07-31T09:03:52.576Z",
   "state": "repairing",
   "articles": {
     "total": 143,
@@ -8,9 +8,9 @@
   },
   "readings": {
     "expected": 286,
-    "ready": 198,
-    "missing": 88,
-    "fahedReady": 99,
+    "ready": 199,
+    "missing": 87,
+    "fahedReady": 100,
     "nouraReady": 99
   },
   "dialogues": {
@@ -19,8 +19,8 @@
     "missing": 141
   },
   "queue": {
-    "total": 229,
-    "failed": 88,
+    "total": 228,
+    "failed": 87,
     "next": {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
       "title": "شهادة امتياز… لدمية بلا وعي!",
@@ -141,7 +141,7 @@
       }
     ]
   },
-  "progressPercent": 46.6,
+  "progressPercent": 46.9,
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -329,9 +329,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 16,
+            "attempts": 17,
             "firstFailedAt": "2026-07-22T00:40:49.709Z",
-            "lastFailedAt": "2026-07-30T12:06:33.093Z",
+            "lastFailedAt": "2026-07-31T08:57:38.169Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
           }
         },
@@ -393,9 +393,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 16,
+            "attempts": 17,
             "firstFailedAt": "2026-07-22T02:26:19.941Z",
-            "lastFailedAt": "2026-07-30T12:07:53.568Z",
+            "lastFailedAt": "2026-07-31T08:59:02.076Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
           }
         },
@@ -457,9 +457,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 16,
+            "attempts": 17,
             "firstFailedAt": "2026-07-22T00:46:10.255Z",
-            "lastFailedAt": "2026-07-30T12:06:45.085Z",
+            "lastFailedAt": "2026-07-31T08:57:50.326Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
           }
         },
@@ -553,9 +553,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 16,
+            "attempts": 17,
             "firstFailedAt": "2026-07-22T02:16:38.283Z",
-            "lastFailedAt": "2026-07-30T12:07:39.574Z",
+            "lastFailedAt": "2026-07-31T08:58:48.033Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
           }
         },
@@ -2110,9 +2110,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 5,
+            "attempts": 6,
             "firstFailedAt": "2026-07-23T20:21:21.408Z",
-            "lastFailedAt": "2026-07-30T09:44:18.296Z",
+            "lastFailedAt": "2026-07-31T08:59:25.334Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
           }
         },
@@ -2190,18 +2190,9 @@
       "title": "كثرة التطبيقات التعليمية… وعدم الجدوى في الواقع التربوي",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201709-005.mp3",
-          "failure": {
-            "slug": "qabas-201709-005",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 5,
-            "firstFailedAt": "2026-07-23T20:22:13.472Z",
-            "lastFailedAt": "2026-07-30T09:44:26.490Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=88/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
@@ -3501,9 +3492,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 16,
+            "attempts": 17,
             "firstFailedAt": "2026-07-22T01:33:32.610Z",
-            "lastFailedAt": "2026-07-30T12:07:15.426Z",
+            "lastFailedAt": "2026-07-31T08:58:20.979Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
           }
         },
@@ -3611,9 +3602,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 16,
+            "attempts": 17,
             "firstFailedAt": "2026-07-22T01:19:05.194Z",
-            "lastFailedAt": "2026-07-30T12:07:00.202Z",
+            "lastFailedAt": "2026-07-31T08:58:05.768Z",
             "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
           }
         },
@@ -3794,9 +3785,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 16,
+            "attempts": 17,
             "firstFailedAt": "2026-07-22T02:07:15.589Z",
-            "lastFailedAt": "2026-07-30T12:07:24.353Z",
+            "lastFailedAt": "2026-07-31T08:58:32.788Z",
             "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 74/135"
           }
         },
@@ -4028,9 +4019,9 @@
             "voice": "fahed",
             "kind": "original",
             "stage": "generate-reading",
-            "attempts": 9,
+            "attempts": 10,
             "firstFailedAt": "2026-07-22T05:45:02.086Z",
-            "lastFailedAt": "2026-07-30T12:08:07.641Z",
+            "lastFailedAt": "2026-07-31T08:59:15.405Z",
             "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 76/140"
           }
         },
@@ -4360,5 +4351,5 @@
       "complete": false
     }
   ],
-  "fingerprint": "a432daf6723a9611fe370c66ba940d764ce1366c998bea16c9c9df932b0401a4"
+  "fingerprint": "64fe99fadb60224c7277cfe0311631d34b0bf08614194122d5d7d559eb1ec3a7"
 }

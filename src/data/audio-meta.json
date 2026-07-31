@@ -887,6 +887,12 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:40.485Z"
   },
+  "qabas-201703-001.mp3": {
+    "durationSeconds": 144,
+    "bytes": 2308014,
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-07-31T04:40:29.912Z"
+  },
   "qabas-201703-001.noura.mp3": {
     "bytes": 2356915,
     "sha256": "9ae0f9b96c2577cc11fbd8e9ffd30f65fe8a532e2c5ca3e55cdcbe2763951ea2",
@@ -1354,6 +1360,20 @@
     "acceptedAt": "2026-07-28T23:02:49.608Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T19:38:06.064Z"
+  },
+  "qabas-201709-005.mp3": {
+    "bytes": 2188896,
+    "sha256": "b75e1b2b65a7992399fdae3c04492b2ca99e498aaed2cf6c0769d093e45d2d60",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-07-31T08:59:40.495Z",
+    "durationSeconds": 137,
+    "sourceHash": "8c2c2c3825fbec6104eb1bde0cb27002821343e06ab6de4bdf0732112ce68b46",
+    "pipelineHash": "4e9a9a416d5ad5eb64559842983d24438b90dfd8dac4d86fd2ae22f7fee1267a",
+    "humanLikenessScore": 88,
+    "audioJudgeMinimum": null,
+    "acceptedAt": "2026-07-31T08:59:33.327Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-07-31T09:00:10.903Z"
   },
   "qabas-201709-005.noura.mp3": {
     "bytes": 2207286,
@@ -2574,11 +2594,5 @@
     "bytes": 2973823,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:02.350Z"
-  },
-  "qabas-201703-001.mp3": {
-    "durationSeconds": 144,
-    "bytes": 2308014,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-07-31T04:40:29.912Z"
   }
 }

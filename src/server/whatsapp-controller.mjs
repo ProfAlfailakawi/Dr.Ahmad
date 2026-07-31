@@ -4,6 +4,7 @@ import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
 import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
 import { distillItem } from '../../whatsapp-agent/daily-experience.mjs'
+import { conceptQueryFor, glossarySize } from '../../whatsapp-agent/domain-concepts.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const OWNER_ALERT_FALLBACK = 'طلب صاحب هذه الرسالة التواصل معك مباشرة. افتح محادثات واتساب من جهازك المرتبط.'
@@ -145,6 +146,7 @@ const COLLECTIONS = Object.freeze({
   commands: 'whatsapp_bridge_commands',
   events: 'whatsapp_attention_events',
   settings: 'whatsapp_settings',
+  quality: 'whatsapp_quality_daily',
   audienceContacts: 'whatsapp_audience_contacts',
   audienceLists: 'whatsapp_audience_lists',
   audienceMembers: 'whatsapp_audience_members',
@@ -729,7 +731,7 @@ function impliedReading(cleanText) {
    حين يكون الطلب تخميناً (fallback) وكلمتُه واحدةً أو كلمتين، ويتقارب أعلى
    مرشَّحَين تقارباً حقيقياً، فالصوابُ سؤالٌ واحد لا ثلاثةُ روابطَ تُلقى على
    القارئ. الشكّ يُصرَّح به ولا يُخفى خلف قائمة. */
-function scoredSiteResults(query, options = {}) {
+export function scoredSiteResults(query, options = {}) {
   const tokens = contentTokens(options.overrideQuery || query).slice(0, 8)
   if (!tokens.length) return []
   const excluded = new Set(Array.isArray(options.excludeIds) ? options.excludeIds : [])
@@ -743,6 +745,10 @@ function scoredSiteResults(query, options = {}) {
       const neededMatches = Math.min(tokens.length, Math.max(1, Math.ceil(tokens.length * .38)))
       return row.score >= 7 && row.matched >= neededMatches
     })
+    /* درجةٌ منسوبة إلى أقصى ما يمكن لهذا السؤال: الدرجة الخام تكبر بكثرة
+       الألفاظ، فلا تصلح للموازنة بين بحثين مختلفَي الألفاظ (اللفظي والمفهومي).
+       النسبة تجعلهما قابلَين للمقارنة بإنصاف. */
+    .map((row) => ({ ...row, norm: row.score / Math.max(1, tokens.length * 8) }))
     .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
     .slice(0, Math.max(1, Math.min(5, Number(options.limit || 3))))
 }
@@ -916,6 +922,42 @@ function kindsForReader(kind) {
   return []
 }
 
+/* ═══ حضور الدكتور ═══
+   كان البوت يقول «وصلت رسالتك للدكتور» بصيغةٍ واحدة سواءٌ كان الدكتور متابعاً
+   اليوم أم غائباً أسبوعاً — وعدٌ متساوٍ في حالتين مختلفتين. الآن يعرف: كل
+   رسالةٍ يكتبها الدكتور بيده في أي محادثة تُثبِت حضوره. فيصدُق في الحالين،
+   ولا يَعِد بموعدٍ قط. */
+let ownerLastActiveAt = 0
+const OWNER_PRESENT_MS = 12 * 60 * 60_000
+export function markOwnerActive(at = Date.now()) {
+  const stamp = typeof at === 'number' ? at : Date.parse(at) || Date.now()
+  if (stamp > ownerLastActiveAt) ownerLastActiveAt = stamp
+}
+export function ownerPresenceLine(at = Date.now()) {
+  if (!ownerLastActiveAt) return ''
+  return at - ownerLastActiveAt <= OWNER_PRESENT_MS
+    ? '\n\nوالدكتور متابعٌ لرسائله اليوم — لكنّي لا أعدك بموعد رد.'
+    : ''
+}
+
+/* ═══ الجودة تُقاس لا تُدّعى ═══
+   كل ترقيةٍ بعد اليوم يجب أن تُقاس بأثرها لا بذوق من بناها: كم سؤالاً أُجيب
+   من المنشور، وكم انتهى بـ«ما لقيت»، وكم أنقذه المفهوم أو تعليمُ الدكتور.
+   عدّادٌ يوميّ واحد لكل محادثة — بلا حفظ نصوص الناس ولا أرقامهم. */
+const QUALITY_BUCKETS = new Map([
+  ['no-grounded-answer', 'missed'], ['near-suggestions', 'missed'],
+  ['active-clarify', 'clarified'], ['doubt-clarify', 'clarified'],
+  ['context-missing', 'clarified'], ['correction-clarify', 'clarified'],
+  ['human-request', 'escalated'],
+  ['concept-search', 'concept'], ['taught-phrase', 'taught'],
+])
+export function qualityBucketFor(reason) {
+  const key = String(reason || '')
+  if (QUALITY_BUCKETS.has(key)) return QUALITY_BUCKETS.get(key)
+  if (key.startsWith('rule-no-grounding')) return 'missed'
+  return 'answered'
+}
+
 const INITIATIVE_COOLDOWN_MS = 30 * 60_000
 function initiativeLine(conversation = {}, item = null, previousIds = [], at = Date.now()) {
   if (!item) return ''
@@ -969,7 +1011,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   }
   if (!clean) return { kind: 'reply', reason: 'empty-after-normalization', reply: signReply(clarifyText(messages, conversation), messages) }
   if (HUMAN_PATTERNS.some((pattern) => pattern.test(clean))) {
-    return { kind: 'escalate', reason: 'human-request', reply: signReply(HUMAN_ACK, messages) }
+    return { kind: 'escalate', reason: 'human-request', reply: signReply(`${HUMAN_ACK}${ownerPresenceLine()}`, messages) }
   }
 
   const rule = findRuleMatch(text, rules)
@@ -1511,7 +1553,43 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       })
       .map((entry) => entry.row)]
     : rows
-  const found = orderedRows.slice(0, 3).map((row) => row.item)
+  let found = orderedRows.slice(0, 3).map((row) => row.item)
+
+  /* ═══ المعنى قبل اللفظ ═══
+     «تقييم الطلاب بلا درجات» لا تطابق «التقويم التربوي» حرفاً، وهما الشيء
+     نفسه عند الدكتور. نردّ لفظ السائل إلى مفهومه من معجمه (٢٩٠ مفهوماً و١٣٢٢
+     اسماً) ونبحث بأسماء المفهوم كلها. **زيادةُ إدراكٍ لا استبدال**: لا نُشغّله
+     إلا حين يقصُر البحث الحرفي، ولا نُزيح ما وجده — فما كان يعمل يبقى كما هو،
+     وما كان يسقط صار يُدرَك. */
+  const conceptHit = conceptQueryFor(query)
+  let conceptUsed = false
+  if (conceptHit) {
+    const conceptRows = scoredSiteResults(conceptHit.query, { kinds, limit: 5, filters })
+    const literalBest = orderedRows[0]?.norm || 0
+    const conceptBest = conceptRows[0]?.norm || 0
+    /* ثلاث حالاتٍ فقط يتدخّل فيها المفهوم — وفي غيرها يبقى البحث الحرفي كما
+       هو، فما كان يعمل لا يُمسّ:
+       (١) لم يجد اللفظُ شيئاً       → إنقاذٌ كامل
+       (٢) وجد أقلّ من ثلاث        → إكمالٌ بلا إزاحة
+       (٣) وجد، والمفهوم أوضح منه بفارقٍ بيّن (≥١٫٢٥×) → إعادة ترتيبٍ بالنسبة */
+    if (!found.length && conceptRows.length) {
+      conceptUsed = true
+      found = conceptRows.slice(0, 3).map((row) => row.item)
+    } else if (found.length < 3 && conceptRows.length) {
+      const known = new Set(found.map((item) => item.id))
+      found = [...found, ...conceptRows.map((row) => row.item).filter((item) => !known.has(item.id))].slice(0, 3)
+    } else if (conceptBest >= literalBest * 1.25 && conceptRows.length) {
+      const merged = new Map()
+      for (const row of [...orderedRows, ...conceptRows]) {
+        const previous = merged.get(row.item.id)
+        if (!previous || row.norm > previous.norm) merged.set(row.item.id, row)
+      }
+      const reranked = [...merged.values()].sort((a, b) => b.norm - a.norm).slice(0, 3)
+      /* لا نُعلن «فهمت مقصدك» إلا إذا غيّر المفهومُ الصدارة فعلاً. */
+      conceptUsed = reranked[0]?.item?.id !== found[0]?.id
+      found = reranked.map((row) => row.item)
+    }
+  }
 
   /* ─── الشكّ يُسأل عنه، ولا يُخمَّن ───
      كلمةٌ واحدة تخميناً + مرشَّحان متقاربان = سؤالٌ واحد. والجواب بـ«الأولى»
@@ -1537,9 +1615,16 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
          مصفوفة محدودة السقف — كذاكرة الاهتمام، ولنفس سبب `merge:true`. */
       ...(signal ? { readerSignals: [...(Array.isArray(conversation.readerSignals) ? conversation.readerSignals : []), signal].slice(-12) } : {}),
     }
+    /* حين يكون الإدراكُ من المفهوم لا من اللفظ، نُصرّح به: هذه أمانةٌ مع
+       السائل (عرفتُ مقصدك لا لفظك)، وهي أيضاً أجملُ ما في الردّ. */
+    const intro = filterLabel
+      ? `فهمت شرطك (${filterLabel}). هذا ما يطابقه من موقع الدكتور:`
+      : conceptUsed && conceptHit
+        ? `فهمت أنك تقصد «${conceptHit.concept.canonicalAr}» — وهذا ما كتبه الدكتور فيه:`
+        : undefined
     return {
-      kind: 'reply', reason: classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
-      reply: signReply(`${siteResultReply(found, filterLabel ? `فهمت شرطك (${filterLabel}). هذا ما يطابقه من موقع الدكتور:` : undefined)}${offer}`, messages),
+      kind: 'reply', reason: conceptUsed ? 'concept-search' : classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
+      reply: signReply(`${siteResultReply(found, intro)}${offer}`, messages),
       evidence: found.map((item) => item.id),
       contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: query,
       ...(Object.keys(patch).length ? { patch } : {}),
@@ -2756,6 +2841,11 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         lastManualAt: now,
         updatedAt: now,
       }, { merge: true })
+      /* كتابةُ الدكتور بيده في أي محادثة دليلُ حضوره — يُستفاد منها في صدق
+         وعد التحويل البشري، ولا تُحفظ عنها أي بيانات أخرى. */
+      markOwnerActive(now)
+      void db.collection(COLLECTIONS.settings).doc('owner-presence')
+        .set({ lastActiveAt: now, updatedAt: now }, { merge: true }).catch(() => {})
       sendJson(res, 200, { ok: true, wakeActive: false })
       return
     }
@@ -2833,6 +2923,11 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
        TTL داخلي، فيسري تحرير الدكتور من لوحة «رسائل البوت» خلال دقائق. */
     void refreshBotMessages().catch(() => {})
     void primeTaughtPhrases(db).catch(() => {})
+    void (async () => {
+      if (ownerLastActiveAt) return
+      const snapshot = await db.collection(COLLECTIONS.settings).doc('owner-presence').get()
+      if (snapshot.exists) markOwnerActive(snapshot.data()?.lastActiveAt || 0)
+    })().catch(() => {})
     const wakePhrase = isWhatsAppWakePhrase(text)
     const manualTakeoverActive = data.mode === 'human'
       || (data.mode === 'silent' && Boolean(data.lastManualAt) && data.wakeActive !== true)
@@ -3069,6 +3164,21 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     /* ذاكرة اللهجة الحيّة: الصياغة التي لم تُفهم بثقة تُرصد للمراقبة في اللوحة
        (كما كانت أيام الوكيل المحلي). رصدٌ خلفي لا يؤخر الرد، ولا يتعلم البوت
        منها جواباً — الاعتماد يبقى للدكتور صراحةً. */
+    /* عدّاد الجودة اليومي: رقمٌ واحد لكل ردّ، بلا نصٍّ ولا رقم هاتف. */
+    void (async () => {
+      /* `FieldValue` يُستورد هنا لا في رأس الملف: العقل يُختبر بلا firebase،
+         واستيرادُه ساكناً كان يجرّ حزمة الخادم كاملةً إلى الاختبارات. */
+      const { FieldValue } = await import('firebase-admin/firestore')
+      const day = new Intl.DateTimeFormat('en-CA', { timeZone: KUWAIT_TZ }).format(new Date())
+      const bucket = qualityBucketFor(decision.reason)
+      await db.collection(COLLECTIONS.quality).doc(day).set({
+        day,
+        total: FieldValue.increment(1),
+        [bucket]: FieldValue.increment(1),
+        updatedAt: now,
+      }, { merge: true })
+    })().catch(() => {})
+
     if (['active-clarify', 'no-grounded-answer', 'near-suggestions', 'correction-clarify'].includes(decision.reason)) {
       const phrase = bounded(stripArabicGreetings(text) || normalizeArabicMessage(text), 160)
       if (phrase.length >= 2) {
@@ -4128,6 +4238,38 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
 
+    /* ═══ الجودة مقيسة ═══
+       سبعة أرقامٍ عن أسبوع: كم سؤالاً أُجيب من المنشور، وكم انتهى بـ«ما
+       لقيت»، وكم أنقذه المعجم أو تعليم الدكتور. بلا هذه الأرقام يبقى كل
+       تحسينٍ تخميناً — ومنها يُعرف هل الترقيات تنفع فعلاً. */
+    if (path === '/quality' && method === 'GET') {
+      const snapshot = await db.collection(COLLECTIONS.quality).orderBy('day', 'desc').limit(14).get().catch(() => ({ docs: [] }))
+      const days = snapshot.docs.map(serializeDoc).filter(Boolean)
+      const week = days.slice(0, 7)
+      const sum = (key) => week.reduce((total, row) => total + Number(row[key] || 0), 0)
+      const total = sum('total')
+      const missed = sum('missed')
+      const pct = (value) => (total ? Math.round((value / total) * 100) : 0)
+      sendJson(res, 200, {
+        days,
+        week: {
+          total,
+          answered: sum('answered'),
+          clarified: sum('clarified'),
+          missed,
+          escalated: sum('escalated'),
+          concept: sum('concept'),
+          taught: sum('taught'),
+          missedPercent: pct(missed),
+          answeredPercent: pct(sum('answered')),
+        },
+        glossary: glossarySize(),
+        note: total
+          ? `من ${total} ردّاً هذا الأسبوع: ${pct(sum('answered'))}٪ أُجيب من المنشور، و${pct(missed)}٪ انتهى بلا مادة. كلما نزلت نسبة «بلا مادة» صار الفهم أعمق.`
+          : 'لم تُسجَّل ردود بعد. الأرقام تبدأ من أول محادثة بعد هذا التحديث.',
+      })
+      return
+    }
     if (path === '/learning' && method === 'GET') {
       /* الذاكرة الحيّة تعرض الصياغات المرصودة فعلاً (ما لم يُفهم بثقة) —
          كانت اللوحة تقرأ أصفاراً لأن العقل المركزي لم يكن يرصد شيئاً. */

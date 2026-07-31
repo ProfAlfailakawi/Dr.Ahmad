@@ -18,6 +18,7 @@ src/data/*
 !src/data/editorial-policy.json
 !src/data/bodies.json
 !src/data/audio.json
+!src/data/dr-ahmad-domain-glossary.json
 !src/data/audio-meta.json
 !src/data/podcast-admin.json
 !src/data/research-papers.ts
@@ -39,3 +40,4 @@ whatsapp-agent/*
 !whatsapp-agent/knowledge-modes.mjs
 !whatsapp-agent/conversation-context.mjs
 !whatsapp-agent/daily-experience.mjs
+!whatsapp-agent/domain-concepts.mjs

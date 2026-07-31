@@ -5,6 +5,8 @@ import {
   returningReaderLine,
   applyTaughtPhrases,
   readerKindOf,
+  qualityBucketFor,
+  markOwnerActive,
   buildWhatsAppDiagnostics,
   normalizeArabicMessage,
   isWhatsAppWakePhrase,
@@ -499,6 +501,45 @@ assert.equal(readerKindOf({ readerSignals: ['teacher', 'teacher'] }), 'teacher')
     new RegExp(String(newest.title).slice(0, 18).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
   )
 }
+
+/* ١٢) المعنى قبل اللفظ: معجم الدكتور (٢٩٠ مفهوماً/١٣٢٢ اسماً) صار يُفتح. */
+{
+  const { conceptQueryFor, glossarySize } = await import('../whatsapp-agent/domain-concepts.mjs')
+  const size = glossarySize()
+  assert.ok(size.concepts >= 250 && size.aliases >= 1_000, `المعجم يُقرأ فعلاً (${size.concepts}/${size.aliases})`)
+  assert.equal(conceptQueryFor('تقييم الطلاب بلا درجات')?.concept.canonicalAr, 'التقويم التربوي')
+  assert.equal(conceptQueryFor('edtech')?.concept.canonicalAr, 'تكنولوجيا التعليم', 'الإنجليزية تُفهم أيضاً')
+  assert.equal(conceptQueryFor('كيف حالك'), null, 'الكلام العادي لا يُقحم في المفاهيم')
+  /* الإنجليزية كانت تعجز تماماً قبل المعجم — والآن تُجيب من المنشور */
+  const english = decideGroundedResponse({ text: 'edtech' })
+  assert.equal(english.reason, 'concept-search')
+  assert.match(english.reply, /فهمت أنك تقصد «تكنولوجيا التعليم»/)
+  assert.match(english.reply, /https:\/\/dr-alfailakawi\.com\//)
+  /* ولا يُقحم المفهوم على سؤالٍ وجد جوابه الحرفي القويّ */
+  assert.notEqual(decideGroundedResponse({ text: 'آخر مقالة' }).reason, 'concept-search')
+}
+
+/* ١٣) الجودة مقيسة: كل ردٍّ يقع في خانةٍ واحدة، والخانة الافتراضية «أُجيب». */
+assert.equal(qualityBucketFor('no-grounded-answer'), 'missed')
+assert.equal(qualityBucketFor('near-suggestions'), 'missed')
+assert.equal(qualityBucketFor('active-clarify'), 'clarified')
+assert.equal(qualityBucketFor('doubt-clarify'), 'clarified')
+assert.equal(qualityBucketFor('human-request'), 'escalated')
+assert.equal(qualityBucketFor('concept-search'), 'concept')
+assert.equal(qualityBucketFor('taught-phrase'), 'taught')
+assert.equal(qualityBucketFor('site-index'), 'answered')
+assert.equal(qualityBucketFor('context-summary'), 'answered')
+
+/* ١٤) حضور الدكتور: الوعد يصدُق في الحالين ولا يَعِد بموعدٍ قط. */
+markOwnerActive(0)
+const awayAck = decideGroundedResponse({ text: 'أبي أكلم موظف' })
+assert.equal(awayAck.kind, 'escalate')
+assert.doesNotMatch(awayAck.reply, /متابعٌ لرسائله اليوم/)
+markOwnerActive(Date.now() - 60_000)
+const presentAck = decideGroundedResponse({ text: 'أبي أكلم موظف' })
+assert.match(presentAck.reply, /متابعٌ لرسائله اليوم/)
+assert.doesNotMatch(presentAck.reply, /خلال ساعة|خلال يوم|سيرد عليك خلال/, 'لا وعد بموعد رد أبداً')
+markOwnerActive(0)
 
 /* القوالب الحية: تحرير اللوحة يجب أن يصل الردود (كان مسبوكاً عند التحميل) */
 const controllerNow = controllerSource

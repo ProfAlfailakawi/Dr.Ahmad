@@ -573,6 +573,7 @@ const densityLabels: Record<DesignDensity | 'auto', string> = {
 }
 
 const platformLabels: Record<SocialPlatform | 'auto', string> = {
+  facebook: 'فيسبوك',
   auto: 'يختار الأنسب',
   instagram: 'Instagram',
   story: 'Story',
@@ -2014,6 +2015,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const timer = window.setTimeout(() => controller.abort(), 285_000)
     try {
       const platformFormat: Record<SocialPlatform | 'auto', SocialFormatId> = {
+        facebook: 'facebook-landscape',
         auto: 'instagram-portrait',
         instagram: 'instagram-portrait',
         story: 'story',
@@ -2218,6 +2220,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
   const buildLocalReserveImage = async (options: { reason: string; candidateIndex?: number; preferredWorld?: string; textZone?: 'right' | 'left' | 'bottom' } = { reason: 'local-reserve' }): Promise<GeneratedStudioImage> => {
     const platformFormat: Record<SocialPlatform | 'auto', SocialFormatId> = {
+        facebook: 'facebook-landscape',
       auto: 'instagram-portrait',
       instagram: 'instagram-portrait',
       story: 'story',

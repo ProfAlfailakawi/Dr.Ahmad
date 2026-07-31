@@ -910,16 +910,14 @@ export default function ArticleDetail() {
       {serenity && (
         <div className="serenity-controls" role="group" aria-label="إعدادات وضع السكينة">
           <div className="serenity-surface-switch" role="radiogroup" aria-label="مظهر القراءة">
-            <button type="button" role="radio" aria-checked={serenitySurface === 'sepia'} onClick={() => setSerenitySurface('sepia')} className={serenitySurface === 'sepia' ? 'is-active' : ''}>
+            <button type="button" role="radio" aria-checked={serenitySurface === 'sepia'} onClick={() => setSerenitySurface('sepia')} title="ورق كريمي" aria-label="ورق كريمي" className={serenitySurface === 'sepia' ? 'is-active' : ''}>
               <span aria-hidden className="serenity-swatch serenity-swatch--sepia" />
-              ورق كريمي
             </button>
-            <button type="button" role="radio" aria-checked={serenitySurface === 'dark'} onClick={() => setSerenitySurface('dark')} className={serenitySurface === 'dark' ? 'is-active' : ''}>
+            <button type="button" role="radio" aria-checked={serenitySurface === 'dark'} onClick={() => setSerenitySurface('dark')} title="ورق داكن" aria-label="ورق داكن" className={serenitySurface === 'dark' ? 'is-active' : ''}>
               <span aria-hidden className="serenity-swatch serenity-swatch--dark" />
-              داكن
             </button>
           </div>
-          <button type="button" onClick={() => setSerenity(false)} className="serenity-exit" aria-label="الخروج من وضع السكينة">خروج</button>
+          <button type="button" onClick={() => setSerenity(false)} className="serenity-exit" aria-label="الخروج من وضع السكينة" title="خروج من السكينة"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" /></svg></button>
         </div>
       )}
     </Page>

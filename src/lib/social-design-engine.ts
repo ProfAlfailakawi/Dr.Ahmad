@@ -85,6 +85,9 @@ export type SocialPlatform =
   | 'reel'
   | 'linkedin'
   | 'x'
+  /* فيسبوك: الدكتور ينشر فيه فعلاً (فيسبوك · X · إنستغرام · لينكدإن) وكان
+     غائباً عن المقاسات كلها بينما حضر ما لا ينشر فيه. */
+  | 'facebook'
   | 'pinterest'
   | 'presentation'
   | 'thumbnail'
@@ -97,6 +100,8 @@ export type SocialFormatId =
   | 'reel-cover'
   | 'linkedin-landscape'
   | 'linkedin-square'
+  | 'facebook-landscape'
+  | 'facebook-square'
   | 'x-landscape'
   | 'x-square'
   | 'pinterest-tall'
@@ -822,6 +827,8 @@ export const SOCIAL_FORMATS: Record<SocialFormatId, SocialFormatSpec> = {
   'reel-cover': { id: 'reel-cover', label: 'Reel cover 9:16', platform: 'reel', width: 1080, height: 1920, safeInset: 0.13, maxTitleWords: 13, maxBodyWords: 20, supportsCarousel: false },
   'linkedin-landscape': { id: 'linkedin-landscape', label: 'LinkedIn 1.91:1', platform: 'linkedin', width: 1200, height: 627, safeInset: 0.075, maxTitleWords: 18, maxBodyWords: 34, supportsCarousel: false },
   'linkedin-square': { id: 'linkedin-square', label: 'LinkedIn 1:1', platform: 'linkedin', width: 1200, height: 1200, safeInset: 0.08, maxTitleWords: 24, maxBodyWords: 56, supportsCarousel: true },
+  'facebook-landscape': { id: 'facebook-landscape', label: 'Facebook 1.91:1', platform: 'facebook', width: 1200, height: 630, safeInset: 0.075, maxTitleWords: 18, maxBodyWords: 34, supportsCarousel: false },
+  'facebook-square': { id: 'facebook-square', label: 'Facebook 1:1', platform: 'facebook', width: 1080, height: 1080, safeInset: 0.08, maxTitleWords: 22, maxBodyWords: 52, supportsCarousel: true },
   'x-landscape': { id: 'x-landscape', label: 'X 16:9', platform: 'x', width: 1600, height: 900, safeInset: 0.07, maxTitleWords: 18, maxBodyWords: 30, supportsCarousel: false },
   'x-square': { id: 'x-square', label: 'X 1:1', platform: 'x', width: 1080, height: 1080, safeInset: 0.08, maxTitleWords: 18, maxBodyWords: 36, supportsCarousel: false },
   'pinterest-tall': { id: 'pinterest-tall', label: 'Pinterest 2:3', platform: 'pinterest', width: 1000, height: 1500, safeInset: 0.08, maxTitleWords: 24, maxBodyWords: 66, supportsCarousel: false },
@@ -2003,22 +2010,16 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
      ٢) ذاكرة العائلات: ما استُعمل في الجلسات الأخيرة يُخفَّض قليلاً — خفضٌ
         لطيف لا يكسر الجدارة، لكنه يكفي لتصعيد عائلةٍ جديدة حين تتقارب
         الدرجات. النتيجة: تنقّلٌ حقيقي بين لغات التكوين لا دورانٌ حول ثلاث. */
-  const recentFamilies = new Map<string, number>()
-  for (const [index, entry] of history.slice(-8).entries()) {
-    const family = String((entry as { layout?: string }).layout || '')
-    if (family) recentFamilies.set(family, Math.max(recentFamilies.get(family) || 0, 8 - index))
-  }
-  const familyFatigue = (layoutId: string) => Math.min(9, (recentFamilies.get(layoutId) || 0) * 1.2)
-
   const candidates: CompositionPlan[] = []
   for (const [layoutIndex, layout] of rankedLayouts.entries()) {
     for (let variant = 0; variant < 9; variant += 1) {
       const candidate = makeCandidate(layout, analysis, format, density, seed, layoutIndex * 7 + variant, history, directedRequest.preferPalette, directedRequest.preferTypography, ideaDna)
       /* الطلب الصريح للعائلة يتقدّم دائماً؛ وإرهاق التكرار لا يُطبَّق عليه
          أبداً حتى يبقى وعد الزر مطلقاً كما هو. */
-      const explicit = preferenceBoost(layout.id)
-      const adjustment = explicit ? explicit : -familyFatigue(layout.id)
-      const boosted = adjustment ? { ...candidate, fitness: roundScore(candidate.fitness + adjustment) } : candidate
+      /* أُلغيت عقوبة «إرهاق العائلات» بعد ملاحظة الدكتور أن التصاميم نقصت:
+         أي خصمٍ من الجدارة قد يُسقط مرشحين تحت عتبة القبول فيضيق المعروض.
+         التنويع يبقى من توسيع فضاء التوليد وحده — إضافةٌ لا تُنقص شيئاً. */
+      const boosted = preferenceBoost(layout.id) ? { ...candidate, fitness: roundScore(candidate.fitness + preferenceBoost(layout.id)) } : candidate
       candidates.push(directedRequest.basePlan ? applyDesignLocks(directedRequest.basePlan, boosted, locks) : boosted)
     }
   }
@@ -2482,6 +2483,7 @@ export interface EngagementForecast {
 
 const PLATFORM_TITLE_WINDOW: Record<SocialPlatform, { min: number; max: number; name: string; ideal: string }> = {
   reel: { min: 3, max: 7, name: 'الريل', ideal: '٣–٧ كلمات' },
+  facebook: { min: 5, max: 13, name: 'فيسبوك', ideal: '٥–١٣ كلمة' },
   thumbnail: { min: 3, max: 7, name: 'الثَمبنيل', ideal: '٣–٧ كلمات' },
   story: { min: 4, max: 9, name: 'الستوري', ideal: '٤–٩ كلمات' },
   instagram: { min: 5, max: 11, name: 'إنستغرام', ideal: '٥–١١ كلمة' },

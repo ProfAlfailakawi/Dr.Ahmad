@@ -14,6 +14,9 @@ import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { PublishingStudioNavigation, type PublishingStudioView } from './PublishingStudioNavigation'
 import { EditorialMemoryPanel } from './EditorialMemoryPanel'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
+/* بصمة الأسلوب: المسطرة نفسها التي يقيس بها الخادم — الملف .mjs عمداً كي
+   يستورده server.mjs بلا ترجمة، فلا يمدح أحدهما ما يرفضه الآخر. */
+import { judgeStyle, measureStyleDna, refineToStyle, type StyleVerdict } from '../../lib/style-dna.mjs'
 import { createIdeaDna } from '../../lib/idea-dna'
 import { buildKnowledgeGraph, graphSearch } from '../../lib/knowledge-graph'
 import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialCalibrationProfile, type EditorialPortfolioEvidence, type EditorialSourceType } from '../../lib/editorial-board'
@@ -271,6 +274,15 @@ type PerfectArticleResponse = {
   originality: number
   similarity: { slug: string; title: string; score: number }[]
   modelValidated: boolean
+  style?: {
+    score: number
+    ready: boolean
+    structure: string
+    lines: string[]
+    checks: { key: string; label: string; grade: number; actual: string; wanted: string }[]
+    fatal: string[]
+    metrics: { ellipsis: number; antithesis: number; questions: number; medianSentence: number; shortRate: number; paragraphs: number }
+  }
 }
 
 type RadarItem = { id: string; ar?: string; arNote?: string; en?: string; source?: string; url?: string }
@@ -311,6 +323,8 @@ const normalize = (value = '') => value
 const wordCount = (value = '') => value.trim().split(/\s+/).filter(Boolean).length
 const fromArabicDigits = (value: string) => value.replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
 
+/* لم يعد يُستدعى على مخرَج المحرك — إيقاع الفقرات صار من بصمته عبر
+   refineToStyle. باقٍ لأن مسارات قديمة قد تناديه على نصٍّ بلا فواصل. */
 function humanParagraphs(value: string, target: number) {
   const words = value.replace(/[ \t]+/g, ' ').replace(/\n+/g, ' ').trim().split(/\s+/).filter(Boolean)
   if (!words.length) return ''
@@ -335,44 +349,18 @@ function humanParagraphs(value: string, target: number) {
   return chunks.filter(Boolean).join('\n\n')
 }
 
-function fitExactWords(value: string, target: number) {
-  const clean = value.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
-  let words = clean.split(/\s+/).filter(Boolean)
-  const additions = [
-    'والفكرة هنا ليست في مقاومة الجديد، بل في أن نمنحه معنى تربوياً يحفظ الإنسان قبل أن يحتفل بالأداة.',
-    'حين يتقدم الإجراء على الغاية، يصبح التطوير أسرع، لكنه لا يصبح بالضرورة أعدل أو أعمق أو أكثر أثراً.',
-    'لهذا يحتاج القرار التعليمي إلى سؤال بسيط: ما الذي سيتغير فعلياً في وعي الطالب وفي حضور المعلم؟',
-    'التكنولوجيا الجيدة لا تلغي العلاقة الإنسانية، بل تمنحها وقتاً أوسع للفهم والحوار والتأمل والمراجعة الصادقة.',
-    'وكلما ازدادت قدرة النظام، ازدادت مسؤوليتنا عن الحدود والقيم واللغة التي تشرح للناس لماذا نستخدمه.',
-    'لا نحتاج حماساً أقل، بل نحتاج بصيرة أكبر توازن بين الإمكان والمصلحة وبين السرعة وكرامة المتعلم.',
-    'المعيار ليس حجم الانبهار، وإنما جودة الأثر الذي يبقى بعد أن تهدأ الضجة وتتحول الفكرة إلى ممارسة يومية.',
-    'ومن هنا يبدأ النقاش الحقيقي: تطوير يضيف للإنسان، لا تطوير يطلب من الإنسان أن يتكيف بصمت مع كل جديد.',
-  ]
-  let index = 0
-  while (words.length < target) {
-    const sentence = additions[index % additions.length].split(/\s+/).filter(Boolean)
-    const remaining = target - words.length
-    if (sentence.length <= remaining) words.push(...sentence)
-    else words.push(...sentence.slice(0, remaining))
-    index += 1
-  }
-  if (words.length > target) words = words.slice(0, target)
-  const last = words.length - 1
-  words[last] = words[last].replace(/[،؛:!.؟]+$/g, '') + '.'
-  return humanParagraphs(words.join(' '), target)
-}
+/* ⚠️ حُذف من هنا مصدرا «ليس أسلوبي» — لا يُعادان:
 
-function buildExactLocalArticle(idea: string, audience: string, angle: string, related: ArticleRecord[], target: number) {
-  const base = buildArticleDraft(idea, audience, angle, related)
-  const nearest = related.slice(0, 2).map((article) => article.title).join('، ')
-  const extension = [
-    `وإذا كانت هذه الفكرة قريبة من موضوعات سابقة مثل ${nearest || 'الإنسان والتعليم والتكنولوجيا'}، فإن زاويتها الجديدة ينبغي أن تبدأ من اللحظة الراهنة لا من تكرار الإجابات القديمة.`,
-    `المطلوب ليس مقالاً يصف الظاهرة فقط، بل نصاً يختبر افتراضاتها، ويقارن بين الوعد الذي تعلنه والنتيجة التي يلمسها الناس في الواقع.`,
-    `بالنسبة إلى ${audience}، تصبح المسؤولية أوضح: ترجمة الفكرة إلى قرار يمكن شرحه، وقياس أثره، والتراجع عنه حين يثبت أنه يختصر الإنسان بدل أن يخدمه.`,
-    `وهنا تظهر قيمة ${angle}: فهي لا تضع التكنولوجيا في مواجهة التربية، بل تضع كلتيهما أمام معيار واحد هو المعنى الإنساني الذي نريد حمايته.`,
-  ].join('\n\n')
-  return fitExactWords(`${base}\n\n${extension}`, target)
-}
+   ١) fitExactWords: كان يحشو أي مقالٍ أقصر من الهدف بثماني جملٍ مُعلَّبة
+      محفوظة في الكود («والفكرةُ هنا ليست في مقاومةِ الجديد…»)، وكان يعمل على
+      مخرَج النموذج الناجح أيضاً — فكل مقالٍ يخرج من الاستوديو كان يُختم
+      بجملٍ لم يكتبها أحد.
+
+   ٢) buildExactLocalArticle: قالبٌ يملأ الفراغات، يفتتح فقرته الثالثة بإحالةٍ
+      إلى «عنوان مقالك» — أي أنه ينقل عناوينه حرفياً داخل المقال الجديد.
+      قياسه بحَكَم الأسلوب: ٤٥٪ مقابل ٨٧٪ لمقالاته، مع رصدِ نقلٍ حرفي.
+
+   البديل: النقص يُعالَج بطلبِ توسيعٍ حقيقي من المحرك، والعجزُ يُقال صراحةً. */
 
 async function adminAiRequest<T>(path: string, body: unknown, token: string): Promise<T> {
   const response = await fetch(path, {
@@ -475,25 +463,14 @@ function clampExcerpt(text: string) {
   return Array.from(text.replace(/\s+/g, ' ').trim()).slice(0, 195).join('')
 }
 
-function buildArticleDraft(idea: string, audience: string, angle: string, related: ArticleRecord[]) {
-  const seed = related[0]
-  const second = related[1]
-  const topic = idea.trim() || 'السؤال التربوي الجديد'
-  const p1 = `ليست قيمة ${topic} في أنه موضوع جديد يملأ العناوين، بل في أنه يكشف طريقة نظرنا إلى الإنسان داخل التعليم. كل أداة أو فكرة تبدأ جذابة حين نراها من بعيد، لكنها تصبح أكثر تعقيداً عندما تقترب من الطالب والمعلم والأسرة والقرار اليومي داخل الصف. هنا لا يكفي أن نسأل: ما الذي تغيّر؟ بل ينبغي أن نسأل: ماذا فعل هذا التغيّر في المعنى؟`
-  const p2 = `بالنسبة إلى ${audience}، تبدو الزاوية الأهم في ${angle}. فالتعليم لا يتحرك بالأدوات وحدها، ولا يعيش بالشعارات وحدها. يعيش حين تتحول الفكرة إلى ممارسة عادلة، وإلى سؤال يحفظ كرامة المتعلم، وإلى قرار لا يختصر الإنسان في رقم أو سرعة أو نتيجة عابرة. ولذلك فإن أي نقاش جاد يجب أن يبدأ من أثر الفكرة لا من بريقها.`
-  const p3 = seed
-    ? `وقد كتبت من قبل في «${seed.title}» ما يقترب من هذا المعنى؛ فهناك خيط واضح بين السؤال القديم والسؤال الحالي: كيف نحافظ على حضور الإنسان بينما تتبدل اللغة والأدوات؟ وإذا كان المقال القديم قد فتح الباب، فإن اللحظة الحالية تطلب خطوة أهدأ وأكثر دقة: أن نميّز بين التطوير الذي يخدم التعلم، والتطوير الذي يجعل الإنسان تابعاً للإجراء.`
-    : `هذه الفكرة تحتاج إلى أن تُقرأ من الداخل لا من الحافة. فكل تغيير تعليمي يحمل وعداً وخطراً في الوقت نفسه؛ الوعد أن يساعدنا على الفهم، والخطر أن يجعلنا ننسى لماذا نتعلم أصلاً.`
-  const p4 = second
-    ? `واللافت أن هذا الخيط يظهر أيضاً في «${second.title}». هذا لا يعني تكرار الفكرة، بل يعني أن المسألة عادت إلينا بوجه جديد. فالأفكار الحقيقية لا تنتهي بعد مقال واحد؛ إنها تتطور، وتراجع نفسها، وتطلب منا لغة أكثر إنصافاً كلما تغيّر الزمن.`
-    : `المسألة إذن ليست رفضاً ولا اندفاعاً. هي دعوة إلى بطء عاقل داخل زمن سريع؛ بطء لا يعطل التطوير، لكنه يمنحه ضميراً واتجاهاً.`
-  const p5 = `لهذا أرى أن السؤال العملي ليس: هل نقبل ${topic} أو نرفضه؟ السؤال الأقرب إلى التعليم هو: كيف نجعله أداة تخدم الإنسان ولا تختصره؟ عندما نبدأ من هذا السؤال، يصبح التطوير أكثر تواضعاً، وأكثر صدقاً، وأقرب إلى روح التربية.`
-  let draft = [p1, p2, p3, p4, p5].join('\n\n')
-  const words = wordCount(draft)
-  if (words > 450) draft = draft.split(/\s+/).slice(0, 445).join(' ') + '.'
-  if (words < 350) draft += '\n\nوالأهم أن يبقى السؤال مفتوحاً: ما الأثر الإنساني الذي لا نريد أن نخسره ونحن نطارد الحلول السريعة؟'
-  return draft
-}
+/* ⚠️ حُذف «buildArticleDraft» — قالبُ الفراغات الذي كان يفتتح الاستوديو.
+
+   كان يُستدعى مرتين: مرةً ليملأ محرّر المقال لحظةَ فتح الاستوديو (فيرى
+   الدكتور نصّاً ليس نصّه قبل أن يضغط شيئاً)، ومرةً داخل السقوط المحلي. وكان
+   يكتب إحالةً إلى مقالٍ سابقٍ بعنوانه، ويقول «لهذا أرى أنّ…» — وكلاهما صوتٌ
+   لا يظهر في أرشيفه: «أرى أنّ» وردت مرتين في ٥٣ ألف كلمة.
+
+   المحرّر يفتح الآن فارغاً؛ الفراغ أصدق من نصٍّ منتحل. */
 
 function buildSocial(bundle: Pick<Bundle, 'title' | 'excerpt' | 'body'>, audience: string) {
   const quote = bundle.body
@@ -1275,15 +1252,16 @@ function buildBundle(idea: string, audience: string, angle: string, articles: Ar
   const related = relatedForIdea(`${idea} ${angle}`, articles, (article) => `${article.excerpt || ''} ${article.body || ''}`, 5)
   const relatedBooks = relatedForIdea(`${idea} ${angle}`, books, (book) => book.desc || '', 3)
   const relatedPapers = relatedForIdea(`${idea} ${angle}`, papers, (paper) => `${paper.meta || ''} ${paper.abstractAr || ''} ${paper.journal || ''}`, 3)
-  const body = buildArticleDraft(idea, audience, angle, related)
-  const excerpt = clampExcerpt(body.split('\n\n')[0])
+  /* المحرّر يفتح فارغاً: لا نصَّ يُنسب إليه قبل أن يكتبه المحرك بأسلوبه. */
+  const body = ''
+  const excerpt = ''
   const partial = { title, excerpt, body }
   const quality = [
-    wordCount(body) >= 350 && wordCount(body) <= 450 ? `عدد الكلمات مناسب: ${wordCount(body)} كلمة.` : `عدد الكلمات يحتاج ضبطاً: ${wordCount(body)} كلمة.`,
+    'المحرّر يفتح فارغاً عمداً؛ المقال يُكتب ببصمتك المقيسة لا بقالب.',
     related.length ? `مرتبط بـ ${related.length} مقالات من أرشيفك.` : 'لم أجد ربطاً قوياً؛ أضف كلمات من قاموسك الفكري.',
     relatedBooks.length || relatedPapers.length ? 'يوجد امتداد أكاديمي/كتابي مناسب.' : 'لا يوجد امتداد كتابي أو بحثي واضح بعد.',
     'صورة المشاركة الافتراضية جاهزة إذا لم ترفع صورة خاصة.',
-    'الحزمة الاجتماعية تولّدت للمقال، ويمكن حفظها في طابور الموافقة.',
+    'الحزمة الاجتماعية تُبنى بعد كتابة المقال، ويمكن حفظها في طابور الموافقة.',
     'التصنيف والمقتطف والـslug جاهزة مبدئياً.',
     'بعد النشر: الصوت الآلي وR2 ينتظران مفاتيح Azure/Gemini ليصبحا تلقائيين بالكامل.',
   ]
@@ -1589,6 +1567,57 @@ function QualityGateCard({ gate }: { gate: ReturnType<typeof qualityGate> }) {
           </div>
         ))}
       </div>
+    </section>
+  )
+}
+
+/* مقياس البصمة الحيّ: يقيس ما في المحرّر الآن بالمسطرة نفسها التي يقيس بها
+   الخادم — فيرى الدكتور أثر كل تعديلٍ يكتبه على مطابقته لأسلوبه لحظةَ كتابته. */
+function StyleFidelityCard({ verdict, sampleSize }: { verdict: StyleVerdict | null; sampleSize: number }) {
+  if (!verdict) return null
+  const tone = verdict.score >= 88 ? 'text-accent' : verdict.score >= 78 ? 'text-ink' : 'text-soft'
+  const weakest = [...verdict.checks].filter((check) => check.grade < .8).sort((left, right) => left.grade - right.grade).slice(0, 3)
+  return (
+    <section className={card} data-style-fidelity="true">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">مطابقة أسلوبك</p>
+          <h2 className="mt-1 font-display text-xl font-semibold text-ink">{verdict.ready ? 'داخل مدى مقالاتك' : 'خارج مدى مقالاتك'}</h2>
+        </div>
+        <span className={`rounded-full border border-accent/30 bg-accent/[.06] px-4 py-2 font-display text-xl ${tone}`}>{verdict.score}٪</span>
+      </div>
+      <p className="mt-2 text-[.76rem] leading-relaxed text-soft">المسطرة مقيسة على {sampleSize} مقالاً منشوراً لك؛ وسيط مقالاتك نفسها ٨٧٪.</p>
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {([
+          ['وقفات «…»', verdict.metrics.ellipsis],
+          ['«بل»', verdict.metrics.antithesis],
+          ['أسئلة', verdict.metrics.questions],
+          ['وسيط الجملة', verdict.metrics.medianSentence],
+        ] as [string, number][]).map(([label, value]) => (
+          <div key={label} className="rounded-xl border border-hair bg-canvas px-3 py-2 text-center">
+            <strong className="block font-display text-lg text-accent">{value}</strong>
+            <span className="text-[.68rem] text-soft">{label}</span>
+          </div>
+        ))}
+      </div>
+      {verdict.fatal.length > 0 && (
+        <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">{verdict.fatal.join(' · ')}</p>
+      )}
+      {weakest.length > 0 && (
+        <div className="mt-4 grid gap-2">
+          {weakest.map((check) => (
+            <div key={check.key} className="rounded-xl border border-hair bg-canvas px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[.82rem] font-semibold text-ink">{check.label}</span>
+                <span className="text-[.74rem] text-soft">{check.actual} · المعتاد {check.wanted}</span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-hair">
+                <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(check.grade * 100)}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
@@ -2373,6 +2402,17 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
 
   const style = useMemo(() => editorialStyleProfile(richArticles), [richArticles])
   const styleSamples = useMemo(() => representativeStyleSamples(richArticles, 6), [richArticles])
+  /* البصمة الرقمية من الأرشيف الحيّ كاملاً: ما يقيسه الحَكَم على الخادم وما
+     يُصقل به النص هنا. تُحسب مرة عند تحميل المتون لا في كل توليد. */
+  const styleDna = useMemo(() => measureStyleDna(richArticles.map((article) => ({ body: article.body || '' }))), [richArticles])
+  const [styleVerdict, setStyleVerdict] = useState<StyleVerdict | null>(null)
+  /* المقياس الحيّ يتبع ما في المحرّر لا ما وُلّد: يكتب الدكتور سطراً فيرى أثره
+     على مطابقته لبصمته فوراً. فحص النقل الحرفي يبقى لحظة التوليد وحدها لأنه
+     يمسح الأرشيف كله. */
+  const liveStyleVerdict = useMemo(
+    () => bundle.body.trim().split(/\s+/).filter(Boolean).length >= 120 ? judgeStyle(bundle.body, styleDna) : styleVerdict,
+    [bundle.body, styleDna, styleVerdict],
+  )
   const lab = useMemo(() => ideaLab(idea, richArticles, books, papers), [idea, richArticles])
   const privateLinks = (privateBookLinks as { books?: PrivateBookLink[] }).books || []
   const gate = useMemo(() => qualityGate(bundle, richArticles, targetWords, skipOriginality), [bundle, richArticles, skipOriginality, targetWords])
@@ -2698,6 +2738,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
             body: articleBundle.body,
             audience,
             styleProfile: style,
+            /* المنشور يُقرأ باسمه كما يُقرأ المقال: البصمة نفسها ترافقه. */
+            styleDna,
             selectedEventIds,
           }, token)
         } catch {
@@ -2762,6 +2804,11 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           skipOriginality,
           styleProfile: style,
           styleSamples,
+          /* البصمة مقيسةٌ هنا على الأرشيف الحيّ كاملاً بلا بتر: الخادم يحمل
+             لقطةً من ١٤٣ مقالاً، والواجهة تحمل ما نُشر بعدها أيضاً. */
+          styleDna,
+          /* رقم الجولة يدوّر بنية المقال فلا يخرج مقالان متتاليان بالشكل نفسه. */
+          variation: generationRun.current,
           selectedEventIds,
           existing: archive.map((article) => ({
             slug: article.slug,
@@ -2771,34 +2818,17 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           })),
         }, token)
       } catch (reason) {
+        /* لا مقالَ مُلفَّقاً عند العجز. القالب المحلي القديم كان يسلّم نصاً
+           باسمه لم يكتبه أحد — والصدق أن يُقال «لم يُكتب» ويُحفظ ما كتبه هو. */
         const message = reason instanceof Error ? reason.message : ''
         if (/جلسة|صلاحية|Unauthenticated|Admin access/i.test(message)) throw reason
-        const initialTitle = suggestStrongTitle(requestedIdea)
-        const localBody = buildExactLocalArticle(requestedIdea, audience, requestedAngle, nearest, requestedTarget)
-        const localReport = articleSimilarityReport(initialTitle, localBody, richArticles)
-        const title = !skipOriginality && localReport.repeated ? `${initialTitle}… وما الذي تغيّر الآن؟` : initialTitle
-        const finalReport = articleSimilarityReport(title, localBody, richArticles)
-        generated = {
-          title,
-          cat: chooseCat(`${requestedIdea} ${requestedAngle}`),
-          excerpt: clampExcerpt(localBody.split(/(?<=[.!؟])\s+/).slice(0, 2).join(' ')),
-          body: localBody,
-          angle: requestedAngle,
-          event: selectedEventIds.length ? currentEvents.find((item) => item.id === selectedEventIds[0]) || null : null,
-          eventConnection: selectedEventIds.length ? 'استُخدم الحدث كمدخل راهن من دون أن يطغى على الفكرة الأصلية.' : '',
-          originalityNote: 'بُني محلياً من بصمة الأرشيف بعد فحص أقرب الزوايا السابقة.',
-          exactWords: requestedTarget,
-          originality: finalReport.originality,
-          similarity: finalReport.matches.slice(0, 5),
-          modelValidated: false,
-        }
+        throw new Error(`لم يُكتب المقال: تعذّر الوصول إلى محرك الكتابة${message ? ` (${message})` : ''}. لم يُحفظ أي نصٍّ ناقص، وفكرتك وزاويتك كما هما. جرّب مرة أخرى بعد قليل.`)
       }
-      const generatedWords = wordCount(generated.body)
-      if (generatedWords < requestedTarget) {
-        generated = { ...generated, body: fitExactWords(generated.body, requestedTarget), exactWords: requestedTarget }
-      } else {
-        generated = { ...generated, body: humanParagraphs(generated.body, generatedWords), exactWords: generatedWords }
-      }
+      /* الصقل الحتمي الأخير: طباعةٌ وإيقاعُ فقراتٍ ببصمته. لا تُضاف كلمة. */
+      const refinedBody = refineToStyle(generated.body, styleDna)
+      const verdict = judgeStyle(refinedBody, styleDna, { archive: richArticles.map((article) => ({ body: article.body || '' })) })
+      generated = { ...generated, body: refinedBody, exactWords: wordCount(refinedBody) }
+      setStyleVerdict(verdict)
       generated = {
         ...generated,
         title: override?.title || distinctEditorialTitle(generated.title, requestedIdea, bundle.title, richArticles, generationRun.current),
@@ -2816,9 +2846,11 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         books: relatedBooks.map(({ slug, title }) => ({ slug, title })),
         papers: relatedPapers.map(({ slug, title }) => ({ slug, title })),
         quality: [
+          `مطابقة الأسلوب لبصمتك: ${verdict.score}٪${generated.style?.structure ? ` · البناء: ${generated.style.structure}` : ''}${verdict.ready ? ' — داخل مدى مقالاتك' : ' — دون العتبة، راجع الملاحظات'}`,
+          `وقفات «…» ${verdict.metrics.ellipsis} · انقلابات «بل» ${verdict.metrics.antithesis} · أسئلة ${verdict.metrics.questions} · وسيط الجملة ${verdict.metrics.medianSentence} كلمة.`,
           `الحد الأدنى 350 كلمة؛ النسخة المولّدة الآن ${generated.exactWords} كلمة ويمكنك زيادتها بحرية.`,
           `درجة الأصالة مقابل الأرشيف: ${generated.originality}٪.`,
-          `تعلّم من ${style.articleCount} مقالاً ومن ${styleSamples.length} عينات أسلوب متنوعة.`,
+          `قيست بصمتك على ${styleDna?.sampleSize || style.articleCount} مقالاً منشوراً، لا على وصفٍ عام.`,
           generated.event ? `ربط راهن موثّق: ${generated.event.source} — ${generated.event.title}` : 'لم يُفرض حدث راهن لأن الصلة لم تكن عضوية.',
           skipOriginality ? 'استُثني فحص الأصالة بإقرار الكاتب لأن النص أو فكرته أصلية له.' : (generated.originalityNote || 'اجتاز فحص عدم تكرار الزاوية والحجة.'),
           'قوالب السوشيال تُبنى منفصلة لكل منصة لمنع النسخ المتكرر.',
@@ -2835,7 +2867,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       setBundle(nextBundle)
       setIdea(override?.title || idea)
       if (override?.angle) setAngle(override.angle)
-      setNotice(`بُني المقال بطول مبدئي ${generated.exactWords} كلمة. الحد الأدنى 350، ويمكنك الكتابة حتى 4000 كلمة وأكثر يدوياً${skipOriginality ? '، مع تسجيل استثناء الأصالة بإقرارك' : ''} ✓`)
+      setNotice(`كُتب المقال بأسلوبك بمطابقة ${verdict.score}٪ وطول ${generated.exactWords} كلمة${generated.style?.structure ? ` · بناء ${generated.style.structure}` : ''}${skipOriginality ? ' · مع تسجيل استثناء الأصالة بإقرارك' : ''} ✓`)
       setView('write')
       task.needsInput('المقال جاهز للمراجعة')
       void requestSocialPack(nextBundle, false).catch(() => undefined)
@@ -3108,6 +3140,7 @@ ${effectivePurpose}`,
             purpose: effectivePurpose,
             audience: effectiveAudience,
             styleProfile: style,
+            styleDna,
             selectedEventIds: pulseSelectedEventIds,
             standalone: true,
             creativeDirectives: {
@@ -3312,6 +3345,7 @@ ${effectivePurpose}`,
             </section>
             {bundle.event && <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">صلة راهنة موثقة</p><a href={bundle.event.url} target="_blank" rel="noreferrer" className="mt-3 block font-display text-[1rem] font-semibold leading-relaxed text-ink hover:text-accent">{bundle.event.title}</a><p className="mt-2 text-[.78rem] text-soft">{bundle.event.source}</p>{bundle.eventConnection && <p className="mt-3 text-[.8rem] leading-relaxed text-soft">{bundle.eventConnection}</p>}</section>}
             <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p><p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p><div className="mt-4 grid gap-3">{bundle.related.map((item) => <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">{item.title}{item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}</a>)}</div></section>
+            <StyleFidelityCard verdict={liveStyleVerdict} sampleSize={styleDna?.sampleSize || style.articleCount} />
             <PrivateBookMemoryCard matches={privateMemoryMatches} />
             <button type="button" onClick={() => setView('review')} className={primary}>انتقل إلى بوابة الجودة</button>
           </aside>

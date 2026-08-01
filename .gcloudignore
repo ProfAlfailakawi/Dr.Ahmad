@@ -22,6 +22,9 @@ src/data/*
 !src/data/audio-meta.json
 !src/data/podcast-admin.json
 !src/data/research-papers.ts
+!src/lib/
+src/lib/*
+!src/lib/style-dna.mjs
 !src/server/
 src/server/*
 !src/server/whatsapp-controller.mjs

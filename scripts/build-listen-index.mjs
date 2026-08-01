@@ -16,12 +16,13 @@
  * في الدقّة لا كسرٌ في الصفحة. وما لم يُنشر صوته لا يدخل الفهرس أصلاً: لا سطر
  * يقود إلى صمت.
  */
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = resolve(ROOT, 'src/data/listen-index.json')
+const SPOKEN_OUT = resolve(ROOT, 'src/data/spoken-index.json')
 const SELF_TEST = process.argv.includes('--self-test')
 
 const AUDIO_BASE = String(process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
@@ -98,7 +99,7 @@ function staticArticles() {
     }))
 }
 
-async function fetchTimings(episodes) {
+async function fetchTimings(episodes, spoken) {
   if (!AUDIO_BASE || !episodes.length) return
   const queue = [...episodes]
   const worker = async () => {
@@ -120,6 +121,18 @@ async function fetchTimings(episodes) {
         const matches = (item) => typeof item?.text === 'string' && item.text.includes(episode.question)
         const found = matches(line) ? line : utterances.find(matches)
         if (found && typeof found.startSec === 'number') episode.startSec = Number(found.startSec.toFixed(2))
+        /* فهرس المنطوق: كل جملةٍ قيلت في الحلقة بثانيتها ومتحدثها. منه يصير
+           الأرشيف المسموع قابلاً للبحث بالكلمة التي نُطقت لا بالعنوان. لا
+           يُجمع إلا لحلقةٍ موقّتة — الجملة بلا ثانيةٍ لا تُفتح على شيء. */
+        if (spoken && utterances.some((item) => typeof item?.startSec === 'number')) {
+          spoken.push({
+            slug: episode.slug,
+            title: episode.title,
+            lines: utterances
+              .filter((item) => typeof item?.startSec === 'number' && typeof item?.text === 'string')
+              .map((item) => [Number(Number(item.startSec).toFixed(1)), item.speaker === 'نورة' ? 1 : 0, item.text]),
+          })
+        }
       } catch { /* الحلقة تبقى بلا ثانية وتُشغَّل من أولها */ }
     }
   }
@@ -198,7 +211,8 @@ const dialogueOf = (slug) => {
 }
 
 const episodes = buildIndex({ articles, audioMeta, dialogueOf })
-await fetchTimings(episodes)
+const spoken = []
+await fetchTimings(episodes, spoken)
 
 mkdirSync(dirname(OUT), { recursive: true })
 writeFileSync(OUT, `${JSON.stringify({
@@ -207,5 +221,13 @@ writeFileSync(OUT, `${JSON.stringify({
   episodes,
 }, null, 2)}\n`)
 
+/* فهرس المنطوق ملفٌّ مستقل ثقيل عمداً: لا يُحمَّل إلا لمن فتح تبويب «جُمل
+   منطوقة» فعلاً (استيراد ديناميكي)، فلا يدفع ثمنه من لا يبحث في الصوت.
+   ويُكتب مضغوطاً بلا مسافات: مصفوفة [ثانية، متحدث، نص] لا كائن بمفاتيح. */
+spoken.sort((left, right) => left.slug.localeCompare(right.slug))
+writeFileSync(SPOKEN_OUT, `${JSON.stringify({ schemaVersion: 1, episodes: spoken })}\n`)
+
 const timed = episodes.filter((episode) => typeof episode.startSec === 'number').length
+const lines = spoken.reduce((total, item) => total + item.lines.length, 0)
 console.log(`✔ مجلس الفكرة: ${episodes.length} حلقة منشورة · ${timed} منها تبدأ عند ثانية السؤال`)
+console.log(`✔ فهرس المنطوق: ${lines} جملة من ${spoken.length} حلقة · ${Math.round(statSync(SPOKEN_OUT).size / 1024)}KB`)

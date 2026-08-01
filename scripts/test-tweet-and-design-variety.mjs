@@ -166,6 +166,86 @@ for (const draft of drafts) {
 }
 guard('concept-hero-not-a-person')
 
+/* ═══ ٥ ــ دفتر «ما نُشر» وخطة الأسبوع ═════════════════════════════ */
+
+const mem = await import(await compile('src/lib/tweet-memory.ts', { './tweet-forge': await compile('src/lib/tweet-forge.ts', { './voice-echoes': echoesUrl }) }))
+
+let ledger = mem.createEmptyTweetMemory()
+const hook = () => ({
+  isPublished: (text) => mem.isPublished(ledger, text),
+  affinity: (draft) => mem.tweetTasteAffinity(ledger.taste, draft),
+})
+
+/* البصمة تكشف الإعادة ولو بوسمٍ مختلفٍ أو نقطةٍ زائدة. */
+const base = 'المدرسة التي تخاف من الخطأ تُنتج طالباً يخاف من السؤال.'
+assert.equal(mem.tweetFingerprint(base), mem.tweetFingerprint(`${base}\n\n#التعليم`), 'الوسم لا يصنع تغريدةً جديدة')
+assert.equal(mem.tweetFingerprint(base), mem.tweetFingerprint(`${base} https://dr-alfailakawi.com/x`), 'الرابط لا يصنع تغريدةً جديدة')
+assert.notEqual(mem.tweetFingerprint(base), mem.tweetFingerprint('المدرسة التي تحتفي بالخطأ تصنع طالباً يجرؤ.'), 'نصّان مختلفان بصمتان مختلفتان')
+guard('fingerprint-ignores-links-and-hashtags')
+
+/* ما نُشر لا يعود أبداً. */
+const round1 = forge.buildTweets(source, { count: 10, memory: hook() })
+assert.ok(round1.length >= 5, 'الجولة الأولى تعطي خمساً فأكثر')
+for (let index = 0; index < 5; index += 1) {
+  const pool = forge.buildTweets(source, { count: 10, memory: hook() })
+  if (!pool.length) break
+  ledger = mem.recordPublishedTweet(ledger, pool[0], new Date(2026, 7, 1 + index))
+}
+assert.equal(ledger.records.length, 5, 'خمسُ تغريداتٍ في الدفتر')
+const round2 = forge.buildTweets(source, { count: 10, memory: hook() })
+assert.ok(round2.every((draft) => !mem.isPublished(ledger, draft.text)), 'تغريدةٌ نُشرت لا تُعرض ثانيةً')
+assert.ok(round2.length < round1.length, 'الحوض يتقلّص بما نُشر')
+guard('published-tweets-never-return')
+
+/* التراجع يعيدها ويخفض وزنها — الخطأ في النقر وارد. */
+const firstId = ledger.records[0].id
+const undone = mem.forgetPublishedTweet(ledger, firstId)
+assert.equal(undone.records.length, 4, 'التراجع يحذف السجل')
+assert.equal(undone.taste.samples, 4, 'التراجع يخفض العيّنات')
+guard('undo-restores-tweet')
+
+/* الذوق يتعلّم — ولا يحكم قبل خمس عيّنات. */
+assert.equal(mem.tweetTasteAffinity(mem.createEmptyTweetMemory().taste, { angle: 'paradox', sourceKind: 'article', chars: 200 }), 0, 'دفترٌ فارغ لا رأي له')
+assert.ok(ledger.taste.samples >= 5, 'بلغ الذوق عتبة التعلّم')
+assert.ok(mem.tasteHighlights(ledger.taste, (angle) => forge.TWEET_ANGLES[angle].label).length >= 2, 'الذوق يُفصح عن نفسه للدكتور')
+guard('taste-learns-after-five-samples')
+
+/* الدمج بين جهازين عديم الأثر عند تكراره. */
+const mergedOnce = mem.mergeTweetMemories(ledger, ledger)
+const mergedTwice = mem.mergeTweetMemories(mergedOnce, ledger)
+assert.equal(mergedOnce.records.length, ledger.records.length, 'الدمج لا يضاعف السجلات')
+assert.equal(mergedTwice.taste.samples, mergedOnce.taste.samples, 'الدمج المتكرر لا يضاعف الذوق')
+guard('memory-merge-is-idempotent')
+
+/* خطة الأسبوع: سبعةُ أيامٍ بمصادر وزوايا مختلفة. */
+const weekSources = Array.from({ length: 12 }, (_, index) => ({
+  kind: index === 0 ? 'news' : 'article',
+  id: `week-${index}`,
+  title: `مادة ${index} في التعليم`,
+  text: BODY.replace('التلعيب', `المحور ${index}`),
+  url: `https://dr-alfailakawi.com/a/${index}`,
+}))
+const plan = forge.buildWeeklyTweetPlan(weekSources, { startDate: new Date(2026, 7, 1), memory: hook(), occasionOf: () => null })
+assert.equal(plan.days.length, 7, 'الخطة سبعةُ أيام')
+assert.equal(plan.filled, 7, `المادةُ وفيرة فلا يجوز أن يبقى يومٌ فارغاً — امتلأ ${plan.filled} فقط`)
+const planSources = plan.days.filter((day) => day.draft).map((day) => day.draft.sourceId)
+assert.equal(new Set(planSources).size, planSources.length, 'لا تتكرر مادةٌ في الأسبوع الواحد')
+const planAngles = plan.days.filter((day) => day.draft).map((day) => day.draft.angle)
+assert.ok(new Set(planAngles).size >= 5, `الأسبوع يحتاج خمس زوايا مختلفة على الأقل، وجدنا ${new Set(planAngles).size}`)
+assert.ok(plan.days[0].draft?.sourceKind === 'news', 'الخبر الراهن يتصدّر — لأنه يفسد بالتأجيل')
+assert.ok(plan.days.every((day) => day.reason.trim().length > 10), 'كل يومٍ يقول سببه — ولو كان فراغاً')
+guard('weekly-plan-fills-seven-distinct-days')
+
+/* التهدئة: مادةٌ نُشرت أمس لا تعود هذا الأسبوع. */
+const cooled = forge.buildWeeklyTweetPlan(weekSources, {
+  startDate: new Date(2026, 7, 1),
+  memory: hook(),
+  daysSinceSource: (id) => (id === 'week-3' ? 2 : null),
+})
+assert.ok(cooled.days.every((day) => day.draft?.sourceId !== 'week-3'), 'المادة المنشورة قبل يومين لا تعود')
+assert.ok(cooled.skipped.some((line) => line.includes('مادة 3')), 'الاستبعاد يُعلَن للدكتور لا يُخفى')
+guard('cooldown-is-announced-not-silent')
+
 /* الكلمة المحورية تخرج بلا سابقةٍ ملتصقة: «بالمعرفة» كانت تصير «نتحدث عن بالمعرفة». */
 for (const draft of drafts) {
   assert.doesNotMatch(draft.text, /(?:عن|في|إلى)\s+[بكل]ال\p{L}+/u, `إطار «${draft.angleLabel}» يحمل كلمةً محوريةً بسابقةٍ ملتصقة`)

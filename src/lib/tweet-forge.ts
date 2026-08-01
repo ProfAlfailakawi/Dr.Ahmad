@@ -113,6 +113,8 @@ export interface TweetDraft {
   standalonePost: string
   /** غرض التصميم المرافق للنص في المنشور المستقل. */
   designPurpose: string
+  /** ميلُ الدفتر إلى هذه التغريدة (‎-1..1‎) — يظهر فقط بعد خمس عيّناتٍ من نشره. */
+  tasteLean?: number
 }
 
 export interface TweetThread {
@@ -134,6 +136,17 @@ export interface TweetForgeOptions {
   audience?: string
   /** زوايا بعينها؛ الافتراضي كل ما يصلح للمصدر. */
   angles?: TweetAngleId[]
+  /**
+   * دفتر «ما نُشر»: يمنع تكرار ما سبق نشره، ويرفع الزوايا التي يختارها الدكتور.
+   * حُقن بدالتين لا بالنوع نفسه كي يبقى المسبك مستقلاً عن طبقة الخزن —
+   * فيُختبر بلا Firestore ولا localStorage.
+   */
+  memory?: {
+    /** هل نُشر هذا النص (أو ما يطابقه جوهراً) من قبل؟ */
+    isPublished?: (text: string) => boolean
+    /** قربُ التغريدة من ذوقه: ‎-1..1‎ — يرجّح الترتيب ولا يحكمه. */
+    affinity?: (draft: { angle: TweetAngleId; sourceKind: TweetSourceKind; chars: number }) => number
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -657,9 +670,19 @@ export function buildTweets(source: TweetSource, options: TweetForgeOptions = {}
     })
   }
 
-  return drafts
+  /* الدفتر يعمل على طبقتين: يحذف ما نُشر حذفاً (لا تكرار أبداً)، ويرجّح ما
+     يشبه ذوقه ترجيحاً (‎±14‎ نقطة) — فالذوق يقدّم ولا يُقصي، والدرجة المعروضة
+     تبقى درجة النص نفسه لا درجةً مضروبةً في هوى. */
+  const published = options.memory?.isPublished
+  const affinity = options.memory?.affinity
+  const ranked = drafts
     .filter((draft) => !draft.overLimit)
-    .sort((left, right) => right.score - left.score || left.angle.localeCompare(right.angle))
+    .filter((draft) => !published || !published(draft.text))
+    .map((draft) => ({ draft, lean: affinity ? affinity(draft) : 0 }))
+    .sort((left, right) => (right.draft.score + right.lean * 14) - (left.draft.score + left.lean * 14)
+      || left.draft.angle.localeCompare(right.draft.angle))
+  return ranked
+    .map(({ draft, lean }) => lean ? { ...draft, tasteLean: Number(lean.toFixed(3)) } : draft)
     .slice(0, Math.max(1, options.count || 8))
 }
 
@@ -719,6 +742,122 @@ export function buildTweetBatch(sources: readonly TweetSource[], options: TweetF
   return all
     .sort((left, right) => right.score - left.score || left.sourceTitle.localeCompare(right.sourceTitle))
     .slice(0, Math.max(1, options.count || 12))
+}
+
+/* ------------------------------------------------------------------ */
+/*                            خطة الأسبوع                              */
+/* ------------------------------------------------------------------ */
+
+export interface WeeklyTweetDay {
+  /** ٠ = اليوم، ٦ = بعد ستة أيام. */
+  offset: number
+  /** التاريخ بتوقيت الكويت — يوماً واسماً. */
+  dayLabel: string
+  iso: string
+  draft: TweetDraft | null
+  /** لماذا هذه المادة في هذا اليوم — يُعرض للدكتور فيقرّ أو يبدّل. */
+  reason: string
+  /** مناسبةٌ تقع في هذا اليوم إن وُجدت. */
+  occasion?: string
+}
+
+export interface WeeklyTweetPlan {
+  days: WeeklyTweetDay[]
+  filled: number
+  averageScore: number
+  /** مصادرُ لم تدخل الخطة لأنها نُشرت قريباً — للشفافية لا للحجب الصامت. */
+  skipped: string[]
+}
+
+const WEEKDAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+
+/**
+ * سبعةُ أيامٍ، لكل يومٍ تغريدةٌ من مادةٍ مختلفة وزاويةٍ مختلفة.
+ *
+ * ثلاث قواعد تحكم التوزيع:
+ *  • **لا يتكرر مصدرٌ ولا زاوية في الأسبوع الواحد** — سبعة أيامٍ بصوتٍ واحد ملل.
+ *  • **المناسبة تتصدّر يومها.** يوم المناسبة (رمضان/عيد/وطني) يأخذ أقرب مادةٍ
+ *    إليها إن وُجدت، وإلا يبقى بمادته العادية مع ذكر المناسبة للدكتور.
+ *  • **الخبر الراهن لا يؤجَّل.** إن وُجدت مادةٌ من الرادار وُضعت في أول يومٍ
+ *    ممكن، لأن الراهن يفسد بالانتظار.
+ *
+ * والصمتُ مسموح: يومٌ لا يجد مادةً تستحق يخرج فارغاً بسببٍ مكتوب، ولا يُملأ
+ * بتغريدةٍ ضعيفة.
+ */
+export function buildWeeklyTweetPlan(
+  sources: readonly TweetSource[],
+  options: TweetForgeOptions & {
+    /** بداية الأسبوع؛ تُمرَّر لأن المحرك لا يقرأ الساعة بنفسه (قابليةُ الاختبار). */
+    startDate: Date
+    /** مناسبةُ يومٍ بعينه: تُستدعى لكل يومٍ فتعيد اسم المناسبة أو لا شيء. */
+    occasionOf?: (date: Date) => string | null
+    /** أيامُ التهدئة قبل إعادة الطَرق على المصدر نفسه. */
+    cooldownDays?: number
+    /** كم يوماً مضى على آخر نشرٍ من هذا المصدر (null = لم يُنشر قط). */
+    daysSinceSource?: (sourceId: string) => number | null
+  },
+): WeeklyTweetPlan {
+  const cooldown = Math.max(0, options.cooldownDays ?? 21)
+  const skipped: string[] = []
+  const pool = sources.filter((source) => {
+    const since = options.daysSinceSource?.(source.id)
+    if (since != null && since < cooldown) { skipped.push(`${source.title} (نُشر قبل ${since} يوماً)`); return false }
+    return true
+  })
+
+  /* **أربعةُ مرشحين لكل مادة لا مرشحٌ واحد.** المرشح الواحد كان يُسقط المادة
+     كلها متى كانت زاويتها الأقوى محجوزةً ليومٍ سابق — فامتلأ يومٌ وبقيت ستة
+     فارغةً وفي الأرشيف مادةٌ وفيرة. الآن لكل مادةٍ زواياها البديلة. */
+  const candidates = pool
+    .flatMap((source) => buildTweets(source, { ...options, count: 4 }))
+    .sort((left, right) => right.score - left.score)
+
+  const usedSources = new Set<string>()
+  const angleUses = new Map<TweetAngleId, number>()
+  const days: WeeklyTweetDay[] = []
+
+  for (let offset = 0; offset < 7; offset += 1) {
+    const date = new Date(options.startDate.getTime() + offset * 86_400_000)
+    const occasion = options.occasionOf?.(date) || undefined
+    /* المادة لا تتكرر في الأسبوع أبداً (قاعدةٌ صارمة)، والزاوية تُفضَّل جديدةً
+       ثم يُسمح بتكرارها مرةً واحدة — تنويعُ الأسلوب مطلوب، لكن ألا نغرّد أصلاً
+       من أجله ثمنٌ أغلى منه. */
+    const freeSource = candidates.filter((draft) => !usedSources.has(draft.sourceId))
+    const fresh = freeSource.filter((draft) => !angleUses.has(draft.angle))
+    const relaxed = freeSource.filter((draft) => (angleUses.get(draft.angle) || 0) < 2)
+    const tier = fresh.length ? fresh : relaxed
+    /* أولويةُ اليوم: الراهن أولاً، ثم ما يخدم المناسبة، ثم الأقوى. */
+    const newsFirst = offset <= 1 ? tier.find((draft) => draft.sourceKind === 'news') : undefined
+    const occasionMatch = occasion
+      ? tier.find((draft) => `${draft.sourceTitle} ${draft.text}`.includes(occasion.split(' ')[0]))
+      : undefined
+    const chosen = newsFirst || occasionMatch || tier[0] || null
+    if (chosen) { usedSources.add(chosen.sourceId); angleUses.set(chosen.angle, (angleUses.get(chosen.angle) || 0) + 1) }
+    days.push({
+      offset,
+      iso: date.toISOString().slice(0, 10),
+      dayLabel: WEEKDAYS[date.getDay()],
+      draft: chosen,
+      occasion,
+      reason: !chosen
+        ? 'لم تبقَ مادةٌ جديدة تستحق هذا اليوم — الصمت أفضل من تغريدةٍ مكرّرة.'
+        : newsFirst === chosen
+          ? 'خبرٌ راهن — والراهن يفسد بالتأجيل.'
+          : occasionMatch === chosen
+            ? `يخدم مناسبة ${occasion}.`
+            : chosen.tasteLean && chosen.tasteLean > .15
+              ? `زاوية «${chosen.angleLabel}» من أكثر ما تنشره، ودرجتها ${chosen.score}٪.`
+              : `أقوى ما بقي: ${chosen.score}٪ · زاوية «${chosen.angleLabel}».`,
+    })
+  }
+
+  const filledDays = days.filter((day) => day.draft)
+  return {
+    days,
+    filled: filledDays.length,
+    averageScore: filledDays.length ? Math.round(filledDays.reduce((sum, day) => sum + (day.draft?.score || 0), 0) / filledDays.length) : 0,
+    skipped: skipped.slice(0, 8),
+  }
 }
 
 /**

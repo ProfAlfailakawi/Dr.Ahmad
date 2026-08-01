@@ -7,12 +7,17 @@
  *
  * ومن كل تغريدةٍ زرٌّ واحد يسلّمها إلى «منشور مستقل» في استوديو النشر فتصير
  * تصميماً — وهو الطريق الذي طلبه الدكتور: تغريدة ← تصميم ← نشر.
+ *
+ * ودفترُ «ما نُشر» يجعل الاستوديو يتذكّر ويتعلّم: ما نشره لا يعود، وما يختاره
+ * يرتفع. والخزن محليٌّ أولاً ثم يُزامَن إلى `site_settings/tweet-memory` فيتبع
+ * الدفترُ الدكتورَ بين هاتفه وحاسوبه.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { loadArticleBodies } from '../../lib/article-bodies'
-import { fetchPublishedExtras } from '../../lib/firebase'
+import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
+import { currentSeason } from '../../lib/seasons'
 import { Pagination, usePagedList } from '../Pagination'
 import {
   TWEET_ANGLES,
@@ -20,11 +25,26 @@ import {
   buildThread,
   buildTweetBatch,
   buildTweets,
+  buildWeeklyTweetPlan,
+  type TweetAngleId,
   type TweetDraft,
   type TweetSource,
   type TweetSourceKind,
   type TweetThread,
 } from '../../lib/tweet-forge'
+import {
+  createEmptyTweetMemory,
+  daysSinceSource,
+  forgetPublishedTweet,
+  isPublished,
+  loadTweetMemory,
+  mergeTweetMemories,
+  recordPublishedTweet,
+  storeTweetMemory,
+  tasteHighlights,
+  tweetTasteAffinity,
+  type TweetMemory,
+} from '../../lib/tweet-memory'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
@@ -60,15 +80,16 @@ function ScoreBar({ score }: { score: number }) {
   )
 }
 
-function TweetCard({ draft, onCopied }: { draft: TweetDraft; onCopied: (message: string) => void }) {
+function TweetCard({ draft, onCopied, onPublished }: { draft: TweetDraft; onCopied: (message: string) => void; onPublished: (draft: TweetDraft, text: string) => void }) {
   const [text, setText] = useState(draft.text)
   const [open, setOpen] = useState(false)
-  useEffect(() => setText(draft.text), [draft.id, draft.text])
+  const [marked, setMarked] = useState(false)
+  useEffect(() => { setText(draft.text); setMarked(false) }, [draft.id, draft.text])
   const chars = [...text].length
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text)
-      onCopied('نُسخت التغريدة. الصقها في X.')
+      onCopied('نُسخت التغريدة. الصقها في X — ثم اضغط «نشرتُها» ليتذكّرها الدفتر.')
     } catch {
       onCopied('تعذّر النسخ في هذا المتصفح — حدّد النص وانسخه يدوياً.')
     }
@@ -79,6 +100,9 @@ function TweetCard({ draft, onCopied }: { draft: TweetDraft; onCopied: (message:
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[.62rem] font-bold text-accent">{draft.angleLabel}</span>
           {draft.quoteVerified && <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[.6rem] font-bold text-emerald-700" title="جملةٌ موجودةٌ في متنك حرفاً بحرف">جملة موثّقة ✓</span>}
+          {typeof draft.tasteLean === 'number' && draft.tasteLean > .15 && (
+            <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[.6rem] font-bold text-violet-700" title="الدفتر يرى أنها تشبه ما تنشره عادةً">على ذوقك</span>
+          )}
         </div>
         <span className={`text-[.66rem] font-black ${draft.score >= 82 ? 'text-emerald-700' : draft.score >= 68 ? 'text-amber-700' : 'text-red-600'}`}>{draft.score}٪</span>
       </div>
@@ -113,6 +137,13 @@ function TweetCard({ draft, onCopied }: { draft: TweetDraft; onCopied: (message:
           onClick={() => { sendToStandalone({ ...draft, standalonePost: text.split('\n').filter((line) => !/^https?:\/\//.test(line.trim()) && !/^#/.test(line.trim())).join('\n').trim() }); onCopied('أُرسلت إلى «منشور مستقل» في استوديو النشر.') }}
         >صمّمها في منشور مستقل ←</button>
       </div>
+      {/* التعليم صريحٌ بيد الدكتور: الاستوديو لا يزعم أنه يعرف ما نشره. */}
+      <button
+        type="button"
+        disabled={marked}
+        onClick={() => { onPublished(draft, text); setMarked(true) }}
+        className={`rounded-full px-4 py-2 text-[.72rem] font-bold transition ${marked ? 'bg-emerald-100 text-emerald-700' : 'border border-hair bg-canvas text-soft hover:border-emerald-400 hover:text-emerald-700'}`}
+      >{marked ? 'سُجّلت في الدفتر ✓ — لن تعود' : 'نشرتُها ✓'}</button>
     </article>
   )
 }
@@ -131,6 +162,9 @@ export function TweetStudio() {
   const [notice, setNotice] = useState('')
   const [thread, setThread] = useState<TweetThread | null>(null)
   const [batchMode, setBatchMode] = useState(false)
+  const [memory, setMemory] = useState<TweetMemory>(() => createEmptyTweetMemory())
+  const [weeklyMode, setWeeklyMode] = useState(false)
+  const [ledgerOpen, setLedgerOpen] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -138,6 +172,48 @@ export function TweetStudio() {
     fetchPublishedExtras<RadarItem>('site_radar').then((items) => { if (active) setRadar(items.slice(0, 40)) }).catch(() => undefined)
     return () => { active = false }
   }, [])
+
+  /* الدفتر: المحلي فوراً (يعمل بلا شبكة)، ثم يُدمج مع نسخة السحابة إن وُجدت.
+     الدمج اتحادٌ لا استبدال، فلا يضيع ما نُشر من هاتفٍ آخر. */
+  useEffect(() => {
+    let active = true
+    const local = loadTweetMemory()
+    setMemory(local)
+    void (async () => {
+      try {
+        const db = await getDb()
+        if (!db || !active) return
+        const { doc, getDoc } = await import('firebase/firestore')
+        const snapshot = await getDoc(doc(db, 'site_settings', 'tweet-memory'))
+        if (!snapshot.exists() || !active) return
+        const remote = snapshot.data() as { memory?: TweetMemory }
+        if (!remote.memory?.records) return
+        const merged = mergeTweetMemories(local, remote.memory)
+        setMemory(merged)
+        storeTweetMemory(merged)
+      } catch { /* الدفتر المحلي يكفي حين تتعذّر السحابة */ }
+    })()
+    return () => { active = false }
+  }, [])
+
+  const persistMemory = useCallback((next: TweetMemory) => {
+    setMemory(next)
+    storeTweetMemory(next)
+    void (async () => {
+      try {
+        const db = await getDb()
+        if (!db) return
+        const { doc, setDoc } = await import('firebase/firestore')
+        await setDoc(doc(db, 'site_settings', 'tweet-memory'), { memory: next, updatedAt: Date.now() }, { merge: true })
+      } catch { /* فشل المزامنة لا يُفقد الدفتر المحلي */ }
+    })()
+  }, [])
+
+  const markPublished = useCallback((draft: TweetDraft, text: string) => {
+    const next = recordPublishedTweet(memory, { ...draft, text, chars: [...text].length }, new Date())
+    persistMemory(next)
+    setNotice('سُجّلت في الدفتر. لن تُعرض عليك ثانيةً، وزاويتُها صارت أقربَ إلى ذوقك.')
+  }, [memory, persistMemory])
 
   useEffect(() => { setNotice(''); setThread(null) }, [kind, selectedId, variation])
 
@@ -191,11 +267,42 @@ export function TweetStudio() {
     return filtered.find((source) => source.id === selectedId) || filtered[0] || null
   }, [filtered, freeText, freeTitle, kind, selectedId])
 
+  /* حقنُ الدفتر: المسبك يستدعي هاتين لا يعرف Firestore ولا localStorage. */
+  const forgeMemory = useMemo(() => ({
+    isPublished: (text: string) => isPublished(memory, text),
+    affinity: (draft: { angle: TweetAngleId; sourceKind: TweetSourceKind; chars: number }) => tweetTasteAffinity(memory.taste, draft),
+  }), [memory])
+
   const drafts = useMemo(() => {
-    if (batchMode) return buildTweetBatch(sources.slice(0, 30), { variation, withHashtags, count: 12, perSource: 1 })
+    if (weeklyMode) return []
+    if (batchMode) return buildTweetBatch(sources.slice(0, 30), { variation, withHashtags, count: 12, perSource: 1, memory: forgeMemory })
     if (!activeSource) return []
-    return buildTweets(activeSource, { variation, withHashtags, count: 10 })
-  }, [activeSource, batchMode, sources, variation, withHashtags])
+    return buildTweets(activeSource, { variation, withHashtags, count: 10, memory: forgeMemory })
+  }, [activeSource, batchMode, forgeMemory, sources, variation, weeklyMode, withHashtags])
+
+  /* خطة الأسبوع: كل المصادر الحقيقية معاً (لا نوعاً واحداً)، فالأسبوع يُبنى من
+     الأرشيف كله. والمناسبة تُقرأ من نواة المواسم المشتركة لا من جدولٍ ثانٍ. */
+  const allSources = useMemo<TweetSource[]>(() => [
+    ...cms.articles.slice(0, 60).map((article) => ({ kind: 'article' as const, id: article.slug, title: article.title, text: [article.excerpt, article.body || bodies[article.slug] || ''].filter(Boolean).join(' '), url: `${SITE}/articles/${article.slug}`, date: article.iso })),
+    ...cms.books.map((book) => ({ kind: 'book' as const, id: book.slug, title: book.title, text: book.desc || '', url: `${SITE}/publications` })),
+    ...cms.papers.map((paper) => ({ kind: 'paper' as const, id: paper.slug, title: paper.titleAr || paper.title, text: paper.abstractAr || '', url: paper.url || `${SITE}/research`, outlet: paper.journal || '' })),
+    ...radar.slice(0, 10).map((item) => ({ kind: 'news' as const, id: item.id, title: item.ar || item.en || '', text: [item.ar, item.arNote].filter(Boolean).join('. '), url: item.url, outlet: item.source })),
+  ], [bodies, cms.articles, cms.books, cms.papers, radar])
+
+  const weeklyPlan = useMemo(() => {
+    if (!weeklyMode) return null
+    const start = new Date()
+    return buildWeeklyTweetPlan(allSources, {
+      startDate: start,
+      variation,
+      withHashtags,
+      memory: forgeMemory,
+      occasionOf: (date) => currentSeason(date)?.label || null,
+      daysSinceSource: (sourceId) => daysSinceSource(memory, sourceId, start.getTime()),
+    })
+  }, [allSources, forgeMemory, memory, variation, weeklyMode, withHashtags])
+
+  const taste = useMemo(() => tasteHighlights(memory.taste, (angle) => TWEET_ANGLES[angle].label), [memory.taste])
 
   const readyCount = drafts.filter((draft) => draft.score >= 78).length
   const verifiedCount = drafts.filter((draft) => draft.quoteVerified).length
@@ -230,17 +337,91 @@ export function TweetStudio() {
           <button
             type="button"
             className={batchMode ? primary : ghost}
-            onClick={() => { setBatchMode((current) => !current); setThread(null) }}
+            onClick={() => { setBatchMode((current) => !current); setWeeklyMode(false); setThread(null) }}
             disabled={kind === 'free'}
           >ماذا أغرّد اليوم؟ — أفضل ما في الأرشيف</button>
-          {activeSource && !batchMode && (
-            <button type="button" className={ghost} onClick={() => setThread(buildThread(activeSource, { variation }))}>ابنِ خيطاً 🧵</button>
+          <button
+            type="button"
+            className={weeklyMode ? primary : ghost}
+            onClick={() => { setWeeklyMode((current) => !current); setBatchMode(false); setThread(null) }}
+          >خطة الأسبوع — سبعة أيام</button>
+          {activeSource && !batchMode && !weeklyMode && (
+            <button type="button" className={ghost} onClick={() => setThread(buildThread(activeSource, { variation }))}>ابنِ خيطاً</button>
           )}
         </div>
         {notice && <p className="mt-3 rounded-2xl border border-accent/25 bg-accent/[.05] px-4 py-2.5 text-[.72rem] text-accent">{notice}</p>}
+
+        {/* الدفتر: ما نُشر وما تعلّمه الاستوديو منه — مفتوحٌ للفحص لا صندوقاً مغلقاً. */}
+        <details
+          className="mt-4 rounded-2xl border border-hair bg-canvas"
+          open={ledgerOpen}
+          onToggle={(event) => setLedgerOpen((event.target as HTMLDetailsElement).open)}
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[.72rem] font-semibold text-accent [&::-webkit-details-marker]:hidden">
+            <span>دفتر ما نُشر — {memory.records.length} تغريدة</span>
+            <span className="text-[.64rem] font-normal text-soft">{memory.taste.samples >= 5 ? 'الدفتر يرجّح ترتيب الزوايا الآن' : `يبدأ التعلّم بعد ${Math.max(0, 5 - memory.taste.samples)} تغريدات`}</span>
+          </summary>
+          <div className="grid gap-3 border-t border-hair p-4">
+            {taste.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {taste.map((line) => <span key={line} className="rounded-full bg-violet-50 px-3 py-1.5 text-[.64rem] font-semibold text-violet-700">{line}</span>)}
+              </div>
+            )}
+            {memory.records.length === 0
+              ? <p className="text-[.72rem] leading-relaxed text-soft">فارغ. كلما نشرتَ تغريدةً اضغط «نشرتُها ✓» تحتها — عندها لن تُعرض عليك ثانيةً، ويبدأ الاستوديو يتعلّم زواياك المفضّلة.</p>
+              : (
+                <ul className="grid max-h-72 gap-2 overflow-y-auto">
+                  {memory.records.slice(0, 40).map((record) => (
+                    <li key={record.id} className="flex items-start justify-between gap-3 rounded-xl border border-hair bg-paper p-2.5">
+                      <span className="min-w-0">
+                        <span className="text-[.58rem] font-bold text-accent">{TWEET_ANGLES[record.angle]?.label || record.angle} · {new Date(record.publishedAt).toLocaleDateString('ar', { day: 'numeric', month: 'short' })}</span>
+                        <span className="mt-0.5 block truncate text-[.7rem] text-ink">{record.excerpt}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { persistMemory(forgetPublishedTweet(memory, record.id)); setNotice('حُذفت من الدفتر — قد تُعرض عليك ثانيةً.') }}
+                        className="shrink-0 rounded-full border border-hair px-2.5 py-1 text-[.58rem] text-soft transition hover:border-red-300 hover:text-red-600"
+                      >تراجع</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+          </div>
+        </details>
       </section>
 
-      {kind === 'free' && !batchMode && (
+      {weeklyPlan && (
+        <section className={card}>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[.7rem] font-semibold text-accent">خطة الأسبوع</p>
+              <h3 className="mt-1 font-display text-lg font-semibold text-ink">
+                {weeklyPlan.filled} من ٧ أيامٍ ممتلئة · متوسط الدرجة {weeklyPlan.averageScore}٪
+              </h3>
+              <p className="mt-1 text-[.68rem] leading-relaxed text-soft">مادةٌ مختلفة وزاويةٌ مختلفة لكل يوم. الخبر الراهن يتقدّم، والمناسبة تأخذ يومها، واليوم الذي لا يجد مادةً يبقى فارغاً بصراحة.</p>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+            {weeklyPlan.days.map((day) => (
+              <div key={day.iso} className="grid gap-2">
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <strong className="text-[.74rem] text-ink">{day.offset === 0 ? 'اليوم' : day.dayLabel}</strong>
+                  {day.occasion && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[.58rem] font-bold text-amber-800">{day.occasion}</span>}
+                </div>
+                <p className="px-1 text-[.62rem] leading-relaxed text-soft">{day.reason}</p>
+                {day.draft
+                  ? <TweetCard draft={day.draft} onCopied={setNotice} onPublished={markPublished} />
+                  : <div className="rounded-[1.35rem] border border-dashed border-hair bg-canvas p-5 text-center text-[.7rem] text-soft">يومٌ بلا تغريدة</div>}
+              </div>
+            ))}
+          </div>
+          {weeklyPlan.skipped.length > 0 && (
+            <p className="mt-5 text-[.64rem] leading-relaxed text-soft">استُبعدت لأنها نُشرت قريباً: {weeklyPlan.skipped.join(' · ')}</p>
+          )}
+        </section>
+      )}
+
+      {kind === 'free' && !batchMode && !weeklyMode && (
         <section className={card}>
           <p className="text-[.7rem] font-semibold text-accent">فكرة حرّة</p>
           <div className="mt-3 grid gap-3">
@@ -257,7 +438,7 @@ export function TweetStudio() {
         </section>
       )}
 
-      {kind !== 'free' && !batchMode && (
+      {kind !== 'free' && !batchMode && !weeklyMode && (
         <section className={card} id="tweet-sources">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <p className="text-[.7rem] font-semibold text-accent">اختر المادة ({filtered.length})</p>
@@ -305,7 +486,7 @@ export function TweetStudio() {
         </section>
       )}
 
-      <section className={card}>
+      {!weeklyMode && <section className={card}>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-[.7rem] font-semibold text-accent">{batchMode ? 'أقوى ما في الأرشيف اليوم' : 'الزوايا الجاهزة'}</p>
@@ -315,7 +496,7 @@ export function TweetStudio() {
           </div>
         </div>
         {drafts.length
-          ? <div className="mt-5 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">{drafts.map((draft) => <TweetCard key={draft.id} draft={draft} onCopied={setNotice} />)}</div>
+          ? <div className="mt-5 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">{drafts.map((draft) => <TweetCard key={draft.id} draft={draft} onCopied={setNotice} onPublished={markPublished} />)}</div>
           : (
             <p className="mt-4 text-[.78rem] leading-relaxed text-soft">
               {kind === 'free'
@@ -323,7 +504,7 @@ export function TweetStudio() {
                 : 'اختر مادةً من القائمة. المواد القصيرة جداً قد لا تكفي لبناء زاوية — والمحرك يصمت بدل أن يخترع.'}
             </p>
           )}
-      </section>
+      </section>}
     </div>
   )
 }

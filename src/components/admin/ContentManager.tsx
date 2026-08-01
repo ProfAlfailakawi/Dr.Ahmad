@@ -15,6 +15,7 @@ import { buildBookArchitecture, buildEvidenceChain, buildMeaningFingerprint, typ
 import { buildPublicationPassportDraft, type PublicationPassportDraft, type SignedPublicationPassport } from '../../lib/sovereign-publishing.mjs'
 import { requestPublicationPassportSignature } from '../../lib/publication-passport-client'
 import { audioProofAssets } from '../../lib/audio-proof'
+import { buildMultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -360,13 +361,41 @@ function articlePublicationPassportDraft(form: Form, current?: ManagedRecord | n
   ].filter(Boolean)
   const alerts = [...evidenceAlerts]
   if (contentChanged && sourceIds.length) alerts.push('تغيّر النص بعد الجواز السابق؛ تحتاج صلة المصادر مراجعة جديدة.')
+  const fingerprint = buildMeaningFingerprint({
+    slug: form.slug || current?.slug || '',
+    title: form.title || '',
+    excerpt: form.excerpt || '',
+    body: form.body || '',
+    sourceIds,
+  })
+  const socialRows: Array<{ id: string; channel: string; text: string }> = []
+  const appendSocial = (channel: string, value: unknown) => {
+    const list = Array.isArray(value) ? value : value ? [value] : []
+    list.map(String).filter(Boolean).forEach((text, index) => socialRows.push({ id: `${channel}-${index + 1}`, channel, text }))
+  }
+  if (!contentChanged) {
+    appendSocial('X', socialPack.x); appendSocial('LinkedIn', socialPack.linkedin); appendSocial('Facebook', socialPack.facebook)
+    appendSocial('Threads', socialPack.threads); appendSocial('Instagram', socialPack.instagramCaptions); appendSocial('Stories', socialPack.stories)
+    appendSocial('Reel', socialPack.reelScript); appendSocial('WhatsApp', socialPack.whatsapp); appendSocial('Newsletter', socialPack.newsletter)
+  }
+  const designRows = contentChanged ? [] : [
+    ...visualDirections.map((item: unknown, index: number) => { const row = objectRecord(item); return { id: `direction-${index + 1}`, channel: 'اتجاه بصري', text: `${String(row.headline || '')}\n${String(row.subline || '')}` } }),
+    ...carouselSlides.map((item: unknown, index: number) => { const row = objectRecord(item); return { id: `slide-${index + 1}`, channel: 'شريحة', text: `${String(row.kicker || '')}\n${String(row.title || '')}\n${String(row.body || '')}` } }),
+  ].filter((item) => item.text.trim())
+  const semanticCourtInput = {
+    article: { slug: form.slug || current?.slug || '', title: form.title || '', excerpt: form.excerpt || '', body: form.body || '' },
+    fingerprint,
+    media: { audio: audioAssets, social: socialRows, designs: designRows },
+    evidence: { sourceIds, proofs: sourceProofs, alerts },
+  }
+  const semanticCourt = buildMultimodalMeaningCourt(semanticCourtInput)
   return buildPublicationPassportDraft({
     article: {
       slug: form.slug || current?.slug || '',
       title: form.title || '',
       excerpt: form.excerpt || '',
       body: form.body || '',
-      meaningFingerprint: String(objectRecord(studio.sovereignPublication).fingerprint || ''),
+      meaningFingerprint: fingerprint.hash,
     },
     audio: { assets: audioAssets },
     design: {
@@ -378,9 +407,11 @@ function articlePublicationPassportDraft(form: Form, current?: ManagedRecord | n
       tweetCount: contentChanged ? 0 : xPosts.length || Number(existingSocial.tweetCount || 0),
       platformCount: contentChanged ? 0 : platformCount || Number(existingSocial.platformCount || 0),
       campaignId: String(objectRecord(studio.sovereignPublication).campaignId || existingSocial.campaignId || ''),
-      content: contentChanged ? '' : JSON.stringify(socialPack),
+      content: socialRows.map((item) => item.text).join('\n\n'),
     },
     evidence: { sourceIds, proofs: sourceProofs, alerts },
+    semanticCourt,
+    semanticCourtInput,
     releaseDecision: {
       targetStatus: form.status || 'draft',
       manualOverride: form._manualPublishOverride === '1',
@@ -953,6 +984,7 @@ ${form.outlet || ''}`
     { label: 'جواز: التصميم', ok: passportPreview.components.design.status === 'verified' },
     { label: 'جواز: التغريدات', ok: passportPreview.components.social.status === 'verified' },
     { label: 'جواز: المصادر', ok: passportPreview.components.sources.status === 'verified' },
+    { label: `محكمة المعنى ${passportPreview.semanticCourt.score}٪`, ok: passportPreview.semanticCourt.releaseReady },
   ] : []
   const combinedReadinessChecks = [...readiness.checks, ...passportChecks]
   const readinessComplete = combinedReadinessChecks.every((check) => check.ok) && !readiness.leaked
@@ -1275,7 +1307,7 @@ ${form.outlet || ''}`
               <div className="rounded-xl border border-hair bg-wash px-4 py-3" data-sovereign-publication-gate={passportPreview ? 'true' : undefined}>
                 <p className="text-[.72rem] font-semibold text-soft">
                   جاهزية النشر: <span className={done === combinedReadinessChecks.length ? 'text-accent' : 'text-ink'}>{done}/{combinedReadinessChecks.length}</span>
-                  <span className="ms-2 font-light">— {kind === 'article' ? 'المسودة متاحة دائماً؛ قبل النشر يوقّع الخادم حالة الطبقات الخمس كما هي.' : 'مؤشر مراجعة واضح قبل الحفظ.'}</span>
+                  <span className="ms-2 font-light">— {kind === 'article' ? 'المسودة متاحة دائماً؛ قبل النشر يعيد الخادم محاكمة المعنى ثم يوقّع الطبقات كما هي.' : 'مؤشر مراجعة واضح قبل الحفظ.'}</span>
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
                   {combinedReadinessChecks.map((check) => (

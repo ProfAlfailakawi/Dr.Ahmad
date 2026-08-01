@@ -310,21 +310,17 @@ jobs:
       # الواجهة و /api/** يجب أن يُنشرا من الالتزام نفسه. سابقاً كان Hosting
       # يتقدم بينما تبقى dr-api على إصدار أقدم، فتظهر أزرار جديدة أمام API لا يعرفها.
       # نوقف النشر إذا لم نستطع مزامنة الخادم بدلاً من شحن نسخة نصف محدثة.
+      - name: Authenticate Google Cloud for synchronized API deploy
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.CLOUD_RUN_DEPLOY_SERVICE_ACCOUNT_JSON || secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
       - name: Setup Google Cloud SDK for synchronized API deploy
         uses: google-github-actions/setup-gcloud@v3
 
       - name: Deploy matching dr-api revision before Hosting
         run: |
           set -euo pipefail
-          cleanup() { rm -f "$RUNNER_TEMP/cloud-run-deploy-service-account.json"; }
-          trap cleanup EXIT
-          DEPLOY_KEY="${CLOUD_RUN_DEPLOY_SERVICE_ACCOUNT_JSON:-${FIREBASE_HOSTING_SERVICE_ACCOUNT_JSON:-}}"
-          if [ -z "$DEPLOY_KEY" ]; then
-            echo "::error title=Cloud Run deploy credentials missing::أضف CLOUD_RUN_DEPLOY_SERVICE_ACCOUNT_JSON (مفضل) أو امنح حساب Hosting صلاحيات نشر dr-api. لن ننشر واجهة أحدث من الخادم."
-            exit 1
-          fi
-          printf '%s' "$DEPLOY_KEY" > "$RUNNER_TEMP/cloud-run-deploy-service-account.json"
-          gcloud auth activate-service-account --key-file="$RUNNER_TEMP/cloud-run-deploy-service-account.json" --quiet
           gcloud config set project gen-lang-client-0200723670 --quiet
           gcloud run deploy dr-api \
             --source=. \
@@ -359,8 +355,6 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-delay 4 "$API_URL/api/ai/studio-image/health" >/dev/null
           echo "✓ dr-api and Hosting are now pinned to the same commit: $GITHUB_SHA"
         env:
-          CLOUD_RUN_DEPLOY_SERVICE_ACCOUNT_JSON: ${{ secrets.CLOUD_RUN_DEPLOY_SERVICE_ACCOUNT_JSON }}
-          FIREBASE_HOSTING_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
           FIREBASE_WEB_PUSH_VAPID_KEY: ${{ vars.FIREBASE_WEB_PUSH_VAPID_KEY }}
           NEWSLETTER_FROM_EMAIL: ${{ vars.NEWSLETTER_FROM_EMAIL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

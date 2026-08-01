@@ -43,6 +43,8 @@ import { useCmsContent } from '../../lib/content'
 import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
 import { resolveResonantQuotes, type ResonanceRow } from '../../lib/resonance-quotes'
 import { GenerationLibraryPanel, type GeneratedDesignLibraryAsset, type GeneratedLibraryAsset } from './GenerationLibraryPanel'
+import { buildMeaningFingerprint } from '../../lib/editorial-memory'
+import { buildMultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
@@ -82,6 +84,16 @@ const STUDIO_DRAFT_ID = 'current'
 const STUDIO_DRAFT_FALLBACK_KEY = 'dr-ahmad-social-design-live-draft-v1'
 const STUDIO_DRAFT_HINT_KEY = 'dr-ahmad-social-design-live-draft-hint-v1'
 const SIMPLIFIED_STUDIO = true
+
+function compositionSemanticText(plan: CompositionPlan) {
+  const content = plan.content
+  return [
+    content.original, content.kicker, content.title, content.subtitle, content.body, content.quote, content.heroWord, content.cta,
+    ...(content.points || []),
+    ...(content.slides || []).flatMap((slide) => [slide.kicker, slide.title, slide.body]),
+    ...(plan.overlays || []).filter((item) => item.kind === 'text').map((item) => item.text || ''),
+  ].map((item) => String(item || '').trim()).filter(Boolean).join('\n')
+}
 
 const STUDIO_STAGES = [
   { id: 'idea', number: '01', label: 'الفكرة', description: 'أنت تكتب فقط' },
@@ -1214,6 +1226,29 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const expertContext = useMemo(() => [commandContext, domainUnderstanding.expandedContext].filter(Boolean).join(' · '), [commandContext, domainUnderstanding.expandedContext])
   const analysis = useMemo(() => analyzeSocialContent(hasInput ? interpretedText : 'فكرة معرفية جديدة', expertContext, { author: 'د. أحمد حسين الفيلكاوي' }), [expertContext, hasInput, interpretedText])
   const creativeBrief = useMemo(() => buildCreativeBrief(interpretedText, `${expertContext} · ${identityContext(creativeIdentity)}`, analysis), [analysis, creativeIdentity, expertContext, interpretedText])
+  const designMeaningSource = useMemo(() => `${text.trim()}\n${context.trim()}`.trim(), [context, text])
+  const designMeaningFingerprint = useMemo(() => buildMeaningFingerprint({
+    slug: 'social-design-studio',
+    title: text.trim() || 'فكرة التصميم',
+    excerpt: context.trim(),
+    body: designMeaningSource,
+    thesis: text.trim() || context.trim(),
+    sourceIds: ['design-studio-input'],
+  }), [context, designMeaningSource, text])
+  const meaningCourtForPlans = (candidates: CompositionPlan[]) => buildMultimodalMeaningCourt({
+    article: { slug: 'social-design-studio', title: text.trim() || 'فكرة التصميم', excerpt: context.trim(), body: designMeaningSource },
+    fingerprint: designMeaningFingerprint,
+    media: { designs: candidates.map((plan, index) => ({ id: plan.id || `design-${index + 1}`, channel: plan.format?.label || 'تصميم', text: compositionSemanticText(plan) })) },
+    evidence: { sourceIds: ['design-studio-input'], proofs: ['design-studio-input|author-confirmed'], alerts: [] },
+  })
+  const designMeaningRelease = (candidates: CompositionPlan[]) => {
+    const court = meaningCourtForPlans(candidates)
+    const ready = court.chambers.design.status === 'passed'
+      && court.safeguards.headlineGuard.status === 'passed'
+      && court.safeguards.caveatCovenant.status === 'passed'
+      && court.safeguards.claimLineage.status === 'passed'
+    return { court, ready }
+  }
   const visualSearchPlan = useMemo(() => buildVisualSearchPlan(interpretedText, expertContext, creativeBrief, creativeIdentity), [creativeBrief, creativeIdentity, expertContext, interpretedText])
   const artDirections = useMemo<ArtDirection[]>(() => buildArtDirections(creativeBrief), [creativeBrief])
   const externalProviderLabels = useMemo(() => [...new Set(externalVisuals.map((item) => item.providerLabel))], [externalVisuals])
@@ -1263,6 +1298,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
          آخر نسخة اعتمدها المستخدم. هذا يمنع امتلاء المكتبة بمرشحي الناقد
          والاتجاهات الداخلية التي لم يخترها أحد. */
       const cleanPlan = JSON.parse(JSON.stringify(generatedPlans[0])) as CompositionPlan
+      const meaningRelease = designMeaningRelease([cleanPlan])
       const id = 'latest-approved'
       const storagePath = 'admin-generated-designs/latest-approved.json'
       const payload = JSON.stringify({ version: 1, plan: cleanPlan, generationKind, archivedAt: new Date(createdAtMs).toISOString() })
@@ -1297,6 +1333,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         toneId: analysis?.primaryTone || '',
         kindId: analysis?.primaryKind || '',
         seasonIdentity: seasonIdentityFor().label,
+        meaningCourtStatus: meaningRelease.ready ? 'passed' : meaningRelease.court.chambers.design.status,
+        meaningCourtScore: meaningRelease.court.chambers.design.score,
+        meaningFingerprintHash: designMeaningFingerprint.hash,
       }
       await setDoc(doc(db, 'admin_generated_designs', id), { ...asset, createdAt: serverTimestamp(), archivePolicy: 'latest-approved-only' })
       setGeneratedDesignLibraryAssets([asset])
@@ -3056,7 +3095,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setNotice('أُعيد ضبط ذاكرة الذوق فقط؛ لم تُحذف تصاميمك المحفوظة ولا تاريخ التنويع.')
   }
 
+  const authorizeMeaningExport = (candidates: CompositionPlan[]) => {
+    const verdict = designMeaningRelease(candidates)
+    if (verdict.ready) return true
+    setNotice(`محكمة المعنى أوقفت التصدير: ${verdict.court.alerts[0] || 'التصميم لا يحفظ الأطروحة أو التحفّظات كما يجب.'}`)
+    return false
+  }
+
   const exportPlan = async (plan: CompositionPlan, type: 'png' | 'jpeg') => {
+    if (!authorizeMeaningExport([plan])) return
     const score = plan.quality?.score || 0
     if (score < qualityThreshold || (plan.quality?.lineFit || 0) < 78 || plan.quality?.issues.some((issue) => issue.startsWith('خطأ:'))) {
       setNotice(`منع محرك الجودة التصدير: النتيجة ${score}٪ والحد ${qualityThreshold}٪. اختر اتجاهاً أقوى أو أعد توليده.`)
@@ -3069,6 +3116,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   /* تصدير كل المقاسات بنقرة: الأصل ثم مربع وستوري وLinkedIn — كل نسخة
      تُعاد هندستها لمقاسها (لا تمديد صورة)، وتنزل ملفاً ملفاً. */
   const exportAllSizes = async (plan: CompositionPlan) => {
+    if (!authorizeMeaningExport([plan])) return
     const targets: SocialFormatId[] = ['instagram-square', 'story', 'linkedin-landscape']
     setNotice('أصدّر الطقم الكامل: الأصل + مربع + ستوري + LinkedIn…')
     teachTaste(plan, 1)
@@ -3079,6 +3127,26 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       await downloadCompositionRaster(variant, 'png')
     }
     setNotice('نزل الطقم الكامل — نسخة مهيأة لكل منصة بهندستها الخاصة.')
+  }
+
+  const exportCompositionSvg = async (plan: CompositionPlan) => {
+    if (!authorizeMeaningExport([plan])) return
+    await downloadCompositionSvg(plan)
+  }
+
+  const exportCompositionPdf = (plan: CompositionPlan) => {
+    if (!authorizeMeaningExport([plan])) return
+    printCompositionPdf(plan)
+  }
+
+  const exportCampaignRaster = async (value: SocialCampaign) => {
+    if (!authorizeMeaningExport(value.assets.map((asset) => asset.plan))) return
+    await downloadSocialCampaignRaster(value, 'png')
+  }
+
+  const exportCampaignPdf = (value: SocialCampaign) => {
+    if (!authorizeMeaningExport(value.assets.map((asset) => asset.plan))) return
+    printSocialCampaignPdf(value)
   }
 
   const runCampaign = (campaignText: string, campaignContext: string, basePlan?: CompositionPlan, options: { preserveSelection?: boolean; quiet?: boolean } = {}) => {
@@ -4068,8 +4136,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         <section className={`${card} overflow-hidden`}>
           {approvedPlan ? <>
             <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[.68rem] font-black uppercase tracking-[.15em] text-accent">Publish without noise</p><h3 className="mt-1 font-display text-3xl font-bold text-ink">كل شيء جاهز للنشر من مكان واحد.</h3><p className="mt-2 max-w-2xl text-[.8rem] leading-loose text-soft">النسخة المعتمدة، المقاسات، والحملة السردية. لا خيارات تصميم إضافية هنا؛ فقط القرار النهائي والتنزيل.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void exportPlan(approvedPlan, 'png')}>تنزيل التصميم PNG</button><button type="button" className={ghost} onClick={() => void exportAllSizes(approvedPlan)}>كل المقاسات</button></div></div>
-            <div className="mt-6 grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]"><div className="rounded-[1.4rem] border border-hair bg-canvas p-3"><Preview plan={approvedPlan} /><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>التحرير</button><button type="button" className={ghost} onClick={() => void downloadCompositionSvg(approvedPlan)}>SVG</button><button type="button" className={ghost} onClick={() => printCompositionPdf(approvedPlan)}>PDF</button></div></div>
-              <div>{campaign ? <><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">الحملة السردية</p><p className="mt-1 text-[.72rem] text-soft">{campaign.assets.length} قطع، لكل واحدة وظيفة بصرية مختلفة.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">جودة {campaign.qualityScore}٪</span><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">تماسك {campaign.coherenceScore}٪</span><button type="button" className={primary} disabled={!campaign.ready} onClick={() => void downloadSocialCampaignRaster(campaign, 'png')}>تنزيل الحملة</button><button type="button" className={ghost} disabled={!campaign.ready} onClick={() => printSocialCampaignPdf(campaign)}>PDF</button></div></div><div className="mt-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><div className="flex min-w-max gap-3">{campaign.assets.map((asset) => <article key={asset.id} className="w-[220px] shrink-0 rounded-2xl border border-hair bg-canvas p-2.5"><Preview plan={asset.plan} /><strong className="mt-2 block text-[.72rem] text-ink">{asset.label}</strong><p className="mt-1 text-[.62rem] leading-relaxed text-soft">{asset.purpose}</p></article>)}</div></div></> : <div className="grid min-h-[280px] place-items-center rounded-[1.5rem] border border-dashed border-hair bg-canvas p-6 text-center"><div><h4 className="font-display text-xl font-bold text-ink">الحملة لم تُبنَ بعد.</h4><p className="mt-2 text-[.72rem] text-soft">ابنها حول النسخة المعتمدة من دون تغيير التصميم الأساسي.</p><button type="button" className={`${primary} mt-4`} onClick={() => runCampaign(text, context, approvedPlan, { preserveSelection: true })}>ابنِ الحملة الآن</button></div></div>}</div></div>
+            <div className="mt-6 grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]"><div className="rounded-[1.4rem] border border-hair bg-canvas p-3"><Preview plan={approvedPlan} /><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>التحرير</button><button type="button" className={ghost} onClick={() => void exportCompositionSvg(approvedPlan)}>SVG</button><button type="button" className={ghost} onClick={() => exportCompositionPdf(approvedPlan)}>PDF</button></div></div>
+              <div>{campaign ? <><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">الحملة السردية</p><p className="mt-1 text-[.72rem] text-soft">{campaign.assets.length} قطع، لكل واحدة وظيفة بصرية مختلفة.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">جودة {campaign.qualityScore}٪</span><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">تماسك {campaign.coherenceScore}٪</span><button type="button" className={primary} disabled={!campaign.ready} onClick={() => void exportCampaignRaster(campaign)}>تنزيل الحملة</button><button type="button" className={ghost} disabled={!campaign.ready} onClick={() => exportCampaignPdf(campaign)}>PDF</button></div></div><div className="mt-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><div className="flex min-w-max gap-3">{campaign.assets.map((asset) => <article key={asset.id} className="w-[220px] shrink-0 rounded-2xl border border-hair bg-canvas p-2.5"><Preview plan={asset.plan} /><strong className="mt-2 block text-[.72rem] text-ink">{asset.label}</strong><p className="mt-1 text-[.62rem] leading-relaxed text-soft">{asset.purpose}</p></article>)}</div></div></> : <div className="grid min-h-[280px] place-items-center rounded-[1.5rem] border border-dashed border-hair bg-canvas p-6 text-center"><div><h4 className="font-display text-xl font-bold text-ink">الحملة لم تُبنَ بعد.</h4><p className="mt-2 text-[.72rem] text-soft">ابنها حول النسخة المعتمدة من دون تغيير التصميم الأساسي.</p><button type="button" className={`${primary} mt-4`} onClick={() => runCampaign(text, context, approvedPlan, { preserveSelection: true })}>ابنِ الحملة الآن</button></div></div>}</div></div>
           </> : <div className="grid min-h-[340px] place-items-center text-center"><div><h3 className="font-display text-2xl font-bold text-ink">ابدأ بالفكرة أولاً.</h3><button type="button" className={`${primary} mt-4`} onClick={() => setStage('idea')}>العودة</button></div></div>}
         </section>
       )}
@@ -4148,8 +4216,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">تماسك {campaign.coherenceScore}٪</span>
               <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">تنوع {campaign.diversityScore}٪</span>
               <span className={`rounded-full px-3 py-2 text-[.7rem] font-semibold ${campaign.ready ? 'bg-accent/10 text-accent' : 'bg-amber-50 text-amber-800'}`}>{campaign.ready ? 'جاهزة للنشر' : 'تحتاج إعادة توليد'}</span>
-              <button type="button" className={primary} disabled={!campaign.ready} onClick={() => void downloadSocialCampaignRaster(campaign, 'png')}>تنزيل الحملة PNG</button>
-              <button type="button" className={ghost} disabled={!campaign.ready} onClick={() => printSocialCampaignPdf(campaign)}>PDF للحملة</button>
+              <button type="button" className={primary} disabled={!campaign.ready} onClick={() => void exportCampaignRaster(campaign)}>تنزيل الحملة PNG</button>
+              <button type="button" className={ghost} disabled={!campaign.ready} onClick={() => exportCampaignPdf(campaign)}>PDF للحملة</button>
             </div>
           </div>
           {!campaign.ready && campaign.warnings.length > 0 && <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[.76rem] leading-relaxed text-amber-900">{campaign.warnings.join(' · ')}</p>}
@@ -4472,7 +4540,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 </section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">إخراج جديد</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={ghost} type="button" onClick={() => regenerateSelected('smart')}>اقتراح أذكى</button><button className={ghost} type="button" onClick={() => regenerateSelected('luxury')}>أكثر فخامة</button><button className={ghost} type="button" onClick={() => regenerateSelected('calm')}>أكثر هدوءاً</button><button className={ghost} type="button" onClick={() => regenerateSelected('bold')}>أكثر جرأة</button></div></section>
                 <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">تحويل ذكي للمقاس</p><div className="mt-3 flex flex-wrap gap-2">{formatActions.map((action) => <button key={action.id} className={ghost} type="button" onClick={() => transform(action.id)}>{action.label}</button>)}</div></section>
-                <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">التصدير</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={primary} type="button" onClick={() => void exportPlan(selected, 'png')}>تنزيل PNG</button><button className={ghost} type="button" onClick={() => void exportPlan(selected, 'jpeg')}>تنزيل JPG</button><button className={ghost} type="button" onClick={() => void downloadCompositionSvg(selected)}>تنزيل SVG</button><button className={ghost} type="button" onClick={() => printCompositionPdf(selected)}>طباعة / PDF</button><button className={`${primary} sm:col-span-2`} type="button" title="الأصل + مربع + ستوري + LinkedIn، كل نسخة بهندسة مقاسها" onClick={() => void exportAllSizes(selected)}>كل المقاسات دفعة واحدة</button></div></section>
+                <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">التصدير</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button className={primary} type="button" onClick={() => void exportPlan(selected, 'png')}>تنزيل PNG</button><button className={ghost} type="button" onClick={() => void exportPlan(selected, 'jpeg')}>تنزيل JPG</button><button className={ghost} type="button" onClick={() => void exportCompositionSvg(selected)}>تنزيل SVG</button><button className={ghost} type="button" onClick={() => exportCompositionPdf(selected)}>طباعة / PDF</button><button className={`${primary} sm:col-span-2`} type="button" title="الأصل + مربع + ستوري + LinkedIn، كل نسخة بهندسة مقاسها" onClick={() => void exportAllSizes(selected)}>كل المقاسات دفعة واحدة</button></div></section>
                 <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={primary} onClick={() => saveSelectedToLibrary(selected)}>هذا ذوقي · احفظه</button><button type="button" className={ghost} onClick={() => { teachTaste(selected, -1); setSelected(null); generate() }}>أبعد هذا الأسلوب</button></div>
                 <button type="button" className={ghost} onClick={buildCampaign}>حوّل هذا الاتجاه إلى حملة متكاملة</button>
               </div>

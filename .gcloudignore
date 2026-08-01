@@ -25,6 +25,8 @@ src/data/*
 !src/lib/
 src/lib/*
 !src/lib/style-dna.mjs
+!src/lib/sovereign-publishing.mjs
+!src/lib/semantic-court.mjs
 !src/server/
 src/server/*
 !src/server/whatsapp-controller.mjs

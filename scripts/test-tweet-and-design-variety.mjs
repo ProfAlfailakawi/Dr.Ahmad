@@ -166,6 +166,32 @@ for (const draft of drafts) {
 }
 guard('concept-hero-not-a-person')
 
+/* الكلمة المحورية تخرج بلا سابقةٍ ملتصقة: «بالمعرفة» كانت تصير «نتحدث عن بالمعرفة». */
+for (const draft of drafts) {
+  assert.doesNotMatch(draft.text, /(?:عن|في|إلى)\s+[بكل]ال\p{L}+/u, `إطار «${draft.angleLabel}» يحمل كلمةً محوريةً بسابقةٍ ملتصقة`)
+}
+guard('hero-word-has-no-clitic')
+
+/* الوسوم مشتقّةٌ من الفكرة لا من حوضٍ ثابت. */
+const tagged = forge.buildTweets(source, { count: 6, withHashtags: true })
+const allTags = [...new Set(tagged.flatMap((draft) => draft.hashtags))]
+assert.ok(allTags.length > 0, 'عند طلب الوسوم يجب أن تخرج وسوم')
+assert.ok(allTags.every((tag) => tag.startsWith('#') && !/\s/.test(tag)), 'الوسم كلمةٌ واحدةٌ تبدأ بمربّع')
+for (const draft of tagged) assert.ok(draft.hashtags.length <= 2, 'وسمان على الأكثر — الزيادة تخفض الوصول')
+assert.ok(
+  allTags.some((tag) => /التلعيب|الدافعية/.test(tag)),
+  `وسوم فكرةٍ عن التلعيب يجب أن تلامس موضوعها، خرجت: ${allTags.join(' ')}`,
+)
+const familyTags = forge.buildTweets(
+  { kind: 'free', id: 'family', title: 'الأسرة أول فصل دراسي', text: 'الأسرة أول فصل دراسي في حياة الطفل. البيت الذي يقرأ يصنع قارئاً، والبيت الذي يسأل يصنع سائلاً. لا تُبنى القيم بالمحاضرة بل بما يراه الطفل كل يوم.' },
+  { count: 4, withHashtags: true },
+).flatMap((draft) => draft.hashtags)
+assert.ok(
+  familyTags.some((tag) => /الأسرة|التربية|الطفولة/.test(tag)) && !familyTags.some((tag) => /التلعيب/.test(tag)),
+  `وسوم فكرةٍ أسرية يجب أن تختلف عن وسوم التلعيب، خرجت: ${[...new Set(familyTags)].join(' ')}`,
+)
+guard('hashtags-derived-from-content')
+
 /* التنويع: جولةٌ جديدة تعطي نصاً جديداً. */
 const second = forge.buildTweets(source, { count: 10, variation: 1 })
 assert.notEqual(drafts.map((draft) => draft.text).join('|'), second.map((draft) => draft.text).join('|'), '«تنويع جديد» يجب أن يغيّر النص فعلاً')

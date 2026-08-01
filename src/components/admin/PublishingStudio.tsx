@@ -3389,11 +3389,14 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           /* رقم الجولة يدوّر بنية المقال فلا يخرج مقالان متتاليان بالشكل نفسه. */
           variation: generationRun.current,
           selectedEventIds,
-          existing: archive.map((article) => ({
+          /* المتون لا تُرفع: الخادم يقرأ bodies.json من قرصه. تُرسل متونُ
+             أقرب خمسة وعشرين فقط — وهي التي قد تكون أحدث من بناء الخادم —
+             فتهبط الحمولة من ٦٣٦ كيلوبايت (وحدّ الطلب ١٢٨) إلى نحو تسعين. */
+          existing: archive.map((article, position) => ({
             slug: article.slug,
             title: article.title,
-            excerpt: article.excerpt || '',
-            body: article.body || '',
+            excerpt: (article.excerpt || '').slice(0, 220),
+            body: position < 12 ? (article.body || '').slice(0, 1_200) : '',
           })),
         }, token)
       } catch (reason) {

@@ -122,6 +122,7 @@
     "round9:self-test": "node scripts/test-editorial-board.mjs && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check",
     "editorial-board:calibration:self-test": "node scripts/editorial-board-calibration.mjs --self-test",
     "round10:self-test": "node scripts/test-publishing-studio-regressions.mjs && node scripts/test-editorial-board.mjs && node scripts/editorial-board-calibration.mjs --self-test && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check && node scripts/guard-site-architecture.mjs && node scripts/test-site-polish-2026.mjs",
+    "style:self-test": "node scripts/test-style-dna.mjs",
     "publishing-studio:types:self-test": "node scripts/test-publishing-studio-regressions.mjs",
     "round11:self-test": "node scripts/test-publishing-studio-regressions.mjs && node scripts/test-editorial-board.mjs && node scripts/editorial-board-calibration.mjs --self-test && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check && node scripts/guard-site-architecture.mjs && node scripts/test-site-polish-2026.mjs",
     "editorial-memory:self-test": "node scripts/test-editorial-memory.mjs && node scripts/source-desk-watch.mjs --self-test && node scripts/test-editorial-policy.mjs",

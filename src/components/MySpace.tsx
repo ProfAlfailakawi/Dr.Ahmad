@@ -295,6 +295,37 @@ export function MySpace({ variant = 'floating' }: { variant?: 'floating' | 'foot
     };
   }, [closeSpace, open]);
 
+  /* الجملة التي فارقتَها: نجلب نصّ الحلقة المنشور (خفيف ومخزَّن في المتصفّح)
+     ونبحث عن الجملة التي كان الصوت عندها لحظة توقّفك. لا نجلب شيئاً إلا إن
+     كان آخرُ استماعٍ حلقةً حوارية ومفتوحةً أمامك الآن. */
+  const [leftAtLine, setLeftAtLine] = useState<{ speaker: string; text: string } | null>(null);
+  useEffect(() => {
+    setLeftAtLine(null);
+    const track = snapshot.audio?.track;
+    const at = Number(snapshot.audio?.current || 0);
+    if (!open || !track?.src || !track.src.includes(".dialogue.mp3") || at < 5) return;
+    let on = true;
+    const url = track.src.split("?")[0].replace(/\.mp3$/, ".json");
+    fetch(url, { cache: "force-cache" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!on || !data || !Array.isArray(data.utterances)) return;
+        let found: { speaker?: string; text?: string; startSec?: number } | null = null;
+        for (const line of data.utterances) {
+          if (typeof line?.startSec !== "number") continue;
+          if (line.startSec <= at + 0.5) found = line;
+          else break;
+        }
+        if (found?.text) setLeftAtLine({ speaker: String(found.speaker || ""), text: String(found.text) });
+      })
+      .catch(() => {
+        /* يبقى الرقم كما كان */
+      });
+    return () => {
+      on = false;
+    };
+  }, [open, snapshot.audio]);
+
   const resumeAudio = async () => {
     if (!snapshot.audio) return;
     await audio.playTrack(snapshot.audio.track);
@@ -458,16 +489,31 @@ export function MySpace({ variant = 'floating' }: { variant?: 'floating' | 'foot
                             <h3 className="mt-3 line-clamp-2 font-display text-[1.02rem] font-semibold leading-[1.65] text-ink transition-colors group-hover:text-accent">
                               {snapshot.audio.track.title}
                             </h3>
-                            <p className="mt-2 text-[.74rem] text-soft">
-                              توقفت عند{" "}
-                              {arNumber(
-                                Math.floor(snapshot.audio.current / 60),
-                              )}
-                              :
-                              {arNumber(
-                                String(
-                                  Math.floor(snapshot.audio.current % 60),
-                                ).padStart(2, "0"),
+                            {/* الجملة التي فارقتَها: الرقم يقول أين توقّفت،
+                                والجملة تقول عند أيّ معنى. النصّ موقّت بالثانية
+                                فنعرف ما كان يُقال تماماً. وإن تعذّر جلبه بقي
+                                الرقم وحده كما كان. */}
+                            <p className="mt-2 line-clamp-2 text-[.78rem] leading-[1.9] text-soft">
+                              {leftAtLine ? (
+                                <>
+                                  <span className="font-semibold text-accent">
+                                    {leftAtLine.speaker}:
+                                  </span>{" "}
+                                  {leftAtLine.text}
+                                </>
+                              ) : (
+                                <>
+                                  توقفت عند{" "}
+                                  {arNumber(
+                                    Math.floor(snapshot.audio.current / 60),
+                                  )}
+                                  :
+                                  {arNumber(
+                                    String(
+                                      Math.floor(snapshot.audio.current % 60),
+                                    ).padStart(2, "0"),
+                                  )}
+                                </>
                               )}
                             </p>
                           </button>

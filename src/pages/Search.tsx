@@ -8,6 +8,9 @@ import { books, papers, media } from '../data'
 import { buildKnowledgeGraph, graphSearch, type KnowledgeKind } from '../lib/knowledge-graph'
 import { useCmsContent } from '../lib/content'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
+import { usePersistentAudio } from '../lib/persistent-audio'
+import { versionedAudioUrl } from '../components/extras'
+import { loadSpokenIndex, searchSpoken, type SpokenHit } from '../lib/spoken-search'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { staticQuestions } from '../questions-data'
 
@@ -20,14 +23,18 @@ const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '012345678
    بنيوياً: فهرس الكتاب هو وصفه العام المنشور فقط، لا نصه الداخلي. */
 
 type UnifiedKind = KnowledgeKind | 'question'
+type TabId = 'all' | UnifiedKind | 'spoken'
 
-const KIND_TABS: { id: 'all' | UnifiedKind; label: string }[] = [
+const KIND_TABS: { id: TabId; label: string }[] = [
   { id: 'all', label: 'الكل' },
   { id: 'article', label: 'المقالات' },
   { id: 'paper', label: 'الأبحاث' },
   { id: 'book', label: 'الكتب' },
   { id: 'media', label: 'الإعلام' },
   { id: 'question', label: 'الأسئلة' },
+  /* التبويب الوحيد الذي لا يفتح نصاً بل صوتاً: جملةٌ نُطقت، والنقر يشغّلها
+     عند ثانيتها. يبقى آخر الصف لأنه أحدثها وأقلها استعمالاً في البدء. */
+  { id: 'spoken', label: 'جُمل منطوقة' },
 ]
 
 const KIND_BADGE: Record<UnifiedKind, string> = {
@@ -96,8 +103,8 @@ export default function Search() {
   })
 
   const [query, setQuery] = useState(() => searchParams.get('q') || '')
-  const [tab, setTab] = useState<'all' | UnifiedKind>(() => {
-    const requested = searchParams.get('tab') as 'all' | UnifiedKind | null
+  const [tab, setTab] = useState<TabId>(() => {
+    const requested = searchParams.get('tab') as TabId | null
     return requested && KIND_TABS.some((item) => item.id === requested) ? requested : 'all'
   })
   const [cat, setCat] = useState('الكل')
@@ -156,7 +163,38 @@ export default function Search() {
       .slice(0, 12)
   }, [expandedQuery, searchStarted])
 
-  const counts: Record<'all' | UnifiedKind, number> = useMemo(() => {
+  /* ── البحث في المنطوق ──
+     الفهرس ثقيل، فلا يُجلب إلا حين يفتح الزائر التبويب فعلاً. وبعد جلبه مرّة
+     يبقى في الذاكرة، فتصير النتائج فورية مع كل حرفٍ يكتبه. */
+  const player = usePersistentAudio()
+  const [spokenReady, setSpokenReady] = useState(false)
+  const [spokenIndex, setSpokenIndex] = useState<Awaited<ReturnType<typeof loadSpokenIndex>>>([])
+  useEffect(() => {
+    if (tab !== 'spoken' || spokenReady) return
+    let on = true
+    void loadSpokenIndex().then((index) => { if (on) { setSpokenIndex(index); setSpokenReady(true) } })
+    return () => { on = false }
+  }, [spokenReady, tab])
+
+  const spokenHits: SpokenHit[] = useMemo(
+    () => (searchStarted && spokenReady ? searchSpoken(spokenIndex, normalizedQuery) : []),
+    [normalizedQuery, searchStarted, spokenIndex, spokenReady])
+
+  /* الاستماع من نتيجة البحث: لا ينتقل الزائر ولا تُفتح صفحة — يشتغل المشغّل
+     المقيم أسفل الشاشة عند ثانية الجملة نفسها. */
+  const playSpoken = (hit: SpokenHit) => {
+    const src = versionedAudioUrl(`/audio/${hit.slug}.dialogue.mp3`)
+    void player.playTrack({
+      id: src,
+      src,
+      title: hit.title,
+      label: 'مجلس الفكرة',
+      path: `/articles/${hit.slug}`,
+      startAt: hit.startSec,
+    })
+  }
+
+  const counts: Record<TabId, number> = useMemo(() => {
     const paper = graphResults.filter((row) => row.node.kind === 'paper').length
     const book = graphResults.filter((row) => row.node.kind === 'book').length
     const mediaCount = graphResults.filter((row) => row.node.kind === 'media').length
@@ -173,8 +211,9 @@ export default function Search() {
       social: kindCount('social'),
       concept: kindCount('concept'),
       all: articleResults.length + paper + book + mediaCount + questionResults.length,
+      spoken: spokenHits.length,
     }
-  }, [articleResults, graphResults, questionResults])
+  }, [articleResults, graphResults, questionResults, spokenHits])
 
   /* قائمة «الكل» الموحدة: كل نتيجة بنوعها، مرتبة بالمواءمة */
   type UnifiedRow = { kind: UnifiedKind; title: string; snippet: string; url: string; year?: string; score: number }
@@ -257,7 +296,11 @@ export default function Search() {
                         }`}
                       >
                         {item.label}
-                        <span className="ms-1.5 text-[.72rem] text-soft">{ar(counts[item.id])}</span>
+                        {/* «جُمل منطوقة» لا تُظهر رقماً قبل أن يُفتح فهرسها:
+                            صفرٌ قبل القراءة يكذب على الزائر بأنه لا شيء. */}
+                        <span className="ms-1.5 text-[.72rem] text-soft">
+                          {item.id === 'spoken' && !spokenReady ? '' : ar(counts[item.id])}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -313,7 +356,7 @@ export default function Search() {
           {searchStarted && <FadeUp delay={0.05}>
             <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
               <p className="text-[.9rem] text-soft" aria-live="polite">
-                {ar(activeRows.length)} نتيجة
+                {ar(tab === 'spoken' ? spokenHits.length : activeRows.length)} نتيجة
                 <span> عن «{normalizedQuery}»</span>
                 {tab !== 'all' && <span> في {KIND_TABS.find((item) => item.id === tab)?.label}</span>}
               </p>
@@ -333,7 +376,43 @@ export default function Search() {
             </div>
           </FadeUp>}
 
-          {searchStarted && <ul id="search-results" className="mt-8 scroll-mt-28">
+          {/* نتائج المنطوق: جملةٌ قيلت، وتحتها متحدثها وحلقتها وثانيتها. لا رابط
+              ينقل الزائر — النقر يشغّل الصوت عند الجملة نفسها والزائر مكانه. */}
+          {searchStarted && tab === 'spoken' && (
+            <ul id="search-results" className="mt-8 scroll-mt-28">
+              {!spokenReady && <li className="py-10 text-[.88rem] text-soft">يفتح المنطوق…</li>}
+              {spokenReady && spokenHits.map((hit, index) => (
+                <li key={`${hit.slug}-${hit.startSec}`} className={index === 0 ? '' : 'border-t border-hair'}>
+                  <button
+                    type="button"
+                    onClick={() => playSpoken(hit)}
+                    className="group flex w-full items-start gap-3.5 py-5 text-start transition-colors"
+                  >
+                    <span className="mt-1.5 shrink-0 text-[.72rem] text-accent/65 transition-colors group-hover:text-accent">▷</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-display text-[1.05rem] leading-[1.8] text-ink transition-colors group-hover:text-accent">
+                        {hit.text}
+                      </span>
+                      <span className="mt-1.5 block truncate text-[.72rem] text-soft">
+                        {hit.speaker}
+                        <span className="mx-1.5 opacity-45">·</span>
+                        {hit.title}
+                        <span className="mx-1.5 opacity-45">·</span>
+                        {Math.floor(hit.startSec / 60)}:{String(Math.floor(hit.startSec % 60)).padStart(2, '0')}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+              {spokenReady && !spokenHits.length && (
+                <li className="border-t border-hair py-16 text-center text-[.92rem] text-soft">
+                  {spokenIndex.length ? 'لم تُقل هذه الكلمة في أي حلقة بعد.' : 'الحلقات المسموعة في طريقها.'}
+                </li>
+              )}
+            </ul>
+          )}
+
+          {searchStarted && tab !== 'spoken' && <ul id="search-results" className="mt-8 scroll-mt-28">
             {visibleRows.map((row, index) => (
               <FadeUp key={`${row.kind}-${row.url}-${row.title.slice(0, 30)}`} delay={Math.min(index * 0.025, 0.25)}>
                 <li className={index === 0 ? '' : 'border-t border-hair'}>
@@ -358,7 +437,7 @@ export default function Search() {
             ))}
           </ul>}
 
-          {searchStarted && <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={activeRows.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="search-results" label="صفحات نتائج البحث" className="mt-8" />}
+          {searchStarted && tab !== 'spoken' && <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={activeRows.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="search-results" label="صفحات نتائج البحث" className="mt-8" />}
 
           {!searchStarted && (
             <FadeUp delay={0.05}>
@@ -371,7 +450,7 @@ export default function Search() {
             </FadeUp>
           )}
 
-          {searchStarted && activeRows.length === 0 && (
+          {searchStarted && tab !== 'spoken' && activeRows.length === 0 && (
             <FadeUp>
               <div className="border-t border-hair py-20 text-center">
                 <p className="font-display text-[1.5rem] font-semibold text-ink">لا نتائج دقيقة.</p>

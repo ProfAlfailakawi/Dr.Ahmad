@@ -13,6 +13,8 @@ import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { PublishingStudioNavigation, type PublishingStudioView } from './PublishingStudioNavigation'
 import { EditorialMemoryPanel } from './EditorialMemoryPanel'
+import { EditorialForesightPanel } from './EditorialForesightPanel'
+import { LiveDirector } from './LiveDirector'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 /* بصمة الأسلوب: المسطرة نفسها التي يقيس بها الخادم — الملف .mjs عمداً كي
    يستورده server.mjs بلا ترجمة، فلا يمدح أحدهما ما يرفضه الآخر. */
@@ -2572,6 +2574,31 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     return () => window.removeEventListener('studio:standalone-seed', onSeed)
   }, [])
 
+  /* غرفة د. أحمد لا تنسخ الاستوديو: تسلّمه بذرة المهمة فيفتح المسار القائم
+     ومجلسه وذاكرته كما هما. */
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('admin:publishing-room-seed')
+      if (!stored) return
+      const seed = JSON.parse(stored) as { idea?: string; audience?: string; purpose?: string; openBoard?: boolean }
+      if (seed.idea) setIdea(seed.idea)
+      if (seed.audience) setAudience(seed.audience)
+      if (seed.purpose) setAngle(seed.purpose.slice(0, 180))
+      setEditorialDecision(null)
+      setView('idea')
+      sessionStorage.removeItem('admin:publishing-room-seed')
+    } catch { /* بذرة تالفة لا توقف الاستوديو */ }
+  }, [])
+
+  /* المخرج الحي يسكن داخل الاستوديو، ويستقبل بذور غرفة د. أحمد وصفحة المقال
+     ومجلس التحرير من دون إضافة تبويب رئيسي إلى لوحة التحكم أو الموقع العام. */
+  useEffect(() => {
+    const openDirector = () => setView('director')
+    window.addEventListener('studio:live-director-seed', openDirector)
+    try { if (sessionStorage.getItem('admin:live-director-seed')) setView('director') } catch { /* noop */ }
+    return () => window.removeEventListener('studio:live-director-seed', openDirector)
+  }, [])
+
   useEffect(() => {
     let active = true
     setRichArticles(articles)
@@ -3741,6 +3768,7 @@ ${effectivePurpose}`,
           </section>
           <EditorialMemoryPanel idea={`${idea} ${angle}`} articles={richArticles} books={books as any} papers={papers as any} onDataChange={handleEditorialMemoryData} />
           <EditorialBoardPanel decision={editorialDecision} progress={editorialProgress} busy={editorialBusy || generating} historyCount={editorialHistory.length} onStart={startEditorialArticle} onOpenExisting={openExistingEditorialArticle} />
+          {editorialDecision && ['write', 'revive'].includes(editorialDecision.verdict) && <section className={card}><div className="flex flex-wrap items-center justify-between gap-3"><span><span className="block text-[.7rem] font-semibold text-accent">بعد اعتماد الفكرة</span><span className="mt-1 block text-[.75rem] text-soft">حوّل قرار المجلس إلى مشروع Flow من دون إنشاء مقال تلقائي.</span></span><button type="button" className={ghost} onClick={() => { const seed = { type: 'public_topic_video', topic: editorialDecision.idea, message: editorialDecision.plan.thesis, audience, editorialDecisionId: editorialDecision.id }; try { sessionStorage.setItem('admin:live-director-seed', JSON.stringify(seed)) } catch { /* noop */ } window.dispatchEvent(new CustomEvent('studio:live-director-seed', { detail: seed })); setView('director') }}>افتحها في المخرج الحي</button></div></section>}
           {editorialHistory.length > 0 && <details className={`${card} group`}>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ{editorialCalibrationProfile.sampleSize >= 1 ? ` · ${editorialCalibrationProfile.sampleSize} نتيجة دخلت المعايرة` : ''}{(editorialCalibrationProfile.stubbornWins || 0) > 0 ? ` · ${editorialCalibrationProfile.stubbornWins} انتصار عناد صحّح ميزانه` : ''}</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -3785,6 +3813,7 @@ ${effectivePurpose}`,
       )}
 
       {view === 'write' && (
+        <>
         <div id="article-writing-workspace" className="scroll-mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,.7fr)]">
           <section className={card}>
             <div className="grid gap-4">
@@ -3822,10 +3851,13 @@ ${effectivePurpose}`,
             <button type="button" onClick={() => setView('review')} className={primary}>انتقل إلى بوابة الجودة</button>
           </aside>
         </div>
+        <EditorialForesightPanel title={bundle.title} body={bundle.body} articles={richArticles} onInsertFairAnswer={(paragraph) => updateBundle({ body: `${bundle.body.trim()}\n\n${paragraph}`.trim() })} />
+        </>
       )}
 
       {view === 'review' && (
         <>
+          <EditorialForesightPanel title={bundle.title} body={bundle.body} articles={richArticles} onInsertFairAnswer={(paragraph) => { updateBundle({ body: `${bundle.body.trim()}\n\n${paragraph}`.trim() }); setView('write') }} />
           <EditorialDecisionRoom suite={editorialDecisionSuite} />
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]">
             <div className="grid content-start gap-5">
@@ -3849,6 +3881,8 @@ ${effectivePurpose}`,
           </div>
         </>
       )}
+
+      {view === 'director' && <LiveDirector articles={richArticles} />}
 
       {view === 'pulse' && (
         <div className="grid gap-5">
@@ -3915,6 +3949,17 @@ ${effectivePurpose}`,
 
       {view === 'distribution' && (
         <>
+          <section className={card}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span><span className="block text-[.7rem] font-semibold text-accent">امتداد بصري للحزمة</span><span className="mt-1 block text-[.75rem] text-soft">ابنِ فيديو المقال من النسخة نفسها؛ المخرج يشرح الجوهر ولا يقرأ المقال كاملاً.</span></span>
+              <button type="button" className={ghost} onClick={() => {
+                const seed = { type: 'article_video', articleSlug: bundle.slug, article: { slug: bundle.slug, title: bundle.title, excerpt: bundle.excerpt, body: bundle.body, cat: bundle.cat }, title: bundle.title, message: bundle.excerpt }
+                try { sessionStorage.setItem('admin:live-director-seed', JSON.stringify(seed)) } catch { /* noop */ }
+                window.dispatchEvent(new CustomEvent('studio:live-director-seed', { detail: seed }))
+                setView('director')
+              }}>افتح فيديو المقال في المخرج الحي</button>
+            </div>
+          </section>
           {bundle.socialPack ? (
             <PerfectSocialPackCard
               pack={bundle.socialPack}

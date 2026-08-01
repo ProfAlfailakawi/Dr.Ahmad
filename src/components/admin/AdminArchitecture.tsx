@@ -5,6 +5,7 @@ import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { createAnalyticsNamer, decodeAnalyticsPath } from '../../lib/analytics-labels'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../lib/cms'
 import { EASE } from '../motion'
+import { DrAhmadRoom } from './DrAhmadRoom'
 
 export type { AdminArea, AdminTab } from './admin-navigation'
 export { ADMIN_GROUPS, areaOfTab, defaultTabForArea } from './admin-navigation'
@@ -262,7 +263,7 @@ const topicLabel = (title: string) => {
   return value
 }
 
-export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]; onOpen: (tab: AdminTab) => void }) {
+export function TodayDashboard({ articles, books, papers, media, onOpen }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[]; onOpen: (tab: AdminTab) => void }) {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState({ todayViews: 0, topTitle: 'لا بيانات بعد', topCount: 0, recentMessages: 0, healthStatus: 'غير مفحوص', issues: 0, sourceDecisions: 0, launchActive: false, journeys: [] as JourneyPulseRow[] })
   const namer = useMemo(() => createAnalyticsNamer({ articles }), [articles])
@@ -408,6 +409,7 @@ export function TodayDashboard({ articles, onOpen }: { articles: ArticleRecord[]
 
   return (
     <div className="grid gap-5">
+      <DrAhmadRoom articles={articles} books={books} papers={papers} media={media} onOpen={onOpen} />
       <section className="relative overflow-hidden rounded-3xl border border-hair bg-ink p-7 text-white md:p-10">
         <div className="pointer-events-none absolute -left-16 -top-24 h-64 w-64 rounded-full bg-white/[.06] blur-3xl" />
         <div className="relative flex flex-wrap items-start justify-between gap-6">

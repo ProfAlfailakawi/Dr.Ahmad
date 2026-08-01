@@ -59,7 +59,17 @@ assert.match(fetchSource, /requeueLocked/)
 assert.match(fetchSource, /requireQueued: false/)
 assert.match(fetchSource, /retryRequestedAt/)
 const engineSource = readFileSync(resolve('scripts/podcast-dialogue.mjs'), 'utf8')
-assert.match(engineSource, /sttQuotaExhausted && MANUAL_EXACT/)
+/* ملاذ نفاد الحصة لنصّ الدكتور وحده — بقفل Firestore أو بحواره المحفوظ في
+   الملفات (وكلاهما بصمتُه محسوبة). ولا يُفتح لحوارٍ يكتبه الآلة أبداً. */
+assert.match(engineSource, /sttQuotaExhausted && \(MANUAL_EXACT \|\| MANUAL_TEXT_MODE\)/)
+/* والأدقّ من نصّ الشرط: كلُّ موضعٍ يُفتح فيه الملاذ فعلاً (quotaFallback) لا بدّ
+   أن يسبقه شرطُ مصدر النصّ. فلو أضاف أحدٌ ملاذاً جديداً بلا شرط سقط هنا. */
+for (const [line, index] of engineSource.split('\n').map((value, position) => [value, position])) {
+  if (!/quotaFallback: true/.test(line)) continue
+  const preceding = engineSource.split('\n').slice(Math.max(0, index - 8), index).join('\n')
+  assert.match(preceding, /MANUAL_EXACT \|\| MANUAL_TEXT_MODE/,
+    `ملاذ نفاد الحصة عند السطر ${index + 1} بلا شرط مصدر النص`)
+}
 assert.match(engineSource, /providerQuotaFallback/)
 
 console.log('✓ manual dialogue source-lock self-test passed')

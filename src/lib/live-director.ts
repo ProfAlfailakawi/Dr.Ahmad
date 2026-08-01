@@ -8,6 +8,21 @@ export type LiveDirectorClipStatus = 'not_generated' | 'generated' | 'needs_revi
 export type LiveDirectorTone = 'فكرية' | 'تربوية' | 'إنسانية' | 'صادمة' | 'إعلامية' | 'أكاديمية مبسطة' | 'مستقبلية' | 'ساخرة بذكاء'
 export type LiveDirectorPlatform = 'Instagram Reels' | 'X' | 'YouTube Shorts' | 'LinkedIn' | 'TikTok' | 'متعدد المنصات'
 export type FlowAppearance = 'avatar_direct' | 'avatar_voiceover' | 'visual_only' | 'avatar_with_object'
+/** نمط الترابط بين المقطع والمقطع الذي يسبقه. */
+export type ContinuityMode = 'direct' | 'soft' | 'thematic' | 'independent'
+/** استراتيجية الصورة المرجعية القادمة من المقطع السابق. */
+export type ReferenceStrategy = 'last_frame' | 'selected_frame' | 'style_only' | 'none'
+/** طريقة الصوت داخل المقطع: حديث مباشر، تعليق فوق مشهد، أو صورة وصوت بيئي بلا كلام. */
+export type VoiceMode = 'avatar_speech' | 'voice_over' | 'ambient'
+
+export type OverlayCue = {
+  kind: 'عنوان' | 'اقتباس' | 'رابط' | 'دعوة'
+  text: string
+  from: number
+  to: number
+  position: 'أعلى الإطار' | 'أسفل الإطار' | 'وسط الإطار'
+  space: string
+}
 
 export type LiveDirectorSegment = {
   id: string
@@ -16,15 +31,27 @@ export type LiveDirectorSegment = {
   duration: 8
   role: string
   purpose: string
+  /** المعنى الوحيد الذي يجب أن يصل من هذا المقطع. */
+  message: string
   appearance: FlowAppearance
+  voiceMode: VoiceMode
   narration: string
   shotCount: 1 | 2 | 3
   shotPlan: { from: number; to: number; framing: string }[]
   prompt: string
   negativeConstraints: string[]
   continuity: string
+  continuityMode: ContinuityMode
+  referenceStrategy: ReferenceStrategy
+  referenceSourceClipId: string
+  selectedReferenceFrame: string
+  lastFrameImage: string
+  startState: string
+  endState: string
+  overlayPlan: OverlayCue[]
   status: LiveDirectorClipStatus
   videoUrl: string
+  revisionReason: string
   promptVersions: { prompt: string; reason: string; createdAt: string }[]
 }
 
@@ -48,7 +75,17 @@ export type LiveDirectorQuality = {
   clips: 'ممتاز' | 'جيد' | 'يحتاج تبسيطاً' | 'يحتاج مراجعة'
   avatar: 'ممتاز' | 'جيد' | 'يحتاج تبسيطاً' | 'يحتاج مراجعة'
   publishing: 'ممتاز' | 'جيد' | 'يحتاج تبسيطاً' | 'يحتاج مراجعة'
+  continuity: 'ممتاز' | 'جيد' | 'يحتاج تبسيطاً' | 'يحتاج مراجعة'
   notes: string[]
+}
+
+/** أرقام حقيقية يدخلها د. أحمد بعد النشر؛ لا تكامل مدفوع ولا تخمين. */
+export type LiveDirectorMetrics = {
+  views: number
+  completion: number
+  saves: number
+  shares: number
+  articleClicks: number
 }
 
 export type LiveDirectorProject = {
@@ -83,6 +120,7 @@ export type LiveDirectorProject = {
   sourceSessionId: string
   linkedEditorialDecisionId: string
   linkedCampaignId: string
+  metrics?: LiveDirectorMetrics
   createdAtClient: string
   updatedAtClient: string
 }
@@ -228,6 +266,157 @@ function appearanceFor(index: number, count: number, useAvatar: boolean): FlowAp
   return map[index] || 'visual_only'
 }
 
+const SHIFT_ROLE = /المثال|الدليل|المقارنة|الخاتمة|التحول/
+
+function voiceModeFor(appearance: FlowAppearance, role: string, count: number): VoiceMode {
+  if (appearance !== 'visual_only') return 'avatar_speech'
+  // مقطع بصري واحد بلا جملة منطوقة: الصورة أقوى، والمعنى ينتقل إلى خطة النصوص المضافة.
+  if (count >= 6 && /المثال|الدليل|المقارنة/.test(role)) return 'ambient'
+  return 'voice_over'
+}
+
+/** يختار نمط الترابط مع المقطع السابق؛ المقطع الأول مشهد مؤسس دائماً. */
+function continuityModeFor(index: number, appearances: FlowAppearance[], role: string): ContinuityMode {
+  if (index === 0) return 'independent'
+  const previous = appearances[index - 1]
+  const current = appearances[index]
+  const previousAvatar = previous !== 'visual_only'
+  const currentAvatar = current !== 'visual_only'
+  if (previousAvatar !== currentAvatar) return 'thematic'
+  if (!currentAvatar && SHIFT_ROLE.test(role)) return 'thematic'
+  return currentAvatar ? 'direct' : 'soft'
+}
+
+const DEFAULT_REFERENCE: Record<ContinuityMode, ReferenceStrategy> = {
+  independent: 'none',
+  direct: 'last_frame',
+  soft: 'selected_frame',
+  thematic: 'style_only',
+}
+
+export const CONTINUITY_LABELS: Record<ContinuityMode, string> = {
+  direct: 'امتداد مباشر',
+  soft: 'امتداد بصري لطيف',
+  thematic: 'انتقال موضوعي',
+  independent: 'مشهد مؤسس',
+}
+
+export const REFERENCE_LABELS: Record<ReferenceStrategy, string> = {
+  last_frame: 'الإطار الأخير',
+  selected_frame: 'إطار مختار يدوياً',
+  style_only: 'مرجع هوية ولون فقط',
+  none: 'بلا مرجع',
+}
+
+export const VOICE_MODE_LABELS: Record<VoiceMode, string> = {
+  avatar_speech: 'حديث مباشر بالأفتار',
+  voice_over: 'تعليق صوتي فوق مشهد',
+  ambient: 'مشهد بصري وصوت بيئي',
+}
+
+const CONTINUITY_CLAUSES: Record<ContinuityMode, string[]> = {
+  direct: [
+    'Continue the exact visual moment.',
+    'Maintain body position and gaze logic.',
+    'Continue the existing motion naturally.',
+    'Do not introduce a new environment.',
+    'Do not reset the character pose.',
+  ],
+  soft: [
+    'Maintain the same cinematic world.',
+    'Preserve environment and lighting.',
+    'Shift to the requested camera angle smoothly.',
+    'Keep the scene visually continuous despite the controlled reframing.',
+  ],
+  thematic: [
+    'Maintain the established visual identity and emotional tone.',
+    'Transition into the related new setting using a shared color, object, motion or sound.',
+    'Do not make the new clip feel like an unrelated video.',
+  ],
+  independent: [
+    'This is the founding scene of the project.',
+    'Establish the environment, light direction, palette and framing logic that the following clips will inherit.',
+  ],
+}
+
+/** البرومبت يُكتب بإنجليزية واضحة؛ العربية تبقى للحوار وحده. */
+const TONE_EN: Record<LiveDirectorTone, string> = {
+  'فكرية': 'reflective and intellectual',
+  'تربوية': 'educational and grounded',
+  'إنسانية': 'human, warm and unforced',
+  'صادمة': 'striking and direct',
+  'إعلامية': 'broadcast-ready and composed',
+  'أكاديمية مبسطة': 'accessible academic',
+  'مستقبلية': 'future-facing and clean',
+  'ساخرة بذكاء': 'wry and intelligent',
+}
+
+const ROLE_EN: Array<[RegExp, string]> = [
+  [/الخطاف/, 'hook — stop the scroll with one visual question'],
+  [/الومضة/, 'single flash — one idea, one image'],
+  [/المشكلة|المشهد/, 'the problem — show why it matters'],
+  [/السؤال المركزي/, 'the central question'],
+  [/الفكرة الأولى/, 'first idea — one point only'],
+  [/المقارنة|الدليل|المثال/, 'example or evidence'],
+  [/الفكرة الثانية/, 'second idea'],
+  [/التفسير/, 'explanation'],
+  [/رأي/, 'the author verdict — the quotable line'],
+  [/الخاتمة|الدعوة/, 'closing beat and invitation to read'],
+  [/جوهر الفكرة/, 'the core idea'],
+]
+
+const PLATFORM_EN: Record<LiveDirectorPlatform, string> = {
+  'Instagram Reels': 'Instagram Reels',
+  'X': 'X',
+  'YouTube Shorts': 'YouTube Shorts',
+  'LinkedIn': 'LinkedIn',
+  'TikTok': 'TikTok',
+  'متعدد المنصات': 'multi-platform vertical distribution',
+}
+
+const OVERLAY_POSITION_EN: Record<OverlayCue['position'], string> = {
+  'أعلى الإطار': 'upper third',
+  'أسفل الإطار': 'lower third',
+  'وسط الإطار': 'centre of frame',
+}
+
+function roleInEnglish(role: string) {
+  return ROLE_EN.find(([pattern]) => pattern.test(role))?.[1] || 'carry one clear idea forward'
+}
+
+const REFERENCE_HEADER ='Continue from the provided reference frame. Use it as the visual starting point of the new 8-second clip. Preserve the selected Dr. Ahmad avatar, wardrobe, lighting, environment, color palette, background details, time of day and cinematic tone. Continue the motion naturally instead of restarting or redesigning the scene from scratch.'
+
+function referenceInstruction(mode: ContinuityMode, strategy: ReferenceStrategy, hasFrame: boolean) {
+  if (strategy === 'none' || mode === 'independent') return 'Reference image: none. Build this scene from the written description only.'
+  if (!hasFrame) return `Reference image: not uploaded yet. Follow the written continuity notes instead of assuming a frame exists. ${CONTINUITY_CLAUSES[mode].join(' ')}`
+  if (strategy === 'style_only') return `Reference image: use the attached frame for identity, wardrobe, palette and lighting only, not for composition. ${CONTINUITY_CLAUSES[mode].join(' ')}`
+  return `${REFERENCE_HEADER} ${CONTINUITY_CLAUSES[mode].join(' ')}`
+}
+
+function startStateFor(mode: ContinuityMode) {
+  if (mode === 'independent') return 'Open on a settled composed frame that establishes environment, light direction and palette for the whole project.'
+  if (mode === 'direct') return 'Open exactly on the visual state of the reference frame: same pose, same gaze direction, same light.'
+  if (mode === 'soft') return 'Open inside the same environment as the previous clip, seen from the newly requested angle.'
+  return 'Open on the shared visual link — colour, object, motion or sound — carried over from the previous clip.'
+}
+
+function endStateFor(role: string) {
+  if (role.includes('الخطاف')) return 'End on a held, unresolved beat with the subject still in frame, ready to be inherited by the next clip.'
+  if (role.includes('الخاتمة') || role.includes('الدعوة')) return 'End on a stable quiet frame with clean negative space reserved for the title and link added later in editing.'
+  return 'End on a stable handoff: one clear object or gaze direction that the next clip can start from.'
+}
+
+function overlayFor(input: { role: string; order: number; count: number; voiceMode: VoiceMode; title: string; message: string; articleUrl: string }): OverlayCue[] {
+  const cues: OverlayCue[] = []
+  if (input.voiceMode === 'ambient') cues.push({ kind: 'عنوان', text: clipWords(input.message, 8, input.title), from: 1, to: 5.5, position: 'وسط الإطار', space: 'اترك ثلث الإطار الأوسط نظيفاً بلا عناصر.' })
+  if (input.role.includes('رأي')) cues.push({ kind: 'اقتباس', text: clipWords(input.message, 10, input.title), from: 2, to: 6.5, position: 'أسفل الإطار', space: 'اترك الثلث السفلي هادئاً بلا تفاصيل متحركة.' })
+  if (input.order === input.count) {
+    cues.push({ kind: 'عنوان', text: clipWords(input.title, 7, input.title), from: 0.5, to: 3.5, position: 'أعلى الإطار', space: 'اترك الثلث العلوي فارغاً.' })
+    cues.push({ kind: input.articleUrl ? 'رابط' : 'دعوة', text: input.articleUrl || 'اكتب رأيك في التعليقات', from: 4.5, to: 8, position: 'أسفل الإطار', space: 'اترك الثلث السفلي فارغاً ومستقراً.' })
+  }
+  return cues
+}
+
 function shotsFor(index: number, role: string, appearance: FlowAppearance): 1 | 2 | 3 {
   if (appearance === 'visual_only') return role.includes('الخطاف') || role.includes('الخاتمة') ? 3 : 2
   if (role.includes('الخطاف') || role.includes('الخاتمة')) return 3
@@ -270,26 +459,50 @@ function buildFlowPrompt(input: {
   const subject = avatar
     ? `${AVATAR_LOCK} Keep body movement simple and natural; no complex hand choreography while speaking.`
     : `Main subject: one clear symbolic object or one human-scale educational moment related to “${input.title}”; no avatar is needed in this clip.`
-  const sound = avatar ? 'Natural room ambience under the approved avatar voice; preserve lip synchronization through every angle change.' : 'Subtle natural environmental sound with a restrained Arabic voice-over if narration is used.'
-  const dialogue = segment.narration ? `Arabic dialogue or voice-over, exactly one short sentence: "${segment.narration.replace(/"/g, '“')}".` : 'No dialogue.'
+  const sound = segment.voiceMode === 'avatar_speech'
+    ? 'Natural room ambience under the approved avatar voice; preserve lip synchronization through every angle change.'
+    : segment.voiceMode === 'voice_over'
+      ? 'Subtle natural environmental sound sitting under a restrained Arabic voice-over.'
+      : 'Environmental sound only — no spoken line in this clip; let the image carry the meaning.'
+  const dialogue = segment.voiceMode === 'ambient' || !segment.narration
+    ? 'No dialogue and no voice-over in this clip.'
+    : `${segment.voiceMode === 'avatar_speech' ? 'Arabic dialogue spoken by the avatar' : 'Arabic voice-over'}, exactly one short sentence: "${segment.narration.replace(/"/g, '“')}". Never cut on a spoken word; place every cut on a natural pause.`
+  const overlay = segment.overlayPlan.length
+    ? `Editorial overlay: text is added after generation, never inside Flow. Reserve clean space — ${unique(segment.overlayPlan.map((cue) => `${OVERLAY_POSITION_EN[cue.position]} (${cue.from.toFixed(1)}-${cue.to.toFixed(1)}s)`)).join(', ')}.`
+    : 'Editorial overlay: none required for this clip.'
   return [
     'Duration: exactly 8 seconds.',
-    `Aspect ratio: 9:16 vertical for ${input.platform}.`,
+    `Aspect ratio: 9:16 vertical for ${PLATFORM_EN[input.platform] || 'multi-platform vertical distribution'}.`,
+    `Avatar usage: ${avatar ? 'yes — the pre-saved Dr. Ahmad avatar already stored in Google Flow' : 'no avatar in this clip'}.`,
+    `Clip function: ${roleInEnglish(segment.role)}.`,
     subject,
     'Location: one calm, premium educational environment; keep the same location, background, time of day and visual moment throughout this clip.',
     `Primary action: ${segment.purpose}. One main action only.`,
     `Shot construction: ${segment.shotCount} ${segment.shotCount === 1 ? 'continuous shot' : 'connected shots'} in the same context. ${shotText}`,
     'Camera movement: one restrained motion per shot, either a slow push-in or a locked camera; no competing movements.',
     'Lighting: soft cinematic daylight with consistent direction and exposure across all cuts.',
-    `Visual mood: ${input.tone}, realistic, quiet, refined. Color palette: ${input.palette}.`,
+    `Visual mood: ${TONE_EN[input.tone] || 'reflective and intellectual'}, realistic, quiet, refined. Color palette: ${input.palette}.`,
     `Environmental sound: ${sound}`,
     dialogue,
-    'Ending: finish on a stable frame with clean negative space for text to be added later during editing, never generated inside Flow.',
+    `Clip start state: ${segment.startState}`,
+    `Clip end state: ${segment.endState}`,
+    `Continuity with the previous clip: ${segment.continuityMode}.`,
+    referenceInstruction(segment.continuityMode, segment.referenceStrategy, Boolean(segment.selectedReferenceFrame)),
+    overlay,
     avatar ? `Identity lock: ${AVATAR_LOCK}` : '',
-    `Continuity: ${segment.continuity}`,
+    `Continuity notes: ${segment.continuity}`,
     `Negative constraints: ${segment.negativeConstraints.join(', ')}.`,
   ].filter(Boolean).join('\n')
 }
+
+type SegmentDraft = Omit<LiveDirectorSegment, 'prompt' | 'promptVersions'>
+
+/** يعيد بناء برومبت مقطع واحد فقط بعد تغيير الترابط أو المرجع أو النص. */
+function rebuiltPrompt(segment: SegmentDraft, project: Pick<LiveDirectorProject, 'title' | 'tone' | 'platform'>) {
+  return buildFlowPrompt({ segment, title: project.title, tone: project.tone, platform: project.platform, palette: PALETTE })
+}
+
+const PALETTE = 'deep slate blue, warm ivory, restrained muted gold accents'
 
 function buildSegments(input: {
   type: LiveDirectorProjectType
@@ -298,31 +511,48 @@ function buildSegments(input: {
   useAvatar: boolean
   tone: LiveDirectorTone
   platform: LiveDirectorPlatform
+  articleUrl?: string
 }) {
-  const roles = (input.type === 'article_video' ? ARTICLE_ROLES : PUBLIC_ROLES)[input.narrations.length] || PUBLIC_ROLES[3]
-  const palette = 'deep slate blue, warm ivory, restrained muted gold accents'
+  const count = input.narrations.length
+  const roles = (input.type === 'article_video' ? ARTICLE_ROLES : PUBLIC_ROLES)[count] || PUBLIC_ROLES[3]
+  const appearances = input.narrations.map((_, index) => appearanceFor(index, count, input.useAvatar))
   return input.narrations.map((narration, index) => {
     const role = roles[index] || `المقطع ${index + 1}`
-    const appearance = appearanceFor(index, input.narrations.length, input.useAvatar)
+    const appearance = appearances[index]
+    const voiceMode = voiceModeFor(appearance, role, count)
     const shotCount = shotsFor(index, role, appearance)
     const negativeConstraints = constraintsFor(appearance, shotCount)
-    const base: Omit<LiveDirectorSegment, 'prompt' | 'promptVersions'> = {
+    const continuityMode = continuityModeFor(index, appearances, role)
+    const message = clipWords(narration, 12, role)
+    const base: SegmentDraft = {
       id: `clip-${index + 1}`,
       order: index + 1,
       day: Math.floor(index / 3) + 1,
       duration: 8,
       role,
-      purpose: role.includes('الخطاف') ? 'create an immediate visual question without a greeting' : role.includes('الخاتمة') ? 'resolve the visual idea and leave a memorable final beat' : `communicate ${role} with one visible cause-and-effect action`,
+      purpose: role.includes('الخطاف') ? 'create an immediate visual question without a greeting' : role.includes('الخاتمة') ? 'resolve the visual idea and leave a memorable final beat' : `communicate the ${roleInEnglish(role)} with one visible cause-and-effect action`,
+      message,
       appearance,
-      narration: clipWords(narration, appearance === 'visual_only' ? 14 : 11, narration),
+      voiceMode,
+      // المقطع الصامت يحمل معناه في الصورة وفي خطة النصوص المضافة، لا في جملة منطوقة.
+      narration: voiceMode === 'ambient' ? '' : clipWords(narration, voiceMode === 'voice_over' ? 14 : 11, narration),
       shotCount,
       shotPlan: shotPlan(shotCount, appearance),
       negativeConstraints,
-      continuity: `Same ${palette} palette, soft daylight, 50mm-equivalent realism, consistent background logic, and a visual handoff from clip ${Math.max(1, index)} to clip ${index + 2}.`,
+      continuity: `Same ${PALETTE} palette, soft daylight, 50mm-equivalent realism, consistent background logic, and a visual handoff from clip ${Math.max(1, index)} to clip ${index + 2}.`,
+      continuityMode,
+      referenceStrategy: DEFAULT_REFERENCE[continuityMode],
+      referenceSourceClipId: index === 0 ? '' : `clip-${index}`,
+      selectedReferenceFrame: '',
+      lastFrameImage: '',
+      startState: startStateFor(continuityMode),
+      endState: endStateFor(role),
+      overlayPlan: overlayFor({ role, order: index + 1, count, voiceMode, title: input.title, message, articleUrl: input.articleUrl || '' }),
       status: 'not_generated',
       videoUrl: '',
+      revisionReason: '',
     }
-    const prompt = buildFlowPrompt({ segment: base, title: input.title, tone: input.tone, platform: input.platform, palette })
+    const prompt = rebuiltPrompt(base, { title: input.title, tone: input.tone, platform: input.platform })
     return { ...base, prompt, promptVersions: [{ prompt, reason: 'النسخة الأولى', createdAt: now() }] }
   })
 }
@@ -358,12 +588,25 @@ function quality(project: Pick<LiveDirectorProject, 'idea' | 'duration' | 'durat
   const avatarCount = project.segments.filter((segment) => segment.appearance !== 'visual_only').length
   const repeatedAppearances = new Set(project.segments.map((segment) => `${segment.appearance}:${segment.shotCount}`)).size < Math.min(3, project.segments.length)
   const socialDistinct = new Set([project.social.x, project.social.instagram, project.social.linkedin]).size === 3
+  const spokenWords = project.segments.reduce((total, segment) => total + wordCount(segment.narration), 0)
+  const modes = project.segments.map((segment) => segment.continuityMode)
+  const allDirect = project.segments.length > 2 && modes.slice(1).every((mode) => mode === 'direct')
+  const foundingScene = project.segments[0]?.continuityMode === 'independent' && project.segments[0]?.referenceStrategy === 'none'
+  const chainSound = project.segments.slice(1).every((segment) => segment.referenceStrategy === 'none' || Boolean(segment.referenceSourceClipId))
+  const sameShotCount = new Set(project.segments.map((segment) => segment.shotCount)).size === 1 && project.segments.length > 2
   const notes: string[] = []
   if (speechTooLong) notes.push('اختصر جملة أحد المقاطع لتبقى طبيعية خلال ثماني ثوانٍ.')
   if (project.useAvatar && avatarCount === project.segments.length && project.segments.length > 1) notes.push('خفّف ظهور الأفتار؛ ليس مطلوباً في كل المقاطع.')
   if (repeatedAppearances) notes.push('نوّع بناء اللقطات أو وظيفة المشهد لمنع الإيقاع المتوقع.')
+  if (sameShotCount) notes.push('عدد اللقطات متكرر في كل المقاطع؛ نوّع بين لقطة ولقطتين وثلاث.')
   if (!socialDistinct) notes.push('أعد تمييز لغة المنصات؛ لا تقبل نسخ النص نفسه.')
+  if (allDirect) notes.push('كل المقاطع امتداد مباشر؛ أدخل انتقالاً موضوعياً واحداً على الأقل لمنع الملل.')
+  if (!foundingScene) notes.push('المقطع الأول يجب أن يكون مشهداً مؤسساً بلا صورة مرجعية.')
+  // الميزانية تُقاس على المقاطع الناطقة وحدها؛ المقطع الصامت مقصود ولا يُحسب نقصاً.
+  const speaking = project.segments.filter((segment) => segment.narration).length
+  if (speaking && (spokenWords < speaking * 7 || spokenWords > speaking * 14)) notes.push(`النص المنطوق ${spokenWords} كلمة على ${speaking} مقاطع ناطقة؛ اجعل كل جملة بين 7 و14 كلمة.`)
   return {
+    continuity: !foundingScene || !chainSound ? 'يحتاج مراجعة' : allDirect ? 'يحتاج تبسيطاً' : unique(modes).length >= 3 ? 'ممتاز' : 'جيد',
     idea: wordCount(project.idea) >= 5 ? 'ممتاز' : 'يحتاج مراجعة',
     duration: project.durationReason && [8, 24, 48, 64].includes(project.duration) ? 'ممتاز' : 'يحتاج مراجعة',
     clips: speechTooLong ? 'يحتاج تبسيطاً' : repeatedAppearances ? 'جيد' : 'ممتاز',
@@ -393,7 +636,7 @@ export function createArticleVideoProject(input: ArticleVideoInput): LiveDirecto
   const title = input.article.title
   const idea = input.article.excerpt || clipWords(input.article.body || '', 30, title)
   const narrations = articleNarration(input.article, recommendation.segments)
-  const segments = buildSegments({ type: 'article_video', title, narrations, useAvatar: input.useAvatar !== false, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات' })
+  const segments = buildSegments({ type: 'article_video', title, narrations, useAvatar: input.useAvatar !== false, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: `/articles/${input.article.slug}` })
   const social = socialPack({ type: 'article_video', title, idea, articleUrl: `/articles/${input.article.slug}` })
   const base: LiveDirectorProject = {
     id: projectId('article_video', input.article.slug), type: 'article_video', articleId: input.article.slug, articleUrl: `/articles/${input.article.slug}`,
@@ -415,7 +658,7 @@ export function createPublicVideoProject(input: PublicVideoInput): LiveDirectorP
   const title = suggestStrongTitle(input.topic)
   const idea = input.message?.trim() || input.topic.trim()
   const narrations = publicNarration(input.topic, idea, recommended.segments)
-  const segments = buildSegments({ type: 'public_topic_video', title, narrations, useAvatar: input.useAvatar !== false, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات' })
+  const segments = buildSegments({ type: 'public_topic_video', title, narrations, useAvatar: input.useAvatar !== false, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '' })
   const social = socialPack({ type: 'public_topic_video', title, idea, linkedArticle: input.linkedArticle, articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '', archive: input.archive })
   const base: LiveDirectorProject = {
     id: projectId('public_topic_video', input.topic), type: 'public_topic_video', articleId: input.linkedArticle?.slug || '', articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '',
@@ -433,40 +676,159 @@ export function createPublicVideoProject(input: PublicVideoInput): LiveDirectorP
 }
 
 export const LIVE_DIRECTOR_REPAIR_ISSUES = [
-  'تغير الوجه', 'تغيرت الملابس', 'الحركة غير طبيعية', 'الكلام غير واضح', 'مزامنة الفم سيئة', 'المشهد مزدحم', 'الفكرة غير مفهومة', 'الكاميرا غير مناسبة', 'الإضاءة ضعيفة', 'النتيجة غير واقعية', 'المقطع لا يتصل بما قبله', 'المقطع لا يتصل بما بعده',
+  'تغير الأفتار', 'تغير الوجه أو المظهر', 'تغيرت الملابس', 'الحركة غير طبيعية', 'حركة اليد ضعيفة', 'الكلام غير واضح', 'مزامنة الفم سيئة', 'الزوايا كثيرة', 'الزوايا قليلة والمشهد جامد', 'الانتقال بين الزوايا غير طبيعي', 'المشهد مزدحم', 'الفكرة غير واضحة', 'الكاميرا غير مناسبة', 'الإضاءة غير مناسبة', 'الخلفية تغيرت', 'النتيجة غير واقعية', 'المقطع غير مترابط مع السابق', 'المقطع لا يجهز لما بعده', 'الإطار المرجعي غير مناسب', 'النتيجة تبدو كفيديو مختلف', 'النص طويل', 'المقطع غير احترافي',
 ] as const
 
-const REPAIR_HINTS: Record<(typeof LIVE_DIRECTOR_REPAIR_ISSUES)[number], string> = {
-  'تغير الوجه': 'Use only the saved Dr. Ahmad avatar and lock identity more strongly across every shot; prefer one continuous front-facing shot.',
-  'تغيرت الملابس': 'Lock the approved saved-avatar wardrobe; do not reinterpret fabric, color, ghutra or agal between shots.',
+export type LiveDirectorRepairIssue = (typeof LIVE_DIRECTOR_REPAIR_ISSUES)[number]
+
+const REPAIR_HINTS: Record<LiveDirectorRepairIssue, string> = {
+  'تغير الأفتار': 'Use strictly the pre-saved Dr. Ahmad avatar selected inside Flow. Never substitute a similar-looking person; keep one continuous front-facing shot to hold identity.',
+  'تغير الوجه أو المظهر': 'Lock facial identity, age and skin tone across every shot; prefer one continuous front-facing shot over angle changes.',
+  'تغيرت الملابس': 'Lock the approved saved-avatar wardrobe; do not reinterpret fabric, colour, ghutra or agal between shots.',
   'الحركة غير طبيعية': 'Reduce motion to one natural breath, one small head movement and still hands.',
-  'الكلام غير واضح': 'Shorten the Arabic line and use one calm continuous shot with natural speaking pace.',
-  'مزامنة الفم سيئة': 'Use one continuous close shot; preserve exact Arabic phoneme timing and remove competing gestures.',
+  'حركة اليد ضعيفة': 'Keep hands out of frame or resting still; remove all hand gestures rather than attempting complex ones.',
+  'الكلام غير واضح': 'Shorten the Arabic line and use one calm continuous shot with a natural speaking pace.',
+  'مزامنة الفم سيئة': 'Move the meaning to a voice-over over a visual scene instead of on-camera speech; keep the avatar silent and expressive.',
+  'الزوايا كثيرة': 'Reduce the clip to fewer, longer shots; give the viewer time to read one image.',
+  'الزوايا قليلة والمشهد جامد': 'Add one controlled angle change on a natural pause to give the clip a pulse, staying in the same location and moment.',
+  'الانتقال بين الزوايا غير طبيعي': 'Keep the cut inside the same action and light direction; the second angle must read as the same continuous moment, never a new setup.',
   'المشهد مزدحم': 'Remove secondary objects and people; keep one subject, one action and generous negative space.',
-  'الفكرة غير مفهومة': 'Replace decoration with one visible cause-and-effect action that directly represents the segment purpose.',
+  'الفكرة غير واضحة': 'Replace decoration with one visible cause-and-effect action that directly represents the clip message.',
   'الكاميرا غير مناسبة': 'Use a stable 50mm-equivalent medium shot and one slow push-in only.',
-  'الإضاءة ضعيفة': 'Use soft directional daylight on the subject with stable exposure and a clean background separation.',
-  'النتيجة غير واقعية': 'Increase photorealism, natural skin/material texture and restrained practical lighting; remove stylized effects.',
-  'المقطع لا يتصل بما قبله': 'Start with the same object, gaze direction, sound texture and light direction used at the end of the previous clip.',
-  'المقطع لا يتصل بما بعده': 'End on a stable visual handoff object and gaze direction that the next clip can inherit.',
+  'الإضاءة غير مناسبة': 'Use soft directional daylight on the subject with stable exposure and clean background separation.',
+  'الخلفية تغيرت': 'Hold the exact same background geometry, depth and furniture placement through every shot of this clip.',
+  'النتيجة غير واقعية': 'Increase photorealism, natural skin and material texture and restrained practical lighting; remove stylised effects.',
+  'المقطع غير مترابط مع السابق': 'Start from the reference frame state: same object, gaze direction, light direction and sound texture that closed the previous clip.',
+  'المقطع لا يجهز لما بعده': 'End on a stable visual handoff object and gaze direction that the next clip can inherit.',
+  'الإطار المرجعي غير مناسب': 'Ignore the previous reference frame and rebuild continuity from the written notes: same world, same light, same palette.',
+  'النتيجة تبدو كفيديو مختلف': 'Restore the established visual identity: same palette, same light direction, same lens character and same environment logic as the approved clips.',
+  'النص طويل': 'Shorten the spoken line so it lands comfortably inside eight seconds with a natural pause before the final cut.',
+  'المقطع غير احترافي': 'Simplify to one subject, one action and one restrained camera move, with cinematic exposure and clean composition.',
+}
+
+/** تعديلات بنيوية حقيقية على المقطع المتضرر وحده — لا مجرد إضافة سطر إلى البرومبت. */
+function repairedDraft(segment: LiveDirectorSegment, issue: LiveDirectorRepairIssue): SegmentDraft {
+  const draft: SegmentDraft = { ...segment }
+  if (issue === 'الزوايا كثيرة' && draft.shotCount > 1) draft.shotCount = (draft.shotCount - 1) as 1 | 2
+  if (issue === 'الزوايا قليلة والمشهد جامد' && draft.shotCount < 3) draft.shotCount = (draft.shotCount + 1) as 2 | 3
+  if (issue === 'الانتقال بين الزوايا غير طبيعي' && draft.shotCount > 1) draft.shotCount = 1
+  if (['الزوايا كثيرة', 'الزوايا قليلة والمشهد جامد', 'الانتقال بين الزوايا غير طبيعي'].includes(issue)) draft.shotPlan = shotPlan(draft.shotCount, draft.appearance)
+  // مزامنة الفم الضعيفة تُعالج بتحويل الحديث إلى تعليق صوتي، لا بإعادة المشروع.
+  if (issue === 'مزامنة الفم سيئة' && draft.voiceMode === 'avatar_speech') draft.voiceMode = 'voice_over'
+  if (issue === 'النص طويل') draft.narration = clipWords(draft.narration, draft.voiceMode === 'voice_over' ? 10 : 8, draft.narration)
+  // عدم الترابط: الامتداد المباشر مطلب صارم يصعب على المولّد؛ ننزل إلى امتداد لطيف بدل إعادة البناء.
+  if (issue === 'المقطع غير مترابط مع السابق' && draft.continuityMode === 'direct') {
+    draft.continuityMode = 'soft'
+    draft.referenceStrategy = draft.selectedReferenceFrame ? 'selected_frame' : DEFAULT_REFERENCE.soft
+  }
+  if (issue === 'النتيجة تبدو كفيديو مختلف' && draft.continuityMode === 'thematic') {
+    draft.continuityMode = 'soft'
+    draft.referenceStrategy = draft.selectedReferenceFrame ? 'selected_frame' : 'style_only'
+  }
+  if (issue === 'الإطار المرجعي غير مناسب') {
+    draft.selectedReferenceFrame = ''
+    draft.referenceStrategy = draft.continuityMode === 'independent' ? 'none' : 'style_only'
+  }
+  draft.startState = startStateFor(draft.continuityMode)
+  draft.negativeConstraints = unique([...constraintsFor(draft.appearance, draft.shotCount), ...(issue.includes('الأفتار') || issue.includes('الوجه') ? ['avatar replacement', 'pose reset'] : []), ...(issue === 'الخلفية تغيرت' ? ['inconsistent background'] : []), ...(issue === 'الانتقال بين الزوايا غير طبيعي' ? ['abrupt motion discontinuity'] : [])])
+  return draft
 }
 
 /** يصلح مقطعاً واحداً ويُبقي مراجع بقية المقاطع بلا تغيير. */
-export function repairLiveDirectorSegment(project: LiveDirectorProject, segmentId: string, issue: (typeof LIVE_DIRECTOR_REPAIR_ISSUES)[number]) {
+export function repairLiveDirectorSegment(project: LiveDirectorProject, segmentId: string, issue: LiveDirectorRepairIssue) {
   const index = project.segments.findIndex((segment) => segment.id === segmentId)
   if (index < 0) return project
   const previous = project.segments[index]
   const hint = REPAIR_HINTS[issue]
-  const prompt = `${previous.prompt}\n\nTargeted correction for this clip only: ${hint}\nPreserve every approved continuity choice from the other clips. Do not regenerate or reinterpret the project.`
+  const draft = repairedDraft(previous, issue)
+  const prompt = `${rebuiltPrompt(draft, project)}\n\nTargeted correction for this clip only: ${hint}\nPreserve every approved continuity choice from the other clips. Do not regenerate or reinterpret the project.`
   const nextSegment: LiveDirectorSegment = {
-    ...previous,
+    ...draft,
     prompt,
     status: 'needs_revision',
+    revisionReason: issue,
     promptVersions: [...previous.promptVersions, { prompt, reason: issue, createdAt: now() }],
   }
   const segments = project.segments.map((segment, segmentIndex) => segmentIndex === index ? nextSegment : segment)
   const next = { ...project, segments, status: 'needs_revision' as const, updatedAtClient: now() }
   return { ...next, quality: quality(next) }
+}
+
+/** يغيّر نمط الترابط أو استراتيجية المرجع لمقطع واحد ويعيد بناء برومبته وحده. */
+export function setSegmentContinuity(project: LiveDirectorProject, segmentId: string, change: { mode?: ContinuityMode; strategy?: ReferenceStrategy }) {
+  const index = project.segments.findIndex((segment) => segment.id === segmentId)
+  if (index < 0) return project
+  const previous = project.segments[index]
+  const mode = change.mode || previous.continuityMode
+  const strategy = change.strategy || (change.mode ? DEFAULT_REFERENCE[change.mode] : previous.referenceStrategy)
+  const draft: SegmentDraft = { ...previous, continuityMode: mode, referenceStrategy: strategy, startState: startStateFor(mode) }
+  const prompt = rebuiltPrompt(draft, project)
+  const segments = project.segments.map((segment, segmentIndex) => segmentIndex === index
+    ? { ...draft, prompt, promptVersions: [...previous.promptVersions, { prompt, reason: `تغيير الترابط إلى ${CONTINUITY_LABELS[mode]} · ${REFERENCE_LABELS[strategy]}`, createdAt: now() }] }
+    : segment)
+  const next = { ...project, segments, updatedAtClient: now() }
+  return { ...next, quality: quality(next) }
+}
+
+/** يقيس صلاحية الإطار المرجعي قبل اعتماده؛ الضبابي لا يُستخدم تلقائياً. */
+export function assessReferenceFrame(input: { sharpness?: number; capturedAt?: number }) {
+  const sharpness = typeof input.sharpness === 'number' ? input.sharpness : 1
+  if (sharpness < 0.35) return { usable: false, verdict: 'ضعيف' as const, note: 'الإطار ضبابي أو أثناء حركة؛ اختر إطاراً آخر بدل اعتماده تلقائياً.' }
+  if (sharpness < 0.6) return { usable: true, verdict: 'مقبول' as const, note: 'الإطار مقبول، لكن إطاراً أهدأ سيعطي بداية أنظف للمقطع التالي.' }
+  return { usable: true, verdict: 'جيد' as const, note: 'الإطار مستقر وصالح كبداية بصرية للمقطع التالي.' }
+}
+
+/**
+ * يثبّت إطاراً مرجعياً من مقطع ويمرّره إلى المقطع التالي وحده.
+ * الانتقال الموضوعي يستخدمه مرجع هوية ولون فقط حتى لا يمنع الانتقال المطلوب.
+ */
+export function applyReferenceFrame(project: LiveDirectorProject, sourceSegmentId: string, input: { frameUrl: string; kind: 'last_frame' | 'selected_frame'; sharpness?: number }) {
+  const index = project.segments.findIndex((segment) => segment.id === sourceSegmentId)
+  if (index < 0) return { project, applied: false, note: 'لا يوجد مقطع بهذا المعرف.' }
+  const assessment = assessReferenceFrame({ sharpness: input.sharpness })
+  if (!assessment.usable) return { project, applied: false, note: assessment.note }
+  const target = project.segments[index + 1]
+  const withFrame = project.segments.map((segment, segmentIndex) => segmentIndex === index ? { ...segment, lastFrameImage: input.frameUrl } : segment)
+  if (!target) {
+    return { project: { ...project, segments: withFrame, updatedAtClient: now() }, applied: true, note: 'حُفظ الإطار؛ لا يوجد مقطع تالٍ يرثه.' }
+  }
+  const strategy: ReferenceStrategy = target.continuityMode === 'thematic' ? 'style_only' : input.kind
+  const draft: SegmentDraft = { ...target, selectedReferenceFrame: input.frameUrl, referenceSourceClipId: sourceSegmentId, referenceStrategy: strategy }
+  const prompt = rebuiltPrompt(draft, project)
+  const segments = withFrame.map((segment, segmentIndex) => segmentIndex === index + 1
+    ? { ...draft, prompt, promptVersions: [...target.promptVersions, { prompt, reason: `اعتماد ${REFERENCE_LABELS[strategy]} من ${sourceSegmentId}`, createdAt: now() }] }
+    : segment)
+  const next = { ...project, segments, updatedAtClient: now() }
+  return { project: { ...next, quality: quality(next) }, applied: true, note: `${assessment.note} ورُبط المقطع ${target.order} بالإطار.` }
+}
+
+/** النسخة القريبة من دقيقة: مادة Flow تبقى 48 ثانية، والفارق تحرير خارجي. */
+export function nearMinuteEditPlan(project: Pick<LiveDirectorProject, 'duration' | 'title' | 'articleUrl'>) {
+  const generated = project.duration
+  return {
+    generated,
+    intro: { from: 3, to: 5, note: 'مقدمة خارجية بسيطة: عنوان ثابت أو لقطة غلاف، تُحرَّر خارج Flow.' },
+    outro: { from: 4, to: 7, note: project.articleUrl ? 'بطاقة رابط المقال ودعوة القراءة.' : 'بطاقة ختامية بالاسم والدعوة.' },
+    finalFrom: generated + 3 + 4,
+    finalTo: generated + 5 + 7,
+    statement: `المادة المولدة من Flow ${generated} ثانية؛ والمدة النهائية بعد التحرير تقارب ${generated + 7}–${generated + 12} ثانية. لا تُنسب المقدمة والخاتمة إلى التوليد.`,
+  }
+}
+
+/** ملاحظات من أرقام حقيقية فقط؛ تحت العينة الكافية تُعلن قلة البيانات ولا تُخترع نتيجة. */
+export function liveDirectorPerformanceInsights(projects: Pick<LiveDirectorProject, 'duration' | 'segments' | 'useAvatar' | 'metrics'>[]) {
+  const measured = projects.filter((project) => project.metrics && project.metrics.views > 0)
+  if (measured.length < 5) return { enough: false, sample: measured.length, notes: ['لا توجد بيانات كافية بعد.'] }
+  const average = (items: typeof measured) => items.reduce((total, item) => total + (item.metrics?.completion || 0), 0) / (items.length || 1)
+  const bookended = measured.filter((project) => project.segments[0]?.appearance !== 'visual_only' && project.segments[project.segments.length - 1]?.appearance !== 'visual_only')
+  const others = measured.filter((project) => !bookended.includes(project))
+  const notes: string[] = [`العينة الحالية ${measured.length} مشروعاً منشوراً بأرقام مُدخلة يدوياً.`]
+  if (bookended.length >= 2 && others.length >= 2) {
+    const gap = average(bookended) - average(others)
+    if (Math.abs(gap) >= 3) notes.push(gap > 0 ? 'الفيديوهات التي يظهر فيها الأفتار في البداية والخاتمة تحقق إكمالاً أفضل.' : 'الفيديوهات التي تبدأ وتنتهي بمشهد بصري تحقق إكمالاً أفضل من ظهور الأفتار في الطرفين.')
+    else notes.push('لا فرق معتد به بين ظهور الأفتار في الطرفين وغيره حتى الآن.')
+  }
+  return { enough: true, sample: measured.length, notes }
 }
 
 export function setLiveDirectorSegmentStatus(project: LiveDirectorProject, segmentId: string, status: LiveDirectorClipStatus, videoUrl = '') {

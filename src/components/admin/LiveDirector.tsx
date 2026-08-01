@@ -3,18 +3,30 @@ import type { ArticleRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
 import {
+  CONTINUITY_LABELS,
   LIVE_DIRECTOR_REPAIR_ISSUES,
+  REFERENCE_LABELS,
+  VOICE_MODE_LABELS,
+  applyReferenceFrame,
   createArticleVideoProject,
   createPublicVideoProject,
   isValidYouTubeUrl,
   liveDirectorDailyPlan,
+  liveDirectorPerformanceInsights,
+  nearMinuteEditPlan,
   repairLiveDirectorSegment,
   setLiveDirectorSegmentStatus,
+  setSegmentContinuity,
+  type ContinuityMode,
   type LiveDirectorClipStatus,
   type LiveDirectorPlatform,
   type LiveDirectorProject,
+  type LiveDirectorRepairIssue,
+  type LiveDirectorSegment,
   type LiveDirectorTone,
+  type ReferenceStrategy,
 } from '../../lib/live-director'
+import { extractVideoFrame, measureImageSharpness } from '../../lib/live-director-frames'
 
 type DirectorPath = 'article' | 'public' | null
 type StoredProject = LiveDirectorProject & { userId?: string }
@@ -34,8 +46,17 @@ const CLIP_STATUS_LABELS: Record<LiveDirectorClipStatus, string> = {
 
 const PLATFORMS: LiveDirectorPlatform[] = ['متعدد المنصات', 'Instagram Reels', 'X', 'YouTube Shorts', 'LinkedIn', 'TikTok']
 const TONES: LiveDirectorTone[] = ['فكرية', 'تربوية', 'إنسانية', 'صادمة', 'إعلامية', 'أكاديمية مبسطة', 'مستقبلية', 'ساخرة بذكاء']
+const METRIC_FIELDS = [
+  { key: 'views' as const, label: 'المشاهدات' },
+  { key: 'completion' as const, label: 'نسبة الإكمال' },
+  { key: 'saves' as const, label: 'الحفظ' },
+  { key: 'shares' as const, label: 'المشاركة' },
+  { key: 'articleClicks' as const, label: 'النقر على المقال' },
+]
+const CONTINUITY_MODES: ContinuityMode[] = ['direct', 'soft', 'thematic', 'independent']
+const REFERENCE_STRATEGIES: ReferenceStrategy[] = ['last_frame', 'selected_frame', 'style_only', 'none']
 
-function fileExtension(file: File) {
+function fileExtension(file: File | Blob) {
   const typed = file.type === 'video/mp4' ? 'mp4' : file.type === 'video/webm' ? 'webm' : file.type === 'video/quicktime' ? 'mov' : file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
   return typed
 }
@@ -65,12 +86,16 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
   const [projects, setProjects] = useState<StoredProject[]>([])
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState('')
-  const [repairIssue, setRepairIssue] = useState<Record<string, (typeof LIVE_DIRECTOR_REPAIR_ISSUES)[number]>>({})
+  const [repairIssue, setRepairIssue] = useState<Record<string, LiveDirectorRepairIssue>>({})
   const [youtubeDraft, setYoutubeDraft] = useState('')
+  const [clipFiles, setClipFiles] = useState<Record<string, File>>({})
+  const [frameSecond, setFrameSecond] = useState<Record<string, string>>({})
 
   const selectedArticle = articles.find((article) => article.slug === articleSlug) || null
   const linkedArticle = articles.find((article) => article.slug === linkedArticleSlug) || null
   const dailyPlan = useMemo(() => project ? liveDirectorDailyPlan(project) : [], [project])
+  const nearMinute = useMemo(() => project ? nearMinuteEditPlan(project) : null, [project])
+  const insights = useMemo(() => liveDirectorPerformanceInsights(projects), [projects])
 
   const loadProjects = async () => {
     try {
@@ -161,14 +186,15 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
     } finally { setBusy('') }
   }
 
-  const uploadAsset = async (file: File, kind: 'clip' | 'final' | 'cover', segmentId = '') => {
+  /** يرفع أصلاً خاصاً إلى مساحة المشروع؛ الإطار المرجعي صورة تخضع للتحقق نفسه. */
+  const uploadAsset = async (file: File | Blob, kind: 'clip' | 'final' | 'cover' | 'frame', segmentId = '', frameSharpness = 1) => {
     if (!project || !user || busy) return
-    const isCover = kind === 'cover'
+    const isImage = kind === 'cover' || kind === 'frame'
     const validVideo = ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type)
     const validImage = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
-    if (isCover ? !validImage : !validVideo) { setNotice(isCover ? 'الغلاف يجب أن يكون JPG أو PNG أو WebP.' : 'الفيديو يجب أن يكون MP4 أو WebM أو MOV.'); return }
-    const max = isCover ? 12 * 1024 * 1024 : 220 * 1024 * 1024
-    if (file.size <= 0 || file.size > max) { setNotice(isCover ? 'حجم الغلاف يتجاوز 12MB.' : 'حجم الفيديو يتجاوز 220MB.'); return }
+    if (isImage ? !validImage : !validVideo) { setNotice(isImage ? 'الصورة يجب أن تكون JPG أو PNG أو WebP.' : 'الفيديو يجب أن يكون MP4 أو WebM أو MOV.'); return }
+    const max = isImage ? 12 * 1024 * 1024 : 220 * 1024 * 1024
+    if (file.size <= 0 || file.size > max) { setNotice(isImage ? 'حجم الصورة يتجاوز 12MB.' : 'حجم الفيديو يتجاوز 220MB.'); return }
     setBusy(`upload:${kind}:${segmentId}`); setNotice('أرفع الأصل الخاص…')
     try {
       const app = await getFirebaseApp(); if (!app) throw new Error('Firebase غير متاح')
@@ -184,12 +210,51 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
       let next = project
       if (kind === 'clip') next = setLiveDirectorSegmentStatus(project, segmentId, 'uploaded', url)
       else if (kind === 'final') next = { ...project, finalVideoUrl: url, status: 'ready_to_publish', updatedAtClient: new Date().toISOString() }
+      else if (kind === 'frame') {
+        const outcome = applyReferenceFrame(project, segmentId, { frameUrl: url, kind: 'selected_frame', sharpness: frameSharpness })
+        next = outcome.project
+        setProject(next)
+        setNotice(outcome.applied ? `${outcome.note} أُعيد بناء برومبت المقطع التالي وحده.` : outcome.note)
+        return
+      }
       else next = { ...project, coverUrl: url, updatedAtClient: new Date().toISOString() }
       setProject(next)
       setNotice('اكتمل الرفع الخاص. احفظ المشروع لتثبيت الرابط في Firestore.')
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : 'تعذّر رفع الأصل.')
     } finally { setBusy('') }
+  }
+
+  /** يلتقط إطاراً من ملف المقطع محلياً ثم يرفعه ويمرّره إلى المقطع التالي وحده. */
+  const captureFrame = async (segmentId: string, mode: 'last' | 'manual') => {
+    if (!project || busy) return
+    const file = clipFiles[segmentId]
+    if (!file) { setNotice('اختر ملف المقطع أولاً حتى يُستخرج منه الإطار على جهازك.'); return }
+    setBusy(`frame:${segmentId}`); setNotice('أستخرج الإطار داخل المتصفح…')
+    try {
+      const second = mode === 'manual' ? Number(frameSecond[segmentId] || '0') : undefined
+      const frame = await extractVideoFrame(file, mode === 'manual' && Number.isFinite(second) ? second : undefined)
+      // الإطار الضبابي لا يُعتمد تلقائياً؛ يُعرض السبب ويُترك الاختيار لد. أحمد.
+      if (frame.sharpness < 0.35) {
+        setNotice(`الإطار عند ${frame.atSecond.toFixed(2)} ثانية ضبابي أو أثناء حركة؛ اختر ثانية أخرى بدل اعتماده.`)
+        return
+      }
+      await uploadAsset(frame.blob, 'frame', segmentId, frame.sharpness)
+    } catch (reason) {
+      setNotice(reason instanceof Error ? reason.message : 'تعذّر استخراج الإطار.')
+    } finally { setBusy('') }
+  }
+
+  const uploadManualFrame = async (segmentId: string, file: File) => {
+    const sharpness = await measureImageSharpness(file)
+    if (sharpness < 0.35) { setNotice('الصورة المرفوعة ضبابية؛ اختر إطاراً أوضح بدل اعتماده تلقائياً.'); return }
+    await uploadAsset(file, 'frame', segmentId, sharpness)
+  }
+
+  const changeContinuity = (segmentId: string, change: { mode?: ContinuityMode; strategy?: ReferenceStrategy }) => {
+    if (!project) return
+    setProject(setSegmentContinuity(project, segmentId, change))
+    setNotice('حُدِّث ترابط هذا المقطع وأُعيد بناء برومبته وحده.')
   }
 
   const saveYoutube = () => {
@@ -250,9 +315,28 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
 
         <section className={card}><p className="text-[.72rem] font-semibold text-accent">السيناريو المختصر</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">{project.title}</h3><p className="mt-2 text-[.78rem] leading-relaxed text-soft">{project.centralMessage}</p><div className="mt-4 rounded-xl border border-hair bg-canvas p-4"><span className="text-[.66rem] font-semibold text-accent">النص المنطوق · {project.narration.split(/\s+/).filter(Boolean).length} كلمة</span><p className="mt-2 text-[.8rem] leading-loose text-ink">{project.narration}</p></div><details className="mt-4 rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-ink">قفل الهوية وملاحظات الاستمرارية</summary><p className="mt-3 text-[.72rem] leading-relaxed text-soft">{project.identityLock}</p><ul className="mt-3 grid gap-1 text-[.7rem] text-soft">{project.continuityNotes.map((item) => <li key={item}>— {item}</li>)}</ul></details></section>
 
-        <section className={card} data-live-director-daily-plan="true"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.72rem] font-semibold text-accent">خطة العمل اليومية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">ولّد ثلاثة مقاطع فقط في اليوم.</h3></div><span className="text-[.68rem] text-soft">إذا فشل مقطع، أصلحه وحده.</span></div><div className="mt-5 grid gap-6">{dailyPlan.map((day) => <section key={day.day}><h4 className="mb-3 text-[.76rem] font-semibold text-ink">اليوم {day.day}</h4><div className="grid gap-4 xl:grid-cols-3">{day.clips.map((segment) => <article key={segment.id} className="min-w-0 rounded-2xl border border-hair bg-canvas p-4" data-flow-clip={segment.id}><div className="flex items-start justify-between gap-3"><span><span className="block text-[.62rem] font-semibold text-accent">المقطع {segment.order} · {segment.role}</span><strong className="mt-1 block text-[.78rem] text-ink">{segment.shotCount} {segment.shotCount === 1 ? 'لقطة' : 'لقطات'} · {segment.appearance === 'visual_only' ? 'مشهد بصري' : 'الأفتار المحفوظ'}</strong></span><select aria-label={`حالة المقطع ${segment.order}`} className="rounded-full border border-hair bg-wash px-2 py-1 text-[.62rem] text-soft" value={segment.status} onChange={(event) => updateClipStatus(segment.id, event.target.value as LiveDirectorClipStatus)}>{Object.entries(CLIP_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div><p className="mt-3 rounded-xl bg-wash px-3 py-2 text-[.72rem] leading-relaxed text-ink">{segment.narration}</p><details className="mt-3 rounded-xl border border-hair p-3"><summary className="cursor-pointer list-none text-[.68rem] font-semibold text-accent">برومبت Flow باللغة الإنجليزية</summary><pre dir="ltr" className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-left font-mono text-[.62rem] leading-relaxed text-soft">{segment.prompt}</pre></details><div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => void navigator.clipboard.writeText(segment.prompt).then(() => setNotice(`نُسخ برومبت المقطع ${segment.order}.`))} className={ghost}>نسخ البرومبت</button><label className={`${ghost} cursor-pointer`}>رفع المقطع<input type="file" accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadAsset(file, 'clip', segment.id); event.currentTarget.value = '' }} /></label></div><details className="mt-3 rounded-xl border border-hair bg-wash p-3"><summary className="cursor-pointer list-none text-[.67rem] font-semibold text-soft">النتيجة لم تضبط</summary><select className={`${input} mt-3`} value={repairIssue[segment.id] || LIVE_DIRECTOR_REPAIR_ISSUES[0]} onChange={(event) => setRepairIssue((previous) => ({ ...previous, [segment.id]: event.target.value as (typeof LIVE_DIRECTOR_REPAIR_ISSUES)[number] }))}>{LIVE_DIRECTOR_REPAIR_ISSUES.map((issue) => <option key={issue}>{issue}</option>)}</select><button type="button" onClick={() => repairClip(segment.id)} className={`${ghost} mt-2 w-full`}>أصلح هذا المقطع فقط</button>{segment.promptVersions.length > 1 && <span className="mt-2 block text-[.62rem] text-soft">محفوظة {segment.promptVersions.length} نسخ لهذا المقطع.</span>}</details>{segment.videoUrl && <video controls preload="metadata" className="mt-3 aspect-video w-full rounded-xl bg-ink" src={segment.videoUrl} />}</article>)}</div></section>)}</div></section>
+        <section className={card} data-live-director-daily-plan="true"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.72rem] font-semibold text-accent">خطة العمل اليومية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">ولّد ثلاثة مقاطع فقط في اليوم.</h3></div><span className="text-[.68rem] text-soft">إذا فشل مقطع، أصلحه وحده.</span></div><div className="mt-5 grid gap-6">{dailyPlan.map((day) => <section key={day.day}><h4 className="mb-3 text-[.76rem] font-semibold text-ink">اليوم {day.day}</h4><div className="grid gap-4 xl:grid-cols-3">{day.clips.map((segment) => <ClipCard key={segment.id} segment={segment} status={CLIP_STATUS_LABELS} busy={busy} repairIssue={repairIssue[segment.id] || LIVE_DIRECTOR_REPAIR_ISSUES[0]} hasFile={Boolean(clipFiles[segment.id])} frameSecond={frameSecond[segment.id] || ''} onStatus={(value) => updateClipStatus(segment.id, value)} onRepairIssue={(value) => setRepairIssue((previous) => ({ ...previous, [segment.id]: value }))} onRepair={() => repairClip(segment.id)} onCopy={() => void navigator.clipboard.writeText(segment.prompt).then(() => setNotice(`نُسخ برومبت المقطع ${segment.order}.`))} onPickClip={(file) => { setClipFiles((previous) => ({ ...previous, [segment.id]: file })); void uploadAsset(file, 'clip', segment.id) }} onFrameSecond={(value) => setFrameSecond((previous) => ({ ...previous, [segment.id]: value }))} onCaptureFrame={(mode) => void captureFrame(segment.id, mode)} onManualFrame={(file) => void uploadManualFrame(segment.id, file)} onContinuity={(change) => changeContinuity(segment.id, change)} />)}</div></section>)}</div></section>
 
-        <section className={card}><p className="text-[.72rem] font-semibold text-accent">بوابة الجودة</p><div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">{Object.entries({ 'الفكرة': project.quality.idea, 'المدة': project.quality.duration, 'المقاطع': project.quality.clips, 'الأفتار': project.quality.avatar, 'النشر': project.quality.publishing }).map(([label, value]) => <div key={label} className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.64rem] text-soft">{label}</span><strong className="mt-1 block text-[.76rem] text-ink">{value}</strong></div>)}</div><ul className="mt-4 grid gap-1 text-[.7rem] leading-relaxed text-soft">{project.quality.notes.map((item) => <li key={item}>— {item}</li>)}</ul></section>
+        <section className={card}><p className="text-[.72rem] font-semibold text-accent">بوابة الجودة</p><div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-6">{Object.entries({ 'الفكرة': project.quality.idea, 'المدة': project.quality.duration, 'المقاطع': project.quality.clips, 'الأفتار': project.quality.avatar, 'الترابط': project.quality.continuity, 'النشر': project.quality.publishing }).map(([label, value]) => <div key={label} className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.64rem] text-soft">{label}</span><strong className="mt-1 block text-[.76rem] text-ink">{value}</strong></div>)}</div><ul className="mt-4 grid gap-1 text-[.7rem] leading-relaxed text-soft">{project.quality.notes.map((item) => <li key={item}>— {item}</li>)}</ul></section>
+
+        {nearMinute && <section className={card} data-live-director-near-minute="true">
+          <p className="text-[.72rem] font-semibold text-accent">النسخة القريبة من دقيقة</p>
+          <p className="mt-2 text-[.78rem] leading-relaxed text-soft">{nearMinute.statement}</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.63rem] text-soft">مقدمة تحريرية</span><strong className="mt-1 block text-[.75rem] text-ink">{nearMinute.intro.from}–{nearMinute.intro.to} ثانية</strong><span className="mt-1 block text-[.63rem] leading-relaxed text-soft">{nearMinute.intro.note}</span></div>
+            <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.63rem] text-soft">مادة Flow المولدة</span><strong className="mt-1 block text-[.75rem] text-ink">{nearMinute.generated} ثانية</strong><span className="mt-1 block text-[.63rem] leading-relaxed text-soft">هذه وحدها ما يولّده Flow.</span></div>
+            <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.63rem] text-soft">خاتمة أو بطاقة رابط</span><strong className="mt-1 block text-[.75rem] text-ink">{nearMinute.outro.from}–{nearMinute.outro.to} ثانية</strong><span className="mt-1 block text-[.63rem] leading-relaxed text-soft">{nearMinute.outro.note}</span></div>
+          </div>
+        </section>}
+
+        <section className={card} data-live-director-performance="true">
+          <p className="text-[.72rem] font-semibold text-accent">ما تقوله النتائج المنشورة</p>
+          <ul className="mt-3 grid gap-1 text-[.74rem] leading-relaxed text-soft">{insights.notes.map((note) => <li key={note}>— {note}</li>)}</ul>
+          {!insights.enough && <p className="mt-3 text-[.68rem] leading-relaxed text-soft">أدخل أرقام المشاهدات والإكمال يدوياً بعد النشر؛ لا يوجد تكامل مدفوع، ولا تُعرض خلاصة قبل خمسة مشاريع مقيسة.</p>}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {METRIC_FIELDS.map((field) => <label key={field.key}><span className="mb-1 block text-[.63rem] font-semibold text-ink">{field.label}</span><input dir="ltr" inputMode="numeric" className="w-full rounded-lg border border-hair bg-canvas px-2 py-1.5 text-left text-[.7rem] text-ink" value={String(project.metrics?.[field.key] ?? '')} onChange={(event) => setProject({ ...project, metrics: { views: 0, completion: 0, saves: 0, shares: 0, articleClicks: 0, ...(project.metrics || {}), [field.key]: Number(event.target.value.replace(/[^0-9.]/g, '')) || 0 }, updatedAtClient: new Date().toISOString() })} /></label>)}
+          </div>
+        </section>
 
         <section className={card}><p className="text-[.72rem] font-semibold text-accent">مواد النشر</p><div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{Object.entries({ 'نص الغلاف': project.social.coverText, 'Caption': project.social.caption, 'تغريدة': project.social.x, 'Instagram': project.social.instagram, 'LinkedIn': project.social.linkedin, 'وصف YouTube': project.social.youtube, 'سؤال للجمهور': project.social.audienceQuestion, 'الدعوة': project.social.callToAction, 'الصورة المصغرة': project.social.thumbnailIdea }).map(([label, value]) => <article key={label} className="rounded-xl border border-hair bg-canvas p-4"><strong className="text-[.7rem] text-accent">{label}</strong><p className="mt-2 whitespace-pre-line text-[.74rem] leading-relaxed text-soft">{value}</p><button type="button" onClick={() => void navigator.clipboard.writeText(value).then(() => setNotice(`نُسخ «${label}».`))} className="mt-3 text-[.65rem] font-semibold text-accent">نسخ</button></article>)}</div>{project.social.articleDecision && <p className="mt-4 rounded-xl border border-accent/20 bg-canvas px-4 py-3 text-[.74rem] text-ink"><strong className="text-accent">قرار المقال:</strong> {project.social.articleDecision}</p>}</section>
 
@@ -263,6 +347,110 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
 
       {projects.length > 0 && <RecentProjects projects={projects.filter((item) => item.id !== project?.id)} onOpen={(item) => { setProject(item); setPath(item.type === 'article_video' ? 'article' : 'public'); setYoutubeDraft(item.youtubeUrl || ''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />}
     </div>
+  )
+}
+
+type ClipCardProps = {
+  segment: LiveDirectorSegment
+  status: Record<LiveDirectorClipStatus, string>
+  busy: string
+  repairIssue: LiveDirectorRepairIssue
+  hasFile: boolean
+  frameSecond: string
+  onStatus: (value: LiveDirectorClipStatus) => void
+  onRepairIssue: (value: LiveDirectorRepairIssue) => void
+  onRepair: () => void
+  onCopy: () => void
+  onPickClip: (file: File) => void
+  onFrameSecond: (value: string) => void
+  onCaptureFrame: (mode: 'last' | 'manual') => void
+  onManualFrame: (file: File) => void
+  onContinuity: (change: { mode?: ContinuityMode; strategy?: ReferenceStrategy }) => void
+}
+
+function ClipCard(props: ClipCardProps) {
+  const { segment } = props
+  const founding = segment.continuityMode === 'independent'
+  return (
+    <article className="min-w-0 rounded-2xl border border-hair bg-canvas p-4" data-flow-clip={segment.id}>
+      <div className="flex items-start justify-between gap-3">
+        <span>
+          <span className="block text-[.62rem] font-semibold text-accent">المقطع {segment.order} · {segment.role}</span>
+          <strong className="mt-1 block text-[.78rem] text-ink">{segment.shotCount} {segment.shotCount === 1 ? 'لقطة' : 'لقطات'} · 8 ثوانٍ · {VOICE_MODE_LABELS[segment.voiceMode]}</strong>
+        </span>
+        <select aria-label={`حالة المقطع ${segment.order}`} className="rounded-full border border-hair bg-wash px-2 py-1 text-[.62rem] text-soft" value={segment.status} onChange={(event) => props.onStatus(event.target.value as LiveDirectorClipStatus)}>
+          {Object.entries(props.status).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </div>
+
+      <p className="mt-3 text-[.68rem] leading-relaxed text-soft"><span className="font-semibold text-ink">المعنى الواحد:</span> {segment.message}</p>
+      {segment.narration
+        ? <p className="mt-2 rounded-xl bg-wash px-3 py-2 text-[.72rem] leading-relaxed text-ink">{segment.narration}</p>
+        : <p className="mt-2 rounded-xl border border-dashed border-hair px-3 py-2 text-[.68rem] leading-relaxed text-soft">بلا جملة منطوقة؛ الصورة تحمل المعنى والنص يُضاف في المونتاج.</p>}
+
+      <ul className="mt-3 grid gap-1 text-[.63rem] text-soft">
+        {segment.shotPlan.map((shot, index) => <li key={`${segment.id}-shot-${index}`} dir="ltr" className="text-left font-mono">{shot.from.toFixed(1)}–{shot.to.toFixed(1)}s · {shot.framing}</li>)}
+      </ul>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <label><span className="mb-1 block text-[.62rem] font-semibold text-ink">الترابط مع السابق</span>
+          <select className="w-full rounded-lg border border-hair bg-wash px-2 py-1.5 text-[.66rem] text-ink" value={segment.continuityMode} onChange={(event) => props.onContinuity({ mode: event.target.value as ContinuityMode })}>
+            {CONTINUITY_MODES.map((mode) => <option key={mode} value={mode}>{CONTINUITY_LABELS[mode]}</option>)}
+          </select>
+        </label>
+        <label><span className="mb-1 block text-[.62rem] font-semibold text-ink">الصورة المرجعية</span>
+          <select className="w-full rounded-lg border border-hair bg-wash px-2 py-1.5 text-[.66rem] text-ink" value={segment.referenceStrategy} onChange={(event) => props.onContinuity({ strategy: event.target.value as ReferenceStrategy })}>
+            {REFERENCE_STRATEGIES.map((strategy) => <option key={strategy} value={strategy}>{REFERENCE_LABELS[strategy]}</option>)}
+          </select>
+        </label>
+      </div>
+      <p className="mt-2 text-[.62rem] leading-relaxed text-soft">
+        {founding ? 'مشهد مؤسس: يبني العالم البصري الذي ترثه بقية المقاطع.' : segment.selectedReferenceFrame ? `مربوط بإطار من ${segment.referenceSourceClipId}.` : `ينتظر إطاراً مرجعياً من ${segment.referenceSourceClipId || 'المقطع السابق'}؛ حتى ذلك الحين يعتمد على ملاحظات الاستمرارية النصية.`}
+      </p>
+      {segment.selectedReferenceFrame && <img src={segment.selectedReferenceFrame} alt={`الإطار المرجعي للمقطع ${segment.order}`} loading="lazy" className="mt-2 h-24 w-full rounded-lg object-cover" />}
+
+      {segment.overlayPlan.length > 0 && <details className="mt-3 rounded-xl border border-hair bg-wash p-3">
+        <summary className="cursor-pointer list-none text-[.67rem] font-semibold text-soft">النصوص التي تُضاف بعد التوليد · {segment.overlayPlan.length}</summary>
+        <ul className="mt-2 grid gap-2 text-[.64rem] leading-relaxed text-soft">
+          {segment.overlayPlan.map((cue, index) => <li key={`${segment.id}-cue-${index}`}><strong className="text-ink">{cue.kind}</strong> — «{cue.text}» · {cue.from.toFixed(1)}–{cue.to.toFixed(1)}ث · {cue.position} · {cue.space}</li>)}
+        </ul>
+      </details>}
+
+      <details className="mt-3 rounded-xl border border-hair p-3">
+        <summary className="cursor-pointer list-none text-[.68rem] font-semibold text-accent">برومبت Flow باللغة الإنجليزية</summary>
+        <pre dir="ltr" className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-left font-mono text-[.62rem] leading-relaxed text-soft">{segment.prompt}</pre>
+      </details>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" onClick={props.onCopy} className={ghost}>نسخ البرومبت</button>
+        <label className={`${ghost} cursor-pointer`}>رفع المقطع<input type="file" accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) props.onPickClip(file); event.currentTarget.value = '' }} /></label>
+      </div>
+
+      <details className="mt-3 rounded-xl border border-hair bg-wash p-3">
+        <summary className="cursor-pointer list-none text-[.67rem] font-semibold text-soft">الإطار المرجعي للمقطع التالي</summary>
+        <p className="mt-2 text-[.63rem] leading-relaxed text-soft">يُستخرج الإطار على جهازك من الملف نفسه؛ لا يُرفع الفيديو إلى أي خدمة معالجة.</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button type="button" disabled={!props.hasFile || Boolean(props.busy)} onClick={() => props.onCaptureFrame('last')} className={ghost}>الإطار الأخير</button>
+          <input aria-label={`ثانية الإطار اليدوي للمقطع ${segment.order}`} dir="ltr" inputMode="decimal" value={props.frameSecond} onChange={(event) => props.onFrameSecond(event.target.value)} placeholder="5.5" className="w-20 rounded-lg border border-hair bg-canvas px-2 py-1.5 text-left text-[.66rem] text-ink" />
+          <button type="button" disabled={!props.hasFile || Boolean(props.busy)} onClick={() => props.onCaptureFrame('manual')} className={ghost}>التقط هذه الثانية</button>
+          <label className={`${ghost} cursor-pointer`}>ارفع صورة إطار<input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) props.onManualFrame(file); event.currentTarget.value = '' }} /></label>
+        </div>
+        {!props.hasFile && <p className="mt-2 text-[.62rem] text-soft">اختر ملف المقطع من زر «رفع المقطع» ليصبح الالتقاط متاحاً.</p>}
+        {segment.lastFrameImage && <img src={segment.lastFrameImage} alt={`إطار مأخوذ من المقطع ${segment.order}`} loading="lazy" className="mt-2 h-24 w-full rounded-lg object-cover" />}
+      </details>
+
+      <details className="mt-3 rounded-xl border border-hair bg-wash p-3">
+        <summary className="cursor-pointer list-none text-[.67rem] font-semibold text-soft">النتيجة لم تضبط</summary>
+        <select className={`${input} mt-3`} value={props.repairIssue} onChange={(event) => props.onRepairIssue(event.target.value as LiveDirectorRepairIssue)}>
+          {LIVE_DIRECTOR_REPAIR_ISSUES.map((issue) => <option key={issue}>{issue}</option>)}
+        </select>
+        <button type="button" onClick={props.onRepair} className={`${ghost} mt-2 w-full`}>أصلح هذا المقطع فقط</button>
+        {segment.revisionReason && <span className="mt-2 block text-[.62rem] text-soft">آخر سبب تعديل: {segment.revisionReason}</span>}
+        {segment.promptVersions.length > 1 && <span className="mt-1 block text-[.62rem] text-soft">محفوظة {segment.promptVersions.length} نسخ لهذا المقطع.</span>}
+      </details>
+
+      {segment.videoUrl && <video controls preload="metadata" className="mt-3 aspect-video w-full rounded-xl bg-ink" src={segment.videoUrl} />}
+    </article>
   )
 }
 

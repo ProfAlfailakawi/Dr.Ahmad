@@ -86,7 +86,36 @@ const audioManagePath = '/api/admin/audio/manage'
 const sourcesCheckPath = '/api/admin/sources/check'
 const controlCenterPath = '/api/admin/control-center'
 const publicationPassportPath = '/api/admin/publication-passport/sign'
-const maxArticleRequestBytes = 128 * 1024
+/* ١٢٨ كانت ضيّقةً على نداءٍ يحمل فهرس أرشيفٍ كامل — والضيق كان يُرفَض بـ٤١٣
+   قبل بلوغ المحرك. المتون انتقلت إلى القرص، والحدّ رُفع إلى ثلاثة أضعافٍ
+   ليبقى هامشٌ حقيقي بلا فتحِ الباب على مصراعيه. */
+const maxArticleRequestBytes = 384 * 1024
+
+/* ---------- الأرشيف يُقرأ من القرص لا يُرسَل عبر الشبكة ----------
+
+   العطب الذي منع الكتابة تماماً: الواجهة كانت ترسل ١٨٠ مقالاً **بمتونها
+   الكاملة** = ٦٣٦ كيلوبايت، وحدّ الطلب هنا ١٢٨. فكان كل نداءٍ يُرفض بـ٤١٣
+   قبل أن يبلغ المحرك أصلاً.
+
+   ولم يظهر العطب سنةً لأن القالب المحلي المُعلَّب كان يبتلع الرفض ويسلّم نصاً
+   جاهزاً — أي أن «المقال غير الاحترافي» الذي شكا منه الدكتور كان **أثر هذا
+   العطب** لا سبباً مستقلاً. وحين حُذف القالب ظهر الرفض عارياً.
+
+   والحل كان تحت اليد: `src/data/bodies.json` منسوخٌ في الصورة أصلاً
+   (`Dockerfile:30`) — فالخادم يملك الأرشيف كاملاً ولا حاجة لرفعه إليه. */
+let archiveBodiesCache = null
+function archiveBodies() {
+  if (archiveBodiesCache) return archiveBodiesCache
+  archiveBodiesCache = new Map()
+  try {
+    const file = new URL('./src/data/bodies.json', import.meta.url)
+    const raw = JSON.parse(readFileSync(file, 'utf8'))
+    for (const [slug, body] of Object.entries(raw)) {
+      if (typeof body === 'string' && body.trim().length > 100) archiveBodiesCache.set(slug, body)
+    }
+  } catch { /* غير متاح في بيئة الاختبار: نكتفي بما ترسله الواجهة */ }
+  return archiveBodiesCache
+}
 const firebaseJwksUrl = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تكنولوجيا', 'هوية', 'إعلام', 'بحث'])
 const articleCategoryPattern = /^[\p{L}][\p{L}\p{M}\s-]{1,38}$/u
@@ -2440,9 +2469,20 @@ function perfectArticleInput(value) {
     title: boundedString(item.title, 300), cat: boundedString(item.cat, 80), year: boundedString(item.year, 10),
     opening: boundedString(item.opening, 850), middle: boundedString(item.middle, 850), closing: boundedString(item.closing, 850),
   } : null)
-  const existing = boundedArray(value.existing, 180, (item) => item && typeof item === 'object' ? {
-    slug: boundedString(item.slug, 220), title: boundedString(item.title, 300), excerpt: boundedString(item.excerpt, 450), body: boundedString(item.body, 1_800),
-  } : null)
+  /* المتن يأتي من القرص أولاً، ومن الواجهة فقط لما لم يُبنَ بعد (مقالٌ جديد
+     في Firestore لم يدخل bodies.json). فالحمولة تهبط من ٦٣٦ ك.ب إلى نحو ٩٠. */
+  const disk = archiveBodies()
+  const existing = boundedArray(value.existing, 180, (item) => {
+    if (!item || typeof item !== 'object') return null
+    const slug = boundedString(item.slug, 220)
+    const sent = boundedString(item.body, 1_800)
+    return {
+      slug,
+      title: boundedString(item.title, 300),
+      excerpt: boundedString(item.excerpt, 450),
+      body: sent || boundedString(disk.get(slug) || '', 1_800),
+    }
+  })
   const selectedEventIds = boundedArray(value.selectedEventIds, 12, (item) => typeof item === 'string' ? boundedString(item, 200) : null)
   /* بصمة الأسلوب تصل من الواجهة مقيسةً على الأرشيف الحيّ كاملاً (لا المبتور)؛
      وإن لم تصل استعمل المقيسة على ١٤٣ مقالاً داخل الحزمة. */

@@ -561,7 +561,8 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
   const audioControlId = `article-audio-${slug}`
   const sources = [
     ...readingSources,
-    ...(dialogueOk ? [{ key: 'dialogue', label: 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`) }] : []),
+    // نصّ الحلقة يسير مع صوتها: منه المحاور القابلة للنقر والسطر المتوهّج.
+    ...(dialogueOk ? [{ key: 'dialogue', label: 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue.json`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 

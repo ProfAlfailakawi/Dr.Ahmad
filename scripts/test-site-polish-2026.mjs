@@ -137,13 +137,20 @@ ok(!extras.includes("label: 'قراءة نورة'") && !extras.includes("label: 
 ok(ideaLife.includes('من البدايات الأولى للفكرة إلى امتداداتها عبر الزمن.') && !ideaLife.includes('لا يدّعي هذا الخيط علاقة سببية'), 'لغة حياة الفكرة إنسانية وغير دفاعية')
 ok(thoughtOverview.includes('هنا تتجاور المواد التي تدور حول فكرةٍ واحدة'), 'شرح العلاقات الدلالية في خريطة الفكر أصبح موجهاً للزائر')
 ok(extras.includes('contextUrl === undefined ? citationUrl : safeLink(contextUrl)') && articleDetail.includes("contextUrl={liveLink(article.source) || ''}"), 'زر فتح المصدر يظهر فقط عند وجود مصدر أصلي حقيقي ولا يعيد المستخدم إلى المقال نفسه')
+/* المقصد المحروس هنا: ألّا يزحم الحوارُ جسدَ المقال ببطاقةٍ أو نصٍّ خارج
+   المشغّل. نصُّ الحلقة ومحاورها يسكنان داخل المشغّل المفتوح وحده، فالعنوان
+   يمرّر مسار النصّ ولا يرسم منه شيئاً. لذلك نحرس الموضع لا مجرّد اسم الملف. */
 ok(!extras.includes('بين صوتين')
   && extras.includes("key: 'dialogue', label: 'استمع'")
   && !extras.includes('dialogue-promo')
   && audioPlayer.includes("item.key === 'dialogue'")
   && audioPlayer.includes('? null')
   && !audioPlayer.includes('transcriptOpen')
-  && !extras.includes('.dialogue.json'), 'الحوار داخل مشغل «استمع» نفسه بأيقونة فقط، بلا بطاقة أو نص إضافي يزحم المقال')
+  && !extras.includes('نص الحلقة') && !extras.includes('محاور الحلقة'), 'الحوار داخل مشغل «استمع» نفسه بأيقونة فقط، بلا بطاقة أو نص إضافي يزحم المقال')
+ok(extras.includes(`transcript: versionedAudioUrl(\`/audio/\${slug}.dialogue.json\`)`)
+  && audioPlayer.includes('aria-label="نص الحلقة"') && audioPlayer.includes('محاور الحلقة')
+  && audioPlayer.includes('followSuspendedUntil') && audioPlayer.includes('list.scrollTo({ top: target')
+  && audioPlayer.includes('setPendingSeek'), 'نصّ الحلقة يسير مع صوتها داخل المشغّل: محاور يقفز إليها المستمع وسطرٌ يتوهّج ويتبع الصوت ويسكن لمن يقرأ بيده')
 ok(articleDetail.includes("!audio.track?.src.includes('.dialogue.')"), 'تتبّع نص المقال يميّز النسخة الثنائية من مسار الملف لا من اسمها الظاهر')
 ok(readerResonance.includes('if (!quote) return null')
   && readerResonance.includes('paragraph.slice(startOffset, endOffset)')

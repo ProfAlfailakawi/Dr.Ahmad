@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { usePersistentAudio } from '../lib/persistent-audio'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (digit) => '0123456789'[+digit])
@@ -15,7 +15,113 @@ export type AudioSource = {
   label: string
   src: string
   avatar?: 'man' | 'woman' | 'dialogue'
+  /** نصّ الحلقة الحوارية المنشور بجانب صوتها — منه الفصول والنص المتزامن. */
+  transcript?: string
 }
+
+type DialogueLine = { speaker?: string; text: string; startSec?: number; endSec?: number }
+type DialogueChapter = { index: number; title: string; startSec: number; endSec: number }
+type DialogueScript = { chapters: DialogueChapter[]; utterances: DialogueLine[] }
+
+/* نصُّ الحلقة يتوهّج مع الصوت، وفصولٌ عند جسور المحرّر يقفز إليها المستمع.
+   التوقيت من Timeline التركيب نفسه لا من تقدير، فإن غاب (حلقةٌ قديمة قبل
+   التوقيت) بقي النصّ كاملاً مقروءاً بلا توهّجٍ ولا فصول — نقصٌ في الميزة
+   لا كسرٌ في الصفحة. مكوّنٌ مستقل بذاكرة: نبضُ الثانية لا يُعيد بناء أربعين
+   سطراً، وإنما يتحرك السطر المضيء وحده. */
+const DialogueScriptView = memo(function DialogueScriptView({ script, activeIndex, onJump }: {
+  script: DialogueScript
+  activeIndex: number
+  onJump: (seconds: number) => void
+}) {
+  const listRef = useRef<HTMLOListElement>(null)
+  const timed = script.utterances.some((line) => typeof line.startSec === 'number')
+  /* أدبُ المتابعة: من يقرأ متقدّماً على الصوت لا يُسحب إلى الوراء كل ثانية.
+     إن حرّك القارئ النصّ بيده سكن التتبّع ستّ ثوانٍ ثم عاد وحده — بلا زرٍّ
+     يتعلّمه ولا إعداد. والحركة التي نصنعها نحن لا تُحسب حركةً منه. */
+  const followSuspendedUntil = useRef(0)
+  const selfScrolling = useRef(false)
+
+  useEffect(() => {
+    const list = listRef.current
+    const node = list?.children[activeIndex] as HTMLElement | undefined
+    if (activeIndex < 0 || !list || !node || Date.now() < followSuspendedUntil.current) return
+    /* لا نحرّك النصّ ما دام السطر المضيء مرئياً: الحركة عند الحاجة وحدها،
+       فلا يرتجّ النصّ مع كل جملة. وحين يخرج السطر نُنزل الشريط ليتوسّطه. */
+    const lineTop = node.offsetTop
+    const lineBottom = lineTop + node.clientHeight
+    const viewTop = list.scrollTop
+    if (lineTop >= viewTop + 24 && lineBottom <= viewTop + list.clientHeight - 24) return
+    const target = Math.max(0, Math.min(list.scrollHeight - list.clientHeight,
+      lineTop - list.clientHeight / 2 + node.clientHeight / 2))
+    selfScrolling.current = true
+    list.scrollTo({ top: target, behavior: 'smooth' })
+    /* بعض المتصفّحات تتجاهل الانسياب البرمجي داخل صندوقٍ متمرّر فلا يتحرّك شيء
+       (رُصد حيّاً). نتحقّق بعد لحظة: إن لم يبدأ الشريط بالحركة أوصلناه فوراً —
+       فالوصول أهمّ من نعومة الوصول. */
+    const ensure = window.setTimeout(() => {
+      if (Math.abs(list.scrollTop - viewTop) < 2) list.scrollTop = target
+    }, 220)
+    const settle = window.setTimeout(() => { selfScrolling.current = false }, 900)
+    return () => { window.clearTimeout(ensure); window.clearTimeout(settle) }
+  }, [activeIndex])
+
+  const activeChapter = script.chapters.findIndex((chapter, index) => {
+    const line = script.utterances[activeIndex]
+    if (!line || typeof line.startSec !== 'number') return false
+    const next = script.chapters[index + 1]
+    return line.startSec >= chapter.startSec && (!next || line.startSec < next.startSec)
+  })
+
+  return (
+    <div className="mt-4 border-t border-hair pt-4">
+      {script.chapters.length > 1 && (
+        <>
+          <p className="text-[.68rem] font-semibold tracking-wide text-soft">محاور الحلقة</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {script.chapters.map((chapter, index) => (
+              <button
+                key={chapter.index}
+                type="button"
+                onClick={() => onJump(chapter.startSec)}
+                aria-current={index === activeChapter ? 'true' : undefined}
+                className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-[.7rem] transition-colors ${index === activeChapter ? 'border-accent bg-accent/8 text-accent' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+              >
+                <span className="text-[.62rem] opacity-70">{ar(chapter.index)}</span>
+                <span className="truncate">{chapter.title}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <ol
+        ref={listRef}
+        onScroll={() => { if (!selfScrolling.current) followSuspendedUntil.current = Date.now() + 6000 }}
+        className="mt-3 max-h-72 space-y-1 overflow-y-auto pe-1"
+        aria-label="نص الحلقة"
+      >
+        {script.utterances.map((line, index) => {
+          const seekable = typeof line.startSec === 'number'
+          const isActive = index === activeIndex
+          return (
+            <li key={index}>
+              <button
+                type="button"
+                disabled={!seekable}
+                aria-current={isActive ? 'true' : undefined}
+                onClick={() => seekable && onJump(line.startSec as number)}
+                className={`block w-full rounded-lg px-2.5 py-1.5 text-start text-[.78rem] leading-relaxed transition-colors ${isActive ? 'bg-accent/8 text-ink' : 'text-soft'} ${seekable ? 'hover:bg-wash hover:text-ink' : 'cursor-default'}`}
+              >
+                {line.speaker && <span className={`me-1.5 text-[.68rem] font-semibold ${isActive ? 'text-accent' : 'text-soft/80'}`}>{line.speaker}:</span>}
+                {line.text}
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+      {!timed && <p className="mt-2 px-2.5 text-[.68rem] text-soft">هذه حلقة أُنتجت قبل التوقيت؛ يظهر نصّها كاملاً بلا تتبّع.</p>}
+    </div>
+  )
+})
 
 /* صورة صوت بلا كلام: رجل/امرأة — أحادية اللون، تحترم هوية الموقع */
 function VoiceFigure({ kind, size = 16 }: { kind: 'man' | 'woman'; size?: number }) {
@@ -130,6 +236,37 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
     return () => window.removeEventListener('article-audio-follow-change', syncFollow)
   }, [])
 
+  /* نصّ الحلقة لا يُجلب إلا حين يفتح المستمع المشغّل فعلاً: لا بايت واحد
+     يُحمَّل على من لا يستمع، ولا يُثقَل أول رسمٍ للصفحة. */
+  const transcriptSrc = source?.transcript
+  const [script, setScript] = useState<DialogueScript | null>(null)
+  useEffect(() => {
+    setScript(null)
+    if (!expanded || !transcriptSrc) return
+    let on = true
+    fetch(transcriptSrc, { cache: 'force-cache' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!on || !data || !Array.isArray(data.utterances)) return
+        setScript({
+          chapters: Array.isArray(data.chapters) ? data.chapters : [],
+          utterances: data.utterances.filter((line: DialogueLine) => line && typeof line.text === 'string'),
+        })
+      })
+      .catch(() => { /* الحلقة تُسمع وإن تعذّر نصّها */ })
+    return () => { on = false }
+  }, [expanded, transcriptSrc])
+
+  /* القفز إلى محورٍ أو سطرٍ قبل بدء التشغيل: المتصفّح لا يعرف مدة الملف بعد،
+     فـseekTo يسقط صامتاً. نحفظ الطلب ونُنفّذه لحظة تُعرف المدة. */
+  const [pendingSeek, setPendingSeek] = useState<number | null>(null)
+  useEffect(() => {
+    if (pendingSeek === null) return
+    if (!player.isActive(source?.src) || !player.duration) return
+    player.seekTo(pendingSeek)
+    setPendingSeek(null)
+  }, [pendingSeek, player, source?.src])
+
   if (!source) return null
 
   const active = player.isActive(source.src)
@@ -146,6 +283,24 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
     label: source.label,
     path: typeof window !== 'undefined' ? window.location.pathname : '',
   })
+
+  /* السطر المضيء: آخرُ مداخلةٍ بدأت قبل اللحظة الحالية. المداخلات مرتّبة
+     زمنياً فنقف عند أول مداخلةٍ لم يحن وقتها بعد. */
+  let activeIndex = -1
+  if (active && script) {
+    for (let index = 0; index < script.utterances.length; index++) {
+      const start = script.utterances[index].startSec
+      if (typeof start !== 'number') continue
+      if (start <= current + 0.15) activeIndex = index
+      else break
+    }
+  }
+
+  const jumpTo = (seconds: number) => {
+    if (active && duration) { player.seekTo(seconds); return }
+    setPendingSeek(seconds)
+    void play()
+  }
 
   const choose = (key: string) => {
     setSelectedKey(key)
@@ -258,6 +413,10 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
             ))}
           </div>
 
+
+          {script && script.utterances.length > 0 && (
+            <DialogueScriptView script={script} activeIndex={activeIndex} onJump={jumpTo} />
+          )}
 
           {active && player.error && <p className="mt-3 text-[.7rem] leading-relaxed text-soft">{player.error}</p>}
         </section>

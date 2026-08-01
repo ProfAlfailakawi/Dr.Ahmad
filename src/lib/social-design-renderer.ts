@@ -10,10 +10,13 @@
  */
 
 import {
+  FONT_MAX_WEIGHT,
+  FONT_WIDTH_RATIO,
   FRAMING_MODES,
   TYPOGRAPHY_MODES,
   compositionTextLayout,
   extractInfographicPoints,
+  fontStack,
   resolvePalette,
   type CompositionPlan,
   type InfographicVariantId,
@@ -36,82 +39,9 @@ export interface RenderPreferences {
   seasonal: boolean
   /** نمط خلفيةٍ راقٍ اختياري: نقطية · خطوط · زخرفة إسلامية · تدرّج شبكي */
   pattern: BackgroundPattern
-  /** بصمة الموسم: خيطٌ سفليّ واحد بلون الفصل يرث كل تصاميم الفترة (هوية عائلة) */
-  familySignature: boolean
-  /** الأرقام الهندية (٢٠٢٦) بدل العربية الغربية في البيانات الوصفية */
-  arabicNumerals: boolean
 }
 
-let renderPreferences: RenderPreferences = { seal: false, seasonal: false, pattern: 'none', familySignature: true, arabicNumerals: true }
-
-/* ------------------------------------------------------------------ */
-/*   بصمة الموسم: ما يجعل منشورات الشهر عائلةً واحدة لا أفراداً يتامى     */
-/* ------------------------------------------------------------------ */
-
-export type SeasonIdentity = { id: string; label: string; tint: string; index: number }
-
-/** أربع بصماتٍ في السنة، حتميّة من التاريخ فتتشاركها كل تصاميم الفترة. */
-export function seasonIdentityFor(date = new Date()): SeasonIdentity {
-  const month = date.getMonth()
-  const year = date.getFullYear()
-  const table: Array<{ id: string; label: string; tint: string }> = [
-    { id: 'winter', label: 'شتاء', tint: '#3F6C8E' },
-    { id: 'spring', label: 'ربيع', tint: '#5C7F63' },
-    { id: 'summer', label: 'صيف', tint: '#B08343' },
-    { id: 'autumn', label: 'خريف', tint: '#8A5B4B' },
-  ]
-  const index = month <= 1 || month === 11 ? 0 : month <= 4 ? 1 : month <= 7 ? 2 : 3
-  const season = table[index]
-  return { ...season, label: `${season.label} ${year}`, index }
-}
-
-/** الخيط السفلي: حضورٌ يُحسّ ولا يُرى — عرضه ثلث القاعدة وسمكه شعرة. */
-function familySignatureMark(s: Scene): string {
-  if (!renderPreferences.familySignature) return ''
-  const identity = seasonIdentityFor()
-  const { w, h, min } = s
-  const width = w * .18
-  const x = s.safeX
-  const y = h - Math.max(s.safeY * .55, min * .045)
-  return `<g aria-hidden="true" opacity=".55">
-    <rect x="${round(x)}" y="${round(y)}" width="${round(width)}" height="${round(Math.max(1.4, min * .0035))}" rx="${round(min * .002)}" fill="${identity.tint}"/>
-  </g>`
-}
-
-/* ------------------------------------------------------------------ */
-/*        الطباعة العربية المتقدمة: أرقام هندية وكشيدة صحيحة            */
-/* ------------------------------------------------------------------ */
-
-const ARABIC_INDIC = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
-
-/** يحوّل الأرقام الغربية إلى هندية — للبيانات الوصفية لا لنص الدكتور. */
-export function toArabicIndic(value: string): string {
-  if (!renderPreferences.arabicNumerals) return value
-  return String(value || '').replace(/[0-9]/g, (digit) => ARABIC_INDIC[Number(digit)])
-}
-
-/* الحروف التي لا تتصل بما بعدها: لا تُمدّ الكشيدة خلفها أبداً وإلا انفصلت
-   الكلمة وبدت خطأً إملائياً. هذه هي القاعدة التي تفرق بين مدٍّ خطّي أصيل
-   وتشويهٍ آليٍّ يفضح صانعه. */
-const NON_CONNECTING_FORWARD = new Set(['ا', 'أ', 'إ', 'آ', 'د', 'ذ', 'ر', 'ز', 'و', 'ؤ', 'ة', 'ى', 'ء'])
-
-/** مدّ الكلمة بالكشيدة إلى طولٍ مطلوب، بلا كسر اتصال الحروف. */
-export function elongateArabic(word: string, extra = 1): string {
-  const letters = Array.from(String(word || ''))
-  if (letters.length < 3 || extra < 1) return word
-  const slots: number[] = []
-  for (let index = 0; index < letters.length - 1; index += 1) {
-    const current = letters[index]
-    const next = letters[index + 1]
-    if (NON_CONNECTING_FORWARD.has(current)) continue
-    if (next === 'ء' || /\s/.test(next) || !/[ء-ي]/.test(current) || !/[ء-ي]/.test(next)) continue
-    slots.push(index + 1)
-  }
-  if (!slots.length) return word
-  /* نمدّ عند الموضع الأوسط: أقرب إلى ذائقة الخطّاط من المدّ عند الطرف. */
-  const pick = slots[Math.floor((slots.length - 1) / 2)]
-  return `${letters.slice(0, pick).join('')}${'ـ'.repeat(Math.min(4, extra))}${letters.slice(pick).join('')}`
-}
+let renderPreferences: RenderPreferences = { seal: false, seasonal: false, pattern: 'none' }
 
 export function setRenderPreferences(preferences: Partial<RenderPreferences>) {
   renderPreferences = { ...renderPreferences, ...preferences }
@@ -174,30 +104,34 @@ function measuredUnits(value: string, family = 'Tajawal') {
     } catch { measureContext = null }
   }
   if (measureContext) {
-    measureContext.font = `500 100px ${family}, Tajawal, sans-serif`
+    /* العائلة ذات الكلمتين («El Messiri») بلا اقتباس تجعل مختصر font غير صالح،
+       فيُهمل الإسناد صامتاً ويبقى القياس على خط سابق. الاقتباس شرط صحة. */
+    measureContext.font = `500 100px ${fontStack(family)}`
     measureContext.direction = hasArabic(cleanValue) ? 'rtl' : 'ltr'
     const measured = measureContext.measureText(cleanValue).width / 55.5
     measureCache.set(cacheKey, measured)
     if (measureCache.size > 1200) measureCache.clear()
     return measured
   }
+  /* بلا Canvas (البناء الثابت) نعدّ الحروف ثم نصحّح بنسبة عرض الوجه، وإلا
+     صار كسر السطر محسوباً على Tajawal مهما كان الخط الظاهر. */
   return Array.from(cleanValue).reduce((total, character) => {
     if (/\s/.test(character)) return total + .42
     if (/[؀-ۿ]/.test(character)) return total + 1
     if (/[A-Z]/.test(character)) return total + .86
     if (/[a-z0-9]/.test(character)) return total + .72
     return total + .5
-  }, 0)
+  }, 0) * (FONT_WIDTH_RATIO[family] || 1)
 }
 
-function textUnits(value: string) { return measuredUnits(value) }
+function textUnits(value: string, family?: string) { return measuredUnits(value, family || 'Tajawal') }
 
 /** عرض بالبكسل وفق القياس الفعلي حين يكون Canvas متاحاً. */
-const lineWidthPx = (line: string, size: number) => measuredUnits(line) * size * .555
+const lineWidthPx = (line: string, size: number, family?: string) => measuredUnits(line, family || 'Tajawal') * size * .555
 
 /** موازنة ديناميكية: تفحص نقاط القطع الممكنة وتختار أقل تفاوت بين الأسطر،
     مع عقوبة واضحة للسطر اليتيم والفيضان. */
-function balancedWrap(sourceWords: string[], budget: number, maxLines: number) {
+function balancedWrap(sourceWords: string[], budget: number, maxLines: number, family?: string) {
   const n = sourceWords.length
   const memo = new Map<string, { lines: string[]; score: number; consumed: number }>()
   const solve = (start: number, left: number): { lines: string[]; score: number; consumed: number } => {
@@ -208,7 +142,7 @@ function balancedWrap(sourceWords: string[], budget: number, maxLines: number) {
     let line = ''
     for (let end = start; end < n; end += 1) {
       line = line ? `${line} ${sourceWords[end]}` : sourceWords[end]
-      const width = textUnits(line)
+      const width = textUnits(line, family)
       if (width > budget * 1.16 && end > start) break
       const tail = solve(end + 1, left - 1)
       const fill = Math.min(1.4, width / budget)
@@ -225,11 +159,11 @@ function balancedWrap(sourceWords: string[], budget: number, maxLines: number) {
   return solve(0, maxLines)
 }
 
-function wrap(value: string, maxUnits: number, maxLines: number) {
+function wrap(value: string, maxUnits: number, maxLines: number, family?: string) {
   const source = words(value)
   if (!source.length) return []
   const budget = Math.max(4, maxUnits)
-  const result = balancedWrap(source, budget, Math.max(1, maxLines))
+  const result = balancedWrap(source, budget, Math.max(1, maxLines), family)
   const lines = result.lines.slice(0, maxLines)
   if (result.consumed < source.length && lines.length) lines[lines.length - 1] = `${lines[lines.length - 1].replace(/[.…]+$/, '')}…`
   if (lines.length >= 2) {
@@ -238,7 +172,7 @@ function wrap(value: string, maxUnits: number, maxLines: number) {
     if (last.length === 1 && previous.length > 2 && !lines[lines.length - 1].endsWith('…')) {
       const moved = previous.pop() as string
       const candidate = `${moved} ${last.join(' ')}`
-      if (textUnits(candidate) <= budget * 1.05) {
+      if (textUnits(candidate, family) <= budget * 1.05) {
         lines[lines.length - 2] = previous.join(' ')
         lines[lines.length - 1] = candidate
       }
@@ -248,9 +182,9 @@ function wrap(value: string, maxUnits: number, maxLines: number) {
 }
 
 /** حجم خط يجعل الأسطر تتنفس داخل منطقة محددة بلا فيضان. */
-function fitted(lines: string[], base: number, zoneWidth: number, maxHeight: number, lineHeight: number, minimumScale = .5) {
+function fitted(lines: string[], base: number, zoneWidth: number, maxHeight: number, lineHeight: number, minimumScale = .5, family?: string) {
   if (!lines.length) return base
-  const widest = Math.max(...lines.map((line) => lineWidthPx(line, base)), 1)
+  const widest = Math.max(...lines.map((line) => lineWidthPx(line, base, family)), 1)
   const estimatedHeight = base * (1.02 + Math.max(0, lines.length - 1) * lineHeight)
   const scale = Math.min(1, zoneWidth / widest, maxHeight / Math.max(1, estimatedHeight))
   return base * Math.max(minimumScale, scale)
@@ -310,26 +244,9 @@ interface TextBlockOptions {
   emphasisWeight?: number
 }
 
-/** يحسم الوزن المتاح فعلياً: Tajawal المحلي ينتهي عند 500 فلا نطلب تغليظاً اصطناعياً. */
-/**
- * جذر «الخط غير جميل» (ملاحظة الدكتور ٣١ يوليو مساءً) — أعمقُ من نسيان
- * fonts.load: **«Alexandria Variable» لا وجود له في المشروع أصلاً**. لا ملف
- * ولا ‎@font-face، واسمه لا يظهر إلا في جدول أنماط الطباعة داخل المحرك. وكان
- * الرسم يُخرج `font-family="Alexandria Variable"` عارياً بلا بديل، فيسقط كل
- * عنوانٍ صامتاً إلى خطّ النظام. (مسار الكانفس كان سليماً لأنه يكتب سلسلةً
- * حقيقية: "El Messiri", "Tajawal", sans-serif — ولهذا بدا الخلل في مسارٍ دون
- * آخر.) الحل: سلسلةُ بدائل عند حافة الكتابة — إن أُضيف الخط يوماً استُعمل،
- * واليوم يهبط الرسم إلى خط الهوية لا إلى خطّ نظامٍ غريب.
- */
-const FALLBACK_STACK = `'El Messiri', 'Tajawal', sans-serif`
-const fontStack = (family: string) => {
-  const name = String(family || '').trim()
-  if (!name) return FALLBACK_STACK
-  if (name === 'El Messiri' || name === 'Tajawal') return `'${name}', ${name === 'Tajawal' ? `'El Messiri'` : `'Tajawal'`}, sans-serif`
-  return `'${name}', ${FALLBACK_STACK}`
-}
-
-const resolveWeight = (family: string, weight: number) => family === 'Tajawal' ? Math.min(weight, 500) : weight
+/** يحسم الوزن المتاح فعلياً: Tajawal ينتهي عند 500 وEl Messiri عند 700،
+    فلا نطلب من المتصفح تغليظاً اصطناعياً يشوّه اتصال الحروف العربية. */
+const resolveWeight = (family: string, weight: number) => Math.min(weight, FONT_MAX_WEIGHT[family] ?? 900)
 
 /** يبني سطراً مع إبراز كلمة بطولية داخله (tspan متصل يحترم اتجاه العربية). */
 function lineContent(line: string, options: TextBlockOptions) {
@@ -497,8 +414,8 @@ function fitTitle(s: Scene, zoneWidth: number, opts: { base?: number; maxLines?:
   const sparseBoost = s.sparse && words(s.titleText).length <= 8 ? 1.22 : 1
   const base = (opts.base ?? s.min * .066 * TYPOGRAPHY_MODES[s.plan.typography].titleScale) * sparseBoost
   const maxUnits = Math.max(8, zoneWidth / (base * .555))
-  const lines = wrap(s.titleText, maxUnits, maxLines)
-  const size = fitted(lines, base, zoneWidth, s.h * (s.isWide ? .42 : .38), s.titleLineHeight, opts.minScale ?? .5)
+  const lines = wrap(s.titleText, maxUnits, maxLines, s.displayFamily)
+  const size = fitted(lines, base, zoneWidth, s.h * (s.isWide ? .42 : .38), s.titleLineHeight, opts.minScale ?? .5, s.displayFamily)
   return { lines, size }
 }
 
@@ -509,8 +426,8 @@ function fitBody(s: Scene, zoneWidth: number, opts: { base?: number; maxLines?: 
   const base = opts.base ?? s.min * .0285
   const maxLines = opts.maxLines ?? layout.bodyMaxLines
   const maxUnits = Math.max(10, zoneWidth / (base * .555))
-  const lines = wrap(source, maxUnits, maxLines)
-  const size = fitted(lines, base, zoneWidth, s.h * .28, 1.62, .66)
+  const lines = wrap(source, maxUnits, maxLines, s.bodyFamily)
+  const size = fitted(lines, base, zoneWidth, s.h * .28, 1.62, .66, s.bodyFamily)
   return { lines, size }
 }
 
@@ -684,9 +601,7 @@ function kickerItem(s: Scene, options: { x?: number; anchor?: Anchor; fill?: str
       const baseline = top + size * .85
       const dot = anchor === 'middle' ? '' : `<circle cx="${round(x - size * .28)}" cy="${round(baseline - size * .3)}" r="${round(size * .21)}" fill="${fill}"/>`
       const textX = anchor === 'middle' ? x : x - size * 1.05
-      /* الأرقام الهندية في الشارة (سنة، عدد، تاريخ): تفصيلٌ صغير يفرق بين
-         تصميمٍ عربي مترجَم وتصميمٍ وُلد عربياً. */
-      return `${dot}${textBlock({ lines: [toArabicIndic(s.kicker)], x: textX, y: baseline, size, fill, weight: 700, anchor, family: 'Tajawal', opacity: .95 })}`
+      return `${dot}${textBlock({ lines: [s.kicker], x: textX, y: baseline, size, fill, weight: 700, anchor, family: 'Tajawal', opacity: .95 })}`
     },
   }
 }
@@ -1016,7 +931,7 @@ const paintEvidenceLedger: Painter = (s) => {
     h: figureSize * 1.24,
     gap: min * .035,
     draw: (top) => [
-      `<text x="${w - s.safeX}" y="${round(top + figureSize * .92)}" text-anchor="end" direction="ltr"><tspan fill="${p.accent}" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(figureSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(min * .055)}" dx="8">${esc(figure.unit)}</tspan>` : ''}</text>`,
+      `<text x="${w - s.safeX}" y="${round(top + figureSize * .92)}" text-anchor="end" direction="ltr"><tspan fill="${p.accent}" font-family="${esc(fontStack('Tajawal'))}" font-weight="500" font-size="${round(figureSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="${esc(fontStack('Tajawal'))}" font-weight="500" font-size="${round(min * .055)}" dx="8">${esc(figure.unit)}</tspan>` : ''}</text>`,
       `<line x1="${w - s.safeX}" y1="${round(top + figureSize * 1.18)}" x2="${w - s.safeX - min * .14}" y2="${round(top + figureSize * 1.18)}" stroke="${p.accent}" stroke-width="3" opacity=".85"/>`,
     ].join(''),
   } : { h: 0, draw: () => '' }
@@ -1503,7 +1418,7 @@ const paintInfographic: Painter = (s) => {
       const labelLines = statLabel ? wrap(statLabel, Math.max(8, (contentW - numW - min * .05) / (labelSize * .555)), 2) : []
       const labelH = blockHeight(labelLines, labelSize, 1.4)
       return [
-        `<text x="${round(w - s.safeX)}" y="${round(top + figSize * .9)}" text-anchor="end" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        `<text x="${round(w - s.safeX)}" y="${round(top + figSize * .9)}" text-anchor="end" direction="ltr"><tspan fill="url(#${accGrad})" font-family="${esc(fontStack('Tajawal'))}" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="${esc(fontStack('Tajawal'))}" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
         `<rect x="${round(w - s.safeX - numW)}" y="${round(top + figSize * 1.04)}" width="${round(numW)}" height="${round(min * .006)}" rx="${round(min * .003)}" fill="url(#${accGrad})" opacity=".9"/>`,
         labelLines.length ? textBlock({ lines: labelLines, x: w - s.safeX - numW - min * .05, y: top + (figSize * 1.16 - labelH) / 2 + labelSize * .82, size: labelSize, fill: p.muted, weight: 500, family: s.bodyFamily, lineHeight: 1.4 }) : '',
       ].join('')
@@ -1522,7 +1437,7 @@ const paintInfographic: Painter = (s) => {
       return [
         `<g filter="url(#${s.uid}-shadow)"><rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH)}" rx="${round(min * .028)}" fill="url(#${accGrad})"/></g>`,
         `<rect x="${round(s.safeX)}" y="${round(top)}" width="${round(contentW)}" height="${round(cardH * .5)}" rx="${round(min * .028)}" fill="#ffffff" opacity=".07"/>`,
-        `<text x="${round(w - s.safeX - pad)}" y="${round(top + cardH / 2 + figSize * .34)}" text-anchor="end" direction="ltr"><tspan fill="#FFFFFF" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="rgba(255,255,255,.82)" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        `<text x="${round(w - s.safeX - pad)}" y="${round(top + cardH / 2 + figSize * .34)}" text-anchor="end" direction="ltr"><tspan fill="#FFFFFF" font-family="${esc(fontStack('Tajawal'))}" font-weight="700" font-size="${round(figSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="rgba(255,255,255,.82)" font-family="${esc(fontStack('Tajawal'))}" font-weight="500" font-size="${round(figSize * .48)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
         labelLines.length ? textBlock({ lines: labelLines, x: s.safeX + pad, y: top + cardH / 2 - labelH / 2 + labelSize * .82, size: labelSize, fill: 'rgba(255,255,255,.9)', weight: 500, anchor: 'start', family: s.bodyFamily, lineHeight: 1.35 }) : '',
       ].join('')
     },
@@ -1553,7 +1468,7 @@ const paintInfographic: Painter = (s) => {
           `<path d="${arc}" fill="none" stroke="url(#${arcGrad})" stroke-width="${sw}" stroke-linecap="round" filter="url(#${glowId})" opacity=".55"/>`,
           `<path d="${arc}" fill="none" stroke="url(#${arcGrad})" stroke-width="${sw}" stroke-linecap="round"/>`,
           `<circle cx="${round(sx)}" cy="${round(sy)}" r="${round(sw / 2)}" fill="${hexShade(p.accent, .3)}"/>`,
-          `<text x="${round(cx)}" y="${round(cy + numSize * .34)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="700" font-size="${round(numSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(numSize * .4)}" dx="4">${esc(figure.unit)}</tspan>` : ''}</text>`,
+          `<text x="${round(cx)}" y="${round(cy + numSize * .34)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="${esc(fontStack('Tajawal'))}" font-weight="700" font-size="${round(numSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="${esc(fontStack('Tajawal'))}" font-weight="500" font-size="${round(numSize * .4)}" dx="4">${esc(figure.unit)}</tspan>` : ''}</text>`,
           statLabel ? textBlock({ lines: [words(statLabel).slice(0, 4).join(' ')], x: cx, y: cy + R + min * .05, size: Math.max(12, min * .022), fill: p.muted, weight: 500, anchor: 'middle', family: s.bodyFamily }) : '',
         ].join('')
       },
@@ -1661,7 +1576,7 @@ const paintInfographic: Painter = (s) => {
       h: heroSize * .92 + (statLabel ? min * .05 : 0),
       gap: min * .05,
       draw: (top) => [
-        `<text x="${round(w / 2)}" y="${round(top + heroSize * .8)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="700" font-size="${round(heroSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(heroSize * .34)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
+        `<text x="${round(w / 2)}" y="${round(top + heroSize * .8)}" text-anchor="middle" direction="ltr"><tspan fill="url(#${accGrad})" font-family="${esc(fontStack('Tajawal'))}" font-weight="700" font-size="${round(heroSize)}">${esc(figure.value)}</tspan>${figure.unit ? `<tspan fill="${p.muted}" font-family="${esc(fontStack('Tajawal'))}" font-weight="500" font-size="${round(heroSize * .34)}" dx="6">${esc(figure.unit)}</tspan>` : ''}</text>`,
         statLabel ? textBlock({ lines: [words(statLabel).slice(0, 5).join(' ')], x: w / 2, y: top + heroSize * .8 + min * .05, size: Math.max(13, min * .024), fill: p.muted, weight: 500, anchor: 'middle', family: s.bodyFamily }) : '',
       ].join(''),
     }
@@ -1861,262 +1776,6 @@ const paintSiliconArabesque: Painter = (s) => {
   return { markup: [rings, traces.join(''), stack, identityFooter(s)].join('') }
 }
 
-
-/* ------------------------------------------------------------------ */
-/*      خمس عائلات تكوين جديدة — لكلٍّ لغةٌ بصرية مستقلة لا شكلٌ مختلف   */
-/* ------------------------------------------------------------------ */
-
-/** ١٨ — الشبكة السويسرية: اثنا عشر عموداً حقيقية، والعنوان يجلس على خط الشبكة
-    لا في وسطٍ تقريبي. الشبكة تُرى خافتةً فتُعلن قانونها، وكل كتلةٍ تبدأ من
-    عمودٍ معلوم — انضباط بازل بحرفٍ عربي. */
-const paintSwissGrid: Painter = (s) => {
-  const { palette: p, w, h, min } = s
-  const gutter = min * .022
-  const left = s.safeX
-  const right = w - s.safeX
-  const span = right - left
-  const colW = (span - gutter * 11) / 12
-  /* الأعمدة تُعدّ من اليمين لأن القراءة عربية: العمود ١ أقصى اليمين. */
-  const colRight = (index: number) => right - index * (colW + gutter)
-  const colLeft = (index: number, spanCols: number) => colRight(index) - spanCols * colW - (spanCols - 1) * gutter
-  const guides = Array.from({ length: 12 }, (_, index) => {
-    const x = colLeft(index, 1)
-    return `<rect x="${round(x)}" y="${round(s.safeY)}" width="${round(colW)}" height="${round(h - s.safeY * 2)}" fill="${p.accent}" opacity=".035"/>`
-  }).join('')
-  /* العنوان يشغل ثمانية أعمدة من اليمين؛ المتن خمسة — نسبةٌ سويسرية كلاسيكية. */
-  const titleZone = colW * 8 + gutter * 7
-  const bodyZone = colW * 5 + gutter * 4
-  const title = fitTitle(s, titleZone, { base: min * .062, maxLines: 4 })
-  const body = fitBody(s, bodyZone, { maxLines: 5 })
-  const points = extractPoints(s.plan, 3)
-  const baselineY = s.safeY + h * .1
-  const rows: string[] = [
-    `<line x1="${round(left)}" y1="${round(baselineY)}" x2="${round(right)}" y2="${round(baselineY)}" stroke="${p.ink}" stroke-width="2" opacity=".85"/>`,
-    s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: colRight(0), y: baselineY - min * .018, size: Math.max(13, min * .019), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
-    /* «العنوان على خط الشبكة»: أعلى كتلة العنوان ملتصقٌ بالخط الأفقي تماماً. */
-    textBlock({ lines: title.lines, x: colRight(0), y: baselineY + title.size * .92, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
-  ]
-  const afterTitle = baselineY + title.size * .92 + blockHeight(title.lines, title.size, s.titleLineHeight)
-  let cursor = afterTitle + min * .06
-  if (body.lines.length) {
-    rows.push(textBlock({ lines: body.lines, x: colRight(0), y: cursor, size: body.size, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.66 }))
-    cursor += blockHeight(body.lines, body.size, 1.66) + min * .05
-  }
-  /* النقاط تنزل في عمودٍ ثانٍ (يسار الشبكة) فيظهر قانون الأعمدة عملياً. */
-  if (points.length) {
-    const noteSize = Math.max(12, min * .0195)
-    const noteZone = colW * 4 + gutter * 3
-    points.slice(0, 3).forEach((point, index) => {
-      const wrapped = wrap(point, Math.max(10, noteZone / (noteSize * .555)), 3)
-      /* التقدير وحده كان يسرّب سطراً خارج الحافة اليسرى (لقطة المعاينة): نُعيد
-         القياس الحقيقي ونصغّر عند الحاجة كما تفعل بقية العائلات. */
-      const noteFit = fitted(wrapped, noteSize, noteZone, noteSize * 6, 1.55, .7)
-      const lines = wrapped
-      const y = afterTitle + min * .06 + index * (noteSize * 3.9)
-      rows.push(`<line x1="${round(colLeft(8, 4))}" y1="${round(y - noteSize * .9)}" x2="${round(colRight(8))}" y2="${round(y - noteSize * .9)}" stroke="${p.rule}" stroke-width="1"/>`)
-      rows.push(textBlock({ lines: [arabicIndex(index + 1)], x: colRight(8), y, size: noteSize * .86, fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }))
-      rows.push(textBlock({ lines, x: colRight(8), y: y + noteSize * 1.5, size: noteFit, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.55 }))
-    })
-  }
-  const cta = ctaItem(s, { x: colLeft(0, 12) })
-  if (cta.h) rows.push(cta.draw(Math.min(cursor, h - s.safeY - min * .16)))
-  return { markup: [guides, rows.join(''), identityFooter(s)].join('') }
-}
-
-/** ١٩ — المجلة بعمودين: نصٌّ عربي في عمودين يفصلهما خطٌّ شعري، وحرفٌ استهلالي
-    يفتح العمود الأول. المتن يُقسَم قسمةً حقيقية بين العمودين (لا نسخاً)، فتقرأ
-    من اليمين إلى اليسار كصفحة مجلةٍ لا كبطاقة. */
-const paintMagazineColumns: Painter = (s) => {
-  const { palette: p, w, h, min } = s
-  const gutter = min * .055
-  const colW = (w - s.safeX * 2 - gutter) / 2
-  const title = fitTitle(s, w - s.safeX * 2, { base: min * .058, maxLines: 3 })
-  const headTop = s.safeY + h * .035
-  const titleBase = headTop + title.size * .9
-  const ruleY = titleBase + blockHeight(title.lines, title.size, s.titleLineHeight) + min * .028
-  const bodySize = Math.max(13, min * .0235)
-  const perCol = Math.max(3, Math.floor((h - ruleY - s.safeY - min * .13) / (bodySize * 1.78)))
-  /* العمودان يحتاجان نصاً يملؤهما: المتن المقتطع وحده كان يترك الصفحة خاوية،
-     فنُكمل من نصّ الدكتور الأصلي (لا اختلاق) حتى يمتلئ العمودان. */
-  const trimmedTitle = normalizeForCompare(s.titleText)
-  /* لا يُعاد العنوان في أول العمود: نُسقط الجملة الافتتاحية إن كانت هي العنوان
-     نفسه (كانت تُقرأ مرتين في المعاينة الأولى). */
-  const stripTitle = (value: string) => String(value || '')
-    .split(/(?<=[.؟!])\s+/)
-    .filter((sentence) => normalizeForCompare(sentence) !== trimmedTitle)
-    .join(' ')
-    .trim()
-  const overflow = stripTitle(s.plan.content.original || '')
-  const source = [stripTitle(s.bodyText), stripTitle(s.plan.content.quote), overflow]
-    .filter(Boolean)
-    .reduce((best, item) => item.length > best.length ? item : best, '')
-  const all = wrap(source, Math.max(12, colW / (bodySize * .555)), perCol * 2)
-  const dropChar = (all[0] || source).trim().charAt(0) || ''
-  const dropSize = bodySize * 2.9
-  /* الحرف الاستهلالي يقتطع سطرين من العمود الأول فقط — لا يزاحم العمود الثاني. */
-  /* القسمة نصفان لا «امتلاء الأول ثم الفائض»: العمود الثاني كان يبقى خاوياً
-     كلما استوعب الأولُ النصَّ كلَّه، فتفقد الصفحة معنى العمودين. */
-  const half = Math.ceil(all.length / 2)
-  const rightLines = all.slice(0, half)
-  const leftLines = all.slice(half)
-  const colTop = ruleY + min * .05
-  const indentUnits = lineWidthPx(dropChar || 'ا', dropSize) + min * .014
-  const rightBlocks = rightLines.map((line, index) => {
-    /* سطران فقط بجانب الحرف الاستهلالي — بارتفاعه تماماً فلا يطفو وحيداً. */
-    const narrowed = index < 2
-    return textBlock({ lines: [line], x: w - s.safeX - (narrowed ? indentUnits : 0), y: colTop + bodySize + index * bodySize * 1.78, size: bodySize, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily })
-  }).join('')
-  const leftBlocks = leftLines.map((line, index) => textBlock({
-    lines: [line], x: s.safeX + colW, y: colTop + bodySize + index * bodySize * 1.78, size: bodySize, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily,
-  })).join('')
-  const divider = `<line x1="${round(s.safeX + colW + gutter / 2)}" y1="${round(colTop - min * .01)}" x2="${round(s.safeX + colW + gutter / 2)}" y2="${round(colTop + Math.max(rightLines.length, leftLines.length) * bodySize * 1.78)}" stroke="${p.rule}" stroke-width="1.1" opacity=".95"/>`
-  const drop = dropChar
-    ? textBlock({ lines: [dropChar], x: w - s.safeX, y: colTop + bodySize + bodySize * 1.5, size: dropSize, fill: p.accent, weight: 700, anchor: 'end', family: s.displayFamily })
-    : ''
-  return {
-    markup: [
-      s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: w - s.safeX, y: headTop - min * .012, size: Math.max(12, min * .018), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
-      textBlock({ lines: title.lines, x: w - s.safeX, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
-      `<line x1="${round(s.safeX)}" y1="${round(ruleY)}" x2="${round(w - s.safeX)}" y2="${round(ruleY)}" stroke="${p.rule}" stroke-width="1.4"/>`,
-      divider, drop, rightBlocks, leftBlocks,
-      identityFooter(s),
-    ].join(''),
-  }
-}
-
-/** ٢٠ — الملصق التايبوغرافي: بلا صورةٍ ولا زخرفةٍ إطلاقاً. الكلمة نفسها هي
-    التصميم: كلماتُ العنوان تنزل سطراً سطراً بأحجامٍ متدرّجة تملأ العرض، وكلمةٌ
-    واحدة تحمل اللون. لا إطار ولا مدار ولا نمط — الحرف وحده. */
-const paintTypePoster: Painter = (s) => {
-  const { palette: p, w, h, min } = s
-  const zone = w - s.safeX * 2
-  const source = words(s.titleText).slice(0, 7)
-  const heroKey = normalizeForCompare(s.hero)
-  /* كل سطرٍ يُقاس ليملأ العرض: هذا ما يجعل الكتلة تبدو منحوتةً لا مركّبة. */
-  const lines = source.length ? source : words(s.bodyText).slice(0, 5)
-  const raw = lines.map((word) => clamp(zone / Math.max(1, textUnits(word) * .555), min * .045, min * .19))
-  const ctaBlock = ctaItem(s, { align: 'center' })
-  /* الكتلة كلها تُقاس قبل الرسم وتُصغَّر بنسبةٍ واحدة إن تجاوزت الحيّز — بلا
-     ذلك كان آخر سطرٍ يخرج من أسفل اللوحة (لقطة المعاينة الأولى). */
-  const headroom = s.safeY + min * .075
-  const available = h - headroom - s.safeY - min * .09 - (ctaBlock.h ? ctaBlock.h + min * .06 : 0)
-  const rawH = raw.reduce((sum, size) => sum + size * 1.06, 0)
-  const shrink = rawH > available ? available / rawH : 1
-  const sizes = raw.map((size) => size * shrink)
-  const totalH = rawH * shrink
-  const footprint = totalH + (ctaBlock.h ? ctaBlock.h + min * .06 : 0)
-  let y = Math.max(headroom, headroom + (h - headroom - s.safeY - min * .09 - footprint) * .42)
-  const stack = lines.map((word, index) => {
-    const size = sizes[index]
-    const isHero = heroKey && normalizeForCompare(word) === heroKey
-    const markup = textBlock({ lines: [word], x: w / 2, y: y + size * .84, size, fill: isHero ? p.accent : p.ink, weight: 800, anchor: 'middle', family: s.displayFamily })
-    y += size * 1.06
-    return markup
-  }).join('')
-  const kicker = s.kicker
-    ? textBlock({ lines: [toArabicIndic(s.kicker)], x: w / 2, y: s.safeY + min * .035, size: Math.max(12, min * .019), fill: p.muted, weight: 700, anchor: 'middle', family: 'Tajawal' })
-    : ''
-  const cta = ctaBlock.h ? ctaBlock.draw(y + min * .06) : ''
-  return { markup: [kicker, stack, cta, identityFooter(s, { mode: 'center' })].join('') }
-}
-
-/** ٢١ — الحاشية: متنٌ مركزيٌّ صغير محكوم العرض، وهامشٌ واسع على اليسار تسكنه
-    تعليقاتٌ مرقّمة بخطٍّ رفيع — كمخطوطة عالِمٍ يحاور متنه على الطُرّة. */
-const paintMarginalia: Painter = (s) => {
-  const { palette: p, w, h, min } = s
-  /* المتن ثلثا اللوحة من اليمين، والهامش ثلثها — نسبة المخطوطات. */
-  const marginW = (w - s.safeX * 2) * .3
-  const gutter = min * .045
-  const textW = (w - s.safeX * 2) - marginW - gutter
-  const textRight = w - s.safeX
-  const marginRight = textRight - textW - gutter
-  const title = fitTitle(s, textW, { base: min * .05, maxLines: 4 })
-  const body = fitBody(s, textW, { base: min * .026, maxLines: 8 })
-  const top = s.safeY + h * .07
-  const titleBase = top + title.size * .9
-  const bodyTop = titleBase + blockHeight(title.lines, title.size, s.titleLineHeight) + min * .038
-  const notes = extractPoints(s.plan, 4)
-  const noteSize = Math.max(11, min * .0165)
-  const marginParts: string[] = []
-  let noteY = top + noteSize * 1.2
-  notes.slice(0, 4).forEach((note, index) => {
-    const lines = wrap(note, Math.max(8, marginW / (noteSize * .555)), 4)
-    const noteFit = fitted(lines, noteSize, marginW, noteSize * 8, 1.6, .7)
-    marginParts.push(textBlock({ lines: [arabicIndex(index + 1)], x: marginRight, y: noteY, size: noteSize * .92, fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }))
-    marginParts.push(textBlock({ lines, x: marginRight, y: noteY + noteSize * 1.62, size: noteFit, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.6, opacity: .92 }))
-    noteY += noteSize * 1.62 + blockHeight(lines, noteFit, 1.6) + noteSize * 1.5
-  })
-  /* خطّ الطُرّة يفصل المتن عن الحاشية — علامة المخطوطة الأولى. */
-  const rail = `<line x1="${round(textRight - textW - gutter / 2)}" y1="${round(top - min * .02)}" x2="${round(textRight - textW - gutter / 2)}" y2="${round(Math.max(noteY, bodyTop + blockHeight(body.lines, body.size, 1.72)))}" stroke="${p.rule}" stroke-width="1"/>`
-  const cta = ctaItem(s, { x: textRight - textW })
-  return {
-    markup: [
-      rail,
-      s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: textRight, y: top - min * .022, size: Math.max(12, min * .018), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
-      textBlock({ lines: title.lines, x: textRight, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
-      body.lines.length ? textBlock({ lines: body.lines, x: textRight, y: bodyTop + body.size, size: body.size, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.72 }) : '',
-      marginParts.join(''),
-      cta.h ? cta.draw(h - s.safeY - min * .17) : '',
-      identityFooter(s),
-    ].join(''),
-  }
-}
-
-/** ٢٢ — الجدول الزمني الرأسي: خطٌّ ينزل من أعلى اللوحة إلى أسفلها، وعليه
-    محطاتٌ مؤرّخة بنقاطٍ ونصٍّ قصير. التواريخ تُلتقط من النص نفسه؛ وحين لا
-    تاريخ، تُرقَّم المحطات ترقيماً عربياً بلا اختلاق زمنٍ لم يُكتب. */
-const paintVerticalTimeline: Painter = (s) => {
-  const { palette: p, w, h, min } = s
-  const title = fitTitle(s, w - s.safeX * 2 - min * .1, { base: min * .05, maxLines: 3 })
-  const top = s.safeY + h * .045
-  const titleBase = top + title.size * .9
-  const railX = w - s.safeX - min * .045
-  const railTop = titleBase + blockHeight(title.lines, title.size, s.titleLineHeight) + min * .055
-  const railBottom = h - s.safeY - min * .11
-  const stations = (() => {
-    const points = extractPoints(s.plan, 5)
-    const slides = s.plan.content.slides.map((slide) => slide.title || slide.body).filter(Boolean)
-    const source = points.length >= 2 ? points : slides.length >= 2 ? slides : points
-    return source.slice(0, 5)
-  })()
-  if (stations.length < 2) {
-    /* بلا محطتين لا جدول زمني: نسقط إلى تكوينٍ رأسيٍّ نظيف بدل خطٍّ فارغ. */
-    const body = fitBody(s, w - s.safeX * 2, { maxLines: 5 })
-    const stack = drawStack([
-      kickerItem(s),
-      textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .04 }),
-      ruleItem(s, { gap: min * .035 }),
-      textItem({ lines: body.lines, x: w - s.safeX, size: body.size, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.68, gap: min * .04 }),
-      ctaItem(s, { gap: min * .05 }),
-    ], contentBand(s), .44)
-    return { markup: [stack, identityFooter(s)].join('') }
-  }
-  const timings = extractTiming(s.plan.content.original || s.bodyText)
-  const gap = (railBottom - railTop) / Math.max(1, stations.length - 1)
-  const labelSize = Math.max(12, min * .0205)
-  const stops = stations.map((station, index) => {
-    const y = railTop + index * gap
-    const stamp = timings[index] ? toArabicIndic(timings[index]) : `المحطة ${toArabicIndic(String(index + 1))}`
-    const labelZone = w - s.safeX * 2 - min * .12
-    const lines = wrap(station, Math.max(10, labelZone / (labelSize * .555)), 2)
-    const labelFit = fitted(lines, labelSize, labelZone, labelSize * 4, 1.5, .72)
-    return [
-      `<circle cx="${round(railX)}" cy="${round(y)}" r="${round(min * (index === 0 ? .011 : .0085))}" fill="${index === 0 ? p.accent : p.surface}" stroke="${p.accent}" stroke-width="2"/>`,
-      textBlock({ lines: [stamp], x: railX - min * .032, y: y + labelSize * .22, size: labelSize * .82, fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }),
-      textBlock({ lines, x: railX - min * .032, y: y + labelSize * 1.75, size: labelFit, fill: p.ink, weight: 500, anchor: 'end', family: s.bodyFamily, lineHeight: 1.5 }),
-    ].join('')
-  }).join('')
-  return {
-    markup: [
-      `<line x1="${round(railX)}" y1="${round(railTop)}" x2="${round(railX)}" y2="${round(railBottom)}" stroke="${p.rule}" stroke-width="1.6"/>`,
-      s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: w - s.safeX, y: top - min * .018, size: Math.max(12, min * .018), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
-      textBlock({ lines: title.lines, x: w - s.safeX, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
-      stops,
-      identityFooter(s),
-    ].join(''),
-  }
-}
-
 const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'editorial-axis': paintEditorialAxis,
   'hero-word': paintHeroWord,
@@ -2135,11 +1794,6 @@ const PAINTERS: Record<CompositionPlan['layout'], Painter> = {
   'ink-veil': paintInkVeil,
   'neural-constellation': paintNeuralConstellation,
   'silicon-arabesque': paintSiliconArabesque,
-  'swiss-grid': paintSwissGrid,
-  'magazine-columns': paintMagazineColumns,
-  'type-poster': paintTypePoster,
-  marginalia: paintMarginalia,
-  'vertical-timeline': paintVerticalTimeline,
 }
 
 /* ------------------------------------------------------------------ */
@@ -2159,7 +1813,6 @@ function identityLayer(s: Scene, options: RenderSvgOptions) {
   return [
     sealVisible ? identitySeal(s, options.sealHref || '/logo.png') : '',
     renderPreferences.seasonal ? seasonalDecor(s, sealVisible) : '',
-    familySignatureMark(s),
   ].join('')
 }
 
@@ -2285,21 +1938,16 @@ export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOp
   const s = sceneOf(plan)
   const glow = plan.layout === 'hero-word' || plan.layout === 'quiet-orbit' || plan.layout === 'ink-veil' ? 'center'
     : plan.layout === 'quote-stage' || plan.layout === 'human-note' ? 'top-right'
-      : plan.layout === 'cinematic-window' || plan.layout === 'sadu-weave' || plan.layout === 'neural-constellation'
-        || plan.layout === 'type-poster' || plan.layout === 'swiss-grid' ? 'none'
+      : plan.layout === 'cinematic-window' || plan.layout === 'sadu-weave' || plan.layout === 'neural-constellation' ? 'none'
         : 'top-left'
   const bg = backdrop(s, { glow })
   const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
   /* الصورة البطولية تمرّ عبر رسّام واعٍ بمنطقة النص، لكنه يحترم عائلة الخطة
      نفسها (اقتباس/حدث/كلمة بطلة/سجل معرفة). هكذا لا تتحول كل النتائج إلى
      النافذة السينمائية ذاتها لمجرد وجود صورة. */
-  /* «الملصق التايبوغرافي — بلا صورة إطلاقاً» (شرط الدكتور نصاً): هذه العائلة
-     وحدها لا تُسلَّم لرسّام الصورة ولا تُفرَش تحتها صورةٌ بطولية، فالكلمة نفسها
-     هي التصميم. باقي العائلات على سلوكها القائم بلا مساس. */
-  const typographicOnly = plan.layout === 'type-poster'
-  const painter = heroImage && !typographicOnly ? paintCinematicWindow : (PAINTERS[plan.layout] || paintEditorialAxis)
+  const painter = heroImage ? paintCinematicWindow : (PAINTERS[plan.layout] || paintEditorialAxis)
   const scenePaint = painter(s)
-  const hero = typographicOnly ? { defs: '', markup: '' } : imageUnderlayLayer(s)
+  const hero = imageUnderlayLayer(s)
   const accessible = esc(options.ariaLabel || `${plan.directionLabel}: ${plan.content.title}`)
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}${hero.defs}</defs>${bg.markup}${hero.markup}${frameDecor(s)}${scenePaint.markup}${dnaSignature(s)}${overlaysLayer(s)}${identityLayer(s, options)}</svg>`
@@ -2375,7 +2023,7 @@ function renderCarouselSlideSvg(plan: CompositionPlan, slideIndex: number, optio
     progress,
   ], contentBand(s), .42)
 
-  const ghostIndex = `<text x="${round(s.safeX)}" y="${round(s.safeY + min * .16)}" fill="${p.accent}" opacity=".14" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(min * .17)}" text-anchor="start">${arabicIndex(slideIndex + 1)}</text>`
+  const ghostIndex = `<text x="${round(s.safeX)}" y="${round(s.safeY + min * .16)}" fill="${p.accent}" opacity=".14" font-family="${esc(fontStack('Tajawal'))}" font-weight="500" font-size="${round(min * .17)}" text-anchor="start">${arabicIndex(slideIndex + 1)}</text>`
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
   const accessible = esc(`شريحة ${slideIndex + 1} من ${total}: ${slide.title}`)
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${accessible}</title><defs>${fontStyle}${bg.defs}</defs>${bg.markup}${ghostIndex}${roleDecor}${stack}${identityFooter(s)}${identityLayer(s, options)}</svg>`
@@ -2529,15 +2177,6 @@ async function rasterizeSvg(svg: string, width: number, height: number, type: 'p
 
 /** يصدّر التصميم؛ وإن كان سلسلة صدّر كل شرائحها ملفاً ملفاً — كما يليق بكاروسيل حقيقي. */
 export async function downloadCompositionRaster(plan: CompositionPlan, type: 'png' | 'jpeg' = 'png') {
-  /* نفس جذر «الخطوط غير جيدة»: ctx/SVG لا يُنزّل خطاً لم تستعمله الصفحة بعد،
-     فيسقط الرسم لخطّ نظام صامتاً. نطلب الأوزان المستعملة صراحةً أولاً. */
-  await Promise.race([
-    Promise.allSettled([
-      '700 64px "El Messiri"', '600 48px "El Messiri"', '400 32px "El Messiri"',
-      '700 40px Tajawal', '500 32px Tajawal', '400 28px Tajawal',
-    ].map((font) => document.fonts?.load(font, 'أ') ?? Promise.resolve())),
-    new Promise((resolve) => window.setTimeout(resolve, 3500)),
-  ])
   await document.fonts?.ready
   const fontCss = await embeddedFontCss()
   const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='

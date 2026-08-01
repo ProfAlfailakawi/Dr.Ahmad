@@ -44,19 +44,6 @@ export type ExternalVisualResult = {
 
 const PEXELS_FALLBACK_KEY = 'REDACTED'
 
-/* نداءات المخازن كانت بلا مهلة إطلاقاً: مزوّد واحد معلّق (أوبنفيرس خاصة)
-   يجمّد Promise.allSettled فتبقى «أبحث الآن…» مضاءة للأبد — لقطة الدكتور
-   ٣١ يوليو. تسع ثوانٍ سقف أي مزوّد، والبطيء يسقط وحده ويكمل إخوته. */
-async function fetchWithDeadline(input: string, init: RequestInit = {}, timeoutMs = 9_000): Promise<Response> {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    return await fetch(input, { ...init, signal: controller.signal })
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
 const clean = (value = '') => value.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 const truncate = (value: string, count: number) => {
   const words = clean(value).split(/\s+/).filter(Boolean)
@@ -198,10 +185,29 @@ function deriveOrientation(width?: number, height?: number) {
   return width > height ? 'landscape' as const : 'portrait' as const
 }
 
+/* كلماتٌ تصف الحقل كله ولا تدلّ على الفكرة: مطابقتها لا تعني صلةً بالنص.
+   وجودها في التسجيل هو ما جعل صورةً عامّةً «فصل دراسي» تجتاز بوابة الترشيح
+   لفكرةٍ عن التلعيب أو التقويم أو الذكاء الاصطناعي. */
+const GENERIC_MATCH_TOKENS = new Set([
+  'education', 'educational', 'learning', 'teaching', 'teacher', 'student', 'students', 'school', 'schools',
+  'classroom', 'class', 'university', 'college', 'study', 'studying', 'knowledge', 'training', 'course',
+  'child', 'children', 'kids', 'people', 'person', 'man', 'woman', 'group', 'team', 'work', 'working',
+  'photo', 'image', 'picture', 'background', 'concept', 'abstract', 'modern', 'business', 'office',
+  'التعليم', 'تعليم', 'تعليمي', 'التعلم', 'تعلم', 'المعرفة', 'معرفة', 'المدرسة', 'مدرسة', 'الطالب', 'طالب',
+  'الطلاب', 'المعلم', 'معلم', 'الجامعة', 'جامعة', 'الصف', 'صورة', 'مشهد', 'فكرة', 'الفكرة',
+])
+
 function computeCandidateScore(item: Omit<ExternalVisualResult, 'score' | 'orientation'>, plan: VisualSearchPlan) {
   const haystack = normalize(`${item.title} ${item.description}`)
-  const qTerms = unique([...plan.queries, ...plan.englishQueries]).flatMap((entry) => normalize(entry).split(/\s+/)).filter((word) => word.length > 2)
-  const matchBoost = qTerms.reduce((sum, term) => sum + (haystack.includes(term) ? 5 : 0), 0)
+  /* جذر «الصورة ما لها علاقة بالكلام»: الكلمات كانت تُجمع من تسع عباراتٍ بلا
+     تفريدٍ على مستوى الكلمة، فكلمة «education» المتكررة في خمس عبارات تمنح
+     ٢٥ نقطة وحدها. الآن: تفريدٌ بالكلمة، إسقاطٌ للكلمات العامة، وسقفٌ للمكافأة. */
+  const qTerms = [...new Set(
+    unique([...plan.queries, ...plan.englishQueries])
+      .flatMap((entry) => normalize(entry).split(/\s+/))
+      .filter((word) => word.length > 2 && !GENERIC_MATCH_TOKENS.has(word)),
+  )]
+  const matchBoost = Math.min(20, qTerms.reduce((sum, term) => sum + (haystack.includes(term) ? 5 : 0), 0))
   const avoidPenalty = plan.avoidTerms.reduce((sum, term) => sum + (haystack.includes(normalize(term)) ? 12 : 0), 0)
   const conceptTerms = unique([
     plan.glossaryLabel || '',
@@ -220,8 +226,11 @@ function computeCandidateScore(item: Omit<ExternalVisualResult, 'score' | 'orien
   const smallestSide = Math.min(Number(item.width || 0), Number(item.height || 0))
   const genericStock = /generic|stock photo|business team|office meeting|people (?:using|with) laptop|smiling (?:student|people|team)/i.test(haystack)
   let score = 44 + matchBoost + conceptHits * 12 + Math.round(literalCoverage * 18) - avoidPenalty
-  if (primaryConceptMissing) score -= 38
-  if (literalTokens.length >= 2 && literalCoverage < .34) score -= 22
+  /* حين يفهم المعجم مفهوماً أساسياً ولا يحمله وصف الصورة، لا يكفي خصمٌ يمكن
+     تعويضه بجودة الصورة واتجاهها؛ نسقّف النتيجة تحت عتبة القبول (70) فيُستبعد
+     المرشح بدل أن يُركَّب على التصميم خطأً. الصمت أصدق من صورة لا صلة لها. */
+  if (primaryConceptMissing) score = Math.min(score - 38, 58)
+  if (literalTokens.length >= 2 && literalCoverage < .34) score = Math.min(score - 22, 62)
   if (genericStock) score -= 26
   if (smallestSide > 0 && smallestSide < 720) score -= 24
   else if (smallestSide >= 1200) score += 8
@@ -251,7 +260,7 @@ async function searchWikimedia(query: string, plan: VisualSearchPlan, limit = 8)
   url.searchParams.set('iiprop', 'url|extmetadata|size')
   url.searchParams.set('iiurlwidth', '900')
   url.searchParams.set('inprop', 'url')
-  const response = await fetchWithDeadline(url.toString())
+  const response = await fetch(url.toString())
   if (!response.ok) throw new Error('wikimedia_search_failed')
   const payload = await response.json() as { query?: { pages?: Record<string, any> } }
   const pages = Object.values(payload.query?.pages || {})
@@ -286,7 +295,7 @@ async function searchPexels(query: string, plan: VisualSearchPlan, limit = 8): P
   url.searchParams.set('query', query)
   url.searchParams.set('per_page', String(Math.max(4, Math.min(limit, 15))))
   url.searchParams.set('orientation', plan.tone === 'documentary' ? 'landscape' : 'landscape')
-  const response = await fetchWithDeadline(url.toString(), { headers: { Authorization: apiKey } })
+  const response = await fetch(url.toString(), { headers: { Authorization: apiKey } })
   if (!response.ok) throw new Error('pexels_search_failed')
   const payload = await response.json() as { photos?: any[] }
   return (payload.photos || []).map((photo) => {
@@ -316,7 +325,7 @@ async function searchOpenverse(query: string, plan: VisualSearchPlan, limit = 8)
   url.searchParams.set('page_size', String(Math.max(4, Math.min(limit, 14))))
   url.searchParams.set('license_type', 'commercial')
   url.searchParams.set('mature', 'false')
-  const response = await fetchWithDeadline(url.toString())
+  const response = await fetch(url.toString())
   if (!response.ok) throw new Error('openverse_search_failed')
   const payload = await response.json() as { results?: any[] }
   return (payload.results || []).map((item) => {
@@ -373,20 +382,9 @@ export async function searchExternalVisualSources(plan: VisualSearchPlan, limit 
     if (!deduped.has(key) || (deduped.get(key)?.score || 0) < item.score) deduped.set(key, item)
   }
   /* لا نعرض صورة جاهزة لمجرد أنها جميلة أو قريبة من كلمة عامة. المرشح الذي
-     لا يحمل المفهوم الأساسي في وصفه يُستبعد بدل أن يُركّب على التصميم خطأً.
-     لكن عتبة السبعين وحدها كانت تُجوّع الأفكار المجردة حتى الصفر (خصم -٣٨
-     لغياب المصطلح الأكاديمي من أوصاف المخازن) فيموت المسار كله — لقطة
-     ٣١ يوليو. الحل تدرّج صادق: الصارم أولاً، فإن جاع نزلنا لمطابقة مرنة
-     معلنة في مبررها بدل يدين فارغتين. */
-  const pool = [...deduped.values()]
+     لا يحمل المفهوم الأساسي في وصفه يُستبعد بدل أن يُركّب على التصميم خطأً. */
+  return [...deduped.values()]
+    .filter((item) => item.score >= 70)
     .sort((a, b) => b.score - a.score || a.providerLabel.localeCompare(b.providerLabel))
-  const strict = pool.filter((item) => item.score >= 70)
-  if (strict.length >= Math.min(3, limit)) return strict.slice(0, limit)
-  const flexible = pool
-    .filter((item) => item.score >= 52)
-    .map((item) => ({
-      ...item,
-      rationale: `${item.rationale} (مطابقة مرنة: المفهوم مجرد ولا يظهر حرفياً في أوصاف المخازن — رُشحت الأقرب بصرياً وترتيبها بالدرجة.)`,
-    }))
-  return [...strict, ...flexible.filter((item) => !strict.some((top) => top.id === item.id))].slice(0, limit)
+    .slice(0, limit)
 }

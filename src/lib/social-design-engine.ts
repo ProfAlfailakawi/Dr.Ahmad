@@ -85,9 +85,6 @@ export type SocialPlatform =
   | 'reel'
   | 'linkedin'
   | 'x'
-  /* فيسبوك: الدكتور ينشر فيه فعلاً (فيسبوك · X · إنستغرام · لينكدإن) وكان
-     غائباً عن المقاسات كلها بينما حضر ما لا ينشر فيه. */
-  | 'facebook'
   | 'pinterest'
   | 'presentation'
   | 'thumbnail'
@@ -100,8 +97,6 @@ export type SocialFormatId =
   | 'reel-cover'
   | 'linkedin-landscape'
   | 'linkedin-square'
-  | 'facebook-landscape'
-  | 'facebook-square'
   | 'x-landscape'
   | 'x-square'
   | 'pinterest-tall'
@@ -126,11 +121,6 @@ export type LayoutFamilyId =
   | 'ink-veil'
   | 'neural-constellation'
   | 'silicon-arabesque'
-  | 'swiss-grid'
-  | 'magazine-columns'
-  | 'type-poster'
-  | 'marginalia'
-  | 'vertical-timeline'
 
 /** الاتجاهات الفنية للإنفوجرافيك — تُنتقى تلقائياً أو يختارها الدكتور يدوياً. */
 export type InfographicVariantId = 'rail' | 'ordinal' | 'cards' | 'timeline' | 'ring' | 'spotlight'
@@ -390,9 +380,6 @@ export interface PlanContent {
   /** نقاط الإنفوجرافيك المرقّمة — يملؤها المحرك للتخطيط الإنفوجرافيكي، فيقرؤها
       الرسّام (مصدرٌ واحد) والناقد (كي يقيس الحمولة على القائمة لا على متنٍ وهمي). */
   points?: string[]
-  /** زاوية طرح الفكرة في هذا الاتجاه (سؤال · مفارقة · رقم · مشهد · اعتراض).
-      تُشتقّ من النص نفسه ولا تُخترع؛ غيابها يعني أن النص لم يدعم أي زاوية. */
-  ideaAngle?: IdeaAngleId
   omittedWordCount: number
   overflowStrategy: 'none' | 'trimmed-preview' | 'carousel'
 }
@@ -621,15 +608,8 @@ const COMMAND_VISUAL_ROUTES: [RegExp, StudioVisualRoute, string][] = [
 ]
 
 const COMMAND_STYLE_ROUTES: [RegExp, StudioStyleRoute, LayoutFamilyId, ContentTone, DesignDensity, string][] = [
-  /* العائلات الخمس الجديدة تتقدّم في المطابقة لأن ألفاظها أخصّ من الألفاظ
-     العامة بعدها («عمودين» أخصّ من «مجلاتي»). */
-  [/(?:^|\s)(?:عمودين|بعمودين|صفحه\s+مجله|صفحة\s+مجلة|حرف\s+استهلالي|مجله\s+بعمودين)(?=$|[\s:،,.!؟…-])/, 'editorial', 'magazine-columns', 'intellectual', 'balanced', 'المجلة بعمودين — حرفٌ استهلالي وفاصل شعري'],
-  [/(?:^|\s)(?:حاشيه|حاشية|هامش|تعليقات\s+جانبيه|تعليقات\s+جانبية|مخطوطه|مخطوطة)(?=$|[\s:،,.!؟…-])/, 'editorial', 'marginalia', 'academic', 'balanced', 'الحاشية — متنٌ صغير وهامشٌ عالِم'],
-  [/(?:^|\s)(?:خط\s+زمني|جدول\s+زمني|محطات|مسار\s+زمني|timeline)(?=$|[\s:،,.!؟…-])/i, 'evidence', 'vertical-timeline', 'institutional', 'balanced', 'الجدول الزمني الرأسي — محطاتٌ مؤرّخة'],
-  [/(?:^|\s)(?:ملصق|بوستر\s+طباعي|بلا\s+صوره|بلا\s+صورة|بالحرف\s+فقط|typographic)(?=$|[\s:،,.!؟…-])/i, 'kinetic', 'type-poster', 'bold', 'minimal', 'الملصق التايبوغرافي — الكلمة هي التصميم'],
-  [/(?:^|\s)(?:شبكه\s+اثني\s+عشر|شبكة\s+اثني\s+عشر|شبكه\s+صارمه|شبكة\s+صارمة|grid)(?=$|[\s:،,.!؟…-])/i, 'swiss', 'swiss-grid', 'formal', 'balanced', 'الشبكة السويسرية — اثنا عشر عموداً'],
   [/(?:^|\s)(?:تحريري|مجلاتي|غلاف\s+مجلة|editorial)(?:\s|$)/i, 'editorial', 'editorial-axis', 'intellectual', 'balanced', 'تحريري عالمي'],
-  [/(?:^|\s)(?:سويسري|شبكة\s+سويسرية|مينيمال|بسيط\s+جداً|minimal)(?:\s|$)/i, 'swiss', 'swiss-grid', 'formal', 'balanced', 'سويسري صارم — العنوان على خط الشبكة'],
+  [/(?:^|\s)(?:سويسري|شبكة\s+سويسرية|مينيمال|بسيط\s+جداً|minimal)(?:\s|$)/i, 'swiss', 'editorial-axis', 'formal', 'minimal', 'سويسري صارم'],
   [/(?:^|\s)(?:حركي|تايبوجرافي\s+جريء|طباعي\s+جريء|kinetic)(?:\s|$)/i, 'kinetic', 'hero-word', 'bold', 'minimal', 'طباعي حركي'],
   [/(?:^|\s)(?:سينمائي|فيلم|cinematic)(?:\s|$)/i, 'cinematic', 'cinematic-window', 'bold', 'minimal', 'سينمائي'],
   [/(?:^|\s)(?:كولاج|ورقي|ملمسي|قصاصات|tactile|collage)(?:\s|$)/i, 'tactile', 'human-note', 'human', 'balanced', 'كولاج ملمسي'],
@@ -842,8 +822,6 @@ export const SOCIAL_FORMATS: Record<SocialFormatId, SocialFormatSpec> = {
   'reel-cover': { id: 'reel-cover', label: 'Reel cover 9:16', platform: 'reel', width: 1080, height: 1920, safeInset: 0.13, maxTitleWords: 13, maxBodyWords: 20, supportsCarousel: false },
   'linkedin-landscape': { id: 'linkedin-landscape', label: 'LinkedIn 1.91:1', platform: 'linkedin', width: 1200, height: 627, safeInset: 0.075, maxTitleWords: 18, maxBodyWords: 34, supportsCarousel: false },
   'linkedin-square': { id: 'linkedin-square', label: 'LinkedIn 1:1', platform: 'linkedin', width: 1200, height: 1200, safeInset: 0.08, maxTitleWords: 24, maxBodyWords: 56, supportsCarousel: true },
-  'facebook-landscape': { id: 'facebook-landscape', label: 'Facebook 1.91:1', platform: 'facebook', width: 1200, height: 630, safeInset: 0.075, maxTitleWords: 18, maxBodyWords: 34, supportsCarousel: false },
-  'facebook-square': { id: 'facebook-square', label: 'Facebook 1:1', platform: 'facebook', width: 1080, height: 1080, safeInset: 0.08, maxTitleWords: 22, maxBodyWords: 52, supportsCarousel: true },
   'x-landscape': { id: 'x-landscape', label: 'X 16:9', platform: 'x', width: 1600, height: 900, safeInset: 0.07, maxTitleWords: 18, maxBodyWords: 30, supportsCarousel: false },
   'x-square': { id: 'x-square', label: 'X 1:1', platform: 'x', width: 1080, height: 1080, safeInset: 0.08, maxTitleWords: 18, maxBodyWords: 36, supportsCarousel: false },
   'pinterest-tall': { id: 'pinterest-tall', label: 'Pinterest 2:3', platform: 'pinterest', width: 1000, height: 1500, safeInset: 0.08, maxTitleWords: 24, maxBodyWords: 66, supportsCarousel: false },
@@ -868,25 +846,46 @@ export const LAYOUT_FAMILIES: Record<LayoutFamilyId, LayoutFamily> = {
   'sadu-weave': { id: 'sadu-weave', label: 'نول السدو', description: 'هوية كويتية معاصرة: حزامان منسوجان من مثلثات السدو يؤطران الفكرة، وقارٌ تراثي لا يشبه أحداً.', idealKinds: ['core-idea', 'quote', 'announcement', 'impression-card', 'book', 'invitation'], idealTones: ['luxury', 'human', 'deep', 'formal', 'inspiring'], preferredDensities: ['minimal', 'balanced'], textBias: 'title', decorationBudget: 3 },
   'ink-veil': { id: 'ink-veil', label: 'نَفَس الحبر', description: 'كلمة واحدة بحبرٍ ضخم يتنفس خلف العنوان — بلاغة الخطّ العربي بروح معاصرة وتكثيف صارم.', idealKinds: ['quote', 'core-idea', 'provocative-question', 'impression-card', 'reel-cover'], idealTones: ['bold', 'deep', 'intellectual', 'luxury'], preferredDensities: ['minimal'], textBias: 'title', decorationBudget: 2 },
   'neural-constellation': { id: 'neural-constellation', label: 'كوكبة عصبية', description: 'شبكة عقدٍ ومساراتٍ تُرسم من بذرة التصميم نفسها، ومسارٌ واحد مضيء يحمل الفكرة — لغة أستاذ الذكاء الاصطناعي.', idealKinds: ['core-idea', 'statistic', 'research', 'knowledge-design', 'information', 'provocative-question'], idealTones: ['media', 'intellectual', 'academic', 'bold'], preferredDensities: ['minimal', 'balanced'], textBias: 'title', decorationBudget: 3 },
-  'swiss-grid': { id: 'swiss-grid', label: 'الشبكة السويسرية', description: 'شبكة اثني عشر عموداً صارمة ظاهرة الأثر: العنوان يجلس على خط الشبكة لا في وسطٍ تقريبي، وكل كتلةٍ تبدأ من عمودٍ معلوم.', idealKinds: ['information', 'research', 'summary', 'article', 'knowledge-design', 'linkedin-post'], idealTones: ['formal', 'institutional', 'academic', 'intellectual'], preferredDensities: ['balanced', 'rich'], textBias: 'body', decorationBudget: 1 },
-  'magazine-columns': { id: 'magazine-columns', label: 'المجلة بعمودين', description: 'نصٌّ عربي في عمودين يفصلهما خطٌّ شعري، وحرفٌ استهلالي يفتح العمود الأول — صفحة مجلةٍ لا بطاقة.', idealKinds: ['article', 'summary', 'research', 'core-idea', 'book'], idealTones: ['intellectual', 'academic', 'formal', 'human'], preferredDensities: ['balanced', 'rich'], textBias: 'body', decorationBudget: 2 },
-  'type-poster': { id: 'type-poster', label: 'الملصق التايبوغرافي', description: 'بلا صورةٍ ولا زخرفة: الكلمة نفسها هي التصميم — أحجامٌ متدرّجة وكتلٌ محكمة تملأ اللوحة بالحرف وحده.', idealKinds: ['quote', 'core-idea', 'provocative-question', 'impression-card', 'announcement'], idealTones: ['bold', 'deep', 'luxury', 'intellectual'], preferredDensities: ['minimal', 'balanced'], textBias: 'title', decorationBudget: 0 },
-  marginalia: { id: 'marginalia', label: 'الحاشية', description: 'متنٌ مركزيٌّ صغير وهامشٌ واسع تسكنه تعليقاتٌ جانبية مرقّمة — كمخطوطة عالِمٍ يحاور نفسه.', idealKinds: ['research', 'knowledge-design', 'summary', 'article', 'quote', 'book'], idealTones: ['academic', 'intellectual', 'deep', 'calm'], preferredDensities: ['balanced', 'rich'], textBias: 'body', decorationBudget: 2 },
-  'vertical-timeline': { id: 'vertical-timeline', label: 'الجدول الزمني الرأسي', description: 'خطٌّ ينزل من أعلى اللوحة إلى أسفلها بمحطاتٍ مؤرّخة — للمسار والتحوّل والسيرة.', idealKinds: ['summary', 'carousel', 'announcement', 'research', 'information', 'article'], idealTones: ['institutional', 'formal', 'academic', 'media'], preferredDensities: ['balanced', 'rich'], textBias: 'sequence', decorationBudget: 2 },
   'silicon-arabesque': { id: 'silicon-arabesque', label: 'زخرفة السيليكون', description: 'النجمة الثمانية تُرسم بلغة مسارات الدوائر الإلكترونية ولحاماتها — تراثٌ يلتقي بالرقاقة، لم يصنعه أحد.', idealKinds: ['core-idea', 'quote', 'announcement', 'impression-card', 'knowledge-design', 'book'], idealTones: ['luxury', 'intellectual', 'deep', 'formal', 'media'], preferredDensities: ['minimal', 'balanced'], textBias: 'title', decorationBudget: 3 },
 }
 
+/*
+ * وجوه الخط الثلاثة التي يملكها المشروع فعلاً (Alexandria المحمّل عبر Fontsource
+ * وElMessiri وTajawal المحليان في public/fonts). كانت أنماط الطباعة التسعة كلها
+ * تكتب `Alexandria Variable` نفسه، فيتبدّل الوزن والمقاس ولا يتبدّل الخط أبداً —
+ * وهذا هو سبب «ولا الخطوط تعدلت». الآن لكل مجموعة وجهٌ حقيقي مختلف:
+ * Alexandria للحضور الهندسي، El Messiri للنَفَس التحريري، Tajawal للوضوح المؤسسي.
+ * قاعدة ملزمة: لا تكتب هنا اسم خط لا يوجد له ملفٌ في المشروع — السقوط صامت.
+ */
 export const TYPOGRAPHY_MODES: Record<TypographyModeId, TypographyMode> = {
-  'display-monumental': { id: 'display-monumental', label: 'عنوان نُصبي', description: 'كلمات قليلة بحضور قوي ومسافة أسطر متماسكة.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 1.1, lineHeight: 1.34, maxLines: 4 },
-  'editorial-serif': { id: 'editorial-serif', label: 'تحريري معاصر', description: 'هرمية مجلة عربية معاصرة بوزن ومسافات تحريرية دقيقة.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: .98, lineHeight: 1.48, maxLines: 6 },
-  'rational-sans': { id: 'rational-sans', label: 'هندسي واضح', description: 'وضوح مؤسسي سريع القراءة بوزن محسوب.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 0.93, lineHeight: 1.4, maxLines: 5 },
-  'number-led': { id: 'number-led', label: 'الرقم أولاً', description: 'رقم أو نسبة كبيرة يعقبها تفسير مختصر.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.16, lineHeight: 1.3, maxLines: 4 },
-  'quotation-signature': { id: 'quotation-signature', label: 'اقتباس وتوقيع', description: 'صوت هادئ مع علامات اقتباس وهوية مؤلف مقتصدة.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 1, lineHeight: 1.62, maxLines: 7 },
-  'academic-index': { id: 'academic-index', label: 'فهرس أكاديمي', description: 'عناوين دقيقة وترقيم صغير يشبه أوراق البحث.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: 0.88, lineHeight: 1.5, maxLines: 6 },
-  'cinematic-title': { id: 'cinematic-title', label: 'عنوان سينمائي', description: 'كتلة عنوان قصيرة عالية التباين للغلاف.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.08, lineHeight: 1.3, maxLines: 4 },
-  conversational: { id: 'conversational', label: 'صوت قريب', description: 'إيقاع عربي مريح يناسب السؤال والنبرة الإنسانية.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: .96, lineHeight: 1.58, maxLines: 7 },
-  'studio-clean': { id: 'studio-clean', label: 'عربي معاصر', description: 'خط عربي نظيف ومباشر للمنشور المستقل؛ بلا زخرفة زائدة وبوزن متزن على الهاتف.', displayFamily: 'Alexandria Variable', bodyFamily: 'Alexandria Variable', titleWeight: 600, titleScale: 1.02, lineHeight: 1.46, maxLines: 6 },
+  'display-monumental': { id: 'display-monumental', label: 'عنوان نُصبي', description: 'كلمات قليلة بحضور قوي ومسافة أسطر متماسكة (Alexandria ثقيل).', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.1, lineHeight: 1.34, maxLines: 4 },
+  'editorial-serif': { id: 'editorial-serif', label: 'تحريري معاصر', description: 'هرمية مجلة عربية معاصرة بوجه El Messiri التحريري.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: .98, lineHeight: 1.48, maxLines: 6 },
+  'rational-sans': { id: 'rational-sans', label: 'هندسي واضح', description: 'وضوح مؤسسي سريع القراءة بوجه Tajawal الهندسي.', displayFamily: 'Tajawal', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 0.93, lineHeight: 1.4, maxLines: 5 },
+  'number-led': { id: 'number-led', label: 'الرقم أولاً', description: 'رقم أو نسبة كبيرة يعقبها تفسير مختصر (Alexandria ثقيل جداً).', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 800, titleScale: 1.16, lineHeight: 1.3, maxLines: 4 },
+  'quotation-signature': { id: 'quotation-signature', label: 'اقتباس وتوقيع', description: 'صوت هادئ بوجه El Messiri الخفيف وعلامات اقتباس مقتصدة.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 1, lineHeight: 1.62, maxLines: 7 },
+  'academic-index': { id: 'academic-index', label: 'فهرس أكاديمي', description: 'عناوين دقيقة بوجه Tajawal وترقيم صغير يشبه أوراق البحث.', displayFamily: 'Tajawal', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: 0.88, lineHeight: 1.5, maxLines: 6 },
+  'cinematic-title': { id: 'cinematic-title', label: 'عنوان سينمائي', description: 'كتلة عنوان قصيرة عالية التباين بوجه El Messiri الثقيل.', displayFamily: 'El Messiri', bodyFamily: 'Tajawal', titleWeight: 700, titleScale: 1.08, lineHeight: 1.3, maxLines: 4 },
+  conversational: { id: 'conversational', label: 'صوت قريب', description: 'إيقاع عربي مريح بوجه Tajawal يناسب السؤال والنبرة الإنسانية.', displayFamily: 'Tajawal', bodyFamily: 'Tajawal', titleWeight: 500, titleScale: .96, lineHeight: 1.58, maxLines: 7 },
+  'studio-clean': { id: 'studio-clean', label: 'عربي معاصر', description: 'خط عربي نظيف ومباشر للمنشور المستقل؛ بلا زخرفة زائدة وبوزن متزن على الهاتف.', displayFamily: 'Alexandria Variable', bodyFamily: 'Tajawal', titleWeight: 600, titleScale: 1.02, lineHeight: 1.46, maxLines: 6 },
 }
+
+/**
+ * سلسلة البدائل الملزمة عند حافة الكتابة. العائلة العارية (`font-family="X"`)
+ * تسقط صامتةً إلى خط النظام إن غاب الملف، فلا يرى الدكتور خطأً ولا خطاً.
+ */
+export const FONT_STACK: Record<string, string> = {
+  'Alexandria Variable': '"Alexandria Variable", "Alexandria", "Tajawal", "El Messiri", sans-serif',
+  'El Messiri': '"El Messiri", "Alexandria Variable", "Tajawal", serif',
+  Tajawal: '"Tajawal", "Alexandria Variable", "El Messiri", sans-serif',
+}
+
+/** أقصى وزنٍ يملك المشروع ملفَه فعلاً لكل عائلة (التغليظ الاصطناعي يشوّه العربية). */
+export const FONT_MAX_WEIGHT: Record<string, number> = { Tajawal: 500, 'El Messiri': 700, 'Alexandria Variable': 900 }
+
+/** نسبة عرض الحرف مقارنةً بـTajawal — تحفظ كسر السطر صحيحاً بعد تبدّل الوجه. */
+export const FONT_WIDTH_RATIO: Record<string, number> = { Tajawal: 1, 'Alexandria Variable': 1.04, 'El Messiri': 0.93 }
+
+export const fontStack = (family: string) => FONT_STACK[family] || `"${family}", "Tajawal", sans-serif`
 
 export const SPATIAL_PATTERNS: Record<SpatialPatternId, SpatialPattern> = {
   'asymmetric-air': { id: 'asymmetric-air', label: 'هواء غير متماثل', description: 'كتلة نصية إلى اليمين وفراغ بطولي محسوب.', columns: 12, titleWidth: 0.66, titleX: 0.26, titleY: 0.2, bodyWidth: 0.48, bodyX: 0.44, bodyY: 0.62, align: 'right' },
@@ -1128,6 +1127,13 @@ const seededOrder = <T,>(items: readonly T[], seed: string, discriminator = '') 
   .map((item, index) => ({ item, index, weight: hashString(`${seed}:${discriminator}:${index}:${String(item)}`) }))
   .sort((left, right) => left.weight - right.weight || left.index - right.index)
   .map(({ item }) => item)
+
+/** انتقاءٌ من حوضٍ مُرجَّح بالتكرار، ومحكومٌ بالنص عبر البذرة لا بالمؤشر وحده. */
+const pickFromPool = <T,>(pool: readonly T[], seed: string, discriminator: string): T | undefined =>
+  pool.length ? pool[hashString(`${seed}:${discriminator}`) % pool.length] : undefined
+
+/** اهتزازٌ صغيرٌ محكومٌ بالنص يفكّ تجمّد ترتيب العائلات حين تتساوى ملاءمتها. */
+const layoutJitter = (layoutId: LayoutFamilyId, seed: string) => (hashString(`${seed}:layout-jitter:${layoutId}`) % 1000) / 1000 * 11
 
 const truncateWords = (value: string, maximum: number) => {
   const words = normalizeWhitespace(value).split(/\s+/).filter(Boolean)
@@ -1574,11 +1580,6 @@ const SPATIAL_BY_LAYOUT: Record<LayoutFamilyId, readonly SpatialPatternId[]> = {
   'ink-veil': ['centered-monument', 'asymmetric-air', 'low-horizon'],
   'neural-constellation': ['asymmetric-air', 'right-rail', 'split-balance'],
   'silicon-arabesque': ['asymmetric-air', 'right-rail', 'layered-depth'],
-  'swiss-grid': ['modular-grid', 'right-rail', 'asymmetric-air'],
-  'magazine-columns': ['split-balance', 'modular-grid', 'right-rail'],
-  'type-poster': ['centered-monument', 'open-corners', 'low-horizon'],
-  marginalia: ['asymmetric-air', 'right-rail', 'layered-depth'],
-  'vertical-timeline': ['topographic-stack', 'right-rail', 'modular-grid'],
 }
 
 const ACCENT_BY_LAYOUT: Record<LayoutFamilyId, readonly AccentStrategyId[]> = {
@@ -1599,11 +1600,6 @@ const ACCENT_BY_LAYOUT: Record<LayoutFamilyId, readonly AccentStrategyId[]> = {
   'ink-veil': ['hero-keyword', 'none', 'single-rule'],
   'neural-constellation': ['soft-orbit', 'hero-keyword', 'single-rule'],
   'silicon-arabesque': ['corner-signal', 'single-rule', 'quiet-seal'],
-  'swiss-grid': ['single-rule', 'editorial-index', 'none'],
-  'magazine-columns': ['editorial-index', 'single-rule', 'hero-keyword'],
-  'type-poster': ['hero-keyword', 'none', 'single-rule'],
-  marginalia: ['editorial-index', 'single-rule', 'quiet-seal'],
-  'vertical-timeline': ['data-marker', 'single-rule', 'editorial-index'],
 }
 
 const FRAME_BY_LAYOUT: Record<LayoutFamilyId, readonly FramingModeId[]> = {
@@ -1624,11 +1620,6 @@ const FRAME_BY_LAYOUT: Record<LayoutFamilyId, readonly FramingModeId[]> = {
   'ink-veil': ['open-canvas', 'full-bleed', 'cinematic-crop'],
   'neural-constellation': ['open-canvas', 'full-bleed', 'hairline-inset'],
   'silicon-arabesque': ['open-canvas', 'corner-marks', 'hairline-inset'],
-  'swiss-grid': ['hairline-inset', 'open-canvas', 'editorial-folio'],
-  'magazine-columns': ['editorial-folio', 'hairline-inset', 'open-canvas'],
-  'type-poster': ['full-bleed', 'open-canvas', 'cinematic-crop'],
-  marginalia: ['editorial-folio', 'open-canvas', 'hairline-inset'],
-  'vertical-timeline': ['open-canvas', 'hairline-inset', 'editorial-folio'],
 }
 
 const PALETTE_BY_TONE: Record<ContentTone, readonly PaletteId[]> = {
@@ -1647,7 +1638,7 @@ const PALETTE_BY_TONE: Record<ContentTone, readonly PaletteId[]> = {
 }
 
 const DIRECTION_LABELS: Record<LayoutFamilyId, string> = {
-  'editorial-axis': 'تحريرية صافية', 'hero-word': 'كلمة تقود المشهد', 'quote-stage': 'اقتباس يتنفس', 'dual-thesis': 'مواجهة فكرية', 'evidence-ledger': 'الدليل أولاً', 'event-marquee': 'واجهة إعلامية', 'knowledge-map': 'خريطة المعنى', 'quiet-orbit': 'مدار هادئ', 'chapter-stack': 'فصول متتابعة', 'cinematic-window': 'غلاف سينمائي', 'human-note': 'صوت إنساني', 'modular-brief': 'ملخص مؤسسي', infographic: 'إنفوجرافيك مرقّم', 'sadu-weave': 'نول السدو', 'ink-veil': 'نفَس الحبر', 'neural-constellation': 'كوكبة عصبية', 'silicon-arabesque': 'زخرفة السيليكون', 'swiss-grid': 'شبكة سويسرية', 'magazine-columns': 'صفحة مجلة', 'type-poster': 'ملصق بالحرف', marginalia: 'متنٌ وحاشية', 'vertical-timeline': 'خطّ زمني رأسي',
+  'editorial-axis': 'تحريرية صافية', 'hero-word': 'كلمة تقود المشهد', 'quote-stage': 'اقتباس يتنفس', 'dual-thesis': 'مواجهة فكرية', 'evidence-ledger': 'الدليل أولاً', 'event-marquee': 'واجهة إعلامية', 'knowledge-map': 'خريطة المعنى', 'quiet-orbit': 'مدار هادئ', 'chapter-stack': 'فصول متتابعة', 'cinematic-window': 'غلاف سينمائي', 'human-note': 'صوت إنساني', 'modular-brief': 'ملخص مؤسسي', infographic: 'إنفوجرافيك مرقّم', 'sadu-weave': 'نول السدو', 'ink-veil': 'نفَس الحبر', 'neural-constellation': 'كوكبة عصبية', 'silicon-arabesque': 'زخرفة السيليكون',
 }
 
 const platformFormats = (platform: SocialPlatform) => (Object.values(SOCIAL_FORMATS) as SocialFormatSpec[]).filter((format) => format.platform === platform)
@@ -1727,52 +1718,14 @@ export function extractInfographicPoints(text: string, title = '', keywords: str
   while ((match = bulletRe.exec(source)) && out.length < max) push(match[1])
   if (out.length < 3) for (const sentence of source.split(/[\n.؟!]+/)) if (splitWords(sentence).length >= 2) push(sentence)
   if (out.length < 3) for (const fragment of source.split(/[،,؛]/)) if (splitWords(fragment).length >= 2) push(fragment)
-  if (out.length < 2) for (const keyword of keywords) push(keyword)
-  return out.slice(0, max)
+  /* الاحتياطي القديم كان يدفع الكلمات المفتاحية مفردةً، فيخرج عنوانٌ من أربع
+     كلمات على هيئة «قائمةٍ» بنودها: دراسي · أول · فصل. وهذا ليس إنفوجرافيك بل
+     تقطيعُ عنوان. حين لا توجد بنودٌ حقيقية نُرجع فراغاً، فتحجب البوابة
+     الاحترافية هذا الاتجاه بدل أن يخرج تصميمٌ ركيك. */
+  return out.length >= 2 ? out.slice(0, max) : []
 }
 
-/* ------------------------------------------------------------------ */
-/*        تنويع طرح الفكرة: خمس زوايا لا خمسة أشكال (أمر الدكتور)        */
-/* ------------------------------------------------------------------ */
-
-/**
- * الشكل وحده لا يكفي: التصاميم الأربعة قد تختلف بنيةً وتتشابه في «كيف طُرحت
- * الفكرة». هذه الزوايا الخمس تجعل كل اتجاهٍ يفتح النص من مدخلٍ مختلف.
- * **شرطٌ صارم: الزاوية لا تُنتقى إلا إن دلّ عليها النص نفسه** — فلا يوعد
- * التصميم بسؤالٍ ليس في الكلام ولا برقمٍ لم يكتبه الدكتور.
- */
-export type IdeaAngleId = 'question' | 'paradox' | 'number' | 'scene' | 'objection'
-
-export const IDEA_ANGLE_LABELS: Record<IdeaAngleId, string> = {
-  question: 'سؤال',
-  paradox: 'مفارقة',
-  number: 'رقم',
-  scene: 'مشهد',
-  objection: 'اعتراض',
-}
-
-const IDEA_ANGLE_SIGNALS: [IdeaAngleId, RegExp][] = [
-  ['question', /[؟?]|(?:^|\s)(?:هل|لماذا|كيف|ايهما|ما الذي|من الذي)(?=\s)/],
-  ['paradox', /(?:^|\s)(?:لكن|غير ان|رغم|بالرغم|مع ذلك|في المقابل|بينما)(?=\s)|لا\s+\S+\s+بل|ليس\s+\S+\s+بل/],
-  ['number', /[0-9٠-٩]{1,}\s*(?:٪|%|بالمئه|مليون|مليار|الف)|(?:^|\s)(?:نسبه|احصائيه?|اضعاف|ثلث|ربع|نصف)(?=\s|$)/],
-  ['scene', /(?:^|\s)(?:حين|حينما|عندما|بينما|ذات يوم|في احد|جلست|رايت|شاهدت|سالني|قال لي|دخلت)(?=\s)/],
-  ['objection', /(?:^|\s)(?:يقولون|يظن|يعتقد البعض|خلافا|ليس صحيحا|لا اوافق|يخطئ من|شاع ان|المالوف)(?=\s)/],
-]
-
-/** الزوايا التي يحتملها النص فعلاً — مرتّبةً ترتيباً ثابتاً. */
-export const availableIdeaAngles = (text: string): IdeaAngleId[] => {
-  const normalized = normalizeArabicForDesign(text)
-  return IDEA_ANGLE_SIGNALS.filter(([, pattern]) => pattern.test(normalized)).map(([id]) => id)
-}
-
-/** توزيع الزوايا على تنويعات الدفعة: كل تنويعٍ يفتح النص من مدخلٍ آخر. */
-const ideaAngleFor = (text: string, variant: number): IdeaAngleId | undefined => {
-  const angles = availableIdeaAngles(text)
-  if (!angles.length) return undefined
-  return angles[Math.abs(variant) % angles.length]
-}
-
-const contentForPlan = (analysis: SocialContentAnalysis, format: SocialFormatSpec, layout: LayoutFamily, angle?: IdeaAngleId): PlanContent => {
+const contentForPlan = (analysis: SocialContentAnalysis, format: SocialFormatSpec, layout: LayoutFamily): PlanContent => {
   const structure = analysis.structure
   const titleLimit = Math.max(7, Math.round(format.maxTitleWords * (layout.textBias === 'title' ? 0.72 : 1)))
   const bodyLimit = Math.max(12, Math.round(format.maxBodyWords * (layout.textBias === 'body' ? 1 : 0.75)))
@@ -1798,8 +1751,7 @@ const contentForPlan = (analysis: SocialContentAnalysis, format: SocialFormatSpe
   ) && structure.slides.length >= 2
   return {
     original: structure.original,
-    /* الشارة تُعلن زاوية الطرح حين دلّ عليها النص، وإلا فتصنيف المحتوى كما كان. */
-    kicker: angle ? IDEA_ANGLE_LABELS[angle] : KIND_LABELS[analysis.primaryKind],
+    kicker: KIND_LABELS[analysis.primaryKind],
     title,
     subtitle: distinct(structure.subtitle) ? truncateWords(structure.subtitle, Math.round(bodyLimit * 0.72)) : '',
     body,
@@ -1811,7 +1763,6 @@ const contentForPlan = (analysis: SocialContentAnalysis, format: SocialFormatSpe
     slides: carousel ? structure.slides : [],
     keywords: structure.keywords.slice(0, 6),
     points: layout.id === 'infographic' ? extractInfographicPoints(structure.original, title, structure.keywords, 5) : undefined,
-    ideaAngle: angle,
     omittedWordCount: Math.max(0, analysis.metrics.words - included),
     overflowStrategy: carousel ? 'carousel' : analysis.metrics.words > included ? 'trimmed-preview' : 'none',
   }
@@ -1879,11 +1830,10 @@ const TONE_DIRECTION: Record<ContentTone, { feeling: string; audience: string }>
   intellectual: { feeling: 'عمقٍ فكري', audience: 'المثقّفين وصنّاع الرأي' },
 }
 
-const planRationale = (analysis: SocialContentAnalysis, layout: LayoutFamily, format: SocialFormatSpec, novelty: number, angle?: IdeaAngleId) => {
+const planRationale = (analysis: SocialContentAnalysis, layout: LayoutFamily, format: SocialFormatSpec, novelty: number) => {
   const dir = TONE_DIRECTION[analysis.primaryTone] || TONE_DIRECTION.intellectual
   return [
     `يخدم الفكرة: ${layout.label} — ${layout.description}`,
-    ...(angle ? [`طرحُ الفكرة: ${IDEA_ANGLE_LABELS[angle]} — مدخلٌ دلّ عليه النص نفسه`] : []),
     `الشعور الذي يصنعه: إحساسٌ بـ${dir.feeling}`,
     `الجمهور الذي يؤثّر فيه: ${dir.audience}`,
     `${KIND_LABELS[analysis.primaryKind]} بنبرة ${TONE_LABELS[analysis.primaryTone]} · ${format.label} أقرب لبنية النص`,
@@ -1903,17 +1853,37 @@ const makeCandidate = (
   preferredTypography?: TypographyModeId,
   ideaDna?: IdeaDna,
 ): CompositionPlan => {
+  /* جذر «نفس التصاميم لكل العناوين»: بصمة الفكرة تعطي ثلاث لوحات وثلاثة أنماط
+     طباعة فقط، وكانت تُنتقى بالمؤشر `variant` وحده — لا أثر للنص فيها. وبما أن
+     شجرة القرار في البصمة تُسقط أغلب العناوين العربية في الفرع الافتراضي نفسه،
+     خرج عنوانان مختلفان بالقرارات البصرية ذاتها حرفياً. الآن: البصمة تُرجَّح ولا
+     تحتكر — تُضاف إليها لوحة النبرة وثلاث لوحات يختارها النص نفسه، ثم يُنتقى من
+     الحوض بمُلخَّص يشمل النص. الملاءمة محفوظة لأن مقدّمة الحوض تبقى للبصمة. */
   const dnaTypography = ideaDna?.direction.typography
-  const typographyPool = [dnaTypography?.primary, ...(dnaTypography?.alternates || [])].filter((item): item is TypographyModeId => Boolean(item && item in TYPOGRAPHY_MODES))
-  const typography = preferredTypography || (typographyPool.length ? typographyPool[Math.abs(variant) % typographyPool.length] : chooseFirst(TYPOGRAPHY_BY_BIAS[layout.textBias], seed, `${layout.id}:type:${variant}`))
+  const dnaTypographyPool = [dnaTypography?.primary, ...(dnaTypography?.alternates || [])].filter((item): item is TypographyModeId => Boolean(item && item in TYPOGRAPHY_MODES))
+  /* التكرار متعمَّد: الحضور مرتين يعني ترجيحاً لا احتكاراً. */
+  const typographyPool: TypographyModeId[] = [
+    ...dnaTypographyPool,
+    ...dnaTypographyPool,
+    ...TYPOGRAPHY_BY_BIAS[layout.textBias],
+    ...seededOrder(Object.keys(TYPOGRAPHY_MODES) as TypographyModeId[], seed, `${layout.id}:type-widen`).slice(0, 3),
+  ].filter((item) => item in TYPOGRAPHY_MODES)
+  const typography = preferredTypography || pickFromPool(typographyPool, seed, `${layout.id}:type:${variant}`)
+    || chooseFirst(TYPOGRAPHY_BY_BIAS[layout.textBias], seed, `${layout.id}:type:${variant}`)
   const spatial = chooseFirst(SPATIAL_BY_LAYOUT[layout.id], seed, `${layout.id}:space:${variant}`)
   const accent = chooseFirst(ACCENT_BY_LAYOUT[layout.id], seed, `${layout.id}:accent:${variant}`)
   const framing = chooseFirst(FRAME_BY_LAYOUT[layout.id], seed, `${layout.id}:frame:${variant}`)
   const dnaPalette = ideaDna?.direction.palette
-  const palettePool = [dnaPalette?.primary, ...(dnaPalette?.alternates || [])].filter((item): item is PaletteId => Boolean(item && item in PALETTES))
-  const palette = preferredPalette || (palettePool.length ? palettePool[Math.abs(variant + layout.id.length) % palettePool.length] : chooseFirst(PALETTE_BY_TONE[analysis.primaryTone], seed, `${layout.id}:palette:${variant}`))
+  const dnaPalettePool = [dnaPalette?.primary, ...(dnaPalette?.alternates || [])].filter((item): item is PaletteId => Boolean(item && item in PALETTES))
+  const palettePool: PaletteId[] = [
+    ...dnaPalettePool,
+    ...dnaPalettePool,
+    ...PALETTE_BY_TONE[analysis.primaryTone],
+    ...seededOrder(Object.keys(PALETTES) as PaletteId[], seed, `${layout.id}:palette-widen`).slice(0, 3),
+  ].filter((item) => item in PALETTES)
+  const palette = preferredPalette || pickFromPool(palettePool, seed, `${layout.id}:palette:${variant}`)
+    || chooseFirst(PALETTE_BY_TONE[analysis.primaryTone], seed, `${layout.id}:palette:${variant}`)
   const ctaPlacement = ctaPlacementFor(analysis, format, layout.id, `${seed}:${variant}`)
-  const angle = ideaAngleFor(analysis.structure.original, variant)
   const signature: DesignSignature = { layout: layout.id, typography, spatial, accent, framing, cta: ctaPlacement, palette, format: format.id }
   const novelty = noveltyAgainst(signature, history)
   const fitness = layoutFitness(layout, analysis, density, format)
@@ -1923,7 +1893,7 @@ const makeCandidate = (
     version: SOCIAL_DESIGN_ENGINE_VERSION,
     directionIndex: variant,
     directionLabel: DIRECTION_LABELS[layout.id],
-    rationale: planRationale(analysis, layout, format, novelty, angle),
+    rationale: planRationale(analysis, layout, format, novelty),
     format,
     platform: format.platform,
     density,
@@ -1935,7 +1905,7 @@ const makeCandidate = (
     ctaPlacement,
     palette,
     geometry: geometryFor(format, spatial, typography, layout),
-    content: contentForPlan(analysis, format, layout, angle),
+    content: contentForPlan(analysis, format, layout),
     analysis: { topic: analysis.topic, primaryKind: analysis.primaryKind, primaryTone: analysis.primaryTone, confidence: analysis.confidence },
     fitness,
     novelty: Number(novelty.toFixed(4)),
@@ -2047,21 +2017,6 @@ const selectVisibleThemeDiversity = (ranked: readonly CompositionPlan[], count: 
   return selected
 }
 
-/**
- * ذاكرة العائلات — **ترتيبٌ في العرض لا خصمٌ من الجدارة**.
- * العقوبة القديمة أُلغيت لأنها كانت تُسقط مرشحين تحت عتبة القبول فيضيق
- * المعروض (ملاحظة الدكتور: «التصاميم نقصت»). هنا لا يُحذف مرشح ولا تُنقص
- * درجة: العائلات الغائبة عن السجل القريب تتقدّم في الصف فقط، والباقي يحتفظ
- * بترتيبه النسبي كما رتّبته الجودة.
- */
-const orderByFamilyMemory = (plans: CompositionPlan[], history: readonly DesignHistoryEntry[]): CompositionPlan[] => {
-  if (plans.length < 2 || !history.length) return plans
-  const seen = new Set(history.map((entry) => entry.signature.layout))
-  const fresh = plans.filter((plan) => !seen.has(plan.layout))
-  if (!fresh.length || fresh.length === plans.length) return plans
-  return [...fresh, ...plans.filter((plan) => seen.has(plan.layout))]
-}
-
 export function generateSocialDesigns(request: SocialDesignRequest): SocialDesignResult {
   const ideaDna = request.ideaDna || createIdeaDna(request.text, { context: request.context })
   const dnaTone = ideaDna.tone.id as ContentTone
@@ -2096,24 +2051,16 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
     const dnaIndex = dnaLayouts.indexOf(layoutId)
     return dnaIndex === 0 ? 24 : dnaIndex === 1 ? 15 : dnaIndex === 2 ? 9 : 0
   }
+  /* الاهتزاز يُضاف للترتيب فقط (لا لملاءمة الخطة)، فيفصل بين عائلتين متساويتي
+     الملاءمة حسب النص نفسه بدل أن تفوز دائماً الأولى في الجدول. */
+  const layoutRank = (layout: LayoutFamily) =>
+    layoutFitness(layout, analysis, density, format) + preferenceBoost(layout.id) + (directedRequest.preferLayout === layout.id ? 0 : layoutJitter(layout.id, seed))
   const rankedLayouts = seededOrder(Object.values(LAYOUT_FAMILIES), seed, 'layout-order')
-    .sort((left, right) => (layoutFitness(right, analysis, density, format) + preferenceBoost(right.id)) - (layoutFitness(left, analysis, density, format) + preferenceBoost(left.id)))
-  /* «تنويع كل شيء» (طلب الدكتور ٣١ يوليو): كان فرزُ الجدارة يُصعّد العائلات
-     نفسها لكل فكرةٍ من طرازٍ واحد، فتبدو المخرجات إخوةً وإن كانت المكتبة سبع
-     عشرة عائلة. علاجان معاً:
-     ١) فضاء أوسع: تسعة تنويعات لكل عائلة بدل ستة (١٥٣ مرشحاً بدل ١٠٢).
-     ٢) ذاكرة العائلات: ما استُعمل في الجلسات الأخيرة يُخفَّض قليلاً — خفضٌ
-        لطيف لا يكسر الجدارة، لكنه يكفي لتصعيد عائلةٍ جديدة حين تتقارب
-        الدرجات. النتيجة: تنقّلٌ حقيقي بين لغات التكوين لا دورانٌ حول ثلاث. */
+    .sort((left, right) => layoutRank(right) - layoutRank(left))
   const candidates: CompositionPlan[] = []
   for (const [layoutIndex, layout] of rankedLayouts.entries()) {
-    for (let variant = 0; variant < 9; variant += 1) {
+    for (let variant = 0; variant < 6; variant += 1) {
       const candidate = makeCandidate(layout, analysis, format, density, seed, layoutIndex * 7 + variant, history, directedRequest.preferPalette, directedRequest.preferTypography, ideaDna)
-      /* الطلب الصريح للعائلة يتقدّم دائماً؛ وإرهاق التكرار لا يُطبَّق عليه
-         أبداً حتى يبقى وعد الزر مطلقاً كما هو. */
-      /* أُلغيت عقوبة «إرهاق العائلات» بعد ملاحظة الدكتور أن التصاميم نقصت:
-         أي خصمٍ من الجدارة قد يُسقط مرشحين تحت عتبة القبول فيضيق المعروض.
-         التنويع يبقى من توسيع فضاء التوليد وحده — إضافةٌ لا تُنقص شيئاً. */
       const boosted = preferenceBoost(layout.id) ? { ...candidate, fitness: roundScore(candidate.fitness + preferenceBoost(layout.id)) } : candidate
       candidates.push(directedRequest.basePlan ? applyDesignLocks(directedRequest.basePlan, boosted, locks) : boosted)
     }
@@ -2140,7 +2087,6 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
       if (plans.length === visibleCount) break
     }
   }
-  plans = orderByFamilyMemory(plans, history)
   // وعد الزر يُنفَّذ حرفياً: إن طلب المستخدم عائلة بعينها ولم تصعد بجودتها،
   // نصعد أقوى مرشح منها إلى الصدارة بدل أن يضيع الطلب في فرز الجودة العام.
   if (directedRequest.preferLayout && !plans.some((plan) => plan.layout === directedRequest.preferLayout)) {
@@ -2233,8 +2179,8 @@ export function compositionCssVariables(plan: CompositionPlan): Record<string, s
     '--social-accent': palette.accent,
     '--social-accent-soft': palette.accentSoft,
     '--social-rule': palette.rule,
-    '--social-display-font': `"${typography.displayFamily}", "Tajawal", sans-serif`,
-    '--social-body-font': `"${typography.bodyFamily}", sans-serif`,
+    '--social-display-font': fontStack(typography.displayFamily),
+    '--social-body-font': fontStack(typography.bodyFamily),
     '--social-title-scale': String(typography.titleScale),
     '--social-title-leading': String(typography.lineHeight),
     '--social-frame-inset': `${frame.inset * 100}%`,
@@ -2579,7 +2525,6 @@ export interface EngagementForecast {
 
 const PLATFORM_TITLE_WINDOW: Record<SocialPlatform, { min: number; max: number; name: string; ideal: string }> = {
   reel: { min: 3, max: 7, name: 'الريل', ideal: '٣–٧ كلمات' },
-  facebook: { min: 5, max: 13, name: 'فيسبوك', ideal: '٥–١٣ كلمة' },
   thumbnail: { min: 3, max: 7, name: 'الثَمبنيل', ideal: '٣–٧ كلمات' },
   story: { min: 4, max: 9, name: 'الستوري', ideal: '٤–٩ كلمات' },
   instagram: { min: 5, max: 11, name: 'إنستغرام', ideal: '٥–١١ كلمة' },

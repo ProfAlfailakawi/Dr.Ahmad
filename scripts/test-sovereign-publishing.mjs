@@ -12,7 +12,7 @@ import {
 const longBody = Array.from({ length: 380 }, (_, index) => `كلمة${index}`).join(' ')
 const audioProofRow = `signed-article.fahed.mp3|sha256:${'a'.repeat(64)}|source:${'b'.repeat(64)}|bytes:4096|seconds:180`
 const semanticCourtInput = {
-  article: { slug: 'signed-article', title: 'مقال موقّع', excerpt: 'مقتطف واضح', body: longBody },
+  article: { slug: 'signed-article', title: 'كلمة1 كلمة2 كلمة3', excerpt: 'كلمة1 كلمة2 كلمة3', body: longBody },
   fingerprint: { hash: 'meaning-1', thesis: 'كلمة1 كلمة2 كلمة3', protectedPoints: ['كلمة1 كلمة2 كلمة3'], caveats: [] },
   media: {
     audio: [audioProofRow],
@@ -22,7 +22,7 @@ const semanticCourtInput = {
   evidence: { sourceIds: ['paper:one'], proofs: ['paper:one|doi:10.1000/example|status:active'], alerts: [], claims: [] },
 }
 const readyDraft = buildPublicationPassportDraft({
-  article: { slug: 'signed-article', title: 'مقال موقّع', excerpt: 'مقتطف واضح', body: longBody, meaningFingerprint: 'meaning-1' },
+  article: { slug: 'signed-article', title: 'كلمة1 كلمة2 كلمة3', excerpt: 'كلمة1 كلمة2 كلمة3', body: longBody, meaningFingerprint: 'meaning-1' },
   audio: { assets: [audioProofRow] },
   design: { assetCount: 4, qualityScore: 91, fingerprints: ['visual-1'] },
   social: { tweetCount: 3, platformCount: 5, campaignId: 'signed-article-7d', content: 'نصوص الحملة' },
@@ -32,6 +32,20 @@ const readyDraft = buildPublicationPassportDraft({
 })
 assert.equal(readyDraft.releaseReady, true, 'all passport layers and the semantic court should be required and sufficient')
 assert.deepEqual(readyDraft.blocking, [])
+
+const correctionBlocked = buildPublicationPassportDraft({
+  article: { slug: 'signed-article', title: 'كلمة1 كلمة2 كلمة3', excerpt: 'كلمة1 كلمة2 كلمة3', body: longBody, meaningFingerprint: 'meaning-1' },
+  audio: { assets: [audioProofRow] },
+  design: { assetCount: 4, qualityScore: 91, fingerprints: ['visual-1'] },
+  social: { tweetCount: 3, platformCount: 5, campaignId: 'signed-article-7d', content: 'نصوص الحملة' },
+  evidence: { sourceIds: ['paper:one'], proofs: ['paper:one|doi:10.1000/example|status:active'], alerts: [] },
+  semanticCourtInput,
+  correction: { caseId: 'case-1', status: 'remediating', sourceStatus: 'corrected', replacesPassportId: 'signed-article:old-passport', readyForPassport: false },
+})
+assert.equal(correctionBlocked.releaseReady, false)
+assert.ok(correctionBlocked.blocking.includes('سلسلة التصحيح'))
+const correctionReady = buildPublicationPassportDraft({ ...correctionBlocked, correction: { ...correctionBlocked.correction, readyForPassport: true, status: 'ready_for_passport' }, semanticCourtInput })
+assert.ok(!correctionReady.blocking.includes('سلسلة التصحيح'))
 
 const incompleteDraft = buildPublicationPassportDraft({ article: { slug: 'draft', title: 'مسودة', body: longBody } })
 assert.equal(incompleteDraft.releaseReady, false)
@@ -100,6 +114,7 @@ assert.match(server, /admin_publication_passports/)
 assert.match(server, /signPayload\('RSA-SHA256'/)
 assert.match(server, /selfVerified = verifySignature\('RSA-SHA256'/)
 assert.match(server, /buildMultimodalMeaningCourt\(semanticCourtInput\)/, 'the server must recompute the semantic court instead of trusting the browser verdict')
+assert.match(server, /adversarialSimulation:[\s\S]*?scenarioHashes:/, 'the signed server manifest must include hashes of the recomputed adversarial simulation')
 assert.match(server, /proofHashes: sourceProofs\.map\(proofHash\)/, 'private source details must be hashed before the passport reaches a public article document')
 assert.match(server, /overrideReasonHash: overrideReason \? proofHash\(overrideReason\)/, 'a manual release decision must be covered by the signed manifest without exposing its private reason')
 assert.doesNotMatch(server.match(/const envelope = \{[\s\S]*?\n  \}/)?.[0] || '', /signedBy:/, 'the public passport envelope must not expose the admin uid')

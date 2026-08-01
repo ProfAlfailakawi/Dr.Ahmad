@@ -23,7 +23,7 @@ jobs:
       - name: تثبيت اعتمادات التشغيل
         run: npm ci --omit=dev --registry=https://registry.npmjs.org/ --prefer-online
       - name: اختبار الحارس بلا شبكة
-        run: node scripts/source-desk-watch.mjs --self-test
+        run: npm run cascade-correction:self-test && node scripts/source-desk-watch.mjs --self-test
       - name: تحضير حساب الخدمة
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then

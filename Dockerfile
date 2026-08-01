@@ -22,6 +22,7 @@ COPY src/lib/style-dna.mjs /app/src/lib/style-dna.mjs
 # الواجهة فقط. يجب أن يبقى هذا السطر متزامناً مع سماحه في .gcloudignore.
 COPY src/lib/sovereign-publishing.mjs /app/src/lib/sovereign-publishing.mjs
 COPY src/lib/semantic-court.mjs /app/src/lib/semantic-court.mjs
+COPY src/lib/adversarial-misunderstanding.mjs /app/src/lib/adversarial-misunderstanding.mjs
 COPY src/server/whatsapp-controller.mjs /app/src/server/whatsapp-controller.mjs
 COPY src/server/admin-communications.mjs /app/src/server/admin-communications.mjs
 COPY src/data.ts /app/src/data.ts

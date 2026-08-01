@@ -3581,6 +3581,7 @@ function publicationPassportManifest(value, semanticCourtInputValue) {
   const socialProof = objectMap(components.social)
   const sourceProof = objectMap(components.sources)
   const releaseDecision = objectMap(input.releaseDecision)
+  const correctionValue = objectMap(input.correction)
   const slug = boundedString(article.slug, 160).toLowerCase()
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new HttpError(400, 'رابط المقال غير صالح لجواز النشر.')
   const hash = (candidate) => /^[a-f0-9]{64}$/i.test(String(candidate || '')) ? String(candidate).toLowerCase() : ''
@@ -3606,6 +3607,12 @@ function publicationPassportManifest(value, semanticCourtInputValue) {
   const targetStatus = ['published', 'scheduled'].includes(String(releaseDecision.targetStatus || '')) ? String(releaseDecision.targetStatus) : 'draft'
   const manualOverride = releaseDecision.manualOverride === true
   const overrideReason = boundedString(releaseDecision.overrideReason, 1_200)
+  const correctionCaseId = boundedString(correctionValue.caseId, 240)
+  const correctionStatus = ['detected', 'remediating', 'ready_for_passport', 'resolved'].includes(String(correctionValue.status)) ? String(correctionValue.status) : ''
+  const correctionSourceStatus = ['needs_review', 'corrected', 'retracted'].includes(String(correctionValue.sourceStatus)) ? String(correctionValue.sourceStatus) : ''
+  const replacesPassportId = boundedString(correctionValue.replacesPassportId, 260)
+  const correctionReadyForPassport = correctionValue.readyForPassport === true
+  if (correctionCaseId && replacesPassportId && !replacesPassportId.startsWith(`${slug}:`)) throw new HttpError(400, 'الجواز السابق لا يخص هذا المقال.')
   const semanticCourtInput = objectMap(semanticCourtInputValue)
   const courtArticle = objectMap(semanticCourtInput.article)
   const courtMedia = objectMap(semanticCourtInput.media)
@@ -3637,7 +3644,7 @@ function publicationPassportManifest(value, semanticCourtInputValue) {
     }
   }
   const normalizedCourt = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: 'multimodal-meaning-court',
     fingerprintHash: boundedString(calculatedCourt.fingerprintHash, 240),
     status: courtStatus(calculatedCourt.status),
@@ -3645,6 +3652,18 @@ function publicationPassportManifest(value, semanticCourtInputValue) {
     score: safeNumber(calculatedCourt.score, 0, 100),
     chambers: Object.fromEntries(Object.entries(calculatedCourt.chambers).map(([key, item]) => [key, normalizeCourtPart(item)])),
     safeguards: Object.fromEntries(Object.entries(calculatedCourt.safeguards).map(([key, item]) => [key, normalizeCourtPart(item)])),
+    adversarialSimulation: {
+      schemaVersion: 1,
+      kind: 'adversarial-misunderstanding-simulation',
+      status: courtStatus(calculatedCourt.adversarialSimulation?.status),
+      releaseReady: calculatedCourt.adversarialSimulation?.releaseReady === true,
+      score: safeNumber(calculatedCourt.adversarialSimulation?.score, 0, 100),
+      highRiskCount: safeNumber(calculatedCourt.adversarialSimulation?.highRiskCount, 0, 100),
+      scenarioCount: Array.isArray(calculatedCourt.adversarialSimulation?.scenarios) ? calculatedCourt.adversarialSimulation.scenarios.length : 0,
+      scenarioHashes: boundedArray(calculatedCourt.adversarialSimulation?.scenarios, 30, (item) => item && typeof item === 'object' ? proofHash(stableCanonicalJson(item)) : null),
+      defenseHashes: list(calculatedCourt.adversarialSimulation?.defenses, 30, 800).map(proofHash),
+      alertHashes: list(calculatedCourt.adversarialSimulation?.alerts, 30, 800).map(proofHash),
+    },
     alertHashes: list(calculatedCourt.alerts, 60, 800).map(proofHash),
   }
   const normalizedComponents = {
@@ -3688,6 +3707,7 @@ function publicationPassportManifest(value, semanticCourtInputValue) {
   const labels = { text: 'النص', audio: 'الصوت', design: 'التصميم', social: 'التغريدات', sources: 'المصادر' }
   const blocking = Object.entries(normalizedComponents).filter(([, item]) => item.status !== 'verified').map(([key]) => labels[key])
   if (!normalizedCourt.releaseReady) blocking.push('محكمة المعنى')
+  if (correctionCaseId && !correctionReadyForPassport) blocking.push('سلسلة التصحيح')
   return {
     schemaVersion: 1,
     kind: 'sovereign-publication-passport',
@@ -3700,6 +3720,13 @@ function publicationPassportManifest(value, semanticCourtInputValue) {
       overrideReasonHash: overrideReason ? proofHash(overrideReason) : '',
       overrideReasonLength: Array.from(overrideReason).length,
     },
+    ...(correctionCaseId ? { correction: {
+      caseIdHash: proofHash(correctionCaseId),
+      status: correctionStatus || 'detected',
+      sourceStatus: correctionSourceStatus || 'needs_review',
+      replacesPassportId,
+      readyForPassport: correctionReadyForPassport,
+    } } : {}),
     releaseReady: blocking.length === 0,
     blocking,
   }
@@ -3715,7 +3742,7 @@ async function signPublicationPassport(value, ownerId, semanticCourtInput) {
   const signature = signPayload('RSA-SHA256', Buffer.from(canonical), signingKey.privateKey).toString('base64url')
   const selfVerified = verifySignature('RSA-SHA256', Buffer.from(canonical), signingKey.publicKey, Buffer.from(signature, 'base64url'))
   if (!selfVerified) throw new HttpError(500, 'فشل التحقق الداخلي من توقيع جواز النشر.')
-  const envelope = {
+  const baseEnvelope = {
     schemaVersion: 1,
     passportId: `${manifest.article.slug}:${fingerprint.slice(0, 24)}`,
     fingerprint,
@@ -3727,12 +3754,50 @@ async function signPublicationPassport(value, ownerId, semanticCourtInput) {
     selfVerified,
     manifest,
   }
-  await db.collection('admin_publication_passports').doc(`${manifest.article.slug}__${fingerprint.slice(0, 24)}`).set({
-    ...envelope,
-    signedByHash: createHash('sha256').update(ownerId).digest('hex'),
-    createdAt: FieldValue.serverTimestamp(),
+  const passportDocumentId = `${manifest.article.slug}__${fingerprint.slice(0, 24)}`
+  const passportRef = db.collection('admin_publication_passports').doc(passportDocumentId)
+  const headRef = db.collection('admin_publication_passport_heads').doc(manifest.article.slug)
+  let result = baseEnvelope
+  await db.runTransaction(async (transaction) => {
+    const headSnapshot = await transaction.get(headRef)
+    const passportSnapshot = await transaction.get(passportRef)
+    const head = headSnapshot.exists ? objectMap(headSnapshot.data()) : {}
+    const requestedPrevious = boundedString(manifest.correction?.replacesPassportId, 260)
+    const currentPrevious = boundedString(head.currentPassportId, 260)
+    if (requestedPrevious && currentPrevious && requestedPrevious !== currentPrevious) {
+      throw new HttpError(409, 'تغير رأس سلسلة الجوازات؛ أعد فتح المقال لتحصل على آخر نسخة قبل التوقيع.')
+    }
+    const supersedesPassportId = requestedPrevious || currentPrevious
+    result = { ...baseEnvelope, ...(supersedesPassportId && supersedesPassportId !== baseEnvelope.passportId ? { supersedesPassportId } : {}) }
+    if (passportSnapshot.exists) {
+      result = passportSnapshot.data()
+      return
+    }
+    transaction.set(passportRef, {
+      ...result,
+      signedByHash: createHash('sha256').update(ownerId).digest('hex'),
+      createdAt: FieldValue.serverTimestamp(),
+    })
+    transaction.set(headRef, {
+      articleSlug: manifest.article.slug,
+      currentPassportId: baseEnvelope.passportId,
+      currentFingerprint: fingerprint,
+      currentDocumentId: passportDocumentId,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true })
+    if (supersedesPassportId && supersedesPassportId !== baseEnvelope.passportId) {
+      const previousDocumentId = supersedesPassportId.replace(':', '__')
+      transaction.set(db.collection('admin_publication_passport_links').doc(previousDocumentId), {
+        articleSlug: manifest.article.slug,
+        supersededPassportId: supersedesPassportId,
+        supersededByPassportId: baseEnvelope.passportId,
+        supersededByDocumentId: passportDocumentId,
+        correctionCaseIdHash: manifest.correction?.caseIdHash || '',
+        createdAt: FieldValue.serverTimestamp(),
+      })
+    }
   })
-  return envelope
+  return result
 }
 
 

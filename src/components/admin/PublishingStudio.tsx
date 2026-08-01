@@ -42,6 +42,7 @@ import {
 import { requestPublicationPassportSignature } from '../../lib/publication-passport-client'
 import { audioProofAssets } from '../../lib/audio-proof'
 import { buildMultimodalMeaningCourt, type MultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
+import { buildImpactMirror, type EditorialImpactMirror, type ImpactObservationSource } from '../../lib/impact-mirror.mjs'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -101,6 +102,14 @@ type EditorialCalibrationRecord = {
   actual7?: EditorialPerformanceMeasure | null
   actual30?: EditorialPerformanceMeasure | null
 }
+
+const IMPACT_SOURCE_LABELS: Array<{ value: ImpactObservationSource; label: string }> = [
+  { value: 'comment', label: 'تعليق عام' },
+  { value: 'conversation', label: 'حوار مباشر' },
+  { value: 'message', label: 'رسالة' },
+  { value: 'field', label: 'ملاحظة ميدانية' },
+  { value: 'other', label: 'شاهد آخر' },
+]
 
 const EDITORIAL_SOURCE_LABELS: Array<{ value: EditorialSourceType; label: string }> = [
   { value: 'friend', label: 'صديق' },
@@ -1936,10 +1945,59 @@ function PublicationPassportCard({ passport }: { passport: PublicationPassportDr
       <div className={`mt-3 rounded-xl border px-3 py-3 ${passport.semanticCourt.status === 'passed' ? 'border-emerald-200 bg-emerald-50/70' : passport.semanticCourt.status === 'blocked' ? 'border-red-200 bg-red-50/60' : 'border-amber-200 bg-amber-50/60'}`} data-semantic-court={passport.semanticCourt.status}>
         <div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-[.72rem] text-ink">محكمة المعنى متعددة الوسائط</strong><span className={`text-[.68rem] font-bold ${passport.semanticCourt.status === 'passed' ? 'text-emerald-700' : passport.semanticCourt.status === 'blocked' ? 'text-red-700' : 'text-amber-800'}`}>{passport.semanticCourt.score}٪ · {passport.semanticCourt.status === 'passed' ? 'مجتازة' : passport.semanticCourt.status === 'blocked' ? 'أوقفت النشر' : passport.semanticCourt.status === 'review' ? 'مراجعة' : 'بانتظار الطبقات'}</span></div>
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">{Object.values(passport.semanticCourt.chambers).map((chamber) => <span key={chamber.label} className={`text-[.64rem] ${chamber.status === 'passed' ? 'text-emerald-700' : chamber.status === 'blocked' ? 'text-red-700' : 'text-soft'}`}>{chamber.status === 'passed' ? '✓' : chamber.status === 'blocked' ? '✕' : '○'} {chamber.label}</span>)}</div>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-hair/70 pt-2" data-adversarial-misunderstanding={passport.semanticCourt.adversarialSimulation.status}>
+          <span className="text-[.64rem] font-semibold text-ink">محاكي سوء الفهم العدائي</span>
+          <span className={`text-[.64rem] font-bold ${passport.semanticCourt.adversarialSimulation.status === 'passed' ? 'text-emerald-700' : passport.semanticCourt.adversarialSimulation.status === 'blocked' ? 'text-red-700' : 'text-amber-800'}`}>{passport.semanticCourt.adversarialSimulation.score}٪ · {passport.semanticCourt.adversarialSimulation.highRiskCount ? `${passport.semanticCourt.adversarialSimulation.highRiskCount} خطر مرتفع` : passport.semanticCourt.adversarialSimulation.status === 'passed' ? 'محصن' : 'يحتاج تحصين'}</span>
+        </div>
+        {passport.semanticCourt.adversarialSimulation.scenarios[0] && <p className="mt-1 text-[.62rem] leading-relaxed text-soft">أسوأ اقتطاع محتمل: {passport.semanticCourt.adversarialSimulation.scenarios[0].attack}</p>}
         <p className="mt-2 text-[.64rem] leading-relaxed text-soft">حارس العنوان · عهد التحفّظات · سلسلة نسب الادعاء. الخادم يعيد الحساب قبل التوقيع؛ لا يعتمد على شارة الواجهة.</p>
         {passport.semanticCourt.alerts.length > 0 && <p className="mt-2 text-[.64rem] leading-relaxed text-soft">أول تنبيه: {passport.semanticCourt.alerts[0]}</p>}
       </div>
       {!passport.releaseReady && <p className="mt-3 text-[.7rem] leading-relaxed text-soft">المعلّق: {passport.blocking.join('، ')}. الجواز لا يدّعي اكتمال ما ليس موجوداً؛ يسجل حالته بدقة، والنشر العام يتطلب اكتماله أو تجاوزاً تحريرياً مسبباً وموقعاً.</p>}
+    </details>
+  )
+}
+
+function ImpactMirrorInline({
+  mirror,
+  busy,
+  onSave,
+}: {
+  mirror: EditorialImpactMirror
+  busy: boolean
+  onSave: (text: string, source: ImpactObservationSource) => Promise<void>
+}) {
+  const [text, setText] = useState('')
+  const [source, setSource] = useState<ImpactObservationSource>('comment')
+  const labels: Record<EditorialImpactMirror['status'], string> = {
+    'awaiting-observations': 'بانتظار شاهد فهم',
+    preliminary: 'قراءة أولية',
+    aligned: 'النية وصلت',
+    mixed: 'أثر مختلط',
+    drift: 'المعنى انزاح',
+  }
+  const save = async () => {
+    if (text.trim().length < 12) return
+    await onSave(text, source)
+    setText('')
+  }
+  return (
+    <details className="group mt-2 rounded-lg border border-hair bg-wash px-3 py-2" data-impact-mirror={mirror.status}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+        <span className="text-[.68rem] font-semibold text-ink">مرآة الأثر · {labels[mirror.status]}</span>
+        <span className={`text-[.64rem] font-bold ${mirror.status === 'aligned' ? 'text-emerald-700' : mirror.status === 'drift' ? 'text-red-700' : 'text-soft'}`}>{mirror.semanticScore == null ? `${mirror.counts.total} شواهد` : `${mirror.semanticScore}٪ · ${mirror.counts.total} شواهد`}</span>
+      </summary>
+      <div className="mt-3 grid gap-3 border-t border-hair pt-3">
+        <p className="text-[.64rem] leading-relaxed text-soft">الانتشار لا يساوي الفهم. الأرقام تقيس الوصول والفعل، ومحاذاة المعنى لا تحسب إلا من صياغة مجهلة تسجلها هنا بلا أسماء أو أرقام أو روابط.</p>
+        {(mirror.resonance.metrics.views != null || mirror.resonance.score != null) && <div className="flex flex-wrap gap-x-4 gap-y-1 text-[.62rem] text-soft"><span>وصول: {mirror.resonance.metrics.views ?? '—'}</span><span>مشاركة: {mirror.resonance.metrics.shares ?? '—'}</span><span>انتقال تال: {mirror.resonance.metrics.onwardJourneys ?? '—'}</span><span>اكتمال صوت: {mirror.resonance.listenCompletion ?? '—'}{mirror.resonance.listenCompletion != null ? '٪' : ''}</span></div>}
+        {mirror.observations.slice(-3).reverse().map((item) => <div key={item.id} className="rounded-lg border border-hair bg-canvas px-3 py-2"><div className="flex items-center justify-between gap-3"><span className="text-[.62rem] font-semibold text-ink">{item.assessment.status === 'aligned' ? 'المعنى وصل' : item.assessment.status === 'partial' ? 'وصل جزئيا' : 'انزياح يحتاج مراجعة'}</span><span className="text-[.6rem] text-soft">{item.assessment.score}٪</span></div><p className="mt-1 text-[.66rem] leading-relaxed text-soft">{item.text}</p></div>)}
+        {mirror.reopenRecommended && <p className="rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 text-[.66rem] leading-relaxed text-red-700">تقترح المرآة إعادة فتح المادة في مجلس التحرير لتصحيح ما وصل، لا لمطاردة رقم المشاهدة.</p>}
+        <div className="grid gap-2 sm:grid-cols-[10rem_minmax(0,1fr)_auto]">
+          <select className="rounded-lg border border-hair bg-canvas px-3 py-2 text-[.68rem] text-ink" value={source} onChange={(event) => setSource(event.target.value as ImpactObservationSource)}>{IMPACT_SOURCE_LABELS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
+          <input className="rounded-lg border border-hair bg-canvas px-3 py-2 text-[.68rem] text-ink outline-none focus:border-accent" value={text} onChange={(event) => setText(event.target.value)} placeholder="اكتب كيف أعاد القارئ الفكرة بكلماته — بلا اسم…" />
+          <button type="button" className="rounded-full border border-accent/35 px-3 py-2 text-[.66rem] font-semibold text-accent disabled:opacity-50" disabled={busy || text.trim().length < 12} onClick={() => void save()}>{busy ? 'أحفظ…' : 'سجل الشاهد'}</button>
+        </div>
+      </div>
     </details>
   )
 }
@@ -2387,6 +2445,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   const [editorialHistory, setEditorialHistory] = useState<EditorialBoardDecision[]>([])
   const [editorialCalibrationProfile, setEditorialCalibrationProfile] = useState<EditorialCalibrationProfile>({ sampleSize: 0, strengthBias: 0, articlePotentialBias: 0 })
   const [editorialCalibrationByDecision, setEditorialCalibrationByDecision] = useState<Record<string, EditorialCalibrationRecord>>({})
+  const [editorialImpactMirrorByDecision, setEditorialImpactMirrorByDecision] = useState<Record<string, EditorialImpactMirror>>({})
+  const [impactMirrorBusyId, setImpactMirrorBusyId] = useState('')
   const [editorialProgress, setEditorialProgress] = useState<EditorialProgress>('idle')
   /* أفكار المجلس الخمس (٣١ يوليو): جرس غرفة الانتظار، مقترحات الوارد بنقرة،
      والجلسة الأسبوعية — كلها قراءة محلية فوق السجل المحفوظ، بلا نشر تلقائي. */
@@ -2432,6 +2492,45 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     setPersonalSources(data.sources)
     setIntellectualAgenda(data.agenda)
   }, [])
+
+  const recordImpactObservation = async (decision: EditorialBoardDecision, observationText: string, source: ImpactObservationSource) => {
+    const cleanText = observationText.trim()
+    if (cleanText.length < 12 || impactMirrorBusyId) return
+    setImpactMirrorBusyId(decision.id)
+    setError('')
+    try {
+      const ok = isAdmin || await refresh()
+      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثا قبل حفظ شاهد الأثر.')
+      const current = editorialImpactMirrorByDecision[decision.id]
+      const intent = current?.intent || {
+        title: decision.plan.primaryTitle,
+        thesis: decision.plan.thesis,
+        protectedPoints: [decision.plan.thesis, ...decision.plan.outline.slice(0, 2)],
+        caveats: decision.plan.doNotRepeat,
+        expectedAction: decision.plan.outline.at(-1) || '',
+        audience,
+        fingerprintHash: decision.fingerprint,
+      }
+      const next = buildImpactMirror({
+        intent,
+        observations: [
+          ...(current?.observations || []),
+          { id: `impact-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, text: cleanText, source, at: new Date().toISOString() },
+        ],
+        metrics: current?.resonance.metrics || {},
+      })
+      const db = await getDb()
+      if (!db) throw new Error('Firebase غير متاح الآن.')
+      const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      await setDoc(doc(db, 'admin_editorial_board', decision.id), { impactMirror: next, updatedAt: serverTimestamp() }, { merge: true })
+      setEditorialImpactMirrorByDecision((previous) => ({ ...previous, [decision.id]: next }))
+      setNotice(next.reopenRecommended ? 'سجلت المرآة انزياحا يستحق إعادة فتح المادة في مجلس التحرير.' : 'حفظت مرآة الأثر شاهد الفهم وربطته بالنية الأصلية.')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذر حفظ شاهد الأثر.')
+    } finally {
+      setImpactMirrorBusyId('')
+    }
+  }
 
   // بذرة «حملة من مقال»: عند وصولها نفتح استوديو التصاميم فوراً، وعند وجودها
   // مخزنة (وصل الحدث قبل تركيب هذا المكوّن) نلتقطها في أول تركيب.
@@ -2507,11 +2606,17 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           return decisionId && item.calibration ? [[decisionId, item.calibration as EditorialCalibrationRecord]] : []
         })
         setEditorialCalibrationByDecision(Object.fromEntries(calibrationEntries))
+        const mirrorEntries: Array<[string, EditorialImpactMirror]> = rows.flatMap((item): Array<[string, EditorialImpactMirror]> => {
+          const decisionId = String((item.decision as EditorialBoardDecision | undefined)?.id || item.id || '')
+          return decisionId && item.impactMirror ? [[decisionId, item.impactMirror as EditorialImpactMirror]] : []
+        })
+        setEditorialImpactMirrorByDecision(Object.fromEntries(mirrorEntries))
       } catch {
         if (active) {
           setEditorialHistory([])
           setEditorialCalibrationProfile({ sampleSize: 0, strengthBias: 0, articlePotentialBias: 0 })
           setEditorialCalibrationByDecision({})
+          setEditorialImpactMirrorByDecision({})
         }
       }
     })()
@@ -2869,6 +2974,15 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       if (db) {
         const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
         const safeDecision = JSON.parse(JSON.stringify(decision)) as EditorialBoardDecision
+        const initialImpactMirror = buildImpactMirror({ intent: {
+          title: decision.plan.primaryTitle,
+          thesis: decision.plan.thesis,
+          protectedPoints: [decision.plan.thesis, ...decision.plan.outline.slice(0, 2)],
+          caveats: decision.plan.doNotRepeat,
+          expectedAction: decision.plan.outline.at(-1) || '',
+          audience,
+          fingerprintHash: decision.fingerprint,
+        } })
         await setDoc(doc(db, 'admin_editorial_board', decision.id), {
           id: decision.id,
           fingerprint: decision.fingerprint,
@@ -2884,10 +2998,12 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           linkedArticleId: null,
           publishedAt: null,
           calibration: { mode: 'feedback-loop', status: 'awaiting-article', due7At: null, due30At: null, actual7: null, actual30: null },
+          impactMirror: initialImpactMirror,
           generatedAt: decision.generatedAt,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         })
+        setEditorialImpactMirrorByDecision((items) => ({ ...items, [decision.id]: initialImpactMirror }))
       } else {
         setNotice('اكتمل قرار المجلس، لكن تعذّر حفظ السجل لأن Firestore غير متاح الآن.')
       }
@@ -3262,13 +3378,29 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         updatedAt: serverTimestamp(),
       }, { merge: true })
       if (editorialDecision) {
+        const existingMirror = editorialImpactMirrorByDecision[editorialDecision.id]
+        const impactMirror = buildImpactMirror({
+          intent: {
+            title: bundle.title.trim(),
+            thesis: meaningFingerprint.thesis || editorialDecision.plan.thesis,
+            protectedPoints: meaningFingerprint.protectedPoints,
+            caveats: meaningFingerprint.caveats,
+            expectedAction: editorialDecision.plan.outline.at(-1) || '',
+            audience,
+            fingerprintHash: meaningFingerprint.hash,
+          },
+          observations: existingMirror?.observations || [],
+          metrics: existingMirror?.resonance.metrics || {},
+        })
         await setDoc(doc(db, 'admin_editorial_board', editorialDecision.id), {
           lifecycleStatus: 'draft_started',
           linkedArticleId: bundle.slug,
           draftStartedAt: serverTimestamp(),
           calibration: { mode: 'feedback-loop', status: 'awaiting-publication', due7At: null, due30At: null, actual7: null, actual30: null },
+          impactMirror,
           updatedAt: serverTimestamp(),
         }, { merge: true })
+        setEditorialImpactMirrorByDecision((items) => ({ ...items, [editorialDecision.id]: impactMirror }))
       }
       setNotice(`نُقل المقال إلى «المقالات» كمسودة بجواز موقّع ${signedPassport.fingerprint.slice(0, 12)}…${signedPassport.manifest.releaseReady ? ' ومكتمل الطبقات' : `؛ وتبقى قبل النشر: ${signedPassport.manifest.blocking.join('، ')}`} ✓`)
       await onTransferToArticles?.(bundle.slug)
@@ -3299,7 +3431,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       if (!meaningGuard.ready) throw new Error(`بصمة المعنى أوقفت الحزمة قبل الطابور: ${meaningGuard.explanation}`)
       if (semanticCourt.chambers.social.status === 'blocked'
         || semanticCourt.safeguards.headlineGuard.status === 'blocked'
-        || semanticCourt.safeguards.claimLineage.status === 'blocked') {
+        || semanticCourt.safeguards.claimLineage.status === 'blocked'
+        || semanticCourt.adversarialSimulation.status === 'blocked') {
         throw new Error(`محكمة المعنى أوقفت الحزمة قبل الطابور: ${semanticCourt.alerts[0] || 'نسخة مشتقة لا تحفظ معنى الأصل.'}`)
       }
       await addDoc(collection(db, 'social_queue'), {
@@ -3502,7 +3635,8 @@ ${effectivePurpose}`,
         evidence: { sourceIds: ['standalone-author-input'], proofs: ['standalone-author-input|author-confirmed'], alerts: [] },
       })
       if (pulseCourt.chambers.social.status === 'blocked' || pulseCourt.chambers.design.status === 'blocked'
-        || pulseCourt.safeguards.headlineGuard.status === 'blocked' || pulseCourt.safeguards.claimLineage.status === 'blocked') {
+        || pulseCourt.safeguards.headlineGuard.status === 'blocked' || pulseCourt.safeguards.claimLineage.status === 'blocked'
+        || pulseCourt.adversarialSimulation.status === 'blocked') {
         throw new Error(`محكمة المعنى أوقفت المنشور المستقل: ${pulseCourt.alerts[0] || 'إحدى النسخ لا تحفظ الفكرة الأصلية.'}`)
       }
       await addDoc(collection(db, 'social_queue'), {
@@ -3632,7 +3766,16 @@ ${effectivePurpose}`,
               const actual = calibration?.actual30 || calibration?.actual7
               const windowLabel = calibration?.actual30 ? '30 يوم' : calibration?.actual7 ? '7 أيام' : ''
               const comparison = actual?.vsSiteAveragePct == null ? '' : `${actual.vsSiteAveragePct >= 0 ? 'أعلى' : 'أقل'} من متوسط الموقع بـ${Math.abs(actual.vsSiteAveragePct)}٪`
-              return <div key={item.id} className="grid gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><span className="min-w-0"><strong className="block truncate text-[.8rem] text-ink">{item.idea}</strong><span className="mt-1 block text-[.68rem] text-soft">{new Date(item.generatedAt).toLocaleDateString('ar-KW')}{actual?.performanceScore != null ? ` · توقع ${item.scores.strength ?? '—'}/100 · أداء ${windowLabel} ${actual.performanceScore}/100${comparison ? ` · ${comparison}` : ''}` : ''}</span></span><span className="text-[.72rem] font-semibold text-accent">{item.verdictLabel}</span></div>
+              const mirror = editorialImpactMirrorByDecision[item.id] || buildImpactMirror({ intent: {
+                title: item.plan.primaryTitle,
+                thesis: item.plan.thesis,
+                protectedPoints: [item.plan.thesis, ...item.plan.outline.slice(0, 2)],
+                caveats: item.plan.doNotRepeat,
+                expectedAction: item.plan.outline.at(-1) || '',
+                audience,
+                fingerprintHash: item.fingerprint,
+              } })
+              return <div key={item.id} className="rounded-xl border border-hair bg-canvas px-4 py-3"><div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><span className="min-w-0"><strong className="block truncate text-[.8rem] text-ink">{item.idea}</strong><span className="mt-1 block text-[.68rem] text-soft">{new Date(item.generatedAt).toLocaleDateString('ar-KW')}{actual?.performanceScore != null ? ` · توقع ${item.scores.strength ?? '—'}/100 · أداء ${windowLabel} ${actual.performanceScore}/100${comparison ? ` · ${comparison}` : ''}` : ''}</span></span><span className="text-[.72rem] font-semibold text-accent">{item.verdictLabel}</span></div><ImpactMirrorInline mirror={mirror} busy={impactMirrorBusyId === item.id} onSave={(text, source) => recordImpactObservation(item, text, source)} /></div>
             })}</div>
           </details>}
           <CurrentEventsCard items={currentEvents} selected={selectedEventIds} loading={eventsLoading} opportunities={opportunityRadar} onToggle={(id) => setSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id].slice(0, 3))} />

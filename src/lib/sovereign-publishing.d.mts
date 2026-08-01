@@ -13,6 +13,7 @@ export type PublicationPassportDraft = {
   semanticCourt: MultimodalMeaningCourt
   _semanticCourtInput?: Record<string, any>
   releaseDecision: { targetStatus: 'draft' | 'published' | 'scheduled'; manualOverride: boolean; overrideReason?: string; overrideReasonHash?: string; overrideReasonLength?: number }
+  correction?: { caseId: string; status: string; sourceStatus: string; replacesPassportId: string; readyForPassport: boolean; caseIdHash?: string }
   releaseReady: boolean
   blocking: string[]
 }
@@ -26,6 +27,7 @@ export type SignedPublicationPassport = {
   publicKey: string
   signedAt: string
   selfVerified: boolean
+  supersedesPassportId?: string
   manifest: PublicationPassportDraft
 }
 export type TransformingCampaignStage = { day: number; platform: string; role: string; goal: string; carriesFrom: string; handoff: string; copy: string; decisionSignal: string }

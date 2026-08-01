@@ -53,6 +53,11 @@ COPY whatsapp-agent/knowledge-modes.mjs /app/whatsapp-agent/knowledge-modes.mjs
 COPY whatsapp-agent/conversation-context.mjs /app/whatsapp-agent/conversation-context.mjs
 COPY whatsapp-agent/daily-experience.mjs /app/whatsapp-agent/daily-experience.mjs
 COPY whatsapp-agent/domain-concepts.mjs /app/whatsapp-agent/domain-concepts.mjs
+# «ما قاله الدكتور بصوته»: intent-engine يستورده استيراداً ساكناً، فغيابه أسقط
+# بناء الصورة كلها (حارس شجرة الاستيراد أدناه أمسكه). وفهرسه JSON يُبنى قبل هذه
+# الخطوة في وظيفة النشر نفسها، فينسخ ممتلئاً لا فارغاً.
+COPY whatsapp-agent/spoken-index.mjs /app/whatsapp-agent/spoken-index.mjs
+COPY src/data/spoken-index.json /app/src/data/spoken-index.json
 
 # «node --check» يقرأ الصياغة ولا يحلّ استيراداً: ملفٌ منسيٌّ في النسخ يمرّ من
 # هنا ثم يقتل المُشغَّل في Cloud Run. نحلّ شجرة الاستيراد كلها في البناء نفسه،

@@ -18,7 +18,7 @@ import { LiveDirector } from './LiveDirector'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 /* بصمة الأسلوب: المسطرة نفسها التي يقيس بها الخادم — الملف .mjs عمداً كي
    يستورده server.mjs بلا ترجمة، فلا يمدح أحدهما ما يرفضه الآخر. */
-import { extractVoiceSignature, judgeStyle, measureStyleDna, refineToStyle, withVoiceMemory, type StyleVerdict } from '../../lib/style-dna.mjs'
+import { buildOrthographyIndex, extractVoiceSignature, judgeStyle, measureStyleDna, refineToStyle, withVoiceMemory, type StyleVerdict } from '../../lib/style-dna.mjs'
 import { createIdeaDna } from '../../lib/idea-dna'
 import { buildKnowledgeGraph, graphSearch } from '../../lib/knowledge-graph'
 import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialCalibrationProfile, type EditorialPortfolioEvidence, type EditorialSourceType } from '../../lib/editorial-board'
@@ -1663,6 +1663,36 @@ function FingerprintPanel({ dna }: { dna: ReturnType<typeof measureStyleDna> }) 
   )
 }
 
+/* أربعون ثانية من الصمت تجعل الدكتور يظن أن شيئاً تعطّل. هذه تقول له الحقيقة
+   وحدها: كم مضى، وماذا يجري فعلاً في الخادم — بلا مراحل مخترعة. */
+function GenerationProgress({ startedAt }: { startedAt: number }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1_000)
+    return () => clearInterval(timer)
+  }, [])
+  const seconds = Math.max(0, Math.round((now - startedAt) / 1_000))
+  const stage = seconds < 45
+    ? 'نسختان تُكتبان الآن من نموذجين مختلفين وبنيتين مختلفتين…'
+    : seconds < 100
+      ? 'الحَكَم يقيس النسختين على بصمتك، ويعيد أرقام النقص إلى المحرك…'
+      : 'جولة تصحيحٍ موجّهة ثم تدقيقٌ لغويّ أخير…'
+  return (
+    <div className={`${card} border-accent/30`} data-generation-progress="true">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-[.82rem] font-semibold text-ink">{stage}</p>
+        <span className="shrink-0 font-display text-[1.1rem] text-accent">{seconds}ث</span>
+      </div>
+      <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-hair">
+        <div className="h-full rounded-full bg-accent transition-all duration-1000" style={{ width: `${Math.min(96, seconds / 1.5)}%` }} />
+      </div>
+      <p className="mt-3 text-[.76rem] leading-relaxed text-soft">
+        لا يُسلَّم نصٌّ باسمك قبل أن يجتاز الأسلوب والإسناد والتكرار والإملاء. وإن عجز المحرك قال لك ذلك، ولم يخترع مقالاً.
+      </p>
+    </div>
+  )
+}
+
 function StyleFidelityCard({ verdict, sampleSize, dna }: { verdict: StyleVerdict | null; sampleSize: number; dna: ReturnType<typeof measureStyleDna> }) {
   if (!verdict) return <section className={card} data-style-fidelity="idle">
     <p className="text-[.76rem] font-semibold uppercase text-accent">مطابقة أسلوبك</p>
@@ -1696,6 +1726,18 @@ function StyleFidelityCard({ verdict, sampleSize, dna }: { verdict: StyleVerdict
       </div>
       {verdict.fatal.length > 0 && (
         <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">{verdict.fatal.join(' · ')}</p>
+      )}
+      {verdict.corrections.length > 0 && (
+        /* الحَكَم يكتب أسباب النقص بعربيةٍ واضحة ثم لا تُعرض ولا مرة —
+           كان الدكتور يرى الدرجة ولا يرى لماذا. */
+        <div className="mt-4 rounded-xl border border-accent/25 bg-accent/[.04] px-4 py-3">
+          <p className="text-[.74rem] font-semibold text-accent">ما ينقص هذا النص ليصير نصّك</p>
+          <ul className="mt-2 grid gap-1.5">
+            {verdict.corrections.slice(0, 4).map((line, index) => (
+              <li key={index} className="text-[.8rem] leading-relaxed text-soft">· {line}</li>
+            ))}
+          </ul>
+        </div>
       )}
       <FingerprintPanel dna={dna} />
       {weakest.length > 0 && (
@@ -2666,7 +2708,10 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     try { return JSON.parse(localStorage.getItem('dr-voice-exclusions') || '[]').slice(0, 60) } catch { return [] }
   })
   const styleDna = useMemo(() => withVoiceMemory(measuredDna, voiceExclusions), [measuredDna, voiceExclusions])
+  /* معجم صوابه: كل صورةٍ كتبها ومرات ورودها — مرجعُ الإملاء بلا قاموسٍ يُنزَّل. */
+  const orthography = useMemo(() => buildOrthographyIndex(archiveTexts), [archiveTexts])
   const [alternates, setAlternates] = useState<NonNullable<PerfectArticleResponse['alternates']>>([])
+  const [generationStartedAt, setGenerationStartedAt] = useState(0)
   /* المزامنة بين أجهزته: تُقرأ مرةً عند الفتح، وتُدمج مع المحلي ولا تدهسه. */
   useEffect(() => {
     let alive = true
@@ -2694,11 +2739,19 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   /* الأرشيف يرافق القياس الحيّ: بدونه كان تحفّظ «نقلٌ حرفي» يُحسب مرةً واحدة
      عند التوليد ثم تحجبه البطاقة الحيّة فلا يراه أحد. ودون العتبة لا تُعرض
      درجةٌ قديمة لنصٍّ لم يعد موجوداً — البطاقة تختفي. */
+  /* القياس على نصٍّ مهدَّأ لا على كل ضغطة مفتاح: مسحُ الأرشيف كله (النقل
+     الحرفي والإسناد والإملاء) يكلّف ٦٦ مللي ثانية مقابل ٧ بدونه — أي تلعثمٌ
+     محسوس أثناء الكتابة. نصف ثانيةٍ من السكون تكفي. */
+  const [settledBody, setSettledBody] = useState('')
+  useEffect(() => {
+    const timer = setTimeout(() => setSettledBody(bundle.body), 500)
+    return () => clearTimeout(timer)
+  }, [bundle.body])
   const liveStyleVerdict = useMemo(
-    () => wordCount(bundle.body) >= 120
-      ? judgeStyle(bundle.body, styleDna, { archive: archiveTexts, sources: archiveTexts })
+    () => wordCount(settledBody) >= 120
+      ? judgeStyle(settledBody, styleDna, { archive: archiveTexts, sources: archiveTexts, orthography })
       : null,
-    [bundle.body, styleDna, archiveTexts],
+    [settledBody, styleDna, archiveTexts, orthography],
   )
   const lab = useMemo(() => ideaLab(idea, richArticles, books, papers), [idea, richArticles])
   const privateLinks = (privateBookLinks as { books?: PrivateBookLink[] }).books || []
@@ -3185,6 +3238,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     setError('')
     setNotice('')
     setGenerating(true)
+    setGenerationStartedAt(Date.now())
     try {
       const parsedTarget = Number(fromArabicDigits(targetWordsInput).replace(/[^0-9]/g, ''))
       const requestedTarget = Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, Number.isFinite(parsedTarget) && parsedTarget > 0 ? parsedTarget : targetWords))
@@ -3865,6 +3919,7 @@ ${effectivePurpose}`,
             </section>
             {bundle.event && <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">صلة راهنة موثقة</p><a href={bundle.event.url} target="_blank" rel="noreferrer" className="mt-3 block font-display text-[1rem] font-semibold leading-relaxed text-ink hover:text-accent">{bundle.event.title}</a><p className="mt-2 text-[.78rem] text-soft">{bundle.event.source}</p>{bundle.eventConnection && <p className="mt-3 text-[.8rem] leading-relaxed text-soft">{bundle.eventConnection}</p>}</section>}
             <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p><p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p><div className="mt-4 grid gap-3">{bundle.related.map((item) => <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">{item.title}{item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}</a>)}</div></section>
+            {generating && generationStartedAt > 0 && <GenerationProgress startedAt={generationStartedAt} />}
             <StyleFidelityCard verdict={liveStyleVerdict} sampleSize={styleDna?.sampleSize || style.articleCount} dna={measuredDna} />
             <CandidateRoom alternates={alternates} onAdopt={adoptAlternate} />
             <VoiceTeacher

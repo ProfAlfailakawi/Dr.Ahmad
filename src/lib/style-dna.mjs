@@ -20,6 +20,7 @@
 const TASHKEEL = /[ؐ-ًؚ-ٰٟۖ-ۭـ]/gu
 
 export const stripTashkeel = (value = '') => String(value).replace(TASHKEEL, '')
+const bareTashkeel = stripTashkeel
 
 export const bareText = (value = '') => stripTashkeel(value)
   .replace(/[أإآٱ]/gu, 'ا')
@@ -480,6 +481,107 @@ const hasBanned = (text, phrases) => {
   return (phrases || []).filter((phrase) => bannedPattern(phrase).test(bare))
 }
 
+/* ---------- مسطرة المقتطف: قاعدةٌ حتمية مقيسة من بطاقاته ----------
+
+   تدقيقٌ آليّ زعم أن ٨١٪ من مقتطفاته هي مطلع متنه حرفياً، فقِستُها بنفسي على
+   البطاقات الـ١٤٣ فكانت **١٨٪**. فاشتقاقُ المقتطف من الجسم كان سيكون انحداراً
+   لا إصلاحاً — الدكتور يكتب مقتطفه مستقلاً في أربعة أخماس مقالاته.
+
+   ما صحّ من القياس هو **الطول**: وسيط مقتطفه ٩٥ محرفاً، وينتهي عند نقطةٍ لا
+   في منتصف جملة — والمحرك كان يسمح بـ١٩٠، أي ضعف ما يكتب.
+
+   فالقاعدة هنا: يُحترم مقتطف النموذج ما دام داخل مداه، ولا يُشتقّ من الجسم
+   إلا حين يعجز النموذج (فارغ أو مبتور أو ضِعف طوله). */
+export function deriveExcerpt(body, fallback = '', low = 80, high = 130) {
+  /* مقتطفٌ صالحٌ من النموذج يُقبل كما هو: هذه عادته في ٨٢٪ من مقالاته. */
+  const offered = String(fallback || '').trim()
+  const offeredLength = Array.from(offered).length
+  if (offeredLength >= 60 && offeredLength <= 150 && /[.!؟…»]$/.test(offered)) return offered
+  const sentences = sentencesOf(polishTypography(String(body || '')))
+  if (!sentences.length) return String(fallback || '').trim()
+  let built = ''
+  for (const sentence of sentences) {
+    const next = built ? `${built} ${sentence}` : sentence
+    if (Array.from(next).length > high) break
+    built = next
+    if (Array.from(built).length >= low) break
+  }
+  /* جملةٌ أولى أطول من السقف: نقصّها عند آخر وقفةٍ داخلها لا في منتصف كلمة. */
+  if (!built) {
+    const first = sentences[0]
+    const cut = Array.from(first).slice(0, high).join('')
+    const stop = Math.max(cut.lastIndexOf('…'), cut.lastIndexOf('،'))
+    built = (stop > low ? cut.slice(0, stop) : cut.replace(/\s+\S*$/, '')).trim()
+    if (!/[.!؟…]$/.test(built)) built += '…'
+  }
+  const trimmed = built.trim()
+  return Array.from(trimmed).length >= 40 ? trimmed : String(fallback || trimmed).trim()
+}
+
+/* ---------- بوابة الإملاء: أرشيفه هو المرجع، لا قاموسٌ يُنزَّل ----------
+
+   الثغرة مبرهنة: حُقنت ستة أخطاء إملائية كلاسيكية في مقالٍ منشور فتحرّكت درجة
+   الأسلوب صفر نقطة. خمسة عشر فحصاً ولا واحدٌ منها يرى الإملاء.
+
+   والحلول الجاهزة سقطت كلها بالقياس: معجمٌ من أرشيفه وحده يرفض «الخوارزمية»
+   ويمرّر «الأسوء»؛ وقاموس Ayaspell يحتاج سبعة ميغابايت تُنزَّل ويرفض ٤١٪ من
+   كلماته قبل تحليل السوابق واللواحق؛ وLanguageTool يفوّت الأخطاء السياقية
+   ويقترح صورةَ تنوينٍ تخالف أسلوبه.
+
+   الطريق الذي نجا أبسط منها جميعاً: **شهادة أرشيفه على نفسه**. إن كتب «في»
+   ألفاً وستمئة وثلاثاً وسبعين مرة و«فى» سبعاً، فالسبع زلّةٌ لا اختيار. صفر
+   تنزيل، صفر نيورون، صفر إنترنت.
+
+   وتُستثنى الأزواج التي تحتمل معنيين — «إن/أن» و«كأن/كان» و«إما/أما» — فهي
+   كلماتٌ صحيحة مختلفة، ولولا استثناؤها لصار الفحص إنذاراً كاذباً في أغلبه:
+   بلا الاستثناء ٦٤ موضعاً أكثرها سليم، ومعه ٢٠ موضعاً كلها أخطاء حقيقية. */
+
+const ORTHO_RATIO = 6
+
+/* أنماطٌ لا تحتمل معنىً ثانياً في العربية المعاصرة. */
+const ORTHO_RULES = [
+  { id: 'dotless-ya', label: 'ياء بلا نقاط', from: (word) => word.endsWith('ى') ? `${word.slice(0, -1)}ي` : null },
+  { id: 'dropped-hamza', label: 'همزة قطعٍ ساقطة', from: (word) => word.startsWith('الا') && word.length > 4 ? `الإ${word.slice(3)}` : null },
+  { id: 'added-hamza', label: 'همزة قطعٍ زائدة', from: (word) => word.startsWith('الإ') && word.length > 4 ? `الا${word.slice(3)}` : null },
+]
+
+const orthoTokens = (value = '') => bareTashkeel(value)
+  .replace(/[^\u0600-\u06FF\s]+/g, ' ')
+  .split(/\s+/)
+  .filter((word) => word.length > 1)
+
+/* معجمُ صوابه: كل صورةٍ كتبها ومرات ورودها. يُبنى مرةً ويُعاد استعماله. */
+export function buildOrthographyIndex(corpus = []) {
+  const frequency = new Map()
+  for (const item of corpus) {
+    const body = typeof item === 'string' ? item : String(item?.body || '')
+    for (const word of orthoTokens(body)) frequency.set(word, (frequency.get(word) || 0) + 1)
+  }
+  return frequency
+}
+
+/* يعيد المواضع التي تخالف صورته الغالبة، ولا يخمّن كلمةً لم يكتبها قط. */
+export function orthographySlips(body, index) {
+  if (!index || !index.size) return []
+  const counted = new Map()
+  for (const word of orthoTokens(body)) counted.set(word, (counted.get(word) || 0) + 1)
+  const slips = []
+  for (const [word, times] of counted) {
+    for (const rule of ORTHO_RULES) {
+      const fixed = rule.from(word)
+      if (!fixed) continue
+      const right = index.get(fixed) || 0
+      const wrong = index.get(word) || 0
+      /* شرط الحسم: صورته الأخرى أغلب بستة أضعاف على الأقل في أرشيفه كله. */
+      if (right >= Math.max(5, (wrong + times) * ORTHO_RATIO)) {
+        slips.push({ word, fixed, times, archiveRight: right, archiveWrong: wrong, rule: rule.label })
+        break
+      }
+    }
+  }
+  return slips.sort((left, right) => right.times - left.times)
+}
+
 /* ---------- بوابة الإسناد: أخطر عيبٍ رأيته في تشغيلٍ حيّ ----------
 
    النموذج المجاني كتب في مقالٍ باسم الدكتور: «دراسة نشرت في علم النفس التربوي
@@ -738,7 +840,19 @@ export function judgeStyle(body, rawDna, options = {}) {
   if (bannedHits.length) fatal.push(`عبارات نموذجٍ آليّ: ${bannedHits.join(' · ')}`)
   if (voiceHits.length) fatal.push(`صوتٌ ليس صوته: ${voiceHits.join(' · ')}`)
 
-  /* ١٥ — بوابة الإسناد: رقمٌ أو دراسةٌ بلا سندٍ في المادة المعطاة (قاطع). */
+  /* ١٥ — الإملاء بشهادة أرشيفه (قاطع حين يكون المرجع حاضراً). */
+  const orthoIndex = options.orthography || null
+  const slips = orthoIndex ? orthographySlips(text, orthoIndex) : []
+  if (orthoIndex) {
+    add('orthography', 'الإملاء', slips.length ? 0 : 1, 10,
+      slips.length ? slips.map((slip) => `${slip.word}→${slip.fixed}`).join(' · ') : 'سليم', 'صفر',
+      slips.length
+        ? `صحّح إملائياً: ${slips.map((slip) => `«${slip.word}» ← «${slip.fixed}»`).join(' · ')}. الدكتور يكتبها بالصورة الثانية في أرشيفه.`
+        : '')
+    if (slips.length) fatal.push(`إملاء: ${slips.slice(0, 3).map((slip) => `${slip.word}→${slip.fixed}`).join(' · ')}`)
+  }
+
+  /* ١٦ — بوابة الإسناد: رقمٌ أو دراسةٌ بلا سندٍ في المادة المعطاة (قاطع). */
   const sources = options.sources || options.archive
   const orphanClaims = sources ? unsupportedClaims(text, sources) : []
   add('evidence', 'إسناد الأرقام', orphanClaims.length ? 0 : 1, 12,

@@ -1,7 +1,6 @@
 import { researchPapers } from './data/research-papers'
 
-// ⚠️ روابط الموقع القديم معطّلة مؤقتاً.
-// عند بناء الصفحات الداخلية، غيّر LINK_OUT إلى true.
+// الروابط الخارجية معطّلة؛ التنقل المعتمد داخلي عبر React Router.
 export const LINK_OUT = false
 
 /** صوت المتصفّح الآلي رديء للعربية. اجعله true فقط إن لم تولّد ملفات MP3. */
@@ -560,12 +559,12 @@ export const roundDown10 = (n: number) => Math.floor(n / 10) * 10
 
 // الظهور الإعلامي — لقاءات تلفزيونية (مسحوبة من الموقع)
 export const media = [
-  { title: 'لقاء في برنامج «معاكم» على تلفزيون دولة الكويت حول مشروع التعليم عن بعد', outlet: 'تلفزيون الكويت', url: 'https://www.youtube.com/watch?v=ydhZ9IcGaVc' },
-  { title: 'لقاء في تلفزيون الكويت — تكنولوجيا التعليم', outlet: 'تلفزيون الكويت', url: 'https://www.youtube.com/watch?v=MdMDpX9jwTU' },
-  { title: 'برنامج «البيت العود» على قناة إثراء — مفهوم تكنولوجيا التعليم', outlet: 'قناة إثراء', url: 'https://www.youtube.com/watch?v=UsO9ju--z2M' },
-  { title: 'برنامج «مساء الخير يا كويت» — حديث حول تكنولوجيا التعليم', outlet: 'تلفزيون الكويت', url: 'https://www.youtube.com/watch?v=x_nNolE8DuM' },
-  { title: 'برنامج «حدد مسارك» — نصائح للشباب (2): المهارات', outlet: 'حدد مسارك', url: 'https://www.youtube.com/watch?v=cOlGZibqDiw' },
-  { title: 'برنامج «حدد مسارك» — نصائح للشباب', outlet: 'حدد مسارك', url: 'https://www.youtube.com/watch?v=-6BvLvZqTik' },
+  { title: 'لقاء في برنامج «معاكم» على تلفزيون دولة الكويت حول مشروع التعليم عن بعد', outlet: 'تلفزيون الكويت', channel: 'تلفزيون دولة الكويت', program: 'معاكم', url: 'https://www.youtube.com/watch?v=ydhZ9IcGaVc', iso: '2020-04-03', date: '3 أبريل 2020', duration: '00:04:09', topics: 'التعليم عن بُعد، استمرارية التعليم، التجربة الكويتية', clipStart: '00:00', clipEnd: '00:45' },
+  { title: 'لقاء في تلفزيون الكويت — تكنولوجيا التعليم', outlet: 'تلفزيون الكويت', channel: 'تلفزيون دولة الكويت', program: 'لقاء تلفزيوني', url: 'https://www.youtube.com/watch?v=MdMDpX9jwTU', iso: '2016-02-05', date: '5 فبراير 2016', duration: '00:09:29', topics: 'تكنولوجيا التعليم، التعلم الإلكتروني، دور التقنية في التعليم', clipStart: '00:00', clipEnd: '00:45' },
+  { title: 'برنامج «البيت العود» على قناة إثراء — مفهوم تكنولوجيا التعليم', outlet: 'قناة إثراء', channel: 'قناة إثراء', program: 'البيت العود', url: 'https://www.youtube.com/watch?v=UsO9ju--z2M', iso: '2016-05-04', date: '4 مايو 2016', duration: '00:23:53', topics: 'مفهوم تكنولوجيا التعليم، التعليم الإلكتروني، التعليم عن بُعد', clipStart: '00:00', clipEnd: '00:45' },
+  { title: 'برنامج «مساء الخير يا كويت» — حديث حول تكنولوجيا التعليم', outlet: 'تلفزيون الكويت', channel: 'تلفزيون دولة الكويت', program: 'مساء الخير يا كويت', url: 'https://www.youtube.com/watch?v=x_nNolE8DuM', iso: '2016-04-19', date: '19 أبريل 2016', duration: '00:12:08', topics: 'تكنولوجيا التعليم، التعلم الإلكتروني، الحاسوب في التعليم', clipStart: '00:00', clipEnd: '00:45' },
+  { title: 'برنامج «حدد مسارك» — نصائح للشباب (2): المهارات', outlet: 'حدد مسارك', channel: 'برنامج حدد مسارك', program: 'حدد مسارك', url: 'https://www.youtube.com/watch?v=cOlGZibqDiw', iso: '2016-06-06', date: '6 يونيو 2016', duration: '00:08:24', topics: 'مهارات الشباب، التعلم، بناء المسار', clipStart: '00:00', clipEnd: '00:45' },
+  { title: 'برنامج «حدد مسارك» — نصائح للشباب', outlet: 'حدد مسارك', channel: 'برنامج حدد مسارك', program: 'حدد مسارك', url: 'https://www.youtube.com/watch?v=-6BvLvZqTik', iso: '2016-05-27', date: '27 مايو 2016', duration: '00:07:32', topics: 'الشباب، التعليم، بناء المسار، التعلم المستمر', clipStart: '00:00', clipEnd: '00:45' },
 ]
 
 
@@ -619,7 +618,7 @@ export const latest = {
 }
 
 /* ============================================================
-   المختارات — «من اختياراتي» (بنية الموقع القديم)
+   المختارات — «من اختياراتي» (البنية التحريرية)
    عنصر واحد فقط لكل تصنيف = الأحدث. أضِف/عدّل هنا، أو اربطه بـ Firestore.
    ============================================================ */
 export type Pick = {

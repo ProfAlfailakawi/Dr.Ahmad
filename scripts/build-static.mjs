@@ -49,7 +49,9 @@ if (SITE !== OFFICIAL_SITE) {
 }
 const AUDIO_PUBLIC_BASE_URL = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const SITE_HOST = new URL(SITE).hostname
-const HOME_OG = '/og/canonical.jpg'
+const HOME_OG_AR = '/og/canonical-ar.jpg'
+const HOME_OG_EN = '/og/canonical-en.jpg'
+const HOME_OG = HOME_OG_AR
 const AUTHOR = 'د. أحمد حسين الفيلكاوي'
 const logoDataUri = `data:image/png;base64,${readFileSync(resolve(ROOT, 'public/logo.png')).toString('base64')}`
 const portraitDataUri = `data:image/jpeg;base64,${readFileSync(resolve(ROOT, 'public/portrait.jpg')).toString('base64')}`
@@ -224,10 +226,31 @@ const localBooks = [...grab('books').matchAll(/\{ slug: '([^']+)'[\s\S]*?title: 
   .map((m) => ({ slug: m[1], title: m[2], isbn: m[3], cover: m[4], pdf: m[5], desc: m[6] }))
   .filter(keepAlive('book'))
 
-const localMedia = [...grab('media').matchAll(/\{ title: '([^']+)', outlet: '([^']*)', url: '([^']*)'/g)]
+const literalField = (block, name) => {
+  const match = block.match(new RegExp(`\\b${name}:\\s*'((?:\\\\'|[^'])*)'`))
+  return match ? match[1].replace(/\\'/g, "'") : ''
+}
+const localMedia = [...grab('media').matchAll(/\{[^\n{}]*\}/g)]
   .map((m, index) => {
-    const id = (m[3].match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || String(index + 1)
-    return { slug: `media-${id}`, title: m[1], outlet: m[2], url: m[3] }
+    const block = m[0]
+    const url = literalField(block, 'url')
+    const id = (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || String(index + 1)
+    return {
+      slug: `media-${id}`,
+      title: literalField(block, 'title'),
+      outlet: literalField(block, 'outlet'),
+      channel: literalField(block, 'channel'),
+      program: literalField(block, 'program'),
+      url,
+      iso: literalField(block, 'iso'),
+      date: literalField(block, 'date'),
+      duration: literalField(block, 'duration'),
+      topics: literalField(block, 'topics'),
+      thumbnail: literalField(block, 'thumbnail'),
+      clipStart: literalField(block, 'clipStart'),
+      clipEnd: literalField(block, 'clipEnd'),
+      transcript: literalField(block, 'transcript'),
+    }
   })
   .filter(keepAlive('media'))
 
@@ -324,8 +347,13 @@ const STATIC = [
 
 const routes = [
   ...STATIC,
-  ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.desc, isbn: b.isbn })),
+  ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.longDescription || b.desc, image: b.cover, isbn: b.isbn, year: b.year, edition: b.edition, publisher: b.publisher, pageCount: b.pageCount })),
   ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: p.abstractAr || `بحث محكّم — ${p.meta}`, type: 'article' })),
+  ...media.map((item) => {
+    const id = youtubeId(item.url)
+    const thumbnail = item.thumbnail || (id ? `https://i.ytimg.com/vi/${id}/maxresdefault.jpg` : '')
+    return { ...item, path: `/media/${item.slug}`, title: item.title, desc: item.topics || `${item.program || 'لقاء إعلامي'} — ${item.channel || item.outlet || ''}`, type: 'video.other', iso: item.iso, image: thumbnail, thumbnail }
+  }),
   ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.jpg` })),
   ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.jpg` })),
 ]
@@ -847,7 +875,7 @@ function generateBodyHtml(path, lang = 'ar') {
             <a href="/research/${p.slug}" style="color: #15161A; text-decoration: none;">${esc(p.title)}</a>
           </h2>
           <p style="color: #626A76; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; margin-bottom: 0.5rem;">${esc(p.meta)}</p>
-          <p style="color: #3E5C78; font-size: 0.85rem; font-family: 'Tajawal', sans-serif; font-weight: 500; margin: 0;">${p.coAuthors ? `الباحث الرئيسي: د. أحمد حسين الفيلكاوي · الباحث المشارك: ${esc(p.coAuthors)}` : 'الباحث: د. أحمد حسين الفيلكاوي'}</p>
+          <p style="color: #3E5C78; font-size: 0.85rem; font-family: 'Tajawal', sans-serif; font-weight: 500; margin: 0;">الباحثون: د. أحمد حسين الفيلكاوي${p.coAuthors ? `، ${esc(p.coAuthors)}` : ''}</p>
         </div>
       `).join('')
 
@@ -875,7 +903,7 @@ function generateBodyHtml(path, lang = 'ar') {
           <article style="text-align: right;">
             <header style="margin-bottom: 2rem;">
               <h1 dir="auto" style="font-size: 2.25rem; font-family: 'El Messiri', serif; font-weight: bold; color: #15161A; margin-bottom: 1rem; line-height: 1.3;">بحث محكّم: ${esc(p.title)}</h1>
-              <p style="color: #626A76; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">${p.coAuthors ? `الباحث الرئيسي: د. أحمد حسين الفيلكاوي &middot; الباحث المشارك: ${esc(p.coAuthors)}` : 'الباحث: د. أحمد حسين الفيلكاوي'}</p>
+              <p style="color: #626A76; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">الباحثون: د. أحمد حسين الفيلكاوي${p.coAuthors ? `، ${esc(p.coAuthors)}` : ''}</p>
             </header>
             <section style="background: rgba(62, 92, 120, 0.03); padding: 2.5rem; border-radius: 8px; border-right: 4px solid #3E5C78; margin-bottom: 2rem;">
               <p style="color: #3E5C78; font-size: .85rem; font-weight: 700; font-family: 'Tajawal', sans-serif; margin: 0 0 .75rem;">الملخص</p>
@@ -890,9 +918,10 @@ function generateBodyHtml(path, lang = 'ar') {
     const mediaHtml = media.map((item) => `
       <article style="margin-bottom: 2rem; border-bottom: 1px solid rgba(62, 92, 120, 0.1); padding-bottom: 1.5rem; text-align: right;">
         <h2 style="font-size: 1.45rem; font-family: 'El Messiri', serif; margin-bottom: 0.5rem; color: #15161A;">
-          <a href="${attr(item.url)}" style="color: #15161A; text-decoration: none;">${esc(item.title)}</a>
+          <a href="/media/${attr(item.slug)}" style="color: #15161A; text-decoration: none;">${esc(item.title)}</a>
         </h2>
-        <p style="color: #626A76; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(item.outlet || 'ظهور إعلامي')}</p>
+        <p style="color: #626A76; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(item.program || 'لقاء إعلامي')} · ${esc(item.channel || item.outlet || '')}${item.date ? ` · ${esc(item.date)}` : ''}${item.duration ? ` · ${esc(item.duration)}` : ''}</p>
+        ${item.topics ? `<p style="color:#626A76;font-size:.9rem;line-height:1.7;font-family:'Tajawal',sans-serif;">${esc(item.topics)}</p>` : ''}
       </article>
     `).join('')
 
@@ -905,6 +934,27 @@ function generateBodyHtml(path, lang = 'ar') {
         ${mediaHtml}
       </main>
     `
+  } else if (path.startsWith('/media/')) {
+    const slug = path.split('/').pop()
+    const item = media.find((entry) => entry.slug === slug)
+    if (item) {
+      const videoThumbnail = item.thumbnail || (youtubeId(item.url) ? `https://i.ytimg.com/vi/${youtubeId(item.url)}/maxresdefault.jpg` : '')
+      contentHtml = `
+        <main style="max-width:900px;margin:4rem auto;padding:0 1rem;" dir="rtl">
+          <p><a href="/media" style="color:#3E5C78;text-decoration:none;font-family:'Tajawal',sans-serif;">&rarr; العودة إلى الظهور الإعلامي</a></p>
+          <article style="text-align:right;">
+            <header style="margin:2rem 0;">
+              <p style="color:#3E5C78;font-family:'Tajawal',sans-serif;">${esc(item.program || 'لقاء إعلامي')} · ${esc(item.channel || item.outlet || '')}${item.date ? ` · ${esc(item.date)}` : ''}${item.duration ? ` · ${esc(item.duration)}` : ''}</p>
+              <h1 style="font-size:2.4rem;font-family:'El Messiri',serif;line-height:1.4;color:#15161A;">${esc(item.title)}</h1>
+            </header>
+            ${videoThumbnail ? `<img src="${attr(videoThumbnail)}" alt="${attr(item.title)}" width="1280" height="720" style="width:100%;height:auto;border-radius:18px;" />` : ''}
+            ${item.topics ? `<section style="margin-top:2rem;"><h2 style="font-family:'El Messiri',serif;">موضوعات اللقاء</h2><p style="font-family:'Tajawal',sans-serif;line-height:1.9;color:#626A76;">${esc(item.topics)}</p></section>` : ''}
+            <p style="margin-top:2rem;"><a href="${attr(item.url)}" rel="noopener noreferrer" style="display:inline-block;background:#3E5C78;color:white;text-decoration:none;border-radius:999px;padding:.8rem 1.3rem;font-family:'Tajawal',sans-serif;">مشاهدة الفيديو الكامل</a></p>
+            <section style="margin-top:2rem;"><h2 style="font-family:'El Messiri',serif;">النص المفرّغ</h2><p style="font-family:'Tajawal',sans-serif;line-height:1.9;color:#626A76;">${item.transcript ? esc(item.transcript) : 'النص التلقائي لا يُنشر قبل المراجعة اللغوية واعتماد النسخة المنقحة.'}</p></section>
+          </article>
+        </main>
+      `
+    }
   } else if (richStaticHtml(path)) {
     contentHtml = richStaticHtml(path)
   } else if (['/about', '/contact', '/ask', '/thought', '/decade', '/impact', '/cv/impact', '/thought-paths', '/search', '/atlas', '/questions', '/radar', '/curated', '/upcoming', '/inbox'].includes(path)) {
@@ -1040,7 +1090,24 @@ function generateBodyHtml(path, lang = 'ar') {
   return `${headerHtml}\n${contentHtml}\n${footerHtml}`
 }
 
-function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar', isbn }) {
+function clockSeconds(value = '') {
+  return String(value).split(':').reduce((total, part) => total * 60 + (Number(part) || 0), 0)
+}
+
+function schemaDuration(value = '') {
+  const seconds = clockSeconds(value)
+  if (!seconds) return undefined
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const rest = seconds % 60
+  return `PT${hours ? `${hours}H` : ''}${minutes ? `${minutes}M` : ''}${rest ? `${rest}S` : ''}`
+}
+
+function youtubeId(value = '') {
+  return (String(value).match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
+}
+
+function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar', isbn, year, edition, publisher, pageCount, url: videoUrl, duration, topics, thumbnail, program, channel, clipStart, clipEnd }) {
   const en = lang === 'en'
   const isAdmin = path === '/admin'
   // ما دامت المرآة مخفية: صفحاتها الإنجليزية لا تُفهرس
@@ -1050,15 +1117,20 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   const full = isAdmin ? title : path === '/' || hasName ? title : en ? `${title} — Dr. Ahmad H. Alfailakawi` : `${title} — د. أحمد حسين الفيلكاوي`
   const url = SITE + path
   /* بطاقة المقال الخاصة إن وُلدت، وإلا البطاقة الموحدة */
-  const img = image ? `${SITE}${image}` : `${SITE}${HOME_OG}`
+  const resolvedImage = image || thumbnail
+  const img = resolvedImage
+    ? (/^https?:\/\//.test(resolvedImage) ? resolvedImage : `${SITE}${resolvedImage}`)
+    : `${SITE}${en ? HOME_OG_EN : HOME_OG_AR}`
 
   // مسار التفصيل يحدّد نوع Schema والفتات (Breadcrumb)
   const isArticlePage = /^\/(?:en\/)?articles\//.test(path)
   const isPaperPage = /^\/(?:en\/)?research\//.test(path)
   const isBookPage = /^\/(?:en\/)?publications\//.test(path)
+  const isMediaPage = /^\/(?:en\/)?media\//.test(path)
   const section = isArticlePage ? ['المقالات', '/articles']
     : isPaperPage ? ['المساهمات العلمية', '/research']
-    : isBookPage ? ['المؤلفات', '/publications'] : null
+    : isBookPage ? ['المؤلفات', '/publications']
+    : isMediaPage ? ['الظهور الإعلامي', '/media'] : null
   const crumb = section && {
     '@type': 'BreadcrumbList',
     itemListElement: [
@@ -1086,7 +1158,19 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   } else if (isPaperPage) {
     graph = [{ '@type': 'ScholarlyArticle', headline: title, name: title, description: desc, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, publisher: PUBLISHER, mainEntityOfPage: url, ...(iso ? { datePublished: iso } : {}) }, crumb].filter(Boolean)
   } else if (isBookPage) {
-    graph = [{ '@type': 'Book', name: title, description: desc, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, url, ...(isbn ? { isbn } : {}) }, crumb].filter(Boolean)
+    graph = [{ '@type': 'Book', name: title, description: desc, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, url, ...(isbn ? { isbn } : {}), ...(year ? { datePublished: String(year) } : {}), ...(edition ? { bookEdition: edition } : {}), ...(publisher ? { publisher: { '@type': 'Organization', name: publisher } } : {}), ...(pageCount ? { numberOfPages: Number(pageCount) || pageCount } : {}) }, crumb].filter(Boolean)
+  } else if (isMediaPage) {
+    const id = youtubeId(videoUrl)
+    const start = clockSeconds(clipStart)
+    const end = clockSeconds(clipEnd)
+    graph = [{
+      '@type': 'VideoObject', name: title, description: topics || desc, thumbnailUrl: img,
+      ...(iso ? { uploadDate: iso } : {}), ...(schemaDuration(duration) ? { duration: schemaDuration(duration) } : {}),
+      contentUrl: videoUrl, ...(id ? { embedUrl: `https://www.youtube-nocookie.com/embed/${id}` } : {}),
+      inLanguage: lang, creator: { '@id': `${SITE}/#person` },
+      ...(program || channel ? { isPartOf: { '@type': 'CreativeWorkSeries', name: [program, channel].filter(Boolean).join(' — ') } } : {}),
+      ...(end > start ? { hasPart: { '@type': 'Clip', name: 'مقتطف اللقاء', startOffset: start, endOffset: end, url: `${url}#excerpt` } } : {}),
+    }, crumb].filter(Boolean)
   } else if (type === 'article') {
     graph = [{ '@type': 'Article', headline: title, description: desc, datePublished: iso, dateModified: iso, articleSection: cat, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, publisher: PUBLISHER, mainEntityOfPage: url }, crumb].filter(Boolean)
   } else {
@@ -1112,6 +1196,8 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   ` : `
     <title>${esc(full)}</title>
     <meta name="description" content="${esc(desc)}" />
+    ${(process.env.VITE_GOOGLE_SITE_VERIFICATION || process.env.GOOGLE_SITE_VERIFICATION) ? `<meta name="google-site-verification" content="${attr(process.env.VITE_GOOGLE_SITE_VERIFICATION || process.env.GOOGLE_SITE_VERIFICATION)}" />` : ''}
+    ${(process.env.VITE_BING_SITE_VERIFICATION || process.env.BING_SITE_VERIFICATION) ? `<meta name="msvalidate.01" content="${attr(process.env.VITE_BING_SITE_VERIFICATION || process.env.BING_SITE_VERIFICATION)}" />` : ''}
     ${robots ? `<meta name="robots" content="${robots}" />` : ''}
     <link rel="canonical" href="${url}" />
     ${hreflang}
@@ -1283,6 +1369,20 @@ writeFileSync(resolve(DIST, 'admin.html'), render({ path: '/admin', title: 'لو
 writeFileSync(resolve(DIST, 'offline.html'), render({ path: '/offline', title: 'أنت غير متصل', desc: 'هذه الصفحة متاحة عند انقطاع الاتصال.' }), 'utf8')
 // بطاقة مشاركة خاصة لكل مقال (بأمر الدكتور بعد صدمة المعاينة العامة):
 // عنوان المقال وتصنيفه وأول جملة منه بهوية الموقع — بدل بطاقة موحّدة باهتة.
+async function generateCanonicalOg() {
+  const out = resolve(DIST, 'og')
+  mkdirSync(out, { recursive: true })
+  const variants = [
+    [HOME_OG_AR, 'د. أحمد حسين الفيلكاوي', 'تعليم · تقنية · مجتمع', 'الموقع الرسمي'],
+    [HOME_OG_EN, 'Dr. Ahmad H. Alfailakawi', 'Education · Technology · Society', 'Official website'],
+  ]
+  for (const [file, title, subtitle, label] of variants) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#FCFCFA"/><circle cx="1040" cy="80" r="280" fill="#3E5C78" opacity=".08"/><rect x="56" y="56" width="1088" height="518" rx="34" fill="#fff" stroke="#3E5C78" stroke-opacity=".16" stroke-width="2"/><image href="${portraitDataUri}" x="96" y="112" width="270" height="382" preserveAspectRatio="xMidYMid slice"/><image href="${logoDataUri}" x="430" y="118" width="150" height="76" preserveAspectRatio="xMidYMid meet"/><text x="1080" y="274" text-anchor="end" font-family="Tajawal,Arial,sans-serif" font-size="49" font-weight="700" fill="#15161A">${attr(title)}</text><text x="1080" y="345" text-anchor="end" font-family="Tajawal,Arial,sans-serif" font-size="30" fill="#3E5C78">${attr(subtitle)}</text><text x="1080" y="460" text-anchor="end" font-family="Tajawal,Arial,sans-serif" font-size="22" fill="#626A76">${attr(label)} · ${attr(SITE_HOST)}</text></svg>`
+    await sharp(Buffer.from(svg)).jpeg({ quality: 90, mozjpeg: true }).toFile(resolve(DIST, file.replace(/^\//, '')))
+  }
+}
+
+await generateCanonicalOg()
 const ogCount = await generateArticleOg()
 console.log(`✔ بطاقات مشاركة المقالات: ${ogCount} بطاقة بهوية الموقع`)
 
@@ -1567,6 +1667,12 @@ function assertStaticOutput() {
   const duplicateLocs = locs.filter((loc, index) => locs.indexOf(loc) !== index)
   if (duplicateLocs.length) throw new Error(`sitemap يحتوي روابط مكررة: ${duplicateLocs.slice(0, 3).join(', ')}`)
   if (/scheduledarabbic|localhost|127\.0\.0\.1/.test(sitemap)) throw new Error('sitemap يحتوي رابط اختبار أو slug غير نظيف')
+  const forbiddenIndexPaths = ['/admin', '/privacy', '/terms', '/data-deletion', '/cv-file/', '/wp-', '/signature_articles/', '/published_articles/', '/scholarly_contributi/']
+  const forbiddenLoc = locs.find((loc) => forbiddenIndexPaths.some((part) => loc.includes(part)))
+  if (forbiddenLoc) throw new Error(`sitemap يحتوي صفحة غير مخصصة للفهرسة: ${forbiddenLoc}`)
+  for (const item of media) {
+    if (!locs.includes(`${SITE}/media/${item.slug}`)) throw new Error(`sitemap يفتقد صفحة اللقاء: ${item.slug}`)
+  }
 
   const robots = readFileSync(resolve(DIST, 'robots.txt'), 'utf8')
   if (!robots.includes(`Sitemap: ${SITE}/sitemap.xml`) || /localhost|127\.0\.0\.1/.test(robots)) {

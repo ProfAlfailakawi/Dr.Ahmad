@@ -86,9 +86,9 @@ const labels: Record<ManagedKind, { singular: string; plural: string }> = {
 
 const editableFields: Record<ManagedKind, string[]> = {
   article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt'],
-  book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors'],
+  book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors', 'year', 'edition', 'publisher', 'pageCount', 'longDescription', 'targetAudience', 'whyWritten', 'toc'],
   paper: ['slug', 'title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'coAuthors', 'doi', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'analysisSources', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt', 'fieldEvidence', 'conflictReport', 'qualityReport', 'qualityReady'],
-  media: ['slug', 'title', 'outlet', 'url', 'iso', 'date'],
+  media: ['slug', 'title', 'outlet', 'url', 'iso', 'date', 'program', 'channel', 'duration', 'topics', 'thumbnail', 'clipStart', 'clipEnd', 'transcript'],
 }
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.94rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -254,9 +254,9 @@ function slugify(value: string) {
 function blank(kind: ManagedKind): Form {
   const iso = todayIso()
   if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', bodyVocalized: '', source: '', url: '', status: 'draft', scheduledAt: '', _aiReady: '', _manualPublishOverride: '', _manualPublishReason: '' }
-  if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
+  if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '', year: '', edition: '', publisher: '', pageCount: '', longDescription: '', targetAudience: '', whyWritten: '', toc: '' }
   if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', pdf: '', scholar: '', researchgate: '', orcid: DEFAULT_RESEARCH_ORCID, repository: '', coAuthors: '', doi: '', reviewStatus: 'محكّم', studyType: '', methodology: '', sample: '', researchQuestion: '', keyFinding: '', contribution: '', applications: '', limitations: '', year: '', metadataText: '', pdfText: '', analysisText: '', analysisFingerprint: '', analysisSources: '', evidenceLabel: '', evidenceScore: '', keywords: '', openAccess: '', analysisConfidence: '', analysisNeedsReview: '', analyzedAt: '', fieldEvidence: '', conflictReport: '[]', qualityReport: '', qualityReady: '' }
-  return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
+  return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso), program: '', channel: '', duration: '', topics: '', thumbnail: '', clipStart: '', clipEnd: '', transcript: '' }
 }
 
 /* مركز جاهزية النشر: المسودة تُحفظ دائماً، أما النشر فيحتاج اكتمال الفحوص أو
@@ -271,8 +271,10 @@ function publishReadiness(kind: ManagedKind, form: Form) {
     )
   } else if (kind === 'book') {
     checks.push(
-      { label: 'وصف تعريفي (٢٠ كلمة فأكثر)', ok: (form.desc || '').trim().split(/\s+/).filter(Boolean).length >= 20 },
+      { label: 'وصف موسّع (٣٠٠–٦٠٠ كلمة)', ok: (() => { const count = (form.longDescription || '').trim().split(/\s+/).filter(Boolean).length; return count >= 300 && count <= 600 })() },
       { label: 'غلاف الكتاب', ok: Boolean(form.cover) },
+      { label: 'البيانات الببليوغرافية', ok: Boolean(form.year && form.edition && form.publisher && form.pageCount && form.isbn) },
+      { label: 'الجمهور وسبب التأليف والفهرس', ok: Boolean(form.targetAudience && form.whyWritten && form.toc) },
     )
   } else if (kind === 'paper') {
     checks.push(
@@ -285,6 +287,8 @@ function publishReadiness(kind: ManagedKind, form: Form) {
       { label: 'رابط يوتيوب صالح', ok: /(?:v=|youtu\.be\/|shorts\/|embed\/)[\w-]{6,}/.test(form.url || '') },
       { label: 'الجهة الإعلامية', ok: Boolean((form.outlet || '').trim()) },
       { label: 'تاريخ اللقاء', ok: Boolean(form.iso) },
+      { label: 'مدة ومحاور ومقتطف', ok: Boolean(form.duration && form.topics && form.clipStart && form.clipEnd) },
+      { label: 'نص مفرّغ مراجع', ok: Boolean((form.transcript || '').trim()) },
     )
   }
   /* الإنذار الأمني الفوري: بصمة المنظومة الخاصة في حقل عام تُكشف وقت الكتابة لا وقت البناء */
@@ -1294,8 +1298,18 @@ ${form.outlet || ''}`
 
           {kind === 'book' && (
             <>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <Field label="سنة النشر"><input className={input} dir="ltr" inputMode="numeric" value={form.year || ''} onChange={(event) => set('year', event.target.value)} /></Field>
+                <Field label="الطبعة"><input className={input} value={form.edition || ''} onChange={(event) => set('edition', event.target.value)} /></Field>
+                <Field label="الناشر"><input className={input} value={form.publisher || ''} onChange={(event) => set('publisher', event.target.value)} /></Field>
+                <Field label="عدد الصفحات"><input className={input} dir="ltr" inputMode="numeric" value={form.pageCount || ''} onChange={(event) => set('pageCount', event.target.value)} /></Field>
+              </div>
               <Field label="ISBN / ردمك"><input className={input} dir="ltr" value={form.isbn || ''} onChange={(event) => set('isbn', event.target.value)} /></Field>
-              <Field label="الوصف"><textarea className={`${input} min-h-28 leading-loose`} value={form.desc || ''} onChange={(event) => set('desc', event.target.value)} /></Field>
+              <Field label="الوصف المختصر"><textarea className={`${input} min-h-24 leading-loose`} value={form.desc || ''} onChange={(event) => set('desc', event.target.value)} /></Field>
+              <Field label="الوصف الموسّع (300–600 كلمة)" hint={`${(form.longDescription || '').trim().split(/\s+/).filter(Boolean).length} كلمة`}><textarea className={`${input} min-h-64 leading-loose`} value={form.longDescription || ''} onChange={(event) => set('longDescription', event.target.value)} /></Field>
+              <Field label="الفئة المستهدفة"><textarea className={`${input} min-h-24 leading-loose`} value={form.targetAudience || ''} onChange={(event) => set('targetAudience', event.target.value)} /></Field>
+              <Field label="لماذا كُتب الكتاب؟"><textarea className={`${input} min-h-24 leading-loose`} value={form.whyWritten || ''} onChange={(event) => set('whyWritten', event.target.value)} /></Field>
+              <Field label="فهرس المحتويات" hint="عنوان واحد في كل سطر؛ لا تُدخل رقماً إلا بعد مطابقته بالنسخة المعتمدة."><textarea className={`${input} min-h-48 leading-loose`} value={form.toc || ''} onChange={(event) => set('toc', event.target.value)} /></Field>
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.title?.trim()} className={secondary}>{form._aiBusy === '1' ? 'أفكّر…' : '✦ اقترح وصفاً'}</button>
                 <span className="text-[.75rem] text-soft">الاقتراح قابل للتعديل والمراجعة قبل الحفظ.</span>
@@ -1412,6 +1426,18 @@ ${form.outlet || ''}`
           {kind === 'media' && (
             <>
               <Field label="المنصّة / القناة"><input className={input} value={form.outlet || ''} onChange={(event) => set('outlet', event.target.value)} /></Field>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="اسم البرنامج"><input className={input} value={form.program || ''} onChange={(event) => set('program', event.target.value)} /></Field>
+                <Field label="القناة / الجهة"><input className={input} value={form.channel || ''} onChange={(event) => set('channel', event.target.value)} /></Field>
+              </div>
+              <div className="grid gap-5 sm:grid-cols-3">
+                <Field label="مدة الفيديو" hint="مثال 00:09:29"><input className={input} dir="ltr" placeholder="00:09:29" value={form.duration || ''} onChange={(event) => set('duration', event.target.value)} /></Field>
+                <Field label="بداية المقتطف"><input className={input} dir="ltr" placeholder="00:00" value={form.clipStart || ''} onChange={(event) => set('clipStart', event.target.value)} /></Field>
+                <Field label="نهاية المقتطف"><input className={input} dir="ltr" placeholder="00:45" value={form.clipEnd || ''} onChange={(event) => set('clipEnd', event.target.value)} /></Field>
+              </div>
+              <Field label="الموضوعات" hint="افصل بينها بفاصلة"><input className={input} value={form.topics || ''} onChange={(event) => set('topics', event.target.value)} /></Field>
+              <Field label="صورة مصغّرة مخصصة (اختياري)"><input className={input} dir="ltr" type="url" value={form.thumbnail || ''} onChange={(event) => set('thumbnail', event.target.value)} /></Field>
+              <Field label="النص المفرّغ المراجع" hint="لا تنشر النص التلقائي قبل مراجعته لغوياً."><textarea className={`${input} min-h-64 leading-loose`} value={form.transcript || ''} onChange={(event) => set('transcript', event.target.value)} /></Field>
               <Field label="رابط الفيديو" hint="الصق رابط يوتيوب — يُجلب العنوان والقناة تلقائياً إن كانا فارغين.">
                 <input className={input} dir="ltr" type="url" value={form.url || ''} onChange={(event) => set('url', event.target.value)}
                   onBlur={async () => {

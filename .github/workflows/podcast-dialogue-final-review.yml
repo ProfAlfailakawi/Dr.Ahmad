@@ -131,7 +131,7 @@ jobs:
 
       - name: Upload review episode
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: podcast-dialogue-final-review-${{ github.event.inputs.slug }}
           path: |

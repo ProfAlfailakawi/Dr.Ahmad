@@ -47,11 +47,13 @@ export function BookWorld({
   book,
   seed,
   articles,
+  books,
   papers,
 }: {
   book: BookRecord
   seed: string
   articles: ArticleRecord[]
+  books: BookRecord[]
   papers: PaperRecord[]
 }) {
   const [activeIdea, setActiveIdea] = useState('')
@@ -74,6 +76,12 @@ export function BookWorld({
 
     const paperMatches = papers
       .map((item) => ({ item, score: scoreAgainst(source, `${item.title} ${item.titleAr || ''} ${item.abstractAr || ''} ${item.meta || ''}`) }))
+      .filter((row) => row.score > 0)
+      .sort((a, b) => b.score - a.score)
+
+    const bookMatches = books
+      .filter((item) => item.slug !== book.slug)
+      .map((item) => ({ item, score: scoreAgainst(source, `${item.title} ${item.desc || ''} ${item.longDescription || ''}`) }))
       .filter((row) => row.score > 0)
       .sort((a, b) => b.score - a.score)
 
@@ -105,8 +113,9 @@ export function BookWorld({
       dna,
       paths,
       ideas: paths.map((path) => path.idea),
+      relatedBooks: bookMatches.slice(0, 3),
     }
-  }, [articles, book.desc, book.title, papers, seed])
+  }, [articles, book.desc, book.slug, book.title, books, papers, seed])
 
   const selectedIdea = activeIdea || model.ideas[0] || ''
   const activePath = useMemo(
@@ -207,6 +216,12 @@ export function BookWorld({
                   <span className="text-[.76rem] leading-relaxed text-ink">{item.title}</span>
                 </Link>
               ))}
+            </div>
+          </Disclosure>}
+
+          {model.relatedBooks.length > 0 && <Disclosure eyebrow="كتب مرتبطة" title="مؤلفات تفتح امتداداً آخر للفكرة" meta="صلة موضوعية من العنوان والوصف، وليست ترتيباً في سلسلة نشر.">
+            <div className="grid gap-2 sm:grid-cols-3">
+              {model.relatedBooks.map(({ item }) => <Link key={item.slug} to={`/publications/${item.slug}`} className="rounded-xl border border-hair bg-wash px-4 py-3 transition-colors hover:border-accent"><span className="text-[.64rem] font-semibold text-accent">كتاب</span><strong className="mt-1 block text-[.78rem] leading-relaxed text-ink">{item.title}</strong></Link>)}
             </div>
           </Disclosure>}
         </div>

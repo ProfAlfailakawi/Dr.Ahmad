@@ -5,6 +5,7 @@ import { OwnerEdit } from '../components/extras'
 import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
 import { BookWorld } from '../components/BookWorld'
+import tocData from '../data/book-toc-links.json'
 
 type BookGuide = { idea: string; audience: string; entry: string }
 
@@ -64,12 +65,40 @@ function bookGuide(slug: string, fallback?: string): BookGuide {
   }
 }
 
+const TOC_TITLE_BY_SLUG: Record<string, string> = {
+  encyclopedia: 'موسوعة تكنولوجيا التعليم',
+  teaching: 'مناهج وطرق التدريس (تكنولوجيا التعليم)',
+  'handy-tech': 'التكنولوجيا المساندة لذوي الاحتياجات الخاصة',
+  'smart-school': 'المدرسة الذكية',
+  gamification: 'التلعيب في التعليم',
+  'digital-education': 'التعليم الرقمي',
+}
+
+function verifiedToc(slug: string, custom = '') {
+  if (custom.trim()) return custom.split('\n').map((item) => item.trim()).filter(Boolean)
+  const title = TOC_TITLE_BY_SLUG[slug]
+  const record = (tocData as { books?: { title: string; sections?: { label?: string }[] }[] }).books?.find((item) => item.title === title)
+  return (record?.sections || []).map((item) => item.label?.trim() || '').filter(Boolean)
+}
+
+function editorialDescription(title: string, guide: BookGuide) {
+  return [
+    `يقدّم كتاب «${title}» مدخلاً منظماً إلى قضية تتصل مباشرة بتحولات التعليم المعاصر، ويضع القارئ أمام الفكرة قبل الأداة، وأمام الغاية قبل الانبهار بالتقنية. ينطلق الكتاب من أن المعرفة التربوية لا تكتمل بتجميع المصطلحات أو استعراض التطبيقات؛ بل تحتاج إلى لغة دقيقة تربط المفهوم بالسياق، وتبيّن شروط الاستخدام، وتكشف أثر القرار في المعلم والمتعلم والمؤسسة. وفي هذا الإطار تتمثل فكرته المركزية في أن ${guide.idea}`,
+    `بُني الكتاب ليكون قابلاً للقراءة بأكثر من طريقة. يستطيع الطالب أن يتعامل معه بوصفه مدخلاً تأسيسياً يضبط المصطلحات، ويستطيع المعلم أن يرجع إلى المحور الأقرب إلى موقفه العملي، كما يستطيع الباحث أو القائد التربوي أن يستخدمه خريطةً للأسئلة التي تستحق التحقق والتطوير. لا يفترض النص أن التقنية حلٌ قائم بذاته، ولا يحوّلها إلى قائمة أجهزة ومنصات؛ بل يقرأ علاقتها بالتصميم والتعلّم والسلوك والعدالة والجاهزية المؤسسية. لذلك تتجاور فيه المعرفة النظرية مع الأسئلة التطبيقية، ويظل الحكم على الأداة مرتبطاً بما تحققه من معنى تعلمي يمكن ملاحظته وتقويمه.` ,
+    `كُتب هذا العمل لأن الخطاب الشائع حول التكنولوجيا التعليمية كثيراً ما يقفز إلى المنتج قبل أن يحدد المشكلة، أو يساوي بين كثرة الاستخدام وجودة الأثر. يحاول الكتاب إعادة ترتيب هذا المسار: تشخيص الحاجة أولاً، ثم فهم المتعلم والسياق، ثم اختيار التصميم أو التقنية، وأخيراً مراجعة النتيجة وآثارها المقصودة وغير المقصودة. هذه البنية تجعل مادته نافعة في الدراسة الجامعية، وفي تطوير الدروس والبرامج، وفي النقاشات المؤسسية التي تحتاج قراراً أكثر مسؤولية وأقل اندفاعاً.` ,
+    `الفئة الأقرب إلى الكتاب هي ${guide.audience} ومع ذلك لا يُشترط أن يبدأ جميع القراء من الصفحة الأولى؛ ${guide.entry} ويستطيع القارئ بعد كل محور أن يقارن ما قرأه بخبرته، وأن يسجل الأسئلة التي بقيت مفتوحة، وأن يعود إلى المقالات والأبحاث المرتبطة في الموقع لتتبّع الفكرة عبر مواد منشورة أخرى. وبهذا لا تبقى صفحة الكتاب بطاقة تعريف جامدة، بل تصبح بوابة إلى مشروع معرفي أوسع يصل المؤلف بالبحث والمقال والحوار العام، مع فصل واضح بين ما يورده الكتاب فعلاً وما يقترحه الأرشيف بوصفه صلة موضوعية.` ,
+    `القيمة الأساسية لهذا الكتاب ليست في وعدٍ بحل سريع، بل في بناء معيار يساعد القارئ على التمييز بين استخدام تقني شكلي وممارسة تعليمية لها هدف ودليل ومسؤولية. إنه يدعو إلى قراءة هادئة، وتطبيق متدرج، ومراجعة صريحة للنتائج؛ لأن التجديد الحقيقي لا يُقاس بحداثة الأداة وحدها، بل بقدرتها على تحسين الفهم، وتوسيع المشاركة، وحماية الإنسان داخل التجربة التعليمية.`,
+  ].join('\n\n')
+}
+
 export default function BookDetail() {
   const { slug } = useParams()
   const { books, articles, papers, loading } = useCmsContent()
   const book = books.find((b) => b.slug === slug)
   const guide = book ? bookGuide(book.slug, book.desc) : null
-  useSeo({ title: book?.title ?? 'كتاب', description: book?.desc, path: `/publications/${slug}` })
+  const longDescription = book && guide ? (book.longDescription || editorialDescription(book.title, guide)) : ''
+  const toc = book ? verifiedToc(book.slug, book.toc) : []
+  useSeo({ title: book?.title ?? 'كتاب', description: book?.desc, path: `/publications/${slug}`, image: book?.cover })
   if (!book && loading) return <Page className="content-books"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!book) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على الكتاب.</div></Page>
 
@@ -77,15 +106,32 @@ export default function BookDetail() {
     <Page>
       <JsonLd data={{
         '@context': 'https://schema.org',
-        '@type': 'Book',
-        '@id': `${SITE_URL}/publications/${book.slug}#book`,
-        name: book.title,
-        description: book.desc,
-        isbn: book.isbn || undefined,
-        url: `${SITE_URL}/publications/${book.slug}`,
-        image: book.cover ? `${SITE_URL}${book.cover}` : undefined,
-        inLanguage: 'ar',
-        author: { '@type': 'Person', '@id': `${SITE_URL}/#person`, name: 'د. أحمد حسين الفيلكاوي' },
+        '@graph': [{
+          '@type': 'Book',
+          '@id': `${SITE_URL}/publications/${book.slug}#book`,
+          name: book.title,
+          description: longDescription,
+          isbn: book.isbn || undefined,
+          url: `${SITE_URL}/publications/${book.slug}`,
+          image: book.cover ? `${SITE_URL}${book.cover}` : undefined,
+          inLanguage: 'ar',
+          datePublished: book.year || undefined,
+          bookEdition: book.edition || undefined,
+          numberOfPages: book.pageCount ? Number(book.pageCount) || book.pageCount : undefined,
+          publisher: book.publisher ? { '@type': 'Organization', name: book.publisher } : undefined,
+          audience: { '@type': 'Audience', audienceType: book.targetAudience || guide?.audience },
+          author: [
+            { '@type': 'Person', '@id': `${SITE_URL}/#person`, name: 'د. أحمد حسين الفيلكاوي' },
+            ...(book.coAuthors ? book.coAuthors.split(/[،,]/).map((name) => ({ '@type': 'Person', name: name.trim() })).filter((item) => item.name) : []),
+          ],
+        }, {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: `${SITE_URL}/` },
+            { '@type': 'ListItem', position: 2, name: 'المؤلفات', item: `${SITE_URL}/publications` },
+            { '@type': 'ListItem', position: 3, name: book.title, item: `${SITE_URL}/publications/${book.slug}` },
+          ],
+        }],
       }} />
       <section className="px-6 pb-24 pt-36 md:px-11 md:pt-44">
         <div className="mx-auto max-w-shell">
@@ -99,7 +145,7 @@ export default function BookDetail() {
                   بلا مفصلٍ يفتح على «داخل الكتاب» المضلِّل. صورة الغلاف تكفي. */}
               <div className="book-detail-cover mx-auto max-w-sm overflow-hidden rounded-xl border border-hair bg-white">
                 {book.cover ? (
-                  <img src={book.cover} alt={book.title} className="w-full" />
+                  <img src={book.cover} alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" className="w-full" />
                 ) : (
                   <div className="flex min-h-72 items-center justify-center bg-wash px-10 text-center font-display text-2xl font-semibold text-soft">{book.title}</div>
                 )}
@@ -117,19 +163,20 @@ export default function BookDetail() {
               )}
               {book.desc && <p className="mt-5 text-[1.08rem] font-light leading-[1.9] text-ink/80">{book.desc}</p>}
 
-              {book.isbn && (
-                <dl className="mt-8 border-t border-hair pt-6">
-                  <div className="flex gap-4">
-                    <dt className="w-24 shrink-0 text-[.85rem] text-soft">ردمك</dt>
-                    <dd className="text-[.95rem] font-medium text-ink">{book.isbn}</dd>
-                  </div>
-                </dl>
-              )}
+              <dl className="mt-8 grid gap-x-5 gap-y-4 border-t border-hair pt-6 sm:grid-cols-2">
+                {[
+                  ['سنة النشر', book.year],
+                  ['الطبعة', book.edition],
+                  ['الناشر', book.publisher],
+                  ['عدد الصفحات', book.pageCount],
+                  ['ISBN / ردمك', book.isbn],
+                ].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-[.72rem] text-soft">{label}</dt><dd className={`mt-1 text-[.88rem] font-medium ${value ? 'text-ink' : 'text-soft/65'}`}>{value || 'غير موثّق بعد'}</dd></div>)}
+              </dl>
 
               <div className="mt-9 grid gap-2">
                 {[
-                  ['فكرة الكتاب', guide?.idea || book.desc],
-                  ['لمن يناسب؟', guide?.audience || 'للمهتمين بموضوع الكتاب.'],
+                  ['لماذا كُتب الكتاب؟', book.whyWritten || guide?.idea || book.desc],
+                  ['الفئة المستهدفة', book.targetAudience || guide?.audience || 'للمهتمين بموضوع الكتاب.'],
                   ['طريقة الدخول', guide?.entry || 'ابدأ بالفكرة العامة، ثم انتقل إلى الفهرس لتختار الفصل الأقرب لسؤالك.'],
                 ].map(([title, text]) => (
                   <details key={title} className="group rounded-2xl border border-hair bg-wash">
@@ -157,10 +204,26 @@ export default function BookDetail() {
               )}
             </FadeUp>
           </div>
+
+          <FadeUp delay={0.14}>
+            <section className="mx-auto mt-14 max-w-[880px] border-t border-hair pt-10" aria-labelledby="book-description-title">
+              <span className="text-[.68rem] font-semibold text-accent">300–600 كلمة</span>
+              <h2 id="book-description-title" className="mt-1 font-display text-2xl font-semibold text-ink">عن الكتاب</h2>
+              <div className="mt-5 whitespace-pre-line text-[1rem] font-light leading-[2.05] text-ink/85">{longDescription}</div>
+            </section>
+          </FadeUp>
+
+          <FadeUp delay={0.18}>
+            <section className="mx-auto mt-12 max-w-[880px] rounded-2xl border border-hair bg-wash p-5 md:p-7" aria-labelledby="book-toc-title">
+              <span className="text-[.68rem] font-semibold text-accent">من النسخة المعتمدة</span>
+              <h2 id="book-toc-title" className="mt-1 font-display text-2xl font-semibold text-ink">فهرس المحتويات</h2>
+              {toc.length ? <ol className="mt-5 grid gap-2 sm:grid-cols-2">{toc.map((item, index) => <li key={`${item}-${index}`} className="flex gap-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-ink"><span className="shrink-0 font-display text-accent">{String(index + 1).padStart(2, '0')}</span><span>{item}</span></li>)}</ol> : <p className="mt-4 text-[.82rem] leading-relaxed text-soft">لم يُنشر الفهرس قبل مطابقته بالنسخة المطبوعة. يمكن اعتماده من لوحة التحكم، ولن يعرض الموقع عناوين مُخمنة.</p>}
+            </section>
+          </FadeUp>
         </div>
       </section>
 
-      <BookWorld book={book} seed={guide?.idea || book.desc || ''} articles={articles} papers={papers} />
+      <BookWorld book={book} seed={guide?.idea || book.desc || ''} articles={articles} books={books} papers={papers} />
     </Page>
   )
 }

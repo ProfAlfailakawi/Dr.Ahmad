@@ -470,9 +470,25 @@ memoryDb.exec(`
 const bodies = JSON.parse(readFileSync(resolve(ROOT, 'src/data/bodies.json'), 'utf8'))
 const src = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
 const block = (src.match(/export const articles = \[([\s\S]*?)\n\]/) || [])[1] || ''
-const STATIC_ARTICLES = [...block.matchAll(/\{ slug: '([^']+)', title: '([^']+)', date: '[^']*', iso: '([^']*)'/g)]
-  .map((m) => ({ slug: m[1], title: m[2].replace(/\\'/g, "'"), iso: m[3], body: bodies[m[1]] || '', origin: 'base' }))
+/* التصنيف اختياريّ في الالتقاط (?:…)? — لو غاب عن مقالٍ يوماً لا يسقط المقال
+   من القافلة، وإنما يعود إلى المزاج الافتراضي. */
+const STATIC_ARTICLES = [...block.matchAll(/\{ slug: '([^']+)', title: '([^']+)', date: '[^']*', iso: '([^']*)'(?:, cat: '([^']*)')?/g)]
+  .map((m) => ({ slug: m[1], title: m[2].replace(/\\'/g, "'"), iso: m[3], cat: m[4] || '', body: bodies[m[1]] || '', origin: 'base' }))
   .filter((a) => a.body && a.body.split(/\s+/).length >= 120)
+
+/* ═══════════ مزاج الحلقة من إقليم المقال ═══════════
+   المكتبة ثلاث مقطوعاتٍ بثلاثة أمزجة، وكان الحوار اليدوي يثبّت «تأملي» فتخرج
+   الحلقات كلها بالنغمة نفسها — أرشيفٌ بصوتٍ واحد. الإقليم الذي كتب فيه الدكتور
+   هو الذي يختار النغمة: التعليم والتربية أفقٌ مفتوح، والتقنية والمجتمع عزيمةٌ
+   هادئة، والهوية والإعلام والتأمل ضوءٌ هادئ. ولا يغيّر هذا حرفاً من الحوار. */
+const MOOD_BY_REGION = {
+  'التعليم': 'تربوي', 'التربية': 'تربوي', 'بحث': 'تربوي',
+  'كتاب الشهر': 'تربوي', 'أداة الأسبوع': 'مشوق',
+  'تقنية': 'جاد', 'مجتمع': 'جاد',
+  'هوية': 'تأملي', 'إعلام': 'تأملي',
+  'اقتباس وتأمّل': 'تأملي', 'سؤال مزلزل': 'تأملي',
+}
+const moodOfArticle = (article) => MOOD_BY_REGION[String(article?.cat || '').trim()] || 'تأملي'
 
 async function loadArticles() {
   const accountPath = resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
@@ -507,7 +523,7 @@ async function loadArticles() {
       const body = data.body || data.text || data.content
       if (typeof body !== 'string' || body.trim().split(/\s+/).length < 120) return []
       return [{ slug: String(data.slug || document.id), title: String(data.title || data.slug || document.id),
-        iso: String(data.iso || ''), body: body.trim(), origin: 'site_article' }]
+        iso: String(data.iso || ''), cat: String(data.cat || data.category || ''), body: body.trim(), origin: 'site_article' }]
     })
     return [...added, ...originals].sort((left, right) => (right.iso || '').localeCompare(left.iso || ''))
   } finally {
@@ -1598,6 +1614,8 @@ function selectLicensedMusic(mood) {
   if (!track || !existsSync(resolve(ROOT, track.path))) return null
   return {
     file: resolve(ROOT, track.path),
+    title: String(track.title || ''),
+    matchedMood: (track.moods || []).includes(mood) ? String(mood) : '',
     bedVol: Math.min(0.02, track.bedVolume ?? 0.012),
     introVol: 0.16,
     outroVol: 0.12,
@@ -2641,6 +2659,47 @@ function buildSilenceReport(timeline, utteranceAudits, totalSec, utterances) {
     pauses }
 }
 
+/* ═══════════ توقيت المداخلات وفصول المستمع ═══════════
+   التوقيت هو Timeline التركيب نفسه لا تقديرٌ ولا تخمين: نمشي على الشريط
+   ونتخطّى المقدمة والجسور والخاتمة، فيبقى ترتيبٌ يطابق المداخلات واحدةً
+   بواحدة. وإن اختلّ الطول لسببٍ ما أسقطنا التوقيت كله بدل نشر توقيتٍ كاذب —
+   الصمت أشرف من رقمٍ لا يصدق، والنصّ يبقى مقروءاً بلا تتبّع. */
+function timeUtterances(utterances, timeline = []) {
+  const spoken = (timeline || []).filter((item) =>
+    !item.isMusicIntro && !item.isMusicBridge && !item.isMusicOutro)
+  if (spoken.length !== utterances.length) {
+    return utterances.map(({ speaker, text }) => ({ speaker, text }))
+  }
+  return utterances.map(({ speaker, text }, index) => ({ speaker, text,
+    startSec: Number(Number(spoken[index].start).toFixed(2)),
+    endSec: Number((Number(spoken[index].start) + Number(spoken[index].dur)).toFixed(2)) }))
+}
+
+/* الفصول: جسرُ المحرّر هو الفاصل الذي اختاره الدكتور بنفسه، فلا نخترع فواصل
+   من عندنا ولا نقسّم بالزمن. وعنوان الفصل أوائل كلمات مداخلته — من نصّه حرفاً. */
+function buildEditorialChapters(timedUtterances, bridges = []) {
+  if (!timedUtterances.length || timedUtterances[0].startSec === undefined) return []
+  const title = (text) => {
+    const words = String(text || '').replace(/\s+/g, ' ').trim().split(' ')
+    const head = words.slice(0, 6).join(' ').replace(/[،؛:.\s]+$/, '')
+    return words.length > 6 ? `${head}…` : head
+  }
+  const boundaries = [...new Set([0, ...(bridges || [])
+    .map((bridge) => Number(bridge.afterUtterance))
+    .filter((index) => Number.isFinite(index) && index > 0 && index < timedUtterances.length)])]
+    .sort((left, right) => left - right)
+  return boundaries.map((from, index) => {
+    const to = index + 1 < boundaries.length ? boundaries[index + 1] : timedUtterances.length
+    return {
+      index: index + 1,
+      title: title(timedUtterances[from].text),
+      startSec: timedUtterances[from].startSec,
+      endSec: timedUtterances[to - 1].endSec,
+      utterances: [from, to - 1],
+    }
+  })
+}
+
 function assemble(segments, outMp3, music, { raw = false } = {}) {
   const musicIdentity = addEpisodeMusicIdentity(segments, music, outMp3, raw)
   const { timeline, total } = planTimeline(musicIdentity.segments)
@@ -3286,7 +3345,7 @@ async function produce(article, lang) {
           return quarantine('فشل قفل المصدر: ملف الحوار لا يطابق النسخة المرفوعة في Firestore')
         }
       }
-      script = { mood: 'تأملي', storyIntro: false,
+      script = { mood: moodOfArticle(article), storyIntro: false,
         utterances: manualSource.turns.map((item, index) => ({
           speaker: item.speaker === 'female' ? 'B' : 'A',
           text: item.text,
@@ -3527,7 +3586,7 @@ async function produce(article, lang) {
        أولاً ثم ننزل إلى أول مقطوعةٍ مرخّصة — فالهوية الموسيقية لكل حلقة. */
     const music = selectLicensedMusic(script.mood)
     if (!music) console.log('  ♪ إخراج بلا موسيقى — لا توجد مقطوعة مرخّصة في المكتبة')
-    else console.log(`  ♪ الهوية الموسيقية: مقدمة ${music.introSec}ث · خاتمة ${music.outroSec}ث · جسور المحرّر عند [موسيقى]`)
+    else console.log(`  ♪ «${music.title}» (${script.mood}${music.matchedMood ? '' : ' — بلا مطابقة، أول مرخّصة'}) · مقدمة ${music.introSec}ث · خاتمة ${music.outroSec}ث · جسور المحرّر عند [موسيقى]`)
 
     /* ٥) إدراج الجسور المحددة صراحةً فقط، ثم تركيب المقدمة والخاتمة العامتين. */
     let bridged = insertSemanticMusicBridges(segments.map((segment) => ({ ...segment })), transcript, music, TMP)
@@ -3684,6 +3743,8 @@ async function produce(article, lang) {
       return quarantine(`بوابة البشرية أقل من الحد: proxy=${humanGate.proxy.score}/100، judge=${humanGate.minimumJudgeDimension}/100`
         + `${detail ? ` — سقط: ${detail}` : ''}${criticalNote}`, { humanGate })
     }
+    const timedUtterances = timeUtterances(transcript, assembled.timeline)
+    const chapters = buildEditorialChapters(timedUtterances, auditRecord.musicBridges)
     const publicTranscript = { title: article.title, generatedAt: new Date().toISOString().slice(0, 10),
       language: 'ar',
       sourceLock: MANUAL_EXACT ? {
@@ -3697,8 +3758,10 @@ async function produce(article, lang) {
         intro: auditRecord.musicIdentity?.intro || null,
         bridges: auditRecord.musicBridges || [],
         outro: auditRecord.musicIdentity?.outro || null,
+        music: music ? { title: music.title, mood: script.mood } : null,
       },
-      utterances: transcript.map(({ speaker, text }) => ({ speaker, text })) }
+      chapters,
+      utterances: timedUtterances }
     const tempTranscript = resolve(TMP, `${article.slug}.dialogue.json`)
     if (lang === 'ar') writeFileSync(tempTranscript, JSON.stringify(publicTranscript, null, 2))
     const snapshot = createReleaseSnapshot({ article, lang, outMp3, transcriptPath, stateKey: key,
@@ -4181,7 +4244,37 @@ if (SELF_TEST) {
     `${withMusicMp3.replace(/\.mp3$/, '')}.music-intro.wav`,
     `${withMusicMp3.replace(/\.mp3$/, '')}.music-outro.wav`,
     resolve(TMP, 'semantic-bridge-1.wav')]) rmSync(file, { force: true })
-  console.log('✓ اختبارات بوابة البودكاست العربي: 46/46')
+  /* ١٥) توقيت المداخلات وفصول المستمع: الشريط يحمل المقدمة والجسر والخاتمة،
+     والمداخلات وحدها هي التي تُوقَّت. وحيث وضع الدكتور [موسيقى] يبدأ فصلٌ
+     جديد — لا فاصل زمنيّ مخترع. وإن اختلّ الطول يسقط التوقيت كله بلا كذب. */
+  const timelineSample = [
+    { isMusicIntro: true, start: 0, dur: 4.8 },
+    { start: 3.6, dur: 5.0 },
+    { start: 8.8, dur: 4.0 },
+    { isMusicBridge: true, start: 12.9, dur: 2.05 },
+    { start: 14.5, dur: 6.0 },
+    { isMusicOutro: true, start: 20.8, dur: 5.5 },
+  ]
+  const sampleUtterances = [
+    { speaker: 'فهد', text: 'هذا جيلٌ يعرف كثيراً عن العالم وقليلاً عن نفسه اليوم.' },
+    { speaker: 'نورة', text: 'ويحفظ سير نجومٍ لا يعرفونه.' },
+    { speaker: 'فهد', text: 'فأين الحكاية الأولى؟' },
+  ]
+  const timed = timeUtterances(sampleUtterances, timelineSample)
+  assert.equal(timed.length, 3, 'كل مداخلةٍ تأخذ توقيتها ولا تُحسب الموسيقى مداخلةً')
+  assert.equal(timed[0].startSec, 3.6, 'أول مداخلةٍ تبدأ حيث بدأت في الشريط لا عند الصفر')
+  assert.equal(timed[2].startSec, 14.5, 'المداخلة بعد الجسر تأخذ توقيتها بعده لا قبله')
+  assert.equal(timed[2].endSec, 20.5, 'نهاية المداخلة بدايتها زائد مدتها')
+  const droppedTiming = timeUtterances(sampleUtterances, timelineSample.slice(0, 3))
+  assert(droppedTiming.every((line) => line.startSec === undefined),
+    'اختلال الطول يُسقط التوقيت كله — لا يُنشر رقمٌ لا يصدق')
+  const sampleChapters = buildEditorialChapters(timed, [{ afterUtterance: 2, durationSec: 2.05 }])
+  assert.equal(sampleChapters.length, 2, 'جسرُ المحرّر وحده يفتح فصلاً جديداً')
+  assert.equal(sampleChapters[1].startSec, 14.5, 'الفصل الثاني يبدأ بالمداخلة التالية للجسر')
+  assert.equal(sampleChapters[0].title, 'هذا جيلٌ يعرف كثيراً عن العالم…', 'عنوان الفصل من نصّ الدكتور حرفاً')
+  assert.deepEqual(buildEditorialChapters(sampleUtterances.map(({ speaker, text }) => ({ speaker, text })), []), [],
+    'بلا توقيتٍ لا فصول — ولا تنكسر الصفحة')
+  console.log('✓ اختبارات بوابة البودكاست العربي: 47/47')
   process.exit(0)
 }
 

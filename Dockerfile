@@ -36,6 +36,9 @@ COPY src/data/audio-meta.json /app/src/data/audio-meta.json
 COPY src/data/podcast-admin.json /app/src/data/podcast-admin.json
 COPY src/data/research-papers.ts /app/src/data/research-papers.ts
 COPY src/data/editorial-policy.json /app/src/data/editorial-policy.json
+# فهرس المنطوق ووحدته: منهما يعرف البوت الجملة التي قالها الدكتور وثانيتَها.
+COPY src/data/spoken-index.json /app/src/data/spoken-index.json
+COPY whatsapp-agent/spoken-index.mjs /app/whatsapp-agent/spoken-index.mjs
 COPY whatsapp-agent/content-index.mjs /app/whatsapp-agent/content-index.mjs
 COPY whatsapp-agent/config.mjs /app/whatsapp-agent/config.mjs
 COPY whatsapp-agent/dialect-lexicon.mjs /app/whatsapp-agent/dialect-lexicon.mjs

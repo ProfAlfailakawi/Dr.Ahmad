@@ -6,7 +6,7 @@ import { SocialIcon } from './icons'
 import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT, site } from '../data'
 import audioManifest from '../data/audio.json'
 import audioMeta from '../data/audio-meta.json'
-import { AudioPlayer } from './AudioPlayer'
+import { AudioPlayer, openAudioPlayer } from './AudioPlayer'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { trackShare } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
@@ -561,12 +561,27 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
     ...(voices.noura ? [{ key: 'reading-woman', label: 'قراءة المقال', avatar: 'woman' as const, src: versionedAudioUrl(typeof voices.noura === 'string' ? voices.noura : `/audio/${slug}.noura.mp3`) }] : []),
   ]
   const audioControlId = `article-audio-${slug}`
+  /* رابط اللحظة ‎?t=ثانية‎ يفتح الحلقة عند الجملة المقصودة — يرسله البوت في
+     الواتساب، ويصلح للمشاركة عموماً. وبلا الوسم يبقى كل شيء كما كان. */
+  const momentSeconds = (() => {
+    if (typeof window === 'undefined') return 0
+    const raw = Number(new URLSearchParams(window.location.search).get('t') || 0)
+    return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0
+  })()
   const sources = [
     ...readingSources,
     // نصّ الحلقة يسير مع صوتها: منه المحاور القابلة للنقر والسطر المتوهّج.
-    ...(dialogueOk ? [{ key: 'dialogue', label: 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue.json`) }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue.json`), startAt: momentSeconds || undefined }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
+
+  /* من فتح رابط لحظة يجد المشغّل مفتوحاً على الحوار عند ثانيتها — بلا بحثٍ عن
+     زرّ ولا نقرتين. ولا يحدث شيء لمن دخل الصفحة كالعادة. */
+  useEffect(() => {
+    if (!momentSeconds || !dialogueOk) return
+    const frame = window.requestAnimationFrame(() => openAudioPlayer(audioControlId, 'dialogue'))
+    return () => window.cancelAnimationFrame(frame)
+  }, [audioControlId, dialogueOk, momentSeconds])
 
   if (sources.length) return (
     <div className={compact ? 'min-w-0 flex-1' : ''}>

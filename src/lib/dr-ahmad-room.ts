@@ -17,6 +17,8 @@ export type DrAhmadTaskType =
 export type CurrentContextItem = {
   id: string
   title: string
+  titleAr?: string
+  originalTitle?: string
   summary?: string
   source: string
   url: string

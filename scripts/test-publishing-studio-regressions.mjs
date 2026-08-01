@@ -33,6 +33,9 @@ assert.match(studio, /void launchEditorialArticle\(decision, !decision\.evidence
 const launchFlow = studio.match(/const launchEditorialArticle = async[\s\S]*?const startEditorialArticle/)?.[0] || ''
 assert.match(launchFlow, /const written = await rebuild/, 'the studio must await a successful article before moving the viewport')
 assert.doesNotMatch(launchFlow, /window\.scrollTo\(\{ top: 0/, 'Start article must never jump to the top before generation finishes')
+assert.ok(launchFlow.indexOf("setView('write')") < launchFlow.indexOf('await rebuild'), 'the writing workspace must open immediately instead of waiting for the network')
+assert.match(studio, /data-article-generation-state="working"/, 'the editor must explain that article generation is running')
+assert.match(studio, /data-article-generation-state="error"/, 'generation failures must appear beside the preserved draft')
 assert.match(studio, /id="article-writing-workspace"/, 'successful generation must have a stable editor destination')
 assert.match(studio, /busy=\{editorialBusy \|\| generating\}/, 'Start article must stay disabled with a truthful writing state until generation finishes')
 assert.match(cms, /publishedAt\?: string/,'ArticleRecord must preserve the real publication timestamp')

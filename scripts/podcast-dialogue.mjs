@@ -1388,6 +1388,7 @@ function buildSSML(u, pronText, subs, voice, lang) {
 }
 
 async function synthSSML(ssml, outPath, diag = null) {
+  let lastReason = ''
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
       const res = await fetchWithTimeout(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
@@ -1406,15 +1407,22 @@ async function synthSSML(ssml, outPath, diag = null) {
         if (diag) diag.lastBytes = buf.length
         if (buf.length > 4000) { writeFileSync(outPath, buf); trimSilence(outPath); return true }
       } else {
-        if (diag) diag.lastBody = String(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200)
+        const body = String(await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200)
+        if (diag) diag.lastBody = body
+        lastReason = `HTTP ${res.status}${body ? ` ${body}` : ''}`
         if (res.status === 429) await new Promise((r) => setTimeout(r, 4000 * attempt))
         else await new Promise((r) => setTimeout(r, 1200 * attempt))
       }
     } catch (error) { /* أخطاء الشبكة العابرة (ECONNRESET/fetch failed): أعد المحاولة بمهلة متصاعدة */
       if (diag) diag.lastError = String(error?.message || error).slice(0, 140)
+      lastReason = String(error?.message || error).slice(0, 140)
       await new Promise((r) => setTimeout(r, 1500 * attempt))
     }
   }
+  /* السقوط الصامت أغلى من السقوط: كان النداء يعود false فيموت به مقالٌ أو
+     حلقةٌ كاملة، والسبب الذي قاله Azure يُرمى لأن المنادي لم يطلب diag.
+     يقولها النداء بنفسه الآن، فلا يُشخَّص عطبٌ بالظنّ مرةً أخرى. */
+  console.log(`    ⚠ تعذّر التوليد من Azure بعد أربع محاولات${lastReason ? `: ${lastReason}` : ''}`)
   return false
 }
 
@@ -2158,8 +2166,15 @@ async function calibrateProductionPlan({ utterance, voice, text, subs, lang, tem
   if (lang !== 'ar' || !Number(utterance.targetWordsPerMinute)) return { plan: { ...utterance }, calibration: null }
   const trial = `${tempBase}.pace.wav`
   const plan = { ...utterance }
-  if (!await synthSSML(buildSSML(plan, text, subs, voice, lang), trial))
-    return { plan, calibration: { pass: false, reason: 'فشل عينة معايرة السرعة' } }
+  /* المعايرة تحسينٌ لا بوابة: عيّنةٌ تُولَّد لتُقاس عليها السرعة ثم تُرمى. وكان
+     سقوطُها يُعدم الحلقة كلها — رصدتُ تشغيلةً وُلِّدت فيها ١٤٢ مداخلة بنجاح
+     وسقطت عيّنتا معايرةٍ اثنتان (تعثّرٌ عابر من Azure) فماتت حلقتان كاملتان.
+     الآن: نمضي بالإيقاع المخطَّط بلا معايرة، وتحكم الحلقةَ بواباتُها كلها كما
+     هي — فالخسارة ضبطُ سرعةٍ دقيق لا حلقةٌ كاملة. */
+  if (!await synthSSML(buildSSML(plan, text, subs, voice, lang), trial)) {
+    console.log('    ⏲ تعذّرت عيّنة المعايرة — نمضي بالإيقاع المخطَّط وتبقى البوابات كاملة')
+    return { plan, calibration: { degraded: true, reason: 'تعذّرت عيّنة المعايرة؛ مضى الإيقاع المخطَّط' } }
+  }
   const intended = spokenText(text, subs)
   trimGeneratedBoundaryPadding(trial, intended)
   const audit = auditSegment(trial, intended, {})

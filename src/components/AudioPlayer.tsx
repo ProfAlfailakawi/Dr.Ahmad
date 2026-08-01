@@ -19,6 +19,8 @@ export type AudioSource = {
   avatar?: 'man' | 'woman' | 'dialogue'
   /** نصّ الحلقة الحوارية المنشور بجانب صوتها — منه الفصول والنص المتزامن. */
   transcript?: string
+  /** بدايةٌ مقصودة بالثانية (رابط لحظة ‎?t=‎). */
+  startAt?: number
 }
 
 type DialogueLine = { speaker?: string; text: string; startSec?: number; endSec?: number }
@@ -290,6 +292,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
     title,
     label: source.label,
     path: typeof window !== 'undefined' ? window.location.pathname : '',
+    ...(source.startAt ? { startAt: source.startAt } : {}),
   })
 
   /* السطر المضيء: آخرُ مداخلةٍ بدأت قبل اللحظة الحالية. المداخلات مرتّبة

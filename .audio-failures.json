@@ -1,0 +1,566 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-01T14:13:40.599Z",
+  "items": [
+    {
+      "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 8,
+      "firstFailedAt": "2026-07-23T09:10:12.164Z",
+      "lastFailedAt": "2026-08-01T12:34:33.380Z",
+      "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 78/145"
+    },
+    {
+      "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 8,
+      "firstFailedAt": "2026-07-23T09:10:36.007Z",
+      "lastFailedAt": "2026-08-01T12:34:45.114Z",
+      "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 78/146"
+    },
+    {
+      "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 18,
+      "firstFailedAt": "2026-07-22T00:40:49.709Z",
+      "lastFailedAt": "2026-08-01T06:48:11.242Z",
+      "message": "r020 فشل بعد 3 محاولات: STT 77٪، السرعة 127/139"
+    },
+    {
+      "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 18,
+      "firstFailedAt": "2026-07-22T00:46:10.255Z",
+      "lastFailedAt": "2026-08-01T06:51:19.468Z",
+      "message": "r020 فشل بعد 3 محاولات: STT 88٪، السرعة 123/122"
+    },
+    {
+      "slug": "coming-soon-a-certificate-without-a-mind-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T11:32:51.077Z",
+      "lastFailedAt": "2026-08-01T12:34:17.794Z",
+      "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 84/141"
+    },
+    {
+      "slug": "do-we-contain-or-raise-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 18,
+      "firstFailedAt": "2026-07-22T02:16:38.283Z",
+      "lastFailedAt": "2026-08-01T07:08:52.363Z",
+      "message": "r007 فشل بعد 3 محاولات: STT 91٪، السرعة 134/138"
+    },
+    {
+      "slug": "e-learning-initiatives-and-solutions-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T12:44:30.978Z",
+      "lastFailedAt": "2026-07-31T21:26:42.357Z",
+      "message": "r006 فشل بعد 3 محاولات: STT 0٪، السرعة 68/133"
+    },
+    {
+      "slug": "e-learning-initiatives-and-solutions-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T12:45:33.535Z",
+      "lastFailedAt": "2026-07-31T21:26:48.468Z",
+      "message": "r006 فشل بعد 3 محاولات: STT 0٪، السرعة 72/135"
+    },
+    {
+      "slug": "ethical-hacking-culture",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:50:56.256Z",
+      "lastFailedAt": "2026-07-23T16:50:56.256Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "ethical-hacking-culture",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:51:04.616Z",
+      "lastFailedAt": "2026-07-23T16:51:04.616Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "excellent-in-grades-lost-in-decision",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T16:50:39.500Z",
+      "lastFailedAt": "2026-08-01T12:28:20.942Z",
+      "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 84/134"
+    },
+    {
+      "slug": "excellent-in-grades-lost-in-decision",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T16:50:47.859Z",
+      "lastFailedAt": "2026-08-01T12:29:39.848Z",
+      "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 83/139"
+    },
+    {
+      "slug": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 8,
+      "firstFailedAt": "2026-07-23T08:29:47.334Z",
+      "lastFailedAt": "2026-08-01T07:21:53.998Z",
+      "message": "r014 فشل بعد 3 محاولات: STT 88٪، السرعة 132/136"
+    },
+    {
+      "slug": "past-mistakes-still-persist-in-the-age",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:51:13.026Z",
+      "lastFailedAt": "2026-07-23T16:51:13.026Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "past-mistakes-still-persist-in-the-age",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:51:21.385Z",
+      "lastFailedAt": "2026-07-23T16:51:21.385Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "qabas-201611-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T16:52:53.567Z",
+      "lastFailedAt": "2026-07-31T21:26:59.686Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201611-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T16:53:01.933Z",
+      "lastFailedAt": "2026-07-31T21:27:10.838Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201612-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T16:53:43.768Z",
+      "lastFailedAt": "2026-07-31T21:27:21.768Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=90/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201612-002",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T16:54:00.632Z",
+      "lastFailedAt": "2026-07-31T21:27:33.470Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201612-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T16:54:09.096Z",
+      "lastFailedAt": "2026-07-31T21:27:44.867Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201702-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T18:30:09.470Z",
+      "lastFailedAt": "2026-07-31T21:27:54.694Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201702-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T18:30:18.168Z",
+      "lastFailedAt": "2026-07-31T21:28:04.486Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201702-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T18:30:35.525Z",
+      "lastFailedAt": "2026-07-31T21:28:19.564Z",
+      "message": "r012 فشل بعد 3 محاولات: STT 0٪، السرعة 79/133"
+    },
+    {
+      "slug": "qabas-201702-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T18:30:44.200Z",
+      "lastFailedAt": "2026-07-31T21:28:35.337Z",
+      "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 82/143"
+    },
+    {
+      "slug": "qabas-201702-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T18:30:52.886Z",
+      "lastFailedAt": "2026-07-31T21:28:45.212Z",
+      "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 84/136"
+    },
+    {
+      "slug": "qabas-201703-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T18:32:11.060Z",
+      "lastFailedAt": "2026-07-31T21:28:54.617Z",
+      "message": "r015 فشل بعد 3 محاولات: STT 0٪، السرعة 78/128"
+    },
+    {
+      "slug": "qabas-201703-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T18:32:19.739Z",
+      "lastFailedAt": "2026-07-31T21:29:02.988Z",
+      "message": "r015 فشل بعد 3 محاولات: STT 0٪، السرعة 84/122"
+    },
+    {
+      "slug": "qabas-201707-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T18:34:48.500Z",
+      "lastFailedAt": "2026-07-31T21:29:13.506Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201707-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T18:34:57.237Z",
+      "lastFailedAt": "2026-07-31T21:29:23.985Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201707-003",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T18:35:23.340Z",
+      "lastFailedAt": "2026-07-31T21:29:34.013Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 80/139"
+    },
+    {
+      "slug": "qabas-201707-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T18:35:32.002Z",
+      "lastFailedAt": "2026-07-31T21:29:42.300Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 81/135"
+    },
+    {
+      "slug": "qabas-201707-004",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T20:19:54.497Z",
+      "lastFailedAt": "2026-07-31T21:29:49.431Z",
+      "message": "r013 فشل بعد 3 محاولات: STT 0٪، السرعة 77/133"
+    },
+    {
+      "slug": "qabas-201707-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T20:20:03.301Z",
+      "lastFailedAt": "2026-07-31T21:29:56.275Z",
+      "message": "r013 فشل بعد 3 محاولات: STT 0٪، السرعة 77/140"
+    },
+    {
+      "slug": "qabas-201709-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 5,
+      "firstFailedAt": "2026-07-27T19:15:17.474Z",
+      "lastFailedAt": "2026-07-31T21:30:04.565Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 83/138"
+    },
+    {
+      "slug": "qabas-201709-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T20:21:12.740Z",
+      "lastFailedAt": "2026-07-31T21:30:12.313Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 78/138"
+    },
+    {
+      "slug": "qabas-201709-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T20:21:30.075Z",
+      "lastFailedAt": "2026-07-31T21:30:20.152Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201709-006",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T20:22:39.490Z",
+      "lastFailedAt": "2026-07-31T21:30:32.290Z",
+      "message": "r005 فشل بعد 3 محاولات: STT 0٪، السرعة 74/143"
+    },
+    {
+      "slug": "qabas-201711-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 4,
+      "firstFailedAt": "2026-07-29T06:55:07.362Z",
+      "lastFailedAt": "2026-07-31T21:30:45.054Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/138"
+    },
+    {
+      "slug": "qabas-201711-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T20:24:23.537Z",
+      "lastFailedAt": "2026-07-31T21:30:56.773Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201712-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T20:24:58.464Z",
+      "lastFailedAt": "2026-07-31T21:31:11.581Z",
+      "message": "r016 فشل بعد 3 محاولات: STT 0٪، السرعة 71/143"
+    },
+    {
+      "slug": "qabas-201712-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T20:25:15.855Z",
+      "lastFailedAt": "2026-07-31T21:31:23.542Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201712-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T20:25:33.171Z",
+      "lastFailedAt": "2026-07-31T21:31:32.820Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "qabas-201805-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T23:10:46.903Z",
+      "lastFailedAt": "2026-07-31T21:31:46.869Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/143"
+    },
+    {
+      "slug": "qabas-201805-002",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T23:12:22.249Z",
+      "lastFailedAt": "2026-07-31T21:32:02.049Z",
+      "message": "r004 فشل بعد 3 محاولات: STT 0٪، السرعة 84/132"
+    },
+    {
+      "slug": "qabas-201805-003",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T23:12:33.610Z",
+      "lastFailedAt": "2026-07-31T21:32:15.194Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 81/138"
+    },
+    {
+      "slug": "qabas-201806-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T23:22:42.666Z",
+      "lastFailedAt": "2026-07-31T21:32:28.459Z",
+      "message": "r016 فشل بعد 3 محاولات: STT 0٪، السرعة 69/130"
+    },
+    {
+      "slug": "qabas-201806-004",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T23:35:43.678Z",
+      "lastFailedAt": "2026-07-31T21:32:42.048Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 69/135"
+    },
+    {
+      "slug": "qabas-201806-005",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T23:36:00.229Z",
+      "lastFailedAt": "2026-07-31T21:32:54.242Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 76/137"
+    },
+    {
+      "slug": "qabas-201807-001",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T23:36:07.588Z",
+      "lastFailedAt": "2026-08-01T07:59:28.176Z",
+      "message": "r008 فشل بعد 3 محاولات: STT 0٪، السرعة 78/140"
+    },
+    {
+      "slug": "qabas-201807-001",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T23:36:13.981Z",
+      "lastFailedAt": "2026-07-31T21:33:07.121Z",
+      "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 78/136"
+    },
+    {
+      "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 8,
+      "firstFailedAt": "2026-07-23T08:54:08.715Z",
+      "lastFailedAt": "2026-08-01T07:26:14.269Z",
+      "message": "r028 فشل بعد 3 محاولات: STT 46٪، السرعة 133/135"
+    },
+    {
+      "slug": "the-mind-present-in-absence-absent-in-presence-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T16:49:32.439Z",
+      "lastFailedAt": "2026-08-01T11:57:20.870Z",
+      "message": "r003 فشل بعد 3 محاولات: STT 0٪، السرعة 84/132"
+    },
+    {
+      "slug": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 7,
+      "firstFailedAt": "2026-07-23T12:24:47.370Z",
+      "lastFailedAt": "2026-07-31T21:26:33.682Z",
+      "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
+    },
+    {
+      "slug": "the-teacher-the-last-to-know-2",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 6,
+      "firstFailedAt": "2026-07-23T16:49:24.045Z",
+      "lastFailedAt": "2026-08-01T11:57:04.446Z",
+      "message": "r014 فشل بعد 3 محاولات: STT 0٪، السرعة 84/132"
+    },
+    {
+      "slug": "when-a-student-wishes-for-death-before-the-first-bell-2",
+      "voice": "fahed",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:49:49.195Z",
+      "lastFailedAt": "2026-07-23T16:49:49.196Z",
+      "message": "Azure TTS 401: "
+    },
+    {
+      "slug": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+      "voice": "noura",
+      "kind": "original",
+      "stage": "generate-reading",
+      "attempts": 1,
+      "firstFailedAt": "2026-07-23T16:48:58.905Z",
+      "lastFailedAt": "2026-07-23T16:48:58.905Z",
+      "message": "Azure TTS 401: "
+    }
+  ]
+}

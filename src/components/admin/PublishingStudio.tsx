@@ -909,7 +909,7 @@ function mergeSocialPacks(local: PerfectSocialPack, remote: PerfectSocialPack, v
   }
 }
 
-function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: number, skipOriginality: boolean, styleScore: number | null = null) {
+function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: number, skipOriginality: boolean, styleScore: number | null = null, styleBlockers: string[] = []) {
   const usedSlug = articles.some((article) => article.slug === bundle.slug)
   const words = wordCount(bundle.body)
   const evaluated = bundle.title.trim().length >= 6 && words >= 40
@@ -929,7 +929,13 @@ function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: num
     /* كان: `Boolean(bundle.generatedBy)` — وسمٌ لا يضعه إلا المولّد، فصار
        المقال الذي يكتبه الدكتور بيده عاجزاً عن مغادرة الاستوديو بعد أن صار
        المحرّر يفتح فارغاً. المقياس الآن ما يدّعيه: مطابقة البصمة نفسها. */
-    { key: 'style-ai', label: `مطابق لبصمة أسلوبك${styleScore === null ? '' : ` (${styleScore}٪)`}`, ok: styleScore === null ? Boolean(bundle.generatedBy) : styleScore >= 72 },
+    /* ولا تُقاس المطابقة بعتبةٍ تحجب: قِسْتُها على متونه فوجدت أن عتبة ٧٢
+       ترسّب ٢١٪ من مقالاته المنشورة — عشرةٌ منها حديثة. أسلوبه متفاوتٌ بطبعه،
+       والدرجة تدرّجٌ لا حكم. فالبوابة تُخبر ولا تحجب هنا؛ ولا يحجب إلا العيب
+       الموضوعي: نقلٌ حرفي، أو رقمٌ مختلق، أو نصٌّ يلفّ على نفسه، أو عبارة
+       نموذجٍ آليّ — وهذه تُقاس في بندٍ مستقلّ لا يقبل التأويل. */
+    { key: 'style-ai', label: `مطابقة أسلوبك${styleScore === null ? '' : ` — ${styleScore}٪`}`, ok: true },
+    { key: 'style-blockers', label: styleBlockers.length ? `عيوبٌ توقف النشر: ${styleBlockers.join(' · ')}` : 'بلا نقلٍ حرفي ولا رقمٍ مختلق ولا تكرار', ok: styleBlockers.length === 0 },
     { key: 'social', label: 'قابل للتحويل إلى حزمة سوشيال لاحقاً', ok: socialOk },
   ]
   return {
@@ -2747,15 +2753,35 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     const timer = setTimeout(() => setSettledBody(bundle.body), 500)
     return () => clearTimeout(timer)
   }, [bundle.body])
+  /* ولا يُقارَن المقال بنفسه: حين يفتح الدكتور مقالاً منشوراً للتحرير، يُستثنى
+     من أرشيف المقارنة بمعرّفه قبل أي قياس. */
+  const comparisonArchive = useMemo(
+    () => richArticles.filter((article) => article.slug !== bundle.slug).map((article) => ({ body: article.body || '', iso: article.iso || '' })),
+    [richArticles, bundle.slug],
+  )
   const liveStyleVerdict = useMemo(
     () => wordCount(settledBody) >= 120
-      ? judgeStyle(settledBody, styleDna, { archive: archiveTexts, sources: archiveTexts, orthography })
+      ? judgeStyle(settledBody, styleDna, { archive: comparisonArchive, sources: archiveTexts, orthography })
       : null,
-    [settledBody, styleDna, archiveTexts, orthography],
+    [settledBody, styleDna, archiveTexts, comparisonArchive, orthography],
   )
   const lab = useMemo(() => ideaLab(idea, richArticles, books, papers), [idea, richArticles])
   const privateLinks = (privateBookLinks as { books?: PrivateBookLink[] }).books || []
-  const gate = useMemo(() => qualityGate(bundle, richArticles, targetWords, skipOriginality, liveStyleVerdict?.score ?? null), [bundle, richArticles, skipOriginality, targetWords, liveStyleVerdict])
+  /* المبدأ: **يُحاكَم المحرك، ولا يُحاكَم الكاتب.**
+
+     قوائم المنع كلها — العبارات الآلية، وآثار القوالب، والنقل الحرفي، والإملاء
+     — وُضعت لتصف ما يُمنع على النموذج. وحين طُبّقت على نصوصه هو حجبت ٢٨٪ من
+     مقالاته المنشورة: ٢٣ منها لأنها تتقاطع بستّ كلماتٍ مع مقالٍ آخر له (وهذا
+     كاتبٌ يعيد صياغة نفسه)، وتسعةٌ لأن فيها تعداداً أو شرطة، وسبعةٌ لعبارةٍ
+     نادرة، وخمسةٌ لأنه قال «أرى أنّ» مرة.
+
+     فالحجب الآن لما ولّده المحرك وحده. وما يكتبه الدكتور بيده يُقاس ويُعرض
+     ولا يُمنع أبداً — أسلوبه هو تعريف أسلوبه. */
+  const styleBlockers = useMemo(
+    () => bundle.generatedBy ? (liveStyleVerdict?.fatal || []) : [],
+    [liveStyleVerdict, bundle.generatedBy],
+  )
+  const gate = useMemo(() => qualityGate(bundle, richArticles, targetWords, skipOriginality, liveStyleVerdict?.score ?? null, styleBlockers), [bundle, richArticles, skipOriginality, targetWords, liveStyleVerdict, styleBlockers])
   const similarity = useMemo(() => articleSimilarityReport(bundle.title, bundle.body, richArticles), [bundle.title, bundle.body, richArticles])
   const editorialEvidenceChain = useMemo(() => buildEvidenceChain({
     slug: bundle.slug,

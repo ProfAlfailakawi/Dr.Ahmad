@@ -337,6 +337,21 @@ assert.ok(!deriveExcerpt(strongBody, '').includes('undefined'), 'ولا يختر
 
 /* ─── ذاكرة الصوت: يتعلّم من حكمه هو لا من أرشيفه فقط ─── */
 const studio = readFileSync(resolve(root, 'src/components/admin/PublishingStudio.tsx'), 'utf8')
+
+/* ─── يُحاكَم المحرك ولا يُحاكَم الكاتب ─── */
+/* عتبةٌ حاجبة على الأسلوب كانت ترسّب ٢١٪ من مقالاته المنشورة، ثم اتضح أن
+   قوائم المنع كلها تحجب ٢٨٪ منها. هذا الفحص يمنع عودة أي حجبٍ على نصّه. */
+assert.match(studio, /bundle\.generatedBy \? \(liveStyleVerdict\?\.fatal \|\| \[\]\) : \[\]/, 'الحجب لما ولّده المحرك وحده')
+assert.match(studio, /key: 'style-ai'[^\n]*ok: true/, 'درجة المطابقة تُخبر ولا تحجب')
+assert.doesNotMatch(studio, /styleScore >= 72/, 'ولا عتبة حاجبة على الأسلوب')
+
+/* ولا يُقارَن المقال بنفسه حين يُفتح للتحرير. والتقاطع بينه وبين مقالٍ آخر
+   له أمرٌ طبيعي — كاتبٌ يعيد صياغة نفسه — ولذلك لا يحجب إلا مخرَج المحرك. */
+const own = archive[11]
+assert.equal(verbatimOverlap(own.body, [own]).length, 0, 'المقال لا يُتّهم بالنقل عن نفسه')
+assert.equal(verbatimOverlap(own.body, [{ body: `مقدمة قصيرة. ${own.body}` }]).length, 0, 'ولا عن نسخةٍ تحتويه')
+assert.match(studio, /article\.slug !== bundle\.slug/, 'وأرشيف المقارنة يستثني المقال المفتوح')
+
 const rejectedParagraph = 'إن الاعتماد المتزايد على أدوات الذكاء الاصطناعي يشكل تحدياً كبيراً أمام المؤسسات التعليمية التي تسعى إلى بناء جيل قادر على الإبداع.'
 const signature = extractVoiceSignature(rejectedParagraph, archive)
 assert.ok(signature.length >= 2, `يستخرج بصمة النموذج من فقرةٍ مرفوضة (${signature.length})`)

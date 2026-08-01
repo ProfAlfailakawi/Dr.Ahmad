@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { createRequire } from 'node:module'
@@ -11,13 +11,43 @@ const out = mkdtempSync(join(tmpdir(), 'editorial-memory-'))
 const fixture = join(out, 'fixture')
 const compiled = join(out, 'compiled')
 mkdirSync(fixture, { recursive: true })
-writeFileSync(join(fixture, 'editorial-memory.ts'), readFileSync(join(root, 'src/lib/editorial-memory.ts'), 'utf8'))
-writeFileSync(join(fixture, 'intelligence.ts'), readFileSync(join(root, 'src/lib/intelligence.ts'), 'utf8'))
+
+// مصدر المشروع يكتب امتداد ‎.ts صراحةً في الاستيرادات النسبية لأن node يشغّل
+// ملفات ‎.ts مباشرةً (type stripping) ولا يخمّن الامتدادات. أمّا مختبرُنا هنا فيصرّف
+// بـ‎--moduleResolution node، وهي لا تقبل الامتداد الصريح. فننزعه عند النسخ فقط،
+// ولا نمسّ المصدر نفسه.
+const forFixture = (code) => code.replace(/(\bfrom\s+['"]\.{1,2}\/[^'"]+?)\.ts(['"])/g, '$1$2')
+const copyLib = (name) => writeFileSync(join(fixture, name), forFixture(readFileSync(join(root, `src/lib/${name}`), 'utf8')))
+copyLib('editorial-memory.ts')
+copyLib('intelligence.ts')
+
+// خريطة الكتب تُستورد من JSON بسمة ‎with { type: 'json' } وهي ممنوعة في commonjs،
+// فنزرع البيانات الحقيقية نفسها داخل المختبر بدل اختراع بديلٍ يخالف السلوك الحيّ.
+writeFileSync(join(fixture, 'book-knowledge.ts'), forFixture(readFileSync(join(root, 'src/lib/book-knowledge.ts'), 'utf8'))
+  .replace(/^import\s+rawKnowledge\s+from\s+['"][^'"]+['"][^\n]*$/m,
+    `const rawKnowledge = JSON.parse(${JSON.stringify(readFileSync(join(root, 'src/data/book-knowledge.json'), 'utf8'))})`))
+
 writeFileSync(join(fixture, 'cms.ts'), `
 export type ArticleRecord = { slug:string; title:string; excerpt?:string; body?:string; cat:string; iso:string; hasAudio:boolean; words:number; year?:string; [key:string]: any }
 export type BookRecord = { slug:string; title:string; desc:string; [key:string]: any }
 export type PaperRecord = { slug:string; title:string; titleAr?:string; meta:string; abstractAr?:string; journal?:string; keyFinding?:string; keywords?:string; analysisNeedsReview?:boolean; url?:string; source?:string; pdf?:string; doi?:string; [key:string]: any }
 `)
+// حارسٌ يمنع تكرار عطب ٢٠٢٦-٠٨-٠١: وحدةٌ جديدة تُستورد داخل src/lib فيسقط
+// المختبر برسالة tsc غامضة. هنا يسقط برسالةٍ تقول أيّ ملفٍ ينقص وأين يُضاف.
+const fixtureFiles = readdirSync(fixture).filter((name) => name.endsWith('.ts'))
+const present = new Set(fixtureFiles.map((name) => name.replace(/\.ts$/, '')))
+const missing = []
+for (const file of fixtureFiles) {
+  const code = readFileSync(join(fixture, file), 'utf8')
+  for (const [, specifier] of code.matchAll(/\bfrom\s+['"]\.\/([^'"]+)['"]/g)) {
+    const dependency = specifier.replace(/\.ts$/, '')
+    if (!present.has(dependency)) missing.push(`${file} ← ./${dependency}`)
+  }
+}
+if (missing.length) {
+  throw new Error(`نسخة المختبر ناقصة: ${missing.join('، ')}\nأضف الوحدة (أو بديلاً لها) في scripts/test-editorial-memory.mjs قبل التصريف.`)
+}
+
 // لا نعتمد على tsc العالمي في GitHub Runner: قد تكون نسخته مختلفة عن
 // النسخة المقفلة في package-lock، وهذا كان يجعل الاختبار يمر محلياً ويفشل في CI.
 // بعد npm ci يجب أن نستخدم TypeScript الخاص بالمشروع حصراً.

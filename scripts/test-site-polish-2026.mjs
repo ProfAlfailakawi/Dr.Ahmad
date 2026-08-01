@@ -199,7 +199,18 @@ const audioClearWorkflow = read('.github/workflows/admin-audio-clear.yml')
 ok(audioClearWorkflow.includes('reading) FILES=') && audioClearWorkflow.includes('.noura.mp3'), 'إدارة القراءة تتعامل مع ملفي فهد ونورة معاً فلا يبقى صوت نورة خارج المزامنة')
 ok(!autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('MODE="reading"') && autoAudioWorkflow.includes("github.event_name == 'schedule'"), 'الدورة المجدولة تستمر في فحص المقالات الجديدة وتولد مسارات القراءة دون اعتماد على لقطة ثابتة قديمة')
 ok(autoAudioWorkflow.includes('node scripts/idea-life-sync.mjs') && autoAudioWorkflow.includes("IDEA_LIFE_STALE_DAYS: '7'"), 'كل جولة مجدولة تُحدّث دليل حياة/أثر الفكرة للمقالات المنشورة من دون اختلاق أثر بلا مصدر')
-ok(autoAudioWorkflow.includes('GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}') && autoAudioWorkflow.includes('npm run podcast:ar:nightly') && autoAudioWorkflow.includes('PODCAST_NO_GEMINI=1 npm run podcast:ar:nightly'), 'الحوار يتولد تلقائياً للمقال المنشور عند توفر Gemini، ويبقى البديل اليدوي الآمن عند غياب المفتاح')
+/* العقد انقلب بأمر الدكتور (١ أغسطس ٢٠٢٦): «ما نستخدم جيمناي إطلاقاً». كان
+   الشرط القديم يقيس وجود المفتاح لا رصيده، فمات المحرك بالرمز ٤ ثلاثة أيام
+   والتشغيلات «ناجحة». فالمطلوب الآن عكس ما كان: ألّا يعرف مسار الحوار مزوّداً
+   مدفوعاً أصلاً — نداءٌ واحد بلا شرط ولا مفتاح. */
+ok(autoAudioWorkflow.includes('npm run podcast:ar:nightly')
+  && !autoAudioWorkflow.includes('PODCAST_NO_GEMINI=1 npm run podcast:ar:nightly')
+  && !autoAudioWorkflow.includes('GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}')
+  && !autoAudioWorkflow.includes('GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}'),
+'مسار الحوار لا يعرف مزوّداً مدفوعاً: نداءٌ واحد بلا شرطٍ ولا مفتاح Gemini في الورك‑فلو')
+ok(podcastDialogue.includes("const GEMINI_OPT_IN = flag('with-gemini')")
+  && podcastDialogue.includes('let NO_GEMINI = !GEMINI_OPT_IN'),
+'المحرك نفسه «بلا Gemini» افتراضاً، ولا يُفتح الباب إلا بطلبٍ يدوي صريح')
 const autoAudioEngine = read('scripts/auto-audio.mjs')
 const audioSupervisor = read('scripts/audio-supervisor.mjs')
 ok(autoAudioEngine.includes("voice.key === 'fahed' || voice.key === 'noura'") && autoAudioEngine.includes("label: 'صوت نورة'"), 'محرك القراءة التلقائي يولد فهد ونورة ولا يهمل صوت نورة')

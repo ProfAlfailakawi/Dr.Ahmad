@@ -4,7 +4,6 @@
     "noura": true
   },
   "a-generation-without-rootsarabic": {
-    "dialogue": true,
     "fahed": true,
     "noura": true
   },
@@ -17,7 +16,6 @@
     "noura": true
   },
   "alternative-plans-for-distance-education": {
-    "dialogue": true,
     "fahed": true,
     "noura": true
   },
@@ -135,6 +133,7 @@
     "noura": true
   },
   "qabas-201703-001": {
+    "fahed": true,
     "noura": true
   },
   "qabas-201703-002": {
@@ -205,6 +204,7 @@
     "noura": true
   },
   "qabas-201709-005": {
+    "fahed": true,
     "noura": true
   },
   "qabas-201709-007": {
@@ -284,6 +284,12 @@
   },
   "qabas-201808-002": {
     "fahed": true,
+    "noura": true
+  },
+  "qabas-201810-001": {
+    "noura": true
+  },
+  "qabas-201810-002": {
     "noura": true
   },
   "qabas-201810-003": {

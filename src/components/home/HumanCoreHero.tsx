@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { EASE, SocialIcon } from '../ui'
 import { profile } from '../../data'
 import { currentSeason, seasonStrokePath } from '../../lib/seasons'

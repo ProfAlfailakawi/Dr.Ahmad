@@ -5,7 +5,7 @@
    ٤) بصمة القارئ           — أثرٌ شخصيّ محليّ بالكامل (بلا خادم، بلا تتبّع) يُهدى للقارئ.
    كل مكوّن مستقل ونقيّ: يستقبل بياناته أو يقرأ التخزين المحلي، ويختفي بلطف حين لا مادة له. */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { getDb } from '../lib/firebase'
 

@@ -3613,7 +3613,7 @@ async function latestAdminWorkflowRuns() {
   const items = await Promise.all(controlCenterWorkflowDefinitions.map(async (definition) => {
     try {
       const response = await fetchWithTimeout(fetch,
-        `https://api.github.com/repos/${githubRepository}/actions/workflows/${encodeURIComponent(definition.workflow)}/runs?per_page=1`, {
+        `https://api.github.com/repos/${githubRepository}/actions/workflows/${encodeURIComponent(definition.workflow)}/runs?per_page=5`, {
           headers: {
             accept: 'application/vnd.github+json',
             authorization: `Bearer ${githubToken}`,
@@ -3623,7 +3623,13 @@ async function latestAdminWorkflowRuns() {
         }, 8_000)
       if (!response.ok) return { ...definition, available: false, status: 'unknown', conclusion: null }
       const payload = await response.json()
-      const run = Array.isArray(payload?.workflow_runs) ? payload.workflow_runs[0] : null
+      const runs = Array.isArray(payload?.workflow_runs) ? payload.workflow_runs : []
+      const newestRun = runs[0] || null
+      // التشغيل اليدوي المكرر قد يُسجّل skipped/cancelled بعد نشر ناجح، فلا
+      // نسمح له بمحو حقيقة آخر بوابة مكتملة. التشغيل الجاري يبقى ظاهراً فوراً.
+      const run = newestRun?.status !== 'completed'
+        ? newestRun
+        : runs.find((candidate) => !['skipped', 'cancelled'].includes(String(candidate?.conclusion || '').toLowerCase())) || newestRun
       return {
         ...definition,
         available: true,
@@ -3639,6 +3645,13 @@ async function latestAdminWorkflowRuns() {
   }))
   controlCenterRunsCache = { expiresAt: Date.now() + 20_000, items }
   return items
+}
+
+function workflowRunIsFailure(run) {
+  if (!run || run.available === false) return true
+  if (run.status !== 'completed') return false
+  const conclusion = String(run.conclusion || '').toLowerCase()
+  return Boolean(conclusion && !['success', 'skipped', 'cancelled'].includes(conclusion))
 }
 
 function firestoreTimeIso(value) {
@@ -4121,7 +4134,7 @@ export function createRequestHandler({
         const githubReady = Boolean(String(process.env.GITHUB_WORKFLOW_TOKEN || process.env.GITHUB_ACTIONS_TOKEN || '').trim())
         const studioReady = Boolean(String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim() && String(process.env.CLOUDFLARE_API_TOKEN || '').trim())
         const communications = communicationsHealth()
-        const r2Configured = Boolean(String(process.env.AUDIO_PUBLIC_BASE_URL || '').trim() && String(process.env.CLOUDFLARE_R2_BUCKET || '').trim())
+        const r2DirectConfigured = Boolean(String(process.env.AUDIO_PUBLIC_BASE_URL || '').trim() && String(process.env.CLOUDFLARE_R2_BUCKET || '').trim())
         const pushLevel = communications.vapidReady && pushDeviceCount > 0 ? 'healthy' : pushDeviceCount > 0 ? 'attention' : 'warning'
         const newsletterLevel = communications.newsletterReady ? 'healthy' : communications.resendReady ? 'attention' : 'warning'
         const workflowRuns = githubReady ? await latestAdminWorkflowRuns() : []
@@ -4134,18 +4147,23 @@ export function createRequestHandler({
           : audioSyncAgeMs <= 45 * 60_000
             ? 'healthy'
             : audioSyncAgeMs <= 120 * 60_000 ? 'attention' : 'critical'
+        const r2InventoryVerified = Boolean(firebaseReady && totalAudioFiles > 0 && audioLastSyncAt && audioSyncAgeMs <= 120 * 60_000)
         const contentProblems = Number(sourceHealth.problems || 0)
         const contentWarnings = Number(sourceHealth.warnings || 0)
         const sourceCheckedAt = firestoreTimeIso(sourceHealth.checkedAt)
           || boundedString(sourceHealth.checkedAt, 80)
           || runById['content-guardian']?.updatedAt
           || null
+        const sourceCheckedMs = new Date(sourceCheckedAt || '').getTime()
+        const sourceReportFresh = Number.isFinite(sourceCheckedMs) && Date.now() - sourceCheckedMs <= 36 * 60 * 60_000
         const publishRun = runById['site-publish']
         const publishLevel = !githubReady
           ? 'critical'
+          : !publishRun
+            ? 'attention'
           : publishRun?.status && publishRun.status !== 'completed'
             ? 'attention'
-            : publishRun?.conclusion && publishRun.conclusion !== 'success'
+            : workflowRunIsFailure(publishRun)
               ? 'critical'
               : 'healthy'
         const incidents = incidentRows.map((incident) => ({
@@ -4258,13 +4276,15 @@ export function createRequestHandler({
               id: 'r2',
               title: 'Cloudflare R2',
               eyebrow: 'OBJECT STORAGE',
-              level: r2Configured && audioLastSyncAt ? audioLevel : r2Configured ? 'attention' : 'warning',
-              metric: r2Configured ? 'مربوط' : 'الربط ناقص',
-              summary: r2Configured
-                ? 'مسار الصوت الخارجي وBucket معروفان للخادم، وتُثبت مزامنة الصوت القراءة من R2.'
-                : 'متغيرات R2 أو AUDIO_PUBLIC_BASE_URL غير مكتملة على الخادم.',
+              level: r2InventoryVerified ? audioLevel : r2DirectConfigured ? 'attention' : 'warning',
+              metric: r2InventoryVerified ? `${totalAudioFiles} ملف موثّق` : r2DirectConfigured ? 'الربط المباشر جاهز' : 'بانتظار إثبات حي',
+              summary: r2InventoryVerified
+                ? 'R2 حيّ ومثبت بجرد خارجي حديث ثم قراءة راجعة موقعة من Firestore.'
+                : r2DirectConfigured
+                  ? 'الربط الإداري المباشر موجود، لكن جرد الصوت الحي ليس حديثاً بما يكفي.'
+                  : 'لا يوجد جرد R2 حديث يثبت الحالة الآن؛ غياب أسرار الإدارة عن dr-api وحده لا يعني انقطاع الصوت.',
               reason: audioLastSyncAt ? `آخر إثبات حي: ${audioLastSyncAt}.` : 'لا توجد قراءة راجعة حديثة من جرد R2.',
-              action: r2Configured ? 'راقب جرد الصوت؛ أي انقطاع سيظهر هنا.' : 'راجع أسرار R2 في خدمة dr-api.',
+              action: r2InventoryVerified ? 'لا يحتاج تدخلاً؛ الجرد يتجدد تلقائياً.' : 'شغّل مزامنة عدّاد الصوت لإنتاج إثبات حي جديد.',
               lastEventAt: audioLastSyncAt,
             },
             {
@@ -4318,13 +4338,15 @@ export function createRequestHandler({
               id: 'content',
               title: 'المحتوى والمصادر',
               eyebrow: 'SITE GUARDIAN',
-              level: contentProblems > 0 ? 'warning' : contentWarnings > 0 ? 'attention' : 'healthy',
-              metric: contentProblems > 0 ? `${contentProblems} مشكلة` : contentWarnings > 0 ? `${contentWarnings} تنبيه` : 'سليم',
-              summary: contentProblems > 0
+              level: !sourceReportFresh ? 'attention' : contentProblems > 0 ? 'warning' : contentWarnings > 0 ? 'attention' : 'healthy',
+              metric: !sourceReportFresh ? 'التقرير قديم' : contentProblems > 0 ? `${contentProblems} مشكلة` : contentWarnings > 0 ? `${contentWarnings} تنبيه` : 'سليم',
+              summary: !sourceReportFresh
+                ? 'لا توجد مشكلة حية مؤكدة؛ آخر تقرير للحارس انتهت صلاحيته.'
+                : contentProblems > 0
                 ? 'يوجد مصدر أو رابط يحتاج قراراً.'
                 : 'لا توجد مشكلة مؤكدة تمنع النشر في آخر فحص.',
-              reason: sourceCheckedAt ? 'الحالة مأخوذة من آخر تقرير حي لفاحص المصادر.' : 'سيظهر التقرير الحي بعد أول دورة للحارس.',
-              action: contentProblems > 0 || contentWarnings > 0 ? 'شغّل حارس المحتوى من هذه البطاقة.' : 'الحارس يعمل يومياً تلقائياً.',
+              reason: sourceReportFresh ? 'الحالة مأخوذة من تقرير حي وحديث لفاحص المصادر.' : 'لا نعرض أرقام التقرير القديم كأنها مشكلة راهنة.',
+              action: !sourceReportFresh || contentProblems > 0 || contentWarnings > 0 ? 'شغّل حارس المحتوى من هذه البطاقة.' : 'الحارس يعمل يومياً تلقائياً.',
               lastEventAt: sourceCheckedAt,
               workflow: runById['content-guardian'] || null,
             },
@@ -4385,7 +4407,7 @@ export function createRequestHandler({
         }
         const githubStartedAt = Date.now()
         const workflowRuns = await latestAdminWorkflowRuns()
-        const failedRun = workflowRuns.find((run) => run.available === false || (run.status === 'completed' && run.conclusion && run.conclusion !== 'success'))
+        const failedRun = workflowRuns.find((run) => workflowRunIsFailure(run))
         steps.push({
           id: 'github-probe',
           label: 'GitHub وسجل المهام',

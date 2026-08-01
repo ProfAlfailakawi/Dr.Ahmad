@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { JsonLd, useSeo } from '../components/seo'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
 import { academicProfiles, doctorate, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'

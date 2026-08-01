@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { FadeUp, Page, PageHead, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { aboutSite } from '../data'

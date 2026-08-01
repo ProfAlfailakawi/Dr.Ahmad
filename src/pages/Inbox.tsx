@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { EASE, FadeUp, Page, PageHead } from "../components/ui";
 import { Newsletter } from "../components/extras";
 import { useSeo } from "../components/seo";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useExtras, useCmsContent } from "../lib/content";
 import { loadArticleBodies } from "../lib/article-bodies";
 import { pickEchoes, type VoiceEcho } from "../lib/voice-echoes";

@@ -53,14 +53,27 @@ const PRIVATE_MARKERS = ['books-memory', 'private-books/', 'privateUse', 'ماد
 
 if (existsSync(DIST)) {
   const assetsDir = join(DIST, 'assets')
-  const publicChunks = existsSync(assetsDir)
-    ? readdirSync(assetsDir).filter((name) => name.endsWith('.js') && !/^Admin-/.test(name))
+  const allChunks = existsSync(assetsDir)
+    ? readdirSync(assetsDir).filter((name) => name.endsWith('.js'))
     : []
+  // بعد تقسيم الإدارة ديناميكياً لم تعد كل أدواتها داخل Admin-*.js. تُعزل
+  // ذاكرة الكتب نفسها في chunk صريح، ثم نثبت أدناه أن استوديو الإدارة وحده
+  // يستورده وأن أي صفحة عامة لا تشير إليه.
+  const privateMemoryChunks = allChunks.filter((name) => /^admin-private-memory-/.test(name))
+  const publicChunks = allChunks.filter((name) => !/^Admin-/.test(name) && !/^admin-private-memory-/.test(name))
   for (const chunk of publicChunks) {
     const content = readFileSync(join(assetsDir, chunk), 'utf8')
     for (const marker of PRIVATE_MARKERS) {
       if (content.includes(marker)) failures.push(`بصمة المنظومة الخاصة «${marker}» ظهرت في حزمة عامة: ${chunk}`)
     }
+  }
+  if (privateMemoryChunks.length !== 1) failures.push(`حزمة ذاكرة الكتب الإدارية المتوقعة واحدة، والموجود ${privateMemoryChunks.length}`)
+  for (const privateChunk of privateMemoryChunks) {
+    const importers = allChunks.filter((chunk) => chunk !== privateChunk && readFileSync(join(assetsDir, chunk), 'utf8').includes(privateChunk))
+    for (const importer of importers) {
+      if (!/^(?:Admin|PublishingStudio)-/.test(importer)) failures.push(`حزمة عامة تستورد ذاكرة الكتب الخاصة: ${importer}`)
+    }
+    if (!importers.some((name) => /^PublishingStudio-/.test(name))) failures.push('استوديو النشر الإداري لا يستورد حزمة ذاكرة الكتب المعزولة كما هو متوقع')
   }
   const htmlFiles = []
   const collectHtml = (dir) => {
@@ -73,6 +86,9 @@ if (existsSync(DIST)) {
   collectHtml(DIST)
   for (const file of htmlFiles) {
     const content = readFileSync(file, 'utf8')
+    for (const privateChunk of privateMemoryChunks) {
+      if (content.includes(privateChunk)) failures.push(`صفحة عامة تشير مباشرةً إلى حزمة ذاكرة الكتب الخاصة: ${basename(file)}`)
+    }
     for (const marker of PRIVATE_MARKERS) {
       if (content.includes(marker)) failures.push(`بصمة المنظومة الخاصة «${marker}» ظهرت في صفحة مُصيَّرة: ${basename(file)}`)
     }

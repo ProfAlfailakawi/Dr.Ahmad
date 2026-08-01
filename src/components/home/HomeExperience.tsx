@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { EASE, FadeUp, Label, Reveal, SectionHead } from '../ui'
 import { Newsletter } from '../extras'
 import { staticQuestions, LAUNCH_DATE } from '../../pages/Questions'

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { FadeUp, Page, PageHead, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'

@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { useCmsContent } from "../lib/content";
 import { categoryLabel } from "../lib/content-taxonomy";
 import { usePersistentAudio } from "../lib/persistent-audio";

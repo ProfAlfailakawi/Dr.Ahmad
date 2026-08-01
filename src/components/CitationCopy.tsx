@@ -71,7 +71,7 @@ async function copyText(value: string) {
 /** استشهاد عربي جاهز بنمطَي APA وMLA، مع إبقاء الأداة صغيرة حتى يطلبها القارئ. */
 export function CitationCopy({ title, path, iso, date, source, url }: CitationCopyProps) {
   const panelId = useId()
-  const timer = useRef<number>()
+  const timer = useRef<number | undefined>(undefined)
   const [status, setStatus] = useState<CitationStyle | 'error' | null>(null)
   const canonicalUrl = url?.trim() || `${site.url}${path}`
   const publication = sourceName(source)

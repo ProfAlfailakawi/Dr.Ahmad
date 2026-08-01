@@ -65,6 +65,10 @@ const paperAnalysisPath = '/api/ai/paper-analysis'
 const perfectArticlePath = '/api/ai/perfect-article'
 const socialPackPath = '/api/ai/social-pack'
 const socialIdeasPath = '/api/ai/social-ideas'
+/* إصلاح فقرةٍ واحدة: العلاج الوحيد كان رمي المقال كله وشراء نداءين متوازيين
+   وجولتَي تصحيح. فإن أعجبته سبع فقراتٍ وكرِه واحدة، دفع ثمن المقال كله من
+   حصةٍ يومية محدودة — وخسر السبع التي أحبّها. هذا نداءٌ واحد لفقرةٍ واحدة. */
+const articleParagraphPath = '/api/ai/article-paragraph'
 const currentContextPath = '/api/ai/current-context'
 const studioImagePath = '/api/ai/studio-image'
 const studioImageAliases = Object.freeze(['/api/studio-image', '/api/generate-studio-image'])
@@ -2444,6 +2448,59 @@ function perfectArticleInput(value) {
   const requestedVariation = Number(value.variation)
   const variation = clamp(Math.trunc(Number.isFinite(requestedVariation) ? requestedVariation : 0), 0, 9_999)
   return { idea, audience, angle, targetWords, skipOriginality, styleProfile, styleSamples, existing, selectedEventIds, styleDna, variation, voiceExclusions }
+}
+
+function articleParagraphInput(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
+  const paragraph = boundedString(value.paragraph, 3_000)
+  if (countArabicWords(paragraph) < 8) throw new HttpError(400, 'الفقرة أقصر من أن تُصلح')
+  return {
+    paragraph,
+    before: boundedString(value.before, 1_200),
+    after: boundedString(value.after, 1_200),
+    title: boundedString(value.title, 300),
+    note: boundedString(value.note, 400),
+    styleDna: withVoiceMemory(
+      value.styleDna && typeof value.styleDna === 'object' && !Array.isArray(value.styleDna) ? value.styleDna : null,
+      boundedArray(value.voiceExclusions, 60, (item) => typeof item === 'string' ? boundedString(item, 120) : null),
+    ),
+  }
+}
+
+const countArabicWords = (value = '') => String(value).trim().split(/\s+/).filter(Boolean).length
+
+/* يعيد الفقرة وحدها بأسلوبه، محفوظةَ الطول والموضع داخل المقال. */
+export async function reviseArticleParagraph(input, fetchImpl = fetch) {
+  const dna = resolveStyleDna(input.styleDna)
+  const words = countArabicWords(input.paragraph)
+  const revised = await callGeminiStructured({
+    instruction: [
+      `أنت الدكتور أحمد الفيلكاوي تعيد كتابة **فقرةٍ واحدة** من مقالك، لا المقال.`,
+      '',
+      styleBrief(dna, Math.max(120, words * 3)),
+      '',
+      'قواعد هذه المهمة:',
+      `· أعد الفقرة وحدها في نحو ${words} كلمة (±٢٠٪). لا تكتب ما قبلها ولا ما بعدها.`,
+      '· احفظ وظيفتها في المقال: إن كانت مشهداً فابقِها مشهداً، وإن كانت خاتمةً فاختم.',
+      '· صِلها بما قبلها وما بعدها بلا تكرار جملةٍ منهما.',
+      input.note ? `· ملاحظة الكاتب على هذه الفقرة: ${input.note}` : '',
+      '· أعد JSON بمفتاح paragraph فقط.',
+    ].filter(Boolean).join('\n'),
+    prompt: JSON.stringify({ title: input.title, before: input.before, paragraph: input.paragraph, after: input.after }),
+    cfModel: process.env.EDITORIAL_CF_MODEL || ARTICLE_MODEL_PRIMARY,
+    properties: { paragraph: { type: 'STRING' } },
+    required: ['paragraph'],
+    maxOutputTokens: clamp(Math.ceil(words * 6), 512, 4_096),
+    temperature: .62,
+  }, fetchImpl)
+  const body = refineToStyle(String(revised?.paragraph || '').trim(), dna)
+  if (!body) throw new HttpError(502, 'لم تُكتب الفقرة. لم يُغيَّر شيء في مقالك.')
+  return {
+    paragraph: body,
+    words: countArabicWords(body),
+    before: words,
+    style: { score: judgeStyle(body, dna, { threshold: 70 }).score },
+  }
 }
 
 function socialPackInput(value) {
@@ -5304,7 +5361,7 @@ export function createRequestHandler({
       return
     }
 
-    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, socialPackPath, socialIdeasPath, currentContextPath, studioImagePath, ...studioImageAliases].includes(url.pathname)) {
+    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, articleParagraphPath, socialPackPath, socialIdeasPath, currentContextPath, studioImagePath, ...studioImageAliases].includes(url.pathname)) {
       if (method !== 'POST') {
         sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
         return
@@ -5344,6 +5401,10 @@ export function createRequestHandler({
       if (url.pathname === socialPackPath) {
         const input = socialPackInput(body)
         sendJson(res, 200, await createSocialPack(input))
+        return
+      }
+      if (url.pathname === articleParagraphPath) {
+        sendJson(res, 200, await reviseArticleParagraph(articleParagraphInput(body)))
         return
       }
       if (url.pathname === socialIdeasPath) {

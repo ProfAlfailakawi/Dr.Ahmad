@@ -113,6 +113,17 @@ export declare function orthographySlips(body: string, index: Map<string, number
 }[]
 export declare function deriveExcerpt(body: string, fallback?: string, low?: number, high?: number): string
 
+export declare function locateIssues(
+  body: string,
+  dna: StyleDna | null,
+  options?: {
+    archive?: ({ body?: string } | string)[]
+    sources?: ({ body?: string } | string)[]
+    orthography?: Map<string, number> | null
+    strict?: boolean
+  },
+): { sentence: string; reason: string; kind: string }[]
+
 export declare const PROOFREAD_INSTRUCTION: string
 export declare function acceptProofread(
   original: string,

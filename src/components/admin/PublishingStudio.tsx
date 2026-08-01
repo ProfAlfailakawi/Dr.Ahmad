@@ -18,7 +18,7 @@ import { LiveDirector } from './LiveDirector'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 /* بصمة الأسلوب: المسطرة نفسها التي يقيس بها الخادم — الملف .mjs عمداً كي
    يستورده server.mjs بلا ترجمة، فلا يمدح أحدهما ما يرفضه الآخر. */
-import { buildOrthographyIndex, extractVoiceSignature, judgeStyle, measureStyleDna, refineToStyle, withVoiceMemory, type StyleVerdict } from '../../lib/style-dna.mjs'
+import { buildOrthographyIndex, extractVoiceSignature, judgeStyle, locateIssues, measureStyleDna, refineToStyle, withVoiceMemory, type StyleVerdict } from '../../lib/style-dna.mjs'
 import { createIdeaDna } from '../../lib/idea-dna'
 import { buildKnowledgeGraph, graphSearch } from '../../lib/knowledge-graph'
 import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialCalibrationProfile, type EditorialPortfolioEvidence, type EditorialSourceType } from '../../lib/editorial-board'
@@ -1599,6 +1599,49 @@ function CandidateRoom({ alternates, onAdopt }: {
   )
 }
 
+/* أشِر إلى الجملة لا إلى المقياس: «وقفات … ٧ والمعتاد ٢٢» رقمٌ صحيح لا يدلّ
+   على موضع. هذه تعرض الجملة نفسها، وتصلح فقرتها وحدها بنداءٍ واحد بدل شراء
+   مقالٍ كامل من حصةٍ يومية محدودة. */
+function IssueMap({ issues, busy, onRepair }: {
+  issues: { sentence: string; reason: string; kind: string }[]
+  busy: string
+  onRepair: (sentence: string, reason: string) => void
+}) {
+  if (!issues.length) return null
+  const label: Record<string, string> = {
+    banned: 'ليست من لغتك', orthography: 'إملاء', evidence: 'بلا سند',
+    verbatim: 'منقولة من أرشيفك', repeat: 'مكرّرة', long: 'أطول من عادتك',
+  }
+  return (
+    <section className={card} data-issue-map="true">
+      <p className="text-[.76rem] font-semibold uppercase text-accent">أين بالضبط</p>
+      <h2 className="mt-1 font-display text-xl font-semibold text-ink">{issues.length} موضعاً يستحق نظرة</h2>
+      <p className="mt-2 text-[.78rem] leading-relaxed text-soft">
+        لا رقماً يقول «الوقفات قليلة»… بل الجملة نفسها. وإصلاحُ فقرتها وحدها يكلّف نداءً واحداً بدل مقالٍ كامل.
+      </p>
+      <div className="mt-4 grid gap-2">
+        {issues.map((issue, index) => (
+          <div key={index} className="rounded-xl border border-hair bg-canvas px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="rounded-full border border-accent/30 px-2.5 py-0.5 text-[.68rem] text-accent">{label[issue.kind] || issue.kind}</span>
+              <span className="text-[.72rem] text-soft">{issue.reason}</span>
+            </div>
+            <p className="mt-2 text-[.84rem] leading-loose text-ink">{issue.sentence}</p>
+            <button
+              type="button"
+              disabled={Boolean(busy)}
+              onClick={() => onRepair(issue.sentence, issue.reason)}
+              className="mt-3 rounded-full border border-hair px-3 py-1.5 text-[.72rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+            >
+              {busy === issue.sentence ? 'يُعاد تحرير فقرتها…' : 'أصلح فقرتها وحدها'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 /* مصحّح الصوت: يقرأ الدكتور فقرةً فيقول «هذه ليست أنا»، فتدخل عباراتُها
    الغريبة عن أرشيفه في قائمة منعٍ دائمة. تعلُّمٌ بلا تدريب ولا اشتراك. */
 function VoiceTeacher({ body, memory, onTeach, onForget }: {
@@ -2718,6 +2761,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   const orthography = useMemo(() => buildOrthographyIndex(archiveTexts), [archiveTexts])
   const [alternates, setAlternates] = useState<NonNullable<PerfectArticleResponse['alternates']>>([])
   const [generationStartedAt, setGenerationStartedAt] = useState(0)
+  const [repairingSentence, setRepairingSentence] = useState('')
   /* المزامنة بين أجهزته: تُقرأ مرةً عند الفتح، وتُدمج مع المحلي ولا تدهسه. */
   useEffect(() => {
     let alive = true
@@ -3257,6 +3301,50 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     }))
     setAlternates((previous) => previous.filter((item) => item !== alternate))
     setNotice(`اعتُمدت النسخة الثانية (${alternate.structure} · ${alternate.score}٪). حزمة التوزيع ستُبنى من جديد.`)
+  }
+
+  const styleIssues = useMemo(
+    () => wordCount(settledBody) >= 60
+      ? locateIssues(settledBody, styleDna, {
+        archive: bundle.generatedBy ? comparisonArchive : undefined,
+        sources: archiveTexts,
+        orthography,
+        /* نصّه هو: لا تُعرض عليه قواعد النموذج، بل العيب الموضوعي وحده. */
+        strict: Boolean(bundle.generatedBy),
+      })
+      : [],
+    [settledBody, styleDna, comparisonArchive, archiveTexts, orthography, bundle.generatedBy],
+  )
+
+  /* نداءٌ واحد لفقرةٍ واحدة: يستبدلها في مكانها ولا يمسّ بقية المقال. */
+  const repairParagraph = async (sentence: string, note: string) => {
+    const paragraphs = bundle.body.split(/\n\s*\n/)
+    const index = paragraphs.findIndex((part) => part.includes(sentence.slice(0, 40)))
+    if (index < 0) { setError('تعذّر تحديد فقرة هذه الجملة. حرّرها بيدك.'); return }
+    setRepairingSentence(sentence)
+    setError('')
+    try {
+      const ok = isAdmin || await refresh()
+      if (!ok || !user) throw new Error('جلسة المشرف تحتاج تحديثاً.')
+      const token = await user.getIdToken()
+      const revised = await adminAiRequest<{ paragraph: string; words: number }>('/api/ai/article-paragraph', {
+        paragraph: paragraphs[index],
+        before: paragraphs[index - 1] || '',
+        after: paragraphs[index + 1] || '',
+        title: bundle.title,
+        note,
+        styleDna,
+        voiceExclusions,
+      }, token)
+      const next = [...paragraphs]
+      next[index] = revised.paragraph
+      updateBundle({ body: refineToStyle(next.join('\n\n'), styleDna) })
+      setNotice(`أُعيد تحرير الفقرة ${index + 1} وحدها (${revised.words} كلمة). بقية المقال كما هي.`)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذّر إصلاح الفقرة. لم يتغيّر شيء في مقالك.')
+    } finally {
+      setRepairingSentence('')
+    }
   }
 
   const rebuild = async (override?: { title?: string; angle?: string }): Promise<boolean> => {
@@ -3947,6 +4035,7 @@ ${effectivePurpose}`,
             <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p><p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p><div className="mt-4 grid gap-3">{bundle.related.map((item) => <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">{item.title}{item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}</a>)}</div></section>
             {generating && generationStartedAt > 0 && <GenerationProgress startedAt={generationStartedAt} />}
             <StyleFidelityCard verdict={liveStyleVerdict} sampleSize={styleDna?.sampleSize || style.articleCount} dna={measuredDna} />
+            <IssueMap issues={styleIssues} busy={repairingSentence} onRepair={repairParagraph} />
             <CandidateRoom alternates={alternates} onAdopt={adoptAlternate} />
             <VoiceTeacher
               body={bundle.body}

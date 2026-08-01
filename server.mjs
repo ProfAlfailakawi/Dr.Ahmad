@@ -7,7 +7,7 @@ import { pipeline } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { createGzip } from 'node:zlib'
 import { POLICY, evaluateCandidate } from './scripts/editorial-policy.mjs'
-import { articleMetrics, judgeStyle, refineToStyle, resolveStyleDna, styleBrief, styleReportLines } from './src/lib/style-dna.mjs'
+import { PROOFREAD_INSTRUCTION, acceptProofread, articleMetrics, judgeStyle, refineToStyle, resolveStyleDna, styleBrief, styleReportLines, withVoiceMemory } from './src/lib/style-dna.mjs'
 import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
 
@@ -2415,7 +2415,10 @@ function boundedArray(value, maximum, mapper) {
 
 function perfectArticleInput(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
-  const targetWords = clamp(Math.trunc(Number(value.targetWords || 400)), 350, 4_000)
+  /* NaN كان يمرّ: `Math.abs(words - NaN)` يعطي NaN فيرسب كل شرطٍ صامتاً
+     وتتجمّد الحلقة على أول مرشح. */
+  const requestedWords = Number(value.targetWords)
+  const targetWords = clamp(Math.trunc(Number.isFinite(requestedWords) && requestedWords > 0 ? requestedWords : 400), 350, 4_000)
   const skipOriginality = value.skipOriginality === true
   const idea = boundedString(value.idea, 500)
   if (idea.length < 3) throw new HttpError(400, 'Idea is too short')
@@ -2432,9 +2435,12 @@ function perfectArticleInput(value) {
   const selectedEventIds = boundedArray(value.selectedEventIds, 12, (item) => typeof item === 'string' ? boundedString(item, 200) : null)
   /* بصمة الأسلوب تصل من الواجهة مقيسةً على الأرشيف الحيّ كاملاً (لا المبتور)؛
      وإن لم تصل استعمل المقيسة على ١٤٣ مقالاً داخل الحزمة. */
-  const styleDna = resolveStyleDna(value.styleDna && typeof value.styleDna === 'object' && !Array.isArray(value.styleDna) ? value.styleDna : null)
-  const variation = clamp(Math.trunc(Number(value.variation || 0)), 0, 9_999)
-  return { idea, audience, angle, targetWords, skipOriginality, styleProfile, styleSamples, existing, selectedEventIds, styleDna, variation }
+  /* ذاكرة الصوت: عباراتٌ أشار إليها الدكتور بنفسه وقال «هذه ليست أنا». */
+  const voiceExclusions = boundedArray(value.voiceExclusions, 60, (item) => typeof item === 'string' ? boundedString(item, 120) : null)
+  const styleDna = withVoiceMemory(value.styleDna && typeof value.styleDna === 'object' && !Array.isArray(value.styleDna) ? value.styleDna : null, voiceExclusions)
+  const requestedVariation = Number(value.variation)
+  const variation = clamp(Math.trunc(Number.isFinite(requestedVariation) ? requestedVariation : 0), 0, 9_999)
+  return { idea, audience, angle, targetWords, skipOriginality, styleProfile, styleSamples, existing, selectedEventIds, styleDna, variation, voiceExclusions }
 }
 
 function socialPackInput(value) {
@@ -2517,11 +2523,21 @@ function geminiSchemaToJsonSchema(node) {
   return { type: 'string' }
 }
 
-async function callCloudflareStructured({ instruction, prompt, cfPrompt, properties, required, maxOutputTokens = 4_096, temperature = .55 }, fetchImpl = fetch) {
+/* النموذج الافتراضي تغيّر بعد مفاضلةٍ حيّة على حساب الدكتور نفسه (١ أغسطس):
+   نفس الوصفة ونفس الفكرة على تسعة نماذج مجانية، وحَكَم الأسلوب يصحّح الأوراق.
+   qwen3-30b نال ٩٨٪ وqwq-32b ٩٧٪، بينما llama-3.3-70b — الافتراضي القديم —
+   نال ٤٥٪ وكان يلفّ على نفسه بعشرة بالمئة من جمله مكرّرة. */
+export const ARTICLE_MODEL_PRIMARY = '@cf/qwen/qwen3-30b-a3b-fp8'
+export const ARTICLE_MODEL_SECONDARY = '@cf/qwen/qwq-32b'
+/* آخر ملجأ حين يزدحم النموذجان: أضعف أسلوباً لكنه يكتب، والحَكَم يبقى حارساً
+   على ما يخرج منه. الحصة المجانية مشتركة، وازدحامها واقعٌ لا استثناء. */
+export const ARTICLE_MODEL_FALLBACK = '@cf/mistralai/mistral-small-3.1-24b-instruct'
+
+async function callCloudflareStructured({ instruction, prompt, cfPrompt, cfModel, properties, required, maxOutputTokens = 4_096, temperature = .55 }, fetchImpl = fetch) {
   const accountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || '').trim()
   const apiToken = String(process.env.CLOUDFLARE_API_TOKEN || '').trim()
   if (!accountId || !apiToken) throw new HttpError(503, 'AI service is not configured')
-  const model = String(process.env.EDITORIAL_CF_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast').trim()
+  const model = String(cfModel || process.env.EDITORIAL_CF_MODEL || ARTICLE_MODEL_PRIMARY).trim()
   if (!/^@cf\/[A-Za-z0-9._/-]+$/.test(model)) throw new HttpError(503, 'AI model is not configured correctly')
   const endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`
   const headers = { accept: 'application/json', authorization: `Bearer ${apiToken}`, 'content-type': 'application/json' }
@@ -2550,6 +2566,28 @@ async function callCloudflareStructured({ instruction, prompt, cfPrompt, propert
     if (error?.name === 'AbortError') throw new HttpError(504, 'AI service timed out')
     if (error instanceof HttpError) throw error
     throw new HttpError(502, 'AI service unavailable (cloudflare)')
+  }
+  /* «مزدحمة» و«نفدت الحصة» ليستا الشيء نفسه: الأولى تُنتظر، والثانية تعني
+     أن اليوم انتهى. الحصة المجانية ١٠٬٠٠٠ نيورون يومياً وتتجدد تلقائياً،
+     ويتقاسمها المقال وصور الاستوديو معاً. */
+  if (response.status === 429) {
+    let quotaExhausted = false
+    try {
+      const peek = await response.clone().json()
+      quotaExhausted = JSON.stringify(peek?.errors || '').includes('daily free allocation')
+    } catch { /* لا يهم: نعامله ازدحاماً عابراً */ }
+    if (quotaExhausted) {
+      throw new HttpError(503, 'نفدت الحصة المجانية اليومية من Cloudflare (١٠٬٠٠٠ نيورون). تتجدّد تلقائياً بعد منتصف الليل بتوقيت غرينتش، ولا حاجة لأي اشتراك. جرّب غداً، أو خفّف توليد الصور اليوم لأنها تتقاسم الحصة نفسها.')
+    }
+  }
+  if (response.status === 429 || response.status === 503) {
+    /* الحصة المجانية مشتركة وتزدحم لحظياً؛ انتظارةٌ قصيرة تنقذ الطلب بدل أن
+       يُعلَن العجز على الدكتور. محاولة واحدة لا أكثر كي لا تطول الاستجابة. */
+    const wait = clamp(Number(response.headers?.get?.('retry-after')) * 1_000 || 4_000, 1_000, 12_000)
+    await new Promise((resolve) => setTimeout(resolve, wait))
+    try {
+      response = await fetchWithTimeout(fetchImpl, endpoint, { method: 'POST', headers, body: JSON.stringify(requestBody) }, timeout)
+    } catch { /* يُعالَج أدناه */ }
   }
   if (!response.ok) {
     if (response.status === 429) throw new HttpError(503, 'AI service is busy', { 'retry-after': '30' })
@@ -2915,59 +2953,95 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
 
   const required = ['title','cat','excerpt','body','angle','eventId','eventConnection','originalityNote']
 
-  const write = async (family, temperature) => {
+  const write = async (family, temperature, cfModel) => {
     const draft = await callGeminiStructured({
       instruction: instructionFor(family),
       prompt: fullPrompt(family),
       cfPrompt: cfPrompt(family),
+      cfModel,
       properties: perfectArticleSchema(),
       required,
       maxOutputTokens: articleOutputTokens(input.targetWords),
       temperature,
     }, fetchImpl)
+    /* العقد يُعلن الحقول المطلوبة للمزود، ولا أحد يتحقق منها بعد التحليل:
+       عنوانٌ غير نصّي كان يصير سلسلةً فارغة وتُسلَّم كذلك. */
+    for (const field of ['title', 'body']) {
+      if (typeof draft?.[field] !== 'string' || !draft[field].trim()) throw new HttpError(502, `AI response is missing ${field}`)
+    }
+    for (const field of ['cat', 'excerpt', 'angle', 'eventId', 'eventConnection', 'originalityNote']) {
+      if (typeof draft[field] !== 'string') draft[field] = ''
+    }
     draft.body = refineToStyle(draft.body, dna)
-    return { draft, family }
+    return { draft, family, cfModel }
   }
 
   /* درجةٌ مركّبة: مطابقة الأسلوب أولاً، ثم الطول، ثم الأصالة — فالمقال الذي
      يصيب العدد ويخطئ النَفَس ليس مقاله. */
   const wordTolerance = Math.max(15, Math.round(input.targetWords * .06))
   const evaluate = (draft) => {
-    const verdict = judgeStyle(draft.body, dna, { archive: input.existing, threshold: 80 })
+    const verdict = judgeStyle(draft.body, dna, {
+      archive: input.existing,
+      /* بوابة الإسناد تحتاج المصادر لا الأرشيف وحده: الحدث الراهن سندٌ مشروع. */
+      sources: [...input.existing, ...currentEvents],
+      threshold: 80,
+    })
     const words = exactWordCount(draft.body)
     const similarity = serverArticleSimilarity(draft.title, draft.body, input.existing)
     const duplicateTitle = existingTitles.some((title) => normalizeArabicForSimilarity(title) === normalizeArabicForSimilarity(draft.title))
     const lengthOff = Math.abs(words - input.targetWords)
     const originalityBroken = duplicateTitle || (!input.skipOriginality && similarity.repeated)
+    /* التكرار عقوبةٌ مستقلة فوق الدرجة: تشغيلٌ حيّ أثبت أن النموذج المجاني حين
+       يُطالَب بالأرقام والطول معاً ينحدر إلى لفّ الجمل — ويجب ألا يفوز أبداً. */
+    const repetition = articleMetrics(draft.body)
+    const repetitionPenalty = Math.min(45, repetition.duplicateSentenceRate * 3 + repetition.duplicateGramRate * 4)
     const rank = verdict.score
       - Math.min(25, Math.max(0, lengthOff - wordTolerance) / Math.max(1, wordTolerance) * 10)
       - (originalityBroken ? 30 : 0)
       - (verdict.fatal.length ? 20 : 0)
-    return { verdict, words, similarity, duplicateTitle, lengthOff, originalityBroken, rank }
+      - repetitionPenalty
+    return { verdict, words, similarity, duplicateTitle, lengthOff, originalityBroken, repetition, rank }
   }
 
   let best = null
+  /* المرشح الخاسر كان يُرمى بعد توليده — وقد كُتب فعلاً ودُفع ثمنه من الحصة.
+     يُحفظ الآن ليختار الدكتور بين نسختين من نموذجين وبنيتين. */
+  const roster = []
   const keep = (candidate) => {
     if (!candidate?.draft?.body) return
     const scored = { ...candidate, ...evaluate(candidate.draft) }
+    roster.push(scored)
     if (!best || scored.rank > best.rank) best = scored
   }
 
-  /* ١ — مرشحان ببنيتين مختلفتين، متوازيان: الوقت نفسه ونتيجتان. */
+  /* ١ — مرشحان متوازيان: بنيتان مختلفتان **ونموذجان مختلفان**. الاختلاف في
+     المحرك نفسه أنفع من الاختلاف في الحرارة، والحَكَم هو من يفصل. */
   const families = chooseFamilies(`${input.idea} ${input.angle}`, input.variation)
+  const primaryModel = process.env.EDITORIAL_CF_MODEL || ARTICLE_MODEL_PRIMARY
+  const secondaryModel = process.env.EDITORIAL_CF_MODEL_SECONDARY || ARTICLE_MODEL_SECONDARY
   const firstRound = await Promise.allSettled([
-    write(families[0], .62),
-    write(families[1], .78),
+    write(families[0], .62, primaryModel),
+    write(families[1], .78, secondaryModel),
   ])
   for (const result of firstRound) if (result.status === 'fulfilled') keep(result.value)
+
+  /* ١ب — كلا المرشحين تعثّر: محاولةٌ أخيرة بنموذجٍ ثالث قبل إعلان العجز.
+     ازدحام الحصة المجانية (٤٢٩) أصاب النموذجين معاً في تجربةٍ حقيقية. */
+  if (!best) {
+    const rescue = await write(families[0], .66, process.env.EDITORIAL_CF_MODEL_FALLBACK || ARTICLE_MODEL_FALLBACK).catch(() => null)
+    if (rescue) keep(rescue)
+  }
   if (!best) {
     const failure = firstRound.find((result) => result.status === 'rejected')?.reason
     throw failure instanceof HttpError ? failure : new HttpError(502, 'تعذّر الاتصال بمحرك الكتابة. لم يُحفظ أي نص ناقص.')
   }
 
   /* ٢ — جولات تصحيح موجّهة: الحَكَم يسلّم النموذج أرقام النقص حرفياً. */
-  for (let round = 1; round <= 3 && Date.now() < deadline; round += 1) {
-    if (best.verdict.ready && best.lengthOff <= wordTolerance && !best.originalityBroken) break
+  /* جولتان لا ثلاث: كل نداءٍ يستهلك من حصةٍ يومية مشتركة مع صور الاستوديو،
+     والقياس يقول إن الجولة الثالثة نادراً ما تضيف. يُرفع بمتغير بيئة. */
+  const maxRounds = envNumber('ARTICLE_REPAIR_ROUNDS', 2, 1, 4)
+  for (let round = 1; round <= maxRounds && Date.now() < deadline; round += 1) {
+    if (best.verdict.ready && best.lengthOff <= wordTolerance && !best.originalityBroken && best.repetition.duplicateSentenceRate <= 0) break
 
     const orders = []
     if (best.originalityBroken) {
@@ -2976,8 +3050,8 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     orders.push(...best.verdict.corrections)
     if (best.lengthOff > wordTolerance) {
       orders.push(best.words > input.targetWords
-        ? `النص ${best.words} كلمة والمطلوب ${input.targetWords}: احذف الجمل التفسيرية الزائدة ولا تحذف المشهد ولا الخاتمة.`
-        : `النص ${best.words} كلمة والمطلوب ${input.targetWords}: أضف مشهداً صغيراً أو موقفاً إنسانياً، لا جملاً إنشائية.`)
+        ? `النص ${best.words} كلمة والمطلوب ${input.targetWords}: احذف الجمل التفسيرية الزائدة وكل عبارةٍ تعيد ما قيل، ولا تحذف المشهد ولا الخاتمة.`
+        : `النص ${best.words} كلمة والمطلوب ${input.targetWords}: أضف مشهداً صغيراً أو موقفاً إنسانياً جديداً. ممنوع بلوغ العدد بتكرار جملةٍ سبقت أو بإعادة صياغتها.`)
     }
 
     const revision = await callGeminiStructured({
@@ -2990,25 +3064,53 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
         'لا تعتذر ولا تشرح ما فعلت. أعد المقال كاملاً في JSON.',
       ].join('\n'),
       prompt: JSON.stringify({ article: best.draft, currentEvents, forbiddenNearest: best.similarity.matches, round }),
+      cfModel: best.cfModel,
       properties: perfectArticleSchema(),
       required,
       maxOutputTokens: articleOutputTokens(input.targetWords),
       temperature: best.originalityBroken ? .72 : .3,
     }, fetchImpl).catch(() => null)
-    if (!revision?.body) break
+    /* كان `break`: تعثّرٌ عابر في نداءٍ واحد يُلغي كل جولات التصحيح الباقية
+       ويُسلَّم أضعف نصٍّ لدينا. الجولة تُتخطى، ولا تُنهي الحلقة. */
+    if (!revision?.body) continue
     revision.body = refineToStyle(revision.body, dna)
-    keep({ draft: revision, family: best.family })
+    keep({ draft: revision, family: best.family, cfModel: best.cfModel })
 
     if (best.lengthOff > wordTolerance * 2 && Date.now() < deadline) {
       const fitted = await repairArticleWords(best.draft, input, currentEvents, round, fetchImpl).catch(() => null)
       if (fitted?.body) {
         fitted.body = refineToStyle(fitted.body, dna)
-        keep({ draft: fitted, family: best.family })
+        keep({ draft: fitted, family: best.family, cfModel: best.cfModel })
       }
     }
   }
 
-  /* ٣ — لا تسليم أعمى: ما يُسلَّم يُقاس ويُعلن بدرجته. */
+  /* ٣ — تدقيقٌ لغويّ أخير: النماذج المجانية تكتب عربيةً فيها أخطاء إملاءٍ
+     وتطابق («الأسوء»، «الهدف واضع»، «ينقرض الفرصة») — والحَكَم يقيس الأسلوب لا
+     الإملاء. نداءٌ واحد بمهمةٍ ضيّقة، وبوابةٌ ترفض التصحيح كاملاً إن مسّ
+     الأسلوب أو أعاد الكتابة. يُعطَّل بـARTICLE_PROOFREAD=off. */
+  let proofread = null
+  if (process.env.ARTICLE_PROOFREAD !== 'off' && Date.now() < deadline) {
+    const corrected = await callGeminiStructured({
+      instruction: PROOFREAD_INSTRUCTION,
+      prompt: JSON.stringify({ body: best.draft.body }),
+      cfModel: process.env.EDITORIAL_CF_MODEL_PROOFREADER || best.cfModel,
+      properties: { body: { type: 'STRING' } },
+      required: ['body'],
+      maxOutputTokens: articleOutputTokens(input.targetWords),
+      temperature: .1,
+    }, fetchImpl).catch(() => null)
+    if (corrected?.body) {
+      const candidate = refineToStyle(corrected.body, dna)
+      const gate = acceptProofread(best.draft.body, candidate, dna)
+      proofread = gate.reason
+      if (gate.accepted) {
+        best = { ...best, draft: { ...best.draft, body: candidate }, ...evaluate({ ...best.draft, body: candidate }) }
+      }
+    }
+  }
+
+  /* ٤ — لا تسليم أعمى: ما يُسلَّم يُقاس ويُعلن بدرجته. */
   const article = best.draft
   const event = currentEvents.find((item) => item.id === article.eventId) || null
   const metrics = articleMetrics(article.body)
@@ -3025,10 +3127,28 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     originality: best.similarity.originality,
     similarity: best.similarity.matches,
     modelValidated: true,
+    /* النسخة الثانية: من نموذجٍ آخر وبنيةٍ أخرى، مقيسةٌ بالمسطرة نفسها. */
+    alternates: roster
+      .filter((item) => item !== best && item.verdict.score >= 55 && item.draft.body !== best.draft.body)
+      .sort((left, right) => right.rank - left.rank)
+      .slice(0, 2)
+      .map((item) => ({
+        title: boundedString(item.draft.title, 300),
+        excerpt: boundedString(item.draft.excerpt, 200),
+        body: String(item.draft.body).trim(),
+        cat: (() => { try { return normalizedArticleCategory(item.draft.cat) } catch { return 'التعليم' } })(),
+        words: item.words,
+        score: item.verdict.score,
+        structure: item.family.label,
+        model: String(item.cfModel || '').replace('@cf/', ''),
+        originality: item.similarity.originality,
+      })),
     style: {
       score: best.verdict.score,
       ready: best.verdict.ready,
       structure: best.family.label,
+      model: String(best.cfModel || '').replace('@cf/', ''),
+      proofread: proofread || 'لم يُشغَّل',
       lines: styleReportLines(best.verdict),
       checks: best.verdict.checks.map((check) => ({ key: check.key, label: check.label, grade: check.grade, actual: String(check.actual), wanted: String(check.wanted) })),
       fatal: best.verdict.fatal,
@@ -3039,6 +3159,8 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
         medianSentence: metrics.medianSentence,
         shortRate: metrics.shortRate,
         paragraphs: metrics.paragraphs,
+        duplicateSentenceRate: metrics.duplicateSentenceRate,
+        lexicalDiversity: metrics.lexicalDiversity,
       },
     },
   }

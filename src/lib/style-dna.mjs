@@ -36,6 +36,11 @@ export const sentencesOf = (value = '') => String(value)
   .map((part) => part.trim())
   .filter(Boolean)
 
+/* جُرّب فصل «الجملة البنيوية» (نقطة/تعجّب/سؤال فقط) عن الوقفة، فانهار القياس:
+   وسيط «جملته» صار ٧١ كلمة لأن «…» هي فاصله الحقيقي لا زخرفةً فوق النقطة.
+   فالقياس يبقى على إيقاعه، ومنعُ حشو الوقفات صار مسؤولية النافذة ذات الطرفين
+   في فحص «وقفات …» — وهي تخفض النص المحشو بدل أن ترفعه. */
+
 export const paragraphsOf = (value = '') => String(value)
   .split(/\n\s*\n/)
   .map((part) => part.trim())
@@ -49,7 +54,9 @@ const occurrences = (text, pattern) => (String(text).match(pattern) || []).lengt
 
 /* حدود الكلمة العربية: \b في جافاسكربت لا يرى الحروف العربية، فالمطابقة تتم
    بغياب حرفٍ قبلها وبعدها. */
-const arabicWord = (word) => new RegExp(`(?<!\\p{L})${word}(?!\\p{L})`, 'gu')
+/* الحركات علاماتٌ تركيبية \p{M} لا حروف \p{L}؛ فبلا استثنائها كان «ثمَّة»
+   يُقرأ «ثم» و«بلَغَت» تُقرأ «بل». والمشروع يحفظ نسخةً مشكّلة كاملة. */
+const arabicWord = (word) => new RegExp(`(?<![\\p{L}\\p{M}])${word}(?![\\p{L}\\p{M}])`, 'gu')
 
 /* ---------- عبارات ممنوعة: مقيسةٌ بغيابها عن أرشيفه لا بذوقي ---------- */
 /* كل عبارةٍ هنا فُحصت على ١٤٣ مقالاً فلم تَرِد ولا مرة واحدة (أو وردت مرةً
@@ -183,6 +190,42 @@ const bandOf = (values) => {
   }
 }
 
+/* التكرار: مقاييس أضيفت بعد تشغيلٍ حيّ على النموذج المجاني كشف أنه — تحت ضغط
+   «زد الوقفات» و«زد الانقلابات» و«أطل النص» — ينحدر إلى لفّ الجمل نفسها، ونال
+   ٩٥٪ من الحَكَم قبل هذه الإضافة. والقياس قاطع: الدكتور لا يكرّر إطلاقاً
+   (وسيط الجمل المكرّرة ٠٪، وp97 صفر، وأقصى تكرارٍ لجملةٍ عنده مرّتان). */
+const repetitionShape = (text) => {
+  const normalize = (value) => bareText(value).replace(/[^\p{L}\p{N}\s]+/gu, ' ').replace(/\s+/g, ' ').trim()
+  const sentences = sentencesOf(text).map(normalize).filter((item) => countWords(item) >= 5)
+  const seenSentences = new Set()
+  let duplicateSentences = 0
+  let worstRepeat = 0
+  const tally = new Map()
+  for (const sentence of sentences) {
+    if (seenSentences.has(sentence)) duplicateSentences += 1
+    seenSentences.add(sentence)
+    const count = (tally.get(sentence) || 0) + 1
+    tally.set(sentence, count)
+    if (count > worstRepeat) worstRepeat = count
+  }
+  const tokens = normalize(text).split(' ').filter(Boolean)
+  const seenGrams = new Set()
+  let duplicateGrams = 0
+  let totalGrams = 0
+  for (let index = 0; index + 8 <= tokens.length; index += 1) {
+    const gram = tokens.slice(index, index + 8).join(' ')
+    totalGrams += 1
+    if (seenGrams.has(gram)) duplicateGrams += 1
+    else seenGrams.add(gram)
+  }
+  return {
+    duplicateSentenceRate: sentences.length ? round1(duplicateSentences / sentences.length * 100) : 0,
+    duplicateGramRate: totalGrams ? round1(duplicateGrams / totalGrams * 100) : 0,
+    lexicalDiversity: tokens.length ? round1(new Set(tokens).size / tokens.length * 100) : 100,
+    worstSentenceRepeat: worstRepeat,
+  }
+}
+
 export function articleMetrics(body) {
   const text = String(body || '')
   const words = countWords(text)
@@ -211,6 +254,7 @@ export function articleMetrics(body) {
     singleRate: Math.round(paragraphSentences.filter((value) => value === 1).length / Math.max(1, paragraphSentences.length) * 100),
     firstSentenceWords: countWords(sentences[0] || ''),
     lastSentence: sentences[sentences.length - 1] || '',
+    ...repetitionShape(text),
   }
 }
 
@@ -228,6 +272,10 @@ function perArticleBands(texts) {
     medianParagraph: bandOf(column('medianParagraph')),
     longSentenceRate: bandOf(column('longSentenceRate')),
     firstSentenceWords: bandOf(column('firstSentenceWords')),
+    antithesisPer100: bandOf(column('antithesisPer100')),
+    duplicateSentenceRate: bandOf(column('duplicateSentenceRate')),
+    duplicateGramRate: bandOf(column('duplicateGramRate')),
+    lexicalDiversity: bandOf(column('lexicalDiversity')),
   }
 }
 
@@ -301,6 +349,10 @@ export const FALLBACK_STYLE_DNA = {
     words: { p03: 271, p15: 329, p35: 363, p50: 386, p65: 392, p85: 415, p97: 454 },
     ellipsisPer100: { p03: 0, p15: 1.1, p35: 5.2, p50: 7.7, p65: 10.2, p85: 12.8, p97: 15.5 },
     antithesis: { p03: 0, p15: 0, p35: 0, p50: 1, p65: 2, p85: 5, p97: 8 },
+    antithesisPer100: { p03: 0, p15: 0, p35: 0, p50: .3, p65: .5, p85: 1.3, p97: 2.3 },
+    duplicateSentenceRate: { p03: 0, p15: 0, p35: 0, p50: 0, p65: 0, p85: 0, p97: 0 },
+    duplicateGramRate: { p03: 0, p15: 0, p35: 0, p50: 0, p65: 0, p85: 0, p97: 0 },
+    lexicalDiversity: { p03: 65.9, p15: 69, p35: 71, p50: 72.6, p65: 74.1, p85: 76.7, p97: 80.1 },
     questions: { p03: 0, p15: 0, p35: 1, p50: 2, p65: 3, p85: 5, p97: 12 },
     collective: { p03: 0, p15: 0, p35: 1, p50: 1, p65: 2, p85: 3, p97: 5 },
     medianSentence: { p03: 5, p15: 6, p35: 7, p50: 8, p65: 10, p85: 15, p97: 25 },
@@ -316,9 +368,26 @@ export const FALLBACK_STYLE_DNA = {
 /* بصمةٌ واصلةٌ بلا مسطرة (واجهةٌ قديمة أو حمولةٌ مبتورة) تُكمَّل من المقيسة،
    فلا يسقط الحَكَم ولا يمرّ نصٌّ بلا قياس. */
 export const resolveStyleDna = (dna) => {
-  if (!dna || typeof dna !== 'object' || !dna.sentence || !dna.marks || !dna.paragraph) return FALLBACK_STYLE_DNA
-  if (dna.perArticle && dna.perArticle.ellipsisPer100) return dna
-  return { ...dna, perArticle: FALLBACK_STYLE_DNA.perArticle }
+  if (!dna || typeof dna !== 'object' || Array.isArray(dna)) return FALLBACK_STYLE_DNA
+  /* الإكمال حقلاً حقلاً: حمولةٌ مبتورة (واجهة قديمة أو JSON مقصوص) كانت تعبر
+     الفحص الثلاثي ثم تُسقط styleBrief بخطأ ٥٠٠ عارٍ. */
+  const merged = { ...FALLBACK_STYLE_DNA, ...dna }
+  for (const key of ['article', 'sentence', 'paragraph', 'marks', 'moves', 'closings']) {
+    merged[key] = { ...FALLBACK_STYLE_DNA[key], ...(dna[key] && typeof dna[key] === 'object' ? dna[key] : {}) }
+  }
+  merged.perArticle = { ...FALLBACK_STYLE_DNA.perArticle }
+  if (dna.perArticle && typeof dna.perArticle === 'object') {
+    for (const [key, band] of Object.entries(dna.perArticle)) {
+      if (band && typeof band === 'object' && typeof band.p50 === 'number') {
+        merged.perArticle[key] = { ...FALLBACK_STYLE_DNA.perArticle[key], ...band }
+      }
+    }
+  }
+  merged.openers = Array.isArray(dna.openers) && dna.openers.length ? dna.openers : FALLBACK_STYLE_DNA.openers
+  merged.banned = Array.isArray(dna.banned) && dna.banned.length ? dna.banned : BANNED_PHRASES
+  merged.bannedVoice = Array.isArray(dna.bannedVoice) && dna.bannedVoice.length ? dna.bannedVoice : BANNED_VOICE
+  merged.sampleSize = Number(dna.sampleSize) > 0 ? Number(dna.sampleSize) : FALLBACK_STYLE_DNA.sampleSize
+  return merged
 }
 
 /* ---------- الوصفة التي تُملى على المحرك ---------- */
@@ -338,7 +407,7 @@ export function styleBrief(rawDna, targetWords = 400) {
     `بصمة الكاتب مقيسةٌ رقمياً من ${dna.sampleSize} مقالاً منشوراً له. التزمها رقماً رقماً؛ النص الذي يخالف هذه الأرقام ليس نصّه ويُرفض آلياً:`,
     `١) الجملة قصيرة: وسيطها ${dna.sentence.median} كلمات، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${Math.max(22, dna.sentence.p90 + 3)} كلمة إلا نادراً.`,
     `٢) نقاط الحذف «…» علامته الأولى: استعملها ${ellipsis} مرة على الأقل، وقفةً قبل الانقلاب لا زخرفةً. تلتصق بما قبلها وتليها مسافة: «لأنهم عاجزون… بل لأن أحداً أقنعهم».`,
-    `٣) البناء الضدّي «…بل» عمودُ نصّه: ${antithesis} مرات على الأقل بصيغة «ليس كذا…بل كذا» أو «لا كذا…بل كذا».`,
+    `٣) البناء الضدّي «…بل»: ${antithesis} مرات لا أكثر، في مواضع انقلابٍ حقيقي بصيغة «ليس كذا… بل كذا». رشُّها في كل فقرة تقليدٌ ميكانيكي يُرفض؛ أقصى ما بلغه في مقالٍ كامل ${dna.perArticle?.antithesisPer100?.p97 ?? 2.3} لكل مئة كلمة.`,
     `٤) الفقرات ${paragraphsLow}-${paragraphsHigh} فقرة متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`,
     `٥) الأسئلة البلاغية ${questions} على الأقل، موزّعة لا متراكمة، وواحدٌ منها يصلح خاتمة.`,
     `٦) الصوت جمعيّ: «نحن» و«دعونا» و«علينا» و«نعيش». ممنوع منعاً باتاً: «أرى» و«في تقديري» و«من وجهة نظري» و«كتبتُ سابقاً» وأي إحالةٍ إلى مقالٍ سابق له.`,
@@ -348,7 +417,10 @@ export function styleBrief(rawDna, targetWords = 400) {
     `١٠) الافتتاح مشهدٌ أو نفيٌ أو ضميرٌ جمعي، في جملةٍ لا تتجاوز ${Math.max(16, dna.sentence.p90)} كلمة. ممنوع التعريف المدرسي («يُعدّ… من أهم…»).`,
     `١١) عباراتٌ محظورة لأنها غائبةٌ تماماً عن أرشيفه: ${(dna.banned || BANNED_PHRASES).filter((phrase) => phrase !== 'صيدة' && phrase !== 'صيد').slice(0, 24).join(' · ')}.`,
     '١٢) لا تستخدم كلمة «صيدة» ولا «صيد» بأي صيغة.',
-    openers.length ? `١٣) يبدأ جمله وفقراته بهذه الكلمات أكثر من غيرها — استعمل بعضها في مواضعها الطبيعية: ${openers.join(' · ')}.` : '',
+    '١٣) ممنوع منعاً باتاً تكرار جملةٍ أو عبارةٍ أو إعادة صياغة الفكرة نفسها لتطويل النص. لا يكرّر الدكتور جملةً في مقاله قط، والتكرار يُرفض آلياً مهما بلغت بقية الأرقام. كل فقرةٍ تدفع المقال خطوةً جديدة إلى الأمام.',
+    '١٤) لا تبلغ الأرقام المطلوبة بالحشو: الوقفات والانقلابات والأسئلة تأتي داخل أفكارٍ جديدة، لا بإلصاقها على جملٍ مُعادة.',
+    (dna.voiceMemory || []).length ? `★) عباراتٌ رفضها الدكتور بنفسه وقال «هذه ليست أنا» — ممنوعةٌ منعاً باتاً هي وأشباهها: ${dna.voiceMemory.slice(0, 12).map((item) => `«${item}»`).join(' · ')}.` : '',
+    openers.length ? `١٥) يبدأ جمله وفقراته بهذه الكلمات أكثر من غيرها — استعمل بعضها في مواضعها الطبيعية: ${openers.join(' · ')}.` : '',
   ].filter(Boolean).join('\n')
 }
 
@@ -363,6 +435,61 @@ const bannedPattern = (phrase) => {
 const hasBanned = (text, phrases) => {
   const bare = bareText(text)
   return (phrases || []).filter((phrase) => bannedPattern(phrase).test(bare))
+}
+
+/* ---------- بوابة الإسناد: أخطر عيبٍ رأيته في تشغيلٍ حيّ ----------
+
+   النموذج المجاني كتب في مقالٍ باسم الدكتور: «دراسة نشرت في علم النفس التربوي
+   (2025) أظهرت أن الطلاب… سجلوا تراجعاً بنسبة ٣٨٪». الدراسة مخترعة والرقم
+   مخترع — وهذا في مقال أستاذٍ جامعي كارثةٌ لا عيبُ أسلوب.
+
+   والقياس يقول إن الاستشهاد نفسه من أسلوبه: ٤٣ من ١٤٣ مقالاً تستشهد بدراساتٍ
+   حقيقية بأسمائها وسنواتها (Deci & Ryan 1999 · Vosoughi 2018 · Al-Enezi 2025).
+   فالقاعدة ليست منع الأرقام… بل منع ما لا سند له في المادة المعطاة. */
+
+const DIGIT_MAP = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' }
+const normalizeDigits = (value = '') => String(value).replace(/[٠-٩]/g, (digit) => DIGIT_MAP[digit] || digit)
+
+const PERCENT_PATTERN = /(\d+(?:[.,]\d+)?)\s*(?:%|٪|بالمئة|بالمائة|في المئة|في المائة)/g
+const CITATION_WORD = /(?<!\p{L})(?:دراسة|دراسات|بحثٌ|أبحاث|تقرير|استطلاع|إحصائية|إحصاءات)(?!\p{L})/u
+
+/* يعيد الادعاءات التي لا أثر لها في المادة المعطاة. */
+export function unsupportedClaims(body, sources = []) {
+  const haystack = normalizeDigits((sources || [])
+    .map((item) => typeof item === 'string' ? item : `${item?.body || ''} ${item?.title || ''} ${item?.summary || ''} ${item?.excerpt || ''}`)
+    .join('\n'))
+  const text = normalizeDigits(String(body || ''))
+  const claims = []
+
+  /* المطابقة بحدود الرمز لا بالاحتواء: «٣٨» موجودة كجزءٍ من رقمٍ ما في أي
+     أرشيفٍ من ٥٣ ألف كلمة، فكان كل رقمٍ مُختلَق يعبر. والنسبة تُطلب بصيغتها
+     نسبةً في المصدر لا رقماً عابراً. */
+  const numberInSources = (number) => {
+    const escaped = number.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return new RegExp(`(?<![\\d.,])${escaped}\\s*(?:%|٪|بالمئة|بالمائة|في المئة|في المائة)`, 'u').test(haystack)
+      || new RegExp(`(?<![\\d.,])${escaped}(?![\\d.,])`, 'u').test(haystack.replace(/(?<=\d)[.,](?=\d)/g, '.'))
+  }
+
+  for (const match of text.matchAll(PERCENT_PATTERN)) {
+    if (!numberInSources(match[1])) claims.push({ kind: 'نسبة', value: match[0].trim() })
+    if (claims.length >= 6) break
+  }
+
+  /* اسمُ الدراسة أو الدورية أو المؤلف هو السند الحقيقي؛ السنة وحدها دليلٌ
+     ضعيف (٢٠٢٥ موجودة في أرشيفه فتُمرِّر أي اختلاقٍ يرافقها). */
+  for (const sentence of sentencesOf(text)) {
+    if (!CITATION_WORD.test(bareText(sentence))) continue
+    const latinNames = (sentence.match(/[A-Z][A-Za-z.'-]{2,}(?:\s+(?:et al\.?|and|&)\s*[A-Za-z.'-]*)?/g) || []).map((name) => name.trim())
+    const quoted = (sentence.match(/«([^»]{3,60})»/g) || []).map((item) => item.replace(/[«»]/g, '').trim())
+    const named = [...latinNames, ...quoted]
+    if (!named.length) continue
+    const orphan = named.filter((marker) => !haystack.includes(marker) && !bareText(haystack).includes(bareText(marker)))
+    if (orphan.length === named.length) {
+      claims.push({ kind: 'استشهاد', value: sentence.slice(0, 90) })
+      if (claims.length >= 6) break
+    }
+  }
+  return claims
 }
 
 /* تداخلٌ حرفي مع الأرشيف: ستّ كلماتٍ متتالية متطابقة = نقلٌ لا محاكاة. */
@@ -404,6 +531,24 @@ const gradeAtMost = (value, band, ceilingKey = 'p65') => {
   const span = Math.max(.001, (zero - full) * 2)
   return clampNumber(1 - (value - full) / span * .95, 0, 1)
 }
+/* نافذةٌ من الطرفين. الحاجة إليها ظهرت في تشغيلٍ حيّ: النموذج تعلّم أن «كل
+   زيادةٍ في العلامة زيادةٌ في الدرجة»، فرشّ «…بل» ثماني مرات في ١٦٧ كلمة —
+   أي ٤٫٨ لكل مئة، بينما أقصى ما بلغه الدكتور في أي مقالٍ له ٤٫٥ ووسيطه ٠٫٣.
+   العلامة التي تتجاوز سقفه ليست أسلوبه… بل تقليدٌ ميكانيكي له. */
+const gradeWindow = (value, band, lowKey = 'p35', highKey = 'p85') => {
+  const low = band?.[lowKey] ?? 0
+  const high = band?.[highKey] ?? Infinity
+  if (value >= low && value <= high) return 1
+  if (value < low) {
+    const zero = band?.p03 ?? 0
+    if (value <= zero) return .05
+    return clampNumber(.05 + (value - zero) / Math.max(.001, low - zero) * .95, 0, 1)
+  }
+  const ceiling = band?.p97 ?? high
+  const runway = Math.max(.001, (ceiling - high) * 2)
+  return clampNumber(1 - (value - high) / runway * .95, .05, 1)
+}
+
 const gradeInside = (value, band) => {
   if (value >= (band?.p15 ?? 0) && value <= (band?.p85 ?? Infinity)) return 1
   const low = band?.p03 ?? 0
@@ -435,9 +580,12 @@ export function judgeStyle(body, rawDna, options = {}) {
 
   /* ١ — نقاط الحذف: أثقل علامةٍ في بصمته (٩٤٪ من مقالاته، وسيط ٢٨ وقفة). */
   const ellipsisWanted = Math.max(4, Math.round((bands.ellipsisPer100?.p35 ?? 4) * metrics.words / 100))
-  add('ellipsis', 'وقفات «…»', gradeAtLeast(metrics.ellipsisPer100, bands.ellipsisPer100), 18,
-    `${metrics.ellipsis} وقفة`, `≥ ${ellipsisWanted}`,
-    `زد وقفات «…» إلى ${ellipsisWanted} على الأقل (الموجود ${metrics.ellipsis}): وقفةً قبل الانقلاب، تلتصق بما قبلها وتليها مسافة هكذا «عاجزون… بل».`)
+  const ellipsisCeiling = Math.round((bands.ellipsisPer100?.p85 ?? 13) * metrics.words / 100)
+  add('ellipsis', 'وقفات «…»', gradeWindow(metrics.ellipsisPer100, bands.ellipsisPer100), 18,
+    `${metrics.ellipsis} وقفة`, `${ellipsisWanted}-${ellipsisCeiling}`,
+    metrics.ellipsisPer100 > (bands.ellipsisPer100?.p85 ?? 13)
+      ? `الوقفات «…» أكثر من عادته (${metrics.ellipsis} في ${metrics.words} كلمة): أبقِ منها ${ellipsisCeiling} تقريباً في مواضع الانقلاب، واحذف البقية. الوقفة التي لا تسبق انقلاباً زخرفة.`
+      : `زد وقفات «…» إلى ${ellipsisWanted} على الأقل (الموجود ${metrics.ellipsis}): وقفةً قبل الانقلاب، تلتصق بما قبلها وتليها مسافة هكذا «عاجزون… بل».`)
 
   /* ٢ — طول الجملة: الطول عيب، القِصَر ليس. */
   add('sentenceLength', 'وسيط الجملة', gradeAtMost(metrics.medianSentence, bands.medianSentence), 15,
@@ -456,9 +604,12 @@ export function judgeStyle(body, rawDna, options = {}) {
 
   /* ٥ — البناء الضدّي: العتبة عند وسيطه لا عند ربعه، لأن ربعه صفر — وصفرُ
      «بل» في نصٍّ باسمه علامةٌ فارقة لا تُغتفر. */
-  add('antithesis', 'الانقلاب «…بل»', gradeAtLeast(metrics.antithesis, bands.antithesis, 'p50'), 11,
-    `${metrics.antithesis}`, `≥ ${bands.antithesis?.p35 ?? 1}`,
-    `استعمل «…بل» ${Math.max(2, bands.antithesis?.p50 ?? 2)} مرات على الأقل (الموجود ${metrics.antithesis}) بصيغة «ليس كذا…بل كذا».`)
+  const antithesisCeiling = Math.max(2, Math.round((bands.antithesisPer100?.p85 ?? 1.3) * metrics.words / 100))
+  add('antithesis', 'الانقلاب «…بل»', gradeWindow(metrics.antithesisPer100, bands.antithesisPer100, 'p50', 'p85'), 11,
+    `${metrics.antithesis} (${metrics.antithesisPer100}/١٠٠)`, `≤ ${antithesisCeiling} في هذا الطول`,
+    metrics.antithesisPer100 > (bands.antithesisPer100?.p85 ?? 1.3)
+      ? `«بل» مرشوشة لا مقصودة (${metrics.antithesis} مرة في ${metrics.words} كلمة، وأقصى ما بلغه في مقالٍ كامل ${bands.antithesisPer100?.p97 ?? 2.3} لكل مئة). أبقِ منها ${antithesisCeiling} في مواضع الانقلاب الحقيقي واحذف الباقي؛ الانقلاب الذي لا يقلب شيئاً ركاكة.`
+      : `استعمل «…بل» مرةً أو مرتين (الموجود ${metrics.antithesis}) بصيغة «ليس كذا… بل كذا» في موضع انقلابٍ حقيقي.`)
 
   /* ٦ — الأسئلة البلاغية. */
   add('questions', 'الأسئلة البلاغية', gradeInside(metrics.questions, bands.questions), 8,
@@ -493,7 +644,35 @@ export function judgeStyle(body, rawDna, options = {}) {
     closingOpen ? 'تفتح' : 'تلخّص', 'سؤال أو انقلاب «بل» أو وقفة «…»',
     'الخاتمة تلخّص بدل أن تفتح. اجعل الجملة الأخيرة سؤالاً أو انقلاباً بـ«بل»، ولا تتجاوز ثلاثين كلمة.')
 
-  /* ١١ — النظافة الطباعية (قاطع). */
+  /* ١١ — التكرار: أثقل عيبٍ ينحدر إليه النموذج المجاني تحت ضغط الأرقام.
+     توزيعه كله أصفار، فالعتبات هنا مطلقة لا نسبية. */
+  const repetitionGrade = (() => {
+    if (metrics.duplicateSentenceRate <= 0 && metrics.duplicateGramRate < 1) return 1
+    const sentencePenalty = Math.min(1, metrics.duplicateSentenceRate / 8)
+    const gramPenalty = Math.min(1, metrics.duplicateGramRate / 5)
+    return clampNumber(1 - Math.max(sentencePenalty, gramPenalty), 0, 1)
+  })()
+  add('repetition', 'التكرار', repetitionGrade, 16,
+    `جمل مكرّرة ${metrics.duplicateSentenceRate}٪ · مقاطع مكرّرة ${metrics.duplicateGramRate}٪`, 'صفر',
+    `النص يعيد نفسه (${metrics.duplicateSentenceRate}٪ من جمله مكرّرة، وأكثر جملةٍ تتكرر ${metrics.worstSentenceRepeat} مرات). الدكتور لا يكرّر جملةً قط. احذف كل جملةٍ أو عبارةٍ مكرّرة واستبدلها بفكرةٍ جديدة تدفع المقال للأمام؛ ولا تُطِل النص بإعادة الصياغة.`)
+  if (metrics.duplicateSentenceRate >= 6 || metrics.duplicateGramRate >= 4 || metrics.worstSentenceRepeat >= 3) {
+    const cause = metrics.duplicateSentenceRate >= 6
+      ? `${metrics.duplicateSentenceRate}٪ من جمله مكرّرة`
+      : metrics.worstSentenceRepeat >= 3
+        ? `جملةٌ واحدة تتكرر ${metrics.worstSentenceRepeat} مرات`
+        : `${metrics.duplicateGramRate}٪ من مقاطعه مكرّرة`
+    fatal.push(`النص يلفّ على نفسه: ${cause}`)
+  }
+
+  /* ١٢ — تنوّع المفردات: قاعُ توزيعه ٦٦٪، وما دونه لفٌّ لا كتابة. */
+  add('lexicalDiversity', 'تنوّع المفردات', gradeAtLeast(metrics.lexicalDiversity, bands.lexicalDiversity, 'p15'), 8,
+    `${metrics.lexicalDiversity}٪`, `≥ ${bands.lexicalDiversity?.p15 ?? 69}٪`,
+    'مفرداتك تدور في حلقة ضيقة؛ وسّع المعجم ولا تُعد الجملة نفسها بصيغةٍ أخرى.')
+  if (metrics.lexicalDiversity < (bands.lexicalDiversity?.p03 ?? 60) - 6) {
+    fatal.push(`تنوّع المفردات ${metrics.lexicalDiversity}٪ — دون أي مقالٍ له`)
+  }
+
+  /* ١٣ — النظافة الطباعية (قاطع). */
   const artifacts = []
   if (/—/.test(text)) artifacts.push('الشرطة الاعتراضية —')
   if (/^\s*#{1,6}\s/m.test(text)) artifacts.push('عناوين ماركداون')
@@ -506,7 +685,7 @@ export function judgeStyle(body, rawDna, options = {}) {
     artifacts.length ? `احذف: ${artifacts.join(' · ')}؛ لا تظهر في أي مقالٍ له.` : '')
   if (artifacts.length) fatal.push(`آثار قوالب آلية: ${artifacts.join(' · ')}`)
 
-  /* ١٢ — عباراتٌ ليست منه (قاطع). */
+  /* ١٤ — عباراتٌ ليست منه (قاطع). */
   const bannedHits = hasBanned(text, dna.banned || BANNED_PHRASES)
   const voiceHits = hasBanned(text, dna.bannedVoice || BANNED_VOICE)
   const allBanned = [...bannedHits, ...voiceHits]
@@ -516,7 +695,17 @@ export function judgeStyle(body, rawDna, options = {}) {
   if (bannedHits.length) fatal.push(`عبارات نموذجٍ آليّ: ${bannedHits.join(' · ')}`)
   if (voiceHits.length) fatal.push(`صوتٌ ليس صوته: ${voiceHits.join(' · ')}`)
 
-  /* ١٣ — منع النقل الحرفي من أرشيفه (قاطع). */
+  /* ١٥ — بوابة الإسناد: رقمٌ أو دراسةٌ بلا سندٍ في المادة المعطاة (قاطع). */
+  const sources = options.sources || options.archive
+  const orphanClaims = sources ? unsupportedClaims(text, sources) : []
+  add('evidence', 'إسناد الأرقام', orphanClaims.length ? 0 : 1, 12,
+    orphanClaims.length ? orphanClaims.map((claim) => `${claim.kind}: ${claim.value}`).join(' · ') : 'كل رقمٍ مُسنَد', 'صفر بلا سند',
+    orphanClaims.length
+      ? `احذف كل رقمٍ أو دراسةٍ لا سند لها في المادة المرفقة، أو أعد صياغة الفكرة بلا رقم: ${orphanClaims.map((claim) => claim.value).slice(0, 3).join(' · ')}. الدكتور يستشهد بدراساتٍ حقيقية بأسمائها؛ اختراعُ دراسةٍ باسمه لا يُغتفر.`
+      : '')
+  if (orphanClaims.length) fatal.push(`رقمٌ أو دراسةٌ بلا سند: ${orphanClaims[0].value}`)
+
+  /* ١٦ — منع النقل الحرفي من أرشيفه (قاطع). */
   const overlap = options.archive ? verbatimOverlap(text, options.archive) : []
   if (overlap.length) {
     fatal.push(`نقلٌ حرفي من الأرشيف: «${overlap[0]}»`)
@@ -526,7 +715,11 @@ export function judgeStyle(body, rawDna, options = {}) {
   const weightTotal = checks.reduce((sum, check) => sum + check.weight, 0)
   const earned = checks.reduce((sum, check) => sum + check.grade * check.weight, 0)
   const raw = Math.round(earned / Math.max(1, weightTotal) * 100)
-  const score = clampNumber(overlap.length ? Math.min(raw, 45) : raw, 0, 100)
+  /* التحفّظ القاطع يسقف الدرجة مهما أحسن النص في بقية المقاييس. بلا هذا السقف
+     كان نصٌّ يلفّ على نفسه ينال ٦٩٪ لأنه أتقن الوقفات والانقلابات والأسئلة —
+     وهي عين طريقة النموذج في «تحقيق الأرقام» بلا كتابة. */
+  const capped = overlap.length ? Math.min(raw, 45) : (fatal.length ? Math.min(raw, 55) : raw)
+  const score = clampNumber(capped, 0, 100)
 
   return {
     score,
@@ -547,15 +740,17 @@ export function polishTypography(value = '') {
   let text = String(value)
     .replace(/\r\n?/g, '\n')
     .replace(/[‎‏‪-‮]/g, '')
-    .replace(/^\s*#{1,6}\s+/gm, '')
+    .replace(/^[ \t]*#{1,6}[ \t]+/gm, '')
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/__(.+?)__/g, '$1')
-    .replace(/^\s*[-*•]\s+/gm, '')
+    .replace(/^[ \t]*[-*•][ \t]+/gm, '')
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '')
     .replace(/\.{3,}/g, '…')
     .replace(/\s*—\s*/g, '، ')
     .replace(/\s*–\s*/g, '، ')
-    .replace(/"([^"\n]{2,120})"/g, '«$1»')
+    /* الاقتران بالتناوب: القاعدة القديمة تتخطى أي مقطعٍ خارج المدى فتزاوج
+       علامة إغلاقه مع افتتاح المقطع التالي، فتحيط الأقواس بالسرد لا بالاقتباس. */
+    .replace(/"/g, (() => { let open = true; return () => (open = !open) ? '»' : '«' })())
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/ ([،؛؟!.])/g, '$1')
     .replace(/…{2,}/g, '…')
@@ -600,9 +795,13 @@ export function liftPauses(value = '', rawDna) {
   let text = String(value)
   for (const juncture of PAUSE_JUNCTURES) {
     if (current >= target) break
-    let seen = 0
-    let lifted = 0
-    text = text.replace(new RegExp(`،[ \\t]+(?=${juncture.word}(?!\\p{L}))`, 'gu'), () => {
+    /* المفاصل المحوَّلة سابقاً تُحسب ضمن الكل، وإلا حوّل كل تمريرٍ نصيباً
+       جديداً من الباقين حتى تبلغ النسبة ١٠٠٪ — والدالة تُستدعى مرتين في
+       المسار الحقيقي (خادمٌ ثم واجهة). */
+    const already = occurrences(text, new RegExp(`…[ \\t]*${juncture.word}(?![\\p{L}\\p{M}])`, 'gu'))
+    let seen = already
+    let lifted = already
+    text = text.replace(new RegExp(`،[ \\t]+(?=${juncture.word}(?![\\p{L}\\p{M}]))`, 'gu'), () => {
       seen += 1
       if (current >= target || lifted >= Math.ceil(seen * juncture.share)) return '، '
       current += 1
@@ -622,7 +821,7 @@ const SENTENCE_STARTERS = ['بل', 'ولكن', 'لكن', 'ولا', 'لا', 'وق
 export function breakLongSentences(value = '', rawDna) {
   const dna = resolveStyleDna(rawDna)
   const ceiling = Math.max(16, (dna.perArticle?.medianSentence?.p85 ?? 15) + 4)
-  const pattern = new RegExp(`،[ \\t]+(?=(?:${SENTENCE_STARTERS.join('|')})(?!\\p{L}))`, 'u')
+  const pattern = new RegExp(`،[ \\t]+(?=(?:${SENTENCE_STARTERS.join('|')})(?![\\p{L}\\p{M}]))`, 'u')
   const rebuild = (sentence) => {
     if (countWords(sentence) <= ceiling) return sentence
     /* نختار المفصل الأقرب إلى المنتصف كي لا نُخلّف جملةً يتيمة. */
@@ -695,6 +894,97 @@ export function refineToStyle(value = '', rawDna) {
   return applyRhythm(liftPauses(breakLongSentences(polishTypography(value), rawDna), rawDna), rawDna)
 }
 
+/* ---------- ذاكرة الصوت: ما يقوله الدكتور بنفسه «هذه ليست أنا» ----------
+
+   البصمة تُقاس من أرشيفه، وهي ماضيه. وهذه تُبنى من حكمه هو على ما يُكتب له
+   الآن. حين يشير إلى فقرةٍ ويقول «ليست أنا»، نستخرج منها العباراتِ التي لا
+   أثر لها في أرشيفه — فهي بالضبط ما دخل من عند النموذج لا من عنده — ونمنعها
+   في كل مقالٍ قادم. لا نموذج يُدرَّب ولا خدمة تُشترى: قائمةُ منعٍ تكبر بحكمه. */
+
+const VOICE_STOP = new Set(['في','من','على','الى','إلى','عن','مع','هذا','هذه','ذلك','التي','الذي','ان','أن','إن','ما','لا','لم','لن','قد','هو','هي','كل','بين','عند','ثم','او','أو','و','ف','ب','ل','ك'])
+
+/* عباراتٌ من ثلاث كلماتٍ دلالية لا تَرِد في أرشيفه إطلاقاً: هذه بصمة النموذج
+   لا بصمته. نأخذ أندرها لا أكثرها كي تبقى القائمة دقيقة. */
+export function extractVoiceSignature(rejectedText, corpus = [], limit = 4) {
+  const haystack = ` ${bareText((corpus || []).map((item) => typeof item === 'string' ? item : String(item?.body || '')).join(' ')).replace(/[^\p{L}\p{N}\s]+/gu, ' ').replace(/\s+/g, ' ')} `
+  const tokens = bareText(String(rejectedText || '')).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean)
+  const found = []
+  for (let index = 0; index + 3 <= tokens.length; index += 1) {
+    const gram = tokens.slice(index, index + 3)
+    if (gram.filter((word) => !VOICE_STOP.has(word) && word.length > 2).length < 2) continue
+    const phrase = gram.join(' ')
+    if (haystack.includes(` ${phrase} `)) continue
+    if (found.some((item) => item.includes(gram[1]))) continue
+    found.push(phrase)
+    if (found.length >= limit) break
+  }
+  return found
+}
+
+/* البصمة + ما تعلّمه منه: قائمة المنع الشخصية تدخل الحَكَم والوصفة معاً. */
+export function withVoiceMemory(rawDna, exclusions = []) {
+  const dna = resolveStyleDna(rawDna)
+  const extra = (exclusions || []).map((item) => String(item || '').trim()).filter((item) => item.length > 4).slice(0, 60)
+  if (!extra.length) return dna
+  return { ...dna, bannedVoice: [...(dna.bannedVoice || BANNED_VOICE), ...extra], voiceMemory: extra }
+}
+
+/* ---------- بوابة المصحّح اللغوي ----------
+
+   نموذجٌ ثانٍ يصحّح الإملاء والتطابق فقط. الخطر أن يعيد الكتابة بأسلوبه هو،
+   فيضيع كل ما بُني. هذه البوابة تقبل التصحيح أو ترفضه كاملاً:
+
+     · لا يتغيّر عدد الكلمات أكثر من ٣٪.
+     · لا تتغيّر الحروف أكثر من ٤٪ (تصحيحٌ لا إعادة كتابة).
+     · لا تنخفض درجة المطابقة أكثر من نقطتين.
+     · لا تظهر عبارةٌ ممنوعة جديدة، ولا يُمسّ عدد الوقفات والانقلابات.
+
+   وإن سقط أي شرط: يبقى النص الأصلي كما هو. */
+export function acceptProofread(original, corrected, rawDna) {
+  const dna = resolveStyleDna(rawDna)
+  const source = String(original || '')
+  const target = String(corrected || '')
+  if (!target.trim()) return { accepted: false, reason: 'المصحّح أعاد نصاً فارغاً' }
+
+  const sourceWords = countWords(source)
+  const targetWords = countWords(target)
+  if (Math.abs(targetWords - sourceWords) > Math.max(6, sourceWords * .03)) {
+    return { accepted: false, reason: `المصحّح غيّر الطول (${sourceWords} ← ${targetWords})` }
+  }
+
+  /* نسبة الحروف المتغيّرة: تصحيحُ إملاءٍ يمسّ أحرفاً معدودة، لا فقرات. */
+  const a = bareText(source).replace(/[^\p{L}\p{N}]+/gu, '')
+  const b = bareText(target).replace(/[^\p{L}\p{N}]+/gu, '')
+  let common = 0
+  for (let index = 0, cursor = 0; index < a.length && cursor < b.length; index += 1) {
+    const found = b.indexOf(a[index], cursor)
+    if (found >= 0 && found - cursor < 4) { common += 1; cursor = found + 1 }
+  }
+  const drift = 1 - common / Math.max(1, a.length)
+  if (drift > .04) return { accepted: false, reason: `المصحّح أعاد الكتابة لا التصحيح (${Math.round(drift * 100)}٪ من الحروف)` }
+
+  const before = judgeStyle(source, dna)
+  const after = judgeStyle(target, dna)
+  if (after.score < before.score - 2) return { accepted: false, reason: `المطابقة انخفضت ${before.score}٪ ← ${after.score}٪` }
+  if (after.fatal.length > before.fatal.length) return { accepted: false, reason: 'المصحّح أدخل تحفّظاً قاطعاً جديداً' }
+
+  const beforeMarks = articleMetrics(source)
+  const afterMarks = articleMetrics(target)
+  if (afterMarks.ellipsis < beforeMarks.ellipsis - 1 || afterMarks.antithesis < beforeMarks.antithesis - 1) {
+    return { accepted: false, reason: 'المصحّح مسّ وقفاتك أو انقلاباتك' }
+  }
+  return { accepted: true, reason: `صُحّح بلا مساسٍ بالأسلوب (${before.score}٪ ← ${after.score}٪)`, score: after.score }
+}
+
+export const PROOFREAD_INSTRUCTION = [
+  'أنت مدقّقٌ لغويّ عربيّ صارم، ولستَ كاتباً ولا محرّراً.',
+  'مهمتك الوحيدة: تصحيح الأخطاء الإملائية والنحوية وأخطاء التطابق في النص كما هو.',
+  'ممنوع منعاً باتاً: تغيير أسلوب الكاتب، أو إعادة صياغة جملة، أو حذف جملة أو إضافتها،',
+  'أو تغيير علامات الترقيم — وبخاصة نقاط الحذف «…» وعلامات الاقتباس «» — أو تغيير',
+  'مواضع الفقرات، أو تحويل التنوين إلى صورةٍ أخرى (اكتب «طلاباً» لا «طلابًا»).',
+  'أعد النص نفسه حرفاً بحرف مع تصحيح الأخطاء وحدها. أعد JSON بمفتاح body فقط.',
+].join('\n')
+
 /* ---------- تقريرٌ عربيّ قصير يُعرض للدكتور ---------- */
 export function styleReportLines(verdict) {
   if (!verdict) return []
@@ -703,6 +993,7 @@ export function styleReportLines(verdict) {
     `مطابقة الأسلوب: ${verdict.score}٪${verdict.ready ? ' — مطابق' : ' — دون العتبة'}`,
     `وقفات «…» ${metrics.ellipsis} · انقلابات «بل» ${metrics.antithesis} · أسئلة ${metrics.questions}`,
     `وسيط الجملة ${metrics.medianSentence} كلمة · الجمل القصيرة ${metrics.shortRate}٪ · فقرات من جملة ${metrics.singleRate}٪`,
+    `التكرار ${metrics.duplicateSentenceRate}٪ · تنوّع المفردات ${metrics.lexicalDiversity}٪`,
     ...(verdict.fatal.length ? [`تحفّظات قاطعة: ${verdict.fatal.join(' · ')}`] : []),
   ]
 }

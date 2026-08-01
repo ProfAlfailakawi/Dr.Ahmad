@@ -4,6 +4,7 @@
     "noura": true
   },
   "a-generation-without-rootsarabic": {
+    "dialogue": true,
     "fahed": true,
     "noura": true
   },
@@ -15,22 +16,13 @@
     "fahed": true,
     "noura": true
   },
-  "aggression-in-the-sky-and-steadfastness-withinarabic": {
-    "noura": true
-  },
   "alternative-plans-for-distance-education": {
-    "fahed": true,
-    "noura": true
-  },
-  "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2": {
+    "dialogue": true,
     "fahed": true,
     "noura": true
   },
   "children-who-know-what-is-required-but-do-not-know-whyarabic": {
     "fahed": true,
-    "noura": true
-  },
-  "children-who-know-what-is-required-but-do-not-know-whyarabic-2": {
     "noura": true
   },
   "coming-soon-a-certificate-without-a-mind-2": {
@@ -39,9 +31,6 @@
   },
   "competency-based-approach-to-the-trash": {
     "fahed": true,
-    "noura": true
-  },
-  "do-we-contain-or-raise-2": {
     "noura": true
   },
   "dr-jasem-malik-the-lesson-that-never-ends-2": {
@@ -80,12 +69,8 @@
     "fahed": true,
     "noura": true
   },
-  "i-earned-more-than-harvard-but-it-doesnt-teach-brains": {
-    "noura": true
-  },
   "i-write-to-awaken-you-not-to-discourage-you-2": {
-    "fahed": true,
-    "noura": true
+    "fahed": true
   },
   "in-farewell-to-abdullah-ismail-al-kandariarabic": {
     "fahed": true,
@@ -150,7 +135,6 @@
     "noura": true
   },
   "qabas-201703-001": {
-    "fahed": true,
     "noura": true
   },
   "qabas-201703-002": {
@@ -212,9 +196,6 @@
   "qabas-201709-001": {
     "fahed": true
   },
-  "qabas-201709-002": {
-    "fahed": true
-  },
   "qabas-201709-003": {
     "fahed": true,
     "noura": true
@@ -224,11 +205,7 @@
     "noura": true
   },
   "qabas-201709-005": {
-    "fahed": true,
     "noura": true
-  },
-  "qabas-201709-006": {
-    "fahed": true
   },
   "qabas-201709-007": {
     "fahed": true,
@@ -247,24 +224,11 @@
     "noura": true
   },
   "qabas-201711-002": {
-    "fahed": true,
     "noura": true
-  },
-  "qabas-201711-003": {
-    "fahed": true
   },
   "qabas-201711-004": {
     "fahed": true,
     "noura": true
-  },
-  "qabas-201712-001": {
-    "fahed": true
-  },
-  "qabas-201712-002": {
-    "fahed": true
-  },
-  "qabas-201712-003": {
-    "fahed": true
   },
   "qabas-201712-004": {
     "fahed": true,
@@ -302,21 +266,9 @@
     "fahed": true,
     "noura": true
   },
-  "qabas-201805-001": {
-    "fahed": true
-  },
-  "qabas-201805-002": {
-    "fahed": true
-  },
-  "qabas-201805-003": {
-    "fahed": true
-  },
   "qabas-201805-004": {
     "fahed": true,
     "noura": true
-  },
-  "qabas-201806-001": {
-    "fahed": true
   },
   "qabas-201806-002": {
     "fahed": true,
@@ -326,25 +278,11 @@
     "fahed": true,
     "noura": true
   },
-  "qabas-201806-004": {
-    "fahed": true
-  },
-  "qabas-201806-005": {
-    "fahed": true
-  },
   "qabas-201808-001": {
     "fahed": true,
     "noura": true
   },
   "qabas-201808-002": {
-    "fahed": true,
-    "noura": true
-  },
-  "qabas-201810-001": {
-    "fahed": true,
-    "noura": true
-  },
-  "qabas-201810-002": {
     "fahed": true,
     "noura": true
   },
@@ -372,13 +310,6 @@
     "fahed": true,
     "noura": true
   },
-  "rest-is-taught-and-the-mind-is-on-permanent-vacation-2": {
-    "noura": true
-  },
-  "students-minds-are-on-vacation-while-chatgpt-works-full-time-2": {
-    "fahed": true,
-    "noura": true
-  },
   "success-that-does-not-bring-joy-to-its-ownerarabic": {
     "fahed": true,
     "noura": true
@@ -388,10 +319,6 @@
     "noura": true
   },
   "the-classroom-that-fears-mistakesarabic": {
-    "fahed": true,
-    "noura": true
-  },
-  "the-excellence-epidemic-or-the-cult-of-grades-2": {
     "fahed": true,
     "noura": true
   },
@@ -408,10 +335,6 @@
     "noura": true
   },
   "the-mind-present-in-absence-absent-in-presence-2": {
-    "fahed": true,
-    "noura": true
-  },
-  "the-republic-of-degrees-and-the-fall-of-thought-2": {
     "fahed": true,
     "noura": true
   },
@@ -447,10 +370,6 @@
     "fahed": true,
     "noura": true
   },
-  "we-breastfeed-them-with-tenderness-and-deprive-them-of-education": {
-    "fahed": true,
-    "noura": true
-  },
   "we-graduated-with-a-degree-but-the-language-was-lost-2": {
     "fahed": true,
     "noura": true
@@ -460,10 +379,6 @@
     "noura": true
   },
   "when-a-student-wishes-for-death-before-the-first-bell-2": {
-    "fahed": true,
-    "noura": true
-  },
-  "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2": {
     "fahed": true,
     "noura": true
   },

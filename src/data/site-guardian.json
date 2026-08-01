@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "checkedAt": "2026-07-28T11:16:03.111Z",
+  "checkedAt": "2026-08-01T04:35:33.182Z",
   "status": "attention",
   "counts": {
     "articles": 143,
-    "missingAudio": 41,
+    "missingAudio": 39,
     "missingImages": 0,
     "brokenInternal": 0,
     "orphans": 0,
@@ -135,20 +135,6 @@
       "severity": "info",
       "slug": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
       "title": "السوق المفتوح لاقتناء الشهادات أزمة علمية أم أخلاقية؟",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "qabas-201810-001",
-      "title": "أصول التوجيه للطلبة… فلكل مقام مقال…",
-      "note": "لا يوجد صوت منشور بعد"
-    },
-    {
-      "kind": "audio",
-      "severity": "info",
-      "slug": "qabas-201810-002",
-      "title": "سر اليوتيوب… وغموض المحتوى",
       "note": "لا يوجد صوت منشور بعد"
     },
     {

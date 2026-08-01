@@ -12,6 +12,9 @@ import { ContentManagerHeader } from './ContentManagerHeader'
 import { IdeaDnaPanel } from './IdeaDnaPanel'
 import { createIdeaDna } from '../../lib/idea-dna'
 import { buildBookArchitecture, buildEvidenceChain, buildMeaningFingerprint, type BookArchitecture, type PersonalSourceRecord } from '../../lib/editorial-memory'
+import { buildPublicationPassportDraft, type PublicationPassportDraft, type SignedPublicationPassport } from '../../lib/sovereign-publishing.mjs'
+import { requestPublicationPassportSignature } from '../../lib/publication-passport-client'
+import { audioProofAssets } from '../../lib/audio-proof'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -321,6 +324,69 @@ function cleanData(kind: ManagedKind, form: Form) {
 
 function same(a: unknown, b: unknown) {
   return String(a ?? '').trim() === String(b ?? '').trim()
+}
+
+function objectRecord(value: unknown): Record<string, any> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, any> : {}
+}
+
+function articlePublicationPassportDraft(form: Form, current?: ManagedRecord | null, evidenceAlerts: string[] = []): PublicationPassportDraft {
+  const studio = objectRecord(current?.publishingStudio)
+  const socialPack = objectRecord(studio.socialPack)
+  const existingPassport = objectRecord(current?.publicationPassport)
+  const existingManifest = objectRecord(existingPassport.manifest)
+  const existingComponents = objectRecord(existingManifest.components)
+  const contentChanged = Boolean(current && (
+    !same(form.title, current.title)
+    || !same(form.body, current.body)
+    || !same(form.excerpt, current.excerpt)
+  ))
+  const audioAssets = contentChanged ? [] : audioProofAssets(form.slug || current?.slug || '')
+  const existingDesign = objectRecord(existingComponents.design)
+  const visualDirections = Array.isArray(socialPack.visualDirections) ? socialPack.visualDirections : []
+  const carouselSlides = Array.isArray(socialPack.carouselSlides) ? socialPack.carouselSlides : []
+  const designCount = contentChanged ? 0 : visualDirections.length + carouselSlides.length || Number(existingDesign.assetCount || 0)
+  const existingSocial = objectRecord(existingComponents.social)
+  const xPosts = Array.isArray(socialPack.x) ? socialPack.x.map(String) : []
+  const socialValues = [socialPack.linkedin, socialPack.facebook, socialPack.threads, socialPack.instagramCaptions, socialPack.stories, socialPack.whatsapp, socialPack.newsletter]
+  const platformCount = contentChanged ? 0 : 1 + socialValues.filter((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)).length
+  const relatedPapers = Array.isArray(studio.relatedPapers) ? studio.relatedPapers.map((item: unknown) => String(objectRecord(item).slug || '')).filter(Boolean) : []
+  const existingSources = objectRecord(existingComponents.sources)
+  const sourceIds = [...relatedPapers, form.source || form.url || '', ...(Array.isArray(existingSources.ids) ? existingSources.ids.map(String) : [])].filter(Boolean)
+  const sourceProofs = [
+    ...relatedPapers.map((slug) => `paper:${slug}`),
+    form.source || form.url || '',
+    ...(Array.isArray(existingSources.proofs) ? existingSources.proofs.map(String) : []),
+  ].filter(Boolean)
+  const alerts = [...evidenceAlerts]
+  if (contentChanged && sourceIds.length) alerts.push('تغيّر النص بعد الجواز السابق؛ تحتاج صلة المصادر مراجعة جديدة.')
+  return buildPublicationPassportDraft({
+    article: {
+      slug: form.slug || current?.slug || '',
+      title: form.title || '',
+      excerpt: form.excerpt || '',
+      body: form.body || '',
+      meaningFingerprint: String(objectRecord(studio.sovereignPublication).fingerprint || ''),
+    },
+    audio: { assets: audioAssets },
+    design: {
+      assetCount: designCount,
+      qualityScore: contentChanged ? 0 : Number(socialPack.qualityScore || existingDesign.qualityScore || 0),
+      fingerprints: visualDirections.map((item: unknown) => JSON.stringify(item)),
+    },
+    social: {
+      tweetCount: contentChanged ? 0 : xPosts.length || Number(existingSocial.tweetCount || 0),
+      platformCount: contentChanged ? 0 : platformCount || Number(existingSocial.platformCount || 0),
+      campaignId: String(objectRecord(studio.sovereignPublication).campaignId || existingSocial.campaignId || ''),
+      content: contentChanged ? '' : JSON.stringify(socialPack),
+    },
+    evidence: { sourceIds, proofs: sourceProofs, alerts },
+    releaseDecision: {
+      targetStatus: form.status || 'draft',
+      manualOverride: form._manualPublishOverride === '1',
+      overrideReason: form._manualPublishReason || '',
+    },
+  })
 }
 
 async function hasPdfSignature(file: File) {
@@ -877,7 +943,19 @@ ${form.outlet || ''}`
 
   const researchAnalysis = useMemo(() => kind === 'paper' ? analyzeResearch(form) : null, [form, kind])
   const readiness = publishReadiness(kind, form)
-  const readinessComplete = readiness.checks.every((check) => check.ok) && !readiness.leaked
+  const passportPreview = useMemo(
+    () => kind === 'article' ? articlePublicationPassportDraft(form, current, articleEvidenceReview?.alerts || []) : null,
+    [articleEvidenceReview?.alerts, current, form, kind],
+  )
+  const passportChecks = passportPreview ? [
+    { label: 'جواز: النص', ok: passportPreview.components.text.status === 'verified' },
+    { label: 'جواز: الصوت', ok: passportPreview.components.audio.status === 'verified' },
+    { label: 'جواز: التصميم', ok: passportPreview.components.design.status === 'verified' },
+    { label: 'جواز: التغريدات', ok: passportPreview.components.social.status === 'verified' },
+    { label: 'جواز: المصادر', ok: passportPreview.components.sources.status === 'verified' },
+  ] : []
+  const combinedReadinessChecks = [...readiness.checks, ...passportChecks]
+  const readinessComplete = combinedReadinessChecks.every((check) => check.ok) && !readiness.leaked
   const targetsPublicArticle = kind === 'article' && form.status !== 'draft'
   const needsRecordedOverride = targetsPublicArticle && !readinessComplete && !readiness.leaked
   const applyResearchAnalysis = async () => {
@@ -1192,15 +1270,15 @@ ${form.outlet || ''}`
 
           {error && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.86rem] text-soft">{error}</p>}
           {(() => {
-            const done = readiness.checks.filter((check) => check.ok).length
+            const done = combinedReadinessChecks.filter((check) => check.ok).length
             return (
-              <div className="rounded-xl border border-hair bg-wash px-4 py-3">
+              <div className="rounded-xl border border-hair bg-wash px-4 py-3" data-sovereign-publication-gate={passportPreview ? 'true' : undefined}>
                 <p className="text-[.72rem] font-semibold text-soft">
-                  جاهزية النشر: <span className={done === readiness.checks.length ? 'text-accent' : 'text-ink'}>{done}/{readiness.checks.length}</span>
-                  <span className="ms-2 font-light">— {kind === 'article' ? 'المسودة متاحة دائماً؛ النشر يحتاج اكتمالها أو تجاوزاً مسجلاً.' : 'مؤشر مراجعة واضح قبل الحفظ.'}</span>
+                  جاهزية النشر: <span className={done === combinedReadinessChecks.length ? 'text-accent' : 'text-ink'}>{done}/{combinedReadinessChecks.length}</span>
+                  <span className="ms-2 font-light">— {kind === 'article' ? 'المسودة متاحة دائماً؛ قبل النشر يوقّع الخادم حالة الطبقات الخمس كما هي.' : 'مؤشر مراجعة واضح قبل الحفظ.'}</span>
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
-                  {readiness.checks.map((check) => (
+                  {combinedReadinessChecks.map((check) => (
                     <span key={check.label} className={`text-[.74rem] ${check.ok ? 'text-accent' : 'text-soft'}`}>
                       {check.ok ? '✓' : '○'} {check.label}
                     </span>
@@ -1211,6 +1289,7 @@ ${form.outlet || ''}`
                     ⚠ إنذار أمني: حقل عام يحمل بصمة المنظومة الخاصة («{readiness.leaked}»). احذفها قبل النشر — حزام البناء سيوقف الموقع كله إن بقيت.
                   </p>
                 )}
+                {passportPreview && <p className="mt-2 text-[.7rem] leading-relaxed text-soft">{passportPreview.releaseReady ? '✓ جواز النشر مكتمل وسيُعاد توقيعه على هذه النسخة لحظة النشر.' : `الجواز سيثبت أن الطبقات المعلّقة هي: ${passportPreview.blocking.join('، ')}.`}</p>}
               </div>
             )
           })()}
@@ -1223,7 +1302,7 @@ ${form.outlet || ''}`
                   checked={form._manualPublishOverride === '1'}
                   onChange={(event) => setForm((previous) => ({ ...previous, _manualPublishOverride: event.target.checked ? '1' : '', _manualPublishReason: event.target.checked ? previous._manualPublishReason : '' }))}
                 />
-                <span><strong>تجاوز يدوي مسجّل.</strong> أملك سبباً تحريرياً لنشر هذه النسخة قبل اكتمال معيار ٣٠٠ كلمة.</span>
+                <span><strong>تجاوز يدوي مسجّل وموقّع.</strong> أملك سبباً تحريرياً للنشر قبل اكتمال أحد معايير النص أو الصوت أو التصميم أو التغريدات أو المصادر.</span>
               </label>
               {form._manualPublishOverride === '1' && (
                 <textarea
@@ -1332,6 +1411,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
     try {
       let preparedForm = { ...form }
       let publicationGateAudit: Record<string, unknown> | null = null
+      let publicationPassport: SignedPublicationPassport | null = null
       if (kind === 'paper') {
         const local = analyzeResearch(preparedForm)
         const fingerprint = local.analysisFingerprint
@@ -1360,22 +1440,8 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         preparedForm = { ...preparedForm, title: normalizeArabicTypography(preparedForm.title || ''), excerpt: normalizeArabicTypography(preparedForm.excerpt || ''), body: normalizeArabicTypography(preparedForm.body || '') }
         if ((preparedForm.body || '').trim().length < 40) throw new Error('نص المقال يجب أن يكون 40 حرفاً على الأقل.')
         const readiness = publishReadiness('article', preparedForm)
-        const passed = readiness.checks.every((check) => check.ok) && !readiness.leaked
         const targetsPublication = preparedForm.status !== 'draft'
-        const manualOverride = preparedForm._manualPublishOverride === '1'
-        const overrideReason = (preparedForm._manualPublishReason || '').trim()
         if (targetsPublication && readiness.leaked) throw new Error(`توقّف النشر لأن النص يحمل بصمة خاصة («${readiness.leaked}»). احذفها أو احفظ المادة مسودة.`)
-        if (targetsPublication && !passed && (!manualOverride || overrideReason.length < 12)) {
-          throw new Error('بوابة النشر غير مكتملة. احفظها مسودة، أو فعّل التجاوز اليدوي واكتب سبباً واضحاً من 12 حرفاً على الأقل.')
-        }
-        publicationGateAudit = {
-          passed,
-          manualOverride: Boolean(targetsPublication && !passed && manualOverride),
-          overrideReason: targetsPublication && !passed ? overrideReason : '',
-          targetStatus: preparedForm.status || 'draft',
-          checkedAtClient: new Date().toISOString(),
-          checks: readiness.checks,
-        }
         if (preparedForm.status === 'scheduled') {
           const scheduled = Date.parse(preparedForm.scheduledAt || '')
           if (!Number.isFinite(scheduled)) throw new Error('حدد موعد نشر صحيح قبل الجدولة.')
@@ -1403,6 +1469,47 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       const slug = data.slug
       if (!slug) throw new Error('الرابط المختصر مطلوب')
 
+      if (kind === 'article') {
+        const readiness = publishReadiness('article', preparedForm)
+        const targetsPublication = data.status !== 'draft'
+        const manualOverride = preparedForm._manualPublishOverride === '1'
+        const overrideReason = (preparedForm._manualPublishReason || '').trim()
+        const passportDraft = articlePublicationPassportDraft(preparedForm, current)
+        const preliminaryPassed = readiness.checks.every((check) => check.ok) && !readiness.leaked && passportDraft.releaseReady
+        if (targetsPublication && !preliminaryPassed && (!manualOverride || overrideReason.length < 12)) {
+          throw new Error(`جواز النشر غير مكتمل (${passportDraft.blocking.join('، ')}). أكمل الطبقات، أو احفظ مسودة، أو فعّل تجاوزاً مسبباً من 12 حرفاً على الأقل.`)
+        }
+        if (targetsPublication) publicationPassport = await requestPublicationPassportSignature(passportDraft)
+        const passportManifest = publicationPassport?.manifest || passportDraft
+        const passportChecks = Object.entries(passportManifest.components).map(([key, component]) => ({
+          label: `جواز:${({ text: 'النص', audio: 'الصوت', design: 'التصميم', social: 'التغريدات', sources: 'المصادر' } as Record<string, string>)[key] || key}`,
+          ok: component.status === 'verified',
+        }))
+        const checks = [...readiness.checks, ...passportChecks]
+        const passed = checks.every((check) => check.ok) && !readiness.leaked
+        if (targetsPublication && !passed && (!manualOverride || overrideReason.length < 12)) {
+          throw new Error(`جواز النشر غير مكتمل (${passportManifest.blocking.join('، ')}). أكمل الطبقات، أو احفظ مسودة، أو فعّل تجاوزاً مسبباً من 12 حرفاً على الأقل.`)
+        }
+        publicationGateAudit = {
+          passed,
+          manualOverride: Boolean(targetsPublication && !passed && manualOverride),
+          overrideReason: targetsPublication && !passed ? overrideReason : '',
+          targetStatus: data.status || 'draft',
+          checkedAtClient: new Date().toISOString(),
+          checks,
+          passport: publicationPassport ? {
+            passportId: publicationPassport.passportId,
+            fingerprint: publicationPassport.fingerprint,
+            signature: publicationPassport.signature,
+            algorithm: publicationPassport.algorithm,
+            keyId: publicationPassport.keyId,
+            signedAt: publicationPassport.signedAt,
+            releaseReady: publicationPassport.manifest.releaseReady,
+            blocking: publicationPassport.manifest.blocking,
+          } : { signed: false, releaseReady: passportDraft.releaseReady, blocking: passportDraft.blocking },
+        }
+      }
+
       const collision = items.find((item) => item.slug === slug && item !== current)
       if (!current && collision) throw new Error('هذا الرابط المختصر مستخدم؛ غيّره قبل النشر.')
 
@@ -1425,10 +1532,16 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       const firstPublication = kind === 'article' && data.status === 'published' && !(current && 'publishedAt' in current && current.publishedAt)
         ? { publishedAt: serverTimestamp() }
         : {}
+      const passportInvalidated = kind === 'article' && Boolean(current && (
+        !same(data.title, current.title) || !same(data.body, current.body) || !same(data.excerpt, current.excerpt)
+      ))
+      const passportWrite = kind === 'article'
+        ? publicationPassport || (passportInvalidated ? null : current?.publicationPassport || undefined)
+        : undefined
       if (!current) {
-        await setDoc(doc(db, collections[kind], slug), { ...data, ...firstPublication, ...(publicationGateAudit ? { publicationGate: publicationGateAudit } : {}), createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+        await setDoc(doc(db, collections[kind], slug), { ...data, ...firstPublication, ...(publicationGateAudit ? { publicationGate: publicationGateAudit } : {}), ...(passportWrite !== undefined ? { publicationPassport: passportWrite } : {}), createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
       } else if (current._cms.origin === 'added') {
-        await setDoc(doc(db, collections[kind], current._cms.docId || current.slug), { ...data, ...firstPublication, ...(publicationGateAudit ? { publicationGate: publicationGateAudit } : {}), updatedAt: serverTimestamp() }, { merge: true })
+        await setDoc(doc(db, collections[kind], current._cms.docId || current.slug), { ...data, ...firstPublication, ...(publicationGateAudit ? { publicationGate: publicationGateAudit } : {}), ...(passportWrite !== undefined ? { publicationPassport: passportWrite } : {}), updatedAt: serverTimestamp() }, { merge: true })
       } else {
         const base = getBaseRecord(kind, current._cms.baseSlug || current.slug)
         if (!base) throw new Error('تعذّر العثور على نسخة الأصل لهذا العنصر')
@@ -1438,6 +1551,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         // حالة الصوت ليست حقلاً تحريرياً نصياً، لكنها يجب أن تبقى عند تعديل المقال لاحقاً.
         if (kind === 'article' && current.audioControl) patch.audioControl = current.audioControl
         if (publicationGateAudit) patch.publicationGate = publicationGateAudit
+        if (kind === 'article' && passportWrite !== undefined) patch.publicationPassport = passportWrite
         const overrideRef = doc(db, 'content_overrides', `${kind}:${current._cms.baseSlug || current.slug}`)
         if (!Object.keys(patch).length && !current._cms.hidden) await deleteDoc(overrideRef)
         else await setDoc(overrideRef, { patch, hidden: Boolean(current._cms.hidden), updatedAt: serverTimestamp() })
@@ -1481,6 +1595,12 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
             evidenceAlerts,
             needsEvidenceReview: evidenceAlerts.length > 0,
             contentStatus: data.status || 'published',
+            ...(publicationPassport ? {
+              publicationPassportId: publicationPassport.passportId,
+              publicationPassportFingerprint: publicationPassport.fingerprint,
+              publicationPassportReady: publicationPassport.manifest.releaseReady,
+              publicationPassportSignedAt: publicationPassport.signedAt,
+            } : {}),
             updatedAtClient: new Date().toISOString(),
             updatedAt: serverTimestamp(),
             ...(!existingSnapshot.exists() ? { createdAt: serverTimestamp() } : {}),
@@ -1490,7 +1610,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         }
       }
       setCurrent(undefined)
-      await done(kind === 'article' && data.status === 'scheduled' ? '✓ حُفظ المقال مجدولاً ولن يظهر للزوار قبل موعده.' : kind === 'article' && data.status === 'draft' ? '✓ حُفظ المقال كمسودة ولم يظهر للزوار.' : '✓ حُفظ التعديل ويظهر للزوار فوراً.')
+      await done(kind === 'article' && data.status === 'scheduled' ? `✓ حُفظ المقال مجدولاً بجواز موقّع ${publicationPassport?.fingerprint.slice(0, 12) || ''}… ولن يظهر قبل موعده.` : kind === 'article' && data.status === 'draft' ? '✓ حُفظ المقال كمسودة ولم يظهر للزوار.' : kind === 'article' && publicationPassport ? `✓ نُشر بجواز سيادي موقّع ${publicationPassport.fingerprint.slice(0, 12)}…` : '✓ حُفظ التعديل ويظهر للزوار فوراً.')
       task.complete(`تم حفظ ${labels[kind].singular}`)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر الحفظ')

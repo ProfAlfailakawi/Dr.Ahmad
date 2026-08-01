@@ -31,6 +31,16 @@ import {
   type CompositionPlan,
 } from '../../lib/social-design-engine'
 import { downloadCompositionRaster, renderCompositionSvg } from '../../lib/social-design-renderer'
+import {
+  buildOpportunityRadar,
+  buildPublicationPassportDraft,
+  buildTransformingCampaign,
+  type OpportunityRadarItem,
+  type PublicationPassportDraft,
+  type TransformingCampaign,
+} from '../../lib/sovereign-publishing.mjs'
+import { requestPublicationPassportSignature } from '../../lib/publication-passport-client'
+import { audioProofAssets } from '../../lib/audio-proof'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -315,13 +325,6 @@ type WeeklyPack = {
   question: string
   quote: string
   radarComment: string
-}
-
-type SevenDayCampaign = {
-  day: string
-  platform: string
-  goal: string
-  copy: string
 }
 
 const normalize = (value = '') => value
@@ -1130,54 +1133,6 @@ function buildEditorialDecisionSuite({
   }
 }
 
-function buildSevenDayCampaign(bundle: Bundle, pack: WeeklyPack): SevenDayCampaign[] {
-  const quote = pack.quote || 'الفكرة القوية تبدأ حين نرى الإنسان قبل الأداة.'
-  return [
-    {
-      day: 'اليوم ١',
-      platform: 'LinkedIn',
-      goal: 'إطلاق الفكرة بهدوء',
-      copy: pack.linkedin[0],
-    },
-    {
-      day: 'اليوم ٢',
-      platform: 'X',
-      goal: 'سؤال قصير يفتح النقاش',
-      copy: `سؤال اليوم:\n${pack.question}`,
-    },
-    {
-      day: 'اليوم ٣',
-      platform: 'Instagram Carousel',
-      goal: 'تبسيط الفكرة بصرياً',
-      copy: `${bundle.title}\n\n١. الفكرة ليست في الأداة.\n٢. الأثر الحقيقي في الإنسان.\n٣. التعليم علاقة قبل أن يكون إجراء.\n٤. السؤال: ماذا يبقى في الطالب بعد التجربة؟`,
-    },
-    {
-      day: 'اليوم ٤',
-      platform: 'LinkedIn',
-      goal: 'ربط المقال بالأرشيف والخبرة',
-      copy: pack.linkedin[1],
-    },
-    {
-      day: 'اليوم ٥',
-      platform: 'X',
-      goal: 'اقتباس قابل للمشاركة',
-      copy: quote,
-    },
-    {
-      day: 'اليوم ٦',
-      platform: 'Instagram Story',
-      goal: 'تصويت أو تفاعل سريع',
-      copy: `هل ترى أن «${bundle.title}» قضية تكنولوجية أم إنسانية أولاً؟\n\n[تكنولوجيا]\n[إنسانية]\n[الاثنان معاً]`,
-    },
-    {
-      day: 'اليوم ٧',
-      platform: 'Newsletter / WhatsApp',
-      goal: 'إغلاق الحملة ودعوة للقراءة',
-      copy: `لمن فاته النقاش هذا الأسبوع:\n${bundle.title}\n\n${bundle.excerpt}\n\nاقرأ المقال كاملاً، ثم اسأل: ما القرار الصغير الذي يمكن أن يتغير غداً؟`,
-    },
-  ]
-}
-
 function privateBookMatches(bundle: Bundle, privateLinks: PrivateBookLink[]) {
   const text = normalize(`${bundle.title} ${bundle.excerpt} ${bundle.body} ${bundle.cat}`)
   const tocBooks = (bookTocLinks as { books?: PrivateBookLink[] }).books || []
@@ -1207,16 +1162,15 @@ function privateBookMatches(bundle: Bundle, privateLinks: PrivateBookLink[]) {
     .slice(0, 4)
 }
 
-function buildWeeklyPack(bundle: Bundle, articles: ArticleRecord[], radar: RadarItem[]): WeeklyPack {
+function buildWeeklyPack(bundle: Bundle, articles: ArticleRecord[], opportunity?: OpportunityRadarItem): WeeklyPack {
   const related = bundle.related
     .map((item) => articles.find((article) => article.slug === item.slug))
     .filter(Boolean) as ArticleRecord[]
   const pool = related.length ? related : articles.slice(0, 5)
   const quote = strongestQuote(pool.map((article) => `${article.excerpt || ''} ${article.body || ''}`).join(' ') || bundle.body)
-  const radarTop = radar[0]
-  const radarComment = radarTop
-    ? `${radarTop.ar}\n\nاللافت في هذا الحدث أنه لا يخص التكنولوجيا وحدها؛ بل يفتح سؤالاً تربوياً أعمق: كيف نحافظ على الإنسان داخل موجة التغيير؟\n\nيرتبط ذلك بما كتبته في «${bundle.related[0]?.title || bundle.title}».`
-    : `لا توجد مادة رادار منشورة اليوم. التعليق الجاهز:\n\n${bundle.title}\n\nقد يبدو الموضوع تكنولوجياً، لكنه في التعليم سؤال إنساني أولاً: ماذا يتغير في الطالب والمعلم حين تتغير الأداة؟`
+  const radarComment = opportunity
+    ? `${opportunity.event.title}\n\n${opportunity.whyNow}\n\nلهذا أعود اليوم إلى «${opportunity.article.title}» — لا لأن المادة قديمة، بل لأن اللحظة أعادت فتح سؤالها.\n\nثقة الرادار الموثقة: ${opportunity.confidence}٪ · المصدر: ${opportunity.event.source}`
+    : ''
   return {
     linkedin: [
       `${bundle.title}\n\n${bundle.excerpt}\n\nالفكرة ليست في سرعة التغيير، بل في المعنى الذي نحافظ عليه ونحن نتغير.`,
@@ -1925,7 +1879,7 @@ function WeeklyPackCard({
   busy,
 }: {
   pack: WeeklyPack
-  campaign: SevenDayCampaign[]
+  campaign: TransformingCampaign
   onSave: () => void
   busy: boolean
 }) {
@@ -1936,47 +1890,54 @@ function WeeklyPackCard({
     `Instagram:\n${pack.instagram}`,
     `سؤال تفاعلي:\n${pack.question}`,
     `اقتباس:\n${pack.quote}`,
-    `تعليق على حدث راهن:\n${pack.radarComment}`,
-    ...campaign.map((item) => `${item.day} · ${item.platform}\n${item.goal}\n${item.copy}`),
+    ...(pack.radarComment ? [`تعليق على حدث راهن:\n${pack.radarComment}`] : []),
+    ...campaign.stages.map((item) => `اليوم ${item.day} · ${item.platform} · ${item.role}\n${item.goal}\n${item.copy}\n\nالتسليم لليوم التالي: ${item.handoff}`),
   ].join('\n\n---\n\n')
   return (
     <section className={card}>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[.76rem] font-semibold uppercase text-accent">حزمة الأسبوع</p>
-          <h2 className="mt-1 font-display text-2xl font-semibold text-ink">محتوى أسبوع كامل ينتظر موافقتك.</h2>
-          <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">غرفة حملات هادئة: لا تنشر شيئاً وحدها، لكنها ترتّب المقال على سبعة أيام حتى توافق.</p>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">مخرج الحملة المتحوّلة</p>
+          <h2 className="mt-1 font-display text-2xl font-semibold text-ink">فكرة واحدة تسافر سبعة أيام.</h2>
+          <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">{campaign.promise} تماسك الرحلة {campaign.continuityScore}٪، ولا يُنشر شيء قبل موافقتك.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <CopyButton value={all} label="نسخ الكل" />
           <button type="button" className={primary} disabled={busy} onClick={onSave}>{busy ? 'أحفظ…' : 'حفظ في طابور الموافقة'}</button>
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {pack.linkedin.map((text, index) => <SocialCard key={`li-${index}`} title={`LinkedIn ${index + 1}`} text={text} />)}
-        {pack.x.map((text, index) => <SocialCard key={`x-${index}`} title={`X للمقال ${index + 1}`} text={text} />)}
-        {pack.generalX.map((text, index) => <SocialCard key={`gx-${index}`} title={`X عام ${index + 1}`} text={text} />)}
-        <SocialCard title="Instagram" text={pack.instagram} />
-        <SocialCard title="سؤال تفاعلي" text={pack.question} />
-        <SocialCard title="اقتباس من الأرشيف" text={pack.quote} />
-        <SocialCard title="تعليق على حدث راهن" text={pack.radarComment} />
-      </div>
-      <details className="mt-5 rounded-2xl border border-hair bg-canvas p-4">
-        <summary className="cursor-pointer list-none font-semibold text-ink">غرفة حملة ٧ أيام</summary>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {campaign.map((item) => (
-            <div key={`${item.day}-${item.platform}`} className="rounded-xl border border-hair bg-wash p-4">
+      <details className="group mt-5 rounded-2xl border border-hair bg-canvas p-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-ink"><span>افتح خط الرحلة والترابط بين أيامها</span><span className="text-accent transition-transform group-open:rotate-45">＋</span></summary>
+        <ol className="mt-4 grid gap-3">
+          {campaign.stages.map((item, index) => (
+            <li key={`${item.day}-${item.platform}`} className="grid gap-3 rounded-xl border border-hair bg-wash p-4 md:grid-cols-[7rem_minmax(0,1fr)_auto] md:items-start">
               <div className="flex items-center justify-between gap-3">
-                <p className="font-semibold text-accent">{item.day} · {item.platform}</p>
-                <CopyButton value={item.copy} />
+                <p className="font-semibold text-accent">اليوم {item.day}<span className="mt-1 block text-[.68rem] font-normal text-soft">{item.platform}</span></p>
               </div>
-              <p className="mt-2 text-[.76rem] text-soft">{item.goal}</p>
-              <p className="mt-3 whitespace-pre-wrap text-[.82rem] leading-relaxed text-ink">{item.copy}</p>
-            </div>
+              <div className="min-w-0"><p className="text-[.76rem] font-semibold text-ink">{item.role} · {item.goal}</p>{index > 0 && <p className="mt-1 text-[.7rem] leading-relaxed text-accent">يرث ما قبله: {item.carriesFrom}</p>}<p className="mt-3 whitespace-pre-wrap text-[.82rem] leading-relaxed text-ink">{item.copy}</p><p className="mt-3 border-t border-hair pt-2 text-[.7rem] leading-relaxed text-soft">إشارة القرار: {item.decisionSignal}<br />التسليم: {item.handoff}</p></div>
+              <CopyButton value={item.copy} />
+            </li>
           ))}
-        </div>
+        </ol>
       </details>
     </section>
+  )
+}
+
+function PublicationPassportCard({ passport }: { passport: PublicationPassportDraft }) {
+  const rows = [
+    ['text', 'النص'],
+    ['audio', 'الصوت'],
+    ['design', 'التصميم'],
+    ['social', 'التغريدات'],
+    ['sources', 'المصادر'],
+  ] as const
+  return (
+    <details className="group mt-4 rounded-2xl border border-hair bg-canvas p-4" data-publication-passport="preview">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span><strong className="block text-[.78rem] text-ink">جواز النشر السيادي</strong><span className="mt-1 block text-[.7rem] leading-relaxed text-soft">بصمة واحدة للنص والصوت والتصميم والتغريدات والمصادر؛ يوقّعها الخادم عند النقل، ويعيد توقيعها قبل أي نشر عام.</span></span><span className={`shrink-0 rounded-full px-3 py-1.5 text-[.68rem] font-bold ${passport.releaseReady ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{passport.releaseReady ? 'مكتمل' : `${passport.blocking.length} معلّق`}</span></summary>
+      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-hair pt-4 sm:grid-cols-5">{rows.map(([key, label]) => { const state = passport.components[key].status; return <div key={key} className="rounded-xl border border-hair bg-wash px-3 py-2 text-center"><span className={`block text-[.68rem] font-bold ${state === 'verified' ? 'text-emerald-700' : state === 'review' ? 'text-amber-700' : 'text-soft'}`}>{state === 'verified' ? '✓ مثبت' : state === 'review' ? '◐ مراجعة' : '○ معلّق'}</span><span className="mt-1 block text-[.7rem] text-ink">{label}</span></div> })}</div>
+      {!passport.releaseReady && <p className="mt-3 text-[.7rem] leading-relaxed text-soft">المعلّق: {passport.blocking.join('، ')}. الجواز لا يدّعي اكتمال ما ليس موجوداً؛ يسجل حالته بدقة، والنشر العام يتطلب اكتماله أو تجاوزاً تحريرياً مسبباً وموقعاً.</p>}
+    </details>
   )
 }
 
@@ -1986,11 +1947,13 @@ function CurrentEventsCard({
   selected,
   loading,
   onToggle,
+  opportunities = [],
 }: {
   items: CurrentEvent[]
   selected: string[]
   loading: boolean
   onToggle: (id: string) => void
+  opportunities?: OpportunityRadarItem[]
 }) {
   const kuwait = items.filter((item) => /kuwait|kuna|times kuwait|الكويت/i.test(`${item.source} ${item.title}`))
   const rest = items.filter((item) => !kuwait.some((local) => local.id === item.id))
@@ -2001,7 +1964,7 @@ function CurrentEventsCard({
         <span>
           <span className="block text-[.76rem] font-semibold uppercase text-accent">أحداث الساعة</span>
           <span className="mt-1 block font-display text-xl font-semibold text-ink">يربط الحدث فقط عندما يخدم الفكرة.</span>
-          <span className="mt-1 block text-[.8rem] leading-relaxed text-soft">{loading ? 'أحدّث المصادر…' : selected.length ? `${selected.length} حدث مثبت` : items.length ? `${shown.length} إشارات راهنة متاحة` : 'لا توجد إشارة راهنة مناسبة الآن'}</span>
+          <span className="mt-1 block text-[.8rem] leading-relaxed text-soft">{loading ? 'أحدّث المصادر…' : opportunities.length ? `${opportunities.length} فرصة أرشيف اجتازت عتبة الثقة` : selected.length ? `${selected.length} حدث مثبت` : items.length ? 'لا تطابق أرشيفياً موثقاً الآن' : 'لا توجد إشارة راهنة مناسبة الآن'}</span>
         </span>
         <span className="flex items-center gap-2">
           {selected.length > 0 && <span className="rounded-full border border-hair px-3 py-1 text-[.7rem] text-soft">{selected.length} محدد</span>}
@@ -2009,7 +1972,8 @@ function CurrentEventsCard({
         </span>
       </summary>
       <div className="mt-5 border-t border-hair pt-5">
-        <p className="mb-4 text-[.78rem] leading-relaxed text-soft">رادار الكويت يظهر أولاً عند وجود مادة محلية موثوقة، ثم تأتي المصادر العالمية.</p>
+        {opportunities.length > 0 && <div className="mb-5 grid gap-3" data-opportunity-radar="verified">{opportunities.map((opportunity) => <article key={opportunity.id} className="rounded-2xl border border-accent/35 bg-accent/[.04] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-[.72rem] font-bold text-accent">رادار اللحظة المناسبة · ثقة {opportunity.confidence}٪</span><span className="text-[.68rem] text-soft">صلة {opportunity.breakdown.topical} · حداثة {opportunity.breakdown.recency} · دليل {opportunity.breakdown.evidence}</span></div><a href={opportunity.event.url} target="_blank" rel="noreferrer" className="mt-2 block font-display text-[.96rem] font-semibold leading-relaxed text-ink hover:text-accent">{opportunity.event.title}</a><p className="mt-2 text-[.76rem] leading-relaxed text-soft">{opportunity.whyNow}</p><a href={`/articles/${opportunity.article.slug}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[.76rem] font-semibold text-accent hover:underline">المادة التي استيقظت: {opportunity.article.title} ↗</a></article>)}</div>}
+        <p className="mb-4 text-[.78rem] leading-relaxed text-soft">لا يقترح الرادار إحياء مادة إلا برابط مصدر، وتوقيت معلوم، وتطابق دلالي يتجاوز {opportunities[0]?.threshold || 78}٪. ما دون ذلك يظل حدثاً للقراءة فقط.</p>
         {items.length ? (
           <div className="grid gap-3 md:grid-cols-2">
             {shown.map((item) => {
@@ -2622,9 +2586,41 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     thesis: editorialDecision?.plan.thesis,
     sourceIds: editorialEvidenceChain.sourceIds,
   }), [bundle.body, bundle.excerpt, bundle.slug, bundle.title, editorialDecision?.plan.thesis, editorialEvidenceChain.sourceIds])
-  const weeklyPack = useMemo(() => buildWeeklyPack(bundle, richArticles, radar), [bundle, radar, richArticles])
+  const opportunityRadar = useMemo(
+    () => buildOpportunityRadar(currentEvents, richArticles, { threshold: 78, limit: 4 }),
+    [currentEvents, richArticles],
+  )
+  const weeklyPack = useMemo(() => buildWeeklyPack(bundle, richArticles, opportunityRadar[0]), [bundle, opportunityRadar, richArticles])
   const styleInsight = useMemo(() => styleReview(bundle, style), [bundle, style])
-  const sevenDayCampaign = useMemo(() => buildSevenDayCampaign(bundle, weeklyPack), [bundle, weeklyPack])
+  const sevenDayCampaign = useMemo(() => buildTransformingCampaign({ bundle, pack: weeklyPack }), [bundle, weeklyPack])
+  const publicationPassportDraft = useMemo(() => {
+    const audioAssets = audioProofAssets(bundle.slug)
+    const socialPack = bundle.socialPack
+    const visualDirections = socialPack?.visualDirections || []
+    const socialTexts = socialPack
+      ? [...socialPack.x, ...socialPack.linkedin, ...(socialPack.facebook || []), ...socialPack.threads, ...socialPack.instagramCaptions, ...socialPack.stories, socialPack.reelScript, socialPack.whatsapp, socialPack.newsletter]
+      : Object.values(bundle.social)
+    const platformCount = socialPack
+      ? [socialPack.x, socialPack.linkedin, socialPack.facebook, socialPack.threads, socialPack.instagramCaptions, socialPack.stories, socialPack.whatsapp, socialPack.newsletter].filter((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)).length
+      : Object.values(bundle.social).filter(Boolean).length
+    return buildPublicationPassportDraft({
+      article: { slug: bundle.slug, title: bundle.title, excerpt: bundle.excerpt, body: bundle.body, meaningFingerprint: meaningFingerprint.hash },
+      audio: { assets: audioAssets },
+      design: {
+        assetCount: visualDirections.length + (socialPack?.carouselSlides?.length || 0),
+        qualityScore: socialPack?.qualityScore || 0,
+        fingerprints: visualDirections.map((item) => `${item.layout}:${item.headline}:${item.subline}`),
+      },
+      social: { tweetCount: socialPack?.x?.length || 0, platformCount, campaignId: sevenDayCampaign.id, content: socialTexts.filter(Boolean).join('\n\n') },
+      evidence: {
+        sourceIds: editorialEvidenceChain.sourceIds,
+        paperSlugs: bundle.papers.map((paper) => paper.slug),
+        proofs: editorialEvidenceChain.sources.map((source) => JSON.stringify(source)),
+        alerts: editorialEvidenceChain.alerts,
+      },
+      releaseDecision: { targetStatus: 'draft', manualOverride: false, overrideReason: '' },
+    })
+  }, [bundle, editorialEvidenceChain.alerts, editorialEvidenceChain.sourceIds, meaningFingerprint.hash, sevenDayCampaign.id])
   const privateMemoryMatches = useMemo(() => privateBookMatches(bundle, privateLinks), [bundle, privateLinks])
   const editorialDecisionSuite = useMemo(() => buildEditorialDecisionSuite({
     bundle,
@@ -3152,6 +3148,29 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       if (!db) throw new Error('Firebase غير متاح الآن.')
       const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
       const date = today()
+      const signedPassport = await requestPublicationPassportSignature(publicationPassportDraft)
+      const privateBookMemory = privateMemoryMatches.map((book) => ({
+        title: book.title,
+        pages: book.pages || null,
+        score: book.score,
+        section: book.section ? {
+          label: book.section.label || 'محور خاص',
+          page: book.section.page || null,
+          pages: book.section.pages || null,
+          keywords: (book.section.keywords || []).slice(0, 6),
+        } : null,
+        linkedPublicBook: book.linkedPublicBook || null,
+      }))
+      const editorialBoardTrace = editorialDecision ? {
+        decisionId: editorialDecision.id,
+        fingerprint: editorialDecision.fingerprint,
+        verdict: editorialDecision.verdict,
+        recommendedTitle: editorialDecision.plan.primaryTitle,
+        thesis: editorialDecision.plan.thesis,
+        angle: editorialDecision.plan.angle,
+        doNotRepeat: editorialDecision.plan.doNotRepeat,
+        source: editorialDecision.source,
+      } : null
       await setDoc(doc(db, 'site_articles', bundle.slug), {
         slug: bundle.slug,
         title: bundle.title.trim(),
@@ -3162,48 +3181,28 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         date: date.ar,
         status: 'draft',
         scheduledAt: '',
+        publicationPassport: signedPassport,
+        // هذه الوثيقة عامة القراءة؛ لا يدخلها كتاب خاص أو مصدر فكرة أو ذاكرة أسلوب.
+        // التفاصيل الداخلية تحفظ أدناه في admin_content_intelligence فقط.
         publishingStudio: {
-          idea,
-          audience,
-          angle,
           social: bundle.social,
           relatedArticles: bundle.related,
           relatedBooks: bundle.books,
           relatedPapers: bundle.papers,
-          privateBookMemory: privateMemoryMatches.map((book) => ({
-            title: book.title,
-            pages: book.pages || null,
-            score: book.score,
-            section: book.section ? {
-              label: book.section.label || 'محور خاص',
-              page: book.section.page || null,
-              pages: book.section.pages || null,
-              keywords: (book.section.keywords || []).slice(0, 6),
-            } : null,
-            linkedPublicBook: book.linkedPublicBook || null,
-          })),
-          quality: bundle.quality,
-          requestedGenerationWords: targetWords,
           actualWords: wordCount(bundle.body),
-          originality: similarity.originality,
           originalityBypassed: skipOriginality,
-          nearestArchive: similarity.matches,
-          styleProfile: style,
-          styleSamples: styleSamples.map((sample) => ({ slug: sample.slug, title: sample.title, cat: sample.cat, year: sample.year })),
           currentEvent: bundle.event || null,
           eventConnection: bundle.eventConnection || '',
           socialPack: bundle.socialPack || null,
           generatedBy: bundle.generatedBy || 'local-archive-studio',
-          editorialBoard: editorialDecision ? {
-            decisionId: editorialDecision.id,
-            fingerprint: editorialDecision.fingerprint,
-            verdict: editorialDecision.verdict,
-            recommendedTitle: editorialDecision.plan.primaryTitle,
-            thesis: editorialDecision.plan.thesis,
-            angle: editorialDecision.plan.angle,
-            doNotRepeat: editorialDecision.plan.doNotRepeat,
-            source: editorialDecision.source,
-          } : null,
+          sovereignPublication: {
+            passportId: signedPassport.passportId,
+            fingerprint: signedPassport.fingerprint,
+            releaseReady: signedPassport.manifest.releaseReady,
+            blocking: signedPassport.manifest.blocking,
+            campaignId: sevenDayCampaign.id,
+            opportunityId: opportunityRadar[0]?.id || null,
+          },
         },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -3214,7 +3213,22 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         title: bundle.title.trim(),
         meaningFingerprint,
         evidenceChain: editorialEvidenceChain,
+        publicationPassportId: signedPassport.passportId,
+        publicationPassportFingerprint: signedPassport.fingerprint,
         sourceIds: editorialEvidenceChain.sourceIds,
+        privatePublishingStudio: {
+          idea,
+          audience,
+          angle,
+          privateBookMemory,
+          quality: bundle.quality,
+          requestedGenerationWords: targetWords,
+          originality: similarity.originality,
+          nearestArchive: similarity.matches,
+          styleProfile: style,
+          styleSamples: styleSamples.map((sample) => ({ slug: sample.slug, title: sample.title, cat: sample.cat, year: sample.year })),
+          editorialBoard: editorialBoardTrace,
+        },
         ...(editorialEvidenceChain.alerts.length ? { evidenceAlerts: editorialEvidenceChain.alerts, needsEvidenceReview: true } : {}),
         editorialDecisionId: editorialDecision?.id || null,
         builtFrom: 'publishing-studio',
@@ -3231,7 +3245,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           updatedAt: serverTimestamp(),
         }, { merge: true })
       }
-      setNotice('نُقل المقال كاملاً إلى «المقالات» كمسودة. من هناك تستطيع مراجعته أو جدولته أو نشره ✓')
+      setNotice(`نُقل المقال إلى «المقالات» كمسودة بجواز موقّع ${signedPassport.fingerprint.slice(0, 12)}…${signedPassport.manifest.releaseReady ? ' ومكتمل الطبقات' : `؛ وتبقى قبل النشر: ${signedPassport.manifest.blocking.join('، ')}`} ✓`)
       await onTransferToArticles?.(bundle.slug)
       task.complete('تم نقل المقال')
     } catch (reason) {
@@ -3292,10 +3306,25 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         currentEvent: bundle.socialPack?.event || bundle.event || null,
         relatedArticles: bundle.related,
         radar: radar.slice(0, 3),
+        transformingCampaign: sevenDayCampaign,
+        opportunityRadar: opportunityRadar[0] || null,
+        sovereignPassportPreview: {
+          releaseReady: publicationPassportDraft.releaseReady,
+          blocking: publicationPassportDraft.blocking,
+        },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
-      setNotice('حُفظت الحزمة النصية والبصرية ومصدر الحدث في طابور الموافقة ✓')
+      try {
+        localStorage.setItem('studio-campaign-seed', JSON.stringify({
+          text: bundle.title,
+          context: `${sevenDayCampaign.thesis}\n${sevenDayCampaign.promise}`,
+          slug: bundle.slug,
+          transformingCampaign: sevenDayCampaign,
+          at: Date.now(),
+        }))
+      } catch { /* طابور Firestore هو الأصل؛ هذا الجسر يختصر فتح استوديو التصاميم فقط. */ }
+      setNotice(`حُفظت رحلة الأيام السبعة في طابور الموافقة وشُبكت ببذرة استوديو التصاميم · تماسك ${sevenDayCampaign.continuityScore}٪ ✓`)
       task.complete('حُفظت حزمة النشر')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر حفظ حزمة الأسبوع.')
@@ -3547,7 +3576,7 @@ ${effectivePurpose}`,
               return <div key={item.id} className="grid gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><span className="min-w-0"><strong className="block truncate text-[.8rem] text-ink">{item.idea}</strong><span className="mt-1 block text-[.68rem] text-soft">{new Date(item.generatedAt).toLocaleDateString('ar-KW')}{actual?.performanceScore != null ? ` · توقع ${item.scores.strength ?? '—'}/100 · أداء ${windowLabel} ${actual.performanceScore}/100${comparison ? ` · ${comparison}` : ''}` : ''}</span></span><span className="text-[.72rem] font-semibold text-accent">{item.verdictLabel}</span></div>
             })}</div>
           </details>}
-          <CurrentEventsCard items={currentEvents} selected={selectedEventIds} loading={eventsLoading} onToggle={(id) => setSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id].slice(0, 3))} />
+          <CurrentEventsCard items={currentEvents} selected={selectedEventIds} loading={eventsLoading} opportunities={opportunityRadar} onToggle={(id) => setSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id].slice(0, 3))} />
           <IdeaSuggestionsCard suggestions={articleSuggestions} onPick={pickSuggestion} />
           <ArchiveWakeCard articles={richArticles} onPick={pickSuggestion} />
         </>
@@ -3608,6 +3637,7 @@ ${effectivePurpose}`,
                 <p className="text-[.76rem] font-semibold uppercase text-accent">إلى مكتبة المقالات</p>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-ink">القرار النهائي يتم من صفحة المقالات.</h2>
                 <p className="mt-3 text-[.86rem] leading-relaxed text-soft">هذا الاستوديو يبني النص ويفحصه فقط. الزر التالي ينقل العنوان والمقتطف والنص والتصنيف والروابط والحزمة كاملة إلى «المقالات» كمسودة؛ وهناك تختار الجدولة أو النشر.</p>
+                <PublicationPassportCard passport={publicationPassportDraft} />
                 <button type="button" disabled={busy || !gate.ready} className={`${primary} mt-6 w-full`} onClick={() => void transferToArticles()}>{busy ? 'أنقل المقال…' : 'نقل المقال كاملاً إلى المقالات'}</button>
                 {!gate.ready && <p className="mt-3 text-[.78rem] leading-relaxed text-soft">أكمل البنود غير المجتازة في بوابة الجودة أولاً.</p>}
                 {notice && <p className="mt-4 rounded-xl border border-accent/30 bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-accent">{notice}</p>}
@@ -3703,11 +3733,12 @@ ${effectivePurpose}`,
             </section>
           )}
 
+          <WeeklyPackCard pack={weeklyPack} campaign={sevenDayCampaign} onSave={saveWeeklyQueue} busy={queueBusy} />
+
           <details className={`${card} group`}>
             <summary className="cursor-pointer list-none text-[.82rem] font-semibold text-soft transition-colors hover:text-accent">الحزمة الكلاسيكية الاحتياطية</summary>
             <div className="mt-5">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"><SocialCard title="X" text={bundle.social.x} /><SocialCard title="LinkedIn" text={bundle.social.linkedin} /><SocialCard title="Instagram" text={bundle.social.instagram} /><SocialCard title="Threads" text={bundle.social.threads} /><SocialCard title="WhatsApp / Broadcast" text={bundle.social.whatsapp} /><SocialCard title="النشرة البريدية" text={bundle.social.newsletter} /></div>
-              <div className="mt-5"><WeeklyPackCard pack={weeklyPack} campaign={sevenDayCampaign} onSave={saveWeeklyQueue} busy={queueBusy} /></div>
             </div>
           </details>
 

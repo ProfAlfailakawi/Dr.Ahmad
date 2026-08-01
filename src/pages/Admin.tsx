@@ -38,7 +38,7 @@ import { BotMessagesPanel } from '../components/admin/BotMessagesPanel'
 import { ProductionMonitor } from '../components/admin/ProductionMonitor'
 import { NewsletterCenter } from '../components/admin/NewsletterCenter'
 import { InboxIntelligence, InboxInsightBadges } from '../components/admin/InboxIntelligence'
-import { registerAdminPush } from '../lib/admin-push'
+import { registerAdminPush, sendAdminPushTest } from '../lib/admin-push'
 import { VisitorJourneySuggestion } from '../components/admin/VisitorJourneySuggestion'
 import { SoundCaravanBoard } from '../components/admin/SoundCaravanBoard'
 import { useSeo } from '../components/seo'
@@ -207,6 +207,74 @@ function CvPdfCard() {
   )
 }
 
+/* بوابة الإشعارات: زرّ التفعيل كان مدفوناً داخل تبويب الوارد، فبقي الدكتور
+   بلا إشعارٍ وهو يظن القناة معطلة (٣١ يوليو). الشريط هنا في رأس اللوحة — لا
+   يُرى إلا حين تكون القناة مغلقة فعلاً، ويختفي فور ربط الجهاز. ومعه اختبارٌ
+   فوري: لا ينتظر رسالة قارئ ليتأكد أن الإشعار يصل جهازه. */
+function PushGateBanner() {
+  const { user } = useAdminAuth()
+  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>(() => (
+    typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
+  ))
+  const [registered, setRegistered] = useState(() => typeof window !== 'undefined' && localStorage.getItem('admin:push-registered') === '1')
+  const [busy, setBusy] = useState('')
+  const [notice, setNotice] = useState('')
+
+  if (permission === 'unsupported') return null
+  if (registered && permission === 'granted' && !notice) {
+    return (
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hair bg-canvas px-4 py-2.5" data-push-gate="ready">
+        <span className="text-[.74rem] text-soft">الإشعارات الفورية مربوطة بهذا الجهاز — رسائل القراء تصلك فور وصولها.</span>
+        <button type="button" disabled={Boolean(busy)} onClick={() => {
+          if (!user) return
+          setBusy('test')
+          void sendAdminPushTest(user)
+            .then((result) => setNotice(result?.sent ? 'أُرسل إشعار تجريبي الآن — تحقق من جهازك.' : 'لم يصل الإشعار لأي جهاز مسجّل؛ أعد الربط من هذا الشريط.'))
+            .catch(() => setNotice('تعذّر إرسال الإشعار التجريبي في هذه الجلسة.'))
+            .finally(() => setBusy(''))
+        }} className="rounded-full border border-hair px-3 py-1.5 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-45">
+          {busy === 'test' ? 'يُرسل…' : 'جرّب الإشعار الآن'}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-5 rounded-2xl border border-accent/35 bg-accent/[.05] px-4 py-3" data-push-gate="needs-enable">
+      <p className="text-[.82rem] font-semibold text-ink">الإشعارات الفورية غير مفعّلة على هذا الجهاز</p>
+      <p className="mt-1 text-[.76rem] leading-relaxed text-soft">
+        رسائل القراء واشتراكات النشرة تصل صندوقك، لكنها لن توقظ هاتفك حتى تربط هذا الجهاز مرة واحدة. اضغط الزر ثم اسمح للمتصفح.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button type="button" disabled={Boolean(busy) || !user} onClick={() => {
+          if (!user) return
+          setBusy('enable')
+          setNotice('أربط هذا الجهاز…')
+          void registerAdminPush(user).then((result) => {
+            setPermission(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission)
+            setNotice(result.message)
+            if (result.ok) { localStorage.setItem('admin:push-registered', '1'); setRegistered(true) }
+          }).catch((error) => setNotice(error instanceof Error ? error.message : 'تعذّر الربط على هذا الجهاز.'))
+            .finally(() => setBusy(''))
+        }} className="rounded-full bg-accent px-4 py-2 text-[.78rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-45">
+          {busy === 'enable' ? 'يربط…' : 'فعّل الإشعارات على هذا الجهاز'}
+        </button>
+        {registered && (
+          <button type="button" disabled={Boolean(busy)} onClick={() => {
+            if (!user) return
+            setBusy('test')
+            void sendAdminPushTest(user)
+              .then((result) => setNotice(result?.sent ? 'أُرسل إشعار تجريبي الآن — تحقق من جهازك.' : 'لا جهاز مسجّل بعد.'))
+              .catch(() => setNotice('تعذّر إرسال الإشعار التجريبي.'))
+              .finally(() => setBusy(''))
+          }} className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-soft hover:border-accent hover:text-accent disabled:opacity-45">جرّب الإشعار</button>
+        )}
+      </div>
+      {notice && <p className="mt-2 rounded-lg border border-hair bg-canvas px-3 py-2 text-[.74rem] leading-relaxed text-soft">{notice}</p>}
+    </div>
+  )
+}
+
 function Panel({ email }: { email: string }) {
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const requestedTab = params.get('tab') as AdminTab | null
@@ -272,6 +340,7 @@ function Panel({ email }: { email: string }) {
     production: <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
     analytics: <div className="grid gap-4"><ReaderPulse /><VisitorJourneySuggestion articles={cms.articles} /><Indicators articles={cms.articles} /></div>,
     studio: <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />,
+    'social-posts': <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} initialView="pulse" />,
     design: <SocialDesignStudio />,
     tweets: <TweetStudio />,
     'image-lab': <ImageLab />,
@@ -297,6 +366,7 @@ function Panel({ email }: { email: string }) {
     <Page>
       <AdminTaskFavicon />
       <div className="admin-shell mx-auto box-border w-full max-w-[1440px] overflow-x-clip px-4 pb-32 pt-28 sm:px-6 md:px-10 md:pb-24 md:pt-32">
+        <PushGateBanner />
         <div className="mb-7 grid min-w-0 gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between md:mb-9">
           <div className="min-w-0">
             <p className="mb-1 text-[.78rem] font-semibold uppercase text-accent">لوحة التحكم</p>

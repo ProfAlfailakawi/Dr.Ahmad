@@ -169,6 +169,15 @@ const wordsOf = (value: string) => clean(value).split(/\s+/).filter(Boolean)
 
 const stripPrefix = (word: string) => word.replace(/^(?:وال|فال|بال|كال|ال|و|ف|ب|ل|ك)/, '') || word
 
+/* الكلمة كما تُعرض: تُنزع السوابق الملتصقة قبل أداة التعريف فقط. اللمحة الأمامية
+   `(?=ال)` تحمي الكلمات التي تبدأ بالباء أصالةً («بحث»)، وبغيرها كانت الكلمة
+   المحورية تخرج «بالمعرفة» فتصير الجملة «بين أن نتحدث عن بالمعرفة». */
+const displayWord = (raw: string) => raw
+  .replace(/^و(?=[بلك]?ال|لل)/, '')
+  .replace(/^ف(?=[بلك]?ال|لل)/, '')
+  .replace(/^[بك](?=ال)/, '')
+  .replace(/^لل/, 'ال')
+
 /* أسماءُ ذواتٍ لا مفاهيم. الخلط بينهما يُنتج جملاً مشوّهة من نوع «الفرق بين أن
    نعرف الطالب وأن نمارسه» — لذلك تُمنع من الزوايا التي تعامل الكلمة كمفهوم. */
 const PERSON_WORDS = new Set([
@@ -193,7 +202,7 @@ function heroWordOf(...sources: string[]): string {
     }
   }
   const ranked = [...counts.values()].sort((left, right) => right.hits - left.hits || right.word.length - left.word.length)
-  return ranked[0]?.word || ''
+  return displayWord(ranked[0]?.word || '')
 }
 
 /** جُمَلٌ صالحةٌ للتغريد: أقصر من جُمَل الأصداء وأوسع نطاقاً. */
@@ -374,7 +383,7 @@ function readSource(source: TweetSource, offset: number): SourceReading {
   const quoteVerified = Boolean(candidate) && (verifyEcho(candidate, raw) || verifyEcho(candidate, text))
   /* الكلمة المحورية من العنوان أولاً: احتسابها من المتن بالتكرار كان يرفع
      «الطالب» فوق «التلعيب» لأن الذوات تتكرر أكثر من المفاهيم. */
-  const titleHero = heroWordOf(title)
+  const titleHero = heroWordOf(title || pool[0] || '')
   const hero = titleHero || heroWordOf(title, text)
   return {
     title,
@@ -530,18 +539,43 @@ const COMPOSERS: Record<TweetAngleId, Composer> = {
   },
 }
 
-const HASHTAG_POOL = ['#التعليم', '#التربية', '#الكويت', '#تطوير_التعليم', '#المعلم', '#الأسرة']
+/* الوسوم تُشتقّ من الفكرة نفسها. الحوض الثابت المنتقى بالبذرة كان يضع
+   «#الكويت #الأسرة» على فكرةٍ عن التلعيب — وسمٌ لا يخدم بل يُشتّت. */
+const HASHTAG_TOPICS: { test: RegExp; tags: string[] }[] = [
+  { test: /تلعيب|لعبة|ألعاب|الدافعي|دافعية|تحفيز/, tags: ['#التلعيب', '#الدافعية'] },
+  { test: /ذكاء اصطناع|خوارزم|رقمن|رقمي|تقنية|تكنولوجيا|منصة|افتراضي/, tags: ['#الذكاء_الاصطناعي', '#التعليم_الرقمي'] },
+  { test: /تقويم|امتحان|اختبار|درجات|قياس|نتائج/, tags: ['#التقويم', '#الامتحانات'] },
+  { test: /قراءة|كتاب|مكتبة|مطالعة/, tags: ['#القراءة'] },
+  { test: /أسرة|أسري|والدين|آباء|أمهات|بيت|تنشئة/, tags: ['#الأسرة', '#التربية'] },
+  { test: /معلم|معلمين|مدرّس|مدرس|هيئة تدريس/, tags: ['#المعلم'] },
+  { test: /منهج|مناهج|مقرر|خطة دراسية/, tags: ['#المناهج'] },
+  { test: /جامعة|جامعي|تعليم عال|بحث علمي|أكاديمي|دراسات عليا/, tags: ['#التعليم_العالي'] },
+  { test: /موهوب|موهبة|إبداع|ابتكار|تفكير ناقد/, tags: ['#الإبداع', '#التفكير_الناقد'] },
+  { test: /طفل|طفولة|روضة|رياض الأطفال/, tags: ['#الطفولة'] },
+  { test: /مهارات|المستقبل|سوق العمل|قرن/, tags: ['#مهارات_المستقبل'] },
+  { test: /سياسة تعليمية|وزارة|إصلاح|تطوير التعليم|قرار تربوي/, tags: ['#تطوير_التعليم'] },
+  { test: /الكويت|كويتي|الخليج|خليجي/, tags: ['#الكويت'] },
+  { test: /نفسي|صحة نفسية|قلق|ضغط|احتراق/, tags: ['#الصحة_النفسية'] },
+]
 
-function hashtagsFor(reading: SourceReading, seed: string): string[] {
-  const first = pick(HASHTAG_POOL.slice(0, 3), `${seed}:h1`)
-  const second = pick(HASHTAG_POOL.slice(3), `${seed}:h2`)
-  return uniqueStrings([first, second]).slice(0, 2)
+const HASHTAG_FALLBACK = ['#التعليم', '#التربية']
+
+/** وسمان على الأكثر، مشتقّان من نص الفكرة — والأقرب دلالةً أولاً. */
+function hashtagsFor(reading: SourceReading): string[] {
+  const haystack = `${reading.title} ${reading.text}`
+  const matched = HASHTAG_TOPICS.filter((topic) => topic.test.test(haystack)).flatMap((topic) => topic.tags)
+  /* الكلمة المحورية وسماً حين تكون كلمةً واحدةً نظيفة لا تكرّر ما اختير. */
+  const heroTag = reading.conceptHero && !/\s/.test(reading.conceptHero) && reading.conceptHero.length >= 4
+    ? `#${reading.conceptHero}`
+    : ''
+  const ordered = uniqueStrings([...matched, heroTag, ...HASHTAG_FALLBACK])
+  return ordered.slice(0, 2)
 }
 
-function assemble(parts: string[], reading: SourceReading, options: { withHashtags: boolean; url: string }, seed: string) {
+function assemble(parts: string[], reading: SourceReading, options: { withHashtags: boolean; url: string }) {
   const lines = parts.map((line) => clean(line))
   let text = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
-  const hashtags = options.withHashtags ? hashtagsFor(reading, seed) : []
+  const hashtags = options.withHashtags ? hashtagsFor(reading) : []
   const tail = [options.url, hashtags.join(' ')].filter(Boolean).join('\n')
   if (tail && charCount(`${text}\n\n${tail}`) <= TWEET_LIMIT) text = `${text}\n\n${tail}`
   else if (options.url && charCount(`${text}\n\n${options.url}`) <= TWEET_LIMIT) text = `${text}\n\n${options.url}`
@@ -587,7 +621,7 @@ export function buildTweets(source: TweetSource, options: TweetForgeOptions = {}
     const parts = Array.isArray(composed) ? composed : [composed]
     if (!parts.filter(Boolean).length) continue
     if (claimed) takenLines.add(claimed)
-    const { text, hashtags } = assemble(parts, reading, { withHashtags, url: reading.url }, seed)
+    const { text, hashtags } = assemble(parts, reading, { withHashtags, url: reading.url })
     const head = clean(text).slice(0, 30)
     if (seenHeads.has(head)) continue
     seenHeads.add(head)

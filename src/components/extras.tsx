@@ -10,7 +10,7 @@ import { AudioPlayer } from './AudioPlayer'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { trackShare } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
-import { Link as RouterLink, useLocation } from 'react-router-dom'
+import { Link as RouterLink, useLocation } from 'react-router'
 import { MySpace } from './MySpace'
 import { safeLink } from '../lib/dead-links'
 

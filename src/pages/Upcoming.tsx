@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { FadeUp, Label, Magnetic, Page } from '../components/ui'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { Newsletter } from '../components/extras'

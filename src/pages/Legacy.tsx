@@ -1,4 +1,4 @@
-import { Navigate, useLocation, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useParams } from 'react-router'
 import NotFound from './NotFound'
 import { useCmsContent } from '../lib/content'
 import type { PaperRecord } from '../lib/cms'

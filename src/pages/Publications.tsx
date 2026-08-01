@@ -1,6 +1,6 @@
 import { JsonLd, useSeo } from '../components/seo'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { EASE, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'

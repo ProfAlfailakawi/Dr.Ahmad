@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { getDb, getFirebaseAuth } from '../lib/firebase'
 import { categoryLabel } from '../lib/content-taxonomy'
 

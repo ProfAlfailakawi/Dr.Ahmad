@@ -571,12 +571,15 @@ export function WhatsAppAgentPanel() {
     ['5', 'التذكيرات وبطاقات الاقتباس', flags.reminders || flags.quoteCard],
   ] as const
   const diagnostics = status.diagnostics
+  // حقيقة الاتصال الحية تتقدم على عدّاد إخفاقات تاريخي تراكمي. هذا عرض فقط؛
+  // لا يغيّر الجسر أو الجلسة أو الطابور أو آليات الإحياء.
+  const liveDiagnosticLevel = status.health?.ready ? 'healthy' : diagnostics?.level || 'warning'
   const diagnosticTone = {
     healthy: 'border-emerald-300/70 bg-emerald-50/70 text-emerald-800',
     attention: 'border-sky-300/70 bg-sky-50/70 text-sky-800',
     warning: 'border-amber-300/70 bg-amber-50/70 text-amber-900',
     critical: 'border-red-300/70 bg-red-50/70 text-red-800',
-  }[diagnostics?.level || 'warning']
+  }[liveDiagnosticLevel]
   const diagnosticCheckTone = (state: DiagnosticCheck['state']) => ({
     ok: 'border-emerald-200 bg-emerald-50/45 text-emerald-800',
     info: 'border-sky-200 bg-sky-50/45 text-sky-800',
@@ -795,13 +798,13 @@ export function WhatsAppAgentPanel() {
           <div className="min-w-0">
             <p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">مركز التشخيص والإحياء</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <h2 className="font-display text-2xl font-semibold text-ink">{diagnostics?.title || 'أفحص طبقات واتساب…'}</h2>
+              <h2 className="font-display text-2xl font-semibold text-ink">{status.health?.ready ? 'واتساب متصل ومستقر الآن' : diagnostics?.title || 'أفحص طبقات واتساب…'}</h2>
               <span className={`rounded-full border px-3 py-1 text-[.68rem] font-semibold ${diagnosticTone}`}>
-                {diagnostics?.level === 'healthy' ? 'سليم' : diagnostics?.level === 'critical' ? 'يحتاج تدخلاً' : diagnostics?.level === 'warning' ? 'يحتاج انتباهاً' : 'ملاحظة'}
+                {liveDiagnosticLevel === 'healthy' ? 'سليم' : liveDiagnosticLevel === 'critical' ? 'يحتاج تدخلاً' : liveDiagnosticLevel === 'warning' ? 'يحتاج انتباهاً' : 'ملاحظة'}
               </span>
             </div>
-            <p className="mt-2 max-w-3xl text-[.8rem] leading-relaxed text-soft">{diagnostics?.summary || 'يجمع حالة الخادم والجسر وجلسة واتساب ومحرك الرد وطابور الأوامر.'}</p>
-            {diagnostics?.action && <p className="mt-2 max-w-3xl text-[.76rem] font-medium leading-relaxed text-ink">{diagnostics.action}</p>}
+            <p className="mt-2 max-w-3xl text-[.8rem] leading-relaxed text-soft">{status.health?.ready ? 'الجسر والجلسة ومحرك الرد حية الآن؛ الأرقام التاريخية أدناه سجلّ متابعة وليست عطلاً راهناً.' : diagnostics?.summary || 'يجمع حالة الخادم والجسر وجلسة واتساب ومحرك الرد وطابور الأوامر.'}</p>
+            {(status.health?.ready || diagnostics?.action) && <p className="mt-2 max-w-3xl text-[.76rem] font-medium leading-relaxed text-ink">{status.health?.ready ? 'لا يحتاج تدخلاً؛ لا إعادة تشغيل ولا مسح للجلسة.' : diagnostics?.action}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={primary} disabled={recoveringAll || repairing || diagnostics?.code === 'scan-qr'} onClick={() => void recoverEverything()}>
@@ -829,7 +832,7 @@ export function WhatsAppAgentPanel() {
             <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">آخر رسالة وصلت</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{activityLabel(diagnostics.activity.lastInboundAt)}</p></div>
             <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">آخر رد آلي</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{activityLabel(diagnostics.activity.lastReplyAt)}</p></div>
             <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">آخر تدخل يدوي</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{activityLabel(diagnostics.activity.lastManualAt)}</p></div>
-            <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">طابور الأوامر</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{diagnostics.queue.active} نشط · {diagnostics.queue.failed} فاشل · {diagnostics.queue.staleLeased} عالق</p></div>
+            <div className="rounded-xl border border-hair bg-canvas px-3 py-3"><p className="text-[.66rem] text-soft">طابور الأوامر</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{diagnostics.queue.active} نشط · {diagnostics.queue.staleLeased} عالق الآن · {diagnostics.queue.failed} إخفاق تاريخي</p></div>
             <div className="rounded-xl border border-hair bg-canvas px-3 py-3" data-whatsapp-catchup-status="true"><p className="text-[.66rem] text-soft">استرجاع ما فات أثناء الانقطاع</p><p className="mt-1 text-[.72rem] font-semibold text-ink">{status.lastCatchupAt ? `${activityLabel(status.lastCatchupAt)} · ${status.lastCatchupRecovered || 0} مستعادة` : 'يبدأ بعد الاتصال'}</p>{status.lastCatchupError && <p className="mt-1 text-[.64rem] text-red-700">{status.lastCatchupError}</p>}</div>
           </div>
         )}

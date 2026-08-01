@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router'
 
 export function KnowledgeEntry({ compact = false }: { compact?: boolean }) {
   const location = useLocation()

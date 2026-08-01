@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { FadeUp, Label, Page, Reveal } from '../components/ui'
 import { place } from '../data'
 import { ContactForm } from '../components/ContactForm'

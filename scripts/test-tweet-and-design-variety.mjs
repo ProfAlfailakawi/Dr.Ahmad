@@ -447,6 +447,7 @@ guard('standalone-handoff-is-clean')
 /* الجسر بين الاستوديوين: حدثٌ يرسله استوديو التغريدات ويستقبله استوديو النشر. */
 const tweetStudio = await readFile(resolve('src/components/admin/TweetStudio.tsx'), 'utf8')
 assert.match(tweetStudio, /studio:standalone-seed/, 'استوديو التغريدات يرسل البذرة')
+assert.match(tweetStudio, /يفحص المسبك أربع عشرة زاويةً بلاغيةً ثم يعرض أقوى عشر/, 'الوعد الظاهر يطابق المحرك: يفحص 14 ويعرض أقوى 10')
 assert.match(publishing, /studio:standalone-seed/, 'استوديو النشر يستقبل البذرة وإلا ضاع زر «صمّمها في منشور مستقل»')
 const navigation = await readFile(resolve('src/components/admin/admin-navigation.ts'), 'utf8')
 assert.match(navigation, /tab: 'tweets'/, 'تبويب استوديو التغريدات يجب أن يبقى في سجل التنقل')

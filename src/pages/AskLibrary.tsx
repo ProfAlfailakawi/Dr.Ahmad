@@ -4,7 +4,7 @@
  * اقتباسات حرفية، خط زمني، أحدث موقف منشور، ومسار قراءة قابل للطباعة.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router";
 import { toRoot } from "../lib/dialect-lexicon";
 import { FadeUp, Page, PageHead } from "../components/ui";
 import { KnowledgeEntry } from '../components/KnowledgeEntry'

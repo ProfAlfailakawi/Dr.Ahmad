@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { listenIsOpen } from '../lib/listen-catalog'
 

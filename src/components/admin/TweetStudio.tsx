@@ -66,7 +66,7 @@ const SOURCE_TABS: { kind: TweetSourceKind; label: string; note: string }[] = [
   { kind: 'paper', label: 'أبحاثي', note: 'من الملخص العربي' },
   { kind: 'media', label: 'اللقاءات', note: 'ظهور إعلامي يستحق التذكير' },
   { kind: 'news', label: 'الواقع الآن', note: 'أخبار الرادار — قراءةٌ تربوية للخبر' },
-  { kind: 'free', label: 'فكرة حرّة', note: 'اكتب فكرتك وسأصوغها بأربع عشرة زاوية' },
+  { kind: 'free', label: 'فكرة حرّة', note: 'أربع عشرة زاوية؛ نعرض أقوى عشر' },
 ]
 
 const SITE = 'https://dr-alfailakawi.com'
@@ -466,7 +466,7 @@ export function TweetStudio() {
         <p className="text-[.76rem] font-semibold uppercase text-accent">استوديو التغريدات</p>
         <h2 className="mt-1 font-display text-2xl font-semibold text-ink">تغريداتك من كلامك أنت — لا من كلامٍ يُنسب إليك.</h2>
         <p className="mt-2 text-[.82rem] leading-relaxed text-soft">
-          اختر مادةً من أرشيفك أو اكتب فكرةً حرّة، فيخرج لك أربع عشرة زاويةً بلاغيةً مختلفة، كلٌّ بدرجةِ انتشارٍ وأسبابها.
+          اختر مادةً من أرشيفك أو اكتب فكرةً حرّة؛ يفحص المسبك أربع عشرة زاويةً بلاغيةً ثم يعرض أقوى عشر، كلٌّ بدرجةِ انتشارٍ وأسبابها.
           كل جملةٍ تحمل شارة «موثّقة» موجودةٌ في متنك حرفاً بحرف؛ وما عداها إطارٌ من الاستوديو لا يدّعي عليك قولاً.
         </p>
 

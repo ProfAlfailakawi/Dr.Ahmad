@@ -897,6 +897,7 @@ function mergeSocialPacks(local: PerfectSocialPack, remote: PerfectSocialPack, v
 function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: number, skipOriginality: boolean, styleScore: number | null = null) {
   const usedSlug = articles.some((article) => article.slug === bundle.slug)
   const words = wordCount(bundle.body)
+  const evaluated = bundle.title.trim().length >= 6 && words >= 40
   const linked = bundle.related.length + bundle.books.length + bundle.papers.length
   const hasQuestion = /[؟?]/.test(bundle.body) || /السؤال|لماذا|كيف/.test(bundle.body)
   const socialOk = bundle.social.x.length <= 280 && bundle.social.linkedin.length >= 120 && bundle.social.instagram.length >= 90
@@ -917,9 +918,10 @@ function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: num
     { key: 'social', label: 'قابل للتحويل إلى حزمة سوشيال لاحقاً', ok: socialOk },
   ]
   return {
+    evaluated,
     checks,
-    ready: checks.every((check) => check.ok),
-    blocking: checks.filter((check) => !check.ok).map((check) => check.label),
+    ready: evaluated && checks.every((check) => check.ok),
+    blocking: evaluated ? checks.filter((check) => !check.ok).map((check) => check.label) : [],
   }
 }
 
@@ -1108,6 +1110,7 @@ function buildEditorialDecisionSuite({
   const ethicalScore = Math.max(0, Math.round(100 - ethicalHolds * 35 - ethicalSignals.filter((signal) => signal.status === 'watch').length * 10))
 
   return {
+    evaluated: gate.evaluated,
     decision,
     decisionScore,
     decisionSignals,
@@ -1571,6 +1574,15 @@ function EvidenceChainCard({ chain }: { chain: ReturnType<typeof buildEvidenceCh
 }
 
 function QualityGateCard({ gate }: { gate: ReturnType<typeof qualityGate> }) {
+  if (!gate.evaluated) {
+    return (
+      <section className={card} data-quality-gate-state="empty">
+        <p className="text-[.76rem] font-semibold uppercase text-accent">بوابة جودة قبل النشر</p>
+        <h2 className="mt-1 font-display text-xl font-semibold text-ink">لم تُقيّم المسودة بعد.</h2>
+        <p className="mt-3 text-[.82rem] leading-relaxed text-soft">اكتب عنواناً ونصاً أولياً؛ تبدأ الأرقام والقرارات بعد ٤٠ كلمة حتى لا تُعرض نتيجة وهمية لمسودة فارغة.</p>
+      </section>
+    )
+  }
   return (
     <section className={card}>
       <p className="text-[.76rem] font-semibold uppercase text-accent">بوابة جودة قبل النشر</p>
@@ -1780,7 +1792,26 @@ function SignalRow({ signal }: { signal: EditorialSignal }) {
   )
 }
 
+function withHashtagsOnce(text: string, hashtags: string[]) {
+  const cleanText = text.trim()
+  const existing = new Set((cleanText.match(/#[\p{L}\p{N}_]+/gu) || []).map((tag) => normalize(tag)))
+  const missing = hashtags.filter((tag, index, all) => (
+    all.findIndex((candidate) => normalize(candidate) === normalize(tag)) === index
+    && !existing.has(normalize(tag))
+  ))
+  return missing.length ? `${cleanText}\n\n${missing.join(' ')}` : cleanText
+}
+
 function EditorialDecisionRoom({ suite }: { suite: ReturnType<typeof buildEditorialDecisionSuite> }) {
+  if (!suite.evaluated) {
+    return (
+      <section className={card} data-editorial-decision-state="empty">
+        <p className="text-[.76rem] font-semibold uppercase text-accent">غرفة القرار قبل النشر</p>
+        <h2 className="mt-1 font-display text-2xl font-semibold text-ink">لم يبدأ التقييم.</h2>
+        <p className="mt-3 max-w-3xl text-[.82rem] leading-relaxed text-soft">تظهر العدسات الأربع ودرجاتها بعد وجود مسودة فعلية من ٤٠ كلمة على الأقل؛ لا حكم ولا نسبة على صفحة فارغة.</p>
+      </section>
+    )
+  }
   const metrics = [
     { label: 'قرار النشر', value: suite.decisionScore, note: suite.decision },
     { label: 'مؤشر الصمت', value: suite.silenceScore, note: suite.silenceSummary },
@@ -2280,7 +2311,7 @@ function PerfectSocialPackCard({
         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {pack.x.map((text, index) => <SocialCard key={`x-perfect-${index}`} title={`X · صيغة ${index + 1}`} text={text} />)}
           {pack.linkedin.map((text, index) => <SocialCard key={`li-perfect-${index}`} title={`LinkedIn · صيغة ${index + 1}`} text={text} />)}
-          {pack.instagramCaptions.map((text, index) => <SocialCard key={`ig-perfect-${index}`} title={`Instagram · Caption ${index + 1}`} text={`${text}\n\n${pack.hashtags.join(' ')}`} />)}
+          {pack.instagramCaptions.map((text, index) => <SocialCard key={`ig-perfect-${index}`} title={`Instagram · Caption ${index + 1}`} text={withHashtagsOnce(text, pack.hashtags)} />)}
           {(pack.facebook || []).map((text, index) => <SocialCard key={`fb-perfect-${index}`} title={`فيسبوك · صيغة ${index + 1}`} text={text} />)}
           {pack.threads.map((text, index) => <SocialCard key={`th-perfect-${index}`} title={`Threads · صيغة ${index + 1}`} text={text} />)}
           <SocialCard title="Reel · 45–60 ثانية" text={pack.reelScript} />
@@ -2604,7 +2635,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     similarity,
   }), [bundle, gate, privateMemoryMatches, similarity, styleInsight, weeklyPack])
   const articleSuggestions = useMemo(() => suggestArticleIdeas(richArticles, radar, privateLinks), [privateLinks, radar, richArticles])
-  const pulseTemplateShowcase = useMemo(() => standaloneVisualTemplates(pulsePreviewCopy.idea, pulsePreviewCopy.purpose), [pulsePreviewCopy])
+  const pulsePreviewReady = pulsePreviewCopy.idea.trim().length >= 3
+  const pulseTemplateShowcase = useMemo(() => pulsePreviewReady ? standaloneVisualTemplates(pulsePreviewCopy.idea, pulsePreviewCopy.purpose) : [], [pulsePreviewCopy, pulsePreviewReady])
   const pulseCopyAnalysis = useMemo(() => analyzeSocialCopy(`${pulsePreviewCopy.idea} ${pulsePreviewCopy.purpose}`), [pulsePreviewCopy])
   const pulseCommand = useMemo(() => parseStudioCommand(pulsePreviewCopy.idea), [pulsePreviewCopy.idea])
   const pulseDesignResult = useMemo(() => {
@@ -2644,6 +2676,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     return { ...directed, plans }
   }, [pulseAudience, pulseCommand, pulsePack?.visualSeed, pulsePreviewCopy.idea, pulsePreviewCopy.purpose])
   const pulseProfessionalPlans = useMemo(() => {
+    if (!pulsePreviewReady) return []
     const ranked = pulseDesignResult.plans
       .map((plan) => ({ plan, release: professionalReleaseGate(plan) }))
       .sort((left, right) => Number(right.release.ready) - Number(left.release.ready) || right.release.score - left.release.score)
@@ -2660,7 +2693,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       }
     }
     return selected.slice(0, 3)
-  }, [pulseDesignResult])
+  }, [pulseDesignResult, pulsePreviewReady])
   const pulseApprovedCount = pulseProfessionalPlans.filter((item) => item.release.ready).length
   const pulseTemplatePages = usePagedList(pulseTemplateShowcase, 8, `${pulsePreviewCopy.idea}|${pulsePreviewCopy.purpose}`)
 
@@ -3606,6 +3639,14 @@ ${effectivePurpose}`,
           </section>
 
           <section id="standalone-template-library" className={card} aria-labelledby="standalone-templates-title">
+            {!pulsePreviewReady ? (
+              <div className="rounded-2xl border border-dashed border-hair bg-canvas px-5 py-10 text-center" data-standalone-design-state="empty">
+                <p className="text-[.76rem] font-semibold uppercase text-accent">Professional Art Direction</p>
+                <h2 id="standalone-templates-title" className="mt-2 font-display text-2xl font-semibold text-ink">المخرج ينتظر فكرتك.</h2>
+                <p className="mx-auto mt-3 max-w-2xl text-[.82rem] leading-relaxed text-soft">اكتب الفكرة أولاً؛ بعدها فقط تظهر التحليلات والرؤى القابلة للتنزيل. لا نص افتراضياً ولا تصميم وهمياً في الحالة الفارغة.</p>
+              </div>
+            ) : (
+            <>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-[.76rem] font-semibold uppercase text-accent">Professional Art Direction</p>
@@ -3629,6 +3670,8 @@ ${effectivePurpose}`,
               <summary className="cursor-pointer list-none px-4 py-3 text-[.7rem] font-semibold text-soft">مختبر التكوينات الكامل — مكتبة القوالب كاملة — 24 تكويناً</summary>
               <div className="border-t border-hair p-4"><p className="mb-4 text-[.68rem] leading-relaxed text-soft">هذه التكوينات تبقى مختبراً اختيارياً للمقارنة اليدوية؛ القرار الاحترافي الأساسي هو الرؤى الثلاث أعلاه.</p><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{pulseTemplatePages.pageItems.map((template) => <VisualTemplateCard key={template.id} template={template} />)}</div><Pagination page={pulseTemplatePages.page} pageCount={pulseTemplatePages.pageCount} onChange={pulseTemplatePages.setPage} totalItems={pulseTemplateShowcase.length} firstItem={pulseTemplatePages.firstItem} lastItem={pulseTemplatePages.lastItem} scrollTargetId="standalone-template-library" label="صفحات قوالب السوشال ميديا" className="mt-7" /></div>
             </details>
+            </>
+            )}
           </section>
 
           {pulseEvents.length > 0 && <CurrentEventsCard items={pulseEvents} selected={pulseSelectedEventIds} loading={pulseEventsLoading} onToggle={(id) => setPulseSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [id])} />}

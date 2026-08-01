@@ -4,7 +4,7 @@
    المحتوى من data-en.ts (صياغة تحريرية، لا ترجمة حرفية).
    ============================================================ */
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { SocialIcon } from '../components/icons'

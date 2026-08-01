@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 330
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           sparse-checkout: |
             /*
@@ -48,7 +48,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -70,6 +70,16 @@ jobs:
       - name: Install dependencies
         if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+      # بوابة رخيصة ومبكرة: لا نثبّت أدوات الوسائط، ولا نستهلك Azure، ولا نفتح
+      # معاملة R2 إذا كان المستودع نفسه لن يجتاز البناء النهائي.
+      - name: Repository preflight before audio production
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+        run: |
+          npm run guard:critical
+          npm run architecture:self-test
+          npm run typography:tanween:guard
+          npm run lint
 
       - name: Install media and R2 tools
         if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
@@ -96,7 +106,7 @@ jobs:
 
       - name: Restore private pronunciation memory
         if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: ArabicPronunciationMemory.sqlite*
           key: pronunciation-memory-v1-${{ github.run_id }}
@@ -105,7 +115,7 @@ jobs:
 
       - name: Restore resumable audio checkpoints
         if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: |
             .audio-human-work
@@ -257,6 +267,7 @@ jobs:
           PODCAST_RELEASE_MIN_SCORE: '94'
 
       - name: Publish generated local audio/transcripts to R2 atomically
+        id: r2_publish
         if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: |
           set -o pipefail
@@ -351,7 +362,7 @@ jobs:
 
       - name: Save resumable audio checkpoints
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: |
             .audio-human-work
@@ -363,7 +374,7 @@ jobs:
 
       - name: Save accepted pronunciation memory privately
         if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: ArabicPronunciationMemory.sqlite*
           key: pronunciation-memory-v1-${{ github.run_id }}
@@ -470,7 +481,7 @@ jobs:
         run: rm -f sa.json
 
       - name: Roll back R2 transaction on any failure
-        if: failure()
+        if: failure() && steps.r2_publish.outcome == 'success'
         run: npm run audio:r2:rollback
         env:
           CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
@@ -491,7 +502,7 @@ jobs:
       - name: Keep the failure log for download
         if: failure()
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ci-log
           path: |

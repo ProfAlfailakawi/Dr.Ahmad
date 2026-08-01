@@ -247,14 +247,14 @@ function slugify(value: string) {
 
 function blank(kind: ManagedKind): Form {
   const iso = todayIso()
-  if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', bodyVocalized: '', source: '', url: '', status: 'published', scheduledAt: '', _aiReady: '' }
+  if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', bodyVocalized: '', source: '', url: '', status: 'draft', scheduledAt: '', _aiReady: '', _manualPublishOverride: '', _manualPublishReason: '' }
   if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
   if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', pdf: '', scholar: '', researchgate: '', orcid: DEFAULT_RESEARCH_ORCID, repository: '', coAuthors: '', doi: '', reviewStatus: 'محكّم', studyType: '', methodology: '', sample: '', researchQuestion: '', keyFinding: '', contribution: '', applications: '', limitations: '', year: '', metadataText: '', pdfText: '', analysisText: '', analysisFingerprint: '', analysisSources: '', evidenceLabel: '', evidenceScore: '', keywords: '', openAccess: '', analysisConfidence: '', analysisNeedsReview: '', analyzedAt: '', fieldEvidence: '', conflictReport: '[]', qualityReport: '', qualityReady: '' }
   return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
 }
 
-/* مركز جاهزية النشر (مقترح معتمد — البند 18): فحوص موحدة لكل نوع قبل الحفظ.
-   إرشاد لا حاجز — البوابة الصلبة تبقى في حزام البناء (guard-private-books). */
+/* مركز جاهزية النشر: المسودة تُحفظ دائماً، أما النشر فيحتاج اكتمال الفحوص أو
+   تجاوزاً يكتبه المشرف بسبب واضح ويُحفظ مع سجل المادة. */
 const PRIVATE_FINGERPRINTS = ['private-books', 'books-memory', 'مادة خام سرية', 'privateUse', 'localPath', '/Users/', 'file://', 'C:\\']
 function publishReadiness(kind: ManagedKind, form: Form) {
   const checks: { label: string; ok: boolean }[] = []
@@ -654,6 +654,8 @@ function Editor({
       next.excerpt = ''
       next._aiReady = ''
       next._aiFallback = ''
+      next._manualPublishOverride = ''
+      next._manualPublishReason = ''
     }
     if (kind === 'media' && field === 'url' && value !== previous.url) {
       if (previous.title && previous.title === previous._aiGeneratedTitle) {
@@ -874,6 +876,10 @@ ${form.outlet || ''}`
   }, [form._aiBusy, form._aiInput, form.desc, form.meta, form.outlet, form.pdf, form.source, form.title, form.url, kind])
 
   const researchAnalysis = useMemo(() => kind === 'paper' ? analyzeResearch(form) : null, [form, kind])
+  const readiness = publishReadiness(kind, form)
+  const readinessComplete = readiness.checks.every((check) => check.ok) && !readiness.leaked
+  const targetsPublicArticle = kind === 'article' && form.status !== 'draft'
+  const needsRecordedOverride = targetsPublicArticle && !readinessComplete && !readiness.leaked
   const applyResearchAnalysis = async () => {
     if (!researchAnalysis || form._researchBusy === '1') return
     const fingerprint = researchAnalysis.analysisFingerprint
@@ -1186,13 +1192,12 @@ ${form.outlet || ''}`
 
           {error && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.86rem] text-soft">{error}</p>}
           {(() => {
-            const readiness = publishReadiness(kind, form)
             const done = readiness.checks.filter((check) => check.ok).length
             return (
               <div className="rounded-xl border border-hair bg-wash px-4 py-3">
                 <p className="text-[.72rem] font-semibold text-soft">
                   جاهزية النشر: <span className={done === readiness.checks.length ? 'text-accent' : 'text-ink'}>{done}/{readiness.checks.length}</span>
-                  <span className="ms-2 font-light">— إرشاد لا شرط؛ الحفظ متاح دائماً.</span>
+                  <span className="ms-2 font-light">— {kind === 'article' ? 'المسودة متاحة دائماً؛ النشر يحتاج اكتمالها أو تجاوزاً مسجلاً.' : 'مؤشر مراجعة واضح قبل الحفظ.'}</span>
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
                   {readiness.checks.map((check) => (
@@ -1209,6 +1214,27 @@ ${form.outlet || ''}`
               </div>
             )
           })()}
+          {needsRecordedOverride && (
+            <div className="rounded-xl border border-accent/35 bg-wash px-4 py-3" data-publication-override="required">
+              <label className="flex items-start gap-3 text-[.78rem] leading-relaxed text-ink">
+                <input
+                  type="checkbox"
+                  className="mt-1 accent-[var(--color-accent)]"
+                  checked={form._manualPublishOverride === '1'}
+                  onChange={(event) => setForm((previous) => ({ ...previous, _manualPublishOverride: event.target.checked ? '1' : '', _manualPublishReason: event.target.checked ? previous._manualPublishReason : '' }))}
+                />
+                <span><strong>تجاوز يدوي مسجّل.</strong> أملك سبباً تحريرياً لنشر هذه النسخة قبل اكتمال معيار ٣٠٠ كلمة.</span>
+              </label>
+              {form._manualPublishOverride === '1' && (
+                <textarea
+                  className={`${input} mt-3 min-h-24`}
+                  value={form._manualPublishReason || ''}
+                  onChange={(event) => set('_manualPublishReason', event.target.value)}
+                  placeholder="اكتب سبب القرار بوضوح (١٢ حرفاً على الأقل)…"
+                />
+              )}
+            </div>
+          )}
           {current && <ChangeLog kind={kind} slug={current.slug} onRestore={(snapshot) => setForm((previous) => ({ ...previous, ...snapshot }))} />}
           <div className="flex flex-wrap items-center gap-3 border-t border-hair pt-5">
             <button type="button" onClick={onSave} disabled={busy || !form.title?.trim() || !form.slug?.trim() || (kind === 'article' && (form.body || '').trim().length < 40)} className={primary}>
@@ -1305,6 +1331,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
     setError('')
     try {
       let preparedForm = { ...form }
+      let publicationGateAudit: Record<string, unknown> | null = null
       if (kind === 'paper') {
         const local = analyzeResearch(preparedForm)
         const fingerprint = local.analysisFingerprint
@@ -1332,6 +1359,23 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       if (kind === 'article') {
         preparedForm = { ...preparedForm, title: normalizeArabicTypography(preparedForm.title || ''), excerpt: normalizeArabicTypography(preparedForm.excerpt || ''), body: normalizeArabicTypography(preparedForm.body || '') }
         if ((preparedForm.body || '').trim().length < 40) throw new Error('نص المقال يجب أن يكون 40 حرفاً على الأقل.')
+        const readiness = publishReadiness('article', preparedForm)
+        const passed = readiness.checks.every((check) => check.ok) && !readiness.leaked
+        const targetsPublication = preparedForm.status !== 'draft'
+        const manualOverride = preparedForm._manualPublishOverride === '1'
+        const overrideReason = (preparedForm._manualPublishReason || '').trim()
+        if (targetsPublication && readiness.leaked) throw new Error(`توقّف النشر لأن النص يحمل بصمة خاصة («${readiness.leaked}»). احذفها أو احفظ المادة مسودة.`)
+        if (targetsPublication && !passed && (!manualOverride || overrideReason.length < 12)) {
+          throw new Error('بوابة النشر غير مكتملة. احفظها مسودة، أو فعّل التجاوز اليدوي واكتب سبباً واضحاً من 12 حرفاً على الأقل.')
+        }
+        publicationGateAudit = {
+          passed,
+          manualOverride: Boolean(targetsPublication && !passed && manualOverride),
+          overrideReason: targetsPublication && !passed ? overrideReason : '',
+          targetStatus: preparedForm.status || 'draft',
+          checkedAtClient: new Date().toISOString(),
+          checks: readiness.checks,
+        }
         if (preparedForm.status === 'scheduled') {
           const scheduled = Date.parse(preparedForm.scheduledAt || '')
           if (!Number.isFinite(scheduled)) throw new Error('حدد موعد نشر صحيح قبل الجدولة.')
@@ -1382,9 +1426,9 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         ? { publishedAt: serverTimestamp() }
         : {}
       if (!current) {
-        await setDoc(doc(db, collections[kind], slug), { ...data, ...firstPublication, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+        await setDoc(doc(db, collections[kind], slug), { ...data, ...firstPublication, ...(publicationGateAudit ? { publicationGate: publicationGateAudit } : {}), createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
       } else if (current._cms.origin === 'added') {
-        await setDoc(doc(db, collections[kind], current._cms.docId || current.slug), { ...data, ...firstPublication, updatedAt: serverTimestamp() }, { merge: true })
+        await setDoc(doc(db, collections[kind], current._cms.docId || current.slug), { ...data, ...firstPublication, ...(publicationGateAudit ? { publicationGate: publicationGateAudit } : {}), updatedAt: serverTimestamp() }, { merge: true })
       } else {
         const base = getBaseRecord(kind, current._cms.baseSlug || current.slug)
         if (!base) throw new Error('تعذّر العثور على نسخة الأصل لهذا العنصر')
@@ -1393,6 +1437,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
           .map((field) => [field, data[field] ?? '']))
         // حالة الصوت ليست حقلاً تحريرياً نصياً، لكنها يجب أن تبقى عند تعديل المقال لاحقاً.
         if (kind === 'article' && current.audioControl) patch.audioControl = current.audioControl
+        if (publicationGateAudit) patch.publicationGate = publicationGateAudit
         const overrideRef = doc(db, 'content_overrides', `${kind}:${current._cms.baseSlug || current.slug}`)
         if (!Object.keys(patch).length && !current._cms.hidden) await deleteDoc(overrideRef)
         else await setDoc(overrideRef, { patch, hidden: Boolean(current._cms.hidden), updatedAt: serverTimestamp() })

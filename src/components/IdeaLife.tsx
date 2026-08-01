@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import { useExtras } from '../lib/content'
 import { buildIdeaLife, ideaWords, type IdeaLifeRemoteRecord, type IdeaRadarItem, type IdeaUpdateKind, type ImpactNode, type RemoteIdeaUpdate } from '../lib/idea-life'

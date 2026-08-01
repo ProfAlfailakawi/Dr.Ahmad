@@ -8,7 +8,7 @@
  * ٣) ثلاث بطاقات: مقال جديد · سؤال الأسبوع · لقاء قادم.
  *    كل ما يُنشر هنا يظهر في الموقع فوراً — بلا رفع ملفات.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Page } from '../components/ui'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { firebaseEnabled, getDb, getFirebaseApp } from '../lib/firebase'
@@ -18,29 +18,11 @@ import { useCmsContent } from '../lib/content'
 import { beginAdminTask } from '../lib/admin-task-state'
 import { normalizeArabicTypography } from '../lib/arabic-typography'
 import { useAdminAuth } from '../lib/admin-auth'
-import { ContentManager, type ManagedKind, type ManagedRecord } from '../components/admin/ContentManager'
-import { Indicators } from '../components/admin/Indicators'
-import { IntelligenceLab } from '../components/admin/IntelligenceLab'
-import { PublishingStudio } from '../components/admin/PublishingStudio'
-import { SocialDesignStudio } from '../components/admin/SocialDesignStudio'
-import { TweetStudio } from '../components/admin/TweetStudio'
-import { ImageLab } from '../components/admin/ImageLab'
-import { VoiceBakeoffCard } from '../components/admin/VoiceBakeoff'
-import { ManualDialogueEditor } from '../components/admin/ManualDialogueEditor'
-import { AudioLibrary } from '../components/admin/AudioLibrary'
-import { PronunciationLexicon } from '../components/admin/PronunciationLexicon'
-import { ReaderPulse } from '../components/admin/ReaderPulse'
-import { ProductionHealthCenter } from '../components/admin/ProductionHealthCenter'
+import { ContentManager, UploadField, type ManagedKind, type ManagedRecord } from '../components/admin/ContentManager'
 import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminTaskFavicon'
-import { UploadField } from '../components/admin/ContentManager'
-import { WhatsAppAgentPanel } from '../components/admin/WhatsAppAgentPanel'
-import { BotMessagesPanel } from '../components/admin/BotMessagesPanel'
-import { ProductionMonitor } from '../components/admin/ProductionMonitor'
 import { NewsletterCenter } from '../components/admin/NewsletterCenter'
 import { InboxIntelligence, InboxInsightBadges } from '../components/admin/InboxIntelligence'
 import { registerAdminPush, sendAdminPushTest } from '../lib/admin-push'
-import { VisitorJourneySuggestion } from '../components/admin/VisitorJourneySuggestion'
-import { SoundCaravanBoard } from '../components/admin/SoundCaravanBoard'
 import { useSeo } from '../components/seo'
 import {
   AdminCommandPalette,
@@ -52,6 +34,26 @@ import {
   type AdminTab,
 } from '../components/admin/AdminArchitecture'
 import { ADMIN_TABS } from '../components/admin/admin-navigation'
+
+// كل استوديو يُحمّل عند فتح تبويبه فقط. بقيت شاشة الإدارة وبنية التنقل ثابتتين،
+// بينما خرجت المحركات الثقيلة من الحزمة الأولى من دون تغيير واجهاتها أو وظائفها.
+const Indicators = lazy(() => import('../components/admin/Indicators').then((module) => ({ default: module.Indicators })))
+const IntelligenceLab = lazy(() => import('../components/admin/IntelligenceLab').then((module) => ({ default: module.IntelligenceLab })))
+const PublishingStudio = lazy(() => import('../components/admin/PublishingStudio').then((module) => ({ default: module.PublishingStudio })))
+const SocialDesignStudio = lazy(() => import('../components/admin/SocialDesignStudio').then((module) => ({ default: module.SocialDesignStudio })))
+const TweetStudio = lazy(() => import('../components/admin/TweetStudio').then((module) => ({ default: module.TweetStudio })))
+const ImageLab = lazy(() => import('../components/admin/ImageLab').then((module) => ({ default: module.ImageLab })))
+const VoiceBakeoffCard = lazy(() => import('../components/admin/VoiceBakeoff').then((module) => ({ default: module.VoiceBakeoffCard })))
+const ManualDialogueEditor = lazy(() => import('../components/admin/ManualDialogueEditor').then((module) => ({ default: module.ManualDialogueEditor })))
+const AudioLibrary = lazy(() => import('../components/admin/AudioLibrary').then((module) => ({ default: module.AudioLibrary })))
+const PronunciationLexicon = lazy(() => import('../components/admin/PronunciationLexicon').then((module) => ({ default: module.PronunciationLexicon })))
+const ReaderPulse = lazy(() => import('../components/admin/ReaderPulse').then((module) => ({ default: module.ReaderPulse })))
+const ProductionHealthCenter = lazy(() => import('../components/admin/ProductionHealthCenter').then((module) => ({ default: module.ProductionHealthCenter })))
+const WhatsAppAgentPanel = lazy(() => import('../components/admin/WhatsAppAgentPanel').then((module) => ({ default: module.WhatsAppAgentPanel })))
+const BotMessagesPanel = lazy(() => import('../components/admin/BotMessagesPanel').then((module) => ({ default: module.BotMessagesPanel })))
+const ProductionMonitor = lazy(() => import('../components/admin/ProductionMonitor').then((module) => ({ default: module.ProductionMonitor })))
+const VisitorJourneySuggestion = lazy(() => import('../components/admin/VisitorJourneySuggestion').then((module) => ({ default: module.VisitorJourneySuggestion })))
+const SoundCaravanBoard = lazy(() => import('../components/admin/SoundCaravanBoard').then((module) => ({ default: module.SoundCaravanBoard })))
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.95rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const btn = 'rounded-full bg-accent px-7 py-2.5 font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
@@ -399,7 +401,9 @@ function Panel({ email }: { email: string }) {
           <AdminSidebar tab={tab} onSelect={chooseTab} />
           <section className="min-w-0">
             <AdminMobileSubnav tab={tab} onSelect={chooseTab} />
-            {tabContent[tab]}
+            <Suspense fallback={<div className="rounded-2xl border border-hair bg-wash px-5 py-10 text-center text-[.82rem] text-soft">أفتح الأداة المطلوبة…</div>}>
+              {tabContent[tab]}
+            </Suspense>
           </section>
         </div>
       </div>

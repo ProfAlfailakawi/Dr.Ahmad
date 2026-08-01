@@ -9,10 +9,15 @@ ENV PORT=8080
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --registry=https://registry.npmjs.org/
 
-RUN mkdir -p /app/dist /app/scripts /app/src/data /app/src/server /app/whatsapp-agent
+RUN mkdir -p /app/dist /app/scripts /app/src/data /app/src/lib /app/src/server /app/whatsapp-agent
 COPY server.mjs /app/server.mjs
 COPY scripts/daily-radar.mjs /app/scripts/daily-radar.mjs
 COPY scripts/editorial-policy.mjs /app/scripts/editorial-policy.mjs
+# محرك بصمة الأسلوب: يستورده server.mjs، وكان سطر السماح في .gcloudignore
+# موجوداً بلا سطر النسخ هنا — فبُنيت الصورة بنجاح («node --check» يقرأ الصياغة
+# ولا يحلّ الاستيراد) ثم مات المُشغَّل عند الإقلاع، فرفض Cloud Run النسخة
+# وسقط نشر الموقع كله معه. قاعدة الدار في أعلى الملف كانت تقول ذلك حرفاً.
+COPY src/lib/style-dna.mjs /app/src/lib/style-dna.mjs
 COPY src/server/whatsapp-controller.mjs /app/src/server/whatsapp-controller.mjs
 COPY src/server/admin-communications.mjs /app/src/server/admin-communications.mjs
 COPY src/data.ts /app/src/data.ts
@@ -42,6 +47,11 @@ COPY whatsapp-agent/knowledge-modes.mjs /app/whatsapp-agent/knowledge-modes.mjs
 COPY whatsapp-agent/conversation-context.mjs /app/whatsapp-agent/conversation-context.mjs
 COPY whatsapp-agent/daily-experience.mjs /app/whatsapp-agent/daily-experience.mjs
 COPY whatsapp-agent/domain-concepts.mjs /app/whatsapp-agent/domain-concepts.mjs
+
+# «node --check» يقرأ الصياغة ولا يحلّ استيراداً: ملفٌ منسيٌّ في النسخ يمرّ من
+# هنا ثم يقتل المُشغَّل في Cloud Run. نحلّ شجرة الاستيراد كلها في البناء نفسه،
+# فيسقط البناء هنا لا الموقع هناك. ولا نُشغّل الخادم — نحلّ فقط بلا تنفيذ.
+RUN node -e "const {readFileSync,existsSync}=require('fs');const {dirname,resolve}=require('path');const seen=new Set();const walk=(f)=>{if(seen.has(f))return;seen.add(f);if(!existsSync(f)){console.error('استيراد مفقود من الصورة: '+f);process.exit(1)}if(!/\.(mjs|js)$/.test(f))return;const src=readFileSync(f,'utf8');for(const m of src.matchAll(/from\s+['\"](\.[^'\"]+)['\"]/g))walk(resolve(dirname(f),m[1]))};walk('/app/server.mjs');console.log('✓ شجرة استيراد الخادم كاملة داخل الصورة: '+seen.size+' ملفاً')"
 
 RUN node --check /app/whatsapp-agent/intent-engine.mjs \
  && node --check /app/server.mjs \

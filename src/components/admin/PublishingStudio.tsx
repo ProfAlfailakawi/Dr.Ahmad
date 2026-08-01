@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Pagination, usePagedList } from '../Pagination'
 import { articleCats, books, papers } from '../../data'
-/* خريطة المواد المنطوقة (قراءات فهد ونورة والحوارات): تدخل وعي المحفظة
-   الفكرية فيعرف المجلس أن صوت الدكتور حاضر أصلاً في إقليم الفكرة. */
-import audioCatalog from '../../data/audio.json'
 import privateBookLinks from '../../data/private-book-links.json'
 import bookTocLinks from '../../data/book-toc-links.json'
 import type { ArticleRecord } from '../../lib/cms'
@@ -36,7 +33,7 @@ const ghost = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft
 const MIN_ARTICLE_WORDS = 350
 const MAX_GENERATION_WORDS = 4000
 
-type SocialKey = 'x' | 'linkedin' | 'facebook' | 'instagram' | 'threads' | 'whatsapp' | 'newsletter'
+type SocialKey = 'x' | 'linkedin' | 'instagram' | 'threads' | 'whatsapp' | 'newsletter'
 
 type Bundle = {
   title: string
@@ -119,7 +116,7 @@ function personalAudienceEvidence(): EditorialAudienceEvidence {
   }
 }
 
-function buildEditorialPortfolioEvidence(idea: string, articles: ArticleRecord[], voicedArticles: ArticleRecord[] = []): EditorialPortfolioEvidence {
+function buildEditorialPortfolioEvidence(idea: string, articles: ArticleRecord[]): EditorialPortfolioEvidence {
   const totalArticles = articles.length
   if (!totalArticles) {
     return {
@@ -150,15 +147,9 @@ function buildEditorialPortfolioEvidence(idea: string, articles: ArticleRecord[]
   const relatedArticleCount = meaningful.length
   const relatedBookCount = relatedForIdea(idea, books, (book) => book.desc || '', Math.max(1, books.length)).length
   const relatedPaperCount = relatedForIdea(idea, papers, (paper) => `${paper.meta || ''} ${paper.abstractAr || ''} ${paper.journal || ''}`, Math.max(1, papers.length)).length
-  /* فكرة المجلس (٤): الأرشيف الصوتي جزء من المحفظة — مادة قريبة لها قراءة
-     أو حوار منطوق تعني أن صوته يغطي الإقليم فعلاً، فيرتفع التشبع قليلاً. */
-  const relatedAudioCount = voicedArticles.length
-    ? relatedForIdea(idea, voicedArticles, (article) => `${article.excerpt || ''} ${article.body || ''}`, Math.max(1, Math.min(voicedArticles.length, 30))).length
-    : 0
   const highestSimilarity = Math.round((similarityRows[0]?.score || 0) * 100)
   const relatedDensity = Math.min(100, Math.round((relatedArticleCount / Math.max(1, Math.min(totalArticles, 20))) * 100))
-  const audioSaturationBoost = Math.min(6, relatedAudioCount * 2)
-  const saturationScore = Math.max(0, Math.min(100, Math.round((focusCategoryShare * .35) + (relatedDensity * .35) + (highestSimilarity * .30)) + audioSaturationBoost))
+  const saturationScore = Math.max(0, Math.min(100, Math.round((focusCategoryShare * .35) + (relatedDensity * .35) + (highestSimilarity * .30))))
   const strategicNeedScore = Math.max(0, Math.min(100, 100 - saturationScore))
   const dominantCategories = [...categoryCounts.entries()]
     .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'ar'))
@@ -178,13 +169,10 @@ function buildEditorialPortfolioEvidence(idea: string, articles: ArticleRecord[]
     relatedArticleCount,
     relatedBookCount,
     relatedPaperCount,
-    relatedAudioCount,
     saturationScore,
     strategicNeedScore,
     dominantCategories,
-    explanation: relatedAudioCount > 0
-      ? `${explanation} وصوتك حاضر في هذا الإقليم فعلاً: ${relatedAudioCount} مادة قريبة لها قراءة أو حوار منطوق.`
-      : explanation,
+    explanation,
   }
 }
 
@@ -192,7 +180,7 @@ function archiveMaterialFromArticle(article: ArticleRecord, score: number): Edit
   return { kind: 'article', slug: article.slug, title: article.title, url: `/articles/${article.slug}`, score, date: article.date || article.iso || '', excerpt: article.excerpt || '' }
 }
 
-function editorialCalibrationProfileFromRows(rows: Array<Record<string, any>>, publishedArticles: ArticleRecord[] = []): EditorialCalibrationProfile {
+function editorialCalibrationProfileFromRows(rows: Array<Record<string, any>>): EditorialCalibrationProfile {
   const strengthErrors: number[] = []
   const potentialErrors: number[] = []
   for (const row of rows) {
@@ -204,42 +192,18 @@ function editorialCalibrationProfileFromRows(rows: Array<Record<string, any>>, p
     if (decision.scores.strength != null) strengthErrors.push(performance - decision.scores.strength)
     if (decision.scores.articlePotential != null) potentialErrors.push(performance - decision.scores.articlePotential)
   }
-  /* فكرة المجلس (٣) — معايرة العناد: فكرة رفضها المجلس أو أجّلها ثم كتبها
-     الدكتور رغم ذلك ونُشرت فعلاً = دليل أن المجلس بخس أفكاراً من هذا الطراز.
-     تُحتسب إشارة تصحيح محدودة (+٢ لكل انتصار عنيد بسقف +٤) داخل سقف ±٨
-     القائم — بلا ادعاء تعلم آلي، والعينة تُعرض بعددها الصريح. */
-  let stubbornWins = 0
-  for (const row of rows) {
-    const decision = row.decision as EditorialBoardDecision | undefined
-    if (!decision || !['reject', 'wait'].includes(decision.verdict)) continue
-    const decidedAt = Date.parse(decision.generatedAt || '') || 0
-    if (!decidedAt) continue
-    const laterMatch = articleSimilarityReport(decision.idea, '', publishedArticles, 3).matches
-      .some((match) => {
-        if (match.score < .5) return false
-        const article = publishedArticles.find((item) => item.slug === match.slug)
-        const publishedAt = Date.parse(article?.iso || article?.date || '') || 0
-        return publishedAt > decidedAt
-      })
-    if (laterMatch) stubbornWins += 1
-  }
   const average = (values: number[]) => values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0
   const cap = (value: number) => Math.max(-8, Math.min(8, value))
-  const stubbornLift = Math.min(4, stubbornWins * 2)
   return {
     sampleSize: Math.max(strengthErrors.length, potentialErrors.length),
-    strengthBias: cap(average(strengthErrors) + stubbornLift),
-    articlePotentialBias: cap(average(potentialErrors) + stubbornLift),
-    stubbornWins,
+    strengthBias: cap(average(strengthErrors)),
+    articlePotentialBias: cap(average(potentialErrors)),
   }
 }
 
 type PerfectSocialPack = {
   x: string[]
   linkedin: string[]
-  /* فيسبوك: منصةٌ ينشر فيها الدكتور فعلاً وكانت غائبة عن الحزمة كلها بينما
-     حضر ما لا ينشر فيه. نبرتها بين رسمية لينكدإن وعفوية X: فقرة تروي لا تبرق. */
-  facebook: string[]
   threads: string[]
   instagramCaptions: string[]
   carouselSlides: { kicker: string; title: string; body: string }[]
@@ -504,9 +468,6 @@ function buildSocial(bundle: Pick<Bundle, 'title' | 'excerpt' | 'body'>, audienc
   return {
     x: `${quote}\n\n${bundle.title}`,
     linkedin: `${bundle.title}\n\n${bundle.excerpt}\n\nالسؤال الذي يستحق النقاش: كيف نحافظ على الإنسان في قلب التطوير؟`,
-    /* فيسبوك يقرأ بعين المتصفّح لا القارئ: فقرة تفتح بمشهد، ثم الفكرة، ثم
-       سؤال يفتح تعليقاً. أطول من X، وأدفأ من لينكدإن. */
-    facebook: `${bundle.title}\n\n${quote}\n\n${bundle.excerpt}\n\nما رأيك أنت؟ أقرأ تعليقاتكم وأتعلّم منها.`,
     instagram: `${bundle.title}\n\n${quote}\n\n#التعليم #الذكاء_الاصطناعي #د_أحمد_الفيلكاوي`,
     threads: `${bundle.excerpt}\n\nأحياناً لا نحتاج إجابة أسرع، بل سؤالاً أعدل.`,
     whatsapp: `مقال جديد: ${bundle.title}\n${bundle.excerpt}`,
@@ -732,16 +693,9 @@ ${language.hashtags.join(' ')}`,
   ], variation).slice(0, 3)
   const generatedAt = new Date().toISOString()
 
-  const facebook = rotateBy([
-    `${thought}\n\n${goal}.\n\n${language.question}`,
-    `${language.insight}\n\n${thought}\n\nما الذي تراه أنت في هذا؟`,
-    `${goal}.\n\n${thought}\n\nأكتب هذا وأنا أنتظر رأيكم — فالنقاش يصحّح ما تفوته الكتابة.`,
-  ], variation).slice(0, 3)
-
   return {
     x,
     linkedin,
-    facebook,
     threads,
     instagramCaptions,
     carouselSlides,
@@ -2066,10 +2020,6 @@ function PerfectSocialPackCard({
   saveBusy: boolean
 }) {
   const visuals = buildSocialVisuals(pack, article)
-  const standaloneDesigns = useMemo(
-    () => standaloneVisualTemplates(article.title, article.excerpt),
-    [article.title, article.excerpt],
-  )
   return (
     <div className="grid gap-5">
       <section className={card}>
@@ -2111,27 +2061,12 @@ function PerfectSocialPackCard({
         </div>
       </section>
 
-      {/* ٢٢ تكويناً كانت مبنيةً كاملةً في standaloneVisualTemplates ولا يستدعيها
-          أحد — فبقي الدكتور يرى ثلاثة تصاميم ويظن المكتبة فقيرة. وُصلت هنا:
-          المداد · الليل · الجريدة · الشريط · المشكاة · التوقيع · المدار …
-          مرتّبةً بحسب شكل الفكرة وموضوعها لا عشوائياً. */}
-      {standaloneDesigns.length > 0 && (
-        <section className={card}>
-          <p className="text-[.76rem] font-semibold uppercase text-accent">مكتبة التكوينات · {standaloneDesigns.length} تصميماً</p>
-          <h3 className="mt-1 font-display text-xl font-semibold text-ink">اختر ما يليق بالفكرة — كلها بهويتك.</h3>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-            {standaloneDesigns.map((template) => <VisualTemplateCard key={template.id} template={template} />)}
-          </div>
-        </section>
-      )}
-
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">النصوص حسب المنصة</p>
         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {pack.x.map((text, index) => <SocialCard key={`x-perfect-${index}`} title={`X · صيغة ${index + 1}`} text={text} />)}
           {pack.linkedin.map((text, index) => <SocialCard key={`li-perfect-${index}`} title={`LinkedIn · صيغة ${index + 1}`} text={text} />)}
           {pack.instagramCaptions.map((text, index) => <SocialCard key={`ig-perfect-${index}`} title={`Instagram · Caption ${index + 1}`} text={`${text}\n\n${pack.hashtags.join(' ')}`} />)}
-          {(pack.facebook || []).map((text, index) => <SocialCard key={`fb-perfect-${index}`} title={`فيسبوك · صيغة ${index + 1}`} text={text} />)}
           {pack.threads.map((text, index) => <SocialCard key={`th-perfect-${index}`} title={`Threads · صيغة ${index + 1}`} text={text} />)}
           <SocialCard title="Reel · 45–60 ثانية" text={pack.reelScript} />
           <SocialCard title="WhatsApp" text={pack.whatsapp} />
@@ -2142,7 +2077,7 @@ function PerfectSocialPackCard({
   )
 }
 
-export function PublishingStudio({ articles, onTransferToArticles, initialView = 'idea' }: { articles: ArticleRecord[]; onTransferToArticles?: (slug: string) => void | Promise<void>; initialView?: PublishingStudioView }) {
+export function PublishingStudio({ articles, onTransferToArticles }: { articles: ArticleRecord[]; onTransferToArticles?: (slug: string) => void | Promise<void> }) {
   const { isAdmin, refresh, user } = useAdminAuth()
   const [richArticles, setRichArticles] = useState<ArticleRecord[]>(articles)
   const [radar, setRadar] = useState<RadarItem[]>([])
@@ -2165,73 +2100,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   const [currentEvents, setCurrentEvents] = useState<CurrentEvent[]>([])
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
-  /* تبويب «تغريدات ومنشورات» يفتح الاستوديو على المسار السريع مباشرة بدل أن
-     يبحث الدكتور عن خطوةٍ جانبية داخل رحلة المقال. */
-  const [view, setView] = useState<PublishingStudioView>(initialView)
+  const [view, setView] = useState<PublishingStudioView>('idea')
   const [proposalMode, setProposalMode] = useState<'self' | 'received'>('self')
-  const voicedArticles = useMemo(
-    () => richArticles.filter((article) => Boolean((audioCatalog as Record<string, unknown>)[article.slug])),
-    [richArticles],
-  )
-  const snoozeWaitingIdea = async (decisionId: string, days = 7) => {
-    const until = new Date(Date.now() + days * 86_400_000).toISOString()
-    setEditorialSnoozeById((current) => ({ ...current, [decisionId]: until }))
-    try {
-      const db = await getDb()
-      if (!db) return
-      const { doc, setDoc } = await import('firebase/firestore')
-      await setDoc(doc(db, 'admin_editorial_board', decisionId), { snoozeUntil: until }, { merge: true })
-    } catch { /* التأجيل المحلي قائم؛ الحفظ السحابي يُعاد مع أي جلسة تالية */ }
-  }
-
-  const adoptSavedIdea = (decision: EditorialBoardDecision) => {
-    setIdea(decision.idea)
-    setEditorialDecision(null)
-    setNotice(`حُمّلت فكرة «${decision.idea.slice(0, 60)}» من سجل المجلس — اعرضها عليه الآن برادار اليوم.`)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  /* مقترحات القراء بنقرة (فكرة المجلس ٢): رسائل صندوق الوارد تدخل «مقترح
-     وصلني» بمصدرها وسياقها تلقائياً — قراءة فقط، ولا تُحذف الرسالة. */
-  const loadInboxSuggestions = async () => {
-    if (inboxSuggestionsBusy) return
-    setInboxSuggestionsBusy(true)
-    try {
-      const db = await getDb()
-      if (!db) throw new Error('no-db')
-      const { collection, getDocs, limit, query } = await import('firebase/firestore')
-      const snapshot = await getDocs(query(collection(db, 'messages'), limit(40)))
-      const rows = snapshot.docs.map((item) => {
-        const data = item.data() as Record<string, unknown>
-        return {
-          id: item.id,
-          name: String(data.name || data.email || 'قارئ'),
-          topic: String(data.topic || ''),
-          message: String(data.message || data.body || ''),
-          at: Date.parse(String(data.createdAt || data.receivedAt || '')) || 0,
-        }
-      }).filter((row) => row.message.trim().length >= 12)
-        .sort((left, right) => right.at - left.at)
-        .slice(0, 12)
-      setInboxSuggestions(rows)
-    } catch {
-      setInboxSuggestions([])
-    } finally {
-      setInboxSuggestionsBusy(false)
-    }
-  }
-
-  const adoptInboxSuggestion = (row: { name: string; topic: string; message: string }) => {
-    const seed = row.topic.trim() || row.message.split(/(?<=[.!؟?])\s+/)[0] || row.message
-    setProposalMode('received')
-    setProposalSourceType('reader')
-    setProposalSourcePerson(row.name.slice(0, 80))
-    setProposalSourceContext(`من صندوق الوارد: ${row.message.slice(0, 220)}`)
-    setIdea(seed.slice(0, 300))
-    setEditorialDecision(null)
-    setInboxSuggestionsOpen(false)
-    setNotice('التُقط المقترح من صندوق الوارد بمصدره — اعرضه على المجلس.')
-  }
   const [proposalSourcePerson, setProposalSourcePerson] = useState('')
   const [proposalSourceType, setProposalSourceType] = useState<EditorialSourceType>('friend')
   const [proposalSourceContext, setProposalSourceContext] = useState('')
@@ -2240,43 +2110,6 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   const [editorialCalibrationProfile, setEditorialCalibrationProfile] = useState<EditorialCalibrationProfile>({ sampleSize: 0, strengthBias: 0, articlePotentialBias: 0 })
   const [editorialCalibrationByDecision, setEditorialCalibrationByDecision] = useState<Record<string, EditorialCalibrationRecord>>({})
   const [editorialProgress, setEditorialProgress] = useState<EditorialProgress>('idle')
-  /* أفكار المجلس الخمس (٣١ يوليو): جرس غرفة الانتظار، مقترحات الوارد بنقرة،
-     والجلسة الأسبوعية — كلها قراءة محلية فوق السجل المحفوظ، بلا نشر تلقائي. */
-  const [editorialSnoozeById, setEditorialSnoozeById] = useState<Record<string, string>>({})
-  const [inboxSuggestions, setInboxSuggestions] = useState<Array<{ id: string; name: string; topic: string; message: string }>>([])
-  const [inboxSuggestionsBusy, setInboxSuggestionsBusy] = useState(false)
-  const [inboxSuggestionsOpen, setInboxSuggestionsOpen] = useState(false)
-  const [weeklySessionOpen, setWeeklySessionOpen] = useState(false)
-  /* جرس غرفة الانتظار (فكرة المجلس ١): قرارات «انتظر» التي بلغ موعد مراجعتها
-     ولم يؤجلها الدكتور بيده — تُعرض عند فتح مرحلة الفكرة بلا أي إيقاظ خفي. */
-  const dueWaitingIdeas = useMemo(() => {
-    const now = Date.now()
-    return editorialHistory.filter((decision) => {
-      if (decision.verdict !== 'wait' || !decision.waitingRoom?.reviewAt) return false
-      const review = Date.parse(decision.waitingRoom.reviewAt) || 0
-      if (!review || review > now) return false
-      const snooze = Date.parse(editorialSnoozeById[decision.id] || '') || 0
-      return snooze <= now
-    }).slice(0, 6)
-  }, [editorialHistory, editorialSnoozeById])
-  /* الجلسة الأسبوعية (فكرة المجلس ٥): آخر الأفكار المحفوظة دفعةً واحدة —
-     مستحقات الانتظار أولاً ثم الأقوى درجةً؛ عرضٌ مرتب لا إعادة حكم خفية. */
-  const weeklySessionRows = useMemo(() => {
-    const seen = new Set<string>()
-    const unique = editorialHistory.filter((decision) => {
-      const key = decision.fingerprint || decision.id
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
-    const dueIds = new Set(dueWaitingIdeas.map((decision) => decision.id))
-    return unique
-      .slice(0, 14)
-      .sort((left, right) => (
-        Number(dueIds.has(right.id)) - Number(dueIds.has(left.id))
-        || (right.scores.strength ?? 0) - (left.scores.strength ?? 0)
-      ))
-  }, [editorialHistory, dueWaitingIdeas])
   const [editorialBusy, setEditorialBusy] = useState(false)
   const [editorialEvidenceHold, setEditorialEvidenceHold] = useState('')
   const [personalSources, setPersonalSources] = useState<PersonalSourceRecord[]>([])
@@ -2306,6 +2139,26 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   const [pulseSelectedEventIds, setPulseSelectedEventIds] = useState<string[]>([])
   const [pulseEventsLoading, setPulseEventsLoading] = useState(false)
 
+  /* بذرةٌ قادمةٌ من استوديو التغريدات: تغريدةٌ اعتمدها الدكتور تُسلَّم هنا فتفتح
+     «منشور مستقل» بنصها جاهزاً للتصميم. تُقرأ من الحدث وقت الوصول، ومن الخزن
+     المحلي حين يسبق الحدثُ تركيبَ هذا المكوّن (انتقال تبويب). */
+  useEffect(() => {
+    const apply = (seed: { idea?: string; purpose?: string } | null) => {
+      if (!seed?.idea) return
+      setView('pulse')
+      setPulseIdea(seed.idea)
+      if (seed.purpose) setPulsePurpose(seed.purpose)
+      try { localStorage.removeItem('studio-standalone-seed') } catch { /* noop */ }
+    }
+    const onSeed = (event: Event) => apply((event as CustomEvent).detail || null)
+    window.addEventListener('studio:standalone-seed', onSeed)
+    try {
+      const stored = localStorage.getItem('studio-standalone-seed')
+      if (stored) apply(JSON.parse(stored))
+    } catch { /* بذرةٌ تالفة لا توقف الاستوديو */ }
+    return () => window.removeEventListener('studio:standalone-seed', onSeed)
+  }, [])
+
   useEffect(() => {
     let active = true
     setRichArticles(articles)
@@ -2328,13 +2181,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         if (!active) return
         const rows = snapshot.docs.map((item) => item.data() as Record<string, any>)
         setEditorialHistory(rows.map((item) => item.decision).filter(Boolean).slice(0, 24) as EditorialBoardDecision[])
-        setEditorialCalibrationProfile(editorialCalibrationProfileFromRows(rows, richArticles))
-        /* تأجيلات غرفة الانتظار المحفوظة: يقرؤها الجرس فلا يزعج بما أجّله الدكتور بيده. */
-        setEditorialSnoozeById(Object.fromEntries(rows.flatMap((item): Array<[string, string]> => {
-          const decisionId = String((item.decision as EditorialBoardDecision | undefined)?.id || item.id || '')
-          const snooze = String(item.snoozeUntil || '')
-          return decisionId && snooze ? [[decisionId, snooze]] : []
-        })))
+        setEditorialCalibrationProfile(editorialCalibrationProfileFromRows(rows))
         const calibrationEntries: Array<[string, EditorialCalibrationRecord]> = rows.flatMap((item): Array<[string, EditorialCalibrationRecord]> => {
           const decisionId = String((item.decision as EditorialBoardDecision | undefined)?.id || item.id || '')
           return decisionId && item.calibration ? [[decisionId, item.calibration as EditorialCalibrationRecord]] : []
@@ -2399,7 +2246,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       tone: pulseCommand.tone || 'auto',
       density: pulseCommand.density || (pulseCommand.noBody ? 'minimal' : 'auto'),
       platform: pulseCommand.platform || 'instagram',
-      // المنشور المستقل يستخدم وجهاً عربياً أنظف من خط العناوين التحريري للموقع.
+      /* المسار الأول وحده يُثبَّت على الوجه النظيف. تثبيته على المسارين معاً كان
+         سبب «ولا الخطوط تعدلت»: الرؤى الثلاث كلها بنمط طباعة واحد فخط واحد. */
       preferTypography: 'studio-clean',
       ...(pulseCommand.format ? { format: pulseCommand.format } : {}),
       ...(pulseCommand.preferLayout ? { preferLayout: pulseCommand.preferLayout } : {}),
@@ -2415,6 +2263,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       ...request,
       density: content.split(/\s+/).length <= 18 ? 'minimal' : request.density,
       preferLayout: undefined,
+      // يُترك حراً في وجه الخط أيضاً؛ الوجوه الثلاثة كلها من هوية الموقع فلا خطر.
+      preferTypography: undefined,
       seed: `${request.seed}:independent-art-direction`,
       noveltyThreshold: .42,
     })
@@ -2551,7 +2401,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
 
       setEditorialProgress('portfolio')
       const audienceEvidence = personalAudienceEvidence()
-      const portfolioEvidence = buildEditorialPortfolioEvidence(cleanIdea, richArticles, voicedArticles)
+      const portfolioEvidence = buildEditorialPortfolioEvidence(cleanIdea, richArticles)
       const personalSourceMatches = matchPersonalSources(`${cleanIdea} ${angle} ${proposalContext}`, personalSources, 6)
       const agendaEvidence = buildAgendaAlignment(`${cleanIdea} ${angle}`, intellectualAgenda)
 
@@ -3164,23 +3014,6 @@ ${effectivePurpose}`,
         <>
           <section className={card} data-editorial-board-entry="true">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              {dueWaitingIdeas.length > 0 && (
-                <div className="mb-5 w-full rounded-2xl border border-accent/30 bg-accent/[.04] p-4" data-waiting-room-bell="true">
-                  <p className="text-[.72rem] font-semibold text-accent">جرس غرفة الانتظار — أفكار حان وقتها ({dueWaitingIdeas.length})</p>
-                  <div className="mt-3 grid gap-2">
-                    {dueWaitingIdeas.map((decision) => (
-                      <div key={decision.id} className="grid gap-2 rounded-xl border border-hair bg-canvas px-3 py-2.5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
-                        <span className="min-w-0">
-                          <strong className="block truncate text-[.8rem] text-ink">{decision.idea}</strong>
-                          <span className="mt-1 block text-[.66rem] text-soft">موعد المراجعة حلّ · {decision.waitingRoom?.trigger || ''}</span>
-                        </span>
-                        <button type="button" className={`${ghost} !px-3 !py-1.5 text-[.7rem]`} onClick={() => adoptSavedIdea(decision)}>اعرضها الآن</button>
-                        <button type="button" className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft hover:border-accent hover:text-accent" onClick={() => void snoozeWaitingIdea(decision.id)}>أجّل أسبوعاً</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               <div>
                 <p className="text-[.72rem] font-semibold uppercase text-accent">مجلس التحرير · قبل الكتابة</p>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-ink">هل تستحق الفكرة مقالاً أصلاً؟</h2>
@@ -3192,22 +3025,6 @@ ${effectivePurpose}`,
               </div>
             </div>
 
-            {proposalMode === 'received' && <div className="mt-4">
-              <button type="button" className="rounded-full border border-hair px-4 py-2 text-[.74rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent" onClick={() => { setInboxSuggestionsOpen((open) => !open); if (!inboxSuggestions.length) void loadInboxSuggestions() }}>
-                {inboxSuggestionsBusy ? 'أجلب صندوق الوارد…' : 'التقط مقترحاً من صندوق الوارد'}
-              </button>
-              {inboxSuggestionsOpen && (
-                <div className="mt-3 grid max-h-64 gap-2 overflow-y-auto rounded-xl border border-hair bg-canvas p-2">
-                  {inboxSuggestions.map((row) => (
-                    <button key={row.id} type="button" onClick={() => adoptInboxSuggestion(row)} className="rounded-lg border border-hair px-3 py-2 text-right transition-colors hover:border-accent">
-                      <strong className="block text-[.76rem] text-ink">{row.topic || row.message.slice(0, 60)}</strong>
-                      <span className="mt-1 block text-[.66rem] leading-relaxed text-soft">{row.name} · {row.message.slice(0, 110)}</span>
-                    </button>
-                  ))}
-                  {!inboxSuggestions.length && !inboxSuggestionsBusy && <p className="px-3 py-2 text-[.72rem] text-soft">لا رسائل صالحة كمقترح الآن — أو تعذّر جلبها في هذه الجلسة.</p>}
-                </div>
-              )}
-            </div>}
             {proposalMode === 'received' && <div className="mt-5 grid gap-4 md:grid-cols-3">
               <Field label="من اقترحها؟ — اختياري"><input className={input} value={proposalSourcePerson} onChange={(event) => { setProposalSourcePerson(event.target.value); setEditorialDecision(null) }} placeholder="اسم داخلي لا يُنشر" /></Field>
               <Field label="نوع المصدر"><select className={input} value={proposalSourceType} onChange={(event) => { setProposalSourceType(event.target.value as EditorialSourceType); setEditorialDecision(null) }}>{EDITORIAL_SOURCE_LABELS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
@@ -3230,25 +3047,7 @@ ${effectivePurpose}`,
           <EditorialMemoryPanel idea={`${idea} ${angle}`} articles={richArticles} books={books as any} papers={papers as any} onDataChange={handleEditorialMemoryData} />
           <EditorialBoardPanel decision={editorialDecision} progress={editorialProgress} busy={editorialBusy} historyCount={editorialHistory.length} onStart={startEditorialArticle} onForceStart={forceStartEditorialArticle} onOpenExisting={openExistingEditorialArticle} evidenceHold={Boolean(editorialDecision && editorialEvidenceHold === editorialDecision.id)} />
           {editorialHistory.length > 0 && <details className={`${card} group`}>
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ{editorialCalibrationProfile.sampleSize >= 1 ? ` · ${editorialCalibrationProfile.sampleSize} نتيجة دخلت المعايرة` : ''}{(editorialCalibrationProfile.stubbornWins || 0) > 0 ? ` · ${editorialCalibrationProfile.stubbornWins} انتصار عناد صحّح ميزانه` : ''}</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" className="rounded-full border border-accent/35 px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white" onClick={() => setWeeklySessionOpen((open) => !open)}>
-                {weeklySessionOpen ? 'أغلق الجلسة الأسبوعية' : 'جلسة المجلس الأسبوعية — آخر أفكارك مرتبة'}
-              </button>
-            </div>
-            {weeklySessionOpen && (
-              <div className="mt-3 grid gap-2 rounded-xl border border-accent/25 bg-canvas p-3" data-weekly-board-session="true">
-                <p className="text-[.7rem] leading-relaxed text-soft">مستحقات غرفة الانتظار أولاً، ثم الأقوى درجةً. اضغط فكرةً لتحميلها وعرضها على المجلس برادار اليوم.</p>
-                {weeklySessionRows.map((decision, index) => (
-                  <button key={decision.id} type="button" onClick={() => adoptSavedIdea(decision)} className="grid gap-1 rounded-lg border border-hair px-3 py-2 text-right transition-colors hover:border-accent sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-3">
-                    <span className="text-[.7rem] font-bold text-accent">{index + 1}</span>
-                    <span className="min-w-0"><strong className="block truncate text-[.78rem] text-ink">{decision.idea}</strong><span className="mt-0.5 block text-[.64rem] text-soft">{new Date(decision.generatedAt).toLocaleDateString('ar-KW')}</span></span>
-                    <span className="text-[.68rem] font-semibold text-accent">{decision.verdictLabel}{decision.scores.strength != null ? ` · ${decision.scores.strength}/100` : ''}</span>
-                  </button>
-                ))}
-                {!weeklySessionRows.length && <p className="px-2 py-1 text-[.72rem] text-soft">لا قرارات محفوظة بعد.</p>}
-              </div>
-            )}
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ{editorialCalibrationProfile.sampleSize >= 1 ? ` · ${editorialCalibrationProfile.sampleSize} نتيجة دخلت المعايرة` : ''}</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
             <div className="mt-4 grid gap-2 border-t border-hair pt-4">{editorialHistory.slice(0, 12).map((item) => {
               const calibration = editorialCalibrationByDecision[item.id]
               const actual = calibration?.actual30 || calibration?.actual7

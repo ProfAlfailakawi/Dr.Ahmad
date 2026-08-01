@@ -4,8 +4,8 @@ export type AdminTab =
   | 'production'
   | 'analytics'
   | 'studio'
-  | 'social-posts'
   | 'design'
+  | 'tweets'
   | 'image-lab'
   | 'launch'
   | 'event'
@@ -75,11 +75,8 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
         note: 'من الفكرة إلى المادة والصورة',
         items: [
           { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة التحريرية' },
-          /* «اكتب الموضوع فتجهز التغريدات» (طلب الدكتور ٣١ يوليو): المسار كان
-             يعمل كاملاً لكنه مخبوء داخل استوديو النشر كخطوةٍ جانبية، فلم يجده.
-             صار باباً مستقلاً بلغته هو — يفتح الاستوديو على المسار السريع رأساً. */
-          { tab: 'social-posts', label: 'تغريدات ومنشورات', note: 'اكتب الموضوع فقط — وتخرج لك صيغ كل منصة' },
           { tab: 'design', label: 'استوديو التصاميم', note: 'التصميم والتوليد ومكتبة الأصول' },
+          { tab: 'tweets', label: 'استوديو التغريدات', note: 'تغريداتٌ من أرشيفك، ثم تصميمها بنقرة' },
         ],
       },
       {
@@ -134,9 +131,7 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
     sections: [{
       id: 'audience-tools',
       items: [
-        /* النشرة البريدية تسكن هذا التبويب (غرفة تحريرها أسفل الرسائل)، وكانت
-           لا تُذكر في اسمه فيظن الدكتور أنها غير موجودة — الوصف يدلّ عليها الآن. */
-        { tab: 'inbox', label: 'الرسائل والنشرة', note: 'طلبات التواصل · المشتركون · غرفة تحرير النشرة' },
+        { tab: 'inbox', label: 'الرسائل', note: 'طلبات التواصل والتعاون' },
         { tab: 'whatsapp', label: 'مساعد واتساب', note: 'الحالة والمحادثات والحملات والجمهور' },
         { tab: 'bot-messages', label: 'رسائل البوت', note: 'تحرير ما يقوله البوت بلا كود' },
         { tab: 'analytics', label: 'التحليلات', note: 'المشاهدات ورحلة الزائر والاقتراح الشخصي' },
@@ -148,9 +143,7 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
 export const itemsOfGroup = (group: AdminNavGroup): AdminNavItem[] =>
   group.sections.flatMap((section) => section.items)
 
-/* «مختبر الصور» يعمل كاملاً ويغذّي الاستوديو ببصمة الصورة اللونية، لكن الدكتور
-   لا يحتاجه الآن (قراره ٣١ يوليو) — يبقى حياً بالرابط المباشر بلا أن يزاحم
-   تبويباته. لا يُحذف: يُظهره سطرٌ واحد متى طلبه. */
+// تبويبات محفوظة للمستقبل: تعمل عبر الرابط المباشر إن احتجناها، لكنها لا تظهر في الواجهة الآن.
 const HIDDEN_ADMIN_TABS: AdminTab[] = ['image-lab']
 export const ADMIN_TABS: AdminTab[] = [...ADMIN_GROUPS.flatMap((group) => itemsOfGroup(group).map((item) => item.tab)), ...HIDDEN_ADMIN_TABS]
 

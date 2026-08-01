@@ -23,6 +23,7 @@ const Decade = lazy(() => import('./pages/Decade'))
 const ThoughtPaths = lazy(() => import('./pages/ThoughtPaths'))
 const ThoughtOverview = lazy(() => import('./pages/ThoughtOverview'))
 const Media = lazy(() => import('./pages/Media'))
+const MediaDetail = lazy(() => import('./pages/MediaDetail'))
 const CV = lazy(() => import('./pages/CV'))
 const Impact = lazy(() => import('./pages/Impact'))
 const CvFile = lazy(() => import('./pages/CvFile'))
@@ -47,11 +48,6 @@ const EnglishHome = lazy(() => import('./pages/English').then((m) => ({ default:
 const EnglishCV = lazy(() => import('./pages/English').then((m) => ({ default: m.EnglishCV })))
 const EnglishResearch = lazy(() => import('./pages/English').then((m) => ({ default: m.EnglishResearch })))
 const EnglishContact = lazy(() => import('./pages/EnglishContact'))
-const LegacyArticle = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyArticle })))
-const LegacyBook = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyBook })))
-const LegacyLang = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyLang })))
-const LegacyPage = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyPage })))
-const LegacyPaper = lazy(() => import('./pages/Legacy').then((m) => ({ default: m.LegacyPaper })))
 
 function RouteLoadingLine() {
   return <div className="route-loading-line" aria-hidden="true" />
@@ -181,6 +177,7 @@ function AnimatedRoutes() {
         <Route path="/articles/:slug" element={<ArticleDetail />} />
         <Route path="/atlas" element={<Atlas />} />
         <Route path="/media" element={<Media />} />
+        <Route path="/media/:slug" element={<MediaDetail />} />
         <Route path="/questions" element={<Questions />} />
         <Route path="/radar" element={<Radar />} />
         <Route path="/now" element={<Navigate to="/" replace />} />
@@ -205,14 +202,6 @@ function AnimatedRoutes() {
         <Route path="/en/cv" element={<EnglishCV />} />
         <Route path="/en/research" element={<EnglishResearch />} />
         <Route path="/en/contact" element={<EnglishContact />} />
-        {/* جسر الروابط القديمة */}
-        <Route path="/ar/*" element={<LegacyLang />} />
-        <Route path="/en/*" element={<LegacyLang />} />
-        <Route path="/signature_articles/:slug" element={<LegacyArticle />} />
-        <Route path="/scholarly_contributi/:slug" element={<LegacyPaper />} />
-        <Route path="/books/:slug" element={<LegacyBook />} />
-        <Route path="/:slug" element={<LegacyPage />} />
-
         <Route path="*" element={<NotFound />} />
       </Routes>
       </Suspense>

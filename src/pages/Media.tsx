@@ -5,6 +5,7 @@ import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import type { MediaRecord } from '../lib/cms'
 import { Pagination, usePagedList } from '../components/Pagination'
+import { Link } from 'react-router'
 
 const id = (url: string) => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
 const mediaCount = (count: number) => {
@@ -95,17 +96,15 @@ export default function Media() {
         transition={{ duration: 0.7, delay: Math.min(index * 0.06, 0.3), ease: EASE }}
         className={`group relative overflow-hidden rounded-2xl border bg-canvas transition-colors duration-300 hover:border-accent ${large ? 'border-accent/40 md:col-span-2' : 'border-hair'}`}
       >
-        <a
-          href={videoUrl || undefined}
-          target={videoUrl ? '_blank' : undefined}
-          rel={videoUrl ? 'noreferrer' : undefined}
+        <Link
+          to={`/media/${m.slug}`}
           data-hover
           className="block"
         >
           <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: large ? '21 / 9' : '16 / 9' }}>
             {videoId && (
               <img
-                src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
+                src={m.thumbnail || `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`}
                 alt={m.title}
                 loading="lazy"
                 decoding="async"
@@ -114,7 +113,7 @@ export default function Media() {
                 onError={(e) => {
                   const img = e.currentTarget
                   // احتياطي: جرّب مقاساً آخر مرّة، وإلا أخفِ الصورة (تبقى الخلفية الأنيقة وزر التشغيل)
-                  if (!img.dataset.fallback) { img.dataset.fallback = '1'; img.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` }
+                  if (!img.dataset.fallback) { img.dataset.fallback = '1'; img.src = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }
                   else { img.style.display = 'none' }
                 }}
                 className="h-full w-full object-cover"
@@ -128,12 +127,13 @@ export default function Media() {
           </div>
           <div className="p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 text-[.74rem]">
-              <span className="font-semibold text-accent">{m.outlet || 'ظهور إعلامي'}</span>
-              {m.date && <time className="text-soft">{m.date}</time>}
+              <span className="font-semibold text-accent">{m.program || m.outlet || 'ظهور إعلامي'}</span>
+              <span className="flex items-center gap-2 text-soft">{m.duration && <span dir="ltr">{m.duration}</span>}{m.date && <time>{m.date}</time>}</span>
             </div>
             <h2 className={`mt-2 font-medium leading-[1.6] text-ink ${large ? 'font-display text-[1.25rem]' : 'text-[1.05rem]'}`}>{m.title}</h2>
+            {m.topics && <p className="mt-2 line-clamp-2 text-[.76rem] leading-relaxed text-soft">{m.topics}</p>}
           </div>
-        </a>
+        </Link>
         {/* «شاهد لاحقاً» — على جهازك وحدك، بلا حساب */}
         <button
           type="button"

@@ -63,9 +63,9 @@ expect(
 
 const regexPairs = redirects.map((x) => `${x.regex || ''} -> ${x.destination}`)
 const rewrites = hosting.hosting?.rewrites || []
-expect(rewrites.some((x) => x.source === '/scholarly_contributi/**' && x.destination === '/index.html'), 'جسر روابط الأبحاث القديمة إلى محلل المسارات مفقود')
+expect(!rewrites.some((x) => /scholarly_contributi|signature_articles|wp-/i.test(x.source || '')), 'لا يجوز إبقاء مسار أرشيفي عاماً داخل التطبيق؛ التحويلات الدقيقة وحدها هي المعتمدة')
 expect(regexPairs.some((x) => x.includes('curated-insights/') && x.endsWith(' -> /inbox')), 'تحويل From My Inbox المتداخل مفقود')
-expect(regexPairs.some((x) => x.includes('reading-room|watch-listen') && x.endsWith(' -> /curated')), 'تحويل أقسام WordPress المتداخلة إلى المختارات مفقود')
+expect(regexPairs.some((x) => x.includes('reading-room|watch-listen') && x.endsWith(' -> /curated')), 'تحويل الأقسام الأرشيفية المتداخلة إلى المختارات مفقود')
 
 for (const runtime of ['index.html', 'server.mjs', 'src/data.ts', 'data.ts'].filter((p) => existsSync(resolve(ROOT, p)))) {
   expect(!read(runtime).includes('208.115.236.10'), `${runtime} ما زال يعتمد عنوان الخادم القديم`)
@@ -103,4 +103,4 @@ if (errors.length) {
 }
 console.log('✔ لا يوجد اتصال حي أو اعتماد مخفي على الموقع السابق')
 console.log('✔ المحتوى المهم والملفات المعروفة مرتبطة بالموقع الجديد')
-console.log('✔ مسارات المحتوى القديمة مغطاة بتحويلات 301 وجسر حلّ ذكي للأبحاث القديمة')
+console.log('✔ المسارات المفهرسة سابقاً مغطاة بتحويلات 301 دقيقة فقط، بلا جسر تشغيل عام')

@@ -1,18 +1,13 @@
-احذف هذه النسخ الجذرية القديمة بعد دمج ملفات هذا التحديث:
-
-App.tsx
-ArticleDetail.tsx
-PaperDetail.tsx
-IdeaFeatures.tsx
-SocialDesignStudio.tsx
-social-design-engine.ts
-social-design-renderer.ts
-agent.mjs
-intent-engine.mjs
-public/sitemap.xml
-
-السبب: المصدر الحي الوحيد للواجهة ومحرك التصميم هو src/، والمصدر الحي الوحيد للوكيل هو whatsapp-agent/.
-للتطبيق الآمن شغّل:
-node scripts/clean-obsolete-root-files.mjs
-
-السكريبت لا يحذف أي ميزة حية؛ يحذف النسخ الجذرية اليتيمة فقط، ثم ينظف صفحات/صور المقالات التي لم يعد لها سجل منشور.
+ROOT-CAUSES-AND-FILES.txt
+atlas/index 2.html
+contact/index 2.html
+curated/index 3.html
+cv/index 2.html
+data.ts
+inbox/index 3.html
+media/index 2.html
+publications/index 2.html
+questions/index 3.html
+research/index 3.html
+src/pages/Legacy.tsx
+upcoming/index 3.html

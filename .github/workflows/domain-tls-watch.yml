@@ -1,0 +1,22 @@
+name: حارس النطاقات والشهادات
+
+on:
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: domain-tls-watch
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: فحص DNS وHTTPS وانتهاء الشهادات
+        run: node scripts/check-domain-tls.mjs

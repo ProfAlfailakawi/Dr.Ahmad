@@ -78,13 +78,27 @@ function isOfficialUrl(value) {
   }
 }
 
+function isTrustedVideoAsset(value, key) {
+  try {
+    const parsed = new URL(String(value))
+    if (parsed.protocol !== 'https:') return false
+    if (key === 'contentUrl') return ['www.youtube.com', 'youtube.com', 'youtu.be'].includes(parsed.hostname)
+    if (key === 'embedUrl') return parsed.hostname === 'www.youtube-nocookie.com'
+    if (key === 'thumbnailUrl' || key === 'image') return parsed.hostname === 'i.ytimg.com'
+    return false
+  } catch {
+    return false
+  }
+}
+
 function checkJsonLdUrls(value, rel, path = '$') {
   if (Array.isArray(value)) {
     value.forEach((entry, index) => checkJsonLdUrls(entry, rel, `${path}[${index}]`))
     return
   }
   if (!value || typeof value !== 'object') return
-  const protectedKeys = new Set(['url', 'mainEntityOfPage', 'image', 'logo', 'contentUrl', 'thumbnailUrl'])
+  const protectedKeys = new Set(['url', 'mainEntityOfPage', 'image', 'logo', 'contentUrl', 'thumbnailUrl', 'embedUrl'])
+  const isVideoObject = value['@type'] === 'VideoObject'
   for (const [key, entry] of Object.entries(value)) {
     const child = `${path}.${key}`
     if (protectedKeys.has(key)) {
@@ -94,7 +108,10 @@ function checkJsonLdUrls(value, rel, path = '$') {
           ? [entry['@id']]
           : []
       for (const candidate of candidates) {
-        if (/^https?:\/\//i.test(candidate)) expect(isOfficialUrl(candidate), `${rel}: Schema ${child} خارج الدومين الرسمي`)
+        if (/^https?:\/\//i.test(candidate)) {
+          const allowed = isOfficialUrl(candidate) || (isVideoObject && isTrustedVideoAsset(candidate, key))
+          expect(allowed, `${rel}: Schema ${child} خارج الدومين الرسمي أو قائمة أصول الفيديو الموثوقة`)
+        }
       }
     }
     checkJsonLdUrls(entry, rel, child)

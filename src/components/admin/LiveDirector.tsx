@@ -24,9 +24,12 @@ import {
   type LiveDirectorRepairIssue,
   type LiveDirectorSegment,
   type LiveDirectorTone,
+  type NarrationSource,
   type ReferenceStrategy,
 } from '../../lib/live-director'
 import { extractVideoFrame, measureImageSharpness } from '../../lib/live-director-frames'
+import { buildTweets, verifiedLineOf, type TweetSource } from '../../lib/tweet-forge'
+import { resolveResonantQuotes, resonanceBySlug, type ResonanceRow } from '../../lib/resonance-quotes'
 
 type DirectorPath = 'article' | 'public' | null
 type StoredProject = LiveDirectorProject & { userId?: string }
@@ -53,6 +56,13 @@ const METRIC_FIELDS = [
   { key: 'shares' as const, label: 'المشاركة' },
   { key: 'articleClicks' as const, label: 'النقر على المقال' },
 ]
+const NARRATION_SOURCE_LABELS: Record<NarrationSource, string> = {
+  resonance: 'من كلامه — جملة ظلّلها القرّاء',
+  verified: 'من متن المقال، موثّقة حرفاً بحرف',
+  derived: 'مستخرجة من المادة نفسها',
+  scaffold: 'صياغة المحرك — راجعها',
+}
+const SITE = 'https://dr-alfailakawi.com'
 const CONTINUITY_MODES: ContinuityMode[] = ['direct', 'soft', 'thematic', 'independent']
 const REFERENCE_STRATEGIES: ReferenceStrategy[] = ['last_frame', 'selected_frame', 'style_only', 'none']
 
@@ -90,6 +100,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
   const [youtubeDraft, setYoutubeDraft] = useState('')
   const [clipFiles, setClipFiles] = useState<Record<string, File>>({})
   const [frameSecond, setFrameSecond] = useState<Record<string, string>>({})
+  const [resonanceRows, setResonanceRows] = useState<ResonanceRow[]>([])
 
   const selectedArticle = articles.find((article) => article.slug === articleSlug) || null
   const linkedArticle = articles.find((article) => article.slug === linkedArticleSlug) || null
@@ -107,6 +118,43 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
   }
 
   useEffect(() => { void loadProjects() }, [])
+
+  // رنين القرّاء: ما ظلّله الناس فعلاً. غيابه لا يوقف شيئاً — يعود المحرك إلى المتن.
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      try {
+        const db = await getDb(); if (!db || !active) return
+        const { collection, getDocs } = await import('firebase/firestore')
+        const snapshot = await getDocs(collection(db, 'article_highlights'))
+        if (!active) return
+        setResonanceRows(snapshot.docs.map((item) => item.data() as ResonanceRow))
+      } catch { /* غياب الرنين لا يوقف المخرج الحي */ }
+    })()
+    return () => { active = false }
+  }, [])
+
+  const resonanceMap = useMemo(() => {
+    if (!resonanceRows.length) return new Map<string, { text: string; count: number }[]>()
+    const rows = resolveResonantQuotes(resonanceRows, articles.map((article) => ({ slug: article.slug, title: article.title, body: article.body || '' })), { limit: 60 })
+    return resonanceBySlug(rows)
+  }, [articles, resonanceRows])
+
+  /** يبني مدخل المسبك: زوايا التغريدات، والجملة الموثّقة، وما ظلّله القرّاء. */
+  const forgeFor = (tweetSource: TweetSource, slug: string) => {
+    const resonantLines = slug ? resonanceMap.get(slug) : undefined
+    try {
+      const drafts = buildTweets({ ...tweetSource, resonantLines }, { count: 8, withHashtags: true })
+      return {
+        drafts: drafts.map((draft) => ({ angle: draft.angle, angleLabel: draft.angleLabel, text: draft.text, hashtags: draft.hashtags, quote: draft.quote, quoteVerified: draft.quoteVerified, score: draft.score, resonanceCount: draft.resonanceCount })),
+        verifiedLine: verifiedLineOf(tweetSource.text || '', tweetSource.title),
+        resonantLines,
+      }
+    } catch {
+      // تعثّر المسبك لا يُفرغ المشروع؛ المحرك يعود إلى متن المقال نفسه.
+      return { resonantLines }
+    }
+  }
 
   const applySeed = (seed: Record<string, unknown> | null) => {
     if (!seed) return
@@ -130,7 +178,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
           words: body.trim().split(/\s+/).filter(Boolean).length, year: String(new Date().getFullYear()), hasAudio: false, missing: false,
           _cms: { kind: 'article', origin: 'added', modified: true, hidden: true, deleted: false, docId: String(draft.slug || slug || 'room-draft'), baseSlug: String(draft.slug || slug || 'room-draft') },
         }
-        setProject(createArticleVideoProject({ article: temporary, audience, platform, tone, useAvatar, source: seededSource, sourceSessionId: seededSessionId, linkedEditorialDecisionId: seededDecisionId, linkedCampaignId: seededCampaignId }))
+        setProject(createArticleVideoProject({ article: temporary, audience, platform, tone, useAvatar, forge: forgeFor({ kind: 'article', id: temporary.slug, title: temporary.title, text: [temporary.excerpt, body].filter(Boolean).join(' '), url: '' }, temporary.slug), source: seededSource, sourceSessionId: seededSessionId, linkedEditorialDecisionId: seededDecisionId, linkedCampaignId: seededCampaignId }))
       }
     } else {
       setPath('public')
@@ -155,12 +203,14 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
     setNotice('')
     if (path === 'article') {
       if (!selectedArticle) { setNotice('اختر المقالة أولاً.'); return }
-      setProject(createArticleVideoProject({ article: selectedArticle, audience, platform, tone, useAvatar, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }))
+      const forge = forgeFor({ kind: 'article', id: selectedArticle.slug, title: selectedArticle.title, text: [selectedArticle.excerpt, selectedArticle.body].filter(Boolean).join(' '), url: `${SITE}/articles/${selectedArticle.slug}`, date: selectedArticle.iso }, selectedArticle.slug)
+      setProject(createArticleVideoProject({ article: selectedArticle, audience, platform, tone, useAvatar, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }))
       return
     }
     if (path === 'public') {
       if (topic.trim().length < 4) { setNotice('اكتب موضوع الفيديو أولاً.'); return }
-      setProject(createPublicVideoProject({ topic, message, audience, platform, tone, useAvatar, wantsSeries, linkedArticle, archive: articles, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }))
+      const forge = forgeFor({ kind: linkedArticle ? 'article' : 'free', id: linkedArticle?.slug || 'topic', title: linkedArticle?.title || topic, text: [message, topic, linkedArticle?.body].filter(Boolean).join(' '), url: linkedArticle ? `${SITE}/articles/${linkedArticle.slug}` : '' }, linkedArticle?.slug || '')
+      setProject(createPublicVideoProject({ topic, message, audience, platform, tone, useAvatar, wantsSeries, linkedArticle, archive: articles, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }))
     }
   }
 
@@ -384,6 +434,7 @@ function ClipCard(props: ClipCardProps) {
       </div>
 
       <p className="mt-3 text-[.68rem] leading-relaxed text-soft"><span className="font-semibold text-ink">المعنى الواحد:</span> {segment.message}</p>
+      <p className="mt-1 text-[.62rem] text-soft">{NARRATION_SOURCE_LABELS[segment.narrationSource]}{segment.resonanceCount > 0 ? ` · ظلّلها ${segment.resonanceCount} من القرّاء` : ''}</p>
       {segment.narration
         ? <p className="mt-2 rounded-xl bg-wash px-3 py-2 text-[.72rem] leading-relaxed text-ink">{segment.narration}</p>
         : <p className="mt-2 rounded-xl border border-dashed border-hair px-3 py-2 text-[.68rem] leading-relaxed text-soft">بلا جملة منطوقة؛ الصورة تحمل المعنى والنص يُضاف في المونتاج.</p>}

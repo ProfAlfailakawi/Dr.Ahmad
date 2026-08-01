@@ -1,6 +1,34 @@
 import type { ArticleRecord } from './cms'
 import { genuineAdditionMeter } from './editorial-foresight.ts'
 import { strongestQuote, suggestStrongTitle } from './intelligence.ts'
+import { polishTypography } from './style-dna.mjs'
+
+/**
+ * مخرجات مسبك التغريدات ورنين القرّاء تُحقن حقناً ولا تُستورد هنا.
+ * المسبك يستورد معجماً بصيغة JSON فلا يعمل تحت node مباشرة؛ والحقن يُبقي هذا
+ * المحرك نقياً قابلاً للاختبار بلا Firestore ولا متصفح — وهي طريقة المسبك نفسه.
+ */
+export type ForgeDraft = {
+  angle: string
+  angleLabel: string
+  text: string
+  hashtags: string[]
+  quote: string
+  quoteVerified: boolean
+  score: number
+  resonanceCount?: number
+}
+
+export type ForgeInput = {
+  drafts?: readonly ForgeDraft[]
+  /** جملة من متنه مُتحقَّق من وجودها حرفاً بحرف. */
+  verifiedLine?: string
+  /** ما ظلّله القرّاء في هذا المتن، مرتّباً بعدد من ظلّله. */
+  resonantLines?: readonly { text: string; count: number }[]
+}
+
+/** من أين جاءت جملة المقطع: كلامه المُظلَّل، أو متنه، أو صياغة المحرك. */
+export type NarrationSource = 'resonance' | 'verified' | 'derived' | 'scaffold'
 
 export type LiveDirectorProjectType = 'article_video' | 'public_topic_video'
 export type LiveDirectorProjectStatus = 'draft' | 'analyzing' | 'prompts_ready' | 'day_one' | 'day_two' | 'generating' | 'needs_revision' | 'clips_approved' | 'editing' | 'ready_to_publish' | 'published' | 'archived'
@@ -36,6 +64,10 @@ export type LiveDirectorSegment = {
   appearance: FlowAppearance
   voiceMode: VoiceMode
   narration: string
+  /** مصدر الجملة — يظهر في اللوحة كي لا تختلط صياغة المحرك بكلامه. */
+  narrationSource: NarrationSource
+  /** كم قارئاً ظلّل الجملة التي بُني عليها هذا المقطع. */
+  resonanceCount: number
   shotCount: 1 | 2 | 3
   shotPlan: { from: number; to: number; framing: string }[]
   prompt: string
@@ -132,6 +164,7 @@ export type ArticleVideoInput = {
   tone?: LiveDirectorTone
   useAvatar?: boolean
   preferredDuration?: 24 | 48 | 64
+  forge?: ForgeInput
   source?: string
   sourceSessionId?: string
   linkedEditorialDecisionId?: string
@@ -146,6 +179,7 @@ export type PublicVideoInput = {
   tone?: LiveDirectorTone
   useAvatar?: boolean
   wantsSeries?: boolean
+  forge?: ForgeInput
   source?: string
   sourceSessionId?: string
   linkedEditorialDecisionId?: string
@@ -159,6 +193,13 @@ const wordCount = (value = '') => wordList(value).length
 const unique = <T,>(items: T[]) => [...new Set(items)]
 const now = () => new Date().toISOString()
 
+/** تجريد الجملة للمقارنة: بلا تشكيل ولا ترقيم ولا فروق ألف. */
+const bareLine = (value = '') => value
+  .replace(/[\u064B-\u0652\u0670\u0640]/g, '')
+  .replace(/[إأآا]/g, 'ا')
+  .replace(/[^\p{L}\p{N}]+/gu, ' ')
+  .trim()
+
 function clipWords(value: string, maximum: number, fallback = '') {
   const rows = wordList(value.replace(/[\r\n]+/g, ' '))
   const output = rows.slice(0, maximum).join(' ').replace(/[،؛:]$/, '')
@@ -170,11 +211,14 @@ function cleanSentence(value = '') {
 }
 
 function meaningfulSentences(value = '') {
+  const seen = new Set<string>()
   return value
     .replace(/\s+/g, ' ')
     .split(/(?<=[.!؟…])\s+/)
     .map(cleanSentence)
     .filter((item) => wordCount(item) >= 6 && wordCount(item) <= 34)
+    // الجملة المكرّرة في المتن لا تُقال مرتين في فيديو من ست مقاطع.
+    .filter((item) => { const bare = bareLine(item); if (!bare || seen.has(bare)) return false; seen.add(bare); return true })
 }
 
 function projectId(type: LiveDirectorProjectType, seed: string) {
@@ -218,44 +262,107 @@ const PUBLIC_ROLES: Record<number, string[]> = {
   6: ['الخطاف', 'المشكلة', 'التفسير', 'المثال أو الدليل', 'رأي د. أحمد', 'الخاتمة والدعوة'],
 }
 
-function articleNarration(article: ArticleRecord, count: number) {
-  const body = article.body || article.excerpt || article.title
-  const sentences = meaningfulSentences(body)
-  const central = clipWords(article.excerpt || sentences[0] || article.title, 12, article.title)
-  const first = clipWords(sentences.find((item) => item !== sentences[0]) || central, 11, central)
-  const second = clipWords(sentences.find((item) => item !== sentences[0] && item !== sentences[1]) || strongestQuote(body), 11, central)
-  const quote = clipWords(strongestQuote(body), 11, central)
-  const six = [
-    `ماذا لو كان ${clipWords(article.title, 7, 'هذا السؤال')} أعمق مما نظن؟`,
-    `المشكلة ليست في الحدث وحده؛ بل في أثره على الإنسان.`,
-    first,
-    second,
-    `رأيي أن ${clipWords(quote, 9, 'المعنى يجب أن يسبق الأداة')}.`,
-    `الفكرة كاملة في المقال؛ اقرأها ثم اختبرها في واقعك.`,
-  ]
-  if (count === 3) return [six[0], `جوهر المقال: ${clipWords(central, 10, central)}.`, six[5]]
-  if (count === 8) return [six[0], six[1], `السؤال المركزي: ${clipWords(central, 9, central)}.`, six[2], `ويظهر الدليل حين ${clipWords(second, 9, second)}.`, six[3], six[4], six[5]]
-  return six
+/** حروفٌ وأدواتٌ لا تصلح آخر جملةٍ منطوقة؛ وجودها في النهاية يعني قطعاً في منتصف المعنى. */
+const DANGLING = /\s(?:بل|من|في|إلى|على|عن|أن|إن|أو|و|ثم|لكن|لأن|التي|الذي|مع|بين|عند|قد|كي|حتى)$/
+
+/**
+ * يقتطع جملةً طويلة عند حدّ معنى لا عند حدّ عدد.
+ * الجملة المُظلَّلة كلامه هو؛ قطعها في منتصفها يشوّهه، فنأخذ أطول مقطعٍ تامّ يسع المدة.
+ */
+function clipToClause(value: string, maximum: number, fallback = '') {
+  const clean = value.replace(/\s+/g, ' ').trim()
+  if (!clean) return fallback
+  if (wordCount(clean) <= maximum) return clean.replace(/[،؛:]$/, '')
+  const clauses = clean.split(/(?<=[؛،:.…])\s+|\s+(?=بل\s)/).map((part) => part.replace(/[،؛:.…]+$/, '').trim()).filter(Boolean)
+  const fitting = clauses.filter((clause) => wordCount(clause) <= maximum && wordCount(clause) >= 5)
+  if (fitting.length) return fitting.sort((left, right) => wordCount(right) - wordCount(left))[0]
+  let trimmed = clipWords(clean, maximum, fallback)
+  while (DANGLING.test(trimmed)) trimmed = trimmed.replace(DANGLING, '')
+  return trimmed || fallback
 }
 
-function publicNarration(topic: string, message: string, count: number) {
+/** سطرٌ مع نسبه: كلامه المُظلَّل أولاً، ثم متنه، ثم صياغة المحرك أخيراً. */
+type SourcedLine = { text: string; source: NarrationSource; resonanceCount: number }
+
+const sourced = (text: string, source: NarrationSource, resonanceCount = 0): SourcedLine => ({ text: polishTypography(text), source, resonanceCount })
+
+/** قوالب الخطاف لا تُستعمل إلا حين لا توجد جملة له تصلح؛ وتتنوّع بثبات مع العنوان. */
+const HOOK_SHAPES = [
+  (subject: string) => `ماذا لو كان ${subject} أعمق مما نظن؟`,
+  (subject: string) => `${subject}… والسؤال الذي لا نسأله.`,
+  (subject: string) => `ما الذي يتغيّر لو نظرنا إلى ${subject} من زاوية أخرى؟`,
+  (subject: string) => `يُقال الكثير عن ${subject}. والحقيقة أهدأ من ذلك.`,
+]
+
+function scaffoldHook(title: string) {
+  let hash = 2166136261
+  for (const character of title) { hash ^= character.codePointAt(0) || 0; hash = Math.imul(hash, 16777619) }
+  return HOOK_SHAPES[(hash >>> 0) % HOOK_SHAPES.length](clipWords(title, 7, 'هذا السؤال'))
+}
+
+function articleNarration(article: ArticleRecord, count: number, forge?: ForgeInput): SourcedLine[] {
+  const body = article.body || article.excerpt || article.title
+  const sentences = meaningfulSentences(body)
+  const resonant = [...(forge?.resonantLines || [])].filter((line) => line.text.trim()).sort((left, right) => right.count - left.count)
+  const verified = forge?.verifiedLine?.trim() || ''
+  const central = clipWords(article.excerpt || sentences[0] || article.title, 12, article.title)
+
+  // الخطاف: الجملة التي أوقفت القرّاء فعلاً أولى من أي قالب.
+  const hook: SourcedLine = resonant[0]
+    ? sourced(clipToClause(resonant[0].text, 11, central), 'resonance', resonant[0].count)
+    : sourced(scaffoldHook(article.title), 'scaffold')
+
+  // الرأي: كلامه هو، مُظلَّلاً أو موثّقاً من متنه — لا صياغة عنه.
+  const verdictLine = resonant[1] || resonant[0]
+  const verdict: SourcedLine = verdictLine && verdictLine.text !== (resonant[0] && hook.source === 'resonance' ? resonant[0].text : '')
+    ? sourced(clipToClause(verdictLine.text, 11, central), 'resonance', verdictLine.count)
+    : verified
+      ? sourced(clipToClause(verified, 11, central), 'verified')
+      : sourced(clipToClause(strongestQuote(body) || central, 11, central), 'derived')
+
+  // الجملة المقتطعة لا تطابق أصلها حرفاً بحرف؛ فالاستبعاد بالاحتواء لا بالمساواة، وإلا تكرّر الخطاف.
+  const taken = [hook.text, verdict.text].map(bareLine).filter(Boolean)
+  const rest = sentences.filter((item) => {
+    const bare = bareLine(item)
+    return bare && !taken.some((used) => bare.includes(used) || used.includes(bare))
+  })
+  const problem: SourcedLine = rest[0] ? sourced(clipToClause(rest[0], 12, central), 'derived') : sourced(clipWords(central, 12, central), 'derived')
+  const first: SourcedLine = rest[1] ? sourced(clipToClause(rest[1], 11, central), 'derived') : sourced(clipWords(central, 11, central), 'derived')
+  const second: SourcedLine = rest[2] ? sourced(clipToClause(rest[2], 11, central), 'derived') : first
+  const closing: SourcedLine = sourced('الفكرة كاملة في المقال؛ اقرأها ثم اختبرها في واقعك.', 'scaffold')
+
+  if (count === 3) return [hook, sourced(clipWords(central, 10, central), 'derived'), closing]
+  if (count === 8) return [hook, problem, sourced(clipWords(central, 9, central), 'derived'), first, sourced(clipToClause(rest[3] || second.text, 11, central), 'derived'), second, verdict, closing]
+  return [hook, problem, first, second, verdict, closing]
+}
+
+function publicNarration(topic: string, message: string, count: number, forge?: ForgeInput): SourcedLine[] {
   const central = clipWords(message || topic, 12, topic)
-  const one = `${clipWords(central, 11, 'فكرة تستحق التأمل')}.`
-  const three = [
-    `هل فكرنا فعلاً في ${clipWords(topic, 7, 'هذا السؤال')}؟`,
-    `الفكرة ببساطة: ${clipWords(central, 10, central)}.`,
-    `ما الذي سيتغير لو أخذنا هذا السؤال بجدية؟`,
-  ]
-  if (count === 1) return [one]
+  const sentences = meaningfulSentences(`${message} ${topic}`.trim())
+  const verified = forge?.verifiedLine?.trim() || ''
+  const resonant = [...(forge?.resonantLines || [])].sort((left, right) => right.count - left.count)
+
+  const one = sourced(`${clipWords(central, 11, 'فكرة تستحق التأمل')}.`, 'derived')
+  const hook: SourcedLine = resonant[0]
+    ? sourced(clipToClause(resonant[0].text, 11, central), 'resonance', resonant[0].count)
+    : sourced(scaffoldHook(topic), 'scaffold')
+  const core = sourced(clipWords(central, 10, central), 'derived')
+  const closing = sourced('ما الذي سيتغيّر لو أخذنا هذا السؤال بجدية؟', 'scaffold')
+  // الرأي في الفيديو العام: كلامه إن وُجد، وإلا فرسالته هو كما كتبها — لا حكمة مُعلَّبة.
+  const verdict: SourcedLine = verified
+    ? sourced(clipToClause(verified, 11, central), 'verified')
+    : sourced(clipToClause(message || sentences[0] || central, 11, central), 'derived')
+
+  if (count === 1) return [resonant[0] ? hook : one]
   if (count === 6) return [
-    three[0],
-    `المشكلة أننا نرى النتيجة، ولا نسأل عن معناها.`,
-    three[1],
-    `مثال واحد صادق يكشف ما لا تقوله الشعارات.`,
-    `رأيي أن القرار الجيد يبدأ من الإنسان قبل الأداة.`,
-    three[2],
+    hook,
+    sourced(clipToClause(sentences[0] || central, 12, central), 'derived'),
+    core,
+    sourced(clipToClause(sentences[1] || central, 12, central), 'derived'),
+    verdict,
+    closing,
   ]
-  return three
+  return [hook, core, closing]
 }
 
 function appearanceFor(index: number, count: number, useAvatar: boolean): FlowAppearance {
@@ -507,7 +614,7 @@ const PALETTE = 'deep slate blue, warm ivory, restrained muted gold accents'
 function buildSegments(input: {
   type: LiveDirectorProjectType
   title: string
-  narrations: string[]
+  narrations: SourcedLine[]
   useAvatar: boolean
   tone: LiveDirectorTone
   platform: LiveDirectorPlatform
@@ -516,14 +623,15 @@ function buildSegments(input: {
   const count = input.narrations.length
   const roles = (input.type === 'article_video' ? ARTICLE_ROLES : PUBLIC_ROLES)[count] || PUBLIC_ROLES[3]
   const appearances = input.narrations.map((_, index) => appearanceFor(index, count, input.useAvatar))
-  return input.narrations.map((narration, index) => {
+  return input.narrations.map((line, index) => {
+    const narration = line.text
     const role = roles[index] || `المقطع ${index + 1}`
     const appearance = appearances[index]
     const voiceMode = voiceModeFor(appearance, role, count)
     const shotCount = shotsFor(index, role, appearance)
     const negativeConstraints = constraintsFor(appearance, shotCount)
     const continuityMode = continuityModeFor(index, appearances, role)
-    const message = clipWords(narration, 12, role)
+    const message = clipToClause(narration, 12, role)
     const base: SegmentDraft = {
       id: `clip-${index + 1}`,
       order: index + 1,
@@ -535,7 +643,9 @@ function buildSegments(input: {
       appearance,
       voiceMode,
       // المقطع الصامت يحمل معناه في الصورة وفي خطة النصوص المضافة، لا في جملة منطوقة.
-      narration: voiceMode === 'ambient' ? '' : clipWords(narration, voiceMode === 'voice_over' ? 14 : 11, narration),
+      narration: voiceMode === 'ambient' ? '' : clipToClause(narration, voiceMode === 'voice_over' ? 14 : 11, narration),
+      narrationSource: voiceMode === 'ambient' ? 'derived' : line.source,
+      resonanceCount: line.resonanceCount,
       shotCount,
       shotPlan: shotPlan(shotCount, appearance),
       negativeConstraints,
@@ -557,7 +667,12 @@ function buildSegments(input: {
   })
 }
 
-function socialPack(input: { type: LiveDirectorProjectType; title: string; idea: string; articleUrl?: string; linkedArticle?: ArticleRecord | null; archive?: ArticleRecord[] }): LiveDirectorSocialPack {
+/** زوايا المسبك موزّعة على المنصات حتى لا يتكرر النص: لكل منصة زاوية مختلفة. */
+const HUMAN_ANGLES = ['scene', 'letter', 'confession', 'three-points', 'open-question']
+const PROFESSIONAL_ANGLES = ['rule', 'contrast', 'redefine', 'core-claim', 'figure', 'myth-break']
+const INVITING_ANGLES = ['invitation', 'open-question', 'paradox']
+
+function socialPack(input: { type: LiveDirectorProjectType; title: string; idea: string; articleUrl?: string; linkedArticle?: ArticleRecord | null; archive?: ArticleRecord[]; forge?: ForgeInput }): LiveDirectorSocialPack {
   const link = input.articleUrl ? `\n${input.articleUrl}` : ''
   const question = input.title.endsWith('؟') ? input.title : `ماذا يتغير لو أخذنا «${clipWords(input.title, 8, input.title)}» بجدية؟`
   let articleDecision: LiveDirectorSocialPack['articleDecision']
@@ -568,16 +683,36 @@ function socialPack(input: { type: LiveDirectorProjectType; title: string; idea:
       articleDecision = addition.verdict === 'قريب من الأرشيف' ? 'حدّث مقالة قديمة' : addition.verdict === 'إضافة واضحة' ? 'حوّله إلى فكرة مقال' : 'أرسله إلى مجلس التحرير'
     } else articleDecision = 'أرسله إلى مجلس التحرير'
   }
+  // مسبك التغريدات هو مصدر النصوص حين يُحقن؛ لا نبني نسخة أفقر منه هنا.
+  const ranked = [...(input.forge?.drafts || [])].filter((draft) => draft.text.trim()).sort((left, right) => right.score - left.score)
+  const takeDraft = (preferred: string[], used: string[]) =>
+    ranked.find((draft) => preferred.includes(draft.angle) && !used.includes(draft.angle))
+    || ranked.find((draft) => !used.includes(draft.angle))
+  const forX = ranked[0]
+  const used = forX ? [forX.angle] : []
+  const forInstagram = takeDraft(HUMAN_ANGLES, used)
+  if (forInstagram) used.push(forInstagram.angle)
+  const forLinkedin = takeDraft(PROFESSIONAL_ANGLES, used)
+  if (forLinkedin) used.push(forLinkedin.angle)
+  const forCaption = takeDraft(INVITING_ANGLES, used)
+  const echo = input.forge?.verifiedLine?.trim() || ''
+  const withLink = (text: string) => text.includes('http') || !link ? text : `${text}${link}`
+
   return {
     coverText: clipWords(input.title, 7, input.title),
-    caption: `${question}\n\n${clipWords(input.idea, 34, input.title)}\n\nالفيديو يفتح السؤال؛ والتفصيل يبقى في المادة الأصلية.${link}`,
-    x: `${question}\n\nليست الفكرة أن نضيف أداة جديدة، بل أن نعرف ماذا تضيف إلى الإنسان.${link}`,
-    instagram: `${question}\n\nقد تبدو المسألة تقنية، لكن أثرها يظهر في قرار صغير داخل الصف أو البيت. احفظ الفكرة وجرّب أن تسأل: من يتعلم أكثر فعلاً؟${link}`,
-    linkedin: `${input.title}\n\n${clipWords(input.idea, 44, input.title)}\n\nفي التعليم والقيادة، جودة القرار لا تُقاس بحداثة الأداة، بل بوضوح الهدف ومسؤولية التطبيق. ما المعيار الذي تستخدمونه قبل التوسع؟${link}`,
-    youtube: `${clipWords(input.idea, 55, input.title)}\n\n${input.type === 'article_video' ? `اقرأ المقالة كاملة: ${input.articleUrl || ''}` : 'هذا الفيديو جزء من مشروع د. أحمد الفكري والتربوي.'}`,
+    caption: forCaption ? withLink(forCaption.text) : `${question}\n\n${clipWords(input.idea, 34, input.title)}\n\nالفيديو يفتح السؤال؛ والتفصيل يبقى في المادة الأصلية.${link}`,
+    x: forX ? withLink(forX.text) : `${question}\n\n${clipWords(echo || input.idea, 26, input.title)}${link}`,
+    instagram: forInstagram
+      ? `${withLink(forInstagram.text)}\n\nاحفظ الفكرة، ثم اسأل نفسك أين تراها في يومك.`
+      : `${question}\n\n${clipWords(input.idea, 30, input.title)}\n\nاحفظ الفكرة، ثم اسأل نفسك أين تراها في يومك.${link}`,
+    linkedin: forLinkedin
+      ? `${input.title}\n\n${withLink(forLinkedin.text)}\n\nما المعيار الذي تعتمدونه قبل التوسّع في هذا؟`
+      : `${input.title}\n\n${clipWords(input.idea, 44, input.title)}\n\nما المعيار الذي تعتمدونه قبل التوسّع في هذا؟${link}`,
+    youtube: `${clipWords(echo || input.idea, 55, input.title)}\n\n${input.type === 'article_video' ? `اقرأ المقالة كاملة: ${input.articleUrl || ''}` : 'هذا الفيديو جزء من مشروع د. أحمد الفكري والتربوي.'}`,
     audienceQuestion: question,
     callToAction: input.type === 'article_video' ? 'اقرأ المقالة كاملة من الرابط.' : 'اكتب المثال الذي ترى فيه الفكرة بوضوح.',
-    hashtags: ['#التعليم', '#تكنولوجيا_التعليم'].slice(0, 2),
+    // الوسوم من المسبك (مشتقّة من معجم مفاهيمه)، لا وسمان ثابتان لكل موضوع.
+    hashtags: unique([...(forX?.hashtags || []), ...(forInstagram?.hashtags || [])]).slice(0, 2),
     thumbnailIdea: 'لقطة نظيفة عالية التباين من أقوى مشهد، مع مساحة فارغة لإضافة عنوان الغلاف يدوياً خارج Flow.',
     articleDecision,
   }
@@ -635,14 +770,14 @@ export function createArticleVideoProject(input: ArticleVideoInput): LiveDirecto
     : recommended
   const title = input.article.title
   const idea = input.article.excerpt || clipWords(input.article.body || '', 30, title)
-  const narrations = articleNarration(input.article, recommendation.segments)
+  const narrations = articleNarration(input.article, recommendation.segments, input.forge)
   const segments = buildSegments({ type: 'article_video', title, narrations, useAvatar: input.useAvatar !== false, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: `/articles/${input.article.slug}` })
-  const social = socialPack({ type: 'article_video', title, idea, articleUrl: `/articles/${input.article.slug}` })
+  const social = socialPack({ type: 'article_video', title, idea, articleUrl: `/articles/${input.article.slug}`, forge: input.forge })
   const base: LiveDirectorProject = {
     id: projectId('article_video', input.article.slug), type: 'article_video', articleId: input.article.slug, articleUrl: `/articles/${input.article.slug}`,
     title, idea, centralMessage: idea, audience: input.audience || 'الجمهور العام والمهتمون بالتعليم', platform: input.platform || 'متعدد المنصات', tone: input.tone || 'فكرية', useAvatar: input.useAvatar !== false,
     series: false, seriesPlan: [], duration: recommendation.duration, durationReason: recommendation.reason, segmentCount: recommendation.segments, days: recommendation.days,
-    narration: narrations.join(' '), identityLock: AVATAR_LOCK, continuityNotes: [
+    narration: narrations.map((line) => line.text).join(' '), identityLock: AVATAR_LOCK, continuityNotes: [
       'استخدم أفتار د. أحمد المحفوظ داخل Flow فقط؛ لا تطلب صورة مرجعية جديدة.',
       'الملابس والصوت والهوية المعتمدة ثابتة في كل ظهور.',
       'إضاءة نهارية ناعمة ولوحة أزرق داكن وعاجي ولمسة ذهبية هادئة.',
@@ -657,14 +792,14 @@ export function createPublicVideoProject(input: PublicVideoInput): LiveDirectorP
   const recommended = recommendPublicVideoDuration(input)
   const title = suggestStrongTitle(input.topic)
   const idea = input.message?.trim() || input.topic.trim()
-  const narrations = publicNarration(input.topic, idea, recommended.segments)
+  const narrations = publicNarration(input.topic, idea, recommended.segments, input.forge)
   const segments = buildSegments({ type: 'public_topic_video', title, narrations, useAvatar: input.useAvatar !== false, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '' })
-  const social = socialPack({ type: 'public_topic_video', title, idea, linkedArticle: input.linkedArticle, articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '', archive: input.archive })
+  const social = socialPack({ type: 'public_topic_video', title, idea, linkedArticle: input.linkedArticle, articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '', archive: input.archive, forge: input.forge })
   const base: LiveDirectorProject = {
     id: projectId('public_topic_video', input.topic), type: 'public_topic_video', articleId: input.linkedArticle?.slug || '', articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '',
     title, idea, centralMessage: clipWords(idea, 30, title), audience: input.audience || 'الجمهور العام', platform: input.platform || 'متعدد المنصات', tone: input.tone || 'فكرية', useAvatar: input.useAvatar !== false,
     series: recommended.series, seriesPlan: recommended.series ? seriesPlan(input.topic) : [], duration: recommended.duration, durationReason: recommended.reason, segmentCount: recommended.segments, days: recommended.days,
-    narration: narrations.join(' '), identityLock: AVATAR_LOCK, continuityNotes: [
+    narration: narrations.map((line) => line.text).join(' '), identityLock: AVATAR_LOCK, continuityNotes: [
       'إذا ظهر الأفتار، استخدم النسخة المحفوظة داخل Flow بلا رفع أو وصف جديد.',
       'المكان واللحظة والإضاءة ثابتة داخل كل مقطع، مع رابط بصري بين المقاطع.',
       'غيّر حجم اللقطة أو الزاوية فقط؛ لا تغيّر الشخصية أو الملابس أو الخلفية.',

@@ -83,6 +83,7 @@ export declare function judgeStyle(
     /* مصادر الإسناد: الأرشيف + الأحداث الراهنة. كل رقمٍ أو دراسةٍ في النص
        يجب أن يكون له أثرٌ هنا، وإلا فهو مُختلَق. */
     sources?: ({ body?: string; title?: string; summary?: string; excerpt?: string } | string)[]
+    orthography?: Map<string, number> | null
     threshold?: number
   },
 ): StyleVerdict
@@ -105,6 +106,12 @@ export declare function styleReportLines(verdict: StyleVerdict | null): string[]
 
 export declare function extractVoiceSignature(rejectedText: string, corpus?: ({ body?: string } | string)[], limit?: number): string[]
 export declare function withVoiceMemory(dna: StyleDna | null, exclusions?: string[]): StyleDna
+
+export declare function buildOrthographyIndex(corpus?: ({ body?: string } | string)[]): Map<string, number>
+export declare function orthographySlips(body: string, index: Map<string, number> | null): {
+  word: string; fixed: string; times: number; archiveRight: number; archiveWrong: number; rule: string
+}[]
+export declare function deriveExcerpt(body: string, fallback?: string, low?: number, high?: number): string
 
 export declare const PROOFREAD_INSTRUCTION: string
 export declare function acceptProofread(

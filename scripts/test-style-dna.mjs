@@ -19,8 +19,9 @@ import { resolve } from 'node:path'
 const root = process.cwd()
 const {
   BANNED_PHRASES, articleMetrics, countWords, judgeStyle, measureStyleDna,
-  PROOFREAD_INSTRUCTION, acceptProofread, bareText, extractVoiceSignature, liftPauses,
-  polishTypography, refineToStyle, styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory,
+  PROOFREAD_INSTRUCTION, acceptProofread, bareText, buildOrthographyIndex, deriveExcerpt,
+  extractVoiceSignature, liftPauses, orthographySlips, polishTypography, refineToStyle,
+  styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory,
 } = await import(resolve(root, 'src/lib/style-dna.mjs'))
 
 const bodies = JSON.parse(readFileSync(resolve(root, 'src/data/bodies.json'), 'utf8'))
@@ -304,6 +305,36 @@ const numberIn = (brief, needle) => Number((brief.split('\n').find((line) => lin
 assert.ok(numberIn(eraBrief, 'الأسئلة البلاغية') > numberIn(flatBrief, 'الأسئلة البلاغية'), 'الأسئلة ارتفعت — وهي علامته اليوم')
 assert.ok(numberIn(eraBrief, 'نقاط الحذف') < numberIn(flatBrief, 'نقاط الحذف'), 'الوقفات انخفضت — وهي علامته القديمة')
 
+/* ─── بوابة الإملاء: أرشيفه هو المرجع ─── */
+const orthoIndex = buildOrthographyIndex(archive)
+assert.ok(orthoIndex.size > 5_000, `معجم صوابه مبنيّ (${orthoIndex.size} صورة)`)
+
+/* الثغرة التي كانت: حقنُ أخطاءٍ كلاسيكية لم يحرّك الدرجة نقطةً واحدة */
+const cleanArticle = archive.find((item) => !orthographySlips(item.body, orthoIndex).length)
+assert.ok(cleanArticle, 'يوجد مقالٌ سليم إملائياً للاختبار')
+const dirtied = cleanArticle.body
+  .replace(/(?<![\p{L}])في(?![\p{L}])/gu, 'فى')
+  .replace(/(?<![\p{L}])التي(?![\p{L}])/gu, 'التى')
+assert.ok(orthographySlips(dirtied, orthoIndex).length >= 1, 'الأخطاء المحقونة تُضبط')
+assert.ok(
+  judgeStyle(dirtied, dna, { orthography: orthoIndex }).score < judgeStyle(cleanArticle.body, dna, { orthography: orthoIndex }).score,
+  'والإملاء صار يخفض الدرجة بعد أن كان لا يحرّكها',
+)
+
+/* والأهم: لا إنذار على كلماتٍ صحيحة تحتمل معنيين */
+for (const pair of ['وإن نظرنا إلى الأمر', 'كأن شيئاً لم يكن', 'إما أن نبدأ أو نصمت', 'ألا نستحق إجابة']) {
+  assert.equal(orthographySlips(pair, orthoIndex).length, 0, `«${pair}» كلامٌ صحيح لا خطأ`)
+}
+
+/* ─── مسطرة المقتطف: طولُه لا اشتقاقُه ─── */
+/* تدقيقٌ آليّ زعم أن ٨١٪ من مقتطفاته مطلع متنه؛ القياس يقول ١٨٪ — فالاشتقاق
+   الدائم انحدار. هذا الفحص يمنع إعادة ذلك الزعم إلى الكود. */
+const goodExcerpt = 'ليست المشكلة في أن الطالب لا يعرف… بل في أنه لم يُسأل يوماً لماذا يتعلّم.'
+assert.equal(deriveExcerpt(strongBody, goodExcerpt), goodExcerpt, 'مقتطفه يُحترم كما كتبه')
+assert.ok(deriveExcerpt(strongBody, '').length >= 40, 'ويُشتقّ من الجسم حين يغيب')
+assert.ok(Array.from(deriveExcerpt(strongBody, 'كلمة '.repeat(60))).length <= 150, 'والمتضخّم يُقصّ إلى مداه')
+assert.ok(!deriveExcerpt(strongBody, '').includes('undefined'), 'ولا يخترع شيئاً')
+
 /* ─── ذاكرة الصوت: يتعلّم من حكمه هو لا من أرشيفه فقط ─── */
 const studio = readFileSync(resolve(root, 'src/components/admin/PublishingStudio.tsx'), 'utf8')
 const rejectedParagraph = 'إن الاعتماد المتزايد على أدوات الذكاء الاصطناعي يشكل تحدياً كبيراً أمام المؤسسات التعليمية التي تسعى إلى بناء جيل قادر على الإبداع.'
@@ -331,6 +362,14 @@ assert.ok(!judgeStyle(long, dna).fatal.some((line) => line.includes('يشكل ت
 assert.match(server, /const roster = \[\]/, 'كل المرشحين يُحفظون لا الفائز وحده')
 assert.match(server, /alternates: roster/, 'النسخة الثانية تعود مع المقال')
 assert.match(studio, /data-candidate-room="true"/, 'غرفة المرشحَين معروضة')
+assert.match(studio, /data-generation-progress="true"/, 'الانتظار لم يعد صامتاً')
+assert.match(studio, /verdict\.corrections\.length > 0/, '«لماذا» تُعرض للدكتور بعربيته')
+assert.match(studio, /buildOrthographyIndex\(archiveTexts\)/, 'معجم صوابه موصولٌ بالقياس الحيّ')
+assert.match(studio, /setSettledBody\(bundle\.body\), 500/, 'القياس مهدَّأ لا في كل ضغطة مفتاح')
+assert.match(server, /cfModel: process\.env\.EDITORIAL_CF_MODEL \|\| ARTICLE_MODEL_PRIMARY,/, 'جولات التصحيح على النموذج الأسرع')
+assert.match(server, /clamp\(Math\.ceil\(targetWords \* 3\.2\), 1_200, 16_384\)/, 'سقف الرموز لم يعد يُلغي نفسه')
+assert.match(server, /buildOrthographyIndex\(input\.existing\)/, 'بوابة الإملاء موصولةٌ بالمحرك')
+assert.match(server, /deriveExcerpt\(article\.body, article\.excerpt\)/, 'مسطرة المقتطف موصولة')
 assert.match(studio, /data-voice-teacher="true"/, 'لوحة «علّمه صوتك» معروضة')
 assert.match(studio, /admin_style_memory/, 'ذاكرة الصوت تُزامَن بين أجهزته')
 const rules = readFileSync(resolve(root, 'firestore.rules'), 'utf8')

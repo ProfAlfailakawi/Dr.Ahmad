@@ -129,7 +129,7 @@
     "round9:self-test": "node scripts/test-editorial-board.mjs && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check",
     "editorial-board:calibration:self-test": "node scripts/editorial-board-calibration.mjs --self-test",
     "round10:self-test": "node scripts/test-publishing-studio-regressions.mjs && node scripts/test-editorial-board.mjs && node scripts/editorial-board-calibration.mjs --self-test && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check && node scripts/guard-site-architecture.mjs && node scripts/test-site-polish-2026.mjs",
-    "style:self-test": "node scripts/test-style-dna.mjs",
+    "style:self-test": "node scripts/test-style-dna.mjs && node scripts/audit-published-orthography.mjs --self-test",
     "publishing-studio:types:self-test": "node scripts/test-publishing-studio-regressions.mjs",
     "round11:self-test": "node scripts/test-publishing-studio-regressions.mjs && node scripts/test-editorial-board.mjs && node scripts/editorial-board-calibration.mjs --self-test && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check && node scripts/guard-site-architecture.mjs && node scripts/test-site-polish-2026.mjs",
     "editorial-memory:self-test": "node scripts/test-editorial-memory.mjs && node scripts/source-desk-watch.mjs --self-test && node scripts/test-editorial-policy.mjs",
@@ -142,7 +142,9 @@
     "editorial-foresight:self-test": "node scripts/test-editorial-foresight.mjs",
     "dr-ahmad-room:self-test": "node scripts/test-dr-ahmad-room.mjs",
     "live-director:self-test": "node scripts/test-live-director.mjs",
-    "smart-command-room:self-test": "npm run editorial-foresight:self-test && npm run dr-ahmad-room:self-test && npm run live-director:self-test"
+    "smart-command-room:self-test": "npm run editorial-foresight:self-test && npm run dr-ahmad-room:self-test && npm run live-director:self-test",
+    "ortho:audit": "node scripts/audit-published-orthography.mjs",
+    "ortho:self-test": "node scripts/audit-published-orthography.mjs --self-test"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

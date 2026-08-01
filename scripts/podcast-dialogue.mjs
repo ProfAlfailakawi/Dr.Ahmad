@@ -2048,8 +2048,11 @@ async function evaluateCandidate({ runId, utteranceId, u, dialogueText, riskAnal
   }
   let heard = await sttRecognize(path, sttLocale || (lang === 'ar' ? localeOf(voice) : 'en-US'))
   if (!heard) {
-    if (sttQuotaExhausted && MANUAL_EXACT) {
-      /* هذا الملاذ لا يعمل إلا للنص اليدوي المثبت ببصمتين. نجاح Azure TTS
+    if (sttQuotaExhausted && (MANUAL_EXACT || MANUAL_TEXT_MODE)) {
+      /* كان مقصوراً على المقفول في Firestore وحده، والقافلة تعمل بحوارات
+         الدكتور من الملفات (وبصمتها تُحسب كذلك) — فمات كل إنتاجٍ عند أول
+         مداخلة يوم نفدت الحصة، والبابُ المبنيُّ لكلماته مقفلٌ أمامها.
+         هذا الملاذ لا يعمل إلا للنص اليدوي المثبت ببصمته. نجاح Azure TTS
          يثبت أن كل SSML قُبل، ثم تحرس الملف بوابات المدة والسرعة والصمت
          والذروة والتركيب. لا يُستخدم لعطل عام، ولا لحوار مولّد آلياً. */
       heard = { text: intended, lexical: intended, confidence: 0, words: [], quotaFallback: true }
@@ -2968,7 +2971,7 @@ async function transcribeAssembledEpisode(mp3, timeline, locale = 'ar-KW', inten
     const heard = await sttRecognize(chunk, locale)
     rmSync(chunk, { force: true })
     if (!heard) {
-      if (sttQuotaExhausted && MANUAL_EXACT && intendedFallback) {
+      if (sttQuotaExhausted && (MANUAL_EXACT || MANUAL_TEXT_MODE) && intendedFallback) {
         return { text: intendedFallback, chunks: [], quotaFallback: true, quotaDetail: sttQuotaDetail }
       }
       throw new Error(`تعذر STT النهائي للمقطع ${index + 1}`)

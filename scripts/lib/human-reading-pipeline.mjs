@@ -136,6 +136,12 @@ function wav16(input, output) {
   if (result.status !== 0) throw new Error(result.stderr || 'تعذر تجهيز WAV لفحص STT')
 }
 
+/* كان مسار القراءات يبتلع سبب سكوت STT ويعيد null، فتبدو العلّة «بطء إلقاء»
+   وهي انقطاع أذن. ضاعت ساعةٌ في تشخيصٍ بالظنّ حتى قرأنا سجلّ الحوار. نُعلنه
+   مرّةً واحدة في التشغيلة (لا ٥٢٨ مرة) ثم نمضي كما كنا. */
+let sttOutageReason = ''
+export const sttOutage = () => sttOutageReason
+
 async function azureSttLocale({ wav, key, region, language }) {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const response = await fetch(`https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${language}&format=detailed&profanity=raw&wordLevelTimestamps=true`, {
@@ -152,6 +158,11 @@ async function azureSttLocale({ wav, key, region, language }) {
       const text = best.Display || best.Lexical || result.DisplayText || ''
       if (text) return { locale: language, text, confidence: Number(best.Confidence || 0), words: best.Words || [],
         offset: best.Offset ?? result.Offset, duration: best.Duration ?? result.Duration }
+    }
+    if (response && !response.ok && !sttOutageReason) {
+      const detail = await response.text().catch(() => '')
+      sttOutageReason = `HTTP ${response.status} ${String(detail).replace(/\s+/g, ' ').slice(0, 120)}`.trim()
+      console.log(`    ⓘ صمتت أذن STT: ${sttOutageReason}`)
     }
     if (response && response.status !== 429 && response.status < 500) break
     await sleep(900 * attempt)
@@ -261,7 +272,13 @@ const SHORT_UNIT_SECONDS_PER_WORD = [0.28, 1.9]
 
 const isShortUnit = (text) => countArabicWords(text) < SHORT_UNIT_WORDS
 
-function shortUnitPaceOk(measuredWpm) {
+/* المسطرة نفسها تصلح لحالةٍ ثانية: انقطاع الأذن. فحين يعمل STT تُقاس السرعة
+   على زمن الكلام المسموع (تعطينا Azure بدايته ونهايته)، وحين يصمت تسقط إلى
+   زمن الملف كله بصمته ووقفاته — فيقرأ المقياس ٨٤ أمام هدفٍ ١٣٢ وكلاهما صحيح
+   بمسطرته. حوكمت القراءةُ بمسطرةٍ لا تصلح لها، فرُفض كل مقالٍ في الأرشيف.
+   حين تصمت الأذن نحكم بزمن الكلمة الواحدة وحده — وهو المدى البشري بلا التباس —
+   ويعود الحكم الصارم من تلقاء نفسه لحظة عودتها. */
+function humanPaceOk(measuredWpm) {
   if (!(Number(measuredWpm) > 0)) return false
   const secondsPerWord = 60 / Number(measuredWpm)
   return secondsPerWord >= SHORT_UNIT_SECONDS_PER_WORD[0]
@@ -294,7 +311,8 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
     // Keep the normal tight gate for real reading units, but judge a short unit
     // by how long a single word takes — the only ruler that means anything there.
     const shortUnit = isShortUnit(working.pronunciationText)
-    const pacePass = shortUnit ? shortUnitPaceOk(measuredWpm) : Math.abs(paceDelta) <= 8
+    const earIsBlind = !heard
+    const pacePass = (shortUnit || earIsBlind) ? humanPaceOk(measuredWpm) : Math.abs(paceDelta) <= 8
     const sttPass = comparison.ratio >= 0.9 && comparison.importantRatio >= 0.95
       && heard?.consensusPass === true
       && missingRisks.length === 0 && negationMissing.length === 0
@@ -307,7 +325,7 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
       const probe = probeAudio(trimmed)
       const audioSound = probe.durationSec >= .45
         && statSync(trimmed).size > 4_000
-        && (shortUnit ? shortUnitPaceOk(measuredWpm) : (measuredWpm >= 85 && measuredWpm <= 195))
+        && humanPaceOk(measuredWpm)
       if (audioSound && pacePass) {
         return {
           file: trimmed,
@@ -355,9 +373,9 @@ async function synthesizeAndVerifyUnit({ unit, voice, workDir, key, region, maxA
   if (bestEffort?.file && existsSync(bestEffort.file)) {
     const probe = probeAudio(bestEffort.file)
     const wpm = Number(bestEffort.measuredWpm || 0)
-    const shortBest = isShortUnit(bestEffort.unit?.pronunciationText || unit.pronunciationText)
+    const blindBest = !bestEffort.heard || isShortUnit(bestEffort.unit?.pronunciationText || unit.pronunciationText)
     const audioSound = probe.durationSec >= 0.45 && statSync(bestEffort.file).size > 4000
-      && (shortBest ? shortUnitPaceOk(wpm) : (wpm >= 85 && wpm <= 195))
+      && (blindBest ? humanPaceOk(wpm) : (wpm >= 85 && wpm <= 195))
     const negationLost = (bestEffort.comparison?.missingImportant || []).some((word) => /^(لا|لم|لن|ليس|ليست|غير|دون)$/.test(word))
     if (audioSound && !negationLost) {
       const sttNote = bestEffort.comparison?.sttUnavailable

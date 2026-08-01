@@ -123,10 +123,11 @@ const assertions = [
   [fetchBridge.includes('manual-dialogues') && fetchBridge.includes('podcast_dialogues'), 'nightly Firestore-to-repository bridge must remain active'],
   [fetchBridge.includes('manual-upload-locked') && fetchBridge.includes('revisionSha256'), 'manual dialogue bridge must fail closed with a cloud source lock'],
   [podcastWorkflow.includes('--manual-exact --no-gemini')
-    && podcastEngine.includes('sttQuotaExhausted && MANUAL_EXACT')
+    && podcastEngine.includes('sttQuotaExhausted && (MANUAL_EXACT || MANUAL_TEXT_MODE)')
+    && podcastEngine.split('quotaFallback: true').slice(0, -1).every((chunk) => /MANUAL_EXACT \|\| MANUAL_TEXT_MODE/.test(chunk.slice(-900)))
     && podcastEngine.includes('providerQuotaFallback')
     && !podcastWorkflow.includes('fetch-manual-dialogues.mjs --slugs="$REQUESTED" || true'),
-  'podcast release must keep the exact locked manual dialogue, survive external judge/STT quota exhaustion only for that locked source, and never swallow fetch failures'],
+  'podcast release must keep the exact locked manual dialogue, survive external judge/STT quota exhaustion only for the doctor own text (Firestore lock or the hashed manual file), never for generated dialogue, and never swallow fetch failures'],
   [manualEditor.includes('expectedDialogueContentSha256') && manualEditor.includes('queue-readback-mismatch'), 'manual editor must queue the exact verified dialogue revision'],
   [manualEditor.includes('dispatchPodcastGeneration') && podcastDispatch.includes('/api/admin/podcast/dispatch'), 'manual dialogue submit must start generation from the admin panel'],
   [serverSource.includes('GITHUB_WORKFLOW_TOKEN') && serverSource.includes('podcastDispatchPath') && serverSource.includes('actions/workflows'), 'server must dispatch the locked podcast workflow without exposing the GitHub token'],

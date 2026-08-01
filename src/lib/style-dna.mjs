@@ -1147,6 +1147,76 @@ export const PROOFREAD_INSTRUCTION = [
   'أعد النص نفسه حرفاً بحرف مع تصحيح الأخطاء وحدها. أعد JSON بمفتاح body فقط.',
 ].join('\n')
 
+/* ---------- أشِر إلى الجملة، لا إلى المقياس ----------
+
+   البطاقة كانت تقول «وقفات … ٧ والمعتاد ٢٢» — رقمٌ صحيح لا يدلّ على موضع.
+   والدكتور يريد أن يرى **أين** في نصّه، لا كم. هذه تعيد لكل عيبٍ جملته. */
+export function locateIssues(body, rawDna, options = {}) {
+  const dna = resolveStyleDna(rawDna)
+  const text = String(body || '')
+  const sentences = sentencesOf(text)
+  const found = []
+  const push = (sentence, reason, kind) => {
+    if (!sentence) return
+    if (found.some((item) => item.sentence === sentence && item.kind === kind)) return
+    found.push({ sentence, reason, kind })
+  }
+
+  /* قواعد وُضعت لتصف ما يُمنع على النموذج — لا تُملى على الكاتب في نصّه هو.
+     `strict` يُرفع لمخرَج المحرك وحده. */
+  const strict = options.strict !== false
+  for (const phrase of strict ? [...(dna.banned || []), ...(dna.bannedVoice || [])] : []) {
+    const pattern = bannedPattern(phrase)
+    const hit = sentences.find((sentence) => pattern.test(bareText(sentence)))
+    if (hit) push(hit, `«${phrase}» ليست من لغته`, 'banned')
+  }
+
+  /* إملاءٌ يخالف صورته الغالبة */
+  if (options.orthography) {
+    for (const slip of orthographySlips(text, options.orthography)) {
+      const hit = sentences.find((sentence) => bareTashkeel(sentence).includes(slip.word))
+      if (hit) push(hit, `«${slip.word}» ← «${slip.fixed}»`, 'orthography')
+    }
+  }
+
+  /* رقمٌ أو دراسةٌ بلا سند */
+  const sources = options.sources || options.archive
+  if (sources) {
+    for (const claim of unsupportedClaims(text, sources)) {
+      const needle = claim.value.split(/\s+/).slice(0, 4).join(' ')
+      const hit = sentences.find((sentence) => sentence.includes(needle) || sentence.includes(claim.value.slice(0, 20)))
+      if (hit) push(hit, `${claim.kind} بلا سند في المادة المرفقة`, 'evidence')
+    }
+  }
+
+  /* نقلٌ حرفي من الأرشيف */
+  if (options.archive) {
+    for (const gram of verbatimOverlap(text, options.archive).slice(0, 3)) {
+      const head = gram.split(' ').slice(0, 3).join(' ')
+      const hit = sentences.find((sentence) => bareText(sentence).includes(head))
+      if (hit) push(hit, 'منقولةٌ حرفياً من الأرشيف', 'verbatim')
+    }
+  }
+
+  /* جملٌ مكرّرة داخل النص نفسه */
+  const seen = new Map()
+  for (const sentence of sentences) {
+    const key = bareText(sentence).replace(/[^\p{L}\p{N}\s]+/gu, ' ').replace(/\s+/g, ' ').trim()
+    if (key.length < 25) continue
+    if (seen.has(key)) push(sentence, 'مكرّرة في النص نفسه', 'repeat')
+    else seen.set(key, true)
+  }
+
+  /* أطول جملةٍ حين يتجاوز الوسيط عادته */
+  const bands = dna.perArticle || FALLBACK_STYLE_DNA.perArticle
+  const metrics = articleMetrics(text)
+  if (strict && metrics.medianSentence > (bands.medianSentence?.p85 ?? 17)) {
+    const longest = [...sentences].sort((left, right) => countWords(right) - countWords(left))[0]
+    push(longest, `${countWords(longest)} كلمة — وعادته ${dna.sentence.median}`, 'long')
+  }
+  return found.slice(0, 8)
+}
+
 /* ---------- تقريرٌ عربيّ قصير يُعرض للدكتور ---------- */
 export function styleReportLines(verdict) {
   if (!verdict) return []

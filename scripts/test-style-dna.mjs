@@ -20,7 +20,7 @@ const root = process.cwd()
 const {
   BANNED_PHRASES, articleMetrics, countWords, judgeStyle, measureStyleDna,
   PROOFREAD_INSTRUCTION, acceptProofread, bareText, buildOrthographyIndex, deriveExcerpt,
-  extractVoiceSignature, liftPauses, orthographySlips, polishTypography, refineToStyle,
+  extractVoiceSignature, liftPauses, locateIssues, orthographySlips, polishTypography, refineToStyle,
   styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory,
 } = await import(resolve(root, 'src/lib/style-dna.mjs'))
 
@@ -305,6 +305,29 @@ const numberIn = (brief, needle) => Number((brief.split('\n').find((line) => lin
 assert.ok(numberIn(eraBrief, 'الأسئلة البلاغية') > numberIn(flatBrief, 'الأسئلة البلاغية'), 'الأسئلة ارتفعت — وهي علامته اليوم')
 assert.ok(numberIn(eraBrief, 'نقاط الحذف') < numberIn(flatBrief, 'نقاط الحذف'), 'الوقفات انخفضت — وهي علامته القديمة')
 
+/* ─── أشِر إلى الجملة لا إلى المقياس ─── */
+const flawed = [
+  'في الختام، يمكن القول إن التعليم يلعب دوراً هاماً في بناء المجتمعات.',
+  'دراسة نشرت عام 2025 أظهرت تراجعاً بنسبة 38% في فهم المواد.',
+  'وفى رأيي أن هذا مقلق للغاية.',
+].join('\n\n')
+const located = locateIssues(flawed, dna, { sources: archive, orthography: buildOrthographyIndex(archive) })
+assert.ok(located.length >= 3, `يدلّ على الجمل لا على الأرقام (${located.length})`)
+for (const issue of located) assert.ok(flawed.includes(issue.sentence), 'وكل ما يشير إليه جملةٌ من النص نفسه')
+assert.ok(located.some((issue) => issue.kind === 'banned'), 'يضبط العبارة الآلية')
+assert.ok(located.some((issue) => issue.kind === 'evidence'), 'ويضبط الرقم بلا سند')
+assert.ok(located.some((issue) => issue.kind === 'orthography'), 'ويضبط الإملاء')
+/* ولا يشوّش على نصّه هو */
+/* على نصٍّ كتبه هو (strict:false) لا يُعرض إلا العيب الموضوعي */
+const quiet = archive.slice(0, 30).filter((item) => locateIssues(item.body, dna, { strict: false }).length === 0).length
+assert.ok(quiet >= 28, `صامتٌ على نصّه هو (${quiet} من ٣٠)`)
+
+/* ─── أصلح فقرةً واحدة بدل شراء مقالٍ كامل ─── */
+assert.match(server, /const articleParagraphPath = '\/api\/ai\/article-paragraph'/, 'مسار إصلاح الفقرة موجود')
+assert.match(server, /export async function reviseArticleParagraph/, 'ودالته مبنيّة')
+assert.match(server, /url\.pathname === articleParagraphPath/, 'وموصولٌ بالتوجيه')
+assert.match(server, /articleParagraphPath, socialPackPath/, 'ومحميٌّ ببوابة المشرف')
+
 /* ─── بوابة الإملاء: أرشيفه هو المرجع ─── */
 const orthoIndex = buildOrthographyIndex(archive)
 assert.ok(orthoIndex.size > 5_000, `معجم صوابه مبنيّ (${orthoIndex.size} صورة)`)
@@ -337,6 +360,9 @@ assert.ok(!deriveExcerpt(strongBody, '').includes('undefined'), 'ولا يختر
 
 /* ─── ذاكرة الصوت: يتعلّم من حكمه هو لا من أرشيفه فقط ─── */
 const studio = readFileSync(resolve(root, 'src/components/admin/PublishingStudio.tsx'), 'utf8')
+assert.match(studio, /data-issue-map="true"/, 'لوحة «أين بالضبط» معروضة')
+assert.match(studio, /strict: Boolean\(bundle\.generatedBy\)/, 'وقواعد النموذج لا تُملى على الكاتب')
+assert.match(studio, /'\/api\/ai\/article-paragraph'/, 'وزرّ إصلاح الفقرة موصول')
 
 /* ─── يُحاكَم المحرك ولا يُحاكَم الكاتب ─── */
 /* عتبةٌ حاجبة على الأسلوب كانت ترسّب ٢١٪ من مقالاته المنشورة، ثم اتضح أن

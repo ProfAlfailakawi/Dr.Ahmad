@@ -46,7 +46,8 @@ const engine = await import(engineUrl)
 const rendererUrl = await compile('src/lib/social-design-renderer.ts', { './social-design-engine': engineUrl, './seasons': await compile('src/lib/seasons.ts') })
 const renderer = await import(rendererUrl)
 const echoesUrl = await compile('src/lib/voice-echoes.ts')
-const forge = await import(await compile('src/lib/tweet-forge.ts', { './voice-echoes': echoesUrl }))
+const resonanceUrl = await compile('src/lib/resonance-quotes.ts')
+const forge = await import(await compile('src/lib/tweet-forge.ts', { './voice-echoes': echoesUrl, './resonance-quotes': resonanceUrl }))
 
 const guards = []
 const guard = (name) => guards.push(name)
@@ -168,7 +169,7 @@ guard('concept-hero-not-a-person')
 
 /* ═══ ٥ ــ دفتر «ما نُشر» وخطة الأسبوع ═════════════════════════════ */
 
-const mem = await import(await compile('src/lib/tweet-memory.ts', { './tweet-forge': await compile('src/lib/tweet-forge.ts', { './voice-echoes': echoesUrl }) }))
+const mem = await import(await compile('src/lib/tweet-memory.ts', { './tweet-forge': await compile('src/lib/tweet-forge.ts', { './voice-echoes': echoesUrl, './resonance-quotes': resonanceUrl }) }))
 
 let ledger = mem.createEmptyTweetMemory()
 const hook = () => ({
@@ -245,6 +246,49 @@ const cooled = forge.buildWeeklyTweetPlan(weekSources, {
 assert.ok(cooled.days.every((day) => day.draft?.sourceId !== 'week-3'), 'المادة المنشورة قبل يومين لا تعود')
 assert.ok(cooled.skipped.some((line) => line.includes('مادة 3')), 'الاستبعاد يُعلَن للدكتور لا يُخفى')
 guard('cooldown-is-announced-not-silent')
+
+/* ═══ ٦ ــ رنين القرّاء ═════════════════════════════════════════════ */
+
+const resonance = await import(resonanceUrl)
+
+const RESONANT_LINE = 'المدرسة التي تخاف من الخطأ تُنتج طالباً يخاف من السؤال'
+const articleBody = `فقرةٌ أولى لا يظلّلها أحد.\n\n${RESONANT_LINE}. وجملةٌ أخرى بعدها في الفقرة نفسها.`
+const paragraphTwo = articleBody.split('\n\n')[1]
+const rows = [
+  { slug: 'gam', paragraph: 1, startOffset: 0, endOffset: RESONANT_LINE.length, count: 7 },
+  { slug: 'gam', paragraph: 9, startOffset: 0, endOffset: 40, count: 99 },
+  { slug: 'ghost', paragraph: 0, startOffset: 0, endOffset: 40, count: 50 },
+  { slug: 'gam', paragraph: 1, startOffset: 0, endOffset: 4, count: 30 },
+]
+const quotes = resonance.resolveResonantQuotes(rows, [{ slug: 'gam', title: 'التلعيب في التعليم', body: articleBody }])
+assert.equal(quotes.length, 1, `صفٌّ واحدٌ فقط صالح؛ خرج ${quotes.length}`)
+assert.equal(quotes[0].text, RESONANT_LINE, 'الاقتباس يُقتطع من المتن بالإزاحات المسجّلة حرفاً بحرف')
+assert.ok(paragraphTwo.includes(quotes[0].text), 'ولا يخرج حرفٌ ليس في المتن')
+assert.equal(quotes[0].count, 7, 'العدد يُنقل كما هو')
+guard('resonance-resolves-only-valid-rows')
+
+/* المطابقة تتسامح مع الترقيم والتشكيل. */
+assert.equal(resonance.resonanceCountOf(`${RESONANT_LINE}.`, [{ text: RESONANT_LINE, count: 7 }]), 7, 'النقطة الأخيرة لا تكسر المطابقة')
+assert.equal(resonance.resonanceCountOf('جملةٌ لا صلة لها', [{ text: RESONANT_LINE, count: 7 }]), 0, 'ولا تطابق ما ليس منها')
+guard('resonance-match-tolerates-punctuation')
+
+/* الرنين يتصدّر ويُكافأ بالدرجة. */
+const withEcho = forge.buildTweets({ ...source, resonantLines: [{ text: RESONANT_LINE, count: 7 }] }, { count: 10 })
+const echoed = withEcho.filter((draft) => draft.resonanceCount)
+assert.ok(echoed.length > 0, 'التغريدات المبنيّة على جملةٍ ظلّلها القرّاء تحمل عددها')
+assert.equal(echoed[0].resonanceCount, 7, 'العدد يصل إلى التغريدة')
+assert.ok(
+  echoed[0].signals.some((signal) => signal.label.includes('ظلّله') && signal.weight >= 8),
+  'إشارة الرنين يجب أن تظهر في أسباب الدرجة بوزنٍ يليق بدليلٍ من الواقع',
+)
+const plain = forge.buildTweets(source, { count: 10 })
+const sameAngle = plain.find((draft) => draft.angle === echoed[0].angle)
+if (sameAngle) assert.ok(echoed[0].score >= sameAngle.score, 'الزاوية نفسها تعلو حين تُبنى على جملةٍ ظلّلها القرّاء')
+guard('resonant-lines-lead-and-score-higher')
+
+/* غياب الرنين لا يكسر شيئاً — الأرشيف كله يبقى متاحاً. */
+assert.ok(forge.buildTweets({ ...source, resonantLines: [] }, { count: 6 }).length >= 5, 'بلا رنينٍ يعمل المسبك كما كان')
+guard('resonance-is-optional')
 
 /* الكلمة المحورية تخرج بلا سابقةٍ ملتصقة: «بالمعرفة» كانت تصير «نتحدث عن بالمعرفة». */
 for (const draft of drafts) {

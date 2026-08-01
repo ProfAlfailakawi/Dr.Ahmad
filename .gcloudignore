@@ -23,6 +23,7 @@ src/data/*
 !src/data/podcast-admin.json
 !src/data/research-papers.ts
 !src/data/book-evidence.json
+!src/data/spoken-index.json
 !src/lib/
 src/lib/*
 !src/lib/style-dna.mjs
@@ -48,3 +49,4 @@ whatsapp-agent/*
 !whatsapp-agent/conversation-context.mjs
 !whatsapp-agent/daily-experience.mjs
 !whatsapp-agent/domain-concepts.mjs
+!whatsapp-agent/spoken-index.mjs

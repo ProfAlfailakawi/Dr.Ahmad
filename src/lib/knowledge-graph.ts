@@ -1,4 +1,5 @@
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms'
+import { bookKnowledgeText } from './book-knowledge'
 
 export type KnowledgeKind = 'article' | 'book' | 'paper' | 'media' | 'curated' | 'podcast' | 'audio' | 'social' | 'concept'
 export type KnowledgeNode = { id:string; kind:KnowledgeKind; slug:string; title:string; text:string; url:string; year?:string; tokens:string[] }
@@ -14,7 +15,7 @@ const node = (kind:KnowledgeKind, item:any, text:string, url:string):KnowledgeNo
 export function buildKnowledgeGraph(input:{articles:ArticleRecord[];books:BookRecord[];papers:PaperRecord[];media?:MediaRecord[]}):KnowledgeGraph {
   const nodes:KnowledgeNode[] = [
     ...input.articles.map((x)=>node('article',x,`${x.cat||''} ${x.excerpt||''} ${x.body||''}`,`/articles/${x.slug}`)),
-    ...input.books.map((x:any)=>node('book',x,`${x.desc||''} ${x.meta||''}`,`/publications/${x.slug}`)),
+    ...input.books.map((x:any)=>node('book',x,`${x.desc||''} ${x.meta||''} ${bookKnowledgeText(x.slug)}`,`/publications/${x.slug}`)),
     ...input.papers.map((x:any)=>node('paper',x,`${x.abstractAr||''} ${x.meta||''} ${x.journal||''}`,`/research/${x.slug}`)),
     ...(input.media||[]).map((x:any)=>node('media',x,`${x.desc||''} ${x.meta||''}`,`/media/${x.slug}`)),
   ].filter((x)=>x.slug)

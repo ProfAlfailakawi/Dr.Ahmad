@@ -1,6 +1,7 @@
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms'
 import { absentPartyAdvocate, genuineAdditionMeter, timeTest } from './editorial-foresight.ts'
 import { relatedForIdea, strongestQuote, suggestStrongTitle } from './intelligence.ts'
+import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from './book-knowledge.ts'
 
 export type DrAhmadTaskType =
   | 'media_preparation'
@@ -114,12 +115,17 @@ function asSource(kind: ArchiveDecisionSource['kind'], item: { slug: string; tit
 
 function archiveSources(command: string, archive: RoomArchive) {
   const articles = relatedForIdea(command, archive.articles, (item) => `${item.excerpt || ''} ${item.body || ''} ${item.cat || ''}`, 5)
-  const books = relatedForIdea(command, archive.books, (item) => `${item.desc || ''} ${item.longDescription || ''} ${item.toc || ''}`, 3)
+  const books = relatedForIdea(command, archive.books, (item) => `${item.desc || ''} ${item.longDescription || ''} ${item.toc || ''} ${bookKnowledgeText(item.slug)}`, 3)
   const papers = relatedForIdea(command, archive.papers, (item) => `${item.meta || ''} ${item.abstractAr || ''} ${item.keyFinding || ''} ${item.journal || ''}`, 3)
   const media = relatedForIdea(command, archive.media, (item) => `${item.outlet || ''} ${item.program || ''} ${item.topics || ''} ${item.transcript || ''}`, 3)
   const sources: ArchiveDecisionSource[] = [
     ...articles.map((item) => asSource('مقال', item, item.excerpt || clip(item.body || ''), item.iso?.slice(0, 4) || '')),
-    ...books.map((item) => asSource('كتاب', item, item.desc || item.longDescription || '', item.year || '')),
+    ...books.map((item) => {
+      const match = bestBookConcept(command, item.slug)
+      const source = asSource('كتاب', item, match && match.score > 0 ? `${match.concept.title} — ص ${match.concept.pageStart}` : item.desc || item.longDescription || '', item.year || '')
+      if (match && match.score > 0) source.url = `/publications/${item.slug}#${bookKnowledgeAnchor(match.concept)}`
+      return source
+    }),
     ...papers.map((item) => asSource('بحث', item, item.abstractAr || item.meta || '', item.year || item.iso?.slice(0, 4) || '')),
     ...media.map((item) => asSource('إعلام', item, `${item.outlet}${item.topics ? ` — ${item.topics}` : ''}`, item.iso?.slice(0, 4) || '')),
   ]

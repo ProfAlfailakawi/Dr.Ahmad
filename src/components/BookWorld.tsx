@@ -4,6 +4,7 @@ import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { createIdeaDna } from '../lib/idea-dna'
 import { ideaWords } from '../lib/idea-life'
 import { bookArchiveDate, buildBookWorldTimeline } from '../lib/book-world-timeline'
+import { bookKnowledgeAnchor, bookKnowledgeText, getBookKnowledge } from '../lib/book-knowledge'
 
 function scoreAgainst(source: Set<string>, value: string) {
   return ideaWords(value).reduce((total, word) => total + (source.has(word) ? 1 : 0), 0)
@@ -58,7 +59,8 @@ export function BookWorld({
 }) {
   const [activeIdea, setActiveIdea] = useState('')
   const model = useMemo(() => {
-    const sourceText = `${book.title}\n${book.desc || ''}\n${seed || ''}`
+    const knowledge = getBookKnowledge(book.slug)
+    const sourceText = `${book.title}\n${book.desc || ''}\n${seed || ''}\n${knowledge?.role || ''}\n${knowledge?.topTerms.join(' ') || ''}\n${knowledge?.concepts.flatMap((concept) => [concept.title, concept.keywords.join(' ')]).join(' ') || ''}`
     const source = new Set(ideaWords(sourceText))
     const archive = articles.map((item) => ({
       slug: item.slug,
@@ -81,15 +83,21 @@ export function BookWorld({
 
     const bookMatches = books
       .filter((item) => item.slug !== book.slug)
-      .map((item) => ({ item, score: scoreAgainst(source, `${item.title} ${item.desc || ''} ${item.longDescription || ''}`) }))
+      .map((item) => ({ item, score: scoreAgainst(source, `${item.title} ${item.desc || ''} ${item.longDescription || ''} ${bookKnowledgeText(item.slug)}`) }))
       .filter((row) => row.score > 0)
       .sort((a, b) => b.score - a.score)
 
-    const candidateIdeas = Array.from(new Set([
+    const verifiedConcepts = (knowledge?.concepts || [])
+      .filter((concept) => !/^قائمة المراجع/u.test(concept.title))
+      .map((concept) => concept.title)
+    const fallbackIdeas = [
       dna.topic.label,
       ...dna.keywords,
       ...articleMatches.slice(0, 5).flatMap(({ item }) => ideaWords(`${item.title} ${item.cat || ''}`).slice(0, 2)),
-    ].map((item) => String(item || '').trim()).filter((item) => item.length >= 3 && item !== 'فكرة عامة')))
+    ]
+    const candidateIdeas = Array.from(new Set((verifiedConcepts.length ? verifiedConcepts : fallbackIdeas)
+      .map((item) => String(item || '').trim())
+      .filter((item) => item.length >= 3 && item !== 'فكرة عامة')))
 
     const paths = candidateIdeas
       .map((idea) => {
@@ -103,21 +111,23 @@ export function BookWorld({
           .map((item) => ({ item, score: scoreAgainst(words, `${item.title} ${item.titleAr || ''} ${item.abstractAr || ''} ${item.meta || ''}`) }))
           .filter((row) => row.score > 0)
           .sort((a, b) => b.score - a.score)
-        if (!pathArticles.length && !pathPapers.length) return null
+        const isBookConcept = knowledge?.concepts.some((concept) => concept.title === idea)
+        if (!pathArticles.length && !pathPapers.length && !isBookConcept) return null
         return { idea, articles: pathArticles, papers: pathPapers }
       })
       .filter((row): row is { idea: string; articles: typeof articleMatches; papers: typeof paperMatches } => Boolean(row))
-      .slice(0, 7)
 
     return {
       dna,
       paths,
       ideas: paths.map((path) => path.idea),
       relatedBooks: bookMatches.slice(0, 3),
+      knowledge,
     }
   }, [articles, book.desc, book.slug, book.title, books, papers, seed])
 
   const selectedIdea = activeIdea || model.ideas[0] || ''
+  const selectedConcept = model.knowledge?.concepts.find((concept) => concept.title === selectedIdea)
   const activePath = useMemo(
     () => model.paths.find((path) => path.idea === selectedIdea) || model.paths[0] || null,
     [model.paths, selectedIdea],
@@ -132,16 +142,34 @@ export function BookWorld({
     if (activeIdea && !model.ideas.includes(activeIdea)) setActiveIdea('')
   }, [activeIdea, model.ideas])
 
+  useEffect(() => {
+    const revealConcept = () => {
+      const hash = typeof window === 'undefined' ? '' : window.location.hash.replace(/^#/, '')
+      const concept = model.knowledge?.concepts.find((item) => bookKnowledgeAnchor(item) === hash)
+      if (!concept) return
+      setActiveIdea(concept.title)
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+        const target = document.getElementById(hash)
+        const disclosure = target?.closest('details')
+        if (disclosure instanceof HTMLDetailsElement) disclosure.open = true
+        target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }))
+    }
+    revealConcept()
+    window.addEventListener('hashchange', revealConcept)
+    return () => window.removeEventListener('hashchange', revealConcept)
+  }, [model.knowledge])
+
   if (!model.paths.length) return null
 
   return (
-    <section className="border-t border-hair bg-wash px-6 py-12 md:px-11 md:py-16" aria-labelledby="book-world-title">
+    <section id="book-knowledge" className="scroll-mt-28 border-t border-hair bg-wash px-6 py-12 md:px-11 md:py-16" aria-labelledby="book-world-title">
       <div className="mx-auto max-w-shell">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-3xl">
             <span className="text-[.7rem] font-semibold uppercase tracking-[.08em] text-accent">عالم الكتاب</span>
             <h2 id="book-world-title" className="mt-2 font-display text-[clamp(1.55rem,3vw,2.2rem)] font-semibold leading-[1.35] text-ink">امتدادات الكتاب داخل الأرشيف</h2>
-            <p className="mt-2 text-[.82rem] leading-[1.8] text-soft">خريطة موثقة من المواد المنشورة فعلاً. كل الأقسام مطوية افتراضياً حتى يبقى الكتاب هو العنصر الرئيسي.</p>
+            <p className="mt-2 text-[.82rem] leading-[1.8] text-soft">خريطة بُنيت من متن الكتاب كاملاً، ثم تصل مفاهيمه بالمواد المنشورة فعلاً. لا يُعرض متن الكتاب ولا ملفه الكامل، وتبقى الأقسام مطوية حتى يظل التصميم هادئاً.</p>
           </div>
           <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="rounded-full border border-accent/35 px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">المسار الفكري الكامل ←</Link>
         </div>
@@ -152,8 +180,8 @@ export function BookWorld({
                في هذه الصفحة عربياتٌ مفهومة («استمرار الفكرة»، «الزمن داخل
                الأرشيف»). البصمة نفسها تبقى في لوحة التحكم حيث تنفع. */
             eyebrow="بصمة الفكرة"
-            title="بصمة الكتاب ومساراته الفكرية"
-            meta={`${model.dna.topic.label} · ${model.dna.tone.label} · عمق ${model.dna.depth.score}% · دليل ${model.dna.evidence.score}%`}
+            title="المفاهيم التي يحملها الكتاب إلى الأرشيف"
+            meta={model.knowledge ? `${model.knowledge.concepts.length} محوراً مفهرساً من ${model.knowledge.indexedPages} صفحة قابلة للقراءة` : `${model.dna.topic.label} · ${model.dna.tone.label}`}
             lockOpen={Boolean(activeIdea)}
           >
             <div className="flex flex-wrap gap-2" aria-label="مسارات أفكار الكتاب">
@@ -163,6 +191,7 @@ export function BookWorld({
                   <button
                     type="button"
                     key={`${idea}-${index}`}
+                    id={model.knowledge?.concepts.find((concept) => concept.title === idea) ? bookKnowledgeAnchor(model.knowledge.concepts.find((concept) => concept.title === idea)!) : undefined}
                     onClick={() => setActiveIdea(idea)}
                     aria-pressed={active}
                     className={`rounded-full border px-3.5 py-2 text-[.7rem] transition-colors ${active ? 'border-accent bg-accent/[.07] font-semibold text-accent' : 'border-hair bg-wash text-ink hover:border-accent/40'}`}
@@ -174,7 +203,7 @@ export function BookWorld({
             </div>
             <div className="mt-4 border-t border-hair pt-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[.68rem] text-soft">البوابة النشطة · «{selectedIdea}»</span>
+                <span className="text-[.68rem] text-soft">البوابة النشطة · «{selectedIdea}»{selectedConcept ? ` · ص ${selectedConcept.pageStart}${selectedConcept.pageEnd > selectedConcept.pageStart ? `–${selectedConcept.pageEnd}` : ''}` : ''}</span>
                 <span className="text-[.64rem] text-soft">{model.dna.audience.primary}</span>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -185,6 +214,10 @@ export function BookWorld({
                   <Link key={`active-p-${item.slug}`} to={`/research/${item.slug}`} className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.66rem] text-ink transition-colors hover:border-accent hover:text-accent">بحث · {item.titleAr || item.title}</Link>
                 ))}
               </div>
+              {selectedConcept && <div className="mt-3 text-[.76rem] leading-[1.85] text-soft">
+                <p>{selectedConcept.summary}</p>
+                <p className="mt-2 border-r-2 border-accent/35 pr-3 text-ink/80"><span className="font-semibold text-accent">سؤال للقراءة:</span> {selectedConcept.question}</p>
+              </div>}
             </div>
           </Disclosure>}
 

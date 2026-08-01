@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { buildContentIndex, normalizeArabic } from '../whatsapp-agent/content-index.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const bookKnowledgeFile = path.join(root, 'src', 'data', 'book-knowledge.json')
+const bookKnowledge = fs.existsSync(bookKnowledgeFile) ? JSON.parse(fs.readFileSync(bookKnowledgeFile, 'utf8')) : { books: [] }
+const bookKnowledgeBySlug = new Map((bookKnowledge.books || []).map((book) => [book.slug, book]))
 const stop = new Set('من في على الى عن هذا هذه ذلك التي الذي مع او ثم ما ماذا كيف هل لم لن قد كل بين عند بعد قبل عبر نحو حول داخل خارج'.split(' '))
 const tok = (value) => [...new Set(normalizeArabic(String(value || '')).split(' ').filter((x) => x.length > 2 && !stop.has(x)))].slice(0, 140)
 const overlap = (a, b) => { const bs = new Set(b); return a.filter((x) => bs.has(x)).length }
@@ -12,16 +15,23 @@ const addEdge = (edges, from, to, score, reasons = []) => { edges.push({ from, t
 
 function baseNodes() {
   const items = buildContentIndex(root)
-  const nodes = items.map((item) => ({
-    id: item.id,
-    kind: item.kind,
-    slug: item.slug,
-    title: item.title,
-    excerpt: String(item.excerpt || '').slice(0, 900),
-    url: item.url,
-    year: yearOf(item.date),
-    tokens: tok(`${item.title} ${item.excerpt} ${item.body} ${item.keywords}`),
-  }))
+  const nodes = items.map((item) => {
+    const book = item.kind === 'book' ? bookKnowledgeBySlug.get(item.slug) : null
+    const bookText = book
+      ? `${book.role || ''} ${(book.topTerms || []).join(' ')} ${(book.concepts || []).flatMap((concept) => [concept.title, ...(concept.keywords || [])]).join(' ')}`
+      : ''
+    const bookAxes = book ? (book.concepts || []).slice(0, 8).map((concept) => concept.title).join(' · ') : ''
+    return {
+      id: item.id,
+      kind: item.kind,
+      slug: item.slug,
+      title: item.title,
+      excerpt: `${String(item.excerpt || '')}${bookAxes ? ` · محاور من المتن: ${bookAxes}` : ''}`.slice(0, 900),
+      url: item.url,
+      year: yearOf(item.date),
+      tokens: tok(`${item.title} ${item.excerpt} ${bookText} ${item.body} ${item.keywords}`),
+    }
+  })
 
   const audioNodes = []
   for (const item of items) {

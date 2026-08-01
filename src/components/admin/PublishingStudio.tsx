@@ -2527,7 +2527,9 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
      يُصقل به النص هنا. تُحسب مرة عند تحميل المتون لا في كل توليد. */
   /* نصوص الأرشيف تُجمَع مرةً واحدة وتُشارَك بين البصمة وحارس النقل الحرفي؛
      كانت تُبنى في كل قياس، والقياس نفسه ٢٣٠ مللي ثانية على الخيط الرئيسي. */
-  const archiveTexts = useMemo(() => richArticles.map((article) => ({ body: article.body || '' })), [richArticles])
+  /* التاريخ يُمرَّر مع المتن: البصمة تُرجَّح بالحقبة، فأسلوبه اليوم أثقل من
+     أسلوب ٢٠١٧ — وقياسه أثبت أن العلامات انقلبت بينهما. */
+  const archiveTexts = useMemo(() => richArticles.map((article) => ({ body: article.body || '', iso: article.iso || article.date || '' })), [richArticles])
   const measuredDna = useMemo(() => measureStyleDna(archiveTexts), [archiveTexts])
   /* ذاكرة الصوت: ما قال عنه الدكتور «هذه ليست أنا». تعيش محلياً فوراً،
      وتُزامَن مع Firestore إن سمحت القاعدة — فلا تتعطّل إن لم تُنشر بعد. */

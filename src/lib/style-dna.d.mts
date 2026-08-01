@@ -29,6 +29,7 @@ export interface StyleDna {
   openers: { word: string; count: number }[]
   closings: { questionRate: number; antithesisRate: number; appealRate: number }
   perArticle: Record<string, StyleBand>
+  era?: { halfLifeYears: number; weightedSample: number; recentArticles: number }
   banned: string[]
   bannedVoice: string[]
 }
@@ -70,7 +71,7 @@ export declare function countWords(value?: string): number
 export declare function sentencesOf(value?: string): string[]
 export declare function paragraphsOf(value?: string): string[]
 
-export declare function measureStyleDna(articles: ({ body?: string } | string)[]): StyleDna | null
+export declare function measureStyleDna(articles: ({ body?: string; iso?: string; date?: string } | string)[]): StyleDna | null
 export declare function articleMetrics(body: string): StyleMetrics
 export declare function resolveStyleDna(dna: unknown): StyleDna
 export declare function styleBrief(dna: StyleDna | null, targetWords?: number): string

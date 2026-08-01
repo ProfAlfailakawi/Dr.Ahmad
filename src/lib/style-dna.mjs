@@ -85,15 +85,53 @@ export const BANNED_VOICE = [
 
 /* ---------- القياس ---------- */
 
-/* يقبل مصفوفة نصوص أو كائنات {title, body}. */
+/* يقبل مصفوفة نصوص أو كائنات {title, body, iso}. */
 const bodiesOf = (articles) => (Array.isArray(articles) ? articles : [])
   .map((item) => typeof item === 'string' ? item : String(item?.body || ''))
   .map((body) => body.trim())
   .filter((body) => body.length > 200)
 
+/* ---------- ترجيح الحقبة ----------
+
+   أسلوبه تغيّر، والقياس قاطع. بين ٩٥ مقالاً قبل ٢٠٢٢ و٤٨ مقالاً في ٢٠٢٥-٢٠٢٦:
+
+     وقفات «…» لكل ١٠٠ كلمة   ٩٫٩ ← ٣٫٠   (علامته القديمة، تتراجع)
+     «بل» لكل ١٠٠ كلمة        ٠٫١ ← ١٫٤   (علامته اليوم، أربعة عشر ضعفاً)
+     الأسئلة في المقال          ١ ← ٤
+     وسيط الفقرة              ٦٥ ← ٢٢ كلمة
+
+   البصمة الشاملة كانت تُحاكم مقالاته الحديثة بـ٨٥٪ بينما تستحق ٩٠٪ ببصمة
+   حقبتها — أي أن المحرك كان يُملي عليه صوت ٢٠١٧. الترجيح بنصف عمرٍ ثلاث
+   سنوات: المقال الأحدث يزن أربعة أضعاف الأقدم، والأرشيف كله يبقى حاضراً. */
+const ERA_HALF_LIFE_YEARS = 3
+const ERA_MAX_WEIGHT = 4
+
+function eraWeights(articles) {
+  const stamps = articles.map((item) => {
+    const iso = typeof item === 'string' ? '' : String(item?.iso || item?.date || '')
+    const year = Number(String(iso).slice(0, 4))
+    return Number.isFinite(year) && year > 1990 && year < 2100 ? year + (Number(String(iso).slice(5, 7)) || 6) / 12 : null
+  })
+  const newest = stamps.filter((value) => value !== null).sort((a, b) => b - a)[0]
+  if (!newest) return stamps.map(() => 1)
+  return stamps.map((value) => {
+    if (value === null) return 1
+    const age = Math.max(0, newest - value)
+    return Math.max(1, Math.round(ERA_MAX_WEIGHT * Math.pow(.5, age / ERA_HALF_LIFE_YEARS)))
+  })
+}
+
+/* التكرار بالوزن: أبسط طريقةٍ صادقة لحساب مئينٍ مرجَّح. */
+const weighted = (values, weights) => values.flatMap((value, index) => Array.from({ length: weights[index] || 1 }, () => value))
+const wMean = (values, weights) => { const list = weighted(values, weights); return list.length ? list.reduce((sum, value) => sum + value, 0) / list.length : 0 }
+const wPercentile = (values, weights, ratio) => percentile([...weighted(values, weights)].sort((a, b) => a - b), ratio)
+
 export function measureStyleDna(articles) {
   const texts = bodiesOf(articles)
   if (!texts.length) return null
+  /* الأوزان تتبع الترتيب نفسه بعد التصفية، فنعيد بناءها على المقبولين. */
+  const kept = (Array.isArray(articles) ? articles : []).filter((item) => String(typeof item === 'string' ? item : item?.body || '').trim().length > 200)
+  const weights = eraWeights(kept)
 
   const articleWords = texts.map(countWords).sort((a, b) => a - b)
   const totalWords = articleWords.reduce((sum, value) => sum + value, 0)
@@ -105,6 +143,7 @@ export function measureStyleDna(articles) {
 
   const sentences = texts.flatMap(sentencesOf)
   const sentenceWords = sentences.map(countWords).filter(Boolean).sort((a, b) => a - b)
+  const rows = texts.map(articleMetrics)
 
   const corpus = texts.join('\n\n')
   const bareCorpus = bareText(corpus)
@@ -116,40 +155,42 @@ export function measureStyleDna(articles) {
     version: 2,
     sampleSize: texts.length,
     totalWords,
+    /* كلها مرجَّحةٌ بالحقبة: هذه الأرقام هي ما يُملى على المحرك حرفياً، فلو
+       بقيت مجمَّعةً على الأرشيف كله لأملينا عليه صوت ٢٠١٧. */
     article: {
-      p10: percentile(articleWords, .1),
-      p25: percentile(articleWords, .25),
-      median: percentile(articleWords, .5),
-      p75: percentile(articleWords, .75),
-      p90: percentile(articleWords, .9),
-      mean: Math.round(mean(articleWords)),
+      p10: wPercentile(rows.map((row) => row.words), weights, .1),
+      p25: wPercentile(rows.map((row) => row.words), weights, .25),
+      median: wPercentile(rows.map((row) => row.words), weights, .5),
+      p75: wPercentile(rows.map((row) => row.words), weights, .75),
+      p90: wPercentile(rows.map((row) => row.words), weights, .9),
+      mean: Math.round(wMean(rows.map((row) => row.words), weights)),
     },
     sentence: {
       mean: round1(mean(sentenceWords)),
-      median: percentile(sentenceWords, .5),
+      median: wPercentile(rows.map((row) => row.medianSentence), weights, .5),
       p10: percentile(sentenceWords, .1),
-      p90: percentile(sentenceWords, .9),
-      shortRate: Math.round(sentenceWords.filter((value) => value <= 9).length / Math.max(1, sentenceWords.length) * 100),
-      longRate: Math.round(sentenceWords.filter((value) => value >= 26).length / Math.max(1, sentenceWords.length) * 100),
+      p90: wPercentile(rows.map((row) => row.medianSentence), weights, .9),
+      shortRate: Math.round(wMean(rows.map((row) => row.shortRate), weights)),
+      longRate: Math.round(wMean(rows.map((row) => row.longSentenceRate), weights)),
     },
     paragraph: {
       mean: Math.round(mean(paragraphWords)),
-      median: percentile(paragraphWords, .5),
+      median: wPercentile(rows.map((row) => row.medianParagraph), weights, .5),
       p25: percentile(paragraphWords, .25),
-      p75: percentile(paragraphWords, .75),
+      p75: wPercentile(rows.map((row) => row.medianParagraph), weights, .75),
       p90: percentile(paragraphWords, .9),
-      singleSentenceRate: Math.round(paragraphSentences.filter((value) => value === 1).length / Math.max(1, paragraphSentences.length) * 100),
+      singleSentenceRate: Math.round(wMean(rows.map((row) => row.singleRate), weights)),
       twoSentenceRate: Math.round(paragraphSentences.filter((value) => value === 2).length / Math.max(1, paragraphSentences.length) * 100),
-      perArticle: Math.round(mean(paragraphsPerArticle)),
+      perArticle: Math.round(wMean(paragraphsPerArticle, weights)),
       /* الوسيط لا المتوسط: مقالٌ واحد بتسعٍ وأربعين فقرة يرفع المتوسط إلى
          أحد عشر بينما نصف مقالاته سبع فقرات أو أقل. */
-      perArticleMedian: percentile([...paragraphsPerArticle].sort((a, b) => a - b), .5),
-      perArticleP75: percentile([...paragraphsPerArticle].sort((a, b) => a - b), .75),
+      perArticleMedian: wPercentile(paragraphsPerArticle, weights, .5),
+      perArticleP75: wPercentile(paragraphsPerArticle, weights, .75),
     },
     marks: {
-      ellipsisPer100: per100(occurrences(corpus, /…/g)),
-      ellipsisPerArticle: Math.round(occurrences(corpus, /…/g) / texts.length),
-      questionsPerArticle: round1(occurrences(corpus, /؟/g) / texts.length),
+      ellipsisPer100: round1(wMean(rows.map((row) => row.ellipsisPer100), weights)),
+      ellipsisPerArticle: Math.round(wMean(rows.map((row) => row.ellipsis), weights)),
+      questionsPerArticle: round1(wMean(rows.map((row) => row.questions), weights)),
       guillemetsPer100: per100(occurrences(corpus, /«/g)),
       semicolonPer100: per100(occurrences(corpus, /؛/g)),
       emDashPer100: per100(occurrences(corpus, /—/g)),
@@ -157,7 +198,7 @@ export function measureStyleDna(articles) {
       commaPer100: per100(occurrences(corpus, /،/g)),
     },
     moves: {
-      antithesisPer100: per100(occurrences(bareCorpus, arabicWord('بل'))),
+      antithesisPer100: round1(wMean(rows.map((row) => row.antithesisPer100), weights)),
       negationAntithesisPer100: per100(occurrences(bareCorpus, /(?<!\p{L})(?:ليست?|لا)(?!\p{L})[^.!؟…]{0,90}(?<!\p{L})بل(?!\p{L})/gu)),
       collectivePer100: per100(occurrences(bareCorpus, /(?<!\p{L})(?:نحن|نعيش|نحتاج|دعونا|نقول|علينا)(?!\p{L})/gu)),
       articlesWithEllipsis: withAny(/…/u),
@@ -170,7 +211,11 @@ export function measureStyleDna(articles) {
     /* توزيعات المقال الواحد: هذه هي مسطرة الحَكَم. المقياس ليس «هل يطابق
        الوسيط» بل «هل يقع داخل المدى الذي تعيش فيه مقالاته». بلا هذه
        التوزيعات كان الحَكَم يرسب أكثر من ثلثي أرشيفه. */
-    perArticle: perArticleBands(texts),
+    perArticle: perArticleBands(rows, weights),
+    era: (() => {
+      const heavy = weights.filter((w) => w >= ERA_MAX_WEIGHT).length
+      return { halfLifeYears: ERA_HALF_LIFE_YEARS, weightedSample: weights.reduce((sum, w) => sum + w, 0), recentArticles: heavy }
+    })(),
     banned: BANNED_PHRASES,
     bannedVoice: BANNED_VOICE,
   }
@@ -258,9 +303,8 @@ export function articleMetrics(body) {
   }
 }
 
-function perArticleBands(texts) {
-  const rows = texts.map(articleMetrics)
-  const column = (key) => rows.map((row) => row[key])
+function perArticleBands(rows, weights = []) {
+  const column = (key) => weighted(rows.map((row) => row[key]), weights)
   return {
     words: bandOf(column('words')),
     ellipsisPer100: bandOf(column('ellipsisPer100')),
@@ -324,42 +368,41 @@ function closingTaxonomy(texts) {
    الأرشيف (طلبٌ قديم من واجهةٍ لم تُحدَّث بعد). ليست تخميناً: هذه مخرجات
    measureStyleDna على ١٤٣ مقالاً بتاريخ ١ أغسطس ٢٠٢٦. */
 export const FALLBACK_STYLE_DNA = {
-  version: 2,
+  version: 3,
   sampleSize: 143,
   totalWords: 53431,
-  article: { p10: 298, p25: 351, median: 386, p75: 397, p90: 435, mean: 374 },
-  sentence: { mean: 9.9, median: 8, p10: 3, p90: 19, shortRate: 62, longRate: 5 },
-  paragraph: { mean: 33, median: 21, p25: 9, p75: 52, p90: 73, singleSentenceRate: 33, twoSentenceRate: 29, perArticle: 11, perArticleMedian: 7, perArticleP75: 10 },
-  marks: {
-    ellipsisPer100: 7.4, ellipsisPerArticle: 28, questionsPerArticle: 3,
-    guillemetsPer100: .5, semicolonPer100: .3, emDashPer100: 0, shaddaPer100: 1.7, commaPer100: 3.5,
-  },
+  article: { p10: 329, p25: 355, median: 385, p75: 406, p90: 442, mean: 380 },
+  sentence: { mean: 9.9, median: 9, p10: 3, p90: 18, shortRate: 51, longRate: 11 },
+  paragraph: { mean: 33, median: 45, p25: 9, p75: 62, p90: 73, singleSentenceRate: 24, twoSentenceRate: 29, perArticle: 16, perArticleMedian: 8, perArticleP75: 19 },
+  marks: { ellipsisPer100: 5.3, ellipsisPerArticle: 20, questionsPerArticle: 4.4, guillemetsPer100: .5, semicolonPer100: .3, emDashPer100: 0, shaddaPer100: 1.7, commaPer100: 3.5 },
   moves: {
-    antithesisPer100: .6, negationAntithesisPer100: .3, collectivePer100: .5,
+    antithesisPer100: .9, negationAntithesisPer100: .2, collectivePer100: .4,
     articlesWithEllipsis: 94, articlesWithAntithesis: 60, articlesWithQuestion: 79, articlesWithGuillemets: 43,
   },
   openers: [
-    { word: 'في', count: 120 }, { word: 'هل', count: 53 }, { word: 'إن', count: 42 },
-    { word: 'نحن', count: 29 }, { word: 'أما', count: 25 }, { word: 'بل', count: 24 },
+    { word: 'في', count: 120 }, { word: 'إن', count: 61 }, { word: 'هل', count: 53 },
+    { word: 'نحن', count: 29 }, { word: 'أما', count: 25 }, { word: 'بل', count: 25 },
     { word: 'نعم', count: 24 }, { word: 'لكن', count: 22 }, { word: 'دعونا', count: 18 },
   ],
-  closings: { questionRate: 8, antithesisRate: 8, appealRate: 6 },
-  /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته الـ١٤٣ منفردة. */
+  closings: { questionRate: 8, antithesisRate: 8, appealRate: 4 },
+  era: { halfLifeYears: 3, weightedSample: 266, recentArticles: 27 },
+  /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته الـ١٤٣ منفردة، **مرجَّحةً
+     بالحقبة** (نصف عمرٍ ثلاث سنوات) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
-    words: { p03: 271, p15: 329, p35: 363, p50: 386, p65: 392, p85: 415, p97: 454 },
-    ellipsisPer100: { p03: 0, p15: 1.1, p35: 5.2, p50: 7.7, p65: 10.2, p85: 12.8, p97: 15.5 },
-    antithesis: { p03: 0, p15: 0, p35: 0, p50: 1, p65: 2, p85: 5, p97: 8 },
-    antithesisPer100: { p03: 0, p15: 0, p35: 0, p50: .3, p65: .5, p85: 1.3, p97: 2.3 },
+    words: { p03: 278, p15: 340, p35: 363, p50: 385, p65: 394, p85: 430, p97: 452 },
+    ellipsisPer100: { p03: 0, p15: .8, p35: 1.7, p50: 4.9, p65: 6, p85: 11.7, p97: 14.5 },
+    antithesis: { p03: 0, p15: 0, p35: 2, p50: 3, p65: 5, p85: 6, p97: 11 },
+    antithesisPer100: { p03: 0, p15: 0, p35: .5, p50: .9, p65: 1.2, p85: 1.7, p97: 2.7 },
+    questions: { p03: 0, p15: 0, p35: 2, p50: 3, p65: 4, p85: 10, p97: 13 },
+    collective: { p03: 0, p15: 0, p35: 1, p50: 1, p65: 2, p85: 4, p97: 5 },
+    medianSentence: { p03: 5, p15: 6, p35: 7, p50: 9, p65: 11, p85: 17, p97: 25 },
+    shortRate: { p03: 11, p15: 20, p35: 40, p50: 54, p65: 68, p85: 76, p97: 85 },
+    medianParagraph: { p03: 8, p15: 10, p35: 26, p50: 45, p65: 54, p85: 69, p97: 86 },
+    longSentenceRate: { p03: 0, p15: 0, p35: 3, p50: 5, p65: 12, p85: 21, p97: 47 },
+    firstSentenceWords: { p03: 2, p15: 4, p35: 7, p50: 9, p65: 11, p85: 18, p97: 50 },
     duplicateSentenceRate: { p03: 0, p15: 0, p35: 0, p50: 0, p65: 0, p85: 0, p97: 0 },
     duplicateGramRate: { p03: 0, p15: 0, p35: 0, p50: 0, p65: 0, p85: 0, p97: 0 },
-    lexicalDiversity: { p03: 65.9, p15: 69, p35: 71, p50: 72.6, p65: 74.1, p85: 76.7, p97: 80.1 },
-    questions: { p03: 0, p15: 0, p35: 1, p50: 2, p65: 3, p85: 5, p97: 12 },
-    collective: { p03: 0, p15: 0, p35: 1, p50: 1, p65: 2, p85: 3, p97: 5 },
-    medianSentence: { p03: 5, p15: 6, p35: 7, p50: 8, p65: 10, p85: 15, p97: 25 },
-    shortRate: { p03: 12, p15: 32, p35: 47, p50: 59, p65: 68, p85: 76, p97: 85 },
-    medianParagraph: { p03: 8, p15: 18, p35: 47, p50: 56, p65: 64, p85: 73, p97: 87 },
-    longSentenceRate: { p03: 0, p15: 0, p35: 0, p50: 3, p65: 7, p85: 19, p97: 47 },
-    firstSentenceWords: { p03: 2, p15: 4, p35: 7, p50: 9, p65: 11, p85: 19, p97: 54 },
+    lexicalDiversity: { p03: 65.9, p15: 69.1, p35: 71, p50: 72.9, p65: 74.5, p85: 76.7, p97: 80.1 },
   },
   banned: BANNED_PHRASES,
   bannedVoice: BANNED_VOICE,

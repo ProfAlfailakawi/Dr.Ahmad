@@ -278,6 +278,32 @@ assert.ok(!acceptProofread(beforeProof, '', dna).accepted, 'نصٌّ فارغ ي
 assert.ok(PROOFREAD_INSTRUCTION.includes('طلاباً'), 'المدقّق مأمورٌ ألا يغيّر صورة التنوين — وهي أسلوبه')
 assert.match(server, /ARTICLE_PROOFREAD !== 'off'/, 'التدقيق اللغوي موصولٌ وقابلٌ للتعطيل')
 
+/* ─── ترجيح الحقبة: البصمة تقيس أحمد اليوم لا أحمد ٢٠١٧ ─── */
+const dataSource = readFileSync(resolve(root, 'src/data.ts'), 'utf8')
+const isoBySlug = new Map()
+for (const match of dataSource.matchAll(/slug:\s*'([^']+)'[^}]*?iso:\s*'([0-9-]+)'/g)) isoBySlug.set(match[1], match[2])
+const dated = archive.map((item) => ({ ...item, iso: isoBySlug.get(item.slug) || '' })).filter((item) => item.iso)
+assert.ok(dated.length >= 100, `تواريخ المقالات متاحة (${dated.length})`)
+
+const flatDna = measureStyleDna(dated.map((item) => ({ body: item.body })))
+const eraDna = measureStyleDna(dated)
+assert.ok(eraDna.era && eraDna.era.weightedSample > eraDna.sampleSize, 'الترجيح فعّالٌ لا اسمي')
+
+const medianOf = (list, useDna) => {
+  const scores = list.map((item) => judgeStyle(item.body, useDna).score).sort((left, right) => left - right)
+  return scores[Math.floor(scores.length / 2)]
+}
+const recent = dated.filter((item) => item.iso >= '2025-01-01')
+assert.ok(recent.length >= 20, `عيّنة حديثة كافية (${recent.length})`)
+assert.ok(medianOf(recent, eraDna) > medianOf(recent, flatDna), `الترجيح ينصف مقالاته الحديثة (${medianOf(recent, flatDna)} ← ${medianOf(recent, eraDna)})`)
+
+/* والأهم: ما يُملى على المحرك تغيّر فعلاً نحو صوته اليوم */
+const flatBrief = styleBrief(flatDna, 400)
+const eraBrief = styleBrief(eraDna, 400)
+const numberIn = (brief, needle) => Number((brief.split('\n').find((line) => line.includes(needle)) || '').match(/\d+/)?.[0] || 0)
+assert.ok(numberIn(eraBrief, 'الأسئلة البلاغية') > numberIn(flatBrief, 'الأسئلة البلاغية'), 'الأسئلة ارتفعت — وهي علامته اليوم')
+assert.ok(numberIn(eraBrief, 'نقاط الحذف') < numberIn(flatBrief, 'نقاط الحذف'), 'الوقفات انخفضت — وهي علامته القديمة')
+
 /* ─── ذاكرة الصوت: يتعلّم من حكمه هو لا من أرشيفه فقط ─── */
 const studio = readFileSync(resolve(root, 'src/components/admin/PublishingStudio.tsx'), 'utf8')
 const rejectedParagraph = 'إن الاعتماد المتزايد على أدوات الذكاء الاصطناعي يشكل تحدياً كبيراً أمام المؤسسات التعليمية التي تسعى إلى بناء جيل قادر على الإبداع.'

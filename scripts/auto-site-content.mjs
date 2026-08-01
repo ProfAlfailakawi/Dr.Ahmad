@@ -187,6 +187,13 @@ function grabArray(source, name) {
   );
 }
 
+function literalField(block, name) {
+  const match = block.match(
+    new RegExp(`\\b${name}:\\s*'((?:\\\\.|[^'\\\\])*)'`),
+  );
+  return match ? clean(match[1]) : "";
+}
+
 function loadSources() {
   // المصدر المنشور نفسه الذي تبنيه الواجهة؛ لا نقرأ النسخة الجذرية القديمة التي قد تحتوي مواد مستبعدة.
   const source = readFileSync(resolve(ROOT, "src/data.ts"), "utf8");
@@ -226,19 +233,27 @@ function loadSources() {
     .filter((item) => item.title && item.text);
 
   const media = [
-    ...grabArray(source, "media").matchAll(
-      /\{ title: '([^']+)', outlet: '([^']+)', url: '([^']+)' \}/g,
-    ),
+    ...grabArray(source, "media").matchAll(/\{[^{}]*\}/g),
   ]
-    .map((match, index) => ({
-      key: `media:${index}:${hash(match[1])}`,
-      type: "لقاء",
-      title: clean(match[1]),
-      category: clean(match[2]),
-      url: clean(match[3]),
-      text: `لقاء بعنوان «${clean(match[1])}» في ${clean(match[2])}.`,
-    }))
-    .filter((item) => item.title);
+    .map((match, index) => {
+      const block = match[0];
+      const title = literalField(block, "title");
+      const outlet =
+        literalField(block, "outlet") || literalField(block, "channel");
+      const url = literalField(block, "url");
+      const topics = literalField(block, "topics");
+      return {
+        key: `media:${index}:${hash(title)}`,
+        type: "لقاء",
+        title,
+        category: outlet,
+        url,
+        text: topics
+          ? `لقاء بعنوان «${title}» في ${outlet}. موضوعاته: ${topics}.`
+          : `لقاء بعنوان «${title}» في ${outlet}.`,
+      };
+    })
+    .filter((item) => item.title && item.url);
 
   return [...articles, ...books, ...media];
 }
@@ -796,9 +811,18 @@ async function run() {
   if (SELF_TEST) {
     const articles = sources.filter((item) => item.type === "مقال").length;
     const books = sources.filter((item) => item.type === "كتاب").length;
-    const media = sources.filter((item) => item.type === "لقاء").length;
+    const mediaSources = sources.filter((item) => item.type === "لقاء");
+    const media = mediaSources.length;
     if (articles < 100 || books < 5 || media < 3)
       throw new Error(`مصادر غير كافية: ${articles}/${books}/${media}`);
+    if (
+      !mediaSources.some(
+        (item) =>
+          item.category === "تلفزيون الكويت" &&
+          item.url.includes("ydhZ9IcGaVc"),
+      )
+    )
+      throw new Error("تعذر تحليل حقول اللقاءات المرئية بعد إثرائها");
 
     /* ═══ حراسةُ التنويع ═══
      *

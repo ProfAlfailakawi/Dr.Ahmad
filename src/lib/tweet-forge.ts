@@ -697,14 +697,14 @@ export function buildThread(source: TweetSource, options: TweetForgeOptions = {}
     if (chosen.length === 5) break
   }
   const opener = reading.question
-    ? `${reading.question.replace(/[.،]$/, '')}\n\nخيطٌ قصير 🧵`.replace(' 🧵', '')
+    ? `${reading.question.replace(/[.،]$/, '')}\n\nخيطٌ قصير في ${chosen.length} نقاط.`
     : `${trimTo(reading.title, 90)}\n\nخيطٌ قصير في ${chosen.length} نقاط.`
   const body = chosen.map((sentence, index) => `${index + 1}/${chosen.length}\n${trimTo(sentence, 240)}`)
   const word = KIND_WORD[source.kind] || 'المادة'
   const closer = reading.url
     ? `التفصيل في ${word} «${trimTo(reading.title, 60)}»:\n${reading.url}`
     : `التفصيل في ${word} «${trimTo(reading.title, 60)}».`
-  const tweets = [opener, ...body, closer].map((tweet) => clean(tweet.replace(/\n{3,}/g, '\n\n')) ? tweet.trim() : tweet.trim()).filter(Boolean)
+  const tweets = [opener, ...body, closer].map((tweet) => tweet.replace(/\n{3,}/g, '\n\n').trim()).filter(Boolean)
   const score = Math.round(tweets.reduce((sum, tweet) => sum + scoreTweet(tweet).score, 0) / tweets.length)
   return { id: `thr-${hashString(`${source.id}:${variation}`).toString(16)}`, sourceId: source.id, sourceTitle: reading.title, tweets, score, url: reading.url }
 }
@@ -721,8 +721,12 @@ export function buildTweetBatch(sources: readonly TweetSource[], options: TweetF
     .slice(0, Math.max(1, options.count || 12))
 }
 
-/** جملةٌ موثّقةٌ من متنٍ — للعرض في الواجهة كدليلٍ على أن النص من كلامه. */
+/**
+ * جملةٌ موثّقةٌ من متنٍ — نقطة الدخول لمن أراد سطراً واحداً مضموناً من كلام
+ * الدكتور بلا بناء تغريدةٍ كاملة (بطاقة اقتباس، رسالة بوت، ترويسة تصميم).
+ */
 export const verifiedLineOf = (body: string, title: string) => {
   const line = bestTweetableLine(clean(body), title)
-  return verifyEcho(line, body) ? line : (splitBodySentences(body).find((sentence) => verifyEcho(sentence, body)) || '')
+  if (verifyEcho(line, body)) return line
+  return splitBodySentences(body).find((sentence) => verifyEcho(sentence, body)) || ''
 }

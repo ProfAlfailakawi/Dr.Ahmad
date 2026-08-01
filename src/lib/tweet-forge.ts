@@ -23,6 +23,7 @@
 
 import { splitBodySentences, verifyEcho } from './voice-echoes'
 import { resonanceCountOf } from './resonance-quotes'
+import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
 
 export const TWEET_FORGE_VERSION = '1.0.0'
 
@@ -32,6 +33,9 @@ export const TWEET_LIMIT = 280
 /** النطاق الذي تنتشر فيه التغريدة العربية فعلاً: لا برقيةٌ ولا مقال. */
 const SWEET_MIN = 120
 const SWEET_MAX = 262
+
+/** أدنى درجةٍ يُقبل عندها مفهومٌ من المعجم: ما دونها مطابقةٌ جزئية لا تعرّف. */
+const MIN_CONCEPT_SCORE = 100
 
 export type TweetSourceKind = 'article' | 'book' | 'paper' | 'media' | 'news' | 'free'
 
@@ -94,8 +98,12 @@ export const TWEET_ANGLES: Record<TweetAngleId, TweetAngle> = {
 }
 
 export interface TweetSignal {
+  /** مفتاحٌ ثابتٌ للمعايرة — لا يتغيّر بتغيّر النص المعروض. */
+  key: string
   label: string
   weight: number
+  /** الوزن قبل المعايرة، حين عايره الواقع. */
+  baseWeight?: number
 }
 
 export interface TweetDraft {
@@ -149,6 +157,8 @@ export interface TweetForgeOptions {
    * حُقن بدالتين لا بالنوع نفسه كي يبقى المسبك مستقلاً عن طبقة الخزن —
    * فيُختبر بلا Firestore ولا localStorage.
    */
+  /** معايرةُ أوزان الإشارات بأرقام التفاعل الحقيقية (مفتاح ← مُضاعِف). */
+  calibration?: Readonly<Record<string, number>>
   memory?: {
     /** هل نُشر هذا النص (أو ما يطابقه جوهراً) من قبل؟ */
     isPublished?: (text: string) => boolean
@@ -316,7 +326,21 @@ const JARGON = /(?:إشكالية|براديغم|إبستمولوجي|سوسيو
  * درجةُ قابلية إعادة النشر. كل إشارةٍ فيها قابلةٌ للفحص بالعين، ولا تدّعي
  * تنبؤاً بالأرقام: تقيس بنيةَ النص لا مستقبله.
  */
-export function scoreTweet(text: string, options: { hasQuote?: boolean; hashtags?: number; links?: number; resonance?: number } = {}) {
+export function scoreTweet(
+  text: string,
+  options: {
+    hasQuote?: boolean
+    hashtags?: number
+    links?: number
+    resonance?: number
+    /**
+     * معايرةٌ من الواقع: مُضاعِفٌ لكل مفتاح إشارة، مشتقٌّ من أرقام التفاعل التي
+     * أدخلها الدكتور لتغريداتٍ نشرها. غيابها يعني أن الوزن يبقى كما قدّرتُه —
+     * فالأداة تفترض حتى تتعلّم، ولا تدّعي أنها تعلّمت قبل أن تُقاس.
+     */
+    calibration?: Readonly<Record<string, number>>
+  } = {},
+) {
   const body = clean(text)
   const size = charCount(body)
   const head = body.slice(0, 45)
@@ -326,48 +350,54 @@ export function scoreTweet(text: string, options: { hasQuote?: boolean; hashtags
   const signals: TweetSignal[] = []
   let score = 46
 
-  const add = (label: string, weight: number) => { score += weight; signals.push({ label, weight }) }
+  /* لكل إشارةٍ مفتاحٌ ثابتٌ لا يتغيّر بتغيّر نصّها المعروض — بلا ذلك تعذّرت
+     معايرتها بالواقع (لاحظ أن نصّ إشارة الرنين يحمل عدداً متغيّراً). */
+  const add = (key: string, label: string, weight: number) => {
+    const tuned = Math.round(weight * (options.calibration?.[key] ?? 1))
+    score += tuned
+    signals.push({ key, label, weight: tuned, ...(tuned !== weight ? { baseWeight: weight } : {}) })
+  }
 
-  if (/[؟?]/.test(head) || /^\d|^لا\s|^ليس|^حين|^أخطر|^أصعب|^ثلاث/.test(head)) add('خطّافٌ في أول سطر', 11)
-  else add('البداية تقريرية — لا خطّاف', -8)
+  if (/[؟?]/.test(head) || /^\d|^لا\s|^ليس|^حين|^أخطر|^أصعب|^ثلاث/.test(head)) add('hook', 'خطّافٌ في أول سطر', 11)
+  else add('no-hook', 'البداية تقريرية — لا خطّاف', -8)
 
-  if (size >= SWEET_MIN && size <= SWEET_MAX) add('طولٌ في نطاق الانتشار', 10)
-  else if (size < SWEET_MIN) add('أقصر من أن تحمل فكرة', -9)
-  else add('أطول من نطاق القراءة السريعة', -7)
+  if (size >= SWEET_MIN && size <= SWEET_MAX) add('length-sweet', 'طولٌ في نطاق الانتشار', 10)
+  else if (size < SWEET_MIN) add('length-short', 'أقصر من أن تحمل فكرة', -9)
+  else add('length-long', 'أطول من نطاق القراءة السريعة', -7)
 
-  if (TURN.test(body)) add('فيها منعطفٌ يقلب المعنى', 9)
-  if (lines.length >= 3 && lines.length <= 5) add('مُقطَّعةٌ إلى أسطر تُقرأ بلمحة', 7)
-  if (lines.length === 1 && size > 190) add('كتلةٌ واحدة بلا تنفّس', -6)
+  if (TURN.test(body)) add('turn', 'فيها منعطفٌ يقلب المعنى', 9)
+  if (lines.length >= 3 && lines.length <= 5) add('breathing-lines', 'مُقطَّعةٌ إلى أسطر تُقرأ بلمحة', 7)
+  if (lines.length === 1 && size > 190) add('one-block', 'كتلةٌ واحدة بلا تنفّس', -6)
 
-  if (averageWords <= 12) add('جُملٌ قصيرة سريعة الالتقاط', 6)
-  else if (averageWords > 20) add('جُملٌ طويلة تُبطئ القراءة', -7)
+  if (averageWords <= 12) add('short-sentences', 'جُملٌ قصيرة سريعة الالتقاط', 6)
+  else if (averageWords > 20) add('long-sentences', 'جُملٌ طويلة تُبطئ القراءة', -7)
 
-  if (CONCRETE.test(body)) add('صورةٌ محسوسة لا تجريد', 5)
-  if (JARGON.test(body)) add('لغةٌ أكاديمية تُبعد القارئ العام', -12)
+  if (CONCRETE.test(body)) add('concrete', 'صورةٌ محسوسة لا تجريد', 5)
+  if (JARGON.test(body)) add('jargon', 'لغةٌ أكاديمية تُبعد القارئ العام', -12)
 
-  if (options.hasQuote) add('جملةٌ موثّقةٌ من متن الدكتور', 8)
+  if (options.hasQuote) add('verified-quote', 'جملةٌ موثّقةٌ من متن الدكتور', 8)
   /* الرنين دليلٌ من الواقع لا تقديرٌ بلاغي: قارئٌ ظلّلها بإصبعه. ولذلك يكافأ
      أعلى من كل إشارةٍ أخرى، وبتدرّجٍ يحترم عدد من ظلّل. */
-  if (options.resonance) add(`سطرٌ ظلّله ${options.resonance} من القرّاء`, Math.min(16, 8 + options.resonance * 2))
+  if (options.resonance) add('resonance', `سطرٌ ظلّله ${options.resonance} من القرّاء`, Math.min(16, 8 + options.resonance * 2))
 
   const endsWell = !/https?:\/\/\S*$/.test(body) && !/#\S+$/.test(body)
-  if (endsWell) add('تنتهي بمعنى لا برابط', 6)
-  else add('تنتهي برابطٍ أو وسم فيضيع الأثر', -6)
+  if (endsWell) add('ends-well', 'تنتهي بمعنى لا برابط', 6)
+  else add('ends-badly', 'تنتهي برابطٍ أو وسم فيضيع الأثر', -6)
 
   const hashtags = options.hashtags ?? (body.match(/#\S+/g) || []).length
-  if (hashtags === 0) add('بلا وسوم — أنقى للوصول', 4)
-  else if (hashtags <= 2) add('وسمان على الأكثر', 2)
-  else add('وسومٌ كثيرة تخفض الوصول', -10)
+  if (hashtags === 0) add('no-hashtags', 'بلا وسوم — أنقى للوصول', 4)
+  else if (hashtags <= 2) add('two-hashtags', 'وسمان على الأكثر', 2)
+  else add('many-hashtags', 'وسومٌ كثيرة تخفض الوصول', -10)
 
   const links = options.links ?? (body.match(/https?:\/\/\S+/g) || []).length
-  if (links > 1) add('أكثر من رابطٍ واحد', -8)
+  if (links > 1) add('many-links', 'أكثر من رابطٍ واحد', -8)
 
-  if (/^(?:في مقالي|في كتابي|اقرأ|شاهد|حمّل)/.test(body)) add('تفتح بترويجٍ لا بفكرة', -11)
-  if (/[!]{2,}|[؟]{2,}/.test(body)) add('علاماتٌ مكرّرة تُضعف الرصانة', -5)
-  if (/[\u{1F300}-\u{1FAFF}]/u.test(body)) add('رموزٌ تعبيرية — خارج نبرة الموقع', -4)
+  if (/^(?:في مقالي|في كتابي|اقرأ|شاهد|حمّل)/.test(body)) add('promo-opener', 'تفتح بترويجٍ لا بفكرة', -11)
+  if (/[!]{2,}|[؟]{2,}/.test(body)) add('repeated-marks', 'علاماتٌ مكرّرة تُضعف الرصانة', -5)
+  if (/[\u{1F300}-\u{1FAFF}]/u.test(body)) add('emoji', 'رموزٌ تعبيرية — خارج نبرة الموقع', -4)
 
   const quotableLine = lines.find((line) => scoreQuotable(line) >= 1.4)
-  if (quotableLine) add('فيها سطرٌ يُقتبس وحده', 9)
+  if (quotableLine) add('quotable-line', 'فيها سطرٌ يُقتبس وحده', 9)
 
   return { score: Math.max(0, Math.min(99, Math.round(score))), signals: signals.sort((a, b) => b.weight - a.weight) }
 }
@@ -393,6 +423,8 @@ interface SourceReading {
   pool: string[]
   raw: string
   resonant: readonly { text: string; count: number }[]
+  /** مفاهيم الدكتور المعياريّة التي تعرّف عليها المعجم في هذه المادة. */
+  concepts: string[]
 }
 
 function readSource(source: TweetSource, offset: number): SourceReading {
@@ -417,8 +449,19 @@ function readSource(source: TweetSource, offset: number): SourceReading {
   const quoteVerified = Boolean(candidate) && (verifyEcho(candidate, raw) || verifyEcho(candidate, text))
   /* الكلمة المحورية من العنوان أولاً: احتسابها من المتن بالتكرار كان يرفع
      «الطالب» فوق «التلعيب» لأن الذوات تتكرر أكثر من المفاهيم. */
+  /* المعجم أولاً: ٢٩٠ مفهوماً و١٣٢٢ اسماً تُشغّل بوت الدكتور، وكان المسبك
+     يجهلها فيستخرج الكلمة المحورية بالتكرار وحده. المصطلح المعياري من معجمه
+     أدقّ من أثقل كلمةٍ في النص — «التقويم البديل» لا «التقويم» وحدها.
+
+     والعتبة ضرورية: المطابقة الجزئية تُنتج مفاهيم لا وجود لها في النص. نصٌّ
+     أسريٌّ لا رقمَ فيه طابق «الأسرة الرقمية» فخرج مفهوم «التربية الرقمية»
+     بدرجة ٨٦، بينما المطابقة التامة «التقويم البديل» تبلغ ١٢٤. فما دون المئة
+     تخمينٌ لا تعرّف. */
+  const understanding = interpretDrAhmadDomain(title, text)
+  const solidConcepts = understanding.recognizedTerms.filter((term) => term.kind === 'concept' && term.score >= MIN_CONCEPT_SCORE)
+  const glossaryHero = solidConcepts[0]?.canonicalAr || ''
   const titleHero = heroWordOf(title || pool[0] || '')
-  const hero = titleHero || heroWordOf(title, text)
+  const hero = glossaryHero || titleHero || heroWordOf(title, text)
   return {
     title,
     text,
@@ -434,6 +477,7 @@ function readSource(source: TweetSource, offset: number): SourceReading {
     points: threePointsOf(text, title),
     url: clean(source.url || ''),
     resonant,
+    concepts: solidConcepts.map((term) => term.canonicalAr).slice(0, 4),
   }
 }
 
@@ -596,14 +640,23 @@ const HASHTAG_TOPICS: { test: RegExp; tags: string[] }[] = [
 const HASHTAG_FALLBACK = ['#التعليم', '#التربية']
 
 /** وسمان على الأكثر، مشتقّان من نص الفكرة — والأقرب دلالةً أولاً. */
+/** يحوّل مصطلحاً إلى وسمٍ صالح: كلمةٌ واحدة أو كلمتان بشرطةٍ سفلية. */
+function conceptTag(concept: string): string {
+  const words = wordsOf(concept).filter((word) => !STOPWORDS.has(word))
+  if (!words.length || words.length > 2) return ''
+  const tag = words.join('_').replace(/[^\p{L}\p{N}_]/gu, '')
+  return tag.length >= 4 ? `#${tag}` : ''
+}
+
 function hashtagsFor(reading: SourceReading): string[] {
   const haystack = `${reading.title} ${reading.text}`
+  /* **مفاهيمه أولاً.** المعجم يعرف ٢٩٠ مفهوماً من اصطلاح الدكتور نفسه، وهي
+     أدقّ من قائمةٍ عامّةٍ كتبتُها أنا. القائمة تبقى شبكةَ أمانٍ حين يصمت المعجم. */
+  const conceptTags = reading.concepts.map(conceptTag).filter(Boolean)
   const matched = HASHTAG_TOPICS.filter((topic) => topic.test.test(haystack)).flatMap((topic) => topic.tags)
   /* الكلمة المحورية وسماً حين تكون كلمةً واحدةً نظيفة لا تكرّر ما اختير. */
-  const heroTag = reading.conceptHero && !/\s/.test(reading.conceptHero) && reading.conceptHero.length >= 4
-    ? `#${reading.conceptHero}`
-    : ''
-  const ordered = uniqueStrings([...matched, heroTag, ...HASHTAG_FALLBACK])
+  const heroTag = reading.conceptHero ? conceptTag(reading.conceptHero) : ''
+  const ordered = uniqueStrings([...conceptTags, heroTag, ...matched, ...HASHTAG_FALLBACK])
   return ordered.slice(0, 2)
 }
 
@@ -671,7 +724,7 @@ export function buildTweets(source: TweetSource, options: TweetForgeOptions = {}
     }) || ''
     const lineVerified = Boolean(usedLine) && (verifyEcho(usedLine, reading.raw) || verifyEcho(usedLine, reading.text))
     const resonance = usedLine ? resonanceCountOf(usedLine, reading.resonant) : 0
-    const measured = scoreTweet(text, { hasQuote: lineVerified, hashtags: hashtags.length, links: reading.url ? 1 : 0, resonance })
+    const measured = scoreTweet(text, { hasQuote: lineVerified, hashtags: hashtags.length, links: reading.url ? 1 : 0, resonance, calibration: options.calibration })
     drafts.push({
       id: `tw-${hashString(`${seed}:${text}`).toString(16)}`,
       angle,

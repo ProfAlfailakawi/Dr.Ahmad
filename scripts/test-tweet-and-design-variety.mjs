@@ -47,7 +47,7 @@ const rendererUrl = await compile('src/lib/social-design-renderer.ts', { './soci
 const renderer = await import(rendererUrl)
 const echoesUrl = await compile('src/lib/voice-echoes.ts')
 const resonanceUrl = await compile('src/lib/resonance-quotes.ts')
-const forge = await import(await compile('src/lib/tweet-forge.ts', { './voice-echoes': echoesUrl, './resonance-quotes': resonanceUrl }))
+const forge = await import(await compile('src/lib/tweet-forge.ts', { './dr-ahmad-domain-glossary': glossaryUrl, './voice-echoes': echoesUrl, './resonance-quotes': resonanceUrl }))
 
 const guards = []
 const guard = (name) => guards.push(name)
@@ -169,7 +169,7 @@ guard('concept-hero-not-a-person')
 
 /* ═══ ٥ ــ دفتر «ما نُشر» وخطة الأسبوع ═════════════════════════════ */
 
-const mem = await import(await compile('src/lib/tweet-memory.ts', { './tweet-forge': await compile('src/lib/tweet-forge.ts', { './voice-echoes': echoesUrl, './resonance-quotes': resonanceUrl }) }))
+const mem = await import(await compile('src/lib/tweet-memory.ts', { './tweet-forge': await compile('src/lib/tweet-forge.ts', { './dr-ahmad-domain-glossary': glossaryUrl, './voice-echoes': echoesUrl, './resonance-quotes': resonanceUrl }) }))
 
 let ledger = mem.createEmptyTweetMemory()
 const hook = () => ({
@@ -289,6 +289,118 @@ guard('resonant-lines-lead-and-score-higher')
 /* غياب الرنين لا يكسر شيئاً — الأرشيف كله يبقى متاحاً. */
 assert.ok(forge.buildTweets({ ...source, resonantLines: [] }, { count: 6 }).length >= 5, 'بلا رنينٍ يعمل المسبك كما كان')
 guard('resonance-is-optional')
+
+/* ═══ ٧ ــ المعجم يغذّي التغريدات ══════════════════════════════════ */
+
+const glossaryDraft = forge.buildTweets(
+  { kind: 'article', id: 'taqweem', title: 'التقويم البديل في المدرسة الحديثة', text: 'التقويم البديل ليس بديلاً عن الامتحان بل عن فلسفته. الامتحان يسأل: ماذا تحفظ؟ والتقويم البديل يسأل: ماذا تستطيع أن تفعل بما تعرف؟ في تجربتنا تحوّل الطالب من متلقٍّ إلى صانع.' },
+  { count: 6, withHashtags: true },
+)
+const glossaryTags = [...new Set(glossaryDraft.flatMap((draft) => draft.hashtags))]
+assert.ok(
+  glossaryTags.some((tag) => tag.includes('التقويم')),
+  `وسوم مادةٍ عن التقويم البديل يجب أن تحمل مصطلحه من معجمه، خرجت: ${glossaryTags.join(' ')}`,
+)
+assert.ok(
+  glossaryDraft.some((draft) => draft.text.includes('التقويم البديل')),
+  'المصطلح المعياري من المعجم يجب أن يظهر في الأطر لا الكلمة المبتورة',
+)
+guard('glossary-drives-hero-and-hashtags')
+
+/* والعتبة تمنع المطابقة الجزئية من اختراع مفهومٍ لا وجود له في النص. */
+const familyTagsGlossary = forge.buildTweets(
+  { kind: 'free', id: 'fam2', title: 'الأسرة أول فصل دراسي', text: 'الأسرة أول فصل دراسي في حياة الطفل. البيت الذي يقرأ يصنع قارئاً. ولا تُبنى القيم بالمحاضرة بل بما يراه الطفل كل يوم في بيته.' },
+  { count: 4, withHashtags: true },
+).flatMap((draft) => draft.hashtags)
+assert.ok(
+  !familyTagsGlossary.some((tag) => tag.includes('رقمي') || tag.includes('الرقمية')),
+  `نصٌّ أسريٌّ لا رقمَ فيه لا يجوز أن يحمل وسماً رقمياً (مطابقةٌ جزئية)، خرجت: ${[...new Set(familyTagsGlossary)].join(' ')}`,
+)
+guard('glossary-threshold-blocks-partial-match')
+
+/* ═══ ٨ ــ حلقة الصدق: الدرجة تُعايَر بالواقع ══════════════════════ */
+
+const outcomeRecord = (index, keys, likes) => ({
+  id: `cal-${index}`,
+  excerpt: `تغريدة ${index}`,
+  angle: 'paradox',
+  sourceId: `src-${index}`,
+  sourceKind: 'article',
+  sourceTitle: `مادة ${index}`,
+  publishedAt: new Date(2026, 6, 1 + index).toISOString(),
+  score: 80,
+  chars: 200,
+  hadHashtags: false,
+  signalKeys: keys,
+  outcome: { impressions: 1000, likes, reposts: 0, replies: 0, recordedAt: new Date(2026, 6, 20).toISOString() },
+})
+
+/* لا معايرة قبل العتبة — الصمت أصدق من رقمٍ بلا سند. */
+const tooFew = Array.from({ length: 5 }, (_, index) => outcomeRecord(index, ['hook'], 90))
+assert.equal(mem.buildSignalCalibration(tooFew).length, 0, `دون ${mem.MIN_OUTCOME_SAMPLES} تغريداتٍ بأرقام لا يجوز أن تُعايَر إشارة`)
+guard('no-calibration-below-sample-floor')
+
+/* ولا لإشارةٍ يقلّ أحد جانبيها عن ثلاث. */
+const lopsided = [
+  ...Array.from({ length: 9 }, (_, index) => outcomeRecord(index, ['turn'], 50)),
+  outcomeRecord(20, ['hook', 'turn'], 90),
+]
+assert.ok(
+  !mem.buildSignalCalibration(lopsided).some((item) => item.key === 'hook'),
+  'إشارةٌ ظهرت مرةً واحدة لا تُعايَر مهما كثرت العيّنة الكلية',
+)
+guard('no-calibration-without-both-sides')
+
+/* وحين تكفي العيّنة: الأثر يُكتشف باتجاهه الصحيح، ويُغيّر الدرجة فعلاً. */
+const balanced = [
+  ...Array.from({ length: 5 }, (_, index) => outcomeRecord(index, ['hook', 'turn'], 90)),
+  ...Array.from({ length: 5 }, (_, index) => outcomeRecord(10 + index, ['no-hook', 'turn'], 30)),
+]
+const calibrations = mem.buildSignalCalibration(balanced)
+const hookCalibration = calibrations.find((item) => item.key === 'hook')
+assert.ok(hookCalibration, 'الإشارة ذات العيّنة الكافية يجب أن تُعايَر')
+assert.ok(hookCalibration.lift > 2, `الخطّاف ضاعف التفاعل ثلاثاً فيجب أن يُكتشف، وجدنا ${hookCalibration.lift}`)
+assert.ok(hookCalibration.multiplier <= 1.5 && hookCalibration.multiplier >= 0.6, 'المُضاعِف محصورٌ في [0.6, 1.5] — الواقع يعدّل تقديري ولا يلغيه')
+const negative = calibrations.find((item) => item.key === 'no-hook')
+assert.ok(negative && negative.multiplier < 1, 'والإشارة التي أضرّت يجب أن ينخفض مُضاعِفها')
+
+const probeText = 'هل نصنع الدافعية أم نتوارثها؟\n\nلا يصنعها شعارٌ يُعلَّق على الجدار، بل تجربةٌ يعيشها الطالب.'
+const plainScore = forge.scoreTweet(probeText)
+const tunedScore = forge.scoreTweet(probeText, { calibration: mem.calibrationMap(calibrations) })
+assert.ok(tunedScore.score > plainScore.score, `المعايرة يجب أن تحرّك الدرجة فعلاً (${plainScore.score} → ${tunedScore.score})`)
+const tunedHook = tunedScore.signals.find((signal) => signal.key === 'hook')
+assert.ok(tunedHook?.baseWeight != null && tunedHook.weight > tunedHook.baseWeight, 'والإشارة المعايَرة تُظهر وزنها الأصلي كي يرى الدكتور ما تغيّر')
+guard('calibration-learns-and-shows-its-work')
+
+/* لكل إشارةٍ مفتاحٌ ثابت — بلا ذلك تعذّرت المعايرة أصلاً. */
+const keyedSignals = forge.scoreTweet(probeText, { resonance: 7 }).signals
+assert.ok(keyedSignals.every((signal) => signal.key && !/\d/.test(signal.key)), 'كل إشارةٍ تحمل مفتاحاً ثابتاً لا رقم فيه')
+assert.equal(new Set(keyedSignals.map((signal) => signal.key)).size, keyedSignals.length, 'ولا يتكرر مفتاحان في تغريدةٍ واحدة')
+guard('signal-keys-are-stable')
+
+/* الأرقام تُسجَّل وتُمحى بيد الدكتور. */
+let outcomeLedger = mem.createEmptyTweetMemory()
+outcomeLedger = mem.recordPublishedTweet(outcomeLedger, round1[0], new Date(2026, 7, 1))
+const outcomeId = outcomeLedger.records[0].id
+assert.ok((outcomeLedger.records[0].signalKeys || []).length > 0, 'مفاتيح الإشارات تُحفظ ساعة النشر وإلا تعذّرت المعايرة لاحقاً')
+outcomeLedger = mem.recordTweetOutcome(outcomeLedger, outcomeId, { impressions: 900, likes: 30, reposts: 6 }, new Date(2026, 7, 3))
+assert.equal(mem.outcomeCount(outcomeLedger), 1, 'الأرقام تُسجَّل')
+assert.ok(mem.engagementOf(outcomeLedger.records[0]) > 0, 'ويُحسب منها تفاعل')
+outcomeLedger = mem.recordTweetOutcome(outcomeLedger, outcomeId, null, new Date())
+assert.equal(mem.outcomeCount(outcomeLedger), 0, 'وتُمحى بأمره')
+guard('outcome-recorded-and-erasable')
+
+/* إعادة النشر أثقل من الإعجاب — لأن الدكتور طلب ما يُعاد تغريده. */
+const likeHeavy = { ...outcomeRecord(1, [], 0), outcome: { impressions: 1000, likes: 30, reposts: 0, replies: 0, recordedAt: '' } }
+const repostHeavy = { ...outcomeRecord(2, [], 0), outcome: { impressions: 1000, likes: 10, reposts: 10, replies: 0, recordedAt: '' } }
+assert.ok(mem.engagementOf(repostHeavy) > mem.engagementOf(likeHeavy), 'عشرُ إعاداتٍ أثقل من ثلاثين إعجاباً')
+guard('reposts-weigh-more-than-likes')
+
+/* استوديو التصاميم واستوديو التغريدات على محلّلٍ واحد. */
+const designStudio = await readFile(resolve('src/components/admin/SocialDesignStudio.tsx'), 'utf8')
+assert.match(designStudio, /resolveResonantQuotes/, 'استوديو التصاميم يجب أن يستعمل المحلّل المشترك لا نسخةً ثانية')
+assert.doesNotMatch(designStudio, /paragraph\.slice\(Number\(row\.startOffset/, 'ولا تبقى فيه نسخةٌ يدويةٌ من الاقتطاع تتباعد عن الأصل')
+guard('one-resonance-resolver-for-both-studios')
 
 /* الكلمة المحورية تخرج بلا سابقةٍ ملتصقة: «بالمعرفة» كانت تصير «نتحدث عن بالمعرفة». */
 for (const draft of drafts) {

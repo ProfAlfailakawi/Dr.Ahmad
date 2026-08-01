@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-01",
+  "episodes": [
+    {
+      "slug": "a-generation-without-rootsarabic",
+      "title": "جيلٌ بلا جذور",
+      "cat": "هوية",
+      "iso": "2025-12-19",
+      "date": "19 ديسمبر 2025",
+      "question": "ماذا لو تربى الجيل في بيوت مشغولة دائما؟",
+      "speaker": "نورة",
+      "turn": 22,
+      "durationSec": 204
+    },
+    {
+      "slug": "alternative-plans-for-distance-education",
+      "title": "الخطط البديلة للتعليم عن بعد",
+      "cat": "التعليم",
+      "iso": "2020-03-24",
+      "date": "24 مارس 2020",
+      "question": "من أجل ماذا كل هذا الاستعداد المبكر؟",
+      "speaker": "فهد",
+      "turn": 32,
+      "durationSec": 204
+    }
+  ]
+}

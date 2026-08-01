@@ -1,5 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { usePersistentAudio } from '../lib/persistent-audio'
+import { listenIsOpen } from '../lib/listen-catalog'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (digit) => '0123456789'[+digit])
 const ARTICLE_VOICE_PREFERENCE_KEY = 'article-audio-reading-voice-v1'
@@ -119,6 +121,12 @@ const DialogueScriptView = memo(function DialogueScriptView({ script, activeInde
         })}
       </ol>
       {!timed && <p className="mt-2 px-2.5 text-[.68rem] text-soft">هذه حلقة أُنتجت قبل التوقيت؛ يظهر نصّها كاملاً بلا تتبّع.</p>}
+      {/* بابٌ واحد هادئ إلى بقية الحلقات، لا يراه إلا من يستمع الآن. */}
+      {listenIsOpen && (
+        <Link to="/listen" className="mt-3 inline-block px-2.5 text-[.72rem] text-soft transition-colors hover:text-accent">
+          مجلس الفكرة ←
+        </Link>
+      )}
     </div>
   )
 })
@@ -396,7 +404,8 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
                 تتبع النص
               </button>
             )}
-            {sources.map((item) => (
+            {/* مصدرٌ واحد لا يُختار: شارةٌ وحيدة تُضغط فلا يتغيّر شيء زحمةٌ لا خيار. */}
+            {sources.length > 1 && sources.map((item) => (
               <button
                 key={item.key}
                 type="button"

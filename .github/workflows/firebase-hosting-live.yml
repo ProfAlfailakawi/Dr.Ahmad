@@ -138,6 +138,7 @@ jobs:
           check "Audio reconciliation self-test" node scripts/reconcile-audio-meta.mjs --self-test
           check "Failure explainer self-test" node scripts/explain-failure.mjs --self-test
           check "Dialogue staging self-test" node scripts/stage-dialogues-local.mjs --self-test
+          check "Majlis index self-test" node scripts/build-listen-index.mjs --self-test
           check "Dialogue upload self-test" node scripts/upload-dialogues.mjs --self-test
           check "Article body audit self-test" node scripts/audit-article-bodies.mjs --self-test
 

@@ -499,7 +499,9 @@ type ArticleAudioControl = { readingDisabled?: boolean; fahedDisabled?: boolean;
 const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const audioUrl = (path: string) => audioBase ? `${audioBase}/${path.replace(/^\/?audio\//, '')}` : path
 const audioMetaMap = audioMeta as Record<string, { sha256?: string }>
-const versionedAudioUrl = (path: string) => {
+/* مُصدَّرة كي يستعملها «مجلس الفكرة» بالقانون نفسه: عنوانٌ واحد للصوت في
+   الموقع كله، وبصمةٌ واحدة تكسر التخزين المؤقت عند تغيّر الملف. */
+export const versionedAudioUrl = (path: string) => {
   const raw = /^https?:\/\//i.test(path) ? path : audioUrl(path)
   const name = decodeURIComponent((raw.split('?', 1)[0].split('/').pop() || '').trim())
   const version = audioMetaMap[name]?.sha256?.slice(0, 16)

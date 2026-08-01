@@ -206,17 +206,24 @@ export default function BookDetail() {
           </div>
 
           <FadeUp delay={0.14}>
-            <section className="mx-auto mt-14 max-w-[880px] border-t border-hair pt-10" aria-labelledby="book-description-title">
-              <span className="text-[.68rem] font-semibold text-accent">300–600 كلمة</span>
-              <h2 id="book-description-title" className="mt-1 font-display text-2xl font-semibold text-ink">عن الكتاب</h2>
-              <div className="mt-5 whitespace-pre-line text-[1rem] font-light leading-[2.05] text-ink/85">{longDescription}</div>
-            </section>
+            <details className="group mx-auto mt-14 max-w-[880px] overflow-hidden rounded-2xl border border-hair bg-canvas">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 px-5 py-5 md:px-7">
+                <span>
+                  <span id="book-description-title" className="block font-display text-2xl font-semibold text-ink">عن الكتاب</span>
+                  <span className="mt-1 block text-[.78rem] leading-relaxed text-soft">فكرة الكتاب وسياقه وطريقة قراءته.</span>
+                </span>
+                <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <div className="whitespace-pre-line border-t border-hair bg-wash/45 px-5 py-6 text-[1rem] font-light leading-[2.05] text-ink/85 md:px-7 md:py-8">{longDescription}</div>
+            </details>
           </FadeUp>
 
           <FadeUp delay={0.18}>
             <section className="mx-auto mt-12 max-w-[880px] rounded-2xl border border-hair bg-wash p-5 md:p-7" aria-labelledby="book-toc-title">
-              <span className="text-[.68rem] font-semibold text-accent">من النسخة المعتمدة</span>
-              <h2 id="book-toc-title" className="mt-1 font-display text-2xl font-semibold text-ink">فهرس المحتويات</h2>
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <h2 id="book-toc-title" className="font-display text-2xl font-semibold text-ink">فهرس المحتويات</h2>
+                {toc.length > 0 && <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.68rem] text-soft">{toc.length} عنواناً</span>}
+              </div>
               {toc.length ? <ol className="mt-5 grid gap-2 sm:grid-cols-2">{toc.map((item, index) => <li key={`${item}-${index}`} className="flex gap-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-ink"><span className="shrink-0 font-display text-accent">{String(index + 1).padStart(2, '0')}</span><span>{item}</span></li>)}</ol> : <p className="mt-4 text-[.82rem] leading-relaxed text-soft">لم يُنشر الفهرس قبل مطابقته بالنسخة المطبوعة. يمكن اعتماده من لوحة التحكم، ولن يعرض الموقع عناوين مُخمنة.</p>}
             </section>
           </FadeUp>

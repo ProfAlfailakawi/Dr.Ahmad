@@ -4,6 +4,7 @@ import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, needsHumanOnly, sign } from './bot-rules.mjs'
 import { getBotMessages } from './bot-messages.mjs'
+import { spokenReply } from './spoken-index.mjs'
 import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD } from './scholar.mjs'
 import {
   dialogueModeReply,
@@ -487,6 +488,20 @@ export function groundedRescue(db, rawText) {
     const named = clean(`${item.title || ''} ${item.keywords || ''}`)
     return words.some((word) => named.includes(word))
   })
+  /* قبل «هذي أقرب موادّه»: هل قالها الدكتور بصوته في حلقة؟ نصوص المجلس موقّتة
+     بالثانية، فالجملة نفسها أصدق من قائمة روابط — ورابطُها يفتح الحلقة عند
+     اللحظة التي قيلت فيها. ولا يُرسَل صوتٌ في الرسالة: الجملةُ والرابط فقط. */
+  const spoken = spokenReply(query)
+  if (spoken) {
+    const nearest = (onDomain.length ? onDomain : namedContentMatches(db, words, 2)).slice(0, 2)
+    const reading = nearest.map((item) => item.title + '\n' + item.url).join('\n\n')
+    return {
+      text: nearest.length ? spoken.text + '\n\nوللقراءة:\n' + reading : spoken.text,
+      contentId: nearest[0]?.id,
+      contextItems: nearest.map((item) => item.id),
+      seenContentIds: nearest.map((item) => item.id),
+    }
+  }
   const chosen = onDomain.length ? onDomain : namedContentMatches(db, words, 3)
   if (!chosen.length) return null
   const choices = chosen.slice(0, 3)

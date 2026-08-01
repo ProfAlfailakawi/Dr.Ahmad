@@ -271,7 +271,7 @@ function publishReadiness(kind: ManagedKind, form: Form) {
     )
   } else if (kind === 'book') {
     checks.push(
-      { label: 'وصف موسّع (٣٠٠–٦٠٠ كلمة)', ok: (() => { const count = (form.longDescription || '').trim().split(/\s+/).filter(Boolean).length; return count >= 300 && count <= 600 })() },
+      { label: 'وصف الكتاب', ok: Boolean((form.longDescription || '').trim()) },
       { label: 'غلاف الكتاب', ok: Boolean(form.cover) },
       { label: 'البيانات الببليوغرافية', ok: Boolean(form.year && form.edition && form.publisher && form.pageCount && form.isbn) },
       { label: 'الجمهور وسبب التأليف والفهرس', ok: Boolean(form.targetAudience && form.whyWritten && form.toc) },
@@ -1306,7 +1306,7 @@ ${form.outlet || ''}`
               </div>
               <Field label="ISBN / ردمك"><input className={input} dir="ltr" value={form.isbn || ''} onChange={(event) => set('isbn', event.target.value)} /></Field>
               <Field label="الوصف المختصر"><textarea className={`${input} min-h-24 leading-loose`} value={form.desc || ''} onChange={(event) => set('desc', event.target.value)} /></Field>
-              <Field label="الوصف الموسّع (300–600 كلمة)" hint={`${(form.longDescription || '').trim().split(/\s+/).filter(Boolean).length} كلمة`}><textarea className={`${input} min-h-64 leading-loose`} value={form.longDescription || ''} onChange={(event) => set('longDescription', event.target.value)} /></Field>
+              <Field label="الوصف الموسّع" hint={`${(form.longDescription || '').trim().split(/\s+/).filter(Boolean).length} كلمة`}><textarea className={`${input} min-h-64 leading-loose`} value={form.longDescription || ''} onChange={(event) => set('longDescription', event.target.value)} /></Field>
               <Field label="الفئة المستهدفة"><textarea className={`${input} min-h-24 leading-loose`} value={form.targetAudience || ''} onChange={(event) => set('targetAudience', event.target.value)} /></Field>
               <Field label="لماذا كُتب الكتاب؟"><textarea className={`${input} min-h-24 leading-loose`} value={form.whyWritten || ''} onChange={(event) => set('whyWritten', event.target.value)} /></Field>
               <Field label="فهرس المحتويات" hint="عنوان واحد في كل سطر؛ لا تُدخل رقماً إلا بعد مطابقته بالنسخة المعتمدة."><textarea className={`${input} min-h-48 leading-loose`} value={form.toc || ''} onChange={(event) => set('toc', event.target.value)} /></Field>

@@ -3054,7 +3054,22 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       decision.plan.referencesNeeded.length ? `تحقق قبل الحسم من: ${decision.plan.referencesNeeded.join(' ')}` : '',
       evidenceOverride && decision.evidenceGate.missing.length ? `بوابة الدليل — أكمل قبل النشر: ${decision.evidenceGate.missing.join(' ')}` : '',
     ].filter(Boolean).join('\n')
+    const seeded = buildBundle(decision.plan.primaryTitle, audience, handoffAngle, richArticles)
+    setBundle({
+      ...seeded,
+      title: decision.plan.primaryTitle,
+      slug: makeSlug(decision.plan.primaryTitle),
+      socialPack: null,
+    })
+    setIdea(decision.plan.primaryTitle)
     setAngle(handoffAngle)
+    /* لا نربط فتح المحرر بنجاح الشبكة: القرار والعنوان وملاحظة الدليل تنتقل
+       فوراً، ثم يصل النص إلى المحرر نفسه. وكان تأخير الانتقال حتى نهاية الطلب
+       يجعل أي بطء أو خطأ يبدو كأنه أعاد الصفحة بلا استجابة. */
+    setView('write')
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      document.getElementById('article-writing-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }))
     const written = await rebuild({ title: decision.plan.primaryTitle, angle: handoffAngle })
     if (!written) return
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
@@ -3814,6 +3829,17 @@ ${effectivePurpose}`,
 
       {view === 'write' && (
         <>
+        {generating && <section className={`${card} border-accent/30`} aria-live="polite" data-article-generation-state="working">
+          <div className="h-1.5 overflow-hidden rounded-full bg-hair/60"><div className="h-full w-2/3 animate-pulse rounded-full bg-accent" /></div>
+          <h2 className="mt-4 font-display text-xl font-semibold text-ink">أكتب المقال الآن داخل المحرر.</h2>
+          <p className="mt-2 text-[.8rem] leading-relaxed text-soft">انتقلت الفكرة والعنوان وملاحظات مجلس التحرير. سيظهر النص هنا فور اكتمال الكتابة، من دون نقلك إلى أعلى الصفحة.</p>
+        </section>}
+        {!generating && error && <section className={`${card} border-red-300/45`} role="alert" data-article-generation-state="error">
+          <h2 className="font-display text-xl font-semibold text-ink">تعذّرت الكتابة، وبقيت الفكرة محفوظة.</h2>
+          <p className="mt-2 text-[.82rem] leading-relaxed text-soft">{error}</p>
+          <button type="button" className={`${ghost} mt-4`} onClick={() => void rebuild({ title: bundle.title, angle })}>أعد محاولة كتابة المقال</button>
+        </section>}
+        {!generating && notice && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.84rem] leading-relaxed text-accent" aria-live="polite">{notice}</p>}
         <div id="article-writing-workspace" className="scroll-mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,.7fr)]">
           <section className={card}>
             <div className="grid gap-4">

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
@@ -37,9 +37,20 @@ export default function MediaDetail() {
   const seed = useMemo(() => new Set(ideaWords(`${item?.title || ''} ${item?.topics || ''}`)), [item?.title, item?.topics])
   const articleLinks = useMemo(() => related(seed, articles, (article) => `${article.title} ${article.excerpt || ''} ${article.cat || ''}`, 4), [articles, seed])
   const paperLinks = useMemo(() => related(seed, papers, (paper) => `${paper.title} ${paper.titleAr || ''} ${paper.abstractAr || ''} ${paper.meta || ''}`, 3), [papers, seed])
-  const start = clockSeconds(item?.clipStart)
-  const end = clockSeconds(item?.clipEnd)
-  const excerptUrl = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&start=${start}${end > start ? `&end=${end}` : ''}` : ''
+  const playerUrl = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0` : ''
+  const [youtubeTranscript, setYoutubeTranscript] = useState('')
+
+  useEffect(() => {
+    let active = true
+    setYoutubeTranscript(item?.transcript || '')
+    if (!videoId || item?.transcript) return () => { active = false }
+    void import('../data/media-transcripts.json').then(({ default: transcripts }) => {
+      if (active) setYoutubeTranscript((transcripts as Record<string, string>)[videoId] || '')
+    }).catch(() => {
+      if (active) setYoutubeTranscript('')
+    })
+    return () => { active = false }
+  }, [item?.transcript, videoId])
 
   useSeo({
     title: item?.title || 'ظهور إعلامي',
@@ -70,7 +81,6 @@ export default function MediaDetail() {
             inLanguage: 'ar',
             about: topics.map((name) => ({ '@type': 'Thing', name })),
             creator: { '@type': 'Person', '@id': `${SITE_URL}/#person`, name: 'د. أحمد حسين الفيلكاوي' },
-            ...(start >= 0 && end > start ? { hasPart: { '@type': 'Clip', name: 'مقتطف اللقاء', startOffset: start, endOffset: end, url: `${SITE_URL}/media/${item.slug}#excerpt` } } : {}),
           },
           {
             '@type': 'BreadcrumbList',
@@ -101,25 +111,23 @@ export default function MediaDetail() {
           </FadeUp>
 
           <FadeUp delay={0.1}>
-            <section id="excerpt" className="mt-8" aria-labelledby="excerpt-title">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div><span className="text-[.68rem] font-semibold text-accent">مقتطف مركز</span><h2 id="excerpt-title" className="mt-1 font-display text-xl font-semibold text-ink">{end > start ? `${end - start} ثانية من اللقاء` : 'مقتطف من اللقاء'}</h2></div>
-                <span className="text-[.7rem] text-soft" dir="ltr">{item.clipStart || '00:00'} — {item.clipEnd || '00:45'}</span>
+            <section className="mt-8" aria-labelledby="video-title">
+              <h2 id="video-title" className="font-display text-xl font-semibold text-ink">اللقاء الكامل</h2>
+              <div className="mt-4 overflow-hidden rounded-2xl border border-hair bg-ink shadow-[0_18px_50px_rgba(20,31,45,.08)]" style={{ aspectRatio: '16 / 9' }}>
+                {playerUrl ? <iframe src={playerUrl} title={item.title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="h-full w-full border-0" /> : <div className="flex h-full items-center justify-center text-white/70">المعاينة غير متاحة</div>}
               </div>
-              <div className="mt-4 overflow-hidden rounded-2xl border border-hair bg-ink" style={{ aspectRatio: '16 / 9' }}>
-                {excerptUrl ? <iframe src={excerptUrl} title={`مقتطف: ${item.title}`} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="h-full w-full border-0" /> : <div className="flex h-full items-center justify-center text-white/70">المعاينة غير متاحة</div>}
-              </div>
-              <a href={item.url} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-full bg-accent px-6 py-3 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep">مشاهدة الفيديو الكامل ↗</a>
             </section>
           </FadeUp>
 
-          <FadeUp delay={0.14}>
-            <section className="mt-10 rounded-2xl border border-hair bg-wash p-5 md:p-7" aria-labelledby="transcript-title">
-              <span className="text-[.68rem] font-semibold text-accent">Transcript</span>
-              <h2 id="transcript-title" className="mt-1 font-display text-xl font-semibold text-ink">النص المفرّغ</h2>
-              {item.transcript ? <div className="mt-4 whitespace-pre-line text-[.94rem] leading-[2] text-ink/85">{item.transcript}</div> : <p className="mt-3 text-[.82rem] leading-relaxed text-soft">النص التلقائي لا يُنشر قبل مراجعته لغوياً. الحقل جاهز في لوحة التحكم، ويظهر هنا فور اعتماد النسخة المنقحة.</p>}
-            </section>
-          </FadeUp>
+          {youtubeTranscript && <FadeUp delay={0.14}>
+            <details className="group mt-10 overflow-hidden rounded-2xl border border-hair bg-wash">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-5 p-5 md:px-7">
+                <span><span id="transcript-title" className="block font-display text-xl font-semibold text-ink">النص المفرّغ</span><span className="mt-1 block text-[.7rem] text-soft">من النص العربي التلقائي المتاح في YouTube</span></span>
+                <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <div className="max-h-[34rem] overflow-y-auto whitespace-pre-line border-t border-hair bg-canvas px-5 py-6 text-[.9rem] leading-[2] text-ink/85 md:px-7">{youtubeTranscript}</div>
+            </details>
+          </FadeUp>}
 
           {(articleLinks.length > 0 || paperLinks.length > 0) && <FadeUp delay={0.18}>
             <section className="mt-10 border-t border-hair pt-8" aria-labelledby="media-related-title">

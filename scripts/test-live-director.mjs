@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
+import ts from 'typescript'
 import { resolve } from 'node:path'
 import {
   createArticleVideoProject,
@@ -163,6 +165,73 @@ check(/المادة المولدة من Flow 48 ثانية/.test(near.statement)
 check(liveDirectorPerformanceInsights([]).notes[0] === 'لا توجد بيانات كافية بعد.', 'لا استنتاج قبل عينة كافية')
 check(/live-director-frames/.test(liveUi) && !/ffmpeg|api\/video|cloudinary/i.test(liveUi), 'استخراج الإطار داخل المتصفح بلا خدمة خارجية')
 check(/بلا Flow API|لا Flow API|بلا Flow/.test(liveUi) || !/flow\.google|veo/i.test(liveUi), 'لا استدعاء إلى Flow أو Veo')
+
+// 72–90: صوت د. أحمد — رنين القرّاء ومسبك التغريدات بدل النص المُعلَّب.
+const loud = 'المعلم لا يفقد دوره حين تظهر أداة جديدة؛ بل ينتقل من نقل الإجابة إلى بناء السؤال.'
+const quieter = 'المدرسة التي تقيس الحفظ وحده ستربح الاختبار وتخسر العقل.'
+const richBody = [loud, quieter, 'التقنية تكشف ما في المدرسة ولا تصنعه من عدم.', 'السؤال الحقيقي ليس ماذا تفعل الأداة بل ماذا تفعل بنا.', 'في المقابل تظهر تجربة أخرى تكشف نتيجة مختلفة عن الشائع.'].join(' ')
+const richArticle = { ...buildArticle(400), body: richBody, excerpt: 'سؤال يتكرر كل عام ويحتاج جواباً هادئاً لا حماسياً.' }
+const injected = {
+  resonantLines: [{ text: loud, count: 14 }, { text: quieter, count: 6 }],
+  verifiedLine: quieter,
+  drafts: [
+    { angle: 'core-claim', angleLabel: 'الجملة الحاكمة', text: loud, hashtags: ['#التعليم'], quote: loud, quoteVerified: true, score: 91, resonanceCount: 14 },
+    { angle: 'scene', angleLabel: 'مشهد قصير', text: 'طفلٌ يسأل، وشاشةٌ تجيب فوراً. والمعلم كان يسأله: ولماذا تظن ذلك؟', hashtags: ['#المعلم'], quote: '', quoteVerified: false, score: 84 },
+    { angle: 'rule', angleLabel: 'قاعدة', text: quieter, hashtags: [], quote: quieter, quoteVerified: true, score: 78 },
+    { angle: 'invitation', angleLabel: 'دعوة', text: 'كتبتُ عن هذا السؤال بهدوء. اقرأه ثم اختبره في صفّك.', hashtags: [], quote: '', quoteVerified: false, score: 60 },
+  ],
+}
+const voiced = createArticleVideoProject({ article: richArticle, forge: injected, useAvatar: true })
+
+check(voiced.segments[0].narrationSource === 'resonance' && voiced.segments[0].resonanceCount === 14, 'الخطاف من الجملة التي ظلّلها أكثر القرّاء')
+check(voiced.segments.some((segment) => segment.role.includes('رأي') && segment.narrationSource === 'resonance'), 'مقطع الرأي من كلامه المُظلَّل')
+check(voiced.segments.every((segment) => !segment.narration || !/^بل\s|\s(?:بل|من|في|إلى|على|عن|أن|و)$/.test(segment.narration)), 'لا تُقطع جملته في منتصف المعنى')
+check(new Set(voiced.segments.map((segment) => segment.narration).filter(Boolean)).size === voiced.segments.filter((segment) => segment.narration).length, 'لا تتكرر جملة منطوقة بين مقطعين')
+check(voiced.segments.every((segment) => ['resonance', 'verified', 'derived', 'scaffold'].includes(segment.narrationSource)), 'لكل جملة نسبٌ معلوم')
+
+check(voiced.social.x.includes(loud), 'التغريدة من المسبك لا من قالب ثابت')
+check(voiced.social.instagram.includes('طفلٌ يسأل'), 'Instagram من زاوية إنسانية مختلفة')
+check(voiced.social.linkedin.includes(quieter), 'LinkedIn من زاوية مهنية مختلفة')
+check(new Set([voiced.social.x, voiced.social.instagram, voiced.social.linkedin, voiced.social.caption]).size === 4, 'أربع مواد نشر متمايزة')
+check(voiced.social.hashtags.length <= 2 && voiced.social.hashtags.includes('#التعليم'), 'وسوم من المسبك لا وسمان ثابتان')
+const canned = ['ليست الفكرة أن نضيف أداة جديدة', 'قد تبدو المسألة تقنية', 'جودة القرار لا تُقاس بحداثة الأداة', 'المشكلة ليست في الحدث وحده', 'رأيي أن القرار الجيد يبدأ من الإنسان']
+const engineSource = readFileSync(resolve(ROOT, 'src/lib/live-director.ts'), 'utf8')
+check(canned.every((phrase) => !engineSource.includes(phrase)), 'حذف الجمل المُعلَّبة من المحرك')
+
+// المشروع بلا رنين ولا مسبك يجب أن يبقى عاملاً — الغياب لا يُفرغ المخرجات.
+const bare = createArticleVideoProject({ article: richArticle, useAvatar: true })
+check(bare.segments.every((segment) => segment.narrationSource !== 'resonance') && bare.segments.filter((segment) => segment.narration).length >= 4, 'غياب الرنين لا يوقف المشروع')
+check(Boolean(bare.social.x && bare.social.instagram && bare.social.linkedin) && new Set([bare.social.x, bare.social.instagram, bare.social.linkedin]).size === 3, 'غياب المسبك يُبقي مواد النشر متمايزة')
+
+// وصلٌ حقيقي بالمسبك نفسه — لا نكتفي بمسودات مصطنعة.
+const compile = async (path, replacements = {}) => {
+  const source = await readFile(resolve(ROOT, path), 'utf8')
+  const result = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ES2020, strict: true }, fileName: resolve(ROOT, path) })
+  let output = result.outputText
+  for (const [specifier, url] of Object.entries(replacements)) output = output.replace(specifier, url)
+  return `data:text/javascript;base64,${Buffer.from(output).toString('base64')}`
+}
+const glossaryJson = await readFile(resolve(ROOT, 'src/data/dr-ahmad-domain-glossary.json'), 'utf8')
+const glossarySource = (await readFile(resolve(ROOT, 'src/lib/dr-ahmad-domain-glossary.ts'), 'utf8'))
+  .replace("import glossaryData from '../data/dr-ahmad-domain-glossary.json'", `const glossaryData = ${glossaryJson}`)
+const glossaryUrl = `data:text/javascript;base64,${Buffer.from(ts.transpileModule(glossarySource, { compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ES2020 } }).outputText).toString('base64')}`
+const realForge = await import(await compile('src/lib/tweet-forge.ts', {
+  './dr-ahmad-domain-glossary': glossaryUrl,
+  './voice-echoes': await compile('src/lib/voice-echoes.ts'),
+  './resonance-quotes': await compile('src/lib/resonance-quotes.ts'),
+}))
+const realDrafts = realForge.buildTweets({ kind: 'article', id: 'a', title: richArticle.title, text: richBody, url: 'https://dr-alfailakawi.com/articles/a', resonantLines: injected.resonantLines }, { count: 8, withHashtags: true })
+check(realDrafts.length >= 3, 'المسبك الحقيقي ينتج زوايا متعددة')
+const realProject = createArticleVideoProject({
+  article: richArticle,
+  forge: { drafts: realDrafts.map((draft) => ({ angle: draft.angle, angleLabel: draft.angleLabel, text: draft.text, hashtags: draft.hashtags, quote: draft.quote, quoteVerified: draft.quoteVerified, score: draft.score, resonanceCount: draft.resonanceCount })), verifiedLine: realForge.verifiedLineOf(richBody, richArticle.title), resonantLines: injected.resonantLines },
+})
+check(new Set([realProject.social.x, realProject.social.instagram, realProject.social.linkedin]).size === 3, 'المسبك الحقيقي يعطي ثلاث مواد متمايزة')
+check(realProject.social.x.length > 0 && !realProject.social.x.includes('undefined'), 'نص المسبك الحقيقي سليم')
+check(realDrafts.some((draft) => draft.resonanceCount > 0), 'المسبك يكافئ الجمل التي ظلّلها القرّاء')
+const liveUiVoice = readFileSync(resolve(ROOT, 'src/components/admin/LiveDirector.tsx'), 'utf8')
+check(/buildTweets|verifiedLineOf/.test(liveUiVoice) && /article_highlights/.test(liveUiVoice), 'اللوحة تصل المسبك والرنين فعلاً')
+check(/NARRATION_SOURCE_LABELS/.test(liveUiVoice), 'اللوحة تُظهر نسب كل جملة')
 
 assert.ok(checks >= 35)
 console.log(`✓ المخرج الحي: ${checks}/${checks}`)

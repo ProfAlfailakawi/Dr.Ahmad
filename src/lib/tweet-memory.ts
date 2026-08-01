@@ -22,6 +22,15 @@ export const TWEET_MEMORY_VERSION = 1
 /** أقصى ما يُحفظ في الدفتر — يبقى دون سقف مستند Firestore بمراحل. */
 const MAX_RECORDS = 400
 
+/** أرقامُ الواقع كما نقلها الدكتور من X — لا تُجلب من API مدفوع. */
+export interface TweetOutcome {
+  impressions?: number
+  likes?: number
+  reposts?: number
+  replies?: number
+  recordedAt: string
+}
+
 export interface TweetPublishRecord {
   /** بصمة النص — هي مفتاح منع التكرار. */
   id: string
@@ -35,6 +44,10 @@ export interface TweetPublishRecord {
   score: number
   chars: number
   hadHashtags: boolean
+  /** مفاتيح الإشارات التي حملتها التغريدة ساعةَ صياغتها — بها تُعايَر الأوزان. */
+  signalKeys?: string[]
+  /** ما حدث فعلاً بعد النشر. */
+  outcome?: TweetOutcome
 }
 
 export interface TweetTasteProfile {
@@ -131,6 +144,7 @@ export function recordPublishedTweet(memory: TweetMemory, draft: TweetDraft, at:
     score: draft.score,
     chars: draft.chars,
     hadHashtags: draft.hashtags.length > 0,
+    signalKeys: draft.signals.map((signal) => signal.key).filter(Boolean),
   }
   const records = [record, ...memory.records].slice(0, MAX_RECORDS)
   const samples = memory.taste.samples + 1
@@ -195,6 +209,101 @@ export function tasteHighlights(taste: TweetTasteProfile | undefined, labelOf: (
   }
   return out
 }
+
+/* ------------------------------------------------------------------ */
+/*              حلقة الصدق: الدرجة تُعايَر بأرقام الواقع                 */
+/* ------------------------------------------------------------------ */
+
+/** أدنى عددٍ من التغريدات ذات أرقامٍ قبل أن نزعم أننا تعلّمنا شيئاً. */
+export const MIN_OUTCOME_SAMPLES = 8
+/** وأدنى عددٍ في كل جانبٍ من المقارنة (حَمَلت الإشارة / لم تحملها). */
+const MIN_SIDE_SAMPLES = 3
+
+/**
+ * وزنُ التفاعل: إعادةُ النشر أثقل من الإعجاب، لأن الدكتور طلب صراحةً ما
+ * «يصير عليه اعادة توجيه وتغريد». والردّ بينهما — يدلّ على أنها حرّكت شيئاً.
+ */
+export function engagementOf(record: TweetPublishRecord): number | null {
+  const outcome = record.outcome
+  if (!outcome) return null
+  const likes = Number(outcome.likes || 0)
+  const reposts = Number(outcome.reposts || 0)
+  const replies = Number(outcome.replies || 0)
+  const raw = likes + reposts * 3 + replies * 2
+  if (!raw && !outcome.impressions) return null
+  /* حين توجد المشاهدات نقيس النسبة لا العدد المطلق — تغريدةٌ بألف مشاهدة
+     وعشرين تفاعلاً أنجح من واحدةٍ بعشرة آلاف مشاهدة وخمسين. */
+  const impressions = Number(outcome.impressions || 0)
+  return impressions >= 50 ? (raw / impressions) * 1000 : raw
+}
+
+export interface SignalCalibration {
+  key: string
+  /** مُضاعِفُ الوزن: 1 يعني «كما قدّرتُه». */
+  multiplier: number
+  /** نسبةُ متوسط التفاعل مع الإشارة إلى متوسطه بدونها. */
+  lift: number
+  withSamples: number
+  withoutSamples: number
+}
+
+const mean = (list: readonly number[]) => list.reduce((sum, value) => sum + value, 0) / Math.max(1, list.length)
+
+/**
+ * يقيس أثر كل إشارةٍ على الواقع: متوسط تفاعل التغريدات التي حملتها مقابل
+ * متوسط التي لم تحملها.
+ *
+ * وثلاث قيودٍ تحفظ الصدق:
+ *  • لا معايرة قبل ثماني تغريداتٍ بأرقام، ولا لإشارةٍ يقلّ أحد جانبيها عن ثلاث.
+ *  • المُضاعِف محصورٌ في ‎[0.6, 1.5]‎ — الواقع يعدّل التقدير ولا يلغيه، فعيّنةٌ
+ *    من عشرين تغريدةً لا تكفي لقلب قاعدةٍ بلاغية رأساً على عقب.
+ *  • ما لا تكفي عيّنته لا يظهر أصلاً — الصمت أصدق من رقمٍ بلا سند.
+ */
+export function buildSignalCalibration(records: readonly TweetPublishRecord[]): SignalCalibration[] {
+  const measured = records
+    .map((record) => ({ record, value: engagementOf(record) }))
+    .filter((item): item is { record: TweetPublishRecord; value: number } => item.value != null)
+  if (measured.length < MIN_OUTCOME_SAMPLES) return []
+
+  const keys = [...new Set(measured.flatMap((item) => item.record.signalKeys || []))]
+  const out: SignalCalibration[] = []
+  for (const key of keys) {
+    const withSignal = measured.filter((item) => (item.record.signalKeys || []).includes(key)).map((item) => item.value)
+    const withoutSignal = measured.filter((item) => !(item.record.signalKeys || []).includes(key)).map((item) => item.value)
+    if (withSignal.length < MIN_SIDE_SAMPLES || withoutSignal.length < MIN_SIDE_SAMPLES) continue
+    const withoutMean = mean(withoutSignal)
+    if (withoutMean <= 0) continue
+    const lift = mean(withSignal) / withoutMean
+    out.push({
+      key,
+      lift: Number(lift.toFixed(3)),
+      multiplier: Number(clamp(lift, 0.6, 1.5).toFixed(3)),
+      withSamples: withSignal.length,
+      withoutSamples: withoutSignal.length,
+    })
+  }
+  return out.sort((left, right) => right.lift - left.lift)
+}
+
+/** الخريطة التي يستهلكها المسبك: مفتاح ← مُضاعِف. */
+export const calibrationMap = (calibrations: readonly SignalCalibration[]): Record<string, number> =>
+  Object.fromEntries(calibrations.map((item) => [item.key, item.multiplier]))
+
+/** يسجّل أرقام تغريدةٍ نُشرت — أو يحذفها حين تُمرَّر null. */
+export function recordTweetOutcome(memory: TweetMemory, id: string, outcome: Omit<TweetOutcome, 'recordedAt'> | null, at: Date): TweetMemory {
+  return {
+    ...memory,
+    records: memory.records.map((record) => {
+      if (record.id !== id) return record
+      if (!outcome) { const { outcome: _drop, ...rest } = record; return rest }
+      return { ...record, outcome: { ...outcome, recordedAt: at.toISOString() } }
+    }),
+  }
+}
+
+/** كم تغريدةً في الدفتر تحمل أرقاماً — لعرض تقدّم التعلّم للدكتور. */
+export const outcomeCount = (memory: TweetMemory | undefined) =>
+  (memory?.records || []).filter((record) => engagementOf(record) != null).length
 
 /* ------------------------------------------------------------------ */
 /*                            الخزن والمزامنة                          */

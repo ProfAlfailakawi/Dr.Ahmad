@@ -44,7 +44,13 @@ import {
   storeTweetMemory,
   tasteHighlights,
   tweetTasteAffinity,
+  buildSignalCalibration,
+  calibrationMap,
+  outcomeCount,
+  recordTweetOutcome,
+  MIN_OUTCOME_SAMPLES,
   type TweetMemory,
+  type TweetPublishRecord,
 } from '../../lib/tweet-memory'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
@@ -65,11 +71,113 @@ const SOURCE_TABS: { kind: TweetSourceKind; label: string; note: string }[] = [
 
 const SITE = 'https://dr-alfailakawi.com'
 
+/** أسماءٌ عربيةٌ لمفاتيح الإشارات — تُعرض في لوحة «ما علّمك إياه الواقع». */
+const SIGNAL_NAMES: Record<string, string> = {
+  hook: 'خطّافٌ في أول سطر',
+  'no-hook': 'بدايةٌ تقريرية',
+  'length-sweet': 'طولٌ في نطاق الانتشار',
+  'length-short': 'أقصر من أن تحمل فكرة',
+  'length-long': 'أطول من القراءة السريعة',
+  turn: 'منعطفٌ يقلب المعنى',
+  'breathing-lines': 'مُقطَّعةٌ إلى أسطر',
+  'one-block': 'كتلةٌ واحدة بلا تنفّس',
+  'short-sentences': 'جُملٌ قصيرة',
+  'long-sentences': 'جُملٌ طويلة',
+  concrete: 'صورةٌ محسوسة',
+  jargon: 'لغةٌ أكاديمية',
+  'verified-quote': 'جملةٌ موثّقةٌ من متنك',
+  resonance: 'سطرٌ ظلّله القرّاء',
+  'ends-well': 'تنتهي بمعنى',
+  'ends-badly': 'تنتهي برابطٍ أو وسم',
+  'no-hashtags': 'بلا وسوم',
+  'two-hashtags': 'وسمان',
+  'many-hashtags': 'وسومٌ كثيرة',
+  'many-links': 'أكثر من رابط',
+  'promo-opener': 'تفتح بترويج',
+  'repeated-marks': 'علاماتٌ مكرّرة',
+  emoji: 'رموزٌ تعبيرية',
+  'quotable-line': 'سطرٌ يُقتبس وحده',
+}
+
 /** يسلّم نص التغريدة إلى «منشور مستقل» في استوديو النشر. */
 function sendToStandalone(draft: TweetDraft) {
   const seed = { idea: draft.standalonePost, purpose: draft.designPurpose, at: new Date().toISOString() }
   try { localStorage.setItem('studio-standalone-seed', JSON.stringify(seed)) } catch { /* الخزن ليس شرطاً */ }
   window.dispatchEvent(new CustomEvent('studio:standalone-seed', { detail: seed }))
+}
+
+type OutcomeInput = { impressions?: number; likes?: number; reposts?: number; replies?: number }
+
+/**
+ * صفُّ الدفتر: التغريدة المنشورة، وزرُّ إدخال أرقامها من X يدوياً.
+ * يدويٌّ لأن واجهة X مدفوعة — والدكتور قال «ما ابي اصلا شي ادفع عليه».
+ */
+function LedgerRow({ record, onSaveOutcome, onForget }: { record: TweetPublishRecord; onSaveOutcome: (id: string, outcome: OutcomeInput | null) => void; onForget: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({
+    impressions: String(record.outcome?.impressions ?? ''),
+    likes: String(record.outcome?.likes ?? ''),
+    reposts: String(record.outcome?.reposts ?? ''),
+    replies: String(record.outcome?.replies ?? ''),
+  })
+  const num = (value: string) => { const parsed = Number(value.replace(/[^\d]/g, '')); return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined }
+  const fields: { key: keyof typeof form; label: string }[] = [
+    { key: 'impressions', label: 'مشاهدات' },
+    { key: 'likes', label: 'إعجاب' },
+    { key: 'reposts', label: 'إعادة نشر' },
+    { key: 'replies', label: 'ردود' },
+  ]
+  return (
+    <li className="rounded-xl border border-hair bg-paper p-2.5">
+      <div className="flex items-start justify-between gap-3">
+        <span className="min-w-0">
+          <span className="text-[.58rem] font-bold text-accent">{TWEET_ANGLES[record.angle]?.label || record.angle} · {new Date(record.publishedAt).toLocaleDateString('ar', { day: 'numeric', month: 'short' })}</span>
+          <span className="mt-0.5 block truncate text-[.7rem] text-ink">{record.excerpt}</span>
+        </span>
+        <span className="flex shrink-0 gap-1.5">
+          <button
+            type="button"
+            onClick={() => setOpen((current) => !current)}
+            className={`rounded-full border px-2.5 py-1 text-[.56rem] transition ${record.outcome ? 'border-violet-300 bg-violet-50 text-violet-700' : 'border-hair text-soft hover:border-violet-400 hover:text-violet-700'}`}
+          >{record.outcome ? 'أرقامها ✓' : 'أضف أرقامها'}</button>
+          <button
+            type="button"
+            onClick={onForget}
+            className="rounded-full border border-hair px-2.5 py-1 text-[.58rem] text-soft transition hover:border-red-300 hover:text-red-600"
+          >تراجع</button>
+        </span>
+      </div>
+      {open && (
+        <div className="mt-2 grid gap-2 rounded-xl border border-violet-200 bg-violet-50/40 p-2.5">
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+            {fields.map(({ key, label }) => (
+              <label key={key} className="grid gap-1 text-[.54rem] text-soft">
+                {label}
+                <input
+                  inputMode="numeric"
+                  className="w-full rounded-lg border border-hair bg-canvas px-2 py-1 text-[.68rem] text-ink outline-none focus:border-accent"
+                  value={form[key]}
+                  onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value }))}
+                />
+              </label>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              className="rounded-full bg-accent px-3 py-1 text-[.6rem] font-bold text-white"
+              onClick={() => { onSaveOutcome(record.id, { impressions: num(form.impressions), likes: num(form.likes), reposts: num(form.reposts), replies: num(form.replies) }); setOpen(false) }}
+            >احفظ</button>
+            {record.outcome && (
+              <button type="button" className="rounded-full border border-hair px-3 py-1 text-[.6rem] text-soft hover:text-red-600" onClick={() => { onSaveOutcome(record.id, null); setOpen(false) }}>امسحها</button>
+            )}
+            <button type="button" className="rounded-full border border-hair px-3 py-1 text-[.6rem] text-soft" onClick={() => setOpen(false)}>إلغاء</button>
+          </div>
+          <p className="text-[.54rem] leading-relaxed text-soft">تُنقل من صفحة التغريدة في X. حين تكتب المشاهدات تُقاس النسبة لا العدد المطلق.</p>
+        </div>
+      )}
+    </li>
+  )
 }
 
 function ScoreBar({ score }: { score: number }) {
@@ -125,8 +233,13 @@ function TweetCard({ draft, onCopied, onPublished }: { draft: TweetDraft; onCopi
         <summary className="cursor-pointer list-none px-3 py-2 text-[.64rem] font-semibold text-accent [&::-webkit-details-marker]:hidden">لماذا هذه الدرجة؟</summary>
         <div className="grid gap-1 border-t border-hair p-3">
           {draft.signals.map((signal) => (
-            <span key={signal.label} className="flex items-center justify-between gap-3 text-[.64rem]">
-              <span className="text-soft">{signal.label}</span>
+            <span key={signal.key} className="flex items-center justify-between gap-3 text-[.64rem]">
+              <span className="text-soft">
+                {signal.label}
+                {typeof signal.baseWeight === 'number' && (
+                  <em className="ms-1.5 text-[.56rem] not-italic text-violet-700" title={`قدّرتُ وزنها ${signal.baseWeight}، وأرقامك عدّلته`}>عايَره واقعك</em>
+                )}
+              </span>
               <strong className={signal.weight >= 0 ? 'text-emerald-700' : 'text-red-600'}>{signal.weight > 0 ? '+' : ''}{signal.weight}</strong>
             </span>
           ))}
@@ -237,6 +350,11 @@ export function TweetStudio() {
     })()
   }, [])
 
+  const saveOutcome = useCallback((id: string, outcome: OutcomeInput | null) => {
+    persistMemory(recordTweetOutcome(memory, id, outcome, new Date()))
+    setNotice(outcome ? 'سُجّلت الأرقام. كلما جمعتَ ثمانياً صارت الدرجة تتعلّم من واقعك لا من تقديري.' : 'مُسحت أرقام هذه التغريدة.')
+  }, [memory, persistMemory])
+
   const markPublished = useCallback((draft: TweetDraft, text: string) => {
     const next = recordPublishedTweet(memory, { ...draft, text, chars: [...text].length }, new Date())
     persistMemory(next)
@@ -302,12 +420,18 @@ export function TweetStudio() {
     affinity: (draft: { angle: TweetAngleId; sourceKind: TweetSourceKind; chars: number }) => tweetTasteAffinity(memory.taste, draft),
   }), [memory])
 
+  const taste = useMemo(() => tasteHighlights(memory.taste, (angle) => TWEET_ANGLES[angle].label), [memory.taste])
+  /* المعايرة تُحسب من الدفتر كله مرةً واحدة، وتُمرَّر إلى كل توليد. */
+  const calibrations = useMemo(() => buildSignalCalibration(memory.records), [memory.records])
+  const calibration = useMemo(() => calibrationMap(calibrations), [calibrations])
+  const measured = useMemo(() => outcomeCount(memory), [memory])
+
   const drafts = useMemo(() => {
     if (weeklyMode || resonanceMode) return []
-    if (batchMode) return buildTweetBatch(sources.slice(0, 30), { variation, withHashtags, count: 12, perSource: 1, memory: forgeMemory })
+    if (batchMode) return buildTweetBatch(sources.slice(0, 30), { variation, withHashtags, count: 12, perSource: 1, memory: forgeMemory, calibration })
     if (!activeSource) return []
-    return buildTweets(activeSource, { variation, withHashtags, count: 10, memory: forgeMemory })
-  }, [activeSource, batchMode, forgeMemory, resonanceMode, sources, variation, weeklyMode, withHashtags])
+    return buildTweets(activeSource, { variation, withHashtags, count: 10, memory: forgeMemory, calibration })
+  }, [activeSource, batchMode, calibration, forgeMemory, resonanceMode, sources, variation, weeklyMode, withHashtags])
 
   /* خطة الأسبوع: كل المصادر الحقيقية معاً (لا نوعاً واحداً)، فالأسبوع يُبنى من
      الأرشيف كله. والمناسبة تُقرأ من نواة المواسم المشتركة لا من جدولٍ ثانٍ. */
@@ -326,12 +450,12 @@ export function TweetStudio() {
       variation,
       withHashtags,
       memory: forgeMemory,
+      calibration,
       occasionOf: (date) => currentSeason(date)?.label || null,
       daysSinceSource: (sourceId) => daysSinceSource(memory, sourceId, start.getTime()),
     })
-  }, [allSources, forgeMemory, memory, variation, weeklyMode, withHashtags])
+  }, [allSources, calibration, forgeMemory, memory, variation, weeklyMode, withHashtags])
 
-  const taste = useMemo(() => tasteHighlights(memory.taste, (angle) => TWEET_ANGLES[angle].label), [memory.taste])
 
   const readyCount = drafts.filter((draft) => draft.score >= 78).length
   const verifiedCount = drafts.filter((draft) => draft.quoteVerified).length
@@ -403,22 +527,49 @@ export function TweetStudio() {
                 {taste.map((line) => <span key={line} className="rounded-full bg-violet-50 px-3 py-1.5 text-[.64rem] font-semibold text-violet-700">{line}</span>)}
               </div>
             )}
+
+            {/* حلقة الصدق: ما علّمه الواقعُ للأداة — أو صراحةُ أنه لم يعلّمها بعد. */}
+            <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <strong className="text-[.68rem] text-violet-800">ما علّمك إياه الواقع</strong>
+                <span className="text-[.6rem] text-violet-700">{measured} تغريدة بأرقام{measured < MIN_OUTCOME_SAMPLES ? ` · تبدأ المعايرة عند ${MIN_OUTCOME_SAMPLES}` : ''}</span>
+              </div>
+              {calibrations.length === 0
+                ? (
+                  <p className="mt-2 text-[.62rem] leading-relaxed text-soft">
+                    {measured < MIN_OUTCOME_SAMPLES
+                      ? `أوزان الإشارات ما زالت تقديري أنا. أدخل أرقام ${MIN_OUTCOME_SAMPLES - measured} تغريدةٍ أخرى من X (زر «أضف أرقامها» تحت كل سجل) فتبدأ الدرجة تُقاس على جمهورك أنت.`
+                      : 'الأرقام موجودة لكن لا إشارة بلغت عيّنةً كافيةً في الجانبين (ثلاثٌ مع وثلاثٌ بدون). واصل التسجيل — الصمت هنا أصدق من رقمٍ بلا سند.'}
+                  </p>
+                )
+                : (
+                  <div className="mt-2 grid gap-1">
+                    {calibrations.slice(0, 6).map((item) => (
+                      <span key={item.key} className="flex items-center justify-between gap-3 text-[.62rem]">
+                        <span className="text-soft">{SIGNAL_NAMES[item.key] || item.key}</span>
+                        <span className={`font-bold ${item.lift >= 1.15 ? 'text-emerald-700' : item.lift <= .85 ? 'text-red-600' : 'text-soft'}`}>
+                          ×{item.lift.toFixed(2)} <em className="not-italic text-[.54rem] font-normal text-soft">({item.withSamples} مع · {item.withoutSamples} بدون)</em>
+                        </span>
+                      </span>
+                    ))}
+                    <p className="mt-1 text-[.56rem] leading-relaxed text-soft">
+                      النسبة = متوسط تفاعل التغريدات التي حملت الإشارة ÷ متوسط التي لم تحملها. وإعادة النشر تزن ثلاثة أضعاف الإعجاب لأنك طلبتَ ما يُعاد تغريده.
+                      والتعديل محصورٌ بين ‎×0.6‎ و‎×1.5‎ — الواقع يعدّل تقديري ولا يلغيه.
+                    </p>
+                  </div>
+                )}
+            </div>
             {memory.records.length === 0
               ? <p className="text-[.72rem] leading-relaxed text-soft">فارغ. كلما نشرتَ تغريدةً اضغط «نشرتُها ✓» تحتها — عندها لن تُعرض عليك ثانيةً، ويبدأ الاستوديو يتعلّم زواياك المفضّلة.</p>
               : (
                 <ul className="grid max-h-72 gap-2 overflow-y-auto">
                   {memory.records.slice(0, 40).map((record) => (
-                    <li key={record.id} className="flex items-start justify-between gap-3 rounded-xl border border-hair bg-paper p-2.5">
-                      <span className="min-w-0">
-                        <span className="text-[.58rem] font-bold text-accent">{TWEET_ANGLES[record.angle]?.label || record.angle} · {new Date(record.publishedAt).toLocaleDateString('ar', { day: 'numeric', month: 'short' })}</span>
-                        <span className="mt-0.5 block truncate text-[.7rem] text-ink">{record.excerpt}</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => { persistMemory(forgetPublishedTweet(memory, record.id)); setNotice('حُذفت من الدفتر — قد تُعرض عليك ثانيةً.') }}
-                        className="shrink-0 rounded-full border border-hair px-2.5 py-1 text-[.58rem] text-soft transition hover:border-red-300 hover:text-red-600"
-                      >تراجع</button>
-                    </li>
+                    <LedgerRow
+                      key={record.id}
+                      record={record}
+                      onSaveOutcome={saveOutcome}
+                      onForget={() => { persistMemory(forgetPublishedTweet(memory, record.id)); setNotice('حُذفت من الدفتر — قد تُعرض عليك ثانيةً.') }}
+                    />
                   ))}
                 </ul>
               )}

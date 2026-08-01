@@ -41,6 +41,7 @@ import { currentSeason } from '../../lib/seasons'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
 import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
+import { resolveResonantQuotes, type ResonanceRow } from '../../lib/resonance-quotes'
 import { GenerationLibraryPanel, type GeneratedDesignLibraryAsset, type GeneratedLibraryAsset } from './GenerationLibraryPanel'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
@@ -1731,22 +1732,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       if (!db) { setNotice('Firebase غير متاح الآن.'); return }
       const { collection, getDocs } = await import('firebase/firestore')
       const snapshot = await getDocs(collection(db, 'article_highlights'))
-      const rows = snapshot.docs
-        .map((item) => item.data() as { slug?: string; paragraph?: number; startOffset?: number; endOffset?: number; count?: number })
-        .filter((item) => item.slug && Number(item.count || 0) >= 1)
-        .sort((left, right) => Number(right.count || 0) - Number(left.count || 0))
-        .slice(0, 24)
-      const resolved: { quote: string; title: string; count: number }[] = []
-      for (const row of rows) {
-        const article = cmsArticles.find((candidate) => candidate.slug === row.slug)
-        if (!article?.body) continue
-        const paragraph = article.body.split('\n\n')[Number(row.paragraph || 0)] || ''
-        const quote = paragraph.slice(Number(row.startOffset || 0), Number(row.endOffset || 0)).replace(/\s+/g, ' ').trim()
-        if (quote.length < 15 || quote.length > 220) continue
-        if (resolved.some((item) => item.quote === quote)) continue
-        resolved.push({ quote, title: article.title, count: Number(row.count || 0) })
-        if (resolved.length >= 6) break
-      }
+      /* مصدرٌ واحدٌ للحقيقة: المحلّل نفسه الذي يغذّي استوديو التغريدات
+         (`resonance-quotes.ts`). كانت هنا نسخةٌ ثانية بحدودٍ مختلفة، فتخرج
+         البطاقةُ من جملةٍ والتغريدةُ من أخرى وكلتاهما تدّعي أن القرّاء اختاروها. */
+      const rows = snapshot.docs.map((item) => item.data() as ResonanceRow)
+      const resolved = resolveResonantQuotes(
+        rows,
+        cmsArticles.map((article) => ({ slug: article.slug, title: article.title, body: article.body })),
+        { limit: 6 },
+      ).map((item) => ({ quote: item.text, title: item.title, count: item.count }))
       setResonance(resolved)
       if (!resolved.length) setNotice('لا تظليلات قابلة للتحويل بعد — ستظهر هنا كلما ظلل قراؤك جملاً.')
     } catch { setNotice('تعذر جلب تظليلات القراء الآن.') }

@@ -37,7 +37,9 @@ assert(!thought.includes('<ThoughtHub') && staticBuild.includes("path: '/thought
 assert(!health.includes('اقتراح يتكوّن من رحلة كل زائر') && analytics.includes('اقتراح'), 'visitor journey belongs to analytics')
 assert(whatsapp.includes("id: 'campaigns'") && whatsapp.includes("screen === 'campaigns'"), 'WhatsApp campaigns have their own screen')
 assert(publishing.includes('<PublishingStudioNavigation') && publishingNavigation.includes('مسار المقال') && publishingNavigation.includes('منشور مستقل'), 'publishing separates the article journey from the standalone path')
-assert(!publishing.includes("'design'") && !publishingNavigation.includes("'design'"), 'stale publishing design stage cannot return')
+// كلمة design مشروعة داخل جواز النشر وبيانات الحملة؛ ما نمنعه هو إعادة
+// المرحلة القديمة نفسها إلى تنقّل الاستوديو، لا ورود اسم طبقة التصميم.
+assert(!publishing.includes("setView('design')") && !publishingNavigation.includes("id: 'design'") && !publishingNavigation.includes("value: 'design'"), 'stale publishing design stage cannot return')
 assert(health.includes('<AudioSystemOverview') && intelligence.includes('AudioWorkspaceBridge') && !intelligence.includes('PodcastControlRoom'), 'advanced lab links to the official audio system instead of duplicating it')
 assert(design.includes('<GenerationLibraryPanel') && contentManager.includes('<ContentManagerHeader'), 'large studios are split into maintained internal modules')
 assert(packageJson.includes('node scripts/guard-site-architecture.mjs') && architectureDoc.includes('لا تُحذف ميزة'), 'architecture contract is documented and enforced during build')

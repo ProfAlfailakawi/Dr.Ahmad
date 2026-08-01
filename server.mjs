@@ -1,4 +1,4 @@
-import { createHash, createPublicKey, verify as verifySignature } from 'node:crypto'
+import { createHash, createPublicKey, generateKeyPairSync, sign as signPayload, verify as verifySignature } from 'node:crypto'
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { lookup } from 'node:dns/promises'
@@ -10,6 +10,7 @@ import { POLICY, evaluateCandidate } from './scripts/editorial-policy.mjs'
 import { PROOFREAD_INSTRUCTION, acceptProofread, articleMetrics, judgeStyle, refineToStyle, resolveStyleDna, styleBrief, styleReportLines, withVoiceMemory } from './src/lib/style-dna.mjs'
 import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
+import { stableCanonicalJson } from './src/lib/sovereign-publishing.mjs'
 
 // Node لا يقرأ .env تلقائياً. نحمّله محلياً فقط، من دون استبدال متغيرات بيئة النشر.
 const localEnvFile = resolve(process.cwd(), '.env')
@@ -75,6 +76,7 @@ const podcastDispatchPath = '/api/admin/podcast/dispatch'
 const audioManagePath = '/api/admin/audio/manage'
 const sourcesCheckPath = '/api/admin/sources/check'
 const controlCenterPath = '/api/admin/control-center'
+const publicationPassportPath = '/api/admin/publication-passport/sign'
 const maxArticleRequestBytes = 128 * 1024
 const firebaseJwksUrl = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تكنولوجيا', 'هوية', 'إعلام', 'بحث'])
@@ -3513,6 +3515,182 @@ async function getAdminFirestore() {
   return adminFirestorePromise
 }
 
+async function publicationPassportSigningKey(db, FieldValue) {
+  let privateKey = String(process.env.PUBLICATION_PASSPORT_PRIVATE_KEY || '').trim().replace(/\\n/g, '\n')
+  let keyId = String(process.env.PUBLICATION_PASSPORT_KEY_ID || '').trim()
+  let persistedPublicKey = ''
+  if (!privateKey) {
+    const keyRef = db.collection('admin_publication_signing_keys').doc('active-rs256-v1')
+    const initialSnapshot = await keyRef.get()
+    const initial = initialSnapshot.exists ? objectMap(initialSnapshot.data()) : {}
+    let selected = String(initial.privateKey || '').includes('BEGIN PRIVATE KEY') && String(initial.publicKey || '').includes('BEGIN PUBLIC KEY')
+      ? { privateKey: String(initial.privateKey), publicKey: String(initial.publicKey), keyId: String(initial.keyId || '') }
+      : null
+    if (!selected) {
+      const generated = generateKeyPairSync('rsa', {
+        modulusLength: 3072,
+        publicKeyEncoding: { type: 'spki', format: 'pem' },
+        privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+      })
+      const candidateId = createHash('sha256').update(generated.publicKey).digest('hex').slice(0, 20)
+      selected = await db.runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(keyRef)
+        const stored = snapshot.exists ? objectMap(snapshot.data()) : {}
+        if (String(stored.privateKey || '').includes('BEGIN PRIVATE KEY') && String(stored.publicKey || '').includes('BEGIN PUBLIC KEY')) {
+          return { privateKey: String(stored.privateKey), publicKey: String(stored.publicKey), keyId: String(stored.keyId || '') }
+        }
+        transaction.set(keyRef, {
+          algorithm: 'RS256',
+          purpose: 'sovereign-publication-passport',
+          privateKey: generated.privateKey,
+          publicKey: generated.publicKey,
+          keyId: candidateId,
+          createdAt: FieldValue.serverTimestamp(),
+        })
+        return { privateKey: generated.privateKey, publicKey: generated.publicKey, keyId: candidateId }
+      })
+    }
+    privateKey = selected.privateKey
+    persistedPublicKey = selected.publicKey
+    keyId = selected.keyId
+  }
+  if (!privateKey.includes('BEGIN PRIVATE KEY')) {
+    throw new HttpError(503, 'مفتاح توقيع جواز النشر غير متاح على الخادم.')
+  }
+  let publicKey
+  try {
+    publicKey = persistedPublicKey || createPublicKey(privateKey).export({ type: 'spki', format: 'pem' }).toString()
+  } catch {
+    throw new HttpError(503, 'مفتاح توقيع جواز النشر غير صالح.')
+  }
+  return {
+    privateKey,
+    publicKey,
+    keyId: keyId || createHash('sha256').update(publicKey).digest('hex').slice(0, 20),
+  }
+}
+
+function publicationPassportManifest(value) {
+  const input = objectMap(value)
+  const article = objectMap(input.article)
+  const components = objectMap(input.components)
+  const textProof = objectMap(components.text)
+  const audioProof = objectMap(components.audio)
+  const designProof = objectMap(components.design)
+  const socialProof = objectMap(components.social)
+  const sourceProof = objectMap(components.sources)
+  const releaseDecision = objectMap(input.releaseDecision)
+  const slug = boundedString(article.slug, 160).toLowerCase()
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new HttpError(400, 'رابط المقال غير صالح لجواز النشر.')
+  const hash = (candidate) => /^[a-f0-9]{64}$/i.test(String(candidate || '')) ? String(candidate).toLowerCase() : ''
+  const proofHash = (candidate) => createHash('sha256').update(String(candidate || '')).digest('hex')
+  const list = (candidate, maximum, length = 240) => boundedArray(candidate, maximum, (item) => typeof item === 'string' ? boundedString(item, length) : null)
+  const safeNumber = (candidate, minimum, maximum) => {
+    const number = Number(candidate)
+    return Number.isFinite(number) ? Math.round(clamp(number, minimum, maximum)) : minimum
+  }
+  const title = boundedString(textProof.title || article.title, 400)
+  const wordCount = safeNumber(textProof.wordCount, 0, 100_000)
+  const bodyHash = hash(textProof.bodyHash)
+  const excerptHash = hash(textProof.excerptHash)
+  const audioAssets = list(audioProof.assets, 20, 500)
+  const designCount = safeNumber(designProof.assetCount, 0, 500)
+  const designQuality = safeNumber(designProof.qualityScore, 0, 100)
+  const tweetCount = safeNumber(socialProof.tweetCount, 0, 100)
+  const platformCount = safeNumber(socialProof.platformCount, 0, 30)
+  const sourceIds = list(sourceProof.ids, 80, 400)
+  const sourceProofs = list(sourceProof.proofs, 80, 1_500)
+  const sourceAlerts = list(sourceProof.alerts, 30, 700)
+  const designFingerprints = list(designProof.fingerprints, 40, 1_500)
+  const targetStatus = ['published', 'scheduled'].includes(String(releaseDecision.targetStatus || '')) ? String(releaseDecision.targetStatus) : 'draft'
+  const manualOverride = releaseDecision.manualOverride === true
+  const overrideReason = boundedString(releaseDecision.overrideReason, 1_200)
+  const normalizedComponents = {
+    text: {
+      status: title && bodyHash && excerptHash && wordCount >= 350 ? 'verified' : 'pending',
+      wordCount,
+      title,
+      slug,
+      bodyHash,
+      excerptHash,
+      meaningFingerprint: boundedString(textProof.meaningFingerprint, 240),
+    },
+    audio: {
+      status: audioAssets.length ? 'verified' : 'pending',
+      assets: audioAssets,
+      note: audioAssets.length ? 'ملفات الصوت مثبتة في الفهرس.' : 'لا يوجد ملف صوت مثبت لهذه النسخة بعد.',
+    },
+    design: {
+      status: designCount > 0 && designQuality >= 70 ? 'verified' : designCount > 0 ? 'review' : 'pending',
+      assetCount: designCount,
+      qualityScore: designQuality,
+      fingerprintHashes: designFingerprints.map(proofHash),
+    },
+    social: {
+      status: tweetCount > 0 && platformCount >= 2 && hash(socialProof.contentHash) ? 'verified' : 'pending',
+      tweetCount,
+      platformCount,
+      campaignId: boundedString(socialProof.campaignId, 180),
+      contentHash: hash(socialProof.contentHash),
+    },
+    sources: {
+      status: sourceIds.length > 0 && sourceProofs.length > 0 && sourceAlerts.length === 0 ? 'verified' : sourceIds.length > 0 ? 'review' : 'pending',
+      sourceCount: sourceIds.length,
+      proofCount: sourceProofs.length,
+      alertCount: sourceAlerts.length,
+      idHashes: sourceIds.map(proofHash),
+      proofHashes: sourceProofs.map(proofHash),
+      alertHashes: sourceAlerts.map(proofHash),
+    },
+  }
+  const labels = { text: 'النص', audio: 'الصوت', design: 'التصميم', social: 'التغريدات', sources: 'المصادر' }
+  const blocking = Object.entries(normalizedComponents).filter(([, item]) => item.status !== 'verified').map(([key]) => labels[key])
+  return {
+    schemaVersion: 1,
+    kind: 'sovereign-publication-passport',
+    article: { slug, title },
+    components: normalizedComponents,
+    releaseDecision: {
+      targetStatus,
+      manualOverride,
+      overrideReasonHash: overrideReason ? proofHash(overrideReason) : '',
+      overrideReasonLength: Array.from(overrideReason).length,
+    },
+    releaseReady: blocking.length === 0,
+    blocking,
+  }
+}
+
+async function signPublicationPassport(value, ownerId) {
+  const manifest = publicationPassportManifest(value)
+  const canonical = stableCanonicalJson(manifest)
+  const fingerprint = createHash('sha256').update(canonical).digest('hex')
+  const { db, FieldValue } = await getAdminFirestore()
+  const signingKey = await publicationPassportSigningKey(db, FieldValue)
+  const signedAt = new Date().toISOString()
+  const signature = signPayload('RSA-SHA256', Buffer.from(canonical), signingKey.privateKey).toString('base64url')
+  const selfVerified = verifySignature('RSA-SHA256', Buffer.from(canonical), signingKey.publicKey, Buffer.from(signature, 'base64url'))
+  if (!selfVerified) throw new HttpError(500, 'فشل التحقق الداخلي من توقيع جواز النشر.')
+  const envelope = {
+    schemaVersion: 1,
+    passportId: `${manifest.article.slug}:${fingerprint.slice(0, 24)}`,
+    fingerprint,
+    signature,
+    algorithm: 'RS256',
+    keyId: signingKey.keyId,
+    publicKey: signingKey.publicKey,
+    signedAt,
+    selfVerified,
+    manifest,
+  }
+  await db.collection('admin_publication_passports').doc(`${manifest.article.slug}__${fingerprint.slice(0, 24)}`).set({
+    ...envelope,
+    signedByHash: createHash('sha256').update(ownerId).digest('hex'),
+    createdAt: FieldValue.serverTimestamp(),
+  })
+  return envelope
+}
+
 
 function objectMap(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
@@ -3965,6 +4143,18 @@ export function createRequestHandler({
 
     if (await handleWhatsAppRequest(req, res, url, method)) return
     if (await handleCommunicationsRequest(req, res, url, method)) return
+
+    if (url.pathname === publicationPassportPath) {
+      if (method !== 'POST') { sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' }); return }
+      const contentType = String(req.headers['content-type'] || '').toLowerCase()
+      if (contentType.split(';', 1)[0].trim() !== 'application/json') throw new HttpError(415, 'Content-Type must be application/json')
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      if (claims?.admin !== true || typeof claims.sub !== 'string' || !claims.sub) throw new HttpError(403, 'Admin access required')
+      const body = await readJsonBody(req, 96 * 1024)
+      sendJson(res, 200, await signPublicationPassport(body?.manifest, claims.sub))
+      return
+    }
 
     if (url.pathname === journeyPath) {
       if (method !== 'POST') { sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' }); return }

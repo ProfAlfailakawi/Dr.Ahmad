@@ -171,6 +171,17 @@ service cloud.firestore {
     match /admin_content_intelligence/{id} {
       allow read, create, update, delete: if isAdmin();
     }
+    // جوازات النشر الموقّعة: سجل إثبات خاص لا يظهر في الموقع العام.
+    // يكتبها الخادم بحساب الخدمة؛ وتبقى القراءة للمشرف للمراجعة والتدقيق.
+    match /admin_publication_passports/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    // المفتاح الخاص للجواز لا يخرج إلى أي عميل، حتى حساب المشرف؛ الخادم فقط
+    // يصل إليه عبر Admin SDK. المفتاح العام موجود داخل كل جواز للتحقق المستقل.
+    match /admin_publication_signing_keys/{id} {
+      allow read, write: if false;
+    }
     match /admin_book_architecture/{id} {
       allow read, create, update, delete: if isAdmin();
     }

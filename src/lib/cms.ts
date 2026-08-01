@@ -61,6 +61,10 @@ export type ArticleRecord = {
   publishedAt?: string
   audio?: ArticleAudio
   audioControl?: ArticleAudioControl
+  /** حزمة الاستوديو الخاصة والجواز الموقّع؛ لا تُعرضان للعامة. */
+  publishingStudio?: Record<string, unknown>
+  publicationPassport?: Record<string, unknown>
+  publicationGate?: Record<string, unknown>
   words: number
   year: string
   hasAudio: boolean
@@ -156,7 +160,7 @@ type AnyRecord = ArticleRecord | BookRecord | PaperRecord | MediaRecord
 const audioMap = audioManifest as Record<string, AudioEntry>
 
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
-  article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt', 'audio', 'audioControl'],
+  article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt', 'audio', 'audioControl', 'publishingStudio', 'publicationPassport', 'publicationGate'],
   book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
   paper: ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate', 'orcid', 'repository', 'doi', 'verification', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'analysisSources', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt'],
   media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
@@ -240,6 +244,9 @@ function buildArticle(value: Record<string, unknown>, cms: CmsMeta): ArticleReco
     publishedAt: stringValue(value.publishedAt) || undefined,
     audio,
     audioControl,
+    publishingStudio: isObject(value.publishingStudio) ? value.publishingStudio : undefined,
+    publicationPassport: isObject(value.publicationPassport) ? value.publicationPassport : undefined,
+    publicationGate: isObject(value.publicationGate) ? value.publicationGate : undefined,
     words: wordCount(body || stringValue(value.excerpt)),
     year: stringValue(value.iso).slice(0, 4),
     hasAudio: Boolean(

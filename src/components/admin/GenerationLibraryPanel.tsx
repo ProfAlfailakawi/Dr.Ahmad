@@ -40,6 +40,9 @@ export type GeneratedDesignLibraryAsset = {
   toneId?: string
   kindId?: string
   seasonIdentity?: string
+  meaningCourtStatus?: string
+  meaningCourtScore?: number
+  meaningFingerprintHash?: string
 }
 
 type Props = {

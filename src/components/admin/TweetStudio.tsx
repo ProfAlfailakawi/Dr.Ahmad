@@ -52,6 +52,8 @@ import {
   type TweetMemory,
   type TweetPublishRecord,
 } from '../../lib/tweet-memory'
+import { buildMeaningFingerprint } from '../../lib/editorial-memory'
+import { buildMultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
@@ -189,13 +191,27 @@ function ScoreBar({ score }: { score: number }) {
   )
 }
 
-function TweetCard({ draft, onCopied, onPublished }: { draft: TweetDraft; onCopied: (message: string) => void; onPublished: (draft: TweetDraft, text: string) => void }) {
+function TweetCard({ draft, source, onCopied, onPublished }: { draft: TweetDraft; source?: TweetSource | null; onCopied: (message: string) => void; onPublished: (draft: TweetDraft, text: string) => void }) {
   const [text, setText] = useState(draft.text)
   const [open, setOpen] = useState(false)
   const [marked, setMarked] = useState(false)
   useEffect(() => { setText(draft.text); setMarked(false) }, [draft.id, draft.text])
   const chars = [...text].length
+  const meaningCourt = useMemo(() => {
+    const origin = String(source?.text || draft.sourceTitle || '').trim()
+    const fingerprint = buildMeaningFingerprint({ slug: source?.id || draft.sourceId, title: source?.title || draft.sourceTitle, body: origin, thesis: source?.title || draft.sourceTitle, sourceIds: [`tweet-source:${source?.id || draft.sourceId}`] })
+    return buildMultimodalMeaningCourt({
+      article: { slug: source?.id || draft.sourceId, title: source?.title || draft.sourceTitle, excerpt: '', body: origin },
+      fingerprint,
+      media: { social: [{ id: draft.id, channel: 'X', text }] },
+      evidence: { sourceIds: [`tweet-source:${source?.id || draft.sourceId}`], proofs: ['tweet-studio|source-bound'], alerts: [] },
+    })
+  }, [draft.id, draft.sourceId, draft.sourceTitle, source, text])
+  const meaningBlocked = meaningCourt.chambers.social.status === 'blocked'
+    || meaningCourt.safeguards.headlineGuard.status === 'blocked'
+    || meaningCourt.safeguards.claimLineage.status === 'blocked'
   const copy = async () => {
+    if (meaningBlocked) { onCopied(`محكمة المعنى أوقفت النسخ: ${meaningCourt.alerts[0] || 'راجع صلة التغريدة بالمصدر.'}`); return }
     try {
       await navigator.clipboard.writeText(text)
       onCopied('نُسخت التغريدة. الصقها في X — ثم اضغط «نشرتُها» ليتذكّرها الدفتر.')
@@ -215,6 +231,7 @@ function TweetCard({ draft, onCopied, onPublished }: { draft: TweetDraft; onCopi
           {Boolean(draft.resonanceCount) && (
             <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[.6rem] font-bold text-amber-800" title="جملةٌ ظلّلها القرّاء بأصابعهم في صفحة المقال">اختارها القرّاء · {draft.resonanceCount}</span>
           )}
+          <span className={`rounded-full px-2.5 py-1 text-[.6rem] font-bold ${meaningBlocked ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{meaningBlocked ? 'محكمة المعنى ✕' : 'المعنى محفوظ ✓'}</span>
         </div>
         <span className={`text-[.66rem] font-black ${draft.score >= 82 ? 'text-emerald-700' : draft.score >= 68 ? 'text-amber-700' : 'text-red-600'}`}>{draft.score}٪</span>
       </div>
@@ -251,7 +268,7 @@ function TweetCard({ draft, onCopied, onPublished }: { draft: TweetDraft; onCopi
         <button
           type="button"
           className="rounded-full border border-accent/30 bg-accent/[.06] px-4 py-2.5 text-[.76rem] font-bold text-accent transition hover:border-accent"
-          onClick={() => { sendToStandalone({ ...draft, standalonePost: text.split('\n').filter((line) => !/^https?:\/\//.test(line.trim()) && !/^#/.test(line.trim())).join('\n').trim() }); onCopied('أُرسلت إلى «منشور مستقل» في استوديو النشر.') }}
+          onClick={() => { if (meaningBlocked) { onCopied(`محكمة المعنى أوقفت التسليم للتصميم: ${meaningCourt.alerts[0] || 'راجع النص.'}`); return } sendToStandalone({ ...draft, standalonePost: text.split('\n').filter((line) => !/^https?:\/\//.test(line.trim()) && !/^#/.test(line.trim())).join('\n').trim() }); onCopied('أُرسلت إلى «منشور مستقل» في استوديو النشر.') }}
         >صمّمها في منشور مستقل ←</button>
       </div>
       {/* التعليم صريحٌ بيد الدكتور: الاستوديو لا يزعم أنه يعرف ما نشره. */}
@@ -642,7 +659,7 @@ export function TweetStudio() {
                 </div>
                 <p className="px-1 text-[.62rem] leading-relaxed text-soft">{day.reason}</p>
                 {day.draft
-                  ? <TweetCard draft={day.draft} onCopied={setNotice} onPublished={markPublished} />
+                  ? <TweetCard draft={day.draft} source={allSources.find((source) => source.id === day.draft?.sourceId)} onCopied={setNotice} onPublished={markPublished} />
                   : <div className="rounded-[1.35rem] border border-dashed border-hair bg-canvas p-5 text-center text-[.7rem] text-soft">يومٌ بلا تغريدة</div>}
               </div>
             ))}
@@ -728,7 +745,7 @@ export function TweetStudio() {
           </div>
         </div>
         {drafts.length
-          ? <div className="mt-5 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">{drafts.map((draft) => <TweetCard key={draft.id} draft={draft} onCopied={setNotice} onPublished={markPublished} />)}</div>
+          ? <div className="mt-5 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">{drafts.map((draft) => <TweetCard key={draft.id} draft={draft} source={allSources.find((source) => source.id === draft.sourceId)} onCopied={setNotice} onPublished={markPublished} />)}</div>
           : (
             <p className="mt-4 text-[.78rem] leading-relaxed text-soft">
               {kind === 'free'

@@ -18,6 +18,10 @@ COPY scripts/editorial-policy.mjs /app/scripts/editorial-policy.mjs
 # ولا يحلّ الاستيراد) ثم مات المُشغَّل عند الإقلاع، فرفض Cloud Run النسخة
 # وسقط نشر الموقع كله معه. قاعدة الدار في أعلى الملف كانت تقول ذلك حرفاً.
 COPY src/lib/style-dna.mjs /app/src/lib/style-dna.mjs
+# جواز النشر يُوقَّع داخل server.mjs؛ لذلك محرك التطبيع جزء من الخادم لا من
+# الواجهة فقط. يجب أن يبقى هذا السطر متزامناً مع سماحه في .gcloudignore.
+COPY src/lib/sovereign-publishing.mjs /app/src/lib/sovereign-publishing.mjs
+COPY src/lib/semantic-court.mjs /app/src/lib/semantic-court.mjs
 COPY src/server/whatsapp-controller.mjs /app/src/server/whatsapp-controller.mjs
 COPY src/server/admin-communications.mjs /app/src/server/admin-communications.mjs
 COPY src/data.ts /app/src/data.ts

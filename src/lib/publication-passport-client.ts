@@ -12,15 +12,15 @@ export async function requestPublicationPassportSignature(draft: PublicationPass
   const { getAuth } = await import('firebase/auth')
   const token = await getAuth(app).currentUser?.getIdToken()
   if (!token) throw new Error('انتهت جلسة الدخول قبل توقيع جواز النشر.')
+  const semanticCourtInput = draft._semanticCourtInput
   const manifest = await sealPublicationPassportDraft(draft, sha256)
   const response = await fetch('/api/admin/publication-passport/sign', {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-    body: JSON.stringify({ manifest }),
+    body: JSON.stringify({ manifest, semanticCourtInput }),
   })
   let payload: (SignedPublicationPassport & { error?: string }) | null = null
   try { payload = await response.json() as SignedPublicationPassport & { error?: string } } catch { /* الرسالة أدناه أدق للمستخدم */ }
   if (!response.ok || !payload?.signature) throw new Error(payload?.error || `تعذّر توقيع جواز النشر (${response.status}).`)
   return payload
 }
-

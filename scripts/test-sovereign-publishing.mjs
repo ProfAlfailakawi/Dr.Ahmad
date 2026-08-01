@@ -10,20 +10,32 @@ import {
 } from '../src/lib/sovereign-publishing.mjs'
 
 const longBody = Array.from({ length: 380 }, (_, index) => `كلمة${index}`).join(' ')
+const audioProofRow = `signed-article.fahed.mp3|sha256:${'a'.repeat(64)}|source:${'b'.repeat(64)}|bytes:4096|seconds:180`
+const semanticCourtInput = {
+  article: { slug: 'signed-article', title: 'مقال موقّع', excerpt: 'مقتطف واضح', body: longBody },
+  fingerprint: { hash: 'meaning-1', thesis: 'كلمة1 كلمة2 كلمة3', protectedPoints: ['كلمة1 كلمة2 كلمة3'], caveats: [] },
+  media: {
+    audio: [audioProofRow],
+    social: [{ id: 'x-1', channel: 'X', text: 'كلمة1 كلمة2 كلمة3' }],
+    designs: [{ id: 'design-1', channel: 'تصميم', text: 'كلمة1 كلمة2 كلمة3' }],
+  },
+  evidence: { sourceIds: ['paper:one'], proofs: ['paper:one|doi:10.1000/example|status:active'], alerts: [], claims: [] },
+}
 const readyDraft = buildPublicationPassportDraft({
   article: { slug: 'signed-article', title: 'مقال موقّع', excerpt: 'مقتطف واضح', body: longBody, meaningFingerprint: 'meaning-1' },
-  audio: { assets: ['fahed:https://audio.example/one.mp3'] },
+  audio: { assets: [audioProofRow] },
   design: { assetCount: 4, qualityScore: 91, fingerprints: ['visual-1'] },
   social: { tweetCount: 3, platformCount: 5, campaignId: 'signed-article-7d', content: 'نصوص الحملة' },
   evidence: { sourceIds: ['paper:one'], proofs: ['paper:one|doi:10.1000/example|status:active'], alerts: [] },
+  semanticCourtInput,
   releaseDecision: { targetStatus: 'published', manualOverride: false, overrideReason: '' },
 })
-assert.equal(readyDraft.releaseReady, true, 'all five passport layers should be required and sufficient')
+assert.equal(readyDraft.releaseReady, true, 'all passport layers and the semantic court should be required and sufficient')
 assert.deepEqual(readyDraft.blocking, [])
 
 const incompleteDraft = buildPublicationPassportDraft({ article: { slug: 'draft', title: 'مسودة', body: longBody } })
 assert.equal(incompleteDraft.releaseReady, false)
-assert.deepEqual(incompleteDraft.blocking, ['الصوت', 'التصميم', 'التغريدات', 'المصادر'])
+assert.deepEqual(incompleteDraft.blocking, ['الصوت', 'التصميم', 'التغريدات', 'المصادر', 'محكمة المعنى'])
 
 const digest = async (value) => createHash('sha256').update(value).digest('hex')
 const sealed = await sealPublicationPassportDraft(readyDraft, digest)
@@ -87,6 +99,7 @@ assert.match(contentManager, /requestPublicationPassportSignature/)
 assert.match(server, /admin_publication_passports/)
 assert.match(server, /signPayload\('RSA-SHA256'/)
 assert.match(server, /selfVerified = verifySignature\('RSA-SHA256'/)
+assert.match(server, /buildMultimodalMeaningCourt\(semanticCourtInput\)/, 'the server must recompute the semantic court instead of trusting the browser verdict')
 assert.match(server, /proofHashes: sourceProofs\.map\(proofHash\)/, 'private source details must be hashed before the passport reaches a public article document')
 assert.match(server, /overrideReasonHash: overrideReason \? proofHash\(overrideReason\)/, 'a manual release decision must be covered by the signed manifest without exposing its private reason')
 assert.doesNotMatch(server.match(/const envelope = \{[\s\S]*?\n  \}/)?.[0] || '', /signedBy:/, 'the public passport envelope must not expose the admin uid')

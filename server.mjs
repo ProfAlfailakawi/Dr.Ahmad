@@ -11,6 +11,7 @@ import { PROOFREAD_INSTRUCTION, acceptProofread, articleMetrics, judgeStyle, ref
 import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
 import { stableCanonicalJson } from './src/lib/sovereign-publishing.mjs'
+import { buildMultimodalMeaningCourt } from './src/lib/semantic-court.mjs'
 
 // Node لا يقرأ .env تلقائياً. نحمّله محلياً فقط، من دون استبدال متغيرات بيئة النشر.
 const localEnvFile = resolve(process.cwd(), '.env')
@@ -3570,7 +3571,7 @@ async function publicationPassportSigningKey(db, FieldValue) {
   }
 }
 
-function publicationPassportManifest(value) {
+function publicationPassportManifest(value, semanticCourtInputValue) {
   const input = objectMap(value)
   const article = objectMap(input.article)
   const components = objectMap(input.components)
@@ -3605,6 +3606,47 @@ function publicationPassportManifest(value) {
   const targetStatus = ['published', 'scheduled'].includes(String(releaseDecision.targetStatus || '')) ? String(releaseDecision.targetStatus) : 'draft'
   const manualOverride = releaseDecision.manualOverride === true
   const overrideReason = boundedString(releaseDecision.overrideReason, 1_200)
+  const semanticCourtInput = objectMap(semanticCourtInputValue)
+  const courtArticle = objectMap(semanticCourtInput.article)
+  const courtMedia = objectMap(semanticCourtInput.media)
+  const courtSocial = Array.isArray(courtMedia.social) ? courtMedia.social : []
+  const courtBody = typeof courtArticle.body === 'string' ? courtArticle.body.trim() : ''
+  const courtExcerpt = typeof courtArticle.excerpt === 'string' ? courtArticle.excerpt.trim() : ''
+  const courtSocialText = courtSocial.map((item) => boundedString(objectMap(item).text, 20_000)).filter(Boolean).join('\n\n')
+  if (!courtBody || proofHash(courtBody) !== bodyHash || proofHash(courtExcerpt) !== excerptHash) {
+    throw new HttpError(400, 'دليل محكمة المعنى لا يطابق النص المراد توقيعه.')
+  }
+  if (proofHash(courtSocialText) !== hash(socialProof.contentHash)) {
+    throw new HttpError(400, 'دليل محكمة المعنى لا يطابق حزمة المنصات المراد توقيعها.')
+  }
+  if (boundedString(courtArticle.slug, 160).toLowerCase() !== slug) {
+    throw new HttpError(400, 'رابط دليل محكمة المعنى لا يطابق جواز النشر.')
+  }
+  const calculatedCourt = buildMultimodalMeaningCourt(semanticCourtInput)
+  const courtStatus = (candidate) => ['passed', 'review', 'blocked', 'pending'].includes(String(candidate)) ? String(candidate) : 'pending'
+  const normalizeCourtPart = (candidate) => {
+    const item = objectMap(candidate)
+    return {
+      label: boundedString(item.label, 120),
+      status: courtStatus(item.status),
+      score: safeNumber(item.score, 0, 100),
+      checked: safeNumber(item.checked, 0, 1_000),
+      passed: safeNumber(item.passed, 0, 1_000),
+      ...(item.sourceLocked === true ? { sourceLocked: true } : {}),
+      alertHashes: list(item.alerts, 40, 800).map(proofHash),
+    }
+  }
+  const normalizedCourt = {
+    schemaVersion: 1,
+    kind: 'multimodal-meaning-court',
+    fingerprintHash: boundedString(calculatedCourt.fingerprintHash, 240),
+    status: courtStatus(calculatedCourt.status),
+    releaseReady: calculatedCourt.releaseReady === true,
+    score: safeNumber(calculatedCourt.score, 0, 100),
+    chambers: Object.fromEntries(Object.entries(calculatedCourt.chambers).map(([key, item]) => [key, normalizeCourtPart(item)])),
+    safeguards: Object.fromEntries(Object.entries(calculatedCourt.safeguards).map(([key, item]) => [key, normalizeCourtPart(item)])),
+    alertHashes: list(calculatedCourt.alerts, 60, 800).map(proofHash),
+  }
   const normalizedComponents = {
     text: {
       status: title && bodyHash && excerptHash && wordCount >= 350 ? 'verified' : 'pending',
@@ -3645,11 +3687,13 @@ function publicationPassportManifest(value) {
   }
   const labels = { text: 'النص', audio: 'الصوت', design: 'التصميم', social: 'التغريدات', sources: 'المصادر' }
   const blocking = Object.entries(normalizedComponents).filter(([, item]) => item.status !== 'verified').map(([key]) => labels[key])
+  if (!normalizedCourt.releaseReady) blocking.push('محكمة المعنى')
   return {
     schemaVersion: 1,
     kind: 'sovereign-publication-passport',
     article: { slug, title },
     components: normalizedComponents,
+    semanticCourt: normalizedCourt,
     releaseDecision: {
       targetStatus,
       manualOverride,
@@ -3661,8 +3705,8 @@ function publicationPassportManifest(value) {
   }
 }
 
-async function signPublicationPassport(value, ownerId) {
-  const manifest = publicationPassportManifest(value)
+async function signPublicationPassport(value, ownerId, semanticCourtInput) {
+  const manifest = publicationPassportManifest(value, semanticCourtInput)
   const canonical = stableCanonicalJson(manifest)
   const fingerprint = createHash('sha256').update(canonical).digest('hex')
   const { db, FieldValue } = await getAdminFirestore()
@@ -4151,8 +4195,8 @@ export function createRequestHandler({
       const token = bearerToken(req.headers.authorization)
       const claims = await verifyToken(token)
       if (claims?.admin !== true || typeof claims.sub !== 'string' || !claims.sub) throw new HttpError(403, 'Admin access required')
-      const body = await readJsonBody(req, 96 * 1024)
-      sendJson(res, 200, await signPublicationPassport(body?.manifest, claims.sub))
+      const body = await readJsonBody(req, 256 * 1024)
+      sendJson(res, 200, await signPublicationPassport(body?.manifest, claims.sub, body?.semanticCourtInput))
       return
     }
 

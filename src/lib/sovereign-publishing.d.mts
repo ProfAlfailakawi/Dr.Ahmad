@@ -10,6 +10,8 @@ export type PublicationPassportDraft = {
     social: { status: PassportComponentStatus; tweetCount: number; platformCount: number; campaignId: string; content?: string; contentHash?: string }
     sources: { status: PassportComponentStatus; ids?: string[]; proofs?: string[]; alerts?: string[]; sourceCount?: number; proofCount?: number; alertCount?: number; idHashes?: string[]; proofHashes?: string[]; alertHashes?: string[] }
   }
+  semanticCourt: MultimodalMeaningCourt
+  _semanticCourtInput?: Record<string, any>
   releaseDecision: { targetStatus: 'draft' | 'published' | 'scheduled'; manualOverride: boolean; overrideReason?: string; overrideReasonHash?: string; overrideReasonLength?: number }
   releaseReady: boolean
   blocking: string[]
@@ -41,3 +43,4 @@ export function buildPublicationPassportDraft(input?: Record<string, any>): Publ
 export function sealPublicationPassportDraft(draft: PublicationPassportDraft, digest: (value: string) => Promise<string>): Promise<PublicationPassportDraft>
 export function buildTransformingCampaign(input?: Record<string, any>): TransformingCampaign
 export function buildOpportunityRadar(events?: Record<string, any>[], articles?: Record<string, any>[], options?: { now?: number; threshold?: number; limit?: number }): OpportunityRadarItem[]
+import type { MultimodalMeaningCourt } from './semantic-court.mjs'

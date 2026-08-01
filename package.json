@@ -56,6 +56,8 @@
     "faq:repair": "node scripts/faq-repair.mjs",
     "social:self-test": "node scripts/test-social-design-engine.mjs && node scripts/test-social-templates.mjs && node scripts/test-tweet-and-design-variety.mjs",
     "sovereign:self-test": "node scripts/test-sovereign-publishing.mjs",
+    "semantic-court:self-test": "node scripts/test-semantic-court.mjs",
+    "cloud-run:context:self-test": "node scripts/test-cloud-run-context.mjs",
     "tweets:self-test": "node scripts/test-tweet-and-design-variety.mjs",
     "nuclear:self-test": "node scripts/test-nuclear-systems.mjs && node scripts/test-social-design-engine.mjs && node whatsapp-agent/self-test.mjs",
     "content:auto:self-test": "node scripts/auto-site-content.mjs --self-test",

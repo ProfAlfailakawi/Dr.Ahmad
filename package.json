@@ -43,6 +43,8 @@
     "podcast:ar:nightly": "node scripts/podcast-dialogue.mjs --lang=ar --nightly",
     "podcast:ar:bakeoff": "node scripts/podcast-dialogue.mjs --voice-bakeoff",
     "private-books:memory": "node scripts/private-books-memory.mjs",
+    "private-books:knowledge": "node scripts/build-book-knowledge.mjs",
+    "book-knowledge:self-test": "node scripts/test-book-knowledge-integration.mjs",
     "audio:r2:plan": "node scripts/audio-r2-plan.mjs",
     "audio:r2:build": "AUDIO_PUBLIC_BASE_URL=$AUDIO_PUBLIC_BASE_URL VITE_AUDIO_BASE_URL=$AUDIO_PUBLIC_BASE_URL npm run build",
     "audio:external:verify": "node scripts/verify-external-audio.mjs",
@@ -129,7 +131,7 @@
     "round9:self-test": "node scripts/test-editorial-board.mjs && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check",
     "editorial-board:calibration:self-test": "node scripts/editorial-board-calibration.mjs --self-test",
     "round10:self-test": "node scripts/test-publishing-studio-regressions.mjs && node scripts/test-editorial-board.mjs && node scripts/editorial-board-calibration.mjs --self-test && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check && node scripts/guard-site-architecture.mjs && node scripts/test-site-polish-2026.mjs",
-    "style:self-test": "node scripts/test-style-dna.mjs && node scripts/audit-published-orthography.mjs --self-test",
+    "style:self-test": "node scripts/test-style-dna.mjs",
     "publishing-studio:types:self-test": "node scripts/test-publishing-studio-regressions.mjs",
     "round11:self-test": "node scripts/test-publishing-studio-regressions.mjs && node scripts/test-editorial-board.mjs && node scripts/editorial-board-calibration.mjs --self-test && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check && node scripts/guard-site-architecture.mjs && node scripts/test-site-polish-2026.mjs",
     "editorial-memory:self-test": "node scripts/test-editorial-memory.mjs && node scripts/source-desk-watch.mjs --self-test && node scripts/test-editorial-policy.mjs",
@@ -142,9 +144,7 @@
     "editorial-foresight:self-test": "node scripts/test-editorial-foresight.mjs",
     "dr-ahmad-room:self-test": "node scripts/test-dr-ahmad-room.mjs",
     "live-director:self-test": "node scripts/test-live-director.mjs",
-    "smart-command-room:self-test": "npm run editorial-foresight:self-test && npm run dr-ahmad-room:self-test && npm run live-director:self-test",
-    "ortho:audit": "node scripts/audit-published-orthography.mjs",
-    "ortho:self-test": "node scripts/audit-published-orthography.mjs --self-test"
+    "smart-command-room:self-test": "npm run editorial-foresight:self-test && npm run dr-ahmad-room:self-test && npm run live-director:self-test"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

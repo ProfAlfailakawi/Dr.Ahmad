@@ -6,6 +6,7 @@ import { useCmsContent, useExtras } from '../lib/content'
 import { normalizeArabic } from '../lib/cms'
 import { staticQuestions } from './Questions'
 import { dynamicArticleCategories } from '../lib/content-taxonomy'
+import { bookKnowledgeText } from '../lib/book-knowledge'
 
 type ThoughtPath = {
   id: string
@@ -165,7 +166,7 @@ export default function ThoughtPaths() {
     /* عتبة ثقة أعلى للوصلات الجانبية (مقترح معتمد): مرساة + إشارة على الأقل،
        وإلا أُخفي العنصر بصمت — لا وصلة تقديرية ولا اعتذار عنها */
     const paper = bestMatch(papers, (item) => `${item.title} ${item.meta} ${item.journal || ''}`, active, 7)
-    const book = bestMatch(books, (item) => `${item.title} ${item.desc}`, active, 7)
+    const book = bestMatch(books, (item) => `${item.title} ${item.desc} ${bookKnowledgeText(item.slug)}`, active, 7)
     const mediaItem = bestMatch(media, (item) => `${item.title} ${item.outlet} ${item.platform || ''}`, active, 7)
 
     const nodes: PathNode[] = []

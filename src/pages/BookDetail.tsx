@@ -141,8 +141,8 @@ export default function BookDetail() {
 
           <div className="mt-10 grid gap-12 md:grid-cols-[1fr_1.1fr] md:gap-16">
             <FadeUp>
-              {/* لا تُعرض محتويات الكتب إطلاقاً (أمر الدكتور) — غلافٌ ثابت أنيق فقط،
-                  بلا مفصلٍ يفتح على «داخل الكتاب» المضلِّل. صورة الغلاف تكفي. */}
+              {/* الغلاف لا يفتح المتن ولا PDF الكامل. استخدام المتن يحدث في
+                  خريطة المعرفة أدناه، أما القراءة العامة فتبقى للعينة المعتمدة. */}
               <div className="book-detail-cover mx-auto max-w-sm overflow-hidden rounded-xl border border-hair bg-white">
                 {book.cover ? (
                   <img src={book.cover} alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" className="w-full" />

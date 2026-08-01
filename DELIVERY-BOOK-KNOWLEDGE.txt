@@ -1,0 +1,66 @@
+التسليم: الذاكرة المعرفية الذكية للكتب
+
+السبب الجذري
+- كانت الكتب تصل إلى بقية الموقع من العنوان والوصف والفهرس فقط؛ لذلك ظلت صلاتها بالمقالات والأبحاث واللقاءات سطحية.
+- ثلاثة كتب مصوّرة لم يكن متنها قابلاً للاستخراج النصي، فاحتاجت OCR محلياً قبل بناء الذاكرة.
+- كانت واجهة «عالم الكتاب» تقصّ المفاهيم إلى أول سبعة، بينما البحث قد يحيل إلى مفهوم لاحق؛ أصلح هذا من دون فتح الأقسام افتراضياً.
+- كان مولّد HTML الثابت يعيد زر YouTube والنص المؤقت القديم رغم أن صفحة React أزالتهما.
+
+ما تغير
+- خريطة عامة آمنة لـ9 كتب و1596 صفحة، فيها المفاهيم والأسئلة وأرقام الصفحات بلا متن ولا PDF كامل.
+- دليل نصي خادمي فقط للأسئلة الموثقة؛ لا يدخل حزمة React ولا dist.
+- ربط الكتب بالبحث، العقل الحي، غرفة د. أحمد، المقالات، الأبحاث الـ17، اللقاءات، مسار الفكرة والخريطة المعرفية.
+- الموسوعة تحمل رتبة «الجذر المرجعي» وتظهر بهذه الصفة في الروابط المناسبة.
+- إبقاء ملفات العينة المقصودة (الفهرس والمقدمة) كما هي، وعدم إضافة أي PDF كامل أو رابط محلي.
+- تشغيل الفيديو الإعلامي داخل الموقع، واستخدام النص المتاح محلياً من YouTube، وإزالة الرابط الخارجي والعبارة المؤقتة من HTML الثابت أيضاً.
+
+الملفات المعدلة والمضافة
+.gcloudignore
+Dockerfile
+package.json
+server.mjs
+scripts/build-book-knowledge.mjs
+scripts/build-knowledge-graph.mjs
+scripts/build-static.mjs
+scripts/guard-private-books.mjs
+scripts/test-book-knowledge-integration.mjs
+scripts/test-book-media-polish.mjs
+scripts/test-book-world.mjs
+src/App.tsx
+src/components/BookWorld.tsx
+src/components/admin/ContentManager.tsx
+src/data.ts
+src/data/book-evidence.json
+src/data/book-knowledge.json
+src/data/knowledge-graph-index.json
+src/data/knowledge-graph.json
+src/data/legacy-profile.json
+src/data/media-transcripts.json
+src/lib/book-knowledge.ts
+src/lib/cms.ts
+src/lib/dr-ahmad-room.ts
+src/lib/intelligence.ts
+src/lib/knowledge-graph.ts
+src/pages/ArticleDetail.tsx
+src/pages/AskLibrary.tsx
+src/pages/BookDetail.tsx
+src/pages/Media.tsx
+src/pages/MediaDetail.tsx
+src/pages/PaperDetail.tsx
+src/pages/Search.tsx
+src/pages/ThoughtPaths.tsx
+
+اختبارات التسليم
+- TypeScript/lint
+- تكامل معرفة الكتب وعزل المتن
+- غرفة د. أحمد 16/16
+- عالم الكتاب والروابط العميقة
+- صقل الكتب والإعلام
+- سياسة التنوين
+- بنية الموقع والجسور الحرجة
+- بناء Vite و207 صفحات ثابتة
+- smoke لـ181 صفحة
+- 218 رابطاً داخلياً بلا كسر
+- ميزانية الأداء والدومين وإزالة إرث الموقع السابق
+
+لم يتم رفع أو نشر أو دفع أي ملف. لم تُعدّل أنظمة WhatsApp أو R2 أو الصوت ضمن هذه الحزمة.

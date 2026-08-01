@@ -16,13 +16,13 @@ src/*
 !src/data/
 src/data/*
 !src/data/editorial-policy.json
-!src/data/spoken-index.json
 !src/data/bodies.json
 !src/data/audio.json
 !src/data/dr-ahmad-domain-glossary.json
 !src/data/audio-meta.json
 !src/data/podcast-admin.json
 !src/data/research-papers.ts
+!src/data/book-evidence.json
 !src/lib/
 src/lib/*
 !src/lib/style-dna.mjs
@@ -42,7 +42,6 @@ whatsapp-agent/*
 !whatsapp-agent/bot-messages.mjs
 !whatsapp-agent/bot-rules.mjs
 !whatsapp-agent/crypto.mjs
-!whatsapp-agent/spoken-index.mjs
 !whatsapp-agent/reminders.mjs
 !whatsapp-agent/scholar.mjs
 !whatsapp-agent/knowledge-modes.mjs

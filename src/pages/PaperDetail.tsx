@@ -9,6 +9,7 @@ import { analyzeResearch, type ResearchEvidence } from '../lib/research-intellig
 import { useAdminAuth } from '../lib/admin-auth'
 import { safeLink } from '../lib/dead-links'
 import { ResearchSectionNavigator, type ResearchLayer } from '../components/ResearchSectionNavigator'
+import { bookKnowledgeAnchor, relatedBookKnowledge } from '../lib/book-knowledge'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
 const arabicScientific = (value = '') => {
@@ -73,12 +74,18 @@ function EvidenceStamp({ evidence, fallback = 'المصدر الأصلي' }: { e
 export default function PaperDetail() {
   const { slug } = useParams()
   const location = useLocation()
-  const { papers, loading } = useCmsContent()
+  const { papers, books, loading } = useCmsContent()
   const index = papers.findIndex((paper) => paper.slug === slug)
   const p = papers[index]
   const [openSection, setOpenSection] = useState<ResearchSection | null>(null)
   const [readerKey, setReaderKey] = useState('')
   const intelligence = useMemo(() => analyzeResearch(p || {}), [p])
+  const bookRoots = useMemo(() => {
+    if (!p) return []
+    const liveBooks = new Set(books.map((book) => book.slug))
+    return relatedBookKnowledge(`${p.title} ${p.titleAr || ''} ${p.meta || ''} ${p.abstractAr || ''} ${p.keywords || ''} ${p.keyFinding || ''}`, 3)
+      .filter((match) => liveBooks.has(match.book.slug))
+  }, [books, p])
 
   useSeo({ title: p?.title ?? 'بحث', description: p?.abstractAr || p?.meta, path: `/research/${slug}`, type: 'article' })
 
@@ -315,6 +322,28 @@ export default function PaperDetail() {
               </div>
             </FadeUp>
           </div>
+
+          {bookRoots.length > 0 && <FadeUp>
+            <details className="group mt-8 overflow-hidden rounded-[26px] border border-hair bg-wash">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-5 py-5 md:px-7">
+                <span>
+                  <span className="block text-[.72rem] font-extrabold text-accent">داخل المشروع المعرفي</span>
+                  <strong className="mt-1 block text-[1rem] text-ink">الجذر النظري والامتداد في المؤلفات</strong>
+                  <span className="mt-1 block text-[.72rem] leading-relaxed text-soft">صلة مفهومية محسوبة من متن الكتب وبيانات البحث؛ لا تعني أن البحث اقتبس الكتاب ما لم يذكره مصدره.</span>
+                </span>
+                <span aria-hidden className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <div className="grid gap-3 border-t border-hair bg-canvas px-5 py-5 md:grid-cols-3 md:px-7">
+                {bookRoots.map(({ book, concept }) => (
+                  <Link key={book.slug} to={`/publications/${book.slug}#${bookKnowledgeAnchor(concept)}`} className="rounded-2xl border border-hair p-4 transition-colors hover:border-accent">
+                    <span className="text-[.65rem] font-semibold text-accent">{book.slug === 'encyclopedia' ? 'الجذر المرجعي' : 'امتداد في كتاب'} · ص {concept.pageStart}</span>
+                    <strong className="mt-1.5 block text-[.82rem] leading-relaxed text-ink">{book.title}</strong>
+                    <span className="mt-2 block text-[.72rem] leading-relaxed text-soft">{concept.title}</span>
+                  </Link>
+                ))}
+              </div>
+            </details>
+          </FadeUp>}
 
           <FadeUp>
             <nav className="mt-16 grid gap-6 border-t border-hair pt-8 sm:grid-cols-2">

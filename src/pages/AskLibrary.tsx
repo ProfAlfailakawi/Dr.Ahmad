@@ -13,6 +13,7 @@ import type { ArticleRecord, BookRecord, PaperRecord } from "../lib/cms";
 import { useSeo } from "../components/seo";
 import { loadArticleBodies } from "../lib/article-bodies";
 import { categoryLabel } from "../lib/content-taxonomy";
+import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
 
 const norm = (s: string) =>
   s
@@ -147,8 +148,15 @@ function matchRefs(
   const scoreText = (value: string) => tokenize(value).reduce((score, root) => score + (query.has(root) ? 1 : 0), 0)
   const refs: (Ref & { score: number })[] = []
   for (const book of books) {
-    const score = scoreText(`${book.title} ${book.desc || ''}`)
-    if (score > 0) refs.push({ kind: 'كتاب', slug: book.slug, title: book.title, href: `/publications/${book.slug}`, score })
+    const score = scoreText(`${book.title} ${book.desc || ''} ${bookKnowledgeText(book.slug)}`)
+    const concept = bestBookConcept(qTokens.join(' '), book.slug)
+    if (score > 0) refs.push({
+      kind: 'كتاب',
+      slug: book.slug,
+      title: concept && concept.score > 0 ? `${book.title} — ${concept.concept.title} (ص ${concept.concept.pageStart})` : book.title,
+      href: concept && concept.score > 0 ? `/publications/${book.slug}#${bookKnowledgeAnchor(concept.concept)}` : `/publications/${book.slug}`,
+      score,
+    })
   }
   for (const paper of papers) {
     const title = paper.titleAr || paper.title
@@ -465,7 +473,7 @@ export default function AskLibrary() {
 
   useEffect(() => {
     const controller = new AbortController();
-    if (!asked || !result?.hits.length) {
+    if (!asked || !result || (!result.hits.length && !result.refs.length)) {
       setTwin(null);
       setTwinLoading(false);
       return () => controller.abort();
@@ -627,7 +635,7 @@ export default function AskLibrary() {
             )}
             {result && (
               <div className="mt-12">
-                {result.hits.length > 0 ? (
+                {result.hits.length > 0 || result.refs.length > 0 ? (
                   <>
                     <FadeUp>
                       <section
@@ -690,7 +698,7 @@ export default function AskLibrary() {
                           {twin.citations.map((citation) => (
                             <li key={`${citation.index}-${citation.slug}`}>
                               <Link
-                                to={`/articles/${citation.slug}`}
+                                to={citation.url || `/articles/${citation.slug}`}
                                 className="group flex gap-3 text-[.82rem] text-soft transition-colors hover:text-accent"
                               >
                                 <span className="shrink-0">

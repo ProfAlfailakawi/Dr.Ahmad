@@ -291,6 +291,10 @@ const books = mergeCloudAdditions('book', localBooks, cloudCms.books)
   .filter((item) => item.title && item.slug)
 const media = mergeCloudAdditions('media', localMedia, cloudCms.media)
   .filter((item) => item.title && item.slug && item.url)
+const mediaTranscriptsPath = resolve(ROOT, 'src/data/media-transcripts.json')
+const mediaTranscripts = existsSync(mediaTranscriptsPath)
+  ? JSON.parse(readFileSync(mediaTranscriptsPath, 'utf8'))
+  : {}
 const papers = mergeCloudAdditions('paper', localPapers, cloudCms.papers)
   .filter((item) => item.title && item.slug)
 
@@ -938,7 +942,9 @@ function generateBodyHtml(path, lang = 'ar') {
     const slug = path.split('/').pop()
     const item = media.find((entry) => entry.slug === slug)
     if (item) {
-      const videoThumbnail = item.thumbnail || (youtubeId(item.url) ? `https://i.ytimg.com/vi/${youtubeId(item.url)}/maxresdefault.jpg` : '')
+      const itemVideoId = youtubeId(item.url)
+      const videoThumbnail = item.thumbnail || (itemVideoId ? `https://i.ytimg.com/vi/${itemVideoId}/maxresdefault.jpg` : '')
+      const transcript = item.transcript || mediaTranscripts[itemVideoId] || ''
       contentHtml = `
         <main style="max-width:900px;margin:4rem auto;padding:0 1rem;" dir="rtl">
           <p><a href="/media" style="color:#3E5C78;text-decoration:none;font-family:'Tajawal',sans-serif;">&rarr; العودة إلى الظهور الإعلامي</a></p>
@@ -947,10 +953,9 @@ function generateBodyHtml(path, lang = 'ar') {
               <p style="color:#3E5C78;font-family:'Tajawal',sans-serif;">${esc(item.program || 'لقاء إعلامي')} · ${esc(item.channel || item.outlet || '')}${item.date ? ` · ${esc(item.date)}` : ''}${item.duration ? ` · ${esc(item.duration)}` : ''}</p>
               <h1 style="font-size:2.4rem;font-family:'El Messiri',serif;line-height:1.4;color:#15161A;">${esc(item.title)}</h1>
             </header>
-            ${videoThumbnail ? `<img src="${attr(videoThumbnail)}" alt="${attr(item.title)}" width="1280" height="720" style="width:100%;height:auto;border-radius:18px;" />` : ''}
+            ${itemVideoId ? `<div style="position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:18px;background:#15161A;"><iframe src="https://www.youtube-nocookie.com/embed/${attr(itemVideoId)}?rel=0" title="${attr(item.title)}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>` : videoThumbnail ? `<img src="${attr(videoThumbnail)}" alt="${attr(item.title)}" width="1280" height="720" style="width:100%;height:auto;border-radius:18px;" />` : ''}
             ${item.topics ? `<section style="margin-top:2rem;"><h2 style="font-family:'El Messiri',serif;">موضوعات اللقاء</h2><p style="font-family:'Tajawal',sans-serif;line-height:1.9;color:#626A76;">${esc(item.topics)}</p></section>` : ''}
-            <p style="margin-top:2rem;"><a href="${attr(item.url)}" rel="noopener noreferrer" style="display:inline-block;background:#3E5C78;color:white;text-decoration:none;border-radius:999px;padding:.8rem 1.3rem;font-family:'Tajawal',sans-serif;">مشاهدة الفيديو الكامل</a></p>
-            <section style="margin-top:2rem;"><h2 style="font-family:'El Messiri',serif;">النص المفرّغ</h2><p style="font-family:'Tajawal',sans-serif;line-height:1.9;color:#626A76;">${item.transcript ? esc(item.transcript) : 'النص التلقائي لا يُنشر قبل المراجعة اللغوية واعتماد النسخة المنقحة.'}</p></section>
+            ${transcript ? `<section style="margin-top:2rem;"><h2 style="font-family:'El Messiri',serif;">النص المفرّغ</h2><p style="font-family:'Tajawal',sans-serif;line-height:1.9;color:#626A76;white-space:pre-line;">${esc(transcript)}</p></section>` : ''}
           </article>
         </main>
       `

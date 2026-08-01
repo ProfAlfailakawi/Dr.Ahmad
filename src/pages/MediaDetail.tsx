@@ -6,6 +6,7 @@ import { OwnerEdit } from '../components/extras'
 import { useCmsContent } from '../lib/content'
 import { ideaWords } from '../lib/idea-life'
 import { SITE_URL } from '../data'
+import { bookKnowledgeAnchor, relatedBookKnowledge } from '../lib/book-knowledge'
 
 const youtubeId = (url = '') => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
 const clockSeconds = (value = '') => value.split(':').reduce((total, part) => total * 60 + (Number(part) || 0), 0)
@@ -29,16 +30,21 @@ function related<T>(seed: Set<string>, items: readonly T[], text: (item: T) => s
 
 export default function MediaDetail() {
   const { slug = '' } = useParams()
-  const { media, articles, papers, loading } = useCmsContent()
+  const { media, articles, books, papers, loading } = useCmsContent()
   const item = media.find((entry) => entry.slug === slug)
   const videoId = youtubeId(item?.url)
   const thumbnail = item?.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : '')
   const topics = topicList(item?.topics)
-  const seed = useMemo(() => new Set(ideaWords(`${item?.title || ''} ${item?.topics || ''}`)), [item?.title, item?.topics])
+  const [youtubeTranscript, setYoutubeTranscript] = useState('')
+  const contextText = `${item?.title || ''} ${item?.topics || ''} ${youtubeTranscript.slice(0, 6_000)}`
+  const seed = useMemo(() => new Set(ideaWords(contextText)), [contextText])
   const articleLinks = useMemo(() => related(seed, articles, (article) => `${article.title} ${article.excerpt || ''} ${article.cat || ''}`, 4), [articles, seed])
   const paperLinks = useMemo(() => related(seed, papers, (paper) => `${paper.title} ${paper.titleAr || ''} ${paper.abstractAr || ''} ${paper.meta || ''}`, 3), [papers, seed])
+  const bookLinks = useMemo(() => {
+    const live = new Set(books.map((book) => book.slug))
+    return relatedBookKnowledge(contextText, 3).filter((match) => live.has(match.book.slug))
+  }, [books, contextText])
   const playerUrl = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0` : ''
-  const [youtubeTranscript, setYoutubeTranscript] = useState('')
 
   useEffect(() => {
     let active = true
@@ -129,13 +135,14 @@ export default function MediaDetail() {
             </details>
           </FadeUp>}
 
-          {(articleLinks.length > 0 || paperLinks.length > 0) && <FadeUp delay={0.18}>
+          {(articleLinks.length > 0 || paperLinks.length > 0 || bookLinks.length > 0) && <FadeUp delay={0.18}>
             <section className="mt-10 border-t border-hair pt-8" aria-labelledby="media-related-title">
-              <h2 id="media-related-title" className="font-display text-xl font-semibold text-ink">مقالات وأبحاث مرتبطة</h2>
-              <p className="mt-2 text-[.76rem] text-soft">صلة موضوعية محسوبة من الأرشيف نفسه، وليست ادعاءً بأن المواد ذُكرت داخل اللقاء.</p>
+              <h2 id="media-related-title" className="font-display text-xl font-semibold text-ink">امتداد اللقاء في المشروع المعرفي</h2>
+              <p className="mt-2 text-[.76rem] text-soft">صلة موضوعية محسوبة من عنوان اللقاء ومحاوره ونصه المفرّغ ومن الأرشيف نفسه؛ لا تعني أن المادة ذُكرت حرفياً داخل اللقاء.</p>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {articleLinks.map(({ item: article }) => <Link key={article.slug} to={`/articles/${article.slug}`} className="rounded-xl border border-hair p-4 transition-colors hover:border-accent"><span className="text-[.65rem] font-semibold text-accent">مقال</span><strong className="mt-1 block text-[.84rem] leading-relaxed text-ink">{article.title}</strong></Link>)}
                 {paperLinks.map(({ item: paper }) => <Link key={paper.slug} to={`/research/${paper.slug}`} className="rounded-xl border border-hair p-4 transition-colors hover:border-accent"><span className="text-[.65rem] font-semibold text-accent">بحث</span><strong className="mt-1 block text-[.84rem] leading-relaxed text-ink">{paper.titleAr || paper.title}</strong></Link>)}
+                {bookLinks.map(({ book, concept }) => <Link key={book.slug} to={`/publications/${book.slug}#${bookKnowledgeAnchor(concept)}`} className="rounded-xl border border-hair p-4 transition-colors hover:border-accent"><span className="text-[.65rem] font-semibold text-accent">{book.slug === 'encyclopedia' ? 'من الموسوعة' : 'من كتاب'} · ص {concept.pageStart}</span><strong className="mt-1 block text-[.84rem] leading-relaxed text-ink">{book.title}</strong><span className="mt-1.5 block text-[.7rem] leading-relaxed text-soft">{concept.title}</span></Link>)}
               </div>
             </section>
           </FadeUp>}

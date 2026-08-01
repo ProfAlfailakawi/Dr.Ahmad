@@ -8,6 +8,7 @@ const data = read('src/data.ts')
 const book = read('src/pages/BookDetail.tsx')
 const media = read('src/pages/MediaDetail.tsx')
 const mediaIndex = read('src/pages/Media.tsx')
+const staticBuilder = read('scripts/build-static.mjs')
 const manager = read('src/components/admin/ContentManager.tsx')
 const transcripts = JSON.parse(read('src/data/media-transcripts.json'))
 
@@ -28,6 +29,9 @@ assert.match(media, /youtubeTranscript && <FadeUp/, 'the transcript surface must
 assert.match(media, /import\('\.\.\/data\/media-transcripts\.json'\)/, 'YouTube transcripts must load lazily on media detail pages')
 assert.doesNotMatch(data, /import mediaTranscripts/, 'transcripts must not inflate the shared site data bundle')
 assert.match(mediaIndex, /لقاءاتي الإذاعية والتلفزيونية كاملة داخل الموقع/, 'the media index must describe full in-site playback')
+assert.doesNotMatch(staticBuilder, /مشاهدة الفيديو الكامل|النص التلقائي لا يُنشر/, 'static media HTML must not restore retired outbound or placeholder controls')
+assert.match(staticBuilder, /youtube-nocookie\.com\/embed/, 'static media HTML must preserve in-site playback before hydration')
+assert.match(staticBuilder, /media-transcripts\.json/, 'static media HTML must use the locally captured YouTube transcript when available')
 
 for (const id of ['MdMDpX9jwTU', 'UsO9ju--z2M', 'x_nNolE8DuM', 'cOlGZibqDiw']) {
   assert.ok((transcripts[id] || '').split(/\s+/).length > 500, `${id} must contain the available YouTube Arabic transcript`)

@@ -1901,6 +1901,18 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
     window.dispatchEvent(new CustomEvent('studio:campaign-seed'))
   }
 
+  const sendToLiveDirector = (item: ManagedRecord) => {
+    const seed = {
+      type: 'article_video',
+      articleSlug: item.slug || '',
+      title: item.title || '',
+      message: item.excerpt || '',
+      at: Date.now(),
+    }
+    try { sessionStorage.setItem('admin:live-director-seed', JSON.stringify(seed)) } catch { /* الحدث يكفي داخل الجلسة */ }
+    window.dispatchEvent(new CustomEvent('studio:live-director-seed', { detail: seed }))
+  }
+
   const toggleVisibility = async (item: ManagedRecord) => {
     const task = beginAdminTask(item._cms.hidden ? 'إظهار عنصر' : 'إخفاء عنصر')
     setBusy(true)
@@ -2054,7 +2066,10 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
                 : <button type="button" disabled={busy} onClick={() => void deleteItem(item)} className="min-w-0 rounded-full border border-red-700/20 px-2 py-2 font-semibold text-red-700/80 disabled:opacity-50 dark:text-red-300/80">حذف</button>}
             </div>
             {kind === 'article' && (
-              <button type="button" onClick={() => sendToDesignStudio(item)} className="mt-2 w-full rounded-full border border-accent/30 bg-accent/[.05] px-3 py-2 text-[.72rem] font-semibold text-accent transition hover:bg-accent/10">حملة تصاميم من هذا المقال</button>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <button type="button" onClick={() => sendToDesignStudio(item)} className="w-full rounded-full border border-accent/30 bg-accent/[.05] px-3 py-2 text-[.72rem] font-semibold text-accent transition hover:bg-accent/10">حملة تصاميم</button>
+                <button type="button" onClick={() => sendToLiveDirector(item)} className="w-full rounded-full border border-hair bg-canvas px-3 py-2 text-[.72rem] font-semibold text-ink transition hover:border-accent hover:text-accent">فيديو في المخرج الحي</button>
+              </div>
             )}
             {item._cms.origin === 'base' && (item._cms.modified || item._cms.hidden) && (
               <button type="button" disabled={busy} onClick={() => void resetOriginal(item)} className="mt-2 w-full rounded-full border border-hair px-3 py-2 text-[.72rem] text-soft disabled:opacity-50">استعادة الأصل</button>
@@ -2111,7 +2126,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
                 <td className="px-5 py-4">
                   <div className="flex flex-wrap items-center gap-3 text-[.78rem]">
                     <button type="button" onClick={() => openEdit(item)} className="font-semibold text-accent hover:text-accent-deep">تعديل</button>
-                    {kind === 'article' && <button type="button" onClick={() => sendToDesignStudio(item)} className="font-semibold text-accent/80 hover:text-accent" title="يبني حملة تصاميم اجتماعية من عنوان المقال ومقتطفه">حملة</button>}
+                    {kind === 'article' && <><button type="button" onClick={() => sendToDesignStudio(item)} className="font-semibold text-accent/80 hover:text-accent" title="يبني حملة تصاميم اجتماعية من عنوان المقال ومقتطفه">حملة</button><button type="button" onClick={() => sendToLiveDirector(item)} className="font-semibold text-accent/80 hover:text-accent" title="يفتح المقال في المخرج الحي">فيديو</button></>}
                     <button type="button" disabled={busy} onClick={() => void toggleVisibility(item)} className="text-soft hover:text-accent">{item._cms.hidden ? 'استعادة' : 'إخفاء'}</button>
                     {item._cms.hidden
                       ? <button type="button" disabled={busy} onClick={() => void purgeItem(item)} className="font-semibold text-red-700/80 transition-colors hover:text-red-700 dark:text-red-300/85 dark:hover:text-red-300">حذف نهائي</button>

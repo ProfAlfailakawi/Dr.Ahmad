@@ -67,6 +67,23 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
+    // مقاطع ونسخ المخرج الحي: ملفات خاصة بالمالك، لا يقرأها زائر ولا مشروع عام.
+    // الفيديو حتى 220MB، والغلاف حتى 12MB. لا ملفات تنفيذية ولا أنواع مجهولة.
+    match /admin-live-director/{userId}/{projectId}/{fileName} {
+      allow read: if isAdmin() && request.auth.uid == userId;
+      allow create, update: if isAdmin() && request.auth.uid == userId
+        && projectId.size() >= 8 && projectId.size() <= 160
+        && isValidFileName(fileName)
+        && request.resource.size > 0
+        && ((request.resource.size <= 220 * 1024 * 1024
+              && request.resource.contentType.matches('video/(mp4|webm|quicktime)')
+              && fileName.matches('^.+[.](mp4|webm|mov)$'))
+          || (request.resource.size <= 12 * 1024 * 1024
+              && request.resource.contentType.matches('image/(jpeg|png|webp)')
+              && fileName.matches('^.+[.](jpg|jpeg|png|webp)$')));
+      allow delete: if isAdmin() && request.auth.uid == userId;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

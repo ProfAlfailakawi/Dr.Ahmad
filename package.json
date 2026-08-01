@@ -138,7 +138,11 @@
     "round12:self-test": "node scripts/test-publishing-studio-regressions.mjs && node scripts/test-editorial-board.mjs && node scripts/test-editorial-memory.mjs && node scripts/test-editorial-policy.mjs && node scripts/source-desk-watch.mjs --self-test && node scripts/editorial-board-calibration.mjs --self-test && node scripts/test-book-world.mjs && node scripts/test-whatsapp-central.mjs && npm --prefix whatsapp-bridge run check && node scripts/guard-site-architecture.mjs && node scripts/test-site-polish-2026.mjs",
     "delivery:guard": "node scripts/guard-delivery-vs-repo.mjs",
     "listen:index": "node scripts/build-listen-index.mjs",
-    "listen:index:self-test": "node scripts/build-listen-index.mjs --self-test"
+    "listen:index:self-test": "node scripts/build-listen-index.mjs --self-test",
+    "editorial-foresight:self-test": "node scripts/test-editorial-foresight.mjs",
+    "dr-ahmad-room:self-test": "node scripts/test-dr-ahmad-room.mjs",
+    "live-director:self-test": "node scripts/test-live-director.mjs",
+    "smart-command-room:self-test": "npm run editorial-foresight:self-test && npm run dr-ahmad-room:self-test && npm run live-director:self-test"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

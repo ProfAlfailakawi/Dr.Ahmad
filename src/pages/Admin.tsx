@@ -81,6 +81,7 @@ export default function Admin() {
   if (operationsPreview) return <Page><div className="mx-auto w-full max-w-[1220px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><ProductionMonitor articles={[]} onOpen={() => undefined} /></div></Page>
   if (creativePreview === 'publishing') return <Page><div className="mx-auto w-full max-w-[1500px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><PublishingStudio articles={[]} /></div></Page>
   if (creativePreview === 'design') return <Page><div className="mx-auto w-full max-w-[1500px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><SocialDesignStudio /></div></Page>
+  if (creativePreview === 'dashboard') return <Page><div className="mx-auto w-full max-w-[1500px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><TodayDashboard articles={[]} books={[]} papers={[]} media={[]} onOpen={() => undefined} /></div></Page>
   if (!firebaseEnabled) return <SetupGuide />
   if (checking) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!user) return <Login />
@@ -310,10 +311,12 @@ function Panel({ email }: { email: string }) {
   // استوديو التصاميم مباشرة (تبويبه المستقل الجديد — يستهلك البذرة بنفسه).
   useEffect(() => {
     const toDesign = () => chooseTab('design')
+    const toLiveDirector = () => chooseTab('studio')
     window.addEventListener('studio:campaign-seed', toDesign)
     // البصمة البصرية القادمة من مختبر الصور تقفز باللوحة إلى الاستوديو ليلتقطها
     window.addEventListener('studio:dna-palette', toDesign)
-    return () => { window.removeEventListener('studio:campaign-seed', toDesign); window.removeEventListener('studio:dna-palette', toDesign) }
+    window.addEventListener('studio:live-director-seed', toLiveDirector)
+    return () => { window.removeEventListener('studio:campaign-seed', toDesign); window.removeEventListener('studio:dna-palette', toDesign); window.removeEventListener('studio:live-director-seed', toLiveDirector) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -336,7 +339,7 @@ function Panel({ email }: { email: string }) {
   /* سجل الـrender مطابق لسجل التنقل: إضافة أي تبويب جديد تصبح خطأ TypeScript
      ما لم يحصل على شاشة فعلية، فلا تتكرر مشكلة رابط موجود بلا محتوى أو العكس. */
   const tabContent: Record<AdminTab, ReactNode> = {
-    dashboard: <TodayDashboard articles={cms.articles} onOpen={chooseTab} />,
+    dashboard: <TodayDashboard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} onOpen={chooseTab} />,
     monitor: <ProductionMonitor articles={cms.articles} onOpen={chooseTab} />,
     'content-health': <ProductionHealthCenter view="health" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
     production: <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,

@@ -171,6 +171,23 @@ service cloud.firestore {
     match /admin_content_intelligence/{id} {
       allow read, create, update, delete: if isAdmin();
     }
+    // جلسات غرفة د. أحمد: أوامر، مراجع ومخرجات تنفيذية خاصة بالمالك وحده.
+    // لا تستعلم عنها الواجهة العامة ولا تنسخ نصوص الأرشيف؛ تحفظ المعرفات والروابط.
+    match /admin_command_sessions/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+    }
+    // مشاريع «المخرج الحي»: البرومبتات ونسخ الإصلاح وروابط المقاطع خاصة بالمشرف.
+    match /admin_live_director_projects/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+    }
     // بروتوكول التصحيح المتسلسل وسجل انتقالاته؛ خاص بالمشرف ولا يظهر للعامة.
     match /admin_correction_cases/{id} {
       allow read, create, update, delete: if isAdmin();

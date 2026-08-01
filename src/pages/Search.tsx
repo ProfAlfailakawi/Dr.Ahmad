@@ -11,6 +11,9 @@ import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { versionedAudioUrl } from '../components/extras'
 import { loadSpokenIndex, searchSpoken, type SpokenHit } from '../lib/spoken-search'
+import { loadBookPassages, searchBookPassages } from '../lib/book-quotes'
+import { searchMediaChapters, stamp } from '../lib/media-chapters'
+import { ReadingShelf } from '../components/ReadingShelf'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { staticQuestions } from '../questions-data'
 
@@ -22,7 +25,7 @@ const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '012345678
    المتن ولا ملف PDF: تعرض المحور وموضعه فقط وتفتح صفحة الكتاب نفسها. */
 
 type UnifiedKind = KnowledgeKind | 'question'
-type TabId = 'all' | UnifiedKind | 'spoken'
+type TabId = 'all' | UnifiedKind | 'spoken' | 'passage'
 
 const KIND_TABS: { id: TabId; label: string }[] = [
   { id: 'all', label: 'الكل' },
@@ -34,9 +37,13 @@ const KIND_TABS: { id: TabId; label: string }[] = [
   /* التبويب الوحيد الذي لا يفتح نصاً بل صوتاً: جملةٌ نُطقت، والنقر يشغّلها
      عند ثانيتها. يبقى آخر الصف لأنه أحدثها وأقلها استعمالاً في البدء. */
   { id: 'spoken', label: 'جُمل منطوقة' },
+  /* متون الكتب التسعة كاملة — بإذن الدكتور. فهرسها ثقيل فلا يُجلب إلا عند
+     فتح التبويب، ثم يبقى في الذاكرة فتصير النتائج فورية. */
+  { id: 'passage', label: 'متون الكتب' },
 ]
 
-const KIND_BADGE: Record<UnifiedKind, string> = {
+const KIND_BADGE: Record<UnifiedKind | 'passage', string> = {
+  passage: 'من كتاب',
   article: 'مقال',
   paper: 'بحث',
   book: 'كتاب',
@@ -179,6 +186,27 @@ export default function Search() {
     () => (searchStarted && spokenReady ? searchSpoken(spokenIndex, normalizedQuery) : []),
     [normalizedQuery, searchStarted, spokenIndex, spokenReady])
 
+  /* ── متون الكتب ──
+     الفهرس الكامل (تسعة كتب) يُجلب عند أول بحثٍ في هذا التبويب أو في «الكل»،
+     فلا يثقل أول زيارة، ويبقى بعدها في الذاكرة. */
+  const [passagesReady, setPassagesReady] = useState(false)
+  useEffect(() => {
+    if (!searchStarted || passagesReady) return
+    if (tab !== 'passage' && tab !== 'all') return
+    let on = true
+    void loadBookPassages().then(() => { if (on) setPassagesReady(true) })
+    return () => { on = false }
+  }, [passagesReady, searchStarted, tab])
+
+  const passageHits = useMemo(
+    () => (searchStarted && passagesReady ? searchBookPassages(expandedQuery, 40) : []),
+    [expandedQuery, passagesReady, searchStarted])
+
+  /* دقيقة الفكرة: البحث لا يعيد اللقاء فحسب، بل الموضع الذي قيلت فيه الجملة. */
+  const chapterHits = useMemo(
+    () => (searchStarted ? searchMediaChapters(expandedQuery, 6) : []),
+    [expandedQuery, searchStarted])
+
   /* الاستماع من نتيجة البحث: لا ينتقل الزائر ولا تُفتح صفحة — يشتغل المشغّل
      المقيم أسفل الشاشة عند ثانية الجملة نفسها. */
   const playSpoken = (hit: SpokenHit) => {
@@ -196,7 +224,7 @@ export default function Search() {
   const counts: Record<TabId, number> = useMemo(() => {
     const paper = graphResults.filter((row) => row.node.kind === 'paper').length
     const book = graphResults.filter((row) => row.node.kind === 'book').length
-    const mediaCount = graphResults.filter((row) => row.node.kind === 'media').length
+    const mediaCount = graphResults.filter((row) => row.node.kind === 'media').length + chapterHits.length
     const kindCount = (kind: UnifiedKind) => graphResults.filter((row) => row.node.kind === kind).length
     return {
       article: articleResults.length,
@@ -209,13 +237,14 @@ export default function Search() {
       podcast: kindCount('podcast'),
       social: kindCount('social'),
       concept: kindCount('concept'),
-      all: articleResults.length + paper + book + mediaCount + questionResults.length,
+      all: articleResults.length + paper + book + mediaCount + questionResults.length + passageHits.length,
       spoken: spokenHits.length,
+      passage: passageHits.length,
     }
-  }, [articleResults, graphResults, questionResults, spokenHits])
+  }, [articleResults, chapterHits, graphResults, questionResults, spokenHits, passageHits])
 
   /* قائمة «الكل» الموحدة: كل نتيجة بنوعها، مرتبة بالمواءمة */
-  type UnifiedRow = { kind: UnifiedKind; title: string; snippet: string; url: string; year?: string; score: number }
+  type UnifiedRow = { kind: UnifiedKind | 'passage'; title: string; snippet: string; url: string; year?: string; score: number }
   const unifiedRows: UnifiedRow[] = useMemo(() => {
     if (!searchStarted) return []
     const rows: UnifiedRow[] = []
@@ -241,8 +270,30 @@ export default function Search() {
     for (const row of questionResults) {
       rows.push({ kind: 'question', title: row.item.ar, snippet: row.item.take.slice(0, 180), url: '/questions', year: undefined, score: row.hits * 10 })
     }
+    for (const hit of chapterHits) {
+      rows.push({
+        kind: 'media',
+        title: `${hit.title} · نحو ${stamp(hit.chapter.at)}`,
+        snippet: hit.chapter.text.slice(0, 170),
+        url: `/media/media-${hit.videoId}`,
+        year: undefined,
+        score: hit.score * 8,
+      })
+    }
+    /* المقطع من المتن يدخل النتائج بنصّه هو: يقرأ الباحث كلام الدكتور نفسه،
+       ويعرف من أي كتابٍ وأي صفحة، ثم يفتح صفحة الكتاب لا ملفاً. */
+    for (const match of passageHits) {
+      rows.push({
+        kind: 'passage',
+        title: `${match.bookTitle} · ص ${match.quote.page}`,
+        snippet: match.quote.text,
+        url: `/publications/${match.bookSlug}#book-knowledge`,
+        year: undefined,
+        score: match.score * 9,
+      })
+    }
     return rows.sort((a, b) => b.score - a.score)
-  }, [articleResults, expandedQuery, graphResults, questionResults, searchStarted])
+  }, [articleResults, chapterHits, expandedQuery, graphResults, passageHits, questionResults, searchStarted])
 
   const activeRows = useMemo(() => tab === 'all' ? unifiedRows : unifiedRows.filter((row) => row.kind === tab), [tab, unifiedRows])
 
@@ -310,7 +361,7 @@ export default function Search() {
                         {/* «جُمل منطوقة» لا تُظهر رقماً قبل أن يُفتح فهرسها:
                             صفرٌ قبل القراءة يكذب على الزائر بأنه لا شيء. */}
                         <span className="ms-1.5 text-[.72rem] text-soft">
-                          {item.id === 'spoken' && !spokenReady ? '' : ar(counts[item.id])}
+                          {(item.id === 'spoken' && !spokenReady) || (item.id === 'passage' && !passagesReady) ? '' : ar(counts[item.id])}
                         </span>
                       </button>
                     ))}
@@ -422,6 +473,10 @@ export default function Search() {
               )}
             </ul>
           )}
+
+          {/* الرفّ: من قائمة نتائج إلى خطة قراءة مرتّبة — قبل القائمة نفسها،
+              لأن الزائر الذي يعرف بمَ يبدأ لا يحتاج أن يقرأ القائمة كلها. */}
+          {searchStarted && tab === 'all' && <ReadingShelf query={normalizedQuery} articles={articleResults} />}
 
           {searchStarted && tab !== 'spoken' && <ul id="search-results" className="mt-8 scroll-mt-28">
             {visibleRows.map((row, index) => (

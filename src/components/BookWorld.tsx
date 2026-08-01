@@ -4,6 +4,7 @@ import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { createIdeaDna } from '../lib/idea-dna'
 import { ideaWords } from '../lib/idea-life'
 import { bookArchiveDate, buildBookWorldTimeline } from '../lib/book-world-timeline'
+import { bookQuotes, loadBookPassages, quotesForConcept, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
 import { bookKnowledgeAnchor, bookKnowledgeText, getBookKnowledge } from '../lib/book-knowledge'
 
 function scoreAgainst(source: Set<string>, value: string) {
@@ -117,17 +118,50 @@ export function BookWorld({
       })
       .filter((row): row is { idea: string; articles: typeof articleMatches; papers: typeof paperMatches } => Boolean(row))
 
+    /* «ما كُتب بعد الكتاب»: الفكرة لم تتجمّد يوم صدر الكتاب. نعرض المقالات
+       المنشورة بعد سنة الصدور وحدها، من الأقدم إلى الأحدث، ليرى القارئ
+       امتداد الفكرة في الزمن لا مجرد قربها في المعنى. */
+    const publishedYear = Number(String((book as { year?: string }).year || '').slice(0, 4)) || 0
+    const afterBook = publishedYear
+      ? articleMatches
+        .filter(({ item }) => Number(String(item.iso || '').slice(0, 4)) > publishedYear)
+        .sort((a, b) => bookArchiveDate(a.item).localeCompare(bookArchiveDate(b.item)))
+        .slice(0, 5)
+      : []
+
     return {
       dna,
       paths,
       ideas: paths.map((path) => path.idea),
       relatedBooks: bookMatches.slice(0, 3),
       knowledge,
+      afterBook,
+      publishedYear,
+      allQuotes: bookQuotes(book.slug),
     }
-  }, [articles, book.desc, book.slug, book.title, books, papers, seed])
+  }, [articles, book, book.desc, book.slug, book.title, books, papers, seed])
 
   const selectedIdea = activeIdea || model.ideas[0] || ''
   const selectedConcept = model.knowledge?.concepts.find((concept) => concept.title === selectedIdea)
+  const conceptQuotes = quotesForConcept(book.slug, selectedConcept?.id || '')
+
+  /* ═══ «اسأل هذا الكتاب» ═══
+     الزائر يسأل سؤاله بلغته، فيجيبه الكتاب بمقاطعه هو — لا بنموذجٍ يخمّن،
+     ولا بملفٍ يُفتح. الكتاب يدلّ على نفسه دون أن يُفتح. */
+  const [bookQuestion, setBookQuestion] = useState('')
+  const [askReady, setAskReady] = useState(false)
+  const [asked, setAsked] = useState('')
+
+  const askBook = (question: string) => {
+    setAsked(question)
+    if (askReady) return
+    void loadBookPassages().then(() => setAskReady(true))
+  }
+
+  const bookAnswer: BookQuoteMatch[] = useMemo(
+    () => (asked.trim().length >= 2 && askReady ? searchBookPassages(asked, 4, book.slug) : []),
+    [askReady, asked, book.slug],
+  )
   const activePath = useMemo(
     () => model.paths.find((path) => path.idea === selectedIdea) || model.paths[0] || null,
     [model.paths, selectedIdea],
@@ -218,6 +252,83 @@ export function BookWorld({
                 <p>{selectedConcept.summary}</p>
                 <p className="mt-2 border-r-2 border-accent/35 pr-3 text-ink/80"><span className="font-semibold text-accent">سؤال للقراءة:</span> {selectedConcept.question}</p>
               </div>}
+            </div>
+          </Disclosure>}
+
+          {/* ═══ اسأل هذا الكتاب ═══
+              الكتاب يجيب بمقاطعه هو. لا نموذج يخمّن، ولا ملف يُفتح. */}
+          {model.allQuotes.length > 0 && <Disclosure
+            eyebrow="اسأل هذا الكتاب"
+            title="اكتب سؤالك، فيجيبك الكتاب بمقاطعه"
+            meta="بحثٌ في متن هذا الكتاب وحده — بلا ملفٍ يُفتح ولا صفحةٍ تُنسخ."
+            lockOpen={Boolean(asked)}
+          >
+            <form
+              onSubmit={(event) => { event.preventDefault(); askBook(bookQuestion) }}
+              className="flex flex-wrap items-center gap-2"
+            >
+              <input
+                value={bookQuestion}
+                onChange={(event) => setBookQuestion(event.target.value)}
+                placeholder="مثال: ما دور المعلّم؟"
+                aria-label={`سؤال عن كتاب ${book.title}`}
+                className="min-w-0 flex-1 rounded-full border border-hair bg-canvas px-4 py-2.5 text-[.8rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent"
+              />
+              <button type="submit" className="rounded-full bg-accent px-5 py-2.5 text-[.75rem] font-semibold text-white transition-colors hover:bg-accent-deep">اسأل</button>
+            </form>
+
+            {asked && (
+              <div className="mt-4 border-t border-hair pt-4">
+                {!askReady && <p className="text-[.76rem] text-soft">يفتح الكتاب…</p>}
+                {askReady && bookAnswer.length === 0 && (
+                  <p className="text-[.76rem] leading-relaxed text-soft">لم يتناول هذا الكتاب سؤالك بهذه الكلمات. جرّب كلمةً أقرب إلى محاوره، أو <Link to={`/search?q=${encodeURIComponent(asked)}&tab=passage`} className="text-accent">ابحث في الكتب التسعة</Link>.</p>
+                )}
+                <div className="grid gap-3">
+                  {bookAnswer.map((match) => (
+                    <figure key={`ask-${match.quote.id}`} className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
+                      <blockquote className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/85">{match.quote.text}</blockquote>
+                      <figcaption className="mt-2 pr-3 text-[.66rem] text-soft">ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</figcaption>
+                    </figure>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Disclosure>}
+
+          {/* ═══ من متن الكتاب ═══
+              أذن الدكتور بنشر مقتطفاتٍ من المتن. تُعرض هنا مقاطع المحور النشط
+              أولاً، فإن لم يكن له مقاطع عُرضت مختارات الكتاب موزّعة على طوله. */}
+          {model.allQuotes.length > 0 && <Disclosure
+            eyebrow="من متن الكتاب"
+            title={conceptQuotes.length ? `مقاطع من «${selectedIdea}»` : 'مقاطع مختارة من الكتاب'}
+            meta={`${model.allQuotes.length} مقطعاً منشوراً بإذن المؤلف · منسوبة إلى صفحاتها · الكتاب نفسه أوسع`}
+          >
+            <div className="grid gap-3">
+              {(conceptQuotes.length ? conceptQuotes : model.allQuotes.slice(0, 4)).map((quote) => (
+                <figure key={quote.id} className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
+                  <blockquote className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/85">{quote.text}</blockquote>
+                  <figcaption className="mt-2 pr-3 text-[.66rem] text-soft">
+                    {book.title} · ص {quote.page}{quote.conceptTitle ? ` · ${quote.conceptTitle}` : ''}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </Disclosure>}
+
+          {/* ═══ ما كُتب بعد الكتاب ═══
+              الفكرة لم تتجمّد يوم الطبع؛ هذه امتداداتها الصحفية بعد الصدور. */}
+          {model.afterBook.length > 0 && <Disclosure
+            eyebrow="ما كُتب بعد الكتاب"
+            title={`امتداد الفكرة بعد صدوره سنة ${model.publishedYear}`}
+            meta="مقالات نُشرت بعد الكتاب وتلامس محاوره — من الأقدم إلى الأحدث."
+          >
+            <div className="grid gap-1">
+              {model.afterBook.map(({ item }) => (
+                <Link key={`after-${item.slug}`} to={`/articles/${item.slug}`} className="grid gap-1 rounded-xl px-2 py-2.5 transition-colors hover:bg-canvas sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-start sm:gap-3">
+                  <span className="text-[.68rem] font-semibold text-accent">{bookArchiveDate(item) || item.iso?.slice(0, 4)}</span>
+                  <span className="text-[.76rem] leading-relaxed text-ink">{item.title}</span>
+                </Link>
+              ))}
             </div>
           </Disclosure>}
 

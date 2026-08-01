@@ -35,7 +35,7 @@ COPY src/data/dr-ahmad-domain-glossary.json /app/src/data/dr-ahmad-domain-glossa
 COPY src/data/audio-meta.json /app/src/data/audio-meta.json
 COPY src/data/podcast-admin.json /app/src/data/podcast-admin.json
 COPY src/data/research-papers.ts /app/src/data/research-papers.ts
-COPY src/data/book-evidence.json /app/src/data/book-evidence.json
+COPY src/data/book-quotes.json /app/src/data/book-quotes.json
 COPY src/data/editorial-policy.json /app/src/data/editorial-policy.json
 COPY whatsapp-agent/content-index.mjs /app/whatsapp-agent/content-index.mjs
 COPY whatsapp-agent/config.mjs /app/whatsapp-agent/config.mjs

@@ -9,11 +9,12 @@ import { toRoot } from "../lib/dialect-lexicon";
 import { FadeUp, Page, PageHead } from "../components/ui";
 import { KnowledgeEntry } from '../components/KnowledgeEntry'
 import { useCmsContent } from "../lib/content";
-import type { ArticleRecord, BookRecord, PaperRecord } from "../lib/cms";
+import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from "../lib/cms";
 import { useSeo } from "../components/seo";
 import { loadArticleBodies } from "../lib/article-bodies";
 import { categoryLabel } from "../lib/content-taxonomy";
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
+import { loadBookPassages, matchBookQuotes, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
 
 const norm = (s: string) =>
   s
@@ -107,7 +108,7 @@ type TimelineItem = {
   score: number;
 };
 type Ref = {
-  kind: "كتاب" | "بحث محكّم";
+  kind: "كتاب" | "بحث محكّم" | "لقاء";
   slug: string;
   title: string;
   href: string;
@@ -143,6 +144,7 @@ function matchRefs(
   qTokens: string[],
   books: BookRecord[],
   papers: PaperRecord[],
+  media: MediaRecord[] = [],
 ): Ref[] {
   const query = new Set(qTokens)
   const scoreText = (value: string) => tokenize(value).reduce((score, root) => score + (query.has(root) ? 1 : 0), 0)
@@ -163,7 +165,24 @@ function matchRefs(
     const score = scoreText(`${title} ${paper.meta || ''} ${paper.abstractAr || ''} ${paper.keywords || ''} ${paper.keyFinding || ''}`)
     if (score > 0) refs.push({ kind: 'بحث محكّم', slug: paper.slug, title, href: `/research/${paper.slug}`, score: score + 1 })
   }
-  return refs.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, 'ar')).slice(0, 4)
+  /* اللقاءات المرئية طبقةٌ رابعة: ما قاله أمام الكاميرا، لا ما كتبه فقط.
+     كانت غائبة عن هذه الصفحة كلياً رغم أنها من أقوى ما يقنع الزائر. */
+  for (const item of media) {
+    const score = scoreText(`${item.title} ${item.topics || ''} ${item.program || ''} ${item.channel || ''} ${item.outlet || ''}`)
+    if (score > 0) refs.push({ kind: 'لقاء', slug: item.slug, title: item.title, href: `/media/${item.slug}`, score })
+  }
+  /* لا يبتلع نوعٌ واحد القائمة: الكتب وحدها كانت تملأ الستة فتختفي الأبحاث
+     واللقاءات. حصةٌ لكل نوع، ثم يُكمَّل الباقي بالأقوى. */
+  const sorted = refs.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, 'ar'))
+  const quota = new Map<Ref['kind'], number>()
+  const balanced = sorted.filter((item) => {
+    const used = quota.get(item.kind) || 0
+    if (used >= 2) return false
+    quota.set(item.kind, used + 1)
+    return true
+  })
+  const rest = sorted.filter((item) => !balanced.includes(item))
+  return [...balanced, ...rest].slice(0, 6)
 }
 
 function compactText(text = "", limit = 460) {
@@ -198,6 +217,7 @@ function answer(
   articles: ArticleRecord[],
   books: BookRecord[],
   papers: PaperRecord[],
+  media: MediaRecord[] = [],
 ): Answer {
   const q = tokenize(question);
   if (!q.length) return { hits: [], near: [], refs: [], timeline: [] };
@@ -268,7 +288,7 @@ function answer(
             " و",
           )}، وكأن الفكرة عند الدكتور ليست تكنولوجية أو تربوية وحدها، بل سؤال إنساني يتغير سياقه.`
       : undefined;
-  const refs = matchRefs(q, books, papers);
+  const refs = matchRefs(q, books, papers, media);
   const top = scored.filter((item) => item.score >= 5).slice(0, 3);
 
   const hits: Hit[] = [];
@@ -420,7 +440,7 @@ function buildPersonalBookChapters(result: Answer) {
 }
 
 export default function AskLibrary() {
-  const { articles, books, papers } = useCmsContent();
+  const { articles, books, papers, media } = useCmsContent();
   const [searchParams] = useSearchParams();
   const initialQuestion = (searchParams.get("q") || "").trim();
   useSeo({
@@ -439,9 +459,27 @@ export default function AskLibrary() {
   const inputRef = useRef<HTMLInputElement>(null);
   const result = useMemo(
     () =>
-      asked && bodies ? answer(asked, bodies, articles, books, papers) : null,
-    [asked, articles, bodies, books, papers],
+      asked && bodies ? answer(asked, bodies, articles, books, papers, media) : null,
+    [asked, articles, bodies, books, media, papers],
   );
+  /* ── من متن كتبه ──
+     المختارات (٢١٤ مقطعاً) محمّلة مع الصفحة فتظهر النتيجة فوراً؛ ثم يُجلب
+     فهرس المتون الكامل (٩٣٩ مقطعاً من تسعة كتب) في الخلفية فترتقي النتيجة
+     من «مختارات» إلى «الكتب كاملة» بلا انتظارٍ يراه الزائر. */
+  const [passagesReady, setPassagesReady] = useState(false);
+  useEffect(() => {
+    if (!asked || passagesReady) return;
+    let on = true;
+    void loadBookPassages().then(() => { if (on) setPassagesReady(true); });
+    return () => { on = false; };
+  }, [asked, passagesReady]);
+
+  const bookVoice: BookQuoteMatch[] = useMemo(() => {
+    if (!asked) return [];
+    const deep = passagesReady ? searchBookPassages(asked, 4) : [];
+    return deep.length ? deep : matchBookQuotes(asked, 3);
+  }, [asked, passagesReady]);
+
   const [twin, setTwin] = useState<TwinAnswer | null>(null);
   const [twinLoading, setTwinLoading] = useState(false);
   const [answerMode, setAnswerMode] = useState<AnswerMode>('direct');
@@ -732,10 +770,37 @@ export default function AskLibrary() {
                         ))}
                       </div>
 
+                      {bookVoice.length > 0 && (
+                        <div className="mt-9 border-t border-hair pt-6">
+                          <p className="text-[.8rem] text-soft">
+                            من متن كتبه
+                            <span className="mr-2 text-[.72rem] text-soft/70">
+                              {passagesReady ? 'بحثٌ في الكتب التسعة كاملة' : 'من المختارات — والكتب كاملة في الطريق'}
+                            </span>
+                          </p>
+                          <div className="mt-3 space-y-4">
+                            {bookVoice.map((match) => (
+                              <figure key={match.quote.id} className="rounded-xl border border-hair bg-wash px-4 py-3.5">
+                                <blockquote className="border-r-2 border-accent/40 pr-3 text-[.92rem] font-light leading-[1.95] text-ink/85">
+                                  {match.quote.text}
+                                </blockquote>
+                                <figcaption className="mt-2 pr-3 text-[.74rem] text-soft">
+                                  <Link to={`/publications/${match.bookSlug}#book-knowledge`} className="transition-colors hover:text-accent">
+                                    {match.bookTitle}
+                                  </Link>
+                                  {' · '}ص {match.quote.page}
+                                  {match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}
+                                </figcaption>
+                              </figure>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {result.refs.length > 0 && (
                         <div className="mt-9 border-t border-hair pt-6">
                           <p className="text-[.8rem] text-soft">
-                            كتب وأبحاث مرتبطة
+                            كتب وأبحاث ولقاءات مرتبطة
                           </p>
                           <ul className="mt-3 space-y-3">
                             {result.refs.map((r) => (

@@ -11,6 +11,7 @@
  *      لوحة التحكم (Admin-*.js) — لا في حزمة الزوار ولا في أي HTML مُصيَّر.
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { resolve, join, basename } from 'node:path'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -20,6 +21,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SAFE_JSON_FILES = ['src/data/private-book-links.json', 'src/data/book-toc-links.json']
 const PUBLIC_KNOWLEDGE = resolve(ROOT, 'src/data/book-knowledge.json')
 const SERVER_EVIDENCE = resolve(ROOT, 'src/data/book-evidence.json')
+const PUBLIC_QUOTES = resolve(ROOT, 'src/data/book-quotes.json')
+const PUBLIC_PASSAGES = resolve(ROOT, 'src/data/book-passages.json')
 const DIST = resolve(ROOT, 'dist')
 
 const failures = []
@@ -67,14 +70,127 @@ else {
   }
 }
 
-/* المتن المفهرس مسموح في الخادم فقط، ومنزوع منه اسم الملف والمسار وPDF. */
-if (!existsSync(SERVER_EVIDENCE)) failures.push('فهرس أدلة الكتب الخادمي مفقود')
-else {
+/* ═══ المتن الكامل لا يسكن المستودع ═══
+   المستودع عام (وهو عامٌ عمداً: تشغيلات Actions مجانية بلا سقف). فالمتن
+   الكامل يبقى على جهاز الدكتور، ويُبنى منه المشتقّان: خريطة المفاهيم
+   العامة، والاقتباسات المقيسة. وجودُه محلياً مسموح؛ تتبّعه في git ممنوع. */
+if (existsSync(SERVER_EVIDENCE)) {
   const serverEvidenceText = readFileSync(SERVER_EVIDENCE, 'utf8')
-  const serverEvidence = JSON.parse(serverEvidenceText)
-  if (serverEvidence?.coverage?.books !== 9 || serverEvidence?.coverage?.pages !== 1596) failures.push('تغطية أدلة الكتب الخادمية ناقصة')
-  for (const marker of ['.pdf', '/Users/', 'PrivateBooks', 'localPath', 'fileName']) {
-    if (serverEvidenceText.includes(marker)) failures.push(`فهرس الخادم يحمل مساراً أو ملفاً ممنوعاً: ${marker}`)
+  for (const marker of ['/Users/', 'PrivateBooks', 'localPath', 'fileName']) {
+    if (serverEvidenceText.includes(marker)) failures.push(`فهرس المتن المحلي يحمل مساراً ممنوعاً: ${marker}`)
+  }
+  const tracked = spawnSync('git', ['ls-files', '--error-unmatch', 'src/data/book-evidence.json'], { cwd: ROOT, encoding: 'utf8' })
+  if (tracked.status === 0) {
+    failures.push('متن الكتب الكامل متتبَّع في git — والمستودع عام. أخرجه: git rm --cached src/data/book-evidence.json')
+  }
+}
+
+/* ═══ الاقتباسات المنشورة — بإذن الدكتور، وبسقفٍ لا يُوسَّع صامتاً ═══
+   أُذِن بنشر «بعض الكلام من المتن». هذا الحارس يترجم «بعض» إلى رقم:
+   جملة أو جملتان لكل موضع، بسقف حرفي، وبعددٍ محدود لكل كتاب ومحور —
+   فلا يتحول الموقع إلى قارئٍ للكتاب من حيث لا ننتبه. */
+const QUOTE_HARD_LIMITS = {
+  maxChars: 240,
+  /* الضمانة الأولى: التباعد. اقتباسان بينهما أقل من ثلاث صفحات يعنيان أننا
+     نقترب من إعادة تركيب فقرةٍ متصلة — وهو الخط الذي لا يُعبر. */
+  minPageGap: 3,
+  /* الضمانة الثانية: النسبة. لا يتجاوز المقتبَس من أي كتاب ٣٪ من متنه
+     (الصفحة ≈ ١٦٠٠ حرف)، فيبقى دليلاً على الكتاب لا بديلاً عنه. */
+  maxShareOfBook: 0.03,
+  charsPerPage: 1600,
+}
+
+if (!existsSync(PUBLIC_QUOTES)) failures.push('ملف الاقتباسات المنشورة مفقود — شغّل npm run books:quotes')
+else {
+  const quotesText = readFileSync(PUBLIC_QUOTES, 'utf8')
+  const quotesFile = JSON.parse(quotesText)
+  const knowledgeBooks = existsSync(PUBLIC_KNOWLEDGE)
+    ? (JSON.parse(readFileSync(PUBLIC_KNOWLEDGE, 'utf8')).books || [])
+    : []
+
+  for (const book of quotesFile?.books || []) {
+    const quotes = book?.quotes || []
+    const pageCount = Number(knowledgeBooks.find((item) => item.slug === book.slug)?.pageCount || 0)
+
+    const pages = []
+    let chars = 0
+    for (const quote of quotes) {
+      const text = String(quote?.text || '')
+      chars += text.length
+      if (text.length > QUOTE_HARD_LIMITS.maxChars) {
+        failures.push(`اقتباس ${quote.id} طوله ${text.length} حرفاً — والسقف ${QUOTE_HARD_LIMITS.maxChars}`)
+      }
+      const tooClose = pages.find((page) => Math.abs(page - quote.page) < QUOTE_HARD_LIMITS.minPageGap)
+      if (tooClose !== undefined) {
+        failures.push(`اقتباسان متلاصقان في «${book.title}» (ص ${tooClose} و${quote.page}) — الحدّ ${QUOTE_HARD_LIMITS.minPageGap} صفحات`)
+      }
+      pages.push(quote.page)
+    }
+
+    if (pageCount) {
+      const share = chars / (pageCount * QUOTE_HARD_LIMITS.charsPerPage)
+      if (share > QUOTE_HARD_LIMITS.maxShareOfBook) {
+        failures.push(`المقتبَس من «${book.title}» ${(share * 100).toFixed(1)}٪ من الكتاب — والسقف ${QUOTE_HARD_LIMITS.maxShareOfBook * 100}٪`)
+      }
+    }
+  }
+
+  for (const marker of ['/Users/', 'PrivateBooks', '.pdf', 'localPath']) {
+    if (quotesText.includes(marker)) failures.push(`ملف الاقتباسات يحمل أثراً ممنوعاً: ${marker}`)
+  }
+}
+
+/* فهرس المتون الكامل منشورٌ بأمر الدكتور («استخدم الكتب كاملة»)، لكنه يظل
+   فهرساً للبحث: مقاطع منسوبة إلى صفحاتها، بلا مسارٍ ولا ملفٍ ولا بصمة مصدر. */
+if (!existsSync(PUBLIC_PASSAGES)) failures.push('فهرس متون الكتب مفقود — شغّل npm run books:quotes')
+else {
+  const passagesText = readFileSync(PUBLIC_PASSAGES, 'utf8')
+  const passagesFile = JSON.parse(passagesText)
+  if ((passagesFile?.coverage?.books || 0) !== 9) failures.push('فهرس المتون لا يغطي الكتب التسعة')
+  for (const marker of ['/Users/', 'PrivateBooks', '.pdf', 'localPath', 'sourceFingerprint']) {
+    if (passagesText.includes(marker)) failures.push(`فهرس المتون يحمل أثراً ممنوعاً: ${marker}`)
+  }
+}
+
+/* ═══ قفل الـPDF — لا يظهر إلا المتفق عليه ═══
+   شرط الدكتور الثابت: لا يظهر PDF الكتاب إلا ما اتُّفق على ظهوره. نترجمه إلى
+   حقلٍ صريح في البيانات (pdfPolicy) وفحصٍ للملف نفسه، فلا تكفي النيّة:
+   الملف الذي يتجاوز حجم العيّنة يُفشل النشر ولو حمل الاسم الصحيح. */
+const SAMPLE_MAX_PAGES = 25
+const SAMPLE_MAX_RATIO = 0.15
+
+{
+  const dataText = readFileSync(resolve(ROOT, 'src/data.ts'), 'utf8')
+  const booksStart = dataText.indexOf('export const books = [')
+  const booksBlock = booksStart >= 0 ? dataText.slice(booksStart, dataText.indexOf('\n]', booksStart)) : ''
+  const entries = [...booksBlock.matchAll(/\{\s*slug:\s*'([^']+)'[\s\S]*?(?=\n  \{\s*slug:|$)/g)]
+
+  if (entries.length !== 9) failures.push(`قائمة الكتب المتوقعة ٩، والموجود ${entries.length}`)
+
+  for (const [entry, slug] of entries.map((match) => [match[0], match[1]])) {
+    const pdf = entry.match(/pdf:\s*'([^']+)'/)?.[1] || ''
+    const policy = entry.match(/pdfPolicy:\s*'([^']+)'/)?.[1] || ''
+    const pageCount = Number(entry.match(/pageCount:\s*'?(\d+)/)?.[1] || 0)
+
+    if (pdf && !policy) { failures.push(`الكتاب «${slug}» ينشر PDF بلا سياسة معلنة (pdfPolicy)`); continue }
+    if (!policy) continue
+    if (!['sample', 'full', 'none'].includes(policy)) { failures.push(`سياسة PDF غير معروفة للكتاب «${slug}»: ${policy}`); continue }
+    if (policy === 'none' && pdf) { failures.push(`الكتاب «${slug}» سياسته «لا نشر» ومع ذلك يعرض ملفاً`); continue }
+    if (!pdf) continue
+
+    const file = resolve(ROOT, pdf.replace(/^\//, ''))
+    if (!existsSync(file)) { failures.push(`ملف PDF مفقود للكتاب «${slug}»: ${pdf}`); continue }
+
+    /* عدّ الصفحات من بنية الملف نفسه — لا من اسمه ولا من ثقتنا بمن رفعه. */
+    const pdfPages = (readFileSync(file, 'latin1').match(/\/Type\s*\/Page[^s]/g) || []).length
+    if (policy === 'sample') {
+      if (pdfPages > SAMPLE_MAX_PAGES) {
+        failures.push(`عيّنة «${slug}» ${pdfPages} صفحة — والسقف ${SAMPLE_MAX_PAGES}. إن كان النشر الكامل مقصوداً فغيّر pdfPolicy صراحةً.`)
+      }
+      if (pageCount && pdfPages > Math.ceil(pageCount * SAMPLE_MAX_RATIO)) {
+        failures.push(`عيّنة «${slug}» تغطي ${pdfPages} من ${pageCount} صفحة — أكثر من ${Math.round(SAMPLE_MAX_RATIO * 100)}٪ من الكتاب`)
+      }
+    }
   }
 }
 

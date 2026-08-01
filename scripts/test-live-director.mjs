@@ -9,6 +9,12 @@ import {
   recommendArticleVideoDuration,
   recommendPublicVideoDuration,
   repairLiveDirectorSegment,
+  applyReferenceFrame,
+  assessReferenceFrame,
+  setSegmentContinuity,
+  nearMinuteEditPlan,
+  liveDirectorPerformanceInsights,
+  LIVE_DIRECTOR_REPAIR_ISSUES,
 } from '../src/lib/live-director.ts'
 
 const ROOT = resolve(import.meta.dirname, '..')
@@ -93,6 +99,70 @@ check(/admin-live-director/.test(storageRules) && /220 \* 1024 \* 1024/.test(sto
 check(/ماذا تريد أن تنجز اليوم يا د\. أحمد/.test(roomUi), 'غرفة د. أحمد تعرض السؤال الرئيسي')
 check(recommendPublicVideoDuration({ topic: 'اقتباس: التعليم معنى' }).duration === 8, 'دعم ومضة 8 ثوانٍ')
 check(publicSimple.social.articleDecision != null, 'قرار تحويل الفيديو العام إلى مقال')
+
+// 44–71: سلسلة الترابط البصري وخطة النصوص المضافة وإصلاح المقطع الواحد.
+const chain = createArticleVideoProject({ article: published, useAvatar: true })
+check(chain.segments[0].continuityMode === 'independent' && chain.segments[0].referenceStrategy === 'none', 'المقطع الأول مشهد مؤسس بلا مرجع')
+check(chain.segments.slice(1).every((segment) => segment.referenceSourceClipId === `clip-${segment.order - 1}`), 'كل مقطع يرث مرجعه من سابقه')
+const modes = new Set(chain.segments.map((segment) => segment.continuityMode))
+check(modes.size >= 3, 'تنويع أنماط الترابط بدل امتداد مباشر متكرر')
+check(chain.segments.some((segment) => segment.continuityMode === 'soft'), 'دعم الامتداد البصري اللطيف')
+check(chain.segments.some((segment) => segment.continuityMode === 'thematic'), 'دعم الانتقال الموضوعي')
+check(chain.segments.some((segment) => segment.continuityMode === 'direct'), 'دعم الامتداد المباشر')
+check(chain.segments.every((segment) => segment.prompt.includes('Continuity with the previous clip')), 'البرومبت يحدد نوع الترابط')
+check(chain.segments.every((segment) => segment.prompt.includes('Clip start state') && segment.prompt.includes('Clip end state')), 'البرومبت يصف بداية المقطع ونهايته')
+
+const weak = applyReferenceFrame(chain, 'clip-1', { frameUrl: 'https://example.com/blur.jpg', kind: 'last_frame', sharpness: 0.2 })
+check(!weak.applied && weak.project === chain, 'الإطار الضبابي لا يُعتمد تلقائياً')
+check(assessReferenceFrame({ sharpness: 0.9 }).usable && !assessReferenceFrame({ sharpness: 0.1 }).usable, 'تقييم صلاحية الإطار المرجعي')
+
+const linked = applyReferenceFrame(chain, 'clip-1', { frameUrl: 'https://example.com/frame.jpg', kind: 'last_frame', sharpness: 0.9 })
+check(linked.applied && linked.project.segments[0].lastFrameImage === 'https://example.com/frame.jpg', 'حفظ الإطار الأخير في مقطعه')
+check(linked.project.segments[1].selectedReferenceFrame === 'https://example.com/frame.jpg', 'حفظ selectedReferenceFrame في المقطع التالي')
+check(linked.project.segments[1].referenceSourceClipId === 'clip-1', 'حفظ referenceSourceClipId')
+check(linked.project.segments[1].prompt !== chain.segments[1].prompt, 'إعادة بناء برومبت المقطع التالي وحده')
+check(linked.project.segments.slice(2).every((segment, index) => segment.prompt === chain.segments[index + 2].prompt), 'بقية المقاطع لم تُمس عند اعتماد المرجع')
+check(/Reference image: use the attached frame for identity/.test(linked.project.segments[1].prompt), 'الانتقال الموضوعي يستخدم المرجع للهوية واللون فقط')
+
+const direct = setSegmentContinuity(chain, 'clip-2', { mode: 'direct' })
+const withFrame = applyReferenceFrame(direct, 'clip-1', { frameUrl: 'https://example.com/frame.jpg', kind: 'last_frame', sharpness: 0.9 })
+check(/Continue from the provided reference frame/.test(withFrame.project.segments[1].prompt), 'الامتداد المباشر يبدأ من الإطار المرجعي')
+check(/Do not reset the character pose/.test(withFrame.project.segments[1].prompt), 'تعليمات الامتداد المباشر كاملة')
+const soft = setSegmentContinuity(chain, 'clip-3', { mode: 'soft', strategy: 'selected_frame' })
+check(/Shift to the requested camera angle smoothly/.test(soft.segments[2].prompt), 'تعليمات الامتداد اللطيف')
+const none = setSegmentContinuity(chain, 'clip-2', { strategy: 'none' })
+check(/Reference image: none/.test(none.segments[1].prompt), 'عدم استخدام مرجع حين لا يناسب')
+
+const disconnected = repairLiveDirectorSegment(withFrame.project, 'clip-2', 'المقطع غير مترابط مع السابق')
+check(disconnected.segments[1].continuityMode === 'soft', 'إصلاح عدم الترابط ينزل من المباشر إلى اللطيف')
+check(disconnected.segments[1].revisionReason === 'المقطع غير مترابط مع السابق', 'تسجيل سبب التعديل')
+check(disconnected.segments[1].promptVersions.length > withFrame.project.segments[1].promptVersions.length, 'حفظ النسخة السابقة قبل الإصلاح')
+check(disconnected.segments[0] === withFrame.project.segments[0] && disconnected.segments[3] === withFrame.project.segments[3], 'إصلاح مقطع دون إعادة المشروع كاملاً')
+
+const tooManyAngles = repairLiveDirectorSegment(chain, 'clip-1', 'الزوايا كثيرة')
+check(tooManyAngles.segments[0].shotCount < chain.segments[0].shotCount && tooManyAngles.segments[0].shotPlan.length === tooManyAngles.segments[0].shotCount, 'تقليل عدد اللقطات عند كثرة الزوايا')
+const lipSync = repairLiveDirectorSegment(chain, 'clip-1', 'مزامنة الفم سيئة')
+check(lipSync.segments[0].voiceMode === 'voice_over', 'تحويل الحديث إلى تعليق صوتي عند ضعف مزامنة الفم')
+check(LIVE_DIRECTOR_REPAIR_ISSUES.length >= 20 && LIVE_DIRECTOR_REPAIR_ISSUES.includes('الإطار المرجعي غير مناسب'), 'قائمة أسباب الإصلاح كاملة')
+check(chain.segments.every((segment) => segment.shotPlan.length === segment.shotCount && segment.shotPlan.at(-1).to === 8), 'خط زمني للقطات يغطي ثماني ثوانٍ')
+
+check(chain.segments.some((segment) => segment.voiceMode === 'avatar_speech'), 'مقطع بحديث مباشر')
+check(chain.segments.some((segment) => segment.voiceMode === 'voice_over'), 'مقطع بتعليق صوتي')
+check(chain.segments.some((segment) => segment.voiceMode === 'ambient' && !segment.narration), 'مقطع بصري دون كلام')
+check(chain.segments.every((segment) => segment.message), 'لكل مقطع معنى واحد محدد')
+check(chain.segments.some((segment) => segment.overlayPlan.length > 0), 'خطة النصوص المضافة بعد التوليد')
+check(chain.segments.every((segment) => segment.overlayPlan.every((cue) => cue.to <= 8 && cue.from >= 0)), 'توقيت النصوص داخل حدود المقطع')
+check(chain.segments.at(-1).overlayPlan.some((cue) => cue.kind === 'رابط' || cue.kind === 'دعوة'), 'الخاتمة تترك مساحة للرابط أو الدعوة')
+const outsideQuotes = (prompt) => prompt.replace(/[«“"][^»”"]*[»”"]/g, '')
+check(chain.segments.every((segment) => !/[\u0600-\u06FF]/.test(outsideQuotes(segment.prompt))), 'البرومبت إنجليزي عدا الحوار والعنوان بين علامتي اقتباس')
+check(chain.quality.continuity === 'ممتاز' || chain.quality.continuity === 'جيد', 'بوابة جودة الترابط')
+
+const near = nearMinuteEditPlan(chain)
+check(near.generated === 48 && near.finalTo <= 60 && near.finalFrom >= 55, 'النسخة القريبة من دقيقة: 48 مولدة والباقي تحرير')
+check(/المادة المولدة من Flow 48 ثانية/.test(near.statement), 'تصريح صادق بأن الدقيقة ليست كلها من Flow')
+check(liveDirectorPerformanceInsights([]).notes[0] === 'لا توجد بيانات كافية بعد.', 'لا استنتاج قبل عينة كافية')
+check(/live-director-frames/.test(liveUi) && !/ffmpeg|api\/video|cloudinary/i.test(liveUi), 'استخراج الإطار داخل المتصفح بلا خدمة خارجية')
+check(/بلا Flow API|لا Flow API|بلا Flow/.test(liveUi) || !/flow\.google|veo/i.test(liveUi), 'لا استدعاء إلى Flow أو Veo')
 
 assert.ok(checks >= 35)
 console.log(`✓ المخرج الحي: ${checks}/${checks}`)

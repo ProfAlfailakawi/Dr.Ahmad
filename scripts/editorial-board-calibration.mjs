@@ -10,6 +10,7 @@ import { createSign } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { buildImpactMirror } from '../src/lib/impact-mirror.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DAY_MS = 86_400_000
@@ -80,6 +81,7 @@ export function windowDaysFrom(publicationAt, span) {
 export function buildViewIndex(documents) {
   const daily = new Map()
   const articlePaths = new Set()
+  const allPaths = new Set()
   for (const document of documents) {
     const id = String(document.id || '')
     const data = document.data || document
@@ -87,6 +89,7 @@ export function buildViewIndex(documents) {
     if (id.startsWith('total:')) {
       try {
         const path = decodeURIComponent(id.slice(6))
+        allPaths.add(path)
         if (path.startsWith('/articles/')) articlePaths.add(path)
       } catch { /* ignore malformed analytics ids */ }
       continue
@@ -96,17 +99,26 @@ export function buildViewIndex(documents) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue
     try {
       const path = decodeURIComponent(id.slice(15))
-      if (!path.startsWith('/articles/')) continue
-      articlePaths.add(path)
+      allPaths.add(path)
+      if (path.startsWith('/articles/')) articlePaths.add(path)
       daily.set(`${day}|${path}`, count)
     } catch { /* ignore malformed analytics ids */ }
   }
-  return { daily, articlePaths }
+  return { daily, articlePaths, allPaths }
 }
 
 export function measureWindow(viewIndex, articlePath, publicationAt, span, measuredAt = new Date()) {
   const days = windowDaysFrom(publicationAt, span)
-  const views = days.reduce((sum, day) => sum + Number(viewIndex.daily.get(`${day}|${articlePath}`) || 0), 0)
+  const sumPath = (path) => days.reduce((sum, day) => sum + Number(viewIndex.daily.get(`${day}|${path}`) || 0), 0)
+  const views = sumPath(articlePath)
+  const shares = sumPath(`/_share${articlePath}`)
+  const listen25 = sumPath(`/_listen25${articlePath}`)
+  const listen50 = sumPath(`/_listen50${articlePath}`)
+  const listen75 = sumPath(`/_listen75${articlePath}`)
+  const journeyPrefix = `/_journey/${encodeURIComponent(articlePath)}>`
+  const onwardJourneys = [...(viewIndex.allPaths || [])]
+    .filter((path) => path.startsWith(journeyPrefix))
+    .reduce((sum, path) => sum + sumPath(path), 0)
   const paths = [...viewIndex.articlePaths]
   const siteTotal = paths.reduce((sum, path) => sum + days.reduce((subtotal, day) => subtotal + Number(viewIndex.daily.get(`${day}|${path}`) || 0), 0), 0)
   const siteAverage = paths.length ? siteTotal / paths.length : 0
@@ -118,14 +130,19 @@ export function measureWindow(viewIndex, articlePath, publicationAt, span, measu
     siteAverage: Math.round(siteAverage * 10) / 10,
     vsSiteAveragePct,
     performanceScore,
+    shares,
+    listen25,
+    listen50,
+    listen75,
+    onwardJourneys,
     source: 'views.daily.aggregate',
     measuredAt: measuredAt.toISOString(),
   }
 }
 
-export function nextCalibrationState({ calibration = {}, article, decision, viewIndex, now = new Date() }) {
+export function nextCalibrationState({ calibration = {}, impactMirror = {}, article, decision, viewIndex, now = new Date() }) {
   const publicationAt = parsePublicationAt(article, now)
-  if (!publicationAt) return { changed: false, lifecycleStatus: 'draft_started', publishedAt: null, calibration: { ...calibration, status: 'awaiting-publication' } }
+  if (!publicationAt) return { changed: false, lifecycleStatus: 'draft_started', publishedAt: null, calibration: { ...calibration, status: 'awaiting-publication' }, impactMirror }
 
   const due7 = new Date(publicationAt.getTime() + 7 * DAY_MS)
   const due30 = new Date(publicationAt.getTime() + 30 * DAY_MS)
@@ -154,11 +171,18 @@ export function nextCalibrationState({ calibration = {}, article, decision, view
     latestCalibrationError: error,
     method: 'مقارنة أداء المقال بمتوسط المقالات في الموقع خلال النافذة نفسها؛ معايرة تدريجية وليست Machine Learning.',
   }
+  const nextImpactMirror = buildImpactMirror({
+    intent: impactMirror.intent || {},
+    observations: impactMirror.observations || [],
+    metrics: preferredActual || impactMirror.resonance?.metrics || {},
+    updatedAt: now.toISOString(),
+  })
   return {
-    changed: JSON.stringify(next) !== JSON.stringify(calibration),
+    changed: JSON.stringify(next) !== JSON.stringify(calibration) || JSON.stringify(nextImpactMirror) !== JSON.stringify(impactMirror),
     lifecycleStatus: 'published',
     publishedAt: publicationAt.toISOString(),
     calibration: next,
+    impactMirror: nextImpactMirror,
   }
 }
 
@@ -229,12 +253,13 @@ async function main() {
     if (!linkedArticleId) continue
     const article = articleMap.get(linkedArticleId)
     if (!article) continue
-    const result = nextCalibrationState({ calibration: row.data.calibration || {}, article, decision: row.data.decision || {}, viewIndex, now })
+    const result = nextCalibrationState({ calibration: row.data.calibration || {}, impactMirror: row.data.impactMirror || {}, article, decision: row.data.decision || {}, viewIndex, now })
     if (!result.changed) continue
     await patchEditorialDecision(row.id, {
       lifecycleStatus: result.lifecycleStatus,
       publishedAt: result.publishedAt,
       calibration: result.calibration,
+      impactMirror: result.impactMirror,
       updatedAt: now,
     })
     updated += 1
@@ -251,12 +276,22 @@ if (process.argv.includes('--self-test')) {
   for (const day of days) {
     docs.push({ id: `day:${day}:%2Farticles%2Falpha`, data: { count: 4 } })
     docs.push({ id: `day:${day}:%2Farticles%2Fbeta`, data: { count: 2 } })
+    docs.push({ id: `day:${day}:${encodeURIComponent('/_share/articles/alpha')}`, data: { count: 1 } })
+    docs.push({ id: `day:${day}:${encodeURIComponent('/_listen25/articles/alpha')}`, data: { count: 3 } })
+    docs.push({ id: `day:${day}:${encodeURIComponent('/_listen75/articles/alpha')}`, data: { count: 2 } })
+    docs.push({ id: `day:${day}:${encodeURIComponent(`/_journey/${encodeURIComponent('/articles/alpha')}>${encodeURIComponent('/publications/book')}`)}`, data: { count: 1 } })
   }
   const index = buildViewIndex(docs)
-  const result = nextCalibrationState({ calibration: { mode: 'feedback-loop', status: 'awaiting-publication' }, article: { slug: 'alpha', status: 'published', iso: '2026-06-01' }, decision: { scores: { strength: 70, articlePotential: 74 } }, viewIndex: index, now })
+  const result = nextCalibrationState({
+    calibration: { mode: 'feedback-loop', status: 'awaiting-publication' },
+    impactMirror: { intent: { title: 'استقلالية الطالب', thesis: 'الأداة تساعد الطالب ولا تستبدل قراره', protectedPoints: ['القرار يبقى للطالب'], caveats: ['لا تستبدل قراره'] }, observations: [{ id: 'o1', source: 'comment', at: now.toISOString(), text: 'فهمت أن الأداة تساعد الطالب لكن القرار يجب أن يبقى بيده' }] },
+    article: { slug: 'alpha', status: 'published', iso: '2026-06-01' }, decision: { scores: { strength: 70, articlePotential: 74 } }, viewIndex: index, now,
+  })
   if (!result.calibration.actual7 || !result.calibration.actual30 || result.calibration.actual30.views !== 120) throw new Error('calibration self-test failed')
   if (result.calibration.actual30.vsSiteAveragePct !== 33) throw new Error('site-average comparison self-test failed')
   if (result.calibration.status !== 'complete') throw new Error('30-day lifecycle self-test failed')
+  if (result.calibration.actual30.shares !== 30 || result.calibration.actual30.listen75 !== 60 || result.calibration.actual30.onwardJourneys !== 30) throw new Error('impact signal aggregation self-test failed')
+  if (!result.impactMirror || result.impactMirror.counts.total !== 1 || result.impactMirror.resonance.metrics.shares !== 30) throw new Error('impact mirror self-test failed')
   console.log('Editorial board calibration self-test: passed')
 } else {
   await main()

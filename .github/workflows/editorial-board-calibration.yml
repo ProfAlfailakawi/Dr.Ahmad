@@ -19,6 +19,8 @@ jobs:
         with:
           sparse-checkout: |
             scripts/editorial-board-calibration.mjs
+            src/lib/impact-mirror.mjs
+            src/lib/adversarial-misunderstanding.mjs
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
@@ -27,7 +29,7 @@ jobs:
         run: node scripts/editorial-board-calibration.mjs --self-test
       - name: تحضير حساب الخدمة
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}' > sa.json
-      - name: قياس أداء 7 و30 يوماً وتحديث سجل القرار فقط
+      - name: قياس أداء 7 و30 يوماً وتحديث مرآة الأثر
         run: node scripts/editorial-board-calibration.mjs
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json

@@ -824,6 +824,9 @@ function LockButton({ active, children, onClick }: { active: boolean; children: 
 export function SocialDesignStudio({ initialText = '', initialContext = '' }: { initialText?: string; initialContext?: string }) {
   const [text, setText] = useState(initialText)
   const [context, setContext] = useState(initialContext)
+  const [campaignSourceSlug, setCampaignSourceSlug] = useState('')
+  const [correctionHold, setCorrectionHold] = useState(false)
+  const [correctionRefreshRequired, setCorrectionRefreshRequired] = useState(false)
   const [tone, setTone] = useState<ContentTone | 'auto'>('auto')
   const [density, setDensity] = useState<DesignDensity | 'auto'>('auto')
   const [platform, setPlatform] = useState<SocialPlatform | 'auto'>('auto')
@@ -1247,6 +1250,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       && court.safeguards.headlineGuard.status === 'passed'
       && court.safeguards.caveatCovenant.status === 'passed'
       && court.safeguards.claimLineage.status === 'passed'
+      && court.adversarialSimulation.status !== 'blocked'
     return { court, ready }
   }
   const visualSearchPlan = useMemo(() => buildVisualSearchPlan(interpretedText, expertContext, creativeBrief, creativeIdentity), [creativeBrief, creativeIdentity, expertContext, interpretedText])
@@ -3096,6 +3100,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }
 
   const authorizeMeaningExport = (candidates: CompositionPlan[]) => {
+    if (correctionHold || correctionRefreshRequired) {
+      setNotice('بروتوكول التصحيح يمنع تصدير مشتقات هذه المادة. أعد إرسال النسخة المصححة من مكتبة المقالات بعد اكتمال الجواز البديل.')
+      return false
+    }
     const verdict = designMeaningRelease(candidates)
     if (verdict.ready) return true
     setNotice(`محكمة المعنى أوقفت التصدير: ${verdict.court.alerts[0] || 'التصميم لا يحفظ الأطروحة أو التحفّظات كما يجب.'}`)
@@ -3150,6 +3158,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }
 
   const runCampaign = (campaignText: string, campaignContext: string, basePlan?: CompositionPlan, options: { preserveSelection?: boolean; quiet?: boolean } = {}) => {
+    if (correctionHold || correctionRefreshRequired) {
+      setNotice('هذه المادة تحت التصحيح المتسلسل؛ لن تبنى أو تصدر حملة من نسخة قديمة.')
+      return
+    }
     setCampaignBusy(true)
     try {
       let next = generateSocialCampaign({
@@ -3764,17 +3776,59 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     } catch { /* noop */ }
     if (!raw) return
     try {
-      const seed = JSON.parse(raw) as { text?: string; context?: string }
+      const seed = JSON.parse(raw) as { text?: string; context?: string; slug?: string }
       const seedText = String(seed?.text || '').trim()
       if (!seedText) return
       const seedContext = String(seed?.context || '').trim()
-      setText(seedText)
-      setContext(seedContext)
-      setNotice('وصل المقال من المكتبة — أبني له حملة متكاملة الآن…')
-      window.setTimeout(() => { runCampaignRef.current(seedText, seedContext) }, 80)
+      const sourceSlug = String(seed?.slug || '').trim()
+      void (async () => {
+        if (sourceSlug) {
+          const db = await getDb()
+          if (db) {
+            const { doc, getDoc } = await import('firebase/firestore')
+            const snapshot = await getDoc(doc(db, 'admin_content_intelligence', `article:${sourceSlug}`))
+            const protocol = snapshot.exists() ? (snapshot.data() as Record<string, any>).correctionProtocol : null
+            if (protocol?.status !== 'resolved' && protocol?.holds?.designExport === true) {
+              setCampaignSourceSlug(sourceSlug)
+              setCorrectionHold(true)
+              setCorrectionRefreshRequired(true)
+              setNotice('وصلت مادة تحت التصحيح المتسلسل؛ أوقفت بناء التصميم والحملة قبل استخدام النسخة القديمة.')
+              return
+            }
+          }
+        }
+        setCampaignSourceSlug(sourceSlug)
+        setCorrectionHold(false)
+        setCorrectionRefreshRequired(false)
+        setText(seedText)
+        setContext(seedContext)
+        setNotice('وصل المقال من المكتبة — أبني له حملة متكاملة الآن…')
+        window.setTimeout(() => { runCampaignRef.current(seedText, seedContext) }, 80)
+      })()
     } catch { /* بذرة تالفة: نتجاهلها بصمت */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!campaignSourceSlug) return
+    let active = true
+    let stop = () => {}
+    void getDb().then(async (db) => {
+      if (!db || !active) return
+      const { doc, onSnapshot } = await import('firebase/firestore')
+      stop = onSnapshot(doc(db, 'admin_content_intelligence', `article:${campaignSourceSlug}`), (snapshot) => {
+        if (!active || !snapshot.exists()) return
+        const protocol = (snapshot.data() as Record<string, any>).correctionProtocol
+        const held = protocol?.status !== 'resolved' && protocol?.holds?.designExport === true
+        setCorrectionHold(held)
+        if (held) {
+          setCorrectionRefreshRequired(true)
+          setNotice('فعل بروتوكول التصحيح حجز هذه المادة؛ بقيت المعاينة أمامك لكن التصدير والحملة متوقفان حتى تصل نسخة مصححة جديدة.')
+        }
+      }, () => undefined)
+    }).catch(() => undefined)
+    return () => { active = false; stop() }
+  }, [campaignSourceSlug])
 
   /* البصمة البصرية القادمة من مختبر الصور: نلتقطها عند الفتح فتلبسها كل دفعة تُولَّد. */
   useEffect(() => {
@@ -3837,6 +3891,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           </div>
         </div>
         <div className="relative mt-5"><StageRail stage={stage} onChange={handleStageChange} /></div>
+        {(correctionHold || correctionRefreshRequired) && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-[.68rem] leading-relaxed text-amber-800" data-correction-hold="design">تصحيح جار لهذه المادة: المعاينة محفوظة، لكن التصدير وبناء الحملة محجوزان. افتح النسخة المصححة من مكتبة المقالات بعد توقيع الجواز البديل.</p>}
 
         {interruptedDraft && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/20 bg-accent/[.045] px-4 py-3 text-[.68rem] shadow-sm" role="status" aria-live="polite">

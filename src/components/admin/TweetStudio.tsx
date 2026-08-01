@@ -210,6 +210,8 @@ function TweetCard({ draft, source, onCopied, onPublished }: { draft: TweetDraft
   const meaningBlocked = meaningCourt.chambers.social.status === 'blocked'
     || meaningCourt.safeguards.headlineGuard.status === 'blocked'
     || meaningCourt.safeguards.claimLineage.status === 'blocked'
+    || meaningCourt.adversarialSimulation.status === 'blocked'
+  const meaningNeedsReview = !meaningBlocked && meaningCourt.adversarialSimulation.status === 'review'
   const copy = async () => {
     if (meaningBlocked) { onCopied(`محكمة المعنى أوقفت النسخ: ${meaningCourt.alerts[0] || 'راجع صلة التغريدة بالمصدر.'}`); return }
     try {
@@ -231,7 +233,7 @@ function TweetCard({ draft, source, onCopied, onPublished }: { draft: TweetDraft
           {Boolean(draft.resonanceCount) && (
             <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[.6rem] font-bold text-amber-800" title="جملةٌ ظلّلها القرّاء بأصابعهم في صفحة المقال">اختارها القرّاء · {draft.resonanceCount}</span>
           )}
-          <span className={`rounded-full px-2.5 py-1 text-[.6rem] font-bold ${meaningBlocked ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{meaningBlocked ? 'محكمة المعنى ✕' : 'المعنى محفوظ ✓'}</span>
+          <span className={`rounded-full px-2.5 py-1 text-[.6rem] font-bold ${meaningBlocked ? 'bg-red-100 text-red-700' : meaningNeedsReview ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'}`}>{meaningBlocked ? 'سوء الفهم أوقفها ✕' : meaningNeedsReview ? 'تحصين المعنى ◐' : 'المعنى محصن ✓'}</span>
         </div>
         <span className={`text-[.66rem] font-black ${draft.score >= 82 ? 'text-emerald-700' : draft.score >= 68 ? 'text-amber-700' : 'text-red-600'}`}>{draft.score}٪</span>
       </div>
@@ -301,12 +303,33 @@ export function TweetStudio() {
   const [ledgerOpen, setLedgerOpen] = useState(false)
   const [resonant, setResonant] = useState<ResonantQuote[]>([])
   const [resonanceMode, setResonanceMode] = useState(false)
+  const [correctionHoldSlugs, setCorrectionHoldSlugs] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
     let active = true
     loadArticleBodies().then((map) => { if (active) setBodies(map) }).catch(() => undefined)
     fetchPublishedExtras<RadarItem>('site_radar').then((items) => { if (active) setRadar(items.slice(0, 40)) }).catch(() => undefined)
     return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    let stop = () => {}
+    void getDb().then(async (db) => {
+      if (!db || !active) return
+      const { collection, onSnapshot } = await import('firebase/firestore')
+      stop = onSnapshot(collection(db, 'admin_content_intelligence'), (snapshot) => {
+        if (!active) return
+        const held = new Set<string>()
+        for (const row of snapshot.docs) {
+          const data = row.data() as Record<string, any>
+          const protocol = data.correctionProtocol && typeof data.correctionProtocol === 'object' ? data.correctionProtocol : {}
+          if (protocol.status !== 'resolved' && protocol.holds?.socialReuse === true) held.add(String(data.slug || row.id.replace(/^article:/, '')))
+        }
+        setCorrectionHoldSlugs(held)
+      }, () => undefined)
+    }).catch(() => undefined)
+    return () => { active = false; stop() }
   }, [])
 
   /* رنينُ القرّاء: ما ظلّلوه في المتون. يُجلب مرةً واحدة ثم يُحلّ إلى جُملٍ
@@ -329,7 +352,9 @@ export function TweetStudio() {
     return () => { active = false }
   }, [bodies, cms.articles])
 
-  const resonanceMap = useMemo(() => resonanceBySlug(resonant), [resonant])
+  const safeResonant = useMemo(() => resonant.filter((item) => !correctionHoldSlugs.has(item.slug)), [correctionHoldSlugs, resonant])
+  const resonanceMap = useMemo(() => resonanceBySlug(safeResonant), [safeResonant])
+  const availableArticles = useMemo(() => cms.articles.filter((article) => !correctionHoldSlugs.has(article.slug)), [cms.articles, correctionHoldSlugs])
 
   /* الدفتر: المحلي فوراً (يعمل بلا شبكة)، ثم يُدمج مع نسخة السحابة إن وُجدت.
      الدمج اتحادٌ لا استبدال، فلا يضيع ما نُشر من هاتفٍ آخر. */
@@ -384,7 +409,7 @@ export function TweetStudio() {
   const sources = useMemo<TweetSource[]>(() => {
     switch (kind) {
       case 'article':
-        return cms.articles.map((article) => ({
+        return availableArticles.map((article) => ({
           kind: 'article' as const,
           id: article.slug,
           title: article.title,
@@ -412,7 +437,7 @@ export function TweetStudio() {
       default:
         return []
     }
-  }, [bodies, cms.articles, cms.books, cms.media, cms.papers, kind, radar, resonanceMap])
+  }, [availableArticles, bodies, cms.books, cms.media, cms.papers, kind, radar, resonanceMap])
 
   const filtered = useMemo(() => {
     const needle = query.trim()
@@ -453,11 +478,11 @@ export function TweetStudio() {
   /* خطة الأسبوع: كل المصادر الحقيقية معاً (لا نوعاً واحداً)، فالأسبوع يُبنى من
      الأرشيف كله. والمناسبة تُقرأ من نواة المواسم المشتركة لا من جدولٍ ثانٍ. */
   const allSources = useMemo<TweetSource[]>(() => [
-    ...cms.articles.slice(0, 60).map((article) => ({ kind: 'article' as const, id: article.slug, title: article.title, text: [article.excerpt, article.body || bodies[article.slug] || ''].filter(Boolean).join(' '), url: `${SITE}/articles/${article.slug}`, date: article.iso, resonantLines: resonanceMap.get(article.slug) })),
+    ...availableArticles.slice(0, 60).map((article) => ({ kind: 'article' as const, id: article.slug, title: article.title, text: [article.excerpt, article.body || bodies[article.slug] || ''].filter(Boolean).join(' '), url: `${SITE}/articles/${article.slug}`, date: article.iso, resonantLines: resonanceMap.get(article.slug) })),
     ...cms.books.map((book) => ({ kind: 'book' as const, id: book.slug, title: book.title, text: book.desc || '', url: `${SITE}/publications` })),
     ...cms.papers.map((paper) => ({ kind: 'paper' as const, id: paper.slug, title: paper.titleAr || paper.title, text: paper.abstractAr || '', url: paper.url || `${SITE}/research`, outlet: paper.journal || '' })),
     ...radar.slice(0, 10).map((item) => ({ kind: 'news' as const, id: item.id, title: item.ar || item.en || '', text: [item.ar, item.arNote].filter(Boolean).join('. '), url: item.url, outlet: item.source })),
-  ], [bodies, cms.articles, cms.books, cms.papers, radar, resonanceMap])
+  ], [availableArticles, bodies, cms.books, cms.papers, radar, resonanceMap])
 
   const weeklyPlan = useMemo(() => {
     if (!weeklyMode) return null
@@ -486,6 +511,7 @@ export function TweetStudio() {
           اختر مادةً من أرشيفك أو اكتب فكرةً حرّة؛ يفحص المسبك أربع عشرة زاويةً بلاغيةً ثم يعرض أقوى عشر، كلٌّ بدرجةِ انتشارٍ وأسبابها.
           كل جملةٍ تحمل شارة «موثّقة» موجودةٌ في متنك حرفاً بحرف؛ وما عداها إطارٌ من الاستوديو لا يدّعي عليك قولاً.
         </p>
+        {correctionHoldSlugs.size > 0 && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-[.68rem] leading-relaxed text-amber-800" data-correction-hold="tweets">التصحيح المتسلسل يحجب {correctionHoldSlugs.size} مادة متأثرة من التوليد والخيوط والخطة الأسبوعية فقط؛ بقية الاستوديو يعمل كالمعتاد.</p>}
 
         <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
           {SOURCE_TABS.map((tab) => (
@@ -519,9 +545,9 @@ export function TweetStudio() {
             type="button"
             className={resonanceMode ? primary : ghost}
             onClick={() => { setResonanceMode((current) => !current); setBatchMode(false); setWeeklyMode(false); setThread(null) }}
-            disabled={!resonant.length}
-            title={resonant.length ? '' : 'لم يظلّل القرّاء شيئاً بعد — أو لم يصل سجلّ التظليل'}
-          >رنين القرّاء{resonant.length ? ` — ${resonant.length} جملة` : ' (لا يوجد بعد)'}</button>
+            disabled={!safeResonant.length}
+            title={safeResonant.length ? '' : 'لم يظلّل القرّاء شيئاً صالحا لإعادة الاستخدام الآن'}
+          >رنين القرّاء{safeResonant.length ? ` — ${safeResonant.length} جملة` : ' (لا يوجد بعد)'}</button>
           {activeSource && !batchMode && !weeklyMode && !resonanceMode && (
             <button type="button" className={ghost} onClick={() => setThread(buildThread(activeSource, { variation }))}>ابنِ خيطاً</button>
           )}
@@ -603,7 +629,7 @@ export function TweetStudio() {
             وهذا دليلٌ من الواقع لا يملكه أيّ ترتيبٍ بلاغيّ. اضغط جملةً لتصير تغريدات.
           </p>
           <div className="mt-5 grid gap-3">
-            {resonant.slice(0, 24).map((quote) => (
+            {safeResonant.slice(0, 24).map((quote) => (
               <div key={`${quote.slug}-${quote.text.slice(0, 24)}`} className="rounded-2xl border border-hair bg-canvas p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="rounded-full bg-amber-100 px-3 py-1 text-[.62rem] font-bold text-amber-800">ظلّلها {quote.count} من القرّاء</span>
@@ -634,7 +660,7 @@ export function TweetStudio() {
                 </div>
               </div>
             ))}
-            {!resonant.length && <p className="text-[.78rem] text-soft">لم يصل سجلّ التظليل بعد، أو لم يظلّل أحدٌ شيئاً حتى الآن.</p>}
+            {!safeResonant.length && <p className="text-[.78rem] text-soft">لا توجد جملة صالحة لإعادة الاستخدام الآن؛ المواد الواقعة تحت التصحيح محجوبة تلقائيا.</p>}
           </div>
         </section>
       )}

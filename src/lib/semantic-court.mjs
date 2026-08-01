@@ -1,3 +1,5 @@
+import { buildAdversarialMisunderstandingSimulation } from './adversarial-misunderstanding.mjs'
+
 const MARKS = /[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06edـ]/g
 const STOP = new Set('الى علي على عن من في مع هذا هذه ذلك التي الذي كان كانت يكون تكون كما لكن لان ان او ثم كل بين بعد قبل حول عند عبر قد ما هو هي هم نحن حتى the and for from with that this are was were'.split(' '))
 const NEGATIONS = new Set(['لا', 'لن', 'لم', 'ليس', 'ليست', 'ما'])
@@ -213,14 +215,15 @@ export function buildMultimodalMeaningCourt(input = {}) {
     caveatCovenant: { label: 'عهد التحفّظات', status: caveats.status, score: caveats.score, preserved: caveats.preserved, total: caveats.total, alerts: caveats.status === 'review' ? ['سقطت جميع التحفّظات من النسخ المشتقة الطويلة.'] : [] },
     claimLineage: { label: 'سلسلة نسب الادعاء', status: lineage.length ? 'blocked' : 'passed', score: lineage.length ? clamp(100 - lineage.length * 30) : 100, alerts: lineage },
   }
-  const checks = [...Object.values(chambers), ...Object.values(safeguards)]
+  const adversarialSimulation = buildAdversarialMisunderstandingSimulation(input)
+  const checks = [...Object.values(chambers), ...Object.values(safeguards), adversarialSimulation]
   const status = checks.some((item) => item.status === 'blocked') ? 'blocked'
     : Object.values(chambers).some((item) => item.status === 'pending') ? 'pending'
       : checks.some((item) => item.status === 'review') ? 'review' : 'passed'
   const scored = checks.filter((item) => item.status !== 'pending')
-  return { schemaVersion: 1, kind: 'multimodal-meaning-court', fingerprintHash: clean(fingerprint.hash), status,
+  return { schemaVersion: 2, kind: 'multimodal-meaning-court', fingerprintHash: clean(fingerprint.hash), status,
     releaseReady: status === 'passed', score: scored.length ? clamp(scored.reduce((sum, item) => sum + item.score, 0) / scored.length) : 0,
-    chambers, safeguards, alerts: unique(checks.flatMap((item) => item.alerts || []), 60) }
+    chambers, safeguards, adversarialSimulation, alerts: unique(checks.flatMap((item) => item.alerts || []), 60) }
 }
 
 export function semanticCourtSummary(court = {}) {

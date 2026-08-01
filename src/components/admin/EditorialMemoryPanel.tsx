@@ -11,6 +11,7 @@ import {
   type PersonalSourceStatus,
 } from '../../lib/editorial-memory'
 import { useAdminAuth } from '../../lib/admin-auth'
+import { buildCascadeCorrectionCase, cascadeCorrectionId, cascadeCorrectionSummary } from '../../lib/cascade-correction.mjs'
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.78rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
@@ -219,8 +220,56 @@ export function EditorialMemoryPanel({ idea, articles, books, papers, onDataChan
   const updateSourceStatus = async (item: PersonalSourceRecord, status: PersonalSourceStatus) => {
     try {
       const db = await getDb(); if (!db) return
-      const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      const { arrayUnion, collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } = await import('firebase/firestore')
       await setDoc(doc(db, 'admin_source_desk', item.id), { status, updatedAtClient: new Date().toISOString(), updatedAt: serverTimestamp() }, { merge: true })
+      if (!['corrected', 'retracted'].includes(status)) return
+      const sourceRef = `personal:${item.id}`
+      const dependencies = await getDocs(query(collection(db, 'admin_content_intelligence'), where('sourceIds', 'array-contains', sourceRef)))
+      let affected = 0
+      for (const dependencyRow of dependencies.docs) {
+        const dependency = dependencyRow.data() as Record<string, any>
+        const slug = String(dependency.slug || dependencyRow.id.replace(/^article:/, '')).trim()
+        if (!slug) continue
+        const caseId = cascadeCorrectionId(item.id, slug)
+        const caseRef = doc(db, 'admin_correction_cases', caseId)
+        const existingCase = await getDoc(caseRef)
+        const article = articles.find((candidate) => candidate.slug === slug) as (ArticleRecord & { publicationPassport?: unknown }) | undefined
+        const watchedSource = item as PersonalSourceRecord & { watch?: { provider?: string; signals?: string[] } }
+        const correction = buildCascadeCorrectionCase({
+          source: { ...item, status, provider: watchedSource.watch?.provider, signals: watchedSource.watch?.signals },
+          dependency,
+          article: { slug, title: article?.title || dependency.title, publicationPassport: article?.publicationPassport || { passportId: dependency.publicationPassportId || '' } },
+          existingCase: existingCase.exists() ? existingCase.data() : null,
+        })
+        const summary = cascadeCorrectionSummary(correction)
+        await setDoc(caseRef, {
+          ...correction,
+          updatedAt: serverTimestamp(),
+          ...(!existingCase.exists() ? { createdAt: serverTimestamp() } : {}),
+        }, { merge: true })
+        await setDoc(dependencyRow.ref, {
+          needsEvidenceReview: true,
+          correctionCaseId: caseId,
+          correctionCaseIds: arrayUnion(caseId),
+          correctionProtocol: summary,
+          sourceWatchAlerts: arrayUnion(`[${sourceRef}] المصدر «${item.title}» حالته الآن ${status === 'retracted' ? 'منسحب' : 'مصحح'}؛ فُتحت سلسلة تصحيح لكل المشتقات المرتبطة.`),
+          sourceWatchUpdatedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+        const queued = await getDocs(query(collection(db, 'social_queue'), where('articleSlug', '==', slug)))
+        for (const queuedRow of queued.docs) {
+          const queuedData = queuedRow.data() as Record<string, any>
+          await setDoc(queuedRow.ref, {
+            status: 'correction_hold',
+            statusBeforeCorrection: queuedData.status === 'correction_hold' ? queuedData.statusBeforeCorrection || 'ready_for_review' : queuedData.status || 'ready_for_review',
+            correctionCaseId: caseId,
+            correctionHeldAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          }, { merge: true })
+        }
+        affected += 1
+      }
+      setSourceNotice(affected ? `فُتحت سلسلة التصحيح فوراً في ${affected} مادة، وتوقفت مشتقاتها وحدها.` : 'حُفظت الحالة؛ لا توجد مادة مرتبطة بهذا المصدر حالياً.')
     } catch { /* لا نغيّر العرض محلياً إذا تعذر الحفظ */ }
   }
 

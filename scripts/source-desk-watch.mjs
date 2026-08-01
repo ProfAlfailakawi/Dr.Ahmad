@@ -10,6 +10,7 @@
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { buildCascadeCorrectionCase, cascadeCorrectionId, cascadeCorrectionSummary } from '../src/lib/cascade-correction.mjs'
 
 export function extractDoi(value = '') {
   return String(value || '')
@@ -126,10 +127,44 @@ async function main() {
     if (!alert) continue
     const dependency = await db.collection('admin_content_intelligence').where('sourceIds', 'array-contains', `personal:${document.id}`).get()
     for (const row of dependency.docs) {
+      const dependencyData = row.data() || {}
+      let correctionProtocol = null
+      if (['corrected', 'retracted'].includes(result.status)) {
+        const articleSlug = String(dependencyData.slug || row.id.replace(/^article:/, '')).trim()
+        const caseId = cascadeCorrectionId(document.id, articleSlug)
+        const caseRef = db.collection('admin_correction_cases').doc(caseId)
+        const existingCase = await caseRef.get()
+        const correction = buildCascadeCorrectionCase({
+          source: { id: document.id, ...source, status: result.status, provider: 'Crossref', signals: result.signals },
+          dependency: dependencyData,
+          article: { slug: articleSlug, title: dependencyData.title, publicationPassport: { passportId: dependencyData.publicationPassportId || '' } },
+          existingCase: existingCase.exists ? existingCase.data() : null,
+          now,
+        })
+        correctionProtocol = cascadeCorrectionSummary(correction)
+        await caseRef.set({
+          ...correction,
+          updatedAt: FieldValue.serverTimestamp(),
+          ...(!existingCase.exists ? { createdAt: FieldValue.serverTimestamp() } : {}),
+        }, { merge: true })
+        const queued = await db.collection('social_queue').where('articleSlug', '==', articleSlug).get()
+        for (const queuedRow of queued.docs) {
+          const queuedData = queuedRow.data() || {}
+          if (queuedData.correctionCaseId === caseId && queuedData.status === 'correction_hold') continue
+          await queuedRow.ref.set({
+            status: 'correction_hold',
+            statusBeforeCorrection: queuedData.status === 'correction_hold' ? queuedData.statusBeforeCorrection || 'ready_for_review' : queuedData.status || 'ready_for_review',
+            correctionCaseId: caseId,
+            correctionHeldAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+          }, { merge: true })
+        }
+      }
       await row.ref.set({
         needsEvidenceReview: true,
         sourceWatchAlerts: FieldValue.arrayUnion(`[personal:${document.id}] ${alert}`),
         sourceWatchUpdatedAt: FieldValue.serverTimestamp(),
+        ...(correctionProtocol ? { correctionCaseId: correctionProtocol.id, correctionCaseIds: FieldValue.arrayUnion(correctionProtocol.id), correctionProtocol } : {}),
       }, { merge: true })
       alerted += 1
     }

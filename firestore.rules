@@ -171,9 +171,23 @@ service cloud.firestore {
     match /admin_content_intelligence/{id} {
       allow read, create, update, delete: if isAdmin();
     }
+    // بروتوكول التصحيح المتسلسل وسجل انتقالاته؛ خاص بالمشرف ولا يظهر للعامة.
+    match /admin_correction_cases/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
     // جوازات النشر الموقّعة: سجل إثبات خاص لا يظهر في الموقع العام.
     // يكتبها الخادم بحساب الخدمة؛ وتبقى القراءة للمشرف للمراجعة والتدقيق.
     match /admin_publication_passports/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    // رأس السلسلة ورابط التعاقب يكتبهما خادم التوقيع فقط. الجواز القديم يبقى
+    // غير قابل للتعديل، وهذه الوثيقة المنفصلة تثبت من حل محله.
+    match /admin_publication_passport_heads/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    match /admin_publication_passport_links/{id} {
       allow read: if isAdmin();
       allow write: if false;
     }

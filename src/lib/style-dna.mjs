@@ -641,8 +641,13 @@ export function unsupportedClaims(body, sources = []) {
 export function verbatimOverlap(body, archiveTexts, size = 6) {
   const target = bareText(String(body)).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean)
   if (target.length < size) return []
+  const targetKey = target.join(' ')
   const seen = new Set()
   for (const source of (archiveTexts || [])) {
+    /* النصّ يطابق نفسه: فتحُ مقالٍ منشور في الاستوديو كان يُتّهم بالنقل عنه
+       هو. أي مصدرٍ يحتوي النصّ المفحوص كاملاً يُستثنى من المقارنة. */
+    const raw = bareText(String(source?.body ?? source ?? '')).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean).join(' ')
+    if (raw === targetKey || (raw.length > 40 && raw.includes(targetKey))) continue
     const tokens = bareText(String(source?.body ?? source ?? '')).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean)
     for (let index = 0; index + size <= tokens.length; index += 1) seen.add(tokens.slice(index, index + size).join(' '))
   }

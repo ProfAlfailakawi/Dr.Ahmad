@@ -40,6 +40,8 @@ export interface StyleMetrics {
   questions: number; collective: number; guillemets: number
   medianSentence: number; longSentenceRate: number; shortRate: number
   medianParagraph: number; maxParagraph: number; singleRate: number
+  duplicateSentenceRate: number; duplicateGramRate: number
+  lexicalDiversity: number; worstSentenceRepeat: number
   firstSentenceWords: number; lastSentence: string
 }
 
@@ -75,8 +77,19 @@ export declare function styleBrief(dna: StyleDna | null, targetWords?: number): 
 export declare function judgeStyle(
   body: string,
   dna: StyleDna | null,
-  options?: { archive?: ({ body?: string } | string)[]; threshold?: number },
+  options?: {
+    archive?: ({ body?: string } | string)[]
+    /* مصادر الإسناد: الأرشيف + الأحداث الراهنة. كل رقمٍ أو دراسةٍ في النص
+       يجب أن يكون له أثرٌ هنا، وإلا فهو مُختلَق. */
+    sources?: ({ body?: string; title?: string; summary?: string; excerpt?: string } | string)[]
+    threshold?: number
+  },
 ): StyleVerdict
+
+export declare function unsupportedClaims(
+  body: string,
+  sources?: ({ body?: string; title?: string; summary?: string; excerpt?: string } | string)[],
+): { kind: string; value: string }[]
 export declare function verbatimOverlap(
   body: string,
   archiveTexts: ({ body?: string } | string)[],
@@ -88,3 +101,13 @@ export declare function applyRhythm(value?: string, dna?: StyleDna | null): stri
 export declare function breakLongSentences(value?: string, dna?: StyleDna | null): string
 export declare function refineToStyle(value?: string, dna?: StyleDna | null): string
 export declare function styleReportLines(verdict: StyleVerdict | null): string[]
+
+export declare function extractVoiceSignature(rejectedText: string, corpus?: ({ body?: string } | string)[], limit?: number): string[]
+export declare function withVoiceMemory(dna: StyleDna | null, exclusions?: string[]): StyleDna
+
+export declare const PROOFREAD_INSTRUCTION: string
+export declare function acceptProofread(
+  original: string,
+  corrected: string,
+  dna?: StyleDna | null,
+): { accepted: boolean; reason: string; score?: number }

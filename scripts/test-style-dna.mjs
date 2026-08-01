@@ -19,7 +19,8 @@ import { resolve } from 'node:path'
 const root = process.cwd()
 const {
   BANNED_PHRASES, articleMetrics, countWords, judgeStyle, measureStyleDna,
-  polishTypography, refineToStyle, styleBrief, verbatimOverlap,
+  PROOFREAD_INSTRUCTION, acceptProofread, bareText, extractVoiceSignature, liftPauses,
+  polishTypography, refineToStyle, styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory,
 } = await import(resolve(root, 'src/lib/style-dna.mjs'))
 
 const bodies = JSON.parse(readFileSync(resolve(root, 'src/data/bodies.json'), 'utf8'))
@@ -110,6 +111,31 @@ const longParagraph = Array.from({ length: 14 }, (_, index) => `هذه جملة 
 assert.ok(refineToStyle(longParagraph, dna).split(/\n\s*\n/).length >= 3, 'الفقرة المتضخّمة تُقطَّع بإيقاعه')
 assert.ok(polishTypography('كلمة  مزدوجة   المسافات').includes('كلمة مزدوجة'), 'المسافات المكرّرة تُضبط')
 
+/* ─── بوابة الإسناد: أخطر ما كشفه التشغيل الحيّ ─── */
+const fabricated = 'في الصف اليوم مشهدٌ يتكرر. دراسة نشرت في «علم النفس التربوي» (2025) أظهرت أن الطلاب الذين اعتمدوا على الذكاء الاصطناعي سجلوا تراجعاً بنسبة 38% في فهم المواد بعد شهر. لا لأنه لا يقرأ… بل لأن عقله لم يُجبر على التفاعل. فهل نمنحهم أدوات التعلّم… أم أدوات التحايل؟'
+const orphan = unsupportedClaims(fabricated, archive)
+assert.ok(orphan.length >= 1, `الرقم المخترع يُضبط (${orphan.length})`)
+assert.ok(judgeStyle(fabricated, dna, { sources: archive }).fatal.some((line) => line.includes('بلا سند')), 'الاختلاق تحفّظٌ قاطع')
+/* واستشهادُه الحقيقي يعبر: ٤٣ من مقالاته تستشهد بدراساتٍ بأسمائها */
+const citing = archive.filter((item) => /(?<!\p{L})دراسة(?!\p{L})/u.test(item.body))
+assert.ok(citing.length >= 20, `الاستشهاد من أسلوبه (${citing.length} مقالاً)`)
+const falseAlarms = citing.filter((item) => unsupportedClaims(item.body, archive).length).length
+assert.ok(falseAlarms === 0, `لا إنذار كاذب على استشهاداته الحقيقية (${falseAlarms})`)
+
+/* ─── أعطابٌ رصدها تدقيقٌ عدائي ─── */
+assert.equal(polishTypography('قال "أ" ثم "ب" وانتهى.'), 'قال «أ» ثم «ب» وانتهى.', 'الاقتباس يقترن بالتناوب لا بعرضٍ ثابت')
+assert.equal(polishTypography(polishTypography('قال "أ" ثم "ب" وانتهى.')), polishTypography('قال "أ" ثم "ب" وانتهى.'), 'الطباعة ثابتة عبر التمريرات')
+assert.equal(liftPauses('الوعي ليس شعاراً، ثمَّة فرقٌ بين الأداة والغاية.', dna), 'الوعي ليس شعاراً، ثمَّة فرقٌ بين الأداة والغاية.', 'التشكيل لا يجعل «ثمَّة» تُقرأ «ثم»')
+const unstable = archive.filter((item) => {
+  const once = refineToStyle(item.body, dna)
+  return refineToStyle(once, dna) !== once
+}).length
+assert.ok(unstable <= 12, `الصقل شبه ثابت عبر تمريرين (${unstable} من ${archive.length}؛ كان ٣٧)`)
+const spamSource = archive[7].body
+const spammed = spamSource.split(/\s+/).map((word, index) => index % 6 === 5 ? `${word}…` : word).join(' ')
+assert.ok(judgeStyle(spammed, dna).score < judgeStyle(spamSource, dna).score, 'حشو الوقفات يخفض الدرجة ولا يرفعها')
+assert.ok(judgeStyle('نص تجريبي طويل بما يكفي للقياس والحكم عليه. '.repeat(20), { sampleSize: 5 }).score >= 0, 'بصمة مبتورة لا تُسقط الحَكَم')
+
 /* الوصفة التي تُملى على المحرك أرقامٌ لا صفات */
 const brief = styleBrief(dna, 400)
 for (const needle of ['وسيطها', 'نقاط الحذف', '…بل', 'صيدة', 'ممنوع']) {
@@ -123,19 +149,27 @@ process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account'
 process.env.CLOUDFLARE_API_TOKEN = 'test-token'
 const { generatePerfectArticle } = await import(resolve(root, 'server.mjs'))
 
-const filler = (count) => Array.from({ length: count }, (_, index) => ['التعليم', 'يتنفس', 'حين', 'يقود', 'المعلم', 'وعياً', 'راشداً', 'اليوم'][index % 8]).join(' ')
+/* نصّان مصطنعان للاختبار: أحدهما بلغة النماذج، والآخر بإيقاعه. كُتبا هنا
+   عمداً (لا مقتطفان من أرشيفه) كي يعبرا حارس النقل الحرفي. */
 const weakBody = [
-  `يعد الذكاء الاصطناعي من أهم التطورات التي يشهدها التعليم في هذه المرحلة الدقيقة من تاريخه الطويل، وهو ما يفرض على المؤسسات التعليمية أن تعيد النظر في أدواتها ومناهجها وسياساتها. ${filler(60)}`,
-  `${filler(120)}`,
-  `في الختام، إن الأمر يتوقف على طريقة الاستخدام. ${filler(120)}`,
+  'يعد الذكاء الاصطناعي من أهم التطورات التي يشهدها التعليم في هذه المرحلة الدقيقة من تاريخه الطويل، وهو ما يفرض على المؤسسات التعليمية أن تعيد النظر في أدواتها ومناهجها وسياساتها كافة، خصوصاً مع تسارع وتيرة التحول الرقمي في المنطقة العربية عموماً وفي دول الخليج خصوصاً.',
+  'إن الاعتماد المتزايد على هذه الأدوات في إنجاز الواجبات المدرسية والبحوث الأكاديمية قد يؤدي إلى إضعاف مهارات التفكير المستقل لدى الطلاب، وهو ما يشكل تحدياً كبيراً أمام المؤسسات التي تسعى إلى بناء جيل قادر على الإبداع والابتكار ومواكبة متطلبات سوق العمل المتغيرة باستمرار.',
+  'في الختام، إن الأمر يتوقف على طريقة الاستخدام وعلى وعي المعلم وولي الأمر بحدود الأداة وإمكاناتها، وعلى قدرة النظام التعليمي على وضع الضوابط الكفيلة بتحقيق التوازن المنشود بين الاستفادة من التقدم التقني والحفاظ على جوهر العملية التربوية.',
 ].join('\n\n')
+
 const strongBody = [
-  'دخل المعلّم الصفّ كعادته…لكن الأسئلة تغيّرت.',
-  'الطالب لا يسأل «كيف أفهم؟»…بل «من يجيب عني؟»',
-  'ليست المشكلة في الأداة…بل في الوعي الذي يقودها.',
-  `نحن أمام امتحانٍ جديد. هل نربّي عقلاً…أم نشتري إجابة؟ دعونا نصارح أنفسنا. ${filler(90)}`,
-  `علينا أن نختار. ليس بيننا وبين التكنولوجيا عداوة…بل بيننا وبين الكسل. ${filler(80)}`,
-  'وإن لم نفعل…فمن يبقى ليسأل؟',
+  'دخل المعلّم الصفّ كعادته… لكن الأسئلة تغيّرت.',
+  'قبل سنواتٍ كان الطالب يسأل: كيف أفهم هذا الدرس؟ اليوم يسأل سؤالاً آخر، أقصر وأخطر: من يجيب عني؟',
+  'ليست المشكلة في الأداة… بل في الوعي الذي يقودها. الأداة لا تعرف الفرق بين طالبٍ يتعلّم وطالبٍ يهرب. نحن من نعرف.',
+  'في ورقةٍ صحيحة تماماً، لا خطأ فيها ولا أثر ليدٍ مترددة، يغيب شيءٌ واحد: صاحبها. الورقة كاملة… والعقل غائب.',
+  'نعم، أنجز الواجب. ونعم، حصل على الدرجة. لكن ما الذي بقي في رأسه بعد أن أُغلق الجهاز؟',
+  'هنا يبدأ سؤالٌ لا تحلّه المناهج: ماذا نقيس حين نصحّح؟ نقيس المُخرَج أم نقيس الطريق إليه؟ الامتحان يقيس الأول… والتربية تعيش في الثاني.',
+  'دعونا نصارح أنفسنا. نحن لم نُهزم أمام الآلة، ولم نُسبَق. نحن فقط اخترنا الأسهل حين صار متاحاً، ثم سمّيناه تطويراً.',
+  'وأخطر ما في الأمر أنه هادئ. لا ضجيج، ولا احتجاج، ولا مشهد يستدعي القلق. طالبٌ راضٍ، ومعلّمٌ مطمئن، وأسرةٌ فخورة… وعقلٌ لم يُستعمل.',
+  'ماذا لو غيّرنا السؤال؟ بدل «هل أنجز الواجب؟» نسأل: «ما الذي تغيّر فيه بعد أن أنجزه؟» سؤالٌ واحدٌ يعيد ترتيب الغرفة كلها.',
+  'علينا أن نختار. ليس بيننا وبين التكنولوجيا عداوة… بل بيننا وبين الكسل الذي تسهّله حين نتركها بلا سؤال.',
+  'ولن يحمينا في هذا كلّه منهجٌ جديد ولا نظامُ مراقبة. سيحمينا معلّمٌ يعرف طلابه واحداً واحداً، ويسمع في الجواب صوت صاحبه.',
+  'وإن لم نفعل… فمن يبقى ليسأل؟',
 ].join('\n\n')
 
 let cfCalls = 0
@@ -190,6 +224,16 @@ assert.ok(Array.isArray(article.style.lines) && article.style.lines.length, 'ت�
 assert.ok(article.body.includes('…'), 'الوقفات حاضرة في المسلَّم')
 assert.doesNotMatch(article.body, /في الختام/, 'عبارات النماذج لا تصل الدكتور')
 
+/* التكرار: العطب الحقيقي الذي كشفه تشغيلٌ حيّ على النموذج المجاني — نصٌّ يلفّ
+   على نفسه كان ينال ٩٥٪ قبل هذا الحارس. */
+const loopingText = Array.from({ length: 9 }, () => 'نحن بحاجة إلى إعادة التفكير في كيفية استخدامنا للتكنولوجيا في التعليم… بل لتعليمهم كيفية التفكير النقدي وحل المشكلات والتعلم مدى الحياة. هل نربي عقلاً؟').join(' ')
+const loopingVerdict = judgeStyle(loopingText, dna)
+assert.ok(loopingVerdict.score <= 60, `النص الذي يلفّ على نفسه يسقط (${loopingVerdict.score}٪)`)
+assert.ok(loopingVerdict.fatal.some((line) => line.includes('يلفّ على نفسه')), 'التكرار تحفّظٌ قاطع')
+assert.ok(loopingVerdict.corrections.some((line) => line.includes('يعيد نفسه')), 'أمر إصلاح التكرار يصل النموذج')
+const ownRepetition = archive.map((item) => articleMetrics(item.body).duplicateSentenceRate)
+assert.ok(ownRepetition.filter((rate) => rate > 0).length <= 4, 'الدكتور نفسه لا يكرّر — المسطرة صادقة هنا أيضاً')
+
 /* بنيتان مختلفتان لكل جولة: لا يتكرّر شكل المقال */
 const structures = new Set()
 for (const variation of [0, 1, 2, 3]) {
@@ -211,8 +255,62 @@ await assert.rejects(
   'انهيار المحرك يرفع خطأً ولا يسلّم قالباً',
 )
 
-/* ─── ٥) مصادر الاستوديو نظيفة من الحشو والقوالب ─── */
+/* ─── بوابة المصحّح اللغوي: تقبل التصحيح وترفض إعادة الكتابة ─── */
+const server = readFileSync(resolve(root, 'server.mjs'), 'utf8')
+const beforeProof = [
+  'دخل المعلّم الصفّ كعادته… لكن الأسئلة تغيّرت.',
+  'والأسوء أننا نترك الآلة تعلّمهم أن التعلّم غير ضروري. الواجب ليس مسؤوليةً على الأعاتب… بل فرصةً للنمو.',
+  'نحن أمام امتحانٍ جديد. هل نربّي عقلاً… أم نشتري إجابة؟ دعونا نصارح أنفسنا.',
+  'وإن لم نفعل… فمن يبقى ليسأل؟',
+].join('\n\n')
+const properProof = beforeProof.replace('والأسوء', 'والأسوأ').replace('الأعاتب', 'الأعتاب')
+const proofVerdict = acceptProofread(beforeProof, properProof, dna)
+assert.ok(proofVerdict.accepted, `تصحيح الإملاء يُقبل (${proofVerdict.reason})`)
+
+const rewritten = [
+  'في عالم اليوم، يواجه التعليم تحديات كبيرة بسبب التطور التكنولوجي المتسارع في جميع المجالات.',
+  'إن المعلم مطالب بمواكبة هذه التغيرات، بالإضافة إلى ذلك يجب على الطالب أن يتحلى بالمسؤولية.',
+  'في الختام، يمكن القول إن الأمر يتوقف على وعي الجميع بأهمية التعليم في بناء المستقبل.',
+].join('\n\n')
+assert.ok(!acceptProofread(beforeProof, rewritten, dna).accepted, 'إعادة الكتابة تُرفض كاملة')
+assert.ok(!acceptProofread(beforeProof, beforeProof.replace(/…/g, '،'), dna).accepted, 'مسُّ الوقفات يُرفض')
+assert.ok(!acceptProofread(beforeProof, '', dna).accepted, 'نصٌّ فارغ يُرفض')
+assert.ok(PROOFREAD_INSTRUCTION.includes('طلاباً'), 'المدقّق مأمورٌ ألا يغيّر صورة التنوين — وهي أسلوبه')
+assert.match(server, /ARTICLE_PROOFREAD !== 'off'/, 'التدقيق اللغوي موصولٌ وقابلٌ للتعطيل')
+
+/* ─── ذاكرة الصوت: يتعلّم من حكمه هو لا من أرشيفه فقط ─── */
 const studio = readFileSync(resolve(root, 'src/components/admin/PublishingStudio.tsx'), 'utf8')
+const rejectedParagraph = 'إن الاعتماد المتزايد على أدوات الذكاء الاصطناعي يشكل تحدياً كبيراً أمام المؤسسات التعليمية التي تسعى إلى بناء جيل قادر على الإبداع.'
+const signature = extractVoiceSignature(rejectedParagraph, archive)
+assert.ok(signature.length >= 2, `يستخرج بصمة النموذج من فقرةٍ مرفوضة (${signature.length})`)
+for (const phrase of signature) {
+  assert.ok(!bareText(archive.map((item) => item.body).join(' ')).includes(phrase), `«${phrase}» غائبةٌ فعلاً عن أرشيفه`)
+}
+/* الاختبار الحاسم: فقراتُه هو لا تُنتج بصمةً غريبة */
+let selfSignals = 0
+for (const item of archive.slice(0, 40)) {
+  const paragraph = item.body.split(/\n\s*\n/).find((part) => countWords(part) > 25) || ''
+  if (paragraph && extractVoiceSignature(paragraph, archive).length) selfSignals += 1
+}
+assert.equal(selfSignals, 0, 'لا يستخرج شيئاً من فقراتٍ كتبها هو — وإلا تعلّم منع نفسه')
+
+const taught = withVoiceMemory(dna, ['يشكل تحديا كبيرا'])
+assert.ok(taught.bannedVoice.includes('يشكل تحديا كبيرا'), 'ما تعلّمه يدخل قائمة المنع')
+assert.ok(styleBrief(taught, 400).includes('هذه ليست أنا'), 'ما تعلّمه يُملى على المحرك أيضاً')
+const long = `${rejectedParagraph}\n\n${strongBody}`
+assert.ok(judgeStyle(long, taught).fatal.some((line) => line.includes('صوتٌ ليس صوته')), 'الحَكَم يرفض ما رفضه الدكتور')
+assert.ok(!judgeStyle(long, dna).fatal.some((line) => line.includes('يشكل تحديا')), 'وقبل أن يعلّمه لم يكن يعرفه')
+
+/* ─── غرفة المرشحَين: المرشح الثاني يعود بدل أن يُرمى ─── */
+assert.match(server, /const roster = \[\]/, 'كل المرشحين يُحفظون لا الفائز وحده')
+assert.match(server, /alternates: roster/, 'النسخة الثانية تعود مع المقال')
+assert.match(studio, /data-candidate-room="true"/, 'غرفة المرشحَين معروضة')
+assert.match(studio, /data-voice-teacher="true"/, 'لوحة «علّمه صوتك» معروضة')
+assert.match(studio, /admin_style_memory/, 'ذاكرة الصوت تُزامَن بين أجهزته')
+const rules = readFileSync(resolve(root, 'firestore.rules'), 'utf8')
+assert.match(rules, /match \/admin_style_memory\/\{id\}/, 'قاعدة ذاكرة الصوت موجودة — وإلا صمتت المزامنة')
+
+/* ─── ٥) مصادر الاستوديو نظيفة من الحشو والقوالب ─── */
 assert.doesNotMatch(studio, /والفكرة هنا ليست في مقاومة الجديد/, 'الحشو المُعلَّب حُذف من الاستوديو')
 assert.doesNotMatch(studio, /وقد كتبت من قبل في/, 'قالب الاقتباس من عناوينه حُذف')
 assert.doesNotMatch(studio, /function buildExactLocalArticle/, 'مُلفِّق المقال المحلي حُذف')
@@ -221,9 +319,12 @@ assert.match(studio, /styleDna/, 'البصمة تُرسل إلى المحرك')
 assert.match(studio, /refineToStyle/, 'الصقل الحتمي مطبَّق على المسلَّم')
 assert.match(studio, /data-style-fidelity="true"/, 'مقياس المطابقة معروضٌ للدكتور')
 
-const server = readFileSync(resolve(root, 'server.mjs'), 'utf8')
 assert.match(server, /style-dna\.mjs/, 'الخادم يقيس بالمسطرة نفسها')
 assert.match(server, /ARTICLE_FAMILIES/, 'مستودع البُنى حاضر في الخادم')
+assert.match(server, /ARTICLE_MODEL_PRIMARY = '@cf\/qwen\/qwen3-30b-a3b-fp8'/, 'النموذج الافتراضي هو الفائز في المفاضلة الحية')
+assert.match(server, /if \(!revision\?\.body\) continue/, 'تعثّر جولةٍ لا يُلغي الجولات الباقية')
+assert.match(server, /Number\.isFinite\(requestedWords\)/, 'عدد كلماتٍ غير صالح لا يصير NaN')
+assert.match(studio, /wordCount\(bundle\.body\) < MIN_ARTICLE_WORDS\) return/, 'لا حزمة توزيع من محرّرٍ فارغ')
 const gcloudignore = readFileSync(resolve(root, '.gcloudignore'), 'utf8')
 assert.match(gcloudignore, /!src\/lib\/style-dna\.mjs/, 'الوحدة مشمولة في حزمة النشر — وإلا انهار dr-api عند الإقلاع')
 

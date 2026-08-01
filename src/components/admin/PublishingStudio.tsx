@@ -16,7 +16,7 @@ import { EditorialMemoryPanel } from './EditorialMemoryPanel'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 /* بصمة الأسلوب: المسطرة نفسها التي يقيس بها الخادم — الملف .mjs عمداً كي
    يستورده server.mjs بلا ترجمة، فلا يمدح أحدهما ما يرفضه الآخر. */
-import { judgeStyle, measureStyleDna, refineToStyle, type StyleVerdict } from '../../lib/style-dna.mjs'
+import { extractVoiceSignature, judgeStyle, measureStyleDna, refineToStyle, withVoiceMemory, type StyleVerdict } from '../../lib/style-dna.mjs'
 import { createIdeaDna } from '../../lib/idea-dna'
 import { buildKnowledgeGraph, graphSearch } from '../../lib/knowledge-graph'
 import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialCalibrationProfile, type EditorialPortfolioEvidence, type EditorialSourceType } from '../../lib/editorial-board'
@@ -274,10 +274,23 @@ type PerfectArticleResponse = {
   originality: number
   similarity: { slug: string; title: string; score: number }[]
   modelValidated: boolean
+  alternates?: {
+    title: string
+    excerpt: string
+    body: string
+    cat: string
+    words: number
+    score: number
+    structure: string
+    model: string
+    originality: number
+  }[]
   style?: {
     score: number
     ready: boolean
     structure: string
+    model?: string
+    proofread?: string
     lines: string[]
     checks: { key: string; label: string; grade: number; actual: string; wanted: string }[]
     fatal: string[]
@@ -881,7 +894,7 @@ function mergeSocialPacks(local: PerfectSocialPack, remote: PerfectSocialPack, v
   }
 }
 
-function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: number, skipOriginality: boolean) {
+function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: number, skipOriginality: boolean, styleScore: number | null = null) {
   const usedSlug = articles.some((article) => article.slug === bundle.slug)
   const words = wordCount(bundle.body)
   const linked = bundle.related.length + bundle.books.length + bundle.papers.length
@@ -897,7 +910,10 @@ function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: num
     { key: 'duplicate', label: skipOriginality ? 'الأصالة: مستثناة بإقرار الكاتب' : `أصالة الفكرة (${similarity.originality}٪)`, ok: skipOriginality || (!similarity.repeated && !articles.some((article) => normalize(article.title) === normalize(bundle.title))) },
     { key: 'words', label: `الحد الأدنى: ${MIN_ARTICLE_WORDS} كلمة (الحالي ${words})`, ok: words >= MIN_ARTICLE_WORDS },
     { key: 'voice', label: 'قابلية صوتية', ok: words >= MIN_ARTICLE_WORDS && hasQuestion },
-    { key: 'style-ai', label: 'مبني من بصمة أرشيفك', ok: Boolean(bundle.generatedBy) },
+    /* كان: `Boolean(bundle.generatedBy)` — وسمٌ لا يضعه إلا المولّد، فصار
+       المقال الذي يكتبه الدكتور بيده عاجزاً عن مغادرة الاستوديو بعد أن صار
+       المحرّر يفتح فارغاً. المقياس الآن ما يدّعيه: مطابقة البصمة نفسها. */
+    { key: 'style-ai', label: `مطابق لبصمة أسلوبك${styleScore === null ? '' : ` (${styleScore}٪)`}`, ok: styleScore === null ? Boolean(bundle.generatedBy) : styleScore >= 72 },
     { key: 'social', label: 'قابل للتحويل إلى حزمة سوشيال لاحقاً', ok: socialOk },
   ]
   return {
@@ -1573,8 +1589,112 @@ function QualityGateCard({ gate }: { gate: ReturnType<typeof qualityGate> }) {
 
 /* مقياس البصمة الحيّ: يقيس ما في المحرّر الآن بالمسطرة نفسها التي يقيس بها
    الخادم — فيرى الدكتور أثر كل تعديلٍ يكتبه على مطابقته لأسلوبه لحظةَ كتابته. */
-function StyleFidelityCard({ verdict, sampleSize }: { verdict: StyleVerdict | null; sampleSize: number }) {
-  if (!verdict) return null
+/* غرفة المرشحَين: المرشح الثاني كُتب فعلاً ودُفع ثمنه من الحصة، وكان يُرمى.
+   الآن يراه الدكتور بدرجته وبنيته ونموذجه، ويختار. */
+function CandidateRoom({ alternates, onAdopt }: {
+  alternates: NonNullable<PerfectArticleResponse['alternates']>
+  onAdopt: (alternate: NonNullable<PerfectArticleResponse['alternates']>[number]) => void
+}) {
+  if (!alternates.length) return null
+  return (
+    <section className={card} data-candidate-room="true">
+      <p className="text-[.76rem] font-semibold uppercase text-accent">نسخةٌ ثانية بين يديك</p>
+      <p className="mt-2 text-[.8rem] leading-relaxed text-soft">
+        كُتبت في اللحظة نفسها ببنيةٍ أخرى ونموذجٍ آخر، ومقيسةٌ بالمسطرة نفسها. اقرأها؛ إن كانت أقرب إليك فاعتمدها.
+      </p>
+      <div className="mt-4 grid gap-4">
+        {alternates.map((alternate, index) => (
+          <article key={`${alternate.structure}-${index}`} className="rounded-xl border border-hair bg-canvas p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <strong className="font-display text-[1rem] leading-relaxed text-ink">{alternate.title}</strong>
+              <span className="rounded-full border border-accent/30 bg-accent/[.06] px-3 py-1 font-display text-[.9rem] text-accent">{alternate.score}٪</span>
+            </div>
+            <p className="mt-1 text-[.7rem] text-soft">{alternate.structure} · {alternate.words} كلمة · أصالة {alternate.originality}٪ · {alternate.model}</p>
+            <p className="mt-3 max-h-40 overflow-y-auto whitespace-pre-line text-[.84rem] leading-loose text-soft">{alternate.body}</p>
+            <button type="button" className={`${ghost} mt-4`} onClick={() => onAdopt(alternate)}>اعتمد هذه النسخة</button>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* مصحّح الصوت: يقرأ الدكتور فقرةً فيقول «هذه ليست أنا»، فتدخل عباراتُها
+   الغريبة عن أرشيفه في قائمة منعٍ دائمة. تعلُّمٌ بلا تدريب ولا اشتراك. */
+function VoiceTeacher({ body, memory, onTeach, onForget }: {
+  body: string
+  memory: string[]
+  onTeach: (paragraph: string) => void
+  onForget: () => void
+}) {
+  const paragraphs = body.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean)
+  if (paragraphs.length < 2) return null
+  return (
+    <section className={card} data-voice-teacher="true">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">علّمه صوتك</p>
+          <h2 className="mt-1 font-display text-xl font-semibold text-ink">أشِر إلى ما ليس منك</h2>
+        </div>
+        {memory.length > 0 && <span className="text-[.72rem] text-soft">تعلّم {memory.length} عبارة</span>}
+      </div>
+      <p className="mt-2 text-[.78rem] leading-relaxed text-soft">
+        البصمة مقيسةٌ من أرشيفك — وهو ماضيك. هذه تُبنى من حكمك الآن: كل فقرةٍ ترفضها تُستخرج منها العباراتُ الغريبة عن أرشيفك وتُمنع في كل مقالٍ قادم.
+      </p>
+      <div className="mt-4 grid gap-2">
+        {paragraphs.map((paragraph, index) => (
+          <div key={index} className="flex items-start gap-3 rounded-xl border border-hair bg-canvas px-4 py-3">
+            <p className="min-w-0 flex-1 text-[.82rem] leading-loose text-soft line-clamp-3">{paragraph}</p>
+            <button type="button" onClick={() => onTeach(paragraph)} className="shrink-0 rounded-full border border-hair px-3 py-1.5 text-[.72rem] text-soft transition-colors hover:border-accent hover:text-accent">ليست أنا</button>
+          </div>
+        ))}
+      </div>
+      {memory.length > 0 && (
+        <details className="mt-4 group">
+          <summary className="cursor-pointer list-none text-[.76rem] text-accent">ما تعلّمه منك ({memory.length}) — اضغط لتراه</summary>
+          <p className="mt-2 text-[.78rem] leading-loose text-soft">{memory.map((item) => `«${item}»`).join(' · ')}</p>
+          <button type="button" className={`${ghost} mt-3`} onClick={onForget}>امسح ما تعلّمه وابدأ من جديد</button>
+        </details>
+      )}
+    </section>
+  )
+}
+
+/* بصمتك كما قِيست: ما تعلّمه المحرك عنك من أرشيفك، بالأرقام. ليس زينةً —
+   هذه هي المسطرة نفسها التي يُحاكَم بها كل نصٍّ يُكتب باسمه. */
+function FingerprintPanel({ dna }: { dna: ReturnType<typeof measureStyleDna> }) {
+  if (!dna) return null
+  const rows: [string, string][] = [
+    ['طول المقال', `${dna.article.p25}–${dna.article.p90} كلمة (وسيطك ${dna.article.median})`],
+    ['وسيط الجملة', `${dna.sentence.median} كلمات · ${dna.sentence.shortRate}٪ من جملك تسع فأقل`],
+    ['وقفات «…»', `${dna.marks.ellipsisPerArticle} في المقال · في ${dna.moves.articlesWithEllipsis}٪ من مقالاتك`],
+    ['الانقلاب «بل»', `في ${dna.moves.articlesWithAntithesis}٪ من مقالاتك`],
+    ['الأسئلة', `${dna.marks.questionsPerArticle} في المقال · في ${dna.moves.articlesWithQuestion}٪ منها`],
+    ['الفقرة', `وسيط ${dna.paragraph.median} كلمة · ${dna.paragraph.singleSentenceRate}٪ منها جملة واحدة`],
+    ['الخاتمة', `${dna.closings.questionRate}٪ سؤال · ${dna.closings.antithesisRate}٪ انقلاب بـ«بل»`],
+    ['أكثر ما تبدأ به', (dna.openers || []).slice(0, 6).map((item) => item.word).join(' · ')],
+  ]
+  return (
+    <details className="mt-4 group" data-fingerprint-panel="true">
+      <summary className="cursor-pointer list-none text-[.76rem] text-accent">بصمتك كما قِيست من {dna.sampleSize} مقالاً — اضغط لتراها</summary>
+      <div className="mt-3 grid gap-2">
+        {rows.filter(([, value]) => value).map(([label, value]) => (
+          <div key={label} className="flex items-start justify-between gap-4 rounded-xl border border-hair bg-canvas px-4 py-2.5">
+            <span className="shrink-0 text-[.76rem] font-semibold text-ink">{label}</span>
+            <span className="text-end text-[.76rem] leading-relaxed text-soft">{value}</span>
+          </div>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function StyleFidelityCard({ verdict, sampleSize, dna }: { verdict: StyleVerdict | null; sampleSize: number; dna: ReturnType<typeof measureStyleDna> }) {
+  if (!verdict) return <section className={card} data-style-fidelity="idle">
+    <p className="text-[.76rem] font-semibold uppercase text-accent">مطابقة أسلوبك</p>
+    <p className="mt-2 text-[.8rem] leading-relaxed text-soft">اكتب مئةً وعشرين كلمة فأكثر، أو ولّد المقال، وستظهر درجة المطابقة هنا لحظةً بلحظة.</p>
+    <FingerprintPanel dna={dna} />
+  </section>
   const tone = verdict.score >= 88 ? 'text-accent' : verdict.score >= 78 ? 'text-ink' : 'text-soft'
   const weakest = [...verdict.checks].filter((check) => check.grade < .8).sort((left, right) => left.grade - right.grade).slice(0, 3)
   return (
@@ -1603,6 +1723,7 @@ function StyleFidelityCard({ verdict, sampleSize }: { verdict: StyleVerdict | nu
       {verdict.fatal.length > 0 && (
         <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.8rem] leading-relaxed text-soft">{verdict.fatal.join(' · ')}</p>
       )}
+      <FingerprintPanel dna={dna} />
       {weakest.length > 0 && (
         <div className="mt-4 grid gap-2">
           {weakest.map((check) => (
@@ -2404,18 +2525,53 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   const styleSamples = useMemo(() => representativeStyleSamples(richArticles, 6), [richArticles])
   /* البصمة الرقمية من الأرشيف الحيّ كاملاً: ما يقيسه الحَكَم على الخادم وما
      يُصقل به النص هنا. تُحسب مرة عند تحميل المتون لا في كل توليد. */
-  const styleDna = useMemo(() => measureStyleDna(richArticles.map((article) => ({ body: article.body || '' }))), [richArticles])
+  /* نصوص الأرشيف تُجمَع مرةً واحدة وتُشارَك بين البصمة وحارس النقل الحرفي؛
+     كانت تُبنى في كل قياس، والقياس نفسه ٢٣٠ مللي ثانية على الخيط الرئيسي. */
+  const archiveTexts = useMemo(() => richArticles.map((article) => ({ body: article.body || '' })), [richArticles])
+  const measuredDna = useMemo(() => measureStyleDna(archiveTexts), [archiveTexts])
+  /* ذاكرة الصوت: ما قال عنه الدكتور «هذه ليست أنا». تعيش محلياً فوراً،
+     وتُزامَن مع Firestore إن سمحت القاعدة — فلا تتعطّل إن لم تُنشر بعد. */
+  const [voiceExclusions, setVoiceExclusions] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('dr-voice-exclusions') || '[]').slice(0, 60) } catch { return [] }
+  })
+  const styleDna = useMemo(() => withVoiceMemory(measuredDna, voiceExclusions), [measuredDna, voiceExclusions])
+  const [alternates, setAlternates] = useState<NonNullable<PerfectArticleResponse['alternates']>>([])
+  /* المزامنة بين أجهزته: تُقرأ مرةً عند الفتح، وتُدمج مع المحلي ولا تدهسه. */
+  useEffect(() => {
+    let alive = true
+    void (async () => {
+      try {
+        const db = await getDb()
+        if (!db) return
+        const { doc, getDoc } = await import('firebase/firestore')
+        const snapshot = await getDoc(doc(db, 'admin_style_memory', 'voice'))
+        const remote = snapshot.exists() ? (snapshot.data()?.exclusions as string[] | undefined) : undefined
+        if (!alive || !Array.isArray(remote) || !remote.length) return
+        setVoiceExclusions((previous) => {
+          const merged = [...new Set([...previous, ...remote.filter((item) => typeof item === 'string')])].slice(-60)
+          try { localStorage.setItem('dr-voice-exclusions', JSON.stringify(merged)) } catch { /* لا شيء يتعطّل */ }
+          return merged
+        })
+      } catch { /* القاعدة لم تُنشر بعد: المحلي يكفي */ }
+    })()
+    return () => { alive = false }
+  }, [])
   const [styleVerdict, setStyleVerdict] = useState<StyleVerdict | null>(null)
   /* المقياس الحيّ يتبع ما في المحرّر لا ما وُلّد: يكتب الدكتور سطراً فيرى أثره
      على مطابقته لبصمته فوراً. فحص النقل الحرفي يبقى لحظة التوليد وحدها لأنه
      يمسح الأرشيف كله. */
+  /* الأرشيف يرافق القياس الحيّ: بدونه كان تحفّظ «نقلٌ حرفي» يُحسب مرةً واحدة
+     عند التوليد ثم تحجبه البطاقة الحيّة فلا يراه أحد. ودون العتبة لا تُعرض
+     درجةٌ قديمة لنصٍّ لم يعد موجوداً — البطاقة تختفي. */
   const liveStyleVerdict = useMemo(
-    () => bundle.body.trim().split(/\s+/).filter(Boolean).length >= 120 ? judgeStyle(bundle.body, styleDna) : styleVerdict,
-    [bundle.body, styleDna, styleVerdict],
+    () => wordCount(bundle.body) >= 120
+      ? judgeStyle(bundle.body, styleDna, { archive: archiveTexts, sources: archiveTexts })
+      : null,
+    [bundle.body, styleDna, archiveTexts],
   )
   const lab = useMemo(() => ideaLab(idea, richArticles, books, papers), [idea, richArticles])
   const privateLinks = (privateBookLinks as { books?: PrivateBookLink[] }).books || []
-  const gate = useMemo(() => qualityGate(bundle, richArticles, targetWords, skipOriginality), [bundle, richArticles, skipOriginality, targetWords])
+  const gate = useMemo(() => qualityGate(bundle, richArticles, targetWords, skipOriginality, liveStyleVerdict?.score ?? null), [bundle, richArticles, skipOriginality, targetWords, liveStyleVerdict])
   const similarity = useMemo(() => articleSimilarityReport(bundle.title, bundle.body, richArticles), [bundle.title, bundle.body, richArticles])
   const editorialEvidenceChain = useMemo(() => buildEvidenceChain({
     slug: bundle.slug,
@@ -2766,10 +2922,50 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   }
 
   useEffect(() => {
-    if (view !== 'distribution' || bundle.socialPack || !bundle.title.trim()) return
+    /* كان الشرط على العنوان وحده، والعنوان يُقترح من الفكرة قبل كتابة حرف —
+       ففتحُ تبويب التوزيع على محرّرٍ فارغ كان يبني حزمةً من منشوراتٍ خاوية
+       ويعرضها كأنها جاهزة. */
+    if (view !== 'distribution' || bundle.socialPack || wordCount(bundle.body) < MIN_ARTICLE_WORDS) return
     const fallback = buildArticleSocialPack(bundle, audience, bundle.event || null, socialVariation.current)
     setBundle((previous) => previous.slug === bundle.slug && !previous.socialPack ? { ...previous, socialPack: fallback } : previous)
   }, [audience, bundle, view])
+
+  /* «هذه ليست أنا»: نستخرج من الفقرة العباراتِ التي لا أثر لها في أرشيفه —
+     فهي ما دخل من عند النموذج — ونمنعها في كل مقالٍ قادم. */
+  const teachNotMe = (paragraph: string) => {
+    const signature = extractVoiceSignature(paragraph, archiveTexts)
+    if (!signature.length) {
+      setNotice('هذه الفقرة بمفرداتٍ موجودة في أرشيفك، فلا عبارة غريبة لأمنعها. عدّلها بيدك وسأتعلّم من النتيجة.')
+      return
+    }
+    const next = [...new Set([...voiceExclusions, ...signature])].slice(-60)
+    setVoiceExclusions(next)
+    try { localStorage.setItem('dr-voice-exclusions', JSON.stringify(next)) } catch { /* التخزين ممتلئ: الذاكرة تبقى للجلسة */ }
+    void (async () => {
+      try {
+        const db = await getDb()
+        if (!db) return
+        const { doc, setDoc } = await import('firebase/firestore')
+        await setDoc(doc(db, 'admin_style_memory', 'voice'), { exclusions: next, updatedAt: new Date().toISOString() }, { merge: true })
+      } catch { /* القاعدة لم تُنشر بعد: المحلي يكفي ولا شيء يتعطّل */ }
+    })()
+    setNotice(`تعلّمت: ${signature.map((item) => `«${item}»`).join(' · ')} — لن تعود في مقالٍ لك.`)
+  }
+
+  const adoptAlternate = (alternate: NonNullable<PerfectArticleResponse['alternates']>[number]) => {
+    const body = refineToStyle(alternate.body, styleDna)
+    setStyleVerdict(judgeStyle(body, styleDna, { archive: archiveTexts, sources: archiveTexts }))
+    setBundle((previous) => ({
+      ...previous,
+      title: alternate.title || previous.title,
+      excerpt: alternate.excerpt || previous.excerpt,
+      cat: alternate.cat || previous.cat,
+      body,
+      socialPack: null,
+    }))
+    setAlternates((previous) => previous.filter((item) => item !== alternate))
+    setNotice(`اعتُمدت النسخة الثانية (${alternate.structure} · ${alternate.score}٪). حزمة التوزيع ستُبنى من جديد.`)
+  }
 
   const rebuild = async (override?: { title?: string; angle?: string }) => {
     const task = beginAdminTask('توليد المقال')
@@ -2807,6 +3003,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           /* البصمة مقيسةٌ هنا على الأرشيف الحيّ كاملاً بلا بتر: الخادم يحمل
              لقطةً من ١٤٣ مقالاً، والواجهة تحمل ما نُشر بعدها أيضاً. */
           styleDna,
+          /* ما قال عنه «هذه ليست أنا»: يمنعه المحرك ويرفضه الحَكَم. */
+          voiceExclusions,
           /* رقم الجولة يدوّر بنية المقال فلا يخرج مقالان متتاليان بالشكل نفسه. */
           variation: generationRun.current,
           selectedEventIds,
@@ -2825,6 +3023,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         throw new Error(`لم يُكتب المقال: تعذّر الوصول إلى محرك الكتابة${message ? ` (${message})` : ''}. لم يُحفظ أي نصٍّ ناقص، وفكرتك وزاويتك كما هما. جرّب مرة أخرى بعد قليل.`)
       }
       /* الصقل الحتمي الأخير: طباعةٌ وإيقاعُ فقراتٍ ببصمته. لا تُضاف كلمة. */
+      setAlternates(generated.alternates || [])
       const refinedBody = refineToStyle(generated.body, styleDna)
       const verdict = judgeStyle(refinedBody, styleDna, { archive: richArticles.map((article) => ({ body: article.body || '' })) })
       generated = { ...generated, body: refinedBody, exactWords: wordCount(refinedBody) }
@@ -3345,7 +3544,14 @@ ${effectivePurpose}`,
             </section>
             {bundle.event && <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">صلة راهنة موثقة</p><a href={bundle.event.url} target="_blank" rel="noreferrer" className="mt-3 block font-display text-[1rem] font-semibold leading-relaxed text-ink hover:text-accent">{bundle.event.title}</a><p className="mt-2 text-[.78rem] text-soft">{bundle.event.source}</p>{bundle.eventConnection && <p className="mt-3 text-[.8rem] leading-relaxed text-soft">{bundle.eventConnection}</p>}</section>}
             <section className={card}><p className="text-[.76rem] font-semibold uppercase text-accent">ذاكرة الفكرة</p><p className="mt-2 text-[.86rem] leading-relaxed text-soft">{lab.angle}</p><div className="mt-4 grid gap-3">{bundle.related.map((item) => <a key={item.slug} href={`/articles/${item.slug}`} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink transition-colors hover:border-accent hover:text-accent">{item.title}{item.iso && <span className="ms-2 text-soft">{item.iso.slice(0, 4)}</span>}</a>)}</div></section>
-            <StyleFidelityCard verdict={liveStyleVerdict} sampleSize={styleDna?.sampleSize || style.articleCount} />
+            <StyleFidelityCard verdict={liveStyleVerdict} sampleSize={styleDna?.sampleSize || style.articleCount} dna={measuredDna} />
+            <CandidateRoom alternates={alternates} onAdopt={adoptAlternate} />
+            <VoiceTeacher
+              body={bundle.body}
+              memory={voiceExclusions}
+              onTeach={teachNotMe}
+              onForget={() => { setVoiceExclusions([]); try { localStorage.removeItem('dr-voice-exclusions') } catch { /* لا شيء يتعطّل */ } setNotice('مُسحت ذاكرة الصوت. البصمة المقيسة من أرشيفك باقية كما هي.') }}
+            />
             <PrivateBookMemoryCard matches={privateMemoryMatches} />
             <button type="button" onClick={() => setView('review')} className={primary}>انتقل إلى بوابة الجودة</button>
           </aside>

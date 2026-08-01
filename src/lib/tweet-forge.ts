@@ -22,6 +22,7 @@
  */
 
 import { splitBodySentences, verifyEcho } from './voice-echoes'
+import { resonanceCountOf } from './resonance-quotes'
 
 export const TWEET_FORGE_VERSION = '1.0.0'
 
@@ -44,6 +45,11 @@ export interface TweetSource {
   date?: string
   /** الجهة: المجلة للبحث، القناة للقاء، المصدر للخبر. */
   outlet?: string
+  /**
+   * ما ظلّله القرّاء في هذا المتن. هذه الجُمَل ليست اختيار الدكتور ولا اختيار
+   * المحرك — الناسُ صوّتوا عليها بأصابعهم، فتتصدّر حوض الاقتباس وتُكافأ بالدرجة.
+   */
+  resonantLines?: readonly { text: string; count: number }[]
 }
 
 export type TweetAngleId =
@@ -115,6 +121,8 @@ export interface TweetDraft {
   designPurpose: string
   /** ميلُ الدفتر إلى هذه التغريدة (‎-1..1‎) — يظهر فقط بعد خمس عيّناتٍ من نشره. */
   tasteLean?: number
+  /** كم قارئاً ظلّل الجملة التي بُنيت عليها هذه التغريدة. */
+  resonanceCount?: number
 }
 
 export interface TweetThread {
@@ -308,7 +316,7 @@ const JARGON = /(?:إشكالية|براديغم|إبستمولوجي|سوسيو
  * درجةُ قابلية إعادة النشر. كل إشارةٍ فيها قابلةٌ للفحص بالعين، ولا تدّعي
  * تنبؤاً بالأرقام: تقيس بنيةَ النص لا مستقبله.
  */
-export function scoreTweet(text: string, options: { hasQuote?: boolean; hashtags?: number; links?: number } = {}) {
+export function scoreTweet(text: string, options: { hasQuote?: boolean; hashtags?: number; links?: number; resonance?: number } = {}) {
   const body = clean(text)
   const size = charCount(body)
   const head = body.slice(0, 45)
@@ -338,6 +346,9 @@ export function scoreTweet(text: string, options: { hasQuote?: boolean; hashtags
   if (JARGON.test(body)) add('لغةٌ أكاديمية تُبعد القارئ العام', -12)
 
   if (options.hasQuote) add('جملةٌ موثّقةٌ من متن الدكتور', 8)
+  /* الرنين دليلٌ من الواقع لا تقديرٌ بلاغي: قارئٌ ظلّلها بإصبعه. ولذلك يكافأ
+     أعلى من كل إشارةٍ أخرى، وبتدرّجٍ يحترم عدد من ظلّل. */
+  if (options.resonance) add(`سطرٌ ظلّله ${options.resonance} من القرّاء`, Math.min(16, 8 + options.resonance * 2))
 
   const endsWell = !/https?:\/\/\S*$/.test(body) && !/#\S+$/.test(body)
   if (endsWell) add('تنتهي بمعنى لا برابط', 6)
@@ -381,15 +392,25 @@ interface SourceReading {
   /** جُملُ المتن مرتّبةً بقابلية الاقتباس — لتدوير الاقتباس بين الزوايا. */
   pool: string[]
   raw: string
+  resonant: readonly { text: string; count: number }[]
 }
 
 function readSource(source: TweetSource, offset: number): SourceReading {
   const title = clean(source.title)
   const text = clean(source.text || '')
   const raw = String(source.text || '')
+  const resonant = source.resonantLines || []
+  /* رنينُ القرّاء يتصدّر الحوض: جملةٌ ظلّلها سبعةُ قرّاء أثبتت بالفعل أنها
+     تستوقف، وهذا دليلٌ لا يملكه أيّ ترتيبٍ بلاغيّ. وترتيبُها بينها بعدد من
+     ظلّلها، ثم يأتي بعدها ترتيبُ الجودة المعتاد. */
   const pool = tweetableSentences(text)
     .filter((sentence) => sentence !== title)
-    .sort((left, right) => scoreQuotable(right) - scoreQuotable(left))
+    .sort((left, right) => {
+      const leftEcho = resonanceCountOf(left, resonant)
+      const rightEcho = resonanceCountOf(right, resonant)
+      if (leftEcho !== rightEcho) return rightEcho - leftEcho
+      return scoreQuotable(right) - scoreQuotable(left)
+    })
   const candidate = pool[Math.abs(offset) % Math.max(1, pool.length)] || ''
   /* البوّابة نفسها التي تحكم أصداء المتون: ما لم يوجد في المتن حرفاً بحرف
      لا يخرج بين قوسين ولا يُنسب إلى الدكتور. */
@@ -412,6 +433,7 @@ function readSource(source: TweetSource, offset: number): SourceReading {
     contrast: contrastOf(text),
     points: threePointsOf(text, title),
     url: clean(source.url || ''),
+    resonant,
   }
 }
 
@@ -648,7 +670,8 @@ export function buildTweets(source: TweetSource, options: TweetForgeOptions = {}
       return shown.length > 12 && text.includes(shown)
     }) || ''
     const lineVerified = Boolean(usedLine) && (verifyEcho(usedLine, reading.raw) || verifyEcho(usedLine, reading.text))
-    const measured = scoreTweet(text, { hasQuote: lineVerified, hashtags: hashtags.length, links: reading.url ? 1 : 0 })
+    const resonance = usedLine ? resonanceCountOf(usedLine, reading.resonant) : 0
+    const measured = scoreTweet(text, { hasQuote: lineVerified, hashtags: hashtags.length, links: reading.url ? 1 : 0, resonance })
     drafts.push({
       id: `tw-${hashString(`${seed}:${text}`).toString(16)}`,
       angle,
@@ -658,6 +681,7 @@ export function buildTweets(source: TweetSource, options: TweetForgeOptions = {}
       overLimit: chars > TWEET_LIMIT,
       quote: lineVerified ? usedLine : '',
       quoteVerified: lineVerified,
+      ...(resonance ? { resonanceCount: resonance } : {}),
       hashtags,
       score: measured.score,
       signals: measured.signals,

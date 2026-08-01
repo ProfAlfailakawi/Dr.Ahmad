@@ -18,6 +18,7 @@ import { loadArticleBodies } from '../../lib/article-bodies'
 import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
 import { currentSeason } from '../../lib/seasons'
+import { resolveResonantQuotes, resonanceBySlug, type ResonanceRow, type ResonantQuote } from '../../lib/resonance-quotes'
 import { Pagination, usePagedList } from '../Pagination'
 import {
   TWEET_ANGLES,
@@ -103,6 +104,9 @@ function TweetCard({ draft, onCopied, onPublished }: { draft: TweetDraft; onCopi
           {typeof draft.tasteLean === 'number' && draft.tasteLean > .15 && (
             <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[.6rem] font-bold text-violet-700" title="الدفتر يرى أنها تشبه ما تنشره عادةً">على ذوقك</span>
           )}
+          {Boolean(draft.resonanceCount) && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[.6rem] font-bold text-amber-800" title="جملةٌ ظلّلها القرّاء بأصابعهم في صفحة المقال">اختارها القرّاء · {draft.resonanceCount}</span>
+          )}
         </div>
         <span className={`text-[.66rem] font-black ${draft.score >= 82 ? 'text-emerald-700' : draft.score >= 68 ? 'text-amber-700' : 'text-red-600'}`}>{draft.score}٪</span>
       </div>
@@ -165,6 +169,8 @@ export function TweetStudio() {
   const [memory, setMemory] = useState<TweetMemory>(() => createEmptyTweetMemory())
   const [weeklyMode, setWeeklyMode] = useState(false)
   const [ledgerOpen, setLedgerOpen] = useState(false)
+  const [resonant, setResonant] = useState<ResonantQuote[]>([])
+  const [resonanceMode, setResonanceMode] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -172,6 +178,28 @@ export function TweetStudio() {
     fetchPublishedExtras<RadarItem>('site_radar').then((items) => { if (active) setRadar(items.slice(0, 40)) }).catch(() => undefined)
     return () => { active = false }
   }, [])
+
+  /* رنينُ القرّاء: ما ظلّلوه في المتون. يُجلب مرةً واحدة ثم يُحلّ إلى جُملٍ
+     مقروءة بعد وصول المتون — ولذلك يعتمد على `bodies` لا على التركيب وحده. */
+  useEffect(() => {
+    if (!cms.articles.length || !Object.keys(bodies).length) return
+    let active = true
+    void (async () => {
+      try {
+        const db = await getDb()
+        if (!db || !active) return
+        const { collection, getDocs } = await import('firebase/firestore')
+        const snapshot = await getDocs(collection(db, 'article_highlights'))
+        if (!active) return
+        const rows = snapshot.docs.map((item) => item.data() as ResonanceRow)
+        const articles = cms.articles.map((article) => ({ slug: article.slug, title: article.title, body: article.body || bodies[article.slug] || '' }))
+        setResonant(resolveResonantQuotes(rows, articles, { limit: 60 }))
+      } catch { /* غياب الرنين لا يوقف الاستوديو — يبقى الأرشيف كله متاحاً */ }
+    })()
+    return () => { active = false }
+  }, [bodies, cms.articles])
+
+  const resonanceMap = useMemo(() => resonanceBySlug(resonant), [resonant])
 
   /* الدفتر: المحلي فوراً (يعمل بلا شبكة)، ثم يُدمج مع نسخة السحابة إن وُجدت.
      الدمج اتحادٌ لا استبدال، فلا يضيع ما نُشر من هاتفٍ آخر. */
@@ -228,6 +256,7 @@ export function TweetStudio() {
           text: [article.excerpt, article.body || bodies[article.slug] || ''].filter(Boolean).join(' '),
           url: `${SITE}/articles/${article.slug}`,
           date: article.iso,
+          resonantLines: resonanceMap.get(article.slug),
         }))
       case 'book':
         return cms.books.map((book) => ({ kind: 'book' as const, id: book.slug, title: book.title, text: book.desc || '', url: `${SITE}/publications` }))
@@ -248,7 +277,7 @@ export function TweetStudio() {
       default:
         return []
     }
-  }, [bodies, cms.articles, cms.books, cms.media, cms.papers, kind, radar])
+  }, [bodies, cms.articles, cms.books, cms.media, cms.papers, kind, radar, resonanceMap])
 
   const filtered = useMemo(() => {
     const needle = query.trim()
@@ -274,20 +303,20 @@ export function TweetStudio() {
   }), [memory])
 
   const drafts = useMemo(() => {
-    if (weeklyMode) return []
+    if (weeklyMode || resonanceMode) return []
     if (batchMode) return buildTweetBatch(sources.slice(0, 30), { variation, withHashtags, count: 12, perSource: 1, memory: forgeMemory })
     if (!activeSource) return []
     return buildTweets(activeSource, { variation, withHashtags, count: 10, memory: forgeMemory })
-  }, [activeSource, batchMode, forgeMemory, sources, variation, weeklyMode, withHashtags])
+  }, [activeSource, batchMode, forgeMemory, resonanceMode, sources, variation, weeklyMode, withHashtags])
 
   /* خطة الأسبوع: كل المصادر الحقيقية معاً (لا نوعاً واحداً)، فالأسبوع يُبنى من
      الأرشيف كله. والمناسبة تُقرأ من نواة المواسم المشتركة لا من جدولٍ ثانٍ. */
   const allSources = useMemo<TweetSource[]>(() => [
-    ...cms.articles.slice(0, 60).map((article) => ({ kind: 'article' as const, id: article.slug, title: article.title, text: [article.excerpt, article.body || bodies[article.slug] || ''].filter(Boolean).join(' '), url: `${SITE}/articles/${article.slug}`, date: article.iso })),
+    ...cms.articles.slice(0, 60).map((article) => ({ kind: 'article' as const, id: article.slug, title: article.title, text: [article.excerpt, article.body || bodies[article.slug] || ''].filter(Boolean).join(' '), url: `${SITE}/articles/${article.slug}`, date: article.iso, resonantLines: resonanceMap.get(article.slug) })),
     ...cms.books.map((book) => ({ kind: 'book' as const, id: book.slug, title: book.title, text: book.desc || '', url: `${SITE}/publications` })),
     ...cms.papers.map((paper) => ({ kind: 'paper' as const, id: paper.slug, title: paper.titleAr || paper.title, text: paper.abstractAr || '', url: paper.url || `${SITE}/research`, outlet: paper.journal || '' })),
     ...radar.slice(0, 10).map((item) => ({ kind: 'news' as const, id: item.id, title: item.ar || item.en || '', text: [item.ar, item.arNote].filter(Boolean).join('. '), url: item.url, outlet: item.source })),
-  ], [bodies, cms.articles, cms.books, cms.papers, radar])
+  ], [bodies, cms.articles, cms.books, cms.papers, radar, resonanceMap])
 
   const weeklyPlan = useMemo(() => {
     if (!weeklyMode) return null
@@ -322,8 +351,8 @@ export function TweetStudio() {
             <button
               key={tab.kind}
               type="button"
-              onClick={() => { setKind(tab.kind); setSelectedId(''); setBatchMode(false) }}
-              className={`min-h-16 rounded-2xl px-3 py-2.5 text-right transition-colors ${kind === tab.kind && !batchMode ? 'bg-accent text-white' : 'border border-hair bg-wash text-ink hover:border-accent hover:text-accent'}`}
+              onClick={() => { setKind(tab.kind); setSelectedId(''); setBatchMode(false); setWeeklyMode(false); setResonanceMode(false) }}
+              className={`min-h-16 rounded-2xl px-3 py-2.5 text-right transition-colors ${kind === tab.kind && !batchMode && !weeklyMode && !resonanceMode ? 'bg-accent text-white' : 'border border-hair bg-wash text-ink hover:border-accent hover:text-accent'}`}
             >
               <strong className="block text-[.78rem]">{tab.label}</strong>
               <span className={`mt-0.5 block text-[.6rem] leading-relaxed ${kind === tab.kind && !batchMode ? 'text-white/70' : 'text-soft'}`}>{tab.note}</span>
@@ -345,7 +374,14 @@ export function TweetStudio() {
             className={weeklyMode ? primary : ghost}
             onClick={() => { setWeeklyMode((current) => !current); setBatchMode(false); setThread(null) }}
           >خطة الأسبوع — سبعة أيام</button>
-          {activeSource && !batchMode && !weeklyMode && (
+          <button
+            type="button"
+            className={resonanceMode ? primary : ghost}
+            onClick={() => { setResonanceMode((current) => !current); setBatchMode(false); setWeeklyMode(false); setThread(null) }}
+            disabled={!resonant.length}
+            title={resonant.length ? '' : 'لم يظلّل القرّاء شيئاً بعد — أو لم يصل سجلّ التظليل'}
+          >رنين القرّاء{resonant.length ? ` — ${resonant.length} جملة` : ' (لا يوجد بعد)'}</button>
+          {activeSource && !batchMode && !weeklyMode && !resonanceMode && (
             <button type="button" className={ghost} onClick={() => setThread(buildThread(activeSource, { variation }))}>ابنِ خيطاً</button>
           )}
         </div>
@@ -390,6 +426,51 @@ export function TweetStudio() {
         </details>
       </section>
 
+      {resonanceMode && (
+        <section className={card}>
+          <p className="text-[.76rem] font-semibold uppercase text-accent">رنين القرّاء</p>
+          <h3 className="mt-1 font-display text-xl font-semibold text-ink">جُملٌ صوّت عليها قرّاؤك بأصابعهم — لا أنا ولا أنت اخترناها.</h3>
+          <p className="mt-2 text-[.8rem] leading-relaxed text-soft">
+            هذه ما ظلّله الناس في صفحات مقالاتك. كل جملةٍ هنا أثبتت بالفعل أنها تستوقف قارئاً —
+            وهذا دليلٌ من الواقع لا يملكه أيّ ترتيبٍ بلاغيّ. اضغط جملةً لتصير تغريدات.
+          </p>
+          <div className="mt-5 grid gap-3">
+            {resonant.slice(0, 24).map((quote) => (
+              <div key={`${quote.slug}-${quote.text.slice(0, 24)}`} className="rounded-2xl border border-hair bg-canvas p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="rounded-full bg-amber-100 px-3 py-1 text-[.62rem] font-bold text-amber-800">ظلّلها {quote.count} من القرّاء</span>
+                  <span className="truncate text-[.64rem] text-soft">{quote.title}</span>
+                </div>
+                <p className="mt-2.5 text-[.9rem] leading-relaxed text-ink">«{quote.text}»</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className={ghost}
+                    onClick={() => {
+                      setResonanceMode(false)
+                      setKind('article')
+                      setSelectedId(quote.slug)
+                      setNotice(`فُتح «${quote.title}» — والجملة التي ظلّلها ${quote.count} قارئاً تتصدّر زواياه الآن.`)
+                    }}
+                  >اصنع منها تغريدات ←</button>
+                  <button
+                    type="button"
+                    className={ghost}
+                    onClick={() => {
+                      const seed = { idea: `«${quote.text}»`, purpose: `اقتباس انتخبه ${quote.count} من القرّاء بتظليلهم من مقال «${quote.title}»`, at: new Date().toISOString() }
+                      try { localStorage.setItem('studio-standalone-seed', JSON.stringify(seed)) } catch { /* الخزن ليس شرطاً */ }
+                      window.dispatchEvent(new CustomEvent('studio:standalone-seed', { detail: seed }))
+                      setNotice('أُرسلت إلى «منشور مستقل» لتصير تصميماً.')
+                    }}
+                  >صمّمها مباشرةً</button>
+                </div>
+              </div>
+            ))}
+            {!resonant.length && <p className="text-[.78rem] text-soft">لم يصل سجلّ التظليل بعد، أو لم يظلّل أحدٌ شيئاً حتى الآن.</p>}
+          </div>
+        </section>
+      )}
+
       {weeklyPlan && (
         <section className={card}>
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -421,7 +502,7 @@ export function TweetStudio() {
         </section>
       )}
 
-      {kind === 'free' && !batchMode && !weeklyMode && (
+      {kind === 'free' && !batchMode && !weeklyMode && !resonanceMode && (
         <section className={card}>
           <p className="text-[.7rem] font-semibold text-accent">فكرة حرّة</p>
           <div className="mt-3 grid gap-3">
@@ -438,7 +519,7 @@ export function TweetStudio() {
         </section>
       )}
 
-      {kind !== 'free' && !batchMode && !weeklyMode && (
+      {kind !== 'free' && !batchMode && !weeklyMode && !resonanceMode && (
         <section className={card} id="tweet-sources">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <p className="text-[.7rem] font-semibold text-accent">اختر المادة ({filtered.length})</p>
@@ -486,7 +567,7 @@ export function TweetStudio() {
         </section>
       )}
 
-      {!weeklyMode && <section className={card}>
+      {!weeklyMode && !resonanceMode && <section className={card}>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-[.7rem] font-semibold text-accent">{batchMode ? 'أقوى ما في الأرشيف اليوم' : 'الزوايا الجاهزة'}</p>

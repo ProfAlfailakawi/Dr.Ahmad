@@ -22,7 +22,7 @@ src/data/*
 !src/data/audio-meta.json
 !src/data/podcast-admin.json
 !src/data/research-papers.ts
-!src/data/book-evidence.json
+!src/data/book-quotes.json
 !src/data/spoken-index.json
 !src/lib/
 src/lib/*

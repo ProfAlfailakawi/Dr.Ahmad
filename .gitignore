@@ -84,3 +84,6 @@ ci-log.txt
 /*Â*
 /whatsapp-agent/*.command
 
+
+# متن الكتب الكامل — يبقى على جهاز الدكتور ولا يدخل مستودعاً عاماً
+src/data/book-evidence.json

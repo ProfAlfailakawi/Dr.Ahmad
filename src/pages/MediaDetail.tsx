@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { chapterUrl, chaptersForVideo, stamp } from '../lib/media-chapters'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
@@ -33,6 +34,7 @@ export default function MediaDetail() {
   const { media, articles, books, papers, loading } = useCmsContent()
   const item = media.find((entry) => entry.slug === slug)
   const videoId = youtubeId(item?.url)
+  const chapters = chaptersForVideo(videoId || '')
   const thumbnail = item?.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : '')
   const topics = topicList(item?.topics)
   const [youtubeTranscript, setYoutubeTranscript] = useState('')
@@ -124,6 +126,39 @@ export default function MediaDetail() {
               </div>
             </section>
           </FadeUp>
+
+          {/* ═══ دقيقة الفكرة ═══
+              اللقاء الطويل يخيف الزائر. هذه محاوره، والنقر يفتح يوتيوب عند
+              الموضع نفسه. المواضع تقديرية (يوتيوب لا يمنح التوقيتات مجاناً)
+              ومطروحٌ منها هامش أمان، فنقول «نحو» ولا ندّعي دقةً لا نملكها. */}
+          {chapters.length > 0 && <FadeUp delay={0.12}>
+            <details className="group mt-10 overflow-hidden rounded-2xl border border-hair bg-wash">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-5 p-5 md:px-7">
+                <span>
+                  <span className="block font-display text-xl font-semibold text-ink">محاور اللقاء</span>
+                  <span className="mt-1 block text-[.7rem] text-soft">{chapters.length} محوراً · النقر يفتح اللقاء عند موضعه التقريبي</span>
+                </span>
+                <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <div className="border-t border-hair p-5 md:px-7">
+                <ol className="grid gap-1">
+                  {chapters.map((chapter) => (
+                    <li key={chapter.at}>
+                      <a
+                        href={chapterUrl(item.url, chapter.at)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="grid gap-1 rounded-xl px-2 py-2.5 transition-colors hover:bg-canvas sm:grid-cols-[6.5rem_minmax(0,1fr)] sm:items-baseline sm:gap-3"
+                      >
+                        <span className="text-[.72rem] font-semibold text-accent">نحو {stamp(chapter.at)}</span>
+                        <span className="text-[.82rem] leading-relaxed text-ink">{chapter.label}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </details>
+          </FadeUp>}
 
           {youtubeTranscript && <FadeUp delay={0.14}>
             <details className="group mt-10 overflow-hidden rounded-2xl border border-hair bg-wash">

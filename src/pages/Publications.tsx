@@ -5,6 +5,7 @@ import { EASE, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
 import { Pagination, usePagedList } from '../components/Pagination'
+import { BooksAtlas } from '../components/BooksAtlas'
 
 const bookCount = (count: number) => {
   if (count === 1) return 'كتاب واحد'
@@ -61,6 +62,9 @@ export default function Publications() {
         </div>
         <div className="mx-auto mt-10 max-w-shell"><Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={books.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="books-grid" label="صفحات الكتب" /></div>
       </section>
+
+      {/* خريطة المؤلَّفات: تأتي بعد الأغلفة لا قبلها — الكتب أولاً، ثم بنيتها. */}
+      <BooksAtlas />
     </Page>
   )
 }

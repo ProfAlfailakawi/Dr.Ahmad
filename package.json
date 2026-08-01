@@ -33,6 +33,7 @@
     "guardian": "node scripts/site-guardian.mjs",
     "guardian:write": "node scripts/site-guardian.mjs --write",
     "knowledge:build": "node scripts/build-knowledge-graph.mjs",
+    "books:quotes": "node scripts/build-book-quotes.mjs",
     "podcast:ar:self-test": "node scripts/test-manual-dialogue-lock.mjs && node scripts/podcast-dialogue.mjs --self-test",
     "podcast:ar:preflight": "node scripts/podcast-dialogue.mjs --preflight --lang=ar",
     "podcast:ar:canary": "node scripts/podcast-dialogue.mjs --canary --lang=ar",

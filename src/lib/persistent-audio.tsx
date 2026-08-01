@@ -20,6 +20,13 @@ export type PersistentTrack = {
   title: string
   label: string
   path: string
+  /* الحلقة التالية في المجلس: حين تنتهي هذه تبدأ تلك بلا نقرة — والسلسلة
+     محمولةٌ داخل المسار نفسه، فتستمر وإن غادر الزائر الصفحة إلى مقالٍ يقرؤه.
+     ما لا يحمل تالياً (قراءة مقال مثلاً) ينتهي كما كان ينتهي. */
+  next?: PersistentTrack
+  /* بدايةٌ مقصودة بالثانية (الدخول من سؤالٍ بعينه). تغلب الموضعَ المحفوظ
+     عمداً: من ضغط سؤالاً يريد سماعه هو، لا العودة إلى حيث توقّف أمس. */
+  startAt?: number
 }
 
 type Status = 'idle' | 'loading' | 'ready' | 'error'
@@ -83,10 +90,18 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
     const onMeta = () => {
       setState((prev) => ({ ...prev, duration: Number.isFinite(el.duration) ? el.duration : 0, status: 'ready', error: '' }))
       if (state.track) {
-        try {
-          const saved = Number(localStorage.getItem(`audio:pos:${state.track.id}`) || 0)
-          if (saved > 5 && saved < (el.duration || 0) - 5) el.currentTime = saved
-        } catch { /* noop */ }
+        /* البداية المقصودة تغلب الموضع المحفوظ: من دخل من سؤالٍ بعينه يريد
+           سماعه، لا العودة إلى حيث توقّف أمس. وكان الاستئناف يسبق القفز
+           فيبتلعه — فيبدأ الصوت في غير موضع السؤال. */
+        const intended = Number(state.track.startAt)
+        if (Number.isFinite(intended) && intended > 1 && intended < (el.duration || 0) - 2) {
+          el.currentTime = intended
+        } else {
+          try {
+            const saved = Number(localStorage.getItem(`audio:pos:${state.track.id}`) || 0)
+            if (saved > 5 && saved < (el.duration || 0) - 5) el.currentTime = saved
+          } catch { /* noop */ }
+        }
       }
     }
     const onCanPlay = () => setState((prev) => ({ ...prev, status: 'ready', error: '' }))
@@ -99,6 +114,19 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
     const onPause = () => { savePosition(); setState((prev) => ({ ...prev, playing: false })) }
     const onEnd = () => {
       savePosition()
+      const next = state.track?.next
+      if (next) {
+        /* المجلس يمشي: لا نعيد بناء المشغّل ولا ننقل الزائر، نبدّل المصدر
+           ونواصل. وإن منع المتصفّح التشغيل التلقائي توقّفنا بهدوء بلا خطأ
+           أحمر — فالمنع قرارُ متصفّحٍ لا عطبٌ في الموقع. */
+        milestones.current = new Set()
+        setState((prev) => ({ ...prev, track: next, current: 0, duration: 0, playing: false, status: 'loading', error: '' }))
+        el.src = next.src
+        el.playbackRate = state.speed
+        el.load()
+        void el.play().catch(() => setState((prev) => ({ ...prev, playing: false, status: 'ready' })))
+        return
+      }
       setState((prev) => ({ ...prev, playing: false, current: el.duration || prev.current }))
     }
     const onError = () => {

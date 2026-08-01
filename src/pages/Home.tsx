@@ -15,12 +15,41 @@ import { ideaContinuation } from '../lib/idea-memory'
 import { sortUpcomingEvents } from '../lib/events'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { PROJECT_START_YEAR } from '../lib/project-meta'
+import { listenIsOpen, rotatingQuestion, type ListenEpisode } from '../lib/listen-catalog'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
 
 /* ---------- «فكرة اليوم» — بطاقة واحدة هادئة تتبدل كل منتصف ليل ----------
    تعيد استخدام محرك المختارات اليومي؛ تُحمَّل كسولاً فلا تُثقل الرئيسية */
+/* سؤالٌ واحد من مجلس الفكرة داخل شريط «الآن» — بلا قسمٍ جديد ولا صورة ولا
+   عدّاد: بطاقةٌ رابعة في شريطٍ قائم، تحمل سؤالاً من حوارٍ مسموع ويتبدّل مع
+   الوقت. ولا تظهر إطلاقاً قبل أن يمتلئ المجلس. */
+function MajlisSpark() {
+  const [episode, setEpisode] = useState<ListenEpisode | null>(null)
+  useEffect(() => { setEpisode(rotatingQuestion()) }, [])
+  if (!listenIsOpen || !episode) return null
+  return (
+    <Link
+      to="/listen"
+      data-hover
+      className="group relative flex h-full flex-col rounded-2xl border border-hair bg-canvas p-6 transition-colors duration-300 hover:border-accent md:p-7"
+    >
+      <p className="mb-4 flex items-center gap-2.5 text-[.76rem] font-semibold text-accent">
+        <span className="text-[.7rem]">▷</span>
+        مجلس الفكرة
+      </p>
+      <p className="font-display text-[1.08rem] font-semibold leading-[1.75] text-ink transition-colors group-hover:text-accent">
+        {episode.question || episode.title}
+      </p>
+      <p className="mt-auto flex items-center gap-2 border-t border-hair pt-4 text-[.74rem] text-soft">
+        <span className="truncate">{episode.title}</span>
+        <span className="ms-auto shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">استمع ←</span>
+      </p>
+    </Link>
+  )
+}
+
 function DailySpark({ compact = false }: { compact?: boolean }) {
   const [c, setC] = useState<Curio | null>(null)
   useEffect(() => {
@@ -675,6 +704,7 @@ function NowHub() {
       <div className="rail home-motion-rail mt-1 flex gap-4 overflow-x-auto px-6 pb-5 md:gap-5 md:px-[max(2.75rem,calc((100vw-1180px)/2))]">
         <FadeUp className="w-[70vw] max-w-[500px] shrink-0 md:w-[48vw]"><LatestCard compact /></FadeUp>
         <FadeUp delay={0.08} className="w-[58vw] max-w-[270px] shrink-0 md:w-[34vw]"><DailySpark compact /></FadeUp>
+        {listenIsOpen && <FadeUp delay={0.12} className="w-[58vw] max-w-[270px] shrink-0 md:w-[31vw]"><MajlisSpark /></FadeUp>}
         <FadeUp delay={0.14} className="w-[58vw] max-w-[270px] shrink-0 md:w-[31vw]"><OnThisWeek compact /></FadeUp>
         <span aria-hidden className="w-px shrink-0" />
       </div>

@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LINK_OUT, SHOW_EN_TOGGLE, academicProfiles, profile, socials, links, upcoming, type Event } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
 import { sortUpcomingEvents } from '../lib/events'
+import { listenIsOpen } from '../lib/listen-catalog'
 import { ThemeToggle } from './extras'
 import { MySpace } from './MySpace'
 import { useCvLinks } from '../lib/settings'
@@ -236,6 +237,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     label: 'ابدأ من هنا',
     items: [
       { to: '/articles', label: 'المقالات الفكرية', allLabel: 'جميع المقالات' },
+      { to: '/listen', label: 'مجلس الفكرة' },
       /* «أبحث عن مادة» و«أسأل الأرشيف» يظهران داخل الأداة نفسها (KnowledgeEntry
          في /search و/ask)، فسردهما هنا تكرارٌ لما سيراه بعد نقرةٍ واحدة.
          الوصلة الآن مباشرةٌ إلى الأداة، والطريقان يُختاران داخلها. */
@@ -281,9 +283,14 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
      إلى صفحةٍ فارغة. القائمة مغلقةٌ حتى يفتحها الزائر، وبيانات اللقاءات تُحمَّل
      مع الصفحة، فتستقر الحالة قبل أن تُرى — بلا وميض. تعود فور إعلان لقاءٍ جديد. */
   const cmsUpcoming = useExtras<Event & { id: string }>('site_upcoming')
+  /* «مجلس الفكرة» يخضع لقانون «اللقاء القادم» نفسه: لا يُعرض رابطٌ إلى صفحةٍ لم تمتلئ. */
   const hasUpcoming = useMemo(() => sortUpcomingEvents([...cmsUpcoming, ...upcoming]).length > 0, [cmsUpcoming])
   const groups = useMemo(
-    () => hasUpcoming ? GROUPS : GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => item.to !== '/upcoming') })),
+    () => GROUPS.map((group) => ({
+      ...group,
+      items: group.items.filter((item) =>
+        (item.to !== '/upcoming' || hasUpcoming) && (item.to !== '/listen' || listenIsOpen)),
+    })).filter((group) => group.items.length),
     [hasUpcoming],
   )
 

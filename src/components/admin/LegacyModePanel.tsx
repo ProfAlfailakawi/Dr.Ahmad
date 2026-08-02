@@ -1,4 +1,5 @@
 import profileData from '../../data/legacy-profile.json'
+import { arabicCountPhrase, CONNECTED_MATERIAL_FORMS, CONCEPT_FORMS, DOCUMENTED_YEAR_FORMS, MATERIAL_FORMS, RECENT_AVAILABLE_YEAR_FORMS, RELATED_MATERIAL_FORMS } from '../../lib/arabic-count.ts'
 
 type LegacyExample = { id: string; kind: string; title: string; url?: string; year?: string }
 type LegacyTheme = { id: string; title: string; support: number; firstYear?: string; lastYear?: string; kinds?: string[]; examples?: LegacyExample[] }
@@ -46,8 +47,8 @@ export function LegacyModePanel() {
             <p className="mt-2 text-[.78rem] leading-[1.8] text-soft">ليس Analytics. هذه قراءة تركيبية للرسم المعرفي نفسه: المحاور الأعلى حضوراً، المواد المركزية، والامتدادات الزمنية الموثقة داخل الأرشيف.</p>
           </div>
           <div className="flex flex-wrap gap-1.5 text-[.66rem] text-soft">
-            <span className="rounded-full border border-hair bg-wash px-3 py-1.5">{profile.stats?.themes || themes.length} محوراً</span>
-            <span className="rounded-full border border-hair bg-wash px-3 py-1.5">{profile.stats?.years || timeline.length} سنة موثقة</span>
+            <span className="rounded-full border border-hair bg-wash px-3 py-1.5">{arabicCountPhrase(profile.stats?.themes || themes.length, CONCEPT_FORMS)}</span>
+            <span className="rounded-full border border-hair bg-wash px-3 py-1.5">{arabicCountPhrase(profile.stats?.years || timeline.length, DOCUMENTED_YEAR_FORMS)}</span>
           </div>
         </div>
         {profile.note && <p className="mt-4 rounded-xl border border-hair bg-wash px-4 py-3 text-[.7rem] leading-relaxed text-soft">{profile.note}</p>}
@@ -65,7 +66,7 @@ export function LegacyModePanel() {
                   <span className="shrink-0 font-display text-[.72rem] font-semibold text-accent">0{index + 1}</span>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5 text-[.62rem] text-soft">
-                  <span>{theme.support} مواد مرتبطة</span>
+                  <span>{arabicCountPhrase(theme.support, RELATED_MATERIAL_FORMS)}</span>
                   {theme.firstYear && theme.lastYear && <span>· {theme.firstYear === theme.lastYear ? theme.firstYear : `${theme.firstYear}—${theme.lastYear}`}</span>}
                 </div>
               </div>
@@ -88,14 +89,14 @@ export function LegacyModePanel() {
             <span className="text-[.66rem] font-semibold text-accent">الخط الزمني</span>
             <h4 className="mt-1 font-display text-lg font-semibold text-ink">كيف يتراكم الأرشيف الموثق عبر السنوات؟</h4>
           </div>
-          <span className="text-[.64rem] text-soft">آخر {recentTimeline.length} سنوات متاحة في البيانات</span>
+          <span className="text-[.64rem] text-soft">آخر {arabicCountPhrase(recentTimeline.length, RECENT_AVAILABLE_YEAR_FORMS)} في البيانات</span>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-10">
           {recentTimeline.map((item) => (
             <div key={item.year} className="flex min-h-28 flex-col justify-end rounded-xl border border-hair bg-wash p-3">
               <span className="mb-2 block w-full rounded-full bg-accent/20" style={{ height: `${Math.max(4, Math.round((item.count / maxYearCount) * 42))}px` }} aria-hidden="true" />
               <strong className="font-display text-[.8rem] text-ink">{item.year}</strong>
-              <span className="mt-1 text-[.62rem] text-soft">{item.count} مادة</span>
+              <span className="mt-1 text-[.62rem] text-soft">{arabicCountPhrase(item.count, MATERIAL_FORMS)}</span>
             </div>
           ))}
         </div>
@@ -110,7 +111,7 @@ export function LegacyModePanel() {
             <div key={arc.id} className="rounded-xl border border-hair bg-wash p-3.5">
               <strong className="block text-[.8rem] leading-relaxed text-ink">{arc.title}</strong>
               <span className="mt-2 block font-display text-[.72rem] font-semibold text-accent">{arc.firstYear} → {arc.lastYear}</span>
-              <span className="mt-1 block text-[.62rem] text-soft">{arc.support} مواد متصلة</span>
+              <span className="mt-1 block text-[.62rem] text-soft">{arabicCountPhrase(arc.support, CONNECTED_MATERIAL_FORMS)}</span>
             </div>
           ))}
         </div>

@@ -8,13 +8,10 @@ import { Pagination, usePagedList } from '../components/Pagination'
 import { Link } from 'react-router'
 import { MediaSaveButton } from '../components/MySpace'
 import { SPACE_EVENT, savedMediaSlugs } from '../lib/reading-space'
+import { arabicCountPhrase, MEDIA_FORMS } from '../lib/arabic-count.ts'
 
 const id = (url: string) => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
-const mediaCount = (count: number) => {
-  if (count === 1) return 'لقاء واحد'
-  if (count === 2) return 'لقاءان'
-  return `${count} لقاءات`
-}
+const mediaCount = (count: number) => arabicCountPhrase(count, MEDIA_FORMS)
 
 export default function Media() {
   const { media } = useCmsContent()

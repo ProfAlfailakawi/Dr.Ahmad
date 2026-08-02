@@ -8,6 +8,7 @@ import { chapterUrl, searchMediaChapters, stamp } from '../lib/media-chapters'
 import { QuoteCite } from '../components/QuoteCite'
 import { loadArticleBodies } from '../lib/article-bodies'
 import { ideaEvolution } from '../lib/idea-evolution'
+import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, POINT_AFTER_PREPOSITION_FORMS, YEAR_FORMS } from '../lib/arabic-count.ts'
 
 /**
  * سيرة مفهوم — «المعلّم الرقمي عبر عشرين سنة».
@@ -205,7 +206,7 @@ export default function ConceptLife() {
         label="سيرة مفهوم"
         title={term ? `«${term}»` : 'سيرة مفهوم'}
         sub={span
-          ? `رحلة الفكرة من ${span.from} إلى ${span.to} عبر ما نشره: مقالاً ولقاءً وكتاباً وبحثاً.`
+          ? `رحلة الفكرة من ${span.from} إلى ${span.to} عبر مقالات ولقاءات وكتب وأبحاث نشرها على امتداد المسيرة.`
           : 'اختر مفهوماً لترى رحلته في الزمن عبر مقالاته وكتبه وأبحاثه ولقاءاته.'}
       />
 
@@ -230,7 +231,7 @@ export default function ConceptLife() {
                   <h2 id="evolution-title" className="font-display text-[1.15rem] font-semibold text-ink">
                     {evolution.meaningful ? 'كيف تحوّلت نبرته' : 'كيف امتدّ الموقف'}
                   </h2>
-                  <span className="text-[.7rem] text-soft">{evolution.years} سنة بين الطرفين</span>
+                  <span className="text-[.7rem] text-soft">{arabicCountPhrase(evolution.years, YEAR_FORMS)} بين الطرفين</span>
                 </div>
 
                 <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -238,7 +239,7 @@ export default function ConceptLife() {
                     <figure key={side.slug || index} className="rounded-xl border border-hair bg-canvas px-4 py-4">
                       <figcaption className="flex items-baseline justify-between gap-2">
                         <span className="font-display text-[1.05rem] font-semibold text-accent tabular-nums">{side.year}</span>
-                        <span className="text-[.64rem] text-soft">{side.articles === 1 ? 'مقال واحد' : `${side.articles} مقالات`} · تحفّظ {side.caution}٪</span>
+                        <span className="text-[.64rem] text-soft">{arabicCountPhrase(side.articles, ARTICLE_PLAIN_FORMS)} · تحفّظ {side.caution}٪</span>
                       </figcaption>
                       <blockquote className="mt-2 border-r-2 border-accent/30 pr-3 text-[.86rem] font-light leading-[1.9] text-ink/[.85]">
                         {side.line}
@@ -254,8 +255,8 @@ export default function ConceptLife() {
 
                 <p className="mt-4 border-t border-hair pt-3 text-[.72rem] leading-relaxed text-soft">
                   {evolution.meaningful
-                    ? `نبرة التحفّظ في كتابته عن «${term}» ${evolution.shift > 0 ? 'ارتفعت' : 'انخفضت'} ${Math.abs(evolution.shift)} نقطة بين الطرفين.`
-                    : `النبرة ثابتة تقريباً (${evolution.shift > 0 ? '+' : ''}${evolution.shift} نقطة) — الفكرة امتدّت ولم تنقلب.`}
+                    ? `نبرة التحفّظ في كتابته عن «${term}» ${evolution.shift > 0 ? 'ارتفعت' : 'انخفضت'} بمقدار ${arabicCountPhrase(Math.abs(evolution.shift), POINT_AFTER_PREPOSITION_FORMS)} بين الطرفين.`
+                    : `النبرة ثابتة تقريباً (بفارق ${arabicCountPhrase(Math.abs(evolution.shift), POINT_AFTER_PREPOSITION_FORMS)}) — الفكرة امتدّت ولم تنقلب.`}
                   {' '}المقياس آليّ من مفردات الوعد والتحفّظ، لا حكم تحريري.
                 </p>
               </section>

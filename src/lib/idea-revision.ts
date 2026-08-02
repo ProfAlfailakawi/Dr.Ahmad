@@ -13,6 +13,7 @@
 import type { ArticleRecord } from './cms'
 import curatedRevisions from '../data/idea-revisions.json'
 import { ideaWords } from './idea-life'
+import { arabicCountPhrase, YEAR_AFTER_PREPOSITION_FORMS } from './arabic-count.ts'
 
 /**
  * المواضع التي أقرّها الدكتور بنفسه. الكشف الآلي لا يستطيع الحكم على تغيّر
@@ -208,7 +209,7 @@ export function findIdeaRevisions(article: ArticleRecord, articles: readonly Art
     const span = Number(yearOf(newerArticle)) - Number(yearOf(olderArticle))
     found.push({
       concept,
-      line: `كتبتُ عن ${concept} سنة ${yearOf(olderArticle)}، ثم راجعتُ رأيي بعد ${span === 1 ? 'سنة' : `${span} سنوات`} وقلتُ ذلك بنفسي.`,
+      line: `كتبتُ عن ${concept} سنة ${yearOf(olderArticle)}، ثم راجعتُ رأيي بعد ${arabicCountPhrase(span, YEAR_AFTER_PREPOSITION_FORMS)} وقلتُ ذلك بنفسي.`,
       older: { slug: olderArticle.slug, title: olderArticle.title, year: yearOf(olderArticle), excerpt: reserve },
       newer: { slug: newerArticle.slug, title: newerArticle.title, year: yearOf(newerArticle), excerpt: shift },
     })

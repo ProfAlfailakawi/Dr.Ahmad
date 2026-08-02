@@ -21,6 +21,15 @@ const glossaryCompiled = ts.transpileModule(glossarySource, {
 })
 assert.equal((glossaryCompiled.diagnostics || []).filter((item) => item.category === ts.DiagnosticCategory.Error).length, 0, 'قاموس التخصص يجب أن يترجم بلا أخطاء')
 const glossaryDataUrl = `data:text/javascript;base64,${Buffer.from(glossaryCompiled.outputText).toString('base64')}`
+const countPath = resolve('src/lib/arabic-count.ts')
+const countSource = await readFile(countPath, 'utf8')
+const countCompiled = ts.transpileModule(countSource, {
+  compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ES2020, strict: true },
+  reportDiagnostics: true,
+  fileName: countPath,
+})
+assert.equal((countCompiled.diagnostics || []).filter((item) => item.category === ts.DiagnosticCategory.Error).length, 0, 'محرك العدد والمعدود يجب أن يترجم بلا أخطاء')
+const countDataUrl = `data:text/javascript;base64,${Buffer.from(countCompiled.outputText).toString('base64')}`
 const ideaDnaPath = resolve('src/lib/idea-dna.ts')
 const ideaDnaSource = await readFile(ideaDnaPath, 'utf8')
 const ideaDnaCompiled = ts.transpileModule(ideaDnaSource, {
@@ -45,6 +54,7 @@ assert.equal(diagnostics.filter((item) => item.category === ts.DiagnosticCategor
 const engineOutput = compiled.outputText
   .replace('./dr-ahmad-domain-glossary', glossaryDataUrl)
   .replace('./idea-dna', ideaDnaDataUrl)
+  .replace('./arabic-count.ts', countDataUrl)
 const engine = await import(`data:text/javascript;base64,${Buffer.from(engineOutput).toString('base64')}`)
 
 const virtualReality = engine.analyzeSocialContent('الواقع الافتراضي')

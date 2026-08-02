@@ -7,6 +7,7 @@ import { buildDrAhmadDecisionPackage, classifyDrAhmadCommand, type CurrentContex
 import { buildAudienceSignals, type InboxMessageInput } from '../../lib/inbox-intelligence'
 import { buildRows, windowDays, type ViewDoc } from '../readerPulseLogic'
 import type { AdminTab } from './admin-navigation'
+import { arabicCountPhrase, RECENT_READING_FORMS, VERIFIED_MATERIAL_FORMS } from '../../lib/arabic-count.ts'
 
 type SavedSession = {
   id: string
@@ -94,7 +95,7 @@ export function DrAhmadRoom({
         getDocs(query(collection(db, 'admin_command_sessions'), orderBy('createdAt', 'desc'), limit(8))).catch(() => null),
       ])
       const rows = buildRows((views?.docs || []).map((item) => ({ id: item.id, ...(item.data() as Omit<ViewDoc, 'id'>) })), windowDays())
-      setReaderSignals(rows.filter((item) => item.recent > 0).slice(0, 5).map((item) => `${item.title || item.path}: ${item.recent} قراءة حديثة`))
+      setReaderSignals(rows.filter((item) => item.recent > 0).slice(0, 5).map((item) => `${item.title || item.path}: ${arabicCountPhrase(item.recent, RECENT_READING_FORMS)}`))
       const inbox = (messages?.docs || []).map((item) => ({ id: item.id, ...(item.data() as Omit<InboxMessageInput, 'id'>) }))
       setAudienceSignals(buildAudienceSignals(inbox).map((item) => `${item.theme}: ${item.suggestion}`))
       setHistory((sessions?.docs || []).map((item) => ({ id: item.id, ...(item.data() as Omit<SavedSession, 'id'>) })))
@@ -241,7 +242,7 @@ export function DrAhmadRoom({
           </section>
 
           <details className="rounded-2xl border border-hair bg-canvas p-5" open>
-            <summary className="cursor-pointer list-none text-[.8rem] font-semibold text-ink">من أرشيف د. أحمد · {result.archive.length} مادة موثقة</summary>
+            <summary className="cursor-pointer list-none text-[.8rem] font-semibold text-ink">من أرشيف د. أحمد · {arabicCountPhrase(result.archive.length, VERIFIED_MATERIAL_FORMS)}</summary>
             {result.archive.length ? <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">{result.archive.map((source) => <a key={`${source.kind}:${source.id}`} href={source.url} target="_blank" rel="noreferrer" className="rounded-xl border border-hair bg-wash p-3 transition hover:border-accent"><span className="text-[.62rem] font-semibold text-accent">{source.kind}{source.year ? ` · ${source.year}` : ''}</span><strong className="mt-1 line-clamp-2 block text-[.78rem] leading-relaxed text-ink">{source.title}</strong><span className="mt-1 line-clamp-2 block text-[.68rem] leading-relaxed text-soft">{source.note}</span></a>)}</div> : <p className="mt-3 text-[.78rem] text-soft">لم توجد مادة أرشيفية كافية؛ لم تُخترع إحالة بديلة.</p>}
           </details>
 

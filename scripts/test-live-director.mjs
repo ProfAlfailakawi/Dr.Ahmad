@@ -230,6 +230,7 @@ const realForge = await import(await compile('src/lib/tweet-forge.ts', {
   './dr-ahmad-domain-glossary': glossaryUrl,
   './voice-echoes': await compile('src/lib/voice-echoes.ts'),
   './resonance-quotes': await compile('src/lib/resonance-quotes.ts'),
+  './arabic-count.ts': await compile('src/lib/arabic-count.ts'),
 }))
 const realDrafts = realForge.buildTweets({ kind: 'article', id: 'a', title: richArticle.title, text: richBody, url: 'https://dr-alfailakawi.com/articles/a', resonantLines: injected.resonantLines }, { count: 8, withHashtags: true })
 check(realDrafts.length >= 3, 'المسبك الحقيقي ينتج زوايا متعددة')

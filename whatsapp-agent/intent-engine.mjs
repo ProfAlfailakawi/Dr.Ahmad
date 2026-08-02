@@ -1,3 +1,4 @@
+import { arabicCountPhrase, ARTICLE_ENTRY_FORMS, AUDIO_EPISODE_FORMS, BOOK_ENTRY_FORMS, CURATED_ENTRY_FORMS, NEW_MATERIAL_FORMS, PAPER_ENTRY_FORMS, RECORDED_VIEW_FORMS } from './dialect-lexicon.mjs'
 import { contentSummary, findContent, latestAudioContent, latestContent, mostPopularContent, normalizeArabic, searchContent, shortReadableContent, topArticleTopics } from './content-index.mjs'
 import { AUDIO_PUBLIC_BASE_URL, AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, redactJid } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
@@ -864,7 +865,7 @@ function mostViewedArticleReply(db) {
   return {
     text: `الأكثر قراءة في عدّاد الموقع خلال ${snapshot.period}:
 ${item.title}
-${item.verifiedViews} مشاهدة مسجلة
+${arabicCountPhrase(item.verifiedViews, RECORDED_VIEW_FORMS)}
 ${item.url}
 
 المصدر: عدّاد الموقع الداخلي، والمدة مذكورة أعلاه.`,
@@ -876,13 +877,17 @@ ${item.url}
 
 function libraryOverviewReply(db) {
   const kinds = [
-    ['article', 'مقالة'], ['paper', 'بحثاً'], ['book', 'كتاباً'], ['podcast', 'حلقة'], ['curated', 'مختارة'],
+    ['article', ARTICLE_ENTRY_FORMS],
+    ['paper', PAPER_ENTRY_FORMS],
+    ['book', BOOK_ENTRY_FORMS],
+    ['podcast', AUDIO_EPISODE_FORMS],
+    ['curated', CURATED_ENTRY_FORMS],
   ]
-  const counts = kinds.map(([kind, label]) => ({ kind, label, count: Number(db.get('SELECT COUNT(*) c FROM content_items WHERE kind=?', kind)?.c || 0) }))
+  const counts = kinds.map(([kind, forms]) => ({ kind, forms, count: Number(db.get('SELECT COUNT(*) c FROM content_items WHERE kind=?', kind)?.c || 0) }))
   const available = counts.filter((item) => item.count > 0)
   return {
     text: `المكتبة تضم الآن:
-${available.map((item) => `• ${item.count} ${item.label}`).join('\n')}
+${available.map((item) => `• ${arabicCountPhrase(item.count, item.forms)}`).join('\n')}
 
 ما تحتاج تحفظ أوامر. اكتب مثلاً: شنو جديد الدكتور؟ عنده شيء عن التقييم؟ آخر أبحاثه؟ أو فاجئني.`,
   }
@@ -893,7 +898,7 @@ function topTopicsReply(db) {
   if (!topics.length) return { text: 'لا توجد موضوعات مصنفة في المقالات الآن.' }
   return {
     text: `أكثر المسارات حضوراً في مقالات الدكتور:
-${topics.map((item, index) => `${index + 1}. ${item.topic} — ${item.count} مقالة`).join('\n')}
+${topics.map((item, index) => `${index + 1}. ${item.topic} — ${arabicCountPhrase(item.count, ARTICLE_ENTRY_FORMS)}`).join('\n')}
 
 اكتب اسم أي مسار منها وأختار لك أفضل نقطة بداية من الموقع.`,
   }
@@ -1563,7 +1568,7 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       const row = jid && db.get('SELECT payload FROM user_preferences WHERE jid=?', db.jidKey(jid)); let cursor = ''
       try { cursor = row ? JSON.parse(row.payload).lastContentCursor || '' : '' } catch { cursor = '' }
       const items = cursor ? db.all('SELECT * FROM content_items WHERE date>? ORDER BY date DESC LIMIT 3', cursor) : latestContent(db, 'article', 3)
-      return { ...classification, text: items.length ? `من آخر مرة، ظهر ${items.length} مواد جديدة. أبدأ لك بالأحدث؟\n${items.map((item) => `${item.title}\n${item.url}`).join('\n')}` : 'ما فاتك شيء جديد مسجل عندي حتى الآن.', contentId: items[0]?.id, contextItems: items.map((item) => item.id), seenContentIds: items.map((item) => item.id) }
+      return { ...classification, text: items.length ? `من آخر مرة، ظهرت ${arabicCountPhrase(items.length, NEW_MATERIAL_FORMS)}. أبدأ لك بالأحدث؟\n${items.map((item) => `${item.title}\n${item.url}`).join('\n')}` : 'ما فاتك شيء جديد مسجل عندي حتى الآن.', contentId: items[0]?.id, contextItems: items.map((item) => item.id), seenContentIds: items.map((item) => item.id) }
     }
     case INTENTS.SURPRISE_ME: {
       const unseen = selectDailyUnsentContent(db, { jid })

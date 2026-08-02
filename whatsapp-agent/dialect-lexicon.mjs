@@ -13,6 +13,44 @@
  * كتب بأيّ لسان.
  */
 
+
+/* صرف العدد داخل الوكيل مستقل عن مشروع الواجهة، لأن مجلد whatsapp-agent
+   يُشغَّل أيضاً كحزمة محلية قائمة بذاتها على جهاز الدكتور. */
+export function arabicCountLabel(count, forms) {
+  const numeric = Number(count) || 0
+  const absolute = Math.abs(Math.trunc(numeric))
+  const mod100 = absolute % 100
+  if (numeric === 0 && forms.zero) return forms.zero
+  if (absolute === 1) return forms.one
+  if (absolute === 2) return forms.two
+  if (mod100 >= 3 && mod100 <= 10) return forms.few
+  return forms.many
+}
+export function arabicCountPhrase(count, forms, formatNumber = (value) => String(value)) {
+  const numeric = Number(count) || 0
+  if (numeric === 0 && forms.zero) return forms.zero
+  if (Math.abs(numeric) === 1 || Math.abs(numeric) === 2) return arabicCountLabel(numeric, forms)
+  return `${formatNumber(numeric)} ${arabicCountLabel(numeric, forms)}`.trim()
+}
+export const WORD_PLAIN_FORMS = { one: 'كلمة', two: 'كلمتان', few: 'كلمات', many: 'كلمة' }
+export const CLUSTER_AFTER_PREPOSITION_FORMS = { one: 'عنقود', two: 'عنقودين', few: 'عناقيد', many: 'عنقوداً' }
+export const OCCURRENCE_FORMS = { one: 'مرة', two: 'مرتين', few: 'مرات', many: 'مرة' }
+export const OTHER_TEXT_FORMS = { one: 'نص آخر', two: 'نصان آخران', few: 'نصوص أخرى', many: 'نصاً آخر' }
+export const YEAR_FORMS = { one: 'سنة', two: 'سنتان', few: 'سنوات', many: 'سنة' }
+export const CELL_FORMS = { one: 'خانة', two: 'خانتان', few: 'خانات', many: 'خانة' }
+export const CONSECUTIVE_OCCURRENCE_FORMS = { one: 'مرة متتالية', two: 'مرتين متتاليتين', few: 'مرات متتالية', many: 'مرة متتالية' }
+export const CONVERSATION_AFTER_PREPOSITION_FORMS = { one: 'محادثة', two: 'محادثتين', few: 'محادثات', many: 'محادثة' }
+export const ENTITY_FORMS = { one: 'جهة', two: 'جهتان', few: 'جهات', many: 'جهة' }
+export const FULL_NUMBER_OBJECT_FORMS = { one: 'رقماً كاملاً', two: 'رقمين كاملين', few: 'أرقام كاملة', many: 'رقماً كاملاً' }
+export const WITHDRAWN_GROUP_FORMS = { one: 'مجموعة مسحوبة', two: 'مجموعتان مسحوبتان', few: 'مجموعات مسحوبة', many: 'مجموعة مسحوبة' }
+export const ARTICLE_ENTRY_FORMS = { one: 'مقالة', two: 'مقالتان', few: 'مقالات', many: 'مقالة' }
+export const PAPER_ENTRY_FORMS = { one: 'بحث', two: 'بحثان', few: 'أبحاث', many: 'بحثاً' }
+export const BOOK_ENTRY_FORMS = { one: 'كتاب', two: 'كتابان', few: 'كتب', many: 'كتاباً' }
+export const AUDIO_EPISODE_FORMS = { one: 'حلقة', two: 'حلقتان', few: 'حلقات', many: 'حلقة' }
+export const CURATED_ENTRY_FORMS = { one: 'مختارة', two: 'مختارتان', few: 'مختارات', many: 'مختارة' }
+export const NEW_MATERIAL_FORMS = { one: 'مادة جديدة', two: 'مادتان جديدتان', few: 'مواد جديدة', many: 'مادة جديدة' }
+export const RECORDED_VIEW_FORMS = { one: 'مشاهدة مسجلة', two: 'مشاهدتان مسجلتان', few: 'مشاهدات مسجلة', many: 'مشاهدة مسجلة' }
+
 /* التطبيع نفسه المستعمل في المحرك، منسوخٌ هنا كي يبقى الملف مستقلاً قائماً بذاته */
 const normalize = (value) => String(value || '')
   .normalize('NFKD').replace(/[ً-ٰٟۖ-ۭ]/g, '')
@@ -192,6 +230,6 @@ if (IS_MAIN && process.argv.includes('--self-test')) {
   assert(toRoot('نفطيات') === 'نفطيات', 'المجهول يُطبَّع ويُعاد')
   assert(toRoot('أطفال') === toRoot('اطفال'), 'الهمزة لا تفرّق')
 
-  console.log(`✓ اختبارات القاموس الجبّار: 23/23 · ${LEXICON_SIZE} كلمة في ${CLUSTERS.length} عنقوداً`)
+  console.log(`✓ اختبارات القاموس الجبّار: 23/23 · ${arabicCountPhrase(LEXICON_SIZE, WORD_PLAIN_FORMS)} في ${arabicCountPhrase(CLUSTERS.length, CLUSTER_AFTER_PREPOSITION_FORMS)}`)
   process.exit(0)
 }

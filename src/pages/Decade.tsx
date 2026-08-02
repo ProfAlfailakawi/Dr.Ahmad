@@ -9,7 +9,7 @@ import { toRoot } from '../lib/dialect-lexicon'
 import { loadArticleBodies } from '../lib/article-bodies'
 import { predictionRecordsFor, type IdeaLifeRemoteRecord } from '../lib/idea-life'
 import { categoryLabel } from '../lib/content-taxonomy'
-import { arabicCountPhrase, ARTICLE_FORMS, YEAR_IMPACT_FORMS } from '../lib/arabic-count.ts'
+import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, CHAPTER_FORMS, PREDICTION_FORMS, TEXT_FORMS, YEAR_IMPACT_FORMS } from '../lib/arabic-count.ts'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -47,7 +47,7 @@ function chapterRange(chapters: YearChapter[]) {
 /* العنوان يتبع ما يُعرض فعلاً. كتابة «ثلاثة فصول» فوق بطاقتين كذبٌ صغير،
    والصغير منه يُفقد الثقة في الكبير. */
 function chapterCountWord(count: number) {
-  return count === 1 ? 'فصلٌ واحد' : count === 2 ? 'فصلان' : `${['', '', '', 'ثلاثة'][count] || count} فصول`
+  return arabicCountPhrase(count, CHAPTER_FORMS, number.format)
 }
 
 /* رحلة فكرةٍ بعينها عبر السنوات: يكتب القارئ «الامتحان» أو «العيال» فيرى متى
@@ -170,7 +170,7 @@ export default function Decade() {
       firstActive && {
         year: firstActive.year,
         title: 'بداية نافذة العقد',
-        description: `تبدأ الرحلة من ${PROJECT_START_YEAR}، ويظهر في أول سنة نشطة داخل الأرشيف ${number.format(firstActive.articles.length)} ${firstActive.articles.length === 1 ? 'نص' : 'نصوص'}، وكان «${categoryLabel(firstActive.dominant)}» الموضوع الأكثر حضوراً.`,
+        description: `تبدأ الرحلة من ${PROJECT_START_YEAR}، ويظهر في أول سنة نشطة داخل الأرشيف ${arabicCountPhrase(firstActive.articles.length, TEXT_FORMS, number.format)}، وكان «${categoryLabel(firstActive.dominant)}» الموضوع الأكثر حضوراً.`,
       },
       growth && growth.delta > 0 && {
         year: growth.chapter.year,
@@ -301,7 +301,7 @@ export default function Decade() {
                 <div className="flex flex-wrap items-end justify-between gap-5 border-b border-hair pb-7">
                   <div>
                     <span className="text-[.75rem] font-semibold text-accent">سجل حيّ يتجدد تلقائياً</span>
-                    <h2 className="mt-2 font-display text-[clamp(1.6rem,3.6vw,2.45rem)] font-bold leading-[1.35] text-ink">{number.format(predictionRegister.length)} توقعاً تحت المراجعة.</h2>
+                    <h2 className="mt-2 font-display text-[clamp(1.6rem,3.6vw,2.45rem)] font-bold leading-[1.35] text-ink">{arabicCountPhrase(predictionRegister.length, PREDICTION_FORMS, number.format)}.</h2>
                   </div>
                   <p className="max-w-[22rem] text-[.78rem] font-light leading-[1.8] text-soft">العبارة محفوظة من النص الأصلي. لا تتغير حالتها إلا عندما تظهر إشارة لاحقة أو دليل عام يمكن الرجوع إليه.</p>
                 </div>
@@ -393,7 +393,7 @@ export default function Decade() {
             <div className="mx-auto max-w-shell">
               <FadeUp>
                 <p className="max-w-3xl font-display text-[clamp(1.35rem,3vw,2rem)] font-medium leading-[1.8] text-ink">
-                  من {document.firstYear} إلى {document.latestYear}: {document.span >= 10 ? 'أكثر من عشر سنوات' : arabicCountPhrase(document.span, YEAR_IMPACT_FORMS, number.format)} تقرأ نفسها من خلال {arabicCountPhrase(document.articles.length, ARTICLE_FORMS, number.format)}، لا لتختصر الفكرة في رقم، بل لتكشف حركتها.
+                  من {document.firstYear} إلى {document.latestYear}: {document.span >= 10 ? 'أكثر من عشر سنوات' : arabicCountPhrase(document.span, YEAR_IMPACT_FORMS, number.format)} تقرأ نفسها من خلال {arabicCountPhrase(document.articles.length, ARTICLE_AFTER_PREPOSITION_FORMS, number.format)}، لا لتختصر الفكرة في رقم، بل لتكشف حركتها.
                 </p>
               </FadeUp>
             </div>

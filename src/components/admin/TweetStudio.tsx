@@ -54,6 +54,7 @@ import {
 } from '../../lib/tweet-memory'
 import { buildMeaningFingerprint } from '../../lib/editorial-memory'
 import { buildMultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
+import { arabicCountPhrase, AFFECTED_MATERIAL_OBJECT_FORMS, DAY_FORMS, READER_FORMS, SENTENCE_FORMS, TWEET_AFTER_PREPOSITION_FORMS, TWEET_FORMS } from '../../lib/arabic-count.ts'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
@@ -511,7 +512,7 @@ export function TweetStudio() {
           اختر مادةً من أرشيفك أو اكتب فكرةً حرّة؛ يفحص المسبك أربع عشرة زاويةً بلاغيةً ثم يعرض أقوى عشر، كلٌّ بدرجةِ انتشارٍ وأسبابها.
           كل جملةٍ تحمل شارة «موثّقة» موجودةٌ في متنك حرفاً بحرف؛ وما عداها إطارٌ من الاستوديو لا يدّعي عليك قولاً.
         </p>
-        {correctionHoldSlugs.size > 0 && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-[.68rem] leading-relaxed text-amber-800" data-correction-hold="tweets">التصحيح المتسلسل يحجب {correctionHoldSlugs.size} مادة متأثرة من التوليد والخيوط والخطة الأسبوعية فقط؛ بقية الاستوديو يعمل كالمعتاد.</p>}
+        {correctionHoldSlugs.size > 0 && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-[.68rem] leading-relaxed text-amber-800" data-correction-hold="tweets">التصحيح المتسلسل يحجب {arabicCountPhrase(correctionHoldSlugs.size, AFFECTED_MATERIAL_OBJECT_FORMS)} من التوليد والخيوط والخطة الأسبوعية فقط؛ بقية الاستوديو يعمل كالمعتاد.</p>}
 
         <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
           {SOURCE_TABS.map((tab) => (
@@ -547,7 +548,7 @@ export function TweetStudio() {
             onClick={() => { setResonanceMode((current) => !current); setBatchMode(false); setWeeklyMode(false); setThread(null) }}
             disabled={!safeResonant.length}
             title={safeResonant.length ? '' : 'لم يظلّل القرّاء شيئاً صالحا لإعادة الاستخدام الآن'}
-          >رنين القرّاء{safeResonant.length ? ` — ${safeResonant.length} جملة` : ' (لا يوجد بعد)'}</button>
+          >رنين القرّاء{safeResonant.length ? ` — ${arabicCountPhrase(safeResonant.length, SENTENCE_FORMS)}` : ' (لا يوجد بعد)'}</button>
           {activeSource && !batchMode && !weeklyMode && !resonanceMode && (
             <button type="button" className={ghost} onClick={() => setThread(buildThread(activeSource, { variation }))}>ابنِ خيطاً</button>
           )}
@@ -561,8 +562,8 @@ export function TweetStudio() {
           onToggle={(event) => setLedgerOpen((event.target as HTMLDetailsElement).open)}
         >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[.72rem] font-semibold text-accent [&::-webkit-details-marker]:hidden">
-            <span>دفتر ما نُشر — {memory.records.length} تغريدة</span>
-            <span className="text-[.64rem] font-normal text-soft">{memory.taste.samples >= 5 ? 'الدفتر يرجّح ترتيب الزوايا الآن' : `يبدأ التعلّم بعد ${Math.max(0, 5 - memory.taste.samples)} تغريدات`}</span>
+            <span>دفتر ما نُشر — {arabicCountPhrase(memory.records.length, TWEET_FORMS)}</span>
+            <span className="text-[.64rem] font-normal text-soft">{memory.taste.samples >= 5 ? 'الدفتر يرجّح ترتيب الزوايا الآن' : `يبدأ التعلّم بعد ${arabicCountPhrase(Math.max(0, 5 - memory.taste.samples), TWEET_AFTER_PREPOSITION_FORMS)}`}</span>
           </summary>
           <div className="grid gap-3 border-t border-hair p-4">
             {taste.length > 0 && (
@@ -575,13 +576,13 @@ export function TweetStudio() {
             <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <strong className="text-[.68rem] text-violet-800">ما علّمك إياه الواقع</strong>
-                <span className="text-[.6rem] text-violet-700">{measured} تغريدة بأرقام{measured < MIN_OUTCOME_SAMPLES ? ` · تبدأ المعايرة عند ${MIN_OUTCOME_SAMPLES}` : ''}</span>
+                <span className="text-[.6rem] text-violet-700">{arabicCountPhrase(measured, TWEET_FORMS)} بأرقام{measured < MIN_OUTCOME_SAMPLES ? ` · تبدأ المعايرة عند ${MIN_OUTCOME_SAMPLES}` : ''}</span>
               </div>
               {calibrations.length === 0
                 ? (
                   <p className="mt-2 text-[.62rem] leading-relaxed text-soft">
                     {measured < MIN_OUTCOME_SAMPLES
-                      ? `أوزان الإشارات ما زالت تقديري أنا. أدخل أرقام ${MIN_OUTCOME_SAMPLES - measured} تغريدةٍ أخرى من X (زر «أضف أرقامها» تحت كل سجل) فتبدأ الدرجة تُقاس على جمهورك أنت.`
+                      ? `أوزان الإشارات ما زالت تقديري أنا. أدخل أرقام ${arabicCountPhrase(MIN_OUTCOME_SAMPLES - measured, TWEET_AFTER_PREPOSITION_FORMS)} أخرى من X (زر «أضف أرقامها» تحت كل سجل) فتبدأ الدرجة تُقاس على جمهورك أنت.`
                       : 'الأرقام موجودة لكن لا إشارة بلغت عيّنةً كافيةً في الجانبين (ثلاثٌ مع وثلاثٌ بدون). واصل التسجيل — الصمت هنا أصدق من رقمٍ بلا سند.'}
                   </p>
                 )
@@ -644,7 +645,7 @@ export function TweetStudio() {
                       setResonanceMode(false)
                       setKind('article')
                       setSelectedId(quote.slug)
-                      setNotice(`فُتح «${quote.title}» — والجملة التي ظلّلها ${quote.count} قارئاً تتصدّر زواياه الآن.`)
+                      setNotice(`فُتح «${quote.title}» — والجملة التي ظلّلها ${arabicCountPhrase(quote.count, READER_FORMS)} تتصدّر زواياه الآن.`)
                     }}
                   >اصنع منها تغريدات ←</button>
                   <button
@@ -671,7 +672,7 @@ export function TweetStudio() {
             <div>
               <p className="text-[.7rem] font-semibold text-accent">خطة الأسبوع</p>
               <h3 className="mt-1 font-display text-lg font-semibold text-ink">
-                {weeklyPlan.filled} من ٧ أيامٍ ممتلئة · متوسط الدرجة {weeklyPlan.averageScore}٪
+                {arabicCountPhrase(weeklyPlan.filled, DAY_FORMS)} من أصل ٧ أيام · متوسط الدرجة {weeklyPlan.averageScore}٪
               </h3>
               <p className="mt-1 text-[.68rem] leading-relaxed text-soft">مادةٌ مختلفة وزاويةٌ مختلفة لكل يوم. الخبر الراهن يتقدّم، والمناسبة تأخذ يومها، واليوم الذي لا يجد مادةً يبقى فارغاً بصراحة.</p>
             </div>
@@ -742,7 +743,7 @@ export function TweetStudio() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-[.7rem] font-semibold text-accent">خيطٌ من «{thread.sourceTitle}»</p>
-              <h3 className="mt-1 font-display text-lg font-semibold text-ink">{thread.tweets.length} تغريدات · متوسط الدرجة {thread.score}٪</h3>
+              <h3 className="mt-1 font-display text-lg font-semibold text-ink">{arabicCountPhrase(thread.tweets.length, TWEET_FORMS)} · متوسط الدرجة {thread.score}٪</h3>
             </div>
             <button
               type="button"
@@ -766,7 +767,7 @@ export function TweetStudio() {
           <div>
             <p className="text-[.7rem] font-semibold text-accent">{batchMode ? 'أقوى ما في الأرشيف اليوم' : 'الزوايا الجاهزة'}</p>
             <h3 className="mt-1 font-display text-lg font-semibold text-ink">
-              {drafts.length ? `${drafts.length} تغريدة · ${readyCount} منها في نطاق الانتشار · ${verifiedCount} بجملةٍ موثّقة` : 'لا تغريدات بعد'}
+              {drafts.length ? `${arabicCountPhrase(drafts.length, TWEET_FORMS)} · ${readyCount} منها في نطاق الانتشار · ${verifiedCount} بجملةٍ موثّقة` : 'لا تغريدات بعد'}
             </h3>
           </div>
         </div>

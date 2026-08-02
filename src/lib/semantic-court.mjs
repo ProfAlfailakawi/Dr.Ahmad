@@ -1,4 +1,5 @@
 import { buildAdversarialMisunderstandingSimulation } from './adversarial-misunderstanding.mjs'
+import { arabicCountPhrase, UNSUPPORTED_CLAIM_FORMS } from './style-dna.mjs'
 
 const MARKS = /[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06edـ]/g
 const STOP = new Set('الى علي على عن من في مع هذا هذه ذلك التي الذي كان كانت يكون تكون كما لكن لان ان او ثم كل بين بعد قبل حول عند عبر قد ما هو هي هم نحن حتى the and for from with that this are was were'.split(' '))
@@ -178,7 +179,7 @@ function sourceChamber(evidence) {
   const status = !ids.length || !proofs.length ? 'pending' : alerts.length || unsupported ? 'review' : 'passed'
   return { label: 'المصادر', status, score: ids.length ? clamp(proofs.length / ids.length * 75 + (unsupported ? 0 : 25) - alerts.length * 15) : 0,
     checked: Math.max(ids.length, claims.length), passed: Math.max(0, claims.length - unsupported),
-    alerts: unique([...alerts, ...(unsupported ? [`${unsupported} ادعاءً في الأصل لم يكتمل إسناده.`] : [])], 30), units: [] }
+    alerts: unique([...alerts, ...(unsupported ? [`${arabicCountPhrase(unsupported, UNSUPPORTED_CLAIM_FORMS)}.`] : [])], 30), units: [] }
 }
 
 /** فحص حتمي لا يدّعي OCR أو تفريغاً لم يُجر: الصوت يمر ببصمة مصدر دقيقة، والتصميم من طبقات النص الأصلية قبل الرسم. */

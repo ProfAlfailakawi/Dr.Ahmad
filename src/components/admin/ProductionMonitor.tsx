@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ArticleRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import type { AdminTab } from './AdminArchitecture'
+import { arabicCountPhrase, RULE_FORMS, SAVED_COPY_FORMS } from '../../lib/arabic-count.ts'
 
 type HealthLevel = 'healthy' | 'attention' | 'warning' | 'critical'
 type WorkflowState = {
@@ -215,7 +216,7 @@ const buildWhatsAppService = (status: WhatsAppStatus): ControlService => {
 
 const previewServices: ControlService[] = [
   { id: 'whatsapp', title: 'مساعد واتساب الحي', eyebrow: 'LIVE WHATSAPP', level: 'healthy', metric: 'مستمر بلا حد', summary: 'يجيب السؤال الأول والثاني وكل متابعة؛ لا يغلق الجلسة إلا ردّ المالك اليدوي.', reason: 'اكتمل فحص الاتصال والجلسة والطابور واختبار 3 رسائل متتالية.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString(), automation: 'فحص كل 15 ثانية' },
-  { id: 'audio', title: 'الصوت والعدّاد الحي', eyebrow: 'AUDIO AUTOSYNC', level: 'healthy', metric: '201 ملف', summary: 'فهد 98 · نورة 99 · حوار 4، والرقم من R2 مباشرة.', reason: 'نجح المسح الحي والكتابة والقراءة الراجعة.', action: 'يتجدد تلقائياً كل 15 دقيقة.', lastEventAt: new Date().toISOString(), automation: 'كل 15 دقيقة' },
+  { id: 'audio', title: 'الصوت والعدّاد الحي', eyebrow: 'AUDIO AUTOSYNC', level: 'healthy', metric: '201 ملفاً', summary: 'فهد 98 · نورة 99 · حوار 4، والرقم من R2 مباشرة.', reason: 'نجح المسح الحي والكتابة والقراءة الراجعة.', action: 'يتجدد تلقائياً كل 15 دقيقة.', lastEventAt: new Date().toISOString(), automation: 'كل 15 دقيقة' },
   { id: 'studio', title: 'استوديو التصاميم والتوليد', eyebrow: 'CREATIVE STUDIO', level: 'healthy', metric: 'المولّد جاهز', summary: 'التوليد والفحص البصري والأرشفة الخاصة تعمل.', reason: 'Cloudflare وFirebase Storage جاهزان.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString() },
   { id: 'firebase', title: 'Firebase والبيانات الحية', eyebrow: 'LIVE DATA', level: 'healthy', metric: 'قراءة ناجحة', summary: 'قاعدة البيانات تقرأ سجلات التشغيل الحية.', reason: 'نجحت القراءة الراجعة من إعدادات النظام.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString() },
   { id: 'content', title: 'المحتوى والمصادر', eyebrow: 'SITE GUARDIAN', level: 'attention', metric: 'يتابع تنبيهين', summary: 'لا توجد مشكلة تمنع النشر؛ الحارس يتابع مصدرين خارجيين.', reason: 'المصدران يحجبان الفحص الآلي لكنهما يعملان للزائر.', action: 'لا يلزم قرار الآن.', lastEventAt: new Date().toISOString() },
@@ -752,7 +753,7 @@ export function ProductionMonitor({
           <p className="mt-3 text-[.67rem] leading-relaxed text-soft">لا تشمل الجلسة أو أرقام الناس أو المحادثات. الاستعادة تعيد إعدادات التشغيل فقط.</p>
           <details className="group mt-3 rounded-xl border border-hair bg-canvas">
             <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-[.68rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">
-              <span>{backups.length === 1 ? 'نسخة واحدة محفوظة' : backups.length ? `${backups.length} نسخ محفوظة` : 'لا توجد نسخة بعد'}</span>
+              <span>{backups.length ? arabicCountPhrase(backups.length, SAVED_COPY_FORMS) : 'لا توجد نسخة بعد'}</span>
               <span className="text-soft transition group-open:rotate-45">＋</span>
             </summary>
             <div className="grid gap-2 border-t border-hair p-3">
@@ -760,7 +761,7 @@ export function ProductionMonitor({
                 <div key={backup.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-wash px-3 py-2">
                   <div>
                     <strong className="block text-[.64rem] text-ink">{safeDate(backup.createdAt)}</strong>
-                    <span className="text-[.56rem] text-soft">{backup.ruleCount} قاعدة · الشخصية والرسائل</span>
+                    <span className="text-[.56rem] text-soft">{arabicCountPhrase(backup.ruleCount, RULE_FORMS)} · الشخصية والرسائل</span>
                   </div>
                   <button type="button" className={lightButton} disabled={Boolean(busy)} onClick={() => void restoreBackup(backup)}>
                     {busy === `restore:${backup.id}` ? 'يستعيد…' : 'استعد هذه النسخة'}

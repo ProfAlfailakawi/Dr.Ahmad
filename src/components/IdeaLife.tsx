@@ -8,6 +8,7 @@ import { buildIdeaLife, ideaWords, type IdeaLifeRemoteRecord, type IdeaRadarItem
 import { findIdeaRevisions, type IdeaRevision } from '../lib/idea-revision'
 import { liveLink } from '../lib/dead-links'
 import { staticQuestions } from '../questions-data'
+import { arabicCountPhrase, TOPICAL_CONNECTION_FORMS } from '../lib/arabic-count.ts'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 const updateDate = new Intl.DateTimeFormat('ar-KW-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -356,7 +357,7 @@ function TimePanel({ article, model, close }: { article: ArticleRecord; model: R
                 <Link to={`/articles/${link.article.slug}`} onClick={close} className="mt-1.5 block font-display text-[1rem] font-medium leading-[1.65] text-ink transition-colors hover:text-accent">
                   {link.article.title}
                 </Link>
-                <p className="mt-1 text-[.72rem] text-soft">{number.format(link.overlap)} صلات موضوعية مشتركة</p>
+                <p className="mt-1 text-[.72rem] text-soft">{arabicCountPhrase(link.overlap, TOPICAL_CONNECTION_FORMS, number.format)}</p>
               </li>
             ))}
           </ol>

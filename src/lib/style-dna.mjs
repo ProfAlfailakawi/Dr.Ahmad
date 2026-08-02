@@ -15,6 +15,90 @@
    الوحدة هنا مقصودة: الخادم والواجهة يقيسان بالمسطرة نفسها، فلا يمدح أحدهما
    ما يرفضه الآخر. */
 
+function normalizedMod100(count) {
+  return Math.abs(Math.trunc(Number(count) || 0)) % 100
+}
+
+export function arabicCountLabel(count, forms) {
+  const numeric = Number(count) || 0
+  const mod100 = normalizedMod100(numeric)
+  const absolute = Math.abs(Math.trunc(numeric))
+  if (numeric === 0 && forms.zero) return forms.zero
+  if (absolute === 1) return forms.one
+  if (absolute === 2) return forms.two
+  if (mod100 >= 3 && mod100 <= 10) return forms.few
+  return forms.many
+}
+
+export function arabicCountPhrase(count, forms, formatNumber = (value) => String(value)) {
+  const numeric = Number(count) || 0
+  if (numeric === 0 && forms.zero) return forms.zero
+  if (Math.abs(numeric) === 1 || Math.abs(numeric) === 2) return arabicCountLabel(numeric, forms)
+  return `${formatNumber(numeric)} ${arabicCountLabel(numeric, forms)}`.trim()
+}
+
+export const WORD_FORMS = { one: 'كلمة', two: 'كلمتان', few: 'كلمات', many: 'كلمة' }
+export const OCCURRENCE_FORMS = { one: 'مرة', two: 'مرتين', few: 'مرات', many: 'مرة' }
+export const CLAIM_FORMS = { one: 'ادعاء', two: 'ادعاءان', few: 'ادعاءات', many: 'ادعاءً' }
+export const POINT_FORMS = { one: 'نقطة', two: 'نقطتان', few: 'نقاط', many: 'نقطة' }
+export const HOUR_FORMS = { one: 'ساعة', two: 'ساعتان', few: 'ساعات', many: 'ساعة' }
+export const MESSAGE_FORMS = { one: 'رسالة', two: 'رسالتان', few: 'رسائل', many: 'رسالة' }
+export const VERIFIED_MATERIAL_FORMS = { one: 'مادة موثقة', two: 'مادتان موثقتان', few: 'مواد موثقة', many: 'مادة موثقة' }
+export const SENTENCE_FORMS = { one: 'جملة', two: 'جملتان', few: 'جمل', many: 'جملة' }
+export const PARAGRAPH_FORMS = { one: 'فقرة', two: 'فقرتان', few: 'فقرات', many: 'فقرة' }
+export const ARTICLE_FORMS = { one: 'مقال', two: 'مقالان', few: 'مقالات', many: 'مقالاً' }
+export const DAY_AFTER_PREPOSITION_FORMS = { one: 'يوم', two: 'يومين', few: 'أيام', many: 'يوماً' }
+export const SECOND_FORMS = { one: 'ثانية', two: 'ثانيتان', few: 'ثوانٍ', many: 'ثانية' }
+export const PASSAGE_FORMS = { one: 'مقطع', two: 'مقطعان', few: 'مقاطع', many: 'مقطعاً' }
+export const READING_FORMS = { one: 'قراءة', two: 'قراءتان', few: 'قراءات', many: 'قراءة' }
+export const VIEW_FORMS = { one: 'مشاهدة', two: 'مشاهدتان', few: 'مشاهدات', many: 'مشاهدة' }
+export const SHARE_FORMS = { one: 'مشاركة', two: 'مشاركتان', few: 'مشاركات', many: 'مشاركة' }
+export const FILE_FORMS = { one: 'ملف', two: 'ملفان', few: 'ملفات', many: 'ملفاً' }
+export const MINUTE_FORMS = { one: 'دقيقة', two: 'دقيقتان', few: 'دقائق', many: 'دقيقة' }
+export const MATERIAL_FORMS = { one: 'مادة', two: 'مادتان', few: 'مواد', many: 'مادة' }
+
+export const WEEK_AFTER_PREPOSITION_FORMS = { one: 'أسبوع', two: 'أسبوعين', few: 'أسابيع', many: 'أسبوعاً' }
+export const SECOND_AFTER_PREPOSITION_FORMS = { one: 'ثانية', two: 'ثانيتين', few: 'ثوانٍ', many: 'ثانية' }
+export const PASSAGE_AFTER_PREPOSITION_FORMS = { one: 'مقطع', two: 'مقطعين', few: 'مقاطع', many: 'مقطعاً' }
+export const RECOVERED_MESSAGE_FORMS = { one: 'رسالة فاتتها الأحداث الحية', two: 'رسالتان فاتتهما الأحداث الحية', few: 'رسائل فاتتها الأحداث الحية', many: 'رسالة فاتتها الأحداث الحية' }
+export const POINT_AFTER_PREPOSITION_FORMS = { one: 'نقطة', two: 'نقطتين', few: 'نقاط', many: 'نقطة' }
+export const PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS = { one: 'مقال منشور', two: 'مقالين منشورين', few: 'مقالات منشورة', many: 'مقالاً منشوراً' }
+export const PARAGRAPH_AFTER_PREPOSITION_FORMS = { one: 'فقرة', two: 'فقرتين', few: 'فقرات', many: 'فقرة' }
+export const UNSUPPORTED_CLAIM_FORMS = { one: 'ادعاء في الأصل لم يكتمل إسناده', two: 'ادعاءان في الأصل لم يكتمل إسنادهما', few: 'ادعاءات في الأصل لم يكتمل إسنادها', many: 'ادعاءً في الأصل لم يكتمل إسناده' }
+export const RECOVERED_MESSAGE_OBJECT_FORMS = { one: 'رسالة فاتتها الأحداث الحية', two: 'رسالتين فاتتهما الأحداث الحية', few: 'رسائل فاتتها الأحداث الحية', many: 'رسالة فاتتها الأحداث الحية' }
+export const PROTECTED_POINT_AFTER_PREPOSITION_FORMS = { one: 'نقطة محمية', two: 'نقطتين محميتين', few: 'نقاط محمية', many: 'نقطة محمية' }
+export const MISSING_CAVEAT_FORMS = {
+  one: 'تحفّظ واحد في الأصل لم يظهر في النسخ المشتقة',
+  two: 'تحفّظان في الأصل لم يظهر أيٌّ منهما في النسخ المشتقة',
+  few: 'تحفّظات في الأصل لم يظهر أيٌّ منها في النسخ المشتقة',
+  many: 'تحفّظاً في الأصل لم يظهر في النسخ المشتقة',
+}
+export const REPLY_AFTER_PREPOSITION_FORMS = { one: 'رد', two: 'ردين', few: 'ردود', many: 'رداً' }
+export const CONVERSATION_AFTER_PREPOSITION_FORMS = { one: 'محادثة', two: 'محادثتين', few: 'محادثات', many: 'محادثة' }
+export const WORD_AFTER_PREPOSITION_FORMS = { one: 'كلمة', two: 'كلمتين', few: 'كلمات', many: 'كلمة' }
+export const WORD_PLAIN_FORMS = { one: 'كلمة', two: 'كلمتان', few: 'كلمات', many: 'كلمة' }
+export const VERIFIED_FILE_FORMS = { one: 'ملف موثّق', two: 'ملفان موثّقان', few: 'ملفات موثّقة', many: 'ملفاً موثّقاً' }
+export const SUBSCRIBER_FORMS = { one: 'مشترك', two: 'مشتركان', few: 'مشتركين', many: 'مشتركاً' }
+export const RULE_FORMS = { one: 'قاعدة', two: 'قاعدتان', few: 'قواعد', many: 'قاعدة' }
+export const OTHER_TEXT_FORMS = { one: 'نص آخر', two: 'نصان آخران', few: 'نصوص أخرى', many: 'نصاً آخر' }
+export const YEAR_FORMS = { one: 'سنة', two: 'سنتان', few: 'سنوات', many: 'سنة' }
+export const WITHDRAWN_GROUP_FORMS = { one: 'مجموعة مسحوبة', two: 'مجموعتان مسحوبتان', few: 'مجموعات مسحوبة', many: 'مجموعة مسحوبة' }
+export const FULL_NUMBER_OBJECT_FORMS = { one: 'رقماً كاملاً', two: 'رقمين كاملين', few: 'أرقام كاملة', many: 'رقماً كاملاً' }
+export const CLUSTER_AFTER_PREPOSITION_FORMS = { one: 'عنقود', two: 'عنقودين', few: 'عناقيد', many: 'عنقوداً' }
+export const RECORDED_VIEW_FORMS = { one: 'مشاهدة مسجلة', two: 'مشاهدتان مسجلتان', few: 'مشاهدات مسجلة', many: 'مشاهدة مسجلة' }
+export const ARTICLE_ENTRY_FORMS = { one: 'مقالة', two: 'مقالتان', few: 'مقالات', many: 'مقالة' }
+export const NEW_MATERIAL_FORMS = { one: 'مادة جديدة', two: 'مادتان جديدتان', few: 'مواد جديدة', many: 'مادة جديدة' }
+export const DEVICE_FORMS = { one: 'جهاز', two: 'جهازان', few: 'أجهزة', many: 'جهازاً' }
+export const PROBLEM_FORMS = { one: 'مشكلة', two: 'مشكلتان', few: 'مشكلات', many: 'مشكلة' }
+export const WARNING_FORMS = { one: 'تنبيه', two: 'تنبيهان', few: 'تنبيهات', many: 'تنبيهاً' }
+export const PAPER_ENTRY_FORMS = { one: 'بحث', two: 'بحثان', few: 'أبحاث', many: 'بحثاً' }
+export const BOOK_ENTRY_FORMS = { one: 'كتاب', two: 'كتابان', few: 'كتب', many: 'كتاباً' }
+export const AUDIO_EPISODE_FORMS = { one: 'حلقة', two: 'حلقتان', few: 'حلقات', many: 'حلقة' }
+export const CURATED_ENTRY_FORMS = { one: 'مختارة', two: 'مختارتان', few: 'مختارات', many: 'مختارة' }
+export const CELL_FORMS = { one: 'خانة', two: 'خانتان', few: 'خانات', many: 'خانة' }
+export const ENTITY_FORMS = { one: 'جهة', two: 'جهتان', few: 'جهات', many: 'جهة' }
+export const CONSECUTIVE_OCCURRENCE_FORMS = { one: 'مرة متتالية', two: 'مرتين متتاليتين', few: 'مرات متتالية', many: 'مرة متتالية' }
+
 /* ---------- أدوات نصية ---------- */
 
 const TASHKEEL = /[ؐ-ًؚ-ٰٟۖ-ۭـ]/gu
@@ -448,17 +532,17 @@ export function styleBrief(rawDna, targetWords = 400) {
   const paragraphsHigh = Math.max(paragraphsLow + 3, Math.round((dna.paragraph.perArticleP75 || 10) * scale))
   const openers = (dna.openers || []).map((item) => item.word).filter((word) => word.length >= 2).slice(0, 10)
   return [
-    `بصمة الكاتب مقيسةٌ رقمياً من ${dna.sampleSize} مقالاً منشوراً له. التزمها رقماً رقماً؛ النص الذي يخالف هذه الأرقام ليس نصّه ويُرفض آلياً:`,
-    `١) الجملة قصيرة: وسيطها ${dna.sentence.median} كلمات، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${Math.max(22, dna.sentence.p90 + 3)} كلمة إلا نادراً.`,
-    `٢) نقاط الحذف «…» علامته الأولى: استعملها ${ellipsis} مرة على الأقل، وقفةً قبل الانقلاب لا زخرفةً. تلتصق بما قبلها وتليها مسافة: «لأنهم عاجزون… بل لأن أحداً أقنعهم».`,
-    `٣) البناء الضدّي «…بل»: ${antithesis} مرات لا أكثر، في مواضع انقلابٍ حقيقي بصيغة «ليس كذا… بل كذا». رشُّها في كل فقرة تقليدٌ ميكانيكي يُرفض؛ أقصى ما بلغه في مقالٍ كامل ${dna.perArticle?.antithesisPer100?.p97 ?? 2.3} لكل مئة كلمة.`,
-    `٤) الفقرات ${paragraphsLow}-${paragraphsHigh} فقرة متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`,
+    `بصمة الكاتب مقيسةٌ رقمياً من ${arabicCountPhrase(dna.sampleSize, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)} له. التزمها رقماً رقماً؛ النص الذي يخالف هذه الأرقام ليس نصّه ويُرفض آلياً:`,
+    `١) الجملة قصيرة: وسيطها ${arabicCountPhrase(dna.sentence.median, WORD_FORMS)}، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`,
+    `٢) نقاط الحذف «…» علامته الأولى: استعملها ${arabicCountPhrase(ellipsis, OCCURRENCE_FORMS)} على الأقل، وقفةً قبل الانقلاب لا زخرفةً. تلتصق بما قبلها وتليها مسافة: «لأنهم عاجزون… بل لأن أحداً أقنعهم».`,
+    `٣) البناء الضدّي «…بل»: ${arabicCountPhrase(antithesis, OCCURRENCE_FORMS)} لا أكثر، في مواضع انقلابٍ حقيقي بصيغة «ليس كذا… بل كذا». رشُّها في كل فقرة تقليدٌ ميكانيكي يُرفض؛ أقصى ما بلغه في مقالٍ كامل ${dna.perArticle?.antithesisPer100?.p97 ?? 2.3} لكل مئة كلمة.`,
+    `٤) الفقرات من ${paragraphsLow} إلى ${arabicCountPhrase(paragraphsHigh, PARAGRAPH_AFTER_PREPOSITION_FORMS)} متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`,
     `٥) الأسئلة البلاغية ${questions} على الأقل، موزّعة لا متراكمة، وواحدٌ منها يصلح خاتمة.`,
     `٦) الصوت جمعيّ: «نحن» و«دعونا» و«علينا» و«نعيش». ممنوع منعاً باتاً: «أرى» و«في تقديري» و«من وجهة نظري» و«كتبتُ سابقاً» وأي إحالةٍ إلى مقالٍ سابق له.`,
     `٧) الاقتباس داخل النص بين «…» لا بعلامات لاتينية. ممنوع: الشرطة الاعتراضية —، والعناوين الفرعية، والتعداد النقطي أو الرقمي، والرموز التعبيرية، وعلامات ماركداون.`,
-    `٨) الطول شرطُ قبولٍ لا اقتراح: ${targetWords} كلمة. النص الأقصر من ${Math.round(targetWords * .85)} كلمة يُرفض ويُعاد. اكتب ${Math.max(7, Math.round(targetWords / 45))} فقرة، كل فقرة أربعين إلى خمسين كلمة — عُدَّها قبل الإخراج. لا تختم قبل بلوغ العدد.`,
+    `٨) الطول شرطُ قبولٍ لا اقتراح: ${arabicCountPhrase(targetWords, WORD_FORMS)}. النص الأقصر من ${arabicCountPhrase(Math.round(targetWords * .85), WORD_FORMS)} يُرفض ويُعاد. اكتب ${arabicCountPhrase(Math.max(7, Math.round(targetWords / 45)), PARAGRAPH_FORMS)}، كل فقرة أربعين إلى خمسين كلمة — عُدَّها قبل الإخراج. لا تختم قبل بلوغ العدد.`,
     `٩) الخاتمة تنقلب أو تسأل، ولا تلخّص: ${dna.closings.questionRate}٪ من خواتيمه سؤال و${dna.closings.antithesisRate}٪ انقلابٌ بـ«بل». ممنوع «في الختام» و«خلاصة القول» وكل عبارةٍ تعلن أنها خاتمة.`,
-    `١٠) الافتتاح مشهدٌ أو نفيٌ أو ضميرٌ جمعي، في جملةٍ لا تتجاوز ${Math.max(16, dna.sentence.p90)} كلمة. ممنوع التعريف المدرسي («يُعدّ… من أهم…»).`,
+    `١٠) الافتتاح مشهدٌ أو نفيٌ أو ضميرٌ جمعي، في جملةٍ لا تتجاوز ${arabicCountPhrase(Math.max(16, dna.sentence.p90), WORD_FORMS)}. ممنوع التعريف المدرسي («يُعدّ… من أهم…»).`,
     `١١) عباراتٌ محظورة لأنها غائبةٌ تماماً عن أرشيفه: ${(dna.banned || BANNED_PHRASES).filter((phrase) => phrase !== 'صيدة' && phrase !== 'صيد').slice(0, 24).join(' · ')}.`,
     '١٢) لا تستخدم كلمة «صيدة» ولا «صيد» بأي صيغة.',
     '١٣) ممنوع منعاً باتاً تكرار جملةٍ أو عبارةٍ أو إعادة صياغة الفكرة نفسها لتطويل النص. لا يكرّر الدكتور جملةً في مقاله قط، والتكرار يُرفض آلياً مهما بلغت بقية الأرقام. كل فقرةٍ تدفع المقال خطوةً جديدة إلى الأمام.',
@@ -734,13 +818,13 @@ export function judgeStyle(body, rawDna, options = {}) {
   add('ellipsis', 'وقفات «…»', gradeWindow(metrics.ellipsisPer100, bands.ellipsisPer100), 18,
     `${metrics.ellipsis} وقفة`, `${ellipsisWanted}-${ellipsisCeiling}`,
     metrics.ellipsisPer100 > (bands.ellipsisPer100?.p85 ?? 13)
-      ? `الوقفات «…» أكثر من عادته (${metrics.ellipsis} في ${metrics.words} كلمة): أبقِ منها ${ellipsisCeiling} تقريباً في مواضع الانقلاب، واحذف البقية. الوقفة التي لا تسبق انقلاباً زخرفة.`
+      ? `الوقفات «…» أكثر من عادته (${metrics.ellipsis} في ${arabicCountPhrase(metrics.words, WORD_FORMS)}): أبقِ منها ${ellipsisCeiling} تقريباً في مواضع الانقلاب، واحذف البقية. الوقفة التي لا تسبق انقلاباً زخرفة.`
       : `زد وقفات «…» إلى ${ellipsisWanted} على الأقل (الموجود ${metrics.ellipsis}): وقفةً قبل الانقلاب، تلتصق بما قبلها وتليها مسافة هكذا «عاجزون… بل».`)
 
   /* ٢ — طول الجملة: الطول عيب، القِصَر ليس. */
   add('sentenceLength', 'وسيط الجملة', gradeAtMost(metrics.medianSentence, bands.medianSentence), 15,
-    `${metrics.medianSentence} كلمة`, `≤ ${bands.medianSentence?.p65 ?? 12} كلمة`,
-    `جملك أطول من عادته: وسيطها ${metrics.medianSentence} كلمة وعادته ${dna.sentence.median}. اكسر أطول ${Math.max(3, Math.round(metrics.sentences * .3))} جملة إلى جملتين حاسمتين.`)
+    `${arabicCountPhrase(metrics.medianSentence, WORD_FORMS)}`, `≤ ${arabicCountPhrase(bands.medianSentence?.p65 ?? 12, WORD_FORMS)}`,
+    `جملك أطول من عادته: وسيطها ${arabicCountPhrase(metrics.medianSentence, WORD_FORMS)} وعادته ${dna.sentence.median}. اكسر أطول ${arabicCountPhrase(Math.max(3, Math.round(metrics.sentences * .3)), SENTENCE_FORMS)} إلى جملتين حاسمتين.`)
 
   /* ٣ — نسبة الجمل القصيرة. */
   add('shortSentences', 'الجمل القصيرة', gradeAtLeast(metrics.shortRate, bands.shortRate), 12,
@@ -758,7 +842,7 @@ export function judgeStyle(body, rawDna, options = {}) {
   add('antithesis', 'الانقلاب «…بل»', gradeWindow(metrics.antithesisPer100, bands.antithesisPer100, 'p50', 'p85'), 11,
     `${metrics.antithesis} (${metrics.antithesisPer100}/١٠٠)`, `≤ ${antithesisCeiling} في هذا الطول`,
     metrics.antithesisPer100 > (bands.antithesisPer100?.p85 ?? 1.3)
-      ? `«بل» مرشوشة لا مقصودة (${metrics.antithesis} مرة في ${metrics.words} كلمة، وأقصى ما بلغه في مقالٍ كامل ${bands.antithesisPer100?.p97 ?? 2.3} لكل مئة). أبقِ منها ${antithesisCeiling} في مواضع الانقلاب الحقيقي واحذف الباقي؛ الانقلاب الذي لا يقلب شيئاً ركاكة.`
+      ? `«بل» مرشوشة لا مقصودة (${arabicCountPhrase(metrics.antithesis, OCCURRENCE_FORMS)} في ${arabicCountPhrase(metrics.words, WORD_FORMS)}، وأقصى ما بلغه في مقالٍ كامل ${bands.antithesisPer100?.p97 ?? 2.3} لكل مئة). أبقِ منها ${antithesisCeiling} في مواضع الانقلاب الحقيقي واحذف الباقي؛ الانقلاب الذي لا يقلب شيئاً ركاكة.`
       : `استعمل «…بل» مرةً أو مرتين (الموجود ${metrics.antithesis}) بصيغة «ليس كذا… بل كذا» في موضع انقلابٍ حقيقي.`)
 
   /* ٦ — الأسئلة البلاغية. */
@@ -775,13 +859,13 @@ export function judgeStyle(body, rawDna, options = {}) {
 
   /* ٨ — إيقاع الفقرة: الفقرة المتضخّمة عيب. */
   add('paragraphRhythm', 'إيقاع الفقرات', gradeAtMost(metrics.medianParagraph, bands.medianParagraph), 8,
-    `وسيط ${metrics.medianParagraph} كلمة`, `≤ ${bands.medianParagraph?.p65 ?? 60} كلمة`,
-    `فقراتك كتلٌ متضخّمة (وسيط ${metrics.medianParagraph} كلمة). اجعل الفقرات قصيرة متفاوتة، وبينها فقرةٌ من جملةٍ واحدة.`)
+    `وسيط ${arabicCountPhrase(metrics.medianParagraph, WORD_FORMS)}`, `≤ ${arabicCountPhrase(bands.medianParagraph?.p65 ?? 60, WORD_FORMS)}`,
+    `فقراتك كتلٌ متضخّمة (وسيط ${arabicCountPhrase(metrics.medianParagraph, WORD_FORMS)}). اجعل الفقرات قصيرة متفاوتة، وبينها فقرةٌ من جملةٍ واحدة.`)
 
   /* ٩ — الافتتاح. */
   const openingClean = !/(?<!\p{L})(?:يعد|يعتبر|تعتبر|يشكل|تشكل)(?!\p{L})/u.test(bareText(text).slice(0, 90))
   add('opening', 'الافتتاح', Math.min(gradeAtMost(metrics.firstSentenceWords, bands.firstSentenceWords), openingClean ? 1 : .3), 8,
-    `${metrics.firstSentenceWords} كلمة`, `≤ ${bands.firstSentenceWords?.p65 ?? 18} كلمة وبلا تعريف مدرسي`,
+    `${arabicCountPhrase(metrics.firstSentenceWords, WORD_FORMS)}`, `≤ ${arabicCountPhrase(bands.firstSentenceWords?.p65 ?? 18, WORD_FORMS)} وبلا تعريف مدرسي`,
     'الجملة الأولى طويلة أو تعريفية. ابدأ بمشهدٍ أو نفيٍ أو ضميرٍ جمعي في جملةٍ قصيرة.')
 
   /* ١٠ — الخاتمة تنقلب أو تسأل ولا تلخّص. */
@@ -804,12 +888,12 @@ export function judgeStyle(body, rawDna, options = {}) {
   })()
   add('repetition', 'التكرار', repetitionGrade, 16,
     `جمل مكرّرة ${metrics.duplicateSentenceRate}٪ · مقاطع مكرّرة ${metrics.duplicateGramRate}٪`, 'صفر',
-    `النص يعيد نفسه (${metrics.duplicateSentenceRate}٪ من جمله مكرّرة، وأكثر جملةٍ تتكرر ${metrics.worstSentenceRepeat} مرات). الدكتور لا يكرّر جملةً قط. احذف كل جملةٍ أو عبارةٍ مكرّرة واستبدلها بفكرةٍ جديدة تدفع المقال للأمام؛ ولا تُطِل النص بإعادة الصياغة.`)
+    `النص يعيد نفسه (${metrics.duplicateSentenceRate}٪ من جمله مكرّرة، وأكثر جملةٍ تتكرر ${arabicCountPhrase(metrics.worstSentenceRepeat, OCCURRENCE_FORMS)}). الدكتور لا يكرّر جملةً قط. احذف كل جملةٍ أو عبارةٍ مكرّرة واستبدلها بفكرةٍ جديدة تدفع المقال للأمام؛ ولا تُطِل النص بإعادة الصياغة.`)
   if (metrics.duplicateSentenceRate >= 6 || metrics.duplicateGramRate >= 4 || metrics.worstSentenceRepeat >= 3) {
     const cause = metrics.duplicateSentenceRate >= 6
       ? `${metrics.duplicateSentenceRate}٪ من جمله مكرّرة`
       : metrics.worstSentenceRepeat >= 3
-        ? `جملةٌ واحدة تتكرر ${metrics.worstSentenceRepeat} مرات`
+        ? `جملةٌ واحدة تتكرر ${arabicCountPhrase(metrics.worstSentenceRepeat, OCCURRENCE_FORMS)}`
         : `${metrics.duplicateGramRate}٪ من مقاطعه مكرّرة`
     fatal.push(`النص يلفّ على نفسه: ${cause}`)
   }
@@ -1212,7 +1296,7 @@ export function locateIssues(body, rawDna, options = {}) {
   const metrics = articleMetrics(text)
   if (strict && metrics.medianSentence > (bands.medianSentence?.p85 ?? 17)) {
     const longest = [...sentences].sort((left, right) => countWords(right) - countWords(left))[0]
-    push(longest, `${countWords(longest)} كلمة — وعادته ${dna.sentence.median}`, 'long')
+    push(longest, `${arabicCountPhrase(countWords(longest), WORD_FORMS)} — وعادته ${dna.sentence.median}`, 'long')
   }
   return found.slice(0, 8)
 }
@@ -1224,7 +1308,7 @@ export function styleReportLines(verdict) {
   return [
     `مطابقة الأسلوب: ${verdict.score}٪${verdict.ready ? ' — مطابق' : ' — دون العتبة'}`,
     `وقفات «…» ${metrics.ellipsis} · انقلابات «بل» ${metrics.antithesis} · أسئلة ${metrics.questions}`,
-    `وسيط الجملة ${metrics.medianSentence} كلمة · الجمل القصيرة ${metrics.shortRate}٪ · فقرات من جملة ${metrics.singleRate}٪`,
+    `وسيط الجملة ${arabicCountPhrase(metrics.medianSentence, WORD_FORMS)} · الجمل القصيرة ${metrics.shortRate}٪ · فقرات من جملة ${metrics.singleRate}٪`,
     `التكرار ${metrics.duplicateSentenceRate}٪ · تنوّع المفردات ${metrics.lexicalDiversity}٪`,
     ...(verdict.fatal.length ? [`تحفّظات قاطعة: ${verdict.fatal.join(' · ')}`] : []),
   ]

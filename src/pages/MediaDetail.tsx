@@ -10,6 +10,7 @@ import { useCmsContent } from '../lib/content'
 import { ideaWords } from '../lib/idea-life'
 import { SITE_URL } from '../data'
 import { bookKnowledgeAnchor, relatedBookKnowledge } from '../lib/book-knowledge'
+import { arabicCountPhrase, CONCEPT_FORMS } from '../lib/arabic-count.ts'
 
 const youtubeId = (url = '') => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
 const clockSeconds = (value = '') => value.split(':').reduce((total, part) => total * 60 + (Number(part) || 0), 0)
@@ -141,7 +142,7 @@ export default function MediaDetail() {
               <summary className="flex cursor-pointer list-none items-center justify-between gap-5 p-5 md:px-7">
                 <span>
                   <span className="block font-display text-xl font-semibold text-ink">محاور اللقاء</span>
-                  <span className="mt-1 block text-[.7rem] text-soft">{chapters.length} محوراً · النقر يفتح اللقاء عند موضعه التقريبي</span>
+                  <span className="mt-1 block text-[.7rem] text-soft">{arabicCountPhrase(chapters.length, CONCEPT_FORMS)} · النقر يفتح اللقاء عند موضعه التقريبي</span>
                 </span>
                 <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
               </summary>

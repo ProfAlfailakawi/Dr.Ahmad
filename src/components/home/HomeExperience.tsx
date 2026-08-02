@@ -9,6 +9,7 @@ import type { Event as SiteEvent } from '../../data'
 import type { Curio } from '../../data-curated'
 import { categoryLabel } from '../../lib/content-taxonomy'
 import { SocialIcon } from '../icons'
+import { arabicCountPhrase, NEW_ARTICLE_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
 
 type Persona = 'reader' | 'scholar' | 'org'
 const PERSONAS: { key: Persona; label: string; title: string; desc: string; links: { to: string; label: string }[] }[] = [
@@ -39,7 +40,7 @@ function YouTubeThumb({ videoId, title }: { videoId: string; title: string }) {
     />
   )
 }
-const yearsAgo = (n: number) => (n === 1 ? 'قبل سنة' : n === 2 ? 'قبل سنتين' : n <= 10 ? `قبل ${n} سنوات` : `قبل ${n} سنة`)
+const yearsAgo = (n: number) => `قبل ${arabicCountPhrase(n, YEAR_AFTER_PREPOSITION_FORMS)}`
 
 function ReturningNote({ articles }: { articles: ArticleRecord[] }) {
   const [snapshot] = useState(() => {
@@ -65,7 +66,7 @@ function ReturningNote({ articles }: { articles: ArticleRecord[] }) {
   return (
     <div className="mb-5 flex min-h-12 flex-wrap items-center gap-x-5 gap-y-1.5 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.8rem] text-soft">
       {resume && <Link to={`/articles/${resume.slug}`} className="group"><span className="font-semibold text-accent">تابع من حيث توقفت</span> · <span className="text-ink group-hover:text-accent">«{resume.title}»</span></Link>}
-      {newArticles > 0 && <Link to="/articles" className="transition-colors hover:text-accent"><span className="font-semibold text-accent">منذ زيارتك:</span> {newArticles === 1 ? 'مقال جديد' : `${newArticles} مقالات جديدة`}</Link>}
+      {newArticles > 0 && <Link to="/articles" className="transition-colors hover:text-accent"><span className="font-semibold text-accent">منذ زيارتك:</span> {arabicCountPhrase(newArticles, NEW_ARTICLE_FORMS)}</Link>}
     </div>
   )
 }

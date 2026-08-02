@@ -7,6 +7,7 @@ import podcastAdmin from '../../data/podcast-admin.json'
 import { fingerprintDialogue } from '../../lib/podcast-dialogue-lock'
 import { dispatchPodcastGeneration } from '../../lib/podcast-generation'
 import { reviewMeaningDrift, type MeaningDriftReview, type MeaningFingerprint } from '../../lib/editorial-memory'
+import { arabicCountPhrase, INTERVENTION_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
 
 type Speaker = 'male' | 'female'
 type DialogueTurn = {
@@ -285,7 +286,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
     setAvailableDraft(local)
     setDirty(false)
     setNotice(local
-      ? `فُتحت المسودة المحفوظة (${local.length} مداخلة).`
+      ? `فُتحت المسودة المحفوظة (${arabicCountPhrase(local.length, INTERVENTION_FORMS)}).`
       : 'مداخلة واحدة جاهزة؛ أضف غيرها فقط عند الحاجة.')
     setArticleBody('')
     loadArticleBodies().then((bodies) => { if (active) setArticleBody(article?.body || bodies[slug] || article?.excerpt || '') }).catch(() => { if (active) setArticleBody(article?.body || article?.excerpt || '') })
@@ -315,8 +316,8 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
                وتبقى السحابية خلف الزرّ لمن أرادها. */
             if (!local) setTurns(cloud)
             setNotice(local
-              ? `توجد مسودة سحابية محفوظة (${cloud.length} مداخلة) ويمكن استعادتها عند الحاجة.`
-              : `فُتح الحوار المحفوظ في اللوحة (${cloud.length} مداخلة).`)
+              ? `توجد مسودة سحابية محفوظة (${arabicCountPhrase(cloud.length, INTERVENTION_FORMS)}) ويمكن استعادتها عند الحاجة.`
+              : `فُتح الحوار المحفوظ في اللوحة (${arabicCountPhrase(cloud.length, INTERVENTION_FORMS)}).`)
             return
           } catch {
             // جرّب المسار الاحتياطي؛ بعض المشاريع لم تُنشر فيها قاعدة المجموعة الجديدة بعد.
@@ -489,8 +490,8 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
       const dispatch = await dispatchPodcastGeneration({ user, slug, proof })
       setQueuedProof({ turnCount: proof.turnCount, sha: proof.contentSha256.slice(0, 12), runId: dispatch.workflowRunId ? String(dispatch.workflowRunId) : undefined })
       setNotice(dispatch.duplicate
-        ? `الحوار نفسه مقفول والتوليد يعمل بالفعل ✓ ${proof.turnCount} مداخلة · بصمة ${proof.contentSha256.slice(0, 12)}`
-        : `بدأ التوليد تلقائياً من لوحة التحكم ✓ ${proof.turnCount} مداخلة · بصمة ${proof.contentSha256.slice(0, 12)}${dispatch.workflowRunId ? ` · تشغيل ${dispatch.workflowRunId}` : ''}. لا تحتاج إلى دخول GitHub.`)
+        ? `الحوار نفسه مقفول والتوليد يعمل بالفعل ✓ ${arabicCountPhrase(proof.turnCount, INTERVENTION_FORMS)} · بصمة ${proof.contentSha256.slice(0, 12)}`
+        : `بدأ التوليد تلقائياً من لوحة التحكم ✓ ${arabicCountPhrase(proof.turnCount, INTERVENTION_FORMS)} · بصمة ${proof.contentSha256.slice(0, 12)}${dispatch.workflowRunId ? ` · تشغيل ${dispatch.workflowRunId}` : ''}. لا تحتاج إلى دخول GitHub.`)
       /* التحويل المباشر إلى صفحة التوليد: الدكتور يرى حالة حلقته فوراً، ولا تبقى
          بين يديه شاشةٌ فيها زرّ إرسالٍ قد يُضغط مرّةً ثانية فيُنتج تكراراً. */
       onQueued?.()
@@ -531,7 +532,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
     setTurns(availableDraft)
     setAvailableDraft(null)
     setDirty(false)
-    setNotice(`استُعيدت المسودة المحفوظة (${availableDraft.length} مداخلة) ✓`)
+    setNotice(`استُعيدت المسودة المحفوظة (${arabicCountPhrase(availableDraft.length, INTERVENTION_FORMS)}) ✓`)
   }
 
   const download = () => {
@@ -559,14 +560,14 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
         const parsed = normalizeTurns(JSON.parse(await file.text()))
         if (!parsed) throw new Error('invalid-json')
         setTurns(parsed)
-        setNotice(`استُوردت نسخة احتياطية تحتوي ${parsed.length} مداخلة؛ راجعها ثم احفظ.`)
+        setNotice(`استُوردت نسخة احتياطية تحتوي ${arabicCountPhrase(parsed.length, INTERVENTION_FORMS)}؛ راجعها ثم احفظ.`)
       } else {
         const text = await documentText(file)
         const script = turnsFromScript(text)
         if (script) {
           setTurns(script)
           const maleCount = script.filter((turn) => turn.speaker === 'male').length
-          setNotice(`استُورد الحوار كاملاً من المستند: ${script.length} مداخلة (الرجل ${maleCount} · المرأة ${script.length - maleCount}). راجع المداخلات ثم احفظ — الحفظ يوصلها لغرفة الإنتاج.`)
+          setNotice(`استُورد الحوار كاملاً من المستند: ${arabicCountPhrase(script.length, INTERVENTION_FORMS)} (الرجل ${maleCount} · المرأة ${script.length - maleCount}). راجع المداخلات ثم احفظ — الحفظ يوصلها لغرفة الإنتاج.`)
         } else {
           const firstTurn = firstTurnFromSource(article?.title || file.name.replace(/\.[^.]+$/, ''), text)
           setTurns([firstTurn])
@@ -652,7 +653,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
             onClick={restoreSavedDraft}
             className="mt-3 inline-flex w-fit items-center rounded-full border border-accent/[.35] bg-canvas px-4 py-2 text-[.76rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
           >
-            استعادة المسودة المحفوظة ({availableDraft.length} مداخلة)
+            استعادة المسودة المحفوظة ({arabicCountPhrase(availableDraft.length, INTERVENTION_FORMS)})
           </button>
         )}
 
@@ -677,8 +678,8 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
         </div>
 
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.76rem] text-soft">
-          <span><strong className="text-ink">{turns.length}</strong> مداخلة</span>
-          <span><strong className="text-ink">{wordCount}</strong> كلمة</span>
+          <span><strong className="text-ink">{arabicCountPhrase(turns.length, INTERVENTION_FORMS)}</strong></span>
+          <span><strong className="text-ink">{arabicCountPhrase(wordCount, WORD_PLAIN_FORMS)}</strong></span>
           <span><strong className="text-ink">{turns.filter((item) => item.speaker === 'male').length}</strong> للمتحدث</span>
           <span><strong className="text-ink">{turns.filter((item) => item.speaker === 'female').length}</strong> للمتحدثة</span>
           {article && <span className="min-w-0 truncate">الحلقة: <span dir="ltr">{article.slug}</span></span>}
@@ -704,7 +705,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
           <div role="status" className="mt-4 grid gap-2 rounded-2xl border border-accent/[.45] bg-canvas px-5 py-4">
             <p className="font-display text-[1.05rem] font-semibold text-ink">✓ وصل الحوار وبدأ التوليد</p>
             <p className="text-[.82rem] leading-relaxed text-soft">
-              {queuedProof.turnCount} مداخلة · بصمة {queuedProof.sha}
+              {arabicCountPhrase(queuedProof.turnCount, INTERVENTION_FORMS)} · بصمة {queuedProof.sha}
               {queuedProof.runId ? ` · تشغيل ${queuedProof.runId}` : ''}
               <br />
               التوليد يستغرق نحو عشر دقائق. لا تحتاج إلى الضغط ثانيةً، ولا إلى دخول GitHub —

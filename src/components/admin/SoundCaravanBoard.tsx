@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb } from '../../lib/firebase'
 import audio from '../../data/audio.json'
+import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, READY_PATH_FORMS } from '../../lib/arabic-count.ts'
 
 /*
  * قافلة الصوت — لوحة إدارة صريحة. نعرض فهد ونورة والحوار كلٌّ على حدة،
@@ -109,7 +110,7 @@ function Meter({
           className="mt-1 min-h-9 text-[.72rem] text-soft transition-colors hover:text-accent"
           aria-label={`عرض المقالات المتبقية في ${name}: ${missing}`}
         >
-          باقٍ {missing} مقالاً ← اعرضها
+          باقٍ {arabicCountPhrase(missing, ARTICLE_PLAIN_FORMS)} ← اعرضها
         </button>
       ) : <div className="mt-2 text-[.72rem] text-soft">اكتمل المسار</div>}
     </div>
@@ -321,7 +322,7 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-extrabold text-ink">قافلة الصوت</h2>
-          <p className="mt-1 text-sm text-soft">لكل مقال ثلاثة مسارات إنتاج ظاهرة للإدارة: فهد، نورة، والحوار — {done} من {target} مساراً جاهزاً ({overall}٪). كل رقم قابل للفتح لمعرفة المقالات التي وراءه.</p>
+          <p className="mt-1 text-sm text-soft">لكل مقال ثلاثة مسارات إنتاج ظاهرة للإدارة: فهد، نورة، والحوار — {arabicCountPhrase(done, READY_PATH_FORMS)} من أصل {target} ({overall}٪). كل رقم قابل للفتح لمعرفة المقالات التي وراءه.</p>
         </div>
         <button
           type="button"
@@ -378,7 +379,7 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
           <button type="button" onClick={() => setDetail({ voice: 'fahed', state: 'ready' })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-wash hover:text-accent"><i className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: FAHED }} />فهد {fahed}</button>
           <button type="button" onClick={() => setDetail({ voice: 'noura', state: 'ready' })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-wash hover:text-accent"><i className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: NOURA }} />نورة {noura}</button>
           <button type="button" onClick={() => setDetail({ voice: 'dialogue', state: 'ready' })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-wash hover:text-accent"><i className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: DIALOGUE }} />الحوار {dialogue}</button>
-          <button type="button" onClick={() => setDetail({ voice: 'noura', state: 'missing' })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-wash hover:text-accent"><i className="inline-block h-2.5 w-2.5 rounded-sm bg-soft/40" />{total - noura} مقالاً بلا صوت نورة بعد</button>
+          <button type="button" onClick={() => setDetail({ voice: 'noura', state: 'missing' })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-wash hover:text-accent"><i className="inline-block h-2.5 w-2.5 rounded-sm bg-soft/40" />{arabicCountPhrase(total - noura, ARTICLE_PLAIN_FORMS)} بلا صوت نورة بعد</button>
         </div>
       </div>
 

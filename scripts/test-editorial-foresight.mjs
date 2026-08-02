@@ -13,7 +13,7 @@ const newDraft = 'في المدارس النائية يمكن للذكاء ال�
 const report = genuineAdditionMeter('من يراجع الخوارزمية داخل الصف؟', newDraft, archive)
 assert.notEqual(report.verdict, 'لا توجد مادة كافية للحكم')
 assert.equal(report.nearest.length > 0, true)
-assert.match(report.evidenceBasis, /8 مادة/)
+assert.match(report.evidenceBasis, /8 مواد/)
 
 const advocate = absentPartyAdvocate('الذكاء الاصطناعي في التعليم', newDraft)
 assert.match(advocate.party, /المعلم|المختص/)

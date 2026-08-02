@@ -24,6 +24,7 @@ import { SaveForLaterButton } from '../components/MySpace'
 import IdeaLife from '../components/IdeaLife'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
+import { arabicCountPhrase, SHARE_FORMS, VIEW_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
@@ -404,7 +405,7 @@ function TimeDialogue({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTi
   if (!pair.older && !pair.newer) return null
   const yr = (iso: string) => iso.slice(0, 4)
   const diff = (iso: string) => Math.abs(+yr(iso) - +yr(a.iso))
-  const yearsWord = (n: number) => (n === 1 ? 'سنة' : n === 2 ? 'سنتين' : n <= 10 ? `${n} سنوات` : `${n} سنة`)
+  const yearsWord = (n: number) => arabicCountPhrase(n, YEAR_AFTER_PREPOSITION_FORMS)
 
   return (
     <FadeUp>
@@ -491,9 +492,9 @@ function OwnerBadge({ path, article }: { path: string; article: ArticleRecord })
   const shares = estimatedShares ? engagementIndex(article, 'shares', 12, 86) + c.shares : c.shares
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-hair bg-canvas/80 px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title={estimatedViews || estimatedShares ? 'يظهر لك وحدك — علامة ≈ تعني مؤشراً داخلياً متنوعاً وليست إحصاءً موثقاً. القيم التي تتجاوز عتبة الرصد تُعرض بلا علامة.' : 'يظهر لك وحدك — أرقام داخلية موثقة من الموقع'}>
-      <span>{estimatedViews ? '≈ ' : ''}{views.toLocaleString('en-US')} مشاهدة</span>
+      <span>{estimatedViews ? '≈ ' : ''}{arabicCountPhrase(views, VIEW_FORMS, (value) => value.toLocaleString('en-US'))}</span>
       <span className="text-hair">·</span>
-      <span>{estimatedShares ? '≈ ' : ''}{shares.toLocaleString('en-US')} مشاركة</span>
+      <span>{estimatedShares ? '≈ ' : ''}{arabicCountPhrase(shares, SHARE_FORMS, (value) => value.toLocaleString('en-US'))}</span>
     </span>
   )
 }

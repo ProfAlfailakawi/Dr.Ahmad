@@ -6,6 +6,7 @@ import { useCmsContent } from '../lib/content'
 import { ideaWords } from '../lib/idea-life'
 import { PROJECT_START_YEAR, getMinimumCompletedJourneyYears } from '../lib/project-meta'
 import { categoryLabel } from '../lib/content-taxonomy'
+import { arabicCountPhrase, DIFFERENT_YEAR_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS } from '../lib/arabic-count.ts'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -148,7 +149,7 @@ export default function ThoughtOverview() {
                 <h2 id="thought-return-title" className="mt-1 font-display text-2xl font-semibold text-ink">المحور الأكثر امتداداً</h2>
                 <strong className="mt-7 block font-display text-4xl font-semibold leading-tight text-accent">{model.recurring?.category || '—'}</strong>
                 <p className="mt-4 text-[.88rem] font-light leading-[1.9] text-soft">
-                  ظهر هذا المحور في {number.format(model.recurring?.years || 0)} سنوات مختلفة داخل الأرشيف، ولذلك يُقرأ هنا بوصفه سؤالاً متجدداً لا موضوعاً عابراً.
+                  ظهر هذا المحور في {arabicCountPhrase(model.recurring?.years || 0, DIFFERENT_YEAR_AFTER_PREPOSITION_FORMS, number.format)} داخل الأرشيف، ولذلك يُقرأ هنا بوصفه سؤالاً متجدداً لا موضوعاً عابراً.
                 </p>
                 <Link to={`/decade?idea=${encodeURIComponent(model.recurring?.category || '')}`} className="mt-6 inline-flex items-center gap-2 text-[.8rem] font-semibold text-accent">تتبّع رحلته عبر السنوات ←</Link>
               </section>
@@ -170,7 +171,7 @@ export default function ThoughtOverview() {
                     <span className="absolute -right-[2.25rem] top-4 flex h-4 w-4 items-center justify-center rounded-full border border-accent/40 bg-paper md:-top-[2.2rem] md:right-4"><span className="h-1.5 w-1.5 rounded-full bg-accent" /></span>
                     <span className="text-[.68rem] font-semibold text-accent">{period.label} · {period.from}–{period.to}</span>
                     <strong className="mt-2 block font-display text-xl font-semibold text-ink">{categoryLabel(period.dominant)}</strong>
-                    <p className="mt-2 text-[.78rem] leading-relaxed text-soft">{number.format(period.count)} مادة في هذه المرحلة.</p>
+                    <p className="mt-2 text-[.78rem] leading-relaxed text-soft">{arabicCountPhrase(period.count, MATERIAL_FORMS, number.format)} في هذه المرحلة.</p>
                   </div>
                 ))}
               </div>

@@ -2,6 +2,7 @@ import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms.
 import { absentPartyAdvocate, genuineAdditionMeter, timeTest } from './editorial-foresight.ts'
 import { relatedForIdea, strongestQuote, suggestStrongTitle } from './intelligence.ts'
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from './book-knowledge.ts'
+import { arabicCountPhrase, RELATED_MATERIAL_AFTER_PREPOSITION_FORMS } from './arabic-count.ts'
 
 export type DrAhmadTaskType =
   | 'media_preparation'
@@ -215,7 +216,7 @@ export function buildDrAhmadDecisionPackage(input: {
   const archiveEvidence = related.sources.length >= 6
     ? 'الأرشيف يغطي الموضوع من أكثر من نوع مادة.'
     : related.sources.length
-      ? `التغطية موجودة لكنها محدودة إلى ${related.sources.length} مواد مرتبطة.`
+      ? `التغطية موجودة لكنها محدودة إلى ${arabicCountPhrase(related.sources.length, RELATED_MATERIAL_AFTER_PREPOSITION_FORMS)}.`
       : 'لا توجد مادة أرشيفية قريبة بما يكفي.'
   const freshness = classification.needsCurrentContext
     ? current.length

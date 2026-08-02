@@ -10,6 +10,7 @@ import { QuoteImage } from './QuoteImage'
 import { RESONANCE_FLOOR, loadPassageResonance, recordPassageHighlight } from '../lib/passage-resonance'
 import { bookKnowledgeAnchor, bookKnowledgeText, getBookKnowledge } from '../lib/book-knowledge'
 import { buildSmartQueryPlan } from '../lib/smart-search'
+import { arabicCountPhrase, CONCEPT_FORMS, PAGE_AFTER_PREPOSITION_FORMS, PASSAGE_FORMS } from '../lib/arabic-count.ts'
 
 function scoreAgainst(source: Set<string>, value: string) {
   return ideaWords(value).reduce((total, word) => total + (source.has(word) ? 1 : 0), 0)
@@ -287,7 +288,7 @@ export function BookWorld({
                الأرشيف»). البصمة نفسها تبقى في لوحة التحكم حيث تنفع. */
             eyebrow="بصمة الفكرة"
             title="المفاهيم التي يحملها الكتاب إلى الأرشيف"
-            meta={model.knowledge ? `${model.knowledge.concepts.length} محوراً على امتداد ${model.knowledge.pageCount} صفحة` : `${model.dna.topic.label} · ${model.dna.tone.label}`}
+            meta={model.knowledge ? `${arabicCountPhrase(model.knowledge.concepts.length, CONCEPT_FORMS)} على امتداد ${arabicCountPhrase(model.knowledge.pageCount, PAGE_AFTER_PREPOSITION_FORMS)}` : `${model.dna.topic.label} · ${model.dna.tone.label}`}
             lockOpen={Boolean(activeIdea)}
           >
             {/* ═══ شريط الكتاب ═══
@@ -407,7 +408,7 @@ export function BookWorld({
           {model.allQuotes.length > 0 && <Disclosure
             eyebrow="من متن الكتاب"
             title={conceptQuotes.length ? `مقاطع من «${selectedIdea}»` : 'مقاطع مختارة من الكتاب'}
-            meta={`${model.allQuotes.length} مقطعاً من الكتاب، كلٌّ منسوبٌ إلى صفحته`}
+            meta={`${arabicCountPhrase(model.allQuotes.length, PASSAGE_FORMS)} من الكتاب، كلٌّ منسوبٌ إلى صفحته`}
           >
             <div className="grid gap-3">
               {byReaders(conceptQuotes.length ? conceptQuotes : model.allQuotes).slice(0, conceptQuotes.length ? conceptQuotes.length : 4).map((quote) => (

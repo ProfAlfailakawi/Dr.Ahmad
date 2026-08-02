@@ -7,7 +7,7 @@ import { pipeline } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { createGzip } from 'node:zlib'
 import { POLICY, evaluateCandidate } from './scripts/editorial-policy.mjs'
-import { PROOFREAD_INSTRUCTION, acceptProofread, articleMetrics, buildOrthographyIndex, deriveExcerpt, judgeStyle, orthographySlips, refineToStyle, resolveStyleDna, styleBrief, styleReportLines, withVoiceMemory } from './src/lib/style-dna.mjs'
+import { PROOFREAD_INSTRUCTION, acceptProofread, arabicCountPhrase, articleMetrics, buildOrthographyIndex, deriveExcerpt, DEVICE_FORMS, FILE_FORMS, judgeStyle, orthographySlips, PROBLEM_FORMS, refineToStyle, resolveStyleDna, RULE_FORMS, styleBrief, styleReportLines, SUBSCRIBER_FORMS, VERIFIED_FILE_FORMS, WARNING_FORMS, withVoiceMemory, WORD_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from './src/lib/style-dna.mjs'
 import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
 import { stableCanonicalJson } from './src/lib/sovereign-publishing.mjs'
@@ -2519,7 +2519,7 @@ export async function reviseArticleParagraph(input, fetchImpl = fetch) {
       styleBrief(dna, Math.max(120, words * 3)),
       '',
       'قواعد هذه المهمة:',
-      `· أعد الفقرة وحدها في نحو ${words} كلمة (±٢٠٪). لا تكتب ما قبلها ولا ما بعدها.`,
+      `· أعد الفقرة وحدها في نحو ${arabicCountPhrase(words, WORD_AFTER_PREPOSITION_FORMS)} (±٢٠٪). لا تكتب ما قبلها ولا ما بعدها.`,
       '· احفظ وظيفتها في المقال: إن كانت مشهداً فابقِها مشهداً، وإن كانت خاتمةً فاختم.',
       '· صِلها بما قبلها وما بعدها بلا تكرار جملةٍ منهما.',
       input.note ? `· ملاحظة الكاتب على هذه الفقرة: ${input.note}` : '',
@@ -3137,7 +3137,7 @@ function rhythmAnchors(styleSamples = []) {
 async function repairArticleWords(article, input, context, attempt, fetchImpl) {
   const actual = exactWordCount(article.body)
   return callGeminiStructured({
-    instruction: `أنت محرر عربي صارم. أعد تحرير المقال نفسه ليصبح ${input.targetWords} كلمة تقريباً وفق العد بالفصل بالمسافات. لا تغيّر الفكرة أو الوقائع أو النبرة أو إيقاع الجمل القصيرة أو وقفات «…». لا تضف عنواناً داخل النص، ولا عناوين فرعية ولا تعداداً. أعد JSON فقط.`,
+    instruction: `أنت محرر عربي صارم. أعد تحرير المقال نفسه ليصبح ${arabicCountPhrase(input.targetWords, WORD_PLAIN_FORMS)} تقريباً وفق العد بالفصل بالمسافات. لا تغيّر الفكرة أو الوقائع أو النبرة أو إيقاع الجمل القصيرة أو وقفات «…». لا تضف عنواناً داخل النص، ولا عناوين فرعية ولا تعداداً. أعد JSON فقط.`,
     prompt: [
       `العدد الحالي: ${actual}. العدد المطلوب: ${input.targetWords}. محاولة الضبط: ${attempt}.`,
       'احتفظ بعنوان المقال وتصنيفه ومقتطفه، واضبط الجسم فقط. راجع العد داخلياً قبل الإخراج.',
@@ -3351,8 +3351,8 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     orders.push(...best.verdict.corrections)
     if (best.lengthOff > wordTolerance) {
       orders.push(best.words > input.targetWords
-        ? `النص ${best.words} كلمة والمطلوب ${input.targetWords}: احذف الجمل التفسيرية الزائدة وكل عبارةٍ تعيد ما قيل، ولا تحذف المشهد ولا الخاتمة.`
-        : `النص ${best.words} كلمة والمطلوب ${input.targetWords}: أضف مشهداً صغيراً أو موقفاً إنسانياً جديداً. ممنوع بلوغ العدد بتكرار جملةٍ سبقت أو بإعادة صياغتها.`)
+        ? `النص ${arabicCountPhrase(best.words, WORD_PLAIN_FORMS)} والمطلوب ${input.targetWords}: احذف الجمل التفسيرية الزائدة وكل عبارةٍ تعيد ما قيل، ولا تحذف المشهد ولا الخاتمة.`
+        : `النص ${arabicCountPhrase(best.words, WORD_PLAIN_FORMS)} والمطلوب ${input.targetWords}: أضف مشهداً صغيراً أو موقفاً إنسانياً جديداً. ممنوع بلوغ العدد بتكرار جملةٍ سبقت أو بإعادة صياغتها.`)
     }
 
     const revision = await callGeminiStructured({
@@ -4866,7 +4866,7 @@ export function createRequestHandler({
               title: 'الإشعارات الفورية',
               eyebrow: 'REAL PUSH',
               level: pushLevel,
-              metric: pushDeviceCount ? `${pushDeviceCount} جهاز` : 'لا جهاز مسجل',
+              metric: pushDeviceCount ? arabicCountPhrase(pushDeviceCount, DEVICE_FORMS) : 'لا جهاز مسجل',
               summary: pushDeviceCount
                 ? 'لوحة التحكم مسجلة لاستقبال إشعارات الرسائل والاشتراكات حتى عند إغلاق الصفحة.'
                 : 'لم يُسجل جهاز المشرف بعد لاستقبال Push حقيقي.',
@@ -4881,7 +4881,7 @@ export function createRequestHandler({
               title: 'Cloudflare R2',
               eyebrow: 'OBJECT STORAGE',
               level: r2InventoryVerified ? audioLevel : r2DirectConfigured ? 'attention' : 'warning',
-              metric: r2InventoryVerified ? `${totalAudioFiles} ملف موثّق` : r2DirectConfigured ? 'الربط المباشر جاهز' : 'بانتظار إثبات حي',
+              metric: r2InventoryVerified ? arabicCountPhrase(totalAudioFiles, VERIFIED_FILE_FORMS) : r2DirectConfigured ? 'الربط المباشر جاهز' : 'بانتظار إثبات حي',
               summary: r2InventoryVerified
                 ? 'R2 حيّ ومثبت بجرد خارجي حديث ثم قراءة راجعة موقعة من Firestore.'
                 : r2DirectConfigured
@@ -4896,7 +4896,7 @@ export function createRequestHandler({
               title: 'النشرة البريدية',
               eyebrow: 'NEWSLETTER',
               level: newsletterLevel,
-              metric: `${subscriberCount} مشترك`,
+              metric: arabicCountPhrase(subscriberCount, SUBSCRIBER_FORMS),
               summary: communications.newsletterReady
                 ? 'المعاينة والاختبار والإرسال الجماعي وسجل الإرسال جاهزة من صندوق الرسائل.'
                 : 'واجهة التحرير جاهزة، لكن الإرسال الحقيقي ينتظر اكتمال إعداد مزود البريد والحماية.',
@@ -4911,7 +4911,7 @@ export function createRequestHandler({
               title: 'الصوت والعدّاد الحي',
               eyebrow: 'AUDIO AUTOSYNC',
               level: audioLevel,
-              metric: totalAudioFiles ? `${totalAudioFiles} ملف` : 'بانتظار أول جرد',
+              metric: totalAudioFiles ? arabicCountPhrase(totalAudioFiles, FILE_FORMS) : 'بانتظار أول جرد',
               summary: audioLastSyncAt
                 ? `آخر جرد حي سجّل فهد ${Number(inventory.fahed || 0)} · نورة ${Number(inventory.noura || 0)} · حوار ${Number(inventory.dialogue || 0)}.`
                 : 'لا توجد بصمة حديثة لجرد R2 في اللوحة.',
@@ -4943,7 +4943,7 @@ export function createRequestHandler({
               title: 'المحتوى والمصادر',
               eyebrow: 'SITE GUARDIAN',
               level: !sourceReportFresh ? 'attention' : contentProblems > 0 ? 'warning' : contentWarnings > 0 ? 'attention' : 'healthy',
-              metric: !sourceReportFresh ? 'التقرير قديم' : contentProblems > 0 ? `${contentProblems} مشكلة` : contentWarnings > 0 ? `${contentWarnings} تنبيه` : 'سليم',
+              metric: !sourceReportFresh ? 'التقرير قديم' : contentProblems > 0 ? arabicCountPhrase(contentProblems, PROBLEM_FORMS) : contentWarnings > 0 ? arabicCountPhrase(contentWarnings, WARNING_FORMS) : 'سليم',
               summary: !sourceReportFresh
                 ? 'لا توجد مشكلة حية مؤكدة؛ آخر تقرير للحارس انتهت صلاحيته.'
                 : contentProblems > 0
@@ -5081,7 +5081,7 @@ export function createRequestHandler({
           label: 'إعدادات واتساب ورسائل البوت',
           ok: true,
           durationMs: Date.now() - startedAt,
-          detail: `حُفظت ${backup.ruleCount} قاعدة مع الشخصية وقوالب الرسائل.`,
+          detail: `حُفظت ${arabicCountPhrase(backup.ruleCount, RULE_FORMS)} مع الشخصية وقوالب الرسائل.`,
         }]
         const incidentId = await writeControlCenterIncident(db, FieldValue, {
           action,
@@ -5113,7 +5113,7 @@ export function createRequestHandler({
           label: 'استعادة إعدادات واتساب ورسائل البوت',
           ok: true,
           durationMs: Date.now() - startedAt,
-          detail: `عادت ${restored.ruleCount} قاعدة من النسخة المحددة، من دون لمس الجلسة أو المحادثات.`,
+          detail: `عادت ${arabicCountPhrase(restored.ruleCount, RULE_FORMS)} من النسخة المحددة، من دون لمس الجلسة أو المحادثات.`,
         }]
         const incidentId = await writeControlCenterIncident(db, FieldValue, {
           action,

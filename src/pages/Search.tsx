@@ -18,15 +18,11 @@ import { Pagination, usePagedList } from '../components/Pagination'
 import { staticQuestions } from '../questions-data'
 import { SocialIcon } from '../components/icons'
 import { buildSmartQueryPlan, diversifySmartRows, scoreSmartFields, suggestedDomainTerms } from '../lib/smart-search'
+import { arabicCountPhrase, RESULT_FORMS } from '../lib/arabic-count.ts'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
-const resultWord = (count: number) => {
-  if (count === 1) return 'نتيجة واحدة'
-  if (count === 2) return 'نتيجتان'
-  if (count >= 3 && count <= 10) return `${ar(count)} نتائج`
-  return `${ar(count)} نتيجة`
-}
+const resultWord = (count: number) => arabicCountPhrase(count, RESULT_FORMS, (value) => ar(value))
 
 const SEARCH_SUGGESTION_STOPWORDS = new Set([
   'الدكتور', 'المقال', 'مقال', 'كتاب', 'كتب', 'بحث', 'ابحاث', 'أبحاث', 'هذا', 'هذه',

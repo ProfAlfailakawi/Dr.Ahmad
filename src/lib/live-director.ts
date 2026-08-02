@@ -2,6 +2,7 @@ import type { ArticleRecord } from './cms.ts'
 import { genuineAdditionMeter } from './editorial-foresight.ts'
 import { strongestQuote, suggestStrongTitle } from './intelligence.ts'
 import { polishTypography } from './style-dna.mjs'
+import { arabicCountPhrase, DAY_FORMS, PASSAGE_AFTER_PREPOSITION_FORMS, PUBLISHED_PROJECT_FORMS, SECOND_FORMS, WORD_FORMS } from './arabic-count.ts'
 
 /**
  * مخرجات مسبك التغريدات ورنين القرّاء تُحقن حقناً ولا تُستورد هنا.
@@ -873,7 +874,7 @@ function quality(project: Pick<LiveDirectorProject, 'idea' | 'duration' | 'durat
   if (!foundingScene) notes.push('المقطع الأول يجب أن يكون مشهداً مؤسساً بلا صورة مرجعية.')
   // الميزانية تُقاس على المقاطع الناطقة وحدها؛ المقطع الصامت مقصود ولا يُحسب نقصاً.
   const speaking = project.segments.filter((segment) => segment.narration).length
-  if (speaking && (spokenWords < speaking * 7 || spokenWords > speaking * 14)) notes.push(`النص المنطوق ${spokenWords} كلمة على ${speaking} مقاطع ناطقة؛ اجعل كل جملة بين 7 و14 كلمة.`)
+  if (speaking && (spokenWords < speaking * 7 || spokenWords > speaking * 14)) notes.push(`النص المنطوق ${arabicCountPhrase(spokenWords, WORD_FORMS)} على ${arabicCountPhrase(speaking, PASSAGE_AFTER_PREPOSITION_FORMS)}؛ اجعل كل جملة بين 7 و14 كلمة.`)
   return {
     continuity: !foundingScene || !chainSound ? 'يحتاج مراجعة' : allDirect ? 'يحتاج تبسيطاً' : unique(modes).length >= 3 ? 'ممتاز' : 'جيد',
     idea: wordCount(project.idea) >= 5 ? 'ممتاز' : 'يحتاج مراجعة',
@@ -900,7 +901,7 @@ export function createArticleVideoProject(input: ArticleVideoInput): LiveDirecto
   const duration = input.preferredDuration || recommended.duration
   const segmentCount = duration / 8
   const recommendation = input.preferredDuration
-    ? { duration, segments: segmentCount, days: Math.ceil(segmentCount / 3), reason: `اختيار يدوي: ${duration} ثانية، مع بقاء حد ثلاثة مقاطع يومياً.` }
+    ? { duration, segments: segmentCount, days: Math.ceil(segmentCount / 3), reason: `اختيار يدوي: ${arabicCountPhrase(duration, SECOND_FORMS)}، مع بقاء حد ثلاثة مقاطع يومياً.` }
     : recommended
   const title = input.article.title
   const idea = input.article.excerpt || clipWords(input.article.body || '', 30, title)
@@ -1119,7 +1120,7 @@ export function nearMinuteEditPlan(project: Pick<LiveDirectorProject, 'duration'
     outro: { from: 4, to: 7, note: project.articleUrl ? 'بطاقة رابط المقال ودعوة القراءة.' : 'بطاقة ختامية بالاسم والدعوة.' },
     finalFrom: generated + 3 + 4,
     finalTo: generated + 5 + 7,
-    statement: `المادة المولدة من Flow ${generated} ثانية؛ والمدة النهائية بعد التحرير تقارب ${generated + 7}–${generated + 12} ثانية. لا تُنسب المقدمة والخاتمة إلى التوليد.`,
+    statement: `المادة المولدة من Flow ${arabicCountPhrase(generated, SECOND_FORMS)}؛ والمدة النهائية بعد التحرير تقارب ${generated + 7}–${generated + 12} ثانية. لا تُنسب المقدمة والخاتمة إلى التوليد.`,
   }
 }
 
@@ -1130,7 +1131,7 @@ export function liveDirectorPerformanceInsights(projects: Pick<LiveDirectorProje
   const average = (items: typeof measured) => items.reduce((total, item) => total + (item.metrics?.completion || 0), 0) / (items.length || 1)
   const bookended = measured.filter((project) => project.segments[0]?.appearance !== 'visual_only' && project.segments[project.segments.length - 1]?.appearance !== 'visual_only')
   const others = measured.filter((project) => !bookended.includes(project))
-  const notes: string[] = [`العينة الحالية ${measured.length} مشروعاً منشوراً بأرقام مُدخلة يدوياً.`]
+  const notes: string[] = [`العينة الحالية ${arabicCountPhrase(measured.length, PUBLISHED_PROJECT_FORMS)} بأرقام مُدخلة يدوياً.`]
   if (bookended.length >= 2 && others.length >= 2) {
     const gap = average(bookended) - average(others)
     if (Math.abs(gap) >= 3) notes.push(gap > 0 ? 'الفيديوهات التي يظهر فيها الأفتار في البداية والخاتمة تحقق إكمالاً أفضل.' : 'الفيديوهات التي تبدأ وتنتهي بمشهد بصري تحقق إكمالاً أفضل من ظهور الأفتار في الطرفين.')

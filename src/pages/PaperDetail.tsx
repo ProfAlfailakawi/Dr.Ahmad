@@ -12,6 +12,7 @@ import { ResearchSectionNavigator, type ResearchLayer } from '../components/Rese
 import { bookKnowledgeAnchor, relatedBookKnowledge } from '../lib/book-knowledge'
 import { SocialIcon } from '../components/icons'
 import { NextStep } from '../components/NextStep'
+import { arabicCountPhrase, DIMENSION_FORMS, PROOF_FORMS } from '../lib/arabic-count.ts'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
 const arabicScientific = (value = '') => {
@@ -188,7 +189,7 @@ export default function PaperDetail() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-accent/10 px-3.5 py-1 text-[.72rem] font-extrabold text-accent">بحث محكّم</span>
                     {studyType && <span className="rounded-full border border-hair px-3.5 py-1 text-[.72rem] font-semibold text-ink">{studyType}</span>}
-                    {evidenceCount > 0 && isAdmin && <span className="rounded-full border border-accent/20 bg-accent/[.04] px-3.5 py-1 text-[.72rem] font-bold text-accent">✓ {evidenceCount} أدلة موثّقة</span>}
+                    {evidenceCount > 0 && isAdmin && <span className="rounded-full border border-accent/20 bg-accent/[.04] px-3.5 py-1 text-[.72rem] font-bold text-accent">✓ {arabicCountPhrase(evidenceCount, PROOF_FORMS)}</span>}
                   </div>
                   <div className="flex items-center gap-3">
                     {year && <span className="font-display text-[.9rem] font-bold text-accent">{year}</span>}
@@ -246,7 +247,7 @@ export default function PaperDetail() {
                       <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 2</span>
                       <h2 className="mt-1 font-display text-xl font-bold text-ink">المستوى الثاني: الأبعاد المنهجية والأكاديمية</h2>
                     </div>
-                    <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.72rem] font-semibold text-soft">{dataCards.length} أبعاد مستخرجة</span>
+                    <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.72rem] font-semibold text-soft">{arabicCountPhrase(dataCards.length, DIMENSION_FORMS)}</span>
                   </div>
 
                   <div className="research-smart-reader mt-5" aria-label="قارئ البحث الذكي">

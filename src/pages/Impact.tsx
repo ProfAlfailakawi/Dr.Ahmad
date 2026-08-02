@@ -7,6 +7,7 @@ import { useSeo } from '../components/seo'
 import { useCmsContent, useExtras } from '../lib/content'
 import { buildIdeaLife, type IdeaLifeRemoteRecord, type ImpactKind, type ImpactNode } from '../lib/idea-life'
 import { liveLink } from '../lib/dead-links'
+import { arabicCountPhrase, JOURNEY_FORMS } from '../lib/arabic-count.ts'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 type FilterKey = 'all' | 'paper' | 'media' | 'archive'
@@ -168,7 +169,7 @@ export default function Impact() {
                 onClick={() => setYearFilter(yearFilter === year ? null : year)}
                 className={`border-b pb-0.5 text-[.74rem] transition-colors ${yearFilter === year ? 'border-accent font-semibold text-accent' : 'border-transparent text-soft hover:text-accent'}`}
               >
-                {year} · {count === 1 ? 'رحلة واحدة' : count === 2 ? 'رحلتان' : count <= 10 ? `${number.format(count)} رحلات` : `${number.format(count)} رحلة`}
+                {year} · {arabicCountPhrase(count, JOURNEY_FORMS, number.format)}
               </button>
             ))}
             <button

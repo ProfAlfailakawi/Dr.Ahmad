@@ -1,3 +1,4 @@
+import { arabicCountPhrase, MISSING_CAVEAT_FORMS, PROTECTED_POINT_AFTER_PREPOSITION_FORMS } from './style-dna.mjs'
 const MARKS = /[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06edـ]/g
 const STOP = new Set('الى علي على عن من في مع هذا هذه ذلك التي الذي كان كانت يكون تكون كما لكن لان ان او ثم كل بين بعد قبل حول عند عبر قد ما هو هي هم نحن حتى the and for from with that this are was were'.split(' '))
 const NEGATIONS = new Set(['لا', 'لن', 'لم', 'ليس', 'ليست', 'ما'])
@@ -126,7 +127,7 @@ export function buildAdversarialMisunderstandingSimulation(input = {}) {
   if (caveats.length && combinedDerived) {
     const preserved = caveats.filter((item) => overlap(item, combinedDerived) >= 8)
     if (!preserved.length) scenarios.push(scenario('caveat-erasure', 'ناشر ينتقي الجملة الحادة', 'يسقط التحفظات ويعرض الرأي كحكم مطلق.', 'حزمة المنصات', derived.length >= 3 ? 78 : 58,
-      `${caveats.length} تحفظات في الأصل ولم يظهر أي منها في النسخ المشتقة.`, 'ثبّت أقصر تحفظ في منشور رئيسي وشريحة التصميم الافتتاحية أو الختامية.'))
+      `${arabicCountPhrase(caveats.length, MISSING_CAVEAT_FORMS)}.`, 'ثبّت أقصر تحفظ في منشور رئيسي وشريحة التصميم الافتتاحية أو الختامية.'))
   }
 
   const originAssociative = includesAny(origin, ASSOCIATION_LANGUAGE)
@@ -141,7 +142,7 @@ export function buildAdversarialMisunderstandingSimulation(input = {}) {
 
   const protectedMissing = protectedPoints.filter((point) => derived.length && overlap(point, combinedDerived) < 7)
   if (protectedPoints.length && protectedMissing.length === protectedPoints.length) scenarios.push(scenario('protected-point-drop', 'محرر يختزل الفكرة', 'يختار أكثر جملة جاذبية ويترك النقاط التي تمنع إساءة الفهم.', 'حزمة المنصات', derived.length >= 4 ? 72 : 44,
-    `لم تظهر أي نقطة من ${protectedPoints.length} نقاط محمية في الحزمة.`, 'وزع النقاط المحمية على أيام الحملة ولا تجعل المنشور الأول يحمل الرحلة وحده.'))
+    `لم تظهر أي نقطة من ${arabicCountPhrase(protectedPoints.length, PROTECTED_POINT_AFTER_PREPOSITION_FORMS)} في الحزمة.`, 'وزع النقاط المحمية على أيام الحملة ولا تجعل المنشور الأول يحمل الرحلة وحده.'))
 
   const highRiskCount = scenarios.filter((item) => item.risk >= 70).length
   const critical = scenarios.some((item) => item.severity === 'critical')

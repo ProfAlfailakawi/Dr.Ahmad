@@ -5,6 +5,7 @@ import { Pagination, usePagedList } from '../Pagination'
 import { getFirebaseApp } from '../../lib/firebase'
 import lexiconFile from '../../../scripts/pronunciation-lexicon.json'
 import bodies from '../../data/bodies.json'
+import { ADJUSTED_WORD_FORMS, AUDIO_EPISODE_AFTER_PREPOSITION_FORMS, LEXICON_TERM_FORMS, PENDING_TERM_FORMS, TERM_OBJECT_FORMS, arabicCountPhrase } from '../../lib/arabic-count.ts'
 
 type Entry = { word: string; sub?: string; diacritics?: string; note?: string; type?: string; updatedAt?: string }
 
@@ -138,7 +139,7 @@ export function PronunciationLexicon() {
       }
     }
     setQueue(rows)
-    setNotice(rows.length ? `${rows.length} لفظاً بانتظار ضبطك أدناه.` : 'كلها مضبوطةٌ في القاموس بالفعل.')
+    setNotice(rows.length ? `${arabicCountPhrase(rows.length, PENDING_TERM_FORMS)} أدناه.` : 'كلها مضبوطةٌ في القاموس بالفعل.')
   }
 
   const editRow = (index: number, patch: Partial<{ diacritics: string; sub: string }>) =>
@@ -164,7 +165,7 @@ export function PronunciationLexicon() {
       }
       const savedKeys = new Set(ready.map((row) => row.word))
       setQueue((rows) => rows.filter((row) => !savedKeys.has(row.word)))
-      setNotice(`✓ حُفظ ${ready.length} لفظاً. ستُنطق هكذا في كل حلقةٍ بعد الآن.`)
+      setNotice(`✓ حُفظ ${arabicCountPhrase(ready.length, TERM_OBJECT_FORMS)}. ستُنطق هكذا في كل حلقةٍ بعد الآن.`)
       await load()
     } catch (error) {
       setNotice(`تعذّر الحفظ: ${error instanceof Error ? error.message : 'خطأ'}`)
@@ -218,7 +219,7 @@ export function PronunciationLexicon() {
   return (
     <details className="rounded-2xl border border-hair bg-wash p-5" open>
       <summary className="cursor-pointer text-[.95rem] font-semibold text-ink">
-        قاموس النطق — {summary.total} كلمة مضبوطة
+        قاموس النطق — {arabicCountPhrase(summary.total, ADJUSTED_WORD_FORMS)}
       </summary>
 
       <p className="mt-3 text-[.8rem] leading-relaxed text-soft">
@@ -229,7 +230,7 @@ export function PronunciationLexicon() {
       {/* الحجم والأصناف: يعرف الدكتور ما يملكه بلا أن يُغرَق بثلاثمئة سطر */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-accent px-4 py-1.5 text-[.78rem] font-semibold text-white">
-          {summary.total} كلمة مضبوطة سلفاً
+          {arabicCountPhrase(summary.total, ADJUSTED_WORD_FORMS)} سلفاً
         </span>
         {summary.types.map(([type, count]) => (
           <span key={type} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] text-soft">
@@ -267,7 +268,7 @@ export function PronunciationLexicon() {
       {pending.length > 0 && (
         <div className="mt-4 rounded-xl border border-accent/40 bg-canvas p-3">
           <p className="text-[.78rem] font-semibold text-accent">
-            المحرك نطق ألفاظاً باجتهاده في {pending.length === 1 ? 'حلقة' : `${pending.length} حلقات`}
+            المحرك نطق ألفاظاً باجتهاده في {arabicCountPhrase(pending.length, AUDIO_EPISODE_AFTER_PREPOSITION_FORMS)}
           </p>
           <ul className="mt-2 grid gap-1.5">
             {pendingPages.pageItems.map((item) => (
@@ -290,7 +291,7 @@ export function PronunciationLexicon() {
       {/* الطابور: كل لفظٍ بحقوله أمام الدكتور، ثم حفظٌ واحد للجميع */}
       {queue.length > 0 && (
         <div className="mt-4 rounded-xl border border-accent/40 bg-canvas p-4">
-          <p className="text-[.8rem] font-semibold text-ink">{queue.length} لفظاً بانتظار ضبطك</p>
+          <p className="text-[.8rem] font-semibold text-ink">{arabicCountPhrase(queue.length, PENDING_TERM_FORMS)}</p>
           <p className="mt-1 text-[.72rem] text-soft">لكلٍّ إمّا حركات (الكلمة نفسها مشكولة) وإمّا نطقٌ بديل. اترك ما لا تعرفه واحفظ الباقي.</p>
           <ul className="mt-3 grid gap-2">
             {queuePages.pageItems.map((row, index) => {
@@ -333,7 +334,7 @@ export function PronunciationLexicon() {
       {candidates.length > 0 && (
         <div className="mt-4 rounded-xl border border-accent/30 bg-canvas p-3">
           <p className="text-[.75rem] font-semibold text-accent">
-            {candidates.length === 1 ? 'لفظٌ في مقالاتك' : `${candidates.length} ألفاظٍ في مقالاتك`} ليست في القاموس — ستُنطق باجتهاد المحرك
+            {arabicCountPhrase(candidates.length, LEXICON_TERM_FORMS)} خارج القاموس — ستُنطق باجتهاد المحرك
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {candidates.map((item) => (

@@ -24,6 +24,7 @@
 import { splitBodySentences, verifyEcho } from './voice-echoes'
 import { resonanceCountOf } from './resonance-quotes'
 import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
+import { arabicCountPhrase, DAY_AFTER_PREPOSITION_FORMS, POINT_AFTER_PREPOSITION_FORMS } from './arabic-count.ts'
 
 export const TWEET_FORGE_VERSION = '1.0.0'
 
@@ -797,8 +798,8 @@ export function buildThread(source: TweetSource, options: TweetForgeOptions = {}
     if (chosen.length === 5) break
   }
   const opener = reading.question
-    ? `${reading.question.replace(/[.،]$/, '')}\n\nخيطٌ قصير في ${chosen.length} نقاط.`
-    : `${trimTo(reading.title, 90)}\n\nخيطٌ قصير في ${chosen.length} نقاط.`
+    ? `${reading.question.replace(/[.،]$/, '')}\n\nخيطٌ قصير في ${arabicCountPhrase(chosen.length, POINT_AFTER_PREPOSITION_FORMS)}.`
+    : `${trimTo(reading.title, 90)}\n\nخيطٌ قصير في ${arabicCountPhrase(chosen.length, POINT_AFTER_PREPOSITION_FORMS)}.`
   const body = chosen.map((sentence, index) => `${index + 1}/${chosen.length}\n${trimTo(sentence, 240)}`)
   const word = KIND_WORD[source.kind] || 'المادة'
   const closer = reading.url
@@ -878,7 +879,7 @@ export function buildWeeklyTweetPlan(
   const skipped: string[] = []
   const pool = sources.filter((source) => {
     const since = options.daysSinceSource?.(source.id)
-    if (since != null && since < cooldown) { skipped.push(`${source.title} (نُشر قبل ${since} يوماً)`); return false }
+    if (since != null && since < cooldown) { skipped.push(`${source.title} (نُشر قبل ${arabicCountPhrase(since, DAY_AFTER_PREPOSITION_FORMS)})`); return false }
     return true
   })
 

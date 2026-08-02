@@ -3,6 +3,7 @@ import AudienceStudio from './AudienceStudio'
 import { BroadcastStudio } from './BroadcastStudio'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb } from '../../lib/firebase'
+import { ALIAS_FORMS, arabicCountPhrase, CONCEPT_FORMS, CONVERSATION_AFTER_PREPOSITION_FORMS, MINUTE_FORMS, OCCURRENCE_FORMS, RECENT_DAY_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
 
 type DiagnosticCheck = {
   id: string
@@ -171,8 +172,8 @@ const emptyRule: Omit<ReplyRule, 'id'> & { id?: string } = {
 
 function ageLabel(ms?: number | null) {
   if (ms == null || !Number.isFinite(ms)) return '—'
-  if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))} ثانية`
-  return `${Math.round(ms / 60_000)} دقيقة`
+  if (ms < 60_000) return arabicCountPhrase(Math.max(1, Math.round(ms / 1000)), SECOND_FORMS)
+  return arabicCountPhrase(Math.round(ms / 60_000), MINUTE_FORMS)
 }
 
 function activityLabel(value?: string | null) {
@@ -555,7 +556,7 @@ export function WhatsAppAgentPanel() {
   const turnGapIntoCampaign = (gap: { topic?: string; reason: string; total: number }) => {
     const seed = {
       text: `فجوة معرفية متكررة: ${gap.topic || gap.reason}`,
-      context: `ظهرت ${gap.total} مرة في مؤشرات البوت المجمعة. صمّم حملة توضيحية موثقة من دون استخدام نصوص أو بيانات شخصية.`,
+      context: `ظهرت ${arabicCountPhrase(gap.total, OCCURRENCE_FORMS)} في مؤشرات البوت المجمعة. صمّم حملة توضيحية موثقة من دون استخدام نصوص أو بيانات شخصية.`,
     }
     localStorage.setItem('studio-campaign-seed', JSON.stringify(seed))
     window.dispatchEvent(new CustomEvent('studio:campaign-seed'))
@@ -640,7 +641,7 @@ export function WhatsAppAgentPanel() {
                 {!knowledge.conversations.gaps.length && <p className="rounded-xl border border-dashed border-hair p-4 text-[.76rem] text-soft">لا توجد فجوات غير محلولة حتى الآن.</p>}
                 {knowledge.conversations.gaps.slice(0, 8).map((gap) => (
                   <div key={`${gap.topic || 'unclassified'}-${gap.reason}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair px-3 py-3">
-                    <div><p className="text-[.78rem] font-semibold text-ink">{gap.topic || 'موضوع غير مصنّف'}</p><p className="mt-1 text-[.68rem] text-soft">{gap.reason} · تكررت {gap.total} مرة</p></div>
+                    <div><p className="text-[.78rem] font-semibold text-ink">{gap.topic || 'موضوع غير مصنّف'}</p><p className="mt-1 text-[.68rem] text-soft">{gap.reason} · تكررت {arabicCountPhrase(gap.total, OCCURRENCE_FORMS)}</p></div>
                     <button type="button" className={secondary} onClick={() => turnGapIntoCampaign(gap)}>حوّلها إلى حملة</button>
                   </div>
                 ))}
@@ -873,7 +874,7 @@ export function WhatsAppAgentPanel() {
             </div>
           )}
           {status.health?.ready && (
-            <p className="mt-4 text-[.78rem] text-soft">متصل؛ بعد كلمة الإيقاظ يرد على كل رسالة ويفحص تلقائياً ما فاته أثناء أي انقطاع{status.health.silenced ? ` · أُغلق في ${status.health.silenced} محادثة بعد تدخل يدوي` : ''}</p>
+            <p className="mt-4 text-[.78rem] text-soft">متصل؛ بعد كلمة الإيقاظ يرد على كل رسالة ويفحص تلقائياً ما فاته أثناء أي انقطاع{status.health.silenced ? ` · أُغلق في ${arabicCountPhrase(status.health.silenced, CONVERSATION_AFTER_PREPOSITION_FORMS)} بعد تدخل يدوي` : ''}</p>
           )}
 
           {status.qrImage && !status.health?.ready && (
@@ -941,7 +942,7 @@ export function WhatsAppAgentPanel() {
           </div>
           {silence.silenced > 0 && (
             <p className="mt-2 text-[.76rem] leading-relaxed text-accent">
-              البوت صامتٌ الآن في {silence.silenced === 1 ? 'محادثة واحدة' : `${silence.silenced} محادثات`}
+              البوت صامتٌ الآن في {arabicCountPhrase(silence.silenced, CONVERSATION_AFTER_PREPOSITION_FORMS)}
               لأنك رددتَ فيها بيدك. لن يعود تلقائياً؛ زر «اسمح بالإيقاظ» ينهي الاستلام اليدوي فقط، وبعده يظل صامتاً حتى يكتب الشخص جملة الإيقاظ.
             </p>
           )}
@@ -1030,7 +1031,7 @@ export function WhatsAppAgentPanel() {
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">{weeklyReport.conversations} محادثة</span>
                 <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">{weeklyReport.awakened} أيقظته</span>
-                <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">آخر {weeklyReport.days} أيام</span>
+                <span className="rounded-full border border-hair px-3 py-1 text-[.72rem] text-soft">آخر {arabicCountPhrase(weeklyReport.days, RECENT_DAY_FORMS)}</span>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-hair p-4">
@@ -1081,7 +1082,7 @@ export function WhatsAppAgentPanel() {
             ))}
           </div>
           {quality.glossary?.concepts ? (
-            <p className="mt-3 text-[.72rem] text-soft">معجم المجال المستعمل في الفهم: {quality.glossary.concepts} مفهوماً · {quality.glossary.aliases} اسماً بديلاً.</p>
+            <p className="mt-3 text-[.72rem] text-soft">معجم المجال المستعمل في الفهم: {arabicCountPhrase(quality.glossary.concepts, CONCEPT_FORMS)} · {arabicCountPhrase(quality.glossary.aliases, ALIAS_FORMS)}.</p>
           ) : null}
         </div>
 
@@ -1117,7 +1118,7 @@ export function WhatsAppAgentPanel() {
                           ? `علّمتَه إياها ← يبحث عن «${item.teachQuery}»`
                           : item.status === 'ignored'
                             ? 'متجاهلة'
-                            : `تحت المراقبة · ظهرت ${item.hits || 1} ${Number(item.hits || 1) === 1 ? 'مرة' : 'مرات'}${item.lastSeenAt ? ` · آخرها ${new Date(item.lastSeenAt).toLocaleString('ar-KW', { dateStyle: 'short', timeStyle: 'short' })}` : ''}`}</p>
+                            : `تحت المراقبة · ظهرت ${arabicCountPhrase(Number(item.hits || 1), OCCURRENCE_FORMS)}${item.lastSeenAt ? ` · آخرها ${new Date(item.lastSeenAt).toLocaleString('ar-KW', { dateStyle: 'short', timeStyle: 'short' })}` : ''}`}</p>
                     </div>
                     {/* التعليم بنقرة: تُسنِد الصياغة التي أخطأ فيها إلى موضوعٍ من
                         موادّك، فيجيب عنها في المرّة القادمة بحثاً في المنشور. */}

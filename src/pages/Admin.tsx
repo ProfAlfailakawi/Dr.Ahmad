@@ -24,6 +24,7 @@ import { NewsletterCenter } from '../components/admin/NewsletterCenter'
 import { InboxIntelligence, InboxInsightBadges } from '../components/admin/InboxIntelligence'
 import { registerAdminPush, sendAdminPushTest } from '../lib/admin-push'
 import { useSeo } from '../components/seo'
+import { arabicCountPhrase, MESSAGE_PLAIN_FORMS, SUBSCRIBER_FORMS } from '../lib/arabic-count.ts'
 import {
   AdminCommandPalette,
   AdminMobileNav,
@@ -715,7 +716,7 @@ function InboxPanel() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-[.78rem] font-semibold text-accent">مشتركو البريد</p>
-              <h2 className="mt-1 font-display text-xl font-bold text-ink">{subscribers.length} مشترك</h2>
+              <h2 className="mt-1 font-display text-xl font-bold text-ink">{arabicCountPhrase(subscribers.length, SUBSCRIBER_FORMS)}</h2>
               <p className="mt-2 text-[.84rem] leading-relaxed text-soft">هذه هي العناوين المسجلة فعلياً في النشرة، والأحدث أولاً.</p>
             </div>
           </div>
@@ -763,7 +764,7 @@ function InboxPanel() {
         </div>
       ) : (
         <>
-          <p className="text-[.85rem] text-soft">{items.length} رسالة — الأحدث أولاً</p>
+          <p className="text-[.85rem] text-soft">{arabicCountPhrase(items.length, MESSAGE_PLAIN_FORMS)} — الأحدث أولاً</p>
           {paged.pageItems.map((m) => (
             <div key={m.id} className={card}>
               <div className="flex flex-wrap items-center justify-between gap-3">

@@ -59,6 +59,32 @@ const smartSearch = read('src/lib/smart-search.ts')
 const bookQuotesSearch = read('src/lib/book-quotes.ts')
 const bookKnowledgeSearch = read('src/lib/book-knowledge.ts')
 const knowledgeGraphSearch = read('src/lib/knowledge-graph.ts')
+const knowledgeFingerprint = read('src/components/KnowledgeFingerprint.tsx')
+const impactMap = read('src/components/ImpactMap.tsx')
+const cvPage = read('src/pages/CV.tsx')
+const arabicCount = read('src/lib/arabic-count.ts')
+const thoughtOverview = read('src/pages/ThoughtOverview.tsx')
+const paperDetail = read('src/pages/PaperDetail.tsx')
+const conceptLife = read('src/pages/ConceptLife.tsx')
+const radar = read('src/pages/Radar.tsx')
+
+const rawCountPattern = /(?:\$\{([^}\n]+)\}|\{([^}\n]+)\})\s*(?:<\/(?:strong|span|b)>\s*)?(?:مقال(?:اً|ة|ات)?|بحث(?:اً|ان|ين|ون)?|كتاب(?:اً|ان|ين|ات)?|باب(?:اً|ان|ين)?|سنة|سنوات|حلقة|حلقات|ساعة|ساعات|مداخلة|مداخلات|طبقة|طبقات|قطعة|قطع|بطاقة|بطاقات|لفظ(?:اً|ان|ين)?|ألفاظ|مشترك(?:اً|ان|ين|ون)?|رد(?:اً|ان|ين|ود)?|كلمة|كلمات|فقرة|فقرات|صفحة|صفحات|مادة|مواد|دقيقة|دقائق|ثانية|ثوانٍ|يوم|أيام|أسبوع|أسابيع|ملف|ملفات|جهة|جهات|مشكلة|مشكلات|تنبيه|تنبيهات|قاعدة|قواعد|محادثة|محادثات|مجموعة|مجموعات|رقم|أرقام|حالة|حالات|صورة|صور|نسخة|نسخ|اتجاه|اتجاهات|مصدر|مصادر|رابط|روابط|جملة|جمل|قرار|قرارات|نقطة|نقاط|مشهد|مشاهد|تغريدة|تغريدات|مشاركة|مشاركات|مشاهدة|مشاهدات|قراءة|قراءات|نص|نصوص|خانة|خانات|عنقود(?:اً|ان|ين)?|مقالة|مقالات|جهاز|أجهزة)/u
+function rawDynamicCountLines() {
+  const files = [
+    ...walk('src').filter((file) => /\.(?:ts|tsx|js|mjs)$/.test(file)),
+    'server.mjs',
+    ...walk('whatsapp-agent').filter((file) => /\.(?:js|mjs)$/.test(file) && !/(?:self-test|nuclear)/.test(file)),
+  ]
+  return files.flatMap((file) => read(file).split(/\r?\n/).flatMap((line, index) => {
+    if (line.includes('arabicCountPhrase') || line.includes('arabicCountLabel')) return []
+    const match = line.match(rawCountPattern)
+    if (!match) return []
+    const expression = String(match[1] || match[2] || '')
+    return /length|count|Count|total|Total|words|Words|views|Views|number|Number|years|hours|minutes|seconds|files|devices|subscriber|silenced|poll|articles|papers|books|rows|queue|turns|assets|blocking|issue/.test(expression)
+      ? [`${file}:${index + 1}`]
+      : []
+  }))
+}
 
 console.log('\nالأساس البصري والأعطاب الصامتة')
 check('غلاف الصفحات يستعمل overflow-x-clip ولا يقتل sticky', /signature-page[^\n]+overflow-x-clip/.test(ui))
@@ -72,6 +98,15 @@ check('ستائر النوافذ تستعمل تعتيماً مولداً', !/bg
 check('لا يوجد maxresdefault في المصدر أو البناء الثابت', ![...walk('src'), ...walk('scripts')].filter((file) => !file.endsWith('test-all-user-notes.mjs')).some((file) => /\.(?:ts|tsx|js|mjs)$/.test(file) && read(file).includes('maxresdefault')))
 check('صور YouTube تتحقق من naturalWidth وتملك hq→mq fallback', media.includes('naturalWidth <= 120') && media.includes('mqdefault.jpg') && home.includes('naturalWidth <= 120') && home.includes('/mqdefault.'))
 check('البناء الثابت لا يكتب صورة YouTube الرمادية عالية الدقة الوهمية', staticBuild.includes('hqdefault.jpg') && !staticBuild.includes('maxresdefault.jpg'))
+
+
+check('حارس التوكنات يقبل البصمة بعد تحويل الشفافية إلى قيمة اعتباطية', knowledgeFingerprint.includes('border-accent/[.15]') && !knowledgeFingerprint.includes('border-accent/15'))
+check('البصمة المعرفية باقية في السيرة ولا تتكرر في الرئيسية', cvPage.includes('<KnowledgeFingerprint feature />') && !home.includes('KnowledgeFingerprint'))
+check('مساحتي تحذف كلمة إدارة وتحسب عدد القراءات المعروضة فعلياً', !mySpace.includes('>إدارة<') && mySpace.includes('Math.min(8, snapshot.recent.length)') && mySpace.includes('snapshot.recent.slice(0, 8)'))
+check('عداد الصوت يوحّد فهد ونورة ويضيف الحوار مستقلاً', impactMap.includes("replace(/\\.noura\\.mp3$/u, '')") && impactMap.includes("file.endsWith('.dialogue.mp3')") && impactMap.includes('if (bucket.standard)') && impactMap.includes('if (bucket.dialogue)'))
+check('صياغة العدد والمعدود مركزية وتشمل أبواب المعرفة', arabicCount.includes("few: 'أبواب معرفية'") && impactMap.includes('arabicCountLabel(stats.categories, CATEGORY_FORMS)'))
+check('العدادات العامة لا تعود إلى صيغ خام خاطئة', !paperDetail.includes('{evidenceCount} أدلة') && !paperDetail.includes('{dataCards.length} أبعاد') && !bookDetail.includes('{group.entries.length} فصول') && !conceptLife.includes('{evolution.years} سنة') && !radar.includes('{arNum(items.length)} مادة') && !thoughtOverview.includes('{number.format(period.count)} مادة'))
+check('لا يبقى عداد ديناميكي خام قبل اسم عربي في الواجهة أو الخادم أو الوكيل', rawDynamicCountLines().length === 0, rawDynamicCountLines().slice(0, 5).join('، '))
 
 console.log('\nالمقالات والقراءة')
 check('رأس المقال يضع أدوات القارئ في ReaderControls', articleDetail.includes('<ReaderControls') && articleReader.includes('Aa'))
@@ -113,7 +148,7 @@ check('وضع البحث داخل كتاب لا يكرر بوابة طرق ال�
 check('كروت اختيار الكتب تعرض العنوان فقط', !search.includes('من كتب الدكتور · ${book.year}') && !search.includes("book.desc ? ` · ${book.desc}`"))
 check('السؤال الجاهز يدور ويحفظ ما استُخدم لكل كتاب', search.includes('READY_QUESTION_STORAGE_KEY') && search.includes('nextReadyQuestion') && search.includes('markReadyQuestionUsed') && search.includes('readyQuestionsForBook'))
 check('بطاقة جواب الكتاب لا تظهر بلا نتائج', search.includes('askBookMatches.length > 0 && (') && search.includes('askBookMatches.length === 0') && !search.includes('mt-4 rounded-2xl border border-hair bg-wash px-4 py-5'))
-check('جملة عدد النتائج عربية سليمة', search.includes("const resultWord = (count: number)") && search.includes("return 'نتيجتان'") && search.includes('نتائج'))
+check('جملة عدد النتائج عربية سليمة', search.includes("const resultWord = (count: number)") && search.includes('arabicCountPhrase(count, RESULT_FORMS'))
 check('تبويب نصوص الكتب واضح للزائر', search.includes("label: 'داخل كتب الدكتور'"))
 check('اقتراحات البحث تستبعد الكلمات العامة المربكة', search.includes('SEARCH_SUGGESTION_STOPWORDS') && search.includes("'الدكتور'") && search.includes("'المقال'"))
 check('المحرك يفهم المعنى والمرادفات والأخطاء لا الكلمات فقط', smartSearch.includes('DR_AHMAD_DOMAIN_GLOSSARY') && smartSearch.includes('SEMANTIC_FAMILIES') && smartSearch.includes('fuzzyContains') && smartSearch.includes('scoreSmartFields'))

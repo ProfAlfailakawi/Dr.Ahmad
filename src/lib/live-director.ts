@@ -1,4 +1,4 @@
-import type { ArticleRecord } from './cms'
+import type { ArticleRecord } from './cms.ts'
 import { genuineAdditionMeter } from './editorial-foresight.ts'
 import { strongestQuote, suggestStrongTitle } from './intelligence.ts'
 import { polishTypography } from './style-dna.mjs'

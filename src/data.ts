@@ -1,4 +1,4 @@
-import { researchPapers } from './data/research-papers'
+import { researchPapers } from './data/research-papers.ts'
 
 // الروابط الخارجية معطّلة؛ التنقل المعتمد داخلي عبر React Router.
 export const LINK_OUT = false

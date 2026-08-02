@@ -1,4 +1,4 @@
-import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms'
+import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms.ts'
 import { absentPartyAdvocate, genuineAdditionMeter, timeTest } from './editorial-foresight.ts'
 import { relatedForIdea, strongestQuote, suggestStrongTitle } from './intelligence.ts'
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from './book-knowledge.ts'

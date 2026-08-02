@@ -1,17 +1,13 @@
 import { useMemo } from 'react'
 import { useCmsContent } from '../lib/content'
 import { PROJECT_START_YEAR } from '../lib/project-meta'
-
-/* البصمة المعرفية — امتداد لفكرة «نواة الإنسان» في الهيرو:
-   كل حلقة سنة، كل نقطة مقال في موضع شهره من سنته،
-   الحلقات المجوّفة أبحاث محكّمة، والأختام كتب.
-   تُبنى من البيانات الفعلية فتنمو تلقائياً مع كل جديد — بلا أي تحديث يدوي. */
+import { arabicCountPhrase, ARTICLE_FORMS, BOOK_FORMS, PAPER_FORMS } from '../lib/arabic-count.ts'
 
 const C = 250
 const R0 = 44
 const RING_GAP = 15
 
-export default function KnowledgeFingerprint() {
+export default function KnowledgeFingerprint({ feature = false }: { feature?: boolean }) {
   const { articles, books, papers } = useCmsContent()
 
   const model = useMemo(() => {
@@ -64,15 +60,20 @@ export default function KnowledgeFingerprint() {
 
   const firstYear = model.years[0]
   const lastYear = model.years[model.years.length - 1]
+  const wrapper = feature
+    ? 'mb-14 overflow-hidden rounded-[30px] border border-accent/15 bg-[radial-gradient(circle_at_top_right,rgba(var(--c-accent),0.1),transparent_42%),linear-gradient(180deg,rgba(var(--c-wash),0.55),rgba(var(--c-canvas),1))] p-6 shadow-[0_16px_60px_rgba(15,23,42,.04)] md:p-9'
+    : 'mb-14 overflow-hidden rounded-2xl border border-hair bg-wash/40 p-6 md:p-8'
+  const svgWidth = feature ? 'max-w-[430px]' : 'max-w-[380px]'
+  const textWidth = feature ? 'max-w-[52ch]' : 'max-w-[46ch]'
 
   return (
-    <section className="knowledge-fingerprint mb-14 overflow-hidden rounded-2xl border border-hair bg-wash/40 p-6 md:p-8" aria-labelledby="knowledge-fingerprint-title">
-      <div className="grid items-center gap-8 md:grid-cols-[auto_1fr] md:gap-12">
+    <section className={wrapper} aria-labelledby="knowledge-fingerprint-title">
+      <div className={`grid items-center gap-8 ${feature ? 'md:grid-cols-[1.05fr_.95fr] md:gap-14' : 'md:grid-cols-[auto_1fr] md:gap-12'}`}>
         <svg
           viewBox="0 0 500 500"
-          className="mx-auto block w-full max-w-[380px]"
+          className={`mx-auto block w-full ${svgWidth}`}
           role="img"
-          aria-label={`البصمة المعرفية: ${articles.length} مقالاً و${papers.length} بحثاً محكّماً و${books.length} كتاباً منذ ${firstYear}`}
+          aria-label={`البصمة المعرفية: ${arabicCountPhrase(articles.length, ARTICLE_FORMS)} و${arabicCountPhrase(papers.length, PAPER_FORMS)} و${arabicCountPhrase(books.length, BOOK_FORMS)} منذ ${firstYear}`}
         >
           {model.rings.map((ring) => (
             <circle key={ring.year} cx={C} cy={C} r={ring.radius} fill="none" stroke="rgb(var(--c-accent) / .10)" strokeWidth="1" />
@@ -99,12 +100,17 @@ export default function KnowledgeFingerprint() {
         </svg>
 
         <div>
-          <p className="text-[.72rem] font-semibold text-accent">توقيع بصري</p>
-          <h2 id="knowledge-fingerprint-title" className="mt-1 font-display text-[1.18rem] font-semibold text-ink">البصمة المعرفية.</h2>
-          <p className="mt-3 max-w-[46ch] text-[.92rem] font-light leading-[1.95] text-soft">
+          <p className="text-[.72rem] font-semibold text-accent">{feature ? 'توقيع بصري للمسيرة' : 'توقيع بصري'}</p>
+          <h2 id="knowledge-fingerprint-title" className="mt-1 font-display text-[1.18rem] font-semibold text-ink md:text-[1.28rem]">البصمة المعرفية.</h2>
+          <p className={`mt-3 ${textWidth} text-[.92rem] font-light leading-[1.95] text-soft`}>
             كل حلقة سنة منذ {firstYear}، وكل نقطة مقال في موضع شهره من سنته؛ الحلقات المجوّفة أبحاث محكّمة، والأختام كتب.
             بصمة لا تشبه أحداً — لأنها مبنية من المسيرة نفسها، وتنمو تلقائياً مع كل جديد.
           </p>
+          {feature && (
+            <p className="mt-3 max-w-[52ch] text-[.8rem] leading-[1.85] text-soft">
+              وضعتها هنا في صدر السيرة لأنها لا تعرض رقماً فقط؛ بل تعطي الزائر انطباعاً فورياً عن امتداد الرحلة وتراكمها عبر السنين.
+            </p>
+          )}
           <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-[.8rem] text-soft">
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />

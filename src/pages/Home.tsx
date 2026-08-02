@@ -18,6 +18,7 @@ import { PROJECT_START_YEAR } from '../lib/project-meta'
 import { listenIsOpen, rotatingQuestion, type ListenEpisode } from '../lib/listen-catalog'
 import { SPACE_EVENT, isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
 import { SocialIcon as ActionIcon } from '../components/icons'
+import { arabicCountPhrase, ARTICLE_FORMS, BOOK_FORMS, PAPER_FORMS } from '../lib/arabic-count.ts'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -180,7 +181,7 @@ const personasFor = (articleCount: number, paperCount: number): {
     greet: 'بدأتُ لك من الكلمة.', to: '/articles',
     links: [{ to: '/articles', t: 'أحدث ما كتبت' }, { to: '/articles', t: 'كل المقالات' }] },
   { key: 'scholar', label: 'معلّم وباحث', gate: 'للمعلم والباحث',
-    d: `${paperCount} بحثاً محكّماً، وأدوات ومفاهيم منتقاة.`,
+    d: `${arabicCountPhrase(paperCount, PAPER_FORMS)}، وأدوات ومفاهيم منتقاة.`,
     greet: 'من المعرفة المحكّمة.', to: '/research',
     links: [{ to: '/research', t: 'المساهمات العلمية' }, { to: '/publications', t: 'الكتب المنشورة' }] },
   { key: 'org', label: 'جهة أو صانع قرار', gate: 'للجهات وصنّاع القرار',
@@ -472,11 +473,11 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
     <div data-hover className={`group relative h-full rounded-2xl border border-hair bg-canvas transition-colors hover:border-accent ${compact ? 'p-6 md:p-7' : 'max-w-3xl border-0 p-0'}`}>
       <Link to={`/articles/${pick.a.slug}`} aria-label={`اقرأ مقال: ${pick.a.title}`} className="absolute inset-0 z-0"><span className="sr-only">{pick.a.title}</span></Link>
       <div className="pointer-events-none relative z-10">
-        <div className="flex min-w-0 flex-col items-start gap-3 text-accent">
+        <div className="flex min-w-0 items-center justify-between gap-2.5 text-accent">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="h-[1.5px] w-7 shrink-0 bg-accent" />
             <p className="min-w-0 whitespace-nowrap text-[clamp(.62rem,2.25vw,.74rem)] font-semibold leading-none">
-              في مثل هذا الأسبوع {yearsAgo(n)}
+              في مثل هذا الأسبوع <span className="px-1 text-soft/70">·</span> {yearsAgo(n)}
             </p>
           </div>
           <QuickArticleActions article={pick.a} className="pointer-events-auto shrink-0 flex-nowrap" />
@@ -623,8 +624,8 @@ function ImpactTimeline() {
 
   const steps = [
     { y: String(firstYear), t: 'البداية — انطلاق الرحلة العلمية التي تشكّل منها المشروع الفكري.' },
-    { y: `${peakYear[0]}`, t: `ذروة الإنتاج — ${peakYear[1]} مقالاً في عامٍ واحد.` },
-    { y: 'مرجع', t: `أرشيفٌ مؤلَّف — ${books.length} كتب و${papers.length} بحثاً محكّماً.` },
+    { y: `${peakYear[0]}`, t: `ذروة الإنتاج — ${arabicCountPhrase(Number(peakYear[1]), ARTICLE_FORMS)} في عامٍ واحد.` },
+    { y: 'مرجع', t: `أرشيفٌ مؤلَّف — ${arabicCountPhrase(books.length, BOOK_FORMS)} و${arabicCountPhrase(papers.length, PAPER_FORMS)}.` },
     { y: String(latestYear), t: `الأحدث — «${latest.title}».` },
   ]
 

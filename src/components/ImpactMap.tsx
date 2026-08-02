@@ -1,22 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCmsContent } from '../lib/content'
 import audioMeta from '../data/audio-meta.json'
+import {
+  arabicCountLabel,
+  ARTICLE_FORMS,
+  AUDIO_EPISODE_FORMS,
+  AUDIO_HOUR_FORMS,
+  BOOK_FORMS,
+  CATEGORY_FORMS,
+  PAPER_FORMS,
+  YEAR_IMPACT_FORMS,
+} from '../lib/arabic-count.ts'
 
-/*
- * خريطة الأثر: حصيلةُ الجسد المعرفي في أرقامٍ هادئة — مقالات، أبحاث، كتب،
- * حلقات مسموعة وساعاتها، سنوات، أبواب. تُعدّ الأرقامَ حيّاً من محتوى اللوحة،
- * وتُحرّكها صعوداً عند ظهورها. لا تلوّث: خطٌّ واحدٌ من البطاقات بهوية الموقع.
- */
-const arNum = new Intl.NumberFormat('ar-KW-u-nu-arab')
+const arNum = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
-/* الحركة كانت تبدأ لحظة تركيب المكوّن — والشريط أسفل الطيّة، فتنتهي الأرقام
-   صعودها في ثانية واحدة قبل أن يصل إليها الزائر أصلاً، فلا يرى إلا أرقاماً
-   ساكنة. (وتعليق الملف كان يَعِد بـ«تُحرّكها عند ظهورها» ولم يكن ذلك منفَّذاً.)
-   الآن تنتظر حتى يقع الشريط في المرأى فعلاً ثم تصعد أمام عينيه — وهذا هو
-   المقصود: أن يشهد الحركة لا أن تسبقه. ومن أوقف الحركة في نظامه (تفضيل
-   `prefers-reduced-motion`) يرى الأرقام كاملةً فوراً، فلا نفرض عليه حركة. */
-function useCountUp(target: number, active: boolean, ms = 1150) {
-  const [value, setValue] = useState(0)
+function useCountUp(target: number, active: boolean, ms = 850) {
+  const [value, setValue] = useState(active ? 0 : target)
   useEffect(() => {
     if (!active) return
     if (target <= 0) { setValue(0); return }
@@ -32,16 +31,12 @@ function useCountUp(target: number, active: boolean, ms = 1150) {
       if (p < 1) raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
-    // ضمانُ الوصول للهدف ولو خُنق rAF (تبويبٌ في الخلفية أو نافذةٌ مخفيّة)
     const settle = window.setTimeout(() => setValue(target), ms + 150)
     return () => { cancelAnimationFrame(raf); window.clearTimeout(settle) }
   }, [target, ms, active])
   return value
 }
 
-/* المراقب يُطلق الحركة مرّةً واحدة عند أول ظهور ثم ينفصل — فلا تتكرّر كلّما
-   مرّ الزائر. ومن غاب عنه IntersectionObserver (متصفّح قديم) تبدأ عنده فوراً
-   كما كانت، فلا يخسر شيئاً. */
 function useSeen<T extends HTMLElement>() {
   const ref = useRef<T | null>(null)
   const [seen, setSeen] = useState(false)
@@ -71,6 +66,43 @@ function Stat({ value, label, active }: { value: number; label: string; active: 
   )
 }
 
+type AudioMetaRow = { durationSeconds?: number }
+
+type AudioEpisodeSummary = {
+  count: number
+  hours: number
+}
+
+function summarizeAudio(meta: Record<string, AudioMetaRow>): AudioEpisodeSummary {
+  const grouped = new Map<string, { standard?: number; dialogue?: number }>()
+
+  for (const [file, row] of Object.entries(meta)) {
+    if (!file.endsWith('.mp3')) continue
+    const seconds = typeof row?.durationSeconds === 'number' ? row.durationSeconds : 0
+    if (seconds <= 0) continue
+
+    const isDialogue = file.endsWith('.dialogue.mp3')
+    const base = file
+      .replace(/\.dialogue\.mp3$/u, '')
+      .replace(/\.noura\.mp3$/u, '')
+      .replace(/\.mp3$/u, '')
+
+    const bucket = grouped.get(base) || {}
+    if (isDialogue) bucket.dialogue = seconds
+    else bucket.standard = Math.max(bucket.standard || 0, seconds)
+    grouped.set(base, bucket)
+  }
+
+  let count = 0
+  let totalSeconds = 0
+  for (const bucket of grouped.values()) {
+    if (bucket.standard) { count += 1; totalSeconds += bucket.standard }
+    if (bucket.dialogue) { count += 1; totalSeconds += bucket.dialogue }
+  }
+
+  return { count, hours: Math.round(totalSeconds / 3600) }
+}
+
 export default function ImpactMap() {
   const { articles, papers, books } = useCmsContent()
   const { ref, seen } = useSeen<HTMLElement>()
@@ -79,21 +111,18 @@ export default function ImpactMap() {
     const years = articles.map((article) => Number(String(article.iso).slice(0, 4))).filter((year) => year > 1990)
     const span = years.length ? Math.max(...years) - Math.min(...years) + 1 : 0
     const categories = new Set(articles.map((article) => article.cat).filter(Boolean)).size
-    const audioEntries = Object.values(audioMeta as Record<string, { durationSeconds?: number }>)
-      .filter((meta) => meta && typeof meta.durationSeconds === 'number' && meta.durationSeconds > 0)
-    const audioCount = audioEntries.length
-    const audioHours = Math.round(audioEntries.reduce((sum, meta) => sum + (meta.durationSeconds || 0), 0) / 3600)
-    return { articles: articles.length, papers: papers.length, books: books.length, audioCount, audioHours, span, categories }
+    const audio = summarizeAudio(audioMeta as Record<string, AudioMetaRow>)
+    return { articles: articles.length, papers: papers.length, books: books.length, audioCount: audio.count, audioHours: audio.hours, span, categories }
   }, [articles, papers, books])
 
   const items = [
-    { value: stats.articles, label: 'مقالة فكرية' },
-    { value: stats.papers, label: 'بحثاً محكّماً' },
-    { value: stats.books, label: 'كتاباً منشوراً' },
-    { value: stats.audioCount, label: 'حلقة مسموعة' },
-    { value: stats.audioHours, label: 'ساعة استماع' },
-    { value: stats.span, label: 'سنة من الأثر' },
-    { value: stats.categories, label: 'باباً معرفياً' },
+    { value: stats.articles, label: arabicCountLabel(stats.articles, ARTICLE_FORMS) },
+    { value: stats.papers, label: arabicCountLabel(stats.papers, PAPER_FORMS) },
+    { value: stats.books, label: arabicCountLabel(stats.books, BOOK_FORMS) },
+    { value: stats.audioCount, label: arabicCountLabel(stats.audioCount, AUDIO_EPISODE_FORMS) },
+    { value: stats.audioHours, label: arabicCountLabel(stats.audioHours, AUDIO_HOUR_FORMS) },
+    { value: stats.span, label: arabicCountLabel(stats.span, YEAR_IMPACT_FORMS) },
+    { value: stats.categories, label: arabicCountLabel(stats.categories, CATEGORY_FORMS) },
   ].filter((item) => item.value > 0)
 
   if (items.length < 3) return null

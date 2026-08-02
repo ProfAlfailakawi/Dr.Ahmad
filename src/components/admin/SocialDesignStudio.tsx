@@ -1308,13 +1308,36 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       const payload = JSON.stringify({ version: 1, plan: cleanPlan, generationKind, archivedAt: new Date(createdAtMs).toISOString() })
       if (payload.length > 15 * 1024 * 1024) throw new Error('generated_design_too_large')
       const thumbnail = await generatedDesignThumbnailDataUri(cleanPlan)
-      await uploadBytes(ref(storage, storagePath), new Blob([payload], { type: 'application/json' }), {
-        contentType: 'application/json',
-        customMetadata: { source: 'social-design-studio', generationKind, archivePolicy: 'latest-approved-only' },
-      })
+
+      /* ═══ الأصل لا يضيع ═══
+         Storage قد يكون غير مفعّل في المشروع (تفعيله مرة واحدة بيد مالكه).
+         كان التصميم حينها يُفقد بعد توليده. الآن نسقط إلى Firestore: الخطة
+         كاملةً داخل الوثيقة ما دامت تحت سقف المستند (مليون بايت، ونترك
+         هامشاً). فيبقى التصميم مفتوحاً للتحرير وإعادة التصدير كما لو رُفع. */
+      const INLINE_LIMIT = 700 * 1024
+      let savedPath = storagePath
+      let inlinePlan = ''
+      try {
+        await uploadBytes(ref(storage, storagePath), new Blob([payload], { type: 'application/json' }), {
+          contentType: 'application/json',
+          customMetadata: { source: 'social-design-studio', generationKind, archivePolicy: 'latest-approved-only' },
+        })
+      } catch (storageError) {
+        if (payload.length > INLINE_LIMIT) throw storageError
+        savedPath = ''
+        inlinePlan = payload
+        const code = String((storageError as { code?: unknown })?.code || '')
+        setGeneratedDesignLibraryError(
+          /unauthorized|unknown|retry-limit|quota/i.test(code) || !code
+            ? 'حُفظ التصميم في مكتبة التوليد داخل قاعدة البيانات لأن Storage غير مفعّل. لم يضع شيء، ويُفتح ويُصدَّر كالمعتاد. لتفعيل Storage مرة واحدة: افتح Firebase Console ← Storage في مشروع drahmad-8e9e2.'
+            : 'حُفظ التصميم داخل قاعدة البيانات بدل الحاوية. لم يضع شيء.',
+        )
+      }
+
       const asset: GeneratedDesignLibraryAsset = {
         id,
-        storagePath,
+        storagePath: savedPath,
+        ...(inlinePlan ? { inlinePlan } : {}),
         title: (cleanPlan.content?.title || creativeBrief.issue || text || 'آخر تصميم معتمد').replace(/\s+/g, ' ').trim().slice(0, 140),
         note: (cleanPlan.rationale?.[0] || cleanPlan.directionLabel || generationKind).replace(/\s+/g, ' ').trim().slice(0, 180),
         thumbnail,
@@ -1344,7 +1367,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       await setDoc(doc(db, 'admin_generated_designs', id), { ...asset, createdAt: serverTimestamp(), archivePolicy: 'latest-approved-only' })
       setGeneratedDesignLibraryAssets([asset])
       setGeneratedDesignLibraryHasMore(false)
-      setGeneratedDesignLibraryError('')
+      /* لا نمسح تنبيه «حُفظ في قاعدة البيانات» — هو خبرٌ صحيح يحتاجه الدكتور. */
+      if (!inlinePlan) setGeneratedDesignLibraryError('')
     } catch (error) {
       const detail = error instanceof Error && error.message === 'generated_design_too_large'
         ? 'أحد التصاميم كبير جداً للحفظ الآمن؛ بقي داخل الجلسة الحالية.'
@@ -1358,9 +1382,14 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     try {
       const app = await getFirebaseApp()
       if (!app) throw new Error('firebase_unavailable')
-      const { getBlob, getStorage, ref } = await import('firebase/storage')
-      const blob = await getBlob(ref(getStorage(app), asset.storagePath), 18 * 1024 * 1024)
-      const payload = JSON.parse(await blob.text()) as { version?: number; plan?: CompositionPlan }
+      /* المحفوظ داخل الوثيقة يُفتح منها مباشرة — لا حاجة إلى الحاوية. */
+      let raw = asset.inlinePlan || ''
+      if (!raw) {
+        const { getBlob, getStorage, ref } = await import('firebase/storage')
+        const blob = await getBlob(ref(getStorage(app), asset.storagePath), 18 * 1024 * 1024)
+        raw = await blob.text()
+      }
+      const payload = JSON.parse(raw) as { version?: number; plan?: CompositionPlan }
       const plan = payload?.plan
       if (!plan?.id || !plan?.format || !plan?.content) throw new Error('invalid_generated_design')
       setPlans((previous) => [plan, ...previous.filter((item) => item.id !== plan.id)].slice(0, 8))
@@ -1390,7 +1419,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       if (!app || !db) throw new Error('firebase_unavailable')
       const [{ deleteObject, getStorage, ref }, { deleteDoc, doc }] = await Promise.all([import('firebase/storage'), import('firebase/firestore')])
       try {
-        await deleteObject(ref(getStorage(app), asset.storagePath))
+        if (asset.storagePath) await deleteObject(ref(getStorage(app), asset.storagePath))
       } catch (storageError) {
         const code = String((storageError as { code?: unknown })?.code || '')
         if (!code.includes('object-not-found')) throw storageError
@@ -1621,7 +1650,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       if (!app || !db) throw new Error('firebase_unavailable')
       const [{ deleteObject, getStorage, ref }, { deleteDoc, doc }] = await Promise.all([import('firebase/storage'), import('firebase/firestore')])
       try {
-        await deleteObject(ref(getStorage(app), asset.storagePath))
+        if (asset.storagePath) await deleteObject(ref(getStorage(app), asset.storagePath))
       } catch (storageError) {
         const code = String((storageError as { code?: unknown })?.code || '')
         if (!code.includes('object-not-found')) throw storageError

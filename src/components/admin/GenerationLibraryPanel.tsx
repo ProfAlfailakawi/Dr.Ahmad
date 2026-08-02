@@ -40,6 +40,9 @@ export type GeneratedDesignLibraryAsset = {
   toneId?: string
   kindId?: string
   seasonIdentity?: string
+  /* مسار النجاة حين يتعطّل Storage: خطة التصميم كاملةً داخل وثيقة Firestore.
+     الأصل لا يضيع، ويُفتح من هنا كما يُفتح من الحاوية. */
+  inlinePlan?: string
   meaningCourtStatus?: string
   meaningCourtScore?: number
   meaningFingerprintHash?: string

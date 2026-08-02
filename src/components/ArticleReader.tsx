@@ -55,6 +55,10 @@ type ReaderPreferences = {
   vocalized: boolean
 }
 
+import glossaryVoice from '../data/glossary-voice.json' with { type: 'json' }
+
+const VOICE = (glossaryVoice as { voice?: Record<string, { text: string; book: string; slug: string; page: number }> }).voice || {}
+
 type XrayTerm = {
   term: string
   title: string
@@ -674,6 +678,15 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
               </div>
               <p className="mt-4 text-[.88rem] font-light leading-[1.95] text-ink/88">{xray.definition}</p>
               {xray.note && <p className="mt-3 border-r border-accent/35 ps-3 text-[.76rem] leading-[1.85] text-soft">{xray.note}</p>}
+              {/* صوته هو: المصطلح كما ورد في كتبه، منسوباً إلى صفحته. لا
+                  يحلّ محلّ التعريف العام أعلاه — يجيء بعده لأنه أعمق. */}
+              {VOICE[xray.title] && (
+                <figure className="mt-4 border-t border-hair pt-3">
+                  <figcaption className="text-[.68rem] font-semibold text-accent">من كتبه</figcaption>
+                  <blockquote className="mt-1.5 text-[.8rem] font-light leading-[1.9] text-ink/80">{VOICE[xray.title].text}</blockquote>
+                  <p className="mt-1.5 text-[.66rem] text-soft">{VOICE[xray.title].book} · ص {VOICE[xray.title].page}</p>
+                </figure>
+              )}
             </motion.aside>
           </motion.div>
         )}

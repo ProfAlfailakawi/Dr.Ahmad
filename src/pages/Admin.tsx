@@ -39,6 +39,7 @@ import { ADMIN_TABS } from '../components/admin/admin-navigation'
 // بينما خرجت المحركات الثقيلة من الحزمة الأولى من دون تغيير واجهاتها أو وظائفها.
 const Indicators = lazy(() => import('../components/admin/Indicators').then((module) => ({ default: module.Indicators })))
 const IntelligenceLab = lazy(() => import('../components/admin/IntelligenceLab').then((module) => ({ default: module.IntelligenceLab })))
+const NextBookCard = lazy(() => import('../components/admin/NextBookCard').then((module) => ({ default: module.NextBookCard })))
 const PublishingStudio = lazy(() => import('../components/admin/PublishingStudio').then((module) => ({ default: module.PublishingStudio })))
 const SocialDesignStudio = lazy(() => import('../components/admin/SocialDesignStudio').then((module) => ({ default: module.SocialDesignStudio })))
 const TweetStudio = lazy(() => import('../components/admin/TweetStudio').then((module) => ({ default: module.TweetStudio })))
@@ -350,7 +351,13 @@ function Panel({ email }: { email: string }) {
     tweets: <TweetStudio />,
     'image-lab': <ImageLab />,
     launch: <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />,
-    lab: <IntelligenceLab articles={cms.articles} onOpen={chooseTab} />,
+    lab: (
+      <div className="grid gap-5">
+        {/* الكتاب العاشر أولاً: هو الخلاصة، وما تحته أدواتُ التحليل. */}
+        <NextBookCard />
+        <IntelligenceLab articles={cms.articles} onOpen={chooseTab} />
+      </div>
+    ),
     whatsapp: <WhatsAppAgentPanel />,
     'bot-messages': <BotMessagesPanel />,
     voice: <VoiceBakeoffCard />,

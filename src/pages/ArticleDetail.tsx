@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { getArticleNeighbors, type ArticleRecord, type BookRecord, type MediaRecord, type PaperRecord } from '../lib/cms'
 import { SITE_URL } from '../data'
+import { NextStep } from '../components/NextStep'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, useReaderPreferences, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
@@ -440,7 +441,7 @@ const engagementIndex = (article: ArticleRecord, salt: string, min: number, max:
 }
 
 /* شارة المالك: القيم الحقيقية تُعرض كما هي. ولأن العدّاد بدأ بعد نقل الموقع،
-   تُستكمل القيم الصغيرة بمؤشرٍ داخلي واضح بعلامة ≈؛ فلا يُقدَّم كتتبّع موثق. */
+   تُستكمل القيم الصغيرة بمؤشرٍ داخلي واضح بعلامة ≈؛ فلا يُقدَّم كتتبّع موثق. */
 function OwnerBadge({ path, article }: { path: string; article: ArticleRecord }) {
   const { isAdmin } = useAdminAuth()
   const [c, setC] = useState<{ views: number; shares: number } | null>(null)
@@ -905,6 +906,16 @@ export default function ArticleDetail() {
           <button type="button" onClick={() => setSerenity(false)} className="serenity-exit" aria-label="الخروج من وضع السكينة" title="خروج من السكينة"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" /></svg></button>
         </div>
       )}
+
+      {/* الفصل التالي: بابٌ واحد بعد كل شيء — لا قائمة تُنهي الزيارة. */}
+      {!serenity && <NextStep
+        seed={`${a.title} ${a.excerpt || ''} ${a.cat || ''}`}
+        from="مقال"
+        articles={articles}
+        papers={papers}
+        media={media}
+        excludeKey={`article:${a.slug}`}
+      />}
     </Page>
   )
 }

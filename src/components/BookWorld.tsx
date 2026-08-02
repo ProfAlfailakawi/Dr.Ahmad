@@ -7,6 +7,7 @@ import { bookArchiveDate, buildBookWorldTimeline } from '../lib/book-world-timel
 import { bookQuotes, loadBookPassages, quotesForConcept, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
 import { QuoteCite } from './QuoteCite'
 import { QuoteImage } from './QuoteImage'
+import { RESONANCE_FLOOR, loadPassageResonance, recordPassageHighlight } from '../lib/passage-resonance'
 import { bookKnowledgeAnchor, bookKnowledgeText, getBookKnowledge } from '../lib/book-knowledge'
 
 function scoreAgainst(source: Set<string>, value: string) {
@@ -156,6 +157,29 @@ export function BookWorld({
   const selectedIdea = activeIdea || model.ideas[0] || ''
   const selectedConcept = model.knowledge?.concepts.find((concept) => concept.title === selectedIdea)
   const conceptQuotes = quotesForConcept(book.slug, selectedConcept?.id || '')
+
+  /* ═══ ما توقّف عنده القرّاء ═══
+     تظليل الزائر لمقطعٍ يُحسب، فترتفع المقاطع التي توقّف عندها الناس فوق ما
+     رجّحته الخوارزمية. لا قسم جديد ولا لوحة: ترتيبٌ وشارةٌ صغيرة فقط. */
+  const [resonance, setResonance] = useState<Map<string, number>>(new Map())
+  useEffect(() => {
+    let on = true
+    void loadPassageResonance().then((map) => { if (on) setResonance(new Map(map)) })
+    return () => { on = false }
+  }, [])
+
+  const markHighlight = (passageId: string) => {
+    const text = window.getSelection()?.toString().trim() || ''
+    /* تظليلٌ أقصر من ربع سطر ليس توقّفاً — هو نقرةٌ عابرة. */
+    if (text.length < 25) return
+    void recordPassageHighlight(passageId)
+    setResonance((previous) => new Map(previous).set(passageId, (previous.get(passageId) || 0) + 1))
+  }
+
+  /* الترتيب: ما توقّف عنده القرّاء أولاً، ثم ترتيب الكتاب. */
+  const byReaders = <T extends { id: string; page: number }>(list: T[]) => list
+    .slice()
+    .sort((left, right) => (resonance.get(right.id) || 0) - (resonance.get(left.id) || 0) || left.page - right.page)
 
   /* ═══ «اسأل هذا الكتاب» ═══
      الزائر يسأل سؤاله بلغته، فيجيبه الكتاب بمقاطعه هو — لا بنموذجٍ يخمّن،
@@ -336,11 +360,20 @@ export function BookWorld({
             meta={`${model.allQuotes.length} مقطعاً من الكتاب، كلٌّ منسوبٌ إلى صفحته`}
           >
             <div className="grid gap-3">
-              {(conceptQuotes.length ? conceptQuotes : model.allQuotes.slice(0, 4)).map((quote) => (
+              {byReaders(conceptQuotes.length ? conceptQuotes : model.allQuotes).slice(0, conceptQuotes.length ? conceptQuotes.length : 4).map((quote) => (
                 <figure key={quote.id} className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
-                  <blockquote className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/85">{quote.text}</blockquote>
+                  <blockquote
+                    onMouseUp={() => markHighlight(quote.id)}
+                    onTouchEnd={() => markHighlight(quote.id)}
+                    className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/85"
+                  >{quote.text}</blockquote>
                   <figcaption className="mt-2 flex flex-wrap items-center justify-between gap-2 pr-3 text-[.66rem] text-soft">
-                    <span>{book.title} · ص {quote.page}{quote.conceptTitle ? ` · ${quote.conceptTitle}` : ''}</span>
+                    <span>
+                      {book.title} · ص {quote.page}{quote.conceptTitle ? ` · ${quote.conceptTitle}` : ''}
+                      {(resonance.get(quote.id) || 0) >= RESONANCE_FLOOR && (
+                        <span className="mr-2 text-accent">· توقّف عندها {resonance.get(quote.id)}</span>
+                      )}
+                    </span>
                     <span className="flex flex-wrap items-center gap-3">
                       <QuoteCite book={book} page={quote.page} />
                       <QuoteImage text={quote.text} attribution={`${book.title} · ص ${quote.page}`} />

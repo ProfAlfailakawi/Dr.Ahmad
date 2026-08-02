@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-02T02:28:44.575Z",
+  "generatedAt": "2026-07-29T00:00:12.461Z",
   "episodes": [
     {
       "slug": "a-generation-without-rootsarabic",
@@ -10,29 +10,33 @@
       "status": "under_review",
       "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/a-generation-without-rootsarabic.dialogue.mp3",
       "audio": "/audio/a-generation-without-rootsarabic.dialogue.mp3",
-      "bytes": 3423547,
-      "audioHash": "433a9da011f0c69c",
+      "bytes": 3261379,
+      "audioHash": "fc1ff7486df160c6",
       "hasTranscript": true,
-      "utterances": 38,
+      "utterances": 0,
       "quality": {
-        "score": 98,
+        "score": 32,
         "pass": false,
         "metrics": {
-          "durationSeconds": 214,
-          "bytes": 3423547,
-          "sttRatio": 97,
-          "importantRatio": 97,
-          "longSilences": 2,
-          "unexpectedLongSilences": 0,
-          "peakDb": -1.8,
-          "judgePass": true,
-          "humanLikeness": 0,
-          "humanProxy": 100
+          "durationSeconds": 204,
+          "bytes": 3261379,
+          "sttRatio": null,
+          "importantRatio": null,
+          "longSilences": null,
+          "unexpectedLongSilences": null,
+          "peakDb": null,
+          "judgePass": false,
+          "humanLikeness": null,
+          "humanProxy": null
         },
-        "pronunciation": "مقبول",
+        "pronunciation": "ينتظر فحص النطق والمعنى",
         "pace": "مقبول",
-        "pauses": "مقبول",
+        "pauses": "يحتاج تقليل الوقفات",
         "issues": [
+          "الحلقة ليست معتمدة آلياً في حالة البودكاست.",
+          "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
+          "تطابق STT مع النص المقصود أقل من الحد الصارم.",
+          "توجد وقفات طويلة تتجاوز الحد المقبول.",
           "بوابة البشرية أقل من 95/100."
         ]
       }
@@ -46,29 +50,33 @@
       "status": "under_review",
       "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/alternative-plans-for-distance-education.dialogue.mp3",
       "audio": "/audio/alternative-plans-for-distance-education.dialogue.mp3",
-      "bytes": 3432324,
-      "audioHash": "3398e063e4ef936c",
+      "bytes": 3256782,
+      "audioHash": "8a9939c4e07cea98",
       "hasTranscript": true,
-      "utterances": 40,
+      "utterances": 0,
       "quality": {
-        "score": 98,
+        "score": 32,
         "pass": false,
         "metrics": {
-          "durationSeconds": 214,
-          "bytes": 3432324,
-          "sttRatio": 97,
-          "importantRatio": 96,
-          "longSilences": 2,
-          "unexpectedLongSilences": 0,
-          "peakDb": -1.7,
-          "judgePass": true,
-          "humanLikeness": 0,
-          "humanProxy": 100
+          "durationSeconds": 204,
+          "bytes": 3256782,
+          "sttRatio": null,
+          "importantRatio": null,
+          "longSilences": null,
+          "unexpectedLongSilences": null,
+          "peakDb": null,
+          "judgePass": false,
+          "humanLikeness": null,
+          "humanProxy": null
         },
-        "pronunciation": "مقبول",
+        "pronunciation": "ينتظر فحص النطق والمعنى",
         "pace": "مقبول",
-        "pauses": "مقبول",
+        "pauses": "يحتاج تقليل الوقفات",
         "issues": [
+          "الحلقة ليست معتمدة آلياً في حالة البودكاست.",
+          "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
+          "تطابق STT مع النص المقصود أقل من الحد الصارم.",
+          "توجد وقفات طويلة تتجاوز الحد المقبول.",
           "بوابة البشرية أقل من 95/100."
         ]
       }
@@ -87,29 +95,33 @@
           "status": "under_review",
           "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/alternative-plans-for-distance-education.dialogue.mp3",
           "audio": "/audio/alternative-plans-for-distance-education.dialogue.mp3",
-          "bytes": 3432324,
-          "audioHash": "3398e063e4ef936c",
+          "bytes": 3256782,
+          "audioHash": "8a9939c4e07cea98",
           "hasTranscript": true,
-          "utterances": 40,
+          "utterances": 0,
           "quality": {
-            "score": 98,
+            "score": 32,
             "pass": false,
             "metrics": {
-              "durationSeconds": 214,
-              "bytes": 3432324,
-              "sttRatio": 97,
-              "importantRatio": 96,
-              "longSilences": 2,
-              "unexpectedLongSilences": 0,
-              "peakDb": -1.7,
-              "judgePass": true,
-              "humanLikeness": 0,
-              "humanProxy": 100
+              "durationSeconds": 204,
+              "bytes": 3256782,
+              "sttRatio": null,
+              "importantRatio": null,
+              "longSilences": null,
+              "unexpectedLongSilences": null,
+              "peakDb": null,
+              "judgePass": false,
+              "humanLikeness": null,
+              "humanProxy": null
             },
-            "pronunciation": "مقبول",
+            "pronunciation": "ينتظر فحص النطق والمعنى",
             "pace": "مقبول",
-            "pauses": "مقبول",
+            "pauses": "يحتاج تقليل الوقفات",
             "issues": [
+              "الحلقة ليست معتمدة آلياً في حالة البودكاست.",
+              "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
+              "تطابق STT مع النص المقصود أقل من الحد الصارم.",
+              "توجد وقفات طويلة تتجاوز الحد المقبول.",
               "بوابة البشرية أقل من 95/100."
             ]
           }

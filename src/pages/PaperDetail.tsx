@@ -10,6 +10,7 @@ import { useAdminAuth } from '../lib/admin-auth'
 import { safeLink } from '../lib/dead-links'
 import { ResearchSectionNavigator, type ResearchLayer } from '../components/ResearchSectionNavigator'
 import { bookKnowledgeAnchor, relatedBookKnowledge } from '../lib/book-knowledge'
+import { NextStep } from '../components/NextStep'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
 const arabicScientific = (value = '') => {
@@ -74,7 +75,7 @@ function EvidenceStamp({ evidence, fallback = 'المصدر الأصلي' }: { e
 export default function PaperDetail() {
   const { slug } = useParams()
   const location = useLocation()
-  const { papers, books, loading } = useCmsContent()
+  const { papers, books, articles, media, loading } = useCmsContent()
   const index = papers.findIndex((paper) => paper.slug === slug)
   const p = papers[index]
   const [openSection, setOpenSection] = useState<ResearchSection | null>(null)
@@ -353,6 +354,16 @@ export default function PaperDetail() {
           </FadeUp>
         </div>
       </article>
+
+      {/* الفصل التالي بعد البحث المحكّم: مقالٌ أو لقاءٌ يخفّف ثقل الأكاديمي. */}
+      <NextStep
+        seed={`${(p as { titleAr?: string }).titleAr || p.title} ${p.meta || ''}`}
+        from="بحث محكّم"
+        articles={articles}
+        papers={papers}
+        media={media}
+        excludeKey={`paper:${p.slug}`}
+      />
     </Page>
   )
 }

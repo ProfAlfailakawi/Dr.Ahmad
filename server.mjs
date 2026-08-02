@@ -24,9 +24,12 @@ if (existsSync(localEnvFile)) {
 }
 
 const root = resolve(process.cwd(), 'dist')
-const bookEvidenceFile = resolve(process.cwd(), 'src/data/book-evidence.json')
-const bookEvidenceCorpus = existsSync(bookEvidenceFile)
-  ? JSON.parse(readFileSync(bookEvidenceFile, 'utf8'))
+/* شواهد الكتب: المتن الكامل بقي على جهاز الدكتور (المستودع عام)، والخادم
+   يستند إلى الاقتباسات المقيسة المنشورة بإذنه — وهي المنشورة للزوار نفسها،
+   فلا يقول الخادم للناس ما لا يستطيع الموقع أن يريهم إياه. */
+const bookQuotesFile = resolve(process.cwd(), 'src/data/book-quotes.json')
+const bookEvidenceCorpus = existsSync(bookQuotesFile)
+  ? JSON.parse(readFileSync(bookQuotesFile, 'utf8'))
   : { books: [] }
 
 // الرادار السحابي: sa يصل كسرّ في GOOGLE_SA_JSON — نكتبه ملفاً مؤقتاً للسكربت
@@ -86,30 +89,22 @@ const audioManagePath = '/api/admin/audio/manage'
 const sourcesCheckPath = '/api/admin/sources/check'
 const controlCenterPath = '/api/admin/control-center'
 const publicationPassportPath = '/api/admin/publication-passport/sign'
-/* ١٢٨ كانت ضيّقةً على نداءٍ يحمل فهرس أرشيفٍ كامل — والضيق كان يُرفَض بـ٤١٣
-   قبل بلوغ المحرك. المتون انتقلت إلى القرص، والحدّ رُفع إلى ثلاثة أضعافٍ
-   ليبقى هامشٌ حقيقي بلا فتحِ الباب على مصراعيه. */
+/* ١٢٨ كانت ضيّقةً على نداءٍ يحمل فهرس أرشيفٍ كامل، فكان يُرفض بـ٤١٣ قبل بلوغ
+   المحرك. المتون انتقلت إلى القرص، والحدّ رُفع ثلاثة أضعاف بهامشٍ حقيقي. */
 const maxArticleRequestBytes = 384 * 1024
 
 /* ---------- الأرشيف يُقرأ من القرص لا يُرسَل عبر الشبكة ----------
-
-   العطب الذي منع الكتابة تماماً: الواجهة كانت ترسل ١٨٠ مقالاً **بمتونها
-   الكاملة** = ٦٣٦ كيلوبايت، وحدّ الطلب هنا ١٢٨. فكان كل نداءٍ يُرفض بـ٤١٣
-   قبل أن يبلغ المحرك أصلاً.
-
-   ولم يظهر العطب سنةً لأن القالب المحلي المُعلَّب كان يبتلع الرفض ويسلّم نصاً
-   جاهزاً — أي أن «المقال غير الاحترافي» الذي شكا منه الدكتور كان **أثر هذا
-   العطب** لا سبباً مستقلاً. وحين حُذف القالب ظهر الرفض عارياً.
-
-   والحل كان تحت اليد: `src/data/bodies.json` منسوخٌ في الصورة أصلاً
-   (`Dockerfile:30`) — فالخادم يملك الأرشيف كاملاً ولا حاجة لرفعه إليه. */
+   الواجهة كانت ترسل ١٨٠ مقالاً بمتونها = ٦٣٦ كيلوبايت، والحدّ ١٢٨. ولم يظهر
+   العطب لأن القالب المُعلَّب كان يبتلع الرفض ويسلّم نصاً جاهزاً — أي أن
+   «المقال غير الاحترافي» كان أثر هذا العطب لا سبباً مستقلاً.
+   و`src/data/bodies.json` منسوخٌ في الصورة أصلاً (Dockerfile) — فالخادم يملك
+   الأرشيف ولا حاجة لرفعه إليه. */
 let archiveBodiesCache = null
 function archiveBodies() {
   if (archiveBodiesCache) return archiveBodiesCache
   archiveBodiesCache = new Map()
   try {
-    const file = new URL('./src/data/bodies.json', import.meta.url)
-    const raw = JSON.parse(readFileSync(file, 'utf8'))
+    const raw = JSON.parse(readFileSync(new URL('./src/data/bodies.json', import.meta.url), 'utf8'))
     for (const [slug, body] of Object.entries(raw)) {
       if (typeof body === 'string' && body.trim().length > 100) archiveBodiesCache.set(slug, body)
     }
@@ -2469,8 +2464,8 @@ function perfectArticleInput(value) {
     title: boundedString(item.title, 300), cat: boundedString(item.cat, 80), year: boundedString(item.year, 10),
     opening: boundedString(item.opening, 850), middle: boundedString(item.middle, 850), closing: boundedString(item.closing, 850),
   } : null)
-  /* المتن يأتي من القرص أولاً، ومن الواجهة فقط لما لم يُبنَ بعد (مقالٌ جديد
-     في Firestore لم يدخل bodies.json). فالحمولة تهبط من ٦٣٦ ك.ب إلى نحو ٩٠. */
+  /* المتن من القرص أولاً، ومن الواجهة لما لم يُبنَ بعد (مقالٌ جديد في
+     Firestore لم يدخل bodies.json). الحمولة تهبط ٦٣٦ ← ١١٦ كيلوبايت. */
   const disk = archiveBodies()
   const existing = boundedArray(value.existing, 180, (item) => {
     if (!item || typeof item !== 'object') return null
@@ -2632,10 +2627,8 @@ function geminiSchemaToJsonSchema(node) {
    qwen3-30b نال ٩٨٪ وqwq-32b ٩٧٪، بينما llama-3.3-70b — الافتراضي القديم —
    نال ٤٥٪ وكان يلفّ على نفسه بعشرة بالمئة من جمله مكرّرة. */
 export const ARTICLE_MODEL_PRIMARY = '@cf/qwen/qwen3-30b-a3b-fp8'
-/* كان qwq-32b مرشحاً ثانياً لجودته (٩٧٪)، لكن المفاضلة قاست زمنه **٤٦ ثانية
-   وحده** — وهو وحده يستهلك ميزانية الطلب كلها تحت باب الستين. التنويع الآن
-   بالبنية والحرارة على النموذج السريع (١٧ ثانية · ٩٨٪)، وqwq يبقى متاحاً
-   بمتغير بيئة لمن يملك وقتاً. */
+/* qwq-32b أجود بنقطة لكنه **٤٦ ثانية وحده** — أي الميزانية كلها تحت باب
+   الستين. التنويع الآن بالبنية والحرارة على السريع (١٧ ثانية · ٩٨٪). */
 export const ARTICLE_MODEL_SECONDARY = process.env.EDITORIAL_CF_MODEL_SECONDARY || '@cf/qwen/qwen3-30b-a3b-fp8'
 /* آخر ملجأ حين يزدحم النموذجان: أضعف أسلوباً لكنه يكتب، والحَكَم يبقى حارساً
    على ما يخرج منه. الحصة المجانية مشتركة، وازدحامها واقعٌ لا استثناء. */
@@ -2659,7 +2652,7 @@ async function callCloudflareStructured({ instruction, prompt, cfPrompt, cfModel
     max_tokens: clamp(Math.trunc(maxOutputTokens), 512, 4_096),
     temperature,
   }
-  /* نداءٌ واحد لا يجوز أن يبتلع الميزانية كلها: اثنتان وعشرون ثانية سقفاً. */
+  /* نداءٌ واحد لا يبتلع الميزانية: اثنتان وعشرون ثانية سقفاً. */
   const timeout = envNumber('EDITORIAL_AI_TIMEOUT_MS', 22_000, 8_000, 90_000)
   let response
   try {
@@ -2808,10 +2801,10 @@ export function findBookEvidence(question, limit = 4, corpus = bookEvidenceCorpu
   const rows = []
   for (const book of Array.isArray(corpus?.books) ? corpus.books : []) {
     const bookTitle = normalizeBookEvidence(book?.title)
-    for (const chunk of Array.isArray(book?.chunks) ? book.chunks : []) {
-      if (!chunk?.text || chunk.kind === 'references') continue
+    for (const chunk of Array.isArray(book?.quotes) ? book.quotes : []) {
+      if (!chunk?.text) continue
       const text = normalizeBookEvidence(chunk.text)
-      const section = normalizeBookEvidence(chunk.section)
+      const section = normalizeBookEvidence(`${chunk.section || ''} ${chunk.conceptTitle || ''}`)
       let score = normalizedQuestion.length >= 5 && text.includes(normalizedQuestion) ? 18 : 0
       let matched = 0
       for (const word of query) {
@@ -3037,10 +3030,9 @@ function perfectArticleSchema() {
   }
 }
 
-/* كان الحدّ الأدنى ٤٠٩٦ وسقف Workers AI ٤٠٩٦ — فكانت الدالة تُلغي نفسها.
-   وخفضتُ الأرضية إلى ١٢٠٠ فوقعتُ في الطرف الآخر: **الكلمة العربية نحو ثلاثة
-   رموز**، فأربعمئة كلمة تحتاج ١٢٠٠ للنص وحده قبل JSON والعنوان والمقتطف —
-   فكان المقال يُبتر عند مئةٍ وسبع كلمات. المعامل خمسةٌ وأرضيةٌ ٢٥٠٠. */
+/* الحدّ الأدنى ٤٠٩٦ مع سقف Workers AI ٤٠٩٦ كان يُلغي الدالة؛ وخفضُه إلى ١٢٠٠
+   وقع في الطرف الآخر: **الكلمة العربية نحو ثلاثة رموز**، فأربعمئة كلمة تحتاج
+   ١٢٠٠ للنص وحده قبل JSON — فبُتر المقال عند مئةٍ وسبع كلمات. */
 const articleOutputTokens = (targetWords = 400) => clamp(Math.ceil(targetWords * 5), 2_500, 16_384)
 
 /* ---------- عائلات البناء: مستودعُ حركاته الست، مستخرجٌ من افتتاحيات أرشيفه ----------
@@ -3133,16 +3125,10 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
   const anchors = rhythmAnchors(input.styleSamples)
   const brief = styleBrief(dna, input.targetWords)
   /* ---------- الميزانية الزمنية: الباب أضيق من المحرك ----------
-
-     السجلّ الحيّ (١ أغسطس ٢٣:٤٧ و٢٣:٤٩): المقال كُتب مرتين بنجاح — ٢٠٠ في
-     ٧٩٫٦ ثانية ثم ٦٦٫١ — **ولم يرَه الدكتور مرة واحدة**. لأن `firebase.json`
-     يمرّر `/api/**` عبر Firebase Hosting، ومهلته **ستون ثانية ثابتة** لا
-     تُضبط، فيقطع الاتصال ويعيد ٥٠٢ بينما الخادم لا يزال يكتب.
-
-     فالمهلة الداخلية ٢١٠ ثانية كانت وعداً لا يمكن الوفاء به. الميزانية الآن
-     ست وأربعون ثانية: أربع عشرة ثانية هامشاً تحت باب الاستضافة. */
+     السجلّ الحيّ: المقال كُتب مرتين بنجاح (٢٠٠ في ٧٩٫٦ ثم ٦٦٫١ ثانية) ولم يره
+     الدكتور مرة. لأن `firebase.json` يمرّر `/api/**` عبر Firebase Hosting
+     ومهلته **ستون ثانية ثابتة**، فيقطع ويعيد ٥٠٢ بينما الخادم يكتب. */
   const deadline = Date.now() + envNumber('ARTICLE_STYLE_DEADLINE_MS', 46_000, 20_000, 540_000)
-  /* لا نبدأ نداءً لا يسعه الوقت الباقي: نصفُ مقالٍ لا يُسلَّم. */
   const timeLeft = () => deadline - Date.now()
   const canAfford = (needed) => timeLeft() > needed
 
@@ -3271,15 +3257,10 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
   const families = chooseFamilies(`${input.idea} ${input.angle}`, input.variation)
   const primaryModel = process.env.EDITORIAL_CF_MODEL || ARTICLE_MODEL_PRIMARY
   const secondaryModel = ARTICLE_MODEL_SECONDARY
-  /* ---------- التصعيد بدل الشراء المسبق ----------
-
-     قياسٌ حيّ (٢ أغسطس): ثلاث تشغيلاتٍ استنفدت حصة اليوم كاملة — عشرة آلاف
-     نيورون تكفي ثلاثة أو أربعة مقالات، ويتقاسمها الاستوديو. فشراء مرشحين
-     دائماً يعني أن نصف الحصة يذهب إلى نسخةٍ لن تُقرأ في أغلب الأحيان.
-
-     الآن: يُكتب الأول، فإن جاء مطابقاً (٨٨٪ فأعلى بلا تحفّظ) سُلِّم بنداءٍ
-     واحد. وإن قصّر، اشتُري الثاني — وهناك يستحقّ الدكتور الاختيار.
-     ويُستعاد الشراء المسبق بـARTICLE_CANDIDATES=2 لمن أراد نسختين دائماً. */
+  /* التصعيد بدل الشراء المسبق: ثلاث تشغيلاتٍ استنفدت حصة يومٍ كاملة — عشرة
+     آلاف نيورون تكفي ثلاثة مقالات ويتقاسمها الاستوديو. يُكتب الأول، فإن جاء
+     مطابقاً سُلِّم بنداءٍ واحد؛ وإن قصّر اشتُري الثاني وهناك يستحقّ الاختيار.
+     ويُستعاد الشراء المسبق بـARTICLE_CANDIDATES=2. */
   const alwaysTwo = process.env.ARTICLE_CANDIDATES === '2'
   const firstRound = await Promise.allSettled(
     alwaysTwo
@@ -3288,7 +3269,19 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
   )
   for (const result of firstRound) if (result.status === 'fulfilled') keep(result.value)
 
-  const needsSecond = !alwaysTwo && (!best || best.verdict.score < 88 || best.verdict.fatal.length || best.lengthOff > wordTolerance)
+  /* العتبة مقيسةٌ لا مُختارة بالذوق: محاكاةٌ على ٢٠٬٣٠٦ زوجٍ من نصوص الدكتور
+     نفسها أعطت هذه المقايضة (متوسط الخسارة بالنقاط · توفير النداءات):
+
+         ٨٢ ← ١٫٣٦ · ٣٤٫٦٪      ٩٠ ← ٠٫٣٨ · ٢٣٫١٪
+         ٨٥ ← ٠٫٩٣ · ٣١٫١٪      ٩٢ ← ٠٫٢١ · ١٨٫٥٪
+         ٨٨ ← ٠٫٥٣ · ٢٥٫٩٪      ٩٥ ← ٠٫٠٤ · ٩٫٨٪
+
+     تسعون تخفض الخسارة تسعةً وعشرين بالمئة مقابل ثلاث نقاطٍ من التوفير —
+     وهذه أفضل صفقة في المنحنى. وهي حدٌّ أعلى للخسارة لا قيمةً متوقعة: المحاكاة
+     تزاوج نصوصاً غير مترابطة، بينما المرشحان في الواقع من النموذج نفسه على
+     الفكرة نفسها فدرجتاهما متقاربتان (٩٨ و٩٧ في المفاضلة الحية). */
+  const acceptWithoutSecond = envNumber('ARTICLE_ACCEPT_SCORE', 90, 60, 100)
+  const needsSecond = !alwaysTwo && (!best || best.verdict.score < acceptWithoutSecond || best.verdict.fatal.length || best.lengthOff > wordTolerance)
   if (needsSecond && canAfford(18_000)) {
     const second = await write(families[1], .78, secondaryModel).catch(() => null)
     if (second) keep(second)
@@ -3309,7 +3302,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
   /* جولتان لا ثلاث: كل نداءٍ يستهلك من حصةٍ يومية مشتركة مع صور الاستوديو،
      والقياس يقول إن الجولة الثالثة نادراً ما تضيف. يُرفع بمتغير بيئة. */
   const maxRounds = envNumber('ARTICLE_REPAIR_ROUNDS', 2, 1, 4)
-  for (let round = 1; round <= maxRounds && canAfford(16_000); round += 1) {
+  for (let round = 1; round <= maxRounds && canAfford(15_000); round += 1) {
     if (best.verdict.ready && best.lengthOff <= wordTolerance && !best.originalityBroken && best.repetition.duplicateSentenceRate <= 0) break
 
     const orders = []
@@ -3421,7 +3414,6 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
       score: best.verdict.score,
       ready: best.verdict.ready,
       structure: best.family.label,
-      seconds: Math.round((Date.now() - (deadline - envNumber('ARTICLE_STYLE_DEADLINE_MS', 46_000, 20_000, 540_000))) / 100) / 10,
       model: String(best.cfModel || '').replace('@cf/', ''),
       proofread: proofread || 'لم يُشغَّل',
       lines: styleReportLines(best.verdict),

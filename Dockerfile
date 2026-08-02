@@ -36,6 +36,7 @@ COPY src/data/audio-meta.json /app/src/data/audio-meta.json
 COPY src/data/podcast-admin.json /app/src/data/podcast-admin.json
 COPY src/data/research-papers.ts /app/src/data/research-papers.ts
 COPY src/data/book-quotes.json /app/src/data/book-quotes.json
+COPY src/data/book-passages.json /app/src/data/book-passages.json
 COPY src/data/editorial-policy.json /app/src/data/editorial-policy.json
 COPY whatsapp-agent/content-index.mjs /app/whatsapp-agent/content-index.mjs
 COPY whatsapp-agent/config.mjs /app/whatsapp-agent/config.mjs
@@ -57,6 +58,7 @@ COPY whatsapp-agent/domain-concepts.mjs /app/whatsapp-agent/domain-concepts.mjs
 # بناء الصورة كلها (حارس شجرة الاستيراد أدناه أمسكه). وفهرسه JSON يُبنى قبل هذه
 # الخطوة في وظيفة النشر نفسها، فينسخ ممتلئاً لا فارغاً.
 COPY whatsapp-agent/spoken-index.mjs /app/whatsapp-agent/spoken-index.mjs
+COPY whatsapp-agent/book-quotes.mjs /app/whatsapp-agent/book-quotes.mjs
 COPY src/data/spoken-index.json /app/src/data/spoken-index.json
 
 # «node --check» يقرأ الصياغة ولا يحلّ استيراداً: ملفٌ منسيٌّ في النسخ يمرّ من

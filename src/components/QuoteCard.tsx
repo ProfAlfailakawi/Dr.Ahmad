@@ -1,87 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { EASE } from './motion'
-
-const W = 1080
-const H = 1080
-
-/** يرسم البطاقة على canvas ويعيدها كـ dataURL */
-function draw(quote: string, dark: boolean): string {
-  const c = document.createElement('canvas')
-  c.width = W
-  c.height = H
-  const g = c.getContext('2d')!
-  const bg = dark ? '#111215' : '#FCFCFA'
-  const ink = dark ? '#EAEAE7' : '#15161A'
-  const accent = dark ? '#8AADCC' : '#3E5C78'
-  const soft = dark ? '#8A8F98' : '#7C818B'
-
-  g.fillStyle = bg
-  g.fillRect(0, 0, W, H)
-
-  // توهّج ناعم
-  const grad = g.createRadialGradient(W * 0.82, H * 0.2, 40, W * 0.82, H * 0.2, 620)
-  grad.addColorStop(0, accent + '22')
-  grad.addColorStop(1, accent + '00')
-  g.fillStyle = grad
-  g.fillRect(0, 0, W, H)
-
-  // إطار
-  g.strokeStyle = accent + '30'
-  g.lineWidth = 2
-  g.strokeRect(56, 56, W - 112, H - 112)
-
-  // علامة اقتباس
-  g.fillStyle = accent + '2e'
-  g.font = '700 220px "El Messiri", serif'
-  g.textAlign = 'right'
-  g.fillText('”', W - 104, 250)
-
-  // النص
-  const size = quote.length > 260 ? 40 : quote.length > 170 ? 48 : quote.length > 90 ? 56 : 64
-  g.font = `300 ${size}px "El Messiri", serif`
-  g.fillStyle = ink
-  g.textAlign = 'right'
-  g.direction = 'rtl'
-
-  const maxW = W - 220
-  const words = quote.split(/\s+/)
-  const lines: string[] = []
-  let line = ''
-  for (const w of words) {
-    const test = line ? line + ' ' + w : w
-    if (g.measureText(test).width > maxW && line) {
-      lines.push(line)
-      line = w
-    } else line = test
-  }
-  if (line) lines.push(line)
-
-  const lh = size * 1.72
-  let y = H / 2 - ((lines.length - 1) * lh) / 2 - 20
-  for (const l of lines) {
-    g.fillText(l, W - 110, y)
-    y += lh
-  }
-
-  // خط + التوقيع
-  g.strokeStyle = accent
-  g.lineWidth = 3
-  g.beginPath()
-  g.moveTo(W - 110, H - 214)
-  g.lineTo(W - 210, H - 214)
-  g.stroke()
-
-  g.font = '600 34px "Tajawal", sans-serif'
-  g.fillStyle = ink
-  g.fillText('د. أحمد حسين الفيلكاوي', W - 110, H - 152)
-
-  g.font = '400 26px "Tajawal", sans-serif'
-  g.fillStyle = soft
-  g.fillText('dr-alfailakawi.com', W - 110, H - 106)
-
-  return c.toDataURL('image/png')
-}
+import { renderQuoteCard } from '../lib/quote-card'
 
 export function QuoteCard() {
   const [sel, setSel] = useState('')
@@ -115,10 +35,9 @@ export function QuoteCard() {
   }, [])
 
   const make = useCallback(async () => {
-    // انتظر تحميل الخطوط وإلا رسم canvas بخط احتياطي
-    try { await (document as any).fonts?.ready } catch { /* noop */ }
-    const dark = document.documentElement.classList.contains('dark')
-    setImg(draw(sel, dark))
+    /* الرسم صار في src/lib/quote-card — تستعمله بطاقات الكتب أيضاً،
+       فتبقى الهويّة واحدة أينما ظهر الاقتباس. */
+    setImg(await renderQuoteCard(sel))
   }, [sel])
 
   const download = () => {

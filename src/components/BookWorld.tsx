@@ -5,6 +5,8 @@ import { createIdeaDna } from '../lib/idea-dna'
 import { ideaWords } from '../lib/idea-life'
 import { bookArchiveDate, buildBookWorldTimeline } from '../lib/book-world-timeline'
 import { bookQuotes, loadBookPassages, quotesForConcept, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
+import { QuoteCite } from './QuoteCite'
+import { QuoteImage } from './QuoteImage'
 import { bookKnowledgeAnchor, bookKnowledgeText, getBookKnowledge } from '../lib/book-knowledge'
 
 function scoreAgainst(source: Set<string>, value: string) {
@@ -129,9 +131,19 @@ export function BookWorld({
         .slice(0, 5)
       : []
 
+    /* الشريط: كل محورٍ بموضعه من الكتاب. ما لا صفحة له يذهب إلى الآخر
+       بدل أن يتصدّر بلا سبب. */
+    const conceptByTitle = new Map((knowledge?.concepts || []).map((concept) => [concept.title, concept]))
+    const spine = paths
+      .map((path) => ({ idea: path.idea, concept: conceptByTitle.get(path.idea) || null }))
+      .sort((left, right) => (left.concept?.pageStart ?? 1e9) - (right.concept?.pageStart ?? 1e9))
+    const spinePages = spine.map((item) => item.concept?.pageStart).filter((page): page is number => typeof page === 'number')
+
     return {
       dna,
       paths,
+      spine,
+      spineRange: spinePages.length >= 2 ? { from: Math.min(...spinePages), to: Math.max(...spinePages) } : null,
       ideas: paths.map((path) => path.idea),
       relatedBooks: bookMatches.slice(0, 3),
       knowledge,
@@ -203,7 +215,7 @@ export function BookWorld({
           <div className="max-w-3xl">
             <span className="text-[.7rem] font-semibold uppercase tracking-[.08em] text-accent">عالم الكتاب</span>
             <h2 id="book-world-title" className="mt-2 font-display text-[clamp(1.55rem,3vw,2.2rem)] font-semibold leading-[1.35] text-ink">امتدادات الكتاب داخل الأرشيف</h2>
-            <p className="mt-2 text-[.82rem] leading-[1.8] text-soft">خريطة بُنيت من متن الكتاب كاملاً، ثم تصل مفاهيمه بالمواد المنشورة فعلاً. لا يُعرض متن الكتاب ولا ملفه الكامل، وتبقى الأقسام مطوية حتى يظل التصميم هادئاً.</p>
+            <p className="mt-2 text-[.82rem] leading-[1.8] text-soft">خريطة مبنيّة من الكتاب، تصل مفاهيمه بما نُشر في الأرشيف من مقالات وأبحاث ولقاءات.</p>
           </div>
           <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="rounded-full border border-accent/35 px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">المسار الفكري الكامل ←</Link>
         </div>
@@ -215,26 +227,40 @@ export function BookWorld({
                الأرشيف»). البصمة نفسها تبقى في لوحة التحكم حيث تنفع. */
             eyebrow="بصمة الفكرة"
             title="المفاهيم التي يحملها الكتاب إلى الأرشيف"
-            meta={model.knowledge ? `${model.knowledge.concepts.length} محوراً مفهرساً من ${model.knowledge.indexedPages} صفحة قابلة للقراءة` : `${model.dna.topic.label} · ${model.dna.tone.label}`}
+            meta={model.knowledge ? `${model.knowledge.concepts.length} محوراً على امتداد ${model.knowledge.pageCount} صفحة` : `${model.dna.topic.label} · ${model.dna.tone.label}`}
             lockOpen={Boolean(activeIdea)}
           >
-            <div className="flex flex-wrap gap-2" aria-label="مسارات أفكار الكتاب">
-              {model.ideas.map((idea, index) => {
+            {/* ═══ شريط الكتاب ═══
+                كان جداراً من أربعة صفوف يعامل ٢٣ محوراً كحبّاتٍ متساوية بلا
+                ترتيب. صار شريطاً واحداً مرتّباً بترتيب الكتاب نفسه — من أول
+                صفحة إلى آخرها — فيقرأ الزائر بنيةَ الكتاب لا كومة كلمات،
+                ويلفّ يميناً ويساراً بدل أن يتمدّد القسم رأسياً. */}
+            <div className="rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-2 [scroll-snap-type:x_proximity]" aria-label={`محاور ${book.title} بترتيب الكتاب`}>
+              {model.spine.map(({ idea, concept }, index) => {
                 const active = selectedIdea === idea
                 return (
-                  <button
-                    type="button"
-                    key={`${idea}-${index}`}
-                    id={model.knowledge?.concepts.find((concept) => concept.title === idea) ? bookKnowledgeAnchor(model.knowledge.concepts.find((concept) => concept.title === idea)!) : undefined}
-                    onClick={() => setActiveIdea(idea)}
-                    aria-pressed={active}
-                    className={`rounded-full border px-3.5 py-2 text-[.7rem] transition-colors ${active ? 'border-accent bg-accent/[.07] font-semibold text-accent' : 'border-hair bg-wash text-ink hover:border-accent/40'}`}
-                  >
-                    {idea}
-                  </button>
+                  <div key={`${idea}-${index}`} className="flex shrink-0 flex-col items-center gap-1.5 [scroll-snap-align:center]">
+                    <span className={`text-[.62rem] tabular-nums transition-colors ${active ? 'font-semibold text-accent' : 'text-soft/70'}`}>
+                      {concept ? concept.pageStart : '—'}
+                    </span>
+                    <button
+                      type="button"
+                      id={concept ? bookKnowledgeAnchor(concept) : undefined}
+                      onClick={() => setActiveIdea(idea)}
+                      aria-pressed={active}
+                      className={`whitespace-nowrap rounded-full border px-3.5 py-2 text-[.7rem] transition-colors ${active ? 'border-accent bg-accent/[.07] font-semibold text-accent' : 'border-hair bg-wash text-ink hover:border-accent/40'}`}
+                    >
+                      {idea}
+                    </button>
+                  </div>
                 )
               })}
             </div>
+            {model.spineRange && (
+              <p className="mt-2 text-[.64rem] text-soft/80">
+                بترتيب الكتاب · من ص {model.spineRange.from} إلى ص {model.spineRange.to}
+              </p>
+            )}
             <div className="mt-4 border-t border-hair pt-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[.68rem] text-soft">البوابة النشطة · «{selectedIdea}»{selectedConcept ? ` · ص ${selectedConcept.pageStart}${selectedConcept.pageEnd > selectedConcept.pageStart ? `–${selectedConcept.pageEnd}` : ''}` : ''}</span>
@@ -260,7 +286,7 @@ export function BookWorld({
           {model.allQuotes.length > 0 && <Disclosure
             eyebrow="اسأل هذا الكتاب"
             title="اكتب سؤالك، فيجيبك الكتاب بمقاطعه"
-            meta="بحثٌ في متن هذا الكتاب وحده — بلا ملفٍ يُفتح ولا صفحةٍ تُنسخ."
+            meta="الجواب من متن الكتاب، منسوباً إلى صفحته."
             lockOpen={Boolean(asked)}
           >
             <form
@@ -287,7 +313,13 @@ export function BookWorld({
                   {bookAnswer.map((match) => (
                     <figure key={`ask-${match.quote.id}`} className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
                       <blockquote className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/85">{match.quote.text}</blockquote>
-                      <figcaption className="mt-2 pr-3 text-[.66rem] text-soft">ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</figcaption>
+                      <figcaption className="mt-2 flex flex-wrap items-center justify-between gap-2 pr-3 text-[.66rem] text-soft">
+                        <span>ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</span>
+                        <span className="flex flex-wrap items-center gap-3">
+                          <QuoteCite book={book} page={match.quote.page} />
+                          <QuoteImage text={match.quote.text} attribution={`${book.title} · ص ${match.quote.page}`} />
+                        </span>
+                      </figcaption>
                     </figure>
                   ))}
                 </div>
@@ -301,14 +333,18 @@ export function BookWorld({
           {model.allQuotes.length > 0 && <Disclosure
             eyebrow="من متن الكتاب"
             title={conceptQuotes.length ? `مقاطع من «${selectedIdea}»` : 'مقاطع مختارة من الكتاب'}
-            meta={`${model.allQuotes.length} مقطعاً منشوراً بإذن المؤلف · منسوبة إلى صفحاتها · الكتاب نفسه أوسع`}
+            meta={`${model.allQuotes.length} مقطعاً من الكتاب، كلٌّ منسوبٌ إلى صفحته`}
           >
             <div className="grid gap-3">
               {(conceptQuotes.length ? conceptQuotes : model.allQuotes.slice(0, 4)).map((quote) => (
                 <figure key={quote.id} className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
                   <blockquote className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/85">{quote.text}</blockquote>
-                  <figcaption className="mt-2 pr-3 text-[.66rem] text-soft">
-                    {book.title} · ص {quote.page}{quote.conceptTitle ? ` · ${quote.conceptTitle}` : ''}
+                  <figcaption className="mt-2 flex flex-wrap items-center justify-between gap-2 pr-3 text-[.66rem] text-soft">
+                    <span>{book.title} · ص {quote.page}{quote.conceptTitle ? ` · ${quote.conceptTitle}` : ''}</span>
+                    <span className="flex flex-wrap items-center gap-3">
+                      <QuoteCite book={book} page={quote.page} />
+                      <QuoteImage text={quote.text} attribution={`${book.title} · ص ${quote.page}`} />
+                    </span>
                   </figcaption>
                 </figure>
               ))}
@@ -332,7 +368,7 @@ export function BookWorld({
             </div>
           </Disclosure>}
 
-          {activePath && <Disclosure eyebrow="استمرار الفكرة" title="مواد قريبة في المقالات والأبحاث" meta="صلة موضوعية فقط؛ لا نفترض أنها فصول من الكتاب.">
+          {activePath && <Disclosure eyebrow="استمرار الفكرة" title="مواد قريبة في المقالات والأبحاث" meta="مواد تلامس المحور نفسه في المقالات والأبحاث.">
             <div className="grid gap-2">
               {activeConnections.articles.map(({ item, score }) => (
                 <Link key={item.slug} to={`/articles/${item.slug}`} className="group grid gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/45 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
@@ -363,7 +399,7 @@ export function BookWorld({
             </div>
           </Disclosure>}
 
-          {model.relatedBooks.length > 0 && <Disclosure eyebrow="كتب مرتبطة" title="مؤلفات تفتح امتداداً آخر للفكرة" meta="صلة موضوعية من العنوان والوصف، وليست ترتيباً في سلسلة نشر.">
+          {model.relatedBooks.length > 0 && <Disclosure eyebrow="كتب مرتبطة" title="مؤلفات تفتح امتداداً آخر للفكرة" meta="مؤلَّفات تتقاطع مع محاور هذا الكتاب.">
             <div className="grid gap-2 sm:grid-cols-3">
               {model.relatedBooks.map(({ item }) => <Link key={item.slug} to={`/publications/${item.slug}`} className="rounded-xl border border-hair bg-wash px-4 py-3 transition-colors hover:border-accent"><span className="text-[.64rem] font-semibold text-accent">كتاب</span><strong className="mt-1 block text-[.78rem] leading-relaxed text-ink">{item.title}</strong></Link>)}
             </div>

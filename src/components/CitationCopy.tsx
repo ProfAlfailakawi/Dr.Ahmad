@@ -1,3 +1,4 @@
+import { SocialIcon } from './icons'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { site } from '../data'
 
@@ -101,9 +102,13 @@ export function CitationCopy({ title, path, iso, date, source, url }: CitationCo
     <details className="group mt-8 border-y border-hair py-1">
       <summary
         aria-controls={panelId}
+        aria-label="الاستشهاد المرجعي"
+        title="الاستشهاد المرجعي"
         className="flex cursor-pointer list-none items-center justify-between gap-4 py-3 text-[.84rem] font-semibold text-ink marker:hidden transition-colors hover:text-accent [&::-webkit-details-marker]:hidden"
       >
-        <span>انسخ الاستشهاد</span>
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors group-hover:border-accent group-hover:text-accent">
+          <SocialIcon name="Cite" size={16} />
+        </span>
         <span aria-hidden="true" className="text-accent transition-transform duration-300 group-open:rotate-45">＋</span>
       </summary>
 

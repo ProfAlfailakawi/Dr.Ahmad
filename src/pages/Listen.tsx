@@ -101,6 +101,7 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
             }]}
             title={episode.title}
             controlId={`majlis-${episode.slug}`}
+            showChapters
           />
         </div>
       )}

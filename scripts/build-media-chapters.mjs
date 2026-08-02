@@ -46,6 +46,14 @@ const seconds = (value) => {
   return parts[0] * 3600 + parts[1] * 60 + parts[2]
 }
 
+/* سياسة التنوين نفسها تسري على نصوص اللقاءات المفرّغة. */
+const FATHATAN = '\u064B'
+const normalizeTanween = (value = '') => String(value)
+  .normalize('NFC')
+  .replaceAll(`${FATHATAN}ا`, `ا${FATHATAN}`)
+  .replace(/([\u0621-\u064A\u0671-\u06D3])[ \t]+([\u064B-\u064D])/g, '$1$2')
+  .replace(/([\u064B-\u064D])\1+/g, '$1')
+
 const STOP = new Set('في من على الى عن هذا هذه ذلك التي الذي مع كان كانت يكون تكون هو هي انا نحن انت هم كل بعض عند بعد قبل ثم او ام لا ما هل قد يعني يعنى اليوم طبعا اكيد الله حياك شكرا نعم'.split(' '))
 const normalize = (value = '') => value
   .normalize('NFKC').replace(/ـ+/g, '').replace(/[ً-ْٰ]/g, '')
@@ -68,7 +76,7 @@ const items = []
 for (const entry of entries) {
   const url = field(entry, 'url')
   const videoId = url.split('v=')[1]?.split('&')[0] || ''
-  const transcript = String(transcripts[videoId] || '').trim()
+  const transcript = normalizeTanween(String(transcripts[videoId] || '')).trim()
   const duration = seconds(field(entry, 'duration'))
   if (!videoId || !transcript || !duration) continue
 

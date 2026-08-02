@@ -81,8 +81,20 @@ let blockedHits = 0
 const ARABIC = /[؀-ۿ]/
 const LATIN = /[A-Za-z]/
 
+/* ═══ سياسة التنوين ═══
+   المتون مستخرَجة من ملفات PDF بتشكيلها المطبوع، وفيها «مشروعً+ا» بينما
+   سياسة الموقع «مشروعاً» (تنوين الفتح على الألف). حارس البناء يرفض غيرها،
+   فنطبّع هنا في المصدر — لا نُرخي الحارس. المعنى لا يتغير، والرسم يتوحّد.
+   (القاعدة نفسها في scripts/guard-arabic-tanween.mjs) */
+const FATHATAN = '\u064B'
+const normalizeTanween = (value = '') => String(value)
+  .normalize('NFC')
+  .replaceAll(`${FATHATAN}ا`, `ا${FATHATAN}`)
+  .replace(/([\u0621-\u064A\u0671-\u06D3])[ \t]+([\u064B-\u064D])/g, '$1$2')
+  .replace(/([\u064B-\u064D])\1+/g, '$1')
+
 /* رقم الصفحة يلتصق ببداية المقطع عند الاستخراج، وأحياناً يتكرر في نهايته. */
-const stripPageNoise = (value) => String(value)
+const stripPageNoise = (value) => normalizeTanween(String(value))
   .replace(/^\s*\d{1,4}\s+/, '')
   .replace(/\s+\d{1,4}\s*$/, '')
   .replace(/ /g, ' ')
@@ -265,7 +277,11 @@ for (const book of evidence.books || []) {
         if (reason) { noteRejection(reason); continue }
 
         /* البصمة تمنع تكرار الجملة نفسها بين المقاطع المتداخلة. */
-        const fingerprint = candidate.replace(/[^؀-ۿ]/g, '').slice(0, 60)
+        /* البصمة بلا تشكيل: حذف المسافات كان يُلصق تنوين آخر كلمة بألف
+           الكلمة التالية فيتولّد نمط «ً+ا» الممنوع في سياسة الموقع — وهو
+           عيبٌ في البصمة لا في الاقتباس. والتجريد يجعلها أصمد أيضاً أمام
+           اختلاف التشكيل بين نسختين من المتن. */
+        const fingerprint = candidate.replace(/[\u064B-\u0652\u0670]/g, '').replace(/[^؀-ۿ]/g, '').slice(0, 60)
         if (seen.has(fingerprint)) { noteRejection('مكرّرة'); continue }
 
         /* عنوانٌ يظهر في وسط الاقتباس («…لا يتعلمون التقييم التكويني: المفاهيم
@@ -302,10 +318,10 @@ for (const book of evidence.books || []) {
 
     /* التداخل النصّي يُرفض دائماً: جملتان تشتركان في نصّهما تكرارٌ للقارئ
        وضجيجٌ في البحث، لا فتحُ بابٍ جديد. */
-    const bareCandidate = candidate.text.replace(/[^؀-ۿ]/g, '')
+    const bareCandidate = candidate.text.replace(/[\u064B-\u0652\u0670]/g, '').replace(/[^؀-ۿ]/g, '')
     const overlaps = passages.some((item) => {
       if (Math.abs(item.page - candidate.page) > 2) return false
-      const bareItem = item.text.replace(/[^؀-ۿ]/g, '')
+      const bareItem = item.text.replace(/[\u064B-\u0652\u0670]/g, '').replace(/[^؀-ۿ]/g, '')
       const shorter = bareCandidate.length <= bareItem.length ? bareCandidate : bareItem
       const longer = bareCandidate.length <= bareItem.length ? bareItem : bareCandidate
       return longer.includes(shorter) || longer.includes(shorter.slice(0, 40))

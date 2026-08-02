@@ -86,7 +86,7 @@ export default function CitationImpact() {
 
   return (
     <section
-      className="mb-14 overflow-hidden rounded-2xl border border-hair bg-wash/55 p-5 md:p-7"
+      className="mb-14 overflow-hidden rounded-2xl border border-hair bg-wash/[.55] p-5 md:p-7"
       aria-labelledby="citation-impact-title"
     >
       <div className="flex flex-wrap items-end justify-between gap-4">

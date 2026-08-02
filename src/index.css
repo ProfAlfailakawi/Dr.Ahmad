@@ -63,7 +63,7 @@ html, body, #root, main {
 }
 
 @supports (-webkit-touch-callout: none) {
-  html, body, #root, main { overflow-x: hidden; }
+  html, body, #root, main { overflow-x: hidden; overflow-x: clip; }
 
   /* iOS يفرض عرضاً جوهرياً على حقل التاريخ فيُخرجه من إطار نماذج اللوحة — نلغيه هنا وحده،
      والحقل يرث حجمه وحدوده من صنف الحقول الموحّد فلا يتغيّر شكله */
@@ -1377,21 +1377,17 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
   background: rgba(255,255,255,.9);
 }
 
-/* رابط تبيان: أيقونة فقط ضمن شريط أدوات الموقع؛ الاسم يبقى لقارئ الشاشة والتلميح. */
-.tebyan-link { min-height: 2.5rem; border-color: rgb(var(--c-hair) / .86); }
+/* روابط المشاريع مستقلة عن أيقونات التواصل: أسماء نصية هادئة وواضحة. */
+.tebyan-link { min-height: 2.5rem; border-color: color-mix(in srgb, var(--c-hair) 86%, transparent); }
 .tebyan-link:hover {
   border-color: rgb(var(--c-accent) / .42);
 }
 .schedule-link {
   min-height: 2.25rem;
-  border-color: rgb(var(--c-hair) / .62);
+  border-color: color-mix(in srgb, var(--c-hair) 62%, transparent);
 }
 .schedule-link:hover {
   border-color: rgb(var(--c-accent) / .34);
-}
-.schedule-link {
-  max-width: 2.5rem;
-  overflow: hidden;
 }
 
 /* خيط الفكرة: منع أعمدة الكلمات والفراغات الحادة، خصوصاً عند العناوين الإنجليزية الطويلة. */
@@ -2388,8 +2384,8 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 .selected-media-frame { position: relative; isolation: isolate; background: rgb(var(--c-wash)); }
 .selected-media-frame::before { content: ""; position: absolute; inset: -10%; z-index: -1; background-image: var(--media-thumb); background-size: cover; background-position: center 22%; filter: blur(18px) saturate(.72); opacity: .22; }
 .selected-media-thumb { object-fit: contain !important; object-position: center top !important; transform: none !important; }
-.article-source-tools { display: inline-flex; align-items: center; gap: .55rem; padding: .28rem; border: 1px solid rgb(var(--c-hair)); border-radius: 999px; background: rgb(var(--c-canvas) / .82); backdrop-filter: blur(12px); }
-.article-tool-icon { display: inline-flex; width: 2.75rem; height: 2.75rem; flex: 0 0 2.75rem; align-items: center; justify-content: center; border: 1px solid rgb(var(--c-hair)); border-radius: 999px; background: rgb(var(--c-canvas)); color: rgb(var(--c-soft)); transition: border-color .25s var(--E), color .25s var(--E), background-color .25s var(--E), transform .25s var(--E); }
+.article-source-tools { display: inline-flex; align-items: center; gap: .55rem; padding: .28rem; border: 1px solid var(--c-hair); border-radius: 999px; background: rgb(var(--c-canvas) / .82); backdrop-filter: blur(12px); }
+.article-tool-icon { display: inline-flex; width: 2.75rem; height: 2.75rem; flex: 0 0 2.75rem; align-items: center; justify-content: center; border: 1px solid var(--c-hair); border-radius: 999px; background: rgb(var(--c-canvas)); color: rgb(var(--c-soft)); transition: border-color .25s var(--E), color .25s var(--E), background-color .25s var(--E), transform .25s var(--E); }
 .article-tool-icon:hover { border-color: rgb(var(--c-accent)); color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .07); transform: translateY(-1px); }
 
 /* أي نافذة «خرائط الفكر والأثر» تُنشأ مباشرة في body؛ لا تسمح لأزرار الصفحة العائمة بالظهور فوقها. */
@@ -2421,16 +2417,16 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  border: 1px solid rgb(var(--c-hair));
+  border: 1px solid var(--c-hair);
   border-radius: 1.25rem;
   background: rgb(var(--c-canvas));
   padding: 1.5rem;
   box-shadow: 0 28px 90px -42px rgb(21 22 26 / .72);
 }
 .citation-sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-.citation-close { display: inline-flex; width: 2.5rem; height: 2.5rem; flex: 0 0 2.5rem; align-items: center; justify-content: center; border: 1px solid rgb(var(--c-hair)); border-radius: 999px; color: rgb(var(--c-soft)); transition: color .2s var(--E), border-color .2s var(--E); }
+.citation-close { display: inline-flex; width: 2.5rem; height: 2.5rem; flex: 0 0 2.5rem; align-items: center; justify-content: center; border: 1px solid var(--c-hair); border-radius: 999px; color: rgb(var(--c-soft)); transition: color .2s var(--E), border-color .2s var(--E); }
 .citation-close:hover { color: rgb(var(--c-accent)); border-color: rgb(var(--c-accent)); }
-.citation-text { margin-top: 1.25rem; min-width: 0; border: 1px solid rgb(var(--c-hair)); border-radius: .9rem; background: rgb(var(--c-wash)); padding: 1rem; color: rgb(var(--c-soft)); font-size: .86rem; font-weight: 300; line-height: 2; overflow-wrap: anywhere; word-break: normal; white-space: normal; }
+.citation-text { margin-top: 1.25rem; min-width: 0; border: 1px solid var(--c-hair); border-radius: .9rem; background: rgb(var(--c-wash)); padding: 1rem; color: rgb(var(--c-soft)); font-size: .86rem; font-weight: 300; line-height: 2; overflow-wrap: anywhere; word-break: normal; white-space: normal; }
 .citation-actions { margin-top: 1rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
 .citation-source-link { min-width: 0; color: rgb(var(--c-soft)); font-size: .78rem; font-weight: 600; overflow-wrap: anywhere; transition: color .2s var(--E); }
 .citation-source-link:hover { color: rgb(var(--c-accent)); }
@@ -2497,7 +2493,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   overflow-x: hidden !important;
   overflow-y: auto !important;
   overscroll-behavior: contain !important;
-  border: 1px solid rgb(var(--c-hair)) !important;
+  border: 1px solid var(--c-hair) !important;
   border-radius: 20px !important;
   background: rgb(var(--c-canvas)) !important;
   box-shadow: 0 30px 90px -20px rgba(0, 0, 0, 0.3) !important;
@@ -2564,7 +2560,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   min-width: 38px !important;
   margin: 0 !important;
   padding: 0 !important;
-  border: 1px solid rgb(var(--c-hair)) !important;
+  border: 1px solid var(--c-hair) !important;
   border-radius: 999px !important;
   background: transparent !important;
   color: rgb(var(--c-soft)) !important;
@@ -2585,7 +2581,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   min-width: 0 !important;
   margin: 0 0 20px 0 !important;
   padding: 16px !important;
-  border: 1px solid rgb(var(--c-hair)) !important;
+  border: 1px solid var(--c-hair) !important;
   border-radius: 14px !important;
   background: rgb(var(--c-wash)) !important;
   color: rgb(var(--c-ink)) !important;
@@ -2891,7 +2887,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   gap: 6px !important;
   margin: 0 0 14px !important;
   padding: 5px !important;
-  border: 1px solid rgb(var(--c-hair)) !important;
+  border: 1px solid var(--c-hair) !important;
   border-radius: 999px !important;
   background: rgb(var(--c-wash)) !important;
 }
@@ -3211,7 +3207,7 @@ html.serenity-mode body::before { display: none; }
   width: max-content;
   max-width: calc(100vw - 1.5rem);
   padding: .35rem;
-  border: 1px solid rgb(var(--c-hair));
+  border: 1px solid var(--c-hair);
   border-radius: 999px;
   background: rgb(var(--c-canvas) / .92);
   box-shadow: 0 16px 45px -26px rgb(var(--c-ink) / .5);
@@ -3354,7 +3350,7 @@ html.serenity-mode body::before { display: none; }
 
 .not-found-orbits span:nth-child(1) { width: min(30rem, 82vw); aspect-ratio: 1; }
 .not-found-orbits span:nth-child(2) { width: min(22rem, 62vw); aspect-ratio: 1; border-color: rgb(var(--c-accent) / .2); }
-.not-found-orbits span:nth-child(3) { width: min(14rem, 42vw); aspect-ratio: 1; border-color: rgb(var(--c-hair)); }
+.not-found-orbits span:nth-child(3) { width: min(14rem, 42vw); aspect-ratio: 1; border-color: var(--c-hair); }
 
 .not-found-orbits i {
   position: absolute;

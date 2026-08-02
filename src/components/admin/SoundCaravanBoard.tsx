@@ -91,7 +91,7 @@ function Meter({
         <button
           type="button"
           onClick={onReady}
-          className="group inline-flex min-h-11 items-end gap-1 rounded-lg text-right transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
+          className="group inline-flex min-h-11 items-end gap-1 rounded-lg text-right transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]"
           aria-label={`عرض المقالات الجاهزة في ${name}: ${val}`}
         >
           <span className="text-3xl font-extrabold text-ink transition-colors group-hover:text-accent">{val}</span>
@@ -135,7 +135,7 @@ function DetailPanel({ selection, rows, onClose }: { selection: DetailSelection;
             href={`/articles/${row.slug}`}
             target="_blank"
             rel="noreferrer"
-            className="grid min-h-12 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-wash/55 sm:px-5"
+            className="grid min-h-12 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-wash/[.55] sm:px-5"
           >
             <span className="text-[.68rem] tabular-nums text-soft">{row.n}</span>
             <span className="min-w-0 truncate text-[.78rem] font-semibold text-ink">{row.title}</span>
@@ -191,7 +191,7 @@ function ArticlePreview({ row, onClose }: { row: Row; onClose: () => void }) {
           href={`/articles/${row.slug}`}
           target="_blank"
           rel="noreferrer"
-          className="mr-auto inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-[.78rem] font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
+          className="mr-auto inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-[.78rem] font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]"
           data-caravan-open-article="true"
         >
           فتح المقال ↗
@@ -399,7 +399,7 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
                 title={`معرفة المقال رقم ${row.n}: ${row.title}`}
                 aria-label={`معرفة المقال رقم ${row.n}: ${row.title}`}
                 data-caravan-number={row.n}
-                className={`flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border bg-canvas transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent/60 hover:bg-wash/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 ${selectedRow?.slug === row.slug ? 'border-accent ring-1 ring-accent/20' : full ? 'border-accent/50' : 'border-hair'}`}
+                className={`flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border bg-canvas transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent/60 hover:bg-wash/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35] ${selectedRow?.slug === row.slug ? 'border-accent ring-1 ring-accent/20' : full ? 'border-accent/50' : 'border-hair'}`}
                 style={full ? { boxShadow: `0 0 0 1px ${DIALOGUE}33` } : undefined}
               >
                 <span className="text-[.62rem] font-semibold tabular-nums text-soft">{row.n}</span>

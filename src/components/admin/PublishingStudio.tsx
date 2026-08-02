@@ -998,7 +998,7 @@ type EditorialSignal = {
 }
 
 const statusTone: Record<EditorialStatus, string> = {
-  pass: 'border-accent/35 bg-accent/[.055] text-accent',
+  pass: 'border-accent/[.35] bg-accent/[.055] text-accent',
   watch: 'border-hair bg-canvas text-soft',
   hold: 'border-red-300/40 bg-canvas text-soft',
 }
@@ -1415,7 +1415,7 @@ function EditorialBoardPanel({
     return (
       <section className={`${card} border-accent/25`} aria-live="polite" data-editorial-board-analyzing="true">
         <p className="text-[.72rem] font-semibold uppercase text-accent">مجلس التحرير</p>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-hair/60"><div className="h-full w-2/3 animate-pulse rounded-full bg-accent" /></div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[color:var(--c-hair)]"><div className="h-full w-2/3 animate-pulse rounded-full bg-accent" /></div>
         <p className="mt-4 font-display text-xl font-semibold text-ink">{EDITORIAL_PROGRESS_LABELS[progress] || 'يبدأ التحليل…'}</p>
         <p className="mt-2 text-[.8rem] leading-relaxed text-soft">كل خطوة هنا مرتبطة بفحص حقيقي؛ لا توجد حركة تحميل وهمية.</p>
       </section>
@@ -1448,7 +1448,7 @@ function EditorialBoardPanel({
 
       <div className="mt-5 grid gap-x-8 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
         {scoreRows.map(([label, value]) => (
-          <div key={label} className="flex items-baseline justify-between gap-4 border-b border-hair/70 py-2.5">
+          <div key={label} className="flex items-baseline justify-between gap-4 border-b border-hair py-2.5">
             <span className="text-[.76rem] text-soft">{label}</span>
             <strong className="text-[.8rem] text-ink">{editorialScoreLabel(value)}</strong>
           </div>
@@ -1478,7 +1478,7 @@ function EditorialBoardPanel({
         </details>
         <details className="group rounded-xl border border-hair bg-canvas px-4 py-3" data-editorial-evidence-trace="true">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">بصمة الدليل</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
-          <div className="mt-3 grid gap-3 border-t border-hair pt-3">{decision.scoreEvidence.map((item) => <div key={item.key} className="border-b border-hair/70 pb-3 last:border-0 last:pb-0"><div className="flex items-baseline justify-between gap-4"><strong className="text-[.78rem] text-ink">{item.label}</strong><span className="text-[.72rem] text-soft">{editorialScoreLabel(item.value)} · {item.confidence === 'high' ? 'دليل قوي' : item.confidence === 'medium' ? 'دليل متوسط' : 'دليل محدود'}</span></div>{item.signals.map((signal) => <p key={signal} className="mt-1 text-[.72rem] leading-relaxed text-soft">{signal}</p>)}</div>)}</div>
+          <div className="mt-3 grid gap-3 border-t border-hair pt-3">{decision.scoreEvidence.map((item) => <div key={item.key} className="border-b border-hair pb-3 last:border-0 last:pb-0"><div className="flex items-baseline justify-between gap-4"><strong className="text-[.78rem] text-ink">{item.label}</strong><span className="text-[.72rem] text-soft">{editorialScoreLabel(item.value)} · {item.confidence === 'high' ? 'دليل قوي' : item.confidence === 'medium' ? 'دليل متوسط' : 'دليل محدود'}</span></div>{item.signals.map((signal) => <p key={signal} className="mt-1 text-[.72rem] leading-relaxed text-soft">{signal}</p>)}</div>)}</div>
         </details>
         <details className="group rounded-xl border border-hair bg-canvas px-4 py-3" data-editorial-portfolio="true">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">وعي المحفظة الفكرية</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
@@ -1488,12 +1488,12 @@ function EditorialBoardPanel({
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">السياق الشخصي الخاص</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
           <div className="mt-3 border-t border-hair pt-3">
             <p className="text-[.8rem] leading-relaxed text-ink">{decision.agenda.explanation}</p>
-            {decision.personalSources.length ? <div className="mt-3 grid gap-2">{decision.personalSources.map((source) => <div key={source.id} className="flex items-start justify-between gap-3 border-b border-hair/70 pb-2 last:border-0"><span className="min-w-0 text-[.74rem] leading-relaxed text-soft">{source.title}</span><span className="shrink-0 text-[.68rem] text-soft">{source.status === 'active' ? 'فعّال' : source.status === 'retracted' ? 'منسحب' : source.status === 'corrected' ? 'مصحح' : 'يحتاج مراجعة'}</span></div>)}</div> : <p className="mt-2 text-[.72rem] leading-relaxed text-soft">لا توجد مادة محفوظة قريبة من هذه الفكرة في مكتب المصادر الشخصي.</p>}
+            {decision.personalSources.length ? <div className="mt-3 grid gap-2">{decision.personalSources.map((source) => <div key={source.id} className="flex items-start justify-between gap-3 border-b border-hair pb-2 last:border-0"><span className="min-w-0 text-[.74rem] leading-relaxed text-soft">{source.title}</span><span className="shrink-0 text-[.68rem] text-soft">{source.status === 'active' ? 'فعّال' : source.status === 'retracted' ? 'منسحب' : source.status === 'corrected' ? 'مصحح' : 'يحتاج مراجعة'}</span></div>)}</div> : <p className="mt-2 text-[.72rem] leading-relaxed text-soft">لا توجد مادة محفوظة قريبة من هذه الفكرة في مكتب المصادر الشخصي.</p>}
           </div>
         </details>
         <details className="group rounded-xl border border-hair bg-canvas px-4 py-3" data-editorial-scenarios="true">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">محاكاة القرار</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
-          <div className="mt-3 grid gap-2 border-t border-hair pt-3">{decision.scenarios.items.map((scenario) => <div key={scenario.id} className="grid gap-1 border-b border-hair/70 py-2 last:border-0"><div className="flex items-baseline justify-between gap-4"><strong className={scenario.preferred ? 'text-[.78rem] text-accent' : 'text-[.78rem] text-ink'}>{scenario.label}{scenario.preferred ? ' · المسار المفضّل' : ''}</strong><span className="text-[.72rem] text-soft">{editorialScoreLabel(scenario.strength)}</span></div><p className="text-[.72rem] leading-relaxed text-soft">{scenario.explanation}</p></div>)}</div>
+          <div className="mt-3 grid gap-2 border-t border-hair pt-3">{decision.scenarios.items.map((scenario) => <div key={scenario.id} className="grid gap-1 border-b border-hair py-2 last:border-0"><div className="flex items-baseline justify-between gap-4"><strong className={scenario.preferred ? 'text-[.78rem] text-accent' : 'text-[.78rem] text-ink'}>{scenario.label}{scenario.preferred ? ' · المسار المفضّل' : ''}</strong><span className="text-[.72rem] text-soft">{editorialScoreLabel(scenario.strength)}</span></div><p className="text-[.72rem] leading-relaxed text-soft">{scenario.explanation}</p></div>)}</div>
         </details>
         <details className="group rounded-xl border border-hair bg-canvas px-4 py-3">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">محامي الشيطان</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
@@ -1512,7 +1512,7 @@ function EditorialBoardPanel({
       </div>
 
       {decision.waitingRoom && <div className="mt-5 rounded-xl border border-hair bg-canvas px-4 py-3"><p className="text-[.72rem] font-semibold text-accent">غرفة الانتظار التحريرية</p><p className="mt-1 text-[.8rem] leading-relaxed text-ink">{decision.waitingRoom.reason}</p><p className="mt-2 text-[.74rem] leading-relaxed text-soft">إشارة العودة: {decision.waitingRoom.trigger}</p></div>}
-      {!decision.evidenceGate.ready && <div className="mt-5 rounded-xl border border-accent/35 bg-canvas px-4 py-3" data-editorial-evidence-gate="needs-evidence"><p className="text-[.72rem] font-semibold text-accent">ملاحظة ترافق المسودة — ولا تعطلها</p><p className="mt-1 text-[.8rem] leading-relaxed text-ink">{decision.evidenceGate.explanation}</p>{decision.evidenceGate.missing.map((item) => <p key={item} className="mt-1 text-[.74rem] leading-relaxed text-soft">{item}</p>)}</div>}
+      {!decision.evidenceGate.ready && <div className="mt-5 rounded-xl border border-accent/[.35] bg-canvas px-4 py-3" data-editorial-evidence-gate="needs-evidence"><p className="text-[.72rem] font-semibold text-accent">ملاحظة ترافق المسودة — ولا تعطلها</p><p className="mt-1 text-[.8rem] leading-relaxed text-ink">{decision.evidenceGate.explanation}</p>{decision.evidenceGate.missing.map((item) => <p key={item} className="mt-1 text-[.74rem] leading-relaxed text-soft">{item}</p>)}</div>}
 
       <div className="mt-6 flex flex-wrap gap-3">
         {canStart && <button type="button" disabled={busy} className={primary} onClick={() => onStart(decision)}>{busy ? 'أكتب المقال…' : decision.evidenceGate.ready ? 'ابدأ المقال' : 'ابدأ المقال وسجّل الملاحظة'}</button>}
@@ -1534,7 +1534,7 @@ function EvidenceChainCard({ chain }: { chain: ReturnType<typeof buildEvidenceCh
       </summary>
       <div className="mt-4 grid gap-3 border-t border-hair pt-4">
         {chain.alerts.map((alert) => <p key={alert} className="rounded-xl border border-accent/30 bg-canvas px-3 py-2 text-[.7rem] leading-relaxed text-accent">{alert}</p>)}
-        {chain.claims.map((claim) => <div key={claim.id} className="border-b border-hair/70 pb-3 last:border-0 last:pb-0"><div className="flex flex-wrap items-start justify-between gap-2"><p className="max-w-3xl text-[.74rem] leading-relaxed text-ink">{claim.text}</p><span className="shrink-0 text-[.64rem] font-semibold text-soft">{claim.support === 'strong' ? 'دعم قوي' : claim.support === 'partial' ? 'دعم جزئي' : 'لا سند مرتبط بعد'}</span></div>{claim.sourceIds.length > 0 && <p className="mt-1 text-[.64rem] leading-relaxed text-soft">{claim.sourceIds.map((id) => sourceById.get(id)?.title || id).join(' · ')}</p>}</div>)}
+        {chain.claims.map((claim) => <div key={claim.id} className="border-b border-hair pb-3 last:border-0 last:pb-0"><div className="flex flex-wrap items-start justify-between gap-2"><p className="max-w-3xl text-[.74rem] leading-relaxed text-ink">{claim.text}</p><span className="shrink-0 text-[.64rem] font-semibold text-soft">{claim.support === 'strong' ? 'دعم قوي' : claim.support === 'partial' ? 'دعم جزئي' : 'لا سند مرتبط بعد'}</span></div>{claim.sourceIds.length > 0 && <p className="mt-1 text-[.64rem] leading-relaxed text-soft">{claim.sourceIds.map((id) => sourceById.get(id)?.title || id).join(' · ')}</p>}</div>)}
         {!chain.claims.length && <p className="text-[.72rem] leading-relaxed text-soft">تُبنى السلسلة تلقائياً من النسخة النهائية والمصادر الخاصة والأبحاث المرتبطة، من دون نشر بياناتها للزوار.</p>}
       </div>
     </details>
@@ -2038,7 +2038,7 @@ function PublicationPassportCard({ passport }: { passport: PublicationPassportDr
       <div className={`mt-3 rounded-xl border px-3 py-3 ${passport.semanticCourt.status === 'passed' ? 'border-emerald-200 bg-emerald-50/70' : passport.semanticCourt.status === 'blocked' ? 'border-red-200 bg-red-50/60' : 'border-amber-200 bg-amber-50/60'}`} data-semantic-court={passport.semanticCourt.status}>
         <div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-[.72rem] text-ink">محكمة المعنى متعددة الوسائط</strong><span className={`text-[.68rem] font-bold ${passport.semanticCourt.status === 'passed' ? 'text-emerald-700' : passport.semanticCourt.status === 'blocked' ? 'text-red-700' : 'text-amber-800'}`}>{passport.semanticCourt.score}٪ · {passport.semanticCourt.status === 'passed' ? 'مجتازة' : passport.semanticCourt.status === 'blocked' ? 'أوقفت النشر' : passport.semanticCourt.status === 'review' ? 'مراجعة' : 'بانتظار الطبقات'}</span></div>
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">{Object.values(passport.semanticCourt.chambers).map((chamber) => <span key={chamber.label} className={`text-[.64rem] ${chamber.status === 'passed' ? 'text-emerald-700' : chamber.status === 'blocked' ? 'text-red-700' : 'text-soft'}`}>{chamber.status === 'passed' ? '✓' : chamber.status === 'blocked' ? '✕' : '○'} {chamber.label}</span>)}</div>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-hair/70 pt-2" data-adversarial-misunderstanding={passport.semanticCourt.adversarialSimulation.status}>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-hair pt-2" data-adversarial-misunderstanding={passport.semanticCourt.adversarialSimulation.status}>
           <span className="text-[.64rem] font-semibold text-ink">محاكي سوء الفهم العدائي</span>
           <span className={`text-[.64rem] font-bold ${passport.semanticCourt.adversarialSimulation.status === 'passed' ? 'text-emerald-700' : passport.semanticCourt.adversarialSimulation.status === 'blocked' ? 'text-red-700' : 'text-amber-800'}`}>{passport.semanticCourt.adversarialSimulation.score}٪ · {passport.semanticCourt.adversarialSimulation.highRiskCount ? `${passport.semanticCourt.adversarialSimulation.highRiskCount} خطر مرتفع` : passport.semanticCourt.adversarialSimulation.status === 'passed' ? 'محصن' : 'يحتاج تحصين'}</span>
         </div>
@@ -2088,7 +2088,7 @@ function ImpactMirrorInline({
         <div className="grid gap-2 sm:grid-cols-[10rem_minmax(0,1fr)_auto]">
           <select className="rounded-lg border border-hair bg-canvas px-3 py-2 text-[.68rem] text-ink" value={source} onChange={(event) => setSource(event.target.value as ImpactObservationSource)}>{IMPACT_SOURCE_LABELS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
           <input className="rounded-lg border border-hair bg-canvas px-3 py-2 text-[.68rem] text-ink outline-none focus:border-accent" value={text} onChange={(event) => setText(event.target.value)} placeholder="اكتب كيف أعاد القارئ الفكرة بكلماته — بلا اسم…" />
-          <button type="button" className="rounded-full border border-accent/35 px-3 py-2 text-[.66rem] font-semibold text-accent disabled:opacity-50" disabled={busy || text.trim().length < 12} onClick={() => void save()}>{busy ? 'أحفظ…' : 'سجل الشاهد'}</button>
+          <button type="button" className="rounded-full border border-accent/[.35] px-3 py-2 text-[.66rem] font-semibold text-accent disabled:opacity-50" disabled={busy || text.trim().length < 12} onClick={() => void save()}>{busy ? 'أحفظ…' : 'سجل الشاهد'}</button>
         </div>
       </div>
     </details>
@@ -2126,7 +2126,7 @@ function CurrentEventsCard({
         </span>
       </summary>
       <div className="mt-5 border-t border-hair pt-5">
-        {opportunities.length > 0 && <div className="mb-5 grid gap-3" data-opportunity-radar="verified">{opportunities.map((opportunity) => <article key={opportunity.id} className="rounded-2xl border border-accent/35 bg-accent/[.04] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-[.72rem] font-bold text-accent">رادار اللحظة المناسبة · ثقة {opportunity.confidence}٪</span><span className="text-[.68rem] text-soft">صلة {opportunity.breakdown.topical} · حداثة {opportunity.breakdown.recency} · دليل {opportunity.breakdown.evidence}</span></div><a href={opportunity.event.url} target="_blank" rel="noreferrer" className="mt-2 block font-display text-[.96rem] font-semibold leading-relaxed text-ink hover:text-accent">{opportunity.event.title}</a><p className="mt-2 text-[.76rem] leading-relaxed text-soft">{opportunity.whyNow}</p><a href={`/articles/${opportunity.article.slug}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[.76rem] font-semibold text-accent hover:underline">المادة التي استيقظت: {opportunity.article.title} ↗</a></article>)}</div>}
+        {opportunities.length > 0 && <div className="mb-5 grid gap-3" data-opportunity-radar="verified">{opportunities.map((opportunity) => <article key={opportunity.id} className="rounded-2xl border border-accent/[.35] bg-accent/[.04] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-[.72rem] font-bold text-accent">رادار اللحظة المناسبة · ثقة {opportunity.confidence}٪</span><span className="text-[.68rem] text-soft">صلة {opportunity.breakdown.topical} · حداثة {opportunity.breakdown.recency} · دليل {opportunity.breakdown.evidence}</span></div><a href={opportunity.event.url} target="_blank" rel="noreferrer" className="mt-2 block font-display text-[.96rem] font-semibold leading-relaxed text-ink hover:text-accent">{opportunity.event.title}</a><p className="mt-2 text-[.76rem] leading-relaxed text-soft">{opportunity.whyNow}</p><a href={`/articles/${opportunity.article.slug}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[.76rem] font-semibold text-accent hover:underline">المادة التي استيقظت: {opportunity.article.title} ↗</a></article>)}</div>}
         <p className="mb-4 text-[.78rem] leading-relaxed text-soft">لا يقترح الرادار إحياء مادة إلا برابط مصدر، وتوقيت معلوم، وتطابق دلالي يتجاوز {opportunities[0]?.threshold || 78}٪. ما دون ذلك يظل حدثاً للقراءة فقط.</p>
         {items.length ? (
           <div className="grid gap-3 md:grid-cols-2">
@@ -3958,7 +3958,7 @@ ${effectivePurpose}`,
           {editorialHistory.length > 0 && <details className={`${card} group`}>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ{editorialCalibrationProfile.sampleSize >= 1 ? ` · ${editorialCalibrationProfile.sampleSize} نتيجة دخلت المعايرة` : ''}{(editorialCalibrationProfile.stubbornWins || 0) > 0 ? ` · ${editorialCalibrationProfile.stubbornWins} انتصار عناد صحّح ميزانه` : ''}</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" className="rounded-full border border-accent/35 px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white" onClick={() => setWeeklySessionOpen((open) => !open)}>
+              <button type="button" className="rounded-full border border-accent/[.35] px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white" onClick={() => setWeeklySessionOpen((open) => !open)}>
                 {weeklySessionOpen ? 'أغلق الجلسة الأسبوعية' : 'جلسة المجلس الأسبوعية — آخر أفكارك مرتبة'}
               </button>
             </div>
@@ -4001,7 +4001,7 @@ ${effectivePurpose}`,
       {view === 'write' && (
         <>
         {generating && <section className={`${card} border-accent/30`} aria-live="polite" data-article-generation-state="working">
-          <div className="h-1.5 overflow-hidden rounded-full bg-hair/60"><div className="h-full w-2/3 animate-pulse rounded-full bg-accent" /></div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--c-hair)]"><div className="h-full w-2/3 animate-pulse rounded-full bg-accent" /></div>
           <h2 className="mt-4 font-display text-xl font-semibold text-ink">أكتب المقال الآن داخل المحرر.</h2>
           <p className="mt-2 text-[.8rem] leading-relaxed text-soft">انتقلت الفكرة والعنوان وملاحظات مجلس التحرير. سيظهر النص هنا فور اكتمال الكتابة، من دون نقلك إلى أعلى الصفحة.</p>
         </section>}

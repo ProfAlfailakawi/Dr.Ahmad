@@ -382,7 +382,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           {summary.trend.map((day) => (
             <div key={day.date} className="flex h-full min-w-0 flex-col items-center justify-end gap-2">
               <span className="text-[.72rem] text-soft">{ar(day.count)}</span>
-              <span className="w-full max-w-10 rounded-t-md bg-accent/80 transition-[height]" style={{ height: `${day.count ? Math.max((day.count / trendMax) * 120, 5) : 2}px` }} />
+              <span className="w-full max-w-10 rounded-t-md bg-accent/[.08]0 transition-[height]" style={{ height: `${day.count ? Math.max((day.count / trendMax) * 120, 5) : 2}px` }} />
               <time className="text-[.58rem] text-soft sm:text-[.65rem]" dateTime={day.date}>{day.date.slice(5).replace('-', '/')}</time>
             </div>
           ))}
@@ -394,7 +394,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         <h2 className="mt-1 font-display text-xl font-semibold text-ink">أكثر الانتقالات تكراراً</h2>
         {summary.journeys.length ? <ol className="mt-5 grid gap-3">{summary.journeys.slice(0, 10).map((row) => <li key={row.id} className="grid gap-2 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] md:grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_auto] md:items-center">
           <span className="min-w-0 truncate text-ink" title={row.from}>{row.human.from}</span>
-          <span className="hidden h-px bg-accent/45 md:block" aria-hidden="true" />
+          <span className="hidden h-px bg-accent/[.45] md:block" aria-hidden="true" />
           <span className="min-w-0 truncate text-ink" title={row.to}>{row.human.to}</span>
           <span className="w-fit rounded-full border border-hair px-2.5 py-1 text-accent">{ar(row.count)}</span>
         </li>)}</ol> : <p className="mt-4 text-[.86rem] text-soft">لا توجد بيانات كافية بعد.</p>}

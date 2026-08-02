@@ -88,7 +88,7 @@ const DialogueScriptView = memo(function DialogueScriptView({ script, activeInde
                 type="button"
                 onClick={() => onJump(chapter.startSec)}
                 aria-current={index === activeChapter ? 'true' : undefined}
-                className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-[.7rem] transition-colors ${index === activeChapter ? 'border-accent bg-accent/8 text-accent' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+                className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-[.7rem] transition-colors ${index === activeChapter ? 'border-accent bg-accent/[.08] text-accent' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
               >
                 <span className="text-[.62rem] opacity-70">{ar(chapter.index)}</span>
                 <span className="truncate">{chapter.title}</span>
@@ -113,7 +113,7 @@ const DialogueScriptView = memo(function DialogueScriptView({ script, activeInde
                 disabled={!seekable}
                 aria-current={isActive ? 'true' : undefined}
                 onClick={() => seekable && onJump(line.startSec as number)}
-                className={`block w-full rounded-lg px-2.5 py-1.5 text-start text-[.78rem] leading-relaxed transition-colors ${isActive ? 'bg-accent/8 text-ink' : 'text-soft'} ${seekable ? 'hover:bg-wash hover:text-ink' : 'cursor-default'}`}
+                className={`block w-full rounded-lg px-2.5 py-1.5 text-start text-[.78rem] leading-relaxed transition-colors ${isActive ? 'bg-accent/[.08] text-ink' : 'text-soft'} ${seekable ? 'hover:bg-wash hover:text-ink' : 'cursor-default'}`}
               >
                 {line.speaker && <span className={`me-1.5 text-[.68rem] font-semibold ${isActive ? 'text-accent' : 'text-soft/80'}`}>{line.speaker}:</span>}
                 {line.text}
@@ -381,9 +381,9 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
         aria-expanded={expanded}
         className={compact
           ? 'group flex min-h-11 w-full items-center gap-2 px-1 text-start transition-colors hover:text-accent'
-          : 'group flex w-full items-center gap-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-start transition-colors hover:border-accent/45'}
+          : 'group flex w-full items-center gap-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-start transition-colors hover:border-accent/[.45]'}
       >
-        <span className={`flex shrink-0 items-center justify-center text-accent ${compact ? 'h-9 w-9' : 'h-9 w-9 rounded-full bg-accent/8'}`}><AudioWave dialogue={isDialogue} /></span>
+        <span className={`flex shrink-0 items-center justify-center text-accent ${compact ? 'h-9 w-9' : 'h-9 w-9 rounded-full bg-accent/[.08]'}`}><AudioWave dialogue={isDialogue} /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-[.82rem] font-semibold text-ink">استمع</span>
           {!compact && <span className="mt-0.5 block truncate text-[.7rem] text-soft">{anyActive ? player.track?.label : sources.length > 1 ? `${sources.length.toLocaleString('en-US')} تجارب صوتية` : source.label}</span>}
@@ -392,7 +392,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
       </button>
 
       {expanded && (
-        <section className="mt-3 rounded-xl border border-hair bg-wash/55 p-4 md:p-5" aria-label="مشغل المقال الصوتي">
+        <section className="mt-3 rounded-xl border border-hair bg-wash/[.55] p-4 md:p-5" aria-label="مشغل المقال الصوتي">
           <div className="flex items-center gap-3">
             <button
               type="button"

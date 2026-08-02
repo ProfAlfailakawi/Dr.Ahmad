@@ -55,7 +55,6 @@ export default function Publications() {
                   )}
                 </div>
                 <h2 className="mt-3 break-words font-display text-[1rem] font-medium leading-[1.45] text-ink sm:mt-5 sm:text-[1.2rem] md:text-[1.3rem]">{b.title}</h2>
-                {b.isbn && <span className="mt-1 block text-[.78rem] text-soft">ردمك {b.isbn}</span>}
               </Link>
             </motion.div>
           ))}

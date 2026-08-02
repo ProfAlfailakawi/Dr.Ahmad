@@ -70,7 +70,7 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
         aria-expanded={expanded}
         className={`group flex w-full items-start gap-3.5 px-1 py-4 text-start transition-colors md:px-2 ${expanded ? '' : 'border-b border-hair hover:bg-wash/70'}`}
       >
-        <span className={`mt-1.5 shrink-0 text-[.72rem] transition-colors ${playing ? 'text-accent' : 'text-accent/65 group-hover:text-accent'}`}>
+        <span className={`mt-1.5 shrink-0 text-[.72rem] transition-colors ${playing ? 'text-accent' : 'text-accent/[.65] group-hover:text-accent'}`}>
           {playing ? '❚❚' : '▷'}
         </span>
         <span className="min-w-0 flex-1">
@@ -90,7 +90,7 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
           والنصّ المتزامن — لا نسخةٌ مصغّرة منه. ما يراه الزائر هنا هو ما يراه
           هناك، فلا يتعلّم واجهتين. ولا يُركَّب إلا للصفّ المفتوح وحده. */}
       {expanded && (
-        <div className="border-b border-hair bg-wash/35 px-1 pb-5 md:px-2">
+        <div className="border-b border-hair bg-wash/[.35] px-1 pb-5 md:px-2">
           <AudioPlayer
             sources={[{
               key: 'dialogue',
@@ -210,7 +210,7 @@ export default function Listen() {
             <button
               type="button"
               onClick={() => open(resume, { atQuestion: !resumeIsContinuation })}
-              className="flex w-full items-center gap-3.5 rounded-xl border border-hair bg-wash/55 px-4 py-3.5 text-start transition-colors hover:border-accent/45 md:px-5"
+              className="flex w-full items-center gap-3.5 rounded-xl border border-hair bg-wash/[.55] px-4 py-3.5 text-start transition-colors hover:border-accent/[.45] md:px-5"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-[.78rem] text-white">▷</span>
               <span className="min-w-0">
@@ -224,7 +224,7 @@ export default function Listen() {
         )}
       </section>
 
-      <section className="sticky top-16 z-[120] mt-6 border-y border-hair bg-canvas/92 px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
+      <section className="sticky top-16 z-[120] mt-6 border-y border-hair bg-canvas/[.92] px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
         <div className="mx-auto grid max-w-shell gap-3 lg:grid-cols-[minmax(240px,.55fr)_minmax(0,1fr)] lg:items-center">
           <div className="relative">
             <input

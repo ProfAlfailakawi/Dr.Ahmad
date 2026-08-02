@@ -320,7 +320,7 @@ export default function HumanCoreHero() {
             transition={{ duration: 0.52, delay: 0.62, ease: EASE }}
           >
             <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
-            <p className="human-core__tagline mt-1.5 text-[.95rem] font-light">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
+            <p className="human-core__tagline mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[.95rem] font-light"><span className="whitespace-nowrap">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي</span><span className="whitespace-nowrap">· باحث</span><span className="whitespace-nowrap">· مستشار</span></p>
           </motion.div>
         </div>
 

@@ -394,7 +394,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
                   <div className="min-w-0"><p className="truncate text-[.84rem] font-semibold text-ink">{activeCampaign.name}</p><p className="mt-1 text-[.68rem] text-soft">{campaignStateLabel[activeCampaign.state] || activeCampaign.state} · بدأت {campaignDate(activeCampaign.startedAt)}</p></div>
                   <span className="rounded-full border border-accent/25 bg-accent/[.06] px-3 py-1 text-[.7rem] font-semibold text-accent">{activeCampaign.completed} من {activeCampaign.total}</span>
                 </div>
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-hair/55"><div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${activeCampaign.total ? Math.min(100, Math.round((activeCampaign.completed / activeCampaign.total) * 100)) : 0}%` }} /></div>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-[color:var(--c-hair)]"><div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${activeCampaign.total ? Math.min(100, Math.round((activeCampaign.completed / activeCampaign.total) * 100)) : 0}%` }} /></div>
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
                   <div className="rounded-xl border border-hair bg-canvas px-3 py-2"><span className="block text-[.64rem] text-soft">الناجح</span><strong className="font-display text-xl text-ink">{activeCampaign.sent}</strong></div>
                   <div className="rounded-xl border border-hair bg-canvas px-3 py-2"><span className="block text-[.64rem] text-soft">الفاشل</span><strong className="font-display text-xl text-ink">{activeCampaign.failed}</strong></div>

@@ -105,7 +105,7 @@ export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab:
         }}
       >
         <div
-          className={`relative rounded-[1.5rem] border border-hair bg-canvas/92 p-2 shadow-[0_24px_70px_-48px_rgba(21,22,26,.48)] backdrop-blur-xl transition-[transform,opacity,box-shadow] duration-300 ease-out ${railExpanded ? 'translate-x-0 opacity-100' : 'translate-x-[52px] opacity-30 shadow-none'}`}
+          className={`relative rounded-[1.5rem] border border-hair bg-canvas/[.92] p-2 shadow-[0_24px_70px_-48px_rgba(21,22,26,.48)] backdrop-blur-xl transition-[transform,opacity,box-shadow] duration-300 ease-out ${railExpanded ? 'translate-x-0 opacity-100' : 'translate-x-[52px] opacity-30 shadow-none'}`}
           aria-label={railExpanded ? 'قائمة الإدارة مفتوحة' : 'مرّر المؤشر هنا لإظهار قائمة الإدارة'}
         >
           <div className="grid gap-2">
@@ -122,7 +122,7 @@ export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab:
                   aria-label={`${group.label}${groupActive ? ' — القسم الحالي' : ''}`}
                   title={group.label}
                   onClick={() => setOpenArea((value) => value === group.area ? null : group.area)}
-                  className={`group relative flex h-14 w-full items-center justify-center rounded-[1.05rem] border transition-all duration-200 ${expanded || groupActive ? 'border-accent bg-accent text-white shadow-[0_12px_28px_-18px_rgba(45,76,105,.85)]' : 'border-transparent bg-wash/55 text-accent hover:-translate-y-0.5 hover:border-hair hover:bg-wash'}`}
+                  className={`group relative flex h-14 w-full items-center justify-center rounded-[1.05rem] border transition-all duration-200 ${expanded || groupActive ? 'border-accent bg-accent text-white shadow-[0_12px_28px_-18px_rgba(45,76,105,.85)]' : 'border-transparent bg-wash/[.55] text-accent hover:-translate-y-0.5 hover:border-hair hover:bg-wash'}`}
                 >
                   <span aria-hidden className="text-[1.05rem] font-semibold leading-none">{group.icon}</span>
                   {groupActive && !expanded && <span aria-hidden className="absolute -left-[5px] top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-accent" />}

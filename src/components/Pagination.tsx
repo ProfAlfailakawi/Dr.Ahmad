@@ -130,7 +130,6 @@ export function Pagination({
         )}
         {arrow('next')}
       </div>
-      <p className="mt-3 text-center text-[.68rem] text-soft/75">الصفحة {page} من {pageCount}</p>
     </nav>
   )
 }

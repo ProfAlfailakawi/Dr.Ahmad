@@ -47,7 +47,7 @@ export function QuoteImage({ text, attribution }: { text: string; attribution: s
       <button
         type="button"
         onClick={download}
-        className="rounded-full border border-accent/35 px-3 py-1 text-[.64rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+        className="rounded-full border border-accent/[.35] px-3 py-1 text-[.64rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
       >
         نزّل الصورة
       </button>

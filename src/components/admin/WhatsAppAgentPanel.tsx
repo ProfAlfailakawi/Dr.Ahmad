@@ -866,7 +866,7 @@ export function WhatsAppAgentPanel() {
           </div>
 
           {status.health && !status.health.ready && (
-            <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4">
+            <div className="mt-4 rounded-2xl border border-accent/[.35] bg-canvas p-4">
               <p className="text-[.82rem] font-semibold text-accent">{status.health.label}</p>
               {status.health.why && <p className="mt-1 text-[.78rem] leading-relaxed text-ink">{status.health.why}</p>}
               {status.health.fix && <p className="mt-1 text-[.76rem] leading-relaxed text-soft">{status.health.fix}</p>}
@@ -877,7 +877,7 @@ export function WhatsAppAgentPanel() {
           )}
 
           {status.qrImage && !status.health?.ready && (
-            <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4 sm:p-5">
+            <div className="mt-4 rounded-2xl border border-accent/[.35] bg-canvas p-4 sm:p-5">
               <p className="text-[.82rem] font-semibold text-ink">اربط واتساب</p>
               <p className="mt-1 text-[.74rem] leading-relaxed text-soft">من الجوال: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم اجعل الرمز كاملاً داخل إطار الكاميرا. امسحه مرة واحدة فقط؛ إذا رفض الهاتف الربط فاتركه حتى تنتهي مهلة الحماية ولا تكرر المسح.</p>
               <div className="mx-auto mt-4 flex w-fit max-w-full justify-center overflow-hidden rounded-2xl bg-white p-3 sm:p-4">
@@ -898,7 +898,7 @@ export function WhatsAppAgentPanel() {
             </div>
           )}
           {status.pairing_code && !status.health?.ready && (
-            <div className="mt-4 rounded-2xl border border-accent/35 bg-canvas p-4">
+            <div className="mt-4 rounded-2xl border border-accent/[.35] bg-canvas p-4">
               <p className="text-[.8rem] font-semibold text-ink">رمز الاقتران</p>
               <p className="mt-2 font-mono text-2xl tracking-[.3em] text-accent">{status.pairing_code}</p>
             </div>

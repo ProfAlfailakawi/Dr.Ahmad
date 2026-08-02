@@ -73,7 +73,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
             href="/"
             style={{
               borderRadius: '999px',
-              border: '1px solid rgb(var(--c-hair, 21 22 26) / .18)',
+              border: '1px solid var(--c-hair, rgba(21, 22, 26, .18))',
               color: 'rgb(var(--c-ink, 21 22 26))',
               padding: '.7rem 1.6rem',
               fontSize: '.9rem',

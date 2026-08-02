@@ -170,7 +170,7 @@ export default function BookDetail() {
                   ['الناشر', book.publisher],
                   ['عدد الصفحات', book.pageCount],
                   ['ISBN / ردمك', book.isbn],
-                ].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-[.72rem] text-soft">{label}</dt><dd className={`mt-1 text-[.88rem] font-medium ${value ? 'text-ink' : 'text-soft/65'}`}>{value || 'غير موثّق بعد'}</dd></div>)}
+                ].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-[.72rem] text-soft">{label}</dt><dd className={`mt-1 text-[.88rem] font-medium ${value ? 'text-ink' : 'text-soft/[.65]'}`}>{value || 'غير موثّق بعد'}</dd></div>)}
               </dl>
 
               <div className="mt-9 grid gap-2">
@@ -214,7 +214,7 @@ export default function BookDetail() {
                 </span>
                 <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
               </summary>
-              <div className="whitespace-pre-line border-t border-hair bg-wash/45 px-5 py-6 text-[1rem] font-light leading-[2.05] text-ink/85 md:px-7 md:py-8">{longDescription}</div>
+              <div className="whitespace-pre-line border-t border-hair bg-wash/[.45] px-5 py-6 text-[1rem] font-light leading-[2.05] text-ink/[.85] md:px-7 md:py-8">{longDescription}</div>
             </details>
           </FadeUp>
 

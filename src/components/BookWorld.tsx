@@ -241,7 +241,7 @@ export function BookWorld({
             <h2 id="book-world-title" className="mt-2 font-display text-[clamp(1.55rem,3vw,2.2rem)] font-semibold leading-[1.35] text-ink">امتدادات الكتاب داخل الأرشيف</h2>
             <p className="mt-2 text-[.82rem] leading-[1.8] text-soft">خريطة مبنيّة من الكتاب، تصل مفاهيمه بما نُشر في الأرشيف من مقالات وأبحاث ولقاءات.</p>
           </div>
-          <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="rounded-full border border-accent/35 px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">المسار الفكري الكامل ←</Link>
+          <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="rounded-full border border-accent/[.35] px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">المسار الفكري الكامل ←</Link>
         </div>
 
         <div className="mt-6 grid gap-3">
@@ -300,7 +300,7 @@ export function BookWorld({
               </div>
               {selectedConcept && <div className="mt-3 text-[.76rem] leading-[1.85] text-soft">
                 <p>{selectedConcept.summary}</p>
-                <p className="mt-2 border-r-2 border-accent/35 pr-3 text-ink/80"><span className="font-semibold text-accent">سؤال للقراءة:</span> {selectedConcept.question}</p>
+                <p className="mt-2 border-r-2 border-accent/[.35] pr-3 text-ink/80"><span className="font-semibold text-accent">سؤال للقراءة:</span> {selectedConcept.question}</p>
               </div>}
             </div>
           </Disclosure>}
@@ -336,7 +336,7 @@ export function BookWorld({
                 <div className="grid gap-3">
                   {bookAnswer.map((match) => (
                     <figure key={`ask-${match.quote.id}`} className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
-                      <blockquote className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/85">{match.quote.text}</blockquote>
+                      <blockquote className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/[.85]">{match.quote.text}</blockquote>
                       <figcaption className="mt-2 flex flex-wrap items-center justify-between gap-2 pr-3 text-[.66rem] text-soft">
                         <span>ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</span>
                         <span className="flex flex-wrap items-center gap-3">
@@ -365,7 +365,7 @@ export function BookWorld({
                   <blockquote
                     onMouseUp={() => markHighlight(quote.id)}
                     onTouchEnd={() => markHighlight(quote.id)}
-                    className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/85"
+                    className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/[.85]"
                   >{quote.text}</blockquote>
                   <figcaption className="mt-2 flex flex-wrap items-center justify-between gap-2 pr-3 text-[.66rem] text-soft">
                     <span>
@@ -404,7 +404,7 @@ export function BookWorld({
           {activePath && <Disclosure eyebrow="استمرار الفكرة" title="مواد قريبة في المقالات والأبحاث" meta="مواد تلامس المحور نفسه في المقالات والأبحاث.">
             <div className="grid gap-2">
               {activeConnections.articles.map(({ item, score }) => (
-                <Link key={item.slug} to={`/articles/${item.slug}`} className="group grid gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/45 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <Link key={item.slug} to={`/articles/${item.slug}`} className="group grid gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/[.45] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                   <span className="min-w-0">
                     <strong className="block text-[.8rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{item.title}</strong>
                     <span className="mt-1 block text-[.66rem] text-soft">{bookArchiveDate(item) || 'مقال من الأرشيف'}</span>
@@ -413,7 +413,7 @@ export function BookWorld({
                 </Link>
               ))}
               {activeConnections.papers.map(({ item, score }) => (
-                <Link key={item.slug} to={`/research/${item.slug}`} className="group grid gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/45 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <Link key={item.slug} to={`/research/${item.slug}`} className="group grid gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/[.45] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                   <strong className="text-[.8rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{item.titleAr || item.title}</strong>
                   <span className="w-fit rounded-full bg-wash px-2.5 py-1 text-[.62rem] text-soft">صلة {score}</span>
                 </Link>

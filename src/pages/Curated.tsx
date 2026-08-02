@@ -206,7 +206,7 @@ function SourceLine({ c }: { c: Curio }) {
 }
 
 function RadarPanel({ items }: { items: Curio[] }) {
-  if (!items.length) return <p className="rounded-2xl border border-hair bg-wash/35 px-6 py-10 text-center text-[.84rem] text-soft">سيظهر هنا أحدث ما يلتقطه الرادار.</p>;
+  if (!items.length) return <p className="rounded-2xl border border-hair bg-wash/[.35] px-6 py-10 text-center text-[.84rem] text-soft">سيظهر هنا أحدث ما يلتقطه الرادار.</p>;
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -325,7 +325,7 @@ export default function Curated() {
           <div className="mx-auto mt-7 max-w-4xl" role="tabpanel">
             {feature === "today" && (
               <FadeUp key="today">
-                <CardWrap c={daily} className="block rounded-2xl border border-accent/35 bg-wash/55 p-7 md:p-9">
+                <CardWrap c={daily} className="block rounded-2xl border border-accent/[.35] bg-wash/[.55] p-7 md:p-9">
                   <span className="text-[.74rem] font-semibold text-accent">{daily.kind}</span>
                   <div className="mt-3"><CurioBody c={daily} /></div>
                   <SourceLine c={daily} />

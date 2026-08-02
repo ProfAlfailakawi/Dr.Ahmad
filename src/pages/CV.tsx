@@ -52,7 +52,7 @@ function CourseArchive({ items }: { items: CvTextItem[] }) {
   return (
     <div className="grid gap-4">
       {groups.map((group) => (
-        <details key={group.title} open={group.open} className="group overflow-hidden rounded-2xl border border-hair bg-wash/45">
+        <details key={group.title} open={group.open} className="group overflow-hidden rounded-2xl border border-hair bg-wash/[.45]">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 marker:hidden">
             <span className="font-display text-[1rem] font-semibold text-ink">{group.title}</span>
             <span className="flex items-center gap-3 text-[.78rem] text-soft">
@@ -66,7 +66,7 @@ function CourseArchive({ items }: { items: CvTextItem[] }) {
           <div className="border-t border-hair px-4 py-4 sm:px-5">
             <ul className="grid gap-2.5 md:grid-cols-2">
               {group.items.map((item, index) => (
-                <li key={item.id} className="rounded-xl border border-hair/80 bg-canvas px-4 py-3 text-[.84rem] font-light leading-[1.65] text-ink">
+                <li key={item.id} className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] font-light leading-[1.65] text-ink">
                   <span className="me-2 text-[.7rem] font-semibold text-accent/70">{index + 1}</span>
                   <span dir="auto">{item.text}</span>
                 </li>
@@ -146,7 +146,7 @@ export default function CV() {
             </div>
             <div className="mb-14 border-b border-hair pb-10 text-center">
               <p className="mx-auto max-w-[560px] text-[.78rem] font-light leading-[1.8] text-soft">بعض الأعمال لا تنتهي عند النشر؛ يتتبع السجل انتقالها إلى البحث والحوار العام والتطبيق، مع طريق يعود إلى أصل كل محطة.</p>
-              <Link to="/impact" reloadDocument className="mt-4 inline-block border-b border-accent/35 pb-1 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف مسارات الأثر الموثق ←</Link>
+              <Link to="/impact" reloadDocument className="mt-4 inline-block border-b border-accent/[.35] pb-1 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف مسارات الأثر الموثق ←</Link>
             </div>
           </FadeUp>
 
@@ -253,7 +253,7 @@ export default function CV() {
                     </div>
                     <ol className="mt-5 grid gap-3 md:grid-cols-2">
                       {papers.map((paper, index) => (
-                        <li key={paper.slug} className="group rounded-2xl border border-hair bg-canvas p-4 transition-colors hover:border-accent/55 hover:bg-wash">
+                        <li key={paper.slug} className="group rounded-2xl border border-hair bg-canvas p-4 transition-colors hover:border-accent/[.55] hover:bg-wash">
                           <a href={paper.url} className="block" aria-label={`فتح البحث: ${paper.title}`}>
                             <div className="flex items-start gap-3">
                               <span className="mt-0.5 flex h-7 min-w-7 items-center justify-center rounded-full border border-accent/30 text-[.7rem] font-semibold text-accent">{index + 1}</span>
@@ -262,7 +262,7 @@ export default function CV() {
                                 {paper.titleAr && paper.titleAr !== paper.title && (
                                   <p className="mt-1 text-[.78rem] font-light leading-[1.6] text-soft">{paper.titleAr}</p>
                                 )}
-                                <p dir="auto" className="mt-2 text-[.74rem] leading-[1.55] text-soft/85">{paper.journal}</p>
+                                <p dir="auto" className="mt-2 text-[.74rem] leading-[1.55] text-soft/[.85]">{paper.journal}</p>
                               </div>
                             </div>
                           </a>

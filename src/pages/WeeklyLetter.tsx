@@ -88,7 +88,7 @@ export default function WeeklyLetter() {
                 </h2>
 
                 {opening && (
-                  <p className="mt-7 max-w-[680px] border-r-2 border-accent/35 pe-1 ps-5 text-[1.06rem] font-light leading-[1.95] text-ink/85">
+                  <p className="mt-7 max-w-[680px] border-r-2 border-accent/[.35] pe-1 ps-5 text-[1.06rem] font-light leading-[1.95] text-ink/[.85]">
                     {opening}
                   </p>
                 )}
@@ -119,7 +119,7 @@ export default function WeeklyLetter() {
                   {rest.map((a, i) => (
                     <FadeUp key={a.slug} delay={Math.min(i * 0.02, 0.25)}>
                       <li className="relative ps-7 pb-9 last:pb-0">
-                        <span className="absolute -start-[5px] top-2 h-2.5 w-2.5 rounded-full bg-accent/45" />
+                        <span className="absolute -start-[5px] top-2 h-2.5 w-2.5 rounded-full bg-accent/[.45]" />
                         <Link to={`/articles/${a.slug}`} className="group block">
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[.74rem] text-soft">
                             <span className="font-semibold text-accent/80">الرسالة {arDigits(weekOrdinal(a.iso, earliestIso))}</span>

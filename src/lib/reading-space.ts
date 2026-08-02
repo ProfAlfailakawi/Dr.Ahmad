@@ -1,4 +1,4 @@
-import type { ArticleRecord } from "./cms";
+import type { ArticleRecord, MediaRecord } from "./cms";
 import type { PersistentTrack } from "./persistent-audio";
 
 export const READ_LAST_KEY = "read:last";
@@ -7,6 +7,7 @@ export const SAVED_KEY = "reader:saved:v1";
 export const READ_KEY = "reader:read:v1";
 export const QUOTES_KEY = "reader:quotes:v2";
 export const AUDIO_LAST_KEY = "audio:last:v1";
+export const MEDIA_SAVED_KEY = "media:watch-later:v1";
 export const PROGRESS_PREFIX = "reader:progress:v2:";
 export const SPACE_EVENT = "reader:space-changed";
 
@@ -107,6 +108,28 @@ export function toggleSavedArticle(article: ArticleSeed) {
   return !exists;
 }
 
+
+export function savedMediaSlugs() {
+  return readJson<unknown[]>(MEDIA_SAVED_KEY, [])
+    .map((item) => typeof item === "string" ? item : clean((item as { slug?: unknown })?.slug))
+    .filter((slug): slug is string => Boolean(slug));
+}
+
+export function isMediaSaved(slug: string) {
+  return savedMediaSlugs().includes(slug);
+}
+
+export function toggleSavedMedia(slug: string) {
+  const current = savedMediaSlugs();
+  const exists = current.includes(slug);
+  const next = exists
+    ? current.filter((item) => item !== slug)
+    : [slug, ...current.filter((item) => item !== slug)].slice(0, 60);
+  writeJson(MEDIA_SAVED_KEY, next);
+  notifyReadingSpace();
+  return !exists;
+}
+
 export function storeLastAudio(
   track: PersistentTrack,
   current: number,
@@ -137,8 +160,9 @@ export function progressFor(slug: string) {
   return Math.min(1, Math.max(0, Number(value.progress || 0)));
 }
 
-export function readingSpaceSnapshot(articles: ArticleRecord[]) {
+export function readingSpaceSnapshot(articles: ArticleRecord[], media: MediaRecord[] = []) {
   const bySlug = new Map(articles.map((article) => [article.slug, article]));
+  const mediaBySlug = new Map(media.map((item) => [item.slug, item]));
   const normalize = (item: StoredArticle): StoredArticle | null => {
     const article = bySlug.get(clean(item?.slug));
     return article ? { ...seedOf(article), at: Number(item.at || 0) } : null;
@@ -181,7 +205,10 @@ export function readingSpaceSnapshot(articles: ArticleRecord[]) {
             },
           }
         : audioRaw;
-  return { last, recent, saved, quotes, audio };
+  const savedMedia = savedMediaSlugs()
+    .map((slug) => mediaBySlug.get(slug))
+    .filter((item): item is MediaRecord => Boolean(item));
+  return { last, recent, saved, quotes, audio, savedMedia };
 }
 
 /**
@@ -189,10 +216,10 @@ export function readingSpaceSnapshot(articles: ArticleRecord[]) {
  * العنوان دائماً يعاد من المحتوى الحي. بذلك لا يعيد الكاش أو localStorage
  * عنواناً أو بطاقة حذفها الدكتور من الموقع.
  */
-export function sanitizeReadingSpace(articles: ArticleRecord[]) {
+export function sanitizeReadingSpace(articles: ArticleRecord[], media: MediaRecord[] = []) {
   if (!inBrowser()) return;
   const bySlug = new Map(articles.map((article) => [article.slug, article]));
-  const snapshot = readingSpaceSnapshot(articles);
+  const snapshot = readingSpaceSnapshot(articles, media);
 
   if (snapshot.last)
     writeJson(READ_LAST_KEY, {
@@ -210,6 +237,7 @@ export function sanitizeReadingSpace(articles: ArticleRecord[]) {
   writeJson(RECENT_KEY, snapshot.recent);
   writeJson(SAVED_KEY, snapshot.saved);
   writeJson(QUOTES_KEY, snapshot.quotes);
+  writeJson(MEDIA_SAVED_KEY, snapshot.savedMedia.map((item) => item.slug));
 
   const storedAudio = readLastAudio();
   if (snapshot.audio) writeJson(AUDIO_LAST_KEY, snapshot.audio);

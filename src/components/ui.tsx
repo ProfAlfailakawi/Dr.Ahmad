@@ -392,22 +392,9 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                               <span className="block">{it.label}</span>
                               {it.description && <span className="mt-0.5 block font-sans text-[.7rem] font-normal text-soft">{it.description}</span>}
                             </span>
-                            <span className="flex w-11 shrink-0 flex-col items-center pt-1 text-soft transition-colors group-hover:text-accent">
-                              <motion.svg
-                                aria-hidden
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.2"
-                                strokeLinecap="round"
-                                animate={{ rotate: expanded ? 180 : 0 }}
-                                transition={{ duration: 0.3, ease: EASE }}
-                              >
-                                <path d="M6 9l6 6 6-6" />
-                              </motion.svg>
-                              <span className="mt-1 text-[.58rem] font-normal leading-none">{expanded ? 'إغلاق' : 'فروع'}</span>
+                            <span className="inline-flex shrink-0 items-center gap-1.5 self-center rounded-full border border-hair px-2.5 py-1.5 text-[.62rem] font-normal text-soft transition-colors group-hover:border-accent group-hover:text-accent">
+                              <span>{expanded ? 'إغلاق' : 'فروع'}</span>
+                              <motion.svg aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.3, ease: EASE }}><path d="M6 9l6 6 6-6" /></motion.svg>
                             </span>
                           </button>
                           {it.showAllLink !== false && (
@@ -727,7 +714,7 @@ function SearchPalette({ close }: { close: () => void }) {
           <button type="button" onClick={close} className="min-h-11 px-2 text-[.75rem] text-soft transition-colors hover:text-accent">إغلاق</button>
         </div>
 
-        <nav aria-label="مسارات البحث" className="grid grid-cols-2 gap-2 border-b border-hair bg-wash/45 px-3 py-3 sm:px-5">
+        <nav aria-label="مسارات البحث" className="grid grid-cols-2 gap-2 border-b border-hair bg-wash/[.45] px-3 py-3 sm:px-5">
           <Link to={deepTo} onClick={close} className="group min-w-0 rounded-xl border border-hair bg-canvas px-3 py-3 transition hover:border-accent sm:px-4">
             <span className="block text-[.62rem] font-bold text-accent">نتائج وفلاتر</span>
             <span className="mt-1 flex items-center justify-between gap-2 text-[.82rem] font-semibold text-ink group-hover:text-accent"><span>البحث المتقدم</span><span aria-hidden>←</span></span>
@@ -1013,10 +1000,9 @@ export function TebyanProjectLink({ label = 'تبيان' }: { label?: string }) 
       rel="noopener noreferrer"
       aria-label="تبيان — منصة عامة مستقلة"
       title="تبيان — منصة عامة مستقلة"
-      className="tebyan-link group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair bg-canvas text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
+      className="tebyan-link inline-flex min-h-10 shrink-0 items-center rounded-full border border-hair px-3.5 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
     >
-      <img src="/tebyan-icon.png" alt="" className="h-5 w-5 rounded-full object-cover opacity-80 transition-opacity duration-300 group-hover:opacity-100" loading="lazy" />
-      <span className="sr-only">{label}</span>
+      {label}
     </a>
   )
 }
@@ -1029,14 +1015,9 @@ export function ScheduleProjectLink({ label = 'الجدول الدراسي' }: {
       rel="noopener noreferrer"
       aria-label={label}
       title={label}
-      className="schedule-link group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
+      className="schedule-link inline-flex min-h-10 shrink-0 items-center rounded-full border border-hair px-3.5 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
     >
-      <svg aria-hidden viewBox="0 0 20 20" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 3.2v2.4M14 3.2v2.4M4.1 7h11.8" />
-        <rect x="3.2" y="4.5" width="13.6" height="12.1" rx="2.1" />
-        <path d="M6.4 10.1h2.2M11.4 10.1h2.2M6.4 13.2h2.2M11.4 13.2h2.2" />
-      </svg>
-      <span className="sr-only">{label}</span>
+      {label}
     </a>
   )
 }
@@ -1044,5 +1025,5 @@ export function ScheduleProjectLink({ label = 'الجدول الدراسي' }: {
 /* ---------- Page transition wrapper ---------- */
 export function Page({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   useEffect(() => { window.scrollTo(0, 0) }, [])
-  return <div className={`signature-page w-full max-w-full overflow-x-hidden ${className}`}>{children}</div>
+  return <div className={`signature-page w-full max-w-full overflow-x-clip ${className}`}>{children}</div>
 }

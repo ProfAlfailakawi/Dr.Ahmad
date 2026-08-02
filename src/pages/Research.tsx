@@ -47,7 +47,7 @@ export default function Research() {
             <div className="mb-8 flex flex-wrap items-center justify-between gap-5 border-b border-hair pb-6">
               <div>
                 <span className="block text-[.82rem] font-semibold text-ink">الأرشيف العلمي المحكّم</span>
-                <span className="mt-1 block text-[.74rem] text-soft">{count} مع وصول مباشر إلى البيانات والمصادر الأصلية</span>
+                <span className="mt-1 block text-[.74rem] text-soft">{count} محكّماً بمصادر أصلية، مع وصول مباشر إلى البيانات والمنهج والنتائج</span>
               </div>
               <span className="flex items-center gap-2.5">
                 {academicProfiles.map((profileLink) => (
@@ -92,14 +92,10 @@ export default function Research() {
               return (
                 <FadeUp key={p.slug} delay={Math.min(i * 0.03, 0.3)}>
                   <li className="research-list-card overflow-hidden rounded-[26px] border">
-                    <div className="grid gap-4 p-5 sm:grid-cols-[48px_minmax(0,1fr)_auto] sm:items-center md:p-7">
+                    <div className="grid gap-4 p-5 sm:grid-cols-[48px_minmax(0,1fr)] sm:items-start md:p-7">
                       <span className="pt-1 font-display text-[.86rem] font-bold text-accent sm:self-start">{ar((paged.page - 1) * 12 + i + 1)}</span>
                       <div className="min-w-0">
-                        <div className="mb-3 flex flex-wrap gap-2">
-                          <span className={badge}>محكّم</span>
-                          {type && <span className={badge}>{type}</span>}
-                          {intelligence.fieldEvidence.sample && <span className={badge}>مصادر موثقة</span>}
-                        </div>
+                        {type && <div className="mb-3 flex flex-wrap gap-2"><span className={badge}>{type}</span></div>}
                         <Link to={`/research/${p.slug}`} dir="auto" className="research-title-link block text-[1.12rem] font-bold leading-[1.65] text-ink transition-colors hover:text-accent">{p.title}</Link>
                         {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-1 text-[.92rem] font-light leading-[1.8] text-soft">{p.titleAr}</p>}
                         {(journal || year) && (
@@ -108,8 +104,8 @@ export default function Research() {
                             {year && <span className="font-semibold text-accent">{year}</span>}
                           </p>
                         )}
+                        <Link to={`/research/${p.slug}#research-passport`} className="research-understand-link mt-4 inline-flex">افهم هذا البحث <span aria-hidden>←</span></Link>
                       </div>
-                      <Link to={`/research/${p.slug}#research-passport`} className="research-understand-link sm:self-center">افهم هذا البحث <span aria-hidden>←</span></Link>
                     </div>
                   </li>
                 </FadeUp>

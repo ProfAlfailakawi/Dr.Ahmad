@@ -635,7 +635,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
           </div>
         </div>
 
-        {meaningFingerprint && meaningReview && !meaningReview.ready && <div className="mt-4 rounded-xl border border-accent/35 bg-canvas px-4 py-3" data-meaning-drift-warning="true"><p className="text-[.76rem] font-semibold text-accent">بصمة المعنى</p><p className="mt-1 text-[.74rem] leading-relaxed text-soft">{meaningReview.explanation} لن يُرسل الحوار للتوليد حتى تبقى الأطروحة والتحفظات الجوهرية محفوظة.</p></div>}
+        {meaningFingerprint && meaningReview && !meaningReview.ready && <div className="mt-4 rounded-xl border border-accent/[.35] bg-canvas px-4 py-3" data-meaning-drift-warning="true"><p className="text-[.76rem] font-semibold text-accent">بصمة المعنى</p><p className="mt-1 text-[.74rem] leading-relaxed text-soft">{meaningReview.explanation} لن يُرسل الحوار للتوليد حتى تبقى الأطروحة والتحفظات الجوهرية محفوظة.</p></div>}
         <div className="mt-4 rounded-2xl border border-accent/20 bg-canvas px-4 py-4 text-[.8rem] leading-relaxed text-soft">
           <p className="font-semibold text-accent">في الوضع اليدوي</p>
           <ul className="mt-2 grid gap-1.5 pr-4">
@@ -650,7 +650,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
           <button
             type="button"
             onClick={restoreSavedDraft}
-            className="mt-3 inline-flex w-fit items-center rounded-full border border-accent/35 bg-canvas px-4 py-2 text-[.76rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+            className="mt-3 inline-flex w-fit items-center rounded-full border border-accent/[.35] bg-canvas px-4 py-2 text-[.76rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
           >
             استعادة المسودة المحفوظة ({availableDraft.length} مداخلة)
           </button>
@@ -701,7 +701,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
         </div>
 
         {queuedProof && (
-          <div role="status" className="mt-4 grid gap-2 rounded-2xl border border-accent/45 bg-canvas px-5 py-4">
+          <div role="status" className="mt-4 grid gap-2 rounded-2xl border border-accent/[.45] bg-canvas px-5 py-4">
             <p className="font-display text-[1.05rem] font-semibold text-ink">✓ وصل الحوار وبدأ التوليد</p>
             <p className="text-[.82rem] leading-relaxed text-soft">
               {queuedProof.turnCount} مداخلة · بصمة {queuedProof.sha}
@@ -774,7 +774,7 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
         ))}
       </section>
 
-      <button type="button" onClick={add} className="rounded-2xl border border-dashed border-accent/45 bg-wash px-5 py-4 text-[.82rem] font-semibold text-accent transition-colors hover:border-accent">إضافة مداخلة جديدة +</button>
+      <button type="button" onClick={add} className="rounded-2xl border border-dashed border-accent/[.45] bg-wash px-5 py-4 text-[.82rem] font-semibold text-accent transition-colors hover:border-accent">إضافة مداخلة جديدة +</button>
     </div>
   )
 }

@@ -423,7 +423,7 @@ export function AudioLibrary({ articles, onChanged }: Props) {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="ابحث باسم المقال أو التصنيف…"
-            className="min-h-11 w-full rounded-xl border border-hair bg-canvas px-4 text-[.84rem] text-ink outline-none transition-colors placeholder:text-soft/65 focus:border-accent"
+            className="min-h-11 w-full rounded-xl border border-hair bg-canvas px-4 text-[.84rem] text-ink outline-none transition-colors placeholder:text-soft/[.65] focus:border-accent"
           />
         </label>
         <div className="rail flex min-w-0 gap-1 overflow-x-auto pb-1">

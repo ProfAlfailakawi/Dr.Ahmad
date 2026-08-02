@@ -5,6 +5,7 @@ import { NextStep } from '../components/NextStep'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
+import { MediaSaveButton } from '../components/MySpace'
 import { useCmsContent } from '../lib/content'
 import { ideaWords } from '../lib/idea-life'
 import { SITE_URL } from '../data'
@@ -36,7 +37,7 @@ export default function MediaDetail() {
   const item = media.find((entry) => entry.slug === slug)
   const videoId = youtubeId(item?.url)
   const chapters = chaptersForVideo(videoId || '')
-  const thumbnail = item?.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : '')
+  const thumbnail = item?.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '')
   const topics = topicList(item?.topics)
   const [youtubeTranscript, setYoutubeTranscript] = useState('')
   const contextText = `${item?.title || ''} ${item?.topics || ''} ${youtubeTranscript.slice(0, 6_000)}`
@@ -114,7 +115,10 @@ export default function MediaDetail() {
                 {item.duration && <><span>·</span><span dir="ltr">{item.duration}</span></>}
               </div>
               <h1 className="mt-4 font-display text-[clamp(2rem,4.6vw,3.1rem)] font-bold leading-[1.35] text-ink"><Reveal>{item.title}</Reveal></h1>
-              <OwnerEdit tab="media" slug={item.slug} className="mt-3" />
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <MediaSaveButton slug={item.slug} compact={false} />
+                <OwnerEdit tab="media" slug={item.slug} />
+              </div>
               {topics.length > 0 && <div className="mt-5 flex flex-wrap gap-2">{topics.map((topic) => <span key={topic} className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.7rem] text-soft">{topic}</span>)}</div>}
             </header>
           </FadeUp>
@@ -167,7 +171,7 @@ export default function MediaDetail() {
                 <span><span id="transcript-title" className="block font-display text-xl font-semibold text-ink">النص المفرّغ</span><span className="mt-1 block text-[.7rem] text-soft">من النص العربي التلقائي المتاح في YouTube</span></span>
                 <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-transform group-open:rotate-45">+</span>
               </summary>
-              <div className="max-h-[34rem] overflow-y-auto whitespace-pre-line border-t border-hair bg-canvas px-5 py-6 text-[.9rem] leading-[2] text-ink/85 md:px-7">{youtubeTranscript}</div>
+              <div className="max-h-[34rem] overflow-y-auto whitespace-pre-line border-t border-hair bg-canvas px-5 py-6 text-[.9rem] leading-[2] text-ink/[.85] md:px-7">{youtubeTranscript}</div>
             </details>
           </FadeUp>}
 

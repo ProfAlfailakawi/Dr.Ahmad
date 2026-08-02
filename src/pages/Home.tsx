@@ -63,9 +63,9 @@ function DailySpark({ compact = false }: { compact?: boolean }) {
     <Link
       to="/curated"
       data-hover
-      className={`group relative block h-full overflow-hidden rounded-2xl border border-hair border-r-[3px] border-r-accent bg-wash transition-colors duration-300 hover:border-accent ${compact ? 'p-6 md:p-7' : 'p-8 md:p-11'}`}
+      className={`group relative block h-full overflow-hidden rounded-2xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent ${compact ? 'p-6 md:p-7' : 'p-8 md:p-11'}`}
     >
-      <span aria-hidden className={`pointer-events-none absolute left-5 top-2 select-none font-display leading-none text-accent/10 ${compact ? 'text-[5rem]' : 'text-[5.5rem] md:left-8 md:top-3 md:text-[9rem]'}`}>”</span>
+      <span aria-hidden className="pointer-events-none absolute left-5 top-5 h-8 w-8 rounded-full border border-accent/20" />
       <p className="relative mb-4 flex items-center gap-2.5 text-[.76rem] font-semibold text-accent">
         <span className="pulse relative h-1.5 w-1.5 rounded-full bg-accent" />
         فكرة اليوم · {c.kind}
@@ -506,7 +506,7 @@ function ThoughtCompass() {
               <Link to={`/articles/${a.slug}`} data-hover className="group flex h-full min-h-[170px] flex-col rounded-2xl border border-hair bg-canvas p-5 transition-colors duration-300 hover:border-accent md:p-6">
                 <time className="text-[.72rem] text-soft">{a.date}</time>
                 <h3 className="mt-2.5 font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent md:text-[1.12rem]">{a.title}</h3>
-                <span className="mt-auto pt-5 text-[.78rem] text-soft transition-colors group-hover:text-accent">اقرأ</span>
+                <span aria-hidden className="mt-auto pt-5 text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1">←</span>
               </Link>
             </FadeUp>
           ))}
@@ -517,7 +517,7 @@ function ThoughtCompass() {
               <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex min-h-[108px] w-[62vw] max-w-[252px] shrink-0 flex-col justify-between rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent md:w-auto md:max-w-none">
                 <span className="inline-flex w-fit rounded-full border border-hair px-2 py-0.5 text-[.66rem] text-soft">{item.tag}</span>
                 <span className="line-clamp-2 text-[.86rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{item.label}</span>
-                <span className="text-[.72rem] font-semibold text-accent">افتح المسار</span>
+                <span aria-hidden className="text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1">←</span>
               </Link>
             ))}
             <span aria-hidden className="w-px shrink-0 md:hidden" />
@@ -583,7 +583,7 @@ function LatestCard({ compact = false }: { compact?: boolean }) {
   const content = (
     <motion.div
       transition={{ duration: 0.4, ease: EASE }}
-      className={`group relative h-full overflow-hidden rounded-2xl border border-hair bg-wash ${compact ? 'p-7 md:p-9' : 'p-8 md:p-12'}`}
+      className={`group relative h-full overflow-hidden rounded-2xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent ${compact ? 'p-7 md:p-9' : 'p-8 md:p-12'}`}
     >
       <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-accent/[.07] blur-3xl" />
       <div className="relative flex h-full flex-col justify-between gap-7">
@@ -766,7 +766,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
           {items.map((item, index) => {
             const isBook = item.kind === 'book'
             const inner = (
-              <div className="group flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/45 md:min-h-[270px]">
+              <div className="group flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/[.45] md:min-h-[270px]">
                 {item.image ? (
                   <div className={`flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3 md:h-32' : item.external ? 'selected-media-frame h-28 overflow-hidden md:h-32' : 'h-28 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${item.image})` } as CSSProperties) : undefined}>
                     <img
@@ -944,7 +944,7 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
   const modal = (
     <AnimatePresence>
       {active && (
-        <motion.div className="home-thought-maps-overlay fixed inset-0 z-[1000] bg-ink/35 p-3 pt-[calc(4.75rem+env(safe-area-inset-top))] backdrop-blur-sm md:p-8 md:pt-24" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setActive(null)}>
+        <motion.div className="home-thought-maps-overlay fixed inset-0 z-[1000] bg-ink/[.35] p-3 pt-[calc(4.75rem+env(safe-area-inset-top))] backdrop-blur-sm md:p-8 md:pt-24" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setActive(null)}>
           <motion.div ref={dialogRef} id="home-thought-maps-dialog" role="dialog" aria-modal="true" aria-labelledby="home-thought-maps-title" tabIndex={-1} className="mx-auto h-full max-w-6xl overflow-y-auto rounded-3xl border border-hair bg-canvas shadow-2xl outline-none" initial={{ y: 18, scale: .985 }} animate={{ y: 0, scale: 1 }} exit={{ y: 12, scale: .99 }} transition={{ duration: .28, ease: EASE }}>
             <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hair bg-canvas/90 px-5 py-3 backdrop-blur md:px-7">
               <h2 id="home-thought-maps-title" className="font-display text-[1rem] font-semibold text-ink">خرائط الفكر والأثر</h2>
@@ -1013,9 +1013,9 @@ function HomeSocialFooter() {
               aria-expanded={newsletterOpen}
               aria-label="النشرة البريدية"
               title="النشرة البريدية"
-              className={`${iconButton} ${newsletterOpen ? 'border-accent bg-accent text-white hover:text-white' : ''}`}
+              className={`inline-flex min-h-10 shrink-0 items-center rounded-full border border-hair px-3.5 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent ${newsletterOpen ? 'border-accent bg-accent text-white hover:text-white' : ''}`}
             >
-              <SocialIcon name="Mail" size={16} />
+              النشرة
             </button>
             <TebyanProjectLink />
             <ScheduleProjectLink />

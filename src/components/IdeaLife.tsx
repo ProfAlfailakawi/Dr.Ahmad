@@ -86,7 +86,7 @@ function IdeaTrace({ article, model, embedded = false }: { article: ArticleRecor
 
   if (points.length < 2) return null
   return (
-    <section className={`${embedded ? 'mb-9' : 'mt-10'} rounded-[1.4rem] border border-hair bg-wash/35 px-4 py-5 md:px-6`} aria-labelledby="idea-trace-title">
+    <section className={`${embedded ? 'mb-9' : 'mt-10'} rounded-[1.4rem] border border-hair bg-wash/[.35] px-4 py-5 md:px-6`} aria-labelledby="idea-trace-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[.66rem] font-semibold text-accent">أثر الفكرة</p>
@@ -101,7 +101,7 @@ function IdeaTrace({ article, model, embedded = false }: { article: ArticleRecor
             <span className="mt-3 block text-[.62rem] font-semibold text-accent">{point.label}{point.year ? ` · ${point.year}` : ''}</span>
             <strong className="mt-1.5 block line-clamp-2 font-display text-[.8rem] font-medium leading-[1.6] text-ink">{point.title}</strong>
           </>
-          const cls = `group relative w-[72vw] max-w-[17rem] shrink-0 snap-start rounded-xl border px-4 pb-4 pt-3 text-start transition-colors md:w-auto md:flex-1 ${point.current ? 'border-accent/35 bg-accent/[.045]' : 'border-hair bg-canvas hover:border-accent/35'}`
+          const cls = `group relative w-[72vw] max-w-[17rem] shrink-0 snap-start rounded-xl border px-4 pb-4 pt-3 text-start transition-colors md:w-auto md:flex-1 ${point.current ? 'border-accent/[.35] bg-accent/[.045]' : 'border-hair bg-canvas hover:border-accent/[.35]'}`
           return <li key={`${point.label}-${point.title}-${index}`} className="contents">{point.to ? <Link to={point.to} className={cls}>{body}</Link> : point.href ? <a href={point.href} target="_blank" rel="noreferrer" className={cls}>{body}</a> : <div className={cls}>{body}</div>}</li>
         })}
       </ol>
@@ -138,8 +138,8 @@ function ThreadPanel({ nodes, close }: { nodes: ThreadNode[]; close: () => void 
           return (
             <li key={`${node.kind}-${node.title}`} className="relative pe-9 md:pe-0">
               {node.to
-                ? <Link to={node.to} onClick={close} className="group block h-full rounded-2xl border border-hair/70 bg-wash/45 px-4 py-4 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent/35 hover:bg-wash">{content}</Link>
-                : <a href={node.href} target="_blank" rel="noreferrer" className="group block h-full rounded-2xl border border-hair/70 bg-wash/45 px-4 py-4 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent/35 hover:bg-wash">{content}</a>}
+                ? <Link to={node.to} onClick={close} className="group block h-full rounded-2xl border border-hair bg-wash/[.45] px-4 py-4 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent/[.35] hover:bg-wash">{content}</Link>
+                : <a href={node.href} target="_blank" rel="noreferrer" className="group block h-full rounded-2xl border border-hair bg-wash/[.45] px-4 py-4 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent/[.35] hover:bg-wash">{content}</a>}
             </li>
           )
         })}
@@ -157,7 +157,7 @@ function RevisionPanel({ revisions, close }: { revisions: IdeaRevision[]; close:
       <SectionTitle index="01" title="رأيٌ راجع نفسه." sub="موضعان من الأرشيف نفسه: ما كتبتُه أولاً، وما صرتُ إليه بعد سنوات." />
       <ol className="mt-7 grid gap-5">
         {revisions.map((revision) => (
-          <li key={`${revision.older.slug}-${revision.newer.slug}-${revision.concept}`} className="rounded-2xl border border-hair/70 bg-wash/40 px-4 py-5 md:px-6">
+          <li key={`${revision.older.slug}-${revision.newer.slug}-${revision.concept}`} className="rounded-2xl border border-hair bg-wash/40 px-4 py-5 md:px-6">
             <p className="text-[.62rem] font-semibold text-accent">{revision.concept}</p>
             <p dir="auto" className="mt-2 font-display text-[.95rem] font-medium leading-[1.7] text-ink">{revision.line}</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -166,7 +166,7 @@ function RevisionPanel({ revisions, close }: { revisions: IdeaRevision[]; close:
                   key={side.slug}
                   to={`/articles/${side.slug}`}
                   onClick={close}
-                  className={`group block rounded-xl border px-4 py-4 transition-colors ${index ? 'border-accent/30 bg-accent/[.045]' : 'border-hair bg-canvas'} hover:border-accent/45`}
+                  className={`group block rounded-xl border px-4 py-4 transition-colors ${index ? 'border-accent/30 bg-accent/[.045]' : 'border-hair bg-canvas'} hover:border-accent/[.45]`}
                 >
                   <span className="block text-[.62rem] font-semibold text-accent">{index ? 'وصرتُ إليه' : 'كتبتُ أولاً'} · {side.year}</span>
                   <span dir="auto" className="mt-2 block text-[.78rem] font-light leading-[1.9] text-soft [overflow-wrap:anywhere]">«{side.excerpt}»</span>
@@ -194,7 +194,7 @@ function TestPanel({ model }: { model: ReturnType<typeof buildIdeaLife> }) {
 
       <section>
         <SectionTitle index="02" title="أقوى حجة في الجهة المقابلة" sub="اعتراض جاد، لا خصم ضعيف صُمّم كي يخسر." />
-        <p className="mt-5 text-[.94rem] font-light leading-[2.05] text-ink/82">{model.test.counterargument}</p>
+        <p className="mt-5 text-[.94rem] font-light leading-[2.05] text-ink/[.82]">{model.test.counterargument}</p>
       </section>
 
       <section>
@@ -241,7 +241,7 @@ function IdeaUpdatesPanel({ updates }: { updates: RemoteIdeaUpdate[] }) {
   if (!lead) return null
   const leadMeta = updateMeta[lead.kind || 'field']
   return (
-    <section aria-labelledby="idea-updates-title" className="relative overflow-hidden rounded-[1.75rem] border border-accent/20 bg-wash/45 px-5 py-6 md:px-7 md:py-7">
+    <section aria-labelledby="idea-updates-title" className="relative overflow-hidden rounded-[1.75rem] border border-accent/20 bg-wash/[.45] px-5 py-6 md:px-7 md:py-7">
       <span aria-hidden className="absolute -left-14 -top-16 h-40 w-40 rounded-full border border-accent/10" />
       <span aria-hidden className="absolute -left-7 -top-9 h-24 w-24 rounded-full border border-accent/10" />
       <div className="relative flex items-start justify-between gap-5 border-b border-hair pb-5">
@@ -363,7 +363,7 @@ function TimePanel({ article, model, close }: { article: ArticleRecord; model: R
           <Link
             to={`/decade?${new URLSearchParams({ عرض: 'تنبؤات', فكرة: article.title, مقال: article.slug }).toString()}`}
             onClick={close}
-            className="mt-7 inline-flex items-center gap-2 border-b border-accent/35 pb-1 text-[.78rem] font-semibold text-accent"
+            className="mt-7 inline-flex items-center gap-2 border-b border-accent/[.35] pb-1 text-[.78rem] font-semibold text-accent"
           >
             سجل التنبؤات والمراجعات الكامل <ArrowIcon />
           </Link>
@@ -400,7 +400,7 @@ function ImpactPanel({ article, model, close }: { article: ArticleRecord; model:
           <ol className="relative mt-7 space-y-7 before:absolute before:bottom-3 before:right-[7px] before:top-3 before:w-px before:bg-hair">
             {model.impact.map((node, index) => (
               <li key={`${node.label}-${node.title}-${index}`} className="relative ps-8">
-                <span className={`absolute right-0 top-[.35rem] flex h-4 w-4 items-center justify-center rounded-full border ${node.confidence === 'موثق' ? 'border-accent bg-accent' : 'border-accent/45 bg-canvas'}`}>
+                <span className={`absolute right-0 top-[.35rem] flex h-4 w-4 items-center justify-center rounded-full border ${node.confidence === 'موثق' ? 'border-accent bg-accent' : 'border-accent/[.45] bg-canvas'}`}>
                   {node.confidence === 'موثق' && <span className="h-1.5 w-1.5 rounded-full bg-canvas" />}
                 </span>
                 <ImpactLink node={node} close={close} />
@@ -479,7 +479,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
 
   const modal = open ? (
         <motion.div
-          className="reader-modal-overlay fixed inset-0 z-[320] flex items-end justify-center bg-ink/45 backdrop-blur-sm sm:items-center sm:p-5"
+          className="reader-modal-overlay fixed inset-0 z-[320] flex items-end justify-center bg-ink/[.45] backdrop-blur-sm sm:items-center sm:p-5"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           onClick={() => setOpen(false)}
         >
@@ -531,7 +531,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
 
   return (
     <>
-      <section className="idea-life-entry mt-5 border-y border-hair py-4" aria-label="حياة الفكرة">
+      <section className="idea-life-entry mt-5 border-t border-hair pt-4" aria-label="حياة الفكرة">
         <button ref={triggerButton} type="button" onClick={() => { if (isNew && model.updates.length) setTab('time'); setOpen(true) }} className="group flex w-full items-center justify-between gap-5 text-start">
           <span className="flex min-w-0 items-center gap-3.5">
             <OrbitMark />

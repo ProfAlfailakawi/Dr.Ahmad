@@ -781,7 +781,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                   return (
                     <button key={t.key} type="button" onPointerDown={(event) => firstPress(event, () => chooseTemplate(t.key))} onClick={(event) => { if (event.detail === 0) chooseTemplate(t.key) }}
                       title={isSmart ? `اخترناه لك — النصّ ${TONE_LABEL[smartTone]}` : t.hint}
-                      className={`rounded-full px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${template === t.key ? 'bg-canvas text-ink' : 'border border-canvas/35 text-canvas/85 hover:border-canvas'}`}>
+                      className={`rounded-full px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${template === t.key ? 'bg-canvas text-ink' : 'border border-canvas/[.35] text-canvas/[.85] hover:border-canvas'}`}>
                       {isSmart && '✨ '}{t.label}
                     </button>
                   )
@@ -789,7 +789,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                 <span className="mx-1 h-4 w-px bg-canvas/30" />
                 {CARD_FORMATS.map((f) => (
                   <button key={f.key} type="button" onPointerDown={(event) => firstPress(event, () => chooseFormat(f.key))} onClick={(event) => { if (event.detail === 0) chooseFormat(f.key) }} title={f.hint}
-                    className={`rounded-full px-3 py-1.5 text-[.72rem] font-semibold transition-colors ${format === f.key ? 'bg-canvas text-ink' : 'border border-canvas/35 text-canvas/85 hover:border-canvas'}`}>
+                    className={`rounded-full px-3 py-1.5 text-[.72rem] font-semibold transition-colors ${format === f.key ? 'bg-canvas text-ink' : 'border border-canvas/[.35] text-canvas/[.85] hover:border-canvas'}`}>
                     {f.label}
                   </button>
                 ))}
@@ -832,7 +832,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
               {quoteSaved && (
                 <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[.72rem] font-semibold text-canvas/80">
                   <span>حُفظت.</span>
-                  <button type="button" onPointerDown={(event) => firstPress(event, openReadingNotebook)} onClick={(event) => { if (event.detail === 0) openReadingNotebook() }} className="border-b border-canvas/45 pb-px text-canvas transition-colors hover:border-canvas">فتح دفتر القراءة</button>
+                  <button type="button" onPointerDown={(event) => firstPress(event, openReadingNotebook)} onClick={(event) => { if (event.detail === 0) openReadingNotebook() }} className="border-b border-canvas/[.45] pb-px text-canvas transition-colors hover:border-canvas">فتح دفتر القراءة</button>
                 </div>
               )}
               {downloadFeedback && <p className="mt-2 text-center text-[.7rem] font-medium text-canvas/80">{downloadFeedback}</p>}

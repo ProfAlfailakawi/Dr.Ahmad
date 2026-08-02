@@ -393,7 +393,7 @@ function scrollToSavedQuote(quote: SavedQuote) {
   return true
 }
 
-export function ReaderControls({ article }: { article: ReaderArticle }) {
+export function ReaderControls({ article, saveControl, onSerenity }: { article: ReaderArticle; saveControl?: ReactNode; onSerenity?: () => void }) {
   const { preferences, setPreferences } = useReaderPreferences()
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<'settings' | 'quotes'>('settings')
@@ -526,31 +526,11 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
         <button
           type="button"
           onClick={() => { setTab('settings'); setOpen(true) }}
-          aria-label="إعدادات القراءة"
-          title="إعدادات القراءة"
-          className="reader-aa-button flex h-11 min-w-11 items-center justify-center px-2 text-[.82rem] font-semibold text-ink transition-colors hover:text-accent"
+          aria-label="أدوات القراءة"
+          title="أدوات القراءة"
+          className="reader-aa-button flex h-11 min-w-11 items-center justify-center rounded-full border border-hair bg-canvas px-2 text-[.82rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
         >
           Aa
-        </button>
-        {/* «اقتباساتي» كانت مدفونةً تبويباً داخل اللوحة: لا تُرى حتى تُفتح
-            الإعدادات، فيظنّها القارئ غير موجودة. تخرج هنا بجوار Aa أيقونةً
-            صامتة — بلا كلمة ولا عدد — وتفتح اللوحة على اقتباساته مباشرةً. */}
-        <button
-          type="button"
-          onClick={() => { setTab('quotes'); setOpen(true) }}
-          aria-label={quotes.length ? `اقتباساتي (${quotes.length})` : 'اقتباساتي'}
-          title="اقتباساتي"
-          className="reader-quotes-button flex h-11 min-w-11 items-center justify-center px-2 text-ink transition-colors hover:text-accent"
-        >
-          {/* كانت هذه الأيقونة مرجعيةً (bookmark) مطابقةً لأيقونة «احفظ لاحقاً»
-              المجاورة، فبدا في شريط المقال زرّا حفظٍ متطابقان بلا فرق ظاهر
-              (ملاحظة الدكتور ٣١ يوليو). صارت علامة اقتباسٍ صريحة: الوظيفة
-              نفسها لم تُمسّ، والعين تفرّق بينهما من أول نظرة. */}
-          <svg aria-hidden viewBox="0 0 20 20" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8.2 5.4c-2 .5-3.4 2.1-3.4 4.2 0 1.5 1 2.6 2.4 2.6 1.3 0 2.2-.9 2.2-2.1 0-1.2-.8-2-1.9-2-.2 0-.4 0-.6.1.3-1 1.1-1.7 2.1-2Z" fill="currentColor" stroke="none" />
-            <path d="M15.4 5.4c-2 .5-3.4 2.1-3.4 4.2 0 1.5 1 2.6 2.4 2.6 1.3 0 2.2-.9 2.2-2.1 0-1.2-.8-2-1.9-2-.2 0-.4 0-.6.1.3-1 1.1-1.7 2.1-2Z" fill="currentColor" stroke="none" />
-            <path d="M4 15.6h12" opacity=".45" />
-          </svg>
         </button>
       </div>
 
@@ -558,7 +538,7 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
         {showResume && (
           <motion.aside
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-            className="reader-resume-prompt reader-hide-focus fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[225] mx-auto max-w-sm rounded-2xl border border-hair bg-canvas/96 px-4 py-3 shadow-[0_22px_60px_-34px_rgba(21,22,26,.65)] backdrop-blur"
+            className="reader-resume-prompt reader-hide-focus fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[225] mx-auto max-w-sm rounded-2xl border border-hair bg-canvas/[.96] px-4 py-3 shadow-[0_22px_60px_-34px_rgba(21,22,26,.65)] backdrop-blur"
           >
             <p className="text-[.8rem] font-semibold text-ink">متابعة من حيث توقفت؟</p>
             <div className="mt-2 flex items-center gap-2">
@@ -582,7 +562,7 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
               <header className="flex items-center justify-between gap-4 border-b border-hair pb-4">
                 <div>
                   <p className="text-[.72rem] font-semibold text-accent">قارئ هادئ</p>
-                  <h2 className="mt-1 font-display text-[1.22rem] font-semibold text-ink">{tab === 'settings' ? 'إعدادات القراءة' : 'اقتباساتي'}</h2>
+                  <h2 className="mt-1 font-display text-[1.22rem] font-semibold text-ink">{tab === 'settings' ? 'أدوات القراءة' : 'اقتباساتي'}</h2>
                 </div>
                 <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft">×</button>
               </header>
@@ -594,6 +574,20 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
 
               {tab === 'settings' ? (
                 <div className="mt-6 space-y-6">
+                  {(saveControl || onSerenity) && (
+                    <section className="rounded-2xl border border-hair bg-wash/[.45] p-4">
+                      <p className="text-[.76rem] font-semibold text-ink">أدوات المقال</p>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        {saveControl && <span className="inline-flex items-center gap-2"><span className="text-[.7rem] text-soft">حفظ للعودة</span>{saveControl}</span>}
+                        {onSerenity && (
+                          <button type="button" onClick={() => { setOpen(false); onSerenity() }} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
+                            <svg aria-hidden viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round"><path d="M5 12h14M7.5 8.5h9M9.5 15.5h5" /><circle cx="12" cy="12" r="9" /></svg>
+                            وضع السكينة
+                          </button>
+                        )}
+                      </div>
+                    </section>
+                  )}
                   <section>
                     <p className="text-[.76rem] font-semibold text-ink">حجم النص</p>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -632,20 +626,18 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
                     </div>
                     <p className="mt-2 text-[.68rem] leading-[1.7] text-soft">كل المقالات متوفّرة بنصٍّ مشكّلٍ كامل الحركات لقراءةٍ أدقّ.</p>
                   </section>
-                  {/* أُزيل «وضع التركيز» القديم بأمر الدكتور — حلّ محله «وضع السكينة» ۩
-                      بجوار هذا الزر، وهو أنقى وأشمل؛ ازدواج الوضعين كان يربك القارئ. */}
                   <p className="text-[.7rem] leading-[1.8] text-soft">تُحفظ هذه الاختيارات على هذا الجهاز فقط، وتُطبّق تلقائياً على بقية المقالات.</p>
                 </div>
               ) : (
                 <div className="mt-6">
-                  <p className="rounded-2xl border border-hair bg-wash/45 px-4 py-3 text-[.74rem] leading-[1.8] text-soft">الاقتباسات محفوظة على هذا الجهاز فقط، من دون حساب أو بريد إلكتروني.</p>
+                  <p className="rounded-2xl border border-hair bg-wash/[.45] px-4 py-3 text-[.74rem] leading-[1.8] text-soft">الاقتباسات محفوظة على هذا الجهاز فقط، من دون حساب أو بريد إلكتروني.</p>
                   {quotes.length ? (
                     <div className="mt-4 space-y-3">
                       {quotes.map((quote) => (
                         <article key={quote.id} className="rounded-2xl border border-hair bg-canvas p-4">
                           <blockquote className="font-display text-[.94rem] font-light leading-[1.9] text-ink">«{quote.quote}»</blockquote>
                       <p className="mt-2 text-[.7rem] leading-relaxed text-soft">{quote.title} · {new Date(quote.savedAt).toLocaleDateString('ar-KW')}</p>
-                      {quote.note && <p className="mt-2 rounded-xl bg-wash/55 px-3 py-2 text-[.72rem] leading-relaxed text-soft">ملاحظتك: {quote.note}</p>}
+                      {quote.note && <p className="mt-2 rounded-xl bg-wash/[.55] px-3 py-2 text-[.72rem] leading-relaxed text-soft">ملاحظتك: {quote.note}</p>}
                           <div className="mt-3 flex flex-wrap gap-2">
                             <button type="button" onClick={() => goToQuote(quote)} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft hover:border-accent hover:text-accent">الرجوع إلى موضعه</button>
                             <button type="button" onClick={async () => { await copyText(quote.quote); setCopiedId(quote.id); window.setTimeout(() => setCopiedId(''), 1200) }} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft hover:border-accent hover:text-accent">{copiedId === quote.id ? 'نُسخ' : 'نسخ'}</button>
@@ -670,14 +662,14 @@ export function ReaderControls({ article }: { article: ReaderArticle }) {
 
       <AnimatePresence>
         {xray && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="reader-modal-overlay fixed inset-0 z-[315] flex items-end justify-center overflow-y-auto overscroll-contain bg-ink/24 backdrop-blur-[1.5px] sm:items-center sm:p-5" onClick={() => setXray(null)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="reader-modal-overlay fixed inset-0 z-[315] flex items-end justify-center overflow-y-auto overscroll-contain bg-ink/[.24] backdrop-blur-[1.5px] sm:items-center sm:p-5" onClick={() => setXray(null)}>
             <motion.aside initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 14, opacity: 0 }} onClick={(event) => event.stopPropagation()} className="max-h-[86dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[1.6rem] border border-hair bg-canvas px-5 pb-[calc(1.2rem+env(safe-area-inset-bottom))] pt-5 shadow-[0_28px_80px_-40px_rgba(21,22,26,.75)] sm:rounded-[1.6rem] sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div><p className="text-[.7rem] font-semibold text-accent">توضيح داخل المقال</p><h2 className="mt-1 font-display text-[1.14rem] font-semibold text-ink">{xray.title}</h2></div>
                 <button type="button" onClick={() => setXray(null)} aria-label="إغلاق" className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft">×</button>
               </div>
-              <p className="mt-4 text-[.88rem] font-light leading-[1.95] text-ink/88">{xray.definition}</p>
-              {xray.note && <p className="mt-3 border-r border-accent/35 ps-3 text-[.76rem] leading-[1.85] text-soft">{xray.note}</p>}
+              <p className="mt-4 text-[.88rem] font-light leading-[1.95] text-ink/[.88]">{xray.definition}</p>
+              {xray.note && <p className="mt-3 border-r border-accent/[.35] ps-3 text-[.76rem] leading-[1.85] text-soft">{xray.note}</p>}
               {/* صوته هو: المصطلح كما ورد في كتبه، منسوباً إلى صفحته. لا
                   يحلّ محلّ التعريف العام أعلاه — يجيء بعده لأنه أعمق. */}
               {VOICE[xray.title] && (
@@ -1353,13 +1345,13 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
 
       <AnimatePresence>
         {sheet && currentSelection && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="reader-modal-overlay fixed inset-0 z-[320] flex items-end justify-center overflow-y-auto overscroll-contain bg-ink/38 backdrop-blur-[2px] sm:items-center sm:p-5" onClick={closeSheet}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="reader-modal-overlay fixed inset-0 z-[320] flex items-end justify-center overflow-y-auto overscroll-contain bg-ink/[.38] backdrop-blur-[2px] sm:items-center sm:p-5" onClick={closeSheet}>
             <motion.section initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 18, opacity: 0 }} onClick={(event) => event.stopPropagation()} className="max-h-[90dvh] w-full max-w-[560px] overflow-y-auto rounded-t-[1.75rem] border border-hair bg-canvas px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 shadow-[0_38px_90px_-42px_rgba(21,22,26,.8)] sm:rounded-[1.75rem] sm:p-7" dir="rtl">
               <header className="flex items-start justify-between gap-4">
                 <div><p className="text-[.7rem] font-semibold text-accent">{sheet === 'thread' ? 'الفكرة عبر السنوات' : sheet === 'card' ? 'بطاقة الاقتباس' : 'مشاركة الاقتباس'}</p><h2 className="mt-1 font-display text-[1.16rem] font-semibold text-ink">{current.title}</h2></div>
                 <button type="button" onClick={closeSheet} aria-label="إغلاق" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft">×</button>
               </header>
-              <blockquote className="mt-5 rounded-2xl border border-hair bg-wash/45 px-4 py-4 font-display text-[.9rem] font-light leading-[1.9] text-ink">«{currentSelection.text}»</blockquote>
+              <blockquote className="mt-5 rounded-2xl border border-hair bg-wash/[.45] px-4 py-4 font-display text-[.9rem] font-light leading-[1.9] text-ink">«{currentSelection.text}»</blockquote>
 
               {sheet === 'card' ? (
                 <div className="mt-5">
@@ -1372,7 +1364,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
                         <button type="button" onClick={downloadCard} className="rounded-full border border-hair px-5 py-2.5 text-[.76rem] font-semibold text-soft hover:border-accent hover:text-accent">حفظ الصورة</button>
                       </div>
                       <div className="mt-3 flex justify-center">
-                        <button type="button" onClick={keepQuote} aria-pressed={quoteSaved} className="rounded-full border border-accent/35 px-4 py-2 text-[.72rem] font-semibold text-accent transition-colors hover:bg-accent/8">
+                        <button type="button" onClick={keepQuote} aria-pressed={quoteSaved} className="rounded-full border border-accent/[.35] px-4 py-2 text-[.72rem] font-semibold text-accent transition-colors hover:bg-accent/[.08]">
                           {quoteSaved ? 'حُفظت في دفتر القراءة' : 'احتفظ بالجملة في دفتر القراءة'}
                         </button>
                       </div>

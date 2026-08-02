@@ -7,7 +7,7 @@
  */
 import rawQuotes from '../data/book-quotes.json' with { type: 'json' }
 import { bestBookConcept, relatedBookKnowledge } from './book-knowledge'
-import { buildSmartQueryPlan, extendSmartQueryPlan, scoreSmartFields } from './smart-search'
+import { buildSmartQueryPlan, extendSmartQueryPlan, scoreSmartFields } from './smart-search.ts'
 
 export type BookQuote = {
   id: string

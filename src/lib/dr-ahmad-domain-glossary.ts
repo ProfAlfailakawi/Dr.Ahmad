@@ -1,4 +1,4 @@
-import glossaryData from '../data/dr-ahmad-domain-glossary.json'
+import glossaryData from '../data/dr-ahmad-domain-glossary.json' with { type: 'json' }
 
 export type DomainMood = 'bright' | 'human' | 'institutional' | 'playful' | 'energetic' | 'academic' | 'future' | 'clear' | 'optimistic' | 'creative' | 'critical' | 'calm' | 'data' | 'dignified' | 'collaborative' | 'warm' | 'balanced' | 'immersive' | 'curious' | 'dynamic' | 'intellectual' | 'precise' | 'confident' | 'efficient'
 

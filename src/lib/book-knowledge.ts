@@ -1,5 +1,5 @@
 import rawKnowledge from '../data/book-knowledge.json' with { type: 'json' }
-import { buildSmartQueryPlan, scoreSmartFields } from './smart-search'
+import { buildSmartQueryPlan, scoreSmartFields } from './smart-search.ts'
 
 export type BookKnowledgeConcept = {
   id: string

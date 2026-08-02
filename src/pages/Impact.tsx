@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { FadeUp, Page, PageHead } from '../components/ui'
+import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
 import ImpactMap from '../components/ImpactMap'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { useSeo } from '../components/seo'
@@ -174,9 +174,11 @@ export default function Impact() {
             <button
               type="button"
               onClick={() => window.print()}
-              className="ms-auto rounded-full border border-hair px-4 py-1.5 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
+              aria-label="طباعة نسخة رسمية"
+              title="طباعة نسخة رسمية"
+              className="ms-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"
             >
-              نسخة رسمية للطباعة ⎙
+              <SocialIcon name="Print" size={16} />
             </button>
           </div>
         )}

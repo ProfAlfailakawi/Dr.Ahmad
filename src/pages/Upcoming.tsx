@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { FadeUp, Label, Magnetic, Page } from '../components/ui'
+import { FadeUp, Label, Magnetic, Page, SocialIcon } from '../components/ui'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { Newsletter } from '../components/extras'
 import { useSeo } from '../components/seo'
@@ -104,18 +104,20 @@ export default function Upcoming() {
                         href={googleCalendarUrl(e)}
                         target="_blank"
                         rel="noreferrer"
+                        aria-label="أضف إلى تقويم Google"
                         title="أضف إلى تقويم Google"
-                        className="rounded-full border border-hair px-3.5 py-2 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"
                       >
-                        + تقويم Google
+                        <SocialIcon name="Calendar" size={17} />
                       </a>
                       <button
                         type="button"
                         onClick={() => downloadEventIcs(e)}
-                        title="ملف تقويم يفتحه Apple وOutlook"
-                        className="rounded-full border border-hair px-3.5 py-2 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
+                        aria-label="تنزيل الموعد لتقويم Apple أو Outlook"
+                        title="تنزيل الموعد لتقويم Apple أو Outlook"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"
                       >
-                        + تقويمي (ICS)
+                        <SocialIcon name="Download" size={17} />
                       </button>
                     </div>
                   </li>

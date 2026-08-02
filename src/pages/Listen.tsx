@@ -8,6 +8,7 @@ import { usePersistentAudio, type PersistentTrack } from '../lib/persistent-audi
 import { versionedAudioUrl } from '../components/extras'
 import { AudioPlayer, openAudioPlayer } from '../components/AudioPlayer'
 import { listenEpisodes, type ListenEpisode } from '../lib/listen-catalog'
+import { SocialIcon } from '../components/icons'
 
 /* ═══════════ مجلس الفكرة ═══════════
    الأرشيف المسموع لا يُفهرَس بعناوينه. كلُّ حلقةٍ هنا يمثّلها سؤالٌ نطقه فهد أو
@@ -212,7 +213,7 @@ export default function Listen() {
               onClick={() => open(resume, { atQuestion: !resumeIsContinuation })}
               className="flex w-full items-center gap-3.5 rounded-xl border border-hair bg-wash/[.55] px-4 py-3.5 text-start transition-colors hover:border-accent/[.45] md:px-5"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-[.78rem] text-white">▷</span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Play" size={16} /></span>
               <span className="min-w-0">
                 <span className="block text-[.84rem] font-semibold text-ink">افتح المجلس</span>
                 <span className="mt-0.5 block truncate text-[.71rem] text-soft">
@@ -234,7 +235,7 @@ export default function Listen() {
               aria-label="بحث في أسئلة المجلس"
               className="w-full rounded-full border border-hair bg-canvas py-3 pe-12 ps-5 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
             />
-            <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft">⌕</span>
+            <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft"><SocialIcon name="Search" size={17} /></span>
           </div>
           <div className="rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
             {categories.map((item) => (

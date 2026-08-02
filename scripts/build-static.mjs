@@ -355,7 +355,7 @@ const routes = [
   ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: p.abstractAr || `بحث محكّم — ${p.meta}`, type: 'article' })),
   ...media.map((item) => {
     const id = youtubeId(item.url)
-    const thumbnail = item.thumbnail || (id ? `https://i.ytimg.com/vi/${id}/maxresdefault.jpg` : '')
+    const thumbnail = item.thumbnail || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : '')
     return { ...item, path: `/media/${item.slug}`, title: item.title, desc: item.topics || `${item.program || 'لقاء إعلامي'} — ${item.channel || item.outlet || ''}`, type: 'video.other', iso: item.iso, image: thumbnail, thumbnail }
   }),
   ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.jpg` })),
@@ -943,7 +943,7 @@ function generateBodyHtml(path, lang = 'ar') {
     const item = media.find((entry) => entry.slug === slug)
     if (item) {
       const itemVideoId = youtubeId(item.url)
-      const videoThumbnail = item.thumbnail || (itemVideoId ? `https://i.ytimg.com/vi/${itemVideoId}/maxresdefault.jpg` : '')
+      const videoThumbnail = item.thumbnail || (itemVideoId ? `https://i.ytimg.com/vi/${itemVideoId}/hqdefault.jpg` : '')
       const transcript = item.transcript || mediaTranscripts[itemVideoId] || ''
       contentHtml = `
         <main style="max-width:900px;margin:4rem auto;padding:0 1rem;" dir="rtl">

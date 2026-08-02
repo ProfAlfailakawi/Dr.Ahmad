@@ -10,6 +10,7 @@ import { useAdminAuth } from '../lib/admin-auth'
 import { safeLink } from '../lib/dead-links'
 import { ResearchSectionNavigator, type ResearchLayer } from '../components/ResearchSectionNavigator'
 import { bookKnowledgeAnchor, relatedBookKnowledge } from '../lib/book-knowledge'
+import { SocialIcon } from '../components/icons'
 import { NextStep } from '../components/NextStep'
 
 const cleanText = (value = '') => value.replace(/^ملخص عربي:\s*/, '').replace(/\s+/g, ' ').trim()
@@ -51,7 +52,7 @@ function ResearchAccordion({
           <span className="mt-1 block text-[1.02rem] font-bold text-ink">{title}</span>
           <span className="mt-1.5 block text-[.78rem] font-normal leading-[1.7] text-soft">{summary}</span>
         </span>
-        <span aria-hidden className="research-accordion-icon">⌄</span>
+        <span aria-hidden className="research-accordion-icon"><SocialIcon name="ChevronDown" size={14} /></span>
       </button>
       <div id={`${id}-panel`} className="research-accordion-panel" hidden={!open}>
         {children}

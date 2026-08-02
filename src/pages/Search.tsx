@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { KnowledgeEntry } from '../components/KnowledgeEntry'
 import { useSeo } from '../components/seo'
@@ -105,7 +105,6 @@ function editDistance(a: string, b: string) {
 
 export default function Search() {
   const { articles, books, papers, media } = useCmsContent()
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   useSeo({
     title: 'البحث العميق',
@@ -123,6 +122,10 @@ export default function Search() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [askBookSlug, setAskBookSlug] = useState(() => searchParams.get('book') || '')
   const [askBookQuestion, setAskBookQuestion] = useState('')
+  const [askBookAsked, setAskBookAsked] = useState('')
+  const [askBookReady, setAskBookReady] = useState(false)
+  const [askBookLoading, setAskBookLoading] = useState(false)
+  const [askBookError, setAskBookError] = useState('')
 
   useEffect(() => {
     const requested = searchParams.get('book') || ''
@@ -217,6 +220,28 @@ export default function Search() {
   const passageHits = useMemo(
     () => (searchStarted && passagesReady ? searchBookPassages(expandedQuery, 40) : []),
     [expandedQuery, passagesReady, searchStarted])
+
+  const selectedAskBook = useMemo(() => books.find((book) => book.slug === askBookSlug) || books[0] || null, [askBookSlug, books])
+  const askBookMatches = useMemo(
+    () => (askBookReady && askBookAsked.length >= 2 && selectedAskBook ? searchBookPassages(askBookAsked, 6, selectedAskBook.slug) : []),
+    [askBookAsked, askBookReady, selectedAskBook],
+  )
+
+  const submitAskBook = async () => {
+    const question = askBookQuestion.trim()
+    if (!selectedAskBook || question.length < 2 || askBookLoading) return
+    setAskBookLoading(true)
+    setAskBookError('')
+    try {
+      await loadBookPassages()
+      setAskBookReady(true)
+      setAskBookAsked(question)
+    } catch {
+      setAskBookError('تعذّر فتح فهرس الكتاب الآن. أعد المحاولة بعد لحظة.')
+    } finally {
+      setAskBookLoading(false)
+    }
+  }
 
   /* دقيقة الفكرة: البحث لا يعيد اللقاء فحسب، بل الموضع الذي قيلت فيه الجملة. */
   const chapterHits = useMemo(
@@ -360,7 +385,7 @@ export default function Search() {
                   aria-label="بحث في الأرشيف كله"
                   className="w-full rounded-none border-0 border-b border-hair bg-transparent py-5 pe-4 ps-14 font-display text-[clamp(1.2rem,4.3vw,2.5rem)] font-semibold leading-[1.5] text-ink outline-none transition-colors placeholder:text-soft/[.45] focus:border-accent"
                 />
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[1.4rem] text-accent">⌕</span>
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-accent"><SocialIcon name="Search" size={19} /></span>
               </div>
 
               <div className="mt-7 border-t border-hair pt-5">
@@ -437,7 +462,7 @@ export default function Search() {
             <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
               <p className="text-[.9rem] text-soft" aria-live="polite">
                 {tab === 'askbook' ? (
-                  <>اختر كتاباً، ثم اكتب سؤالك لينتقل بك مباشرة إلى قسم «اسأل هذا الكتاب».</>
+                  <>اختر كتاباً واكتب سؤالك؛ الجواب يظهر هنا من متن الكتاب نفسه.</>
                 ) : (
                   <>
                     {ar(tab === 'spoken' ? spokenHits.length : activeRows.length)} نتيجة
@@ -463,58 +488,84 @@ export default function Search() {
           </FadeUp>}
 
           {tab === 'askbook' && <FadeUp delay={0.08}>
-            <section className="mt-8 rounded-[2rem] border border-hair bg-wash p-5 md:p-7" aria-labelledby="ask-book-gateway-title">
-              <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(18rem,.95fr)] lg:items-start">
-                <div>
-                  <span className="text-[.72rem] font-semibold uppercase tracking-[.08em] text-accent">اسأل كتاباً</span>
-                  <h2 id="ask-book-gateway-title" className="mt-2 font-display text-[clamp(1.35rem,2.8vw,2rem)] font-semibold leading-[1.45] text-ink">الميزة نفسها، لكن في الواجهة الآن.</h2>
-                  <p className="mt-3 max-w-2xl text-[.88rem] leading-[1.9] text-soft">اختر كتاباً من المؤلفات، واكتب سؤالك، ثم انتقل مباشرةً إلى قسم «اسأل هذا الكتاب» داخل صفحته؛ هناك سيجيبك المتن بمقاطعه المنسوبة إلى صفحاتها.</p>
-                  <div className="rail mt-5 grid grid-flow-col auto-cols-[min(82vw,18rem)] gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid-flow-row md:auto-cols-auto md:grid-cols-2 md:overflow-visible">
-                    {books.map((book) => (
-                      <button
-                        key={book.slug}
-                        type="button"
-                        onClick={() => { const next = new URLSearchParams(searchParams); next.set('tab', 'askbook'); next.set('book', book.slug); setAskBookSlug(book.slug); setSearchParams(next, { replace: true }) }}
-                        className={`rounded-2xl border px-4 py-3 text-right transition-colors ${askBookSlug === book.slug ? 'border-accent bg-canvas' : 'border-hair bg-canvas/70 hover:border-accent/[.45]'}`}
-                      >
-                        <strong className="block text-[.82rem] leading-relaxed text-ink">{book.title}</strong>
-                        <span className="mt-1 block text-[.68rem] leading-relaxed text-soft">{book.year ? `سنة النشر ${book.year}` : 'من المؤلفات المنشورة'}{book.desc ? ` · ${book.desc.slice(0, 85)}${book.desc.length > 85 ? '…' : ''}` : ''}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-[1.75rem] border border-hair bg-canvas p-4 md:p-5">
-                  <label htmlFor="ask-book-question" className="block text-[.72rem] font-semibold text-accent">سؤالك عن الكتاب</label>
-                  <textarea
-                    id="ask-book-question"
-                    value={askBookQuestion}
-                    onChange={(event) => setAskBookQuestion(event.target.value)}
-                    placeholder="مثال: ما دور المعلّم في هذا الكتاب؟"
-                    className="mt-2 min-h-36 w-full rounded-[1.4rem] border border-hair bg-wash px-4 py-3 text-[.88rem] leading-relaxed text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent"
-                  />
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
+            <section className="mt-8 min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-hair bg-wash p-4 sm:p-5 md:p-7" aria-labelledby="ask-book-gateway-title">
+              <div className="min-w-0">
+                <span className="text-[.72rem] font-semibold uppercase tracking-[.08em] text-accent">اسأل كتاباً</span>
+                <h2 id="ask-book-gateway-title" className="mt-2 break-words font-display text-[clamp(1.35rem,2.8vw,2rem)] font-semibold leading-[1.45] text-ink">حوار مباشر مع متن الكتاب.</h2>
+                <p className="mt-3 max-w-2xl text-[.88rem] leading-[1.9] text-soft">اختر الكتاب ثم اكتب سؤالك. لا يغادر الجواب هذه الصفحة، ولا يستعين بمادة من خارج الكتاب المختار.</p>
+
+                <div dir="rtl" className="ask-book-rail rail mt-5 flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden" aria-label="اختيار الكتاب">
+                  {books.map((book) => (
                     <button
+                      key={book.slug}
                       type="button"
                       onClick={() => {
-                        if (!askBookSlug || askBookQuestion.trim().length < 2) return
-                        navigate(`/publications/${askBookSlug}?book_question=${encodeURIComponent(askBookQuestion.trim())}#ask-book-section`)
+                        const next = new URLSearchParams(searchParams)
+                        next.set('tab', 'askbook')
+                        next.set('book', book.slug)
+                        setAskBookSlug(book.slug)
+                        setAskBookAsked('')
+                        setAskBookError('')
+                        setSearchParams(next, { replace: true })
                       }}
-                      disabled={!askBookSlug || askBookQuestion.trim().length < 2}
-                      className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45"
+                      aria-pressed={askBookSlug === book.slug}
+                      className={`w-[78vw] max-w-[18rem] shrink-0 snap-start rounded-2xl border px-4 py-3 text-right transition-colors sm:w-[18rem] ${askBookSlug === book.slug ? 'border-accent bg-canvas shadow-sm' : 'border-hair bg-canvas/70 hover:border-accent/[.45]'}`}
                     >
-                      اذهب إلى جواب الكتاب
+                      <strong className="block break-words text-[.82rem] leading-relaxed text-ink">{book.title}</strong>
+                      <span className="mt-1 block line-clamp-2 text-[.68rem] leading-relaxed text-soft">{book.year ? `سنة النشر ${book.year}` : 'من المؤلفات المنشورة'}{book.desc ? ` · ${book.desc}` : ''}</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setAskBookQuestion('ما الفكرة الأساسية في هذا الكتاب؟')}
-                      className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
-                    >
-                      ابدأ بسؤال جاهز
-                    </button>
-                  </div>
-                  <p className="mt-3 text-[.68rem] leading-relaxed text-soft">الانتقال يفتح الصفحة نفسها عند القسم المناسب، ويحمّل سؤالك تلقائياً دون أن تبقى الميزة مدفونة في داخل الكتاب.</p>
+                  ))}
                 </div>
               </div>
+
+              <form onSubmit={(event) => { event.preventDefault(); void submitAskBook() }} className="mt-5 grid min-w-0 gap-3 rounded-[1.75rem] border border-hair bg-canvas p-4 md:p-5">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="ask-book-question" className="text-[.72rem] font-semibold text-accent">سؤالك عن {selectedAskBook?.title || 'الكتاب'}</label>
+                  {askBookAsked && <button type="button" onClick={() => { setAskBookQuestion(''); setAskBookAsked(''); setAskBookError('') }} aria-label="مسح السؤال والجواب" title="مسح السؤال والجواب" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Close" size={15} /></button>}
+                </div>
+                <textarea
+                  id="ask-book-question"
+                  value={askBookQuestion}
+                  onChange={(event) => setAskBookQuestion(event.target.value)}
+                  placeholder="مثال: ما دور المعلّم في هذا الكتاب؟"
+                  className="min-h-32 w-full min-w-0 max-w-full resize-y rounded-[1.4rem] border border-hair bg-wash px-4 py-3 text-[.88rem] leading-relaxed text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <button type="submit" disabled={!selectedAskBook || askBookQuestion.trim().length < 2 || askBookLoading} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45">{askBookLoading ? 'يفتح متن الكتاب…' : 'اسأل الكتاب'}</button>
+                  <button type="button" onClick={() => setAskBookQuestion('ما الفكرة الأساسية في هذا الكتاب؟')} className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">سؤال جاهز</button>
+                </div>
+                {askBookError && <p className="text-[.72rem] leading-relaxed text-accent" role="alert">{askBookError}</p>}
+              </form>
+
+              {askBookAsked && !askBookLoading && (
+                <section className="mt-5 min-w-0 rounded-[1.75rem] border border-hair bg-canvas p-4 md:p-5" aria-live="polite" aria-labelledby="ask-book-answer-title">
+                  <div className="flex min-w-0 flex-wrap items-start justify-between gap-3 border-b border-hair pb-4">
+                    <div className="min-w-0">
+                      <span className="text-[.68rem] font-semibold text-accent">الجواب من متن الكتاب</span>
+                      <h3 id="ask-book-answer-title" className="mt-1 break-words font-display text-[1.05rem] font-semibold leading-relaxed text-ink">{selectedAskBook?.title}</h3>
+                      <p className="mt-1 break-words text-[.74rem] leading-relaxed text-soft">«{askBookAsked}»</p>
+                    </div>
+                    {selectedAskBook && <Link to={`/publications/${selectedAskBook.slug}#book-knowledge`} className="shrink-0 text-[.7rem] font-semibold text-accent transition-colors hover:text-accent-deep">افتح صفحة الكتاب ←</Link>}
+                  </div>
+
+                  {askBookReady && askBookMatches.length > 0 ? (
+                    <div className="mt-4 grid min-w-0 gap-3">
+                      <p className="text-[.76rem] leading-[1.85] text-soft">وجدتُ أقرب المقاطع التي يجيب بها الكتاب نفسه؛ رتبتها بحسب صلتها بالسؤال، وكل مقطع منسوب إلى صفحته.</p>
+                      {askBookMatches.map((match) => (
+                        <figure key={`search-ask-${match.bookSlug}-${match.quote.id}`} className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-wash px-4 py-4">
+                          <blockquote className="break-words border-r-2 border-accent/[.35] pr-3 text-[.88rem] font-light leading-[2] text-ink/[.88]">{match.quote.text}</blockquote>
+                          <figcaption className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 pr-3 text-[.68rem] text-soft">
+                            <span className="break-words">{match.bookTitle} · ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</span>
+                            <Link to={`/publications/${match.bookSlug}#book-knowledge`} className="font-semibold text-accent">في الكتاب ←</Link>
+                          </figcaption>
+                        </figure>
+                      ))}
+                    </div>
+                  ) : askBookReady ? (
+                    <div className="mt-4 rounded-2xl border border-hair bg-wash px-4 py-5 text-[.78rem] leading-[1.9] text-soft">لم أجد في هذا الكتاب مقطعاً موثقاً يجيب عن السؤال بهذه الصياغة. جرّب مفهوماً أقرب إلى عنوان فصل أو كلمة أساسية، ولن أقدّم جواباً من خارج المتن.</div>
+                  ) : null}
+                </section>
+              )}
             </section>
           </FadeUp>}
 
@@ -530,7 +581,7 @@ export default function Search() {
                     onClick={() => playSpoken(hit)}
                     className="group flex w-full items-start gap-3.5 py-5 text-start transition-colors"
                   >
-                    <span className="mt-1.5 shrink-0 text-[.72rem] text-accent/[.65] transition-colors group-hover:text-accent">▷</span>
+                    <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-accent/[.75] transition-colors group-hover:border-accent group-hover:bg-accent group-hover:text-white"><SocialIcon name="Play" size={14} /></span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-display text-[1.05rem] leading-[1.8] text-ink transition-colors group-hover:text-accent">
                         {hit.text}

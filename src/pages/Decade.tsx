@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { useSeo } from '../components/seo'
-import { FadeUp, Page, PageHead } from '../components/ui'
+import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
 import { useCmsContent, useExtras } from '../lib/content'
 import { PROJECT_START_YEAR } from '../lib/project-meta'
 import type { ArticleRecord } from '../lib/cms'
@@ -367,9 +367,11 @@ export default function Decade() {
                           <button
                             type="button"
                             onClick={() => sharePrediction(article.slug, `${article.slug}:${prediction.quote}`)}
-                            className="text-[.72rem] font-semibold text-soft transition-colors hover:text-accent"
+                            aria-label={copiedPrediction === `${article.slug}:${prediction.quote}` ? 'نُسخ رابط التوقع' : 'نسخ رابط هذا التوقع'}
+                            title={copiedPrediction === `${article.slug}:${prediction.quote}` ? 'نُسخ رابط التوقع' : 'نسخ رابط هذا التوقع'}
+                            className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${copiedPrediction === `${article.slug}:${prediction.quote}` ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                           >
-                            {copiedPrediction === `${article.slug}:${prediction.quote}` ? 'نُسخ رابط التوقع ✓' : 'شارك هذا التوقع ⧉'}
+                            <SocialIcon name={copiedPrediction === `${article.slug}:${prediction.quote}` ? 'Check' : 'Copy'} size={16} />
                           </button>
                         </div>
                       </div>

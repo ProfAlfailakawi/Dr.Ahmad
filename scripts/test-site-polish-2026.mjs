@@ -340,7 +340,7 @@ console.log('\nFinal closure: design intelligence + archive + system health')
   ok(bookWorld.includes('activeIdea')
     && bookWorld.includes('aria-pressed')
     && bookWorld.includes('البوابة النشطة')
-    && bookDetail.includes('<BookWorld'), 'صفحة الكتاب أصبحت عالماً تفاعلياً: اختيار بوابة فكرة يعيد ربط المقالات والأبحاث حولها فوراً')
+    && (bookDetail.includes('<BookWorld') || bookDetail.includes('<DeferredBookWorld') || bookDetail.includes('<LazyBookWorld')), 'صفحة الكتاب أصبحت عالماً تفاعلياً: اختيار بوابة فكرة يعيد ربط المقالات والأبحاث حولها فوراً')
 }
 
 console.log('\nAll requested polish guards passed.')

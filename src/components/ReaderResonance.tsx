@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
 import { getDb } from '../lib/firebase'
+import { SocialIcon } from './icons'
 
 const READER_QUOTES_KEY = 'reader:quotes:v2'
 const READER_READ_KEY = 'reader:read:v1'
@@ -103,7 +104,7 @@ export function ArticlePulse({ slug, body }: { slug: string; body: string }) {
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent/[.08]0" />
         </span>
         <span className="text-[.85rem] font-semibold text-accent">نبض المقال</span>
-        <span className="mr-auto text-[.72rem] font-light text-soft transition-transform group-open:rotate-180" aria-hidden>⌄</span>
+        <span className="mr-auto text-soft transition-transform group-open:rotate-180" aria-hidden><SocialIcon name="ChevronDown" size={14} /></span>
       </summary>
       <p className="mt-3 pr-6 text-[.85rem] font-light leading-relaxed text-soft">«{quote}»</p>
     </details>

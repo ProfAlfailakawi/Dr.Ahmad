@@ -1028,6 +1028,5 @@ export function ScheduleProjectLink({ label = 'الجدول الدراسي', ico
 
 /* ---------- Page transition wrapper ---------- */
 export function Page({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  useEffect(() => { window.scrollTo(0, 0) }, [])
   return <div className={`signature-page w-full max-w-full overflow-x-clip ${className}`}>{children}</div>
 }

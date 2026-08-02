@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from 'react-router'
 import { Footer, Nav } from './components/ui'
 import { FloatingActions } from './components/extras'
 import { CmsProvider } from './lib/content'
@@ -52,6 +52,54 @@ const EnglishContact = lazy(() => import('./pages/EnglishContact'))
 
 function RouteLoadingLine() {
   return <div className="route-loading-line" aria-hidden="true" />
+}
+
+/* إدارة موضع التمرير على مستوى المسارات كلّها:
+   - الانتقال إلى مادة جديدة يبدأ من الأعلى.
+   - روابط # تذهب إلى القسم المقصود بعد ظهوره.
+   - زر الرجوع/التقدّم يعيد الموضع السابق قدر الإمكان.
+   Page وحده لا يكفي لأن React Router يعيد استعمال المكوّن عند تغيير slug. */
+const routeScrollPositions = new Map<string, number>()
+function RouteScrollManager() {
+  const location = useLocation()
+  const navigationType = useNavigationType()
+
+  useLayoutEffect(() => {
+    const key = location.key || `${location.pathname}${location.search}`
+    let cancelled = false
+    let attempts = 0
+
+    const settle = () => {
+      if (cancelled) return
+      if (location.hash) {
+        const id = decodeURIComponent(location.hash.slice(1))
+        const target = document.getElementById(id)
+        if (target) {
+          target.scrollIntoView({ block: 'start' })
+          return
+        }
+        if (attempts < 12) {
+          attempts += 1
+          window.setTimeout(settle, attempts < 5 ? 40 : 90)
+          return
+        }
+      }
+      if (navigationType === 'POP' && routeScrollPositions.has(key)) {
+        window.scrollTo({ top: routeScrollPositions.get(key) || 0, left: 0 })
+      } else {
+        window.scrollTo({ top: 0, left: 0 })
+      }
+    }
+
+    const frame = window.requestAnimationFrame(settle)
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(frame)
+      routeScrollPositions.set(key, window.scrollY)
+    }
+  }, [location.hash, location.key, location.pathname, location.search, navigationType])
+
+  return null
 }
 
 function WesternDigitsGuard() {
@@ -277,6 +325,7 @@ export default function App() {
           <ReadingMemoryGuard />
           <RouteJourneyTracker />
           <RouteViewTracker />
+          <RouteScrollManager />
           <ConditionalOnboarding />
           <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
           <ConditionalNav />

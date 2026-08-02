@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { listenIsOpen } from '../lib/listen-catalog'
+import { SocialIcon } from './icons'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (digit) => '0123456789'[+digit])
 const ARTICLE_VOICE_PREFERENCE_KEY = 'article-audio-reading-voice-v1'
@@ -388,7 +389,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
           <span className="block text-[.82rem] font-semibold text-ink">استمع</span>
           {!compact && <span className="mt-0.5 block truncate text-[.7rem] text-soft">{anyActive ? player.track?.label : sources.length > 1 ? `${sources.length.toLocaleString('en-US')} تجارب صوتية` : source.label}</span>}
         </span>
-        <span className={`text-[.82rem] text-soft transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}>⌄</span>
+        <span className={`text-soft transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}><SocialIcon name="ChevronDown" size={14} /></span>
       </button>
 
       {expanded && (

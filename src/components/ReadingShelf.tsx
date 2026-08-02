@@ -99,6 +99,12 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
           >
             {saved ? 'حُفظت في مساحتي ✓' : 'احفظ في مساحتي'}
           </button>
+          <Link
+            to={`/concept/${encodeURIComponent(query)}`}
+            className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+          >
+            سيرة المفهوم
+          </Link>
           <button
             type="button"
             onClick={() => window.print()}

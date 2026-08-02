@@ -5,6 +5,7 @@ import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, needsHumanOnly, sign } from './bot-rules.mjs'
 import { getBotMessages } from './bot-messages.mjs'
 import { spokenReply } from './spoken-index.mjs'
+import { bookQuoteReply } from './book-quotes.mjs'
 import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD } from './scholar.mjs'
 import {
   dialogueModeReply,
@@ -502,6 +503,21 @@ export function groundedRescue(db, rawText) {
       seenContentIds: nearest.map((item) => item.id),
     }
   }
+  /* ثم كتبه: إن لم يقلها بصوته في حلقة، فقد يكون كتبها في أحد كتبه التسعة.
+     جملةٌ من متنه منسوبةً إلى صفحتها أصدق من قائمة روابط — والرابط يفتح
+     صفحة الكتاب لا ملفه. */
+  const fromBook = bookQuoteReply(query)
+  if (fromBook) {
+    const nearest = (onDomain.length ? onDomain : namedContentMatches(db, words, 2)).slice(0, 2)
+    const reading = nearest.map((item) => item.title + '\n' + item.url).join('\n\n')
+    return {
+      text: nearest.length ? fromBook.text + '\n\nوللقراءة:\n' + reading : fromBook.text,
+      contentId: nearest[0]?.id,
+      contextItems: nearest.map((item) => item.id),
+      seenContentIds: nearest.map((item) => item.id),
+    }
+  }
+
   const chosen = onDomain.length ? onDomain : namedContentMatches(db, words, 3)
   if (!chosen.length) return null
   const choices = chosen.slice(0, 3)

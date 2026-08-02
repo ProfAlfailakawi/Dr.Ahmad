@@ -21,6 +21,7 @@ const Search = lazy(() => import('./pages/Search'))
 const AskLibrary = lazy(() => import('./pages/AskLibrary'))
 const Decade = lazy(() => import('./pages/Decade'))
 const ThoughtPaths = lazy(() => import('./pages/ThoughtPaths'))
+const ConceptLife = lazy(() => import('./pages/ConceptLife'))
 const ThoughtOverview = lazy(() => import('./pages/ThoughtOverview'))
 const Media = lazy(() => import('./pages/Media'))
 const MediaDetail = lazy(() => import('./pages/MediaDetail'))
@@ -173,6 +174,8 @@ function AnimatedRoutes() {
         <Route path="/ask" element={<AskLibrary />} />
         <Route path="/decade" element={<Decade />} />
         <Route path="/thought-paths" element={<ThoughtPaths />} />
+        {/* سيرة مفهوم: تبدأ من الفكرة لا من المادة، وتعرض رحلتها في الزمن. */}
+        <Route path="/concept/:term" element={<ConceptLife />} />
         <Route path="/thought" element={<ThoughtOverview />} />
         <Route path="/articles/:slug" element={<ArticleDetail />} />
         <Route path="/atlas" element={<Atlas />} />

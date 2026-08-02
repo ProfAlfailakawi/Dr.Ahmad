@@ -13,14 +13,24 @@
  * التشغيل: node scripts/build-book-quotes.mjs [--report]
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { voiceScore } from './book-voice.mjs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const EVIDENCE = resolve(ROOT, 'src/data/book-evidence.json')
+/* المتن الخام خارج المستودع عمداً. نبحث عنه في مكانه الطبيعي داخل المشروع،
+   ثم بجوار ملفات PDF الأصلية حيث حُفظت نسخته الدائمة. */
+const EVIDENCE_CANDIDATES = [
+  resolve(ROOT, 'src/data/book-evidence.json'),
+  resolve(ROOT, '../PrivateBooks/book-evidence.json'),
+  resolve(ROOT, '../../PrivateBooks/book-evidence.json'),
+  process.env.BOOK_EVIDENCE || '',
+].filter(Boolean)
+const EVIDENCE = EVIDENCE_CANDIDATES.find((item) => existsSync(item)) || EVIDENCE_CANDIDATES[0]
 const KNOWLEDGE = resolve(ROOT, 'src/data/book-knowledge.json')
 const OUT = resolve(ROOT, 'src/data/book-quotes.json')
 const OUT_PASSAGES = resolve(ROOT, 'src/data/book-passages.json')
+const BLOCKLIST = resolve(ROOT, 'src/data/book-passage-blocklist.json')
 
 /* ═══ الحدود المطلقة — يفرضها الحارس أيضاً، فلا تُوسَّع من هنا وحدها ═══
  *
@@ -51,13 +61,21 @@ export const highlightCap = (indexedPages = 0) =>
 const report = process.argv.includes('--report')
 
 if (!existsSync(EVIDENCE)) {
-  console.error('✘ لم أجد src/data/book-evidence.json — شغّل build-book-knowledge أولاً من جهاز الدكتور.')
+  console.error('✘ لم أجد متن الكتب. المسارات المجرَّبة:')
+  for (const item of EVIDENCE_CANDIDATES) console.error(`   · ${item}`)
+  console.error('  عرّفه صراحةً: BOOK_EVIDENCE=/path/to/book-evidence.json node scripts/build-book-quotes.mjs')
   process.exit(1)
 }
 
 const evidence = JSON.parse(readFileSync(EVIDENCE, 'utf8'))
 const knowledge = existsSync(KNOWLEDGE) ? JSON.parse(readFileSync(KNOWLEDGE, 'utf8')) : { books: [] }
 const conceptsBySlug = new Map(knowledge.books.map((book) => [book.slug, book.concepts || []]))
+
+/* قائمة الحجب: ما يستبعده الدكتور بعينه. تُطابق ببصمة النص لا برقم المقطع،
+   لأن الأرقام تتغيّر مع كل إعادة توليد بينما النص يبقى. */
+const blocklist = existsSync(BLOCKLIST) ? JSON.parse(readFileSync(BLOCKLIST, 'utf8')) : { blocked: [] }
+const blockedPrints = new Set((blocklist.blocked || []).map((item) => String(item.fingerprint || '')))
+let blockedHits = 0
 
 /* ═══ التنظيف ═══ */
 const ARABIC = /[؀-ۿ]/
@@ -257,7 +275,6 @@ for (const book of evidence.books || []) {
           .some((title) => candidate.indexOf(title) > 0)
         if (bleed) { noteRejection('عنوان داخل الجملة'); continue }
 
-        const concept = conceptFor(chunk.page)
         candidates.push({
           text: candidate,
           page: chunk.page,
@@ -265,6 +282,7 @@ for (const book of evidence.books || []) {
           conceptId: concept?.id || '',
           conceptTitle: concept?.title || '',
           score: quoteScore(candidate, concept),
+          voice: voiceScore(candidate).score,
           fingerprint,
         })
       }
@@ -280,6 +298,7 @@ for (const book of evidence.books || []) {
   const passages = []
   for (const candidate of candidates.slice().sort((left, right) => left.page - right.page)) {
     if (seen.has(candidate.fingerprint)) continue
+    if (blockedPrints.has(candidate.fingerprint)) { blockedHits += 1; noteRejection('محجوب بأمر الدكتور'); continue }
 
     /* التداخل النصّي يُرفض دائماً: جملتان تشتركان في نصّهما تكرارٌ للقارئ
        وضجيجٌ في البحث، لا فتحُ بابٍ جديد. */
@@ -306,7 +325,8 @@ for (const book of evidence.books || []) {
   const highlightPages = []
   const highlights = []
 
-  for (const candidate of passages.slice().sort((left, right) => right.score - left.score || left.page - right.page)) {
+  /* المختارات تبدأ بما هو أقرب إلى قلمه: الصوت أولاً ثم قوة المقطع. */
+  for (const candidate of passages.slice().sort((left, right) => (right.voice - left.voice) * 2 + (right.score - left.score) || left.page - right.page)) {
     if (highlights.length >= cap) break
     if (candidate.text.length > QUOTE_LIMITS.highlightMaxChars) continue
     if (highlightPages.some((page) => Math.abs(page - candidate.page) < QUOTE_LIMITS.highlightPageGap)) continue
@@ -322,6 +342,8 @@ for (const book of evidence.books || []) {
     section: item.section,
     conceptId: item.conceptId,
     conceptTitle: item.conceptTitle,
+    voice: item.voice,
+    fingerprint: item.fingerprint,
   })
 
   books.push({

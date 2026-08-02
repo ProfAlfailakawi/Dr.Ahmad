@@ -6,7 +6,9 @@
  *   · كل بطاقة تقود للمصدر الأصلي مباشرة
  * يقرأ من site_radar (المنشور فقط) — يُحدَّث تلقائياً بلا أي رفع.
  */
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
+import { loadBookPassages, matchBookQuotes, searchBookPassages } from "../lib/book-quotes";
 import { useSeo } from "../components/seo";
 import { FadeUp, Page, PageHead } from "../components/ui";
 import { useExtras } from "../lib/content";
@@ -54,15 +56,53 @@ function weekOf(dayIso: string) {
   };
 }
 
-function RadarCard({ item, index = 0 }: { item: RadarItem; index?: number }) {
+/**
+ * صدى الكتب في خبر اليوم.
+ *
+ * الرادار يجلب ما يُنشر في العالم عن التعليم والتقنية. وكتب الدكتور التسعة
+ * تناولت أكثر هذه الموضوعات قبل سنوات. فبدل أن يبقى الطرفان متجاورين بلا
+ * صلة، نصل الخبر بما قاله هو — فتصير كتبه حيّةً مع الأحداث لا أرشيفاً.
+ *
+ * الشرط: لا نفتعل الصلة. المقطع لا يظهر إلا إذا تجاوز عتبة تطابقٍ معتبرة،
+ * فلا يُنسب إلى الدكتور رأيٌ في خبرٍ لم يتناوله.
+ */
+function BookEcho({ item, deep }: { item: RadarItem; deep: boolean }) {
+  const match = useMemo(() => {
+    const query = `${item.ar || ''} ${item.arNote || ''}`.trim();
+    if (query.length < 8) return null;
+    const found = deep ? searchBookPassages(query, 1) : matchBookQuotes(query, 1);
+    /* عتبة الصدق: تطابقٌ ضعيف يعني موضوعاً آخر يشترك في كلمةٍ عامة. */
+    return found[0] && found[0].score >= 9 ? found[0] : null;
+  }, [deep, item.ar, item.arNote]);
+
+  if (!match) return null;
+
+  return (
+    <div className="border-t border-hair px-6 py-4">
+      <span className="text-[.68rem] font-semibold text-accent">وقد تناوله في كتبه</span>
+      <blockquote className="mt-1.5 border-r-2 border-accent/30 pr-3 text-[.82rem] font-light leading-[1.85] text-ink/80">
+        {match.quote.text}
+      </blockquote>
+      <Link
+        to={`/publications/${match.bookSlug}#book-knowledge`}
+        className="mt-2 inline-block pr-3 text-[.68rem] text-soft transition-colors hover:text-accent"
+      >
+        {match.bookTitle} · ص {match.quote.page} ←
+      </Link>
+    </div>
+  );
+}
+
+function RadarCard({ item, index = 0, deep = false }: { item: RadarItem; index?: number; deep?: boolean }) {
   return (
     <FadeUp delay={Math.min(index * 0.05, 0.2)}>
+      <div className="h-full rounded-2xl border border-hair transition-colors hover:border-accent">
       <a
         href={item.url}
         target="_blank"
         rel="noreferrer"
         data-hover
-        className="group flex h-full flex-col rounded-2xl border border-hair p-6 transition-colors hover:border-accent"
+        className="group flex flex-col p-6"
       >
         <span className="text-[.72rem] text-soft">
           {radarDateArabic(item.day)} · {radarSourceArabic(item.source)}
@@ -79,11 +119,28 @@ function RadarCard({ item, index = 0 }: { item: RadarItem; index?: number }) {
           اقرأ المادة في مصدرها ←
         </span>
       </a>
+      <BookEcho item={item} deep={deep} />
+      </div>
     </FadeUp>
   );
 }
 
 export default function Radar() {
+  /* فهرس المتون ثقيل، فلا يُجلب مع الصفحة: نؤجّله إلى ما بعد أول رسم،
+     فتظهر البطاقات فوراً ثم يرتقي الصدى من المختارات إلى المتون كاملة. */
+  const [deepReady, setDeepReady] = useState(false);
+  useEffect(() => {
+    let on = true;
+    const idle = window.requestIdleCallback
+      ? window.requestIdleCallback(() => { void loadBookPassages().then(() => { if (on) setDeepReady(true); }); }, { timeout: 3000 })
+      : window.setTimeout(() => { void loadBookPassages().then(() => { if (on) setDeepReady(true); }); }, 1200);
+    return () => {
+      on = false;
+      if (window.cancelIdleCallback && typeof idle === "number") window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle as number);
+    };
+  }, []);
+
   useSeo({
     title: "أرشيف الرادار",
     path: "/radar",
@@ -193,7 +250,7 @@ export default function Radar() {
                   </FadeUp>
                   <div className="mx-auto max-w-4xl space-y-4">
                     {w.items.slice(0, 2).map((item, index) => (
-                      <RadarCard key={`${item.url || item.ar || item.day}-${index}`} item={item} index={index} />
+                      <RadarCard key={`${item.url || item.ar || item.day}-${index}`} item={item} index={index} deep={deepReady} />
                     ))}
                   </div>
                   {w.items.length > 2 && (
@@ -204,7 +261,7 @@ export default function Radar() {
                       </summary>
                       <div className="mx-auto mt-4 max-w-4xl space-y-4 border-t border-hair pt-5">
                         {w.items.slice(2).map((item, index) => (
-                          <RadarCard key={`${item.url || item.ar || item.day}-more-${index}`} item={item} index={index} />
+                          <RadarCard key={`${item.url || item.ar || item.day}-more-${index}`} item={item} index={index} deep={deepReady} />
                         ))}
                       </div>
                     </details>

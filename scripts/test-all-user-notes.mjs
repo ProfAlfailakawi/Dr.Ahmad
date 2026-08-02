@@ -82,6 +82,8 @@ check('شريط محاور الكتاب صف واحد قابل للسحب RTL', 
 check('عالم الكتاب يحمي كل الحاويات من خروج الهاتف', css.includes('.content-book-world') && css.includes('max-width: 100%') && css.includes('min-width: 0') && css.includes('overflow-x: clip'))
 check('حقل اسأل هذا الكتاب ينكمش داخل الهاتف', /id="ask-book-section"[\s\S]{0,800}min-w-0[\s\S]{0,800}w-full/u.test(bookWorld))
 check('فهرس متن الكتاب لا يحمل إلا عند السؤال', bookWorld.includes('loadBookPassages().then') && !bookDetail.includes('loadBookPassages'))
+check('فهرس الكتاب لا يستعمل defaultOpen غير المدعوم في React', !bookDetail.includes('defaultOpen=') && bookDetail.includes('<TocDisclosure'))
+check('التحميل الكسول لا يضيّق window إلى never في TypeScript', !bookDetail.includes("'IntersectionObserver' in window") && bookDetail.includes("typeof IntersectionObserver === 'undefined'"))
 
 console.log('\nاسأل كتاباً والبحث المعرفي')
 check('اسأل كتاباً تبويب حقيقي داخل البحث', search.includes("{ id: 'askbook', label: 'اسأل كتاباً' }") && search.includes("tab === 'askbook'"))

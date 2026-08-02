@@ -42,6 +42,34 @@ function groupToc(items: string[]): TocGroup[] {
   return groups
 }
 
+function TocDisclosure({ group, groupIndex }: { group: TocGroup; groupIndex: number }) {
+  const [open, setOpen] = useState(groupIndex === 0)
+  return (
+    <details
+      className="group/toc"
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-4 px-5 py-4 md:px-7">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair font-display text-[.68rem] text-accent">{String(groupIndex + 1).padStart(2, '0')}</span>
+        <strong className="min-w-0 flex-1 break-words text-[.9rem] leading-relaxed text-ink">{group.title}</strong>
+        <span className="shrink-0 text-[.66rem] text-soft">{group.entries.length} فصول</span>
+        <span aria-hidden className="text-accent transition-transform group-open/toc:rotate-45">＋</span>
+      </summary>
+      <ol className="border-t border-hair bg-wash/[.38] px-5 py-2 md:px-7">
+        {group.entries.map((entry) => (
+          <li key={`${entry.index}-${entry.label}`} className="grid min-w-0 grid-cols-[2.2rem_minmax(0,1fr)_auto] items-baseline gap-3 border-b border-hair py-3.5 last:border-b-0">
+            <span className="font-display text-[.68rem] tabular-nums text-accent">{String(entry.index).padStart(2, '0')}</span>
+            <Link to={`?book_idea=${encodeURIComponent(entry.label)}#book-knowledge`} className="min-w-0 break-words text-[.82rem] leading-[1.8] text-ink transition-colors hover:text-accent">{entry.label}</Link>
+            {entry.page && <span className="shrink-0 text-[.68rem] tabular-nums text-soft">ص {entry.page}</span>}
+          </li>
+        ))}
+      </ol>
+    </details>
+  )
+}
+
+
 function DeferredBookWorld({ book, seed, articles, books, papers }: { book: BookRecord; seed: string; articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[] }) {
   const anchorRef = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState(() => {
@@ -60,9 +88,9 @@ function DeferredBookWorld({ book, seed, articles, books, papers }: { book: Book
 
   useEffect(() => {
     if (ready || !anchorRef.current) return
-    if (!('IntersectionObserver' in window)) {
-      const timer = window.setTimeout(() => setReady(true), 500)
-      return () => window.clearTimeout(timer)
+    if (typeof IntersectionObserver === 'undefined') {
+      const timer = setTimeout(() => setReady(true), 500)
+      return () => clearTimeout(timer)
     }
     const observer = new IntersectionObserver((entries) => {
       if (!entries.some((entry) => entry.isIntersecting)) return
@@ -321,23 +349,7 @@ export default function BookDetail() {
               {toc.length ? (
                 <div className="divide-y divide-hair">
                   {tocGroups.map((group, groupIndex) => (
-                    <details key={`${group.title}-${groupIndex}`} className="group/toc" defaultOpen={groupIndex === 0}>
-                      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-4 px-5 py-4 md:px-7">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair font-display text-[.68rem] text-accent">{String(groupIndex + 1).padStart(2, '0')}</span>
-                        <strong className="min-w-0 flex-1 break-words text-[.9rem] leading-relaxed text-ink">{group.title}</strong>
-                        <span className="shrink-0 text-[.66rem] text-soft">{group.entries.length} فصول</span>
-                        <span aria-hidden className="text-accent transition-transform group-open/toc:rotate-45">＋</span>
-                      </summary>
-                      <ol className="border-t border-hair bg-wash/[.38] px-5 py-2 md:px-7">
-                        {group.entries.map((entry) => (
-                          <li key={`${entry.index}-${entry.label}`} className="grid min-w-0 grid-cols-[2.2rem_minmax(0,1fr)_auto] items-baseline gap-3 border-b border-hair py-3.5 last:border-b-0">
-                            <span className="font-display text-[.68rem] tabular-nums text-accent">{String(entry.index).padStart(2, '0')}</span>
-                            <Link to={`?book_idea=${encodeURIComponent(entry.label)}#book-knowledge`} className="min-w-0 break-words text-[.82rem] leading-[1.8] text-ink transition-colors hover:text-accent">{entry.label}</Link>
-                            {entry.page && <span className="shrink-0 text-[.68rem] tabular-nums text-soft">ص {entry.page}</span>}
-                          </li>
-                        ))}
-                      </ol>
-                    </details>
+                    <TocDisclosure key={`${group.title}-${groupIndex}`} group={group} groupIndex={groupIndex} />
                   ))}
                 </div>
               ) : <p className="px-5 py-6 text-[.82rem] leading-relaxed text-soft md:px-7">لم يُنشر الفهرس قبل مطابقته بالنسخة المطبوعة. يمكن اعتماده من لوحة التحكم، ولن يعرض الموقع عناوين مُخمنة.</p>}

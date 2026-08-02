@@ -39,9 +39,7 @@
     <script src="/boot.js"></script>
     <!-- صورة LCP (البورتريه) — تحميل مبكّر لتسريع أكبر عنصر مرئي -->
     <link rel="preload" href="/portrait.webp" as="image" fetchpriority="high" />
-    <!-- المحتوى الحي يُجلب بعد أول رسمة من Firestore؛ فتح القناة مبكراً يختصر جولة الشبكة -->
-    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
-    <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+    <!-- المحتوى الحي يُحدَّث في الخلفية بعد استقرار الواجهة؛ لا نفتح اتصالاً مبكراً ينافس أصول الصفحة الحرجة. -->
     <!--
       نسخة الـSEO الثابتة تُحفظ خارج جذر React كي تفهمها محركات البحث، ولا تُعرض
       لزائرٍ يعمل عنده JavaScript أبداً — كانت مهلة الأمان تكشفها بعد ثماني ثوانٍ

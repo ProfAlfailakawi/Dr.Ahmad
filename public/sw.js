@@ -20,9 +20,14 @@ self.addEventListener('install', (e) => {
 })
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())
-  )
+  e.waitUntil((async () => {
+    const keys = await caches.keys()
+    await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
+    if (self.registration.navigationPreload) {
+      try { await self.registration.navigationPreload.enable() } catch { /* غير مدعوم */ }
+    }
+    await self.clients.claim()
+  })())
 })
 
 
@@ -108,19 +113,31 @@ self.addEventListener('fetch', (e) => {
     return
   }
 
-  // الصفحات العامة: الشبكة أولاً، ثم الذاكرة.
+  // الصفحات العامة: غلاف التطبيق من الذاكرة فوراً، وتحديث الشبكة في الخلفية.
+  // الاستراتيجية السابقة كانت تنتظر الشبكة في كل فتح مباشر، ولذلك بدا الموقع
+  // سريعاً مرة وبطيئاً مرة أخرى بحسب زمن الخادم والاتصال.
   if (request.mode === 'navigate') {
-    e.respondWith(
-      fetch(request)
-        .then((r) => {
-          if (r.status === 200) {
-            const copy = r.clone()
-            caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {})
-          }
-          return r
-        })
-        .catch(() => caches.match(request).then((r) => r || caches.match('/index.html')))
-    )
+    const networkUpdate = (async () => {
+      const preload = e.preloadResponse ? await e.preloadResponse.catch(() => null) : null
+      const response = preload || await fetch(request, { cache: 'no-cache' })
+      if (response?.status === 200) {
+        const cache = await caches.open(CACHE)
+        await cache.put(request, response.clone())
+      }
+      return response
+    })()
+
+    e.waitUntil(networkUpdate.catch(() => undefined))
+    e.respondWith((async () => {
+      const cache = await caches.open(CACHE)
+      const cached = await cache.match(request) || await cache.match('/index.html') || await cache.match('/')
+      if (cached) return cached
+      try {
+        return await networkUpdate
+      } catch {
+        return await caches.match('/offline.html') || new Response('Offline', { status: 503 })
+      }
+    })())
     return
   }
 

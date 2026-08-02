@@ -44,7 +44,7 @@ export interface ExtraArticle {
   audioControl?: { readingDisabled?: boolean; fahedDisabled?: boolean; nouraDisabled?: boolean; dialogueDisabled?: boolean; readingStatus?: string; fahedStatus?: string; nouraStatus?: string; dialogueStatus?: string }
 }
 
-type ExtrasOptions = { realtime?: boolean }
+type ExtrasOptions = { realtime?: boolean; enabled?: boolean }
 export type ExtrasResource<T> = {
   data: T[]
   loading: boolean
@@ -85,8 +85,9 @@ function writeExtrasCache(collectionName: string, data: unknown[]) {
 function useExtrasResource<T>(collectionName: string, options: ExtrasOptions = {}): ExtrasResource<T> {
   const initial = useMemo(() => readExtrasCache<T>(collectionName), [collectionName])
   const [data, setData] = useState<T[]>(initial)
-  const [loading, setLoading] = useState(initial.length === 0)
-  const [refreshing, setRefreshing] = useState(firebaseEnabled)
+  const enabled = options.enabled !== false
+  const [loading, setLoading] = useState(enabled && initial.length === 0)
+  const [refreshing, setRefreshing] = useState(enabled && firebaseEnabled)
   const [error, setError] = useState(false)
   const [fromCache, setFromCache] = useState(initial.length > 0)
   const realtime = Boolean(options.realtime)
@@ -96,10 +97,16 @@ function useExtrasResource<T>(collectionName: string, options: ExtrasOptions = {
     let unsubscribe = () => {}
     const cached = readExtrasCache<T>(collectionName)
     setData(cached)
-    setLoading(cached.length === 0)
-    setRefreshing(firebaseEnabled)
+    setLoading(enabled && cached.length === 0)
+    setRefreshing(enabled && firebaseEnabled)
     setError(false)
     setFromCache(cached.length > 0)
+
+    if (!enabled) {
+      setLoading(false)
+      setRefreshing(false)
+      return () => { active = false }
+    }
 
     if (!firebaseEnabled) {
       setLoading(false)
@@ -182,7 +189,7 @@ function useExtrasResource<T>(collectionName: string, options: ExtrasOptions = {
     })()
 
     return () => { active = false; unsubscribe() }
-  }, [collectionName, realtime])
+  }, [collectionName, enabled, realtime])
 
   return { data, loading, refreshing, error, fromCache }
 }
@@ -234,30 +241,66 @@ const errorMessage = (error: unknown) =>
 const documents = (snapshot: { docs: { id: string; data: () => Record<string, unknown> }[] }): RemoteDocument[] =>
   normalizeArabicTanween(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })))
 
-const isAdminRoute = () =>
-  typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+const CMS_CACHE_KEY = 'site:cms-cache:v1'
+const CMS_CACHE_MAX_AGE = 14 * 24 * 60 * 60 * 1000
 
-const afterFirstPaint = (callback: () => void, timeout = 2500) => {
+type CmsCacheEnvelope = { savedAt: number; data: RemoteCmsData }
+
+function readCmsCache(): RemoteCmsData {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(CMS_CACHE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as CmsCacheEnvelope
+    if (!parsed || !Number.isFinite(parsed.savedAt) || Date.now() - parsed.savedAt > CMS_CACHE_MAX_AGE || !parsed.data || typeof parsed.data !== 'object') return {}
+    return normalizeArabicTanween(parsed.data)
+  } catch {
+    return {}
+  }
+}
+
+function writeCmsCache(data: RemoteCmsData) {
+  if (typeof window === 'undefined') return
+  try {
+    const envelope: CmsCacheEnvelope = { savedAt: Date.now(), data }
+    window.localStorage.setItem(CMS_CACHE_KEY, JSON.stringify(envelope))
+  } catch {
+    /* التخزين المحلي تحسين سرعة فقط؛ فشله لا يمس المحتوى الأساسي. */
+  }
+}
+
+function hasCmsCache(data: RemoteCmsData) {
+  return Object.values(data).some((items) => Array.isArray(items) && items.length > 0)
+}
+
+const afterFirstPaint = (callback: () => void, delay = 2500) => {
   if (typeof window === 'undefined') return () => {}
   let cancelled = false
-  const run = () => { if (!cancelled) callback() }
+  let idleId = 0
   const win = window as typeof window & {
     requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number
     cancelIdleCallback?: (id: number) => void
   }
-  const id = win.requestIdleCallback
-    ? win.requestIdleCallback(run, { timeout })
-    : window.setTimeout(run, Math.min(timeout, 1200))
+  const timer = window.setTimeout(() => {
+    if (cancelled) return
+    const run = () => { if (!cancelled) callback() }
+    idleId = win.requestIdleCallback
+      ? win.requestIdleCallback(run, { timeout: 1200 })
+      : window.setTimeout(run, 32)
+  }, delay)
   return () => {
     cancelled = true
-    if (win.cancelIdleCallback && typeof id === 'number') win.cancelIdleCallback(id)
-    else window.clearTimeout(id)
+    window.clearTimeout(timer)
+    if (!idleId) return
+    if (win.cancelIdleCallback) win.cancelIdleCallback(idleId)
+    else window.clearTimeout(idleId)
   }
 }
 
-export function CmsProvider({ children }: { children: ReactNode }) {
-  const [remote, setRemote] = useState<RemoteCmsData>({})
-  const [loading, setLoading] = useState(isAdminRoute)
+export function CmsProvider({ children, realtime = false }: { children: ReactNode; realtime?: boolean }) {
+  const initialCache = useMemo(() => realtime ? {} : readCmsCache(), [realtime])
+  const [remote, setRemote] = useState<RemoteCmsData>(initialCache)
+  const [loading, setLoading] = useState(realtime)
   const [error, setError] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
@@ -274,23 +317,27 @@ export function CmsProvider({ children }: { children: ReactNode }) {
           return [collectionMap[name], documents(snapshot)] as const
         }),
       )
-      // تحديث غير عاجل: دمج المحتوى الحي يعيد رسم الموقع كله، وجعله قابلاً
-      // للمقاطعة يمنع تجميد نقرة أو تنقّل تزامن وصول البيانات معه.
+      const next = Object.fromEntries(entries) as RemoteCmsData
+      // المحتوى الأساسي مضمّن في الحزمة؛ التحديث الحي يصل في الخلفية ولا يحجز التفاعل.
       startTransition(() => {
-        setRemote(Object.fromEntries(entries) as RemoteCmsData)
+        setRemote(next)
         setError(null)
       })
+      if (!realtime) writeCmsCache(next)
     } catch (loadError) {
       setError(errorMessage(loadError))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [realtime])
 
   useEffect(() => {
     let active = true
     const unsubscribers: (() => void)[] = []
     let cancelStart = () => {}
+    let lastRefresh = 0
+
+    if (realtime) setLoading(true)
 
     const startRealtime = async () => {
       try {
@@ -334,16 +381,36 @@ export function CmsProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // المحتوى والعدادات في كل صفحات الموقع مصدرها واحد حيّ. بذلك ينعكس الحذف والإخفاء
-    // فوراً في الرئيسية والسيرة والبحث والقوائم، ولا تبقى أرقام قديمة حتى إعادة البناء.
-    cancelStart = afterFirstPaint(() => { void startRealtime() }, isAdminRoute() ? 450 : 900)
+    if (realtime) {
+      // لوحة التحكم وحدها تحتاج بثاً لحظياً دائماً.
+      cancelStart = afterFirstPaint(() => { void startRealtime() }, 180)
+    } else {
+      // الصفحات العامة تعرض النسخة المضمّنة/المحفوظة فوراً ثم تحدّث مرة واحدة
+      // في وقت خمول؛ خمس قنوات Firestore دائمة كانت سبباً رئيسياً للتذبذب.
+      const delay = hasCmsCache(initialCache) ? 12000 : 4500
+      cancelStart = afterFirstPaint(() => {
+        lastRefresh = Date.now()
+        void reload()
+      }, delay)
+    }
+
+    const refreshWhenVisible = () => {
+      if (realtime || document.visibilityState !== 'visible') return
+      if (Date.now() - lastRefresh < 10 * 60 * 1000) return
+      lastRefresh = Date.now()
+      void reload()
+    }
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    window.addEventListener('online', refreshWhenVisible)
 
     return () => {
       active = false
       cancelStart()
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+      window.removeEventListener('online', refreshWhenVisible)
       unsubscribers.forEach((unsubscribe) => unsubscribe())
     }
-  }, [reload])
+  }, [initialCache, realtime, reload])
 
   const value = useMemo<CmsContextValue>(() => ({
     remote,

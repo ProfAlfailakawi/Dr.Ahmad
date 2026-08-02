@@ -3,7 +3,7 @@ import { AnimatePresence } from 'framer-motion'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router'
 import { Footer, Nav } from './components/ui'
 import { FloatingActions } from './components/extras'
-import { CmsProvider, warmPublicExtras } from './lib/content'
+import { CmsProvider } from './lib/content'
 import { useTrackJourney, useTrackView } from './lib/views'
 import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-audio'
 import { ReadingMemoryGuard } from './components/MySpace'
@@ -132,18 +132,50 @@ function WesternDigitsGuard() {
       while (walker.nextNode()) normalizeText(walker.currentNode)
     }
 
-    normalizeElement(document.body)
+    // كان كل تحديث React يمسح الشجرة فوراً داخل MutationObserver، فيتكدّس
+    // العمل على الصفحات الطويلة. نجمع العقد وننظفها دفعة واحدة وقت الخمول.
+    const pending = new Set<Node>()
+    const win = window as typeof window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+    let scheduled = 0
+    const flush = () => {
+      scheduled = 0
+      const nodes = Array.from(pending)
+      pending.clear()
+      for (const node of nodes) {
+        if (node.nodeType === Node.TEXT_NODE) normalizeText(node)
+        else if (node instanceof Element) normalizeElement(node)
+      }
+    }
+    const schedule = () => {
+      if (scheduled) return
+      scheduled = win.requestIdleCallback
+        ? win.requestIdleCallback(flush, { timeout: 350 })
+        : window.setTimeout(flush, 32)
+    }
+    const queue = (node: Node) => {
+      pending.add(node)
+      schedule()
+    }
+
+    queue(document.body)
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        if (mutation.type === 'characterData') normalizeText(mutation.target)
-        for (const node of mutation.addedNodes) {
-          if (node.nodeType === Node.TEXT_NODE) normalizeText(node)
-          else if (node instanceof Element) normalizeElement(node)
-        }
+        if (mutation.type === 'characterData') queue(mutation.target)
+        for (const node of mutation.addedNodes) queue(node)
       }
     })
     observer.observe(document.body, { childList: true, subtree: true, characterData: true })
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      pending.clear()
+      if (scheduled) {
+        if (win.cancelIdleCallback) win.cancelIdleCallback(scheduled)
+        else window.clearTimeout(scheduled)
+      }
+    }
   }, [])
   return null
 }
@@ -290,18 +322,6 @@ function ConditionalFooter() {
 
 
 
-function CriticalContentWarmup() {
-  useEffect(() => {
-    const warm = () => { void warmPublicExtras(['site_inbox', 'site_faqs', 'site_questions', 'site_testimonials', 'site_radar']) }
-    if (typeof window.requestIdleCallback === 'function') {
-      const idle = window.requestIdleCallback(warm, { timeout: 1800 })
-      return () => window.cancelIdleCallback(idle)
-    }
-    const timer = window.setTimeout(warm, 500)
-    return () => window.clearTimeout(timer)
-  }, [])
-  return null
-}
 
 /** في النسخة المثبّتة، الرجوع إلى البرنامج بعد خروجه يبدأ من الرئيسية بدل
     استعادة صفحة داخلية قديمة. لا يطبّق ذلك على تبويب المتصفح العادي. */
@@ -352,30 +372,37 @@ function RouteViewTracker() {
   return null
 }
 
+function RoutedApplication() {
+  const location = useLocation()
+  const adminRoute = location.pathname.startsWith('/admin')
+  return (
+    <CmsProvider realtime={adminRoute}>
+      <PersistentAudioProvider>
+        <WesternDigitsGuard />
+        <AdaptiveSilence />
+        <ExclusiveDetailsGuard />
+        <ReadingMemoryGuard />
+        <PwaResumeHome />
+        <RouteJourneyTracker />
+        <RouteViewTracker />
+        <RouteScrollManager />
+        <ConditionalOnboarding />
+        <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
+        <ConditionalNav />
+        <main id="main">
+          <AnimatedRoutes />
+        </main>
+        <ConditionalActions />
+        <ConditionalFooter />
+      </PersistentAudioProvider>
+    </CmsProvider>
+  )
+}
+
 export default function App() {
   return (
-    <CmsProvider>
-      <BrowserRouter>
-        <PersistentAudioProvider>
-          <CriticalContentWarmup />
-          <WesternDigitsGuard />
-          <AdaptiveSilence />
-          <ExclusiveDetailsGuard />
-          <ReadingMemoryGuard />
-          <PwaResumeHome />
-          <RouteJourneyTracker />
-          <RouteViewTracker />
-          <RouteScrollManager />
-          <ConditionalOnboarding />
-          <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
-          <ConditionalNav />
-          <main id="main">
-            <AnimatedRoutes />
-          </main>
-          <ConditionalActions />
-          <ConditionalFooter />
-        </PersistentAudioProvider>
-      </BrowserRouter>
-    </CmsProvider>
+    <BrowserRouter>
+      <RoutedApplication />
+    </BrowserRouter>
   )
 }

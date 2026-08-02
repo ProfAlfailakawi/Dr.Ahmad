@@ -133,3 +133,11 @@
 - src/pages/Upcoming.tsx
 
 لم يُرفع أي شيء إلى GitHub أو الموقع.
+
+تصحيح TypeScript بعد فحص GitHub Actions
+- استُبدل فحص `'IntersectionObserver' in window` بفحص `typeof IntersectionObserver === 'undefined'` حتى لا يضيّق TypeScript نوع `window` إلى `never` داخل الفرع الاحتياطي.
+- استُبدل `window.setTimeout/window.clearTimeout` في ذلك الفرع بـ `setTimeout/clearTimeout` المحايدين نوعياً.
+- أُلغي استخدام الخاصية غير المدعومة `defaultOpen` على عنصر `<details>`.
+- أُضيف مكوّن `TocDisclosure` بحالة React صريحة (`open` + `onToggle`) لفتح الباب الأول افتراضياً مع بقاء الطي والفتح تفاعلياً.
+- أضيف حارسان جديدان إلى `scripts/test-all-user-notes.mjs` لمنع رجوع الخطأين.
+- النتيجة بعد التصحيح: 65 تحققاً مخصصاً ناجحاً، 0 إخفاقاً.

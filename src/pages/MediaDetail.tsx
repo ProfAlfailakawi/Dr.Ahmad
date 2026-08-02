@@ -103,7 +103,7 @@ export default function MediaDetail() {
         ],
       }} />
 
-      <article className="px-6 pb-24 pt-32 md:px-11 md:pt-40">
+      <article className="px-6 pb-12 pt-32 md:px-11 md:pb-16 md:pt-40">
         <div className="mx-auto max-w-[980px]">
           <FadeUp><Link to="/media" className="text-[.85rem] text-soft transition-colors hover:text-accent">← كل اللقاءات</Link></FadeUp>
           <FadeUp delay={0.05}>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { KnowledgeEntry } from '../components/KnowledgeEntry'
@@ -30,28 +30,28 @@ type TabId = 'all' | UnifiedKind | 'spoken' | 'passage' | 'askbook'
 
 const KIND_TABS: { id: TabId; label: string }[] = [
   { id: 'all', label: 'الكل' },
-  { id: 'article', label: 'المقالات' },
-  { id: 'paper', label: 'الأبحاث' },
-  { id: 'book', label: 'الكتب' },
-  { id: 'media', label: 'الإعلام' },
+  { id: 'article', label: 'مقالات الدكتور' },
+  { id: 'paper', label: 'أبحاث الدكتور' },
+  { id: 'book', label: 'كتب الدكتور' },
+  { id: 'media', label: 'لقاءات الدكتور' },
   { id: 'question', label: 'الأسئلة' },
   /* بوابة مباشرة إلى ميزة «اسأل هذا الكتاب» كي لا تبقى مدفونة في صفحات
      الكتب. هو تبويبٌ خدمي أكثر من كونه قائمة نتائج. */
-  { id: 'askbook', label: 'اسأل كتاباً' },
+  { id: 'askbook', label: 'ابحث في كتاب' },
   /* التبويب الوحيد الذي لا يفتح نصاً بل صوتاً: جملةٌ نُطقت، والنقر يشغّلها
      عند ثانيتها. يبقى آخر الصف لأنه أحدثها وأقلها استعمالاً في البدء. */
   { id: 'spoken', label: 'جُمل منطوقة' },
   /* متون الكتب التسعة كاملة — بإذن الدكتور. فهرسها ثقيل فلا يُجلب إلا عند
      فتح التبويب، ثم يبقى في الذاكرة فتصير النتائج فورية. */
-  { id: 'passage', label: 'متون الكتب' },
+  { id: 'passage', label: 'متون كتب الدكتور' },
 ]
 
 const KIND_BADGE: Record<UnifiedKind | 'passage', string> = {
-  passage: 'من كتاب',
-  article: 'مقال',
-  paper: 'بحث',
-  book: 'كتاب',
-  media: 'إعلام',
+  passage: 'من كتب الدكتور',
+  article: 'من مقالات الدكتور',
+  paper: 'من أبحاث الدكتور',
+  book: 'من كتب الدكتور',
+  media: 'من لقاءات الدكتور',
   question: 'سؤال',
   audio: 'صوت',
   curated: 'مختارة',
@@ -139,19 +139,26 @@ export default function Search() {
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
   const years = useMemo(() => Array.from(new Set(articles.map((article) => article.iso.slice(0, 4))))
     .sort((a, b) => b.localeCompare(a)), [articles])
-  const normalizedQuery = query.trim()
+  const deferredQuery = useDeferredValue(query)
+  const normalizedQuery = deferredQuery.trim()
   const searchStarted = normalizedQuery.length >= 2
 
-  /* عبارة البحث والتبويب يسكنان الرابط — فتُشارك النتائج نفسها برابطها */
+  /* نحدّث الرابط بعد هدوء الكتابة بقليل. سابقاً كان كل حرف يغيّر location.search،
+     ومدير التمرير يعيد الصفحة إلى الأعلى؛ فكان الحقل يبدو وكأنه يعلّق. */
   useEffect(() => {
-    const next = new URLSearchParams(searchParams)
-    if (normalizedQuery) next.set('q', normalizedQuery)
-    else next.delete('q')
-    if (tab !== 'all') next.set('tab', tab)
-    else next.delete('tab')
-    if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [normalizedQuery, tab])
+    const timer = window.setTimeout(() => {
+      const typed = query.trim()
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current)
+        if (typed) next.set('q', typed)
+        else next.delete('q')
+        if (tab !== 'all') next.set('tab', tab)
+        else next.delete('tab')
+        return next.toString() === current.toString() ? current : next
+      }, { replace: true })
+    }, 240)
+    return () => window.clearTimeout(timer)
+  }, [query, setSearchParams, tab])
 
   const knowledgeGraph = useMemo(() => buildKnowledgeGraph({ articles, books, papers, media }), [articles, books, media, papers])
 
@@ -368,7 +375,7 @@ export default function Search() {
       <PageHead
         label="بحث"
         title="البحث العميق."
-        sub="محرك معرفة واحد يفتح الأرشيف كله: المقالات والأبحاث والكتب والإعلام والأسئلة."
+        sub="محرك معرفة واحد يفتح أرشيف الدكتور كله: مقالاته وأبحاثه وكتبه ولقاءاته وأسئلته."
       />
 
       <div className="px-6 pt-8 md:px-11"><div className="mx-auto max-w-3xl"><KnowledgeEntry /></div></div>
@@ -381,7 +388,8 @@ export default function Search() {
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="كلمة، فكرة، عنوان، باحث، أو سؤال"
+                  placeholder="كلمة، فكرة، عنوان، كتاب، أو سؤال"
+                  enterKeyHint="search"
                   aria-label="بحث في الأرشيف كله"
                   className="w-full rounded-none border-0 border-b border-hair bg-transparent py-5 pe-4 ps-14 font-display text-[clamp(1.2rem,4.3vw,2.5rem)] font-semibold leading-[1.5] text-ink outline-none transition-colors placeholder:text-soft/[.45] focus:border-accent"
                 />
@@ -462,7 +470,7 @@ export default function Search() {
             <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
               <p className="text-[.9rem] text-soft" aria-live="polite">
                 {tab === 'askbook' ? (
-                  <>اختر كتاباً واكتب سؤالك؛ الجواب يظهر هنا من متن الكتاب نفسه.</>
+                  <>اختر كتاباً واكتب ما تبحث عنه؛ تظهر الإجابة من متن الكتاب نفسه.</>
                 ) : (
                   <>
                     {ar(tab === 'spoken' ? spokenHits.length : activeRows.length)} نتيجة
@@ -490,9 +498,9 @@ export default function Search() {
           {tab === 'askbook' && <FadeUp delay={0.08}>
             <section className="mt-8 min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-hair bg-wash p-4 sm:p-5 md:p-7" aria-labelledby="ask-book-gateway-title">
               <div className="min-w-0">
-                <span className="text-[.72rem] font-semibold uppercase tracking-[.08em] text-accent">اسأل كتاباً</span>
-                <h2 id="ask-book-gateway-title" className="mt-2 break-words font-display text-[clamp(1.35rem,2.8vw,2rem)] font-semibold leading-[1.45] text-ink">حوار مباشر مع متن الكتاب.</h2>
-                <p className="mt-3 max-w-2xl text-[.88rem] leading-[1.9] text-soft">اختر الكتاب ثم اكتب سؤالك. لا يغادر الجواب هذه الصفحة، ولا يستعين بمادة من خارج الكتاب المختار.</p>
+                <span className="text-[.72rem] font-semibold uppercase tracking-[.08em] text-accent">ميزة خاصة · ابحث في كتاب</span>
+                <h2 id="ask-book-gateway-title" className="mt-2 break-words font-display text-[clamp(1.35rem,2.8vw,2rem)] font-semibold leading-[1.45] text-ink">بحث مباشر داخل متن كتاب من كتب الدكتور.</h2>
+                <p className="mt-3 max-w-2xl text-[.88rem] leading-[1.9] text-soft">اختر كتاباً من كتب الدكتور ثم اكتب سؤالك أو مفهومك. تظهر أقرب الإجابات الموثقة من متن الكتاب المختار فقط.</p>
 
                 <div dir="rtl" className="ask-book-rail rail mt-5 flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden" aria-label="اختيار الكتاب">
                   {books.map((book) => (
@@ -512,7 +520,7 @@ export default function Search() {
                       className={`w-[78vw] max-w-[18rem] shrink-0 snap-start rounded-2xl border px-4 py-3 text-right transition-colors sm:w-[18rem] ${askBookSlug === book.slug ? 'border-accent bg-canvas shadow-sm' : 'border-hair bg-canvas/70 hover:border-accent/[.45]'}`}
                     >
                       <strong className="block break-words text-[.82rem] leading-relaxed text-ink">{book.title}</strong>
-                      <span className="mt-1 block line-clamp-2 text-[.68rem] leading-relaxed text-soft">{book.year ? `سنة النشر ${book.year}` : 'من المؤلفات المنشورة'}{book.desc ? ` · ${book.desc}` : ''}</span>
+                      <span className="mt-1 block line-clamp-2 text-[.68rem] leading-relaxed text-soft">{book.year ? `من كتب الدكتور · ${book.year}` : 'من كتب الدكتور'}{book.desc ? ` · ${book.desc}` : ''}</span>
                     </button>
                   ))}
                 </div>
@@ -531,7 +539,7 @@ export default function Search() {
                   className="min-h-32 w-full min-w-0 max-w-full resize-y rounded-[1.4rem] border border-hair bg-wash px-4 py-3 text-[.88rem] leading-relaxed text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent"
                 />
                 <div className="flex flex-wrap items-center gap-2">
-                  <button type="submit" disabled={!selectedAskBook || askBookQuestion.trim().length < 2 || askBookLoading} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45">{askBookLoading ? 'يفتح متن الكتاب…' : 'اسأل الكتاب'}</button>
+                  <button type="submit" disabled={!selectedAskBook || askBookQuestion.trim().length < 2 || askBookLoading} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45">{askBookLoading ? 'يفتح متن الكتاب…' : 'ابحث في الكتاب'}</button>
                   <button type="button" onClick={() => setAskBookQuestion('ما الفكرة الأساسية في هذا الكتاب؟')} className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">سؤال جاهز</button>
                 </div>
                 {askBookError && <p className="text-[.72rem] leading-relaxed text-accent" role="alert">{askBookError}</p>}
@@ -613,7 +621,7 @@ export default function Search() {
             {visibleRows.map((row, index) => (
               <FadeUp key={`${row.kind}-${row.url}-${row.title.slice(0, 30)}`} delay={Math.min(index * 0.025, 0.25)}>
                 <li className={`relative ${index === 0 ? '' : 'border-t border-hair'}`}>
-                  <Link to={row.url} className={`group grid gap-3 py-6 md:grid-cols-[7rem_1fr_5.5rem] md:items-baseline ${row.kind === 'book' ? 'pl-12' : ''}`}>
+                  <Link to={row.url} className={`group grid gap-3 py-6 md:grid-cols-[7rem_1fr_5.5rem] md:items-baseline ${row.kind === 'book' ? 'pb-16' : ''}`}>
                     <span className={`h-fit w-fit rounded-full px-3 py-1 text-[.7rem] font-bold ${row.kind === 'article' ? 'bg-accent/10 text-accent' : 'border border-hair text-soft'}`}>
                       {KIND_BADGE[row.kind]}
                     </span>
@@ -632,11 +640,12 @@ export default function Search() {
                   {row.kind === 'book' && row.slug && (
                     <Link
                       to={`/search?tab=askbook&book=${encodeURIComponent(row.slug)}`}
-                      aria-label={`اسأل كتاب ${row.title}`}
-                      title="اسأل هذا الكتاب"
-                      className="absolute left-0 top-6 flex h-10 w-10 items-center justify-center rounded-full border border-hair bg-canvas text-soft transition-colors hover:border-accent hover:text-accent"
+                      aria-label={`ابحث داخل كتاب ${row.title}`}
+                      title="ابحث في هذا الكتاب"
+                      className="absolute bottom-3 left-0 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-accent/35 bg-canvas px-3 text-[.68rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
                     >
-                      <SocialIcon name="Question" size={16} />
+                      <SocialIcon name="Search" size={14} />
+                      <span>ابحث فيه</span>
                     </Link>
                   )}
                 </li>
@@ -651,7 +660,7 @@ export default function Search() {
               <div className="py-16 text-center md:py-20">
                 <h2 className="font-display text-[clamp(1.35rem,3vw,1.8rem)] font-semibold text-ink">عمّ تبحث اليوم؟</h2>
                 <p className="mx-auto mt-2 max-w-md text-[.9rem] leading-[1.8] text-soft">
-                  اكتب حرفين على الأقل — البحث يفتح المقالات والأبحاث والكتب والإعلام والأسئلة معاً.
+                  اكتب حرفين على الأقل — البحث يفتح مقالات الدكتور وأبحاثه وكتبه ولقاءاته والأسئلة معاً.
                 </p>
               </div>
             </FadeUp>

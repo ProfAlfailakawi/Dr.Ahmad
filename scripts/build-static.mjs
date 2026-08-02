@@ -879,7 +879,7 @@ function generateBodyHtml(path, lang = 'ar') {
             <a href="/research/${p.slug}" style="color: #15161A; text-decoration: none;">${esc(p.title)}</a>
           </h2>
           <p style="color: #626A76; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; margin-bottom: 0.5rem;">${esc(p.meta)}</p>
-          <p style="color: #3E5C78; font-size: 0.85rem; font-family: 'Tajawal', sans-serif; font-weight: 500; margin: 0;">الباحثون: د. أحمد حسين الفيلكاوي${p.coAuthors ? `، ${esc(p.coAuthors)}` : ''}</p>
+          <p style="color: #3E5C78; font-size: 0.85rem; font-family: 'Tajawal', sans-serif; font-weight: 500; margin: 0;">${p.coAuthors ? 'الباحثون' : 'الباحث'}: د. أحمد حسين الفيلكاوي${p.coAuthors ? `، ${esc(p.coAuthors)}` : ''}</p>
         </div>
       `).join('')
 
@@ -907,7 +907,7 @@ function generateBodyHtml(path, lang = 'ar') {
           <article style="text-align: right;">
             <header style="margin-bottom: 2rem;">
               <h1 dir="auto" style="font-size: 2.25rem; font-family: 'El Messiri', serif; font-weight: bold; color: #15161A; margin-bottom: 1rem; line-height: 1.3;">بحث محكّم: ${esc(p.title)}</h1>
-              <p style="color: #626A76; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">الباحثون: د. أحمد حسين الفيلكاوي${p.coAuthors ? `، ${esc(p.coAuthors)}` : ''}</p>
+              <p style="color: #626A76; font-size: 1.05rem; font-family: 'Tajawal', sans-serif;">${p.coAuthors ? 'الباحثون' : 'الباحث'}: د. أحمد حسين الفيلكاوي${p.coAuthors ? `، ${esc(p.coAuthors)}` : ''}</p>
             </header>
             <section style="background: rgba(62, 92, 120, 0.03); padding: 2.5rem; border-radius: 8px; border-right: 4px solid #3E5C78; margin-bottom: 2rem;">
               <p style="color: #3E5C78; font-size: .85rem; font-weight: 700; font-family: 'Tajawal', sans-serif; margin: 0 0 .75rem;">الملخص</p>

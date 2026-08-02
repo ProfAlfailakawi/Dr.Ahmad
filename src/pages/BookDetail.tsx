@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useLocation, useParams } from 'react-router'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
@@ -60,7 +60,7 @@ function TocDisclosure({ group, groupIndex }: { group: TocGroup; groupIndex: num
         {group.entries.map((entry) => (
           <li key={`${entry.index}-${entry.label}`} className="grid min-w-0 grid-cols-[2.2rem_minmax(0,1fr)_auto] items-baseline gap-3 border-b border-hair py-3.5 last:border-b-0">
             <span className="font-display text-[.68rem] tabular-nums text-accent">{String(entry.index).padStart(2, '0')}</span>
-            <Link to={`?book_idea=${encodeURIComponent(entry.label)}#book-knowledge`} className="min-w-0 break-words text-[.82rem] leading-[1.8] text-ink transition-colors hover:text-accent">{entry.label}</Link>
+            <Link to={`?book_question=${encodeURIComponent(entry.label)}#ask-book-section`} aria-label={`ابحث عن ${entry.label} داخل الكتاب`} className="min-w-0 break-words text-[.82rem] leading-[1.8] text-ink transition-colors hover:text-accent">{entry.label}</Link>
             {entry.page && <span className="shrink-0 text-[.68rem] tabular-nums text-soft">ص {entry.page}</span>}
           </li>
         ))}
@@ -71,6 +71,7 @@ function TocDisclosure({ group, groupIndex }: { group: TocGroup; groupIndex: num
 
 
 function DeferredBookWorld({ book, seed, articles, books, papers }: { book: BookRecord; seed: string; articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[] }) {
+  const location = useLocation()
   const anchorRef = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -78,13 +79,8 @@ function DeferredBookWorld({ book, seed, articles, books, papers }: { book: Book
   })
 
   useEffect(() => {
-    const revealFromLocation = () => {
-      if (/book-knowledge|ask-book-section/u.test(window.location.hash) || new URLSearchParams(window.location.search).has('book_question')) setReady(true)
-    }
-    revealFromLocation()
-    window.addEventListener('hashchange', revealFromLocation)
-    return () => window.removeEventListener('hashchange', revealFromLocation)
-  }, [])
+    if (/book-knowledge|ask-book-section/u.test(location.hash) || new URLSearchParams(location.search).has('book_question')) setReady(true)
+  }, [location.hash, location.search])
 
   useEffect(() => {
     if (ready || !anchorRef.current) return
@@ -305,8 +301,8 @@ export default function BookDetail() {
                   to={`/publications/${book.slug}#ask-book-section`}
                   className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[.78rem] font-semibold text-white transition-colors hover:bg-accent-deep"
                 >
-                  <SocialIcon name="Question" size={16} />
-                  <span>اسأل هذا الكتاب</span>
+                  <SocialIcon name="Search" size={16} />
+                  <span>ابحث في هذا الكتاب</span>
                 </Link>
                 {book.pdf && (
                   <a

@@ -44,7 +44,7 @@ export function NextStep({
   if (!step) return null
 
   return (
-    <div className="mx-auto max-w-shell px-6 pb-20 md:px-11">
+    <div className="mx-auto max-w-shell px-6 pb-8 md:px-11 md:pb-10">
       <Link
         to={step.to}
         onClick={() => rememberStep(step.key)}

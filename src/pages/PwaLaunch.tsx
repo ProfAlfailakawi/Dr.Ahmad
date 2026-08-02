@@ -1,20 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-
-const safeDestination = (value: string | null) => {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return '/articles'
-  if (['/', '/launch', '/admin'].includes(value) || value.startsWith('/cv-file/')) return '/articles'
-  return value
-}
 
 export default function PwaLaunch() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const [visible, setVisible] = useState<boolean | null>(null)
-  const destination = useMemo(() => {
-    try { return safeDestination(localStorage.getItem('pwa:last-route')) }
-    catch { return '/articles' }
-  }, [])
+  const destination = '/'
 
   useEffect(() => {
     /* شاشة العودة ليست محطةً إجبارية. تظهر فقط عند فتح الـPWA بعد غيابٍ
@@ -47,7 +38,7 @@ export default function PwaLaunch() {
         <img src="/logo.png" alt="د. أحمد حسين الفيلكاوي" className="pwa-launch__logo dark:invert" />
         <p className="pwa-launch__eyebrow">مكتبة د. أحمد الفيلكاوي</p>
         <h1>أهلاً بعودتك.</h1>
-        <p>أفتح لك آخر مكان توقفت عنده.</p>
+        <p>أفتح لك الصفحة الرئيسية.</p>
         <div className="pwa-launch__line" aria-hidden="true"><span /></div>
       </div>
     </section>

@@ -59,10 +59,11 @@ function QuickArticleActions({ article, className = '' }: { article: ArticleReco
     return () => { window.removeEventListener(SPACE_EVENT, sync); window.removeEventListener('storage', sync) }
   }, [article.slug])
 
-  const copyLink = async () => {
+  const shareArticle = async () => {
+    const url = `${window.location.origin}/articles/${article.slug}`
     try {
-      const url = `${window.location.origin}/articles/${article.slug}`
-      await navigator.clipboard.writeText(url)
+      if (navigator.share) await navigator.share({ title: article.title, url })
+      else await navigator.clipboard.writeText(url)
       setCopied(true)
       window.setTimeout(() => setCopied(false), 2200)
     } catch {
@@ -83,12 +84,12 @@ function QuickArticleActions({ article, className = '' }: { article: ArticleReco
       </button>
       <button
         type="button"
-        onClick={(event) => { event.preventDefault(); event.stopPropagation(); void copyLink() }}
-        aria-label={copied ? 'تم نسخ الرابط' : 'نسخ رابط المقال'}
-        title={copied ? 'تم نسخ الرابط' : 'نسخ رابط المقال'}
+        onClick={(event) => { event.preventDefault(); event.stopPropagation(); void shareArticle() }}
+        aria-label={copied ? 'تمت مشاركة المقال' : 'مشاركة المقال'}
+        title={copied ? 'تمت مشاركة المقال' : 'مشاركة المقال'}
         className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-[.9rem] transition-colors ${copied ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
       >
-        <ActionIcon name={copied ? 'Check' : 'Copy'} size={16} />
+        <ActionIcon name={copied ? 'Check' : 'Share'} size={16} />
       </button>
     </div>
   )
@@ -471,16 +472,14 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
     <div data-hover className={`group relative h-full rounded-2xl border border-hair bg-canvas transition-colors hover:border-accent ${compact ? 'p-6 md:p-7' : 'max-w-3xl border-0 p-0'}`}>
       <Link to={`/articles/${pick.a.slug}`} aria-label={`اقرأ مقال: ${pick.a.title}`} className="absolute inset-0 z-0"><span className="sr-only">{pick.a.title}</span></Link>
       <div className="pointer-events-none relative z-10">
-        <div className="flex items-start justify-between gap-3 text-accent">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="mt-[.7em] h-[1.5px] w-7 shrink-0 bg-accent" />
-            <p className="min-w-0 text-[.74rem] font-semibold leading-[1.7]">
-              <span className="block sm:inline">في مثل هذا الأسبوع</span>
-              <span className="hidden px-1 sm:inline">·</span>
-              <span className="block sm:inline">{yearsAgo(n)}</span>
+        <div className="flex min-w-0 items-center justify-between gap-2.5 text-accent">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="h-[1.5px] w-7 shrink-0 bg-accent" />
+            <p className="min-w-0 whitespace-nowrap text-[clamp(.62rem,2.25vw,.74rem)] font-semibold leading-none">
+              في مثل هذا الأسبوع <span className="px-1 text-soft/70">·</span> {yearsAgo(n)}
             </p>
           </div>
-          <QuickArticleActions article={pick.a} className="pointer-events-auto shrink-0" />
+          <QuickArticleActions article={pick.a} className="pointer-events-auto shrink-0 flex-nowrap" />
         </div>
         <h2 className={`mt-4 font-display font-semibold leading-[1.55] text-ink transition-colors duration-300 group-hover:text-accent ${compact ? 'text-[1.02rem] md:text-[1.08rem]' : 'text-[clamp(1.4rem,3.2vw,2.1rem)]'}`}>
           «{pick.a.title}»

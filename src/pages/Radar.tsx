@@ -11,7 +11,7 @@ import { Link } from "react-router";
 import { loadBookPassages, matchBookQuotes, searchBookPassages } from "../lib/book-quotes";
 import { useSeo } from "../components/seo";
 import { FadeUp, Page, PageHead } from "../components/ui";
-import { useExtras } from "../lib/content";
+import { useExtrasState } from "../lib/content";
 import {
   radarArabicNote,
   radarArabicTitle,
@@ -148,7 +148,8 @@ export default function Radar() {
       "كل ما التقطه الرادار من مصادر موثوقة، يوماً بيوم — حصاد أسبوعي مؤرشف بالعربية مع رابط المادة الأصلية.",
   });
 
-  const items = useExtras<RadarItem>("site_radar", { realtime: true })
+  const radarState = useExtrasState<RadarItem>("site_radar", { realtime: true });
+  const items = radarState.data
     .map((r) => ({ ...r, url: liveLink(r.url) || "", ar: radarArabicTitle(r.ar, r.en), arNote: radarArabicNote(r.arNote, r.en) }))
     .filter((r) => (!r.status || r.status === "published") && r.day && r.ar && r.url)
     .sort((a, b) => b.day.localeCompare(a.day));
@@ -187,7 +188,9 @@ export default function Radar() {
             <FadeUp>
               <div className="rounded-2xl border border-hair bg-wash py-20 text-center">
                 <p className="text-[1.05rem] font-light text-soft">
-                  لا توجد مواد في أرشيف الرادار الآن.
+                  {radarState.loading || radarState.refreshing
+                    ? "نستعيد أرشيف الرادار المحفوظ ونتحقق من أحدث نسخة…"
+                    : "لا توجد مواد في أرشيف الرادار الآن."}
                 </p>
               </div>
             </FadeUp>

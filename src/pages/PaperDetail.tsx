@@ -172,7 +172,7 @@ export default function PaperDetail() {
         genre: studyType || undefined,
       }} />
 
-      <article className="px-4 pb-24 pt-32 sm:px-6 md:px-11 md:pt-40">
+      <article className="px-4 pb-12 pt-32 sm:px-6 md:px-11 md:pb-16 md:pt-40">
         <div className="mx-auto max-w-[960px]">
           <FadeUp>
             <div className="flex items-center justify-between gap-4">
@@ -228,7 +228,7 @@ export default function PaperDetail() {
                     DOI «مسجّل» ولا «مجلة محكّمة» بلا اسمها. البيانات من البحث نفسه فقط. */}
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {topic && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">الموضوع الأساسي</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{topic}</strong></div>}
-                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">الباحثون</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{researchers}</strong></div>
+                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">{p.coAuthors?.trim() ? 'الباحثون' : 'الباحث'}</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{researchers}</strong></div>
                   {journal && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">جهة النشر / وعاء النشر</span><strong dir="auto" className="mt-1 block min-w-0 whitespace-normal text-[.88rem] font-bold leading-[1.85] text-ink [overflow-wrap:anywhere]">{journal}</strong></div>}
                   {year && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">سنة الصدور</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{year}</strong></div>}
                   {doi && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">المعرّف المعياري DOI</span><strong dir="ltr" className="mt-1 block min-w-0 font-mono text-[.8rem] text-accent [overflow-wrap:anywhere]">{doi}</strong></div>}

@@ -51,7 +51,9 @@ function CourseArchive({ items }: { items: CvTextItem[] }) {
 
   return (
     <div className="grid gap-4">
-      {groups.map((group) => (
+      {groups.map((group) => {
+        const english = group === groups.find((candidate) => candidate.items === technical)
+        return (
         <details key={group.title} open={group.open} className="group overflow-hidden rounded-2xl border border-hair bg-wash/[.45]">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 marker:hidden">
             <span className="font-display text-[1rem] font-semibold text-ink">{group.title}</span>
@@ -64,17 +66,18 @@ function CourseArchive({ items }: { items: CvTextItem[] }) {
             </span>
           </summary>
           <div className="border-t border-hair px-4 py-4 sm:px-5">
-            <ul className="grid gap-2.5 md:grid-cols-2">
+            <ul dir={english ? 'ltr' : 'rtl'} className="grid gap-2.5 md:grid-cols-2">
               {group.items.map((item, index) => (
-                <li key={item.id} className="rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] font-light leading-[1.65] text-ink">
+                <li key={item.id} className={`rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] font-light leading-[1.65] text-ink ${english ? 'text-left' : 'text-right'}`}>
                   <span className="me-2 text-[.7rem] font-semibold text-accent/70">{index + 1}</span>
-                  <span dir="auto">{item.text}</span>
+                  <span dir={english ? 'ltr' : 'auto'}>{item.text}</span>
                 </li>
               ))}
             </ul>
           </div>
         </details>
-      ))}
+        )
+      })}
     </div>
   )
 }

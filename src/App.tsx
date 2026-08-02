@@ -1,9 +1,9 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from 'react-router'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router'
 import { Footer, Nav } from './components/ui'
 import { FloatingActions } from './components/extras'
-import { CmsProvider } from './lib/content'
+import { CmsProvider, warmPublicExtras } from './lib/content'
 import { useTrackJourney, useTrackView } from './lib/views'
 import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-audio'
 import { ReadingMemoryGuard } from './components/MySpace'
@@ -65,7 +65,7 @@ function RouteScrollManager() {
   const navigationType = useNavigationType()
 
   useLayoutEffect(() => {
-    const key = location.key || `${location.pathname}${location.search}`
+    const key = location.pathname
     let cancelled = false
     let attempts = 0
 
@@ -97,7 +97,7 @@ function RouteScrollManager() {
       window.cancelAnimationFrame(frame)
       routeScrollPositions.set(key, window.scrollY)
     }
-  }, [location.hash, location.key, location.pathname, location.search, navigationType])
+  }, [location.hash, location.pathname, navigationType])
 
   return null
 }
@@ -289,13 +289,51 @@ function ConditionalFooter() {
 }
 
 
+
+function CriticalContentWarmup() {
+  useEffect(() => {
+    const warm = () => { void warmPublicExtras(['site_inbox', 'site_faqs', 'site_questions', 'site_testimonials', 'site_radar']) }
+    if (typeof window.requestIdleCallback === 'function') {
+      const idle = window.requestIdleCallback(warm, { timeout: 1800 })
+      return () => window.cancelIdleCallback(idle)
+    }
+    const timer = window.setTimeout(warm, 500)
+    return () => window.clearTimeout(timer)
+  }, [])
+  return null
+}
+
+/** في النسخة المثبّتة، الرجوع إلى البرنامج بعد خروجه يبدأ من الرئيسية بدل
+    استعادة صفحة داخلية قديمة. لا يطبّق ذلك على تبويب المتصفح العادي. */
+function PwaResumeHome() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const hiddenAt = useRef(0)
+
+  useEffect(() => {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+      || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
+    if (!standalone) return
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt.current = Date.now()
+        return
+      }
+      if (!hiddenAt.current || Date.now() - hiddenAt.current < 1200) return
+      hiddenAt.current = 0
+      if (location.pathname === '/' || location.pathname === '/admin' || location.pathname.startsWith('/cv-file/')) return
+      navigate('/', { replace: true })
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [location.pathname, navigate])
+
+  return null
+}
+
 function RouteJourneyTracker() {
   const location = useLocation()
   useTrackJourney(location.pathname, location.pathname !== '/admin' && location.pathname !== '/launch')
-  useEffect(() => {
-    if (['/', '/launch', '/admin'].includes(location.pathname) || location.pathname.startsWith('/cv-file/')) return
-    try { localStorage.setItem('pwa:last-route', `${location.pathname}${location.search}`) } catch { /* private mode */ }
-  }, [location.pathname, location.search])
   return null
 }
 
@@ -319,10 +357,12 @@ export default function App() {
     <CmsProvider>
       <BrowserRouter>
         <PersistentAudioProvider>
+          <CriticalContentWarmup />
           <WesternDigitsGuard />
           <AdaptiveSilence />
           <ExclusiveDetailsGuard />
           <ReadingMemoryGuard />
+          <PwaResumeHome />
           <RouteJourneyTracker />
           <RouteViewTracker />
           <RouteScrollManager />

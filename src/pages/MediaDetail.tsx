@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { chapterUrl, chaptersForVideo, stamp } from '../lib/media-chapters'
+import { NextStep } from '../components/NextStep'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
@@ -183,6 +184,16 @@ export default function MediaDetail() {
           </FadeUp>}
         </div>
       </article>
+
+      {/* الفصل التالي: من شاهد لقاءً يُدعى إلى نصٍّ أو مقطعِ كتاب — لا لقاءٍ آخر. */}
+      <NextStep
+        seed={`${item.title} ${(item as { topics?: string }).topics || ''}`}
+        from="لقاء"
+        articles={articles}
+        papers={papers}
+        media={media}
+        excludeKey={`media:${videoId}`}
+      />
     </Page>
   )
 }

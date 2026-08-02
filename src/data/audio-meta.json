@@ -28,19 +28,19 @@
     "verifiedAt": "2026-07-27T17:09:26.956Z"
   },
   "a-generation-without-rootsarabic.dialogue.json": {
-    "bytes": 9583,
-    "sha256": "5c3f9bbc194de8e226d106e16e1dcb7cdf299f57d198dbbf35838b9f03c61096",
+    "bytes": 6574,
+    "sha256": "6dd6218c94768cf60bc7165fa7c3b12c67250f5b6d0aa866e727be7ba43b7d5b",
     "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-08-02T02:25:58.398Z",
+    "publishedAt": "2026-07-28T15:28:56.413Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-28T21:49:05.738Z"
   },
   "a-generation-without-rootsarabic.dialogue.mp3": {
-    "bytes": 3423547,
-    "sha256": "433a9da011f0c69c299d3b79d980b558601c70272780d8449e71a7eb593f2ab9",
+    "bytes": 3261379,
+    "sha256": "fc1ff7486df160c66eac516470d53e82ea39e410673070040a3658c0ca622a05",
     "contentType": "audio/mpeg",
-    "publishedAt": "2026-08-02T02:25:58.398Z",
-    "durationSeconds": 214,
+    "publishedAt": "2026-07-28T15:28:56.413Z",
+    "durationSeconds": 204,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-28T15:34:28.976Z"
   },
@@ -51,8 +51,8 @@
     "verifiedAt": "2026-07-27T15:13:27.336Z"
   },
   "a-generation-without-rootsarabic.noura.mp3": {
-    "durationSeconds": 208,
-    "bytes": 3334104,
+    "durationSeconds": 240,
+    "bytes": 3366705,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:27.601Z"
   },
@@ -113,19 +113,19 @@
     "verifiedAt": "2026-07-27T17:09:28.388Z"
   },
   "alternative-plans-for-distance-education.dialogue.json": {
-    "bytes": 9967,
-    "sha256": "1e7c1e4d0c51cb3cd42ab06f916003f15e7242b99558cf1ef232a7c0740b8b9f",
+    "bytes": 6844,
+    "sha256": "c1a4361987186730c20881b4b2a3820638f8a4378b1808d19505274931b4341d",
     "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-08-02T02:25:58.449Z",
+    "publishedAt": "2026-07-28T15:28:56.466Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-28T21:49:07.939Z"
   },
   "alternative-plans-for-distance-education.dialogue.mp3": {
-    "bytes": 3432324,
-    "sha256": "3398e063e4ef936c5bdbce24b275179cf38212ee3d24705d86145bcae6a75caf",
+    "bytes": 3256782,
+    "sha256": "8a9939c4e07cea989b3c7379abc91a010b0a58139cc71d27c62fb2e24e8c8cf2",
     "contentType": "audio/mpeg",
-    "publishedAt": "2026-08-02T02:25:58.449Z",
-    "durationSeconds": 214,
+    "publishedAt": "2026-07-28T15:28:56.466Z",
+    "durationSeconds": 204,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-28T15:34:30.383Z"
   },
@@ -158,13 +158,13 @@
     "verifiedAt": "2026-07-27T19:37:47.961Z"
   },
   "children-who-know-what-is-required-but-do-not-know-whyarabic.mp3": {
-    "durationSeconds": 197,
-    "bytes": 3144768,
+    "durationSeconds": 229,
+    "bytes": 3169010,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:28.369Z"
   },
   "children-who-know-what-is-required-but-do-not-know-whyarabic.noura.mp3": {
-    "bytes": 3179041,
+    "bytes": 3178623,
     "sha256": "8d35b753a7aaeb2a852d3bcefe03cffea86d51f6328b8cc427678ece08810906",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-27T19:37:43.353Z",
@@ -181,13 +181,13 @@
     "sha256": "1f7be107db06d792a0a8d887264883102542f7048a66f0a40254897c546b2938",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T10:26:06.354Z",
-    "durationSeconds": 234,
+    "durationSeconds": 235,
     "sourceHash": "5ecb6f97aed072621a3f3e75e46654d3ad4b8c50efbb89069d7893b6518dd0ed",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T09:04:29.633Z",
-    "bytes": 3749973,
+    "bytes": 3767946,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:28.594Z"
   },
@@ -389,13 +389,13 @@
     "sha256": "33de8ac2d12133a4bd2aa03d559c61abbf2337e693d3311539014496701a0033",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T10:26:06.705Z",
-    "durationSeconds": 196,
+    "durationSeconds": 200,
     "sourceHash": "dfb8a17eba1e74cfb23312be21fc39016e71bd351cfa97892cab17e98f33aa2f",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T08:13:31.946Z",
-    "bytes": 3138499,
+    "bytes": 3199939,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:32.230Z"
   },
@@ -403,13 +403,13 @@
     "sha256": "209668d8a94a26864e816345f43a352f79d2c9b2511760c5df8c494ee7d6a1ab",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T10:26:06.755Z",
-    "durationSeconds": 199,
+    "durationSeconds": 202,
     "sourceHash": "87ab74aa27ba71c7b1f6cefc9208c0fb61cfccd896f3b06012d5ae18afe818f6",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T08:18:05.078Z",
-    "bytes": 3184475,
+    "bytes": 3228360,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:32.553Z"
   },
@@ -451,7 +451,7 @@
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T08:22:33.275Z",
-    "bytes": 3176533,
+    "bytes": 3186564,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:33.273Z"
   },
@@ -459,13 +459,13 @@
     "sha256": "fbd2145cbb65d20c1395e6e12b5fc0c051904bb09000b057c6eeedc94b17ba48",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T10:26:06.855Z",
-    "durationSeconds": 203,
+    "durationSeconds": 204,
     "sourceHash": "eea04af5f9cae9d61fc4bea625455275fe08df948f258a3f229a543fe60ceaab",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T08:27:06.347Z",
-    "bytes": 3255528,
+    "bytes": 3263887,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:33.529Z"
   },
@@ -473,13 +473,13 @@
     "sha256": "a4c49b02050fe2237ce6d9a92b033597ec036c137c95862d1a04d09ef79792ff",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T02:29:37.151Z",
-    "durationSeconds": 180,
+    "durationSeconds": 184,
     "sourceHash": "17f19f6840a96935c6899d1b89283ed4333c0c0db3df1a58fd570e12771288c7",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T02:11:07.639Z",
-    "bytes": 2884798,
+    "bytes": 2913219,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:33.816Z"
   },
@@ -596,7 +596,7 @@
     "verifiedAt": "2026-07-27T17:09:35.824Z"
   },
   "lets-work-towards-scientific-research.mp3": {
-    "bytes": 3362943,
+    "bytes": 3362525,
     "sha256": "d426cf628e441c82b925381aac294f807bd3f205736569295cd114ddb088fb4d",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-27T17:09:24.131Z",
@@ -652,14 +652,14 @@
     "verifiedAt": "2026-07-27T15:13:36.668Z"
   },
   "private-lesson-in-the-age-of-digital-educational-intelligence.mp3": {
-    "durationSeconds": 211,
-    "bytes": 3368795,
+    "durationSeconds": 255,
+    "bytes": 3373392,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:36.939Z"
   },
   "private-lesson-in-the-age-of-digital-educational-intelligence.noura.mp3": {
-    "durationSeconds": 213,
-    "bytes": 3407247,
+    "durationSeconds": 259,
+    "bytes": 3433578,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:37.183Z"
   },
@@ -888,7 +888,7 @@
     "verifiedAt": "2026-07-27T17:09:40.485Z"
   },
   "qabas-201703-001.noura.mp3": {
-    "bytes": 2356915,
+    "bytes": 2356497,
     "sha256": "9ae0f9b96c2577cc11fbd8e9ffd30f65fe8a532e2c5ca3e55cdcbe2763951ea2",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-27T19:37:43.623Z",
@@ -958,7 +958,7 @@
     "verifiedAt": "2026-07-27T17:09:41.473Z"
   },
   "qabas-201704-001.mp3": {
-    "bytes": 3149784,
+    "bytes": 3150202,
     "sha256": "cdc0ea6cf29240fb82e7e5cbb3b9114abfad05af34a2c50bbfa6760485c3d58c",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-27T17:09:25.173Z",
@@ -1294,8 +1294,8 @@
     "verifiedAt": "2026-07-27T19:38:05.280Z"
   },
   "qabas-201709-001.mp3": {
-    "durationSeconds": 237,
-    "bytes": 3789262,
+    "durationSeconds": 218,
+    "bytes": 3493764,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-28T07:42:33.266Z"
   },
@@ -1482,11 +1482,11 @@
     "verifiedAt": "2026-07-27T21:09:23.619Z"
   },
   "qabas-201711-002.noura.mp3": {
-    "bytes": 3073715,
+    "bytes": 2883126,
     "sha256": "623048148f6b05a2c9cf3275e1e134ab2a14d99f1a57f9b0654bdf8d97478696",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-27T21:08:55.255Z",
-    "durationSeconds": 192,
+    "durationSeconds": 180,
     "sourceHash": "06398a296a0f7cb9d3a1c8d820413a5b2b2957c9ac23b9a8312216537f700236",
     "pipelineHash": "6f694fc2ba2650c584f08d0f9d9e741f2b33909d3477311951abe74914b329d2",
     "humanLikenessScore": 100,
@@ -1524,7 +1524,7 @@
     "verifiedAt": "2026-07-27T21:09:24.375Z"
   },
   "qabas-201712-004.mp3": {
-    "bytes": 2668295,
+    "bytes": 2666623,
     "sha256": "56e93fc584d979acb8c23ceda02c4219c218f1fa5db1c50d8edefc88e3abbbfb",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-25T01:59:10.663Z",
@@ -2105,7 +2105,7 @@
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T07:44:29.183Z",
-    "bytes": 3597000,
+    "bytes": 3608285,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:54.126Z"
   },
@@ -2229,13 +2229,13 @@
     "sha256": "12c0a6f7308bd3b9a35330fdb8cf271da71399c0909bdf0dbdf7b3a4fba0c04f",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T10:26:07.104Z",
-    "durationSeconds": 196,
+    "durationSeconds": 197,
     "sourceHash": "9e6961aa5f151ffeff06487bc5987a9767023ca3e25f9a1578f82e31d80b0de9",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T08:01:24.563Z",
-    "bytes": 3133484,
+    "bytes": 3157307,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:56.192Z"
   },
@@ -2268,14 +2268,14 @@
     "verifiedAt": "2026-07-27T17:09:54.088Z"
   },
   "the-social-media-swamp-and-plastic-surgery-addiction-2.mp3": {
-    "durationSeconds": 209,
-    "bytes": 3345389,
+    "durationSeconds": 248,
+    "bytes": 3377154,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:56.396Z"
   },
   "the-social-media-swamp-and-plastic-surgery-addiction-2.noura.mp3": {
-    "durationSeconds": 209,
-    "bytes": 3345807,
+    "durationSeconds": 252,
+    "bytes": 3360435,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:56.648Z"
   },
@@ -2301,7 +2301,7 @@
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T07:49:08.712Z",
-    "bytes": 3173608,
+    "bytes": 3172772,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:57.286Z"
   },
@@ -2320,14 +2320,14 @@
     "verifiedAt": "2026-07-27T15:13:57.543Z"
   },
   "the-teacher-what-do-you-know-about-the-teacher.mp3": {
-    "durationSeconds": 207,
-    "bytes": 3317386,
+    "durationSeconds": 245,
+    "bytes": 3318639,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:57.806Z"
   },
   "the-teacher-what-do-you-know-about-the-teacher.noura.mp3": {
-    "durationSeconds": 210,
-    "bytes": 3367123,
+    "durationSeconds": 249,
+    "bytes": 3365451,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:58.033Z"
   },
@@ -2360,26 +2360,26 @@
     "verifiedAt": "2026-07-27T17:09:56.403Z"
   },
   "todays-childs-confusion-between-education-and-care.mp3": {
-    "durationSeconds": 197,
-    "bytes": 3160233,
+    "durationSeconds": 237,
+    "bytes": 3186982,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:58.534Z"
   },
   "todays-childs-confusion-between-education-and-care.noura.mp3": {
-    "durationSeconds": 199,
-    "bytes": 3189908,
+    "durationSeconds": 240,
+    "bytes": 3207880,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:58.765Z"
   },
   "turning-video-game-obsession-into-creative-meditation-2.mp3": {
-    "durationSeconds": 204,
-    "bytes": 3259289,
+    "durationSeconds": 245,
+    "bytes": 3259707,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:59.001Z"
   },
   "turning-video-game-obsession-into-creative-meditation-2.noura.mp3": {
-    "durationSeconds": 205,
-    "bytes": 3284367,
+    "durationSeconds": 247,
+    "bytes": 3284785,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:59.382Z"
   },
@@ -2415,13 +2415,13 @@
     "sha256": "7e3a7a4f833905a05d5d7df735a2ace5013a6eb933d3b999dccfc4f4db89f80b",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T02:29:37.505Z",
-    "durationSeconds": 237,
+    "durationSeconds": 239,
     "sourceHash": "bc2346789254105d6ebb32cd7ef67bb372bb1b7a308a3a01f2a526a6316d7058",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T01:38:12.419Z",
-    "bytes": 3793859,
+    "bytes": 3823952,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:59.666Z"
   },
@@ -2429,13 +2429,13 @@
     "sha256": "e4f28c636e10c2f894f1a2f8713f23e9ff14916e26eb8ea9507a9e4d5053b098",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-23T02:29:37.564Z",
-    "durationSeconds": 240,
+    "durationSeconds": 241,
     "sourceHash": "685dcbf9ed6c8cd23ec9d3393825e477350593c3a2e3a4aa99928db1ab5a00cb",
     "pipelineHash": "5bb0e9d381c8beb4a248c6e470048361b99cdddf8e953238c903a722256cd106",
     "humanLikenessScore": 100,
     "audioJudgeMinimum": null,
     "acceptedAt": "2026-07-23T01:43:12.072Z",
-    "bytes": 3846940,
+    "bytes": 3849448,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:59.915Z"
   },
@@ -2574,491 +2574,5 @@
     "bytes": 2973823,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:02.350Z"
-  },
-  "aggression-in-the-sky-and-steadfastness-withinarabic.noura.mp3": {
-    "durationSeconds": 187,
-    "bytes": 2997229,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:26:51.389Z"
-  },
-  "children-who-know-what-is-required-but-do-not-know-whyarabic-2.noura.mp3": {
-    "durationSeconds": 196,
-    "bytes": 3143097,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:26:52.657Z"
-  },
-  "the-excellence-epidemic-or-the-cult-of-grades-2.mp3": {
-    "durationSeconds": 235,
-    "bytes": 3765856,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:26:56.995Z"
-  },
-  "the-excellence-epidemic-or-the-cult-of-grades-2.noura.mp3": {
-    "durationSeconds": 236,
-    "bytes": 3780484,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:26:57.485Z"
-  },
-  "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.mp3": {
-    "durationSeconds": 245,
-    "bytes": 3918411,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:26:58.654Z"
-  },
-  "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.noura.mp3": {
-    "durationSeconds": 240,
-    "bytes": 3843596,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:26:59.145Z"
-  },
-  "the-republic-of-degrees-and-the-fall-of-thought-2.mp3": {
-    "durationSeconds": 214,
-    "bytes": 3423129,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:01.227Z"
-  },
-  "the-republic-of-degrees-and-the-fall-of-thought-2.noura.mp3": {
-    "durationSeconds": 210,
-    "bytes": 3366287,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:01.732Z"
-  },
-  "do-we-contain-or-raise-2.noura.mp3": {
-    "durationSeconds": 238,
-    "bytes": 3805980,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:03.060Z"
-  },
-  "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2.mp3": {
-    "durationSeconds": 229,
-    "bytes": 3664292,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:03.847Z"
-  },
-  "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2.noura.mp3": {
-    "durationSeconds": 227,
-    "bytes": 3627511,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:04.369Z"
-  },
-  "i-write-to-awaken-you-not-to-discourage-you-2.noura.mp3": {
-    "durationSeconds": 181,
-    "bytes": 2901098,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:05.212Z"
-  },
-  "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.mp3": {
-    "durationSeconds": 201,
-    "bytes": 3209552,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:06.417Z"
-  },
-  "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.noura.mp3": {
-    "durationSeconds": 199,
-    "bytes": 3180295,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:06.919Z"
-  },
-  "i-earned-more-than-harvard-but-it-doesnt-teach-brains.noura.mp3": {
-    "durationSeconds": 208,
-    "bytes": 3325745,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:07.897Z"
-  },
-  "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.noura.mp3": {
-    "durationSeconds": 245,
-    "bytes": 3913395,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:09.539Z"
-  },
-  "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.mp3": {
-    "durationSeconds": 229,
-    "bytes": 3668053,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:11.315Z"
-  },
-  "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.noura.mp3": {
-    "durationSeconds": 231,
-    "bytes": 3694803,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:11.810Z"
-  },
-  "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.mp3": {
-    "durationSeconds": 211,
-    "bytes": 3371302,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:12.625Z"
-  },
-  "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.noura.mp3": {
-    "durationSeconds": 215,
-    "bytes": 3445699,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:13.149Z"
-  },
-  "a-generation-that-knows-everything-and-understands-nothing.mp3": {
-    "durationSeconds": 191,
-    "bytes": 3060341,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:13.959Z"
-  },
-  "a-generation-that-knows-everything-and-understands-nothing.noura.mp3": {
-    "durationSeconds": 194,
-    "bytes": 3097539,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:14.459Z"
-  },
-  "smartphone-child-a-creative-mind-or-a-child-being-driven.mp3": {
-    "durationSeconds": 228,
-    "bytes": 3653007,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:16.547Z"
-  },
-  "smartphone-child-a-creative-mind-or-a-child-being-driven.noura.mp3": {
-    "durationSeconds": 233,
-    "bytes": 3720716,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:17.042Z"
-  },
-  "in-their-opinion-surgery-is-a-male-specialty-2.mp3": {
-    "durationSeconds": 270,
-    "bytes": 4321742,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:18.869Z"
-  },
-  "in-their-opinion-surgery-is-a-male-specialty-2.noura.mp3": {
-    "durationSeconds": 278,
-    "bytes": 4442532,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:19.432Z"
-  },
-  "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.mp3": {
-    "durationSeconds": 213,
-    "bytes": 3412262,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:20.225Z"
-  },
-  "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.noura.mp3": {
-    "durationSeconds": 222,
-    "bytes": 3553533,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:20.758Z"
-  },
-  "e-learning-initiatives-and-solutions-2.mp3": {
-    "durationSeconds": 267,
-    "bytes": 4267407,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:22.180Z"
-  },
-  "e-learning-initiatives-and-solutions-2.noura.mp3": {
-    "durationSeconds": 278,
-    "bytes": 4443368,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:22.774Z"
-  },
-  "qabas-201611-003.mp3": {
-    "durationSeconds": 201,
-    "bytes": 3217911,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:25.649Z"
-  },
-  "qabas-201611-003.noura.mp3": {
-    "durationSeconds": 210,
-    "bytes": 3362107,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:26.157Z"
-  },
-  "qabas-201612-001.mp3": {
-    "durationSeconds": 200,
-    "bytes": 3198267,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:27.691Z"
-  },
-  "qabas-201612-002.mp3": {
-    "durationSeconds": 216,
-    "bytes": 3459492,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:28.509Z"
-  },
-  "qabas-201612-002.noura.mp3": {
-    "durationSeconds": 226,
-    "bytes": 3617062,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:29.007Z"
-  },
-  "qabas-201702-001.mp3": {
-    "durationSeconds": 183,
-    "bytes": 2932027,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:30.480Z"
-  },
-  "qabas-201702-001.noura.mp3": {
-    "durationSeconds": 189,
-    "bytes": 3030666,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:30.980Z"
-  },
-  "qabas-201702-002.noura.mp3": {
-    "durationSeconds": 192,
-    "bytes": 3065774,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:31.798Z"
-  },
-  "qabas-201702-003.mp3": {
-    "durationSeconds": 173,
-    "bytes": 2762336,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:32.634Z"
-  },
-  "qabas-201702-003.noura.mp3": {
-    "durationSeconds": 178,
-    "bytes": 2855541,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:33.137Z"
-  },
-  "qabas-201703-001.mp3": {
-    "durationSeconds": 144,
-    "bytes": 2308014,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:34.175Z"
-  },
-  "qabas-201703-004.mp3": {
-    "durationSeconds": 186,
-    "bytes": 2980928,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:35.641Z"
-  },
-  "qabas-201703-004.noura.mp3": {
-    "durationSeconds": 194,
-    "bytes": 3102137,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:36.163Z"
-  },
-  "qabas-201707-001.mp3": {
-    "durationSeconds": 190,
-    "bytes": 3038607,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:39.587Z"
-  },
-  "qabas-201707-001.noura.mp3": {
-    "durationSeconds": 197,
-    "bytes": 3157307,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:40.066Z"
-  },
-  "qabas-201707-003.mp3": {
-    "durationSeconds": 171,
-    "bytes": 2733079,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:41.221Z"
-  },
-  "qabas-201707-003.noura.mp3": {
-    "durationSeconds": 176,
-    "bytes": 2818342,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:41.724Z"
-  },
-  "qabas-201707-004.mp3": {
-    "durationSeconds": 157,
-    "bytes": 2512396,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:42.434Z"
-  },
-  "qabas-201707-004.noura.mp3": {
-    "durationSeconds": 162,
-    "bytes": 2595152,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:42.822Z"
-  },
-  "qabas-201709-001.noura.mp3": {
-    "durationSeconds": 244,
-    "bytes": 3910888,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:44.637Z"
-  },
-  "qabas-201709-002.mp3": {
-    "durationSeconds": 137,
-    "bytes": 2188896,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:45.345Z"
-  },
-  "qabas-201709-002.noura.mp3": {
-    "durationSeconds": 150,
-    "bytes": 2404563,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:45.751Z"
-  },
-  "qabas-201709-005.mp3": {
-    "durationSeconds": 137,
-    "bytes": 2188896,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:47.109Z"
-  },
-  "qabas-201709-006.mp3": {
-    "durationSeconds": 189,
-    "bytes": 3029412,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:47.926Z"
-  },
-  "qabas-201709-006.noura.mp3": {
-    "durationSeconds": 210,
-    "bytes": 3355420,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:48.415Z"
-  },
-  "qabas-201711-002.mp3": {
-    "durationSeconds": 177,
-    "bytes": 2830463,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:50.502Z"
-  },
-  "qabas-201711-003.mp3": {
-    "durationSeconds": 203,
-    "bytes": 3249676,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:51.319Z"
-  },
-  "qabas-201711-003.noura.mp3": {
-    "durationSeconds": 229,
-    "bytes": 3657186,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:51.865Z"
-  },
-  "qabas-201712-001.mp3": {
-    "durationSeconds": 162,
-    "bytes": 2588883,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:52.973Z"
-  },
-  "qabas-201712-001.noura.mp3": {
-    "durationSeconds": 180,
-    "bytes": 2887724,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:53.451Z"
-  },
-  "qabas-201712-002.mp3": {
-    "durationSeconds": 212,
-    "bytes": 3395126,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:54.267Z"
-  },
-  "qabas-201712-002.noura.mp3": {
-    "durationSeconds": 234,
-    "bytes": 3749555,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:54.764Z"
-  },
-  "qabas-201712-003.mp3": {
-    "durationSeconds": 162,
-    "bytes": 2585539,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:55.519Z"
-  },
-  "qabas-201712-003.noura.mp3": {
-    "durationSeconds": 178,
-    "bytes": 2850943,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:56.012Z"
-  },
-  "qabas-201805-001.mp3": {
-    "durationSeconds": 205,
-    "bytes": 3278515,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:27:59.686Z"
-  },
-  "qabas-201805-001.noura.mp3": {
-    "durationSeconds": 221,
-    "bytes": 3535560,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:00.298Z"
-  },
-  "qabas-201805-002.mp3": {
-    "durationSeconds": 154,
-    "bytes": 2462241,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:00.997Z"
-  },
-  "qabas-201805-002.noura.mp3": {
-    "durationSeconds": 173,
-    "bytes": 2762336,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:01.486Z"
-  },
-  "qabas-201805-003.mp3": {
-    "durationSeconds": 212,
-    "bytes": 3386767,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:02.343Z"
-  },
-  "qabas-201805-003.noura.mp3": {
-    "durationSeconds": 229,
-    "bytes": 3668471,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:02.826Z"
-  },
-  "qabas-201806-001.mp3": {
-    "durationSeconds": 196,
-    "bytes": 3138499,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:03.973Z"
-  },
-  "qabas-201806-001.noura.mp3": {
-    "durationSeconds": 220,
-    "bytes": 3525529,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:04.551Z"
-  },
-  "qabas-201806-004.mp3": {
-    "durationSeconds": 157,
-    "bytes": 2516994,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:05.966Z"
-  },
-  "qabas-201806-004.noura.mp3": {
-    "durationSeconds": 177,
-    "bytes": 2830045,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:06.472Z"
-  },
-  "qabas-201806-005.mp3": {
-    "durationSeconds": 194,
-    "bytes": 3097539,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:07.288Z"
-  },
-  "qabas-201806-005.noura.mp3": {
-    "durationSeconds": 214,
-    "bytes": 3421875,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:07.773Z"
-  },
-  "qabas-201807-001.noura.mp3": {
-    "durationSeconds": 257,
-    "bytes": 4109000,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:08.708Z"
-  },
-  "qabas-201810-001.mp3": {
-    "durationSeconds": 158,
-    "bytes": 2524099,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:10.100Z"
-  },
-  "qabas-201810-001.noura.mp3": {
-    "durationSeconds": 160,
-    "bytes": 2560044,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:10.489Z"
-  },
-  "qabas-201810-002.mp3": {
-    "durationSeconds": 156,
-    "bytes": 2488573,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:11.216Z"
-  },
-  "qabas-201810-002.noura.mp3": {
-    "durationSeconds": 157,
-    "bytes": 2520337,
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-02T02:28:11.615Z"
   }
 }

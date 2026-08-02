@@ -8,7 +8,7 @@
     "lint": "tsc --noEmit",
     "guard:critical": "node scripts/guard-critical-bridges.mjs",
     "clean:obsolete": "node scripts/clean-obsolete-root-files.mjs",
-    "build": "node scripts/clean-obsolete-root-files.mjs && node scripts/guard-critical-bridges.mjs && node scripts/guard-site-architecture.mjs && node scripts/guard-arabic-tanween.mjs && node scripts/site-guardian.mjs --write && node scripts/build-knowledge-graph.mjs && npm run audio:quality:self-test && node scripts/guard-no-generated-audio-in-git.mjs && node scripts/sync-scholar-citations.mjs && node scripts/optimize-images.mjs && node scripts/prune-orphan-audio.mjs && node scripts/prune-missing-audio.mjs && (node scripts/audit-pronunciation.mjs --guard || echo '::warning::ألفاظ دخيلة خارج قاموس النطق — راجع لوحة التحكم') && node scripts/sync-audio.mjs && node scripts/build-podcast-admin.mjs && node scripts/build-listen-index.mjs && vite build && node scripts/guard-private-books.mjs && node scripts/build-static.mjs && node scripts/smoke-static.mjs && node scripts/check-static-links.mjs && node scripts/performance-budget.mjs && node scripts/verify-domain-migration.mjs --dist && node scripts/verify-legacy-retirement.mjs",
+    "build": "node scripts/clean-obsolete-root-files.mjs && node scripts/guard-cloudrun-context.mjs && node scripts/guard-critical-bridges.mjs && node scripts/guard-site-architecture.mjs && node scripts/guard-arabic-tanween.mjs && node scripts/site-guardian.mjs --write && node scripts/build-knowledge-graph.mjs && npm run audio:quality:self-test && node scripts/guard-no-generated-audio-in-git.mjs && node scripts/sync-scholar-citations.mjs && node scripts/optimize-images.mjs && node scripts/prune-orphan-audio.mjs && node scripts/prune-missing-audio.mjs && (node scripts/audit-pronunciation.mjs --guard || echo '::warning::ألفاظ دخيلة خارج قاموس النطق — راجع لوحة التحكم') && node scripts/sync-audio.mjs && node scripts/build-podcast-admin.mjs && node scripts/build-listen-index.mjs && vite build && node scripts/guard-private-books.mjs && node scripts/build-static.mjs && node scripts/smoke-static.mjs && node scripts/check-static-links.mjs && node scripts/performance-budget.mjs && node scripts/verify-domain-migration.mjs --dist && node scripts/verify-legacy-retirement.mjs",
     "gcp-build": "npm run build",
     "start": "node server.mjs",
     "preview": "vite preview",
@@ -150,7 +150,8 @@
     "ortho:self-test": "node scripts/audit-published-orthography.mjs --self-test",
     "books:glossary": "node scripts/build-glossary-voice.mjs",
     "books:next": "node scripts/next-book.mjs",
-    "books:review": "node scripts/review-book-passages.mjs"
+    "books:review": "node scripts/review-book-passages.mjs",
+    "guard:cloudrun": "node scripts/guard-cloudrun-context.mjs"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

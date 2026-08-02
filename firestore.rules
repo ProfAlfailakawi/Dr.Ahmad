@@ -243,9 +243,22 @@ service cloud.firestore {
       allow update: if isValidJourneyUpdate();
     }
 
-    // «الاقتباسات الشائعة» — إشارة مجهولة لا تحتوي اقتباسًا شخصيًا أو ملاحظة.
+    // «الاقتباسات الشائعة» — إشارة مجهولة لا تحتوي اقتباساً شخصياً أو ملاحظة.
     // لا يكتب العميل العداد إلا ضمن Transaction تنشئ عضوية Anonymous واحدة
     // مرتبطة بالعبارة نفسها. قراءة العضويات ممنوعة حتى على القارئ المجهول.
+    /* رنين مقاطع الكتب: عدّادٌ صرف بلا نصٍّ ولا هويّة قارئ. الزائر المجهول
+       يزيده واحداً فقط، ولا يملك تنقيصه ولا كتابة أي حقلٍ آخر. */
+    match /passage_highlights/{id} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create: if isAdmin() || (isAnonymous()
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == 1);
+      allow update: if isAdmin() || (isAnonymous()
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == resource.data.count + 1);
+    }
+
     match /article_highlights/{id} {
       allow read: if true;
       allow delete: if isAdmin();
@@ -264,7 +277,7 @@ service cloud.firestore {
     }
 
     // دفتر الاقتباسات العام: لا يُرسل اسم أو بريد أو موقع. كل جهاز يملك
-    // معرّفًا عشوائيًا مُجزّأً، ويُنشئ صوتًا واحدًا فقط لكل عبارة.
+    // معرّفاً عشوائياً مُجزّأً، ويُنشئ صوتاً واحداً فقط لكل عبارة.
     match /article_quote_votes/{id} {
       allow get: if true;
       allow list: if false;

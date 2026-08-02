@@ -23,7 +23,6 @@ src/data/*
 !src/data/podcast-admin.json
 !src/data/research-papers.ts
 !src/data/book-quotes.json
-!whatsapp-agent/book-quotes.mjs
 !src/data/book-passages.json
 !src/data/spoken-index.json
 !src/lib/
@@ -52,3 +51,4 @@ whatsapp-agent/*
 !whatsapp-agent/daily-experience.mjs
 !whatsapp-agent/domain-concepts.mjs
 !whatsapp-agent/spoken-index.mjs
+!whatsapp-agent/book-quotes.mjs

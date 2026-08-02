@@ -1,26 +1,115 @@
 {
-  "note": "مقطوعات أصلية مؤلَّفة آلياً داخل المشروع (تركيب توافقيات + معالجة) — ملكية كاملة للدكتور أحمد حسين الفيلكاوي، لا تحتاج ترخيصاً خارجياً. تُستخدم فراشاً هامساً تحت الحوار مع دخول وخروج ناعمين.",
+  "note": "مقطوعات شرقية بآلات حقيقية (عود · قانون · ناي · وتريات) بترخيص CC0 من أرشيف archive.org/turkish-instrumental-music — بلا مقابل وبلا التزام إسناد. اختيرت بقياسين يخصّان الفرش تحت الكلام: ثبات المستوى (steadiness منخفض فلا ترتفع فجأة تحت الصوت)، وبُعد الطاقة عن نطاق الصوت البشري ٣٠٠–٣٥٠٠ هرتز (speechBandGap أسلب فلا تُغبّش كلمات فهد ونورة). حُوّلت إلى أحادية ٩٦ك.ب لأنها تُشغَّل بـ١٦٪ ويُقتطع منها ثوانٍ فقط. والمقطوعة الواحدة تعطي عشرات الوجوه لأن كل حلقة تقتطع من ثوانٍ مختلفة.",
   "tracks": [
     {
-      "path": "music/still-light.mp3",
-      "title": "ضوء هادئ",
+      "path": "music/maqam-reflections.mp3",
+      "title": "تأملات مقامية",
       "licensed": true,
+      "license": "CC0-1.0",
+      "durationSec": 90.0,
+      "steadiness": 1.6,
+      "speechBandGap": -7.7,
+      "moods": ["تأملي", "هادئ"],
+      "bedVolume": 0.045
+    },
+    {
+      "path": "music/quiet-echoes.mp3",
+      "title": "أصداء هادئة",
+      "licensed": true,
+      "license": "CC0-1.0",
+      "durationSec": 90.0,
+      "steadiness": 2.3,
+      "speechBandGap": -4.6,
       "moods": ["تأملي", "هادئ", "إنساني"],
       "bedVolume": 0.045
     },
     {
-      "path": "music/open-horizon.mp3",
-      "title": "أفق مفتوح",
+      "path": "music/eastern-night.mp3",
+      "title": "ليلٌ شرقي",
       "licensed": true,
-      "moods": ["متفائل", "مشوق", "تربوي"],
+      "license": "CC0-1.0",
+      "durationSec": 140.1,
+      "steadiness": 2.4,
+      "speechBandGap": -4.6,
+      "moods": ["تأملي", "جاد"],
       "bedVolume": 0.045
     },
     {
-      "path": "music/quiet-resolve.mp3",
-      "title": "عزيمة هادئة",
+      "path": "music/heritage-echoes.mp3",
+      "title": "أصداء الموروث",
       "licensed": true,
+      "license": "CC0-1.0",
+      "durationSec": 90.0,
+      "steadiness": 2.7,
+      "speechBandGap": -2.3,
+      "moods": ["جاد", "إنساني"],
+      "bedVolume": 0.04
+    },
+    {
+      "path": "music/oriental-world.mp3",
+      "title": "عالمٌ شرقي",
+      "licensed": true,
+      "license": "CC0-1.0",
+      "durationSec": 102.3,
+      "steadiness": 3.9,
+      "speechBandGap": -4.7,
+      "moods": ["جاد", "مشوق"],
+      "bedVolume": 0.04
+    },
+    {
+      "path": "music/eastern-spell.mp3",
+      "title": "سحرٌ شرقي",
+      "licensed": true,
+      "license": "CC0-1.0",
+      "durationSec": 197.9,
+      "steadiness": 4.3,
+      "speechBandGap": -3.3,
       "moods": ["جاد"],
       "bedVolume": 0.04
+    },
+    {
+      "path": "music/eastern-tapestry.mp3",
+      "title": "نسيج شرقي",
+      "licensed": true,
+      "license": "CC0-1.0",
+      "durationSec": 90.0,
+      "steadiness": 3.2,
+      "speechBandGap": -3.6,
+      "moods": ["تربوي"],
+      "bedVolume": 0.04
+    },
+    {
+      "path": "music/cultural-echoes.mp3",
+      "title": "أصداء ثقافية",
+      "licensed": true,
+      "license": "CC0-1.0",
+      "durationSec": 90.0,
+      "steadiness": 3.2,
+      "speechBandGap": -3.7,
+      "moods": ["تربوي", "إنساني"],
+      "bedVolume": 0.045
+    },
+    {
+      "path": "music/eastern-elegance.mp3",
+      "title": "أناقة شرقية",
+      "licensed": true,
+      "license": "CC0-1.0",
+      "durationSec": 90.0,
+      "steadiness": 3.4,
+      "speechBandGap": -3.6,
+      "moods": ["تربوي", "متفائل"],
+      "bedVolume": 0.045
+    },
+    {
+      "path": "music/east-journey.mp3",
+      "title": "رحلة إلى الشرق",
+      "licensed": true,
+      "license": "CC0-1.0",
+      "durationSec": 89.2,
+      "steadiness": 3.0,
+      "speechBandGap": -5.3,
+      "moods": ["مشوق", "متفائل", "تربوي"],
+      "bedVolume": 0.045
     }
   ]
 }

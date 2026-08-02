@@ -488,7 +488,38 @@ const MOOD_BY_REGION = {
   'هوية': 'تأملي', 'إعلام': 'تأملي',
   'اقتباس وتأمّل': 'تأملي', 'سؤال مزلزل': 'تأملي',
 }
-const moodOfArticle = (article) => MOOD_BY_REGION[String(article?.cat || '').trim()] || 'تأملي'
+/* ═══════════ مزاج المقال الجديد ═══════════
+   خريطة الأقاليم تغطّي ما كُتب حتى اليوم. فإذا كتب الدكتور غداً في إقليمٍ
+   جديد — أو تحت تصنيفٍ لم يُسجَّل — كان الجواب «تأملي» دائماً، فتخرج كل
+   مقالاته القادمة بنغمةٍ واحدة. المخرج ألا نسأل التصنيف وحده: نقرأ العنوان
+   والمتن ونستدلّ. حتميٌّ بالكامل، بلا نموذجٍ ولا خدمة. */
+const MOOD_SIGNALS = Object.freeze({
+  'تربوي': ['تعليم', 'مدرسة', 'معلم', 'المعلّم', 'طالب', 'طلبة', 'منهج', 'تربية', 'طفل', 'أطفال',
+    'امتحان', 'اختبار', 'جامعة', 'تدريس', 'تعلّم', 'صف', 'مناهج', 'تعليمي', 'أسرة', 'أبناء'],
+  'جاد': ['تقنية', 'ذكاء اصطناعي', 'خوارزم', 'بيانات', 'أمن', 'اختراق', 'رقمي', 'إنترنت',
+    'هاتف', 'منصة', 'جريمة', 'إدمان', 'خطر', 'أزمة', 'تزييف', 'خصوصية', 'مجتمع', 'ظاهرة'],
+  'متفائل': ['فرصة', 'أمل', 'مستقبل', 'إنجاز', 'نهضة', 'تطوير', 'رؤية', 'بناء', 'إصلاح', 'تجديد'],
+  'مشوق': ['سؤال', 'مفاجأة', 'تجربة', 'اكتشاف', 'رحلة', 'حكاية', 'قصة'],
+  'تأملي': ['هوية', 'ذات', 'معنى', 'وعي', 'تأمل', 'إنسان', 'قيمة', 'ضمير', 'حكمة',
+    'صمت', 'ذاكرة', 'جذور', 'انتماء', 'روح'],
+})
+
+function inferMoodFromContent(article) {
+  const text = `${String(article?.title || '')} ${String(article?.body || '').slice(0, 4000)}`
+  let best = 'تأملي'
+  let bestScore = 0
+  for (const [mood, words] of Object.entries(MOOD_SIGNALS)) {
+    let score = 0
+    for (const word of words) if (text.includes(word)) score += 1
+    /* العنوان أثقل من المتن: هو ما اختاره الكاتب ليقول عمّاذا يكتب */
+    for (const word of words) if (String(article?.title || '').includes(word)) score += 2
+    if (score > bestScore) { bestScore = score; best = mood }
+  }
+  return bestScore > 0 ? best : 'تأملي'
+}
+
+const moodOfArticle = (article) => MOOD_BY_REGION[String(article?.cat || '').trim()]
+  || inferMoodFromContent(article)
 
 async function loadArticles() {
   const accountPath = resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
@@ -1641,16 +1672,45 @@ async function discoverArabicVoices() {
     male: list.filter((voice) => voice.Gender === 'Male').map(describe) }
 }
 
-function selectLicensedMusic(mood) {
+/* ═══════════ نوافذ المقطوعة ═══════════
+   كان كل مقطعٍ يُقتطع من الثانية صفر: المقدمة والجسور الثلاثة والخاتمة — فتُسمع
+   النغمة نفسها خمس مرات في الحلقة الواحدة، ثم تتكرر الحلقة كلها في كل مقالٍ من
+   إقليمها. نقسّم المقطوعة إلى خاناتٍ ونوزّع المقاطع عليها بخطوةٍ لا تعيد خانةً
+   مرتين، ونشتقّ نقطة البداية من اسم المقال — فلا يتكرر مقطعٌ داخل حلقة، ولا
+   تتشابه حلقتان، والمقال الجديد يأخذ نوافذه بلا عملٍ بشري. */
+function musicWindows(slug, durationSec, introSec, outroSec, bridgeCount = 3) {
+  const span = Math.max(6, durationSec - Math.max(introSec, outroSec) - 1)
+  /* عددٌ فرديّ من الخانات شرطٌ لعمل الخطوة اثنتين بلا تكرار. وكلما زادت
+     الخانات زادت وجوه المقطوعة الواحدة — إحدى عشرة خانة تكفي لأرشيفٍ يكبر. */
+  const slots = 8 + bridgeCount
+  const width = span / slots
+  const base = Number.parseInt(createHash('sha256').update(`${slug}|music-window`).digest('hex').slice(0, 8), 16) % slots
+  /* الخطوة اثنتان وعدد الخانات فرديّ، فالدورة تمرّ على الخانات كلها بلا تكرار */
+  const at = (step) => Number((((base + step * 2) % slots) * width + width * 0.12).toFixed(2))
+  return {
+    intro: at(0),
+    bridges: Array.from({ length: bridgeCount }, (_, index) => at(index + 1)),
+    outro: at(bridgeCount + 1),
+  }
+}
+
+function selectLicensedMusic(mood, slug = '') {
   if (!existsSync(MUSIC_LIB)) return null
   const library = JSON.parse(readFileSync(MUSIC_LIB, 'utf8'))
-  const track = (library.tracks || []).find((item) => item.licensed && (item.moods || []).includes(mood))
-    || (library.tracks || []).find((item) => item.licensed)
-  if (!track || !existsSync(resolve(ROOT, track.path))) return null
+  const playable = (library.tracks || []).filter((item) => item.licensed && existsSync(resolve(ROOT, item.path)))
+  /* المزاج يختار العائلة واسم المقال يختار المقطوعة: كان `find` يعيد الأولى
+     دائماً، فمقطوعةٌ واحدة تخدم أربعاً وسبعين مقالاً تعليمياً. */
+  const matching = playable.filter((item) => (item.moods || []).includes(mood))
+  const pool = matching.length ? matching : playable
+  if (!pool.length) return null
+  const pick = Number.parseInt(createHash('sha256').update(`${slug}|music-track`).digest('hex').slice(0, 8), 16) % pool.length
+  const track = pool[pick]
   return {
     file: resolve(ROOT, track.path),
     title: String(track.title || ''),
     matchedMood: (track.moods || []).includes(mood) ? String(mood) : '',
+    license: String(track.license || ''),
+    offsets: musicWindows(slug, Number(track.durationSec || 90), 4.8, 5.5, 3),
     bedVol: Math.min(0.02, track.bedVolume ?? 0.012),
     introVol: 0.16,
     outroVol: 0.12,
@@ -2600,8 +2660,10 @@ function createMusicClip(track, outPath, durationSec, volume, { fadeInSec = 0.4,
   return outPath
 }
 
-function createMusicBridge(track, outPath, durationSec = 2.05, volume = 0.11) {
-  return createMusicClip(track, outPath, durationSec, volume, { fadeInSec: 0.35, fadeOutSec: 0.72 })
+/* الجسر يُقتطع من موضعٍ يخصّه: كان الثلاثة يُقتطعون من الثانية صفر فتُسمع
+   النغمة نفسها ثلاث مرات في الحلقة الواحدة. */
+function createMusicBridge(track, outPath, durationSec = 2.05, volume = 0.11, startSec = 0) {
+  return createMusicClip(track, outPath, durationSec, volume, { fadeInSec: 0.35, fadeOutSec: 0.72, startSec })
 }
 
 function insertSemanticMusicBridges(segments, utterances, music, workDir) {
@@ -2616,7 +2678,14 @@ function insertSemanticMusicBridges(segments, utterances, music, workDir) {
     if (!indexes.includes(index)) continue
     const durationSec = bridges.length === 0 ? 2.05 : 1.65
     const bridgeFile = resolve(workDir, `semantic-bridge-${bridges.length + 1}.wav`)
-    createMusicBridge(music, bridgeFile, durationSec, bridges.length === 0 ? Number(music.bridgeVol || 0.11) : Math.max(0.075, Number(music.bridgeVol || 0.11) * 0.82))
+    /* مواضع الجسور من الحوار اليدوي وحده — لا يُمسّ. والنافذة الموسيقية هي
+       المتغيّر: جسرٌ رابع (لو اعتمده المحرّر يوماً) يدور على النوافذ بدل أن
+       يسقط إلى الثانية صفر ويعيد نغمة المقدمة. */
+    const bridgeStarts = Array.isArray(music.offsets?.bridges) && music.offsets.bridges.length
+      ? music.offsets.bridges : [0]
+    createMusicBridge(music, bridgeFile, durationSec,
+      bridges.length === 0 ? Number(music.bridgeVol || 0.11) : Math.max(0.075, Number(music.bridgeVol || 0.11) * 0.82),
+      Number(bridgeStarts[bridges.length % bridgeStarts.length] || 0))
     segment.pauseAfterMs = Math.min(Number(segment.pauseAfterMs || 300), 120)
     expanded.push({ file: bridgeFile, pauseAfterMs: 0, overlapMs: 470,
       hasHighRisk: false, isMusicBridge: true, bridgeDurationSec: durationSec })
@@ -2633,8 +2702,10 @@ function addEpisodeMusicIdentity(segments, music, outMp3, raw = false) {
   const outroSec = Number(music.outroSec || 5.5)
   const introFile = `${stem}.music-intro.wav`
   const outroFile = `${stem}.music-outro.wav`
-  createMusicClip(music, introFile, introSec, Number(music.introVol || 0.16), { fadeInSec: 0.55, fadeOutSec: 1.15 })
-  createMusicClip(music, outroFile, outroSec, Number(music.outroVol || 0.12), { fadeInSec: 0.65, fadeOutSec: 1.45, startSec: Math.max(0, introSec + 1.2) })
+  createMusicClip(music, introFile, introSec, Number(music.introVol || 0.16),
+    { fadeInSec: 0.55, fadeOutSec: 1.15, startSec: Math.max(0, Number(music.offsets?.intro || 0)) })
+  createMusicClip(music, outroFile, outroSec, Number(music.outroVol || 0.12),
+    { fadeInSec: 0.65, fadeOutSec: 1.45, startSec: Math.max(0, Number(music.offsets?.outro ?? (introSec + 1.2))) })
   const spoken = segments.map((segment, index) => index === 0
     ? { ...segment, overlapMs: Math.max(Number(segment.overlapMs || 0), 1150) }
     : { ...segment })
@@ -3632,9 +3703,9 @@ async function produce(article, lang) {
        بلا بديل، فإذا كتب المحرك مزاجاً خارج المكتبة («جاد ساخر» مثلاً) خرجت
        الحلقة بلا مقدمةٍ ولا خاتمةٍ ولا جسور وهو خلاف الاتفاق. نُبقي المطابقة
        أولاً ثم ننزل إلى أول مقطوعةٍ مرخّصة — فالهوية الموسيقية لكل حلقة. */
-    const music = selectLicensedMusic(script.mood)
+    const music = selectLicensedMusic(script.mood, article.slug)
     if (!music) console.log('  ♪ إخراج بلا موسيقى — لا توجد مقطوعة مرخّصة في المكتبة')
-    else console.log(`  ♪ «${music.title}» (${script.mood}${music.matchedMood ? '' : ' — بلا مطابقة، أول مرخّصة'}) · مقدمة ${music.introSec}ث · خاتمة ${music.outroSec}ث · جسور المحرّر عند [موسيقى]`)
+    else console.log(`  ♪ «${music.title}» (${script.mood}${music.matchedMood ? '' : ' — بلا مطابقة، أول مرخّصة'}) · نوافذ: مقدمة@${music.offsets.intro}ث · جسور@${music.offsets.bridges.join('، ')}ث · خاتمة@${music.offsets.outro}ث`)
 
     /* ٥) إدراج الجسور المحددة صراحةً فقط، ثم تركيب المقدمة والخاتمة العامتين. */
     let bridged = insertSemanticMusicBridges(segments.map((segment) => ({ ...segment })), transcript, music, TMP)
@@ -3792,7 +3863,14 @@ async function produce(article, lang) {
         + `${detail ? ` — سقط: ${detail}` : ''}${criticalNote}`, { humanGate })
     }
     const timedUtterances = timeUtterances(transcript, assembled.timeline)
-    const chapters = buildEditorialChapters(timedUtterances, auditRecord.musicBridges)
+    /* المحاور قرارٌ تحريريّ لا موسيقيّ: مواضعها محفوظة في الحوار نفسه
+       (musicBridgeAfter) سواءٌ شُغّلت موسيقى أم لم تُشغَّل. وكان الكود يستقيها
+       من سجلّ الجسور، وهذا السجلّ يخرج فارغاً حين لا موسيقى — فتضيع المحاور
+       كلها لسببٍ لا علاقة له بها. نستقيها من مصدرها الأصلي عند الغياب. */
+    const editorialBreaks = selectMusicBridgeIndexes(transcript)
+      .map((index) => ({ afterUtterance: index + 1 }))
+    const chapters = buildEditorialChapters(timedUtterances,
+      auditRecord.musicBridges?.length ? auditRecord.musicBridges : editorialBreaks)
     const publicTranscript = { title: article.title, generatedAt: new Date().toISOString().slice(0, 10),
       language: 'ar',
       sourceLock: MANUAL_EXACT ? {
@@ -3806,7 +3884,7 @@ async function produce(article, lang) {
         intro: auditRecord.musicIdentity?.intro || null,
         bridges: auditRecord.musicBridges || [],
         outro: auditRecord.musicIdentity?.outro || null,
-        music: music ? { title: music.title, mood: script.mood } : null,
+        music: music ? { title: music.title, mood: script.mood, license: music.license || '' } : null,
       },
       chapters,
       utterances: timedUtterances }
@@ -4514,8 +4592,8 @@ if (flag('voice-finalist-retest')) {
   }
   const bridgeAfterIndex = Math.max(0, sample.utterances.findIndex((u) => /والتعليم الذي يخيف/.test(u.text)))
   const makeBridge = (dir, tag) => {
-    const track = selectLicensedMusic('تأملي') || (existsSync(resolve(ROOT, 'music/still-light.mp3'))
-      ? { file: resolve(ROOT, 'music/still-light.mp3') } : null)
+    const track = selectLicensedMusic('تأملي') || (existsSync(resolve(ROOT, 'music/maqam-reflections.mp3'))
+      ? { file: resolve(ROOT, 'music/maqam-reflections.mp3') } : null)
     if (!track) return null
     const out = resolve(dir, `${tag}.bridge.wav`)
     ff(['-i', track.file, '-t', '2.35', '-af',

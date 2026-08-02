@@ -5,7 +5,6 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { toRoot } from "../lib/dialect-lexicon";
 import { FadeUp, Page, PageHead } from "../components/ui";
 import { KnowledgeEntry } from '../components/KnowledgeEntry'
 import { useCmsContent } from "../lib/content";
@@ -16,80 +15,9 @@ import { categoryLabel } from "../lib/content-taxonomy";
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
 import { loadBookPassages, matchBookQuotes, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
 import { SocialIcon } from '../components/icons'
+import { buildSmartQueryPlan, scoreSmartFields, smartRoots } from '../lib/smart-search'
 
-const norm = (s: string) =>
-  s
-    .replace(/[ً-ْٰ]/g, "")
-    .replace(/[أإآٱ]/g, "ا")
-    .replace(/ى/g, "ي")
-    .replace(/ة/g, "ه")
-    .replace(/ؤ/g, "و")
-    .replace(/ئ/g, "ي")
-    .replace(/[^\w؀-ۿ ]/g, " ")
-    .toLowerCase();
-
-const STOP = new Set([
-  "على",
-  "الى",
-  "من",
-  "في",
-  "عن",
-  "مع",
-  "هذا",
-  "هذه",
-  "ذلك",
-  "التي",
-  "الذي",
-  "بين",
-  "بعد",
-  "قبل",
-  "عند",
-  "حتي",
-  "كان",
-  "كانت",
-  "هل",
-  "ما",
-  "لا",
-  "لم",
-  "لن",
-  "قد",
-  "ثم",
-  "او",
-  "ام",
-  "بل",
-  "كل",
-  "بعض",
-  "غير",
-  "نحو",
-  "لدي",
-  "منذ",
-  "حين",
-  "حول",
-  "ان",
-  "لان",
-  "كيف",
-  "اين",
-  "ليس",
-  "وهو",
-  "وهي",
-  "راي",
-  "رايك",
-  "الدكتور",
-  "دكتور",
-  "احمد",
-  "الفيلكاوي",
-  "برايك",
-  "شنو",
-  "ماذا",
-  "لماذا",
-]);
-const bareTokens = (s: string) =>
-  norm(s)
-    .split(/\s+/)
-    .filter((w) => w.length > 2 && !STOP.has(w));
-/* التوسيع بالقاموس الجبّار: يسأل الزائر «شنو رايه بالعيال؟» فيلتقي بمقال الأستاذ
-   عن «الأطفال». والموقع والبوت يفهمان اللهجات نفسها لأنهما يشربان من معجمٍ واحد. */
-const tokenize = (s: string) => bareTokens(s).map(toRoot);
+const tokenize = (value: string) => smartRoots(value)
 
 type Hit = {
   slug: string;
@@ -142,38 +70,51 @@ type TwinAnswer = {
 };
 
 function matchRefs(
-  qTokens: string[],
+  question: string,
   books: BookRecord[],
   papers: PaperRecord[],
   media: MediaRecord[] = [],
 ): Ref[] {
-  const query = new Set(qTokens)
-  const scoreText = (value: string) => tokenize(value).reduce((score, root) => score + (query.has(root) ? 1 : 0), 0)
+  const plan = buildSmartQueryPlan(question)
   const refs: (Ref & { score: number })[] = []
+
   for (const book of books) {
-    const score = scoreText(`${book.title} ${book.desc || ''} ${bookKnowledgeText(book.slug)}`)
-    const concept = bestBookConcept(qTokens.join(' '), book.slug)
-    if (score > 0) refs.push({
+    const concept = bestBookConcept(question, book.slug)
+    const score = scoreSmartFields(plan, [
+      { value: book.title, weight: 5.2, phraseWeight: 1.6, exactWeight: 1.7 },
+      { value: book.desc || '', weight: 2.2 },
+      { value: bookKnowledgeText(book.slug), weight: 1.3 },
+    ]) + (concept?.score || 0) * .5
+    if (score > 7) refs.push({
       kind: 'كتاب',
       slug: book.slug,
-      title: concept && concept.score > 0 ? `${book.title} — ${concept.concept.title} (ص ${concept.concept.pageStart})` : book.title,
-      href: concept && concept.score > 0 ? `/publications/${book.slug}#${bookKnowledgeAnchor(concept.concept)}` : `/publications/${book.slug}`,
+      title: concept && concept.score > 18 ? `${book.title} — ${concept.concept.title} (ص ${concept.concept.pageStart})` : book.title,
+      href: concept && concept.score > 18 ? `/publications/${book.slug}#${bookKnowledgeAnchor(concept.concept)}` : `/publications/${book.slug}`,
       score,
     })
   }
+
   for (const paper of papers) {
     const title = paper.titleAr || paper.title
-    const score = scoreText(`${title} ${paper.meta || ''} ${paper.abstractAr || ''} ${paper.keywords || ''} ${paper.keyFinding || ''}`)
-    if (score > 0) refs.push({ kind: 'بحث محكّم', slug: paper.slug, title, href: `/research/${paper.slug}`, score: score + 1 })
+    const score = scoreSmartFields(plan, [
+      { value: title, weight: 5, phraseWeight: 1.5, exactWeight: 1.6 },
+      { value: paper.abstractAr || '', weight: 2.2 },
+      { value: `${paper.meta || ''} ${paper.keywords || ''} ${paper.keyFinding || ''}`, weight: 1.5 },
+    ])
+    if (score > 7) refs.push({ kind: 'بحث محكّم', slug: paper.slug, title, href: `/research/${paper.slug}`, score })
   }
-  /* اللقاءات المرئية طبقةٌ رابعة: ما قاله أمام الكاميرا، لا ما كتبه فقط.
-     كانت غائبة عن هذه الصفحة كلياً رغم أنها من أقوى ما يقنع الزائر. */
+
   for (const item of media) {
-    const score = scoreText(`${item.title} ${item.topics || ''} ${item.program || ''} ${item.channel || ''} ${item.outlet || ''}`)
-    if (score > 0) refs.push({ kind: 'لقاء', slug: item.slug, title: item.title, href: `/media/${item.slug}`, score })
+    const score = scoreSmartFields(plan, [
+      { value: item.title, weight: 5, phraseWeight: 1.5, exactWeight: 1.6 },
+      { value: `${item.topics || ''} ${item.program || ''} ${item.channel || ''} ${item.outlet || ''}`, weight: 1.8 },
+      { value: item.transcript || '', weight: 1.05 },
+    ])
+    if (score > 7) refs.push({ kind: 'لقاء', slug: item.slug, title: item.title, href: `/media/${item.slug}`, score })
   }
-  /* لا يبتلع نوعٌ واحد القائمة: الكتب وحدها كانت تملأ الستة فتختفي الأبحاث
-     واللقاءات. حصةٌ لكل نوع، ثم يُكمَّل الباقي بالأقوى. */
+
+  /* لا يبتلع نوعٌ واحد القائمة: نضمن حضور الأنواع المختلفة متى كانت ذات صلة،
+     ثم نكمل بالأقوى دلالياً. */
   const sorted = refs.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, 'ar'))
   const quota = new Map<Ref['kind'], number>()
   const balanced = sorted.filter((item) => {
@@ -220,7 +161,8 @@ function answer(
   papers: PaperRecord[],
   media: MediaRecord[] = [],
 ): Answer {
-  const q = tokenize(question);
+  const plan = buildSmartQueryPlan(question)
+  const q = plan.directRoots.length ? plan.directRoots : tokenize(question)
   if (!q.length) return { hits: [], near: [], refs: [], timeline: [] };
 
   const scored = articles
@@ -229,27 +171,12 @@ function answer(
         ...article,
         body: bodies[article.slug] || undefined,
       };
-      /* الطرفان يُردّان إلى الجذور: كلماتُ السؤال مُوسَّعة أصلاً في q، وكلماتُ
-       المقال نُوسّعها هنا كمجموعةٍ من الجذور. فيلتقي «العيال» بـ«الأطفال». */
-      const titleRoots = new Set(tokenize(a.title));
-      const excerptRoots = new Set(tokenize(a.excerpt || ""));
-      const bodyRoots = a.body ? tokenize(a.body) : [];
-      const bodyCount = new Map<string, number>();
-      for (const root of bodyRoots)
-        bodyCount.set(root, (bodyCount.get(root) || 0) + 1);
-      let score = 0;
-      const normalizedQuestion = norm(question).trim();
-      const normalizedTitle = norm(a.title);
-      const normalizedExcerpt = norm(a.excerpt || '');
-      if (normalizedQuestion && normalizedTitle.includes(normalizedQuestion)) score += 12;
-      if (normalizedQuestion && normalizedExcerpt.includes(normalizedQuestion)) score += 6;
-      for (const w of q) {
-        if (titleRoots.has(w)) score += 5;
-        if (excerptRoots.has(w)) score += 3;
-        score += Math.min(5, bodyCount.get(w) || 0);
-      }
-      const matchedRoots = q.filter((root) => titleRoots.has(root) || excerptRoots.has(root) || bodyCount.has(root)).length;
-      score += matchedRoots >= Math.min(3, q.length) ? 4 : 0;
+      const score = scoreSmartFields(plan, [
+        { value: a.title, weight: 5.2, phraseWeight: 1.6, exactWeight: 1.7 },
+        { value: a.excerpt || '', weight: 2.8, phraseWeight: 1.2 },
+        { value: a.body || '', weight: 1.15 },
+        { value: a.cat || '', weight: 1.1 },
+      ])
       return { a, score };
     })
     .sort(
@@ -259,9 +186,9 @@ function answer(
 
   const near = scored
     .slice(0, 4)
-    .filter((item) => item.score > 0)
+    .filter((item) => item.score > 7)
     .map(toTimelineItem);
-  const relevant = scored.filter((item) => item.score >= 3).map(toTimelineItem);
+  const relevant = scored.filter((item) => item.score >= 8).map(toTimelineItem);
   const chronological = [...relevant].sort((left, right) =>
     left.iso.localeCompare(right.iso),
   );
@@ -289,8 +216,8 @@ function answer(
             " و",
           )}، وكأن الفكرة عند الدكتور ليست تكنولوجية أو تربوية وحدها، بل سؤال إنساني يتغير سياقه.`
       : undefined;
-  const refs = matchRefs(q, books, papers, media);
-  const top = scored.filter((item) => item.score >= 5).slice(0, 3);
+  const refs = matchRefs(question, books, papers, media);
+  const top = scored.filter((item) => item.score >= 12).slice(0, 3);
 
   const hits: Hit[] = [];
   for (const { a } of top) {
@@ -302,18 +229,14 @@ function answer(
     let best = "";
     let bestScore = -1;
     for (const p of paras) {
-      const paragraph = norm(p);
-      let score = 0;
-      for (const w of q)
-        if (paragraph.includes(w))
-          score += 1 + Math.min(2, Math.max(0, paragraph.split(w).length - 2));
-      if (p.length > 700) score -= 1;
+      let score = scoreSmartFields(plan, [{ value: p, weight: 1.25, phraseWeight: 1.2 }]);
+      if (p.length > 900) score -= 1;
       if (score > bestScore) {
         bestScore = score;
         best = p;
       }
     }
-    if (bestScore > 0)
+    if (bestScore > 7)
       hits.push({
         slug: a.slug,
         title: a.title,

@@ -127,7 +127,7 @@ export function NowStation({ articles }: { articles: ArticleRecord[] }) {
             </FadeUp>}
             {historic && <FadeUp delay={0.14}>
               <Link to={`/articles/${historic.article.slug}`} className="group block rounded-2xl border border-hair bg-canvas p-6 transition-colors hover:border-accent">
-                <p className="text-[.75rem] font-semibold text-accent">في مثل هذا الأسبوع · {yearsAgo(new Date().getFullYear() - historic.date.getFullYear())}</p>
+                <p className="text-[.75rem] font-semibold text-accent">في مثل هذا الأسبوع {yearsAgo(new Date().getFullYear() - historic.date.getFullYear())}</p>
                 <p className="mt-3 font-display text-[1.08rem] font-semibold leading-[1.7] text-ink transition-colors group-hover:text-accent">«{historic.article.title}»</p>
                 <p className="mt-4 text-[.78rem] text-soft">من ذاكرة الأرشيف ←</p>
               </Link>

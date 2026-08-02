@@ -35,9 +35,6 @@ const KIND_TABS: { id: TabId; label: string }[] = [
   { id: 'book', label: 'كتب الدكتور' },
   { id: 'media', label: 'لقاءات الدكتور' },
   { id: 'question', label: 'الأسئلة' },
-  /* بوابة مباشرة إلى ميزة «اسأل هذا الكتاب» كي لا تبقى مدفونة في صفحات
-     الكتب. هو تبويبٌ خدمي أكثر من كونه قائمة نتائج. */
-  { id: 'askbook', label: 'ابحث في كتاب' },
   /* التبويب الوحيد الذي لا يفتح نصاً بل صوتاً: جملةٌ نُطقت، والنقر يشغّلها
      عند ثانيتها. يبقى آخر الصف لأنه أحدثها وأقلها استعمالاً في البدء. */
   { id: 'spoken', label: 'جُمل منطوقة' },
@@ -45,6 +42,8 @@ const KIND_TABS: { id: TabId; label: string }[] = [
      فتح التبويب، ثم يبقى في الذاكرة فتصير النتائج فورية. */
   { id: 'passage', label: 'متون كتب الدكتور' },
 ]
+
+const RESULT_TABS = KIND_TABS.filter((item) => item.id !== 'askbook')
 
 const KIND_BADGE: Record<UnifiedKind | 'passage', string> = {
   passage: 'من كتب الدكتور',
@@ -115,7 +114,7 @@ export default function Search() {
   const [query, setQuery] = useState(() => searchParams.get('q') || '')
   const [tab, setTab] = useState<TabId>(() => {
     const requested = searchParams.get('tab') as TabId | null
-    return requested && KIND_TABS.some((item) => item.id === requested) ? requested : 'all'
+    return requested === 'askbook' || (requested && RESULT_TABS.some((item) => item.id === requested)) ? requested : 'all'
   })
   const [cat, setCat] = useState('الكل')
   const [year, setYear] = useState('الكل')
@@ -147,18 +146,20 @@ export default function Search() {
      ومدير التمرير يعيد الصفحة إلى الأعلى؛ فكان الحقل يبدو وكأنه يعلّق. */
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      const next = new URLSearchParams(window.location.search)
       const typed = query.trim()
-      setSearchParams((current) => {
-        const next = new URLSearchParams(current)
-        if (typed) next.set('q', typed)
-        else next.delete('q')
-        if (tab !== 'all') next.set('tab', tab)
-        else next.delete('tab')
-        return next.toString() === current.toString() ? current : next
-      }, { replace: true })
+      if (typed) next.set('q', typed)
+      else next.delete('q')
+      if (tab !== 'all') next.set('tab', tab)
+      else next.delete('tab')
+      const search = next.toString()
+      const url = `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`
+      /* لا نمر عبر Router أثناء كل حرف: مدير التمرير كان يعامل كل تحديث للرابط
+         كتنقل جديد فيدفع الصفحة فوق وتحت. replaceState يحفظ الرابط بلا Layout Shift. */
+      window.history.replaceState(window.history.state, '', url)
     }, 240)
     return () => window.clearTimeout(timer)
-  }, [query, setSearchParams, tab])
+  }, [query, tab])
 
   const knowledgeGraph = useMemo(() => buildKnowledgeGraph({ articles, books, papers, media }), [articles, books, media, papers])
 
@@ -380,7 +381,30 @@ export default function Search() {
 
       <div className="px-6 pt-8 md:px-11"><div className="mx-auto max-w-3xl"><KnowledgeEntry /></div></div>
 
-      <section className="px-6 py-14 md:px-11 md:py-16">
+      <div className="px-6 pt-7 md:px-11">
+        <div className="mx-auto max-w-shell">
+          <button
+            type="button"
+            onClick={() => {
+              setTab('askbook')
+              const next = new URLSearchParams(window.location.search)
+              next.set('tab', 'askbook')
+              window.history.replaceState(window.history.state, '', `${window.location.pathname}?${next.toString()}`)
+            }}
+            className={`group flex w-full items-center justify-between gap-5 rounded-[1.65rem] border px-5 py-5 text-right transition-colors md:px-7 ${tab === 'askbook' ? 'border-accent bg-accent/[.045]' : 'border-hair bg-wash/[.45] hover:border-accent/[.55]'}`}
+            aria-pressed={tab === 'askbook'}
+          >
+            <span className="min-w-0">
+              <span className="block text-[.7rem] font-semibold text-accent">ميزة مستقلة</span>
+              <strong className="mt-1 block font-display text-[clamp(1.15rem,2.2vw,1.55rem)] font-semibold text-ink">ابحث في كتاب</strong>
+              <span className="mt-1 block text-[.78rem] leading-relaxed text-soft">اختر كتاباً واحداً، ثم ابحث في متنه الموثق فقط.</span>
+            </span>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent group-hover:bg-accent group-hover:text-white"><SocialIcon name="Search" size={17} /></span>
+          </button>
+        </div>
+      </div>
+
+      <section className="px-6 py-10 md:px-11 md:py-12">
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <div className="border-b border-hair pb-8">
@@ -399,7 +423,7 @@ export default function Search() {
               <div className="mt-7 border-t border-hair pt-5">
                 {/* تبويبات الأنواع مع عداداتها — قلب المحرك الموحد */}
                 <div className="rail -mx-1 flex flex-nowrap gap-5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="أنواع نتائج البحث">
-                  {KIND_TABS.map((item) => (
+                  {RESULT_TABS.map((item) => (
                     <button
                       key={item.id}
                       role="tab"
@@ -475,11 +499,11 @@ export default function Search() {
                   <>
                     {ar(tab === 'spoken' ? spokenHits.length : activeRows.length)} نتيجة
                     <span> عن «{normalizedQuery}»</span>
-                    {tab !== 'all' && <span> في {KIND_TABS.find((item) => item.id === tab)?.label}</span>}
+                    {tab !== 'all' && <span> في {RESULT_TABS.find((item) => item.id === tab)?.label}</span>}
                   </>
                 )}
               </p>
-              {tab !== 'askbook' && keywords.length > 0 && (
+              {(tab === 'all' || tab === 'article') && keywords.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {keywords.slice(0, 8).map((keyword) => (
                     <button

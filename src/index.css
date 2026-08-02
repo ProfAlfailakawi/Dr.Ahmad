@@ -613,7 +613,8 @@ html.dark .content-media .page-head {
   .article-body p {
     font-size: calc(1.06rem * var(--article-scale, 1));
     line-height: var(--article-line, 2);
-    text-align: start;
+    text-align: justify;
+    text-justify: inter-word;
     text-align-last: start;
     word-spacing: normal;
     overflow-wrap: break-word;
@@ -3675,4 +3676,16 @@ body.selection-active .floating-actions {
   .content-book-world {
     padding-bottom: calc(8rem + env(safe-area-inset-bottom));
   }
+}
+
+
+/* نهاية الصفحات الداخلية لا تحجز شاشة فارغة قبل التذييل. */
+.signature-page:not(.home-page) > :last-child { margin-bottom: 0; }
+.content-articles > article { min-height: 0; }
+.content-articles > article + div { margin-top: 0; }
+@media (max-width: 640px) {
+  .content-articles article { padding-bottom: 2rem; }
+  .content-articles .article-body,
+  .content-articles .article-body p,
+  .content-articles .article-body-synced .synced-paragraph { text-align: justify; text-justify: inter-word; text-align-last: start; }
 }

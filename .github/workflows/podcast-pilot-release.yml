@@ -193,7 +193,16 @@ jobs:
           npm run audio:guard
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .podcast-state.json src/data/audio.json src/data/audio-meta.json src/data/podcast-admin.json
+          # ‎.podcast-state.json مستبعَدٌ في .gitignore، و«git add» العادي يخرج
+          # بحالة فشل حين يُطلب منه ملفٌ مستبعَد — و‎bash -e يُسقط الخطوة كلها،
+          # فيرتدّ نشرٌ نجح فيه كل شيء قبله. القافلة الساعية تستعمل ‎-f على
+          # الموجود وحده منذ زمن؛ هذا المسار لم يكن. ونتجاوز الغائب لأن بعض
+          # الملفات لا تُكتب إلا في مساراتٍ بعينها.
+          MANAGED=(.podcast-state.json src/data/audio.json src/data/audio-meta.json src/data/podcast-admin.json)
+          PRESENT=()
+          for managed in "${MANAGED[@]}"; do [ -f "$managed" ] && PRESENT+=("$managed"); done
+          if [ "${#PRESENT[@]}" -eq 0 ]; then echo "لا سجلّات لتثبيتها."; exit 0; fi
+          git add -f -- "${PRESENT[@]}"
           if git diff --cached --quiet; then
             echo "No manifest changes to commit."
           else

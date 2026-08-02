@@ -42,6 +42,8 @@ export type ContinuityMode = 'direct' | 'soft' | 'thematic' | 'independent'
 export type ReferenceStrategy = 'last_frame' | 'selected_frame' | 'style_only' | 'none'
 /** طريقة الصوت داخل المقطع: حديث مباشر، تعليق فوق مشهد، أو صورة وصوت بيئي بلا كلام. */
 export type VoiceMode = 'avatar_speech' | 'voice_over' | 'ambient'
+export type FlowPromptMode = 'speech' | 'silent'
+export type FlowPromptVariants = Record<FlowPromptMode, string>
 
 export type OverlayCue = {
   kind: 'عنوان' | 'اقتباس' | 'رابط' | 'دعوة'
@@ -71,6 +73,10 @@ export type LiveDirectorSegment = {
   shotCount: 1 | 2 | 3
   shotPlan: { from: number; to: number; framing: string }[]
   prompt: string
+  /** نسختان إنجليزيتان خالصتان: مع أداء صوتي أو بلا أي كلام. */
+  flowPrompts?: FlowPromptVariants
+  /** وصف بصري إنجليزي مشتق داخلياً من موضوع المقطع من دون تسريب العربية إلى Flow. */
+  visualBrief?: string
   negativeConstraints: string[]
   continuity: string
   continuityMode: ContinuityMode
@@ -446,7 +452,7 @@ const CONTINUITY_CLAUSES: Record<ContinuityMode, string[]> = {
   ],
 }
 
-/** البرومبت يُكتب بإنجليزية واضحة؛ العربية تبقى للحوار وحده. */
+/** كل ما يُنسخ إلى Flow إنجليزي خالص؛ الجملة الصوتية تُدار منفصلة عند الحاجة. */
 const TONE_EN: Record<LiveDirectorTone, string> = {
   'فكرية': 'reflective and intellectual',
   'تربوية': 'educational and grounded',
@@ -553,44 +559,129 @@ function constraintsFor(appearance: FlowAppearance, count: number) {
 
 const AVATAR_LOCK = 'Use Dr. Ahmad’s pre-saved avatar already available in Google Flow. Never create, describe, or substitute a new or similar person. Preserve the approved avatar identity, voice, appearance, wardrobe, realism, and performance continuity across every shot and every clip.'
 
+const ARABIC_SCRIPT = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]+/g
+
+const VISUAL_CONCEPTS: Array<{ pattern: RegExp; scenes: string[] }> = [
+  { pattern: /ذكاء اصطناعي|خوارزم|تقني|رقمي|هاتف|شاشة|منصات|إنترنت|بيانات/, scenes: [
+    'A thoughtful educator studies a restrained digital interface while keeping a real notebook and human conversation visibly central.',
+    'A calm human-scale technology scene contrasts automated suggestions with a deliberate human decision.',
+    'A clean desk scene shows one digital tool being paused, questioned, and used with visible judgment rather than passive dependence.',
+  ] },
+  { pattern: /طفل|ابن|ابنة|أبناء|أسرة|بيت|والد|أم|أب/, scenes: [
+    'A warm domestic learning moment shows careful listening, emotional safety, and one clear boundary without confrontation.',
+    'A quiet family scene centers on eye contact, patience, and a small shared action rather than a lecture.',
+    'A human close-up captures hesitation turning into trust through calm presence and respectful distance.',
+  ] },
+  { pattern: /مدرسة|صف|طالب|معلم|تعليم|درس|تعلّم|منهج/, scenes: [
+    'A premium classroom moment shows one learner moving from passive compliance to active understanding through a visible question.',
+    'A quiet educational environment contrasts completing a task with genuinely making sense of it.',
+    'A single classroom object becomes a visual cause-and-effect metaphor for attention, understanding, and agency.',
+  ] },
+  { pattern: /بحث|دراسة|دراسات|سؤال|أكاديم|مصدر|دليل/, scenes: [
+    'A refined research desk shows many scattered possibilities narrowing into one precise question and one credible source.',
+    'A researcher compares evidence calmly, removing noise until one defensible line of inquiry remains.',
+    'A close visual sequence moves from a crowded field of notes to one clear, testable question.',
+  ] },
+  { pattern: /درجة|اختبار|تقييم|تفوق|نجاح|رسوب/, scenes: [
+    'A single score on paper is visually placed beside richer evidence of understanding, judgment, and growth.',
+    'A calm assessment scene shifts attention from the final number to the thinking process that produced it.',
+    'A restrained educational metaphor shows a grade shrinking to its proper size while human capability remains larger in frame.',
+  ] },
+  { pattern: /غضب|صراخ|خلاف|حدود|سلوك|عقاب|حزم/, scenes: [
+    'A tense moment slows down before reaction, showing one breath, one pause, and one clear boundary delivered without aggression.',
+    'A quiet visual beat contrasts impulsive escalation with a composed, respectful response.',
+    'A close human moment shows repair after tension through accountability, calm tone, and restored connection.',
+  ] },
+  { pattern: /مقارنة|شهرة|متابع|محتوى|إعلان|منصات/, scenes: [
+    'A person steps back from a stream of polished public images and returns attention to one authentic, ordinary moment.',
+    'A restrained creator-economy scene contrasts rising metrics with the need to protect identity, privacy, and inner measure.',
+    'A calm cinematic composition shows public numbers fading while real human value stays physically present and stable.',
+  ] },
+  { pattern: /قراءة|كتاب|كتب|مقال|معرفة/, scenes: [
+    'A quiet reading ritual begins with one inviting page, one marked idea, and no visual pressure to finish quickly.',
+    'A book moves from decorative background to active conversation through a small, deliberate reading habit.',
+    'A close tactile scene shows depth winning over distraction through one page, one pause, and one reflected thought.',
+  ] },
+  { pattern: /قياد|فريق|مبادرة|إدارة|قرار|مؤسسة/, scenes: [
+    'A leadership scene shows a written directive becoming a shared action through listening, ownership, and visible participation.',
+    'A small team aligns around one clear purpose rather than another decorative initiative.',
+    'A composed meeting moment turns silent resistance into an honest, constructive contribution.',
+  ] },
+  { pattern: /إرهاق|تعب|نوم|راحة|ضغط|قلق|تركيز|انتباه/, scenes: [
+    'A demanding routine visibly slows into a healthier rhythm through rest, reduced clutter, and one protected focus period.',
+    'A close human moment distinguishes exhaustion from avoidance without judgment or melodrama.',
+    'A calm environment shows attention returning after noise, notifications, and competing demands are deliberately removed.',
+  ] },
+  { pattern: /مستقبل|مهارة|وظائف|تغيير|تطور/, scenes: [
+    'A future-facing educational scene keeps human judgment, adaptability, and meaning in the foreground while tools change around them.',
+    'A clean visual transition shows temporary technologies moving past while durable human capabilities remain stable.',
+    'A learner faces an uncertain path with a small set of enduring skills rather than a crowded wall of predictions.',
+  ] },
+]
+
+function visualBriefFor(source: string, role: string, order: number) {
+  const concept = VISUAL_CONCEPTS.find((item) => item.pattern.test(source))
+  const scenes = concept?.scenes || [
+    'A refined human-scale educational moment turns an abstract idea into one visible cause-and-effect action.',
+    'A calm cinematic scene gives one idea physical clarity through a single subject, one action, and generous negative space.',
+    'A thoughtful human moment moves from uncertainty to clearer judgment without spectacle or visual clutter.',
+  ]
+  const scene = scenes[Math.abs(order - 1) % scenes.length]
+  return `${scene} The visual beat must serve this function: ${roleInEnglish(role)}.`
+}
+
+function englishOnly(value: string) {
+  return value
+    .replace(ARABIC_SCRIPT, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/ {2,}/g, ' ')
+    .trim()
+}
+
 function buildFlowPrompt(input: {
-  segment: Omit<LiveDirectorSegment, 'prompt' | 'promptVersions'>
+  segment: Omit<LiveDirectorSegment, 'prompt' | 'promptVersions' | 'flowPrompts'>
   title: string
   tone: LiveDirectorTone
   platform: LiveDirectorPlatform
   palette: string
+  mode: FlowPromptMode
 }) {
-  const { segment } = input
+  const { segment, mode } = input
   const avatar = segment.appearance !== 'visual_only'
   const shotText = segment.shotPlan.map((shot, index) => `Shot ${index + 1} (${shot.from.toFixed(1)}-${shot.to.toFixed(1)}s): ${shot.framing}.`).join(' ')
+  const visualBrief = segment.visualBrief || visualBriefFor(`${input.title} ${segment.message}`, segment.role, segment.order)
   const subject = avatar
-    ? `${AVATAR_LOCK} Keep body movement simple and natural; no complex hand choreography while speaking.`
-    : `Main subject: one clear symbolic object or one human-scale educational moment related to “${input.title}”; no avatar is needed in this clip.`
-  const sound = segment.voiceMode === 'avatar_speech'
-    ? 'Natural room ambience under the approved avatar voice; preserve lip synchronization through every angle change.'
-    : segment.voiceMode === 'voice_over'
-      ? 'Subtle natural environmental sound sitting under a restrained Arabic voice-over.'
-      : 'Environmental sound only — no spoken line in this clip; let the image carry the meaning.'
-  const dialogue = segment.voiceMode === 'ambient' || !segment.narration
-    ? 'No dialogue and no voice-over in this clip.'
-    : `${segment.voiceMode === 'avatar_speech' ? 'Arabic dialogue spoken by the avatar' : 'Arabic voice-over'}, exactly one short sentence: "${segment.narration.replace(/"/g, '“')}". Never cut on a spoken word; place every cut on a natural pause.`
+    ? `${AVATAR_LOCK} Keep body movement simple and natural; avoid complex hand choreography.`
+    : 'No avatar is required in this clip. Use one clear symbolic object or one human-scale educational moment as the main subject.'
+  const sound = mode === 'silent'
+    ? 'Environmental sound only. No dialogue, no voice-over, no narration, no spoken words, and no vocal reactions.'
+    : avatar
+      ? 'Natural room ambience under the approved avatar performance. The exact spoken line is supplied separately by the creator in Flow, never embedded in this prompt. Preserve precise lip synchronization through every angle change.'
+      : 'Subtle natural environmental sound. A single short creator-supplied voice-over may be added separately; do not generate or infer any spoken wording from this prompt.'
+  const speech = mode === 'silent'
+    ? 'Performance mode: completely silent visual performance. The avatar, if present, must not move the mouth as if speaking.'
+    : avatar
+      ? 'Performance mode: speaking avatar. Deliver one short creator-supplied line with calm, natural pacing. The wording and language are supplied separately. Do not create subtitles or visible text.'
+      : 'Performance mode: voice-over-ready visual. Keep the scene visually complete without relying on generated speech; the creator may add one short line separately.'
   const overlay = segment.overlayPlan.length
-    ? `Editorial overlay: text is added after generation, never inside Flow. Reserve clean space — ${unique(segment.overlayPlan.map((cue) => `${OVERLAY_POSITION_EN[cue.position]} (${cue.from.toFixed(1)}-${cue.to.toFixed(1)}s)`)).join(', ')}.`
-    : 'Editorial overlay: none required for this clip.'
-  return [
+    ? `Editorial overlay: all text is added later in editing, never generated inside Flow. Reserve clean space at ${unique(segment.overlayPlan.map((cue) => `${OVERLAY_POSITION_EN[cue.position]} (${cue.from.toFixed(1)}-${cue.to.toFixed(1)}s)`)).join(', ')}.`
+    : 'Editorial overlay: none required for this clip. Do not generate any titles, captions, labels, letters, numbers, or subtitles.'
+  return englishOnly([
     'Duration: exactly 8 seconds.',
     `Aspect ratio: 9:16 vertical for ${PLATFORM_EN[input.platform] || 'multi-platform vertical distribution'}.`,
-    `Avatar usage: ${avatar ? 'yes — the pre-saved Dr. Ahmad avatar already stored in Google Flow' : 'no avatar in this clip'}.`,
+    `Prompt option: ${mode === 'speech' ? 'WITH SPEECH' : 'WITHOUT SPEECH'}.`,
+    `Avatar usage: ${avatar ? 'yes — use only the pre-saved Dr. Ahmad avatar already stored in Google Flow' : 'no avatar in this clip'}.`,
     `Clip function: ${roleInEnglish(segment.role)}.`,
     subject,
+    `Scene concept: ${visualBrief}`,
     'Location: one calm, premium educational environment; keep the same location, background, time of day and visual moment throughout this clip.',
     `Primary action: ${segment.purpose}. One main action only.`,
     `Shot construction: ${segment.shotCount} ${segment.shotCount === 1 ? 'continuous shot' : 'connected shots'} in the same context. ${shotText}`,
     'Camera movement: one restrained motion per shot, either a slow push-in or a locked camera; no competing movements.',
     'Lighting: soft cinematic daylight with consistent direction and exposure across all cuts.',
     `Visual mood: ${TONE_EN[input.tone] || 'reflective and intellectual'}, realistic, quiet, refined. Color palette: ${input.palette}.`,
-    `Environmental sound: ${sound}`,
-    dialogue,
+    `Sound design: ${sound}`,
+    speech,
     `Clip start state: ${segment.startState}`,
     `Clip end state: ${segment.endState}`,
     `Continuity with the previous clip: ${segment.continuityMode}.`,
@@ -598,15 +689,35 @@ function buildFlowPrompt(input: {
     overlay,
     avatar ? `Identity lock: ${AVATAR_LOCK}` : '',
     `Continuity notes: ${segment.continuity}`,
-    `Negative constraints: ${segment.negativeConstraints.join(', ')}.`,
-  ].filter(Boolean).join('\n')
+    `Negative constraints: ${unique([...segment.negativeConstraints, 'Arabic writing', 'Arabic subtitles', 'Arabic captions', 'generated dialogue wording']).join(', ')}.`,
+  ].filter(Boolean).join('\n'))
 }
 
-type SegmentDraft = Omit<LiveDirectorSegment, 'prompt' | 'promptVersions'>
+function buildFlowPrompts(input: Omit<Parameters<typeof buildFlowPrompt>[0], 'mode'>): FlowPromptVariants {
+  return {
+    speech: buildFlowPrompt({ ...input, mode: 'speech' }),
+    silent: buildFlowPrompt({ ...input, mode: 'silent' }),
+  }
+}
 
-/** يعيد بناء برومبت مقطع واحد فقط بعد تغيير الترابط أو المرجع أو النص. */
+function preferredPromptMode(segment: Pick<LiveDirectorSegment, 'voiceMode'>): FlowPromptMode {
+  return segment.voiceMode === 'ambient' ? 'silent' : 'speech'
+}
+
+export function getFlowPrompt(segment: LiveDirectorSegment, mode: FlowPromptMode) {
+  return segment.flowPrompts?.[mode] || englishOnly(segment.prompt)
+}
+
+type SegmentDraft = Omit<LiveDirectorSegment, 'prompt' | 'promptVersions' | 'flowPrompts'>
+
+/** يعيد بناء نسختي برومبت المقطع بعد تغيير الترابط أو المرجع أو النص. */
+function rebuiltFlowPrompts(segment: SegmentDraft, project: Pick<LiveDirectorProject, 'title' | 'tone' | 'platform'>) {
+  return buildFlowPrompts({ segment, title: project.title, tone: project.tone, platform: project.platform, palette: PALETTE })
+}
+
 function rebuiltPrompt(segment: SegmentDraft, project: Pick<LiveDirectorProject, 'title' | 'tone' | 'platform'>) {
-  return buildFlowPrompt({ segment, title: project.title, tone: project.tone, platform: project.platform, palette: PALETTE })
+  const variants = rebuiltFlowPrompts(segment, project)
+  return variants[preferredPromptMode(segment)]
 }
 
 const PALETTE = 'deep slate blue, warm ivory, restrained muted gold accents'
@@ -640,6 +751,7 @@ function buildSegments(input: {
       role,
       purpose: role.includes('الخطاف') ? 'create an immediate visual question without a greeting' : role.includes('الخاتمة') ? 'resolve the visual idea and leave a memorable final beat' : `communicate the ${roleInEnglish(role)} with one visible cause-and-effect action`,
       message,
+      visualBrief: visualBriefFor(`${input.title} ${message}`, role, index + 1),
       appearance,
       voiceMode,
       // المقطع الصامت يحمل معناه في الصورة وفي خطة النصوص المضافة، لا في جملة منطوقة.
@@ -662,8 +774,9 @@ function buildSegments(input: {
       videoUrl: '',
       revisionReason: '',
     }
-    const prompt = rebuiltPrompt(base, { title: input.title, tone: input.tone, platform: input.platform })
-    return { ...base, prompt, promptVersions: [{ prompt, reason: 'النسخة الأولى', createdAt: now() }] }
+    const flowPrompts = rebuiltFlowPrompts(base, { title: input.title, tone: input.tone, platform: input.platform })
+    const prompt = flowPrompts[preferredPromptMode(base)]
+    return { ...base, prompt, flowPrompts, promptVersions: [{ prompt, reason: 'النسخة الأولى', createdAt: now() }] }
   })
 }
 
@@ -810,6 +923,28 @@ export function createPublicVideoProject(input: PublicVideoInput): LiveDirectorP
   return base
 }
 
+/** يرقّي المشاريع المحفوظة قبل إضافة الخيارين، ويعيد بناء البرومبتات بالصيغة الإنجليزية الحالية. */
+export function ensureLiveDirectorPromptVariants(project: LiveDirectorProject): LiveDirectorProject {
+  const segments = project.segments.map((segment) => {
+    const { prompt: _legacyPrompt, promptVersions, flowPrompts: _legacyVariants, ...rest } = segment
+    const draft: SegmentDraft = {
+      ...rest,
+      visualBrief: segment.visualBrief || visualBriefFor(`${project.title} ${segment.message}`, segment.role, segment.order),
+    }
+    const variants = rebuiltFlowPrompts(draft, project)
+    const prompt = variants[preferredPromptMode(draft)]
+    return {
+      ...draft,
+      prompt,
+      flowPrompts: variants,
+      promptVersions: Array.isArray(promptVersions) && promptVersions.length
+        ? promptVersions
+        : [{ prompt, reason: 'ترقية البرومبت الإنجليزي', createdAt: now() }],
+    }
+  })
+  return { ...project, segments, updatedAtClient: project.updatedAtClient || now() }
+}
+
 export const LIVE_DIRECTOR_REPAIR_ISSUES = [
   'تغير الأفتار', 'تغير الوجه أو المظهر', 'تغيرت الملابس', 'الحركة غير طبيعية', 'حركة اليد ضعيفة', 'الكلام غير واضح', 'مزامنة الفم سيئة', 'الزوايا كثيرة', 'الزوايا قليلة والمشهد جامد', 'الانتقال بين الزوايا غير طبيعي', 'المشهد مزدحم', 'الفكرة غير واضحة', 'الكاميرا غير مناسبة', 'الإضاءة غير مناسبة', 'الخلفية تغيرت', 'النتيجة غير واقعية', 'المقطع غير مترابط مع السابق', 'المقطع لا يجهز لما بعده', 'الإطار المرجعي غير مناسب', 'النتيجة تبدو كفيديو مختلف', 'النص طويل', 'المقطع غير احترافي',
 ] as const
@@ -876,13 +1011,25 @@ export function repairLiveDirectorSegment(project: LiveDirectorProject, segmentI
   const previous = project.segments[index]
   const hint = REPAIR_HINTS[issue]
   const draft = repairedDraft(previous, issue)
-  const prompt = `${rebuiltPrompt(draft, project)}\n\nTargeted correction for this clip only: ${hint}\nPreserve every approved continuity choice from the other clips. Do not regenerate or reinterpret the project.`
+  const correction = `Targeted correction for this clip only: ${hint}
+Preserve every approved continuity choice from the other clips. Do not regenerate or reinterpret the project.`
+  const basePrompts = rebuiltFlowPrompts(draft, project)
+  const flowPrompts: FlowPromptVariants = {
+    speech: `${basePrompts.speech}
+
+${correction}`,
+    silent: `${basePrompts.silent}
+
+${correction}`,
+  }
+  const prompt = flowPrompts[preferredPromptMode(draft)]
   const nextSegment: LiveDirectorSegment = {
     ...draft,
     prompt,
+    flowPrompts,
     status: 'needs_revision',
     revisionReason: issue,
-    promptVersions: [...previous.promptVersions, { prompt, reason: issue, createdAt: now() }],
+    promptVersions: [...(previous.promptVersions || []), { prompt, reason: issue, createdAt: now() }],
   }
   const segments = project.segments.map((segment, segmentIndex) => segmentIndex === index ? nextSegment : segment)
   const next = { ...project, segments, status: 'needs_revision' as const, updatedAtClient: now() }
@@ -897,9 +1044,10 @@ export function setSegmentContinuity(project: LiveDirectorProject, segmentId: st
   const mode = change.mode || previous.continuityMode
   const strategy = change.strategy || (change.mode ? DEFAULT_REFERENCE[change.mode] : previous.referenceStrategy)
   const draft: SegmentDraft = { ...previous, continuityMode: mode, referenceStrategy: strategy, startState: startStateFor(mode) }
-  const prompt = rebuiltPrompt(draft, project)
+  const flowPrompts = rebuiltFlowPrompts(draft, project)
+  const prompt = flowPrompts[preferredPromptMode(draft)]
   const segments = project.segments.map((segment, segmentIndex) => segmentIndex === index
-    ? { ...draft, prompt, promptVersions: [...previous.promptVersions, { prompt, reason: `تغيير الترابط إلى ${CONTINUITY_LABELS[mode]} · ${REFERENCE_LABELS[strategy]}`, createdAt: now() }] }
+    ? { ...draft, prompt, flowPrompts, promptVersions: [...(previous.promptVersions || []), { prompt, reason: `تغيير الترابط إلى ${CONTINUITY_LABELS[mode]} · ${REFERENCE_LABELS[strategy]}`, createdAt: now() }] }
     : segment)
   const next = { ...project, segments, updatedAtClient: now() }
   return { ...next, quality: quality(next) }
@@ -929,9 +1077,10 @@ export function applyReferenceFrame(project: LiveDirectorProject, sourceSegmentI
   }
   const strategy: ReferenceStrategy = target.continuityMode === 'thematic' ? 'style_only' : input.kind
   const draft: SegmentDraft = { ...target, selectedReferenceFrame: input.frameUrl, referenceSourceClipId: sourceSegmentId, referenceStrategy: strategy }
-  const prompt = rebuiltPrompt(draft, project)
+  const flowPrompts = rebuiltFlowPrompts(draft, project)
+  const prompt = flowPrompts[preferredPromptMode(draft)]
   const segments = withFrame.map((segment, segmentIndex) => segmentIndex === index + 1
-    ? { ...draft, prompt, promptVersions: [...target.promptVersions, { prompt, reason: `اعتماد ${REFERENCE_LABELS[strategy]} من ${sourceSegmentId}`, createdAt: now() }] }
+    ? { ...draft, prompt, flowPrompts, promptVersions: [...(target.promptVersions || []), { prompt, reason: `اعتماد ${REFERENCE_LABELS[strategy]} من ${sourceSegmentId}`, createdAt: now() }] }
     : segment)
   const next = { ...project, segments, updatedAtClient: now() }
   return { project: { ...next, quality: quality(next) }, applied: true, note: `${assessment.note} ورُبط المقطع ${target.order} بالإطار.` }

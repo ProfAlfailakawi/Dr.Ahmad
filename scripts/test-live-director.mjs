@@ -6,6 +6,8 @@ import { resolve } from 'node:path'
 import {
   createArticleVideoProject,
   createPublicVideoProject,
+  ensureLiveDirectorPromptVariants,
+  getFlowPrompt,
   isValidYouTubeUrl,
   liveDirectorDailyPlan,
   recommendArticleVideoDuration,
@@ -76,6 +78,12 @@ check(articleProject.segments.every((segment) => segment.narration.split(/\s+/).
 check(articleProject.segments.every((segment) => segment.shotCount >= 1 && segment.shotCount <= 3), 'من لقطة إلى ثلاث لقطات')
 check(articleProject.segments.every((segment) => /Camera movement: one restrained motion per shot/.test(segment.prompt)), 'منع حركات كاميرا متنافسة')
 check(articleProject.segments.every((segment) => segment.negativeConstraints.includes('Arabic text inside the scene')), 'منع النص العربي المولّد')
+check(articleProject.segments.every((segment) => Boolean(segment.flowPrompts?.speech && segment.flowPrompts?.silent)), 'كل مقطع يملك خيار مع كلام وخياراً صامتاً')
+const arabicScript = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/
+check(articleProject.segments.every((segment) => !arabicScript.test(segment.flowPrompts?.speech || '') && !arabicScript.test(segment.flowPrompts?.silent || '')), 'برومبتا Flow خاليان تماماً من الحروف العربية')
+check(articleProject.segments.every((segment) => getFlowPrompt(segment, 'speech').includes('WITH SPEECH') && getFlowPrompt(segment, 'silent').includes('WITHOUT SPEECH')), 'الخياران واضحان عند النسخ')
+const legacyPromptProject = ensureLiveDirectorPromptVariants({ ...articleProject, segments: articleProject.segments.map(({ flowPrompts: _flowPrompts, ...segment }) => segment) })
+check(legacyPromptProject.segments.every((segment) => segment.flowPrompts?.speech && segment.flowPrompts?.silent), 'المشاريع المحفوظة القديمة تُرقّى تلقائياً للخيارين')
 
 // 28: إصلاح مقطع واحد فقط.
 const beforeRefs = [...articleProject.segments]
@@ -232,6 +240,7 @@ check(realDrafts.some((draft) => draft.resonanceCount > 0), 'المسبك يكا
 const liveUiVoice = readFileSync(resolve(ROOT, 'src/components/admin/LiveDirector.tsx'), 'utf8')
 check(/buildTweets|verifiedLineOf/.test(liveUiVoice) && /article_highlights/.test(liveUiVoice), 'اللوحة تصل المسبك والرنين فعلاً')
 check(/NARRATION_SOURCE_LABELS/.test(liveUiVoice), 'اللوحة تُظهر نسب كل جملة')
+check(/مع كلام/.test(liveUiVoice) && /بدون كلام/.test(liveUiVoice) && /getFlowPrompt/.test(liveUiVoice), 'اللوحة تعرض خياري الكلام والصمت لكل مقطع')
 
 assert.ok(checks >= 35)
 console.log(`✓ المخرج الحي: ${checks}/${checks}`)

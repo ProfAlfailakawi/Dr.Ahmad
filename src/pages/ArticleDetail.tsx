@@ -882,12 +882,11 @@ export default function ArticleDetail() {
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                     </Link>
                   ) : <span className="h-8 w-8 shrink-0" aria-hidden />}
-                  <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={next?.title}><span className="text-ink">السابق:</span> {next?.title || 'لا يوجد'}</p>
+                  <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={next?.title}>{next?.title || 'لا يوجد'}</p>
                 </div>
 
                 <Link to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-8 items-center gap-1 rounded-full border border-hair px-2 text-[.58rem] font-light text-soft transition-colors hover:border-accent hover:text-accent">
                   <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M5 6h14M5 12h14M5 18h14" /></svg>
-                  <span className="hidden whitespace-nowrap sm:inline">جميع المقالات</span>
                 </Link>
 
                 <div className="flex min-w-0 flex-row-reverse items-center gap-1.5 text-left">
@@ -896,7 +895,7 @@ export default function ArticleDetail() {
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
                     </Link>
                   ) : <span className="h-8 w-8 shrink-0" aria-hidden />}
-                  <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={prev?.title}><span className="text-ink">التالي:</span> {prev?.title || 'لا يوجد'}</p>
+                  <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={prev?.title}>{prev?.title || 'لا يوجد'}</p>
                 </div>
               </div>
             </nav>

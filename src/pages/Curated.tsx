@@ -206,7 +206,7 @@ function SourceLine({ c }: { c: Curio }) {
 }
 
 function RadarPanel({ items }: { items: Curio[] }) {
-  if (!items.length) return <p className="rounded-2xl border border-hair bg-wash/[.35] px-6 py-10 text-center text-[.84rem] text-soft">سيظهر هنا أحدث ما يلتقطه الرادار.</p>;
+  if (!items.length) return null;
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-3">

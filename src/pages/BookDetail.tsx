@@ -8,6 +8,7 @@ import { SITE_URL } from '../data'
 import tocData from '../data/book-toc-links.json'
 import { SocialIcon } from '../components/icons'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
+import { bookKnowledgeAnchor, getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
 
 type BookGuide = { idea: string; audience: string; entry: string }
 
@@ -42,7 +43,53 @@ function groupToc(items: string[]): TocGroup[] {
   return groups
 }
 
-function TocDisclosure({ group, groupIndex }: { group: TocGroup; groupIndex: number }) {
+const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
+
+function pageNumber(value = '') {
+  const latin = value.replace(/[٠-٩]/g, (digit) => String(ARABIC_DIGITS.indexOf(digit)))
+  const number = Number(latin)
+  return Number.isFinite(number) ? number : 0
+}
+
+function normalizeTocText(value = '') {
+  return value
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[ً-ْٰ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/^(?:الفصل|الباب)\s+(?:الاول|الثاني|الثالث|الرابع|الخامس|السادس|السابع|الثامن|التاسع|العاشر)\s*[:：-]?\s*/u, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function tocConcept(bookSlug: string, entry: TocEntry): BookKnowledgeConcept | null {
+  const concepts = (getBookKnowledge(bookSlug)?.concepts || [])
+    .filter((concept) => !/^قائمة المراجع/u.test(concept.title))
+  if (!concepts.length) return null
+
+  const page = pageNumber(entry.page)
+  if (page > 0) {
+    const exact = concepts.find((concept) => page >= concept.pageStart && page <= concept.pageEnd)
+    if (exact) return exact
+  }
+
+  const entryWords = new Set(normalizeTocText(entry.label).split(' ').filter((word) => word.length > 2))
+  let best: { concept: BookKnowledgeConcept; score: number } | null = null
+  for (const concept of concepts) {
+    const conceptWords = new Set(normalizeTocText(concept.title).split(' ').filter((word) => word.length > 2))
+    let score = 0
+    for (const word of entryWords) if (conceptWords.has(word)) score += word.length >= 7 ? 3 : 2
+    if (normalizeTocText(concept.title) === normalizeTocText(entry.label)) score += 20
+    if (page > 0) score += Math.max(0, 8 - Math.min(8, Math.abs(concept.pageStart - page)))
+    if (!best || score > best.score) best = { concept, score }
+  }
+  return best?.score ? best.concept : concepts[0]
+}
+
+function TocDisclosure({ group, groupIndex, bookSlug }: { group: TocGroup; groupIndex: number; bookSlug: string }) {
   const [open, setOpen] = useState(groupIndex === 0)
   return (
     <details
@@ -57,13 +104,17 @@ function TocDisclosure({ group, groupIndex }: { group: TocGroup; groupIndex: num
         <span aria-hidden className="text-accent transition-transform group-open/toc:rotate-45">＋</span>
       </summary>
       <ol className="border-t border-hair bg-wash/[.38] px-5 py-2 md:px-7">
-        {group.entries.map((entry) => (
-          <li key={`${entry.index}-${entry.label}`} className="grid min-w-0 grid-cols-[2.2rem_minmax(0,1fr)_auto] items-baseline gap-3 border-b border-hair py-3.5 last:border-b-0">
-            <span className="font-display text-[.68rem] tabular-nums text-accent">{String(entry.index).padStart(2, '0')}</span>
-            <Link to={`?book_question=${encodeURIComponent(entry.label)}#ask-book-section`} aria-label={`ابحث عن ${entry.label} داخل الكتاب`} className="min-w-0 break-words text-[.82rem] leading-[1.8] text-ink transition-colors hover:text-accent">{entry.label}</Link>
-            {entry.page && <span className="shrink-0 text-[.68rem] tabular-nums text-soft">ص {entry.page}</span>}
-          </li>
-        ))}
+        {group.entries.map((entry) => {
+          const concept = tocConcept(bookSlug, entry)
+          const anchor = concept ? bookKnowledgeAnchor(concept) : 'book-knowledge'
+          return (
+            <li key={`${entry.index}-${entry.label}`} className="grid min-w-0 grid-cols-[2.2rem_minmax(0,1fr)_auto] items-baseline gap-3 border-b border-hair py-3.5 last:border-b-0">
+              <span className="font-display text-[.68rem] tabular-nums text-accent">{String(entry.index).padStart(2, '0')}</span>
+              <Link to={`/publications/${bookSlug}#${anchor}`} aria-label={`انتقل إلى ${entry.label} داخل الكتاب`} className="min-w-0 break-words text-[.82rem] leading-[1.8] text-ink transition-colors hover:text-accent">{entry.label}</Link>
+              {entry.page && <span className="shrink-0 text-[.68rem] tabular-nums text-soft">ص {entry.page}</span>}
+            </li>
+          )
+        })}
       </ol>
     </details>
   )
@@ -345,7 +396,7 @@ export default function BookDetail() {
               {toc.length ? (
                 <div className="divide-y divide-hair">
                   {tocGroups.map((group, groupIndex) => (
-                    <TocDisclosure key={`${group.title}-${groupIndex}`} group={group} groupIndex={groupIndex} />
+                    <TocDisclosure key={`${group.title}-${groupIndex}`} group={group} groupIndex={groupIndex} bookSlug={book.slug} />
                   ))}
                 </div>
               ) : <p className="px-5 py-6 text-[.82rem] leading-relaxed text-soft md:px-7">لم يُنشر الفهرس قبل مطابقته بالنسخة المطبوعة. يمكن اعتماده من لوحة التحكم، ولن يعرض الموقع عناوين مُخمنة.</p>}

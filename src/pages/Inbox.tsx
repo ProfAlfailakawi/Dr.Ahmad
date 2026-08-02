@@ -47,6 +47,15 @@ type LiveTestimonial = {
 
 type InboxView = "letters" | "threads" | "echoes" | "questions";
 
+type ArchiveEchoCard = {
+  id: string;
+  kind: "كتاب" | "مقال" | "بحث" | "لقاء";
+  title: string;
+  text: string;
+  to: string;
+  year?: string;
+};
+
 type WeeklyQuestion = {
   id: string;
   ar?: string;
@@ -72,6 +81,14 @@ const isPublished = (item: { status?: string; published?: boolean }) =>
 const clean = (value = "") => value.replace(/\s+/g, " ").trim();
 const createdMillis = (value?: { seconds?: number }) =>
   Number(value?.seconds || 0) * 1000;
+const compact = (value = "", limit = 235) => {
+  const text = clean(value);
+  if (text.length <= limit) return text;
+  const sliced = text.slice(0, limit);
+  const boundary = Math.max(sliced.lastIndexOf("،"), sliced.lastIndexOf("."), sliced.lastIndexOf("؟"));
+  return `${(boundary > 90 ? sliced.slice(0, boundary) : sliced).trim()}…`;
+};
+const yearFrom = (value = "") => value.match(/(?:19|20)\d{2}/)?.[0];
 
 export default function Inbox() {
   useSeo({
@@ -158,9 +175,8 @@ export default function Inbox() {
     .filter((item) => item.quote.length >= 35);
 
   /* الشهادةُ حكمٌ على الدكتور يُقدَّم للزائر دليلاً، فلا يجوز أن يكون مصنوعاً.
-     حُذف البديل المخبوز (شهادتان مكتوبتان في الكود) — وحلّت محلّه أصداء من
-     متونه: كلامه هو، بحرفه، منسوباً لمقاله. فإن اعتمد الدكتور شهادةً حقيقية
-     من اللوحة تصدّرت مكانها فوراً. */
+     لذلك لا تُعرض إلا شهادة حقيقية معتمدة من اللوحة؛ أما المختارات المعرفية
+     فتظهر مستقلة باسم نوعها ومصدرها الواضح من الأرشيف. */
   const publicTestimonials = liveQuotes.filter(
     (item, index, all) =>
       all.findIndex(
@@ -172,14 +188,14 @@ export default function Inbox() {
     2,
   );
 
-  /* أصداء من المتون: تُعرض حين لا توجد شهادةٌ حقيقية معتمَدة. ولا تُخترع —
-     جملُ الدكتور بحرفها من مقالاتها، تمرّ ببوّابة تحققٍ قبل العرض. */
-  const { articles, books, papers } = useCmsContent();
-  const archiveDialogues = useMemo(() => buildArchiveDialogues(articles, books, papers), [articles, books, papers]);
+  /* الأرشيف هنا متعدد الأنواع عمداً: لا يُختزل في المقالات بينما الكتب
+     والأبحاث واللقاءات تحمل امتداداتٍ مختلفة للفكرة نفسها. */
+  const { articles, books, papers, media } = useCmsContent();
+  const archiveDialogues = useMemo(() => buildArchiveDialogues(articles, books, papers, media), [articles, books, media, papers]);
   const [activeView, setActiveView] = useState<InboxView>("letters");
   const inboxTabs: Array<{ id: InboxView; label: string }> = [
     { id: "letters", label: "الرسائل" },
-    { id: "echoes", label: publicTestimonials.length ? "ماذا قالوا" : "أصداء من المتون" },
+    { id: "echoes", label: "أصداء الأرشيف" },
     { id: "questions", label: "الأسئلة" },
   ];
   if (archiveDialogues.length > 0) {
@@ -190,11 +206,11 @@ export default function Inbox() {
   }, [activeView, archiveDialogues.length]);
   const [echoes, setEchoes] = useState<VoiceEcho[]>([]);
   useEffect(() => {
-    if (publicTestimonials.length || !articles.length) return;
+    if (!articles.length) return;
     let active = true;
     loadArticleBodies()
       .then((bodies) => {
-        if (active) setEchoes(pickEchoes(articles, bodies, 2));
+        if (active) setEchoes(pickEchoes(articles, bodies, 4));
       })
       .catch(() => {
         /* المتون زينة هنا: تعذّرها لا يكسر الصفحة */
@@ -202,7 +218,73 @@ export default function Inbox() {
     return () => {
       active = false;
     };
-  }, [articles, publicTestimonials.length]);
+  }, [articles]);
+
+  const archiveEchoCards = useMemo<ArchiveEchoCard[]>(() => {
+    const article = echoes.length
+      ? {
+          id: `article:${echoes[testimonialPulse % echoes.length].slug}`,
+          kind: "مقال" as const,
+          title: echoes[testimonialPulse % echoes.length].title,
+          text: echoes[testimonialPulse % echoes.length].quote,
+          to: `/articles/${echoes[testimonialPulse % echoes.length].slug}`,
+          year: echoes[testimonialPulse % echoes.length].iso?.slice(0, 4),
+        }
+      : null;
+    const visibleBooks = books.filter((item) => !item._cms.hidden && !item._cms.deleted && clean(item.desc));
+    const pickedBook = visibleBooks.length ? visibleBooks[(testimonialPulse + 1) % visibleBooks.length] : null;
+    const book = pickedBook ? {
+      id: `book:${pickedBook.slug}`,
+      kind: "كتاب" as const,
+      title: pickedBook.title,
+      text: compact(pickedBook.desc),
+      to: `/publications/${pickedBook.slug}`,
+      year: pickedBook.year,
+    } : null;
+    const visiblePapers = papers.filter((item) => !item._cms.hidden && !item._cms.deleted && clean(item.keyFinding || item.abstractAr || item.meta));
+    const pickedPaper = visiblePapers.length ? visiblePapers[(testimonialPulse + 2) % visiblePapers.length] : null;
+    const paper = pickedPaper ? {
+      id: `paper:${pickedPaper.slug}`,
+      kind: "بحث" as const,
+      title: pickedPaper.titleAr || pickedPaper.title,
+      text: compact(pickedPaper.keyFinding || pickedPaper.abstractAr || pickedPaper.meta),
+      to: `/research/${pickedPaper.slug}`,
+      year: pickedPaper.year || yearFrom(pickedPaper.iso || pickedPaper.date || ""),
+    } : null;
+    const visibleMedia = media.filter((item) => !item._cms.hidden && !item._cms.deleted && clean(item.topics || item.transcript || item.outlet));
+    const pickedMedia = visibleMedia.length ? visibleMedia[(testimonialPulse + 3) % visibleMedia.length] : null;
+    const mediaCard = pickedMedia ? {
+      id: `media:${pickedMedia.slug}`,
+      kind: "لقاء" as const,
+      title: pickedMedia.title,
+      text: compact(pickedMedia.topics || pickedMedia.transcript || `${pickedMedia.outlet}${pickedMedia.program ? ` · ${pickedMedia.program}` : ""}`),
+      to: `/media/${pickedMedia.slug}`,
+      year: yearFrom(pickedMedia.iso || pickedMedia.date || ""),
+    } : null;
+    const cards = [book, article, mediaCard, paper].filter((item): item is ArchiveEchoCard => Boolean(item));
+    if (!cards.length) return [];
+    const offset = testimonialPulse % cards.length;
+    return [...cards.slice(offset), ...cards.slice(0, offset)];
+  }, [books, echoes, media, papers]);
+
+  const pageHead = {
+    letters: {
+      title: "رسالةٌ تفتح نافذة.",
+      sub: "رسائل قصيرة تعود إلى الأرشيف كله، لا إلى نوع واحد من مواده.",
+    },
+    threads: {
+      title: "الأرشيف يتحاور مع نفسه.",
+      sub: "كتابٌ يلتقي بمقال، وبحثٌ يمتد إلى لقاء؛ فتظهر صلات لا تصنعها القائمة المنفصلة.",
+    },
+    echoes: {
+      title: "أثرٌ يبقى بعد القراءة والاستماع.",
+      sub: "مختارات متوازنة من الكتب والمقالات والأبحاث واللقاءات، مع مصدر كل مادة.",
+    },
+    questions: {
+      title: "سؤالٌ يفتح طريقاً جديداً.",
+      sub: "أسئلة تصل إلى الفكرة من أبواب متعددة، ثم تعود بالقارئ إلى مادتها الموثقة.",
+    },
+  }[activeView];
 
   const lastUpdated = Math.max(
     0,
@@ -224,8 +306,8 @@ export default function Inbox() {
     <Page className="inbox-page">
       <PageHead
         label="رسائل على الهامش"
-        title="رسالةٌ تفتح نافذة."
-        sub="رسائل وأسئلة تلتقي بما يُنشر هنا، وتفتح أبواباً جديدة للقراءة والتفكير."
+        title={pageHead.title}
+        sub={pageHead.sub}
       />
       <div className="border-b border-hair px-6 py-3 md:px-11">
         <p className="mx-auto flex max-w-shell items-center gap-2 text-[.72rem] text-soft">
@@ -301,7 +383,7 @@ export default function Inbox() {
                 والنصّان معاً يولّدهما النظام من أرشيفه. النصّ باقٍ كما هو —
                 والنسبة وحدها تُصحَّح، فلا يُنسب إلى غائبٍ قولٌ لم يقله. */}
             <span className="text-[.76rem] font-semibold uppercase text-accent">
-              على هامش المقال
+              على هامش الأرشيف
             </span>
           </FadeUp>
           {featuredLetter ? (
@@ -334,11 +416,11 @@ export default function Inbox() {
             </div>
           ) : (
             <FadeUp delay={0.06}>
-              <div className="mt-8 rounded-[2rem] border border-hair bg-wash p-8 text-soft">
+              <p className="mt-8 text-[.86rem] leading-relaxed text-soft">
                 {inboxState.loading || inboxState.refreshing
                   ? "نستعيد الرسائل المحفوظة ونتحقق من أحدث نسخة…"
                   : "لا توجد رسالة معروضة الآن. يمكنك الانتقال إلى خيوط الأرشيف أو الأسئلة من التبويبات أعلاه."}
-              </div>
+              </p>
             </FadeUp>
           )}
 
@@ -359,83 +441,63 @@ export default function Inbox() {
       </section>
       )}
 
-      {/* شهادات حقيقية معتمَدة — أو أصداء من متون الدكتور حين لا توجد */}
+      {/* شهادات حقيقية معتمَدة، ثم مختارات متوازنة من الأرشيف بحسب المتاح */}
       {activeView === "echoes" && (
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <span className="text-[.76rem] font-semibold uppercase text-accent">
-              {publicTestimonials.length ? "ماذا قالوا" : "أصداء من المتون"}
+              أصداء موثقة من الأرشيف
             </span>
-            {!publicTestimonials.length && (
-              <p className="mt-2 text-[.84rem] font-light text-soft">
-                جملٌ من مقالات الدكتور، بنصّها ومصدرها.
-              </p>
-            )}
+            <p className="mt-2 text-[.84rem] font-light leading-relaxed text-soft">
+              كتاب ومقال وبحث ولقاء؛ كل مادة تظهر باسم نوعها ومصدرها من دون خلط أو تكرار.
+            </p>
           </FadeUp>
-          {!publicTestimonials.length && echoes.length > 0 && (
+
+          {publicTestimonials.length > 0 && (
             <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
-              {echoes.map((echo, i) => (
-                <motion.figure
-                  key={echo.slug}
+              {visibleTestimonials.map((t, i) => (
+                <motion.blockquote
+                  key={i}
                   initial={reduce ? false : { opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.7, delay: i * 0.08, ease: EASE }}
-                  className="relative flex h-full flex-col rounded-2xl border border-hair bg-wash p-8 md:p-9"
+                  className="relative rounded-2xl border border-hair bg-wash p-8 md:p-9"
                 >
-                  <span className="absolute right-7 top-3 font-display text-[3.5rem] leading-none text-accent/20">
-                    ”
-                  </span>
-                  <blockquote className="relative font-display text-[1.16rem] font-light leading-[1.95] text-ink/90">
-                    {echo.quote}
-                  </blockquote>
-                  <figcaption className="mt-5 border-t border-hair pt-4 text-[.82rem] text-soft">
-                    <Link
-                      to={`/articles/${echo.slug}`}
-                      data-hover
-                      className="font-semibold text-ink transition-colors hover:text-accent"
-                    >
-                      {echo.title}
-                    </Link>
-                    {echo.iso && (
-                      <span className="mt-1 block text-[.74rem] font-light text-soft/75">
-                        {echo.iso.slice(0, 4)}
-                      </span>
-                    )}
-                  </figcaption>
-                </motion.figure>
+                  <span className="absolute right-7 top-3 font-display text-[3.5rem] leading-none text-accent/20">”</span>
+                  <p className="relative font-display text-[1.16rem] font-light leading-[1.95] text-ink/90">{t.quote}</p>
+                  <span className="mt-5 block border-t border-hair pt-4 text-[.7rem] font-semibold text-accent">شهادة معتمدة</span>
+                </motion.blockquote>
               ))}
             </div>
           )}
 
-          {!publicTestimonials.length && echoes.length === 0 && (
-            <p className="mt-8 rounded-2xl border border-hair bg-wash px-6 py-5 text-[.88rem] font-light text-soft">
-              تظهر هنا أصداءٌ مقتبسة من المقالات المنشورة، بنصّها ومصدرها.
-            </p>
+          {archiveEchoCards.length > 0 && (
+            <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
+              {archiveEchoCards.map((item, index) => (
+                <motion.article
+                  key={item.id}
+                  initial={reduce ? false : { opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.7, delay: Math.min(index * 0.08, 0.24), ease: EASE }}
+                  className="flex h-full min-w-0 flex-col rounded-2xl border border-hair bg-wash p-7 md:p-8"
+                >
+                  <span className="w-fit rounded-full bg-accent/[.08] px-3 py-1 text-[.66rem] font-bold text-accent">{item.kind}</span>
+                  <p className="mt-5 flex-1 font-display text-[1.05rem] font-light leading-[1.95] text-ink/[.88]">{item.text}</p>
+                  <div className="mt-5 border-t border-hair pt-4">
+                    <Link to={item.to} data-hover className="font-semibold leading-relaxed text-ink transition-colors hover:text-accent">{item.title}</Link>
+                    {item.year && <span className="mt-1 block text-[.7rem] text-soft">{item.year}</span>}
+                  </div>
+                </motion.article>
+              ))}
+            </div>
           )}
 
-          <div
-            className={`mobile-card-rail mt-8 grid gap-6 md:grid-cols-2 ${publicTestimonials.length ? "" : "hidden"}`}
-          >
-            {visibleTestimonials.map((t, i) => (
-              <motion.blockquote
-                key={i}
-                initial={reduce ? false : { opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.7, delay: i * 0.08, ease: EASE }}
-                className="relative rounded-2xl border border-hair bg-wash p-8 md:p-9"
-              >
-                <span className="absolute right-7 top-3 font-display text-[3.5rem] leading-none text-accent/20">
-                  ”
-                </span>
-                <p className="relative font-display text-[1.16rem] font-light leading-[1.95] text-ink/90">
-                  {t.quote}
-                </p>
-              </motion.blockquote>
-            ))}
-          </div>
+          {publicTestimonials.length === 0 && archiveEchoCards.length === 0 && (
+            <p className="mt-8 text-[.88rem] font-light text-soft">تظهر المختارات هنا فور توافر مادة موثقة من الأرشيف.</p>
+          )}
         </div>
       </section>
       )}
@@ -466,7 +528,7 @@ export default function Inbox() {
           <Pagination page={questionPages.page} pageCount={questionPages.pageCount} onChange={questionPages.setPage} totalItems={questions.length} firstItem={questionPages.firstItem} lastItem={questionPages.lastItem} scrollTargetId="inbox-questions" label="صفحات الأسئلة" className="mt-9" />
 
           {questions.length === 0 && (
-            <p className="mt-9 rounded-2xl border border-hair bg-wash px-6 py-5 text-[.88rem] font-light text-soft">
+            <p className="mt-9 text-[.88rem] font-light leading-relaxed text-soft">
               {faqState.loading || questionState.loading || faqState.refreshing || questionState.refreshing
                 ? "نستعيد الأسئلة المحفوظة ونتحقق من أحدث نسخة…"
                 : "لا توجد أسئلة معروضة الآن."}

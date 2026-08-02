@@ -1,10 +1,10 @@
-import type { ArticleRecord, BookRecord, PaperRecord } from './cms'
+import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms'
 
 type DialogueMode = 'خيط خفي' | 'وجه آخر للفكرة' | 'بعد سنوات' | 'سؤال لم يُطرح'
 type DialogueLabel = 'خلاصة مركبة' | 'فكرة مستخلصة'
 
 export type ArchiveDialogueSource = {
-  kind: 'مقال' | 'كتاب' | 'بحث'
+  kind: 'مقال' | 'كتاب' | 'بحث' | 'لقاء'
   title: string
   to: string
   year?: string
@@ -106,6 +106,23 @@ function paperCandidates(papers: PaperRecord[]): Candidate[] {
     })
 }
 
+function mediaCandidates(media: MediaRecord[]): Candidate[] {
+  return media
+    .filter((item) => !item._cms.hidden && !item._cms.deleted)
+    .map((item) => {
+      const text = [item.title, item.outlet, item.program, item.channel, item.topics, item.transcript].filter(Boolean).join(' ')
+      return {
+        kind: 'لقاء' as const,
+        title: item.title,
+        to: `/media/${item.slug}`,
+        year: yearFrom(item.iso) || yearFrom(item.date),
+        iso: item.iso,
+        text,
+        tokens: tokenSet(text),
+      }
+    })
+}
+
 const overlap = (a: Candidate, b: Candidate) => {
   let score = 0
   for (const token of a.tokens) if (b.tokens.has(token)) score += token.length >= 7 ? 3 : 2
@@ -192,6 +209,34 @@ function buildOtherFace(books: Candidate[], articles: Candidate[], used: Set<str
   }
 }
 
+function buildBookMedia(books: Candidate[], media: Candidate[], used: Set<string>): ArchiveDialogue | undefined {
+  const pair = bestPair(books, media, used)
+  if (!pair) return undefined
+  markUsed(used, pair.a, pair.b)
+  return {
+    id: `book-media:${pair.a.to}:${pair.b.to}`,
+    mode: 'وجه آخر للفكرة',
+    label: 'خلاصة مركبة',
+    title: 'من الفكرة الممتدة في كتاب إلى لحظتها الحيّة في لقاء',
+    body: `يفتح كتاب «${pair.a.title}» المجال النظري الواسع، بينما يعرض لقاء «${pair.b.title}» الفكرة في سياق حواري أقرب إلى الأسئلة العامة. هذه صلة موضوعية تقود إلى المصدرين، ولا تنسب إلى أي منهما ما لم يقله.`,
+    sources: [asSource(pair.a), asSource(pair.b)],
+  }
+}
+
+function buildResearchMedia(papers: Candidate[], media: Candidate[], used: Set<string>): ArchiveDialogue | undefined {
+  const pair = bestPair(papers, media, used)
+  if (!pair) return undefined
+  markUsed(used, pair.a, pair.b)
+  return {
+    id: `research-media:${pair.a.to}:${pair.b.to}`,
+    mode: 'خيط خفي',
+    label: 'خلاصة مركبة',
+    title: 'حين يخرج السؤال البحثي إلى مساحة الحوار',
+    body: `يجمع هذا المسار بين بحث «${pair.a.title}» ولقاء «${pair.b.title}» حول مفردات مشتركة. يبدأ القارئ بالدليل الأكاديمي، ثم يرى كيف تتحرك القضية نفسها في خطابٍ موجّه إلى جمهور أوسع.`,
+    sources: [asSource(pair.a), asSource(pair.b)],
+  }
+}
+
 function buildUnasked(papers: Candidate[], used: Set<string>): ArchiveDialogue | undefined {
   const candidate = papers
     .filter((item) => !used.has(item.to))
@@ -215,16 +260,20 @@ export function buildArchiveDialogues(
   articles: ArticleRecord[],
   books: BookRecord[],
   papers: PaperRecord[],
+  media: MediaRecord[] = [],
 ): ArchiveDialogue[] {
   const articlePool = articleCandidates(articles)
   const bookPool = bookCandidates(books)
   const paperPool = paperCandidates(papers)
+  const mediaPool = mediaCandidates(media)
   const used = new Set<string>()
 
   return [
     buildThread(articlePool, paperPool, used),
+    buildBookMedia(bookPool, mediaPool, used),
     buildAcrossYears(articlePool, used),
     buildOtherFace(bookPool, articlePool, used),
+    buildResearchMedia(paperPool, mediaPool, used),
     buildUnasked(paperPool, used),
   ].filter((item): item is ArchiveDialogue => Boolean(item))
 }

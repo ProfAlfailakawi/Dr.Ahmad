@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, useLocation, useSearchParams } from 'react-router'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { createIdeaDna } from '../lib/idea-dna'
 import { ideaWords } from '../lib/idea-life'
@@ -67,6 +67,7 @@ export function BookWorld({
   papers: PaperRecord[]
 }) {
   const [searchParams] = useSearchParams()
+  const location = useLocation()
   const [activeIdea, setActiveIdea] = useState('')
   const stagedIdea = (searchParams.get('book_idea') || '').trim()
   const model = useMemo(() => {
@@ -243,29 +244,24 @@ export function BookWorld({
   }, [asked, stagedQuestion])
 
   useEffect(() => {
-    const revealConcept = () => {
-      const hash = typeof window === 'undefined' ? '' : window.location.hash.replace(/^#/, '')
-      if (hash === 'ask-book-section') {
-        setAskOpen(true)
-        window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-          document.getElementById('ask-book-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }))
-        return
-      }
-      const concept = model.knowledge?.concepts.find((item) => bookKnowledgeAnchor(item) === hash)
-      if (!concept) return
-      setActiveIdea(concept.title)
+    const hash = location.hash.replace(/^#/, '')
+    if (hash === 'ask-book-section') {
+      setAskOpen(true)
       window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-        const target = document.getElementById(hash)
-        const disclosure = target?.closest('details')
-        if (disclosure instanceof HTMLDetailsElement) disclosure.open = true
-        target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        document.getElementById('ask-book-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }))
+      return
     }
-    revealConcept()
-    window.addEventListener('hashchange', revealConcept)
-    return () => window.removeEventListener('hashchange', revealConcept)
-  }, [model.knowledge])
+    const concept = model.knowledge?.concepts.find((item) => bookKnowledgeAnchor(item) === hash)
+    if (!concept) return
+    setActiveIdea(concept.title)
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      const target = document.getElementById(hash)
+      const disclosure = target?.closest('details')
+      if (disclosure instanceof HTMLDetailsElement) disclosure.open = true
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }))
+  }, [location.hash, model.knowledge])
 
   if (!model.paths.length) return null
 
@@ -440,7 +436,7 @@ export function BookWorld({
             </div>
           </Disclosure>}
 
-          {activePath && <Disclosure eyebrow="استمرار الفكرة" title="مواد قريبة في المقالات والأبحاث" meta="مواد تلامس المحور نفسه في المقالات والأبحاث.">
+          {activePath && (activeConnections.articles.length > 0 || activeConnections.papers.length > 0) && <Disclosure eyebrow="استمرار الفكرة" title="مواد قريبة في المقالات والأبحاث" meta="مواد تلامس المحور نفسه في المقالات والأبحاث.">
             <div className="grid gap-2">
               {activeConnections.articles.map(({ item, score }) => (
                 <Link key={item.slug} to={`/articles/${item.slug}`} className="group grid min-w-0 max-w-full gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/[.45] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">

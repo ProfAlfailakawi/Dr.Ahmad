@@ -96,12 +96,27 @@ jobs:
             # الدفع العاري كان يُرفض عند أول تصادم فيحمرّ الفحص بلا عطلٍ حقيقي
             # (تشغيلة ٣١ يوليو ٢١:٣٠). نعيد المحاولة فوق أحدث main، وإن عجزنا
             # فعلاً صرّحنا بالفشل ولم نبتلعه.
+            bot_commit="$(git rev-parse HEAD)"
             pushed=0
             for attempt in 1 2 3; do
-              if git pull --rebase --autostash origin main && git push origin HEAD:main; then pushed=1; break; fi
+              # لا نترك rebase متعارضاً بين المحاولات. نبدأ كل محاولة من أحدث
+              # main ثم نعيد تطبيق سجل الروابط، مع ترجيح سجل الفحص الحالي فقط
+              # عند اصطدام تحديثين آليين متزامنين للملف نفسه.
+              git rebase --abort >/dev/null 2>&1 || true
+              git cherry-pick --abort >/dev/null 2>&1 || true
+              git fetch origin main
+              git reset --hard origin/main
+              if git cherry-pick -X theirs "$bot_commit" && git push origin HEAD:main; then
+                pushed=1
+                break
+              fi
               sleep $((attempt * 5))
             done
-            if [ "$pushed" != 1 ]; then echo "::error::تعذّر تثبيت سجل الروابط بعد ثلاث محاولات."; exit 1; fi
+            if [ "$pushed" != 1 ]; then
+              git cherry-pick --abort >/dev/null 2>&1 || true
+              echo "::error::تعذّر تثبيت سجل الروابط بعد ثلاث محاولات نظيفة."
+              exit 1
+            fi
           else
             echo "لا تغييرات جديدة في سجلات الروابط."
           fi

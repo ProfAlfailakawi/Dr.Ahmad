@@ -28,19 +28,19 @@
     "verifiedAt": "2026-07-27T17:09:26.956Z"
   },
   "a-generation-without-rootsarabic.dialogue.json": {
-    "bytes": 6574,
-    "sha256": "6dd6218c94768cf60bc7165fa7c3b12c67250f5b6d0aa866e727be7ba43b7d5b",
+    "bytes": 9583,
+    "sha256": "5c3f9bbc194de8e226d106e16e1dcb7cdf299f57d198dbbf35838b9f03c61096",
     "contentType": "application/json; charset=utf-8",
     "publishedAt": "2026-07-28T15:28:56.413Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-28T21:49:05.738Z"
   },
   "a-generation-without-rootsarabic.dialogue.mp3": {
-    "bytes": 3261379,
-    "sha256": "fc1ff7486df160c66eac516470d53e82ea39e410673070040a3658c0ca622a05",
+    "bytes": 3423547,
+    "sha256": "433a9da011f0c69c299d3b79d980b558601c70272780d8449e71a7eb593f2ab9",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-28T15:28:56.413Z",
-    "durationSeconds": 204,
+    "durationSeconds": 216,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-28T15:34:28.976Z"
   },
@@ -113,19 +113,19 @@
     "verifiedAt": "2026-07-27T17:09:28.388Z"
   },
   "alternative-plans-for-distance-education.dialogue.json": {
-    "bytes": 6844,
-    "sha256": "c1a4361987186730c20881b4b2a3820638f8a4378b1808d19505274931b4341d",
+    "bytes": 9967,
+    "sha256": "1e7c1e4d0c51cb3cd42ab06f916003f15e7242b99558cf1ef232a7c0740b8b9f",
     "contentType": "application/json; charset=utf-8",
     "publishedAt": "2026-07-28T15:28:56.466Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-28T21:49:07.939Z"
   },
   "alternative-plans-for-distance-education.dialogue.mp3": {
-    "bytes": 3256782,
-    "sha256": "8a9939c4e07cea989b3c7379abc91a010b0a58139cc71d27c62fb2e24e8c8cf2",
+    "bytes": 3432324,
+    "sha256": "3398e063e4ef936c5bdbce24b275179cf38212ee3d24705d86145bcae6a75caf",
     "contentType": "audio/mpeg",
     "publishedAt": "2026-07-28T15:28:56.466Z",
-    "durationSeconds": 204,
+    "durationSeconds": 216,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-28T15:34:30.383Z"
   },

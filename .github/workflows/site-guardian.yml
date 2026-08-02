@@ -46,9 +46,24 @@ jobs:
           # `git push || true` كان يبتلع الرفض بصمت: يوم يتصادم مع دفعةٍ أخرى
           # يضيع تقرير الحارس ولا يعلم أحد. نعيد المحاولة فوق أحدث main، فإن
           # عجزنا صرّحنا — سكوتُ الحارس أخطر من احمرار سطر.
+          bot_commit="$(git rev-parse HEAD)"
           pushed=0
           for attempt in 1 2 3; do
-            if git pull --rebase --autostash origin main && git push origin HEAD:main; then pushed=1; break; fi
+            # لا نترك rebase متعارضاً بين المحاولات. نبدأ كل محاولة من أحدث
+            # main ثم نعيد تطبيق تحديث الحارس، مع ترجيح ملفات التحديث الآلي
+            # وحدها عند اصطدامها بتحديث آلي متزامن للملف نفسه.
+            git rebase --abort >/dev/null 2>&1 || true
+            git cherry-pick --abort >/dev/null 2>&1 || true
+            git fetch origin main
+            git reset --hard origin/main
+            if git cherry-pick -X theirs "$bot_commit" && git push origin HEAD:main; then
+              pushed=1
+              break
+            fi
             sleep $((attempt * 5))
           done
-          if [ "$pushed" != 1 ]; then echo "::error::تعذّر رفع تقرير الحارس بعد ثلاث محاولات."; exit 1; fi
+          if [ "$pushed" != 1 ]; then
+            git cherry-pick --abort >/dev/null 2>&1 || true
+            echo "::error::تعذّر رفع تقرير الحارس بعد ثلاث محاولات نظيفة."
+            exit 1
+          fi

@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-02T07:08:47.552Z",
-  "state": "repairing",
+  "generatedAt": "2026-08-02T09:54:47.211Z",
+  "state": "producing",
   "articles": {
     "total": 143,
     "complete": 0
   },
   "readings": {
     "expected": 286,
-    "ready": 284,
-    "missing": 2,
-    "fahedReady": 142,
-    "nouraReady": 142
+    "ready": 286,
+    "missing": 0,
+    "fahedReady": 143,
+    "nouraReady": 143
   },
   "dialogues": {
     "expected": 143,
@@ -19,8 +19,8 @@
     "missing": 143
   },
   "queue": {
-    "total": 145,
-    "failed": 2,
+    "total": 143,
+    "failed": 0,
     "next": {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
       "title": "شهادة امتياز… لدمية بلا وعي!",
@@ -141,39 +141,21 @@
       }
     ]
   },
-  "progressPercent": 66.2,
+  "progressPercent": 66.7,
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
       "title": "شهادة امتياز… لدمية بلا وعي!",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "a-certificate-of-excellence-for-a-lifeless-doll-2.mp3",
-          "failure": {
-            "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 8,
-            "firstFailedAt": "2026-07-23T09:10:12.164Z",
-            "lastFailedAt": "2026-08-01T12:34:33.380Z",
-            "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 78/145"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "a-certificate-of-excellence-for-a-lifeless-doll-2.noura.mp3",
-          "failure": {
-            "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 8,
-            "firstFailedAt": "2026-07-23T09:10:36.007Z",
-            "lastFailedAt": "2026-08-01T12:34:45.114Z",
-            "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 78/146"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -426,16 +408,7 @@
         "noura": {
           "ready": true,
           "fileName": "coming-soon-a-certificate-without-a-mind-2.noura.mp3",
-          "failure": {
-            "slug": "coming-soon-a-certificate-without-a-mind-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 6,
-            "firstFailedAt": "2026-07-23T11:32:51.077Z",
-            "lastFailedAt": "2026-08-01T12:34:17.794Z",
-            "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 84/141"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -632,30 +605,12 @@
         "fahed": {
           "ready": true,
           "fileName": "excellent-in-grades-lost-in-decision.mp3",
-          "failure": {
-            "slug": "excellent-in-grades-lost-in-decision",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 7,
-            "firstFailedAt": "2026-07-23T16:50:39.500Z",
-            "lastFailedAt": "2026-08-01T12:28:20.942Z",
-            "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 84/134"
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "excellent-in-grades-lost-in-decision.noura.mp3",
-          "failure": {
-            "slug": "excellent-in-grades-lost-in-decision",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 6,
-            "firstFailedAt": "2026-07-23T16:50:47.859Z",
-            "lastFailedAt": "2026-08-01T12:29:39.848Z",
-            "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 83/139"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3014,16 +2969,7 @@
         "fahed": {
           "ready": true,
           "fileName": "the-mind-present-in-absence-absent-in-presence-2.mp3",
-          "failure": {
-            "slug": "the-mind-present-in-absence-absent-in-presence-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 6,
-            "firstFailedAt": "2026-07-23T16:49:32.439Z",
-            "lastFailedAt": "2026-08-01T11:57:20.870Z",
-            "message": "r003 فشل بعد 3 محاولات: STT 0٪، السرعة 84/132"
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
@@ -3166,16 +3112,7 @@
         "noura": {
           "ready": true,
           "fileName": "the-teacher-the-last-to-know-2.noura.mp3",
-          "failure": {
-            "slug": "the-teacher-the-last-to-know-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 6,
-            "firstFailedAt": "2026-07-23T16:49:24.045Z",
-            "lastFailedAt": "2026-08-01T11:57:04.446Z",
-            "message": "r014 فشل بعد 3 محاولات: STT 0٪، السرعة 84/132"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3550,5 +3487,5 @@
       "complete": false
     }
   ],
-  "fingerprint": "3ff71eb5781ac7977986ff5ce554fb293d5ada37a686a6e64b43527f339a0973"
+  "fingerprint": "6c8c4aed5d6c6bd35ba1a6f662bb384912a478d14822b54fdaccb36355887507"
 }

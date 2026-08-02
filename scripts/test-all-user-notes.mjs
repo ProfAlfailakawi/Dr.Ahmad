@@ -17,6 +17,7 @@ function check(name, condition, detail = '') {
 
 const app = read('src/App.tsx')
 const ui = read('src/components/ui.tsx')
+const knowledgeEntry = read('src/components/KnowledgeEntry.tsx')
 const css = read('src/index.css')
 const articleDetail = read('src/pages/ArticleDetail.tsx')
 const articleReader = read('src/components/ArticleReader.tsx')
@@ -86,8 +87,9 @@ check('فهرس الكتاب لا يستعمل defaultOpen غير المدعوم
 check('التحميل الكسول لا يضيّق window إلى never في TypeScript', !bookDetail.includes("'IntersectionObserver' in window") && bookDetail.includes("typeof IntersectionObserver === 'undefined'"))
 
 console.log('\nاسأل كتاباً والبحث المعرفي')
-check('ابحث في كتاب بوابة مستقلة عن تبويبات النتائج', search.includes('ميزة مستقلة') && search.includes('اختر كتاباً واحداً، ثم ابحث في متنه الموثق فقط') && search.includes("setTab('askbook')"))
-check('بوابة الكتاب تعمل بلا كتابة بحث عام', search.includes("(searchStarted || tab === 'askbook')") && search.includes("tab !== 'askbook'"))
+check('ابحث في كتاب بوابة مستقلة بلا بطاقة مكررة', knowledgeEntry.includes("/search?tab=askbook") && knowledgeEntry.includes('ابحث في كتاب') && !search.includes('ميزة مستقلة') && !search.includes('اختر كتاباً واحداً، ثم ابحث في متنه الموثق فقط'))
+check('بوابة الكتاب تخفي البحث العام وتعمل بلا كتابة مسبقة', search.includes("{tab !== 'askbook' && <FadeUp>") && search.includes("(searchStarted || tab === 'askbook')") && search.includes("tab !== 'askbook'"))
+check('مركز البحث السريع يعرض ابحث في كتاب كمسار ثالث', ui.includes("const bookTo = '/search?tab=askbook'") && ui.includes('grid-cols-3') && ui.includes('ابحث في كتاب'))
 check('اختيار الكتاب والسؤال والجواب كلها داخل صفحة البحث', search.includes('ask-book-rail') && search.includes('submitAskBook') && search.includes('searchBookPassages(askBookAsked') && search.includes('الجواب من متن الكتاب'))
 check('الجواب يعرض الكتاب والصفحة والمحور ورابطاً اختيارياً', search.includes('match.bookTitle') && search.includes('match.quote.page') && search.includes('match.quote.conceptTitle') && search.includes('في الكتاب'))
 check('غياب الدليل لا ينتج جواباً جازماً من خارج الكتاب', search.includes('لن أقدّم جواباً من خارج المتن'))

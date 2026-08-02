@@ -680,6 +680,7 @@ function SearchPalette({ close }: { close: () => void }) {
   const encodedQuery = encodeURIComponent(query.trim())
   const deepTo = encodedQuery ? `/search?q=${encodedQuery}` : '/search'
   const askTo = encodedQuery ? `/ask?q=${encodedQuery}` : '/ask'
+  const bookTo = '/search?tab=askbook'
   return (
     <motion.div
       role="dialog"
@@ -714,14 +715,18 @@ function SearchPalette({ close }: { close: () => void }) {
           <button type="button" onClick={close} aria-label="إغلاق البحث" title="إغلاق" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Close" size={16} /></button>
         </div>
 
-        <nav aria-label="مسارات البحث" className="grid grid-cols-2 gap-2 border-b border-hair bg-wash/[.45] px-3 py-3 sm:px-5">
-          <Link to={deepTo} onClick={close} className="group min-w-0 rounded-xl border border-hair bg-canvas px-3 py-3 transition hover:border-accent sm:px-4">
-            <span className="block text-[.62rem] font-bold text-accent">نتائج وفلاتر</span>
-            <span className="mt-1 flex items-center justify-between gap-2 text-[.82rem] font-semibold text-ink group-hover:text-accent"><span>البحث المتقدم</span><span aria-hidden>←</span></span>
+        <nav aria-label="مسارات البحث" className="grid grid-cols-3 gap-1.5 border-b border-hair bg-wash/[.45] px-3 py-3 sm:gap-2 sm:px-5">
+          <Link to={deepTo} onClick={close} className="group min-w-0 rounded-xl border border-hair bg-canvas px-2.5 py-3 transition hover:border-accent sm:px-4">
+            <span className="block truncate text-[.56rem] font-bold text-accent sm:text-[.62rem]">نتائج وفلاتر</span>
+            <span className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[.7rem] font-semibold text-ink group-hover:text-accent sm:text-[.82rem]"><span className="truncate">البحث المتقدم</span><span aria-hidden className="shrink-0">←</span></span>
           </Link>
-          <Link to={askTo} onClick={close} className="group min-w-0 rounded-xl border border-accent/30 bg-accent/[.05] px-3 py-3 transition hover:border-accent sm:px-4">
-            <span className="block text-[.62rem] font-bold text-accent">جواب من المتون</span>
-            <span className="mt-1 flex items-center justify-between gap-2 text-[.82rem] font-semibold text-ink group-hover:text-accent"><span>اسأل الأرشيف</span><span aria-hidden>←</span></span>
+          <Link to={askTo} onClick={close} className="group min-w-0 rounded-xl border border-accent/30 bg-accent/[.05] px-2.5 py-3 transition hover:border-accent sm:px-4">
+            <span className="block truncate text-[.56rem] font-bold text-accent sm:text-[.62rem]">جواب من المتون</span>
+            <span className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[.7rem] font-semibold text-ink group-hover:text-accent sm:text-[.82rem]"><span className="truncate">اسأل الأرشيف</span><span aria-hidden className="shrink-0">←</span></span>
+          </Link>
+          <Link to={bookTo} onClick={close} className="group min-w-0 rounded-xl border border-hair bg-canvas px-2.5 py-3 transition hover:border-accent sm:px-4">
+            <span className="block truncate text-[.56rem] font-bold text-accent sm:text-[.62rem]">كتاب واحد</span>
+            <span className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[.7rem] font-semibold text-ink group-hover:text-accent sm:text-[.82rem]"><span className="truncate">ابحث في كتاب</span><span aria-hidden className="shrink-0">←</span></span>
           </Link>
         </nav>
 
@@ -740,7 +745,7 @@ function SearchPalette({ close }: { close: () => void }) {
             <div className="px-5 py-10 text-center">
               <p className="font-display text-[1rem] font-semibold text-ink">لم أجد تطابقاً واضحاً.</p>
               <p className="mt-2 text-[.8rem] text-soft">جرّب عبارة أقصر، أو أرسل السؤال نفسه إلى «العقل الحي».</p>
-              <p className="mt-4 text-[.76rem] font-medium text-accent">اختر أحد المسارين الواضحين أعلى النتائج.</p>
+              <p className="mt-4 text-[.76rem] font-medium text-accent">اختر أحد مسارات البحث الواضحة أعلى النتائج.</p>
             </div>
           )}
         </div>

@@ -472,7 +472,7 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
     <div data-hover className={`group relative h-full rounded-2xl border border-hair bg-canvas transition-colors hover:border-accent ${compact ? 'p-6 md:p-7' : 'max-w-3xl border-0 p-0'}`}>
       <Link to={`/articles/${pick.a.slug}`} aria-label={`اقرأ مقال: ${pick.a.title}`} className="absolute inset-0 z-0"><span className="sr-only">{pick.a.title}</span></Link>
       <div className="pointer-events-none relative z-10">
-        <div className="flex min-w-0 items-center justify-between gap-2.5 text-accent">
+        <div className="flex min-w-0 flex-col items-start gap-3 text-accent">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="h-[1.5px] w-7 shrink-0 bg-accent" />
             <p className="min-w-0 whitespace-nowrap text-[clamp(.62rem,2.25vw,.74rem)] font-semibold leading-none">

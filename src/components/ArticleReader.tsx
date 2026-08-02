@@ -612,20 +612,11 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
                     </div>
                   </section>
                   <section>
-                    <p className="text-[.76rem] font-semibold text-ink">الخلفية</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <SettingChoice value="light" current={preferences.theme} label="فاتحة" onClick={() => setPreferences({ theme: 'light' })} />
-                      <SettingChoice value="dark" current={preferences.theme} label="داكنة" onClick={() => setPreferences({ theme: 'dark' })} />
-                      <SettingChoice value="paper" current={preferences.theme} label="ورقية" onClick={() => setPreferences({ theme: 'paper' })} />
-                    </div>
-                  </section>
-                  <section>
                     <p className="text-[.76rem] font-semibold text-ink">التشكيل</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <SettingChoice value={false} current={preferences.vocalized} label="بدون" onClick={() => setPreferences({ vocalized: false })} />
                       <SettingChoice value={true} current={preferences.vocalized} label="نص مشكّل" onClick={() => setPreferences({ vocalized: true })} />
                     </div>
-                    <p className="mt-2 text-[.68rem] leading-[1.7] text-soft">كل المقالات متوفّرة بنصٍّ مشكّلٍ كامل الحركات لقراءةٍ أدقّ.</p>
                   </section>
                   <p className="text-[.7rem] leading-[1.8] text-soft">تُحفظ هذه الاختيارات على هذا الجهاز فقط، وتُطبّق تلقائياً على بقية المقالات.</p>
                 </div>

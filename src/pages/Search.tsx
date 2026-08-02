@@ -6,7 +6,7 @@ import { useSeo } from '../components/seo'
 import { searchArticles, topKeywordsFor } from '../lib/cms'
 import { buildKnowledgeGraph, graphSearch, type KnowledgeKind } from '../lib/knowledge-graph'
 import { useCmsContent } from '../lib/content'
-import { bestBookConcept, bookKnowledgeAnchor } from '../lib/book-knowledge'
+import { bestBookConcept, bookKnowledgeAnchor, getBookKnowledge } from '../lib/book-knowledge'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { versionedAudioUrl } from '../components/extras'
@@ -31,6 +31,92 @@ const SEARCH_SUGGESTION_STOPWORDS = new Set([
   'الدكتور', 'المقال', 'مقال', 'كتاب', 'كتب', 'بحث', 'ابحاث', 'أبحاث', 'هذا', 'هذه',
   'التي', 'الذي', 'على', 'الى', 'إلى', 'عن', 'في', 'من', 'مع', 'كان', 'بعد', 'قبل',
 ])
+
+const READY_QUESTION_STORAGE_KEY = 'dr-ahmad:ask-book-ready-questions:v1'
+
+type ReadyQuestionState = {
+  used: string[]
+  cursor: number
+  lastOffered?: string
+}
+
+type ReadyQuestionHistory = Record<string, ReadyQuestionState>
+
+function readReadyQuestionHistory(): ReadyQuestionHistory {
+  if (typeof window === 'undefined') return {}
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(READY_QUESTION_STORAGE_KEY) || '{}') as ReadyQuestionHistory
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeReadyQuestionHistory(history: ReadyQuestionHistory) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(READY_QUESTION_STORAGE_KEY, JSON.stringify(history))
+  } catch {
+    /* التخزين تحسينٌ للتجربة؛ تعطّله لا يعطّل البحث نفسه. */
+  }
+}
+
+function readyQuestionsForBook(slug = '') {
+  const knowledge = getBookKnowledge(slug)
+  if (!knowledge) return []
+  const questions = knowledge.concepts
+    .filter((concept) => !/^(?:مقدمة|الخاتمة|قائمة المراجع)$/u.test(concept.title.trim()))
+    .flatMap((concept) => {
+      const title = concept.title.trim().replace(/[؟?]+$/u, '')
+      return [
+        `ماذا يقول الكتاب عن «${title}»؟`,
+        `ما الفكرة الأساسية في محور «${title}»؟`,
+        `كيف يعالج الكتاب محور «${title}»؟`,
+      ]
+    })
+  return Array.from(new Set(questions))
+}
+
+function nextReadyQuestion(slug: string, questions: string[], currentQuestion = '') {
+  if (!slug || !questions.length) return ''
+  const history = readReadyQuestionHistory()
+  const current: ReadyQuestionState = history[slug] || { used: [], cursor: 0 }
+  let used = current.used.filter((question) => questions.includes(question))
+  const currentText = currentQuestion.trim()
+
+  const pickFrom = (blocked: Set<string>) => {
+    for (let offset = 0; offset < questions.length; offset += 1) {
+      const index = (current.cursor + offset) % questions.length
+      const question = questions[index]
+      if (!blocked.has(question)) return { question, nextCursor: (index + 1) % questions.length }
+    }
+    return null
+  }
+
+  let picked = pickFrom(new Set([...used, currentText, current.lastOffered || '']))
+  if (!picked) {
+    used = []
+    picked = pickFrom(new Set([currentText, current.lastOffered || '']))
+  }
+  if (!picked) picked = pickFrom(new Set())
+  if (!picked) return ''
+
+  history[slug] = { used, cursor: picked.nextCursor, lastOffered: picked.question }
+  writeReadyQuestionHistory(history)
+  return picked.question
+}
+
+function markReadyQuestionUsed(slug: string, question: string, questions: string[]) {
+  if (!slug || !questions.includes(question)) return
+  const history = readReadyQuestionHistory()
+  const current: ReadyQuestionState = history[slug] || { used: [], cursor: 0 }
+  history[slug] = {
+    ...current,
+    used: Array.from(new Set([...current.used.filter((item) => questions.includes(item)), question])),
+    lastOffered: question,
+  }
+  writeReadyQuestionHistory(history)
+}
 
 
 /* ═══ محرك المعرفة الموحد ═══
@@ -252,10 +338,26 @@ export default function Search() {
     [expandedQuery, passagesReady, searchStarted])
 
   const selectedAskBook = useMemo(() => books.find((book) => book.slug === askBookSlug) || books[0] || null, [askBookSlug, books])
+  const readyQuestions = useMemo(() => readyQuestionsForBook(selectedAskBook?.slug || ''), [selectedAskBook?.slug])
   const askBookMatches = useMemo(
     () => (askBookReady && askBookAsked.length >= 2 && selectedAskBook ? searchBookPassages(askBookAsked, 6, selectedAskBook.slug) : []),
     [askBookAsked, askBookReady, selectedAskBook],
   )
+
+  useEffect(() => {
+    setAskBookQuestion('')
+    setAskBookAsked('')
+    setAskBookError('')
+  }, [askBookSlug])
+
+  const chooseReadyQuestion = () => {
+    if (!selectedAskBook) return
+    const question = nextReadyQuestion(selectedAskBook.slug, readyQuestions, askBookQuestion)
+    if (!question) return
+    setAskBookQuestion(question)
+    setAskBookAsked('')
+    setAskBookError('')
+  }
 
   const submitAskBook = async () => {
     const question = askBookQuestion.trim()
@@ -266,6 +368,7 @@ export default function Search() {
       await loadBookPassages()
       setAskBookReady(true)
       setAskBookAsked(question)
+      markReadyQuestionUsed(selectedAskBook.slug, question, readyQuestions)
     } catch {
       setAskBookError('تعذّر فتح فهرس الكتاب الآن. أعد المحاولة بعد لحظة.')
     } finally {
@@ -500,18 +603,12 @@ export default function Search() {
             </div>
           </FadeUp>}
 
-          {(searchStarted || tab === 'askbook') && <FadeUp delay={0.05}>
+          {searchStarted && tab !== 'askbook' && <FadeUp delay={0.05}>
             <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
               <p className="text-[.9rem] text-soft" aria-live="polite">
-                {tab === 'askbook' ? (
-                  <>اختر كتاباً واكتب ما تبحث عنه؛ تظهر الإجابة من متن الكتاب نفسه.</>
-                ) : (
-                  <>
-                    {resultWord(tab === 'spoken' ? spokenHits.length : activeRows.length)}
-                    <span> عن «{normalizedQuery}»</span>
-                    {tab !== 'all' && <span> في {RESULT_TABS.find((item) => item.id === tab)?.label}</span>}
-                  </>
-                )}
+                {resultWord(tab === 'spoken' ? spokenHits.length : activeRows.length)}
+                <span> عن «{normalizedQuery}»</span>
+                {tab !== 'all' && <span> في {RESULT_TABS.find((item) => item.id === tab)?.label}</span>}
               </p>
               {(tab === 'all' || tab === 'article') && keywords.length > 0 && (
                 <div className="flex flex-wrap gap-2">
@@ -532,9 +629,7 @@ export default function Search() {
           {tab === 'askbook' && <FadeUp delay={0.08}>
             <section className="mt-8 min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-hair bg-wash p-4 sm:p-5 md:p-7" aria-labelledby="ask-book-gateway-title">
               <div className="min-w-0">
-                <span className="text-[.72rem] font-semibold text-accent">البحث داخل كتاب واحد</span>
-                <h2 id="ask-book-gateway-title" className="mt-2 break-words font-display text-[clamp(1.35rem,2.8vw,2rem)] font-semibold leading-[1.45] text-ink">بحث مباشر داخل متن كتاب من كتب الدكتور.</h2>
-                <p className="mt-3 max-w-2xl text-[.88rem] leading-[1.9] text-soft">اختر كتاباً من كتب الدكتور ثم اكتب سؤالك أو مفهومك. تظهر أقرب الإجابات الموثقة من متن الكتاب المختار فقط.</p>
+                <h2 id="ask-book-gateway-title" className="break-words font-display text-[clamp(1.35rem,2.8vw,2rem)] font-semibold leading-[1.45] text-ink">بحث مباشر داخل متن كتاب من كتب الدكتور.</h2>
 
                 <div dir="rtl" className="ask-book-rail rail mt-5 flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden" aria-label="اختيار الكتاب">
                   {books.map((book) => (
@@ -546,6 +641,7 @@ export default function Search() {
                         next.set('tab', 'askbook')
                         next.set('book', book.slug)
                         setAskBookSlug(book.slug)
+                        setAskBookQuestion('')
                         setAskBookAsked('')
                         setAskBookError('')
                         setSearchParams(next, { replace: true })
@@ -554,7 +650,6 @@ export default function Search() {
                       className={`w-[78vw] max-w-[18rem] shrink-0 snap-start rounded-2xl border px-4 py-3 text-right transition-colors sm:w-[18rem] ${askBookSlug === book.slug ? 'border-accent bg-canvas shadow-sm' : 'border-hair bg-canvas/70 hover:border-accent/[.45]'}`}
                     >
                       <strong className="block break-words text-[.82rem] leading-relaxed text-ink">{book.title}</strong>
-                      <span className="mt-1 block line-clamp-2 text-[.68rem] leading-relaxed text-soft">{book.year ? `من كتب الدكتور · ${book.year}` : 'من كتب الدكتور'}{book.desc ? ` · ${book.desc}` : ''}</span>
                     </button>
                   ))}
                 </div>
@@ -574,12 +669,12 @@ export default function Search() {
                 />
                 <div className="flex flex-wrap items-center gap-2">
                   <button type="submit" disabled={!selectedAskBook || askBookQuestion.trim().length < 2 || askBookLoading} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45">{askBookLoading ? 'يفتح متن الكتاب…' : 'ابحث في الكتاب'}</button>
-                  <button type="button" onClick={() => setAskBookQuestion('ما الفكرة الأساسية في هذا الكتاب؟')} className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">سؤال جاهز</button>
+                  <button type="button" onClick={chooseReadyQuestion} disabled={!readyQuestions.length} className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45">سؤال جاهز</button>
                 </div>
                 {askBookError && <p className="text-[.72rem] leading-relaxed text-accent" role="alert">{askBookError}</p>}
               </form>
 
-              {askBookAsked && !askBookLoading && (
+              {askBookAsked && !askBookLoading && askBookReady && askBookMatches.length > 0 && (
                 <section className="mt-5 min-w-0 rounded-[1.75rem] border border-hair bg-canvas p-4 md:p-5" aria-live="polite" aria-labelledby="ask-book-answer-title">
                   <div className="flex min-w-0 flex-wrap items-start justify-between gap-3 border-b border-hair pb-4">
                     <div className="min-w-0">
@@ -590,23 +685,22 @@ export default function Search() {
                     {selectedAskBook && <Link to={`/publications/${selectedAskBook.slug}#book-knowledge`} className="shrink-0 text-[.7rem] font-semibold text-accent transition-colors hover:text-accent-deep">افتح صفحة الكتاب ←</Link>}
                   </div>
 
-                  {askBookReady && askBookMatches.length > 0 ? (
-                    <div className="mt-4 grid min-w-0 gap-3">
-                      <p className="text-[.76rem] leading-[1.85] text-soft">وجدتُ أقرب المقاطع التي يجيب بها الكتاب نفسه؛ رتبتها بحسب صلتها بالسؤال، وكل مقطع منسوب إلى صفحته.</p>
-                      {askBookMatches.map((match) => (
-                        <figure key={`search-ask-${match.bookSlug}-${match.quote.id}`} className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-wash px-4 py-4">
-                          <blockquote className="break-words border-r-2 border-accent/[.35] pr-3 text-[.88rem] font-light leading-[2] text-ink/[.88]">{match.quote.text}</blockquote>
-                          <figcaption className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 pr-3 text-[.68rem] text-soft">
-                            <span className="break-words">{match.bookTitle} · ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</span>
-                            <Link to={`/publications/${match.bookSlug}#book-knowledge`} className="font-semibold text-accent">في الكتاب ←</Link>
-                          </figcaption>
-                        </figure>
-                      ))}
-                    </div>
-                  ) : askBookReady ? (
-                    <div className="mt-4 rounded-2xl border border-hair bg-wash px-4 py-5 text-[.78rem] leading-[1.9] text-soft">لم أجد في هذا الكتاب مقطعاً موثقاً يجيب عن السؤال بهذه الصياغة. جرّب مفهوماً أقرب إلى عنوان فصل أو كلمة أساسية، ولن أقدّم جواباً من خارج المتن.</div>
-                  ) : null}
+                  <div className="mt-4 grid min-w-0 gap-3">
+                    <p className="text-[.76rem] leading-[1.85] text-soft">وجدتُ أقرب المقاطع التي يجيب بها الكتاب نفسه؛ رتبتها بحسب صلتها بالسؤال، وكل مقطع منسوب إلى صفحته.</p>
+                    {askBookMatches.map((match) => (
+                      <figure key={`search-ask-${match.bookSlug}-${match.quote.id}`} className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-wash px-4 py-4">
+                        <blockquote className="break-words border-r-2 border-accent/[.35] pr-3 text-[.88rem] font-light leading-[2] text-ink/[.88]">{match.quote.text}</blockquote>
+                        <figcaption className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 pr-3 text-[.68rem] text-soft">
+                          <span className="break-words">{match.bookTitle} · ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</span>
+                          <Link to={`/publications/${match.bookSlug}#book-knowledge`} className="font-semibold text-accent">في الكتاب ←</Link>
+                        </figcaption>
+                      </figure>
+                    ))}
+                  </div>
                 </section>
+              )}
+              {askBookAsked && !askBookLoading && askBookReady && askBookMatches.length === 0 && (
+                <p className="mt-5 text-[.78rem] leading-[1.9] text-soft" role="status">لم أجد في هذا الكتاب مقطعاً موثقاً يجيب عن السؤال بهذه الصياغة. جرّب مفهوماً أقرب إلى عنوان فصل أو كلمة أساسية، ولن أقدّم جواباً من خارج المتن.</p>
               )}
             </section>
           </FadeUp>}

@@ -3689,3 +3689,25 @@ body.selection-active .floating-actions {
   .content-articles .article-body p,
   .content-articles .article-body-synced .synced-paragraph { text-align: justify; text-justify: inter-word; text-align-last: start; }
 }
+
+/* 2026-08 final layout audit: no artificial blank screen before the footer. */
+.content-articles > article,
+.content-search > section,
+.content-books > section,
+.content-research > section,
+.content-media > section {
+  min-height: 0 !important;
+}
+
+.content-articles > article:last-of-type,
+.content-search > section:last-of-type {
+  margin-bottom: 0 !important;
+}
+
+/* Article prose: full alignment for old imported bodies and new synced bodies. */
+.content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote) {
+  text-align: justify;
+  text-justify: inter-word;
+  text-align-last: start;
+}
+

@@ -147,7 +147,10 @@
     "live-director:self-test": "node scripts/test-live-director.mjs",
     "smart-command-room:self-test": "npm run editorial-foresight:self-test && npm run dr-ahmad-room:self-test && npm run live-director:self-test",
     "ortho:audit": "node scripts/audit-published-orthography.mjs",
-    "ortho:self-test": "node scripts/audit-published-orthography.mjs --self-test"
+    "ortho:self-test": "node scripts/audit-published-orthography.mjs --self-test",
+    "books:glossary": "node scripts/build-glossary-voice.mjs",
+    "books:next": "node scripts/next-book.mjs",
+    "books:review": "node scripts/review-book-passages.mjs"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

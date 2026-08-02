@@ -6,6 +6,8 @@ import { useCmsContent } from '../lib/content'
 import { loadBookPassages, matchBookQuotes, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
 import { chapterUrl, searchMediaChapters, stamp } from '../lib/media-chapters'
 import { QuoteCite } from '../components/QuoteCite'
+import { loadArticleBodies } from '../lib/article-bodies'
+import { ideaEvolution } from '../lib/idea-evolution'
 
 /**
  * سيرة مفهوم — «المعلّم الرقمي عبر عشرين سنة».
@@ -90,6 +92,16 @@ export default function ConceptLife() {
     return () => { on = false }
   }, [deepReady, term])
 
+  /* متون المقالات تلزم لقياس النبرة واختيار الجملة الدالّة — لا للعرض.
+     تُجلب بعد أول رسم فلا تؤخّر ظهور المحطات. */
+  const [bodies, setBodies] = useState<Record<string, string> | null>(null)
+  useEffect(() => {
+    if (!term || bodies) return
+    let on = true
+    void loadArticleBodies().then((map) => { if (on) setBodies(map as Record<string, string>) })
+    return () => { on = false }
+  }, [bodies, term])
+
   const stations = useMemo<Station[]>(() => {
     if (term.length < 2) return []
     const seed = roots(term)
@@ -166,6 +178,16 @@ export default function ConceptLife() {
     })
   }, [articles, books, deepReady, media, papers, term])
 
+  /* «ما تغيّر رأيه فيه»: مقياسٌ لا تفسير — انظر src/lib/idea-evolution.ts */
+  const evolution = useMemo(() => {
+    if (!bodies || term.length < 2) return null
+    const seed = [...roots(term)]
+    const matched = articles
+      .filter((article) => overlap(roots(term), roots(`${article.title} ${article.excerpt || ''} ${article.cat || ''}`)) >= 1)
+      .map((article) => ({ ...article, body: bodies[article.slug] || '' }))
+    return ideaEvolution(matched, seed)
+  }, [articles, bodies, term])
+
   const span = useMemo(() => {
     const years = stations.map((item) => Number(item.year)).filter((year) => year > 1900)
     return years.length >= 2 ? { from: Math.min(...years), to: Math.max(...years) } : null
@@ -198,6 +220,45 @@ export default function ConceptLife() {
                   </span>
                 ))}
               </div>
+            </FadeUp>
+          )}
+
+          {evolution && (
+            <FadeUp>
+              <section className="mt-8 rounded-2xl border border-hair bg-wash px-5 py-6 md:px-7" aria-labelledby="evolution-title">
+                <div className="flex flex-wrap items-baseline justify-between gap-3">
+                  <h2 id="evolution-title" className="font-display text-[1.15rem] font-semibold text-ink">
+                    {evolution.meaningful ? 'كيف تحوّلت نبرته' : 'كيف امتدّ الموقف'}
+                  </h2>
+                  <span className="text-[.7rem] text-soft">{evolution.years} سنة بين الطرفين</span>
+                </div>
+
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {[evolution.early, evolution.late].map((side, index) => (
+                    <figure key={side.slug || index} className="rounded-xl border border-hair bg-canvas px-4 py-4">
+                      <figcaption className="flex items-baseline justify-between gap-2">
+                        <span className="font-display text-[1.05rem] font-semibold text-accent tabular-nums">{side.year}</span>
+                        <span className="text-[.64rem] text-soft">{side.articles === 1 ? 'مقال واحد' : `${side.articles} مقالات`} · تحفّظ {side.caution}٪</span>
+                      </figcaption>
+                      <blockquote className="mt-2 border-r-2 border-accent/30 pr-3 text-[.86rem] font-light leading-[1.9] text-ink/85">
+                        {side.line}
+                      </blockquote>
+                      {side.slug && (
+                        <Link to={`/articles/${side.slug}`} className="mt-2 inline-block pr-3 text-[.66rem] text-soft transition-colors hover:text-accent">
+                          {side.title} ←
+                        </Link>
+                      )}
+                    </figure>
+                  ))}
+                </div>
+
+                <p className="mt-4 border-t border-hair pt-3 text-[.72rem] leading-relaxed text-soft">
+                  {evolution.meaningful
+                    ? `نبرة التحفّظ في كتابته عن «${term}» ${evolution.shift > 0 ? 'ارتفعت' : 'انخفضت'} ${Math.abs(evolution.shift)} نقطة بين الطرفين.`
+                    : `النبرة ثابتة تقريباً (${evolution.shift > 0 ? '+' : ''}${evolution.shift} نقطة) — الفكرة امتدّت ولم تنقلب.`}
+                  {' '}المقياس آليّ من مفردات الوعد والتحفّظ، لا حكم تحريري.
+                </p>
+              </section>
             </FadeUp>
           )}
 

@@ -40,7 +40,7 @@ const MALE = env.PODCAST_AR_MALE || 'ar-KW-FahedNeural'
 const FEMALE = env.PODCAST_AR_FEMALE || 'ar-KW-NouraNeural'
 const MALE_NAME = env.PODCAST_AR_MALE_NAME || 'فهد'
 const FEMALE_NAME = env.PODCAST_AR_FEMALE_NAME || 'نورة'
-const MUSIC = resolve(ROOT, 'music/still-light.mp3')
+const MUSIC = resolve(ROOT, 'music/maqam-reflections.mp3')
 
 const ff = (args) => {
   const r = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', ...args], { encoding: 'utf8' })

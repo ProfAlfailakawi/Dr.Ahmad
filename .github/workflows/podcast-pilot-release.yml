@@ -171,6 +171,13 @@ jobs:
       - name: Build and validate final RSS
         if: steps.prepare.outputs.has_work == 'true'
         run: |
+          # مصالحة السجلّ قبل التحقّق — وإلا أسقطت ملفاتٌ قديمة تشغيلةً نجحت.
+          # ملفٌ أُعيد توليده ورُفع بحجمٍ جديد، ثم سقطت التشغيلة لسببٍ آخر
+          # فلم يُثبَّت السجلّ، فبقي يحمل الحجم القديم ويُفشل كل تشغيلةٍ بعده.
+          # سقط ٣٠ ملفاً بهذا في ٢ أغسطس بعد أن وُلِّدت الحلقتان واجتازتا البوابة.
+          # القافلة الساعية تصالح قبل التحقّق منذ زمن؛ مسار الإطلاق لم يكن.
+          node scripts/guard-audio-meta-regression.mjs --apply
+          node scripts/reconcile-audio-meta.mjs --apply
           npm run audio:external:verify
           npm run build
           npm run podcast:release:dist

@@ -874,37 +874,29 @@ export default function ArticleDetail() {
           </FadeUp>
 
           <FadeUp className="serenity-hide">
-            <nav className="mt-8 border-t border-hair pt-4" aria-label="التنقل بين المقالات">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-4">
-                <div className="flex min-w-0 items-center gap-2 text-right">
+            <nav className="mt-7 border-t border-hair pt-3" aria-label="التنقل بين المقالات">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 sm:gap-3">
+                <div className="flex min-w-0 items-center gap-1.5">
                   {next ? (
-                    <Link to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                    <Link to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                     </Link>
-                  ) : <span className="h-9 w-9 shrink-0" aria-hidden />}
-                  <div className="min-w-0">
-                    <span className="block text-[.58rem] font-light text-soft">السابق</span>
-                    <p className="mt-0.5 truncate font-display text-[.68rem] font-light leading-normal text-ink" title={next?.title}>{next?.title || 'لا يوجد مقال سابق'}</p>
-                  </div>
+                  ) : <span className="h-8 w-8 shrink-0" aria-hidden />}
+                  <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={next?.title}><span className="text-ink">السابق:</span> {next?.title || 'لا يوجد'}</p>
                 </div>
 
-                <div className="flex min-w-[4.5rem] flex-col items-center gap-1 text-center">
-                  <span className="block text-[.58rem] font-light text-soft">جميع المقالات</span>
-                  <Link to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round"><path d="M5 6h14M5 12h14M5 18h14" /><circle cx="3" cy="6" r=".45" fill="currentColor" stroke="none" /><circle cx="3" cy="12" r=".45" fill="currentColor" stroke="none" /><circle cx="3" cy="18" r=".45" fill="currentColor" stroke="none" /></svg>
-                  </Link>
-                </div>
+                <Link to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-8 items-center gap-1 rounded-full border border-hair px-2 text-[.58rem] font-light text-soft transition-colors hover:border-accent hover:text-accent">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M5 6h14M5 12h14M5 18h14" /></svg>
+                  <span className="hidden whitespace-nowrap sm:inline">جميع المقالات</span>
+                </Link>
 
-                <div className="flex min-w-0 flex-row-reverse items-center gap-2 text-left">
+                <div className="flex min-w-0 flex-row-reverse items-center gap-1.5 text-left">
                   {prev ? (
-                    <Link to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
+                    <Link to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
                     </Link>
-                  ) : <span className="h-9 w-9 shrink-0" aria-hidden />}
-                  <div className="min-w-0">
-                    <span className="block text-[.58rem] font-light text-soft">التالي</span>
-                    <p className="mt-0.5 truncate font-display text-[.68rem] font-light leading-normal text-ink" title={prev?.title}>{prev?.title || 'لا يوجد مقال تالٍ'}</p>
-                  </div>
+                  ) : <span className="h-8 w-8 shrink-0" aria-hidden />}
+                  <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={prev?.title}><span className="text-ink">التالي:</span> {prev?.title || 'لا يوجد'}</p>
                 </div>
               </div>
             </nav>

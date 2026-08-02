@@ -94,6 +94,12 @@ check('اختيار الكتاب والسؤال والجواب كلها داخل
 check('الجواب يعرض الكتاب والصفحة والمحور ورابطاً اختيارياً', search.includes('match.bookTitle') && search.includes('match.quote.page') && search.includes('match.quote.conceptTitle') && search.includes('في الكتاب'))
 check('غياب الدليل لا ينتج جواباً جازماً من خارج الكتاب', search.includes('لن أقدّم جواباً من خارج المتن'))
 check('تبويبات البحث قابلة للسحب على الهاتف', search.includes('role="tablist"') && search.includes('overflow-x-auto') && css.includes('.content-search [role="tablist"].rail'))
+check('وضع البحث داخل كتاب لا يكرر بوابة طرق البحث', search.includes("{tab !== 'askbook' && <div className=\"px-6 pt-8 md:px-11\">") && search.includes('البحث داخل كتاب واحد'))
+check('جملة عدد النتائج عربية سليمة', search.includes("const resultWord = (count: number)") && search.includes("return 'نتيجتان'") && search.includes('نتائج'))
+check('تبويب نصوص الكتب واضح للزائر', search.includes("label: 'داخل كتب الدكتور'"))
+check('اقتراحات البحث تستبعد الكلمات العامة المربكة', search.includes('SEARCH_SUGGESTION_STOPWORDS') && search.includes("'الدكتور'") && search.includes("'المقال'"))
+check('تنقل المقالات صف واحد صغير والعناوين موجودة', articleDetail.includes('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]') && articleDetail.includes('السابق:') && articleDetail.includes('التالي:') && articleDetail.includes('text-[.6rem]'))
+check('متون المقالات القديمة والجديدة مضبوطة المحاذاة', css.includes('.article-body-synced') && css.includes('text-align: justify') && css.includes('text-align-last: start'))
 
 console.log('\nالإعلام ومساحتي')
 check('امتداد اللقاء شريط أفقي واحد لا شبكة', mediaDetail.includes('media-related-rail') && mediaDetail.includes('flex snap-x') && mediaDetail.includes('shrink-0 snap-start') && !/media-related-rail[^\n]+grid/u.test(mediaDetail))

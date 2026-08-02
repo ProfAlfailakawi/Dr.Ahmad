@@ -20,6 +20,18 @@ import { SocialIcon } from '../components/icons'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
+const resultWord = (count: number) => {
+  if (count === 1) return 'نتيجة واحدة'
+  if (count === 2) return 'نتيجتان'
+  if (count >= 3 && count <= 10) return `${ar(count)} نتائج`
+  return `${ar(count)} نتيجة`
+}
+
+const SEARCH_SUGGESTION_STOPWORDS = new Set([
+  'الدكتور', 'المقال', 'مقال', 'كتاب', 'كتب', 'بحث', 'ابحاث', 'أبحاث', 'هذا', 'هذه',
+  'التي', 'الذي', 'على', 'الى', 'إلى', 'عن', 'في', 'من', 'مع', 'كان', 'بعد', 'قبل',
+])
+
 
 /* ═══ محرك المعرفة الموحد ═══
    الكتاب يُبحث عبر خريطة مفاهيم مشتقة من متنه الكامل، لكن النتيجة لا تكشف
@@ -40,7 +52,7 @@ const KIND_TABS: { id: TabId; label: string }[] = [
   { id: 'spoken', label: 'جُمل منطوقة' },
   /* متون الكتب التسعة كاملة — بإذن الدكتور. فهرسها ثقيل فلا يُجلب إلا عند
      فتح التبويب، ثم يبقى في الذاكرة فتصير النتائج فورية. */
-  { id: 'passage', label: 'متون كتب الدكتور' },
+  { id: 'passage', label: 'داخل كتب الدكتور' },
 ]
 
 const RESULT_TABS = KIND_TABS.filter((item) => item.id !== 'askbook')
@@ -360,7 +372,18 @@ export default function Search() {
 
   const activeRows = useMemo(() => tab === 'askbook' ? [] : tab === 'all' ? unifiedRows : unifiedRows.filter((row) => row.kind === tab), [tab, unifiedRows])
 
-  const keywords = useMemo(() => topKeywordsFor(articleResults.slice(0, 18), 12), [articleResults])
+  const keywords = useMemo(() => {
+    const seen = new Set<string>()
+    return topKeywordsFor(articleResults.slice(0, 18), 20)
+      .map((word) => word.trim())
+      .filter((word) => {
+        const normalized = normalizeArabic(word)
+        if (normalized.length < 4 || SEARCH_SUGGESTION_STOPWORDS.has(word) || SEARCH_SUGGESTION_STOPWORDS.has(normalized) || seen.has(normalized)) return false
+        seen.add(normalized)
+        return true
+      })
+      .slice(0, 6)
+  }, [articleResults])
   const paged = usePagedList(activeRows, 20, `${normalizedQuery}|${tab}|${cat}|${year}`)
   const visibleRows = paged.pageItems
 
@@ -389,7 +412,7 @@ export default function Search() {
         sub="محرك معرفة واحد يفتح أرشيف الدكتور كله: مقالاته وأبحاثه وكتبه ولقاءاته وأسئلته."
       />
 
-      <div className="px-6 pt-8 md:px-11"><div className="mx-auto max-w-3xl"><KnowledgeEntry /></div></div>
+      {tab !== 'askbook' && <div className="px-6 pt-8 md:px-11"><div className="mx-auto max-w-3xl"><KnowledgeEntry /></div></div>}
 
       <section className="px-6 py-10 md:px-11 md:py-12">
         <div className="mx-auto max-w-shell">
@@ -484,7 +507,7 @@ export default function Search() {
                   <>اختر كتاباً واكتب ما تبحث عنه؛ تظهر الإجابة من متن الكتاب نفسه.</>
                 ) : (
                   <>
-                    {ar(tab === 'spoken' ? spokenHits.length : activeRows.length)} نتيجة
+                    {resultWord(tab === 'spoken' ? spokenHits.length : activeRows.length)}
                     <span> عن «{normalizedQuery}»</span>
                     {tab !== 'all' && <span> في {RESULT_TABS.find((item) => item.id === tab)?.label}</span>}
                   </>
@@ -509,7 +532,7 @@ export default function Search() {
           {tab === 'askbook' && <FadeUp delay={0.08}>
             <section className="mt-8 min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-hair bg-wash p-4 sm:p-5 md:p-7" aria-labelledby="ask-book-gateway-title">
               <div className="min-w-0">
-                <span className="text-[.72rem] font-semibold uppercase tracking-[.08em] text-accent">ميزة خاصة · ابحث في كتاب</span>
+                <span className="text-[.72rem] font-semibold text-accent">البحث داخل كتاب واحد</span>
                 <h2 id="ask-book-gateway-title" className="mt-2 break-words font-display text-[clamp(1.35rem,2.8vw,2rem)] font-semibold leading-[1.45] text-ink">بحث مباشر داخل متن كتاب من كتب الدكتور.</h2>
                 <p className="mt-3 max-w-2xl text-[.88rem] leading-[1.9] text-soft">اختر كتاباً من كتب الدكتور ثم اكتب سؤالك أو مفهومك. تظهر أقرب الإجابات الموثقة من متن الكتاب المختار فقط.</p>
 

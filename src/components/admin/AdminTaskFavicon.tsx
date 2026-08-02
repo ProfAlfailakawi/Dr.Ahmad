@@ -125,7 +125,7 @@ export function AdminTaskIndicator() {
 
   return (
     <div
-      className="inline-flex h-10 items-center gap-2 rounded-full border border-hair bg-canvas/85 px-3 text-[.72rem] font-semibold text-soft shadow-sm backdrop-blur-md"
+      className="inline-flex h-10 items-center gap-2 rounded-full border border-hair bg-canvas/[.85] px-3 text-[.72rem] font-semibold text-soft shadow-sm backdrop-blur-md"
       role="status"
       aria-live="polite"
       title={task.label || label}

@@ -646,7 +646,7 @@ export default function Atlas() {
                   <g className="pointer-events-none">
                     <circle cx={active.x} cy={active.y} r={active.r + 10} className="fill-none stroke-accent" strokeOpacity={0.42} strokeWidth={1.4} />
                     <foreignObject className="atlas-tooltip-foreign" x={tooltipX} y={tooltipY} width={tooltipWidth} height={tooltipHeight}>
-                      <div className="atlas-tooltip h-full rounded-xl border border-accent/35 bg-canvas/95 px-4 py-3 text-right shadow-xl backdrop-blur" dir="rtl">
+                      <div className="atlas-tooltip h-full rounded-xl border border-accent/[.35] bg-canvas/95 px-4 py-3 text-right shadow-xl backdrop-blur" dir="rtl">
                         <p className="truncate text-[11px] font-semibold text-accent">{categoryLabel(active.cat)} · {active.date}</p>
                         <p className="mt-1 line-clamp-2 font-display text-[14px] font-semibold leading-[1.55] text-ink">{active.title}</p>
                         <p className="mt-1 text-[10px] font-medium text-soft">اضغط لتثبيت المسار · اضغط مرة ثانية للقراءة</p>
@@ -677,7 +677,7 @@ export default function Atlas() {
                       <p className="text-[.7rem] font-semibold text-accent">المسار الزمني</p>
                       <div className="mt-2 space-y-2">
                         {timelineTrail.map((item) => (
-                          <Link key={`time-${item.star.slug}`} to={`/articles/${item.star.slug}`} className={`group flex items-start gap-3 rounded-xl border px-3 py-2 transition-colors ${item.star.i === active.i ? 'border-accent/45 bg-accent/5 text-ink' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
+                          <Link key={`time-${item.star.slug}`} to={`/articles/${item.star.slug}`} className={`group flex items-start gap-3 rounded-xl border px-3 py-2 transition-colors ${item.star.i === active.i ? 'border-accent/[.45] bg-accent/5 text-ink' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
                             <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-accent opacity-70" />
                             <span className="min-w-0">
                               <span className="block text-[.66rem] font-semibold">{item.label} · {arDigits(item.star.iso.slice(0, 4))}</span>

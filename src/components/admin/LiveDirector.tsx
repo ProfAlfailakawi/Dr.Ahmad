@@ -35,7 +35,7 @@ type DirectorPath = 'article' | 'public' | null
 type StoredProject = LiveDirectorProject & { userId?: string }
 
 const card = 'min-w-0 rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
-const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.86rem] text-ink outline-none transition placeholder:text-soft/55 focus:border-accent'
+const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.86rem] text-ink outline-none transition placeholder:text-soft/[.55] focus:border-accent'
 const primary = 'min-h-11 rounded-full bg-accent px-6 py-2.5 text-[.8rem] font-semibold text-white transition hover:bg-accent-deep disabled:opacity-45'
 const ghost = 'min-h-10 rounded-full border border-hair bg-canvas px-4 py-2 text-[.72rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-45'
 

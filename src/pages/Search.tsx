@@ -338,7 +338,7 @@ export default function Search() {
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="كلمة، فكرة، عنوان، باحث، أو سؤال"
                   aria-label="بحث في الأرشيف كله"
-                  className="w-full rounded-none border-0 border-b border-hair bg-transparent py-5 pe-4 ps-14 font-display text-[clamp(1.2rem,4.3vw,2.5rem)] font-semibold leading-[1.5] text-ink outline-none transition-colors placeholder:text-soft/45 focus:border-accent"
+                  className="w-full rounded-none border-0 border-b border-hair bg-transparent py-5 pe-4 ps-14 font-display text-[clamp(1.2rem,4.3vw,2.5rem)] font-semibold leading-[1.5] text-ink outline-none transition-colors placeholder:text-soft/[.45] focus:border-accent"
                 />
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[1.4rem] text-accent">⌕</span>
               </div>
@@ -450,7 +450,7 @@ export default function Search() {
                     onClick={() => playSpoken(hit)}
                     className="group flex w-full items-start gap-3.5 py-5 text-start transition-colors"
                   >
-                    <span className="mt-1.5 shrink-0 text-[.72rem] text-accent/65 transition-colors group-hover:text-accent">▷</span>
+                    <span className="mt-1.5 shrink-0 text-[.72rem] text-accent/[.65] transition-colors group-hover:text-accent">▷</span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-display text-[1.05rem] leading-[1.8] text-ink transition-colors group-hover:text-accent">
                         {hit.text}

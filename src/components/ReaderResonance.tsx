@@ -100,7 +100,7 @@ export function ArticlePulse({ slug, body }: { slug: string; body: string }) {
       >
         <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent/80" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent/[.08]0" />
         </span>
         <span className="text-[.85rem] font-semibold text-accent">نبض المقال</span>
         <span className="mr-auto text-[.72rem] font-light text-soft transition-transform group-open:rotate-180" aria-hidden>⌄</span>
@@ -216,14 +216,11 @@ export function ReaderFingerprint() {
     }
   }, [quotes, read])
 
-  if (data.articles === 0 && data.sentences === 0) {
+  if (data.articles < 2 && data.sentences === 0) {
     return (
-      <section aria-label="بصمة القارئ" className="rounded-[2rem] border border-hair bg-wash/40 px-6 py-10 text-center">
-        <p className="text-[.74rem] font-semibold uppercase tracking-[.18em] text-accent">بصمتك القارئة</p>
-        <p className="mx-auto mt-3 max-w-md text-[.9rem] font-light leading-relaxed text-soft">
-          حين تقرأ مقالاً أو تحفظ جملةً لامستك، تتشكّل هنا بصمةٌ خاصة بك وحدك — تبقى على جهازك، لا يراها أحد.
-        </p>
-      </section>
+      <p aria-label="بصمة القارئ" className="border-t border-hair py-6 text-center text-[.8rem] font-light leading-relaxed text-soft">
+        تتشكّل بصمتك القارئة بعد رحلتين أو عند حفظ أول جملة؛ وتبقى على جهازك وحده.
+      </p>
     )
   }
 
@@ -245,7 +242,7 @@ export function ReaderFingerprint() {
             كما لبصمته المعرفية شكلٌ ينمو من كل ما يكتب، لرحلتك بصمةٌ تنمو من كل ما يمسّك.
           </p>
           {data.lastQuote ? (
-            <p className="mt-4 border-r-2 border-accent/35 pe-1 ps-4 text-right text-[.9rem] font-light italic leading-[1.9] text-ink/80">
+            <p className="mt-4 border-r-2 border-accent/[.35] pe-1 ps-4 text-right text-[.9rem] font-light italic leading-[1.9] text-ink/80">
               «{data.lastQuote.length > 150 ? `${data.lastQuote.slice(0, 147)}…` : data.lastQuote}»
             </p>
           ) : null}

@@ -709,12 +709,12 @@ export default function AskLibrary() {
                             {answerMode !== 'direct' && (
                               <p className="mt-4 text-[.68rem] leading-relaxed text-soft">رتّبت لك المواد الأقرب عبر الزمن لتتبع الفكرة خطوةً بعد خطوة.</p>
                             )}
-                            <p className="mt-3 border-t border-hair pt-3 text-[.68rem] leading-relaxed text-soft/85">
+                            <p className="mt-3 border-t border-hair pt-3 text-[.68rem] leading-relaxed text-soft/[.85]">
                               الإجابة مستندة إلى مواد منشورة وموثّقة. سؤالك خاص ولا يُنشر.
                             </p>
                             <div className="mt-5 flex flex-wrap gap-2">
                               <button type="button" onClick={() => void copyArchiveAnswer()} className="inline-flex min-h-11 items-center rounded-full border border-hair px-5 text-[.76rem] font-semibold text-ink transition hover:border-accent hover:text-accent">{answerCopied ? '✓ نُسخ الجواب بمصادره' : 'نسخ الجواب بمصادره'}</button>
-                              <Link to="/thought-paths" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/35 px-5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">استكشف المسار الفكري <span aria-hidden>←</span></Link>
+                              <Link to="/thought-paths" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/[.35] px-5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">استكشف المسار الفكري <span aria-hidden>←</span></Link>
                             </div>
                           </>
                         ) : null}
@@ -781,7 +781,7 @@ export default function AskLibrary() {
                           <div className="mt-3 space-y-4">
                             {bookVoice.map((match) => (
                               <figure key={match.quote.id} className="rounded-xl border border-hair bg-wash px-4 py-3.5">
-                                <blockquote className="border-r-2 border-accent/40 pr-3 text-[.92rem] font-light leading-[1.95] text-ink/85">
+                                <blockquote className="border-r-2 border-accent/40 pr-3 text-[.92rem] font-light leading-[1.95] text-ink/[.85]">
                                   {match.quote.text}
                                 </blockquote>
                                 <figcaption className="mt-2 pr-3 text-[.74rem] text-soft">

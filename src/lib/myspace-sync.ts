@@ -2,10 +2,10 @@
  * مزامنة «مساحتي» عبر الأجهزة — اختيارية، بلا حساب ولا بريد.
  *
  * الفلسفة: الوضع المحلي يبقى الافتراضي (خصوصية كاملة). من أراد المزامنة بين
- * هاتفه وحاسوبه يُنشئ «رمز مزامنة» سرّياً؛ يُخزَّن ما يخصّه — موضع القراءة،
- * التظليلات، قائمة الاستماع، المحفوظات، المسارات، الفعاليات — تحت هذا الرمز
- * في Firestore (نفس مسار الكتابة العلني للمشاهدات). الرمز وحده مفتاح الوصول،
- * فمن حازه رأى البيانات — لذا يُنبَّه المستخدم أن يحفظه سرّاً.
+ * هاتفه وحاسوبه يُنشئ «رمز مزامنة» سرّياً؛ تُشفَّر داخل المتصفح بيانات موضع
+ * القراءة والتظليلات وقائمة الاستماع والمحفوظات والمسارات والفعاليات قبل رفعها
+ * إلى Firestore. لا يصل إلى السحابة سوى نص مشفّر، والرمز هو مفتاح فكّه؛ لذلك
+ * يُنبَّه المستخدم إلى حفظه سرياً وعدم مشاركته.
  *
  * الدمج لا يُهدر: القوائم تُوحَّد (لا يضيع تظليلٌ من جهاز)، وموضع القراءة يأخذ
  * الأبعد، والمؤشّرات المفردة يفوز فيها الأحدث دفعاً. وكلُّ شيءٍ يتحمّل غياب
@@ -14,6 +14,9 @@
 
 const CODE_KEY = 'myspace:sync-code:v1'
 const COLLECTION = 'myspace_sync'
+const SYNC_COOLDOWN_MS = 4_000
+let lastSyncAt = 0
+let lastSyncCode = ''
 
 /* المفاتيح الشخصية التي تُزامَن (لا شيء من بيانات الموقع العامة). */
 const EXACT_KEYS = [
@@ -61,7 +64,7 @@ export function generateSyncCode(): string {
 }
 
 export function normalizeSyncCode(raw: string): string {
-  return String(raw || '').trim().toLowerCase().replace(/\s+/g, '')
+  return String(raw || '').trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9-]/g, '')
 }
 
 function allSyncKeys(): string[] {
@@ -146,7 +149,7 @@ export function mergeStates(localState: SyncState, remoteState: SyncState): Sync
   return merged
 }
 
-const CHANGE_EVENTS = ['reader:space-changed', 'reader:quotes-changed', 'reader:journey-changed', 'reader:preferences-changed']
+const CHANGE_EVENTS = ['reader:space-changed', 'reader:quotes-changed', 'reader:journey-changed', 'reader:preferences-changed', 'media:watch-later-changed']
 
 export function applyState(state: SyncState) {
   if (!hasWindow()) return
@@ -155,6 +158,91 @@ export function applyState(state: SyncState) {
   }
   for (const event of CHANGE_EVENTS) {
     try { window.dispatchEvent(new CustomEvent(event)) } catch { /* تجاهل */ }
+  }
+}
+
+type EncryptedEnvelope = {
+  version: 2
+  algorithm: 'AES-GCM'
+  salt: string
+  iv: string
+  ciphertext: string
+}
+
+const bytesToBase64 = (bytes: Uint8Array) => {
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary)
+}
+
+const base64ToBytes = (value: string) => {
+  const binary = atob(value)
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0))
+}
+
+async function encryptionKey(code: string, salt: Uint8Array) {
+  if (!hasWindow() || !window.crypto?.subtle) return null
+  const material = await window.crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(normalizeSyncCode(code)),
+    'PBKDF2',
+    false,
+    ['deriveKey'],
+  )
+  return window.crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 180_000, hash: 'SHA-256' },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  )
+}
+
+async function encryptState(code: string, state: SyncState): Promise<string | null> {
+  try {
+    if (!window.crypto?.getRandomValues) return null
+    const salt = window.crypto.getRandomValues(new Uint8Array(16))
+    const iv = window.crypto.getRandomValues(new Uint8Array(12))
+    const key = await encryptionKey(code, salt)
+    if (!key) return null
+    const encrypted = await window.crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      new TextEncoder().encode(JSON.stringify(state)),
+    )
+    const envelope: EncryptedEnvelope = {
+      version: 2,
+      algorithm: 'AES-GCM',
+      salt: bytesToBase64(salt),
+      iv: bytesToBase64(iv),
+      ciphertext: bytesToBase64(new Uint8Array(encrypted)),
+    }
+    return JSON.stringify(envelope)
+  } catch {
+    return null
+  }
+}
+
+async function decryptState(code: string, raw: string): Promise<SyncState | null> {
+  try {
+    const parsed = parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    const envelope = parsed as Partial<EncryptedEnvelope>
+    if (envelope.version !== 2) return parsed as SyncState
+    if (envelope.algorithm !== 'AES-GCM' || !envelope.salt || !envelope.iv || !envelope.ciphertext) return null
+    const salt = base64ToBytes(envelope.salt)
+    const iv = base64ToBytes(envelope.iv)
+    const key = await encryptionKey(code, salt)
+    if (!key) return null
+    const decrypted = await window.crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      base64ToBytes(envelope.ciphertext),
+    )
+    const state = JSON.parse(new TextDecoder().decode(decrypted))
+    return state && typeof state === 'object' ? state as SyncState : null
+  } catch {
+    return null
   }
 }
 
@@ -176,8 +264,7 @@ export async function pullFromCloud(code: string): Promise<SyncState | null> {
     if (!snapshot.exists()) return null
     const raw = snapshot.data()?.data
     if (typeof raw !== 'string') return null
-    const parsed = parse(raw)
-    return parsed && typeof parsed === 'object' ? (parsed as SyncState) : null
+    return await decryptState(code, raw)
   } catch { return null }
 }
 
@@ -187,7 +274,9 @@ export async function pushToCloud(code: string, state: SyncState): Promise<boole
     const handle = await cloudDoc(code)
     if (!handle) return false
     const { setDoc, serverTimestamp } = await import('firebase/firestore')
-    await setDoc(handle.ref, { data: JSON.stringify(state), updatedAt: serverTimestamp() }, { merge: true })
+    const encrypted = await encryptState(code, state)
+    if (!encrypted) return false
+    await setDoc(handle.ref, { data: encrypted, updatedAt: serverTimestamp() }, { merge: true })
     return true
   } catch { return false }
 }
@@ -199,6 +288,10 @@ export type SyncOutcome = 'synced' | 'unavailable' | 'error'
  * ثم يدفعه ليتقارب الجهازان. يبقى محلياً بسلاسة إن غابت السحابة.
  */
 export async function syncNow(code: string): Promise<SyncOutcome> {
+  const now = Date.now()
+  if (code === lastSyncCode && now - lastSyncAt < SYNC_COOLDOWN_MS) return 'synced'
+  lastSyncAt = now
+  lastSyncCode = code
   const local = collectLocalState()
   const remote = await pullFromCloud(code)
   const merged = remote ? mergeStates(local, remote) : local
@@ -206,4 +299,15 @@ export async function syncNow(code: string): Promise<SyncOutcome> {
   const pushed = await pushToCloud(code, merged)
   if (!pushed && !remote) return 'unavailable'
   return pushed ? 'synced' : 'error'
+}
+
+
+/** يمحو النسخة السحابية فقط بكتابتها حالةً مشفّرة فارغة؛ لا يمسّ بيانات الجهاز. */
+export async function clearCloudState(code: string): Promise<boolean> {
+  const ok = await pushToCloud(code, {})
+  if (ok) {
+    lastSyncAt = Date.now()
+    lastSyncCode = code
+  }
+  return ok
 }

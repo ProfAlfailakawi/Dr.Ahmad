@@ -25,7 +25,7 @@ function OpenItem({ item }: { item: LegacyExample | LegacyRepresentative }) {
       <strong className="mt-1 block text-[.8rem] leading-[1.65] text-ink">{item.title}</strong>
     </>
   )
-  return item.url ? <a href={item.url} target={item.url.startsWith('/') ? undefined : '_blank'} rel="noreferrer" className="block rounded-xl border border-hair bg-canvas px-3.5 py-3 transition-colors hover:border-accent/45">{content}</a> : <div className="rounded-xl border border-hair bg-canvas px-3.5 py-3">{content}</div>
+  return item.url ? <a href={item.url} target={item.url.startsWith('/') ? undefined : '_blank'} rel="noreferrer" className="block rounded-xl border border-hair bg-canvas px-3.5 py-3 transition-colors hover:border-accent/[.45]">{content}</a> : <div className="rounded-xl border border-hair bg-canvas px-3.5 py-3">{content}</div>
 }
 
 export function LegacyModePanel() {

@@ -253,7 +253,7 @@ export function PersistentAudioDock() {
 
   if (isAdmin) {
     return (
-      <div className="persistent-audio-dock fixed inset-x-3 bottom-[calc(5.7rem+env(safe-area-inset-bottom))] z-[275] mx-auto max-w-[520px] rounded-2xl border border-hair bg-canvas/97 p-2.5 shadow-[0_22px_65px_-34px_rgba(21,22,26,.6)] backdrop-blur md:bottom-5 md:left-5 md:right-auto md:mx-0 md:w-[min(420px,calc(100vw-2.5rem))]">
+      <div className="persistent-audio-dock fixed inset-x-3 bottom-[calc(5.7rem+env(safe-area-inset-bottom))] z-[275] mx-auto max-w-[520px] rounded-2xl border border-hair bg-canvas/[.97] p-2.5 shadow-[0_22px_65px_-34px_rgba(21,22,26,.6)] backdrop-blur md:bottom-5 md:left-5 md:right-auto md:mx-0 md:w-[min(420px,calc(100vw-2.5rem))]">
         <div className="flex items-center gap-2.5">
           <button onClick={() => void audio.toggle()} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white" aria-label={audio.playing ? 'إيقاف مؤقت' : 'تشغيل'}>
             {audio.playing ? '❚❚' : '▶'}

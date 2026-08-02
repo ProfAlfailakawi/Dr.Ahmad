@@ -1130,7 +1130,7 @@ ${form.outlet || ''}`
   }
 
   return (
-    <div className="fixed inset-0 z-[400] overflow-y-auto bg-ink/45 px-4 py-8 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`تحرير ${labels[kind].singular}`}>
+    <div className="fixed inset-0 z-[400] overflow-y-auto bg-ink/[.45] px-4 py-8 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`تحرير ${labels[kind].singular}`}>
       <div className="mx-auto max-w-3xl rounded-3xl border border-hair bg-canvas p-5 shadow-2xl md:p-8">
         <div className="mb-7 flex items-start justify-between gap-4">
           <div>
@@ -1148,7 +1148,7 @@ ${form.outlet || ''}`
             <input className={input} dir="ltr" value={form.slug || ''} disabled={Boolean(current)} onChange={(event) => set('slug', slugify(event.target.value))} />
           </Field>
           {ideaDna && <IdeaDnaPanel dna={ideaDna} />}
-          {kind === 'article' && (articleEvidenceReview?.needsReview || correctionCase) && <div className="rounded-2xl border border-accent/35 bg-wash p-4" data-private-evidence-review="true" data-cascade-correction={correctionCase?.status || 'available'}>
+          {kind === 'article' && (articleEvidenceReview?.needsReview || correctionCase) && <div className="rounded-2xl border border-accent/[.35] bg-wash p-4" data-private-evidence-review="true" data-cascade-correction={correctionCase?.status || 'available'}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <span><p className="text-[.78rem] font-semibold text-accent">{correctionCase ? 'بروتوكول التصحيح المتسلسل' : 'مراجعة دليل خاصة مطلوبة'}</p><p className="mt-1 text-[.76rem] leading-relaxed text-soft">تغيّرت حالة مصدر تعتمد عليه هذه المادة. المقال العام لا يحذف ولا يتغير تلقائياً؛ يتوقف فقط ما يعتمد على النسخة المتأثرة.</p></span>
               {correctionCase && <span className={`rounded-full px-3 py-1 text-[.62rem] font-bold ${correctionCase.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : correctionCase.status === 'ready_for_passport' ? 'bg-amber-100 text-amber-800' : 'bg-accent/10 text-accent'}`}>{correctionCase.status === 'resolved' ? 'اكتملت السلسلة' : correctionCase.status === 'ready_for_passport' ? 'جاهز للجواز البديل' : 'تصحيح جار'}</span>}
@@ -1332,7 +1332,7 @@ ${form.outlet || ''}`
 
           {kind === 'paper' && (
             <>
-              <section className="rounded-3xl border border-accent/30 bg-wash/55 p-5 md:p-6">
+              <section className="rounded-3xl border border-accent/30 bg-wash/[.55] p-5 md:p-6">
                 <p className="text-[.78rem] font-semibold text-accent">إدخال سريع</p>
                 <h3 className="mt-1 text-lg font-bold text-ink">أدخل الأساسيات وارفع PDF فقط</h3>
                 <p className="mt-2 max-w-2xl text-[.8rem] leading-relaxed text-soft">عند الحفظ يقرأ النظام ملف PDF كاملاً وصفحة المجلة وDOI والبيانات الوصفية، ثم يضع العينة والمنهج والنتائج والكلمات المفتاحية والروابط في مواضعها تلقائياً. لا تحتاج إلى تعبئة الحقول العلمية يدوياً.</p>
@@ -1374,7 +1374,7 @@ ${form.outlet || ''}`
                       </div>
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         {researchAnalysis.quality.checks.map((check) => (
-                          <div key={check.id} className="flex items-start gap-2 rounded-xl bg-wash/55 px-3 py-2.5">
+                          <div key={check.id} className="flex items-start gap-2 rounded-xl bg-wash/[.55] px-3 py-2.5">
                             <span className={`mt-0.5 ${check.passed ? 'text-accent' : 'text-soft'}`}>{check.passed ? '✓' : '○'}</span>
                             <span className="min-w-0"><strong className="block text-[.76rem] text-ink">{check.label}</strong><span className="mt-0.5 block text-[.68rem] leading-relaxed text-soft">{check.detail}</span></span>
                           </div>
@@ -1490,7 +1490,7 @@ ${form.outlet || ''}`
             )
           })()}
           {needsRecordedOverride && (
-            <div className="rounded-xl border border-accent/35 bg-wash px-4 py-3" data-publication-override="required">
+            <div className="rounded-xl border border-accent/[.35] bg-wash px-4 py-3" data-publication-override="required">
               <label className="flex items-start gap-3 text-[.78rem] leading-relaxed text-ink">
                 <input
                   type="checkbox"

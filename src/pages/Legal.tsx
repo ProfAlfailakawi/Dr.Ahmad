@@ -34,14 +34,14 @@ function Section({ section, lang }: { section: LegalSection; lang: 'ar' | 'en' }
         {section.title}
       </h2>
       {section.body?.map((paragraph) => (
-        <p key={paragraph} className="mt-4 text-[1rem] font-light leading-[2] text-ink/82">
+        <p key={paragraph} className="mt-4 text-[1rem] font-light leading-[2] text-ink/[.82]">
           {paragraph}
         </p>
       ))}
       {section.items && (
         <ul className="mt-5 space-y-3">
           {section.items.map((item) => (
-            <li key={item} className="relative ps-6 text-[.98rem] font-light leading-[1.9] text-ink/82">
+            <li key={item} className="relative ps-6 text-[.98rem] font-light leading-[1.9] text-ink/[.82]">
               <span className={`absolute top-[.72em] h-1.5 w-1.5 rotate-45 bg-accent ${lang === 'ar' ? 'right-0' : 'left-0'}`} />
               {item}
             </li>

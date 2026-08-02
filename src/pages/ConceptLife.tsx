@@ -240,7 +240,7 @@ export default function ConceptLife() {
                         <span className="font-display text-[1.05rem] font-semibold text-accent tabular-nums">{side.year}</span>
                         <span className="text-[.64rem] text-soft">{side.articles === 1 ? 'مقال واحد' : `${side.articles} مقالات`} · تحفّظ {side.caution}٪</span>
                       </figcaption>
-                      <blockquote className="mt-2 border-r-2 border-accent/30 pr-3 text-[.86rem] font-light leading-[1.9] text-ink/85">
+                      <blockquote className="mt-2 border-r-2 border-accent/30 pr-3 text-[.86rem] font-light leading-[1.9] text-ink/[.85]">
                         {side.line}
                       </blockquote>
                       {side.slug && (
@@ -287,7 +287,7 @@ export default function ConceptLife() {
                     </Link>
                     {station.quote ? (
                       <figure className="mt-2">
-                        <blockquote className="border-r-2 border-accent/35 pr-3 text-[.85rem] font-light leading-[1.9] text-ink/80">{station.note}</blockquote>
+                        <blockquote className="border-r-2 border-accent/[.35] pr-3 text-[.85rem] font-light leading-[1.9] text-ink/80">{station.note}</blockquote>
                         <figcaption className="mt-1.5 pr-3">
                           {books.find((item) => item.slug === station.quote!.bookSlug) && (
                             <QuoteCite book={books.find((item) => item.slug === station.quote!.bookSlug)!} page={station.quote.quote.page} />
@@ -312,7 +312,7 @@ export default function ConceptLife() {
             <FadeUp>
               <div className="mt-6 flex flex-wrap gap-3 border-t border-hair pt-8">
                 <Link to={`/search?q=${encodeURIComponent(term)}`} className="rounded-full border border-hair px-5 py-2.5 text-[.76rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">ابحث في الأرشيف كله</Link>
-                <Link to={`/ask?q=${encodeURIComponent(term)}`} className="rounded-full border border-accent/35 px-5 py-2.5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">اسأل الأرشيف عنه</Link>
+                <Link to={`/ask?q=${encodeURIComponent(term)}`} className="rounded-full border border-accent/[.35] px-5 py-2.5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">اسأل الأرشيف عنه</Link>
               </div>
             </FadeUp>
           )}

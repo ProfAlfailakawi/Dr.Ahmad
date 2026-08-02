@@ -244,7 +244,7 @@ function PushGateBanner() {
   }
 
   return (
-    <div className="mb-5 rounded-2xl border border-accent/35 bg-accent/[.05] px-4 py-3" data-push-gate="needs-enable">
+    <div className="mb-5 rounded-2xl border border-accent/[.35] bg-accent/[.05] px-4 py-3" data-push-gate="needs-enable">
       <p className="text-[.82rem] font-semibold text-ink">الإشعارات الفورية غير مفعّلة على هذا الجهاز</p>
       <p className="mt-1 text-[.76rem] leading-relaxed text-soft">
         رسائل القراء واشتراكات النشرة تصل صندوقك، لكنها لن توقظ هاتفك حتى تربط هذا الجهاز مرة واحدة. اضغط الزر ثم اسمح للمتصفح.

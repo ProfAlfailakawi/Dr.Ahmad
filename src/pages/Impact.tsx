@@ -208,7 +208,7 @@ export default function Impact() {
                       <ol className="relative space-y-7 before:absolute before:bottom-3 before:right-[7px] before:top-3 before:w-px before:bg-hair">
                         {nodes.map((node, index) => (
                           <li key={`${node.label}:${node.title}:${index}`} className="relative ps-8">
-                            <span className={`absolute right-0 top-[.35rem] flex h-4 w-4 items-center justify-center rounded-full border ${node.confidence === 'موثق' ? 'border-accent bg-accent' : 'border-accent/45 bg-canvas'}`}>
+                            <span className={`absolute right-0 top-[.35rem] flex h-4 w-4 items-center justify-center rounded-full border ${node.confidence === 'موثق' ? 'border-accent bg-accent' : 'border-accent/[.45] bg-canvas'}`}>
                               {node.confidence === 'موثق' && <span className="h-1.5 w-1.5 rounded-full bg-canvas" />}
                             </span>
                             <EvidenceLink node={node} />

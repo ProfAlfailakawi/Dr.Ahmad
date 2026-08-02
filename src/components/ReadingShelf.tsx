@@ -95,7 +95,7 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
           <button
             type="button"
             onClick={saveAll}
-            className="rounded-full border border-accent/35 px-4 py-2 text-[.72rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+            className="rounded-full border border-accent/[.35] px-4 py-2 text-[.72rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
           >
             {saved ? 'حُفظت في مساحتي ✓' : 'احفظ في مساحتي'}
           </button>
@@ -120,7 +120,7 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
           <li key={`${step.order}-${step.title}`}>
             <Link
               to={step.to || '/'}
-              className="group grid gap-2 rounded-xl border border-hair bg-canvas px-4 py-3 transition-colors hover:border-accent/45 sm:grid-cols-[2.2rem_minmax(0,1fr)_auto] sm:items-center"
+              className="group grid gap-2 rounded-xl border border-hair bg-canvas px-4 py-3 transition-colors hover:border-accent/[.45] sm:grid-cols-[2.2rem_minmax(0,1fr)_auto] sm:items-center"
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-[.72rem] font-semibold text-accent">{step.order}</span>
               <span className="min-w-0">

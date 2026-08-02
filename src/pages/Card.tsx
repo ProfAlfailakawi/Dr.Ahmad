@@ -86,7 +86,7 @@ export default function Card() {
                 href={item.url}
                 target={item.url.startsWith('http') ? '_blank' : undefined}
                 rel="noreferrer"
-                className="group flex items-center justify-between gap-3 rounded-2xl border border-hair bg-canvas px-5 py-3.5 text-start transition-colors hover:border-accent/45"
+                className="group flex items-center justify-between gap-3 rounded-2xl border border-hair bg-canvas px-5 py-3.5 text-start transition-colors hover:border-accent/[.45]"
               >
                 <span className="flex items-center gap-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors group-hover:border-accent group-hover:text-accent">

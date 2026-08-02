@@ -50,9 +50,33 @@ function ClosingSignature() {
     <div ref={ref} className={`closing-signature mt-14 text-center ${visible ? 'is-visible' : ''}`} aria-hidden="true">
       <span className="closing-signature__rule mx-auto block h-px w-14 bg-accent/50" />
       <img src="/logo.png" alt="" width={72} height={44} className="closing-signature__mark mx-auto mt-5 h-11 w-[72px] object-contain opacity-85 dark:invert" loading="lazy" decoding="async" />
-      <span className="closing-signature__name mt-3 block font-display text-[1.02rem] font-semibold text-ink/85">{'\u062F. \u0623\u062D\u0645\u062F \u062D\u0633\u064A\u0646 \u0627\u0644\u0641\u064A\u0644\u0643\u0627\u0648\u064A'}</span>
+      <span className="closing-signature__name mt-3 block font-display text-[1.02rem] font-semibold text-ink/[.85]">{'\u062F. \u0623\u062D\u0645\u062F \u062D\u0633\u064A\u0646 \u0627\u0644\u0641\u064A\u0644\u0643\u0627\u0648\u064A'}</span>
     </div>
   )
+}
+
+function SelectionDiscoveryHint() {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try { if (localStorage.getItem('reader:selection-hint-seen:v1') === '1') return } catch { /* noop */ }
+    let timer = 0
+    const onSelection = () => {
+      const selection = window.getSelection()
+      const text = selection?.toString().trim() || ''
+      const node = selection?.anchorNode
+      const element = node instanceof Element ? node : node?.parentElement
+      if (text.length < 4 || !element?.closest('#article-body')) return
+      try { localStorage.setItem('reader:selection-hint-seen:v1', '1') } catch { /* noop */ }
+      setVisible(true)
+      timer = window.setTimeout(() => setVisible(false), 4200)
+      document.removeEventListener('selectionchange', onSelection)
+    }
+    document.addEventListener('selectionchange', onSelection)
+    return () => { document.removeEventListener('selectionchange', onSelection); window.clearTimeout(timer) }
+  }, [])
+  if (!visible) return null
+  return <div role="status" className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[230] mx-auto max-w-sm rounded-2xl border border-hair bg-canvas/[.96] px-4 py-3 text-center text-[.74rem] leading-[1.75] text-soft shadow-[0_22px_60px_-34px_rgba(21,22,26,.65)] backdrop-blur">ظهرت أدوات الجملة المحددة: عبر السنوات وبطاقة الاقتباس.</div>
 }
 
 
@@ -352,7 +376,7 @@ function IdeaEvolutionCard({ a, articles }: { a: ArticleTimeSeed; articles: Arti
   if (!pair.older && !pair.newer) return null
   return (
     <FadeUp>
-      <aside className="idea-evolution mt-8 rounded-2xl border border-hair bg-wash/65 px-5 py-4">
+      <aside className="idea-evolution mt-8 rounded-2xl border border-hair bg-wash/[.65] px-5 py-4">
         <p className="text-[.72rem] font-semibold text-accent">خريطة تطور الفكرة</p>
         <p className="mt-2 text-[.86rem] leading-[1.9] text-soft">
           هذه الفكرة لا تقف وحدها؛ تظهر ضمن مسار يمتد {years.length > 1 ? `بين ${years[0]} و${years[years.length - 1]}` : `من عام ${a.iso.slice(0, 4)}`}. اقرأها كحلقة في تفكير يتطور، لا كصفحة منفصلة.
@@ -513,7 +537,7 @@ function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; arti
         : null
   return (
     <FadeUp>
-      <details id="student-archive" className="mt-8 rounded-2xl border border-hair bg-wash px-6 py-5">
+      <details id="student-archive" className="mt-5 rounded-2xl border border-hair bg-wash px-6 py-5">
         <summary className="cursor-pointer list-none font-display text-[1.15rem] font-semibold text-ink marker:hidden">
           للطلاب والباحثين <span className="text-accent">＋</span>
         </summary>
@@ -578,7 +602,7 @@ function ReadingLayers({ hasAudio, hasEvolution, slug }: { hasAudio: boolean; ha
 
   return (
     <FadeUp>
-      <nav className="reader-layers mt-7 rounded-2xl border border-hair bg-wash/55 px-4 py-3" aria-label="طبقات قراءة المقال">
+      <nav className="reader-layers mt-7 rounded-2xl border border-hair bg-wash/[.55] px-4 py-3" aria-label="طبقات قراءة المقال">
         <p className="text-[.72rem] font-semibold text-accent">طبقات القراءة</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {links.map((link) => (
@@ -604,7 +628,7 @@ function ArticleClosingNote({ next, related }: { next?: ArticleRecord; related: 
   const target = next || related[0]
   return (
     <FadeUp>
-      <aside className="article-closing-note mt-16 rounded-[2rem] border border-hair bg-wash/45 px-6 py-6 text-center md:px-8">
+      <aside className="article-closing-note mt-16 rounded-[2rem] border border-hair bg-wash/[.45] px-6 py-6 text-center md:px-8">
         <p className="font-display text-[1.2rem] font-semibold leading-[1.7] text-ink">إن بقي السؤال مفتوحاً، فهذا جزء من قيمة الفكرة.</p>
         <p className="mx-auto mt-2 max-w-[520px] text-[.86rem] leading-[1.9] text-soft">
           تستطيع أن تتابع خيطها عبر الزمن، أو تنتقل إلى نص قريب يكمل المعنى من زاوية أخرى.
@@ -774,15 +798,10 @@ export default function ArticleDetail() {
             </h1>
             <div className="mt-6 h-[2px] w-16 bg-accent" />
             {article.body && (
-              <div className="article-reading-actions serenity-hide mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 pb-1">
-                <div className="flex shrink-0 items-center gap-2 order-1 sm:order-2"><SaveForLaterButton slug={article.slug} /><button type="button" onClick={() => setSerenity(true)} title="وضع السكينة — يبقى النص وحده" aria-label="وضع السكينة" className="article-tool-icon"><span aria-hidden className="text-[1.02rem] leading-none">۩</span></button><ReaderControls article={article} /></div>
+              <div className="article-reading-actions serenity-hide mt-4 flex flex-wrap items-center gap-x-3 gap-y-3 pb-1">
                 <div id="article-audio" className="order-2 w-full min-w-0 sm:order-1 sm:w-auto sm:flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
+                <div className="order-1 flex shrink-0 items-center sm:order-2"><ReaderControls article={article} saveControl={<SaveForLaterButton slug={article.slug} />} onSerenity={() => setSerenity(true)} /></div>
               </div>
-            )}
-            {article.body && (
-              <p className="serenity-hide mt-1.5 text-[.68rem] leading-relaxed text-soft/75">
-                حدّد أي جملة داخل المقال؛ تظهر عندها أداتا «عبر السنوات» و«بطاقة اقتباس».
-              </p>
             )}
           </FadeUp>
 
@@ -797,6 +816,7 @@ export default function ArticleDetail() {
                 <ClosingSignature />
                 {/* أداة التحديد لا تظهر إلا حين يختار القارئ نصاً؛ لا تزاحم نهاية المقال. */}
                 <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />
+                <SelectionDiscoveryHint />
               </>
             ) : loading ? (
               /* المتون حزمة كسولة: أثناء وصولها لا نتهم مقالاً كاملاً بأنه «قيد الإضافة» */
@@ -831,38 +851,24 @@ export default function ArticleDetail() {
           </FadeUp>
 
           <FadeUp className="serenity-hide">
-            <IdeaLife article={article} articles={articles} books={books} papers={papers} media={media} />
-          </FadeUp>
-
-          {/* «حياة الفكرة» ثم أدوات الباحث: رحلة واحدة متصلة قبل خاتمة المشاركة. */}
-          {article.body && (
-            <FadeUp className="serenity-hide">
-              <ArticleExtensions article={article} articles={articles} books={books} papers={papers} />
-            </FadeUp>
-          )}
-
-          {/* نُقل «خيط الفكرة» و«أثر الفكرة» بكامل وظيفتهما إلى نافذة «حياة هذه الفكرة» من دون حذف أي مسار. */}
-
-          <FadeUp className="serenity-hide">
-            <section className="mt-8 border-y border-hair py-5" aria-label="مشاركة المقال والاستشهاد به">
-              <p className="mb-3 text-[.78rem] font-medium text-soft">شارك المقال</p>
-              <div className="flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <Share compact title={a.title} path={`/articles/${a.slug}`} />
-                {liveLink(article.source) && (
-                  <a
-                    href={liveLink(article.source)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="article-tool-icon"
-                    aria-label="فتح المصدر الأصلي"
-                    title="المصدر الأصلي"
-                  >
-                    <svg aria-hidden viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 3h7v7" /><path d="M21 3l-9 9" /><path d="M18 13v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h5" />
-                    </svg>
-                  </a>
-                )}
-                <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
+            <section className="mt-10 border-y border-hair py-5" aria-labelledby="after-reading-title">
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <h2 id="after-reading-title" className="font-display text-[1.05rem] font-semibold text-ink">بعد القراءة</h2>
+                <p className="text-[.7rem] text-soft">امتداد الفكرة · أدوات الباحث · المشاركة والاستشهاد</p>
+              </div>
+              <IdeaLife article={article} articles={articles} books={books} papers={papers} media={media} />
+              {article.body && <ArticleExtensions article={article} articles={articles} books={books} papers={papers} />}
+              <div className="mt-6 border-t border-hair pt-5" aria-label="مشاركة المقال والاستشهاد به">
+                <p className="mb-3 text-[.76rem] font-medium text-soft">شارك المقال</p>
+                <div className="flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <Share compact title={a.title} path={`/articles/${a.slug}`} />
+                  {liveLink(article.source) && (
+                    <a href={liveLink(article.source)} target="_blank" rel="noreferrer" className="article-tool-icon" aria-label="فتح المصدر الأصلي" title="المصدر الأصلي">
+                      <svg aria-hidden viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3h7v7" /><path d="M21 3l-9 9" /><path d="M18 13v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h5" /></svg>
+                    </a>
+                  )}
+                  <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
+                </div>
               </div>
             </section>
           </FadeUp>

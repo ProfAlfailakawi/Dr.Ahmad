@@ -30,7 +30,7 @@ export default function NotFound() {
               {/* أفلاك هادئة من لغة الهوية — الرقم فكرة خرجت عن مدارها */}
               <div className="not-found-orbits" aria-hidden="true"><span /><span /><span /><i /></div>
               <motion.span
-                className="not-found-code relative block font-display text-[clamp(5rem,15vw,9rem)] font-bold leading-none text-accent/15"
+                className="not-found-code relative block font-display text-[clamp(5rem,15vw,9rem)] font-bold leading-none text-accent/[.15]"
                 initial={{ opacity: 0, scale: 0.94 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, ease: EASE }}

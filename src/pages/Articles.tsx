@@ -125,51 +125,44 @@ export default function Articles() {
         sub="مقالاتٌ أكتبها منذ انطلاق رحلتي العلمية عام 2015؛ أقرأ فيها تحولات التعليم والتكنولوجيا والمجتمع، وأتتبع ما تتركه في الإنسان والممارسة والحياة العامة."
       />
 
-      <section className="sticky top-16 z-[120] border-b border-hair bg-canvas/92 px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
-        <div className="mx-auto grid max-w-shell gap-3 lg:grid-cols-[minmax(230px,.55fr)_minmax(0,1fr)_auto_auto] lg:items-center">
-          <div className="relative">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="ابحث في المقالات…"
-              aria-label="بحث"
-              className="w-full rounded-full border border-hair bg-canvas py-3 pe-12 ps-5 text-[.94rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
-            />
-            <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft">⌕</span>
-          </div>
-          <div className="rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
+      <section className="sticky top-16 z-[120] border-b border-hair bg-canvas/[.92] px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
+        <div className="mx-auto max-w-shell">
+          <div className="rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCat(c)}
-                className={`shrink-0 rounded-full border px-4 py-2 text-[.82rem] font-medium transition-colors duration-300 ${
-                  cat === c ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'
-                }`}
+                className={`shrink-0 rounded-full border px-4 py-2 text-[.82rem] font-medium transition-colors duration-300 ${cat === c ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
               >
                 {categoryLabel(c)}
               </button>
             ))}
           </div>
-          <label className="relative min-w-36">
-            <span className="sr-only">تصفية المقالات حسب السنة</span>
-            <select
-              value={year}
-              onChange={(event) => setYear(event.target.value)}
-              className="min-h-11 w-full appearance-none rounded-full border border-hair bg-canvas py-2 pe-9 ps-4 text-[.82rem] font-medium text-soft outline-none transition-colors hover:border-accent focus:border-accent"
-            >
-              <option value="الكل">كل السنوات</option>
-              {archiveYears.map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-            <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[.7rem] text-soft">⌄</span>
-          </label>
-          <div className="flex flex-wrap gap-4 text-[.8rem] font-semibold text-accent lg:justify-end">
-            <Link to="/search" className="transition-opacity hover:opacity-70">البحث العميق ←</Link>
-            <Link to="/atlas" className="transition-opacity hover:opacity-70">سماء المقالات ←</Link>
+          <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+            <div className="relative">
+              <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="ابحث في المقالات…" aria-label="بحث" className="w-full rounded-full border border-hair bg-canvas py-3 pe-12 ps-5 text-[.9rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent" />
+              <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft">⌕</span>
+            </div>
+            <label className="relative min-w-36">
+              <span className="sr-only">تصفية المقالات حسب السنة</span>
+              <select value={year} onChange={(event) => setYear(event.target.value)} className="min-h-11 w-full appearance-none rounded-full border border-hair bg-canvas py-2 pe-9 ps-4 text-[.82rem] font-medium text-soft outline-none transition-colors hover:border-accent focus:border-accent">
+                <option value="الكل">كل السنوات</option>
+                {archiveYears.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[.7rem] text-soft">⌄</span>
+            </label>
+            <details className="group relative">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف الأرشيف <span aria-hidden className="transition-transform group-open:rotate-180">⌄</span></summary>
+              <div className="absolute left-0 top-[calc(100%+.5rem)] z-20 min-w-44 rounded-xl border border-hair bg-canvas p-2 shadow-[0_18px_50px_-30px_rgba(21,22,26,.55)]">
+                <Link to="/search" className="block rounded-lg px-3 py-2 text-[.76rem] font-semibold text-ink hover:bg-wash hover:text-accent">البحث العميق</Link>
+                <Link to="/atlas" className="block rounded-lg px-3 py-2 text-[.76rem] font-semibold text-ink hover:bg-wash hover:text-accent">سماء المقالات</Link>
+              </div>
+            </details>
           </div>
         </div>
       </section>
 
-      {/* featured trio - 3 distinct, expressive card variations */}
+      {/* featured trio — بنية موحّدة، والاختلاف تحريري لا زخرفي */}
       {!term && featured.length > 0 && <section className="border-b border-hair px-4 py-10 sm:px-6 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           <div className="mb-6 flex items-center justify-between">
@@ -179,98 +172,18 @@ export default function Articles() {
             <span className="text-[.75rem] text-soft">3 عدسات موضوعية متجددة</span>
           </div>
           <div className="article-featured-rail mx-0 flex snap-x snap-mandatory gap-4 overflow-x-auto px-0 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:pb-0">
-            {featured.map((e, i) => {
-              // Card style variation 0: Highlight Hero Card
-              if (i === 0) {
-                return (
-                  <FadeUp key={e.title} delay={0} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
-                    <Link
-                      to={`/articles/${e.slug}`}
-                      viewTransition
-                      className="group flex h-full min-w-0 flex-col justify-between rounded-2xl border border-accent/30 bg-accent/[.045] p-6 shadow-sm transition-all duration-300 hover:border-accent hover:bg-accent/[.07] hover:shadow-md"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-[.7rem] font-bold text-white">
-                            <span className="h-1.5 w-1.5 rounded-full bg-white/80" />
-                            {e.tag} · أبرز مقال
-                          </span>
-                          <span className="text-[.75rem] font-bold text-accent">01</span>
-                        </div>
-                        <h3 style={{ viewTransitionName: `article-${e.slug}` }} className="mt-4 break-words font-display text-[1.18rem] font-bold leading-[1.5] text-ink transition-colors group-hover:text-accent sm:text-[1.32rem]">
-                          {e.title}
-                        </h3>
-                        <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.9rem] leading-[1.8] text-soft">
-                          {e.quote}
-                        </blockquote>
-                      </div>
-                      <div className="mt-6 flex items-center justify-between border-t border-accent/20 pt-4 text-[.78rem] font-bold text-accent">
-                        <span>اقرأ المقال الكامل</span>
-                        <span className="transition-transform group-hover:translate-x-1">←</span>
-                      </div>
-                    </Link>
-                  </FadeUp>
-                )
-              }
-
-              // Card style variation 1: Archival Framed Card
-              if (i === 1) {
-                return (
-                  <FadeUp key={e.title} delay={0.08} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
-                    <Link
-                      to={`/articles/${e.slug}`}
-                      viewTransition
-                      className="group flex h-full min-w-0 flex-col justify-between rounded-2xl border border-hair border-t-4 border-t-accent bg-paper p-6 transition-all duration-300 hover:border-accent/50 hover:shadow-md"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="inline-flex rounded-md border border-hair bg-canvas px-2.5 py-1 text-[.7rem] font-bold text-soft">
-                            {e.tag} · قراءة من الأرشيف
-                          </span>
-                          <span className="text-[.75rem] font-bold text-soft">02</span>
-                        </div>
-                        <h3 style={{ viewTransitionName: `article-${e.slug}` }} className="mt-4 break-words font-display text-[1.12rem] font-bold leading-[1.52] text-ink transition-colors group-hover:text-accent sm:text-[1.25rem]">
-                          {e.title}
-                        </h3>
-                        <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.88rem] leading-[1.8] text-soft/90">
-                          {e.quote}
-                        </blockquote>
-                      </div>
-                      <div className="mt-6 flex items-center justify-between border-t border-hair pt-4 text-[.78rem] font-semibold text-soft group-hover:text-accent">
-                        <span>استكشف هذا المقال</span>
-                        <span className="transition-transform group-hover:translate-x-1">←</span>
-                      </div>
-                    </Link>
-                  </FadeUp>
-                )
-              }
-
-              // Card style variation 2: Editorial Cross-topic Card
+            {featured.map((entry, index) => {
+              const labels = ['الأبرز', 'من الأرشيف', 'زاوية مختلفة']
               return (
-                <FadeUp key={e.title} delay={0.16} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
-                  <Link
-                    to={`/articles/${e.slug}`}
-                    viewTransition
-                    className="group flex h-full min-w-0 flex-col justify-between rounded-2xl border border-hair border-r-4 border-r-accent bg-canvas p-6 transition-all duration-300 hover:border-accent/60 hover:bg-paper hover:shadow-md"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="inline-flex rounded-full bg-accent/10 px-3 py-1 text-[.7rem] font-bold text-accent">
-                          {e.tag} · إضاءة موضوعية
-                        </span>
-                        <span className="text-[.75rem] font-bold text-soft">03</span>
-                      </div>
-                      <h3 style={{ viewTransitionName: `article-${e.slug}` }} className="mt-4 break-words font-display text-[1.12rem] font-bold leading-[1.52] text-ink transition-colors group-hover:text-accent sm:text-[1.25rem]">
-                        {e.title}
-                      </h3>
-                      <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.88rem] font-normal leading-[1.8] text-soft">
-                        {e.quote}
-                      </blockquote>
+                <FadeUp key={entry.slug} delay={index * 0.08} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
+                  <Link to={`/articles/${entry.slug}`} viewTransition className="group flex h-full min-w-0 flex-col rounded-2xl border border-hair bg-canvas p-6 transition-[border-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex rounded-full border border-hair bg-wash px-3 py-1 text-[.68rem] font-semibold text-accent">{entry.tag} · {labels[index] || 'مختارة'}</span>
+                      <span className="text-[.7rem] font-semibold text-soft">0{index + 1}</span>
                     </div>
-                    <div className="mt-6 flex items-center justify-between border-t border-hair pt-4 text-[.78rem] font-semibold text-soft group-hover:text-accent">
-                      <span>مقال ذو صلة</span>
-                      <span className="transition-transform group-hover:translate-x-1">←</span>
-                    </div>
+                    <h3 style={{ viewTransitionName: `article-${entry.slug}` }} className="mt-4 break-words font-display text-[1.16rem] font-bold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.26rem]">{entry.title}</h3>
+                    <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.88rem] leading-[1.8] text-soft">{entry.quote}</blockquote>
+                    <span aria-hidden className="mt-auto pt-6 text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1">←</span>
                   </Link>
                 </FadeUp>
               )

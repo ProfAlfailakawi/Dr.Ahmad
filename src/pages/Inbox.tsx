@@ -249,7 +249,7 @@ export default function Inbox() {
       </nav>
 
       {activeView === "threads" && archiveDialogues.length > 0 && (
-        <section className="border-b border-hair bg-wash/35 px-6 py-14 md:px-11 md:py-20" aria-labelledby="archive-dialogue-title">
+        <section className="border-b border-hair bg-wash/[.35] px-6 py-14 md:px-11 md:py-20" aria-labelledby="archive-dialogue-title">
           <div className="mx-auto max-w-shell">
             <FadeUp>
               <div className="grid gap-5 md:grid-cols-[minmax(0,.72fr)_minmax(0,1.28fr)] md:items-end">
@@ -262,13 +262,13 @@ export default function Inbox() {
             <div className="archive-dialogue-rail mobile-card-rail mt-8 grid items-stretch gap-5 md:grid-cols-2">
               {archiveDialogues.map((item, index) => (
                 <FadeUp key={item.id} delay={Math.min(index * .06, .2)} className="flex h-full">
-                  <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-hair bg-canvas p-6 shadow-[0_18px_55px_-48px_rgba(21,32,44,.55)] transition hover:border-accent/55">
+                  <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-hair bg-canvas p-6 shadow-[0_18px_55px_-48px_rgba(21,32,44,.55)] transition hover:border-accent/[.55]">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="rounded-full bg-accent/[.08] px-3 py-1 text-[.66rem] font-bold text-accent">{item.label}</span>
                       <span className="text-[.63rem] font-semibold text-soft">{item.mode}</span>
                     </div>
                     <h3 className="mt-5 font-display text-[1.12rem] font-semibold leading-[1.65] text-ink">{item.title}</h3>
-                    <p className="mt-3 flex-1 text-[.86rem] font-light leading-[1.95] text-ink/78">{item.body}</p>
+                    <p className="mt-3 flex-1 text-[.86rem] font-light leading-[1.95] text-ink/[.78]">{item.body}</p>
                     <div className="mt-6 border-t border-hair pt-4">
                       <span className="text-[.64rem] font-semibold text-soft">ارجع إلى المواد التي بنت هذا المسار</span>
                       <div className="mt-2 flex flex-wrap gap-2">
@@ -303,10 +303,10 @@ export default function Inbox() {
             <div className="mt-8 grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:items-end">
               <FadeUp delay={0.06}>
                 <blockquote className="relative overflow-hidden rounded-[2rem] border border-hair bg-wash px-7 py-9 md:px-11 md:py-12">
-                  <span className="absolute right-8 top-3 font-display text-[5rem] leading-none text-accent/15">
+                  <span className="absolute right-8 top-3 font-display text-[5rem] leading-none text-accent/[.15]">
                     ”
                   </span>
-                  <p className="relative line-clamp-5 font-display text-[clamp(1.2rem,2.2vw,1.72rem)] font-light leading-[2] text-ink/92">
+                  <p className="relative line-clamp-5 font-display text-[clamp(1.2rem,2.2vw,1.72rem)] font-light leading-[2] text-ink/[.92]">
                     {featuredLetter.message}
                   </p>
                   <button type="button" onClick={() => setOpenCard({ title: "رسالة على الهامش", body: featuredLetter.message, reply: featuredLetter.reply })} className="relative mt-6 inline-flex min-h-10 items-center text-[.8rem] font-semibold text-accent transition-colors hover:text-accent-deep">
@@ -320,7 +320,7 @@ export default function Inbox() {
                     <span className="text-[.72rem] font-semibold uppercase text-accent">
                       تعقيب الدكتور
                     </span>
-                    <p className="mt-3 line-clamp-4 font-display text-[1.06rem] leading-[1.95] text-ink/82">
+                    <p className="mt-3 line-clamp-4 font-display text-[1.06rem] leading-[1.95] text-ink/[.82]">
                       {featuredLetter.reply}
                     </p>
                   </div>
@@ -340,7 +340,7 @@ export default function Inbox() {
               {letterPages.pageItems.map((letter, index) => (
                 <FadeUp key={letter.id} delay={Math.min(index * 0.05, 0.25)}>
                   <button type="button" onClick={() => setOpenCard({ title: "رسالة على الهامش", body: letter.message, reply: letter.reply })} className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-6 text-right transition-colors hover:border-accent">
-                    <p className="line-clamp-3 font-display text-[1.02rem] font-light leading-[1.9] text-ink/84">{letter.message}</p>
+                    <p className="line-clamp-3 font-display text-[1.02rem] font-light leading-[1.9] text-ink/[.84]">{letter.message}</p>
                     <span className="mt-5 text-[.78rem] font-semibold text-accent">فتح الرسالة ←</span>
                   </button>
                 </FadeUp>
@@ -473,14 +473,14 @@ export default function Inbox() {
       </section>
       )}
       {openCard && typeof document !== "undefined" ? createPortal(
-        <div className="reader-modal-overlay fixed inset-0 z-[320] flex items-end justify-center bg-ink/35 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label={openCard.title} onMouseDown={(event) => { if (event.target === event.currentTarget) setOpenCard(null) }}>
+        <div className="reader-modal-overlay fixed inset-0 z-[320] flex items-end justify-center bg-ink/[.35] p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label={openCard.title} onMouseDown={(event) => { if (event.target === event.currentTarget) setOpenCard(null) }}>
           <article className="max-h-[88dvh] w-full max-w-2xl overflow-y-auto rounded-t-[1.75rem] border border-hair bg-canvas p-6 shadow-2xl sm:rounded-[1.75rem] sm:p-9" tabIndex={-1}>
             <div className="flex items-start justify-between gap-5 border-b border-hair pb-5">
               <h2 className="font-display text-[1.25rem] font-semibold leading-relaxed text-ink">{openCard.title}</h2>
               <button type="button" autoFocus onClick={() => setOpenCard(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent" aria-label="إغلاق">×</button>
             </div>
-            <p className="mt-6 whitespace-pre-line font-display text-[1.05rem] font-light leading-[2] text-ink/88">{openCard.body}</p>
-            {openCard.reply && <div className="mt-7 border-r-2 border-accent pr-5"><span className="text-[.72rem] font-semibold text-accent">تعقيب الدكتور</span><p className="mt-2 whitespace-pre-line leading-[1.95] text-ink/82">{openCard.reply}</p></div>}
+            <p className="mt-6 whitespace-pre-line font-display text-[1.05rem] font-light leading-[2] text-ink/[.88]">{openCard.body}</p>
+            {openCard.reply && <div className="mt-7 border-r-2 border-accent pr-5"><span className="text-[.72rem] font-semibold text-accent">تعقيب الدكتور</span><p className="mt-2 whitespace-pre-line leading-[1.95] text-ink/[.82]">{openCard.reply}</p></div>}
           </article>
         </div>,
         document.body,

@@ -173,7 +173,7 @@ export default function Questions() {
               {/* الجسر إلى العقل الحي: السؤال يفتح المكتبة كلها بنقرة (مقترح معتمد) */}
               <Link
                 to={`/ask?q=${encodeURIComponent(currentQuestion.ar)}`}
-                className="inline-flex items-center gap-2 rounded-full border border-accent/35 px-5 py-2.5 text-[.82rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+                className="inline-flex items-center gap-2 rounded-full border border-accent/[.35] px-5 py-2.5 text-[.82rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
               >
                 ابحث عن هذا السؤال في أرشيفي
                 <span aria-hidden>←</span>

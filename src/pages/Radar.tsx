@@ -254,7 +254,7 @@ export default function Radar() {
                     ))}
                   </div>
                   {w.items.length > 2 && (
-                    <details className="group mt-5 rounded-2xl border border-hair bg-wash/35 px-5 py-4">
+                    <details className="group mt-5 rounded-2xl border border-hair bg-wash/[.35] px-5 py-4">
                       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 text-[.82rem] font-semibold text-accent marker:hidden">
                         <span>بقية مواد هذا الأسبوع</span>
                         <span className="text-soft transition-transform group-open:rotate-45" aria-hidden="true">＋</span>

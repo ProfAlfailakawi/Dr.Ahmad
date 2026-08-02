@@ -108,15 +108,15 @@ export default function KnowledgeFingerprint() {
           <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-[.8rem] text-soft">
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
-              {articles.length} مقالاً
+              المقالات
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full border border-accent/70" aria-hidden="true" />
-              {papers.length} بحثاً محكّماً
+              الأبحاث المحكّمة
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-accent ring-2 ring-canvas" aria-hidden="true" />
-              {books.length} كتب
+              الكتب
             </span>
           </div>
         </div>

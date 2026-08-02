@@ -6,21 +6,14 @@ import { useCmsContent } from '../lib/content'
 import type { MediaRecord } from '../lib/cms'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { Link } from 'react-router'
+import { MediaSaveButton } from '../components/MySpace'
+import { SPACE_EVENT, savedMediaSlugs } from '../lib/reading-space'
 
 const id = (url: string) => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
 const mediaCount = (count: number) => {
   if (count === 1) return 'لقاء واحد'
   if (count === 2) return 'لقاءان'
   return `${count} لقاءات`
-}
-
-/* «شاهد لاحقاً» — قائمة محلية على جهاز الزائر وحده (مقترح معتمد) */
-const WATCH_LATER_KEY = 'media:watch-later:v1'
-const loadWatchLater = (): string[] => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(WATCH_LATER_KEY) || '[]')
-    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : []
-  } catch { return [] }
 }
 
 export default function Media() {
@@ -41,16 +34,18 @@ export default function Media() {
   const [year, setYear] = useState('الكل')
   const [outlet, setOutlet] = useState('الكل')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [watchLater, setWatchLater] = useState<string[]>(() => typeof window === 'undefined' ? [] : loadWatchLater())
+  const [watchLater, setWatchLater] = useState<string[]>(() => typeof window === 'undefined' ? [] : savedMediaSlugs())
 
-  const toggleWatchLater = (slug: string) => {
-    setWatchLater((previous) => {
-      const next = previous.includes(slug) ? previous.filter((item) => item !== slug) : [...previous, slug].slice(-30)
-      try { localStorage.setItem(WATCH_LATER_KEY, JSON.stringify(next)) } catch { /* noop */ }
-      return next
-    })
-  }
-  useEffect(() => { setWatchLater(loadWatchLater()) }, [])
+  useEffect(() => {
+    const sync = () => setWatchLater(savedMediaSlugs())
+    sync()
+    window.addEventListener(SPACE_EVENT, sync)
+    window.addEventListener('storage', sync)
+    return () => {
+      window.removeEventListener(SPACE_EVENT, sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
 
   const years = useMemo(() => Array.from(new Set(uniqueMedia.map((item) => (item.iso || '').slice(0, 4)).filter(Boolean))).sort((a, b) => b.localeCompare(a)), [uniqueMedia])
   const outlets = useMemo(() => Array.from(new Set(uniqueMedia.map((item) => item.outlet).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ar')), [uniqueMedia])
@@ -87,7 +82,6 @@ export default function Media() {
   const Card = ({ m, index, large = false }: { m: MediaRecord; index: number; large?: boolean }) => {
     const videoUrl = m.url || ''
     const videoId = id(videoUrl)
-    const saved = watchLater.includes(m.slug)
     return (
       <motion.div
         initial={reduce ? false : { opacity: 0 }}
@@ -104,17 +98,27 @@ export default function Media() {
           <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: large ? '21 / 9' : '16 / 9' }}>
             {videoId && (
               <img
-                src={m.thumbnail || `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`}
+                src={m.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
                 alt={m.title}
                 loading="lazy"
                 decoding="async"
                 width={480}
                 height={270}
-                onError={(e) => {
-                  const img = e.currentTarget
-                  // احتياطي: جرّب مقاساً آخر مرّة، وإلا أخفِ الصورة (تبقى الخلفية الأنيقة وزر التشغيل)
-                  if (!img.dataset.fallback) { img.dataset.fallback = '1'; img.src = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }
-                  else { img.style.display = 'none' }
+                onLoad={(event) => {
+                  const img = event.currentTarget
+                  if (!m.thumbnail && img.naturalWidth <= 120 && !img.dataset.fallback) {
+                    img.dataset.fallback = '1'
+                    img.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
+                  }
+                }}
+                onError={(event) => {
+                  const img = event.currentTarget
+                  if (!img.dataset.fallback) {
+                    img.dataset.fallback = '1'
+                    img.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
+                  } else {
+                    img.style.display = 'none'
+                  }
                 }}
                 className="h-full w-full object-cover"
               />
@@ -134,16 +138,8 @@ export default function Media() {
             {m.topics && <p className="mt-2 line-clamp-2 text-[.76rem] leading-relaxed text-soft">{m.topics}</p>}
           </div>
         </Link>
-        {/* «شاهد لاحقاً» — على جهازك وحدك، بلا حساب */}
-        <button
-          type="button"
-          onClick={() => toggleWatchLater(m.slug)}
-          aria-label={saved ? 'أزل من قائمة المشاهدة' : 'شاهد لاحقاً'}
-          title={saved ? 'أزل من قائمة المشاهدة' : 'شاهد لاحقاً — تُحفظ على جهازك فقط'}
-          className={`absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border text-[.85rem] backdrop-blur transition-colors ${saved ? 'border-accent bg-accent text-white' : 'border-white/70 bg-ink/35 text-white hover:bg-accent'}`}
-        >
-          {saved ? '✓' : '+'}
-        </button>
+        {/* القائمة نفسها تظهر داخل «مساحتي» وفي صفحة اللقاء، بلا تكرار تخزين. */}
+        <MediaSaveButton slug={m.slug} className="absolute left-4 top-4 border-white/70 shadow-sm backdrop-blur" />
       </motion.div>
     )
   }

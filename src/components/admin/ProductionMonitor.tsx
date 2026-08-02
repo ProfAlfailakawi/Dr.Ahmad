@@ -696,7 +696,7 @@ export function ProductionMonitor({
             </div>
           )}
           {proof && (
-            <div className="mt-4 grid gap-2 rounded-xl border border-accent/15 bg-canvas p-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+            <div className="mt-4 grid gap-2 rounded-xl border border-accent/[.15] bg-canvas p-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
               <div>
                 <strong className="block text-[.68rem] text-ink">إثبات قبل / بعد</strong>
                 <span className="mt-1 block text-[.62rem] text-soft">قراءة راجعة موثقة في {safeDate(proof.checkedAt)}</span>

@@ -101,7 +101,7 @@ export default function FirstVisitOnboarding() {
       {visible && (
         <motion.div
           data-first-visit-onboarding="true"
-          className="fixed inset-0 z-[520] flex items-end justify-center bg-ink/45 p-3 backdrop-blur-[7px] sm:items-center sm:p-6"
+          className="fixed inset-0 z-[520] flex items-end justify-center bg-ink/[.45] p-3 backdrop-blur-[7px] sm:items-center sm:p-6"
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -153,7 +153,7 @@ export default function FirstVisitOnboarding() {
               <div className="mt-8 flex items-center justify-between gap-4 border-t border-hair pt-5">
                 <div className="flex items-center gap-1.5" aria-label={`الخطوة ${step + 1} من ${steps.length}`}>
                   {steps.map((_, index) => (
-                    <span key={index} aria-hidden className={`h-1.5 rounded-full transition-all duration-300 ${index === step ? 'w-7 bg-accent' : 'w-1.5 bg-ink/15 dark:bg-white/20'}`} />
+                    <span key={index} aria-hidden className={`h-1.5 rounded-full transition-all duration-300 ${index === step ? 'w-7 bg-accent' : 'w-1.5 bg-ink/[.15] dark:bg-white/20'}`} />
                   ))}
                 </div>
                 <div className="flex items-center gap-2">

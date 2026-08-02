@@ -6,6 +6,7 @@ import { loadArticleBodies } from '../../lib/article-bodies'
 import { fetchPublishedExtras } from '../../lib/firebase'
 import { beginAdminTask } from '../../lib/admin-task-state'
 import { PersonalKnowledgeGraph } from './PersonalKnowledgeGraph'
+import { AnswerQualityLab } from './AnswerQualityLab'
 import type { AdminTab } from './admin-navigation'
 import {
   articleSystem,
@@ -324,12 +325,12 @@ function AudioWorkspaceBridge({ onOpen }: { onOpen: (tab: AdminTab) => void }) {
 
 export function IntelligenceLab({ articles, onOpen }: { articles: ArticleRecord[]; onOpen: (tab: AdminTab) => void }) {
   const [richArticles, setRichArticles] = useState<ArticleRecord[]>(articles)
-  const [view, setView] = useState<'before' | 'develop' | 'system'>(() => {
+  const [view, setView] = useState<'before' | 'develop' | 'system' | 'quality'>(() => {
     if (typeof window === 'undefined') return 'before'
     try {
       const requested = sessionStorage.getItem('admin:lab-view')
       sessionStorage.removeItem('admin:lab-view')
-      return requested === 'develop' ? 'develop' : 'before'
+      return requested === 'develop' || requested === 'quality' ? requested : 'before'
     } catch { return 'before' }
   })
 
@@ -351,15 +352,17 @@ export function IntelligenceLab({ articles, onOpen }: { articles: ArticleRecord[
     <div className="grid gap-5">
       <section className={card}>
         <p className="text-[.76rem] font-semibold uppercase text-accent">المختبر المتقدم</p>
-        <p className="mt-2 text-[.88rem] leading-relaxed text-soft">الأدوات نفسها باقية، لكنها موزعة على ثلاث غرف حتى لا تظهر كلها في شاشة واحدة.</p>
+        <p className="mt-2 text-[.88rem] leading-relaxed text-soft">الأدوات نفسها باقية، ومختبر الجودة الداخلي منفصل حتى لا يلوث واجهة الموقع العامة.</p>
         <div className="mt-5 flex min-w-0 flex-wrap gap-2 pb-1 md:flex-nowrap md:overflow-x-auto">
-          {([['before','قبل النشر'],['develop','تطوير الفكرة'],['system','تحويل المقال والصوت']] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{label}</button>)}
+          {([['before','قبل النشر'],['develop','تطوير الفكرة'],['system','تحويل المقال والصوت'],['quality','جودة اسأل المكتبة']] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{label}</button>)}
         </div>
       </section>
 
       {view === 'before' && <LabLayer title="قبل النشر" note="فحص الجاهزية وخطة نشر تتغير تلقائياً كل شهر."><ReadinessCard articles={richArticles} /><MonthlyPlanDetails articles={richArticles} /></LabLayer>}
 
       {view === 'develop' && <LabLayer title="تطوير الفكرة" note="مساحة هادئة لتطوير سؤال أو خبر أو ملاحظة، وربطه بتاريخك الفكري."><PersonalKnowledgeGraph /><IdeaLabCard articles={richArticles} /><DoctorRadarCard articles={richArticles} /><SeriesDetails articles={richArticles} /></LabLayer>}
+
+      {view === 'quality' && <LabLayer title="جودة اسأل المكتبة" note="مختبر داخلي صامت يختبر قلب الإجابة ولا يضيف أي عنصر إلى الموقع العام."><AnswerQualityLab articles={richArticles} /></LabLayer>}
 
       {view === 'system' && <LabLayer title="تحويل المقال إلى منظومة" note="تحويل المقال الواحد إلى محاضرة، منشورات، سؤال طلاب، وبودكاست — من دون نشر تلقائي."><ArticleSystemCard articles={richArticles} /><AudioWorkspaceBridge onOpen={onOpen} /></LabLayer>}
     </div>

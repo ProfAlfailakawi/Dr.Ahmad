@@ -86,8 +86,8 @@ check('فهرس الكتاب لا يستعمل defaultOpen غير المدعوم
 check('التحميل الكسول لا يضيّق window إلى never في TypeScript', !bookDetail.includes("'IntersectionObserver' in window") && bookDetail.includes("typeof IntersectionObserver === 'undefined'"))
 
 console.log('\nاسأل كتاباً والبحث المعرفي')
-check('اسأل كتاباً تبويب حقيقي داخل البحث', search.includes("{ id: 'askbook', label: 'ابحث في كتاب' }") && search.includes("tab === 'askbook'"))
-check('التبويب يعمل بلا كتابة بحث عام', search.includes("(searchStarted || tab === 'askbook')") && search.includes("tab !== 'askbook'"))
+check('ابحث في كتاب بوابة مستقلة عن تبويبات النتائج', search.includes('ميزة مستقلة') && search.includes('اختر كتاباً واحداً، ثم ابحث في متنه الموثق فقط') && search.includes("setTab('askbook')"))
+check('بوابة الكتاب تعمل بلا كتابة بحث عام', search.includes("(searchStarted || tab === 'askbook')") && search.includes("tab !== 'askbook'"))
 check('اختيار الكتاب والسؤال والجواب كلها داخل صفحة البحث', search.includes('ask-book-rail') && search.includes('submitAskBook') && search.includes('searchBookPassages(askBookAsked') && search.includes('الجواب من متن الكتاب'))
 check('الجواب يعرض الكتاب والصفحة والمحور ورابطاً اختيارياً', search.includes('match.bookTitle') && search.includes('match.quote.page') && search.includes('match.quote.conceptTitle') && search.includes('في الكتاب'))
 check('غياب الدليل لا ينتج جواباً جازماً من خارج الكتاب', search.includes('لن أقدّم جواباً من خارج المتن'))
@@ -126,6 +126,12 @@ check('لا يقول لم أجد جواباً ثم يعرض جواباً', !ask.
 check('الإجابة المركبة تصف تعدد المواد والشواهد', ask.includes('إجابة مركّبة من المواد والشواهد الموثّقة'))
 check('الجواب غير المؤسس لا يمر كجواب موثق', ask.includes('grounded') && ask.includes('setTwin(fallback)'))
 check('طباعة المسار في الواجهة أيقونة فقط', ask.includes('SocialIcon name="Print"') && ask.includes('aria-label="طباعة مسار القراءة"'))
+
+
+const answerQuality = read('src/components/admin/AnswerQualityLab.tsx')
+const intelligenceLab = read('src/components/admin/IntelligenceLab.tsx')
+check('مختبر جودة اسأل المكتبة داخلي فقط', answerQuality.includes('داخلي · لا يظهر للزائر') && intelligenceLab.includes('AnswerQualityLab') && !read('src/App.tsx').includes('AnswerQualityLab'))
+check('مختبر الجودة يفحص الامتناع واللهجة والمصادر', answerQuality.includes('mustAnswer: false') && answerQuality.includes('toRoot') && answerQuality.includes('أقوى المصادر الحالية'))
 
 console.log(`\nالنتيجة: ${passed} تحققاً ناجحاً، ${failed} إخفاقاً.`)
 if (failed) process.exit(1)

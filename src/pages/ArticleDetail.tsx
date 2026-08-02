@@ -874,37 +874,39 @@ export default function ArticleDetail() {
           </FadeUp>
 
           <FadeUp className="serenity-hide">
-            {/* تنقّل بصري خفيف: ثلاثة رموز مفهومة بلا تكرار الكلمات أو
-               عناوين طويلة تُربك نهاية المقال. الأسماء تبقى لقارئ الشاشة. */}
-            <nav className="mt-10 flex items-center justify-center gap-3 border-t border-hair pt-6" aria-label="التنقل بين المقالات">
-              {next ? (
-                <Link
-                  to={`/articles/${next.slug}`}
-                  aria-label={`السابق: ${next.title}`}
-                  title={`السابق: ${next.title}`}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white"
-                >
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
-                </Link>
-              ) : <span className="h-11 w-11" aria-hidden="true" />}
-              <Link
-                to="/articles"
-                aria-label="جميع المقالات"
-                title="جميع المقالات"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white"
-              >
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round"><path d="M5 6h14M5 12h14M5 18h14" /><circle cx="3" cy="6" r=".5" fill="currentColor" stroke="none" /><circle cx="3" cy="12" r=".5" fill="currentColor" stroke="none" /><circle cx="3" cy="18" r=".5" fill="currentColor" stroke="none" /></svg>
-              </Link>
-              {prev ? (
-                <Link
-                  to={`/articles/${prev.slug}`}
-                  aria-label={`التالي: ${prev.title}`}
-                  title={`التالي: ${prev.title}`}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white"
-                >
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
-                </Link>
-              ) : <span className="h-11 w-11" aria-hidden="true" />}
+            <nav className="mt-10 border-t border-hair pt-6" aria-label="التنقل بين المقالات">
+              <div className="grid items-start gap-5 sm:grid-cols-[1fr_auto_1fr]">
+                <div className="min-w-0 text-right">
+                  <span className="block text-[.7rem] text-soft">السابق</span>
+                  {next ? (
+                    <div className="mt-2 flex items-start gap-3">
+                      <Link to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                      </Link>
+                      <p className="min-w-0 pt-1 font-display text-[.95rem] font-semibold leading-[1.65] text-ink">{next.title}</p>
+                    </div>
+                  ) : <span className="mt-2 block text-[.78rem] text-soft">لا يوجد مقال سابق</span>}
+                </div>
+
+                <div className="flex flex-col items-center gap-2">
+                  <span className="block text-[.7rem] text-soft">جميع المقالات</span>
+                  <Link to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round"><path d="M5 6h14M5 12h14M5 18h14" /><circle cx="3" cy="6" r=".5" fill="currentColor" stroke="none" /><circle cx="3" cy="12" r=".5" fill="currentColor" stroke="none" /><circle cx="3" cy="18" r=".5" fill="currentColor" stroke="none" /></svg>
+                  </Link>
+                </div>
+
+                <div className="min-w-0 text-right sm:text-left">
+                  <span className="block text-[.7rem] text-soft">التالي</span>
+                  {prev ? (
+                    <div className="mt-2 flex items-start gap-3 sm:flex-row-reverse">
+                      <Link to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
+                      </Link>
+                      <p className="min-w-0 pt-1 font-display text-[.95rem] font-semibold leading-[1.65] text-ink">{prev.title}</p>
+                    </div>
+                  ) : <span className="mt-2 block text-[.78rem] text-soft">لا يوجد مقال تالٍ</span>}
+                </div>
+              </div>
             </nav>
           </FadeUp>
         </div>

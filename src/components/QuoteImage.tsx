@@ -76,9 +76,11 @@ export function QuoteImage({ text, attribution }: { text: string; attribution: s
         type="button"
         onClick={make}
         disabled={busy}
-        className="text-[.66rem] text-soft underline decoration-hair underline-offset-4 transition-colors hover:text-accent disabled:opacity-60"
+        aria-label={busy ? 'جارٍ تجهيز بطاقة النشر' : 'بطاقة للنشر'}
+        title={busy ? 'جارٍ تجهيز بطاقة النشر' : 'بطاقة للنشر'}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-60"
       >
-        {busy ? 'تُرسم…' : 'بطاقة للنشر'}
+        <SocialIcon name="Image" size={16} />
       </button>
     )
   }

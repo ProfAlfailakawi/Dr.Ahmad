@@ -1,3 +1,4 @@
+import { SocialIcon } from './icons'
 import { useEffect, useRef, useState } from 'react'
 import type { BookRecord } from '../lib/cms'
 import { copyText } from '../lib/clipboard'
@@ -69,9 +70,11 @@ export function QuoteCite({ book, page, compact = true }: { book: BookRecord; pa
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-[.66rem] text-soft underline decoration-hair underline-offset-4 transition-colors hover:text-accent"
+        aria-label="استشهد بهذا"
+        title="استشهد بهذا"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"
       >
-        استشهد بهذا
+        <SocialIcon name="Cite" size={16} />
       </button>
     )
   }

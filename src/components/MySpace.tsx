@@ -246,7 +246,7 @@ function CrossDeviceSync({ onActiveChange }: { onActiveChange?: (active: boolean
           <span className="block text-[.72rem] font-semibold text-ink">المزامنة عبر الأجهزة</span>
           {code && <span className="mt-1 block text-[.7rem] leading-relaxed text-soft">مفعّلة · البيانات تُشفّر قبل مغادرة جهازك.</span>}
         </span>
-        <span className="shrink-0 text-[.72rem] font-semibold text-accent">{expanded ? "إغلاق" : "إدارة"}</span>
+        <span className="shrink-0 text-[.72rem] font-semibold text-accent">{expanded ? "إغلاق" : "فتح"}</span>
       </button>
       {expanded && (
         <div className="mt-4 grid gap-3 rounded-2xl bg-wash/[.55] p-4">
@@ -470,7 +470,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
 
                           {snapshot.recent.length > 0 && (
                             <details className="group border-t border-hair pt-5">
-                              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[.8rem] font-semibold text-ink"><span>آخر القراءات</span><span className="text-[.7rem] text-soft group-open:hidden">عرض {arNumber(Math.min(5, snapshot.recent.length))}</span><span className="hidden text-[.7rem] text-soft group-open:inline">إخفاء</span></summary>
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[.8rem] font-semibold text-ink"><span>آخر القراءات</span><span className="text-[.7rem] text-soft group-open:hidden">عرض {arNumber(Math.min(8, snapshot.recent.length))}</span><span className="hidden text-[.7rem] text-soft group-open:inline">إخفاء</span></summary>
                               <ol className="mt-3 divide-y divide-hair">
                                 {snapshot.recent.slice(0, 8).map((item) => <li key={`${item.slug}-${item.at}`}><Link to={`/articles/${item.slug}`} onClick={() => setOpen(false)} className="group flex items-center gap-4 py-3.5"><span className="min-w-0 flex-1 line-clamp-1 text-[.82rem] text-ink group-hover:text-accent">{item.title}</span><span className="shrink-0 text-[.66rem] text-soft">{timeAgo(item.at)}</span></Link></li>)}
                               </ol>

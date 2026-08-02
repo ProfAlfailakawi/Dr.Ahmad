@@ -6,9 +6,10 @@ import { academicProfiles, doctorate, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { analyzeResearch } from '../lib/research-intelligence'
+import { arabicCountPhrase, PAPER_FORMS } from '../lib/arabic-count.ts'
 
 const ar = (n: number) => String(n).padStart(2, '0')
-const paperCount = (count: number) => count === 1 ? 'بحث واحد' : count === 2 ? 'بحثان' : `${count} بحثاً`
+const paperCount = (count: number) => arabicCountPhrase(count, PAPER_FORMS)
 const badge = 'research-badge inline-flex items-center rounded-full px-3 py-1.5 text-[.72rem] font-semibold'
 const arabicOnly = (value = '') => /[\u0600-\u06ff]/.test(value) ? value.trim() : ''
 const normalizeSearch = (value = '') => value.toLowerCase().replace(/[ًٌٍَُِّْـ]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
@@ -79,7 +80,7 @@ export default function Research() {
                     {years.map((year) => <option key={year}>{year}</option>)}
                   </select>
                 </label>
-                <span className="research-index-result">{filtered.length} نتيجة</span>
+                <span className="research-index-result">{filtered.length === 1 ? 'نتيجة واحدة' : filtered.length === 2 ? 'نتيجتان' : filtered.length <= 10 ? `${filtered.length} نتائج` : `${filtered.length} نتيجة`}</span>
               </div>
             </section>
           </FadeUp>

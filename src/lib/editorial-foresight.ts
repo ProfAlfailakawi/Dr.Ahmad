@@ -1,4 +1,4 @@
-import type { ArticleRecord } from './cms'
+import type { ArticleRecord } from './cms.ts'
 import { articleSimilarityReport, ideaTokens } from './intelligence.ts'
 
 type ArticleLike = Pick<ArticleRecord, 'slug' | 'title' | 'excerpt' | 'body' | 'cat' | 'iso' | 'hasAudio'>

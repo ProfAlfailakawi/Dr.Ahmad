@@ -1,11 +1,11 @@
-import audioManifest from '../data/audio.json'
+import audioManifest from '../data/audio.json' with { type: 'json' }
 import {
   articleCats,
   articles as staticArticles,
   books as staticBooks,
   media as staticMedia,
   papers as staticPapers,
-} from '../data'
+} from '../data.ts'
 
 export type ContentKind = 'article' | 'book' | 'paper' | 'media'
 export type ContentOrigin = 'base' | 'added'

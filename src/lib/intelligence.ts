@@ -1,4 +1,4 @@
-import type { ArticleRecord, BookRecord, PaperRecord } from './cms'
+import type { ArticleRecord, BookRecord, PaperRecord } from './cms.ts'
 import { bookKnowledgeText } from './book-knowledge.ts'
 
 type SimpleBook = Pick<BookRecord, 'slug' | 'title' | 'desc'>

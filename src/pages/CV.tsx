@@ -11,6 +11,7 @@ import { useCv, type CvTextItem } from '../lib/cv'
 import { useTrackView } from '../lib/views'
 import { useCvLinks } from '../lib/settings'
 import { CvDownloadCards } from '../components/CvDownloadCards'
+import { arabicCountLabel, ARTICLE_FORMS, BOOK_FORMS, PAPER_FORMS, WORD_FORMS } from '../lib/arabic-count.ts'
 
 const ar = (n: number) => String(n)
 // محفوظ للمستقبل من دون عرضه حالياً؛ إعادة تفعيله لا تحتاج استرجاع أي كود.
@@ -128,15 +129,20 @@ export default function CV() {
             </div>
           )}
 
-          {/* أثرٌ موثّق — أختام هادئة لا أرقام صاخبة */}
+          {/* البصمة المعرفية — رفعتها إلى صدر السيرة حتى لا تبقى مدفونة */}
           <FadeUp>
+            <KnowledgeFingerprint feature />
+          </FadeUp>
+
+          {/* أثرٌ موثّق — أختام هادئة لا أرقام صاخبة */}
+          <FadeUp delay={0.04}>
             <p className="mb-8 text-center text-[.76rem] font-semibold uppercase text-accent">أثرٌ موثّق</p>
             <div className="cv-impact-grid mb-5 grid grid-cols-2 gap-6 md:grid-cols-4">
               {[
-                { n: ar(books.length), l: 'كتاباً منشوراً' },
-                { n: ar(papers.length), l: 'بحثاً محكّماً' },
-                { n: ar(articles.length), l: 'مقالاً فكرياً' },
-                { n: ar(Math.round(publishedWords / 1000)) + 'K', l: 'كلمة منشورة' },
+                { n: ar(books.length), l: arabicCountLabel(books.length, BOOK_FORMS) },
+                { n: ar(papers.length), l: arabicCountLabel(papers.length, PAPER_FORMS) },
+                { n: ar(articles.length), l: arabicCountLabel(articles.length, ARTICLE_FORMS) },
+                { n: ar(Math.round(publishedWords / 1000)) + 'K', l: arabicCountLabel(Math.round(publishedWords / 1000), WORD_FORMS) },
               ].map((s) => (
                 <div key={s.l} className="flex flex-col items-center text-center">
                   <span className="cv-impact-seal relative flex h-24 w-24 items-center justify-center rounded-full border border-accent/30 md:h-28 md:w-28">
@@ -160,11 +166,6 @@ export default function CV() {
               <CitationImpact />
             </FadeUp>
           )}
-
-          {/* البصمة المعرفية — توقيع بصري مبني من بيانات المسيرة نفسها */}
-          <FadeUp delay={0.08}>
-            <KnowledgeFingerprint />
-          </FadeUp>
 
           {/* ── الجوهر: مفتوح دائماً ── */}
           <Open title="التعليم">

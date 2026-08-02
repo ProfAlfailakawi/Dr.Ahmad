@@ -9,6 +9,7 @@ import { toRoot } from '../lib/dialect-lexicon'
 import { loadArticleBodies } from '../lib/article-bodies'
 import { predictionRecordsFor, type IdeaLifeRemoteRecord } from '../lib/idea-life'
 import { categoryLabel } from '../lib/content-taxonomy'
+import { arabicCountPhrase, ARTICLE_FORMS, YEAR_IMPACT_FORMS } from '../lib/arabic-count.ts'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -392,7 +393,7 @@ export default function Decade() {
             <div className="mx-auto max-w-shell">
               <FadeUp>
                 <p className="max-w-3xl font-display text-[clamp(1.35rem,3vw,2rem)] font-medium leading-[1.8] text-ink">
-                  من {document.firstYear} إلى {document.latestYear}: {document.span >= 10 ? 'أكثر من عشر سنوات' : `${number.format(document.span)} سنة`} تقرأ نفسها من خلال {number.format(document.articles.length)} مقالاً، لا لتختصر الفكرة في رقم، بل لتكشف حركتها.
+                  من {document.firstYear} إلى {document.latestYear}: {document.span >= 10 ? 'أكثر من عشر سنوات' : arabicCountPhrase(document.span, YEAR_IMPACT_FORMS, number.format)} تقرأ نفسها من خلال {arabicCountPhrase(document.articles.length, ARTICLE_FORMS, number.format)}، لا لتختصر الفكرة في رقم، بل لتكشف حركتها.
                 </p>
               </FadeUp>
             </div>
@@ -411,7 +412,7 @@ export default function Decade() {
                       <span className="font-semibold text-accent">{stage.label}</span>
                       <span className="text-soft">{stage.range}</span>
                     </div>
-                    <p className="mt-5 text-[.82rem] text-soft">{number.format(stage.count)} مقالاً · الأبرز موضوعياً: {stage.dominant ? categoryLabel(stage.dominant) : '—'}</p>
+                    <p className="mt-5 text-[.82rem] text-soft">{arabicCountPhrase(stage.count, ARTICLE_FORMS, number.format)} · الأبرز موضوعياً: {stage.dominant ? categoryLabel(stage.dominant) : '—'}</p>
                     {stage.article ? (
                       <Link to={`/articles/${stage.article.slug}`} className="group mt-5 block border-t border-hair pt-5">
                         <span className="text-[.72rem] text-soft">أبرز مقال في هذه المرحلة</span>
@@ -491,7 +492,7 @@ export default function Decade() {
                         <time>{chapter.year}</time>
                       </a>
                       <div>
-                        <p className="text-[.78rem] text-soft">{number.format(chapter.articles.length)} مقالاً · {categoryLabel(chapter.dominant)}</p>
+                        <p className="text-[.78rem] text-soft">{arabicCountPhrase(chapter.articles.length, ARTICLE_FORMS, number.format)} · {categoryLabel(chapter.dominant)}</p>
                         {chapter.representative && (
                           <Link to={`/articles/${chapter.representative.slug}`} className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.65] text-ink transition-colors hover:text-accent">
                             {chapter.representative.title} ←

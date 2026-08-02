@@ -1,11 +1,13 @@
 /**
  * الاقتباسات المنشورة من متون الكتب — بإذن المؤلف.
  *
- * العقد: مقتطف قصير منسوب إلى كتابه وصفحته ومحوره، يدلّ على الكتاب ولا يغني
- * عنه. الملف المولّد (book-quotes.json) مقيّدٌ بسقوفٍ يفرضها حارس البناء،
- * فلا تتسع هذه الطبقة إلا بقرارٍ صريح من الدكتور.
+ * البحث هنا هجين: يطابق اللفظ، والجذر العربي، والمعنى المتخصص، وعناوين
+ * الفصول. وعندما يكون السؤال عنوان محورٍ لا يملك مقتطفاً مستقلاً، يُعاد
+ * المحور نفسه بوصفه «محوراً مفهرساً» لا اقتباساً حرفياً.
  */
 import rawQuotes from '../data/book-quotes.json' with { type: 'json' }
+import { bestBookConcept, relatedBookKnowledge } from './book-knowledge'
+import { buildSmartQueryPlan, extendSmartQueryPlan, scoreSmartFields } from './smart-search'
 
 export type BookQuote = {
   id: string
@@ -14,6 +16,7 @@ export type BookQuote = {
   section: string
   conceptId: string
   conceptTitle: string
+  evidenceType?: 'passage' | 'concept'
 }
 
 export type BookQuoteRecord = {
@@ -37,43 +40,6 @@ const bySlug = new Map(file.books.map((book) => [book.slug, book]))
 export const bookQuotePolicy = file.policy
 export const bookQuoteCoverage = file.coverage
 
-const STOP = new Set('من في على الى عن هذا هذه ذلك التي الذي مع كان كانت يكون تكون كتاب فصل مقدمه خاتمه'.split(' '))
-/* الجمع المكسّر لا تصلحه قاعدة: «أطفال» ليست «طفل» + لاحقة. وهذه أكثر
-   الكلمات دوراناً في مجال الدكتور، فبلا ردّها إلى مفردها يفشل البحث في
-   أشيع ما يكتبه الناس. قائمةٌ صغيرة مقصودة — لا معجم كامل. */
-const BROKEN_PLURALS: Record<string, string> = {
-  اطفال: 'طفل', مدارس: 'مدرس', معلمين: 'معلم', معلمون: 'معلم',
-  طلاب: 'طالب', طلبه: 'طالب', كتب: 'كتاب', العاب: 'لعب', الالعاب: 'لعب',
-  وسايل: 'وسيل', وسائل: 'وسيل', مفاهيم: 'مفهوم', مناهج: 'منهج',
-  اجهزه: 'جهاز', اجهزة: 'جهاز', شاشات: 'شاش', مهارات: 'مهار',
-  اهداف: 'هدف', ادوات: 'اداه', بيئات: 'بيئه', فصول: 'فصل',
-}
-
-const roots = (value = '') => new Set(String(value)
-  .normalize('NFKC').toLowerCase().replace(/ـ+/g, '').replace(/[ً-ْٰ]/g, '')
-  .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[ؤئ]/g, 'ء')
-  .replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim().split(' ')
-  /* السوابق العربية تلتصق بالكلمة: «بالتلعيب» و«والشاشة» و«للمعلم» كلها
-     صور للجذر نفسه. بلا إسقاطها يفشل البحث في أكثر أسئلة الناس شيوعاً. */
-  .map((word) => word
-    .replace(/^(?:[وف])(?=[بكل]ال|ال)/u, '')
-    .replace(/^لل(?=.{3,})/u, '')
-    .replace(/^[بكل](?=ال.{3,})/u, '')
-    .replace(/^ال(?=.{3,})/u, '')
-    .replace(/^[وف](?=.{4,})/u, '')
-    /* «شاشات» و«شاشة» جذرٌ واحد عند المطابقة؛ بلا توحيدهما يفشل أكثر
-       ما يكتبه الناس. نطبّق القاعدة على الطرفين فيبقى الميزان عادلاً. */
-    .replace(/(?:ات|ون|ين|ية|يه)$/u, '')
-    .replace(/ه$/u, (match, offset, full) => (full.length > 4 ? '' : match)))
-  .map((word) => BROKEN_PLURALS[word] || word)
-  .filter((word) => word.length > 2 && !STOP.has(word)))
-
-const overlap = (left: Set<string>, right: Set<string>) => {
-  let score = 0
-  for (const word of left) if (right.has(word)) score += 1
-  return score
-}
-
 export function bookQuotes(slug = ''): BookQuote[] {
   return bySlug.get(slug)?.quotes || []
 }
@@ -90,45 +56,72 @@ export type BookQuoteMatch = {
   score: number
 }
 
-/**
- * أقرب اقتباسات المتن إلى سؤالٍ أو فكرة — بلا نموذج لغويّ ولا خدمة مدفوعة.
- * الترجيح جذريّ (مطابقة جذور الكلمات)، فيعمل على الجهاز نفسه وفوراً.
- */
-export function matchBookQuotes(query: string, limit = 3, onlySlug = ''): BookQuoteMatch[] {
-  const queryRoots = roots(query)
-  if (queryRoots.size < 1) return []
-  const matches: BookQuoteMatch[] = []
-
-  for (const book of file.books) {
-    if (onlySlug && book.slug !== onlySlug) continue
-    for (const quote of book.quotes) {
-      const score = overlap(queryRoots, roots(quote.text)) * 3
-        + overlap(queryRoots, roots(quote.conceptTitle)) * 4
-        + overlap(queryRoots, roots(book.title)) * 2
-      if (score > 0) matches.push({ quote, bookSlug: book.slug, bookTitle: book.title, score })
-    }
+function conceptQuote(match: NonNullable<ReturnType<typeof bestBookConcept>>): BookQuoteMatch {
+  return {
+    bookSlug: match.book.slug,
+    bookTitle: match.book.title,
+    score: match.score + 72,
+    quote: {
+      id: `concept-${match.concept.id}`,
+      text: match.concept.summary || match.concept.question,
+      page: match.concept.pageStart,
+      section: match.concept.title,
+      conceptId: match.concept.id,
+      conceptTitle: match.concept.title,
+      evidenceType: 'concept',
+    },
   }
+}
 
-  /* لا يحتكر كتابٌ واحد النتيجة: اقتباسان لكل كتاب على الأكثر، ليرى السائل
-     أن الفكرة تعبر أكثر من مؤلَّف. */
+function balancedMatches(matches: BookQuoteMatch[], limit: number, perBookLimit = 3) {
+  const seen = new Set<string>()
   const perBook = new Map<string, number>()
   return matches
     .sort((left, right) => right.score - left.score || left.quote.page - right.quote.page)
     .filter((match) => {
+      const key = `${match.bookSlug}:${match.quote.id}`
+      if (seen.has(key)) return false
+      seen.add(key)
       const used = perBook.get(match.bookSlug) || 0
-      if (used >= 2) return false
+      if (used >= perBookLimit) return false
       perBook.set(match.bookSlug, used + 1)
       return true
     })
     .slice(0, limit)
 }
 
-/* ═══ المتون كاملة — من الجلدة إلى الجلدة ═══
- *
- * المختارات أعلاه تُحمَّل مع الصفحة لأنها خفيفة وتُعرض في صفحة الكتاب.
- * أما فهرس المتون الكامل (تسعة كتب) فثقيل، فلا يُجلب إلا حين يبحث الزائر
- * فعلاً — كما يفعل فهرس المنطوق. وبعد جلبه مرّة يبقى في الذاكرة.
- */
+/** أقرب مختارات الكتاب إلى سؤالٍ أو فكرة، مع فهم المعنى لا التطابق الحرفي. */
+export function matchBookQuotes(query: string, limit = 3, onlySlug = ''): BookQuoteMatch[] {
+  const plan = buildSmartQueryPlan(query)
+  if (!plan.directRoots.length && !plan.semanticRoots.length) return []
+  const matches: BookQuoteMatch[] = []
+
+  for (const book of file.books) {
+    if (onlySlug && book.slug !== onlySlug) continue
+    for (const quote of book.quotes) {
+      const score = scoreSmartFields(plan, [
+        { value: quote.text, weight: 1.8, phraseWeight: 1.15 },
+        { value: quote.conceptTitle, weight: 5.2, phraseWeight: 1.7, exactWeight: 1.8 },
+        { value: quote.section, weight: 3.6 },
+        { value: book.title, weight: 1.25 },
+      ])
+      if (score > 8) matches.push({ quote: { ...quote, evidenceType: quote.evidenceType || 'passage' }, bookSlug: book.slug, bookTitle: book.title, score })
+    }
+  }
+
+  if (onlySlug) {
+    const concept = bestBookConcept(query, onlySlug)
+    if (concept && concept.score > 18) matches.push(conceptQuote(concept))
+  } else {
+    for (const concept of relatedBookKnowledge(query, Math.max(4, limit))) {
+      if (concept.score > 18) matches.push(conceptQuote(concept))
+    }
+  }
+
+  return balancedMatches(matches, limit, onlySlug ? Math.max(3, limit) : 2)
+}
+
+/* ═══ المتون كاملة — من الجلدة إلى الجلدة ═══ */
 type PassagesFile = {
   coverage: { books: number; passages: number }
   books: { slug: string; title: string; year: string; passages: BookQuote[] }[]
@@ -150,40 +143,62 @@ export function loadBookPassages(): Promise<PassagesFile> {
   return passagesPromise
 }
 
-/** هل جاهز الفهرس في الذاكرة؟ يستعمله البحث ليقرر إن كان عليه الانتظار. */
 export const bookPassagesReady = () => Boolean(passagesCache)
 
 /**
- * البحث في متون الكتب التسعة كاملة. يعمل بلا خادم ولا نموذج لغويّ ولا خدمة
- * مدفوعة: مطابقة جذور عربية على الجهاز نفسه.
+ * البحث الدلالي في متون الكتب التسعة كاملة.
+ *
+ * 1) يفهم صياغة الزائر واللهجة والمرادفات من معجم التخصص.
+ * 2) يطابق عناوين الفصول والمحاور بوزن أعلى من الكلمات العامة.
+ * 3) إذا كان السؤال عنوان محور مثل «الصفات الأساسية للعب»، يعرض المحور
+ *    نفسه ثم أقرب المقاطع معنىً، حتى لو لم يرد العنوان حرفياً داخل المقطع.
  */
 export function searchBookPassages(query: string, limit = 12, onlySlug = ''): BookQuoteMatch[] {
   if (!passagesCache) return []
-  const queryRoots = roots(query)
-  if (!queryRoots.size) return []
+  const plan = buildSmartQueryPlan(query)
+  if (!plan.directRoots.length && !plan.semanticRoots.length) return []
   const matches: BookQuoteMatch[] = []
+  const selectedConcept = onlySlug ? bestBookConcept(query, onlySlug) : null
+  const conceptPlan = selectedConcept && selectedConcept.score > 12
+    ? extendSmartQueryPlan(plan, `${selectedConcept.concept.title} ${selectedConcept.concept.keywords.join(' ')} ${selectedConcept.concept.summary} ${selectedConcept.concept.question}`)
+    : null
 
   for (const book of passagesCache.books) {
     if (onlySlug && book.slug !== onlySlug) continue
-    const bookRoots = roots(book.title)
     for (const passage of book.passages) {
-      const score = overlap(queryRoots, roots(passage.text)) * 3
-        + overlap(queryRoots, roots(passage.conceptTitle)) * 4
-        + overlap(queryRoots, bookRoots)
-      if (score >= 3) matches.push({ quote: passage, bookSlug: book.slug, bookTitle: book.title, score })
+      let score = scoreSmartFields(plan, [
+        { value: passage.text, weight: 1.75, phraseWeight: 1.08 },
+        { value: passage.conceptTitle, weight: 5.2, phraseWeight: 1.65, exactWeight: 1.7 },
+        { value: passage.section, weight: 4.2, phraseWeight: 1.45 },
+        { value: book.title, weight: 1.25 },
+      ])
+
+      if (conceptPlan && selectedConcept && book.slug === selectedConcept.book.slug) {
+        score += scoreSmartFields(conceptPlan, [
+          { value: passage.text, weight: .48 },
+          { value: passage.conceptTitle, weight: 1.45 },
+          { value: passage.section, weight: 1.2 },
+        ])
+        const distance = Math.abs(Number(passage.page || 0) - selectedConcept.concept.pageStart)
+        if (distance <= 12) score += Math.max(0, 10 - distance * .65)
+      }
+
+      if (score > 9) matches.push({
+        quote: { ...passage, evidenceType: passage.evidenceType || 'passage' },
+        bookSlug: book.slug,
+        bookTitle: book.title,
+        score,
+      })
     }
   }
 
-  /* ثلاثة مقاطع لكل كتاب على الأكثر: يرى الباحث أن الفكرة تعبر مؤلفاته،
-     ولا يبتلع كتابٌ واحد الصفحة. */
-  const perBook = new Map<string, number>()
-  return matches
-    .sort((left, right) => right.score - left.score || left.quote.page - right.quote.page)
-    .filter((match) => {
-      const used = perBook.get(match.bookSlug) || 0
-      if (used >= 3) return false
-      perBook.set(match.bookSlug, used + 1)
-      return true
-    })
-    .slice(0, limit)
+  if (onlySlug) {
+    if (selectedConcept && selectedConcept.score > 18) matches.push(conceptQuote(selectedConcept))
+  } else {
+    for (const concept of relatedBookKnowledge(query, Math.max(6, limit))) {
+      if (concept.score > 18) matches.push(conceptQuote(concept))
+    }
+  }
+
+  return balancedMatches(matches, limit, onlySlug ? Math.max(4, limit) : 3)
 }

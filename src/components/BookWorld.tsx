@@ -9,6 +9,7 @@ import { QuoteCite } from './QuoteCite'
 import { QuoteImage } from './QuoteImage'
 import { RESONANCE_FLOOR, loadPassageResonance, recordPassageHighlight } from '../lib/passage-resonance'
 import { bookKnowledgeAnchor, bookKnowledgeText, getBookKnowledge } from '../lib/book-knowledge'
+import { buildSmartQueryPlan } from '../lib/smart-search'
 
 function scoreAgainst(source: Set<string>, value: string) {
   return ideaWords(value).reduce((total, word) => total + (source.has(word) ? 1 : 0), 0)
@@ -207,8 +208,10 @@ export function BookWorld({
     void loadBookPassages().then(() => setAskReady(true))
   }
 
+  const askedPlan = useMemo(() => buildSmartQueryPlan(asked), [asked])
+  const questionPlan = useMemo(() => buildSmartQueryPlan(bookQuestion), [bookQuestion])
   const bookAnswer: BookQuoteMatch[] = useMemo(
-    () => (asked.trim().length >= 2 && askReady ? searchBookPassages(asked, 4, book.slug) : []),
+    () => (asked.trim().length >= 2 && askReady ? searchBookPassages(asked, 6, book.slug) : []),
     [askReady, asked, book.slug],
   )
   const activePath = useMemo(
@@ -342,8 +345,8 @@ export function BookWorld({
               الكتاب يجيب بمقاطعه هو. لا نموذج يخمّن، ولا ملف يُفتح. */}
           {model.allQuotes.length > 0 && <Disclosure
             eyebrow="ابحث في هذا الكتاب"
-            title="اكتب ما تبحث عنه، فيجيبك الكتاب بمقاطعه"
-            meta="الجواب من متن الكتاب، منسوباً إلى صفحته."
+            title="اكتب بطريقتك، فيفهم الكتاب ما تقصده"
+            meta="بحث بالمعنى في عناوين الكتاب ومحاوره ومقاطعه، لا تطابق كلمات فقط."
             lockOpen={Boolean(asked) || askOpen}
           >
             <form
@@ -354,30 +357,42 @@ export function BookWorld({
               <input
                 value={bookQuestion}
                 onChange={(event) => setBookQuestion(event.target.value)}
-                placeholder="مثال: ما دور المعلّم؟"
+                placeholder="اكتب فكرة أو سؤالاً أو موقفاً حتى لو لم تعرف كلمات الكتاب"
                 aria-label={`ابحث داخل كتاب ${book.title}`}
                 className="min-w-0 w-full max-w-full rounded-full border border-hair bg-canvas px-4 py-3 text-[.82rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent"
               />
               <button type="submit" className="min-h-11 w-full rounded-full bg-accent px-5 py-2.5 text-[.75rem] font-semibold text-white transition-colors hover:bg-accent-deep sm:w-auto">ابحث</button>
             </form>
+            {bookQuestion.trim().length >= 2 && (questionPlan.interpretation || questionPlan.suggestions.length > 0) && (
+              <div className="mt-3 rounded-xl border border-hair bg-wash px-3.5 py-3">
+                {questionPlan.interpretation && <p className="text-[.7rem] leading-[1.8] text-soft"><span className="font-semibold text-accent">فهم البحث: </span>{questionPlan.interpretation}</p>}
+                {questionPlan.suggestions.length > 0 && <div className="mt-2 flex flex-wrap gap-2">{questionPlan.suggestions.slice(0, 3).map((suggestion) => <button key={suggestion} type="button" onClick={() => setBookQuestion(suggestion)} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.66rem] leading-relaxed text-soft transition-colors hover:border-accent hover:text-accent">{suggestion}</button>)}</div>}
+              </div>
+            )}
             {stagedQuestion && <p className="mt-2 text-[.68rem] leading-relaxed text-soft">جاءك هذا القسم مباشرة من ميزة «ابحث في كتاب» في البحث، ويمكنك تعديل السؤال هنا متى شئت.</p>}
 
             {asked && (
               <div className="mt-4 border-t border-hair pt-4">
                 {!askReady && <p className="text-[.76rem] text-soft">يفتح الكتاب…</p>}
                 {askReady && bookAnswer.length === 0 && (
-                  <p className="text-[.76rem] leading-relaxed text-soft">لم يتناول هذا الكتاب سؤالك بهذه الكلمات. جرّب كلمةً أقرب إلى محاوره، أو <Link to={`/search?q=${encodeURIComponent(asked)}&tab=passage`} className="text-accent">ابحث في كتب الدكتور التسعة</Link>.</p>
+                  <div className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
+                    <p className="text-[.76rem] leading-relaxed text-soft">لم تظهر شواهد كافية داخل هذا الكتاب بعد فحص المعنى والعناوين والمحاور والمقاطع. يمكنك <Link to={`/search?q=${encodeURIComponent(asked)}&tab=all`} className="text-accent">توسيع البحث إلى الأرشيف كله</Link>.</p>
+                    {askedPlan.suggestions.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{askedPlan.suggestions.slice(0, 3).map((suggestion) => <button key={suggestion} type="button" onClick={() => { setBookQuestion(suggestion); setAsked('') }} className="rounded-full border border-hair px-3 py-1.5 text-[.66rem] text-soft transition-colors hover:border-accent hover:text-accent">{suggestion}</button>)}</div>}
+                  </div>
                 )}
                 <div className="grid gap-3">
                   {bookAnswer.map((match) => (
                     <figure key={`ask-${match.quote.id}`} className="min-w-0 max-w-full overflow-hidden rounded-xl border border-hair bg-canvas px-4 py-3.5">
-                      <blockquote className="break-words border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/[.85]">{match.quote.text}</blockquote>
+                      <span className="mb-2 inline-flex rounded-full border border-hair bg-wash px-2.5 py-1 text-[.61rem] font-semibold text-accent">{match.quote.evidenceType === 'concept' ? 'محور مفهرس في الكتاب' : 'مقطع موثق من المتن'}</span>
+                      {match.quote.evidenceType === 'concept'
+                        ? <p className="break-words border-r-2 border-accent/40 pr-3 text-[.86rem] leading-[1.95] text-ink/[.85]">{match.quote.text}</p>
+                        : <blockquote className="break-words border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/[.85]">{match.quote.text}</blockquote>}
                       <figcaption className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-2 pr-3 text-[.66rem] text-soft">
                         <span>ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</span>
-                        <span className="flex flex-wrap items-center gap-3">
+                        {match.quote.evidenceType !== 'concept' && <span className="flex flex-wrap items-center gap-3">
                           <QuoteCite book={book} page={match.quote.page} />
                           <QuoteImage text={match.quote.text} attribution={`${book.title} · ص ${match.quote.page}`} />
-                        </span>
+                        </span>}
                       </figcaption>
                     </figure>
                   ))}

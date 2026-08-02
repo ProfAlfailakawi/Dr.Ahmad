@@ -476,7 +476,7 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="h-[1.5px] w-7 shrink-0 bg-accent" />
             <p className="min-w-0 whitespace-nowrap text-[clamp(.62rem,2.25vw,.74rem)] font-semibold leading-none">
-              في مثل هذا الأسبوع <span className="px-1 text-soft/70">·</span> {yearsAgo(n)}
+              في مثل هذا الأسبوع {yearsAgo(n)}
             </p>
           </div>
           <QuickArticleActions article={pick.a} className="pointer-events-auto shrink-0 flex-nowrap" />

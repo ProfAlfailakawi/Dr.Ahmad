@@ -408,7 +408,13 @@ assert.match(studio, /verdict\.corrections\.length > 0/, '«لماذا» تُع�
 assert.match(studio, /buildOrthographyIndex\(archiveTexts\)/, 'معجم صوابه موصولٌ بالقياس الحيّ')
 assert.match(studio, /setSettledBody\(bundle\.body\), 500/, 'القياس مهدَّأ لا في كل ضغطة مفتاح')
 assert.match(server, /cfModel: process\.env\.EDITORIAL_CF_MODEL \|\| ARTICLE_MODEL_PRIMARY,/, 'جولات التصحيح على النموذج الأسرع')
-assert.match(server, /clamp\(Math\.ceil\(targetWords \* 3\.2\), 1_200, 16_384\)/, 'سقف الرموز لم يعد يُلغي نفسه')
+/* الأرضية ١٢٠٠ كانت الطرف الآخر من العطب: الكلمة العربية نحو ثلاثة رموز،
+   فأربعمئة كلمة تُبتر عند مئةٍ وسبع. المعامل خمسةٌ وأرضيةٌ ٢٥٠٠. */
+assert.match(server, /clamp\(Math\.ceil\(targetWords \* 5\), 2_500, 16_384\)/, 'سقف الرموز يتّسع للعربية')
+assert.match(server, /ARTICLE_STYLE_DEADLINE_MS', 46_000/, 'الميزانية تحت باب Firebase Hosting الستين')
+assert.match(server, /const needsSecond = !alwaysTwo/, 'المرشح الثاني يُشترى عند الحاجة لا مقدماً')
+assert.match(server, /archiveBodies\(\)/, 'الخادم يقرأ الأرشيف من قرصه')
+assert.match(server, /maxArticleRequestBytes = 384 \* 1024/, 'وحدّ الطلب يتّسع للفهرس')
 assert.match(server, /buildOrthographyIndex\(input\.existing\)/, 'بوابة الإملاء موصولةٌ بالمحرك')
 assert.match(server, /deriveExcerpt\(article\.body, article\.excerpt\)/, 'مسطرة المقتطف موصولة')
 assert.match(studio, /data-voice-teacher="true"/, 'لوحة «علّمه صوتك» معروضة')

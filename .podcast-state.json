@@ -1,0 +1,41 @@
+{
+ "done": {
+  "a-generation-without-rootsarabic:ar": {
+   "contentHash": "fc897b0655ffbf7e",
+   "pipelineHash": "fdf6b06992401311",
+   "sourceHash": "4134144c96a9d8035dc980f2d36d0a5a7c0604420fa3d7a08598102df0320c03",
+   "audioHash": "433a9da011f0c69c299d3b79d980b558601c70272780d8449e71a7eb593f2ab9",
+   "transcriptHash": "5c3f9bbc194de8e226d106e16e1dcb7cdf299f57d198dbbf35838b9f03c61096",
+   "manualSource": {
+    "mode": "manual-upload-locked",
+    "contentSha256": "4134144c96a9d8035dc980f2d36d0a5a7c0604420fa3d7a08598102df0320c03",
+    "revisionSha256": "5f3ab913765bc62d96eaa688fb5d58c119eea60ae4dba74f5cf9b63ea4ad8fad",
+    "revisionId": "5f3ab913765bc62d96eaa688fb5d58c119eea60ae4dba74f5cf9b63ea4ad8fad",
+    "turnCount": 38
+   },
+   "status": "accepted_automated",
+   "acceptedAt": "2026-08-02T02:23:57.475Z",
+   "pilot": false
+  },
+  "alternative-plans-for-distance-education:ar": {
+   "contentHash": "5b0f1a2c0ed6950b",
+   "pipelineHash": "fdf6b06992401311",
+   "sourceHash": "9db1dd9cffc30c30b10eb1baef085f6d8b295894ba7749b90b7b4cfde818ca09",
+   "audioHash": "3398e063e4ef936c5bdbce24b275179cf38212ee3d24705d86145bcae6a75caf",
+   "transcriptHash": "1e7c1e4d0c51cb3cd42ab06f916003f15e7242b99558cf1ef232a7c0740b8b9f",
+   "manualSource": {
+    "mode": "manual-upload-locked",
+    "contentSha256": "9db1dd9cffc30c30b10eb1baef085f6d8b295894ba7749b90b7b4cfde818ca09",
+    "revisionSha256": "aa992d11a58fd07fe2e8bd379352bb401fab9bd19c8b68c23b38f632f04ee30f",
+    "revisionId": "aa992d11a58fd07fe2e8bd379352bb401fab9bd19c8b68c23b38f632f04ee30f",
+    "turnCount": 40
+   },
+   "status": "accepted_automated",
+   "acceptedAt": "2026-08-02T02:25:38.273Z",
+   "pilot": false
+  }
+ },
+ "storyCount": 0,
+ "totalCount": 2,
+ "pilotGate": null
+}

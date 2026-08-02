@@ -61,6 +61,9 @@ const REJECT = [
   /* الجملة المبتورة من أولها تبدأ بحرف عطفٍ معلّق. */
   { test: new RegExp(`^(?:و|ف)[${AR}]`), why: 'بداية معلّقة' },
   { test: /^(?:ثم|أو|أي|إذ)\s/u, why: 'بداية معلّقة' },
+  /* الجملة التي تفتتح بـ«بل» أو «لكن» أو «لا،» ذيلُ جملةٍ قبلها: المنفيّ
+     الذي تستدركه غائبٌ عنها، فتُقرأ ناقصةً خارج سياقها — وهذه تُعرض وحدها. */
+  { test: /^(?:بل|لكنّ?|لا[،,])\s/u, why: 'استدراكٌ بلا منفيّه' },
 ]
 
 const clean = (value = '') => String(value)
@@ -69,7 +72,10 @@ const clean = (value = '') => String(value)
   .replace(/[ \t]+/g, ' ')
   .trim()
 
-const MIN = 60
+/* المسطرة مُعايَرة على نَفَسه هو: بصمته المقيسة تقول وسيط الجملة ٨–٩ كلمات،
+   وقياس جمل الانعطاف في أرشيفه أعطى وسيطاً ٥٤ حرفاً. فحدٌّ أدنى عند ٦٠ كان
+   يرفض ٢٦٨ جملة من ٤٨٥ لأنها «قصيرة» — وهي ليست قصيرة، بل هي أسلوبه. */
+const MIN = 40
 const MAX = 220
 
 const stats = { articles: 0, withPivot: 0, rejected: {} }
@@ -87,8 +93,11 @@ for (const [slug, rawBody] of Object.entries(bodies)) {
   let best = null
 
   paragraphs.forEach((paragraph, paragraphIndex) => {
+    /* «…» علامةُ ختامٍ عنده لا حشو: بصمته المقيسة ٥٫٣ وقفة لكل ١٠٠ كلمة،
+       و١٢٪ من جمله تنتهي بها. إغفالها كان يُلصق الجملة بما بعدها فتطول
+       وتُرفض — فضاع أكثر من نصف المرشّحين. */
     const sentences = paragraph
-      .split(/(?<=[.؟!])\s+/)
+      .split(/(?<=[.؟!…])\s+/)
       .map(clean)
       .filter(Boolean)
 
@@ -97,7 +106,7 @@ for (const [slug, rawBody] of Object.entries(bodies)) {
       const reason = REJECT.find((rule) => rule.test.test(sentence))
       if (reason) { note(reason.why); return }
       /* الجملة المكتملة تنتهي بعلامة ختام؛ وإلا فهي مقطوعة عند حدّ الفقرة. */
-      if (!/[.؟!]$/.test(sentence)) { note('بلا نهاية'); return }
+      if (!/[.؟!…]$/.test(sentence)) { note('بلا نهاية'); return }
 
       const marks = TURNS.filter((turn) => turn.test.test(sentence))
       if (!marks.length) return
@@ -107,7 +116,7 @@ for (const [slug, rawBody] of Object.entries(bodies)) {
       const position = paragraphs.length > 1 ? paragraphIndex / (paragraphs.length - 1) : 0.5
       if (position >= 0.2 && position <= 0.8) score += 3
       /* الطول المعتدل أجمل في العرض وأدلّ على جملةٍ مكتملة. */
-      if (sentence.length >= 80 && sentence.length <= 180) score += 2
+      if (sentence.length >= 45 && sentence.length <= 160) score += 2
       /* «ليست… بل…» في جملةٍ واحدة هي توقيعه الكامل. */
       if (/ليست?[^.؟!]{0,60}بل\s/u.test(sentence)) score += 6
 

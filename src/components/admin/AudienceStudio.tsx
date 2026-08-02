@@ -10,6 +10,7 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import { Pagination, usePagedList } from '../Pagination'
+import { arabicCountPhrase, CARD_FORMS, LINE_FORMS, LIST_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent'
@@ -357,7 +358,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                           كان يُقرأ رقماً شارداً بجانب الأرقام. */}
                       {contact.lists > 0 && (
                         <span className={`mr-1.5 text-[.66rem] ${isPicked ? 'text-white/80' : 'text-accent'}`}>
-                          {contact.lists === 1 ? 'في قائمة' : `في ${contact.lists} قوائم`}
+                          في {arabicCountPhrase(contact.lists, LIST_AFTER_PREPOSITION_FORMS)}
                         </span>
                       )}
                     </button>
@@ -456,8 +457,8 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-[.72rem] text-soft">
                     {/BEGIN:VCARD/i.test(bulk)
-                      ? `${(bulk.match(/BEGIN:VCARD/gi) || []).length} بطاقة`
-                      : `${bulk.split('\n').filter((line) => line.trim()).length} سطراً`}
+                      ? arabicCountPhrase((bulk.match(/BEGIN:VCARD/gi) || []).length, CARD_FORMS)
+                      : arabicCountPhrase(bulk.split('\n').filter((line) => line.trim()).length, LINE_FORMS)}
                   </span>
                   <button type="button" className={primary} disabled={busy || !bulk.trim()}
                     onClick={() => void act('انتهى الاستيراد.', async () => {

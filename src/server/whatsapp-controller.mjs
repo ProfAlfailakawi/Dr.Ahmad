@@ -5,6 +5,7 @@ import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
 import { distillItem } from '../../whatsapp-agent/daily-experience.mjs'
 import { conceptQueryFor, glossarySize } from '../../whatsapp-agent/domain-concepts.mjs'
+import { arabicCountPhrase, CONVERSATION_AFTER_PREPOSITION_FORMS, DAY_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS, MINUTE_FORMS, PASSAGE_AFTER_PREPOSITION_FORMS, RECOVERED_MESSAGE_OBJECT_FORMS, REPLY_AFTER_PREPOSITION_FORMS, SECOND_AFTER_PREPOSITION_FORMS, VERIFIED_MATERIAL_FORMS, WEEK_AFTER_PREPOSITION_FORMS } from '../lib/style-dna.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const OWNER_ALERT_FALLBACK = 'طلب صاحب هذه الرسالة التواصل معك مباشرة. افتح محادثات واتساب من جهازك المرتبط.'
@@ -53,7 +54,7 @@ export function returningReaderLine(conversation = {}, at = Date.now()) {
   const gap = at - lastSeen
   if (gap < RETURNING_READER_GAP_MS) return ''
   const days = Math.floor(gap / 86_400_000)
-  const when = days >= 30 ? 'بعد غيبة' : days >= 7 ? `بعد ${arabicNumber(Math.floor(days / 7))} أسبوع` : days >= 1 ? `بعد ${arabicNumber(days)} ${days === 1 ? 'يوم' : days === 2 ? 'يومين' : 'أيام'}` : 'اليوم'
+  const when = days >= 30 ? 'بعد غيبة' : days >= 7 ? `بعد ${arabicCountPhrase(Math.floor(days / 7), WEEK_AFTER_PREPOSITION_FORMS, arabicNumber)}` : days >= 1 ? `بعد ${arabicCountPhrase(days, DAY_AFTER_PREPOSITION_FORMS, arabicNumber)}` : 'اليوم'
   const current = currentConversationItem(conversation)
   const topic = current?.title || bounded(conversation.lastTopic, 90)
   if (topic) return `أهلاً بعودتك ${when}. آخر مرة وقفنا عند «${topic}» — نكمل منها أم نفتح جديداً؟`
@@ -547,7 +548,7 @@ function readingMinutes(item) {
 function itemMetaLine(item) {
   const parts = [itemLabel(item)]
   const minutes = readingMinutes(item)
-  if (minutes) parts.push(`قراءة ~${arabicNumber(minutes)} ${minutes === 1 ? 'دقيقة' : minutes === 2 ? 'دقيقتين' : 'دقائق'}`)
+  if (minutes) parts.push(`قراءة ~${arabicCountPhrase(minutes, MINUTE_FORMS, arabicNumber)}`)
   const audio = item?.audio || null
   if (audio?.dialogue) parts.push('فيها حوار مسموع')
   else if (audio?.fahed || audio?.noura) parts.push('فيها قراءة صوتية')
@@ -1141,7 +1142,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     const nextSaved = [...new Set([...savedIds, current.id])].slice(-20)
     return {
       kind: 'reply', reason: 'saved-to-shelf', intent,
-      reply: signReply(`حفظتها لك في رفّك:\n*${current.title}*\n\nرفّك فيه الآن ${arabicNumber(nextSaved.length)} ${nextSaved.length === 1 ? 'مادة' : 'مواد'}. قل «رفي» متى ما أردت استعراضه.`, messages),
+      reply: signReply(`حفظتها لك في رفّك:\n*${current.title}*\n\nرفّك فيه الآن ${arabicCountPhrase(nextSaved.length, MATERIAL_FORMS, arabicNumber)}. قل «رفي» متى ما أردت استعراضه.`, messages),
       evidence: [current.id], patch: { savedItemIds: nextSaved },
     }
   }
@@ -1391,7 +1392,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     const nextCursor = cursor + step
     const remaining = Math.max(0, words.length - nextCursor)
     const tail = remaining > 0
-      ? `\n\nبقي نحو ${arabicNumber(Math.ceil(remaining / 90))} مقطع. قل «كمل» أكمل، أو «المصدر» أعطيك الرابط.`
+      ? `\n\nبقي نحو ${arabicCountPhrase(Math.ceil(remaining / 90), PASSAGE_AFTER_PREPOSITION_FORMS, arabicNumber)}. قل «كمل» أكمل، أو «المصدر» أعطيك الرابط.`
       : `\n\nوبهذا اكتمل النص عندي. الصفحة الكاملة:\n${current.url}`
     return {
       kind: 'reply', reason: 'continue-reading', intent,
@@ -2069,7 +2070,7 @@ export function buildWhatsAppDiagnostics({
       label: 'خدمة الماك المقيمة',
       state: bridgeOnline ? 'ok' : 'error',
       detail: bridgeOnline
-        ? `النبض يصل بانتظام${status?.heartbeatAgeMs != null ? `؛ آخر نبضة قبل ${Math.max(1, Math.round(Number(status.heartbeatAgeMs) / 1000))} ثانية` : ''}.`
+        ? `النبض يصل بانتظام${status?.heartbeatAgeMs != null ? `؛ آخر نبضة قبل ${arabicCountPhrase(Math.max(1, Math.round(Number(status.heartbeatAgeMs) / 1000)), SECOND_AFTER_PREPOSITION_FORMS)}` : ''}.`
         : 'لا تصل نبضة من الماك؛ قد يكون الجهاز مطفأً أو نائماً، الإنترنت مقطوعاً، أو خدمة التشغيل متوقفة.',
     },
     {
@@ -2089,7 +2090,7 @@ export function buildWhatsAppDiagnostics({
       detail: status?.lastCatchupError
         ? `تعذّر آخر فحص استرجاع: ${bounded(status.lastCatchupError, 180)}`
         : status?.lastCatchupAt
-          ? `آخر فحص ${status.lastCatchupAt}؛ استعاد ${Math.max(0, Number(status.lastCatchupRecovered || 0))} رسالة فاتتها الأحداث الحية.`
+          ? `آخر فحص ${status.lastCatchupAt}؛ استعاد ${arabicCountPhrase(Math.max(0, Number(status.lastCatchupRecovered || 0)), RECOVERED_MESSAGE_OBJECT_FORMS)}.`
           : 'يعمل الفحص بعد اكتمال اتصال الجسر ثم كل خمس دقائق.',
     },
     {
@@ -2101,8 +2102,8 @@ export function buildWhatsAppDiagnostics({
         : indexed <= 0
           ? 'فهرس الموقع فارغ؛ لا توجد مادة موثقة يبني عليها الرد.'
           : silenced > 0
-            ? `المحرك يعمل، لكن ${silenced} محادثة تحت الاستلام اليدوي ولن تعود إلا بعد إتاحة الإيقاظ.`
-            : `المحرك يعمل ومعه ${indexed} مادة موثقة.`,
+            ? `المحرك يعمل، لكن ${arabicCountPhrase(silenced, CONVERSATION_AFTER_PREPOSITION_FORMS)} تحت الاستلام اليدوي ولن تعود إلا بعد إتاحة الإيقاظ.`
+            : `المحرك يعمل ومعه ${arabicCountPhrase(indexed, VERIFIED_MATERIAL_FORMS)}.`,
     },
     {
       id: 'command-queue',
@@ -2170,7 +2171,7 @@ export function buildWhatsAppDiagnostics({
     code = 'manual-takeover'
     level = 'attention'
     title = 'البوت حي مع محادثات مستلمة يدوياً'
-    summary = `الاتصال سليم، لكن ${silenced} محادثة أُغلقت فيها جلسة البوت بعد رد بشري.`
+    summary = `الاتصال سليم، لكن ${arabicCountPhrase(silenced, CONVERSATION_AFTER_PREPOSITION_FORMS)} أُغلقت فيها جلسة البوت بعد رد بشري.`
     action = 'استخدم «اسمح بالإيقاظ»؛ بعدها يعود فقط عندما يكتب الشخص جملة الإيقاظ.'
   }
 
@@ -4265,7 +4266,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         },
         glossary: glossarySize(),
         note: total
-          ? `من ${total} ردّاً هذا الأسبوع: ${pct(sum('answered'))}٪ أُجيب من المنشور، و${pct(missed)}٪ انتهى بلا مادة. كلما نزلت نسبة «بلا مادة» صار الفهم أعمق.`
+          ? `من ${arabicCountPhrase(total, REPLY_AFTER_PREPOSITION_FORMS)} هذا الأسبوع: ${pct(sum('answered'))}٪ أُجيب من المنشور، و${pct(missed)}٪ انتهى بلا مادة. كلما نزلت نسبة «بلا مادة» صار الفهم أعمق.`
           : 'لم تُسجَّل ردود بعد. الأرقام تبدأ من أول محادثة بعد هذا التحديث.',
       })
       return

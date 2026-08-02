@@ -10,6 +10,7 @@ import { DrAhmadRoom } from './DrAhmadRoom'
 export type { AdminArea, AdminTab } from './admin-navigation'
 export { ADMIN_GROUPS, areaOfTab, defaultTabForArea } from './admin-navigation'
 import { ADMIN_GROUPS, areaOfTab, defaultTabForArea, itemsOfGroup, adminItem, type AdminArea, type AdminTab } from './admin-navigation'
+import { arabicCountPhrase, DECISION_FORMS, MATERIAL_WAITING_AUDIO_FORMS, MESSAGE_PLAIN_FORMS, SCHEDULED_ARTICLE_FORMS, SOURCE_NEEDS_DECISION_FORMS, SUSPICIOUS_SOURCE_FORMS } from '../../lib/arabic-count.ts'
 
 export function AdminAreaTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   const activeArea = areaOfTab(tab)
@@ -363,9 +364,9 @@ export function TodayDashboard({ articles, books, papers, media, onOpen }: { art
   }).length
   const tasks = [
     drafts ? { label: `${drafts} مسودة`, note: 'قرار نشر أو تأجيل.', tab: 'articles' as AdminTab } : null,
-    data.sourceDecisions ? { label: `${data.sourceDecisions} مصدر مشكوك`, note: 'اعتماد بديل أو تركه للمراجعة.', tab: 'content-health' as AdminTab } : null,
+    data.sourceDecisions ? { label: arabicCountPhrase(data.sourceDecisions, SUSPICIOUS_SOURCE_FORMS), note: 'اعتماد بديل أو تركه للمراجعة.', tab: 'content-health' as AdminTab } : null,
     audioNeedsReview ? { label: `${audioNeedsReview} صوت يحتاج مراجعة`, note: 'قرار اعتماد أو إعادة توليد.', tab: 'audio-library' as AdminTab } : null,
-    data.recentMessages ? { label: `${data.recentMessages} رسالة`, note: 'رد أو تحويل أو اعتماد كشهادة.', tab: 'inbox' as AdminTab } : null,
+    data.recentMessages ? { label: arabicCountPhrase(data.recentMessages, MESSAGE_PLAIN_FORMS), note: 'رد أو تحويل أو اعتماد كشهادة.', tab: 'inbox' as AdminTab } : null,
   ].filter(Boolean) as { label: string; note: string; tab: AdminTab }[]
 
   const pulse = useMemo(() => {
@@ -385,13 +386,13 @@ export function TodayDashboard({ articles, books, papers, media, onOpen }: { art
       .sort((a, b) => b.score - a.score || b.count - a.count)[0]?.path || ''
 
     const update = data.sourceDecisions
-      ? { text: `${data.sourceDecisions} مصدر يحتاج قراراً`, tab: 'content-health' as AdminTab }
+      ? { text: arabicCountPhrase(data.sourceDecisions, SOURCE_NEEDS_DECISION_FORMS), tab: 'content-health' as AdminTab }
       : audioNeedsReview
         ? { text: `${audioNeedsReview} صوت يحتاج مراجعة`, tab: 'audio-library' as AdminTab }
       : drafts
         ? { text: `${drafts} مسودة تنتظر قرارك`, tab: 'articles' as AdminTab }
         : scheduled
-          ? { text: `${scheduled} مقال مجدول للمراجعة`, tab: 'articles' as AdminTab }
+          ? { text: arabicCountPhrase(scheduled, SCHEDULED_ARTICLE_FORMS), tab: 'articles' as AdminTab }
           : { text: 'لا شيء عاجل اليوم', tab: 'analytics' as AdminTab }
 
     const focus = topicLabel(data.topTitle)
@@ -415,13 +416,13 @@ export function TodayDashboard({ articles, books, papers, media, onOpen }: { art
         <div className="relative flex flex-wrap items-start justify-between gap-6">
           <div>
             <p className="text-[.76rem] font-semibold text-white/60">غرفة القيادة الصامتة</p>
-            <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.35]">{tasks.length ? `اليوم لديك ${tasks.length} قرارات فقط.` : 'لا توجد مشكلات عاجلة.'}</h2>
+            <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.35]">{tasks.length ? `اليوم لديك ${arabicCountPhrase(tasks.length, DECISION_FORMS)} فقط.` : 'لا توجد مشكلات عاجلة.'}</h2>
             <p className="mt-3 max-w-2xl text-[.9rem] font-light leading-[1.9] text-white/65">هذا الصندوق يعرض القرارات لا كل النواقص. نقص التغطية الصوتية يبقى مسار تطوير مستقلاً، لا إنذاراً أحمر.</p>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1.5 text-[.72rem] text-white/65"><span className="pulse relative h-1.5 w-1.5 rounded-full bg-white/70" />{loading ? 'يتصل بالنظام…' : 'يتحدّث تلقائياً'}</span>
         </div>
         {tasks.length ? <ol className="relative mt-8 grid gap-2.5 md:grid-cols-2">{tasks.map((task, index) => <li key={task.label}><button onClick={() => onOpen(task.tab)} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[.05] px-4 py-3 text-right transition-colors hover:bg-white/[.1]"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[.75rem]">{index + 1}</span><span className="min-w-0 flex-1"><span className="block text-[.86rem] font-medium">{task.label}</span><span className="mt-0.5 block text-[.72rem] text-white/55">{task.note}</span></span><span className="ms-auto">←</span></button></li>)}</ol> : <p className="relative mt-7 text-[.88rem] text-white/70">يمكنك الآن الكتابة أو المغادرة. النظام لا يطلب تدخلك العاجل.</p>}
-        {missingAudio > 0 && <p className="relative mt-4 rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-[.78rem] leading-relaxed text-white/62">تغطية الصوت: {missingAudio} مادة تنتظر صوتاً. تظهر كمؤشر تطوير، لا كخلل عاجل.</p>}
+        {missingAudio > 0 && <p className="relative mt-4 rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-[.78rem] leading-relaxed text-white/62">تغطية الصوت: {arabicCountPhrase(missingAudio, MATERIAL_WAITING_AUDIO_FORMS)}. تظهر كمؤشر تطوير، لا كخلل عاجل.</p>}
       </section>
 
       <section className="overflow-hidden rounded-3xl border border-hair bg-wash px-5 py-6 sm:px-7 md:px-8" aria-label="نبض الموقع">

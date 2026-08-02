@@ -14,6 +14,7 @@ import { createAnalyticsNamer } from '../../lib/analytics-labels'
 import { useCmsContent } from '../../lib/content'
 import { Pagination, usePagedList } from '../Pagination'
 import { buildRows, sleeping, windowDays, type ViewDoc } from '../readerPulseLogic'
+import { arabicCountPhrase, READING_FORMS, VISITED_PAGE_FORMS } from '../../lib/arabic-count.ts'
 
 export function ReaderPulse() {
   const { articles, books, papers, media } = useCmsContent()
@@ -57,13 +58,13 @@ export function ReaderPulse() {
         <>
           <div className="mt-4 flex flex-wrap gap-3">
             <span className="rounded-full bg-accent px-4 py-1.5 text-[.8rem] font-semibold text-white">
-              {weekTotal} قراءة هذا الأسبوع
+              {arabicCountPhrase(weekTotal, READING_FORMS)} هذا الأسبوع
             </span>
             <span className="rounded-full border border-hair px-4 py-1.5 text-[.8rem] text-soft">
-              {allTime} قراءة منذ البداية
+              {arabicCountPhrase(allTime, READING_FORMS)} منذ البداية
             </span>
             <span className="rounded-full border border-hair px-4 py-1.5 text-[.8rem] text-soft">
-              {rows.length} صفحة زارها أحد
+              {arabicCountPhrase(rows.length, VISITED_PAGE_FORMS)}
             </span>
           </div>
 

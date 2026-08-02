@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import type { ArticleRecord } from '../../lib/cms'
+import { arabicCountPhrase, MATERIAL_FORMS } from '../../lib/arabic-count.ts'
 
 const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 
@@ -31,7 +32,7 @@ export function VisitorJourneySuggestion({ articles }: { articles: ArticleRecord
       <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-3">
         {paths.map((path) => (
           <div key={path.category} className="min-w-0 rounded-2xl border border-hair bg-canvas p-3 sm:p-4">
-            <p className="text-[.72rem] font-semibold text-accent">{path.category} · {path.count} مادة</p>
+            <p className="text-[.72rem] font-semibold text-accent">{path.category} · {arabicCountPhrase(path.count, MATERIAL_FORMS)}</p>
             <p className="mt-2 font-display text-[.92rem] font-semibold leading-[1.55] text-ink">{path.first?.title}</p>
             {path.next && <p className="mt-2 text-[.74rem] leading-relaxed text-soft">ثم: {path.next.title}</p>}
           </div>

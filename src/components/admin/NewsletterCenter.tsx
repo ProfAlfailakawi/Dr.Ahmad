@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAdminAuth } from '../../lib/admin-auth'
+import { arabicCountPhrase, SUBSCRIBER_AFTER_PREPOSITION_FORMS, SUBSCRIBER_FORMS } from '../../lib/arabic-count.ts'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.9rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -56,7 +57,7 @@ export function NewsletterCenter({ draft }: { draft: Draft | null }) {
     if (action === 'send') {
       const count = Number(state?.recipientCount || 0)
       if (!count) { setNotice('لا يوجد مشتركون صالحون للإرسال.'); return }
-      if (!window.confirm(`سيتم إرسال هذه النشرة إلى ${count} مشتركاً. هل اعتمدت المعاينة والاختبار؟`)) return
+      if (!window.confirm(`سيتم إرسال هذه النشرة إلى ${arabicCountPhrase(count, SUBSCRIBER_AFTER_PREPOSITION_FORMS)}. هل اعتمدت المعاينة والاختبار؟`)) return
     }
     setBusy(action)
     setNotice('')
@@ -86,7 +87,7 @@ export function NewsletterCenter({ draft }: { draft: Draft | null }) {
           <p className="mt-2 text-[.82rem] leading-relaxed text-soft">لا توجد أي عملية إرسال تلقائي. الإرسال الجماعي لا يبدأ إلا بعد تأكيدك الصريح.</p>
         </div>
         <span className={`rounded-full border px-3 py-1.5 text-[.72rem] font-semibold ${state?.configured ? 'border-accent/25 bg-accent/[.06] text-accent' : 'border-hair bg-canvas text-soft'}`}>
-          {state?.configured ? `${state.provider} جاهز · ${state.recipientCount} مشترك` : 'الإرسال الحقيقي ينتظر الإعداد'}
+          {state?.configured ? `${state.provider} جاهز · ${arabicCountPhrase(state.recipientCount, SUBSCRIBER_FORMS)}` : 'الإرسال الحقيقي ينتظر الإعداد'}
         </span>
       </div>
 
@@ -102,7 +103,7 @@ export function NewsletterCenter({ draft }: { draft: Draft | null }) {
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => setShowPreview((value) => !value)} className="rounded-full border border-hair bg-canvas px-4 py-2 text-[.78rem] font-semibold text-soft hover:border-accent hover:text-accent">{showPreview ? 'إخفاء المعاينة' : 'معاينة الرسالة'}</button>
         <button type="button" onClick={() => void send('test')} disabled={busy !== '' || !state?.configured} className="rounded-full border border-accent/30 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent disabled:opacity-40">{busy === 'test' ? 'أرسل الاختبار…' : `اختبار لنفسي${state?.testEmail ? ` · ${state.testEmail}` : ''}`}</button>
-        <button type="button" onClick={() => void send('send')} disabled={busy !== '' || !state?.configured || !state?.recipientCount} className="rounded-full bg-accent px-5 py-2 text-[.78rem] font-semibold text-white disabled:opacity-40">{busy === 'send' ? 'جارٍ الإرسال…' : `إرسال إلى ${state?.recipientCount || 0} مشترك`}</button>
+        <button type="button" onClick={() => void send('send')} disabled={busy !== '' || !state?.configured || !state?.recipientCount} className="rounded-full bg-accent px-5 py-2 text-[.78rem] font-semibold text-white disabled:opacity-40">{busy === 'send' ? 'جارٍ الإرسال…' : `إرسال إلى ${arabicCountPhrase(state?.recipientCount || 0, SUBSCRIBER_AFTER_PREPOSITION_FORMS)}`}</button>
         {notice && <span className="text-[.76rem] text-soft">{notice}</span>}
       </div>
 

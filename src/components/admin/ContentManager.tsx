@@ -18,6 +18,7 @@ import { audioProofAssets } from '../../lib/audio-proof'
 import { buildMultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
 import { advanceCascadeCorrection, buildCascadeCorrectionCase, cascadeCorrectionId, cascadeCorrectionSummary, correctionBlocksRelease, correctionReadyForPassport, type CascadeCorrectionCase, type CascadeCorrectionEvent } from '../../lib/cascade-correction.mjs'
 import { buildImpactMirror } from '../../lib/impact-mirror.mjs'
+import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, RELATED_PAPER_FORMS, SENTENCE_WITH_ECHO_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -1266,7 +1267,7 @@ ${form.outlet || ''}`
                   {echoes.length > 0 && (
                     <div className="mt-3 rounded-xl border border-accent/30 bg-canvas p-3">
                       <p className="text-[.75rem] font-semibold text-accent">
-                        ماذا لو نشرتَه اليوم؟ — {echoes.length === 1 ? 'جملةٌ لها صدى' : `${echoes.length} جُمَل لها صدى`} في أرشيفك
+                        ماذا لو نشرتَه اليوم؟ — {arabicCountPhrase(echoes.length, SENTENCE_WITH_ECHO_FORMS)} في أرشيفك
                       </p>
                       <ul className="mt-2 grid gap-3">
                         {echoes.map((echo) => (
@@ -1306,7 +1307,7 @@ ${form.outlet || ''}`
               </div>
               <Field label="ISBN / ردمك"><input className={input} dir="ltr" value={form.isbn || ''} onChange={(event) => set('isbn', event.target.value)} /></Field>
               <Field label="الوصف المختصر"><textarea className={`${input} min-h-24 leading-loose`} value={form.desc || ''} onChange={(event) => set('desc', event.target.value)} /></Field>
-              <Field label="الوصف الموسّع" hint={`${(form.longDescription || '').trim().split(/\s+/).filter(Boolean).length} كلمة`}><textarea className={`${input} min-h-64 leading-loose`} value={form.longDescription || ''} onChange={(event) => set('longDescription', event.target.value)} /></Field>
+              <Field label="الوصف الموسّع" hint={arabicCountPhrase((form.longDescription || '').trim().split(/\s+/).filter(Boolean).length, WORD_PLAIN_FORMS)}><textarea className={`${input} min-h-64 leading-loose`} value={form.longDescription || ''} onChange={(event) => set('longDescription', event.target.value)} /></Field>
               <Field label="الفئة المستهدفة"><textarea className={`${input} min-h-24 leading-loose`} value={form.targetAudience || ''} onChange={(event) => set('targetAudience', event.target.value)} /></Field>
               <Field label="لماذا كُتب الكتاب؟"><textarea className={`${input} min-h-24 leading-loose`} value={form.whyWritten || ''} onChange={(event) => set('whyWritten', event.target.value)} /></Field>
               <Field label="فهرس المحتويات" hint="عنوان واحد في كل سطر؛ لا تُدخل رقماً إلا بعد مطابقته بالنسخة المعتمدة."><textarea className={`${input} min-h-48 leading-loose`} value={form.toc || ''} onChange={(event) => set('toc', event.target.value)} /></Field>
@@ -1324,7 +1325,7 @@ ${form.outlet || ''}`
                   <p className="text-[.74rem] leading-relaxed text-soft">خريطة خاصة لا تظهر للقراء: تقيس ما لديك فعلاً من مقالات وأبحاث، وتقترح محاور قابلة للبناء من دون كتابة الكتاب عنك.</p>
                   <div><button type="button" className={secondary} disabled={bookArchitectureBusy || !form.slug?.trim()} onClick={() => void rebuildBookArchitecture()}>{bookArchitectureBusy ? 'أبني الخريطة…' : 'حلّل بنية الكتاب من الأرشيف'}</button></div>
                   {bookArchitectureNotice && <p className="text-[.72rem] leading-relaxed text-soft">{bookArchitectureNotice}</p>}
-                  {bookArchitecture && <div className="grid gap-2">{bookArchitecture.chapters.map((chapter) => <div key={chapter.id} className="rounded-xl border border-hair bg-canvas px-3 py-2.5"><div className="flex items-baseline justify-between gap-4"><strong className="text-[.76rem] text-ink">{chapter.title}</strong><span className="shrink-0 text-[.66rem] text-soft">تغطية {chapter.coverage}/100</span></div><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{chapter.articles.length} مقال · {chapter.papers.length} بحث مرتبط</p></div>)}{bookArchitecture.gaps.map((gap) => <p key={gap} className="rounded-lg border border-accent/20 bg-canvas px-3 py-2 text-[.7rem] leading-relaxed text-soft">{gap}</p>)}</div>}
+                  {bookArchitecture && <div className="grid gap-2">{bookArchitecture.chapters.map((chapter) => <div key={chapter.id} className="rounded-xl border border-hair bg-canvas px-3 py-2.5"><div className="flex items-baseline justify-between gap-4"><strong className="text-[.76rem] text-ink">{chapter.title}</strong><span className="shrink-0 text-[.66rem] text-soft">تغطية {chapter.coverage}/100</span></div><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{arabicCountPhrase(chapter.articles.length, ARTICLE_PLAIN_FORMS)} · {arabicCountPhrase(chapter.papers.length, RELATED_PAPER_FORMS)}</p></div>)}{bookArchitecture.gaps.map((gap) => <p key={gap} className="rounded-lg border border-accent/20 bg-canvas px-3 py-2 text-[.7rem] leading-relaxed text-soft">{gap}</p>)}</div>}
                 </div>
               </details>
             </>

@@ -1,5 +1,6 @@
 import type { ArticleRecord } from './cms.ts'
 import { articleSimilarityReport, ideaTokens } from './intelligence.ts'
+import { arabicCountPhrase, AVAILABLE_ARCHIVAL_MATERIAL_FORMS, CHECKABLE_SENTENCE_FORMS, DURABLE_SENTENCE_FORMS, MATERIAL_AFTER_PREPOSITION_FORMS, MOMENT_SENTENCE_FORMS } from './arabic-count.ts'
 
 type ArticleLike = Pick<ArticleRecord, 'slug' | 'title' | 'excerpt' | 'body' | 'cat' | 'iso' | 'hasAudio'>
 
@@ -68,7 +69,7 @@ export function genuineAdditionMeter(title: string, body: string, articles: Arti
       newTerms: [],
       repeatedTerms: [],
       questions: ['ما الادعاء الذي لم يقله الأرشيف بهذه الصورة؟'],
-      evidenceBasis: `${articles.length} مادة أرشيفية متاحة للمقارنة.`,
+      evidenceBasis: `${arabicCountPhrase(articles.length, AVAILABLE_ARCHIVAL_MATERIAL_FORMS)}.`,
     }
   }
 
@@ -109,7 +110,7 @@ export function genuineAdditionMeter(title: string, body: string, articles: Arti
       'هل الجديد معلومة، أم مثال، أم موقف، أم نتيجة عملية؟',
       highest >= .40 ? 'هل الأفضل تحديث أقرب مقال بدل نشر مادة جديدة؟' : 'هل يمكن صياغة الإضافة في سطر واحد داخل المقدمة؟',
     ],
-    evidenceBasis: `قورنت المسودة بـ${articles.length} مادة؛ أعلى تطابق أرشيفي فعلي ${Math.round(highest * 100)}٪.`,
+    evidenceBasis: `قورنت المسودة بـ${arabicCountPhrase(articles.length, MATERIAL_AFTER_PREPOSITION_FORMS)}؛ أعلى تطابق أرشيفي فعلي ${Math.round(highest * 100)}٪.`,
   }
 }
 
@@ -202,7 +203,7 @@ export function timeTest(title: string, body: string): TimeTest {
     durable,
     needsContext,
     verdict,
-    explanation: `${momentBound.length} جملة مرتبطة باللحظة، و${durable.length} جملة تحمل معياراً أبقى، من أصل ${rows.length} جملة قابلة للفحص.`,
+    explanation: `${arabicCountPhrase(momentBound.length, MOMENT_SENTENCE_FORMS)}، و${arabicCountPhrase(durable.length, DURABLE_SENTENCE_FORMS)}، من أصل ${arabicCountPhrase(rows.length, CHECKABLE_SENTENCE_FORMS)}.`,
   }
 }
 

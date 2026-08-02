@@ -61,7 +61,7 @@ export default function KnowledgeFingerprint({ feature = false }: { feature?: bo
   const firstYear = model.years[0]
   const lastYear = model.years[model.years.length - 1]
   const wrapper = feature
-    ? 'mb-14 overflow-hidden rounded-[30px] border border-accent/15 bg-[radial-gradient(circle_at_top_right,rgba(var(--c-accent),0.1),transparent_42%),linear-gradient(180deg,rgba(var(--c-wash),0.55),rgba(var(--c-canvas),1))] p-6 shadow-[0_16px_60px_rgba(15,23,42,.04)] md:p-9'
+    ? 'mb-14 overflow-hidden rounded-[30px] border border-accent/[.15] bg-[radial-gradient(circle_at_top_right,rgba(var(--c-accent),0.1),transparent_42%),linear-gradient(180deg,rgba(var(--c-wash),0.55),rgba(var(--c-canvas),1))] p-6 shadow-[0_16px_60px_rgba(15,23,42,.04)] md:p-9'
     : 'mb-14 overflow-hidden rounded-2xl border border-hair bg-wash/40 p-6 md:p-8'
   const svgWidth = feature ? 'max-w-[430px]' : 'max-w-[380px]'
   const textWidth = feature ? 'max-w-[52ch]' : 'max-w-[46ch]'

@@ -1,5 +1,6 @@
 import type { IdeaDna } from './idea-dna'
 import type { AgendaAlignment, PersonalSourceMatch } from './editorial-memory'
+import { arabicCountPhrase, ARCHIVAL_MATERIAL_FORMS, CONNECTION_OBJECT_FORMS, ITEM_FORMS, NEAR_ARCHIVAL_MATERIAL_FORMS, RELEVANT_LINK_OBJECT_FORMS, RELATED_ARCHIVAL_MATERIAL_OBJECT_FORMS, RETURNABLE_RELATED_MATERIAL_OBJECT_FORMS, RELATED_SIGNAL_OBJECT_FORMS, RESULT_AFTER_PREPOSITION_FORMS } from './arabic-count.ts'
 
 export type EditorialVerdict = 'write_now' | 'change_angle' | 'wait' | 'update_existing' | 'reject'
 export type EditorialSourceType = 'self' | 'friend' | 'colleague' | 'reader' | 'student' | 'meeting' | 'whatsapp' | 'encounter' | 'other'
@@ -284,7 +285,7 @@ function timingFrom(input: EditorialBoardInput) {
   return {
     available: true,
     score,
-    explanation: `وجد الرادار ${input.currentEvents.length} رابطاً راهناً ذا صلة؛ أقوى إشارة تحريرية بلغت ${strongest} في مقياس الرادار الداخلي${fresh ? ' وبينها مادة حديثة خلال 72 ساعة' : ''}.`,
+    explanation: `وجد الرادار ${arabicCountPhrase(input.currentEvents.length, RELEVANT_LINK_OBJECT_FORMS)}؛ أقوى إشارة تحريرية بلغت ${strongest} في مقياس الرادار الداخلي${fresh ? ' وبينها مادة حديثة خلال 72 ساعة' : ''}.`,
   }
 }
 
@@ -349,7 +350,7 @@ function buildEvidenceGate(input: EditorialBoardInput, timingScore: number | nul
     input.dna.evidence.score >= 62 ? `Idea DNA يقدّر قوة الدليل الأولي بـ${clamp(input.dna.evidence.score)}/100.` : '',
     strongPaper ? `يوجد بحث مرتبط في الأرشيف: «${strongPaper.title}».` : '',
     activePersonalSource ? `لديك في مكتب المصادر مادة شخصية مرتبطة: «${activePersonalSource.title}».` : '',
-    strongArchive >= 2 ? `يوجد ${strongArchive} مواد أرشيفية قريبة يمكن البناء عليها من دون بدء البحث من الصفر.` : '',
+    strongArchive >= 2 ? `يوجد ${arabicCountPhrase(strongArchive, NEAR_ARCHIVAL_MATERIAL_FORMS)} يمكن البناء عليها من دون بدء البحث من الصفر.` : '',
     freshCurrent ? `يوجد سياق راهن موثوق يمكن التحقق منه عبر «${freshCurrent.source}».` : '',
   ], 6)
   const missing = unique([
@@ -375,7 +376,7 @@ function buildEvidenceGate(input: EditorialBoardInput, timingScore: number | nul
     missing,
     explanation: ready
       ? 'بوابة الدليل جاهزة؛ لن تظهر للمستخدم عند بدء المقال لأن الأدلة الأساسية موجودة.'
-      : `قبل المسودة ينقص ${missing.length === 1 ? 'عنصر واحد' : `${missing.length} عناصر`} من الدليل. لا يُمنع الكاتب، لكن يلزم قرار واعٍ قبل المتابعة.`,
+      : `قبل المسودة ينقص ${arabicCountPhrase(missing.length, ITEM_FORMS)} من الدليل. لا يُمنع الكاتب، لكن يلزم قرار واعٍ قبل المتابعة.`,
   }
 }
 
@@ -501,15 +502,15 @@ function buildScoreEvidence(
     {
       key: 'timing', label: 'قوة التوقيت', value: scores.timing,
       signals: unique([
-        input.currentContextAvailable ? `فُحص current-context ووجد ${input.currentEvents.length} إشارة مرتبطة.` : 'current-context غير متاح؛ لم تدخل درجة مصطنعة.',
+        input.currentContextAvailable ? `فُحص current-context ووجد ${arabicCountPhrase(input.currentEvents.length, RELATED_SIGNAL_OBJECT_FORMS)}.` : 'current-context غير متاح؛ لم تدخل درجة مصطنعة.',
         input.currentEvents[0] ? `أقوى مصدر راهن: ${input.currentEvents[0].source}.` : '',
       ], 4),
     },
     {
       key: 'identityFit', label: 'ملاءمة الموضوع لهويتك', value: scores.identityFit,
       signals: unique([
-        input.graphMatches.length ? `خريطة المعرفة أعادت ${input.graphMatches.length} صلات حقيقية.` : 'خريطة المعرفة لم تُرجع صلة؛ استُخدم الأرشيف المباشر فقط.',
-        input.archiveMaterials.length ? `المجلس وجد ${input.archiveMaterials.length} مواد أرشيفية مرتبطة.` : '',
+        input.graphMatches.length ? `خريطة المعرفة أعادت ${arabicCountPhrase(input.graphMatches.length, CONNECTION_OBJECT_FORMS)}.` : 'خريطة المعرفة لم تُرجع صلة؛ استُخدم الأرشيف المباشر فقط.',
+        input.archiveMaterials.length ? `المجلس وجد ${arabicCountPhrase(input.archiveMaterials.length, RELATED_ARCHIVAL_MATERIAL_OBJECT_FORMS)}.` : '',
       ], 4),
     },
     {
@@ -674,7 +675,7 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
     timing.explanation,
     input.portfolioEvidence.explanation,
     input.agendaEvidence?.explanation || '',
-    (input.personalSourceMatches || []).length ? `وجد مكتب المصادر الشخصي ${(input.personalSourceMatches || []).length} مادة مرتبطة يمكن العودة إليها؛ لم تُحسب أي مادة منسحبة كدليل قوي.` : '',
+    (input.personalSourceMatches || []).length ? `وجد مكتب المصادر الشخصي ${arabicCountPhrase((input.personalSourceMatches || []).length, RETURNABLE_RELATED_MATERIAL_OBJECT_FORMS)}؛ لم تُحسب أي مادة منسحبة كدليل قوي.` : '',
     !input.personalMode ? input.audienceEvidence.explanation : '',
     verdict === 'update_existing' && nearestArticle ? `الأقرب «${nearestArticle.title}» قريب بما يكفي لأن يكون تحديثه أفضل من تقسيم الفكرة.` : '',
   ], 8)
@@ -689,7 +690,7 @@ export function buildEditorialBoardDecision(input: EditorialBoardInput): Editori
     input.personalMode ? 'مجلس التحرير في الوضع الشخصي: لا يستخدم ردود الجمهور أو رسائلهم في القرار.' : (!input.audienceEvidence.available ? 'لا توجد بيانات جمهور كافية؛ لم تُخترع درجة اهتمام.' : ''),
     !input.graphMatches.length ? 'لم تُرجع خريطة المعرفة صلة كافية؛ اعتمد المجلس على فحص التشابه والأرشيف المباشر.' : '',
     !input.agendaEvidence?.available ? 'لا توجد أجندة فكرية خاصة بعد؛ لم يخترع المجلس اتجاهاً استراتيجياً نيابةً عنك.' : '',
-    calibration ? `عُيّرت الدرجات تدريجياً من ${calibration.sampleSize} نتيجة منشورة سابقة، وبحد أقصى ±8 نقاط؛ هذه معايرة أداء وليست Machine Learning.` : '',
+    calibration ? `عُيّرت الدرجات تدريجياً من ${arabicCountPhrase(calibration.sampleSize, RESULT_AFTER_PREPOSITION_FORMS)}، وبحد أقصى ±8 نقاط؛ هذه معايرة أداء وليست Machine Learning.` : '',
   ])
   const fingerprint = `editorial-${hash(`${normalize(input.idea)}::${input.sourceMode}::${normalize(input.sourceContext || '')}`)}`
   return {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { getDb } from '../../lib/firebase'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../lib/cms'
 import type { LaunchKind, LaunchMode } from '../../lib/settings'
+import { arabicCountPhrase, CUMULATIVE_VIEW_FORMS, DECISION_FORMS } from '../../lib/arabic-count.ts'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const softButton = 'rounded-full border border-hair px-4 py-2 text-[.82rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent'
@@ -69,7 +70,7 @@ export function QuietCommandCenter({ articles, onNavigate }: { articles: Article
           <div>
             <p className="text-[.76rem] font-semibold uppercase text-accent">غرفة القيادة الصامتة</p>
             <h2 className="mt-2 font-display text-[clamp(1.55rem,3vw,2.25rem)] font-semibold leading-[1.4] text-ink">
-              {loading ? 'أرتّب أولويات اليوم…' : decisions.length ? `اليوم لديك ${decisions.length} ${decisions.length === 1 ? 'قرار' : 'قرارات'} فقط.` : 'لا توجد مشكلات عاجلة.'}
+              {loading ? 'أرتّب أولويات اليوم…' : decisions.length ? `اليوم لديك ${arabicCountPhrase(decisions.length, DECISION_FORMS)} فقط.` : 'لا توجد مشكلات عاجلة.'}
             </h2>
             <p className="mt-2 max-w-2xl text-[.88rem] leading-relaxed text-soft">لا تعرض هذه الصفحة كل ما يستطيع النظام فعله؛ تعرض فقط ما يحتاج انتباهك الآن.</p>
           </div>
@@ -90,7 +91,7 @@ export function QuietCommandCenter({ articles, onNavigate }: { articles: Article
       </section>
 
       <section className={`${card} flex flex-wrap items-center justify-between gap-4`}>
-        <div><p className="text-[.75rem] font-semibold text-accent">الأكثر حضوراً</p><p className="mt-1 font-display text-lg font-semibold text-ink">{data.topTitle}</p><p className="mt-1 text-[.78rem] text-soft">{data.topCount ? `${data.topCount} مشاهدة تراكمية` : 'سيظهر هنا بعد بدء التفاعل.'}</p></div>
+        <div><p className="text-[.75rem] font-semibold text-accent">الأكثر حضوراً</p><p className="mt-1 font-display text-lg font-semibold text-ink">{data.topTitle}</p><p className="mt-1 text-[.78rem] text-soft">{data.topCount ? arabicCountPhrase(data.topCount, CUMULATIVE_VIEW_FORMS) : 'سيظهر هنا بعد بدء التفاعل.'}</p></div>
         <button onClick={() => onNavigate('analytics')} className={softButton}>افتح التحليلات التفصيلية ←</button>
       </section>
     </div>

@@ -20,6 +20,7 @@ import {
 } from "../lib/radar-display";
 import { Pagination, usePagedList } from "../components/Pagination";
 import { liveLink } from "../lib/dead-links";
+import { arabicCountPhrase, MATERIAL_FORMS, SOURCE_PLAIN_FORMS } from '../lib/arabic-count.ts';
 
 type RadarItem = {
   ar: string;
@@ -198,7 +199,7 @@ export default function Radar() {
             <>
               <FadeUp>
                 <p className="mb-12 text-[.9rem] text-soft">
-                  {arNum(items.length)} مادة · {arNum(sources.size)} مصادر · الأحدث أولاً
+                  {arabicCountPhrase(items.length, MATERIAL_FORMS, arNum)} · {arabicCountPhrase(sources.size, SOURCE_PLAIN_FORMS, arNum)} · الأحدث أولاً
                 </p>
               </FadeUp>
 
@@ -247,7 +248,7 @@ export default function Radar() {
                       </span>
                       <span className="text-[.85rem] text-soft">
                         {w.label} · {arNum(w.items.length)}{" "}
-                        {w.items.length === 1 ? "التقاطة" : "التقاطات"}
+                        {arabicCountPhrase(w.items.length, CAPTURE_FORMS)}
                       </span>
                     </h3>
                   </FadeUp>

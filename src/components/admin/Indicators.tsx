@@ -4,6 +4,7 @@ import { analyticsKindOf, createAnalyticsNamer, decodeAnalyticsPath, parseJourne
 import type { ArticleRecord } from '../../lib/cms'
 import { useCmsContent } from '../../lib/content'
 import { Pagination, usePagedList } from '../Pagination'
+import { arabicCountPhrase, ATTENTION_WARNING_FORMS } from '../../lib/arabic-count.ts'
 
 type Kind = 'الكل' | AnalyticsKind
 
@@ -241,7 +242,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
               <div>
                 <p className="text-[.76rem] font-semibold uppercase text-accent">حارس الجودة · فحص أسبوعي آلي</p>
                 <h2 className="font-display text-lg font-semibold text-ink">
-                  {health.status === 'سليم' ? 'الموقع سليم بالكامل.' : `${ar(health.issueCount)} تنبيهاً يحتاج انتباهك.`}
+                  {health.status === 'سليم' ? 'الموقع سليم بالكامل.' : `${arabicCountPhrase(health.issueCount, ATTENTION_WARNING_FORMS)}.`}
                 </h2>
               </div>
             </div>

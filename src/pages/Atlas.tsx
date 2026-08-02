@@ -5,6 +5,7 @@ import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
+import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from '../lib/arabic-count.ts'
 
 const W = 1160
 const PAD_R = 150
@@ -77,7 +78,7 @@ export default function Atlas() {
   useSeo({
     title: 'سماء المقالات',
     path: '/atlas',
-    description: `خريطة بصرية لـ${articles.length} مقالاً — كل نجمة مقال، وحجمها طوله.`,
+    description: `خريطة بصرية لـ${arabicCountPhrase(articles.length, ARTICLE_AFTER_PREPOSITION_FORMS)} — كل نجمة مقال، وحجمها طوله.`,
   })
   const reduce = useReducedMotion()
   const nav = useNavigate()
@@ -663,7 +664,7 @@ export default function Atlas() {
               <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-hair bg-canvas p-5">
                 <div className="flex flex-wrap items-center gap-2 text-[.74rem] text-soft">
                   <span className="font-semibold text-accent">{categoryLabel(active.cat)}</span>
-                  <span>·</span><time>{active.date}</time><span>·</span><span>{arDigits(active.words)} كلمة</span>
+                  <span>·</span><time>{active.date}</time><span>·</span><span>{arabicCountPhrase(active.words, WORD_PLAIN_FORMS, arDigits)}</span>
                   {active.hasAudio && <><span>·</span><span>له صوت</span></>}
                   {active.i === dayStarIndex && <><span>·</span><span className="text-accent">نجمة اليوم</span></>}
                 </div>

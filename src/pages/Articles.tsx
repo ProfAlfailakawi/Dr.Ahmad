@@ -7,6 +7,7 @@ import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy
 import { ReaderFingerprint } from '../components/ReaderResonance'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { SocialIcon } from '../components/icons'
+import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, MATCHING_RESULT_FORMS } from '../lib/arabic-count.ts'
 
 const stableHash = (value: string) => {
   let hash = 2166136261
@@ -57,7 +58,7 @@ export default function Articles() {
   // السنة الأولى تُحسب من المقالات نفسها — تتحدّث تلقائياً مع أي إضافة
   const years = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
   const firstYear = years.length ? Math.min(...years) : new Date().getFullYear()
-  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مقالات فكرية تتتبّع تحولات التعليم والتكنولوجيا والمجتمع منذ انطلاق الرحلة العلمية عام 2015 — ${articles.length} مقالاً.` })
+  useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مقالات فكرية تتتبّع تحولات التعليم والتكنولوجيا والمجتمع منذ انطلاق الرحلة العلمية عام 2015 — ${arabicCountPhrase(articles.length, ARTICLE_PLAIN_FORMS)}.` })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
   const [year, setYear] = useState('الكل')
@@ -198,7 +199,7 @@ export default function Articles() {
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <p className="text-[.82rem] text-soft">
-              {archiveActive ? `${filtered.length} نتيجة مطابقة` : 'المقالات موزعة بتنوّع موضوعي، مع الحفاظ على حضور الأحدث.'}
+              {archiveActive ? arabicCountPhrase(filtered.length, MATCHING_RESULT_FORMS) : 'المقالات موزعة بتنوّع موضوعي، مع الحفاظ على حضور الأحدث.'}
             </p>
           </FadeUp>
 

@@ -1,6 +1,7 @@
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms'
 import { toRoot } from './dialect-lexicon'
 import { liveLink } from './dead-links'
+import { arabicCountPhrase, YEAR_AFTER_PREPOSITION_FORMS } from './arabic-count.ts'
 
 export type IdeaCertainty = 'حقيقة موثقة' | 'استنتاج' | 'موقف قيمي' | 'توقع'
 export type PredictionStatus = 'قيد المتابعة' | 'ظهرت إشارة لاحقة' | 'تحتاج زمناً أطول'
@@ -411,8 +412,8 @@ export function predictionRecordsFor(article: ArticleRecord, articles: ArticleRe
           ? `أعاد مقال «${newer.title}» المنشور عام ${newer.iso.slice(0, 4)} فتح الاتجاه الذي بدأه هذا التوقع، من دون أن يكون ظهوره وحده حكماً بالتحقق.`
           : `لم تظهر بعد في الأرشيف كتابة لاحقة تعيد صياغة توقع «${concise(quote, 92)}» أو تنقض اتجاهه بوضوح.`),
         timing: review?.dimensions?.timing || (yearsOld < 2
-          ? `لم يمض على نشر «${article.title}» سوى ${yearsOld || 'أقل من'} ${yearsOld === 1 ? 'سنة' : 'سنتين'}؛ لذلك تبقى المراجعة المبكرة غير عادلة.`
-          : `مرّ نحو ${yearsOld} أعوام منذ نشر «${article.title}» عام ${article.iso.slice(0, 4)}؛ وهي مدة تسمح بجمع إشارات، لا بإعلان نتيجة نهائية بلا أدلة مستقلة.`),
+          ? `لم يمض على نشر «${article.title}» سوى ${yearsOld ? arabicCountPhrase(yearsOld, YEAR_AFTER_PREPOSITION_FORMS) : 'أقل من سنة'}؛ لذلك تبقى المراجعة المبكرة غير عادلة.`
+          : `مرّ نحو ${arabicCountPhrase(yearsOld, YEAR_AFTER_PREPOSITION_FORMS)} منذ نشر «${article.title}» عام ${article.iso.slice(0, 4)}؛ وهي مدة تسمح بجمع إشارات، لا بإعلان نتيجة نهائية بلا أدلة مستقلة.`),
         scale: review?.dimensions?.scale || `يتصل هذا التوقع بمحور «${themeLabel(article)}»؛ لذلك لا يُقاس حجمه بخبر واحد، بل بتكرار الأثر واتساعه وثباته عبر أكثر من حالة.`,
         scope: review?.dimensions?.scope || `نطاق الحكم الأول هو سياق «${article.cat || themeLabel(article)}» كما صيغ في «${article.title}»؛ وأي تعميم خارجه يحتاج دليلاً يطابق الفئة والبيئة والزمن.`,
       },

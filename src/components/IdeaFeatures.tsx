@@ -1,3 +1,4 @@
+import { arabicCountPhrase, CONNECTION_FORMS } from '../lib/arabic-count.ts'
 /* أداة تحديدٍ واحدة أنيقة (أحادية اللون، بلا تلوث بصري): تظهر عند تظليل أي جملةٍ في المقال،
    وتقدّم فعلين متباعدين في شريطٍ واحد لا يتداخلان:
    ١) تتبّع الجملة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
@@ -754,7 +755,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                         <Link to={`/articles/${a.slug}`} onClick={close} className="mt-0.5 block font-display text-[1.02rem] font-medium leading-[1.6] text-ink transition-colors hover:text-accent">
                           {a.title}
                         </Link>
-                        <span className="mt-1 block text-[.72rem] text-soft">{categoryLabel(a.cat)} · {overlap > 0 ? `${ar(overlap)} ${overlap === 1 ? 'صلة' : 'صلات'} مشتركة` : 'امتداد من المرحلة نفسها'}</span>
+                        <span className="mt-1 block text-[.72rem] text-soft">{categoryLabel(a.cat)} · {overlap > 0 ? arabicCountPhrase(overlap, CONNECTION_FORMS, ar) : 'امتداد من المرحلة نفسها'}</span>
                       </li>
                     ))}
                   </ol>

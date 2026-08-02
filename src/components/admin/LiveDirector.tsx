@@ -33,6 +33,7 @@ import {
 import { extractVideoFrame, measureImageSharpness } from '../../lib/live-director-frames'
 import { buildTweets, verifiedLineOf, type TweetSource } from '../../lib/tweet-forge'
 import { resolveResonantQuotes, resonanceBySlug, type ResonanceRow } from '../../lib/resonance-quotes'
+import { arabicCountPhrase, DAY_FORMS, SAVED_PROMPT_COPY_FORMS, SECOND_AFTER_PREPOSITION_FORMS, SECOND_FORMS, SHOT_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
 
 type DirectorPath = 'article' | 'public' | null
 type StoredProject = LiveDirectorProject & { userId?: string }
@@ -303,7 +304,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
       const frame = await extractVideoFrame(file, mode === 'manual' && Number.isFinite(second) ? second : undefined)
       // الإطار الضبابي لا يُعتمد تلقائياً؛ يُعرض السبب ويُترك الاختيار لد. أحمد.
       if (frame.sharpness < 0.35) {
-        setNotice(`الإطار عند ${frame.atSecond.toFixed(2)} ثانية ضبابي أو أثناء حركة؛ اختر ثانية أخرى بدل اعتماده.`)
+        setNotice(`الإطار عند ${arabicCountPhrase(Number(frame.atSecond.toFixed(2)), SECOND_AFTER_PREPOSITION_FORMS)} ضبابي أو أثناء حركة؛ اختر ثانية أخرى بدل اعتماده.`)
         return
       }
       await uploadAsset(frame.blob, 'frame', segmentId, frame.sharpness)
@@ -378,9 +379,9 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
       </section>
 
       {project && <>
-        <section className={card} data-live-director-recommendation="true"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Metric label="المدة المقترحة" value={`${project.duration} ثانية`} /><Metric label="المقاطع" value={`${project.segmentCount} × 8 ثوانٍ`} /><Metric label="خطة التوليد" value={`${project.days} ${project.days === 1 ? 'يوم' : 'أيام'}`} /><Metric label="الحالة" value={project.status} /></div><p className="mt-4 border-t border-hair pt-4 text-[.78rem] leading-relaxed text-soft">{project.durationReason}</p>{project.series && <div className="mt-4 rounded-xl border border-accent/20 bg-canvas p-4"><strong className="text-[.76rem] text-accent">الموضوع يستحق سلسلة بدل الحشر</strong><ol className="mt-2 grid gap-1 text-[.72rem] text-soft">{project.seriesPlan.map((item) => <li key={item}>{item}</li>)}</ol></div>}</section>
+        <section className={card} data-live-director-recommendation="true"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Metric label="المدة المقترحة" value={arabicCountPhrase(project.duration, SECOND_FORMS)} /><Metric label="المقاطع" value={`${project.segmentCount} × 8 ثوانٍ`} /><Metric label="خطة التوليد" value={arabicCountPhrase(project.days, DAY_FORMS)} /><Metric label="الحالة" value={project.status} /></div><p className="mt-4 border-t border-hair pt-4 text-[.78rem] leading-relaxed text-soft">{project.durationReason}</p>{project.series && <div className="mt-4 rounded-xl border border-accent/20 bg-canvas p-4"><strong className="text-[.76rem] text-accent">الموضوع يستحق سلسلة بدل الحشر</strong><ol className="mt-2 grid gap-1 text-[.72rem] text-soft">{project.seriesPlan.map((item) => <li key={item}>{item}</li>)}</ol></div>}</section>
 
-        <section className={card}><p className="text-[.72rem] font-semibold text-accent">السيناريو المختصر</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">{project.title}</h3><p className="mt-2 text-[.78rem] leading-relaxed text-soft">{project.centralMessage}</p><div className="mt-4 rounded-xl border border-hair bg-canvas p-4"><span className="text-[.66rem] font-semibold text-accent">النص المنطوق · {project.narration.split(/\s+/).filter(Boolean).length} كلمة</span><p className="mt-2 text-[.8rem] leading-loose text-ink">{project.narration}</p></div><details className="mt-4 rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-ink">قفل الهوية وملاحظات الاستمرارية</summary><p className="mt-3 text-[.72rem] leading-relaxed text-soft">{project.identityLock}</p><ul className="mt-3 grid gap-1 text-[.7rem] text-soft">{project.continuityNotes.map((item) => <li key={item}>— {item}</li>)}</ul></details></section>
+        <section className={card}><p className="text-[.72rem] font-semibold text-accent">السيناريو المختصر</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">{project.title}</h3><p className="mt-2 text-[.78rem] leading-relaxed text-soft">{project.centralMessage}</p><div className="mt-4 rounded-xl border border-hair bg-canvas p-4"><span className="text-[.66rem] font-semibold text-accent">النص المنطوق · {arabicCountPhrase(project.narration.split(/\s+/).filter(Boolean).length, WORD_PLAIN_FORMS)}</span><p className="mt-2 text-[.8rem] leading-loose text-ink">{project.narration}</p></div><details className="mt-4 rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-ink">قفل الهوية وملاحظات الاستمرارية</summary><p className="mt-3 text-[.72rem] leading-relaxed text-soft">{project.identityLock}</p><ul className="mt-3 grid gap-1 text-[.7rem] text-soft">{project.continuityNotes.map((item) => <li key={item}>— {item}</li>)}</ul></details></section>
 
         <section className={card} data-live-director-daily-plan="true"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.72rem] font-semibold text-accent">خطة العمل اليومية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">ولّد ثلاثة مقاطع فقط في اليوم.</h3></div><span className="text-[.68rem] text-soft">إذا فشل مقطع، أصلحه وحده.</span></div><div className="mt-5 grid gap-6">{dailyPlan.map((day) => <section key={day.day}><h4 className="mb-3 text-[.76rem] font-semibold text-ink">اليوم {day.day}</h4><div className="grid gap-4 xl:grid-cols-3">{day.clips.map((segment) => <ClipCard key={segment.id} segment={segment} status={CLIP_STATUS_LABELS} busy={busy} repairIssue={repairIssue[segment.id] || LIVE_DIRECTOR_REPAIR_ISSUES[0]} hasFile={Boolean(clipFiles[segment.id])} frameSecond={frameSecond[segment.id] || ''} onStatus={(value) => updateClipStatus(segment.id, value)} onRepairIssue={(value) => setRepairIssue((previous) => ({ ...previous, [segment.id]: value }))} onRepair={() => repairClip(segment.id)} onCopy={(prompt, mode) => void navigator.clipboard.writeText(prompt).then(() => setNotice(`نُسخ برومبت المقطع ${segment.order} — ${flowPromptModeNotice(mode)}.`))} onPickClip={(file) => { setClipFiles((previous) => ({ ...previous, [segment.id]: file })); void uploadAsset(file, 'clip', segment.id) }} onFrameSecond={(value) => setFrameSecond((previous) => ({ ...previous, [segment.id]: value }))} onCaptureFrame={(mode) => void captureFrame(segment.id, mode)} onManualFrame={(file) => void uploadManualFrame(segment.id, file)} onContinuity={(change) => changeContinuity(segment.id, change)} />)}</div></section>)}</div></section>
 
@@ -390,9 +391,9 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
           <p className="text-[.72rem] font-semibold text-accent">النسخة القريبة من دقيقة</p>
           <p className="mt-2 text-[.78rem] leading-relaxed text-soft">{nearMinute.statement}</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.63rem] text-soft">مقدمة تحريرية</span><strong className="mt-1 block text-[.75rem] text-ink">{nearMinute.intro.from}–{nearMinute.intro.to} ثانية</strong><span className="mt-1 block text-[.63rem] leading-relaxed text-soft">{nearMinute.intro.note}</span></div>
-            <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.63rem] text-soft">مادة Flow المولدة</span><strong className="mt-1 block text-[.75rem] text-ink">{nearMinute.generated} ثانية</strong><span className="mt-1 block text-[.63rem] leading-relaxed text-soft">هذه وحدها ما يولّده Flow.</span></div>
-            <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.63rem] text-soft">خاتمة أو بطاقة رابط</span><strong className="mt-1 block text-[.75rem] text-ink">{nearMinute.outro.from}–{nearMinute.outro.to} ثانية</strong><span className="mt-1 block text-[.63rem] leading-relaxed text-soft">{nearMinute.outro.note}</span></div>
+            <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.63rem] text-soft">مقدمة تحريرية</span><strong className="mt-1 block text-[.75rem] text-ink">من {nearMinute.intro.from} إلى {arabicCountPhrase(nearMinute.intro.to, SECOND_AFTER_PREPOSITION_FORMS)}</strong><span className="mt-1 block text-[.63rem] leading-relaxed text-soft">{nearMinute.intro.note}</span></div>
+            <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.63rem] text-soft">مادة Flow المولدة</span><strong className="mt-1 block text-[.75rem] text-ink">{arabicCountPhrase(nearMinute.generated, SECOND_FORMS)}</strong><span className="mt-1 block text-[.63rem] leading-relaxed text-soft">هذه وحدها ما يولّده Flow.</span></div>
+            <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.63rem] text-soft">خاتمة أو بطاقة رابط</span><strong className="mt-1 block text-[.75rem] text-ink">من {nearMinute.outro.from} إلى {arabicCountPhrase(nearMinute.outro.to, SECOND_AFTER_PREPOSITION_FORMS)}</strong><span className="mt-1 block text-[.63rem] leading-relaxed text-soft">{nearMinute.outro.note}</span></div>
           </div>
         </section>}
 
@@ -445,7 +446,7 @@ function ClipCard(props: ClipCardProps) {
       <div className="flex items-start justify-between gap-3">
         <span>
           <span className="block text-[.62rem] font-semibold text-accent">المقطع {segment.order} · {segment.role}</span>
-          <strong className="mt-1 block text-[.78rem] text-ink">{segment.shotCount} {segment.shotCount === 1 ? 'لقطة' : 'لقطات'} · 8 ثوانٍ · {VOICE_MODE_LABELS[segment.voiceMode]}</strong>
+          <strong className="mt-1 block text-[.78rem] text-ink">{arabicCountPhrase(segment.shotCount, SHOT_FORMS)} · 8 ثوانٍ · {VOICE_MODE_LABELS[segment.voiceMode]}</strong>
         </span>
         <select aria-label={`حالة المقطع ${segment.order}`} className="rounded-full border border-hair bg-wash px-2 py-1 text-[.62rem] text-soft" value={segment.status} onChange={(event) => props.onStatus(event.target.value as LiveDirectorClipStatus)}>
           {Object.entries(props.status).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -538,7 +539,7 @@ function ClipCard(props: ClipCardProps) {
         </select>
         <button type="button" onClick={props.onRepair} className={`${ghost} mt-2 w-full`}>أصلح هذا المقطع فقط</button>
         {segment.revisionReason && <span className="mt-2 block text-[.62rem] text-soft">آخر سبب تعديل: {segment.revisionReason}</span>}
-        {segment.promptVersions.length > 1 && <span className="mt-1 block text-[.62rem] text-soft">محفوظة {segment.promptVersions.length} نسخ لهذا المقطع.</span>}
+        {segment.promptVersions.length > 1 && <span className="mt-1 block text-[.62rem] text-soft">{arabicCountPhrase(segment.promptVersions.length, SAVED_PROMPT_COPY_FORMS)} لهذا المقطع.</span>}
       </details>
 
       {segment.videoUrl && <video controls preload="metadata" className="mt-3 aspect-video w-full rounded-xl bg-ink" src={segment.videoUrl} />}
@@ -556,5 +557,5 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function RecentProjects({ projects, onOpen }: { projects: StoredProject[]; onOpen: (project: StoredProject) => void }) {
   if (!projects.length) return null
-  return <details className={card}><summary className="cursor-pointer list-none text-[.76rem] font-semibold text-ink">المشاريع المحفوظة · {projects.length}</summary><div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">{projects.map((item) => <button key={item.id} type="button" onClick={() => onOpen(item)} className="rounded-xl border border-hair bg-canvas p-4 text-right transition hover:border-accent"><span className="text-[.62rem] font-semibold text-accent">{item.type === 'article_video' ? 'فيديو مقال' : 'فيديو جمهور'} · {item.duration} ثانية</span><strong className="mt-1 line-clamp-2 block text-[.76rem] text-ink">{item.title}</strong><span className="mt-1 block text-[.65rem] text-soft">{item.status}</span></button>)}</div></details>
+  return <details className={card}><summary className="cursor-pointer list-none text-[.76rem] font-semibold text-ink">المشاريع المحفوظة · {projects.length}</summary><div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">{projects.map((item) => <button key={item.id} type="button" onClick={() => onOpen(item)} className="rounded-xl border border-hair bg-canvas p-4 text-right transition hover:border-accent"><span className="text-[.62rem] font-semibold text-accent">{item.type === 'article_video' ? 'فيديو مقال' : 'فيديو جمهور'} · {arabicCountPhrase(item.duration, SECOND_FORMS)}</span><strong className="mt-1 line-clamp-2 block text-[.76rem] text-ink">{item.title}</strong><span className="mt-1 block text-[.65rem] text-soft">{item.status}</span></button>)}</div></details>
 }

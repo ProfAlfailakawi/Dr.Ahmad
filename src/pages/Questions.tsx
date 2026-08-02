@@ -7,6 +7,7 @@ import { useExtras } from '../lib/content'
 import { normalizeArabic } from '../lib/cms'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { Question, LAUNCH_DATE, staticQuestions } from '../questions-data'
+import { arabicCountPhrase, DAY_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 export { LAUNCH_DATE, staticQuestions }
 
 const clean = (value = '') => value.replace(/\s+/g, ' ').trim()
@@ -55,7 +56,7 @@ function cadenceIndex(length: number) {
 
 const relativePeriod = (offset: number) => {
   if (offset === 1) return 'السؤال السابق'
-  return `قبل ${offset * 2} أيام`
+  return `قبل ${arabicCountPhrase(offset * 2, DAY_AFTER_PREPOSITION_FORMS)}`
 }
 
 type LiveQuestion = Question & {

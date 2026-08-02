@@ -9,6 +9,7 @@ import tocData from '../data/book-toc-links.json'
 import { SocialIcon } from '../components/icons'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { bookKnowledgeAnchor, getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
+import { arabicCountPhrase, CHAPTER_FORMS, TITLE_FORMS } from '../lib/arabic-count.ts'
 
 type BookGuide = { idea: string; audience: string; entry: string }
 
@@ -100,7 +101,7 @@ function TocDisclosure({ group, groupIndex, bookSlug }: { group: TocGroup; group
       <summary className="flex min-h-14 cursor-pointer list-none items-center gap-4 px-5 py-4 md:px-7">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair font-display text-[.68rem] text-accent">{String(groupIndex + 1).padStart(2, '0')}</span>
         <strong className="min-w-0 flex-1 break-words text-[.9rem] leading-relaxed text-ink">{group.title}</strong>
-        <span className="shrink-0 text-[.66rem] text-soft">{group.entries.length} فصول</span>
+        <span className="shrink-0 text-[.66rem] text-soft">{arabicCountPhrase(group.entries.length, CHAPTER_FORMS)}</span>
         <span aria-hidden className="text-accent transition-transform group-open/toc:rotate-45">＋</span>
       </summary>
       <ol className="border-t border-hair bg-wash/[.38] px-5 py-2 md:px-7">
@@ -391,7 +392,7 @@ export default function BookDetail() {
                   <h2 id="book-toc-title" className="font-display text-2xl font-semibold text-ink">فهرس المحتويات</h2>
                   <p className="mt-1 text-[.72rem] leading-relaxed text-soft">أبوابٌ تُفتح عند الحاجة؛ لا جدار من البطاقات المتشابهة.</p>
                 </div>
-                {toc.length > 0 && <span className="text-[.68rem] text-soft">{toc.length} عنواناً</span>}
+                {toc.length > 0 && <span className="text-[.68rem] text-soft">{arabicCountPhrase(toc.length, TITLE_FORMS)}</span>}
               </div>
               {toc.length ? (
                 <div className="divide-y divide-hair">

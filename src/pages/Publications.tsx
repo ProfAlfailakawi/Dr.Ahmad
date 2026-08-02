@@ -7,12 +7,9 @@ import { SITE_URL } from '../data'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { BooksAtlas } from '../components/BooksAtlas'
 import { SocialIcon } from '../components/icons'
+import { arabicCountPhrase, BOOK_PLAIN_FORMS } from '../lib/arabic-count.ts'
 
-const bookCount = (count: number) => {
-  if (count === 1) return 'كتاب واحد'
-  if (count === 2) return 'كتابان'
-  return `${count} كتب`
-}
+const bookCount = (count: number) => arabicCountPhrase(count, BOOK_PLAIN_FORMS)
 
 export default function Publications() {
   const { books } = useCmsContent()

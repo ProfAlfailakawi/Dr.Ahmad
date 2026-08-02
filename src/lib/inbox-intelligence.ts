@@ -1,4 +1,5 @@
 import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
+import { arabicCountPhrase, OCCURRENCE_FORMS } from './arabic-count.ts'
 
 export type InboxMessageInput = {
   id: string
@@ -86,7 +87,7 @@ export function buildAudienceSignals(messages: InboxMessageInput[]): AudienceSig
         messageIds: row.ids,
         strength: count >= 5 ? 'إشارة قوية' as const : count >= 3 ? 'يتكرر' as const : 'بداية نمط' as const,
         suggestion: count >= 3
-          ? `وصل السؤال أو المعنى حول «${theme}» ${count} مرات. يستحق زاوية مستقلة تجيب ما وراء السؤال، لا الرسائل نفسها.`
+          ? `وصل السؤال أو المعنى حول «${theme}» ${arabicCountPhrase(count, OCCURRENCE_FORMS)}. يستحق زاوية مستقلة تجيب ما وراء السؤال، لا الرسائل نفسها.`
           : `ظهرت إشارة متكررة حول «${theme}». راقبها؛ تكرار ثالث يحولها إلى مرشح قوي للكتابة.`,
       }
     })

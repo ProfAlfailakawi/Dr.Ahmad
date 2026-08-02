@@ -8,6 +8,7 @@ import { beginAdminTask } from '../../lib/admin-task-state'
 import { PersonalKnowledgeGraph } from './PersonalKnowledgeGraph'
 import { AnswerQualityLab } from './AnswerQualityLab'
 import type { AdminTab } from './admin-navigation'
+import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, ARTICLE_WITH_AUDIO_FORMS, COVER_FORMS } from '../../lib/arabic-count.ts'
 import {
   articleSystem,
   automaticSeries,
@@ -125,8 +126,8 @@ function ReadinessCard({ articles }: { articles: ArticleRecord[] }) {
       { label: 'RSS', ok: rss, note: rss ? 'الخلاصة متاحة.' : 'الخلاصة غير متاحة.' },
       { label: 'Podcast', ok: podcast, note: podcast ? 'خلاصة البودكاست متاحة.' : 'خلاصة البودكاست غير متاحة.' },
       { label: 'Robots', ok: robots, note: robots ? 'يوجه لمحركات البحث.' : 'يحتاج مراجعة.' },
-      { label: 'الصوت', ok: withAudio === articles.length, note: `${withAudio} من ${articles.length} مقالاً لديها صوت.` },
-      { label: 'الصور', ok: missingImages === 0, note: missingImages ? `${missingImages} غلاف يحتاج مراجعة.` : 'أغلفة الكتب متاحة.' },
+      { label: 'الصوت', ok: withAudio === articles.length, note: `${arabicCountPhrase(withAudio, ARTICLE_WITH_AUDIO_FORMS)} من أصل ${arabicCountPhrase(articles.length, ARTICLE_PLAIN_FORMS)}.` },
+      { label: 'الصور', ok: missingImages === 0, note: missingImages ? `${arabicCountPhrase(missingImages, COVER_FORMS)}.` : 'أغلفة الكتب متاحة.' },
     ]
     setChecks(nextChecks)
     if (nextChecks.every((check) => check.ok)) task.complete('الموقع جاهز')

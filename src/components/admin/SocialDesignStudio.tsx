@@ -45,6 +45,7 @@ import { resolveResonantQuotes, type ResonanceRow } from '../../lib/resonance-qu
 import { GenerationLibraryPanel, type GeneratedDesignLibraryAsset, type GeneratedLibraryAsset } from './GenerationLibraryPanel'
 import { buildMeaningFingerprint } from '../../lib/editorial-memory'
 import { buildMultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
+import { arabicCountPhrase, CONCEPT_FORMS, DIRECTION_AFTER_PREPOSITION_FORMS, DISPLAYABLE_IMAGE_AFTER_PREPOSITION_FORMS, CAMPAIGN_PIECE_AFTER_PREPOSITION_FORMS, CAMPAIGN_PIECE_FORMS, ENDING_OBJECT_FORMS, FINAL_READY_COPY_FORMS, HIGHLIGHT_FORMS, INDEPENDENT_DIRECTION_AFTER_PREPOSITION_FORMS, LAYER_AFTER_PREPOSITION_FORMS, LAYER_FORMS, SAVED_COPY_FORMS, SCENE_AFTER_PREPOSITION_FORMS, SECOND_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
@@ -2049,7 +2050,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setExternalVisuals(results)
       setExternalQuery(query)
       setLastVisualSearchSignature(signature)
-      if (results.length) setNotice(`تم التحقق من ${results.length} صور قابلة للعرض من المصادر المجانية؛ أُزيلت الروابط المكسورة تلقائياً.`)
+      if (results.length) setNotice(`تم التحقق من ${arabicCountPhrase(results.length, DISPLAYABLE_IMAGE_AFTER_PREPOSITION_FORMS)} من المصادر المجانية؛ أُزيلت الروابط المكسورة تلقائياً.`)
       else setNotice('لم أجد صورة قابلة للتحميل بهذه العبارة. جرّب عبارة أقصر أو اختر مصدراً موثّقاً آخر.')
     } catch {
       if (sequence !== externalSearchSequenceRef.current) return
@@ -2270,7 +2271,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         const delayMs = semanticRetry ? 450 + attempt * 250 : 1_500 * (attempt + 1)
         setNotice(semanticRetry
           ? `رفض فاحص الجودة المرشح ${attempt + 1}؛ غيّرت العالم البصري وزاوية المشهد ومساحة النص، وأصنع مرشحاً جديداً تلقائياً…`
-          : `خدمة الصور تحت ضغط لحظي؛ أحافظ على الفكرة وأعيد هذا المشهد تلقائياً بعد ${Math.round(delayMs / 1_000)} ثوانٍ…`)
+          : `خدمة الصور تحت ضغط لحظي؛ أحافظ على الفكرة وأعيد هذا المشهد تلقائياً بعد ${arabicCountPhrase(Math.round(delayMs / 1_000), SECOND_AFTER_PREPOSITION_FORMS)}…`)
         await new Promise<void>((resolve) => window.setTimeout(resolve, delayMs))
       }
     }
@@ -2860,7 +2861,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (selectedOverlayIds.length < 2) { setNotice('اختر طبقتين على الأقل لتكوين مجموعة.'); return }
     const groupId = `group-${Date.now().toString(36)}`
     editPlan((plan) => ({ ...plan, overlays: (plan.overlays || []).map((item) => selectedOverlayIds.includes(item.id) ? { ...item, groupId } : item) }))
-    setNotice(`جُمعت ${selectedOverlayIds.length} طبقات؛ سحب إحداها يحرك المجموعة كلها.`)
+    setNotice(`جُمعت ${arabicCountPhrase(selectedOverlayIds.length, LAYER_FORMS)}؛ سحب إحداها يحرك المجموعة كلها.`)
   }
   const ungroupSelectedOverlays = () => {
     if (!selectedOverlayIds.length) return
@@ -2888,7 +2889,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const pasteOverlayStyle = () => {
     if (!overlayStyleClipboard || !selectedOverlayIds.length) return
     editPlan((plan) => ({ ...plan, overlays: (plan.overlays || []).map((item) => selectedOverlayIds.includes(item.id) ? { ...item, ...overlayStyleClipboard } : item) }))
-    setNotice(`طُبق النمط على ${selectedOverlayIds.length} طبقة من دون تغيير محتواها أو موقعها.`)
+    setNotice(`طُبق النمط على ${arabicCountPhrase(selectedOverlayIds.length, LAYER_AFTER_PREPOSITION_FORMS)} من دون تغيير محتواها أو موقعها.`)
   }
   /* مشاهد الانبهار الجاهزة: توقيعات فنية بضغطة — بألوان اللوحة نفسها */
   const addFlourish = (preset: 'gilded-arcs' | 'orbit' | 'horizon') => {
@@ -3102,7 +3103,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     storeTasteProfile(next)
     storeTasteLedger(nextLedger)
     setNotice(signal > 0
-      ? `تعلّم الاستوديو هذا الاختيار مرة واحدة. ذاكرة الذوق الآن مبنية على ${Object.keys(nextLedger).length} اتجاهات مستقلة.`
+      ? `تعلّم الاستوديو هذا الاختيار مرة واحدة. ذاكرة الذوق الآن مبنية على ${arabicCountPhrase(Object.keys(nextLedger).length, INDEPENDENT_DIRECTION_AFTER_PREPOSITION_FORMS)}.`
       : 'ابتعد الاستوديو عن هذا الأسلوب في التوليدات القادمة من دون أن يقتل التنوع.')
     return next
   }
@@ -3116,7 +3117,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const next = savePlan(plan)
     setSavedPlans(next)
     void archiveGeneratedDesigns([plan], 'نسخة محفوظة بعد التحرير')
-    setNotice(`حُفظ التصميم محلياً وفي مكتبة التوليد السحابية، وتعلّم الاستوديو ذوقك. لديك الآن ${next.length} نسخة محفوظة محلياً.`)
+    setNotice(`حُفظ التصميم محلياً وفي مكتبة التوليد السحابية، وتعلّم الاستوديو ذوقك. لديك الآن ${arabicCountPhrase(next.length, SAVED_COPY_FORMS)}.`)
   }
 
   const resetTaste = () => {
@@ -3266,7 +3267,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       remember(next.assets.map((asset) => asset.plan))
       if (!options.preserveSelection) setSelected(null)
       if (!options.quiet) setNotice(next.ready
-        ? `اكتملت حملة من ${next.assets.length} قطع متناسقة وغير مكررة واجتازت لجنة الجودة: ${next.qualityScore}٪.`
+        ? `اكتملت حملة من ${arabicCountPhrase(next.assets.length, CAMPAIGN_PIECE_AFTER_PREPOSITION_FORMS)} واجتازت لجنة الجودة: ${next.qualityScore}٪.`
         : next.warnings[0] || 'الحملة تحتاج إعادة توليد قبل التصدير.')
       return next
     } finally { setCampaignBusy(false) }
@@ -3291,7 +3292,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setAutoFinalsBusy(true)
     try {
       for (const plan of picked) await downloadCompositionRaster(plan, 'png')
-      setNotice(`نُزّلت ${picked.length} نسخ نهائية جاهزة للنشر — مختلفة حقاً لا تكراراً شكلياً.`)
+      setNotice(`نُزّلت ${arabicCountPhrase(picked.length, FINAL_READY_COPY_FORMS)} — مختلفة حقاً لا تكراراً شكلياً.`)
     } finally {
       setAutoFinalsBusy(false)
     }
@@ -3778,9 +3779,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       remember(championPlans)
       if (!options.quiet) setNotice((visualSet.length > 0 || passport)
         ? visualSet.length > 1
-          ? `بنى الطيار الآلي خمس نهايات من ${visualSet.length} مشاهد مولدة مستقلة، مع اختلاف الصورة والبنية واللون والمعالجة — لا ثيم واحد مكرر.`
-          : `بنى الطيار الآلي ${finalPack.length} نهايات عالمية، ورفض كل نتيجة لم تجتز عين المصمم ثم أعادها حتى ثلاث مرات.`
-        : `بنى الطيار الآلي ${finalPack.length} نهايات عالمية، ورفض النتائج العادية وأعاد البناء حتى ثلاث مرات.`)
+          ? `بنى الطيار الآلي ${arabicCountPhrase(5, ENDING_OBJECT_FORMS)} من ${arabicCountPhrase(visualSet.length, SCENE_AFTER_PREPOSITION_FORMS)}، مع اختلاف الصورة والبنية واللون والمعالجة — لا ثيم واحد مكرر.`
+          : `بنى الطيار الآلي ${arabicCountPhrase(finalPack.length, ENDING_OBJECT_FORMS)}، ورفض كل نتيجة لم تجتز عين المصمم ثم أعادها حتى ثلاث مرات.`
+        : `بنى الطيار الآلي ${arabicCountPhrase(finalPack.length, ENDING_OBJECT_FORMS)}، ورفض النتائج العادية وأعاد البناء حتى ثلاث مرات.`)
       return finalPack
     } finally {
       setAutopilotBusy(false)
@@ -3973,7 +3974,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   />
                 </label>
                 {domainUnderstanding.recognizedTerms.length > 0 && <div className="mt-3 overflow-hidden rounded-2xl border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,253,245,.96),rgba(255,255,255,.9))] px-4 py-3 shadow-sm">
-                  <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.6rem] font-black uppercase tracking-[.12em] text-emerald-700">الرسم المعرفي الشخصي فهم العبارة</p><h3 className="mt-1 text-[.86rem] font-bold text-ink">{domainUnderstanding.recognizedTerms.slice(0, 4).map((item) => item.canonicalAr).join(' + ')}</h3></div><div className="flex flex-wrap gap-1.5"><span className="rounded-full bg-emerald-100 px-3 py-1 text-[.6rem] font-bold text-emerald-700">ثقة {domainUnderstanding.confidence}٪</span><span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[.58rem] font-semibold text-emerald-800">سعة تركيبية {new Intl.NumberFormat('ar-KW-u-nu-latn').format(domainUnderstanding.conceptCapacity)} مفهوم</span></div></div>
+                  <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.6rem] font-black uppercase tracking-[.12em] text-emerald-700">الرسم المعرفي الشخصي فهم العبارة</p><h3 className="mt-1 text-[.86rem] font-bold text-ink">{domainUnderstanding.recognizedTerms.slice(0, 4).map((item) => item.canonicalAr).join(' + ')}</h3></div><div className="flex flex-wrap gap-1.5"><span className="rounded-full bg-emerald-100 px-3 py-1 text-[.6rem] font-bold text-emerald-700">ثقة {domainUnderstanding.confidence}٪</span><span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[.58rem] font-semibold text-emerald-800">سعة تركيبية {arabicCountPhrase(domainUnderstanding.conceptCapacity, CONCEPT_FORMS, (value) => new Intl.NumberFormat('ar-KW-u-nu-latn').format(value))}</span></div></div>
                   <p className="mt-2 text-[.68rem] leading-relaxed text-soft">{domainUnderstanding.compoundMeaning}</p>
                   <div className="mt-2 flex flex-wrap gap-1.5">{domainUnderstanding.recognizedTerms.slice(0, 10).map((entry) => <span key={`${entry.kind}-${entry.id}`} className="rounded-full border border-emerald-100 bg-white/80 px-2.5 py-1 text-[.56rem] text-soft">{entry.kind === 'concept' ? 'مفهوم' : entry.kind === 'audience' ? 'جمهور' : entry.kind === 'context' ? 'سياق' : entry.kind === 'action' ? 'غاية' : entry.kind === 'outcome' ? 'ناتج' : 'منهج'}: {entry.canonicalAr}</span>)}</div>
                 </div>}
@@ -4055,7 +4056,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               {resonance.map((item) => (
                 <button key={item.quote} type="button" onClick={() => designFromResonance(item)} className="rounded-xl border border-hair bg-canvas px-4 py-2.5 text-right text-[.8rem] leading-relaxed text-ink transition-colors hover:border-accent">
                   «{item.quote}»
-                  <span className="mt-1 block text-[.66rem] text-soft">{item.title} · {item.count} {item.count === 1 ? 'تظليل' : 'تظليلاً'}</span>
+                  <span className="mt-1 block text-[.66rem] text-soft">{item.title} · {arabicCountPhrase(item.count, HIGHLIGHT_FORMS)}</span>
                 </button>
               ))}
             </div>
@@ -4221,7 +4222,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           {approvedPlan ? <>
             <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[.68rem] font-black uppercase tracking-[.15em] text-accent">Publish without noise</p><h3 className="mt-1 font-display text-3xl font-bold text-ink">كل شيء جاهز للنشر من مكان واحد.</h3><p className="mt-2 max-w-2xl text-[.8rem] leading-loose text-soft">النسخة المعتمدة، المقاسات، والحملة السردية. لا خيارات تصميم إضافية هنا؛ فقط القرار النهائي والتنزيل.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void exportPlan(approvedPlan, 'png')}>تنزيل التصميم PNG</button><button type="button" className={ghost} onClick={() => void exportAllSizes(approvedPlan)}>كل المقاسات</button></div></div>
             <div className="mt-6 grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]"><div className="rounded-[1.4rem] border border-hair bg-canvas p-3"><Preview plan={approvedPlan} /><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>التحرير</button><button type="button" className={ghost} onClick={() => void exportCompositionSvg(approvedPlan)}>SVG</button><button type="button" className={ghost} onClick={() => exportCompositionPdf(approvedPlan)}>PDF</button></div></div>
-              <div>{campaign ? <><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">الحملة السردية</p><p className="mt-1 text-[.72rem] text-soft">{campaign.assets.length} قطع، لكل واحدة وظيفة بصرية مختلفة.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">جودة {campaign.qualityScore}٪</span><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">تماسك {campaign.coherenceScore}٪</span><button type="button" className={primary} disabled={!campaign.ready} onClick={() => void exportCampaignRaster(campaign)}>تنزيل الحملة</button><button type="button" className={ghost} disabled={!campaign.ready} onClick={() => exportCampaignPdf(campaign)}>PDF</button></div></div><div className="mt-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><div className="flex min-w-max gap-3">{campaign.assets.map((asset) => <article key={asset.id} className="w-[220px] shrink-0 rounded-2xl border border-hair bg-canvas p-2.5"><Preview plan={asset.plan} /><strong className="mt-2 block text-[.72rem] text-ink">{asset.label}</strong><p className="mt-1 text-[.62rem] leading-relaxed text-soft">{asset.purpose}</p></article>)}</div></div></> : <div className="grid min-h-[280px] place-items-center rounded-[1.5rem] border border-dashed border-hair bg-canvas p-6 text-center"><div><h4 className="font-display text-xl font-bold text-ink">الحملة لم تُبنَ بعد.</h4><p className="mt-2 text-[.72rem] text-soft">ابنها حول النسخة المعتمدة من دون تغيير التصميم الأساسي.</p><button type="button" className={`${primary} mt-4`} onClick={() => runCampaign(text, context, approvedPlan, { preserveSelection: true })}>ابنِ الحملة الآن</button></div></div>}</div></div>
+              <div>{campaign ? <><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">الحملة السردية</p><p className="mt-1 text-[.72rem] text-soft">{arabicCountPhrase(campaign.assets.length, CAMPAIGN_PIECE_FORMS)}، لكل واحدة وظيفة بصرية مختلفة.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">جودة {campaign.qualityScore}٪</span><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">تماسك {campaign.coherenceScore}٪</span><button type="button" className={primary} disabled={!campaign.ready} onClick={() => void exportCampaignRaster(campaign)}>تنزيل الحملة</button><button type="button" className={ghost} disabled={!campaign.ready} onClick={() => exportCampaignPdf(campaign)}>PDF</button></div></div><div className="mt-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><div className="flex min-w-max gap-3">{campaign.assets.map((asset) => <article key={asset.id} className="w-[220px] shrink-0 rounded-2xl border border-hair bg-canvas p-2.5"><Preview plan={asset.plan} /><strong className="mt-2 block text-[.72rem] text-ink">{asset.label}</strong><p className="mt-1 text-[.62rem] leading-relaxed text-soft">{asset.purpose}</p></article>)}</div></div></> : <div className="grid min-h-[280px] place-items-center rounded-[1.5rem] border border-dashed border-hair bg-canvas p-6 text-center"><div><h4 className="font-display text-xl font-bold text-ink">الحملة لم تُبنَ بعد.</h4><p className="mt-2 text-[.72rem] text-soft">ابنها حول النسخة المعتمدة من دون تغيير التصميم الأساسي.</p><button type="button" className={`${primary} mt-4`} onClick={() => runCampaign(text, context, approvedPlan, { preserveSelection: true })}>ابنِ الحملة الآن</button></div></div>}</div></div>
           </> : <div className="grid min-h-[340px] place-items-center text-center"><div><h3 className="font-display text-2xl font-bold text-ink">ابدأ بالفكرة أولاً.</h3><button type="button" className={`${primary} mt-4`} onClick={() => setStage('idea')}>العودة</button></div></div>}
         </section>
       )}
@@ -4262,7 +4263,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               />
               <button type="button" className={ghost} onClick={applySpeechEdit}>طبّق</button>
             </div>
-            <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {Object.keys(tasteLedger).length} اتجاه</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={ghost} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يعيد بناء الأفضل…' : 'أعد بناء 5 نهايات'}</button><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'ابنِ Final / Safer / Viral'}</button><button type="button" className={ghost} onClick={() => void runZeroDecisionMode()} disabled={zeroDecisionBusy}>{zeroDecisionBusy ? 'يحسم القرار…' : 'القرار الصفري'}</button><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy || (!autopilotPack.length && !plans.length)}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'صدّر 3 نهائيات'}</button><button type="button" className={primary} disabled={campaignBusy} onClick={() => { buildCampaign(); setStage('publish') }}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة سردية'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
+            <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {arabicCountPhrase(Object.keys(tasteLedger).length, DIRECTION_AFTER_PREPOSITION_FORMS)}</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={ghost} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يعيد بناء الأفضل…' : 'أعد بناء 5 نهايات'}</button><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'ابنِ Final / Safer / Viral'}</button><button type="button" className={ghost} onClick={() => void runZeroDecisionMode()} disabled={zeroDecisionBusy}>{zeroDecisionBusy ? 'يحسم القرار…' : 'القرار الصفري'}</button><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy || (!autopilotPack.length && !plans.length)}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'صدّر 3 نهائيات'}</button><button type="button" className={primary} disabled={campaignBusy} onClick={() => { buildCampaign(); setStage('publish') }}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة سردية'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {artDirections.map((direction, index) => <article key={direction.id} className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-[.62rem] font-bold text-accent">الرؤية {index + 1}</span><h4 className="mt-1 text-[.9rem] font-bold text-ink">{direction.title}</h4></div><span className="rounded-full bg-paper px-2 py-1 text-[.62rem] font-semibold text-accent">قرب الهوية {direction.identityFit}٪</span></div><p className="mt-2 text-[.72rem] leading-relaxed text-soft">{direction.description}</p><dl className="mt-3 grid gap-2"><div><dt className="text-[.6rem] font-semibold text-soft">الشعور</dt><dd className="text-[.68rem] text-ink">{direction.feeling}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الصورة المطلوبة</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.imageNeed}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الخطر</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.risk}</dd></div></dl><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => generate({ tone: direction.tone, platform: direction.platform, preferLayout: direction.preferLayout })}>أعد بناء هذه الرؤية</button></article>)}
@@ -4583,7 +4584,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     {dna ? (
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
                         <span className="flex overflow-hidden rounded-full border border-hair">{dna.swatches.slice(0, 5).map((color, index) => <span key={index} className="h-5 w-5" style={{ background: color }} />)}</span>
-                        <span className="rounded-full border border-accent/30 bg-accent/[.06] px-2.5 py-1 text-[.62rem] font-semibold text-accent">مطبّقة فعلياً على {plans.length} اتجاه</span>
+                        <span className="rounded-full border border-accent/30 bg-accent/[.06] px-2.5 py-1 text-[.62rem] font-semibold text-accent">مطبّقة فعلياً على {arabicCountPhrase(plans.length, DIRECTION_AFTER_PREPOSITION_FORMS)}</span>
                         <span className="text-[.6rem] text-soft">خلفية · توهجات · زوايا · توقيع لوني</span>
                         <button type="button" onClick={saveDnaFave} className="rounded-full border border-accent/40 px-2.5 py-1 text-[.62rem] font-semibold text-accent transition hover:bg-accent hover:text-white">★ احفظ في المفضّلة</button>
                         <button type="button" onClick={clearVisualDna} className="rounded-full border border-hair px-2.5 py-1 text-[.62rem] font-semibold text-soft transition hover:border-accent hover:text-accent">أزل البصمة</button>

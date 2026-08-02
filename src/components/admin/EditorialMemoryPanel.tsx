@@ -12,6 +12,7 @@ import {
 } from '../../lib/editorial-memory'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { buildCascadeCorrectionCase, cascadeCorrectionId, cascadeCorrectionSummary } from '../../lib/cascade-correction.mjs'
+import { arabicCountPhrase, INTERNAL_MATERIAL_AFTER_PREPOSITION_FORMS, MATERIAL_AFTER_PREPOSITION_FORMS, PATH_FORMS, SAVED_SOURCE_FORMS, SOURCE_NEAR_FORMS } from '../../lib/arabic-count.ts'
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.78rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
@@ -269,7 +270,7 @@ export function EditorialMemoryPanel({ idea, articles, books, papers, onDataChan
         }
         affected += 1
       }
-      setSourceNotice(affected ? `فُتحت سلسلة التصحيح فوراً في ${affected} مادة، وتوقفت مشتقاتها وحدها.` : 'حُفظت الحالة؛ لا توجد مادة مرتبطة بهذا المصدر حالياً.')
+      setSourceNotice(affected ? `فُتحت سلسلة التصحيح فوراً في ${arabicCountPhrase(affected, MATERIAL_AFTER_PREPOSITION_FORMS)}، وتوقفت مشتقاتها وحدها.` : 'حُفظت الحالة؛ لا توجد مادة مرتبطة بهذا المصدر حالياً.')
     } catch { /* لا نغيّر العرض محلياً إذا تعذر الحفظ */ }
   }
 
@@ -300,12 +301,12 @@ export function EditorialMemoryPanel({ idea, articles, books, papers, onDataChan
   return (
     <details className="group min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5" data-personal-editorial-memory="true">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-        <span><span className="block text-[.72rem] font-semibold text-accent">ذاكرتي التحريرية الخاصة</span><span className="mt-1 block text-[.78rem] text-soft">{sources.length} مصدر محفوظ · {agenda.length} مسار في الأجندة · لا يظهر شيء منها للزوار</span></span>
+        <span><span className="block text-[.72rem] font-semibold text-accent">ذاكرتي التحريرية الخاصة</span><span className="mt-1 block text-[.78rem] text-soft">{arabicCountPhrase(sources.length, SAVED_SOURCE_FORMS)} · {arabicCountPhrase(agenda.length, PATH_FORMS)} في الأجندة · لا يظهر شيء منها للزوار</span></span>
         <span className="text-accent transition-transform group-open:rotate-45">+</span>
       </summary>
       <div className="mt-4 grid gap-3 border-t border-hair pt-4">
         <details className="group/source rounded-xl border border-hair bg-canvas px-4 py-3" data-personal-source-desk="true">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span><strong className="text-[.82rem] text-ink">مكتب المصادر الشخصي</strong>{idea.trim() && <span className="ms-2 text-[.68rem] text-soft">{sourceMatches.length ? `${sourceMatches.length} مصدر قريب من الفكرة الحالية` : 'لا يوجد مصدر شخصي قريب الآن'}</span>}</span><span className="text-accent transition-transform group-open/source:rotate-45">+</span></summary>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span><strong className="text-[.82rem] text-ink">مكتب المصادر الشخصي</strong>{idea.trim() && <span className="ms-2 text-[.68rem] text-soft">{sourceMatches.length ? arabicCountPhrase(sourceMatches.length, SOURCE_NEAR_FORMS) : 'لا يوجد مصدر شخصي قريب الآن'}</span>}</span><span className="text-accent transition-transform group-open/source:rotate-45">+</span></summary>
           <div className="mt-4 grid gap-3 border-t border-hair pt-4">
             <div className="grid gap-3 md:grid-cols-2"><input className={input} placeholder="عنوان المصدر — اختياري" value={sourceTitle} onChange={(event) => setSourceTitle(event.target.value)} /><input className={input} dir="ltr" placeholder="DOI أو رابط — أو اتركه للملاحظة" value={sourceReference} onChange={(event) => setSourceReference(event.target.value)} /></div>
             <textarea className={`${input} min-h-20 leading-relaxed`} placeholder="لماذا حفظته؟ ملاحظة قصيرة تكفي." value={sourceNote} onChange={(event) => setSourceNote(event.target.value)} />
@@ -314,7 +315,7 @@ export function EditorialMemoryPanel({ idea, articles, books, papers, onDataChan
             {sourceMatches.length > 0 && <div className="grid gap-2 border-t border-hair pt-3">{sourceMatches.map((match) => {
               const row = sources.find((item) => item.id === match.id)
               const uses = usage[`personal:${match.id}`]?.length || 0
-              return <div key={match.id} className="grid gap-1 rounded-lg border border-hair px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"><div className="min-w-0"><strong className="block truncate text-[.76rem] text-ink">{match.title}</strong><span className="mt-1 block text-[.66rem] leading-relaxed text-soft">صلة {match.score}/100{uses ? ` · مستخدم في ${uses} مادة داخلية` : ''}{row?.year ? ` · ${row.year}` : ''}</span></div>{row && <select className="rounded-lg border border-hair bg-canvas px-2 py-1.5 text-[.66rem] text-soft" value={row.status} onChange={(event) => void updateSourceStatus(row, event.target.value as PersonalSourceStatus)}>{sourceStatuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select>}</div>
+              return <div key={match.id} className="grid gap-1 rounded-lg border border-hair px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"><div className="min-w-0"><strong className="block truncate text-[.76rem] text-ink">{match.title}</strong><span className="mt-1 block text-[.66rem] leading-relaxed text-soft">صلة {match.score}/100{uses ? ` · مستخدم في ${arabicCountPhrase(uses, INTERNAL_MATERIAL_AFTER_PREPOSITION_FORMS)}` : ''}{row?.year ? ` · ${row.year}` : ''}</span></div>{row && <select className="rounded-lg border border-hair bg-canvas px-2 py-1.5 text-[.66rem] text-soft" value={row.status} onChange={(event) => void updateSourceStatus(row, event.target.value as PersonalSourceStatus)}>{sourceStatuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select>}</div>
             })}</div>}
             {sources.length > 0 && <details className="group/library rounded-xl border border-hair bg-wash px-3 py-2.5" data-personal-source-library="true">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[.72rem] font-semibold text-soft"><span>إدارة المصادر المحفوظة</span><span className="text-accent transition-transform group-open/library:rotate-45">+</span></summary>

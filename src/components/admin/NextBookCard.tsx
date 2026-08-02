@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import nextBook from '../../data/next-book.json' with { type: 'json' }
+import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, ARTICLE_PLAIN_FORMS, BOOK_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
 
 /**
  * الكتاب العاشر — ما لم يُجمع بعد.
@@ -38,7 +39,7 @@ export function NextBookCard() {
           <h2 id="next-book-title" className="mt-1 font-display text-[1.2rem] font-semibold text-ink">ما لم تجمعه في كتابٍ بعد</h2>
         </div>
         <span className="text-[.68rem] text-soft">
-          من {file.builtFrom?.articles || 0} مقالاً مقابل {file.builtFrom?.books || 0} كتب
+          من {arabicCountPhrase(file.builtFrom?.articles || 0, ARTICLE_AFTER_PREPOSITION_FORMS)} مقابل {arabicCountPhrase(file.builtFrom?.books || 0, BOOK_AFTER_PREPOSITION_FORMS)}
         </span>
       </header>
 
@@ -56,7 +57,7 @@ export function NextBookCard() {
                 <span className="min-w-0">
                   <strong className="block text-[.95rem] text-ink">«{cluster.seed}»</strong>
                   <span className="mt-0.5 block text-[.68rem] text-soft">
-                    {cluster.articles} مقالاً{cluster.span ? ` · ${cluster.span.from}–${cluster.span.to}` : ''} · {cluster.verdict}
+                    {arabicCountPhrase(cluster.articles, ARTICLE_PLAIN_FORMS)}{cluster.span ? ` · ${cluster.span.from}–${cluster.span.to}` : ''} · {cluster.verdict}
                   </span>
                 </span>
                 <span aria-hidden="true" className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform ${expanded ? 'rotate-45' : ''}`}>+</span>
@@ -69,7 +70,7 @@ export function NextBookCard() {
                       <li key={`${chapter.theme}-${index}`}>
                         <p className="text-[.76rem] font-semibold text-accent">
                           الفصل {index + 1} · {chapter.theme}
-                          <span className="mr-2 font-normal text-soft">{chapter.articles.length} مقالات</span>
+                          <span className="mr-2 font-normal text-soft">{arabicCountPhrase(chapter.articles.length, ARTICLE_PLAIN_FORMS)}</span>
                         </p>
                         <ul className="mt-1.5 grid gap-1">
                           {chapter.articles.map((article) => (

@@ -1,3 +1,4 @@
+import { arabicCountPhrase, CELL_FORMS, CONSECUTIVE_OCCURRENCE_FORMS, CONVERSATION_AFTER_PREPOSITION_FORMS, ENTITY_FORMS } from './dialect-lexicon.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import { AUDIO_PUBLIC_BASE_URL, BRIDGE_PORT, BRIDGE_SECRET_MIN_LENGTH, BROADCAST_DEFAULT_INTERVAL_SECONDS, BROADCAST_MIN_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALE_MS, MANUAL_TAKEOVER_MINUTES, MAX_CAMPAIGN_TARGETS, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, projectRoot, redactError } from './config.mjs'
@@ -196,7 +197,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   const heartbeat = () => db.setSetting('bridge.heartbeat', { at: new Date().toISOString(), pid: process.pid })
   const bridgeSecret = () => {
     const configured = String(process.env.WHATSAPP_AGENT_BRIDGE_SECRET || '').trim()
-    if (configured && configured.length < BRIDGE_SECRET_MIN_LENGTH) throw new Error(`WHATSAPP_AGENT_BRIDGE_SECRET يجب ألا يقل عن ${BRIDGE_SECRET_MIN_LENGTH} خانة.`)
+    if (configured && configured.length < BRIDGE_SECRET_MIN_LENGTH) throw new Error(`WHATSAPP_AGENT_BRIDGE_SECRET يجب ألا يقل عن ${arabicCountPhrase(BRIDGE_SECRET_MIN_LENGTH, CELL_FORMS)}.`)
     if (configured) return configured
     const existing = db.getSetting('bridge.secret', '')
     if (typeof existing === 'string' && existing.length >= BRIDGE_SECRET_MIN_LENGTH) return existing
@@ -625,7 +626,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
   }
   const queueCampaign = ({ name, message, targets = [], scheduledAt = null }) => {
     if (!name || !message) throw new Error('اسم الحملة ورسالتها مطلوبان')
-    if (Number.isFinite(MAX_CAMPAIGN_TARGETS) && targets.length > MAX_CAMPAIGN_TARGETS) throw new Error(`الحد المضبوط للحملة ${MAX_CAMPAIGN_TARGETS} جهة.`)
+    if (Number.isFinite(MAX_CAMPAIGN_TARGETS) && targets.length > MAX_CAMPAIGN_TARGETS) throw new Error(`الحد المضبوط للحملة ${arabicCountPhrase(MAX_CAMPAIGN_TARGETS, ENTITY_FORMS)}.`)
     for (const target of targets) if (typeof target === 'string' && !target.includes('@') && target !== 'self') throw new Error('لا تحفظ رقماً خاماً؛ استخدم الذات أو جهة معروفة بصيغة jid محلياً.')
     const id = randomToken(10); const now = new Date().toISOString()
     db.run('INSERT INTO campaigns(id,name,state,message,created_at,scheduled_at,updated_at) VALUES(?,?,?,?,?,?,?)', id, name, 'draft', safeText(message), now, scheduledAt, now)
@@ -713,7 +714,7 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
     const before = silenceState()
     const now = new Date().toISOString()
     db.run("UPDATE chat_sessions SET mode='suggest-only', manual_until=NULL, content_id=NULL, followup_json=NULL, context_json=NULL, opened_at=NULL, last_user_at=NULL, updated_at=? WHERE manual_until IS NOT NULL", now)
-    db.addAudit('bot-wake-enabled-all', '', `أصبح الإيقاظ متاحاً في ${before.silenced} محادثة`)
+    db.addAudit('bot-wake-enabled-all', '', `أصبح الإيقاظ متاحاً في ${arabicCountPhrase(before.silenced, CONVERSATION_AFTER_PREPOSITION_FORMS)}`)
     return { returned: before.silenced }
   }
 
@@ -1201,11 +1202,11 @@ export function createAgent({ db = openDatabase(), transport, root = projectRoot
       fix = 'فعّل WHATSAPP_AUTO_REPLY_ENABLED ثم أعد التشغيل.'
     } else if (pollFailures >= 20) {
       code = 'queue-stuck'; label = 'الطابور متعثّر'
-      why = `فشلت قراءة الطابور ${pollFailures} مرة متتالية.`
+      why = `فشلت قراءة الطابور ${arabicCountPhrase(pollFailures, CONSECUTIVE_OCCURRENCE_FORMS)}.`
       fix = 'اضغط «إعادة تشغيل واتساب».'
     } else if (silenced > 0) {
       code = 'manual-takeover'; label = 'صامتٌ — تدخّلٌ يدويّ'
-      why = `رددتَ بيدك في ${silenced === 1 ? 'محادثة' : `${silenced} محادثات`}، فصمت البوت فيها.`
+      why = `رددتَ بيدك في ${arabicCountPhrase(silenced, CONVERSATION_AFTER_PREPOSITION_FORMS)}، فصمت البوت فيها.`
       fix = 'انتظر انتهاء المهلة ثم اطلب من المرسل كتابة جملة الإيقاظ، أو اضغط «اسمح بالإيقاظ الآن».'
     }
 

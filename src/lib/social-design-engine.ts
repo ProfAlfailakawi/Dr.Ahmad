@@ -9,6 +9,7 @@
 
 import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
 import { createIdeaDna, type IdeaDna } from './idea-dna'
+import { arabicCountPhrase, DISTINCT_DIRECTION_AFTER_PREPOSITION_FORMS, WORD_FORMS } from './arabic-count.ts'
 
 export const SOCIAL_DESIGN_ENGINE_VERSION = '3.2.0'
 
@@ -2218,7 +2219,7 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
   }
   plans = plans.map((plan, index) => ({ ...plan, directionIndex: index + 1 }))
   if (plans.some((plan) => plan.novelty < noveltyThreshold)) warnings.push('السجل البصري كثيف؛ اختير أبعد تكوين ممكن مع المحافظة على ملاءمة النص.')
-  if (finalists.length < requestedCount) warnings.push(`الأقفال الحالية سمحت بفحص ${finalists.length} اتجاهات متمايزة فقط قبل اختيار أقوى أربعة.`)
+  if (finalists.length < requestedCount) warnings.push(`الأقفال الحالية سمحت بفحص ${arabicCountPhrase(finalists.length, DISTINCT_DIRECTION_AFTER_PREPOSITION_FORMS)} فقط قبل اختيار أقوى أربعة.`)
   return {
     analysis,
     ideaDna,
@@ -3026,8 +3027,8 @@ export function validateCompositionPlan(plan: CompositionPlan, peers: readonly C
   const titleWords = wordsOf(plan.content.title).length
   const bodyWords = wordsOf(plan.content.body).length
   const lineLayout = compositionTextLayout(plan)
-  if (titleWords > plan.format.maxTitleWords) issues.push({ severity: 'warning', code: 'title-overflow', message: `العنوان ${titleWords} كلمة ويتجاوز المجال المريح (${plan.format.maxTitleWords}).` })
-  if (bodyWords > plan.format.maxBodyWords) issues.push({ severity: 'warning', code: 'body-overflow', message: `المتن ${bodyWords} كلمة ويتجاوز المجال المريح (${plan.format.maxBodyWords}).` })
+  if (titleWords > plan.format.maxTitleWords) issues.push({ severity: 'warning', code: 'title-overflow', message: `العنوان ${arabicCountPhrase(titleWords, WORD_FORMS)} ويتجاوز المجال المريح (${plan.format.maxTitleWords}).` })
+  if (bodyWords > plan.format.maxBodyWords) issues.push({ severity: 'warning', code: 'body-overflow', message: `المتن ${arabicCountPhrase(bodyWords, WORD_FORMS)} ويتجاوز المجال المريح (${plan.format.maxBodyWords}).` })
   if (lineLayout.estimatedTitleLines > lineLayout.titleMaxLines) issues.push({ severity: 'error', code: 'title-overflow', message: `العنوان يحتاج ${lineLayout.estimatedTitleLines} أسطر والمتاح ${lineLayout.titleMaxLines}.` })
   if (lineLayout.estimatedBodyLines > lineLayout.bodyMaxLines) issues.push({ severity: 'warning', code: 'body-overflow', message: `المتن يحتاج ${lineLayout.estimatedBodyLines} أسطر والمتاح ${lineLayout.bodyMaxLines}.` })
   for (const zone of [plan.geometry.titleZone, plan.geometry.bodyZone]) {

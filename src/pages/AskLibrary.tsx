@@ -16,6 +16,7 @@ import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/
 import { loadBookPassages, matchBookQuotes, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
 import { SocialIcon } from '../components/icons'
 import { buildSmartQueryPlan, scoreSmartFields, smartRoots } from '../lib/smart-search'
+import { arabicCountPhrase, EVIDENCE_FORMS, SOURCE_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 
 const tokenize = (value: string) => smartRoots(value)
 
@@ -423,7 +424,7 @@ export default function AskLibrary() {
   const coverage = useMemo(() => {
     if (!result) return null;
     const evidence = result.hits.length + result.refs.length;
-    return { label: evidence ? 'موثّق' : 'دون شواهد كافية', note: evidence === 1 ? 'شاهد واحد موثّق' : `${evidence} شواهد موثّقة` };
+    return { label: evidence ? 'موثّق' : 'دون شواهد كافية', note: arabicCountPhrase(evidence, EVIDENCE_FORMS) };
   }, [result]);
 
   useEffect(() => {
@@ -539,7 +540,7 @@ export default function AskLibrary() {
     : 'لا يكفي الأرشيف المتاح لبناء خط زمني موثوق لهذا السؤال.';
   const connectionsAnswer = result
     ? result.refs.length
-      ? `يرتبط السؤال بـ${result.refs.length === 1 ? 'مصدر إضافي' : `${result.refs.length} مصادر إضافية`} من الكتب والأبحاث؛ افتحها لتوسيع القراءة من زوايا متجاورة.`
+      ? `يرتبط السؤال بـ${arabicCountPhrase(result.refs.length, SOURCE_AFTER_PREPOSITION_FORMS)} من الكتب والأبحاث؛ افتحها لتوسيع القراءة من زوايا متجاورة.`
       : 'لا يظهر في الأرشيف الآن كتاب أو بحث قريب بما يكفي من هذا السؤال.'
     : '';
   const visibleAnswer = answerMode === 'timeline' ? timelineAnswer : answerMode === 'connections' ? connectionsAnswer : twin?.answer || '';

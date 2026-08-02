@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { arabicCountPhrase, RESULT_FORMS } from '../../lib/arabic-count.ts'
 
 export type GeneratedLibraryAsset = {
   id: string
@@ -182,7 +183,7 @@ export function GenerationLibraryPanel(props: Props) {
             <button type="button" aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly((value) => !value)} className={`${selectClass} ${favoritesOnly ? 'border-accent bg-accent/[.07] text-accent' : ''}`}>★ المفضلة</button>
             {filtersActive && <button type="button" onClick={resetFilters} className={ghostClass}>مسح الفلاتر</button>}
           </div>
-          <p className="mt-2 px-1 text-[.58rem] text-soft">{filteredDesigns.length + filteredAssets.length} نتيجة من {designs.length + assets.length} · البحث والفلترة يعملان داخل المكتبة نفسها بلا شاشة إضافية.</p>
+          <p className="mt-2 px-1 text-[.58rem] text-soft">{arabicCountPhrase(filteredDesigns.length + filteredAssets.length, RESULT_FORMS)} من {designs.length + assets.length} · البحث والفلترة يعملان داخل المكتبة نفسها بلا شاشة إضافية.</p>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hair bg-paper/70 px-3 py-2.5">

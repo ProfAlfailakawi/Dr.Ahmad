@@ -6,7 +6,7 @@ import { academicProfiles, doctorate, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { analyzeResearch } from '../lib/research-intelligence'
-import { arabicCountPhrase, PAPER_FORMS } from '../lib/arabic-count.ts'
+import { arabicCountPhrase, PAPER_FORMS, RESULT_FORMS } from '../lib/arabic-count.ts'
 
 const ar = (n: number) => String(n).padStart(2, '0')
 const paperCount = (count: number) => arabicCountPhrase(count, PAPER_FORMS)
@@ -32,7 +32,7 @@ export default function Research() {
   const paged = usePagedList(filtered, 12, `${papers.length}|${term}|${typeFilter}|${yearFilter}`)
   const count = paperCount(papers.length)
 
-  useSeo({ title: 'المساهمات العلمية', path: '/research', description: `${count} محكّماً في تكنولوجيا التعليم والممارسة التربوية.` })
+  useSeo({ title: 'المساهمات العلمية', path: '/research', description: `${count} في تكنولوجيا التعليم والممارسة التربوية.` })
   return (
     <Page className="content-research page-journey">
       <JsonLd data={{
@@ -48,7 +48,7 @@ export default function Research() {
             <div className="mb-8 flex flex-wrap items-center justify-between gap-5 border-b border-hair pb-6">
               <div>
                 <span className="block text-[.82rem] font-semibold text-ink">الأرشيف العلمي المحكّم</span>
-                <span className="mt-1 block text-[.74rem] text-soft">{count} محكّماً بمصادر أصلية، مع وصول مباشر إلى البيانات والمنهج والنتائج</span>
+                <span className="mt-1 block text-[.74rem] text-soft">{count} بمصادر أصلية، مع وصول مباشر إلى البيانات والمنهج والنتائج</span>
               </div>
               <span className="flex items-center gap-2.5">
                 {academicProfiles.map((profileLink) => (
@@ -80,7 +80,7 @@ export default function Research() {
                     {years.map((year) => <option key={year}>{year}</option>)}
                   </select>
                 </label>
-                <span className="research-index-result">{filtered.length === 1 ? 'نتيجة واحدة' : filtered.length === 2 ? 'نتيجتان' : filtered.length <= 10 ? `${filtered.length} نتائج` : `${filtered.length} نتيجة`}</span>
+                <span className="research-index-result">{arabicCountPhrase(filtered.length, RESULT_FORMS)}</span>
               </div>
             </section>
           </FadeUp>

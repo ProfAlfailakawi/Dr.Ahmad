@@ -10,6 +10,7 @@ import { useAdminAuth } from '../../lib/admin-auth'
 import { Pagination, usePagedList } from '../Pagination'
 import { AudioSystemOverview } from './AudioSystemOverview'
 import { SystemHealthOverview } from './SystemHealthOverview'
+import { arabicCountPhrase, DAMAGED_LINK_FORMS, HEALTHY_LINK_FORMS } from '../../lib/arabic-count.ts'
 
 const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const pill = 'min-w-0 rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold leading-tight text-soft'
@@ -381,10 +382,10 @@ export function ProductionHealthCenter({
             >
               <span className="min-w-0">
                 <span className="block text-[.82rem] font-semibold text-ink">
-                  فحص المصادر · {sourceReport.ok ?? 0} رابطاً استجاب سليماً
+                  فحص المصادر · {arabicCountPhrase(sourceReport.ok ?? 0, HEALTHY_LINK_FORMS)}
                 </span>
                 <span className="mt-0.5 block text-[.72rem] text-soft">
-                  {confirmedDeadCount ? `${confirmedDeadCount} رابطاً تالفاً مؤكداً` : 'لا رابط تالفاً مؤكداً'}
+                  {confirmedDeadCount ? arabicCountPhrase(confirmedDeadCount, DAMAGED_LINK_FORMS) : 'لا يوجد رابط تالف مؤكَّد'}
                   {unverifiedCount ? ` · تعذّر التحقق آلياً من ${unverifiedCount}` : ''}
                   {sourceReport.total ? ` · الإجمالي ${sourceReport.total}` : ''}
                   {sourceReport.checkedAt ? ` · ${new Date(sourceReport.checkedAt).toLocaleString('ar-KW', { dateStyle: 'medium', timeStyle: 'short', numberingSystem: 'latn' })}` : ''}

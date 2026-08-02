@@ -18,6 +18,7 @@
  *   تعيش في هاتفك وحده               |  تعيش في لوحتك، تعدّلها متى شئت
  */
 import { randomUUID } from 'node:crypto'
+import { arabicCountPhrase, FULL_NUMBER_OBJECT_FORMS, WITHDRAWN_GROUP_FORMS } from './dialect-lexicon.mjs'
 
 const now = () => new Date().toISOString()
 
@@ -59,7 +60,7 @@ function purgeDiscoveredGroups(db) {
     db.run('DELETE FROM broadcast_members WHERE list_id=?', row.id)
     db.run('DELETE FROM broadcast_lists WHERE id=?', row.id)
   }
-  if (strays.length) db.addAudit('groups.purged', '', `مُحيت ${strays.length} مجموعة مسحوبة`)
+  if (strays.length) db.addAudit('groups.purged', '', `مُحيت ${arabicCountPhrase(strays.length, WITHDRAWN_GROUP_FORMS)}`)
 }
 
 /**
@@ -74,7 +75,7 @@ function purgeDiscoveredGroups(db) {
 function scrubPlainNumbers(db) {
   const rows = db.all('SELECT id, phone FROM contacts').filter((row) => String(row.phone || '').length > 4)
   for (const row of rows) db.run('UPDATE contacts SET phone=? WHERE id=?', String(row.phone).slice(-4), row.id)
-  if (rows.length) db.addAudit('privacy.scrub', '', `أُخفيت ${rows.length} أرقام كاملة من القاعدة`)
+  if (rows.length) db.addAudit('privacy.scrub', '', `تم إخفاء ${arabicCountPhrase(rows.length, FULL_NUMBER_OBJECT_FORMS)} من القاعدة`)
 }
 
 /* ═══ أدوات ═══ */

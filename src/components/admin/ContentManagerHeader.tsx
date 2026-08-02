@@ -1,4 +1,5 @@
 import type { ManagedKind } from './ContentManager'
+import { arabicCountPhrase, ITEM_FORMS } from '../../lib/arabic-count.ts'
 
 const labels: Record<ManagedKind, { singular: string; plural: string }> = {
   article: { singular: 'مقال', plural: 'المقالات' },
@@ -26,7 +27,7 @@ export function ContentManagerHeader({ kind, total, query, descending, onQuery, 
         <div className="min-w-0">
           <p className="text-[.76rem] font-semibold uppercase text-accent">إدارة المحتوى</p>
           <h2 className="mt-1 font-display text-2xl font-bold text-ink">{copy.plural}</h2>
-          <p className="mt-1 text-[.82rem] text-soft">{total} عنصراً — الأصل والإضافات في قائمة واحدة.</p>
+          <p className="mt-1 text-[.82rem] text-soft">{arabicCountPhrase(total, ITEM_FORMS)} — الأصل والإضافات في قائمة واحدة.</p>
         </div>
         <button type="button" onClick={onNew} className={`${primaryClass} w-full sm:w-auto`}>+ إضافة {copy.singular}</button>
       </div>

@@ -45,6 +45,7 @@ import { requestPublicationPassportSignature } from '../../lib/publication-passp
 import { audioProofAssets } from '../../lib/audio-proof'
 import { buildMultimodalMeaningCourt, type MultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
 import { buildImpactMirror, type EditorialImpactMirror, type ImpactObservationSource } from '../../lib/impact-mirror.mjs'
+import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, ARTICLE_PLAIN_FORMS, AUDIO_NEAR_MATERIAL_FORMS, BOOK_PLAIN_FORMS, CALIBRATION_RESULT_FORMS, CLAIM_FORMS, DIRECTION_FORMS, EVIDENCE_FORMS, EVENT_FORMS, LAST_SAVED_DECISION_FORMS, LINK_FORMS, OPPORTUNITY_FORMS, PAPER_PLAIN_FORMS, PARAGRAPH_FORMS, PENDING_ITEM_FORMS, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS, SAVED_DECISION_FORMS, STUBBORN_WIN_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -190,7 +191,7 @@ function buildEditorialPortfolioEvidence(idea: string, articles: ArticleRecord[]
     .slice(0, 4)
     .map(([category, count]) => ({ category, count, share: Math.round((count / totalArticles) * 100) }))
   const explanation = saturationScore >= 68
-    ? `محور «${focusCategory}» مشبع نسبياً داخل الأرشيف (${focusCategoryCount} من ${totalArticles} مقالاً)، لذلك لا تكفي جودة الفكرة وحدها؛ يجب أن تضيف زاوية جديدة بوضوح.`
+    ? `محور «${focusCategory}» مشبع نسبياً داخل الأرشيف (${focusCategoryCount} من ${arabicCountPhrase(totalArticles, ARTICLE_AFTER_PREPOSITION_FORMS)})، لذلك لا تكفي جودة الفكرة وحدها؛ يجب أن تضيف زاوية جديدة بوضوح.`
     : saturationScore <= 34
       ? `محور «${focusCategory}» أقل حضوراً داخل الأرشيف؛ إذا كانت الفكرة ملائمة لهويتك فهي تسد فراغاً في المحفظة بدلاً من زيادة محور مكتمل.`
       : `محور «${focusCategory}» متوازن داخل الأرشيف؛ القرار يعتمد على الجِدة والتوقيت أكثر من الحاجة العددية للمحور.`
@@ -208,7 +209,7 @@ function buildEditorialPortfolioEvidence(idea: string, articles: ArticleRecord[]
     strategicNeedScore,
     dominantCategories,
     explanation: relatedAudioCount > 0
-      ? `${explanation} وصوتك حاضر في هذا الإقليم فعلاً: ${relatedAudioCount} مادة قريبة لها قراءة أو حوار منطوق.`
+      ? `${explanation} وصوتك حاضر في هذا الإقليم فعلاً: ${arabicCountPhrase(relatedAudioCount, AUDIO_NEAR_MATERIAL_FORMS)}.`
       : explanation,
   }
 }
@@ -924,7 +925,7 @@ function qualityGate(bundle: Bundle, articles: ArticleRecord[], targetWords: num
     { key: 'links', label: 'روابط داخلية/معرفية', ok: linked >= 2 },
     { key: 'image', label: 'صورة مشاركة افتراضية متاحة', ok: true },
     { key: 'duplicate', label: skipOriginality ? 'الأصالة: مستثناة بإقرار الكاتب' : `أصالة الفكرة (${similarity.originality}٪)`, ok: skipOriginality || (!similarity.repeated && !articles.some((article) => normalize(article.title) === normalize(bundle.title))) },
-    { key: 'words', label: `الحد الأدنى: ${MIN_ARTICLE_WORDS} كلمة (الحالي ${words})`, ok: words >= MIN_ARTICLE_WORDS },
+    { key: 'words', label: `الحد الأدنى: ${arabicCountPhrase(MIN_ARTICLE_WORDS, WORD_PLAIN_FORMS)} (الحالي ${words})`, ok: words >= MIN_ARTICLE_WORDS },
     { key: 'voice', label: 'قابلية صوتية', ok: words >= MIN_ARTICLE_WORDS && hasQuestion },
     /* كان: `Boolean(bundle.generatedBy)` — وسمٌ لا يضعه إلا المولّد، فصار
        المقال الذي يكتبه الدكتور بيده عاجزاً عن مغادرة الاستوديو بعد أن صار
@@ -975,12 +976,12 @@ function styleReview(bundle: Bundle, style: ReturnType<typeof editorialStyleProf
   const hasHumanOpening = /^(قد يبدو|حين|عندما|ليست|ليس|في|أمام|داخل|هل|كيف|لماذا|ماذا)/.test(body.trim())
   const checks = [
     { label: 'افتتاحية من عالم الإنسان لا من تعريف مدرسي', ok: hasHumanOpening, note: hasHumanOpening ? 'البداية قريبة من روح المقالات.' : 'جرّب أن تبدأ بمشهد أو مفارقة.' },
-    { label: `متوسط الجملة قريب من بصمتك (${style.avgSentenceWords || '—'} كلمة)`, ok: !avgSentence || sentenceGap <= 7, note: stats.average ? `المقال الحالي: ${stats.average} كلمة للجملة.` : 'لا توجد جمل كافية للحكم.' },
-    { label: `تقسيم الفقرات قريب من عادتك (${style.avgParagraphs || '—'} فقرات)`, ok: !style.avgParagraphs || paragraphGap <= 4, note: `${paragraphs.length || 0} فقرات في النص الحالي.` },
+    { label: `متوسط الجملة قريب من بصمتك (${style.avgSentenceWords ? arabicCountPhrase(style.avgSentenceWords, WORD_PLAIN_FORMS) : '—'})`, ok: !avgSentence || sentenceGap <= 7, note: stats.average ? `المقال الحالي: ${arabicCountPhrase(stats.average, WORD_PLAIN_FORMS)} للجملة.` : 'لا توجد جمل كافية للحكم.' },
+    { label: `تقسيم الفقرات قريب من عادتك (${style.avgParagraphs ? arabicCountPhrase(style.avgParagraphs, PARAGRAPH_FORMS) : '—'})`, ok: !style.avgParagraphs || paragraphGap <= 4, note: `${arabicCountPhrase(paragraphs.length || 0, PARAGRAPH_FORMS)} في النص الحالي.` },
     { label: 'حضور مفرداتك الإنسانية', ok: anchors.length >= 3, note: anchors.length ? anchors.join('، ') : 'أضف أثر الفكرة في الإنسان/الطالب/المعلم.' },
     { label: 'روابط انتقال طبيعية في التحليل', ok: connectors.length >= 2, note: connectors.length ? connectors.join('، ') : 'النص يحتاج مفاصل انتقال أكثر.' },
     { label: 'خلو من عبارات AI العامة', ok: weakPhrases.length === 0, note: weakPhrases.length ? weakPhrases.join('، ') : 'لا توجد عبارات آلية ظاهرة.' },
-    { label: 'طول مريح للمقال الفكري', ok: words >= MIN_ARTICLE_WORDS, note: `${words} كلمة.` },
+    { label: 'طول مريح للمقال الفكري', ok: words >= MIN_ARTICLE_WORDS, note: `${arabicCountPhrase(words, WORD_PLAIN_FORMS)}.` },
   ]
   const score = Math.round((checks.filter((check) => check.ok).length / checks.length) * 100)
   return {
@@ -1249,7 +1250,7 @@ function buildBundle(idea: string, audience: string, angle: string, articles: Ar
   const partial = { title, excerpt, body }
   const quality = [
     'المحرّر يفتح فارغاً عمداً؛ المقال يُكتب ببصمتك المقيسة لا بقالب.',
-    related.length ? `مرتبط بـ ${related.length} مقالات من أرشيفك.` : 'لم أجد ربطاً قوياً؛ أضف كلمات من قاموسك الفكري.',
+    related.length ? `مرتبط بـ ${arabicCountPhrase(related.length, ARTICLE_AFTER_PREPOSITION_FORMS)} من أرشيفك.` : 'لم أجد ربطاً قوياً؛ أضف كلمات من قاموسك الفكري.',
     relatedBooks.length || relatedPapers.length ? 'يوجد امتداد أكاديمي/كتابي مناسب.' : 'لا يوجد امتداد كتابي أو بحثي واضح بعد.',
     'صورة المشاركة الافتراضية جاهزة إذا لم ترفع صورة خاصة.',
     'الحزمة الاجتماعية تُبنى بعد كتابة المقال، ويمكن حفظها في طابور الموافقة.',
@@ -1334,7 +1335,7 @@ function IdeaSuggestionsCard({
             <span className="block font-display text-lg font-semibold leading-relaxed text-ink">{item.title}</span>
             <span className="mt-2 block text-[.84rem] leading-relaxed text-soft">{item.idea}</span>
             <span className="mt-3 block text-[.74rem] text-accent">
-              {item.coverage.length ? `الأرشيف يغطيها جزئياً: ${item.coverage.length} روابط` : 'فجوة شبه جديدة — مناسبة لمقال'}
+              {item.coverage.length ? `الأرشيف يغطيها جزئياً: ${arabicCountPhrase(item.coverage.length, LINK_FORMS)}` : 'فجوة شبه جديدة — مناسبة لمقال'}
             </span>
           </button>
         ))}
@@ -1442,7 +1443,7 @@ function EditorialBoardPanel({
         </div>
         <div className="text-left">
           <span className="block font-display text-3xl font-semibold text-accent">{editorialScoreLabel(decision.scores.strength)}</span>
-          <span className="mt-1 block text-[.66rem] text-soft">قوة القرار · {historyCount ? `${historyCount} قرار محفوظ` : 'أول قرار محفوظ'}</span>
+          <span className="mt-1 block text-[.66rem] text-soft">قوة القرار · {historyCount ? arabicCountPhrase(historyCount, SAVED_DECISION_FORMS) : 'أول قرار محفوظ'}</span>
         </div>
       </div>
 
@@ -1482,7 +1483,7 @@ function EditorialBoardPanel({
         </details>
         <details className="group rounded-xl border border-hair bg-canvas px-4 py-3" data-editorial-portfolio="true">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">وعي المحفظة الفكرية</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
-          <div className="mt-3 border-t border-hair pt-3"><p className="text-[.8rem] leading-relaxed text-ink">{decision.portfolio.explanation}</p>{decision.portfolio.available && <p className="mt-2 text-[.72rem] leading-relaxed text-soft">المحور: {decision.portfolio.focusCategory} · حضوره {decision.portfolio.focusCategoryCount}/{decision.portfolio.totalArticles} · مواد قريبة: {decision.portfolio.relatedArticleCount} مقال، {decision.portfolio.relatedBookCount} كتاب، {decision.portfolio.relatedPaperCount} بحث.</p>}</div>
+          <div className="mt-3 border-t border-hair pt-3"><p className="text-[.8rem] leading-relaxed text-ink">{decision.portfolio.explanation}</p>{decision.portfolio.available && <p className="mt-2 text-[.72rem] leading-relaxed text-soft">المحور: {decision.portfolio.focusCategory} · حضوره {decision.portfolio.focusCategoryCount}/{decision.portfolio.totalArticles} · مواد قريبة: {arabicCountPhrase(decision.portfolio.relatedArticleCount, ARTICLE_PLAIN_FORMS)}، {arabicCountPhrase(decision.portfolio.relatedBookCount, BOOK_PLAIN_FORMS)}، {arabicCountPhrase(decision.portfolio.relatedPaperCount, PAPER_PLAIN_FORMS)}.</p>}</div>
         </details>
         <details className="group rounded-xl border border-hair bg-canvas px-4 py-3" data-editorial-personal-context="true">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span className="font-semibold text-ink">السياق الشخصي الخاص</span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
@@ -1529,7 +1530,7 @@ function EvidenceChainCard({ chain }: { chain: ReturnType<typeof buildEvidenceCh
   return (
     <details className={`${card} group`} data-evidence-chain="true">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-        <span><span className="block text-[.72rem] font-semibold text-accent">سلسلة الدليل الخاصة</span><span className="mt-1 block text-[.76rem] text-soft">{chain.claims.length ? `تغطية ${chain.coverage}/100 · ${chain.claims.length} ادعاء مفحوص` : 'لا توجد ادعاءات قابلة للربط في النص الحالي'}</span></span>
+        <span><span className="block text-[.72rem] font-semibold text-accent">سلسلة الدليل الخاصة</span><span className="mt-1 block text-[.76rem] text-soft">{chain.claims.length ? `تغطية ${chain.coverage}/100 · ${arabicCountPhrase(chain.claims.length, CLAIM_FORMS)}` : 'لا توجد ادعاءات قابلة للربط في النص الحالي'}</span></span>
         <span className="text-accent transition-transform group-open:rotate-45">+</span>
       </summary>
       <div className="mt-4 grid gap-3 border-t border-hair pt-4">
@@ -1589,7 +1590,7 @@ function CandidateRoom({ alternates, onAdopt }: {
               <strong className="font-display text-[1rem] leading-relaxed text-ink">{alternate.title}</strong>
               <span className="rounded-full border border-accent/30 bg-accent/[.06] px-3 py-1 font-display text-[.9rem] text-accent">{alternate.score}٪</span>
             </div>
-            <p className="mt-1 text-[.7rem] text-soft">{alternate.structure} · {alternate.words} كلمة · أصالة {alternate.originality}٪ · {alternate.model}</p>
+            <p className="mt-1 text-[.7rem] text-soft">{alternate.structure} · {arabicCountPhrase(alternate.words, WORD_PLAIN_FORMS)} · أصالة {alternate.originality}٪ · {alternate.model}</p>
             <p className="mt-3 max-h-40 overflow-y-auto whitespace-pre-line text-[.84rem] leading-loose text-soft">{alternate.body}</p>
             <button type="button" className={`${ghost} mt-4`} onClick={() => onAdopt(alternate)}>اعتمد هذه النسخة</button>
           </article>
@@ -1688,18 +1689,18 @@ function VoiceTeacher({ body, memory, onTeach, onForget }: {
 function FingerprintPanel({ dna }: { dna: ReturnType<typeof measureStyleDna> }) {
   if (!dna) return null
   const rows: [string, string][] = [
-    ['طول المقال', `${dna.article.p25}–${dna.article.p90} كلمة (وسيطك ${dna.article.median})`],
-    ['وسيط الجملة', `${dna.sentence.median} كلمات · ${dna.sentence.shortRate}٪ من جملك تسع فأقل`],
+    ['طول المقال', `${dna.article.p25}–${dna.article.p90} كلمة (وسيطك ${arabicCountPhrase(dna.article.median, WORD_PLAIN_FORMS)})`],
+    ['وسيط الجملة', `${arabicCountPhrase(dna.sentence.median, WORD_PLAIN_FORMS)} · ${dna.sentence.shortRate}٪ من جملك تسع فأقل`],
     ['وقفات «…»', `${dna.marks.ellipsisPerArticle} في المقال · في ${dna.moves.articlesWithEllipsis}٪ من مقالاتك`],
     ['الانقلاب «بل»', `في ${dna.moves.articlesWithAntithesis}٪ من مقالاتك`],
     ['الأسئلة', `${dna.marks.questionsPerArticle} في المقال · في ${dna.moves.articlesWithQuestion}٪ منها`],
-    ['الفقرة', `وسيط ${dna.paragraph.median} كلمة · ${dna.paragraph.singleSentenceRate}٪ منها جملة واحدة`],
+    ['الفقرة', `وسيط ${arabicCountPhrase(dna.paragraph.median, WORD_PLAIN_FORMS)} · ${dna.paragraph.singleSentenceRate}٪ منها جملة واحدة`],
     ['الخاتمة', `${dna.closings.questionRate}٪ سؤال · ${dna.closings.antithesisRate}٪ انقلاب بـ«بل»`],
     ['أكثر ما تبدأ به', (dna.openers || []).slice(0, 6).map((item) => item.word).join(' · ')],
   ]
   return (
     <details className="mt-4 group" data-fingerprint-panel="true">
-      <summary className="cursor-pointer list-none text-[.76rem] text-accent">بصمتك كما قِيست من {dna.sampleSize} مقالاً — اضغط لتراها</summary>
+      <summary className="cursor-pointer list-none text-[.76rem] text-accent">بصمتك كما قِيست من {arabicCountPhrase(dna.sampleSize, ARTICLE_AFTER_PREPOSITION_FORMS)} — اضغط لتراها</summary>
       <div className="mt-3 grid gap-2">
         {rows.filter(([, value]) => value).map(([label, value]) => (
           <div key={label} className="flex items-start justify-between gap-4 rounded-xl border border-hair bg-canvas px-4 py-2.5">
@@ -1759,7 +1760,7 @@ function StyleFidelityCard({ verdict, sampleSize, dna }: { verdict: StyleVerdict
         </div>
         <span className={`rounded-full border border-accent/30 bg-accent/[.06] px-4 py-2 font-display text-xl ${tone}`}>{verdict.score}٪</span>
       </div>
-      <p className="mt-2 text-[.76rem] leading-relaxed text-soft">المسطرة مقيسة على {sampleSize} مقالاً منشوراً لك؛ وسيط مقالاتك نفسها ٨٧٪.</p>
+      <p className="mt-2 text-[.76rem] leading-relaxed text-soft">المسطرة مقيسة على {arabicCountPhrase(sampleSize, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)} لك؛ وسيط مقالاتك نفسها ٨٧٪.</p>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {([
           ['وقفات «…»', verdict.metrics.ellipsis],
@@ -1879,7 +1880,7 @@ function EditorialDecisionRoom({ suite }: { suite: ReturnType<typeof buildEditor
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">قرار واحد… وأربع عدسات هادئة.</h2>
           <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">هذه الغرفة لا تنشر ولا تغيّر النص وحدها؛ فقط تكشف ما يحتاج قرارك قبل نقل المقال إلى المكتبة.</p>
         </div>
-        <span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{suite.words} كلمة</span>
+        <span className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] text-soft">{arabicCountPhrase(suite.words, WORD_PLAIN_FORMS)}</span>
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -2033,7 +2034,7 @@ function PublicationPassportCard({ passport }: { passport: PublicationPassportDr
   ] as const
   return (
     <details className="group mt-4 rounded-2xl border border-hair bg-canvas p-4" data-publication-passport="preview">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span><strong className="block text-[.78rem] text-ink">جواز النشر السيادي</strong><span className="mt-1 block text-[.7rem] leading-relaxed text-soft">بصمة واحدة للنص والصوت والتصميم والتغريدات والمصادر؛ يوقّعها الخادم عند النقل، ويعيد توقيعها قبل أي نشر عام.</span></span><span className={`shrink-0 rounded-full px-3 py-1.5 text-[.68rem] font-bold ${passport.releaseReady ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{passport.releaseReady ? 'مكتمل' : `${passport.blocking.length} معلّق`}</span></summary>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span><strong className="block text-[.78rem] text-ink">جواز النشر السيادي</strong><span className="mt-1 block text-[.7rem] leading-relaxed text-soft">بصمة واحدة للنص والصوت والتصميم والتغريدات والمصادر؛ يوقّعها الخادم عند النقل، ويعيد توقيعها قبل أي نشر عام.</span></span><span className={`shrink-0 rounded-full px-3 py-1.5 text-[.68rem] font-bold ${passport.releaseReady ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{passport.releaseReady ? 'مكتمل' : arabicCountPhrase(passport.blocking.length, PENDING_ITEM_FORMS)}</span></summary>
       <div className="mt-4 grid grid-cols-2 gap-2 border-t border-hair pt-4 sm:grid-cols-5">{rows.map(([key, label]) => { const state = passport.components[key].status; return <div key={key} className="rounded-xl border border-hair bg-wash px-3 py-2 text-center"><span className={`block text-[.68rem] font-bold ${state === 'verified' ? 'text-emerald-700' : state === 'review' ? 'text-amber-700' : 'text-soft'}`}>{state === 'verified' ? '✓ مثبت' : state === 'review' ? '◐ مراجعة' : '○ معلّق'}</span><span className="mt-1 block text-[.7rem] text-ink">{label}</span></div> })}</div>
       <div className={`mt-3 rounded-xl border px-3 py-3 ${passport.semanticCourt.status === 'passed' ? 'border-emerald-200 bg-emerald-50/70' : passport.semanticCourt.status === 'blocked' ? 'border-red-200 bg-red-50/60' : 'border-amber-200 bg-amber-50/60'}`} data-semantic-court={passport.semanticCourt.status}>
         <div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-[.72rem] text-ink">محكمة المعنى متعددة الوسائط</strong><span className={`text-[.68rem] font-bold ${passport.semanticCourt.status === 'passed' ? 'text-emerald-700' : passport.semanticCourt.status === 'blocked' ? 'text-red-700' : 'text-amber-800'}`}>{passport.semanticCourt.score}٪ · {passport.semanticCourt.status === 'passed' ? 'مجتازة' : passport.semanticCourt.status === 'blocked' ? 'أوقفت النشر' : passport.semanticCourt.status === 'review' ? 'مراجعة' : 'بانتظار الطبقات'}</span></div>
@@ -2078,7 +2079,7 @@ function ImpactMirrorInline({
     <details className="group mt-2 rounded-lg border border-hair bg-wash px-3 py-2" data-impact-mirror={mirror.status}>
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
         <span className="text-[.68rem] font-semibold text-ink">مرآة الأثر · {labels[mirror.status]}</span>
-        <span className={`text-[.64rem] font-bold ${mirror.status === 'aligned' ? 'text-emerald-700' : mirror.status === 'drift' ? 'text-red-700' : 'text-soft'}`}>{mirror.semanticScore == null ? `${mirror.counts.total} شواهد` : `${mirror.semanticScore}٪ · ${mirror.counts.total} شواهد`}</span>
+        <span className={`text-[.64rem] font-bold ${mirror.status === 'aligned' ? 'text-emerald-700' : mirror.status === 'drift' ? 'text-red-700' : 'text-soft'}`}>{mirror.semanticScore == null ? arabicCountPhrase(mirror.counts.total, EVIDENCE_FORMS) : `${mirror.semanticScore}٪ · ${arabicCountPhrase(mirror.counts.total, EVIDENCE_FORMS)}`}</span>
       </summary>
       <div className="mt-3 grid gap-3 border-t border-hair pt-3">
         <p className="text-[.64rem] leading-relaxed text-soft">الانتشار لا يساوي الفهم. الأرقام تقيس الوصول والفعل، ومحاذاة المعنى لا تحسب إلا من صياغة مجهلة تسجلها هنا بلا أسماء أو أرقام أو روابط.</p>
@@ -2118,7 +2119,7 @@ function CurrentEventsCard({
         <span>
           <span className="block text-[.76rem] font-semibold uppercase text-accent">أحداث الساعة</span>
           <span className="mt-1 block font-display text-xl font-semibold text-ink">يربط الحدث فقط عندما يخدم الفكرة.</span>
-          <span className="mt-1 block text-[.8rem] leading-relaxed text-soft">{loading ? 'أحدّث المصادر…' : opportunities.length ? `${opportunities.length} فرصة أرشيف اجتازت عتبة الثقة` : selected.length ? `${selected.length} حدث مثبت` : items.length ? 'لا تطابق أرشيفياً موثقاً الآن' : 'لا توجد إشارة راهنة مناسبة الآن'}</span>
+          <span className="mt-1 block text-[.8rem] leading-relaxed text-soft">{loading ? 'أحدّث المصادر…' : opportunities.length ? arabicCountPhrase(opportunities.length, OPPORTUNITY_FORMS) : selected.length ? arabicCountPhrase(selected.length, EVENT_FORMS) : items.length ? 'لا تطابق أرشيفياً موثقاً الآن' : 'لا توجد إشارة راهنة مناسبة الآن'}</span>
         </span>
         <span className="flex items-center gap-2">
           {selected.length > 0 && <span className="rounded-full border border-hair px-3 py-1 text-[.7rem] text-soft">{selected.length} محدد</span>}
@@ -3340,7 +3341,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       const next = [...paragraphs]
       next[index] = revised.paragraph
       updateBundle({ body: refineToStyle(next.join('\n\n'), styleDna) })
-      setNotice(`أُعيد تحرير الفقرة ${index + 1} وحدها (${revised.words} كلمة). بقية المقال كما هي.`)
+      setNotice(`أُعيد تحرير الفقرة ${index + 1} وحدها (${arabicCountPhrase(revised.words, WORD_PLAIN_FORMS)}). بقية المقال كما هي.`)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر إصلاح الفقرة. لم يتغيّر شيء في مقالك.')
     } finally {
@@ -3431,10 +3432,10 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         papers: relatedPapers.map(({ slug, title }) => ({ slug, title })),
         quality: [
           `مطابقة الأسلوب لبصمتك: ${verdict.score}٪${generated.style?.structure ? ` · البناء: ${generated.style.structure}` : ''}${verdict.ready ? ' — داخل مدى مقالاتك' : ' — دون العتبة، راجع الملاحظات'}`,
-          `وقفات «…» ${verdict.metrics.ellipsis} · انقلابات «بل» ${verdict.metrics.antithesis} · أسئلة ${verdict.metrics.questions} · وسيط الجملة ${verdict.metrics.medianSentence} كلمة.`,
-          `الحد الأدنى 350 كلمة؛ النسخة المولّدة الآن ${generated.exactWords} كلمة ويمكنك زيادتها بحرية.`,
+          `وقفات «…» ${verdict.metrics.ellipsis} · انقلابات «بل» ${verdict.metrics.antithesis} · أسئلة ${verdict.metrics.questions} · وسيط الجملة ${arabicCountPhrase(verdict.metrics.medianSentence, WORD_PLAIN_FORMS)}.`,
+          `الحد الأدنى ${arabicCountPhrase(350, WORD_PLAIN_FORMS)}؛ النسخة المولّدة الآن ${arabicCountPhrase(generated.exactWords, WORD_PLAIN_FORMS)} ويمكنك زيادتها بحرية.`,
           `درجة الأصالة مقابل الأرشيف: ${generated.originality}٪.`,
-          `قيست بصمتك على ${styleDna?.sampleSize || style.articleCount} مقالاً منشوراً، لا على وصفٍ عام.`,
+          `قيست بصمتك على ${arabicCountPhrase(styleDna?.sampleSize || style.articleCount, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)}، لا على وصفٍ عام.`,
           generated.event ? `ربط راهن موثّق: ${generated.event.source} — ${generated.event.title}` : 'لم يُفرض حدث راهن لأن الصلة لم تكن عضوية.',
           skipOriginality ? 'استُثني فحص الأصالة بإقرار الكاتب لأن النص أو فكرته أصلية له.' : (generated.originalityNote || 'اجتاز فحص عدم تكرار الزاوية والحجة.'),
           'قوالب السوشيال تُبنى منفصلة لكل منصة لمنع النسخ المتكرر.',
@@ -3451,7 +3452,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       setBundle(nextBundle)
       setIdea(override?.title || idea)
       if (override?.angle) setAngle(override.angle)
-      setNotice(`كُتب المقال بأسلوبك بمطابقة ${verdict.score}٪ وطول ${generated.exactWords} كلمة${generated.style?.structure ? ` · بناء ${generated.style.structure}` : ''}${skipOriginality ? ' · مع تسجيل استثناء الأصالة بإقرارك' : ''} ✓`)
+      setNotice(`كُتب المقال بأسلوبك بمطابقة ${verdict.score}٪ وطول ${arabicCountPhrase(generated.exactWords, WORD_PLAIN_FORMS)}${generated.style?.structure ? ` · بناء ${generated.style.structure}` : ''}${skipOriginality ? ' · مع تسجيل استثناء الأصالة بإقرارك' : ''} ✓`)
       setView('write')
       task.needsInput('المقال جاهز للمراجعة')
       void requestSocialPack(nextBundle, false).catch(() => undefined)
@@ -3496,7 +3497,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     try {
       const ok = isAdmin || await refresh()
       if (!ok) throw new Error('جلسة المشرف تحتاج تحديثاً. سجّل خروجك وادخل من جديد.')
-      if (wordCount(bundle.body) < MIN_ARTICLE_WORDS) throw new Error(`المقال يجب ألا يقل عن ${MIN_ARTICLE_WORDS} كلمة. العدد الحالي: ${wordCount(bundle.body)}.`)
+      if (wordCount(bundle.body) < MIN_ARTICLE_WORDS) throw new Error(`المقال يجب ألا يقل عن ${arabicCountPhrase(MIN_ARTICLE_WORDS, WORD_PLAIN_FORMS)}. العدد الحالي: ${wordCount(bundle.body)}.`)
       if (!gate.ready) throw new Error(`بوابة الجودة لم تجتز بعد: ${gate.blocking.join('، ')}`)
       if (richArticles.some((article) => article.slug === bundle.slug)) throw new Error('هذا الرابط مستخدم سابقاً. عدّل العنوان أو الرابط.')
       const db = await getDb()
@@ -3805,7 +3806,7 @@ ${effectivePurpose}`,
       } else pack = local
       setPulsePack(pack)
       const approvedCount = pulseProfessionalPlans.filter((item) => item.release.ready).length
-      setNotice(`فهم المخرج العبارة وبنى حزمة مستقلة لموضوع «${visualTopicLabel(detectVisualTopic(`${cleanIdea} ${effectivePurpose}`))}»، ومعها ${approvedCount} اتجاهات اجتازت بوابة المصمم من أصل 3 ✓`)
+      setNotice(`فهم المخرج العبارة وبنى حزمة مستقلة لموضوع «${visualTopicLabel(detectVisualTopic(`${cleanIdea} ${effectivePurpose}`))}»، ومعها ${arabicCountPhrase(approvedCount, DIRECTION_FORMS)} من أصل 3 ✓`)
       task.needsInput('المنشور جاهز للمراجعة')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر بناء المنشور المستقل.')
@@ -3957,7 +3958,7 @@ ${effectivePurpose}`,
           <EditorialBoardPanel decision={editorialDecision} progress={editorialProgress} busy={editorialBusy || generating} historyCount={editorialHistory.length} onStart={startEditorialArticle} onOpenExisting={openExistingEditorialArticle} />
           {editorialDecision && ['write', 'revive'].includes(editorialDecision.verdict) && <section className={card}><div className="flex flex-wrap items-center justify-between gap-3"><span><span className="block text-[.7rem] font-semibold text-accent">بعد اعتماد الفكرة</span><span className="mt-1 block text-[.75rem] text-soft">حوّل قرار المجلس إلى مشروع Flow من دون إنشاء مقال تلقائي.</span></span><button type="button" className={ghost} onClick={() => { const seed = { type: 'public_topic_video', topic: editorialDecision.idea, message: editorialDecision.plan.thesis, audience, editorialDecisionId: editorialDecision.id }; try { sessionStorage.setItem('admin:live-director-seed', JSON.stringify(seed)) } catch { /* noop */ } window.dispatchEvent(new CustomEvent('studio:live-director-seed', { detail: seed })); setView('director') }}>افتحها في المخرج الحي</button></div></section>}
           {editorialHistory.length > 0 && <details className={`${card} group`}>
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ{editorialCalibrationProfile.sampleSize >= 1 ? ` · ${editorialCalibrationProfile.sampleSize} نتيجة دخلت المعايرة` : ''}{(editorialCalibrationProfile.stubbornWins || 0) > 0 ? ` · ${editorialCalibrationProfile.stubbornWins} انتصار عناد صحّح ميزانه` : ''}</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {arabicCountPhrase(editorialHistory.length, LAST_SAVED_DECISION_FORMS)}{editorialCalibrationProfile.sampleSize >= 1 ? ` · ${arabicCountPhrase(editorialCalibrationProfile.sampleSize, CALIBRATION_RESULT_FORMS)}` : ''}{(editorialCalibrationProfile.stubbornWins || 0) > 0 ? ` · ${arabicCountPhrase(editorialCalibrationProfile.stubbornWins, STUBBORN_WIN_FORMS)}` : ''}</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button type="button" className="rounded-full border border-accent/[.35] px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white" onClick={() => setWeeklySessionOpen((open) => !open)}>
                 {weeklySessionOpen ? 'أغلق الجلسة الأسبوعية' : 'جلسة المجلس الأسبوعية — آخر أفكارك مرتبة'}
@@ -3979,7 +3980,7 @@ ${effectivePurpose}`,
             <div className="mt-4 grid gap-2 border-t border-hair pt-4">{editorialHistory.slice(0, 12).map((item) => {
               const calibration = editorialCalibrationByDecision[item.id]
               const actual = calibration?.actual30 || calibration?.actual7
-              const windowLabel = calibration?.actual30 ? '30 يوم' : calibration?.actual7 ? '7 أيام' : ''
+              const windowLabel = calibration?.actual30 ? '30 يوماً' : calibration?.actual7 ? '7 أيام' : ''
               const comparison = actual?.vsSiteAveragePct == null ? '' : `${actual.vsSiteAveragePct >= 0 ? 'أعلى' : 'أقل'} من متوسط الموقع بـ${Math.abs(actual.vsSiteAveragePct)}٪`
               const mirror = editorialImpactMirrorByDecision[item.id] || buildImpactMirror({ intent: {
                 title: item.plan.primaryTitle,
@@ -4021,7 +4022,7 @@ ${effectivePurpose}`,
                 <Field label="التصنيف"><input className={input} list="publishing-article-categories" value={bundle.cat} onChange={(event) => updateBundle({ cat: event.target.value })} placeholder="اكتب تصنيفاً قائماً أو جديداً" /><datalist id="publishing-article-categories">{articleCats.filter((cat) => cat !== 'الكل').map((cat) => <option key={cat} value={cat} />)}</datalist></Field>
               </div>
               <Field label="المقتطف"><textarea className={`${input} min-h-24 leading-loose`} value={bundle.excerpt} onChange={(event) => updateBundle({ excerpt: event.target.value })} /></Field>
-              <Field label={`المقال — ${wordCount(bundle.body)} كلمة ${wordCount(bundle.body) >= MIN_ARTICLE_WORDS ? '✓' : `— بقي ${MIN_ARTICLE_WORDS - wordCount(bundle.body)}`}`}><textarea className={`${input} min-h-[500px] leading-loose`} value={bundle.body} onChange={(event) => updateBundle({ body: event.target.value })} /></Field>
+              <Field label={`المقال — ${arabicCountPhrase(wordCount(bundle.body), WORD_PLAIN_FORMS)} ${wordCount(bundle.body) >= MIN_ARTICLE_WORDS ? '✓' : `— بقيت ${arabicCountPhrase(MIN_ARTICLE_WORDS - wordCount(bundle.body), WORD_PLAIN_FORMS)}`}`}><textarea className={`${input} min-h-[500px] leading-loose`} value={bundle.body} onChange={(event) => updateBundle({ body: event.target.value })} /></Field>
             </div>
           </section>
           <aside className="grid content-start gap-5">

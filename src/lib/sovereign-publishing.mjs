@@ -1,4 +1,5 @@
 import { buildMultimodalMeaningCourt } from './semantic-court.mjs'
+import { arabicCountPhrase, HOUR_FORMS } from './style-dna.mjs'
 
 const ARABIC_MARKS = /[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06edـ]/g
 
@@ -303,7 +304,7 @@ export function buildOpportunityRadar(events = [], articles = [], options = {}) 
         article: { slug: text(article.slug), title: text(article.title), excerpt: text(article.excerpt), iso: text(article.iso) },
         sharedConcepts: shared.slice(0, 8),
         breakdown: { topical, recency, evidence, archiveStrength },
-        whyNow: `يلتقي الحدث بالمادة في ${shared.slice(0, 4).join('، ')}؛ المصدر مثبت، وعمر الإشارة ${Math.round(ageHours)} ساعة.`,
+        whyNow: `يلتقي الحدث بالمادة في ${shared.slice(0, 4).join('، ')}؛ المصدر مثبت، وعمر الإشارة ${arabicCountPhrase(Math.round(ageHours), HOUR_FORMS)}.`,
         recommendation: `أعد فتح «${text(article.title)}» من زاوية الحدث، ولا تعِد نشر الرابط وحده.`,
       })
     }

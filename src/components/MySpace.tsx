@@ -6,6 +6,7 @@ import { SocialIcon } from "./icons";
 import { useCmsContent } from "../lib/content";
 import { categoryLabel } from "../lib/content-taxonomy";
 import { usePersistentAudio } from "../lib/persistent-audio";
+import { arabicCountPhrase, DAY_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 import {
   SPACE_EVENT,
   isArticleSaved,
@@ -25,7 +26,7 @@ const timeAgo = (at: number) => {
   const days = Math.floor((Date.now() - at) / 86_400_000);
   if (days <= 0) return "اليوم";
   if (days === 1) return "أمس";
-  if (days < 7) return `قبل ${arNumber(days)} أيام`;
+  if (days < 7) return `قبل ${arabicCountPhrase(days, DAY_AFTER_PREPOSITION_FORMS, (value) => arNumber(value))}`;
   return new Date(at).toLocaleDateString("ar-KW-u-nu-arab", {
     day: "numeric",
     month: "short",
@@ -246,7 +247,6 @@ function CrossDeviceSync({ onActiveChange }: { onActiveChange?: (active: boolean
           <span className="block text-[.72rem] font-semibold text-ink">المزامنة عبر الأجهزة</span>
           {code && <span className="mt-1 block text-[.7rem] leading-relaxed text-soft">مفعّلة · البيانات تُشفّر قبل مغادرة جهازك.</span>}
         </span>
-        <span className="shrink-0 text-[.72rem] font-semibold text-accent">{expanded ? "إغلاق" : "فتح"}</span>
       </button>
       {expanded && (
         <div className="mt-4 grid gap-3 rounded-2xl bg-wash/[.55] p-4">

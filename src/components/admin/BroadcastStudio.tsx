@@ -15,6 +15,7 @@
  * لا بابٌ يُخفي الطريق كلّه حتى تعبره.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { arabicCountPhrase, CAMPAIGN_FORMS, ENTITY_AFTER_PREPOSITION_FORMS, MESSAGE_FORMS, MINUTE_FORMS, SECOND_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
 
 type List = { id: string; name: string; note?: string; kind?: string; count?: number }
 type Preview = { samples: { name: string; body: string }[]; willSend: number; suppressed: number }
@@ -190,7 +191,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
   }
 
   const send = async () => {
-    if (!confirmOnce) { setConfirmOnce(true); say(`اضغط مرّةً أخرى لتأكيد الإرسال إلى ${willSend} جهة.`); return }
+    if (!confirmOnce) { setConfirmOnce(true); say(`اضغط مرّةً أخرى لتأكيد الإرسال إلى ${arabicCountPhrase(willSend, ENTITY_AFTER_PREPOSITION_FORMS)}.`); return }
     setBusy('send')
     try {
       const draft = await request('/admin/audience/draft', {
@@ -206,7 +207,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
       })
       setActiveCampaignId(id)
       await refreshCampaigns(id, true)
-      say(`✓ بدأ الإرسال الهادئ إلى ${willSend} جهة، بفاصل ${interval} ثانية. المتابعة الحية ظهرت أسفل الإرسال.`)
+      say(`✓ بدأ الإرسال الهادئ إلى ${arabicCountPhrase(willSend, ENTITY_AFTER_PREPOSITION_FORMS)}، بفاصل ${arabicCountPhrase(interval, SECOND_AFTER_PREPOSITION_FORMS)}. المتابعة الحية ظهرت أسفل الإرسال.`)
       setConfirmOnce(false)
       setText('')
     } catch (error) {
@@ -223,7 +224,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
         method: 'POST',
         body: JSON.stringify({ confirm: true }),
       }) as { commandsStopped?: number; campaignsStopped?: number }
-      say(`توقف الإرسال الآن: أُلغيت ${Number(result.commandsStopped || 0)} رسالة معلّقة وأُوقفت ${Number(result.campaignsStopped || 0)} حملة.`)
+      say(`توقف الإرسال الآن: أُلغيت ${arabicCountPhrase(Number(result.commandsStopped || 0), MESSAGE_FORMS)} وأُوقفت ${arabicCountPhrase(Number(result.campaignsStopped || 0), CAMPAIGN_FORMS)}.`)
       setConfirmOnce(false)
       await refreshCampaigns(activeCampaignId, true)
     } catch (error) {
@@ -358,7 +359,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
             </label>
             {willSend > 0 && (
               <span className="text-[.75rem] text-soft">
-                المدة المتوقّعة: {Math.max(1, Math.round((willSend * interval) / 60))} دقيقة
+                المدة المتوقّعة: {arabicCountPhrase(Math.max(1, Math.round((willSend * interval) / 60)), MINUTE_FORMS)}
               </span>
             )}
           </div>
@@ -372,7 +373,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
               disabled={busy === 'send'}
               className={`mt-3 rounded-full px-5 py-2.5 text-[.82rem] font-semibold transition-opacity ${confirmOnce ? 'bg-accent text-white' : 'border border-accent text-accent'} hover:opacity-90 disabled:opacity-50`}
             >
-              {busy === 'send' ? 'يبدأ الإرسال…' : confirmOnce ? `تأكيد: أرسل إلى ${willSend} جهة` : `إرسال هادئ إلى ${willSend} جهة`}
+              {busy === 'send' ? 'يبدأ الإرسال…' : confirmOnce ? `تأكيد: أرسل إلى ${arabicCountPhrase(willSend, ENTITY_AFTER_PREPOSITION_FORMS)}` : `إرسال هادئ إلى ${arabicCountPhrase(willSend, ENTITY_AFTER_PREPOSITION_FORMS)}`}
             </button>
           )}
         </div>

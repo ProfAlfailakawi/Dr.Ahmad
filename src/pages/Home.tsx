@@ -18,7 +18,7 @@ import { PROJECT_START_YEAR } from '../lib/project-meta'
 import { listenIsOpen, rotatingQuestion, type ListenEpisode } from '../lib/listen-catalog'
 import { SPACE_EVENT, isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
 import { SocialIcon as ActionIcon } from '../components/icons'
-import { arabicCountPhrase, ARTICLE_FORMS, BOOK_FORMS, PAPER_FORMS } from '../lib/arabic-count.ts'
+import { arabicCountPhrase, ARTICLE_THOUGHT_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, BOOK_FORMS, BOOK_PLAIN_FORMS, NEW_ARTICLE_FORMS, PAPER_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -177,7 +177,7 @@ const personasFor = (articleCount: number, paperCount: number): {
   to: string; links: { to: string; t: string }[]
 }[] => [
   { key: 'reader', label: 'قارئ متأمّل', gate: 'للقارئ المتأمل',
-    d: `أكثر من ${roundDown10(articleCount)} مقالاً فكرياً — اقرأها، وبعضها بصوتي.`,
+    d: `أكثر من ${arabicCountPhrase(roundDown10(articleCount), ARTICLE_THOUGHT_AFTER_PREPOSITION_FORMS)} — اقرأها، وبعضها بصوتي.`,
     greet: 'بدأتُ لك من الكلمة.', to: '/articles',
     links: [{ to: '/articles', t: 'أحدث ما كتبت' }, { to: '/articles', t: 'كل المقالات' }] },
   { key: 'scholar', label: 'معلّم وباحث', gate: 'للمعلم والباحث',
@@ -357,7 +357,7 @@ function SinceLastVisit() {
   const continuation = ideaContinuation(articles)
 
   const bits: { to: string; t: string }[] = []
-  if (newArticles > 0) bits.push({ to: '/articles', t: newArticles === 1 ? 'مقال جديد' : `${newArticles} مقالات جديدة` })
+  if (newArticles > 0) bits.push({ to: '/articles', t: arabicCountPhrase(newArticles, NEW_ARTICLE_FORMS) })
   if (daysGone >= 1) bits.push({ to: '/curated', t: 'اختيارات تبدّلت' })
 
   // «تابع من حيث توقفت» يظهر متى وُجد مقالٌ سابق (حتى دون غياب طويل)
@@ -443,7 +443,7 @@ function Signatures() {
 /* ---------- «في مثل هذا الأسبوع» — الذاكرة الحيّة ----------
    يطابق أسبوع السنة الحالي مع الأرشيف (٢٠١٦ فصاعداً) ويُخرج مقالاً كتبه الدكتور
    في مثل هذه الأيام قبل سنوات — يتبدّل أسبوعياً، بلا خادم وبلا تدخل. */
-const yearsAgo = (n: number) => (n === 1 ? 'قبل سنة' : n === 2 ? 'قبل سنتين' : n <= 10 ? `قبل ${n} سنوات` : `قبل ${n} سنة`)
+const yearsAgo = (n: number) => `قبل ${arabicCountPhrase(n, YEAR_AFTER_PREPOSITION_FORMS)}`
 
 function OnThisWeek({ compact = false }: { compact?: boolean }) {
   const { articles } = useCmsContent()
@@ -473,11 +473,11 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
     <div data-hover className={`group relative h-full rounded-2xl border border-hair bg-canvas transition-colors hover:border-accent ${compact ? 'p-6 md:p-7' : 'max-w-3xl border-0 p-0'}`}>
       <Link to={`/articles/${pick.a.slug}`} aria-label={`اقرأ مقال: ${pick.a.title}`} className="absolute inset-0 z-0"><span className="sr-only">{pick.a.title}</span></Link>
       <div className="pointer-events-none relative z-10">
-        <div className="flex min-w-0 items-center justify-between gap-2.5 text-accent">
+        <div className="flex min-w-0 flex-col items-start gap-3 text-accent">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="h-[1.5px] w-7 shrink-0 bg-accent" />
             <p className="min-w-0 whitespace-nowrap text-[clamp(.62rem,2.25vw,.74rem)] font-semibold leading-none">
-              في مثل هذا الأسبوع <span className="px-1 text-soft/70">·</span> {yearsAgo(n)}
+              في مثل هذا الأسبوع {yearsAgo(n)}
             </p>
           </div>
           <QuickArticleActions article={pick.a} className="pointer-events-auto shrink-0 flex-nowrap" />
@@ -929,7 +929,7 @@ function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
       </section>
       <section className="border-t border-hair bg-wash py-12 md:py-[70px]">
         <div className="mx-auto max-w-shell px-6 md:px-11">
-          <SectionHead label="المؤلفات" title={`${books.length} كتب.`} to="/publications" />
+          <SectionHead label="المؤلفات" title={`${arabicCountPhrase(books.length, BOOK_PLAIN_FORMS)}.`} to="/publications" />
         </div>
         <div className="mx-auto grid max-w-shell grid-cols-2 gap-x-4 gap-y-8 px-6 md:grid-cols-3 md:gap-x-8 md:gap-y-12 md:px-11 lg:grid-cols-4">
           {books.map((book, i) => (

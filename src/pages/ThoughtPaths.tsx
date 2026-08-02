@@ -7,6 +7,7 @@ import { normalizeArabic } from '../lib/cms'
 import { staticQuestions } from './Questions'
 import { dynamicArticleCategories } from '../lib/content-taxonomy'
 import { bookKnowledgeText } from '../lib/book-knowledge'
+import { arabicCountPhrase, MINUTE_AFTER_PREPOSITION_FORMS, STATION_FORMS } from '../lib/arabic-count.ts'
 
 type ThoughtPath = {
   id: string
@@ -284,7 +285,7 @@ export default function ThoughtPaths() {
             <p className="mt-4 max-w-2xl text-[1rem] font-light leading-[1.95] text-soft">{active.intro}</p>
             {journey.nodes.length > 0 && (
               <p className="mt-4 text-[.76rem] font-medium text-soft">
-                {journey.nodes.length} محطات · قراءة المسار كاملاً نحو {journey.minutes === 1 ? 'دقيقة' : journey.minutes === 2 ? 'دقيقتين' : journey.minutes <= 10 ? `${journey.minutes} دقائق` : `${journey.minutes} دقيقة`}
+                {arabicCountPhrase(journey.nodes.length, STATION_FORMS)} · قراءة المسار كاملاً نحو {arabicCountPhrase(journey.minutes, MINUTE_AFTER_PREPOSITION_FORMS)}
               </p>
             )}
           </FadeUp>

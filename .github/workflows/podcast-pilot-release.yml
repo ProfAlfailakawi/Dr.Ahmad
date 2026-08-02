@@ -198,7 +198,11 @@ jobs:
           # فيرتدّ نشرٌ نجح فيه كل شيء قبله. القافلة الساعية تستعمل ‎-f على
           # الموجود وحده منذ زمن؛ هذا المسار لم يكن. ونتجاوز الغائب لأن بعض
           # الملفات لا تُكتب إلا في مساراتٍ بعينها.
-          MANAGED=(.podcast-state.json src/data/audio.json src/data/audio-meta.json src/data/podcast-admin.json)
+          # ‎.podcast-state.json مستبعَدٌ في .gitignore عمداً — حالة المحرك لا
+          # تُتتبَّع. القافلة الساعية لا تذكره في قائمتها أصلاً، وأنا أضفتُه
+          # بـ‎-f فتتبَّع خطأً ثم أزالته جلسةٌ أخرى محقّةً في ‎67cae40. نحذفه
+          # من القائمة بدل إجباره، ويبقى ‎-f للسجلّات التي قد تُستبعَد.
+          MANAGED=(src/data/audio.json src/data/audio-meta.json src/data/podcast-admin.json)
           PRESENT=()
           for managed in "${MANAGED[@]}"; do [ -f "$managed" ] && PRESENT+=("$managed"); done
           if [ "${#PRESENT[@]}" -eq 0 ]; then echo "لا سجلّات لتثبيتها."; exit 0; fi

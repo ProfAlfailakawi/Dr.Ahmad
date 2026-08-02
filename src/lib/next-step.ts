@@ -111,7 +111,7 @@ export function pickNextStep(input: NextStepInput): NextStep | null {
     candidates.push({
       key,
       kind: 'كتاب',
-      invite: `اقرأ ما كتبه عنها في «${match.bookTitle}» — ص ${match.quote.page}`,
+      invite: `يتوسّع الدكتور في هذه الفكرة داخل «${match.bookTitle}» — ص ${match.quote.page}`,
       title: match.quote.conceptTitle || match.bookTitle,
       to: `/publications/${match.bookSlug}#book-knowledge`,
       score: match.score * 2,

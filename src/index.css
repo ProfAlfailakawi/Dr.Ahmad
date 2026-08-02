@@ -375,6 +375,8 @@ html.dark .signature-page :is(.bg-canvas, .bg-wash) {
 
 .content-articles .article-body {
   max-width: min(var(--article-width, 66ch), 100%);
+  text-align: justify;
+  text-justify: inter-word;
   transition: max-width .28s var(--E);
 }
 

@@ -188,7 +188,7 @@ export function BookWorld({
     .slice()
     .sort((left, right) => (resonance.get(right.id) || 0) - (resonance.get(left.id) || 0) || left.page - right.page)
 
-  /* ═══ «اسأل هذا الكتاب» ═══
+  /* ═══ «ابحث في هذا الكتاب» ═══
      الزائر يسأل سؤاله بلغته، فيجيبه الكتاب بمقاطعه هو — لا بنموذجٍ يخمّن،
      ولا بملفٍ يُفتح. الكتاب يدلّ على نفسه دون أن يُفتح. */
   const [bookQuestion, setBookQuestion] = useState('')
@@ -345,8 +345,8 @@ export function BookWorld({
           {/* ═══ اسأل هذا الكتاب ═══
               الكتاب يجيب بمقاطعه هو. لا نموذج يخمّن، ولا ملف يُفتح. */}
           {model.allQuotes.length > 0 && <Disclosure
-            eyebrow="اسأل هذا الكتاب"
-            title="اكتب سؤالك، فيجيبك الكتاب بمقاطعه"
+            eyebrow="ابحث في هذا الكتاب"
+            title="اكتب ما تبحث عنه، فيجيبك الكتاب بمقاطعه"
             meta="الجواب من متن الكتاب، منسوباً إلى صفحته."
             lockOpen={Boolean(asked) || askOpen}
           >
@@ -359,18 +359,18 @@ export function BookWorld({
                 value={bookQuestion}
                 onChange={(event) => setBookQuestion(event.target.value)}
                 placeholder="مثال: ما دور المعلّم؟"
-                aria-label={`سؤال عن كتاب ${book.title}`}
+                aria-label={`ابحث داخل كتاب ${book.title}`}
                 className="min-w-0 w-full max-w-full rounded-full border border-hair bg-canvas px-4 py-3 text-[.82rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent"
               />
-              <button type="submit" className="min-h-11 w-full rounded-full bg-accent px-5 py-2.5 text-[.75rem] font-semibold text-white transition-colors hover:bg-accent-deep sm:w-auto">اسأل</button>
+              <button type="submit" className="min-h-11 w-full rounded-full bg-accent px-5 py-2.5 text-[.75rem] font-semibold text-white transition-colors hover:bg-accent-deep sm:w-auto">ابحث</button>
             </form>
-            {stagedQuestion && <p className="mt-2 text-[.68rem] leading-relaxed text-soft">جاءك هذا القسم مباشرة من تبويب «اسأل كتاباً» في البحث، ويمكنك تعديل السؤال هنا متى شئت.</p>}
+            {stagedQuestion && <p className="mt-2 text-[.68rem] leading-relaxed text-soft">جاءك هذا القسم مباشرة من ميزة «ابحث في كتاب» في البحث، ويمكنك تعديل السؤال هنا متى شئت.</p>}
 
             {asked && (
               <div className="mt-4 border-t border-hair pt-4">
                 {!askReady && <p className="text-[.76rem] text-soft">يفتح الكتاب…</p>}
                 {askReady && bookAnswer.length === 0 && (
-                  <p className="text-[.76rem] leading-relaxed text-soft">لم يتناول هذا الكتاب سؤالك بهذه الكلمات. جرّب كلمةً أقرب إلى محاوره، أو <Link to={`/search?q=${encodeURIComponent(asked)}&tab=passage`} className="text-accent">ابحث في الكتب التسعة</Link>.</p>
+                  <p className="text-[.76rem] leading-relaxed text-soft">لم يتناول هذا الكتاب سؤالك بهذه الكلمات. جرّب كلمةً أقرب إلى محاوره، أو <Link to={`/search?q=${encodeURIComponent(asked)}&tab=passage`} className="text-accent">ابحث في كتب الدكتور التسعة</Link>.</p>
                 )}
                 <div className="grid gap-3">
                   {bookAnswer.map((match) => (

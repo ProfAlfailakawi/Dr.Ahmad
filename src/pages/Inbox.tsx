@@ -5,7 +5,7 @@ import { EASE, FadeUp, Page, PageHead } from "../components/ui";
 import { Newsletter } from "../components/extras";
 import { useSeo } from "../components/seo";
 import { Link } from "react-router";
-import { useExtras, useCmsContent } from "../lib/content";
+import { useExtrasState, useCmsContent } from "../lib/content";
 import { loadArticleBodies } from "../lib/article-bodies";
 import { pickEchoes, type VoiceEcho } from "../lib/voice-echoes";
 import { Pagination, usePagedList } from "../components/Pagination";
@@ -81,14 +81,16 @@ export default function Inbox() {
       "رسائل قصيرة وأسئلة تفتح زوايا جديدة على المقالات والأفكار المنشورة.",
   });
   const reduce = useReducedMotion();
-  const liveInbox = useExtras<LiveInboxItem>("site_inbox", { realtime: true });
-  const liveFaqs = useExtras<LiveFaq>("site_faqs", { realtime: true });
-  const liveQuestions = useExtras<WeeklyQuestion>("site_questions", {
-    realtime: true,
-  });
-  const liveTestimonials = useExtras<LiveTestimonial>("site_testimonials", {
-    realtime: true,
-  });
+  const inboxState = useExtrasState<LiveInboxItem>("site_inbox", { realtime: true });
+  const faqState = useExtrasState<LiveFaq>("site_faqs", { realtime: true });
+  const questionState = useExtrasState<WeeklyQuestion>("site_questions", { realtime: true });
+  const testimonialState = useExtrasState<LiveTestimonial>("site_testimonials", { realtime: true });
+  const liveInbox = inboxState.data;
+  const liveFaqs = faqState.data;
+  const liveQuestions = questionState.data;
+  const liveTestimonials = testimonialState.data;
+  const restoringContent = [inboxState, faqState, questionState, testimonialState]
+    .some((state) => state.loading || state.refreshing);
 
   /* مصدر الرسائل الوحيد هو المجموعة الحية التي يملؤها المجدول الآلي.
      لا بديل ثابتاً ولا روابط يدوية ولا أرقام مخبوزة داخل الصفحة. */
@@ -214,7 +216,9 @@ export default function Inbox() {
         month: "long",
         year: "numeric",
       })
-    : "بانتظار أول تحديث حي";
+    : restoringContent
+      ? "تُستعاد آخر نسخة محفوظة الآن"
+      : "بانتظار أول تحديث موثّق";
 
   return (
     <Page className="inbox-page">
@@ -331,7 +335,9 @@ export default function Inbox() {
           ) : (
             <FadeUp delay={0.06}>
               <div className="mt-8 rounded-[2rem] border border-hair bg-wash p-8 text-soft">
-                لا توجد رسالة معروضة الآن. يمكنك الانتقال إلى خيوط الأرشيف أو الأسئلة من التبويبات أعلاه.
+                {inboxState.loading || inboxState.refreshing
+                  ? "نستعيد الرسائل المحفوظة ونتحقق من أحدث نسخة…"
+                  : "لا توجد رسالة معروضة الآن. يمكنك الانتقال إلى خيوط الأرشيف أو الأسئلة من التبويبات أعلاه."}
               </div>
             </FadeUp>
           )}
@@ -461,7 +467,9 @@ export default function Inbox() {
 
           {questions.length === 0 && (
             <p className="mt-9 rounded-2xl border border-hair bg-wash px-6 py-5 text-[.88rem] font-light text-soft">
-              لا توجد أسئلة معروضة الآن.
+              {faqState.loading || questionState.loading || faqState.refreshing || questionState.refreshing
+                ? "نستعيد الأسئلة المحفوظة ونتحقق من أحدث نسخة…"
+                : "لا توجد أسئلة معروضة الآن."}
             </p>
           )}
 

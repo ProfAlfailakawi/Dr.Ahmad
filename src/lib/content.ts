@@ -44,46 +44,168 @@ export interface ExtraArticle {
   audioControl?: { readingDisabled?: boolean; fahedDisabled?: boolean; nouraDisabled?: boolean; dialogueDisabled?: boolean; readingStatus?: string; fahedStatus?: string; nouraStatus?: string; dialogueStatus?: string }
 }
 
-export function useExtras<T>(collectionName: string, options: { realtime?: boolean } = {}): T[] {
-  const [data, setData] = useState<T[]>([])
+type ExtrasOptions = { realtime?: boolean }
+export type ExtrasResource<T> = {
+  data: T[]
+  loading: boolean
+  refreshing: boolean
+  error: boolean
+  fromCache: boolean
+}
+
+type ExtrasCacheEnvelope = { savedAt: number; data: unknown[] }
+const EXTRAS_CACHE_PREFIX = 'site:extras-cache:v3:'
+const EXTRAS_CACHE_MAX_AGE = 45 * 24 * 60 * 60 * 1000
+
+const extrasCacheKey = (collectionName: string) => `${EXTRAS_CACHE_PREFIX}${collectionName}`
+
+function readExtrasCache<T>(collectionName: string): T[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(extrasCacheKey(collectionName))
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as ExtrasCacheEnvelope
+    if (!Array.isArray(parsed.data) || !Number.isFinite(parsed.savedAt) || Date.now() - parsed.savedAt > EXTRAS_CACHE_MAX_AGE) return []
+    return normalizeArabicTanween(parsed.data) as T[]
+  } catch {
+    return []
+  }
+}
+
+function writeExtrasCache(collectionName: string, data: unknown[]) {
+  if (typeof window === 'undefined') return
+  try {
+    const envelope: ExtrasCacheEnvelope = { savedAt: Date.now(), data }
+    window.localStorage.setItem(extrasCacheKey(collectionName), JSON.stringify(envelope))
+  } catch {
+    /* امتلاء التخزين أو الوضع الخاص لا يعطل المحتوى الحي. */
+  }
+}
+
+function useExtrasResource<T>(collectionName: string, options: ExtrasOptions = {}): ExtrasResource<T> {
+  const initial = useMemo(() => readExtrasCache<T>(collectionName), [collectionName])
+  const [data, setData] = useState<T[]>(initial)
+  const [loading, setLoading] = useState(initial.length === 0)
+  const [refreshing, setRefreshing] = useState(firebaseEnabled)
+  const [error, setError] = useState(false)
+  const [fromCache, setFromCache] = useState(initial.length > 0)
   const realtime = Boolean(options.realtime)
 
   useEffect(() => {
     let active = true
     let unsubscribe = () => {}
-    if (!firebaseEnabled) return () => { active = false }
+    const cached = readExtrasCache<T>(collectionName)
+    setData(cached)
+    setLoading(cached.length === 0)
+    setRefreshing(firebaseEnabled)
+    setError(false)
+    setFromCache(cached.length > 0)
+
+    if (!firebaseEnabled) {
+      setLoading(false)
+      setRefreshing(false)
+      return () => { active = false }
+    }
+
+    const accept = (items: T[], { confirmed, cache }: { confirmed: boolean; cache: boolean }) => {
+      if (!active) return
+      const normalized = normalizeArabicTanween(items) as T[]
+      /* لا نستبدل أرشيفاً محفوظاً بلقطة Firestore محلية فارغة أثناء بدء
+         المزامنة. الفراغ لا يصبح حقيقةً إلا بعد أن يؤكده الخادم. */
+      if (normalized.length > 0 || confirmed || cached.length === 0) {
+        startTransition(() => setData(normalized))
+        setFromCache(!confirmed)
+      }
+      if (cache && (normalized.length > 0 || confirmed)) writeExtrasCache(collectionName, normalized as unknown[])
+      if (confirmed) {
+        setLoading(false)
+        setRefreshing(false)
+        setError(false)
+        setFromCache(false)
+      }
+    }
 
     if (!realtime) {
-      fetchExtras<T>(collectionName).then((items) => {
-        if (active) startTransition(() => setData(normalizeArabicTanween(items) as T[]))
-      })
+      fetchExtras<T>(collectionName)
+        .then((items) => {
+          if (!active) return
+          /* fetchExtras يعيد [] أيضاً عند تعذر الشبكة؛ لذلك لا نمحو نسخةً
+             محفوظة بفراغٍ غير موثوق. */
+          if (items.length > 0) accept(items, { confirmed: true, cache: true })
+          else {
+            setLoading(false)
+            setRefreshing(false)
+            if (cached.length === 0) startTransition(() => setData([]))
+          }
+        })
+        .catch(() => {
+          if (!active) return
+          setLoading(false)
+          setRefreshing(false)
+          setError(true)
+        })
       return () => { active = false }
     }
 
     ;(async () => {
       try {
         const db = await getDb()
-        if (!db || !active) return
+        if (!db || !active) {
+          setLoading(false)
+          setRefreshing(false)
+          return
+        }
         const { collection, onSnapshot, orderBy, query } = await import('firebase/firestore')
         unsubscribe = onSnapshot(
           query(collection(db, collectionName), orderBy('createdAt', 'desc')),
+          { includeMetadataChanges: true },
           (snapshot) => {
             if (!active) return
-            startTransition(() => setData(normalizeArabicTanween(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))) as T[]))
+            const items = snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) as T[]
+            const confirmed = !snapshot.metadata.fromCache
+            accept(items, { confirmed, cache: confirmed })
           },
           () => {
-            fetchExtras<T>(collectionName).then((items) => { if (active) startTransition(() => setData(normalizeArabicTanween(items) as T[])) })
+            if (!active) return
+            setLoading(false)
+            setRefreshing(false)
+            setError(true)
+            /* النسخة المحفوظة تبقى معروضة؛ لا نعلن أن الأرشيف اختفى. */
           },
         )
       } catch {
-        fetchExtras<T>(collectionName).then((items) => { if (active) startTransition(() => setData(normalizeArabicTanween(items) as T[])) })
+        if (!active) return
+        setLoading(false)
+        setRefreshing(false)
+        setError(true)
       }
     })()
 
     return () => { active = false; unsubscribe() }
   }, [collectionName, realtime])
 
-  return data
+  return { data, loading, refreshing, error, fromCache }
+}
+
+export function useExtras<T>(collectionName: string, options: ExtrasOptions = {}): T[] {
+  return useExtrasResource<T>(collectionName, options).data
+}
+
+export function useExtrasState<T>(collectionName: string, options: ExtrasOptions = {}): ExtrasResource<T> {
+  return useExtrasResource<T>(collectionName, options)
+}
+
+/** يبدأ استعادة المجموعات الحساسة عند فتح الموقع، قبل أن يصل الزائر إلى
+    صفحات الرسائل والرادار. لا يمحو التخزين عند فشل الشبكة أو رجوع نتيجة فارغة. */
+export async function warmPublicExtras(collectionNames: string[]) {
+  await Promise.all(collectionNames.map(async (collectionName) => {
+    try {
+      const items = await fetchExtras<Record<string, unknown>>(collectionName)
+      if (items.length > 0) writeExtrasCache(collectionName, normalizeArabicTanween(items) as unknown[])
+    } catch {
+      /* النسخة المحلية هي خط الدفاع الأول. */
+    }
+  }))
 }
 
 type CmsContextValue = {

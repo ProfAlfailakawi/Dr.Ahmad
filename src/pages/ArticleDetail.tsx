@@ -772,7 +772,7 @@ export default function ArticleDetail() {
         }}
       />
       <article
-        className="px-6 pb-24 pt-32 md:px-11 md:pt-40"
+        className="px-6 pb-12 pt-32 md:px-11 md:pb-16 md:pt-40"
         data-print-citation={`للاستشهاد: ${a.title}، ${a.date}، الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، ${SITE_URL}/articles/${a.slug}`}
       >
         <div className="mx-auto max-w-[720px]">
@@ -874,33 +874,37 @@ export default function ArticleDetail() {
           </FadeUp>
 
           <FadeUp className="serenity-hide">
-            {/* صفٌّ واحدٌ على الجوّال كالكمبيوتر (أمر الدكتور): يمين «السابق»،
-               وسطٌ «جميع المقالات»، يسار «التالي» — بعنوانٍ مختصرٍ سطراً واحداً
-               وخطٍّ أصغر أجمل. */}
-            <nav className="mt-14 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-t border-hair pt-8 sm:gap-6">
+            {/* تنقّل بصري خفيف: ثلاثة رموز مفهومة بلا تكرار الكلمات أو
+               عناوين طويلة تُربك نهاية المقال. الأسماء تبقى لقارئ الشاشة. */}
+            <nav className="mt-10 flex items-center justify-center gap-3 border-t border-hair pt-6" aria-label="التنقل بين المقالات">
               {next ? (
-                <Link to={`/articles/${next.slug}`} className="group min-w-0">
-                  <span className="text-[.64rem] text-soft sm:text-[.78rem]">السابق</span>
-                  <span className="mt-0.5 block truncate font-display text-[.8rem] font-medium leading-[1.5] text-ink transition-colors group-hover:text-accent sm:whitespace-normal sm:text-[1.05rem]">
-                    {next.title}
-                  </span>
+                <Link
+                  to={`/articles/${next.slug}`}
+                  aria-label={`السابق: ${next.title}`}
+                  title={`السابق: ${next.title}`}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white"
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                 </Link>
-              ) : (
-                <span />
-              )}
-              <Link to="/articles" className="min-h-11 self-center whitespace-nowrap border-b border-hair px-1 py-2 text-center text-[.66rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent sm:text-[.76rem]">
-                جميع المقالات
+              ) : <span className="h-11 w-11" aria-hidden="true" />}
+              <Link
+                to="/articles"
+                aria-label="جميع المقالات"
+                title="جميع المقالات"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round"><path d="M5 6h14M5 12h14M5 18h14" /><circle cx="3" cy="6" r=".5" fill="currentColor" stroke="none" /><circle cx="3" cy="12" r=".5" fill="currentColor" stroke="none" /><circle cx="3" cy="18" r=".5" fill="currentColor" stroke="none" /></svg>
               </Link>
               {prev ? (
-                <Link to={`/articles/${prev.slug}`} className="group min-w-0 text-left">
-                  <span className="text-[.64rem] text-soft sm:text-[.78rem]">التالي</span>
-                  <span className="mt-0.5 block truncate font-display text-[.8rem] font-medium leading-[1.5] text-ink transition-colors group-hover:text-accent sm:whitespace-normal sm:text-[1.05rem]">
-                    {prev.title}
-                  </span>
+                <Link
+                  to={`/articles/${prev.slug}`}
+                  aria-label={`التالي: ${prev.title}`}
+                  title={`التالي: ${prev.title}`}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white"
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
                 </Link>
-              ) : (
-                <span />
-              )}
+              ) : <span className="h-11 w-11" aria-hidden="true" />}
             </nav>
           </FadeUp>
         </div>

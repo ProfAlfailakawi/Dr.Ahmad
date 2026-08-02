@@ -76,7 +76,7 @@ check('المعلومة العامة عن التحكيم والمصادر تظه
 check('ISBN لا يظهر في بطاقات المؤلفات ويظل في صفحة الكتاب', !/ISBN|ردمك/u.test(publications) && /ISBN \/ ردمك/u.test(bookDetail))
 check('صفحة الكتاب تحمل عالم الكتاب كسولاً عند الاقتراب', bookDetail.includes('LazyBookWorld') && bookDetail.includes('IntersectionObserver') && bookDetail.includes("rootMargin: '700px 0px'"))
 check('فهرس الكتاب هرمي بالأبواب والفصول لا جدار بطاقات', bookDetail.includes('groupToc') && bookDetail.includes('<details') && bookDetail.includes('أبوابٌ تُفتح عند الحاجة'))
-check('عناوين الفهرس قابلة للانتقال إلى بوابة الكتاب', bookDetail.includes('book_idea=') && bookDetail.includes('#book-knowledge'))
+check('عناوين الفهرس قابلة للانتقال إلى بوابة الكتاب', bookDetail.includes('book_question=') && bookDetail.includes('#ask-book-section'))
 check('عالم الكتاب يستقبل فكرة الفهرس بعد التحميل الكسول', bookWorld.includes("searchParams.get('book_idea')") && bookWorld.includes('setActiveIdea'))
 check('شريط محاور الكتاب صف واحد قابل للسحب RTL', bookWorld.includes('book-spine-rail') && bookWorld.includes('dir="rtl"') && bookWorld.includes('overflow-x-auto') && bookWorld.includes('touch-action:pan-x'))
 check('عالم الكتاب يحمي كل الحاويات من خروج الهاتف', css.includes('.content-book-world') && css.includes('max-width: 100%') && css.includes('min-width: 0') && css.includes('overflow-x: clip'))
@@ -86,7 +86,7 @@ check('فهرس الكتاب لا يستعمل defaultOpen غير المدعوم
 check('التحميل الكسول لا يضيّق window إلى never في TypeScript', !bookDetail.includes("'IntersectionObserver' in window") && bookDetail.includes("typeof IntersectionObserver === 'undefined'"))
 
 console.log('\nاسأل كتاباً والبحث المعرفي')
-check('اسأل كتاباً تبويب حقيقي داخل البحث', search.includes("{ id: 'askbook', label: 'اسأل كتاباً' }") && search.includes("tab === 'askbook'"))
+check('اسأل كتاباً تبويب حقيقي داخل البحث', search.includes("{ id: 'askbook', label: 'ابحث في كتاب' }") && search.includes("tab === 'askbook'"))
 check('التبويب يعمل بلا كتابة بحث عام', search.includes("(searchStarted || tab === 'askbook')") && search.includes("tab !== 'askbook'"))
 check('اختيار الكتاب والسؤال والجواب كلها داخل صفحة البحث', search.includes('ask-book-rail') && search.includes('submitAskBook') && search.includes('searchBookPassages(askBookAsked') && search.includes('الجواب من متن الكتاب'))
 check('الجواب يعرض الكتاب والصفحة والمحور ورابطاً اختيارياً', search.includes('match.bookTitle') && search.includes('match.quote.page') && search.includes('match.quote.conceptTitle') && search.includes('في الكتاب'))
@@ -109,7 +109,7 @@ check('استشهد بهذا مدخله أيقونة فقط', read('src/componen
 check('تنزيل وإغلاق صورة الاقتباس أيقونات فقط', quoteImage.includes('SocialIcon name="Download"') && quoteImage.includes('SocialIcon name="Close"') && quoteCard.includes('SocialIcon name="Download"') && quoteCard.includes('SocialIcon name="Close"'))
 check('كل مسارات صور الاقتباس تدعم iPhone Share Sheet', [quoteImage, quoteCard, ideaFeatures, articleReader].every((text) => text.includes('navigator.share') && /iP\(\?:hone\|ad\|od\)|iP(?:hone|ad|od)/.test(text)))
 check('أيقونات الطباعة والتقويم والمشاركة الصغيرة بلا كلمات', icons.includes('Print:') && read('src/pages/Impact.tsx').includes('SocialIcon name="Print"') && read('src/pages/Upcoming.tsx').includes('SocialIcon name="Calendar"') && extras.includes('SocialIcon name={i.icon}'))
-check('الأفعال الرئيسية والحساسة ما زالت نصية وواضحة', mySpace.includes('فعّل المزامنة وأنشئ رمزاً') && search.includes('اسأل الكتاب') && read('src/components/ContactForm.tsx').includes("send: 'إرسال'"))
+check('الأفعال الرئيسية والحساسة ما زالت نصية وواضحة', mySpace.includes('فعّل المزامنة وأنشئ رمزاً') && search.includes('ابحث في الكتاب') && read('src/components/ContactForm.tsx').includes("send: 'إرسال'"))
 check('لا توجد أزرار صغيرة مرئية لعبارات بطاقة النشر/استشهد/تحميل/إغلاق', compactActionAudit())
 
 console.log('\nالرئيسية والذيل والتصميم')
@@ -119,7 +119,7 @@ check('بطاقات المقالات الكاملة لا تكرر اقرأ ال�
 check('النشرة وتبيان والجدول الدراسي عادت أيقونات دائرية', ui.includes('SocialIcon name="Mail"') && ui.includes('<TebyanProjectLink') && ui.includes('<ScheduleProjectLink') && ui.includes('iconOnly = true'))
 check('PROFESSIONAL لم تتغير والخط العربي للمنشور المستقل Alexandria', /PROFESSIONAL/u.test(socialTemplates + publishingStudio) && /المنشور المستقل[\s\S]{0,500}Alexandria/u.test(socialTemplates))
 check('صور الإعلام في الرئيسية تفحص الصورة الرمادية', home.includes('function HomeMediaThumb') && homeExperience.includes('function YouTubeThumb') && home.includes('naturalWidth <= 120'))
-check('سطر المهنة يمنع الفاصلة من الانفراد', home.includes('QuickArticleActions') && read('src/components/home/HumanCoreHero.tsx').includes('whitespace-nowrap">· باحث') && read('src/components/home/HumanCoreHero.tsx').includes('whitespace-nowrap">· مستشار'))
+check('سطر المهنة يمنع الفاصلة من الانفراد', home.includes('QuickArticleActions') && read('src/components/home/HumanCoreHero.tsx').includes('whitespace-nowrap') && read('src/components/home/HumanCoreHero.tsx').includes('أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار'))
 
 console.log('\nصياغة العقل الحي')
 check('لا يقول لم أجد جواباً ثم يعرض جواباً', !ask.includes('لم أجد جواباً مباشراً') && !ask.includes('وهذه أقرب مادة موثّقة'))

@@ -244,7 +244,7 @@ function CrossDeviceSync({ onActiveChange }: { onActiveChange?: (active: boolean
       <button type="button" onClick={() => setExpanded((value) => !value)} className="flex w-full items-center justify-between gap-4 text-right" aria-expanded={expanded}>
         <span className="min-w-0">
           <span className="block text-[.72rem] font-semibold text-ink">المزامنة عبر الأجهزة</span>
-          <span className="mt-1 block text-[.7rem] leading-relaxed text-soft">{code ? "مفعّلة · البيانات تُشفّر قبل مغادرة جهازك." : "غير مفعّلة · التخزين المحلي هو الافتراضي."}</span>
+          {code && <span className="mt-1 block text-[.7rem] leading-relaxed text-soft">مفعّلة · البيانات تُشفّر قبل مغادرة جهازك.</span>}
         </span>
         <span className="shrink-0 text-[.72rem] font-semibold text-accent">{expanded ? "إغلاق" : "إدارة"}</span>
       </button>

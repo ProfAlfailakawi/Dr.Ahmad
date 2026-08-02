@@ -47,6 +47,15 @@ type LiveTestimonial = {
 
 type InboxView = "letters" | "threads" | "echoes" | "questions";
 
+type LetterItem = {
+  id: string;
+  message: string;
+  reply: string;
+  tone: string;
+  source: "live" | "editorial";
+  senderLabel?: string;
+};
+
 type ArchiveEchoCard = {
   id: string;
   kind: "كتاب" | "مقال" | "بحث" | "لقاء";
@@ -90,6 +99,89 @@ const compact = (value = "", limit = 235) => {
 };
 const yearFrom = (value = "") => value.match(/(?:19|20)\d{2}/)?.[0];
 
+const EDITORIAL_LETTERS: LetterItem[] = [
+  {
+    id: "editorial:parent-ai-boundaries",
+    source: "editorial",
+    senderLabel: "ولي أمر",
+    tone: "نموذج تمثيلي",
+    message: "قرأت حديثك عن الذكاء الاصطناعي مع الأبناء. كيف أضع حدوداً واضحة من دون أن يتحول البيت إلى ساحة منع؟",
+    reply: "",
+  },
+  {
+    id: "editorial:teacher-quiet-student",
+    source: "editorial",
+    senderLabel: "معلمة",
+    tone: "نموذج تمثيلي",
+    message: "في فصلي طالب هادئ جداً، لكن هدوءه لا يعني أنه بخير. كيف أقترب منه من غير أن أحرجه أمام زملائه؟",
+    reply: "",
+  },
+  {
+    id: "editorial:graduate-research",
+    source: "editorial",
+    senderLabel: "طالب دراسات عليا",
+    tone: "نموذج تمثيلي",
+    message: "أقرأ أبحاثك لأحدد موضوع رسالتي، لكن كل فكرة تفتح أمامي أفكاراً أكثر. كيف أعرف أن السؤال ناضج للبحث؟",
+    reply: "",
+  },
+  {
+    id: "editorial:parent-comparison",
+    source: "editorial",
+    senderLabel: "أم",
+    tone: "نموذج تمثيلي",
+    message: "ابني يقارن نفسه بمن يراهم في المنصات طوال الوقت. أريد أن أساعده من غير أن أقلل من مشاعره أو أهاجم اهتماماته.",
+    reply: "",
+  },
+  {
+    id: "editorial:school-leader",
+    source: "editorial",
+    senderLabel: "قائد مدرسة",
+    tone: "نموذج تمثيلي",
+    message: "نملك أدوات رقمية كثيرة، لكن أثرها داخل الصف محدود. أشعر أن المشكلة في طريقة الاستخدام لا في نقص التقنية.",
+    reply: "",
+  },
+  {
+    id: "editorial:new-teacher",
+    source: "editorial",
+    senderLabel: "معلم جديد",
+    tone: "نموذج تمثيلي",
+    message: "أحاول أن أكون قريباً من طلابي، وأخشى في الوقت نفسه أن تضيع الحدود المهنية. أين يبدأ التوازن؟",
+    reply: "",
+  },
+  {
+    id: "editorial:reader-book",
+    source: "editorial",
+    senderLabel: "قارئ",
+    tone: "نموذج تمثيلي",
+    message: "أنهيت أحد كتبك وبقي معي سؤال واحد: لماذا نعرف كثيراً عن التربية، ثم نعود إلى ردود أفعالنا القديمة عند أول ضغط؟",
+    reply: "",
+  },
+  {
+    id: "editorial:parent-screen",
+    source: "editorial",
+    senderLabel: "أب",
+    tone: "نموذج تمثيلي",
+    message: "كل نقاش عن وقت الشاشة ينتهي بخلاف. أبحث عن اتفاق عائلي يمكن تطبيقه فعلاً، لا جدول مثالي ينهار بعد يومين.",
+    reply: "",
+  },
+  {
+    id: "editorial:researcher-data",
+    source: "editorial",
+    senderLabel: "باحثة",
+    tone: "نموذج تمثيلي",
+    message: "شدني طرحك عن حوكمة البيانات في التعليم. كيف نحمي الطالب من دون أن نوقف الاستفادة من البيانات نفسها؟",
+    reply: "",
+  },
+  {
+    id: "editorial:media-viewer",
+    source: "editorial",
+    senderLabel: "متابع لقاء",
+    tone: "نموذج تمثيلي",
+    message: "بعد اللقاء الأخير فكرت في شيء: هل نعلّم أبناءنا استخدام التقنية، أم نعلّمهم أولاً متى يرفضونها؟",
+    reply: "",
+  },
+];
+
 export default function Inbox() {
   useSeo({
     title: "رسائل على الهامش",
@@ -98,10 +190,16 @@ export default function Inbox() {
       "رسائل قصيرة وأسئلة تفتح زوايا جديدة على المقالات والأفكار المنشورة.",
   });
   const reduce = useReducedMotion();
-  const inboxState = useExtrasState<LiveInboxItem>("site_inbox", { realtime: true });
-  const faqState = useExtrasState<LiveFaq>("site_faqs", { realtime: true });
-  const questionState = useExtrasState<WeeklyQuestion>("site_questions", { realtime: true });
-  const testimonialState = useExtrasState<LiveTestimonial>("site_testimonials", { realtime: true });
+  const [activeView, setActiveView] = useState<InboxView>("letters");
+  const [liveDataReady, setLiveDataReady] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLiveDataReady(true), 1200);
+    return () => window.clearTimeout(timer);
+  }, []);
+  const inboxState = useExtrasState<LiveInboxItem>("site_inbox", { enabled: liveDataReady });
+  const faqState = useExtrasState<LiveFaq>("site_faqs", { enabled: activeView === "questions" });
+  const questionState = useExtrasState<WeeklyQuestion>("site_questions", { enabled: activeView === "questions" });
+  const testimonialState = useExtrasState<LiveTestimonial>("site_testimonials", { enabled: activeView === "echoes" });
   const liveInbox = inboxState.data;
   const liveFaqs = faqState.data;
   const liveQuestions = questionState.data;
@@ -109,8 +207,8 @@ export default function Inbox() {
   const restoringContent = [inboxState, faqState, questionState, testimonialState]
     .some((state) => state.loading || state.refreshing);
 
-  /* مصدر الرسائل الوحيد هو المجموعة الحية التي يملؤها المجدول الآلي.
-     لا بديل ثابتاً ولا روابط يدوية ولا أرقام مخبوزة داخل الصفحة. */
+  /* الرسائل الواردة تبقى من المجموعة الحية. وتُستكمل بنماذج تحريرية
+     قصيرة وموسومة بوضوح كي لا تُنسب إلى أشخاص حقيقيين. */
   const liveLetters = liveInbox
     .filter(isPublished)
     .filter((item) => Boolean(item.message) || item.autoGenerated === true)
@@ -121,10 +219,14 @@ export default function Inbox() {
       ),
       reply: clean(item.reply),
       tone: clean(item.tone),
+      source: "live" as const,
     }))
     .filter((item) => item.message);
 
-  const letters = liveLetters
+  const letters: LetterItem[] = [
+    ...liveLetters,
+    ...rotateTestimonials(EDITORIAL_LETTERS),
+  ]
     .filter((item) => item.message)
     .filter(
       (item, index, all) =>
@@ -135,7 +237,7 @@ export default function Inbox() {
   const featuredLetter = letters[0];
   const letterArchive = letters.slice(1);
   const letterPages = usePagedList(letterArchive, 6, String(letterArchive.length));
-  const [openCard, setOpenCard] = useState<{ title: string; body: string; reply?: string } | null>(null);
+  const [openCard, setOpenCard] = useState<{ title: string; body: string; reply?: string; meta?: string } | null>(null);
 
   useEffect(() => {
     if (!openCard) return;
@@ -192,7 +294,6 @@ export default function Inbox() {
      والأبحاث واللقاءات تحمل امتداداتٍ مختلفة للفكرة نفسها. */
   const { articles, books, papers, media } = useCmsContent();
   const archiveDialogues = useMemo(() => buildArchiveDialogues(articles, books, papers, media), [articles, books, media, papers]);
-  const [activeView, setActiveView] = useState<InboxView>("letters");
   const inboxTabs: Array<{ id: InboxView; label: string }> = [
     { id: "letters", label: "الرسائل" },
     { id: "echoes", label: "أصداء الأرشيف" },
@@ -206,7 +307,7 @@ export default function Inbox() {
   }, [activeView, archiveDialogues.length]);
   const [echoes, setEchoes] = useState<VoiceEcho[]>([]);
   useEffect(() => {
-    if (!articles.length) return;
+    if (activeView !== "echoes" || !articles.length) return;
     let active = true;
     loadArticleBodies()
       .then((bodies) => {
@@ -218,7 +319,7 @@ export default function Inbox() {
     return () => {
       active = false;
     };
-  }, [articles]);
+  }, [activeView, articles]);
 
   const archiveEchoCards = useMemo<ArchiveEchoCard[]>(() => {
     const article = echoes.length
@@ -261,7 +362,8 @@ export default function Inbox() {
       to: `/media/${pickedMedia.slug}`,
       year: yearFrom(pickedMedia.iso || pickedMedia.date || ""),
     } : null;
-    const cards = [book, article, mediaCard, paper].filter((item): item is ArchiveEchoCard => Boolean(item));
+    const candidates: Array<ArchiveEchoCard | null> = [book, article, mediaCard, paper];
+    const cards = candidates.filter((item): item is ArchiveEchoCard => item !== null);
     if (!cards.length) return [];
     const offset = testimonialPulse % cards.length;
     return [...cards.slice(offset), ...cards.slice(0, offset)];
@@ -383,8 +485,11 @@ export default function Inbox() {
                 والنصّان معاً يولّدهما النظام من أرشيفه. النصّ باقٍ كما هو —
                 والنسبة وحدها تُصحَّح، فلا يُنسب إلى غائبٍ قولٌ لم يقله. */}
             <span className="text-[.76rem] font-semibold uppercase text-accent">
-              على هامش الأرشيف
+              {featuredLetter?.source === "editorial" ? "رسالة تمثيلية" : "على هامش الأرشيف"}
             </span>
+            <p className="mt-2 max-w-2xl text-[.76rem] font-light leading-relaxed text-soft">
+              النماذج الموسومة بأنها تمثيلية صيغت تحريرياً لتجسيد أسئلة شائعة، وليست رسائل واردة من أشخاص حقيقيين.
+            </p>
           </FadeUp>
           {featuredLetter ? (
             <div className="mt-8 grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:items-end">
@@ -393,10 +498,15 @@ export default function Inbox() {
                   <span className="absolute right-8 top-3 font-display text-[5rem] leading-none text-accent/[.15]">
                     ”
                   </span>
+                  {featuredLetter.source === "editorial" && (
+                    <span className="relative mb-4 inline-flex rounded-full border border-accent/20 bg-canvas px-3 py-1 text-[.66rem] font-semibold text-accent">
+                      نموذج تمثيلي{featuredLetter.senderLabel ? ` · ${featuredLetter.senderLabel}` : ""}
+                    </span>
+                  )}
                   <p className="relative line-clamp-5 font-display text-[clamp(1.2rem,2.2vw,1.72rem)] font-light leading-[2] text-ink/[.92]">
                     {featuredLetter.message}
                   </p>
-                  <button type="button" onClick={() => setOpenCard({ title: "رسالة على الهامش", body: featuredLetter.message, reply: featuredLetter.reply })} className="relative mt-6 inline-flex min-h-10 items-center text-[.8rem] font-semibold text-accent transition-colors hover:text-accent-deep">
+                  <button type="button" onClick={() => setOpenCard({ title: featuredLetter.source === "editorial" ? "نموذج رسالة تمثيلية" : "رسالة على الهامش", body: featuredLetter.message, reply: featuredLetter.reply, meta: featuredLetter.source === "editorial" ? `نموذج تمثيلي${featuredLetter.senderLabel ? ` · ${featuredLetter.senderLabel}` : ""}` : undefined })} className="relative mt-6 inline-flex min-h-10 items-center text-[.8rem] font-semibold text-accent transition-colors hover:text-accent-deep">
                     فتح الرسالة كاملة ←
                   </button>
                 </blockquote>
@@ -428,7 +538,8 @@ export default function Inbox() {
             <div id="inbox-letters" className="mobile-card-rail mt-12 scroll-mt-28 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {letterPages.pageItems.map((letter, index) => (
                 <FadeUp key={letter.id} delay={Math.min(index * 0.05, 0.25)}>
-                  <button type="button" onClick={() => setOpenCard({ title: "رسالة على الهامش", body: letter.message, reply: letter.reply })} className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-6 text-right transition-colors hover:border-accent">
+                  <button type="button" onClick={() => setOpenCard({ title: letter.source === "editorial" ? "نموذج رسالة تمثيلية" : "رسالة على الهامش", body: letter.message, reply: letter.reply, meta: letter.source === "editorial" ? `نموذج تمثيلي${letter.senderLabel ? ` · ${letter.senderLabel}` : ""}` : undefined })} className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-6 text-right transition-colors hover:border-accent">
+                    {letter.source === "editorial" && <span className="mb-3 w-fit rounded-full bg-accent/[.08] px-3 py-1 text-[.64rem] font-semibold text-accent">نموذج تمثيلي{letter.senderLabel ? ` · ${letter.senderLabel}` : ""}</span>}
                     <p className="line-clamp-3 font-display text-[1.02rem] font-light leading-[1.9] text-ink/[.84]">{letter.message}</p>
                     <span className="mt-5 text-[.78rem] font-semibold text-accent">فتح الرسالة ←</span>
                   </button>
@@ -550,6 +661,7 @@ export default function Inbox() {
               <h2 className="font-display text-[1.25rem] font-semibold leading-relaxed text-ink">{openCard.title}</h2>
               <button type="button" autoFocus onClick={() => setOpenCard(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent" aria-label="إغلاق" title="إغلاق"><SocialIcon name="Close" size={16} /></button>
             </div>
+            {openCard.meta && <span className="mt-5 inline-flex rounded-full bg-accent/[.08] px-3 py-1 text-[.68rem] font-semibold text-accent">{openCard.meta}</span>}
             <p className="mt-6 whitespace-pre-line font-display text-[1.05rem] font-light leading-[2] text-ink/[.88]">{openCard.body}</p>
             {openCard.reply && <div className="mt-7 border-r-2 border-accent pr-5"><span className="text-[.72rem] font-semibold text-accent">تعقيب الدكتور</span><p className="mt-2 whitespace-pre-line leading-[1.95] text-ink/[.82]">{openCard.reply}</p></div>}
           </article>

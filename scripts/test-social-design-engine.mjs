@@ -13,7 +13,7 @@ const visualDnaSource = await readFile(resolve('src/lib/visual-dna.ts'), 'utf8')
 const glossaryPath = resolve('src/lib/dr-ahmad-domain-glossary.ts')
 const glossaryJson = await readFile(resolve('src/data/dr-ahmad-domain-glossary.json'), 'utf8')
 const glossarySource = (await readFile(glossaryPath, 'utf8'))
-  .replace("import glossaryData from '../data/dr-ahmad-domain-glossary.json'", `const glossaryData = ${glossaryJson}`)
+  .replace(/^import\s+glossaryData\s+from\s+['\"]\.\.\/data\/dr-ahmad-domain-glossary\.json['\"][^\n]*$/m, `const glossaryData = ${glossaryJson}`)
 const glossaryCompiled = ts.transpileModule(glossarySource, {
   compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ES2020, strict: true },
   reportDiagnostics: true,

@@ -6,7 +6,7 @@ import {
   type DrAhmadDomainUnderstanding,
   type DrAhmadGlossaryEntry,
   type RecognizedDomainTerm,
-} from './dr-ahmad-domain-glossary'
+} from './dr-ahmad-domain-glossary.ts'
 
 export type SmartQueryPlan = {
   original: string

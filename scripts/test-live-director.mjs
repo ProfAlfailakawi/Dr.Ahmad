@@ -135,7 +135,7 @@ check(linked.project.segments[1].selectedReferenceFrame === 'https://example.com
 check(linked.project.segments[1].referenceSourceClipId === 'clip-1', 'حفظ referenceSourceClipId')
 check(linked.project.segments[1].prompt !== chain.segments[1].prompt, 'إعادة بناء برومبت المقطع التالي وحده')
 check(linked.project.segments.slice(2).every((segment, index) => segment.prompt === chain.segments[index + 2].prompt), 'بقية المقاطع لم تُمس عند اعتماد المرجع')
-check(/Reference image: use the attached frame for identity/.test(linked.project.segments[1].prompt), 'الانتقال الموضوعي يستخدم المرجع للهوية واللون فقط')
+check(/Reference handling: use the optional attached frame for identity, wardrobe, palette and lighting only, not for composition\./.test(linked.project.segments[1].prompt), 'الانتقال الموضوعي يستخدم المرجع للهوية واللون فقط')
 
 const direct = setSegmentContinuity(chain, 'clip-2', { mode: 'direct' })
 const withFrame = applyReferenceFrame(direct, 'clip-1', { frameUrl: 'https://example.com/frame.jpg', kind: 'last_frame', sharpness: 0.9 })
@@ -224,7 +224,7 @@ const compile = async (path, replacements = {}) => {
 }
 const glossaryJson = await readFile(resolve(ROOT, 'src/data/dr-ahmad-domain-glossary.json'), 'utf8')
 const glossarySource = (await readFile(resolve(ROOT, 'src/lib/dr-ahmad-domain-glossary.ts'), 'utf8'))
-  .replace("import glossaryData from '../data/dr-ahmad-domain-glossary.json'", `const glossaryData = ${glossaryJson}`)
+  .replace(/^import\s+glossaryData\s+from\s+['\"]\.\.\/data\/dr-ahmad-domain-glossary\.json['\"][^\n]*$/m, `const glossaryData = ${glossaryJson}`)
 const glossaryUrl = `data:text/javascript;base64,${Buffer.from(ts.transpileModule(glossarySource, { compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ES2020 } }).outputText).toString('base64')}`
 const realForge = await import(await compile('src/lib/tweet-forge.ts', {
   './dr-ahmad-domain-glossary': glossaryUrl,

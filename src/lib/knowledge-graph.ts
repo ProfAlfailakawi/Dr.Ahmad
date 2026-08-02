@@ -1,6 +1,6 @@
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms'
 import { bookKnowledgeText } from './book-knowledge'
-import { buildSmartQueryPlan, scoreSmartFields, smartRoots } from './smart-search'
+import { buildSmartQueryPlan, scoreSmartFields, smartRoots } from './smart-search.ts'
 
 export type KnowledgeKind = 'article' | 'book' | 'paper' | 'media' | 'curated' | 'podcast' | 'audio' | 'social' | 'concept'
 export type KnowledgeNode = {

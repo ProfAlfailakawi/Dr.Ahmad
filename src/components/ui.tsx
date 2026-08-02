@@ -710,8 +710,8 @@ function SearchPalette({ close }: { close: () => void }) {
             aria-label="مركز البحث الذكي"
             className="min-w-0 flex-1 bg-transparent text-[1rem] text-ink outline-none placeholder:text-soft/70"
           />
-          {query && <button type="button" onClick={() => setQuery('')} className="min-h-11 px-2 text-[.76rem] text-soft transition-colors hover:text-accent">مسح</button>}
-          <button type="button" onClick={close} className="min-h-11 px-2 text-[.75rem] text-soft transition-colors hover:text-accent">إغلاق</button>
+          {query && <button type="button" onClick={() => setQuery('')} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft transition-colors hover:bg-wash hover:text-accent"><SocialIcon name="Close" size={15} /></button>}
+          <button type="button" onClick={close} aria-label="إغلاق البحث" title="إغلاق" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Close" size={16} /></button>
         </div>
 
         <nav aria-label="مسارات البحث" className="grid grid-cols-2 gap-2 border-b border-hair bg-wash/[.45] px-3 py-3 sm:px-5">
@@ -940,6 +940,7 @@ export function Footer() {
                 ))}
               </span>
               <span className="inline-flex items-center gap-2">
+                <Link to="/inbox" aria-label="Newsletter" title="Newsletter" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Mail" size={18} /></Link>
                 <TebyanProjectLink label="Tebyan" />
                 <ScheduleProjectLink label="Schedule" />
               </span>
@@ -979,6 +980,7 @@ export function Footer() {
               ))}
             </span>
             <span className="inline-flex items-center gap-2">
+              <Link to="/inbox" aria-label="النشرة البريدية" title="النشرة البريدية" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Mail" size={18} /></Link>
               <TebyanProjectLink />
               <ScheduleProjectLink />
             </span>
@@ -992,7 +994,7 @@ export function Footer() {
   )
 }
 
-export function TebyanProjectLink({ label = 'تبيان' }: { label?: string }) {
+export function TebyanProjectLink({ label = 'تبيان', iconOnly = true, className = '' }: { label?: string; iconOnly?: boolean; className?: string }) {
   return (
     <a
       href="https://tebyan.dr-alfailakawi.com"
@@ -1000,14 +1002,15 @@ export function TebyanProjectLink({ label = 'تبيان' }: { label?: string }) 
       rel="noopener noreferrer"
       aria-label="تبيان — منصة عامة مستقلة"
       title="تبيان — منصة عامة مستقلة"
-      className="tebyan-link inline-flex min-h-10 shrink-0 items-center rounded-full border border-hair px-3.5 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
+      className={`tebyan-link inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-[border-color,color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-accent hover:text-accent ${iconOnly ? 'w-10' : 'min-w-10 gap-2 px-3.5 text-[.72rem] font-semibold'} ${className}`.trim()}
     >
-      {label}
+      <SocialIcon name="Tebyan" size={18} />
+      {!iconOnly && <span>{label}</span>}
     </a>
   )
 }
 
-export function ScheduleProjectLink({ label = 'الجدول الدراسي' }: { label?: string }) {
+export function ScheduleProjectLink({ label = 'الجدول الدراسي', iconOnly = true, className = '' }: { label?: string; iconOnly?: boolean; className?: string }) {
   return (
     <a
       href="https://schedule.dr-alfailakawi.com"
@@ -1015,9 +1018,10 @@ export function ScheduleProjectLink({ label = 'الجدول الدراسي' }: {
       rel="noopener noreferrer"
       aria-label={label}
       title={label}
-      className="schedule-link inline-flex min-h-10 shrink-0 items-center rounded-full border border-hair px-3.5 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent"
+      className={`schedule-link inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-[border-color,color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-accent hover:text-accent ${iconOnly ? 'w-10' : 'min-w-10 gap-2 px-3.5 text-[.72rem] font-semibold'} ${className}`.trim()}
     >
-      {label}
+      <SocialIcon name="Schedule" size={18} />
+      {!iconOnly && <span>{label}</span>}
     </a>
   )
 }

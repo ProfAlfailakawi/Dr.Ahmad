@@ -8,6 +8,7 @@ import { Link } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { readTone, TONE_LABEL, type Tone } from '../lib/card-intelligence'
 import { categoryLabel } from '../lib/content-taxonomy'
+import { SocialIcon } from './icons'
 
 type Art = { slug: string; title: string; iso: string; cat: string; excerpt?: string; body?: string }
 
@@ -737,7 +738,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                   <p className="text-[.74rem] font-semibold uppercase tracking-wide text-accent">تتبّع الجملة</p>
                   <p className="mt-2 break-words border-r-2 border-accent pe-0 ps-4 text-[.95rem] font-light leading-[1.9] text-ink/80">«{sel}»</p>
                 </div>
-                <button type="button" onClick={close} aria-label="إغلاق" className="shrink-0 text-soft transition-colors hover:text-accent">✕</button>
+                <button type="button" onClick={close} aria-label="إغلاق" title="إغلاق" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-soft transition-colors hover:text-accent"><SocialIcon name="Close" size={14} /></button>
               </div>
               <div className="mt-6 border-t border-hair pt-6">
                 {matches.length ? (

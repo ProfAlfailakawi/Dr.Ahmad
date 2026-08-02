@@ -16,9 +16,57 @@ import { sortUpcomingEvents } from '../lib/events'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { PROJECT_START_YEAR } from '../lib/project-meta'
 import { listenIsOpen, rotatingQuestion, type ListenEpisode } from '../lib/listen-catalog'
+import { SPACE_EVENT, isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
+import { SocialIcon as ActionIcon } from '../components/icons'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
+
+function QuickArticleActions({ article, className = '' }: { article: ArticleRecord; className?: string }) {
+  const [saved, setSaved] = useState(() => isArticleSaved(article.slug))
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    const sync = () => setSaved(isArticleSaved(article.slug))
+    window.addEventListener(SPACE_EVENT, sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener(SPACE_EVENT, sync); window.removeEventListener('storage', sync) }
+  }, [article.slug])
+
+  const copyLink = async () => {
+    try {
+      const url = `${window.location.origin}/articles/${article.slug}`
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2200)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <div className={`flex flex-wrap items-center gap-2 ${className}`.trim()}>
+      <button
+        type="button"
+        onClick={(event) => { event.preventDefault(); event.stopPropagation(); setSaved(toggleSavedArticle(article)) }}
+        aria-label={saved ? 'إزالة المقال من مساحتي' : 'حفظ المقال في مساحتي'}
+        title={saved ? 'إزالة المقال من مساحتي' : 'حفظ المقال في مساحتي'}
+        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-[.9rem] transition-colors ${saved ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+      >
+        <ActionIcon name="Bookmark" size={16} />
+      </button>
+      <button
+        type="button"
+        onClick={(event) => { event.preventDefault(); event.stopPropagation(); void copyLink() }}
+        aria-label={copied ? 'تم نسخ الرابط' : 'نسخ رابط المقال'}
+        title={copied ? 'تم نسخ الرابط' : 'نسخ رابط المقال'}
+        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-[.9rem] transition-colors ${copied ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+      >
+        <ActionIcon name={copied ? 'Check' : 'Copy'} size={16} />
+      </button>
+    </div>
+  )
+}
 
 /* ---------- «فكرة اليوم» — بطاقة واحدة هادئة تتبدل كل منتصف ليل ----------
    تعيد استخدام محرك المختارات اليومي؛ تُحمَّل كسولاً فلا تُثقل الرئيسية */
@@ -581,17 +629,21 @@ function LatestCard({ compact = false }: { compact?: boolean }) {
   const latest = articles[0]
   if (!latest) return null
   const content = (
-    <motion.div
+    <motion.article
       transition={{ duration: 0.4, ease: EASE }}
       className={`group relative h-full overflow-hidden rounded-2xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent ${compact ? 'p-7 md:p-9' : 'p-8 md:p-12'}`}
     >
+      <Link to={`/articles/${latest.slug}`} data-hover aria-label={`اقرأ مقال: ${latest.title}`} className="absolute inset-0 z-0"><span className="sr-only">{latest.title}</span></Link>
       <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-accent/[.07] blur-3xl" />
-      <div className="relative flex h-full flex-col justify-between gap-7">
+      <div className="pointer-events-none relative z-10 flex h-full flex-col justify-between gap-7">
         <div>
-          <span className="inline-flex items-center gap-2.5 text-[.76rem] font-semibold text-accent">
-            <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
-            الأحدث · مقال
-          </span>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <span className="inline-flex items-center gap-2.5 text-[.76rem] font-semibold text-accent">
+              <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
+              الأحدث · مقال
+            </span>
+            <div className="pointer-events-auto"><QuickArticleActions article={latest} /></div>
+          </div>
           <h2 className={`mt-4 font-display font-semibold leading-[1.45] text-ink ${compact ? 'text-[clamp(1.45rem,3vw,2.2rem)]' : 'max-w-[720px] text-[clamp(1.6rem,3.6vw,2.5rem)]'}`}>
             {latest.title}
           </h2>
@@ -599,12 +651,12 @@ function LatestCard({ compact = false }: { compact?: boolean }) {
         </div>
         <span className="inline-flex w-fit items-center gap-2 text-[.86rem] font-semibold text-accent">اقرأ المقال <span className="transition-transform duration-300 group-hover:-translate-x-1">←</span></span>
       </div>
-    </motion.div>
+    </motion.article>
   )
-  if (compact) return <Link to={`/articles/${latest.slug}`} data-hover className="block h-full">{content}</Link>
+  if (compact) return content
   return (
     <section className="px-6 pb-12 md:px-11 md:pb-[86px]">
-      <div className="mx-auto max-w-shell"><FadeUp><Link to={`/articles/${latest.slug}`} data-hover className="block">{content}</Link></FadeUp></div>
+      <div className="mx-auto max-w-shell"><FadeUp>{content}</FadeUp></div>
     </section>
   )
 }
@@ -712,6 +764,35 @@ function NowHub() {
   )
 }
 
+type SelectedArchiveItem = { type: string; kind: 'article' | 'book' | 'paper' | 'media'; title: string; note?: string; to: string; image?: string; external?: boolean; year?: string; article?: ArticleRecord }
+
+function ArchiveCardCover({ item }: { item: SelectedArchiveItem }) {
+  const [failed, setFailed] = useState(false)
+  const isBook = item.kind === 'book'
+  const showImage = Boolean(item.image && !failed)
+  if (!showImage) {
+    return (
+      <div className={`archive-editorial-cover archive-editorial-cover--${item.kind} pointer-events-none`} aria-hidden="true">
+        <span className="archive-editorial-orbit" />
+        <span className="archive-editorial-kicker">{item.kind === 'paper' ? 'RESEARCH' : item.kind === 'book' ? 'BOOK' : item.kind === 'media' ? 'MEDIA' : 'ESSAY'}</span>
+        <span className="archive-editorial-mark">{item.kind === 'paper' ? 'R' : item.kind === 'book' ? 'B' : item.kind === 'media' ? 'M' : 'A'}</span>
+        <span className="archive-editorial-year">{item.year || 'ARCHIVE'}</span>
+      </div>
+    )
+  }
+  return (
+    <div className={`pointer-events-none relative z-[1] flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3 md:h-32' : item.external ? 'selected-media-frame h-28 overflow-hidden md:h-32' : 'h-28 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${item.image})` } as CSSProperties) : undefined}>
+      <img
+        src={item.image}
+        alt=""
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className={`${isBook ? 'h-full w-full object-contain' : item.external ? 'selected-media-thumb h-full w-full opacity-95' : 'h-full w-full object-cover opacity-90'}`}
+      />
+    </div>
+  )
+}
+
 function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
   const items = useMemo(() => {
     const random = (max: number) => {
@@ -746,11 +827,11 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
          build-static) تصلح غلافاً حقيقياً — فلا يبقى صفُّ «أربع زوايا»
          نصفَه صوراً ونصفَه حروفاً مجردة. وإن غابت البطاقة سقط الغلاف
          التحريري المرسوم تلقائياً كما كان (onError في البطاقة). */
-      article && { type: 'مقال', kind: 'article', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: `/og/articles/${article.slug}.jpg`, year: article.iso?.slice(0, 4) },
+      article && { type: 'مقال', kind: 'article', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: `/og/articles/${article.slug}.jpg`, year: article.iso?.slice(0, 4), article },
       book && { type: 'كتاب', kind: 'book', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover, year: '' },
       paper && { type: 'بحث محكّم', kind: 'paper', title: paper.titleAr || paper.title, note: paper.meta, to: `/research/${paper.slug}`, image: '', year: paper.iso?.slice(0, 4) },
       mediaItem && { type: 'ظهور إعلامي', kind: 'media', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.url, image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', external: true, year: '' },
-    ].filter(Boolean) as { type: string; kind: 'article' | 'book' | 'paper' | 'media'; title: string; note?: string; to: string; image?: string; external?: boolean; year?: string }[]
+    ].filter(Boolean) as SelectedArchiveItem[]
     // لا يثبت ترتيب الأنواع أيضاً؛ كل زيارة مدخل جديد فعلياً إلى الأرشيف.
     return selected
       .map((item) => ({ item, order: random(1_000_000) }))
@@ -764,39 +845,21 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
         <SectionHead label="من الأرشيف اليوم" title="أربع زوايا، ورؤية تتجدّد." />
         <div className="mobile-card-rail grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {items.map((item, index) => {
-            const isBook = item.kind === 'book'
             const inner = (
-              <div className="group flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/[.45] md:min-h-[270px]">
-                {item.image ? (
-                  <div className={`flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3 md:h-32' : item.external ? 'selected-media-frame h-28 overflow-hidden md:h-32' : 'h-28 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${item.image})` } as CSSProperties) : undefined}>
-                    <img
-                      src={item.image}
-                      alt=""
-                      loading="lazy"
-                      /* بطاقة مقالٍ لم تُبنَ بعد لا تترك مربعاً مكسوراً: يُخفى
-                         الإطار فيظهر بقية الكرت نظيفاً كما كان قبل الصور. */
-                      onError={(event) => { const frame = event.currentTarget.parentElement; if (frame) frame.style.display = 'none' }}
-                      className={`${isBook ? 'h-full w-full object-contain' : item.external ? 'selected-media-thumb h-full w-full opacity-95' : 'h-full w-full object-cover opacity-90'}`}
-                    />
-                  </div>
-                ) : (
-                  <div className={`archive-editorial-cover archive-editorial-cover--${item.kind}`} aria-hidden="true">
-                    <span className="archive-editorial-orbit" />
-                    <span className="archive-editorial-kicker">{item.kind === 'paper' ? 'RESEARCH' : item.kind === 'book' ? 'BOOK' : item.kind === 'media' ? 'MEDIA' : 'ESSAY'}</span>
-                    <span className="archive-editorial-mark">{item.kind === 'paper' ? 'R' : item.kind === 'book' ? 'B' : item.kind === 'media' ? 'M' : 'A'}</span>
-                    <span className="archive-editorial-year">{item.year || 'ARCHIVE'}</span>
-                  </div>
-                )}
-                <div className="flex flex-1 flex-col p-4 md:p-7">
+              <div className="group relative flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/[.45] md:min-h-[270px]">
+                {item.article && <Link to={item.to} aria-label={`اقرأ مقال: ${item.title}`} className="absolute inset-0 z-0"><span className="sr-only">{item.title}</span></Link>}
+                <ArchiveCardCover item={item} />
+                <div className="pointer-events-none relative z-10 flex flex-1 flex-col p-4 md:p-7">
                   <span className="text-[.72rem] font-semibold text-accent">{item.type}</span>
                   <h3 className="mt-2.5 line-clamp-3 break-words font-display text-[.98rem] font-semibold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.05rem] md:mt-3 md:text-[1.3rem]">{item.title}</h3>
                   {item.note && <p className="mt-2 line-clamp-2 text-start text-[.76rem] font-light leading-[1.7] text-soft sm:text-[.8rem] md:mt-2.5 md:line-clamp-3 md:text-[.88rem]">{item.note}</p>}
+                  {item.article && <div className="pointer-events-auto mt-auto pt-4"><QuickArticleActions article={item.article} /></div>}
                 </div>
               </div>
             )
             return (
               <FadeUp key={`${item.type}-${item.to}`} delay={index * 0.06} className="min-w-0">
-                {item.external ? <a href={item.to} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : <Link to={item.to} viewTransition className="block h-full">{inner}</Link>}
+                {item.article ? inner : item.external ? <a href={item.to} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : <Link to={item.to} viewTransition className="block h-full">{inner}</Link>}
               </FadeUp>
             )
           })}
@@ -857,11 +920,16 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
           <SectionHead label="المقالات الفكرية" title="أفكارٌ تلاحق زمنها." to="/articles" cta="عرض الكل" />
           <div className="grid gap-8 md:grid-cols-[1.5fr_.5fr] md:gap-12">
             <FadeUp>
-              {topArticles[0] && <Link to={`/articles/${topArticles[0].slug}`} data-hover className="group block">
-                <div className="flex items-center gap-2.5 text-[.78rem]"><span className="font-semibold text-accent">{categoryLabel(topArticles[0].cat)}</span><span className="h-1 w-1 rounded-full bg-hair" /><time className="text-soft">{topArticles[0].date}</time></div>
-                <h3 className="mt-4 font-display text-[clamp(1.6rem,3.4vw,2.4rem)] font-semibold leading-[1.4] text-ink transition-colors group-hover:text-accent">{topArticles[0].title}</h3>
-                {topArticles[0].excerpt && <p className="mt-4 max-w-xl text-[1.02rem] font-light leading-[1.9] text-ink/80">{topArticles[0].excerpt}</p>}
-              </Link>}
+              {topArticles[0] && <div className="group block">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <Link to={`/articles/${topArticles[0].slug}`} data-hover className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5 text-[.78rem]"><span className="font-semibold text-accent">{categoryLabel(topArticles[0].cat)}</span><span className="h-1 w-1 rounded-full bg-hair" /><time className="text-soft">{topArticles[0].date}</time></div>
+                    <h3 className="mt-4 font-display text-[clamp(1.6rem,3.4vw,2.4rem)] font-semibold leading-[1.4] text-ink transition-colors group-hover:text-accent">{topArticles[0].title}</h3>
+                    {topArticles[0].excerpt && <p className="mt-4 max-w-xl text-[1.02rem] font-light leading-[1.9] text-ink/80">{topArticles[0].excerpt}</p>}
+                  </Link>
+                  <QuickArticleActions article={topArticles[0]} className="shrink-0" />
+                </div>
+              </div>}
             </FadeUp>
             <FadeUp delay={0.12} className="hidden md:block">
               <div className="flex flex-col divide-y divide-hair border-r border-hair pr-8">
@@ -948,7 +1016,7 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
           <motion.div ref={dialogRef} id="home-thought-maps-dialog" role="dialog" aria-modal="true" aria-labelledby="home-thought-maps-title" tabIndex={-1} className="mx-auto h-full max-w-6xl overflow-y-auto rounded-3xl border border-hair bg-canvas shadow-2xl outline-none" initial={{ y: 18, scale: .985 }} animate={{ y: 0, scale: 1 }} exit={{ y: 12, scale: .99 }} transition={{ duration: .28, ease: EASE }}>
             <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hair bg-canvas/90 px-5 py-3 backdrop-blur md:px-7">
               <h2 id="home-thought-maps-title" className="font-display text-[1rem] font-semibold text-ink">خرائط الفكر والأثر</h2>
-              <button onClick={() => setActive(null)} className="rounded-full border border-hair px-4 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">إغلاق</button>
+              <button onClick={() => setActive(null)} aria-label="إغلاق خرائط الفكر" title="إغلاق" className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><ActionIcon name="Close" size={16} /></button>
             </div>
             <MiniAtlas />
             <ImpactTimeline />
@@ -1013,9 +1081,9 @@ function HomeSocialFooter() {
               aria-expanded={newsletterOpen}
               aria-label="النشرة البريدية"
               title="النشرة البريدية"
-              className={`inline-flex min-h-10 shrink-0 items-center rounded-full border border-hair px-3.5 text-[.72rem] font-semibold text-soft transition-colors duration-300 hover:border-accent hover:text-accent ${newsletterOpen ? 'border-accent bg-accent text-white hover:text-white' : ''}`}
+              className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-[border-color,color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-accent hover:text-accent ${newsletterOpen ? 'border-accent bg-accent text-white hover:text-white' : ''}`}
             >
-              النشرة
+              <SocialIcon name="Mail" size={18} />
             </button>
             <TebyanProjectLink />
             <ScheduleProjectLink />

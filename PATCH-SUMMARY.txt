@@ -1,0 +1,109 @@
+حزمة التعديلات النهائية الشاملة — الملفات المعدلة فقط
+
+السبب الجذري
+1. بعض درجات الشفافية الدلالية لم تكن مولّدة من Tailwind، ولون hair لم يكن يقبل معامل الشفافية كما كُتب؛ فظهرت خلفيات شفافة وحدود ونصوص أثقل من المقصود.
+2. overflow-x-hidden في غلاف الصفحات كان يعطّل sticky، وصور YouTube الرمادية كانت تصل كاستجابة ناجحة صغيرة فلا يشغّل onError البديل.
+3. الوظائف القوية كانت موجودة لكنها متفرقة: محفوظات اللقاءات منفصلة عن «مساحتي»، و«اسأل هذا الكتاب» مدفون داخل صفحات الكتب، وأدوات المقال موزعة قبل النص.
+4. واجهات الهاتف احتاجت ترتيباً لا حذفاً: معلومات الكتاب، امتدادات اللقاء، بطاقات الرئيسية، النوافذ والأزرار العائمة.
+5. تنزيل صورة الاقتباس عبر data URL لا يعمل بثبات على iPhone/PWA؛ احتاج Blob + Web Share مع تنزيل/فتح احتياطي.
+6. تصاميم «المنشور المستقل» كانت قد تسقط إلى خط نظام في أحد مسارات الرسم؛ تم تثبيت الخط العربي Alexandria وتحميله قبل الرسم. شارة PROFESSIONAL لم تُغيّر.
+
+ما نُفّذ من الملاحظات
+- إصلاح التوكنات البصرية والـsticky وستائر النوافذ وصور YouTube، مع حارس بناء يمنع عودة درجات شفافية غير صالحة.
+- إعادة تنظيم رأس المقال على الهاتف، وتجميع أدوات القراءة داخل Aa، والإبقاء على الاستماع والحفظ وكل الوظائف.
+- تنظيم فلاتر المقالات، تبسيط وسوم الأبحاث، إزالة التكرارات البصرية في الترقيم والردمك من بطاقات القائمة فقط مع بقاء البيانات في صفحة الكتاب.
+- إعادة تنظيم «بعد القراءة» مع بقاء حياة الفكرة، أدوات الباحث، المشاركة، الاستشهاد والتنقل.
+- إعادة بناء «مساحتي» بتبويبات: متابعة، محفوظاتي، اقتباساتي؛ وإضافة اللقاءات الإعلامية المحفوظة من نفس قائمة «شاهد لاحقاً» دون ازدواج بيانات.
+- تشفير مزامنة «مساحتي» داخل المتصفح، إبقاء التخزين المحلي افتراضياً، وإضافة مسح النسخة السحابية دون حذف المحلي.
+- ترتيب بطاقات «امتداد اللقاء» يميناً ويساراً على الهاتف، مع منع زر «مساحتي» من ابتلاع النص.
+- تصحيح عبارة «لم أجد جواباً» حتى لا تناقض جواباً معروضاً، وتنظيف الصياغة نفسها حتى لو جاءت من المسار الذكي.
+- ترتيب صفحة الكتاب على الهاتف: غلاف ومقدمة ومسافات أنظف، بيانات النشر في شبكة خفيفة، ISBN محفوظ، وأكورديونات أكثر توازناً.
+- إصلاح تنزيل صورة الاقتباس على iPhone/PWA والأجهزة الأخرى، وجعل التنزيل والإغلاق أيقونتين فقط مع أسماء وصول.
+- مراجعة الأدوات العامة وتحويل الإغلاق/الحذف/النسخ/الحفظ/التنزيل الواضحة إلى SVG أيقوني مع aria-label وtitle، من دون تحويل الأفعال التي تحتاج نصاً إلى رموز غامضة.
+- إصلاح بطاقة المقال في الرئيسية: غلاف تحريري بديل عند فشل الصورة بدل المساحة الفارغة، وإضافة حفظ في «مساحتي» ونسخ الرابط بأيقونات فقط.
+- إعادة النشرة وتبيان والجدول الدراسي إلى أيقونات دائرية أنيقة في الرئيسية وذيل الصفحات.
+- إبقاء PROFESSIONAL كما هي؛ التعديل محصور في الخط العربي داخل «المنشور المستقل» وتوحيده مع Alexandria في مساري التوليد والرسم.
+- إضافة تبويب «اسأل كتاباً» داخل البحث، اختيار أي كتاب، تمرير السؤال إلى صفحته، فتح قسم «اسأل هذا الكتاب» وتشغيل الجواب تلقائياً.
+- إضافة مدخل أيقوني لـ«اسأل هذا الكتاب» من بطاقات الكتب ونتائج البحث، مع إبقاء الموضع الأصلي داخل كل كتاب.
+- الحفاظ على جميع المزايا الحالية؛ لم تُحذف القراءة، الاستماع، الاقتباسات، المحفوظات، اللقاءات، المزامنة، المشاركة، الاستشهاد، الفلاتر أو مسارات المعرفة.
+
+التحقق المنفذ
+- guard-visual-tokens: ناجح.
+- guard-site-architecture: ناجح (15 فحصاً).
+- test-site-polish-2026: ناجح بالكامل.
+- test-book-media-polish: ناجح.
+- فحص تركيب TypeScript للملفات المعدلة: ناجح لـ65 ملفاً.
+- فحص مخصص لكل الملاحظات الحالية: ناجح (28 تحققاً).
+- git diff --check: ناجح بلا أخطاء مسافات.
+- البناء الكامل لم يكتمل في بيئة الفحص لأن حارس المشروع يطلب Dockerfile المحمي غير الموجود في النسخة المرفوعة، قبل وصول Vite إلى الملفات؛ لم يظهر خطأ تركيبي في الملفات المعدلة.
+
+الملفات المعدلة داخل هذه الحزمة
+- firestore.rules
+- package.json
+- src/components/ArticlePivot.tsx
+- src/components/ArticleReader.tsx
+- src/components/AudioPlayer.tsx
+- src/components/BookWorld.tsx
+- src/components/BooksAtlas.tsx
+- src/components/CitationImpact.tsx
+- src/components/ErrorBoundary.tsx
+- src/components/FirstVisitOnboarding.tsx
+- src/components/IdeaFeatures.tsx
+- src/components/IdeaLife.tsx
+- src/components/KnowledgeFingerprint.tsx
+- src/components/MySpace.tsx
+- src/components/Pagination.tsx
+- src/components/QuoteImage.tsx
+- src/components/ReaderResonance.tsx
+- src/components/ReadingShelf.tsx
+- src/components/admin/AdminArchitecture.tsx
+- src/components/admin/AdminTaskFavicon.tsx
+- src/components/admin/AudioLibrary.tsx
+- src/components/admin/BroadcastStudio.tsx
+- src/components/admin/ContentManager.tsx
+- src/components/admin/EditorialMemoryPanel.tsx
+- src/components/admin/GenerationLibraryPanel.tsx
+- src/components/admin/Indicators.tsx
+- src/components/admin/LegacyModePanel.tsx
+- src/components/admin/LiveDirector.tsx
+- src/components/admin/ManualDialogueEditor.tsx
+- src/components/admin/ProductionMonitor.tsx
+- src/components/admin/PublishingStudio.tsx
+- src/components/admin/SocialDesignStudio.tsx
+- src/components/admin/SoundCaravanBoard.tsx
+- src/components/admin/WhatsAppAgentPanel.tsx
+- src/components/extras.tsx
+- src/components/home/HomeExperience.tsx
+- src/components/home/HumanCoreHero.tsx
+- src/components/icons.tsx
+- src/components/ui.tsx
+- src/index.css
+- src/lib/myspace-sync.ts
+- src/lib/persistent-audio.tsx
+- src/lib/reading-space.ts
+- src/lib/social-templates.ts
+- src/pages/Admin.tsx
+- src/pages/ArticleDetail.tsx
+- src/pages/Articles.tsx
+- src/pages/AskLibrary.tsx
+- src/pages/Atlas.tsx
+- src/pages/BookDetail.tsx
+- src/pages/CV.tsx
+- src/pages/Card.tsx
+- src/pages/ConceptLife.tsx
+- src/pages/Curated.tsx
+- src/pages/Home.tsx
+- src/pages/Impact.tsx
+- src/pages/Inbox.tsx
+- src/pages/Legal.tsx
+- src/pages/Listen.tsx
+- src/pages/Media.tsx
+- src/pages/MediaDetail.tsx
+- src/pages/NotFound.tsx
+- src/pages/Publications.tsx
+- src/pages/Questions.tsx
+- src/pages/Radar.tsx
+- src/pages/Research.tsx
+- src/pages/Search.tsx
+- src/pages/WeeklyLetter.tsx
+- scripts/guard-visual-tokens.mjs

@@ -6,6 +6,7 @@ import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { BooksAtlas } from '../components/BooksAtlas'
+import { SocialIcon } from '../components/icons'
 
 const bookCount = (count: number) => {
   if (count === 1) return 'كتاب واحد'
@@ -54,8 +55,20 @@ export default function Publications() {
                     <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>
                   )}
                 </div>
-                <h2 className="mt-3 break-words font-display text-[1rem] font-medium leading-[1.45] text-ink sm:mt-5 sm:text-[1.2rem] md:text-[1.3rem]">{b.title}</h2>
               </Link>
+              <div className="mt-3 flex items-start gap-2 sm:mt-5">
+                <Link to={`/publications/${b.slug}`} viewTransition className="min-w-0 flex-1">
+                  <h2 className="break-words font-display text-[1rem] font-medium leading-[1.45] text-ink transition-colors hover:text-accent sm:text-[1.2rem] md:text-[1.3rem]">{b.title}</h2>
+                </Link>
+                <Link
+                  to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`}
+                  aria-label={`اسأل كتاب ${b.title}`}
+                  title="اسأل هذا الكتاب"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"
+                >
+                  <SocialIcon name="Question" size={15} />
+                </Link>
+              </div>
             </motion.div>
           ))}
         </div>

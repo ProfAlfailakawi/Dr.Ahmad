@@ -10,6 +10,7 @@ import { loadArticleBodies } from "../lib/article-bodies";
 import { pickEchoes, type VoiceEcho } from "../lib/voice-echoes";
 import { Pagination, usePagedList } from "../components/Pagination";
 import { buildArchiveDialogues } from "../lib/archive-dialogue";
+import { SocialIcon } from "../components/icons";
 
 type LiveInboxItem = {
   id: string;
@@ -477,7 +478,7 @@ export default function Inbox() {
           <article className="max-h-[88dvh] w-full max-w-2xl overflow-y-auto rounded-t-[1.75rem] border border-hair bg-canvas p-6 shadow-2xl sm:rounded-[1.75rem] sm:p-9" tabIndex={-1}>
             <div className="flex items-start justify-between gap-5 border-b border-hair pb-5">
               <h2 className="font-display text-[1.25rem] font-semibold leading-relaxed text-ink">{openCard.title}</h2>
-              <button type="button" autoFocus onClick={() => setOpenCard(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent" aria-label="إغلاق">×</button>
+              <button type="button" autoFocus onClick={() => setOpenCard(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent" aria-label="إغلاق" title="إغلاق"><SocialIcon name="Close" size={16} /></button>
             </div>
             <p className="mt-6 whitespace-pre-line font-display text-[1.05rem] font-light leading-[2] text-ink/[.88]">{openCard.body}</p>
             {openCard.reply && <div className="mt-7 border-r-2 border-accent pr-5"><span className="text-[.72rem] font-semibold text-accent">تعقيب الدكتور</span><p className="mt-2 whitespace-pre-line leading-[1.95] text-ink/[.82]">{openCard.reply}</p></div>}

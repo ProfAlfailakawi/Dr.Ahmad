@@ -2931,8 +2931,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       tone: pulseCommand.tone || 'auto',
       density: pulseCommand.density || (pulseCommand.noBody ? 'minimal' : 'auto'),
       platform: pulseCommand.platform || 'instagram',
-      /* المسار الأول وحده يُثبَّت على الوجه النظيف. تثبيته على المسارين معاً كان
-         سبب «ولا الخطوط تعدلت»: الرؤى الثلاث كلها بنمط طباعة واحد فخط واحد. */
+      /* المنشور المستقل وحده يثبت الوجه العربي النظيف في جميع الرؤى؛
+         التنويع يبقى في التكوين واللون، لا في تبديل الخط بين نسخة وأخرى. */
       preferTypography: 'studio-clean',
       ...(pulseCommand.format ? { format: pulseCommand.format } : {}),
       ...(pulseCommand.preferLayout ? { preferLayout: pulseCommand.preferLayout } : {}),
@@ -2948,8 +2948,9 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       ...request,
       density: content.split(/\s+/).length <= 18 ? 'minimal' : request.density,
       preferLayout: undefined,
-      // يُترك حراً في وجه الخط أيضاً؛ الوجوه الثلاثة كلها من هوية الموقع فلا خطر.
-      preferTypography: undefined,
+      // بتوجيه الدكتور: المنشور المستقل وحده يحافظ على الخط العربي نفسه
+      // في الرؤى كلها؛ التنويع يبقى في التكوين واللون لا في وجه الخط.
+      preferTypography: 'studio-clean',
       seed: `${request.seed}:independent-art-direction`,
       noveltyThreshold: .42,
     })

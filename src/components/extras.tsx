@@ -375,7 +375,7 @@ export function CiteButton({
                 <p className="citation-kicker-v2">استشهاد أكاديمي ذكي</p>
                 <h3 id="citation-dialog-title" className="citation-title-v2">صيغة واحدة، بثلاثة أنماط معتمدة</h3>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="citation-close-v2" aria-label="إغلاق النافذة">×</button>
+              <button type="button" onClick={() => setOpen(false)} className="citation-close-v2" aria-label="إغلاق النافذة" title="إغلاق"><SocialIcon name="Close" size={15} /></button>
             </header>
             <div className="citation-style-switch" role="tablist" aria-label="نمط الاستشهاد">
               {styles.map((item) => (

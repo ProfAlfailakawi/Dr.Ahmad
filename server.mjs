@@ -2626,6 +2626,40 @@ function geminiSchemaToJsonSchema(node) {
    نفس الوصفة ونفس الفكرة على تسعة نماذج مجانية، وحَكَم الأسلوب يصحّح الأوراق.
    qwen3-30b نال ٩٨٪ وqwq-32b ٩٧٪، بينما llama-3.3-70b — الافتراضي القديم —
    نال ٤٥٪ وكان يلفّ على نفسه بعشرة بالمئة من جمله مكرّرة. */
+/* ---------- دفتر النيورونات ---------- */
+const neuronLedger = { day: '', calls: 0, promptTokens: 0, outputTokens: 0 }
+/* الرموز تُقاس بيقين (كلاودفلير يعيدها مع كل ردّ)، والنيورون تقديرٌ معاير على
+   ما رُصد فعلاً في ١ أغسطس: نحو إحدى وثلاثين نداءةً كبيرة استنفدت الحصة
+   اليومية (١٠٬٠٠٠) — أي قرابة ثمانٍ وخمسين نيوروناً لكل ألف رمز. يُصحَّح
+   بمتغير NEURONS_PER_1K حين تتغيّر تسعيرة كلاودفلير أو النموذج. */
+const NEURONS_PER_1K_TOKENS = 58
+function recordNeuronUsage(usage) {
+  const today = new Date().toISOString().slice(0, 10)
+  if (neuronLedger.day !== today) Object.assign(neuronLedger, { day: today, calls: 0, promptTokens: 0, outputTokens: 0 })
+  neuronLedger.calls += 1
+  neuronLedger.promptTokens += Number(usage?.prompt_tokens || 0)
+  neuronLedger.outputTokens += Number(usage?.completion_tokens || usage?.output_tokens || 0)
+}
+export function neuronReport() {
+  const tokens = neuronLedger.promptTokens + neuronLedger.outputTokens
+  const rate = envNumber('NEURONS_PER_1K', NEURONS_PER_1K_TOKENS, 1, 500)
+  const spent = Math.round(tokens / 1_000 * rate)
+  const daily = envNumber('CLOUDFLARE_FREE_NEURONS', 10_000, 1_000, 1_000_000)
+  const perCall = neuronLedger.calls ? spent / neuronLedger.calls : 0
+  /* المقال الواحد ثلاث نداءاتٍ وسطياً (مرشح + تصحيح + تدقيق لغوي). */
+  const perArticle = perCall * 3
+  return {
+    day: neuronLedger.day,
+    calls: neuronLedger.calls,
+    tokens,
+    spent,
+    remaining: Math.max(0, daily - spent),
+    perArticle: Math.round(perArticle),
+    articlesLeft: perArticle > 0 ? Math.max(0, Math.floor((daily - spent) / perArticle)) : null,
+    note: 'الرموز مقيسة بيقين؛ النيورون تقديرٌ معاير ويُصحَّح بـNEURONS_PER_1K',
+  }
+}
+
 export const ARTICLE_MODEL_PRIMARY = '@cf/qwen/qwen3-30b-a3b-fp8'
 /* qwq-32b أجود بنقطة لكنه **٤٦ ثانية وحده** — أي الميزانية كلها تحت باب
    الستين. التنويع الآن بالبنية والحرارة على السريع (١٧ ثانية · ٩٨٪). */
@@ -2697,6 +2731,11 @@ async function callCloudflareStructured({ instruction, prompt, cfPrompt, cfModel
   }
   let payload
   try { payload = await response.json() } catch { throw new HttpError(502, 'AI returned an invalid response') }
+  /* دفتر النيورونات: Workers AI يعيد عدّاد الرموز مع كل ردّ، والحصة اليومية
+     تُحسب بالنيورون. نجمعها هنا فيعرف الدكتور كم أنفق وكم بقي — بدل أن يكتشف
+     النفاد بخطأ ٤٢٩ في منتصف مقال. التقدير محافظ (نيورون لكل ألف رمز مخرَج
+     وربعه للمدخل) ويُعاير بمتغير بيئة إن تغيّرت تسعيرة كلاودفلير. */
+  recordNeuronUsage(payload?.result?.usage || payload?.usage || null)
   const raw = payload?.result?.response ?? payload?.result?.output_text ?? payload?.result ?? payload?.response
   return parseSuggestion(typeof raw === 'string' || (raw && typeof raw === 'object') ? (typeof raw === 'string' ? raw : JSON.stringify(raw)) : '')
 }
@@ -3414,6 +3453,8 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
       score: best.verdict.score,
       ready: best.verdict.ready,
       structure: best.family.label,
+      /* كم أنفق هذا المقال وكم بقي من حصة اليوم — بلا تخمين. */
+      budget: neuronReport(),
       model: String(best.cfModel || '').replace('@cf/', ''),
       proofread: proofread || 'لم يُشغَّل',
       lines: styleReportLines(best.verdict),

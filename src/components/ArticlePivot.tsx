@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import rawPivots from '../data/article-pivots.json' with { type: 'json' }
 import { copyText } from '../lib/clipboard'
 import { QuoteImage } from './QuoteImage'
+import { SocialIcon } from './icons'
 
 /**
  * لحظة الانعطاف — علامةٌ في الهامش، لا سطرٌ جديد ولا كرتٌ ظاهر.
@@ -76,7 +77,7 @@ export function ArticlePivot({ slug, title }: { slug: string; title: string }) {
           >
             <span className="flex items-start justify-between gap-4">
               <span className="text-[.68rem] font-semibold text-accent">لحظة الانعطاف</span>
-              <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:text-accent">×</button>
+              <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق" title="إغلاق" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:text-accent"><SocialIcon name="Close" size={13} /></button>
             </span>
 
             <blockquote className="mt-3 border-r-2 border-accent/40 pr-4 font-display text-[1.05rem] font-light leading-[1.95] text-ink md:text-[1.15rem]">

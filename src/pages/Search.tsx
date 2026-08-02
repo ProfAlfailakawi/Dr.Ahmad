@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { KnowledgeEntry } from '../components/KnowledgeEntry'
 import { useSeo } from '../components/seo'
@@ -16,6 +16,7 @@ import { searchMediaChapters, stamp } from '../lib/media-chapters'
 import { ReadingShelf } from '../components/ReadingShelf'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { staticQuestions } from '../questions-data'
+import { SocialIcon } from '../components/icons'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
@@ -25,7 +26,7 @@ const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '012345678
    المتن ولا ملف PDF: تعرض المحور وموضعه فقط وتفتح صفحة الكتاب نفسها. */
 
 type UnifiedKind = KnowledgeKind | 'question'
-type TabId = 'all' | UnifiedKind | 'spoken' | 'passage'
+type TabId = 'all' | UnifiedKind | 'spoken' | 'passage' | 'askbook'
 
 const KIND_TABS: { id: TabId; label: string }[] = [
   { id: 'all', label: 'الكل' },
@@ -34,6 +35,9 @@ const KIND_TABS: { id: TabId; label: string }[] = [
   { id: 'book', label: 'الكتب' },
   { id: 'media', label: 'الإعلام' },
   { id: 'question', label: 'الأسئلة' },
+  /* بوابة مباشرة إلى ميزة «اسأل هذا الكتاب» كي لا تبقى مدفونة في صفحات
+     الكتب. هو تبويبٌ خدمي أكثر من كونه قائمة نتائج. */
+  { id: 'askbook', label: 'اسأل كتاباً' },
   /* التبويب الوحيد الذي لا يفتح نصاً بل صوتاً: جملةٌ نُطقت، والنقر يشغّلها
      عند ثانيتها. يبقى آخر الصف لأنه أحدثها وأقلها استعمالاً في البدء. */
   { id: 'spoken', label: 'جُمل منطوقة' },
@@ -101,6 +105,7 @@ function editDistance(a: string, b: string) {
 
 export default function Search() {
   const { articles, books, papers, media } = useCmsContent()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   useSeo({
     title: 'البحث العميق',
@@ -116,6 +121,17 @@ export default function Search() {
   const [cat, setCat] = useState('الكل')
   const [year, setYear] = useState('الكل')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [askBookSlug, setAskBookSlug] = useState(() => searchParams.get('book') || '')
+  const [askBookQuestion, setAskBookQuestion] = useState('')
+
+  useEffect(() => {
+    const requested = searchParams.get('book') || ''
+    if (requested && books.some((book) => book.slug === requested) && requested !== askBookSlug) {
+      setAskBookSlug(requested)
+      return
+    }
+    if ((!askBookSlug || !books.some((book) => book.slug === askBookSlug)) && books[0]?.slug) setAskBookSlug(books[0].slug)
+  }, [askBookSlug, books, searchParams])
 
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
   const years = useMemo(() => Array.from(new Set(articles.map((article) => article.iso.slice(0, 4))))
@@ -240,22 +256,24 @@ export default function Search() {
       all: articleResults.length + paper + book + mediaCount + questionResults.length + passageHits.length,
       spoken: spokenHits.length,
       passage: passageHits.length,
+      askbook: books.length,
     }
   }, [articleResults, chapterHits, graphResults, questionResults, spokenHits, passageHits])
 
   /* قائمة «الكل» الموحدة: كل نتيجة بنوعها، مرتبة بالمواءمة */
-  type UnifiedRow = { kind: UnifiedKind | 'passage'; title: string; snippet: string; url: string; year?: string; score: number }
+  type UnifiedRow = { kind: UnifiedKind | 'passage'; slug?: string; title: string; snippet: string; url: string; year?: string; score: number }
   const unifiedRows: UnifiedRow[] = useMemo(() => {
     if (!searchStarted) return []
     const rows: UnifiedRow[] = []
     const articleRank = new Map(articleResults.map((item, index) => [item.slug, articleResults.length - index]))
     for (const item of articleResults) {
-      rows.push({ kind: 'article', title: item.title, snippet: item.excerpt || '', url: `/articles/${item.slug}`, year: item.iso.slice(0, 4), score: 1000 + (articleRank.get(item.slug) || 0) })
+      rows.push({ kind: 'article', slug: item.slug, title: item.title, snippet: item.excerpt || '', url: `/articles/${item.slug}`, year: item.iso.slice(0, 4), score: 1000 + (articleRank.get(item.slug) || 0) })
     }
     for (const row of graphResults) {
       const bookMatch = row.node.kind === 'book' ? bestBookConcept(expandedQuery, row.node.slug) : null
       rows.push({
         kind: row.node.kind as UnifiedKind,
+        slug: row.node.slug,
         title: row.node.title,
         snippet: bookMatch && bookMatch.score > 0
           ? `داخل الكتاب: ${bookMatch.concept.title} · ص ${bookMatch.concept.pageStart}. ${bookMatch.concept.summary}`
@@ -268,11 +286,12 @@ export default function Search() {
       })
     }
     for (const row of questionResults) {
-      rows.push({ kind: 'question', title: row.item.ar, snippet: row.item.take.slice(0, 180), url: '/questions', year: undefined, score: row.hits * 10 })
+      rows.push({ kind: 'question', slug: String(row.index), title: row.item.ar, snippet: row.item.take.slice(0, 180), url: '/questions', year: undefined, score: row.hits * 10 })
     }
     for (const hit of chapterHits) {
       rows.push({
         kind: 'media',
+        slug: `media-${hit.videoId}`,
         title: `${hit.title} · نحو ${stamp(hit.chapter.at)}`,
         snippet: hit.chapter.text.slice(0, 170),
         url: `/media/media-${hit.videoId}`,
@@ -285,6 +304,7 @@ export default function Search() {
     for (const match of passageHits) {
       rows.push({
         kind: 'passage',
+        slug: match.bookSlug,
         title: `${match.bookTitle} · ص ${match.quote.page}`,
         snippet: match.quote.text,
         url: `/publications/${match.bookSlug}#book-knowledge`,
@@ -295,7 +315,7 @@ export default function Search() {
     return rows.sort((a, b) => b.score - a.score)
   }, [articleResults, chapterHits, expandedQuery, graphResults, passageHits, questionResults, searchStarted])
 
-  const activeRows = useMemo(() => tab === 'all' ? unifiedRows : unifiedRows.filter((row) => row.kind === tab), [tab, unifiedRows])
+  const activeRows = useMemo(() => tab === 'askbook' ? [] : tab === 'all' ? unifiedRows : unifiedRows.filter((row) => row.kind === tab), [tab, unifiedRows])
 
   const keywords = useMemo(() => topKeywordsFor(articleResults.slice(0, 18), 12), [articleResults])
   const paged = usePagedList(activeRows, 20, `${normalizedQuery}|${tab}|${cat}|${year}`)
@@ -343,33 +363,32 @@ export default function Search() {
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[1.4rem] text-accent">⌕</span>
               </div>
 
-              {searchStarted && (
-                <div className="mt-7 border-t border-hair pt-5">
-                  {/* تبويبات الأنواع مع عداداتها — قلب المحرك الموحد */}
-                  <div className="flex flex-wrap gap-x-5 gap-y-2" role="tablist" aria-label="أنواع نتائج البحث">
-                    {KIND_TABS.map((item) => (
-                      <button
-                        key={item.id}
-                        role="tab"
-                        aria-selected={tab === item.id}
-                        onClick={() => setTab(item.id)}
-                        className={`min-h-11 shrink-0 border-b px-1 py-2 text-[.86rem] font-medium transition-colors ${
-                          tab === item.id ? 'border-accent text-accent' : 'border-transparent text-soft hover:border-accent hover:text-accent'
-                        }`}
-                      >
-                        {item.label}
-                        {/* «جُمل منطوقة» لا تُظهر رقماً قبل أن يُفتح فهرسها:
-                            صفرٌ قبل القراءة يكذب على الزائر بأنه لا شيء. */}
-                        <span className="ms-1.5 text-[.72rem] text-soft">
-                          {(item.id === 'spoken' && !spokenReady) || (item.id === 'passage' && !passagesReady) ? '' : ar(counts[item.id])}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+              <div className="mt-7 border-t border-hair pt-5">
+                {/* تبويبات الأنواع مع عداداتها — قلب المحرك الموحد */}
+                <div className="rail -mx-1 flex flex-nowrap gap-5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="أنواع نتائج البحث">
+                  {KIND_TABS.map((item) => (
+                    <button
+                      key={item.id}
+                      role="tab"
+                      aria-selected={tab === item.id}
+                      onClick={() => setTab(item.id)}
+                      className={`min-h-11 shrink-0 border-b px-1 py-2 text-[.86rem] font-medium transition-colors ${
+                        tab === item.id ? 'border-accent text-accent' : 'border-transparent text-soft hover:border-accent hover:text-accent'
+                      }`}
+                    >
+                      {item.label}
+                      {/* «جُمل منطوقة» لا تُظهر رقماً قبل أن يُفتح فهرسها:
+                          صفرٌ قبل القراءة يكذب على الزائر بأنه لا شيء. */}
+                      <span className="ms-1.5 text-[.72rem] text-soft">
+                        {!searchStarted && item.id !== 'askbook' ? '' : ((item.id === 'spoken' && !spokenReady) || (item.id === 'passage' && !passagesReady) ? '' : ar(counts[item.id]))}
+                      </span>
+                    </button>
+                  ))}
+                </div>
 
-                  {/* الفلاتر مغلقة افتراضياً — تُفتح عند الحاجة (مقترح معتمد) */}
-                  {(tab === 'all' || tab === 'article') && (
-                    <div className="mt-3">
+                {/* الفلاتر مغلقة افتراضياً — تُفتح عند الحاجة (مقترح معتمد) */}
+                {searchStarted && (tab === 'all' || tab === 'article') && (
+                  <div className="mt-3">
                       <button
                         type="button"
                         onClick={() => setFiltersOpen((value) => !value)}
@@ -409,20 +428,25 @@ export default function Search() {
                         </>
                       )}
                     </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </FadeUp>
 
-          {searchStarted && <FadeUp delay={0.05}>
+          {(searchStarted || tab === 'askbook') && <FadeUp delay={0.05}>
             <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
               <p className="text-[.9rem] text-soft" aria-live="polite">
-                {ar(tab === 'spoken' ? spokenHits.length : activeRows.length)} نتيجة
-                <span> عن «{normalizedQuery}»</span>
-                {tab !== 'all' && <span> في {KIND_TABS.find((item) => item.id === tab)?.label}</span>}
+                {tab === 'askbook' ? (
+                  <>اختر كتاباً، ثم اكتب سؤالك لينتقل بك مباشرة إلى قسم «اسأل هذا الكتاب».</>
+                ) : (
+                  <>
+                    {ar(tab === 'spoken' ? spokenHits.length : activeRows.length)} نتيجة
+                    <span> عن «{normalizedQuery}»</span>
+                    {tab !== 'all' && <span> في {KIND_TABS.find((item) => item.id === tab)?.label}</span>}
+                  </>
+                )}
               </p>
-              {keywords.length > 0 && (
+              {tab !== 'askbook' && keywords.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {keywords.slice(0, 8).map((keyword) => (
                     <button
@@ -436,6 +460,62 @@ export default function Search() {
                 </div>
               )}
             </div>
+          </FadeUp>}
+
+          {tab === 'askbook' && <FadeUp delay={0.08}>
+            <section className="mt-8 rounded-[2rem] border border-hair bg-wash p-5 md:p-7" aria-labelledby="ask-book-gateway-title">
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(18rem,.95fr)] lg:items-start">
+                <div>
+                  <span className="text-[.72rem] font-semibold uppercase tracking-[.08em] text-accent">اسأل كتاباً</span>
+                  <h2 id="ask-book-gateway-title" className="mt-2 font-display text-[clamp(1.35rem,2.8vw,2rem)] font-semibold leading-[1.45] text-ink">الميزة نفسها، لكن في الواجهة الآن.</h2>
+                  <p className="mt-3 max-w-2xl text-[.88rem] leading-[1.9] text-soft">اختر كتاباً من المؤلفات، واكتب سؤالك، ثم انتقل مباشرةً إلى قسم «اسأل هذا الكتاب» داخل صفحته؛ هناك سيجيبك المتن بمقاطعه المنسوبة إلى صفحاتها.</p>
+                  <div className="rail mt-5 grid grid-flow-col auto-cols-[min(82vw,18rem)] gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid-flow-row md:auto-cols-auto md:grid-cols-2 md:overflow-visible">
+                    {books.map((book) => (
+                      <button
+                        key={book.slug}
+                        type="button"
+                        onClick={() => { const next = new URLSearchParams(searchParams); next.set('tab', 'askbook'); next.set('book', book.slug); setAskBookSlug(book.slug); setSearchParams(next, { replace: true }) }}
+                        className={`rounded-2xl border px-4 py-3 text-right transition-colors ${askBookSlug === book.slug ? 'border-accent bg-canvas' : 'border-hair bg-canvas/70 hover:border-accent/[.45]'}`}
+                      >
+                        <strong className="block text-[.82rem] leading-relaxed text-ink">{book.title}</strong>
+                        <span className="mt-1 block text-[.68rem] leading-relaxed text-soft">{book.year ? `سنة النشر ${book.year}` : 'من المؤلفات المنشورة'}{book.desc ? ` · ${book.desc.slice(0, 85)}${book.desc.length > 85 ? '…' : ''}` : ''}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-[1.75rem] border border-hair bg-canvas p-4 md:p-5">
+                  <label htmlFor="ask-book-question" className="block text-[.72rem] font-semibold text-accent">سؤالك عن الكتاب</label>
+                  <textarea
+                    id="ask-book-question"
+                    value={askBookQuestion}
+                    onChange={(event) => setAskBookQuestion(event.target.value)}
+                    placeholder="مثال: ما دور المعلّم في هذا الكتاب؟"
+                    className="mt-2 min-h-36 w-full rounded-[1.4rem] border border-hair bg-wash px-4 py-3 text-[.88rem] leading-relaxed text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent"
+                  />
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!askBookSlug || askBookQuestion.trim().length < 2) return
+                        navigate(`/publications/${askBookSlug}?book_question=${encodeURIComponent(askBookQuestion.trim())}#ask-book-section`)
+                      }}
+                      disabled={!askBookSlug || askBookQuestion.trim().length < 2}
+                      className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      اذهب إلى جواب الكتاب
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAskBookQuestion('ما الفكرة الأساسية في هذا الكتاب؟')}
+                      className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+                    >
+                      ابدأ بسؤال جاهز
+                    </button>
+                  </div>
+                  <p className="mt-3 text-[.68rem] leading-relaxed text-soft">الانتقال يفتح الصفحة نفسها عند القسم المناسب، ويحمّل سؤالك تلقائياً دون أن تبقى الميزة مدفونة في داخل الكتاب.</p>
+                </div>
+              </div>
+            </section>
           </FadeUp>}
 
           {/* نتائج المنطوق: جملةٌ قيلت، وتحتها متحدثها وحلقتها وثانيتها. لا رابط
@@ -478,11 +558,11 @@ export default function Search() {
               لأن الزائر الذي يعرف بمَ يبدأ لا يحتاج أن يقرأ القائمة كلها. */}
           {searchStarted && tab === 'all' && <ReadingShelf query={normalizedQuery} articles={articleResults} />}
 
-          {searchStarted && tab !== 'spoken' && <ul id="search-results" className="mt-8 scroll-mt-28">
+          {searchStarted && tab !== 'spoken' && tab !== 'askbook' && <ul id="search-results" className="mt-8 scroll-mt-28">
             {visibleRows.map((row, index) => (
               <FadeUp key={`${row.kind}-${row.url}-${row.title.slice(0, 30)}`} delay={Math.min(index * 0.025, 0.25)}>
-                <li className={index === 0 ? '' : 'border-t border-hair'}>
-                  <Link to={row.url} className="group grid gap-3 py-6 md:grid-cols-[7rem_1fr_5.5rem] md:items-baseline">
+                <li className={`relative ${index === 0 ? '' : 'border-t border-hair'}`}>
+                  <Link to={row.url} className={`group grid gap-3 py-6 md:grid-cols-[7rem_1fr_5.5rem] md:items-baseline ${row.kind === 'book' ? 'pl-12' : ''}`}>
                     <span className={`h-fit w-fit rounded-full px-3 py-1 text-[.7rem] font-bold ${row.kind === 'article' ? 'bg-accent/10 text-accent' : 'border border-hair text-soft'}`}>
                       {KIND_BADGE[row.kind]}
                     </span>
@@ -498,14 +578,24 @@ export default function Search() {
                     </span>
                     <span className="text-[.8rem] text-soft md:text-left">{row.year ? ar(row.year) : ''}</span>
                   </Link>
+                  {row.kind === 'book' && row.slug && (
+                    <Link
+                      to={`/search?tab=askbook&book=${encodeURIComponent(row.slug)}`}
+                      aria-label={`اسأل كتاب ${row.title}`}
+                      title="اسأل هذا الكتاب"
+                      className="absolute left-0 top-6 flex h-10 w-10 items-center justify-center rounded-full border border-hair bg-canvas text-soft transition-colors hover:border-accent hover:text-accent"
+                    >
+                      <SocialIcon name="Question" size={16} />
+                    </Link>
+                  )}
                 </li>
               </FadeUp>
             ))}
           </ul>}
 
-          {searchStarted && tab !== 'spoken' && <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={activeRows.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="search-results" label="صفحات نتائج البحث" className="mt-8" />}
+          {searchStarted && tab !== 'spoken' && tab !== 'askbook' && <Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={activeRows.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="search-results" label="صفحات نتائج البحث" className="mt-8" />}
 
-          {!searchStarted && (
+          {!searchStarted && tab !== 'askbook' && (
             <FadeUp delay={0.05}>
               <div className="py-16 text-center md:py-20">
                 <h2 className="font-display text-[clamp(1.35rem,3vw,1.8rem)] font-semibold text-ink">عمّ تبحث اليوم؟</h2>
@@ -516,7 +606,7 @@ export default function Search() {
             </FadeUp>
           )}
 
-          {searchStarted && tab !== 'spoken' && activeRows.length === 0 && (
+          {searchStarted && tab !== 'spoken' && tab !== 'askbook' && activeRows.length === 0 && (
             <FadeUp>
               <div className="border-t border-hair py-20 text-center">
                 <p className="font-display text-[1.5rem] font-semibold text-ink">لا نتائج دقيقة.</p>

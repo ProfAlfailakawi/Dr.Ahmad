@@ -116,7 +116,7 @@ export default function MediaDetail() {
               </div>
               <h1 className="mt-4 font-display text-[clamp(2rem,4.6vw,3.1rem)] font-bold leading-[1.35] text-ink"><Reveal>{item.title}</Reveal></h1>
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                <MediaSaveButton slug={item.slug} compact={false} />
+                <MediaSaveButton slug={item.slug} />
                 <OwnerEdit tab="media" slug={item.slug} />
               </div>
               {topics.length > 0 && <div className="mt-5 flex flex-wrap gap-2">{topics.map((topic) => <span key={topic} className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.7rem] text-soft">{topic}</span>)}</div>}
@@ -179,10 +179,22 @@ export default function MediaDetail() {
             <section className="mt-10 border-t border-hair pt-8" aria-labelledby="media-related-title">
               <h2 id="media-related-title" className="font-display text-xl font-semibold text-ink">امتداد اللقاء في المشروع المعرفي</h2>
               <p className="mt-2 text-[.76rem] text-soft">صلة موضوعية محسوبة من عنوان اللقاء ومحاوره ونصه المفرّغ ومن الأرشيف نفسه؛ لا تعني أن المادة ذُكرت حرفياً داخل اللقاء.</p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {articleLinks.map(({ item: article }) => <Link key={article.slug} to={`/articles/${article.slug}`} className="rounded-xl border border-hair p-4 transition-colors hover:border-accent"><span className="text-[.65rem] font-semibold text-accent">مقال</span><strong className="mt-1 block text-[.84rem] leading-relaxed text-ink">{article.title}</strong></Link>)}
-                {paperLinks.map(({ item: paper }) => <Link key={paper.slug} to={`/research/${paper.slug}`} className="rounded-xl border border-hair p-4 transition-colors hover:border-accent"><span className="text-[.65rem] font-semibold text-accent">بحث</span><strong className="mt-1 block text-[.84rem] leading-relaxed text-ink">{paper.titleAr || paper.title}</strong></Link>)}
-                {bookLinks.map(({ book, concept }) => <Link key={book.slug} to={`/publications/${book.slug}#${bookKnowledgeAnchor(concept)}`} className="rounded-xl border border-hair p-4 transition-colors hover:border-accent"><span className="text-[.65rem] font-semibold text-accent">{book.slug === 'encyclopedia' ? 'من الموسوعة' : 'من كتاب'} · ص {concept.pageStart}</span><strong className="mt-1 block text-[.84rem] leading-relaxed text-ink">{book.title}</strong><span className="mt-1.5 block text-[.7rem] leading-relaxed text-soft">{concept.title}</span></Link>)}
+              <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                {[
+                  ...articleLinks.map(({ item: article }) => ({ key: `article-${article.slug}`, to: `/articles/${article.slug}`, kind: 'مقال', title: article.title, note: 'امتدادٌ موضوعي من الأرشيف المقروء.' })),
+                  ...paperLinks.map(({ item: paper }) => ({ key: `paper-${paper.slug}`, to: `/research/${paper.slug}`, kind: 'بحث', title: paper.titleAr || paper.title, note: 'ورقة أقرب إلى الفكرة التي دار حولها اللقاء.' })),
+                  ...bookLinks.map(({ book, concept }) => ({ key: `book-${book.slug}`, to: `/publications/${book.slug}#${bookKnowledgeAnchor(concept)}`, kind: `${book.slug === 'encyclopedia' ? 'من الموسوعة' : 'من كتاب'} · ص ${concept.pageStart}`, title: book.title, note: concept.title })),
+                ].map((relatedItem, index) => (
+                  <Link
+                    key={relatedItem.key}
+                    to={relatedItem.to}
+                    className={`group w-[94%] rounded-2xl border border-hair bg-canvas p-4 text-right transition-colors hover:border-accent lg:w-full ${index % 2 === 0 ? 'ml-auto' : 'mr-auto'} lg:mx-0`}
+                  >
+                    <span className="flex items-center justify-between gap-3 text-[.65rem] font-semibold text-accent"><span>{relatedItem.kind}</span><span aria-hidden className="transition-transform group-hover:-translate-x-1">←</span></span>
+                    <strong className="mt-2 block text-[.88rem] leading-relaxed text-ink">{relatedItem.title}</strong>
+                    <span className="mt-1.5 block text-[.72rem] leading-relaxed text-soft">{relatedItem.note}</span>
+                  </Link>
+                ))}
               </div>
             </section>
           </FadeUp>}

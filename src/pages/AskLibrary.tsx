@@ -15,6 +15,7 @@ import { loadArticleBodies } from "../lib/article-bodies";
 import { categoryLabel } from "../lib/content-taxonomy";
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
 import { loadBookPassages, matchBookQuotes, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
+import { SocialIcon } from '../components/icons'
 
 const norm = (s: string) =>
   s
@@ -327,6 +328,18 @@ function answer(
   return { hits, near, refs, timeline, latest, earliest, tension };
 }
 
+function normalizeGroundedAnswerWording(value: string, citationCount: number) {
+  const answer = value.trim()
+  if (!answer || citationCount < 1) return answer
+  const contradictory = /^(?:لم أجد|لم نجد|لا أجد|لا يوجد جواب|لا توجد إجابة|تعذّر العثور على جواب)/u
+  if (!contradictory.test(answer)) return answer
+  const cleaned = answer
+    .replace(contradictory, '')
+    .replace(/^[\s،,:؛.\-–—]+/u, '')
+  const lead = 'هذه إجابة مركّبة من المواد والشواهد الموثّقة الأقرب إلى السؤال، لا من نص واحد يطابق صياغته حرفياً.'
+  return cleaned ? `${lead} ${cleaned}` : lead
+}
+
 function localGroundedAnswer(result: Answer): TwinAnswer {
   const citations = result.hits.slice(0, 3).map((hit, index) => ({
     index: index + 1,
@@ -349,7 +362,7 @@ function localGroundedAnswer(result: Answer): TwinAnswer {
       ? ` ويتكرر الخيط في نصوص منشورة بين ${years[years.length - 1]} و${years[0]}.`
       : "";
   return {
-    answer: `لم أجد جواباً مباشراً مطابقاً، وهذه أقرب مادة موثّقة من الأرشيف.${span} ${citations.map((item) => `[${item.index}]`).join(" ")}`.trim(),
+    answer: `هذه إجابة مركّبة من أقرب المواد الموثّقة في الأرشيف؛ فالسؤال لا يقابله نص واحد بصياغته نفسها.${span} ${citations.map((item) => `[${item.index}]`).join(" ")}`.trim(),
     citations,
     grounded: true,
     source: "local",
@@ -558,7 +571,7 @@ export default function AskLibrary() {
           return;
         }
         setTwin({
-          answer: payload.answer.trim(),
+          answer: normalizeGroundedAnswerWording(payload.answer, citations.length),
           citations,
           grounded: true,
           source: "ai",
@@ -713,7 +726,7 @@ export default function AskLibrary() {
                               الإجابة مستندة إلى مواد منشورة وموثّقة. سؤالك خاص ولا يُنشر.
                             </p>
                             <div className="mt-5 flex flex-wrap gap-2">
-                              <button type="button" onClick={() => void copyArchiveAnswer()} className="inline-flex min-h-11 items-center rounded-full border border-hair px-5 text-[.76rem] font-semibold text-ink transition hover:border-accent hover:text-accent">{answerCopied ? '✓ نُسخ الجواب بمصادره' : 'نسخ الجواب بمصادره'}</button>
+                              <button type="button" onClick={() => void copyArchiveAnswer()} aria-label="نسخ الجواب بمصادره" title={answerCopied ? 'نُسخ الجواب بمصادره' : 'نسخ الجواب بمصادره'} className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition hover:border-accent hover:text-accent ${answerCopied ? 'border-accent bg-accent text-white' : 'border-hair text-ink'}`}><SocialIcon name={answerCopied ? 'Check' : 'Copy'} size={17} /></button>
                               <Link to="/thought-paths" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/[.35] px-5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">استكشف المسار الفكري <span aria-hidden>←</span></Link>
                             </div>
                           </>

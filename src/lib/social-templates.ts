@@ -683,6 +683,7 @@ export async function renderSocialPng(inputTemplate: SocialVisualTemplate) {
      الرسم، ثم ننتظر fonts.ready — وكلاهما بمهلة كي لا يعلّق متصفحٌ الرسم. */
   const requiredFonts = [
     '700 64px "El Messiri"', '600 64px "El Messiri"', '400 32px "El Messiri"',
+    '600 64px "Alexandria Variable"', '500 40px "Alexandria Variable"',
     '700 40px Tajawal', '500 32px Tajawal', '400 28px Tajawal',
   ]
   await Promise.race([
@@ -700,12 +701,18 @@ export async function renderSocialPng(inputTemplate: SocialVisualTemplate) {
   const H = template.height
   const S = W / 1080
   const isStory = template.platform === 'story'
+  const isStandalone = template.id.startsWith('standalone-') || template.format.includes('منشور مستقل')
   const comp = compositionOf(template.layout)
   const ink = INKS[comp]
   const seed = hashSeed(template.id + template.title)
   const pad = Math.round(W * 0.09)
-  const display = (weight: number, size: number) => `${weight} ${Math.round(size)}px "El Messiri", "Tajawal", sans-serif`
-  const sans = (weight: number, size: number) => `${weight} ${Math.round(size)}px Tajawal, sans-serif`
+  /* «المنشور المستقل» يستخدم Alexandria العربي المعتمد في بقية محرك
+     التصميم. لا نغيّر شارة PROFESSIONAL ولا هوية القالب؛ نصحّح الخط العربي
+     وحده ونمنع سقوطه إلى خط النظام عند الرسم على canvas. */
+  const display = (weight: number, size: number) => isStandalone
+    ? `${Math.min(weight, 600)} ${Math.round(size)}px "Alexandria Variable", "Alexandria", "Tajawal", sans-serif`
+    : `${weight} ${Math.round(size)}px "El Messiri", "Tajawal", sans-serif`
+  const sans = (weight: number, size: number) => `${Math.min(weight, 500)} ${Math.round(size)}px Tajawal, sans-serif`
   const hairline = (x1: number, y1: number, x2: number, y2: number, color: string, widthPx: number, alpha = 1) => {
     ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = widthPx; ctx.globalAlpha = alpha
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore()

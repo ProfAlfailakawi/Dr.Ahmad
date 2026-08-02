@@ -1021,6 +1021,44 @@ html.dark .not-found-search {
   border-color: rgb(var(--c-ink) / .16);
 }
 
+
+/* صفحة الكتاب على الهاتف: كتلة تعريف قصيرة وواضحة بدل عمود طويل متباعد. */
+@media (max-width: 767px) {
+  .content-book-detail .book-detail-layout {
+    gap: 1.65rem;
+  }
+  .content-book-detail .book-detail-cover {
+    width: min(78vw, 20rem);
+    box-shadow: 0 22px 48px -34px rgb(var(--c-ink) / .45);
+  }
+  .content-book-detail .book-detail-copy > h1 {
+    margin-top: .7rem;
+    font-size: clamp(1.75rem, 8vw, 2.35rem);
+    line-height: 1.35;
+  }
+  .content-book-detail .book-detail-copy > p {
+    margin-top: .9rem;
+    font-size: .96rem;
+    line-height: 1.9;
+  }
+  .content-book-detail .book-detail-meta-grid > div {
+    min-height: 5.2rem;
+  }
+  .content-book-detail .book-detail-guides details {
+    background: rgb(var(--c-canvas));
+  }
+  .content-book-detail .book-detail-guides summary {
+    padding-block: .8rem;
+  }
+  .content-book-detail #book-knowledge {
+    scroll-margin-top: 5rem;
+  }
+  .content-book-detail ~ .floating-actions,
+  body:has(.content-book-detail) .floating-actions {
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+}
+
 html.dark .book-detail-cover {
   background:
     linear-gradient(180deg, rgb(var(--c-wash)), rgb(var(--c-canvas)));

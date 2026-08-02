@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link } from 'react-router'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Link, useSearchParams } from 'react-router'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { createIdeaDna } from '../lib/idea-dna'
 import { ideaWords } from '../lib/idea-life'
@@ -27,8 +27,13 @@ function Disclosure({
   children: ReactNode
   lockOpen?: boolean
 }) {
+  const detailsRef = useRef<HTMLDetailsElement>(null)
+  useEffect(() => {
+    if (lockOpen && detailsRef.current) detailsRef.current.open = true
+  }, [lockOpen])
   return (
     <details
+      ref={detailsRef}
       className="group rounded-2xl border border-hair bg-canvas"
       data-allow-multiple={lockOpen ? 'true' : undefined}
       onToggle={(event) => {
@@ -61,6 +66,7 @@ export function BookWorld({
   books: BookRecord[]
   papers: PaperRecord[]
 }) {
+  const [searchParams] = useSearchParams()
   const [activeIdea, setActiveIdea] = useState('')
   const model = useMemo(() => {
     const knowledge = getBookKnowledge(book.slug)
@@ -187,9 +193,14 @@ export function BookWorld({
   const [bookQuestion, setBookQuestion] = useState('')
   const [askReady, setAskReady] = useState(false)
   const [asked, setAsked] = useState('')
+  const [askOpen, setAskOpen] = useState(false)
+  const stagedQuestion = (searchParams.get('book_question') || '').trim()
 
   const askBook = (question: string) => {
-    setAsked(question)
+    const cleanQuestion = question.trim()
+    if (!cleanQuestion) return
+    setAsked(cleanQuestion)
+    setAskOpen(true)
     if (askReady) return
     void loadBookPassages().then(() => setAskReady(true))
   }
@@ -213,8 +224,24 @@ export function BookWorld({
   }, [activeIdea, model.ideas])
 
   useEffect(() => {
+    if (!stagedQuestion || asked === stagedQuestion) return
+    setBookQuestion(stagedQuestion)
+    askBook(stagedQuestion)
+    window.requestAnimationFrame(() => {
+      document.getElementById('ask-book-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [asked, stagedQuestion])
+
+  useEffect(() => {
     const revealConcept = () => {
       const hash = typeof window === 'undefined' ? '' : window.location.hash.replace(/^#/, '')
+      if (hash === 'ask-book-section') {
+        setAskOpen(true)
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+          document.getElementById('ask-book-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }))
+        return
+      }
       const concept = model.knowledge?.concepts.find((item) => bookKnowledgeAnchor(item) === hash)
       if (!concept) return
       setActiveIdea(concept.title)
@@ -311,9 +338,10 @@ export function BookWorld({
             eyebrow="اسأل هذا الكتاب"
             title="اكتب سؤالك، فيجيبك الكتاب بمقاطعه"
             meta="الجواب من متن الكتاب، منسوباً إلى صفحته."
-            lockOpen={Boolean(asked)}
+            lockOpen={Boolean(asked) || askOpen}
           >
             <form
+              id="ask-book-section"
               onSubmit={(event) => { event.preventDefault(); askBook(bookQuestion) }}
               className="flex flex-wrap items-center gap-2"
             >
@@ -326,6 +354,7 @@ export function BookWorld({
               />
               <button type="submit" className="rounded-full bg-accent px-5 py-2.5 text-[.75rem] font-semibold text-white transition-colors hover:bg-accent-deep">اسأل</button>
             </form>
+            {stagedQuestion && <p className="mt-2 text-[.68rem] leading-relaxed text-soft">جاءك هذا القسم مباشرة من تبويب «اسأل كتاباً» في البحث، ويمكنك تعديل السؤال هنا متى شئت.</p>}
 
             {asked && (
               <div className="mt-4 border-t border-hair pt-4">

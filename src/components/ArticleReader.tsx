@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { getDb, getFirebaseAuth } from '../lib/firebase'
 import { categoryLabel } from '../lib/content-taxonomy'
+import { SocialIcon } from './icons'
 
 export type ReaderArticle = {
   slug: string
@@ -544,7 +545,7 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
             <div className="mt-2 flex items-center gap-2">
               <button type="button" onClick={resume} className="rounded-full bg-accent px-4 py-1.5 text-[.74rem] font-semibold text-white">متابعة</button>
               <button type="button" onClick={restart} className="rounded-full border border-hair px-4 py-1.5 text-[.74rem] text-soft">من البداية</button>
-              <button type="button" onClick={() => setShowResume(false)} aria-label="إغلاق" className="ms-auto h-7 w-7 rounded-full text-soft">×</button>
+              <button type="button" onClick={() => setShowResume(false)} aria-label="إغلاق" title="إغلاق" className="ms-auto flex h-7 w-7 items-center justify-center rounded-full text-soft"><SocialIcon name="Close" size={14} /></button>
             </div>
           </motion.aside>
         )}
@@ -564,7 +565,7 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
                   <p className="text-[.72rem] font-semibold text-accent">قارئ هادئ</p>
                   <h2 className="mt-1 font-display text-[1.22rem] font-semibold text-ink">{tab === 'settings' ? 'أدوات القراءة' : 'اقتباساتي'}</h2>
                 </div>
-                <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft">×</button>
+                <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق" title="إغلاق" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft"><SocialIcon name="Close" size={15} /></button>
               </header>
 
               <div className="mt-4 flex gap-2" role="tablist" aria-label="أقسام القارئ">
@@ -638,11 +639,11 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
                           <blockquote className="font-display text-[.94rem] font-light leading-[1.9] text-ink">«{quote.quote}»</blockquote>
                       <p className="mt-2 text-[.7rem] leading-relaxed text-soft">{quote.title} · {new Date(quote.savedAt).toLocaleDateString('ar-KW')}</p>
                       {quote.note && <p className="mt-2 rounded-xl bg-wash/[.55] px-3 py-2 text-[.72rem] leading-relaxed text-soft">ملاحظتك: {quote.note}</p>}
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <button type="button" onClick={() => goToQuote(quote)} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft hover:border-accent hover:text-accent">الرجوع إلى موضعه</button>
-                            <button type="button" onClick={async () => { await copyText(quote.quote); setCopiedId(quote.id); window.setTimeout(() => setCopiedId(''), 1200) }} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft hover:border-accent hover:text-accent">{copiedId === quote.id ? 'نُسخ' : 'نسخ'}</button>
-                            <button type="button" onClick={() => void shareSavedQuote(quote)} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft hover:border-accent hover:text-accent">مشاركة</button>
-                            <button type="button" onClick={() => removeQuote(quote.id)} className="ms-auto rounded-full px-3 py-1.5 text-[.7rem] text-soft hover:text-accent">حذف</button>
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <button type="button" onClick={() => goToQuote(quote)} aria-label="الرجوع إلى موضع الاقتباس" title="الرجوع إلى موضعه" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent"><SocialIcon name="ArrowBack" size={15} /></button>
+                            <button type="button" onClick={async () => { await copyText(quote.quote); setCopiedId(quote.id); window.setTimeout(() => setCopiedId(''), 1200) }} aria-label="نسخ الاقتباس" title={copiedId === quote.id ? 'نُسخ الاقتباس' : 'نسخ الاقتباس'} className={`flex h-9 w-9 items-center justify-center rounded-full border text-soft hover:border-accent hover:text-accent ${copiedId === quote.id ? 'border-accent text-accent' : 'border-hair'}`}><SocialIcon name={copiedId === quote.id ? 'Check' : 'Copy'} size={15} /></button>
+                            <button type="button" onClick={() => void shareSavedQuote(quote)} aria-label="مشاركة الاقتباس" title="مشاركة الاقتباس" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent"><SocialIcon name="Share" size={15} /></button>
+                            <button type="button" onClick={() => removeQuote(quote.id)} aria-label="حذف الاقتباس" title="حذف الاقتباس" className="ms-auto flex h-9 w-9 items-center justify-center rounded-full text-soft hover:bg-wash hover:text-accent"><SocialIcon name="Trash" size={15} /></button>
                           </div>
                         </article>
                       ))}
@@ -666,7 +667,7 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
             <motion.aside initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 14, opacity: 0 }} onClick={(event) => event.stopPropagation()} className="max-h-[86dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[1.6rem] border border-hair bg-canvas px-5 pb-[calc(1.2rem+env(safe-area-inset-bottom))] pt-5 shadow-[0_28px_80px_-40px_rgba(21,22,26,.75)] sm:rounded-[1.6rem] sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div><p className="text-[.7rem] font-semibold text-accent">توضيح داخل المقال</p><h2 className="mt-1 font-display text-[1.14rem] font-semibold text-ink">{xray.title}</h2></div>
-                <button type="button" onClick={() => setXray(null)} aria-label="إغلاق" className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft">×</button>
+                <button type="button" onClick={() => setXray(null)} aria-label="إغلاق" title="إغلاق" className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft"><SocialIcon name="Close" size={14} /></button>
               </div>
               <p className="mt-4 text-[.88rem] font-light leading-[1.95] text-ink/[.88]">{xray.definition}</p>
               {xray.note && <p className="mt-3 border-r border-accent/[.35] ps-3 text-[.76rem] leading-[1.85] text-soft">{xray.note}</p>}
@@ -1267,12 +1268,28 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
     anchor.click()
   }
 
-  const downloadCard = () => {
-    if (!cardUrl) return
-    const anchor = document.createElement('a')
-    anchor.href = cardUrl
-    anchor.download = `اقتباس-${current.slug}.png`
-    anchor.click()
+  const downloadCard = async () => {
+    if (!cardUrl || !cardBlob) return
+    const file = new File([cardBlob], `اقتباس-${current.slug}.png`, { type: 'image/png' })
+    const shareNavigator = navigator as Navigator & { canShare?: (data: ShareData) => boolean; standalone?: boolean }
+    const isIos = /iP(?:hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || Boolean(shareNavigator.standalone)
+    try {
+      if ((isIos || isStandalone) && navigator.share && shareNavigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'بطاقة اقتباس' })
+        return
+      }
+      const anchor = document.createElement('a')
+      anchor.href = cardUrl
+      anchor.download = file.name
+      anchor.rel = 'noopener'
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+    } catch (error) {
+      if ((error as DOMException)?.name === 'AbortError') return
+      window.open(cardUrl, '_blank', 'noopener,noreferrer')
+    }
   }
 
   const seed = useMemo(() => new Set(ideaTokens(currentSelection?.text || '')), [currentSelection?.text])
@@ -1349,7 +1366,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
             <motion.section initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 18, opacity: 0 }} onClick={(event) => event.stopPropagation()} className="max-h-[90dvh] w-full max-w-[560px] overflow-y-auto rounded-t-[1.75rem] border border-hair bg-canvas px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 shadow-[0_38px_90px_-42px_rgba(21,22,26,.8)] sm:rounded-[1.75rem] sm:p-7" dir="rtl">
               <header className="flex items-start justify-between gap-4">
                 <div><p className="text-[.7rem] font-semibold text-accent">{sheet === 'thread' ? 'الفكرة عبر السنوات' : sheet === 'card' ? 'بطاقة الاقتباس' : 'مشاركة الاقتباس'}</p><h2 className="mt-1 font-display text-[1.16rem] font-semibold text-ink">{current.title}</h2></div>
-                <button type="button" onClick={closeSheet} aria-label="إغلاق" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft">×</button>
+                <button type="button" onClick={closeSheet} aria-label="إغلاق" title="إغلاق" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft"><SocialIcon name="Close" size={16} /></button>
               </header>
               <blockquote className="mt-5 rounded-2xl border border-hair bg-wash/[.45] px-4 py-4 font-display text-[.9rem] font-light leading-[1.9] text-ink">«{currentSelection.text}»</blockquote>
 
@@ -1360,8 +1377,8 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
                     <>
                       <img src={cardUrl} alt="بطاقة اقتباس" className="mx-auto w-full max-w-[360px] rounded-2xl border border-hair shadow-[0_26px_60px_-36px_rgba(21,22,26,.7)]" />
                       <div className="mt-4 flex flex-wrap justify-center gap-2">
-                        <button type="button" onClick={() => void shareCard()} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white">مشاركة البطاقة</button>
-                        <button type="button" onClick={downloadCard} className="rounded-full border border-hair px-5 py-2.5 text-[.76rem] font-semibold text-soft hover:border-accent hover:text-accent">حفظ الصورة</button>
+                        <button type="button" onClick={() => void shareCard()} aria-label="مشاركة البطاقة" title="مشاركة البطاقة" className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Share" size={17} /></button>
+                        <button type="button" onClick={() => void downloadCard()} aria-label="حفظ الصورة" title="حفظ الصورة" className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent"><SocialIcon name="Download" size={17} /></button>
                       </div>
                       <div className="mt-3 flex justify-center">
                         <button type="button" onClick={keepQuote} aria-pressed={quoteSaved} className="rounded-full border border-accent/[.35] px-4 py-2 text-[.72rem] font-semibold text-accent transition-colors hover:bg-accent/[.08]">
@@ -1389,8 +1406,8 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
                     <div className="mt-5">
                       <img src={cardUrl} alt="بطاقة اقتباس" className="mx-auto w-full max-w-[360px] rounded-2xl border border-hair shadow-[0_26px_60px_-36px_rgba(21,22,26,.7)]" />
                       <div className="mt-3 flex flex-wrap justify-center gap-2">
-                        <button type="button" onClick={() => void shareCard()} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white">مشاركة البطاقة</button>
-                        <button type="button" onClick={downloadCard} className="rounded-full border border-hair px-5 py-2.5 text-[.76rem] font-semibold text-soft hover:border-accent hover:text-accent">حفظ الصورة</button>
+                        <button type="button" onClick={() => void shareCard()} aria-label="مشاركة البطاقة" title="مشاركة البطاقة" className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Share" size={17} /></button>
+                        <button type="button" onClick={() => void downloadCard()} aria-label="حفظ الصورة" title="حفظ الصورة" className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent"><SocialIcon name="Download" size={17} /></button>
                       </div>
                       <p className="mt-2 text-center text-[.68rem] text-soft">صورة عالية الجودة 1080×1350 مناسبة لواتساب وX وإنستغرام.</p>
                     </div>

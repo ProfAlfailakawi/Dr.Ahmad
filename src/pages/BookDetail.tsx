@@ -6,6 +6,7 @@ import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
 import { BookWorld } from '../components/BookWorld'
 import tocData from '../data/book-toc-links.json'
+import { SocialIcon } from '../components/icons'
 
 type BookGuide = { idea: string; audience: string; entry: string }
 
@@ -103,7 +104,7 @@ export default function BookDetail() {
   if (!book) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على الكتاب.</div></Page>
 
   return (
-    <Page>
+    <Page className="content-book-detail">
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@graph': [{
@@ -133,17 +134,17 @@ export default function BookDetail() {
           ],
         }],
       }} />
-      <section className="px-6 pb-24 pt-36 md:px-11 md:pt-44">
+      <section className="px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-28 md:px-11 md:pb-24 md:pt-44">
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <Link to="/publications" className="text-[.85rem] text-soft transition-colors hover:text-accent">← كل المؤلفات</Link>
           </FadeUp>
 
-          <div className="mt-10 grid gap-12 md:grid-cols-[1fr_1.1fr] md:gap-16">
+          <div className="book-detail-layout mt-8 grid items-start gap-8 md:mt-10 md:grid-cols-[1fr_1.1fr] md:gap-16">
             <FadeUp>
               {/* الغلاف لا يفتح المتن ولا PDF الكامل. استخدام المتن يحدث في
                   خريطة المعرفة أدناه، أما القراءة العامة فتبقى للعينة المعتمدة. */}
-              <div className="book-detail-cover mx-auto max-w-sm overflow-hidden rounded-xl border border-hair bg-white">
+              <div className="book-detail-cover mx-auto w-full max-w-[20rem] overflow-hidden rounded-2xl border border-hair bg-white md:max-w-sm">
                 {book.cover ? (
                   <img src={book.cover} alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" className="w-full" />
                 ) : (
@@ -153,7 +154,7 @@ export default function BookDetail() {
             </FadeUp>
 
             <FadeUp delay={0.1}>
-              <span className="text-[.8rem] font-semibold uppercase text-accent">كتاب</span>
+              <div className="book-detail-copy"><span className="text-[.76rem] font-semibold text-accent">كتاب منشور</span>
               <h1 className="mt-4 font-display text-[clamp(2rem,4.6vw,3.2rem)] font-bold leading-[1.25] text-ink">
                 <Reveal>{book.title}</Reveal>
               </h1>
@@ -163,45 +164,58 @@ export default function BookDetail() {
               )}
               {book.desc && <p className="mt-5 text-[1.08rem] font-light leading-[1.9] text-ink/80">{book.desc}</p>}
 
-              <dl className="mt-8 grid gap-x-5 gap-y-4 border-t border-hair pt-6 sm:grid-cols-2">
+              <dl className="book-detail-meta-grid mt-7 grid grid-cols-2 gap-2.5 border-t border-hair pt-5 md:mt-8 md:gap-3 md:pt-6">
                 {[
                   ['سنة النشر', book.year],
                   ['الطبعة', book.edition],
                   ['الناشر', book.publisher],
                   ['عدد الصفحات', book.pageCount],
                   ['ISBN / ردمك', book.isbn],
-                ].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-[.72rem] text-soft">{label}</dt><dd className={`mt-1 text-[.88rem] font-medium ${value ? 'text-ink' : 'text-soft/[.65]'}`}>{value || 'غير موثّق بعد'}</dd></div>)}
+                ].map(([label, value]) => (
+                  <div key={label} className={`min-w-0 rounded-2xl border border-hair bg-wash px-3.5 py-3 md:px-4 ${label === 'ISBN / ردمك' ? 'col-span-2' : ''}`}>
+                    <dt className="text-[.66rem] leading-relaxed text-soft">{label}</dt>
+                    <dd dir={label === 'ISBN / ردمك' ? 'ltr' : undefined} className={`mt-1 break-words text-[.82rem] font-medium leading-relaxed ${label === 'ISBN / ردمك' ? 'text-left tabular-nums' : ''} ${value ? 'text-ink' : 'text-soft/[.65]'}`}>{value || 'غير موثّق بعد'}</dd>
+                  </div>
+                ))}
               </dl>
 
-              <div className="mt-9 grid gap-2">
+              <div className="book-detail-guides mt-6 grid gap-2 md:mt-9">
                 {[
                   ['لماذا كُتب الكتاب؟', book.whyWritten || guide?.idea || book.desc],
                   ['الفئة المستهدفة', book.targetAudience || guide?.audience || 'للمهتمين بموضوع الكتاب.'],
                   ['طريقة الدخول', guide?.entry || 'ابدأ بالفكرة العامة، ثم انتقل إلى الفهرس لتختار الفصل الأقرب لسؤالك.'],
                 ].map(([title, text]) => (
                   <details key={title} className="group rounded-2xl border border-hair bg-wash">
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5">
-                      <span className="text-[.78rem] font-semibold text-accent">{title}</span>
+                    <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5">
+                      <span className="text-[.8rem] font-semibold leading-relaxed text-accent">{title}</span>
                       <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
                     </summary>
-                    <p className="border-t border-hair px-4 py-4 text-[.88rem] leading-relaxed text-soft">{text}</p>
+                    <p className="border-t border-hair px-4 py-4 text-[.86rem] leading-[1.9] text-soft">{text}</p>
                   </details>
                 ))}
               </div>
 
-              {book.pdf && (
-                <div className="mt-7 flex flex-wrap items-center gap-3">
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link
+                  to={`/publications/${book.slug}#ask-book-section`}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[.78rem] font-semibold text-white transition-colors hover:bg-accent-deep"
+                >
+                  <SocialIcon name="Question" size={16} />
+                  <span>اسأل هذا الكتاب</span>
+                </Link>
+                {book.pdf && (
                   <a
                     href={book.pdf}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-3 rounded-full bg-accent px-7 py-3 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
+                    className="inline-flex min-h-11 items-center gap-3 rounded-full border border-hair px-5 text-[.78rem] font-semibold text-ink transition-colors duration-300 hover:border-accent hover:text-accent"
                   >
                     <span>عرض عيّنة الكتاب</span>
-                    <span className="text-[.85rem] opacity-80">PDF</span>
+                    <span className="text-[.72rem] text-soft">PDF</span>
                   </a>
-                </div>
-              )}
+                )}
+              </div>
+              </div>
             </FadeUp>
           </div>
 

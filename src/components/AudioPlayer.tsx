@@ -172,7 +172,8 @@ export const openAudioPlayer = (controlId: string, sourceKey?: string) => {
   window.dispatchEvent(new CustomEvent('audio-player:open', { detail: { controlId, sourceKey } }))
 }
 
-export function AudioPlayer({ sources, title, compact = false, controlId }: { sources: AudioSource[]; title: string; compact?: boolean; controlId?: string }) {
+export function AudioPlayer({ sources, title, compact = false, controlId, showChapters = false }:
+  { sources: AudioSource[]; title: string; compact?: boolean; controlId?: string; showChapters?: boolean }) {
   const player = usePersistentAudio()
   const rootRef = useRef<HTMLDivElement>(null)
   const [selectedKey, setSelectedKey] = useState(() => {
@@ -267,6 +268,26 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
     return () => { on = false }
   }, [expanded, transcriptSrc])
 
+  /* ═══ محاور الحلقة في شريط التقدّم ═══
+     كانت المحاور مدفونةً داخل لوحة نصّ الحلقة، فلا تُرى إلا بفتحةٍ ثانية —
+     ولم تكن تُرى أصلاً في مجلس الفكرة لأن اللوحة لا تُفتح هناك. نجلب المحاور
+     وحدها (بلا انتظار اللوحة) حيث تُطلب صراحةً، فيبقى المقال كما هو تماماً
+     ولا يُحمَّل بايتٌ على من لا يستمع. */
+  const [chapters, setChapters] = useState<DialogueChapter[]>([])
+  useEffect(() => {
+    setChapters([])
+    if (!showChapters || !transcriptSrc) return
+    let on = true
+    fetch(transcriptSrc, { cache: 'force-cache' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!on || !Array.isArray(data?.chapters)) return
+        setChapters(data.chapters.filter((chapter: DialogueChapter) => typeof chapter?.startSec === 'number'))
+      })
+      .catch(() => { /* الحلقة تُسمع وإن تعذّرت محاورها */ })
+    return () => { on = false }
+  }, [showChapters, transcriptSrc])
+
   /* القفز إلى محورٍ أو سطرٍ قبل بدء التشغيل: المتصفّح لا يعرف مدة الملف بعد،
      فـseekTo يسقط صامتاً. نحفظ الطلب ونُنفّذه لحظة تُعرف المدة. */
   const [pendingSeek, setPendingSeek] = useState<number | null>(null)
@@ -306,6 +327,19 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
       else break
     }
   }
+
+  /* حدود المقاطع: يبدأ الأول من الصفر ليبتلع المقدمة الموسيقية، وينتهي
+     الأخير عند نهاية الملف ليبتلع الخاتمة — فلا فجوة في الشريط ولا قفزة. */
+  const segments = duration > 0 && chapters.length > 1
+    ? chapters.map((chapter, index) => ({
+      title: String(chapter.title || ''),
+      from: index === 0 ? 0 : Number(chapter.startSec) || 0,
+      to: index + 1 < chapters.length ? (Number(chapters[index + 1].startSec) || duration) : duration,
+      seekTo: Number(chapter.startSec) || 0,
+    })).filter((segment) => segment.to > segment.from)
+    : []
+  const activeSegment = segments.findIndex((segment, index) =>
+    current >= segment.from && (index + 1 === segments.length || current < segment.to))
 
   const jumpTo = (seconds: number) => {
     if (active && duration) { player.seekTo(seconds); return }
@@ -377,22 +411,56 @@ export function AudioPlayer({ sources, title, compact = false, controlId }: { so
                 {source.key !== 'dialogue' && <VoiceFigure kind={(source as { avatar?: 'man' | 'woman' }).avatar === 'woman' ? 'woman' : 'man'} size={15} />}
                 {source.key === 'dialogue' ? 'استمع' : source.label}
               </p>
-              <p className="mt-0.5 text-[.68rem] text-soft">{active ? `${clock(current)} / ${clock(duration)}` : 'جاهز للاستماع'}</p>
+              <p className="mt-0.5 truncate text-[.68rem] text-soft">
+                {active
+                  ? `${clock(current)} / ${clock(duration)}${segments[activeSegment]?.title ? ` · ${segments[activeSegment].title}` : ''}`
+                  : 'جاهز للاستماع'}
+              </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={(event) => {
-              if (!active || !duration) return
-              const rect = event.currentTarget.getBoundingClientRect()
-              player.seekTo(((event.clientX - rect.left) / rect.width) * duration)
-            }}
-            className="mt-4 block h-1.5 w-full overflow-hidden rounded-full bg-canvas"
-            aria-label="شريط تقدم الصوت"
-          >
-            <span className="block h-full rounded-full bg-accent transition-[width]" style={{ width: `${percent}%` }} />
-          </button>
+          {/* الشريط نفسه هو التنقّل: يُقسَم بعدد المحاور فلا يُضاف عنصرٌ واحد
+              إلى الواجهة. نقرةٌ على قطعةٍ تقفز إلى محورها، والنقر داخل القطعة
+              يبحث بدقّةٍ كما كان. وحين لا محاور يبقى الشريط كما هو حرفاً. */}
+          {segments.length > 1 ? (
+            <div className="mt-4 flex w-full items-center gap-[3px]" role="group" aria-label="محاور الحلقة">
+              {segments.map((segment, index) => {
+                const span = segment.to - segment.from
+                const fill = Math.max(0, Math.min(100, ((current - segment.from) / span) * 100))
+                return (
+                  <button
+                    key={`${segment.from}-${index}`}
+                    type="button"
+                    title={segment.title}
+                    aria-label={`المحور ${index + 1}${segment.title ? `: ${segment.title}` : ''}`}
+                    aria-current={activeSegment === index ? 'true' : undefined}
+                    onClick={(event) => {
+                      const rect = event.currentTarget.getBoundingClientRect()
+                      const within = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
+                      jumpTo(segment.from + within * span)
+                    }}
+                    style={{ flexGrow: span, flexBasis: 0 }}
+                    className="block h-1.5 overflow-hidden rounded-full bg-canvas transition-opacity hover:opacity-80"
+                  >
+                    <span className="block h-full rounded-full bg-accent transition-[width]" style={{ width: `${fill}%` }} />
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={(event) => {
+                if (!active || !duration) return
+                const rect = event.currentTarget.getBoundingClientRect()
+                player.seekTo(((event.clientX - rect.left) / rect.width) * duration)
+              }}
+              className="mt-4 block h-1.5 w-full overflow-hidden rounded-full bg-canvas"
+              aria-label="شريط تقدم الصوت"
+            >
+              <span className="block h-full rounded-full bg-accent transition-[width]" style={{ width: `${percent}%` }} />
+            </button>
+          )}
 
 
           <div className="mt-4 flex flex-wrap items-center gap-2">

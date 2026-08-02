@@ -4,6 +4,7 @@ import { FadeUp, Page, Reveal } from '../components/ui'
 import { getArticleNeighbors, type ArticleRecord, type BookRecord, type MediaRecord, type PaperRecord } from '../lib/cms'
 import { SITE_URL } from '../data'
 import { NextStep } from '../components/NextStep'
+import { ArticlePivot, pivotOf } from '../components/ArticlePivot'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, useReaderPreferences, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
@@ -55,7 +56,9 @@ function ClosingSignature() {
 }
 
 
-function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
+function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; title: string }) {
+  /* الفقرة التي تحمل لحظة الانعطاف — تُحسب مرّة، ولا شيء يُرسم إن لم توجد. */
+  const pivotParagraph = pivotOf(slug)?.paragraph ?? -1
   const audio = usePersistentAudio()
   const popularQuotes = usePopularQuotes(slug, body)
   const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([])
@@ -294,6 +297,10 @@ function SyncedArticleBody({ slug, body }: { slug: string; body: string }) {
                   <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
                 )}
               </p>
+              {/* لحظة الانعطاف: علامةٌ في هامش الفقرة بموضعٍ مطلق — خارج تدفّق
+                  النصّ تماماً، فلا تزيح حرفاً ولا تضيف سطراً. والكرت لا يُفتح
+                  إلا بالنقر عليها. */}
+              {pivotParagraph === pIdx && <ArticlePivot slug={slug} title={title} />}
             </div>
           )
         })}
@@ -786,7 +793,7 @@ export default function ArticleDetail() {
               </div>
             ) : article.body ? (
               <>
-                <SyncedArticleBody slug={article.slug} body={article.body} />
+                <SyncedArticleBody slug={article.slug} body={article.body} title={article.title} />
                 <ClosingSignature />
                 {/* أداة التحديد لا تظهر إلا حين يختار القارئ نصاً؛ لا تزاحم نهاية المقال. */}
                 <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />

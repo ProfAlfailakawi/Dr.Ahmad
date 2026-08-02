@@ -3527,3 +3527,31 @@ body.selection-active .floating-actions {
   color: rgb(var(--c-soft) / .75);
 }
 
+
+/* ═══ لحظة الانعطاف ═══
+   علامةٌ في هامش الفقرة بموضعٍ مطلق: خارج تدفّق النصّ تماماً، فلا تزيح
+   حرفاً ولا تضيف سطراً ولا تكسر لفّ الكلمات. تبقى شبه شفافة حتى يقترب
+   المؤشر من الفقرة، فلا تلوّث القراءة لمن لا يريدها. */
+.pivot-mark {
+  position: absolute;
+  top: .5rem;
+  inset-inline-end: -1.45rem;
+  display: grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent, #3E5C78);
+  opacity: .28;
+  cursor: pointer;
+  transition: opacity .24s ease;
+}
+.pivot-mark:hover,
+.pivot-mark:focus-visible { opacity: 1; }
+.popular-highlight-paragraph:hover .pivot-mark { opacity: .6; }
+@media (max-width: 900px) {
+  /* لا هامش يتّسع على الجوال: تنزل داخل الحافة بلا أن تلمس النص. */
+  .pivot-mark { inset-inline-end: -.15rem; top: .35rem; opacity: .4; }
+}

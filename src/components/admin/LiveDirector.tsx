@@ -10,6 +10,8 @@ import {
   applyReferenceFrame,
   createArticleVideoProject,
   createPublicVideoProject,
+  ensureLiveDirectorPromptVariants,
+  getFlowPrompt,
   isValidYouTubeUrl,
   liveDirectorDailyPlan,
   liveDirectorPerformanceInsights,
@@ -18,6 +20,7 @@ import {
   setLiveDirectorSegmentStatus,
   setSegmentContinuity,
   type ContinuityMode,
+  type FlowPromptMode,
   type LiveDirectorClipStatus,
   type LiveDirectorPlatform,
   type LiveDirectorProject,
@@ -113,7 +116,9 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
       const db = await getDb(); if (!db) return
       const { collection, getDocs, limit, orderBy, query } = await import('firebase/firestore')
       const snapshot = await getDocs(query(collection(db, 'admin_live_director_projects'), orderBy('updatedAt', 'desc'), limit(12)))
-      setProjects(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<StoredProject, 'id'>) })).sort((left, right) => safeTimestamp((right as unknown as { updatedAt?: unknown }).updatedAt) - safeTimestamp((left as unknown as { updatedAt?: unknown }).updatedAt)))
+      setProjects(snapshot.docs
+        .map((item) => ensureLiveDirectorPromptVariants({ id: item.id, ...(item.data() as Omit<StoredProject, 'id'>) } as StoredProject))
+        .sort((left, right) => safeTimestamp((right as unknown as { updatedAt?: unknown }).updatedAt) - safeTimestamp((left as unknown as { updatedAt?: unknown }).updatedAt)))
     } catch { /* أول تشغيل قبل نشر القواعد: المشروع الحالي يبقى محلياً */ }
   }
 
@@ -365,7 +370,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
 
         <section className={card}><p className="text-[.72rem] font-semibold text-accent">السيناريو المختصر</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">{project.title}</h3><p className="mt-2 text-[.78rem] leading-relaxed text-soft">{project.centralMessage}</p><div className="mt-4 rounded-xl border border-hair bg-canvas p-4"><span className="text-[.66rem] font-semibold text-accent">النص المنطوق · {project.narration.split(/\s+/).filter(Boolean).length} كلمة</span><p className="mt-2 text-[.8rem] leading-loose text-ink">{project.narration}</p></div><details className="mt-4 rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-ink">قفل الهوية وملاحظات الاستمرارية</summary><p className="mt-3 text-[.72rem] leading-relaxed text-soft">{project.identityLock}</p><ul className="mt-3 grid gap-1 text-[.7rem] text-soft">{project.continuityNotes.map((item) => <li key={item}>— {item}</li>)}</ul></details></section>
 
-        <section className={card} data-live-director-daily-plan="true"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.72rem] font-semibold text-accent">خطة العمل اليومية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">ولّد ثلاثة مقاطع فقط في اليوم.</h3></div><span className="text-[.68rem] text-soft">إذا فشل مقطع، أصلحه وحده.</span></div><div className="mt-5 grid gap-6">{dailyPlan.map((day) => <section key={day.day}><h4 className="mb-3 text-[.76rem] font-semibold text-ink">اليوم {day.day}</h4><div className="grid gap-4 xl:grid-cols-3">{day.clips.map((segment) => <ClipCard key={segment.id} segment={segment} status={CLIP_STATUS_LABELS} busy={busy} repairIssue={repairIssue[segment.id] || LIVE_DIRECTOR_REPAIR_ISSUES[0]} hasFile={Boolean(clipFiles[segment.id])} frameSecond={frameSecond[segment.id] || ''} onStatus={(value) => updateClipStatus(segment.id, value)} onRepairIssue={(value) => setRepairIssue((previous) => ({ ...previous, [segment.id]: value }))} onRepair={() => repairClip(segment.id)} onCopy={() => void navigator.clipboard.writeText(segment.prompt).then(() => setNotice(`نُسخ برومبت المقطع ${segment.order}.`))} onPickClip={(file) => { setClipFiles((previous) => ({ ...previous, [segment.id]: file })); void uploadAsset(file, 'clip', segment.id) }} onFrameSecond={(value) => setFrameSecond((previous) => ({ ...previous, [segment.id]: value }))} onCaptureFrame={(mode) => void captureFrame(segment.id, mode)} onManualFrame={(file) => void uploadManualFrame(segment.id, file)} onContinuity={(change) => changeContinuity(segment.id, change)} />)}</div></section>)}</div></section>
+        <section className={card} data-live-director-daily-plan="true"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[.72rem] font-semibold text-accent">خطة العمل اليومية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">ولّد ثلاثة مقاطع فقط في اليوم.</h3></div><span className="text-[.68rem] text-soft">إذا فشل مقطع، أصلحه وحده.</span></div><div className="mt-5 grid gap-6">{dailyPlan.map((day) => <section key={day.day}><h4 className="mb-3 text-[.76rem] font-semibold text-ink">اليوم {day.day}</h4><div className="grid gap-4 xl:grid-cols-3">{day.clips.map((segment) => <ClipCard key={segment.id} segment={segment} status={CLIP_STATUS_LABELS} busy={busy} repairIssue={repairIssue[segment.id] || LIVE_DIRECTOR_REPAIR_ISSUES[0]} hasFile={Boolean(clipFiles[segment.id])} frameSecond={frameSecond[segment.id] || ''} onStatus={(value) => updateClipStatus(segment.id, value)} onRepairIssue={(value) => setRepairIssue((previous) => ({ ...previous, [segment.id]: value }))} onRepair={() => repairClip(segment.id)} onCopy={(prompt, mode) => void navigator.clipboard.writeText(prompt).then(() => setNotice(`نُسخ برومبت المقطع ${segment.order} — ${mode === 'speech' ? 'مع كلام' : 'بدون كلام'}.`))} onPickClip={(file) => { setClipFiles((previous) => ({ ...previous, [segment.id]: file })); void uploadAsset(file, 'clip', segment.id) }} onFrameSecond={(value) => setFrameSecond((previous) => ({ ...previous, [segment.id]: value }))} onCaptureFrame={(mode) => void captureFrame(segment.id, mode)} onManualFrame={(file) => void uploadManualFrame(segment.id, file)} onContinuity={(change) => changeContinuity(segment.id, change)} />)}</div></section>)}</div></section>
 
         <section className={card}><p className="text-[.72rem] font-semibold text-accent">بوابة الجودة</p><div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-6">{Object.entries({ 'الفكرة': project.quality.idea, 'المدة': project.quality.duration, 'المقاطع': project.quality.clips, 'الأفتار': project.quality.avatar, 'الترابط': project.quality.continuity, 'النشر': project.quality.publishing }).map(([label, value]) => <div key={label} className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.64rem] text-soft">{label}</span><strong className="mt-1 block text-[.76rem] text-ink">{value}</strong></div>)}</div><ul className="mt-4 grid gap-1 text-[.7rem] leading-relaxed text-soft">{project.quality.notes.map((item) => <li key={item}>— {item}</li>)}</ul></section>
 
@@ -410,7 +415,7 @@ type ClipCardProps = {
   onStatus: (value: LiveDirectorClipStatus) => void
   onRepairIssue: (value: LiveDirectorRepairIssue) => void
   onRepair: () => void
-  onCopy: () => void
+  onCopy: (prompt: string, mode: FlowPromptMode) => void
   onPickClip: (file: File) => void
   onFrameSecond: (value: string) => void
   onCaptureFrame: (mode: 'last' | 'manual') => void
@@ -421,6 +426,8 @@ type ClipCardProps = {
 function ClipCard(props: ClipCardProps) {
   const { segment } = props
   const founding = segment.continuityMode === 'independent'
+  const [promptMode, setPromptMode] = useState<FlowPromptMode>(() => segment.voiceMode === 'ambient' ? 'silent' : 'speech')
+  const activePrompt = getFlowPrompt(segment, promptMode)
   return (
     <article className="min-w-0 rounded-2xl border border-hair bg-canvas p-4" data-flow-clip={segment.id}>
       <div className="flex items-start justify-between gap-3">
@@ -468,12 +475,31 @@ function ClipCard(props: ClipCardProps) {
       </details>}
 
       <details className="mt-3 rounded-xl border border-hair p-3">
-        <summary className="cursor-pointer list-none text-[.68rem] font-semibold text-accent">برومبت Flow باللغة الإنجليزية</summary>
-        <pre dir="ltr" className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-left font-mono text-[.62rem] leading-relaxed text-soft">{segment.prompt}</pre>
+        <summary className="cursor-pointer list-none text-[.68rem] font-semibold text-accent">برومبت Flow · إنجليزي بالكامل</summary>
+        <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-wash p-1" role="tablist" aria-label={`خيار الصوت للمقطع ${segment.order}`}>
+          {(['speech', 'silent'] as FlowPromptMode[]).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="tab"
+              aria-selected={promptMode === mode}
+              onClick={() => setPromptMode(mode)}
+              className={`min-h-9 rounded-lg px-3 py-2 text-[.66rem] font-semibold transition ${promptMode === mode ? 'bg-canvas text-accent shadow-sm' : 'text-soft hover:text-ink'}`}
+            >
+              {mode === 'speech' ? 'مع كلام' : 'بدون كلام'}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[.62rem] leading-relaxed text-soft">
+          {promptMode === 'speech'
+            ? 'الجملة الصوتية لا تدخل داخل البرومبت؛ أضفها منفصلة في Flow. لا كتابة عربية ولا ترجمة مولدة داخل الفيديو.'
+            : 'المشهد صامت تماماً: لا حوار ولا تعليق صوتي ولا حركة فم توحي بالكلام.'}
+        </p>
+        <pre dir="ltr" className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-left font-mono text-[.62rem] leading-relaxed text-soft">{activePrompt}</pre>
       </details>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={props.onCopy} className={ghost}>نسخ البرومبت</button>
+        <button type="button" onClick={() => props.onCopy(activePrompt, promptMode)} className={ghost}>نسخ · {promptMode === 'speech' ? 'مع كلام' : 'بدون كلام'}</button>
         <label className={`${ghost} cursor-pointer`}>رفع المقطع<input type="file" accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) props.onPickClip(file); event.currentTarget.value = '' }} /></label>
       </div>
 

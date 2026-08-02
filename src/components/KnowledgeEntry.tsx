@@ -24,7 +24,7 @@ export function KnowledgeEntry({ compact = false }: { compact?: boolean }) {
             className={`relative rounded-[1.05rem] px-4 py-3 transition-all ${active
               ? 'bg-accent text-white shadow-sm'
               : option.special
-                ? 'border border-accent/35 bg-accent/[.06] text-ink hover:border-accent hover:bg-accent/[.1]'
+                ? 'border border-accent/[.35] bg-accent/[.06] text-ink hover:border-accent hover:bg-accent/[.1]'
                 : 'bg-canvas text-ink hover:text-accent'}`}
           >
             {option.special && !active && <span className="absolute left-3 top-3 rounded-full bg-accent px-2 py-0.5 text-[.56rem] font-bold text-white">ميزة خاصة</span>}

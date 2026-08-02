@@ -874,37 +874,37 @@ export default function ArticleDetail() {
           </FadeUp>
 
           <FadeUp className="serenity-hide">
-            <nav className="mt-10 border-t border-hair pt-6" aria-label="التنقل بين المقالات">
-              <div className="grid items-start gap-5 sm:grid-cols-[1fr_auto_1fr]">
-                <div className="min-w-0 text-right">
-                  <span className="block text-[.7rem] text-soft">السابق</span>
+            <nav className="mt-8 border-t border-hair pt-4" aria-label="التنقل بين المقالات">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-4">
+                <div className="flex min-w-0 items-center gap-2 text-right">
                   {next ? (
-                    <div className="mt-2 flex items-start gap-3">
-                      <Link to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
-                        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
-                      </Link>
-                      <p className="min-w-0 pt-1 font-display text-[.95rem] font-semibold leading-[1.65] text-ink">{next.title}</p>
-                    </div>
-                  ) : <span className="mt-2 block text-[.78rem] text-soft">لا يوجد مقال سابق</span>}
+                    <Link to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                    </Link>
+                  ) : <span className="h-9 w-9 shrink-0" aria-hidden />}
+                  <div className="min-w-0">
+                    <span className="block text-[.58rem] font-light text-soft">السابق</span>
+                    <p className="mt-0.5 truncate font-display text-[.68rem] font-light leading-normal text-ink" title={next?.title}>{next?.title || 'لا يوجد مقال سابق'}</p>
+                  </div>
                 </div>
 
-                <div className="flex flex-col items-center gap-2">
-                  <span className="block text-[.7rem] text-soft">جميع المقالات</span>
-                  <Link to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round"><path d="M5 6h14M5 12h14M5 18h14" /><circle cx="3" cy="6" r=".5" fill="currentColor" stroke="none" /><circle cx="3" cy="12" r=".5" fill="currentColor" stroke="none" /><circle cx="3" cy="18" r=".5" fill="currentColor" stroke="none" /></svg>
+                <div className="flex min-w-[4.5rem] flex-col items-center gap-1 text-center">
+                  <span className="block text-[.58rem] font-light text-soft">جميع المقالات</span>
+                  <Link to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round"><path d="M5 6h14M5 12h14M5 18h14" /><circle cx="3" cy="6" r=".45" fill="currentColor" stroke="none" /><circle cx="3" cy="12" r=".45" fill="currentColor" stroke="none" /><circle cx="3" cy="18" r=".45" fill="currentColor" stroke="none" /></svg>
                   </Link>
                 </div>
 
-                <div className="min-w-0 text-right sm:text-left">
-                  <span className="block text-[.7rem] text-soft">التالي</span>
+                <div className="flex min-w-0 flex-row-reverse items-center gap-2 text-left">
                   {prev ? (
-                    <div className="mt-2 flex items-start gap-3 sm:flex-row-reverse">
-                      <Link to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
-                        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
-                      </Link>
-                      <p className="min-w-0 pt-1 font-display text-[.95rem] font-semibold leading-[1.65] text-ink">{prev.title}</p>
-                    </div>
-                  ) : <span className="mt-2 block text-[.78rem] text-soft">لا يوجد مقال تالٍ</span>}
+                    <Link to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
+                    </Link>
+                  ) : <span className="h-9 w-9 shrink-0" aria-hidden />}
+                  <div className="min-w-0">
+                    <span className="block text-[.58rem] font-light text-soft">التالي</span>
+                    <p className="mt-0.5 truncate font-display text-[.68rem] font-light leading-normal text-ink" title={prev?.title}>{prev?.title || 'لا يوجد مقال تالٍ'}</p>
+                  </div>
                 </div>
               </div>
             </nav>

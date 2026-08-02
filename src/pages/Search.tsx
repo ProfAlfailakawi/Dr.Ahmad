@@ -116,6 +116,16 @@ export default function Search() {
     const requested = searchParams.get('tab') as TabId | null
     return requested === 'askbook' || (requested && RESULT_TABS.some((item) => item.id === requested)) ? requested : 'all'
   })
+
+  /* بطاقات طرق البحث تغيّر query string من دون إعادة تحميل الصفحة. لذلك
+     نزامن الوضع النشط مع الرابط حتى يختفي البحث العام فور دخول «ابحث في كتاب»
+     ويعود فور الرجوع إلى أي مسار آخر. */
+  useEffect(() => {
+    const requested = searchParams.get('tab') as TabId | null
+    const nextTab: TabId = requested === 'askbook' || (requested && RESULT_TABS.some((item) => item.id === requested)) ? requested : 'all'
+    setTab((current) => current === nextTab ? current : nextTab)
+  }, [searchParams])
+
   const [cat, setCat] = useState('الكل')
   const [year, setYear] = useState('الكل')
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -381,32 +391,9 @@ export default function Search() {
 
       <div className="px-6 pt-8 md:px-11"><div className="mx-auto max-w-3xl"><KnowledgeEntry /></div></div>
 
-      <div className="px-6 pt-7 md:px-11">
-        <div className="mx-auto max-w-shell">
-          <button
-            type="button"
-            onClick={() => {
-              setTab('askbook')
-              const next = new URLSearchParams(window.location.search)
-              next.set('tab', 'askbook')
-              window.history.replaceState(window.history.state, '', `${window.location.pathname}?${next.toString()}`)
-            }}
-            className={`group flex w-full items-center justify-between gap-5 rounded-[1.65rem] border px-5 py-5 text-right transition-colors md:px-7 ${tab === 'askbook' ? 'border-accent bg-accent/[.045]' : 'border-hair bg-wash/[.45] hover:border-accent/[.55]'}`}
-            aria-pressed={tab === 'askbook'}
-          >
-            <span className="min-w-0">
-              <span className="block text-[.7rem] font-semibold text-accent">ميزة مستقلة</span>
-              <strong className="mt-1 block font-display text-[clamp(1.15rem,2.2vw,1.55rem)] font-semibold text-ink">ابحث في كتاب</strong>
-              <span className="mt-1 block text-[.78rem] leading-relaxed text-soft">اختر كتاباً واحداً، ثم ابحث في متنه الموثق فقط.</span>
-            </span>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent group-hover:bg-accent group-hover:text-white"><SocialIcon name="Search" size={17} /></span>
-          </button>
-        </div>
-      </div>
-
       <section className="px-6 py-10 md:px-11 md:py-12">
         <div className="mx-auto max-w-shell">
-          <FadeUp>
+          {tab !== 'askbook' && <FadeUp>
             <div className="border-b border-hair pb-8">
               <div className="relative">
                 <input
@@ -488,7 +475,7 @@ export default function Search() {
                 )}
               </div>
             </div>
-          </FadeUp>
+          </FadeUp>}
 
           {(searchStarted || tab === 'askbook') && <FadeUp delay={0.05}>
             <div className="mt-8 flex flex-wrap items-center justify-between gap-4">

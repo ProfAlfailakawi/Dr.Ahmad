@@ -20,6 +20,14 @@ const forFixture = (code) => code.replace(/(\bfrom\s+['"]\.{1,2}\/[^'"]+?)\.ts([
 const copyLib = (name) => writeFileSync(join(fixture, name), forFixture(readFileSync(join(root, `src/lib/${name}`), 'utf8')))
 copyLib('editorial-memory.ts')
 copyLib('intelligence.ts')
+copyLib('smart-search.ts')
+
+// محرك البحث الذكي يعتمد على قاموس المجال المستورد من JSON. نزرع القاموس الحقيقي
+// داخل نسخة المختبر حتى يبقى الاختبار ممثلاً للسلوك الحي ولا يتعطل بسبب JSON modules.
+writeFileSync(join(fixture, 'dr-ahmad-domain-glossary.ts'),
+  forFixture(readFileSync(join(root, 'src/lib/dr-ahmad-domain-glossary.ts'), 'utf8'))
+    .replace(/^import\s+glossaryData\s+from\s+['"][^'"]+['"][^\n]*$/m,
+      `const glossaryData = JSON.parse(${JSON.stringify(readFileSync(join(root, 'src/data/dr-ahmad-domain-glossary.json'), 'utf8'))})`))
 
 // خريطة الكتب تُستورد من JSON بسمة ‎with { type: 'json' } وهي ممنوعة في commonjs،
 // فنزرع البيانات الحقيقية نفسها داخل المختبر بدل اختراع بديلٍ يخالف السلوك الحيّ.

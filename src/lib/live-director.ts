@@ -42,8 +42,9 @@ export type ContinuityMode = 'direct' | 'soft' | 'thematic' | 'independent'
 export type ReferenceStrategy = 'last_frame' | 'selected_frame' | 'style_only' | 'none'
 /** طريقة الصوت داخل المقطع: حديث مباشر، تعليق فوق مشهد، أو صورة وصوت بيئي بلا كلام. */
 export type VoiceMode = 'avatar_speech' | 'voice_over' | 'ambient'
-export type FlowPromptMode = 'speech' | 'silent'
-export type FlowPromptVariants = Record<FlowPromptMode, string>
+export type FlowPromptMode = 'speech_ar' | 'speech_en' | 'silent'
+/** يحتفظ بمفتاح speech القديم للقراءة فقط؛ كل مشروع يُرقّى تلقائياً إلى المسارات الثلاثة. */
+export type FlowPromptVariants = Record<FlowPromptMode, string> & { speech?: string }
 
 export type OverlayCue = {
   kind: 'عنوان' | 'اقتباس' | 'رابط' | 'دعوة'
@@ -73,7 +74,7 @@ export type LiveDirectorSegment = {
   shotCount: 1 | 2 | 3
   shotPlan: { from: number; to: number; framing: string }[]
   prompt: string
-  /** نسختان إنجليزيتان خالصتان: مع أداء صوتي أو بلا أي كلام. */
+  /** ثلاثة مسارات: كلام عربي، كلام إنجليزي، أو بلا كلام؛ البرومبتات نفسها إنجليزية ولا تولّد نصاً مرئياً. */
   flowPrompts?: FlowPromptVariants
   /** وصف بصري إنجليزي مشتق داخلياً من موضوع المقطع من دون تسريب العربية إلى Flow. */
   visualBrief?: string
@@ -500,9 +501,9 @@ function roleInEnglish(role: string) {
 const REFERENCE_HEADER ='Continue from the provided reference frame. Use it as the visual starting point of the new 8-second clip. Preserve the selected Dr. Ahmad avatar, wardrobe, lighting, environment, color palette, background details, time of day and cinematic tone. Continue the motion naturally instead of restarting or redesigning the scene from scratch.'
 
 function referenceInstruction(mode: ContinuityMode, strategy: ReferenceStrategy, hasFrame: boolean) {
-  if (strategy === 'none' || mode === 'independent') return 'Reference image: none. Build this scene from the written description only.'
-  if (!hasFrame) return `Reference image: not uploaded yet. Follow the written continuity notes instead of assuming a frame exists. ${CONTINUITY_CLAUSES[mode].join(' ')}`
-  if (strategy === 'style_only') return `Reference image: use the attached frame for identity, wardrobe, palette and lighting only, not for composition. ${CONTINUITY_CLAUSES[mode].join(' ')}`
+  if (strategy === 'none' || mode === 'independent') return 'Reference handling: no uploaded frame is required. Build the opening state from the written sequence instructions.'
+  if (!hasFrame) return `Reference handling: no uploaded frame is required. Continue from the immediately previous generated clip using sequence continuity and the written handoff below. ${CONTINUITY_CLAUSES[mode].join(' ')}`
+  if (strategy === 'style_only') return `Reference handling: use the optional attached frame for identity, wardrobe, palette and lighting only, not for composition. ${CONTINUITY_CLAUSES[mode].join(' ')}`
   return `${REFERENCE_HEADER} ${CONTINUITY_CLAUSES[mode].join(' ')}`
 }
 
@@ -552,7 +553,7 @@ function shotPlan(count: 1 | 2 | 3, appearance: FlowAppearance) {
 }
 
 function constraintsFor(appearance: FlowAppearance, count: number) {
-  const common = ['generated text', 'Arabic text inside the scene', 'logos', 'subtitles generated inside Flow', 'multiple locations', 'fast cuts', 'shaky camera', 'visual clutter', 'sudden lighting changes']
+  const common = ['generated text', 'visible text in any language', 'Arabic text inside the scene', 'English text inside the scene', 'letters', 'numbers', 'captions', 'subtitles generated inside Flow', 'labels', 'signage', 'interface text', 'logos', 'watermarks', 'multiple locations', 'fast cuts', 'shaky camera', 'visual clutter', 'sudden lighting changes']
   if (appearance === 'visual_only') return [...common, 'extra characters', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
   return [...common, 'face changes', 'identity drift', 'voice changes', 'wardrobe changes', 'age changes', 'lookalike replacement', 'distorted hands', 'extra fingers', 'unnatural mouth movement', 'poor lip synchronization', 'exaggerated gestures', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
 }
@@ -638,6 +639,19 @@ function englishOnly(value: string) {
     .trim()
 }
 
+function continuationOpening(segment: Pick<LiveDirectorSegment, 'order' | 'continuityMode'>) {
+  if (segment.order <= 1) {
+    return 'OPENING CLIP — This is the first clip in the sequence. Establish the exact visual world, identity, wardrobe, location, lighting direction, camera logic, motion rhythm, sound texture, and emotional tone that every following clip must inherit.'
+  }
+  return `CONTINUATION CLIP ${segment.order} — This clip is a continuation of clip ${segment.order - 1} in the same uninterrupted video sequence. Begin from the exact visual, emotional, spatial, lighting, wardrobe, identity, camera-direction, motion, and sound state established at the end of the immediately previous clip. Do not restart, reintroduce, redesign, or treat this as a separate video. No reference image upload is required; preserve continuity from the previous generated clip and from the written handoff instructions below.`
+}
+
+function flowModeLabel(mode: FlowPromptMode) {
+  if (mode === 'speech_ar') return 'WITH ARABIC SPEECH'
+  if (mode === 'speech_en') return 'WITH ENGLISH SPEECH'
+  return 'WITHOUT SPEECH'
+}
+
 function buildFlowPrompt(input: {
   segment: Omit<LiveDirectorSegment, 'prompt' | 'promptVersions' | 'flowPrompts'>
   title: string
@@ -648,6 +662,7 @@ function buildFlowPrompt(input: {
 }) {
   const { segment, mode } = input
   const avatar = segment.appearance !== 'visual_only'
+  const spokenLanguage = mode === 'speech_ar' ? 'Arabic' : mode === 'speech_en' ? 'English' : ''
   const shotText = segment.shotPlan.map((shot, index) => `Shot ${index + 1} (${shot.from.toFixed(1)}-${shot.to.toFixed(1)}s): ${shot.framing}.`).join(' ')
   const visualBrief = segment.visualBrief || visualBriefFor(`${input.title} ${segment.message}`, segment.role, segment.order)
   const subject = avatar
@@ -656,20 +671,21 @@ function buildFlowPrompt(input: {
   const sound = mode === 'silent'
     ? 'Environmental sound only. No dialogue, no voice-over, no narration, no spoken words, and no vocal reactions.'
     : avatar
-      ? 'Natural room ambience under the approved avatar performance. The exact spoken line is supplied separately by the creator in Flow, never embedded in this prompt. Preserve precise lip synchronization through every angle change.'
-      : 'Subtle natural environmental sound. A single short creator-supplied voice-over may be added separately; do not generate or infer any spoken wording from this prompt.'
+      ? `Natural room ambience under the approved avatar performance. Spoken language: ${spokenLanguage}. Use only the exact creator-supplied ${spokenLanguage} line entered separately in Flow. Do not translate, paraphrase, add, omit, or invent any words. Preserve precise lip synchronization through every angle change.`
+      : `Subtle natural environmental sound. Spoken language for the separately supplied voice-over: ${spokenLanguage}. Use only the exact creator-supplied line; do not translate, paraphrase, add, omit, or invent any words.`
   const speech = mode === 'silent'
-    ? 'Performance mode: completely silent visual performance. The avatar, if present, must not move the mouth as if speaking.'
+    ? 'Performance mode: completely silent visual performance. The avatar, if present, must keep the mouth naturally closed and must not move the lips as if speaking.'
     : avatar
-      ? 'Performance mode: speaking avatar. Deliver one short creator-supplied line with calm, natural pacing. The wording and language are supplied separately. Do not create subtitles or visible text.'
-      : 'Performance mode: voice-over-ready visual. Keep the scene visually complete without relying on generated speech; the creator may add one short line separately.'
+      ? `Performance mode: speaking avatar in ${spokenLanguage}. Deliver one short creator-supplied line with calm, natural pacing and authentic pronunciation. The exact wording is supplied separately in Flow. Never generate subtitles, captions, or visible text.`
+      : `Performance mode: ${spokenLanguage} voice-over-ready visual. Keep the scene visually complete while the creator adds one exact short ${spokenLanguage} line separately. Never generate subtitles, captions, or visible text.`
   const overlay = segment.overlayPlan.length
     ? `Editorial overlay: all text is added later in editing, never generated inside Flow. Reserve clean space at ${unique(segment.overlayPlan.map((cue) => `${OVERLAY_POSITION_EN[cue.position]} (${cue.from.toFixed(1)}-${cue.to.toFixed(1)}s)`)).join(', ')}.`
-    : 'Editorial overlay: none required for this clip. Do not generate any titles, captions, labels, letters, numbers, or subtitles.'
-  return englishOnly([
+    : 'Editorial overlay: none required for this clip.'
+  const body = [
     'Duration: exactly 8 seconds.',
     `Aspect ratio: 9:16 vertical for ${PLATFORM_EN[input.platform] || 'multi-platform vertical distribution'}.`,
-    `Prompt option: ${mode === 'speech' ? 'WITH SPEECH' : 'WITHOUT SPEECH'}.`,
+    `Prompt option: ${flowModeLabel(mode)}.`,
+    'VISIBLE-TEXT RULE — Generate absolutely no on-screen text of any kind in any language: no titles, captions, subtitles, labels, letters, numbers, signs, interface text, logos, or watermarks.',
     `Avatar usage: ${avatar ? 'yes — use only the pre-saved Dr. Ahmad avatar already stored in Google Flow' : 'no avatar in this clip'}.`,
     `Clip function: ${roleInEnglish(segment.role)}.`,
     subject,
@@ -689,28 +705,33 @@ function buildFlowPrompt(input: {
     overlay,
     avatar ? `Identity lock: ${AVATAR_LOCK}` : '',
     `Continuity notes: ${segment.continuity}`,
-    `Negative constraints: ${unique([...segment.negativeConstraints, 'Arabic writing', 'Arabic subtitles', 'Arabic captions', 'generated dialogue wording']).join(', ')}.`,
-  ].filter(Boolean).join('\n'))
+    `Negative constraints: ${unique([...segment.negativeConstraints, 'visible writing in any language', 'Arabic writing', 'English writing', 'subtitles', 'captions', 'generated dialogue wording']).join(', ')}.`,
+  ].filter(Boolean).join('\n')
+  return englishOnly(`${continuationOpening(segment)}\n\n${body}`)
 }
 
 function buildFlowPrompts(input: Omit<Parameters<typeof buildFlowPrompt>[0], 'mode'>): FlowPromptVariants {
   return {
-    speech: buildFlowPrompt({ ...input, mode: 'speech' }),
+    speech_ar: buildFlowPrompt({ ...input, mode: 'speech_ar' }),
+    speech_en: buildFlowPrompt({ ...input, mode: 'speech_en' }),
     silent: buildFlowPrompt({ ...input, mode: 'silent' }),
   }
 }
 
 function preferredPromptMode(segment: Pick<LiveDirectorSegment, 'voiceMode'>): FlowPromptMode {
-  return segment.voiceMode === 'ambient' ? 'silent' : 'speech'
+  return segment.voiceMode === 'ambient' ? 'silent' : 'speech_ar'
 }
 
 export function getFlowPrompt(segment: LiveDirectorSegment, mode: FlowPromptMode) {
-  return segment.flowPrompts?.[mode] || englishOnly(segment.prompt)
+  const legacySpeech = segment.flowPrompts?.speech
+  return segment.flowPrompts?.[mode]
+    || (mode === 'speech_ar' ? legacySpeech : '')
+    || englishOnly(segment.prompt)
 }
 
 type SegmentDraft = Omit<LiveDirectorSegment, 'prompt' | 'promptVersions' | 'flowPrompts'>
 
-/** يعيد بناء نسختي برومبت المقطع بعد تغيير الترابط أو المرجع أو النص. */
+/** يعيد بناء مسارات برومبت المقطع الثلاثة بعد تغيير الترابط أو المرجع أو النص. */
 function rebuiltFlowPrompts(segment: SegmentDraft, project: Pick<LiveDirectorProject, 'title' | 'tone' | 'platform'>) {
   return buildFlowPrompts({ segment, title: project.title, tone: project.tone, platform: project.platform, palette: PALETTE })
 }
@@ -923,7 +944,7 @@ export function createPublicVideoProject(input: PublicVideoInput): LiveDirectorP
   return base
 }
 
-/** يرقّي المشاريع المحفوظة قبل إضافة الخيارين، ويعيد بناء البرومبتات بالصيغة الإنجليزية الحالية. */
+/** يرقّي المشاريع المحفوظة قبل إضافة المسارات الثلاثة، ويعيد بناء البرومبتات بالصيغة الإنجليزية الحالية. */
 export function ensureLiveDirectorPromptVariants(project: LiveDirectorProject): LiveDirectorProject {
   const segments = project.segments.map((segment) => {
     const { prompt: _legacyPrompt, promptVersions, flowPrompts: _legacyVariants, ...rest } = segment
@@ -957,7 +978,7 @@ const REPAIR_HINTS: Record<LiveDirectorRepairIssue, string> = {
   'تغيرت الملابس': 'Lock the approved saved-avatar wardrobe; do not reinterpret fabric, colour, ghutra or agal between shots.',
   'الحركة غير طبيعية': 'Reduce motion to one natural breath, one small head movement and still hands.',
   'حركة اليد ضعيفة': 'Keep hands out of frame or resting still; remove all hand gestures rather than attempting complex ones.',
-  'الكلام غير واضح': 'Shorten the Arabic line and use one calm continuous shot with a natural speaking pace.',
+  'الكلام غير واضح': 'Shorten the supplied spoken line in the selected language and use one calm continuous shot with a natural speaking pace.',
   'مزامنة الفم سيئة': 'Move the meaning to a voice-over over a visual scene instead of on-camera speech; keep the avatar silent and expressive.',
   'الزوايا كثيرة': 'Reduce the clip to fewer, longer shots; give the viewer time to read one image.',
   'الزوايا قليلة والمشهد جامد': 'Add one controlled angle change on a natural pause to give the clip a pulse, staying in the same location and moment.',
@@ -1015,7 +1036,10 @@ export function repairLiveDirectorSegment(project: LiveDirectorProject, segmentI
 Preserve every approved continuity choice from the other clips. Do not regenerate or reinterpret the project.`
   const basePrompts = rebuiltFlowPrompts(draft, project)
   const flowPrompts: FlowPromptVariants = {
-    speech: `${basePrompts.speech}
+    speech_ar: `${basePrompts.speech_ar}
+
+${correction}`,
+    speech_en: `${basePrompts.speech_en}
 
 ${correction}`,
     silent: `${basePrompts.silent}

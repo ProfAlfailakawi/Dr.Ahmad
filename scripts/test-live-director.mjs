@@ -78,12 +78,13 @@ check(articleProject.segments.every((segment) => segment.narration.split(/\s+/).
 check(articleProject.segments.every((segment) => segment.shotCount >= 1 && segment.shotCount <= 3), 'من لقطة إلى ثلاث لقطات')
 check(articleProject.segments.every((segment) => /Camera movement: one restrained motion per shot/.test(segment.prompt)), 'منع حركات كاميرا متنافسة')
 check(articleProject.segments.every((segment) => segment.negativeConstraints.includes('Arabic text inside the scene')), 'منع النص العربي المولّد')
-check(articleProject.segments.every((segment) => Boolean(segment.flowPrompts?.speech && segment.flowPrompts?.silent)), 'كل مقطع يملك خيار مع كلام وخياراً صامتاً')
+check(articleProject.segments.every((segment) => Boolean(segment.flowPrompts?.speech_ar && segment.flowPrompts?.speech_en && segment.flowPrompts?.silent)), 'كل مقطع يملك كلاماً عربياً وكلاماً إنجليزياً ومساراً صامتاً')
 const arabicScript = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/
-check(articleProject.segments.every((segment) => !arabicScript.test(segment.flowPrompts?.speech || '') && !arabicScript.test(segment.flowPrompts?.silent || '')), 'برومبتا Flow خاليان تماماً من الحروف العربية')
-check(articleProject.segments.every((segment) => getFlowPrompt(segment, 'speech').includes('WITH SPEECH') && getFlowPrompt(segment, 'silent').includes('WITHOUT SPEECH')), 'الخياران واضحان عند النسخ')
+check(articleProject.segments.every((segment) => !arabicScript.test(segment.flowPrompts?.speech_ar || '') && !arabicScript.test(segment.flowPrompts?.speech_en || '') && !arabicScript.test(segment.flowPrompts?.silent || '')), 'برومبتات Flow الثلاثة خالية تماماً من الحروف العربية')
+check(articleProject.segments.every((segment) => getFlowPrompt(segment, 'speech_ar').includes('WITH ARABIC SPEECH') && getFlowPrompt(segment, 'speech_en').includes('WITH ENGLISH SPEECH') && getFlowPrompt(segment, 'silent').includes('WITHOUT SPEECH')), 'المسارات الثلاثة واضحة عند النسخ')
+check(articleProject.segments.every((segment) => /VISIBLE-TEXT RULE/.test(getFlowPrompt(segment, 'speech_ar')) && /no on-screen text of any kind/i.test(getFlowPrompt(segment, 'speech_en')) && /no on-screen text of any kind/i.test(getFlowPrompt(segment, 'silent'))), 'كل المسارات تمنع أي نص ظاهر داخل الفيديو')
 const legacyPromptProject = ensureLiveDirectorPromptVariants({ ...articleProject, segments: articleProject.segments.map(({ flowPrompts: _flowPrompts, ...segment }) => segment) })
-check(legacyPromptProject.segments.every((segment) => segment.flowPrompts?.speech && segment.flowPrompts?.silent), 'المشاريع المحفوظة القديمة تُرقّى تلقائياً للخيارين')
+check(legacyPromptProject.segments.every((segment) => segment.flowPrompts?.speech_ar && segment.flowPrompts?.speech_en && segment.flowPrompts?.silent), 'المشاريع المحفوظة القديمة تُرقّى تلقائياً للمسارات الثلاثة')
 
 // 28: إصلاح مقطع واحد فقط.
 const beforeRefs = [...articleProject.segments]
@@ -121,6 +122,8 @@ check(chain.segments.some((segment) => segment.continuityMode === 'thematic'), '
 check(chain.segments.some((segment) => segment.continuityMode === 'direct'), 'دعم الامتداد المباشر')
 check(chain.segments.every((segment) => segment.prompt.includes('Continuity with the previous clip')), 'البرومبت يحدد نوع الترابط')
 check(chain.segments.every((segment) => segment.prompt.includes('Clip start state') && segment.prompt.includes('Clip end state')), 'البرومبت يصف بداية المقطع ونهايته')
+check(chain.segments.slice(1).every((segment) => getFlowPrompt(segment, 'speech_ar').split(/\n\n/)[0].startsWith(`CONTINUATION CLIP ${segment.order}`)), 'أول فقرة تعرّف كل مقطع بعد الأول بأنه إكمال للسابق')
+check(chain.segments.slice(1).every((segment) => /No reference image upload is required/i.test(getFlowPrompt(segment, 'speech_en').split(/\n\n/)[0])), 'فقرة الإكمال لا تشترط رفع صورة أو ملف مرجعي')
 
 const weak = applyReferenceFrame(chain, 'clip-1', { frameUrl: 'https://example.com/blur.jpg', kind: 'last_frame', sharpness: 0.2 })
 check(!weak.applied && weak.project === chain, 'الإطار الضبابي لا يُعتمد تلقائياً')
@@ -141,7 +144,7 @@ check(/Do not reset the character pose/.test(withFrame.project.segments[1].promp
 const soft = setSegmentContinuity(chain, 'clip-3', { mode: 'soft', strategy: 'selected_frame' })
 check(/Shift to the requested camera angle smoothly/.test(soft.segments[2].prompt), 'تعليمات الامتداد اللطيف')
 const none = setSegmentContinuity(chain, 'clip-2', { strategy: 'none' })
-check(/Reference image: none/.test(none.segments[1].prompt), 'عدم استخدام مرجع حين لا يناسب')
+check(/no uploaded frame is required/i.test(none.segments[1].prompt), 'عدم اشتراط رفع مرجع حين لا يناسب')
 
 const disconnected = repairLiveDirectorSegment(withFrame.project, 'clip-2', 'المقطع غير مترابط مع السابق')
 check(disconnected.segments[1].continuityMode === 'soft', 'إصلاح عدم الترابط ينزل من المباشر إلى اللطيف')
@@ -240,7 +243,7 @@ check(realDrafts.some((draft) => draft.resonanceCount > 0), 'المسبك يكا
 const liveUiVoice = readFileSync(resolve(ROOT, 'src/components/admin/LiveDirector.tsx'), 'utf8')
 check(/buildTweets|verifiedLineOf/.test(liveUiVoice) && /article_highlights/.test(liveUiVoice), 'اللوحة تصل المسبك والرنين فعلاً')
 check(/NARRATION_SOURCE_LABELS/.test(liveUiVoice), 'اللوحة تُظهر نسب كل جملة')
-check(/مع كلام/.test(liveUiVoice) && /بدون كلام/.test(liveUiVoice) && /getFlowPrompt/.test(liveUiVoice), 'اللوحة تعرض خياري الكلام والصمت لكل مقطع')
+check(/كلام عربي/.test(liveUiVoice) && /كلام إنجليزي/.test(liveUiVoice) && /بدون كلام/.test(liveUiVoice) && /getFlowPrompt/.test(liveUiVoice), 'اللوحة تعرض المسارات الثلاثة لكل مقطع')
 
 assert.ok(checks >= 35)
 console.log(`✓ المخرج الحي: ${checks}/${checks}`)

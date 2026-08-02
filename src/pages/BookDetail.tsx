@@ -1,14 +1,90 @@
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
 import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
-import { BookWorld } from '../components/BookWorld'
 import tocData from '../data/book-toc-links.json'
 import { SocialIcon } from '../components/icons'
+import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 
 type BookGuide = { idea: string; audience: string; entry: string }
+
+type TocEntry = { index: number; label: string; page: string }
+type TocGroup = { title: string; entries: TocEntry[] }
+
+const LazyBookWorld = lazy(() => import('../components/BookWorld').then((module) => ({ default: module.BookWorld })))
+
+function splitTocLabel(value: string) {
+  const match = value.match(/^(.*?)(?:\s*[–—-]\s*ص\s*([0-9٠-٩]+))\s*$/u)
+  return match ? { label: match[1].trim(), page: match[2] } : { label: value.trim(), page: '' }
+}
+
+function groupToc(items: string[]): TocGroup[] {
+  const groups: TocGroup[] = []
+  let current: TocGroup = { title: 'مدخل الكتاب', entries: [] }
+  items.forEach((raw, index) => {
+    const value = raw.trim()
+    if (!value) return
+    if (/^الباب\s/u.test(value)) {
+      if (current.entries.length) groups.push(current)
+      current = { title: value, entries: [] }
+      return
+    }
+    const parsed = splitTocLabel(value)
+    current.entries.push({ index: index + 1, ...parsed })
+  })
+  if (current.entries.length) groups.push(current)
+  if (!groups.length && items.length) {
+    return [{ title: 'محتويات الكتاب', entries: items.map((item, index) => ({ index: index + 1, ...splitTocLabel(item) })) }]
+  }
+  return groups
+}
+
+function DeferredBookWorld({ book, seed, articles, books, papers }: { book: BookRecord; seed: string; articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[] }) {
+  const anchorRef = useRef<HTMLDivElement>(null)
+  const [ready, setReady] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return /book-knowledge|ask-book-section/u.test(window.location.hash) || new URLSearchParams(window.location.search).has('book_question')
+  })
+
+  useEffect(() => {
+    const revealFromLocation = () => {
+      if (/book-knowledge|ask-book-section/u.test(window.location.hash) || new URLSearchParams(window.location.search).has('book_question')) setReady(true)
+    }
+    revealFromLocation()
+    window.addEventListener('hashchange', revealFromLocation)
+    return () => window.removeEventListener('hashchange', revealFromLocation)
+  }, [])
+
+  useEffect(() => {
+    if (ready || !anchorRef.current) return
+    if (!('IntersectionObserver' in window)) {
+      const timer = window.setTimeout(() => setReady(true), 500)
+      return () => window.clearTimeout(timer)
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      setReady(true)
+      observer.disconnect()
+    }, { rootMargin: '700px 0px' })
+    observer.observe(anchorRef.current)
+    return () => observer.disconnect()
+  }, [ready])
+
+  return (
+    <div ref={anchorRef} className="min-h-28">
+      {ready ? (
+        <Suspense fallback={<div className="border-t border-hair bg-wash px-6 py-14 text-center text-[.78rem] text-soft">تُجهّز امتدادات الكتاب بهدوء…</div>}>
+          <LazyBookWorld book={book} seed={seed} articles={articles} books={books} papers={papers} />
+        </Suspense>
+      ) : (
+        <div className="border-t border-hair bg-wash px-6 py-10 text-center text-[.74rem] text-soft" aria-hidden="true">تظهر امتدادات الكتاب عند الاقتراب منها.</div>
+      )}
+    </div>
+  )
+}
 
 const BOOK_GUIDES: Record<string, BookGuide> = {
   encyclopedia: {
@@ -99,6 +175,7 @@ export default function BookDetail() {
   const guide = book ? bookGuide(book.slug, book.desc) : null
   const longDescription = book && guide ? (book.longDescription || editorialDescription(book.title, guide)) : ''
   const toc = book ? verifiedToc(book.slug, book.toc) : []
+  const tocGroups = useMemo(() => groupToc(toc), [toc])
   useSeo({ title: book?.title ?? 'كتاب', description: book?.desc, path: `/publications/${slug}`, image: book?.cover })
   if (!book && loading) return <Page className="content-books"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!book) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على الكتاب.</div></Page>
@@ -146,7 +223,7 @@ export default function BookDetail() {
                   خريطة المعرفة أدناه، أما القراءة العامة فتبقى للعينة المعتمدة. */}
               <div className="book-detail-cover mx-auto w-full max-w-[20rem] overflow-hidden rounded-2xl border border-hair bg-white md:max-w-sm">
                 {book.cover ? (
-                  <img src={book.cover} alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" className="w-full" />
+                  <img src={book.cover} alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" sizes="(max-width: 768px) 320px, 420px" className="w-full" />
                 ) : (
                   <div className="flex min-h-72 items-center justify-center bg-wash px-10 text-center font-display text-2xl font-semibold text-soft">{book.title}</div>
                 )}
@@ -233,18 +310,43 @@ export default function BookDetail() {
           </FadeUp>
 
           <FadeUp delay={0.18}>
-            <section className="mx-auto mt-12 max-w-[880px] rounded-2xl border border-hair bg-wash p-5 md:p-7" aria-labelledby="book-toc-title">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <h2 id="book-toc-title" className="font-display text-2xl font-semibold text-ink">فهرس المحتويات</h2>
-                {toc.length > 0 && <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.68rem] text-soft">{toc.length} عنواناً</span>}
+            <section className="book-toc mx-auto mt-12 max-w-[880px] overflow-hidden rounded-2xl border border-hair bg-canvas" aria-labelledby="book-toc-title">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-hair px-5 py-5 md:px-7">
+                <div>
+                  <h2 id="book-toc-title" className="font-display text-2xl font-semibold text-ink">فهرس المحتويات</h2>
+                  <p className="mt-1 text-[.72rem] leading-relaxed text-soft">أبوابٌ تُفتح عند الحاجة؛ لا جدار من البطاقات المتشابهة.</p>
+                </div>
+                {toc.length > 0 && <span className="text-[.68rem] text-soft">{toc.length} عنواناً</span>}
               </div>
-              {toc.length ? <ol className="mt-5 grid gap-2 sm:grid-cols-2">{toc.map((item, index) => <li key={`${item}-${index}`} className="flex gap-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-ink"><span className="shrink-0 font-display text-accent">{String(index + 1).padStart(2, '0')}</span><span>{item}</span></li>)}</ol> : <p className="mt-4 text-[.82rem] leading-relaxed text-soft">لم يُنشر الفهرس قبل مطابقته بالنسخة المطبوعة. يمكن اعتماده من لوحة التحكم، ولن يعرض الموقع عناوين مُخمنة.</p>}
+              {toc.length ? (
+                <div className="divide-y divide-hair">
+                  {tocGroups.map((group, groupIndex) => (
+                    <details key={`${group.title}-${groupIndex}`} className="group/toc" defaultOpen={groupIndex === 0}>
+                      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-4 px-5 py-4 md:px-7">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair font-display text-[.68rem] text-accent">{String(groupIndex + 1).padStart(2, '0')}</span>
+                        <strong className="min-w-0 flex-1 break-words text-[.9rem] leading-relaxed text-ink">{group.title}</strong>
+                        <span className="shrink-0 text-[.66rem] text-soft">{group.entries.length} فصول</span>
+                        <span aria-hidden className="text-accent transition-transform group-open/toc:rotate-45">＋</span>
+                      </summary>
+                      <ol className="border-t border-hair bg-wash/[.38] px-5 py-2 md:px-7">
+                        {group.entries.map((entry) => (
+                          <li key={`${entry.index}-${entry.label}`} className="grid min-w-0 grid-cols-[2.2rem_minmax(0,1fr)_auto] items-baseline gap-3 border-b border-hair py-3.5 last:border-b-0">
+                            <span className="font-display text-[.68rem] tabular-nums text-accent">{String(entry.index).padStart(2, '0')}</span>
+                            <Link to={`?book_idea=${encodeURIComponent(entry.label)}#book-knowledge`} className="min-w-0 break-words text-[.82rem] leading-[1.8] text-ink transition-colors hover:text-accent">{entry.label}</Link>
+                            {entry.page && <span className="shrink-0 text-[.68rem] tabular-nums text-soft">ص {entry.page}</span>}
+                          </li>
+                        ))}
+                      </ol>
+                    </details>
+                  ))}
+                </div>
+              ) : <p className="px-5 py-6 text-[.82rem] leading-relaxed text-soft md:px-7">لم يُنشر الفهرس قبل مطابقته بالنسخة المطبوعة. يمكن اعتماده من لوحة التحكم، ولن يعرض الموقع عناوين مُخمنة.</p>}
             </section>
           </FadeUp>
         </div>
       </section>
 
-      <BookWorld book={book} seed={guide?.idea || book.desc || ''} articles={articles} books={books} papers={papers} />
+      <DeferredBookWorld book={book} seed={guide?.idea || book.desc || ''} articles={articles} books={books} papers={papers} />
     </Page>
   )
 }

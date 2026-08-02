@@ -579,7 +579,7 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
                     <section className="rounded-2xl border border-hair bg-wash/[.45] p-4">
                       <p className="text-[.76rem] font-semibold text-ink">أدوات المقال</p>
                       <div className="mt-3 flex flex-wrap items-center gap-3">
-                        {saveControl && <span className="inline-flex items-center gap-2"><span className="text-[.7rem] text-soft">حفظ للعودة</span>{saveControl}</span>}
+                        {saveControl && <span className="inline-flex items-center">{saveControl}</span>}
                         {onSerenity && (
                           <button type="button" onClick={() => { setOpen(false); onSerenity() }} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
                             <svg aria-hidden viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round"><path d="M5 12h14M7.5 8.5h9M9.5 15.5h5" /><circle cx="12" cy="12" r="9" /></svg>
@@ -1343,18 +1343,22 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
               type="button"
               onPointerDown={(event) => event.preventDefault()}
               onClick={openThread}
-              className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+              aria-label="تتبّع الفكرة عبر السنوات"
+              title="تتبّع الفكرة عبر السنوات"
+              className="flex h-11 w-12 items-center justify-center text-ink transition-colors hover:bg-accent hover:text-canvas"
             >
-              🧬 عبر السنوات
+              <SocialIcon name="History" size={18} />
             </button>
             <span className="my-1.5 w-px bg-hair" aria-hidden="true" />
             <button
               type="button"
               onPointerDown={(event) => event.preventDefault()}
               onClick={openCard}
-              className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+              aria-label="صناعة بطاقة اقتباس"
+              title="صناعة بطاقة اقتباس"
+              className="flex h-11 w-12 items-center justify-center text-ink transition-colors hover:bg-accent hover:text-canvas"
             >
-              🖼 بطاقة اقتباس
+              <SocialIcon name="Image" size={18} />
             </button>
           </motion.div>
         )}

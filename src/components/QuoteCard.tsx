@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { EASE } from './motion'
 import { renderQuoteCard } from '../lib/quote-card'
+import { SocialIcon } from './icons'
 
 export function QuoteCard() {
   const [sel, setSel] = useState('')
@@ -40,12 +41,43 @@ export function QuoteCard() {
     setImg(await renderQuoteCard(sel))
   }, [sel])
 
-  const download = () => {
+  const dataUrlToBlob = (value: string) => {
+    const [header, encoded = ''] = value.split(',', 2)
+    const mime = /^data:([^;]+)/.exec(header)?.[1] || 'image/png'
+    const binary = atob(encoded)
+    const bytes = new Uint8Array(binary.length)
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
+    return new Blob([bytes], { type: mime })
+  }
+
+  const download = async () => {
     if (!img) return
-    const a = document.createElement('a')
-    a.href = img
-    a.download = 'اقتباس.png'
-    a.click()
+    const blob = dataUrlToBlob(img)
+    const file = new File([blob], 'اقتباس.png', { type: 'image/png' })
+    const shareNavigator = navigator as Navigator & { canShare?: (data: ShareData) => boolean; standalone?: boolean }
+    const isIos = /iP(?:hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    const standalone = window.matchMedia?.('(display-mode: standalone)').matches || Boolean(shareNavigator.standalone)
+    try {
+      if ((isIos || standalone) && navigator.share && shareNavigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'بطاقة اقتباس' })
+        return
+      }
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = file.name
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
+    } catch (reason) {
+      if ((reason as DOMException)?.name === 'AbortError') return
+      const url = URL.createObjectURL(blob)
+      const opened = window.open(url, '_blank', 'noopener,noreferrer')
+      if (!opened) URL.revokeObjectURL(url)
+      else window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    }
   }
 
   return (
@@ -60,9 +92,11 @@ export function QuoteCard() {
             transition={{ duration: 0.22, ease: EASE }}
             onClick={make}
             style={{ left: pos.x, top: pos.y, transform: 'translate(-50%,-100%)' }}
-            className="absolute z-[215] whitespace-nowrap rounded-full bg-ink px-5 py-2.5 text-[.84rem] font-semibold text-canvas shadow-[0_14px_34px_-14px_rgba(0,0,0,.6)]"
+            aria-label="اصنع بطاقة اقتباس"
+            title="اصنع بطاقة اقتباس"
+            className="absolute z-[215] flex h-11 w-11 items-center justify-center rounded-full bg-ink text-canvas shadow-[0_14px_34px_-14px_rgba(0,0,0,.6)]"
           >
-            ✦ اصنع بطاقة اقتباس
+            <SocialIcon name="Image" size={17} />
           </motion.button>
         )}
       </AnimatePresence>
@@ -87,11 +121,11 @@ export function QuoteCard() {
             >
               <img src={img} alt="بطاقة اقتباس" className="w-full rounded-2xl shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)]" />
               <div className="quote-card-controls mt-5 flex justify-center gap-3">
-                <button onClick={download} className="rounded-full bg-accent px-7 py-3 font-semibold text-canvas transition-colors hover:bg-accent-deep">
-                  تحميل الصورة
+                <button type="button" onClick={() => void download()} aria-label="تنزيل الصورة" title="تنزيل الصورة" className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-canvas transition-colors hover:bg-accent-deep">
+                  <SocialIcon name="Download" size={18} />
                 </button>
-                <button onClick={() => setImg(null)} className="rounded-full border-[1.5px] border-canvas/40 px-7 py-3 font-semibold text-canvas transition-colors hover:border-canvas">
-                  إغلاق
+                <button type="button" onClick={() => setImg(null)} aria-label="إغلاق الصورة" title="إغلاق الصورة" className="flex h-12 w-12 items-center justify-center rounded-full border-[1.5px] border-canvas/40 text-canvas transition-colors hover:border-canvas">
+                  <SocialIcon name="Close" size={18} />
                 </button>
               </div>
               <p className="mt-4 text-center text-[.82rem] text-canvas/70">1080×1080 — جاهزة لإنستغرام و X</p>

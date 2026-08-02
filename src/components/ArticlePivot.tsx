@@ -89,9 +89,11 @@ export function ArticlePivot({ slug, title }: { slug: string; title: string }) {
                 <button
                   type="button"
                   onClick={copy}
-                  className="rounded-full border border-hair px-4 py-1.5 font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+                  aria-label={copied ? 'نُسخ الاقتباس' : 'نسخ الاقتباس'}
+                  title={copied ? 'نُسخ الاقتباس' : 'نسخ الاقتباس'}
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${copied ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                 >
-                  {copied ? 'نُسخت ✓' : 'انسخ'}
+                  <SocialIcon name={copied ? 'Check' : 'Copy'} size={15} />
                 </button>
                 <QuoteImage text={pivot.text} attribution={title} />
               </span>

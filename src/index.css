@@ -3589,3 +3589,88 @@ body.selection-active .floating-actions {
   /* لا هامش يتّسع على الجوال: تنزل داخل الحافة بلا أن تلمس النص. */
   .pivot-mark { inset-inline-end: -.15rem; top: .35rem; opacity: .4; }
 }
+
+/* ============================================================
+   تنقية الهاتف 2026 — مسارات أفقية حقيقية ومنع أي خروج عن الإطار
+   ============================================================ */
+.book-spine-rail,
+.media-related-rail,
+.ask-book-rail,
+.content-search [role="tablist"].rail {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pinch-zoom;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+.book-spine-rail::-webkit-scrollbar,
+.media-related-rail::-webkit-scrollbar,
+.ask-book-rail::-webkit-scrollbar,
+.content-search [role="tablist"].rail::-webkit-scrollbar { display: none; }
+
+.book-toc details[open] > summary {
+  background: rgb(var(--c-wash) / .58);
+}
+.book-toc summary::-webkit-details-marker { display: none; }
+
+@media (max-width: 767px) {
+  .content-book-detail,
+  .content-book-world,
+  .content-book-world > div,
+  .content-book-world details,
+  .content-book-world details > summary,
+  .content-book-world details > div {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .content-book-world {
+    overflow-x: clip;
+    padding-bottom: calc(8rem + env(safe-area-inset-bottom));
+  }
+
+  .content-book-world h2,
+  .content-book-world strong,
+  .content-book-world p,
+  .content-book-world blockquote,
+  .content-book-world a,
+  .content-book-world span {
+    overflow-wrap: anywhere;
+  }
+
+  .content-book-world .book-spine-rail {
+    overflow-wrap: normal;
+  }
+
+  .book-spine-rail::after,
+  .media-related-rail::after,
+  .ask-book-rail::after {
+    content: "";
+    flex: 0 0 .35rem;
+  }
+
+  .media-related-rail {
+    margin-inline: -.25rem;
+    padding-inline: .25rem;
+  }
+
+  .book-toc ol li {
+    min-width: 0;
+  }
+
+  body:has(.content-book-detail) .floating-actions {
+    right: .75rem;
+    gap: .55rem;
+  }
+}
+
+/* مساحة آمنة موحّدة للأزرار العائمة على الهاتف: لا تغطي آخر بطاقة أو سطر. */
+@media (max-width: 767px) {
+  .signature-page {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+  .content-book-world {
+    padding-bottom: calc(8rem + env(safe-area-inset-bottom));
+  }
+}

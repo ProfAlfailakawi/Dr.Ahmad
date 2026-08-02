@@ -6,6 +6,7 @@ import { useSeo } from '../components/seo'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { ReaderFingerprint } from '../components/ReaderResonance'
 import { Pagination, usePagedList } from '../components/Pagination'
+import { SocialIcon } from '../components/icons'
 
 const stableHash = (value: string) => {
   let hash = 2166136261
@@ -141,7 +142,7 @@ export default function Articles() {
           <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
             <div className="relative">
               <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="ابحث في المقالات…" aria-label="بحث" className="w-full rounded-full border border-hair bg-canvas py-3 pe-12 ps-5 text-[.9rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent" />
-              <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft">⌕</span>
+              <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft"><SocialIcon name="Search" size={17} /></span>
             </div>
             <label className="relative min-w-36">
               <span className="sr-only">تصفية المقالات حسب السنة</span>
@@ -149,10 +150,10 @@ export default function Articles() {
                 <option value="الكل">كل السنوات</option>
                 {archiveYears.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
-              <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[.7rem] text-soft">⌄</span>
+              <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-soft"><SocialIcon name="ChevronDown" size={13} /></span>
             </label>
             <details className="group relative">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف الأرشيف <span aria-hidden className="transition-transform group-open:rotate-180">⌄</span></summary>
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف الأرشيف <span aria-hidden className="transition-transform group-open:rotate-180"><SocialIcon name="ChevronDown" size={13} /></span></summary>
               <div className="absolute left-0 top-[calc(100%+.5rem)] z-20 min-w-44 rounded-xl border border-hair bg-canvas p-2 shadow-[0_18px_50px_-30px_rgba(21,22,26,.55)]">
                 <Link to="/search" className="block rounded-lg px-3 py-2 text-[.76rem] font-semibold text-ink hover:bg-wash hover:text-accent">البحث العميق</Link>
                 <Link to="/atlas" className="block rounded-lg px-3 py-2 text-[.76rem] font-semibold text-ink hover:bg-wash hover:text-accent">سماء المقالات</Link>

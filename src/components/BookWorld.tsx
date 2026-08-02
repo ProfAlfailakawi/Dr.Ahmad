@@ -34,21 +34,21 @@ function Disclosure({
   return (
     <details
       ref={detailsRef}
-      className="group rounded-2xl border border-hair bg-canvas"
+      className="group min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-canvas"
       data-allow-multiple={lockOpen ? 'true' : undefined}
       onToggle={(event) => {
         if (lockOpen && !event.currentTarget.open) event.currentTarget.open = true
       }}
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 sm:px-5">
-        <span className="min-w-0">
+      <summary className="flex min-w-0 cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 sm:px-5">
+        <span className="min-w-0 max-w-full">
           <span className="block text-[.66rem] font-semibold text-accent">{eyebrow}</span>
-          <strong className="mt-1 block text-[.9rem] leading-relaxed text-ink">{title}</strong>
+          <strong className="mt-1 block break-words text-[.9rem] leading-relaxed text-ink">{title}</strong>
           {meta && <span className="mt-1 block text-[.68rem] leading-relaxed text-soft">{meta}</span>}
         </span>
         <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-[.9rem] text-accent transition-transform group-open:rotate-45">+</span>
       </summary>
-      <div className="border-t border-hair px-4 py-4 sm:px-5">{children}</div>
+      <div className="min-w-0 max-w-full overflow-hidden border-t border-hair px-4 py-4 sm:px-5">{children}</div>
     </details>
   )
 }
@@ -68,6 +68,7 @@ export function BookWorld({
 }) {
   const [searchParams] = useSearchParams()
   const [activeIdea, setActiveIdea] = useState('')
+  const stagedIdea = (searchParams.get('book_idea') || '').trim()
   const model = useMemo(() => {
     const knowledge = getBookKnowledge(book.slug)
     const sourceText = `${book.title}\n${book.desc || ''}\n${seed || ''}\n${knowledge?.role || ''}\n${knowledge?.topTerms.join(' ') || ''}\n${knowledge?.concepts.flatMap((concept) => [concept.title, concept.keywords.join(' ')]).join(' ') || ''}`
@@ -224,6 +225,15 @@ export function BookWorld({
   }, [activeIdea, model.ideas])
 
   useEffect(() => {
+    if (!stagedIdea || !model.paths.length) return
+    const query = new Set(ideaWords(stagedIdea))
+    const ranked = model.paths
+      .map((path) => ({ path, score: ideaWords(path.idea).reduce((total, word) => total + (query.has(word) ? 1 : 0), 0) }))
+      .sort((left, right) => right.score - left.score)
+    if (ranked[0]?.score > 0) setActiveIdea(ranked[0].path.idea)
+  }, [model.paths, stagedIdea])
+
+  useEffect(() => {
     if (!stagedQuestion || asked === stagedQuestion) return
     setBookQuestion(stagedQuestion)
     askBook(stagedQuestion)
@@ -260,18 +270,18 @@ export function BookWorld({
   if (!model.paths.length) return null
 
   return (
-    <section id="book-knowledge" className="scroll-mt-28 border-t border-hair bg-wash px-6 py-12 md:px-11 md:py-16" aria-labelledby="book-world-title">
-      <div className="mx-auto max-w-shell">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-3xl">
+    <section id="book-knowledge" className="content-book-world scroll-mt-28 max-w-full overflow-hidden border-t border-hair bg-wash px-4 py-12 sm:px-6 md:px-11 md:py-16" aria-labelledby="book-world-title">
+      <div className="mx-auto min-w-0 max-w-shell">
+        <div className="flex min-w-0 flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0 max-w-3xl">
             <span className="text-[.7rem] font-semibold uppercase tracking-[.08em] text-accent">عالم الكتاب</span>
             <h2 id="book-world-title" className="mt-2 font-display text-[clamp(1.55rem,3vw,2.2rem)] font-semibold leading-[1.35] text-ink">امتدادات الكتاب داخل الأرشيف</h2>
             <p className="mt-2 text-[.82rem] leading-[1.8] text-soft">خريطة مبنيّة من الكتاب، تصل مفاهيمه بما نُشر في الأرشيف من مقالات وأبحاث ولقاءات.</p>
           </div>
-          <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="rounded-full border border-accent/[.35] px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">المسار الفكري الكامل ←</Link>
+          <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="max-w-full rounded-full border border-accent/[.35] px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">المسار الفكري الكامل ←</Link>
         </div>
 
-        <div className="mt-6 grid gap-3">
+        <div className="mt-6 grid min-w-0 max-w-full gap-3">
           {model.ideas.length > 0 && <Disclosure
             /* «Idea DNA · 2E7078EF» بصمةٌ تقنية لا تقول للزائر شيئاً — وأخواتها
                في هذه الصفحة عربياتٌ مفهومة («استمرار الفكرة»، «الزمن داخل
@@ -286,11 +296,11 @@ export function BookWorld({
                 ترتيب. صار شريطاً واحداً مرتّباً بترتيب الكتاب نفسه — من أول
                 صفحة إلى آخرها — فيقرأ الزائر بنيةَ الكتاب لا كومة كلمات،
                 ويلفّ يميناً ويساراً بدل أن يتمدّد القسم رأسياً. */}
-            <div className="rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-2 [scroll-snap-type:x_proximity]" aria-label={`محاور ${book.title} بترتيب الكتاب`}>
+            <div dir="rtl" tabIndex={0} className="book-spine-rail rail -mx-1 flex w-[calc(100%+0.5rem)] max-w-[calc(100%+0.5rem)] snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain px-1 pb-3 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden" aria-label={`محاور ${book.title} بترتيب الكتاب`}>
               {model.spine.map(({ idea, concept }, index) => {
                 const active = selectedIdea === idea
                 return (
-                  <div key={`${idea}-${index}`} className="flex shrink-0 flex-col items-center gap-1.5 [scroll-snap-align:center]">
+                  <div key={`${idea}-${index}`} className="flex max-w-[86vw] shrink-0 snap-start flex-col items-center gap-1.5">
                     <span className={`text-[.62rem] tabular-nums transition-colors ${active ? 'font-semibold text-accent' : 'text-soft/70'}`}>
                       {concept ? concept.pageStart : '—'}
                     </span>
@@ -299,7 +309,7 @@ export function BookWorld({
                       id={concept ? bookKnowledgeAnchor(concept) : undefined}
                       onClick={() => setActiveIdea(idea)}
                       aria-pressed={active}
-                      className={`whitespace-nowrap rounded-full border px-3.5 py-2 text-[.7rem] transition-colors ${active ? 'border-accent bg-accent/[.07] font-semibold text-accent' : 'border-hair bg-wash text-ink hover:border-accent/40'}`}
+                      className={`max-w-[78vw] whitespace-normal break-words rounded-2xl border px-3.5 py-2 text-center text-[.7rem] leading-relaxed transition-colors ${active ? 'border-accent bg-accent/[.07] font-semibold text-accent' : 'border-hair bg-wash text-ink hover:border-accent/40'}`}
                     >
                       {idea}
                     </button>
@@ -317,12 +327,12 @@ export function BookWorld({
                 <span className="text-[.68rem] text-soft">البوابة النشطة · «{selectedIdea}»{selectedConcept ? ` · ص ${selectedConcept.pageStart}${selectedConcept.pageEnd > selectedConcept.pageStart ? `–${selectedConcept.pageEnd}` : ''}` : ''}</span>
                 <span className="text-[.64rem] text-soft">{model.dna.audience.primary}</span>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-3 grid min-w-0 gap-2 sm:grid-cols-2">
                 {activeConnections.articles.map(({ item }) => (
-                  <Link key={`active-a-${item.slug}`} to={`/articles/${item.slug}`} className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.66rem] text-ink transition-colors hover:border-accent hover:text-accent">مقال · {item.title}</Link>
+                  <Link key={`active-a-${item.slug}`} to={`/articles/${item.slug}`} className="min-w-0 break-words rounded-xl border border-hair bg-wash px-3 py-2 text-[.68rem] leading-relaxed text-ink transition-colors hover:border-accent hover:text-accent">مقال · {item.title}</Link>
                 ))}
                 {activeConnections.papers.map(({ item }) => (
-                  <Link key={`active-p-${item.slug}`} to={`/research/${item.slug}`} className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.66rem] text-ink transition-colors hover:border-accent hover:text-accent">بحث · {item.titleAr || item.title}</Link>
+                  <Link key={`active-p-${item.slug}`} to={`/research/${item.slug}`} className="min-w-0 break-words rounded-xl border border-hair bg-wash px-3 py-2 text-[.68rem] leading-relaxed text-ink transition-colors hover:border-accent hover:text-accent">بحث · {item.titleAr || item.title}</Link>
                 ))}
               </div>
               {selectedConcept && <div className="mt-3 text-[.76rem] leading-[1.85] text-soft">
@@ -343,16 +353,16 @@ export function BookWorld({
             <form
               id="ask-book-section"
               onSubmit={(event) => { event.preventDefault(); askBook(bookQuestion) }}
-              className="flex flex-wrap items-center gap-2"
+              className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
             >
               <input
                 value={bookQuestion}
                 onChange={(event) => setBookQuestion(event.target.value)}
                 placeholder="مثال: ما دور المعلّم؟"
                 aria-label={`سؤال عن كتاب ${book.title}`}
-                className="min-w-0 flex-1 rounded-full border border-hair bg-canvas px-4 py-2.5 text-[.8rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent"
+                className="min-w-0 w-full max-w-full rounded-full border border-hair bg-canvas px-4 py-3 text-[.82rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent"
               />
-              <button type="submit" className="rounded-full bg-accent px-5 py-2.5 text-[.75rem] font-semibold text-white transition-colors hover:bg-accent-deep">اسأل</button>
+              <button type="submit" className="min-h-11 w-full rounded-full bg-accent px-5 py-2.5 text-[.75rem] font-semibold text-white transition-colors hover:bg-accent-deep sm:w-auto">اسأل</button>
             </form>
             {stagedQuestion && <p className="mt-2 text-[.68rem] leading-relaxed text-soft">جاءك هذا القسم مباشرة من تبويب «اسأل كتاباً» في البحث، ويمكنك تعديل السؤال هنا متى شئت.</p>}
 
@@ -364,9 +374,9 @@ export function BookWorld({
                 )}
                 <div className="grid gap-3">
                   {bookAnswer.map((match) => (
-                    <figure key={`ask-${match.quote.id}`} className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
-                      <blockquote className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/[.85]">{match.quote.text}</blockquote>
-                      <figcaption className="mt-2 flex flex-wrap items-center justify-between gap-2 pr-3 text-[.66rem] text-soft">
+                    <figure key={`ask-${match.quote.id}`} className="min-w-0 max-w-full overflow-hidden rounded-xl border border-hair bg-canvas px-4 py-3.5">
+                      <blockquote className="break-words border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/[.85]">{match.quote.text}</blockquote>
+                      <figcaption className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-2 pr-3 text-[.66rem] text-soft">
                         <span>ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</span>
                         <span className="flex flex-wrap items-center gap-3">
                           <QuoteCite book={book} page={match.quote.page} />
@@ -390,13 +400,13 @@ export function BookWorld({
           >
             <div className="grid gap-3">
               {byReaders(conceptQuotes.length ? conceptQuotes : model.allQuotes).slice(0, conceptQuotes.length ? conceptQuotes.length : 4).map((quote) => (
-                <figure key={quote.id} className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
+                <figure key={quote.id} className="min-w-0 max-w-full overflow-hidden rounded-xl border border-hair bg-canvas px-4 py-3.5">
                   <blockquote
                     onMouseUp={() => markHighlight(quote.id)}
                     onTouchEnd={() => markHighlight(quote.id)}
-                    className="border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/[.85]"
+                    className="break-words border-r-2 border-accent/40 pr-3 text-[.86rem] font-light leading-[1.95] text-ink/[.85]"
                   >{quote.text}</blockquote>
-                  <figcaption className="mt-2 flex flex-wrap items-center justify-between gap-2 pr-3 text-[.66rem] text-soft">
+                  <figcaption className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-2 pr-3 text-[.66rem] text-soft">
                     <span>
                       {book.title} · ص {quote.page}{quote.conceptTitle ? ` · ${quote.conceptTitle}` : ''}
                       {(resonance.get(quote.id) || 0) >= RESONANCE_FLOOR && (
@@ -424,7 +434,7 @@ export function BookWorld({
               {model.afterBook.map(({ item }) => (
                 <Link key={`after-${item.slug}`} to={`/articles/${item.slug}`} className="grid gap-1 rounded-xl px-2 py-2.5 transition-colors hover:bg-canvas sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-start sm:gap-3">
                   <span className="text-[.68rem] font-semibold text-accent">{bookArchiveDate(item) || item.iso?.slice(0, 4)}</span>
-                  <span className="text-[.76rem] leading-relaxed text-ink">{item.title}</span>
+                  <span className="min-w-0 break-words text-[.76rem] leading-relaxed text-ink">{item.title}</span>
                 </Link>
               ))}
             </div>
@@ -433,8 +443,8 @@ export function BookWorld({
           {activePath && <Disclosure eyebrow="استمرار الفكرة" title="مواد قريبة في المقالات والأبحاث" meta="مواد تلامس المحور نفسه في المقالات والأبحاث.">
             <div className="grid gap-2">
               {activeConnections.articles.map(({ item, score }) => (
-                <Link key={item.slug} to={`/articles/${item.slug}`} className="group grid gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/[.45] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                  <span className="min-w-0">
+                <Link key={item.slug} to={`/articles/${item.slug}`} className="group grid min-w-0 max-w-full gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/[.45] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <span className="min-w-0 max-w-full">
                     <strong className="block text-[.8rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{item.title}</strong>
                     <span className="mt-1 block text-[.66rem] text-soft">{bookArchiveDate(item) || 'مقال من الأرشيف'}</span>
                   </span>
@@ -442,8 +452,8 @@ export function BookWorld({
                 </Link>
               ))}
               {activeConnections.papers.map(({ item, score }) => (
-                <Link key={item.slug} to={`/research/${item.slug}`} className="group grid gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/[.45] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                  <strong className="text-[.8rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{item.titleAr || item.title}</strong>
+                <Link key={item.slug} to={`/research/${item.slug}`} className="group grid min-w-0 max-w-full gap-1 rounded-xl border border-hair px-3.5 py-3 transition-colors hover:border-accent/[.45] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <strong className="min-w-0 break-words text-[.8rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{item.titleAr || item.title}</strong>
                   <span className="w-fit rounded-full bg-wash px-2.5 py-1 text-[.62rem] text-soft">صلة {score}</span>
                 </Link>
               ))}
@@ -453,9 +463,9 @@ export function BookWorld({
           {activeConnections.timeline.length > 0 && <Disclosure eyebrow="الزمن داخل الأرشيف" title="امتدادات مؤرخة للفكرة" meta="يختار أقوى محطة من كل سنة ويوزّعها على كامل عمر الأرشيف؛ لا يثبت على أحدث سنة.">
             <div className="grid gap-1">
               {activeConnections.timeline.map(({ item, year, date }) => (
-                <Link key={`${item.slug}-${year}`} to={`/articles/${item.slug}`} className="grid gap-1 rounded-xl px-2 py-2.5 transition-colors hover:bg-wash sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-start sm:gap-3">
+                <Link key={`${item.slug}-${year}`} to={`/articles/${item.slug}`} className="grid min-w-0 max-w-full gap-1 rounded-xl px-2 py-2.5 transition-colors hover:bg-wash sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-start sm:gap-3">
                   <span className="text-[.68rem] font-semibold text-accent">{date || year}</span>
-                  <span className="text-[.76rem] leading-relaxed text-ink">{item.title}</span>
+                  <span className="min-w-0 break-words text-[.76rem] leading-relaxed text-ink">{item.title}</span>
                 </Link>
               ))}
             </div>

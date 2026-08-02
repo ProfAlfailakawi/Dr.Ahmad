@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { EASE, FadeUp, Page, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
+import { SocialIcon } from '../components/icons'
 
 export default function NotFound() {
   const { articles, books, papers } = useCmsContent()
@@ -60,7 +61,7 @@ export default function NotFound() {
                 aria-label="بحث"
                 className="not-found-search w-full rounded-full border border-hair bg-canvas py-3.5 pe-12 ps-5 text-center text-[.98rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
               />
-              <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft">⌕</span>
+              <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft"><SocialIcon name="Search" size={17} /></span>
             </div>
 
             {hits.length > 0 && (

@@ -702,18 +702,22 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                 type="button"
                 onPointerDown={(event) => firstPress(event, () => setView('thread'))}
                 onClick={(event) => { if (event.detail === 0) setView('thread') }}
-                className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+                aria-label="تتبّع الفكرة عبر السنوات"
+                title="تتبّع الفكرة عبر السنوات"
+                className="flex h-11 w-12 items-center justify-center text-ink transition-colors hover:bg-accent hover:text-canvas"
               >
-                🧬 عبر السنوات
+                <SocialIcon name="History" size={18} />
               </button>
               <span className="my-1.5 w-px bg-hair" />
               <button
                 type="button"
                 onPointerDown={(event) => firstPress(event, () => { void openCard() })}
                 onClick={(event) => { if (event.detail === 0) void openCard() }}
-                className="flex items-center gap-1.5 px-4 py-2 text-[.78rem] font-semibold text-ink transition-colors hover:bg-accent hover:text-canvas"
+                aria-label="صناعة بطاقة اقتباس"
+                title="صناعة بطاقة اقتباس"
+                className="flex h-11 w-12 items-center justify-center text-ink transition-colors hover:bg-accent hover:text-canvas"
               >
-                🖼 بطاقة اقتباس
+                <SocialIcon name="Image" size={18} />
               </button>
             </motion.div>
           </div>

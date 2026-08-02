@@ -179,20 +179,20 @@ export default function MediaDetail() {
             <section className="mt-10 border-t border-hair pt-8" aria-labelledby="media-related-title">
               <h2 id="media-related-title" className="font-display text-xl font-semibold text-ink">امتداد اللقاء في المشروع المعرفي</h2>
               <p className="mt-2 text-[.76rem] text-soft">صلة موضوعية محسوبة من عنوان اللقاء ومحاوره ونصه المفرّغ ومن الأرشيف نفسه؛ لا تعني أن المادة ذُكرت حرفياً داخل اللقاء.</p>
-              <div className="mt-5 grid gap-3 lg:grid-cols-2">
+              <div dir="rtl" className="media-related-rail rail -mx-1 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-3 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden" aria-label="مواد مرتبطة باللقاء">
                 {[
                   ...articleLinks.map(({ item: article }) => ({ key: `article-${article.slug}`, to: `/articles/${article.slug}`, kind: 'مقال', title: article.title, note: 'امتدادٌ موضوعي من الأرشيف المقروء.' })),
                   ...paperLinks.map(({ item: paper }) => ({ key: `paper-${paper.slug}`, to: `/research/${paper.slug}`, kind: 'بحث', title: paper.titleAr || paper.title, note: 'ورقة أقرب إلى الفكرة التي دار حولها اللقاء.' })),
                   ...bookLinks.map(({ book, concept }) => ({ key: `book-${book.slug}`, to: `/publications/${book.slug}#${bookKnowledgeAnchor(concept)}`, kind: `${book.slug === 'encyclopedia' ? 'من الموسوعة' : 'من كتاب'} · ص ${concept.pageStart}`, title: book.title, note: concept.title })),
-                ].map((relatedItem, index) => (
+                ].map((relatedItem) => (
                   <Link
                     key={relatedItem.key}
                     to={relatedItem.to}
-                    className={`group w-[94%] rounded-2xl border border-hair bg-canvas p-4 text-right transition-colors hover:border-accent lg:w-full ${index % 2 === 0 ? 'ml-auto' : 'mr-auto'} lg:mx-0`}
+                    className="group flex w-[82vw] max-w-[23rem] shrink-0 snap-start flex-col rounded-2xl border border-hair bg-canvas p-4 text-right transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-accent hover:shadow-sm sm:w-[22rem]"
                   >
                     <span className="flex items-center justify-between gap-3 text-[.65rem] font-semibold text-accent"><span>{relatedItem.kind}</span><span aria-hidden className="transition-transform group-hover:-translate-x-1">←</span></span>
-                    <strong className="mt-2 block text-[.88rem] leading-relaxed text-ink">{relatedItem.title}</strong>
-                    <span className="mt-1.5 block text-[.72rem] leading-relaxed text-soft">{relatedItem.note}</span>
+                    <strong className="mt-3 block break-words text-[.9rem] leading-[1.75] text-ink">{relatedItem.title}</strong>
+                    <span className="mt-auto block pt-3 text-[.72rem] leading-relaxed text-soft">{relatedItem.note}</span>
                   </Link>
                 ))}
               </div>

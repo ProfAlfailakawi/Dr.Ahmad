@@ -162,7 +162,7 @@ export function FloatingActions() {
                 aria-label="العودة للأعلى"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-hair bg-canvas/90 text-ink shadow-[0_10px_28px_-14px_rgba(21,22,26,.5)] backdrop-blur transition-colors hover:border-accent hover:text-accent"
               >
-                ↑
+                <SocialIcon name="ArrowUp" size={17} />
               </motion.button>
             )}
           </AnimatePresence>
@@ -219,7 +219,7 @@ export function OwnerEdit({ tab, slug, className = '' }: { tab: 'articles' | 'bo
       title="تحرير (يظهر لك وحدك)"
       className={`inline-flex h-8 w-8 items-center justify-center rounded-full border border-hair align-middle text-[.9rem] text-soft transition-colors hover:border-accent hover:text-accent ${className}`}
     >
-      ✎
+      <SocialIcon name="Edit" size={15} />
     </RouterLink>
   )
 }

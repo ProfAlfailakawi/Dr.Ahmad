@@ -22,6 +22,32 @@ import { SocialIcon as ActionIcon } from '../components/icons'
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
 
+function HomeMediaThumb({ url, title }: { url: string; title: string }) {
+  const videoId = ytId(url)
+  const [source, setSource] = useState(() => videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '')
+
+  if (!source) return <div className="h-full w-full bg-wash" aria-hidden="true" />
+
+  return (
+    <img
+      src={source}
+      alt={title}
+      loading="lazy"
+      width="480"
+      height="360"
+      className="h-full w-full object-cover"
+      onLoad={(event) => {
+        if (event.currentTarget.naturalWidth <= 120 && source.includes('/hqdefault.')) {
+          setSource(source.replace('/hqdefault.', '/mqdefault.'))
+        }
+      }}
+      onError={() => {
+        if (source.includes('/hqdefault.')) setSource(source.replace('/hqdefault.', '/mqdefault.'))
+      }}
+    />
+  )
+}
+
 function QuickArticleActions({ article, className = '' }: { article: ArticleRecord; className?: string }) {
   const [saved, setSaved] = useState(() => isArticleSaved(article.slug))
   const [copied, setCopied] = useState(false)
@@ -84,7 +110,7 @@ function MajlisSpark() {
       className="group relative flex h-full flex-col rounded-2xl border border-hair bg-canvas p-6 transition-colors duration-300 hover:border-accent md:p-7"
     >
       <p className="mb-4 flex items-center gap-2.5 text-[.76rem] font-semibold text-accent">
-        <span className="text-[.7rem]">▷</span>
+        <SocialIcon name="Play" size={13} />
         مجلس الفكرة
       </p>
       <p className="font-display text-[1.08rem] font-semibold leading-[1.75] text-ink transition-colors group-hover:text-accent">
@@ -442,22 +468,26 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
   const when = pick.d.toLocaleDateString('ar-u-nu-latn', { month: 'long', year: 'numeric' })
 
   const card = (
-    <Link to={`/articles/${pick.a.slug}`} data-hover className={`group block h-full rounded-2xl border border-hair bg-canvas transition-colors hover:border-accent ${compact ? 'p-6 md:p-7' : 'max-w-3xl border-0 p-0'}`}>
-      <div className="flex items-start gap-3 text-accent">
-        <span className="mt-[.7em] h-[1.5px] w-7 shrink-0 bg-accent" />
-        <p className="min-w-0 text-[.74rem] font-semibold leading-[1.7]">
-          <span className="block sm:inline">في مثل هذا الأسبوع</span>
-          <span className="hidden px-1 sm:inline">·</span>
-          <span className="block sm:inline">{yearsAgo(n)}</span>
-        </p>
+    <div data-hover className={`group relative h-full rounded-2xl border border-hair bg-canvas transition-colors hover:border-accent ${compact ? 'p-6 md:p-7' : 'max-w-3xl border-0 p-0'}`}>
+      <Link to={`/articles/${pick.a.slug}`} aria-label={`اقرأ مقال: ${pick.a.title}`} className="absolute inset-0 z-0"><span className="sr-only">{pick.a.title}</span></Link>
+      <div className="pointer-events-none relative z-10">
+        <div className="flex items-start justify-between gap-3 text-accent">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="mt-[.7em] h-[1.5px] w-7 shrink-0 bg-accent" />
+            <p className="min-w-0 text-[.74rem] font-semibold leading-[1.7]">
+              <span className="block sm:inline">في مثل هذا الأسبوع</span>
+              <span className="hidden px-1 sm:inline">·</span>
+              <span className="block sm:inline">{yearsAgo(n)}</span>
+            </p>
+          </div>
+          <QuickArticleActions article={pick.a} className="pointer-events-auto shrink-0" />
+        </div>
+        <h2 className={`mt-4 font-display font-semibold leading-[1.55] text-ink transition-colors duration-300 group-hover:text-accent ${compact ? 'text-[1.02rem] md:text-[1.08rem]' : 'text-[clamp(1.4rem,3.2vw,2.1rem)]'}`}>
+          «{pick.a.title}»
+        </h2>
+        <p className="mt-3 text-[.76rem] leading-relaxed text-soft transition-colors group-hover:text-accent">كُتب في {when}</p>
       </div>
-      <h2 className={`mt-4 font-display font-semibold leading-[1.55] text-ink transition-colors duration-300 group-hover:text-accent ${compact ? 'text-[1.02rem] md:text-[1.08rem]' : 'text-[clamp(1.4rem,3.2vw,2.1rem)]'}`}>
-        «{pick.a.title}»
-      </h2>
-      <p className="mt-3 text-[.76rem] leading-relaxed text-soft transition-colors group-hover:text-accent">
-        كُتب في {when}
-      </p>
-    </Link>
+    </div>
   )
 
   if (compact) return card
@@ -551,11 +581,13 @@ function ThoughtCompass() {
         <div className="rail -mx-6 mt-7 flex gap-3 overflow-x-auto px-6 pb-4 md:mx-0 md:mt-10 md:gap-5 md:px-0">
           {related.map((a, i) => (
             <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)} className="w-[56vw] max-w-[248px] shrink-0 md:w-[31%] md:max-w-none">
-              <Link to={`/articles/${a.slug}`} data-hover className="group flex h-full min-h-[170px] flex-col rounded-2xl border border-hair bg-canvas p-5 transition-colors duration-300 hover:border-accent md:p-6">
-                <time className="text-[.72rem] text-soft">{a.date}</time>
-                <h3 className="mt-2.5 font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent md:text-[1.12rem]">{a.title}</h3>
-                <span aria-hidden className="mt-auto pt-5 text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1">←</span>
-              </Link>
+              <div data-hover className="group relative flex h-full min-h-[170px] flex-col rounded-2xl border border-hair bg-canvas p-5 transition-colors duration-300 hover:border-accent md:p-6">
+                <Link to={`/articles/${a.slug}`} aria-label={`اقرأ مقال: ${a.title}`} className="absolute inset-0 z-0"><span className="sr-only">{a.title}</span></Link>
+                <div className="pointer-events-none relative z-10 flex h-full min-w-0 flex-col">
+                  <div className="flex items-start justify-between gap-3"><time className="text-[.72rem] text-soft">{a.date}</time><QuickArticleActions article={a} className="pointer-events-auto shrink-0" /></div>
+                  <h3 className="mt-2.5 font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent md:text-[1.12rem]">{a.title}</h3>
+                </div>
+              </div>
             </FadeUp>
           ))}
         </div>
@@ -649,7 +681,7 @@ function LatestCard({ compact = false }: { compact?: boolean }) {
           </h2>
           {compact && latest.excerpt && <p className="mt-4 max-w-2xl text-[.94rem] font-light leading-[1.9] text-ink/75">{latest.excerpt}</p>}
         </div>
-        <span className="inline-flex w-fit items-center gap-2 text-[.86rem] font-semibold text-accent">اقرأ المقال <span className="transition-transform duration-300 group-hover:-translate-x-1">←</span></span>
+
       </div>
     </motion.article>
   )
@@ -768,8 +800,9 @@ type SelectedArchiveItem = { type: string; kind: 'article' | 'book' | 'paper' | 
 
 function ArchiveCardCover({ item }: { item: SelectedArchiveItem }) {
   const [failed, setFailed] = useState(false)
+  const [source, setSource] = useState(item.image || '')
   const isBook = item.kind === 'book'
-  const showImage = Boolean(item.image && !failed)
+  const showImage = Boolean(source && !failed)
   if (!showImage) {
     return (
       <div className={`archive-editorial-cover archive-editorial-cover--${item.kind} pointer-events-none`} aria-hidden="true">
@@ -781,12 +814,18 @@ function ArchiveCardCover({ item }: { item: SelectedArchiveItem }) {
     )
   }
   return (
-    <div className={`pointer-events-none relative z-[1] flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3 md:h-32' : item.external ? 'selected-media-frame h-28 overflow-hidden md:h-32' : 'h-28 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${item.image})` } as CSSProperties) : undefined}>
+    <div className={`pointer-events-none relative z-[1] flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3 md:h-32' : item.external ? 'selected-media-frame h-28 overflow-hidden md:h-32' : 'h-28 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${source})` } as CSSProperties) : undefined}>
       <img
-        src={item.image}
+        src={source}
         alt=""
         loading="lazy"
-        onError={() => setFailed(true)}
+        onLoad={(event) => {
+          if (item.external && event.currentTarget.naturalWidth <= 120 && source.includes('/hqdefault.')) setSource(source.replace('/hqdefault.', '/mqdefault.'))
+        }}
+        onError={() => {
+          if (item.external && source.includes('/hqdefault.')) setSource(source.replace('/hqdefault.', '/mqdefault.'))
+          else setFailed(true)
+        }}
         className={`${isBook ? 'h-full w-full object-contain' : item.external ? 'selected-media-thumb h-full w-full opacity-95' : 'h-full w-full object-cover opacity-90'}`}
       />
     </div>
@@ -933,7 +972,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
             </FadeUp>
             <FadeUp delay={0.12} className="hidden md:block">
               <div className="flex flex-col divide-y divide-hair border-r border-hair pr-8">
-                {topArticles.slice(1, 3).map((article) => <Link key={article.slug} to={`/articles/${article.slug}`} className="group py-6 first:pt-0"><time className="text-[.76rem] text-soft">{article.date}</time><h4 className="mt-2 font-display text-[1.1rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{article.title}</h4></Link>)}
+                {topArticles.slice(1, 3).map((article) => <div key={article.slug} className="group relative py-6 first:pt-0"><Link to={`/articles/${article.slug}`} aria-label={`اقرأ مقال: ${article.title}`} className="absolute inset-0 z-0"><span className="sr-only">{article.title}</span></Link><div className="pointer-events-none relative z-10"><div className="flex items-start justify-between gap-3"><time className="text-[.76rem] text-soft">{article.date}</time><QuickArticleActions article={article} className="pointer-events-auto shrink-0" /></div><h4 className="mt-2 font-display text-[1.1rem] font-medium leading-[1.6] text-ink transition-colors group-hover:text-accent">{article.title}</h4></div></div>)}
               </div>
             </FadeUp>
           </div>
@@ -968,9 +1007,9 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
           <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" cta="عرض الكل" />
           <div className="grid gap-8 md:grid-cols-[1.55fr_.45fr] md:gap-12">
             <FadeUp>
-              {topMedia[0] && <a href={topMedia[0].url} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-2xl"><div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>{ytId(topMedia[0].url) && <img src={`https://i.ytimg.com/vi/${ytId(topMedia[0].url)}/hqdefault.jpg`} alt={topMedia[0].title} loading="lazy" className="h-full w-full object-cover" />}<span className="absolute inset-0 bg-ink/10" /><span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/40 text-white">▶</span></div><div className="mt-4"><span className="text-[.74rem] font-semibold text-accent">{topMedia[0].outlet}</span><h3 className="mt-1.5 font-display text-[1.2rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{topMedia[0].title}</h3></div></a>}
+              {topMedia[0] && <a href={topMedia[0].url} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-2xl"><div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}><HomeMediaThumb url={topMedia[0].url} title={topMedia[0].title} /><span className="absolute inset-0 bg-ink/10" /><span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/40 text-white"><SocialIcon name="Play" size={22} /></span></div><div className="mt-4"><span className="text-[.74rem] font-semibold text-accent">{topMedia[0].outlet}</span><h3 className="mt-1.5 font-display text-[1.2rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{topMedia[0].title}</h3></div></a>}
             </FadeUp>
-            <FadeUp delay={0.12} className="hidden md:block"><div className="flex flex-col divide-y divide-hair border-r border-hair pr-8">{topMedia.slice(1, 3).map((item) => <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="group flex items-start gap-3 py-5 first:pt-0"><span className="mt-1 text-[.7rem] text-accent">▶</span><span><span className="block text-[.72rem] font-semibold text-accent">{item.outlet}</span><span className="mt-1 block text-[.98rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span></span></a>)}</div></FadeUp>
+            <FadeUp delay={0.12} className="hidden md:block"><div className="flex flex-col divide-y divide-hair border-r border-hair pr-8">{topMedia.slice(1, 3).map((item) => <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="group flex items-start gap-3 py-5 first:pt-0"><span className="mt-1 text-accent"><SocialIcon name="Play" size={13} /></span><span><span className="block text-[.72rem] font-semibold text-accent">{item.outlet}</span><span className="mt-1 block text-[.98rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span></span></a>)}</div></FadeUp>
           </div>
         </div>
       </section>

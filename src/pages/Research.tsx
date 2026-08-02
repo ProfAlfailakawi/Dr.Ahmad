@@ -65,7 +65,7 @@ export default function Research() {
                 <label htmlFor="research-index-input">فهرسة داخلية قوية</label>
                 <div className="research-index-input-wrap">
                   <input id="research-index-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث بالعنوان، الباحث، الكلمات المفتاحية، المنهج، العينة، المجلة أو DOI…" />
-                  <span aria-hidden>⌕</span>
+                  <span aria-hidden><SocialIcon name="Search" size={15} /></span>
                 </div>
               </div>
               <div className="research-index-filters">

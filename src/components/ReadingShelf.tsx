@@ -4,6 +4,7 @@ import type { ArticleRecord } from '../lib/cms'
 import { isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
 import { matchBookQuotes, searchBookPassages } from '../lib/book-quotes'
 import { searchMediaChapters, stamp } from '../lib/media-chapters'
+import { SocialIcon } from './icons'
 
 /**
  * الرفّ الشخصي — من نتيجة بحثٍ إلى خطة قراءة.
@@ -108,9 +109,11 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
           <button
             type="button"
             onClick={() => window.print()}
-            className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+            aria-label="طباعة خطة القراءة"
+            title="طباعة خطة القراءة"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
           >
-            اطبع الخطة
+            <SocialIcon name="Print" size={16} />
           </button>
         </div>
       </div>

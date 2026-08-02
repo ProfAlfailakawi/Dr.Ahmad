@@ -856,10 +856,11 @@ export default function AskLibrary() {
                                   <button
                                     type="button"
                                     onClick={handlePrintReadingRoute}
-                                    className="inline-flex min-h-10 items-center gap-2 rounded-full border border-hair px-4 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+                                    aria-label="طباعة مسار القراءة"
+                                    title="طباعة مسار القراءة"
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-ink transition-colors hover:border-accent hover:text-accent"
                                   >
-                                    <span aria-hidden>⌑</span>
-                                    نسخة مطبوعة للمسار
+                                    <SocialIcon name="Print" size={16} />
                                   </button>
                                 )}
                               </div>

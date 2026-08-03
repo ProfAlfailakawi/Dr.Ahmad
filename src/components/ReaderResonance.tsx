@@ -5,9 +5,9 @@
    ٤) بصمة القارئ           — أثرٌ شخصيّ محليّ بالكامل (بلا خادم، بلا تتبّع) يُهدى للقارئ.
    كل مكوّن مستقل ونقيّ: يستقبل بياناته أو يقرأ التخزين المحلي، ويختفي بلطف حين لا مادة له. */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
-import { getDb } from '../lib/firebase'
 import { SocialIcon } from './icons'
 
 const READER_QUOTES_KEY = 'reader:quotes:v2'
@@ -55,59 +55,59 @@ export function WriterResearcherBridge({ articleTitle, paper }: { articleTitle: 
   )
 }
 
-/* ═══════════════ ٢) نبض المقال ═══════════════ */
-export function ArticlePulse({ slug, body }: { slug: string; body: string }) {
-  const [quote, setQuote] = useState('')
-  useEffect(() => {
-    let alive = true
-    ;(async () => {
-      try {
-        const db = await getDb()
-        if (!db) return
-        const { collection, getDocs, query, where } = await import('firebase/firestore')
-        const snap = await getDocs(query(collection(db, 'article_highlights'), where('slug', '==', slug)))
-        const paragraphs = body.split(/\n\s*\n/)
-        const candidates = snap.docs
-          .map((document) => document.data() as { count?: number; paragraph?: number; startOffset?: number; endOffset?: number })
-          .filter((item) => Number(item.count || 0) >= 3 && Number.isInteger(Number(item.paragraph)) && Number.isInteger(Number(item.startOffset)) && Number.isInteger(Number(item.endOffset)))
-          .sort((left, right) => Number(right.count || 0) - Number(left.count || 0))
-        let resolved = ''
-        for (const item of candidates) {
-          const paragraph = paragraphs[Number(item.paragraph)] || ''
-          const startOffset = Number(item.startOffset)
-          const endOffset = Number(item.endOffset)
-          if (!paragraph || startOffset < 0 || endOffset <= startOffset || endOffset > paragraph.length) continue
-          const selected = paragraph.slice(startOffset, endOffset).replace(/\s+/g, ' ').trim()
-          if (selected.length < 12) continue
-          resolved = selected.length > 150 ? `${selected.slice(0, 147).trim()}…` : selected
-          break
-        }
-        if (alive) setQuote(resolved)
-      } catch { /* الصمت أفضل من بطاقة خطأ */ }
-    })()
-    return () => { alive = false }
-  }, [body, slug])
+/* ═══════════════ ٢) نبض المقال ═══════════════
+   لم يعد بطاقةً مستقلة قبل النص. صار إشارةً هامشية من العائلة البصرية نفسها
+   التي تنتمي إليها «لحظة الانعطاف»؛ لا تشغل سطراً ولا تظهر الجملة إلا بالنقر. */
+export function ArticlePulse({ quote, count = 0, stacked = false }: { quote: string; count?: number; stacked?: boolean }) {
+  const [open, setOpen] = useState(false)
 
-  // لا يظهر «نبض المقال» لمجرد وجود عدّاد؛ لا بد من جملة محددة صالحة
-  // يمكن استخراجها من المقال نفسه، وإلا تبقى نهاية المقال نظيفة تماماً.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
   if (!quote) return null
-  /* بأمر الدكتور (٣٠ يوليو): النبض «مسكّر» افتراضياً — سطرٌ رقيق واحد بلا
-     زحمة، ومن أراد الجملة فتحها بنقرة. */
+
   return (
-    <details className="group mt-10 rounded-2xl border border-hair bg-wash/40 px-5 py-4 transition-colors open:border-accent/40 hover:border-accent/40">
-      <summary
-        className="flex cursor-pointer list-none items-center gap-4 [&::-webkit-details-marker]:hidden"
-        aria-label="نبض المقال"
+    <>
+      <button
+        type="button"
+        onClick={(event) => { event.stopPropagation(); setOpen(true) }}
+        aria-label="نبض المقال في هذه الفقرة"
+        title="نبض المقال"
+        className={`article-pulse-mark${stacked ? ' is-stacked' : ''}`}
       >
-        <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent/[.08]0" />
+        <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M2 2v5a2 2 0 0 0 2 2h6" />
+          <path d="M7.5 6.5 10 9l-2.5 2.5" />
+        </svg>
+      </button>
+
+      {open && createPortal((
+        <span
+          role="presentation"
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-[560] flex items-end justify-center bg-ink/25 px-5 pb-6 backdrop-blur-[2px] sm:items-center sm:pb-0"
+        >
+          <span
+            role="dialog"
+            aria-modal="true"
+            aria-label="نبض المقال"
+            onClick={(event) => event.stopPropagation()}
+            className="block w-full max-w-lg rounded-2xl border border-hair bg-canvas p-6 shadow-[0_18px_50px_rgba(20,31,45,.14)] md:p-7"
+          >
+            <span className="flex items-start justify-between gap-4">
+              <span className="text-[.68rem] font-semibold text-accent">نبض المقال</span>
+              <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق" title="إغلاق" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:text-accent"><SocialIcon name="Close" size={13} /></button>
+            </span>
+            <blockquote className="mt-3 border-r-2 border-accent/40 pr-4 font-display text-[1.02rem] font-light leading-[1.95] text-ink md:text-[1.1rem]">{quote}</blockquote>
+            {count > 0 && <span className="mt-4 block border-t border-hair pt-3 text-[.68rem] text-soft">عدد الإشارات: {new Intl.NumberFormat('ar-KW-u-nu-arab').format(count)}</span>}
+          </span>
         </span>
-        <span className="text-[.85rem] font-semibold text-accent">نبض المقال</span>
-        <span className="mr-auto text-soft transition-transform group-open:rotate-180" aria-hidden><SocialIcon name="ChevronDown" size={14} /></span>
-      </summary>
-      <p className="mt-3 pr-6 text-[.85rem] font-light leading-relaxed text-soft">«{quote}»</p>
-    </details>
+      ), document.body)}
+    </>
   )
 }
 

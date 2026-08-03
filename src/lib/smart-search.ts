@@ -412,7 +412,7 @@ export function buildSmartQueryPlan(query: string): SmartQueryPlan {
   const interpretation = trustedPrimary && understanding.confidence >= 36
     ? `المعنى الأقرب: ${trustedPrimary.canonicalAr}${recognized.length > 1 ? `، مع صلة بـ${recognized.slice(1).join(' و')}` : ''}.`
     : coreText
-      ? `أبحث عن معنى «${coreText}» وصياغاته القريبة، لا عن تطابق حرفي فقط.`
+      ? `أبحث عن معنى «${coreText}».`
       : ''
 
   const result: SmartQueryPlan = {

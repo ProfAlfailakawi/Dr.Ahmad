@@ -48,6 +48,10 @@ type LiveTestimonial = {
 
 type InboxView = "letters" | "threads" | "echoes" | "questions";
 
+/* تبقى طبقتا الأصداء والخيوط محفوظتين في الكود والبيانات، لكنهما خارج الواجهة
+   العامة حالياً حتى لا تتحول «رسائل على الهامش» إلى بوابة مزدحمة. */
+const SHOW_ARCHIVE_SIDE_TABS = false;
+
 type LetterItem = Omit<EditorialLetter, "tone" | "source"> & {
   tone: string;
   source: "live" | "editorial";
@@ -211,14 +215,16 @@ export default function Inbox() {
   const archiveDialogues = useMemo(() => buildArchiveDialogues(articles, books, papers, media), [articles, books, media, papers]);
   const inboxTabs: Array<{ id: InboxView; label: string }> = [
     { id: "letters", label: "الرسائل" },
-    { id: "echoes", label: "أصداء الأرشيف" },
     { id: "questions", label: "الأسئلة" },
   ];
-  if (archiveDialogues.length > 0) {
-    inboxTabs.splice(1, 0, { id: "threads", label: "خيوط الأرشيف" });
+  if (SHOW_ARCHIVE_SIDE_TABS) {
+    inboxTabs.splice(1, 0, { id: "echoes", label: "أصداء الأرشيف" });
+    if (archiveDialogues.length > 0) inboxTabs.splice(1, 0, { id: "threads", label: "خيوط الأرشيف" });
   }
   useEffect(() => {
-    if (activeView === "threads" && archiveDialogues.length === 0) setActiveView("letters");
+    if ((!SHOW_ARCHIVE_SIDE_TABS && (activeView === "threads" || activeView === "echoes")) || (activeView === "threads" && archiveDialogues.length === 0)) {
+      setActiveView("letters");
+    }
   }, [activeView, archiveDialogues.length]);
   const [echoes, setEchoes] = useState<VoiceEcho[]>([]);
   useEffect(() => {
@@ -299,7 +305,7 @@ export default function Inbox() {
     },
     questions: {
       title: "سؤالٌ يفتح طريقاً جديداً.",
-      sub: "أسئلة تصل إلى الفكرة من أبواب متعددة، ثم تعود بالقارئ إلى مادتها الموثقة.",
+      sub: "",
     },
   }[activeView];
 
@@ -402,9 +408,6 @@ export default function Inbox() {
             <span className="text-[.76rem] font-semibold uppercase text-accent">
               {featuredLetter?.source === "editorial" ? "رسالة تمثيلية" : "على هامش الأرشيف"}
             </span>
-            <p className="mt-2 max-w-2xl text-[.76rem] font-light leading-relaxed text-soft">
-              النماذج الموسومة بأنها تمثيلية صيغت تحريرياً لتجسيد أسئلة شائعة، وليست رسائل واردة من أشخاص حقيقيين.
-            </p>
           </FadeUp>
           {featuredLetter ? (
             <div className="mt-8 grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:items-end">
@@ -444,7 +447,7 @@ export default function Inbox() {
               <p className="mt-8 text-[.86rem] leading-relaxed text-soft">
                 {inboxState.loading || inboxState.refreshing
                   ? "نستعيد الرسائل المحفوظة ونتحقق من أحدث نسخة…"
-                  : "لا توجد رسالة معروضة الآن. يمكنك الانتقال إلى خيوط الأرشيف أو الأسئلة من التبويبات أعلاه."}
+                  : "لا توجد رسالة معروضة الآن. يمكنك الانتقال إلى الأسئلة من التبويبات أعلاه."}
               </p>
             </FadeUp>
           )}

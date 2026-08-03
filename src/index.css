@@ -798,28 +798,51 @@ body.audio-dock-open .reader-resume-prompt {
 /* الخريطة */
 iframe { color-scheme: light; }
 
-/* «كوكبة التوقيعات» — نجوم فوق أفق شعري، تتلألأ وتتوهج عند اللمس */
+/* «كوكبة التوقيعات» — خط واحد هادئ، وكل نقطة مرتبطة باسمها مباشرة. */
+.signatures-rail::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 6px;
+  height: 1px;
+  background: var(--c-hair);
+  pointer-events: none;
+}
 .sig-star {
   position: absolute;
-  top: 13px;
+  top: 3px;
   right: 50%;
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 9999px;
-  background: rgb(var(--c-accent) / 0.9);
-  transform: translate(50%, var(--dy, -8px)) scale(1);
-  transition: transform 0.45s var(--E), box-shadow 0.45s var(--E);
-  animation: sig-twinkle 4.5s ease-in-out infinite;
+  border: 1px solid rgb(var(--c-accent) / .7);
+  background: rgb(var(--c-canvas));
+  transform: translateX(50%) scale(1);
+  transition: transform .35s var(--E), background-color .35s var(--E), box-shadow .35s var(--E);
+  animation: sig-twinkle 5.5s ease-in-out infinite;
   animation-delay: var(--tw, 0s);
 }
-.sig-item:hover .sig-star {
-  transform: translate(50%, var(--dy, -8px)) scale(1.9);
-  box-shadow: 0 0 16px 3px rgb(var(--c-accent) / 0.4);
-  animation-play-state: paused;
-  opacity: 1;
+.sig-stem {
+  position: absolute;
+  top: 10px;
+  right: 50%;
+  width: 1px;
+  height: 10px;
+  background: var(--c-hair);
+  transform: translateX(50%);
+  transition: background-color .35s var(--E), height .35s var(--E);
 }
+.sig-item:hover .sig-star,
+.sig-item:focus-visible .sig-star {
+  background: rgb(var(--c-accent));
+  transform: translateX(50%) scale(1.35);
+  box-shadow: 0 0 0 5px rgb(var(--c-accent) / .08);
+  animation-play-state: paused;
+}
+.sig-item:hover .sig-stem,
+.sig-item:focus-visible .sig-stem { background: rgb(var(--c-accent) / .55); height: 12px; }
 @keyframes sig-twinkle {
-  0%, 100% { opacity: 0.45; }
+  0%, 100% { opacity: .55; }
   50% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -3588,9 +3611,34 @@ body.selection-active .floating-actions {
 .pivot-mark:hover,
 .pivot-mark:focus-visible { opacity: 1; }
 .popular-highlight-paragraph:hover .pivot-mark { opacity: .6; }
+
+/* نبض المقال يستخدم الإشارة نفسها، لا بطاقةً مستقلة. اختلاف موضعه فقط يمنع
+   تراكبه مع لحظة الانعطاف حين تجتمع الإشارتان في فقرة واحدة. */
+.article-pulse-mark {
+  position: absolute;
+  top: .5rem;
+  inset-inline-end: -1.45rem;
+  display: grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent, #3E5C78);
+  opacity: .28;
+  cursor: pointer;
+  transition: opacity .24s ease;
+}
+.article-pulse-mark.is-stacked { top: 1.8rem; }
+.article-pulse-mark:hover,
+.article-pulse-mark:focus-visible { opacity: 1; }
+.popular-highlight-paragraph:hover .article-pulse-mark { opacity: .6; }
 @media (max-width: 900px) {
   /* لا هامش يتّسع على الجوال: تنزل داخل الحافة بلا أن تلمس النص. */
-  .pivot-mark { inset-inline-end: -.15rem; top: .35rem; opacity: .4; }
+  .pivot-mark,
+  .article-pulse-mark { inset-inline-end: -.15rem; top: .35rem; opacity: .4; }
+  .article-pulse-mark.is-stacked { top: 1.65rem; }
 }
 
 /* ============================================================

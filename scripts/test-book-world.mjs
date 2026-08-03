@@ -46,7 +46,7 @@ const worldSource = readFileSync(join(root, 'src/components/BookWorld.tsx'), 'ut
 const detailSource = readFileSync(join(root, 'src/pages/BookDetail.tsx'), 'utf8')
 assert.doesNotMatch(worldSource, /\.slice\(-6\)/, 'the old newest-six timeline bug must stay removed')
 assert.doesNotMatch(worldSource, /أصداء موثقة/, 'redundant echo card was intentionally removed')
-assert.match(worldSource, /className="group rounded-2xl border border-hair bg-canvas"/)
+assert.match(worldSource, /className="group [^"]*rounded-2xl border border-hair bg-canvas"/, 'Book World disclosures may add mobile containment classes without becoming visual cards')
 assert.doesNotMatch(worldSource, /<details[^>]*\sopen(?:=|\s|>)/, 'Book World disclosures must be collapsed by default')
 assert.doesNotMatch(worldSource, /while \(ideas\.length < 7\)/, 'empty/fabricated paths must never be padded into the UI')
 assert.doesNotMatch(worldSource, /\.filter\(\(row\)[\s\S]{0,220}\.slice\(0,\s*7\)/, 'all verified book concepts must remain addressable from search and archive deep links')
@@ -63,7 +63,9 @@ assert.match(worldSource, /articles: activePath\?\.articles\.slice\(0, 3\)/, 'do
 assert.match(worldSource, /timeline: activePath \? buildBookWorldTimeline\(activePath\.articles, 6\) : \[\]/, 'archive timeline must follow the selected path')
 assert.doesNotMatch(worldSource, /لا توجد وصلة أرشيفية قوية لهذا المسار بعد/, 'an empty path must be hidden rather than rendered with an empty-state message')
 assert.ok((detailSource.match(/<details key=\{title\}/g) || []).length === 1)
-assert.doesNotMatch(detailSource, /<details[^>]*\sopen(?:=|\s|>)/, 'book guide cards must be collapsed by default')
+const guideDetailsTag = detailSource.match(/<details key=\{title\}[^>]*>/)?.[0] || ''
+assert.ok(guideDetailsTag, 'the generic book guide disclosure must remain present')
+assert.doesNotMatch(guideDetailsTag, /\sopen(?:=|\s|>)/, 'book guide cards must be collapsed by default')
 
 rmSync(out, { recursive: true, force: true })
 console.log('Book World timeline and low-clutter UI: passed')

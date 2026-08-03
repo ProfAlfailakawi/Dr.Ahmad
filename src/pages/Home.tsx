@@ -401,39 +401,36 @@ function SinceLastVisit() {
    تتلألأ بهدوء وتتوهج حين يلمس الزائر اسمها. لون واحد، حركة همس. */
 function Signatures() {
   const sigs = [
-    { to: '/atlas', t: 'سماء المقالات', dy: -14 },
-    { to: '/thought-paths', t: 'مسار الفكرة', dy: -4 },
-    { to: '/ask', t: 'العقل الحي', dy: -18 },
-    { to: '/decade', t: 'وثيقة العقد', dy: -8 },
-    { to: '/questions', t: 'سؤال يُقلق التعليم', dy: -12 },
+    { to: '/atlas', t: 'سماء المقالات' },
+    { to: '/thought-paths', t: 'مسار الفكرة' },
+    { to: '/ask', t: 'العقل الحي' },
+    { to: '/decade', t: 'وثيقة العقد' },
+    { to: '/questions', t: 'سؤال يُقلق التعليم' },
   ]
   return (
-    <section className="border-t border-hair px-6 py-10 md:px-11 md:py-12">
+    <section className="border-t border-hair px-6 py-8 md:px-11 md:py-10">
       <div className="mx-auto max-w-shell">
         <FadeUp>
-          <p className="text-[.78rem] font-semibold text-accent">✦ توقيعات الموقع</p>
+          <p className="text-[.76rem] font-semibold text-accent">توقيعات الموقع</p>
         </FadeUp>
         <FadeUp delay={0.08}>
-          <div className="relative mt-9">
-            {/* الأفق */}
-            <span aria-hidden className="pointer-events-none absolute left-0 right-0 top-[13px] h-px bg-hair" />
-            <div className="flex flex-wrap items-end gap-x-10 gap-y-8 md:gap-x-14">
-              {sigs.map((s, i) => (
-                <Link
-                  key={s.to}
-                  to={s.to}
-                  data-hover
-                  className="sig-item group relative pt-8"
-                  style={{ ['--dy' as string]: `${s.dy}px`, ['--tw' as string]: `${(i * 0.9).toFixed(1)}s` }}
-                >
-                  <span aria-hidden className="sig-star" />
-                  <span className="block font-display text-[.98rem] font-medium text-soft transition-colors duration-300 group-hover:text-ink">
-                    {s.t}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
+          <nav className="signatures-rail relative mt-6 flex snap-x snap-proximity items-start gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="توقيعات الموقع">
+            {sigs.map((signature, index) => (
+              <Link
+                key={signature.to}
+                to={signature.to}
+                data-hover
+                className="sig-item group relative flex min-w-[9.5rem] snap-start flex-col items-center px-3 pt-7 text-center md:min-w-0 md:flex-1"
+                style={{ ['--tw' as string]: `${(index * 0.65).toFixed(2)}s` }}
+              >
+                <span aria-hidden className="sig-star" />
+                <span aria-hidden className="sig-stem" />
+                <span className="block font-display text-[.92rem] font-medium leading-[1.55] text-soft transition-colors duration-300 group-hover:text-ink">
+                  {signature.t}
+                </span>
+              </Link>
+            ))}
+          </nav>
         </FadeUp>
       </div>
     </section>
@@ -1071,12 +1068,19 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
       <section className="border-t border-hair px-6 py-8 md:px-11 md:py-10">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <button ref={triggerRef} type="button" onClick={() => setActive('maps')} aria-haspopup="dialog" aria-expanded={Boolean(active)} aria-controls="home-thought-maps-dialog" className="group flex w-full items-center justify-between gap-5 rounded-3xl border border-hair bg-wash px-5 py-5 text-right transition-colors hover:border-accent md:px-7 md:py-6">
-              <span className="min-w-0">
-                <span className="block text-[.74rem] font-semibold text-accent">خرائط الفكر</span>
-                <span className="mt-1.5 block font-display text-[1.12rem] font-semibold leading-[1.5] text-ink md:text-[1.35rem]">سماء المقالات، رحلة الأثر، وتوقيعات الموقع.</span>
+            <button ref={triggerRef} type="button" onClick={() => setActive('maps')} aria-haspopup="dialog" aria-expanded={Boolean(active)} aria-controls="home-thought-maps-dialog" className="group flex w-full items-center justify-between gap-5 border-y border-hair px-1 py-5 text-right transition-colors hover:border-accent md:py-6">
+              <span className="flex min-w-0 items-center gap-4">
+                <span aria-hidden className="relative h-9 w-9 shrink-0">
+                  <span className="absolute inset-x-0 top-1/2 h-px bg-hair" />
+                  <span className="absolute right-1 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-accent" />
+                  <span className="absolute left-1 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full border border-accent bg-canvas" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[.72rem] font-semibold text-accent">خرائط الفكر والأثر</span>
+                  <span className="mt-1 block font-display text-[1.03rem] font-semibold leading-[1.55] text-ink md:text-[1.2rem]">مدخل واحد إلى سماء المقالات، رحلة الأثر، وتوقيعات الموقع.</span>
+                </span>
               </span>
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent">↗</span>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-all group-hover:border-accent group-hover:-translate-x-0.5">←</span>
             </button>
           </FadeUp>
         </div>

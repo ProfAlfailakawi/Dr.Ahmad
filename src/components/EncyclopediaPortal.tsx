@@ -155,10 +155,10 @@ function buildStrictUnitVideoMap(videos: IndexedEncyclopediaVideo[], doors: Door
     assignedVideoIds.add(video.id)
   }
 
-  // المرحلة الثانية: التسلسل الصريح المكتوب في عنوان الفيديو.
+  // المرحلة الثانية: التسلسل الصريح المكتوب في عنوان أو وصف الفيديو.
   for (const video of videos) {
     if (assignedVideoIds.has(video.id)) continue
-    const sequence = extractEncyclopediaSequence(video.title)
+    const sequence = extractEncyclopediaSequence(`${video.title} ${video.description || ''}`)
     if (!sequence.doorNumber || !sequence.chapterNumber) continue
     const door = doorByNumber.get(sequence.doorNumber)
     const unit = door?.units.find((item) => item.number === sequence.chapterNumber)
@@ -239,6 +239,74 @@ function InlineVideoCard({
         <h4 className="mt-2 line-clamp-2 text-[.86rem] font-semibold leading-[1.75] text-ink">{video.title}</h4>
       </div>
     </article>
+  )
+}
+
+function UnitVideoCarousel({
+  unitVideos,
+  playingVideoId,
+  selectedPlayerUrl,
+  onPlay,
+}: {
+  unitVideos: IndexedEncyclopediaVideo[]
+  playingVideoId: string
+  selectedPlayerUrl: string
+  onPlay: (video: IndexedEncyclopediaVideo) => void
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (!scrollRef.current) return
+    const offset = direction === 'left' ? -320 : 320
+    scrollRef.current.scrollBy({ left: offset, behavior: 'smooth' })
+  }
+
+  return (
+    <div className="relative mt-3">
+      {unitVideos.length > 1 && (
+        <div className="mb-2.5 flex items-center justify-between text-[.66rem] font-semibold">
+          <span className="text-accent">
+            {formatArabicNumber(unitVideos.length)} مقاطع فيديو داخل هذا الفصل
+          </span>
+          <div className="flex items-center gap-1.5" dir="ltr">
+            <button
+              type="button"
+              onClick={() => scroll('right')}
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+              aria-label="التنقل لليمين بين الفيديوهات"
+              title="التنقل لليمين"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={() => scroll('left')}
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+              aria-label="التنقل لليصار بين الفيديوهات"
+              title="التنقل لليسار"
+            >
+              ›
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div
+        ref={scrollRef}
+        dir="rtl"
+        className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-2 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden"
+      >
+        {unitVideos.map((video) => (
+          <InlineVideoCard
+            key={video.id}
+            video={video}
+            active={playingVideoId === video.id}
+            playerUrl={playingVideoId === video.id ? selectedPlayerUrl : ''}
+            onPlay={onPlay}
+          />
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -324,17 +392,12 @@ function DoorRow({
                 </div>
 
                 {unitVideos.length > 0 && (
-                  <div dir="rtl" className="-mx-1 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-2 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden">
-                    {unitVideos.map((video) => (
-                      <InlineVideoCard
-                        key={video.id}
-                        video={video}
-                        active={playingVideoId === video.id}
-                        playerUrl={playingVideoId === video.id ? selectedPlayerUrl : ''}
-                        onPlay={onPlay}
-                      />
-                    ))}
-                  </div>
+                  <UnitVideoCarousel
+                    unitVideos={unitVideos}
+                    playingVideoId={playingVideoId}
+                    selectedPlayerUrl={selectedPlayerUrl}
+                    onPlay={onPlay}
+                  />
                 )}
               </section>
             )
@@ -606,7 +669,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 concepts={concepts}
                 videoMap={unitVideoMap}
                 query={query}
-                initiallyOpen={index === 0}
+                initiallyOpen={false}
                 playingVideoId={playingVideoId}
                 selectedPlayerUrl={selectedPlayerUrl}
                 onPlay={playVideo}

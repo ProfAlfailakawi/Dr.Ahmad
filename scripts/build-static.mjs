@@ -1623,6 +1623,18 @@ const copiedAssets = Object.fromEntries(
     .map(([name, extension]) => [name, syncDirectory(name, extension)]),
 )
 
+// عروض الموسوعة مصدرها المتعقّب داخل files/encyclopedia؛ public/files مستبعد من Git عمداً.
+const encyclopediaDecksSrc = resolve(ROOT, 'files/encyclopedia')
+if (!existsSync(encyclopediaDecksSrc)) throw new Error('مجلد عروض الموسوعة مفقود: files/encyclopedia')
+const encyclopediaDecksDst = resolve(DIST, 'files/encyclopedia')
+rmSync(encyclopediaDecksDst, { recursive: true, force: true })
+mkdirSync(encyclopediaDecksDst, { recursive: true })
+const encyclopediaDecks = readdirSync(encyclopediaDecksSrc, { withFileTypes: true })
+  .filter((entry) => entry.isFile() && entry.name.endsWith('.pptx'))
+for (const entry of encyclopediaDecks) copyFileSync(resolve(encyclopediaDecksSrc, entry.name), resolve(encyclopediaDecksDst, entry.name))
+if (encyclopediaDecks.length !== 4) throw new Error(`عروض الموسوعة غير مكتملة: وُجد ${encyclopediaDecks.length} من 4`)
+copiedAssets['files/encyclopedia'] = encyclopediaDecks.length
+
 // ملفات الأبحاث تحفظ داخل مجلد فرعي واضح؛ النسخ التقليدي أعلاه يتعامل مع ملفات الجذر فقط.
 const researchFilesSrc = resolve(ROOT, 'files/research')
 if (existsSync(researchFilesSrc)) {

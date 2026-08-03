@@ -9,12 +9,14 @@ const read = (file) => readFileSync(resolve(root, file), 'utf8')
 const data = JSON.parse(read('src/data/encyclopedia-teaching-map.json'))
 const portal = read('src/components/EncyclopediaPortal.tsx')
 const helper = read('src/lib/encyclopedia-teaching-map.ts')
+const buildStatic = read('scripts/build-static.mjs')
+const gitignore = read('.gitignore')
 const expectedSlides = { 'door-1': 203, 'door-2': 197, 'door-3': 425, 'door-4': 115 }
 const expectedFiles = {
-  'door-1': 'public/files/encyclopedia/encyclopedia-door-1.pptx',
-  'door-2': 'public/files/encyclopedia/encyclopedia-door-2.pptx',
-  'door-3': 'public/files/encyclopedia/encyclopedia-door-3.pptx',
-  'door-4': 'public/files/encyclopedia/encyclopedia-door-4.pptx',
+  'door-1': 'files/encyclopedia/encyclopedia-door-1.pptx',
+  'door-2': 'files/encyclopedia/encyclopedia-door-2.pptx',
+  'door-3': 'files/encyclopedia/encyclopedia-door-3.pptx',
+  'door-4': 'files/encyclopedia/encyclopedia-door-4.pptx',
 }
 
 assert.deepEqual(Object.keys(data).sort(), Object.keys(expectedSlides).sort())
@@ -60,6 +62,9 @@ assert.match(portal, /aria-label="ابحث في الموسوعة"/)
 assert.match(portal, /name="Search"/)
 assert.doesNotMatch(portal, />\s*ابحث\s*<\/a>/, 'the search entrance must be an icon only')
 assert.doesNotMatch(portal, /bg-ink\/45|text-soft\/55/)
+assert.doesNotMatch(gitignore, /^files(?:\/|$)/m, 'the tracked root files directory must not be ignored')
+assert.match(buildStatic, /files\/encyclopedia/, 'the production build must copy encyclopedia presentations from the tracked root source')
+assert.match(buildStatic, /\.pptx/, 'the production build must include PowerPoint presentations')
 
 console.log('✓ خريطة الشرائح تطابق عروض الأبواب الأربعة وتغطي ٢٤ محوراً')
 console.log('✓ كل محور يربط النص والشرح المرئي والشرائح الدقيقة من دون ازدحام')

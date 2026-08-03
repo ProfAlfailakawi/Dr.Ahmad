@@ -15,7 +15,10 @@ export type EncyclopediaDoorDescriptor = {
   }[]
 }
 
-export type IndexedEncyclopediaVideo = EncyclopediaVideo & {
+export type IndexedEncyclopediaVideo = Omit<
+  EncyclopediaVideo,
+  'doorNumber' | 'chapterNumber' | 'videoNumber' | 'mappingSource' | 'mappingConfidence'
+> & {
   doorId: string | null
   doorNumber: number | null
   chapterNumber: number | null

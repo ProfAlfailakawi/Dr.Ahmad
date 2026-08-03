@@ -12,7 +12,7 @@ import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
 import { stableCanonicalJson } from './src/lib/sovereign-publishing.mjs'
 import { buildMultimodalMeaningCourt } from './src/lib/semantic-court.mjs'
-import { loadEncyclopediaVideoCatalog } from './src/server/encyclopedia-videos.mjs'
+import { getEncyclopediaTranscriptProgress, loadEncyclopediaVideoCatalog, loadEncyclopediaVideoMoment, scheduleEncyclopediaTranscriptWarmup, searchEncyclopediaVideoMoments } from './src/server/encyclopedia-videos.mjs'
 
 // Node لا يقرأ .env تلقائياً. نحمّله محلياً فقط، من دون استبدال متغيرات بيئة النشر.
 const localEnvFile = resolve(process.cwd(), '.env')
@@ -83,6 +83,8 @@ const studioImageAliases = Object.freeze(['/api/studio-image', '/api/generate-st
 const studioImageHealthPath = '/api/ai/studio-image/health'
 const archiveAnswerPath = '/api/ai/archive-answer'
 const encyclopediaVideosPath = '/api/encyclopedia/videos'
+const encyclopediaVideoMomentPath = '/api/encyclopedia/video-moment'
+const encyclopediaVideoSearchPath = '/api/encyclopedia/video-search'
 const journeyPath = '/api/journey'
 const adminNowPath = '/api/admin/site-now'
 const adminJourneysPath = '/api/admin/journeys'
@@ -5524,7 +5526,38 @@ export function createRequestHandler({
         return
       }
       const catalog = await loadEncyclopediaVideoCatalog()
-      sendJson(res, 200, catalog, { 'cache-control': 'public, max-age=1800, stale-while-revalidate=21600' })
+      scheduleEncyclopediaTranscriptWarmup(catalog.videos)
+      sendJson(res, 200, { ...catalog, transcriptIndex: getEncyclopediaTranscriptProgress(catalog.videos) }, { 'cache-control': 'public, max-age=1800, stale-while-revalidate=21600' })
+      return
+    }
+
+    if (url.pathname === encyclopediaVideoMomentPath) {
+      if (method !== 'GET') {
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'GET' })
+        return
+      }
+      const topic = String(url.searchParams.get('topic') || '').trim().slice(0, 180)
+      const videoId = String(url.searchParams.get('video') || '').trim().slice(0, 24)
+      const doorNumber = clamp(Number(url.searchParams.get('door')) || 0, 0, 4)
+      const hints = url.searchParams.getAll('hint').slice(0, 8).map((value) => String(value || '').trim().slice(0, 120)).filter(Boolean)
+      if (!topic && !videoId) throw new HttpError(400, 'Topic or video is required')
+      if (videoId && !/^[\w-]{6,20}$/.test(videoId)) throw new HttpError(400, 'Video id is invalid')
+      const moment = await loadEncyclopediaVideoMoment({ topic, doorNumber, videoId, hints })
+      sendJson(res, moment ? 200 : 404, moment || { error: 'No matching video moment' }, { 'cache-control': 'public, max-age=3600, stale-while-revalidate=86400' })
+      return
+    }
+
+    if (url.pathname === encyclopediaVideoSearchPath) {
+      if (method !== 'GET') {
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'GET' })
+        return
+      }
+      const query = String(url.searchParams.get('q') || '').trim().slice(0, 180)
+      const doorNumber = clamp(Number(url.searchParams.get('door')) || 0, 0, 4)
+      const limit = clamp(Number(url.searchParams.get('limit')) || 6, 1, 10)
+      if (query.length < 2) throw new HttpError(400, 'Search query is too short')
+      const result = await searchEncyclopediaVideoMoments({ query, doorNumber, limit })
+      sendJson(res, 200, result, { 'cache-control': 'public, max-age=1800, stale-while-revalidate=21600' })
       return
     }
 

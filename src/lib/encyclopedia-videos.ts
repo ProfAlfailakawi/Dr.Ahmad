@@ -18,6 +18,7 @@ export type EncyclopediaVideoCatalog = {
   fetchedAt: string
   source: string
   stale?: boolean
+  transcriptIndex?: { running: boolean; total: number; completed: number; available: number }
   videos: EncyclopediaVideo[]
 }
 
@@ -47,6 +48,14 @@ export async function getEncyclopediaVideoCatalog(signal?: AbortSignal): Promise
           fetchedAt: String(payload.fetchedAt || ''),
           source: String(payload.source || 'youtube-channel'),
           stale: Boolean(payload.stale),
+          transcriptIndex: payload.transcriptIndex && typeof payload.transcriptIndex === 'object'
+            ? {
+                running: Boolean(payload.transcriptIndex.running),
+                total: Number(payload.transcriptIndex.total) || videos.length,
+                completed: Number(payload.transcriptIndex.completed) || 0,
+                available: Number(payload.transcriptIndex.available) || 0,
+              }
+            : undefined,
           videos,
         }
       })
@@ -64,4 +73,88 @@ export function youtubeThumbnail(videoId: string) {
 
 export function resetEncyclopediaVideoCatalog() {
   catalogPromise = null
+}
+
+export type EncyclopediaTranscriptProgress = {
+  running: boolean
+  total: number
+  completed: number
+  available: number
+}
+
+export type EncyclopediaVideoMoment = {
+  video: EncyclopediaVideo
+  videoId: string
+  topic: string
+  startSeconds: number
+  endSeconds: number
+  excerpt: string
+  confidence: 'exact' | 'strong' | 'inferred'
+  source: 'captions' | 'sequence' | 'title'
+  score: number
+  sequence: {
+    doorNumber: number | null
+    chapterNumber: number | null
+    videoNumber: number | null
+  }
+  embedUrl: string
+}
+
+export type EncyclopediaVideoMomentSearch = {
+  query: string
+  moments: EncyclopediaVideoMoment[]
+  progress: EncyclopediaTranscriptProgress
+}
+
+const validMoment = (value: unknown): value is EncyclopediaVideoMoment => {
+  if (!value || typeof value !== 'object') return false
+  const item = value as Partial<EncyclopediaVideoMoment>
+  return validVideo(item.video) && typeof item.videoId === 'string' && typeof item.startSeconds === 'number' && Number.isFinite(item.startSeconds)
+}
+
+export async function getEncyclopediaVideoMoment({
+  topic,
+  doorNumber,
+  videoId,
+  hints = [],
+  signal,
+}: {
+  topic: string
+  doorNumber?: number
+  videoId?: string
+  hints?: readonly string[]
+  signal?: AbortSignal
+}): Promise<EncyclopediaVideoMoment | null> {
+  const params = new URLSearchParams({ topic: String(topic || '').trim() })
+  if (doorNumber) params.set('door', String(doorNumber))
+  if (videoId) params.set('video', videoId)
+  for (const hint of hints.slice(0, 8)) if (String(hint || '').trim()) params.append('hint', String(hint).trim())
+  const response = await fetch(`/api/encyclopedia/video-moment?${params}`, { signal, headers: { accept: 'application/json' } })
+  if (!response.ok) throw new Error(`Video moment HTTP ${response.status}`)
+  const payload = await response.json() as unknown
+  return validMoment(payload) ? payload : null
+}
+
+export async function searchEncyclopediaVideoMoments(
+  query: string,
+  { doorNumber, limit = 6, signal }: { doorNumber?: number; limit?: number; signal?: AbortSignal } = {},
+): Promise<EncyclopediaVideoMomentSearch> {
+  const params = new URLSearchParams({ q: String(query || '').trim(), limit: String(Math.max(1, Math.min(10, limit))) })
+  if (doorNumber) params.set('door', String(doorNumber))
+  const response = await fetch(`/api/encyclopedia/video-search?${params}`, { signal, headers: { accept: 'application/json' } })
+  if (!response.ok) throw new Error(`Video moment search HTTP ${response.status}`)
+  const payload = await response.json() as Partial<EncyclopediaVideoMomentSearch>
+  const progress = payload.progress && typeof payload.progress === 'object'
+    ? {
+        running: Boolean(payload.progress.running),
+        total: Number(payload.progress.total) || 0,
+        completed: Number(payload.progress.completed) || 0,
+        available: Number(payload.progress.available) || 0,
+      }
+    : { running: false, total: 0, completed: 0, available: 0 }
+  return {
+    query: String(payload.query || query),
+    moments: Array.isArray(payload.moments) ? payload.moments.filter(validMoment) : [],
+    progress,
+  }
 }

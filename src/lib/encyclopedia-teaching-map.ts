@@ -13,6 +13,7 @@ export type EncyclopediaTeachingTopic = {
   chapter: string
   ranges: EncyclopediaSlideRange[]
   videoHints: string[]
+  chapterNumbers: number[]
   objective: string
   discussion: string
 }

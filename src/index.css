@@ -3588,11 +3588,10 @@ body.selection-active .floating-actions {
 }
 
 
-/* ═══ لحظة الانعطاف ═══
-   علامةٌ في هامش الفقرة بموضعٍ مطلق: خارج تدفّق النصّ تماماً، فلا تزيح
-   حرفاً ولا تضيف سطراً ولا تكسر لفّ الكلمات. تبقى شبه شفافة حتى يقترب
-   المؤشر من الفقرة، فلا تلوّث القراءة لمن لا يريدها. */
-.pivot-mark {
+/* ═══ إشارة المقال الموحّدة ═══
+   علامة واحدة في هامش كل مقال كامل. لا «نبض مقال» منفصل ولا ازدواج مع
+   لحظة الانعطاف؛ مصدر الإشارة يتبدّل في الداخل بينما يبقى الشكل هادئاً. */
+.article-signal-mark {
   position: absolute;
   top: .5rem;
   inset-inline-end: -1.45rem;
@@ -3606,39 +3605,31 @@ body.selection-active .floating-actions {
   color: var(--accent, #3E5C78);
   opacity: .28;
   cursor: pointer;
-  transition: opacity .24s ease;
+  transition: opacity .24s ease, transform .24s ease;
 }
-.pivot-mark:hover,
-.pivot-mark:focus-visible { opacity: 1; }
-.popular-highlight-paragraph:hover .pivot-mark { opacity: .6; }
-
-/* نبض المقال يستخدم الإشارة نفسها، لا بطاقةً مستقلة. اختلاف موضعه فقط يمنع
-   تراكبه مع لحظة الانعطاف حين تجتمع الإشارتان في فقرة واحدة. */
-.article-pulse-mark {
+.article-signal-mark::after {
+  content: '';
   position: absolute;
-  top: .5rem;
-  inset-inline-end: -1.45rem;
-  display: grid;
-  place-items: center;
-  width: 1rem;
-  height: 1rem;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent, #3E5C78);
-  opacity: .28;
-  cursor: pointer;
-  transition: opacity .24s ease;
+  inset: -.22rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  opacity: 0;
+  transform: scale(.72);
+  transition: opacity .24s ease, transform .24s ease;
 }
-.article-pulse-mark.is-stacked { top: 1.8rem; }
-.article-pulse-mark:hover,
-.article-pulse-mark:focus-visible { opacity: 1; }
-.popular-highlight-paragraph:hover .article-pulse-mark { opacity: .6; }
+.article-signal-mark.is-readers::after { opacity: .12; transform: scale(1); }
+.article-signal-mark:hover,
+.article-signal-mark:focus-visible { opacity: 1; transform: translateY(-1px); }
+.article-signal-mark:hover::after,
+.article-signal-mark:focus-visible::after { opacity: .34; transform: scale(1.08); }
+.popular-highlight-paragraph:hover .article-signal-mark { opacity: .62; }
 @media (max-width: 900px) {
-  /* لا هامش يتّسع على الجوال: تنزل داخل الحافة بلا أن تلمس النص. */
-  .pivot-mark,
-  .article-pulse-mark { inset-inline-end: -.15rem; top: .35rem; opacity: .4; }
-  .article-pulse-mark.is-stacked { top: 1.65rem; }
+  /* لا هامش واسعاً على الهاتف: تدخل الحافة من دون أن تلمس النص. */
+  .article-signal-mark { inset-inline-end: -.15rem; top: .35rem; opacity: .42; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .article-signal-mark,
+  .article-signal-mark::after { transition: none; }
 }
 
 /* ============================================================

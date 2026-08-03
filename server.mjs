@@ -12,6 +12,7 @@ import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
 import { stableCanonicalJson } from './src/lib/sovereign-publishing.mjs'
 import { buildMultimodalMeaningCourt } from './src/lib/semantic-court.mjs'
+import { loadEncyclopediaVideoCatalog } from './src/server/encyclopedia-videos.mjs'
 
 // Node لا يقرأ .env تلقائياً. نحمّله محلياً فقط، من دون استبدال متغيرات بيئة النشر.
 const localEnvFile = resolve(process.cwd(), '.env')
@@ -81,6 +82,7 @@ const studioImagePath = '/api/ai/studio-image'
 const studioImageAliases = Object.freeze(['/api/studio-image', '/api/generate-studio-image'])
 const studioImageHealthPath = '/api/ai/studio-image/health'
 const archiveAnswerPath = '/api/ai/archive-answer'
+const encyclopediaVideosPath = '/api/encyclopedia/videos'
 const journeyPath = '/api/journey'
 const adminNowPath = '/api/admin/site-now'
 const adminJourneysPath = '/api/admin/journeys'
@@ -5513,6 +5515,16 @@ export function createRequestHandler({
         requiresVisionCritic: !/^(?:0|false|no|off)$/i.test(String(process.env.STUDIO_IMAGE_REQUIRE_VISION_CRITIC || 'true').trim()),
         revision: String(process.env.K_REVISION || 'local'),
       })
+      return
+    }
+
+    if (url.pathname === encyclopediaVideosPath) {
+      if (method !== 'GET') {
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'GET' })
+        return
+      }
+      const catalog = await loadEncyclopediaVideoCatalog()
+      sendJson(res, 200, catalog, { 'cache-control': 'public, max-age=1800, stale-while-revalidate=21600' })
       return
     }
 

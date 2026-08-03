@@ -2,6 +2,12 @@ import { readFileSync } from 'node:fs'
 
 const CHANNEL_HANDLE = 'موسوعةتكنولوجياالتعليم'
 const CHANNEL_URL = `https://www.youtube.com/@${CHANNEL_HANDLE}/videos`
+const CHANNEL_PAGE_URLS = [
+  CHANNEL_URL,
+  `${CHANNEL_URL}?hl=ar&gl=KW&persist_gl=1`,
+  `${CHANNEL_URL}?hl=en&gl=US&app=desktop`,
+]
+const YOUTUBE_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
 const CACHE_TTL = 6 * 60 * 60 * 1000
 const MAX_PAGES = 24
 const MAX_VIDEOS = 500
@@ -175,22 +181,87 @@ function mergeItems(target, additions) {
   for (const item of additions) if (!target.has(item.id)) target.set(item.id, { ...item, position: target.size + 1 })
 }
 
+
+function decodeXml(value = '') {
+  return String(value)
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+}
+
+function xmlValue(source, tag) {
+  const match = new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, 'i').exec(source)
+  return decodeXml(match?.[1] || '').trim()
+}
+
+export function parseYouTubeFeed(xml) {
+  const entries = String(xml || '').match(/<entry\b[\s\S]*?<\/entry>/gi) || []
+  return entries.map((entry, index) => {
+    const id = bounded(xmlValue(entry, 'yt:videoId'), 24)
+    const title = bounded(xmlValue(entry, 'title'), 500)
+    if (!/^[\w-]{6,20}$/.test(id) || !title) return null
+    const thumbnail = bounded(new RegExp('<media:thumbnail[^>]+url="([^"]+)"', 'i').exec(entry)?.[1] || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`, 2_000)
+    return {
+      id,
+      title,
+      url: `https://www.youtube.com/watch?v=${id}`,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${id}?rel=0`,
+      thumbnail: decodeXml(thumbnail),
+      durationText: '',
+      durationSeconds: 0,
+      publishedText: bounded(xmlValue(entry, 'published'), 100),
+      viewCountText: '',
+      description: bounded(xmlValue(entry, 'media:description'), 1_500),
+      position: index + 1,
+    }
+  }).filter(Boolean)
+}
+
+async function fetchChannelBootstrap(fetchImpl) {
+  let lastError = null
+  for (const pageUrl of CHANNEL_PAGE_URLS) {
+    try {
+      const response = await fetchWithDeadline(fetchImpl, encodeURI(pageUrl), {
+        headers: {
+          accept: 'text/html,application/xhtml+xml',
+          'accept-language': 'ar-KW,ar;q=0.9,en;q=0.7',
+          'user-agent': YOUTUBE_USER_AGENT,
+          cookie: 'CONSENT=YES+; SOCS=CAI',
+        },
+      })
+      const html = await responseText(response)
+      const bootstrap = extractYouTubeBootstrap(html)
+      if (bootstrap.initialData || bootstrap.channelId) return { html, bootstrap, pageUrl }
+      lastError = new Error('YouTube bootstrap data was not found')
+    } catch (error) {
+      lastError = error
+    }
+  }
+  throw lastError || new Error('YouTube channel page is unavailable')
+}
+
+async function fetchYouTubeFeed(fetchImpl, channelId) {
+  if (!/^UC[\w-]{8,}$/.test(String(channelId || ''))) return []
+  try {
+    const response = await fetchWithDeadline(fetchImpl, `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`, {
+      headers: { accept: 'application/atom+xml,application/xml;q=0.9,*/*;q=0.5', 'user-agent': YOUTUBE_USER_AGENT },
+    }, 12_000)
+    return parseYouTubeFeed(await responseText(response))
+  } catch {
+    return []
+  }
+}
+
 export async function fetchEncyclopediaVideoCatalog({ fetchImpl = globalThis.fetch } = {}) {
   if (typeof fetchImpl !== 'function') throw new Error('Fetch is unavailable')
-  const pageResponse = await fetchWithDeadline(fetchImpl, encodeURI(CHANNEL_URL), {
-    headers: {
-      accept: 'text/html,application/xhtml+xml',
-      'accept-language': 'ar,en;q=0.7',
-      'user-agent': 'Mozilla/5.0 (compatible; DrAlfailakawi-Encyclopedia/1.0)',
-    },
-  })
-  const html = await responseText(pageResponse)
-  const bootstrap = extractYouTubeBootstrap(html)
-  if (!bootstrap.initialData) throw new Error('YouTube initial data was not found')
+  const { bootstrap } = await fetchChannelBootstrap(fetchImpl)
 
   const items = new Map()
-  mergeItems(items, parseYouTubeVideos(bootstrap.initialData))
-  let queue = parseYouTubeContinuations(bootstrap.initialData)
+  if (bootstrap.initialData) mergeItems(items, parseYouTubeVideos(bootstrap.initialData))
+  let queue = bootstrap.initialData ? parseYouTubeContinuations(bootstrap.initialData) : []
   const usedTokens = new Set()
 
   if (bootstrap.apiKey && bootstrap.clientVersion && queue.length) {
@@ -202,25 +273,32 @@ export async function fetchEncyclopediaVideoCatalog({ fetchImpl = globalThis.fet
       const continuation = queue.shift()
       if (!continuation || usedTokens.has(continuation)) continue
       usedTokens.add(continuation)
-      const response = await fetchWithDeadline(fetchImpl, `https://www.youtube.com/youtubei/v1/browse?key=${encodeURIComponent(bootstrap.apiKey)}`, {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          origin: 'https://www.youtube.com',
-          referer: CHANNEL_URL,
-          'user-agent': 'Mozilla/5.0 (compatible; DrAlfailakawi-Encyclopedia/1.0)',
-          'x-youtube-client-name': '1',
-          'x-youtube-client-version': bootstrap.clientVersion,
-          ...(bootstrap.visitorData ? { 'x-goog-visitor-id': bootstrap.visitorData } : {}),
-        },
-        body: JSON.stringify({ context, continuation }),
-      })
-      const payload = await responseJson(response)
-      mergeItems(items, parseYouTubeVideos(payload))
-      for (const token of parseYouTubeContinuations(payload)) if (!usedTokens.has(token) && !queue.includes(token)) queue.push(token)
+      try {
+        const response = await fetchWithDeadline(fetchImpl, `https://www.youtube.com/youtubei/v1/browse?key=${encodeURIComponent(bootstrap.apiKey)}`, {
+          method: 'POST',
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            origin: 'https://www.youtube.com',
+            referer: CHANNEL_URL,
+            'user-agent': YOUTUBE_USER_AGENT,
+            'x-youtube-client-name': '1',
+            'x-youtube-client-version': bootstrap.clientVersion,
+            ...(bootstrap.visitorData ? { 'x-goog-visitor-id': bootstrap.visitorData } : {}),
+          },
+          body: JSON.stringify({ context, continuation }),
+        })
+        const payload = await responseJson(response)
+        mergeItems(items, parseYouTubeVideos(payload))
+        for (const token of parseYouTubeContinuations(payload)) if (!usedTokens.has(token) && !queue.includes(token)) queue.push(token)
+      } catch {
+        // لا نسقط الفهرس كله إذا تعطلت صفحة متابعة واحدة؛ نعرض ما وصل فعلاً.
+        break
+      }
     }
   }
+
+  if (!items.size && bootstrap.channelId) mergeItems(items, await fetchYouTubeFeed(fetchImpl, bootstrap.channelId))
 
   const videos = [...items.values()].slice(0, MAX_VIDEOS).map((item, index) => ({ ...item, position: index + 1 }))
   if (!videos.length) throw new Error('No videos were found on the channel')
@@ -228,7 +306,7 @@ export async function fetchEncyclopediaVideoCatalog({ fetchImpl = globalThis.fet
     channel: { handle: CHANNEL_HANDLE, url: CHANNEL_URL, id: bootstrap.channelId || '' },
     count: videos.length,
     fetchedAt: new Date().toISOString(),
-    source: 'youtube-channel',
+    source: items.size > 15 ? 'youtube-channel' : 'youtube-channel-or-feed',
     videos,
   }
 }

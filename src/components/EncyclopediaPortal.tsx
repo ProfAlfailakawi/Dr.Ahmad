@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { Link } from 'react-router'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { bookKnowledgeAnchor, getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
@@ -30,7 +30,7 @@ import { SocialIcon } from './icons'
 import { OwnerEdit } from './extras'
 
 const CHANNEL_URL = 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'
-const ENCYCLOPEDIA_SAMPLE_PDF = '/files/encyclopedia.pdf?v=20260803-3'
+const ENCYCLOPEDIA_SAMPLE_PDF = '/files/encyclopedia.pdf?v=20260803-4'
 const ENCYCLOPEDIA_SAMPLE_FILENAME = 'موسوعة-تكنولوجيا-التعليم-المقدمة-والفهرس.pdf'
 const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-arab').format(value)
 
@@ -92,29 +92,92 @@ function relatedVideoForText(value: string, videos: IndexedEncyclopediaVideo[], 
 
 const unitVideoKey = (doorId: string, unitNumber: number) => `${doorId}:${unitNumber}`
 
+const GENERIC_VIDEO_TERMS = new Set([
+  'التعليم', 'التعلم', 'التدريس', 'التكنولوجيا', 'تقنيه', 'تقنيه التعليم', 'تكنولوجيا التعليم',
+  'شرح', 'موسوعه', 'فيديو', 'مقطع', 'الطالب', 'المعلم',
+].map(normalizeEncyclopediaText))
+
+function directUnitEvidence(video: IndexedEncyclopediaVideo, door: Door, unit: StructureUnit) {
+  // نختبر النص الأصلي للفيديو فقط. لا نستخدم searchText لأنه يحتوي كلمات الفصل
+  // التي أضافها المفهرس بعد الربط، وإلا أصبح القرار يؤكد نفسه بنفسه.
+  const haystack = normalizeEncyclopediaText(`${video.title} ${video.description}`)
+  const normalizedTitle = normalizeEncyclopediaText(unit.title)
+  const exactTitle = Boolean(normalizedTitle && haystack.includes(normalizedTitle))
+  const matchedKeywords = unit.keywords
+    .map(normalizeEncyclopediaText)
+    .filter((keyword) => keyword.length >= 4 && !GENERIC_VIDEO_TERMS.has(keyword) && haystack.includes(keyword))
+  const distinctivePhrases = matchedKeywords.filter((keyword) => keyword.includes(' ') || keyword.length >= 7)
+  const doorTitle = normalizeEncyclopediaText(door.title)
+
+  let score = exactTitle ? 80 : 0
+  if (doorTitle && haystack.includes(doorTitle)) score += 12
+  for (const keyword of matchedKeywords) score += keyword.includes(' ') ? 14 : Math.min(10, 4 + Math.floor(keyword.length / 2))
+
+  return {
+    score,
+    exactTitle,
+    matchedKeywords,
+    direct: exactTitle || distinctivePhrases.length >= 1 || matchedKeywords.length >= 2,
+  }
+}
+
+function linkedVideo(video: IndexedEncyclopediaVideo, door: Door, unit: StructureUnit) {
+  const parts = [`الباب ${door.doorNumber}`, `الفصل ${unit.number}`]
+  if (video.videoNumber) parts.push(`المقطع ${video.videoNumber}`)
+  return {
+    ...video,
+    doorId: door.id,
+    doorNumber: door.doorNumber,
+    chapterNumber: unit.number,
+    chapterTitle: unit.title,
+    sequenceLabel: parts.join(' · '),
+  }
+}
+
+function appendUnitVideo(map: UnitVideoMap, video: IndexedEncyclopediaVideo, door: Door, unit: StructureUnit) {
+  const key = unitVideoKey(door.id, unit.number)
+  map.set(key, [...(map.get(key) || []), linkedVideo(video, door, unit)])
+}
+
 function buildStrictUnitVideoMap(videos: IndexedEncyclopediaVideo[], doors: Door[]): UnitVideoMap {
   const doorByNumber = new Map(doors.map((door) => [door.doorNumber, door]))
   const assignedVideoIds = new Set<string>()
   const map: UnitVideoMap = new Map()
 
+  // المرحلة الأولى: التسلسل المكتوب في عنوان الفيديو هو أقوى دليل صريح.
   for (const video of videos) {
-    if (assignedVideoIds.has(video.id)) continue
-
-    // الربط المعتمد لا يقبل التخمين: يجب أن يذكر عنوان الفيديو الباب والفصل صراحةً.
     const sequence = extractEncyclopediaSequence(video.title)
     if (!sequence.doorNumber || !sequence.chapterNumber) continue
-
     const door = doorByNumber.get(sequence.doorNumber)
     const unit = door?.units.find((item) => item.number === sequence.chapterNumber)
-    if (!door || !unit) continue
+    if (!door || !unit || assignedVideoIds.has(video.id)) continue
+    appendUnitVideo(map, video, door, unit)
+    assignedVideoIds.add(video.id)
+  }
 
-    // الموضوع هو عنوان الفصل المعتمد في فهرس الكتاب؛ لا يُسمح بإسناد فيديو لفصل بديل.
-    if (video.doorId !== door.id || video.chapterNumber !== unit.number) continue
-    if (normalizeEncyclopediaText(video.chapterTitle || '') !== normalizeEncyclopediaText(unit.title)) continue
+  // المرحلة الثانية: بعض فيديوهات القناة عنوانها هو الموضوع نفسه بلا عبارة «باب/فصل».
+  // نقبلها فقط عند وجود تطابق موضوعي مباشر وفائز وحيد؛ لا يوجد أي فيديو احتياطي.
+  for (const video of videos) {
+    if (assignedVideoIds.has(video.id)) continue
+    const sequence = extractEncyclopediaSequence(video.title)
+    const candidateDoors = sequence.doorNumber ? [doorByNumber.get(sequence.doorNumber)].filter(Boolean) as Door[] : doors
+    const candidates = candidateDoors.flatMap((door) => door.units
+      .filter((unit) => !sequence.chapterNumber || unit.number === sequence.chapterNumber)
+      .map((unit) => ({ door, unit, ...directUnitEvidence(video, door, unit) })))
+      .filter((candidate) => candidate.direct && candidate.score > 0)
+      .sort((left, right) => right.score - left.score || left.door.doorNumber - right.door.doorNumber || left.unit.number - right.unit.number)
 
-    const key = unitVideoKey(door.id, unit.number)
-    const current = map.get(key) || []
-    map.set(key, [...current, video])
+    const best = candidates[0]
+    const second = candidates[1]
+    if (!best) continue
+
+    // العنوان الكامل يكفي وحده. أما الكلمات المفتاحية فتحتاج درجة قوية وفارقاً
+    // واضحاً عن أقرب فصل آخر حتى لا يتحول الربط إلى تخمين.
+    const minimumScore = sequence.doorNumber ? 10 : 14
+    const minimumMargin = best.exactTitle ? 0 : 6
+    if (best.score < minimumScore || (second && best.score - second.score < minimumMargin)) continue
+
+    appendUnitVideo(map, video, best.door, best.unit)
     assignedVideoIds.add(video.id)
   }
 
@@ -280,6 +343,8 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const [catalogAttempt, setCatalogAttempt] = useState(0)
   const [query, setQuery] = useState('')
   const [playingVideoId, setPlayingVideoId] = useState('')
+  const [pdfDownloading, setPdfDownloading] = useState(false)
+  const [pdfError, setPdfError] = useState(false)
   const [teachingMaterial, setTeachingMaterial] = useState<TeachingMaterialSelection | null>(null)
 
   useEffect(() => {
@@ -357,6 +422,37 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const openTeachingMaterials = (door: Door, topic?: string) => {
     if (!door.presentation) return
     setTeachingMaterial({ door, topic })
+  }
+
+  const downloadPdf = async (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    if (pdfDownloading) return
+    setPdfDownloading(true)
+    setPdfError(false)
+    try {
+      // fetch ثم Blob يتجاوز عطب Safari القديم الذي كان يعامل ملف PDF كتنقل داخل التطبيق.
+      const response = await fetch(ENCYCLOPEDIA_SAMPLE_PDF, {
+        cache: 'no-store',
+        headers: { accept: 'application/pdf' },
+      })
+      const contentType = response.headers.get('content-type') || ''
+      if (!response.ok || !contentType.toLowerCase().includes('application/pdf')) throw new Error(`PDF HTTP ${response.status}`)
+      const blob = await response.blob()
+      if (blob.size < 100_000) throw new Error('PDF payload is incomplete')
+      const objectUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
+      const anchor = document.createElement('a')
+      anchor.href = objectUrl
+      anchor.download = ENCYCLOPEDIA_SAMPLE_FILENAME
+      anchor.rel = 'noopener'
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
+    } catch {
+      setPdfError(true)
+    } finally {
+      setPdfDownloading(false)
+    }
   }
 
   const retryCatalog = () => {
@@ -448,15 +544,18 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                       href={ENCYCLOPEDIA_SAMPLE_PDF}
                       download={ENCYCLOPEDIA_SAMPLE_FILENAME}
                       type="application/pdf"
+                      onClick={downloadPdf}
+                      aria-busy={pdfDownloading}
                       aria-label="تحميل مقدمة وفهرس موسوعة تكنولوجيا التعليم بصيغة PDF"
-                      className="inline-flex min-h-11 items-center gap-3 rounded-full border border-hair px-5 text-[.78rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+                      className="inline-flex min-h-11 items-center gap-3 rounded-full border border-hair px-5 text-[.78rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent aria-busy:pointer-events-none aria-busy:opacity-60"
                     >
-                      <span>تحميل المقدمة والفهرس</span>
+                      <span>{pdfDownloading ? 'جارٍ تجهيز الملف…' : 'تحميل المقدمة والفهرس'}</span>
                       <span className="text-[.72rem] text-soft">PDF</span>
                       <span className="sr-only">ملف PDF المعتمد متاح كما كان، وهو المقدمة والفهرس فقط وليس الكتاب الكامل.</span>
                     </a>
                   )}
                 </div>
+                {pdfError && <p role="alert" className="mt-2 text-[.66rem] text-red-700">تعذّر تنزيل الملف. أعد المحاولة بعد تحديث الصفحة.</p>}
               </div>
             </FadeUp>
           </div>
@@ -503,6 +602,9 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
             ))}
           </div>
           {!catalog && !catalogError && <p className="mt-4 text-[.65rem] text-soft">تُحمّل الفيديوهات بهدوء.</p>}
+          {catalog && mappedVideos.length > 0 && <p className="mt-4 text-[.65rem] text-soft">تم ربط {formatArabicNumber(mappedVideos.length)} فيديو بالأبواب والفصول مباشرة.</p>}
+          {catalog && mappedVideos.length === 0 && <p role="alert" className="mt-4 text-[.68rem] text-red-700">وصل فهرس القناة، لكن لم يظهر تطابق موثوق. حدّث الصفحة لإعادة الفهرسة.</p>}
+          {catalogError && <p role="alert" className="mt-4 text-[.68rem] text-red-700">تعذّر تحميل فيديوهات الموسوعة الآن. استخدم زر إعادة التحميل أعلاه.</p>}
         </div>
       </section>
 

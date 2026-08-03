@@ -345,22 +345,6 @@ export default function BookDetail() {
                 ))}
               </dl>
 
-              <div className="book-detail-guides mt-6 grid gap-2 md:mt-9">
-                {[
-                  ['لماذا كُتب الكتاب؟', book.whyWritten || guide?.idea || book.desc],
-                  ['الفئة المستهدفة', book.targetAudience || guide?.audience || 'للمهتمين بموضوع الكتاب.'],
-                  ['طريقة الدخول', guide?.entry || 'ابدأ بالفكرة العامة، ثم انتقل إلى الفهرس لتختار الفصل الأقرب لسؤالك.'],
-                ].map(([title, text]) => (
-                  <details key={title} className="group rounded-2xl border border-hair bg-wash">
-                    <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5">
-                      <span className="text-[.8rem] font-semibold leading-relaxed text-accent">{title}</span>
-                      <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
-                    </summary>
-                    <p className="border-t border-hair px-4 py-4 text-[.86rem] leading-[1.9] text-soft">{text}</p>
-                  </details>
-                ))}
-              </div>
-
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <Link
                   to={`/publications/${book.slug}#ask-book-section`}

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { bookKnowledgeAnchor, getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
 import structureData from '../data/encyclopedia-structure.json'
 import {
+  getEncyclopediaFallbackCatalog,
   getEncyclopediaVideoCatalog,
   resetEncyclopediaVideoCatalog,
   type EncyclopediaVideoCatalog,
@@ -31,7 +32,6 @@ import { OwnerEdit } from './extras'
 
 const CHANNEL_URL = 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'
 const ENCYCLOPEDIA_SAMPLE_PDF = '/files/encyclopedia.pdf?v=20260803-4'
-const ENCYCLOPEDIA_SAMPLE_FILENAME = 'موسوعة-تكنولوجيا-التعليم-المقدمة-والفهرس.pdf'
 const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-arab').format(value)
 
 type StructureUnit = {
@@ -293,7 +293,7 @@ function UnitVideoCarousel({
               type="button"
               onClick={() => scroll('left')}
               className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
-              aria-label="التنقل لليصار بين الفيديوهات"
+              aria-label="التنقل لليسار بين الفيديوهات"
               title="التنقل لليسار"
             >
               ›
@@ -426,13 +426,11 @@ function DoorRow({
 export function EncyclopediaPortal({ book, articles: _articles, papers: _papers }: { book: BookRecord; articles: ArticleRecord[]; papers: PaperRecord[] }) {
   const knowledge = getBookKnowledge(book.slug)
   const concepts = useMemo(() => knowledge?.concepts.filter((concept) => !/^(?:مقدمة|الخاتمة|قائمة المراجع)/u.test(concept.title)) || [], [knowledge])
-  const [catalog, setCatalog] = useState<EncyclopediaVideoCatalog | null>(null)
+  const [catalog, setCatalog] = useState<EncyclopediaVideoCatalog | null>(() => getEncyclopediaFallbackCatalog())
   const [catalogError, setCatalogError] = useState(false)
   const [catalogAttempt, setCatalogAttempt] = useState(0)
   const [query, setQuery] = useState('')
   const [playingVideoId, setPlayingVideoId] = useState('')
-  const [pdfDownloading, setPdfDownloading] = useState(false)
-  const [pdfError, setPdfError] = useState(false)
   const [teachingMaterial, setTeachingMaterial] = useState<TeachingMaterialSelection | null>(null)
 
   useEffect(() => {
@@ -466,12 +464,17 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     () => DOORS.flatMap((door) => door.units.flatMap((unit) => videosForUnit(door, unit, unitVideoMap))),
     [unitVideoMap],
   )
+  const supplementalVideos = useMemo(() => {
+    const mappedIds = new Set(mappedVideos.map((video) => video.id))
+    return indexedVideos.filter((video) => !mappedIds.has(video.id))
+  }, [indexedVideos, mappedVideos])
+  const visibleVideos = useMemo(() => [...mappedVideos, ...supplementalVideos], [mappedVideos, supplementalVideos])
 
   useEffect(() => {
-    if (playingVideoId && !mappedVideos.some((video) => video.id === playingVideoId)) setPlayingVideoId('')
-  }, [mappedVideos, playingVideoId])
+    if (playingVideoId && !visibleVideos.some((video) => video.id === playingVideoId)) setPlayingVideoId('')
+  }, [playingVideoId, visibleVideos])
 
-  const playingVideo = mappedVideos.find((video) => video.id === playingVideoId) || null
+  const playingVideo = visibleVideos.find((video) => video.id === playingVideoId) || null
   const selectedPlayerUrl = playingVideo
     ? `${playingVideo.embedUrl}${playingVideo.embedUrl.includes('?') ? '&' : '?'}autoplay=1&playsinline=1&rel=0&modestbranding=1`
     : ''
@@ -481,7 +484,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     units: DOORS.flatMap((door) => door.units.map((unit) => ({ door, unit, score: scoreText(tokens, `${door.title} ${unit.title} ${unit.keywords.join(' ')}`) })))
       .filter((item) => item.score > 0)
       .sort((left, right) => right.score - left.score),
-    videos: mappedVideos
+    videos: visibleVideos
       .map((video) => ({ video, score: scoreIndexedVideo(tokens, video) }))
       .filter((item) => item.score > 0)
       .sort((left, right) => right.score - left.score || left.video.position - right.video.position),
@@ -489,7 +492,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
       .map((topic) => ({ topic, score: scoreEncyclopediaTeachingTopic(tokens, topic) }))
       .filter((item) => item.score > 0)
       .sort((left, right) => right.score - left.score),
-  }), [mappedVideos, tokens])
+  }), [tokens, visibleVideos])
 
   const resultCount = query.trim().length >= 2
     ? searchResults.units.length + searchResults.videos.length + searchResults.slides.length
@@ -512,40 +515,10 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     setTeachingMaterial({ door, topic })
   }
 
-  const downloadPdf = async (event: MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault()
-    if (pdfDownloading) return
-    setPdfDownloading(true)
-    setPdfError(false)
-    try {
-      // fetch ثم Blob يتجاوز عطب Safari القديم الذي كان يعامل ملف PDF كتنقل داخل التطبيق.
-      const response = await fetch(ENCYCLOPEDIA_SAMPLE_PDF, {
-        cache: 'no-store',
-        headers: { accept: 'application/pdf' },
-      })
-      const contentType = response.headers.get('content-type') || ''
-      if (!response.ok || !contentType.toLowerCase().includes('application/pdf')) throw new Error(`PDF HTTP ${response.status}`)
-      const blob = await response.blob()
-      if (blob.size < 100_000) throw new Error('PDF payload is incomplete')
-      const objectUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
-      const anchor = document.createElement('a')
-      anchor.href = objectUrl
-      anchor.download = ENCYCLOPEDIA_SAMPLE_FILENAME
-      anchor.rel = 'noopener'
-      document.body.appendChild(anchor)
-      anchor.click()
-      anchor.remove()
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
-    } catch {
-      setPdfError(true)
-    } finally {
-      setPdfDownloading(false)
-    }
-  }
 
   const retryCatalog = () => {
     resetEncyclopediaVideoCatalog()
-    setCatalog(null)
+    setCatalog(getEncyclopediaFallbackCatalog())
     setCatalogError(false)
     setCatalogAttempt((value) => value + 1)
   }
@@ -560,16 +533,12 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     ? conceptForText(`${teachingGuide.title} ${teachingGuide.chapter} ${teachingGuide.videoHints.join(' ')}`, concepts)
     : null
   const teachingVideo = teachingMaterial && teachingGuide
-    ? relatedVideoForText(`${teachingGuide.title} ${teachingGuide.videoHints.join(' ')}`, mappedVideos, teachingMaterial.door, teachingGuide.chapterNumbers[0])
+    ? relatedVideoForText(`${teachingGuide.title} ${teachingGuide.videoHints.join(' ')}`, visibleVideos, teachingMaterial.door, teachingGuide.chapterNumbers[0])
     : null
   const teachingSlideLabel = teachingGuide ? encyclopediaSlideRangeLabel(teachingGuide.ranges) : ''
   const teachingSlidesCount = teachingGuide ? encyclopediaSlideCount(teachingGuide.ranges) : 0
 
   const featuredScrollRef = useRef<HTMLDivElement>(null)
-
-  const whyWritten = book.whyWritten || 'مرجع موسوعي يجمع مفاهيم تكنولوجيا التعليم وتاريخها ونظمها وتطبيقاتها في خريطة واحدة.'
-  const targetAudience = book.targetAudience || 'طلبة كليات التربية، والمعلمون، وأعضاء هيئة التدريس، والباحثون، ومصممو التعلّم.'
-  const entryGuide = 'ابدأ من الباب أو الفصل الأقرب إلى سؤالك، ثم اقرأ الأصل أو شاهد شرحه داخل الصفحة.'
 
   return (
     <>
@@ -608,22 +577,6 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                   ))}
                 </dl>
 
-                <div className="mt-6 grid gap-2">
-                  {[
-                    ['لماذا كُتب الكتاب؟', whyWritten],
-                    ['الفئة المستهدفة', targetAudience],
-                    ['طريقة الدخول', entryGuide],
-                  ].map(([title, text]) => (
-                    <details key={title} className="group rounded-2xl border border-hair bg-wash">
-                      <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5">
-                        <span className="text-[.8rem] font-semibold leading-relaxed text-accent">{title}</span>
-                        <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
-                      </summary>
-                      <p className="border-t border-hair px-4 py-4 text-[.84rem] leading-[1.85] text-soft">{text}</p>
-                    </details>
-                  ))}
-                </div>
-
                 <div className="mt-7 flex flex-wrap items-center gap-3">
                   <Link to={`/publications/${book.slug}#ask-book-section`} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[.78rem] font-semibold text-white transition-colors hover:bg-accent-deep">
                     <SocialIcon name="Search" size={16} />
@@ -632,20 +585,17 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                   {book.pdf && (
                     <a
                       href={ENCYCLOPEDIA_SAMPLE_PDF}
-                      download={ENCYCLOPEDIA_SAMPLE_FILENAME}
+                      target="_blank"
+                      rel="noreferrer"
                       type="application/pdf"
-                      onClick={downloadPdf}
-                      aria-busy={pdfDownloading}
-                      aria-label="تحميل مقدمة وفهرس موسوعة تكنولوجيا التعليم بصيغة PDF"
-                      className="inline-flex min-h-11 items-center gap-3 rounded-full border border-hair px-5 text-[.78rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent aria-busy:pointer-events-none aria-busy:opacity-60"
+                      aria-label="عرض عيّنة موسوعة تكنولوجيا التعليم بصيغة PDF في المتصفح"
+                      className="inline-flex min-h-11 items-center gap-3 rounded-full border border-hair px-5 text-[.78rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
                     >
-                      <span>{pdfDownloading ? 'جارٍ تجهيز الملف…' : 'تحميل المقدمة والفهرس'}</span>
+                      <span>عرض عيّنة الكتاب</span>
                       <span className="text-[.72rem] text-soft">PDF</span>
-                      <span className="sr-only">ملف PDF المعتمد متاح كما كان، وهو المقدمة والفهرس فقط وليس الكتاب الكامل.</span>
                     </a>
                   )}
                 </div>
-                {pdfError && <p role="alert" className="mt-2 text-[.66rem] text-red-700">تعذّر تنزيل الملف. أعد المحاولة بعد تحديث الصفحة.</p>}
               </div>
             </FadeUp>
           </div>
@@ -657,8 +607,8 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
           <FadeUp>
             <div className="flex flex-wrap items-end justify-between gap-5">
               <div>
-                <span className="text-[.68rem] font-semibold text-accent">الفهرس المرئي</span>
-                <h2 id="encyclopedia-map-title" className="mt-2 font-display text-[clamp(1.55rem,3.2vw,2.3rem)] font-semibold leading-[1.4] text-ink">الأبواب والفصول والفيديو في مكان واحد.</h2>
+                <span className="text-[.68rem] font-semibold text-accent">الموسوعة المرئية</span>
+                <h2 id="encyclopedia-map-title" className="mt-2 font-display text-[clamp(1.55rem,3.2vw,2.3rem)] font-semibold leading-[1.4] text-ink">كل فيديو في موضعه من الباب والفصل.</h2>
               </div>
               <div className="flex items-center gap-2">
                 {catalogError && <button type="button" onClick={retryCatalog} aria-label="إعادة تحميل فهرس الفيديوهات" title="إعادة التحميل" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="History" size={15} /></button>}
@@ -696,12 +646,12 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
             </div>
           )}
 
-          {!query.trim() && mappedVideos.length > 0 && (
+          {!query.trim() && visibleVideos.length > 0 && (
             <div className="mt-7 rounded-2xl border border-hair bg-wash/40 p-4 md:p-5">
               <div className="mb-3.5 flex items-center justify-between">
                 <div>
                   <h3 className="font-display text-[.95rem] font-semibold text-ink">أبرز الشروحات المرئية</h3>
-                  <p className="mt-0.5 text-[.65rem] text-soft">شاهد الشروحات المرئية الموزعة عبر أبواب وفصول الموسوعة ({formatArabicNumber(mappedVideos.length)} فيديو موثّق)</p>
+                  <p className="mt-0.5 text-[.65rem] text-soft">تصفّح فيديوهات الموسوعة من فهرس واحد منظم ({formatArabicNumber(visibleVideos.length)} فيديو)</p>
                 </div>
                 <div className="flex items-center gap-1.5" dir="ltr">
                   <button
@@ -730,7 +680,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 dir="rtl"
                 className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden"
               >
-                {mappedVideos.slice(0, 16).map((video) => (
+                {visibleVideos.slice(0, 16).map((video) => (
                   <InlineVideoCard
                     key={`featured-${video.id}`}
                     video={video}
@@ -760,9 +710,24 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
               />
             ))}
           </div>
+
+          {supplementalVideos.length > 0 && (
+            <div className="mt-7 border-t border-hair pt-6">
+              <div className="mb-3">
+                <h3 className="font-display text-[.95rem] font-semibold text-ink">مقدمات ومواد عامة</h3>
+                <p className="mt-1 text-[.65rem] leading-relaxed text-soft">فيديوهات من القناة لا تنتمي إلى فصل محدد، وتبقى ظاهرة حتى لا يضيع أي محتوى.</p>
+              </div>
+              <div dir="rtl" className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-2 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden">
+                {supplementalVideos.map((video) => (
+                  <InlineVideoCard key={`supplemental-${video.id}`} video={video} active={playingVideoId === video.id} playerUrl={playingVideoId === video.id ? selectedPlayerUrl : ''} onPlay={playVideo} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {!catalog && !catalogError && <p className="mt-4 text-[.65rem] text-soft">تُحمّل الفيديوهات بهدوء.</p>}
-          {catalog && mappedVideos.length > 0 && <p className="mt-4 text-[.65rem] text-soft">ظهر {formatArabicNumber(mappedVideos.length)} فيديو في مواضعه الموثقة داخل الأبواب والفصول.</p>}
-          {catalog && mappedVideos.length === 0 && <p role="alert" className="mt-4 text-[.68rem] text-red-700">وصلت فيديوهات القناة، لكن خريطة القوائم التشغيلية لم تصل. استخدم زر إعادة التحميل أعلاه.</p>}
+          {catalog && visibleVideos.length > 0 && <p className="mt-4 text-[.65rem] text-soft">جميع فيديوهات الفهرس ظاهرة: {formatArabicNumber(visibleVideos.length)} فيديو، منها {formatArabicNumber(mappedVideos.length)} داخل الأبواب والفصول.</p>}
+          {catalog && visibleVideos.length === 0 && <p role="alert" className="mt-4 text-[.68rem] text-red-700">وصلت فيديوهات القناة، لكن خريطة القوائم التشغيلية لم تصل. استخدم زر إعادة التحميل أعلاه.</p>}
           {catalogError && <p role="alert" className="mt-4 text-[.68rem] text-red-700">تعذّر تحميل فيديوهات الموسوعة الآن. استخدم زر إعادة التحميل أعلاه.</p>}
         </div>
       </section>
@@ -774,7 +739,6 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
               <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-5 py-5 md:px-7">
                 <span>
                   <span className="block font-display text-xl font-semibold text-ink">مواد التدريس</span>
-                  <span className="mt-1 block text-[.7rem] text-soft">العروض الأربعة الأولى فقط.</span>
                 </span>
                 <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
               </summary>

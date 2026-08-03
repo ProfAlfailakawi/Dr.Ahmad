@@ -10,7 +10,6 @@ import { QuoteImage } from './QuoteImage'
 import { RESONANCE_FLOOR, loadPassageResonance, recordPassageHighlight } from '../lib/passage-resonance'
 import { bookKnowledgeAnchor, bookKnowledgeText, getBookKnowledge } from '../lib/book-knowledge'
 import { buildSmartQueryPlan } from '../lib/smart-search'
-import { arabicCountPhrase, CONCEPT_FORMS, PAGE_AFTER_PREPOSITION_FORMS, PASSAGE_FORMS } from '../lib/arabic-count.ts'
 
 function scoreAgainst(source: Set<string>, value: string) {
   return ideaWords(value).reduce((total, word) => total + (source.has(word) ? 1 : 0), 0)
@@ -288,7 +287,6 @@ export function BookWorld({
                الأرشيف»). البصمة نفسها تبقى في لوحة التحكم حيث تنفع. */
             eyebrow="بصمة الفكرة"
             title="المفاهيم التي يحملها الكتاب إلى الأرشيف"
-            meta={model.knowledge ? `${arabicCountPhrase(model.knowledge.concepts.length, CONCEPT_FORMS)} على امتداد ${arabicCountPhrase(model.knowledge.pageCount, PAGE_AFTER_PREPOSITION_FORMS)}` : `${model.dna.topic.label} · ${model.dna.tone.label}`}
             lockOpen={Boolean(activeIdea)}
           >
             {/* ═══ شريط الكتاب ═══
@@ -407,7 +405,6 @@ export function BookWorld({
           {model.allQuotes.length > 0 && <Disclosure
             eyebrow="من متن الكتاب"
             title={conceptQuotes.length ? `مقاطع من «${selectedIdea}»` : 'مقاطع مختارة من الكتاب'}
-            meta={`${arabicCountPhrase(model.allQuotes.length, PASSAGE_FORMS)} من الكتاب، كلٌّ منسوبٌ إلى صفحته`}
           >
             <div className="grid gap-3">
               {byReaders(conceptQuotes.length ? conceptQuotes : model.allQuotes).slice(0, conceptQuotes.length ? conceptQuotes.length : 4).map((quote) => (
@@ -482,7 +479,7 @@ export function BookWorld({
             </div>
           </Disclosure>}
 
-          {model.relatedBooks.length > 0 && <Disclosure eyebrow="كتب مرتبطة" title="مؤلفات تفتح امتداداً آخر للفكرة" meta="مؤلَّفات تتقاطع مع محاور هذا الكتاب.">
+          {model.relatedBooks.length > 0 && <Disclosure eyebrow="كتب مرتبطة" title="مؤلفات تفتح امتداداً آخر للفكرة">
             <div className="grid gap-2 sm:grid-cols-3">
               {model.relatedBooks.map(({ item }) => <Link key={item.slug} to={`/publications/${item.slug}`} className="rounded-xl border border-hair bg-wash px-4 py-3 transition-colors hover:border-accent"><span className="text-[.64rem] font-semibold text-accent">كتاب</span><strong className="mt-1 block text-[.78rem] leading-relaxed text-ink">{item.title}</strong></Link>)}
             </div>

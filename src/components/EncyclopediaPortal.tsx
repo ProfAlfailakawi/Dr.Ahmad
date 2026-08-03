@@ -58,10 +58,11 @@ const DOORS = [
 type Door = (typeof DOORS)[number]
 type DoorFilter = 'all' | Door['id']
 type AudienceKey = 'student' | 'teacher' | 'faculty' | 'family'
+type TeachingMaterialSelection = { door: Door; topic?: string }
 
 const AUDIENCES: Record<AudienceKey, { label: string; title: string; text: string; steps: string[]; action: string; href: string }> = {
-  student: { label: 'الطالب', title: 'ادرس بترتيب واضح، ثم ارجع إلى المصدر.', text: 'اختر الباب، اقرأ محاوره، شاهد الشرح، ثم حمّل العرض للمراجعة.', steps: ['اختر الباب', 'اقرأ المفهوم', 'شاهد شرحه', 'راجع العرض'], action: 'ابدأ خريطة الموسوعة', href: '#encyclopedia-map' },
-  teacher: { label: 'المعلم', title: 'حوّل المادة إلى درس من غير أن تبدأ من الصفر.', text: 'العروض جاهزة للتدريس، والفيديوهات مرتبطة بموضوعات الأبواب، والنص الأصلي يبقى مرجعك.', steps: ['حدّد الموضوع', 'حمّل العرض', 'اختر الفيديو', 'ارجع إلى الفصل'], action: 'افتح حقيبة التدريس', href: '#encyclopedia-teaching-kit' },
+  student: { label: 'الطالب', title: 'ادرس بترتيب واضح، ثم ارجع إلى المصدر.', text: 'اختر الباب، اقرأ محاوره، شاهد الشرح، ثم ارجع إلى النص لتثبيت الفكرة.', steps: ['اختر الباب', 'اقرأ المفهوم', 'شاهد شرحه', 'راجع الفكرة'], action: 'ابدأ خريطة الموسوعة', href: '#encyclopedia-map' },
+  teacher: { label: 'المعلم', title: 'حوّل المادة إلى درس من غير أن تبدأ من الصفر.', text: 'شاهد شرح الموضوع، ثم افتح مواد التدريس عند حاجتك إلى العرض، والنص الأصلي يبقى مرجعك.', steps: ['حدّد الموضوع', 'شاهد الشرح', 'افتح مواد التدريس', 'ارجع إلى الفصل'], action: 'افتح حقيبة التدريس', href: '#encyclopedia-teaching-kit' },
   faculty: { label: 'الأستاذ والمدرب', title: 'مرجع، ومادة محاضرة، ومسار مشاهدة في مكان واحد.', text: 'ابنِ محاضرة أو مقرراً، وشارك روابط موضوعية، وابحث في المتن بدل تصفح مئات الصفحات.', steps: ['ابنِ المسار', 'شارك الباب', 'استخدم الشرائح', 'وسّع بالمراجع'], action: 'ابحث في الموسوعة', href: '#encyclopedia-search' },
   family: { label: 'ولي الأمر والقارئ', title: 'ادخل من السؤال، لا من المصطلح الأكاديمي.', text: 'اكتب ما يشغلك في التعليم والتكنولوجيا؛ وستقودك الصفحة إلى أقرب مفهوم وفيديو وفصل.', steps: ['اكتب سؤالك', 'اقرأ النتيجة', 'شاهد التفسير', 'توسّع عند الحاجة'], action: 'اكتب سؤالك', href: '#encyclopedia-search' },
 }
@@ -105,6 +106,7 @@ function DoorRow({
   catalogLoading,
   onOpenTopic,
   onOpenPath,
+  onOpenTeaching,
 }: {
   door: Door
   concept: BookKnowledgeConcept | null
@@ -113,6 +115,7 @@ function DoorRow({
   catalogLoading: boolean
   onOpenTopic: (topic: string, door: Door) => void
   onOpenPath: (door: Door) => void
+  onOpenTeaching: (door: Door, topic?: string) => void
 }) {
   const bookHref = concept ? `/publications/encyclopedia?book_idea=${encodeURIComponent(concept.title)}#book-knowledge` : '#book-knowledge'
   const countLabel = catalogLoading
@@ -139,16 +142,20 @@ function DoorRow({
       <div className="grid gap-6 pb-8 ps-[4.1rem] md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:ps-[5.5rem]">
         <div className="border-y border-hair">
           {door.topics.map((topic) => (
-            <div key={topic} className="flex min-w-0 items-center justify-between gap-4 border-b border-hair py-3 last:border-b-0">
+            <div key={topic} className="flex min-w-0 flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-hair py-3 last:border-b-0">
               <span className="min-w-0 text-[.78rem] leading-relaxed text-ink">{topic}</span>
-              <button type="button" onClick={() => onOpenTopic(topic, door)} className="shrink-0 text-[.66rem] font-semibold text-accent transition-opacity hover:opacity-65">شاهد شرحه ←</button>
+              <span className="flex shrink-0 items-center gap-3 text-[.66rem] font-semibold">
+                <button type="button" onClick={() => onOpenTopic(topic, door)} className="text-accent transition-opacity hover:opacity-65">شاهد الشرح</button>
+                <span aria-hidden className="h-3 w-px bg-hair" />
+                <button type="button" onClick={() => onOpenTeaching(door, topic)} className="text-soft transition-colors hover:text-accent">مواد التدريس</button>
+              </span>
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2 md:max-w-[18rem] md:justify-end">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:max-w-[18rem] md:justify-end">
           <Link to={bookHref} className="inline-flex min-h-10 items-center rounded-full border border-hair px-4 text-[.7rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">ابدأ من الكتاب</Link>
           <button type="button" onClick={() => onOpenPath(door)} className="inline-flex min-h-10 items-center rounded-full border border-accent/30 px-4 text-[.7rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">المسار المرئي</button>
-          <a href={door.presentation} download={`موسوعة تكنولوجيا التعليم - الباب ${door.number}.pptx`} className="inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-[.7rem] font-semibold text-white transition-colors hover:bg-accent-deep">تحميل العرض</a>
+          <button type="button" onClick={() => onOpenTeaching(door)} className="text-[.67rem] font-semibold text-soft underline decoration-hair underline-offset-4 transition-colors hover:text-accent">مواد الباب</button>
         </div>
       </div>
     </details>
@@ -167,6 +174,7 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
   const [videoQuery, setVideoQuery] = useState('')
   const [visibleVideoCount, setVisibleVideoCount] = useState(24)
   const [playerReady, setPlayerReady] = useState(false)
+  const [teachingMaterial, setTeachingMaterial] = useState<TeachingMaterialSelection | null>(null)
   const videoSectionRef = useRef<HTMLElement | null>(null)
   const pageCount = Number(book.pageCount) || 696
   const activeAudience = AUDIENCES[audience]
@@ -200,6 +208,20 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
     setPlayerReady(false)
     try { window.localStorage.setItem(LAST_VIDEO_KEY, selectedVideoId) } catch { /* لا نوقف المشاهدة إذا حُجب التخزين. */ }
   }, [selectedVideoId])
+
+  useEffect(() => {
+    if (!teachingMaterial) return
+    const previousOverflow = document.body.style.overflow
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setTeachingMaterial(null)
+    }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [teachingMaterial])
 
   const selectedVideo = indexedVideos.find((video) => video.id === selectedVideoId) || indexedVideos[0] || null
   const selectedDoor = doorForVideo(selectedVideo)
@@ -243,6 +265,27 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
   const previousVideo = selectedPathIndex > 0 ? selectedPath[selectedPathIndex - 1] : null
   const nextVideo = selectedPathIndex >= 0 && selectedPathIndex < selectedPath.length - 1 ? selectedPath[selectedPathIndex + 1] : null
 
+  const teachingVideo = useMemo(() => {
+    if (!teachingMaterial) return null
+    const candidates = indexedVideos.filter((video) => video.doorId === teachingMaterial.door.id)
+    if (!teachingMaterial.topic) return candidates[0] || null
+    const topicTokens = encyclopediaTokens(teachingMaterial.topic)
+    const ranked = candidates
+      .map((video) => ({ video, score: scoreIndexedVideo(topicTokens, video) }))
+      .sort((left, right) => right.score - left.score || left.video.position - right.video.position)
+    return ranked.find((item) => item.score > 0)?.video || candidates[0] || null
+  }, [indexedVideos, teachingMaterial])
+
+  const teachingConcept = useMemo(() => {
+    if (!teachingMaterial) return null
+    if (!teachingMaterial.topic) return conceptForDoor(teachingMaterial.door, concepts)
+    const topicTokens = encyclopediaTokens(teachingMaterial.topic)
+    const ranked = concepts
+      .map((concept) => ({ concept, score: scoreText(topicTokens, `${concept.title} ${concept.keywords.join(' ')} ${concept.summary}`) }))
+      .sort((left, right) => right.score - left.score)
+    return ranked.find((item) => item.score > 0)?.concept || conceptForDoor(teachingMaterial.door, concepts)
+  }, [concepts, teachingMaterial])
+
   const selectVideo = (video: IndexedEncyclopediaVideo, scroll = true) => {
     setSelectedVideoId(video.id)
     if (scroll) window.requestAnimationFrame(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
@@ -267,6 +310,18 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
       .sort((left, right) => right.score - left.score)[0]?.video
     if (first) setSelectedVideoId(first.id)
     window.requestAnimationFrame(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
+
+  const openTeachingMaterials = (door: Door, topic?: string) => {
+    setTeachingMaterial({ door, topic })
+  }
+
+  const playTeachingVideo = () => {
+    if (!teachingVideo) return
+    setTeachingMaterial(null)
+    setActiveVideoDoor(teachingVideo.doorId as DoorFilter || 'all')
+    setVideoQuery(teachingMaterial?.topic || '')
+    selectVideo(teachingVideo)
   }
 
   const searchResults = useMemo(() => {
@@ -323,7 +378,7 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
               </FadeUp>
               <FadeUp delay={0.13}>
                 <nav className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-hair bg-hair sm:grid-cols-4" aria-label="مداخل الموسوعة">
-                  {[['اقرأ', '#encyclopedia-map'], ['شاهد', '#encyclopedia-video'], ['حمّل العروض', '#encyclopedia-teaching-kit'], ['ابحث', '#encyclopedia-search']].map(([label, href]) => <a key={href} href={href} className="flex min-h-14 items-center justify-center bg-canvas px-3 text-center text-[.76rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">{label}</a>)}
+                  {[['اقرأ', '#encyclopedia-map'], ['شاهد', '#encyclopedia-video'], ['مواد التدريس', '#encyclopedia-teaching-kit'], ['ابحث', '#encyclopedia-search']].map(([label, href]) => <a key={href} href={href} className="flex min-h-14 items-center justify-center bg-canvas px-3 text-center text-[.76rem] font-semibold text-ink transition-colors hover:bg-wash hover:text-accent">{label}</a>)}
                 </nav>
               </FadeUp>
               <FadeUp delay={0.18}>
@@ -355,8 +410,8 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
 
       <section id="encyclopedia-map" className="scroll-mt-24 border-b border-hair px-6 py-14 md:px-11 md:py-20" aria-labelledby="encyclopedia-map-title">
         <div className="mx-auto max-w-shell">
-          <FadeUp><div className="max-w-3xl"><span className="text-[.7rem] font-semibold text-accent">خريطة الموسوعة</span><h2 id="encyclopedia-map-title" className="mt-2 font-display text-[clamp(1.6rem,3.4vw,2.45rem)] font-semibold leading-[1.4] text-ink">أربعة أبواب، وكل باب يفتح النص والفيديو والعرض معاً.</h2></div></FadeUp>
-          <div className="mt-8 border-y border-hair">{DOORS.map((door, index) => <DoorRow key={door.id} door={door} concept={conceptForDoor(door, concepts)} initiallyOpen={index === 0} videoCount={doorCounts.get(door.id) || 0} catalogLoading={catalogLoading} onOpenTopic={openVideoTopic} onOpenPath={openVideoPath} />)}</div>
+          <FadeUp><div className="max-w-3xl"><span className="text-[.7rem] font-semibold text-accent">خريطة الموسوعة</span><h2 id="encyclopedia-map-title" className="mt-2 font-display text-[clamp(1.6rem,3.4vw,2.45rem)] font-semibold leading-[1.4] text-ink">أربعة أبواب؛ اقرأ بهدوء، وشاهد الشرح، وافتح مواد التدريس عند الحاجة.</h2></div></FadeUp>
+          <div className="mt-8 border-y border-hair">{DOORS.map((door, index) => <DoorRow key={door.id} door={door} concept={conceptForDoor(door, concepts)} initiallyOpen={index === 0} videoCount={doorCounts.get(door.id) || 0} catalogLoading={catalogLoading} onOpenTopic={openVideoTopic} onOpenPath={openVideoPath} onOpenTeaching={openTeachingMaterials} />)}</div>
         </div>
       </section>
 
@@ -402,7 +457,7 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
               <FadeUp>
                 {selectedVideo ? <article aria-live="polite">
                   <div className="overflow-hidden rounded-2xl border border-hair bg-ink shadow-[0_24px_70px_-48px_rgba(20,31,45,.55)]">
-                    {playerReady ? <iframe src={`${selectedVideo.embedUrl}&playsinline=1`} title={selectedVideo.title} loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="aspect-video w-full" /> : <button type="button" onClick={() => setPlayerReady(true)} className="group relative block aspect-video w-full overflow-hidden text-white" aria-label={`افتح مشغل ${selectedVideo.title}`}><img src={selectedVideo.thumbnail} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className="h-full w-full object-cover opacity-75 transition duration-500 group-hover:scale-[1.015] group-hover:opacity-65" /><span aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/10" /><span className="absolute inset-0 flex items-center justify-center"><span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/55 bg-ink/45 backdrop-blur-sm transition-transform group-hover:scale-105"><SocialIcon name="Play" size={18} /></span></span><span className="absolute inset-x-5 bottom-4 text-right text-[.68rem] font-semibold">افتح المشغل</span></button>}
+                    {playerReady ? <iframe src={`${selectedVideo.embedUrl}&playsinline=1`} title={selectedVideo.title} loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="aspect-video w-full" /> : <button type="button" onClick={() => setPlayerReady(true)} className="group relative block aspect-video w-full overflow-hidden text-white" aria-label={`افتح مشغل ${selectedVideo.title}`}><img src={selectedVideo.thumbnail} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className="h-full w-full object-cover opacity-75 transition duration-500 group-hover:scale-[1.015] group-hover:opacity-65" /><span aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/10" /><span className="absolute inset-0 flex items-center justify-center"><span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/55 bg-ink/[.45] backdrop-blur-sm transition-transform group-hover:scale-105"><SocialIcon name="Play" size={18} /></span></span><span className="absolute inset-x-5 bottom-4 text-right text-[.68rem] font-semibold">افتح المشغل</span></button>}
                   </div>
                   <div className="pt-5">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[.65rem] text-soft"><span className="font-semibold text-accent">{videoSequence(selectedVideo)}</span>{selectedVideo.durationText && <span>{selectedVideo.durationText}</span>}{selectedVideo.publishedText && <span>{selectedVideo.publishedText}</span>}{selectedPath.length > 1 && selectedPathIndex >= 0 && <span>{formatArabicNumber(selectedPathIndex + 1)} من {formatArabicNumber(selectedPath.length)} في هذا المسار</span>}</div>
@@ -410,7 +465,7 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
                     {selectedVideo.description && <p className="mt-2 line-clamp-2 text-[.75rem] font-light leading-[1.85] text-soft">{selectedVideo.description}</p>}
                     <div className="mt-5 flex flex-wrap gap-2">
                       {selectedVideo.concept && <Link to={`/publications/${book.slug}?book_idea=${encodeURIComponent(selectedVideo.concept.title)}#book-knowledge`} className="inline-flex min-h-10 items-center rounded-full border border-hair px-4 text-[.69rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">اقرأ الموضوع في الكتاب</Link>}
-                      {selectedDoor && <a href={selectedDoor.presentation} download={`موسوعة تكنولوجيا التعليم - الباب ${selectedDoor.number}.pptx`} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-accent/30 px-4 text-[.69rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"><SocialIcon name="Download" size={12} />عرض الباب</a>}
+                      {selectedDoor && <button type="button" onClick={() => openTeachingMaterials(selectedDoor, selectedVideo.concept?.title)} className="inline-flex min-h-10 items-center rounded-full border border-accent/30 px-4 text-[.69rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">مواد التدريس</button>}
                       <a href={selectedVideo.url} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-full border border-hair px-4 text-[.69rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">شاهده في القناة</a>
                     </div>
                     {(previousVideo || nextVideo) && <div className="mt-6 grid grid-cols-2 gap-3 border-t border-hair pt-5"><button type="button" disabled={!previousVideo} onClick={() => previousVideo && selectVideo(previousVideo, false)} className="min-h-11 rounded-xl border border-hair px-4 text-right text-[.68rem] font-semibold text-ink transition-colors enabled:hover:border-accent enabled:hover:text-accent disabled:cursor-not-allowed disabled:opacity-35">→ المقطع السابق</button><button type="button" disabled={!nextVideo} onClick={() => nextVideo && selectVideo(nextVideo, false)} className="min-h-11 rounded-xl border border-hair px-4 text-left text-[.68rem] font-semibold text-ink transition-colors enabled:hover:border-accent enabled:hover:text-accent disabled:cursor-not-allowed disabled:opacity-35">المقطع التالي ←</button></div>}
@@ -420,7 +475,7 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
 
               <FadeUp delay={0.08}><aside aria-label="فهرس فيديوهات الموسوعة">
                 <label htmlFor="encyclopedia-video-query" className="text-[.68rem] font-semibold text-accent">ابحث داخل المقاطع</label>
-                <div className="mt-2 flex items-center rounded-full border border-hair bg-canvas px-4"><SocialIcon name="Search" size={13} /><input id="encyclopedia-video-query" value={videoQuery} onChange={(event) => setVideoQuery(event.target.value)} placeholder="عنوان، مفهوم، باب أو فصل" className="min-w-0 flex-1 bg-transparent px-3 py-3 text-[.75rem] text-ink outline-none placeholder:text-soft/55" />{videoQuery && <button type="button" onClick={() => setVideoQuery('')} aria-label="مسح البحث" title="مسح البحث" className="text-soft hover:text-accent"><SocialIcon name="Close" size={12} /></button>}</div>
+                <div className="mt-2 flex items-center rounded-full border border-hair bg-canvas px-4"><SocialIcon name="Search" size={13} /><input id="encyclopedia-video-query" value={videoQuery} onChange={(event) => setVideoQuery(event.target.value)} placeholder="عنوان، مفهوم، باب أو فصل" className="min-w-0 flex-1 bg-transparent px-3 py-3 text-[.75rem] text-ink outline-none placeholder:text-soft/[.55]" />{videoQuery && <button type="button" onClick={() => setVideoQuery('')} aria-label="مسح البحث" title="مسح البحث" className="text-soft hover:text-accent"><SocialIcon name="Close" size={12} /></button>}</div>
 
                 <div className="mt-4 max-h-[35rem] overflow-y-auto border-y border-hair pe-1 [scrollbar-color:var(--color-hair)_transparent] [scrollbar-width:thin]">
                   {catalogLoading && !indexedVideos.length ? Array.from({ length: 7 }, (_, index) => <div key={`video-loading-${index}`} className="border-b border-hair py-4 last:border-b-0"><span className="block h-2.5 w-20 animate-pulse rounded bg-wash" /><span className="mt-2 block h-3 w-[85%] animate-pulse rounded bg-wash" /></div>) : filteredVideos.length ? filteredVideos.slice(0, visibleVideoCount).map((video, index) => {
@@ -438,12 +493,48 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
 
       <section id="encyclopedia-teaching-kit" className="scroll-mt-24 border-b border-hair bg-wash/40 px-6 py-14 md:px-11 md:py-20" aria-labelledby="encyclopedia-kit-title">
         <div className="mx-auto max-w-shell"><FadeUp><div className="grid gap-8 lg:grid-cols-[minmax(0,.7fr)_minmax(0,1.3fr)] lg:gap-14">
-          <div><span className="text-[.7rem] font-semibold text-accent">حقيبة تدريس الموسوعة</span><h2 id="encyclopedia-kit-title" className="mt-2 font-display text-[clamp(1.55rem,3.2vw,2.35rem)] font-semibold leading-[1.45] text-ink">عروض الأبواب جاهزة للتحميل.</h2><p className="mt-4 text-[.8rem] font-light leading-[1.9] text-soft">للطالب والمعلم والأستاذ والمدرب. الملفات متاحة للاستخدام التعليمي مع حفظ حقوق المؤلفين.</p></div>
+          <div><span className="text-[.7rem] font-semibold text-accent">حقيبة تدريس الموسوعة</span><h2 id="encyclopedia-kit-title" className="mt-2 font-display text-[clamp(1.55rem,3.2vw,2.35rem)] font-semibold leading-[1.45] text-ink">عروض الأبواب جاهزة لمن يدرّس المادة.</h2><p className="mt-4 text-[.8rem] font-light leading-[1.9] text-soft">للمعلم والأستاذ والمدرب. تظهر هنا عند الحاجة، بينما تبقى تجربة القراءة خفيفة وهادئة.</p></div>
           <div className="border-y border-hair bg-canvas px-4 md:px-6">{DOORS.map((door) => <div key={`kit-${door.id}`} className="grid gap-3 border-b border-hair py-5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><div><span className="text-[.64rem] font-semibold text-accent">الباب {door.number}</span><strong className="mt-1 block text-[.88rem] leading-relaxed text-ink">{door.title}</strong><span className="mt-1 block text-[.68rem] leading-relaxed text-soft">عرض تقديمي قابل للتحميل{doorCounts.get(door.id) ? ` · مرتبط بـ ${formatArabicNumber(doorCounts.get(door.id) || 0)} مقطعاً` : ''}</span></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => openVideoPath(door)} className="inline-flex min-h-10 w-fit items-center rounded-full border border-hair px-4 text-[.7rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">شاهد مسار الباب</button><a href={door.presentation} download={`موسوعة تكنولوجيا التعليم - الباب ${door.number}.pptx`} className="inline-flex min-h-10 w-fit items-center gap-2 rounded-full border border-accent/30 px-4 text-[.7rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"><SocialIcon name="Download" size={13} />تحميل العرض</a></div></div>)}</div>
         </div></FadeUp></div>
       </section>
 
       <section className="px-6 py-11 md:px-11 md:py-14"><div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-5 border-y border-hair py-6"><div><span className="text-[.68rem] font-semibold text-accent">النسخة الأصلية</span><p className="mt-1 text-[.8rem] leading-relaxed text-soft">للقراءة الرسمية والبيانات الببليوغرافية.</p></div><div className="flex flex-wrap gap-2">{book.pdf && <a href={book.pdf} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-full border border-hair px-4 text-[.7rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">عرض عيّنة الكتاب</a>}<a href="#book-knowledge" className="inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-[.7rem] font-semibold text-white transition-colors hover:bg-accent-deep">افتح العالم المعرفي</a></div></div></section>
+
+      {teachingMaterial && <div className="fixed inset-0 z-[90] flex items-end justify-center bg-ink/[.28] backdrop-blur-[2px] md:items-stretch md:justify-end" onMouseDown={(event) => { if (event.currentTarget === event.target) setTeachingMaterial(null) }}>
+        <aside role="dialog" aria-modal="true" aria-labelledby="encyclopedia-teaching-panel-title" className="max-h-[88dvh] w-full overflow-y-auto rounded-t-[1.75rem] border-t border-hair bg-canvas px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 shadow-[0_-24px_70px_-48px_rgba(20,31,45,.7)] md:h-full md:max-h-none md:max-w-[27rem] md:rounded-none md:border-s md:border-t-0 md:px-8 md:pb-8 md:pt-7 md:shadow-[-24px_0_70px_-48px_rgba(20,31,45,.7)]">
+          <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-hair md:hidden" aria-hidden />
+          <div className="flex items-start justify-between gap-5 border-b border-hair pb-5">
+            <div className="min-w-0">
+              <span className="text-[.66rem] font-semibold text-accent">مواد التدريس</span>
+              <h2 id="encyclopedia-teaching-panel-title" className="mt-1.5 font-display text-[1.35rem] font-semibold leading-[1.55] text-ink">{teachingMaterial.topic || teachingMaterial.door.title}</h2>
+              <p className="mt-1 text-[.69rem] leading-relaxed text-soft">الباب {teachingMaterial.door.number} · {teachingMaterial.door.title}</p>
+            </div>
+            <button type="button" onClick={() => setTeachingMaterial(null)} aria-label="إغلاق مواد التدريس" title="إغلاق" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Close" size={13} /></button>
+          </div>
+
+          <div className="py-6">
+            <span className="text-[.63rem] font-semibold text-soft">خيط التدريس</span>
+            <div className="mt-3 grid grid-cols-3 border-y border-hair">
+              {teachingConcept ? <Link to={`/publications/${book.slug}?book_idea=${encodeURIComponent(teachingConcept.title)}#book-knowledge`} onClick={() => setTeachingMaterial(null)} className="group min-w-0 border-e border-hair px-2 py-4 text-center transition-colors hover:bg-wash"><span className="block font-display text-[.64rem] text-accent">٠١</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-ink group-hover:text-accent">الموضوع الأصلي</strong></Link> : <span className="min-w-0 border-e border-hair px-2 py-4 text-center opacity-45"><span className="block font-display text-[.64rem] text-soft">٠١</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-soft">الموضوع الأصلي</strong></span>}
+              {teachingVideo ? <button type="button" onClick={playTeachingVideo} className="group min-w-0 border-e border-hair px-2 py-4 text-center transition-colors hover:bg-wash"><span className="block font-display text-[.64rem] text-accent">٠٢</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-ink group-hover:text-accent">شاهد الشرح</strong></button> : <span className="min-w-0 border-e border-hair px-2 py-4 text-center opacity-45"><span className="block font-display text-[.64rem] text-soft">٠٢</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-soft">الشرح المرئي</strong></span>}
+              <a href={teachingMaterial.door.presentation} download={`موسوعة تكنولوجيا التعليم - الباب ${teachingMaterial.door.number}.pptx`} className="group min-w-0 px-2 py-4 text-center transition-colors hover:bg-wash"><span className="block font-display text-[.64rem] text-accent">٠٣</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-ink group-hover:text-accent">حمّل الشرائح</strong></a>
+            </div>
+          </div>
+
+          <div className="border-y border-hair py-5">
+            <div className="flex items-start justify-between gap-5">
+              <div><span className="text-[.63rem] font-semibold text-accent">العرض التقديمي</span><p className="mt-1 text-[.74rem] leading-[1.8] text-ink">عرض الباب كامل بصيغة PowerPoint، جاهز للاستخدام التعليمي والتعديل بما يناسب المحاضرة.</p></div>
+              <SocialIcon name="Download" size={15} />
+            </div>
+            <a href={teachingMaterial.door.presentation} download={`موسوعة تكنولوجيا التعليم - الباب ${teachingMaterial.door.number}.pptx`} className="mt-4 inline-flex min-h-10 items-center rounded-full border border-accent/30 px-4 text-[.69rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">تحميل عرض الباب</a>
+          </div>
+
+          <div className="pt-5 text-[.68rem] leading-[1.8] text-soft">
+            <p>تظهر هذه اللوحة عند طلبها فقط؛ فلا تزاحم القارئ، وتجمع للمدرّس المصدر والشرح والشرائح في مسار واحد.</p>
+            <button type="button" onClick={() => { setTeachingMaterial(null); window.requestAnimationFrame(() => document.getElementById('encyclopedia-teaching-kit')?.scrollIntoView({ behavior: 'smooth', block: 'start' })) }} className="mt-3 font-semibold text-accent hover:underline">افتح حقيبة الأبواب كاملة ←</button>
+          </div>
+        </aside>
+      </div>}
     </>
   )
 }

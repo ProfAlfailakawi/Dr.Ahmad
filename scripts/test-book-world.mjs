@@ -62,10 +62,8 @@ assert.match(readFileSync(join(root, 'src/App.tsx'), 'utf8'), /item\.hasAttribut
 assert.match(worldSource, /articles: activePath\?\.articles\.slice\(0, 3\)/, 'downstream material cards must follow the selected path')
 assert.match(worldSource, /timeline: activePath \? buildBookWorldTimeline\(activePath\.articles, 6\) : \[\]/, 'archive timeline must follow the selected path')
 assert.doesNotMatch(worldSource, /لا توجد وصلة أرشيفية قوية لهذا المسار بعد/, 'an empty path must be hidden rather than rendered with an empty-state message')
-assert.ok((detailSource.match(/<details key=\{title\}/g) || []).length === 1)
-const guideDetailsTag = detailSource.match(/<details key=\{title\}[^>]*>/)?.[0] || ''
-assert.ok(guideDetailsTag, 'the generic book guide disclosure must remain present')
-assert.doesNotMatch(guideDetailsTag, /\sopen(?:=|\s|>)/, 'book guide cards must be collapsed by default')
+assert.doesNotMatch(detailSource, /book-detail-guides/, 'the repetitive generic book-guide disclosures were intentionally removed')
+assert.doesNotMatch(detailSource, /لماذا كُتب الكتاب\?|الفئة المستهدفة|طريقة الدخول/, 'the removed guide copy must not return')
 
 rmSync(out, { recursive: true, force: true })
 console.log('Book World timeline and low-clutter UI: passed')

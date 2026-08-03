@@ -40,9 +40,89 @@ const validVideo = (value: unknown): value is EncyclopediaVideo => {
   return typeof item.id === 'string' && /^[\w-]{6,20}$/.test(item.id) && typeof item.title === 'string' && item.title.trim().length > 0
 }
 
+function normalizedCatalog(payload: Partial<EncyclopediaVideoCatalog>, source?: string): EncyclopediaVideoCatalog {
+  const videos = Array.isArray(payload.videos) ? (payload.videos as EncyclopediaVideo[]).filter(validVideo) : []
+  return {
+    channel: {
+      handle: String(payload.channel?.handle || 'موسوعةتكنولوجياالتعليم'),
+      url: String(payload.channel?.url || 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'),
+      id: String(payload.channel?.id || ''),
+    },
+    count: videos.length,
+    mappedCount: Number(payload.mappedCount) || videos.filter((video) => Number(video.doorNumber) > 0 && Number(video.chapterNumber) > 0).length,
+    fetchedAt: String(payload.fetchedAt || ''),
+    source: String(source || payload.source || 'youtube-channel'),
+    stale: Boolean(payload.stale),
+    transcriptIndex: payload.transcriptIndex && typeof payload.transcriptIndex === 'object'
+      ? {
+          running: Boolean(payload.transcriptIndex.running),
+          total: Number(payload.transcriptIndex.total) || videos.length,
+          completed: Number(payload.transcriptIndex.completed) || 0,
+          available: Number(payload.transcriptIndex.available) || 0,
+        }
+      : undefined,
+    videos,
+  }
+}
+
+const fallbackCatalog = normalizedCatalog(fallbackCatalogData as Partial<EncyclopediaVideoCatalog>, 'static-complete-catalog')
+
+function mergeVideo(live: EncyclopediaVideo, archived?: EncyclopediaVideo): EncyclopediaVideo {
+  if (!archived) return live
+  return {
+    ...archived,
+    ...live,
+    title: live.title?.trim() || archived.title,
+    description: live.description?.trim() || archived.description,
+    thumbnail: live.thumbnail?.trim() || archived.thumbnail,
+    durationText: live.durationText?.trim() || archived.durationText,
+    durationSeconds: live.durationSeconds || archived.durationSeconds,
+    publishedText: live.publishedText?.trim() || archived.publishedText,
+    viewCountText: live.viewCountText?.trim() || archived.viewCountText,
+    doorNumber: live.doorNumber || archived.doorNumber,
+    chapterNumber: live.chapterNumber || archived.chapterNumber,
+    videoNumber: live.videoNumber || archived.videoNumber,
+    mappingSource: live.mappingSource || archived.mappingSource,
+    mappingConfidence: live.mappingConfidence || archived.mappingConfidence,
+    playlistId: live.playlistId || archived.playlistId,
+    playlistTitle: live.playlistTitle || archived.playlistTitle,
+  }
+}
+
+function completeCatalog(livePayload: Partial<EncyclopediaVideoCatalog>): EncyclopediaVideoCatalog {
+  const live = normalizedCatalog(livePayload)
+  const archivedById = new Map(fallbackCatalog.videos.map((video) => [video.id, video]))
+  const merged = new Map<string, EncyclopediaVideo>()
+
+  for (const video of live.videos) merged.set(video.id, mergeVideo(video, archivedById.get(video.id)))
+  for (const video of fallbackCatalog.videos) if (!merged.has(video.id)) merged.set(video.id, video)
+
+  const videos = [...merged.values()].map((video, index) => ({ ...video, position: index + 1 }))
+  return {
+    ...live,
+    channel: live.channel.id ? live.channel : fallbackCatalog.channel,
+    count: videos.length,
+    mappedCount: videos.filter((video) => Number(video.doorNumber) > 0 && Number(video.chapterNumber) > 0).length,
+    source: videos.length > live.videos.length ? `${live.source}+static-complete-catalog` : live.source,
+    videos,
+  }
+}
+
+/**
+ * فهرس ثابت كامل يظهر فوراً، ثم تُدمج فوقه بيانات YouTube الحية. بهذه الطريقة
+ * لا تختفي الفيديوهات إذا تأخرت خدمة القناة أو أعادت YouTube صفحة ناقصة.
+ */
+export function getEncyclopediaFallbackCatalog(): EncyclopediaVideoCatalog {
+  return {
+    ...fallbackCatalog,
+    channel: { ...fallbackCatalog.channel },
+    videos: fallbackCatalog.videos.map((video) => ({ ...video })),
+  }
+}
+
 export async function getEncyclopediaVideoCatalog(signal?: AbortSignal): Promise<EncyclopediaVideoCatalog> {
   if (!catalogPromise) {
-    catalogPromise = fetch(`/api/encyclopedia/videos?v=20260803-5`, {
+    catalogPromise = fetch(`/api/encyclopedia/videos?v=20260803-6`, {
       signal,
       cache: 'no-store',
       headers: { accept: 'application/json' },
@@ -51,49 +131,12 @@ export async function getEncyclopediaVideoCatalog(signal?: AbortSignal): Promise
         if (!response.ok) throw new Error(`Video catalog HTTP ${response.status}`)
         const contentType = response.headers.get('content-type') || ''
         if (!contentType.toLowerCase().includes('application/json')) throw new Error('Video catalog returned a non-JSON response')
-        const payload = await response.json() as Partial<EncyclopediaVideoCatalog>
-        const videos = Array.isArray(payload.videos) ? payload.videos.filter(validVideo) : []
-        if (!videos.length) throw new Error('Video catalog is empty')
-        return {
-          channel: {
-            handle: String(payload.channel?.handle || 'موسوعةتكنولوجياالتعليم'),
-            url: String(payload.channel?.url || 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'),
-            id: String(payload.channel?.id || ''),
-          },
-          count: videos.length,
-          mappedCount: Number(payload.mappedCount) || videos.filter((video) => Number(video.doorNumber) > 0 && Number(video.chapterNumber) > 0).length,
-          fetchedAt: String(payload.fetchedAt || ''),
-          source: String(payload.source || 'youtube-channel'),
-          stale: Boolean(payload.stale),
-          transcriptIndex: payload.transcriptIndex && typeof payload.transcriptIndex === 'object'
-            ? {
-                running: Boolean(payload.transcriptIndex.running),
-                total: Number(payload.transcriptIndex.total) || videos.length,
-                completed: Number(payload.transcriptIndex.completed) || 0,
-                available: Number(payload.transcriptIndex.available) || 0,
-              }
-            : undefined,
-          videos,
-        }
+        return completeCatalog(await response.json() as Partial<EncyclopediaVideoCatalog>)
       })
       .catch((error) => {
         catalogPromise = null
         if (error?.name === 'AbortError') throw error
-        const fallback = fallbackCatalogData as Partial<EncyclopediaVideoCatalog>
-        const videos = Array.isArray(fallback.videos) ? (fallback.videos as EncyclopediaVideo[]).filter(validVideo) : []
-        return {
-          channel: {
-            handle: String(fallback.channel?.handle || 'موسوعةتكنولوجياالتعليم'),
-            url: String(fallback.channel?.url || 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'),
-            id: String(fallback.channel?.id || ''),
-          },
-          count: videos.length,
-          mappedCount: Number(fallback.mappedCount) || videos.filter((video) => Number(video.doorNumber) > 0 && Number(video.chapterNumber) > 0).length,
-          fetchedAt: String(fallback.fetchedAt || ''),
-          source: 'static-fallback',
-          stale: true,
-          videos,
-        }
+        return getEncyclopediaFallbackCatalog()
       })
   }
   return catalogPromise

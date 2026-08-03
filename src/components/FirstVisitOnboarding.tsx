@@ -1,32 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import { Link } from 'react-router'
 import { EASE } from './ui'
 
-const STORAGE_KEY = 'site:first-visit-onboarding:seen'
+const STORAGE_KEY = 'site:first-visit-portal:2026-08-03'
 
-const steps = [
-  {
-    eyebrow: 'أهلاً بك',
-    title: 'هذا ليس موقعاً يعرض ما كُتب فقط؛ بل يريك كيف تعيش الفكرة.',
-    body: 'مساحة تجمع التعليم والتكنولوجيا والإنسان في أرشيف واحد؛ المقال يقود إلى بحث، والكتاب يفتح أسئلة، وما كُتب قبل سنوات يمكن أن يعود اليوم بمعنى جديد.',
-  },
-  {
-    eyebrow: 'تحت السطح',
-    title: 'بعض أقوى أدوات الموقع لا تحتاج أن تصرخ كي تكون موجودة.',
-    body: 'داخل القراءة ستجد طبقات تظهر وقت الحاجة فقط؛ صُممت لتخدم الفكرة لا لتزاحمها.',
-    features: [
-      ['حياة الفكرة', 'ترى امتداد الفكرة في المقالات والكتب والأبحاث المرتبطة بها.'],
-      ['عبر السنوات', 'حدّد جملة داخل مقال لتتبع صداها في الأرشيف عبر الزمن.'],
-      ['اسأل المكتبة', 'انتقل من سؤال قصير إلى مواد موثقة في الأرشيف من دون أن تضيع بين القوائم.'],
-      ['قراءة بصوت آخر', 'حين يتوافر الصوت، تستمع للمقال أو للحوار من المكان نفسه.'],
-    ],
-  },
-  {
-    eyebrow: 'فلسفة التصفح',
-    title: 'ابدأ بما يثير فضولك، لا بما تفرضه القائمة.',
-    body: 'يمكنك الدخول من مقال أو بحث أو كتاب أو «وثيقة العقد». الموقع مصمم كي تكشف الروابط بنفسك، بهدوء، من دون أن يحوّل المعرفة إلى لوحة أزرار.',
-  },
+const paths = [
+  { to: '/articles', number: '01', label: 'المقالات', note: 'أفكارٌ قصيرة تبدأ من سؤالٍ حاضر.' },
+  { to: '/publications', number: '02', label: 'المؤلفات', note: 'كتبٌ تمتدّ إلى خرائط ومعرفةٍ قابلة للبحث.' },
+  { to: '/research', number: '03', label: 'الأبحاث', note: 'الدليل الأكاديمي خلف الفكرة والتطبيق.' },
 ] as const
 
 function rememberSeen() {
@@ -35,41 +18,17 @@ function rememberSeen() {
 
 export default function FirstVisitOnboarding() {
   const reduceMotion = useReducedMotion()
-  const [visible, setVisible] = useState(false)
-  const [step, setStep] = useState(0)
-  const primaryRef = useRef<HTMLButtonElement | null>(null)
-
-  /* الترحيب كان يعلو الافتتاحية بعد ٧٢٠ جزءاً من الثانية، فيقرأ الزائرُ أجمل
-     جملةٍ في الموقع — «أُبقِ الإنسانَ في قلبِ الآلة» — من خلف ضبابٍ رمادي.
-     الدعوة لا تُقدَّم قبل أن يرى صاحبَ الدار. الآن ينتظر أول تمريرة (دليلَ
-     اهتمامٍ حقيقي)، وإن لم يمرّر ظهر بعد ثماني ثوانٍ ليقرأها متمهلاً أولاً. */
-  useEffect(() => {
-    let seen = false
-    try { seen = window.localStorage.getItem(STORAGE_KEY) === '1' } catch { /* noop */ }
-    if (seen) return
-    let done = false
-    const reveal = () => {
-      if (done) return
-      done = true
-      window.removeEventListener('scroll', onScroll)
-      window.clearTimeout(timer)
-      setVisible(true)
-    }
-    const onScroll = () => { if (window.scrollY > 120) reveal() }
-    const timer = window.setTimeout(reveal, 8_000)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      done = true
-      window.removeEventListener('scroll', onScroll)
-      window.clearTimeout(timer)
-    }
-  }, [])
+  const enterRef = useRef<HTMLButtonElement | null>(null)
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try { return window.localStorage.getItem(STORAGE_KEY) !== '1' } catch { return true }
+  })
 
   useEffect(() => {
     if (!visible) return
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const focusTimer = window.setTimeout(() => primaryRef.current?.focus(), 80)
+    const focusTimer = window.setTimeout(() => enterRef.current?.focus(), 120)
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       rememberSeen()
@@ -88,86 +47,109 @@ export default function FirstVisitOnboarding() {
     setVisible(false)
   }
 
-  const advance = () => {
-    if (step >= steps.length - 1) { close(); return }
-    setStep((current) => Math.min(steps.length - 1, current + 1))
-  }
-
-  if (typeof document === 'undefined') return null
-  const current = steps[step]
+  if (!visible || typeof document === 'undefined') return null
 
   return createPortal(
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          data-first-visit-onboarding="true"
-          className="fixed inset-0 z-[520] flex items-end justify-center bg-ink/[.45] p-3 backdrop-blur-[7px] sm:items-center sm:p-6"
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: .28, ease: EASE }}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="first-visit-title"
-          aria-describedby="first-visit-description"
-        >
-          <motion.section
-            className="relative w-full max-w-[760px] overflow-hidden rounded-[28px] border border-hair bg-canvas shadow-2xl"
-            initial={reduceMotion ? false : { opacity: 0, y: 24, scale: .985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: .99 }}
-            transition={{ duration: .42, ease: EASE }}
+    <motion.div
+      data-first-visit-onboarding="true"
+      className="fixed inset-0 z-[520] overflow-y-auto bg-canvas text-ink"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: .36, ease: EASE }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="first-visit-title"
+      aria-describedby="first-visit-description"
+    >
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <motion.span
+          className="absolute -left-[18vw] -top-[24vw] h-[58vw] w-[58vw] rounded-full border border-accent/[.13]"
+          animate={reduceMotion ? undefined : { rotate: 360 }}
+          transition={{ duration: 46, repeat: Infinity, ease: 'linear' }}
+        />
+        <motion.span
+          className="absolute -bottom-[32vw] -right-[16vw] h-[72vw] w-[72vw] rounded-full border border-accent/[.1]"
+          animate={reduceMotion ? undefined : { rotate: -360 }}
+          transition={{ duration: 58, repeat: Infinity, ease: 'linear' }}
+        />
+        <span className="absolute inset-y-0 left-[12%] w-px bg-gradient-to-b from-transparent via-accent/[.12] to-transparent" />
+        <span className="absolute inset-y-0 right-[12%] w-px bg-gradient-to-b from-transparent via-accent/[.08] to-transparent" />
+        <span className="absolute left-1/2 top-[18%] h-[32rem] w-[32rem] -translate-x-1/2 rounded-full bg-accent/[.035] blur-3xl" />
+      </div>
+
+      <div className="relative mx-auto flex min-h-[100svh] w-full max-w-[92rem] flex-col px-5 pb-7 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-8 md:px-12 lg:px-16">
+        <header className="flex items-center justify-between gap-5 border-b border-hair pb-4">
+          <div className="min-w-0">
+            <span className="block text-[.62rem] font-semibold tracking-[.12em] text-accent">الموقع الرسمي</span>
+            <strong className="mt-1 block truncate font-display text-[.86rem] font-semibold text-ink sm:text-[.98rem]">د. أحمد حسين الفيلكاوي</strong>
+          </div>
+          <button type="button" onClick={close} className="shrink-0 rounded-full border border-hair px-4 py-2 text-[.7rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent" aria-label="تخطي بوابة الترحيب">
+            تخطي
+          </button>
+        </header>
+
+        <main className="grid flex-1 items-center gap-10 py-10 md:grid-cols-[minmax(0,1.25fr)_minmax(18rem,.75fr)] md:gap-16 md:py-14 lg:gap-24">
+          <div className="min-w-0">
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: .55, delay: .08, ease: EASE }}
+            >
+              <span className="inline-flex items-center gap-3 text-[.68rem] font-semibold text-accent">
+                <i className="h-px w-10 bg-accent" aria-hidden />
+                أرشيفٌ فكري حيّ
+              </span>
+              <h1 id="first-visit-title" className="mt-5 max-w-4xl font-display text-[clamp(2.15rem,6.5vw,5.4rem)] font-bold leading-[1.16] tracking-[-.035em] text-ink">
+                الفكرة لا تسكن صفحةً واحدة.
+                <span className="mt-2 block font-light text-accent">إنها تعبر الكتاب والبحث والمقال.</span>
+              </h1>
+              <p id="first-visit-description" className="mt-6 max-w-2xl text-[.9rem] font-light leading-[2] text-soft sm:text-[1rem] md:text-[1.08rem]">
+                ادخل من السؤال الذي يشبهك، ثم دع الموقع يكشف الروابط بين ما كُتب وما يُبحث وما يستحق أن يُعاد التفكير فيه.
+              </p>
+            </motion.div>
+
+            <motion.div
+              className="mt-8 flex flex-wrap items-center gap-3"
+              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: .5, delay: .24, ease: EASE }}
+            >
+              <button ref={enterRef} type="button" onClick={close} className="inline-flex min-h-12 items-center rounded-full bg-accent px-6 text-[.78rem] font-semibold text-white transition-colors hover:bg-accent-deep">
+                ادخل الموقع
+              </button>
+              <Link to="/thought" onClick={close} className="inline-flex min-h-12 items-center rounded-full border border-hair px-6 text-[.78rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+                ابدأ من الخريطة الفكرية
+              </Link>
+            </motion.div>
+          </div>
+
+          <motion.nav
+            aria-label="نقاط الدخول إلى الموقع"
+            className="divide-y divide-hair border-y border-hair"
+            initial={reduceMotion ? false : { opacity: 0, x: -18 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: .58, delay: .2, ease: EASE }}
           >
-            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-accent/70 to-transparent" />
-            <div className="p-6 sm:p-9 md:p-11">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-[.68rem] font-semibold uppercase tracking-[.12em] text-accent">{current.eyebrow}</span>
-                <button type="button" onClick={close} className="rounded-full px-2 py-1 text-[.72rem] text-soft transition-colors hover:text-accent" aria-label="تخطي المقدمة">تخطي</button>
-              </div>
+            {paths.map((item) => (
+              <Link key={item.to} to={item.to} onClick={close} className="group grid grid-cols-[2.4rem_minmax(0,1fr)_auto] items-center gap-4 py-5 sm:py-6">
+                <span className="font-display text-[.68rem] text-accent">{item.number}</span>
+                <span className="min-w-0">
+                  <strong className="block font-display text-[1.05rem] font-semibold text-ink transition-colors group-hover:text-accent sm:text-[1.18rem]">{item.label}</strong>
+                  <span className="mt-1 block text-[.7rem] leading-[1.75] text-soft">{item.note}</span>
+                </span>
+                <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-all group-hover:border-accent group-hover:bg-accent group-hover:text-white">←</span>
+              </Link>
+            ))}
+          </motion.nav>
+        </main>
 
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={step}
-                  initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: .3, ease: EASE }}
-                >
-                  <h2 id="first-visit-title" className="mt-5 max-w-[650px] font-display text-[clamp(1.55rem,4vw,2.35rem)] font-semibold leading-[1.45] text-ink">{current.title}</h2>
-                  <p id="first-visit-description" className="mt-4 max-w-[650px] text-[.92rem] font-light leading-[2] text-soft sm:text-[1rem]">{current.body}</p>
-
-                  {'features' in current && current.features && (
-                    <div className="mt-7 grid gap-2.5 sm:grid-cols-2">
-                      {current.features.map(([title, note], index) => (
-                        <div key={title} className="rounded-2xl border border-hair bg-wash p-4">
-                          <span className="text-[.62rem] font-semibold text-accent">0{index + 1}</span>
-                          <strong className="mt-2 block text-[.84rem] text-ink">{title}</strong>
-                          <p className="mt-1 text-[.72rem] leading-[1.75] text-soft">{note}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-
-              <div className="mt-8 flex items-center justify-between gap-4 border-t border-hair pt-5">
-                <div className="flex items-center gap-1.5" aria-label={`الخطوة ${step + 1} من ${steps.length}`}>
-                  {steps.map((_, index) => (
-                    <span key={index} aria-hidden className={`h-1.5 rounded-full transition-all duration-300 ${index === step ? 'w-7 bg-accent' : 'w-1.5 bg-ink/[.15] dark:bg-white/20'}`} />
-                  ))}
-                </div>
-                <div className="flex items-center gap-2">
-                  {step > 0 && <button type="button" onClick={() => setStep((currentStep) => Math.max(0, currentStep - 1))} className="rounded-full border border-hair px-4 py-2.5 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">السابق</button>}
-                  <button ref={primaryRef} type="button" onClick={advance} className="rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-semibold text-white transition-colors hover:bg-accent-deep">
-                    {step === steps.length - 1 ? 'ابدأ التصفح' : 'التالي'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.section>
-        </motion.div>
-      )}
-    </AnimatePresence>,
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-hair pt-4 text-[.62rem] leading-relaxed text-soft">
+          <span>التعليم · التكنولوجيا · الإنسان</span>
+          <span>الكويت</span>
+        </footer>
+      </div>
+    </motion.div>,
     document.body,
   )
 }

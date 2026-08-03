@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 const CHANNEL_HANDLE = 'موسوعةتكنولوجياالتعليم'
 const CHANNEL_URL = `https://www.youtube.com/@${CHANNEL_HANDLE}/videos`
 const CACHE_TTL = 6 * 60 * 60 * 1000
@@ -251,4 +253,528 @@ export async function loadEncyclopediaVideoCatalog({ fetchImpl = globalThis.fetc
 
 export function resetEncyclopediaVideoCache() {
   memoryCache = { expiresAt: 0, payload: null, promise: null }
+}
+
+
+/* --------------------------------------------------------------------------
+ * الفهرس المنطوق للموسوعة
+ *
+ * لا ندّعي توقيتاً دقيقاً من عنوان الفيديو. الموضع لا يُوسم «من النص
+ * المنطوق» إلا إذا وجدناه فعلاً في مسار ترجمة YouTube. وإذا لم تتوافر
+ * ترجمة، يبقى الفيديو مرتبطاً بالباب وتسلسله فقط ويبدأ من أوله.
+ * ----------------------------------------------------------------------- */
+
+const TRANSCRIPT_TTL = 24 * 60 * 60 * 1000
+const TRANSCRIPT_FAILURE_TTL = 2 * 60 * 60 * 1000
+const MATCH_TTL = 24 * 60 * 60 * 1000
+const MAX_TRANSCRIPT_CANDIDATES = 36
+const MAX_SEARCH_FETCHES = 16
+const TRANSCRIPT_WARMUP_BATCH = 12
+const TRANSCRIPT_WARMUP_CONCURRENCY = 2
+const TRANSCRIPT_SAFETY_SECONDS = 3
+
+const transcriptCache = new Map()
+const momentCache = new Map()
+let transcriptWarmup = { running: false, total: 0, completed: 0, available: 0, videoIds: [], promise: null }
+
+let teachingMap = {}
+try {
+  teachingMap = JSON.parse(readFileSync(new URL('../data/encyclopedia-teaching-map.json', import.meta.url), 'utf8'))
+} catch {
+  teachingMap = {}
+}
+
+const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
+const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹'
+const VIDEO_NUMBER_WORDS = {
+  اول: 1, الاول: 1, واحد: 1, واحده: 1,
+  ثاني: 2, الثاني: 2, اثنان: 2, اثنين: 2,
+  ثالث: 3, الثالث: 3, ثلاثه: 3,
+  رابع: 4, الرابع: 4, اربعه: 4,
+  خامس: 5, الخامس: 5, خمسه: 5,
+  سادس: 6, السادس: 6, سته: 6,
+  سابع: 7, السابع: 7, سبعه: 7,
+  ثامن: 8, الثامن: 8, ثمانيه: 8,
+  تاسع: 9, التاسع: 9, تسعه: 9,
+  عاشر: 10, العاشر: 10, عشره: 10,
+}
+
+const MOMENT_STOP_WORDS = new Set('في من على الى عن هذا هذه ذلك التي الذي مع كان كانت يكون تكون ثم او أم و لا ما هو هي باب فصل فيديو مقطع شرح الموسوعه التعليم تكنولوجيا'.split(' '))
+
+export function normalizeEncyclopediaMomentText(value = '') {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[ً-ْٰـ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/[ؤئ]/g, 'ء')
+    .replace(/[٠-٩]/g, (character) => String(ARABIC_DIGITS.indexOf(character)))
+    .replace(/[۰-۹]/g, (character) => String(PERSIAN_DIGITS.indexOf(character)))
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function momentTokens(value = '') {
+  return normalizeEncyclopediaMomentText(value)
+    .split(' ')
+    .filter((token) => token.length > 2 && !MOMENT_STOP_WORDS.has(token))
+}
+
+function numericVideoToken(value = '') {
+  const normalized = normalizeEncyclopediaMomentText(value)
+  if (/^\d{1,3}$/.test(normalized)) return Number(normalized)
+  return VIDEO_NUMBER_WORDS[normalized] || null
+}
+
+function numberAfterLabel(value, labels) {
+  const words = normalizeEncyclopediaMomentText(value).split(' ').filter(Boolean)
+  const labelSet = new Set(labels.map(normalizeEncyclopediaMomentText))
+  for (let index = 0; index < words.length; index += 1) {
+    if (!labelSet.has(words[index])) continue
+    for (let next = index + 1; next <= Math.min(words.length - 1, index + 3); next += 1) {
+      if (words[next] === 'رقم' || words[next] === 'الرقم') continue
+      const parsed = numericVideoToken(words[next])
+      if (parsed !== null) return parsed
+      break
+    }
+  }
+  return null
+}
+
+export function extractServerVideoSequence(title = '') {
+  return {
+    doorNumber: numberAfterLabel(title, ['الباب', 'door']),
+    chapterNumber: numberAfterLabel(title, ['الفصل', 'chapter']),
+    videoNumber: numberAfterLabel(title, ['فيديو', 'الفيديو', 'المقطع', 'مقطع', 'video']),
+  }
+}
+
+export function extractYouTubePlayerResponse(html = '') {
+  return jsonAfterMarker(String(html || ''), [
+    'var ytInitialPlayerResponse =',
+    'window["ytInitialPlayerResponse"] =',
+    "window['ytInitialPlayerResponse'] =",
+    'ytInitialPlayerResponse =',
+  ])
+}
+
+export function parseYouTubeCaptionJson(payload) {
+  const segments = []
+  for (const event of Array.isArray(payload?.events) ? payload.events : []) {
+    const text = bounded((event?.segs || []).map((segment) => segment?.utf8 || '').join('').replace(/\n+/g, ' '), 1_000)
+    const startMs = Number(event?.tStartMs)
+    const durationMs = Number(event?.dDurationMs)
+    if (!text || !Number.isFinite(startMs) || startMs < 0) continue
+    const start = Math.max(0, Math.floor(startMs / 1000))
+    const end = Math.max(start + 1, Math.ceil((startMs + (Number.isFinite(durationMs) ? durationMs : 1_000)) / 1000))
+    const previous = segments.at(-1)
+    if (previous && start - previous.end <= 1 && previous.text.length + text.length <= 220) {
+      previous.text = bounded(`${previous.text} ${text}`, 400)
+      previous.end = end
+    } else {
+      segments.push({ start, end, text })
+    }
+  }
+  return segments
+}
+
+function parseCaptionXml(xml = '') {
+  const decode = (value) => String(value || '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  const segments = []
+  for (const match of String(xml || '').matchAll(/<text\s+start="([\d.]+)"(?:\s+dur="([\d.]+)")?[^>]*>([\s\S]*?)<\/text>/g)) {
+    const start = Math.max(0, Math.floor(Number(match[1]) || 0))
+    const duration = Math.max(1, Math.ceil(Number(match[2]) || 1))
+    const text = bounded(decode(match[3]).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '), 1_000)
+    if (text) segments.push({ start, end: start + duration, text })
+  }
+  return segments
+}
+
+function captionTrack(player) {
+  const tracks = player?.captions?.playerCaptionsTracklistRenderer?.captionTracks
+  if (!Array.isArray(tracks) || !tracks.length) return null
+  const sorted = [...tracks].sort((left, right) => {
+    const leftArabic = /^ar(?:-|$)/i.test(String(left?.languageCode || '')) ? 1 : 0
+    const rightArabic = /^ar(?:-|$)/i.test(String(right?.languageCode || '')) ? 1 : 0
+    const leftManual = left?.kind === 'asr' ? 0 : 1
+    const rightManual = right?.kind === 'asr' ? 0 : 1
+    return rightArabic - leftArabic || rightManual - leftManual
+  })
+  return sorted[0] || null
+}
+
+async function fetchVideoTranscript(video, fetchImpl = globalThis.fetch) {
+  const cached = transcriptCache.get(video.id)
+  if (cached && cached.expiresAt > Date.now()) return cached.value
+  if (cached?.promise) return cached.promise
+
+  const promise = (async () => {
+    try {
+      const response = await fetchWithDeadline(fetchImpl, `https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}&hl=ar`, {
+        headers: {
+          accept: 'text/html,application/xhtml+xml',
+          'accept-language': 'ar,en;q=0.7',
+          'user-agent': 'Mozilla/5.0 (compatible; DrAlfailakawi-Encyclopedia/2.0)',
+        },
+      }, 15_000)
+      const html = await responseText(response)
+      const player = extractYouTubePlayerResponse(html)
+      const track = captionTrack(player)
+      if (!track?.baseUrl) {
+        return {
+          videoId: video.id,
+          available: false,
+          language: '',
+          source: 'none',
+          title: bounded(player?.videoDetails?.title || video.title, 500),
+          description: bounded(player?.videoDetails?.shortDescription || video.description, 2_000),
+          segments: [],
+          text: '',
+        }
+      }
+
+      const captionUrl = new URL(track.baseUrl)
+      captionUrl.searchParams.set('fmt', 'json3')
+      if (!/^ar(?:-|$)/i.test(String(track.languageCode || ''))) captionUrl.searchParams.set('tlang', 'ar')
+      const captionResponse = await fetchWithDeadline(fetchImpl, captionUrl.href, {
+        headers: {
+          accept: 'application/json,text/xml;q=0.8,*/*;q=0.5',
+          'accept-language': 'ar,en;q=0.7',
+          'user-agent': 'Mozilla/5.0 (compatible; DrAlfailakawi-Encyclopedia/2.0)',
+        },
+      }, 12_000)
+      if (!captionResponse?.ok) throw new Error(`YouTube captions HTTP ${captionResponse?.status || 0}`)
+      const raw = await captionResponse.text()
+      let segments = []
+      try { segments = parseYouTubeCaptionJson(JSON.parse(raw)) } catch { segments = parseCaptionXml(raw) }
+      const text = bounded(segments.map((segment) => segment.text).join(' '), 120_000)
+      return {
+        videoId: video.id,
+        available: segments.length > 0,
+        language: bounded(track.languageCode || plainText(track.name), 40),
+        source: segments.length > 0 ? 'captions' : 'none',
+        title: bounded(player?.videoDetails?.title || video.title, 500),
+        description: bounded(player?.videoDetails?.shortDescription || video.description, 2_000),
+        segments,
+        text,
+      }
+    } catch {
+      return {
+        videoId: video.id,
+        available: false,
+        language: '',
+        source: 'none',
+        title: video.title,
+        description: video.description,
+        segments: [],
+        text: '',
+      }
+    }
+  })()
+
+  transcriptCache.set(video.id, { promise, expiresAt: 0, value: null })
+  const value = await promise
+  transcriptCache.set(video.id, {
+    promise: null,
+    value,
+    expiresAt: Date.now() + (value.available ? TRANSCRIPT_TTL : TRANSCRIPT_FAILURE_TTL),
+  })
+  return value
+}
+
+function phraseWeight(haystack, phrase, weight) {
+  const normalized = normalizeEncyclopediaMomentText(phrase)
+  if (!normalized || !haystack.includes(normalized)) return 0
+  return weight + Math.min(7, normalized.split(' ').length * 2)
+}
+
+function windowMomentScore(text, topic, hints) {
+  const normalized = normalizeEncyclopediaMomentText(text)
+  const phrases = [topic, ...hints].filter(Boolean)
+  let score = 0
+  for (let index = 0; index < phrases.length; index += 1) score += phraseWeight(normalized, phrases[index], index === 0 ? 22 : 12)
+  const queryTokens = new Set(momentTokens(phrases.join(' ')))
+  const textTokens = new Set(momentTokens(normalized))
+  let overlap = 0
+  for (const token of queryTokens) if (textTokens.has(token)) overlap += token.length >= 6 ? 5 : 3
+  return score + overlap
+}
+
+export function findEncyclopediaTranscriptMoment(segments, topic, hints = []) {
+  if (!Array.isArray(segments) || !segments.length) return null
+  let best = null
+  for (let startIndex = 0; startIndex < segments.length; startIndex += 1) {
+    let text = ''
+    let end = segments[startIndex].end
+    for (let endIndex = startIndex; endIndex < Math.min(segments.length, startIndex + 9); endIndex += 1) {
+      const segment = segments[endIndex]
+      if (segment.start - segments[startIndex].start > 48) break
+      text = bounded(`${text} ${segment.text}`, 1_800)
+      end = segment.end
+      const score = windowMomentScore(text, topic, hints)
+      if (!best || score > best.score || (score === best.score && segments[startIndex].start < best.start)) {
+        best = { score, start: segments[startIndex].start, end, text: bounded(text, 320) }
+      }
+    }
+  }
+  if (!best || best.score < 8) return null
+  const confidence = best.score >= 34 ? 'exact' : best.score >= 20 ? 'strong' : 'inferred'
+  return {
+    startSeconds: Math.max(0, best.start - TRANSCRIPT_SAFETY_SECONDS),
+    endSeconds: best.end,
+    excerpt: best.text,
+    score: best.score,
+    confidence,
+    source: 'captions',
+  }
+}
+
+function topicEntries() {
+  const entries = []
+  for (const [doorId, door] of Object.entries(teachingMap || {})) {
+    const doorNumber = Number(String(doorId).match(/\d+/)?.[0]) || 0
+    for (const [title, topic] of Object.entries(door?.topics || {})) {
+      entries.push({
+        doorId,
+        doorNumber,
+        title,
+        hints: Array.isArray(topic?.videoHints) ? topic.videoHints : [],
+        chapterNumbers: Array.isArray(topic?.chapterNumbers) ? topic.chapterNumbers.map(Number).filter(Boolean) : [],
+      })
+    }
+  }
+  return entries
+}
+
+const teachingTopics = topicEntries()
+
+function teachingTopicFor(title, doorNumber = 0) {
+  const normalized = normalizeEncyclopediaMomentText(title)
+  const exact = teachingTopics.find((topic) => (!doorNumber || topic.doorNumber === doorNumber) && normalizeEncyclopediaMomentText(topic.title) === normalized)
+  if (exact) return exact
+  let best = null
+  for (const topic of teachingTopics) {
+    if (doorNumber && topic.doorNumber !== doorNumber) continue
+    const score = windowMomentScore(`${topic.title} ${topic.hints.join(' ')}`, title, [])
+    if (!best || score > best.score) best = { topic, score }
+  }
+  return best && best.score >= 8 ? best.topic : null
+}
+
+function titleCandidateScore(video, topic, hints, doorNumber, chapterNumbers) {
+  const sequence = extractServerVideoSequence(video.title)
+  const haystack = normalizeEncyclopediaMomentText(`${video.title} ${video.description}`)
+  let score = windowMomentScore(haystack, topic, hints)
+  if (doorNumber && sequence.doorNumber === doorNumber) score += 12
+  if (chapterNumbers.length && sequence.chapterNumber && chapterNumbers.includes(sequence.chapterNumber)) score += 10
+  if (sequence.videoNumber) score += Math.max(0, 3 - Math.floor(sequence.videoNumber / 40))
+  return { score, sequence }
+}
+
+function videoCandidates(catalog, topic, hints, doorNumber, chapterNumbers) {
+  const ranked = catalog.videos.map((video) => {
+    const scored = titleCandidateScore(video, topic, hints, doorNumber, chapterNumbers)
+    return { video, ...scored }
+  })
+  const explicitDoor = ranked.filter((item) => item.sequence.doorNumber === doorNumber)
+  let pool = doorNumber && explicitDoor.length ? explicitDoor : ranked
+  if (chapterNumbers.length) {
+    const chapterPool = pool.filter((item) => item.sequence.chapterNumber && chapterNumbers.includes(item.sequence.chapterNumber))
+    if (chapterPool.length) pool = chapterPool
+  }
+  return pool.sort((left, right) => right.score - left.score || left.video.position - right.video.position)
+}
+
+function momentResult(video, moment, topic, sequence, fallbackScore = 0) {
+  const startSeconds = moment?.startSeconds || 0
+  return {
+    video,
+    videoId: video.id,
+    topic,
+    startSeconds,
+    endSeconds: moment?.endSeconds || 0,
+    excerpt: moment?.excerpt || '',
+    confidence: moment?.confidence || (fallbackScore > 10 ? 'strong' : 'inferred'),
+    source: moment?.source || 'sequence',
+    score: moment?.score || fallbackScore,
+    sequence,
+    embedUrl: `${video.embedUrl}${video.embedUrl.includes('?') ? '&' : '?'}start=${Math.max(0, startSeconds)}`,
+  }
+}
+
+export function getEncyclopediaTranscriptProgress(videos = []) {
+  const ids = Array.isArray(videos) && videos.length
+    ? videos.map((video) => video?.id).filter(Boolean)
+    : transcriptWarmup.videoIds
+  const completed = ids.reduce((total, id) => total + (transcriptCache.get(id)?.value ? 1 : 0), 0)
+  const available = ids.reduce((total, id) => total + (transcriptCache.get(id)?.value?.available ? 1 : 0), 0)
+  return {
+    running: transcriptWarmup.running,
+    total: ids.length || transcriptWarmup.total,
+    completed: ids.length ? completed : transcriptWarmup.completed,
+    available: ids.length ? available : transcriptWarmup.available,
+  }
+}
+
+const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds))
+
+/*
+ * الفهرسة الخلفية متدرجة عمداً: نقرأ دفعة صغيرة في كل زيارة بدلاً من إطلاق
+ * مئات الطلبات في لحظة واحدة. البحث عن موضوع يظل يفحص أفضل المرشحين فوراً،
+ * بينما تتسع الذاكرة المنطوقة بهدوء مع الاستخدام من دون إبطاء الصفحة.
+ */
+export function scheduleEncyclopediaTranscriptWarmup(videos, { fetchImpl = globalThis.fetch, batchSize = TRANSCRIPT_WARMUP_BATCH } = {}) {
+  if (transcriptWarmup.running || !Array.isArray(videos) || !videos.length || typeof fetchImpl !== 'function') return transcriptWarmup.promise
+  const videoIds = videos.map((video) => video?.id).filter(Boolean)
+  const pending = videos
+    .filter((video) => !transcriptCache.get(video.id)?.value && !transcriptCache.get(video.id)?.promise)
+    .slice(0, Math.max(1, Math.min(TRANSCRIPT_WARMUP_BATCH, Number(batchSize) || TRANSCRIPT_WARMUP_BATCH)))
+  const progress = getEncyclopediaTranscriptProgress(videos)
+  transcriptWarmup = {
+    running: pending.length > 0,
+    total: videos.length,
+    completed: progress.completed,
+    available: progress.available,
+    videoIds,
+    promise: null,
+  }
+  if (!pending.length) return null
+
+  transcriptWarmup.promise = (async () => {
+    for (let index = 0; index < pending.length; index += TRANSCRIPT_WARMUP_CONCURRENCY) {
+      const batch = pending.slice(index, index + TRANSCRIPT_WARMUP_CONCURRENCY)
+      await Promise.all(batch.map((video) => fetchVideoTranscript(video, fetchImpl)))
+      const current = getEncyclopediaTranscriptProgress(videos)
+      transcriptWarmup.completed = current.completed
+      transcriptWarmup.available = current.available
+      await delay(140)
+    }
+    transcriptWarmup.running = false
+    return getEncyclopediaTranscriptProgress(videos)
+  })().catch(() => {
+    transcriptWarmup.running = false
+    return getEncyclopediaTranscriptProgress(videos)
+  })
+  return transcriptWarmup.promise
+}
+
+export async function loadEncyclopediaVideoMoment({ topic, doorNumber = 0, videoId = '', hints = [], fetchImpl = globalThis.fetch } = {}) {
+  const cleanTopic = bounded(topic, 180)
+  const normalizedVideoId = bounded(videoId, 24)
+  if (!cleanTopic && !normalizedVideoId) throw new Error('A topic or video id is required')
+  const resolvedTopic = teachingTopicFor(cleanTopic, Number(doorNumber) || 0)
+  const resolvedDoor = Number(doorNumber) || resolvedTopic?.doorNumber || 0
+  const resolvedHints = [...new Set([...(resolvedTopic?.hints || []), ...(Array.isArray(hints) ? hints : [])].map((value) => bounded(value, 120)).filter(Boolean))]
+  const chapterNumbers = resolvedTopic?.chapterNumbers || []
+  const cacheKey = normalizeEncyclopediaMomentText([cleanTopic, resolvedDoor, normalizedVideoId, ...resolvedHints].join('|'))
+  const cached = momentCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.value
+
+  const catalog = await loadEncyclopediaVideoCatalog({ fetchImpl })
+  scheduleEncyclopediaTranscriptWarmup(catalog.videos, { fetchImpl })
+  let candidates = videoCandidates(catalog, cleanTopic, resolvedHints, resolvedDoor, chapterNumbers)
+  if (normalizedVideoId) candidates = candidates.filter((item) => item.video.id === normalizedVideoId)
+  candidates = candidates.slice(0, MAX_TRANSCRIPT_CANDIDATES)
+  if (!candidates.length) return null
+
+  let best = null
+  for (let index = 0; index < candidates.length; index += 4) {
+    const batch = candidates.slice(index, index + 4)
+    const records = await Promise.all(batch.map(({ video }) => fetchVideoTranscript(video, fetchImpl)))
+    records.forEach((record, offset) => {
+      const candidate = batch[offset]
+      const moment = record.available ? findEncyclopediaTranscriptMoment(record.segments, cleanTopic, resolvedHints) : null
+      const combinedScore = (moment?.score || 0) + candidate.score
+      if (moment && (!best || combinedScore > best.combinedScore)) {
+        best = {
+          combinedScore,
+          value: momentResult(candidate.video, moment, cleanTopic, candidate.sequence, candidate.score),
+        }
+      }
+    })
+    if (best?.value?.confidence === 'exact' && best.combinedScore >= 48) break
+  }
+
+  const fallback = candidates[0]
+  const value = best?.value || momentResult(fallback.video, null, cleanTopic, fallback.sequence, fallback.score)
+  momentCache.set(cacheKey, { value, expiresAt: Date.now() + (best?.value ? MATCH_TTL : TRANSCRIPT_FAILURE_TTL) })
+  return value
+}
+
+function topicQueryScore(query, topic) {
+  return windowMomentScore(`${topic.title} ${topic.hints.join(' ')}`, query, [])
+}
+
+export async function searchEncyclopediaVideoMoments({ query, doorNumber = 0, limit = 6, fetchImpl = globalThis.fetch } = {}) {
+  const cleanQuery = bounded(query, 180)
+  if (cleanQuery.length < 2) return { query: cleanQuery, moments: [], progress: getEncyclopediaTranscriptProgress() }
+  const catalog = await loadEncyclopediaVideoCatalog({ fetchImpl })
+  scheduleEncyclopediaTranscriptWarmup(catalog.videos, { fetchImpl })
+  const requestedDoor = Number(doorNumber) || 0
+
+  const relevantTopics = teachingTopics
+    .filter((topic) => !requestedDoor || topic.doorNumber === requestedDoor)
+    .map((topic) => ({ topic, score: topicQueryScore(cleanQuery, topic) }))
+    .filter((item) => item.score > 0)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 4)
+
+  const candidateMap = new Map()
+  const addCandidates = (items) => {
+    for (const item of items) {
+      const previous = candidateMap.get(item.video.id)
+      if (!previous || item.score > previous.score) candidateMap.set(item.video.id, item)
+    }
+  }
+
+  addCandidates(videoCandidates(catalog, cleanQuery, [], requestedDoor, []).slice(0, 16))
+  for (const { topic } of relevantTopics) {
+    addCandidates(videoCandidates(catalog, cleanQuery, topic.hints, topic.doorNumber, topic.chapterNumbers).slice(0, 14))
+  }
+
+  /* كل ترجمة سبق فهرستها تدخل البحث حتى إن كان عنوان الفيديو رقمياً فقط. */
+  for (const video of catalog.videos) {
+    const record = transcriptCache.get(video.id)?.value
+    if (!record?.available) continue
+    const moment = findEncyclopediaTranscriptMoment(record.segments, cleanQuery, [])
+    if (moment) candidateMap.set(video.id, { video, score: moment.score, sequence: extractServerVideoSequence(video.title), prefetchedMoment: moment })
+  }
+
+  const candidates = [...candidateMap.values()]
+    .sort((left, right) => right.score - left.score || left.video.position - right.video.position)
+    .slice(0, Math.max(MAX_SEARCH_FETCHES, Number(limit) * 3))
+
+  const results = []
+  for (let index = 0; index < candidates.length && index < MAX_SEARCH_FETCHES; index += 4) {
+    const batch = candidates.slice(index, index + 4)
+    const records = await Promise.all(batch.map(({ video, prefetchedMoment }) => prefetchedMoment ? Promise.resolve(null) : fetchVideoTranscript(video, fetchImpl)))
+    batch.forEach((candidate, offset) => {
+      const record = records[offset]
+      const moment = candidate.prefetchedMoment || (record?.available ? findEncyclopediaTranscriptMoment(record.segments, cleanQuery, []) : null)
+      if (moment) results.push(momentResult(candidate.video, moment, cleanQuery, candidate.sequence, candidate.score))
+      else if (candidate.score >= 12) results.push(momentResult(candidate.video, null, cleanQuery, candidate.sequence, candidate.score))
+    })
+  }
+
+  const unique = new Map()
+  for (const result of results.sort((left, right) => right.score - left.score || left.video.position - right.video.position)) {
+    const key = `${result.videoId}:${result.startSeconds}`
+    if (!unique.has(key)) unique.set(key, result)
+  }
+  return {
+    query: cleanQuery,
+    moments: [...unique.values()].slice(0, Math.max(1, Math.min(10, Number(limit) || 6))),
+    progress: getEncyclopediaTranscriptProgress(catalog.videos),
+  }
+}
+
+export function resetEncyclopediaTranscriptCache() {
+  transcriptCache.clear()
+  momentCache.clear()
+  transcriptWarmup = { running: false, total: 0, completed: 0, available: 0, videoIds: [], promise: null }
 }

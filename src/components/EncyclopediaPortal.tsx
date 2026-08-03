@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
 import { arabicCountPhrase, PAGE_FORMS } from '../lib/arabic-count.ts'
-import { getEncyclopediaVideoCatalog, type EncyclopediaVideoCatalog } from '../lib/encyclopedia-videos'
+import { getEncyclopediaVideoCatalog, getEncyclopediaVideoMoment, searchEncyclopediaVideoMoments, type EncyclopediaVideoCatalog, type EncyclopediaVideoMoment, type EncyclopediaTranscriptProgress } from '../lib/encyclopedia-videos'
 import {
   encyclopediaSlideCount,
   encyclopediaSlideRangeLabel,
@@ -27,6 +27,7 @@ import { OwnerEdit } from './extras'
 const CHANNEL_URL = 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'
 const LAST_VIDEO_KEY = 'encyclopedia:last-video'
 const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-arab').format(value)
+const formatMomentTime = (seconds: number) => `${formatArabicNumber(Math.floor(Math.max(0, seconds) / 60))}:${formatArabicNumber(Math.max(0, seconds) % 60).padStart(2, '٠')}`
 
 const scoreText = (tokens: readonly string[], value = '') => {
   const normalized = normalizeEncyclopediaText(value)
@@ -108,8 +109,12 @@ function relatedVideoForConcept(concept: BookKnowledgeConcept, videos: IndexedEn
 }
 
 function relatedVideoForTeachingTopic(topic: EncyclopediaTeachingTopic | null, door: Door, videos: IndexedEncyclopediaVideo[]) {
-  const candidates = videos.filter((video) => video.doorId === door.id)
-  if (!topic) return candidates[0] || null
+  const doorCandidates = videos.filter((video) => video.doorId === door.id)
+  if (!topic) return doorCandidates[0] || null
+  const chapterCandidates = topic.chapterNumbers.length
+    ? doorCandidates.filter((video) => video.chapterNumber && topic.chapterNumbers.includes(video.chapterNumber))
+    : []
+  const candidates = chapterCandidates.length ? chapterCandidates : doorCandidates
   const tokens = encyclopediaTokens([topic.title, ...topic.videoHints].join(' '))
   const ranked = candidates
     .map((video) => ({ video, score: scoreIndexedVideo(tokens, video) }))
@@ -197,8 +202,16 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
   const [videoQuery, setVideoQuery] = useState('')
   const [visibleVideoCount, setVisibleVideoCount] = useState(24)
   const [playerReady, setPlayerReady] = useState(false)
+  const [selectedMoment, setSelectedMoment] = useState<EncyclopediaVideoMoment | null>(null)
+  const [momentLoadingKey, setMomentLoadingKey] = useState('')
+  const [queryMoments, setQueryMoments] = useState<EncyclopediaVideoMoment[]>([])
+  const [queryMomentsLoading, setQueryMomentsLoading] = useState(false)
+  const [videoMoments, setVideoMoments] = useState<EncyclopediaVideoMoment[]>([])
+  const [videoMomentsLoading, setVideoMomentsLoading] = useState(false)
+  const [transcriptProgress, setTranscriptProgress] = useState<EncyclopediaTranscriptProgress>({ running: false, total: 0, completed: 0, available: 0 })
   const [teachingMaterial, setTeachingMaterial] = useState<TeachingMaterialSelection | null>(null)
   const videoSectionRef = useRef<HTMLElement | null>(null)
+  const momentRequestRef = useRef(0)
   const pageCount = Number(book.pageCount) || 696
   const activeAudience = AUDIENCES[audience]
   const tokens = useMemo(() => encyclopediaTokens(query), [query])
@@ -206,7 +219,7 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
   useEffect(() => {
     const controller = new AbortController()
     getEncyclopediaVideoCatalog(controller.signal)
-      .then((payload) => { setCatalog(payload); setCatalogError(false) })
+      .then((payload) => { setCatalog(payload); setTranscriptProgress(payload.transcriptIndex || { running: false, total: payload.videos.length, completed: 0, available: 0 }); setCatalogError(false) })
       .catch((error) => { if ((error as { name?: string })?.name !== 'AbortError') setCatalogError(true) })
     return () => controller.abort()
   }, [])
@@ -248,6 +261,13 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
 
   const selectedVideo = indexedVideos.find((video) => video.id === selectedVideoId) || indexedVideos[0] || null
   const selectedDoor = doorForVideo(selectedVideo)
+  const activeMoment = selectedMoment?.videoId === selectedVideo?.id ? selectedMoment : null
+  const selectedPlayerUrl = selectedVideo
+    ? `${selectedVideo.embedUrl}&playsinline=1${activeMoment?.startSeconds ? `&start=${Math.max(0, Math.floor(activeMoment.startSeconds))}` : ''}`
+    : ''
+  const selectedChannelUrl = selectedVideo
+    ? `${selectedVideo.url}${activeMoment?.startSeconds ? `&t=${Math.max(0, Math.floor(activeMoment.startSeconds))}s` : ''}`
+    : ''
   const doorCounts = useMemo(() => {
     const counts = new Map<string, number>()
     for (const video of indexedVideos) if (video.doorId) counts.set(video.doorId, (counts.get(video.doorId) || 0) + 1)
@@ -267,18 +287,31 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
       .map((item) => item.video)
   }, [activeVideoDoor, indexedVideos, videoTokens])
 
+
+  const videoMomentMap = useMemo(() => new Map(videoMoments.map((moment) => [moment.videoId, moment])), [videoMoments])
+  const listedVideos = useMemo(() => {
+    if (!videoTokens.length || !videoMoments.length) return filteredVideos
+    const exact = videoMoments
+      .map((moment) => indexedVideos.find((video) => video.id === moment.videoId) || indexEncyclopediaVideos([moment.video], DOORS, concepts)[0] || null)
+      .filter((video): video is IndexedEncyclopediaVideo => Boolean(video))
+      .filter((video) => activeVideoDoor === 'all' || video.doorId === activeVideoDoor)
+    const unique = new Map<string, IndexedEncyclopediaVideo>()
+    for (const video of [...exact, ...filteredVideos]) if (!unique.has(video.id)) unique.set(video.id, video)
+    return [...unique.values()]
+  }, [activeVideoDoor, concepts, filteredVideos, indexedVideos, videoMoments, videoTokens])
+
   useEffect(() => {
     setVisibleVideoCount(24)
   }, [activeVideoDoor, videoQuery])
 
   useEffect(() => {
-    if (!filteredVideos.length) return
+    if (!listedVideos.length) return
     setSelectedVideoId((current) => (
-      current && filteredVideos.some((video) => video.id === current)
+      current && listedVideos.some((video) => video.id === current)
         ? current
-        : filteredVideos[0].id
+        : listedVideos[0].id
     ))
-  }, [filteredVideos])
+  }, [listedVideos])
 
   const selectedPath = useMemo(() => {
     if (!selectedVideo) return []
@@ -310,14 +343,57 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
     return ranked.find((item) => item.score > 0)?.concept || conceptForDoor(teachingMaterial.door, concepts)
   }, [concepts, teachingMaterial])
 
-  const selectVideo = (video: IndexedEncyclopediaVideo, scroll = true) => {
+  const selectVideo = (video: IndexedEncyclopediaVideo, scroll = true, moment: EncyclopediaVideoMoment | null = null, preserveMomentRequest = false) => {
+    if (!preserveMomentRequest) momentRequestRef.current += 1
+    setSelectedMoment(moment?.videoId === video.id ? moment : null)
+    setPlayerReady(false)
     setSelectedVideoId(video.id)
     if (scroll) window.requestAnimationFrame(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 
+  const indexedVideoForMoment = (moment: EncyclopediaVideoMoment) => (
+    indexedVideos.find((video) => video.id === moment.videoId)
+    || indexEncyclopediaVideos([moment.video], DOORS, concepts)[0]
+    || null
+  )
+
+  const resolveExactMoment = async ({
+    topic,
+    door,
+    fallback,
+    hints = [],
+    scroll = true,
+  }: {
+    topic: string
+    door: Door
+    fallback: IndexedEncyclopediaVideo | null
+    hints?: readonly string[]
+    scroll?: boolean
+  }) => {
+    const key = `${door.id}:${topic}`
+    const requestId = momentRequestRef.current + 1
+    momentRequestRef.current = requestId
+    setMomentLoadingKey(key)
+    try {
+      const moment = await getEncyclopediaVideoMoment({ topic, doorNumber: door.doorNumber, hints })
+      if (momentRequestRef.current !== requestId || !moment) return
+      const video = indexedVideoForMoment(moment)
+      if (!video) return
+      setActiveVideoDoor((video.doorId as DoorFilter | null) || door.id)
+      selectVideo(video, scroll, moment, true)
+    } catch {
+      if (momentRequestRef.current === requestId && fallback) selectVideo(fallback, scroll, null, true)
+    } finally {
+      if (momentRequestRef.current === requestId) setMomentLoadingKey((current) => current === key ? '' : current)
+    }
+  }
+
   const openVideoPath = (door: Door) => {
+    momentRequestRef.current += 1
+    setMomentLoadingKey('')
     setActiveVideoDoor(door.id)
     setVideoQuery('')
+    setSelectedMoment(null)
     const first = indexedVideos.find((video) => video.doorId === door.id)
     if (first) setSelectedVideoId(first.id)
     window.requestAnimationFrame(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
@@ -327,9 +403,10 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
     setActiveVideoDoor(door.id)
     setVideoQuery(topic)
     const guide = getEncyclopediaTeachingTopic(door.id, topic)
-    const first = relatedVideoForTeachingTopic(guide, door, indexedVideos)
-    if (first) setSelectedVideoId(first.id)
+    const fallback = relatedVideoForTeachingTopic(guide, door, indexedVideos)
+    if (fallback) selectVideo(fallback, false)
     window.requestAnimationFrame(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    void resolveExactMoment({ topic, door, fallback, hints: guide?.videoHints || [], scroll: false })
   }
 
   const openTeachingMaterials = (door: Door, topic?: string) => {
@@ -337,12 +414,55 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
   }
 
   const playTeachingVideo = () => {
-    if (!teachingVideo) return
+    if (!teachingMaterial) return
+    const topic = teachingMaterial.topic || teachingGuide?.title || teachingMaterial.door.title
+    const door = teachingMaterial.door
+    const fallback = teachingVideo
+    const hints = teachingGuide?.videoHints || []
     setTeachingMaterial(null)
-    setActiveVideoDoor(teachingVideo.doorId as DoorFilter || 'all')
-    setVideoQuery(teachingMaterial?.topic || '')
-    selectVideo(teachingVideo)
+    setActiveVideoDoor(door.id)
+    setVideoQuery(topic)
+    if (fallback) selectVideo(fallback, true)
+    else window.requestAnimationFrame(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    void resolveExactMoment({ topic, door, fallback, hints, scroll: false })
   }
+
+  useEffect(() => {
+    const clean = query.trim()
+    if (clean.length < 2) {
+      setQueryMoments([])
+      setQueryMomentsLoading(false)
+      return
+    }
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      setQueryMomentsLoading(true)
+      searchEncyclopediaVideoMoments(clean, { limit: 5, signal: controller.signal })
+        .then((result) => { setQueryMoments(result.moments); setTranscriptProgress(result.progress) })
+        .catch((error) => { if ((error as { name?: string })?.name !== 'AbortError') setQueryMoments([]) })
+        .finally(() => { if (!controller.signal.aborted) setQueryMomentsLoading(false) })
+    }, 360)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [query])
+
+  useEffect(() => {
+    const clean = videoQuery.trim()
+    if (clean.length < 2) {
+      setVideoMoments([])
+      setVideoMomentsLoading(false)
+      return
+    }
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      const doorNumber = activeVideoDoor === 'all' ? undefined : DOORS.find((door) => door.id === activeVideoDoor)?.doorNumber
+      setVideoMomentsLoading(true)
+      searchEncyclopediaVideoMoments(clean, { doorNumber, limit: 8, signal: controller.signal })
+        .then((result) => { setVideoMoments(result.moments); setTranscriptProgress(result.progress) })
+        .catch((error) => { if ((error as { name?: string })?.name !== 'AbortError') setVideoMoments([]) })
+        .finally(() => { if (!controller.signal.aborted) setVideoMomentsLoading(false) })
+    }, 420)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [activeVideoDoor, videoQuery])
 
   const searchResults = useMemo(() => {
     if (!tokens.length) return { concepts: [], doors: [], videos: [], slides: [], articles: [], papers: [] }
@@ -384,7 +504,7 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
     }
   }, [articles, concepts, indexedVideos, papers, tokens])
 
-  const hasSearchResults = searchResults.concepts.length > 0 || searchResults.doors.length > 0 || searchResults.videos.length > 0 || searchResults.slides.length > 0 || searchResults.articles.length > 0 || searchResults.papers.length > 0
+  const hasSearchResults = queryMoments.length > 0 || searchResults.concepts.length > 0 || searchResults.doors.length > 0 || searchResults.videos.length > 0 || searchResults.slides.length > 0 || searchResults.articles.length > 0 || searchResults.papers.length > 0
   const stagedSearchHref = query.trim().length >= 2 ? `/publications/${book.slug}?book_question=${encodeURIComponent(query.trim())}#ask-book-section` : '#encyclopedia-search'
   const catalogLoading = !catalog && !catalogError
   const videoCountLabel = catalog?.count ? `${formatArabicNumber(catalog.count)} فيديو` : 'المكتبة المرئية'
@@ -462,9 +582,14 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
           </FadeUp>
 
           {query.trim().length >= 2 && <FadeUp delay={0.06}><div id="encyclopedia-search-results" className="mt-6 scroll-mt-28 border-y border-hair bg-canvas px-4 py-1 md:px-6">
-            {!hasSearchResults ? <div className="py-6 text-[.78rem] leading-relaxed text-soft">لم يظهر مدخل مختصر بعد. افتح البحث العميق في متن الموسوعة لفحص المقاطع والعناوين كاملة.</div> : <div className="divide-y divide-hair">
-              {searchResults.concepts.map(({ concept, video }) => <div key={`concept-${concept.id}`} className="grid gap-3 py-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"><div><span className="text-[.64rem] font-semibold text-accent">من الكتاب · ص {formatArabicNumber(concept.pageStart)}</span><h3 className="mt-1 text-[.9rem] font-semibold leading-relaxed text-ink">{concept.title}</h3><p className="mt-1 text-[.73rem] leading-[1.8] text-soft">{concept.summary}</p></div><div className="flex flex-wrap gap-3 text-[.68rem] font-semibold"><Link to={`/publications/${book.slug}?book_idea=${encodeURIComponent(concept.title)}#book-knowledge`} className="text-accent hover:underline">افتح في الكتاب</Link>{video && <button type="button" onClick={() => selectVideo(video)} className="text-accent hover:underline">شاهد شرحه</button>}</div></div>)}
-              {searchResults.videos.map(({ video }) => <button key={`video-${video.id}`} type="button" onClick={() => { setActiveVideoDoor(video.doorId as DoorFilter || 'all'); setVideoQuery(query); selectVideo(video) }} className="group flex w-full items-center justify-between gap-5 py-4 text-right"><span className="min-w-0"><span className="text-[.64rem] font-semibold text-accent">مقطع مرئي · {videoSequence(video)}</span><strong className="mt-1 block truncate text-[.84rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{video.title}</strong></span><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent"><SocialIcon name="Play" size={12} /></span></button>)}
+            {!hasSearchResults ? <div className="py-6 text-[.78rem] leading-relaxed text-soft">{queryMomentsLoading ? 'يُفحص الكلام المنطوق داخل المقاطع…' : 'لم يظهر مدخل مختصر بعد. افتح البحث العميق في متن الموسوعة لفحص المقاطع والعناوين كاملة.'}</div> : <div className="divide-y divide-hair">
+              {searchResults.concepts.map(({ concept, video }) => <div key={`concept-${concept.id}`} className="grid gap-3 py-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"><div><span className="text-[.64rem] font-semibold text-accent">من الكتاب · ص {formatArabicNumber(concept.pageStart)}</span><h3 className="mt-1 text-[.9rem] font-semibold leading-relaxed text-ink">{concept.title}</h3><p className="mt-1 text-[.73rem] leading-[1.8] text-soft">{concept.summary}</p></div><div className="flex flex-wrap gap-3 text-[.68rem] font-semibold"><Link to={`/publications/${book.slug}?book_idea=${encodeURIComponent(concept.title)}#book-knowledge`} className="text-accent hover:underline">افتح في الكتاب</Link>{video && (() => { const door = doorForVideo(video); return <button type="button" onClick={() => door ? openVideoTopic(concept.title, door) : selectVideo(video)} className="text-accent hover:underline">شاهد شرحه</button> })()}</div></div>)}
+              {queryMoments.map((moment) => {
+                const video = indexedVideoForMoment(moment)
+                if (!video) return null
+                return <button key={`moment-${moment.videoId}-${moment.startSeconds}`} type="button" onClick={() => { setActiveVideoDoor(video.doorId as DoorFilter || 'all'); setVideoQuery(query); selectVideo(video, true, moment) }} className="group flex w-full items-center justify-between gap-5 py-4 text-right"><span className="min-w-0"><span className="text-[.64rem] font-semibold text-accent">{moment.source === 'captions' ? `من الكلام المنطوق · ${formatMomentTime(moment.startSeconds)}` : `مقطع مرئي · ${videoSequence(video)}`}</span><strong className="mt-1 block truncate text-[.84rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{video.title}</strong>{moment.source === 'captions' && moment.excerpt && <span className="mt-1 block line-clamp-1 text-[.67rem] font-light text-soft">{moment.excerpt}</span>}</span><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent"><SocialIcon name="Play" size={12} /></span></button>
+              })}
+              {searchResults.videos.filter(({ video }) => !queryMoments.some((moment) => moment.videoId === video.id)).map(({ video }) => <button key={`video-${video.id}`} type="button" onClick={() => { setActiveVideoDoor(video.doorId as DoorFilter || 'all'); setVideoQuery(query); selectVideo(video) }} className="group flex w-full items-center justify-between gap-5 py-4 text-right"><span className="min-w-0"><span className="text-[.64rem] font-semibold text-accent">مقطع مرئي · {videoSequence(video)}</span><strong className="mt-1 block truncate text-[.84rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{video.title}</strong></span><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent"><SocialIcon name="Play" size={12} /></span></button>)}
               {searchResults.slides.map(({ topic, door }) => door && <button key={`slides-${topic.doorId}-${topic.title}`} type="button" onClick={() => openTeachingMaterials(door, topic.title)} className="group flex w-full items-center justify-between gap-5 py-4 text-right"><span className="min-w-0"><span className="text-[.64rem] font-semibold text-accent">مواد تدريس · الباب {door.number} · {encyclopediaSlideRangeLabel(topic.ranges)}</span><strong className="mt-1 block text-[.84rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{topic.title}</strong></span><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent"><SocialIcon name="Download" size={12} /></span></button>)}
               {searchResults.doors.map(({ door }) => <div key={`door-${door.id}`} className="flex items-center justify-between gap-4 py-4"><span><span className="text-[.64rem] font-semibold text-accent">باب كامل</span><strong className="mt-1 block text-[.84rem] text-ink">{door.title}</strong></span><button type="button" onClick={() => openVideoPath(door)} className="shrink-0 text-[.68rem] font-semibold text-accent">افتح مساره ←</button></div>)}
               {searchResults.articles.map(({ article }) => <Link key={`article-${article.slug}`} to={`/articles/${article.slug}`} className="group flex items-center justify-between gap-4 py-4"><span><span className="text-[.64rem] font-semibold text-accent">مقال مرتبط</span><strong className="mt-1 block text-[.84rem] leading-relaxed text-ink transition-colors group-hover:text-accent">{article.title}</strong></span><span className="text-soft">←</span></Link>)}
@@ -492,16 +617,17 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
               <FadeUp>
                 {selectedVideo ? <article aria-live="polite">
                   <div className="overflow-hidden rounded-2xl border border-hair bg-ink shadow-[0_24px_70px_-48px_rgba(20,31,45,.55)]">
-                    {playerReady ? <iframe src={`${selectedVideo.embedUrl}&playsinline=1`} title={selectedVideo.title} loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="aspect-video w-full" /> : <button type="button" onClick={() => setPlayerReady(true)} className="group relative block aspect-video w-full overflow-hidden text-white" aria-label={`افتح مشغل ${selectedVideo.title}`}><img src={selectedVideo.thumbnail} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className="h-full w-full object-cover opacity-75 transition duration-500 group-hover:scale-[1.015] group-hover:opacity-65" /><span aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/10" /><span className="absolute inset-0 flex items-center justify-center"><span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/55 bg-ink/[.45] backdrop-blur-sm transition-transform group-hover:scale-105"><SocialIcon name="Play" size={18} /></span></span><span className="absolute inset-x-5 bottom-4 text-right text-[.68rem] font-semibold">افتح المشغل</span></button>}
+                    {playerReady ? <iframe src={selectedPlayerUrl} title={selectedVideo.title} loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="aspect-video w-full" /> : <button type="button" onClick={() => setPlayerReady(true)} className="group relative block aspect-video w-full overflow-hidden text-white" aria-label={`افتح مشغل ${selectedVideo.title}`}><img src={selectedVideo.thumbnail} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className="h-full w-full object-cover opacity-75 transition duration-500 group-hover:scale-[1.015] group-hover:opacity-65" /><span aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/10" /><span className="absolute inset-0 flex items-center justify-center"><span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/55 bg-ink/[.45] backdrop-blur-sm transition-transform group-hover:scale-105"><SocialIcon name="Play" size={18} /></span></span><span className="absolute inset-x-5 bottom-4 text-right text-[.68rem] font-semibold">افتح المشغل</span></button>}
                   </div>
                   <div className="pt-5">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[.65rem] text-soft"><span className="font-semibold text-accent">{videoSequence(selectedVideo)}</span>{selectedVideo.durationText && <span>{selectedVideo.durationText}</span>}{selectedVideo.publishedText && <span>{selectedVideo.publishedText}</span>}{selectedPath.length > 1 && selectedPathIndex >= 0 && <span>{formatArabicNumber(selectedPathIndex + 1)} من {formatArabicNumber(selectedPath.length)} في هذا المسار</span>}</div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[.65rem] text-soft"><span className="font-semibold text-accent">{videoSequence(selectedVideo)}</span>{selectedVideo.durationText && <span>{selectedVideo.durationText}</span>}{selectedVideo.publishedText && <span>{selectedVideo.publishedText}</span>}{selectedPath.length > 1 && selectedPathIndex >= 0 && <span>{formatArabicNumber(selectedPathIndex + 1)} من {formatArabicNumber(selectedPath.length)} في هذا المسار</span>}{momentLoadingKey && <span aria-live="polite">يُحدَّد الموضع الأنسب…</span>}</div>
                     <h3 className="mt-2 font-display text-[1.18rem] font-semibold leading-[1.65] text-ink md:text-[1.35rem]">{selectedVideo.title}</h3>
+                    {activeMoment && <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[.67rem] leading-relaxed text-soft"><span className="font-semibold text-accent">{activeMoment.source === 'captions' ? `يبدأ عند ${formatMomentTime(activeMoment.startSeconds)}` : 'المقطع الأقرب'}</span><span aria-hidden>·</span><span>{activeMoment.topic}</span>{activeMoment.source === 'captions' && <><span aria-hidden>·</span><span>من النص المنطوق</span></>}</p>}
                     {selectedVideo.description && <p className="mt-2 line-clamp-2 text-[.75rem] font-light leading-[1.85] text-soft">{selectedVideo.description}</p>}
                     <div className="mt-5 flex flex-wrap gap-2">
                       {selectedVideo.concept && <Link to={`/publications/${book.slug}?book_idea=${encodeURIComponent(selectedVideo.concept.title)}#book-knowledge`} className="inline-flex min-h-10 items-center rounded-full border border-hair px-4 text-[.69rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">اقرأ الموضوع في الكتاب</Link>}
-                      {selectedDoor && <button type="button" onClick={() => openTeachingMaterials(selectedDoor, selectedVideo.concept?.title)} className="inline-flex min-h-10 items-center rounded-full border border-accent/30 px-4 text-[.69rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">مواد التدريس</button>}
-                      <a href={selectedVideo.url} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-full border border-hair px-4 text-[.69rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">شاهده في القناة</a>
+                      {selectedDoor && <button type="button" onClick={() => openTeachingMaterials(selectedDoor, activeMoment?.topic || selectedVideo.concept?.title)} className="inline-flex min-h-10 items-center rounded-full border border-accent/30 px-4 text-[.69rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">مواد التدريس</button>}
+                      <a href={selectedChannelUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-full border border-hair px-4 text-[.69rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">شاهده في القناة</a>
                     </div>
                     {(previousVideo || nextVideo) && <div className="mt-6 grid grid-cols-2 gap-3 border-t border-hair pt-5"><button type="button" disabled={!previousVideo} onClick={() => previousVideo && selectVideo(previousVideo, false)} className="min-h-11 rounded-xl border border-hair px-4 text-right text-[.68rem] font-semibold text-ink transition-colors enabled:hover:border-accent enabled:hover:text-accent disabled:cursor-not-allowed disabled:opacity-35">→ المقطع السابق</button><button type="button" disabled={!nextVideo} onClick={() => nextVideo && selectVideo(nextVideo, false)} className="min-h-11 rounded-xl border border-hair px-4 text-left text-[.68rem] font-semibold text-ink transition-colors enabled:hover:border-accent enabled:hover:text-accent disabled:cursor-not-allowed disabled:opacity-35">المقطع التالي ←</button></div>}
                   </div>
@@ -513,13 +639,14 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
                 <div className="mt-2 flex items-center rounded-full border border-hair bg-canvas px-4"><SocialIcon name="Search" size={13} /><input id="encyclopedia-video-query" value={videoQuery} onChange={(event) => setVideoQuery(event.target.value)} placeholder="عنوان، مفهوم، باب أو فصل" className="min-w-0 flex-1 bg-transparent px-3 py-3 text-[.75rem] text-ink outline-none placeholder:text-soft/[.55]" />{videoQuery && <button type="button" onClick={() => setVideoQuery('')} aria-label="مسح البحث" title="مسح البحث" className="text-soft hover:text-accent"><SocialIcon name="Close" size={12} /></button>}</div>
 
                 <div className="mt-4 max-h-[35rem] overflow-y-auto border-y border-hair pe-1 [scrollbar-color:var(--color-hair)_transparent] [scrollbar-width:thin]">
-                  {catalogLoading && !indexedVideos.length ? Array.from({ length: 7 }, (_, index) => <div key={`video-loading-${index}`} className="border-b border-hair py-4 last:border-b-0"><span className="block h-2.5 w-20 animate-pulse rounded bg-wash" /><span className="mt-2 block h-3 w-[85%] animate-pulse rounded bg-wash" /></div>) : filteredVideos.length ? filteredVideos.slice(0, visibleVideoCount).map((video, index) => {
+                  {catalogLoading && !indexedVideos.length ? Array.from({ length: 7 }, (_, index) => <div key={`video-loading-${index}`} className="border-b border-hair py-4 last:border-b-0"><span className="block h-2.5 w-20 animate-pulse rounded bg-wash" /><span className="mt-2 block h-3 w-[85%] animate-pulse rounded bg-wash" /></div>) : listedVideos.length ? listedVideos.slice(0, visibleVideoCount).map((video, index) => {
                     const active = selectedVideo?.id === video.id
-                    return <button key={video.id} type="button" onClick={() => selectVideo(video, false)} aria-current={active ? 'true' : undefined} className={`group grid w-full grid-cols-[2rem_minmax(0,1fr)_auto] items-start gap-3 border-b border-hair py-4 text-right last:border-b-0 ${active ? 'text-accent' : 'text-ink'}`}><span className={`font-display text-[.64rem] ${active ? 'font-semibold text-accent' : 'text-soft'}`}>{formatArabicNumber(index + 1)}</span><span className="min-w-0"><span className="block text-[.61rem] font-semibold text-accent/80">{videoSequence(video)}</span><strong className="mt-1 block text-[.74rem] font-semibold leading-[1.7] transition-colors group-hover:text-accent">{video.title}</strong></span><span className="pt-0.5 text-[.61rem] text-soft">{video.durationText || 'مشاهدة'}</span></button>
-                  }) : <div className="py-7 text-[.74rem] leading-[1.8] text-soft">لا يوجد مقطع مطابق داخل هذا الباب. جرّب عبارة أقصر أو اعرض كل المقاطع.</div>}
+                    const moment = videoMomentMap.get(video.id) || null
+                    return <button key={video.id} type="button" onClick={() => selectVideo(video, false, moment)} aria-current={active ? 'true' : undefined} className={`group grid w-full grid-cols-[2rem_minmax(0,1fr)_auto] items-start gap-3 border-b border-hair py-4 text-right last:border-b-0 ${active ? 'text-accent' : 'text-ink'}`}><span className={`font-display text-[.64rem] ${active ? 'font-semibold text-accent' : 'text-soft'}`}>{formatArabicNumber(index + 1)}</span><span className="min-w-0"><span className="block text-[.61rem] font-semibold text-accent/80">{videoSequence(video)}</span><strong className="mt-1 block text-[.74rem] font-semibold leading-[1.7] transition-colors group-hover:text-accent">{video.title}</strong></span><span className="pt-0.5 text-[.61rem] text-soft">{moment?.source === 'captions' ? formatMomentTime(moment.startSeconds) : (video.durationText || 'مشاهدة')}</span></button>
+                  }) : <div className="py-7 text-[.74rem] leading-[1.8] text-soft">{videoMomentsLoading ? 'يُفحص الكلام المنطوق داخل مقاطع هذا الباب…' : 'لا يوجد مقطع مطابق داخل هذا الباب. جرّب عبارة أقصر أو اعرض كل المقاطع.'}</div>}
                 </div>
-                {filteredVideos.length > visibleVideoCount && <button type="button" onClick={() => setVisibleVideoCount((count) => count + 24)} className="mt-4 w-full rounded-full border border-hair py-2.5 text-[.68rem] font-semibold text-accent transition-colors hover:border-accent">عرض {formatArabicNumber(Math.min(24, filteredVideos.length - visibleVideoCount))} مقطعاً آخر</button>}
-                {!catalogLoading && filteredVideos.length > 0 && <p className="mt-3 text-[.62rem] leading-relaxed text-soft">يعرض الفهرس {formatArabicNumber(filteredVideos.length)} نتيجة، ويحمّل مشغلاً واحداً فقط للمحافظة على خفة الصفحة.</p>}
+                {listedVideos.length > visibleVideoCount && <button type="button" onClick={() => setVisibleVideoCount((count) => count + 24)} className="mt-4 w-full rounded-full border border-hair py-2.5 text-[.68rem] font-semibold text-accent transition-colors hover:border-accent">عرض {formatArabicNumber(Math.min(24, listedVideos.length - visibleVideoCount))} مقطعاً آخر</button>}
+                {!catalogLoading && listedVideos.length > 0 && <p className="mt-3 text-[.62rem] leading-relaxed text-soft">يعرض الفهرس {formatArabicNumber(listedVideos.length)} نتيجة، ويحمّل مشغلاً واحداً فقط للمحافظة على خفة الصفحة.</p>}
               </aside></FadeUp>
             </div>
           </>}
@@ -568,7 +695,7 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
               <span className="text-[.63rem] font-semibold text-soft">خيط المادة</span>
               <div className="mt-3 grid grid-cols-3 border-y border-hair">
                 {teachingConcept ? <Link to={`/publications/${book.slug}?book_idea=${encodeURIComponent(teachingConcept.title)}#book-knowledge`} onClick={() => setTeachingMaterial(null)} className="group min-w-0 border-e border-hair px-2 py-4 text-center transition-colors hover:bg-wash"><span className="block font-display text-[.64rem] text-accent">٠١</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-ink group-hover:text-accent">اقرأ الأصل</strong></Link> : <span className="min-w-0 border-e border-hair px-2 py-4 text-center opacity-45"><span className="block font-display text-[.64rem] text-soft">٠١</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-soft">اقرأ الأصل</strong></span>}
-                {teachingVideo ? <button type="button" onClick={playTeachingVideo} className="group min-w-0 border-e border-hair px-2 py-4 text-center transition-colors hover:bg-wash"><span className="block font-display text-[.64rem] text-accent">٠٢</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-ink group-hover:text-accent">شاهد الشرح</strong></button> : <span className="min-w-0 border-e border-hair px-2 py-4 text-center opacity-45"><span className="block font-display text-[.64rem] text-soft">٠٢</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-soft">الشرح المرئي</strong></span>}
+                <button type="button" onClick={playTeachingVideo} aria-busy={momentLoadingKey === `${teachingMaterial.door.id}:${teachingMaterial.topic || teachingGuide?.title || teachingMaterial.door.title}`} className="group min-w-0 border-e border-hair px-2 py-4 text-center transition-colors hover:bg-wash"><span className="block font-display text-[.64rem] text-accent">٠٢</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-ink group-hover:text-accent">شاهد الشرح</strong></button>
                 <a href={teachingMaterial.door.presentation} download={`موسوعة تكنولوجيا التعليم - الباب ${teachingMaterial.door.number}.pptx`} className="group min-w-0 px-2 py-4 text-center transition-colors hover:bg-wash"><span className="block font-display text-[.64rem] text-accent">٠٣</span><strong className="mt-1 block text-[.67rem] font-semibold leading-relaxed text-ink group-hover:text-accent">افتح الشرائح</strong></a>
               </div>
             </div>

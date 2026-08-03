@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -22,7 +22,10 @@ let topicCount = 0
 for (const [doorId, expectedSlideCount] of Object.entries(expectedSlides)) {
   const door = data[doorId]
   assert.equal(door.slideCount, expectedSlideCount, `${doorId} slide count must match the source deck`)
-  assert.ok(existsSync(resolve(root, expectedFiles[doorId])), `${expectedFiles[doorId]} must exist`)
+  const deckPath = resolve(root, expectedFiles[doorId])
+  assert.ok(existsSync(deckPath), `${expectedFiles[doorId]} must exist`)
+  assert.ok(statSync(deckPath).size > 100_000, `${expectedFiles[doorId]} must be the real presentation, not an empty placeholder`)
+  assert.equal(readFileSync(deckPath).subarray(0, 2).toString('ascii'), 'PK', `${expectedFiles[doorId]} must be a valid Office archive`)
   const topics = Object.entries(door.topics || {})
   assert.equal(topics.length, 6, `${doorId} must expose six concise teaching topics`)
   topicCount += topics.length
@@ -32,6 +35,8 @@ for (const [doorId, expectedSlideCount] of Object.entries(expectedSlides)) {
     assert.ok(topic.objective?.trim())
     assert.ok(topic.discussion?.trim())
     assert.ok(Array.isArray(topic.videoHints) && topic.videoHints.length > 0)
+    assert.ok(Array.isArray(topic.chapterNumbers) && topic.chapterNumbers.length > 0)
+    assert.ok(topic.chapterNumbers.every((value) => Number.isInteger(value) && value >= 1))
     assert.ok(Array.isArray(topic.ranges) && topic.ranges.length > 0)
     for (const range of topic.ranges) {
       assert.ok(Number.isInteger(range.from) && Number.isInteger(range.to))

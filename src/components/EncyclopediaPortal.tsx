@@ -19,6 +19,7 @@ import {
 } from '../lib/encyclopedia-teaching-map'
 import {
   encyclopediaTokens,
+  extractEncyclopediaSequence,
   indexEncyclopediaVideos,
   normalizeEncyclopediaText,
   scoreIndexedVideo,
@@ -29,6 +30,8 @@ import { SocialIcon } from './icons'
 import { OwnerEdit } from './extras'
 
 const CHANNEL_URL = 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'
+const ENCYCLOPEDIA_SAMPLE_PDF = '/files/encyclopedia.pdf?v=20260803-3'
+const ENCYCLOPEDIA_SAMPLE_FILENAME = 'موسوعة-تكنولوجيا-التعليم-المقدمة-والفهرس.pdf'
 const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-arab').format(value)
 
 type StructureUnit = {
@@ -52,6 +55,7 @@ type Door = {
 }
 
 type TeachingMaterialSelection = { door: Door; topic?: string }
+type UnitVideoMap = Map<string, IndexedEncyclopediaVideo[]>
 
 const DOORS: Door[] = structureData.doors.map((door) => ({
   ...door,
@@ -77,20 +81,48 @@ function relatedVideoForText(value: string, videos: IndexedEncyclopediaVideo[], 
   const tokens = encyclopediaTokens(value)
   const candidates = videos.filter((video) => {
     if (door && video.doorId !== door.id) return false
-    if (chapterNumber && video.chapterNumber && video.chapterNumber !== chapterNumber) return false
+    if (chapterNumber && video.chapterNumber !== chapterNumber) return false
     return true
   })
   return candidates
     .map((video) => ({ video, score: scoreIndexedVideo(tokens, video) }))
     .sort((left, right) => right.score - left.score || left.video.position - right.video.position)
-    .find((item) => item.score > 0)?.video || candidates[0] || null
+    .find((item) => item.score > 0)?.video || null
 }
 
-function videosForUnit(door: Door, unit: StructureUnit, videos: IndexedEncyclopediaVideo[]) {
-  const exact = videos.filter((video) => video.doorId === door.id && video.chapterNumber === unit.number)
-  if (exact.length) return exact
-  const fallback = relatedVideoForText(`${unit.title} ${unit.keywords.join(' ')}`, videos, door)
-  return fallback ? [fallback] : []
+const unitVideoKey = (doorId: string, unitNumber: number) => `${doorId}:${unitNumber}`
+
+function buildStrictUnitVideoMap(videos: IndexedEncyclopediaVideo[], doors: Door[]): UnitVideoMap {
+  const doorByNumber = new Map(doors.map((door) => [door.doorNumber, door]))
+  const assignedVideoIds = new Set<string>()
+  const map: UnitVideoMap = new Map()
+
+  for (const video of videos) {
+    if (assignedVideoIds.has(video.id)) continue
+
+    // الربط المعتمد لا يقبل التخمين: يجب أن يذكر عنوان الفيديو الباب والفصل صراحةً.
+    const sequence = extractEncyclopediaSequence(video.title)
+    if (!sequence.doorNumber || !sequence.chapterNumber) continue
+
+    const door = doorByNumber.get(sequence.doorNumber)
+    const unit = door?.units.find((item) => item.number === sequence.chapterNumber)
+    if (!door || !unit) continue
+
+    // الموضوع هو عنوان الفصل المعتمد في فهرس الكتاب؛ لا يُسمح بإسناد فيديو لفصل بديل.
+    if (video.doorId !== door.id || video.chapterNumber !== unit.number) continue
+    if (normalizeEncyclopediaText(video.chapterTitle || '') !== normalizeEncyclopediaText(unit.title)) continue
+
+    const key = unitVideoKey(door.id, unit.number)
+    const current = map.get(key) || []
+    map.set(key, [...current, video])
+    assignedVideoIds.add(video.id)
+  }
+
+  return map
+}
+
+function videosForUnit(door: Door, unit: StructureUnit, videoMap: UnitVideoMap) {
+  return videoMap.get(unitVideoKey(door.id, unit.number)) || []
 }
 
 function InlineVideoCard({
@@ -138,7 +170,7 @@ function InlineVideoCard({
 function DoorRow({
   door,
   concepts,
-  videos,
+  videoMap,
   query,
   initiallyOpen,
   playingVideoId,
@@ -149,7 +181,7 @@ function DoorRow({
 }: {
   door: Door
   concepts: BookKnowledgeConcept[]
-  videos: IndexedEncyclopediaVideo[]
+  videoMap: UnitVideoMap
   query: string
   initiallyOpen: boolean
   playingVideoId: string
@@ -160,14 +192,17 @@ function DoorRow({
 }) {
   const detailsRef = useRef<HTMLDetailsElement>(null)
   const tokens = useMemo(() => encyclopediaTokens(query), [query])
-  const doorVideos = videos.filter((video) => video.doorId === door.id)
+  const doorVideos = useMemo(
+    () => door.units.flatMap((unit) => videosForUnit(door, unit, videoMap)),
+    [door, videoMap],
+  )
   const visibleUnits = useMemo(() => {
     if (!tokens.length) return door.units
     return door.units.filter((unit) => {
-      const unitVideos = videosForUnit(door, unit, videos)
+      const unitVideos = videosForUnit(door, unit, videoMap)
       return scoreText(tokens, `${door.title} ${unit.title} ${unit.keywords.join(' ')}`) > 0 || unitVideos.some((video) => scoreIndexedVideo(tokens, video) > 0)
     })
-  }, [door, tokens, videos])
+  }, [door, tokens, videoMap])
   const doorMatches = !tokens.length || visibleUnits.length > 0 || scoreText(tokens, `${door.title} ${door.summary}`) > 0
   const doorConcept = conceptForText(`${door.title} ${door.hints.join(' ')}`, concepts)
   const bookHref = doorConcept ? `/publications/encyclopedia?book_idea=${encodeURIComponent(doorConcept.title)}#book-knowledge` : '#book-knowledge'
@@ -193,7 +228,7 @@ function DoorRow({
       <div className="pb-8 ps-[4.2rem] md:ps-[5.6rem]">
         <div className="border-y border-hair" aria-label="فهرس فيديوهات الموسوعة">
           {visibleUnits.map((unit) => {
-            const unitVideos = videosForUnit(door, unit, videos)
+            const unitVideos = videosForUnit(door, unit, videoMap)
             const concept = conceptForText(`${unit.title} ${unit.keywords.join(' ')}`, concepts)
             const hasTeaching = Boolean(door.presentation && getEncyclopediaTeachingTopic(door.id, unit.title))
             return (
@@ -273,7 +308,17 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   }, [teachingMaterial])
 
   const indexedVideos = useMemo(() => indexEncyclopediaVideos(catalog?.videos || [], DOORS, concepts), [catalog, concepts])
-  const playingVideo = indexedVideos.find((video) => video.id === playingVideoId) || null
+  const unitVideoMap = useMemo(() => buildStrictUnitVideoMap(indexedVideos, DOORS), [indexedVideos])
+  const mappedVideos = useMemo(
+    () => DOORS.flatMap((door) => door.units.flatMap((unit) => videosForUnit(door, unit, unitVideoMap))),
+    [unitVideoMap],
+  )
+
+  useEffect(() => {
+    if (playingVideoId && !mappedVideos.some((video) => video.id === playingVideoId)) setPlayingVideoId('')
+  }, [mappedVideos, playingVideoId])
+
+  const playingVideo = mappedVideos.find((video) => video.id === playingVideoId) || null
   const selectedPlayerUrl = playingVideo
     ? `${playingVideo.embedUrl}${playingVideo.embedUrl.includes('?') ? '&' : '?'}autoplay=1&playsinline=1&rel=0&modestbranding=1`
     : ''
@@ -283,7 +328,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     units: DOORS.flatMap((door) => door.units.map((unit) => ({ door, unit, score: scoreText(tokens, `${door.title} ${unit.title} ${unit.keywords.join(' ')}`) })))
       .filter((item) => item.score > 0)
       .sort((left, right) => right.score - left.score),
-    videos: indexedVideos
+    videos: mappedVideos
       .map((video) => ({ video, score: scoreIndexedVideo(tokens, video) }))
       .filter((item) => item.score > 0)
       .sort((left, right) => right.score - left.score || left.video.position - right.video.position),
@@ -291,7 +336,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
       .map((topic) => ({ topic, score: scoreEncyclopediaTeachingTopic(tokens, topic) }))
       .filter((item) => item.score > 0)
       .sort((left, right) => right.score - left.score),
-  }), [indexedVideos, tokens])
+  }), [mappedVideos, tokens])
 
   const resultCount = query.trim().length >= 2
     ? searchResults.units.length + searchResults.videos.length + searchResults.slides.length
@@ -304,8 +349,8 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
 
   const openVideoPath = (door: Door, unit?: StructureUnit) => {
     const video = unit
-      ? videosForUnit(door, unit, indexedVideos)[0]
-      : indexedVideos.find((item) => item.doorId === door.id)
+      ? videosForUnit(door, unit, unitVideoMap)[0]
+      : door.units.flatMap((item) => videosForUnit(door, item, unitVideoMap))[0]
     if (video) playVideo(video)
   }
 
@@ -331,7 +376,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     ? conceptForText(`${teachingGuide.title} ${teachingGuide.chapter} ${teachingGuide.videoHints.join(' ')}`, concepts)
     : null
   const teachingVideo = teachingMaterial && teachingGuide
-    ? relatedVideoForText(`${teachingGuide.title} ${teachingGuide.videoHints.join(' ')}`, indexedVideos, teachingMaterial.door, teachingGuide.chapterNumbers[0])
+    ? relatedVideoForText(`${teachingGuide.title} ${teachingGuide.videoHints.join(' ')}`, mappedVideos, teachingMaterial.door, teachingGuide.chapterNumbers[0])
     : null
   const teachingSlideLabel = teachingGuide ? encyclopediaSlideRangeLabel(teachingGuide.ranges) : ''
   const teachingSlidesCount = teachingGuide ? encyclopediaSlideCount(teachingGuide.ranges) : 0
@@ -399,10 +444,16 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                     <span>ابحث في هذا الكتاب</span>
                   </Link>
                   {book.pdf && (
-                    <a href={book.pdf} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-3 rounded-full border border-hair px-5 text-[.78rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
-                      <span>عرض عيّنة الكتاب</span>
+                    <a
+                      href={ENCYCLOPEDIA_SAMPLE_PDF}
+                      download={ENCYCLOPEDIA_SAMPLE_FILENAME}
+                      type="application/pdf"
+                      aria-label="تحميل مقدمة وفهرس موسوعة تكنولوجيا التعليم بصيغة PDF"
+                      className="inline-flex min-h-11 items-center gap-3 rounded-full border border-hair px-5 text-[.78rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+                    >
+                      <span>تحميل المقدمة والفهرس</span>
                       <span className="text-[.72rem] text-soft">PDF</span>
-                      <span className="sr-only">ملف PDF المعتمد متاح كما كان</span>
+                      <span className="sr-only">ملف PDF المعتمد متاح كما كان، وهو المقدمة والفهرس فقط وليس الكتاب الكامل.</span>
                     </a>
                   )}
                 </div>
@@ -440,7 +491,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 key={door.id}
                 door={door}
                 concepts={concepts}
-                videos={indexedVideos}
+                videoMap={unitVideoMap}
                 query={query}
                 initiallyOpen={index === 0}
                 playingVideoId={playingVideoId}

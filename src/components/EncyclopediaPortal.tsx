@@ -144,18 +144,30 @@ function buildStrictUnitVideoMap(videos: IndexedEncyclopediaVideo[], doors: Door
   const assignedVideoIds = new Set<string>()
   const map: UnitVideoMap = new Map()
 
-  // المرحلة الأولى: التسلسل المكتوب في عنوان الفيديو هو أقوى دليل صريح.
+  // المرحلة الأولى: الخادم يقرأ القوائم التشغيلية وعناوين القناة ويعيد
+  // إسناداً موثقاً. هذا هو المصدر الأعلى أولوية ولا يعاد تخمينه في المتصفح.
   for (const video of videos) {
-    const sequence = extractEncyclopediaSequence(video.title)
-    if (!sequence.doorNumber || !sequence.chapterNumber) continue
-    const door = doorByNumber.get(sequence.doorNumber)
-    const unit = door?.units.find((item) => item.number === sequence.chapterNumber)
+    if (!video.mappingSource || !video.doorNumber || !video.chapterNumber) continue
+    const door = doorByNumber.get(video.doorNumber)
+    const unit = door?.units.find((item) => item.number === video.chapterNumber)
     if (!door || !unit || assignedVideoIds.has(video.id)) continue
     appendUnitVideo(map, video, door, unit)
     assignedVideoIds.add(video.id)
   }
 
-  // المرحلة الثانية: بعض فيديوهات القناة عنوانها هو الموضوع نفسه بلا عبارة «باب/فصل».
+  // المرحلة الثانية: التسلسل الصريح المكتوب في عنوان الفيديو.
+  for (const video of videos) {
+    if (assignedVideoIds.has(video.id)) continue
+    const sequence = extractEncyclopediaSequence(video.title)
+    if (!sequence.doorNumber || !sequence.chapterNumber) continue
+    const door = doorByNumber.get(sequence.doorNumber)
+    const unit = door?.units.find((item) => item.number === sequence.chapterNumber)
+    if (!door || !unit) continue
+    appendUnitVideo(map, video, door, unit)
+    assignedVideoIds.add(video.id)
+  }
+
+  // المرحلة الثالثة: بعض فيديوهات القناة عنوانها هو الموضوع نفسه بلا عبارة «باب/فصل».
   // نقبلها فقط عند وجود تطابق موضوعي مباشر وفائز وحيد؛ لا يوجد أي فيديو احتياطي.
   for (const video of videos) {
     if (assignedVideoIds.has(video.id)) continue
@@ -602,8 +614,8 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
             ))}
           </div>
           {!catalog && !catalogError && <p className="mt-4 text-[.65rem] text-soft">تُحمّل الفيديوهات بهدوء.</p>}
-          {catalog && mappedVideos.length > 0 && <p className="mt-4 text-[.65rem] text-soft">تم ربط {formatArabicNumber(mappedVideos.length)} فيديو بالأبواب والفصول مباشرة.</p>}
-          {catalog && mappedVideos.length === 0 && <p role="alert" className="mt-4 text-[.68rem] text-red-700">وصل فهرس القناة، لكن لم يظهر تطابق موثوق. حدّث الصفحة لإعادة الفهرسة.</p>}
+          {catalog && mappedVideos.length > 0 && <p className="mt-4 text-[.65rem] text-soft">ظهر {formatArabicNumber(mappedVideos.length)} فيديو في مواضعه الموثقة داخل الأبواب والفصول.</p>}
+          {catalog && mappedVideos.length === 0 && <p role="alert" className="mt-4 text-[.68rem] text-red-700">وصلت فيديوهات القناة، لكن خريطة القوائم التشغيلية لم تصل. استخدم زر إعادة التحميل أعلاه.</p>}
           {catalogError && <p role="alert" className="mt-4 text-[.68rem] text-red-700">تعذّر تحميل فيديوهات الموسوعة الآن. استخدم زر إعادة التحميل أعلاه.</p>}
         </div>
       </section>

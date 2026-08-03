@@ -10,11 +10,19 @@ export type EncyclopediaVideo = {
   viewCountText: string
   description: string
   position: number
+  doorNumber?: number
+  chapterNumber?: number
+  videoNumber?: number | null
+  mappingSource?: string
+  mappingConfidence?: 'exact' | 'strong'
+  playlistId?: string
+  playlistTitle?: string
 }
 
 export type EncyclopediaVideoCatalog = {
   channel: { handle: string; url: string; id: string }
   count: number
+  mappedCount?: number
   fetchedAt: string
   source: string
   stale?: boolean
@@ -32,7 +40,7 @@ const validVideo = (value: unknown): value is EncyclopediaVideo => {
 
 export async function getEncyclopediaVideoCatalog(signal?: AbortSignal): Promise<EncyclopediaVideoCatalog> {
   if (!catalogPromise) {
-    catalogPromise = fetch(`/api/encyclopedia/videos?v=20260803-4`, {
+    catalogPromise = fetch(`/api/encyclopedia/videos?v=20260803-5`, {
       signal,
       cache: 'no-store',
       headers: { accept: 'application/json' },
@@ -51,6 +59,7 @@ export async function getEncyclopediaVideoCatalog(signal?: AbortSignal): Promise
             id: String(payload.channel?.id || ''),
           },
           count: videos.length,
+          mappedCount: Number(payload.mappedCount) || videos.filter((video) => Number(video.doorNumber) > 0 && Number(video.chapterNumber) > 0).length,
           fetchedAt: String(payload.fetchedAt || ''),
           source: String(payload.source || 'youtube-channel'),
           stale: Boolean(payload.stale),

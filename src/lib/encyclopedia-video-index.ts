@@ -24,6 +24,8 @@ export type IndexedEncyclopediaVideo = EncyclopediaVideo & {
   concept: BookKnowledgeConcept | null
   searchText: string
   sequenceLabel: string
+  mappingSource?: string
+  mappingConfidence?: 'exact' | 'strong'
 }
 
 const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
@@ -104,10 +106,22 @@ function numberFollowing(value: string, labels: readonly string[]) {
 }
 
 export function extractEncyclopediaSequence(title: string) {
+  const labeled = {
+    doorNumber: numberFollowing(title, ['الباب', 'باب', 'door', 'ب']),
+    chapterNumber: numberFollowing(title, ['الفصل', 'فصل', 'chapter', 'ف']),
+    videoNumber: numberFollowing(title, ['فيديو', 'الفيديو', 'المقطع', 'مقطع', 'video', 'v']),
+  }
+  const compactText = title
+    .normalize('NFKC')
+    .replace(/[٠-٩]/g, (character) => String(ARABIC_DIGITS.indexOf(character)))
+    .replace(/[۰-۹]/g, (character) => String(PERSIAN_DIGITS.indexOf(character)))
+  const compact = /\b(?:19|20)\d{2}\b/.test(compactText)
+    ? null
+    : compactText.match(/(?:^|\s|[[(])([1-5])\s*[-_/|.:]\s*(\d{1,2})(?:\s*[-_/|.:]\s*(\d{1,3}))?(?:\s|$|[\])])/u)
   return {
-    doorNumber: numberFollowing(title, ['الباب', 'door']),
-    chapterNumber: numberFollowing(title, ['الفصل', 'chapter']),
-    videoNumber: numberFollowing(title, ['فيديو', 'الفيديو', 'المقطع', 'مقطع', 'video']),
+    doorNumber: labeled.doorNumber || (compact ? Number(compact[1]) : null),
+    chapterNumber: labeled.chapterNumber || (compact ? Number(compact[2]) : null),
+    videoNumber: labeled.videoNumber || (compact?.[3] ? Number(compact[3]) : null),
   }
 }
 
@@ -192,10 +206,16 @@ export function indexEncyclopediaVideos(
 ): IndexedEncyclopediaVideo[] {
   const indexed = videos.map((video) => {
     const resolved = resolveDoor(video, doors)
+    const serverDoorNumber = Number(video.doorNumber) || null
+    const serverChapterNumber = Number(video.chapterNumber) || null
+    const serverDoor = serverDoorNumber ? doors.find((door) => door.doorNumber === serverDoorNumber) || null : null
     const concept = resolveConcept(video, concepts)
-    const door = resolved.door
-    const chapter = resolveChapter(video, door, resolved.chapterNumber)
-    const label = sequenceLabel(door?.doorNumber || resolved.doorNumber, chapter.chapterNumber, resolved.videoNumber)
+    const door = serverDoor || resolved.door
+    const chapter = serverDoor && serverChapterNumber && serverDoor.units?.some((unit) => unit.number === serverChapterNumber)
+      ? { chapterNumber: serverChapterNumber, chapterTitle: serverDoor.units?.find((unit) => unit.number === serverChapterNumber)?.title || null }
+      : resolveChapter(video, door, resolved.chapterNumber)
+    const resolvedVideoNumber = Number(video.videoNumber) || resolved.videoNumber
+    const label = sequenceLabel(door?.doorNumber || resolved.doorNumber, chapter.chapterNumber, resolvedVideoNumber)
     const chapterUnit = door?.units?.find((unit) => unit.number === chapter.chapterNumber)
     const searchText = normalizeEncyclopediaText([
       video.title,
@@ -216,7 +236,9 @@ export function indexEncyclopediaVideos(
       doorNumber: door?.doorNumber || resolved.doorNumber,
       chapterNumber: chapter.chapterNumber,
       chapterTitle: chapter.chapterTitle,
-      videoNumber: resolved.videoNumber,
+      videoNumber: resolvedVideoNumber,
+      mappingSource: video.mappingSource,
+      mappingConfidence: video.mappingConfidence,
       concept,
       searchText,
       sequenceLabel: label,

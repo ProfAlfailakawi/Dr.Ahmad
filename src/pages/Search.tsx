@@ -820,10 +820,9 @@ export default function Search() {
                       to={`/search?tab=askbook&book=${encodeURIComponent(row.slug)}`}
                       aria-label={`ابحث داخل كتاب ${row.title}`}
                       title="ابحث في هذا الكتاب"
-                      className="absolute bottom-3 left-0 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-accent/[.35] bg-canvas px-3 text-[.68rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+                      className="absolute bottom-3 left-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-accent/[.35] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
                     >
                       <SocialIcon name="Search" size={14} />
-                      <span>ابحث فيه</span>
                     </Link>
                   )}
                 </li>

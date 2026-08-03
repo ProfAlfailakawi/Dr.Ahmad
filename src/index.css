@@ -798,51 +798,28 @@ body.audio-dock-open .reader-resume-prompt {
 /* الخريطة */
 iframe { color-scheme: light; }
 
-/* «كوكبة التوقيعات» — خط واحد هادئ، وكل نقطة مرتبطة باسمها مباشرة. */
-.signatures-rail::before {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  top: 6px;
-  height: 1px;
-  background: var(--c-hair);
-  pointer-events: none;
-}
+/* «كوكبة التوقيعات» — نجوم فوق أفق شعري، تتلألأ وتتوهج عند اللمس */
 .sig-star {
   position: absolute;
-  top: 3px;
+  top: 13px;
   right: 50%;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 9999px;
-  border: 1px solid rgb(var(--c-accent) / .7);
-  background: rgb(var(--c-canvas));
-  transform: translateX(50%) scale(1);
-  transition: transform .35s var(--E), background-color .35s var(--E), box-shadow .35s var(--E);
-  animation: sig-twinkle 5.5s ease-in-out infinite;
+  background: rgb(var(--c-accent) / 0.9);
+  transform: translate(50%, var(--dy, -8px)) scale(1);
+  transition: transform 0.45s var(--E), box-shadow 0.45s var(--E);
+  animation: sig-twinkle 4.5s ease-in-out infinite;
   animation-delay: var(--tw, 0s);
 }
-.sig-stem {
-  position: absolute;
-  top: 10px;
-  right: 50%;
-  width: 1px;
-  height: 10px;
-  background: var(--c-hair);
-  transform: translateX(50%);
-  transition: background-color .35s var(--E), height .35s var(--E);
-}
-.sig-item:hover .sig-star,
-.sig-item:focus-visible .sig-star {
-  background: rgb(var(--c-accent));
-  transform: translateX(50%) scale(1.35);
-  box-shadow: 0 0 0 5px rgb(var(--c-accent) / .08);
+.sig-item:hover .sig-star {
+  transform: translate(50%, var(--dy, -8px)) scale(1.9);
+  box-shadow: 0 0 16px 3px rgb(var(--c-accent) / 0.4);
   animation-play-state: paused;
+  opacity: 1;
 }
-.sig-item:hover .sig-stem,
-.sig-item:focus-visible .sig-stem { background: rgb(var(--c-accent) / .55); height: 12px; }
 @keyframes sig-twinkle {
-  0%, 100% { opacity: .55; }
+  0%, 100% { opacity: 0.45; }
   50% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -3588,10 +3565,11 @@ body.selection-active .floating-actions {
 }
 
 
-/* ═══ إشارة المقال الموحّدة ═══
-   علامة واحدة في هامش كل مقال كامل. لا «نبض مقال» منفصل ولا ازدواج مع
-   لحظة الانعطاف؛ مصدر الإشارة يتبدّل في الداخل بينما يبقى الشكل هادئاً. */
-.article-signal-mark {
+/* ═══ لحظة الانعطاف ═══
+   علامةٌ في هامش الفقرة بموضعٍ مطلق: خارج تدفّق النصّ تماماً، فلا تزيح
+   حرفاً ولا تضيف سطراً ولا تكسر لفّ الكلمات. تبقى شبه شفافة حتى يقترب
+   المؤشر من الفقرة، فلا تلوّث القراءة لمن لا يريدها. */
+.pivot-mark {
   position: absolute;
   top: .5rem;
   inset-inline-end: -1.45rem;
@@ -3605,31 +3583,14 @@ body.selection-active .floating-actions {
   color: var(--accent, #3E5C78);
   opacity: .28;
   cursor: pointer;
-  transition: opacity .24s ease, transform .24s ease;
+  transition: opacity .24s ease;
 }
-.article-signal-mark::after {
-  content: '';
-  position: absolute;
-  inset: -.22rem;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  opacity: 0;
-  transform: scale(.72);
-  transition: opacity .24s ease, transform .24s ease;
-}
-.article-signal-mark.is-readers::after { opacity: .12; transform: scale(1); }
-.article-signal-mark:hover,
-.article-signal-mark:focus-visible { opacity: 1; transform: translateY(-1px); }
-.article-signal-mark:hover::after,
-.article-signal-mark:focus-visible::after { opacity: .34; transform: scale(1.08); }
-.popular-highlight-paragraph:hover .article-signal-mark { opacity: .62; }
+.pivot-mark:hover,
+.pivot-mark:focus-visible { opacity: 1; }
+.popular-highlight-paragraph:hover .pivot-mark { opacity: .6; }
 @media (max-width: 900px) {
-  /* لا هامش واسعاً على الهاتف: تدخل الحافة من دون أن تلمس النص. */
-  .article-signal-mark { inset-inline-end: -.15rem; top: .35rem; opacity: .42; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .article-signal-mark,
-  .article-signal-mark::after { transition: none; }
+  /* لا هامش يتّسع على الجوال: تنزل داخل الحافة بلا أن تلمس النص. */
+  .pivot-mark { inset-inline-end: -.15rem; top: .35rem; opacity: .4; }
 }
 
 /* ============================================================
@@ -3750,3 +3711,23 @@ body.selection-active .floating-actions {
   text-align-last: start;
 }
 
+
+
+/* مواد تدريس الموسوعة تملك طبقتها الخاصة؛ نخفي أدوات الصفحة العائمة أثناء فتحها
+   حتى لا تتداخل مع زر الإغلاق أو مساحة الهاتف الآمنة. */
+body.encyclopedia-sheet-open .floating-actions,
+body:has(.encyclopedia-teaching-overlay) .floating-actions {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.encyclopedia-sheet-open {
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 767px) {
+  .encyclopedia-teaching-overlay aside {
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+}

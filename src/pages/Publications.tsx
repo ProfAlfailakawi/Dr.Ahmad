@@ -61,10 +61,9 @@ export default function Publications() {
                   to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`}
                   aria-label={`ابحث داخل كتاب ${b.title}`}
                   title="ابحث في هذا الكتاب"
-                  className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-accent/[.35] px-3 text-[.66rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/[.35] text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
                 >
                   <SocialIcon name="Search" size={14} />
-                  <span>ابحث فيه</span>
                 </Link>
               </div>
             </motion.div>

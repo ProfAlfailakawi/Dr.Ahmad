@@ -134,7 +134,6 @@ export default function Questions() {
       <PageHead
         label="الزاوية المتجددة"
         title="سؤال يُقلق التعليم."
-        sub="أسئلةٌ تتجدّد عند تقاطع التعليم والتكنولوجيا والإنسان — كلٌّ منها يستحقّ أن تتوقّف عنده."
       />
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
@@ -150,22 +149,10 @@ export default function Questions() {
               {currentQuestion.ar}
             </h2>
           </Reveal>
-          {currentQuestion.en && (
-            <FadeUp delay={0.15}>
-              <p className="mt-5 max-w-3xl text-[1.05rem] leading-relaxed text-soft" dir="ltr" style={{ textAlign: 'left' }}>
-                {currentQuestion.en}
-              </p>
-            </FadeUp>
-          )}
           <FadeUp delay={0.25}>
             <div className="mt-12 max-w-3xl rounded-2xl border border-hair bg-wash p-6 md:p-8">
               <p className="mb-3 text-[.8rem] font-semibold text-accent">رأيي — في سطرين</p>
               <p className="text-[1.05rem] leading-[2] text-ink">{currentQuestion.take}</p>
-              {currentQuestion.takeEn && (
-                <p className="mt-4 border-t border-hair pt-4 text-[.92rem] leading-relaxed text-soft" dir="ltr" style={{ textAlign: 'left' }}>
-                  {currentQuestion.takeEn}
-                </p>
-              )}
             </div>
           </FadeUp>
           <FadeUp delay={0.3}>
@@ -220,11 +207,6 @@ export default function Questions() {
                     <span className="rounded-full border border-hair px-2.5 py-0.5 text-[.64rem] font-semibold text-accent">{question.topic}</span>
                   </p>
                   <p className="font-display text-xl font-semibold leading-relaxed text-ink">{question.ar}</p>
-                  {question.en && (
-                    <p className="mt-2 text-[.9rem] text-soft" dir="ltr" style={{ textAlign: 'left' }}>
-                      {question.en}
-                    </p>
-                  )}
                   <p className="mt-4 text-[.95rem] leading-[1.9] text-soft">{question.take}</p>
                 </article>
               </FadeUp>

@@ -20,7 +20,7 @@ import {
 } from "../lib/radar-display";
 import { Pagination, usePagedList } from "../components/Pagination";
 import { liveLink } from "../lib/dead-links";
-import { arabicCountPhrase, MATERIAL_FORMS, SOURCE_PLAIN_FORMS } from '../lib/arabic-count.ts';
+import { arabicCountPhrase, CAPTURE_FORMS, MATERIAL_FORMS, SOURCE_PLAIN_FORMS } from '../lib/arabic-count.ts';
 
 type RadarItem = {
   ar: string;

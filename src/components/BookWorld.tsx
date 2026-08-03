@@ -44,7 +44,7 @@ function Disclosure({
     >
       <summary className="flex min-w-0 cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 sm:px-5">
         <span className="min-w-0 max-w-full">
-          <span className="block text-[.66rem] font-semibold text-accent">{eyebrow}</span>
+          {eyebrow && <span className="block text-[.66rem] font-semibold text-accent">{eyebrow}</span>}
           <strong className="mt-1 block break-words text-[.9rem] leading-relaxed text-ink">{title}</strong>
           {meta && <span className="mt-1 block text-[.68rem] leading-relaxed text-soft">{meta}</span>}
         </span>
@@ -345,9 +345,8 @@ export function BookWorld({
           {/* ═══ اسأل هذا الكتاب ═══
               الكتاب يجيب بمقاطعه هو. لا نموذج يخمّن، ولا ملف يُفتح. */}
           {model.allQuotes.length > 0 && <Disclosure
-            eyebrow="ابحث في هذا الكتاب"
-            title="اكتب بطريقتك، فيفهم الكتاب ما تقصده"
-            meta="بحث بالمعنى في عناوين الكتاب ومحاوره ومقاطعه، لا تطابق كلمات فقط."
+            eyebrow=""
+            title="ابحث في هذا الكتاب"
             lockOpen={Boolean(asked) || askOpen}
           >
             <form

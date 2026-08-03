@@ -571,7 +571,7 @@ export function impactNodesFor(
   const paper = bestMatches(article, papers, (item) => `${item.title} ${item.titleAr || ''} ${item.abstractAr || ''} ${item.meta || ''}`, 3)[0]
   if (paper) nodes.push({
     kind: 'paper', label: 'امتداد علمي', title: paper.item.titleAr || paper.item.title,
-    note: 'صلة موضوعية قوية بعمل علمي منشور في الأرشيف؛ لا تُعرض بوصفها استشهاداً إلا إذا أثبته المصدر الخارجي.',
+    note: 'صلة موضوعية قوية بعمل علمي منشور في الأرشيف.',
     year: paper.item.iso?.slice(0, 4), to: `/research/${paper.item.slug}`, confidence: 'صلة قوية',
   })
 

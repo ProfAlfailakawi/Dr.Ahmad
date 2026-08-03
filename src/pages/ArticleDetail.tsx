@@ -166,6 +166,24 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
     }
   }, [body])
 
+  const articlePulse = useMemo(() => {
+    const candidates = [...popularQuotes].sort((left, right) => right.count - left.count)
+    for (const candidate of candidates) {
+      const paragraph = paragraphs[candidate.paragraph]?.text || ''
+      const startOffset = Number(candidate.startOffset)
+      const endOffset = Number(candidate.endOffset)
+      if (!paragraph || !Number.isInteger(startOffset) || !Number.isInteger(endOffset) || startOffset < 0 || endOffset <= startOffset || endOffset > paragraph.length) continue
+      const selected = paragraph.slice(startOffset, endOffset).replace(/\s+/g, ' ').trim()
+      if (selected.length < 12) continue
+      return {
+        paragraph: candidate.paragraph,
+        quote: selected.length > 170 ? `${selected.slice(0, 167).trim()}…` : selected,
+        count: candidate.count,
+      }
+    }
+    return null
+  }, [paragraphs, popularQuotes])
+
   const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.src.includes('.dialogue.') && audio.duration > 0)
 
   // Determine active paragraph and sentence
@@ -264,7 +282,6 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
 
   return (
     <>
-      <ArticlePulse slug={slug} body={body} />
       <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`}>
         {paragraphs.map((paragraph, pIdx) => {
           const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === pIdx)
@@ -326,6 +343,9 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
                   النصّ تماماً، فلا تزيح حرفاً ولا تضيف سطراً. والكرت لا يُفتح
                   إلا بالنقر عليها. */}
               {pivotParagraph === pIdx && <ArticlePivot slug={slug} title={title} />}
+              {articlePulse?.paragraph === pIdx && (
+                <ArticlePulse quote={articlePulse.quote} count={articlePulse.count} stacked={pivotParagraph === pIdx} />
+              )}
             </div>
           )
         })}

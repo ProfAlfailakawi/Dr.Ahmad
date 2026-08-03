@@ -35,12 +35,17 @@ function EvidenceLink({ node }: { node: ImpactNode }) {
       <strong className="mt-1.5 block font-display text-[.98rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{node.title}</strong>
       <span className="mt-1.5 block text-[.76rem] font-light leading-[1.78] text-soft">{node.note}</span>
       {node.source && <span className="mt-2 block text-[.67rem] text-soft/75">المصدر: {node.source}</span>}
+      {node.kind !== 'origin' && (
+        <span className="mt-2 inline-block rounded-full border border-hair px-2.5 py-1 text-[.64rem] font-semibold text-soft transition-colors group-hover:border-accent group-hover:text-accent">
+          {node.confidence === 'موثق' ? 'أثر موثّق' : 'امتداد في الأرشيف'}
+        </span>
+      )}
     </>
   )
-  if (node.to) return <Link to={node.to} className="group block">{content}</Link>
+  if (node.to) return <Link to={node.to} className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40">{content}</Link>
   const url = liveLink(node.url)
-  if (url) return <a href={url} target="_blank" rel="noreferrer" className="group block">{content}</a>
-  return null
+  if (url) return <a href={url} target="_blank" rel="noreferrer" className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40">{content}</a>
+  return <div className="block">{content}</div>
 }
 
 export default function Impact() {
@@ -215,7 +220,6 @@ export default function Impact() {
                               {node.confidence === 'موثق' && <span className="h-1.5 w-1.5 rounded-full bg-canvas" />}
                             </span>
                             <EvidenceLink node={node} />
-                            {node.kind !== 'origin' && <span className="mt-2 inline-block rounded-full border border-hair px-2.5 py-1 text-[.64rem] font-semibold text-soft">{node.confidence === 'موثق' ? 'أثر موثّق' : 'امتداد في الأرشيف'}</span>}
                           </li>
                         ))}
                       </ol>

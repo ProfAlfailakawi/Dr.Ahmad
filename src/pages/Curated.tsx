@@ -420,11 +420,6 @@ export default function Curated() {
             label="صفحات المختارات"
           />
 
-          <FadeUp delay={0.1}>
-            <p className="mt-14 border-t border-hair pt-8 text-[.85rem] leading-relaxed text-soft">
-              مختارات تُقرأ من مصادرها الأصلية، وتبقى هنا بقدر ما تضيف إلى المشهد.
-            </p>
-          </FadeUp>
         </div>
       </section>
     </Page>

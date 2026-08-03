@@ -7,6 +7,7 @@ import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
 import tocData from '../data/book-toc-links.json'
 import { SocialIcon } from '../components/icons'
+import { EncyclopediaPortal } from '../components/EncyclopediaPortal'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { bookKnowledgeAnchor, getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
 import { arabicCountPhrase, CHAPTER_FORMS, TITLE_FORMS } from '../lib/arabic-count.ts'
@@ -256,37 +257,49 @@ export default function BookDetail() {
   if (!book && loading) return <Page className="content-books"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!book) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على الكتاب.</div></Page>
 
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [{
+      '@type': 'Book',
+      '@id': `${SITE_URL}/publications/${book.slug}#book`,
+      name: book.title,
+      description: longDescription,
+      isbn: book.isbn || undefined,
+      url: `${SITE_URL}/publications/${book.slug}`,
+      image: book.cover ? `${SITE_URL}${book.cover}` : undefined,
+      inLanguage: 'ar',
+      datePublished: book.year || undefined,
+      bookEdition: book.edition || undefined,
+      numberOfPages: book.pageCount ? Number(book.pageCount) || book.pageCount : undefined,
+      publisher: book.publisher ? { '@type': 'Organization', name: book.publisher } : undefined,
+      audience: { '@type': 'Audience', audienceType: book.targetAudience || guide?.audience },
+      author: [
+        { '@type': 'Person', '@id': `${SITE_URL}/#person`, name: 'د. أحمد حسين الفيلكاوي' },
+        ...(book.coAuthors ? book.coAuthors.split(/[،,]/).map((name) => ({ '@type': 'Person', name: name.trim() })).filter((item) => item.name) : []),
+      ],
+    }, {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: `${SITE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'المؤلفات', item: `${SITE_URL}/publications` },
+        { '@type': 'ListItem', position: 3, name: book.title, item: `${SITE_URL}/publications/${book.slug}` },
+      ],
+    }],
+  }
+
+  if (book.slug === 'encyclopedia') {
+    return (
+      <Page className="content-encyclopedia">
+        <JsonLd data={structuredData} />
+        <EncyclopediaPortal book={book} articles={articles} papers={papers} />
+        <DeferredBookWorld book={book} seed={guide?.idea || book.desc || ''} articles={articles} books={books} papers={papers} />
+      </Page>
+    )
+  }
+
   return (
     <Page className="content-book-detail">
-      <JsonLd data={{
-        '@context': 'https://schema.org',
-        '@graph': [{
-          '@type': 'Book',
-          '@id': `${SITE_URL}/publications/${book.slug}#book`,
-          name: book.title,
-          description: longDescription,
-          isbn: book.isbn || undefined,
-          url: `${SITE_URL}/publications/${book.slug}`,
-          image: book.cover ? `${SITE_URL}${book.cover}` : undefined,
-          inLanguage: 'ar',
-          datePublished: book.year || undefined,
-          bookEdition: book.edition || undefined,
-          numberOfPages: book.pageCount ? Number(book.pageCount) || book.pageCount : undefined,
-          publisher: book.publisher ? { '@type': 'Organization', name: book.publisher } : undefined,
-          audience: { '@type': 'Audience', audienceType: book.targetAudience || guide?.audience },
-          author: [
-            { '@type': 'Person', '@id': `${SITE_URL}/#person`, name: 'د. أحمد حسين الفيلكاوي' },
-            ...(book.coAuthors ? book.coAuthors.split(/[،,]/).map((name) => ({ '@type': 'Person', name: name.trim() })).filter((item) => item.name) : []),
-          ],
-        }, {
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: `${SITE_URL}/` },
-            { '@type': 'ListItem', position: 2, name: 'المؤلفات', item: `${SITE_URL}/publications` },
-            { '@type': 'ListItem', position: 3, name: book.title, item: `${SITE_URL}/publications/${book.slug}` },
-          ],
-        }],
-      }} />
+      <JsonLd data={structuredData} />
       <section className="px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-28 md:px-11 md:pb-24 md:pt-44">
         <div className="mx-auto max-w-shell">
           <FadeUp>

@@ -1,8 +1,8 @@
 /* أربع لمسات «نووية» أنيقة — أحادية اللون + لكنة #3E5C78، بلا تلوث بصري:
    ١) الجسر: كاتب ↔ باحث   — يربط هويتَي الدكتور حول الفكرة نفسها.
-   ٢) نبض المقال            — يُشير إلى الجملة التي توقّف عندها أكثر القرّاء (رنين جمعي).
-   ٣) الاقتباس السينمائي     — كشفٌ متحرك، كلمةً كلمة، لجملةٍ مختارة.
-   ٤) بصمة القارئ           — أثرٌ شخصيّ محليّ بالكامل (بلا خادم، بلا تتبّع) يُهدى للقارئ.
+   ٢) الاقتباس السينمائي     — كشفٌ متحرك، كلمةً كلمة، لجملةٍ مختارة.
+   ٣) بصمة القارئ           — أثرٌ شخصيّ محليّ بالكامل (بلا خادم، بلا تتبّع) يُهدى للقارئ.
+   إشارة المقال الموحّدة انتقلت إلى ArticlePivot كي لا تتكرر هنا كميزة مستقلة.
    كل مكوّن مستقل ونقيّ: يستقبل بياناته أو يقرأ التخزين المحلي، ويختفي بلطف حين لا مادة له. */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -55,63 +55,7 @@ export function WriterResearcherBridge({ articleTitle, paper }: { articleTitle: 
   )
 }
 
-/* ═══════════════ ٢) نبض المقال ═══════════════
-   لم يعد بطاقةً مستقلة قبل النص. صار إشارةً هامشية من العائلة البصرية نفسها
-   التي تنتمي إليها «لحظة الانعطاف»؛ لا تشغل سطراً ولا تظهر الجملة إلا بالنقر. */
-export function ArticlePulse({ quote, count = 0, stacked = false }: { quote: string; count?: number; stacked?: boolean }) {
-  const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open])
-
-  if (!quote) return null
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={(event) => { event.stopPropagation(); setOpen(true) }}
-        aria-label="نبض المقال في هذه الفقرة"
-        title="نبض المقال"
-        className={`article-pulse-mark${stacked ? ' is-stacked' : ''}`}
-      >
-        <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M2 2v5a2 2 0 0 0 2 2h6" />
-          <path d="M7.5 6.5 10 9l-2.5 2.5" />
-        </svg>
-      </button>
-
-      {open && createPortal((
-        <span
-          role="presentation"
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 z-[560] flex items-end justify-center bg-ink/25 px-5 pb-6 backdrop-blur-[2px] sm:items-center sm:pb-0"
-        >
-          <span
-            role="dialog"
-            aria-modal="true"
-            aria-label="نبض المقال"
-            onClick={(event) => event.stopPropagation()}
-            className="block w-full max-w-lg rounded-2xl border border-hair bg-canvas p-6 shadow-[0_18px_50px_rgba(20,31,45,.14)] md:p-7"
-          >
-            <span className="flex items-start justify-between gap-4">
-              <span className="text-[.68rem] font-semibold text-accent">نبض المقال</span>
-              <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق" title="إغلاق" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:text-accent"><SocialIcon name="Close" size={13} /></button>
-            </span>
-            <blockquote className="mt-3 border-r-2 border-accent/40 pr-4 font-display text-[1.02rem] font-light leading-[1.95] text-ink md:text-[1.1rem]">{quote}</blockquote>
-            {count > 0 && <span className="mt-4 block border-t border-hair pt-3 text-[.68rem] text-soft">عدد الإشارات: {new Intl.NumberFormat('ar-KW-u-nu-arab').format(count)}</span>}
-          </span>
-        </span>
-      ), document.body)}
-    </>
-  )
-}
-
-/* ═══════════════ ٣) الاقتباس السينمائي المتحرك ═══════════════ */
+/* ═══════════════ ٢) الاقتباس السينمائي المتحرك ═══════════════ */
 export function CinematicQuote({ quote }: { quote?: string }) {
   const reduce = useReducedMotion()
   const ref = useRef<HTMLDivElement>(null)
@@ -141,7 +85,7 @@ export function CinematicQuote({ quote }: { quote?: string }) {
   )
 }
 
-/* ═══════════════ ٤) بصمة القارئ ═══════════════ */
+/* ═══════════════ ٣) بصمة القارئ ═══════════════ */
 type SavedQuote = { slug: string; title: string; cat?: string; savedAt: number; quote: string }
 const CAT_LABEL: Record<string, string> = {
   'مقال': 'مقالات', 'تعليم': 'التعليم', 'تقنية': 'التكنولوجيا والتعلم', 'ذكاء': 'الذكاء الاصطناعي',

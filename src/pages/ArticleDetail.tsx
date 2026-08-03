@@ -4,13 +4,13 @@ import { FadeUp, Page, Reveal } from '../components/ui'
 import { getArticleNeighbors, type ArticleRecord, type BookRecord, type MediaRecord, type PaperRecord } from '../lib/cms'
 import { SITE_URL } from '../data'
 import { NextStep } from '../components/NextStep'
-import { ArticlePivot, pivotOf } from '../components/ArticlePivot'
+import { ArticleSignal, articleSignalOf } from '../components/ArticlePivot'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, useReaderPreferences, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
 import { openAudioPlayer } from '../components/AudioPlayer'
-import { ArticlePulse, markArticleRead } from '../components/ReaderResonance'
+import { markArticleRead } from '../components/ReaderResonance'
 import { JsonLd, useSeo } from '../components/seo'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
@@ -82,8 +82,6 @@ function SelectionDiscoveryHint() {
 
 
 function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; title: string }) {
-  /* الفقرة التي تحمل لحظة الانعطاف — تُحسب مرّة، ولا شيء يُرسم إن لم توجد. */
-  const pivotParagraph = pivotOf(slug)?.paragraph ?? -1
   const audio = usePersistentAudio()
   const popularQuotes = usePopularQuotes(slug, body)
   const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([])
@@ -96,7 +94,7 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
 
   // Parse body into structured paragraphs & sentences with word offsets
   const { paragraphs, flatSentences, totalWords } = useMemo(() => {
-    const rawParagraphs = body.split('\n\n')
+    const rawParagraphs = body.split(/\n\s*\n/)
     let globalWordOffset = 0
 
     const parsedParagraphs = rawParagraphs.map((pText, pIdx) => {
@@ -166,23 +164,7 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
     }
   }, [body])
 
-  const articlePulse = useMemo(() => {
-    const candidates = [...popularQuotes].sort((left, right) => right.count - left.count)
-    for (const candidate of candidates) {
-      const paragraph = paragraphs[candidate.paragraph]?.text || ''
-      const startOffset = Number(candidate.startOffset)
-      const endOffset = Number(candidate.endOffset)
-      if (!paragraph || !Number.isInteger(startOffset) || !Number.isInteger(endOffset) || startOffset < 0 || endOffset <= startOffset || endOffset > paragraph.length) continue
-      const selected = paragraph.slice(startOffset, endOffset).replace(/\s+/g, ' ').trim()
-      if (selected.length < 12) continue
-      return {
-        paragraph: candidate.paragraph,
-        quote: selected.length > 170 ? `${selected.slice(0, 167).trim()}…` : selected,
-        count: candidate.count,
-      }
-    }
-    return null
-  }, [paragraphs, popularQuotes])
+  const articleSignal = useMemo(() => articleSignalOf(slug, body, popularQuotes), [body, popularQuotes, slug])
 
   const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.src.includes('.dialogue.') && audio.duration > 0)
 
@@ -339,13 +321,9 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
                   <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
                 )}
               </p>
-              {/* لحظة الانعطاف: علامةٌ في هامش الفقرة بموضعٍ مطلق — خارج تدفّق
-                  النصّ تماماً، فلا تزيح حرفاً ولا تضيف سطراً. والكرت لا يُفتح
-                  إلا بالنقر عليها. */}
-              {pivotParagraph === pIdx && <ArticlePivot slug={slug} title={title} />}
-              {articlePulse?.paragraph === pIdx && (
-                <ArticlePulse quote={articlePulse.quote} count={articlePulse.count} stacked={pivotParagraph === pIdx} />
-              )}
+              {/* إشارة واحدة موحّدة: رنين القرّاء إن وُجد، وإلا لحظة الانعطاف،
+                  وإلا جملة محورية من كلام المقال نفسه. لا بطاقة دائمة ولا ازدواج. */}
+              {articleSignal?.paragraph === pIdx && <ArticleSignal signal={articleSignal} title={title} />}
             </div>
           )
         })}

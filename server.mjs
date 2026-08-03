@@ -5538,7 +5538,7 @@ export function createRequestHandler({
       }
       const topic = String(url.searchParams.get('topic') || '').trim().slice(0, 180)
       const videoId = String(url.searchParams.get('video') || '').trim().slice(0, 24)
-      const doorNumber = clamp(Number(url.searchParams.get('door')) || 0, 0, 4)
+      const doorNumber = clamp(Number(url.searchParams.get('door')) || 0, 0, 5)
       const hints = url.searchParams.getAll('hint').slice(0, 8).map((value) => String(value || '').trim().slice(0, 120)).filter(Boolean)
       if (!topic && !videoId) throw new HttpError(400, 'Topic or video is required')
       if (videoId && !/^[\w-]{6,20}$/.test(videoId)) throw new HttpError(400, 'Video id is invalid')
@@ -5553,7 +5553,7 @@ export function createRequestHandler({
         return
       }
       const query = String(url.searchParams.get('q') || '').trim().slice(0, 180)
-      const doorNumber = clamp(Number(url.searchParams.get('door')) || 0, 0, 4)
+      const doorNumber = clamp(Number(url.searchParams.get('door')) || 0, 0, 5)
       const limit = clamp(Number(url.searchParams.get('limit')) || 6, 1, 10)
       if (query.length < 2) throw new HttpError(400, 'Search query is too short')
       const result = await searchEncyclopediaVideoMoments({ query, doorNumber, limit })

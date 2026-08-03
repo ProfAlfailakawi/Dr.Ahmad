@@ -278,10 +278,16 @@ const momentCache = new Map()
 let transcriptWarmup = { running: false, total: 0, completed: 0, available: 0, videoIds: [], promise: null }
 
 let teachingMap = {}
+let encyclopediaStructure = { doors: [] }
 try {
   teachingMap = JSON.parse(readFileSync(new URL('../data/encyclopedia-teaching-map.json', import.meta.url), 'utf8'))
 } catch {
   teachingMap = {}
+}
+try {
+  encyclopediaStructure = JSON.parse(readFileSync(new URL('../data/encyclopedia-structure.json', import.meta.url), 'utf8'))
+} catch {
+  encyclopediaStructure = { doors: [] }
 }
 
 const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
@@ -535,23 +541,63 @@ export function findEncyclopediaTranscriptMoment(segments, topic, hints = []) {
 }
 
 function topicEntries() {
-  const entries = []
-  for (const [doorId, door] of Object.entries(teachingMap || {})) {
-    const doorNumber = Number(String(doorId).match(/\d+/)?.[0]) || 0
-    for (const [title, topic] of Object.entries(door?.topics || {})) {
-      entries.push({
+  const byKey = new Map()
+
+  /* المصدر الأول هو فهرس الكتاب الموثق من PDF: خمسة أبواب وكل فصولها ومحاور
+     الدراسات. عروض PowerPoint الأربعة تضيف تلميحات تدريسية، لكنها لا تحدد
+     بنية الكتاب ولا تحذف الباب الخامس من فهرس الفيديو. */
+  for (const door of Array.isArray(encyclopediaStructure?.doors) ? encyclopediaStructure.doors : []) {
+    const doorId = bounded(door?.id, 40)
+    const doorNumber = Number(door?.doorNumber) || Number(doorId.match(/\d+/)?.[0]) || 0
+    const doorHints = Array.isArray(door?.hints) ? door.hints : []
+    for (const unit of Array.isArray(door?.units) ? door.units : []) {
+      const title = bounded(unit?.title, 180)
+      const chapterNumber = Number(unit?.number) || 0
+      if (!doorId || !doorNumber || !title) continue
+      const key = `${doorId}:${normalizeEncyclopediaMomentText(title)}`
+      byKey.set(key, {
         doorId,
         doorNumber,
         title,
-        hints: Array.isArray(topic?.videoHints) ? topic.videoHints : [],
-        chapterNumbers: Array.isArray(topic?.chapterNumbers) ? topic.chapterNumbers.map(Number).filter(Boolean) : [],
+        hints: [...new Set([...doorHints, ...(Array.isArray(unit?.keywords) ? unit.keywords : [])].map((value) => bounded(value, 120)).filter(Boolean))],
+        chapterNumbers: chapterNumber ? [chapterNumber] : [],
+        source: 'pdf',
       })
     }
   }
-  return entries
+
+  /* خرائط الشرائح تثري الموضوعات الأربعة الأولى بنطاقات الفيديو المقترحة؛
+     ندمجها مع سجل PDF عند التطابق، أو نضيفها كمداخل مساندة من دون تغيير
+     عدد أبواب الكتاب. */
+  for (const [doorId, door] of Object.entries(teachingMap || {})) {
+    const doorNumber = Number(String(doorId).match(/\d+/)?.[0]) || 0
+    for (const [title, topic] of Object.entries(door?.topics || {})) {
+      const key = `${doorId}:${normalizeEncyclopediaMomentText(title)}`
+      const previous = byKey.get(key)
+      const hints = Array.isArray(topic?.videoHints) ? topic.videoHints : []
+      const chapterNumbers = Array.isArray(topic?.chapterNumbers) ? topic.chapterNumbers.map(Number).filter(Boolean) : []
+      byKey.set(key, {
+        doorId,
+        doorNumber,
+        title,
+        hints: [...new Set([...(previous?.hints || []), ...hints].map((value) => bounded(value, 120)).filter(Boolean))],
+        chapterNumbers: [...new Set([...(previous?.chapterNumbers || []), ...chapterNumbers])],
+        source: previous ? 'pdf+slides' : 'slides',
+      })
+    }
+  }
+  return [...byKey.values()]
 }
 
 const teachingTopics = topicEntries()
+
+export function getEncyclopediaVideoTopicIndex() {
+  return teachingTopics.map((topic) => ({
+    ...topic,
+    hints: [...topic.hints],
+    chapterNumbers: [...topic.chapterNumbers],
+  }))
+}
 
 function teachingTopicFor(title, doorNumber = 0) {
   const normalized = normalizeEncyclopediaMomentText(title)

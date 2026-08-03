@@ -6,6 +6,7 @@ import {
   loadEncyclopediaVideoMoment,
   parseYouTubeCaptionJson,
   getEncyclopediaTranscriptProgress,
+  getEncyclopediaVideoTopicIndex,
   resetEncyclopediaTranscriptCache,
   resetEncyclopediaVideoCache,
   searchEncyclopediaVideoMoments,
@@ -65,6 +66,13 @@ const fetchMock = async (url) => {
 
 check('يقرأ تسلسل الباب والفصل والمقطع من العنوان العربي', () => {
   assert.deepEqual(extractServerVideoSequence('الباب الثالث - الفصل الأول - الفيديو ٢'), { doorNumber: 3, chapterNumber: 1, videoNumber: 2 })
+})
+
+check('فهرس الفيديو الخادمي يعتمد أبواب PDF الخمسة لا عروض PowerPoint الأربعة', () => {
+  const topics = getEncyclopediaVideoTopicIndex()
+  assert.deepEqual([...new Set(topics.map((topic) => topic.doorNumber))].sort((a, b) => a - b), [1, 2, 3, 4, 5])
+  assert.ok(topics.some((topic) => topic.doorNumber === 5 && topic.chapterNumbers.includes(7) && /نظم إدارة التعلم/u.test(topic.title)))
+  assert.ok(topics.filter((topic) => topic.source.startsWith('pdf')).length >= 32)
 })
 
 check('يستخرج استجابة المشغل من صفحة YouTube من دون تنفيذ النص', () => {

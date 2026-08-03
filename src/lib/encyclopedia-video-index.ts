@@ -7,13 +7,19 @@ export type EncyclopediaDoorDescriptor = {
   title: string
   topics: readonly string[]
   hints: readonly string[]
-  presentation: string
+  presentation?: string
+  units?: readonly {
+    number: number
+    title: string
+    keywords?: readonly string[]
+  }[]
 }
 
 export type IndexedEncyclopediaVideo = EncyclopediaVideo & {
   doorId: string | null
   doorNumber: number | null
   chapterNumber: number | null
+  chapterTitle: string | null
   videoNumber: number | null
   concept: BookKnowledgeConcept | null
   searchText: string
@@ -126,6 +132,30 @@ function resolveDoor(video: EncyclopediaVideo, doors: readonly EncyclopediaDoorD
   return { door: best && best.score >= 5 ? best.door : null, ...sequence }
 }
 
+function resolveChapter(video: EncyclopediaVideo, door: EncyclopediaDoorDescriptor | null, explicitChapter: number | null) {
+  const units = door?.units || []
+  if (!units.length) return { chapterNumber: explicitChapter, chapterTitle: null }
+
+  if (explicitChapter) {
+    const explicit = units.find((unit) => unit.number === explicitChapter)
+    if (explicit) return { chapterNumber: explicit.number, chapterTitle: explicit.title }
+  }
+
+  /* بعض فيديوهات القناة تحمل اسم الموضوع بلا رقم فصل. نربطها بفصل PDF من
+     عنوان الفصل وكلماته المفتاحية، بدلاً من تركها خارج الخريطة أو إسنادها
+     إلى أول فصل اعتباطاً. */
+  const haystack = normalizeEncyclopediaText(`${video.title} ${video.description}`)
+  let best: { number: number; title: string; score: number } | null = null
+  for (const unit of units) {
+    const score = phraseScore(haystack, unit.title, 9)
+      + (unit.keywords || []).reduce((total, keyword) => total + phraseScore(haystack, keyword, 3), 0)
+    if (!best || score > best.score) best = { number: unit.number, title: unit.title, score }
+  }
+  return best && best.score >= 5
+    ? { chapterNumber: best.number, chapterTitle: best.title }
+    : { chapterNumber: explicitChapter, chapterTitle: null }
+}
+
 function conceptScore(videoText: string, concept: BookKnowledgeConcept) {
   const conceptTitle = normalizeEncyclopediaText(concept.title)
   let score = conceptTitle && videoText.includes(conceptTitle) ? 12 + Math.min(5, conceptTitle.split(' ').length) : 0
@@ -164,13 +194,17 @@ export function indexEncyclopediaVideos(
     const resolved = resolveDoor(video, doors)
     const concept = resolveConcept(video, concepts)
     const door = resolved.door
-    const label = sequenceLabel(door?.doorNumber || resolved.doorNumber, resolved.chapterNumber, resolved.videoNumber)
+    const chapter = resolveChapter(video, door, resolved.chapterNumber)
+    const label = sequenceLabel(door?.doorNumber || resolved.doorNumber, chapter.chapterNumber, resolved.videoNumber)
+    const chapterUnit = door?.units?.find((unit) => unit.number === chapter.chapterNumber)
     const searchText = normalizeEncyclopediaText([
       video.title,
       video.description,
       label,
       door?.title,
       door?.topics.join(' '),
+      chapter.chapterTitle,
+      chapterUnit?.keywords?.join(' '),
       concept?.title,
       concept?.keywords.join(' '),
       concept?.summary,
@@ -180,7 +214,8 @@ export function indexEncyclopediaVideos(
       ...video,
       doorId: door?.id || null,
       doorNumber: door?.doorNumber || resolved.doorNumber,
-      chapterNumber: resolved.chapterNumber,
+      chapterNumber: chapter.chapterNumber,
+      chapterTitle: chapter.chapterTitle,
       videoNumber: resolved.videoNumber,
       concept,
       searchText,

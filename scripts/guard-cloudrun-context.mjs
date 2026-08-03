@@ -90,6 +90,10 @@ const walkImports = (absolutePath) => {
   for (const match of source.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
     walkImports(resolve(dirname(absolutePath), match[1]))
   }
+  // ملفات JSON المقروءة عبر new URL موارد تشغيل محلية مثل الاستيرادات تماماً.
+  for (const match of source.matchAll(/new URL\(['"](\.[^'"]+)['"],\s*import\.meta\.url\)/g)) {
+    walkImports(resolve(dirname(absolutePath), match[1]))
+  }
 }
 
 if (existsSync(SERVER)) {

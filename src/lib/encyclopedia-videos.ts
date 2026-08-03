@@ -32,9 +32,15 @@ const validVideo = (value: unknown): value is EncyclopediaVideo => {
 
 export async function getEncyclopediaVideoCatalog(signal?: AbortSignal): Promise<EncyclopediaVideoCatalog> {
   if (!catalogPromise) {
-    catalogPromise = fetch('/api/encyclopedia/videos', { signal, headers: { accept: 'application/json' } })
+    catalogPromise = fetch(`/api/encyclopedia/videos?v=20260803-4`, {
+      signal,
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+    })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Video catalog HTTP ${response.status}`)
+        const contentType = response.headers.get('content-type') || ''
+        if (!contentType.toLowerCase().includes('application/json')) throw new Error('Video catalog returned a non-JSON response')
         const payload = await response.json() as Partial<EncyclopediaVideoCatalog>
         const videos = Array.isArray(payload.videos) ? payload.videos.filter(validVideo) : []
         if (!videos.length) throw new Error('Video catalog is empty')

@@ -77,17 +77,27 @@ self.addEventListener('notificationclick', (event) => {
 
 self.addEventListener('fetch', (e) => {
   const { request } = e
-  if (request.method !== 'GET' || new URL(request.url).origin !== location.origin) return
+  const url = new URL(request.url)
+  if (request.method !== 'GET' || url.origin !== location.origin) return
 
-  // طلبات النطاق (Range) — تشغيل الصوت يطلب أجزاء الملف فيرد الخادم 206 (Partial).
-  // المتصفح يرفض تخزين 206 في الكاش؛ فلا نعترضها إطلاقاً ونتركها للمتصفح مباشرة.
+  const pathname = url.pathname
+  const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
+
+  // الشبكة وحدها للـAPI والملفات القابلة للتنزيل. اعتراض PDF كتنقّل ثم إرجاع
+  // غلاف التطبيق المخزّن كان السبب المباشر لرسالة Safari عن redirections.
+  // كما أن تخزين /api جعل فهرس الفيديو قديماً أو HTML بدلاً من JSON.
+  const networkOnly = pathname.startsWith('/api/')
+    || pathname.startsWith('/files/')
+    || pathname.startsWith('/audio/')
+    || pathname.startsWith('/covers/')
+    || /\.(?:pdf|pptx|docx|xlsx|zip|mp3|mp4|webm)$/i.test(pathname)
+  if (networkOnly) return
+
+  // طلبات النطاق (Range) — تشغيل الوسائط يطلب أجزاء الملف فيرد الخادم 206 (Partial).
+  // المتصفح يرفض تخزين 206 في الكاش؛ فلا نعترضها إطلاقاً ونتركها للشبكة مباشرة.
   if (request.headers.has('range')) return
 
-  // الصوت (بثّ، ملفات كبيرة) لا يُخزَّن في الكاش — يُطلب من الشبكة دائماً.
-  const isAudio = new URL(request.url).pathname.startsWith('/audio/')
-
-  const pathname = new URL(request.url).pathname
-  const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
+  const isAudio = pathname.startsWith('/audio/')
 
   // مسارات داخلية قديمة أُزيلت نهائياً. نردّ عليها من الـService Worker نفسه
   // حتى لا يعيد أي كاش قديم صفحةً لم تعد جزءاً من الموقع.
@@ -120,7 +130,7 @@ self.addEventListener('fetch', (e) => {
     const networkUpdate = (async () => {
       const preload = e.preloadResponse ? await e.preloadResponse.catch(() => null) : null
       const response = preload || await fetch(request, { cache: 'no-cache' })
-      if (response?.status === 200) {
+      if (response?.status === 200 && !response.redirected) {
         const cache = await caches.open(CACHE)
         await cache.put(request, response.clone())
       }
@@ -146,7 +156,7 @@ self.addEventListener('fetch', (e) => {
     caches.match(request).then((cached) =>
       cached ||
       fetch(request).then((r) => {
-        if (r.status === 200 && !isAudio && !request.url.includes('/admin')) {
+        if (r.status === 200 && !r.redirected && !isAudio && !request.url.includes('/admin')) {
           const copy = r.clone()
           caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {})
         }

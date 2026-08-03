@@ -554,6 +554,8 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const teachingSlideLabel = teachingGuide ? encyclopediaSlideRangeLabel(teachingGuide.ranges) : ''
   const teachingSlidesCount = teachingGuide ? encyclopediaSlideCount(teachingGuide.ranges) : 0
 
+  const featuredScrollRef = useRef<HTMLDivElement>(null)
+
   const whyWritten = book.whyWritten || 'مرجع موسوعي يجمع مفاهيم تكنولوجيا التعليم وتاريخها ونظمها وتطبيقاتها في خريطة واحدة.'
   const targetAudience = book.targetAudience || 'طلبة كليات التربية، والمعلمون، وأعضاء هيئة التدريس، والباحثون، ومصممو التعلّم.'
   const entryGuide = 'ابدأ من الباب أو الفصل الأقرب إلى سؤالك، ثم اقرأ الأصل أو شاهد شرحه داخل الصفحة.'
@@ -661,6 +663,75 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
             {query.trim().length >= 2 && <p className="mt-2 text-[.64rem] text-soft">{resultCount ? `${formatArabicNumber(resultCount)} نتيجة مرتبطة` : 'لا توجد نتيجة مطابقة.'}</p>}
           </FadeUp>
 
+          {query.trim().length >= 2 && searchResults.videos.length > 0 && (
+            <div className="mt-7 rounded-2xl border border-hair bg-wash/50 p-4 md:p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="font-display text-[.92rem] font-semibold text-ink">فيديوهات مطابقة للبحث ({formatArabicNumber(searchResults.videos.length)})</h3>
+              </div>
+              <div
+                dir="rtl"
+                className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden"
+              >
+                {searchResults.videos.map(({ video }) => (
+                  <InlineVideoCard
+                    key={`search-${video.id}`}
+                    video={video}
+                    active={playingVideoId === video.id}
+                    playerUrl={playingVideoId === video.id ? selectedPlayerUrl : ''}
+                    onPlay={playVideo}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!query.trim() && mappedVideos.length > 0 && (
+            <div className="mt-7 rounded-2xl border border-hair bg-wash/40 p-4 md:p-5">
+              <div className="mb-3.5 flex items-center justify-between">
+                <div>
+                  <h3 className="font-display text-[.95rem] font-semibold text-ink">أبرز الشروحات المرئية</h3>
+                  <p className="mt-0.5 text-[.65rem] text-soft">شاهد الشروحات المرئية الموزعة عبر أبواب وفصول الموسوعة ({formatArabicNumber(mappedVideos.length)} فيديو موثّق)</p>
+                </div>
+                <div className="flex items-center gap-1.5" dir="ltr">
+                  <button
+                    type="button"
+                    onClick={() => featuredScrollRef.current?.scrollBy({ left: 320, behavior: 'smooth' })}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+                    aria-label="التنقل لليمين بين الشروحات المرئية"
+                    title="التنقل لليمين"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => featuredScrollRef.current?.scrollBy({ left: -320, behavior: 'smooth' })}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+                    aria-label="التنقل لليسار بين الشروحات المرئية"
+                    title="التنقل لليسار"
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+
+              <div
+                ref={featuredScrollRef}
+                dir="rtl"
+                className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden"
+              >
+                {mappedVideos.slice(0, 16).map((video) => (
+                  <InlineVideoCard
+                    key={`featured-${video.id}`}
+                    video={video}
+                    active={playingVideoId === video.id}
+                    playerUrl={playingVideoId === video.id ? selectedPlayerUrl : ''}
+                    onPlay={playVideo}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-7 border-y border-hair">
             {DOORS.map((door, index) => (
               <DoorRow
@@ -669,7 +740,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 concepts={concepts}
                 videoMap={unitVideoMap}
                 query={query}
-                initiallyOpen={false}
+                initiallyOpen={index === 0}
                 playingVideoId={playingVideoId}
                 selectedPlayerUrl={selectedPlayerUrl}
                 onPlay={playVideo}

@@ -25,6 +25,9 @@ COPY src/lib/semantic-court.mjs /app/src/lib/semantic-court.mjs
 COPY src/lib/adversarial-misunderstanding.mjs /app/src/lib/adversarial-misunderstanding.mjs
 COPY src/server/whatsapp-controller.mjs /app/src/server/whatsapp-controller.mjs
 COPY src/server/admin-communications.mjs /app/src/server/admin-communications.mjs
+# فهرس موسوعة تكنولوجيا التعليم جزء من API الآن؛ server.mjs يستورده استيراداً
+# ساكناً، لذلك يجب أن يصل إلى سياق Cloud Build ثم يُنسخ إلى الصورة.
+COPY src/server/encyclopedia-videos.mjs /app/src/server/encyclopedia-videos.mjs
 COPY src/data.ts /app/src/data.ts
 COPY src/data-curated.ts /app/src/data-curated.ts
 COPY src/data/bodies.json /app/src/data/bodies.json
@@ -64,14 +67,15 @@ COPY src/data/spoken-index.json /app/src/data/spoken-index.json
 # «node --check» يقرأ الصياغة ولا يحلّ استيراداً: ملفٌ منسيٌّ في النسخ يمرّ من
 # هنا ثم يقتل المُشغَّل في Cloud Run. نحلّ شجرة الاستيراد كلها في البناء نفسه،
 # فيسقط البناء هنا لا الموقع هناك. ولا نُشغّل الخادم — نحلّ فقط بلا تنفيذ.
-RUN node -e "const {readFileSync,existsSync}=require('fs');const {dirname,resolve}=require('path');const seen=new Set();const walk=(f)=>{if(seen.has(f))return;seen.add(f);if(!existsSync(f)){console.error('استيراد مفقود من الصورة: '+f);process.exit(1)}if(!/\.(mjs|js)$/.test(f))return;const src=readFileSync(f,'utf8');for(const m of src.matchAll(/from\s+['\"](\.[^'\"]+)['\"]/g))walk(resolve(dirname(f),m[1]))};walk('/app/server.mjs');console.log('✓ شجرة استيراد الخادم كاملة داخل الصورة: '+seen.size+' ملفاً')"
+RUN node -e "const {readFileSync,existsSync}=require('fs');const {dirname,resolve}=require('path');const seen=new Set();const walk=(f)=>{if(seen.has(f))return;seen.add(f);if(!existsSync(f)){console.error('استيراد مفقود من الصورة: '+f);process.exit(1)}if(!/\\.(mjs|js)$/.test(f))return;const src=readFileSync(f,'utf8');for(const m of src.matchAll(/from\\s+['\\\"](\\.[^'\\\"]+)['\\\"]/g))walk(resolve(dirname(f),m[1]))};walk('/app/server.mjs');console.log('✓ شجرة استيراد الخادم كاملة داخل الصورة: '+seen.size+' ملفاً')"
 
 RUN node --check /app/whatsapp-agent/intent-engine.mjs \
  && node --check /app/server.mjs \
  && node --check /app/scripts/daily-radar.mjs \
  && node --check /app/scripts/editorial-policy.mjs \
  && node --check /app/src/server/whatsapp-controller.mjs \
- && node --check /app/src/server/admin-communications.mjs
+ && node --check /app/src/server/admin-communications.mjs \
+ && node --check /app/src/server/encyclopedia-videos.mjs
 
 EXPOSE 8080
 CMD ["node", "/app/server.mjs"]

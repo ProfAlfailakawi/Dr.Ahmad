@@ -35,6 +35,7 @@ src/lib/*
 src/server/*
 !src/server/whatsapp-controller.mjs
 !src/server/admin-communications.mjs
+!src/server/encyclopedia-videos.mjs
 !whatsapp-agent/
 whatsapp-agent/*
 !whatsapp-agent/content-index.mjs

@@ -253,6 +253,35 @@ function parseRenderer(renderer, position) {
   }
 }
 
+function parseLockupViewModel(vm, position) {
+  if (!vm || vm.contentType !== 'LOCKUP_CONTENT_TYPE_VIDEO') return null
+  const id = bounded(vm.contentId, 24)
+  if (!id || !/^[\w-]{6,20}$/.test(id)) return null
+  const meta = vm.metadata?.lockupMetadataViewModel
+  const title = bounded(meta?.title?.content || plainText(vm.rendererContext?.accessibilityContext?.label), 500)
+  const sources = vm.contentImage?.thumbnailViewModel?.image?.sources || []
+  const thumbnail = bounded(sources.at(-1)?.url || sources[sources.length - 1]?.url || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`, 2000)
+  const overlay = vm.contentImage?.thumbnailViewModel?.overlays || []
+  let durationText = ''
+  for (const ov of overlay) {
+    const badgeText = bounded(ov?.thumbnailBadgeViewModel?.text, 40)
+    if (/^\d+:\d+/.test(badgeText)) durationText = badgeText
+  }
+  return {
+    id,
+    title: title || 'موسوعة تكنولوجيا التعليم',
+    url: `https://www.youtube.com/watch?v=${id}`,
+    embedUrl: `https://www.youtube-nocookie.com/embed/${id}?rel=0`,
+    thumbnail,
+    durationText,
+    durationSeconds: durationSeconds(durationText),
+    publishedText: '',
+    viewCountText: '',
+    description: '',
+    position,
+  }
+}
+
 export function parseYouTubeVideos(payload) {
   const items = []
   const seenObjects = new Set()
@@ -265,6 +294,14 @@ export function parseYouTubeVideos(payload) {
     }
     if (value.gridVideoRenderer) {
       const parsed = parseRenderer(value.gridVideoRenderer, items.length + 1)
+      if (parsed) items.push(parsed)
+    }
+    if (value.playlistVideoRenderer) {
+      const parsed = parseRenderer(value.playlistVideoRenderer, items.length + 1)
+      if (parsed) items.push(parsed)
+    }
+    if (value.lockupViewModel) {
+      const parsed = parseLockupViewModel(value.lockupViewModel, items.length + 1)
       if (parsed) items.push(parsed)
     }
     for (const child of Object.values(value)) visit(child)

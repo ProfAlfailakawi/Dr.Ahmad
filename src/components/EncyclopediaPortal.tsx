@@ -193,6 +193,17 @@ function buildStrictUnitVideoMap(videos: IndexedEncyclopediaVideo[], doors: Door
     assignedVideoIds.add(video.id)
   }
 
+  // المرحلة الرابعة: الاستعانة بالتصنيف المجهز مسبقاً في الفهرس لأي فيديو له باب وفصل
+  for (const video of videos) {
+    if (assignedVideoIds.has(video.id)) continue
+    if (!video.doorNumber || !video.chapterNumber) continue
+    const door = doorByNumber.get(video.doorNumber)
+    const unit = door?.units.find((item) => item.number === video.chapterNumber)
+    if (!door || !unit) continue
+    appendUnitVideo(map, video, door, unit)
+    assignedVideoIds.add(video.id)
+  }
+
   return map
 }
 

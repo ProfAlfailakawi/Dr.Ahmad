@@ -402,6 +402,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                     <a href={book.pdf} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-3 rounded-full border border-hair px-5 text-[.78rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
                       <span>عرض عيّنة الكتاب</span>
                       <span className="text-[.72rem] text-soft">PDF</span>
+                      <span className="sr-only">ملف PDF المعتمد متاح كما كان</span>
                     </a>
                   )}
                 </div>

@@ -1,3 +1,5 @@
+import fallbackCatalogData from '../data/encyclopedia-videos-fallback.json'
+
 export type EncyclopediaVideo = {
   id: string
   title: string
@@ -76,7 +78,22 @@ export async function getEncyclopediaVideoCatalog(signal?: AbortSignal): Promise
       })
       .catch((error) => {
         catalogPromise = null
-        throw error
+        if (error?.name === 'AbortError') throw error
+        const fallback = fallbackCatalogData as Partial<EncyclopediaVideoCatalog>
+        const videos = Array.isArray(fallback.videos) ? (fallback.videos as EncyclopediaVideo[]).filter(validVideo) : []
+        return {
+          channel: {
+            handle: String(fallback.channel?.handle || 'موسوعةتكنولوجياالتعليم'),
+            url: String(fallback.channel?.url || 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'),
+            id: String(fallback.channel?.id || ''),
+          },
+          count: videos.length,
+          mappedCount: Number(fallback.mappedCount) || videos.filter((video) => Number(video.doorNumber) > 0 && Number(video.chapterNumber) > 0).length,
+          fetchedAt: String(fallback.fetchedAt || ''),
+          source: 'static-fallback',
+          stale: true,
+          videos,
+        }
       })
   }
   return catalogPromise

@@ -295,7 +295,9 @@ function DoorRow({
         <span className="font-display text-[.72rem] font-semibold text-accent">{door.number}</span>
         <span className="min-w-0">
           <strong className="block font-display text-[1.12rem] font-semibold leading-[1.55] text-ink md:text-[1.28rem]">{door.title}</strong>
-          <span className="mt-1 block text-[.69rem] leading-relaxed text-soft">{formatArabicNumber(door.units.length)} فصول · {formatArabicNumber(doorVideos.length)} فيديو</span>
+          <span className="mt-1 block text-[.69rem] leading-relaxed text-soft">
+            {formatArabicNumber(door.units.length)} فصول · {doorVideos.length > 0 ? `${formatArabicNumber(doorVideos.length)} فيديو` : 'عروض ومواد تدريسية'}
+          </span>
         </span>
         <span aria-hidden className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
       </summary>

@@ -11,13 +11,149 @@ const YOUTUBE_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (
 const CACHE_TTL = 6 * 60 * 60 * 1000
 const MAX_PAGES = 24
 const MAX_VIDEOS = 500
+const MAX_MAPPED_PLAYLISTS = 36
+const PLAYLIST_CONCURRENCY = 12
 
 let memoryCache = { expiresAt: 0, payload: null, promise: null }
+
+let catalogStructure = { doors: [] }
+try {
+  catalogStructure = JSON.parse(readFileSync(new URL('../data/encyclopedia-structure.json', import.meta.url), 'utf8'))
+} catch {
+  catalogStructure = { doors: [] }
+}
+
+const CATALOG_ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
+const CATALOG_PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹'
+const CATALOG_NUMBER_WORDS = {
+  اول: 1, الاول: 1, واحد: 1, واحده: 1,
+  ثاني: 2, الثاني: 2, اثنان: 2, اثنين: 2,
+  ثالث: 3, الثالث: 3, ثلاثه: 3,
+  رابع: 4, الرابع: 4, اربعه: 4,
+  خامس: 5, الخامس: 5, خمسه: 5,
+  سادس: 6, السادس: 6, سته: 6,
+  سابع: 7, السابع: 7, سبعه: 7,
+  ثامن: 8, الثامن: 8, ثمانيه: 8,
+  تاسع: 9, التاسع: 9, تسعه: 9,
+  عاشر: 10, العاشر: 10, عشره: 10,
+}
+
+function normalizeCatalogText(value = '') {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[ً-ْٰـ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/[٠-٩]/g, (character) => String(CATALOG_ARABIC_DIGITS.indexOf(character)))
+    .replace(/[۰-۹]/g, (character) => String(CATALOG_PERSIAN_DIGITS.indexOf(character)))
+    .replace(/[^\p{L}\p{N}\s._/|:-]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function catalogNumericToken(value = '') {
+  const normalized = normalizeCatalogText(value).replace(/[^\p{L}\p{N}]/gu, '')
+  if (/^\d{1,3}$/.test(normalized)) return Number(normalized)
+  return CATALOG_NUMBER_WORDS[normalized] || null
+}
+
+function catalogNumberAfterLabel(value, labels) {
+  const words = normalizeCatalogText(value).replace(/[._/|:-]/g, ' ').split(' ').filter(Boolean)
+  const labelSet = new Set(labels.map(normalizeCatalogText))
+  for (let index = 0; index < words.length; index += 1) {
+    if (!labelSet.has(words[index])) continue
+    for (let next = index + 1; next <= Math.min(words.length - 1, index + 3); next += 1) {
+      if (words[next] === 'رقم' || words[next] === 'الرقم' || words[next] === 'no') continue
+      const parsed = catalogNumericToken(words[next])
+      if (parsed !== null) return parsed
+      break
+    }
+  }
+  return null
+}
+
+function compactCatalogSequence(value = '') {
+  const normalized = normalizeCatalogText(value)
+  if (/\b(?:19|20)\d{2}\b/.test(normalized)) return null
+  const labeled = normalized.match(/(?:^|\s)(?:ب|باب)\s*(\d{1,2})\s*(?:[-_/|.:]|\s)+(?:ف|فصل)\s*(\d{1,2})(?:\s*(?:[-_/|.:]|\s)+(?:فيديو|مقطع|v)?\s*(\d{1,3}))?/u)
+  if (labeled) return { doorNumber: Number(labeled[1]), chapterNumber: Number(labeled[2]), videoNumber: labeled[3] ? Number(labeled[3]) : null }
+  const compact = normalized.match(/(?:^|\s|[[(])([1-5])\s*[-_/|.:]\s*(\d{1,2})(?:\s*[-_/|.:]\s*(\d{1,3}))?(?:\s|$|[\])])/u)
+  if (!compact) return null
+  return { doorNumber: Number(compact[1]), chapterNumber: Number(compact[2]), videoNumber: compact[3] ? Number(compact[3]) : null }
+}
+
+function extractCatalogSequence(title = '') {
+  const sequence = {
+    doorNumber: catalogNumberAfterLabel(title, ['الباب', 'باب', 'door', 'ب']),
+    chapterNumber: catalogNumberAfterLabel(title, ['الفصل', 'فصل', 'chapter', 'ف']),
+    videoNumber: catalogNumberAfterLabel(title, ['فيديو', 'الفيديو', 'المقطع', 'مقطع', 'video', 'v']),
+  }
+  const compact = compactCatalogSequence(title)
+  return {
+    doorNumber: sequence.doorNumber || compact?.doorNumber || null,
+    chapterNumber: sequence.chapterNumber || compact?.chapterNumber || null,
+    videoNumber: sequence.videoNumber || compact?.videoNumber || null,
+  }
+}
+
+const CATALOG_GENERIC_TERMS = new Set([
+  'التعليم', 'التعلم', 'التدريس', 'التكنولوجيا', 'تقنيه', 'تكنولوجيا التعليم',
+  'موسوعه', 'شرح', 'فيديو', 'مقطع', 'الطالب', 'المعلم', 'مفهوم', 'استخدام',
+].map(normalizeCatalogText))
+
+function validCatalogLocation(doorNumber, chapterNumber) {
+  const door = catalogStructure.doors?.find((item) => Number(item.doorNumber) === Number(doorNumber))
+  const unit = door?.units?.find((item) => Number(item.number) === Number(chapterNumber))
+  return door && unit ? { door, unit } : null
+}
+
+function resolveCatalogLocation(value = '', forcedDoorNumber = 0) {
+  const sequence = extractCatalogSequence(value)
+  const explicitDoor = forcedDoorNumber || sequence.doorNumber || 0
+  if (explicitDoor && sequence.chapterNumber) {
+    const valid = validCatalogLocation(explicitDoor, sequence.chapterNumber)
+    if (valid) return { doorNumber: Number(valid.door.doorNumber), chapterNumber: Number(valid.unit.number), source: 'sequence', confidence: 'exact', videoNumber: sequence.videoNumber }
+  }
+
+  const haystack = normalizeCatalogText(value)
+  const candidates = []
+  for (const door of catalogStructure.doors || []) {
+    if (explicitDoor && Number(door.doorNumber) !== Number(explicitDoor)) continue
+    const doorTitle = normalizeCatalogText(door.title)
+    for (const unit of door.units || []) {
+      const unitTitle = normalizeCatalogText(unit.title)
+      const exactTitle = Boolean(unitTitle && haystack.includes(unitTitle))
+      const matchedKeywords = (unit.keywords || [])
+        .map(normalizeCatalogText)
+        .filter((keyword) => keyword.length >= 4 && !CATALOG_GENERIC_TERMS.has(keyword) && haystack.includes(keyword))
+      let score = exactTitle ? 100 : 0
+      if (doorTitle && haystack.includes(doorTitle)) score += 14
+      for (const keyword of matchedKeywords) score += keyword.includes(' ') ? 16 : Math.min(12, 4 + Math.floor(keyword.length / 2))
+      if (score > 0) candidates.push({ door, unit, score, exactTitle })
+    }
+  }
+  candidates.sort((left, right) => right.score - left.score || Number(left.door.doorNumber) - Number(right.door.doorNumber) || Number(left.unit.number) - Number(right.unit.number))
+  const best = candidates[0]
+  const second = candidates[1]
+  if (!best) return null
+  const strong = best.exactTitle || (best.score >= 20 && (!second || best.score - second.score >= 8))
+  if (!strong) return null
+  return {
+    doorNumber: Number(best.door.doorNumber),
+    chapterNumber: Number(best.unit.number),
+    source: best.exactTitle ? 'topic-title' : 'topic-keywords',
+    confidence: best.exactTitle ? 'exact' : 'strong',
+    videoNumber: sequence.videoNumber,
+  }
+}
 
 const plainText = (node) => {
   if (!node) return ''
   if (typeof node === 'string') return node
   if (typeof node.simpleText === 'string') return node.simpleText
+  if (typeof node.content === 'string') return node.content
   if (Array.isArray(node.runs)) return node.runs.map((run) => run?.text || '').join('')
   if (node.accessibility?.accessibilityData?.label) return String(node.accessibility.accessibilityData.label)
   return ''
@@ -220,9 +356,9 @@ export function parseYouTubeFeed(xml) {
   }).filter(Boolean)
 }
 
-async function fetchChannelBootstrap(fetchImpl) {
+async function fetchPageBootstrap(fetchImpl, pageUrls) {
   let lastError = null
-  for (const pageUrl of CHANNEL_PAGE_URLS) {
+  for (const pageUrl of pageUrls) {
     try {
       const response = await fetchWithDeadline(fetchImpl, encodeURI(pageUrl), {
         headers: {
@@ -240,7 +376,11 @@ async function fetchChannelBootstrap(fetchImpl) {
       lastError = error
     }
   }
-  throw lastError || new Error('YouTube channel page is unavailable')
+  throw lastError || new Error('YouTube page is unavailable')
+}
+
+async function fetchChannelBootstrap(fetchImpl) {
+  return fetchPageBootstrap(fetchImpl, CHANNEL_PAGE_URLS)
 }
 
 async function fetchYouTubeFeed(fetchImpl, channelId) {
@@ -253,6 +393,118 @@ async function fetchYouTubeFeed(fetchImpl, channelId) {
   } catch {
     return []
   }
+}
+
+function playlistTitle(renderer) {
+  return bounded(
+    plainText(renderer?.title)
+      || plainText(renderer?.metadata?.lockupMetadataViewModel?.title)
+      || plainText(renderer?.metadata?.lockupMetadataViewModel?.metadata?.title),
+    500,
+  )
+}
+
+export function parseYouTubePlaylists(payload) {
+  const playlists = []
+  const seenObjects = new Set()
+  const visit = (value) => {
+    if (!value || typeof value !== 'object' || seenObjects.has(value)) return
+    seenObjects.add(value)
+    const renderers = [value.playlistRenderer, value.gridPlaylistRenderer].filter(Boolean)
+    for (const renderer of renderers) {
+      const id = bounded(renderer.playlistId, 100)
+      const title = playlistTitle(renderer)
+      if (id && title) playlists.push({ id, title })
+    }
+    if (value.lockupViewModel) {
+      const renderer = value.lockupViewModel
+      const id = bounded(renderer.contentId, 100)
+      const title = playlistTitle(renderer)
+      if (id && title && /^(?:PL|UU|OLAK5uy_)/i.test(id)) playlists.push({ id, title })
+    }
+    for (const child of Object.values(value)) visit(child)
+  }
+  visit(payload)
+  const unique = new Map()
+  for (const playlist of playlists) if (!unique.has(playlist.id)) unique.set(playlist.id, playlist)
+  return [...unique.values()]
+}
+
+async function fetchPlaylistAssignments(fetchImpl) {
+  const playlistUrls = [
+    `https://www.youtube.com/@${CHANNEL_HANDLE}/playlists`,
+    `https://www.youtube.com/@${CHANNEL_HANDLE}/playlists?view=1&sort=dd&shelf_id=0`,
+  ]
+  let bootstrap
+  try {
+    bootstrap = (await fetchPageBootstrap(fetchImpl, playlistUrls)).bootstrap
+  } catch {
+    return { assignments: new Map(), videos: [] }
+  }
+  const playlists = parseYouTubePlaylists(bootstrap.initialData)
+    .map((playlist) => ({ playlist, location: resolveCatalogLocation(playlist.title) }))
+    .filter((item) => item.location)
+    .slice(0, MAX_MAPPED_PLAYLISTS)
+  if (!playlists.length) return { assignments: new Map(), videos: [] }
+
+  const assignments = new Map()
+  const videos = new Map()
+  const ambiguous = new Set()
+  for (let offset = 0; offset < playlists.length; offset += PLAYLIST_CONCURRENCY) {
+    const batch = playlists.slice(offset, offset + PLAYLIST_CONCURRENCY)
+    const pages = await Promise.all(batch.map(async ({ playlist, location }) => {
+      try {
+        const page = await fetchPageBootstrap(fetchImpl, [`https://www.youtube.com/playlist?list=${encodeURIComponent(playlist.id)}`])
+        return { playlist, location, items: parseYouTubeVideos(page.bootstrap.initialData) }
+      } catch {
+        return { playlist, location, items: [] }
+      }
+    }))
+    for (const { playlist, location, items } of pages) {
+      for (const item of items) {
+        videos.set(item.id, item)
+        const directItemLocation = resolveCatalogLocation(`${item.title} ${item.description}`, location.doorNumber)
+        const itemLocation = directItemLocation || location
+        if (!itemLocation?.chapterNumber) continue
+        const next = {
+          doorNumber: itemLocation.doorNumber,
+          chapterNumber: itemLocation.chapterNumber,
+          videoNumber: itemLocation.videoNumber || null,
+          mappingSource: directItemLocation?.source === 'sequence' ? 'playlist+title' : 'playlist',
+          mappingConfidence: itemLocation.confidence || 'exact',
+          playlistId: playlist.id,
+          playlistTitle: playlist.title,
+        }
+        const previous = assignments.get(item.id)
+        if (previous && (previous.doorNumber !== next.doorNumber || previous.chapterNumber !== next.chapterNumber)) {
+          ambiguous.add(item.id)
+          assignments.delete(item.id)
+        } else if (!ambiguous.has(item.id)) {
+          assignments.set(item.id, next)
+        }
+      }
+    }
+  }
+  return { assignments, videos: [...videos.values()] }
+}
+
+function applyCatalogAssignments(videos, playlistAssignments = new Map()) {
+  let mappedCount = 0
+  const mapped = videos.map((video) => {
+    const playlist = playlistAssignments.get(video.id)
+    const direct = resolveCatalogLocation(`${video.title} ${video.description}`)
+    const assignment = playlist || (direct ? {
+      doorNumber: direct.doorNumber,
+      chapterNumber: direct.chapterNumber,
+      videoNumber: direct.videoNumber || null,
+      mappingSource: direct.source === 'sequence' ? 'title-sequence' : 'title-topic',
+      mappingConfidence: direct.confidence,
+    } : null)
+    if (!assignment) return video
+    mappedCount += 1
+    return { ...video, ...assignment }
+  })
+  return { videos: mapped, mappedCount }
 }
 
 export async function fetchEncyclopediaVideoCatalog({ fetchImpl = globalThis.fetch } = {}) {
@@ -300,14 +552,22 @@ export async function fetchEncyclopediaVideoCatalog({ fetchImpl = globalThis.fet
 
   if (!items.size && bootstrap.channelId) mergeItems(items, await fetchYouTubeFeed(fetchImpl, bootstrap.channelId))
 
-  const videos = [...items.values()].slice(0, MAX_VIDEOS).map((item, index) => ({ ...item, position: index + 1 }))
-  if (!videos.length) throw new Error('No videos were found on the channel')
+  let baseVideos = [...items.values()].slice(0, MAX_VIDEOS).map((item, index) => ({ ...item, position: index + 1 }))
+  if (!baseVideos.length) throw new Error('No videos were found on the channel')
+  let assigned = applyCatalogAssignments(baseVideos)
+  if (assigned.mappedCount < baseVideos.length) {
+    const playlistCatalog = await fetchPlaylistAssignments(fetchImpl).catch(() => ({ assignments: new Map(), videos: [] }))
+    mergeItems(items, playlistCatalog.videos)
+    baseVideos = [...items.values()].slice(0, MAX_VIDEOS).map((item, index) => ({ ...item, position: index + 1 }))
+    assigned = applyCatalogAssignments(baseVideos, playlistCatalog.assignments)
+  }
   return {
     channel: { handle: CHANNEL_HANDLE, url: CHANNEL_URL, id: bootstrap.channelId || '' },
-    count: videos.length,
+    count: assigned.videos.length,
+    mappedCount: assigned.mappedCount,
     fetchedAt: new Date().toISOString(),
-    source: items.size > 15 ? 'youtube-channel' : 'youtube-channel-or-feed',
-    videos,
+    source: items.size > 15 ? 'youtube-channel+playlists' : 'youtube-channel-or-feed+playlists',
+    videos: assigned.videos,
   }
 }
 
@@ -356,16 +616,11 @@ const momentCache = new Map()
 let transcriptWarmup = { running: false, total: 0, completed: 0, available: 0, videoIds: [], promise: null }
 
 let teachingMap = {}
-let encyclopediaStructure = { doors: [] }
+let encyclopediaStructure = catalogStructure
 try {
   teachingMap = JSON.parse(readFileSync(new URL('../data/encyclopedia-teaching-map.json', import.meta.url), 'utf8'))
 } catch {
   teachingMap = {}
-}
-try {
-  encyclopediaStructure = JSON.parse(readFileSync(new URL('../data/encyclopedia-structure.json', import.meta.url), 'utf8'))
-} catch {
-  encyclopediaStructure = { doors: [] }
 }
 
 const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
@@ -429,11 +684,7 @@ function numberAfterLabel(value, labels) {
 }
 
 export function extractServerVideoSequence(title = '') {
-  return {
-    doorNumber: numberAfterLabel(title, ['الباب', 'door']),
-    chapterNumber: numberAfterLabel(title, ['الفصل', 'chapter']),
-    videoNumber: numberAfterLabel(title, ['فيديو', 'الفيديو', 'المقطع', 'مقطع', 'video']),
-  }
+  return extractCatalogSequence(title)
 }
 
 export function extractYouTubePlayerResponse(html = '') {

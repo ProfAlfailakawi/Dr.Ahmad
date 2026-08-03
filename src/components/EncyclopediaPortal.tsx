@@ -100,7 +100,7 @@ function relatedVideoForConcept(concept: BookKnowledgeConcept, videos: IndexedEn
 function DoorRow({
   door,
   concept,
-  defaultOpen,
+  initiallyOpen,
   videoCount,
   catalogLoading,
   onOpenTopic,
@@ -108,7 +108,7 @@ function DoorRow({
 }: {
   door: Door
   concept: BookKnowledgeConcept | null
-  defaultOpen: boolean
+  initiallyOpen: boolean
   videoCount: number
   catalogLoading: boolean
   onOpenTopic: (topic: string, door: Door) => void
@@ -120,9 +120,14 @@ function DoorRow({
     : videoCount > 0
       ? `${formatArabicNumber(videoCount)} مقطعاً مرتبطاً`
       : 'مسار مرئي'
+  const detailsRef = useRef<HTMLDetailsElement>(null)
+
+  useEffect(() => {
+    if (initiallyOpen && detailsRef.current) detailsRef.current.open = true
+  }, [initiallyOpen])
 
   return (
-    <details id={door.id} className="group scroll-mt-28 border-b border-hair last:border-b-0" defaultOpen={defaultOpen}>
+    <details ref={detailsRef} id={door.id} className="group scroll-mt-28 border-b border-hair last:border-b-0">
       <summary className="grid cursor-pointer list-none grid-cols-[2.5rem_minmax(0,1fr)_auto] items-start gap-4 py-6 marker:hidden [&::-webkit-details-marker]:hidden md:grid-cols-[3rem_minmax(0,1fr)_auto] md:gap-6 md:py-8">
         <span className="font-display text-[.72rem] font-semibold text-accent">{door.number}</span>
         <span className="min-w-0">
@@ -351,7 +356,7 @@ export function EncyclopediaPortal({ book, articles, papers }: { book: BookRecor
       <section id="encyclopedia-map" className="scroll-mt-24 border-b border-hair px-6 py-14 md:px-11 md:py-20" aria-labelledby="encyclopedia-map-title">
         <div className="mx-auto max-w-shell">
           <FadeUp><div className="max-w-3xl"><span className="text-[.7rem] font-semibold text-accent">خريطة الموسوعة</span><h2 id="encyclopedia-map-title" className="mt-2 font-display text-[clamp(1.6rem,3.4vw,2.45rem)] font-semibold leading-[1.4] text-ink">أربعة أبواب، وكل باب يفتح النص والفيديو والعرض معاً.</h2></div></FadeUp>
-          <div className="mt-8 border-y border-hair">{DOORS.map((door, index) => <DoorRow key={door.id} door={door} concept={conceptForDoor(door, concepts)} defaultOpen={index === 0} videoCount={doorCounts.get(door.id) || 0} catalogLoading={catalogLoading} onOpenTopic={openVideoTopic} onOpenPath={openVideoPath} />)}</div>
+          <div className="mt-8 border-y border-hair">{DOORS.map((door, index) => <DoorRow key={door.id} door={door} concept={conceptForDoor(door, concepts)} initiallyOpen={index === 0} videoCount={doorCounts.get(door.id) || 0} catalogLoading={catalogLoading} onOpenTopic={openVideoTopic} onOpenPath={openVideoPath} />)}</div>
         </div>
       </section>
 

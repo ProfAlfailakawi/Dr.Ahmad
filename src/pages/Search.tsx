@@ -539,14 +539,24 @@ export default function Search() {
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="اكتب بطريقتك: سؤال، موقف، فكرة، أو حتى عبارة غير مكتملة"
+                  placeholder="اكتب بطريقتك: سؤال، موقف، فكرة"
                   enterKeyHint="search"
                   aria-label="بحث في الأرشيف كله"
-                  className="w-full rounded-none border-0 border-b border-hair bg-transparent py-5 pe-4 ps-14 font-display text-[clamp(1.2rem,4.3vw,2.5rem)] font-semibold leading-[1.5] text-ink outline-none transition-colors placeholder:text-soft/[.45] focus:border-accent"
+                  className="w-full rounded-none border-0 border-b border-hair bg-transparent py-4 pe-16 ps-3 font-display text-[clamp(.85rem,2.8vw,2.2rem)] font-semibold leading-[1.5] text-ink outline-none transition-colors placeholder:text-soft/[.45] focus:border-accent sm:py-5 sm:pe-24 sm:ps-4 sm:text-[clamp(1.1rem,3.8vw,2.5rem)]"
                 />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    aria-label="مسح البحث"
+                    title="مسح البحث"
+                    className="absolute left-11 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full text-soft transition-colors hover:text-accent"
+                  >
+                    <SocialIcon name="Close" size={14} />
+                  </button>
+                )}
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-accent"><SocialIcon name="Search" size={19} /></span>
               </div>
-              <p className="mt-3 text-[.72rem] leading-relaxed text-soft">بحث بالمعنى لا بالنص: يفهم المرادفات والصياغة اليومية والأخطاء البسيطة، ثم يرتب النتائج من الأرشيف كله.</p>
 
               <div className="mt-7 border-t border-hair pt-5">
                 {/* تبويبات الأنواع مع عداداتها — قلب المحرك الموحد */}
@@ -669,7 +679,7 @@ export default function Search() {
               <div className="min-w-0">
                 <h2 id="ask-book-gateway-title" className="break-words font-display text-[clamp(1.35rem,2.8vw,2rem)] font-semibold leading-[1.45] text-ink">بحث ذكي داخل كتاب من كتب الدكتور.</h2>
 
-                <div dir="rtl" className="ask-book-rail rail mt-5 flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden" aria-label="اختيار الكتاب">
+                <div dir="rtl" className="ask-book-rail rail mt-5 flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [touch-action:pan-x_pan-y] [&::-webkit-scrollbar]:hidden" aria-label="اختيار الكتاب">
                   {books.map((book) => (
                     <button
                       key={book.slug}

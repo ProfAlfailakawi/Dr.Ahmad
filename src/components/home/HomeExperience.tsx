@@ -197,21 +197,7 @@ function WeeklyPollCompact() {
   )
 }
 
-function VisitorPathSheet({ open, close }: { open: boolean; close: () => void }) {
-  const [persona, setPersona] = useState<Persona | null>(() => { try { return localStorage.getItem('visitor:persona') as Persona | null } catch { return null } })
-  const choose = (value: Persona) => { setPersona(value); try { localStorage.setItem('visitor:persona', value) } catch { /* noop */ } }
-  const active = persona ? PERSONAS.find((item) => item.key === persona) : null
-  useEffect(() => {
-    if (!open) return
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [close, open])
-  return <AnimatePresence>{open && <motion.div className="fixed inset-0 z-[260] flex items-end justify-center bg-ink/[.35] p-3 backdrop-blur-sm md:items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={close}><motion.div role="dialog" aria-modal="true" aria-label="اختر مسارك" onMouseDown={(event) => event.stopPropagation()} className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-hair bg-canvas p-6 shadow-2xl md:p-9" initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }} transition={{ duration: .35, ease: EASE }}><div className="flex items-start justify-between gap-4"><div><p className="text-[.76rem] font-semibold text-accent">مسارك الشخصي</p><h2 className="mt-1 font-display text-2xl font-semibold text-ink">لا أغيّر الموقع عليك؛ أختصر لك البداية فقط.</h2></div><button onClick={close} aria-label="إغلاق" title="إغلاق" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft"><SocialIcon name="Close" size={15} /></button></div>{active ? <div className="mt-7 rounded-2xl border border-accent/30 bg-wash p-6"><p className="text-[.76rem] font-semibold text-accent">بما أنك {active.label}</p><h3 className="mt-2 font-display text-xl font-semibold text-ink">{active.title}</h3><p className="mt-2 text-[.9rem] leading-relaxed text-soft">{active.desc}</p><div className="mt-5 flex flex-wrap gap-2">{active.links.map((link) => <Link key={link.to} to={link.to} onClick={close} className="rounded-full bg-accent px-5 py-2.5 text-[.84rem] font-semibold text-white">{link.label} ←</Link>)}</div><button onClick={() => setPersona(null)} className="mt-5 text-[.78rem] text-soft hover:text-accent">تغيير المسار</button></div> : <div className="mt-7 grid gap-3 md:grid-cols-3">{PERSONAS.map((item) => <button key={item.key} onClick={() => choose(item.key)} className="rounded-2xl border border-hair bg-wash p-5 text-right transition-colors hover:border-accent"><span className="font-display text-[1rem] font-semibold text-ink">{item.label}</span><span className="mt-2 block text-[.82rem] leading-relaxed text-soft">{item.desc}</span></button>)}</div>}</motion.div></motion.div>}</AnimatePresence>
-}
-
 export function SelectedWorksStation({ articles, books, papers, media }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
-  const [pathOpen, setPathOpen] = useState(false)
   const book = books[0], article = articles[0], paper = papers[0], appearance = media[0]
   const deep = [
     { to: '/atlas', label: 'سماء المقالات', note: 'الأرشيف كخريطة زمنية' },
@@ -233,13 +219,11 @@ export function SelectedWorksStation({ articles, books, papers, media }: { artic
           <div className="grid gap-3 sm:grid-cols-2">
             {deep.map((item, index) => <FadeUp key={item.to} delay={Math.min(index * .04, .16)}><Link to={item.to} className="group block rounded-2xl border border-hair bg-canvas p-5 transition-colors hover:border-accent"><span className="font-display text-[1rem] font-semibold text-ink group-hover:text-accent">{item.label}</span><span className="mt-1 block text-[.78rem] text-soft">{item.note}</span></Link></FadeUp>)}
           </div>
-          <div className="grid gap-3">
-            <button onClick={() => setPathOpen(true)} className="rounded-2xl border border-accent/[.35] bg-accent/[.045] p-5 text-right transition-colors hover:border-accent"><span className="text-[.74rem] font-semibold text-accent">ابدأ وفق اهتمامك</span><span className="mt-1 block font-display text-[1.05rem] font-semibold text-ink">مسار شخصي اختياري، بلا تعطيل للزيارة.</span></button>
+          <div className="flex flex-col justify-center">
             <WeeklyPollCompact />
           </div>
         </div>
       </div>
-      <VisitorPathSheet open={pathOpen} close={() => setPathOpen(false)} />
     </section>
   )
 }

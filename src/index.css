@@ -49,6 +49,12 @@ html {
   transition: background-color 0.5s var(--E);
 }
 
+/* Prevent image drag/callout on touch devices so vertical scrolling remains fluid */
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
 html, body, #root, main {
   box-sizing: border-box;
   width: 100%;
@@ -3602,7 +3608,7 @@ body.selection-active .floating-actions {
 .content-search [role="tablist"].rail {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
-  touch-action: pan-x pinch-zoom;
+  touch-action: pan-x pan-y pinch-zoom;
   scroll-behavior: smooth;
   scrollbar-width: none;
 }
@@ -3748,7 +3754,10 @@ body.encyclopedia-sheet-open {
 /* الخلفية الشفافة مع backdrop-filter داخل sticky كانت تعيد تركيب الطبقة في Safari
    عند كل حركة رأسية، فتظهر رجفة شريط المنهج/التوثيق/المصادر. */
 .research-section-navigator {
-  isolation: isolate;
+  position: sticky;
+  top: calc(4.75rem + env(safe-area-inset-top, 0px));
+  z-index: 35;
+  background-color: rgb(var(--c-canvas));
   box-shadow: 0 8px 24px -22px rgb(var(--c-ink) / .35);
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
@@ -3770,7 +3779,7 @@ body.encyclopedia-sheet-open {
     overscroll-behavior-inline: contain;
     scroll-behavior: auto !important;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-x pinch-zoom;
+    touch-action: pan-x pan-y pinch-zoom;
   }
 
   /* snap الإجباري كان يعيد موضع السكة والصفحة معاً في Safari. */
@@ -3787,10 +3796,7 @@ body.encyclopedia-sheet-open {
   }
 
   .research-section-navigator {
-    top: calc(4.25rem + env(safe-area-inset-top));
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    contain: paint;
+    top: calc(4.25rem + env(safe-area-inset-top, 0px));
   }
 
   #encyclopedia-search {
@@ -3829,16 +3835,6 @@ html, body, #root { max-inline-size: 100%; }
     scroll-snap-type: none !important;
     overscroll-behavior-x: contain;
     overscroll-behavior-y: auto;
-  }
-
-  .research-section-navigator {
-    position: sticky;
-    top: calc(4rem + env(safe-area-inset-top));
-    z-index: 35;
-    background: rgb(var(--c-canvas));
-    transform: none;
-    contain: layout paint;
-    will-change: auto;
   }
 
   #encyclopedia-search { overflow: hidden; }

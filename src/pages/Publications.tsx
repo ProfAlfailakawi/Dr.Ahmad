@@ -42,7 +42,8 @@ export default function Publications() {
       <section className="overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 sm:px-6 md:px-11 md:py-24">
         <div id="books-grid" className="mobile-card-rail scroll-mt-28 mx-auto grid w-full max-w-shell min-w-0 grid-cols-2 gap-x-4 gap-y-8 sm:gap-8 lg:gap-10">
           {paged.pageItems.map((b, i) => {
-            const featured = b.slug === 'encyclopedia'
+            const right = b
+            const featured = right.slug === 'encyclopedia'
             return (
               <motion.div
                 key={b.slug}
@@ -50,7 +51,7 @@ export default function Publications() {
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.7, delay: Math.min(i * 0.06, 0.35), ease: EASE }}
-                className={featured ? 'group col-span-2 min-w-0' : 'group min-w-0'}
+                className={featured ? 'group col-span-2 min-w-0' : 'group col-span-1 min-w-0'}
                 data-featured-encyclopedia={featured ? 'true' : undefined}
               >
                 {featured ? (
@@ -65,11 +66,7 @@ export default function Publications() {
                         </Link>
                         <p className="mt-3 text-[.82rem] leading-relaxed text-soft sm:text-[.88rem]">الموسوعة المرئية والكتاب ومواد التدريس في بوابة معرفية واحدة، مع بحث يصل إلى الفصل والصفحة واللحظة الزمنية الموثقة.</p>
                       </div>
-                      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-hair pt-4">
-                        <Link to={`/publications/${b.slug}`} viewTransition className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90">
-                          <span>استعرض الموسوعة</span>
-                          <span aria-hidden="true" className="text-[.9rem]">←</span>
-                        </Link>
+                      <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-hair pt-4">
                         <ClarifiedIconAction id="book-search-featured" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={15} /></Link></ClarifiedIconAction>
                       </div>
                     </div>

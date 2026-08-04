@@ -3755,10 +3755,14 @@ body.encyclopedia-sheet-open {
    عند كل حركة رأسية، فتظهر رجفة شريط المنهج/التوثيق/المصادر. */
 .research-section-navigator {
   position: sticky;
-  top: calc(4.75rem + env(safe-area-inset-top, 0px));
+  top: calc(4rem + env(safe-area-inset-top, 0px));
   z-index: 35;
   background-color: rgb(var(--c-canvas));
   box-shadow: 0 8px 24px -22px rgb(var(--c-ink) / .35);
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+  contain: layout style;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
@@ -3796,7 +3800,7 @@ body.encyclopedia-sheet-open {
   }
 
   .research-section-navigator {
-    top: calc(4.25rem + env(safe-area-inset-top, 0px));
+    top: calc(4rem + env(safe-area-inset-top, 0px));
   }
 
   #encyclopedia-search {

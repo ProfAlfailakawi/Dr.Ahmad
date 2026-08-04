@@ -26,7 +26,7 @@ const entrances = [
     id: 'question',
     eyebrow: 'ابدأ من فضولك لا من التصنيف',
     title: 'اسأل الأرشيف',
-    desc: 'اطرح سؤالًا فكريًا، ثم انتقل إلى المواد التي تناقشه من زوايا متعددة.',
+    desc: 'اطرح سؤالاً فكريًا، ثم انتقل إلى المواد التي تناقشه من زوايا متعددة.',
     icon: 'Sparkles',
     path: '/ask',
   },
@@ -86,13 +86,13 @@ export default function FirstVisitOnboarding() {
               <div className="max-w-[560px]">
                 <span className="inline-flex items-center gap-2 text-[.7rem] font-extrabold tracking-wide text-accent">
                   <span className="h-1.5 w-8 rounded-full bg-accent" />
-                  أهلًا بك في الأرشيف
+                  أهلاً بك في الأرشيف
                 </span>
                 <h2 id="archive-welcome-title" className="mt-4 max-w-[520px] font-display text-[clamp(1.75rem,5vw,3rem)] font-extrabold leading-[1.35] text-ink">
                   لا تبدأ من القائمة.<br />ابدأ من الفكرة.
                 </h2>
                 <p className="mt-3 max-w-[560px] text-[.9rem] leading-[1.9] text-soft sm:text-[1rem]">
-                  ثلاث طرق ذكية تقودك إلى المعرفة الأقرب لما تبحث عنه، من دون أن تعرف مسبقًا أين توجد.
+                  ثلاث طرق ذكية تقودك إلى المعرفة الأقرب لما تبحث عنه، من دون أن تعرف مسبقاً أين توجد.
                 </p>
               </div>
 

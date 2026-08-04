@@ -325,23 +325,15 @@ ok(instructions.includes('مشروعاً') && instructions.includes('ممدوح�
 }
 
 
-console.log('\nFirst-visit onboarding + Serenity reading surfaces')
+console.log('\nDirect homepage + Serenity reading surfaces')
 {
-  const onboarding = read('src/components/FirstVisitOnboarding.tsx')
   const app = read('src/App.tsx')
   const homePage = read('src/pages/Home.tsx')
   const articleDetail = read('src/pages/ArticleDetail.tsx')
   const stylesheet = read('src/index.css')
-  ok(app.includes('function ConditionalOnboarding()')
-    && app.includes('<ConditionalOnboarding />')
-    && app.includes("location.pathname === '/admin'")
-    && !homePage.includes('<FirstVisitOnboarding />')
-    && onboarding.includes("site:first-visit-portal:2026-08-03")
-    && onboarding.includes('ادخل الموقع')
-    && onboarding.includes('ابدأ من الخريطة الفكرية')
-    && onboarding.includes("to: '/articles'")
-    && onboarding.includes("to: '/publications'")
-    && onboarding.includes("to: '/research'"), 'بوابة الدخول الإبداعية تغطي الشاشة فوراً مرة واحدة، وتمنع الصفحة الرئيسية من الظهور كواجهة مؤقتة قبل أن يختار الزائر نقطة دخوله')
+  ok(!app.includes('FirstVisitOnboarding')
+    && !app.includes('ConditionalOnboarding')
+    && !homePage.includes('<FirstVisitOnboarding />'), 'الرئيسية الأصلية تظهر مباشرة دائماً بلا بوابة دخول أو زر تخطٍ يربك الزائر')
   ok(articleDetail.includes("reader:serenity-surface")
     && articleDetail.includes("serenitySurface === 'sepia'")
     && articleDetail.includes("serenitySurface === 'dark'")

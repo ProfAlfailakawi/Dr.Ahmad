@@ -5,7 +5,7 @@
     "id": "UCYzZgiVHx-sC6aB5KhTRrZw"
   },
   "count": 169,
-  "mappedCount": 165,
+  "mappedCount": 167,
   "fetchedAt": "2026-08-03T14:02:33.352Z",
   "source": "youtube-uploads-playlist-full",
   "videos": [
@@ -208,7 +208,11 @@
       "publishedText": "",
       "viewCountText": "",
       "description": "باب سبتة ",
-      "position": 12
+      "position": 12,
+      "doorNumber": 2,
+      "chapterNumber": 4,
+      "mappingSource": "manual-approved",
+      "mappingConfidence": "exact"
     },
     {
       "id": "4F8lkXTx_DE",
@@ -2057,7 +2061,11 @@
       "publishedText": "",
       "viewCountText": "",
       "description": "باب سبتة ",
-      "position": 115
+      "position": 115,
+      "doorNumber": 2,
+      "chapterNumber": 2,
+      "mappingSource": "manual-approved",
+      "mappingConfidence": "exact"
     },
     {
       "id": "074w9XwdZHc",

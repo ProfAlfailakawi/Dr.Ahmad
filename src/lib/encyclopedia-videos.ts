@@ -16,7 +16,7 @@ export type EncyclopediaVideo = {
   chapterNumber?: number
   videoNumber?: number | null
   mappingSource?: string
-  mappingConfidence?: 'exact' | 'strong'
+  mappingConfidence?: string
   playlistId?: string
   playlistTitle?: string
 }
@@ -28,7 +28,7 @@ export type EncyclopediaVideoCatalog = {
   fetchedAt: string
   source: string
   stale?: boolean
-  transcriptIndex?: { running: boolean; total: number; completed: number; available: number; catalogued?: number }
+  transcriptIndex?: EncyclopediaTranscriptProgress
   videos: EncyclopediaVideo[]
 }
 
@@ -60,6 +60,14 @@ function normalizedCatalog(payload: Partial<EncyclopediaVideoCatalog>, source?: 
           completed: Number(payload.transcriptIndex.completed) || 0,
           available: Number(payload.transcriptIndex.available) || 0,
           catalogued: Number(payload.transcriptIndex.catalogued) || Number(payload.transcriptIndex.total) || videos.length,
+          transcribed: Number(payload.transcriptIndex.transcribed) || Number(payload.transcriptIndex.available) || 0,
+          needsReview: Number(payload.transcriptIndex.needsReview) || 0,
+          missing: Number(payload.transcriptIndex.missing) || Math.max(0, (Number(payload.transcriptIndex.total) || videos.length) - (Number(payload.transcriptIndex.available) || 0)),
+          sources: {
+            buzz: Number(payload.transcriptIndex.sources?.buzz) || 0,
+            'youtube-captions': Number(payload.transcriptIndex.sources?.['youtube-captions']) || 0,
+            'manual-reviewed': Number(payload.transcriptIndex.sources?.['manual-reviewed']) || 0,
+          },
         }
       : undefined,
     videos,
@@ -156,7 +164,15 @@ export type EncyclopediaTranscriptProgress = {
   total: number
   completed: number
   available: number
+  transcribed: number
+  needsReview: number
+  missing: number
   catalogued?: number
+  sources: {
+    buzz: number
+    'youtube-captions': number
+    'manual-reviewed': number
+  }
 }
 
 export type EncyclopediaVideoMoment = {
@@ -167,8 +183,16 @@ export type EncyclopediaVideoMoment = {
   endSeconds: number
   excerpt: string
   confidence: 'exact' | 'strong' | 'inferred'
-  source: 'captions' | 'transcribed' | 'sequence' | 'title'
+  source: 'buzz' | 'youtube-captions' | 'manual-reviewed' | 'sequence' | 'title'
   score: number
+  hasExactTiming: boolean
+  doorId?: string | null
+  doorNumber?: number | null
+  chapterNumber?: number | null
+  chapterTitle?: string | null
+  mappingSource?: string
+  mappingConfidence?: string
+  reviewStatus?: string
   sequence: {
     doorNumber: number | null
     chapterNumber: number | null
@@ -228,8 +252,16 @@ export async function searchEncyclopediaVideoMoments(
         completed: Number(payload.progress.completed) || 0,
         available: Number(payload.progress.available) || 0,
         catalogued: Number(payload.progress.catalogued) || Number(payload.progress.total) || 0,
+        transcribed: Number(payload.progress.transcribed) || Number(payload.progress.available) || 0,
+        needsReview: Number(payload.progress.needsReview) || 0,
+        missing: Number(payload.progress.missing) || Math.max(0, (Number(payload.progress.total) || 0) - (Number(payload.progress.available) || 0)),
+        sources: {
+          buzz: Number(payload.progress.sources?.buzz) || 0,
+          'youtube-captions': Number(payload.progress.sources?.['youtube-captions']) || 0,
+          'manual-reviewed': Number(payload.progress.sources?.['manual-reviewed']) || 0,
+        },
       }
-    : { running: false, total: 0, completed: 0, available: 0, catalogued: 0 }
+    : { running: false, total: 0, completed: 0, available: 0, transcribed: 0, needsReview: 0, missing: 0, catalogued: 0, sources: { buzz: 0, 'youtube-captions': 0, 'manual-reviewed': 0 } }
   return {
     query: String(payload.query || query),
     moments: Array.isArray(payload.moments) ? payload.moments.filter(validMoment) : [],

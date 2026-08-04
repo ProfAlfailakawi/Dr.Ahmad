@@ -29,6 +29,12 @@ export type EncyclopediaSlideMatch = {
   presentation: string
 }
 
+export type EncyclopediaKnowledgeSearchContext = {
+  transcriptExcerpt?: string
+  doorNumber?: number | null
+  chapterNumber?: number | null
+}
+
 export type EncyclopediaKnowledgeSearchResult = {
   query: string
   passages: EncyclopediaPassageMatch[]
@@ -112,13 +118,14 @@ function locationForPassage(passage: RawPassage) {
   return best?.score > 18 ? best.location : null
 }
 
-function searchPassages(query: string, limit: number): EncyclopediaPassageMatch[] {
+function searchPassages(query: string, limit: number, context: EncyclopediaKnowledgeSearchContext = {}): EncyclopediaPassageMatch[] {
   const plan = buildSmartQueryPlan(query)
+  const transcriptPlan = context.transcriptExcerpt ? buildSmartQueryPlan(context.transcriptExcerpt) : null
   if (!plan.directRoots.length && !plan.semanticRoots.length) return []
 
   const ranked = passages.map((passage) => {
     const location = locationForPassage(passage)
-    const score = scoreSmartFields(plan, [
+    let score = scoreSmartFields(plan, [
       { value: passage.text, weight: 5.8, phraseWeight: 1.7, exactWeight: 1.25 },
       { value: passage.conceptTitle, weight: 4.7, phraseWeight: 1.45, exactWeight: 1.45 },
       { value: passage.section, weight: 3.1, phraseWeight: 1.25 },
@@ -126,6 +133,13 @@ function searchPassages(query: string, limit: number): EncyclopediaPassageMatch[
       { value: (location?.unit.keywords || []).join(' '), weight: 2.7 },
       { value: location?.door.title, weight: 1.25 },
     ])
+    if (transcriptPlan) score += scoreSmartFields(transcriptPlan, [
+      { value: passage.text, weight: 1.35, phraseWeight: 1.1, exactWeight: 1.05 },
+      { value: passage.conceptTitle, weight: 1.05 },
+      { value: location?.unit.title, weight: 1.15 },
+    ]) * 0.22
+    if (context.chapterNumber && location?.unit.number === context.chapterNumber && (!context.doorNumber || location.door.doorNumber === context.doorNumber)) score += 13
+    else if (context.doorNumber && location?.door.doorNumber === context.doorNumber) score += 5
     return { passage, location, score }
   })
     .filter((item) => item.score >= 12)
@@ -161,14 +175,15 @@ function searchPassages(query: string, limit: number): EncyclopediaPassageMatch[
   return output
 }
 
-function searchSlides(query: string, limit: number): EncyclopediaSlideMatch[] {
+function searchSlides(query: string, limit: number, context: EncyclopediaKnowledgeSearchContext = {}): EncyclopediaSlideMatch[] {
   const plan = buildSmartQueryPlan(query)
+  const transcriptPlan = context.transcriptExcerpt ? buildSmartQueryPlan(context.transcriptExcerpt) : null
   if (!plan.directRoots.length && !plan.semanticRoots.length) return []
 
   return encyclopediaTeachingTopics
     .map((topic) => {
       const door = doorById.get(topic.doorId)
-      const score = scoreSmartFields(plan, [
+      let score = scoreSmartFields(plan, [
         { value: topic.title, weight: 7.2, phraseWeight: 1.7, exactWeight: 1.7 },
         { value: topic.videoHints.join(' '), weight: 4.8, phraseWeight: 1.35 },
         { value: topic.chapter, weight: 3.4, phraseWeight: 1.25 },
@@ -177,6 +192,13 @@ function searchSlides(query: string, limit: number): EncyclopediaSlideMatch[] {
         { value: topic.ranges.map((range) => range.label).join(' '), weight: 1.7 },
         { value: door?.title, weight: 1.25 },
       ])
+      if (transcriptPlan) score += scoreSmartFields(transcriptPlan, [
+        { value: topic.title, weight: 1.4 },
+        { value: topic.videoHints.join(' '), weight: 1.1 },
+        { value: topic.objective, weight: 0.75 },
+      ]) * 0.2
+      if (context.chapterNumber && topic.chapterNumbers.includes(context.chapterNumber) && (!context.doorNumber || door?.doorNumber === context.doorNumber)) score += 12
+      else if (context.doorNumber && door?.doorNumber === context.doorNumber) score += 4
       return {
         topic,
         score,
@@ -192,14 +214,14 @@ function searchSlides(query: string, limit: number): EncyclopediaSlideMatch[] {
 
 export function searchEncyclopediaKnowledge(
   query: string,
-  { passageLimit = 5, slideLimit = 5 }: { passageLimit?: number; slideLimit?: number } = {},
+  { passageLimit = 5, slideLimit = 5, context = {} }: { passageLimit?: number; slideLimit?: number; context?: EncyclopediaKnowledgeSearchContext } = {},
 ): EncyclopediaKnowledgeSearchResult {
   const cleanQuery = String(query || '').trim().slice(0, 180)
   if (cleanQuery.length < 2) return { query: cleanQuery, passages: [], slides: [] }
   return {
     query: cleanQuery,
-    passages: searchPassages(cleanQuery, Math.max(1, Math.min(10, passageLimit))),
-    slides: searchSlides(cleanQuery, Math.max(1, Math.min(10, slideLimit))),
+    passages: searchPassages(cleanQuery, Math.max(1, Math.min(10, passageLimit)), context),
+    slides: searchSlides(cleanQuery, Math.max(1, Math.min(10, slideLimit)), context),
   }
 }
 

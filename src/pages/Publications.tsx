@@ -8,6 +8,7 @@ import { SITE_URL } from '../data'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { BooksAtlas } from '../components/BooksAtlas'
 import { SocialIcon } from '../components/icons'
+import { ClarifiedIconAction } from '../components/ClarifiedIconAction'
 import { arabicCountPhrase, BOOK_PLAIN_FORMS } from '../lib/arabic-count.ts'
 
 const bookCount = (count: number) => arabicCountPhrase(count, BOOK_PLAIN_FORMS)
@@ -65,7 +66,7 @@ export default function Publications() {
                       <p className="mt-3 max-w-[34rem] text-[.75rem] leading-[1.9] text-soft">الموسوعة المرئية والكتاب ومواد التدريس في بوابة معرفية واحدة، مع بحث يصل إلى الفصل والصفحة واللحظة الزمنية الموثقة.</p>
                       <div className="mt-6 flex flex-wrap items-center gap-3">
                         <Link to={`/publications/${b.slug}`} viewTransition className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[.72rem] font-semibold text-white"><span>ادخل الموسوعة</span><SocialIcon name="ArrowBack" size={14} /></Link>
-                        <Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-accent/[.35] text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={15} /></Link>
+                        <ClarifiedIconAction id="book-search-featured" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-accent/[.35] text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={15} /></Link></ClarifiedIconAction>
                       </div>
                     </div>
                   </div>
@@ -78,7 +79,7 @@ export default function Publications() {
                     </Link>
                     <div className="mt-3 flex items-start gap-2 sm:mt-5">
                       <Link to={`/publications/${b.slug}`} viewTransition className="min-w-0 flex-1"><h2 className="break-words font-display text-[1rem] font-medium leading-[1.45] text-ink transition-colors hover:text-accent sm:text-[1.2rem] md:text-[1.3rem]">{b.title}</h2></Link>
-                      <Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/[.35] text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={14} /></Link>
+                      <ClarifiedIconAction id="book-search-list" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/[.35] text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={14} /></Link></ClarifiedIconAction>
                     </div>
                   </>
                 )}

@@ -201,6 +201,12 @@ export default function Search() {
     setTab((current) => current === nextTab ? current : nextTab)
   }, [searchParams])
 
+  useEffect(() => {
+    if (searchParams.get('tab') !== 'askbook') return
+    const frame = window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }))
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
+
   const [cat, setCat] = useState('الكل')
   const [year, setYear] = useState('الكل')
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -726,7 +732,7 @@ export default function Search() {
                       <h3 id="ask-book-answer-title" className="mt-1 break-words font-display text-[1.05rem] font-semibold leading-relaxed text-ink">{selectedAskBook?.title}</h3>
                       <p className="mt-1 break-words text-[.74rem] leading-relaxed text-soft">«{askBookAsked}»</p>
                     </div>
-                    {selectedAskBook && <Link to={`/publications/${selectedAskBook.slug}#book-knowledge`} className="shrink-0 text-[.7rem] font-semibold text-accent transition-colors hover:text-accent-deep">افتح صفحة الكتاب ←</Link>}
+                    {selectedAskBook && <a href={`${selectedAskBook.pdf || `/publications/${selectedAskBook.slug}`}#page=${Math.max(1, Number(askBookMatches[0]?.quote.page || 1))}`} target="_blank" rel="noreferrer" className="shrink-0 text-[.7rem] font-semibold text-accent transition-colors hover:text-accent-deep">افتح صفحة الكتاب ←</a>}
                   </div>
 
                   <div className="mt-4 grid min-w-0 gap-3">
@@ -739,7 +745,7 @@ export default function Search() {
                           : <blockquote className="break-words border-r-2 border-accent/[.35] pr-3 text-[.88rem] font-light leading-[2] text-ink/[.88]">{match.quote.text}</blockquote>}
                         <figcaption className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 pr-3 text-[.68rem] text-soft">
                           <span className="break-words">{match.bookTitle} · ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</span>
-                          <Link to={`/publications/${match.bookSlug}#book-knowledge`} className="font-semibold text-accent">في الكتاب ←</Link>
+                          <a href={`${books.find((book) => book.slug === match.bookSlug)?.pdf || `/publications/${match.bookSlug}`}#page=${Math.max(1, Number(match.quote.page || 1))}`} target="_blank" rel="noreferrer" className="font-semibold text-accent">في الكتاب ←</a>
                         </figcaption>
                       </figure>
                     ))}

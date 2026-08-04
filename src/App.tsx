@@ -8,7 +8,6 @@ import { useTrackJourney, useTrackView } from './lib/views'
 import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-audio'
 import { ReadingMemoryGuard } from './components/MySpace'
 import { SitewideIconClarifications } from './components/SitewideIconClarifications'
-import { KnowledgeExperience } from './components/KnowledgeExperience'
 import Home from './pages/Home'
 
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
@@ -381,7 +380,6 @@ function RoutedApplication() {
         <RouteJourneyTracker />
         <RouteViewTracker />
         <RouteScrollManager />
-        <KnowledgeExperience />
         <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
         <ConditionalNav />
         <main id="main">

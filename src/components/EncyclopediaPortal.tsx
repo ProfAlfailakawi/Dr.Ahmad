@@ -783,6 +783,12 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   }
 
   useEffect(() => {
+    if (featuredVideos.length < 2 || playingVideoId || featuredPaused || !featuredInView || query.trim()) return
+    const timer = window.setInterval(() => moveFeatured(1), 7000)
+    return () => window.clearInterval(timer)
+  }, [featuredInView, featuredPaused, featuredVideos.length, playingVideoId, query])
+
+  useEffect(() => {
     if (!featuredVideos.length) return
     const container = featuredScrollRef.current
     const cards = container?.querySelectorAll<HTMLElement>('[data-featured-card="true"]')

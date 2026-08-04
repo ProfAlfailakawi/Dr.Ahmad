@@ -366,23 +366,23 @@ function SinceLastVisit() {
 
   return (
     <div className="border-t border-hair bg-wash px-4 py-2.5 sm:px-6 md:px-11">
-      <div className="rail mx-auto flex max-w-shell snap-x snap-mandatory items-center gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5 md:whitespace-nowrap">
+      <div className="rail mx-auto flex max-w-shell items-center gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5 md:whitespace-nowrap">
         {continuation && (
-          <Link to={`/articles/${continuation.article.slug}`} className="group flex min-h-12 w-[88vw] max-w-[32rem] shrink-0 snap-start items-center gap-2.5 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft transition-colors hover:border-accent md:w-auto md:max-w-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
-            <span className="font-semibold text-accent">كنت تتبع أثر {continuation.label}</span>
-            <span className="min-w-0 flex-1 truncate text-ink transition-colors group-hover:text-accent">أكمل من هنا: «{continuation.article.title}»</span>
-            <span className="shrink-0 text-accent transition-transform group-hover:-translate-x-0.5">←</span>
+          <Link to={`/articles/${continuation.article.slug}`} className="group grid min-h-14 w-[88vw] max-w-[32rem] shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2.5 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft transition-colors hover:border-accent md:flex md:min-h-12 md:w-auto md:max-w-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
+            <span className="col-start-1 block font-semibold leading-[1.45] text-accent md:inline">كنت تتبع أثر {continuation.label}</span>
+            <span className="col-start-1 line-clamp-1 min-w-0 leading-[1.45] text-ink transition-colors group-hover:text-accent md:inline md:flex-1">أكمل من هنا: «{continuation.article.title}»</span>
+            <span className="col-start-2 row-span-2 row-start-1 shrink-0 self-center text-accent transition-transform group-hover:-translate-x-0.5 md:inline">←</span>
           </Link>
         )}
         {resume && (
-          <Link to={`/articles/${resume.slug}`} className="group flex min-h-12 w-[88vw] max-w-[32rem] shrink-0 snap-start items-center gap-2.5 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft transition-colors hover:border-accent md:w-auto md:max-w-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
+          <Link to={`/articles/${resume.slug}`} className="group flex min-h-12 w-[88vw] max-w-[32rem] shrink-0 items-center gap-2.5 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft transition-colors hover:border-accent md:w-auto md:max-w-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
             <span className="font-semibold text-accent">تابع من حيث توقفت</span>
             <span className="min-w-0 flex-1 truncate text-ink transition-colors group-hover:text-accent">«{resume.title}»</span>
             <span className="shrink-0 text-accent transition-transform group-hover:-translate-x-0.5">←</span>
           </Link>
         )}
         {bits.length > 0 && (
-          <div className="flex min-h-12 w-[88vw] max-w-[32rem] shrink-0 snap-start flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft md:w-auto md:max-w-none md:flex-nowrap md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
+          <div className="flex min-h-12 w-[88vw] max-w-[32rem] shrink-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft md:w-auto md:max-w-none md:flex-nowrap md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
             <span className="w-full font-semibold text-accent md:w-auto">منذ زيارتك الأخيرة</span>
             {bits.map((b, i) => (
               <Link key={b.to} to={b.to} className="transition-colors hover:text-accent">

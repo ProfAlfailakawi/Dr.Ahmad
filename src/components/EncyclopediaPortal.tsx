@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { bookKnowledgeAnchor, getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
@@ -305,6 +305,12 @@ function UnitVideoCarousel({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  useLayoutEffect(() => {
+    const rail = scrollRef.current
+    if (!rail) return
+    rail.scrollTo({ left: 0, behavior: 'auto' })
+  }, [instancePrefix])
+
   const scroll = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return
     const offset = direction === 'left' ? -320 : 320
@@ -345,7 +351,7 @@ function UnitVideoCarousel({
         ref={scrollRef}
         dir="rtl"
         data-horizontal-video-rail="true"
-        className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {unitVideos.map((video) => {
           const instanceKey = `${instancePrefix}-${video.id}`
@@ -392,6 +398,21 @@ function DoorRow({
   onOpenTeaching: (door: Door, topic?: string) => void
   onToggle: () => void
 }) {
+  const summaryRef = useRef<HTMLElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    if (!isOpen) return
+    const frame = window.requestAnimationFrame(() => {
+      contentRef.current?.querySelectorAll<HTMLElement>('[data-horizontal-video-rail="true"]').forEach((rail) => {
+        // في RTL تكون نقطة البداية الطبيعية عند الصفر في Safari/Chrome الحديث.
+        // إعادة الضبط عند فتح الباب تمنع وراثة موضع باب سبق تصفحه.
+        rail.scrollLeft = 0
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [isOpen])
+
   const tokens = useMemo(() => encyclopediaSearchTokens(query), [query])
   const doorVideos = useMemo(
     () => door.units.flatMap((unit) => videosForUnit(door, unit, videoMap)),
@@ -412,7 +433,10 @@ function DoorRow({
 
   return (
     <details open={isOpen} id={door.id} className="group scroll-mt-24 border-b border-hair last:border-b-0">
-      <summary onClick={(event) => { event.preventDefault(); onToggle() }} className="grid cursor-pointer list-none grid-cols-[2.6rem_minmax(0,1fr)_auto] items-start gap-4 py-6 marker:hidden [&::-webkit-details-marker]:hidden md:grid-cols-[3.2rem_minmax(0,1fr)_auto] md:py-7">
+      <summary ref={summaryRef} onClick={(event) => {
+        event.preventDefault()
+        onToggle()
+      }} className="grid cursor-pointer list-none grid-cols-[2.6rem_minmax(0,1fr)_auto] items-start gap-4 py-6 marker:hidden [&::-webkit-details-marker]:hidden md:grid-cols-[3.2rem_minmax(0,1fr)_auto] md:py-7">
         <span className="font-display text-[.72rem] font-semibold text-accent">{door.number}</span>
         <span className="min-w-0">
           <span className="flex items-start gap-2">
@@ -432,7 +456,7 @@ function DoorRow({
         <span aria-hidden className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
       </summary>
 
-      <div className="pb-8 ps-[4.2rem] md:ps-[5.6rem]">
+      <div ref={contentRef} className="min-w-0 pb-8 ps-[4.2rem] md:ps-[5.6rem]">
         <div className="border-y border-hair" aria-label="فهرس فيديوهات الموسوعة">
           {visibleUnits.map((unit) => {
             const unitVideos = videosForUnit(door, unit, videoMap)
@@ -512,6 +536,17 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const [spokenMoments, setSpokenMoments] = useState<EncyclopediaVideoMoment[]>([])
   const [spokenProgress, setSpokenProgress] = useState<EncyclopediaTranscriptProgress | null>(null)
   const [spokenStatus, setSpokenStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const pendingDoorAnchor = useRef<{ id: string; top: number } | null>(null)
+
+  useLayoutEffect(() => {
+    const pending = pendingDoorAnchor.current
+    if (!pending) return
+    pendingDoorAnchor.current = null
+    const target = document.getElementById(pending.id)
+    if (!target) return
+    const delta = target.getBoundingClientRect().top - pending.top
+    if (Math.abs(delta) > 0.5) window.scrollBy({ top: delta, behavior: 'auto' })
+  }, [openDoorId])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -748,12 +783,6 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   }
 
   useEffect(() => {
-    if (featuredVideos.length < 2 || playingVideoId || featuredPaused || !featuredInView || query.trim()) return
-    const timer = window.setInterval(() => moveFeatured(1), 7000)
-    return () => window.clearInterval(timer)
-  }, [featuredInView, featuredPaused, featuredVideos.length, playingVideoId, query])
-
-  useEffect(() => {
     if (!featuredVideos.length) return
     const container = featuredScrollRef.current
     const cards = container?.querySelectorAll<HTMLElement>('[data-featured-card="true"]')
@@ -843,8 +872,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
           <FadeUp>
             <div className="flex flex-wrap items-end justify-between gap-5">
               <div>
-                <span className="text-[.68rem] font-semibold text-accent">الموسوعة المرئية</span>
-                <h2 id="encyclopedia-map-title" className="mt-2 font-display text-[clamp(1.55rem,3.2vw,2.3rem)] font-semibold leading-[1.4] text-ink">كل فيديو في موضعه من الباب والفصل.</h2>
+                <h2 id="encyclopedia-map-title" className="font-display text-[clamp(1.25rem,3vw,1.7rem)] font-semibold leading-[1.4] text-ink">الموسوعة المرئية</h2>
               </div>
               <div className="flex items-center gap-2">
                 {catalogError && <button type="button" onClick={retryCatalog} aria-label="إعادة تحميل فهرس الفيديوهات" title="إعادة التحميل" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="History" size={15} /></button>}
@@ -854,7 +882,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
 
             <div id="encyclopedia-search" className="mt-6 flex items-center gap-2 rounded-full border border-hair bg-canvas p-1.5">
               <label htmlFor="encyclopedia-query" className="sr-only">ابحث في موسوعة تكنولوجيا التعليم</label>
-              <input id="encyclopedia-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث في كلمة قيلت داخل فيديو، صفحة، أو شريحة" className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-[.82rem] text-ink outline-none placeholder:text-soft/[.6]" />
+              <input id="encyclopedia-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث في فيديو أو صفحة أو شريحة" dir="rtl" className="min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[.7rem] text-ink outline-none placeholder:text-soft/[.6] sm:px-4 sm:text-[.82rem]" />
               {query ? <button type="button" onClick={() => setQuery('')} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft hover:text-accent"><SocialIcon name="Close" size={13} /></button> : <span aria-label="ابحث في الموسوعة" title="ابحث في الموسوعة" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Search" size={15} /></span>}
             </div>
             {query.trim().length >= 2 && <p className="mt-2 text-[.64rem] text-soft">{resultCount ? `${formatArabicNumber(resultCount)} نتيجة مرتبطة` : 'لا توجد نتيجة مطابقة.'}</p>}
@@ -913,7 +941,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 onPointerCancel={() => setFeaturedPaused(false)}
                 onMouseEnter={() => setFeaturedPaused(true)}
                 onMouseLeave={() => setFeaturedPaused(false)}
-                className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
                 {featuredVideos.map((video) => (
                   <InlineVideoCard
@@ -945,7 +973,11 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 onPlay={playVideo}
                 onOpenPath={openVideoPath}
                 onOpenTeaching={openTeachingMaterials}
-                onToggle={() => setOpenDoorId((current) => current === door.id ? '' : door.id)}
+                onToggle={() => {
+                  const target = document.getElementById(door.id)
+                  pendingDoorAnchor.current = { id: door.id, top: target?.getBoundingClientRect().top ?? 0 }
+                  setOpenDoorId((current) => current === door.id ? '' : door.id)
+                }}
               />
             ))}
           </div>

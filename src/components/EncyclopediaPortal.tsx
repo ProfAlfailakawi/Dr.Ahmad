@@ -7,15 +7,18 @@ import {
   getEncyclopediaFallbackCatalog,
   getEncyclopediaVideoCatalog,
   resetEncyclopediaVideoCatalog,
+  searchEncyclopediaVideoMoments,
   type EncyclopediaVideoCatalog,
+  type EncyclopediaVideoMoment,
+  type EncyclopediaTranscriptProgress,
 } from '../lib/encyclopedia-videos'
+import { searchEncyclopediaKnowledge } from '../lib/encyclopedia-knowledge-search'
 import {
   encyclopediaSlideCount,
   encyclopediaSlideRangeLabel,
   encyclopediaTeachingTopics,
   getEncyclopediaTeachingDoor,
   getEncyclopediaTeachingTopic,
-  scoreEncyclopediaTeachingTopic,
   type EncyclopediaTeachingTopic,
 } from '../lib/encyclopedia-teaching-map'
 import {
@@ -29,6 +32,7 @@ import {
 import { FadeUp, Reveal } from './ui'
 import { SocialIcon } from './icons'
 import { OwnerEdit } from './extras'
+import { EncyclopediaKnowledgeResults } from './EncyclopediaKnowledgeResults'
 
 const CHANNEL_URL = 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'
 const ENCYCLOPEDIA_SAMPLE_PDF = '/files/encyclopedia.pdf?v=20260803-4'
@@ -491,6 +495,10 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [featuredRound, setFeaturedRound] = useState(0)
   const [featuredPaused, setFeaturedPaused] = useState(false)
+  const [playingStartSeconds, setPlayingStartSeconds] = useState(0)
+  const [spokenMoments, setSpokenMoments] = useState<EncyclopediaVideoMoment[]>([])
+  const [spokenProgress, setSpokenProgress] = useState<EncyclopediaTranscriptProgress | null>(null)
+  const [spokenStatus, setSpokenStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
 
   useEffect(() => {
     const controller = new AbortController()
@@ -502,6 +510,36 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
       })
     return () => controller.abort()
   }, [catalogAttempt])
+
+  useEffect(() => {
+    const cleanQuery = query.trim()
+    if (cleanQuery.length < 2) {
+      setSpokenMoments([])
+      setSpokenProgress(null)
+      setSpokenStatus('idle')
+      return
+    }
+    const controller = new AbortController()
+    setSpokenMoments([])
+    setSpokenStatus('loading')
+    const timer = window.setTimeout(() => {
+      searchEncyclopediaVideoMoments(cleanQuery, { limit: 8, signal: controller.signal })
+        .then((result) => {
+          setSpokenMoments(result.moments)
+          setSpokenProgress(result.progress)
+          setSpokenStatus('ready')
+        })
+        .catch((error) => {
+          if ((error as { name?: string })?.name === 'AbortError') return
+          setSpokenMoments([])
+          setSpokenStatus('error')
+        })
+    }, 420)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [query])
 
   useEffect(() => {
     if (!teachingMaterial) return
@@ -551,12 +589,13 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     if (playingVideoId && !visibleVideos.some((video) => video.id === playingVideoId)) {
       setPlayingVideoId('')
       setPlayingVideoInstance('')
+      setPlayingStartSeconds(0)
     }
   }, [playingVideoId, visibleVideos])
 
   const playingVideo = visibleVideos.find((video) => video.id === playingVideoId) || null
   const selectedPlayerUrl = playingVideo
-    ? `${playingVideo.embedUrl}${playingVideo.embedUrl.includes('?') ? '&' : '?'}autoplay=1&playsinline=1&rel=0&modestbranding=1`
+    ? `${playingVideo.embedUrl}${playingVideo.embedUrl.includes('?') ? '&' : '?'}autoplay=1&playsinline=1&rel=0&modestbranding=1${playingStartSeconds > 0 ? `&start=${Math.floor(playingStartSeconds)}` : ''}`
     : ''
   const tokens = useMemo(() => encyclopediaTokens(query), [query])
 
@@ -568,14 +607,20 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
       .map((video) => ({ video, score: scoreIndexedVideo(tokens, video) }))
       .filter((item) => item.score > 0)
       .sort((left, right) => right.score - left.score || left.video.position - right.video.position),
-    slides: encyclopediaTeachingTopics
-      .map((topic) => ({ topic, score: scoreEncyclopediaTeachingTopic(tokens, topic) }))
-      .filter((item) => item.score > 0)
-      .sort((left, right) => right.score - left.score),
   }), [tokens, visibleVideos])
 
+  const knowledgeResults = useMemo(
+    () => searchEncyclopediaKnowledge(query, { passageLimit: 6, slideLimit: 6 }),
+    [query],
+  )
+  const videoById = useMemo(() => new Map(visibleVideos.map((video) => [video.id, video])), [visibleVideos])
+  const knowledgeFallbackVideos = useMemo(
+    () => searchResults.videos.slice(0, 6).map((item) => item.video),
+    [searchResults.videos],
+  )
+
   const resultCount = query.trim().length >= 2
-    ? searchResults.units.length + searchResults.videos.length + searchResults.slides.length
+    ? searchResults.units.length + searchResults.videos.length + knowledgeResults.passages.length + knowledgeResults.slides.length
     : 0
 
   useEffect(() => {
@@ -589,13 +634,26 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     if (!openDoorId || playingVideo.doorId !== openDoorId) {
       setPlayingVideoId('')
       setPlayingVideoInstance('')
+      setPlayingStartSeconds(0)
     }
   }, [openDoorId, playingVideo?.doorId, playingVideoInstance])
 
-  const playVideo = (video: IndexedEncyclopediaVideo, instanceKey: string, bringIntoView = false) => {
+  useEffect(() => {
+    if (!playingVideoInstance.startsWith('knowledge-')) return
+    setPlayingVideoId('')
+    setPlayingVideoInstance('')
+    setPlayingStartSeconds(0)
+  }, [query])
+
+  const playVideo = (video: IndexedEncyclopediaVideo, instanceKey: string, bringIntoView = false, startSeconds = 0) => {
     setPlayingVideoId(video.id)
     setPlayingVideoInstance(instanceKey)
+    setPlayingStartSeconds(Math.max(0, Math.floor(startSeconds)))
     if (bringIntoView) window.requestAnimationFrame(() => document.getElementById(instanceKey)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+  }
+
+  const playKnowledgeMoment = (video: IndexedEncyclopediaVideo, _instanceKey: string, startSeconds = 0) => {
+    playVideo(video, _instanceKey, false, startSeconds)
   }
 
   const openVideoPath = (door: Door, unit?: StructureUnit) => {
@@ -608,6 +666,11 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const openTeachingMaterials = (door: Door, topic?: string) => {
     if (!door.presentation) return
     setTeachingMaterial({ door, topic })
+  }
+
+  const openTeachingFromSearch = (doorId: string, topic: string) => {
+    const door = DOORS.find((item) => item.id === doorId)
+    if (door?.presentation) setTeachingMaterial({ door, topic })
   }
 
 
@@ -741,33 +804,28 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
 
             <div id="encyclopedia-search" className="mt-6 flex items-center gap-2 rounded-full border border-hair bg-canvas p-1.5">
               <label htmlFor="encyclopedia-query" className="sr-only">ابحث في موسوعة تكنولوجيا التعليم</label>
-              <input id="encyclopedia-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث في باب أو فصل أو فيديو" className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-[.82rem] text-ink outline-none placeholder:text-soft/[.6]" />
+              <input id="encyclopedia-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث في كلمة قيلت داخل فيديو، صفحة، أو شريحة" className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-[.82rem] text-ink outline-none placeholder:text-soft/[.6]" />
               {query ? <button type="button" onClick={() => setQuery('')} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft hover:text-accent"><SocialIcon name="Close" size={13} /></button> : <span aria-label="ابحث في الموسوعة" title="ابحث في الموسوعة" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Search" size={15} /></span>}
             </div>
             {query.trim().length >= 2 && <p className="mt-2 text-[.64rem] text-soft">{resultCount ? `${formatArabicNumber(resultCount)} نتيجة مرتبطة` : 'لا توجد نتيجة مطابقة.'}</p>}
           </FadeUp>
 
-          {query.trim().length >= 2 && searchResults.videos.length > 0 && (
-            <div className="mt-7 rounded-2xl border border-hair bg-wash/50 p-4 md:p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-display text-[.92rem] font-semibold text-ink">فيديوهات مطابقة للبحث ({formatArabicNumber(searchResults.videos.length)})</h3>
-              </div>
-              <div
-                dir="rtl"
-                className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-                {searchResults.videos.map(({ video }) => (
-                  <InlineVideoCard
-                    key={`search-${video.id}`}
-                    video={video}
-                    instanceKey={`search-${video.id}`}
-                    active={playingVideoId === video.id && playingVideoInstance === `search-${video.id}`}
-                    playerUrl={playingVideoId === video.id && playingVideoInstance === `search-${video.id}` ? selectedPlayerUrl : ''}
-                    onPlay={playVideo}
-                  />
-                ))}
-              </div>
-            </div>
+          {query.trim().length >= 2 && (
+            <EncyclopediaKnowledgeResults
+              query={query.trim()}
+              status={spokenStatus}
+              moments={spokenMoments}
+              progress={spokenProgress}
+              fallbackVideos={knowledgeFallbackVideos}
+              videoById={videoById}
+              passages={knowledgeResults.passages}
+              slides={knowledgeResults.slides}
+              playingVideoId={playingVideoId}
+              playingVideoInstance={playingVideoInstance}
+              selectedPlayerUrl={selectedPlayerUrl}
+              onPlay={playKnowledgeMoment}
+              onOpenTeaching={openTeachingFromSearch}
+            />
           )}
 
           {!query.trim() && visibleVideos.length > 0 && (

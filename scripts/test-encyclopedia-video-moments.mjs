@@ -134,12 +134,12 @@ const warmupFetch = async (url) => {
 await scheduleEncyclopediaTranscriptWarmup(warmupVideos, { fetchImpl: warmupFetch, batchSize: 1 })
 check('يفهرس الكلام المنطوق على دفعات صغيرة ولا يطلق القناة كلها دفعة واحدة', () => {
   assert.equal(warmupWatchRequests, 1)
-  assert.deepEqual(getEncyclopediaTranscriptProgress(warmupVideos), { running: false, total: 2, completed: 1, available: 0 })
+  assert.deepEqual(getEncyclopediaTranscriptProgress(warmupVideos), { running: false, total: 2, completed: 1, available: 0, catalogued: 2 })
 })
 await scheduleEncyclopediaTranscriptWarmup(warmupVideos, { fetchImpl: warmupFetch, batchSize: 1 })
 check('يكمل الدفعة التالية من حيث توقف من دون إعادة طلب الفيديو المفهرس', () => {
   assert.equal(warmupWatchRequests, 2)
-  assert.deepEqual(getEncyclopediaTranscriptProgress(warmupVideos), { running: false, total: 2, completed: 2, available: 0 })
+  assert.deepEqual(getEncyclopediaTranscriptProgress(warmupVideos), { running: false, total: 2, completed: 2, available: 0, catalogued: 2 })
 })
 
 console.log(`\nالنتيجة: ${checks.filter((item) => item.ok).length} تحققاً ناجحاً، 0 إخفاق.`)

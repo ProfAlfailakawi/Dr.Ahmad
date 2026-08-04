@@ -28,7 +28,7 @@ export type EncyclopediaVideoCatalog = {
   fetchedAt: string
   source: string
   stale?: boolean
-  transcriptIndex?: { running: boolean; total: number; completed: number; available: number }
+  transcriptIndex?: { running: boolean; total: number; completed: number; available: number; catalogued?: number }
   videos: EncyclopediaVideo[]
 }
 
@@ -59,6 +59,7 @@ function normalizedCatalog(payload: Partial<EncyclopediaVideoCatalog>, source?: 
           total: Number(payload.transcriptIndex.total) || videos.length,
           completed: Number(payload.transcriptIndex.completed) || 0,
           available: Number(payload.transcriptIndex.available) || 0,
+          catalogued: Number(payload.transcriptIndex.catalogued) || Number(payload.transcriptIndex.total) || videos.length,
         }
       : undefined,
     videos,
@@ -155,6 +156,7 @@ export type EncyclopediaTranscriptProgress = {
   total: number
   completed: number
   available: number
+  catalogued?: number
 }
 
 export type EncyclopediaVideoMoment = {
@@ -165,7 +167,7 @@ export type EncyclopediaVideoMoment = {
   endSeconds: number
   excerpt: string
   confidence: 'exact' | 'strong' | 'inferred'
-  source: 'captions' | 'sequence' | 'title'
+  source: 'captions' | 'transcribed' | 'sequence' | 'title'
   score: number
   sequence: {
     doorNumber: number | null
@@ -225,8 +227,9 @@ export async function searchEncyclopediaVideoMoments(
         total: Number(payload.progress.total) || 0,
         completed: Number(payload.progress.completed) || 0,
         available: Number(payload.progress.available) || 0,
+        catalogued: Number(payload.progress.catalogued) || Number(payload.progress.total) || 0,
       }
-    : { running: false, total: 0, completed: 0, available: 0 }
+    : { running: false, total: 0, completed: 0, available: 0, catalogued: 0 }
   return {
     query: String(payload.query || query),
     moments: Array.isArray(payload.moments) ? payload.moments.filter(validMoment) : [],

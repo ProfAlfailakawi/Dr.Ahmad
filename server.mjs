@@ -5526,7 +5526,7 @@ export function createRequestHandler({
         return
       }
       const catalog = await loadEncyclopediaVideoCatalog()
-      scheduleEncyclopediaTranscriptWarmup(catalog.videos)
+      scheduleEncyclopediaTranscriptWarmup(catalog.videos, { fullSweep: true })
       sendJson(res, 200, { ...catalog, transcriptIndex: getEncyclopediaTranscriptProgress(catalog.videos) }, { 'cache-control': 'public, max-age=1800, stale-while-revalidate=21600' })
       return
     }

@@ -3,11 +3,13 @@ import {
   useCallback,
   useEffect,
   useId,
+  useRef,
   useState,
   type MouseEvent,
   type MouseEventHandler,
   type ReactElement,
 } from 'react'
+import { IconTooltipPortal } from './IconTooltipPortal'
 
 const STORAGE_PREFIX = 'clarified-icon:'
 
@@ -26,6 +28,7 @@ export function ClarifiedIconAction({ id, label, children }: { id: string; label
   const reactId = useId()
   const tipId = `icon-tip-${reactId.replace(/:/g, '')}`
   const [open, setOpen] = useState(false)
+  const wrapperRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -52,17 +55,18 @@ export function ClarifiedIconAction({ id, label, children }: { id: string; label
   }, [id, originalOnClick])
 
   return (
-    <span className="relative inline-flex" data-clarified-icon="true">
+    <span ref={wrapperRef} className="relative inline-flex" data-clarified-icon="true">
       {cloneElement<ClarifiedChildProps>(child, {
         onClick,
         title: child.props.title || label,
         'aria-describedby': open ? tipId : undefined,
       })}
       {open && (
-        <span id={tipId} role="status" className="absolute bottom-[calc(100%+.55rem)] end-0 z-50 w-max max-w-[15rem] rounded-xl border border-hair bg-ink px-3 py-2 text-center text-[.68rem] font-semibold leading-relaxed text-white shadow-xl">
-          {label}
-          <span aria-hidden className="absolute -bottom-1.5 end-4 h-3 w-3 rotate-45 border-b border-r border-hair bg-ink" />
-        </span>
+        <IconTooltipPortal
+          targetEl={wrapperRef.current}
+          label={label}
+          tipId={tipId}
+        />
       )}
     </span>
   )

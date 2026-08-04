@@ -820,6 +820,10 @@ export default function Search() {
                       )}
                     </span>
                     <span className="text-[.8rem] text-soft md:text-left">{row.year ? ar(row.year) : ''}</span>
+                    <details className="knowledge-result-reason md:col-start-2" onClick={(event) => event.stopPropagation()}>
+                      <summary>لماذا ظهرت هذه النتيجة؟</summary>
+                      <p>{row.score >= 40 ? 'تطابق قوي مع العبارة والمعنى داخل المادة.' : row.score >= 20 ? 'تطابق واضح مع الكلمات والمفاهيم المرتبطة بالسؤال.' : 'صلة موضوعية مع الاستعلام ضمن الأرشيف.'}</p>
+                    </details>
                   </Link>
                   {row.kind === 'book' && row.slug && (
                     <Link

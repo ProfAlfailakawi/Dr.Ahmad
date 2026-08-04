@@ -23,6 +23,7 @@ import {
 } from '../lib/encyclopedia-teaching-map'
 import {
   encyclopediaTokens,
+  encyclopediaSearchTokens,
   extractEncyclopediaSequence,
   indexEncyclopediaVideos,
   normalizeEncyclopediaText,
@@ -342,6 +343,7 @@ function UnitVideoCarousel({
       <div
         ref={scrollRef}
         dir="rtl"
+        data-horizontal-video-rail="true"
         className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {unitVideos.map((video) => {
@@ -389,7 +391,7 @@ function DoorRow({
   onOpenTeaching: (door: Door, topic?: string) => void
   onToggle: () => void
 }) {
-  const tokens = useMemo(() => encyclopediaTokens(query), [query])
+  const tokens = useMemo(() => encyclopediaSearchTokens(query), [query])
   const doorVideos = useMemo(
     () => door.units.flatMap((unit) => videosForUnit(door, unit, videoMap)),
     [door, videoMap],
@@ -598,7 +600,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const selectedPlayerUrl = playingVideo
     ? `${playingVideo.embedUrl}${playingVideo.embedUrl.includes('?') ? '&' : '?'}autoplay=1&playsinline=1&rel=0&modestbranding=1${playingStartSeconds > 0 ? `&start=${Math.floor(playingStartSeconds)}` : ''}`
     : ''
-  const tokens = useMemo(() => encyclopediaTokens(query), [query])
+  const tokens = useMemo(() => encyclopediaSearchTokens(query), [query])
 
   const searchResults = useMemo(() => ({
     units: DOORS.flatMap((door) => door.units.map((unit) => ({ door, unit, score: scoreText(tokens, `${door.title} ${unit.title} ${unit.keywords.join(' ')}`) })))
@@ -610,9 +612,17 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
       .sort((left, right) => right.score - left.score || left.video.position - right.video.position),
   }), [tokens, visibleVideos])
 
+  const knowledgeContext = useMemo(() => {
+    const exact = spokenMoments.find((moment) => moment.hasExactTiming && moment.excerpt)
+    return exact ? {
+      transcriptExcerpt: exact.excerpt,
+      doorNumber: exact.doorNumber || exact.sequence.doorNumber,
+      chapterNumber: exact.chapterNumber || exact.sequence.chapterNumber,
+    } : {}
+  }, [spokenMoments])
   const knowledgeResults = useMemo(
-    () => searchEncyclopediaKnowledge(query, { passageLimit: 6, slideLimit: 6 }),
-    [query],
+    () => searchEncyclopediaKnowledge(query, { passageLimit: 6, slideLimit: 6, context: knowledgeContext }),
+    [knowledgeContext, query],
   )
   const videoById = useMemo(() => new Map(visibleVideos.map((video) => [video.id, video])), [visibleVideos])
   const knowledgeFallbackVideos = useMemo(
@@ -646,22 +656,22 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     setPlayingStartSeconds(0)
   }, [query])
 
-  const playVideo = (video: IndexedEncyclopediaVideo, instanceKey: string, bringIntoView = false, startSeconds = 0) => {
+  const playVideo = (video: IndexedEncyclopediaVideo, instanceKey: string, startSeconds = 0) => {
+    // تبديل المشغل لا يغيّر موضع الصفحة عمودياً؛ يبقى التمرير بيد الزائر.
     setPlayingVideoId(video.id)
     setPlayingVideoInstance(instanceKey)
     setPlayingStartSeconds(Math.max(0, Math.floor(startSeconds)))
-    if (bringIntoView) window.requestAnimationFrame(() => document.getElementById(instanceKey)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
   }
 
-  const playKnowledgeMoment = (video: IndexedEncyclopediaVideo, _instanceKey: string, startSeconds = 0) => {
-    playVideo(video, _instanceKey, false, startSeconds)
+  const playKnowledgeMoment = (video: IndexedEncyclopediaVideo, instanceKey: string, startSeconds = 0) => {
+    playVideo(video, instanceKey, startSeconds)
   }
 
   const openVideoPath = (door: Door, unit?: StructureUnit) => {
     const targetUnit = unit || door.units.find((item) => videosForUnit(door, item, unitVideoMap).length > 0)
     if (!targetUnit) return
     const video = videosForUnit(door, targetUnit, unitVideoMap)[0]
-    if (video) playVideo(video, `unit-${door.id}-${targetUnit.number}-${video.id}`, true)
+    if (video) playVideo(video, `unit-${door.id}-${targetUnit.number}-${video.id}`)
   }
 
   const openTeachingMaterials = (door: Door, topic?: string) => {
@@ -740,7 +750,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     const card = cards?.[Math.min(featuredIndex, Math.max(0, cards.length - 1))]
     if (!container || !card) return
 
-    // لا نستخدم scrollIntoView هنا؛ فهو يحرّك الصفحة عمودياً في Safari عند
+    // نحرك شريط البطاقات أفقياً فقط؛ Safari قد يغيّر موضع الصفحة عند تحريك العنصر نفسه.
     // تبدّل الكرت تلقائياً بينما يكون القارئ داخل أبواب الموسوعة أسفل الصفحة.
     // نحرك شريط «أبرز الشروحات» أفقياً فقط ونبقي موضع القراءة ثابتاً تماماً.
     const containerBox = container.getBoundingClientRect()
@@ -887,6 +897,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
               <div
                 ref={featuredScrollRef}
                 dir="rtl"
+                data-horizontal-video-rail="true"
                 onPointerDown={() => setFeaturedPaused(true)}
                 onPointerUp={() => window.setTimeout(() => setFeaturedPaused(false), 3500)}
                 onPointerCancel={() => setFeaturedPaused(false)}
@@ -993,7 +1004,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                       const instanceKey = teachingVideo.doorId && teachingVideo.chapterNumber
                         ? `unit-${teachingVideo.doorId}-${teachingVideo.chapterNumber}-${teachingVideo.id}`
                         : `featured-${teachingVideo.id}`
-                      window.setTimeout(() => playVideo(teachingVideo, instanceKey, true), 80)
+                      window.setTimeout(() => playVideo(teachingVideo, instanceKey), 80)
                     }} className="min-w-0 px-2 py-4 text-center text-[.68rem] font-semibold text-accent disabled:opacity-40">شاهد الشرح</button>
                   </div>
                 </div>

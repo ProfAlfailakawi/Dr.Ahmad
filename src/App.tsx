@@ -8,7 +8,6 @@ import { useTrackJourney, useTrackView } from './lib/views'
 import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-audio'
 import { ReadingMemoryGuard } from './components/MySpace'
 import Home from './pages/Home'
-import FirstVisitOnboarding from './components/FirstVisitOnboarding'
 
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
    فأول تحميل للموقع أخف بكثير (نصوص المقالات الـ٢٧٦ك لا تنزل إلا لقارئها) */
@@ -292,13 +291,6 @@ function AnimatedRoutes() {
   )
 }
 
-/** ينتظر تحديث وسوم SEO للصفحة، ثم يسجل مشاهدة واحدة للمسار في الجلسة. */
-function ConditionalOnboarding() {
-  const location = useLocation()
-  if (location.pathname === '/admin' || location.pathname === '/launch' || location.pathname.startsWith('/cv-file/')) return null
-  return <FirstVisitOnboarding />
-}
-
 function ConditionalNav() {
   const location = useLocation()
   return location.pathname === '/admin' || location.pathname === '/launch' || location.pathname.startsWith('/cv-file/') ? null : <Nav />
@@ -386,7 +378,6 @@ function RoutedApplication() {
         <RouteJourneyTracker />
         <RouteViewTracker />
         <RouteScrollManager />
-        <ConditionalOnboarding />
         <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
         <ConditionalNav />
         <main id="main">

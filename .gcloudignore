@@ -27,6 +27,8 @@ src/data/*
 !src/data/encyclopedia-structure.json
 !src/data/encyclopedia-teaching-map.json
 !src/data/encyclopedia-video-transcripts.json
+!src/data/encyclopedia-search-synonyms.json
+!src/data/encyclopedia-videos-fallback.json
 !src/data/spoken-index.json
 !src/lib/
 src/lib/*

@@ -1,5 +1,6 @@
 import type { BookKnowledgeConcept } from './book-knowledge'
 import type { EncyclopediaVideo } from './encyclopedia-videos'
+import synonymData from '../data/encyclopedia-search-synonyms.json'
 
 export type EncyclopediaDoorDescriptor = {
   id: string
@@ -28,7 +29,7 @@ export type IndexedEncyclopediaVideo = Omit<
   searchText: string
   sequenceLabel: string
   mappingSource?: string
-  mappingConfidence?: 'exact' | 'strong'
+  mappingConfidence?: string
 }
 
 const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
@@ -85,6 +86,26 @@ export function normalizeEncyclopediaText(value = '') {
 
 export function encyclopediaTokens(value = '') {
   return normalizeEncyclopediaText(value).split(' ').filter((token) => token.length > 1)
+}
+
+const synonymGroups: string[][] = (Array.isArray(synonymData)
+  ? synonymData
+  : Array.isArray((synonymData as { groups?: unknown[] }).groups)
+    ? (synonymData as { groups: unknown[] }).groups
+    : [])
+  .map((group) => Array.isArray(group) ? group : Array.isArray((group as { terms?: unknown[] })?.terms) ? (group as { terms: unknown[] }).terms : [])
+  .map((group) => group.map((term) => normalizeEncyclopediaText(String(term || ''))).filter(Boolean))
+  .filter((group) => group.length > 1)
+
+/** يوسّع استعلام البحث فقط؛ لا يغيّر نص التفريغ أو بيانات الفيديو. */
+export function encyclopediaSearchTokens(value = '') {
+  const normalized = normalizeEncyclopediaText(value)
+  const expanded = new Set(encyclopediaTokens(normalized))
+  for (const group of synonymGroups) {
+    if (!group.some((term) => normalized.includes(term) || term.includes(normalized))) continue
+    for (const term of group) for (const token of encyclopediaTokens(term)) expanded.add(token)
+  }
+  return [...expanded]
 }
 
 function numericToken(value = '') {

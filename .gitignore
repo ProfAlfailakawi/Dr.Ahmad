@@ -87,3 +87,21 @@ ci-log.txt
 
 # متن الكتب الكامل — يبقى على جهاز الدكتور ولا يدخل مستودعاً عاماً
 src/data/book-evidence.json
+
+# Local Buzz / Whisper transcription workspace
+local-data/encyclopedia-buzz-transcripts/*
+!local-data/encyclopedia-buzz-transcripts/README.md
+**/.buzz-cache/
+**/buzz-cache/
+**/whisper-models/
+**/.cache/whisper/
+local-data/**/*.mp3
+local-data/**/*.wav
+local-data/**/*.m4a
+local-data/**/*.aac
+local-data/**/*.ogg
+local-data/**/*.flac
+local-data/**/*.mp4
+local-data/**/*.mov
+local-data/**/*.mkv
+local-data/**/*.webm

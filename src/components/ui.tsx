@@ -237,7 +237,6 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'ابدأ من هنا',
     items: [
-      { to: '/', label: 'الرئيسية' },
       { to: '/articles', label: 'المقالات الفكرية', allLabel: 'جميع المقالات' },
       { to: '/listen', label: 'مجلس الفكرة' },
       /* «أبحث عن مادة» و«أسأل الأرشيف» يظهران داخل الأداة نفسها (KnowledgeEntry

@@ -8,8 +8,16 @@ const levels: Array<{ key: ResearchLayer; label: string; short: string }> = [
 
 export function ResearchSectionNavigator({ active, onSelect }: { active: ResearchLayer; onSelect: (layer: ResearchLayer) => void }) {
   return (
-    <div className="research-section-sticky mt-4">
-      <nav className="research-section-navigator rounded-2xl border border-hair bg-canvas p-1.5 shadow-sm" aria-label="التنقل داخل البحث">
+    <div 
+      className="sticky z-[35] -mx-4 mb-6 mt-4 bg-canvas px-4 pb-4 pt-2 sm:-mx-6 sm:px-6 md:-mx-11 md:px-11"
+      style={{
+        top: 'calc(4rem + env(safe-area-inset-top, 0px))',
+        WebkitTransform: 'translate3d(0, 0, 0)',
+        transform: 'translate3d(0, 0, 0)',
+        isolation: 'isolate'
+      }}
+    >
+      <nav className="mx-auto max-w-[960px] rounded-2xl border border-hair bg-paper p-1.5 shadow-sm" aria-label="التنقل داخل البحث">
         <div className="grid grid-cols-3 gap-1">
         {levels.map((level, index) => (
           <button key={level.key} type="button" onClick={() => onSelect(level.key)} aria-current={active === level.key ? 'step' : undefined} className={`rounded-xl px-2 py-2.5 text-center transition-colors sm:px-4 ${active === level.key ? 'bg-accent text-white' : 'text-soft hover:bg-wash hover:text-ink'}`}>

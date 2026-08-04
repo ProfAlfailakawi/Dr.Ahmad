@@ -1,26 +1,26 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-29T00:01:15.811Z",
-  "state": "repairing",
+  "generatedAt": "2026-08-04T18:23:45.453Z",
+  "state": "producing",
   "articles": {
     "total": 143,
-    "complete": 2
+    "complete": 0
   },
   "readings": {
     "expected": 286,
-    "ready": 197,
-    "missing": 89,
-    "fahedReady": 98,
-    "nouraReady": 99
+    "ready": 286,
+    "missing": 0,
+    "fahedReady": 143,
+    "nouraReady": 143
   },
   "dialogues": {
     "expected": 143,
-    "ready": 2,
-    "missing": 141
+    "ready": 0,
+    "missing": 143
   },
   "queue": {
-    "total": 230,
-    "failed": 89,
+    "total": 143,
+    "failed": 0,
     "next": {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
       "title": "شهادة امتياز… لدمية بلا وعي!",
@@ -59,6 +59,15 @@
         "lastError": ""
       },
       {
+        "slug": "a-generation-without-rootsarabic",
+        "title": "جيلٌ بلا جذور",
+        "kind": "dialogue",
+        "voice": "dialogue",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
         "slug": "a-new-kind-of-fatigue-in-old-expressionsarabic",
         "title": "تعبٌ جديد بعبارات قديمة",
         "kind": "dialogue",
@@ -79,6 +88,15 @@
       {
         "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
         "title": "العدوان في السماء… والثبات في الداخل",
+        "kind": "dialogue",
+        "voice": "dialogue",
+        "stage": "generate",
+        "attempts": 0,
+        "lastError": ""
+      },
+      {
+        "slug": "alternative-plans-for-distance-education",
+        "title": "الخطط البديلة للتعليم عن بعد",
         "kind": "dialogue",
         "voice": "dialogue",
         "stage": "generate",
@@ -120,60 +138,24 @@
         "stage": "generate",
         "attempts": 0,
         "lastError": ""
-      },
-      {
-        "slug": "competency-based-approach-to-the-trash",
-        "title": "منهج الكفايات.. بطريقه إلى المهملات كسابقيه",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
-      },
-      {
-        "slug": "do-we-contain-or-raise-2",
-        "title": "هل نحتوي… أم نربّي؟",
-        "kind": "dialogue",
-        "voice": "dialogue",
-        "stage": "generate",
-        "attempts": 0,
-        "lastError": ""
       }
     ]
   },
-  "progressPercent": 46.4,
+  "progressPercent": 66.7,
   "items": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
       "title": "شهادة امتياز… لدمية بلا وعي!",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "a-certificate-of-excellence-for-a-lifeless-doll-2.mp3",
-          "failure": {
-            "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T09:10:12.164Z",
-            "lastFailedAt": "2026-07-27T23:22:14.836Z",
-            "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 78/145"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "a-certificate-of-excellence-for-a-lifeless-doll-2.noura.mp3",
-          "failure": {
-            "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T09:10:36.007Z",
-            "lastFailedAt": "2026-07-27T23:22:25.224Z",
-            "message": "r002 فشل بعد 3 محاولات: STT 0٪، السرعة 78/146"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -212,32 +194,14 @@
       "title": "جيل يعرف كل شيء… ولا يفهم شيئاً",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "a-generation-that-knows-everything-and-understands-nothing.mp3",
-          "failure": {
-            "slug": "a-generation-that-knows-everything-and-understands-nothing",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T09:22:53.507Z",
-            "lastFailedAt": "2026-07-27T23:23:28.937Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "a-generation-that-knows-everything-and-understands-nothing.noura.mp3",
-          "failure": {
-            "slug": "a-generation-that-knows-everything-and-understands-nothing",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T09:26:53.213Z",
-            "lastFailedAt": "2026-07-27T23:23:41.028Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -260,25 +224,16 @@
         "noura": {
           "ready": true,
           "fileName": "a-generation-without-rootsarabic.noura.mp3",
-          "failure": {
-            "slug": "a-generation-without-rootsarabic",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T05:34:58.753Z",
-            "lastFailedAt": "2026-07-23T05:34:58.753Z",
-            "message": "r024 فشل بعد 3 محاولات: STT 67٪، السرعة 134/138"
-          }
+          "failure": null
         }
       },
       "dialogue": {
         "eligible": true,
-        "ready": true,
+        "ready": false,
         "fileName": "a-generation-without-rootsarabic.dialogue.mp3",
         "failure": null
       },
-      "complete": true
+      "complete": false
     },
     {
       "slug": "a-new-kind-of-fatigue-in-old-expressionsarabic",
@@ -331,32 +286,14 @@
       "title": "العدوان في السماء… والثبات في الداخل",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "aggression-in-the-sky-and-steadfastness-withinarabic.mp3",
-          "failure": {
-            "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 14,
-            "firstFailedAt": "2026-07-22T00:40:49.709Z",
-            "lastFailedAt": "2026-07-28T17:51:06.884Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "aggression-in-the-sky-and-steadfastness-withinarabic.noura.mp3",
-          "failure": {
-            "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 13,
-            "firstFailedAt": "2026-07-22T00:43:18.809Z",
-            "lastFailedAt": "2026-07-27T19:56:03.624Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -384,43 +321,25 @@
       },
       "dialogue": {
         "eligible": true,
-        "ready": true,
+        "ready": false,
         "fileName": "alternative-plans-for-distance-education.dialogue.mp3",
         "failure": null
       },
-      "complete": true
+      "complete": false
     },
     {
       "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
       "title": "الذكاء الاصطناعي يُدرّس… والعقل البشري يُقصى",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2.mp3",
-          "failure": {
-            "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 14,
-            "firstFailedAt": "2026-07-22T02:26:19.941Z",
-            "lastFailedAt": "2026-07-28T18:10:42.691Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2.noura.mp3",
-          "failure": {
-            "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 13,
-            "firstFailedAt": "2026-07-22T02:30:52.334Z",
-            "lastFailedAt": "2026-07-27T21:34:20.403Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -438,16 +357,7 @@
         "fahed": {
           "ready": true,
           "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic.mp3",
-          "failure": {
-            "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 7,
-            "firstFailedAt": "2026-07-22T12:54:43.712Z",
-            "lastFailedAt": "2026-07-23T05:21:28.723Z",
-            "message": "r017 فشل بعد 3 محاولات: STT 79٪، السرعة 133/138"
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
@@ -468,32 +378,14 @@
       "title": "أبناءٌ يعرفون المطلوب… لكن من علّمهم المعنى؟",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic-2.mp3",
-          "failure": {
-            "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 14,
-            "firstFailedAt": "2026-07-22T00:46:10.255Z",
-            "lastFailedAt": "2026-07-28T17:54:04.767Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "children-who-know-what-is-required-but-do-not-know-whyarabic-2.noura.mp3",
-          "failure": {
-            "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 13,
-            "firstFailedAt": "2026-07-22T00:49:02.361Z",
-            "lastFailedAt": "2026-07-27T21:31:54.187Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -516,16 +408,7 @@
         "noura": {
           "ready": true,
           "fileName": "coming-soon-a-certificate-without-a-mind-2.noura.mp3",
-          "failure": {
-            "slug": "coming-soon-a-certificate-without-a-mind-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T11:32:51.077Z",
-            "lastFailedAt": "2026-07-23T11:32:51.077Z",
-            "message": "r002 فشل بعد 3 محاولات: STT 88٪، السرعة 98/141"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -564,32 +447,14 @@
       "title": "هل نحتوي… أم نربّي؟",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "do-we-contain-or-raise-2.mp3",
-          "failure": {
-            "slug": "do-we-contain-or-raise-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 14,
-            "firstFailedAt": "2026-07-22T02:16:38.283Z",
-            "lastFailedAt": "2026-07-28T18:07:15.721Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "do-we-contain-or-raise-2.noura.mp3",
-          "failure": {
-            "slug": "do-we-contain-or-raise-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 13,
-            "firstFailedAt": "2026-07-22T02:21:40.233Z",
-            "lastFailedAt": "2026-07-27T21:33:50.817Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -651,32 +516,14 @@
       "title": "مبادرات وحلول للتعليم الإلكتروني",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "e-learning-initiatives-and-solutions-2.mp3",
-          "failure": {
-            "slug": "e-learning-initiatives-and-solutions-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T12:44:30.978Z",
-            "lastFailedAt": "2026-07-28T03:58:45.343Z",
-            "message": "r006 فشل بعد 3 محاولات: STT 0٪، السرعة 68/133"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "e-learning-initiatives-and-solutions-2.noura.mp3",
-          "failure": {
-            "slug": "e-learning-initiatives-and-solutions-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T12:45:33.535Z",
-            "lastFailedAt": "2026-07-28T03:58:53.680Z",
-            "message": "r006 فشل بعد 3 محاولات: STT 0٪، السرعة 72/135"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -758,30 +605,12 @@
         "fahed": {
           "ready": true,
           "fileName": "excellent-in-grades-lost-in-decision.mp3",
-          "failure": {
-            "slug": "excellent-in-grades-lost-in-decision",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T16:50:39.500Z",
-            "lastFailedAt": "2026-07-28T03:57:42.619Z",
-            "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 84/134"
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "excellent-in-grades-lost-in-decision.noura.mp3",
-          "failure": {
-            "slug": "excellent-in-grades-lost-in-decision",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:50:47.859Z",
-            "lastFailedAt": "2026-07-23T16:50:47.859Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -822,30 +651,12 @@
         "fahed": {
           "ready": true,
           "fileName": "freedom-without-thinking-and-openness-without-awareness-2.mp3",
-          "failure": {
-            "slug": "freedom-without-thinking-and-openness-without-awareness-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:50:05.960Z",
-            "lastFailedAt": "2026-07-23T16:50:05.960Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "freedom-without-thinking-and-openness-without-awareness-2.noura.mp3",
-          "failure": {
-            "slug": "freedom-without-thinking-and-openness-without-awareness-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:50:14.315Z",
-            "lastFailedAt": "2026-07-23T16:50:14.315Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -886,30 +697,12 @@
         "fahed": {
           "ready": true,
           "fileName": "he-passed-the-exam-but-failed-the-question-2.mp3",
-          "failure": {
-            "slug": "he-passed-the-exam-but-failed-the-question-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:50:22.724Z",
-            "lastFailedAt": "2026-07-23T16:50:22.724Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "he-passed-the-exam-but-failed-the-question-2.noura.mp3",
-          "failure": {
-            "slug": "he-passed-the-exam-but-failed-the-question-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:50:31.101Z",
-            "lastFailedAt": "2026-07-23T16:50:31.101Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -925,32 +718,14 @@
       "title": "ربحت أكثر من «هارفارد»… لكنها لا تدرّس عقلاً!",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "i-earned-more-than-harvard-but-it-doesnt-teach-brains.mp3",
-          "failure": {
-            "slug": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 4,
-            "firstFailedAt": "2026-07-23T08:29:47.334Z",
-            "lastFailedAt": "2026-07-28T18:14:27.174Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "i-earned-more-than-harvard-but-it-doesnt-teach-brains.noura.mp3",
-          "failure": {
-            "slug": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T08:32:26.967Z",
-            "lastFailedAt": "2026-07-27T21:35:16.416Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -971,18 +746,9 @@
           "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "i-write-to-awaken-you-not-to-discourage-you-2.noura.mp3",
-          "failure": {
-            "slug": "i-write-to-awaken-you-not-to-discourage-you-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 13,
-            "firstFailedAt": "2026-07-22T02:37:53.598Z",
-            "lastFailedAt": "2026-07-27T21:34:30.131Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/134"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -1021,32 +787,14 @@
       "title": "الجراحة برأيهم تخصص رجولي..؟!",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "in-their-opinion-surgery-is-a-male-specialty-2.mp3",
-          "failure": {
-            "slug": "in-their-opinion-surgery-is-a-male-specialty-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T12:15:45.936Z",
-            "lastFailedAt": "2026-07-28T03:58:09.479Z",
-            "message": "r005 فشل بعد 3 محاولات: STT 0٪، السرعة 73/129"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "in-their-opinion-surgery-is-a-male-specialty-2.noura.mp3",
-          "failure": {
-            "slug": "in-their-opinion-surgery-is-a-male-specialty-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T12:16:41.205Z",
-            "lastFailedAt": "2026-07-28T03:58:20.393Z",
-            "message": "r005 فشل بعد 3 محاولات: STT 0٪، السرعة 72/131"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -1197,30 +945,12 @@
         "fahed": {
           "ready": true,
           "fileName": "private-lesson-in-the-age-of-digital-educational-intelligence.mp3",
-          "failure": {
-            "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:52:36.827Z",
-            "lastFailedAt": "2026-07-23T16:52:36.827Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "private-lesson-in-the-age-of-digital-educational-intelligence.noura.mp3",
-          "failure": {
-            "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:52:45.207Z",
-            "lastFailedAt": "2026-07-23T16:52:45.207Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -1282,32 +1012,14 @@
       "title": "التناظر بين الواقع الحقيقي والواقع الافتراضي في الفيس بوك ٢",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201611-003.mp3",
-          "failure": {
-            "slug": "qabas-201611-003",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T16:52:53.567Z",
-            "lastFailedAt": "2026-07-28T03:59:01.592Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201611-003.noura.mp3",
-          "failure": {
-            "slug": "qabas-201611-003",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T16:53:01.933Z",
-            "lastFailedAt": "2026-07-28T03:59:09.384Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -1369,18 +1081,9 @@
       "title": "هل العبرة في صحة الخبر… أم كثرة المتابعين",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201612-001.mp3",
-          "failure": {
-            "slug": "qabas-201612-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T16:53:43.768Z",
-            "lastFailedAt": "2026-07-28T03:59:17.110Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=90/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
@@ -1401,32 +1104,14 @@
       "title": "إلى أي مدى يمكن أن تذهب التكنولوجيا بالتعليم؟",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201612-002.mp3",
-          "failure": {
-            "slug": "qabas-201612-002",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T16:54:00.632Z",
-            "lastFailedAt": "2026-07-28T03:59:25.502Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201612-002.noura.mp3",
-          "failure": {
-            "slug": "qabas-201612-002",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T16:54:09.096Z",
-            "lastFailedAt": "2026-07-28T03:59:33.631Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -1488,32 +1173,14 @@
       "title": "هل أصبحت التكنولوجيا أحد مقومات الراحة؟",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201702-001.mp3",
-          "failure": {
-            "slug": "qabas-201702-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T18:30:09.470Z",
-            "lastFailedAt": "2026-07-28T03:59:40.660Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201702-001.noura.mp3",
-          "failure": {
-            "slug": "qabas-201702-001",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T18:30:18.168Z",
-            "lastFailedAt": "2026-07-28T03:59:47.651Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -1534,18 +1201,9 @@
           "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201702-002.noura.mp3",
-          "failure": {
-            "slug": "qabas-201702-002",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T18:30:35.525Z",
-            "lastFailedAt": "2026-07-28T03:59:57.427Z",
-            "message": "r012 فشل بعد 3 محاولات: STT 0٪، السرعة 79/133"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -1561,32 +1219,14 @@
       "title": "قصور التشريعات المحلية عن مواكبة التكنولوجيا",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201702-003.mp3",
-          "failure": {
-            "slug": "qabas-201702-003",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T18:30:44.200Z",
-            "lastFailedAt": "2026-07-28T04:00:08.959Z",
-            "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 82/143"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201702-003.noura.mp3",
-          "failure": {
-            "slug": "qabas-201702-003",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T18:30:52.886Z",
-            "lastFailedAt": "2026-07-28T04:00:20.150Z",
-            "message": "r010 فشل بعد 3 محاولات: STT 0٪، السرعة 84/136"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -1625,18 +1265,9 @@
       "title": "أما آن لنا أن نعيد توجيه التقدم التكنولوجي نحو الأولويات الحقيقة",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201703-001.mp3",
-          "failure": {
-            "slug": "qabas-201703-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T18:31:18.921Z",
-            "lastFailedAt": "2026-07-28T04:00:26.267Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=88/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
@@ -1703,32 +1334,14 @@
       "title": "ماذا سيحدث لو تحررت التكنولوجيا من الرأسمالية؟",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201703-004.mp3",
-          "failure": {
-            "slug": "qabas-201703-004",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T18:32:11.060Z",
-            "lastFailedAt": "2026-07-28T06:41:22.264Z",
-            "message": "r015 فشل بعد 3 محاولات: STT 0٪، السرعة 78/128"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201703-004.noura.mp3",
-          "failure": {
-            "slug": "qabas-201703-004",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T18:32:19.739Z",
-            "lastFailedAt": "2026-07-27T08:14:16.553Z",
-            "message": "r015 فشل بعد 3 محاولات: STT 0٪، السرعة 84/122"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -1928,32 +1541,14 @@
       "title": "تقنية النظارات3D تغزو التعليم الجامعي",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201707-001.mp3",
-          "failure": {
-            "slug": "qabas-201707-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T18:34:48.500Z",
-            "lastFailedAt": "2026-07-28T06:41:32.844Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201707-001.noura.mp3",
-          "failure": {
-            "slug": "qabas-201707-001",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T18:34:57.237Z",
-            "lastFailedAt": "2026-07-27T09:02:54.147Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -1992,32 +1587,14 @@
       "title": "الجوازات الذكية (الإلكترونية) أدوات تقتحم الخصوصية",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201707-003.mp3",
-          "failure": {
-            "slug": "qabas-201707-003",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T18:35:23.340Z",
-            "lastFailedAt": "2026-07-28T06:41:42.702Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 80/139"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201707-003.noura.mp3",
-          "failure": {
-            "slug": "qabas-201707-003",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T18:35:32.002Z",
-            "lastFailedAt": "2026-07-27T09:08:23.556Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 81/135"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2033,32 +1610,14 @@
       "title": "التكنولوجيا تغزو 40% من سكان الكوكب…",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201707-004.mp3",
-          "failure": {
-            "slug": "qabas-201707-004",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T20:19:54.497Z",
-            "lastFailedAt": "2026-07-28T06:41:47.977Z",
-            "message": "r013 فشل بعد 3 محاولات: STT 0٪، السرعة 77/133"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201707-004.noura.mp3",
-          "failure": {
-            "slug": "qabas-201707-004",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T20:20:03.301Z",
-            "lastFailedAt": "2026-07-27T09:11:50.406Z",
-            "message": "r013 فشل بعد 3 محاولات: STT 0٪، السرعة 78/140"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2145,30 +1704,12 @@
         "fahed": {
           "ready": true,
           "fileName": "qabas-201709-001.mp3",
-          "failure": {
-            "slug": "qabas-201709-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-27T19:15:17.474Z",
-            "lastFailedAt": "2026-07-27T19:15:17.474Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 83/138"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201709-001.noura.mp3",
-          "failure": {
-            "slug": "qabas-201709-001",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T20:21:12.740Z",
-            "lastFailedAt": "2026-07-27T19:15:32.110Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 78/138"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2184,32 +1725,14 @@
       "title": "أدخل إلى عالم التعليم الالكتروني من أبسط تطبيقات جوالك…",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201709-002.mp3",
-          "failure": {
-            "slug": "qabas-201709-002",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T20:21:21.408Z",
-            "lastFailedAt": "2026-07-28T15:37:33.561Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201709-002.noura.mp3",
-          "failure": {
-            "slug": "qabas-201709-002",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T20:21:30.075Z",
-            "lastFailedAt": "2026-07-27T19:19:55.770Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2271,18 +1794,9 @@
       "title": "كثرة التطبيقات التعليمية… وعدم الجدوى في الواقع التربوي",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201709-005.mp3",
-          "failure": {
-            "slug": "qabas-201709-005",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T20:22:13.472Z",
-            "lastFailedAt": "2026-07-28T15:39:39.635Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=88/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
@@ -2303,32 +1817,14 @@
       "title": "وسائل الإعلام التقليدي والإلكتروني… وسائل دفاع للوحدة الخليجية",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201709-006.mp3",
-          "failure": {
-            "slug": "qabas-201709-006",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T20:22:30.817Z",
-            "lastFailedAt": "2026-07-28T18:20:10.935Z",
-            "message": "r005 فشل بعد 3 محاولات: STT 0٪، السرعة 76/141"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201709-006.noura.mp3",
-          "failure": {
-            "slug": "qabas-201709-006",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T20:22:39.490Z",
-            "lastFailedAt": "2026-07-27T19:59:49.816Z",
-            "message": "r005 فشل بعد 3 محاولات: STT 0٪، السرعة 74/143"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2436,18 +1932,9 @@
       "title": "شيخوخة المعلومات",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201711-002.mp3",
-          "failure": {
-            "slug": "qabas-201711-002",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T20:23:57.564Z",
-            "lastFailedAt": "2026-07-28T18:20:17.082Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 79/144"
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
@@ -2468,32 +1955,14 @@
       "title": "هل سينتهي عصر الهواتف الذكية؟",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201711-003.mp3",
-          "failure": {
-            "slug": "qabas-201711-003",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T20:24:14.890Z",
-            "lastFailedAt": "2026-07-28T18:23:05.636Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201711-003.noura.mp3",
-          "failure": {
-            "slug": "qabas-201711-003",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T20:24:23.537Z",
-            "lastFailedAt": "2026-07-27T20:32:46.509Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2532,32 +2001,14 @@
       "title": "مجلس علم… للشيخ جوجل",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201712-001.mp3",
-          "failure": {
-            "slug": "qabas-201712-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T20:24:49.625Z",
-            "lastFailedAt": "2026-07-28T18:25:14.658Z",
-            "message": "r016 فشل بعد 3 محاولات: STT 0٪، السرعة 68/137"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201712-001.noura.mp3",
-          "failure": {
-            "slug": "qabas-201712-001",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T20:24:58.464Z",
-            "lastFailedAt": "2026-07-27T20:43:32.711Z",
-            "message": "r016 فشل بعد 3 محاولات: STT 0٪، السرعة 71/143"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2573,32 +2024,14 @@
       "title": "تكنولوجيا الواقع المعزز… هل هي صديقة الإنسان أم خروج عن السيطرة؟",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201712-002.mp3",
-          "failure": {
-            "slug": "qabas-201712-002",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T20:25:07.173Z",
-            "lastFailedAt": "2026-07-28T18:28:42.338Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201712-002.noura.mp3",
-          "failure": {
-            "slug": "qabas-201712-002",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T20:25:15.855Z",
-            "lastFailedAt": "2026-07-27T20:49:38.277Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2614,32 +2047,14 @@
       "title": "هل وظيفتك مهددة بالانقراض؟",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201712-003.mp3",
-          "failure": {
-            "slug": "qabas-201712-003",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T20:25:24.501Z",
-            "lastFailedAt": "2026-07-28T18:31:05.526Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201712-003.noura.mp3",
-          "failure": {
-            "slug": "qabas-201712-003",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T20:25:33.171Z",
-            "lastFailedAt": "2026-07-27T20:54:06.832Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2862,32 +2277,14 @@
       "title": "نعم لخصخصة التعليم… نظرة إصلاحية",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201805-001.mp3",
-          "failure": {
-            "slug": "qabas-201805-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T23:10:38.970Z",
-            "lastFailedAt": "2026-07-28T18:31:14.808Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/134"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201805-001.noura.mp3",
-          "failure": {
-            "slug": "qabas-201805-001",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T23:10:46.903Z",
-            "lastFailedAt": "2026-07-27T21:01:17.192Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/143"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2903,32 +2300,14 @@
       "title": "لا تخطؤوا خطأ الصين…",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201805-002.mp3",
-          "failure": {
-            "slug": "qabas-201805-002",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T23:11:48.867Z",
-            "lastFailedAt": "2026-07-28T18:32:05.866Z",
-            "message": "r007 فشل بعد 3 محاولات: STT 0٪، السرعة 82/123"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201805-002.noura.mp3",
-          "failure": {
-            "slug": "qabas-201805-002",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T23:12:22.249Z",
-            "lastFailedAt": "2026-07-27T21:02:26.315Z",
-            "message": "r004 فشل بعد 3 محاولات: STT 0٪، السرعة 84/132"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -2944,32 +2323,14 @@
       "title": "دور المعلم… كوسيلة إعلامية",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201805-003.mp3",
-          "failure": {
-            "slug": "qabas-201805-003",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T23:12:28.455Z",
-            "lastFailedAt": "2026-07-28T18:32:12.066Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 83/136"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201805-003.noura.mp3",
-          "failure": {
-            "slug": "qabas-201805-003",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T23:12:33.610Z",
-            "lastFailedAt": "2026-07-27T21:02:38.246Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 80/138"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3008,32 +2369,14 @@
       "title": "كلية التربية… البقرة الحلوب",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201806-001.mp3",
-          "failure": {
-            "slug": "qabas-201806-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T23:19:43.812Z",
-            "lastFailedAt": "2026-07-28T18:34:30.243Z",
-            "message": "r016 فشل بعد 3 محاولات: STT 0٪، السرعة 70/130"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201806-001.noura.mp3",
-          "failure": {
-            "slug": "qabas-201806-001",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T23:22:42.666Z",
-            "lastFailedAt": "2026-07-27T21:07:06.736Z",
-            "message": "r016 فشل بعد 3 محاولات: STT 0٪، السرعة 69/130"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3095,32 +2438,14 @@
       "title": "المافيا المجتمعية… تفشي وخطر مجتمعي…",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201806-004.mp3",
-          "failure": {
-            "slug": "qabas-201806-004",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T23:35:36.432Z",
-            "lastFailedAt": "2026-07-28T18:34:37.899Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 68/134"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201806-004.noura.mp3",
-          "failure": {
-            "slug": "qabas-201806-004",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T23:35:43.678Z",
-            "lastFailedAt": "2026-07-27T21:07:19.812Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 69/135"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3136,32 +2461,14 @@
       "title": "Phubbing… وعاداتها السيئة",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201806-005.mp3",
-          "failure": {
-            "slug": "qabas-201806-005",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T23:35:51.151Z",
-            "lastFailedAt": "2026-07-28T18:34:43.811Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 79/137"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201806-005.noura.mp3",
-          "failure": {
-            "slug": "qabas-201806-005",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T23:36:00.229Z",
-            "lastFailedAt": "2026-07-27T21:07:30.318Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 76/137"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3177,32 +2484,14 @@
       "title": "القدوة العلمية… وتصدع الأجيال",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201807-001.mp3",
-          "failure": {
-            "slug": "qabas-201807-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T23:36:07.588Z",
-            "lastFailedAt": "2026-07-28T18:34:50.310Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 79/145"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201807-001.noura.mp3",
-          "failure": {
-            "slug": "qabas-201807-001",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T23:36:13.981Z",
-            "lastFailedAt": "2026-07-27T21:35:53.686Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 78/136"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3264,32 +2553,14 @@
       "title": "أصول التوجيه للطلبة… فلكل مقام مقال…",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201810-001.mp3",
-          "failure": {
-            "slug": "qabas-201810-001",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-24T01:24:37.024Z",
-            "lastFailedAt": "2026-07-28T18:36:55.276Z",
-            "message": "r014 فشل بعد 3 محاولات: STT 0٪، السرعة 84/133"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201810-001.noura.mp3",
-          "failure": {
-            "slug": "qabas-201810-001",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-24T01:26:41.786Z",
-            "lastFailedAt": "2026-07-27T21:43:03.031Z",
-            "message": "r014 فشل بعد 3 محاولات: STT 0٪، السرعة 82/123"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3305,32 +2576,14 @@
       "title": "سر اليوتيوب… وغموض المحتوى",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201810-002.mp3",
-          "failure": {
-            "slug": "qabas-201810-002",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-24T01:26:48.123Z",
-            "lastFailedAt": "2026-07-28T18:37:01.899Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 84/141"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "qabas-201810-002.noura.mp3",
-          "failure": {
-            "slug": "qabas-201810-002",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-24T01:27:09.332Z",
-            "lastFailedAt": "2026-07-27T21:43:34.428Z",
-            "message": "r003 فشل بعد 3 محاولات: STT 0٪، السرعة 78/133"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3484,32 +2737,14 @@
       "title": "الراحة تُدرّس… والفكر في إجازة دائمة!",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.mp3",
-          "failure": {
-            "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 4,
-            "firstFailedAt": "2026-07-23T08:54:08.715Z",
-            "lastFailedAt": "2026-07-28T18:19:20.051Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.noura.mp3",
-          "failure": {
-            "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T08:59:27.810Z",
-            "lastFailedAt": "2026-07-27T23:22:00.611Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3525,32 +2760,14 @@
       "title": "طفل الهواتف الذكية.. عقل خلاق أم طفل يساق؟!",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "smartphone-child-a-creative-mind-or-a-child-being-driven.mp3",
-          "failure": {
-            "slug": "smartphone-child-a-creative-mind-or-a-child-being-driven",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T10:08:30.793Z",
-            "lastFailedAt": "2026-07-27T23:23:54.664Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "smartphone-child-a-creative-mind-or-a-child-being-driven.noura.mp3",
-          "failure": {
-            "slug": "smartphone-child-a-creative-mind-or-a-child-being-driven",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T10:13:18.709Z",
-            "lastFailedAt": "2026-07-28T03:57:53.587Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3566,32 +2783,14 @@
       "title": "عقول الطلاب في إجازة… وChatGPT يشتغل بدوام كامل!",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.mp3",
-          "failure": {
-            "slug": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 14,
-            "firstFailedAt": "2026-07-22T01:33:32.610Z",
-            "lastFailedAt": "2026-07-28T18:02:51.619Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.noura.mp3",
-          "failure": {
-            "slug": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 13,
-            "firstFailedAt": "2026-07-22T01:38:35.489Z",
-            "lastFailedAt": "2026-07-27T21:32:59.615Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3632,16 +2831,7 @@
         "fahed": {
           "ready": true,
           "fileName": "the-blackboard-that-no-longer-sees-anyone-2.mp3",
-          "failure": {
-            "slug": "the-blackboard-that-no-longer-sees-anyone-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:49:07.356Z",
-            "lastFailedAt": "2026-07-23T16:49:07.356Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
@@ -3685,32 +2875,14 @@
       "title": "عقولنا في عُلب ونتساءل: أين الإبداع؟",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "the-excellence-epidemic-or-the-cult-of-grades-2.mp3",
-          "failure": {
-            "slug": "the-excellence-epidemic-or-the-cult-of-grades-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 14,
-            "firstFailedAt": "2026-07-22T01:19:05.194Z",
-            "lastFailedAt": "2026-07-28T17:58:38.947Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "the-excellence-epidemic-or-the-cult-of-grades-2.noura.mp3",
-          "failure": {
-            "slug": "the-excellence-epidemic-or-the-cult-of-grades-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 13,
-            "firstFailedAt": "2026-07-22T01:23:58.726Z",
-            "lastFailedAt": "2026-07-27T21:32:27.012Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3797,30 +2969,12 @@
         "fahed": {
           "ready": true,
           "fileName": "the-mind-present-in-absence-absent-in-presence-2.mp3",
-          "failure": {
-            "slug": "the-mind-present-in-absence-absent-in-presence-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:49:32.439Z",
-            "lastFailedAt": "2026-07-23T16:49:32.440Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "the-mind-present-in-absence-absent-in-presence-2.noura.mp3",
-          "failure": {
-            "slug": "the-mind-present-in-absence-absent-in-presence-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:49:40.798Z",
-            "lastFailedAt": "2026-07-23T16:49:40.798Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3836,32 +2990,14 @@
       "title": "السوق المفتوح لاقتناء الشهادات أزمة علمية أم أخلاقية؟",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.mp3",
-          "failure": {
-            "slug": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T12:20:36.907Z",
-            "lastFailedAt": "2026-07-28T03:58:28.450Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.noura.mp3",
-          "failure": {
-            "slug": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T12:24:47.370Z",
-            "lastFailedAt": "2026-07-28T03:58:36.696Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3877,32 +3013,14 @@
       "title": "جمهورية الشهادات… وسقوط الفكر!",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "the-republic-of-degrees-and-the-fall-of-thought-2.mp3",
-          "failure": {
-            "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 14,
-            "firstFailedAt": "2026-07-22T02:07:15.589Z",
-            "lastFailedAt": "2026-07-28T18:03:01.253Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 74/135"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "the-republic-of-degrees-and-the-fall-of-thought-2.noura.mp3",
-          "failure": {
-            "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 13,
-            "firstFailedAt": "2026-07-22T02:07:22.790Z",
-            "lastFailedAt": "2026-07-27T21:33:17.736Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 78/137"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -3943,30 +3061,12 @@
         "fahed": {
           "ready": true,
           "fileName": "the-social-media-swamp-and-plastic-surgery-addiction-2.mp3",
-          "failure": {
-            "slug": "the-social-media-swamp-and-plastic-surgery-addiction-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:51:29.802Z",
-            "lastFailedAt": "2026-07-23T16:51:29.802Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "the-social-media-swamp-and-plastic-surgery-addiction-2.noura.mp3",
-          "failure": {
-            "slug": "the-social-media-swamp-and-plastic-surgery-addiction-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:51:38.161Z",
-            "lastFailedAt": "2026-07-23T16:51:38.161Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -4007,30 +3107,12 @@
         "fahed": {
           "ready": true,
           "fileName": "the-teacher-the-last-to-know-2.mp3",
-          "failure": {
-            "slug": "the-teacher-the-last-to-know-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:49:15.671Z",
-            "lastFailedAt": "2026-07-23T16:49:15.671Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "the-teacher-the-last-to-know-2.noura.mp3",
-          "failure": {
-            "slug": "the-teacher-the-last-to-know-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:49:24.045Z",
-            "lastFailedAt": "2026-07-23T16:49:24.045Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -4048,30 +3130,12 @@
         "fahed": {
           "ready": true,
           "fileName": "the-teacher-what-do-you-know-about-the-teacher.mp3",
-          "failure": {
-            "slug": "the-teacher-what-do-you-know-about-the-teacher",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:51:46.557Z",
-            "lastFailedAt": "2026-07-23T16:51:46.557Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "the-teacher-what-do-you-know-about-the-teacher.noura.mp3",
-          "failure": {
-            "slug": "the-teacher-what-do-you-know-about-the-teacher",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:51:54.938Z",
-            "lastFailedAt": "2026-07-23T16:51:54.938Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -4112,30 +3176,12 @@
         "fahed": {
           "ready": true,
           "fileName": "todays-childs-confusion-between-education-and-care.mp3",
-          "failure": {
-            "slug": "todays-childs-confusion-between-education-and-care",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:52:03.327Z",
-            "lastFailedAt": "2026-07-23T16:52:03.327Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "todays-childs-confusion-between-education-and-care.noura.mp3",
-          "failure": {
-            "slug": "todays-childs-confusion-between-education-and-care",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:52:11.699Z",
-            "lastFailedAt": "2026-07-23T16:52:11.699Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -4153,30 +3199,12 @@
         "fahed": {
           "ready": true,
           "fileName": "turning-video-game-obsession-into-creative-meditation-2.mp3",
-          "failure": {
-            "slug": "turning-video-game-obsession-into-creative-meditation-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:52:20.101Z",
-            "lastFailedAt": "2026-07-23T16:52:20.101Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
           "fileName": "turning-video-game-obsession-into-creative-meditation-2.noura.mp3",
-          "failure": {
-            "slug": "turning-video-game-obsession-into-creative-meditation-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 1,
-            "firstFailedAt": "2026-07-23T16:52:28.472Z",
-            "lastFailedAt": "2026-07-23T16:52:28.472Z",
-            "message": "Azure TTS 401: "
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -4192,32 +3220,14 @@
       "title": "نُرضعهم حناناً… ونحرمهم تربية!",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.mp3",
-          "failure": {
-            "slug": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 7,
-            "firstFailedAt": "2026-07-22T05:45:02.086Z",
-            "lastFailedAt": "2026-07-28T18:10:53.338Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 76/140"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.noura.mp3",
-          "failure": {
-            "slug": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 6,
-            "firstFailedAt": "2026-07-22T05:45:11.823Z",
-            "lastFailedAt": "2026-07-27T21:34:49.453Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 73/141"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -4258,16 +3268,7 @@
         "fahed": {
           "ready": true,
           "fileName": "we-handed-them-the-phone-so-theyd-leave-us-alone-2.mp3",
-          "failure": {
-            "slug": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 2,
-            "firstFailedAt": "2026-07-23T04:07:04.266Z",
-            "lastFailedAt": "2026-07-23T06:35:37.879Z",
-            "message": "r002 فشل بعد 3 محاولات: STT 75٪، السرعة 86/149"
-          }
+          "failure": null
         },
         "noura": {
           "ready": true,
@@ -4288,32 +3289,14 @@
       "title": "نعجن أبناءنا للنجاح… ونُخرجهم فارغين",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.mp3",
-          "failure": {
-            "slug": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T09:18:22.210Z",
-            "lastFailedAt": "2026-07-27T23:23:07.561Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 79/142"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.noura.mp3",
-          "failure": {
-            "slug": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T09:18:31.184Z",
-            "lastFailedAt": "2026-07-27T23:23:16.717Z",
-            "message": "r001 فشل بعد 3 محاولات: STT 0٪، السرعة 80/136"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -4361,32 +3344,14 @@
       "title": "حين يصبح الغش ذكاءً… والصدق غباءً",
       "readings": {
         "fahed": {
-          "ready": false,
+          "ready": true,
           "fileName": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.mp3",
-          "failure": {
-            "slug": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
-            "voice": "fahed",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T09:12:16.099Z",
-            "lastFailedAt": "2026-07-27T23:22:41.145Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         },
         "noura": {
-          "ready": false,
+          "ready": true,
           "fileName": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.noura.mp3",
-          "failure": {
-            "slug": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
-            "voice": "noura",
-            "kind": "original",
-            "stage": "generate-reading",
-            "attempts": 3,
-            "firstFailedAt": "2026-07-23T09:18:11.724Z",
-            "lastFailedAt": "2026-07-27T23:22:57.111Z",
-            "message": "بوابة الصوت رفضت القراءة: proxy=91/100، الحكم السمعي غير متاح"
-          }
+          "failure": null
         }
       },
       "dialogue": {
@@ -4522,5 +3487,5 @@
       "complete": false
     }
   ],
-  "fingerprint": "b1d848a87601910584810f165d8cf62f97298761e3c49d52c1a5659464e4417f"
+  "fingerprint": "6c8c4aed5d6c6bd35ba1a6f662bb384912a478d14822b54fdaccb36355887507"
 }

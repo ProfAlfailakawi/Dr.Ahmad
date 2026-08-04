@@ -3803,3 +3803,44 @@ body.encyclopedia-sheet-open {
     text-overflow: clip;
   }
 }
+
+
+/* مراجعة الهاتف النهائية: لا طبقة عابرة ولا تلميح ولا سكة تتجاوز عرض الشاشة. */
+html, body, #root { max-inline-size: 100%; }
+.site-menu-overlay { inline-size: 100dvw; max-inline-size: 100%; overflow-x: clip; }
+
+@media (max-width: 767px) {
+  .signature-page,
+  .home-page,
+  main,
+  section,
+  article { max-inline-size: 100%; }
+
+  /* القرب الإجباري كان سبب النطّات المتبقية في Safari؛ السحب حرّ ومحكوم داخل السكة. */
+  [data-horizontal-video-rail="true"],
+  .rail,
+  .mobile-card-rail,
+  .signatures-rail,
+  .article-featured-rail,
+  .media-related-rail,
+  .ask-book-rail,
+  .book-spine-rail,
+  .home-motion-rail {
+    scroll-snap-type: none !important;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+  }
+
+  .research-section-navigator {
+    position: sticky;
+    top: calc(4rem + env(safe-area-inset-top));
+    z-index: 35;
+    background: rgb(var(--c-canvas));
+    transform: none;
+    contain: layout paint;
+    will-change: auto;
+  }
+
+  #encyclopedia-search { overflow: hidden; }
+  #encyclopedia-query { max-inline-size: calc(100% - 3rem); }
+}

@@ -888,7 +888,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
 
             <div id="encyclopedia-search" className="mt-6 flex items-center gap-2 rounded-full border border-hair bg-canvas p-1.5">
               <label htmlFor="encyclopedia-query" className="sr-only">ابحث في موسوعة تكنولوجيا التعليم</label>
-              <input id="encyclopedia-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث في فيديو أو صفحة أو شريحة" dir="rtl" className="min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[.7rem] text-ink outline-none placeholder:text-soft/[.6] sm:px-4 sm:text-[.82rem]" />
+              <input id="encyclopedia-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث في فيديو أو صفحة أو شريحة" dir="rtl" className="w-0 min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[clamp(.66rem,3.05vw,.82rem)] text-ink outline-none placeholder:text-soft/[.6] sm:px-4" />
               {query ? <button type="button" onClick={() => setQuery('')} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft hover:text-accent"><SocialIcon name="Close" size={13} /></button> : <span aria-label="ابحث في الموسوعة" title="ابحث في الموسوعة" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Search" size={15} /></span>}
             </div>
             {query.trim().length >= 2 && <p className="mt-2 text-[.64rem] text-soft">{resultCount ? `${formatArabicNumber(resultCount)} نتيجة مرتبطة` : 'لا توجد نتيجة مطابقة.'}</p>}

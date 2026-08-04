@@ -209,11 +209,24 @@ function ExclusiveDetailsGuard() {
       const current = event.target
       if (!(current instanceof HTMLDetailsElement) || !current.open) return
       if (current.hasAttribute('data-allow-multiple')) return
+
+      // إغلاق بطاقة أعلى الصفحة يغيّر ارتفاع المستند فيقفز الكرت المضغوط إلى
+      // موضع آخر. نحفظ موضعه البصري ثم نعوض الفرق بعد الإغلاق في الإطار التالي.
+      const beforeTop = current.getBoundingClientRect().top
+      let closedAny = false
       for (const item of Array.from(document.querySelectorAll('details[open]'))) {
         if (item === current || !(item instanceof HTMLDetailsElement)) continue
         if (item.hasAttribute('data-allow-multiple')) continue
         if (item.contains(current)) continue
         item.open = false
+        closedAny = true
+      }
+      if (closedAny) {
+        window.requestAnimationFrame(() => {
+          if (!current.isConnected || !current.open) return
+          const delta = current.getBoundingClientRect().top - beforeTop
+          if (Math.abs(delta) > 0.5) window.scrollBy({ top: delta, left: 0, behavior: 'auto' })
+        })
       }
     }
     /* شرط الدكتور لا يقتصر على <details>: «استماع» زرٌّ يفتح مشغّل الصوت، وفتحُه

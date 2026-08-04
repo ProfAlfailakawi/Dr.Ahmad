@@ -237,6 +237,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'ابدأ من هنا',
     items: [
+      { to: '/', label: 'الرئيسية' },
       { to: '/articles', label: 'المقالات الفكرية', allLabel: 'جميع المقالات' },
       { to: '/listen', label: 'مجلس الفكرة' },
       /* «أبحث عن مادة» و«أسأل الأرشيف» يظهران داخل الأداة نفسها (KnowledgeEntry
@@ -807,7 +808,18 @@ export function Nav() {
     if (ownerPressTimer.current) window.clearTimeout(ownerPressTimer.current)
   }, [])
   useEffect(() => scrollY.on('change', (v) => setScrolled(v > 50)), [scrollY])
-  useEffect(() => setOpen(false), [loc.pathname])
+  useEffect(() => setOpen(false), [loc.pathname, loc.search, loc.hash])
+  useEffect(() => {
+    // Safari قد يعيد الصفحة من bfcache بالحالة السابقة، فتظهر القائمة وكأنها
+    // جزء من الرئيسية. كل عودة فعلية للصفحة تبدأ والقائمة مغلقة.
+    const resetTransientPanels = () => {
+      setOpen(false)
+      setSearchOpen(false)
+      document.body.style.overflow = ''
+    }
+    window.addEventListener('pageshow', resetTransientPanels)
+    return () => window.removeEventListener('pageshow', resetTransientPanels)
+  }, [])
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }

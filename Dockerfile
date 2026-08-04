@@ -44,6 +44,9 @@ COPY src/data/book-passages.json /app/src/data/book-passages.json
 COPY src/data/encyclopedia-structure.json /app/src/data/encyclopedia-structure.json
 # تلميحات العروض الأربعة تُدمج مع فهرس PDF ولا تستبدله.
 COPY src/data/encyclopedia-teaching-map.json /app/src/data/encyclopedia-teaching-map.json
+# الفهرس الزمني المبني مسبقاً هو قلب البحث داخل لحظة الفيديو؛ غيابه يجعل
+# الاستيراد المحلي في encyclopedia-videos.mjs يسقط صورة dr-api عند البناء.
+COPY src/data/encyclopedia-video-transcripts.json /app/src/data/encyclopedia-video-transcripts.json
 COPY src/data/editorial-policy.json /app/src/data/editorial-policy.json
 COPY whatsapp-agent/content-index.mjs /app/whatsapp-agent/content-index.mjs
 COPY whatsapp-agent/config.mjs /app/whatsapp-agent/config.mjs

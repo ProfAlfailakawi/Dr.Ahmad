@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { IconTooltipPortal } from './IconTooltipPortal'
 
 const STORAGE_PREFIX = 'clarified-icon:'
 
@@ -49,15 +50,14 @@ function visibleText(element: HTMLElement) {
 }
 
 export function SitewideIconClarifications() {
-  const [tip, setTip] = useState<{ text: string; x: number; y: number } | null>(null)
-  const tipRef = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState<{ el: HTMLElement; explanation: string } | null>(null)
   const timerRef = useRef<number | null>(null)
 
   useEffect(() => {
     const close = () => {
       if (timerRef.current) window.clearTimeout(timerRef.current)
       timerRef.current = null
-      setTip(null)
+      setActive(null)
     }
 
     const onClick = (event: MouseEvent) => {
@@ -78,10 +78,7 @@ export function SitewideIconClarifications() {
       event.stopImmediatePropagation()
       storageMark(clarification.id)
 
-      const rect = control.getBoundingClientRect()
-      const x = rect.left + rect.width / 2
-      const y = Math.max(18, rect.top - 10)
-      setTip({ text: clarification.explanation, x, y })
+      setActive({ el: control, explanation: clarification.explanation })
       if (timerRef.current) window.clearTimeout(timerRef.current)
       timerRef.current = window.setTimeout(close, 4800)
     }
@@ -97,31 +94,6 @@ export function SitewideIconClarifications() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!tip || !tipRef.current) return
-    const node = tipRef.current
-    const frame = window.requestAnimationFrame(() => {
-      const rect = node.getBoundingClientRect()
-      const gutter = 12
-      let shift = 0
-      if (rect.left < gutter) shift += gutter - rect.left
-      if (rect.right > window.innerWidth - gutter) shift -= rect.right - (window.innerWidth - gutter)
-      if (shift) node.style.transform = `translateX(calc(-50% + ${shift}px)) translateY(-100%)`
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [tip])
-
-  if (!tip) return null
-  return (
-    <div
-      ref={tipRef}
-      role="status"
-      aria-live="polite"
-      className="pointer-events-none fixed z-[500] w-max max-w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-full rounded-xl border border-hair bg-ink px-3.5 py-2.5 text-center text-[.72rem] font-semibold leading-relaxed text-white shadow-2xl"
-      style={{ left: tip.x, top: tip.y }}
-    >
-      {tip.text}
-      <span aria-hidden className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r border-hair bg-ink" />
-    </div>
-  )
+  if (!active) return null
+  return <IconTooltipPortal targetEl={active.el} label={active.explanation} />
 }

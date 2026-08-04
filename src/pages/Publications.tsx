@@ -54,18 +54,23 @@ export default function Publications() {
                 data-featured-encyclopedia={featured ? 'true' : undefined}
               >
                 {featured ? (
-                  <div className="-mx-4 w-[calc(100%+2rem)] max-w-none overflow-hidden border-y border-accent/25 bg-wash/40 sm:mx-0 sm:rounded-2xl sm:border sm:p-5 md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(15rem,.65fr)] md:items-stretch md:gap-6">
-                    <Link to={`/publications/${b.slug}`} viewTransition className="block overflow-hidden border-y border-hair bg-white sm:rounded-xl sm:border" style={{ aspectRatio: '1024 / 700' }}>
-                      {b.cover ? <img src={b.cover} alt={b.title} loading="eager" width="1024" height="700" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
+                  <div className="w-full overflow-hidden rounded-2xl border border-hair bg-canvas shadow-sm sm:border-accent/20 sm:p-5 md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] md:items-center md:gap-7 md:p-6">
+                    <Link to={`/publications/${b.slug}`} viewTransition className="group/cover block w-full overflow-hidden bg-wash sm:rounded-xl" style={{ aspectRatio: '1024 / 700' }}>
+                      {b.cover ? <img src={b.cover} alt={b.title} loading="eager" width="1024" height="700" className="h-full w-full object-cover transition-transform duration-500 group-hover/cover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
                     </Link>
-                    <div className="flex min-w-0 flex-col justify-center px-5 pb-6 pt-5 sm:px-1 sm:pb-1 md:p-2">
-                      <span className="w-fit rounded-full border border-accent/25 bg-canvas px-3 py-1 text-[.62rem] font-semibold text-accent">الكتاب المحوري في المشروع</span>
-                      <Link to={`/publications/${b.slug}`} viewTransition className="mt-4 block">
-                        <h2 className="font-display text-[1.35rem] font-semibold leading-[1.5] text-ink transition-colors hover:text-accent sm:text-[1.7rem]">{b.title}</h2>
-                      </Link>
-                      <p className="mt-3 max-w-[34rem] text-[.75rem] leading-[1.9] text-soft">الموسوعة المرئية والكتاب ومواد التدريس في بوابة معرفية واحدة، مع بحث يصل إلى الفصل والصفحة واللحظة الزمنية الموثقة.</p>
-                      <div className="mt-6 flex flex-wrap items-center gap-3">
-                        <ClarifiedIconAction id="book-search-featured" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-accent/[.35] text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={15} /></Link></ClarifiedIconAction>
+                    <div className="flex min-w-0 flex-col justify-between p-5 sm:p-2 md:p-0">
+                      <div>
+                        <Link to={`/publications/${b.slug}`} viewTransition className="block">
+                          <h2 className="font-display text-xl font-bold leading-snug text-ink transition-colors hover:text-accent sm:text-2xl md:text-3xl">{b.title}</h2>
+                        </Link>
+                        <p className="mt-3 text-[.82rem] leading-relaxed text-soft sm:text-[.88rem]">الموسوعة المرئية والكتاب ومواد التدريس في بوابة معرفية واحدة، مع بحث يصل إلى الفصل والصفحة واللحظة الزمنية الموثقة.</p>
+                      </div>
+                      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-hair pt-4">
+                        <Link to={`/publications/${b.slug}`} viewTransition className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90">
+                          <span>استعرض الموسوعة</span>
+                          <span aria-hidden="true" className="text-[.9rem]">←</span>
+                        </Link>
+                        <ClarifiedIconAction id="book-search-featured" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={15} /></Link></ClarifiedIconAction>
                       </div>
                     </div>
                   </div>

@@ -32,6 +32,7 @@ import {
 } from '../lib/encyclopedia-video-index'
 import { FadeUp, Reveal } from './ui'
 import { SocialIcon } from './icons'
+import { ClarifiedIconAction } from './ClarifiedIconAction'
 import { OwnerEdit } from './extras'
 import { EncyclopediaKnowledgeResults } from './EncyclopediaKnowledgeResults'
 
@@ -414,7 +415,16 @@ function DoorRow({
       <summary onClick={(event) => { event.preventDefault(); onToggle() }} className="grid cursor-pointer list-none grid-cols-[2.6rem_minmax(0,1fr)_auto] items-start gap-4 py-6 marker:hidden [&::-webkit-details-marker]:hidden md:grid-cols-[3.2rem_minmax(0,1fr)_auto] md:py-7">
         <span className="font-display text-[.72rem] font-semibold text-accent">{door.number}</span>
         <span className="min-w-0">
-          <strong className="block font-display text-[1.12rem] font-semibold leading-[1.55] text-ink md:text-[1.28rem]">{door.title}</strong>
+          <span className="flex items-start gap-2">
+            <strong className="block min-w-0 font-display text-[1.12rem] font-semibold leading-[1.55] text-ink md:text-[1.28rem]">{door.title}</strong>
+            {door.presentation && (
+              <ClarifiedIconAction id="encyclopedia-door-materials" label="مواد التدريس المرتبطة بهذا الباب">
+                <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onOpenTeaching(door) }} aria-label={`مواد الباب: ${door.title}`} title="مواد الباب" className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                  <SocialIcon name="Image" size={15} />
+                </button>
+              </ClarifiedIconAction>
+            )}
+          </span>
           <span className="mt-1 block text-[.69rem] leading-relaxed text-soft">
             {formatArabicNumber(door.units.length)} فصول · {doorVideos.length > 0 ? `${formatArabicNumber(doorVideos.length)} فيديو` : 'عروض ومواد تدريسية'}
           </span>
@@ -467,17 +477,13 @@ function DoorRow({
             )
           })}
         </div>
-        <div className="mt-4 flex justify-end">
-          {door.presentation ? (
-            <button type="button" onClick={() => onOpenTeaching(door)} aria-label={`مواد الباب: ${door.title}`} title="مواد الباب" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
-              <SocialIcon name="Image" size={15} />
-            </button>
-          ) : (
+        {!door.presentation && (
+          <div className="mt-4 flex justify-end">
             <Link to={bookHref} aria-label={`اقرأ من الباب: ${door.title}`} title="اقرأ من الباب" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
               <SocialIcon name="Bookmark" size={15} />
             </Link>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </details>
   )

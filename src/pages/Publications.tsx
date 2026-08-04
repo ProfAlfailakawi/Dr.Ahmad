@@ -55,20 +55,21 @@ export default function Publications() {
                 data-featured-encyclopedia={featured ? 'true' : undefined}
               >
                 {featured ? (
-                  <div className="-mx-4 w-[calc(100%+2rem)] overflow-hidden rounded-none border-y border-hair bg-canvas shadow-sm sm:mx-0 sm:w-full sm:rounded-2xl sm:border sm:border-accent/20 sm:p-5 md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] md:items-center md:gap-7 md:p-6">
+                  <div className="-mx-4 w-[calc(100%+2rem)] overflow-hidden border-y border-hair bg-canvas shadow-sm sm:mx-0 sm:w-full sm:rounded-2xl sm:border sm:border-accent/[.20] sm:p-5 md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] md:items-center md:gap-7 md:p-6">
                     <Link to={`/publications/${b.slug}`} viewTransition className="group/cover block w-full overflow-hidden bg-wash sm:rounded-xl" style={{ aspectRatio: '1024 / 700' }}>
                       {b.cover ? <img src={b.cover} alt={b.title} loading="eager" width="1024" height="700" className="h-full w-full object-cover transition-transform duration-500 group-hover/cover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
                     </Link>
-                    <div className="flex min-w-0 flex-col justify-between p-5 sm:p-2 md:p-0">
-                      <div>
-                        <Link to={`/publications/${b.slug}`} viewTransition className="block">
-                          <h2 className="font-display text-xl font-bold leading-snug text-ink transition-colors hover:text-accent sm:text-2xl md:text-3xl">{b.title}</h2>
+                    <div className="min-w-0 p-4 sm:p-2 md:p-0">
+                      <div className="flex items-start gap-3">
+                        <Link to={`/publications/${b.slug}`} viewTransition className="min-w-0 flex-1">
+                          <h2 className="font-display text-[1.25rem] font-extrabold leading-[1.45] text-ink transition-colors hover:text-accent sm:text-2xl md:text-3xl">{b.title}</h2>
                         </Link>
-                        <p className="mt-3 text-[.82rem] leading-relaxed text-soft sm:text-[.88rem]">الموسوعة المرئية والكتاب ومواد التدريس في بوابة معرفية واحدة، مع بحث يصل إلى الفصل والصفحة واللحظة الزمنية الموثقة.</p>
+                        <ClarifiedIconAction id="book-search-featured" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-accent/[.28] bg-paper text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={16} /></Link></ClarifiedIconAction>
                       </div>
-                      <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-hair pt-4">
-                        <ClarifiedIconAction id="book-search-featured" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={15} /></Link></ClarifiedIconAction>
-                      </div>
+                      <p className="mt-2.5 max-w-[48rem] text-[.8rem] leading-[1.85] text-soft sm:mt-3 sm:text-[.88rem]">الموسوعة المرئية والكتاب ومواد التدريس في بوابة معرفية واحدة، مع بحث يصل إلى الفصل والصفحة واللحظة الزمنية الموثقة.</p>
+                      <Link to={`/publications/${b.slug}`} viewTransition className="mt-4 inline-flex items-center gap-2 text-[.76rem] font-extrabold text-accent md:mt-6">
+                        افتح الموسوعة <span aria-hidden="true">←</span>
+                      </Link>
                     </div>
                   </div>
                 ) : (

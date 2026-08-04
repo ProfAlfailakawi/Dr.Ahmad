@@ -1,86 +1,51 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router'
 import { EASE, SocialIcon } from '../ui'
 
-const ONBOARDING_STORAGE_KEY = 'visitor:onboarded:v2'
+const STORAGE_KEY = 'visitor:onboarded:archive-compass-v1'
 
-interface HiddenFeature {
-  id: string
-  eyebrow: string
-  title: string
-  desc: string
-  icon: string
-  path: string
-}
-
-const HIDDEN_FEATURES: HiddenFeature[] = [
+const entrances = [
   {
-    id: 'semantic-search',
-    eyebrow: 'أبعد من مطابقة الكلمات',
-    title: 'بحث يفهم المعنى',
-    desc: 'يصل إلى المقال والبحث والكتاب والموضع الأقرب إلى سؤالك، حتى عندما تختلف صياغة الكلمات.',
+    id: 'meaning',
+    eyebrow: 'اكتب الفكرة كما تخطر لك',
+    title: 'ابحث بالمعنى',
+    desc: 'تصل إلى المقال والكتاب والبحث الأقرب إلى سؤالك، حتى لو اختلفت الكلمات.',
     icon: 'Search',
     path: '/search',
   },
   {
-    id: 'knowledge-atlas',
-    eyebrow: 'العلاقات التي لا تظهر في القوائم',
-    title: 'أطلس الأفكار',
-    desc: 'يكشف الصلات بين المؤلفات والأبحاث والمقالات ويحوّل الأرشيف إلى خريطة معرفية مترابطة.',
+    id: 'relations',
+    eyebrow: 'شاهد الصورة التي لا تعرضها القوائم',
+    title: 'تتبّع العلاقات',
+    desc: 'اكتشف كيف تتصل المقالات بالمؤلفات والأبحاث داخل خريطة معرفية واحدة.',
     icon: 'Link',
     path: '/atlas',
   },
   {
-    id: 'questions',
-    eyebrow: 'مدخل مختلف للقراءة',
-    title: 'أسئلة تقودك إلى المعرفة',
-    desc: 'ابدأ بسؤال فكري، ثم انتقل مباشرة إلى المواد التي تناقشه من زوايا متعددة داخل الأرشيف.',
-    icon: 'Spark',
-    path: '/questions',
+    id: 'question',
+    eyebrow: 'ابدأ من فضولك لا من التصنيف',
+    title: 'اسأل الأرشيف',
+    desc: 'اطرح سؤالًا فكريًا، ثم انتقل إلى المواد التي تناقشه من زوايا متعددة.',
+    icon: 'Sparkles',
+    path: '/ask',
   },
-]
+] as const
 
 export default function FirstVisitOnboarding() {
   const [visible, setVisible] = useState(false)
   const navigate = useNavigate()
-  const reduce = useReducedMotion()
 
   useEffect(() => {
-    if (localStorage.getItem(ONBOARDING_STORAGE_KEY)) return
-
-    const timer = window.setTimeout(() => setVisible(true), 550)
+    if (localStorage.getItem(STORAGE_KEY)) return
+    const timer = window.setTimeout(() => setVisible(true), 650)
     return () => window.clearTimeout(timer)
   }, [])
 
-  useEffect(() => {
-    if (!visible) return
-
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') dismiss()
-    }
-    window.addEventListener('keydown', closeOnEscape)
-
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [visible])
-
-  const markAsSeen = () => localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
-
-  const dismiss = () => {
-    markAsSeen()
+  const finish = (path?: string) => {
+    localStorage.setItem(STORAGE_KEY, 'seen')
     setVisible(false)
-  }
-
-  const openFeature = (path: string) => {
-    markAsSeen()
-    setVisible(false)
-    navigate(path)
+    if (path) navigate(path)
   }
 
   return (
@@ -90,94 +55,79 @@ export default function FirstVisitOnboarding() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reduce ? 0 : 0.25, ease: EASE }}
-          className="fixed inset-0 z-[400] grid place-items-center overflow-y-auto bg-ink/[.58] px-3 py-[max(1rem,env(safe-area-inset-top))] backdrop-blur-[10px] sm:p-6"
-          onMouseDown={(event) => {
-            if (event.currentTarget === event.target) dismiss()
-          }}
+          transition={{ duration: 0.24, ease: EASE }}
+          className="fixed inset-0 z-[400] grid place-items-center overflow-y-auto bg-ink/[.52] px-3 py-5 backdrop-blur-sm sm:p-6"
+          onClick={() => finish()}
         >
           <motion.section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="first-visit-title"
-            initial={reduce ? false : { y: 24, scale: 0.975, opacity: 0 }}
+            initial={{ y: 24, scale: 0.985, opacity: 0 }}
             animate={{ y: 0, scale: 1, opacity: 1 }}
-            exit={reduce ? { opacity: 0 } : { y: 16, scale: 0.98, opacity: 0 }}
-            transition={{ duration: reduce ? 0 : 0.38, ease: EASE }}
-            className="relative my-auto w-full max-w-[540px] overflow-hidden rounded-[2rem] border border-white/70 bg-paper shadow-[0_34px_100px_-36px_rgba(8,22,38,.72)]"
+            exit={{ y: 14, scale: 0.985, opacity: 0 }}
+            transition={{ duration: 0.38, ease: EASE }}
+            onClick={(event) => event.stopPropagation()}
+            className="relative w-full max-w-[720px] overflow-hidden rounded-[30px] border border-white/[.16] bg-paper shadow-[0_30px_90px_rgb(0_0_0/.28)]"
             dir="rtl"
+            aria-modal="true"
+            role="dialog"
+            aria-labelledby="archive-welcome-title"
           >
-            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle_at_78%_10%,rgba(62,92,120,.16),transparent_54%)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[radial-gradient(circle_at_70%_0%,rgb(var(--c-accent)/.18),transparent_68%)]" />
 
-            <div className="relative px-5 pb-5 pt-5 sm:px-7 sm:pb-7 sm:pt-6">
-              <div className="flex items-center justify-between gap-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-accent/[.15] bg-accent/[.055] px-3 py-1.5 text-[.68rem] font-extrabold text-accent">
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_0_4px_rgba(62,92,120,.10)]" />
-                  جولة واحدة فقط
-                </div>
-                <button
-                  type="button"
-                  onClick={dismiss}
-                  aria-label="إغلاق الجولة"
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-hair bg-canvas text-soft transition hover:border-accent/40 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]"
-                >
-                  <SocialIcon name="Close" size={14} />
-                </button>
-              </div>
+            <button
+              type="button"
+              onClick={() => finish()}
+              aria-label="إغلاق الترحيب"
+              className="absolute left-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-hair bg-paper/[.86] text-soft transition hover:border-accent hover:text-accent"
+            >
+              <SocialIcon name="Close" size={14} />
+            </button>
 
-              <header className="mt-6 max-w-[30rem]">
-                <p className="text-[.7rem] font-extrabold tracking-[.08em] text-accent">خلف الواجهة الواضحة</p>
-                <h2 id="first-visit-title" className="mt-2 font-display text-[clamp(1.65rem,7vw,2.35rem)] font-extrabold leading-[1.35] text-ink">
-                  مزايا خفيّة تجعل الأرشيف أذكى.
+            <div className="relative px-5 pb-5 pt-8 sm:px-9 sm:pb-8 sm:pt-10">
+              <div className="max-w-[560px]">
+                <span className="inline-flex items-center gap-2 text-[.7rem] font-extrabold tracking-wide text-accent">
+                  <span className="h-1.5 w-8 rounded-full bg-accent" />
+                  أهلًا بك في الأرشيف
+                </span>
+                <h2 id="archive-welcome-title" className="mt-4 max-w-[520px] font-display text-[clamp(1.75rem,5vw,3rem)] font-extrabold leading-[1.35] text-ink">
+                  لا تبدأ من القائمة.<br />ابدأ من الفكرة.
                 </h2>
-                <p className="mt-3 max-w-[29rem] text-[.82rem] leading-[1.9] text-soft sm:text-[.88rem]">
-                  لا تحتاج إلى شرح الأقسام الظاهرة. هذه ثلاثة مداخل عميقة قد لا تلاحظها من الزيارة الأولى.
+                <p className="mt-3 max-w-[560px] text-[.9rem] leading-[1.9] text-soft sm:text-[1rem]">
+                  ثلاث طرق ذكية تقودك إلى المعرفة الأقرب لما تبحث عنه، من دون أن تعرف مسبقًا أين توجد.
                 </p>
-              </header>
-
-              <div className="mt-6 grid gap-2.5">
-                {HIDDEN_FEATURES.map((feature, index) => (
-                  <motion.button
-                    key={feature.id}
-                    type="button"
-                    onClick={() => openFeature(feature.path)}
-                    initial={reduce ? false : { opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: reduce ? 0 : 0.12 + index * 0.06, duration: 0.3, ease: EASE }}
-                    className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[1.25rem] border border-hair bg-canvas/80 p-3.5 text-right transition hover:-translate-y-0.5 hover:border-accent/30 hover:bg-paper hover:shadow-[0_16px_38px_-28px_rgba(20,45,70,.48)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 sm:p-4"
-                  >
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[.95rem] border border-accent/[.15] bg-accent/[.07] text-accent transition group-hover:bg-accent group-hover:text-white">
-                      <SocialIcon name={feature.icon} size={17} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-[.62rem] font-bold text-accent">{feature.eyebrow}</span>
-                      <strong className="mt-0.5 block font-display text-[.9rem] font-extrabold leading-relaxed text-ink sm:text-[.96rem]">{feature.title}</strong>
-                      <span className="mt-0.5 block text-[.7rem] leading-[1.7] text-soft sm:text-[.74rem]">{feature.desc}</span>
-                    </span>
-                    <span aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-full border border-hair text-[.82rem] text-soft transition group-hover:-translate-x-1 group-hover:border-accent/25 group-hover:text-accent">←</span>
-                  </motion.button>
-                ))}
               </div>
 
-              <div className="mt-5 grid gap-2.5 sm:grid-cols-[1fr_auto]">
-                <button
-                  type="button"
-                  onClick={() => openFeature('/search')}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-ink px-5 text-[.82rem] font-extrabold text-white shadow-[0_15px_34px_-22px_rgba(8,22,38,.8)] transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]"
-                >
-                  ابدأ بالبحث الذكي
-                  <span aria-hidden="true">←</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={dismiss}
-                  className="min-h-12 rounded-2xl border border-hair px-5 text-[.76rem] font-bold text-soft transition hover:border-accent/30 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25"
-                >
-                  سأستكشف بنفسي
-                </button>
+              <div className="relative mt-7 overflow-hidden rounded-[24px] border border-hair bg-canvas/[.72] p-2 sm:mt-9 sm:p-3">
+                <div className="pointer-events-none absolute bottom-0 right-[13%] top-0 w-px bg-gradient-to-b from-transparent via-accent/[.22] to-transparent max-sm:hidden" />
+                <div className="grid gap-1 sm:grid-cols-3 sm:gap-0">
+                  {entrances.map((item, index) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => finish(item.path)}
+                      className={`group relative min-h-[152px] px-4 py-5 text-right transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.45] sm:min-h-[230px] sm:px-5 sm:py-6 ${index ? 'max-sm:border-t max-sm:border-hair sm:border-r sm:border-hair' : ''}`}
+                    >
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-accent/[.18] bg-accent/[.07] text-accent transition duration-300 group-hover:-translate-y-0.5 group-hover:border-accent/[.35] group-hover:bg-accent group-hover:text-white">
+                        <SocialIcon name={item.icon} size={18} />
+                      </span>
+                      <span className="mt-5 block text-[.68rem] font-bold leading-relaxed text-accent">{item.eyebrow}</span>
+                      <strong className="mt-1.5 block font-display text-[1.02rem] font-extrabold text-ink sm:text-[1.08rem]">{item.title}</strong>
+                      <span className="mt-2 block text-[.77rem] leading-[1.75] text-soft">{item.desc}</span>
+                      <span className="absolute bottom-5 left-4 text-[1rem] text-soft transition-transform duration-300 group-hover:-translate-x-1 group-hover:text-accent sm:left-5">←</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <p className="mt-4 text-center text-[.62rem] text-soft/75">بعد الإغلاق لن تظهر هذه الجولة مرة أخرى على هذا الجهاز.</p>
+              <div className="mt-5 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={() => finish()}
+                  className="min-h-12 rounded-full bg-ink px-7 text-[.84rem] font-bold text-paper transition hover:opacity-90 sm:min-w-[210px]"
+                >
+                  ادخل إلى الأرشيف
+                </button>
+                <p className="text-center text-[.68rem] leading-relaxed text-soft sm:text-right">تظهر هذه المقدمة مرة واحدة فقط.</p>
+              </div>
             </div>
           </motion.section>
         </motion.div>

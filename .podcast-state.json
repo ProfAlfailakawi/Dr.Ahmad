@@ -4,30 +4,30 @@
    "contentHash": "125effa59c054115",
    "pipelineHash": "fdf6b06992401311",
    "sourceHash": "cac367bbc0ed78df3304f3ff0000afdd3c7a4217d769f518c51cef22a1e9cb8a",
-   "audioHash": "7b103bf1600bbbf9cb510336318cb301052364c29f4eae6a048db80180f1295f",
+   "audioHash": "14d8f97f4d966041e76d08b652d291568ae2e5dcbf77388b3a64c6aabbff7e48",
    "transcriptHash": "5df1873cb6a58a1ba4a2a3fe96191d4111be1fa0d63bfbcb3db46f2b27c91682",
    "status": "accepted_pilot",
-   "acceptedAt": "2026-08-04T06:48:17.028Z",
+   "acceptedAt": "2026-08-04T10:00:11.923Z",
    "pilot": true
   },
   "pilot:the-return-that-fails-to-fix-what-came-before-itarabic:ar": {
    "contentHash": "af57a999bb116c2c",
    "pipelineHash": "fdf6b06992401311",
    "sourceHash": "86bdc6ab4f854ef695ca941c13e38c17f09b5c773cd693c888e497b40e74c560",
-   "audioHash": "1d406da30edbc0a546e0d47144dbf5d5ffcaefbe271168a2863f5b9f09b70e8a",
+   "audioHash": "5901a114865418d8a764201d5714ce45fef78f72d78942375895371b2a0df40c",
    "transcriptHash": "93335c0f7501c5520f26b2fefaf532bb13a8339930c566fe92540d2d7e2267d9",
    "status": "accepted_pilot",
-   "acceptedAt": "2026-08-04T06:51:36.205Z",
+   "acceptedAt": "2026-08-04T10:03:45.285Z",
    "pilot": true
   },
   "pilot:when-the-exam-becomes-the-goalarabic:ar": {
    "contentHash": "e47cbb8609da7b55",
    "pipelineHash": "fdf6b06992401311",
    "sourceHash": "ab162ad1f3e758d9516d87f61b4e8b8d018d41a6859ef2eec1cb3b7955d3575d",
-   "audioHash": "c0ed49d2def76aa33c52138a85c2c9bf23c2e8ebdd478568905fcd812dff4951",
+   "audioHash": "2b3492b237b496b9274c20be92c7da1b029fa198f49163cacde0aded7f9a7725",
    "transcriptHash": "f95fb6090a03cdfb898b93840c583f244ed34d27a6c5a5c8e5a2576aa778a73d",
    "status": "accepted_pilot",
-   "acceptedAt": "2026-08-04T06:59:02.404Z",
+   "acceptedAt": "2026-08-04T10:11:29.225Z",
    "pilot": true
   }
  },
@@ -35,7 +35,7 @@
  "totalCount": 0,
  "pilotGate": {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-04T06:59:02.466Z",
+  "generatedAt": "2026-08-04T10:11:29.276Z",
   "pipelineHash": "fdf6b06992401311",
   "required": 3,
   "candidates": 8,
@@ -98,12 +98,12 @@
  },
  "failures": {
   "when-the-teacher-knows-why-he-teachesarabic": {
-   "attempts": 1,
-   "lastFailedAt": "2026-08-04T06:54:02.006Z"
+   "attempts": 2,
+   "lastFailedAt": "2026-08-04T10:06:22.308Z"
   },
   "success-that-does-not-bring-joy-to-its-ownerarabic": {
-   "attempts": 1,
-   "lastFailedAt": "2026-08-04T06:55:25.120Z"
+   "attempts": 2,
+   "lastFailedAt": "2026-08-04T10:07:50.659Z"
   }
  }
 }

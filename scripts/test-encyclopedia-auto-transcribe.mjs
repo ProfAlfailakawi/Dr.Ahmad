@@ -15,4 +15,4 @@ const catalog = { videos: [{ id: 'a', url: 'u' }, { id: 'b', url: 'u' }, { id: '
 assert.deepEqual(buildQueue(catalog, index, {}).map((v) => v.id), ['b', 'c'])
 assert.deepEqual(buildQueue(catalog, index, { force: true, limit: 2 }).map((v) => v.id), ['a', 'b'])
 assert.deepEqual(buildQueue(catalog, index, { videoIds: ['c'] }).map((v) => v.id), ['c'])
-console.log('نجح اختبار منظومة التفريغ التلقائي: 12 تحققًا')
+console.log('نجح اختبار منظومة التفريغ التلقائي: 12 تحققاً')

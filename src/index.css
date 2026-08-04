@@ -3731,3 +3731,75 @@ body.encyclopedia-sheet-open {
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
 }
+
+/* ثبات اللمس والتمرير على الهاتف: السكك الأفقية لا تسحب الصفحة عمودياً
+   ولا تستدعي ارتداد iOS أو نقاط snap التي كانت تغيّر موضع القراءة. */
+[data-horizontal-video-rail="true"] {
+  max-inline-size: 100%;
+  scroll-snap-type: none !important;
+  overscroll-behavior-inline: contain;
+  overscroll-behavior-block: auto;
+  -webkit-overflow-scrolling: touch;
+}
+[data-horizontal-video-rail="true"] > * {
+  scroll-snap-align: none !important;
+}
+
+/* الخلفية الشفافة مع backdrop-filter داخل sticky كانت تعيد تركيب الطبقة في Safari
+   عند كل حركة رأسية، فتظهر رجفة شريط المنهج/التوثيق/المصادر. */
+.research-section-navigator {
+  isolation: isolate;
+  box-shadow: 0 8px 24px -22px rgb(var(--c-ink) / .35);
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+@media (max-width: 767px) {
+  /* أي سحب أفقي داخل سكك الموقع يبقى أفقياً؛ هذا يمنع القفزة الرأسية
+     التي كانت تظهر عند تحريك البطاقات يميناً ويساراً على iPhone. */
+  [data-horizontal-video-rail="true"],
+  .rail,
+  .mobile-card-rail,
+  .signatures-rail,
+  .article-featured-rail,
+  .media-related-rail,
+  .ask-book-rail,
+  .book-spine-rail,
+  .home-motion-rail {
+    max-inline-size: 100%;
+    overscroll-behavior-inline: contain;
+    scroll-behavior: auto !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pinch-zoom;
+  }
+
+  /* snap الإجباري كان يعيد موضع السكة والصفحة معاً في Safari. */
+  [data-horizontal-video-rail="true"],
+  .rail,
+  .mobile-card-rail,
+  .signatures-rail,
+  .article-featured-rail,
+  .media-related-rail,
+  .ask-book-rail,
+  .book-spine-rail,
+  .home-motion-rail {
+    scroll-snap-type: x proximity !important;
+  }
+
+  .research-section-navigator {
+    top: calc(4.25rem + env(safe-area-inset-top));
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: paint;
+  }
+
+  #encyclopedia-search {
+    max-inline-size: 100%;
+    min-inline-size: 0;
+  }
+  #encyclopedia-query {
+    inline-size: 100%;
+    min-inline-size: 0;
+    text-overflow: clip;
+  }
+}

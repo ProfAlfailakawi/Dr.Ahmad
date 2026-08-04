@@ -8,7 +8,7 @@ const levels: Array<{ key: ResearchLayer; label: string; short: string }> = [
 
 export function ResearchSectionNavigator({ active, onSelect }: { active: ResearchLayer; onSelect: (layer: ResearchLayer) => void }) {
   return (
-    <nav className="sticky top-[4.75rem] z-30 mt-4 rounded-2xl border border-hair bg-canvas/90 p-1.5 shadow-sm backdrop-blur-xl" aria-label="التنقل داخل البحث">
+    <nav className="research-section-navigator sticky top-[4.75rem] z-30 mt-4 rounded-2xl border border-hair bg-canvas p-1.5" aria-label="التنقل داخل البحث">
       <div className="grid grid-cols-3 gap-1">
         {levels.map((level, index) => (
           <button key={level.key} type="button" onClick={() => onSelect(level.key)} aria-current={active === level.key ? 'step' : undefined} className={`rounded-xl px-2 py-2.5 text-center transition-colors sm:px-4 ${active === level.key ? 'bg-accent text-white' : 'text-soft hover:bg-wash hover:text-ink'}`}>

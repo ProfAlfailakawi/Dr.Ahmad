@@ -162,7 +162,9 @@
     "encyclopedia:knowledge:self-test": "node scripts/test-encyclopedia-knowledge-search.mjs",
     "encyclopedia:buzz:import": "node scripts/import-buzz-encyclopedia-transcripts.mjs",
     "encyclopedia:buzz:report": "node scripts/report-encyclopedia-transcripts.mjs",
-    "encyclopedia:buzz:self-test": "node scripts/test-buzz-transcript-import.mjs"
+    "encyclopedia:buzz:self-test": "node scripts/test-buzz-transcript-import.mjs",
+    "encyclopedia:auto-transcribe": "node scripts/auto-transcribe-encyclopedia.mjs",
+    "encyclopedia:auto-transcribe:self-test": "node scripts/test-encyclopedia-auto-transcribe.mjs"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

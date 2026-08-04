@@ -105,3 +105,8 @@ local-data/**/*.mp4
 local-data/**/*.mov
 local-data/**/*.mkv
 local-data/**/*.webm
+
+# Encyclopedia automatic local transcription
+local-data/encyclopedia-audio-temp/
+local-data/encyclopedia-auto-transcribe-state.json
+*.info.json

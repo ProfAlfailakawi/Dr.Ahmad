@@ -1,6 +1,21 @@
-import { cloneElement, isValidElement, useCallback, useEffect, useId, useState, type MouseEvent, type ReactElement } from 'react'
+import {
+  cloneElement,
+  useCallback,
+  useEffect,
+  useId,
+  useState,
+  type MouseEvent,
+  type MouseEventHandler,
+  type ReactElement,
+} from 'react'
 
 const STORAGE_PREFIX = 'clarified-icon:'
+
+type ClarifiedChildProps = {
+  onClick?: MouseEventHandler<HTMLElement>
+  title?: string
+  'aria-describedby'?: string
+}
 
 function isTouchLike() {
   if (typeof window === 'undefined') return false
@@ -23,7 +38,8 @@ export function ClarifiedIconAction({ id, label, children }: { id: string; label
     }
   }, [open])
 
-  const originalOnClick = children.props.onClick as ((event: MouseEvent<HTMLElement>) => void) | undefined
+  const child = children as ReactElement<ClarifiedChildProps>
+  const originalOnClick = child.props.onClick
   const onClick = useCallback((event: MouseEvent<HTMLElement>) => {
     if (isTouchLike() && !window.localStorage.getItem(`${STORAGE_PREFIX}${id}`)) {
       event.preventDefault()
@@ -35,12 +51,11 @@ export function ClarifiedIconAction({ id, label, children }: { id: string; label
     originalOnClick?.(event)
   }, [id, originalOnClick])
 
-  if (!isValidElement(children)) return children
   return (
     <span className="relative inline-flex">
-      {cloneElement(children, {
+      {cloneElement<ClarifiedChildProps>(child, {
         onClick,
-        title: children.props.title || label,
+        title: child.props.title || label,
         'aria-describedby': open ? tipId : undefined,
       })}
       {open && (

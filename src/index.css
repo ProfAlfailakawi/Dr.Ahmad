@@ -3751,25 +3751,6 @@ body.encyclopedia-sheet-open {
   scroll-snap-align: none !important;
 }
 
-/* الخلفية الشفافة مع backdrop-filter داخل sticky كانت تعيد تركيب الطبقة في Safari
-   عند كل حركة رأسية، فتظهر رجفة شريط المنهج/التوثيق/المصادر. */
-.research-section-sticky {
-  position: -webkit-sticky;
-  position: sticky;
-  top: calc(4rem + env(safe-area-inset-top, 0px));
-  z-index: 35;
-  isolation: isolate;
-  padding-block: 4px;
-  background: rgb(var(--c-canvas));
-}
-
-.research-section-navigator {
-  position: relative;
-  background-color: rgb(var(--c-canvas));
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
-
 @media (max-width: 767px) {
   /* أي سحب أفقي داخل سكك الموقع يبقى أفقياً؛ هذا يمنع القفزة الرأسية
      التي كانت تظهر عند تحريك البطاقات يميناً ويساراً على iPhone. */
@@ -3800,10 +3781,6 @@ body.encyclopedia-sheet-open {
   .book-spine-rail,
   .home-motion-rail {
     scroll-snap-type: x proximity !important;
-  }
-
-  .research-section-sticky {
-    top: calc(4rem + env(safe-area-inset-top, 0px));
   }
 
   #encyclopedia-search {

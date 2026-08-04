@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-01",
+  "generatedAt": "2026-08-04",
   "episodes": [
     {
       "slug": "a-generation-without-rootsarabic",
@@ -11,7 +11,7 @@
       "question": "ماذا لو تربى الجيل في بيوت مشغولة دائما؟",
       "speaker": "نورة",
       "turn": 22,
-      "durationSec": 204
+      "durationSec": 216
     },
     {
       "slug": "alternative-plans-for-distance-education",
@@ -22,7 +22,7 @@
       "question": "من أجل ماذا كل هذا الاستعداد المبكر؟",
       "speaker": "فهد",
       "turn": 32,
-      "durationSec": 204
+      "durationSec": 216
     }
   ]
 }

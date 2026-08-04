@@ -51,32 +51,46 @@ export default function Publications() {
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.7, delay: Math.min(i * 0.06, 0.35), ease: EASE }}
-                className={featured ? 'group col-span-2 min-w-0' : 'group col-span-1 min-w-0'}
+                className={featured ? 'group col-span-2 min-w-0 !w-full !max-w-none !flex-auto' : 'group col-span-1 min-w-0 !w-full !max-w-none !flex-auto'}
                 data-featured-encyclopedia={featured ? 'true' : undefined}
               >
                 {featured ? (
-                  <div className="-mx-4 w-[calc(100%+2rem)] overflow-hidden border-y border-hair bg-canvas shadow-sm sm:mx-0 sm:w-full sm:rounded-2xl sm:border sm:border-accent/[.20] sm:p-5 md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] md:items-center md:gap-7 md:p-6">
-                    <Link to={`/publications/${b.slug}`} viewTransition className="group/cover block w-full overflow-hidden bg-wash sm:rounded-xl" style={{ aspectRatio: '1024 / 700' }}>
-                      {b.cover ? <img src={b.cover} alt={b.title} loading="eager" width="1024" height="700" className="h-full w-full object-cover transition-transform duration-500 group-hover/cover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
+                  <div className="group/portal flex w-full flex-col overflow-hidden rounded-[24px] border border-accent/[.15] bg-paper shadow-lg transition-shadow duration-500 hover:shadow-xl md:grid md:grid-cols-[1.1fr_1fr] md:items-center md:gap-8 lg:gap-12 md:p-8">
+                    <Link to={`/publications/${b.slug}`} viewTransition className="block w-full overflow-hidden bg-white md:rounded-2xl" style={{ aspectRatio: '1024 / 700' }}>
+                      {b.cover ? <img src={b.cover} alt={b.title} loading="eager" width="1024" height="700" className="h-full w-full object-contain p-2 transition-transform duration-700 group-hover/portal:scale-[1.02]" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
                     </Link>
-                    <div className="min-w-0 p-4 sm:p-2 md:p-0">
-                      <div className="flex items-start gap-3">
-                        <Link to={`/publications/${b.slug}`} viewTransition className="min-w-0 flex-1">
-                          <h2 className="font-display text-[1.25rem] font-extrabold leading-[1.45] text-ink transition-colors hover:text-accent sm:text-2xl md:text-3xl">{b.title}</h2>
+                    <div className="relative flex flex-col p-5 sm:p-8 md:p-0">
+                      <div className="pe-14 sm:pe-16 md:pe-0">
+                        <Link to={`/publications/${b.slug}`} viewTransition className="min-w-0 block">
+                          <h2 className="font-display text-2xl font-extrabold leading-[1.35] text-ink transition-colors hover:text-accent md:text-3xl lg:text-4xl">{b.title}</h2>
                         </Link>
-                        <ClarifiedIconAction id="book-search-featured" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-accent/[.28] bg-paper text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={16} /></Link></ClarifiedIconAction>
                       </div>
-                      <p className="mt-2.5 max-w-[48rem] text-[.8rem] leading-[1.85] text-soft sm:mt-3 sm:text-[.88rem]">الموسوعة المرئية والكتاب ومواد التدريس في بوابة معرفية واحدة، مع بحث يصل إلى الفصل والصفحة واللحظة الزمنية الموثقة.</p>
-                      <Link to={`/publications/${b.slug}`} viewTransition className="mt-4 inline-flex items-center gap-2 text-[.76rem] font-extrabold text-accent md:mt-6">
-                        افتح الموسوعة <span aria-hidden="true">←</span>
-                      </Link>
+                      <div className="absolute left-5 top-5 sm:left-8 sm:top-8 md:static md:mt-0">
+                        <div className="md:hidden">
+                          <ClarifiedIconAction id="book-search-featured" label="ابحث داخل هذا الكتاب">
+                            <Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/[.28] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                              <SocialIcon name="Search" size={16} />
+                            </Link>
+                          </ClarifiedIconAction>
+                        </div>
+                      </div>
+                      
+                      <div className="hidden md:flex md:absolute md:left-0 md:top-0">
+                         <ClarifiedIconAction id="book-search-featured-desktop" label="ابحث داخل هذا الكتاب">
+                            <Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-accent/[.28] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                              <SocialIcon name="Search" size={18} />
+                            </Link>
+                          </ClarifiedIconAction>
+                      </div>
+                      
+                      <p className="mt-3 max-w-[42rem] text-[.85rem] leading-[1.8] text-soft sm:mt-4 md:text-[1rem] md:leading-[1.85]">الموسوعة المرئية والكتاب ومواد التدريس في بوابة معرفية واحدة، مع بحث يصل إلى الفصل والصفحة واللحظة الزمنية الموثقة.</p>
                     </div>
                   </div>
                 ) : (
                   <>
                     <Link to={`/publications/${b.slug}`} viewTransition className="block">
                       <div className="group overflow-hidden rounded-xl border border-hair bg-white" style={{ aspectRatio: '1024 / 700' }}>
-                        {b.cover ? <img src={b.cover} alt={b.title} loading="lazy" width="1024" height="700" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
+                        {b.cover ? <img src={b.cover} alt={b.title} loading="lazy" width="1024" height="700" className="h-full w-full object-contain p-1" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
                       </div>
                     </Link>
                     <div className="mt-3 flex items-start gap-2 sm:mt-5">

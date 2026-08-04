@@ -9,6 +9,7 @@ import { ThemeToggle } from './extras'
 import { MySpace } from './MySpace'
 import { useCvLinks } from '../lib/settings'
 import { SocialIcon } from './icons'
+import { ClarifiedIconAction } from './ClarifiedIconAction'
 
 export { EASE } from './motion'
 export { SocialIcon } from './icons'
@@ -1000,7 +1001,7 @@ export function Footer() {
 }
 
 export function TebyanProjectLink({ label = 'تبيان', iconOnly = true, className = '' }: { label?: string; iconOnly?: boolean; className?: string }) {
-  return (
+  const link = (
     <a
       href="https://tebyan.dr-alfailakawi.com"
       target="_blank"
@@ -1013,10 +1014,13 @@ export function TebyanProjectLink({ label = 'تبيان', iconOnly = true, class
       {!iconOnly && <span>{label}</span>}
     </a>
   )
+  return iconOnly
+    ? <ClarifiedIconAction id="project-tebyan" label="تبيان: منصة عامة مستقلة">{link}</ClarifiedIconAction>
+    : link
 }
 
 export function ScheduleProjectLink({ label = 'الجدول الدراسي', iconOnly = true, className = '' }: { label?: string; iconOnly?: boolean; className?: string }) {
-  return (
+  const link = (
     <a
       href="https://schedule.dr-alfailakawi.com"
       target="_blank"
@@ -1029,6 +1033,9 @@ export function ScheduleProjectLink({ label = 'الجدول الدراسي', ico
       {!iconOnly && <span>{label}</span>}
     </a>
   )
+  return iconOnly
+    ? <ClarifiedIconAction id="project-schedule" label="فتح برنامج الجدول الدراسي">{link}</ClarifiedIconAction>
+    : link
 }
 
 /* ---------- Page transition wrapper ---------- */

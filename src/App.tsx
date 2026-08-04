@@ -7,6 +7,7 @@ import { CmsProvider } from './lib/content'
 import { useTrackJourney, useTrackView } from './lib/views'
 import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-audio'
 import { ReadingMemoryGuard } from './components/MySpace'
+import { SitewideIconClarifications } from './components/SitewideIconClarifications'
 import Home from './pages/Home'
 
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
@@ -371,6 +372,7 @@ function RoutedApplication() {
     <CmsProvider realtime={adminRoute}>
       <PersistentAudioProvider>
         <WesternDigitsGuard />
+      <SitewideIconClarifications />
         <AdaptiveSilence />
         <ExclusiveDetailsGuard />
         <ReadingMemoryGuard />

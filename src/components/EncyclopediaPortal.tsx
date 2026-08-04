@@ -456,9 +456,11 @@ function DoorRow({
                         <SocialIcon name="Image" size={15} />
                       </button>
                     ) : concept ? (
-                      <Link to={`/publications/encyclopedia?book_idea=${encodeURIComponent(concept.title)}#${bookKnowledgeAnchor(concept)}`} aria-label={`اقرأ: ${unit.title}`} title="اقرأ" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
-                        <SocialIcon name="Bookmark" size={15} />
-                      </Link>
+                      <ClarifiedIconAction id="encyclopedia-read-in-book" label="افتح موضع هذا الموضوع داخل كتاب الموسوعة">
+                        <Link to={`/publications/encyclopedia?book_idea=${encodeURIComponent(concept.title)}#${bookKnowledgeAnchor(concept)}`} aria-label={`اقرأ: ${unit.title}`} title="اقرأ في الكتاب" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                          <SocialIcon name="Bookmark" size={15} />
+                        </Link>
+                      </ClarifiedIconAction>
                     ) : null}
                   </div>
                 </div>
@@ -479,9 +481,11 @@ function DoorRow({
         </div>
         {!door.presentation && (
           <div className="mt-4 flex justify-end">
-            <Link to={bookHref} aria-label={`اقرأ من الباب: ${door.title}`} title="اقرأ من الباب" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
-              <SocialIcon name="Bookmark" size={15} />
-            </Link>
+            <ClarifiedIconAction id="encyclopedia-read-door" label="افتح هذا الباب في كتاب الموسوعة">
+              <Link to={bookHref} aria-label={`اقرأ من الباب: ${door.title}`} title="اقرأ من الباب في الكتاب" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                <SocialIcon name="Bookmark" size={15} />
+              </Link>
+            </ClarifiedIconAction>
           </div>
         )}
       </div>

@@ -294,7 +294,7 @@ export function BookWorld({
                 ترتيب. صار شريطاً واحداً مرتّباً بترتيب الكتاب نفسه — من أول
                 صفحة إلى آخرها — فيقرأ الزائر بنيةَ الكتاب لا كومة كلمات،
                 ويلفّ يميناً ويساراً بدل أن يتمدّد القسم رأسياً. */}
-            <div dir="rtl" tabIndex={0} className="book-spine-rail rail -mx-1 flex w-[calc(100%+0.5rem)] max-w-[calc(100%+0.5rem)] snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain px-1 pb-3 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden" aria-label={`محاور ${book.title} بترتيب الكتاب`}>
+            <div dir="rtl" tabIndex={0} className="book-spine-rail rail -mx-1 flex w-[calc(100%+0.5rem)] max-w-[calc(100%+0.5rem)] snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain px-1 pb-3 [scrollbar-width:none] [touch-action:pan-x_pan-y] [&::-webkit-scrollbar]:hidden" aria-label={`محاور ${book.title} بترتيب الكتاب`}>
               {model.spine.map(({ idea, concept }, index) => {
                 const active = selectedIdea === idea
                 return (

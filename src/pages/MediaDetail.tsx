@@ -180,7 +180,7 @@ export default function MediaDetail() {
             <section className="mt-10 border-t border-hair pt-8" aria-labelledby="media-related-title">
               <h2 id="media-related-title" className="font-display text-xl font-semibold text-ink">امتداد اللقاء في المشروع المعرفي</h2>
               <p className="mt-2 text-[.76rem] text-soft">صلة موضوعية محسوبة من عنوان اللقاء ومحاوره ونصه المفرّغ ومن الأرشيف نفسه؛ لا تعني أن المادة ذُكرت حرفياً داخل اللقاء.</p>
-              <div dir="rtl" className="media-related-rail rail -mx-1 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-3 [scrollbar-width:none] [touch-action:pan-x_pinch-zoom] [&::-webkit-scrollbar]:hidden" aria-label="مواد مرتبطة باللقاء">
+              <div dir="rtl" className="media-related-rail rail -mx-1 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-3 [scrollbar-width:none] [touch-action:pan-x_pan-y] [&::-webkit-scrollbar]:hidden" aria-label="مواد مرتبطة باللقاء">
                 {[
                   ...articleLinks.map(({ item: article }) => ({ key: `article-${article.slug}`, to: `/articles/${article.slug}`, kind: 'مقال', title: article.title, note: 'امتدادٌ موضوعي من الأرشيف المقروء.' })),
                   ...paperLinks.map(({ item: paper }) => ({ key: `paper-${paper.slug}`, to: `/research/${paper.slug}`, kind: 'بحث', title: paper.titleAr || paper.title, note: 'ورقة أقرب إلى الفكرة التي دار حولها اللقاء.' })),

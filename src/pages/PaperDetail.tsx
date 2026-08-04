@@ -217,7 +217,7 @@ export default function PaperDetail() {
           {/* Layer 1: Visual Identity & Passport Stamp */}
           <div className="mt-7 grid gap-6">
             <FadeUp delay={0.09}>
-              <div id="research-passport-layer1" className={`rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer1' ? 'ring-2 ring-accent/40' : ''}`}>
+              <div id="research-passport-layer1" className={`scroll-mt-28 rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer1' ? 'ring-2 ring-accent/40' : ''}`}>
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                   <div>
                     <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 1</span>
@@ -241,7 +241,7 @@ export default function PaperDetail() {
             {/* Layer 2: Methodological Dimensions */}
             {dataCards.length > 0 && (
               <FadeUp delay={0.11}>
-                <div id="research-passport-layer2" className={`rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer2' ? 'ring-2 ring-accent/40' : ''}`}>
+                <div id="research-passport-layer2" className={`scroll-mt-28 rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer2' ? 'ring-2 ring-accent/40' : ''}`}>
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                     <div>
                       <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 2</span>
@@ -289,7 +289,7 @@ export default function PaperDetail() {
 
             {/* Layer 3: Interactive Field Evidence & Citations Ledger */}
             <FadeUp delay={0.13}>
-              <div id="research-passport-layer3" className={`rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer3' ? 'ring-2 ring-accent/40' : ''}`}>
+              <div id="research-passport-layer3" className={`scroll-mt-28 rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer3' ? 'ring-2 ring-accent/40' : ''}`}>
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                   <div>
                     <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 3</span>

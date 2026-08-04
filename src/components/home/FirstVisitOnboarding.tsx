@@ -111,7 +111,7 @@ export default function FirstVisitOnboarding() {
 
             <div className="relative px-5 pb-5 pt-5 sm:px-7 sm:pb-7 sm:pt-6">
               <div className="flex items-center justify-between gap-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/[.055] px-3 py-1.5 text-[.68rem] font-extrabold text-accent">
+                <div className="inline-flex items-center gap-2 rounded-full border border-accent/[.15] bg-accent/[.055] px-3 py-1.5 text-[.68rem] font-extrabold text-accent">
                   <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_0_4px_rgba(62,92,120,.10)]" />
                   جولة واحدة فقط
                 </div>
@@ -119,7 +119,7 @@ export default function FirstVisitOnboarding() {
                   type="button"
                   onClick={dismiss}
                   aria-label="إغلاق الجولة"
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-hair bg-canvas text-soft transition hover:border-accent/40 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-hair bg-canvas text-soft transition hover:border-accent/40 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]"
                 >
                   <SocialIcon name="Close" size={14} />
                 </button>
@@ -146,7 +146,7 @@ export default function FirstVisitOnboarding() {
                     transition={{ delay: reduce ? 0 : 0.12 + index * 0.06, duration: 0.3, ease: EASE }}
                     className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[1.25rem] border border-hair bg-canvas/80 p-3.5 text-right transition hover:-translate-y-0.5 hover:border-accent/30 hover:bg-paper hover:shadow-[0_16px_38px_-28px_rgba(20,45,70,.48)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 sm:p-4"
                   >
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[.95rem] border border-accent/15 bg-accent/[.07] text-accent transition group-hover:bg-accent group-hover:text-white">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[.95rem] border border-accent/[.15] bg-accent/[.07] text-accent transition group-hover:bg-accent group-hover:text-white">
                       <SocialIcon name={feature.icon} size={17} />
                     </span>
                     <span className="min-w-0">
@@ -163,7 +163,7 @@ export default function FirstVisitOnboarding() {
                 <button
                   type="button"
                   onClick={() => openFeature('/search')}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-ink px-5 text-[.82rem] font-extrabold text-white shadow-[0_15px_34px_-22px_rgba(8,22,38,.8)] transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-ink px-5 text-[.82rem] font-extrabold text-white shadow-[0_15px_34px_-22px_rgba(8,22,38,.8)] transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]"
                 >
                   ابدأ بالبحث الذكي
                   <span aria-hidden="true">←</span>

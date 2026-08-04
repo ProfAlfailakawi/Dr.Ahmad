@@ -55,7 +55,7 @@ export default function Publications() {
                 data-featured-encyclopedia={featured ? 'true' : undefined}
               >
                 {featured ? (
-                  <div className="w-full overflow-hidden rounded-2xl border border-hair bg-canvas shadow-sm sm:border-accent/20 sm:p-5 md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] md:items-center md:gap-7 md:p-6">
+                  <div className="-mx-4 w-[calc(100%+2rem)] overflow-hidden rounded-none border-y border-hair bg-canvas shadow-sm sm:mx-0 sm:w-full sm:rounded-2xl sm:border sm:border-accent/20 sm:p-5 md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] md:items-center md:gap-7 md:p-6">
                     <Link to={`/publications/${b.slug}`} viewTransition className="group/cover block w-full overflow-hidden bg-wash sm:rounded-xl" style={{ aspectRatio: '1024 / 700' }}>
                       {b.cover ? <img src={b.cover} alt={b.title} loading="eager" width="1024" height="700" className="h-full w-full object-cover transition-transform duration-500 group-hover/cover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
                     </Link>

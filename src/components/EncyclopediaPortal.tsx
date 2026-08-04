@@ -495,6 +495,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [featuredRound, setFeaturedRound] = useState(0)
   const [featuredPaused, setFeaturedPaused] = useState(false)
+  const [featuredInView, setFeaturedInView] = useState(false)
   const [playingStartSeconds, setPlayingStartSeconds] = useState(0)
   const [spokenMoments, setSpokenMoments] = useState<EncyclopediaVideoMoment[]>([])
   const [spokenProgress, setSpokenProgress] = useState<EncyclopediaTranscriptProgress | null>(null)
@@ -698,6 +699,24 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
 
   const featuredScrollRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    const container = featuredScrollRef.current
+    if (!container || query.trim()) {
+      setFeaturedInView(false)
+      return
+    }
+    if (typeof window.IntersectionObserver !== 'function') {
+      setFeaturedInView(true)
+      return
+    }
+    const observer = new window.IntersectionObserver(
+      ([entry]) => setFeaturedInView(Boolean(entry?.isIntersecting && entry.intersectionRatio >= 0.15)),
+      { threshold: [0, 0.15, 0.5] },
+    )
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [featuredVideos.length, query])
+
   const moveFeatured = (direction: 1 | -1) => {
     if (!featuredVideos.length) return
     setFeaturedIndex((current) => {
@@ -709,16 +728,27 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   }
 
   useEffect(() => {
-    if (featuredVideos.length < 2 || playingVideoId || featuredPaused || query.trim()) return
+    if (featuredVideos.length < 2 || playingVideoId || featuredPaused || !featuredInView || query.trim()) return
     const timer = window.setInterval(() => moveFeatured(1), 7000)
     return () => window.clearInterval(timer)
-  }, [featuredPaused, featuredVideos.length, playingVideoId, query])
+  }, [featuredInView, featuredPaused, featuredVideos.length, playingVideoId, query])
 
   useEffect(() => {
     if (!featuredVideos.length) return
-    const cards = featuredScrollRef.current?.querySelectorAll<HTMLElement>('[data-featured-card="true"]')
+    const container = featuredScrollRef.current
+    const cards = container?.querySelectorAll<HTMLElement>('[data-featured-card="true"]')
     const card = cards?.[Math.min(featuredIndex, Math.max(0, cards.length - 1))]
-    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+    if (!container || !card) return
+
+    // لا نستخدم scrollIntoView هنا؛ فهو يحرّك الصفحة عمودياً في Safari عند
+    // تبدّل الكرت تلقائياً بينما يكون القارئ داخل أبواب الموسوعة أسفل الصفحة.
+    // نحرك شريط «أبرز الشروحات» أفقياً فقط ونبقي موضع القراءة ثابتاً تماماً.
+    const containerBox = container.getBoundingClientRect()
+    const cardBox = card.getBoundingClientRect()
+    const isRtl = window.getComputedStyle(container).direction === 'rtl'
+    const delta = isRtl ? cardBox.right - containerBox.right : cardBox.left - containerBox.left
+    if (Math.abs(delta) < 1) return
+    container.scrollBy({ left: delta, behavior: 'smooth' })
   }, [featuredIndex, featuredVideos])
 
   useEffect(() => {

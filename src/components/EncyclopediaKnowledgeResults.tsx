@@ -107,7 +107,7 @@ export function EncyclopediaKnowledgeResults({
       </div>
 
       <div dir="rtl" className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:px-6 md:py-6 xl:grid xl:grid-cols-3 xl:overflow-visible">
-        <article className="w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/45 p-4 md:p-5 xl:w-auto xl:max-w-none">
+        <article className="w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none">
           <SourceHeader icon="Play" eyebrow="داخل الكلام المنطوق" title={exactMoment ? `اللحظة ${formatMoment(primaryMoment?.startSeconds || 0)}` : 'الفيديو الأقرب'} />
           {primaryVideo ? (
             <>
@@ -118,7 +118,7 @@ export function EncyclopediaKnowledgeResults({
                   <button type="button" onClick={() => onPlay(primaryVideo, primaryInstance, primaryMoment?.startSeconds || 0)} className="group absolute inset-0 block h-full w-full" aria-label={exactMoment ? `تشغيل ${primaryVideo.title} من اللحظة ${formatMoment(primaryMoment?.startSeconds || 0)}` : `تشغيل ${primaryVideo.title}`}>
                     <img src={primaryVideo.thumbnail} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-[1.02]" />
                     <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink/65 via-transparent to-transparent" />
-                    <span aria-hidden className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/45"><SocialIcon name="Play" size={17} /></span>
+                    <span aria-hidden className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/[.45]"><SocialIcon name="Play" size={17} /></span>
                     {exactMoment && <span className="absolute bottom-3 end-3 rounded-full bg-ink/75 px-3 py-1 text-[.65rem] font-semibold" dir="ltr">{formatMoment(primaryMoment?.startSeconds || 0)}</span>}
                   </button>
                 )}
@@ -135,11 +135,11 @@ export function EncyclopediaKnowledgeResults({
           )}
         </article>
 
-        <article className="w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/45 p-4 md:p-5 xl:w-auto xl:max-w-none">
+        <article className="w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none">
           <SourceHeader icon="Bookmark" eyebrow="من متن الكتاب" title={primaryPassage ? `صفحة ${formatArabicNumber(primaryPassage.page)}` : 'المقطع الأقرب'} />
           {primaryPassage ? (
             <>
-              <p className="mt-5 line-clamp-6 text-[.76rem] leading-[1.95] text-ink/85">{primaryPassage.text}</p>
+              <p className="mt-5 line-clamp-6 text-[.76rem] leading-[1.95] text-ink/[.85]">{primaryPassage.text}</p>
               <div className="mt-4 flex items-center justify-between gap-3 border-t border-hair pt-3">
                 <span className="line-clamp-1 text-[.62rem] text-soft">{primaryPassage.chapterTitle || primaryPassage.section || 'متن الموسوعة'}</span>
                 <a href={passageHref(primaryPassage)} target="_blank" rel="noreferrer" type="application/pdf" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-hair px-3 text-[.65rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
@@ -153,7 +153,7 @@ export function EncyclopediaKnowledgeResults({
           )}
         </article>
 
-        <article className="w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/45 p-4 md:p-5 xl:w-auto xl:max-w-none">
+        <article className="w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none">
           <SourceHeader icon="Image" eyebrow="في مواد التدريس" title={primarySlide ? encyclopediaSlideRangeLabel(primarySlide.topic.ranges) : 'المحور الأقرب'} />
           {primarySlide ? (
             <>

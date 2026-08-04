@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { renderQuoteCard } from '../lib/quote-card'
 import { SocialIcon } from './icons'
+import { ClarifiedIconAction } from './ClarifiedIconAction'
 
 /**
  * «بطاقة» — يحوّل مقطعاً من كتبه إلى صورة قابلة للنشر.
@@ -72,16 +73,18 @@ export function QuoteImage({ text, attribution }: { text: string; attribution: s
 
   if (!image) {
     return (
-      <button
-        type="button"
-        onClick={make}
-        disabled={busy}
-        aria-label={busy ? 'جارٍ تجهيز بطاقة النشر' : 'بطاقة للنشر'}
-        title={busy ? 'جارٍ تجهيز بطاقة النشر' : 'بطاقة للنشر'}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-60"
-      >
-        <SocialIcon name="Image" size={16} />
-      </button>
+      <ClarifiedIconAction id="quote-image-card" label="حوّل الاقتباس إلى بطاقة مصوّرة جاهزة للنشر">
+        <button
+          type="button"
+          onClick={make}
+          disabled={busy}
+          aria-label={busy ? 'جارٍ تجهيز بطاقة النشر' : 'بطاقة للنشر'}
+          title={busy ? 'جارٍ تجهيز بطاقة النشر' : 'بطاقة للنشر'}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-60"
+        >
+          <SocialIcon name="Image" size={16} />
+        </button>
+      </ClarifiedIconAction>
     )
   }
 

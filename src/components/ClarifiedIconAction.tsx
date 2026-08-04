@@ -52,7 +52,7 @@ export function ClarifiedIconAction({ id, label, children }: { id: string; label
   }, [id, originalOnClick])
 
   return (
-    <span className="relative inline-flex">
+    <span className="relative inline-flex" data-clarified-icon="true">
       {cloneElement<ClarifiedChildProps>(child, {
         onClick,
         title: child.props.title || label,

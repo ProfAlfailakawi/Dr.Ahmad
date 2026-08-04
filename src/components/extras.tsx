@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useScroll } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { EASE } from './motion'
 import { SocialIcon } from './icons'
+import { ClarifiedIconAction } from './ClarifiedIconAction'
 import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT, site } from '../data'
 import audioManifest from '../data/audio.json'
 import audioMeta from '../data/audio-meta.json'
@@ -404,23 +405,40 @@ export function CiteButton({
   if (compact) {
     return (
       <>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          aria-label="عرض الاستشهاد المرجعي"
-          title="الاستشهاد المرجعي"
-          className={compactLabel
-            ? 'inline-flex min-h-11 items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent'
-            : 'article-tool-icon'}
-        >
-          <svg aria-hidden viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6.5 5.5h11A2.5 2.5 0 0 1 20 8v10.5H6.5A2.5 2.5 0 0 1 4 16V8a2.5 2.5 0 0 1 2.5-2.5Z" />
-            <path d="M8 10.2h3.4M8 13.8h5.8" /><path d="M15.4 9.2c1.25.1 2.1.85 2.1 2.05 0 1.35-.9 2.2-2.35 2.55" />
-          </svg>
-          {compactLabel && <span>{compactLabel}</span>}
-        </button>
+        {compactLabel ? (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-expanded={open}
+            aria-haspopup="dialog"
+            aria-label="عرض الاستشهاد المرجعي"
+            title="الاستشهاد المرجعي"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
+          >
+            <svg aria-hidden viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6.5 5.5h11A2.5 2.5 0 0 1 20 8v10.5H6.5A2.5 2.5 0 0 1 4 16V8a2.5 2.5 0 0 1 2.5-2.5Z" />
+              <path d="M8 10.2h3.4M8 13.8h5.8" /><path d="M15.4 9.2c1.25.1 2.1.85 2.1 2.05 0 1.35-.9 2.2-2.35 2.55" />
+            </svg>
+            <span>{compactLabel}</span>
+          </button>
+        ) : (
+          <ClarifiedIconAction id="academic-citation" label="أنشئ الاستشهاد الأكاديمي بصيغ APA وMLA وChicago">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-expanded={open}
+              aria-haspopup="dialog"
+              aria-label="عرض الاستشهاد المرجعي"
+              title="الاستشهاد المرجعي"
+              className="article-tool-icon"
+            >
+              <svg aria-hidden viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6.5 5.5h11A2.5 2.5 0 0 1 20 8v10.5H6.5A2.5 2.5 0 0 1 4 16V8a2.5 2.5 0 0 1 2.5-2.5Z" />
+                <path d="M8 10.2h3.4M8 13.8h5.8" /><path d="M15.4 9.2c1.25.1 2.1.85 2.1 2.05 0 1.35-.9 2.2-2.35 2.55" />
+              </svg>
+            </button>
+          </ClarifiedIconAction>
+        )}
         {portalElement}
       </>
     )

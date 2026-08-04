@@ -3759,10 +3759,13 @@ body.encyclopedia-sheet-open {
   z-index: 35;
   background-color: rgb(var(--c-canvas));
   box-shadow: 0 8px 24px -22px rgb(var(--c-ink) / .35);
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  will-change: transform;
-  contain: layout style;
+  /* إبقاء العنصر في مسار التخطيط نفسه يمنع Safari من التبديل بين طبقة
+     composited وطبقة الصفحة عند كل بكسل تمرير، وهو سبب الرجفة الفعلية. */
+  -webkit-transform: none;
+  transform: none;
+  will-change: auto;
+  contain: paint;
+  isolation: isolate;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }

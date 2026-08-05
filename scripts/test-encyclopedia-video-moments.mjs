@@ -48,7 +48,7 @@ check('يجد الموضع المنطوق من المقطع الفعلي ولا 
   assert.match(moment.excerpt, /الفصول المقلوبة/u)
 })
 
-const fallback = await loadEncyclopediaVideoMoment({ topic: 'التعليم المبرمج', doorNumber: 2 })
+const fallback = await loadEncyclopediaVideoMoment({ topic: 'مصطلح غير موجود إطلاقاً', doorNumber: 2 })
 check('عند غياب تفريغ فعلي يعيد فيديو قريباً من البداية بلا توقيت وهمي', () => {
   assert.ok(fallback?.videoId)
   assert.equal(fallback?.source, 'sequence')
@@ -58,11 +58,14 @@ check('عند غياب تفريغ فعلي يعيد فيديو قريباً من
 })
 
 const search = await searchEncyclopediaVideoMoments({ query: 'التعليم المبرمج', limit: 3 })
-check('البحث العام لا ينسب لحظة دقيقة إلى metadata فقط', () => {
-  assert.ok(search.moments.length > 0)
-  assert.ok(search.moments.every((moment) => !moment.hasExactTiming && moment.startSeconds === 0 && moment.excerpt === ''))
+check('البحث العام يصل إلى المقاطع الفعلية ويعرض حالة الفهرس الصحيحة', () => {
+  assert.ok(search.moments.some((moment) => moment.hasExactTiming && moment.excerpt.includes('التعليم المبرمج')))
+  assert.ok(search.moments.every((moment) => moment.hasExactTiming ? moment.excerpt && moment.source !== 'sequence' : moment.startSeconds === 0))
   assert.equal(search.progress.total, 169)
-  assert.equal(search.progress.available, 0)
+  assert.equal(search.progress.processed, 169)
+  assert.equal(search.progress.available, 166)
+  assert.equal(search.progress.noSpeech, 3)
+  assert.equal(search.progress.needsReview, 0)
 })
 
 let networkCalls = 0
@@ -73,17 +76,15 @@ const warmupVideos = [
 await scheduleEncyclopediaTranscriptWarmup(warmupVideos, { fetchImpl: async () => { networkCalls += 1 } })
 check('الـ warm-up ثابت ولا يطلب YouTube أو أي خدمة تفريغ', () => {
   assert.equal(networkCalls, 0)
-  assert.deepEqual(getEncyclopediaTranscriptProgress(warmupVideos), {
-    running: false,
-    total: 2,
-    catalogued: 2,
-    completed: 0,
-    available: 0,
-    transcribed: 0,
-    needsReview: 2,
-    missing: 2,
-    sources: { buzz: 0, 'youtube-captions': 0, 'manual-reviewed': 0 },
-  })
+  const progress = getEncyclopediaTranscriptProgress(warmupVideos)
+  assert.equal(progress.running, false)
+  assert.equal(progress.total, 2)
+  assert.equal(progress.processed, 0)
+  assert.equal(progress.available, 0)
+  assert.equal(progress.noSpeech, 0)
+  assert.equal(progress.needsReview, 2)
+  assert.equal(progress.missing, 2)
+  assert.deepEqual(progress.sources, { buzz: 0, 'youtube-captions': 0, 'manual-reviewed': 0 })
 })
 
 console.log(`\nالنتيجة: ${checks} تحققاً ناجحاً، 0 إخفاق.`)

@@ -26,6 +26,7 @@ src/data/*
 !src/data/book-passages.json
 !src/data/encyclopedia-structure.json
 !src/data/encyclopedia-teaching-map.json
+!src/data/encyclopedia-transcript-corrections.json
 !src/data/encyclopedia-video-transcripts.json
 !src/data/encyclopedia-search-synonyms.json
 !src/data/encyclopedia-videos-fallback.json
@@ -36,6 +37,7 @@ src/lib/*
 !src/lib/sovereign-publishing.mjs
 !src/lib/semantic-court.mjs
 !src/lib/adversarial-misunderstanding.mjs
+!src/lib/encyclopedia-transcript-quality.mjs
 !src/server/
 src/server/*
 !src/server/whatsapp-controller.mjs

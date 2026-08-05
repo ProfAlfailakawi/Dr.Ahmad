@@ -13,12 +13,15 @@ COPY server.mjs /app/server.mjs
 COPY scripts/editorial-policy.mjs /app/scripts/editorial-policy.mjs
 COPY src/data/bodies.json /app/src/data/bodies.json
 COPY src/data/editorial-policy.json /app/src/data/editorial-policy.json
+COPY src/data/dr-ahmad-domain-glossary.json /app/src/data/dr-ahmad-domain-glossary.json
 COPY src/data/encyclopedia-search-synonyms.json /app/src/data/encyclopedia-search-synonyms.json
 COPY src/data/encyclopedia-structure.json /app/src/data/encyclopedia-structure.json
 COPY src/data/encyclopedia-teaching-map.json /app/src/data/encyclopedia-teaching-map.json
+COPY src/data/encyclopedia-transcript-corrections.json /app/src/data/encyclopedia-transcript-corrections.json
 COPY src/data/encyclopedia-video-transcripts.json /app/src/data/encyclopedia-video-transcripts.json
 COPY src/data/encyclopedia-videos-fallback.json /app/src/data/encyclopedia-videos-fallback.json
 COPY src/lib/adversarial-misunderstanding.mjs /app/src/lib/adversarial-misunderstanding.mjs
+COPY src/lib/encyclopedia-transcript-quality.mjs /app/src/lib/encyclopedia-transcript-quality.mjs
 COPY src/lib/semantic-court.mjs /app/src/lib/semantic-court.mjs
 COPY src/lib/sovereign-publishing.mjs /app/src/lib/sovereign-publishing.mjs
 COPY src/lib/style-dna.mjs /app/src/lib/style-dna.mjs

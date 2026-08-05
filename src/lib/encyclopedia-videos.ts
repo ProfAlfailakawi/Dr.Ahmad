@@ -61,6 +61,14 @@ function normalizedCatalog(payload: Partial<EncyclopediaVideoCatalog>, source?: 
           available: Number(payload.transcriptIndex.available) || 0,
           catalogued: Number(payload.transcriptIndex.catalogued) || Number(payload.transcriptIndex.total) || videos.length,
           transcribed: Number(payload.transcriptIndex.transcribed) || Number(payload.transcriptIndex.available) || 0,
+          processed: Number(payload.transcriptIndex.processed) || Number(payload.transcriptIndex.completed) || 0,
+          noSpeech: Number(payload.transcriptIndex.noSpeech) || 0,
+          introductions: Number(payload.transcriptIndex.introductions) || 0,
+          autoCorrected: Number(payload.transcriptIndex.autoCorrected) || 0,
+          autoTranscribed: Number(payload.transcriptIndex.autoTranscribed) || 0,
+          boilerplateOnly: Number(payload.transcriptIndex.boilerplateOnly) || 0,
+          processingPercent: Number(payload.transcriptIndex.processingPercent) || 0,
+          transcriptionPercent: Number(payload.transcriptIndex.transcriptionPercent) || 0,
           needsReview: Number(payload.transcriptIndex.needsReview) || 0,
           missing: Number(payload.transcriptIndex.missing) || Math.max(0, (Number(payload.transcriptIndex.total) || videos.length) - (Number(payload.transcriptIndex.available) || 0)),
           sources: {
@@ -165,6 +173,14 @@ export type EncyclopediaTranscriptProgress = {
   completed: number
   available: number
   transcribed: number
+  processed: number
+  noSpeech: number
+  introductions: number
+  autoCorrected: number
+  autoTranscribed: number
+  boilerplateOnly: number
+  processingPercent: number
+  transcriptionPercent: number
   needsReview: number
   missing: number
   catalogued?: number
@@ -186,6 +202,12 @@ export type EncyclopediaVideoMoment = {
   source: 'buzz' | 'youtube-captions' | 'manual-reviewed' | 'sequence' | 'title'
   score: number
   hasExactTiming: boolean
+  matchReason?: 'exact-phrase' | 'proper-name' | 'canonical-term' | 'synonym' | 'glossary' | 'correction' | 'token-overlap' | 'metadata-fallback'
+  matchReasonLabel?: string
+  matchedTerms?: string[]
+  contentType?: 'encyclopedia-introduction' | 'encyclopedia-chapter-video'
+  mappingReviewStatus?: string
+  transcriptReviewStatus?: string
   doorId?: string | null
   doorNumber?: number | null
   chapterNumber?: number | null
@@ -253,6 +275,14 @@ export async function searchEncyclopediaVideoMoments(
         available: Number(payload.progress.available) || 0,
         catalogued: Number(payload.progress.catalogued) || Number(payload.progress.total) || 0,
         transcribed: Number(payload.progress.transcribed) || Number(payload.progress.available) || 0,
+        processed: Number(payload.progress.processed) || Number(payload.progress.completed) || 0,
+        noSpeech: Number(payload.progress.noSpeech) || 0,
+        introductions: Number(payload.progress.introductions) || 0,
+        autoCorrected: Number(payload.progress.autoCorrected) || 0,
+        autoTranscribed: Number(payload.progress.autoTranscribed) || 0,
+        boilerplateOnly: Number(payload.progress.boilerplateOnly) || 0,
+        processingPercent: Number(payload.progress.processingPercent) || 0,
+        transcriptionPercent: Number(payload.progress.transcriptionPercent) || 0,
         needsReview: Number(payload.progress.needsReview) || 0,
         missing: Number(payload.progress.missing) || Math.max(0, (Number(payload.progress.total) || 0) - (Number(payload.progress.available) || 0)),
         sources: {
@@ -261,7 +291,7 @@ export async function searchEncyclopediaVideoMoments(
           'manual-reviewed': Number(payload.progress.sources?.['manual-reviewed']) || 0,
         },
       }
-    : { running: false, total: 0, completed: 0, available: 0, transcribed: 0, needsReview: 0, missing: 0, catalogued: 0, sources: { buzz: 0, 'youtube-captions': 0, 'manual-reviewed': 0 } }
+    : { running: false, total: 0, completed: 0, available: 0, transcribed: 0, processed: 0, noSpeech: 0, introductions: 0, autoCorrected: 0, autoTranscribed: 0, boilerplateOnly: 0, processingPercent: 0, transcriptionPercent: 0, needsReview: 0, missing: 0, catalogued: 0, sources: { buzz: 0, 'youtube-captions': 0, 'manual-reviewed': 0 } }
   return {
     query: String(payload.query || query),
     moments: Array.isArray(payload.moments) ? payload.moments.filter(validMoment) : [],

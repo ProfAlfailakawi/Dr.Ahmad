@@ -19,6 +19,8 @@ export type EncyclopediaPassageMatch = {
   doorTitle: string
   chapterNumber: number | null
   chapterTitle: string
+  matchReason: string
+  evidence: string[]
 }
 
 export type EncyclopediaSlideMatch = {
@@ -27,6 +29,8 @@ export type EncyclopediaSlideMatch = {
   doorNumber: number
   doorTitle: string
   presentation: string
+  matchReason: string
+  evidence: string[]
 }
 
 export type EncyclopediaKnowledgeSearchContext = {
@@ -118,6 +122,19 @@ function locationForPassage(passage: RawPassage) {
   return best?.score > 18 ? best.location : null
 }
 
+function normalizedEvidenceText(value = '') {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[ً-ْٰـ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function searchPassages(query: string, limit: number, context: EncyclopediaKnowledgeSearchContext = {}): EncyclopediaPassageMatch[] {
   const plan = buildSmartQueryPlan(query)
   const transcriptPlan = context.transcriptExcerpt ? buildSmartQueryPlan(context.transcriptExcerpt) : null
@@ -138,9 +155,18 @@ function searchPassages(query: string, limit: number, context: EncyclopediaKnowl
       { value: passage.conceptTitle, weight: 1.05 },
       { value: location?.unit.title, weight: 1.15 },
     ]) * 0.22
-    if (context.chapterNumber && location?.unit.number === context.chapterNumber && (!context.doorNumber || location.door.doorNumber === context.doorNumber)) score += 13
-    else if (context.doorNumber && location?.door.doorNumber === context.doorNumber) score += 5
-    return { passage, location, score }
+    const sameChapter = Boolean(context.chapterNumber && location?.unit.number === context.chapterNumber && (!context.doorNumber || location.door.doorNumber === context.doorNumber))
+    const sameDoor = Boolean(context.doorNumber && location?.door.doorNumber === context.doorNumber)
+    if (sameChapter) score += 13
+    else if (sameDoor) score += 5
+    const normalizedQuery = normalizedEvidenceText(query)
+    const exactPhrase = Boolean(normalizedQuery && normalizedEvidenceText(`${passage.text} ${passage.conceptTitle || ''} ${passage.section || ''}`).includes(normalizedQuery))
+    const evidence = [
+      exactPhrase ? 'وردت العبارة أو صيغتها المباشرة في متن الكتاب.' : '',
+      sameChapter ? 'المقطع يقع في الباب والفصل نفسيهما للفيديو.' : sameDoor ? 'المقطع يقع في الباب نفسه.' : '',
+      transcriptPlan ? 'عزز سياق الكلام المفرغ ترتيب هذا المقطع.' : '',
+    ].filter(Boolean)
+    return { passage, location, score, exactPhrase, sameChapter, sameDoor, evidence }
   })
     .filter((item) => item.score >= 12)
     .sort((left, right) => right.score - left.score || Number(left.passage.page) - Number(right.passage.page))
@@ -169,6 +195,12 @@ function searchPassages(query: string, limit: number, context: EncyclopediaKnowl
       doorTitle: item.location?.door.title || '',
       chapterNumber: item.location?.unit.number || null,
       chapterTitle: item.location?.unit.title || '',
+      matchReason: item.exactPhrase
+        ? 'أقرب موضع وردت فيه العبارة داخل متن الكتاب.'
+        : item.sameChapter
+          ? 'أقرب مقطع في الباب والفصل نفسيهما، مدعوم بسياق التفريغ.'
+          : 'أقرب مقطع كتاب وفق المصطلحات والسياق العلمي.',
+      evidence: item.evidence,
     })
     if (output.length >= limit) break
   }
@@ -197,14 +229,29 @@ function searchSlides(query: string, limit: number, context: EncyclopediaKnowled
         { value: topic.videoHints.join(' '), weight: 1.1 },
         { value: topic.objective, weight: 0.75 },
       ]) * 0.2
-      if (context.chapterNumber && topic.chapterNumbers.includes(context.chapterNumber) && (!context.doorNumber || door?.doorNumber === context.doorNumber)) score += 12
-      else if (context.doorNumber && door?.doorNumber === context.doorNumber) score += 4
+      const sameChapter = Boolean(context.chapterNumber && topic.chapterNumbers.includes(context.chapterNumber) && (!context.doorNumber || door?.doorNumber === context.doorNumber))
+      const sameDoor = Boolean(context.doorNumber && door?.doorNumber === context.doorNumber)
+      if (sameChapter) score += 12
+      else if (sameDoor) score += 4
+      const normalizedQuery = normalizedEvidenceText(query)
+      const exactPhrase = Boolean(normalizedQuery && normalizedEvidenceText(`${topic.title} ${topic.videoHints.join(' ')} ${topic.objective}`).includes(normalizedQuery))
+      const evidence = [
+        exactPhrase ? 'تطابق المصطلح مع عنوان المحور أو كلماته المفتاحية.' : '',
+        sameChapter ? 'المادة تخص الباب والفصل نفسيهما.' : sameDoor ? 'المادة تخص الباب نفسه.' : '',
+        topic.ranges.length ? 'نطاق الشرائح موثق في خريطة التدريس.' : '',
+      ].filter(Boolean)
       return {
         topic,
         score,
         doorNumber: door?.doorNumber || 0,
         doorTitle: door?.title || '',
         presentation: door?.presentation || '',
+        matchReason: exactPhrase
+          ? 'المحور التدريسي يطابق المصطلح مباشرة.'
+          : sameChapter
+            ? 'المحور التدريسي مرتبط بالفصل نفسه ومدعوم بسياق الفيديو.'
+            : 'المحور الأقرب وفق الكلمات المفتاحية والهدف التعليمي.',
+        evidence,
       }
     })
     .filter((item) => item.score >= 11)

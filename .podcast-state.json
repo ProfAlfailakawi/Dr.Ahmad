@@ -4,30 +4,30 @@
    "contentHash": "125effa59c054115",
    "pipelineHash": "fdf6b06992401311",
    "sourceHash": "cac367bbc0ed78df3304f3ff0000afdd3c7a4217d769f518c51cef22a1e9cb8a",
-   "audioHash": "e877d8a3b03e4a34323d053883528855772826c4eee685a1078e09384d8a18f0",
-   "transcriptHash": "e9521d807a81e98263200d192767dfa06ee955dbdf5850f97a14637595b765cc",
+   "audioHash": "8d08425335e8c26040bd14fc6a70283120a26a7d9bcb44e33dae64311a280dc4",
+   "transcriptHash": "2816a736c6e8350fa6dcf9b0bfd421cce295ffde47ed2281a876cc9c30d82803",
    "status": "accepted_pilot",
-   "acceptedAt": "2026-08-05T06:51:30.057Z",
+   "acceptedAt": "2026-08-05T09:57:48.811Z",
    "pilot": true
   },
   "pilot:the-return-that-fails-to-fix-what-came-before-itarabic:ar": {
    "contentHash": "af57a999bb116c2c",
    "pipelineHash": "fdf6b06992401311",
    "sourceHash": "86bdc6ab4f854ef695ca941c13e38c17f09b5c773cd693c888e497b40e74c560",
-   "audioHash": "7238847b03c584397004a59478fd09583225d0eb45a002f81939a3f02f78aeab",
-   "transcriptHash": "facb1c0da362a6f8745222986a98afe23d9ae1442ba1596d93f7e2f8a632b370",
+   "audioHash": "5decc7ab32c82549f93beefad95760327d163b8c9be61215496ead878521c055",
+   "transcriptHash": "fda409b77bb009f3d8b4b6f3758ae92e4d55b31afcca89079a77b735e038ba4f",
    "status": "accepted_pilot",
-   "acceptedAt": "2026-08-05T06:55:17.984Z",
+   "acceptedAt": "2026-08-05T10:01:09.142Z",
    "pilot": true
   },
   "pilot:when-the-exam-becomes-the-goalarabic:ar": {
    "contentHash": "e47cbb8609da7b55",
    "pipelineHash": "fdf6b06992401311",
    "sourceHash": "ab162ad1f3e758d9516d87f61b4e8b8d018d41a6859ef2eec1cb3b7955d3575d",
-   "audioHash": "1e5ce8fe642607c4ac987c09edc6e7d4b852d51b41c8d4fe62dd0d141b8e3f25",
-   "transcriptHash": "c4e6e5c63cedc8ccc22ac70f770c9e8dc4971d77fd322f01837690eaedd0e0a3",
+   "audioHash": "2030c58f3497cba606be660b14a2d5be340950b4af406224f6be948109e51294",
+   "transcriptHash": "35f0731aa958cd26f1b7a19a20c91af555e12317feb1d2840d58440f44a524fd",
    "status": "accepted_pilot",
-   "acceptedAt": "2026-08-05T07:03:20.217Z",
+   "acceptedAt": "2026-08-05T10:08:06.659Z",
    "pilot": true
   }
  },
@@ -35,7 +35,7 @@
  "totalCount": 0,
  "pilotGate": {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-05T07:03:20.278Z",
+  "generatedAt": "2026-08-05T10:08:06.713Z",
   "pipelineHash": "fdf6b06992401311",
   "required": 3,
   "candidates": 8,
@@ -98,12 +98,12 @@
  },
  "failures": {
   "when-the-teacher-knows-why-he-teachesarabic": {
-   "attempts": 6,
-   "lastFailedAt": "2026-08-05T06:57:55.719Z"
+   "attempts": 7,
+   "lastFailedAt": "2026-08-05T10:03:30.421Z"
   },
   "success-that-does-not-bring-joy-to-its-ownerarabic": {
-   "attempts": 6,
-   "lastFailedAt": "2026-08-05T06:59:26.224Z"
+   "attempts": 7,
+   "lastFailedAt": "2026-08-05T10:04:53.973Z"
   }
  }
 }

@@ -47,8 +47,8 @@ export function parseArgs(argv) {
   return options
 }
 
-function commandExists(command, args = ['--version']) {
-  const result = spawnSync(command, args, { stdio: 'ignore', shell: false })
+function commandExists(command, args = ['--version'], timeout = 8_000) {
+  const result = spawnSync(command, args, { stdio: 'ignore', shell: false, timeout })
   return result.status === 0
 }
 
@@ -63,7 +63,7 @@ export function resolveBuzzCommand(platform = process.platform) {
   }
   for (const candidate of candidates) {
     if ((candidate.command.includes('/') || candidate.command.includes('\\')) && !existsSync(candidate.command)) continue
-    if (commandExists(candidate.command)) return candidate
+    if (commandExists(candidate.command, ['--help'])) return candidate
   }
   if (commandExists('python', ['-m', 'buzz', '--version'])) return { command: 'python', prefix: ['-m', 'buzz'] }
   if (commandExists('python3', ['-m', 'buzz', '--version'])) return { command: 'python3', prefix: ['-m', 'buzz'] }
@@ -80,7 +80,7 @@ export function resolveYtDlpCommand() {
 
 export function completedVideoIds(index) {
   return new Set(Object.values(index?.records || {})
-    .filter((record) => record?.available && Array.isArray(record.segments) && record.segments.length > 0)
+    .filter((record) => (record?.available && Array.isArray(record.segments) && record.segments.length > 0) || record?.status === 'no-speech')
     .map((record) => record.videoId))
 }
 
@@ -121,7 +121,14 @@ export function downloadAudio({ ytDlp, video, audioDir, dryRun = false }) {
   if (existing) return existing
   if (dryRun) return join(audioDir, `${video.id}.m4a`)
   const template = join(audioDir, '%(id)s.%(ext)s')
+  const browser = process.env.YTDLP_COOKIES_BROWSER || (process.platform === 'darwin' ? 'safari' : '')
+  const browserArgs = browser && process.env.YTDLP_NO_BROWSER_COOKIES !== '1'
+    ? ['--cookies-from-browser', browser]
+    : []
   const result = run(ytDlp, [
+    ...browserArgs,
+    '--js-runtimes', 'node',
+    '--remote-components', 'ejs:github',
     '--no-playlist', '--extract-audio', '--audio-format', 'm4a', '--audio-quality', '0',
     '--write-info-json', '--no-overwrites', '--output', template, video.url,
   ])

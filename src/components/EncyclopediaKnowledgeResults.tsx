@@ -28,9 +28,9 @@ function fileName(value: string) {
   return clean.split('/').filter(Boolean).at(-1) || ''
 }
 
-function highlighted(text: string, query: string): ReactNode {
+function highlighted(text: string, query: string, extraTerms: readonly string[] = []): ReactNode {
   const source = String(text || '')
-  const terms = [...new Set(normalizeEncyclopediaText(query).split(' ').filter((term) => term.length > 1))]
+  const terms = [...new Set([query, ...extraTerms].flatMap((value) => normalizeEncyclopediaText(value).split(' ')).filter((term) => term.length > 1))]
   if (!source || !terms.length) return source
   const escaped = terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).sort((a, b) => b.length - a.length)
   const matcher = new RegExp(`(${escaped.join('|')})`, 'giu')
@@ -54,6 +54,7 @@ function SourceHeader({ icon, eyebrow, title }: { icon: string; eyebrow: string;
 }
 
 function locationLabel(moment: EncyclopediaVideoMoment | null, video: IndexedEncyclopediaVideo | null) {
+  if (moment?.contentType === 'encyclopedia-introduction') return 'مادة تعريفية للموسوعة'
   const door = moment?.doorNumber || moment?.sequence?.doorNumber || video?.doorNumber
   const chapter = moment?.chapterNumber || moment?.sequence?.chapterNumber || video?.chapterNumber
   if (!door && !chapter) return ''
@@ -100,7 +101,7 @@ export function EncyclopediaKnowledgeResults({
   const activeInstance = primaryMoment ? `knowledge-${primaryMoment.videoId}-${primaryMoment.startSeconds}` : primaryVideo ? `knowledge-${primaryVideo.id}-0` : ''
   const isPlayingPrimary = Boolean(primaryVideo && playingVideoId === primaryVideo.id && playingVideoInstance === activeInstance)
   const progressText = progress
-    ? `${formatArabicNumber(progress.transcribed || progress.available)} مفرغ فعلياً · ${formatArabicNumber(progress.needsReview || 0)} يحتاج مراجعة · ${formatArabicNumber(progress.missing || Math.max(0, progress.total - progress.available))} بلا تفريغ`
+    ? `${formatArabicNumber(progress.processed || progress.completed)} من ${formatArabicNumber(progress.total)} معالجة · ${formatArabicNumber(progress.transcribed || progress.available)} بتفريغ زمني · ${formatArabicNumber(progress.noSpeech || 0)} بلا كلام`
     : 'الفهرس الزمني لا يدّعي ثانية دقيقة من دون تفريغ محفوظ.'
 
   if (!query.trim()) return null
@@ -135,7 +136,7 @@ export function EncyclopediaKnowledgeResults({
               <p className="mt-3 line-clamp-2 text-[.78rem] font-semibold leading-[1.75] text-ink">{primaryVideo.title}</p>
               {locationLabel(primaryMoment, primaryVideo) && <p className="mt-1 text-[.61rem] font-semibold text-accent">{locationLabel(primaryMoment, primaryVideo)}{primaryMoment?.chapterTitle ? ` · ${primaryMoment.chapterTitle}` : ''}</p>}
               {exactMoment ? (
-                <blockquote className="mt-2 line-clamp-4 border-s-2 border-accent ps-3 text-[.68rem] leading-[1.85] text-soft">{highlighted(primaryMoment?.excerpt || '', query)}</blockquote>
+                <blockquote className="mt-2 line-clamp-4 border-s-2 border-accent ps-3 text-[.68rem] leading-[1.85] text-soft">{highlighted(primaryMoment?.excerpt || '', query, primaryMoment?.matchedTerms || [])}</blockquote>
               ) : (
                 <p className="mt-2 text-[.65rem] leading-relaxed text-soft">{status === 'loading' ? 'يجري البحث داخل الفهرس الزمني الثابت.' : status === 'error' ? 'تعذّر البحث النصي الآن؛ عُرض أقرب فيديو من الفهرس من دون توقيت مختلق.' : 'لم يوجد مقطع زمني موثوق؛ لذلك يبدأ الفيديو من أوله.'}</p>
               )}
@@ -144,6 +145,15 @@ export function EncyclopediaKnowledgeResults({
                   {primaryPassage && <span>الكتاب: صفحة {formatArabicNumber(primaryPassage.page)} · {primaryPassage.chapterTitle || primaryPassage.section}</span>}
                   {primarySlide && <span>التدريس: {primarySlide.topic.title} · {encyclopediaSlideRangeLabel(primarySlide.topic.ranges)}</span>}
                 </div>
+              )}
+              {primaryMoment && (
+                <details className="mt-3 border-t border-hair pt-3 text-[.61rem] text-soft">
+                  <summary className="cursor-pointer select-none font-semibold text-ink/75 marker:text-accent">لماذا ظهرت هذه النتيجة؟</summary>
+                  <p className="mt-2 leading-[1.8]">{primaryMoment.matchReasonLabel || (exactMoment ? 'تطابقت الكلمات الأساسية داخل مقطع زمني محفوظ.' : 'هذا أقرب فيديو بحسب العنوان والباب والفصل، من دون توقيت مختلق.')}</p>
+                  {primaryMoment.matchedTerms?.length ? <p className="mt-1 line-clamp-2">المصطلحات المطابقة: {primaryMoment.matchedTerms.slice(0, 4).join('، ')}</p> : null}
+                  {primaryPassage ? <p className="mt-1">الكتاب: {primaryPassage.matchReason}</p> : null}
+                  {primarySlide ? <p className="mt-1">مواد التدريس: {primarySlide.matchReason}</p> : null}
+                </details>
               )}
             </>
           ) : <div className="mt-4 aspect-video animate-pulse rounded-xl border border-hair bg-wash" />}

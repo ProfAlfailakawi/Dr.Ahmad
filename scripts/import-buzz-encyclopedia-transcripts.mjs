@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { resolve } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { importBuzzDirectory, buildTranscriptReport, formatTranscriptReport } from './lib/encyclopedia-buzz-transcripts.mjs'
 
 const root = resolve(import.meta.dirname, '..')
@@ -11,5 +13,12 @@ const result = await importBuzzDirectory({
   structureFile: resolve(root, 'src/data/encyclopedia-structure.json'),
   force,
 })
-console.log(formatTranscriptReport(buildTranscriptReport({ index: result.index, importReport: result.report })))
+const polish = spawnSync(process.execPath, ['scripts/polish-encyclopedia-transcripts.mjs'], { cwd: root, stdio: 'inherit' })
+if (polish.status !== 0) {
+  console.error('فشل Gold Pass بعد الاستيراد؛ بقي التفريغ الخام محفوظاً ولم يُحذف.')
+  process.exitCode = 1
+} else {
+  const polishedIndex = JSON.parse(readFileSync(resolve(root, 'src/data/encyclopedia-video-transcripts.json'), 'utf8'))
+  console.log(formatTranscriptReport(buildTranscriptReport({ index: polishedIndex, importReport: result.report })))
+}
 if (result.report.failed.length) process.exitCode = 1

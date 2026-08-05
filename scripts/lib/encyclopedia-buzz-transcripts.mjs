@@ -7,6 +7,12 @@ const STATIC_SOURCES = new Set(['buzz', 'youtube-captions', 'manual-reviewed'])
 const NOISE_ONLY = /^\s*[[(（]?\s*(?:موسيقى|صمت|تصفيق|ضوضاء|music|silence|applause|noise)\s*[\])）]?\s*[.!،,؟?]*\s*$/iu
 const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
 const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹'
+const GOLD_RULES = (() => {
+  try { return JSON.parse(readFileSync(new URL('../../src/data/encyclopedia-transcript-corrections.json', import.meta.url), 'utf8')) }
+  catch { return { introductionVideoIds: [], noSpeechVideoIds: [] } }
+})()
+const INTRODUCTION_VIDEO_IDS = new Set(Array.isArray(GOLD_RULES.introductionVideoIds) ? GOLD_RULES.introductionVideoIds : [])
+const NO_SPEECH_VIDEO_IDS = new Set(Array.isArray(GOLD_RULES.noSpeechVideoIds) ? GOLD_RULES.noSpeechVideoIds : [])
 
 export function normalizeTranscriptSearchText(value = '') {
   return String(value || '')
@@ -227,52 +233,92 @@ function validSegments(record) {
   return Array.isArray(record?.segments) && normalizeSegments(record.segments).segments.length > 0
 }
 
-function mappingFromVideo(video, structure) {
-  const doorNumber = Number(video?.doorNumber) || null
-  const chapterNumber = Number(video?.chapterNumber) || null
+function mappingFromVideo(video, structure, previous = {}) {
+  const introduction = INTRODUCTION_VIDEO_IDS.has(video?.id) || previous?.contentType === 'encyclopedia-introduction'
+  if (introduction) {
+    return {
+      contentType: 'encyclopedia-introduction',
+      doorId: null,
+      doorNumber: null,
+      chapterNumber: null,
+      chapterTitle: null,
+      sequenceLabel: 'مادة تعريفية للموسوعة',
+      mappingSource: 'manual-confirmed',
+      mappingConfidence: 'confirmed',
+      mappingReviewStatus: 'reviewed',
+    }
+  }
+  const doorNumber = Number(previous?.doorNumber || video?.doorNumber) || null
+  const chapterNumber = Number(previous?.chapterNumber || video?.chapterNumber) || null
   const door = structure?.doors?.find((item) => Number(item.doorNumber) === doorNumber) || null
   const chapter = door?.units?.find((item) => Number(item.number) === chapterNumber) || null
   const mapped = Boolean(door && chapter)
   return {
+    contentType: 'encyclopedia-chapter-video',
     doorId: mapped ? String(door.id || '') : null,
     doorNumber: mapped ? doorNumber : null,
     chapterNumber: mapped ? chapterNumber : null,
     chapterTitle: mapped ? String(chapter.title || '') : null,
     sequenceLabel: mapped ? `الباب ${doorNumber} · الفصل ${chapterNumber}` : '',
-    mappingSource: mapped ? String(video.mappingSource || 'catalog') : 'needs-review',
-    mappingConfidence: mapped ? String(video.mappingConfidence || 'exact') : 'unresolved',
-    reviewStatus: mapped ? 'unreviewed' : 'needs-review',
+    mappingSource: mapped ? String(previous?.mappingSource || video?.mappingSource || 'catalog') : 'needs-review',
+    mappingConfidence: mapped ? String(previous?.mappingConfidence || video?.mappingConfidence || 'exact') : 'unresolved',
+    mappingReviewStatus: mapped ? 'reviewed' : 'needs-review',
   }
 }
 
+function preserveSegmentMetadata(rawSegments = []) {
+  const normalized = normalizeSegments(rawSegments).segments
+  return normalized.map((segment) => {
+    const previous = rawSegments.find((candidate) => Math.abs(Number(candidate?.start) - segment.start) < 0.002 && Math.abs(Number(candidate?.end) - segment.end) < 0.002) || {}
+    return {
+      ...previous,
+      ...segment,
+      displayText: String(previous.displayText || segment.text),
+      originalText: String(previous.originalText || previous.rawText || segment.text),
+      searchText: String(previous.searchText || normalizeTranscriptSearchText(previous.displayText || segment.text)),
+      indexable: previous.indexable !== false,
+    }
+  })
+}
+
 function recordFromCatalog(video, structure, old = {}) {
-  const mapping = mappingFromVideo(video, structure)
-  const oldHasTranscript = validSegments(old)
-  const normalized = oldHasTranscript ? normalizeSegments(old.segments).segments : []
+  const mapping = mappingFromVideo(video, structure, old)
+  const noSpeech = old?.status === 'no-speech' || NO_SPEECH_VIDEO_IDS.has(video?.id)
+  const oldHasTranscript = !noSpeech && validSegments(old)
+  const normalized = oldHasTranscript ? preserveSegmentMetadata(old.segments) : []
   const source = STATIC_SOURCES.has(old?.source) ? old.source : null
   const available = normalized.length > 0 && Boolean(source)
+  const transcriptReviewStatus = noSpeech
+    ? 'not-applicable'
+    : String(old.transcriptReviewStatus || old.reviewStatus || (available ? 'auto-transcribed' : 'not-available'))
   return {
+    ...old,
     videoId: video.id,
     available,
-    checked: Boolean(old.checked || available),
-    status: available ? 'transcribed' : 'metadata-only',
+    checked: Boolean(old.checked || available || noSpeech),
+    status: noSpeech ? 'no-speech' : available ? 'transcribed' : 'metadata-only',
     language: String(old.language || 'ar'),
-    source,
+    source: available ? source : null,
     title: String(video.title || old.title || ''),
     description: String(video.description || old.description || ''),
     ...mapping,
+    reviewStatus: noSpeech ? 'reviewed' : transcriptReviewStatus,
+    transcriptReviewStatus,
     ...(oldHasTranscript ? {
       segments: normalized,
-      text: normalized.map((segment) => segment.text).join(' '),
+      text: String(old.text || normalized.map((segment) => segment.text).join(' ')),
+      displayText: String(old.displayText || old.text || normalized.map((segment) => segment.text).join(' ')),
+      originalText: String(old.originalText || normalized.map((segment) => segment.originalText || segment.text).join(' ')),
+      searchText: String(old.searchText || normalizeTranscriptSearchText(old.displayText || old.text || normalized.map((segment) => segment.text).join(' '))),
       segmentCount: normalized.length,
+      indexableSegmentCount: normalized.filter((segment) => segment.indexable !== false).length,
       sourceFile: String(old.sourceFile || ''),
       sourceHash: String(old.sourceHash || ''),
       sourceBytes: Number(old.sourceBytes) || 0,
       indexedAt: String(old.indexedAt || ''),
-      reviewStatus: String(old.reviewStatus || mapping.reviewStatus),
       lastTimestamp: normalized.at(-1)?.end || 0,
     } : {
-      segments: [], text: '', segmentCount: 0, sourceFile: '', sourceHash: '', sourceBytes: 0, indexedAt: '', lastTimestamp: 0,
+      segments: [], text: '', displayText: '', originalText: '', searchText: '', segmentCount: 0, indexableSegmentCount: 0, sourceFile: '', sourceHash: '', sourceBytes: 0, indexedAt: '', lastTimestamp: 0,
     }),
   }
 }
@@ -280,7 +326,13 @@ function recordFromCatalog(video, structure, old = {}) {
 export function buildTranscriptProgress(records, total = 0) {
   const list = Array.isArray(records) ? records : Object.values(records || {})
   const available = list.filter((record) => record?.available && validSegments(record)).length
-  const needsReview = list.filter((record) => !record?.doorNumber || !record?.chapterNumber || (record?.available && record?.reviewStatus !== 'reviewed')).length
+  const noSpeech = list.filter((record) => record?.status === 'no-speech').length
+  const processed = available + noSpeech
+  const introductions = list.filter((record) => record?.contentType === 'encyclopedia-introduction').length
+  const needsReview = list.filter((record) => record?.mappingReviewStatus === 'needs-review' || (!record?.available && record?.status !== 'no-speech')).length
+  const autoCorrected = list.filter((record) => record?.transcriptReviewStatus === 'auto-corrected').length
+  const autoTranscribed = list.filter((record) => record?.transcriptReviewStatus === 'auto-transcribed').length
+  const boilerplateOnly = list.filter((record) => record?.quality?.status === 'boilerplate-only').length
   const sources = { buzz: 0, 'youtube-captions': 0, 'manual-reviewed': 0 }
   for (const record of list) if (record?.available && Object.hasOwn(sources, record.source)) sources[record.source] += 1
   const catalogued = total || list.length
@@ -288,11 +340,19 @@ export function buildTranscriptProgress(records, total = 0) {
     running: false,
     total: catalogued,
     catalogued,
-    completed: available,
+    completed: processed,
+    processed,
     available,
     transcribed: available,
+    noSpeech,
+    introductions,
     needsReview,
-    missing: Math.max(0, catalogued - available),
+    missing: Math.max(0, catalogued - processed),
+    autoCorrected,
+    autoTranscribed,
+    boilerplateOnly,
+    processingPercent: catalogued ? Number(((processed / catalogued) * 100).toFixed(2)) : 0,
+    transcriptionPercent: catalogued ? Number(((available / catalogued) * 100).toFixed(2)) : 0,
     sources,
   }
 }
@@ -308,7 +368,7 @@ export function normalizeTranscriptIndex(payload, catalog, structure) {
   const records = {}
   for (const video of catalog.videos || []) records[video.id] = recordFromCatalog(video, structure, oldRecords[video.id] || {})
   return {
-    version: 2,
+    version: Math.max(3, Number(payload?.version) || 0),
     generatedAt: String(payload?.generatedAt || new Date().toISOString()),
     catalogCount: (catalog.videos || []).length,
     progress: buildTranscriptProgress(records, (catalog.videos || []).length),
@@ -415,7 +475,7 @@ export async function importBuzzDirectory({
     if (!force && old?.sourceHash === accepted.parsed.hash && old?.available && validSegments(old)) { report.skipped += 1; continue }
     const sourceFile = relative(inputDir, accepted.filePath).replaceAll('\\', '/')
     const source = basename(accepted.filePath).toLowerCase().includes('manual-reviewed') ? 'manual-reviewed' : 'buzz'
-    const mapping = mappingFromVideo((catalog.videos || []).find((video) => video.id === videoId), structure)
+    const mapping = mappingFromVideo((catalog.videos || []).find((video) => video.id === videoId), structure, old)
     const segments = accepted.parsed.segments
     index.records[videoId] = {
       ...old,
@@ -434,7 +494,10 @@ export async function importBuzzDirectory({
       sourceBytes: accepted.parsed.bytes,
       indexedAt: now(),
       lastTimestamp: segments.at(-1)?.end || 0,
-      reviewStatus: old?.reviewStatus === 'reviewed' || source === 'manual-reviewed' ? 'reviewed' : mapping.reviewStatus,
+      reviewStatus: source === 'manual-reviewed' ? 'reviewed' : 'auto-transcribed',
+      transcriptReviewStatus: source === 'manual-reviewed' ? 'reviewed' : 'auto-transcribed',
+      mappingReviewStatus: mapping.mappingReviewStatus,
+      contentType: mapping.contentType,
     }
     index.generatedAt = now()
     index.progress = buildTranscriptProgress(index.records, index.catalogCount)
@@ -450,17 +513,21 @@ export async function importBuzzDirectory({
 export function buildTranscriptReport({ index, importReport = {} } = {}) {
   const records = Object.values(index?.records || {})
   const progress = buildTranscriptProgress(records, Number(index?.catalogCount) || records.length)
-  const unmapped = records.filter((record) => !record.doorNumber || !record.chapterNumber).map((record) => record.videoId)
+  const noSpeechIds = new Set(records.filter((record) => record?.status === 'no-speech').map((record) => String(record.videoId || '')))
+  const unmapped = records
+    .filter((record) => record?.contentType !== 'encyclopedia-introduction' && (!record.doorNumber || !record.chapterNumber))
+    .map((record) => record.videoId)
+  const emptyFiles = (importReport.empty || []).filter((item) => ![...noSpeechIds].some((videoId) => String(item).includes(videoId)))
   return {
     ...progress,
     importedBuzzFiles: Number(importReport.imported) || progress.sources.buzz || 0,
     unknownFiles: importReport.unknown || [],
     duplicateFiles: importReport.duplicates || [],
-    emptyFiles: importReport.empty || [],
+    emptyFiles,
     invalidTiming: importReport.invalidTiming || [],
     failedFiles: importReport.failed || [],
     unmapped,
-    completionPercent: progress.total ? Number(((progress.available / progress.total) * 100).toFixed(2)) : 0,
+    completionPercent: progress.processingPercent,
   }
 }
 
@@ -468,18 +535,25 @@ export function formatTranscriptReport(report) {
   return [
     `إجمالي الفيديوهات: ${report.total}`,
     `مفرغ فعلياً: ${report.available}`,
+    `بلا كلام بعد التحقق الصوتي: ${report.noSpeech || 0}`,
+    `مواد تعريفية: ${report.introductions || 0}`,
+    `تمت معالجة: ${report.processed || 0} من ${report.total}`,
     `من Buzz: ${report.sources?.buzz || 0}`,
     `من YouTube Captions: ${report.sources?.['youtube-captions'] || 0}`,
     `مراجع يدوياً: ${report.sources?.['manual-reviewed'] || 0}`,
-    `يحتاج مراجعة: ${report.needsReview}`,
-    `بلا تفريغ: ${report.missing}`,
+    `تفريغ مصحح آلياً: ${report.autoCorrected || 0}`,
+    `تفريغ آلي بلا تصحيح: ${report.autoTranscribed || 0}`,
+    `ملاحظات مانعة: ${report.needsReview}`,
+    `بلا تفريغ بسبب خطأ أو نقص: ${report.missing}`,
     `ملفات Buzz المستوردة: ${report.importedBuzzFiles || 0}`,
     `ملفات غير معروفة: ${report.unknownFiles?.length || 0}`,
     `ملفات مكررة: ${report.duplicateFiles?.length || 0}`,
     `ملفات فارغة: ${report.emptyFiles?.length || 0}`,
     `أخطاء توقيت: ${report.invalidTiming?.reduce((sum, item) => sum + (Number(item.count) || 0), 0) || 0}`,
     `فشل الاستيراد: ${report.failedFiles?.length || 0}`,
-    `فيديوهات غير مرتبطة بباب وفصل: ${report.unmapped?.length || 0}`,
-    `نسبة الإنجاز: ${report.completionPercent}%`,
+    `فيديوهات غير مرتبطة بباب وفصل خطأً: ${report.unmapped?.length || 0}`,
+    `نسبة المعالجة: ${report.processingPercent ?? report.completionPercent ?? 0}%`,
+    `نسبة التفريغ النصي: ${report.transcriptionPercent || 0}%`,
   ].join('\n')
 }
+

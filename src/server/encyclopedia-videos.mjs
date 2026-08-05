@@ -1,4 +1,10 @@
 import { readFileSync } from 'node:fs'
+import {
+  buildSearchExpansionGroups,
+  expandSearchQuery,
+  normalizeArabicSearchText,
+  reasonLabel,
+} from '../lib/encyclopedia-transcript-quality.mjs'
 
 const CHANNEL_HANDLE = 'موسوعةتكنولوجياالتعليم'
 const CHANNEL_URL = `https://www.youtube.com/@${CHANNEL_HANDLE}/videos`
@@ -645,35 +651,25 @@ const MAX_MOMENTS_PER_VIDEO = 2
 const DISTINCT_MOMENT_GAP_SECONDS = 24
 
 let teachingMap = {}
-let bundledTranscriptIndex = { version: 2, generatedAt: '', catalogCount: 0, records: {} }
+let bundledTranscriptIndex = { version: 3, generatedAt: '', catalogCount: 0, records: {} }
 let staticCatalog = { videos: [] }
-let searchSynonymGroups = []
+let searchSynonyms = { groups: [] }
+let domainGlossary = []
+let transcriptCorrections = {}
 try { teachingMap = JSON.parse(readFileSync(new URL('../data/encyclopedia-teaching-map.json', import.meta.url), 'utf8')) } catch { teachingMap = {} }
-try { bundledTranscriptIndex = JSON.parse(readFileSync(new URL('../data/encyclopedia-video-transcripts.json', import.meta.url), 'utf8')) } catch { bundledTranscriptIndex = { version: 2, records: {} } }
+try { bundledTranscriptIndex = JSON.parse(readFileSync(new URL('../data/encyclopedia-video-transcripts.json', import.meta.url), 'utf8')) } catch { bundledTranscriptIndex = { version: 3, records: {} } }
 try { staticCatalog = JSON.parse(readFileSync(new URL('../data/encyclopedia-videos-fallback.json', import.meta.url), 'utf8')) } catch { staticCatalog = { videos: [] } }
-try {
-  const synonyms = JSON.parse(readFileSync(new URL('../data/encyclopedia-search-synonyms.json', import.meta.url), 'utf8'))
-  searchSynonymGroups = Array.isArray(synonyms) ? synonyms : Array.isArray(synonyms?.groups) ? synonyms.groups : []
-} catch { searchSynonymGroups = [] }
+try { searchSynonyms = JSON.parse(readFileSync(new URL('../data/encyclopedia-search-synonyms.json', import.meta.url), 'utf8')) } catch { searchSynonyms = { groups: [] } }
+try { domainGlossary = JSON.parse(readFileSync(new URL('../data/dr-ahmad-domain-glossary.json', import.meta.url), 'utf8')) } catch { domainGlossary = [] }
+try { transcriptCorrections = JSON.parse(readFileSync(new URL('../data/encyclopedia-transcript-corrections.json', import.meta.url), 'utf8')) } catch { transcriptCorrections = {} }
+const searchExpansionGroups = buildSearchExpansionGroups({ synonyms: searchSynonyms, glossary: domainGlossary, corrections: transcriptCorrections })
 
 const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
 const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹'
 const MOMENT_STOP_WORDS = new Set('في من على الى عن هذا هذه ذلك التي الذي مع كان كانت يكون تكون ثم او أم و لا ما هو هي باب فصل فيديو مقطع شرح الموسوعه التعليم تكنولوجيا'.split(' '))
 
 export function normalizeEncyclopediaMomentText(value = '') {
-  return String(value || '')
-    .normalize('NFKC')
-    .toLowerCase()
-    .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
-    .replace(/[ً-ْٰـ]/g, '')
-    .replace(/[أإآٱ]/g, 'ا')
-    .replace(/ى/g, 'ي')
-    .replace(/ة/g, 'ه')
-    .replace(/[٠-٩]/g, (character) => String(ARABIC_DIGITS.indexOf(character)))
-    .replace(/[۰-۹]/g, (character) => String(PERSIAN_DIGITS.indexOf(character)))
-    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return normalizeArabicSearchText(value)
 }
 
 function momentTokens(value = '') {
@@ -681,15 +677,7 @@ function momentTokens(value = '') {
 }
 
 function expandedQueries(value = '') {
-  const normalized = normalizeEncyclopediaMomentText(value)
-  const output = new Set([normalized])
-  for (const rawGroup of searchSynonymGroups) {
-    const group = Array.isArray(rawGroup) ? rawGroup : Array.isArray(rawGroup?.terms) ? rawGroup.terms : []
-    const normalizedGroup = group.map(normalizeEncyclopediaMomentText).filter(Boolean)
-    if (!normalizedGroup.some((term) => normalized.includes(term) || term.includes(normalized))) continue
-    for (const term of normalizedGroup) output.add(term)
-  }
-  return [...output].filter(Boolean)
+  return expandSearchQuery(value, searchExpansionGroups)
 }
 
 function normalizeStoredSegments(segments = []) {
@@ -697,9 +685,15 @@ function normalizeStoredSegments(segments = []) {
   for (const segment of Array.isArray(segments) ? segments : []) {
     const start = Number(segment?.start)
     const end = Number(segment?.end)
-    const text = bounded(segment?.text, 2_000)
+    const text = bounded(segment?.displayText || segment?.text, 2_000)
+    const originalText = bounded(segment?.originalText || segment?.rawText || segment?.text, 2_000)
+    const searchText = bounded(segment?.searchText || normalizeEncyclopediaMomentText(text), 3_000)
     if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end <= start || !text) continue
-    output.push({ start, end, text })
+    output.push({
+      start, end, text, displayText: text, originalText, searchText,
+      indexable: segment?.indexable !== false,
+      correctionIds: Array.isArray(segment?.correctionIds) ? segment.correctionIds.slice(0, 80).map((item) => bounded(item, 120)).filter(Boolean) : [],
+    })
   }
   return output.sort((left, right) => left.start - right.start || left.end - right.end)
 }
@@ -716,29 +710,37 @@ function normalizeStoredTranscript(value = {}, video = {}) {
   if (!/^[\w-]{6,20}$/.test(videoId)) return null
   const segments = normalizeStoredSegments(value.segments)
   const source = STATIC_TRANSCRIPT_SOURCES.has(String(value.source || '')) ? String(value.source) : null
-  const available = Boolean(value.available && source && segments.length)
+  const noSpeech = value.status === 'no-speech'
+  const available = Boolean(!noSpeech && value.available && source && segments.length)
+  const contentType = value.contentType === 'encyclopedia-introduction' ? 'encyclopedia-introduction' : 'encyclopedia-chapter-video'
   return {
     videoId,
     available,
-    checked: Boolean(value.checked || available),
-    status: available ? 'transcribed' : 'metadata-only',
+    checked: Boolean(value.checked || available || noSpeech),
+    status: noSpeech ? 'no-speech' : available ? 'transcribed' : 'metadata-only',
+    contentType,
     language: bounded(value.language || 'ar', 40),
-    source,
+    source: available ? source : null,
     title: bounded(value.title || video.title, 500),
     description: bounded(value.description || video.description, 4_000),
-    doorId: value.doorId || null,
-    doorNumber: Number(value.doorNumber || video.doorNumber) || null,
-    chapterNumber: Number(value.chapterNumber || video.chapterNumber) || null,
-    chapterTitle: bounded(value.chapterTitle, 500) || null,
+    doorId: contentType === 'encyclopedia-introduction' ? null : value.doorId || null,
+    doorNumber: contentType === 'encyclopedia-introduction' ? null : Number(value.doorNumber || video.doorNumber) || null,
+    chapterNumber: contentType === 'encyclopedia-introduction' ? null : Number(value.chapterNumber || video.chapterNumber) || null,
+    chapterTitle: contentType === 'encyclopedia-introduction' ? null : bounded(value.chapterTitle, 500) || null,
     sequenceLabel: bounded(value.sequenceLabel, 300),
     mappingSource: bounded(value.mappingSource || video.mappingSource, 100),
     mappingConfidence: bounded(value.mappingConfidence || video.mappingConfidence, 100),
-    reviewStatus: bounded(value.reviewStatus || 'unreviewed', 100),
+    mappingReviewStatus: bounded(value.mappingReviewStatus || (contentType === 'encyclopedia-introduction' ? 'reviewed' : 'needs-review'), 100),
+    reviewStatus: bounded(value.reviewStatus || 'auto-transcribed', 100),
+    transcriptReviewStatus: bounded(value.transcriptReviewStatus || value.reviewStatus || 'auto-transcribed', 100),
     segments,
-    text: bounded(value.text || segments.map((segment) => segment.text).join(' '), 500_000),
+    text: bounded(value.displayText || value.text || segments.map((segment) => segment.text).join(' '), 500_000),
+    searchText: bounded(value.searchText || segments.map((segment) => segment.searchText).join(' '), 500_000),
     segmentCount: segments.length,
+    indexableSegmentCount: segments.filter((segment) => segment.indexable !== false).length,
     sourceFile: bounded(value.sourceFile, 500),
     indexedAt: bounded(value.indexedAt, 80),
+    quality: value.quality && typeof value.quality === 'object' ? value.quality : null,
   }
 }
 
@@ -781,49 +783,103 @@ export async function loadEncyclopediaVideoTranscript(video) {
   return transcriptFor(video) || normalizeStoredTranscript({ videoId: video?.id }, video)
 }
 
-function phraseScore(text, query) {
+function phraseMatch(text, query) {
   const haystack = normalizeEncyclopediaMomentText(text)
-  const phrases = expandedQueries(query)
-  const queryTokens = new Set(phrases.flatMap(momentTokens))
-  if (!haystack || (!phrases.length && !queryTokens.size)) return 0
+  const expansions = expandedQueries(query)
+  const queryTokens = new Set(momentTokens(query))
+  if (!haystack || (!expansions.length && !queryTokens.size)) return { score: 0, reason: 'token-overlap', matchedTerms: [] }
   let score = 0
-  for (const phrase of phrases) {
+  let reason = 'token-overlap'
+  const matchedTerms = new Set()
+  const reasonPriority = { 'exact-phrase': 6, 'proper-name': 5, glossary: 4, synonym: 3, correction: 2, 'canonical-term': 2, 'token-overlap': 1 }
+  for (const entry of expansions) {
+    const phrase = entry.term
     if (!phrase) continue
-    if (haystack === phrase) score += 80
-    else if (haystack.includes(phrase)) score += 34 + Math.min(16, phrase.split(' ').length * 3)
+    let phraseScore = 0
+    if (haystack === phrase) phraseScore = 88
+    else if (haystack.includes(phrase)) phraseScore = 38 + Math.min(18, phrase.split(' ').length * 3)
+    if (!phraseScore) continue
+    score = Math.max(score, phraseScore)
+    const candidateReason = entry.kind === 'direct' ? 'exact-phrase' : entry.kind === 'proper-name' ? 'proper-name' : entry.kind || 'canonical-term'
+    if ((reasonPriority[candidateReason] || 0) > (reasonPriority[reason] || 0)) reason = candidateReason
+    matchedTerms.add(entry.canonical || phrase)
   }
   const haystackTokens = new Set(momentTokens(haystack))
   let matches = 0
-  for (const token of queryTokens) if (haystackTokens.has(token)) matches += 1
-  score += matches * 7
-  if (queryTokens.size && matches === queryTokens.size) score += 12
-  return score
+  for (const token of queryTokens) if (haystackTokens.has(token)) { matches += 1; matchedTerms.add(token) }
+  const tokenRatio = queryTokens.size ? matches / queryTokens.size : 0
+  // Token overlap is based only on the user's direct wording. Aliases may create
+  // an exact synonym/glossary match above, but their generic words (such as
+  // «موقع») must never manufacture unrelated results.
+  if ((queryTokens.size === 1 && matches === 1) || (queryTokens.size > 1 && matches >= 2 && tokenRatio >= 0.67)) {
+    score += matches * 7
+    if (matches === queryTokens.size) score += 12
+  }
+  return { score, reason, matchedTerms: [...matchedTerms].slice(0, 12) }
 }
 
 function excerptAround(segments, index, radius = 1) {
   return segments.slice(Math.max(0, index - radius), Math.min(segments.length, index + radius + 1)).map((segment) => segment.text).join(' ').trim()
 }
 
+function clipExcerptAroundMatch(value, matchedTerms = [], maxLength = 420) {
+  const text = bounded(value, 4_000)
+  if (text.length <= maxLength) return text
+  const candidates = [...new Set((Array.isArray(matchedTerms) ? matchedTerms : [])
+    .map((term) => bounded(term, 180))
+    .filter(Boolean))]
+    .sort((left, right) => right.length - left.length)
+  let matchIndex = -1
+  for (const term of candidates) {
+    const index = text.indexOf(term)
+    if (index >= 0) { matchIndex = index; break }
+  }
+  if (matchIndex < 0) return `${text.slice(0, maxLength - 1).trimEnd()}…`
+  const before = Math.floor(maxLength * 0.36)
+  let start = Math.max(0, matchIndex - before)
+  let end = Math.min(text.length, start + maxLength)
+  start = Math.max(0, end - maxLength)
+  if (start > 0) {
+    const nextSpace = text.indexOf(' ', start)
+    if (nextSpace > start && nextSpace < matchIndex) start = nextSpace + 1
+  }
+  if (end < text.length) {
+    const previousSpace = text.lastIndexOf(' ', end)
+    if (previousSpace > matchIndex) end = previousSpace
+  }
+  return `${start > 0 ? '…' : ''}${text.slice(start, end).trim()}${end < text.length ? '…' : ''}`
+}
+
 export function findEncyclopediaTranscriptMoments(segments, topic, hints = [], limit = 6) {
   const queries = [topic, ...(Array.isArray(hints) ? hints : [])].map((value) => bounded(value, 180)).filter(Boolean)
   if (!queries.length) return []
-  const normalized = normalizeStoredSegments(segments)
+  const normalized = normalizeStoredSegments(segments).filter((segment) => segment.indexable !== false)
   return normalized.map((segment, index) => {
-    let score = 0
-    for (const query of queries) score = Math.max(score, phraseScore(segment.text, query))
+    let best = { score: 0, reason: 'token-overlap', matchedTerms: [] }
+    for (const query of queries) {
+      const candidate = phraseMatch(`${segment.searchText} ${segment.text}`, query)
+      if (candidate.score > best.score) best = candidate
+    }
+    // A neighbouring segment may enrich the excerpt, but it must never create a
+    // second, false timestamp for words that were spoken only in the neighbour.
     const context = excerptAround(normalized, index)
-    for (const query of queries) score = Math.max(score, phraseScore(context, query) * 0.92)
     return {
       startSeconds: Math.max(0, segment.start - TRANSCRIPT_SAFETY_SECONDS),
       endSeconds: segment.end,
-      excerpt: context,
-      confidence: score >= 55 ? 'exact' : 'strong',
+      excerpt: clipExcerptAroundMatch(context, best.matchedTerms),
+      confidence: best.score >= 55 ? 'exact' : 'strong',
       source: 'transcript',
-      score,
+      score: best.score,
+      matchReason: best.reason,
+      matchReasonLabel: reasonLabel(best.reason),
+      matchedTerms: best.matchedTerms,
     }
   }).filter((moment) => moment.score >= 13)
     .sort((left, right) => right.score - left.score || left.startSeconds - right.startSeconds)
-    .filter((moment, index, all) => all.slice(0, index).every((previous) => Math.abs(previous.startSeconds - moment.startSeconds) >= DISTINCT_MOMENT_GAP_SECONDS))
+    .filter((moment, index, all) => all.slice(0, index).every((previous) =>
+      Math.abs(previous.startSeconds - moment.startSeconds) >= DISTINCT_MOMENT_GAP_SECONDS
+      && normalizeEncyclopediaMomentText(previous.excerpt) !== normalizeEncyclopediaMomentText(moment.excerpt)
+    ))
     .slice(0, Math.max(1, limit))
 }
 
@@ -913,6 +969,10 @@ function momentResult(videoInput, moment, topic, transcript, fallbackScore = 0) 
     source: exact ? transcript.source : 'sequence',
     hasExactTiming: exact,
     score: exact ? moment.score : fallbackScore,
+    matchReason: exact ? moment.matchReason : 'metadata-fallback',
+    matchReasonLabel: exact ? moment.matchReasonLabel : reasonLabel('metadata-fallback'),
+    matchedTerms: exact ? moment.matchedTerms : [],
+    contentType: transcript?.contentType || 'encyclopedia-chapter-video',
     sequence,
     doorId: transcript?.doorId || null,
     doorNumber: sequence.doorNumber,
@@ -920,14 +980,16 @@ function momentResult(videoInput, moment, topic, transcript, fallbackScore = 0) 
     chapterTitle: transcript?.chapterTitle || null,
     mappingSource: transcript?.mappingSource || video.mappingSource || '',
     mappingConfidence: transcript?.mappingConfidence || video.mappingConfidence || '',
-    reviewStatus: transcript?.reviewStatus || 'unreviewed',
+    mappingReviewStatus: transcript?.mappingReviewStatus || 'needs-review',
+    reviewStatus: transcript?.reviewStatus || 'auto-transcribed',
+    transcriptReviewStatus: transcript?.transcriptReviewStatus || 'auto-transcribed',
     embedUrl: embedAt(video, startSeconds, exact),
   }
 }
 
 function candidateScore(video, query, doorNumber = 0) {
   const record = transcriptFor(video)
-  let score = phraseScore(`${video.title} ${video.description}`, query)
+  let score = phraseMatch(`${video.title} ${video.description}`, query).score
   const sequence = sequenceFor(video, record)
   if (doorNumber && sequence.doorNumber === doorNumber) score += 20
   return { video, record, sequence, score }
@@ -937,18 +999,33 @@ export function getEncyclopediaTranscriptProgress(videos = []) {
   const sourceVideos = Array.isArray(videos) && videos.length ? videos : fallbackCatalogVideos()
   const records = sourceVideos.map((video) => transcriptFor(video)).filter(Boolean)
   const available = records.filter((record) => record.available).length
-  const needsReview = records.filter((record) => !record.doorNumber || !record.chapterNumber || (record.available && record.reviewStatus !== 'reviewed')).length
+  const noSpeech = records.filter((record) => record.status === 'no-speech').length
+  const processed = available + noSpeech
+  const introductions = records.filter((record) => record.contentType === 'encyclopedia-introduction').length
+  const needsReview = records.filter((record) => record.mappingReviewStatus === 'needs-review' || (!record.available && record.status !== 'no-speech')).length
+  const autoCorrected = records.filter((record) => record.transcriptReviewStatus === 'auto-corrected').length
+  const autoTranscribed = records.filter((record) => record.transcriptReviewStatus === 'auto-transcribed').length
+  const boilerplateOnly = records.filter((record) => record.quality?.status === 'boilerplate-only').length
   const sources = { buzz: 0, 'youtube-captions': 0, 'manual-reviewed': 0 }
   for (const record of records) if (record.available && Object.hasOwn(sources, record.source)) sources[record.source] += 1
+  const total = sourceVideos.length || Number(bundledTranscriptIndex?.catalogCount) || records.length
   return {
     running: false,
-    total: sourceVideos.length || Number(bundledTranscriptIndex?.catalogCount) || records.length,
-    catalogued: sourceVideos.length || Number(bundledTranscriptIndex?.catalogCount) || records.length,
-    completed: available,
+    total,
+    catalogued: total,
+    completed: processed,
+    processed,
     available,
     transcribed: available,
+    noSpeech,
+    introductions,
     needsReview,
-    missing: Math.max(0, (sourceVideos.length || records.length) - available),
+    missing: Math.max(0, total - processed),
+    autoCorrected,
+    autoTranscribed,
+    boilerplateOnly,
+    processingPercent: total ? Number(((processed / total) * 100).toFixed(2)) : 0,
+    transcriptionPercent: total ? Number(((available / total) * 100).toFixed(2)) : 0,
     sources,
   }
 }
@@ -962,7 +1039,7 @@ export function getEncyclopediaTranscriptSnapshot(videos = []) {
   const sourceVideos = Array.isArray(videos) && videos.length ? videos : fallbackCatalogVideos()
   const records = Object.fromEntries(sourceVideos.map((video) => [video.id, transcriptFor(video)]))
   return {
-    version: 2,
+    version: Math.max(3, Number(bundledTranscriptIndex?.version) || 0),
     generatedAt: bundledTranscriptIndex?.generatedAt || '',
     catalogCount: sourceVideos.length,
     progress: getEncyclopediaTranscriptProgress(sourceVideos),
@@ -973,7 +1050,10 @@ export function getEncyclopediaTranscriptSnapshot(videos = []) {
 export async function loadEncyclopediaVideoMoment({ topic, doorNumber = 0, videoId = '', hints = [] } = {}) {
   const query = bounded(topic, 180)
   const videos = fallbackCatalogVideos()
-  const candidates = videos.filter((video) => !videoId || video.id === videoId).map((video) => candidateScore(video, query || video.title, Number(doorNumber) || 0))
+  const candidates = videos
+    .filter((video) => !videoId || video.id === videoId)
+    .map((video) => candidateScore(video, query || video.title, Number(doorNumber) || 0))
+    .filter((candidate) => !doorNumber || candidate.sequence.doorNumber === Number(doorNumber))
   let best = null
   for (const candidate of candidates) {
     if (candidate.record?.available) {
@@ -985,7 +1065,10 @@ export async function loadEncyclopediaVideoMoment({ topic, doorNumber = 0, video
     }
   }
   if (best) return best
-  const fallback = candidates.sort((left, right) => right.score - left.score || Number(left.video.position) - Number(right.video.position))[0]
+  const availableFallbacks = candidates.filter((candidate) => candidate.record?.available)
+  const spokenFallbacks = candidates.filter((candidate) => candidate.record?.status !== 'no-speech')
+  const fallbackPool = availableFallbacks.length ? availableFallbacks : spokenFallbacks.length ? spokenFallbacks : candidates
+  const fallback = fallbackPool.sort((left, right) => right.score - left.score || Number(left.video.position) - Number(right.video.position))[0]
   return fallback ? momentResult(fallback.video, null, query, fallback.record, fallback.score) : null
 }
 
@@ -1004,10 +1087,13 @@ export async function searchEncyclopediaVideoMoments({ query, doorNumber = 0, li
     }
   }
   if (!results.length) {
-    const closest = videos
+    const closestCandidates = videos
       .map((video) => candidateScore(video, cleanQuery, Number(doorNumber) || 0))
       .filter((candidate) => !doorNumber || candidate.sequence.doorNumber === Number(doorNumber))
-      .sort((left, right) => right.score - left.score || Number(left.video.position) - Number(right.video.position))[0]
+    const availableClosest = closestCandidates.filter((candidate) => candidate.record?.available)
+    const spokenClosest = closestCandidates.filter((candidate) => candidate.record?.status !== 'no-speech')
+    const closestPool = availableClosest.length ? availableClosest : spokenClosest.length ? spokenClosest : closestCandidates
+    const closest = closestPool.sort((left, right) => right.score - left.score || Number(left.video.position) - Number(right.video.position))[0]
     if (closest) results.push(momentResult(closest.video, null, cleanQuery, closest.record, closest.score))
   }
   results.sort((left, right) => Number(right.hasExactTiming) - Number(left.hasExactTiming) || right.score - left.score || Number(left.video.position) - Number(right.video.position))
@@ -1024,5 +1110,5 @@ export async function searchEncyclopediaVideoMoments({ query, doorNumber = 0, li
 }
 
 export function resetEncyclopediaTranscriptCache() {
-  try { bundledTranscriptIndex = JSON.parse(readFileSync(new URL('../data/encyclopedia-video-transcripts.json', import.meta.url), 'utf8')) } catch { bundledTranscriptIndex = { version: 2, records: {} } }
+  try { bundledTranscriptIndex = JSON.parse(readFileSync(new URL('../data/encyclopedia-video-transcripts.json', import.meta.url), 'utf8')) } catch { bundledTranscriptIndex = { version: 3, records: {} } }
 }

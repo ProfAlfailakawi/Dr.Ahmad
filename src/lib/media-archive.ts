@@ -29,6 +29,8 @@ export type MediaArchiveItem = {
   thumbnail?: string
   transcriptStatus?: string
   audioHostingRequired?: boolean
+  audioUrl?: string
+  audioFile?: string
 }
 
 export type MediaArchiveRecord = Omit<MediaRecord, 'transcript'> & MediaArchiveItem & {

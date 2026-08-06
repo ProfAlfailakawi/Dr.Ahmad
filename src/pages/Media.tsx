@@ -26,15 +26,15 @@ export default function Media() {
   useSeo({ title: 'الأرشيف الإعلامي', path: '/media', description: 'أرشيف مرئي ومسموع قابل للبحث داخل اللحظة، يجمع اللقاءات التلفزيونية والإذاعية واستضافات يوتيوب.' })
 
   return <Page className="content-media page-journey">
-    <PageHead label="الأرشيف الإعلامي" title="الفكرة كما قيلت، في لحظتها." sub="لقاءات مرئية ومسموعة، مفهرسة زمنياً، قابلة للبحث داخل الكلام نفسه." />
+    <PageHead label="الأرشيف الإعلامي" title="الفكرة كما قيلت، في لحظتها." />
 
     <section className="px-6 pb-8 md:px-11">
       <div className="mx-auto -mt-6 grid max-w-shell gap-3 sm:grid-cols-3">
         {[
-          ['المواد', media.length, 'مرئية ومسموعة'],
-          ['المفهرس زمنياً', transcribed, 'بحث حتى الثانية'],
-          ['مواد إذاعية', audioCount, 'صوتيات مستقلة'],
-        ].map(([label, value, note]) => <FadeUp key={String(label)}><div className="rounded-2xl border border-hair bg-canvas p-5 shadow-[0_16px_40px_rgba(20,31,45,.05)]"><span className="text-[.7rem] font-semibold text-accent">{label}</span><strong className="mt-2 block font-display text-3xl text-ink">{value}</strong><span className="mt-1 block text-[.72rem] text-soft">{note}</span></div></FadeUp>)}
+          ['المواد', media.length],
+          ['المفهرس زمنياً', transcribed],
+          ['مواد إذاعية', audioCount],
+        ].map(([label, value]) => <FadeUp key={String(label)}><div className="flex min-h-32 flex-col justify-between rounded-2xl border border-hair bg-canvas p-5 shadow-[0_16px_40px_rgba(20,31,45,.05)]"><span className="text-[.7rem] font-semibold text-accent">{label}</span><strong className="mt-4 block font-display text-3xl text-ink">{value}</strong></div></FadeUp>)}
       </div>
     </section>
 

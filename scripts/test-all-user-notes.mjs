@@ -175,6 +175,10 @@ check('تنقل المقالات صف واحد صغير والعناوين مو�
 check('متون المقالات القديمة والجديدة مضبوطة المحاذاة', css.includes('.article-body-synced') && css.includes('text-align: justify') && css.includes('text-align-last: start'))
 
 console.log('\nالإعلام ومساحتي')
+check('رأس الأرشيف الإعلامي بلا الوصف المحذوف', !media.includes('لقاءات مرئية ومسموعة، مفهرسة زمنياً، قابلة للبحث داخل الكلام نفسه.'))
+check('بطاقات أرقام الأرشيف بلا أوصاف سفلية زائدة', !media.includes('مرئية ومسموعة') && !media.includes('بحث حتى الثانية') && !media.includes('صوتيات مستقلة'))
+check('الفهرسة لا تظهر في بطاقة الأرشيف عند غياب التفريغ', mediaDetail.includes('transcript?.available && <div><dt className="text-soft">الفهرسة</dt>') && !mediaDetail.includes('لم يُستورد التفريغ بعد'))
+check('المواد الصوتية تستخدم مشغل HTML خفيفاً ولا تُضمّن ملفات داخل المشروع', mediaDetail.includes('<audio ref={audioRef} controls preload="metadata"') && mediaDetail.includes('item?.audioUrl || hostedAudio || item?.url') && !mediaDetail.includes('الصوت محفوظ خارج الموقع حتى يبقى الموقع خفيفاً'))
 check('امتداد اللقاء شريط أفقي واحد لا شبكة', mediaDetail.includes('media-related-rail') && mediaDetail.includes('flex snap-x') && mediaDetail.includes('shrink-0 snap-start') && !/media-related-rail[^\n]+grid/u.test(mediaDetail))
 check('شريط امتداد اللقاء RTL وقابل للسحب باللمس', mediaDetail.includes('dir="rtl"') && mediaDetail.includes('overflow-x-auto') && mediaDetail.includes('touch-action:pan-x'))
 check('شاهد لاحقاً موحد مع مساحتي', readingSpace.includes('MEDIA_SAVED_KEY') && mySpace.includes('savedMedia') && mySpace.includes('MediaSaveButton'))

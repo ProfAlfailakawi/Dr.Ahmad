@@ -31,6 +31,12 @@ export type MediaArchiveItem = {
   audioHostingRequired?: boolean
 }
 
+export type MediaArchiveRecord = Omit<MediaRecord, 'transcript'> & MediaArchiveItem & {
+  /** النص القديم محفوظ للتوافق، بينما transcript هو الفهرس الزمني الجديد. */
+  legacyTranscript?: string
+  transcript: MediaArchiveTranscript | null
+}
+
 const items = ((archivePayload as { items?: MediaArchiveItem[] }).items || [])
 const transcripts = (transcriptPayload as Record<string, MediaArchiveTranscript>) || {}
 
@@ -60,25 +66,36 @@ export function archiveTranscript(id: string) {
   return transcripts[id] || null
 }
 
-export function mergeMediaArchive(cmsMedia: MediaRecord[]): Array<MediaRecord & MediaArchiveItem & { transcript?: MediaArchiveTranscript | null }> {
+export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[] {
   const existingIds = new Set(cmsMedia.map((item) => extractMediaId(item.url || '')).filter(Boolean))
-  const cms = cmsMedia.map((item) => {
+  const cms: MediaArchiveRecord[] = cmsMedia.map((item) => {
     const videoId = extractMediaId(item.url || '')
+    const { transcript: legacyTranscript, ...baseItem } = item
+    const transcript = videoId ? archiveTranscript(videoId) : null
     return {
-      ...item,
+      ...baseItem,
       id: videoId || item.slug,
       kind: (item.platform?.toLowerCase().includes('radio') ? 'radio' : 'youtube') as MediaArchiveKind,
-      transcript: videoId ? archiveTranscript(videoId) : null,
-      transcriptStatus: videoId && archiveTranscript(videoId)?.available ? 'transcribed' : 'legacy',
+      legacyTranscript,
+      transcript,
+      transcriptStatus: transcript?.available ? 'transcribed' : legacyTranscript ? 'legacy' : 'missing',
     }
   })
-  const additions = items
+  const additions: MediaArchiveRecord[] = items
     .filter((item) => !existingIds.has(item.id))
     .map((item) => ({
       ...item,
-      _cms: { kind: 'media', origin: 'base', modified: false, hidden: false, deleted: false, docId: item.slug, baseSlug: item.slug },
+      _cms: {
+        kind: 'media',
+        origin: 'base',
+        modified: false,
+        hidden: false,
+        deleted: false,
+        docId: item.slug,
+        baseSlug: item.slug,
+      },
       transcript: archiveTranscript(item.id),
-    })) as Array<MediaRecord & MediaArchiveItem & { transcript?: MediaArchiveTranscript | null }>
+    }))
   return [...cms, ...additions]
 }
 

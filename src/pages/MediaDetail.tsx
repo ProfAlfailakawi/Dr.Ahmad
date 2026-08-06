@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
@@ -17,13 +17,26 @@ export default function MediaDetail() {
   const [start, setStart] = useState(() => Math.max(0, Number(params.get('t')) || 0))
   const [query, setQuery] = useState('')
   const transcript = item?.transcript || null
+  const audioRef = useRef<HTMLAudioElement>(null)
   const related = useMemo(() => item ? media.filter((entry) => entry.slug !== item.slug).slice(0, 8) : [], [item, media])
   const matches = useMemo(() => {
     const q = normalize(query.trim())
     if (!q || !transcript?.segments) return transcript?.segments || []
     return transcript.segments.filter((segment) => normalize(segment.searchText || segment.displayText || segment.text).includes(q))
   }, [query, transcript])
-  const player = item?.kind !== 'audio' && item?.kind !== 'radio' && item?.id ? `https://www.youtube-nocookie.com/embed/${item.id}?rel=0&start=${Math.floor(start)}&autoplay=${start ? 1 : 0}` : ''
+  const isAudio = item?.kind === 'audio' || item?.kind === 'radio'
+  const audioBase = (import.meta.env.VITE_MEDIA_AUDIO_BASE_URL || '').replace(/\/$/, '')
+  const hostedAudio = item?.audioFile && audioBase ? `${audioBase}/${item.audioFile.split('/').map(encodeURIComponent).join('/')}` : ''
+  const audioSource = isAudio ? (item?.audioUrl || hostedAudio || item?.url || '').trim() : ''
+  const player = !isAudio && item?.id ? `https://www.youtube-nocookie.com/embed/${item.id}?rel=0&start=${Math.floor(start)}` : ''
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio || !audioSource) return
+    const seek = () => { audio.currentTime = Math.min(Math.max(0, start), Number.isFinite(audio.duration) ? audio.duration : start) }
+    if (audio.readyState >= 1) seek()
+    else audio.addEventListener('loadedmetadata', seek, { once: true })
+    return () => audio.removeEventListener('loadedmetadata', seek)
+  }, [audioSource, start])
   useSeo({ title: item?.title || 'ظهور إعلامي', path: `/media/${slug}`, description: item?.topics || 'مادة من الأرشيف الإعلامي.' })
   if (!item && loading) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!item) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على المادة.</div></Page>
@@ -36,13 +49,11 @@ export default function MediaDetail() {
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,.75fr)]">
           <FadeUp delay={.08}><section>
-            <div className="overflow-hidden rounded-[1.4rem] border border-hair bg-ink shadow-[0_24px_60px_rgba(20,31,45,.12)]" style={{ aspectRatio: '16 / 9' }}>
-              {player ? <iframe key={`${item.id}-${start}`} src={player} title={item.title} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen className="h-full w-full border-0" /> : <div className="flex h-full items-center justify-center p-8 text-center text-white/70"><div><span className="text-4xl">◉</span><p className="mt-4 text-sm">الصوت محفوظ خارج الموقع حتى يبقى الموقع خفيفاً. يظهر المشغل بعد إضافة رابط الاستضافة.</p></div></div>}
-            </div>
+            {player ? <div className="overflow-hidden rounded-[1.4rem] border border-hair bg-ink shadow-[0_24px_60px_rgba(20,31,45,.12)]" style={{ aspectRatio: '16 / 9' }}><iframe key={`${item.id}-${start}`} src={player} title={item.title} allow="encrypted-media; picture-in-picture" allowFullScreen className="h-full w-full border-0" /></div> : audioSource ? <div className="rounded-[1.4rem] border border-hair bg-wash p-6 shadow-[0_18px_48px_rgba(20,31,45,.08)]"><span className="text-[.68rem] font-semibold text-accent">التسجيل الصوتي</span><audio ref={audioRef} controls preload="metadata" className="mt-4 w-full" src={audioSource}>متصفحك لا يدعم تشغيل الصوت.</audio></div> : <div className="rounded-[1.4rem] border border-hair bg-wash p-6 text-center"><p className="text-[.78rem] text-soft">لم يُضف ملف صوت صالح لهذه المادة بعد.</p></div>}
             {start > 0 && <div className="mt-3 flex items-center justify-between rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-[.72rem]"><span className="text-ink">يبدأ العرض من <strong className="text-accent">{formatMediaTime(start)}</strong></span><button type="button" onClick={() => setStart(0)} className="text-soft hover:text-accent">من البداية</button></div>}
           </section></FadeUp>
 
-          <FadeUp delay={.12}><aside className="rounded-[1.4rem] border border-hair bg-wash p-5"><span className="text-[.68rem] font-semibold text-accent">بطاقة الأرشيف</span><dl className="mt-4 grid gap-4 text-[.76rem]"><div><dt className="text-soft">النوع</dt><dd className="mt-1 font-semibold text-ink">{item.kind === 'audio' || item.kind === 'radio' ? 'مادة إذاعية' : 'لقاء مرئي'}</dd></div><div><dt className="text-soft">المصدر</dt><dd className="mt-1 font-semibold text-ink">{item.outlet}</dd></div><div><dt className="text-soft">الفهرسة</dt><dd className="mt-1 font-semibold text-ink">{transcript?.available ? `${transcript.segmentCount} مقطعاً زمنياً` : 'لم يُستورد التفريغ بعد'}</dd></div></dl>{item.url && <a href={item.url} target="_blank" rel="noreferrer" className="mt-6 block rounded-xl border border-hair bg-canvas px-4 py-3 text-center text-[.74rem] font-semibold text-accent hover:border-accent">افتح المصدر الأصلي</a>}</aside></FadeUp>
+          <FadeUp delay={.12}><aside className="rounded-[1.4rem] border border-hair bg-wash p-5"><span className="text-[.68rem] font-semibold text-accent">بطاقة الأرشيف</span><dl className="mt-4 grid gap-4 text-[.76rem]"><div><dt className="text-soft">النوع</dt><dd className="mt-1 font-semibold text-ink">{item.kind === 'audio' || item.kind === 'radio' ? 'مادة إذاعية' : 'لقاء مرئي'}</dd></div><div><dt className="text-soft">المصدر</dt><dd className="mt-1 font-semibold text-ink">{item.outlet}</dd></div>{transcript?.available && <div><dt className="text-soft">الفهرسة</dt><dd className="mt-1 font-semibold text-ink">{transcript.segmentCount} مقطعاً زمنياً</dd></div>}</dl>{item.url && !isAudio && <a href={item.url} target="_blank" rel="noreferrer" className="mt-6 block rounded-xl border border-hair bg-canvas px-4 py-3 text-center text-[.74rem] font-semibold text-accent hover:border-accent">افتح المصدر الأصلي</a>}</aside></FadeUp>
         </div>
 
         {transcript?.available && <FadeUp delay={.16}><section className="mt-10 rounded-[1.5rem] border border-hair bg-canvas p-5 md:p-7"><div className="flex flex-wrap items-end justify-between gap-4"><div><span className="text-[.68rem] font-semibold text-accent">النص الزمني</span><h2 className="mt-1 font-display text-2xl font-semibold text-ink">ابحث وانتقل إلى اللحظة</h2></div><span className="text-[.7rem] text-soft">{transcript.segmentCount} مقطعاً</span></div><div className="mt-5 rounded-xl border border-hair bg-wash px-4 py-3"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث داخل كلام اللقاء…" className="w-full bg-transparent text-[.82rem] text-ink outline-none placeholder:text-soft/70" /></div><div className="mt-5 max-h-[42rem] space-y-2 overflow-y-auto pr-1">{matches.map((segment) => <button key={`${segment.start}-${segment.end}`} type="button" onClick={() => { setStart(segment.start); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="group grid w-full gap-3 rounded-xl border border-transparent p-3 text-right transition hover:border-accent/30 hover:bg-wash md:grid-cols-[5rem_minmax(0,1fr)]"><span className="font-mono text-[.72rem] font-bold text-accent">{formatMediaTime(segment.start)}</span><span className="text-[.8rem] leading-[1.9] text-ink/[.85]">{segment.displayText || segment.text}</span></button>)}{!matches.length && <p className="py-8 text-center text-[.78rem] text-soft">لا توجد عبارة مطابقة داخل هذا اللقاء.</p>}</div></section></FadeUp>}

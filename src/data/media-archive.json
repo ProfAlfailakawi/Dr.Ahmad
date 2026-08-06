@@ -183,7 +183,8 @@
       "duration": "28:00",
       "topics": "",
       "transcriptStatus": "pending",
-      "audioHostingRequired": true
+      "audioHostingRequired": true,
+      "audioFile": "Tarbawyah-14.mp3"
     },
     {
       "id": "idaa",
@@ -198,7 +199,8 @@
       "duration": "15:32",
       "topics": "",
       "transcriptStatus": "pending",
-      "audioHostingRequired": true
+      "audioHostingRequired": true,
+      "audioFile": "idaa.mp3"
     }
   ]
 }

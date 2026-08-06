@@ -176,6 +176,9 @@ check('متون المقالات القديمة والجديدة مضبوطة ا
 
 console.log('\nالإعلام ومساحتي')
 check('رأس الأرشيف الإعلامي بلا الوصف المحذوف', !media.includes('لقاءات مرئية ومسموعة، مفهرسة زمنياً، قابلة للبحث داخل الكلام نفسه.'))
+check('بطاقات إحصاءات الأرشيف الإعلامي محذوفة بالكامل', !media.includes("['المواد', media.length]") && !media.includes('المفهرس زمنياً') && !media.includes('مواد إذاعية'))
+const mediaArchiveData = read('src/data/media-archive.json')
+check('المادتان الإذاعيتان غير المرتبطتين بالصوت محذوفتان', !mediaArchiveData.includes('Tarbawyah-14') && !mediaArchiveData.includes('radio-idaa') && !mediaArchiveData.includes('idaa.mp3'))
 check('بطاقات أرقام الأرشيف بلا أوصاف سفلية زائدة', !media.includes('مرئية ومسموعة') && !media.includes('بحث حتى الثانية') && !media.includes('صوتيات مستقلة'))
 check('الفهرسة لا تظهر في بطاقة الأرشيف عند غياب التفريغ', mediaDetail.includes('transcript?.available && <div><dt className="text-soft">الفهرسة</dt>') && !mediaDetail.includes('لم يُستورد التفريغ بعد'))
 check('المواد الصوتية تستخدم مشغل HTML خفيفاً ولا تُضمّن ملفات داخل المشروع', mediaDetail.includes('<audio ref={audioRef} controls preload="metadata"') && mediaDetail.includes('item?.audioUrl || hostedAudio || item?.url') && !mediaDetail.includes('الصوت محفوظ خارج الموقع حتى يبقى الموقع خفيفاً'))

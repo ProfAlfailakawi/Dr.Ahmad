@@ -16,11 +16,7 @@ export default function Media() {
   const reduce = useReducedMotion()
   const media = useMemo(() => mergeMediaArchive(cmsMedia), [cmsMedia])
   const [query, setQuery] = useState('')
-  const [kind, setKind] = useState('الكل')
-  const [outlet, setOutlet] = useState('الكل')
   const moments = useMemo(() => searchArchiveMoments(query, media), [query, media])
-  const outlets = useMemo(() => [...new Set(media.map((item) => item.outlet).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar')), [media])
-  const filtered = useMemo(() => media.filter((item) => (kind === 'الكل' || item.kind === kind) && (outlet === 'الكل' || item.outlet === outlet)), [media, kind, outlet])
   useSeo({ title: 'الأرشيف الإعلامي', path: '/media', description: 'أرشيف مرئي ومسموع قابل للبحث داخل اللحظة، يجمع اللقاءات التلفزيونية والإذاعية واستضافات يوتيوب.' })
 
   return <Page className="content-media page-journey">
@@ -54,17 +50,8 @@ export default function Media() {
           </section>
         </FadeUp>}
 
-        <FadeUp>
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
-            <div className="flex flex-wrap gap-2">
-              {[['الكل','الكل'],['youtube','يوتيوب'],['television','تلفزيون'],['audio','إذاعة'],['podcast','بودكاست']].map(([value,label]) => <button key={value} type="button" onClick={() => setKind(value)} className={`rounded-full border px-4 py-2 text-[.74rem] transition ${kind === value ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{label}</button>)}
-            </div>
-            <select value={outlet} onChange={(event) => setOutlet(event.target.value)} className="rounded-xl border border-hair bg-canvas px-3 py-2 text-[.74rem] text-soft outline-none focus:border-accent"><option value="الكل">كل الجهات</option>{outlets.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-          </div>
-        </FadeUp>
-
-        <div className="mt-7 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((item, index) => {
+        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {media.map((item, index) => {
             const video = item.id && item.kind !== 'audio' && item.kind !== 'radio'
             const available = Boolean(item.transcript?.available)
             return <motion.article key={item.slug} initial={reduce ? false : { opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .15 }} transition={{ duration: .55, delay: Math.min(index * .035, .2), ease: EASE }} className="group relative overflow-hidden rounded-[1.35rem] border border-hair bg-canvas transition hover:-translate-y-1 hover:border-accent hover:shadow-[0_20px_50px_rgba(20,31,45,.08)]">

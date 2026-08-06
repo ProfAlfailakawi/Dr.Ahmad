@@ -10,9 +10,10 @@ on:
       - 'src/data.ts'
       - 'src/data/bodies.json'
   schedule:
-    # أربع محاولات يومية بتوقيت الكويت: 07:35، 12:35، 17:35، 22:35.
-    # السكربت نفسه يمنع التكرار ولا ينشر إلا عند حلول الموعد.
+    # الموعد الأساسي ثم محاولة تعافٍ بعد 20 دقيقة. السكربت متعافي ومانع للتكرار،
+    # لذلك المحاولة الثانية لا تنشر شيئاً إذا نجحت الأولى، لكنها تلتقط أعطال GitHub المؤقتة.
     - cron: '35 4,9,14,19 * * *'
+    - cron: '55 4,9,14,19 * * *'
   workflow_dispatch:
     inputs:
       force:
@@ -31,10 +32,10 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             /*
@@ -46,9 +47,10 @@ jobs:
             !/podcast-state-*.json
             !/whatsapp-agent/*.command
           sparse-checkout-cone-mode: false
+          fetch-depth: 1
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -58,8 +60,20 @@ jobs:
           npm config set registry https://registry.npmjs.org/
           node scripts/normalize-npm-registry.mjs
 
-      - name: Install dependencies
-        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+      - name: Install dependencies with retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::تعذّر تثبيت الاعتمادات بعد ثلاث محاولات."
+              exit 1
+            fi
+            sleep $((attempt * 20))
+          done
 
       - name: Validate archive sources
         run: npm run content:auto:self-test
@@ -87,12 +101,22 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
-      - name: Generate and publish due content
+      - name: Generate and publish due content with retry
         shell: bash
         run: |
+          set -euo pipefail
           EXTRA_ARGS=""
           if [ "${{ inputs.force }}" = "true" ]; then EXTRA_ARGS="--force"; fi
-          npm run content:auto -- $EXTRA_ARGS
+          for attempt in 1 2 3; do
+            if npm run content:auto -- $EXTRA_ARGS; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::تعذّر النشر بعد ثلاث محاولات؛ ستلتقطه محاولة التعافي المجدولة من دون تكرار."
+              exit 1
+            fi
+            sleep $((attempt * 30))
+          done
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}

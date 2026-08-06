@@ -43,6 +43,21 @@ const items = ((archivePayload as { items?: MediaArchiveItem[] }).items || [])
 const transcripts = (transcriptPayload as Record<string, MediaArchiveTranscript>) || {}
 
 export const extractMediaId = (url = '') => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
+
+const AUDIO_EXTENSION = /\.(?:mp3|m4a|aac|wav|ogg)(?:$|[?#])/i
+
+export function detectMediaKind(item: Partial<MediaRecord> & Partial<MediaArchiveItem>): MediaArchiveKind {
+  const explicit = String(item.kind || '').toLowerCase()
+  if (explicit === 'youtube' || explicit === 'audio' || explicit === 'television' || explicit === 'radio' || explicit === 'podcast') {
+    return explicit
+  }
+  const descriptor = `${item.platform || ''} ${item.outlet || ''} ${item.channel || ''} ${item.program || ''}`.toLowerCase()
+  const source = `${item.audioUrl || ''} ${item.audioFile || ''} ${item.url || ''}`
+  if (/بودكاست|podcast/u.test(descriptor)) return 'podcast'
+  if (/إذاعة|اذاعه|radio|audio/u.test(descriptor) || AUDIO_EXTENSION.test(source)) return 'audio'
+  if (/تلفزيون|television|(?:^|\s)tv(?:\s|$)|قناة/u.test(descriptor)) return 'television'
+  return 'youtube'
+}
 export const formatMediaTime = (seconds: number) => {
   const safe = Math.max(0, Math.floor(seconds || 0))
   const hours = Math.floor(safe / 3600)
@@ -69,22 +84,23 @@ export function archiveTranscript(id: string) {
 }
 
 export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[] {
-  const existingIds = new Set(cmsMedia.map((item) => extractMediaId(item.url || '')).filter(Boolean))
+  const existingKeys = new Set(cmsMedia.flatMap((item) => [extractMediaId(item.url || ''), item.slug]).filter(Boolean))
   const cms: MediaArchiveRecord[] = cmsMedia.map((item) => {
     const videoId = extractMediaId(item.url || '')
+    const archiveId = videoId || item.slug
     const { transcript: legacyTranscript, ...baseItem } = item
-    const transcript = videoId ? archiveTranscript(videoId) : null
+    const transcript = archiveTranscript(archiveId)
     return {
       ...baseItem,
-      id: videoId || item.slug,
-      kind: (item.platform?.toLowerCase().includes('radio') ? 'radio' : 'youtube') as MediaArchiveKind,
+      id: archiveId,
+      kind: detectMediaKind(item),
       legacyTranscript,
       transcript,
       transcriptStatus: transcript?.available ? 'transcribed' : legacyTranscript ? 'legacy' : 'missing',
     }
   })
   const additions: MediaArchiveRecord[] = items
-    .filter((item) => !existingIds.has(item.id))
+    .filter((item) => !existingKeys.has(item.id) && !existingKeys.has(item.slug))
     .map((item) => ({
       ...item,
       _cms: {

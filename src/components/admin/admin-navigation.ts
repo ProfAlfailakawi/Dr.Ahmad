@@ -159,6 +159,10 @@ export const ADMIN_TABS: AdminTab[] = [...ADMIN_GROUPS.flatMap((group) => itemsO
 export const adminItem = (tab: AdminTab): AdminNavItem | undefined =>
   ADMIN_GROUPS.flatMap(itemsOfGroup).find((item) => item.tab === tab)
 
+/** اسمٌ عربيٌّ للأداة في تقارير الاستخدام — والمعرّف الخام إن لم تكن تبويباً. */
+export const adminToolLabel = (tool: string): string =>
+  adminItem(tool as AdminTab)?.label || tool || 'غير محدّد'
+
 export const areaOfTab = (tab: AdminTab): AdminArea =>
   ADMIN_GROUPS.find((group) => itemsOfGroup(group).some((item) => item.tab === tab))?.area || 'system'
 

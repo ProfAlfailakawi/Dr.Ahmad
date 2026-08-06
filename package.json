@@ -8,7 +8,7 @@
     "lint": "tsc --noEmit",
     "guard:critical": "node scripts/guard-critical-bridges.mjs",
     "clean:obsolete": "node scripts/clean-obsolete-root-files.mjs",
-    "build": "node scripts/clean-obsolete-root-files.mjs && node scripts/guard-cloudrun-context.mjs && node scripts/guard-critical-bridges.mjs && node scripts/guard-visual-tokens.mjs && node scripts/guard-site-architecture.mjs && node scripts/guard-arabic-tanween.mjs && npm run encyclopedia:gold:check && npm run encyclopedia:gold:self-test && npm run encyclopedia:buzz:self-test && npm run encyclopedia:buzz:report && node scripts/test-encyclopedia-video-hub.mjs && node scripts/test-encyclopedia-video-moments.mjs && node scripts/test-encyclopedia-knowledge-search.mjs && node scripts/test-encyclopedia-teaching-map.mjs && node scripts/test-all-user-notes.mjs && node scripts/site-guardian.mjs --write && node scripts/build-knowledge-graph.mjs && node scripts/build-article-pivots.mjs && npm run audio:quality:self-test && node scripts/guard-no-generated-audio-in-git.mjs && node scripts/sync-scholar-citations.mjs && node scripts/optimize-images.mjs && node scripts/prune-orphan-audio.mjs && node scripts/prune-missing-audio.mjs && (node scripts/audit-pronunciation.mjs --guard || echo '::warning::ألفاظ دخيلة خارج قاموس النطق — راجع لوحة التحكم') && node scripts/sync-audio.mjs && node scripts/build-podcast-admin.mjs && node scripts/build-listen-index.mjs && vite build && node scripts/guard-private-books.mjs && node scripts/build-static.mjs && node scripts/smoke-static.mjs && node scripts/check-static-links.mjs && node scripts/performance-budget.mjs && node scripts/verify-domain-migration.mjs --dist && node scripts/verify-legacy-retirement.mjs",
+    "build": "node scripts/clean-obsolete-root-files.mjs && node scripts/guard-cloudrun-context.mjs && node scripts/guard-critical-bridges.mjs && node scripts/guard-visual-tokens.mjs && node scripts/guard-site-architecture.mjs && node scripts/guard-arabic-tanween.mjs && npm run encyclopedia:gold:check && npm run encyclopedia:gold:self-test && npm run encyclopedia:buzz:self-test && npm run encyclopedia:buzz:report && node scripts/test-encyclopedia-video-hub.mjs && node scripts/test-encyclopedia-video-moments.mjs && node scripts/test-encyclopedia-knowledge-search.mjs && node scripts/test-encyclopedia-teaching-map.mjs && node scripts/test-all-user-notes.mjs && node scripts/site-guardian.mjs --write && node scripts/build-knowledge-graph.mjs && node scripts/build-article-pivots.mjs && npm run audio:quality:self-test && node scripts/guard-no-generated-audio-in-git.mjs && node scripts/sync-scholar-citations.mjs && node scripts/optimize-images.mjs && node scripts/prune-orphan-audio.mjs && node scripts/prune-missing-audio.mjs && (node scripts/audit-pronunciation.mjs --guard || echo '::warning::ألفاظ دخيلة خارج قاموس النطق — راجع لوحة التحكم') && node scripts/sync-audio.mjs && node scripts/build-podcast-admin.mjs && node scripts/build-listen-index.mjs && vite build && node scripts/guard-private-books.mjs && node scripts/build-static.mjs && node scripts/smoke-static.mjs && node scripts/check-static-links.mjs && node scripts/audit-legacy-links.mjs --ci && node scripts/check-docs-freshness.mjs && node scripts/performance-budget.mjs && node scripts/verify-domain-migration.mjs --dist && node scripts/verify-legacy-retirement.mjs",
     "gcp-build": "npm run build",
     "start": "node server.mjs",
     "preview": "vite preview",
@@ -174,8 +174,12 @@
     "media:archive:self-test": "node scripts/test-media-archive.mjs",
     "project:status": "node scripts/generate-project-status.mjs",
     "legacy:audit": "node scripts/audit-legacy-links.mjs",
-    "upgrades:self-test": "node scripts/test-comprehensive-upgrades.mjs",
-    "citations:bibtex:self-test": "node scripts/test-bibtex.mjs"
+    "upgrades:self-test": "node scripts/test-comprehensive-upgrades.mjs && node scripts/test-bibtex.mjs && node scripts/test-admin-usage-insights.mjs && node scripts/test-search-deeplink.mjs && node scripts/check-docs-freshness.mjs && node scripts/audit-legacy-links.mjs --ci",
+    "citations:bibtex:self-test": "node scripts/test-bibtex.mjs",
+    "analytics:self-test": "node scripts/test-admin-usage-insights.mjs",
+    "search:deeplink:self-test": "node scripts/test-search-deeplink.mjs",
+    "docs:check": "node scripts/check-docs-freshness.mjs",
+    "legacy:ci": "node scripts/audit-legacy-links.mjs --ci"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

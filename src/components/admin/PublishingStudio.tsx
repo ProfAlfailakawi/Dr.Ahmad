@@ -11,6 +11,7 @@ import { loadArticleBodies } from '../../lib/article-bodies'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
+import { beginAdminToolTask, trackAdminUsage, trackRecommendation } from '../../lib/admin-usage'
 import { PublishingStudioNavigation, type PublishingStudioView } from './PublishingStudioNavigation'
 import { EditorialMemoryPanel } from './EditorialMemoryPanel'
 import { EditorialForesightPanel } from './EditorialForesightPanel'
@@ -3203,6 +3204,11 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   }
 
   const startEditorialArticle = (decision: EditorialBoardDecision) => {
+    /* توصيةُ المجلس اتُّخذ بها قرارٌ فعليّ — هذا ما يميّز التوصية النافعة من المهملة. */
+    void trackRecommendation('studio', 'قرار مجلس التحرير', true)
+    void trackAdminUsage('admin_result_converted', {
+      tool: 'studio', taskType: 'قرار مجلس التحرير', convertedTo: 'مسودة مقال', finalAction: 'started',
+    })
     void launchEditorialArticle(decision, !decision.evidenceGate.ready)
   }
 
@@ -3351,6 +3357,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
 
   const rebuild = async (override?: { title?: string; angle?: string }): Promise<boolean> => {
     const task = beginAdminTask('توليد المقال')
+    /* دورة الأداة الدلالية: بدأت ← أنتجت ← تُركت. لا تُسجَّل نقرةٌ عابرة. */
+    const usage = beginAdminToolTask('studio', 'توليد المقال')
     setError('')
     setNotice('')
     setGenerating(true)
@@ -3455,11 +3463,13 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       setNotice(`كُتب المقال بأسلوبك بمطابقة ${verdict.score}٪ وطول ${arabicCountPhrase(generated.exactWords, WORD_PLAIN_FORMS)}${generated.style?.structure ? ` · بناء ${generated.style.structure}` : ''}${skipOriginality ? ' · مع تسجيل استثناء الأصالة بإقرارك' : ''} ✓`)
       setView('write')
       task.needsInput('المقال جاهز للمراجعة')
+      void usage.generated(`مطابقة ${verdict.score}٪`)
       void requestSocialPack(nextBundle, false).catch(() => undefined)
       return true
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر بناء المقال الكامل.')
       task.fail(reason, 'تعذّر بناء المقال الكامل')
+      void usage.abandoned()
       return false
     } finally {
       setGenerating(false)

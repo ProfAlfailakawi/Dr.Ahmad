@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router'
+import { Link, useLocation, useParams, useSearchParams } from 'react-router'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
@@ -253,7 +253,11 @@ export default function BookDetail() {
   const longDescription = book && guide ? (book.longDescription || editorialDescription(book.title, guide)) : ''
   const toc = book ? verifiedToc(book.slug, book.toc) : []
   const tocGroups = useMemo(() => groupToc(toc), [toc])
-  useSeo({ title: book?.title ?? 'كتاب', description: book?.desc, path: `/publications/${slug}`, image: book?.cover })
+  /* حالات البحث الديناميكية لا تُفهرس: عبارةٌ في الرابط لا تصنع صفحةً مستقلة،
+     والصفحة الأمّ وحدها هي التي تحمل الترتيب. */
+  const [searchParams] = useSearchParams()
+  const isSearchState = Boolean(searchParams.get('q'))
+  useSeo({ title: book?.title ?? 'كتاب', description: book?.desc, path: `/publications/${slug}`, image: book?.cover, robots: isSearchState ? 'noindex, follow' : undefined })
   if (!book && loading) return <Page className="content-books"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!book) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على الكتاب.</div></Page>
 

@@ -6,6 +6,7 @@ import { getDb } from '../../lib/firebase'
 import podcastAdmin from '../../data/podcast-admin.json'
 import { fingerprintDialogue } from '../../lib/podcast-dialogue-lock'
 import { dispatchPodcastGeneration } from '../../lib/podcast-generation'
+import { trackAdminUsage } from '../../lib/admin-usage'
 import { reviewMeaningDrift, type MeaningDriftReview, type MeaningFingerprint } from '../../lib/editorial-memory'
 import { arabicCountPhrase, INTERVENTION_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
 
@@ -488,6 +489,12 @@ export function ManualDialogueEditor({ articles, onQueued }: { articles: Article
         throw new Error('queue-readback-mismatch')
       }
       const dispatch = await dispatchPodcastGeneration({ user, slug, proof })
+      /* نتيجةٌ عملية حقيقية: حوارٌ يدويّ صار إنتاجاً في الطريق — لا مجرد شاشة. */
+      void trackAdminUsage('admin_result_converted', {
+        tool: 'manual-dialogue', taskId: slug, taskType: 'حوار يدوي',
+        convertedTo: 'حلقة بودكاست', producedItemId: slug,
+        finalAction: dispatch.duplicate ? 'already-running' : 'dispatched',
+      })
       setQueuedProof({ turnCount: proof.turnCount, sha: proof.contentSha256.slice(0, 12), runId: dispatch.workflowRunId ? String(dispatch.workflowRunId) : undefined })
       setNotice(dispatch.duplicate
         ? `الحوار نفسه مقفول والتوليد يعمل بالفعل ✓ ${arabicCountPhrase(proof.turnCount, INTERVENTION_FORMS)} · بصمة ${proof.contentSha256.slice(0, 12)}`

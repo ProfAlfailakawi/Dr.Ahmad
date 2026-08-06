@@ -2,6 +2,7 @@ import { SocialIcon } from './icons'
 import { useEffect, useRef, useState } from 'react'
 import type { BookRecord } from '../lib/cms'
 import { copyText } from '../lib/clipboard'
+import { buildBibTeX, downloadCitationFile, safeCitationFilename } from '../lib/bibtex'
 import { site } from '../data'
 
 /**
@@ -37,7 +38,7 @@ function authorsOf(book: BookRecord, style: 'apa' | 'mla') {
 }
 
 export function QuoteCite({ book, page, compact = true }: { book: BookRecord; page: number; compact?: boolean }) {
-  const [status, setStatus] = useState<'apa' | 'mla' | 'error' | null>(null)
+  const [status, setStatus] = useState<'apa' | 'mla' | 'bibtex' | 'saved' | 'error' | null>(null)
   const [open, setOpen] = useState(false)
   const timer = useRef<number | undefined>(undefined)
 
@@ -52,9 +53,23 @@ export function QuoteCite({ book, page, compact = true }: { book: BookRecord; pa
   const citations = {
     apa: `${authorsOf(book, 'apa')}. (${year}). ${book.title}${apaTail ? ` (${apaTail})` : ''}. ص ${page}. ${url}`,
     mla: `${authorsOf(book, 'mla')}. ${book.title}${meta.publisher?.trim() ? `. ${meta.publisher.trim()}` : ''}، ${year}، ص ${page}.${book.isbn ? ` ردمك ${book.isbn}.` : ''}`,
+    /* المقطع من كتاب، فالنوع book لا misc؛ والصفحة تُحفظ في note لأن BibTeX
+       يحجز pages لمدى صفحات الفصل لا لموضع الاقتباس. */
+    bibtex: buildBibTeX({
+      type: 'book',
+      id: book.slug,
+      authors: authorsOf(book, 'apa'),
+      title: book.title,
+      year: meta.year?.trim() || undefined,
+      publisher: meta.publisher?.trim() || undefined,
+      isbn: book.isbn || undefined,
+      url,
+      language: 'ar',
+      note: `ص ${page}`,
+    }),
   }
 
-  const copy = async (style: 'apa' | 'mla') => {
+  const copy = async (style: 'apa' | 'mla' | 'bibtex') => {
     try {
       await copyText(citations[style])
       setStatus(style)
@@ -81,18 +96,34 @@ export function QuoteCite({ book, page, compact = true }: { book: BookRecord; pa
 
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
-      {(['apa', 'mla'] as const).map((style) => (
+      {(['apa', 'mla', 'bibtex'] as const).map((style) => (
         <button
           key={style}
           type="button"
           onClick={() => copy(style)}
           className="rounded-full border border-hair px-3 py-1 text-[.64rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
         >
-          {status === style ? 'نُسخ ✓' : style.toUpperCase()}
+          {status === style ? 'نُسخ ✓' : style === 'bibtex' ? 'BibTeX' : style.toUpperCase()}
         </button>
       ))}
+      <button
+        type="button"
+        onClick={() => {
+          try {
+            downloadCitationFile(citations.bibtex, safeCitationFilename(`${book.title} - ص ${page}`, 'bib'), 'application/x-bibtex')
+            setStatus('saved')
+          } catch {
+            setStatus('error')
+          }
+          if (timer.current) window.clearTimeout(timer.current)
+          timer.current = window.setTimeout(() => setStatus(null), 2400)
+        }}
+        className="rounded-full border border-hair px-3 py-1 text-[.64rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+      >
+        {status === 'saved' ? 'نُزّل ✓' : '.bib ↓'}
+      </button>
       <span aria-live="polite" className="text-[.62rem] text-soft">
-        {status === 'error' ? 'تعذّر النسخ؛ أعد المحاولة.' : status ? 'جاهز للّصق في بحثك.' : 'صيغة الاستشهاد'}
+        {status === 'error' ? 'تعذّر النسخ؛ أعد المحاولة.' : status === 'saved' ? 'الملف في تنزيلاتك.' : status ? 'جاهز للّصق في بحثك.' : 'صيغة الاستشهاد'}
       </span>
     </span>
   )

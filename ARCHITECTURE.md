@@ -1,6 +1,50 @@
 # معمارية الموقع ولوحة التحكم
 
 هذا الملف يحفظ ترتيب النظام بعد المراجعة المعمارية، من دون حذف أي ميزة أو تغيير محتواها.
+الأرقام الحيّة في [PROJECT-STATUS.md](PROJECT-STATUS.md) — مولَّدةً لا مكتوبة.
+
+## الطبقات
+
+| الطبقة | الموضع | ملاحظة |
+| --- | --- | --- |
+| العرض | `src/pages` · `src/components` | React 19 · Tailwind · Framer Motion |
+| التوجيه | `src/App.tsx` | React Router 8؛ جدول المسارات مصدرٌ واحد |
+| البيانات الثابتة | `src/data.ts` · `src/data/**` | الأساس؛ الموقع يعمل بها وحدها |
+| Firestore | [docs/FIRESTORE.md](docs/FIRESTORE.md) | طبقة إثراءٍ وتحرير، لا شرطَ تشغيل |
+| التخزين | Firebase Storage · R2 للصوت | الصوت خارج المستودع دائماً |
+| المصادقة | Firebase Auth + ادّعاء `admin` | لا حسابات زوّار |
+| الخادم | `server.mjs` على Cloud Run | نداءات الإدارة والتحليلات والإرسال |
+| البناء والحرّاس | `scripts/**` | تُفصَّل في README |
+
+## الأنظمة
+
+| النظام | المدخل | الوثيقة |
+| --- | --- | --- |
+| الموسوعة والبحث | `EncyclopediaPortal` · `encyclopedia-*` | [docs/SEARCH.md](docs/SEARCH.md) |
+| الصوت | `auto-audio.mjs` · `audio-supervisor.mjs` | [docs/MEDIA-AUDIO-HOSTING.md](docs/MEDIA-AUDIO-HOSTING.md) |
+| البودكاست | `podcast-dialogue.mjs` · `ManualDialogueEditor` | [docs/PODCAST.md](docs/PODCAST.md) |
+| الاستشهادات | `src/lib/bibtex.ts` | [docs/CITATIONS.md](docs/CITATIONS.md) |
+| التحليلات | `usage-analytics.ts` · `admin-usage*.ts` | [docs/ANALYTICS.md](docs/ANALYTICS.md) |
+| أنظمة التحرير | `editorial-*` · `PublishingStudio` | مجلس التحرير والذاكرة والاستشراف |
+| الترحيل | `audit-legacy-links.mjs` | [docs/MIGRATION.md](docs/MIGRATION.md) |
+| النشر | ثلاث طبقاتٍ مستقلّة | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
+
+## الحدود الأمنية
+
+- كل نداءٍ إداريّ يتحقّق من رمز Firebase ومن ادّعاء `admin` قبل أي عمل.
+- `/admin` بـ`noindex, nofollow`، وتحليلاتها لا تظهر في الموقع العام.
+- لا سرّ في المستودع؛ المستودع عامّ عمداً، والعلاج إخراجُ الملف لا خصخصةُ المستودع.
+- عبارات البحث تُنقّى وتُقصّ، ويُحجب ما يشبه بريداً أو رقم هاتف قبل التسجيل.
+- الصوت المولَّد لا يُلتزم في git إطلاقاً (`guard-no-generated-audio-in-git`).
+
+## استراتيجيات السقوط (fallback)
+
+- تعذُّر Firebase لا يوقف التصفّح — البيانات الثابتة تكفي.
+- تعطُّل التحليلات لا يعطّل صفحةً ولا زرّاً؛ الفشل يُبتلع صامتاً.
+- غياب تفريغٍ زمنيّ لا يُنتج توقيتاً مختلقاً — يُعرض الفيديو من بدايته.
+- فشل مصدرٍ في بحث الموسوعة لا يمنع بقيّة المصادر.
+- تعذُّر خدمةٍ خارجية للتعريب يهبط إلى مسارٍ مجانيّ لا يتوقّف.
+- استئناف إنتاج البودكاست يعيد المفقود وحده، لا كل المقاطع من أولها.
 
 ## الموقع العام
 

@@ -29,7 +29,7 @@ jobs:
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
       - name: تحضير حساب الخدمة
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}' > sa.json
       - name: تأليف التقرير من أرقام الأسبوع الحقيقية

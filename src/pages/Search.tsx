@@ -185,6 +185,8 @@ export default function Search() {
     title: 'البحث العميق',
     path: '/search',
     description: 'محرك معرفة موحد يبحث في المقالات والأبحاث والكتب والمواد الإعلامية والأسئلة.',
+    /* صفحة البحث تُفهرس، أما نتيجةُ عبارةٍ بعينها فلا: تُتبع روابطها ولا تُفهرس هي. */
+    robots: searchParams.get('q') ? 'noindex, follow' : undefined,
   })
 
   const [query, setQuery] = useState(() => searchParams.get('q') || '')

@@ -267,8 +267,10 @@ export function searchEncyclopediaKnowledge(
   if (cleanQuery.length < 2) return { query: cleanQuery, passages: [], slides: [] }
   return {
     query: cleanQuery,
-    passages: searchPassages(cleanQuery, Math.max(1, Math.min(10, passageLimit)), context),
-    slides: searchSlides(cleanQuery, Math.max(1, Math.min(10, slideLimit)), context),
+    /* السقف رُفع من ١٠ إلى ٦٠: الواجهة صارت تستعرض كل ما يُحسب، فلا يجوز أن
+       يُعلن عددٌ لا يمكن بلوغه. والكشف التدريجي هو من يحمي الأداء لا البتر. */
+    passages: searchPassages(cleanQuery, Math.max(1, Math.min(60, passageLimit)), context),
+    slides: searchSlides(cleanQuery, Math.max(1, Math.min(60, slideLimit)), context),
   }
 }
 

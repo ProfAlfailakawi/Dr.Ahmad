@@ -1,19 +1,70 @@
 #!/usr/bin/env node
+/**
+ * حارس فهرس متن موسوعة تكنولوجيا التعليم.
+ *
+ * يفحص الملف المنشور نفسه (لا يعيد بناءه)، فيعمل في CI بلا الكتاب الخاص:
+ * التغطية، والحدود، والجودة، وخلوّه من التكرار والتداخل ومن كل ما لا يُقتبس.
+ *
+ * يُبنى الفهرس بـ: node scripts/build-book-quotes.mjs
+ */
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { expandEncyclopediaPassages, looksLikeReference, validFragment } from './encyclopedia-passage-expansion.mjs'
+import { resolve } from 'node:path'
+import { BODY_LIMITS, bareArabic, looksLikeReference, passageRejection } from './encyclopedia-passage-expansion.mjs'
 
-const payload = JSON.parse(readFileSync(new URL('../src/data/book-passages.json', import.meta.url), 'utf8'))
+const root = resolve(import.meta.dirname, '..')
+const payload = JSON.parse(readFileSync(resolve(root, 'src/data/book-passages.json'), 'utf8'))
 const book = payload.books.find((item) => item.slug === 'encyclopedia')
-assert.ok(book, 'encyclopedia book exists')
-assert.ok(book.passages.length >= 2000, `expected at least 2000 passages, got ${book.passages.length}`)
-assert.equal(new Set(book.passages.map((item) => item.fingerprint)).size, book.passages.length, 'fingerprints are unique')
-assert.ok(book.passages.every((item) => validFragment(item.text)), 'all passages pass the public-quality gate')
-assert.ok(book.passages.every((item) => !looksLikeReference(item.text)), 'bibliographic/reference-like rows are excluded')
-assert.ok(book.passages.every((item) => item.parentPassageId && item.segmentKind), 'every derived passage keeps auditable provenance')
+let checks = 0
+const check = (condition, message) => { assert.ok(condition, message); checks += 1 }
 
-const sample = [{ id: 'x', text: 'تسهم تكنولوجيا التعليم في تنظيم الخبرات التعليمية، وتساعد المعلم على اختيار الوسيلة المناسبة للموقف التعليمي وتحقيق أهدافه بوضوح.', page: 10 }]
-const expanded = expandEncyclopediaPassages(sample, { target: 20 })
-assert.ok(expanded.length >= 1)
-assert.ok(expanded.every((item) => sample[0].text.includes(item.text) || item.text === sample[0].text), 'no generated or rewritten prose is introduced')
-console.log(`✓ توسعة متن الموسوعة سليمة: ${book.passages.length} مقطعاً`)
+assert.ok(book, 'سجل موسوعة تكنولوجيا التعليم موجود')
+const passages = book.passages || []
+const pages = new Set(passages.map((item) => Number(item.page)))
+
+/* ═══ التغطية ═══ */
+check(passages.length >= 900, `عدد مقاطع الموسوعة ${passages.length} — والمرجو ٩٠٠ فأكثر`)
+check(pages.size >= 370, `الصفحات المفهرسة ${pages.size} — والمرجو ٣٧٠ صفحة فأكثر`)
+check(payload.coverage?.encyclopediaPassages === passages.length, 'العدد المعلن في التغطية يطابق المحتوى')
+check(payload.coverage?.encyclopediaPagesIndexed === pages.size, 'الصفحات المعلنة تطابق المفهرس فعلاً')
+
+/* ═══ الحدود: لا فهرس ولا بيانات نشر ولا قوائم مراجع ═══ */
+const outside = [...pages].filter((page) => page < BODY_LIMITS.bodyStart || page > BODY_LIMITS.bodyEnd)
+check(outside.length === 0, `مقاطع خارج حدود المتن (${BODY_LIMITS.bodyStart}-${BODY_LIMITS.bodyEnd}): ${outside.slice(0, 8).join('، ')}`)
+check(!passages.some((item) => looksLikeReference(item.text)), 'لا مقطع بصيغة مرجع بيبليوغرافي')
+
+/* ═══ الجودة: كل مقطع منشور يجتاز البوابة نفسها التي بُني بها ═══ */
+const failed = passages.filter((item) => passageRejection(item.text))
+check(failed.length === 0, `مقاطع لا تجتاز بوابة الجودة: ${failed.length}؛ أولها ص${failed[0]?.page}: ${failed[0]?.text?.slice(0, 60)}`)
+check(!passages.some((item) => /[0-9٠-٩A-Za-z]/.test(item.text)), 'لا رقم ولا حرف لاتيني — مواضعها غير مضمونة في الاستخراج')
+check(passages.every((item) => item.text.length >= BODY_LIMITS.minPassageChars), 'لا مقطع دون الحد الأدنى')
+check(passages.every((item) => item.text.length <= BODY_LIMITS.hardMaxChars), 'لا مقطع فوق الحد الأقصى')
+check(passages.every((item) => item.id && item.fingerprint && Number(item.page) > 0), 'كل مقطع منسوب إلى صفحته ببصمة ومعرّف')
+check(passages.every((item) => item.section), 'كل مقطع منسوب إلى بابه أو فصله')
+
+/* ═══ لا تكرار ولا تداخل ═══ */
+check(new Set(passages.map((item) => item.id)).size === passages.length, 'المعرّفات فريدة')
+check(new Set(passages.map((item) => item.fingerprint)).size === passages.length, 'البصمات فريدة')
+const bare = passages.map((item) => ({ page: Number(item.page), value: bareArabic(item.text) }))
+check(new Set(bare.map((item) => item.value)).size === bare.length, 'لا نصّين متطابقين')
+/* التداخل: مقطعٌ يبتلع مقطعاً آخر يعني نافذتين من نصٍّ واحد — وهو ما أُزيل. */
+const byPage = new Map()
+for (const item of bare) byPage.set(item.page, [...(byPage.get(item.page) || []), item.value])
+let nested = 0
+for (const values of byPage.values()) {
+  for (const left of values) for (const right of values) {
+    if (left !== right && left.length < right.length && right.includes(left)) nested += 1
+  }
+}
+check(nested === 0, `مقاطع متداخلة داخل الصفحة نفسها: ${nested}`)
+
+/* ═══ الأداء: الفهرس يُجلب عند البحث وحده، فلا يُثقل أول تحميل ═══ */
+const bytes = readFileSync(resolve(root, 'src/data/book-passages.json')).length
+check(bytes <= 3_500_000, `حجم فهرس المتون ${Math.round(bytes / 1024)}KB — والسقف ٣٫٥ ميغابايت`)
+const quotes = JSON.parse(readFileSync(resolve(root, 'src/data/book-quotes.json'), 'utf8'))
+const encyclopediaQuotes = quotes.books.find((item) => item.slug === 'encyclopedia')?.quotes || []
+check(encyclopediaQuotes.length >= 10, 'مختارات صفحة الكتاب مولَّدة من الفهرس الجديد')
+check(encyclopediaQuotes.every((quote) => passages.some((item) => item.fingerprint === quote.fingerprint)), 'كل مختارٍ معروض مأخوذ من الفهرس نفسه')
+
+const covered = Math.round((pages.size / (BODY_LIMITS.bodyEnd - BODY_LIMITS.bodyStart + 1)) * 100)
+console.log(`✓ فهرس متن الموسوعة: ${checks} تحققاً · ${passages.length} مقطعاً · ${pages.size} صفحة (${covered}٪ من المتن) · بلا تكرار ولا تداخل`)

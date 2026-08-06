@@ -194,7 +194,9 @@ check('التخزين المحلي افتراضي والمزامنة اختيا�
 check('مزامنة مساحتي مشفرة داخل المتصفح', sync.includes('crypto.subtle.encrypt') && sync.includes('crypto.subtle.decrypt'))
 check('يمكن مسح النسخة السحابية دون حذف المحلي', mySpace.includes('امسح النسخة السحابية') && mySpace.includes('لا يحذف ما على هذا الجهاز'))
 check('الأزرار العائمة لا تغطي آخر محتوى على الهاتف', css.includes('padding-bottom: calc(5.5rem + env(safe-area-inset-bottom))'))
-check('إصدارات GitHub Actions في مسارات النشر قابلة للحل', autoSiteWorkflow.includes('actions/checkout@v6') && autoSiteWorkflow.includes('actions/setup-node@v6') && autoAudioWorkflow.includes('actions/checkout@v6') && autoAudioWorkflow.includes('actions/setup-node@v6') && autoAudioWorkflow.includes('actions/cache/restore@v5') && autoAudioWorkflow.includes('actions/cache/save@v5') && !/actions\/(?:checkout|setup-node)@v7/u.test(autoAudioWorkflow))
+// مسار الصوت يمشي على v7/v6 وهو ما يفرضه test-site-polish-2026.mjs أيضاً. منعُ v7 هنا
+// كان يخلق تناقضاً لا مخرج منه: البوابة تحمرّ على v6 والبناء يحمرّ على v7 فلا نشرَ أبداً.
+check('إصدارات GitHub Actions في مسارات النشر قابلة للحل', autoSiteWorkflow.includes('actions/checkout@v6') && autoSiteWorkflow.includes('actions/setup-node@v6') && autoAudioWorkflow.includes('actions/checkout@v7') && autoAudioWorkflow.includes('actions/setup-node@v7') && autoAudioWorkflow.includes('actions/cache/restore@v6') && autoAudioWorkflow.includes('actions/cache/save@v6'))
 check('النشر التلقائي لديه محاولة تعافٍ مجدولة ولا يلغي التشغيل السابق', autoSiteWorkflow.includes("cron: '55 4,9,14,19 * * *'") && autoSiteWorkflow.includes('cancel-in-progress: false') && autoSiteWorkflow.includes('with retry'))
 
 console.log('\nالصور والأيقونات')

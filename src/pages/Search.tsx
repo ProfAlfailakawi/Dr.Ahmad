@@ -119,7 +119,7 @@ function markReadyQuestionUsed(slug: string, question: string, questions: string
 
 /* ═══ محرك المعرفة الموحد ═══
    الكتاب يُبحث عبر خريطة مفاهيم مشتقة من متنه الكامل، لكن النتيجة لا تكشف
-   المتن ولا ملف PDF: تعرض المحور وموضعه فقط وتفتح صفحة الكتاب نفسها. */
+   المتن ولا ملف PDF: تعرض المحور وموضعه النصي فقط، من دون أي رابط لفتح الكتاب. */
 
 type UnifiedKind = KnowledgeKind | 'question'
 type TabId = 'all' | UnifiedKind | 'spoken' | 'passage' | 'askbook'
@@ -748,7 +748,7 @@ export default function Search() {
                   </div>
                 )}
                 <div className="flex flex-wrap items-center gap-2">
-                  <button type="submit" disabled={!selectedAskBook || askBookQuestion.trim().length < 2 || askBookLoading} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45">{askBookLoading ? 'يفتح متن الكتاب…' : 'ابحث في الكتاب'}</button>
+                  <button type="submit" disabled={!selectedAskBook || askBookQuestion.trim().length < 2 || askBookLoading} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45">{askBookLoading ? 'يجري البحث في المتن…' : 'ابحث في الكتاب'}</button>
                   <button type="button" onClick={chooseReadyQuestion} disabled={!readyQuestions.length} className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45">سؤال جاهز</button>
                 </div>
                 {askBookError && <p className="text-[.72rem] leading-relaxed text-accent" role="alert">{askBookError}</p>}
@@ -762,7 +762,6 @@ export default function Search() {
                       <h3 id="ask-book-answer-title" className="mt-1 break-words font-display text-[1.05rem] font-semibold leading-relaxed text-ink">{selectedAskBook?.title}</h3>
                       <p className="mt-1 break-words text-[.74rem] leading-relaxed text-soft">«{askBookAsked}»</p>
                     </div>
-                    {selectedAskBook && <a href={`${selectedAskBook.pdf || `/publications/${selectedAskBook.slug}`}#page=${Math.max(1, Number(askBookMatches[0]?.quote.page || 1))}`} target="_blank" rel="noreferrer" className="shrink-0 text-[.7rem] font-semibold text-accent transition-colors hover:text-accent-deep">افتح صفحة الكتاب ←</a>}
                   </div>
 
                   <div className="mt-4 grid min-w-0 gap-3">
@@ -775,7 +774,6 @@ export default function Search() {
                           : <blockquote className="break-words border-r-2 border-accent/[.35] pr-3 text-[.88rem] font-light leading-[2] text-ink/[.88]">{match.quote.text}</blockquote>}
                         <figcaption className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 pr-3 text-[.68rem] text-soft">
                           <span className="break-words">{match.bookTitle} · ص {match.quote.page}{match.quote.conceptTitle ? ` · ${match.quote.conceptTitle}` : ''}</span>
-                          <a href={`${books.find((book) => book.slug === match.bookSlug)?.pdf || `/publications/${match.bookSlug}`}#page=${Math.max(1, Number(match.quote.page || 1))}`} target="_blank" rel="noreferrer" className="font-semibold text-accent">في الكتاب ←</a>
                         </figcaption>
                       </figure>
                     ))}

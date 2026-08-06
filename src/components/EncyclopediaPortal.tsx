@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
-import { bookKnowledgeAnchor, getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
+import { getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
 import structureData from '../data/encyclopedia-structure.json'
 import {
   getEncyclopediaFallbackCatalog,
@@ -427,8 +427,6 @@ function DoorRow({
     })
   }, [door, tokens, videoMap])
   const doorMatches = !tokens.length || visibleUnits.length > 0 || scoreText(tokens, `${door.title} ${door.summary}`) > 0
-  const doorConcept = conceptForText(`${door.title} ${door.hints.join(' ')}`, concepts)
-  const bookHref = doorConcept ? `/publications/encyclopedia?book_idea=${encodeURIComponent(doorConcept.title)}#book-knowledge` : '#book-knowledge'
 
   if (!doorMatches) return null
 
@@ -461,7 +459,6 @@ function DoorRow({
         <div className="border-y border-hair" aria-label="فهرس فيديوهات الموسوعة">
           {visibleUnits.map((unit) => {
             const unitVideos = videosForUnit(door, unit, videoMap)
-            const concept = conceptForText(`${unit.title} ${unit.keywords.join(' ')}`, concepts)
             const hasTeaching = Boolean(door.presentation && getEncyclopediaTeachingTopic(door.id, unit.title))
             return (
               <section key={`${door.id}-${unit.number}`} className="border-b border-hair py-5 last:border-b-0" aria-labelledby={`${door.id}-unit-${unit.number}`}>
@@ -480,12 +477,6 @@ function DoorRow({
                       <button type="button" onClick={() => onOpenTeaching(door, unit.title)} aria-label={`مواد التدريس: ${unit.title}`} title="مواد التدريس" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
                         <SocialIcon name="Image" size={15} />
                       </button>
-                    ) : concept ? (
-                      <ClarifiedIconAction id="encyclopedia-read-in-book" label="افتح موضع هذا الموضوع داخل كتاب الموسوعة">
-                        <Link to={`/publications/encyclopedia?book_idea=${encodeURIComponent(concept.title)}#${bookKnowledgeAnchor(concept)}`} aria-label={`اقرأ: ${unit.title}`} title="اقرأ في الكتاب" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
-                          <SocialIcon name="Bookmark" size={15} />
-                        </Link>
-                      </ClarifiedIconAction>
                     ) : null}
                   </div>
                 </div>
@@ -504,15 +495,6 @@ function DoorRow({
             )
           })}
         </div>
-        {!door.presentation && (
-          <div className="mt-4 flex justify-end">
-            <ClarifiedIconAction id="encyclopedia-read-door" label="افتح هذا الباب في كتاب الموسوعة">
-              <Link to={bookHref} aria-label={`اقرأ من الباب: ${door.title}`} title="اقرأ من الباب في الكتاب" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
-                <SocialIcon name="Bookmark" size={15} />
-              </Link>
-            </ClarifiedIconAction>
-          </div>
-        )}
       </div>
     </details>
   )
@@ -532,7 +514,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const [playingVideoId, setPlayingVideoId] = useState('')
   const [playingVideoInstance, setPlayingVideoInstance] = useState('')
   const [teachingMaterial, setTeachingMaterial] = useState<TeachingMaterialSelection | null>(null)
-  const [openDoorId, setOpenDoorId] = useState(DOORS[0]?.id || '')
+  const [openDoorId, setOpenDoorId] = useState('')
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [featuredRound, setFeaturedRound] = useState(0)
   const [featuredPaused, setFeaturedPaused] = useState(false)
@@ -709,9 +691,8 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     : 0
 
   useEffect(() => {
-    const firstMatch = searchResults.units[0]?.door.id
-    if (query.trim().length >= 2 && firstMatch) setOpenDoorId(firstMatch)
-  }, [query, searchResults.units])
+    if (query.trim().length >= 2) setOpenDoorId('')
+  }, [query])
 
   useEffect(() => {
     if (!playingVideoInstance.startsWith('unit-')) return
@@ -774,9 +755,6 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     ? getEncyclopediaTeachingTopic(teachingMaterial.door.id, teachingMaterial.topic)
       || teachingDoorGuide?.topics[0]
       || null
-    : null
-  const teachingConcept = teachingMaterial && teachingGuide
-    ? conceptForText(`${teachingGuide.title} ${teachingGuide.chapter} ${teachingGuide.videoHints.join(' ')}`, concepts)
     : null
   const teachingVideo = teachingMaterial && teachingGuide
     ? relatedVideoForText(`${teachingGuide.title} ${teachingGuide.videoHints.join(' ')}`, visibleVideos, teachingMaterial.door, teachingGuide.chapterNumbers[0])
@@ -1083,7 +1061,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 <div className="py-5">
                   <span className="text-[.63rem] font-semibold text-soft">خيط المادة</span>
                   <div className="mt-3 grid grid-cols-2 border-y border-hair">
-                    {teachingConcept ? <Link to={`/publications/${book.slug}?book_idea=${encodeURIComponent(teachingConcept.title)}#book-knowledge`} onClick={() => setTeachingMaterial(null)} className="min-w-0 border-e border-hair px-2 py-4 text-center text-[.68rem] font-semibold text-ink hover:text-accent">اقرأ الأصل</Link> : <span className="min-w-0 border-e border-hair px-2 py-4 text-center text-[.68rem] text-soft">اقرأ الأصل</span>}
+                    <span className="min-w-0 border-e border-hair px-2 py-4 text-center text-[.68rem] text-soft">المحور المرتبط</span>
                     <button type="button" disabled={!teachingVideo} onClick={() => {
                       if (!teachingVideo) return
                       setTeachingMaterial(null)

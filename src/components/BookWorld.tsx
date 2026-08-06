@@ -371,7 +371,7 @@ export function BookWorld({
 
             {asked && (
               <div className="mt-4 border-t border-hair pt-4">
-                {!askReady && <p className="text-[.76rem] text-soft">يفتح الكتاب…</p>}
+                {!askReady && <p className="text-[.76rem] text-soft">يجري البحث في المتن…</p>}
                 {askReady && bookAnswer.length === 0 && (
                   <div className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
                     <p className="text-[.76rem] leading-relaxed text-soft">لم تظهر شواهد كافية داخل هذا الكتاب بعد فحص المعنى والعناوين والمحاور والمقاطع. يمكنك <Link to={`/search?q=${encodeURIComponent(asked)}&tab=all`} className="text-accent">توسيع البحث إلى الأرشيف كله</Link>.</p>

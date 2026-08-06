@@ -80,7 +80,7 @@ try {
   const gitignore = readFileSync(resolve(root, '.gitignore'), 'utf8')
   check(server.includes('STATIC_TRANSCRIPT_SOURCES') && !server.includes('fetchWithDeadline(fetchImpl, `https://www.youtube.com/watch'), 'الخادم يستخدم فهرساً ثابتاً بلا جلب ترجمة وقت الزيارة')
   check(server.includes('hasExactTiming: exact') && results.includes('moment.hasExactTiming'), 'لا يعرض توقيتاً وهمياً')
-  check(results.includes('#page=${') && results.includes('encyclopediaSlideRangeLabel') && results.includes('fileName(primarySlide.presentation)'), 'يربط PDF والشرائح واسم ملف العرض')
+  check(!results.includes('#page=${') && results.includes('encyclopediaSlideRangeLabel') && results.includes('fileName(primarySlide.presentation)'), 'لا يفتح صفحات الكتاب ويربط الشرائح واسم ملف العرض فقط')
   check(!portal.includes('scrollIntoView') && portal.includes('data-horizontal-video-rail="true"'), 'لا يقفز عمودياً ويحافظ على السحب الأفقي')
   check(docker.includes('COPY src/data/encyclopedia-video-transcripts.json') && docker.includes('COPY src/data/encyclopedia-search-synonyms.json') && docker.includes('COPY src/data/encyclopedia-transcript-corrections.json'), 'Docker يضم الفهرس والقواميس والتصحيحات صراحة')
   check(cloud.includes('!src/data/encyclopedia-video-transcripts.json') && cloud.includes('!src/data/encyclopedia-search-synonyms.json') && cloud.includes('!src/data/encyclopedia-transcript-corrections.json'), 'سياق Cloud Build يسمح بالملفات المطلوبة')

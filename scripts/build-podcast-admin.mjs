@@ -34,6 +34,25 @@ const externalDialogue = Object.keys(audioMeta).filter((name) => name.endsWith('
 const dialogue = [...new Set([...files.filter((name) => name.endsWith('.dialogue.mp3')), ...externalDialogue])].sort()
 const generatedAt = dialogue.length ? new Date().toISOString() : null
 
+/* غيابُ الإعداد ليس غيابَ المحتوى.
+   بعد انتقال الصوت إلى R2 صار مجلد audio/ فارغاً، فلم يبقَ للحوارات إلا سجلّ
+   audio-meta.json — وهو محجوبٌ خلف AUDIO_PUBLIC_BASE_URL. من شغّل هذا الباني
+   بلا المتغيّر رأى صفر حوارات، فكتب بياناً فارغاً فوق بيانٍ عامر، فاختفت
+   الحلقات من الموقع ومن البوت بلا خطأٍ واحد.
+   القاعدة: لا نُفرغ بياناً قائماً إلا حين نرى المصدر فعلاً ونجده فارغاً. */
+if (!dialogue.length && existsSync(OUT)) {
+  const previous = (() => { try { return JSON.parse(readFileSync(OUT, 'utf8')) } catch { return null } })()
+  const hadEpisodes = Array.isArray(previous?.episodes) && previous.episodes.length
+  const metaDeclares = !EXTERNAL_AUDIO_BASE_URL && existsSync(metaPath)
+    && Object.keys(JSON.parse(readFileSync(metaPath, 'utf8'))).some((name) => name.endsWith('.dialogue.mp3'))
+  if (hadEpisodes && (metaDeclares || !EXTERNAL_AUDIO_BASE_URL)) {
+    console.warn('⚠ لا AUDIO_PUBLIC_BASE_URL ومجلد audio/ فارغ — لا يمكن رؤية الحوارات.')
+    console.warn(`  أبقيتُ podcast-admin.json كما هو (${previous.episodes.length} حلقة) بدل أن أمحوه.`)
+    console.warn('  لتحديثه فعلاً: AUDIO_PUBLIC_BASE_URL=<رابط R2> node scripts/build-podcast-admin.mjs')
+    process.exit(0)
+  }
+}
+
 function readAudit(slug) {
   const file = resolve(AUDITS, `${slug}.ar.json`)
   if (!existsSync(file)) return null

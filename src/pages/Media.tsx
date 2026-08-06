@@ -82,7 +82,7 @@ export default function Media() {
               <Link to={`/media/${item.slug}`} className="block">
                 <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}>
                   {video ? <img src={item.thumbnail || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`} alt="" loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]" /> : <div className="flex h-full items-center justify-center"><div className="text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-accent/25 bg-canvas text-2xl text-accent">◉</span><span className="mt-3 block text-[.72rem] font-semibold text-soft">مادة إذاعية</span></div></div>}
-                  <span className="absolute right-3 top-3 rounded-full border border-white/50 bg-ink/55 px-3 py-1 text-[.65rem] text-white backdrop-blur">{kindLabel[item.kind] || 'ظهور إعلامي'}</span>
+                  <span className="absolute right-3 top-3 rounded-full border border-white/50 bg-ink/[.55] px-3 py-1 text-[.65rem] text-white backdrop-blur">{kindLabel[item.kind] || 'ظهور إعلامي'}</span>
                   {available && <span className="absolute bottom-3 right-3 rounded-full bg-accent px-3 py-1 text-[.62rem] font-bold text-white">مفهرس زمنياً</span>}
                 </div>
                 <div className="p-5">

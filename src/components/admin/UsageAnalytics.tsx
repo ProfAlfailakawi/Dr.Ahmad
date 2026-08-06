@@ -12,6 +12,8 @@ import {
 } from '../../lib/admin-usage-insights'
 import type { AdminUsageRow, Delta, DormancyBucket, ToolUsage } from '../../lib/admin-usage-insights'
 import { adminToolLabel } from './admin-navigation'
+/* الامتداد `.ts` مقصود — انظر ملاحظة استيراد المكتبة في arabic-count. */
+import { arabicCountPhrase, DAY_AFTER_PREPOSITION_FORMS, DAY_FORMS } from '../../lib/arabic-count.ts'
 
 /**
  * لوحة «الاستخدام الفعلي» — نصفٌ للزوار ونصفٌ لأدوات الأدمن.
@@ -264,7 +266,7 @@ export function UsageAnalytics() {
 
   const periodLabel = customMode && range.until
     ? `${customFrom} ← ${customTo}`
-    : `آخر ${arabicNumber(range.days)} يوماً`
+    : `آخر ${arabicCountPhrase(range.days, DAY_FORMS, arabicNumber)}`
   const hasData = events.length > 0 || adminRows.length > 0
 
   return (
@@ -285,7 +287,7 @@ export function UsageAnalytics() {
               aria-pressed={!customMode && days === value}
               className={`rounded-full px-4 py-2 text-[.75rem] transition-colors ${!customMode && days === value ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}
             >
-              {arabicNumber(value)} يوماً
+              {arabicCountPhrase(value, DAY_FORMS, arabicNumber)}
             </button>
           ))}
           <button
@@ -469,7 +471,7 @@ export function UsageAnalytics() {
                   </thead>
                   <tbody>
                     {toolSummary.tools.length ? toolSummary.tools.map((tool) => (
-                      <tr key={tool.tool} className="border-b border-hair/[.6] last:border-b-0">
+                      <tr key={tool.tool} className="border-b border-hair last:border-b-0">
                         <td className="py-3 font-semibold text-ink">{adminToolLabel(tool.tool)}</td>
                         <td>{arabicNumber(tool.opened)}</td>
                         <td>{arabicNumber(tool.generated)}</td>
@@ -481,7 +483,7 @@ export function UsageAnalytics() {
                         <td>{formatPercent(tool.openToResult)}</td>
                         <td>{formatPercent(tool.resultToAction)}</td>
                         <td className="text-soft">{formatDuration(tool.averageDurationMs)} <small>({arabicNumber(tool.durationSamples)})</small></td>
-                        <td className="text-soft">{tool.daysSinceLastUse === null ? 'لا عيّنة' : tool.daysSinceLastUse === 0 ? 'اليوم' : `قبل ${arabicNumber(tool.daysSinceLastUse)} يوماً`}</td>
+                        <td className="text-soft">{tool.daysSinceLastUse === null ? 'لا عيّنة' : tool.daysSinceLastUse === 0 ? 'اليوم' : `قبل ${arabicCountPhrase(tool.daysSinceLastUse, DAY_AFTER_PREPOSITION_FORMS, arabicNumber)}`}</td>
                       </tr>
                     )) : <EmptyRow span={12}>لا أحداث أدوات في هذه الفترة.</EmptyRow>}
                   </tbody>
@@ -535,7 +537,7 @@ export function UsageAnalytics() {
                   </thead>
                   <tbody>
                     {toolSummary.recommendations.length ? toolSummary.recommendations.map((row) => (
-                      <tr key={row.type} className="border-b border-hair/[.6] last:border-b-0">
+                      <tr key={row.type} className="border-b border-hair last:border-b-0">
                         <td className="py-3 font-semibold text-ink">{row.type}</td>
                         <td>{arabicNumber(row.shown)}</td>
                         <td>{arabicNumber(row.used)}</td>
@@ -611,7 +613,7 @@ export function UsageAnalytics() {
                   <h4 className="text-[.8rem] font-semibold text-ink">الخصوصية والتحكّم</h4>
                   <p className="mt-1 text-[.7rem] leading-relaxed text-soft">
                     القياس خاصٌّ بك ولا يظهر في الموقع العام. لا تُسجَّل نصوص المقالات ولا الأفكار — معرّفات العناصر فقط.
-                    مدّة الاحتفاظ {arabicNumber(ADMIN_USAGE_RETENTION_DAYS)} يوماً ثم تُمحى.
+                    مدّة الاحتفاظ {arabicCountPhrase(ADMIN_USAGE_RETENTION_DAYS, DAY_FORMS, arabicNumber)} ثم تُمحى.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">

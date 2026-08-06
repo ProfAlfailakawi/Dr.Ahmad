@@ -287,16 +287,21 @@ export function bucketByPeriod(rows: AdminUsageRow[], granularity: 'week' | 'mon
 
 /* ── صياغة عربية ─────────────────────────────────────────────────── */
 
+/* الامتداد `.ts` مقصود: Node يشغّل TypeScript مباشرةً، والاختبارات تستورد
+   هذا الملف بلا تصريف. */
+import { arabicCountPhrase, HOUR_FORMS, MINUTE_FORMS, SECOND_FORMS } from './arabic-count.ts'
+
 export const formatPercent = (value: number | null) =>
   value === null || !Number.isFinite(value) ? 'لا عيّنة' : `${Math.round(value * 100)}٪`
 
 export function formatDuration(ms: number | null) {
   if (ms === null || !Number.isFinite(ms) || ms <= 0) return 'لا عيّنة'
   const seconds = Math.round(ms / 1000)
-  if (seconds < 90) return `${seconds} ثانية`
+  /* الصيغة العربية تُصرّف بالعدد: «ثانيتان» لا «٢ ثانية». */
+  if (seconds < 90) return arabicCountPhrase(seconds, SECOND_FORMS)
   const minutes = Math.round(seconds / 60)
-  if (minutes < 90) return `${minutes} دقيقة`
-  return `${(minutes / 60).toFixed(1)} ساعة`
+  if (minutes < 90) return arabicCountPhrase(minutes, MINUTE_FORMS)
+  return arabicCountPhrase(Number((minutes / 60).toFixed(1)), HOUR_FORMS, (value) => value.toFixed(1))
 }
 
 export function formatDelta(delta: Delta) {

@@ -1,5 +1,132 @@
 {
-  "generatedAt": null,
-  "episodes": [],
-  "playlists": []
+  "generatedAt": "2026-08-06T10:11:43.671Z",
+  "episodes": [
+    {
+      "slug": "a-generation-without-rootsarabic",
+      "title": "جيلٌ بلا جذور",
+      "category": "هوية",
+      "date": "19 ديسمبر 2025",
+      "iso": "2025-12-19",
+      "status": "under_review",
+      "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/a-generation-without-rootsarabic.dialogue.mp3",
+      "audio": "/audio/a-generation-without-rootsarabic.dialogue.mp3",
+      "bytes": 3423547,
+      "audioHash": "433a9da011f0c69c",
+      "hasTranscript": true,
+      "utterances": 0,
+      "quality": {
+        "score": 32,
+        "pass": false,
+        "metrics": {
+          "durationSeconds": 216,
+          "bytes": 3423547,
+          "sttRatio": null,
+          "importantRatio": null,
+          "longSilences": null,
+          "unexpectedLongSilences": null,
+          "peakDb": null,
+          "judgePass": false,
+          "humanLikeness": null,
+          "humanProxy": null
+        },
+        "pronunciation": "ينتظر فحص النطق والمعنى",
+        "pace": "مقبول",
+        "pauses": "يحتاج تقليل الوقفات",
+        "issues": [
+          "الحلقة ليست معتمدة آلياً في حالة البودكاست.",
+          "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
+          "تطابق STT مع النص المقصود أقل من الحد الصارم.",
+          "توجد وقفات طويلة تتجاوز الحد المقبول.",
+          "بوابة البشرية أقل من 95/100."
+        ]
+      }
+    },
+    {
+      "slug": "alternative-plans-for-distance-education",
+      "title": "الخطط البديلة للتعليم عن بعد",
+      "category": "التعليم",
+      "date": "24 مارس 2020",
+      "iso": "2020-03-24",
+      "status": "under_review",
+      "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/alternative-plans-for-distance-education.dialogue.mp3",
+      "audio": "/audio/alternative-plans-for-distance-education.dialogue.mp3",
+      "bytes": 3432324,
+      "audioHash": "3398e063e4ef936c",
+      "hasTranscript": true,
+      "utterances": 0,
+      "quality": {
+        "score": 32,
+        "pass": false,
+        "metrics": {
+          "durationSeconds": 216,
+          "bytes": 3432324,
+          "sttRatio": null,
+          "importantRatio": null,
+          "longSilences": null,
+          "unexpectedLongSilences": null,
+          "peakDb": null,
+          "judgePass": false,
+          "humanLikeness": null,
+          "humanProxy": null
+        },
+        "pronunciation": "ينتظر فحص النطق والمعنى",
+        "pace": "مقبول",
+        "pauses": "يحتاج تقليل الوقفات",
+        "issues": [
+          "الحلقة ليست معتمدة آلياً في حالة البودكاست.",
+          "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
+          "تطابق STT مع النص المقصود أقل من الحد الصارم.",
+          "توجد وقفات طويلة تتجاوز الحد المقبول.",
+          "بوابة البشرية أقل من 95/100."
+        ]
+      }
+    }
+  ],
+  "playlists": [
+    {
+      "title": "مستقبل المعلم",
+      "episodes": [
+        {
+          "slug": "alternative-plans-for-distance-education",
+          "title": "الخطط البديلة للتعليم عن بعد",
+          "category": "التعليم",
+          "date": "24 مارس 2020",
+          "iso": "2020-03-24",
+          "status": "under_review",
+          "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/alternative-plans-for-distance-education.dialogue.mp3",
+          "audio": "/audio/alternative-plans-for-distance-education.dialogue.mp3",
+          "bytes": 3432324,
+          "audioHash": "3398e063e4ef936c",
+          "hasTranscript": true,
+          "utterances": 0,
+          "quality": {
+            "score": 32,
+            "pass": false,
+            "metrics": {
+              "durationSeconds": 216,
+              "bytes": 3432324,
+              "sttRatio": null,
+              "importantRatio": null,
+              "longSilences": null,
+              "unexpectedLongSilences": null,
+              "peakDb": null,
+              "judgePass": false,
+              "humanLikeness": null,
+              "humanProxy": null
+            },
+            "pronunciation": "ينتظر فحص النطق والمعنى",
+            "pace": "مقبول",
+            "pauses": "يحتاج تقليل الوقفات",
+            "issues": [
+              "الحلقة ليست معتمدة آلياً في حالة البودكاست.",
+              "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
+              "تطابق STT مع النص المقصود أقل من الحد الصارم.",
+              "توجد وقفات طويلة تتجاوز الحد المقبول.",
+              "بوابة البشرية أقل من 95/100."
+            ]
+          }
+        }
+      ]
+    }
+  ]
 }

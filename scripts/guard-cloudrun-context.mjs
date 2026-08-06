@@ -111,6 +111,40 @@ if (existsSync(SERVER)) {
   }
 }
 
+/* المورد المقروء وقت التشغيل — لا استيراداً بل `readFileSync` على مسارٍ مبني.
+   هذا هو العطب الصامت: الصورة تُبنى وتُقلع بنجاح، ثم يعود الفهرس فارغاً فيردّ
+   البوت «ما لقيت مادة منشورة» على كل سؤال. الاستيراد يسقط بصوت، وهذا يسقط بصمت،
+   فوجب أن يمسكه الحارس قبل النشر لا بعده. */
+const RUNTIME_RESOURCE = /(?:readFileSync|readJson|resolve|join)\s*\([^)]*?['"]((?:\.\.?\/)*(?:src|scripts)\/[A-Za-z0-9_./-]+\.(?:json|ts))['"]|['"](src|scripts)['"]\s*,\s*(?:['"][A-Za-z0-9_.-]+['"]\s*,\s*)*['"]([A-Za-z0-9_.-]+\.(?:json|ts))['"]/g
+
+const runtimeResources = new Map()
+for (const absolutePath of visitedImports) {
+  if (!/\.(?:mjs|js)$/.test(absolutePath) || !existsSync(absolutePath)) continue
+  const source = readFileSync(absolutePath, 'utf8')
+  for (const match of source.matchAll(RUNTIME_RESOURCE)) {
+    /* الشكلان اللذان يستعملهما المشروع: مسارٌ واحد ('src/data/x.json')،
+       أو مقاطع مفصولة ('src', 'data', 'x.json'). نردّهما إلى مسار مستودعٍ واحد. */
+    const repoPath = match[1]
+      ? match[1].replace(/^(?:\.\.?\/)+/, '')
+      : [match[2], ...(match[0].match(/['"][A-Za-z0-9_.-]+['"]/g) || [])
+          .slice(1).map((token) => token.slice(1, -1))].join('/')
+    if (!repoPath.startsWith('src/') && !repoPath.startsWith('scripts/')) continue
+    if (!existsSync(resolve(ROOT, repoPath))) continue
+    if (!runtimeResources.has(repoPath)) runtimeResources.set(repoPath, relative(ROOT, absolutePath))
+  }
+}
+
+for (const [repoPath, reader] of runtimeResources) {
+  if (!copiedSources.has(repoPath)) {
+    failures.push(`${repoPath} — يقرأه ${reader} وقت التشغيل ولا COPY له في Dockerfile (فهرسٌ فارغ بلا خطأ)`)
+    continue
+  }
+  if (!included(repoPath)) {
+    const last = patterns.filter((pattern) => matches(pattern, repoPath)).pop()
+    failures.push(`${repoPath} — مورد تشغيل يستبعده .gcloudignore عند «${last}»`)
+  }
+}
+
 if (failures.length) {
   console.error('✘ سياق بناء Cloud Run ناقص — سيسقط نشر dr-api:')
   for (const failure of [...new Set(failures)]) console.error(`  - ${failure}`)
@@ -118,4 +152,4 @@ if (failures.length) {
   process.exit(1)
 }
 
-console.log(`✓ سياق Cloud Run: ${copySources.length} مصدر COPY، و${visitedImports.size} استيراد خادم، كلها موجودة ومسموح بها.`)
+console.log(`✓ سياق Cloud Run: ${copySources.length} مصدر COPY، و${visitedImports.size} استيراد خادم، و${runtimeResources.size} مورد تشغيل، كلها موجودة ومسموح بها.`)

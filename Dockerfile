@@ -10,6 +10,17 @@ RUN npm ci --omit=dev --ignore-scripts
 
 COPY server.mjs /app/server.mjs
 COPY scripts/editorial-policy.mjs /app/scripts/editorial-policy.mjs
+# متون الموقع: مصادر الفهرس التي يقرأها content-index.mjs وقت التشغيل.
+# غيابها لا يُسقط الصورة — يُفرغ الفهرس بصمت فيردّ البوت «ما لقيت مادة» على كل سؤال.
+COPY src/data.ts /app/src/data.ts
+COPY src/data-curated.ts /app/src/data-curated.ts
+COPY src/data/research-papers.ts /app/src/data/research-papers.ts
+COPY src/data/audio.json /app/src/data/audio.json
+COPY src/data/audio-meta.json /app/src/data/audio-meta.json
+COPY src/data/podcast-admin.json /app/src/data/podcast-admin.json
+COPY src/data/book-passages.json /app/src/data/book-passages.json
+COPY src/data/book-quotes.json /app/src/data/book-quotes.json
+COPY src/data/spoken-index.json /app/src/data/spoken-index.json
 COPY src/data/bodies.json /app/src/data/bodies.json
 COPY src/data/dr-ahmad-domain-glossary.json /app/src/data/dr-ahmad-domain-glossary.json
 COPY src/data/editorial-policy.json /app/src/data/editorial-policy.json

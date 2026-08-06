@@ -17,6 +17,7 @@ export default function MediaDetail() {
   const [start, setStart] = useState(() => Math.max(0, Number(params.get('t')) || 0))
   const [query, setQuery] = useState('')
   const transcript = item?.transcript || null
+  const related = useMemo(() => item ? media.filter((entry) => entry.slug !== item.slug).slice(0, 8) : [], [item, media])
   const matches = useMemo(() => {
     const q = normalize(query.trim())
     if (!q || !transcript?.segments) return transcript?.segments || []
@@ -45,6 +46,16 @@ export default function MediaDetail() {
         </div>
 
         {transcript?.available && <FadeUp delay={.16}><section className="mt-10 rounded-[1.5rem] border border-hair bg-canvas p-5 md:p-7"><div className="flex flex-wrap items-end justify-between gap-4"><div><span className="text-[.68rem] font-semibold text-accent">النص الزمني</span><h2 className="mt-1 font-display text-2xl font-semibold text-ink">ابحث وانتقل إلى اللحظة</h2></div><span className="text-[.7rem] text-soft">{transcript.segmentCount} مقطعاً</span></div><div className="mt-5 rounded-xl border border-hair bg-wash px-4 py-3"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث داخل كلام اللقاء…" className="w-full bg-transparent text-[.82rem] text-ink outline-none placeholder:text-soft/70" /></div><div className="mt-5 max-h-[42rem] space-y-2 overflow-y-auto pr-1">{matches.map((segment) => <button key={`${segment.start}-${segment.end}`} type="button" onClick={() => { setStart(segment.start); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="group grid w-full gap-3 rounded-xl border border-transparent p-3 text-right transition hover:border-accent/30 hover:bg-wash md:grid-cols-[5rem_minmax(0,1fr)]"><span className="font-mono text-[.72rem] font-bold text-accent">{formatMediaTime(segment.start)}</span><span className="text-[.8rem] leading-[1.9] text-ink/[.85]">{segment.displayText || segment.text}</span></button>)}{!matches.length && <p className="py-8 text-center text-[.78rem] text-soft">لا توجد عبارة مطابقة داخل هذا اللقاء.</p>}</div></section></FadeUp>}
+
+        {related.length > 0 && <FadeUp delay={.2}><section className="mt-12 border-t border-hair pt-8" aria-labelledby="media-related-title">
+          <div className="flex items-end justify-between gap-4"><div><span className="text-[.68rem] font-semibold text-accent">امتداد اللقاء</span><h2 id="media-related-title" className="mt-1 font-display text-2xl font-semibold text-ink">مواد أخرى من الأرشيف</h2></div><Link to="/media" className="text-[.72rem] font-semibold text-accent">شاهد الكل ←</Link></div>
+          <div dir="rtl" className="media-related-rail mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [touch-action:pan-x]">
+            {related.map((entry) => <Link key={entry.slug} to={`/media/${entry.slug}`} className="w-[min(82vw,19rem)] shrink-0 snap-start overflow-hidden rounded-2xl border border-hair bg-canvas transition hover:border-accent">
+              <div className="aspect-video overflow-hidden bg-wash">{entry.id && entry.kind !== 'audio' && entry.kind !== 'radio' ? <img src={entry.thumbnail || `https://i.ytimg.com/vi/${entry.id}/hqdefault.jpg`} alt="" loading="lazy" onLoad={(event) => { const img = event.currentTarget; if (!entry.thumbnail && img.naturalWidth <= 120 && img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${entry.id}/mqdefault.jpg`; }} onError={(event) => { const img = event.currentTarget; if (img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${entry.id}/mqdefault.jpg`; else img.style.display = 'none'; }} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-2xl text-accent">◉</div>}</div>
+              <div className="p-4"><span className="text-[.65rem] font-semibold text-accent">{entry.program || entry.outlet}</span><strong className="mt-1 line-clamp-2 block text-[.82rem] leading-[1.7] text-ink">{entry.title}</strong></div>
+            </Link>)}
+          </div>
+        </section></FadeUp>}
       </div>
     </article>
   </Page>

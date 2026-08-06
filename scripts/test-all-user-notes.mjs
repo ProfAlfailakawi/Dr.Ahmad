@@ -270,7 +270,7 @@ check('مختبر الجودة يفحص الامتناع واللهجة والم
 
 check('أيقونة مواد الباب انتقلت بجانب عنوان الباب', encyclopediaPortal.includes('مواد التدريس المرتبطة بهذا الباب') && !encyclopediaPortal.includes('<div className="mt-4 flex justify-end">\n          {door.presentation ?'))
 check('الأيقونات غير الواضحة تشرح نفسها في أول لمسة فقط', read('src/components/ClarifiedIconAction.tsx').includes('localStorage') && read('src/components/ClarifiedIconAction.tsx').includes('(hover: none), (pointer: coarse)'))
-check('روابط جواب الكتاب تفتح PDF على الصفحة الحقيقية', search.includes('#page=${Math.max(1, Number(match.quote.page || 1))}') && search.includes('window.scrollTo({ top: 0'))
+check('جواب الكتاب لا يفتح PDF الكامل ويحافظ على العودة المنطقية أعلى النتائج', !search.includes('#page=${Math.max(1, Number(match.quote.page || 1))}') && search.includes('window.scrollTo({ top: 0'))
 
 console.log(`\nالنتيجة: ${passed} تحققاً ناجحاً، ${failed} إخفاقاً.`)
 if (failed) process.exit(1)

@@ -1,19 +1,18 @@
-FROM node:24-bookworm-slim
+FROM node:24.18.0-bookworm-slim
 
-WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
+WORKDIR /app
 
 COPY package.json /app/package.json
 COPY package-lock.json /app/package-lock.json
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts
 
-# كل مورد محلي يصل إليه server.mjs يُنسخ صراحةً ويُفحص بالحارس.
 COPY server.mjs /app/server.mjs
 COPY scripts/editorial-policy.mjs /app/scripts/editorial-policy.mjs
 COPY src/data/bodies.json /app/src/data/bodies.json
-COPY src/data/editorial-policy.json /app/src/data/editorial-policy.json
 COPY src/data/dr-ahmad-domain-glossary.json /app/src/data/dr-ahmad-domain-glossary.json
+COPY src/data/editorial-policy.json /app/src/data/editorial-policy.json
 COPY src/data/encyclopedia-search-synonyms.json /app/src/data/encyclopedia-search-synonyms.json
 COPY src/data/encyclopedia-structure.json /app/src/data/encyclopedia-structure.json
 COPY src/data/encyclopedia-teaching-map.json /app/src/data/encyclopedia-teaching-map.json

@@ -14,6 +14,7 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { voiceScore } from './book-voice.mjs'
+import { expandEncyclopediaPassages } from './encyclopedia-passage-expansion.mjs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -375,6 +376,11 @@ for (const book of evidence.books || []) {
     year: book.year || '',
     passages: passages.map((item, index) => shape(item, index, 'p')),
   })
+}
+
+const encyclopediaBook = passageBooks.find((book) => book.slug === 'encyclopedia')
+if (encyclopediaBook) {
+  encyclopediaBook.passages = expandEncyclopediaPassages(encyclopediaBook.passages, { target: 900 })
 }
 
 const total = books.reduce((sum, book) => sum + book.quotes.length, 0)

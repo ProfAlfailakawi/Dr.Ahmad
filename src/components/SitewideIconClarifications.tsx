@@ -22,8 +22,6 @@ const CLARIFICATIONS: Record<string, { id: string; explanation: string }> = {
   'إعدادات وضع السكينة': { id: 'serenity-settings', explanation: 'يضبط تجربة القراءة الهادئة ويقلل العناصر المحيطة.' },
   'مواد الباب': { id: 'door-materials', explanation: 'يفتح مواد التدريس والعرض المرتبطة بهذا الباب من الموسوعة.' },
   'مواد التدريس': { id: 'door-materials', explanation: 'يفتح الشرائح ومواد التدريس المرتبطة بالموضوع.' },
-  'اقرأ من الباب': { id: 'open-book-door', explanation: 'يفتح نسخة الكتاب مباشرة عند الصفحة الأقرب لهذا الباب.' },
-  'اقرأ': { id: 'open-book-topic', explanation: 'يفتح الكتاب عند الصفحة المرتبطة بهذا الموضوع.' },
   'ابحث في هذا الكتاب': { id: 'search-inside-book', explanation: 'ينقل البحث إلى متن هذا الكتاب وحده بدل البحث في الموقع كله.' },
   'فهم محرك البحث وصياغاته المقترحة': { id: 'search-help', explanation: 'يشرح أنواع البحث والصياغات التي تعطي نتائج أدق.' },
   'فتح لوحة الأوامر': { id: 'command-palette', explanation: 'يفتح لوحة سريعة للوصول إلى أوامر الإدارة من مكان واحد.' },

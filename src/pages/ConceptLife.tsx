@@ -79,6 +79,7 @@ export default function ConceptLife() {
   const term = decodeURIComponent(params.term || search.get('term') || '').trim()
   const { articles, papers, books, media } = useCmsContent()
   const [deepReady, setDeepReady] = useState(false)
+  const [activeKind, setActiveKind] = useState<Station['kind'] | null>(null)
 
   useSeo({
     title: term ? `سيرة مفهوم: ${term}` : 'سيرة مفهوم',
@@ -194,6 +195,10 @@ export default function ConceptLife() {
     return years.length >= 2 ? { from: Math.min(...years), to: Math.max(...years) } : null
   }, [stations])
 
+  const visibleStations = useMemo(() => activeKind ? stations.filter((item) => item.kind === activeKind) : stations, [activeKind, stations])
+
+  useEffect(() => { setActiveKind(null) }, [term])
+
   const kinds = useMemo(() => {
     const counts = new Map<Station['kind'], number>()
     for (const item of stations) counts.set(item.kind, (counts.get(item.kind) || 0) + 1)
@@ -216,9 +221,9 @@ export default function ConceptLife() {
             <FadeUp>
               <div className="flex flex-wrap gap-2 border-b border-hair pb-6">
                 {kinds.map(([kind, count]) => (
-                  <span key={kind} className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.7rem] text-soft">
+                  <button key={kind} type="button" onClick={() => setActiveKind((current) => current === kind ? null : kind)} aria-pressed={activeKind === kind} className={`relative z-10 min-h-11 rounded-full border px-4 py-2 text-[.72rem] font-medium transition-colors ${activeKind === kind ? 'border-accent bg-accent text-white' : 'border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
                     {kind} · {count}
-                  </span>
+                  </button>
                 ))}
               </div>
             </FadeUp>
@@ -273,7 +278,7 @@ export default function ConceptLife() {
           )}
 
           <ol className="mt-8 grid gap-0">
-            {stations.map((station, index) => (
+            {visibleStations.map((station, index) => (
               <FadeUp key={station.key} delay={Math.min(index * 0.03, 0.3)}>
                 <li className="relative grid gap-2 border-r border-hair pr-6 pb-8 sm:grid-cols-[6.5rem_minmax(0,1fr)] sm:gap-5">
                   {/* نقطة المحطة على خيط الزمن */}
@@ -309,7 +314,7 @@ export default function ConceptLife() {
             ))}
           </ol>
 
-          {stations.length > 0 && (
+          {visibleStations.length > 0 && (
             <FadeUp>
               <div className="mt-6 flex flex-wrap gap-3 border-t border-hair pt-8">
                 <Link to={`/search?q=${encodeURIComponent(term)}`} className="rounded-full border border-hair px-5 py-2.5 text-[.76rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">ابحث في الأرشيف كله</Link>

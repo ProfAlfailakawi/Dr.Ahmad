@@ -19,10 +19,6 @@ function formatMoment(seconds: number) {
   return text.replace(/\d/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
 }
 
-function passageHref(match: EncyclopediaPassageMatch) {
-  return `/files/encyclopedia.pdf#page=${Math.max(1, Math.floor(match.page || 1))}`
-}
-
 function fileName(value: string) {
   const clean = String(value || '').split(/[?#]/)[0]
   return clean.split('/').filter(Boolean).at(-1) || ''
@@ -148,15 +144,6 @@ export function EncyclopediaKnowledgeResults({
                   {primarySlide && <span>التدريس: {primarySlide.topic.title} · {encyclopediaSlideRangeLabel(primarySlide.topic.ranges)}</span>}
                 </div>
               )}
-              {primaryMoment && (
-                <details className="mt-3 border-t border-hair pt-3 text-[.61rem] text-soft">
-                  <summary className="cursor-pointer select-none font-semibold text-ink/75 marker:text-accent">لماذا ظهرت هذه النتيجة؟</summary>
-                  <p className="mt-2 leading-[1.8]">{primaryMoment.matchReasonLabel || (exactMoment ? 'تطابقت الكلمات الأساسية داخل مقطع زمني محفوظ.' : 'هذا أقرب فيديو بحسب العنوان والباب والفصل، من دون توقيت مختلق.')}</p>
-                  {primaryMoment.matchedTerms?.length ? <p className="mt-1 line-clamp-2">المصطلحات المطابقة: {primaryMoment.matchedTerms.slice(0, 4).join('، ')}</p> : null}
-                  {primaryPassage ? <p className="mt-1">الكتاب: {primaryPassage.matchReason}</p> : null}
-                  {primarySlide ? <p className="mt-1">مواد التدريس: {primarySlide.matchReason}</p> : null}
-                </details>
-              )}
             </>
           ) : <div className="mt-4 aspect-video animate-pulse rounded-xl border border-hair bg-wash" />}
         </article>
@@ -166,9 +153,8 @@ export function EncyclopediaKnowledgeResults({
           {primaryPassage ? (
             <>
               <p className="mt-5 line-clamp-6 text-[.76rem] leading-[1.95] text-ink/[.85]">{highlighted(primaryPassage.text, query)}</p>
-              <div className="mt-4 flex items-center justify-between gap-3 border-t border-hair pt-3">
+              <div className="mt-4 border-t border-hair pt-3">
                 <span className="line-clamp-1 text-[.62rem] text-soft">{primaryPassage.chapterTitle || primaryPassage.section || 'متن الموسوعة'}</span>
-                <a href={passageHref(primaryPassage)} target="_blank" rel="noreferrer" type="application/pdf" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-hair px-3 text-[.65rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><span>افتح صفحة {formatArabicNumber(primaryPassage.page)}</span><SocialIcon name="ArrowBack" size={13} /></a>
               </div>
             </>
           ) : <p className="mt-5 text-[.68rem] leading-relaxed text-soft">لا يوجد مقطع كتاب موثّق يطابق العبارة بهذه الصياغة.</p>}

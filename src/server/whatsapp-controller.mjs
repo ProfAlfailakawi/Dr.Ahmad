@@ -1461,6 +1461,19 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     }
   }
 
+  /* كلمة النوع وحدها — «مقالة» أو «كتاب» — جوابٌ على دعوتنا نحن: نحن من قال له
+     «قل لي: مقالة، كتاب، بحث، أو بودكاست». فمن دعا إلى بابٍ لا يجوز أن يغلقه.
+     نشترط أن تكون الرسالة كلها كلمةَ النوع حتى لا نخطف سؤالاً فيه تفصيل. */
+  const bareKind = { مقاله: 'article', مقال: 'article', مقالات: 'article', كتاب: 'book', كتب: 'book', بحث: 'paper', ابحاث: 'paper', بحوث: 'paper', دراسه: 'paper', بودكاست: 'podcast', حلقه: 'podcast', حلقات: 'podcast', مختارات: 'curated' }[clean.replace(/^ال/, '').trim()]
+  if (bareKind) {
+    const found = latestSiteItems([bareKind], 3)
+    if (found.length) return {
+      kind: 'reply', reason: 'latest-content', intent,
+      reply: signReply(siteResultReply(found, 'هذه أحدث المواد المنشورة في هذا الباب:'), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
+    }
+  }
+
   const latestKinds = intentKinds(intent)
   if (latestKinds.length || [INTENTS.LATEST_CONTENT, INTENTS.MISSED_CONTENT].includes(intent)) {
     const requested = requestedListCount(clean)

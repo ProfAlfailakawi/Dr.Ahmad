@@ -98,6 +98,8 @@ export function EncyclopediaKnowledgeResults({
   const primarySlide = slides[0] || null
   const activeInstance = primaryMoment ? `knowledge-${primaryMoment.videoId}-${primaryMoment.startSeconds}` : primaryVideo ? `knowledge-${primaryVideo.id}-0` : ''
   const isPlayingPrimary = Boolean(primaryVideo && playingVideoId === primaryVideo.id && playingVideoInstance === activeInstance)
+  const visibleSourceCount = tab === 'all' ? (primarySlide ? 3 : 2) : 1
+  const desktopGridClass = visibleSourceCount === 3 ? 'xl:grid-cols-3' : visibleSourceCount === 2 ? 'xl:grid-cols-2' : 'xl:grid-cols-1'
   const progressText = progress
     ? `${formatArabicNumber(progress.processed || progress.completed)} من ${formatArabicNumber(progress.total)} معالجة · ${formatArabicNumber(progress.transcribed || progress.available)} بتفريغ زمني · ${formatArabicNumber(progress.noSpeech || 0)} بلا كلام`
     : 'الفهرس الزمني لا يدّعي ثانية دقيقة من دون تفريغ محفوظ.'
@@ -116,7 +118,7 @@ export function EncyclopediaKnowledgeResults({
         </div>
       </div>
 
-      <div dir="rtl" data-horizontal-video-rail="true" className="grid snap-x snap-mandatory auto-cols-[82vw] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:p-6 xl:grid-flow-row xl:grid-cols-3 xl:auto-cols-auto xl:overflow-visible">
+      <div dir="rtl" data-horizontal-video-rail="true" className={`grid snap-x snap-mandatory auto-cols-[82vw] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:p-6 xl:grid-flow-row ${desktopGridClass} xl:auto-cols-auto xl:overflow-visible`}>
         <article className={`${tab === 'all' || tab === 'video' ? '' : 'hidden'} w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none`}>
           <SourceHeader icon="Play" eyebrow={exactMoment ? `من اللحظة ${formatMoment(primaryMoment?.startSeconds || 0)}` : 'الفيديو الأقرب'} title={exactMoment ? `شاهد من ${formatMoment(primaryMoment?.startSeconds || 0)}` : 'شاهد من البداية'} />
           {primaryVideo ? (
@@ -135,9 +137,11 @@ export function EncyclopediaKnowledgeResults({
               {locationLabel(primaryMoment, primaryVideo) && <p className="mt-1 text-[.61rem] font-semibold text-accent">{locationLabel(primaryMoment, primaryVideo)}{primaryMoment?.chapterTitle ? ` · ${primaryMoment.chapterTitle}` : ''}</p>}
               {exactMoment ? (
                 <blockquote className="mt-2 line-clamp-4 border-s-2 border-accent ps-3 text-[.68rem] leading-[1.85] text-soft">{highlighted(primaryMoment?.excerpt || '', query, primaryMoment?.matchedTerms || [])}</blockquote>
-              ) : (
-                <p className="mt-2 text-[.65rem] leading-relaxed text-soft">{status === 'loading' ? 'يجري البحث داخل الفهرس الزمني الثابت.' : status === 'error' ? 'تعذّر البحث النصي الآن؛ عُرض أقرب فيديو من الفهرس من دون توقيت مختلق.' : 'لم يوجد مقطع زمني موثوق؛ لذلك يبدأ الفيديو من أوله.'}</p>
-              )}
+              ) : status === 'loading' ? (
+                <p className="mt-2 text-[.65rem] leading-relaxed text-soft">يجري البحث داخل الفهرس الزمني الثابت.</p>
+              ) : status === 'error' ? (
+                <p className="mt-2 text-[.65rem] leading-relaxed text-soft">تعذّر البحث النصي الآن؛ عُرض أقرب فيديو من الفهرس دون توقيت مختلق.</p>
+              ) : null}
               {(primaryPassage || primarySlide) && (
                 <div className="mt-3 grid gap-1 border-t border-hair pt-3 text-[.6rem] text-soft">
                   {primaryPassage && <span>الكتاب: صفحة {formatArabicNumber(primaryPassage.page)} · {primaryPassage.chapterTitle || primaryPassage.section}</span>}

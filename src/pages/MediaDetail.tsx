@@ -1,216 +1,51 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router'
-import { chapterUrl, chaptersForVideo, stamp } from '../lib/media-chapters'
-import { NextStep } from '../components/NextStep'
+import { useMemo, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router'
 import { FadeUp, Page, Reveal } from '../components/ui'
-import { JsonLd, useSeo } from '../components/seo'
-import { OwnerEdit } from '../components/extras'
-import { MediaSaveButton } from '../components/MySpace'
+import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
-import { ideaWords } from '../lib/idea-life'
-import { SITE_URL } from '../data'
-import { bookKnowledgeAnchor, relatedBookKnowledge } from '../lib/book-knowledge'
-import { arabicCountPhrase, CONCEPT_FORMS } from '../lib/arabic-count.ts'
+import { MediaSaveButton } from '../components/MySpace'
+import { mergeMediaArchive, formatMediaTime } from '../lib/media-archive'
 
-const youtubeId = (url = '') => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
-const clockSeconds = (value = '') => value.split(':').reduce((total, part) => total * 60 + (Number(part) || 0), 0)
-const isoDuration = (value = '') => {
-  const seconds = clockSeconds(value)
-  if (!seconds) return undefined
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const rest = seconds % 60
-  return `PT${hours ? `${hours}H` : ''}${minutes ? `${minutes}M` : ''}${rest ? `${rest}S` : ''}`
-}
-const topicList = (value = '') => value.split(/[،,\n]/).map((item) => item.trim()).filter(Boolean)
-
-function related<T>(seed: Set<string>, items: readonly T[], text: (item: T) => string, limit: number) {
-  return items
-    .map((item) => ({ item, score: ideaWords(text(item)).filter((word) => seed.has(word)).length }))
-    .filter((row) => row.score > 0)
-    .sort((left, right) => right.score - left.score)
-    .slice(0, limit)
-}
+const normalize = (value = '') => value.normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g, '').replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').toLowerCase()
 
 export default function MediaDetail() {
   const { slug = '' } = useParams()
-  const { media, articles, books, papers, loading } = useCmsContent()
+  const [params] = useSearchParams()
+  const { media: cmsMedia, loading } = useCmsContent()
+  const media = useMemo(() => mergeMediaArchive(cmsMedia), [cmsMedia])
   const item = media.find((entry) => entry.slug === slug)
-  const videoId = youtubeId(item?.url)
-  const chapters = chaptersForVideo(videoId || '')
-  const thumbnail = item?.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '')
-  const topics = topicList(item?.topics)
-  const [youtubeTranscript, setYoutubeTranscript] = useState('')
-  const contextText = `${item?.title || ''} ${item?.topics || ''} ${youtubeTranscript.slice(0, 6_000)}`
-  const seed = useMemo(() => new Set(ideaWords(contextText)), [contextText])
-  const articleLinks = useMemo(() => related(seed, articles, (article) => `${article.title} ${article.excerpt || ''} ${article.cat || ''}`, 4), [articles, seed])
-  const paperLinks = useMemo(() => related(seed, papers, (paper) => `${paper.title} ${paper.titleAr || ''} ${paper.abstractAr || ''} ${paper.meta || ''}`, 3), [papers, seed])
-  const bookLinks = useMemo(() => {
-    const live = new Set(books.map((book) => book.slug))
-    return relatedBookKnowledge(contextText, 3).filter((match) => live.has(match.book.slug))
-  }, [books, contextText])
-  const playerUrl = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0` : ''
-
-  useEffect(() => {
-    let active = true
-    setYoutubeTranscript(item?.transcript || '')
-    if (!videoId || item?.transcript) return () => { active = false }
-    void import('../data/media-transcripts.json').then(({ default: transcripts }) => {
-      if (active) setYoutubeTranscript((transcripts as Record<string, string>)[videoId] || '')
-    }).catch(() => {
-      if (active) setYoutubeTranscript('')
-    })
-    return () => { active = false }
-  }, [item?.transcript, videoId])
-
-  useSeo({
-    title: item?.title || 'ظهور إعلامي',
-    path: `/media/${slug}`,
-    description: item ? `${item.program || 'لقاء إعلامي'} عبر ${item.channel || item.outlet}. ${item.topics || ''}` : undefined,
-    type: 'article',
-    image: thumbnail || undefined,
-  })
-
+  const [start, setStart] = useState(() => Math.max(0, Number(params.get('t')) || 0))
+  const [query, setQuery] = useState('')
+  const transcript = item?.transcript || null
+  const matches = useMemo(() => {
+    const q = normalize(query.trim())
+    if (!q || !transcript?.segments) return transcript?.segments || []
+    return transcript.segments.filter((segment) => normalize(segment.searchText || segment.displayText || segment.text).includes(q))
+  }, [query, transcript])
+  const player = item?.kind !== 'audio' && item?.kind !== 'radio' && item?.id ? `https://www.youtube-nocookie.com/embed/${item.id}?rel=0&start=${Math.floor(start)}&autoplay=${start ? 1 : 0}` : ''
+  useSeo({ title: item?.title || 'ظهور إعلامي', path: `/media/${slug}`, description: item?.topics || 'مادة من الأرشيف الإعلامي.' })
   if (!item && loading) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
-  if (!item) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على اللقاء.</div></Page>
+  if (!item) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على المادة.</div></Page>
 
-  return (
-    <Page className="content-media page-journey">
-      <JsonLd data={{
-        '@context': 'https://schema.org',
-        '@graph': [
-          {
-            '@type': 'VideoObject',
-            '@id': `${SITE_URL}/media/${item.slug}#video`,
-            name: item.title,
-            description: item.topics || item.title,
-            thumbnailUrl: thumbnail || undefined,
-            uploadDate: item.iso || undefined,
-            duration: isoDuration(item.duration),
-            embedUrl: videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : undefined,
-            contentUrl: item.url,
-            inLanguage: 'ar',
-            about: topics.map((name) => ({ '@type': 'Thing', name })),
-            creator: { '@type': 'Person', '@id': `${SITE_URL}/#person`, name: 'د. أحمد حسين الفيلكاوي' },
-          },
-          {
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: `${SITE_URL}/` },
-              { '@type': 'ListItem', position: 2, name: 'الظهور الإعلامي', item: `${SITE_URL}/media` },
-              { '@type': 'ListItem', position: 3, name: item.title, item: `${SITE_URL}/media/${item.slug}` },
-            ],
-          },
-        ],
-      }} />
+  return <Page className="content-media page-journey">
+    <article className="px-6 pb-16 pt-32 md:px-11 md:pt-40">
+      <div className="mx-auto max-w-[1080px]">
+        <FadeUp><Link to="/media" className="text-[.8rem] text-soft hover:text-accent">← الأرشيف الإعلامي</Link></FadeUp>
+        <FadeUp delay={.04}><header className="mt-6 border-b border-hair pb-8"><div className="flex flex-wrap items-center gap-2 text-[.72rem] text-soft"><span className="font-semibold text-accent">{item.program || 'ظهور إعلامي'}</span><span>·</span><span>{item.outlet}</span>{item.date && <><span>·</span><time>{item.date}</time></>}{item.duration && <><span>·</span><span dir="ltr">{item.duration}</span></>}</div><h1 className="mt-4 font-display text-[clamp(2rem,5vw,3.4rem)] font-bold leading-[1.35] text-ink"><Reveal>{item.title}</Reveal></h1>{item.topics && <p className="mt-4 max-w-3xl text-[.86rem] leading-[1.9] text-soft">{item.topics}</p>}<div className="mt-5"><MediaSaveButton slug={item.slug} /></div></header></FadeUp>
 
-      <article className="px-6 pb-12 pt-32 md:px-11 md:pb-16 md:pt-40">
-        <div className="mx-auto max-w-[980px]">
-          <FadeUp><Link to="/media" className="text-[.85rem] text-soft transition-colors hover:text-accent">← كل اللقاءات</Link></FadeUp>
-          <FadeUp delay={0.05}>
-            <header className="mt-7 border-b border-hair pb-8">
-              <div className="flex flex-wrap items-center gap-2 text-[.76rem] text-soft">
-                <span className="font-semibold text-accent">{item.program || 'لقاء إعلامي'}</span>
-                <span>·</span><span>{item.channel || item.outlet}</span>
-                {item.date && <><span>·</span><time>{item.date}</time></>}
-                {item.duration && <><span>·</span><span dir="ltr">{item.duration}</span></>}
-              </div>
-              <h1 className="mt-4 font-display text-[clamp(2rem,4.6vw,3.1rem)] font-bold leading-[1.35] text-ink"><Reveal>{item.title}</Reveal></h1>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <MediaSaveButton slug={item.slug} />
-                <OwnerEdit tab="media" slug={item.slug} />
-              </div>
-              {topics.length > 0 && <div className="mt-5 flex flex-wrap gap-2">{topics.map((topic) => <span key={topic} className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.7rem] text-soft">{topic}</span>)}</div>}
-            </header>
-          </FadeUp>
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,.75fr)]">
+          <FadeUp delay={.08}><section>
+            <div className="overflow-hidden rounded-[1.4rem] border border-hair bg-ink shadow-[0_24px_60px_rgba(20,31,45,.12)]" style={{ aspectRatio: '16 / 9' }}>
+              {player ? <iframe key={`${item.id}-${start}`} src={player} title={item.title} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen className="h-full w-full border-0" /> : <div className="flex h-full items-center justify-center p-8 text-center text-white/70"><div><span className="text-4xl">◉</span><p className="mt-4 text-sm">الصوت محفوظ خارج الموقع حتى يبقى الموقع خفيفاً. يظهر المشغل بعد إضافة رابط الاستضافة.</p></div></div>}
+            </div>
+            {start > 0 && <div className="mt-3 flex items-center justify-between rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-[.72rem]"><span className="text-ink">يبدأ العرض من <strong className="text-accent">{formatMediaTime(start)}</strong></span><button type="button" onClick={() => setStart(0)} className="text-soft hover:text-accent">من البداية</button></div>}
+          </section></FadeUp>
 
-          <FadeUp delay={0.1}>
-            <section className="mt-8" aria-labelledby="video-title">
-              <h2 id="video-title" className="font-display text-xl font-semibold text-ink">اللقاء الكامل</h2>
-              <div className="mt-4 overflow-hidden rounded-2xl border border-hair bg-ink shadow-[0_18px_50px_rgba(20,31,45,.08)]" style={{ aspectRatio: '16 / 9' }}>
-                {playerUrl ? <iframe src={playerUrl} title={item.title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="h-full w-full border-0" /> : <div className="flex h-full items-center justify-center text-white/70">المعاينة غير متاحة</div>}
-              </div>
-            </section>
-          </FadeUp>
-
-          {/* ═══ دقيقة الفكرة ═══
-              اللقاء الطويل يخيف الزائر. هذه محاوره، والنقر يفتح يوتيوب عند
-              الموضع نفسه. المواضع تقديرية (يوتيوب لا يمنح التوقيتات مجاناً)
-              ومطروحٌ منها هامش أمان، فنقول «نحو» ولا ندّعي دقةً لا نملكها. */}
-          {chapters.length > 0 && <FadeUp delay={0.12}>
-            <details className="group mt-10 overflow-hidden rounded-2xl border border-hair bg-wash">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-5 p-5 md:px-7">
-                <span>
-                  <span className="block font-display text-xl font-semibold text-ink">محاور اللقاء</span>
-                  <span className="mt-1 block text-[.7rem] text-soft">{arabicCountPhrase(chapters.length, CONCEPT_FORMS)} · النقر يفتح اللقاء عند موضعه التقريبي</span>
-                </span>
-                <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span>
-              </summary>
-              <div className="border-t border-hair p-5 md:px-7">
-                <ol className="grid gap-1">
-                  {chapters.map((chapter) => (
-                    <li key={chapter.at}>
-                      <a
-                        href={chapterUrl(item.url, chapter.at)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="grid gap-1 rounded-xl px-2 py-2.5 transition-colors hover:bg-canvas sm:grid-cols-[6.5rem_minmax(0,1fr)] sm:items-baseline sm:gap-3"
-                      >
-                        <span className="text-[.72rem] font-semibold text-accent">نحو {stamp(chapter.at)}</span>
-                        <span className="text-[.82rem] leading-relaxed text-ink">{chapter.label}</span>
-                      </a>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </details>
-          </FadeUp>}
-
-          {youtubeTranscript && <FadeUp delay={0.14}>
-            <details className="group mt-10 overflow-hidden rounded-2xl border border-hair bg-wash">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-5 p-5 md:px-7">
-                <span><span id="transcript-title" className="block font-display text-xl font-semibold text-ink">النص المفرّغ</span><span className="mt-1 block text-[.7rem] text-soft">من النص العربي التلقائي المتاح في YouTube</span></span>
-                <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-transform group-open:rotate-45">+</span>
-              </summary>
-              <div className="max-h-[34rem] overflow-y-auto whitespace-pre-line border-t border-hair bg-canvas px-5 py-6 text-[.9rem] leading-[2] text-ink/[.85] md:px-7">{youtubeTranscript}</div>
-            </details>
-          </FadeUp>}
-
-          {(articleLinks.length > 0 || paperLinks.length > 0 || bookLinks.length > 0) && <FadeUp delay={0.18}>
-            <section className="mt-10 border-t border-hair pt-8" aria-labelledby="media-related-title">
-              <h2 id="media-related-title" className="font-display text-xl font-semibold text-ink">امتداد اللقاء في المشروع المعرفي</h2>
-              <p className="mt-2 text-[.76rem] text-soft">صلة موضوعية محسوبة من عنوان اللقاء ومحاوره ونصه المفرّغ ومن الأرشيف نفسه؛ لا تعني أن المادة ذُكرت حرفياً داخل اللقاء.</p>
-              <div dir="rtl" className="media-related-rail rail -mx-1 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-3 [scrollbar-width:none] [touch-action:pan-x_pan-y] [&::-webkit-scrollbar]:hidden" aria-label="مواد مرتبطة باللقاء">
-                {[
-                  ...articleLinks.map(({ item: article }) => ({ key: `article-${article.slug}`, to: `/articles/${article.slug}`, kind: 'مقال', title: article.title, note: 'امتدادٌ موضوعي من الأرشيف المقروء.' })),
-                  ...paperLinks.map(({ item: paper }) => ({ key: `paper-${paper.slug}`, to: `/research/${paper.slug}`, kind: 'بحث', title: paper.titleAr || paper.title, note: 'ورقة أقرب إلى الفكرة التي دار حولها اللقاء.' })),
-                  ...bookLinks.map(({ book, concept }) => ({ key: `book-${book.slug}`, to: `/publications/${book.slug}#${bookKnowledgeAnchor(concept)}`, kind: `${book.slug === 'encyclopedia' ? 'من الموسوعة' : 'من كتاب'} · ص ${concept.pageStart}`, title: book.title, note: concept.title })),
-                ].map((relatedItem) => (
-                  <Link
-                    key={relatedItem.key}
-                    to={relatedItem.to}
-                    className="group flex w-[82vw] max-w-[23rem] shrink-0 snap-start flex-col rounded-2xl border border-hair bg-canvas p-4 text-right transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-accent hover:shadow-sm sm:w-[22rem]"
-                  >
-                    <span className="flex items-center justify-between gap-3 text-[.65rem] font-semibold text-accent"><span>{relatedItem.kind}</span><span aria-hidden className="transition-transform group-hover:-translate-x-1">←</span></span>
-                    <strong className="mt-3 block break-words text-[.9rem] leading-[1.75] text-ink">{relatedItem.title}</strong>
-                    <span className="mt-auto block pt-3 text-[.72rem] leading-relaxed text-soft">{relatedItem.note}</span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          </FadeUp>}
+          <FadeUp delay={.12}><aside className="rounded-[1.4rem] border border-hair bg-wash p-5"><span className="text-[.68rem] font-semibold text-accent">بطاقة الأرشيف</span><dl className="mt-4 grid gap-4 text-[.76rem]"><div><dt className="text-soft">النوع</dt><dd className="mt-1 font-semibold text-ink">{item.kind === 'audio' || item.kind === 'radio' ? 'مادة إذاعية' : 'لقاء مرئي'}</dd></div><div><dt className="text-soft">المصدر</dt><dd className="mt-1 font-semibold text-ink">{item.outlet}</dd></div><div><dt className="text-soft">الفهرسة</dt><dd className="mt-1 font-semibold text-ink">{transcript?.available ? `${transcript.segmentCount} مقطعاً زمنياً` : 'لم يُستورد التفريغ بعد'}</dd></div></dl>{item.url && <a href={item.url} target="_blank" rel="noreferrer" className="mt-6 block rounded-xl border border-hair bg-canvas px-4 py-3 text-center text-[.74rem] font-semibold text-accent hover:border-accent">افتح المصدر الأصلي</a>}</aside></FadeUp>
         </div>
-      </article>
 
-      {/* الفصل التالي: من شاهد لقاءً يُدعى إلى نصٍّ أو مقطعِ كتاب — لا لقاءٍ آخر. */}
-      <NextStep
-        seed={`${item.title} ${(item as { topics?: string }).topics || ''}`}
-        from="لقاء"
-        articles={articles}
-        papers={papers}
-        media={media}
-        excludeKey={`media:${videoId}`}
-      />
-    </Page>
-  )
+        {transcript?.available && <FadeUp delay={.16}><section className="mt-10 rounded-[1.5rem] border border-hair bg-canvas p-5 md:p-7"><div className="flex flex-wrap items-end justify-between gap-4"><div><span className="text-[.68rem] font-semibold text-accent">النص الزمني</span><h2 className="mt-1 font-display text-2xl font-semibold text-ink">ابحث وانتقل إلى اللحظة</h2></div><span className="text-[.7rem] text-soft">{transcript.segmentCount} مقطعاً</span></div><div className="mt-5 rounded-xl border border-hair bg-wash px-4 py-3"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث داخل كلام اللقاء…" className="w-full bg-transparent text-[.82rem] text-ink outline-none placeholder:text-soft/70" /></div><div className="mt-5 max-h-[42rem] space-y-2 overflow-y-auto pr-1">{matches.map((segment) => <button key={`${segment.start}-${segment.end}`} type="button" onClick={() => { setStart(segment.start); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="group grid w-full gap-3 rounded-xl border border-transparent p-3 text-right transition hover:border-accent/30 hover:bg-wash md:grid-cols-[5rem_minmax(0,1fr)]"><span className="font-mono text-[.72rem] font-bold text-accent">{formatMediaTime(segment.start)}</span><span className="text-[.8rem] leading-[1.9] text-ink/85">{segment.displayText || segment.text}</span></button>)}{!matches.length && <p className="py-8 text-center text-[.78rem] text-soft">لا توجد عبارة مطابقة داخل هذا اللقاء.</p>}</div></section></FadeUp>}
+      </div>
+    </article>
+  </Page>
 }

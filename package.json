@@ -168,7 +168,10 @@
     "encyclopedia:gold:polish": "node scripts/polish-encyclopedia-transcripts.mjs",
     "encyclopedia:gold:check": "node scripts/polish-encyclopedia-transcripts.mjs --check",
     "encyclopedia:gold:report": "node scripts/report-encyclopedia-gold-pass.mjs",
-    "encyclopedia:gold:self-test": "node scripts/test-encyclopedia-gold-pass.mjs"
+    "encyclopedia:gold:self-test": "node scripts/test-encyclopedia-gold-pass.mjs",
+    "media:archive:import": "node scripts/import-media-archive-transcripts.mjs",
+    "media:archive:check": "node scripts/import-media-archive-transcripts.mjs --check",
+    "media:archive:self-test": "node scripts/test-media-archive.mjs"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

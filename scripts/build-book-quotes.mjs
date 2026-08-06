@@ -14,7 +14,7 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { voiceScore } from './book-voice.mjs'
-import { expandEncyclopediaPassages } from './encyclopedia-passage-expansion.mjs'
+import { buildEncyclopediaBodyIndex, loadEncyclopediaBook } from './encyclopedia-passage-expansion.mjs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -378,9 +378,55 @@ for (const book of evidence.books || []) {
   })
 }
 
+/* ═══ الموسوعة: فهرسٌ من صفحات الكتاب لا من مقاطع المتن العامة ═══
+ *
+ * المتن العام (book-evidence) مستخرَجٌ بمجرى النص وحده، ومجراه يخلط أعمدة
+ * الموسوعة المصمَّمة ويُسقط ما بين «» من تعريفات. فلها بانٍ خاص يقرأ صفحاتها
+ * بهندستها وحروفها معاً. وإن تعذّر (لا PyMuPDF أو لا ملفّ) بقي فهرسها كما كان
+ * ولم يسقط البناء — ويُعلَن السبب صريحاً. */
 const encyclopediaBook = passageBooks.find((book) => book.slug === 'encyclopedia')
+let encyclopediaReport = null
 if (encyclopediaBook) {
-  encyclopediaBook.passages = expandEncyclopediaPassages(encyclopediaBook.passages)
+  try {
+    const { pages } = loadEncyclopediaBook()
+    const built = buildEncyclopediaBodyIndex({
+      pages,
+      concepts: conceptsBySlug.get('encyclopedia') || [],
+      blockedFingerprints: blockedPrints,
+      voiceOf: (text) => voiceScore(text).score,
+    })
+    encyclopediaBook.passages = built.passages
+    encyclopediaReport = built.report
+    const quotesRecord = books.find((item) => item.slug === 'encyclopedia')
+    if (quotesRecord) {
+      /* المختارات المعروضة تُشتقّ من الفهرس الجديد نفسه: أقربها إلى قلمه،
+         متباعدةً على طول الكتاب كما يشترط حزام الكتب. */
+      const cap = highlightCap(knowledge.books.find((item) => item.slug === 'encyclopedia')?.indexedPages || 0)
+      const chosenPages = []
+      const chosen = []
+      for (const passage of [...built.passages].sort((left, right) => (right.voice - left.voice) || left.page - right.page)) {
+        if (chosen.length >= cap) break
+        if (passage.text.length > QUOTE_LIMITS.highlightMaxChars) continue
+        if (chosenPages.some((page) => Math.abs(page - passage.page) < QUOTE_LIMITS.highlightPageGap)) continue
+        chosenPages.push(passage.page)
+        chosen.push(passage)
+      }
+      chosen.sort((left, right) => left.page - right.page)
+      quotesRecord.quotes = chosen.map((item, index) => ({
+        id: `encyclopedia-q${String(index + 1).padStart(3, '0')}`,
+        text: item.text,
+        page: item.page,
+        section: item.section,
+        conceptId: item.conceptId,
+        conceptTitle: item.conceptTitle,
+        voice: item.voice,
+        fingerprint: item.fingerprint,
+      }))
+    }
+  } catch (error) {
+    console.error(`⚠ تعذّر بناء فهرس الموسوعة من صفحاتها: ${error.message}`)
+    console.error('  بقي فهرسها السابق كما هو. (يلزم: pip3 install pypdf pymupdf، وملف الكتاب في PrivateBooks)')
+  }
 }
 
 const total = books.reduce((sum, book) => sum + book.quotes.length, 0)
@@ -401,11 +447,23 @@ writeFileSync(OUT, `${JSON.stringify({
 writeFileSync(OUT_PASSAGES, `${JSON.stringify({
   version: 1,
   policy: 'فهرس متون الكتب التسعة كاملة — للبحث والاستشهاد بإذن المؤلف. لا يُعرض متصلاً ولا يُنشر ملف الكتاب.',
-  coverage: { books: passageBooks.length, passages: totalPassages },
+  coverage: {
+    books: passageBooks.length,
+    passages: totalPassages,
+    encyclopediaPassages: encyclopediaBook?.passages.length || 0,
+    encyclopediaPagesIndexed: encyclopediaReport?.coveredPageCount || 0,
+    encyclopediaBodyPages: encyclopediaReport?.bodyPageCount || 0,
+    expansionPolicy: 'فهرس الموسوعة مبنيّ من صفحات الكتاب نفسها: ترتيبُ الهندسة وحروفُ المجرى، بلا توليد ولا إعادة صياغة ولا نوافذ متداخلة.',
+  },
   books: passageBooks,
 })}\n`, 'utf8')
 
 console.log(`✔ فهرس المتون: ${totalPassages} مقطعاً من ${passageBooks.length} كتاباً — من الجلدة إلى الجلدة`)
+if (encyclopediaReport) {
+  const { coveredPageCount, bodyPageCount, totalChars, ligatures, offPageWords } = encyclopediaReport
+  console.log(`✔ الموسوعة: ${coveredPageCount} صفحة مفهرسة من ${bodyPageCount} صفحة متن (${Math.round(coveredPageCount / bodyPageCount * 100)}٪) · ${totalChars.toLocaleString('ar-EG')} حرفاً`)
+  console.log(`   جدول لقاءات الخط: ${ligatures.learned} لقاءً تعلّمها المحرك من ${ligatures.explainedWords.toLocaleString('ar-EG')} كلمة · ${offPageWords} كلمة أثبتها المجرى من موضع آخر`)
+}
 console.log(`✔ المختارات المعروضة: ${total} اقتباساً (أطولها ${longest} حرفاً)`)
 for (const book of books) {
   const passages = passageBooks.find((item) => item.slug === book.slug)?.passages.length || 0

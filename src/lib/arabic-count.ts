@@ -132,6 +132,13 @@ export const MINUTE_FORMS: ArabicCountForms = {
   many: 'دقيقة',
 }
 
+export const HOUR_FORMS: ArabicCountForms = {
+  one: 'ساعة',
+  two: 'ساعتان',
+  few: 'ساعات',
+  many: 'ساعة',
+}
+
 export const SECOND_FORMS: ArabicCountForms = {
   one: 'ثانية',
   two: 'ثانيتان',

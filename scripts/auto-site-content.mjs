@@ -270,10 +270,20 @@ function normalizeTimestamp(value) {
   return null;
 }
 
-function due(nextAt) {
-  if (FORCE) return true;
+function scheduledBacklog(nextAt, intervalDays, items = []) {
+  if (FORCE) return 1;
   const date = normalizeTimestamp(nextAt);
-  return !date || date.getTime() <= Date.now();
+  if (!date) return createdToday(items) ? 0 : 1;
+  const intervalMs = Math.max(1, intervalDays) * 86_400_000;
+  if (date.getTime() > Date.now()) return 0;
+  return Math.floor((Date.now() - date.getTime()) / intervalMs) + 1;
+}
+
+function advanceSchedule(nextAt, intervalDays, backlogCount, publishedCount) {
+  const previous = normalizeTimestamp(nextAt);
+  const caughtUp = Math.min(Math.max(0, backlogCount), Math.max(0, publishedCount));
+  if (previous && caughtUp > 0) return addDays(previous, intervalDays * caughtUp);
+  return addDays(now, intervalDays);
 }
 
 function isPublished(item) {
@@ -815,6 +825,14 @@ async function run() {
     const media = mediaSources.length;
     if (articles < 100 || books < 5 || media < 3)
       throw new Error(`مصادر غير كافية: ${articles}/${books}/${media}`);
+    const twoMissedLetterSlots = scheduledBacklog(addDays(now, -4), 3, []);
+    const threeMissedFaqSlots = scheduledBacklog(addDays(now, -5), 2, []);
+    const recoveredLetterDate = advanceSchedule(addDays(now, -4), 3, 2, 2);
+    if (twoMissedLetterSlots !== 2 || threeMissedFaqSlots !== 3)
+      throw new Error(`حساب استدراك المواعيد غير صالح: ${twoMissedLetterSlots}/${threeMissedFaqSlots}`);
+    if (recoveredLetterDate.getTime() <= now.getTime())
+      throw new Error("موعد النشر التالي لم يتقدم بعد استدراك المواعيد الفائتة");
+
     if (
       !mediaSources.some(
         (item) =>
@@ -886,6 +904,11 @@ async function run() {
           books,
           media,
           bootstrap: { letters: MIN_LETTERS, faqs: MIN_FAQS },
+          recovery: {
+            twoMissedLetterSlots,
+            threeMissedFaqSlots,
+            nextLetterAfterTwoRecovered: recoveredLetterDate.toISOString(),
+          },
           variety: {
             sampled: 60,
             uniqueLetters,
@@ -927,17 +950,18 @@ async function run() {
     const letterDeficit = Math.max(0, MIN_LETTERS - publishedLetters.length);
     const faqDeficit = Math.max(0, MIN_FAQS - publishedFaqs.length);
     const pickDeficit = Math.max(0, MIN_PICKS - publishedPicks.length);
-    const letterDue =
-      due(state?.nextLetterAt) && !createdToday(publishedLetters);
-    const faqDue = due(state?.nextFaqAt) && !createdToday(publishedFaqs);
-    const pickDue = due(state?.nextPickAt) && !createdToday(publishedPicks);
+    // لا تُفقد المواعيد التي صادفت عطلاً في GitHub: نحسب كل الفترات المتأخرة
+    // ونلحقها في دفعات محدودة، بدلاً من إسقاطها ثم بدء العد من يوم التعافي.
+    const letterBacklog = scheduledBacklog(state?.nextLetterAt, 3, publishedLetters);
+    const faqBacklog = scheduledBacklog(state?.nextFaqAt, 2, publishedFaqs);
+    const pickBacklog = scheduledBacklog(state?.nextPickAt, 2, publishedPicks);
     const letterTarget = Math.min(
       MAX_GENERATED_PER_KIND,
-      Math.max(letterDeficit, letterDue ? 1 : 0),
+      Math.max(letterDeficit, letterBacklog),
     );
     const faqTarget = Math.min(
       MAX_GENERATED_PER_KIND,
-      Math.max(faqDeficit, faqDue ? 1 : 0),
+      Math.max(faqDeficit, faqBacklog),
     );
     const pickTarget = 0; // متعمد: site_picks المحلي متوقف نهائياً
 
@@ -1075,15 +1099,21 @@ async function run() {
 
     if (lettersPublished > 0) {
       statePatch.lastLetterAt = FieldValue.serverTimestamp();
-      statePatch.nextLetterAt = Timestamp.fromDate(addDays(now, 3));
+      statePatch.nextLetterAt = Timestamp.fromDate(
+        advanceSchedule(state?.nextLetterAt, 3, letterBacklog, lettersPublished),
+      );
     }
     if (faqsPublished > 0) {
       statePatch.lastFaqAt = FieldValue.serverTimestamp();
-      statePatch.nextFaqAt = Timestamp.fromDate(addDays(now, 2));
+      statePatch.nextFaqAt = Timestamp.fromDate(
+        advanceSchedule(state?.nextFaqAt, 2, faqBacklog, faqsPublished),
+      );
     }
     if (picksPublished > 0) {
       statePatch.lastPickAt = FieldValue.serverTimestamp();
-      statePatch.nextPickAt = Timestamp.fromDate(addDays(now, 2));
+      statePatch.nextPickAt = Timestamp.fromDate(
+        advanceSchedule(state?.nextPickAt, 2, pickBacklog, picksPublished),
+      );
     }
 
     await stateRef.set(statePatch, { merge: true });

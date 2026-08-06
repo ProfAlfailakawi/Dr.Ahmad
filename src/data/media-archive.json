@@ -169,6 +169,38 @@
       "duration": "",
       "topics": "",
       "transcriptStatus": "pending"
+    },
+    {
+      "id": "Tarbawyah-14",
+      "slug": "radio-tarbawyah-14",
+      "kind": "audio",
+      "url": "",
+      "title": "لقاء إذاعي — تربوية 14",
+      "outlet": "إذاعة",
+      "program": "تربوية 14",
+      "date": "",
+      "iso": "",
+      "duration": "28:00",
+      "topics": "",
+      "transcriptStatus": "pending",
+      "audioHostingRequired": true,
+      "audioFile": "Tarbawyah-14.mp3"
+    },
+    {
+      "id": "idaa",
+      "slug": "radio-idaa",
+      "kind": "audio",
+      "url": "",
+      "title": "لقاء إذاعي",
+      "outlet": "إذاعة",
+      "program": "لقاء إذاعي",
+      "date": "",
+      "iso": "",
+      "duration": "15:32",
+      "topics": "",
+      "transcriptStatus": "pending",
+      "audioHostingRequired": true,
+      "audioFile": "idaa.mp3"
     }
   ]
 }

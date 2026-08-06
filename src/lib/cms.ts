@@ -140,7 +140,11 @@ export type MediaRecord = {
   title: string
   outlet: string
   platform?: string
+  kind?: 'youtube' | 'audio' | 'television' | 'radio' | 'podcast'
   url: string
+  audioUrl?: string
+  audioFile?: string
+  audioHostingRequired?: boolean
   iso?: string
   date?: string
   program?: string
@@ -179,7 +183,7 @@ const fieldsByKind: Record<ContentKind, readonly string[]> = {
   article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt', 'audio', 'audioControl', 'publishingStudio', 'publicationPassport', 'publicationGate'],
   book: ['title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors', 'year', 'edition', 'publisher', 'pageCount', 'longDescription', 'targetAudience', 'whyWritten', 'toc'],
   paper: ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate', 'orcid', 'repository', 'doi', 'verification', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'analysisSources', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt'],
-  media: ['title', 'outlet', 'platform', 'url', 'iso', 'date', 'program', 'channel', 'duration', 'topics', 'thumbnail', 'clipStart', 'clipEnd', 'transcript'],
+  media: ['title', 'outlet', 'platform', 'kind', 'url', 'audioUrl', 'audioFile', 'audioHostingRequired', 'iso', 'date', 'program', 'channel', 'duration', 'topics', 'thumbnail', 'clipStart', 'clipEnd', 'transcript'],
 }
 
 const wordCount = (text = '') => text.trim().split(/\s+/).filter(Boolean).length
@@ -346,7 +350,13 @@ function buildMedia(value: Record<string, unknown>, cms: CmsMeta): MediaRecord {
     title: stringValue(value.title),
     outlet,
     platform: stringValue(value.platform, outlet) || undefined,
+    kind: ['youtube', 'audio', 'television', 'radio', 'podcast'].includes(stringValue(value.kind).toLowerCase())
+      ? stringValue(value.kind).toLowerCase() as MediaRecord['kind']
+      : undefined,
     url: stringValue(value.url),
+    audioUrl: stringValue(value.audioUrl) || undefined,
+    audioFile: stringValue(value.audioFile) || undefined,
+    audioHostingRequired: typeof value.audioHostingRequired === 'boolean' ? value.audioHostingRequired : stringValue(value.audioHostingRequired) === 'true',
     iso: stringValue(value.iso) || undefined,
     date: stringValue(value.date) || undefined,
     program: stringValue(value.program) || undefined,

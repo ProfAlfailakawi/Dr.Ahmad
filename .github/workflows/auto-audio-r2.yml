@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 330
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
         with:
           sparse-checkout: |
             /*
@@ -48,7 +48,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -106,7 +106,7 @@ jobs:
 
       - name: Restore private pronunciation memory
         if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@v5
         with:
           path: ArabicPronunciationMemory.sqlite*
           key: pronunciation-memory-v1-${{ github.run_id }}
@@ -115,7 +115,7 @@ jobs:
 
       - name: Restore resumable audio checkpoints
         if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@v5
         with:
           path: |
             .audio-human-work
@@ -362,7 +362,7 @@ jobs:
 
       - name: Save resumable audio checkpoints
         if: always()
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@v5
         with:
           path: |
             .audio-human-work
@@ -374,7 +374,7 @@ jobs:
 
       - name: Save accepted pronunciation memory privately
         if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@v5
         with:
           path: ArabicPronunciationMemory.sqlite*
           key: pronunciation-memory-v1-${{ github.run_id }}

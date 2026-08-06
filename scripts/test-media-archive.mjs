@@ -15,4 +15,18 @@ for (const item of archive.items || []) {
     }
   }
 }
+
+const expectedAudio = new Map([
+  ['Tarbawyah-14', 'Tarbawyah-14.mp3'],
+  ['idaa', 'idaa.mp3'],
+])
+for (const [id, audioFile] of expectedAudio) {
+  const item = (archive.items || []).find((entry) => entry.id === id)
+  if (!item) throw new Error(`المادة الصوتية مفقودة: ${id}`)
+  if (item.kind !== 'audio' || item.audioFile !== audioFile || !item.audioHostingRequired) {
+    throw new Error(`ربط الصوت الخارجي غير صالح: ${id}`)
+  }
+  checks += 1
+}
+
 console.log(`نجح اختبار الأرشيف الإعلامي: ${checks} تحققاً`)

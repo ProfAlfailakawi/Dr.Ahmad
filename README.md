@@ -196,3 +196,18 @@ npm run build     # → dist/
 ## 🩹 إصلاح: عناوين مخفيّة
 `Reveal` و`FadeUp` كانا يعتمدان `whileInView` وحده. إن لم يُطلق المراقب (خلف شاشة التحميل، أو أثناء انتقال صفحة) يبقى العنوان منزلقاً تحت القناع — **نصّ غير مرئي**.
 الآن: `useInView` + شبكة أمان تفحص موضع العنصر بعد ٩٠٠ms وتكشفه إن كان داخل الشاشة.
+
+## الحالة الموثقة للمشروع
+
+المشروع يعمل على React 19 ويتطلب Node 24 وnpm وفق `package-lock.json`. الأرقام المتغيرة والإصدارات تُراجع في [PROJECT-STATUS.md](PROJECT-STATUS.md)، وهو ملف مولد عبر `npm run project:status` ولا يعدل يدويًا.
+
+الوثائق المتخصصة:
+
+- [المعمارية](ARCHITECTURE.md)
+- [التحليلات والخصوصية](docs/ANALYTICS.md)
+- [البحث والروابط العميقة](docs/SEARCH.md)
+- [البودكاست اليدوي](docs/PODCAST.md)
+- [الاستشهادات](docs/CITATIONS.md)
+- [تقرير التنفيذ والسبب الجذري](docs/IMPLEMENTATION-REPORT-2026-08.md)
+
+أوامر التحقق الأساسية: `npx tsc --noEmit`، `node scripts/guard-visual-tokens.mjs`، `node scripts/test-all-user-notes.mjs`، ثم `vite build`. لا تكشف ملفات البيئة أو أسرار Firebase/Azure/R2/GitHub في التوثيق أو السجلات.

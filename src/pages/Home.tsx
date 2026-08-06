@@ -19,6 +19,7 @@ import { PROJECT_START_YEAR } from '../lib/project-meta'
 import { listenIsOpen, rotatingQuestion, type ListenEpisode } from '../lib/listen-catalog'
 import { SPACE_EVENT, isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
 import { SocialIcon as ActionIcon } from '../components/icons'
+import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_THOUGHT_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, BOOK_FORMS, BOOK_PLAIN_FORMS, NEW_ARTICLE_FORMS, PAPER_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 
 const arNum = (n: number) => String(n).padStart(2, '0')
@@ -171,6 +172,16 @@ function DailySpark({ compact = false }: { compact?: boolean }) {
 
 /* ---------- لمحة «سماء المقالات» — نجوم هادئة تمهد للخريطة الكاملة ---------- */
 function MiniAtlas() {
+  const discoveryRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const node = discoveryRef.current
+    if (!node) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) { trackUsage('atlas_impression', { sourcePage: '/', position: 'home_mini_atlas' }, { onceKey: 'atlas-impression:home-mini' }); observer.disconnect() }
+    }, { threshold: 0.35 })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
   const reduce = useReducedMotion()
   const { articles } = useCmsContent()
   // موضع حتمي: الزمن أفقياً (الأقدم يميناً كما في السماء الكاملة)، وتشتت رأسي من بصمة العنوان
@@ -187,8 +198,8 @@ function MiniAtlas() {
     r: 2 + (hash(a.title) % 3),
   }))
   return (
-    <section className="border-t border-hair px-6 py-10 md:px-11 md:py-[62px]">
-      <div className="mx-auto max-w-shell">
+    <section ref={discoveryRef} className="border-t border-hair px-6 py-10 md:px-11 md:py-[62px]">
+      <div className="mx-auto max-w-shell" onClick={(event) => { const target = event.target as HTMLElement; if (target.closest('a[href="/atlas"]')) trackUsage('atlas_discovered', { sourcePage: '/', position: 'home_mini_atlas' }) }}>
         <SectionHead label="سماء المقالات" title="كل نجمة مقال." to="/atlas" cta="الخريطة الكاملة" />
         <FadeUp>
           <div className="relative mt-7 h-[120px] overflow-hidden rounded-2xl border border-hair bg-wash md:mt-10 md:h-[150px]">

@@ -5,6 +5,7 @@ import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
+import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from '../lib/arabic-count.ts'
 
 const W = 1160
@@ -71,6 +72,11 @@ const pointerToSvg = (event: ReactPointerEvent<SVGSVGElement>, width: number, he
 }
 
 export default function Atlas() {
+  const openedAt = useMemo(() => performance.now(), [])
+  useEffect(() => {
+    trackUsage('atlas_opened', { entry: document.referrer && new URL(document.referrer).origin === location.origin ? 'internal' : 'direct' }, { onceKey: 'atlas-opened' })
+    return () => trackUsage('atlas_interaction', { type: 'session_duration', durationMs: Math.round(performance.now() - openedAt) })
+  }, [openedAt])
   const { articles } = useCmsContent()
   const cats = useMemo(() => dynamicArticleCategories(articles, false), [articles])
   const H = TOP + Math.max(cats.length, 1) * ROW + 46
@@ -416,8 +422,8 @@ export default function Atlas() {
               </div>
               <p className="hidden max-w-[30rem] text-[.78rem] font-light text-soft lg:block">{viewHint}</p>
               <div className="ms-auto inline-flex rounded-full border border-hair bg-canvas p-1" role="group" aria-label="طريقة عرض خريطة الأفكار">
-                <button type="button" onClick={() => setView('timeline')} aria-pressed={view === 'timeline'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'timeline' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>المسار الزمني</button>
-                <button type="button" onClick={() => setView('graph')} aria-pressed={view === 'graph'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>شبكة الأفكار</button>
+                <button type="button" onClick={() => { setView('timeline'); trackUsage('atlas_interaction', { type: 'view_timeline' }) }} aria-pressed={view === 'timeline'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'timeline' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>المسار الزمني</button>
+                <button type="button" onClick={() => { setView('graph'); trackUsage('atlas_interaction', { type: 'view_graph' }) }} aria-pressed={view === 'graph'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>شبكة الأفكار</button>
               </div>
             </div>
           </FadeUp>

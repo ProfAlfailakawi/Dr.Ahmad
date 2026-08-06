@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { KnowledgeEntry } from '../components/KnowledgeEntry'
@@ -18,6 +18,7 @@ import { Pagination, usePagedList } from '../components/Pagination'
 import { staticQuestions } from '../questions-data'
 import { SocialIcon } from '../components/icons'
 import { buildSmartQueryPlan, diversifySmartRows, scoreSmartFields, suggestedDomainTerms } from '../lib/smart-search'
+import { normalizeSearchQuery, trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, RESULT_FORMS } from '../lib/arabic-count.ts'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
@@ -488,6 +489,25 @@ export default function Search() {
   }, [articleResults, chapterHits, graphResults, normalizedQuery, passageHits, questionResults, searchStarted, smartPlan])
 
   const activeRows = useMemo(() => tab === 'askbook' ? [] : tab === 'all' ? unifiedRows : unifiedRows.filter((row) => row.kind === tab), [tab, unifiedRows])
+  const lastTrackedQuery = useRef('')
+  const resultOpenedRef = useRef(false)
+  useEffect(() => {
+    if (!searchStarted) return
+    const cleaned = normalizeSearchQuery(normalizedQuery)
+    if (!cleaned || cleaned === lastTrackedQuery.current) return
+    const refined = Boolean(lastTrackedQuery.current)
+    trackUsage(refined ? 'search_refined' : 'search_submitted', { searchType: 'general', query: cleaned, normalizedQuery: normalizeArabic(cleaned) })
+    lastTrackedQuery.current = cleaned
+    resultOpenedRef.current = false
+  }, [normalizedQuery, searchStarted])
+  useEffect(() => {
+    if (!searchStarted) return
+    const total = tab === 'spoken' ? spokenHits.length : activeRows.length
+    trackUsage(total ? 'search_results_shown' : 'search_zero_results', { searchType: 'general', query: normalizeSearchQuery(normalizedQuery), resultCount: total, tab })
+  }, [activeRows.length, normalizedQuery, searchStarted, spokenHits.length, tab])
+  useEffect(() => () => {
+    if (searchStarted && !resultOpenedRef.current) trackUsage('search_abandoned', { searchType: 'general', query: normalizeSearchQuery(normalizedQuery), resultCount: activeRows.length })
+  }, [activeRows.length, normalizedQuery, searchStarted])
 
   const keywords = useMemo(() => {
     const seen = new Set<string>()
@@ -815,7 +835,7 @@ export default function Search() {
             {visibleRows.map((row, index) => (
               <FadeUp key={`${row.kind}-${row.url}-${row.title.slice(0, 30)}`} delay={Math.min(index * 0.025, 0.25)}>
                 <li className={`relative ${index === 0 ? '' : 'border-t border-hair'}`}>
-                  <Link to={row.url} className={`group grid gap-3 py-6 md:grid-cols-[7rem_1fr_5.5rem] md:items-baseline ${row.kind === 'book' ? 'pb-16' : ''}`}>
+                  <Link to={row.url} onClick={() => { resultOpenedRef.current = true; trackUsage('search_result_opened', { searchType: 'general', query: normalizeSearchQuery(normalizedQuery), resultType: row.kind, resultId: row.slug || row.url, position: (paged.page - 1) * 20 + index + 1, timeToResultMs: 0 }) }} className={`group grid gap-3 py-6 md:grid-cols-[7rem_1fr_5.5rem] md:items-baseline ${row.kind === 'book' ? 'pb-16' : ''}`}>
                     <span className={`h-fit w-fit rounded-full px-3 py-1 text-[.7rem] font-bold ${row.kind === 'article' ? 'bg-accent/10 text-accent' : 'border border-hair text-soft'}`}>
                       {KIND_BADGE[row.kind]}
                     </span>

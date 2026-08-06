@@ -3,6 +3,7 @@
  * يسأل الزائر سؤالاً حقيقياً، فيعيد الموقع ترتيب أرشيف الدكتور فقط:
  * اقتباسات حرفية، خط زمني، أحدث موقف منشور، ومسار قراءة قابل للطباعة.
  */
+import { trackUsage } from '../lib/usage-analytics'
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { FadeUp, Page, PageHead } from "../components/ui";
@@ -377,6 +378,12 @@ function buildPersonalBookChapters(result: Answer) {
 }
 
 export default function AskLibrary() {
+  const openedAtRef = useRef(performance.now())
+  const completedRef = useRef(false)
+  useEffect(() => {
+    trackUsage('living_mind_opened', { entry: document.referrer && new URL(document.referrer).origin === location.origin ? 'internal' : 'direct' }, { onceKey: 'living-mind-opened' })
+    return () => { if (!completedRef.current) trackUsage('living_mind_abandoned', { durationMs: Math.round(performance.now() - openedAtRef.current) }) }
+  }, [])
   const { articles, books, papers, media } = useCmsContent();
   const [searchParams] = useSearchParams();
   const initialQuestion = (searchParams.get("q") || "").trim();
@@ -399,6 +406,11 @@ export default function AskLibrary() {
       asked && bodies ? answer(asked, bodies, articles, books, papers, media) : null,
     [asked, articles, bodies, books, media, papers],
   );
+  useEffect(() => {
+    if (!result || completedRef.current) return
+    completedRef.current = true
+    trackUsage('living_mind_completed', { results: result.hits.length + result.refs.length, durationMs: Math.round(performance.now() - openedAtRef.current) })
+  }, [result])
   /* ── من متن كتبه ──
      المختارات (٢١٤ مقطعاً) محمّلة مع الصفحة فتظهر النتيجة فوراً؛ ثم يُجلب
      فهرس المتون الكامل (٩٣٩ مقطعاً من تسعة كتب) في الخلفية فترتقي النتيجة
@@ -522,6 +534,7 @@ export default function AskLibrary() {
   };
 
   const ask = (text: string) => {
+    trackUsage('living_mind_started', { queryLength: text.trim().length })
     const trimmed = text.trim();
     if (trimmed.length < 4) return;
     setQ(trimmed);
@@ -650,7 +663,7 @@ export default function AskLibrary() {
                               الإجابة مستندة إلى مواد منشورة وموثّقة. سؤالك خاص ولا يُنشر.
                             </p>
                             <div className="mt-5 flex flex-wrap gap-2">
-                              <button type="button" onClick={() => void copyArchiveAnswer()} aria-label="نسخ الجواب بمصادره" title={answerCopied ? 'نُسخ الجواب بمصادره' : 'نسخ الجواب بمصادره'} className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition hover:border-accent hover:text-accent ${answerCopied ? 'border-accent bg-accent text-white' : 'border-hair text-ink'}`}><SocialIcon name={answerCopied ? 'Check' : 'Copy'} size={17} /></button>
+                              <button type="button" onClick={() => { void copyArchiveAnswer(); trackUsage('living_mind_result_used', { type: 'copy_answer' }) }} aria-label="نسخ الجواب بمصادره" title={answerCopied ? 'نُسخ الجواب بمصادره' : 'نسخ الجواب بمصادره'} className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition hover:border-accent hover:text-accent ${answerCopied ? 'border-accent bg-accent text-white' : 'border-hair text-ink'}`}><SocialIcon name={answerCopied ? 'Check' : 'Copy'} size={17} /></button>
                               <Link to="/thought-paths" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/[.35] px-5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">استكشف المسار الفكري <span aria-hidden>←</span></Link>
                             </div>
                           </>
@@ -673,7 +686,7 @@ export default function AskLibrary() {
                           {twin.citations.map((citation) => (
                             <li key={`${citation.index}-${citation.slug}`}>
                               <Link
-                                to={citation.url || `/articles/${citation.slug}`}
+                                to={citation.url || `/articles/${citation.slug}`} onClick={() => trackUsage('living_mind_result_used', { type: 'open_source', resultId: citation.slug })}
                                 className="group flex gap-3 text-[.82rem] text-soft transition-colors hover:text-accent"
                               >
                                 <span className="shrink-0">

@@ -86,6 +86,8 @@ const encyclopediaVideosPath = '/api/encyclopedia/videos'
 const encyclopediaVideoMomentPath = '/api/encyclopedia/video-moment'
 const encyclopediaVideoSearchPath = '/api/encyclopedia/video-search'
 const journeyPath = '/api/journey'
+const analyticsEventPath = '/api/analytics/event'
+const adminAnalyticsPath = '/api/admin/analytics/events'
 const adminNowPath = '/api/admin/site-now'
 const adminJourneysPath = '/api/admin/journeys'
 const podcastDispatchPath = '/api/admin/podcast/dispatch'
@@ -4593,6 +4595,65 @@ export function createRequestHandler({
       }, { merge: true })
       res.writeHead(204, { 'cache-control': 'no-store' })
       res.end()
+      return
+    }
+
+    if (url.pathname === analyticsEventPath) {
+      if (method !== 'POST') { sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' }); return }
+      if (!withinJourneyRateLimit(clientAddress(req))) throw new HttpError(429, 'Too many requests', { 'retry-after': '60' })
+      const contentType = String(req.headers['content-type'] || '').toLowerCase()
+      if (contentType.split(';', 1)[0].trim() !== 'application/json') throw new HttpError(415, 'Content-Type must be application/json')
+      const body = await readJsonBody(req, 12_288)
+      const allowedEvents = new Set([
+        'atlas_impression','atlas_discovered','atlas_opened','atlas_interaction',
+        'living_mind_opened','living_mind_started','living_mind_completed','living_mind_failed','living_mind_result_used','living_mind_abandoned',
+        'search_submitted','search_results_shown','search_zero_results','search_result_opened','search_refined','search_abandoned',
+        'web_vital',
+      ])
+      const name = boundedString(body?.name, 80)
+      if (!allowedEvents.has(name)) throw new HttpError(400, 'Unknown analytics event')
+      const sessionId = boundedString(body?.sessionId, 80).replace(/[^a-zA-Z0-9_-]/g, '')
+      if (!sessionId) throw new HttpError(400, 'Anonymous session id required')
+      const sanitizeQuery = (value) => {
+        const cleaned = boundedString(value, 160).replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim()
+        if (/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(cleaned) || /(?:\+?\d[\s().-]*){8,}/.test(cleaned)) return '[redacted]'
+        return cleaned
+      }
+      const props = body?.props && typeof body.props === 'object' && !Array.isArray(body.props) ? body.props : {}
+      const safeProps = {}
+      for (const [key, raw] of Object.entries(props).slice(0, 20)) {
+        if (!/^[a-zA-Z][a-zA-Z0-9_]{0,39}$/.test(key)) continue
+        if (key === 'query' || key === 'normalizedQuery') safeProps[key] = sanitizeQuery(raw)
+        else if (typeof raw === 'string') safeProps[key] = boundedString(raw, 240)
+        else if (typeof raw === 'number' && Number.isFinite(raw)) safeProps[key] = raw
+        else if (typeof raw === 'boolean') safeProps[key] = raw
+      }
+      const { db, FieldValue } = await getAdminFirestore()
+      await db.collection('analytics_events').add({
+        name,
+        sessionId,
+        path: safePublicPath(body?.path || '/'),
+        referrerPath: boundedString(body?.referrerPath, 300),
+        device: body?.device === 'mobile' ? 'mobile' : 'desktop',
+        props: safeProps,
+        createdAt: FieldValue.serverTimestamp(),
+        clientAt: boundedString(body?.clientAt, 40),
+      })
+      res.writeHead(204, { 'cache-control': 'no-store' }); res.end(); return
+    }
+
+    if (url.pathname === adminAnalyticsPath) {
+      if (method !== 'GET') { sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'GET' }); return }
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      if (claims?.admin !== true) throw new HttpError(403, 'Admin access required')
+      const days = clamp(Number(url.searchParams.get('days') || 30), 1, 90)
+      const since = new Date(Date.now() - days * 86_400_000)
+      const { db, Timestamp } = await getAdminFirestore()
+      const snapshot = await db.collection('analytics_events').where('createdAt', '>=', Timestamp.fromDate(since)).orderBy('createdAt', 'desc').limit(5000).get()
+      sendJson(res, 200, { items: snapshot.docs.map((doc) => {
+        const data = doc.data() || {}; return { id: doc.id, name: boundedString(data.name, 80), sessionId: boundedString(data.sessionId, 80), path: boundedString(data.path, 300), referrerPath: boundedString(data.referrerPath, 300), device: data.device === 'mobile' ? 'mobile' : 'desktop', props: data.props || {}, createdAt: data.createdAt?.toDate?.().toISOString?.() || '' }
+      }) }, { 'cache-control': 'no-store' })
       return
     }
 

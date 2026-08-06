@@ -61,5 +61,5 @@ if (dom) {
   s.dataset.domain = dom
   s.src = 'https://plausible.io/js/script.js'
   document.head.appendChild(s)
-  startWebVitalsMonitoring()
 }
+startWebVitalsMonitoring()

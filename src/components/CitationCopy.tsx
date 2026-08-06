@@ -1,8 +1,9 @@
 import { SocialIcon } from './icons'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { site } from '../data'
+import { buildBibTeX, downloadCitationFile, safeCitationFilename } from '../lib/bibtex'
 
-type CitationStyle = 'apa' | 'mla'
+type CitationStyle = 'apa' | 'mla' | 'bibtex'
 
 type CitationCopyProps = {
   title: string
@@ -81,6 +82,7 @@ export function CitationCopy({ title, path, iso, date, source, url }: CitationCo
   const citations = useMemo<Record<CitationStyle, string>>(() => ({
     apa: `${AUTHOR}. (${year}). ${title}. ${publication}. ${canonicalUrl}`,
     mla: `${AUTHOR}. «${title}». ${publication}، ${date?.trim() || year}، ${canonicalUrl}.`,
+    bibtex: buildBibTeX({ type: 'misc', id: path, authors: ['أحمد حسين الفيلكاوي'], title, year, publisher: publication, url: canonicalUrl, language: 'ar' }),
   }), [canonicalUrl, date, publication, title, year])
 
   useEffect(() => () => {
@@ -117,16 +119,17 @@ export function CitationCopy({ title, path, iso, date, source, url }: CitationCo
           اختر الصيغة، وسيُنسخ الاستشهاد كاملاً مع المصدر والرابط.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          {(['apa', 'mla'] as const).map((style) => (
+          {(['apa', 'mla', 'bibtex'] as const).map((style) => (
             <button
               key={style}
               type="button"
               onClick={() => copy(style)}
               className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
             >
-              {status === style ? 'تم النسخ ✓' : `نسخ ${style.toUpperCase()}`}
+              {status === style ? 'تم النسخ ✓' : `نسخ ${style === 'bibtex' ? 'BibTeX' : style.toUpperCase()}`}
             </button>
           ))}
+          <button type="button" onClick={() => { try { downloadCitationFile(citations.bibtex, safeCitationFilename(title, 'bib'), 'application/x-bibtex'); setStatus('bibtex') } catch { setStatus('error') } }} className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">تنزيل .bib</button>
         </div>
         <p aria-live="polite" className="mt-2 min-h-5 text-[.74rem] text-soft">
           {status === 'error' ? 'تعذّر النسخ تلقائياً؛ جرّب مرة أخرى.' : status ? 'الاستشهاد جاهز للصق.' : ''}

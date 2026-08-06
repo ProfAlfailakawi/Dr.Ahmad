@@ -35,6 +35,7 @@ import { SocialIcon } from './icons'
 import { ClarifiedIconAction } from './ClarifiedIconAction'
 import { OwnerEdit } from './extras'
 import { EncyclopediaKnowledgeResults } from './EncyclopediaKnowledgeResults'
+import { normalizeSearchQuery, trackUsage } from '../lib/usage-analytics'
 
 const CHANNEL_URL = 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'
 const ENCYCLOPEDIA_SAMPLE_PDF = '/files/encyclopedia.pdf?v=20260803-4'
@@ -271,7 +272,7 @@ function InlineVideoCard({
           />
         ) : (
           <button type="button" onClick={() => onPlay(video, instanceKey)} className="absolute inset-0 block h-full w-full" aria-label={`تشغيل ${video.title} داخل الموقع`}>
-            <img src={video.thumbnail} alt="" loading="lazy" decoding="async" width="480" height="270" className="h-full w-full object-cover" />
+            <img src={video.thumbnail} alt="" loading="lazy" decoding="async" width="480" height="270" onLoad={(event) => { const image = event.currentTarget; if (image.naturalWidth <= 160 && /ytimg\.com/u.test(image.src)) image.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg` }} onError={(event) => { const image = event.currentTarget; const fallback = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`; if (image.src !== fallback) image.src = fallback }} className="h-full w-full object-cover" />
             <span aria-hidden className="absolute inset-0 bg-ink/10" />
             <span aria-hidden className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/40 text-white"><SocialIcon name="Play" size={19} /></span>
           </button>
@@ -523,7 +524,11 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const [catalog, setCatalog] = useState<EncyclopediaVideoCatalog | null>(() => getEncyclopediaFallbackCatalog())
   const [catalogError, setCatalogError] = useState(false)
   const [catalogAttempt, setCatalogAttempt] = useState(0)
-  const [query, setQuery] = useState('')
+  const initialParams = useMemo(() => new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search), [])
+  const [query, setQuery] = useState(() => initialParams.get('q') || '')
+  const [resultTab, setResultTab] = useState(() => initialParams.get('tab') || 'all')
+  const searchStartedAt = useRef(0)
+  const lastTrackedQuery = useRef('')
   const [playingVideoId, setPlayingVideoId] = useState('')
   const [playingVideoInstance, setPlayingVideoInstance] = useState('')
   const [teachingMaterial, setTeachingMaterial] = useState<TeachingMaterialSelection | null>(null)
@@ -533,10 +538,34 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const [featuredPaused, setFeaturedPaused] = useState(false)
   const [featuredInView, setFeaturedInView] = useState(false)
   const [playingStartSeconds, setPlayingStartSeconds] = useState(0)
+  const [userInitiatedPlayback, setUserInitiatedPlayback] = useState(false)
   const [spokenMoments, setSpokenMoments] = useState<EncyclopediaVideoMoment[]>([])
   const [spokenProgress, setSpokenProgress] = useState<EncyclopediaTranscriptProgress | null>(null)
   const [spokenStatus, setSpokenStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const pendingDoorAnchor = useRef<{ id: string; top: number } | null>(null)
+
+  const updateDeepLink = (changes: Record<string, string | number | null>, mode: 'push' | 'replace' = 'replace') => {
+    const url = new URL(window.location.href)
+    for (const [key, value] of Object.entries(changes)) {
+      if (value === null || value === '' || value === 0 || value === 'all') url.searchParams.delete(key)
+      else url.searchParams.set(key, String(value))
+    }
+    window.history[mode === 'push' ? 'pushState' : 'replaceState']({}, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+
+  useEffect(() => {
+    const restore = () => {
+      const params = new URLSearchParams(window.location.search)
+      setQuery(params.get('q') || '')
+      setResultTab(params.get('tab') || 'all')
+      const videoId = params.get('video') || ''
+      const seconds = Math.max(0, Number(params.get('t') || 0) || 0)
+      if (videoId) { setPlayingVideoId(videoId); setPlayingVideoInstance(`deep-${videoId}`); setPlayingStartSeconds(seconds); setUserInitiatedPlayback(false) }
+      else { setPlayingVideoId(''); setPlayingVideoInstance(''); setPlayingStartSeconds(0) }
+    }
+    window.addEventListener('popstate', restore)
+    return () => window.removeEventListener('popstate', restore)
+  }, [])
 
   useLayoutEffect(() => {
     const pending = pendingDoorAnchor.current
@@ -643,7 +672,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
 
   const playingVideo = visibleVideos.find((video) => video.id === playingVideoId) || null
   const selectedPlayerUrl = playingVideo
-    ? `${playingVideo.embedUrl}${playingVideo.embedUrl.includes('?') ? '&' : '?'}autoplay=1&playsinline=1&rel=0&modestbranding=1${playingStartSeconds > 0 ? `&start=${Math.floor(playingStartSeconds)}` : ''}`
+    ? `${playingVideo.embedUrl}${playingVideo.embedUrl.includes('?') ? '&' : '?'}autoplay=${userInitiatedPlayback ? '1' : '0'}&playsinline=1&rel=0&modestbranding=1${playingStartSeconds > 0 ? `&start=${Math.floor(playingStartSeconds)}` : ''}`
     : ''
   const tokens = useMemo(() => encyclopediaSearchTokens(query), [query])
 
@@ -702,8 +731,11 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   }, [query])
 
   const playVideo = (video: IndexedEncyclopediaVideo, instanceKey: string, startSeconds = 0) => {
-    // تبديل المشغل لا يغيّر موضع الصفحة عمودياً؛ يبقى التمرير بيد الزائر.
+    // الرابط يحفظ النتيجة والتوقيت، لكن التشغيل يبقى بإجراء صريح من المستخدم.
     setPlayingVideoId(video.id)
+    setUserInitiatedPlayback(true)
+    updateDeepLink({ q: query.trim(), tab: resultTab, video: video.id, t: Math.max(0, Math.floor(startSeconds)), result: video.id }, 'push')
+    trackUsage('search_result_opened', { searchType: 'encyclopedia', query: normalizeSearchQuery(query), resultType: 'video', resultId: video.id, timeToResultMs: searchStartedAt.current ? Date.now() - searchStartedAt.current : 0 })
     setPlayingVideoInstance(instanceKey)
     setPlayingStartSeconds(Math.max(0, Math.floor(startSeconds)))
   }
@@ -888,15 +920,22 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
 
             <div id="encyclopedia-search" className="mt-6 flex items-center gap-2 rounded-full border border-hair bg-canvas p-1.5">
               <label htmlFor="encyclopedia-query" className="sr-only">ابحث في موسوعة تكنولوجيا التعليم</label>
-              <input id="encyclopedia-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث في فيديو أو صفحة أو شريحة" dir="rtl" className="w-0 min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[clamp(.66rem,3.05vw,.82rem)] text-ink outline-none placeholder:text-soft/[.6] sm:px-4" />
-              {query ? <button type="button" onClick={() => setQuery('')} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft hover:text-accent"><SocialIcon name="Close" size={13} /></button> : <span aria-label="ابحث في الموسوعة" title="ابحث في الموسوعة" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Search" size={15} /></span>}
+              <input id="encyclopedia-query" value={query} onChange={(event) => { const value = event.target.value; setQuery(value); searchStartedAt.current ||= Date.now() }} onKeyDown={(event) => { if (event.key === 'Enter') { const clean = normalizeSearchQuery(query); updateDeepLink({ q: clean, tab: resultTab }, 'push'); if (clean && clean !== lastTrackedQuery.current) { trackUsage(lastTrackedQuery.current ? 'search_refined' : 'search_submitted', { searchType: 'encyclopedia', query: clean }); lastTrackedQuery.current = clean } } }} placeholder="ابحث في فيديو أو صفحة أو شريحة" dir="rtl" className="w-0 min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[clamp(.66rem,3.05vw,.82rem)] text-ink outline-none placeholder:text-soft/[.6] sm:px-4" />
+              {query ? <button type="button" onClick={() => { setQuery(''); setResultTab('all'); updateDeepLink({ q: null, tab: null, video: null, t: null, result: null }, 'push') }} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft hover:text-accent"><SocialIcon name="Close" size={13} /></button> : <span aria-label="ابحث في الموسوعة" title="ابحث في الموسوعة" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Search" size={15} /></span>}
             </div>
             {query.trim().length >= 2 && <p className="mt-2 text-[.64rem] text-soft">{resultCount ? `${formatArabicNumber(resultCount)} نتيجة مرتبطة` : 'لا توجد نتيجة مطابقة.'}</p>}
           </FadeUp>
 
           {query.trim().length >= 2 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {['all','video','book','slides','chapters'].map((value) => <button key={value} type="button" onClick={() => { setResultTab(value); updateDeepLink({ q: query.trim(), tab: value }, 'push') }} className={`rounded-full border px-3 py-1.5 text-[.68rem] ${resultTab === value ? 'border-accent bg-accent text-white' : 'border-hair text-soft'}`}>{({all:'الكل',video:'الفيديو',book:'الكتاب',slides:'الشرائح',chapters:'الأبواب والفصول'} as Record<string,string>)[value]}</button>)}
+              <button type="button" onClick={async () => { const url = window.location.href; try { if (navigator.share) await navigator.share({ title: 'بحث موسوعة تكنولوجيا التعليم', url }); else await navigator.clipboard.writeText(url) } catch { await navigator.clipboard?.writeText(url).catch(() => undefined) } }} className="rounded-full border border-hair px-3 py-1.5 text-[.68rem] text-accent">مشاركة الرابط</button>
+            </div>
+          )}
+          {query.trim().length >= 2 && (
             <EncyclopediaKnowledgeResults
               query={query.trim()}
+              tab={resultTab}
               status={spokenStatus}
               moments={spokenMoments}
               progress={spokenProgress}

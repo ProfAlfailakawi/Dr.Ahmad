@@ -380,7 +380,7 @@ for (const book of evidence.books || []) {
 
 const encyclopediaBook = passageBooks.find((book) => book.slug === 'encyclopedia')
 if (encyclopediaBook) {
-  encyclopediaBook.passages = expandEncyclopediaPassages(encyclopediaBook.passages, { target: 900 })
+  encyclopediaBook.passages = expandEncyclopediaPassages(encyclopediaBook.passages)
 }
 
 const total = books.reduce((sum, book) => sum + book.quotes.length, 0)

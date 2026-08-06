@@ -6,7 +6,7 @@ import { expandEncyclopediaPassages, looksLikeReference, validFragment } from '.
 const payload = JSON.parse(readFileSync(new URL('../src/data/book-passages.json', import.meta.url), 'utf8'))
 const book = payload.books.find((item) => item.slug === 'encyclopedia')
 assert.ok(book, 'encyclopedia book exists')
-assert.ok(book.passages.length >= 900, `expected at least 900 passages, got ${book.passages.length}`)
+assert.ok(book.passages.length >= 2000, `expected at least 2000 passages, got ${book.passages.length}`)
 assert.equal(new Set(book.passages.map((item) => item.fingerprint)).size, book.passages.length, 'fingerprints are unique')
 assert.ok(book.passages.every((item) => validFragment(item.text)), 'all passages pass the public-quality gate')
 assert.ok(book.passages.every((item) => !looksLikeReference(item.text)), 'bibliographic/reference-like rows are excluded')

@@ -63,6 +63,7 @@ function locationLabel(moment: EncyclopediaVideoMoment | null, video: IndexedEnc
 
 export function EncyclopediaKnowledgeResults({
   query,
+  tab = 'all',
   status,
   moments,
   progress,
@@ -77,6 +78,7 @@ export function EncyclopediaKnowledgeResults({
   onOpenTeaching,
 }: {
   query: string
+  tab?: string
   status: 'idle' | 'loading' | 'ready' | 'error'
   moments: EncyclopediaVideoMoment[]
   progress: EncyclopediaTranscriptProgress | null
@@ -119,7 +121,7 @@ export function EncyclopediaKnowledgeResults({
       </div>
 
       <div dir="rtl" data-horizontal-video-rail="true" className="grid snap-x snap-mandatory auto-cols-[82vw] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:p-6 xl:grid-flow-row xl:grid-cols-3 xl:auto-cols-auto xl:overflow-visible">
-        <article className="w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none">
+        <article className={`${tab === 'all' || tab === 'video' ? '' : 'hidden'} w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none`}>
           <SourceHeader icon="Play" eyebrow={exactMoment ? `من اللحظة ${formatMoment(primaryMoment?.startSeconds || 0)}` : 'الفيديو الأقرب'} title={exactMoment ? `شاهد من ${formatMoment(primaryMoment?.startSeconds || 0)}` : 'شاهد من البداية'} />
           {primaryVideo ? (
             <>
@@ -159,7 +161,7 @@ export function EncyclopediaKnowledgeResults({
           ) : <div className="mt-4 aspect-video animate-pulse rounded-xl border border-hair bg-wash" />}
         </article>
 
-        <article className="w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none">
+        <article className={`${tab === 'all' || tab === 'book' ? '' : 'hidden'} w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none`}>
           <SourceHeader icon="Bookmark" eyebrow="من متن الكتاب" title={primaryPassage ? `صفحة ${formatArabicNumber(primaryPassage.page)}` : 'المقطع الأقرب'} />
           {primaryPassage ? (
             <>
@@ -173,7 +175,7 @@ export function EncyclopediaKnowledgeResults({
         </article>
 
         {primarySlide && (
-          <article className="w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none">
+          <article className={`${tab === 'all' || tab === 'slides' ? '' : 'hidden'} w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none`}>
             <SourceHeader icon="Image" eyebrow="في مواد التدريس" title={encyclopediaSlideRangeLabel(primarySlide.topic.ranges)} />
             <p className="mt-5 text-[.82rem] font-semibold leading-[1.75] text-ink">{primarySlide.topic.title}</p>
             <p className="mt-2 line-clamp-4 text-[.68rem] leading-[1.85] text-soft">{primarySlide.topic.objective}</p>

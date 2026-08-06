@@ -9,6 +9,7 @@
  *    كل ما يُنشر هنا يظهر في الموقع فوراً — بلا رفع ملفات.
  */
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
+import { UsageAnalytics } from '../components/admin/UsageAnalytics'
 import { Page } from '../components/ui'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { firebaseEnabled, getDb, getFirebaseApp } from '../lib/firebase'
@@ -16,6 +17,7 @@ import { articleCats } from '../data'
 import { getBaseRecord, type ArticleRecord } from '../lib/cms'
 import { useCmsContent } from '../lib/content'
 import { beginAdminTask } from '../lib/admin-task-state'
+import { trackAdminUsage } from '../lib/admin-usage'
 import { normalizeArabicTypography } from '../lib/arabic-typography'
 import { useAdminAuth } from '../lib/admin-auth'
 import { ContentManager, UploadField, type ManagedKind, type ManagedRecord } from '../components/admin/ContentManager'
@@ -287,8 +289,15 @@ function Panel({ email }: { email: string }) {
   const editSlug = params.get('edit') || undefined
   const [tab, setTab] = useState<AdminTab>(initialTab)
   const [commandsOpen, setCommandsOpen] = useState(false)
+  const openedTabAt = useRef(Date.now())
+  const previousTab = useRef<AdminTab>(initialTab)
   const cms = useCmsContent({ includeHidden: true })
   useAdminInboxNotifications()
+  useEffect(() => {
+    void trackAdminUsage('admin_tool_opened', { tool: initialTab, from: 'admin-entry' })
+    // فتح الشاشة وحده لا يعني بدء مهمة أو تركها؛ أحداث الدورة تُسجّل عند الإجراءات الدلالية فقط.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -301,6 +310,12 @@ function Panel({ email }: { email: string }) {
   }, [])
 
   const chooseTab = (next: AdminTab) => {
+    const previous = previousTab.current
+    if (previous !== next) {
+      void trackAdminUsage('admin_tool_opened', { tool: next, from: previous, durationMs: Date.now() - openedTabAt.current })
+      previousTab.current = next
+      openedTabAt.current = Date.now()
+    }
     setTab(next)
     const url = new URL(window.location.href)
     url.searchParams.set('tab', next)
@@ -345,7 +360,7 @@ function Panel({ email }: { email: string }) {
     monitor: <ProductionMonitor articles={cms.articles} onOpen={chooseTab} />,
     'content-health': <ProductionHealthCenter view="health" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
     production: <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
-    analytics: <div className="grid gap-4"><ReaderPulse /><VisitorJourneySuggestion articles={cms.articles} /><Indicators articles={cms.articles} /></div>,
+    analytics: <div className="grid gap-4"><UsageAnalytics /><ReaderPulse /><VisitorJourneySuggestion articles={cms.articles} /><Indicators articles={cms.articles} /></div>,
     studio: <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />,
     'social-posts': <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} initialView="pulse" />,
     design: <SocialDesignStudio />,

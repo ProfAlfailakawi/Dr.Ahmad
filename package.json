@@ -171,7 +171,11 @@
     "encyclopedia:gold:self-test": "node scripts/test-encyclopedia-gold-pass.mjs",
     "media:archive:import": "node scripts/import-media-archive-transcripts.mjs",
     "media:archive:check": "node scripts/import-media-archive-transcripts.mjs --check",
-    "media:archive:self-test": "node scripts/test-media-archive.mjs"
+    "media:archive:self-test": "node scripts/test-media-archive.mjs",
+    "project:status": "node scripts/generate-project-status.mjs",
+    "legacy:audit": "node scripts/audit-legacy-links.mjs",
+    "upgrades:self-test": "node scripts/test-comprehensive-upgrades.mjs",
+    "citations:bibtex:self-test": "node scripts/test-bibtex.mjs"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

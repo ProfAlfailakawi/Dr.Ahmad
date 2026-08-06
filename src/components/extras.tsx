@@ -14,6 +14,7 @@ import { useAdminAuth } from '../lib/admin-auth'
 import { Link as RouterLink, useLocation } from 'react-router'
 import { MySpace } from './MySpace'
 import { safeLink } from '../lib/dead-links'
+import { buildBibTeX, downloadCitationFile, safeCitationFilename } from '../lib/bibtex'
 
 /* ---------- النشرة البريدية ---------- */
 export function Newsletter({ compact = false }: { compact?: boolean }) {
@@ -226,7 +227,7 @@ export function OwnerEdit({ tab, slug, className = '' }: { tab: 'articles' | 'bo
 }
 
 /* ---------- استشهاد أكاديمي ذكي واحد — APA / MLA / Chicago ---------- */
-type CitationStyle = 'apa' | 'mla' | 'chicago'
+type CitationStyle = 'apa' | 'mla' | 'chicago' | 'bibtex'
 
 export function CiteButton({
   title,
@@ -260,12 +261,14 @@ export function CiteButton({
     apa: `${authors}. (${year}). ${title}. ${container}.${sourceSuffix}`,
     mla: `${authors}. «${title}». ${container}، ${year}.${sourceSuffix}`,
     chicago: `${authors}. «${title}». ${container} (${year}).${sourceSuffix}`,
+    bibtex: buildBibTeX({ type: /كتاب|book/i.test(container) ? 'book' : /بحث|مجلة|journal/i.test(container) ? 'article' : 'misc', id: `${title}-${year}`, authors, title, year, journal: /بحث|مجلة|journal/i.test(container) ? container : undefined, publisher: /كتاب|book/i.test(container) ? container : undefined, doi: String(citationUrl || url || '').match(/10\.\d{4,9}\/[^\s?#]+/i)?.[0]?.replace(/[.,;]+$/, ''), url: citationUrl || undefined, language: /[\u0600-\u06ff]/u.test(title) ? 'ar' : undefined }),
   }
   const citation = citations[style]
   const styles: { id: CitationStyle; label: string }[] = [
     { id: 'apa', label: 'APA 7' },
     { id: 'mla', label: 'MLA 9' },
     { id: 'chicago', label: 'Chicago' },
+    { id: 'bibtex', label: 'BibTeX' },
   ]
 
   const copy = async () => {
@@ -334,6 +337,13 @@ export function CiteButton({
       setExportState('error')
     }
   }
+  const exportBib = () => {
+    try {
+      downloadCitationFile(citations.bibtex, safeCitationFilename(title, 'bib'), 'application/x-bibtex')
+      setExportState('done')
+      window.setTimeout(() => setExportState('idle'), 2200)
+    } catch { setExportState('error') }
+  }
   const isExport = /تصدير|export|ris/i.test(contextLabel)
 
   useEffect(() => {
@@ -374,7 +384,7 @@ export function CiteButton({
             <header className="citation-header-v2">
               <div className="citation-heading-v2">
                 <p className="citation-kicker-v2">استشهاد أكاديمي ذكي</p>
-                <h3 id="citation-dialog-title" className="citation-title-v2">صيغة واحدة، بثلاثة أنماط معتمدة</h3>
+                <h3 id="citation-dialog-title" className="citation-title-v2">صيغة واحدة، بأربعة أنماط معتمدة</h3>
               </div>
               <button type="button" onClick={() => setOpen(false)} className="citation-close-v2" aria-label="إغلاق النافذة" title="إغلاق"><SocialIcon name="Close" size={15} /></button>
             </header>
@@ -385,7 +395,11 @@ export function CiteButton({
             </div>
             <p className="citation-body-v2" dir="auto">{citation}</p>
             <footer className="citation-footer-v2">
-              {isExport ? (
+              {style === 'bibtex' ? (
+                <button type="button" onClick={exportBib} className="citation-export-v2" aria-live="polite">
+                  {exportState === 'done' ? '✓ نُزّل ملف BibTeX' : exportState === 'error' ? 'تعذّر التنزيل — جرّب النسخ' : 'تنزيل ملف .bib ↓'}
+                </button>
+              ) : isExport ? (
                 <button type="button" onClick={exportRis} className="citation-export-v2" aria-live="polite">
                   {exportState === 'done' ? '✓ نُزّل ملف RIS' : exportState === 'error' ? 'تعذّر التنزيل — جرّب النسخ' : 'تصدير RIS لبرامج المراجع ↓'}
                 </button>
@@ -422,7 +436,7 @@ export function CiteButton({
             <span>{compactLabel}</span>
           </button>
         ) : (
-          <ClarifiedIconAction id="academic-citation" label="أنشئ الاستشهاد الأكاديمي بصيغ APA وMLA وChicago">
+          <ClarifiedIconAction id="academic-citation" label="أنشئ الاستشهاد الأكاديمي بصيغ APA وMLA وChicago وBibTeX">
             <button
               type="button"
               onClick={() => setOpen(true)}
@@ -449,7 +463,7 @@ export function CiteButton({
       <div className="mt-8 rounded-xl border border-hair">
         <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" className="flex w-full items-center justify-between px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent">
           <span>✍ الاستشهاد الأكاديمي</span>
-          <span className="text-[.82rem] font-semibold text-accent">APA · MLA · Chicago ↗</span>
+          <span className="text-[.82rem] font-semibold text-accent">APA · MLA · Chicago · BibTeX ↗</span>
         </button>
       </div>
       {portalElement}

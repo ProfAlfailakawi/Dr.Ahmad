@@ -106,6 +106,12 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           FIREBASE_PROJECT_ID: drahmad-8e9e2
 
+      - name: Mark workflow started
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/podcast-production-status.mjs --status=processing --stage=workflow_started --slugs="$RELEASED_SLUGS" --note="بدأ GitHub Actions وجرى تثبيت نسخة الحوار المقفولة."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
       - name: Verify production secrets
         if: steps.prepare.outputs.has_work == 'true'
         run: |
@@ -120,6 +126,12 @@ jobs:
           CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
           CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Mark speech generation started
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/podcast-production-status.mjs --status=processing --stage=generating_audio --slugs="$RELEASED_SLUGS" --note="جارٍ تحويل المداخلات المقفولة إلى صوت مع استئناف المقاطع المكتملة."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
 
       - name: Generate from locked uploaded dialogue only
         if: steps.prepare.outputs.has_work == 'true'
@@ -147,6 +159,12 @@ jobs:
           CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
+      - name: Mark quality verification started
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/podcast-production-status.mjs --status=processing --stage=quality_checks --slugs="$RELEASED_SLUGS" --note="اكتمل التوليد وبدأ إثبات التطابق وفحوص الجودة." --merge-started=true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
       - name: Prove exact dialogue output
         if: steps.prepare.outputs.has_work == 'true'
         run: node scripts/verify-manual-dialogue-lock.mjs --phase=output --slugs="$RELEASED_SLUGS"
@@ -156,6 +174,12 @@ jobs:
         run: node scripts/podcast-release-gate.mjs --local --slugs="$RELEASED_SLUGS"
         env:
           PODCAST_RELEASE_MIN_SCORE: '94'
+
+      - name: Mark upload started
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/podcast-production-status.mjs --status=processing --stage=uploading --slugs="$RELEASED_SLUGS" --note="اجتازت الحلقة البوابة وبدأ الرفع الذري." --merge-started=true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
 
       - name: Publish accepted files to R2 atomically
         if: steps.prepare.outputs.has_work == 'true'
@@ -244,7 +268,7 @@ jobs:
 
       - name: Mark episodes published
         if: steps.prepare.outputs.has_work == 'true'
-        run: node scripts/podcast-production-status.mjs --status=published --slugs="$RELEASED_SLUGS" --note="نُشر الحوار المرفوع نفسه بعد إثبات التطابق الحرفي."
+        run: node scripts/podcast-production-status.mjs --status=published --stage=completed --slugs="$RELEASED_SLUGS" --note="نُشر الحوار المرفوع نفسه بعد إثبات التطابق الحرفي." --merge-started=true --uploaded=true
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
 
@@ -259,7 +283,7 @@ jobs:
 
       - name: Record exact failure reason
         if: failure() && env.HAS_RELEASE_WORK == 'true'
-        run: node scripts/podcast-production-status.mjs --status=needs_review --slugs="$RELEASED_SLUGS"
+        run: node scripts/podcast-production-status.mjs --status=needs_review --stage=failed --slugs="$RELEASED_SLUGS" --error-code=WORKFLOW_FAILED
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
 

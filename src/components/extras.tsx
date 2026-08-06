@@ -14,7 +14,7 @@ import { useAdminAuth } from '../lib/admin-auth'
 import { Link as RouterLink, useLocation } from 'react-router'
 import { MySpace } from './MySpace'
 import { safeLink } from '../lib/dead-links'
-import { buildBibTeX, downloadCitationFile, safeCitationFilename } from '../lib/bibtex'
+import { buildBibTeX, downloadCitationFile, inferBibTeXType, safeCitationFilename } from '../lib/bibtex'
 
 /* ---------- النشرة البريدية ---------- */
 export function Newsletter({ compact = false }: { compact?: boolean }) {
@@ -261,7 +261,21 @@ export function CiteButton({
     apa: `${authors}. (${year}). ${title}. ${container}.${sourceSuffix}`,
     mla: `${authors}. «${title}». ${container}، ${year}.${sourceSuffix}`,
     chicago: `${authors}. «${title}». ${container} (${year}).${sourceSuffix}`,
-    bibtex: buildBibTeX({ type: /كتاب|book/i.test(container) ? 'book' : /بحث|مجلة|journal/i.test(container) ? 'article' : 'misc', id: `${title}-${year}`, authors, title, year, journal: /بحث|مجلة|journal/i.test(container) ? container : undefined, publisher: /كتاب|book/i.test(container) ? container : undefined, doi: String(citationUrl || url || '').match(/10\.\d{4,9}\/[^\s?#]+/i)?.[0]?.replace(/[.,;]+$/, ''), url: citationUrl || undefined, language: /[\u0600-\u06ff]/u.test(title) ? 'ar' : undefined }),
+    /* النوع يُستنتج من الوعاء الحقيقي (مجلة/كتاب/مؤتمر/أطروحة)، ولا يُختار نوعٌ
+       لمجرد أنه «يستوعب حقولاً أكثر»؛ وما لا نعرفه لا يُكتب. */
+    bibtex: ((type = inferBibTeXType({ container })) => buildBibTeX({
+      type,
+      id: `${title}-${year}`,
+      authors,
+      title,
+      year,
+      journal: type === 'article' ? container : undefined,
+      booktitle: type === 'incollection' || type === 'inproceedings' ? container : undefined,
+      publisher: type === 'book' || type === 'phdthesis' || type === 'mastersthesis' ? container : undefined,
+      doi: String(citationUrl || url || '').match(/10\.\d{4,9}\/[^\s?#]+/i)?.[0]?.replace(/[.,;]+$/, ''),
+      url: citationUrl || undefined,
+      language: /[\u0600-\u06ff]/u.test(title) ? 'ar' : undefined,
+    }))(),
   }
   const citation = citations[style]
   const styles: { id: CitationStyle; label: string }[] = [

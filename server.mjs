@@ -4647,13 +4647,28 @@ export function createRequestHandler({
       const token = bearerToken(req.headers.authorization)
       const claims = await verifyToken(token)
       if (claims?.admin !== true) throw new HttpError(403, 'Admin access required')
-      const days = clamp(Number(url.searchParams.get('days') || 30), 1, 90)
-      const since = new Date(Date.now() - days * 86_400_000)
+      /* الفترة: 7/30/90 أو مخصّصة حتى سنة. و`compare=1` يجلب ضِعف النافذة
+         حتى تُقارَن الفترة بسابقتها من العيّنة نفسها بلا نداءٍ ثانٍ. */
+      const days = clamp(Number(url.searchParams.get('days') || 30), 1, 365)
+      const compare = url.searchParams.get('compare') === '1'
+      const requestedUntil = Date.parse(url.searchParams.get('to') || '')
+      const until = new Date(Number.isFinite(requestedUntil) ? Math.min(requestedUntil, Date.now()) : Date.now())
+      const spanMs = days * 86_400_000
+      const since = new Date(until.getTime() - spanMs * (compare ? 2 : 1))
+      const maxEvents = 8000
       const { db, Timestamp } = await getAdminFirestore()
-      const snapshot = await db.collection('analytics_events').where('createdAt', '>=', Timestamp.fromDate(since)).orderBy('createdAt', 'desc').limit(5000).get()
-      sendJson(res, 200, { items: snapshot.docs.map((doc) => {
-        const data = doc.data() || {}; return { id: doc.id, name: boundedString(data.name, 80), sessionId: boundedString(data.sessionId, 80), path: boundedString(data.path, 300), referrerPath: boundedString(data.referrerPath, 300), device: data.device === 'mobile' ? 'mobile' : 'desktop', props: data.props || {}, createdAt: data.createdAt?.toDate?.().toISOString?.() || '' }
-      }) }, { 'cache-control': 'no-store' })
+      const snapshot = await db.collection('analytics_events')
+        .where('createdAt', '>=', Timestamp.fromDate(since))
+        .where('createdAt', '<', Timestamp.fromDate(until))
+        .orderBy('createdAt', 'desc').limit(maxEvents).get()
+      sendJson(res, 200, {
+        items: snapshot.docs.map((doc) => {
+          const data = doc.data() || {}; return { id: doc.id, name: boundedString(data.name, 80), sessionId: boundedString(data.sessionId, 80), path: boundedString(data.path, 300), referrerPath: boundedString(data.referrerPath, 300), device: data.device === 'mobile' ? 'mobile' : 'desktop', props: data.props || {}, createdAt: data.createdAt?.toDate?.().toISOString?.() || '' }
+        }),
+        /* العيّنة تُعلَن كما هي: لو بُترت، تقول اللوحة ذلك ولا تدّعي اكتمالاً. */
+        window: { days, compare, spanMs, since: since.toISOString(), until: until.toISOString() },
+        truncated: snapshot.size >= maxEvents,
+      }, { 'cache-control': 'no-store' })
       return
     }
 

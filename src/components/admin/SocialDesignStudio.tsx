@@ -44,6 +44,7 @@ import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
 import { resolveResonantQuotes, type ResonanceRow } from '../../lib/resonance-quotes'
 import { GenerationLibraryPanel, type GeneratedDesignLibraryAsset, type GeneratedLibraryAsset } from './GenerationLibraryPanel'
 import { buildMeaningFingerprint } from '../../lib/editorial-memory'
+import { trackAdminUsage } from '../../lib/admin-usage'
 import { buildMultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
 import { arabicCountPhrase, CONCEPT_FORMS, DIRECTION_AFTER_PREPOSITION_FORMS, DISPLAYABLE_IMAGE_AFTER_PREPOSITION_FORMS, CAMPAIGN_PIECE_AFTER_PREPOSITION_FORMS, CAMPAIGN_PIECE_FORMS, ENDING_OBJECT_FORMS, FINAL_READY_COPY_FORMS, HIGHLIGHT_FORMS, INDEPENDENT_DIRECTION_AFTER_PREPOSITION_FORMS, LAYER_AFTER_PREPOSITION_FORMS, LAYER_FORMS, SAVED_COPY_FORMS, SCENE_AFTER_PREPOSITION_FORMS, SECOND_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
 
@@ -3149,6 +3150,11 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     }
     teachTaste(plan, 1)
     await downloadCompositionRaster(plan, type)
+    /* التنزيل هو النتيجة العملية للاستوديو؛ الظهور على الشاشة ليس نجاحاً. */
+    void trackAdminUsage('admin_result_converted', {
+      tool: 'design', taskType: 'تصميم اجتماعي', convertedTo: `تصميم ${type}`,
+      producedItemId: plan.fingerprint, finalAction: 'downloaded',
+    })
   }
 
   /* تصدير كل المقاسات بنقرة: الأصل ثم مربع وستوري وLinkedIn — كل نسخة

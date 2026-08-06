@@ -1,7 +1,70 @@
 # التحليلات والخصوصية
 
-الأحداث العامة المضافة: `atlas_impression`, `atlas_discovered`, `atlas_opened`, `atlas_interaction`, `living_mind_opened`, `living_mind_started`, `living_mind_completed`, `living_mind_failed`, `living_mind_result_used`, `living_mind_abandoned`, `search_submitted`, `search_results_shown`, `search_zero_results`, `search_result_opened`, `search_refined`, `search_abandoned`, `web_vital`.
+نظامان منفصلان تماماً: قياسٌ **عامّ مجهول** للزوار، وقياسٌ **خاصّ دلاليّ** لأدوات
+لوحة التحكّم. لا يلتقيان، ولا يظهر الثاني في الموقع العام أبداً.
 
-عبارات البحث محدودة الطول، تنظف من HTML، وتُحجب عند الاشتباه ببريد أو هاتف. الجلسة مجهولة. لوحة «الاستخدام الفعلي» داخل التحليلات الحالية وليست نظامًا موازيًا.
+## ١) القياس العام — الزوار
 
-أحداث الإدارة دلالية فقط، ويمكن تعطيلها محليًا واستبعاد جلسات الاختبار. لا يُسجل نص المقال أو الفكرة كاملًا.
+`src/lib/usage-analytics.ts` → `/api/analytics/event` → `analytics_events`.
+
+الأحداث: `atlas_impression` · `atlas_discovered` · `atlas_opened` ·
+`atlas_interaction` · `living_mind_opened` · `living_mind_started` ·
+`living_mind_completed` · `living_mind_failed` · `living_mind_result_used` ·
+`living_mind_abandoned` · `search_submitted` · `search_results_shown` ·
+`search_zero_results` · `search_result_opened` · `search_refined` ·
+`search_abandoned` · `web_vital`.
+
+**الخصوصية:** جلسةٌ مجهولة في `sessionStorage`، وعبارات البحث تُنقّى من HTML
+وتُقصّ إلى ١٦٠ حرفاً، ويُحجب ما يشبه بريداً أو رقم هاتف. لا اسم ولا بريد ولا رقم.
+
+Core Web Vitals تُجمع من المستخدم الحقيقي عبر `PerformanceObserver`، وتُعرض p75
+مع **حجم العيّنة** بجانب كل رقم.
+
+## ٢) قياس أدوات اللوحة — المالك الواحد
+
+`src/lib/admin-usage.ts` → `admin_tool_events` (أدمن فقط قراءةً وكتابة).
+
+**ليست مراقبةَ موظفين.** لا فِرق ولا أسماء مستخدمين. السؤال: أيّ أداةٍ تُنتج
+قراراً، وأيّها تُفتح ثم تُترك، وأين ينقطع العمل.
+
+### أحداثٌ دلالية لا نقرات
+
+`admin_tool_opened` · `admin_task_started` · `admin_result_generated` ·
+`admin_result_accepted` · `admin_result_rejected` · `admin_result_edited` ·
+`admin_result_converted` · `admin_task_abandoned` ·
+`admin_recommendation_used` · `admin_recommendation_ignored`.
+
+`beginAdminToolTask(tool, type)` يربط دورةً كاملة بمعرّف مهمةٍ واحد.
+
+### تعريف «النتيجة العملية»
+
+ظهور المخرجات على الشاشة **ليس نجاحاً**. النجاح إجراءٌ حقيقيّ: مسودّة بدأت،
+تصميمٌ نُزِّل، حلقةٌ أُرسلت للإنتاج، توصيةٌ اتُّخذ بها قرار. لذلك يُقاس
+`admin_result_converted` بحقل `convertedTo`.
+
+### الخصوصية والاحتفاظ
+
+- **معرّفات العناصر لا نصوصها:** لا يُسجَّل متن مقالٍ ولا نصّ فكرةٍ ولا حوار.
+- **جلسات الاختبار** تُعلَّم بزرّ وتُستبعد من كل حكم.
+- **التعطيل** بزرٍّ واحد (`admin:usage-tracking-disabled`).
+- **الاحتفاظ ١٨٠ يوماً**: كل حدثٍ يحمل `expiresAt`، ومعه زرُّ تنظيفٍ يدويّ.
+- القياس لا يعطّل العمل: أي فشلٍ في التسجيل يُبتلع صامتاً.
+
+## ٣) لوحة «الاستخدام الفعلي»
+
+قسمٌ داخل تبويب التحليلات القائم — لا تبويبٌ جديد ولا نظامٌ موازٍ.
+
+- الفترة: ٧ · ٣٠ · ٩٠ · **مخصّصة** حتى سنة.
+- **مقارنةٌ بالفترة السابقة** لها مباشرةً، من النداء نفسه (`compare=1`).
+- كل بطاقةٍ تذكر **عيّنتها**، وبلا عيّنة تقول «لا عيّنة» ولا تكتب صفراً.
+- تصنيف الأدوات الخاملة: ٣٠/٦٠/٩٠ يوماً · تُفتح بلا نتيجة · نتائجها تُرفض غالباً.
+- التوصيات: نوعها وظهورها وقبولها وتجاهلها والأدوات المتشابهة — **بلا حكمٍ من
+  عيّنةٍ صغيرة** (أقلّ من خمسٍ لا تُنتج معدّلاً).
+- مسارات العمل: نقاط البداية والنهاية، والتنقّلات المتكرّرة، والمسارات التي
+  انتهت بقرار، ونقاط الانقطاع.
+
+**لا قرار تلقائي:** لا تُحذف أداةٌ ولا تُخفى ولا تُدمج ولا تتغيّر القائمة من
+تلقاء نفسها. اللوحة تعرض توصيةً، والقرار للأدمن.
+
+المنطق كلّه في `src/lib/admin-usage-insights.ts` — دوالُّ خالصة يختبرها
+`npm run analytics:self-test`.

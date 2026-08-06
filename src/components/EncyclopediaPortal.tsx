@@ -35,6 +35,7 @@ import { SocialIcon } from './icons'
 import { ClarifiedIconAction } from './ClarifiedIconAction'
 import { OwnerEdit } from './extras'
 import { EncyclopediaKnowledgeResults } from './EncyclopediaKnowledgeResults'
+import { EncyclopediaResultBrowser } from './EncyclopediaResultBrowser'
 import { normalizeSearchQuery, trackUsage } from '../lib/usage-analytics'
 
 const CHANNEL_URL = 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'
@@ -529,8 +530,10 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const updateDeepLink = (changes: Record<string, string | number | null>, mode: 'push' | 'replace' = 'replace') => {
     const url = new URL(window.location.href)
     for (const [key, value] of Object.entries(changes)) {
+      /* القيم الافتراضية تُنظَّف من الرابط، وطول العبارة محدود حتى لا يُبنى
+         رابطٌ لا يُشارَك ولا يُفهرَس. */
       if (value === null || value === '' || value === 0 || value === 'all') url.searchParams.delete(key)
-      else url.searchParams.set(key, String(value))
+      else url.searchParams.set(key, key === 'q' ? String(value).slice(0, 160) : String(value))
     }
     window.history[mode === 'push' ? 'pushState' : 'replaceState']({}, '', `${url.pathname}${url.search}${url.hash}`)
   }
@@ -677,7 +680,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     } : {}
   }, [spokenMoments])
   const knowledgeResults = useMemo(
-    () => searchEncyclopediaKnowledge(query, { passageLimit: 6, slideLimit: 6, context: knowledgeContext }),
+    () => searchEncyclopediaKnowledge(query, { passageLimit: 40, slideLimit: 40, context: knowledgeContext }),
     [knowledgeContext, query],
   )
   const videoById = useMemo(() => new Map(visibleVideos.map((video) => [video.id, video])), [visibleVideos])
@@ -686,9 +689,21 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     [searchResults.videos],
   )
 
-  const resultCount = query.trim().length >= 2
-    ? searchResults.units.length + searchResults.videos.length + knowledgeResults.passages.length + knowledgeResults.slides.length
-    : 0
+  /* اللحظات الموثّقة تُعدّ داخل الفيديو — العدد المعلن هو عين العدد القابل
+     للاستعراض في الأسفل، بلا فرقٍ بين ما يُحسب وما يُعرض. */
+  const exactMomentCount = useMemo(
+    () => spokenMoments.filter((moment) => moment.hasExactTiming && moment.excerpt && videoById.has(moment.videoId)).length,
+    [spokenMoments, videoById],
+  )
+  const tabCounts = useMemo(() => {
+    if (query.trim().length < 2) return { all: 0, video: 0, book: 0, slides: 0, chapters: 0 }
+    const video = searchResults.videos.length + exactMomentCount
+    const book = knowledgeResults.passages.length
+    const slides = knowledgeResults.slides.length
+    const chapters = searchResults.units.length
+    return { all: video + book + slides + chapters, video, book, slides, chapters }
+  }, [exactMomentCount, knowledgeResults.passages.length, knowledgeResults.slides.length, query, searchResults.units.length, searchResults.videos.length])
+  const resultCount = tabCounts.all
 
   useEffect(() => {
     if (query.trim().length >= 2) setOpenDoorId('')
@@ -713,12 +728,17 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
 
   const playVideo = (video: IndexedEncyclopediaVideo, instanceKey: string, startSeconds = 0) => {
     // الرابط يحفظ النتيجة والتوقيت، لكن التشغيل يبقى بإجراء صريح من المستخدم.
+    /* توقيتٌ أكبر من مدة الفيديو لا يُمرَّر كما هو: يُقصّ إلى داخل المدة بدل
+       أن يفتح مشغّلاً عند نقطةٍ لا وجود لها. */
+    const safeStart = video.durationSeconds > 1
+      ? Math.max(0, Math.min(Math.floor(startSeconds), video.durationSeconds - 1))
+      : Math.max(0, Math.floor(startSeconds))
     setPlayingVideoId(video.id)
     setUserInitiatedPlayback(true)
-    updateDeepLink({ q: query.trim(), tab: resultTab, video: video.id, t: Math.max(0, Math.floor(startSeconds)), result: video.id }, 'push')
+    updateDeepLink({ q: query.trim(), tab: resultTab, video: video.id, t: safeStart, result: video.id }, 'push')
     trackUsage('search_result_opened', { searchType: 'encyclopedia', query: normalizeSearchQuery(query), resultType: 'video', resultId: video.id, timeToResultMs: searchStartedAt.current ? Date.now() - searchStartedAt.current : 0 })
     setPlayingVideoInstance(instanceKey)
-    setPlayingStartSeconds(Math.max(0, Math.floor(startSeconds)))
+    setPlayingStartSeconds(safeStart)
   }
 
   const playKnowledgeMoment = (video: IndexedEncyclopediaVideo, instanceKey: string, startSeconds = 0) => {
@@ -906,7 +926,22 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
 
           {query.trim().length >= 2 && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {['all','video','book','slides','chapters'].map((value) => <button key={value} type="button" onClick={() => { setResultTab(value); updateDeepLink({ q: query.trim(), tab: value }, 'push') }} className={`rounded-full border px-3 py-1.5 text-[.68rem] ${resultTab === value ? 'border-accent bg-accent text-white' : 'border-hair text-soft'}`}>{({all:'الكل',video:'الفيديو',book:'الكتاب',slides:'الشرائح',chapters:'الأبواب والفصول'} as Record<string,string>)[value]}</button>)}
+              {(['all','video','book','slides','chapters'] as const).map((value) => {
+                const count = tabCounts[value]
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={resultTab === value}
+                    /* تبديل التبويب لا يعيد البحث: النتائج محسوبة مسبقاً ومحفوظة. */
+                    onClick={() => { setResultTab(value); updateDeepLink({ q: query.trim(), tab: value }, 'push') }}
+                    className={`rounded-full border px-3 py-1.5 text-[.68rem] transition-colors ${resultTab === value ? 'border-accent bg-accent text-white' : `border-hair ${count ? 'text-soft hover:border-accent hover:text-accent' : 'text-soft/[.55]'}`}`}
+                  >
+                    {({all:'الكل',video:'الفيديو',book:'الكتاب',slides:'الشرائح',chapters:'الأبواب والفصول'} as Record<string,string>)[value]}
+                    <span className="ms-1.5 text-[.62rem] opacity-80">{formatArabicNumber(count)}</span>
+                  </button>
+                )
+              })}
               <button type="button" onClick={async () => { const url = window.location.href; try { if (navigator.share) await navigator.share({ title: 'بحث موسوعة تكنولوجيا التعليم', url }); else await navigator.clipboard.writeText(url) } catch { await navigator.clipboard?.writeText(url).catch(() => undefined) } }} className="rounded-full border border-hair px-3 py-1.5 text-[.68rem] text-accent">مشاركة الرابط</button>
             </div>
           )}
@@ -926,6 +961,21 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
               selectedPlayerUrl={selectedPlayerUrl}
               onPlay={playKnowledgeMoment}
               onOpenTeaching={openTeachingFromSearch}
+            />
+          )}
+          {query.trim().length >= 2 && (
+            <EncyclopediaResultBrowser
+              query={query.trim()}
+              tab={resultTab}
+              videos={searchResults.videos}
+              moments={spokenMoments}
+              passages={knowledgeResults.passages}
+              slides={knowledgeResults.slides}
+              units={searchResults.units}
+              videoById={videoById}
+              onPlay={playVideo}
+              onOpenTeaching={openTeachingFromSearch}
+              onOpenDoor={(doorId) => { setQuery(''); setOpenDoorId(doorId); updateDeepLink({ q: null, tab: null, result: null }, 'push') }}
             />
           )}
 

@@ -4,17 +4,17 @@ export function SocialIcon({ name, size = 20 }: { name: string; size?: number })
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M5 4.5h9.4A3.6 3.6 0 0 1 18 8.1V19H8.6A3.6 3.6 0 0 1 5 15.4V4.5Z" stroke="currentColor" strokeWidth="1.55" strokeLinejoin="round" />
-        <path d="M8.3 8.2h6.5M8.3 11.5h6.5M8.3 14.8h4.2" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" />
-        <path d="M18 7.6c.9-.55 1.45-1.35 1.7-2.4" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
+        <path d="M8.3 8.2h6.5M8.3 11.5h6.5M8.3 14.8h4.2" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M18 7.6c.9-.55 1.45-1.35 1.7-2.4" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     )
   }
   if (name === 'Schedule') {
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <rect x="3.5" y="5.2" width="17" height="15" rx="2.4" stroke="currentColor" strokeWidth="1.55" />
-        <path d="M7.5 3.5v3.3M16.5 3.5v3.3M3.7 9.2h16.6" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" />
-        <path d="M8 13h2M14 13h2M8 16.5h2M14 16.5h2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        <rect x="3.5" y="5.2" width="17" height="15" rx="2.4" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M7.5 3.5v3.3M16.5 3.5v3.3M3.7 9.2h16.6" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M8 13h2M14 13h2M8 16.5h2M14 16.5h2" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     )
   }
@@ -23,7 +23,7 @@ export function SocialIcon({ name, size = 20 }: { name: string; size?: number })
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M2.7 9.1 12 4l9.3 5.1L12 14.2 2.7 9.1Z" fill="currentColor" />
         <path d="M6.3 11.2v4.1c0 1.55 2.55 3.2 5.7 3.2s5.7-1.65 5.7-3.2v-4.1L12 14.35l-5.7-3.15Z" fill="currentColor" opacity=".78" />
-        <path d="M20.2 10.15v5.25" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" />
+        <path d="M20.2 10.15v5.25" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
         <circle cx="20.2" cy="16.9" r="1.15" fill="currentColor" />
       </svg>
     )
@@ -31,9 +31,9 @@ export function SocialIcon({ name, size = 20 }: { name: string; size?: number })
   if (name === 'ResearchGate') {
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.15" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="12" cy="12" r="9.15" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M7.2 16.9V7.1h4.1c2.18 0 3.56 1.13 3.56 3.02 0 1.34-.72 2.3-1.92 2.73l2.38 4.05h-2.18l-2.1-3.72H9.18v3.72H7.2Zm1.98-5.4h1.94c1.1 0 1.72-.47 1.72-1.3 0-.85-.62-1.31-1.72-1.31H9.18v2.61Z" fill="currentColor" />
-        <path d="M16.45 7.5h2.8M17.85 6.1v2.8" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+        <path d="M16.45 7.5h2.8M17.85 6.1v2.8" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     )
   }

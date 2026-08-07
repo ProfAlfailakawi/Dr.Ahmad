@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201806-005",
+  "bridgeAfter": [
+    17,
+    28
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في إحدى الاطلاعات والبحوث التي نجريها في التكنولوجيا وآثارها.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "سواء أكانت الإيجابية منها أم السلبية، وعملية البحث الدائمة في هذا الموضوع.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ظهر معنا مصطلح الفوبنج في أكثر من موضع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد جاءته استفسارات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد جاءني من قبل العديد من الاستفسارات عن هذا المصطلح من طلبة وزملاء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فجاء بخاطري أن أخصص هذا المقال في التعريف عنه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهو ليس غريبا علينا، ولكن كمصطلح سأقوم بتعريبه وتعريفه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقررت أن أضع بعض الحلول للتخلص من العادات السيئة التي يفردها هذا المصطلح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في ضوء الدراسات والبحوث التي تناولته في المقال القادم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والمقصود بمصطلح الفوبنج هو التعلق باستخدام الهاتف.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم هو كذلك، والبعض سيقول أننا تطرقنا من قبل لإدمان الهواتف الذكية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والحقيقة أنه المتداول بين الناس اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن المصطلح صيغ حديثا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن مصطلح الفوبنج صاغه قاموس ماكواري في مايو ألفين واثني عشر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لوصف عادة أصبحت شائعة جدا بين الناس، وتجتاح كافة أنحاء العالم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تجعلهم يهملون من يجالسهم ويتحدث إليهم بسبب انشغالهم بهواتفهم المحمولة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكانت وكالة الدعاية ماكان هي التي قادت الحملة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والتي دعت عددا من مؤلفي المعاجم، والمؤلفين والشعراء، إلى صياغة مصطلح جديد لوصف هذا السلوك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما معنى هذا المصطلح بدقة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إذا، هو مصطلح تم إنشاؤه عن طريق الجمع بين الكلمات والهاتف.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يشير إلى شخص يتفاعل مع هاتفه، أو أي جهاز آخر، بدلا من التفاعل مع إنسان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويعرض الطرق الإيجابية والسلبية وشروطا أخرى حول استخدام الأجهزة المحمولة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويعرض مشكلة متنامية مع أنواع مختلفة من التكنولوجيا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بما في ذلك التوازن الدقيق لتقاسم الوقت والاهتمام عند مواجهة متفاعلين مختلفين في نفس الوقت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد لاحظ الكثيرون أن الناس يتذمرون من بعضهم البعض من خلال استخدام التكنولوجيا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وكيف أن الشركات والأماكن العامة غالبا ما تثبط استخدام نوع الجهاز.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "على سبيل المثال، قد يضع أحد المطاعم أو المقاهي العائلية لافتات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تطلب من الناس احترام الأجواء، ويكونوا اجتماعيين في بيئتهم الحقيقية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بدلا من التقاط الرسائل النصية وإرسالها عبر الليل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل أثمرت تلك الحملة شيئا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبعد مرور عام من حملة وقف الفوبنج، أظهرت النتائج الإيجابية أمرا مهما.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن العديد من الناس كانوا يهتمون بكيفية استخدام الآخرين لأجهزتهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكيفية المحافظة على التفاعل البشري وتعزيزه في جميع أنواع الأماكن والمساحات المختلفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من العشاء العائلي أو الوجبات الحميمية، إلى لم الشمل والفعاليات العامة، وفي مكان العمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إن حملة مكافحة الفوبنج ملائمة للغاية للمواقف التي يشعر فيها الناس بالتهميش.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "من قبل العالم الافتراضي، وسنقوم بالمقال القادم بالتطرق إلى حلول لمشكلة التعلق باستخدام الهاتف.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

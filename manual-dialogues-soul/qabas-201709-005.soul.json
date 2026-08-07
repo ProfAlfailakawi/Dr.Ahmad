@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201709-005",
+  "bridgeAfter": [
+    15,
+    26
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "استكمالا لما أوردناه في مقالة سابقة عن كثرة التطبيقات التعليمية.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعدم وجود أثر لها في الواقع التعليمي عندنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فلا يعني وجود أبحاث تقصت مدى فاعلية أو أثر التطبيقات التعليمية باستخدام التقنيات الحديثة المتطورة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أنها تعني تعميم تلك النتيجة على الجميع مباشرة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "على الأقل يكفي أن ندرك سلبيات وإيجابيات تلك التجربة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتكثيف الدراسات لنصل إلى نتيجة يمكن تطبيقها بشكل فعلي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد يكثر التساؤل حول مدى فاعليتها في الواقع التربوي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فأي افتراض لا بد أن يفحص.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فأي افتراض يتم فحصه للتحقق من صحته قبل تعميمه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وما يطرح من تطبيقات يجب أن يجرى حولها الدراسات للتأكد من فاعليتها في الميدان التربوي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومدى تحقيقها للهدف التعليمي في ضوء التطور التكنولوجي، والتحقق من جدواها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتأتي في العادة الافتراضات الأولية لعدم الجدوى على النحو الآتي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فبنية البرامج نفسها لا تتفق مع النسق التربوي المعروف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكذلك ضعف القائمين على بناء البرمجيات في الجانب التربوي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبناء البرمجيات التربوية كبرمجية تطبيقية دون مراعاة الأسس التربوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأهم النتائج تكمن في الغاية الربحية التي طغت على الهدف الأساسي من التصميم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأين الرقابة على هذه الشركات إذا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فضلا عن عدم وجود رقابة حكومية على الشركات المتخصصة في هذا المجال.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكذلك قصور التشريعات عن الإحاطة بهذا المجال كله.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلا توجد قوانين تناولت هذا الجانب بالواقع العملي والنظري.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بالتالي، نحن بحاجة إلى وجود هيئة حكومية تعنى بمراقبة ومساعدة هذه الشركات على تحسين أدائها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ووضع مسودة معايير واضحة لبناء التطبيقات التعليمية الجديدة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وإجراء المزيد من الدراسات على التطبيقات التعليمية الموجودة حاليا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والاستفادة من الأبحاث السابقة التي أجريت على تطبيقات ثبت فاعليتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهكذا، فنحن أيضا الأكاديميين والخبراء التربويين معنيون بذلك.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بالإضافة إلى أصحاب السلطة لوضع التشريعات، وسن القوانين اللازمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "المسؤول الأول لعدم وجود جدوى للتطبيقات التعليمية على أرض الواقع التربوي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل المسؤولية على الشركات وحدها إذا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل علينا جميعا، فالأكاديميون والخبراء وأصحاب السلطة شركاء في هذا القصور.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتحديد معايير بناء البرمجيات التربوية كبرمجية تطبيقية على أسس تربوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ضمن رؤية إصلاحية تأتي أكلها على التعليم في إطار تكنولوجيا التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالتطبيقات التعليمية كثيرة، والأثر في الواقع التعليمي ما زال غائبا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والغاية الربحية هي التي طغت على الهدف الأساسي من التصميم التربوي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالأمر يحتاج إلى دراسات تتقصى الأثر، لا إلى تطبيقات تطرح بلا فحص.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فنحن بحاجة إلى هيئة حكومية تراقب، ومعايير تبنى، ودراسات تكثف.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "وتشريعات تحيط بهذا المجال، حتى تأتي التطبيقات أكلها في الميدان التربوي.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

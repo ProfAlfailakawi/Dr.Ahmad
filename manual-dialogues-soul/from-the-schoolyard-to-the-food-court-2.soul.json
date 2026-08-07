@@ -1,0 +1,271 @@
+{
+  "slug": "from-the-schoolyard-to-the-food-court-2",
+  "bridgeAfter": [
+    7,
+    18
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في السابق كانت ساحات المدارس تنبض بالحياة بعد الدوام الرسمي.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والطالب يركض من الفصل إلى المسرح، ومن الملعب إلى الورشة الفنية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أنشطة مسائية، ومناظرات، ومسابقات، وهوايات تكتشف، وشخصيات تتكون على مهل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كان التعليم يبدأ في الصف،⏸ لكنه لا ينتهي عند الجرس.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "واليوم؟⏸ أغلقت الأبواب. وتحولت المدرسة إلى بناية صامتة بعد الثانية ظهرا.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأين ذهب الطالب بعدها؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "خرج يبحث عن ساحة بديلة:⏸ المجمعات، والكافيهات، والألعاب الإلكترونية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو الفراغ الرقمي. وهو أخطرها لأنه لا يبدو مكانا أصلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هل نلوم الطالب على أنه بحث عن مكان؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا نلومه أبدا. نحن نقلنا أبناءنا من ساحات التربية إلى ساحات الاستهلاك.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من ميدان القيم إلى مسرح الموضة. والفرق بينهما ليس في المكان⏸ بل في الأثر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "جيل كان يجب أن يصنع شيئا، فصار يشاهد فقط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وجيل كان يجب أن يتدرب، صار ينتظر الخصومات في المول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والفرق بين أن تصنع وأن تنتظر هو الفرق بين إنسانين لا بين عادتين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والمقال يسند هذا برقم لا بانطباع. تقرير أصدرته منظمة UNICEF لعام 2024.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تبين فيه أن الأنشطة اللاصفية تقلل من خطر الانحراف السلوكي بنسبة 36%.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وليس هذا كل شيء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتزيد من مهارات التعاون والابتكار بنسبة 42%. رقمان يكفيان لإعادة فتح الأبواب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكن ماذا فعلنا؟⏸ أغلقنا المساحات التربوية، وتركنا الجيل أمام الشاشات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل المشكلة في الجيل إذن؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا،⏸ بل مشكلة مؤسسة قررت أن تختصر التربية في الحصة الدراسية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونسيت أن صناعة الإنسان لا تحدث فقط في الصف،⏸ بل تبدأ خارجه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هنا بشرى تستحق الوقوف.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "المقال يحيي خطوة وزارة التربية في فتح الأنشطة الصيفية من جديد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "مبادرة جميلة تعيد الروح للساحة المدرسية. لكن المبادرة وحدها لا تكفي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نحتاج إلى تنظيم، وإلى رؤية واضحة، وإلى استدامة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالأنشطة ليست موسما صيفيا،⏸ بل فلسفة تكمل المنهج.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي فنلندا تظل المدارس مفتوحة حتى السادسة مساء.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "مشاريع مجتمعية، وورش تطوير، وأنشطة فنية ورياضية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لأنهم يعرفون أن الطفل لا يربى فقط داخل الدرس،⏸ بل في كيفية قضاء وقته بعده.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "جملة واحدة تختصر الموضوع كله.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فجيل اليوم لا يفتقر إلى الذكاء،⏸ بل إلى مساحة حضارية يمارس فيها إنسانيته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولهذا يقترح المقال في الكويت برامج ثابتة مستمرة طوال العام، لا موسما صيفيا فقط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وإشراك أولياء الأمور في تخطيط الأنشطة لا في متابعتها وحدها، وربطها بمشاريع مجتمعية حقيقية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فحين نفرغ المدرسة من دورها المجتمعي، لا نخسر التعليم فقط،⏸ بل نفرغ المجتمع نفسه من مضمونه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "وربما حان الوقت أن نعيد تعريف معنى دوام المدرسة، فالتربية لا تنتهي بالجرس⏸ بل تبدأ بعده.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,285 @@
+{
+  "slug": "qabas-201707-003",
+  "bridgeAfter": [
+    17,
+    28
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "ذهبت لاستبدال جوازي بالجواز الذكي، فوجدت الكثير يتساءل عن سر تلك الجوازات.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وسمعت الكثير والكثير، وعلامات استفهام أكثر حولها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فالكثير من الناس لا يعرف الهدف من الجوازات الذكية،⏸ وما الغرض منها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد غيرتها الوزارة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد قامت وزارة الداخلية بتغييرها لكل المواطنين تدريجيا في الكويت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهو أمر ليس اختياريا،⏸ بل على الجميع التغيير.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والجواز الذكي سيكون بديل الجواز الحالي، والتي تم استبدالها في أغلب الدول العربية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فما هو الجواز الذكي؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إن الجواز الإلكتروني الذكي الجديد، فيه شريحة إلكترونية تخزن معلوماتك الشخصية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وصورتك الرقمية، وبصمات الإبهامين، وكل ما يتصل بك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويحتوي أيضا على التوقيع الرقمي المنشأ من نظام المفتاح العام للبنية التحتية الوطني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يحميه الرقم السري الخاص بك وحدك.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ومن المعلوم أن لكل دولة جوازات خاصة لمواطنيها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويختلف مستواها كثيرا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويختلف مستوى تلك الجوازات من دولة إلى أخرى، حسب الرفاه الاقتصادي والتطور التكنولوجي فيها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي الآونة الأخيرة، وخاصة في المناطق التي يهددها الإرهاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "عمدت كثير من الدول إلى إصدار جوازات ذكية، تجاوزت مهمتها التعريفية للمواطنين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حيث اشتملت على معلومات تعريفية دقيقة عن كل مواطن.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما وجه القلق في معلومات تعريفية دقيقة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك، كما أسلف، الكثير من التكهنات حول إصدار هذا النوع من الجوازات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فإصدارها يحتم على الحكومات جمع كم هائل من المعلومات الدقيقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا مكمن الخطر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وسيصبح هذا الكم الهائل من المعلومات متاحا للرأسمالية لتوظيفه في الاقتصاد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ورسم السياسات العامة، وتزويد القطاع الخاص بصورة كاملة عن البنية البشرية ومكوناتها الديمغرافية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد تصل إلى عملية المتاجرة وبيع هذا الكم من المعلومات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأصبح هذا الاعتقاد أمرا مرجحا عند الكثيرين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "إذ أن ما تم تحصيله من معلومات يتجاوز الغرض الذي جاءت من أجله تلك الجوازات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويختم هذا الطرح، والكثير من الاعتقادات التي في نفس كل مواطن، بتغريدة للنصرات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "قريبا حجم هائل من المعلومات يقتحم أدق خصوصياتك، سيكون في متناول الرأسمالية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولم لا؟⏸ ففي هذا الكون المتناقض، ومنحى التطور الهائل.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا نستطيع إلا أن نقول:⏸ يكفي تدخلا في الخصوصية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهذه صورة جديدة لانتهاكها، تضاف إلى ما سبقها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالجواز الذكي تجاوز مهمته التعريفية، وجمع من المعلومات ما يفوق الغرض.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا الكم الهائل من المعلومات سيكون في متناول الرأسمالية لتوظيفه في الاقتصاد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ورسم السياسات العامة، وتزويد القطاع الخاص بصورة كاملة عن البنية البشرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تصل إلى عملية المتاجرة وبيع هذا الكم من المعلومات الدقيقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والسؤال المهم:⏸ لماذا هذا التطور في الجوازات الإلكترونية، والذي فاق الغرض؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ويدع الجواب لعقولكم النيرة، ولمن يستطيع أن يثبت عكس ما في أذهان المواطنين.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

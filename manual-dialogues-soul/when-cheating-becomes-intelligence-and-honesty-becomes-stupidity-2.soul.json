@@ -1,0 +1,264 @@
+{
+  "slug": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+  "bridgeAfter": [
+    7,
+    27
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "حين يصبح الغش ذكاء والصدق غباء. خدعة تربوية، ودهاء بلا أخلاق.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في زوايا الصفوف لم يعد الغش سرا،⏸ بل مهارة صامتة.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "يصفقون للطالب الذكي الذي عرف كيف يهرب بورقة، أو يصور بالإجابات، أو يتحايل على المُعلِّم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يقال عنه:⏸ فطين، ذكي، يعرف من أين تؤكل الدرجة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أما الطالب الصادق؟⏸ فيوصف بالمسكين، الساذج، الذي لا يعرف كيف يتصرف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل الذكاء صار قدرة على الالتفاف؟⏸ وهل الصدق ضعف في التعامل مع الواقع؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي تقرير أصدرته منظمة OECD أظهرت الدراسة رقما ثقيلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن أكثر من سبعة وستين بالمئة من طلاب المرحلة الثانوية اعترفوا بممارسة الغش مرة واحدة على الأقل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والسبب كسل؟⏸ هكذا يظن الناس عادة.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يصحح: الدافع لم يكن الكسل،⏸ بل الخوف من الفشل أمام من يجيدون الغش.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهكذا تشوهت القيم:⏸ أصبح الغش مهارة مجتمعية، والصدق موقفا غير واقعي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وتحول الصف من مكان للمعرفة إلى ساحة سباق ملوث.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والطالب يعرف السبب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالطالب الذي يغش يعرف أن المنهج لا يضيف له، وأن العلامة أهم من الفهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمعلم في كثير من الأحيان يغض الطرف، لأنه أيضا ضحية نظام يطالب بالنتائج قبل المعايير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهكذا دون أن نشعر صرنا نخرج محترفين في الخداع، لا في الفكر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والطالب الذي صمت حين رأى الغش تعلم درسا أخطر من أي درس.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "تعلم أن الحق ساكن، وأن الذكي من لا يراه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي أحد الفصول رصد طالب يغش في الامتحان، ولم يعاقب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل أخذ جانبا، وتلقى همسات إعجاب من زملائه:⏸ ذكي، عرف يطلع منها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما الطالب الآخر الذي كتب ما فهمه ولم ينقل ولم يتفوق، فقد خرج من اللجنة مطأطئ الرأس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأن صدقه لم يكن كافيا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فهل صرنا مصانع درجات؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل تحولنا من مؤسسات تربية إلى مصانع درجات؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل صرنا نكافئ النتائج حتى لو جاءت عبر الالتواء، ونتجاهل الطريق المستقيم لأنه بطيء؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي دراسة من جامعة كيمبريدج وجد أمر أخطر.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أن الطلاب الذين يمارسون الغش المتكرر يفقدون تدريجيا ثقتهم في قيمة المعلومة نفسها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويصبح النجاح لديهم مرتبطا بالخداع المتقن أكثر من أي جهد حقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالغش إذن ليس سلوكا فرديا عابرا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا بيت القصيد: ليس فقط سلوكا خاطئا،⏸ بل فلسفة تدميرية للقيم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهو يعلم التهرب، ويكرس مبدأ:⏸ ما لا تحققه بنفسك خذه بالحيلة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والأسوأ من الغش أن يراه الجميع ولا يعترض أحد.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "أن يتحول من استثناء إلى عرف، ومن عيب إلى مهارة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالمدرسة التي تسكت عن الغش تدرس الكذب دون منهج، والمعلم الذي يساير المتفوقين بالغش يصنع مجتمعا لا يثق بأحد.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فيا صناع المنظومة، هل ما زلتم تكرمون الأوائل دون أن تسألوا:⏸ بأي طريقة وصلوا أولا؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

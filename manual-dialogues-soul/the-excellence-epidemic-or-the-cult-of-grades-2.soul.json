@@ -1,0 +1,285 @@
+{
+  "slug": "the-excellence-epidemic-or-the-cult-of-grades-2",
+  "bridgeAfter": [
+    7,
+    20
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "عقولنا في علب، ونتساءل: أين الإبداع؟",
+      "feeling": "gravitas",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "مدارس تنتج،⏸ ولا تبتكر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "في كل صباح يدخل الطلبة إلى صفوف متشابهة. نفس الترتيب، ونفس المقاعد، ونفس السبورة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونفس الطريقة. يلقن المنهج، ويحل الواجب، ويعاد الامتحان، ثم يقاس كل شيء بدرجة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وبعد كل هذا نسأل:⏸ لماذا لا يبدع أبناؤنا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كيف نطلب من العقول أن تبدع ونحن نغلقها في علب؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نعلمهم أن الحل الصحيح واحد، وأن السؤال يجب أن يطرح بصيغة نموذجية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن التفكير خارج الصندوق خطأ يخصم عليه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن ألا نبالغ؟⏸ النظام يحتاج معايير موحدة.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والجواب عند الباحثين:برقم لا برأي.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ففي دراسة نشرت في Creativity Research Journal تبين أمر مقلق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن معدلات التفكير الإبداعي لدى طلبة المرحلة المتوسطة انخفضت بنسبة ثلاثين بالمئة خلال العقدين الأخيرين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن أكثر الأسباب تعود إلى الضغط الأكاديمي الموحد والنمطية الصفية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتشبيه يوجع كثيرا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالمدارس تشبه مصانع التعبئة، وكم من فكرة طردت فيها لأنها لم تكن مألوفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كل طفل يدخل بخياله، ويخرج بشهادة واحدة، وسلوك واحد، وطموح لا يخرج عن ثلاثة خيارات.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمعلم يطالب بتنمية الإبداع،⏸ لكنه يحاسب إن خرج عن الكتاب.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والمنهج يذكر الإبداع في المقدمة، ثم يقيده بالأنشطة المغلقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن لا نكسر العلب. نحن لا نكسر العلب،⏸ بل نزينها. نضيف رسمة على الغلاف، ونجمل التمرين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونخفف الأسلوب،⏸ لكن الصندوق هو هو.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالإبداع ليس مهمة ترفيهية،⏸ بل مناخ فكري. والموهبة لا تنمو في جدول مزدحم بالتلقين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما الذي يطلبه المقال من المدرسة عمليا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ثلاثة أسئلة. هل تركتم لهم مساحة ليختلفوا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل منحتموهم لحظة تفكير واحدة بلا توقيت يلاحقهم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهل سمحتم لطفل واحد أن يخطئ دون أن يحبط أمام زملائه؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالعقول لا تبدع في العلب، حتى لو طليت بألوان زاهية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "بل حين تكسر العلب، وتفتح النوافذ، ويقال للطفل:⏸ لا بأس، فكر بطريقتك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي أحد الفصول رسمت على الجدار عبارة: فكر بإبداع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن الطالب الذي أجاب بطريقة مختلفة رفضت إجابته لأنها ليست في النموذج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهكذا نكرمه بالشعار.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نكرم الإبداع بالشعارات، ونخنقه في التطبيق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي تقرير صادر عن منظمة Torrance Center رقم يصدم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الأطفال بعمر خمس سنوات يظهرون تفكيرا إبداعيا بنسبة تفوق خمسة وثمانين بالمئة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن النسبة تنخفض إلى أقل من عشرة بالمئة عند سن اثنتي عشرة سنة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بسبب بيئات تعليمية لا تسمح بالتجريب، وتكافئ الحلول النموذجية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فيا أصحاب القرار.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا تسألوا عن الإبداع في تقارير الأداء،⏸ بل عن البيئة التي تسمح بظهوره، وعن المُعلِّم الذي يحتضنه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فنحن لا نحتاج لمنهج جديد فقط،⏸ بل لعقلية جديدة تؤمن أن العقول حين تحرر تبدع بالفطرة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

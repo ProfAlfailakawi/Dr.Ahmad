@@ -1,0 +1,257 @@
+{
+  "slug": "qabas-201703-003",
+  "bridgeAfter": [
+    12,
+    22
+  ],
+  "breathAfter": [
+    32
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نعيش في وقتنا الراهن ضمن سياق تشريعات محلية، تضبط لنا الكثير من الانحرافات.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتشرع الرقابة على الجميع، من أجل تنظيم حياتنا بشكل عام، والشعور بالأمان.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتأتي التشريعات المحلية بجانب العديد من التشريعات العالمية التي تسري على الجميع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ضمن ضوابط وبروتوكولات دولية، ومراقبة من منظمات ومؤسسات دولية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مثل الأمم المتحدة واليونيسيف واليونيسكو، وغيرها من المنظمات الدولية الفعالة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "على المستوى الإنساني والبيئي والبيولوجي والحيواني أيضا، وغيرها من المستويات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وما زالت التشريعات الدولية مغيبة عن عالم التكنولوجيا العالمية إلى الآن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتعتمد على التشريعات الوطنية لكل دولة، على الرغم من أن التكنولوجيا عالمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلو نظرنا إلى عالمنا المعاصر تكنولوجيا،⏸ فإن الإنترنت يكاد يكون سماء تغطي العالم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ولم يبق مكان في هذا العالم إلا وغزاه الإنترنت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد تزامن انتشاره مع العولمة العالمية، وخاصة في المجال الاقتصادي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن المعلوم أن جميع الدول الكبرى، والتي تدير اقتصاد العالم، تعتمد اعتمادا أساسيا على الاقتصاد الإلكتروني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الذي سمح للشركات العابرة للقارات بأن تغزو أسواق الشرق والغرب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل هذه الدول واقتصادياتها لا تحتاج إلى حماية في إطار تشريعات دولية؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "على الرغم من كل ذلك، لا زالت التشريعات التي تخص استخدام الإنترنت محلية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فضلا على أنه ما زالت معظم الدول الفقيرة والعالم النامي تفتقر إلى تشريعات محلية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا توجد تشريعات عالمية متفق عليها بين الدول إلى اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فما الذي يحكمها إذا؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وما يحكم التزام الدول ببروتوكولات الإنترنت هو اقتصاد الحاجة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونتيجة لغياب التشريعات الرادعة والمراقبة لأي انتهاكات عبر الإنترنت.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "واستخدام التكنولوجيا الخاطئ، كثرت القرصنة في عالم الإنترنت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وخاصة في الدول الفقيرة التي ليس فيها رقابة ولا تشريعات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "واتسعت بؤرة الاستخدامات الخاطئة للتكنولوجيا، وشكلت خطرا كبيرا على المجتمع قبل أي مجال آخر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما المخرج من هذا كله في رأيك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "الأمر الذي يستدعي، في ضوء الحاجة الملحة، إلى منظومة تشريعات عالمية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من خلال جهود موحدة بين الدول، وخاصة المتحكمة بالاقتصاد العالمي كله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتشريعات المحلية وحدها لا تكفي أمام تكنولوجيا عالمية لا تعرف حدود الدول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والرقابة التي تشرع على الجميع في حياتنا العامة، غائبة في الواقع الافتراضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمنظمات الدولية الفعالة حاضرة في الجانب الإنساني والبيئي، وغائبة عن التكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وما دامت التكنولوجيا عالمية، فالتشريع الذي يضبطها لا بد أن يكون عالميا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالإنترنت غزا العالم كله، والتشريعات بقيت حبيسة حدود كل دولة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا ما فتح الباب واسعا أمام القرصنة والاستخدامات الخاطئة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالحاجة اليوم ملحة إلى تشريعات دولية تحمي الدول واقتصادياتها ومجتمعاتها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وإلا بقيت القرصنة تتسع في عالم الإنترنت، وبقي الخطر يهدد المجتمع قبل أي مجال آخر.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

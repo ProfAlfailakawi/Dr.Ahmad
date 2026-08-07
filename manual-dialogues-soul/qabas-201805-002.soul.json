@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201805-002",
+  "bridgeAfter": [
+    16,
+    27
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "ناقشت مع بعض طلبتي موضوع اختيار التخصص في الجامعة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فوجدت أن غالب الطلبة تعرضوا لكبح وضغط نفسي شديد في اختياراتهم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فمنهم من ترى العائلة أن ابنهم متميز،⏸ ولا بد أن يدرس الطب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومنهم من يرى لابنه الهندسة، ومنهم ومنهم، وكلهم يريدون الأفضل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكلهم يختارون الكليات العلمية الدقيقة لأبنائهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أما من كان مستواه عاديا، فيذهبون به إلى كلية التربية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكأنه إيحاء غير مباشر أن الكليات الإنسانية كليات تكميلية وليست أساسية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والسؤال يفرض نفسه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والسؤال هنا:⏸ مما تشكو الكليات الإنسانية في مجتمعنا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل مجتمعنا وبيئتنا لا تحتاج إلا للطبيب والمهندس وغيرهم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا فعلا ما يحدث في بيوتنا كل عام.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن يا سادة يا كرام، لا تخطئوا خطأ الصين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتي ذهبت في فترة من الفترات إلى التركيز على التعليم العلمي الدقيق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كالطب والهندسة والصناعيين وغيرها، وأهملت اختصاصات العلوم الإنسانية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "واستمرت الصين في غفلة عن أمرها زمنا طويلا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حتى جاء اليوم الذي بحثت فيه عن إداريين ليديروا منشآتهم ولم تجد.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وبحثوا عن مختصين يعملون في تطوير المحتوى التعليمي والمناهج والتدريب وغيرها من المجالات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وماذا كانت النتيجة في نهاية الأمر؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولم يجدوا، فحقا وقعت الصين في ورطة لا تحمد عقباها.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونحن لا نريد الوقوع فيها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لذلك، لا نريد أن نقع في مثل هذه الورطات في بلادنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلا نجد من يدير،⏸ ولا من يطور مناهج، ولا من يدرب كوادر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلنتحرر من برجوازية الكليات العلمية، والافتخار بأن ابني أو ابنتي تدرس في كلية الطب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو الهندسة، ولننظر للأمر بنظرة عقلانية شمولية واعية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إن مخرجات كليات العلوم الإنسانية ليست تكميلية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "بل هي أساسية تدخل صفا بصف بجانب الكليات العلمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهي منظومة واحدة، لا يمكن أن تكتمل المنظومة إلا بوجودهما معا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فأي منشأة في العالم تحتاج أن يكون فيها من كلا الكليتين، العلمية والإنسانية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما ثمرة التفرد بأحدهما دون الآخر؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فهي أجزاء متكاملة، لا تكميلية، والتفرد بأحدهما نتيجته في النهاية التوحد.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذه نتيجة تؤخر من عجلة الإنتاج في أي بلد من البلدان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتكبح طموح أجيال أرادت فقمعت، من أجل برجوازيات فارغة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فدعونا نأخذ العبرة من تجربة الصين المريرة قبل فوات الأوان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولنطلق حرية التخصص لأبنائنا، يختارون ليبدعوا من أجلنا ومن أجل أوطانهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالمنظومة لا تكتمل بكلية دون أخرى، والمجتمع يحتاج الاثنتين معا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فأي منشأة تحتاج إداريين ومدربين ومطوري مناهج، والكليات الإنسانية هي التي تصنع هؤلاء في أي وطن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولنترك لأبنائنا حرية الاختيار،⏸ لمستقبل واعد صاعد ينتظرهم في أوطانهم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

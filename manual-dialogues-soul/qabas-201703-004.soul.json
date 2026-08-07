@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201703-004",
+  "bridgeAfter": [
+    15,
+    24
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في الكثير من المناسبات نذهب لشراء الهدايا، وقد نحتار في اختيار الهدية ونوعها.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فمثلا كنت جالسا في مسائي، وحائرا بشراء هدية لأخي الصغير.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فجاءت لي فكرة أن أشتري له هاتفا محمولا، فقمت إلى محل الهواتف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن المفاجأة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أن سعر الهاتف الذي أردت شراءه لحداثته، يكاد يكون سعرا خرافيا،⏸ بل كونيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولم أطلب هاتفا مصنوعا من حجارة المريخ.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أو هاتفا من سوق العالم الآخر، من مجرة أخرى بعيدة عنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وتفكرت كثيرا بهذا السعر:⏸ هل أشتريه أم ماذا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فخطر في نفسه عنوان هذا المقال.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "من منطلق أن أسباب أسعار هذه التكنولوجيا الخرافية، يأتي من الكسب الرأسمالي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أكثر منه لهدف علمي وتوليد تكنولوجيا تخدم الناس.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وتذكرت كتابا قرأته من قبل عن الرأسمالية والاشتراكية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "أنه في ظل ماركس ومعظم ورثاء نظريته، يصرون على معارضة العلم والتكنولوجيا بالإنسان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بمعنى أن التطور التكنولوجي في الصناعة الرأسمالية، سيضاعف البطالة والإملاق للعمال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذا كله من وجهة نظر الاشتراكيين وحدهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن الرأسمالية تختلف بمنظومتها الفكرية تماما،⏸ فهي تعتمد على الربح على حساب المنفعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل زادت التكنولوجيا البطالة فعلا كما قالوا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يقول الكاتب:⏸ من وجهة نظري، فالتكنولوجيا لم تزد البطالة، وليست قائمة على الربح فقط.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل هي ضاعفت إنتاجية العمل والثروة الوطنية للدول في كافة المجالات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "هذا في الاستثمار القائم على المنفعة العامة، وليست الخاصة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن الواقع شيء آخر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن إذا أخذنا واقع التكنولوجيا، دون النظر إلى رأيه ورأي الماركسيين والرأسماليين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فإن تقدم التكنولوجيا مرهون بالربح، نعم هذا الواقع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "على سبيل المثال، تتطور الهواتف الخلوية وفق منظومة اقتصادية، وليس وفق تقدم تكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ربما تقدم الرأسمالية الإمكانيات، ولكن الأفكار العلمية تولد بلا تكلفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل الفكرة العلمية تكفي لتوليد واقع تكنولوجي؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حتى تتحول الأفكار العلمية إلى تكنولوجيا، نحتاج رأس مال يجعلها حقيقة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وليس رأسمالية تحولها إلى سلعة رهن العرض والطلب في الأسواق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حصان مرهق يحمل فارسا مدججا بالدروع، كلما همزه الفارس للإسراع زاد في إرهاقه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا هو حال التكنولوجيا عندما امتطتها الرأسمالية، تتقدم وهي مرهقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إذن لو تحررت التكنولوجيا من سلطة الرأسمالية، لاستطاعت أن تتقدم بكل سرعتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "دون عوائق توقفها في محطات البيع والشراء، ولأصبح حال الأمم أفضل من الآن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالرأسمالية هي عقبة التقدم التكنولوجي في العالم الثالث،⏸ بل في العالم ككل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالأفكار العلمية تولد بلا تكلفة، ولكن الرأسمالية تجعلها رهن العرض والطلب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حيث جعلت من علم التكنولوجيا والفائدة التي قد تسهم في تقدم كافة المجالات، سلعة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "سلعة تملأ بها مقاصي الرأسماليين،⏸ بينما الأفكار العلمية تولد بلا تكلفة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

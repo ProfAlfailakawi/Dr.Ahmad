@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201807-001",
+  "bridgeAfter": [
+    16,
+    29
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في إحدى اللقاءات الإذاعية ذكر المبدع خالد الجمعان أننا نفتقر للقدوة العلمية.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد ذكر أن له قدوة يفتخر بها، وهو عالم معروف في سماء الكويت والعالم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "هو العم الدكتور صالح العجيري، ولسنا في خضم ذكر أسماء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن لفت انتباهي مصطلح القدوة العلمية في حديثه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "الذي أصبحنا نفتقر كثيرا لمن يذكرون قدواتهم العلمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتباينت القدوات بين الاقتداء الحقيقي والاقتداء الصوري.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا آل المآل بأهل العلم والاختصاص لهذا المستوى؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكثيرا ما ننظر إلى أبنائنا ونستغرب أن بعضهم ليس لهم قدوة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إلا آباءهم أو أمهاتهم أو ذوي القربى منهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد يكونون أناسا عاديين ليسوا أهل علم واختصاص.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فعلمهم خبرة الحياة، وهم قدوة لا شك بذلك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكننا بحاجة أيضا إليهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن نحن بحاجة أيضا إلى القدوات العلمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كالمعلم، والطبيب، والمهندس، وأساتذة الجامعات، وعلمائنا بكافة الاختصاصات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهؤلاء علماء مؤثرون قد يقودون الأجيال إلى المستقبل بخطى ثابتة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويعينهم على النجاح بخبراتهم المتنوعة، وعلمهم الواسع.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "النابع من حقيقة علمية يحتذى بها، فينجون بهذا الجيل إلى بر النجاة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلماذا لا يحترم أبناؤنا معلميهم وأساتذتهم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يتساءل أولياء الأمور:⏸ لماذا أبناؤنا بفئاتهم العمرية المختلفة لا يحترمون معلميهم ومدربيهم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يعتبرون الطبيب قدوة لهم.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يعتبرون الطبيب قدوة،⏸ ولا المهندس، ولا ولا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فدعونا ننظر إلى هذا الموضوع من جانب الاعتبارات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "مع للأسف أن أصحاب العلم في وقتنا الحالي لا يعطون للعلم احترامه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يضيفون إليه أي جديد يذكر في مجال تخصصهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكل معطياتهم في الحياة تنفيذ ما درسوه بحذافيره دون مراعاة الضمير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد يكون أكثر علمهم ليس حقيقيا،⏸ ولا ينبع عن تجارب ودراسات الآخرين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بل هو تلقين ونسخ وسرقات ينسبونها لأنفسهم فقط.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وسلوكياتهم في التعامل لا تبت عن عالم، ويا لسخرية القدر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما فائدة أن يأتي الإنسان أو الطالب ليسأل عن شيء في أصل التخصص؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فيجدونه حائرا، يراوغ في الإجابة، ليس لديه أسلوب علمي يفحم فيه هذا الطالب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأين يقود هذا الحال أجيالنا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هنا يا سادة يا كرام تبدأ حالة التصدع بين الأجيال.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فمنهم من يقعون في حالة من الضياع وعدم الثقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويمضون في حياتهم دون قدوة علمية تهديهم وتهتدي بهم إلى النجاح والعلم والفائدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومنهم يقتدون بمن ليسوا أهل قدوة، فيأخذون عنهم ويصدقونهم ويسقطون في هاوية النفاق العلمي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتتصدع الأجيال، ويبنون فيما بعد أجيالا متصدعة، تفتقر للقدوة العلمية العالمة والسمحة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فدعونا نبدأ بالبحث عن قدواتنا، ولكي يستطيع أبناؤنا أن يختاروا بصدق قدواتهم قبل أن تتصدع ذواتهم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

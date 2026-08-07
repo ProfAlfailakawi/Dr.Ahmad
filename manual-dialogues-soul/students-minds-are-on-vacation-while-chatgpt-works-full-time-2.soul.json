@@ -1,0 +1,278 @@
+{
+  "slug": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
+  "bridgeAfter": [
+    9,
+    25
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في زمن الواجبات الذكية، لم يعد السؤال: هل كتب الطالب؟⏸ بل: من كتب؟",
+      "feeling": "gravitas",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يقضي الطالب نصف ساعة في ترتيب سؤاله للآلة، وخمس دقائق في تسليم الواجب.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "الإجابات مثالية، واللغة أكاديمية، والاقتباسات مضبوطة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لا أحد يعرف: هل هذا فكر طالب؟⏸ أم مجرد استدعاء إلكتروني جاء جاهزا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي دراسة أعدتها جامعة هارفارد وجد أن أكثر من واحد وستين بالمئة من الطلاب الجامعيين اعتمدوا على أدوات الذكاء الاصطناعي.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بشكل جزئي أو كامل في إعداد واجباتهم. لكن الأخطر رقم آخر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن تسعة وثلاثين بالمئة من أعضاء هيئة التدريس لم يستطيعوا التمييز بين الواجب البشري والآلي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالذكاء يشتغل بدوام كامل، والعقل البشري في إجازة مفتوحة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والأستاذ يصحح النموذج لا الطالب، والإدارة تدون الدرجة لا القدرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمؤسسة تحتفل بالامتياز دون أن تكتشف أن المقال لم يكتب داخليا،⏸ بل استخرج خارجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هل نسمي هذا غشا؟⏸ الطالب لم يزور شيئا.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال أدق من ذلك. يقول إننا لا نواجه غشا ذكيا،⏸ بل نشهد ولادة جيل من اللاوعي الأكاديمي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "طالب يتقن التسليم ويجهل ما سلمه، ويحصد الدرجة ولا يعرف ماذا كتب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويفتضح في اللجنة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يجلس في لجنة الامتحان الشفهي، فيتلعثم أمام محتوى هو من أرسله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالخطورة ليست في الأداة نفسها،⏸ بل في استخدامها كذراع بديل عن العقل، بدل أن تكون امتدادا له.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فالأدوات لا تقتل الفكر،⏸ لكن الاستسلام لها يقتل الشخصية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي أحد الفصول سأل المُعلِّم الطالب عن رأيه في موضوع الواجب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فجاء الجواب صادما.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نظر إليه الطالب باستغراب، ثم قال ببراءة: الرأي؟⏸ ما فهمت قصدك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأن الواجب لم يكن ناتجا عن فكرة داخلية،⏸ بل عن أمر خارجي جاء جاهزا ومتقنا وبلا أثر في الذاكرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتدريجيا يتحول الطالب إلى مدير حسابات ذكاء اصطناعي، لا إلى عقل ناضج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يعرف كيف يعد الصيغة، ويطلب المصادر، ويضيف المراجع، وينسق الملف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكنه لا يمتلك رأيا،⏸ ولا يحفظ جملة واحدة مما كتب.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وفي تقرير صادر عن اليونسكو حذرت المنظمة من اعتياد الطلاب على الاعتماد غير النقدي على أدوات الكتابة الذكية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأشارت إلى أن ضعف المهارات التعبيرية الفردية بات يرتبط مباشرة بازدهار الإنتاج الآلي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل نمنع الأدوات ونعود إلى الورقة والقلم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يطلب المنع. يطرح ثلاثة أسئلة على المنظومة نفسها.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل أصبحنا نقيم قدرة الطالب على استخدام أدوات ذكية بدل أن نختبر نضجه الفكري؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نخرج من يجيد استخدام اللغة، أم من يفكر بها؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل الامتياز الآن يمنح على المحتوى، أم على المهارة في التجميل والإخفاء؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والوصف الأدق مؤلم.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالطالب اليوم لا يغش،⏸ لكنه لا يفكر أيضا. لا يزور، لكنه يستعير عقلا آخر دون أن يدري.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والأخطر أن الجميع، من المُعلِّم إلى المؤسسة، يشارك في هذه المسرحية الصامتة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إما بالصمت، أو بالإعجاب بالنتائج السريعة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالتعليم لا يقاس بجودة النص بل بمدى صدقه، ولا بعدد الكلمات بل بكم منها خرج من عقل الطالب نفسه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فيا منظومة التعليم، ابحثوا عن سؤال واحد: هل صاحب الواجب كان حاضرا وهو يكتب؟⏸ أم اكتفى بالإرسال؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

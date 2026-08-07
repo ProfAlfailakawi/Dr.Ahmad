@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201802-002",
+  "bridgeAfter": [
+    16,
+    28
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "ضرب من الجنون، هذا ما قاله صديقي الحائر في ذلك اليوم.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فقلت له:⏸ ولكن يا صديقي، قد تكون الوفاة لها أسباب أخرى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فقال:⏸ لا، لقد شاهدت بأم عينيك الضجة وراء هذا الأمر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتقارير والصحف التي اهتمت بالحدث كله.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "قد يكون ابني من مدمني المخدرات الرقمية، إنه يستوحد بغرفته بالساعات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "مع تلك الموسيقى المزعجة، ويبدو عليه الإرهاق والاكتئاب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فقلت له:⏸ اعرضه على طبيب نفسي ليشخص حالته.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فهي ظاهرة منتشرة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولا تنسى أنها ظاهرة منتشرة بدول الغرب وبعض الدول العربية بين المراهقين خاصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فتفكرت في عرض الموضوع لخطورته:⏸ المخدرات الرقمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "رغم أنه لا توجد دراسات تثبت مخاطرها ومضارها بأي حال من الأحوال.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وأنها تعمل عمل المخدرات الحقيقية في الجسد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إلا أن هناك دراسات تثبت أنها لا تؤدي إلى تغييرات كيميائية في الدماغ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا تصل إلى حالة الإدمان على الموسيقى الرقمية، إلا من وصل لحالة الإدمان الشديد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتدهور الصحي، وخاصة النفسي منه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأن منشأها نفسي وليس كيماويا في الأصل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فتأثيرها قد يكون مجرد إيحاء يعتمد على مدى تقبل الشخص لها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما وصف المنظمة العربية لهذه المخدرات؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بحسب ما وصفته المنظمة العربية للمعلومات والاتصالات،⏸ فإن تلك المخدرات عبارة عن ذبذبات صوتية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تتراوح أمواجها ما بين ألفا ثم بيتا وثيتا، وصولا إلى دلتا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يؤدي الاستماع إليها لفترة طويلة عدة أحاسيس، كالنعاس أو اليقظة الشديدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو الدوخة أو الارتخاء أو الصرع والانزعاج.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وجاء رأي أصحاب الاختصاص والمطلعين على الظاهرة بشيء آخر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن هذه الذبذبات والأمواج الصوتية تؤدي إلى تأثير سيئ في المتعاطي على مستوى كهرباء المخ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كونها لا تشعر المتلقي بالابتهاج فحسب،⏸ بل تسبب له ما يعرف بالشرود الذهني.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهي من أخطر اللحظات التي يصل إليها الدماغ.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حيث تؤدي للانفصال عن الواقع وتقليل التركيز بشدة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويحذرون أن التعرض لهذا التغيير في اختلاف موجة الكهرباء في الدماغ وتكراره.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يؤدي، إضافة للحظات الشرود، إلى نوبات تشنج عند المرء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف تباع هذه الجرعات أصلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتوفر المخدرات على الموقع بعدة أسعار وجرعات، حسب الشعور الذي تود الحصول عليه.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتلك الجرعات التي تقدم تعمل على محاكاة تأثير نفس التجربة في العالم الواقعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويقدم الموقع عينات مجانية يمكن الاستماع إليها، وبعدها طلب الجرعة الكاملة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتتراوح الأسعار ما بين ثلاثة دولارات لتصل إلى ثلاثين دولارا وأحيانا أكثر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فمن وجهة نظره أن المنشأ النفسي والإيحاء أقوى من الإدمان الحقيقي.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فهي تحاكي الدماغ ضمن الذبذبات، وتخرجه عن الواقع، فحذار حذار لكل الأهالي، راقبوا أبناءكم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,264 @@
+{
+  "slug": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2",
+  "bridgeAfter": [
+    15,
+    29
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نعجن أبناءنا للنجاح ونخرجهم فارغين. عقول مخمرة بالضغط، وأرواح بلا نكهة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "في مدارسنا يعامل الطفل كما تعامل العجينة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "يعجن بمنهج موحد، ويضغط بتقييم نمطي، ويخبز في فرن الامتحانات على درجة حرارته المقررة مسبقا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم يخرج رغيفا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ثم يخرج إلى العالم على هيئة رغيف متفوق:⏸ هش الفكر، خال من الطموح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لا يعرف لماذا صنع ولا كيف يؤكل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل النجاح أن تصب في قالب؟⏸ أم أن تخبز على نار الشغف والمعنى؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نريد أبناءنا ناجحين، أم فقط جاهزين للإخراج المدرسي؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وطفل سأل أمه يوما:⏸ لماذا السماء زرقاء؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وبعد عامين من المقررات صار يسأل: كم علامة سأخسر إن نسيت نقطة في التعريف؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا هو الانتقال.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هكذا ننتقل من سؤال الكون إلى سؤال الدرجات، ومن دهشة العقل إلى قلق الامتحان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن حب المعرفة إلى رهاب الخطأ.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي دراسة نشرت في Psychology of Education Review رقمان يستحقان التوقف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أقر ثمانية وستون بالمئة من طلاب الثانوية في الخليج بأنهم يشعرون أن النجاح المدرسي لا يعكس قدراتهم الحقيقية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتسعة وخمسون بالمئة عبروا عن فقدان الشغف بالتعلم مع مرور السنوات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن أليس القالب ضروريا؟⏸ التعليم يحتاج نظاما موحدا.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يرفض النظام،⏸ بل يرفض أن يصير النجاح حالة إنجاز رقمي بدل حالة وعي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نلقن أبناءنا كيف ينجحون لا لماذا، ونعلمهم كيف يجيبون لا كيف يسألون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ندخلهم مدرسة، ونخرج منهم نسخا متشابهة، لا أفرادا متفردين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فنجاحهم مصمم ليرضينا، لا ليشبههم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ولذلك تراهم حين يكبرون يتقنون التقديم الشكلي، ويكرهون الفشل، ويخافون ارتكاب فكرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويتردد أحدهم قبل أن يجيب عن سؤال وجودي بسيط: ماذا تحب أن تكون؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "جيل من الأوائل،⏸ لكن بلا أول فكرة تخصه.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يحملون الشهادات كما تحمل قوالب الخبز: متشابهة، ومطابقة،⏸ لكن بلا طعم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم نتفاجأ بالانهيار.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ثم نتفاجأ حين يسقط المتفوق في أول اختبار حياة، أو يذوب المتفائل في أول شك ذاتي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أو يرتبك الناجح أمام أول مشروع يتطلب قرارا حقيقيا. ونسأل بدهشة: لماذا انهار؟⏸ ألم يكن من المتفوقين؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن لا نعد أبناءنا للنجاح،⏸ بل نهيئهم لقبول نجاح غيرهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نجاح محفوظ، ومقبول، ومكرر،⏸ لكنه لا يشبههم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما البديل؟⏸ أن نتركهم بلا توجيه؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يطلب شيئا آخر: أن نمنحهم فرصة الاحتراق الذاتي. لا بمعنى الهلاك،⏸ بل بمعنى التحول.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فكل نضج حقيقي يحتاج نارا من الداخل، لا فرنا رقابيا من الخارج.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فيا من تضع القوالب، خفف يدك عن العجينة واترك لها شكلها الإنساني، ودع أبناءنا يخبزون مستقبلهم بحرارة اختيارهم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فكلما أحكمنا القالب ضعف الخبز، وكلما ضيقنا المسار تاهت الروح. فالإنسان لا ينتج بالإجبار بل بالاكتشاف.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

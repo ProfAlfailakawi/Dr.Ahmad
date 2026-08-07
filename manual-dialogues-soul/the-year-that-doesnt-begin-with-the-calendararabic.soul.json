@@ -1,0 +1,264 @@
+{
+  "slug": "the-year-that-doesnt-begin-with-the-calendararabic",
+  "bridgeAfter": [
+    5,
+    19
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "ليس كل عام جديد يبدأ حين تتبدل الأرقام.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بعض السنوات تولد في الداخل حين ينهزم الوهم ويصحو المعنى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "نستقبل يناير كمن يستقبل ضيفا رسميا:⏸ تهاني وصور ووعود.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تكتب بسرعة ثم تنسى بسرعة أكبر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "الحقيقة أبسط وأقسى:⏸ التقويم لا يصلح ما أفسدته العادة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والاحتفال لا يرمم إنسانا لم يراجع نفسه بصدق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن أليس في التفاؤل خير؟⏸ لماذا نهدم الفرحة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يهدمها. يقول إن العلم هنا لا يفسد الشعر،⏸ بل يحميه من الخيبة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتجربة واسعة على قرارات رأس السنة وجدت فرقا بين نوعين من الأهداف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من يختار أهدافا اقترابية تبني سلوكا جديدا كان أكثر نجاحا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من الذي يختار أهدافا تجنبية تقوم على المنع فقط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تسعة وخمسون بالمئة مقابل سبعة وأربعين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي متابعة بعد عام كامل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "قال نحو خمسة وخمسين بالمئة إنهم نجحوا في المحافظة على قراراتهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذه ليست أرقاما باردة. إنها تهمس لنا أن النفس تريد أن تبنى لا أن تطارد.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وأن الهدف حين يعرف بما سنصير إليه يكون أرحم وأكثر قابلية للحياة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم تأتي الحقيقة التي لا نحبها لأننا نريدها أسرع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "العادة ليست أمنية،⏸ بل زمن. ودراسة تكوين العادات في الحياة اليومية تقيسه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "الوصول إلى مستوى عال من تلقائية السلوك يستغرق في المتوسط ستة وستين يوما.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبمدى واسع من ثمانية عشر يوما إلى مئتين وأربعة وخمسين حسب طبيعة العادة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلماذا نلوم أنفسنا إذن في الأسبوع الأول؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لهذا يموت حماس الأسبوع الأول سريعا.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نحن نطلب من النفس حصاد موسم كامل ونحن لم نزرع إلا يومين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ثم نستغرب لماذا تنطفئ.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وحين تتردد النفس، لا تحتاج خطابا أطول،⏸ بل بابا أوضح.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والفكرة التي عرفت باسم نوايا التنفيذ ترسخها مراجعة تحليلية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تحويل الهدف إلى صيغة محددة:⏸ إذا جاء الوقت الفلاني فسأفعل كذا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فيسد ذلك الفجوة بين النية والفعل ويزيد فرص الثبات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فبأي شيء نبدأ؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "السنة التي تستحق أن تسمى جديدة قد تبدأ بقرار صغير لا يصفق له أحد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن تجعل هدفك بناء لا مطاردة، وأن تسكنه في سياق ثابت من يومك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن تمنح نفسك زمنا واقعيا بدل أن تحاكمها بمنطق العجالة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "قد تبدأ بأن تنقذ نومك قبل أن تنقذ جدولك، وأن تخفف ضجيجا كنت تظنه عاديا وهو يلتهمك بصمت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن لا نحتاج سنة جديدة بقدر ما نحتاج عينا جديدة ترى أن كثيرا من تعبنا ليس قدرا،⏸ بل تأجيل متقن.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالعمر لا يقاس بعدد ما دخلنا من سنوات،⏸ بل بعدد ما خرجنا من النسخ القديمة من أنفسنا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

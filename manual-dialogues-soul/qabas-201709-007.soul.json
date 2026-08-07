@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201709-007",
+  "bridgeAfter": [
+    14,
+    30
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "جاءني أحد الطلاب في الكلية، يبدو عليه الحيرة.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فقام بتعزيز ثقته ليتحدث براحة، وقد بدأ وكأنه قلق.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ثم بدأ بالكلام بخطى مترددة وهو ينظر إلي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فأسبر له في الكلام.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فأسبرت له في الكلام من أجل تخطي حالة التردد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فقال إنه خائف مما يتم تداوله في مواقع التواصل عن الأوضاع والأزمة القطرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما يراه من تدوينات وتغريدات تعبر عن انهيار القيم والأخلاق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وروح الأخوة التي كانت سائدة فيما بيننا على مر الزمن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "رغم مرورنا بأزمات كثيرة مرت علينا من قبل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل من حقه أن يرد على هؤلاء بحرية ودون رقابة، قد تضعه في مساءلة قانونية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فتفكر وهو يسمع كلامه، وبنفس الوقت أصابته حالة من الفرح.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "أن أبناءنا يدركون الواقع، والصح من الخطأ.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأهم من ذلك يدركون المسؤولية التي تقع عليهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن بحذر، وضمن حدود الحريات التي يفرضها لهم القانون ويمنعها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتوقف عند سؤال طرحه ذلك الطالب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل ما نراه عبر وسائل التواصل الاجتماعي انهيار قيم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فقال له:⏸ هو انهيار قيم في بعض الأحيان.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولكنه في الحقيقة استنفاذ همم لا أكثر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فنظر طويلا وهو صامت، ثم وقف وقال:⏸ صدقت يا دكتور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حقا هي استنفاذ همم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وغادر وهو ممتن للنتيجة التي توصل لها، وكأنه تعرف على الطريق الذي سيسلكه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، لا ننكر أن هناك انهيار قيم حاصل في بعض الأحيان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلا نستطيع أن نعمم الفكرة على الجميع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن هناك مساحة واسعة لهذا الانهيار بيننا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نتيجة للثقافة السياسية والاجتماعية السائدة في ظل الأزمات التي بدأت منذ ما يسمى بالربيع العربي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهو في الحقيقة بداية الخريف لا الربيع.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد تلمسنا ذلك لهول الكارثة التي وقعت على العديد من الدول العربية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد قالها أميرنا الشيخ صباح في مؤتمر عمان في الأردن:⏸ إنه وهم الربيع العربي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقوله:⏸ وحتى نتمكن من تجاوز تلك الحقبة المظلمة من واقعنا العربي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فإننا مطالبون باستخلاص العبر مما حصل لنا، وأن تصحح العديد من مسارات عملنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تحصينا لمجتمعاتنا، وتماسكا لجبهتنا الداخلية، وتحقيقا لتطلعات شعوبنا المشروعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل استخلص الجميع تلك العبر فعلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ما نراه اليوم أن هناك دولا وبعض أفراد تلك الدول لم يأخذوا العبر مما حصل لنا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل أكملوا بتمزيق الجبهات الداخلية والخروج عن المسار.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وخلع تطلعات الشعوب المشروعة من خلال اختراق سيادتها ذاتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فاستنفاذ الهمم أدى إلى انهيار القيم التي تعبت من أجل بنائها أجيال وأجيال.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وبات علينا أن نتصدى ضمن سياق ممنهج لا يخالف القانون والقيم،⏸ فمن انهارت نظمه القيمية أصبح مستنفذا لا حاشدا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

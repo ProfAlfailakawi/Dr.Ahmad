@@ -1,0 +1,257 @@
+{
+  "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
+  "bridgeAfter": [
+    7,
+    27
+  ],
+  "breathAfter": [
+    32
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في يوم التخرج ترفع الشهادات، وتوزع الدرجات، وتلتقط الصور.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن لا أحد يسأل الخريج:⏸ ماذا تعلمت فعلا؟",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "الكل مشغول بالنتيجة، لا بالرحلة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ففي نظامنا التعليمي، المهم أن تنجز الورقة لا أن تفهمها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن تكتب الرسالة لا أن تغير صاحبها، وأن تسلم الملف في الوقت لا أن تولد فيه فكرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا تمنح الشهادة لمن يرضي اللجنة، لا لمن يربكها بسؤال جديد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالطالب يتعلم كيف ينسق الفقرات، لا كيف يصوغ رأيه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يتقن الاقتباس،⏸ لكنه يخاف أن يعلق بجملة من نفسه.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن التنسيق والاقتباس مهارات أكاديمية لازمة.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لازمة نعم،⏸ لكنها صارت بديلا لا وسيلة. والمقال يسند ذلك برقم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في دراسة من جامعة أكسفورد قال ثلاثة وخمسون بالمئة من طلبة الدراسات العليا إن مشاريعهم لا تمثلهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل فقط ما يطلب منهم. والكارثة أن كثيرا منهم لم يقرأ بحثه بعد التخرج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "صار الطالب يجيد التعبئة لا التعبير، ويكتب ليجتاز لا ليكشف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويكافأ على الصمت داخل النمط، لا على التفكير خارج السطر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والنتيجة؟⏸ آلاف الشهادات وأفكار قليلة. مئات الامتيازات بلا وعي نقدي واحد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومشهد يتكرر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في أحد اللقاءات وقف طالب الدراسات العليا أمام لجنة المناقشة، وقرأ الفقرة الأولى من ملخص بحثه ثم صمت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "سأله المشرف:⏸ ما الفكرة المركزية التي تدافع عنها؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فقال:⏸ نسيت، بس أظنني كتبتها بشكل ممتاز.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهذه ليست نكتة،⏸ بل مشهد متكرر. الطالب يكتب عنه، لا يكتب.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "يدرب على التنسيق لا التفكير، ويكافأ على التنظيم لا على الأصالة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتتحول الجامعة إلى معمل إنتاج:⏸ خطة، واقتباسات، وقائمة مراجع، ونموذج جاهز.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "متى ننجز؟⏸ متى نسلم؟⏸ متى نحصل على الامتياز؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولا أحد يسأل: ما الذي تغير في عقلي منذ بدأت؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي تقرير من المركز العربي للتفكير المستقل رقمان يوجعان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "اثنان وسبعون بالمئة من الطلبة لم يعودوا لقراءة أبحاثهم بعد التخرج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأربعة وثمانون بالمئة لم يستخدموا أي فكرة منها في حياتهم المهنية أو الشخصية لاحقا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "هذا ليس تعليما، هذا سباق تعبئة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل المُعلِّم بريء من هذا كله؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حتى المُعلِّم نفسه صار يفرح بالواجب المرتب أكثر من السؤال المختلف.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويشيد بالطالب الصامت أكثر من الجريء. فالهدوء أصبح معيارا للانضباط، لا غيابا للفكر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا معنى لشهادة تمنح لعقل لم يجرب الشك،⏸ ولا فخر بدرجة لم تمر من نار السؤال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فيا صانعي الشهادات: هل يمكن للدرجة أن تكتب قصة؟⏸ وهل يمكن للإطار أن ينتج وعيا؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فالورقة لا تصنع عقلا، والامتياز لا يضمن وعيا، وكل نظام لا يسأل ما الفكرة سينتهي بتخريج من يجيد الإجابة ويخاف السؤال.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

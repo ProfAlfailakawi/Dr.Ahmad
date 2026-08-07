@@ -1,0 +1,264 @@
+{
+  "slug": "do-we-contain-or-raise-2",
+  "bridgeAfter": [
+    14,
+    28
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "يعتقد كثير من الآباء أنهم يربون أبناءهم، لكنهم في الحقيقة فقط يحتوونهم.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يوفرون لهم الطعام، والمدرسة، والملابس، والأجهزة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لكن دون أن يزرعوا فكرة، أو يوجهوا قيمة، أو يصححوا سلوكا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تحمي، وتلبي، وتسكت، وترضي. أما التربية فشيء آخر تماما.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "التربية أن تربك نفسك وتتعب عقلك لتخرج إنسانا يفكر، لا يكرر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي البيت نمنع الطفل من البكاء، لا لأنه تعلم ضبط النفس.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل لأنه يزعجنا. ونعطيه ما يسكت صراخه، لا ما يهذب مشاعره.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي المراهقة نتفاجأ: لماذا لا يصغي؟⏸ ولماذا لا يتحمل؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لأننا علمناه أن كل شيء يعطى فورا،⏸ وما علمناه كيف ينتظر، أو يناقش، أو يتحمل لا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والدراسة تؤكد.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في دراسة نشرتها جامعة هارفارد تبين أن الأطفال الذين تربوا في بيئات محتوية بلا حزم يظهرون ضعفا في الاستقلالية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويميلون للتعلق المفرط أو التمرد المفاجئ لاحقا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالاحتواء بدون تربية راحة مؤقتة للوالدين، ومشكلة مؤجلة للمجتمع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "طفل نظيف، وأنيق، ومبرمج على الطاعة،⏸ لكنه هش من الداخل.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يخاف من التحدي، أو يفجر نفسه فجأة حين يترك وحيدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن أليس الاحتواء حبا؟⏸ نحن نعطيهم لأننا نحبهم.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يقر بذلك، ثم يحذر:⏸ نحن نرضي الطفل لأننا نحبه، لكننا أحيانا نخربه ونحن نظن أننا نحميه.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالتربية ليست أن تزرع حول الطفل جدارا ناعما،⏸ بل أن تزرع في داخله عقلا يرشده عندما لا تكون معه.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالأب الذي لا يتعب نفسه في الحوار اليوم، سيتعب غدا في معالجة العناد والتمرد أو الفراغ.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والأم التي لا تصبر على كلمة زائدة من طفلها، قد تسمع لاحقا صمتا زائدا في وقت لا ينفع فيه الندم.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمشكلة أن كثيرا من الآباء لا يفرقون بين توفير الراحة وصناعة الشخصية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فأنت حين تلبي كل رغبات ابنك، قد تكون ببساطة تحتويه لا تربيه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحين تغطي كل احتياجاته، قد تغطي على احتياجه الحقيقي:⏸ أن يتعلم من نفسه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقاعدتان تلخصان.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالطفل الذي لا يسمح له بالخطأ لن يعرف كيف يصلحه.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والطفل الذي لم يواجه الرفض سيتعامل مع الحياة كخيانة شخصية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي البيوت صارت التربية أقرب إلى خدمة فندقية:⏸ كل شيء جاهز، والأوامر تنفذ، والعواطف تدلل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن أين الجهد النفسي في تعليم الصبر؟⏸ وأين النقاش؟⏸ وأين التفاوض؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأين تلك الجملة التربوية التي تغير سلوكا من الداخل؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهل هذا رأي كاتب، أم أن للأمر سندا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "في تقرير عالمي لمنظمة اليونيسيف أدرجت التربية القائمة على الاستجابة الفورية والتدليل الدائم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كأحد أخطر أسباب ضعف المرونة النفسية لدى الأطفال في الأزمات.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهل نربي طفلا يتحمل؟⏸ أم نعد طفلا ينكسر عند أول منع أو تأخير أو مسؤولية؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فالتربية ليست مشروعا لخدمة طفل مرتاح،⏸ بل مشروعا لبناء إنسان قادر.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "والفرق بين من يربي ومن يريح نفسه يظهر بعد عشر سنوات، في أول موقف، وأول صدمة، وأول فشل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

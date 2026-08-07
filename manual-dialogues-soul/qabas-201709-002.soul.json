@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201709-002",
+  "bridgeAfter": [
+    14,
+    25
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "قديما كان مجرد متابعة برنامج تعليمي على التلفاز يعتبر من تكنولوجيا التعليم.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكان حاسوبنا الكثير يعلم، ممن عاصر جيل قمة التكنولوجيا، زمن الطيبين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "حاسوب صخر، على الرغم من بدائيته، إلا أنه كان بداية التطور التكنولوجي عندنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكان التلفاز والفيديو أيضا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكان التلفاز والفيديو وحاسوب صخر بوابة التقنيات التي استخدمت في التعليم المتطور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والحياة العامة أيضا، ومن هنا بدأ تكنولوجيا التعليم عندنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يا له من زمن جميل وبسيط في كل تفاصيله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ذهبنا قليلا إلى بداية التطور التكنولوجي،⏸ بل الثورة الهائلة للتكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وخاصة تكنولوجيا التعليم نفسها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومع مرور الوقت بدأت تكنولوجيا التعليم تتشكل في وقتنا المعاصر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والذي يعني توظيف التقنيات الحديثة في التعليم بشكل مستمر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأصبح في كل لحظة هناك انطلاقة جديدة في عالم التكنولوجيا وتقنياتها المختلفة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وبرمجياتها وأدواتها، وغيرها من الأمور الكثيرة التي ترتبط بالتكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والذي عزز وجودها انتشار الإنترنت في كل مكان.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وظهرت مسميات عديدة مواكبة للتكنولوجيا التعليمية في هذا المجال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل تكنولوجيا التعليم هي نفسها التعليم المبرمج؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فعلى سبيل المثال، هناك فرق بين تكنولوجيا التعليم والتعليم المبرمج.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فالتعليم المبرمج يكون باستخدام التقنيات أو بغيرها، وضمها في العملية التعليمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أما تكنولوجيا التعليم، فتكون باستخدام التقنيات الحديثة والمتطورة باستمرار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بالإضافة إلى البرمجيات الحديثة المتجددة في كل مجال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولو نظرنا إلى التقنيات التي تستخدم حاليا في التعليم، لوجدنا أمرا جديدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أصبح حديثا الجوال، أو النقال، أو الهاتف المحمول، هو المستهدف باستخدام تقنيات التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وذلك لسهولة حمله واستخدامه في كل وقت ومكان.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأثبتت العديد من الدراسات جدوى استخدام الجوال في التعليم فعلا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهناك تزاحم كبير من الشركات لطرح برمجيات تعليمية على الجوال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "رغم أن العدد كبير،⏸ إلا أن الفائدة في الواقع قليلة جدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا لا تجدي كل هذه التطبيقات إذا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والتساؤل عن عدم جدوى هذه التطبيقات يترك لمجال الدراسات التربوية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كي تسبر غوره وتخرج بفائدة حقيقية لهذا التعليم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالدراسات الحالية لم تعمم التجربة إلا ضمن نطاق ضيق ومحدود.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبين حاسوب صخر وجوال اليوم مسافة طويلة في عالم التقنيات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتعليم ما زال ينتظر أن تصبح التجربة أوسع من نطاقها الضيق اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتكنولوجيا التعليمية تعني التقنيات الحديثة والمتطورة باستمرار، مع البرمجيات الحديثة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحاسوب صخر كان بداية الطريق، والتلفاز والفيديو بوابة التقنيات الأولى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "واليوم أصبح الجوال هو المستهدف، وتزاحمت الشركات على برمجياته التعليمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فمتى ستصبح التجربة واقعا ينتشر على مستوى مؤسسات التعليم؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "سواء التعليم العام أو التعليم العالي، وهذا ما ينتظره كل معني بالتعليم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

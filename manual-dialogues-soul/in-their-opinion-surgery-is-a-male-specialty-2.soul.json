@@ -1,0 +1,264 @@
+{
+  "slug": "in-their-opinion-surgery-is-a-male-specialty-2",
+  "bridgeAfter": [
+    8,
+    12
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "اشتعلت مواقع التواصل والناس بمختلف الدول غضبا على تصريح جازم بالنفي.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أنه لا يوجد في العالم دكتورة جراحة متميزة، وإن وجدت فإما غير متزوجة أو مسترجلة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "صدمت من رأي القائل الجازم، وهو دكتور أكاديمي معروف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومن أين جاء بهذا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "من أين جئت بهذا النفي الذي لا يبت إلا عن ضعف المصادر؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ما هذه السقطات القاتلة التي أوقعت نفسك بها؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأرى أنك قد فجرت على نفسك موجا من التسونامي الذي لن يرحمك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد رأيت الجمع الهائج أكثرهم من الرجال الواعين، وأزواج طبيبات جراحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلا يوجد عالم يخلو من طبيبات جراحات متميزات ومتزوجات.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وإذا وجدت طبيبة جراحة بقناعتك مسترجلة؟⏸ لماذا هذا الابتذال الصريح بالمرأة يا هداك الله؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولا مبرر لهذا أبدا.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولا مبرر، لأن الكلام جاء صريحا قبيحا بحق الجراحات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والعالم يعج بهن رغم قلتهن، لاعتبارات مجتمعية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما هذه الاعتبارات تحديدا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "العادات والتقاليد التي تعتبر تخصص الجراحة لا يناسب النساء، خاصة الجراحات الدقيقة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن الثقافة المجتمعية المسيئة للنساء أثرت بصورة مباشرة على فكرة تقبل النساء كطبيبات جراحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فغرف العمليات كما يعتقد هي حصن منيع للأطباء الجراحين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن المرأة لا تنافس.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأن المرأة لا يمكنها العمل أو المنافسة، وأن المرضى لن يتقبلوا فكرة إجراء عمليات جراحية لهم من قبل النساء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يجوز أيها الزميل الأكاديمي أن نستقي معلوماتنا وإحصائياتنا من مواقع الإنترنت.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "دون الرجوع إلى مصادر موثوق بها،⏸ ولا يمكن أن نأخذ كل ما نقرأ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد اطلعت على دراسات كثيرة تقول عكس ما قلت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتعزو الدراسات قلتهن إلى الصورة المرسومة مسبقا عن النساء الطبيبات، أنها صورة نمطية بكل تأكيد.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تقول أول رئيسة للكلية الملكية للجراحين في بريطانيا، الدكتورة كلير ماركس، إن عددهن لا يتجاوز ثمانمئة طبيبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبنسبة إحدى عشرة بالمئة من مجموع أطباء الجراحة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ونتيجة تقلب الصورة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وقال باحثون من جامعة تورنتو إن النساء أكثر مهارة من الرجال في الجراحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي مسح شمل أطباء مؤهلين حديثا في بريطانيا، أفادت ثمان وستون بالمئة من الطبيبات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بأن تخصص الجراحة لا يعتبر تخصصا يرحب بالنساء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إذن المشكلة اجتماعية، وسيادة المجتمع الذكوري في المقام الأول.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ورغم ذلك، حاضرات ومتميزات في كامل أنوثتهن، متزوجات وغير متزوجات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي مصر يوجد ألفان وسبعمئة وسبع وتسعون طبيبة في تخصص الجراحة، وفي الغالب متزوجات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهناك الدكتورة الجراحة منى كسكين، الوحيدة بين أطباء جراحة المخ والأعصاب في غزة، وهي متزوجة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلا بد من تكسير الصورة النمطية والثقافة المجتمعية المتعلقة بعمل النساء كطبيبات جراحات.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "والواضح أن الزميل لم يتناول المسألة بموضوعية، وتصريحه لا يبت عن منهجية علمية وإحصائيات موثقة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

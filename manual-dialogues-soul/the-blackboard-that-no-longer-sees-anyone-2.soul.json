@@ -1,0 +1,285 @@
+{
+  "slug": "the-blackboard-that-no-longer-sees-anyone-2",
+  "bridgeAfter": [
+    12,
+    28
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كانت السبورة ترى الوجوه، وتحفظ الأسماء، وتبحر مع العقول.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما اليوم فقد أصبحت مجرد شاشة صماء.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "تعرض عليها شرائح بلا معنى، وتختبئ خلفها نظرات غائبة وعقول مشغولة بأجهزة أخرى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ما عادت ترى ابتسامة. ما عادت السبورة تلمح ابتسامة طالب،⏸ ولا حتى نظرة استيعاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كل ما تراه هو ظهور منحنية، ووجوه تائهة، وأصابع تضغط على الشاشات أكثر مما ترفع لتسأل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمعلم حاضر،⏸ لكنه يشرح لطلبة يكتبون الملاحظات دون أن يسمعوه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يقول أحدهم:⏸ نكرم المُعلِّم في أكتوبر، ونقصيه باقي الشهور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فقد صار صوت المُعلِّم في الخلفية، مثل الموسيقى في مقهى مزدحم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "موجود⏸ لكنه لا ينصت إليه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقبل سنوات كانت المدارس مليئة بضجيج الأسئلة، وبنقاشات الصف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبحركات العيون بين الطلاب والسبورة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أما اليوم فصمت تام.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فكأن الفصل غرفة صامتة، فيها شاشة تعرض، ومعلم يتحدث، وطلبة ينتظرون الملخص في القروب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل المشكلة في الأدوات إذن؟⏸ نلغي الشاشات وينتهي الأمر؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال أعمق من ذلك. يقول إنها ليست أزمة أدوات،⏸ بل أزمة وجود.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالتعليم لم يعد لقاء،⏸ بل بثا. والمعلم لم يعد مرشدا، بل ناقل شرائح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وشهادة معلمة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي أحد اللقاءات التربوية قالت معلمة بعد ثلاثين سنة من الخبرة جملة واحدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لم أعد أرى في عيون طلبتي سؤالا، فقط انتظار الإجابة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فقد صارت السبورة وسيلة لعرض المعلومات، لا لاكتشاف الأفكار.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وغاب ذلك الحضور الإنساني العميق الذي يصنعه تواصل العين ونبض الكلمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وإعادة روح الصف لا تتطلب ميزانيات،⏸ بل تتطلب وعيا بأن التعليم بناء إنسان لا إتمام منهج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحدس المُعلِّم حين يشعر أن أحدهم لم يفهم، حتى لو لم يتكلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ودراسة نشرت في Journal of Educational Psychology كشفت رقما ثقيلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أكثر من أربعة وستين بالمئة من المعلمين في المدارس الرقمية يشعرون بالاغتراب الوظيفي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويفقدون الإحساس بتأثيرهم في الصف.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا لا يقاس بالتقنية وحدها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فهذا الاغتراب لا يقاس بالتكنولوجيا فقط،⏸ بل بانقطاع الدفء من الفصول الدراسية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولذلك فإن إعادة النظر في العلاقة الصفية ليست ترفا،⏸ بل ضرورة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل جرب أحد العودة إلى الوراء فعلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في فنلندا قامت بعض المدارس بإلغاء السبورات الرقمية مؤقتا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعادت إلى نماذج التفاعل الوجهي والمجموعات الصغيرة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والنتيجة:⏸ تحسن الأداء المدرسي بنسبة ثمانية عشر بالمئة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وزاد تفاعل الطلبة بنسبة خمسة وثلاثين بالمئة خلال ثلاثة أشهر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فليس التكريم لوحة شكر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بل بيئة تنصت له، وتؤمن بدوره، وتعيد له مكانته التي يستحقها.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وربما آن الأوان لنعيد ترتيب الفصل. لا الكراسي،⏸ بل العلاقة بين الوجوه والقلوب.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فإن كانت السبورة قد انطفأت، فربما يجب أن نضيء نحن من جديد.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

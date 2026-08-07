@@ -1,0 +1,257 @@
+{
+  "slug": "qabas-201702-003",
+  "bridgeAfter": [
+    15,
+    23
+  ],
+  "breathAfter": [
+    32
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "عندما كنا صغارا حتى المراهقة، كان ينتابنا الخوف عند القيام بأي تجاوز، حتى لو كان بسيطا.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكنا نعلم أن هناك رادعا، وهو العقاب لكل تجاوز.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "سواء على المستوى الأسري أو المجتمعي أو القانوني، في كل تجاوز مهما صغر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكبرنا وكبر معنا هذا الحس الذي يهاب التجاوز ويقاومه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأذكر مقولة رائعة كان جدي دائما يرددها:⏸ من أمن العقاب، ساء الأدب.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتجاوز وإساءة الأدب التي تصل إلى الجرائم، تبدأ في قصور التشريعات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أي أن الفرد يأمن العقاب، فيبدأ بالتجاوز والتمادي، وهكذا تبدأ إساءة الأدب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا يطبق على كافة المستويات، والتكنولوجيا لا تخرج من هذا الإطار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ففي البداية كانت التكنولوجيا تنمو في الظل، بعيدا عن أعين الحكومات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وظهرت بعض التجاوزات التكنولوجية دون محاسبة، لأن أثرها لم يكن كبيرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن أبرزها اختراق بعض الأجهزة الشخصية، والفيروسات التي كانت تتخذ طابع الفكاهة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ثم توسعت آفاق التكنولوجيا، وأصبحت تغزو ميادين مهمة تتعلق بأمن المجتمع وسلامته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وظهرت جرائم إلكترونية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وظهرت بعض الجرائم الإلكترونية، والتي كانت على مستوى عال من الخطورة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما زالت الحكومات تحت الضوء، لا ترى ما ينمو بعيدا عن أعينها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أصبح هناك تخصصية، وعلم اختراق وتجسس، وفاق الأمر التصور.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأين كانت الحكومات في أثناء هذا التطور الخطير؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "انشغلت في تسوية خلافات وصراعات بين الدول، وتركت التكنولوجيا تنمو في الظل من جديد.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بعض الدول تنبهت، وبدأت في وضع تشريعات خاصة بالتكنولوجيا، ووضعت رقابة إلكترونية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وخصصت لها خبراء ومراقبين أمنيين واستراتيجيات، وبنودا تشريعية لمعاقبة المتجاوزين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ووضع حد للاختراقات والتجسس، وتفعيل خدمات الاستعلام الإلكتروني عن الدعاوى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "صحيح أن القانون لهث وراء تهافت التكنولوجيا ووضع حدود لها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "إلا أن تلك الدول بدأت بالفعل تدارك خطورة الأمر، ووضعت له حدودا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "واستطاعت أن تضع تشريعات محلية لحماية خصوصية أفرادها ودولتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وماذا عن الدول التي لم تتحرك حتى هذه اللحظة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن الكثير من الدول لم تعر أي انتباه، ولم تضع تشريعا واحدا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما زالت منشغلة في الخلافات والصراعات، ولم تدرك بعد مدى خطورة تجاوزات التكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تلك التكنولوجيا التي تنمو في الظل، وتبث السم بين أفراد شعبها وأركان دولتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وستكون الصحوة وقت الاحتضار، حيث لن ينفع الإنعاش.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالفرد الذي يأمن العقاب يتمادى، والدولة التي تؤجل التشريع تدفع الثمن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والتكنولوجيا اليوم لم تعد تنمو في الظل وحدها،⏸ بل تنمو في كل بيت.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولم يعد قصور التشريعات أمرا يحتمل التأجيل، فالأثر أصبح كبيرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، سيصحو العالم على قنبلة موقوتة اسمها التكنولوجيا، وقد تغولت في كل ميدان.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "بشكل يصعب معه وضع إطار استراتيجي يقننها، أو يضع حدا لها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

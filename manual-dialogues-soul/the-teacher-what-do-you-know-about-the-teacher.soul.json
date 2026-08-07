@@ -1,0 +1,258 @@
+{
+  "slug": "the-teacher-what-do-you-know-about-the-teacher",
+  "bridgeAfter": [
+    12,
+    23
+  ],
+  "breathAfter": [
+    32
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "التقيت مع صديق لي، فوجدته غاضبا محتدا بعض الشيء، ~~ مرسوم على وجهه الحزن.",
+      "feeling": "gravitas",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "قلت له أن يتوكل على الله وأن يتحدث إن أراد، ليوسع عن صدره.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فصدمني مما سمعت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وماذا سمعت؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أن أحد المدرسين الوافدين، الذي يدرس ابنه في المرحلة الابتدائية، قام بضربه بالعصا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبدأ الولد بالبكاء من الألم، وعمد هذا المُعلِّم على توقيفه في آخر الصف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولم يكتف بذلك،⏸ بل قام بشتم الطلبة بشكل عام، وقال حرفيا مع المعذرة: يا أولاد الجزمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "اعذروني يا سادة يا كرام، سأتحدث بعيدا عن الكياسة وما تعودنا عليه من اللطف.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فالموضوع يخرج من مرب فاضل، هذا على أساس المفاضلة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إلا أنه يفتقد للتربية والأخلاق العامة التي لا بد أن يتعامل بها مع أبنائنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تحول التعليم على يده إلى سوق جمعة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "قد يخترق فيه الكلمات النابية والألفاظ الخارجة، والكثير من المصطلحات غير المرغوبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والقسوة المؤدية للضرب في إطار التربية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن ألا نعمم على كل الوافدين بهذا الكلام؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يتحدث عن حادثة ومعيار، لا عن جنسية. ويسأل:⏸ كيف يقوم معلم بالضرب والشتم في مدارسنا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ونحن نعلم أن للمعلم أخلاقيات وفنيات لا بد أن يتعامل من خلالها مع طلبته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ليزرع فيهم الأخلاق الحميدة، والقيم الفاضلة والإنسانية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالمدرسة بيئتهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالمدرسة هي بيئة الطلبة التي تخرجهم إلى المجتمع وسوق العمل بأفضل ما يمتلكون من أخلاق ورحمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن خلالها نولد بداخلهم الثقة ومفهوم الذات، والرضا عن الحياة والتراحم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "دون أن نزرع بداخلهم الشعور بالخوف، وعدم الشعور بالأمان النفسي في ظل الضرب المؤلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "خاصة لأبنائنا في المرحلة الابتدائية، فهم باكورة المجتمع وفيهم نبدأ الغرس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولسنا بحاجة لمعلمين تعمل الدولة على استقدامهم لمجرد أنه حاصل على شهادات وبمعدلات متدنية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يقصد بذلك أي عنصرية،⏸ بل استحقاق حق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فماذا نريد إذن؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لأننا نريد معلمين أكفاء يمتلكون سلاح المستقبل من معرفة وأخلاق وقيم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يتحدون عصر التكنولوجيا الذي قد يحدث تغييرا كبيرا وخطيرا بأبنائنا إذا ما تم إهمالهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "معلمون يعملون على صقل شخصيات أبنائنا ليواجهوا هذا المستقبل المتجدد والمتغير باستمرار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بخطى واثقة، ونفسيات ثابتة ومبدعة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل يصل هذا الصوت إلى من بيده القرار؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يخاطبه مباشرة:⏸ يا وزير التربية، نعلم أنك من صناع القرار المهتمين والمتابعين لمثل هذه القضايا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فدموع أبنائنا غالية لا تذرف بسهولة، ونعلم أنك لن تترك هذا الأمر يمر بسلام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهل يليق هذا بشخصنا أمام أبنائنا، ونحن قدوتهم ورمز افتخارهم؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "أترك الأمر بيد رعاية وزير التربية بكل احترام وتقدير، ولكل من له مداخلة على هذه القضية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

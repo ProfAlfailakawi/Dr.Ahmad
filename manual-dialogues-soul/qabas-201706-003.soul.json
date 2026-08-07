@@ -1,0 +1,257 @@
+{
+  "slug": "qabas-201706-003",
+  "bridgeAfter": [
+    15,
+    27
+  ],
+  "breathAfter": [
+    32
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في الماضي كنا نعيش التقدم في جميع مراحله وفق تدرج معقول.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكنت أسمع والدي والأهل يتحدثون عن أيام أول.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "في وقت لم تكن الكهرباء منتشرة، وكيف دخلت وانتشرت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعلى ماذا اعتمدت في ظل التخطيط البدائي الأولي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولو نظرنا ضمن رؤيا تنظيمية شاملة، نجد أمرا لافتا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فقبل اختراع الكهرباء، عاشت البشرية مع تقدم تكنولوجي شمل جميع نواحي الحياة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "دون أن يرتبط هذا التقدم بجانب محدد أو شيء محدد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالمبادئ كانت عامة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فنجد أن الكثير من الاختراعات البشرية قد ارتبطت بمبدأ الدوران أو الضغط أو الدفع أو الحرارة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذه المبادئ العامة ليست مرتكزة على شيء محدد، ويمكن تواجدها في كل زمان ومكان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبعد ظهور الكهرباء، بدأت الاختراعات والاكتشافات تعتمد اعتمادا كليا على الكهرباء.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "باعتبار أنها شيء مسلم به ودائم في كل زمان ومكان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم جاء اختراع الحاسوب، والذي يعتمد بشكل رئيسي على الكهرباء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومع تقدم الزمن، أصبحت جميع الاكتشافات والاختراعات تعتمد بشكل رئيسي على الحاسوب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتطورات التي طرأت عليه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وبطبيعة الحال، تكون جميع هذه الاختراعات قد اعتمدت على الكهرباء التي يعتمد عليها الحاسوب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل يعقل أن تختفي الكهرباء من حياتنا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هي فكرة قد تبدو مستحيلة للوهلة الأولى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن الكتاب السينمائيين الذين كتبوا في هذه الفكرة أكثر من مرة، جعلوها ممكنة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالكوارث الطبيعية والحروب النووية، وربما فكرة الغزو الفضائي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كلها جعلت فكرة اختفاء الكهرباء من حياتنا فكرة ليست مستحيلة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلو تخيلنا مثلا هذه الفكرة أنها حدثت على أرض الواقع، ماذا سيكون مصير البشرية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حتما ستعود البشرية إلى العصر الحجري.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وقد يقول قائل:⏸ ليس العصر الحجري، وإنما إلى عصور ما قبل اختراع الكهرباء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويخالف الكاتب القائلين بذلك، فنحن الآن لا نعلم تلك المبادئ التي أسست عليها التكنولوجيا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "إن صح تسميتها بذلك في العصور ما قبل اختراع الكهرباء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد اقتصرت دراسة تلك التكنولوجيا على الجانب الأثري والتاريخي، الذي يعتمد على التحليل دون التطبيق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبذلك تكون لدينا معرفة نظرية لا ترتقي لمستوى التطبيق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما الذي كان يجب أن نفكر فيه أولا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كان من باب أولى، قبل أن نفكر بالتقدم التكنولوجي والانجراف وراء التطور المتسارع، أن نفكر: وماذا بعد؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أين نحن فيما وراء الكهرباء؟⏸ فمصادر الطاقة لن تدوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكل شيء يدور حولنا يحيا على الطاقة، التي هي مصدر الكهرباء، والتي هي مصدر التكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومصير الكهرباء الموت، فما هو الجيل الذي بعد الكهرباء؟⏸ دعونا نفكر بالبديل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالأمر أخطر من كونه طرحا لفكرة،⏸ بل تعدى إلى الخوض في الجوهر، أي في صميم حياة البشرية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201806-002",
+  "bridgeAfter": [
+    16,
+    28
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كانت المشاهدات والمشادات في الأيام الماضية نتيجة لقرار معالي وزير التربية في الغش.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "شاحنة، ومليئة بالغضب من الطلبة وأولياء الأمور.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والكثير من الإداريين وغيرهم ممن لهم طرف في القرارات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتابعنا ردود الأفعال التي وصلت إلى رفع أولياء أمور الطلبة قضايا تظلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الذين حرموا من الاختبارات نتيجة إلى الغش، في المحاكم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فدعونا ننظر لتلك الدعاوى في المحاكم بهدوء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "تتبعنا رأي المحكمة المستعجلة التي أقيمت للنظر بتلك الدعاوى للمتظلمين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من حرمانهم بتأدية جميع الاختبارات في هذا العام.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وشاهدنا الحكم الذي أصدر برفض تلك الدعاوى.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقضاؤنا نزيه ما عليه غبار بلا شك.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وفي إطار هذا الحكم العادل، سنأتي بدليل أن مع معالي وزير التربية حق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في الإجراءات التي اتخذها كلها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في الإجراءات التي اتخذها ضد الطلبة الذين غشوا في الاختبارات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن المحكمة لها الحق في رفض الدعاوى المرفوعة إليها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والدليل هو نسبة النجاح في الثانوية العامة لهذا العام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مقارنة مع السنوات السابقة، سنجد أنها فروقات كبيرة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "بل هي هائلة، وتكاد تكون خرافية في هذا الباب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما نسب الأعوام السابقة تحديدا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فبعد أن كانت في بعض السنوات الأعلى في العلمي نسبة تسعين بالمئة تقريبا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والديني قريبا منها، وأدناها في الأدبي تسعة وسبعون بالمئة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي سنوات أخرى الأعلى العلمي واحد وتسعون بالمئة، والديني ثمانية وثمانون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأقلها الأدبي ستة وثمانون بالمئة، وهذا في سنوات سابقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما نسبة النجاح في الثانوية لهذا العام،⏸ فهي في العلمي تسعة وستون بالمئة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والأدبي ثلاثة وستون بالمئة، والديني ثمانية وستون بالمئة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هل لاحظتم يا سادة يا كرام أن نسبة النجاح هذا العام قد انخفضت؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وبشكل كبير، وبالطبع ليست صدفة، أو حظا عاثرا لطلبتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نعم ليست صدفة، وليس للحظ مكان في هذا الأمر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل هو قرار معالي وزير التربية الذي جاء في مكانه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقضى على الغش الذي استفحل كعامل فساد في قاعات الاختبارات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأين العدل فيمن ينجح بالغش؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمن لا يستحق ينجح وبنسبة، لمجرد أنه يبدع في الغش.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وغيره من يدرس ويبذل جل طاقاته، قد لا يصل إلى النسبة التي يحصلون عليها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هؤلاء الذين يعتمدون على الغش، فهل هذا من العدل شيء؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فدعونا نمعن العقل، ونبسط الضمير، فالغاضبون من القرار فليجلسوا مع أنفسهم جلسة حق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "سيعلمون أن من غشنا فليس منا، وأن القرار جاء ليوجه أبناءهم إلى صائبة الطريق.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالغش لن ينفعهم، وهو كالإدمان طريق لا يصل بهم إلا للفشل والندامة، فتحية لمعالي الوزير وللمحكمة الفاضلة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201712-003",
+  "bridgeAfter": [
+    9,
+    27
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كنت أتصفح أفكار المفكرين في مجال مستجدات التكنولوجيا وتطوراتها.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فسقطت عيناه على فكرة اختفاء بعض الوظائف في المستقبل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فتوجست خيفة من مستقبل الكثيرين ممن أعرفهم من أهلي وأصدقائي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حتى أبنائي ومستقبلهم الغامض الذي ينتظرهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فقد سمعنا في كثير من الأوقات عن فقدان أحدهم وظيفته بشكل مفاجئ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتنقلات كثيرة تحدث بين الموظفين في كل مكان.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويفقد الكثيرون مجال عملهم، ليبدأ في مجال آخر لا يعني تخصصه بشيء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتبدأ معاناة الكثير في التكيف مع الوضع الجديد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومن فقد وظيفته يبدأ مرحلة الإفلاس النفسي، نتيجة للواقع الذي فرض عليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي ظل التحديات التي تعاني منها الكثير من المجتمعات.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويطرق على فكري سؤال:⏸ هل وظيفتك مهددة بالانقراض؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا نستعرض الأفكار.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبخصوص التطور التكنولوجي وما ينبني عليه من اختفاء بعض الوظائف وظهور أخرى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "هنا نستعرض أفكار بعض المفكرين في هذا المجال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومن أبرزهم آرت بليجر، الذي برز في حملة ترامب الأخيرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والتي وعد فيها الشعب الأمريكي بالعديد من الوظائف، على عكس ما تنبأ به بليجر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "بأن حلول الآلة مكان الإنسان سيلغي الكثير من الوظائف، وخاصة الميدانية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل من مثال وقع فعلا على أرض الواقع؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كما حدث مع عمال الطباعة في أشهر الصحف العالمية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والتي كادت أن تعلن إفلاسها بسبب النشر الإلكتروني.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كما أن جميع دول العالم المتطورة ستشهد هبوطا في فرص العمل بنسبة سبعة وأربعين بالمئة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "في خمس وعشرين سنة المقبلة، وفقا لدراسة صادرة حديثا عن جامعة أكسفورد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعلى النقيض يأتي المنظر والكاتب توماس فري برؤيته.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "أن ستين بالمئة من الوظائف القادمة لم تخترع بعد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أمام هذا المشهد العالمي الذي يتوجس ويتأمل ما سيأتي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتبقى النتائج الحقيقية رهن بالمستقبل نفسه لا غير.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالتحولات في سنن الكون رهن بيد خالقه، ولكن نحن نأخذ بالأسباب ونعد العدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونتفق جميعا أن الإنسان يجب أن يعد ويجهز بكل الإمكانيات المتاحة لمواجهة هذه التغيرات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما الذي نحتاجه آنيا في رأيه؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يقول:⏸ أتفق مع بليجر أن ما نحتاجه آنيا هو إضافة حصص.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لضمان تملك الطلاب احتياجاتهم لأداء الوظائف التي ستكون متاحة لاحقا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "واستخدام تقنيات أكثر ديناميكية، وإعادة النظر في نظام الاثنتي عشرة سنة دراسية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والسؤال الأخير الذي يئن في ذاكرته هو سؤال ثقيل على النفس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فمن فقد وظيفته يبدأ مرحلة الإفلاس النفسي، نتيجة للواقع الذي فرض عليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ماذا سيصنع البشر عندما يفقدون وظائفهم ويخسرون آمالهم؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "لكن أعتقد أن نعيش بهدف، هو ما يجعل حياتنا تستمر رغم كل شيء.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

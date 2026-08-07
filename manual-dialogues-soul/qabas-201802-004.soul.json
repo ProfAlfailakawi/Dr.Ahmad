@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201802-004",
+  "bridgeAfter": [
+    15,
+    28
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كثيرا ما أجلس مع نفسي، أو مع بعض الزملاء المقربين في الكلية.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نتداول الهموم التعليمية وما آلت عليه العملية التعليمية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وحال التعليم في المدارس، وأداء المعلمين وأعضاء هيئة التدريس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في كليات التربية وغيرها من الكليات الأخرى.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ونتساءل:⏸ هل القصور من وزارة التربية، أو من التعليم العالي، أو من الحكومة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولو نظرنا إلى رأس الهرم وهو الأساس،⏸ فإن الحكومة هي المسؤولة لمتابعة الجهتين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وإنجازاتها، وأداء المُعلِّم،⏸ وما وصل إليه التعليم بشكل عام في تحقيق الأهداف المرجوة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وترتيبنا بين شقيقاتنا في الخليج، وعلى مستوى العالم ضمن المقاييس العالمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبالتالي تضع يدها على القصور وأسبابه الحقيقية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والعمل الدؤوب من أجل وضع حلول جذرية للوصول لتعليم متطور.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "في ضوء متطلبات العصر الذي نعيش فيه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إن دور وزارة التربية والتعليم يأتي من خلال إدارات التعليم والمدارس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بالعمل على رفع مستوى المُعلِّم بما يليق بمكانته ودوره.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويحقق تطلعات ورؤى قيادتنا الحكيمة في هذا الوطن.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وبالتالي يعكس حرص واهتمام القائمين على كليات التربية في وطننا الكويت.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فلو نظرنا إلى عملية القبول بكليات التربية، لوجدنا أمرا يستحق الوقوف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الذي يجب أن يتوفر في المتقدمين إليها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا بد أن تخضع لمعايير وخصائص ومهارات لا بد أن تتوفر في المتقدمين.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لرفع مستوى القبول بها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومعيار المعدل التراكمي واختبارات القياس، مبينا أنه لا بد من إعادة النظر في برامج كليات التربية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بما يتوافق مع معايير ومتطلبات العصر الحديث.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إلى جانب إعادة النظر في عملية تطوير أداء عضو هيئة التدريس في الكليات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتشجيعهم وإشراكهم في البرامج التدريبية المختلفة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إن كليات التربية تحتضن عددا كبيرا من الطلبة والطالبات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهي من أكثر نسب القبول ما بين الكليات الأخرى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ويقترح تشكيل لجنة من عمداء كليات التربية، مهمتهم تقديم مشروع تطويري للكليات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من أجل إعداد المُعلِّم، والاستفادة من مقترحات الجامعات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كإنشاء هيئة وطنية لاعتماد برامج إعداد وتأهيل المعلمين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وذلك لرفع مستوى تأهيل خريجي كليات التربية، ومعايير القبول فيها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الهدف الرئيسي من تطوير هذه الكليات؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يتمثل الهدف الرئيسي لتطوير كليات التربية في تحقيق تحديث شامل لها.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مواكبا التطورات العلمية والمهنية العلمية، ومراعيا الخصوصية الكويتية بعامة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وخصوصية كل كلية وفق بيئتها بخاصة، على أساس منظومي من ناحية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفعالية التعليم والتعلم من ناحية ثانية، والجودة الشاملة كمدخل للتطوير من ناحية ثالثة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فعملية تطوير كليات التربية تحتاج إلى تضافر الجهود، وإرادة قوية وإدارة واعية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "كما أن نجاحها مرهون بجهود أعضاء هيئة التدريس بكليات التربية، فهم عماد عملية التطوير.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

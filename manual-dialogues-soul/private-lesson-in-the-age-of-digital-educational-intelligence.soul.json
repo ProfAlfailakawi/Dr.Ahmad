@@ -1,0 +1,264 @@
+{
+  "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
+  "bridgeAfter": [
+    12,
+    28
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "ذهبنا هنا وهناك، وكنا نذهب إلى المدارس والجامعات، ونرى أبناءنا على نفس الطريق.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والطريق ما زال رمز الاستمرارية مع بعض التغييرات، ولكن المسار اختلف.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد رأيت ابني وأبناء الكثيرين ممن أعرفهم يسيرون نحو المسار المختلف المتطور.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في بلاد أخرى ليس هنا. فنحن في زمن الذكاء التعليمي الرقمي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولم يعد أبناؤنا يسيرون على نفس ما سرنا إليه. وللتطور تأثير في كسر الأسوار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والانتقال في التعليم نقلة نوعية تدرك المسار الذكي الرقمي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فقد تكاتفت الدول في نقل التكنولوجيا وتبادلها، وتوظيفها في كافة المجالات والقطاعات.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وقطاع التعليم كان له نصيب الأسد في تلك الدول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وعمدت للخروج من أسوار المؤسسات التعليمية التقليدية إلى التعليم الذكي والرقمي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فصار مسارا لا تجربة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأصبح التعليم الإلكتروني وعن بعد مسارا تعليميا ملتزمين فيه، ولم يشذوا عن الركب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وواجهوا الأزمات كما في إطار الوباء، ورفعوا راية التطور واستمروا على تطويره ولم يكتفوا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فخرجت دول العالم من التجربة إلى التوظيف، وأصبحت التجربة موثقة في الماضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ونحن؟⏸ ألم ندخل التجربة نفسها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "دخلناها،⏸ لكن لاحظ الكلمة: ما زلنا نقول تجربة. يا لسخرية القدر.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقام كثيرون باستغلالها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "قام الكثيرون باستغلالها أسوأ استغلال، سعيا وراء الثراء المادي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وضللنا عن الهدف الرئيسي في التعليم الإلكتروني عن بعد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فقد خرج المتسلقون وصائدو المواقف، وذهبوا إلى الأسوار وخلف الأسوار لأداء مهامهم غير المشروعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبدلا من أن نوثق تجربة فاعلة ونطورها، وثقنا دروسا خصوصية لأبنائنا المتعثرين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "أو ما يستبق الذكر بأنهم متعثرون.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وماذا عن قواعد السلامة والتباعد وغيرها التي فرضت علينا؟⏸ والتعليم أونلاين للطلبة من أجل سلامتهم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "دخلت الدروس الخصوصية إلى كل منزل، بحجة أن التعليم عن بعد فاشل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن الأبناء لا يستذكرون من خلالها جيدا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وجاؤوا كفرق إنقاذ.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "جاء أساتذة الدروس الخصوصية كفرق الإنقاذ لهؤلاء الأبناء الذين لا يريدون أن يدرسوا ويركزوا في دروسهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكل هم أهليهم مستقبل أبنائهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولو تفكرنا بما يحصل، سنجد أنها حرب واسعة من أجل إفشال التجربة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والعودة إلى أسوار العبودية والتعليم التقليدي، وتقع منظومة التعليم الذكي الرقمي في الأرض.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما البديل؟⏸ أن نمنع الدروس الخصوصية بالقانون؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يبدأ من البناء:⏸ بدلا من حصاد واصطياد الأخطاء، فلنجتمع لصنع بنى تحتية قوية ثابتة، وفكرا رقميا ذكيا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبدلا من الدروس الخصوصية التي أوهم الأهل بها أنفسهم بأنها الحل، تفاعلوا مع التجربة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لتصبح مسلكا تعليميا ملزما، كما التعليم الإلزامي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولنعمل على نبذ التأخر الذي نحن فيه، ونشيد بأهمية التعليم الذكي الرقمي،⏸ فهو مستقبل أبنائنا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فلا تجعلونا ممن ضحكت عليهم الأمم، ولتضرب الدولة بيد من حديد لهؤلاء مستغلي العلم والأهالي.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

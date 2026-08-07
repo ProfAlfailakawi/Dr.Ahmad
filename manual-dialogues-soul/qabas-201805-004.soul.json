@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201805-004",
+  "bridgeAfter": [
+    17,
+    28
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في الماضي كان الغش لا يخرج عن ورقة وقلم في الامتحان.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو على البنطلون، والبنات على المريول في الامتحان.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "يتم نحت المادة أو جزئية منها بخط صغير جدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتبدأ البراشيم في الامتحان بالخروج على أشكالها البسيطة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن في وقتنا الحالي، أصبح الغش يدخل ضمن تطور العصر الحديث.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي إطار التكنولوجيا بمستحدثاتها المختلفة والاتصالات الحديثة كلها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وحدث بلا حرج عما وصل إليه حال الغش اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فقد تلقى بعض المكالمات منهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تلقيت في الآونة الأخيرة بعض المكالمات من أولياء الأمور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يشكون أن أولادهم تم فصلهم من الامتحان، وحرمانهم من السنة كاملة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك بعض المدراء والقائمين على الامتحانات تم فصلهم أيضا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وذلك لتيسيرهم الغش في قاعات الامتحانات، وتسريبها للطلبة أنفسهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولم لا يفصلون هم أيضا معهم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولم لا؟⏸ فالأمر لا يحتمل السكوت عليه بعد اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نعم يا معالي وزير التربية، إن قرارك عين الصواب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونحن معك في قراراتك الشجاعة كلها يا معالي الوزير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحقا نشكرك على لفتاتك الإصلاحية في هذا الأمر كله.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فموضوع الغش بات يؤرق بالنا وزماننا في كل عام دراسي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الذي جعل كشف الغش أصعب من قبل؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "دخلت التكنولوجيا التي من الصعب كان كشفها في عملية الغش.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وذلك لدقة الأدوات التي تستخدم لتيسير الغش أثناء الامتحانات لدى الطلبة وتسريبها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن التربويون بحاجة لقرارات رادعة شجاعة في هذا الوقت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تقمع هذه الظاهرة من جذورها لا من أطرافها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ألا يكفي غضاضة البصر، سواء من الإداريين أو المراقبين على الامتحان أو من غيرهم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وتسريب الإجابات عن طريق الهواتف الذكية بين الطلبة أنفسهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكنا بحاجة لوزير حاسم في هذا الملف الصعب.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ونحن نقف خلفه ونؤازره بكل امتنان وتقدير له.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالحال أصبح مزريا، والمقصرون يرتعون دون حسيب ولا رقيب عليهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لمسؤولية مكانهم الذي ائتمنوا عليه، ولكن ليس بعد اليوم أبدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل يكفي قرار واحد لعلاج هذه الظاهرة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونتقدم بكل العرفان والتقدير لمعالي وزير التربية على جهوده وقراراته الشجاعة كلها.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "التي إن بتت، تبت على رجل صاحب قرار، لا يخاف في الله لومة لائم أبدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ووطننا الحبيب بحاجة لأصحاب الضمائر الحية في كل موقع ومكان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ليكونوا عونا لنا لا علينا في التصدي للظواهر السلبية كلها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالغش بالأمس ورقة وقلم، واليوم هواتف ذكية وأدوات دقيقة، والقرار الشجاع وحده يقمع الظاهرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونمضي بأجيالنا إلى مستقبل واعد مضيء، يعون ما لهم وما عليهم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فمن أمن العقاب ساء الأدب، وسدد الله خطاكم وأنار دربكم ووفقكم على حمل الأمانة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

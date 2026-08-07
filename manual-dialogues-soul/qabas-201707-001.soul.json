@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201707-001",
+  "bridgeAfter": [
+    10,
+    25
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "لفترة ليست ببعيدة، كان التعليم الجامعي يعتمد على أسلوب التلقين.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا ما ساد في العملية التعليمية لسنوات طويلة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن مع التطور الذي واكبناه من قريب أو من بعيد، تم إدخال العديد من الطرق التعليمية الحديثة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولمجاراة الدول المتقدمة، تم استخدام مستحدثات تكنولوجية في التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد علم من أحدهم،⏸ بينما كان يدرس في أمريكا الطب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن هناك تقنيات تستخدم في التعليم الجامعي، وهي عالية الدقة والمرونة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأهمها تقنية النظارات ثلاثية الأبعاد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهي أعلى التقنيات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتعتبر تكنولوجيا ثلاثية الأبعاد من أعلى التقنيات في الوقت الراهن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا بد أن نتوقف ضمن التسلسل التكنولوجي للمراحل التعليمية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "حيث أن التعليم في المدارس يسبق التعليم الجامعي في إدخال التقنيات التربوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف تسبق المدرسة الجامعة في هذا الأمر؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يعود السبب في ذلك إلى مرونة المواد الدراسية في المدارس.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتعاون المعلمين، وسيطرة وزارة التربية على المنظومة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والقليل من الجامعات بدأت باعتماد التقنيات التعليمية على مستوى ضيق ومحدود.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نظرا لعدم توفر مرجعيات علمية لهذه التقنيات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكذلك عدم وجود دراسات تبين فعاليتها بشكل فعلي، وليس ضمن تجربة خاصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن التجارب الفعلية التي تم تعميمها في التعليم الجامعي، جامعة كيس ويسترن ريزيرف.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ومقرها في كليفلاند بولاية أوهايو، نجحت بإدخال النظارات ثلاثية الأبعاد في تخصص الطب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالعمليات صارت افتراضية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حيث أصبحت العمليات الافتراضية تجرى باستخدام هذه التقنية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا سيوفر الوقت والكلفة والمخاطرة، وهي أمور كانت تعيق التقدم في هذا المجال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن المعلوم أن هذه التقنية تعتمد على تقنية الهولوغرام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأصبح استخدامها له تأثير كبير على التعليم العالي، ليس بالطب فقط.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فهناك العديد من الجامعات والمدارس في الدول المتقدمة تستخدمه في تدريس العلوم والرياضيات والهندسة وغيرها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتلك التقنية عبارة عن بيئة تعليمية تقدم العديد من الخدمات للتعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلماذا لا ندشن نحن تجارب فعلية كهذه؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هذا ما يثير النفس من تساؤلات:⏸ أليس من الضروري أن نجعل من جامعاتنا بيئة تعليمية آمنة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بأقل المخاطر، وأفضل النتائج.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويمكن القول أن تلك التقنية ستساعد على اجتياز الكثير من مراحل التعليم بنجاح يفوق التصور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إذا توسعت تلك التقنية، وأصبحت تطبق على نطاق واسع، وفي العديد من المجالات خاصة العملية منها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ستمكن الطلبة من ممارسة كثير من النشاطات التعليمية في بيئة آمنة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتوفر الإدراك الحسي اللازم لعملية التعلم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك الكثير من التقنيات التي لم تصلنا بعد، أو بالأحرى لم نسمع عنها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن بحاجة للخوض في تجارب مماثلة لكي نستعد للقادم، فمستقبل التكنولوجيا حافل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وما زلنا نرتع في التكنولوجيا التقليدية، وقد سبقتنا الأمم، فهل نبقى نتفاجأ دائما بالتالي المجهول؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

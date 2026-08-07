@@ -1,0 +1,264 @@
+{
+  "slug": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+  "bridgeAfter": [
+    12,
+    26
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في زمن صارت فيه بعض الجامعات الخاصة تحقق أرباحا تفوق ما تحققه جامعة هارفرد.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لم تعد المفارقة مضحكة،⏸ بل مؤلمة.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولا مبالغة هنا. فالربح مشروع،⏸ لكن عندما يتحول التعليم إلى بورصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تصبح الشهادة سهما، والعقل فائضا لا يحاسب عليه أحد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي الكويت تنتشر جامعات خاصة تفتقر للحد الأدنى من البحث العلمي، وتخلو من التراكم المعرفي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتخرج آلافا من الطلبة الذين لا يكتبون فقرة من أنفسهم، لكنهم يمنحون شهادات بدرجات عليا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد شارك الأستاذ الدكتور عماد خورشيد تقريرا جريئا، كتب باستخدام الذكاء الاصطناعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "التقرير صاغه الذكاء،⏸ لكنه نطق بما لا يجرؤ كثير من البشر على قوله.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "قال حرفيا إن هذه المؤسسات تدرس⏸ لكنها لا تعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تمنح⏸ لكنها لا تربي، وتخرج لكنها لا تفكر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ونحن من نمولها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نمولها من المال العام، وندعمها بالبعثات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ثم نصدر إلى سوق العمل خريجا لا يجيد إلا الاستذكار المؤقت، والبحث اللحظي، والنجاح الورقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن أليس في هذا ظلم لمؤسسات تجتهد فعلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يتحدث عن نمط لا عن الجميع. وأخطر ما فيه أن حتى النقد صار مزيفا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يكتب بالذكاء الاصطناعي، وينشر باسم بشر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فقد وصلت المؤسسات الأكاديمية إلى مرحلة تفوق فيها خطاب التسويق على خطاب التكوين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وصار الإنجاز يقاس بعدد الخريجين، لا بنوع المعرفة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وصارت اللغة الإنجليزية تلقن دون فهم حقيقي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والبحوث تنجز على الورق،⏸ لكنها لا تلامس الواقع ولا تقدم للمجتمع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي المقابل، جامعات كبرى في العالم تنفق الملايين على البحث العلمي فقط.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتحاسب طلبتها على كل فقرة، وتعلي من قيمة النقاش لا الحفظ، والنقد لا الانقياد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما هنا فنشتري اسم الجامعة، ونسوقه كمنتج راق،⏸ بينما الداخل خاو.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كل شيء متوفر:⏸ القبول مضمون، والجداول مرنة، والتخرج سهل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إلا العقل، فهو الغائب الأكبر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل فقدنا القدرة على أن نواجه تعليما هشا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل تواطأنا، بوعي أو دون وعي، على خيانة المعرفة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل أصبح الذكاء الاصطناعي أكثر صدقا منا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "سؤال يطرحه المقال نفسه،⏸ ولا يجيب عنه بسهولة.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي واحدة من الإحصائيات الصادمة، تشير التقارير المالية إلى رقم يوقفك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن إحدى الجامعات الخاصة في الكويت تحقق صافي أرباح يتجاوز أربعين مليون دينار كويتي سنويا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "رقم يكاد يقارب ميزانيات دول،⏸ لكنه لا يترجم إلى جودة أكاديمية أو إنجاز علمي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلا نرى أبحاثا منشورة عالميا،⏸ ولا مراكز فكرية تسهم في السياسات التعليمية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بل نجد صمتا أكاديميا، ورضا تجاريا، ومخرجات تقدم كأرقام نجاح بلا مضمون حقيقي.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فلم يعد السؤال: كيف نطور التعليم؟⏸ بل: كيف نعيد تعريف التعليم من الأساس؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,264 @@
+{
+  "slug": "qabas-201707-002",
+  "bridgeAfter": [
+    16,
+    26
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كثيرا ما أتداول مع نفسي:⏸ ترى هل سينتهي دور المُعلِّم الذي يقف أمام سبورته؟",
+      "feeling": "gravitas",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويشرح الدرس، ويطالب طلبته بتسجيل ما يكتبه وما يقوله في دفاترهم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ليقوموا باستذكار دروسهم وإنجاز الواجب، ومن ثم يقوم بتصحيح الواجبات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل يمكن الدمج؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل يمكن دمج الحصص الخاصة بمواد الرياضيات والتكنولوجيا والعلوم والهندسة في حصة واحدة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بحيث يتعلم الطالب دروسه من خلال مشروعات يقوم بها، تتطلب منه استخدام كل هذه المواد معا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بعد أن كان يدرس كل مادة منها منفردة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هذا قليل مما ستوفره أنظمة التعليم الحر، مثل ستيم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، فالمواد مترابطة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالمواد مترابطة، وعند دمجها سويا ستمهد للطالب تطبيقات عملية لما يحدث في الحياة الحقيقية من حوله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وليس فقط معلومات وقوانين نظرية لا يستفيد بها خارج حدود الكتاب والمدرسة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي نظام ستيم تقل المحاضرات، وينتهي أسلوب الإلقاء.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ليحل محله التدريبات العملية التي يقوم بها الطلاب بأنفسهم، وبمساعدة معلم مدرب يوجههم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إن هذا التقدم سيخلق فجوة في العنصر البشري.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وقد أخذت بعض الحكومات خطوات متقدمة، مثل الإمارات، وأدخلت ستيم في نظامها التعليمي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومنهج ستيم في الإمارات العربية يقوم على إدخال نظام تكنولوجيا الاتصالات في التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا هو الاتجاه نحو البرمجة، ومن أكبر الأمثلة عليه هو الليجو كودنج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نلغي المنهج التقليدي إذا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يقول الباحث النصرات:⏸ المنهج التقليدي في التعليم يجب أن لا يتبدل، وإنما يجب أن يتطور.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ويجب أن نركز على رفع مقدرة الفرد على التعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كما نحتاج إلى رفع قدرته على التعلم الذاتي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقدرته على حذف المواد وإعادة تعلم شيء جديد، لمواكبة التطور السريع في المعرفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بمعنى التخلص من الثوابت التي تعيق الإبداع والابتكار.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فهناك جامعات عربية من ضمن أفضل ثلاثمئة جامعة على العالم حسب التصنيف.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "هذه الجامعات أدخلت نظام ستيم في المناهج.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهو نظام التعليم الحر، ودمج التعليم بالحياة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إن أكثر قطاع حاول تقليص الفجوة بين مخرجات التعليم ومتطلبات سوق العمل، هو قطاع الاتصال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا تأخرت المؤسسات الرقمية عندنا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولو نظرنا جيدا، سنجد أنه لا توجد لدينا كثير من المؤسسات الرقمية، بسبب ارتفاع نسبة الاختراق.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبناء عليه، فرغم ما نسمع من تطور تكنولوجي على مستوى العالم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إلا أن الحقيقة في نظام التعليم كارثية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالحروب أبقت الكثير من الطلبة خارج تصنيف منظومة التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فمخرجات التعليم بعيدة عن متطلبات سوق العمل، والفجوة تتسع كل يوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وما زال التعليم في العديد من الدول العربية يرزح ضمن إطار نظري.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولم يرتق بعد إلى الحقل الميداني، والمواد مترابطة تنتظر من يدمجها بالحياة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

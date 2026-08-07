@@ -1,0 +1,279 @@
+{
+  "slug": "qabas-201709-004",
+  "bridgeAfter": [
+    16,
+    30
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "يوما كنت جالسا في الديوانية مع العائلة، وبعض الأصدقاء وأبناء العمومة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد ذهل لتجمعهم، فعند اتصال أحد الأعمام وطلبه منه للحضور واللمة الجميلة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لم أتوقع هذا التشكيل الرائع من الحضور كله.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالجميع يجلس، والكبار منا كانوا في كدر واضح.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والشباب يمسكون هواتفهم الذكية، يستطلعون شبكات التواصل وآخر الأحداث الخليجية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والحقيقة أن الحال يوجع القلب، والجميع مستاء وننتظر الانفراج.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد لاحظت أن أحد نسايبنا حزين لما يحدث حولنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وله قرابات كثيرة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهو في الأصل لديه قرابات كثيرة مع دول مجلس التعاون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أي منا لا نفرقه عنا بشيء، فمصيرنا واحد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد اختلط الدم بيننا في الأنساب والعشيرة، لك الحمد والشكر يا الله.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وفجأة قام أحد الجالسين من الشباب يشتم، وقد بان عليه الغضب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نهره الكبار، وعابوا عليه ألفاظه بحضور الجميع، فاعتذر وجلس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبدأ يكتب وينتقل من موقع إلى آخر، ومن سناب إلى آخر وغيرها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومعه جمع كبير من الحضور في تلك الديوانية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فتساءلنا عن تلك الثورة، البشرميديا، أي المستخدم وشبكات التواصل في السوشل ميديا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فذهب يتحدث كالرصاص، وقد فهمنا بصعوبة سبب غضبهم الذي بان على الجميع من الشباب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الذي رآه حين فتح تلك المواقع؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وعندما فتح بعض المواقع المشتركة، ~~ وجد بعض مستخدمي شبكات التواصل يحقرون خليجنا.",
+      "feeling": "firm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويشتمون بعضهم وغير ذلك، فبدأ الكبار يكبرون ويهللون إلى ما وصلنا إليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ترى لماذا هذا كله؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لماذا وصلنا إلى هذا المستوى بيننا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا لا ندرك أن الصراخ والعويل لا ينفع إلا هؤلاء الذين ينبحون دون هدف حقيقي غير الخراب؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، لقد جمعتنا شبكات التواصل حقا،⏸ ولا ننكر ذلك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن لماذا لا نكون عنصر إصلاح، وتهذيب، وخط دفاع عن خليجنا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "مهما تأزمت المواقف، ومهما فاضت التحديات حولنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "نعم، خط دفاع، لا نريد أن نترك مساحة للذين يصطادون بالمياه العكرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلنضع صوب أعيننا انتماءنا الذي يحسدنا عليه الجميع، وولاءنا الذي لا نساوم عليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأعجبتني كلمات والدي عندما انتفض وقال:⏸ دعكم من المهاترات.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وسفاهة اللفظ، والجدل العقيم، فالكلاب تعوي والقافلة تسير.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولكل حصان كبوة، تجمعوا ولا تفرقوا، ودعكم من التنابذ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فماذا نفعل نحن على شبكات التواصل؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لنتصد ضمن خطة دفاعية نجندها على شبكات التواصل بيننا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ندعو فيها كل مواطن خليجي بالكف عن الأذى ببعضنا البعض.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونرشدهم بأن هناك أيادي خفية وراء تلك الفتن والعداوة البغضاء، يريدون تفكيك وحدتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلا خير فينا إذا لم نتحد بوجه الصعاب،⏸ لمواجهة أصحاب الأجندات السوداء.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ولنصنع فيما بيننا خط دفاع خليجي أمام هؤلاء، فالقافلة ستسير رغم العويل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

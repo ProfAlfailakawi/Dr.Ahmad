@@ -1,0 +1,272 @@
+{
+  "slug": "the-teacher-the-last-to-know-2",
+  "bridgeAfter": [
+    7,
+    23
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "تهميش ناعم، لإقصاء صامت. هكذا يبدأ المقال وهكذا ينتهي الأمر.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في زمن توزع فيه المناهج بالتوصيل السريع، وتطبخ السياسات التعليمية خلف الأبواب المغلقة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "يستبعد صاحب الرسالة ليصبح موظف تنفيذ، لا شريك بناء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يستدعى عند التنفيذ، ويقصى عند التخطيط. وهذا وحده يلخص المأساة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أيها القلم، هل تكتب دون أن تستأذن الورقة؟⏸ هكذا يرسم مستقبل أبنائنا بلا مشورة من حامل الطباشير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تعقد المؤتمرات، وتطلق المبادرات، وتصاغ استراتيجيات التغيير، والمعلم غائب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل أخبروه أن المناهج تغيرت؟⏸ وهل شاركوه في اختيار الأدوات؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أم أبلغوه لاحقا بصفته آخر من يعلم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هذا انطباع. هل من رقم يسنده؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في دراسة نشرت في Teaching and Teacher Education أقر اثنان وسبعون بالمئة من معلمي الشرق الأوسط.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بأنهم لم يستشاروا إطلاقا عند تغيير المناهج.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بينما أجبر خمسة وستون بالمئة منهم على تطبيق أدوات تكنولوجية لم يدربوا عليها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فأي عدالة هذه؟⏸ أن يزج بالمعلم إلى الميدان عاريا من المشاركة، مثقلا باللوم؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والتشبيه يوقفك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تخيل طبيبا يدخل غرفة العمليات ليكتشف أن الفريق تغير، وأن البروتوكول أعيدت كتابته دون علمه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ثم يحاسب إن فشل. والمعلم يحاسب كل يوم لأنه الواجهة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن من كتب السيناريو؟⏸ ومن وضع المقال؟⏸ ومن اختار المعدات وحدد الوقت؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومن قرر أن النجاح مسؤولية فردية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونطالبه بكل شيء.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نطالبه أن يكون مربيا، ومحفزا، وإداريا، وتقنيا، وقانونيا، ونفسيا، ورقميا. ثم لا يسأل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كأننا نقول له:⏸ كن كل شيء، إلا أنت.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "نجبره على الحضور الجسدي وننكر وجوده المعنوي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ونحمله فشل منظومة ثم نقصيه عن إصلاحها، ثم نتساءل ببراءة:⏸ لماذا انطفأ الشغف في عينيه؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالمعلم ليس جهاز تنفيذ،⏸ بل عقل تربوي يحتاج أن يصغى له، ويحتضن فكره، ويستثمر رأيه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومع ذلك، هناك معلمون مقصرون فعلا. أليس كذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يعترف بهذا صراحة، ثم يسأل: من الذي قص أجنحتهم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومن الذي قزم أحلامهم؟⏸ ومن الذي وضعهم على الهامش؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهل نلوم الشمعة إذا ذابت، أم الغرفة التي لا نافذة فيها؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فكم من فكرة تعليمية رائعة أجهضت لأنها خرجت من فم معلم ميداني لا يحمل لقبا وظيفيا رفيعا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكم من إصلاح وهمي انهار لأنه أسس من فوق رؤوس من في الميدان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي نظام كهذا تموت الجودة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "في نظام يقصي المُعلِّم، تموت الجودة اختناقا داخل شعاراتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتعليم الحقيقي لا يدار من المكاتب العليا فقط،⏸ بل من القلوب التي تعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من الحصص، ومن الفصول، ~~ ومن الطباشير الذي خفت صوته لكنه لم يخفت أثره.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فيا صانع القرار، لا تطالب المُعلِّم بالمثالية ثم تعزله،⏸ ولا تحاسبه على منهج لم يكتبه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وإن أردت أن تصلح التعليم فلا تصلحه فوق رأسه،⏸ بل من داخله. أعد إليه صوته وكرامته ومكانه في الحكاية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

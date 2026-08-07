@@ -1,0 +1,286 @@
+{
+  "slug": "a-society-that-fears-the-different-arabic",
+  "bridgeAfter": [
+    8,
+    26
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "المجتمع الذي يخاف من المختلف يربي أبناءه على فضيلة واحدة:⏸ أن يختفوا في الصف.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن يختاروا الأمان في الشبه، لا الصدق في أن يكونوا أنفسهم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فهناك لا يكافأ من يفكر خارج الصندوق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل من يتقن الصندوق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل من ينجح في أن يكون نسخة متقنة من الصندوق نفسه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ينجو من النقد،⏸ لكنه لا ينجو من نفسه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومنذ خمسينيات القرن الماضي أظهرت تجارب سولومون آش أمرا مذهلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن الإنسان قد يوافق الجماعة وهو يعلم أنها مخطئة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لمجرد أنه لا يريد أن يبدو شاذا عن الصف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن تلك تجربة قديمة. هل ما زالت صالحة اليوم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي إعادة حديثة للفكرة، وجدت دراسات معاصرة أن ضغط المجموعة لا يزال قادرا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "على دفع الأفراد لتغيير إجاباتهم حتى عندما تكون الحقيقة واضحة أمامهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالخوف من العزلة، كما يبدو، أقوى من وضوح القناعة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا يفسر كثيرا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وتشير تقارير منظمة الصحة العالمية عن صحة المراهقين إلى ضغط الأقران.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومعايير الصورة المثالية التي تصنع على المنصات الرقمية، من أبرز مصادر القلق لدى الشباب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فكلما اتسع الفارق بين ما يعيشه الشاب وما يرى أنه المطلوب، زاد شعوره بأنه أقل من الآخرين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ودراسة عن ضغط الأقران واستخدام الهواتف تكشف سببا غير متوقع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ليس حب الشاشة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أن بعض المراهقين ينجرفون في الاستخدام المفرط لا رغبة في الشاشة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل خوفا من خسارة مكانهم داخل المجموعة. كأن الحضور الدائم شرط للبقاء الاجتماعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي المدرسة تتخذ القصة شكلا أوضح.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أبحاث عن مناخ المدرسة والتنمر تشير إلى أن البيئة التي يسودها احترام حقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تقل فيها احتمالات استهداف الطلاب المختلفين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بينما يتحول الصف ذو المناخ الساخر أو التنافسي الحاد إلى مساحة يختبئ فيها الطالب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "خلف ما يراه آمنا، حتى لو كان بعيدا عن قناعته.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والمختلف هنا لا يهاجم لأنه مخطئ،⏸ بل لأنه يذكر الجماعة بما تحاول إخفاءه عن نفسها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومع ذلك، أليس التشابه يريح الفريق ويسهل العمل؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "الأبحاث تقول العكس تماما.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالفرق الأكثر ابتكارا ليست تلك التي يتشابه أفرادها،⏸ بل التي يتنوع فيها التفكير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويعم فيها ما يسمى بالأمان النفسي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أن يشعر الفرد أنه يستطيع أن يسأل، ويقترح، ويخطئ دون أن يقصى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا ما أبرزه مشروع أرسطو.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "مشروع أرسطو في جوجل وغيره من بحوث الفرق عالية الأداء. فالأداء لا يصنعه التشابه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل مساحة الاختلاف الآمن. ويبقى المشهد الحقيقي في التفاصيل الصغيرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حين يقول طفل رأيا غريبا على المائدة، ~~ أو يرفع طالب يده بفكرة لا تشبه ما اعتاده الصف.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "في تلك اللحظات، دون ضجيج، نقرر إن كان الاختلاف نافذة تفتح، أم شمعة تطفأ.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فالمجتمع الذي يخاف من المختلف سيشتكي بعد سنوات من غياب المبدعين، وهو الذي علمهم أن يخافوا من أنفسهم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

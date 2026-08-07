@@ -1,0 +1,278 @@
+{
+  "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+  "bridgeAfter": [
+    7,
+    24
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في أحد الصفوف رفعت سؤالا بسيطا: لماذا تتعلم؟",
+      "feeling": "gravitas",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولم يتأخر الجواب.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "علشان أنجح. علشان أجيب نسبة عالية. علشان أدخل تخصص أبيه.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كل الإجابات صحيحة،⏸ لكنها تكشف شيئا مقلقا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لم يقل أحد:⏸ لأنني أريد أن أفهم نفسي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولم يقل أحد:⏸ لأن المعرفة تغيرني قبل أن تغير معدلي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهناك فرق هادئ بين أن تتعلم لتصل، وأن تتعلم لتكبر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونحن، دون أن نشعر، دربنا أبناءنا على الأول، وتركنا الثاني كله للصدفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن ألا يبدو هذا حكما قاسيا على جيل بأكمله؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ووالجواب عند الباحثين:ك: المشكلة ليست في جيل كسول،⏸ ولا في طلاب بلا طموح.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل هي أعمق من ذلك. تحول التعليم في وعيهم إلى وسيلة عبور، لا مساحة تشكل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فصار السؤال الأهم عندهم: كم سأحصل؟⏸ لا: ماذا سأصبح؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبين السؤالين عمر كامل.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وعلم النفس التربوي يفسر لنا هذا التحول بدقة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نظرية الدافعية الذاتية كما عرضها ريان وديسي تشير إلى ثلاث حاجات نفسية أساسية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "الاستقلالية، والكفاءة، والانتماء. ثلاث حاجات كي يتحرك الإنسان بدافع داخلي حقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فعندما يشعر الطالب أن له صوتا، وأن جهده يقدر، وأنه جزء من بيئة تحترمه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يصبح التعلم عندها خيارا واعيا، لا عبئا مفروضا عليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومراجعات أحدث تؤكد هذا.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "مراجعة هوارد وآخرين ربطت الدافعية الذاتية بمثابرة أعلى وجودة أداء ورفاه نفسي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بينما ترتبط الدافعية القائمة على الضغط الخارجي بقلق أكبر، وبانطفاء تدريجي للشغف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالفرق هنا ليس في قوة التحفيز نفسها،⏸ بل في مصدره.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ونحن، بحسن نية أحيانا، نربط التعلم بالمكافأة أكثر من ربطه بالمعنى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فنمدح النتيجة أكثر مما نحتفي بالمحاولة التي سبقتها.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونرفع الطالب المتفوق فوق المنصة، لكننا نادرا ما نرفع قيمة السؤال الواحد الذي غير طريقة تفكيره.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل المكافأة نفسها خطأ؟⏸ هذا يبدو قاسيا.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والمقال لا يقول ذلك أبدا. يقول إن الإفراط فيها هو المشكلة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمراجعة التحليلية لديسي وكوستنر وريان حللت مئة وثمانيا وعشرين دراسة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ووجدت أن الإفراط في المكافآت الملموسة قد يضعف الدافعية الداخلية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "عندما يشعر المتعلم أن جهده موجه لإرضاء الخارج لا لإشباع فضوله الذاتي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهكذا يتعلم الطالب درسا غير مكتوب.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "أن قيمة المعرفة ليست في أثرها عليه،⏸ بل في أثرها على صورته أمام الآخرين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فيخرج ناجحا ومترددا معا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ناجح في الورقة، متردد في الحياة. يحفظ المطلوب ولا يعرف لماذا يريده.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويخاف من الخطأ لأنه يهدد تقييمه أمام الناس، لا لأنه يمنع فهمه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فربما لا نحتاج إلى مناهج جديدة بقدر ما نحتاج إلى أسئلة جديدة تعيد للطالب صوته.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وتجعله يرى التعلم رحلة شخصية لا سباقا جماعيا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

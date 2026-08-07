@@ -1,0 +1,267 @@
+{
+  "slug": "a-new-kind-of-fatigue-in-old-expressionsarabic",
+  "bridgeAfter": [
+    7,
+    22
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نقول ضغط، وإرهاق، وروتين، كأنها كلمات كافية لشرح ما يحدث لنا.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن التعب الذي نعيشه اليوم ليس مجرد زيادة عمل.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "إنه تعب بنبرة جديدة،⏸ بينما لغتنا ما زالت قديمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نستخدم مفردات الأمس لوصف استنزاف صنعته إيقاعات اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ثم نستغرب لماذا لا نفهم أنفسنا جيدا، ~~ ولماذا نعود كل أسبوع بذاكرة أقل وقلب أضيق.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومنظمة الصحة العالمية أدرجت الاحتراق الوظيفي في التصنيف الدولي عام ألفين وتسعة عشر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ووصفته بأنه نتيجة ضغط مزمن في العمل لم يدر بنجاح كما ينبغي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وله ثلاث سمات واضحة:⏸ استنزاف الطاقة، والتباعد الذهني، وتراجع الفاعلية المهنية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نحتاج تعريفا رسميا لنعرف أننا متعبون؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ووالجواب عند الباحثين: هذه ليست رفاهية تعريف،⏸ بل مرآة صادقة لما نراه حولنا كل يوم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أناس لا يكرهون وظائفهم بقدر ما يكرهون النسخة المتعبة منهم داخلها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "جملة تصف كثيرين منا اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتوسع الأدبيات الحديثة في فهم الاحتراق بوصفه تآكلا بطيئا للانخراط، لا مجرد تعب عابر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومراجعة ماسلاك تذكرنا بأن الاحتراق ليس مشكلة فرد يعالج وحده.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل هي علاقة مضطربة بين الإنسان وبيئة عمله التي يقضي فيها عمره.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حين تتضخم التوقعات المطلوبة منه، ~~ وتضيق مساحة التحكم بين يديه.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتستبدل المكافأة التي تصنع المعنى بمكافآت ترضي الشكل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وللتعب وجه جديد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فمع دخول التعليم والعمل إلى ساحات رقمية أوسع، ~~ صار للتعب وجه إضافي.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ودراسة حديثة في الكويت أشارت إلى علاقة بين الإفراط الرقمي واحتراق المدرسة لدى طلاب الثانوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مع دور وسيط للمرونة الأكاديمية بين الأمرين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فحتى الطالب لم يعد يتعب من الكتاب وحده.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بل من الإشعارات التي تدرس معه، ومن الواجب الذي لا ينتهي حين تغلق الحصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فماذا نقول لمن ينصح دائما بأخذ إجازة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا بيت القصيد:إنها جملة جميلة،⏸ لكنها ناقصة.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالإجازة تريح الجسد،⏸ لكنها لا تعيد تعريف الحدود ولا ترتب العلاقة بالوقت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والتعب الجديد يحتاج شجاعة في إعادة ترتيب علاقتنا بالوقت، وبالشاشة، وبفكرة الإنجاز نفسها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أن نسأل بهدوء:⏸ ما الذي يستهلكني لأنني لا أجرؤ على إطفائه؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الذي أفعله لأنني أخشى أن أبدو أمام الناس أقل حضورا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومن هنا قد يبدأ التعافي.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "قد يبدأ من تغيير صغير في معيار النجاح.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أن لا يكون كم أنجزت،⏸ بل ما الذي بقي مني بعد الإنجاز.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن نمنح لأنفسنا حق التوقف القصير دون ذنب، وحق إغلاق نافذة رقمية واحدة لا نحتاجها، وحق يوم لا يكون الإنسان فيه آخر بند في الجدول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فتعبنا اليوم ليس ضعفا شخصيا دائما. أحيانا هو إنذار ذكي بأن لغتنا لم تعد تليق بسرعة الحياة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "وحين نمتلك لغة أدق، نمتلك شجاعة أدق لنحمي الإنسان فينا قبل أن نحمي الصورة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

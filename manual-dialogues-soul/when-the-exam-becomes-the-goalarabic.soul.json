@@ -1,0 +1,264 @@
+{
+  "slug": "when-the-exam-becomes-the-goalarabic",
+  "bridgeAfter": [
+    7,
+    24
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في ليالي الامتحانات يتغير شكل البيت. تخف الضحكات، وتعلو الهمسات.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويصبح الوقت فجأة عدوا يركض أسرع من الطالب، فيلهث خلفه ولا يدركه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الكتب مفتوحة، والعيون مفتوحة،⏸ لكن السؤال الحقيقي لا يقال بصوت عال.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هل نستعد لامتحان، أم نستعد لمعركة تثبت من نحن؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا تبدأ المشكلة. فالامتحان في أصله وسيلة قياس.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لكننا حولناه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حولناه بهدوء قاس إلى غاية كاملة، حتى صار الطالب يذاكر لا ليفهم⏸ بل ليعبر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وصار النجاح في وعي كثيرين ورقة تعلق على الجدار، لا خبرة تغير الإنسان من الداخل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن الامتحان أداة قياس لازمة. كيف نعرف الفهم بلا قياس؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والمقال لا يدعو إلى إلغائه. يقول إن المشكلة في المعنى الذي ألصقناه به وحده.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعلم النفس التربوي يضيء هذا التحول بوضوح.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فقلق الاختبار ليس انزعاجا عابرا،⏸ بل حالة نفسية ترتبط بانخفاض الأداء الأكاديمي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبالاستنزاف الذهني إذا خرجت عن حدودها المعقولة. وميتا-تحليل حديث أكد هذا الارتباط السلبي لدى طلبة الجامعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا شاهد يستحق التوقف.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "دراسة يوسف زاده وآخرين بينت أن طريقة إعداد التقييم نفسها يمكن أن تخفض القلق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فعندما يشعر الطالب أن درجته لا تتوقف كلها على اختبار واحد، ينخفض الضغط.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ويصبح الأداء أهدأ. فالإصلاح إذن في تصميم التقييم نفسه، لا في مطالبة الطالب بالهدوء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن الأخطر من القلق نفسه أن تتحول قيمة الإنسان إلى نتيجة امتحان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أبحاث الجدارة الذاتية المشروطة أكاديميا توضح ذلك.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "الطالب حين يربط احترامه لنفسه بدرجته فقط، يصبح أكثر هشاشة أمام الإخفاق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأكثر تقلبا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأكثر عرضة لقلق الاختبار وتقلب تقديره لذاته. هنا لا يعود الامتحان أداة قياس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل محكمة نفسية يقف فيها الطالب متهما. والفرق بين الأداتين هو الفرق بين تعليم وتعذيب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولذلك نرى في صفوفنا طلابا يحفظون كثيرا ويفهمون قليلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يركضون خلف الدرجة لا الفكرة، وينسون أن الفكرة هي التي تبقى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويخافون من الخطأ. لا لأنهم لا يريدون التعلم.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل لأن الخطأ صار تهديدا لصورتهم أمام البيت والمدرسة والعالم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحين نشعر الطالب أن ورقة الاختبار أكبر من روحه، لا نخرج متعلما قويا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "بل نخرج إنسانا مرتبكا يظن أن كل تعثر فضيحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وربما يبدأ الإصلاح من لغتنا نحن، لا من المناهج ولا من الجداول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أن نسأل بعد الاختبار: ماذا فهمت؟⏸ قبل أن نسأل: كم تتوقع؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "سؤالان يبدوان متشابهين تماما.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبينهما مسافة تربية كاملة. وأن نعيد للطالب حقه في أن يكون أكثر من رقمه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فاسأل نفسك:⏸ هل نربي أبناءنا على التعلم، أم على النجاة؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وحين يصبح الامتحان هو الهدف، يضيع الهدف الحقيقي من التعليم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

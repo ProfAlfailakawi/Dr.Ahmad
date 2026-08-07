@@ -1,0 +1,250 @@
+{
+  "slug": "qabas-201611-005",
+  "bridgeAfter": [
+    14,
+    25
+  ],
+  "breathAfter": [
+    31
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "هل الشارع أخطر على أبنائنا، أم العالم الافتراضي؟",
+      "feeling": "gravitas",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نقاش دار بيني وبين أحد الأصدقاء، حين سألته عن ابنه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فأجابني أنه يقضي معظم وقته أمام شاشة الكمبيوتر،⏸ ولا نكاد نراه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فأخبرته أن هذا ليس جيدا، فقال لي:⏸ بل ذلك أفضل من قضاء الوقت في الشارع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ورفقة أصدقاء السوء، على حد قوله.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "قلت في نفسي:⏸ ربما لا تدري أن هذا العالم الافتراضي بلا رقابة، أخطر من الشارع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالشارع في النهاية محيط بسلبياته وإيجابياته على مرأى العين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن هنا الفارق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يقول علم الاجتماع إن البحث عن الأصدقاء والاختلاط بهم حاجة فطرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والصداقة تبنى على تجارب حسية، وقد تحتاج إلى لحظات كي تتوثق، على عكس الصداقة الافتراضية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولو نظرنا إلى الصداقة الحقيقية،⏸ فهي تمر في مواقف حياتية وبيئات مختلفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أما الصداقة الافتراضية فهي محصورة بشاشة الحاسب أو الجوال لا غير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولغة الجسد تساعد في فهم الآخر وتقدير مشاعره وظروفه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "أما الصداقة في العالم الافتراضي، فتفتقر لتلك المميزات المهمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والصديق وقت الضيق لا نجده في العالم الافتراضي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أليس في العالم الافتراضي صداقات صادقة ونافعة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا ينفي،⏸ لكنه يقول: سيكولوجية العلاقات البشرية تحتاج إلى وجود واختلاط حسي، على عكس الافتراضية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومجال الخداع والاستغلال متوفر في الافتراضي، على عكس الحسي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما الرقابة في العالم الافتراضي فهي شبه مفقودة على أبنائنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا تحمي أبناءنا من السلوكيات الخاطئة، واختيار الأصدقاء الحقيقيين.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تتطور لعلاقات عاطفية تؤثر على نفسية أبنائنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهي في تزايد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إن الصداقات الافتراضية في تزايد، وهذا ينذر بخطر كارثي على العلاقات العاطفية، خصوصا عبر الإنترنت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حيث أشار مركز الأبحاث بيو في واشنطن، بدراسة إحصائية شارك فيها أكثر من ألفين ومئتين وخمسين مستخدما لمواقع التواصل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبلغت نسبة الباحثين عن علاقات عن طريق الإنترنت حوالي واحد وأربعين بالمئة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي هامش الدراسة، عبرت أربعون بالمئة من الفتيات عن انزعاجهن من الغايات السيئة للشبان الذين يحاولون التعرف عليهن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل الشارع أسلم إذا من هذا كله؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ففي الشارع الناس تراقب سلوكيات أبنائهم وأبناء الغير، وإدراك السلبيات بسرعة قبل أن تتفاقم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن العالم الافتراضي عالم منغلق مظلم، وهو بحر واسع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويقول صاحب المقال:⏸ أنا لست ضد العالم الافتراضي، فأنا جزء منه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وأحاول أن لا يسرقني من العلاقات الاجتماعية الحقيقية، فقد يكون صديق العالم الافتراضي مطية لإضاعة الوقت وسلب العقول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتأكد أنه مهما وجدت من متعة مع أصدقائك عبر العالم الافتراضي، فمتعتك في العالم الحقيقي أكبر.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وليس هناك مثل الرفقة الطيبة وأصدقاء الطفولة، ومراقبة الحي لأبناء الحي. فهل صديق العالم الافتراضي نعمة أم نقمة؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

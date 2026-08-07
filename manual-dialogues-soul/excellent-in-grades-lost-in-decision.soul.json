@@ -1,0 +1,271 @@
+{
+  "slug": "excellent-in-grades-lost-in-decision",
+  "bridgeAfter": [
+    10,
+    28
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كان يبتسم،⏸ لكن صوته خافت، يحمل ورقة نجاحه بيده.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويخفي في قلبه سؤالا لم يجب عليه أحد: أنا شاطر،⏸ لكن في ماذا؟",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "منحوه الدرجة الكاملة،⏸ لكن لم يمنحوه فرصة للبحث عن ذاته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تفوق في كل شيء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تفوق في كل المواد، إلا في معرفة ميوله. كان الأول على دفعته،⏸ لكنه الأخير في ترتيب القرار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لقد اختزلنا التعليم في أرقام، وربينا جيلا بارعا في الاختبار لكنه لا يجيد اختبار الحياة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "جيل يرى مستقبله كما يرى نموذج الإجابة: خيارات جاهزة بلا تفسير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وجيل خائف من الخطأ أكثر من اشتياقه للصواب.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "يقال له: الطب أفضل. فيذهب، لا لأنه يحب،⏸ بل لأنه يخاف أن يخطئ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويسمع: الهندسة وظيفة مضمونة، فيسلم عقله ويقفز.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ثم يبدأ التخصص، ويتجمد الشغف.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن أليس من حق الأهل أن ينصحوا بما يرونه أضمن؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يمنع النصح،⏸ بل يحذر من غياب السؤال. وفي الكويت تصرف الملايين على نظام البعثات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكن كثيرا من الطلبة يعودون بعد عام أو عامين بتخصص لا يشبههم، ولا يشبه بلدهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بعضهم يعيد التوجيه، وبعضهم يتخرج مكرها، وكأن الشهادة سجن مؤقت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويخرج إلى سوق العمل بلا صوت، وبلا شغف، وبلا مشروع.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والرقم يؤكد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "دراسة لجامعة كامبريدج تقول إن واحدا وأربعين بالمئة من الطلبة الجامعيين يغيرون تخصصهم خلال أول عامين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والسبب ليس الجهل،⏸ بل الغياب العميق للتوجيه، والفهم المتأخر للذات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالمدرسة تهيئه للامتحان،⏸ لكنها لا تعلمه أن يسأل: من أنا؟",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والبيت يحتفل بالمعدل،⏸ لكنه لا يحادث الميول.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والمجتمع يصفق للطب والهندسة، حتى لو مات الحلم في الطريق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فكم من طالب تفوق في كل شيء إلا في أن يكون نفسه؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكم من خريج لا يشبه تخصصه، ولا يجرؤ أن يبدأ من جديد؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والحل ليس منهجا.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن لا نحتاج إلى منهج جديد فقط،⏸ بل إلى فلسفة جديدة في التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويقترح المقال مادة رمزية تسمى ببساطة: أنا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ليست كتابا ولا اختبارا،⏸ بل مساحة اكتشاف.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يتدرب فيها الطالب على السؤال قبل الجواب، ويدرب أذنه على الاستماع إلى شغفه لا إلى ضغوط المجتمع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومادة بلا درجات؟⏸ كيف تقنع بها نظاما يقيس كل شيء؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والجواب عند الباحثين: مادة بلا درجات، لكنها تمنح أعلى امتياز: معرفة الذات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فيها يلتقي الطالب بأصحاب المهن، ويخطئ في محاكاة الواقع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويخوض مقابلات مع نفسه قبل أن يخوضها مع الوظيفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولأن القرار ليس رقما نختاره بل مصيرا نتحمله، فالشهادة لا يجب أن تكون ورقة نعلقها بل مرآة نواجه بها أنفسنا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فلا تسألوا الطالب بعد التخرج: كم نسبتك؟ بل اسألوه: من أنت؟ ولماذا اخترت هذا الطريق؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وإن لم يعرف الجواب، فليس هو من ضاع، بل نحن من أضعناه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

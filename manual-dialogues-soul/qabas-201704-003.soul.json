@@ -1,0 +1,257 @@
+{
+  "slug": "qabas-201704-003",
+  "bridgeAfter": [
+    8,
+    25
+  ],
+  "breathAfter": [
+    32
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "جلست أقلب التلفاز، وإذ بفيلم سبايدر مان الجزء الثاني، الذي تابعناه بشغف.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكان حلم الجميع بأن يتحقق يوما.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ونحن نشاهد ذلك الدكتور أوكتوبوس، العالم العبقري المجنون، الذي تنبأ بعصر السايبرون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حيث تمكن من صناعة أربعة أزرع إلكترونية مدمجة بظهره، وعلى اتصال مباشر بجهازه العصبي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ما يمكنه من التحكم بها عبر الأوامر العقلية فقط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والاستفادة من إمكانياتها الإلكترونية والميكانيكية معا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هذه الأذرع أيضا تحتوي على خلايا بشرية حية، ما يجعل لها إرادتها الخاصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "التي تمكن أوكتوبوس من السيطرة عليها وتطويعها لخدمته.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ليصبح معه آلة ذكاء صناعي مميزة وقوية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل هذا العصر حقيقة، أم مجرد خيال؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهل سيبدأ يوما عصر الكائن السيبراني؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "إن عصر السايبرون هو الوقت الذي ستتسلم فيه الآلة زمام الأمور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بذكاء صناعي يطور نفسه بنفسه بشكل مستقل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفكرة وجود إنسان آلي فكرة قديمة، بدأت معالمها في بدايات القرن الماضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والعديد من الأبحاث في مجال الذكاء الاصطناعي عزز فكرة وجود الإنسان الآلي مستقل التطور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد ساهمت السينما والتلفزيون في رسم معالم هذا الإنسان وطبيعة عمله ووظائفه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لقد ساهمت تقنية النانو في التقدم نحو الرجل الآلي ذاتي الذكاء.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فهي تقنية تهتم بخواص المواد، أي العلم الذي يهتم بدراسة معالجة المادة على المقياس الذري والجزيئي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد حقق العلماء نجاحا واسعا في هذا المجال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كالباحث الياباني هيروتاكا ساتو وفريقه في جامعة نانيانغ للتكنولوجيا بسنغافورة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من تركيب أقطاب كهربائية في نوع معين من الخنافس، معروف باسم خنافس الزهرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وذلك بغرض تحفيز مجموعات عضلات معينة موجودة في أرجلها، والتحكم في مشية الخنافس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذه مقدمات طويلة للوصول إلى الكائن السيبراني كالبشر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "على الرغم أنه لا يشترط أن يكون الكائن السيبراني بشريا أو ثدييا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل يشمل أي نوع من أنواع الكائنات الحية، وهذا يعد ثورة ما بعد البشرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حين يتم تعزيز البشر بشكل صناعي، من خلال منحهم بعض القدرات المميزة والخاصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الذي يعيق هذا التقدم إذا كان ممكنا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ما يعيق تقدم تكنولوجيا الروبوت الآلي، هو عدم تكامل مصنعية كثير من الأجهزة الداخلية من قبل مصنع واحد.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وإنما يعتمد تصنيعه على التقدم في صناعة بعض الأجزاء من قبل بعض الشركات العملاقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "مثل الحساسات، وبعض الأجزاء الميكانيكية، والبرمجيات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فاليابان تعتبر متقدمة في هذا المجال، خاصة شركة هوندا بعد إنتاجها لوحدة أسيمو.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والذي يمثل روبوتا على شكل رائد فضاء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إلا أنه ما تزال تكلفة إنتاج الروبوت ما بين سبعمئة وخمسين ألف دولار إلى مليون.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فمع بطء تقدم وحدات الذكاء الاصطناعي وتلك التكلفات الخرافية، يبقى القول بقرب عصر السايبرون مبكرا جدا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

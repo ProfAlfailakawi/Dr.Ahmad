@@ -1,0 +1,272 @@
+{
+  "slug": "todays-childs-confusion-between-education-and-care",
+  "bridgeAfter": [
+    12,
+    28
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "ما أن نجلس في مجلس إلا ونجد من يكون غائبا عن المجلس بفكره.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حائر كحيرة طفل اليوم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والسبب أن والديه لا يميزون الفرق بين التربية والرعاية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فيظنون أنهم ربوا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يظنون أنهم قاموا بواجبهم في التربية بتوفير حقوقهم المادية من الاحتياجات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يعون أن الفرق شاسع بين التربية والرعاية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فرعاية الطفل هي توفير احتياجاته والاهتمام به.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وقد تستطيع الكثير من المربيات الاهتمام بالأطفال دون والديه.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما التربية فهي السبب الرئيسي لتشكيل شخصية الطفل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتعتبر اجتهادا من الوالدين والمعلم لتكوين شخصية منفردة للطفل.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومساعدته لاكتشاف وتنمية هواياته ومواهبه وثقته بنفسه، وجعله فردا واعيا مقدما على الحياة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والرعاية حق أصيل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فرعاية الطفل بالاهتمام بصحته وأمنه، وتوفير الحب والحنان، ~~ حق من حقوق الطفل.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلماذا نقلل من شأنها إذن؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يقلل:⏸ ولا شك أن الرعاية مهمة جدا في حياة الطفل.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن الماديات التي تقدمها لطفلك لن تبني عقله.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "قد تغذيه لينمو،⏸ لكنه سيظل يحتاج إلى منهج يسير عليه طوال حياته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويحتاج إلى قدوة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "سيحتاج إلى قدوة يقتدي بها ليقوم بالأعمال الصالحة، وليعرف الخطأ والصواب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والرعاية بلا تربية ينتج عنها رجال ضعاف الشخصية، ونساء لا يتحملن المسؤولية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وموظفون لا يحترمون أعمالهم، وتلاميذ يهربون من مدارسهم، وأخ يسرق أخاه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وسنجد مدينة تملؤها القاذورات، لأن لا أحد علم طفلا ألا يرمي شيئا على الأرض.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالرعاية بلا تربية تؤدي إلى خلق كائن أناني لا يهمه في الكون سوى نفسه فقط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ستجده ابنا عاقا بوالديه، لا يستطيع أن يتحمل مسؤولية،⏸ ولا يعتمد عليه في شيء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما التربية إذن؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أما التربية فهي عملية توجيه الطفل نحو الأخلاق الحسنة، والقيم والمبادئ الصالحة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتعويده على عادات جيدة، ولبناء عنصر إيجابي في المجتمع يعتمد عليه في كافة نواحي الحياة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتكوين عنصر مجتهد قادر على تحسين نفسه وتطويرها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويأتي دور التربية في زراعة القيم في الطفل، كي يحترم الصغير الكبير ويعطف الكبير على الصغير.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل القيم مطلوبة من الأبناء وحدهم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والجواب عند الباحثين:⏸ إن القيم والمبادئ لا تخص الأبناء فقط.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لذلك عليك كمرب أن تصبح قدوة لأبنائك:⏸ لا تكذب أمامهم حتى لا يكذبوا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "واحترم عقولهم، واحترم خصوصياتهم حتى لا يقتحموا خصوصياتك، وعدم التسلط على الأبناء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويستطيع الآباء مساعدة أبنائهم على اكتشاف مواهبهم ونقاط قوتهم، ليصبح فردا مبدعا في المجتمع.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فاحرصوا على بناء شخصية مستقلة للطفل، وأخذ رأيه في كل ما يخصه مهما كان صغر سنه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولا تجعلوا أبناءكم حائرين، وعلموهم جيدا من خلال التربية الجيدة مع تقديم الرعاية،⏸ ليرسموا لأنفسهم مسار حياة ينتهجونه بنجاح.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

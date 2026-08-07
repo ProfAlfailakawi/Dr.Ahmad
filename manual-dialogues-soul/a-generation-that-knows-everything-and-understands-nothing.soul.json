@@ -1,0 +1,271 @@
+{
+  "slug": "a-generation-that-knows-everything-and-understands-nothing",
+  "bridgeAfter": [
+    10,
+    23
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في زمن تسكن فيه المعلومة طرف الإبهام، وتستدعى باللمس لا بالكد.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نشأ جيل يعرف كل شيء، ولا يفهم شيئا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "جيل لا يجهل جوابا،⏸ لكنه يفتقر للسؤال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يحفظ ولا يحاكم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يحفظ المعلومة،⏸ لكنه لا يحاكمها. ويتقن الوصول، لكنه لا يدرك الطريق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا التناقض لم يأت من فراغ،⏸ بل من فائض المعرفة وسطحية المعنى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حيث تتحول الثقافة من عمق يبنى، إلى سرعة تستهلك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي دراسة أجرتها منظمة OECD تبين رقمان متقابلان.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أن أكثر من خمسة وستين بالمئة من الطلبة في الدول المتقدمة يستطيعون الوصول إلى المعلومة الرقمية بسرعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكن أقل من عشرين بالمئة يمتلكون القدرة على تحليلها نقديا أو تطبيقها في مواقف حياتية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إنها كارثة تربوية مغلفة بالتكنولوجيا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هل نلوم الجيل؟⏸ هذا اتهام قاس.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال ينصفه صراحة: هذا الجيل ليس غبيا،⏸ بل ضحية تسطيح.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "سرقت منه متعة البحث، وتلاشت فيه دهشة الاكتشاف.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والأمثلة تتوالى.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يعرف تاريخ الحرب العالمية،⏸ لكنه لا يدرك لماذا اندلعت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويحفظ أعراض الاكتئاب،⏸ لكنه لا يشعر بغيره.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويتحدث عن الذكاء العاطفي، ولا يجيد الإصغاء حتى لذاته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يعرف كل شيء، لأنه لم يدرب على الشك، ولا على التأمل، ولا على البناء المعرفي المتدرج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومدارسنا تحولت إلى منصات تحميل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "المُعلِّم يشرح، والطالب يصور، والجهاز يخزن، ثم تنسى كل تلك المعارف عند أول امتحان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فيتخرج الطالب بتقدير امتياز،⏸ لكنه لا يعرف كيف يكتب خطابا، أو يجري حوارا، أو يحلل فكرة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "نحن نمنحهم شهادات، لا فهما.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نخرج أدمغة تحفظ لكنها لا تنتج، وتنفذ لكنها لا تبدع، وتتلقى لكنها لا تبادر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما المطلوب عمليا؟⏸ منهج جديد؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يطلب أعمق من ذلك: إعادة بناء المفهوم التربوي من جذوره.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إلى تعليم يراهن على الإنسان لا على الآلة، وعلى العمق لا الكم، وعلى الإبداع لا التقليد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تعليم يعيد للتلميذ هويته، ويعيد للمدرسة هيبتها كمكان للحوار والتفكير لا للحفظ والتلقين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا عبارة مفتاحية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لسنا بحاجة إلى تعليم يضيف إلى عقولهم معلومة جديدة،⏸ بل إلى تعليم ينقي العقول مما علق بها من أوهام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نحتاج إلى تعليم يدرب على التفكير التحليلي، وعلى الجرأة في الطرح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وعلى مهارات الحياة الحقيقية: النقاش، والتفاوض، وحل المشكلات، والإقناع، والتعاطف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فجيل اليوم لا يلام. هو أذكى مما نظن،⏸ لكنه يعيش في بيئة تشبعه معلومات وتحرمه فهما.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بيئة تسوق الذكاء الاصطناعي على أنه بديل للإنسان،⏸ بينما المطلوب أن يكون مساعدا للإنسان المفكر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وإذا لم نتدارك هذا الخلل، فإننا نبني جيلا هشا، مبرمجا على الجواب، غير مدرب على السؤال.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا بيت القصيد: هل نريد جيلا يعرف كل شيء، أم جيلا يفهم شيئا ويغير العالم به؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

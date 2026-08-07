@@ -173,7 +173,7 @@ export function ReaderFingerprint() {
   return (
     <section aria-label="بصمة القارئ" className="overflow-hidden rounded-[2rem] border border-hair bg-wash/50 px-6 py-9 md:px-10">
       <div className="flex flex-col items-center gap-7 md:flex-row md:items-center md:gap-10">
-        <img src={fingerprintPath(data.seed)} alt="" aria-hidden width={112} height={112} className="h-28 w-28 shrink-0 opacity-90" />
+        <img decoding="async" src={fingerprintPath(data.seed)} alt="" aria-hidden width={112} height={112} className="h-28 w-28 shrink-0 opacity-90" />
         <div className="min-w-0 flex-1 text-center md:text-right">
           <p className="text-[.74rem] font-semibold uppercase tracking-[.18em] text-accent">بصمتك القارئة</p>
           <p className="mt-3 font-display text-[1.15rem] font-semibold leading-[1.8] text-ink">

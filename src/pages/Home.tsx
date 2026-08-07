@@ -36,7 +36,7 @@ function HomeMediaThumb({ url, title }: { url: string; title: string }) {
 
   return (
     <div className="complete-media-frame h-full w-full" style={{ '--media-thumb': `url(${source})` } as CSSProperties}>
-      <img
+      <img decoding="async"
         src={source}
         alt={title}
         loading="lazy"
@@ -670,7 +670,7 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
           <div className="relative mx-auto max-w-[420px]">
             {cover ? (
               <div className={`${book ? 'complete-book-frame' : 'complete-media-frame'} overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-[0_16px_30px_-24px_rgba(0,0,0,.55)]`} style={!book ? ({ '--media-thumb': `url(${cover})` } as CSSProperties) : undefined}>
-                <img src={cover} alt={title} className={`${book ? 'complete-book-image' : 'complete-media-image'} aspect-[4/3] h-full w-full`} />
+                <img decoding="async" src={cover} alt={title} fetchPriority="high" className={`${book ? 'complete-book-image' : 'complete-media-image'} aspect-[4/3] h-full w-full`} />
               </div>
             ) : (
               <div className="flex aspect-square items-center justify-center rounded-full border border-white/15 bg-white/[.04] p-12 text-center">
@@ -720,7 +720,7 @@ function ArchiveCardCover({ item }: { item: SelectedArchiveItem }) {
   }
   return (
     <div className={`pointer-events-none relative z-[1] flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3 md:h-32' : item.external ? 'selected-media-frame h-28 overflow-hidden md:h-32' : 'h-28 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${source})` } as CSSProperties) : undefined}>
-      <img
+      <img decoding="async"
         src={source}
         alt=""
         loading="lazy"
@@ -803,7 +803,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
             )
             return (
               <FadeUp key={`${item.type}-${item.to}`} delay={index * 0.06} className="min-w-0">
-                {item.article ? inner : item.external ? <a href={item.to} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : <Link to={item.to} viewTransition className="block h-full">{inner}</Link>}
+                {item.article ? inner : item.external ? <a href={item.to} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : <Link to={item.to} className="block h-full">{inner}</Link>}
               </FadeUp>
             )
           })}
@@ -839,9 +839,9 @@ function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
         <div className="mx-auto grid max-w-shell grid-cols-2 gap-x-4 gap-y-8 px-6 md:grid-cols-3 md:gap-x-8 md:gap-y-12 md:px-11 lg:grid-cols-4">
           {books.map((book, i) => (
             <Card key={book.slug} delay={Math.min(i * 0.035, 0.18)}>
-              <Link to={`/publications/${book.slug}`} viewTransition className="group block">
+              <Link to={`/publications/${book.slug}`} className="group block">
                 <div className="complete-book-frame overflow-hidden rounded-xl border border-hair bg-white" style={{ aspectRatio: '1024 / 700' }}>
-                  <img src={book.cover} alt={book.title} loading="lazy" width="1024" height="700" className="complete-book-image h-full w-full" />
+                  <img decoding="async" src={book.cover} alt={book.title} loading="lazy" width="1024" height="700" className="complete-book-image h-full w-full" />
                 </div>
                 <h3 className="mt-3 text-wrap-balance font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent md:text-[1.08rem]">{book.title}</h3>
               </Link>

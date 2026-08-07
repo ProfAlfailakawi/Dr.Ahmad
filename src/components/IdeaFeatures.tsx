@@ -801,7 +801,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                 ))}
               </div>
               {img ? (
-                <img src={img} alt="بطاقة اقتباس" className={`mx-auto max-w-full rounded-2xl object-contain shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)] ${format === 'story' ? 'max-h-[46dvh] w-auto sm:max-h-[62vh]' : 'max-h-[50dvh] w-auto sm:max-h-[66vh]'}`} />
+                <img decoding="async" src={img} alt="بطاقة اقتباس" className={`mx-auto max-w-full rounded-2xl object-contain shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)] ${format === 'story' ? 'max-h-[46dvh] w-auto sm:max-h-[62vh]' : 'max-h-[50dvh] w-auto sm:max-h-[66vh]'}`} />
               ) : (
                 <div className="flex aspect-square items-center justify-center rounded-2xl border border-hair bg-canvas text-soft">…</div>
               )}

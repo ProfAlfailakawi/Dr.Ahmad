@@ -1368,7 +1368,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
                   {!cardUrl && <div className="flex aspect-[4/5] items-center justify-center rounded-2xl border border-hair bg-wash text-[.78rem] text-soft">{cardBusy ? 'أصنع البطاقة…' : 'لحظة…'}</div>}
                   {cardUrl && (
                     <>
-                      <img src={cardUrl} alt="بطاقة اقتباس" className="mx-auto w-full max-w-[360px] rounded-2xl border border-hair shadow-[0_26px_60px_-36px_rgba(21,22,26,.7)]" />
+                      <img decoding="async" src={cardUrl} alt="بطاقة اقتباس" className="mx-auto w-full max-w-[360px] rounded-2xl border border-hair shadow-[0_26px_60px_-36px_rgba(21,22,26,.7)]" />
                       <div className="mt-4 flex flex-wrap justify-center gap-2">
                         <button type="button" onClick={() => void shareCard()} aria-label="مشاركة البطاقة" title="مشاركة البطاقة" className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Share" size={17} /></button>
                         <button type="button" onClick={() => void downloadCard()} aria-label="حفظ الصورة" title="حفظ الصورة" className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent"><SocialIcon name="Download" size={17} /></button>
@@ -1397,7 +1397,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
                   {feedback === 'copied' && <p className="mt-3 text-center text-[.72rem] text-accent">نُسخ النص والرابط.</p>}
                   {cardUrl && (
                     <div className="mt-5">
-                      <img src={cardUrl} alt="بطاقة اقتباس" className="mx-auto w-full max-w-[360px] rounded-2xl border border-hair shadow-[0_26px_60px_-36px_rgba(21,22,26,.7)]" />
+                      <img decoding="async" src={cardUrl} alt="بطاقة اقتباس" className="mx-auto w-full max-w-[360px] rounded-2xl border border-hair shadow-[0_26px_60px_-36px_rgba(21,22,26,.7)]" />
                       <div className="mt-3 flex flex-wrap justify-center gap-2">
                         <button type="button" onClick={() => void shareCard()} aria-label="مشاركة البطاقة" title="مشاركة البطاقة" className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Share" size={17} /></button>
                         <button type="button" onClick={() => void downloadCard()} aria-label="حفظ الصورة" title="حفظ الصورة" className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent"><SocialIcon name="Download" size={17} /></button>

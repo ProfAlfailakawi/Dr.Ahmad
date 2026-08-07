@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router'
-import { FadeUp, Page, PageHead } from '../components/ui'
+import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { Pagination, usePagedList } from '../components/Pagination'
@@ -63,14 +64,18 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
   expanded: boolean
   onOpen: (episode: Episode) => void
 }) {
+  const reduce = useReducedMotion()
   return (
-    <li>
+    <li
+      data-majlis-slug={episode.slug}
+      className={`majlis-row ${expanded ? 'is-open' : ''}`}
+    >
       <button
         type="button"
         onClick={() => onOpen(episode)}
         aria-current={playing ? 'true' : undefined}
         aria-expanded={expanded}
-        className={`group flex w-full items-start gap-3.5 px-1 py-4 text-start transition-colors md:px-2 ${expanded ? '' : 'border-b border-hair hover:bg-wash/70'}`}
+        className={`group flex w-full items-start gap-3.5 px-1 py-4 text-start transition-[color,background-color,border-color] md:px-2 ${expanded ? 'rounded-t-2xl border-x border-t border-accent/[.18] bg-wash/[.5] px-3 md:px-4' : 'border-b border-hair hover:bg-wash/70'}`}
       >
         <span className={`mt-1.5 shrink-0 text-[.72rem] transition-colors ${playing ? 'text-accent' : 'text-accent/[.65] group-hover:text-accent'}`}>
           {playing ? (
@@ -78,7 +83,6 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
           ) : <SocialIcon name="Play" size={13} />}
         </span>
         <span className="min-w-0 flex-1">
-          {/* الحلقة التي لا سؤال فيها يصلح باباً تُفتح بعنوانها — لا سطر مبتور. */}
           <span className={`block font-display text-[1.04rem] leading-[1.75] transition-colors ${playing ? 'text-accent' : 'text-ink'}`}>
             {episode.question || episode.title}
           </span>
@@ -90,30 +94,37 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
           </span>
         </span>
       </button>
-      {/* التفصيل والاختيار: مشغّل المقال نفسه حرفاً — الصوتان والحوار، والمحاور،
-          والنصّ المتزامن — لا نسخةٌ مصغّرة منه. ما يراه الزائر هنا هو ما يراه
-          هناك، فلا يتعلّم واجهتين. ولا يُركَّب إلا للصفّ المفتوح وحده. */}
-      {expanded && (
-        <div className="border-b border-hair bg-wash/[.35] px-1 pb-5 md:px-2">
-          <AudioPlayer
-            sources={[{
-              key: 'dialogue',
-              label: 'استمع',
-              avatar: 'dialogue',
-              src: episodeSrc(episode.slug),
-              transcript: versionedAudioUrl(`/audio/${episode.slug}.dialogue.json`),
-              fallbackTranscript: `/spoken/${encodeURIComponent(episode.slug)}.json`,
-              startFresh: true,
-            }]}
-            title={episode.title}
-            controlId={`majlis-${episode.slug}`}
-            showChapters
-          />
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            key="player"
+            initial={reduce ? false : { opacity: 0, height: 0, y: -8, filter: 'blur(5px)' }}
+            animate={{ opacity: 1, height: 'auto', y: 0, filter: 'blur(0px)' }}
+            exit={reduce ? undefined : { opacity: 0, height: 0, y: -6, filter: 'blur(4px)' }}
+            transition={{ duration: reduce ? 0 : .46, ease: EASE }}
+            className="majlis-player-shell overflow-hidden rounded-b-2xl border-x border-b border-accent/[.18] bg-wash/[.35] px-3 pb-5 md:px-4"
+          >
+            <AudioPlayer
+              sources={[{
+                key: 'dialogue',
+                label: 'استمع',
+                avatar: 'dialogue',
+                src: episodeSrc(episode.slug),
+                transcript: versionedAudioUrl(`/audio/${episode.slug}.dialogue.json`),
+                fallbackTranscript: `/spoken/${encodeURIComponent(episode.slug)}.json`,
+                startFresh: true,
+              }]}
+              title={episode.title}
+              controlId={`majlis-${episode.slug}`}
+              showChapters
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </li>
   )
 }
+
 
 export default function Listen() {
   useSeo({
@@ -175,8 +186,14 @@ export default function Listen() {
       track.startFresh = false
     }
     void player.playTrack(track)
-    /* المشغّل يُركَّب في الإطار التالي، فنطلب فتحه على مسار الحوار بعده. */
-    window.requestAnimationFrame(() => openAudioPlayer(`majlis-${episode.slug}`, 'dialogue'))
+    /* المشغّل يُركَّب من الصف نفسه ثم يتمدّد؛ لا قفزة إلى سطح منفصل. */
+    window.requestAnimationFrame(() => {
+      openAudioPlayer(`majlis-${episode.slug}`, 'dialogue')
+      const row = document.querySelector<HTMLElement>(`[data-majlis-slug="${CSS.escape(episode.slug)}"]`)
+      if (!row) return
+      const rect = row.getBoundingClientRect()
+      if (rect.top < 72 || rect.bottom > window.innerHeight - 24) row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
   }
 
   /* «افتح المجلس»: يستأنف آخر حلقةٍ سمعها من موضعها المحفوظ، وإلا بدأ بأحدثها.
@@ -266,6 +283,7 @@ export default function Listen() {
 
       <section id="listen-list" className="mx-auto max-w-shell px-6 pb-16 md:px-11">
         {!filtered.length && <p className="py-14 text-[.88rem] text-soft">لا سؤال يطابق هذا البحث.</p>}
+        <>
         {eras.map((era) => (
           <div key={era.label || 'all'}>
             {era.label && (
@@ -288,6 +306,7 @@ export default function Listen() {
             </ul>
           </div>
         ))}
+        </>
         <Pagination
           page={paged.page}
           pageCount={paged.pageCount}

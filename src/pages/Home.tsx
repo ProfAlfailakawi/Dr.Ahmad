@@ -1,5 +1,5 @@
 import { JsonLd, useSeo } from '../components/seo'
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router'
@@ -11,7 +11,6 @@ import { Newsletter } from '../components/extras'
 import { type Curio } from '../data-curated'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import HumanCoreHero from '../components/home/HumanCoreHero'
-import ThresholdOverture from '../components/home/ThresholdOverture'
 import { ideaContinuation } from '../lib/idea-memory'
 import { sortUpcomingEvents } from '../lib/events'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
@@ -21,6 +20,10 @@ import { SPACE_EVENT, isArticleSaved, toggleSavedArticle } from '../lib/reading-
 import { SocialIcon as ActionIcon } from '../components/icons'
 import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_THOUGHT_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, BOOK_FORMS, BOOK_PLAIN_FORMS, NEW_ARTICLE_FORMS, PAPER_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
+
+/* افتتاحيةُ العتبة ٧٦٨ سطراً ولا يراها إلا الزائر الأول (تحرسها localStorage)،
+   فإبقاؤها في حزمة الدخول يُثقل كلَّ زائرٍ عائد بلا فائدة ويتجاوز ميزانية الأداء */
+const ThresholdOverture = lazy(() => import('../components/home/ThresholdOverture'))
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -1083,7 +1086,9 @@ export default function Home() {
       }} />
       <LaunchSpotlight articles={articles} books={books} papers={papers} media={media} />
 
-      <ThresholdOverture articles={articles.length} books={books.length} papers={papers.length} />
+      <Suspense fallback={null}>
+        <ThresholdOverture articles={articles.length} books={books.length} papers={papers.length} />
+      </Suspense>
 
       <HumanCoreHero />
 

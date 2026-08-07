@@ -14,7 +14,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: firebase-hosting-live
+  # تشغيلةُ workflow_run التي مصدرها فاشل تتخطّى نفسها (انظر شرط gate أدناه). فإن
+  # شاركت مجموعةَ النشر ألغت دفعةً حقيقيةً جارية ثم لم تنشر شيئاً — وهذا ما حدث في
+  # ٧ أغسطس ٢٠٢٦: أُلغيت دفعةُ c33ff1f فبقي أحدثُ التزامٍ بلا نشر. نعزلها وحدها.
+  group: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success') && format('firebase-hosting-noop-{0}', github.run_id) || 'firebase-hosting-live' }}
   cancel-in-progress: true
 
 jobs:

@@ -4,6 +4,7 @@ import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
 import ImpactMap from '../components/ImpactMap'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { useSeo } from '../components/seo'
+import { ComposeScene } from '../components/ComposeScene'
 import { useCmsContent, useExtras } from '../lib/content'
 import { buildIdeaLife, type IdeaLifeRemoteRecord, type ImpactKind, type ImpactNode } from '../lib/idea-life'
 import { liveLink } from '../lib/dead-links'
@@ -193,7 +194,7 @@ export default function Impact() {
       <section className="px-6 py-14 md:px-11 md:py-20">
         <div className="mx-auto max-w-4xl">
           {loading && !chains.length ? (
-            <p className="py-20 text-center text-soft">تُراجع الأدلة والروابط…</p>
+            <div className="py-20"><ComposeScene lines={["تُراجع الأدلة والروابط…"]} /></div>
           ) : visible.length === 0 ? (
             <p className="py-20 text-center text-soft">لا توجد رحلة أثر ضمن هذا النوع حتى الآن.</p>
           ) : (

@@ -543,7 +543,7 @@ type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string; dialog
 type ArticleAudioControl = { readingDisabled?: boolean; fahedDisabled?: boolean; nouraDisabled?: boolean; dialogueDisabled?: boolean }
 const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const audioUrl = (path: string) => audioBase ? `${audioBase}/${path.replace(/^\/?audio\//, '')}` : path
-/* بيانات الصوت ٢٠٦ك.ب، ولا يُؤخذ منها إلا بصمةٌ من ١٦ حرفاً تكسر التخزين
+/* بيانات الصوت 206 ك.ب، ولا يُؤخذ منها إلا بصمةٌ من 16 حرفاً تكسر التخزين
    المؤقت. واستيرادها ثابتاً كان يُركِبها حزمةَ الدخول كاملةً فتتجاوز السقف.
    تُجلب الآن كسولاً: الرابط الأول قد يخرج بلا بصمة — والملف يعمل كما هو —
    ثم تكتمل. ولا يرى الزائر فرقاً. */

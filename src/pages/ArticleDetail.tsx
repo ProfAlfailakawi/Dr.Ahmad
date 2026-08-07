@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
+import { ComposeScene } from '../components/ComposeScene'
 import { getArticleNeighbors, type ArticleRecord, type BookRecord, type MediaRecord, type PaperRecord } from '../lib/cms'
 import { SITE_URL } from '../data'
 import { NextStep } from '../components/NextStep'
@@ -819,7 +820,7 @@ export default function ArticleDetail() {
               </>
             ) : loading ? (
               /* المتون حزمة كسولة: أثناء وصولها لا نتهم مقالاً كاملاً بأنه «قيد الإضافة» */
-              <p className="mt-14 text-center text-[.9rem] font-light text-soft">يُحضر النص الكامل…</p>
+              <div className="mt-14"><ComposeScene lines={["يُحضر النص الكامل…"]} /></div>
             ) : (
               <>
                 {a.excerpt && (

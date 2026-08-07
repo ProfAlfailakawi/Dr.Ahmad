@@ -1,0 +1,109 @@
+{
+ "done": {
+  "pilot:when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m:ar": {
+   "contentHash": "c87f43d9ebdfb495",
+   "pipelineHash": "4a9f937d58900715",
+   "sourceHash": "cac367bbc0ed78df3304f3ff0000afdd3c7a4217d769f518c51cef22a1e9cb8a",
+   "audioHash": "2217c23d2b392144bb2d4d6cfa6551f2ac7c0f0bc612b510d33830b0ed43443b",
+   "transcriptHash": "e4cadb1e388ebce7532d5b557819e792c13bc9dbed808a58d3119e784641348e",
+   "status": "accepted_pilot",
+   "acceptedAt": "2026-08-07T21:07:21.933Z",
+   "pilot": true
+  },
+  "pilot:the-return-that-fails-to-fix-what-came-before-itarabic:ar": {
+   "contentHash": "24ddbcdfbc487a9f",
+   "pipelineHash": "4a9f937d58900715",
+   "sourceHash": "86bdc6ab4f854ef695ca941c13e38c17f09b5c773cd693c888e497b40e74c560",
+   "audioHash": "3fbbc014331894a440d726060dcd6217a3982a9d1e227970025e4b656217d27e",
+   "transcriptHash": "a85b94100544daa70614b85bccd9e483aad02679d1e86f80b7728169b4fc0a1d",
+   "status": "accepted_pilot",
+   "acceptedAt": "2026-08-07T21:10:29.961Z",
+   "pilot": true
+  },
+  "pilot:when-the-exam-becomes-the-goalarabic:ar": {
+   "contentHash": "75a50d41aed923df",
+   "pipelineHash": "4a9f937d58900715",
+   "sourceHash": "ab162ad1f3e758d9516d87f61b4e8b8d018d41a6859ef2eec1cb3b7955d3575d",
+   "audioHash": "374cb8bfb003ebfcaabf304c6db141f8151eb0b7659c81c45d6ff33b620ae7b8",
+   "transcriptHash": "4bbe8acc104c513ac3af0c0641cc0b01c2a1c469e884f95619d949c59d5e0cfd",
+   "status": "accepted_pilot",
+   "acceptedAt": "2026-08-07T21:17:25.165Z",
+   "pilot": true
+  }
+ },
+ "storyCount": 0,
+ "totalCount": 0,
+ "pilotGate": {
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-07T21:17:25.226Z",
+  "pipelineHash": "4a9f937d58900715",
+  "required": 3,
+  "candidates": 8,
+  "passed": 3,
+  "failed": 2,
+  "autoPromote": true,
+  "articles": [
+   {
+    "slug": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+    "title": "حين أختبرُ مدرسةَ بناتي… قبل أن تختبرَهنّ",
+    "category": "human",
+    "status": "accepted_pilot"
+   },
+   {
+    "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
+    "title": "العودة التي لا تُصلِح ما قبلها",
+    "category": "analytical",
+    "status": "accepted_pilot"
+   },
+   {
+    "slug": "when-the-teacher-knows-why-he-teachesarabic",
+    "title": "حين يعرف المعلّم لماذا يعلّم",
+    "category": "reflective",
+    "status": "missing"
+   },
+   {
+    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+    "title": "النجاح الذي لا يفرح صاحبه",
+    "category": "mixed",
+    "status": "missing"
+   },
+   {
+    "slug": "when-the-exam-becomes-the-goalarabic",
+    "title": "حين يصبح الامتحان هو الهدف",
+    "category": "mixed",
+    "status": "accepted_pilot"
+   },
+   {
+    "slug": "expectations-that-shape-a-studentarabic",
+    "title": "التوقّعات التي تصنع طالباً",
+    "category": "mixed",
+    "status": "missing"
+   },
+   {
+    "slug": "the-classroom-that-fears-mistakesarabic",
+    "title": "الصفُّ الذي يخاف من الخطأ",
+    "category": "mixed",
+    "status": "missing"
+   },
+   {
+    "slug": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic",
+    "title": "الوطن ليس وجهةَ نظرٍ وقتَ الأزمات",
+    "category": "mixed",
+    "status": "missing"
+   }
+  ],
+  "pass": false,
+  "promoted": false,
+  "reason": "التجربة غير مكتملة أو غير ناجحة: when-the-teacher-knows-why-he-teachesarabic"
+ },
+ "failures": {
+  "when-the-teacher-knows-why-he-teachesarabic": {
+   "attempts": 1,
+   "lastFailedAt": "2026-08-07T21:12:46.882Z"
+  },
+  "success-that-does-not-bring-joy-to-its-ownerarabic": {
+   "attempts": 1,
+   "lastFailedAt": "2026-08-07T21:14:09.156Z"
+  }
+ }
+}

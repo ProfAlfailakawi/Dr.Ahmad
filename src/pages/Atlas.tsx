@@ -429,7 +429,7 @@ export default function Atlas() {
           </FadeUp>
 
           <FadeUp delay={0.08}>
-            <div className="relative overflow-hidden rounded-2xl border border-hair bg-wash lg:overflow-x-auto" onPointerLeave={() => { setHover(null); setLens(null) }}>
+            <div className="atlas-night relative overflow-hidden rounded-2xl border border-hair lg:overflow-x-auto" onPointerLeave={() => { setHover(null); setLens(null) }}>
               {/* نسخة الهاتف: تتكيّف مع العرض، بلا تمرير جانبي ولا نافذة عائمة مقصوصة. */}
               <svg
                 viewBox={`0 0 ${MOBILE_W} ${mobileH}`}

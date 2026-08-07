@@ -4272,3 +4272,32 @@ html, body, #root { max-inline-size: 100%; }
   .grove--sprig .grove-slots { --sprig-gap: .95rem; }
   .grove--sprig .grove-slot:nth-child(2) { --sprig-step: 1.05rem; }
 }
+
+/* ── سماء المقالات ──
+   الصفحة اسمها «سماء»، وكانت مرسومةً على بياضٍ فلا تكاد نجومها تُرى.
+   هنا تأخذ ليلها: لا لونَ جديداً البتّة — بل قيمُ الوضع الليلي نفسها
+   تُعاد تعريفها داخل هذه اللوحة وحدها، فيرث كلُّ ما فيها الليلَ تلقائياً
+   (النصّ والشعرة واللون المعتمد)، ويبقى الوضع الليلي متّسقاً بلا استثناء. */
+.atlas-night {
+  --c-canvas: 15 17 21;
+  --c-ink: 236 234 228;
+  --c-soft: 181 184 190;
+  --c-accent: 132 169 202;
+  --c-accent-deep: 164 194 220;
+  --c-wash: 23 26 31;
+  --c-hair: rgba(234, 234, 231, .11);
+  background: rgb(var(--c-canvas));
+  background-image:
+    radial-gradient(62% 42% at 76% 0%, rgb(var(--c-accent) / .085), transparent 70%),
+    radial-gradient(48% 34% at 12% 96%, rgb(var(--c-accent) / .06), transparent 72%);
+  color: rgb(var(--c-ink));
+}
+/* النجمة تُضيء بدل أن تكون نقطةً مطفأة. */
+.atlas-night circle { transition: filter .3s ease; }
+.atlas-night circle[fill]:not([fill="none"]) {
+  filter: drop-shadow(0 0 3px rgb(var(--c-accent) / .55));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-night circle { transition: none; }
+}

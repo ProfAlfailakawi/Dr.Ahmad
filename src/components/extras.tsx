@@ -6,7 +6,10 @@ import { SocialIcon } from './icons'
 import { ClarifiedIconAction } from './ClarifiedIconAction'
 import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT, site } from '../data'
 import audioManifest from '../data/audio.json'
-import audioMeta from '../data/audio-meta.json'
+/* البصمات المضغوطة لا السجلّ الإداريّ الكامل: `audio-meta.json` ينمو مع كل
+   حلقةٍ ترفعها قافلة الصوت، وكان يُشحن كاملاً في حزمة الدخول إلى كل زائر حتى
+   تجاوزت الميزانية فتوقّف النشر. هنا لا نحتاج إلا بصمةً تكسر التخزين المؤقت. */
+import audioFingerprints from '../data/audio-fingerprints.json'
 import { AudioPlayer, openAudioPlayer } from './AudioPlayer'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { trackShare } from '../lib/views'
@@ -544,13 +547,15 @@ type ArticleAudio = { fahed?: boolean | string; noura?: boolean | string; dialog
 type ArticleAudioControl = { readingDisabled?: boolean; fahedDisabled?: boolean; nouraDisabled?: boolean; dialogueDisabled?: boolean }
 const audioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const audioUrl = (path: string) => audioBase ? `${audioBase}/${path.replace(/^\/?audio\//, '')}` : path
-const audioMetaMap = audioMeta as Record<string, { sha256?: string }>
+/* الشكل المضغوط [بصمة، ثانية]؛ وTypeScript يستنتج من JSON مصفوفةً مفتوحة
+   الطول، فنقرؤها كذلك ونحوّل عند الاستعمال بدل ادّعاء طولٍ لا يضمنه الملف. */
+const audioMetaMap = (audioFingerprints as { files?: Record<string, (string | number)[]> }).files || {}
 /* مُصدَّرة كي يستعملها «مجلس الفكرة» بالقانون نفسه: عنوانٌ واحد للصوت في
    الموقع كله، وبصمةٌ واحدة تكسر التخزين المؤقت عند تغيّر الملف. */
 export const versionedAudioUrl = (path: string) => {
   const raw = /^https?:\/\//i.test(path) ? path : audioUrl(path)
   const name = decodeURIComponent((raw.split('?', 1)[0].split('/').pop() || '').trim())
-  const version = audioMetaMap[name]?.sha256?.slice(0, 16)
+  const version = String(audioMetaMap[name]?.[0] || '')
   if (!version || new URLSearchParams(raw.split('?', 2)[1] || '').has('v')) return raw
   return `${raw}${raw.includes('?') ? '&' : '?'}v=${version}`
 }

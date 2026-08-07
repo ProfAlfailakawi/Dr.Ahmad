@@ -168,6 +168,11 @@ const GREETINGS = [
   'السلام عليكم ورحمة الله وبركاته', 'السلام عليكم ورحمه الله وبركاته',
   'السلام عليكم', 'سلام عليكم', 'وعليكم السلام', 'هلا والله', 'هلا', 'مرحبا',
   'مرحبا بك', 'صباح الخير', 'مساء الخير', 'شلونك', 'كيف حالك', 'لو سمحت',
+  /* التحية بالإنجليزية كانت تسقط إلى البحث الأعمى: من كتب «hello» عاد إليه
+     «ما لقيت مادة منشورة مطابقة» — وهو أبردُ ما يُقال لمن سلّم. والموقع له
+     مرآةٌ إنجليزية منشورة، فمن يخاطبه بالإنجليزية ليس غريباً عنه. */
+  'hello', 'hi', 'hey', 'good morning', 'good evening', 'good afternoon',
+  'greetings', 'salam', 'salaam', 'assalamu alaikum', 'asalamu alaikum',
 ]
 
 const NOISE_WORDS = new Set([
@@ -182,9 +187,24 @@ const HUMAN_PATTERNS = [
   /(?:تواصل|اتصال)\s+(?:بشري|مع الدكتور|مع موظف)/,
 ]
 
+/* ── سؤال الثمن يُجاب، ولا يبتلع كلمةً عابرة ──
+   كان النمط يلتقط لفظ «سعر» أو «تكلفه» أو «قائمه» **في أي موضع** ثم يردّ
+   برسالة الترحيب. فحدث أمران: «تكلفة التعليم في الكويت» — وهو من صميم ما
+   يكتب فيه الدكتور — كان يُبتلع فيضيع سؤال صاحبه؛ ومن سأل «بكم الاشتراك؟»
+   لم يُجَب أصلاً، بل عُرضت عليه بوابة اليوم فبقي لا يدري: أمجّانيٌّ هو أم لا.
+   الآن يُشترط أن يكون الثمن مسؤولاً عنه هو (اشتراك · دخول · محتوى · موقع)،
+   ويُقال الجواب صريحاً: كل المنشور مجاني. */
 const PRICE_PATTERNS = [
-  /(?:قائمه|منيو|اسعار|الاسعار|سعر|بكم|كم السعر|التكلفه|تكلفه)/,
+  /(?:بكم|كم سعر|كم تكلفه|شقد|جم سعر|ما (?:هو )?السعر|اسعار|الاسعار|رسوم|اشتراك مدفوع|في اشتراك|فيه اشتراك|هل هو مجاني|مجاني و?لا|مدفوع و?لا)\s*(?:ال)?(?:اشتراك|عضويه|دخول|محتوي|موقع|الموقع|كتاب|الكتاب|كتب|مقاله|المقالات|البودكاست|القراءه|الخدمه)?/,
 ]
+const PRICE_ANSWER = 'كل ما يُنشر في موقع الدكتور مجاني ومفتوح: المقالات والأبحاث والكتب والقراءات الصوتية — بلا اشتراك ولا رسوم ولا تسجيل. اكتب لي أي موضوع وأفتح لك ما كتبه فيه.'
+/* سؤال العدد: «كم مقالة عندك» · «كم عدد المقالات» · «شكم بحث له».
+   ولا تُكتب `\b` بعد حرفٍ عربي: حدودُ الكلمة في جافاسكربت مبنيّةٌ على حروف
+   ASCII وحدها، فالنمط لا يطابق شيئاً أبداً وينهار الباب صامتاً. */
+const COUNT_QUESTION = /(?:^|\s)(?:كم|شكم|جم|عدد|كم عدد)\s+(?:ال)?(?:مقاله|مقالات|مقال|كتاب|كتب|بحث|ابحاث|بحوث|مختاره|مختارات|ماده|مواد)(?:\s|$)/
+const PAPER_COUNT_FORMS = { one: 'بحث', two: 'بحثان', few: 'أبحاث', many: 'بحثاً' }
+const BOOK_COUNT_FORMS = { one: 'كتاب', two: 'كتابان', few: 'كتب', many: 'كتاباً' }
+const CURATED_COUNT_FORMS = { one: 'مختارة', two: 'مختارتان', few: 'مختارات', many: 'مختارة' }
 
 const ARABIC_DIGITS = Object.freeze({
   '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
@@ -612,6 +632,14 @@ function siteResultReply(items, intro = 'وجدت لك من موقع الدكت�
 /* حين لا يطابق البحثُ الدقيق شيئاً، لا نكتفي بـ«ما لقيت»: نعرض أقرب المواد
    بعتبةٍ متساهلة، فإن غابت عرضنا أبواب الأرشيف الفعلية (من عناوين المقالات
    المنشورة نفسها) — كله مؤرّضٌ بالموقع، ولا اختلاق. */
+/* ── «أقرب المواد» يجب أن تكون قريبةً فعلاً ──
+   كانت العتبة `score >= 3`، وهي تُستوفى بكلمةٍ واحدة تظهر في مقتطف، أو بثلاث
+   كلماتٍ شائعة في متنٍ طويل. فمن سأل عن «كرة القدم» — ولا شيء عنها في
+   أرشيفه — عادت إليه ثلاثة عناوين عن اللغة والتربية بوصفها «أقرب المواد
+   لفكرتك»، وهي ليست قريبةً من فكرته في شيء. وذلك أسوأ من الصمت: يوهمه أنّ
+   البوت فهم ثم أخفق، والصواب أن يُقال «ليس عنده في هذا» وتُفتح أبواب أرشيفه.
+   الشرط الآن: مطابقةٌ في العنوان أو الكلمات المفتاحية (دلالةٌ صريحة)، أو
+   كلمتان مختلفتان من سؤاله على الأقل. */
 function nearestSuggestions(query, excludeIds = [], limit = 3) {
   const tokens = contentTokens(query).slice(0, 8)
   if (!tokens.length) return []
@@ -619,7 +647,7 @@ function nearestSuggestions(query, excludeIds = [], limit = 3) {
   return siteIndex()
     .filter((item) => !excluded.has(item.id))
     .map((item) => ({ item, ...scoreContent(item, tokens) }))
-    .filter((row) => row.score >= 3)
+    .filter((row) => row.score >= 3 && (row.headingMatches >= 1 || row.matched >= 2))
     .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
     .slice(0, limit)
     .map((row) => row.item)
@@ -657,6 +685,9 @@ const THANKS_PATTERN = /^(?:شكرا(?: جزيلا| لك)?|مشكور(?:ين)?(?
 const FAREWELL_PATTERN = /^(?:مع السلامه|في امان الله|الله يحفظك|تصبح على خير|تصبحون على خير|باي|وداعا|الى اللقاء|سلامات|استودعك الله)\s*$/
 const ACK_PATTERN = /^(?:تمام|اوكي|اوك|ok|okay|زين|طيب|ممتاز|جميل|رائع|واضح|فهمت|اها|ايه|نعم|ان شاء الله|خلاص|ماشي|تم)\s*$/
 const WHO_ARE_YOU_PATTERN = /^(?:من انت|منو انت|انت منو|شنو انت|وش انت|مين انت|هل انت روبوت|هل انت بوت|انت بوت|انت روبوت|انت انسان|معاي انسان او روبوت)\s*$/
+/* صوتا القراءة المنشورة — اسماهما ظاهران على كل مادةٍ لها صوت، فالسؤال عنهما
+   متوقّع. القيد أن يكون السؤال عنهما هما، لا أن يرد الاسم في كلامٍ آخر. */
+const NARRATOR_QUESTION = /^(?:من|منو|مين|من هو|من هي|منهو|منهي|وش|شنو)\s*(?:هو|هي|هم|هما)?\s*(?:فهد|نوره|نورا|فهد ونوره|نوره وفهد)\s*(?:منو|مين)?\s*[؟?]?$/
 const PRAISE_PATTERN = /^(?:ما شاء الله|ماشاء الله|كفو|ابدعت|مبدع|وايد حلو|حلو وايد|روعه|يا سلام|احسنت|برافو|عجيب)\s*$/
 
 const MOOD_MAP = [
@@ -790,8 +821,15 @@ const FRACTIONS = new Map([['نص', .5], ['نصف', .5], ['ربع', .25], ['ثل
 
 /* المدّة تُقرأ ثوانيَ واحدة ثم تُترجم إلى درجةٍ في السلّم. الترجمة بالثواني
    لا بالألفاظ، فتستوي «٤٥ ثانية» و«نص دقيقة» و«دقيقة ونص» على ميزانٍ واحد. */
+/* الرقم يصل كما كتبه صاحبه: هنديّاً (٤٥) أو فارسيّاً (۴۵)، و`\d` في جافاسكربت
+   لا يرى إلا الغربيّ. فمن كتب «٩٠ ثانية» بأرقامه كان عددُه يُقرأ صفراً فيُحسب
+   ثانيةً واحدة — أي أدنى السلّم: طلب دقيقةً ونصفاً فوصلته ثلاثون ثانية، بلا
+   خطأٍ ظاهرٍ يُشتكى منه. والتحويل قبل القياس يجعل الصيغتين سواء. */
+const EASTERN_DIGITS = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9', '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9' }
+const westernDigits = (value) => String(value || '').replace(/[٠-٩۰-۹]/g, (digit) => EASTERN_DIGITS[digit] || digit)
+
 function requestedSeconds(value) {
-  const text = String(value || '')
+  const text = westernDigits(value)
   /* «دقايق» جمعٌ لا يحوي «دقيق» — كان يسقط الوحدةَ فتُقرأ «خمس دقائق» ثلاثين ثانية. */
   const unit = /ثاني|ثواني/.test(text) ? 1 : /ساعه/.test(text) ? 3_600 : /دقيق|دقاي/.test(text) ? 60 : 0
   if (!unit) return 0
@@ -851,6 +889,54 @@ function readingStartOf(conversation = {}, item = null) {
 function deepCompanion(item, previousIds = []) {
   if (!item?.title) return null
   return exactSiteResults(item.title, item.title, { excludeIds: [item.id, ...previousIds], limit: 1 })[0] || null
+}
+
+/* ── جسر الإنجليزية ──
+   ألفاظ ميدان الدكتور وحدها، مكتوبةً بيدٍ لا مولَّدة، فلا خدمة ترجمة ولا
+   مفتاح ولا مقابل — والقاعدة عنده: لا شيء يُدفع عليه. وهو **إنقاذٌ متأخّر**:
+   لا يُشغَّل إلا بعد أن يقصُر البحث الحرفيّ والمعجم معاً. */
+const ENGLISH_TOPIC_BRIDGE = Object.freeze({
+  education: 'التعليم', educational: 'التعليم', teaching: 'التدريس', learning: 'التعلم',
+  school: 'المدرسة', schools: 'المدارس', university: 'الجامعة', college: 'الكلية',
+  student: 'الطالب', students: 'الطلاب', pupil: 'الطالب', teacher: 'المعلم', teachers: 'المعلمون',
+  professor: 'الأستاذ', faculty: 'الهيئة التدريسية', curriculum: 'المنهج', curricula: 'المناهج',
+  classroom: 'الصف', lesson: 'الدرس', homework: 'الواجبات', exam: 'الامتحان', exams: 'الامتحانات',
+  test: 'الاختبار', grades: 'الدرجات', cheating: 'الغش', cheat: 'الغش', plagiarism: 'الغش',
+  evaluation: 'التقويم', assessment: 'التقويم', literacy: 'محو الأمية',
+  technology: 'التكنولوجيا', digital: 'الرقمي', internet: 'الإنترنت', online: 'الإلكتروني',
+  smartphone: 'الهاتف', phone: 'الهاتف', screen: 'الشاشة', screens: 'الشاشات',
+  robot: 'الروبوت', robots: 'الروبوت', chatgpt: 'الذكاء الاصطناعي', ai: 'الذكاء الاصطناعي',
+  data: 'البيانات', privacy: 'الخصوصية', security: 'الأمن', innovation: 'الابتكار',
+  media: 'الإعلام', news: 'الأخبار', press: 'الصحافة', journalism: 'الصحافة',
+  social: 'السوشيال ميديا', instagram: 'السوشيال ميديا', tiktok: 'السوشيال ميديا',
+  youtube: 'اليوتيوب', influencer: 'المشاهير', advertising: 'الإعلان',
+  family: 'الأسرة', parents: 'الأهل', parenting: 'التربية', children: 'الأطفال', child: 'الطفل',
+  youth: 'الشباب', generation: 'الجيل', society: 'المجتمع', community: 'المجتمع',
+  culture: 'الثقافة', identity: 'الهوية', language: 'اللغة', arabic: 'اللغة العربية',
+  values: 'القيم', ethics: 'الأخلاق', morals: 'الأخلاق', religion: 'الدين',
+  reading: 'القراءة', books: 'الكتب', book: 'الكتاب', knowledge: 'المعرفة', thinking: 'التفكير',
+  creativity: 'الإبداع', memory: 'الذاكرة', attention: 'الانتباه', focus: 'التركيز',
+  motivation: 'الدافعية', addiction: 'الإدمان', bullying: 'التنمر', violence: 'العنف',
+  health: 'الصحة', psychology: 'النفسية', stress: 'الضغط', burnout: 'الإرهاق',
+  leadership: 'القيادة', management: 'الإدارة', training: 'التدريب', skills: 'المهارات',
+  work: 'العمل', jobs: 'الوظائف', employment: 'التوظيف', economy: 'الاقتصاد',
+  kuwait: 'الكويت', gulf: 'الخليج', future: 'المستقبل', reform: 'الإصلاح',
+  research: 'بحث', science: 'العلم', development: 'التطوير', quality: 'الجودة',
+})
+/* حشو السؤال لا يُترجم: «what do you have about …» تُرمى كلماتها الأولى. */
+const ENGLISH_STOPWORDS = new Set(['what', 'whats', 'do', 'does', 'you', 'your', 'have', 'has', 'any', 'about', 'on', 'of', 'the', 'a', 'an', 'is', 'are', 'in', 'for', 'me', 'i', 'we', 'to', 'and', 'or', 'with', 'can', 'could', 'give', 'show', 'tell', 'find', 'search', 'looking', 'look', 'want', 'need', 'please', 'there', 'here', 'something', 'anything', 'more', 'some', 'his', 'he', 'dr', 'doctor', 'ahmad', 'ahmed', 'alfailakawi'])
+
+/** ألفاظٌ عربية تُبحث بها رسالةٌ لاتينية، أو null إن لم يُعرف منها شيء. */
+function englishTopicQuery(value) {
+  const latin = String(value || '').match(/[a-z]+/g) || []
+  if (latin.length < 1) return null
+  const terms = []
+  for (const word of latin) {
+    if (ENGLISH_STOPWORDS.has(word)) continue
+    const hit = ENGLISH_TOPIC_BRIDGE[word] || ENGLISH_TOPIC_BRIDGE[word.replace(/s$/, '')]
+    if (hit && !terms.includes(hit)) terms.push(hit)
+  }
+  return terms.length ? terms.slice(0, 4).join(' ') : null
 }
 
 /* موضع «كمل» بعد القراءة: المقطع قد يبدأ بعد عنوانٍ داخليّ (bodyStart)، فلا
@@ -1060,7 +1146,10 @@ function ambiguousRivals(rows, query, isGuess) {
    يتبعها فعلُ طلب — وإلا فالجملة واحدة كما هي.
    **يُقرأ من النصّ الخام لا من المطبَّع:** `normalizeArabicMessage` يمسح
    الترقيم، فالفاصلة — وهي أوضح علامةٍ على طلبين — تختفي قبل أن نراها. */
-const COMPOUND_SPLIT = /\s*[،؛,]\s*|\s+ثم\s+|\s*\+\s*|\s+و(?=(?:أبي|ابي|أبغي|ابغي|أبغى|ابغى|أريد|اريد|عطني|أعطني|اعطني|ورني|شنو|وش|ايش|أيش|كذلك|أيضا|ايضا|بعدين|عن)\b)/u
+/* `\b` بعد حرفٍ عربي لا يطابق شيئاً (حدود الكلمة في جافاسكربت على ASCII
+   وحدها)، فكان فصلُ الطلبين بواو العطف ميتاً: «ابي مقالة وعن التعليم»
+   تُقرأ طلباً واحداً. البديل حدُّ مسافةٍ أو نهايةِ نص. */
+const COMPOUND_SPLIT = /\s*[،؛,]\s*|\s+ثم\s+|\s*\+\s*|\s+و(?=(?:أبي|ابي|أبغي|ابغي|أبغى|ابغى|أريد|اريد|عطني|أعطني|اعطني|ورني|شنو|وش|ايش|أيش|كذلك|أيضا|ايضا|بعدين|عن)(?:\s|$))/u
 function splitCompoundAsks(rawText) {
   const parts = normalizeWhitespace(rawText).split(COMPOUND_SPLIT)
     .map((part) => normalizeArabicMessage(part).trim())
@@ -1358,7 +1447,26 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     }
   }
 
-  if (PRICE_PATTERNS.some((pattern) => pattern.test(clean)) || isGreetingOnly(text) || intent === INTENTS.WELCOME) {
+  if (PRICE_PATTERNS.some((pattern) => pattern.test(clean))) {
+    return { kind: 'reply', reason: 'price-free', intent, reply: signReply(`${PRICE_ANSWER}\n\n${SITE_URL}`, messages) }
+  }
+  /* «كم مقالة عندك؟» سؤالٌ عن عددٍ، وجوابُه عددٌ — وكان يُقابَل بقائمةِ ثلاث
+     مقالات، أي بجوابٍ عن سؤالٍ آخر. والعدد محسوبٌ من الفهرس المنشور نفسه لا
+     مكتوباً بيدٍ تتقادم. */
+  if (COUNT_QUESTION.test(clean)) {
+    const counts = siteIndex().reduce((tally, item) => ({ ...tally, [item.kind]: (tally[item.kind] || 0) + 1 }), {})
+    const rows = [
+      [counts.article || 0, ARTICLE_FORMS, '/articles'],
+      [counts.paper || 0, PAPER_COUNT_FORMS, '/research'],
+      [counts.book || 0, BOOK_COUNT_FORMS, '/publications'],
+      [counts.curated || 0, CURATED_COUNT_FORMS, '/curated'],
+    ].filter(([count]) => count > 0)
+    return {
+      kind: 'reply', reason: 'content-count', intent,
+      reply: signReply(`المنشور في موقع الدكتور الآن:\n\n${rows.map(([count, forms, path]) => `• ${arabicCountPhrase(count, forms, arabicNumber)}\n  ${SITE_URL}${path}`).join('\n')}\n\nاكتب لي أي موضوع وأدلّك على ما كتبه فيه.`, messages),
+    }
+  }
+  if (isGreetingOnly(text) || intent === INTENTS.WELCOME) {
     const welcome = buildWakeWelcome(messages, new Date(), conversation)
     return {
       kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'welcome', intent,
@@ -1371,6 +1479,15 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   }
   if (intent === INTENTS.ABOUT_DOCTOR) {
     return { kind: 'reply', reason: 'about-doctor', intent, reply: signReply(`هذه السيرة الرسمية للدكتور أحمد حسين الفيلكاوي، ومؤلفاته وأبحاثه وخبراته:\n\n${SITE_URL}/about`, messages) }
+  }
+  /* «منو نورة؟» سؤالٌ يتكرّر لأن الاسمين منشوران على كل مادةٍ لها صوت. وكان
+     يُجاب بسيرة الدكتور — جوابٌ عن غير سؤال. والصدق هنا واجب: هما صوتا قراءةٍ
+     لا شخصان يُنسب إليهما رأي. */
+  if (NARRATOR_QUESTION.test(stripped || clean)) {
+    return {
+      kind: 'reply', reason: 'about-narrators', intent,
+      reply: signReply('فهد ونورة صوتا القراءة في الموقع: يقرآن نصّ الدكتور كما نُشر، حرفاً بحرف، فيُسمَع ما كُتب. وبعض المواد لها حوارٌ مسموع بينهما يشرح فكرتها.\n\nتلقى القراءات كلها هنا:\n' + `${SITE_URL}/listen`, messages),
+    }
   }
 
   /* ─── التصحيح: «مو صح» أو «مو عن هذا» اعتذارٌ وبحثٌ من زاوية أخرى ─── */
@@ -1771,6 +1888,23 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     return { kind: 'reply', reason: 'context-reference', intent, reply: signReply(excerptReply(item), messages), evidence: [item.id], contextItemIds: conversation.contextItemIds, contextIndex: index }
   }
 
+  /* ── إشارةٌ إلى «الحالي» ولا حاضرَ في المجلس ──
+     «قائمة المقالات» و«عطني المقالات» و«وين ألقى المقالات» تُقرأ كلها إشارةً
+     إلى المادة الحالية (reference: current)، فإذا لم تكن هناك مادةٌ حاضرة
+     سقطت إلى «ما لقيت مادة» أو إلى استيضاحٍ يسأل الرجلَ عمّا قاله للتوّ.
+     والنوع مذكورٌ في طلبه صراحةً (مقالات · كتب · أبحاث)، فيُعطى أحدثَ ما فيه
+     بدل أن يُردّ خالياً. */
+  if (intent === INTENTS.CONTEXT_REFERENCE && !contextItems.length) {
+    const referenceKind = classification.request?.kind
+    const referenceItems = referenceKind ? latestSiteItems([referenceKind], 3) : []
+    if (referenceItems.length) return {
+      kind: 'reply', reason: 'kind-listing', intent,
+      reply: signReply(siteResultReply(referenceItems, 'هذه أحدث المواد المنشورة من هذا النوع:'), messages),
+      evidence: referenceItems.map((item) => item.id),
+      contextItemIds: referenceItems.map((item) => item.id), contextIndex: 0, lastTopic: referenceItems[0].title,
+    }
+  }
+
   /* «عطني ٤ مقالات» — عددٌ ونوعٌ صريحان يستحقان قائمة، لا استيضاحاً. */
   const countedKind = clean.match(/(?:عطني|اعطني|ابي|اريد|ابغي|ورني|وريني|اعرض|هات)\s+(\d{1,2})\s*(مقالات|مقاله|مقال|ابحاث|بحوث|بحث|كتب|كتاب|بودكاست|حلقات|مختارات)/)
   if (countedKind) {
@@ -1912,6 +2046,27 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       /* لا نُعلن «فهمت مقصدك» إلا إذا غيّر المفهومُ الصدارة فعلاً. */
       conceptUsed = reranked[0]?.item?.id !== found[0]?.id
       found = reranked.map((row) => row.item)
+    }
+  }
+
+  /* ═══ من سأل بالإنجليزية ═══
+     المعجم يعرف المصطلحات المركّبة («artificial intelligence» · «e-learning»)
+     ولا يعرف كلام الناس اليومي: من كتب «what do you have about education»
+     أو «cheating in exams» عاد إليه «ما لقيت مادة» ومعه أقربُ العناوين —
+     وهي عناوين لا صلة لها بسؤاله. وللموقع مرآةٌ إنجليزية منشورة، فمن خاطبه
+     بالإنجليزية ليس غريباً عنه. هذا جسرٌ يدويٌّ مجاني (لا خدمة ترجمة ولا
+     مفتاح): ألفاظ الميدان وحده، ويعمل **بعد** أن يقصُر اللفظ والمفهوم معاً،
+     فلا يُزيح نتيجةً صحيحة أبداً. */
+  if (found.length < 3) {
+    const bridged = englishTopicQuery(clean)
+    if (bridged) {
+      const bridgedRows = scoredSiteResults(bridged, { kinds, limit: 5, filters })
+      if (bridgedRows.length) {
+        const known = new Set(found.map((item) => item.id))
+        const additions = bridgedRows.map((row) => row.item).filter((item) => !known.has(item.id))
+        if (!found.length) conceptUsed = false
+        found = [...found, ...additions].slice(0, 3)
+      }
     }
   }
 
@@ -2117,8 +2272,10 @@ const AUDIENCE_FEMALE_NAMES = new Set([
 const AUDIENCE_MALE_TA_NAMES = new Set(['حمزة', 'أسامة', 'اسامة', 'معاوية', 'عبادة', 'عطية', 'طلحة', 'عبيدة', 'عقبة', 'قتادة', 'حذيفة', 'زكريا'])
 function audienceGender(vocative) {
   const clean = String(vocative || '').trim()
-  if (/^(?:الدكتورة|دكتورة|الأستاذة|استاذة|الأستاذه|الشيخة|أم|ام)\b/u.test(clean)) return 'female'
-  if (/^(?:أبو|ابو|بن|ابن)\b/u.test(clean)) return 'male'
+  /* الألقاب كانت لا تُقرأ أبداً لنفس علّة `\b` مع العربية، فتُصرَّف مخاطبةُ
+     «الدكتورة سارة» بصيغة المذكّر حتى يلتقطها فحصُ الاسم بعدها — وقد لا يلتقطه. */
+  if (/^(?:الدكتورة|دكتورة|الأستاذة|استاذة|الأستاذه|الشيخة|أم|ام)(?:\s|$)/u.test(clean)) return 'female'
+  if (/^(?:أبو|ابو|بن|ابن)(?:\s|$)/u.test(clean)) return 'male'
   const first = clean.replace(/^(?:(?:د|أ|ا|م)\s*\.|الدكتور|دكتور|الأستاذ|استاذ|الشيخ)\s*/u, '').split(/\s+/)[0] || ''
   if (AUDIENCE_FEMALE_NAMES.has(first)) return 'female'
   if (/[ةه]$/u.test(first) && first.length >= 4 && !AUDIENCE_MALE_TA_NAMES.has(first)) return 'female'

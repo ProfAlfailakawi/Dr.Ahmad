@@ -229,8 +229,22 @@ const browserIndex = {
     tokens: (node.tokens || []).slice(0, 80),
   })),
 }
-fs.writeFileSync(path.join(root, 'src/data/knowledge-graph.json'), `${JSON.stringify(graph, null, 2)}\n`)
-fs.writeFileSync(path.join(root, 'src/data/knowledge-graph-index.json'), `${JSON.stringify(browserIndex)}\n`)
+/* ── اكتب ثم اقرأ ما كتبتَ ──
+   نسخة `knowledge-graph.json` المرفوعة في المستودع كانت **مبتورة**: ١٬٩٩٩٬٥٧١
+   بايتاً من ستة ملايين، تنتهي في منتصف نصٍّ مفتوح. فكان `npm run
+   nuclear:self-test` — وهو أحد فاحصات ما قبل الرفع — يسقط عند أول سطرٍ فيه
+   بـSyntaxError، أي أنّ ذلك الفاحص كان **معطَّلاً بلا أن يعلم أحد**. ولأن
+   البتر لا يصدر عنه خطأ (الكتابة «نجحت»)، لا يُكشف إلا بقراءة الناتج. */
+function writeJsonVerified(relativePath, payload) {
+  const target = path.join(root, relativePath)
+  fs.writeFileSync(target, payload)
+  const written = fs.readFileSync(target, 'utf8')
+  try { JSON.parse(written) } catch (error) {
+    throw new Error(`${relativePath}: الملف المكتوب لا يُقرأ JSON (${written.length} حرفاً) — ${error.message}`)
+  }
+}
+writeJsonVerified('src/data/knowledge-graph.json', `${JSON.stringify(graph, null, 2)}\n`)
+writeJsonVerified('src/data/knowledge-graph-index.json', `${JSON.stringify(browserIndex)}\n`)
 const legacyProfile = buildLegacyProfile(nodes, edges, builtAt)
-fs.writeFileSync(path.join(root, 'src/data/legacy-profile.json'), `${JSON.stringify(legacyProfile, null, 2)}\n`)
+writeJsonVerified('src/data/legacy-profile.json', `${JSON.stringify(legacyProfile, null, 2)}\n`)
 console.log(`Knowledge graph v2: ${nodes.length} nodes / ${edges.length} directed edges — ${Object.entries(kinds).map(([kind, count]) => `${kind}:${count}`).join(' · ')} · legacy:${legacyProfile.themes.length} themes/${legacyProfile.timeline.length} years`)

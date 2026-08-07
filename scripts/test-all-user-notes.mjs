@@ -174,7 +174,11 @@ check('عناوين ومحاور الكتب تعود دليلاً حتى عند 
 check('واجهة البحث تشرح فهم السؤال وتقترح إعادة صياغته', search.includes('فهم البحث') && search.includes('حوّلها إلى إجابة موثقة') && search.includes('اكتب بطريقتك: سؤال، موقف، فكرة'))
 check('العقل الحي وعالم الكتاب يستعملان المحرك الدلالي نفسه', ask.includes('buildSmartQueryPlan') && ask.includes('scoreSmartFields') && bookWorld.includes('buildSmartQueryPlan') && bookWorld.includes('لم تظهر شواهد كافية'))
 check('تنقل المقالات صف واحد صغير والعناوين موجودة بلا تسميات زائدة', articleDetail.includes('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]') && !articleDetail.includes('السابق:</span>') && !articleDetail.includes('التالي:</span>') && articleDetail.includes('text-[.6rem]'))
-check('متون المقالات القديمة والجديدة مضبوطة المحاذاة', css.includes('.article-body-synced') && css.includes('text-align: justify') && css.includes('text-align-last: start'))
+/* الرصف من الطرفين أُلغي بعد قياس: على عمود ٥٨٣px (حاسوب) كان وسيط تمدّد المسافة
+   بين الكلمات ١٫٦٥–١٫٩٢× وأقصاه ٢٫٧٨×، وأكثر الفقرات فوق ١٫٥× — أي «أنهار بيضاء»
+   في النصّ العربي، ولا كشيدة في الويب تسدّها. فصار المتن يُرصف من اليمين وحده.
+   الشرط الآن يحرس القرار الجديد: محاذاةٌ من البدء، وبلا رصفٍ من الطرفين. */
+check('متون المقالات القديمة والجديدة مضبوطة المحاذاة', css.includes('.article-body-synced') && css.includes('text-align: start') && css.includes('text-align-last: start') && !/\.article-body[^{]*\{[^}]*text-align: justify/.test(css))
 
 console.log('\nالإعلام ومساحتي')
 check('رأس الأرشيف الإعلامي بلا الوصف المحذوف', !media.includes('لقاءات مرئية ومسموعة، مفهرسة زمنياً، قابلة للبحث داخل الكلام نفسه.'))
@@ -193,7 +197,14 @@ check('مساحتي منظمة بثلاثة تبويبات', mySpace.includes('�
 check('التخزين المحلي افتراضي والمزامنة اختيارية', sync.includes('الوضع المحلي يبقى الافتراضي') && mySpace.includes('فعّل المزامنة'))
 check('مزامنة مساحتي مشفرة داخل المتصفح', sync.includes('crypto.subtle.encrypt') && sync.includes('crypto.subtle.decrypt'))
 check('يمكن مسح النسخة السحابية دون حذف المحلي', mySpace.includes('امسح النسخة السحابية') && mySpace.includes('لا يحذف ما على هذا الجهاز'))
-check('الأزرار العائمة لا تغطي آخر محتوى على الهاتف', css.includes('padding-bottom: calc(5.5rem + env(safe-area-inset-bottom))'))
+/* كان الشرط يثبّت الرقم ‎5.5rem‎؛ وقياس هندسة الزرّ العائم أظهر أنه يحتاج ‎68px‎
+   فقط (يعلو القاع بـ‎1rem + الشريط الآمن‎ وارتفاعه ‎44px‎)، والتذييل يحمل ‎28px‎.
+   فكانت ‎88px‎ تترك ‎48px‎ فراغاً أبيض تحت التذييل على كل صفحة هاتف.
+   الشرط الآن يحرس الغرض: حجزٌ قائم مع الشريط الآمن، ولا يقلّ عن ‎2.5rem‎. */
+check('الأزرار العائمة لا تغطي آخر محتوى على الهاتف', (() => {
+  const m = css.match(/\.signature-page\s*\{[^}]*padding-bottom:\s*calc\(([\d.]+)rem\s*\+\s*env\(safe-area-inset-bottom\)\)/)
+  return Boolean(m) && Number(m[1]) >= 2.5
+})())
 // مسار الصوت يمشي على v7/v6 وهو ما يفرضه test-site-polish-2026.mjs أيضاً. منعُ v7 هنا
 // كان يخلق تناقضاً لا مخرج منه: البوابة تحمرّ على v6 والبناء يحمرّ على v7 فلا نشرَ أبداً.
 check('إصدارات GitHub Actions في مسارات النشر قابلة للحل', autoSiteWorkflow.includes('actions/checkout@v6') && autoSiteWorkflow.includes('actions/setup-node@v6') && autoAudioWorkflow.includes('actions/checkout@v7') && autoAudioWorkflow.includes('actions/setup-node@v7') && autoAudioWorkflow.includes('actions/cache/restore@v6') && autoAudioWorkflow.includes('actions/cache/save@v6'))

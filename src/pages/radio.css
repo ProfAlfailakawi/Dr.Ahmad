@@ -1,0 +1,309 @@
+/* ═══════════ الإذاعة — طبقة بصرية معزولة ببادئة radio- ═══════════
+   صفحةٌ فيها شيءٌ واحد: الجملة المنطوقة. لونان يتنفّسان بمن يتكلّم —
+   عودٌ دافئ لفهد وغسقٌ هادئ لنورة — وإيقاعُ الحوار مرسومٌ من توقيتات
+   النصّ الحقيقية. لا بطاقات ولا أيقونات ولا ظلال.                      */
+
+@font-face {
+  font-family: 'El Messiri Radio';
+  src: url('/fonts/el-messiri-700.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'El Messiri Radio';
+  src: url('/fonts/el-messiri-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --radio-fahd: #B0703A;
+  --radio-noura: #4E6E70;
+  --radio-voice: var(--radio-fahd);
+  --radio-bg: #EAE4D7;
+  --radio-fg: #191510;
+  --radio-soft: #7C7264;
+  --radio-hair: #D3CABA;
+  --radio-pane: #F3EFE6;
+}
+html.dark {
+  --radio-bg: #0E0C0A;
+  --radio-fg: #EFE8DA;
+  --radio-soft: #8A7F6F;
+  --radio-hair: #272119;
+  --radio-pane: #15120E;
+}
+
+.radio-root {
+  position: relative;
+  min-height: 100vh;
+  background: var(--radio-bg);
+  color: var(--radio-fg);
+  font-family: 'El Messiri Radio', 'SF Arabic', 'Geeza Pro', 'Noto Naskh Arabic', system-ui, sans-serif;
+  line-height: 1.8;
+  overflow-x: hidden;
+}
+
+/* ضوء المصباح — طبقتان: سماءٌ تنجرف ببطءٍ شديد، وضوءٌ حيٌّ ينبض مع الكلام */
+.radio-glow {
+  position: fixed;
+  inset: -20%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(46vw 40vh at 62% 30%, color-mix(in srgb, var(--radio-voice) 11%, transparent), transparent 70%),
+    radial-gradient(52vw 44vh at 34% 62%, color-mix(in srgb, var(--radio-noura) 7%, transparent), transparent 72%);
+  transition: background 1.8s cubic-bezier(.4, 0, .2, 1);
+  animation: radio-drift 46s ease-in-out infinite alternate;
+}
+@keyframes radio-drift {
+  from { transform: translate3d(-2.5%, -1.5%, 0) scale(1) }
+  to { transform: translate3d(2.5%, 2%, 0) scale(1.06) }
+}
+.radio-glow-live {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--radio-level, .06);
+  background: radial-gradient(50vw 42vh at 50% 44%,
+    color-mix(in srgb, var(--radio-voice) 85%, transparent), transparent 70%);
+  transition: opacity .35s ease;
+  mix-blend-mode: soft-light;
+}
+html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-level, .06) * .8) }
+.radio-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(120vw 120vh at 50% 42%, transparent 58%,
+    color-mix(in srgb, var(--radio-bg) 65%, black 8%) 100%);
+  opacity: .5;
+}
+.radio-grain {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  opacity: .045;
+  mix-blend-mode: overlay;
+}
+
+.radio-stage {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
+  min-height: 100vh;
+  /* رأس الموقع ثابتٌ فوق الصفحة — الحشوة العلوية تُخلي له مكانه */
+  padding: clamp(104px, 16vh, 148px) clamp(20px, 5vw, 36px) clamp(96px, 14vh, 130px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* على الهواء */
+.radio-onair {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  letter-spacing: .18em;
+  color: var(--radio-soft);
+}
+.radio-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--radio-voice);
+  position: relative;
+  transition: background 1.2s;
+}
+.radio-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid var(--radio-voice);
+  animation: radio-breathe 4s cubic-bezier(.4, 0, .3, 1) infinite;
+}
+@keyframes radio-breathe {
+  0%, 100% { transform: scale(.55); opacity: .6 }
+  55% { transform: scale(1.5); opacity: 0 }
+}
+
+/* الجملة — بطلة الصفحة */
+.radio-now {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 30px;
+  padding: 36px 0;
+}
+.radio-who {
+  font-size: 12px;
+  letter-spacing: .22em;
+  color: var(--radio-voice);
+  transition: color 1.2s;
+  min-height: 1em;
+}
+.radio-line {
+  font-size: clamp(27px, 5.6vw, 50px);
+  line-height: 1.52;
+  font-weight: 700;
+  text-wrap: balance;
+  margin: 0;
+  min-height: 2.5em;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity .5s cubic-bezier(.4, 0, .2, 1), transform .5s cubic-bezier(.4, 0, .2, 1);
+}
+.radio-line.radio-out { opacity: 0; transform: translateY(7px) }
+
+/* إيقاع الحوار — كل عمودٍ جملةٌ قيلت، ولونه من قالها */
+.radio-rhythm {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 34px;
+  margin-top: 2px;
+}
+.radio-tick {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 1px;
+  background: var(--radio-hair);
+  opacity: .55;
+  transition: background .5s, opacity .5s;
+}
+.radio-tick.radio-done { opacity: 1 }
+.radio-tick.radio-done.radio-m { background: var(--radio-fahd) }
+.radio-tick.radio-done.radio-f { background: var(--radio-noura) }
+.radio-tick.radio-live { box-shadow: 0 0 0 1px color-mix(in srgb, var(--radio-voice) 60%, transparent) }
+
+.radio-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 14.5px;
+  color: var(--radio-soft);
+  border-top: 1px solid var(--radio-hair);
+  padding-top: 16px;
+  font-weight: 400;
+}
+.radio-meta b { font-weight: 700; color: var(--radio-fg); font-size: 16px }
+.radio-meta time {
+  margin-inline-start: auto;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Arabic', system-ui, sans-serif;
+}
+
+/* التالي */
+.radio-next { display: flex; flex-direction: column }
+.radio-nx {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 16px;
+  align-items: baseline;
+  padding: 12px 0;
+  font-size: 15px;
+  border-top: 1px solid color-mix(in srgb, var(--radio-hair) 60%, transparent);
+}
+.radio-nx time {
+  font-size: 12.5px;
+  color: var(--radio-soft);
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Arabic', system-ui, sans-serif;
+}
+.radio-nx p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--radio-soft);
+  font-weight: 400;
+}
+.radio-nx.radio-first p { color: var(--radio-fg); font-weight: 700 }
+
+/* زرٌّ واحد لا غير */
+.radio-play {
+  position: fixed;
+  inset-block-end: clamp(20px, 4vh, 34px);
+  inset-inline-end: clamp(20px, 4vw, 34px);
+  z-index: 3;
+  min-width: 54px;
+  height: 54px;
+  padding: 0 20px;
+  border-radius: 27px;
+  border: 1px solid var(--radio-hair);
+  background: color-mix(in srgb, var(--radio-pane) 88%, transparent);
+  backdrop-filter: blur(8px);
+  color: var(--radio-fg);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  transition: transform .28s cubic-bezier(.34, 1.4, .5, 1), border-color .28s;
+}
+.radio-play:hover { transform: scale(1.06); border-color: var(--radio-voice) }
+.radio-play:focus-visible { outline: 2px solid var(--radio-voice); outline-offset: 4px }
+.radio-hint {
+  position: fixed;
+  inset-block-end: calc(clamp(20px, 4vh, 34px) + 16px);
+  inset-inline-end: calc(clamp(20px, 4vw, 34px) + 110px);
+  z-index: 3;
+  font-size: 12.5px;
+  color: var(--radio-soft);
+  max-width: 50vw;
+}
+
+/* الدخول: العناصر تصعد من سكونٍ واحداً إثر الآخر */
+.radio-onair, .radio-now, .radio-next, .radio-play {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .9s cubic-bezier(.22, 1, .36, 1), transform .9s cubic-bezier(.22, 1, .36, 1);
+}
+.radio-entered .radio-onair { opacity: 1; transform: none; transition-delay: .05s }
+.radio-entered .radio-now { opacity: 1; transform: none; transition-delay: .22s }
+.radio-entered .radio-next { opacity: 1; transform: none; transition-delay: .45s }
+.radio-entered .radio-play { opacity: 1; transform: none; transition-delay: .6s }
+
+/* حلقة تقدّم الحلقة تدور حول الزرّ — وظيفةٌ لا زينة */
+.radio-play { position: fixed; overflow: visible }
+.radio-play::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from 180deg, var(--radio-voice) var(--radio-prog, 0%), color-mix(in srgb, var(--radio-hair) 60%, transparent) 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: .85;
+  pointer-events: none;
+}
+
+/* شريط الإيقاع أعرض وأكثر حياة */
+.radio-rhythm { height: 42px }
+.radio-tick { border-radius: 1.5px }
+.radio-tick.radio-live { animation: radio-tickpulse 1.6s ease-in-out infinite }
+@keyframes radio-tickpulse {
+  0%, 100% { transform: scaleY(1) }
+  50% { transform: scaleY(1.18) }
+}
+.radio-tick { transform-origin: bottom }
+
+@media (prefers-reduced-motion: reduce) {
+  .radio-root *, .radio-root *::after { animation: none !important; transition: none !important }
+}
+@media (max-width: 560px) {
+  .radio-nx { grid-template-columns: 54px 1fr; gap: 12px }
+  .radio-rhythm { height: 26px }
+}

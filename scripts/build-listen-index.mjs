@@ -23,17 +23,6 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = resolve(ROOT, 'src/data/listen-index.json')
 const SPOKEN_OUT = resolve(ROOT, 'src/data/spoken-index.json')
-/* ── بصمات الصوت: السطر الذي أوقف النشر كلّه ──
-   `audio-meta.json` سجلٌّ إداريّ ثقيل (sha256 وsourceHash وbytes وحالة تحقّق
-   لكل ملف)، وكان يُستورد في `extras.tsx` — وهي في حزمة الدخول. فكان **كامل
-   جرد R2 يُشحن إلى كل زائر**، وينمو مع كل حلقةٍ ترفعها القافلة. يوم ٧ أغسطس
-   بلغ النموّ حدَّ الميزانية (٥٩١KB من سقف ٥٢٠KB) فاحمرّت `build-and-deploy`،
-   ومعها توقّف نشر dr-api نفسه — فبقي عقل الواتساب على نسخة ما قبل الإصلاح
-   مهما دُفع من إصلاحات. والمتصفّح لا يحتاج من ذلك السجلّ إلا شيئين: بصمةً
-   قصيرة تكسر التخزين المؤقت، وثوانيَ المدّة لعدّاد الأثر. فنكتبهما هنا في
-   ملفٍّ مضغوط [بصمة، ثانية] لا يتجاوز خُمس حجم الأصل، ويبقى السجلّ الكامل
-   للوحة التحكم وحدها (حزمة كسولة). */
-const FINGERPRINTS_OUT = resolve(ROOT, 'src/data/audio-fingerprints.json')
 const SELF_TEST = process.argv.includes('--self-test')
 
 const AUDIO_BASE = String(process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
@@ -238,21 +227,59 @@ writeFileSync(OUT, `${JSON.stringify({
 spoken.sort((left, right) => left.slug.localeCompare(right.slug))
 writeFileSync(SPOKEN_OUT, `${JSON.stringify({ schemaVersion: 1, episodes: spoken })}\n`)
 
-/* البصمات: ملفات mp3 وحدها، وقيمةٌ من عنصرين لا كائنٌ بمفاتيح — الاسم يتكرّر
-   مئات المرّات فلا نُضاعفه بمفاتيح. البصمة ١٦ خانة (تكفي لكسر التخزين المؤقت،
-   والسجلّ الكامل عند اللوحة إن أُريد التحقّق). */
-const fingerprints = {}
-for (const [file, row] of Object.entries(audioMeta)) {
-  if (!file.endsWith('.mp3')) continue
-  const version = /^[a-f0-9]{64}$/i.test(String(row?.sha256 || '')) ? String(row.sha256).slice(0, 16) : ''
-  const seconds = Number.isFinite(Number(row?.durationSeconds)) ? Math.max(0, Math.round(Number(row.durationSeconds))) : 0
-  if (!version && !seconds) continue
-  fingerprints[file] = [version, seconds]
-}
-writeFileSync(FINGERPRINTS_OUT, `${JSON.stringify({ schemaVersion: 1, files: fingerprints })}\n`)
-
 const timed = episodes.filter((episode) => typeof episode.startSec === 'number').length
 const lines = spoken.reduce((total, item) => total + item.lines.length, 0)
 console.log(`✔ مجلس الفكرة: ${episodes.length} حلقة منشورة · ${timed} منها تبدأ عند ثانية السؤال`)
 console.log(`✔ فهرس المنطوق: ${lines} جملة من ${spoken.length} حلقة · ${Math.round(statSync(SPOKEN_OUT).size / 1024)}KB`)
-console.log(`✔ بصمات الصوت: ${Object.keys(fingerprints).length} ملفاً · ${Math.round(statSync(FINGERPRINTS_OUT).size / 1024)}KB (بدل ${Math.round(statSync(resolve(ROOT, 'src/data/audio-meta.json')).size / 1024)}KB في حزمة الدخول)`)
+
+/* بصمات الصوت المصغّرة: حزمة الدخول تحتاج ست عشرة خانةً من بصمة كل ملف
+   لكسر تخزين المتصفح، لا السجلّ كلّه. تُولَّد هنا فلا تتخلّف عن السجلّ. */
+{
+  const metaPath = resolve(ROOT, 'src/data/audio-meta.json')
+  if (existsSync(metaPath)) {
+    const meta = JSON.parse(readFileSync(metaPath, 'utf8'))
+    const versions = {}
+    for (const [name, row] of Object.entries(meta)) {
+      const sha = row && typeof row.sha256 === 'string' ? row.sha256.slice(0, 16) : ''
+      if (sha) versions[name] = sha
+    }
+    writeFileSync(resolve(ROOT, 'src/data/audio-versions.json'), `${JSON.stringify(versions)}\n`)
+    console.log(`✔ بصمات الصوت: ${Object.keys(versions).length} ملفاً`)
+  }
+}
+
+/* خلاصة مجلس الفكرة: العدّ وحفنةٌ للسؤال الدوّار — تكفي حزمة الدخول،
+   والفهرس الكامل يبقى لصفحة الاستماع الكسولة وحدها. */
+{
+  const indexPath = resolve(ROOT, 'src/data/listen-index.json')
+  if (existsSync(indexPath)) {
+    const full = JSON.parse(readFileSync(indexPath, 'utf8'))
+    const episodes = Array.isArray(full.episodes) ? full.episodes : []
+    writeFileSync(resolve(ROOT, 'src/data/listen-summary.json'),
+      `${JSON.stringify({ schemaVersion: 1, count: episodes.length, pool: episodes.slice(0, 24) }, null, 1)}\n`)
+    console.log(`✔ خلاصة المجلس: ${episodes.length} حلقة · ${Math.min(24, episodes.length)} في دورة السؤال`)
+  }
+}
+
+/* جدول الإذاعة: حلقةُ يومٍ واحدة تُرصف فيها الحوارات بترتيبٍ ثابت لا يتغيّر
+   بين بناءٍ وبناء (بالاسم لا بالعشوائية)، فيسمع الجميع اللحظة نفسها من أي
+   جهاز — الموضع يُحسب من ساعة الكويت لا من خادم بثّ. */
+{
+  const indexPath = resolve(ROOT, 'src/data/listen-index.json')
+  if (existsSync(indexPath)) {
+    const full = JSON.parse(readFileSync(indexPath, 'utf8'))
+    const episodes = (Array.isArray(full.episodes) ? full.episodes : [])
+      .filter((e) => Number(e.durationSec) > 30)
+      .sort((a, b) => a.slug.localeCompare(b.slug, 'en'))
+    const GAP_SECONDS = 8
+    let at = 0
+    const items = episodes.map((e) => {
+      const row = { slug: e.slug, title: e.title, cat: e.cat, at, dur: Math.round(e.durationSec) }
+      at += row.dur + GAP_SECONDS
+      return row
+    })
+    writeFileSync(resolve(ROOT, 'src/data/radio-schedule.json'),
+      `${JSON.stringify({ schemaVersion: 1, loop: at, gap: GAP_SECONDS, items }, null, 1)}\n`)
+    console.log(`✔ جدول الإذاعة: ${items.length} حلقة · حلقة اليوم ${(at / 3600).toFixed(1)} ساعة`)
+  }
+}

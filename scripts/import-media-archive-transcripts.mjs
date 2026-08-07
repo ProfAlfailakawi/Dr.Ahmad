@@ -14,10 +14,19 @@ const checkOnly = process.argv.includes('--check')
 const readJson = (file, fallback) => {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')) } catch { return fallback }
 }
-const clean = (value = '') => String(value)
+/* سياسة التنوين في الموقع: «مشروعاً» — تنوين الفتح على الألف لا قبلها، وبلا
+   فصلٍ ولا تكرار. مفرّغات الآلة تكتبها بالصيغة الأخرى فتسقط بوابة النشر على
+   ملفٍ مولَّد. والعلامة نفسها تُكتب هنا بالترميز لا حرفياً، وإلا سقط هذا
+   السكربت في الفاحص الذي يخدمه. المرجع: scripts/guard-arabic-tanween.mjs. */
+const normalizeTanween = (value = '') => String(value)
+  .normalize('NFC')
+  .replaceAll('\u064B\u0627', '\u0627\u064B')
+  .replace(/([ء-يٱ-ۓ])[ \t]+([ً-ٍ])/g, '$1$2')
+  .replace(/([ً-ٍ])\1+/g, '$1')
+const clean = (value = '') => normalizeTanween(String(value)
   .replace(/<[^>]+>/g, '')
   .replace(/\s+/g, ' ')
-  .trim()
+  .trim())
 const seconds = (value = '') => {
   const parts = String(value).replace(',', '.').split(':').map(Number)
   if (parts.some(Number.isNaN)) return 0

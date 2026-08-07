@@ -97,6 +97,15 @@ for (const [slug, [minPassages, minPages]] of Object.entries(floors)) {
   check(!rows.some((item) => looksLikeReference(item.text)), `«${slug}»: لا مقطع بصيغة مرجع`)
 }
 
+/* ═══ المعرّفات فريدة عبر الكتب التسعة لا داخل كل كتابٍ وحده ═══
+   البادئة الثابتة كانت تجعل ٢٢٢ معرّفاً يتصادم، فيحجب أمرُ الحجب غيرَ ما قُصد. */
+const everyId = payload.books.flatMap((item) => (item.passages || []).map((row) => row.id))
+check(new Set(everyId).size === everyId.length, `معرّفات متصادمة بين الكتب: ${everyId.length - new Set(everyId).size}`)
+for (const record of payload.books) {
+  const wrong = (record.passages || []).filter((row) => !String(row.id).startsWith(`${record.slug}-p`))
+  check(wrong.length === 0, `«${record.slug}»: ${wrong.length} معرّفاً لا يحمل سلاسة كتابه`)
+}
+
 const covered = Math.round((pages.size / (BODY_LIMITS.bodyEnd - BODY_LIMITS.bodyStart + 1)) * 100)
 console.log(`✓ فهرس متن الموسوعة: ${checks} تحققاً · ${passages.length} مقطعاً · ${pages.size} صفحة (${covered}٪ من المتن) · بلا تكرار ولا تداخل`)
 console.log(`✓ الكتب الثمانية الأخرى: ${otherPassages} مقطعاً · ${otherPages} صفحة · بالبوابة نفسها`)

@@ -1,4 +1,5 @@
 import audioManifest from '../data/audio.json' with { type: 'json' }
+import mediaArchive from '../data/media-archive.json' with { type: 'json' }
 import {
   articleCats,
   articles as staticArticles,
@@ -398,10 +399,22 @@ const baseBooks: BookRecord[] = staticBooks.map((book) =>
 const basePapers: PaperRecord[] = staticPapers.map((paper) =>
   buildPaper(paper, metadata('paper', paper.slug)))
 
-const baseMedia: MediaRecord[] = staticMedia.map((item, index) => {
-  const slug = 'media-' + (youtubeId(item.url) || index + 1)
-  return buildMedia({ ...item, slug }, metadata('media', slug))
-})
+/* المواد الإذاعية تسكن media-archive.json لا data.ts، فكانت غائبة عن لوحة التحكم
+   تماماً: لا تُفتح ولا يُربط بها ملف صوت. إدراجها في سجلات الأساس يجعلها قابلة
+   للتحرير عبر content_overrides كبقية المواد. */
+const archiveAudioMedia = ((mediaArchive as { items?: Record<string, unknown>[] }).items || [])
+  .filter((item) => item.slug && item.title && !stringValue(item.url) && (item.audioUrl || item.audioFile))
+
+const baseMedia: MediaRecord[] = [
+  ...staticMedia.map((item, index) => {
+    const slug = 'media-' + (youtubeId(item.url) || index + 1)
+    return buildMedia({ ...item, slug }, metadata('media', slug))
+  }),
+  ...archiveAudioMedia.map((item) => {
+    const slug = stringValue(item.slug)
+    return buildMedia(item, metadata('media', slug))
+  }),
+]
 
 export const baseCmsSnapshot: CmsSnapshot = {
   articles: baseArticles,

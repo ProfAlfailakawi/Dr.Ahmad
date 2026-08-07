@@ -289,8 +289,16 @@ const articles = mergeCloudAdditions('article', localArticles, cloudCms.articles
   .sort((a, b) => String(b.iso || '').localeCompare(String(a.iso || '')))
 const books = mergeCloudAdditions('book', localBooks, cloudCms.books)
   .filter((item) => item.title && item.slug)
-const media = mergeCloudAdditions('media', localMedia, cloudCms.media)
-  .filter((item) => item.title && item.slug && item.url)
+/* مواد الأرشيف الصوتية تسكن media-archive.json ولا يوجد لها سطر في data.ts،
+   وكانت تسقط من التوليد الساكن فيصير رابطها المباشر 404 ولا تدخل خريطة الموقع. */
+const mediaArchivePath = resolve(ROOT, 'src/data/media-archive.json')
+const archiveMedia = existsSync(mediaArchivePath)
+  ? (JSON.parse(readFileSync(mediaArchivePath, 'utf8')).items || [])
+    // اللقاءات المرئية لها سطورها في data.ts؛ هنا نضيف المواد الصوتية وحدها لتفادي تكرار الصفحات.
+    .filter((item) => item.title && item.slug && !item.url && (item.audioUrl || item.audioFile))
+  : []
+const media = mergeCloudAdditions('media', [...localMedia, ...archiveMedia], cloudCms.media)
+  .filter((item) => item.title && item.slug && (item.url || item.audioUrl || item.audioFile))
 const mediaTranscriptsPath = resolve(ROOT, 'src/data/media-transcripts.json')
 const mediaTranscripts = existsSync(mediaTranscriptsPath)
   ? JSON.parse(readFileSync(mediaTranscriptsPath, 'utf8'))
@@ -356,7 +364,7 @@ const routes = [
   ...media.map((item) => {
     const id = youtubeId(item.url)
     const thumbnail = item.thumbnail || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : '')
-    return { ...item, path: `/media/${item.slug}`, title: item.title, desc: item.topics || `${item.program || 'لقاء إعلامي'} — ${item.channel || item.outlet || ''}`, type: 'video.other', iso: item.iso, image: thumbnail, thumbnail }
+    return { ...item, path: `/media/${item.slug}`, title: item.title, desc: item.topics || `${item.program || 'لقاء إعلامي'} — ${item.channel || item.outlet || ''}`, type: item.url ? 'video.other' : 'website', iso: item.iso, image: thumbnail, thumbnail }
   }),
   ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.jpg` })),
   ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.jpg` })),
@@ -945,6 +953,10 @@ function generateBodyHtml(path, lang = 'ar') {
       const itemVideoId = youtubeId(item.url)
       const videoThumbnail = item.thumbnail || (itemVideoId ? `https://i.ytimg.com/vi/${itemVideoId}/hqdefault.jpg` : '')
       const transcript = item.transcript || mediaTranscripts[itemVideoId] || ''
+      // رابط الصوت الموقّع من اللوحة، أو مجلد الاستضافة الخارجي إن عُرِّف متغيره.
+      const mediaAudioBase = String(process.env.VITE_MEDIA_AUDIO_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+      const hostedAudio = item.audioUrl
+        || (item.audioFile && mediaAudioBase ? `${mediaAudioBase}/${encodeURIComponent(item.audioFile)}` : '')
       contentHtml = `
         <main style="max-width:900px;margin:4rem auto;padding:0 1rem;" dir="rtl">
           <p><a href="/media" style="color:#3E5C78;text-decoration:none;font-family:'Tajawal',sans-serif;">&rarr; العودة إلى الظهور الإعلامي</a></p>
@@ -953,7 +965,7 @@ function generateBodyHtml(path, lang = 'ar') {
               <p style="color:#3E5C78;font-family:'Tajawal',sans-serif;">${esc(item.program || 'لقاء إعلامي')} · ${esc(item.channel || item.outlet || '')}${item.date ? ` · ${esc(item.date)}` : ''}${item.duration ? ` · ${esc(item.duration)}` : ''}</p>
               <h1 style="font-size:2.4rem;font-family:'El Messiri',serif;line-height:1.4;color:#15161A;">${esc(item.title)}</h1>
             </header>
-            ${itemVideoId ? `<div style="position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:18px;background:#15161A;"><iframe src="https://www.youtube-nocookie.com/embed/${attr(itemVideoId)}?rel=0" title="${attr(item.title)}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>` : videoThumbnail ? `<img src="${attr(videoThumbnail)}" alt="${attr(item.title)}" width="1280" height="720" style="width:100%;height:auto;border-radius:18px;" />` : ''}
+            ${itemVideoId ? `<div style="position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:18px;background:#15161A;"><iframe src="https://www.youtube-nocookie.com/embed/${attr(itemVideoId)}?rel=0" title="${attr(item.title)}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>` : hostedAudio ? `<div style="border-radius:18px;background:#F4F2EE;padding:1.4rem;"><p style="margin:0 0 .8rem;font-family:'Tajawal',sans-serif;color:#3E5C78;font-weight:600;">التسجيل الصوتي</p><audio controls preload="metadata" src="${attr(hostedAudio)}" style="width:100%;">متصفحك لا يدعم تشغيل الصوت.</audio></div>` : videoThumbnail ? `<img src="${attr(videoThumbnail)}" alt="${attr(item.title)}" width="1280" height="720" style="width:100%;height:auto;border-radius:18px;" />` : ''}
             ${item.topics ? `<section style="margin-top:2rem;"><h2 style="font-family:'El Messiri',serif;">موضوعات اللقاء</h2><p style="font-family:'Tajawal',sans-serif;line-height:1.9;color:#626A76;">${esc(item.topics)}</p></section>` : ''}
             ${transcript ? `<section style="margin-top:2rem;"><h2 style="font-family:'El Messiri',serif;">النص المفرّغ</h2><p style="font-family:'Tajawal',sans-serif;line-height:1.9;color:#626A76;white-space:pre-line;">${esc(transcript)}</p></section>` : ''}
           </article>
@@ -1112,7 +1124,7 @@ function youtubeId(value = '') {
   return (String(value).match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
 }
 
-function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar', isbn, year, edition, publisher, pageCount, url: videoUrl, duration, topics, thumbnail, program, channel, clipStart, clipEnd }) {
+function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar', isbn, year, edition, publisher, pageCount, url: videoUrl, duration, topics, thumbnail, program, channel, clipStart, clipEnd, audioUrl, audioFile }) {
   const en = lang === 'en'
   const isAdmin = path === '/admin'
   // ما دامت المرآة مخفية: صفحاتها الإنجليزية لا تُفهرس
@@ -1164,6 +1176,15 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
     graph = [{ '@type': 'ScholarlyArticle', headline: title, name: title, description: desc, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, publisher: PUBLISHER, mainEntityOfPage: url, ...(iso ? { datePublished: iso } : {}) }, crumb].filter(Boolean)
   } else if (isBookPage) {
     graph = [{ '@type': 'Book', name: title, description: desc, image: img, inLanguage: lang, author: { '@id': `${SITE}/#person` }, url, ...(isbn ? { isbn } : {}), ...(year ? { datePublished: String(year) } : {}), ...(edition ? { bookEdition: edition } : {}), ...(publisher ? { publisher: { '@type': 'Organization', name: publisher } } : {}), ...(pageCount ? { numberOfPages: Number(pageCount) || pageCount } : {}) }, crumb].filter(Boolean)
+  } else if (isMediaPage && !videoUrl && (audioUrl || audioFile)) {
+    // المادة الإذاعية ليست فيديو: AudioObject هو النوع الصحيح، ولا تُطلب صورة مصغّرة.
+    graph = [{
+      '@type': 'AudioObject', name: title, description: topics || desc,
+      ...(iso ? { uploadDate: iso } : {}), ...(schemaDuration(duration) ? { duration: schemaDuration(duration) } : {}),
+      ...(audioUrl ? { contentUrl: audioUrl } : {}),
+      inLanguage: lang, creator: { '@id': `${SITE}/#person` },
+      ...(program || channel ? { isPartOf: { '@type': 'CreativeWorkSeries', name: [program, channel].filter(Boolean).join(' — ') } } : {}),
+    }, crumb].filter(Boolean)
   } else if (isMediaPage) {
     const id = youtubeId(videoUrl)
     const start = clockSeconds(clipStart)

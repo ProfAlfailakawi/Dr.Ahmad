@@ -89,7 +89,7 @@ const editableFields: Record<ManagedKind, string[]> = {
   article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt'],
   book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors', 'year', 'edition', 'publisher', 'pageCount', 'longDescription', 'targetAudience', 'whyWritten', 'toc'],
   paper: ['slug', 'title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'coAuthors', 'doi', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'analysisSources', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt', 'fieldEvidence', 'conflictReport', 'qualityReport', 'qualityReady'],
-  media: ['slug', 'title', 'outlet', 'url', 'iso', 'date', 'program', 'channel', 'duration', 'topics', 'thumbnail', 'clipStart', 'clipEnd', 'transcript'],
+  media: ['slug', 'title', 'outlet', 'kind', 'url', 'audioUrl', 'audioFile', 'iso', 'date', 'program', 'channel', 'duration', 'topics', 'thumbnail', 'clipStart', 'clipEnd', 'transcript'],
 }
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.94rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -551,7 +551,7 @@ export function UploadField({
   label: string
   value: string
   accept: string
-  folder: 'covers' | 'files'
+  folder: 'covers' | 'files' | 'audio'
   slug: string
   maxMb: number
   helper?: string
@@ -609,10 +609,17 @@ export function UploadField({
       }
       // اسم المستخدم لا يدخل في مسار السيرة إطلاقاً: أي اسم عربي/إنجليزي يتحول إلى cv.pdf أو cv-en.pdf.
       const sourceExtension = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '')
-      const extension = expectsPdf ? 'pdf' : sourceExtension || (folder === 'covers' ? 'webp' : 'bin')
+      const expectsAudio = folder === 'audio'
+      const extension = expectsPdf ? 'pdf' : expectsAudio ? 'mp3' : sourceExtension || (folder === 'covers' ? 'webp' : 'bin')
+      // قواعد Storage تشترط audio/mpeg بالحرف لملفات الصوت؛ بعض المتصفحات ترسل النوع فارغاً.
       const contentType = expectsPdf
         ? 'application/pdf'
-        : file.type || (extension === 'webp' ? 'image/webp' : extension === 'png' ? 'image/png' : 'image/jpeg')
+        : expectsAudio
+          ? 'audio/mpeg'
+          : file.type || (extension === 'webp' ? 'image/webp' : extension === 'png' ? 'image/png' : 'image/jpeg')
+      if (expectsAudio && sourceExtension !== 'mp3') {
+        throw new Error('ملفات الأرشيف الصوتي تُرفع بصيغة MP3 فقط. حوّل الملف ثم أعد الرفع.')
+      }
       const stableCvFile = folder === 'files' && (safe === 'cv' || safe === 'cv-en')
 
       // السيرة لها مسار مستقل لا يعتمد على Firebase Storage إطلاقاً؛ تُجزّأ داخل
@@ -1426,6 +1433,14 @@ ${form.outlet || ''}`
 
           {kind === 'media' && (
             <>
+              <Field label="نوع المادة" hint="اختر «مادة إذاعية» للتسجيلات الصوتية؛ حينها لا حاجة لرابط فيديو.">
+                <select className={input} value={form.kind || 'youtube'} onChange={(event) => set('kind', event.target.value)}>
+                  <option value="youtube">لقاء مرئي (يوتيوب)</option>
+                  <option value="television">لقاء تلفزيوني</option>
+                  <option value="audio">مادة إذاعية (صوت)</option>
+                  <option value="podcast">بودكاست</option>
+                </select>
+              </Field>
               <Field label="المنصّة / القناة"><input className={input} value={form.outlet || ''} onChange={(event) => set('outlet', event.target.value)} /></Field>
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="اسم البرنامج"><input className={input} value={form.program || ''} onChange={(event) => set('program', event.target.value)} /></Field>
@@ -1439,6 +1454,16 @@ ${form.outlet || ''}`
               <Field label="الموضوعات" hint="افصل بينها بفاصلة"><input className={input} value={form.topics || ''} onChange={(event) => set('topics', event.target.value)} /></Field>
               <Field label="صورة مصغّرة مخصصة (اختياري)"><input className={input} dir="ltr" type="url" value={form.thumbnail || ''} onChange={(event) => set('thumbnail', event.target.value)} /></Field>
               <Field label="النص المفرّغ المراجع" hint="لا تنشر النص التلقائي قبل مراجعته لغوياً."><textarea className={`${input} min-h-64 leading-loose`} value={form.transcript || ''} onChange={(event) => set('transcript', event.target.value)} /></Field>
+              <UploadField
+                label="ملف الصوت (MP3)"
+                value={form.audioUrl || ''}
+                accept="audio/mpeg,.mp3"
+                folder="audio"
+                slug={form.slug || form.title}
+                maxMb={250}
+                helper="ارفع التسجيل أو الصق رابطه المباشر. المشغّل لا يظهر في صفحة المادة إلا بوجود هذا الرابط."
+                onChange={(value) => set('audioUrl', value)}
+              />
               <Field label="رابط الفيديو" hint="الصق رابط يوتيوب — يُجلب العنوان والقناة تلقائياً إن كانا فارغين.">
                 <input className={input} dir="ltr" type="url" value={form.url || ''} onChange={(event) => set('url', event.target.value)}
                   onBlur={async () => {

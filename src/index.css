@@ -4198,28 +4198,38 @@ html, body, #root { max-inline-size: 100%; }
    اللغة واحدة (خيطٌ رفيع وعقدةٌ وسببٌ مكتوب)، والشكل يختلف بحسب المكان
    فلا يتكرّر المشهد نفسه من صفحةٍ لأخرى. */
 
-/* ساقٌ نازلة على حافة البدء، يخرج منها غصنان — بلا SVG، فلا يختلّ
-   انطباقُ الخيط على البطاقة مهما تغيّر عرض الشاشة. */
+/* ساقٌ نازلة على حافة البدء، يخرج منها غصنان — بلا SVG، وكل المقاسات
+   مشتقّةٌ من متغيّرين اثنين، فلا تنفصل الوصلة عن الساق مهما ضاقت الشاشة. */
 .grove--sprig .grove-slots {
+  --sprig-gap: 1.9rem;
   grid-template-columns: minmax(0, 32rem);
   justify-content: start;
   gap: 1.15rem;
-  padding-inline-start: 1.9rem;
+  padding-inline-start: var(--sprig-gap);
   border-inline-start: 1px solid var(--c-hair);
   margin-inline-start: .35rem;
 }
-.grove--sprig .grove-slot { position: relative; }
+.grove--sprig .grove-slot {
+  position: relative;
+  --sprig-step: 0rem;
+  --sprig-reach: calc(var(--sprig-gap) + var(--sprig-step));
+}
+/* الغصن الثاني أعمق قليلاً — تفاوتٌ مقصود لا صفٌّ متساوٍ. */
+.grove--sprig .grove-slot:nth-child(2) {
+  --sprig-step: 2.4rem;
+  margin-inline-start: var(--sprig-step);
+}
 /* الوصلة القصيرة من الساق إلى البطاقة. */
 .grove--sprig .grove-slot::before {
   content: "";
   position: absolute;
   inset-block-start: 1.55rem;
-  inset-inline-start: -1.9rem;
-  inline-size: 1.9rem;
+  inset-inline-start: calc(-1 * var(--sprig-reach));
+  inline-size: var(--sprig-reach);
   block-size: 1px;
   background: var(--c-hair);
   transform: scaleX(0);
-  transform-origin: var(--sprig-origin, right);
+  transform-origin: right;
   transition: transform .6s cubic-bezier(.25, .8, .3, 1);
   transition-delay: var(--grove-delay, 0ms);
 }
@@ -4228,7 +4238,7 @@ html, body, #root { max-inline-size: 100%; }
   content: "";
   position: absolute;
   inset-block-start: calc(1.55rem - 3px);
-  inset-inline-start: calc(-1.9rem - 3px);
+  inset-inline-start: calc(-1 * var(--sprig-reach) - 3px);
   inline-size: 7px;
   block-size: 7px;
   border-radius: 50%;
@@ -4240,16 +4250,6 @@ html, body, #root { max-inline-size: 100%; }
 }
 .grove--sprig.grove--grown .grove-slot::before { transform: scaleX(1); }
 .grove--sprig.grove--grown .grove-slot::after { opacity: .85; transform: scale(1); }
-/* الغصن الثاني أعمق قليلاً — تفاوتٌ مقصود لا صفٌّ متساوٍ. ووصلتُه تطول
-   بالقدر نفسه فتظلّ ملامسةً للساق. */
-.grove--sprig .grove-slot:nth-child(2) { margin-inline-start: 2.4rem; }
-.grove--sprig .grove-slot:nth-child(2)::before {
-  inline-size: 4.3rem;
-  inset-inline-start: -4.3rem;
-}
-.grove--sprig .grove-slot:nth-child(2)::after {
-  inset-inline-start: calc(-4.3rem - 3px);
-}
 .grove--sprig .grove-why { text-align: start; padding-inline-start: .2rem; }
 .grove--sprig .grove-box { min-block-size: 4.4rem; }
 
@@ -4269,6 +4269,6 @@ html, body, #root { max-inline-size: 100%; }
 .grove--rail .grove-why { text-align: center; }
 
 @media (max-width: 540px) {
-  .grove--sprig .grove-slots { padding-inline-start: .9rem; }
-  .grove--sprig .grove-slot:nth-child(2) { margin-inline-start: 1.1rem; }
+  .grove--sprig .grove-slots { --sprig-gap: .95rem; }
+  .grove--sprig .grove-slot:nth-child(2) { --sprig-step: 1.05rem; }
 }

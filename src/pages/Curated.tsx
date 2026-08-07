@@ -307,7 +307,7 @@ export default function Curated() {
                 </span>
                 <p className="mt-1 text-[.74rem] text-soft">{radarLive ? today : latestAdded ? `آخر إضافة: ${latestAdded}` : "مسارات مختارة للقراءة"}</p>
               </div>
-              <div className="max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="max-w-full edge-fade overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex min-w-max gap-1" role="tablist" aria-label="واجهة مختارات د. أحمد">
                   {[
                     ["today", "اختيار اليوم"],
@@ -359,7 +359,7 @@ export default function Curated() {
       <section className="px-6 py-14 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="edge-fade overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex min-w-max gap-1.5" role="tablist" aria-label="تصفية مختارات د. أحمد">
                 {["الكل", ...curioKinds].map((itemKind) => (
                   <button

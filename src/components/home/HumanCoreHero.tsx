@@ -286,7 +286,7 @@ export default function HumanCoreHero() {
 
       <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.08fr_.92fr] md:gap-12 lg:gap-16">
         <div className="order-1 relative md:order-2 md:-translate-x-6 lg:-translate-x-10">
-          <h1 className="human-core__title font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.28] text-ink">
+          <h1 className="human-core__title font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.25] text-ink">
             <span className="-my-[0.3em] block overflow-hidden py-[0.3em]">
               <motion.span
                 className="human-core__title-line block"

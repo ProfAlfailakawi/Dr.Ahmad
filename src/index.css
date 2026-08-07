@@ -212,20 +212,28 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   .rail { touch-action: pan-y; }
 }
 
-/* حافة الشريط الأفقي: تدرّجٌ شفّاف بدل القصّ الحادّ.
-   الشريط نفسه لا يتغيّر — لا عرضه ولا لفّه يميناً ويساراً ولا محتواه — وإنما
-   تُلطَّف الحافة التي يستمرّ منها، فتقول «ثمّة المزيد» بدل أن تبدو كلمةً مبتورة.
-   في اتجاه اليمين‑لليسار يفيض المحتوى يساراً، ولو لم يفض فالحافة فارغة أصلاً
-   ولا يظهر للتدرّج أثر. */
-.rail:dir(rtl),
-.article-featured-rail:dir(rtl) {
-  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent 100%);
-  mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent 100%);
+/* ───────── حافة الأشرطة الأفقية ─────────
+   الشريط الذي يلفّ يميناً ويساراً جمالٌ معتمد، والبطاقة التالية الظاهرة جزئياً هي
+   التي تقول «ثمّة المزيد». لكنّ القصّ الحادّ يجعلها تبدو كلمةً مبتورة، فتُلطَّف
+   الحافة التي يستمرّ منها المحتوى بتدرّجٍ شفّاف.
+   لا يتغيّر عرضٌ ولا لفٌّ ولا محتوى — الحافة وحدها.
+   وفي اتجاه اليمين‑لليسار يفيض المحتوى يساراً؛ فإن لم يفض فالحافة فارغةٌ أصلاً
+   ولا يظهر للتدرّج أثر.
+   `.edge-fade` صنفٌ يدويّ للأشرطة المكتوبة سطرياً بلا صنفٍ خاصّ بها. */
+:root { --rail-fade: 40px; }
+
+.rail,
+.article-featured-rail,
+.research-smart-reader-rail,
+.media-related-rail,
+.ask-book-rail,
+.edge-fade {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - var(--rail-fade)), transparent 100%);
+  mask-image: linear-gradient(to left, #000 calc(100% - var(--rail-fade)), transparent 100%);
 }
-.rail:dir(ltr),
-.article-featured-rail:dir(ltr) {
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent 100%);
-  mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent 100%);
+:is(.rail, .article-featured-rail, .research-smart-reader-rail, .media-related-rail, .ask-book-rail, .edge-fade):dir(ltr) {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--rail-fade)), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--rail-fade)), transparent 100%);
 }
 
 /* hero portrait: monochrome -> color on hover (signature moment) */
@@ -397,8 +405,8 @@ html.dark .signature-page :is(.bg-canvas, .bg-wash) {
 
 .content-articles .article-body {
   max-width: min(var(--article-width, 66ch), 100%);
-  text-align: justify;
-  text-justify: inter-word;
+  text-align: start;
+  text-justify: auto;
   transition: max-width .28s var(--E);
 }
 
@@ -606,8 +614,8 @@ html.dark .content-media .page-head {
   line-height: var(--article-line, 2);
   color: rgb(var(--c-ink) / .88);
   margin-bottom: 1.6em;
-  text-align: justify;
-  text-justify: inter-word;
+  text-align: start;
+  text-justify: auto;
   text-align-last: start;
   word-spacing: normal;
   hyphens: none;
@@ -626,11 +634,15 @@ html.dark .content-media .page-head {
 /* المحاذاة الكاملة محصورة في متن المقال نفسه. تعميمها على كل فقرة كان
    يمدّد الكلمات داخل الكروت على الهاتف ويصنع فراغات غير طبيعية. */
 
-/* الرصف من الطرفين في عمود الجوال الضيق يجبر المتصفح على توسيع المسافات بين
-   الكلمات، فتنشقّ في النص «أنهارٌ بيضاء» رأسية تقطع انسياب القراءة العربية —
-   ولا كشيدة في نصّ الويب تسدّها كما يسدّها الخطّاط. على الجوال وحده يعود
-   الرصف من اليمين: الحافة اليسرى مسنّنة قليلاً، لكن المسافات تبقى طبيعية
-   والعين تنزل بلا عثرات. الشاشات الأوسع تحتفظ بالرصف الكامل كما هو. */
+/* الرصف من الطرفين يجبر المتصفح على توسيع المسافات بين الكلمات، فتنشقّ في النص
+   «أنهارٌ بيضاء» رأسية تقطع انسياب القراءة العربية — ولا كشيدة في نصّ الويب
+   تسدّها كما يسدّها الخطّاط.
+   ظننّا أولاً أن العلّة في ضيق عمود الجوال وحده: قِسنا فقرةً واحدة على الحاسوب
+   فأعطت ١٫١٩× فاطمأننا. ثم قِسنا أربعة مقالات كاملة على عمود ٥٨٣px فتبيّن أن
+   الوسيط ١٫٦٥–١٫٩٢× وأن أكثر الفقرات تتجاوز ١٫٥× — أي أن العلّة في الرصف نفسه
+   مع العربية، لا في عرض العمود.
+   فالمتن يُرصف من اليمين في كل العروض: الحافة اليسرى مسنّنة قليلاً، والمسافات
+   تبقى طبيعية والعين تنزل بلا عثرات — كما في الكتاب المطبوع. */
 @media (max-width: 640px) {
   .article-body p {
     font-size: calc(1.06rem * var(--article-scale, 1));
@@ -1547,6 +1559,10 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     scrollbar-width: none;
     -ms-overflow-style: none;
     touch-action: pan-x pan-y;
+    /* التدرّج هنا داخل استعلام الهاتف عمداً: فوق ٧٦٧px يعود هذان صفّاً شبكياً
+       يملأ العرض، ولو بقي التدرّج لأخفى العمود الأيسر من الشبكة بلا سبب. */
+    -webkit-mask-image: linear-gradient(to left, #000 calc(100% - var(--rail-fade)), transparent 100%);
+    mask-image: linear-gradient(to left, #000 calc(100% - var(--rail-fade)), transparent 100%);
   }
   :is(.home-page, .inbox-page, .content-articles) :is(.rail, .mobile-card-rail, .mobile-paired-grid) {
     /* كانت pan-x وحدها مع contain رأسي، فصار الإصبع الذي يبدأ فوق أي سكة
@@ -3697,8 +3713,17 @@ body.selection-active .floating-actions {
 
 /* مساحة آمنة موحّدة للأزرار العائمة على الهاتف: لا تغطي آخر بطاقة أو سطر. */
 @media (max-width: 767px) {
+  /* الحجز مقيسٌ من هندسة الزرّ نفسه لا مقدَّراً:
+       الزرّ يعلو قاع الشاشة بـ‎1rem + الشريط الآمن‎، وارتفاعه ‎44px‎،
+       فأعلاه يبعد عن قاع الصفحة ‎60px + الشريط الآمن‎.
+       والتذييل يحمل ‎28px‎ من الحشو أصلاً، فتكفي الصفحةَ ‎2.75rem‎ ليصير المجموع
+       ‎72px + الشريط الآمن‎ — أوسع من حاجة الزرّ (‎68px‎) بأربعة بكسلات.
+     كانت ‎5.5rem‎ أي ‎88px‎، فيصير المجموع ‎116px‎ مقابل ‎68px‎ مطلوبة: ‎48px‎
+     فراغاً أبيض تحت التذييل في كل صفحة على الهاتف (‎١٢٢px‎ على الآيفون مع
+     الشريط الآمن). خُفِّض إلى قدر الحاجة وبقيت الحماية كاملة.
+     (جُرِّبت ‎2rem‎ أولاً فنقصت ثمانية بكسلات عن حاجة الزرّ — فقيست ثم صُحّحت.) */
   .signature-page {
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(2.75rem + env(safe-area-inset-bottom));
   }
   .content-book-world {
     padding-bottom: calc(8rem + env(safe-area-inset-bottom));
@@ -3733,16 +3758,13 @@ body.selection-active .floating-actions {
 
 /* Article prose: full alignment for old imported bodies and new synced bodies. */
 .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote) {
-  text-align: justify;
-  text-justify: inter-word;
+  text-align: start;
+  text-justify: auto;
   text-align-last: start;
 }
 
-/* تنفيذ قرار «الأنهار البيضاء» الموثّق أعلى الملف (سطر ٦١٣): الرصف الكامل يبقى
-   على الشاشات الواسعة، ويعود المتن على الجوال إلى الرصف من اليمين وحده.
-   قِيس على عمود ٣٤٢px: المسافة بين الكلمات كانت تتمدّد ٢٫٢٤× داخل الفقرة
-   الواحدة، وعلى ٥٨٣px تتمدّد ١٫١٩× — فالعلّة في ضيق العمود لا في الرصف نفسه.
-   هذه القاعدة أخيرة في الملف لتغلب على المُحدَّد الأعلى في السطر ٣٧١٤. */
+/* تأكيدٌ أخيرٌ في الملف حتى يغلب المُحدِّد الأعلى قبله: متن المقال يُرصف من
+   اليمين وحده في كل العروض. (القياس الكامل في التعليق أعلى الملف.) */
 @media (max-width: 640px) {
   .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote) {
     text-align: start;

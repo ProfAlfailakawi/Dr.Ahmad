@@ -40,7 +40,7 @@ export default function NotFound() {
               </motion.span>
             </div>
 
-            <h1 className="mt-2 font-display text-[clamp(1.7rem,4.2vw,2.6rem)] font-semibold text-ink">
+            <h1 className="mt-2 font-display text-[clamp(1.7rem,4.2vw,2.6rem)] font-semibold leading-[1.25] text-ink">
               <Reveal>هذه الصفحة خرجت عن المدار.</Reveal>
             </h1>
 

@@ -60,7 +60,7 @@ export default function Card() {
           <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-hair bg-wash">
             <img src="/tebyan-icon.png" alt="" width={30} height={30} className="opacity-90" />
           </span>
-          <h1 className="mt-6 font-display text-[clamp(1.6rem,5vw,2.1rem)] font-bold leading-[1.4] text-ink">{profile.fullName}</h1>
+          <h1 className="mt-6 font-display text-[clamp(1.6rem,5vw,2.1rem)] font-bold leading-[1.25] text-ink">{profile.fullName}</h1>
           <p className="mt-2 text-[.86rem] font-light leading-[1.8] text-soft">{profile.eyebrow}</p>
 
           <button

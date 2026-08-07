@@ -374,13 +374,13 @@ export default function Inbox() {
                 <FadeUp key={item.id} delay={Math.min(index * .06, .2)} className="flex h-full">
                   <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-hair bg-canvas p-6 shadow-[0_18px_55px_-48px_rgba(21,32,44,.55)] transition hover:border-accent/[.55]">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="rounded-full bg-accent/[.08] px-3 py-1 text-[.66rem] font-bold text-accent">{item.label}</span>
-                      <span className="text-[.63rem] font-semibold text-soft">{item.mode}</span>
+                      <span className="rounded-full bg-accent/[.08] px-3 py-1 text-[.7rem] font-bold text-accent">{item.label}</span>
+                      <span className="text-[.7rem] font-semibold text-soft">{item.mode}</span>
                     </div>
                     <h3 className="mt-5 font-display text-[1.12rem] font-semibold leading-[1.65] text-ink">{item.title}</h3>
                     <p className="mt-3 flex-1 text-[.86rem] font-light leading-[1.95] text-ink/[.78]">{item.body}</p>
                     <div className="mt-6 border-t border-hair pt-4">
-                      <span className="text-[.64rem] font-semibold text-soft">ارجع إلى المواد التي بنت هذا المسار</span>
+                      <span className="text-[.7rem] font-semibold text-soft">ارجع إلى المواد التي بنت هذا المسار</span>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {item.sources.map((source) => (
                           <Link key={`${item.id}:${source.to}`} to={source.to} className="max-w-full rounded-full border border-hair px-3 py-1.5 text-[.68rem] font-semibold text-ink transition hover:border-accent hover:text-accent">
@@ -417,7 +417,7 @@ export default function Inbox() {
                     ”
                   </span>
                   {featuredLetter.source === "editorial" && (
-                    <span className="relative mb-4 inline-flex rounded-full border border-accent/20 bg-canvas px-3 py-1 text-[.66rem] font-semibold text-accent">
+                    <span className="relative mb-4 inline-flex rounded-full border border-accent/20 bg-canvas px-3 py-1 text-[.7rem] font-semibold text-accent">
                       نموذج تمثيلي
                     </span>
                   )}
@@ -457,7 +457,7 @@ export default function Inbox() {
               {letterPages.pageItems.map((letter, index) => (
                 <FadeUp key={letter.id} delay={Math.min(index * 0.05, 0.25)}>
                   <button type="button" onClick={() => setOpenCard({ title: letter.source === "editorial" ? "نموذج رسالة تمثيلية" : "رسالة على الهامش", body: letter.message, reply: letter.reply, meta: letter.source === "editorial" ? "نموذج تمثيلي" : undefined })} className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-6 text-right transition-colors hover:border-accent">
-                    {letter.source === "editorial" && <span className="mb-3 w-fit rounded-full bg-accent/[.08] px-3 py-1 text-[.64rem] font-semibold text-accent">نموذج تمثيلي</span>}
+                    {letter.source === "editorial" && <span className="mb-3 w-fit rounded-full bg-accent/[.08] px-3 py-1 text-[.7rem] font-semibold text-accent">نموذج تمثيلي</span>}
                     <p className="line-clamp-3 font-display text-[1.02rem] font-light leading-[1.9] text-ink/[.84]">{letter.message}</p>
                     <span className="mt-5 text-[.78rem] font-semibold text-accent">فتح الرسالة ←</span>
                   </button>
@@ -513,7 +513,7 @@ export default function Inbox() {
                   transition={{ duration: 0.7, delay: Math.min(index * 0.08, 0.24), ease: EASE }}
                   className="flex h-full min-w-0 flex-col rounded-2xl border border-hair bg-wash p-7 md:p-8"
                 >
-                  <span className="w-fit rounded-full bg-accent/[.08] px-3 py-1 text-[.66rem] font-bold text-accent">{item.kind}</span>
+                  <span className="w-fit rounded-full bg-accent/[.08] px-3 py-1 text-[.7rem] font-bold text-accent">{item.kind}</span>
                   <p className="mt-5 flex-1 font-display text-[1.05rem] font-light leading-[1.95] text-ink/[.88]">{item.text}</p>
                   <div className="mt-5 border-t border-hair pt-4">
                     <Link to={item.to} data-hover className="font-semibold leading-relaxed text-ink transition-colors hover:text-accent">{item.title}</Link>

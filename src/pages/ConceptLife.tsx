@@ -244,7 +244,7 @@ export default function ConceptLife() {
                     <figure key={side.slug || index} className="rounded-xl border border-hair bg-canvas px-4 py-4">
                       <figcaption className="flex items-baseline justify-between gap-2">
                         <span className="font-display text-[1.05rem] font-semibold text-accent tabular-nums">{side.year}</span>
-                        <span className="text-[.64rem] text-soft">{arabicCountPhrase(side.articles, ARTICLE_PLAIN_FORMS)} · تحفّظ {side.caution}٪</span>
+                        <span className="text-[.7rem] text-soft">{arabicCountPhrase(side.articles, ARTICLE_PLAIN_FORMS)} · تحفّظ {side.caution}٪</span>
                       </figcaption>
                       <blockquote className="mt-2 border-r-2 border-accent/30 pr-3 text-[.86rem] font-light leading-[1.9] text-ink/[.85]">
                         {side.line}

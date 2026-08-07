@@ -1,5 +1,5 @@
 import { arabicCountPhrase, ARTICLE_ENTRY_FORMS, AUDIO_EPISODE_FORMS, BOOK_ENTRY_FORMS, CURATED_ENTRY_FORMS, NEW_MATERIAL_FORMS, PAPER_ENTRY_FORMS, RECORDED_VIEW_FORMS } from './dialect-lexicon.mjs'
-import { contentSummary, findContent, latestAudioContent, latestContent, mostPopularContent, normalizeArabic, searchContent, shortReadableContent, topArticleTopics } from './content-index.mjs'
+import { articlesByTopic, contentSummary, findContent, latestAudioContent, latestContent, mostPopularContent, normalizeArabic, searchContent, shortReadableContent, topArticleTopics } from './content-index.mjs'
 import { AUDIO_PUBLIC_BASE_URL, AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, redactJid } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
@@ -112,7 +112,7 @@ const patterns = [
   [INTENTS.CHALLENGE_ANSWER, [/^(?:1|2|3|١|٢|٣)$/, 0.98]],
   [INTENTS.SOURCE_PROOF, [/^(?:(?:عطني|ابي|اريد|ممكن)\s+)?(?:المصدر|مصدره)(?:\s+لو سمحت)?$|^وين\s+(?:رابط\s+)?المصدر$|^وين قالها$|^اثبات المصدر$/, 0.98]],
   [INTENTS.SAVE_CONTENT, [/^(?:(?:ابي|ممكن)\s+)?(?:احفظه|احفظها|تحفظه|تحفظها)(?:\s+عندي)?$|^(?:حطه برفي|حطها برفي|خلها عندي|خله عندي)$/, 0.97]],
-  [INTENTS.LIST_SAVED, [/^(?:محفوظاتي|رفي|شنو حفظت|اعرض(?: لي)? المحفوظات|ورني رفي)$/, 0.97]],
+  [INTENTS.LIST_SAVED, [/^(?:محفوظاتي|المحفوظات|محفوظات|رفي|الرف|شنو حفظت|اعرض(?: لي)? المحفوظات|ورني رفي|ورني محفوظاتي)$/, 0.97]],
   [INTENTS.REMOVE_SAVED, [/^(?:(?:ممكن|ابي)\s+)?(?:شيله|شيلها|احذفه|احذفها)\s+(?:من\s+)?(?:محفوظاتي|رفي)(?:\s+لو سمحت)?$/, 0.97]],
   [INTENTS.SUMMARY, [/(لخص|ملخص|نبذه|الخلاصه)/, 0.84]],
   /* «كمل» وحدها: طلب متابعة المادة الحاضرة لا بحثٌ عن كلمة. كتبها الدكتور
@@ -137,7 +137,13 @@ const patterns = [
   [INTENTS.READ_ARTICLE, [/(افتح المقال|رابط المقال|ابي اقراه|اقرا المقال)/, 0.94]],
   [INTENTS.HELP, [/(شنو تقدر|الخيارات|مساعده|شلون استخدم|الاوامر|القائمه)/, 0.98]],
   [INTENTS.REMIND_ME, [/(ذكرني|تذكير)/, 0.90]],
-  [INTENTS.WEEKLY_DIGEST, [/(ملخص اسبوعي|النشره الاسبوعيه|نشره اسبوعيه)/, 0.94]],
+  /* «خلاصة الأسبوع» و«جديد الأسبوع» كانتا تذهبان إلى البحث، فيردّ البوت
+     باقتباسٍ فيه لفظ «خلاصة» — جوابٌ عن غير سؤال. */
+  /* المزاج كان له معالجٌ ولا نمط له البتّة — بابٌ مبنيّ بلا مفتاح، فمن كتب
+     «تعبان» قوبل بـ«هذا الموضوع لم يُنشر عنه». والنمط مقيّدٌ بالجملة القصيرة
+     وحدها فلا يخطف «مشكلة التعليم» ولا سؤالاً فيه كلمة مزاج. */
+  [INTENTS.CONTENT_BY_MOOD, [/^(?:انا\s+)?(?:تعبان|تعبانه|زعلان|زعلانه|مضايق|متضايق|مليت|ملل|طفشان|مهموم|مبسوط|فرحان|فاضي|محتار|مو طايق|مزاجي\s*\S*)(?:\s*(?:اليوم|شوي|مره|جدا))?[!.؟]*$/, 0.9]],
+  [INTENTS.WEEKLY_DIGEST, [/(ملخص اسبوعي|النشره الاسبوعيه|نشره اسبوعيه|خلاصه الاسبوع|ملخص الاسبوع|جديد الاسبوع|حصاد الاسبوع)/, 0.94]],
   [INTENTS.VERIFIED_RESEARCH, [/(بحث موثوق|مصادر خارجيه|دراسه حديثه|ما تقوله الدراسات|مصدر رسمي|جهه رسميه)/, 0.97]],
   [INTENTS.EXPLAIN_MODE, [/(اشرح لي|اشرحها|بالتفصيل|في سطرين|في دقيقه|لطالب|لولي امر|لمعلم|لباحث)/, 0.95]],
   [INTENTS.DIALOGUE_MODE, [/(حاورني|عارضني|اختبر الفكره|رحله خمس دقائق|ناقشني|اسالني)/, 0.96]],
@@ -1366,11 +1372,30 @@ function topicSearchReply(db, jid, query, { exclude = [], coverageQuestion = fal
   const excludeSet = new Set(exclude)
   const keep = (item) => item && !excludeSet.has(item.id)
   recordInterest(db, jid, query)
+
+  /* المسار أولاً: من كتب اسم مسارٍ عرضناه عليه («التربية») يُعطى نقاط بداية
+     من ذلك المسار بعينه — وفاءً بالوعد الذي ينتهي به ردّ المسارات. وما عداه
+     يمضي إلى البحث كما كان. */
+  const topical = articlesByTopic(db, query, 3).filter(keep)
+  if (topical.length >= 2) {
+    return {
+      text: `من مسار «${topical[0].topicLabel || clean(query)}» — وهذه نقاط بداية من الموقع:\n${topical.map((item, index) => `${index + 1}. ${item.title}${item.date ? ` · ${item.date}` : ''}\n${item.url}`).join('\n\n')}\n\nقل: الأولى أو الثانية، وأفتحها لك.`,
+      contentId: topical[0].id,
+      contextItems: topical.map((item) => item.id),
+      seenContentIds: topical.map((item) => item.id),
+      replaceContextList: true,
+    }
+  }
+
   const preliminary = searchContent(db, query, { limit: 6 }).filter(keep)
   const meaningfulWords = clean(query).split(/\s+/).filter((word) => word.length > 2)
 
   if (allowDisambiguation && meaningfulWords.length === 1 && preliminary.length >= 3) {
-    const choices = preliminary.slice(0, 3)
+    /* ما ورد اللفظ في عنوانه يتقدّم: «عندك شي عن الغش» كانت تعرض مقالين لا
+       صلة لعنوانهما بالغش ثم «حين يصبح الغش ذكاءً» ثالثاً. */
+    const word = meaningfulWords[0]
+    const inTitle = (item) => normalizeArabic(item.title || '').includes(normalizeArabic(word))
+    const choices = [...preliminary.filter(inTitle), ...preliminary.filter((item) => !inTitle(item))].slice(0, 3)
     return {
       text: `وجدت أكثر من مدخل منشور لهذا المصطلح. أيّها تقصد؟\n${choices.map((item, index) => `${index + 1}. ${item.title}\n${item.url}`).join('\n\n')}\n\nاكتب الأول أو الثاني أو الثالث.`,
       contentId: choices[0].id, contextItems: choices.map((item) => item.id), seenContentIds: choices.map((item) => item.id),
@@ -1732,7 +1757,10 @@ ${SITE_URL}/research` }
     case INTENTS.CONTENT_BY_MOOD: {
       const item = selectDailyUnsentContent(db, { jid })
       if (!item) return { ...classification, text: 'مررتَ على كل مواد الأرشيف المسجلة. اذكر موضوعاً وأختار لك منه.', contextItems: [], replaceContextList: true }
-      return { ...classification, ...extractiveReadingReply(db, item, '30s') }
+      /* من أفصح عن حاله يُقابَل باعترافٍ بحاله قبل المادة — لا بمادةٍ صمّاء. */
+      const reply = extractiveReadingReply(db, item, '30s')
+      const prefix = moodPrefix(detectMood(input))
+      return { ...classification, ...reply, text: prefix ? `${prefix.trim()}\n\n${reply.text}` : reply.text }
     }
     case INTENTS.QUOTE:
     case INTENTS.QUOTE_CARD: {

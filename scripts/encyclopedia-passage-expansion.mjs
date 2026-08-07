@@ -38,6 +38,46 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 export const CACHE_VERSION = 4
 
+/* ═══ الكتب التي تُقرأ بهذا المحرك ═══
+ *
+ * شرطُ الدخول أن يحمل ملفُّها طبقةَ نصّ: الهندسة تقرأ ما رُسم لا ما صُوّر.
+ * وثلاثةٌ من الكتب التسعة مصوَّرةٌ بلا نصّ (الطفل والتكنولوجيا ١٪، البيانات
+ * الضخمة ٥٪، العالم الافتراضي ٠٪) فتبقى على مسار OCR كما كانت.
+ *
+ * حدود المتن تُشتقّ من محاور الكتاب (المقدمة ← الخاتمة، وقائمة المراجع
+ * مستثناة)، إلا الموسوعة فمحاورها تخلط الخاتمة بالمراجع، فحدودُها مقيسةٌ
+ * من نصّها ومحروسةٌ بشاهدَين يُفحصان عند كل بناء.
+ */
+export const ENGINE_BOOKS = {
+  encyclopedia: {
+    file: /موسوعة.*تكنولوجيا.*التعليم/u,
+    body: { start: 34, end: 656 },
+    sentinels: { opensWith: 'انتشرت التكنولوجيا', referencesAt: 658, referencesMark: /قائمة مصادر ومراجع/u },
+  },
+  'digital-education': { source: 'stream', file: /^01-.*digital/i },
+  'kids-tech': { ocr: 'kids' },
+  'mega-data': { ocr: 'mega' },
+  'virtual-world': { ocr: 'virtual' },
+  gamification: { source: 'stream', file: /^02-.*gamification/i },
+  'handy-tech': { source: 'stream', file: /^03-.*handy/i },
+  'smart-school': { source: 'stream', file: /^06-.*smart/i },
+  teaching: { source: 'stream', file: /^07-.*teaching/i },
+}
+
+const REFERENCE_SECTION = /قائمة المراجع|قائمة مصادر|المصادر|الفهرس|المحتويات/u
+
+/** حدود المتن من محاور الكتاب: أول محور ← آخر محورٍ ليس قائمة مراجع. */
+export function bodyRangeFromConcepts(concepts = []) {
+  const usable = concepts.filter((item) => Number(item.pageStart) > 0)
+  if (!usable.length) return null
+  const body = usable.filter((item) => !REFERENCE_SECTION.test(String(item.title || '')))
+  if (!body.length) return null
+  return {
+    start: Math.min(...body.map((item) => Number(item.pageStart))),
+    end: Math.max(...body.map((item) => Number(item.pageEnd || item.pageStart))),
+  }
+}
+
 /* ═══ حدود المتن — أرقام مثبتة بالفحص، يحرسها تحقق تشغيلي أدناه ═══ */
 export const BODY_LIMITS = {
   bodyStart: 34,          // أول صفحة نثر: مقدمة الموسوعة
@@ -151,6 +191,22 @@ export function sentenceRejection(text = '', { standalone = true } = {}) {
   return null
 }
 
+/* ═══ العنوان المندسّ وسط الجملة ═══
+ * مجرى النص يدمج العنوان الجانبي في سطر النثر، فتخرج «إنهم ليسوا التدريب:
+ * مجرد مدربين» و«لا يتعلمون التقييم التكويني: المفاهيم فحسب». وبصمتُه:
+ * نقطتان في وسط الجملة، قبلهما كلامٌ لا يُنهي معنى وبعدهما كلامٌ يكمله —
+ * لا كلمةَ تعدادٍ («مثل» و«الآتي» و«وهي») ولا موضعَ تعريفٍ في آخر الجملة.
+ * (لا تُطبَّق على الموسوعة: هندستُها تفصل العناوين في إطاراتٍ مستقلة.) */
+const LIST_LEAD = /(?:مثل|التالي|التالية|الآتي|الآتية|كالتالي|كالآتي|يلي|هي|هو|منها|وهي|وهو|أهمها|أبرزها|التالى)\s*$/u
+export function hasSplicedHeading(sentence = '') {
+  const match = String(sentence).match(/^(.*?[^\s:])\s*:\s*(\S[\s\S]*)$/u)
+  if (!match) return false
+  const before = match[1].trim()
+  const after = match[2].trim()
+  if (LIST_LEAD.test(before)) return false
+  return before.split(/\s+/u).length >= 3 && after.split(/\s+/u).length >= 4
+}
+
 /* بداية المقطع: تُرفض ذيول التعداد التي لا تقوم جملةً افتتاحية بنفسها.
    («و» و«كما» تفتتحان جملاً تامة في نثر الكتاب فلا تُرفضان.) */
 const TAIL_STARTERS = /^(?:ثم|أو|بل|أي|كذا|كذلك|وعليه|أمّا بعد)\s/u
@@ -228,18 +284,20 @@ for i, page in enumerate(doc):
 print(json.dumps({'pages': pages}, ensure_ascii=False))
 `
 
-export function loadEncyclopediaBook() {
+export function loadBookPages(slug = 'encyclopedia') {
+  const config = ENGINE_BOOKS[slug]
+  if (!config) throw new Error(`الكتاب «${slug}» ليس من كتب هذا المحرك.`)
   const privateDir = locatePrivateDir()
   if (!privateDir) throw new Error('لم أجد مجلد PrivateBooks. عرّفه في PRIVATE_BOOKS_DIR ثم أعد البناء.')
   const fileName = readdirSync(privateDir)
     .filter((name) => extname(name).toLowerCase() === '.pdf')
-    .find((name) => /موسوعة.*تكنولوجيا.*التعليم/u.test(name.normalize('NFC')))
-  if (!fileName) throw new Error('ملف موسوعة تكنولوجيا التعليم غير موجود في PrivateBooks.')
+    .find((name) => config.file.test(name.normalize('NFC')))
+  if (!fileName) throw new Error(`ملف الكتاب «${slug}» غير موجود في PrivateBooks.`)
   const fullPath = resolve(privateDir, fileName)
   const sourceSha256 = createHash('sha256').update(readFileSync(fullPath)).digest('hex')
 
   const cacheDir = resolve(ROOT, '.private-memory/extracted-pages')
-  const cacheFile = resolve(cacheDir, 'encyclopedia-pages.json')
+  const cacheFile = resolve(cacheDir, `${slug}-pages.json`)
   if (existsSync(cacheFile)) {
     try {
       const cached = JSON.parse(readFileSync(cacheFile, 'utf8'))
@@ -251,13 +309,74 @@ export function loadEncyclopediaBook() {
   const result = spawnSync('python3', ['-c', EXTRACT_PY, fullPath], { encoding: 'utf8', maxBuffer: 320 * 1024 * 1024, timeout: 900_000 })
   if (result.status !== 0) {
     const detail = (result.stderr || result.stdout || '').trim().slice(0, 400)
-    throw new Error(`تعذّر الاستخراج المزدوج للموسوعة (يلزم: pip3 install pypdf pymupdf)\n${detail}`)
+    throw new Error(`تعذّر الاستخراج المزدوج للكتاب «${slug}» (يلزم: pip3 install pypdf pymupdf)\n${detail}`)
   }
   const { pages } = JSON.parse(result.stdout)
   mkdirSync(cacheDir, { recursive: true })
   writeFileSync(cacheFile, `${JSON.stringify({ version: CACHE_VERSION, sourceSha256, pageCount: pages.length, pages })}\n`)
   return { pages, sourceSha256 }
 }
+
+/* ═══ الكتب المصوَّرة: قراءة ناتج التعرّف الضوئي ═══
+ *
+ * ثلاثة كتب صُوّرت تصويراً فلا طبقةَ نصّ فيها، وناتجُ التعرّف الضوئي هو نصّها
+ * الوحيد. فلا تصادُقَ بين مستخرجَين هنا ولا إعادةَ هجاء — النصّ يمرّ كما هو،
+ * وتبقى بوابات الجودة نفسها هي الحارس. وتُبنى «الإطارات» من سطوره: السطرُ
+ * القصير غيرُ المختوم عنوانٌ يقطع، وما بينهما فقرة.
+ */
+export function loadOcrPages(name) {
+  const file = resolve(ROOT, `.private-memory/ocr/${name}.jsonl`)
+  if (!existsSync(file)) throw new Error(`ناتج التعرّف الضوئي مفقود: ${file}`)
+  return readFileSync(file, 'utf8').split(/\r?\n/).filter(Boolean).map((line) => {
+    const row = JSON.parse(line)
+    const text = normalizeArabic(row.text || '')
+    const { blocks, headings } = blocksFromLines(row.text || '')
+    return { page: Number(row.page), text, blocks, headings }
+  })
+}
+
+/** يقرأ الكتاب بالمسار الذي يناسبه: هندسةً وتصادُقاً، أو تعرّفاً ضوئياً. */
+/** يبني «إطارات» من سطور نصٍّ واحد — يُستعمل لناتج التعرّف الضوئي ولنصّ المجرى. */
+function blocksFromLines(text = '') {
+  const lines = String(text).split('\n').map((line) => normalizeArabic(line)).filter(Boolean)
+  const blocks = []
+  const headings = []
+  let current = []
+  const close = () => { if (current.length) { blocks.push({ text: current.join(' '), share: 1 }); current = [] } }
+  for (const line of lines) {
+    const heading = line.length < 45 && !/[.؟!][»)”]?$/u.test(line)
+    if (heading || /^(?:[ء-ي]|[٠-٩0-9]+)\s*[-–—.)]\s/u.test(line)) {
+      close()
+      /* العنوان المُهمَل يُحفظ: مجراه قد يدسّه داخل جملةٍ في صفحةٍ أخرى
+         («لا يتعلمون التقييم التكويني: المفاهيم فحسب»)، فيصير دليلَ كشف. */
+      const bare = line.replace(/^[\s\-–—.)٠-٩0-9ء-ي]{0,4}/u, '').replace(/[:：]\s*$/u, '').trim()
+      if (bare.length >= 10 && bare.length <= 60 && /[؀-ۿ]/u.test(bare)) headings.push(bare)
+      continue
+    }
+    current.push(line)
+  }
+  close()
+  return { blocks, headings }
+}
+
+export function loadEngineBook(slug) {
+  const config = ENGINE_BOOKS[slug]
+  if (!config) throw new Error(`الكتاب «${slug}» ليس من كتب هذا المحرك.`)
+  if (config.ocr) return { pages: loadOcrPages(config.ocr), passthrough: true }
+  const loaded = loadBookPages(slug)
+  /* خطُّ بعض الكتب لا يناسب قراءة الهندسة (يبعثر الحروف ويخلط الكلمات)،
+     بينما نصُّ مجراها سليم. فتُقرأ من مجراها بالأنبوب نفسه وبوابته نفسها. */
+  if (config.source === 'stream') {
+    return {
+      pages: loaded.pages.map((page) => ({ ...page, ...blocksFromLines(page.text) })),
+      passthrough: true,
+    }
+  }
+  return { ...loaded, passthrough: false }
+}
+
+/** توافقٌ رجعيّ مع النداء القديم. */
+export const loadEncyclopediaBook = () => loadBookPages('encyclopedia')
 
 /* ═══ جدول لقاءات الخط — يتعلّمه المحرك من الكتاب نفسه ═══
  *
@@ -322,8 +441,9 @@ function learnLigatures(pages, bodyStart, bodyEnd) {
     }
   }
   /* عتبة الشيوع تفصل اللقاء الحقيقي عن مصادفةٍ عابرة في كلمةٍ واحدة. */
+  /* عتبة الشيوع تفصل اللقاء الحقيقي عن مصادفةٍ عابرة في كلمةٍ واحدة. وخطوط
+     الكتب تختلف: منها ما لا لقاءات فيه أصلاً، فالجدولُ الفارغ حالةٌ صحيحة. */
   const table = new Set([...counts].filter(([, count]) => count >= 20).map(([segment]) => segment))
-  if (table.size < 8) throw new Error(`جدول لقاءات الخط لم يتكوّن (${table.size} لقاءً) — راجع الاستخراج`)
   return { table, explained, stubborn }
 }
 
@@ -538,32 +658,50 @@ function splitSentences(text = '') {
 }
 
 /* ═══ الباني الرئيس ═══ */
-export function buildEncyclopediaBodyIndex({
+export function buildBookBodyIndex({
+  slug = 'encyclopedia',
   pages,
   concepts = [],
+  passthrough = false,
   blockedFingerprints = new Set(),
   voiceOf = () => 0,
 } = {}) {
-  const { bodyStart, bodyEnd } = BODY_LIMITS
+  const config = ENGINE_BOOKS[slug] || {}
+  const range = config.body || bodyRangeFromConcepts(concepts)
+  if (!range) throw new Error(`تعذّر تحديد حدود متن الكتاب «${slug}» — لا محاور ولا حدود معلنة.`)
+  const bodyStart = range.start
+  const bodyEnd = range.end
   const byPage = new Map(pages.map((page) => [page.page, page]))
 
-  /* تحقق الحدود: يُفحص في النص نفسه عند كل بناء، فإن تبدّل ملف الكتاب يوماً
-     انكشف الأمر هنا لا في مقاطع فاسدة. */
+  /* شواهد الحدود: تُفحص في النص نفسه عند كل بناء، فإن تبدّل ملف الكتاب يوماً
+     انكشف الأمر هنا لا في مقاطع فاسدة. (الموسوعة وحدها لها شاهدان معلنان،
+     لأن محاورها تخلط الخاتمة بالمراجع فلا تصلح لاشتقاق الحدود.) */
   const textOf = (pageNumber) => normalizeArabic(byPage.get(pageNumber)?.text || '')
-  if (!textOf(bodyStart).includes('انتشرت التكنولوجيا')) {
-    throw new Error(`حدود المتن تزحزحت: ص${bodyStart} لا تفتتح المقدمة المعروفة — راجع BODY_LIMITS`)
+  const sentinels = config.sentinels
+  if (sentinels?.opensWith && !textOf(bodyStart).includes(sentinels.opensWith)) {
+    throw new Error(`حدود متن «${slug}» تزحزحت: ص${bodyStart} لا تفتتح المقدمة المعروفة`)
   }
-  if (!/قائمة مصادر ومراجع/u.test(textOf(BODY_LIMITS.referencesStart))) {
-    throw new Error(`حدود المتن تزحزحت: ص${BODY_LIMITS.referencesStart} ليست بداية المراجع — راجع BODY_LIMITS`)
+  if (sentinels?.referencesAt && !sentinels.referencesMark.test(textOf(sentinels.referencesAt))) {
+    throw new Error(`حدود متن «${slug}» تزحزحت: ص${sentinels.referencesAt} ليست بداية المراجع`)
   }
   if (!pages.some((page) => Array.isArray(page.blocks) && page.blocks.length)) {
-    throw new Error('بنية الإطارات مفقودة — أعد الاستخراج المزدوج (يلزم pymupdf).')
+    throw new Error(`بنية الإطارات مفقودة في «${slug}» — أعد الاستخراج.`)
   }
 
-  const ligatures = learnLigatures(pages, bodyStart, bodyEnd)
+  /* الكتاب المصوَّر مصدرُه واحد، فلا جدولَ لقاءات ولا إعادةَ هجاء. */
+  const ligatures = passthrough
+    ? { table: new Set(), explained: 0, stubborn: 0 }
+    : learnLigatures(pages, bodyStart, bodyEnd)
   const index = buildSpellingIndex(pages, ligatures.table)
   const conceptFor = (pageNumber) => concepts.find((item) => pageNumber >= item.pageStart && pageNumber <= Math.min(item.pageEnd, bodyEnd)) || null
-  const titleBleeds = concepts.map((item) => item.title).filter((title) => title && title.length >= 12)
+  /* حارس الاندساس على طبقتين:
+     · عناوين المحاور طويلةٌ ولا ترد داخل النثر، فظهورُها وسط جملةٍ اقتحام.
+     · عناوين الصفحات قد ترد في النثر مشروعةً، فلا يُدينها إلا أثرُ الاقتحام
+       نفسه: العنوان ثم نقطتان وسط الجملة («…لا يتعلمون التقييم التكويني:
+       المفاهيم فحسب»). وتضييقُها ضروري: بلا ذلك تُقصي نثراً سليماً. */
+  const titleBleeds = concepts.map((item) => String(item.title || '')).filter((title) => title.length >= 12)
+  const headingBleeds = new Set()
+  for (const page of pages) for (const heading of page.headings || []) if (heading.length >= 12) headingBleeds.add(heading)
 
   const stats = { sentences: 0, dropped: {}, rejected: {}, blocked: 0, missingWords: 0, ambiguousWords: 0, joinOnlyOrphans: 0, locatedByPosition: 0, dropSamples: {} }
   const note = (bucket, reason, text = '', page = 0) => {
@@ -646,16 +784,19 @@ export function buildEncyclopediaBodyIndex({
       const page = order === 0 ? firstPage : frame.page
       stats.sentences += 1
       /* الرفض المبكر يوفّر بناء الهجاء لما لن يُقبل أصلاً. */
-      const healed = healSplitWords(raw, page, index)
+      const healed = passthrough ? normalizeArabic(raw) : healSplitWords(raw, page, index)
       const early = sentenceRejection(healed, { standalone: false })
       if (early) { note('dropped', early, healed, page); closeGroup(); return }
-      const sentence = respell(healed, page, index, stats)
+      const sentence = passthrough ? healed : respell(healed, page, index, stats)
       if (!sentence) { note('dropped', 'كلمة لم يثبتها المجرى', raw, page); closeGroup(); return }
       const reason = sentenceRejection(sentence, { standalone: false })
       if (reason) { note('dropped', reason, sentence, page); closeGroup(); return }
       /* القصيرة تنضمّ إلى فقرتها ولا تفتتح مقطعاً بنفسها. */
       const joinOnly = Boolean(sentenceRejection(sentence))
-      if (titleBleeds.some((title) => sentence.indexOf(title) > 0)) {
+      const intruded = titleBleeds.some((title) => sentence.indexOf(title) > 0)
+        || [...headingBleeds].some((title) => sentence.indexOf(`${title}:`) > 0 || sentence.indexOf(`${title} :`) > 0)
+        || (passthrough && hasSplicedHeading(sentence))
+      if (intruded) {
         note('dropped', 'عنوان داخل الجملة', sentence, page)
         closeGroup()
         return
@@ -730,6 +871,7 @@ export function buildEncyclopediaBodyIndex({
   return {
     passages: shaped,
     report: {
+      slug,
       bodyRange: `${bodyStart}-${bodyEnd}`,
       bodyPageCount: bodyPages.length,
       coveredPageCount: coveredPages.size,
@@ -742,3 +884,6 @@ export function buildEncyclopediaBodyIndex({
     },
   }
 }
+
+/** توافقٌ رجعيّ مع النداء القديم. */
+export const buildEncyclopediaBodyIndex = (options = {}) => buildBookBodyIndex({ slug: 'encyclopedia', ...options })

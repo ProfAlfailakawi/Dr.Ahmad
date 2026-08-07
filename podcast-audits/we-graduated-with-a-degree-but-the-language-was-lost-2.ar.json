@@ -1,0 +1,39 @@
+{
+  "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "819cb8497fa5d8241356912f9e88f133a4b13049886a9bc5753900272066c3c2",
+  "bytes": 4645005,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 232.181,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160047,
+      "peakDb": -1.51,
+      "lufs": -16.47,
+      "lra": 3.2,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "slug": "todays-childs-confusion-between-education-and-care",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "f92a84872f8ca607011973f50686f58a7c53bc444b445a68faa691744229111f",
+  "bytes": 4644045,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 232.137,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160044,
+      "peakDb": -1.82,
+      "lufs": -16.46,
+      "lra": 2.8,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

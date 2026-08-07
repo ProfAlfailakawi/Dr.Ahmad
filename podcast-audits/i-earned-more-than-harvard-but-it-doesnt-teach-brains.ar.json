@@ -1,0 +1,39 @@
+{
+  "slug": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "25becf23fa358b7216a885dcf6473a7d0956d5fd730a88ef8764731a1cd13e35",
+  "bytes": 4561005,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 227.987979,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160043,
+      "peakDb": -1.82,
+      "lufs": -16.47,
+      "lra": 3.1,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

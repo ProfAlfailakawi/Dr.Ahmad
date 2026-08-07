@@ -1,0 +1,39 @@
+{
+  "slug": "the-human-who-forgot-himselfarabic",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "8e74d0592b74ec24f0a0f8024b4ca413d48f1256fcd6935ca31844839c8a0f9e",
+  "bytes": 4607085,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 230.291979,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160043,
+      "peakDb": -1.72,
+      "lufs": -16.46,
+      "lra": 3.3,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

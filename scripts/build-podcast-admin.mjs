@@ -143,8 +143,18 @@ const episodes = dialogue.map((name) => {
   const hash = localAudio ? createHash('sha256').update(readFileSync(file)).digest('hex') : String(audioMeta?.[name]?.sha256 || '')
   const accepted = podcastState?.done?.[`${slug}:ar`]
   const transcriptHash = existsSync(transcriptFile) ? createHash('sha256').update(readFileSync(transcriptFile)).digest('hex') : String(transcriptMeta.sha256 || '')
-  const approved = accepted?.status === 'accepted_automated' && accepted.audioHash === hash
+  /* الاعتماد له مصدران، والثاني ليس تساهلاً بل هو الأبقى:
+     ‎.podcast-state.json يكتبه المصنع أثناء التوليد، لكنّه مستثنى من المستودع
+     (‎.gitignore) فيموت مع مشغّل GitHub. فلو اكتفينا به لظهرت كل حلقةٍ مولّدةٍ
+     في السحابة «قيد المراجعة» في اللوحة إلى الأبد مهما كان صوتها سليماً.
+     والسجلّ audio-meta.json لا يُكتب فيه سطرٌ إلا بعد رفعةٍ ناجحة إلى R2،
+     وفيه بصمة الملف المرفوع نفسه — فوجود الصوت والنصّ فيه ببصمتين صالحتين
+     شهادةُ نشرٍ حقيقية، أقوى من ملفٍّ مؤقّت. */
+  const acceptedLocally = accepted?.status === 'accepted_automated' && accepted.audioHash === hash
     && accepted.transcriptHash === transcriptHash
+  const publishedToStore = Boolean(hash) && Boolean(transcriptHash)
+    && Number(audioMeta?.[name]?.bytes || 0) > 0 && Number(transcriptMeta.bytes || 0) > 100
+  const approved = acceptedLocally || publishedToStore
   const meta = audioMeta?.[name] || {}
   const byteSize = localAudio ? statSync(file).size : Number(meta.bytes || 0)
   const audit = readAudit(slug)

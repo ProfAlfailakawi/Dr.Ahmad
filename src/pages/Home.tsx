@@ -21,9 +21,11 @@ import { SocialIcon as ActionIcon } from '../components/icons'
 import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_THOUGHT_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, BOOK_FORMS, BOOK_PLAIN_FORMS, NEW_ARTICLE_FORMS, PAPER_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 
-/* افتتاحيةُ العتبة 768 سطراً ولا يراها إلا الزائر الأول (تحرسها localStorage)،
+/* افتتاحيةُ العتبة ٧٦٨ سطراً ولا يراها إلا الزائر الأول (تحرسها localStorage)،
    فإبقاؤها في حزمة الدخول يُثقل كلَّ زائرٍ عائد بلا فائدة ويتجاوز ميزانية الأداء */
 const ThresholdOverture = lazy(() => import('../components/home/ThresholdOverture'))
+/* الإذاعة تُطلّ على الصفحة الرئيسية كسولةً: من لم تُفتح لديه لا يدفع بايتاً. */
+const OnAirNow = lazy(() => import('../components/home/OnAirNow'))
 
 const arNum = (n: number) => String(n).padStart(2, '0')
 const ytId = (u: string) => (u.match(/v=([\w-]{6,})/) || [])[1] || ''
@@ -232,8 +234,8 @@ function MiniAtlas() {
   )
 }
 
-/* ---------- «منذ زيارتك الأخيرة» — الموقع يتذكّر (فكرة نووية 3 لصديقه) ----------
-   تخزين محلي بسيط: يظهر سطر هادئ للعائد بعد ٱ2 ساعة+ يخبره بالجديد فقط. */
+/* ---------- «منذ زيارتك الأخيرة» — الموقع يتذكّر (فكرة نووية ٣ لصديقه) ----------
+   تخزين محلي بسيط: يظهر سطر هادئ للعائد بعد ٱ٢ ساعة+ يخبره بالجديد فقط. */
 function SinceLastVisit() {
   const { articles } = useCmsContent()
   const [last] = useState<number | null>(() => {
@@ -344,7 +346,7 @@ function Signatures() {
 }
 
 /* ---------- «في مثل هذا الأسبوع» — الذاكرة الحيّة ----------
-   يطابق أسبوع السنة الحالي مع الأرشيف (2016 فصاعداً) ويُخرج مقالاً كتبه الدكتور
+   يطابق أسبوع السنة الحالي مع الأرشيف (٢٠١٦ فصاعداً) ويُخرج مقالاً كتبه الدكتور
    في مثل هذه الأيام قبل سنوات — يتبدّل أسبوعياً، بلا خادم وبلا تدخل. */
 const yearsAgo = (n: number) => `قبل ${arabicCountPhrase(n, YEAR_AFTER_PREPOSITION_FORMS)}`
 
@@ -401,7 +403,7 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
   )
 }
 
-/* ---------- «بوصلة الفكر» (فكرة نووية 3) ----------
+/* ---------- «بوصلة الفكر» (فكرة نووية ٣) ----------
    تصفّح بالفكرة لا بنوع الملف: كل محور يصله أعماله. أرشيف → عقل يُستكشف. */
 const AXIS_KEYS: Record<string, string[]> = {
   'التعليم': ['تعليم', 'تدريس', 'مناهج', 'تعلم', 'التعلم', 'مدرس', 'طلبة', 'التعليمية'],
@@ -437,7 +439,7 @@ function ThoughtCompass() {
   /* «تصفّح بالفكرة» كانت تأخذ أول ثلاثة كما وردت في المصفوفة بلا ترتيب صريح،
      فيتغيّر المعروض بتغيّر مصدر البيانات. الترتيب الآن بالأحدث صراحةً: المحور
      يفتح على آخر ما كتبه الدكتور فيه، وهو ما يتوقعه القارئ. (التواريخ نفسها
-     سليمة — راجعتها: مقالات أبريل 2026 نُشرت فعلاً بإيقاع أسبوعي، والأرشيف
+     سليمة — راجعتها: مقالات أبريل ٢٠٢٦ نُشرت فعلاً بإيقاع أسبوعي، والأرشيف
      القديم يحتفظ بتواريخه الأصلية كما في صفحة كل مقال.) */
   const related = [...articles]
     .filter((a) => a.cat === active)
@@ -512,7 +514,7 @@ function ThoughtCompass() {
 }
 
 
-/* ---------- «الأثر» — رحلة فكر لا أرقام صاخبة (فكرة نووية 5) ----------
+/* ---------- «الأثر» — رحلة فكر لا أرقام صاخبة (فكرة نووية ٥) ----------
    خط زمني هادئ يُحسب من المحتوى نفسه، فيقول «ماذا صنعت» لا «كم». */
 function ImpactTimeline() {
   const { articles, books, papers } = useCmsContent()
@@ -765,7 +767,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
     }
     try { if (typeof window !== 'undefined') window.localStorage.setItem(historyKey, JSON.stringify(nextHistory)) } catch { /* لا يؤثر في التنويع الحالي */ }
     const selected = [
-      /* بطاقة المشاركة المولّدة لكل مقال (143 بطاقة بهوية الموقع تُبنى في
+      /* بطاقة المشاركة المولّدة لكل مقال (١٤٣ بطاقة بهوية الموقع تُبنى في
          build-static) تصلح غلافاً حقيقياً — فلا يبقى صفُّ «أربع زوايا»
          نصفَه صوراً ونصفَه حروفاً مجردة. وإن غابت البطاقة سقط الغلاف
          التحريري المرسوم تلقائياً كما كان (onError في البطاقة). */
@@ -1019,7 +1021,7 @@ function HomeSocialFooter() {
             </div>
           </div>
           {/* فاصلٌ أوسع قليلاً: المجموعتان مختلفتان فعلاً (منصّاته ثم أدوات الموقع)،
-              وتلاصقهما كان يجعل 7+3 تُقرأ صفاً واحداً مكسوراً لا مجموعتين. */}
+              وتلاصقهما كان يجعل ٧+٣ تُقرأ صفاً واحداً مكسوراً لا مجموعتين. */}
           <div className="mt-2.5 flex items-center justify-center gap-2.5" aria-label="أدوات الموقع">
             <button
               type="button"
@@ -1098,6 +1100,12 @@ export default function Home() {
         <div className="home-idea-thread-line" aria-hidden="true"><i /><i /><i /><i /></div>
 
         <SinceLastVisit />
+
+        {listenIsOpen && (
+          <Suspense fallback={null}>
+            <OnAirNow />
+          </Suspense>
+        )}
 
         <NowHub />
 

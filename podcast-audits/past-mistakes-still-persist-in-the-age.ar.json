@@ -1,0 +1,39 @@
+{
+  "slug": "past-mistakes-still-persist-in-the-age",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "6906f4a25b52ef084b097d1e32a1ff3995d0cd9a28b3c0c062c0ae360fc53018",
+  "bytes": 4795725,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 239.713,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160048,
+      "peakDb": -1.57,
+      "lufs": -16.47,
+      "lra": 3.6,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

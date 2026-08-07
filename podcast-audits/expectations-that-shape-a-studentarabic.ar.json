@@ -1,0 +1,39 @@
+{
+  "slug": "expectations-that-shape-a-studentarabic",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "e2e7f6a94cbce5f68b3616c7341db462133925032796c1c17313ba4885100129",
+  "bytes": 4526925,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 226.288,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160041,
+      "peakDb": -1.81,
+      "lufs": -16.47,
+      "lra": 2.8,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

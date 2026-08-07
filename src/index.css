@@ -212,28 +212,20 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   .rail { touch-action: pan-y; }
 }
 
-/* ───────── حافة الأشرطة الأفقية ─────────
-   الشريط الذي يلفّ يميناً ويساراً جمالٌ معتمد، والبطاقة التالية الظاهرة جزئياً هي
-   التي تقول «ثمّة المزيد». لكنّ القصّ الحادّ يجعلها تبدو كلمةً مبتورة، فتُلطَّف
-   الحافة التي يستمرّ منها المحتوى بتدرّجٍ شفّاف.
-   لا يتغيّر عرضٌ ولا لفٌّ ولا محتوى — الحافة وحدها.
-   وفي اتجاه اليمين‑لليسار يفيض المحتوى يساراً؛ فإن لم يفض فالحافة فارغةٌ أصلاً
-   ولا يظهر للتدرّج أثر.
-   `.edge-fade` صنفٌ يدويّ للأشرطة المكتوبة سطرياً بلا صنفٍ خاصّ بها. */
-:root { --rail-fade: 40px; }
-
-.rail,
-.article-featured-rail,
-.research-smart-reader-rail,
-.media-related-rail,
-.ask-book-rail,
-.edge-fade {
-  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - var(--rail-fade)), transparent 100%);
-  mask-image: linear-gradient(to left, #000 calc(100% - var(--rail-fade)), transparent 100%);
+/* حافة الشريط الأفقي: تدرّجٌ شفّاف بدل القصّ الحادّ.
+   الشريط نفسه لا يتغيّر — لا عرضه ولا لفّه يميناً ويساراً ولا محتواه — وإنما
+   تُلطَّف الحافة التي يستمرّ منها، فتقول «ثمّة المزيد» بدل أن تبدو كلمةً مبتورة.
+   في اتجاه اليمين‑لليسار يفيض المحتوى يساراً، ولو لم يفض فالحافة فارغة أصلاً
+   ولا يظهر للتدرّج أثر. */
+.rail:dir(rtl),
+.article-featured-rail:dir(rtl) {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent 100%);
+  mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent 100%);
 }
-:is(.rail, .article-featured-rail, .research-smart-reader-rail, .media-related-rail, .ask-book-rail, .edge-fade):dir(ltr) {
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--rail-fade)), transparent 100%);
-  mask-image: linear-gradient(to right, #000 calc(100% - var(--rail-fade)), transparent 100%);
+.rail:dir(ltr),
+.article-featured-rail:dir(ltr) {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent 100%);
 }
 
 /* hero portrait: monochrome -> color on hover (signature moment) */
@@ -405,8 +397,8 @@ html.dark .signature-page :is(.bg-canvas, .bg-wash) {
 
 .content-articles .article-body {
   max-width: min(var(--article-width, 66ch), 100%);
-  text-align: start;
-  text-justify: auto;
+  text-align: justify;
+  text-justify: inter-word;
   transition: max-width .28s var(--E);
 }
 
@@ -614,8 +606,8 @@ html.dark .content-media .page-head {
   line-height: var(--article-line, 2);
   color: rgb(var(--c-ink) / .88);
   margin-bottom: 1.6em;
-  text-align: start;
-  text-justify: auto;
+  text-align: justify;
+  text-justify: inter-word;
   text-align-last: start;
   word-spacing: normal;
   hyphens: none;
@@ -634,15 +626,11 @@ html.dark .content-media .page-head {
 /* المحاذاة الكاملة محصورة في متن المقال نفسه. تعميمها على كل فقرة كان
    يمدّد الكلمات داخل الكروت على الهاتف ويصنع فراغات غير طبيعية. */
 
-/* الرصف من الطرفين يجبر المتصفح على توسيع المسافات بين الكلمات، فتنشقّ في النص
-   «أنهارٌ بيضاء» رأسية تقطع انسياب القراءة العربية — ولا كشيدة في نصّ الويب
-   تسدّها كما يسدّها الخطّاط.
-   ظننّا أولاً أن العلّة في ضيق عمود الجوال وحده: قِسنا فقرةً واحدة على الحاسوب
-   فأعطت ١٫١٩× فاطمأننا. ثم قِسنا أربعة مقالات كاملة على عمود ٥٨٣px فتبيّن أن
-   الوسيط ١٫٦٥–١٫٩٢× وأن أكثر الفقرات تتجاوز ١٫٥× — أي أن العلّة في الرصف نفسه
-   مع العربية، لا في عرض العمود.
-   فالمتن يُرصف من اليمين في كل العروض: الحافة اليسرى مسنّنة قليلاً، والمسافات
-   تبقى طبيعية والعين تنزل بلا عثرات — كما في الكتاب المطبوع. */
+/* الرصف من الطرفين في عمود الجوال الضيق يجبر المتصفح على توسيع المسافات بين
+   الكلمات، فتنشقّ في النص «أنهارٌ بيضاء» رأسية تقطع انسياب القراءة العربية —
+   ولا كشيدة في نصّ الويب تسدّها كما يسدّها الخطّاط. على الجوال وحده يعود
+   الرصف من اليمين: الحافة اليسرى مسنّنة قليلاً، لكن المسافات تبقى طبيعية
+   والعين تنزل بلا عثرات. الشاشات الأوسع تحتفظ بالرصف الكامل كما هو. */
 @media (max-width: 640px) {
   .article-body p {
     font-size: calc(1.06rem * var(--article-scale, 1));
@@ -1559,10 +1547,6 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     scrollbar-width: none;
     -ms-overflow-style: none;
     touch-action: pan-x pan-y;
-    /* التدرّج هنا داخل استعلام الهاتف عمداً: فوق ٧٦٧px يعود هذان صفّاً شبكياً
-       يملأ العرض، ولو بقي التدرّج لأخفى العمود الأيسر من الشبكة بلا سبب. */
-    -webkit-mask-image: linear-gradient(to left, #000 calc(100% - var(--rail-fade)), transparent 100%);
-    mask-image: linear-gradient(to left, #000 calc(100% - var(--rail-fade)), transparent 100%);
   }
   :is(.home-page, .inbox-page, .content-articles) :is(.rail, .mobile-card-rail, .mobile-paired-grid) {
     /* كانت pan-x وحدها مع contain رأسي، فصار الإصبع الذي يبدأ فوق أي سكة
@@ -3713,17 +3697,8 @@ body.selection-active .floating-actions {
 
 /* مساحة آمنة موحّدة للأزرار العائمة على الهاتف: لا تغطي آخر بطاقة أو سطر. */
 @media (max-width: 767px) {
-  /* الحجز مقيسٌ من هندسة الزرّ نفسه لا مقدَّراً:
-       الزرّ يعلو قاع الشاشة بـ‎1rem + الشريط الآمن‎، وارتفاعه ‎44px‎،
-       فأعلاه يبعد عن قاع الصفحة ‎60px + الشريط الآمن‎.
-       والتذييل يحمل ‎28px‎ من الحشو أصلاً، فتكفي الصفحةَ ‎2.75rem‎ ليصير المجموع
-       ‎72px + الشريط الآمن‎ — أوسع من حاجة الزرّ (‎68px‎) بأربعة بكسلات.
-     كانت ‎5.5rem‎ أي ‎88px‎، فيصير المجموع ‎116px‎ مقابل ‎68px‎ مطلوبة: ‎48px‎
-     فراغاً أبيض تحت التذييل في كل صفحة على الهاتف (‎١٢٢px‎ على الآيفون مع
-     الشريط الآمن). خُفِّض إلى قدر الحاجة وبقيت الحماية كاملة.
-     (جُرِّبت ‎2rem‎ أولاً فنقصت ثمانية بكسلات عن حاجة الزرّ — فقيست ثم صُحّحت.) */
   .signature-page {
-    padding-bottom: calc(2.75rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
   }
   .content-book-world {
     padding-bottom: calc(8rem + env(safe-area-inset-bottom));
@@ -3758,13 +3733,16 @@ body.selection-active .floating-actions {
 
 /* Article prose: full alignment for old imported bodies and new synced bodies. */
 .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote) {
-  text-align: start;
-  text-justify: auto;
+  text-align: justify;
+  text-justify: inter-word;
   text-align-last: start;
 }
 
-/* تأكيدٌ أخيرٌ في الملف حتى يغلب المُحدِّد الأعلى قبله: متن المقال يُرصف من
-   اليمين وحده في كل العروض. (القياس الكامل في التعليق أعلى الملف.) */
+/* تنفيذ قرار «الأنهار البيضاء» الموثّق أعلى الملف (سطر ٦١٣): الرصف الكامل يبقى
+   على الشاشات الواسعة، ويعود المتن على الجوال إلى الرصف من اليمين وحده.
+   قِيس على عمود ٣٤٢px: المسافة بين الكلمات كانت تتمدّد ٢٫٢٤× داخل الفقرة
+   الواحدة، وعلى ٥٨٣px تتمدّد ١٫١٩× — فالعلّة في ضيق العمود لا في الرصف نفسه.
+   هذه القاعدة أخيرة في الملف لتغلب على المُحدَّد الأعلى في السطر ٣٧١٤. */
 @media (max-width: 640px) {
   .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote) {
     text-align: start;
@@ -3881,315 +3859,51 @@ html, body, #root { max-inline-size: 100%; }
   #encyclopedia-query { max-inline-size: calc(100% - 3rem); }
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   «الإجابة تُبنى أمامك» — مشهد التركيب والأغصان
-   يرافق src/components/ComposeScene.tsx. الأسماء مسبوقة بـcompose- و
-   grove- عمداً، فلا تصطدم بشيءٍ مما سبق في هذا الملف الطويل.
-   ═══════════════════════════════════════════════════════════════════ */
-
-.compose-scene {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .6rem;
-}
-
-/* الارتفاع محجوز، فلا يقفز ما تحته حين يحلّ الجواب محلّ المشهد. */
-.compose-frame {
-  position: relative;
-  inline-size: 100%;
-  max-inline-size: 30rem;
-  block-size: 8.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: .8rem;
-  padding: 1.4rem 1.35rem;
-  overflow: hidden;
-}
-.compose-frame--compact { block-size: 6.6rem; gap: .62rem; padding: 1rem 1.2rem; }
-
-/* مسطرة السطور — مسطرة الصفّ لا شبكة طائرة. */
-.compose-frame::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgb(var(--c-ink) / .05) 0 1px,
-    transparent 1px 15px
-  );
-  -webkit-mask-image: radial-gradient(72% 74% at 50% 50%, #000 12%, transparent 82%);
-  mask-image: radial-gradient(72% 74% at 50% 50%, #000 12%, transparent 82%);
-}
-
-/* عمودا الهامش. */
-.compose-guide {
-  position: absolute;
-  inset-block: .5rem;
-  inline-size: 1px;
-  background: var(--c-hair);
-  transform: scaleY(0);
-  transform-origin: top;
-  animation: compose-guide-drop .7s cubic-bezier(.2, .7, .2, 1) forwards;
-}
-.compose-guide--start { inset-inline-start: .85rem; }
-.compose-guide--end { inset-inline-end: .85rem; animation-delay: .1s; }
-@keyframes compose-guide-drop { to { transform: scaleY(1); } }
-
-/* الفقرة تُصفّ سطراً بعد سطر. */
-.compose-ghost {
-  block-size: 11px;
-  border-radius: 12px;
-  background: rgb(var(--c-ink) / .07);
-  opacity: 0;
-  transform: translateY(5px);
-  animation: compose-settle .62s cubic-bezier(.2, .7, .2, 1) forwards;
-}
-.compose-ghost--head {
-  block-size: 19px;
-  inline-size: 62%;
-  background: rgb(var(--c-accent) / .17);
-  animation-delay: .06s;
-}
-.compose-ghost--full { inline-size: 100%; animation-delay: .34s; }
-.compose-ghost--wide { inline-size: 88%; animation-delay: .62s; }
-/* آخرُ سطرٍ في الفقرة العربية يقصر من اليسار. */
-.compose-ghost--tail { inline-size: 46%; align-self: flex-end; animation-delay: .9s; }
-@keyframes compose-settle { to { opacity: 1; transform: translateY(0); } }
-
-/* قطرة حبرٍ تتنفّس — لا كرة معدنية. */
-.compose-drop {
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-start: 50%;
-  inline-size: 9px;
-  block-size: 9px;
-  margin: -4.5px 0 0 -4.5px;
+/* ═══ شارة «على الهواء الآن» ═══
+   شريطٌ في الصفحة الرئيسية يعرض الجملة التي تُقال في الإذاعة هذه اللحظة.
+   نبضةٌ واحدة ولونٌ يتبدّل مع المتحدّث وخيطُ تقدّمٍ أسفله — ولا شيء غير ذلك:
+   الصفحة الرئيسية ليست إذاعة، إنما نافذةٌ عليها. */
+.onair { position: relative; }
+.onair-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: rgb(var(--c-accent));
-  animation: compose-breathe 1.75s ease-in-out infinite;
-}
-.compose-drop::after {
-  content: "";
-  position: absolute;
-  inset: -11px;
-  border-radius: 50%;
-  border: 1px solid rgb(var(--c-accent) / .3);
-  animation: compose-ripple 1.75s ease-out infinite;
-}
-@keyframes compose-breathe {
-  0%, 100% { opacity: .34; transform: scale(.72); }
-  50% { opacity: .9; transform: scale(1.28); }
-}
-@keyframes compose-ripple {
-  0% { transform: scale(.5); opacity: .7; }
-  100% { transform: scale(1.7); opacity: 0; }
-}
-
-.compose-line {
-  margin: 0;
-  font-size: .83rem;
-  color: rgb(var(--c-soft));
-}
-.compose-rule {
-  position: relative;
   display: block;
-  inline-size: 9.4rem;
-  block-size: 1px;
-  overflow: hidden;
-  background: var(--c-hair);
+  background: var(--onair-voice, currentColor);
+  position: relative;
+  transition: background 1.2s ease;
 }
-.compose-rule i {
-  position: absolute;
-  inset: 0;
-  background: rgb(var(--c-accent) / .75);
-  transform-origin: right;
-  animation: compose-fill 5.4s cubic-bezier(.3, .8, .4, 1) forwards;
-}
-@keyframes compose-fill {
-  0% { transform: scaleX(.04); }
-  100% { transform: scaleX(.97); }
-}
-
-/* ——— الأغصان ——— */
-.grove { display: flex; flex-direction: column; }
-.grove-thread {
-  inline-size: 100%;
-  block-size: 54px;
-  display: block;
-  overflow: visible;
-}
-.grove-thread path {
-  fill: none;
-  stroke: rgb(var(--c-ink) / .22);
-  stroke-width: 1;
-  stroke-dasharray: 240;
-  stroke-dashoffset: 240;
-  transition: stroke-dashoffset .78s cubic-bezier(.4, 0, .2, 1);
-}
-.grove-thread path:nth-of-type(2) { transition-delay: .16s; }
-.grove--grown .grove-thread path { stroke-dashoffset: 0; }
-.grove-thread circle {
-  fill: rgb(var(--c-accent));
-  opacity: 0;
-  transition: opacity .4s ease .6s;
-}
-.grove--grown .grove-thread circle { opacity: .85; }
-
-.grove-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-.grove-slots--single { grid-template-columns: minmax(0, 22rem); justify-content: center; }
-.grove-slot { display: flex; flex-direction: column; gap: .55rem; }
-
-.grove-box {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: .38rem;
-  min-block-size: 5.5rem;
-  padding: .8rem .9rem;
-  border: 1px solid var(--c-hair);
-  border-radius: 12px;
-  background: rgb(var(--c-ink) / .035);
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity .6s ease, transform .6s cubic-bezier(.2, .7, .2, 1),
-              border-color .25s ease, background-color .25s ease;
-  transition-delay: var(--grove-delay, 0ms);
-}
-.grove--grown .grove-box {
-  opacity: 1;
-  transform: none;
-  background: rgb(var(--c-accent) / .09);
-  border-color: rgb(var(--c-accent) / .26);
-}
-.grove-box:hover { border-color: rgb(var(--c-accent) / .55); }
-.grove-kind { font-size: .68rem; color: rgb(var(--c-accent)); }
-.grove-title {
-  font-family: "El Messiri", "Tajawal", serif;
-  font-weight: 600;
-  font-size: .94rem;
-  line-height: 1.55;
-  color: rgb(var(--c-ink));
-}
-.grove-why {
-  margin: 0;
-  font-size: .74rem;
-  line-height: 1.7;
-  color: rgb(var(--c-soft));
-  text-align: center;
-  opacity: 0;
-  transition: opacity .5s ease;
-  transition-delay: calc(var(--grove-delay, 0ms) + 220ms);
-}
-.grove--grown .grove-why { opacity: 1; }
-
-@media (max-width: 540px) {
-  .grove-slots { gap: .75rem; }
-  .grove-box { min-block-size: 4.6rem; padding: .7rem .75rem; }
-  .grove-title { font-size: .86rem; }
-}
-
-/* من أطفأ الحركة رأى المشهد ساكناً مكتملاً — لا ناقصاً. */
-@media (prefers-reduced-motion: reduce) {
-  .compose-guide,
-  .compose-ghost,
-  .compose-drop,
-  .compose-drop::after,
-  .compose-rule i {
-    animation: none;
-  }
-  .compose-guide { transform: scaleY(1); }
-  .compose-ghost { opacity: 1; transform: none; }
-  .compose-drop { opacity: .6; }
-  .compose-rule i { transform: scaleX(.5); }
-  .grove-thread path { stroke-dashoffset: 0; }
-  .grove-thread circle { opacity: .85; }
-  .grove-box { opacity: 1; transform: none; }
-  .grove-why { opacity: 1; }
-}
-
-/* ── «لا شيء يظهر جاهزاً» على مستوى الصفحة ──
-   الخيط يُرسم حين يصله القارئ، والمحطّات تستقرّ واحدةً بعد أخرى.
-   يرافق useRevealOnView في src/components/ComposeScene.tsx. */
-
-/* الحدّ الذي رسمه الدكتور يبقى كما هو تماماً — لا يُزاح ولا يُستبدل.
-   الجمال هنا في المحطّات وحدها: تستقرّ حين يصلها القارئ. */
-.thread-spine { position: relative; }
-
-/* المحطّة تستقرّ بعد أن يمرّ بها الخيط. */
-.thread-station {
-  opacity: 0;
-  transform: translateY(9px);
-  transition: opacity .62s ease, transform .62s cubic-bezier(.2, .7, .2, 1);
-  transition-delay: var(--station-delay, 0ms);
-}
-.thread-spine--drawn .thread-station { opacity: 1; transform: none; }
-
-/* عقدة المحطّة تكبر بعد استقرارها — لا قبلها. */
-.thread-node {
-  transform: scale(0);
-  transition: transform .5s cubic-bezier(.34, 1.56, .64, 1);
-  transition-delay: calc(var(--station-delay, 0ms) + 180ms);
-}
-.thread-spine--drawn .thread-node { transform: scale(1); }
-
-/* «الفصل التالي»: سطرٌ واحد كما أراده — يكسب عقدةً وخيطاً، لا بطاقة. */
-.next-step-thread { position: relative; }
-.next-step-thread::after {
+.onair-dot::after {
   content: "";
   position: absolute;
-  inset-block-start: -1px;
-  inset-inline-start: 0;
-  inline-size: 100%;
-  block-size: 1px;
-  background: rgb(var(--c-accent) / .55);
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform .9s cubic-bezier(.25, .8, .3, 1);
-}
-.next-step-thread--drawn::after { transform: scaleX(1); }
-.next-step-node {
-  position: absolute;
-  inset-block-start: -4px;
-  inset-inline-end: -3px;
-  inline-size: 7px;
-  block-size: 7px;
+  inset: -5px;
   border-radius: 50%;
-  background: rgb(var(--c-accent));
-  transform: scale(0);
-  transition: transform .5s cubic-bezier(.34, 1.56, .64, 1) .28s;
+  border: 1px solid var(--onair-voice, currentColor);
+  animation: onair-breathe 4s cubic-bezier(.4, 0, .3, 1) infinite;
 }
-.next-step-thread--drawn .next-step-node { transform: scale(1); }
-
+@keyframes onair-breathe {
+  0%, 100% { transform: scale(.5); opacity: .55 }
+  55% { transform: scale(1.55); opacity: 0 }
+}
+/* الجملة تتبدّل كل بضع ثوانٍ، فتدخل بلطفٍ بدل أن تُستبدل فجأة */
+.onair-line { animation: onair-enter .55s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes onair-enter {
+  from { opacity: 0; transform: translateY(5px) }
+  to { opacity: 1; transform: none }
+}
+.onair-progress {
+  display: block;
+  height: 2px;
+  background: color-mix(in srgb, var(--onair-voice, currentColor) 14%, transparent);
+}
+.onair-progress i {
+  display: block;
+  height: 100%;
+  background: var(--onair-voice, currentColor);
+  opacity: .55;
+  transition: width 1s linear, background 1.2s ease;
+}
 @media (prefers-reduced-motion: reduce) {
-  .thread-spine::before,
-  .next-step-thread::after { transform: none; }
-  .thread-station { opacity: 1; transform: none; }
-  .thread-node,
-  .next-step-thread .next-step-node { transform: scale(1); }
-}
-
-/* ── لحظة الجلاء ──
-   في الفيديو لا تظهر الصورة، بل **تُجلى**: من ضبابٍ خفيفٍ وحجمٍ أصغر بقليل
-   إلى وضوحها الكامل، واحدةً بعد أخرى. هنا الأمر نفسه على الأغلفة الموجودة:
-   لا صورة جديدة، ولا كلمة — لحظةُ وصولٍ فقط. */
-.plate {
-  opacity: 0;
-  filter: blur(9px);
-  transform: scale(1.03);
-  transition:
-    opacity .85s cubic-bezier(.22, .8, .3, 1),
-    filter .85s cubic-bezier(.22, .8, .3, 1),
-    transform 1s cubic-bezier(.22, .8, .3, 1);
-  transition-delay: var(--plate-delay, 0ms);
-}
-.plate--settled {
-  opacity: 1;
-  filter: blur(0);
-  transform: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .plate { opacity: 1; filter: none; transform: none; transition: none; }
+  .onair-dot::after, .onair-line { animation: none }
+  .onair-progress i { transition: none }
 }

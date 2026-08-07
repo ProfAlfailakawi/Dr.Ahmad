@@ -1,0 +1,39 @@
+{
+  "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "0b15d385e9cbd18ef8a952b25e7e6ff75a28cd9a0c12aceed5aac5f380d36f4d",
+  "bytes": 4388205,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 219.347,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160046,
+      "peakDb": -1.44,
+      "lufs": -16.48,
+      "lra": 3.5,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

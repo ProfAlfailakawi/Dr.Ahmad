@@ -1,0 +1,39 @@
+{
+  "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "f6c8ef79f6e3ef84a28283d743428abd34407699c839f821858ae1e260ae646f",
+  "bytes": 4524045,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 226.141,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160043,
+      "peakDb": -1.61,
+      "lufs": -16.46,
+      "lra": 3.3,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

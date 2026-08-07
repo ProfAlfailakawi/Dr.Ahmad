@@ -11,7 +11,7 @@ import { Newsletter } from '../components/extras'
 import { type Curio } from '../data-curated'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import HumanCoreHero from '../components/home/HumanCoreHero'
-import FirstVisitOnboarding from '../components/home/FirstVisitOnboarding'
+import ThresholdOverture from '../components/home/ThresholdOverture'
 import { ideaContinuation } from '../lib/idea-memory'
 import { sortUpcomingEvents } from '../lib/events'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
@@ -1083,7 +1083,7 @@ export default function Home() {
       }} />
       <LaunchSpotlight articles={articles} books={books} papers={papers} media={media} />
 
-      <FirstVisitOnboarding />
+      <ThresholdOverture articles={articles.length} books={books.length} papers={papers.length} />
 
       <HumanCoreHero />
 

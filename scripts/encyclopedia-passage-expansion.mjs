@@ -335,17 +335,21 @@ function learnLigatures(pages, bodyStart, bodyEnd) {
  */
 function buildSpellingIndex(pages, ligatures) {
   const perPage = new Map()
+  const streams = new Map()
   const corpus = new Map()
   for (const page of pages) {
     const counts = new Map()
+    const stream = []
     for (const word of normalizeArabic(page.text || '').match(ARABIC_RUN) || []) {
       const skeleton = stripMarks(word)
       const forms = counts.get(skeleton) || new Map()
       forms.set(word, (forms.get(word) || 0) + 1)
       counts.set(skeleton, forms)
       corpus.set(skeleton, (corpus.get(skeleton) || 0) + 1)
+      stream.push({ word, skeleton, key: canonKey(word) })
     }
     perPage.set(page.page, counts)
+    streams.set(page.page, stream)
   }
 
   /* أصولٌ ممكنة لرسمٍ واحد: كل نافذةٍ يعرفها جدولُ اللقاءات قد تكون معكوسة. */
@@ -389,6 +393,31 @@ function buildSpellingIndex(pages, ligatures) {
     .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'ar'))[0][0]
 
   return {
+    /**
+     * الحسم بالموضع — للكلمات التي يتساوى فيها أصلان («العملية» و«العلمية»
+     * تُرسمان رسماً واحداً، وهما من أكثر كلمات الكتاب دوراناً). نبحث عن تسلسل
+     * كلمات الجملة كاملاً في مجرى الصفحة المستقل؛ فإن وُجد موضعاً واحداً لا
+     * ثانيَ له، قرأنا الهجاء من المجرى نفسه في موضعه — شهادةً لا ترجيحاً.
+     * يرجع مصفوفة الهجاء بترتيب الجملة، أو null إن لم ينفرد الموضع.
+     */
+    locate(pageNumber, keys) {
+      if (keys.length < 4) return null
+      let found = null
+      for (const offset of [0, -1, 1]) {
+        const stream = streams.get(pageNumber + offset)
+        if (!stream || stream.length < keys.length) continue
+        for (let start = 0; start + keys.length <= stream.length; start += 1) {
+          let match = true
+          for (let index = 0; index < keys.length; index += 1) {
+            if (stream[start + index].key !== keys[index]) { match = false; break }
+          }
+          if (!match) continue
+          if (found) return null
+          found = stream.slice(start, start + keys.length).map((item) => item.word)
+        }
+      }
+      return found
+    },
     /** يرجع { status, form }: ok إن انفرد أصلٌ واحد، وإلا ambiguous أو missing. */
     lookup(pageNumber, word) {
       const shown = stripMarks(word)
@@ -418,15 +447,35 @@ function buildSpellingIndex(pages, ligatures) {
 }
 
 /**
- * التنوين المنشقّ: قياسُ الصفحة يفصل ألف التنوين عن كلمتها فتخرج «أساس ا»،
- * ولا كلمة عربية بحرفٍ واحد. تُعاد الألف إلى كلمتها بشرطٍ واحد: أن يشهد
- * المجرى بالكلمة ملتئمةً على الصفحة نفسها — وإلا تُركت لتُرفض جملتها.
+ * الكلمة المنشقّة: قياسُ الصفحة يفصل حرفاً عن كلمته أحياناً — ألفُ التنوين
+ * («أساساً» ← «أساس ا»)، أو واوُ العطف («واكتساب» ← «و اكتساب»)، أو ما بعد
+ * الشدّة («توضّح» ← «توضّ ح»). ولا كلمة عربية بحرفٍ واحد. تُلأَم الكلمة
+ * بشرطٍ واحد: أن يشهد المجرى المستقل بها ملتئمةً — وإلا تُركت لتُرفض جملتها.
  */
-function healSplitTanween(text, pageNumber, index) {
-  return normalizeArabic(text).replace(/([؀-ۿ]{2,})\s+([اىي][ً-ٍ]?)(?=\s|$|[.،؛:!؟»)”])/gu, (whole, word, tail) => {
-    const merged = `${word}${tail}`
-    return index.lookup(pageNumber, merged).status === 'ok' ? merged : whole
-  })
+function healSplitWords(text, pageNumber, index) {
+  const words = normalizeArabic(text).split(' ')
+  const out = []
+  for (let position = 0; position < words.length; position += 1) {
+    const current = words[position]
+    const next = words[position + 1]
+    if (next && /^[؀-ۿ]+$/u.test(current)) {
+      const parts = next.match(/^([؀-ۿ]+)([\s\S]*)$/u)
+      if (parts) {
+        const [, core, tail] = parts
+        /* لا يُلأَم إلا ما لا يقوم بنفسه: حرفٌ مفرد، أو يسارٌ منتهٍ بتشكيل. */
+        const suspect = stripMarks(current).length === 1
+          || stripMarks(core).length === 1
+          || /[ً-ْٰ]$/u.test(current)
+        if (suspect && index.lookup(pageNumber, `${current}${core}`).status === 'ok') {
+          out.push(`${current}${core}${tail}`)
+          position += 1
+          continue
+        }
+      }
+    }
+    out.push(current)
+  }
+  return out.join(' ')
 }
 
 /**
@@ -434,24 +483,59 @@ function healSplitTanween(text, pageNumber, index) {
  * وما حولها من ترقيمٍ يبقى في موضعه. يرجع null إن نقصت كلمة أو التبست.
  */
 function respell(text, pageNumber, index, stats) {
+  const clean = normalizeArabic(text)
   let missing = 0
   let ambiguous = 0
-  const rebuilt = normalizeArabic(text).replace(ARABIC_RUN, (word) => {
+  const rebuilt = clean.replace(ARABIC_RUN, (word) => {
     const found = index.lookup(pageNumber, word)
     if (found.status === 'ok') return found.form
     if (found.status === 'ambiguous') ambiguous += 1
     else missing += 1
     return word
   })
-  if (missing) { stats.missingWords += missing; return null }
-  if (ambiguous) { stats.ambiguousWords += ambiguous; return null }
-  return rebuilt
+  if (!missing && !ambiguous) return rebuilt
+  /* الالتباس وحده يُحسم بالموضع: تسلسل الجملة إن انفرد في مجرى الصفحة قرأنا
+     هجاءه منه. أما نقصُ كلمةٍ فلا يُحسم بموضع، لأن المجرى نفسه لا يحملها. */
+  if (!missing) {
+    const keys = (clean.match(ARABIC_RUN) || []).map(canonKey)
+    const located = index.locate(pageNumber, keys)
+    if (located) {
+      let cursor = 0
+      stats.locatedByPosition += 1
+      return clean.replace(ARABIC_RUN, () => located[cursor++])
+    }
+  }
+  if (missing) stats.missingWords += missing
+  else stats.ambiguousWords += ambiguous
+  return null
 }
 
-const splitSentences = (text = '') => normalizeArabic(text)
-  .split(/(?<=[.؟!][»)”]?)\s+/u)
-  .map((item) => item.trim())
-  .filter(Boolean)
+/* الاقتباس المنقول قد يمتدّ جملتين («…فلان. وقال…»)، فقطعُه عندها يترك
+   تنصيصاً مفتوحاً في شطرٍ ومغلقاً في آخر فيُرفض الاثنان. فلا يُقطع إلا
+   خارج التنصيص. */
+function splitSentences(text = '') {
+  const value = normalizeArabic(text)
+  const out = []
+  let start = 0
+  let depth = 0
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index]
+    if (char === '«') depth += 1
+    else if (char === '»') depth = Math.max(0, depth - 1)
+    else if (depth === 0 && /[.؟!]/u.test(char)) {
+      let end = index + 1
+      if (/[»)”]/u.test(value[end] || '')) end += 1
+      if (/\s/u.test(value[end] || '') || end >= value.length) {
+        const piece = value.slice(start, end).trim()
+        if (piece) out.push(piece)
+        start = end
+      }
+    }
+  }
+  const tail = value.slice(start).trim()
+  if (tail) out.push(tail)
+  return out
+}
 
 /* ═══ الباني الرئيس ═══ */
 export function buildEncyclopediaBodyIndex({
@@ -481,7 +565,7 @@ export function buildEncyclopediaBodyIndex({
   const conceptFor = (pageNumber) => concepts.find((item) => pageNumber >= item.pageStart && pageNumber <= Math.min(item.pageEnd, bodyEnd)) || null
   const titleBleeds = concepts.map((item) => item.title).filter((title) => title && title.length >= 12)
 
-  const stats = { sentences: 0, dropped: {}, rejected: {}, blocked: 0, missingWords: 0, ambiguousWords: 0, joinOnlyOrphans: 0, dropSamples: {} }
+  const stats = { sentences: 0, dropped: {}, rejected: {}, blocked: 0, missingWords: 0, ambiguousWords: 0, joinOnlyOrphans: 0, locatedByPosition: 0, dropSamples: {} }
   const note = (bucket, reason, text = '', page = 0) => {
     stats[bucket][reason] = (stats[bucket][reason] || 0) + 1
     if (text) {
@@ -562,7 +646,7 @@ export function buildEncyclopediaBodyIndex({
       const page = order === 0 ? firstPage : frame.page
       stats.sentences += 1
       /* الرفض المبكر يوفّر بناء الهجاء لما لن يُقبل أصلاً. */
-      const healed = healSplitTanween(raw, page, index)
+      const healed = healSplitWords(raw, page, index)
       const early = sentenceRejection(healed, { standalone: false })
       if (early) { note('dropped', early, healed, page); closeGroup(); return }
       const sentence = respell(healed, page, index, stats)
@@ -653,6 +737,7 @@ export function buildEncyclopediaBodyIndex({
       totalChars: shaped.reduce((sum, passage) => sum + passage.text.length, 0),
       ligatures: { learned: ligatures.table.size, explainedWords: ligatures.explained, stubbornWords: ligatures.stubborn },
       offPageWords: stats.offPageWords,
+      locatedByPosition: stats.locatedByPosition,
       stats,
     },
   }

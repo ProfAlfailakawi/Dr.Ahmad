@@ -1,4 +1,4 @@
-import { arabicCountPhrase, ARTICLE_ENTRY_FORMS, AUDIO_EPISODE_FORMS, BOOK_ENTRY_FORMS, CURATED_ENTRY_FORMS, NEW_MATERIAL_FORMS, PAPER_ENTRY_FORMS, RECORDED_VIEW_FORMS } from './dialect-lexicon.mjs'
+import { arabicCountPhrase, toRoot, ARTICLE_ENTRY_FORMS, AUDIO_EPISODE_FORMS, BOOK_ENTRY_FORMS, CURATED_ENTRY_FORMS, NEW_MATERIAL_FORMS, PAPER_ENTRY_FORMS, RECORDED_VIEW_FORMS } from './dialect-lexicon.mjs'
 import { articlesByTopic, contentSummary, findContent, latestAudioContent, latestContent, mostPopularContent, normalizeArabic, searchContent, shortReadableContent, topArticleTopics } from './content-index.mjs'
 import { AUDIO_PUBLIC_BASE_URL, AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, redactJid } from './config.mjs'
 import { hashOpaque } from './crypto.mjs'
@@ -7,7 +7,7 @@ import { applyBotRules, needsHumanOnly, sign } from './bot-rules.mjs'
 import { getBotMessages } from './bot-messages.mjs'
 import { spokenReply } from './spoken-index.mjs'
 import { bookQuoteReply } from './book-quotes.mjs'
-import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD } from './scholar.mjs'
+import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD, scoreItem as scholarScore, tokens as scholarTokens } from './scholar.mjs'
 import {
   dialogueModeReply,
   explainModeReply,
@@ -27,6 +27,7 @@ import {
 import {
   buildFifteenSecondChallenge,
   buildQuietIdeaNetwork,
+  continueVerbatim,
   distillItem,
   extractVerbatimAtSpeed,
   isVerbatimFromItem,
@@ -103,7 +104,8 @@ const patterns = [
   [INTENTS.LATEST_BOOK, [/(اخر|احدث|جديد)\s*\S*\s*(كتاب|الكتب)|شنو.*(كتب|كتاب).*(الدكتور|له)?|كتب الدكتور/, 0.94]],
   [INTENTS.LATEST_SELECTION, [/(اخر|احدث|جديد)\s*\S*\s*(مختارات)/, 0.94]],
   [INTENTS.LATEST_PODCAST, [/(اخر|احدث|جديد).*(بودكاست|بود كاست|حلقه|حلقات|حوار|الحوار)|اخر بودكاست|شنو.*(بودكاست|بود كاست|حلقات|الحلقه|الحوار).*(الدكتور|له)?/, 0.96]],
-  [INTENTS.MISSED_CONTENT, [/(شنو|ماذا).*(فاتني|فات)/, 0.96], [/(من زمان ما تابعت|ما تابعت من زمان)/, 0.94]],
+  /* «فاتني شي» وحدها كانت تسقط إلى البحث: النمط يشترط «شنو» أو «ماذا» قبلها. */
+  [INTENTS.MISSED_CONTENT, [/(شنو|ماذا).*(فاتني|فات)/, 0.96], [/^(?:فاتني|فاتتني)(?:\s*(?:شي|شيء|اشياء|مواد|كثير))?[!.؟]*$/, 0.95], [/(من زمان ما تابعت|ما تابعت من زمان)/, 0.94]],
   [INTENTS.SURPRISE_ME, [/(فاجيني|اختر لي|اختار لي|على ذوقك|شيء من عندك)/, 0.94]],
   [INTENTS.ONE_MINUTE, [/(عندي دقيقه|عندي دقيقتين|دقيقه وحده|وقت قصير|شي سريع|ماده قصيره|ما عندي وقت|الزبده|ملخص سريع|اختصرها|الفكره بس)/, 0.96]],
   [INTENTS.READ_SPEED, [/^(?:(?:ابي|اريد|ابغي|عطني|اعطني|ممكن|خله|خلها|خلني)\s+)?(?:30 ثانيه|٣٠ ثانيه|۳۰ ثانيه|نص دقيقه|قراءه (?:30|٣٠|۳۰) ثانيه|دقيقتين|دقيقتان|قراءه دقيقتين|قراءه دقيقتان|اتعمق|التعمق|تعمق)(?:\s+(?:بس|لو سمحت))?$/, 0.97]],
@@ -146,8 +148,8 @@ const patterns = [
   [INTENTS.WEEKLY_DIGEST, [/(ملخص اسبوعي|النشره الاسبوعيه|نشره اسبوعيه|خلاصه الاسبوع|ملخص الاسبوع|جديد الاسبوع|حصاد الاسبوع)/, 0.94]],
   [INTENTS.VERIFIED_RESEARCH, [/(بحث موثوق|مصادر خارجيه|دراسه حديثه|ما تقوله الدراسات|مصدر رسمي|جهه رسميه)/, 0.97]],
   [INTENTS.EXPLAIN_MODE, [/(اشرح لي|اشرحها|بالتفصيل|في سطرين|في دقيقه|لطالب|لولي امر|لمعلم|لباحث)/, 0.95]],
-  [INTENTS.DIALOGUE_MODE, [/(حاورني|عارضني|اختبر الفكره|رحله خمس دقائق|ناقشني|اسالني)/, 0.96]],
-  [INTENTS.HUMAN_HANDOFF, [/(دواء|علاج|تشخيص|اعراض|مرض|صحتي|نفسي|اكتئاب|انتحار|قانون|محكمه|قضيه|شكوي|شكوى|محامي|موعد|اقابلك|اتواصل مع الدكتور|اشراف|مشكلتي|ابني|بنتي|زوجي|زوجتي|ساعدني شخصيا)/, 0.96]],
+  [INTENTS.DIALOGUE_MODE, [/(حاورني|عارضني|اختبر الفكره|رحله\s*خمس\s*دقا\S*|ناقشني|اسالني)/, 0.96]],
+  [INTENTS.HUMAN_HANDOFF, [/(دواء|علاج|تشخيص|اعراض|مرض|صحتي|نفسي|اكتئاب|انتحار|قانون|محكمه|قضيه|شكوي|شكوى|محامي|موعد|اقابلك|اتواصل مع الدكتور|اشراف|مشكلتي|ابني|بنتي|زوجي|زوجتي|ساعدني شخصيا|ابي احد يرد|ابغي احد يرد|احد يرد علي|ابي انسان|ابي اكلم الدكتور|ابي اتكلم مع الدكتور|ابي رد شخصي|ودي اكلم الدكتور)/, 0.96]],
   [INTENTS.HUMAN_RESPONSE_REQUIRED, [/(رايك|ماذا تري|هل تعتقد|ابي رايك)/, 0.82]],
   /* اللقاءات والسيرة والمختارات: يسأل عنها الناس كما يسألون عن المقالات،
      وكان البوت لا يعرفها إطلاقاً فيردّ ببحثٍ عشوائي أو يصمت. */
@@ -315,7 +317,14 @@ const cleanTopic = (raw) => clean(raw)
 function detectCorrection(value) {
   const v = String(value || '')
   const notAbout = CORRECTION_NOT_ABOUT.exec(v)
-  if (notAbout) return { isCorrection: true, topic: cleanTopic(notAbout[1]) || null }
+  if (notAbout) {
+    /* «مو عن الامتحانات» نفيٌ لا طلب: الملتقَط هو ما رفضه السائل، وكان يُعاد
+       بحثاً عنه — فيردّ البوت بما رُفض للتوّ. فإن ذكر مقصوده صراحةً («مو عن
+       كذا، أقصد كذا») أخذنا المقصود؛ وإلا فهو استبعادٌ لا موضوع. */
+    const meantToo = CORRECTION_MEANT.exec(v)
+    if (meantToo) return { isCorrection: true, topic: cleanTopic(meantToo[1]) || null, notTopic: cleanTopic(notAbout[1]) || null }
+    return { isCorrection: true, topic: null, notTopic: cleanTopic(notAbout[1]) || null }
+  }
   if (CORRECTION_BARE.test(v)) return { isCorrection: true, topic: null }
   if (CORRECTION_MARK.test(v)) {
     const meant = CORRECTION_MEANT.exec(v)
@@ -457,6 +466,25 @@ function nearestSuggestions(db, rawText, limit = 3) {
     }
   }
   return found.slice(0, limit)
+}
+
+/* التحية والشكر بعد الإيقاظ كانتا تُقابلان بـ«سؤالك خارج المحتوى المنشور» —
+   وهو أبردُ ما يُقال لمن سلّم أو شكر. هذه مجاملةٌ قصيرة بتوقيت الكويت، لا
+   تنسب رأياً ولا تفتح باباً جديداً، ثم تدلّه على ما يقدر عليه. */
+const PURE_GREETING = /^(?:يا\s*)?(?:السلام عليكم(?:\s*ورحمه الله(?:\s*وبركاته)?)?|وعليكم السلام|هلا(?:\s*والله)?|هلا فيك|مرحبا|اهلا(?:\s*وسهلا)?|صباح الخير|صباح النور|مساء الخير|مساء النور|حياك الله|سلام)[\s.!؟]*$/
+const PURE_THANKS = /^(?:جزاك الله خير(?:ا)?|الله يعطيك العافيه|يعطيك العافيه|تسلم(?:ين)?|شكرا(?:\s*لك|\s*جزيلا)?|مشكور(?:ين)?|ممتاز|تمام|احسنت|الله يوفقك|ما قصرت)[\s.!؟]*$/
+function courtesyReply(input, at = new Date()) {
+  const value = clean(input)
+  if (PURE_GREETING.test(value)) {
+    /* ردّ التحية بجنسها: السلام يُردّ سلاماً، وما عداه يُقابل بتحية الوقت. */
+    const salam = /سلام/.test(value)
+    const head = salam ? 'وعليكم السلام ورحمة الله' : timeGreeting(at)
+    return { text: `${head} · أنا وكيل موقع د. أحمد حسين الفيلكاوي، وأفتح لك ما نُشر فيه.\nتقدر تقول: بوابة اليوم · آخر مقالاته · عندك شيء عن أي موضوع؟` }
+  }
+  if (PURE_THANKS.test(value)) {
+    return { text: 'الله يعافيك، وهذا واجبي. متى ما بغيت مادة أو موضوعاً فأنا حاضر — قل: بوابة اليوم، أو اذكر الموضوع بلفظه.' }
+  }
+  return null
 }
 
 function noSilenceReply(db, rawText, { offDomain = false } = {}) {
@@ -1451,6 +1479,27 @@ function correctionReply(db, jid, session, input, correction = null) {
     return topicSearchReply(db, jid, info.topic, { exclude, coverageQuestion: false })
   }
 
+  /* استبعادٌ صريح: نُخرج ما رفضه من الصفّ المحفوظ ونعرض ما بقي، فإن لم يبقَ
+     شيءٌ سألناه عن مقصوده بلفظه — ولا نعيد عليه ما رفض. */
+  if (info.notTopic) {
+    /* المطابقة على الجذور: «الامتحانات» ترفض «الامتحان» — والاستبعاد بالحرف
+       كان يُبقي ما رفضه لاختلاف الصيغة. */
+    const rejectedRoots = new Set(scholarTokens(info.notTopic).map(toRoot))
+    const stillFits = (item) => !scholarTokens(`${item.title || ''} ${item.keywords || ''}`).map(toRoot).some((word) => rejectedRoots.has(word))
+    const others = (context.resultIds || [])
+      .map((id) => findContent(db, id))
+      .filter(Boolean)
+      .filter((item) => item.id !== rejected && stillFits(item))
+      .slice(0, 3)
+    if (others.length) {
+      return {
+        text: `تمام، مو عن «${info.notTopic}». وهذه من غير ذاك الباب:\n${others.map((item, i) => `${i + 1}. ${item.title}\n${item.url}`).join('\n\n')}\n\nوإن أردت باباً آخر فاذكره بلفظه.`,
+        contentId: others[0].id, contextItems: others.map((item) => item.id), seenContentIds: others.map((item) => item.id),
+      }
+    }
+    return { text: `تمام، أستبعد «${info.notTopic}». اذكر الموضوع الذي تقصده بلفظه وأبحث لك في مصادر الدكتور وحدها.` }
+  }
+
   const remaining = (context.resultIds || [])
     .filter((id, index) => index > context.currentIndex)
     .map((id) => findContent(db, id))
@@ -1688,7 +1737,15 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       if (sides.length < 2) return { ...classification, text: 'قارن بين ماذا وماذا؟ اكتب مثلاً: قارن بين التقويم والامتحان.' }
       const foundAcrossSides = []
       const blocks = sides.slice(0, 2).map((side) => {
-        const found = searchContent(db, side, { limit: 2 })
+        /* البحث وحده كان يرشّح مادةً يتصادف ورودُ اللفظ في حاشيتها (٣ﻻـD
+           للتلقين). نرجّح المرشّحين بترجيح العالِم: العنوان أثقل من المتن،
+           فيصعد ما كُتب في الطرف نفسه لا ما ذُكر فيه عرضاً. */
+        const sideTokens = scholarTokens(side)
+        const found = searchContent(db, side, { limit: 8 })
+          .map((item) => ({ item, score: scholarScore(item, sideTokens) }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 2)
+          .map((row) => row.item)
         foundAcrossSides.push(...found)
         return found.length
           ? `في «${side}»:\n${found.map((item) => `• ${item.title}\n  ${item.url}`).join('\n')}`
@@ -1728,6 +1785,8 @@ ${SITE_URL}/research` }
     case INTENTS.SIMILAR_CONTENT: {
       /* سؤال شخصي تسلّل إلى البحث («كم عمرك؟ وين تسكن؟»): لا يُجاب بمقالات
          عشوائية — مسار خارج النطاق الصادق نفسه */
+      const courtesy = courtesyReply(input)
+      if (courtesy) return { ...classification, ...courtesy }
       if (CHATTER_OR_PERSONAL.test(classification.normalized)) {
         return { ...classification, ...noSilenceReply(db, input, { offDomain: true }) }
       }
@@ -1752,6 +1811,25 @@ ${SITE_URL}/research` }
       return { ...classification, ...listenReply(selection.item || latestAudioContent(db, 'dialogue', 1)[0]), preserveContextList: Boolean(selection.item) }
     case INTENTS.READ_ARTICLE:
       return { ...classification, ...contentReply('رابط المادة المنشورة', selection.item || latestContent(db, 'article', 1)[0]), preserveContextList: Boolean(selection.item) }
+    /* «كمل» كان يُصنَّف CONTINUE_READING ثم لا يجد فرعاً له فيسقط إلى الردّ
+       العام «أرسل لي اسم الموضوع» — والمادة بين يديه. */
+    case INTENTS.CONTINUE_READING: {
+      const item = selection.item || (session?.content_id ? findContent(db, session.content_id) : null)
+      if (!item) return { ...classification, text: 'اختر مادة أولاً: اكتب آخر مقالاته، ثم قل الأولى أو الثانية.' }
+      const next = continueVerbatim(item, '30s')
+      if (!next) {
+        return { ...classification, ...extractiveReadingReply(db, item, '2min'), preserveContextList: true }
+      }
+      return {
+        ...classification,
+        text: `تكملة النصّ المنشور:\n${item.title}\n«${displayQuote(next.text)}»\n${item.url}`,
+        contentId: item.id,
+        contextItems: [item.id],
+        seenContentIds: [item.id],
+        evidenceQuotes: [next.text],
+        preserveContextList: true,
+      }
+    }
     case INTENTS.WEEKLY_DIGEST:
       return { ...classification, ...weeklyDigestReply(db) }
     case INTENTS.CONTENT_BY_MOOD: {

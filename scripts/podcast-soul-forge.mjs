@@ -11,10 +11,8 @@
  *
  * الاستعمال:
  *   node scripts/podcast-soul-forge.mjs <slug> [<slug> …]
- *   node scripts/podcast-soul-forge.mjs --all                        (الأرشيف كلّه)
- *   node scripts/podcast-soul-forge.mjs --all --limit 40 --batch 1   (دفعةً دفعة)
- *   node scripts/podcast-soul-forge.mjs <slug> --per-utterance       (الطريقة الأبطأ للمقارنة)
- * المخرج: audio/<slug>.dialogue.mp3 (48kHz · 160k · ‎-16 LUFS) — حيث يقرأ ناشر R2
+ *   node scripts/podcast-soul-forge.mjs --all --limit 40 --batch 1   (الدفعة الأولى)
+ * المخرج: public/audio/<slug>.dialogue.mp3 (48kHz · 160k · ‎-16 LUFS)
  */
 import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync, readdirSync, rmSync, renameSync, unlinkSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
@@ -24,10 +22,7 @@ import { createHash } from 'node:crypto'
 const ROOT = process.cwd()
 const SOUL_DIR = resolve(ROOT, 'manual-dialogues-soul')
 const MUSIC_DIR = resolve(ROOT, 'music')
-/* المخرج في `audio` لا `public/audio`: هذا هو المجلّد الذي يقرأ منه
-   `publish-audio-r2.mjs` ليرفع إلى R2 ويحدّث السجلّ، فتظهر الحلقة في لوحة
-   الدكتور. والمجلّد مُتجاهَلٌ في git فلا يثقل المستودع. */
-const OUT_DIR = resolve(ROOT, 'audio')
+const OUT_DIR = resolve(ROOT, 'public/audio')
 const WORK = resolve(ROOT, '.soul-forge-work')
 
 const KEY = process.env.AZURE_SPEECH_KEY
@@ -58,13 +53,8 @@ const FEEL = {
 }
 
 /* الوقفة بين الأدوار: مشدودةٌ لا ميتة */
-/* الوقفة بين الدورين لا تنزل عن ٠٫٤٢ ثانية، ووقفة الجملة داخل الدور لا تتجاوز
-   ٠٫٣٢ — فيبقى بينهما فرقٌ لا يلتبس، وبه يُكشف حدُّ كل دورٍ من الصمت فتُحسب
-   ثانيةُ بدايته. وعليها يقوم النقر على سؤالٍ ليبدأ الصوت عند موضعه. */
-const GAP = { 480: 0.42, 560: 0.48, 620: 0.52, 680: 0.56, 760: 0.62, 900: 0.68, 240: 0.42 }
-const MIN_GAP = 0.42
-const VOICE_START = 4.0   // التوقيع الافتتاحي ثم يبدأ الكلام
-const gapOf = (ms) => GAP[ms] ?? Math.min(Math.max((ms / 1000) * 0.75, MIN_GAP), 0.68)
+const GAP = { 480: 0.35, 560: 0.42, 620: 0.46, 680: 0.50, 760: 0.56, 900: 0.60, 240: 0.30 }
+const gapOf = (ms) => GAP[ms] ?? Math.min(Math.max((ms / 1000) * 0.72, 0.30), 0.62)
 
 const sh = (bin, args, label) => {
   const r = spawnSync(bin, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
@@ -85,7 +75,7 @@ function spanOf(text, feeling) {
 }
 
 function ssmlOf(utterance) {
-  const boundary = utterance.deliveryType === 'reflection' ? 320 : 280
+  const boundary = utterance.deliveryType === 'reflection' ? 380 : 300
   const halves = utterance.text.split('~~')
   let body = spanOf(halves[0], utterance.feeling || 'plain')
   if (halves[1]) body += '<break time="250ms"/>' + spanOf(halves[1], utterance.feeling2 || utterance.feeling || 'plain')
@@ -96,72 +86,6 @@ function ssmlOf(utterance) {
     + '<mstts:silence type="Tailing-exact" value="50ms"/>'
     + `<mstts:silence type="Sentenceboundary-exact" value="${boundary}ms"/>`
     + body + '</voice></speak>'
-}
-
-/* ═══════════ المقطع: عدّة أدوارٍ في طلبٍ واحد ═══════════
-   الباقة المجانية تسمح بعشرين طلباً في الدقيقة، لا بعشرين جملة. فحين نطلب
-   الحلقة على مقاطعَ بين الجسور بدل جملةً جملة، ينزل الأرشيف كلّه من ساعاتٍ
-   إلى دقائق — والوقفة تُطلب من المحرك بمقدارها بدل أن تُركَّب بعده. */
-function segmentSsml(utterances, gapsBefore) {
-  const parts = utterances.map((u, j) => {
-    const boundary = u.deliveryType === 'reflection' ? 320 : 280
-    const halves = u.text.split('~~')
-    let body = spanOf(halves[0], u.feeling || 'plain')
-    if (halves[1]) body += '<break time="250ms"/>' + spanOf(halves[1], u.feeling2 || u.feeling || 'plain')
-    return `<voice name="${VOICE[u.speaker] || VOICE.male}">`
-      + `<mstts:silence type="Leading-exact" value="${Math.round(gapsBefore[j] * 1000)}ms"/>`
-      + '<mstts:silence type="Tailing-exact" value="0ms"/>'
-      + `<mstts:silence type="Sentenceboundary-exact" value="${boundary}ms"/>`
-      + body + '</voice>'
-  })
-  return '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
-    + 'xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="ar-KW">' + parts.join('') + '</speak>'
-}
-
-/* مواضع القطع: عند كل جسرٍ وعند النَّفَس — فما بينهما مقطعٌ واحد */
-function segmentsOf(doc) {
-  const cuts = new Set([...(doc.bridgeAfter || []), ...(doc.breathAfter || [])])
-  const out = []
-  let start = 0
-  for (let i = 0; i < doc.utterances.length; i += 1) {
-    if (cuts.has(i) || i === doc.utterances.length - 1) {
-      out.push({ from: start, to: i, after: cuts.has(i) ? (doc.bridgeAfter || []).includes(i) ? 'bridge' : 'breath' : 'end' })
-      start = i + 1
-    }
-  }
-  return out.filter((s) => s.from <= s.to)
-}
-
-async function synthesizeSegment(body, path) {
-  const stamp = `${path}.sha`
-  const digest = createHash('sha256').update(body).digest('hex')
-  if (existsSync(path) && statSync(path).size > 4000
-    && existsSync(stamp) && readFileSync(stamp, 'utf8') === digest) return false
-  for (let attempt = 1; attempt <= 4; attempt += 1) {
-    let res
-    try {
-      res = await fetch(`https://${REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
-        method: 'POST',
-        headers: {
-          'Ocp-Apim-Subscription-Key': KEY,
-          'Content-Type': 'application/ssml+xml; charset=utf-8',
-          'X-Microsoft-OutputFormat': 'riff-48khz-16bit-mono-pcm',
-          'User-Agent': 'dr-alfailakawi-soul-forge',
-        },
-        body,
-      })
-    } catch { await sleep(5000); continue }
-    if (res.ok) {
-      const buf = Buffer.from(await res.arrayBuffer())
-      if (buf.length > 4000) { writeFileSync(path, buf); writeFileSync(stamp, digest); return true }
-    } else if (res.status === 429) {
-      await sleep(20000)
-    } else if (res.status === 401 || res.status === 403) {
-      throw new Error(`مفتاح Azure مرفوض (${res.status}) — تحقّق من AZURE_SPEECH_KEY`)
-    }
-    await sleep(4000)
-  }
-  throw new Error('تعذّر توليد المقطع بعد أربع محاولات')
 }
 
 /* ═══════════ التوليد: حدّ الباقة المجانية عشرون طلباً في الدقيقة ═══════════ */
@@ -300,42 +224,24 @@ const MOOD_TRACKS = {
   'تأملي': ['eastern-night.mp3', 'eastern-spell.mp3'],
 }
 
-/* أوزان المشاعر، ومسطرة التطبيع.
-   المزاج لا يفوز بأكبر رقم بل بأبرزِ حضورٍ عن معدّله الطبيعي في الأرشيف —
-   وإلا غلب «الجادّ» كلَّ شيء: لأن الجسر يوضع أصلاً عند اعتراضٍ أو سؤال،
-   فيعزّز سببُ وضعه مزاجَه، فتنهار الحلقات كلّها إلى ثلاث مقطوعات.
-   المعدّلات مقيسةٌ على الأرشيف (٢٨٨ جسراً)، والأُسّ ٠٫٨٥ أعدلُ نقطةٍ قِيست. */
-const MOOD_WEIGHT = {
-  challenge: ['جاد', 2], firm: ['جاد', 2], gravitas: ['جاد', 1.5],
-  curious: ['مشوق', 2], wonder: ['مشوق', 2.5], lively: ['مشوق', 1],
-  warm: ['إنساني', 3], hush: ['إنساني', 3.5],
-  intimate: ['تأملي', 2.5], realization: ['تأملي', 1.5], aphorism: ['تأملي', 2],
-  resolve: ['متفائل', 3], cta: ['متفائل', 1], plain: ['تربوي', 1],
-}
-const MOOD_NORM = { 'جاد': 3.78, 'مشوق': 2.96, 'تربوي': 5.14, 'إنساني': 1.05, 'متفائل': 0.95, 'تأملي': 2.29 }
-const NORM_EXP = 0.85
-
 function moodAt(utterances, index) {
-  /* الجسر يحمل مزاج ما يُقدّمه لا ما يسبقه: ما بعده وزنُه مضاعف، وما قبله واحد،
-     والدورُ المُحرِّض نفسه (الاعتراض الذي استدعى الجسر) يُستثنى من الحساب. */
-  const score = {}
-  const add = (list, weight) => {
-    for (const u of list) {
-      for (const f of [u.feeling, u.feeling2]) {
-        const w = MOOD_WEIGHT[f]
-        if (w) score[w[0]] = (score[w[0]] || 0) + w[1] * weight
-      }
+  /* نقرأ ما قبل الجسر وما بعده: الجسر يحمل معنى الانعطافة لا معنى الحلقة كلها */
+  const window = utterances.slice(Math.max(0, index - 2), Math.min(utterances.length, index + 4))
+  const score = { 'جاد': 0, 'مشوق': 0, 'تربوي': 0, 'إنساني': 0, 'متفائل': 0, 'تأملي': 0 }
+  for (const u of window) {
+    for (const f of [u.feeling, u.feeling2].filter(Boolean)) {
+      if (f === 'challenge') { score['جاد'] += 2; score['مشوق'] += 1 }
+      else if (f === 'firm') score['جاد'] += 2
+      else if (f === 'curious' || f === 'wonder') score['مشوق'] += 2
+      else if (f === 'warm' || f === 'hush') score['إنساني'] += 3
+      else if (f === 'intimate') { score['تأملي'] += 2; score['إنساني'] += 1 }
+      else if (f === 'resolve') score['متفائل'] += 2
+      else if (f === 'realization' || f === 'aphorism') score['تأملي'] += 1
+      else if (f === 'lively') score['مشوق'] += 1
+      else score['تربوي'] += 1
     }
   }
-  add(utterances.slice(index + 2, Math.min(utterances.length, index + 6)), 2)
-  add(utterances.slice(Math.max(0, index - 2), index + 1), 1)
-  let best = 'تربوي'
-  let bestValue = -1
-  for (const mood of Object.keys(MOOD_NORM)) {
-    const value = (score[mood] || 0) / (MOOD_NORM[mood] ** NORM_EXP)
-    if (value > bestValue) { bestValue = value; best = mood }
-  }
-  return best
+  return Object.entries(score).sort((a, b) => b[1] - a[1])[0][0]
 }
 
 function bridgesFor(slug, count, utterances, positions) {
@@ -421,83 +327,6 @@ function buildVoiceTrack(doc, work) {
   return voice
 }
 
-/* حدود الأدوار داخل المقطع: تُكشف من الصمت المقصود لا من التخمين.
-   نطلب من ffmpeg كل صمتٍ يتجاوز ٠٫٣٨ ثانية — وهو فوق أطول وقفةِ جملةٍ داخل
-   الدور (٠٫٣٢) ودون أقصر وقفةٍ بين دورين (٠٫٤٢) — ثم نأخذ منها بعدد الحدود. */
-function utteranceBoundaries(file, count) {
-  if (count <= 1) return []
-  const out = spawnSync(FFMPEG, ['-hide_banner', '-nostats', '-i', file,
-    '-af', 'silencedetect=noise=-45dB:d=0.38', '-f', 'null', '-'],
-  { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }).stderr || ''
-  const found = []
-  const startRe = /silence_start:\s*([\d.]+)/g
-  const endRe = /silence_end:\s*([\d.]+)\s*\|\s*silence_duration:\s*([\d.]+)/g
-  const starts = []
-  let m
-  while ((m = startRe.exec(out))) starts.push(Number(m[1]))
-  const ends = []
-  while ((m = endRe.exec(out))) ends.push({ at: Number(m[1]), dur: Number(m[2]) })
-  for (let i = 0; i < Math.min(starts.length, ends.length); i += 1) {
-    found.push({ start: starts[i], end: ends[i].at, dur: ends[i].dur })
-  }
-  /* إن زادت المواضع عن الحدود، نأخذ أطولها — فالأطول هي وقفات ما بين الأدوار */
-  const need = count - 1
-  const picked = found.length <= need ? found
-    : [...found].sort((a, b) => b.dur - a.dur).slice(0, need).sort((a, b) => a.start - b.start)
-  return picked
-}
-
-/* تركيب مسار الكلام من المقاطع: بين كل مقطعٍ وآخر جسرٌ أو نَفَس */
-function buildVoiceFromSegments(doc, work, segFiles) {
-  const bridgeFiles = bridgesFor(doc.slug, Math.max(1, (doc.bridgeAfter || []).length),
-    doc.utterances, doc.bridgeAfter || [])
-  const breath = makeBreath(join(work, 'breath.wav'))
-  const segs = segmentsOf(doc)
-  const inputs = [...segFiles, breath]
-  const breathIndex = segFiles.length
-  let bridgeCursor = 0
-  const bridgeIndexes = bridgeFiles.map((bridge, n) => {
-    const rest = BRIDGE_POOL.filter((t) => musicTracks().includes(t))
-      .map((t) => ({ file: join(MUSIC_DIR, t), startAt: bridge.startAt, mood: bridge.mood }))
-      .filter((b) => b.file !== bridge.file)
-    inputs.push(cutAudibleBridge([bridge, ...rest], join(work, `bridge${n}.wav`)))
-    return breathIndex + 1 + n
-  })
-  const parts = []
-  const labels = []
-  const silence = (tag, seconds) => {
-    parts.push(`aevalsrc=0:d=${seconds}:s=48000,aformat=channel_layouts=mono[${tag}]`)
-    labels.push(`[${tag}]`)
-  }
-  segs.forEach((seg, i) => {
-    parts.push(`[${i}:a]aformat=channel_layouts=mono:sample_rates=48000[s${i}]`)
-    labels.push(`[s${i}]`)
-    if (seg.after === 'bridge') {
-      silence(`ba${i}`, 0.35)
-      parts.push(`[${bridgeIndexes[bridgeCursor]}:a]aformat=channel_layouts=mono:sample_rates=48000[m${i}]`)
-      labels.push(`[m${i}]`)
-      bridgeCursor = Math.min(bridgeCursor + 1, bridgeIndexes.length - 1)
-      silence(`bb${i}`, 0.15)
-      parts.push(`[${breathIndex}:a]aformat=channel_layouts=mono:sample_rates=48000,acopy[br${i}]`)
-      labels.push(`[br${i}]`)
-      silence(`bc${i}`, 0.08)
-    } else if (seg.after === 'breath') {
-      silence(`na${i}`, 0.20)
-      parts.push(`[${breathIndex}:a]aformat=channel_layouts=mono:sample_rates=48000,acopy[nb${i}]`)
-      labels.push(`[nb${i}]`)
-      silence(`nc${i}`, 0.05)
-    }
-  })
-  const script = join(work, 'voice-seg.fc')
-  writeFileSync(script, `${parts.join(';')};${labels.join('')}concat=n=${labels.length}:v=0:a=1[out]`)
-  const voice = join(work, 'voice.wav')
-  const args = ['-hide_banner', '-loglevel', 'error', '-y']
-  inputs.forEach((f) => args.push('-i', f))
-  args.push('-filter_complex_script', script, '-map', '[out]', '-c:a', 'pcm_s16le', voice)
-  sh(FFMPEG, args, 'voice-seg-concat')
-  return voice
-}
-
 function wrapAndMaster(doc, work, voice, outPath) {
   const tracks = musicTracks()
   const signature = cutAsset(join(MUSIC_DIR, tracks.includes('maqam-reflections.mp3') ? 'maqam-reflections.mp3' : tracks[0]),
@@ -513,7 +342,7 @@ function wrapAndMaster(doc, work, voice, outPath) {
   sh(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y',
     '-i', signature, '-i', breath, '-i', voice, '-i', room, '-i', closing,
     '-filter_complex',
-    `[1:a]adelay=3350[br];[2:a]adelay=${Math.round(VOICE_START * 1000)}[vo];`
+    '[1:a]adelay=3350[br];[2:a]adelay=4000[vo];'
     + `[3:a]atrim=0:${(spoken + 1.2).toFixed(2)},adelay=3600[rt];[4:a]adelay=${stingAt}[st];`
     + '[0:a][br][vo][rt][st]amix=inputs=5:normalize=0:duration=longest,'
     + 'highpass=f=55,acompressor=threshold=-18dB:ratio=1.55:attack=18:release=150,'
@@ -537,89 +366,6 @@ function wrapAndMaster(doc, work, voice, outPath) {
   return outPath
 }
 
-/* ═══════════ النصّ المرافق وسجلّ الاعتماد ═══════════
-   الحلقة لا تبلغ الموقع بملفها الصوتي وحده: الواجهة تقرأ `<slug>.dialogue.json`
-   لتعرض النصّ وتقفز إلى ثانية السؤال، وناشر R2 لا يرفع حلقةً ليست مسجّلةً في
-   `.podcast-state.json` بحالة `accepted_automated` وببصمةٍ مطابقة. فما لم
-   يُكتب الاثنان خرجت التشغيلة خضراء ولم يصل شيءٌ إلى لوحة الدكتور. */
-const NAME_OF = { male: 'فهد', female: 'نورة' }
-
-function buildTranscript(doc, work, segFiles, offsets, outPath) {
-  const utterances = []
-  const segs = segmentsOf(doc)
-  segs.forEach((seg, i) => {
-    const list = doc.utterances.slice(seg.from, seg.to + 1)
-    const base = offsets[i]
-    const bounds = utteranceBoundaries(segFiles[i], list.length)
-    const total = durationOf(segFiles[i])
-    list.forEach((u, j) => {
-      const startSec = j === 0 ? base : base + (bounds[j - 1] ? bounds[j - 1].end : (total / list.length) * j)
-      const endSec = j === list.length - 1 ? base + total
-        : base + (bounds[j] ? bounds[j].start : (total / list.length) * (j + 1))
-      utterances.push({
-        speaker: NAME_OF[u.speaker] || 'فهد',
-        text: u.text.replace(/⏸/g, '').replace(/\s*~~\s*/g, ' ').replace(/\s+/g, ' ').trim(),
-        startSec: Number(startSec.toFixed(2)),
-        endSec: Number(endSec.toFixed(2)),
-      })
-    })
-  })
-  const chapters = (doc.bridgeAfter || []).reduce((acc, cut, index) => {
-    const from = index === 0 ? 0 : (doc.bridgeAfter[index - 1] + 1)
-    acc.push({ index: acc.length + 1, title: `${utterances[from].text.slice(0, 34)}…`,
-      startSec: utterances[from].startSec, endSec: utterances[cut].endSec, utterances: [from, cut] })
-    return acc
-  }, [])
-  const last = (doc.bridgeAfter || []).at(-1)
-  if (typeof last === 'number' && last + 1 < utterances.length) {
-    chapters.push({ index: chapters.length + 1, title: `${utterances[last + 1].text.slice(0, 34)}…`,
-      startSec: utterances[last + 1].startSec, endSec: utterances.at(-1).endSec,
-      utterances: [last + 1, utterances.length - 1] })
-  }
-  const bridgeFiles = bridgesFor(doc.slug, Math.max(1, (doc.bridgeAfter || []).length),
-    doc.utterances, doc.bridgeAfter || [])
-  const body = JSON.stringify({
-    title: utterances[0].text.slice(0, 60),
-    generatedAt: new Date().toISOString().slice(0, 10),
-    language: 'ar',
-    sourceLock: {
-      mode: 'soul-forge-locked',
-      contentSha256: createHash('sha256').update(JSON.stringify(doc.utterances)).digest('hex'),
-      turnCount: doc.utterances.length,
-    },
-    audioIdentity: {
-      intro: { durationSec: 4.2, volume: 1 },
-      bridges: (doc.bridgeAfter || []).map((afterUtterance, n) => ({
-        afterUtterance, durationSec: 5.6, mood: bridgeFiles[n] ? bridgeFiles[n].mood : null,
-      })),
-      breath: doc.breathAfter || [],
-      outro: { durationSec: 3.4, volume: 1 },
-    },
-    chapters,
-    utterances,
-  }, null, 2)
-  writeFileSync(outPath, body)
-  return outPath
-}
-
-function recordAcceptance(doc, mp3Path, transcriptPath) {
-  const statePath = resolve(ROOT, '.podcast-state.json')
-  const state = existsSync(statePath) ? JSON.parse(readFileSync(statePath, 'utf8')) : { done: {} }
-  if (!state.done) state.done = {}
-  const sha = (f) => createHash('sha256').update(readFileSync(f)).digest('hex')
-  state.done[`${doc.slug}:ar`] = {
-    ...(state.done[`${doc.slug}:ar`] || {}),
-    status: 'accepted_automated',
-    engine: 'soul-forge',
-    pilot: false,
-    audioHash: sha(mp3Path),
-    transcriptHash: sha(transcriptPath),
-    contentHash: createHash('sha256').update(JSON.stringify(doc.utterances)).digest('hex'),
-    acceptedAt: new Date().toISOString(),
-  }
-  writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`)
-}
-
 /* ═══════════ فحص الجودة قبل التسليم ═══════════ */
 function inspect(file) {
   const out = spawnSync(FFMPEG, ['-hide_banner', '-nostats', '-i', file,
@@ -639,74 +385,26 @@ async function forge(slug) {
   const work = join(WORK, slug)
   mkdirSync(work, { recursive: true })
   let fresh = 0
-  let voice
-  let segFiles = null
-  let segOffsets = []
-
-  if (process.argv.includes('--per-utterance')) {
-    /* الطريقة الأولى: جملةً جملة — أبطأ، ومحفوظةٌ للمقارنة والرجوع */
-    for (let i = 0; i < doc.utterances.length; i += 1) {
-      const raw = join(work, `u${String(i).padStart(3, '0')}.wav`)
-      const trimmed = join(work, `u${String(i).padStart(3, '0')}.trim.wav`)
-      const made = await synthesize(doc.utterances[i], raw)
-      if (made) fresh += 1
-      if (made || !existsSync(trimmed) || statSync(trimmed).size < 4000) {
-        sh(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', raw, '-af',
-          'silenceremove=start_periods=1:start_threshold=-44dB:start_silence=0.03:detection=peak,'
-          + 'areverse,silenceremove=start_periods=1:start_threshold=-44dB:start_silence=0.05:detection=peak,areverse',
-          '-c:a', 'pcm_s16le', trimmed], 'trim')
-        if (made) await sleep(3200)
-      }
+  for (let i = 0; i < doc.utterances.length; i += 1) {
+    const raw = join(work, `u${String(i).padStart(3, '0')}.wav`)
+    const trimmed = join(work, `u${String(i).padStart(3, '0')}.trim.wav`)
+    const made = await synthesize(doc.utterances[i], raw)
+    if (made) fresh += 1
+    if (made || !existsSync(trimmed) || statSync(trimmed).size < 4000) {
+      /* قصّ الصمت الآلي من الطرفين: الوقفة تُصنع بقصدٍ لا تُترك للمحرك */
+      sh(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', raw, '-af',
+        'silenceremove=start_periods=1:start_threshold=-44dB:start_silence=0.03:detection=peak,'
+        + 'areverse,silenceremove=start_periods=1:start_threshold=-44dB:start_silence=0.05:detection=peak,areverse',
+        '-c:a', 'pcm_s16le', trimmed], 'trim')
+      if (made) await sleep(3200)
     }
-    voice = buildVoiceTrack(doc, work)
-  } else {
-    /* الطريقة المعتمدة: مقطعٌ واحد بين كل جسرين */
-    const segs = segmentsOf(doc)
-    const files = []
-    for (let i = 0; i < segs.length; i += 1) {
-      const seg = segs[i]
-      const list = doc.utterances.slice(seg.from, seg.to + 1)
-      const gaps = list.map((_, j) => (j === 0 ? 0 : gapOf(doc.utterances[seg.from + j - 1].pauseAfterMs)))
-      const raw = join(work, `seg${String(i).padStart(2, '0')}.wav`)
-      const trimmed = join(work, `seg${String(i).padStart(2, '0')}.trim.wav`)
-      const made = await synthesizeSegment(segmentSsml(list, gaps), raw)
-      if (made) fresh += 1
-      if (made || !existsSync(trimmed) || statSync(trimmed).size < 4000) {
-        sh(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', raw, '-af',
-          'silenceremove=start_periods=1:start_threshold=-44dB:start_silence=0.03:detection=peak,'
-          + 'areverse,silenceremove=start_periods=1:start_threshold=-44dB:start_silence=0.05:detection=peak,areverse',
-          '-c:a', 'pcm_s16le', trimmed], 'trim-seg')
-        /* أربعة طلباتٍ للحلقة، وكلٌّ يستغرق ثوانيَ في الخادم — فالإيقاع الطبيعي
-           دون حدّ العشرين في الدقيقة بكثير، ولا حاجة لفاصلٍ طويل. */
-        if (made) await sleep(1200)
-      }
-      files.push(trimmed)
-    }
-    voice = buildVoiceFromSegments(doc, work, files)
-    /* إزاحة كل مقطعٍ في الحلقة النهائية: التوقيع أولاً، ثم المقاطع
-       يفصل بينها جسرٌ أو نَفَسٌ بمقاديرَ معلومة — فتُحسب لا تُقدَّر. */
-    let cursor = VOICE_START
-    segOffsets = segs.map((seg, i) => {
-      const at = cursor
-      cursor += durationOf(files[i])
-      if (seg.after === 'bridge') cursor += 0.35 + 5.6 + 0.15 + 0.6 + 0.08
-      else if (seg.after === 'breath') cursor += 0.20 + 0.6 + 0.05
-      return at
-    })
-    segFiles = files
   }
-
+  const voice = buildVoiceTrack(doc, work)
   const outPath = join(OUT_DIR, `${slug}.dialogue.mp3`)
   wrapAndMaster(doc, work, voice, outPath)
-  /* النصّ المرافق وسجلّ الاعتماد — بلا هذين لا تبلغ الحلقةُ الموقعَ ولا اللوحة */
-  if (segFiles) {
-    const transcript = join(OUT_DIR, `${slug}.dialogue.json`)
-    buildTranscript(doc, work, segFiles, segOffsets, transcript)
-    recordAcceptance(doc, outPath, transcript)
-  }
   const qa = inspect(outPath)
   const pass = Math.abs(qa.lufs + 16) <= 0.8 && qa.peak <= -1.2
-  console.log(`${pass ? '✓' : '⚠'} ${slug} — ${qa.seconds.toFixed(0)}ث · ${qa.lufs} LUFS · ذروة ${qa.peak} · أدوار ${doc.utterances.length} · طلبات ${fresh}`)
+  console.log(`${pass ? '✓' : '⚠'} ${slug} — ${qa.seconds.toFixed(0)}ث · ${qa.lufs} LUFS · ذروة ${qa.peak} · أدوار ${doc.utterances.length} · جديد ${fresh}`)
   return { slug, ...qa, pass, utterances: doc.utterances.length }
 }
 

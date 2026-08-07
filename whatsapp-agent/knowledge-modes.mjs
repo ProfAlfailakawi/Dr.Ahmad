@@ -172,7 +172,14 @@ function exactPassages(item, limit = 1) {
     .map((part) => part.trim())
     .filter((part) => part.length >= 35 && part.length <= 240)
   if (sentences.length) return sentences.slice(0, Math.max(1, limit))
-  return [source.slice(0, 240)]
+  /* المتون التي لا جملة فيها داخل المدى (فقرةٌ واحدة طويلة) كانت تُقصّ عند
+     الحرف ٢٤٠ في وسط الكلمة: «…مستحدثات تكنولوج». نقف عند آخر حدٍّ للكلمة،
+     ونفضّل وقفةً في الجملة إن وُجدت. والمقطع يبقى منسوخاً من المتن. */
+  const head = source.slice(0, 240)
+  const clause = Math.max(head.lastIndexOf('؛'), head.lastIndexOf('،'), head.lastIndexOf('…'))
+  const wordEnd = head.lastIndexOf(' ')
+  const cut = clause >= 120 ? clause : wordEnd > 0 ? wordEnd : head.length
+  return [head.slice(0, cut).replace(/[،؛…\s]+$/, '').trim() || head.trim()]
 }
 
 function exactPassage(item) { return exactPassages(item, 1)[0] || '' }

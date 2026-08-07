@@ -121,6 +121,8 @@ jobs:
           check "Studio image backend self-test" node scripts/test-studio-image-generation.mjs
           check "Studio UI contract" node scripts/test-studio-ui-contract.mjs
           check "Site polish 2026 regression" node scripts/test-site-polish-2026.mjs
+          # الأرشيف الإعلامي كان بلا حارسٍ في النشر، فبقي شهراً بلا فهرسةٍ وبصوتٍ ميت والبناء أخضر.
+          check "Media archive integrity" node scripts/test-media-archive.mjs
           check "Arabic tanween policy" node scripts/guard-arabic-tanween.mjs
           check "Realtime audio sync self-test" node scripts/sync-audio-firestore.mjs --self-test
 

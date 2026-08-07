@@ -163,7 +163,12 @@ export function buildContentIndex(root = projectRoot, siteUrl = SITE_URL) {
       return { candidate, score: common * 2 + (candidate.kind !== item.kind ? 1 : 0) }
     }).filter((row) => row.score >= 5).sort((a, b) => b.score - a.score).slice(0, 5)
     item.related = related.map((row) => row.candidate.id)
-    item.keywords = `${item.keywords || ''} ${related.map((row) => row.candidate.title).join(' ')}`.trim()
+    /* عناوين الامتدادات تُضاف للبحث وحده. وكانت تُلصق بالتصنيف بلا فاصل، فصار
+       حقل التصنيف كتلةً من عناوين الأبحاث — و«أكثر موضوع يكتب عنه» يعرضها
+       بوصفها «مسارات»، فيقرأ الزائر سطراً بطول فقرة. الفاصل «‖» يفصل تصنيف
+       الدكتور عن حصيلة الرسم، فيقرأ العرضُ التصنيفَ ويقرأ البحثُ الاثنين. */
+    const graphTitles = related.map((row) => row.candidate.title).join(' ')
+    item.keywords = graphTitles ? `${String(item.keywords || '').trim()} ‖ ${graphTitles}`.trim() : String(item.keywords || '').trim()
     item.hash = hashItem({ ...item, hash: undefined })
   }
   return indexed
@@ -351,9 +356,37 @@ export function latestAcrossKinds(db, kinds = ['article', 'paper', 'book', 'podc
   return rows.map(rowToItem)
 }
 
+/* المسار هو تصنيف الدكتور وحده — ما قبل الفاصل «‖» — لا حصيلة رسم المعرفة.
+   والتجميع كان على النصّ الكامل فيصير لكل مقالٍ «مسارٌ» يخصّه وحده، فيقول
+   البوت «أكثر المسارات حضوراً» ثم يعدّ واحداً واحداً. */
 export function topArticleTopics(db, limit = 3) {
-  const rows = db.all("SELECT keywords, COUNT(*) AS count FROM content_items WHERE kind='article' AND trim(keywords)<>'' GROUP BY keywords ORDER BY count DESC, keywords ASC LIMIT ?", Math.min(Math.max(Number(limit || 1), 1), 8))
-  return rows.map((row) => ({ topic: String(row.keywords || '').trim(), count: Number(row.count || 0) })).filter((row) => row.topic)
+  const rows = db.all("SELECT keywords FROM content_items WHERE kind='article' AND trim(keywords)<>''") || []
+  const counts = new Map()
+  for (const row of rows) {
+    const topic = String(row.keywords || '').split('‖')[0].trim()
+    if (!topic) continue
+    counts.set(topic, (counts.get(topic) || 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([topic, count]) => ({ topic, count }))
+    .sort((a, b) => b.count - a.count || a.topic.localeCompare(b.topic))
+    .slice(0, Math.min(Math.max(Number(limit || 1), 1), 8))
+}
+
+/* «اكتب اسم أي مسار وأختار لك أفضل نقطة بداية» — وعدٌ كان يُخلَف: اسم المسار
+   يذهب إلى البحث العام فيردّ بأبحاثٍ يتصادف ورودُ اللفظ في عناوينها. المسار
+   يُقرأ من تصنيف الدكتور نفسه، ولا يُطابَق إلا مطابقةً تامة فلا يخطف كلمةً
+   عامّة من سؤالٍ عادي. */
+export function articlesByTopic(db, topic, limit = 3) {
+  const wanted = normalizeArabic(topic)
+  if (!wanted) return []
+  const rows = db.all("SELECT * FROM content_items WHERE kind='article' AND trim(keywords)<>'' ORDER BY date DESC") || []
+  return rows
+    .filter((row) => normalizeArabic(String(row.keywords || '').split('‖')[0]) === wanted)
+    .slice(0, Math.min(Math.max(Number(limit || 1), 1), 8))
+    /* اسم المسار يُعاد بلفظه كما كتبه الدكتور — لا بصيغته المطبَّعة للمطابقة
+       («التربيه» بلا تاء مربوطة كانت تُعرض على الزائر). */
+    .map((row) => ({ ...rowToItem(row), topicLabel: String(row.keywords || '').split('‖')[0].trim() }))
 }
 
 export function contentSummary(item, maxSentences = 3) {

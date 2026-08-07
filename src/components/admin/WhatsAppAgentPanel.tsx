@@ -120,6 +120,16 @@ type TrustedEvidence = {
   authority: string; enabled: boolean; createdAt?: string; updatedAt?: string
 }
 
+type BotSelfCheckItem = {
+  id: string
+  label: string
+  state: 'ok' | 'warn' | 'fail'
+  detail: string
+  preview?: string
+  fix?: { action: 'restart-bridge' | 'bot-return-all'; label: string } | null
+}
+type BotSelfCheck = { ok: boolean; verdict: string; checks: BotSelfCheckItem[]; mutedCount: number; checkedAt: string }
+
 const DEFAULT_PERSONALITY: KnowledgePersonality = {
   verbosity: 'layered', dialect: 'kuwaiti-light', initiative: 'one-question', signature: 'always', memoryConsent: 'explicit',
 }
@@ -225,6 +235,10 @@ export function WhatsAppAgentPanel() {
   const [personality, setPersonality] = useState<KnowledgePersonality>(DEFAULT_PERSONALITY)
   const [trustedEvidence, setTrustedEvidence] = useState<TrustedEvidence[]>([])
   const [evidenceBusy, setEvidenceBusy] = useState(false)
+  /* فحص البوت بضغطة (٧ أغسطس): يوم صمت البوت لم تكن اللوحة تقول أين العطب —
+     الجسر أم العقل أم محادثةٌ أسكتها استلامٌ يدوي. هذا يجيب بالعربية ويصلح. */
+  const [botCheck, setBotCheck] = useState<BotSelfCheck | null>(null)
+  const [botChecking, setBotChecking] = useState(false)
   const [evidenceForm, setEvidenceForm] = useState({ domain: 'education', sourceName: '', sourceType: 'جامعة أو دورية محكّمة', title: '', claim: '', quote: '', url: '', publishedAt: '', authority: '' })
   const bridge = '/api/admin/whatsapp'
 
@@ -353,6 +367,18 @@ export function WhatsAppAgentPanel() {
     } catch {
       setNotice('تعذّر تغيير حالة الإيقاف الفوري.')
     }
+  }
+
+  const runBotCheck = async () => {
+    setBotChecking(true)
+    try {
+      const out = await request<BotSelfCheck>('/admin/self-check', { method: 'POST' })
+      setBotCheck(out)
+      setNotice(out.ok ? '✓ فُحص البوت: سليم.' : 'انتهى الفحص — انظر البطاقات أدناه.')
+    } catch {
+      setBotCheck(null)
+      setNotice('تعذّر فحص البوت: الخادم لم يستجب. جرّب «إحياء آمن».')
+    } finally { setBotChecking(false) }
   }
 
   const returnBotNow = async () => {
@@ -812,8 +838,47 @@ export function WhatsAppAgentPanel() {
               {recoveringAll ? 'يُحيي النظام…' : diagnostics?.code === 'scan-qr' ? 'QR ظاهر أدناه' : 'إحياء آمن'}
             </button>
             <button type="button" className={secondary} disabled={busy} onClick={() => void refresh()}>{busy ? 'يفحص…' : 'فحص شامل'}</button>
+            <button type="button" className={primary} disabled={botChecking} onClick={() => void runBotCheck()}>
+              {botChecking ? 'يفحص البوت…' : 'افحص البوت الآن'}
+            </button>
           </div>
         </div>
+
+        {/* نتيجة «افحص البوت الآن»: حكمٌ بالعربية، وبطاقةٌ لكل طبقة، وزرُّ إصلاحٍ
+            حيث يلزم. صُمّم يوم ٧ أغسطس بعد صمتٍ استغرق تشخيصه قراءةَ سجلّات
+            خادم — وهذا ما لا ينبغي أن يُطلب من الدكتور مرةً أخرى. */}
+        {botCheck && (
+          <div className={`mt-5 rounded-2xl border p-4 ${botCheck.ok ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-amber-500/40 bg-amber-500/5'}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[.82rem] font-semibold text-ink">{botCheck.verdict}</p>
+              <span className="text-[.66rem] text-soft">فُحص: {new Date(botCheck.checkedAt).toLocaleString('ar-KW', { timeZone: 'Asia/Kuwait' })}</span>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {botCheck.checks.map((check) => (
+                <article key={check.id} className={`rounded-xl border p-3 ${check.state === 'ok' ? 'border-emerald-500/25 bg-emerald-500/5' : check.state === 'warn' ? 'border-amber-500/30 bg-amber-500/5' : 'border-rose-500/35 bg-rose-500/5'}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-[.76rem] font-semibold text-ink">{check.label}</h3>
+                    <span aria-hidden="true" className="text-[.78rem]">{check.state === 'ok' ? '●' : check.state === 'warn' ? '◆' : '!'}</span>
+                  </div>
+                  <p className="mt-2 text-[.68rem] leading-relaxed text-soft">{check.detail}</p>
+                  {check.preview && (
+                    <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-canvas/60 p-2 text-[.64rem] leading-relaxed text-ink">{check.preview}</pre>
+                  )}
+                  {check.fix && (
+                    <button
+                      type="button"
+                      className={`${secondary} mt-3 w-full`}
+                      disabled={restarting || returning}
+                      onClick={() => void (check.fix?.action === 'restart-bridge' ? restartBridge() : returnBotNow()).then(() => runBotCheck())}
+                    >
+                      {check.fix.label}
+                    </button>
+                  )}
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {(diagnostics?.checks || []).map((check) => (

@@ -16,18 +16,31 @@ export function parseReminderTime(text, reference = now()) {
     const multiplier = /دقيق/.test(unit) ? 60 * 1000 : /ساع/.test(unit) ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000
     return { dueAt: new Date(reference.getTime() + amount * multiplier).toISOString(), source: 'relative' }
   }
-  const hourMatch = value.match(/(?:الليله|باجر|غدا|الجمعه)?(?:\s*الساعه\s*(\d{1,2})(?:\s*(صباحا|مساء))?)?$/)
-  if (/الليله/.test(value)) {
-    const p = localParts(reference); const hour = hourMatch?.[1] ? Number(hourMatch[1]) : 21
-    return { dueAt: nextLocalDate(reference, p.year, p.month, p.day, hour, /مساء/.test(hourMatch?.[2] || '') ? 0 : 0).toISOString(), source: 'tonight' }
+  const hourMatch = value.match(/(?:الليله|باجر|بكره|بكرا|غدا|الجمعه)?(?:\s*الساعه\s*(\d{1,2})(?:\s*(صباحا|صباح|مساء|مساءا|ظهرا|ظهر|العصر|الليل))?)?$/)
+  /* «الساعة ٧ مساءً» كانت تُحفظ ٧ صباحاً: الفرع الوحيد الذي نظر إلى «مساء»
+     كتبها `? 0 : 0` — شرطاً لا أثر له، والفرعان الآخران لم ينظرا إليها أصلاً.
+     التحويل الآن في موضعٍ واحد يمرّ عليه الجميع. */
+  const meridiem = (hour) => {
+    const mark = hourMatch?.[2] || ''
+    if (!hour && hour !== 0) return hour
+    if (/مساء|الليل|العصر/.test(mark) && hour < 12) return hour + 12
+    if (/ظهر/.test(mark) && hour < 12) return hour === 12 ? 12 : hour + 12
+    if (/صباح/.test(mark) && hour === 12) return 0
+    return hour
   }
-  if (/باجر|غدا/.test(value)) {
-    const p = localParts(reference); const hour = hourMatch?.[1] ? Number(hourMatch[1]) : 9
+  if (/الليله/.test(value)) {
+    const p = localParts(reference); const raw = hourMatch?.[1] ? Number(hourMatch[1]) : 21
+    /* «الليلة الساعة ٩» ليلٌ بطبعه وإن لم يقل «مساءً». */
+    const hour = hourMatch?.[2] ? meridiem(raw) : (raw < 12 ? raw + 12 : raw)
+    return { dueAt: nextLocalDate(reference, p.year, p.month, p.day, hour, 0).toISOString(), source: 'tonight' }
+  }
+  if (/باجر|بكره|بكرا|غدا/.test(value)) {
+    const p = localParts(reference); const hour = meridiem(hourMatch?.[1] ? Number(hourMatch[1]) : 9)
     return { dueAt: nextLocalDate(reference, p.year, p.month, p.day + 1, hour, 0).toISOString(), source: 'tomorrow' }
   }
   if (/الجمعه/.test(value)) {
-    const p = localParts(reference); const current = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay(); const days = (5 - current + 7) % 7 || 7; const hour = hourMatch?.[1] ? Number(hourMatch[1]) : null
-    if (!hour) return { ambiguous: true, reason: 'missing-hour' }
+    const p = localParts(reference); const current = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay(); const days = (5 - current + 7) % 7 || 7; const hour = hourMatch?.[1] ? meridiem(Number(hourMatch[1])) : null
+    if (hour === null) return { ambiguous: true, reason: 'missing-hour' }
     return { dueAt: nextLocalDate(reference, p.year, p.month, p.day + days, hour, 0).toISOString(), source: 'friday' }
   }
   return { ambiguous: true, reason: 'unrecognized-time' }

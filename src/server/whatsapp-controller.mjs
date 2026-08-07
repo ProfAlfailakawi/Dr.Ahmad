@@ -4,7 +4,7 @@ import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
 import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
 import { distillItem } from '../../whatsapp-agent/daily-experience.mjs'
-import { conceptQueryFor, glossarySize } from '../../whatsapp-agent/domain-concepts.mjs'
+import { conceptDefinition, conceptQueryFor, glossarySize } from '../../whatsapp-agent/domain-concepts.mjs'
 import { arabicCountPhrase, CONVERSATION_AFTER_PREPOSITION_FORMS, DAY_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS, MINUTE_FORMS, PASSAGE_AFTER_PREPOSITION_FORMS, RECOVERED_MESSAGE_OBJECT_FORMS, REPLY_AFTER_PREPOSITION_FORMS, SECOND_AFTER_PREPOSITION_FORMS, VERIFIED_MATERIAL_FORMS, WEEK_AFTER_PREPOSITION_FORMS } from '../lib/style-dna.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
@@ -1461,19 +1461,6 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     }
   }
 
-  /* كلمة النوع وحدها — «مقالة» أو «كتاب» — جوابٌ على دعوتنا نحن: نحن من قال له
-     «قل لي: مقالة، كتاب، بحث، أو بودكاست». فمن دعا إلى بابٍ لا يجوز أن يغلقه.
-     نشترط أن تكون الرسالة كلها كلمةَ النوع حتى لا نخطف سؤالاً فيه تفصيل. */
-  const bareKind = { مقاله: 'article', مقال: 'article', مقالات: 'article', كتاب: 'book', كتب: 'book', بحث: 'paper', ابحاث: 'paper', بحوث: 'paper', دراسه: 'paper', بودكاست: 'podcast', حلقه: 'podcast', حلقات: 'podcast', مختارات: 'curated' }[clean.replace(/^ال/, '').trim()]
-  if (bareKind) {
-    const found = latestSiteItems([bareKind], 3)
-    if (found.length) return {
-      kind: 'reply', reason: 'latest-content', intent,
-      reply: signReply(siteResultReply(found, 'هذه أحدث المواد المنشورة في هذا الباب:'), messages),
-      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
-    }
-  }
-
   const latestKinds = intentKinds(intent)
   if (latestKinds.length || [INTENTS.LATEST_CONTENT, INTENTS.MISSED_CONTENT].includes(intent)) {
     const requested = requestedListCount(clean)
@@ -1602,6 +1589,23 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       /* لا نُعلن «فهمت مقصدك» إلا إذا غيّر المفهومُ الصدارة فعلاً. */
       conceptUsed = reranked[0]?.item?.id !== found[0]?.id
       found = reranked.map((row) => row.item)
+    }
+  }
+
+  /* سؤال المعنى يُجاب بالمعنى — من معجم الدكتور نفسه (٢٩٠ مفهوماً بمعانيها)،
+     لا بأقرب مقالٍ صامتٍ عن التعريف. والقيد أن يُطلب المعنى صراحةً، فلا
+     يُقحَم التعريف على من سأل عن مادة. نفس التصريف في الوكيل المقيم. */
+  const definitionHit = conceptDefinition(query)
+  if (definitionHit) {
+    const definitionRows = found.slice(0, 2)
+    const tail = definitionRows.length
+      ? `\n\nوله في هذا من الموقع:\n${definitionRows.map((item) => `• *${item.title}*\n  ${item.url}`).join('\n')}`
+      : ''
+    return {
+      kind: 'reply', reason: 'concept-definition', intent,
+      reply: signReply(`من معجم الدكتور:\n${definitionHit.text}${tail}`, messages),
+      evidence: definitionRows.map((item) => item.id),
+      contextItemIds: definitionRows.map((item) => item.id), contextIndex: 0, lastTopic: query,
     }
   }
 
@@ -3369,6 +3373,116 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       })
       res.setHeader('Cache-Control', 'no-store, max-age=0')
       sendJson(res, 200, status)
+      return
+    }
+
+    /* ═══ فحص البوت بضغطة (٧ أغسطس، بطلب الدكتور: «ما أبي المشكلة ترجع») ═══
+       يوم صمت البوت لم يكن في اللوحة ما يقول أين العطب: الجسر أم العقل أم
+       حالة المحادثة. فكان الجواب يحتاج قراءة سجلّات خادم. هذا المسار يجيب
+       بالعربية عن الأسئلة الثلاثة، ويعرض ما يُصلح كلاً منها بضغطة.
+       ولا يرسل رسالةً إلى أحد: يبني ردّ الإيقاظ في الذاكرة ويقيسه. */
+    if (path === '/self-check' && method === 'POST') {
+      const [bridgeSnapshot, runtimeSnapshot, conversations] = await Promise.all([
+        db.collection(COLLECTIONS.bridge).doc('primary').get(),
+        db.collection(COLLECTIONS.settings).doc('runtime').get(),
+        db.collection(COLLECTIONS.conversations).limit(250).get(),
+      ])
+      const bridgeData = bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {}
+      const status = bridgeStatus({ ...bridgeData, runtimePaused: Boolean(runtimeSnapshot.data()?.paused) })
+      const rows = conversations.docs.map((doc) => doc.data() || {})
+      const mutedRows = rows.filter((row) => row?.mode === 'human')
+      const now = new Date()
+
+      /* ١) هل يصل الصوت من واتساب إلى العقل؟ */
+      const bridgeOk = status.bridgeOnline === true && status.status === 'connected'
+
+      /* ٢) هل يبني العقل ردّ الإيقاظ كاملاً وجميلاً؟ نقيسه لا نفترضه:
+            عنوانٌ ورابطٌ واقتباسٌ وخيارات. */
+      const welcome = buildWakeWelcome(botMessagesNow(), now, {})
+      const welcomeText = String(welcome?.text || '')
+      const welcomeHasLink = /https?:\/\//.test(welcomeText)
+      const welcomeHasQuote = /«[^»]{20,}»/.test(welcomeText)
+      const welcomeOk = welcomeText.length > 80 && welcomeHasLink && welcomeHasQuote
+
+      /* ٣) هل تعمل جملة الإيقاظ نفسها بكل صيغها الشائعة؟ */
+      const wakeSamples = ['موقع د. أحمد', 'موقع د احمد', 'موقع د. الفيلكاوي', 'موقع د الفيلكاوي']
+      const wakeFailures = wakeSamples.filter((sample) => !isWhatsAppWakePhrase(sample))
+
+      /* ٤) هل وصل فهرس الموقع إلى الخادم أصلاً؟ */
+      const indexRows = siteIndex()
+      const indexTotal = indexRows.length
+      const indexArticles = indexRows.filter((row) => row?.kind === 'article').length
+
+      /* ٥) كم محادثة مُسكتة لأن الدكتور كتب فيها بيده؟ */
+      const mutedCount = mutedRows.length
+
+      const checks = [
+        {
+          id: 'bridge',
+          label: 'الجسر (واتساب ← الخادم)',
+          state: bridgeOk ? 'ok' : 'fail',
+          detail: bridgeOk
+            ? 'الجسر متصل ويستلم الرسائل.'
+            : `الجسر غير متصل الآن (${status.status}). الرسائل لا تصل العقل أصلاً.`,
+          fix: bridgeOk ? null : { action: 'restart-bridge', label: 'أعد تشغيل الجسر' },
+        },
+        {
+          id: 'brain-welcome',
+          label: 'ردّ الإيقاظ (جماله واكتماله)',
+          state: welcomeOk ? 'ok' : 'fail',
+          detail: welcomeOk
+            ? 'العقل يبني الترحيب كاملاً: بوابة اليوم وعنوانها واقتباسها ورابطها والخيارات.'
+            : 'ردّ الإيقاظ ناقص: ' + [!welcomeHasLink ? 'بلا رابط' : '', !welcomeHasQuote ? 'بلا اقتباس' : ''].filter(Boolean).join(' و'),
+          preview: welcomeText.slice(0, 700),
+        },
+        {
+          id: 'wake-phrase',
+          label: 'جملة الإيقاظ بكل صيغها',
+          state: wakeFailures.length ? 'fail' : 'ok',
+          detail: wakeFailures.length
+            ? `صيغٌ لا يعرفها البوت: ${wakeFailures.join(' · ')}`
+            : 'كل صيغ «موقع د. أحمد» و«موقع د. الفيلكاوي» معروفة (بهمزة وبدونها، بنقطة وبدونها).',
+        },
+        {
+          /* الفهرس الفارغ كارثةٌ وقعت من قبل: تسعة موارد لم ينسخها Dockerfile
+             فصار البوت يقول «ما لقيت مادة» على كل سؤال، والفاحصات خضراء.
+             العلامة الصادقة هي عدد المواد نفسه. */
+          id: 'content-index',
+          label: 'فهرس الموقع داخل الخادم',
+          state: indexArticles >= 100 ? 'ok' : indexArticles > 0 ? 'warn' : 'fail',
+          detail: indexArticles >= 100
+            ? `الفهرس حاضر: ${indexTotal} مادة منها ${indexArticles} مقالاً.`
+            : indexArticles > 0
+              ? `الفهرس ناقص: ${indexArticles} مقالاً فقط (المتوقّع ١٤٣ فأكثر). تحقّق من نسخ ملفات البيانات إلى الخادم.`
+              : 'الفهرس فارغ داخل الخادم — سيقول البوت «ما لقيت مادة» على كل سؤال. ملفات البيانات لم تصل الصورة.',
+        },
+        {
+          id: 'muted-chats',
+          label: 'محادثات مُسكتة باستلامك اليدوي',
+          state: mutedCount ? 'warn' : 'ok',
+          detail: mutedCount
+            ? `${mutedCount} محادثة لن يردّ فيها البوت لأنك كتبت فيها بيدك. تعود بكتابة «موقع د. أحمد» فيها — أو بضغطة هنا.`
+            : 'لا توجد محادثة مُسكتة.',
+          fix: mutedCount ? { action: 'bot-return-all', label: 'أرجع البوت لكل المحادثات' } : null,
+        },
+        {
+          id: 'owner-test',
+          label: 'تجربتك أنت من جهازك',
+          state: 'ok',
+          detail: 'اكتب «موقع د. أحمد» من جهازك في أي محادثة — حتى محادثتك مع نفسك — فيردّ عليك البوت. (قبل ٧ أغسطس كانت رسالتك بخطّ يدك تُسكته بدل أن توقظه.)',
+        },
+      ]
+
+      const failed = checks.filter((row) => row.state === 'fail')
+      const warned = checks.filter((row) => row.state === 'warn')
+      const verdict = failed.length
+        ? `المنظومة متعثّرة: ${failed.map((row) => row.label).join(' · ')}`
+        : warned.length
+          ? `البوت سليم، وهناك ما ينبغي أن تعرفه: ${warned.map((row) => row.label).join(' · ')}`
+          : 'البوت سليمٌ تماماً: الجسر متصل، وردّ الإيقاظ كامل، ولا محادثة مُسكتة.'
+
+      res.setHeader('Cache-Control', 'no-store, max-age=0')
+      sendJson(res, 200, { ok: failed.length === 0, verdict, checks, mutedCount, checkedAt: asIso() })
       return
     }
 

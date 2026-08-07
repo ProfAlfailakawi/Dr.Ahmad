@@ -17,6 +17,7 @@ const Publications = lazy(() => import('./pages/Publications'))
 const Research = lazy(() => import('./pages/Research'))
 const Articles = lazy(() => import('./pages/Articles'))
 const Listen = lazy(() => import('./pages/Listen'))
+const Radio = lazy(() => import('./pages/Radio'))
 const Search = lazy(() => import('./pages/Search'))
 const AskLibrary = lazy(() => import('./pages/AskLibrary'))
 const Decade = lazy(() => import('./pages/Decade'))
@@ -263,6 +264,7 @@ function AnimatedRoutes() {
         <Route path="/research/:slug" element={<PaperDetail />} />
         <Route path="/articles" element={<Articles />} />
         <Route path="/listen" element={<Listen />} />
+        <Route path="/radio" element={<Radio />} />
         <Route path="/search" element={<Search />} />
         <Route path="/ask" element={<AskLibrary />} />
         <Route path="/decade" element={<Decade />} />

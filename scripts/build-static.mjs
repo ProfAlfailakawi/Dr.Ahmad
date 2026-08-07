@@ -303,6 +303,8 @@ const archiveMedia = existsSync(mediaArchivePath)
     .filter((item) => item.title && item.slug && (item.url || item.audioUrl || item.audioFile))
     .filter((item) => !localMediaSlugs.has(item.slug))
     .filter((item) => { const id = mediaVideoId(item.url); return !id || !localMediaVideoIds.has(id) })
+    /* وما حُذف من اللوحة لا يعود صفحةً ساكنة: الحذف عندنا نهائي. */
+    .filter(keepAlive('media'))
   : []
 const media = mergeCloudAdditions('media', [...localMedia, ...archiveMedia], cloudCms.media)
   .filter((item) => item.title && item.slug && (item.url || item.audioUrl || item.audioFile))

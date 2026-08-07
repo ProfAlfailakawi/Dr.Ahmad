@@ -2620,6 +2620,81 @@ function aggregateCounts(rows, keyOf, valueOf = (key) => key) {
     .sort((left, right) => right.total - left.total || String(left.label).localeCompare(String(right.label), 'ar'))
 }
 
+/* ═══ المعالجة الذاتية (٧ أغسطس، بأمر الدكتور: «مو بس فحص — أبي المعالجة») ═══
+   التشخيص وحده يترك العطب قائماً حتى ينتبه إنسان. هذه تُصلح ما يُصلَح آلياً،
+   وتصف ما لا يُصلَح إلا بيده. تُستدعى من زرّ اللوحة، ومن نبضة الجسر نفسها كل
+   ربع ساعة فتعمل بلا ضغطة أصلاً.
+
+   ما لا تفعله عمداً: لا تُرجع محادثةً أسكتها الدكتور بيده — فقد يكون يتولّاها
+   بنفسه الآن، والقرار قراره. تُحصيها له ويُرجعها بضغطةٍ إن شاء. */
+const AUTO_HEAL_MIN_GAP_MS = 15 * 60_000
+let lastAutoHealAt = 0
+
+export async function autoHealWhatsApp(db, { trigger = 'manual', allowBridgeRestart = true } = {}) {
+  const actions = []
+  const now = Date.now()
+
+  /* ١) حالات الاستلام اليدوي المنتهية: ترقيةٌ آمنة قائمة أصلاً، نُجريها هنا
+        أيضاً فلا تنتظر فتح اللوحة. */
+  try {
+    const swept = await sweepExpiredManualStates(db)
+    if (swept) actions.push({ id: 'manual-states', done: true, detail: `رُقّيت ${swept} محادثة من حقبة الاستئناف التلقائي.` })
+  } catch (error) {
+    actions.push({ id: 'manual-states', done: false, detail: `تعذّر كنس حالات الاستلام: ${String(error?.message || error).slice(0, 120)}` })
+  }
+
+  /* ٢) أوامر عالقة في الطابور: أمرٌ استلمه الجسر ولم يُنهه خلال ٩٠ ثانية يعني
+        أن الجسر تعثّر أثناءه. نُعيده إلى الانتظار ليُنفَّذ من جديد بدل أن يبقى
+        الطابور مقفلاً إلى الأبد. */
+  try {
+    const commands = await db.collection(COLLECTIONS.commands).limit(250).get()
+    const stale = commands.docs.filter((doc) => {
+      const row = doc.data() || {}
+      if (row.status !== 'leased') return false
+      const leasedAt = Date.parse(row.leasedAt || row.updatedAt || '')
+      return Number.isFinite(leasedAt) && now - leasedAt > 90_000
+    })
+    if (stale.length) {
+      await Promise.all(stale.map((doc) => doc.ref.set({ status: 'pending', leasedAt: null, updatedAt: asIso() }, { merge: true })))
+      actions.push({ id: 'stale-commands', done: true, detail: `أُعيد ${stale.length} أمراً عالقاً إلى الطابور.` })
+    }
+  } catch (error) {
+    actions.push({ id: 'stale-commands', done: false, detail: `تعذّرت معالجة الطابور: ${String(error?.message || error).slice(0, 120)}` })
+  }
+
+  /* ٣) الجسر ميّت أو نبضته قديمة: نطلب إعادة تشغيله بأمرٍ في الطابور. وحارس
+        الخادم يعيده كذلك كل دقيقتين — فهذان طريقان لا طريق واحد. */
+  let bridgeHealed = null
+  try {
+    const bridgeSnapshot = await db.collection(COLLECTIONS.bridge).doc('primary').get()
+    const bridgeData = bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {}
+    const current = bridgeStatus(bridgeData)
+    const bridgeDown = !(current.bridgeOnline === true && current.status === 'connected')
+    if (bridgeDown && !current.health?.needsAuthScan && allowBridgeRestart) {
+      /* النوع 'restart' هو ما يفهمه الجسر (تحقّقتُ من مُصرِّف أوامره على
+         الخادم). ومفتاح التكرار يمنع تراكم أوامر إعادةٍ متطابقة حين تتوالى
+         المعالجات: أمرٌ واحد لكل عشر دقائق. */
+      await enqueueCommand(db, 'restart', {}, { idempotencyKey: `auto-heal-restart:${Math.floor(now / 600_000)}` })
+      bridgeHealed = true
+      actions.push({ id: 'bridge', done: true, detail: `الجسر كان (${current.status}) فأُرسل أمر إعادة تشغيلٍ يحفظ الجلسة.` })
+    } else if (bridgeDown && current.health?.needsAuthScan) {
+      bridgeHealed = false
+      actions.push({ id: 'bridge', done: false, detail: 'الجسر ينتظر مسح رمز QR من هاتفك — لا يُصلَح آلياً.' })
+    }
+  } catch (error) {
+    actions.push({ id: 'bridge', done: false, detail: `تعذّر فحص الجسر: ${String(error?.message || error).slice(0, 120)}` })
+  }
+
+  /* ٤) قوالب اللوحة والفهرس: تحديثٌ رخيص يمنع أن يردّ البوت بقوالب قديمة. */
+  try {
+    await refreshBotMessages()
+    actions.push({ id: 'templates', done: true, detail: 'حُدّثت قوالب الردود من اللوحة.' })
+  } catch { /* التحديث تحسينٌ لا شرط */ }
+
+  lastAutoHealAt = now
+  return { trigger, healedAt: asIso(), actions, bridgeHealed }
+}
+
 async function sweepExpiredManualStates(db) {
   /* ترقيةٌ آمنة لحالات النسخ القديمة فقط: انتهاء مؤقت الاستلام اليدوي لا
      يعيد البوت. يحوّل المحادثة إلى الصمت الأساسي، ولا يفتحها بعد ذلك إلا
@@ -2792,6 +2867,13 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       })
 
       if (event === 'heartbeat') await sweepExpiredManualStates(db)
+      /* المعالجة بلا ضغطة: نبضة الجسر تصل كل نصف دقيقة، فنجعلها تُشغّل
+         المعالجة الذاتية مرةً كل ربع ساعة على الأكثر — خلفيّةً لا تؤخّر
+         الردّ على النبضة، وبلا مسٍّ لما قرّره الدكتور بيده. */
+      if (event === 'heartbeat' && Date.now() - lastAutoHealAt > AUTO_HEAL_MIN_GAP_MS) {
+        lastAutoHealAt = Date.now()
+        void autoHealWhatsApp(db, { trigger: 'heartbeat' }).catch(() => {})
+      }
       sendJson(res, 200, { ok: true })
       return
     }
@@ -3381,6 +3463,42 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
        حالة المحادثة. فكان الجواب يحتاج قراءة سجلّات خادم. هذا المسار يجيب
        بالعربية عن الأسئلة الثلاثة، ويعرض ما يُصلح كلاً منها بضغطة.
        ولا يرسل رسالةً إلى أحد: يبني ردّ الإيقاظ في الذاكرة ويقيسه. */
+    if (path === '/self-heal' && method === 'POST') {
+      const body = await readJson(req).catch(() => ({}))
+      const report = await autoHealWhatsApp(db, { trigger: 'panel' })
+      /* إرجاع المحادثات المُسكتة لا يجري تلقائياً أبداً — قد يكون الدكتور
+         يتولّاها بنفسه. يجري هنا فقط حين يطلبه صراحةً بالضغطة. */
+      if (body?.returnMutedChats === true) {
+        const snapshot = await db.collection(COLLECTIONS.conversations).limit(500).get()
+        const rows = snapshot.docs.filter((doc) => (doc.data() || {}).mode === 'human')
+        await Promise.all(rows.map((doc) => doc.ref.set({
+          mode: 'silent', wakeActive: false, wakeVersion: 1, needsHuman: false,
+          manualUntil: null, autoResumeAt: null, notificationMutedUntil: null, updatedAt: asIso(),
+        }, { merge: true })))
+        report.actions.push({
+          id: 'muted-chats',
+          done: true,
+          detail: rows.length
+            ? `أُتيح الإيقاظ في ${rows.length} محادثة — ولن يردّ البوت فيها إلا بعد جملة الإيقاظ.`
+            : 'لا توجد محادثة مُسكتة.',
+        })
+      }
+      const healed = report.actions.filter((row) => row.done).length
+      const blocked = report.actions.filter((row) => row.done === false)
+      res.setHeader('Cache-Control', 'no-store, max-age=0')
+      sendJson(res, 200, {
+        ok: blocked.length === 0,
+        healed,
+        summary: healed
+          ? `عولج ${healed} أمراً تلقائياً.${blocked.length ? ' ويبقى ما لا يُصلَح آلياً.' : ''}`
+          : blocked.length
+            ? 'لم يكن هناك ما يُصلَح آلياً، وبقي ما يحتاج يدك.'
+            : 'لم أجد عطباً يحتاج معالجة — المنظومة سليمة.',
+        ...report,
+      })
+      return
+    }
+
     if (path === '/self-check' && method === 'POST') {
       const [bridgeSnapshot, runtimeSnapshot, conversations] = await Promise.all([
         db.collection(COLLECTIONS.bridge).doc('primary').get(),

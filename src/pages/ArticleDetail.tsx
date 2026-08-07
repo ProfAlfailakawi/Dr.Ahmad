@@ -881,7 +881,7 @@ export default function ArticleDetail() {
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                     </Link>
                   ) : <span className="h-8 w-8 shrink-0" aria-hidden />}
-                  <p className="min-w-0 truncate text-[.7rem] font-light leading-none text-soft" title={next?.title}>{next?.title || 'لا يوجد'}</p>
+                  <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={next?.title}>{next?.title || 'لا يوجد'}</p>
                 </div>
 
                 <Link to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-8 items-center gap-1 rounded-full border border-hair px-2 text-[.58rem] font-light text-soft transition-colors hover:border-accent hover:text-accent">
@@ -894,7 +894,7 @@ export default function ArticleDetail() {
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
                     </Link>
                   ) : <span className="h-8 w-8 shrink-0" aria-hidden />}
-                  <p className="min-w-0 truncate text-[.7rem] font-light leading-none text-soft" title={prev?.title}>{prev?.title || 'لا يوجد'}</p>
+                  <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={prev?.title}>{prev?.title || 'لا يوجد'}</p>
                 </div>
               </div>
             </nav>

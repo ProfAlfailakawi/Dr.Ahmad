@@ -10,7 +10,7 @@ import { useAdminAuth } from '../../lib/admin-auth'
 import { Pagination, usePagedList } from '../Pagination'
 import { AudioSystemOverview } from './AudioSystemOverview'
 import { SystemHealthOverview } from './SystemHealthOverview'
-import { arabicCountPhrase, DAMAGED_LINK_FORMS, HEALTHY_LINK_FORMS } from '../../lib/arabic-count.ts'
+import { arabicCountPhrase, DAMAGED_LINK_FORMS, HEALTHY_LINK_FORMS, INTERVENTION_FORMS } from '../../lib/arabic-count.ts'
 
 const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const pill = 'min-w-0 rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold leading-tight text-soft'
@@ -51,6 +51,8 @@ const stages: { key: Stage; label: string }[] = [
 ]
 
 const generatedEpisodes = (podcastAdmin as { episodes?: Episode[] }).episodes || []
+type BlockedDialogue = { slug: string; turns: number; opening: string; reason: string; action: string }
+const blockedDialogues = (podcastAdmin as { blocked?: BlockedDialogue[] }).blocked || []
 const stageFromEpisode = (episode?: Episode): Stage => {
   if (!episode) return 'draft'
   if (episode.status === 'published') return 'published'
@@ -351,6 +353,28 @@ export function ProductionHealthCenter({
           )})}
         </div>
         {message && <p className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.8rem] text-soft">{message}</p>}
+
+        {/* حوارٌ مكتوبٌ ومضبوطٌ لا ينقصه إلا مقاله. كان يُتخطّى بلا كلمة في كل
+            تشغيلة، فيبقى الدكتور يسأل «لماذا لم تُرفع؟» بلا جواب. هنا جوابه. */}
+        {blockedDialogues.length > 0 && (
+          <div className="mt-5 rounded-2xl border border-accent/25 bg-accent/[.04] p-4">
+            <p className="text-[.76rem] font-semibold text-accent">
+              {blockedDialogues.length === 1 ? 'حوارٌ جاهز يحبسه مقاله' : `${blockedDialogues.length} حوارات جاهزة تحبسها مقالاتها`}
+            </p>
+            <p className="mt-1.5 text-[.8rem] leading-relaxed text-soft">
+              الحلقة تُنشر تحت مقالها، وخاتمتها تدعو المستمع لقراءته — فلا تُرفع قبل أن يُنشر، كي لا يقود الصوتُ الناسَ إلى صفحةٍ غير موجودة.
+            </p>
+            <ul className="mt-3 grid gap-2.5">
+              {blockedDialogues.map((item) => (
+                <li key={item.slug} className="rounded-xl border border-hair bg-canvas px-3.5 py-3">
+                  <p className="font-display text-[.92rem] font-semibold text-ink">{item.opening || item.slug}</p>
+                  <p className="mt-1 text-[.74rem] text-soft" dir="ltr">{item.slug}</p>
+                  <p className="mt-1.5 text-[.78rem] text-soft">{arabicCountPhrase(item.turns, INTERVENTION_FORMS)} · جاهزة للتوليد · {item.reason}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>}
 
       {view === 'production' && <AudioSystemOverview articles={articles} onOpen={onOpen} />}

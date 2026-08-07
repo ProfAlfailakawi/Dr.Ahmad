@@ -69,7 +69,17 @@ if (existsSync(AUDIO_META)) {
     writeFileSync(temp, `${JSON.stringify(nextMeta, null, 2)}\n`, 'utf8')
     renameSync(temp, AUDIO_META)
     console.log(`✔ نُظّفت ${removedMeta.length} مداخل صوت يتيمة من audio-meta.json:`)
-    for (const name of removedMeta) console.log(`  - ${name}`)
+    /* «يتيم» كلمةٌ تُخفي حالتين مختلفتين: ملفٌّ لمقالٍ حُذف (فحذفه صواب)،
+       وحلقةٌ كاملةٌ مكتوبةٌ ينتظر مقالها النشر (فحذفها صامتاً يُضيعها بلا
+       أن يعرف أحد). الثانية تُسمّى بسببها هنا كي لا تُبتلع مرّةً أخرى. */
+    const soulDir = resolve(ROOT, 'manual-dialogues-soul')
+    for (const name of removedMeta) {
+      const slug = slugFromAudioMetaName(name)
+      const hasDialogue = slug && existsSync(resolve(soulDir, `${slug}.soul.json`))
+      console.log(hasDialogue
+        ? `  - ${name} ← حوارٌ مكتوبٌ ينتظر نشر مقاله، لا ملفٌّ زائد`
+        : `  - ${name}`)
+    }
   } else {
     console.log('✔ لا توجد مداخل صوت يتيمة في audio-meta.json.')
   }

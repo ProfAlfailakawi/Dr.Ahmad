@@ -139,6 +139,21 @@ export function selectDailyUnsentContent(db, options = {}) {
   return null
 }
 
+/* «كمل» بعد قراءة الثلاثين ثانية: المقطع التالي مباشرةً من المتن — لا إعادةَ
+   ما قُرئ ولا قفزٌ إلى مقالٍ آخر. يبدأ من حيث انتهى الأول وينتهي عند وقفة. */
+export function continueVerbatim(item, speed = '30s') {
+  if (!item) return null
+  const raw = (item.body && item.body.trim()) ? item.body.trim() : (item.excerpt || '').trim()
+  const first = extractVerbatimAtSpeed(item, speed)
+  if (!raw || !first) return null
+  const at = raw.indexOf(first.text)
+  if (at < 0) return null
+  const rest = raw.slice(at + first.text.length).replace(/^[\s،؛.…]+/, '')
+  if (!rest.trim()) return null
+  const next = extractVerbatimAtSpeed({ ...item, body: rest, excerpt: '' }, speed)
+  return next && next.text ? next : null
+}
+
 /* شبكة الأفكار كانت تُرجع «آخر ثلاث مواد» أياً كان المقال، وبـsharedConcepts
    فارغة — فيقول البوت «امشِ مع الفكرة عبر…» ثم يسوق مقالاتٍ لا تصلها بها فكرة.
    الآن نرجّح بالمشترك الحقيقي: كلمات العنوان والمتن مجذّرة، والعنوان أثقل. */

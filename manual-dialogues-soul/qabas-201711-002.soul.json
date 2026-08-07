@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201711-002",
+  "bridgeAfter": [
+    10,
+    27
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في لحظات بحثي المتنوع في كافة المجالات، وقعت عيناي على دراسات حديثة تتحدث عن الشيخوخة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولفت نظره أن هناك دراسات حديثة أظهرت أن العالم يتجه نحو الشيخوخة أكثر فأكثر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "الأمر الذي يلقي أعباء مادية واقتصادية واجتماعية على المجتمعات والدول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "التي ستعاني أكثر من غيرها من الشيخوخة في قادم الأيام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن تلك الشيخوخة ستصيب المجتمع العجوز، أي أوروبا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأنها ستصل لأعلى نسبة حتى عام ألفين وخمسين.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وسيدخل سباق الشيخوخة الدول ذات الدخل المنخفض أيضا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فللكائن الحي عمر افتراضي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هذا من جهة الكائن الحي، فله عمر افتراضي معروف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكن في الحقيقة راوده سؤال خرج بالمضمون عن هذا الموضوع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد يكون المصطلح هو العامل المشترك بينهما.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كيف سيكون الحال مع المعلومات في عالم المعرفة؟⏸ وهل سيصيبها الشيخوخة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد يستغرب البعض من هذا المصطلح:⏸ شيخوخة المعلومات.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولم لا؟⏸ فلو نظرنا إلى الماضي، كان دور العلم في تطوير الحياة أقل شأنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكانت المعلومات المتوافرة تنزع إلى أن تكون نظرية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولذا فقد كان يرجى من العلم تهذيب النفس وترقية العقل وإمتاع الروح.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "أما اليوم،⏸ فمن الصعب على أي أمة أن تصبح في طليعة الأمم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من غير اعتماد الأساليب العلمية في كل جوانب الحياة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما القاعدة التي تحكم الجميع اليوم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالقاعدة التي تطبق على الجميع في وقتنا الحالي:⏸ من يعرف أكثر يملك أكثر.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويتحكم أكثر ويتطور أكثر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبناء على ذلك أصبحنا اليوم في حاجة إلى أن نعرف أكثر وأكثر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونسرع في فهم الجديد من المعارف، بسبب تقادم المعلومات على نحو لم يسبق له مثيل في السرعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وصارت الشيخوخة تصيب المعلومات والمعارف وهي ما زالت في طفولتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بسبب الأعداد الهائلة من العقول التي تشتغل في البحث والتطوير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعلى سبيل التقدير،⏸ فإن أكثر من تسعين بالمئة من المعلومات المتداولة اليوم قد تم تحديثه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "خلال العقود الثلاثة الماضية وحدها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والكتاب في السنة، والمجلة في الشهر، والجريدة في اليوم، فقدت من قيمتها بما يقدر بعشرة بالمئة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل كل معلومة تشيخ وتفقد صلاحيتها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن، بالرغم من وجود شيخوخة المعلومات وفقدها للصلاحية، إلا أنها ليست شيئا عاما.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وليست على اختلاف مستوياتها يحدث لها ذلك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالمعلومات الأساسية والأفكار الجذرية تصمد في وجه العواصف العلمية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكنها توظف توظيفا جديدا، وتقرأ وتفسر من جديد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتتعرض لما هو أخطر من ذلك، وهو انصراف الاهتمام عنها إلى المعارف العلمية الحديثة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويبقى الباب مفتوحا لكل من يرى أن المعلومات قد تشيخ.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "مع التعرض إلى أسباب تلك الرؤية من وجهة نظر علمية متفحصة، ويبقى أن نتداول آراءكم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

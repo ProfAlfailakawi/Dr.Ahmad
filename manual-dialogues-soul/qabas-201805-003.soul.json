@@ -1,0 +1,258 @@
+{
+  "slug": "qabas-201805-003",
+  "bridgeAfter": [
+    15,
+    26
+  ],
+  "breathAfter": [
+    32
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "تبادل في ذهني في فترة من الفترات الكثير من المصطلحات.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "التي لا بد أن تدخل مجال التربية لتعزيز وتقوية دور ومكانة المُعلِّم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ومن الأصح أن نعطيه مسمى قد يكون جديدا على الساحة التربوية والإعلامية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهو المُعلِّم كوسيلة إعلامية في مدرسته.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هناك من أيدني على هذا المصطلح، ~~ وهناك من وجد أنها أحمال وأثقال على كاهل المُعلِّم.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن، لم هذا الاعتراض على الفكرة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هذا المصطلح يمكن أن يمارسه المُعلِّم دون أن يتفرد فيه فيثقل أحماله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حيث يمكن للمعلم أن يمارس هذا الدور من ضمن حياته اليومية مع الطلبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلو نظرنا إلى الواقع،⏸ فإن هناك فجوة كبيرة بين المُعلِّم والطلبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حيث أن نظرة المُعلِّم إلى طلبته لا تقل سوداوية عنه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فهو يرى في طلبته مجموعة من الأشخاص الذين لا يسعى معظمهم للعلم وتحصيله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل للحصول على الشهادة العلمية بقليل من الجهد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأن هذا الجيل ليس كالأجيال السابقة في جده واجتهاده.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقليل ما يتميز المُعلِّم بعلاقات جيدة مع طلبته.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويساعد على ذلك أن قوانين وأنظمة المؤسسات التعليمية لا تنظم مثل هذه العلاقة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "من خلال الصفوف الدراسية التي يلتقون فيها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل يعد المعلمون على التعامل مع الطلبة أصلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كما أن إعداد المعلمين في الغالب لا يتضمن طرائق التعامل مع الطلبة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وإنما تجعل ذلك وفقا للأنظمة واللوائح، ووفقا لاجتهادات المُعلِّم أثناء أدائه للخدمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن هنا نشأت حالة من الانفصال بين المُعلِّم وطلبته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتراجع دور المربي والقدوة إلى دور آلي خال من الروح الإنسانية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويكون الضحية في ذلك هو الطالب الذي جاء إلى المؤسسة التعليمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مثقلا بكثير من الأسئلة التي يحتاج إلى إجابة لها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كما جاء بقيم وأفكار ومعتقدات ومفاهيم تحتاج من المُعلِّم إلى تصويبها أو تأكيدها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "خاصة وأنه يعيش في نظام تعليمي يفقد في كثير من جوانبه إلى حرية التعامل والحوار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كما يفتقد إلى أسس التعلم الذاتي الصحيح، والتي هي أهم ركائز التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالمعلم يعتبر محور العملية التعليمية، يقوم على صياغة تفكير الإنسان وتربيته وتطوير مهاراته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل يختلف معلم اليوم عن معلم الأمس؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومن جانب آخر،⏸ فإن المُعلِّم كقيادي سوف يكون مختلفا تماما في القرن الواحد والعشرين.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "عن المعلمين في الأجيال الماضية، لأنهم سوف يواجهون مشكلات عديدة كثيرة التعقيد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولذلك فإن هذه المشكلات تحتاج إلى طرق جديدة وأساليب مختلفة في التفكير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمعلم الناجح هو الذي يبدع في ظل الإمكانيات المتاحة أمامه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا هو الدور الجديد للمعلم كوسيلة إعلامية مضافة للوسائل المعروفة،⏸ ليكون أكثر إقناعا ومصححا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "وأصبح لزاما تبني رؤية جديدة للمعلم، قادر على لعب دور المربي والمعلم والإعلامي والمرشد.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

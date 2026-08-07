@@ -1,0 +1,264 @@
+{
+  "slug": "qabas-201712-001",
+  "bridgeAfter": [
+    20,
+    27
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "زارني صديق يعمل في مجال الفقه والأصول منذ سنوات.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويشتكي ضيق الوقت في جمع المعلومات من الكتب الفقهية والأصولية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والدراسات ذات الصلة أثناء تحضيره لأطروحة الدكتوراه الخاصة به.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تحدث عن استعانته بجوجل في تحميل الكتب والدراسات التي تحمل عليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأنه يستخدمها كمصادر في بحثه الطويل.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إلا أنه لا يثق بشكل كلي بالفتاوى والدراسات الفقهية التي تحمل بجوجل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويأخذ منه الوقت في تمحيص تلك الدراسات والتأكد من مصداقيتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما تتناوله من أدلة شرعية ومصادر وفتاوى في هذا الباب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأنا أستمع لصديقي، جاء في بالي أن هناك حقيقة لا بد أن نعي لها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهي مصداقية المصادر الدينية،⏸ فهي ليست بالأمر السهل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يستهان بالأمور الدينية والشرعية،⏸ فهي خط أحمر لا يتجاوز.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فليس كل مورديها يؤخذ منهم في هذا الباب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وعن دخول التكنولوجيا ومواقع الإنترنت في المسائل الشرعية ومصادر عديدة فقهية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أرى أن الشيخ جوجل قد دخل سباق مجالس العلم والشريعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إن الدين منهج إنساني يحاكي الفطرة والعقل معا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "دعا الإنسان إلى التفكر في الكون للوصول إلى حقيقة الخالق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "التي بدورها تغني الإيمان بالرسوخ واليقين في القلب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد اعتمد المسلمون منذ بداية عهد الخلافة وحتى فترة قريبة على منهج التلقي والإخبار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لنقل ثوابت الدين إلى من جاء بعدهم من الأجيال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "واعتمدوا على أعمال العقل بالاستنباط والقياس، وغيرها من مناهج الاستدلال لإحياء علوم الدين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويتعامل الجميع بقدسية وهيبة الدين عند تناول المسائل الشرعية، تبعا لقدسية المصدر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما الذي حصل في عصرنا الحالي؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "اقتحمت التكنولوجيا، ممثلة بمواقع التواصل على الشبكة العنكبوتية، مجال الدين.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأصبحت مساحتها خصبة لنقل الأفكار والفتاوى والمعتقدات بين الناس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأغلب المواقع الدينية أصبحت تشبه جهاز الصراف الآلي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "الذي يغذى بمجموعة مسائل متوفرة عند الطلب لا غير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن الملاحظ أن قليلا من هذه المواقع الدينية يتم متابعتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويبقى المخزون الفقهي الذي غذي به المصدر هو الشيخ المُعلِّم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يا ترى، ما دقة ما يطرح؟⏸ وما سلامته؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وما دقة الموثوقية؟⏸ تساؤلات في سؤال يؤرق كل من بحث عن فتوى إلكترونية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو بحث عن مصادر أصولية يعتمد عليها في دراسته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فعدم الاكتفاء بموقع واحد، ومراجعة عدة مواقع للبحث في فتوى واحدة، دليل على عدم الموثوقية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالمواقع الدينية كثيرة، ومتابعتها قليلة، والمخزون الفقهي فيها هو الشيخ المُعلِّم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتبقى مسألة الشيخ جوجل تحتاج إلى دراسة وتمحيص طويلين.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "لإيجاد الآليات التي تعيد للدين هيبته، ويترك النقاش بهذه المسألة لرؤيتكم المتبصرة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

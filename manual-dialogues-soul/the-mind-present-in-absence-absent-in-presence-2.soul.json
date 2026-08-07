@@ -1,0 +1,285 @@
+{
+  "slug": "the-mind-present-in-absence-absent-in-presence-2",
+  "bridgeAfter": [
+    16,
+    25
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "العقل حاضر في الغياب، وغائب في الحضور. دفتر الحضور ممتلئ،⏸ لكن الفصل فارغ من التفكير.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في كل صباح تسجل الأسماء. فلان؟⏸ موجود. فلانة؟⏸ حاضرة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن لا أحد يسأل:⏸ هل حضر العقل، أم أن الجسد فقط أدى التحية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي مشهد متكرر.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يجلس الطالب في الصف، وعيونه مفتوحة، ودفتره على الطاولة،⏸ لكنه غائب تماما.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يفكر في مباراة، أو يغرق في الشاشة الصغيرة، أو يكتب شيئا لا علاقة له بالمادة. لكنه محسوب ضمن الحضور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هذا حال كل جيل. ألم نشرد نحن أيضا في صفوفنا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "الفرق أن الأمر صار قاعدة لا استثناء، والمقال يسنده برقم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ففي دراسة نشرتها Harvard Business Review تبين أن أكثر من ثمانية وخمسين بالمئة من الطلاب الجامعيين يحضرون الصفوف دون أي تفاعل فعلي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن مفهوم الحضور الذهني أصبح التحدي الأكبر في العملية التعليمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن ندير التعليم كما لو أنه حفل غياب رسمي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "نبحث عن الكرسي المشغول، لا العقل المنشغل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونعاقب المتغيب عن الجسد، ونغض الطرف عن المتغيب عن الوعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل ونمدح الصامت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ففي فصول كثيرة يمدح الطالب الهادئ، لا لأنه يشارك⏸ بل لأنه لا يزعج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويثنى على المنضبط الذي لم ينطق بكلمة طوال الفصل، حتى لو لم يفهم شيئا مما قيل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالعقل لا يقاس بالحضور،⏸ بل بالتماس.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل لمس المعلومة؟⏸ هل تحرك بالسؤال؟⏸ هل ارتبك بالفكرة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أم أنه حضر بصمت، وخرج كما دخل؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتجربة تكشف كل شيء.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في حصة من الحصص طلب المُعلِّم من الطلاب أن يناقشوا فكرة خارج الكتاب، فساد الصمت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "البعض خاف من الخطأ، والبعض لا يعرف رأيا، والبقية ينتظرون النموذج الصحيح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هكذا نكتشف أن الحضور لا يعني الفهم،⏸ بل أحيانا يعني فقط توقيت الجلوس والانصراف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي تقرير صادر عن منظمة OECD إشارة مهمة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أن قلة المشاركة الصفية وانعدام التفاعل مرتبطان ارتباطا وثيقا بمعدلات غياب غير معلن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يسمى الغياب الصامت، وهو شكل من أشكال الحضور الجسدي مع انفصال ذهني كامل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نلوم الطالب وحده على هذا الانفصال؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يلومه. يوجه السؤال إلى المنظومة كلها بثلاثة أسئلة موجعة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كم عقلا غاب اليوم وهو جالس أمامنا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكم فكرة وئدت لأنها لم تجد من يستمع؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكم طالبا تفوق بدرجة، وغاب بفكره طوال العام؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فنحن لا ندرس العقل،⏸ بل نسجل عليه حضورا شكليا.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والنتيجة تمثيل لا تعليم.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وحين نخرج جيلا يتقن الحضور ولا يجيد الانتباه، فنحن لم نعلمه بل دربناه على التمثيل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالوعي لا يأتي من الحضور فقط،⏸ بل من السؤال، ومن الخلاف، ومن التفاعل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن صوت الطالب حين يقول: أنا لا أفهم، وأريد أن أفهم.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا هو الحضور الحقيقي: أن يهتز عقل الطالب أمام فكرة، لا أن يجلس صامتا كأنه جدار.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فيا أيها التعليم، كف عن عد الأجساد، وابدأ بوزن العقول، وابحث عن الغياب الحقيقي في صمت الذين لا يفكرون.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

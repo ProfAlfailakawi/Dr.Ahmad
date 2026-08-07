@@ -1,0 +1,244 @@
+{
+  "slug": "qabas-201612-004",
+  "bridgeAfter": [
+    14,
+    26
+  ],
+  "breathAfter": [
+    30
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "بالأمس، وفي زمن التلفزة الأولى، كان جهاز واحد يجمع حوله جميع عناصر المجتمع وفئاته.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما يعرض في التلفزة يحدد ثقافة المجتمع.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والراديو كان عنصرا أساسيا أيضا لتعزيز الثقافة بين الناس، وقد شكلت عوامل جاذبة ومشوقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتفت حولها العائلة لتشاهد أفلام الكارتون، والمسلسلات الهادفة، والأخبار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والبرامج الأخرى أسست ثقافة مجتمع بكافة فئاته، على الرغم من البساطة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "دعونا نتفكر قليلا، سنجد أن هذا الأمر يناط لاحتياجات البيئة المحيطة التي تشكل وتولد ثقافة الفرد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتتحدد الصناعة الإلكترونية في الأمس بتطوير جهاز التلفاز أو الراديو.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبالتالي ثقافة المنتج تتمحور حول سياسة تهدف إلى الترفيه عن الناس بشكل عام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتشكل ثقافة المجتمع، كل بحسب توجهاته، وهي غير متاحة للجميع، ~~ فلا تتواجد في كل بيت.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "مجتمع بسيط، من الممكن أن يتشارك الجيران والأهل في مشاهدة التلفاز وسماع الراديو.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "في البيوت أو في المقاهي أو السينما وغيرها من الأماكن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "دون أن تترك تأثيرا سلبيا على الأفراد،⏸ بل هي ميزة مجتمع في الغالب.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "إن سمة المجتمع الترابط، ومتابعة ما يحيط بالبيئة التي يعيشون فيها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يحد ثقافتهم تواجد التلفاز، فالكتاب والجرائد كانت صديق الجميع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتتناقل الناس الأخبار بأنواعها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا نقول إن أجهزة الأمس كانت أخف أثرا في الأفراد؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لأنها لم تكن تفرض ثقافة تحدد علاقة الأفراد ببعضهم، وبالتالي يصبح هو النمط السائد.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذا نمط حياة الأمس، ولكن تختلف اليوم في بعض تفاصيلها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد تبدو في جوانب كثيرة نتيجة للتقدم والتكنولوجيا الأكثر تأثيرا عن ثقافة الفرد السابق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فاحتياجات البيئة المحيطة التي تولد ثقافة الفرد أصبحت حاجة ملحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولتوليد هذه الثقافة لا بد من تهيئة البيئة المحيطة واحتياجاتها، وهي ليست بالقليلة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهي مكلفة أيضا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تحتاج إلى وقت وجهد وتكلفة مادية وأجهزة حديثة متطورة وذكية وإنترنت، وغيرها من ضروريات التكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بالإضافة إلى مجتمع يصادق عليها، وقد فاق ذلك احتياجات الزمن الماضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وثقافة الفرد كما يعرفها البعض، ما هي إلا حلول لتحديات يواجهها الفرد مع البيئة المحيطة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بالتالي ثقافة الفرد في الوقت الحاضر تكتسب من مواقع التواصل الذي يعيشه طوال اليوم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فنجد الصغير والكبير يقتبسون ثقافتهم من مواقع التواصل المختلفة، كتويتر وفيسبوك واليوتيوب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل بقي أحد خارج هذه الدائرة اليوم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ودلالة الأمر تبرز في قلة أعداد الأشخاص غير المستخدمين لمواقع التواصل.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويعد ظهورها فتحا تاريخيا، ونقلة مجتمعية ثقافية للأفراد ساهمت في توليد الثقافة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالمعلومات المتدفقة في الواقع الافتراضي تعيد تشكيل الأنماط السائدة، وتقولبها في إطار فهم المجتمعات للمحتوى.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يمكن نكران أن مواقع التواصل أصبحت عمود الخيمة في الحضارة الإنسانية، والثقافة نتاج الحضارة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

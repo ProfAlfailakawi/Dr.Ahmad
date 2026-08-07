@@ -1,0 +1,250 @@
+{
+  "slug": "qabas-201611-004",
+  "bridgeAfter": [
+    10,
+    23
+  ],
+  "breathAfter": [
+    31
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "صديقنا الصدوق، هذا صديق الطفولة، لعبنا وترعرعنا معا.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتسوق بنا السنين لنصبح في مقاعد الدراسة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وخرجنا إلى سوق العمل في خطى واحدة، وتخطينا معا كل الصعاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأخذنا قراراتنا معا، ويكفي أن حلمنا واحد مع قسط من الخيال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نعم، هذه الحقيقة في الواقع الحقيقي، قبل أن نبدأ في التعرف إلى الواقع الافتراضي في الفيس بوك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونعلم أن العالم من حولنا يتطور، ولم نغفل يوما عنه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إنما وجدنا فيه ما لم نجده في واقعنا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكلما أبحرنا أكثر في أعماق التكنولوجيا، أبهرتنا بواقعها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وبذلك استطعنا أن نعيش واقعا لم نستطع يوما أن نعيشه مع مجتمعنا، ونبوح بمكنوناتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حتى نتصرف بحرية تصل إلى حد الجرأة، دون حسيب ولا رقيب مجتمعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقيود ثقافة العيب. وأصبحنا نهرب من واقعنا إلى واقع آخر يستوعبنا أكثر، فنسينا واقعنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا أصبحنا نفضل العالم الافتراضي عن عالمنا الحقيقي؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هذا سؤال المقال نفسه، ولكم التفكر في معنى ما يقول.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ودعونا نبدأ في هذا الجزء بالتعرف على ماهية الواقع الحقيقي والافتراضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وما الجديد القادم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الجديد الذي سيزيد رواد العالم الافتراضي غرقا بعيدا عن الواقع الحقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إن الواقع الحقيقي هو أن نملك تصورا حقيقيا ويقينا عن الواقع.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "صورة حقيقية وغير مشوهة، على الرغم من وجود رؤى مجازية تعبر عن كون الواقع مشبعا بنقائضه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إذ اتسعت رقعته ليشمل ما اعتبرناه ليس واقعيا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والواقع الافتراضي هو ترجمة الواقع الحقيقي إلى بيانات رقمية، حيث يندمج الخيال بالواقع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذا مفهوم مجرد. أما مفهومه اللغوي فهو عملية نقل الوعي الإنساني إلى بيئة افتراضية يتم تشكيلها برمجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من خلال تحرر العقل للغوص في تنفيذ الخيال بعيدا عن مكان الجسد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لا وهمي ولا حقيقي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهو عالم ليس وهميا وليس حقيقيا، بدليل حدوثه ومعايشة بيئته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الغرض منه إذا كان بهذا الالتباس؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "الغرض من الواقع الافتراضي هو تقريب الواقع الحقيقي، لعدم إمكانية الحصول على واقع حقيقي فعلي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا الواقع الافتراضي مثلته نتائج الثورة التكنولوجية.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إذ أصبحت الحياة البشرية تنتج في العالم الافتراضي، ومتحكم فيها عبر وسائل الميديا وتكوين الصداقات.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد ساعدت مواقع التواصل الاجتماعي، الفيس بوك وغيره، على التواصل في مجموعة واسعة من الطرق والأجهزة الذكية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن أعلن مارك في مؤتمر برشلونة ليكمل تلك المتاهة عند مجتمع الفيس بوك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن الواقع الافتراضي هو مستقبل الفيس بوك، وأنه آن الأوان لصناعة تطبيق للواقع الافتراضي على هذا النهج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "موقع يضم مجتمعا كاملا متعدد الثقافات والجنسيات والأجناس والأعمار، فكيف سيكون في بيئة افتراضية؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وتبقى الإجابة المفاجئة والمدوية لانطلاقة مارك في الجزء القادم من المقال.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

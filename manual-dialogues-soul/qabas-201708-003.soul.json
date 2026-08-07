@@ -1,0 +1,279 @@
+{
+  "slug": "qabas-201708-003",
+  "bridgeAfter": [
+    17,
+    30
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في إحدى جمعاتنا بين الأصدقاء، استفقدنا أحدهم، فبدأنا نتساءل عن غيابه.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتفاجأنا بأنه مسافر لعلاج ابنه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "الذي بدأت عليه حالات غريبة، كالانطوائية والانعزال والهزال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفسروا حالته بالتوحد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد فسر بعض الأطباء حالته بالتوحد، فتعجب لذلك التشخيص.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا ننكر أن التكنولوجيا ووسائلها الحديثة حصدت أكلها مع أطفالنا.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في زرعهم أمام الأجهزة اللوحية والهواتف الذكية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "للعب بأحدث الألعاب وأكثرها تعقيدا، والإبحار عبر مواقع التواصل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والانخراط مع فئات مختلفة للعب الجماعي، دون إحساس حقيقي للوقت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومدى تأثير ذلك على أبنائنا في حياتهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فبدأ يفكر بهذا الموضوع، ويتفحص الكثير من الدراسات والمقالات.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "التي تتحدث عن التوحد وتشخيصه الطبي وأسبابه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالتوحد يعتبر أحد أمراض العصر التي بدأت بالتفشي بين الأطفال بشكل كبير.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والتوحد مرض عقلي عضوي، يتركز في قدرة الوصلات العصبية على التآزر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويظهر على شكل ضعف تكيف لفظي اجتماعي عند الطفل.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وجرى الكثير من الدراسات والأبحاث حول هذا المرض.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن لم تظهر الأسباب الحقيقية إلى اليوم.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إلا أن أغلب الدراسات عزت ذلك الاضطراب إلى الجينات الوراثية، وليس الموروثة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل من تفسير آخر غير الجينات؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فيما عزت بعض الدراسات أسبابها إلى امتصاص المواد الثقيلة والمبيدات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والفثلات والفينولات الموجودة في المواد البلاستيكية والكلور وغيرها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهناك رأي ثالث.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهناك دراسات اعتبرت البيئة هي العامل المحفز لظهور المرض، وليس السبب له.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولم يجد دراسات أثبتت أن الانطوائية تسبب التوحد.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وحديثا بدأ الحديث عن أجهزة الهاتف والأجهزة اللوحية كمسبب لمرض التوحد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك خلط بين ما يسبب هذا المرض، وبين العوامل التي تساهم في ظهوره.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولم تكن التكنولوجيا وليدة اللحظة كما يظن البعض.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل أن استخدامها من قبل الأطفال وتعلقهم بها لساعات، هو مواكب لوقت ظهورها.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أي منذ نهاية منتصف القرن الماضي إلى اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فقد ظهر تعلق الأطفال وانعزالهم مع التكنولوجيا، مع ظهور أول الألعاب الإلكترونية وبرامج الكمبيوتر.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن ثم تطورت الألعاب، وظهرت بأشكال تفاعلية أكثر من السابق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلو كانت التكنولوجيا هي المحفز، ألم يكن الأجدر أن تظهر أبكر؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هذا ما يقوله المقال:⏸ كان الأجدر أن تظهر في وقت أبكر، مع ظهور الألعاب القديمة غير التفاعلية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبخصوص الوقت الذي كان يقضيه الطفل مع الألعاب الإلكترونية، لم يختلف.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وإنما اختلفت الطريقة في ممارسة اللعب، وفي الحاضر أصبحت الألعاب أكثر تطورا وتفاعلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلا نلقي باللوم على التكنولوجيا،⏸ لنشعر بالرضى عن تقصيرنا في حق أبنائنا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فهم في سن ليس من الصعب السيطرة على سلوكياتهم ونمط حياتهم، ~~ ولكن يبحث الأهل عن أسباب خارج نطاق البيت.",
+      "feeling": "resolve",
+      "feeling2": "hush",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

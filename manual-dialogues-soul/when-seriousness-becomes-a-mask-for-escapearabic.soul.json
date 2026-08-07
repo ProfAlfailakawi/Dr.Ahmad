@@ -1,0 +1,271 @@
+{
+  "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+  "bridgeAfter": [
+    10,
+    27
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نركض كثيرا، ونسمي الركض التزاما.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونملأ يومنا بالمهام الصغيرة، ونسمي الامتلاء إنجازا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ثم نعود في آخر الليل ونكتشف أن شيئا عميقا لم يتحرك في الداخل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فليست الجدية دائما علامة نضج.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "أحيانا تكون قناعا أنيقا للهروب، نحتمي به من سؤال واحد ثقيل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل نحن ننجز ما ينبغي، أم ننجز ما يريحنا من مواجهة أنفسنا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي ثقافة اليوم صار الانشغال نفسه شارة مكانة اجتماعية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ودراسة بيليزا وباهاريا وكينان وجدت أن الناس يقرأون الانشغال وقلة وقت الفراغ رمزا للندرة والكفاءة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وللطلب العالي على هذا الشخص.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كأن جدولك الممتلئ شهادة غير معلنة بأنك إنسان مهم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "حتى صار الوقت نفسه يستهلك استعراضا، كما كانت تستهلك الأشياء استعراضا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا يبدأ القناع الحقيقي.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالقناع الحقيقي يبدأ حين تتحول الحركة إلى بديل عن الجوهر.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فقد نحضر كل اجتماع صغير لأننا نخشى مهمة واحدة كبيرة تكشف قدرتنا الحقيقية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد نتقن الانشغال الذكي كي لا نقترب من علاقة تحتاج شجاعة صدق حقيقية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو مشروع يضعنا أمام احتمال الفشل، أو قرار حياة مؤجل كأنه لا يرانا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنبدو منضبطين في الصورة أمام الجميع،⏸ بينما قلبنا يؤجل الحقيقة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أليس هذا قسوة على من يعمل بجد فعلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والمقال لا يتهم كل مجتهد. إنه يفرق بين حركة تصنع وحركة تخبئ.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأبحاث التسويف تشرح ذلك.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "مراجعة بيرس ستيل المبنية على مئات العلاقات الارتباطية تظهر أقوى متنبئات التأجيل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نفور المهمة، وبعد مكافأتها الزمنية، وضعف الكفاءة الذاتية، والاندفاعية أيضا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فنحن لا نؤجل لأننا لا نفهم المهمة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "بل لأن النفس أحيانا تفضل ضجيجا مفيدا في ظاهره، على خطوة واحدة قد تكشف مستوانا الحقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولهذا ننجز كثيرا مما لا يهدد صورتنا أمام الناس، ونؤخر ما يمكن أن يغيرنا فعلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومع ذلك، ليس المطلوب أن نحارب الجدية نفسها،⏸ بل أن نعيد تعريفها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالجدية التي تنقذ الإنسان لا تقاس بعدد الرسائل التي يرد عليها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل بعدد القرارات الثقيلة التي يواجهها بصدق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فمن أين نبدأ العلاج إذن؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "قد يبدأ انكسار القناع من حركة داخلية بسيطة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أن نميز بين عمل يملأ الوقت وحده وعمل يصنع المعنى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن نمنح المهمة الثقيلة موعدا محددا في اليوم، بدل أن تبقى رهينة المزاج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتحليل غولفيتزر وشيران حول نوايا التنفيذ يشير إلى صيغة واضحة تنفع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إذا حدث كذا فسأفعل كذا. فتنسد بها الفجوة بين القصد والفعل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "عندها تتراجع الضوضاء ويتقدم الجوهر، ونقلل من المهمات التي تمنحنا شعور البطولة السريع.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فليس أسوأ من إنسان يركض طوال العام، ثم يكتشف أنه كان يهرب من نفسه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

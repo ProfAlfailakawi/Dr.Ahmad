@@ -1,0 +1,272 @@
+{
+  "slug": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
+  "bridgeAfter": [
+    10,
+    28
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نحتفل بضحكتهم، ونغمرهم بالهدايا، ونلبي كل طلب.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ثم نفاجأ أنهم لا يحترمون،⏸ ولا يصبرون، ولا يعرفون حدودا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا ليس مقالا ضد الحنان،⏸ بل ضد الحنان غير المؤطر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "الذي يتحول من دفء إلى ضعف في الشخصية، ومن حب إلى غياب في القيادة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فجيل اليوم يحصل على كل شيء بسهولة:⏸ ألعاب، وأجهزة، ووجبات، وحرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل حتى أعذار جاهزة للخطأ. لكن حين يسقط لا يعرف كيف ينهض.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأنه تعلم الراحة، ولم يتعلم المسؤولية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "نرضعه حنانا منذ الولادة،⏸ لكن لا نرضعه قيما.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "واسأل المعلمين اليوم أنفسهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "تسألهم: ما مشكلتكم مع الطلبة؟⏸ فيجيبون: لم يتعلموا أن يقولوا شكرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يعرفون الانضباط،⏸ ولا يحتملون أبدا كلمة لا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نلوم الطفل على تربية لم يخترها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يلومه. يقول إن المشكلة ليست في الطفل،⏸ بل في المربي المرهق.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الذي ظن أن التربية هي أن نبقي أبناءنا سعداء طول الوقت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونسي أن التربية إعداد للحياة، لا للراحة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وبلاد كثيرة تدرس هذا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بلاد كثيرة تدرس مفهوم المناعة النفسية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أن الطفل يحتاج أن يسمع كلمة لا، وأن يصدم مرة، وأن يخطئ ويحاسب.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأن الحياة ستفعل ذلك لاحقا، وبقسوة أكبر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن نمنحهم كل شيء، ثم نلومهم إذا طالبوا بالمزيد.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ونغرقهم بالموافقة، ثم نتعجب من عدم تقديرهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالتربية ليست رضاعة عاطفية فقط،⏸ بل فطام فكري، وحزم أخلاقي، ومواقف تشكل الوعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فإن أردت أن تحبه حقا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فإذا أردت أن تحب ابنك بحق، فعلمه أن الحب ليس دائما قول نعم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويذكر الكاتب أنه التقى بولي أمر يشتكي: ابني لا يحترمني،⏸ ولا يسمع كلامي، وكل ما أطلبه يرفضه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وحين سأله:⏸ هل قلت له يوما لا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "رد متفاجئا:⏸ لا، مستحيل، ما أقدر أزعله.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا نكتشف المأساة: جيل يعتقد أن الحب يعني الاستجابة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وأن الأبوة مجرد توفير، ~~ والأمومة حضن دائم لا ينتهي.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل من دليل على أن الحماية المفرطة تضر فعلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بحسب دراسة منشورة في مجلة علم النفس الاجتماعي، نعم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تبين أن الأطفال الذين نشأوا في بيئة مفرطة الحماية والحنان يعانون من ضعف في مهارات التأقلم.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وارتفاع في معدلات القلق، ويظهرون سلوكيات نرجسية أو تمردية عند أول صدمة حياتية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فنحن لا نربيهم للماضي،⏸ بل للمستقبل. والمستقبل لا يرحم من لم يتعلم أن يتألم قليلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلنعد تعريف الحب داخل الأسرة، ولنفهم أبناءنا أن التربية لا تقاس بعدد الهدايا بل بعمق القيم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فليس كل ما يرضي الطفل يربيه، وليس كل ما يبكيه يؤذيه. بل أحيانا تبني طفلا سويا حين تقول له: لا، لأنني أحبك.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

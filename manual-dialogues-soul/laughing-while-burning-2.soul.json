@@ -1,0 +1,278 @@
+{
+  "slug": "laughing-while-burning-2",
+  "bridgeAfter": [
+    17,
+    29
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في كل مقطع ريل يضحك جيل كامل،⏸ ولا يرى أن ضحكته تذوب ببطء.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ضحك سريع، وفرح يبرق ثم يخبو، وقلوب تتعلم كيف تخفي وجعها بفلتر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف تقول:⏸ أنا بخير، بإيموجي واحد لا أكثر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نسألهم: كيف حالكم؟⏸ فيبتسمون في وجوهنا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن خلف الابتسامة شاشة باردة، تطفئ ما تبقى من الدفء الإنساني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهذا جيل يعبر بفلتر ويختبئ بإيموجي عن الناس.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يرى العالم من نافذة بحجم الكف، فيتعثر حين يخطو خارجه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهو يضحك في العلن.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يضحك في العلن، ويغرق في الصمت حين تنطفئ الإشعارات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولسنا أمام جيل هش بقدر ما نحن أمام جيل أرهقناه بمعايير لا تطاق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كن جميلا، ناجحا، حاضرا، إيجابيا دائما، وإلا خرجت من المشهد.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والواقع أن استخدام وسائل التواصل بين اليافعين صار شبه كوني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حتى خمسة وتسعين بالمئة منهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حتى خمسة وتسعين بالمئة من المراهقين على منصة واحدة على الأقل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأكثر من ثلثهم يستخدمها على نحو شبه دائم كل يوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا الحضور الكثيف ليس متساوي الأثر على الجميع منهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكنه يرتبط بمخاطر أعلى عندما يتجاوز ثلاث ساعات يوميا.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "إذ تتضاعف احتمالات مشكلات الصحة النفسية لدى من يتخطون هذا الحد الزمني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل هذا كلام موثق، أم انطباع عام؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفق تحذير رسمي من الجراح العام في الولايات المتحدة، الدكتور فيفيك مورثي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتشير أبحاث محكمة أخرى.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتشير أبحاث محكمة إلى أن إجهاد وسائل التواصل يتغذى على المقارنة الاجتماعية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والخوف من الفوات، وتدفق المعلومات، لينتهي بقلق اجتماعي وسلوك تراكمي متخف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهو أشبه بالتفرج الصامت على حياة الآخرين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فليست المشكلة في الأداة،⏸ بل في كيف وكم نستخدمها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وما الذي تسرقه منا من النوم والرياضة والرفقة الحقيقية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد أكدت دراسة علمية رصينة أن الاستخدام الكثيف يرتبط باحتمالات أعلى مرتين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لاعتلال نفسي شديد لدى المراهقين، حتى بعد ضبط عوامل أخرى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهذه ليست شائعة أهل واتساب،⏸ بل نتيجة دراسة منشورة ومفتوحة الوصول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا الجيل لا يحتاج محكمة توبخه،⏸ بل صدرا يحتضنه ومعنى يرشده.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما الحلول العملية بعيدا عن الشعارات؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالبيت منصة عاطفية أولى:⏸ ساعة إصغاء يومية بلا شاشات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وجملة أنا فخور بك تداوي أكثر من ألف إعجاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والمدرسة:⏸ حصة حوار أسبوعية بلا درجات، يجاز فيها السؤال الشخصي والاختلاف بأمان تام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والإعلام وصناع المحتوى:⏸ كفوا عن تصدير الكمال، وأظهروا مسودات الطريق لا لقطات النهاية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وللشباب أنفسهم:⏸ استعادة الطقوس البشرية، مشي يومي، وكتاب ورقي، وصديق يرى بالعين لا بالكاميرا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فجيلنا كان يخاف السلطة، وجيلهم يخاف الوحدة، وأجمل ضحكة هي التي لا تحتاج جمهورا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

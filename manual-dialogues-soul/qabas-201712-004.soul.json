@@ -1,0 +1,285 @@
+{
+  "slug": "qabas-201712-004",
+  "bridgeAfter": [
+    16,
+    29
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "ذهبت من أيام لاستخراج ورقة لي شخصيا من الكلية التي أعمل بها.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكان الوضع يسوده البلبلة وحالة من الإحباطات بين الناس.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فنظرت باستغراب، وسألت أحدهم عما يحدث هناك في ذلك اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فأجاب أن النظام قد تعطل، وأن الوضع في حالة من الشلل الكامل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فتأملت قليلا وأنا أنتظر حتى يتم إصلاح النظام المتعطل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن الجميع قد تعطلت أشغالهم وأعمالهم في ذلك اليوم كله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وباختصار وقعنا بحصار تعطل النظام ووسائله من أجهزة وبرامج معا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فخطر بنفسه سؤال أقلقه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فخطر بنفسي سؤال أقلقني:⏸ ترى ماذا بعد التكنولوجيا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما مصيرنا نحن بعد التكنولوجيا التي نعيش فيها اليوم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ودعونا نقول أن تعطل النظام والتكنولوجيا يساوي تسونامي في الدمار.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "حقا، وسيصبح لدينا حالة من التصحر النفسي بيننا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أي التصحر الإنساني بيننا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أي التصحر الإنساني في البيئة الإنسانية والنفسية معا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نتيجة لاختفاء ما كان يغذي وجدان وأمان وفراغ وأشغال وأعمال الناس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتكنولوجيا أصبحت عصب حياة لبني البشر جميعا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهي نظام متحكم في كافة المجالات من حولنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فأين نحن إذا ما توقفت التكنولوجيا عن العمل فجأة؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل سنعود إلى البدائية الأولى من جديد؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهل نستطيع أن نعود إلى ما لم نتعود عليه يوما؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف سيكون العالم وقتها؟",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف سيكون العالم من حولنا بعد ذلك كله؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والقرية الصغيرة ستتحول إلى فضاء كبير، تتفرق الأمم فيه من جديد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فمصيرنا مجهول، وأعتقد أنه سيصيبنا التصحر النفسي حتما.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والغربة وسط مجتمعاتنا التي نعيش بين أهلها كل يوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وسنعود إلى حياة من الصعب إلى السهل، بعد أن اعتدنا على الانتقال من السهل إلى الصعب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي الحقيقة ليس هناك صعب في ظل التكنولوجيا اليوم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد وفرت لنا الوقت والجهد، وسرعت في معاملاتنا كلها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي مسار حياتنا بشكل عام في كل يوم نعيشه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فتساؤلات كثيرة، وأفكار وتخيلات أكثر قد ترعب البعض، وقد تسعد البعض الآخر منا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهناك من يكره التكنولوجيا أصلا، أليس كذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، وليس لديه أدنى مانع في أن يعود إلى البدائية الأولى.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهم ينظرون إلى ما قبل التكنولوجيا أنها راحة البال، ولمة العائلة الجميلة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والود والمحبة بين أبناء المجتمع الواحد، وقد يكونون هؤلاء على حق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن لن ننكر أننا قد اعتدنا رفاهية التكنولوجيا، وسهولة كل شيء في ظلها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأنها مصدر التسلية وتعبئة الفراغ للكبير والصغير، وهي عالم للمعرفة والعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأنا في خضم هذا التفكير العميق، سمعت شخصا يقول:⏸ تفضل دكتور، رجع النظام.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فعدت من رحلتي الشخصية لأقول:⏸ الحمد لله على نعمة التكنولوجيا، مبتسما وواقفا مستبشرا الخير.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

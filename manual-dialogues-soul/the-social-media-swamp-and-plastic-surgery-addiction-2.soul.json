@@ -1,0 +1,264 @@
+{
+  "slug": "the-social-media-swamp-and-plastic-surgery-addiction-2",
+  "bridgeAfter": [
+    11,
+    28
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "عالم السوشيال ميديا يدخل الفرد منا في متاهات يصعب الخروج منها.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد يدمنها البعض. فعلا تصبح حالة من الإدمان صعب الفرار منها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد سمعت الكثير ممن يشكون إدمان نسائهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "الغارقات في مستنقع السوشيال ميديا ومواقع التجميل، وذلك الهوس الذي لا ينتهي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إنما نهايته الحتمية في غرف عمليات التجميل التي تكلف الكثير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد يدفعن ثمنها غاليا نتيجة لفشل عمليات التجميل، التي تبدأ منها عمليات ترميم وتصحيح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وللأسف تكون في كثير من الأحيان فاشلة أيضا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والإعلانات لا تتوقف:⏸ النتائج مذهلة، ستصبحين كالفنانة فلانة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتلك التي تبدو أصغر من عمرها بعشرين عاما. وغيرها مما تروج له مواقع السوشيال ميديا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتتهافت عليها النساء بمبرر ودون مبرر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولنقف عند الحقيقة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "دعونا نقف بجانب الحقيقة، وليس الوهم أو الإسقاطات التي تقع بها النساء والرجال أيضا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل يرفض المقال عمليات التجميل كلها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أبدا. لو نظرنا إليها لن نستطيع أن نقول إنه لا فائدة منها على الإطلاق.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل هي حقيقة بحاجة لها الكثيرون. منهم النساء اللواتي بدأت تظهر عليهن علامات الكبر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويردن أن يصلحن ما أفسده الدهر، لأسباب عديدة خاصة بحياتهن الزوجية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحالات أشد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "واللواتي تعرضن لحوادث أو تشوهات يسعين إلى إعادة ما ذهب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وإلى اللواتي تعرضن لحروق أو لمرض أضاع الكثير من ملامحهن وجمالهن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا الأمر مباح وضرورة. فأين الخلل إذن؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "الخلل في الفتيات اللواتي يدمن الجلوس على المواقع يتصفحن جمال النساء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومنهم الرجال أيضا الذين يسعون لتخبئة بعض التفاصيل التي تظهر عليهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويقومون بالنظر إلى المرآة يتصفحون خطوط وجوههم في كل ساعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وينظرون إلى أدق تفاصيل الوجه حتى أصبح أكبر همهم.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويحدث لديهم حالة نفسية لا تصدق، وتقليد الآخرين. فهذا هو الإدمان بحد ذاته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فيضيع تقدير الذات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لم يعد هناك تقدير للذات،⏸ ولا استقلال بالشخصية والجمال الذي وهبه الله لهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لا يوجد لديهم إيمان أو قناعة أو تميز باختلافهم عن الآخرين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي الحقيقة، أن كل من قامت بعملية تجميل تشبه غيرها ممن سبقنها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فنكاد نقول إن الجميع نسخ مكررة، وتبقى مدمنة لعمليات التجميل حتى تصبح مسخا. أين أنت؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن المجتمع نفسه يضغط. أليس كذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بلى، وأكثر ما يحزننا أن عمليات التجميل أصبحت ستايل.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إن لم تسع المرأة لعملها يطلق عليها متخلفة، وغير معاصرة، لمجرد أنها تقدر ذاتها وجمالها وقانعة بما هي فيه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهي قضية مجتمعية معاصرة لا بد من تسليط الضوء عليها، وليس كل ما يقال عن عمليات التجميل صحيحا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فلا بد من توعية فتياتنا ونسائنا وشبابنا، حتى لا يدخلوا مستنقع إدمان عمليات التجميل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

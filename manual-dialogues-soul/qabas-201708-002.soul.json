@@ -1,0 +1,264 @@
+{
+  "slug": "qabas-201708-002",
+  "bridgeAfter": [
+    19,
+    28
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كنت أحضر لندوة ما، وأغرق بين الأوراق.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بالإضافة إلى الإبحار بعالم المعلومات على المواقع.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حتى جاء ابني يسألني:⏸ بابا، لماذا أرى بوجوه أساتذتي الكثير من علامات الاستفهام والاستنكار؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهم يتحدثون عن طوفان، وذلك العالم الافتراضي وحصاره للناس على الأرض.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويقولون:⏸ ضاعت القيم. فنظر لابنه برهة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد عصف عقله بالكثير من المصطلحات التي حفظها بدون ترتيب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فما هي إلا مقتطعات لحوار دار بين أساتذته، وقد فهم ما يعنون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فعاد له وهو ما زال يتكلم، وقد سرح تفكيره بكلماته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهو يقول:⏸ هل هناك تسونامي قادم إلينا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فضحك كثيرا محتضنا إياه، فوالله أن كلمته هي خلاصة حوار أساتذته.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "تسونامي الواقع الافتراضي، أو طوفان قيم الواقع الافتراضي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "جلس يحدثه عن التقدم التكنولوجي الذي وصلنا له، والواقع الافتراضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن القيم بخطر، بأسلوب يستوعبه صغيره دون تعقيد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ودعونا نسترسل قليلا في هذا الأمر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إن البشر يسيرون وفق منظومة اجتماعية أخلاقية، يحكمها ذوق متباين له إطار عام تحدده البيئة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فلكل بيئة ذوقها الخاص، وتشترك مع غيرها في الذوق العام والعالمي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وانتشار وسائل التواصل الاجتماعي جعل البيئات، حتى الصغيرة منها، مع غيرها من خلال بيئة افتراضية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحتى البيئات المغلقة تخللها تسلل للبيئات الافتراضية، وأصبحت مفتوحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأصبح الناس يعيشون في البيئات الافتراضية أكثر من الواقع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إذن ما يحدد الذوق العام هو المعايير التي يتم فرضها في البيئات الافتراضية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل من مثال يقرب المعنى؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "مثلا، إنهاء صداقتك مع شخص يحتاج في الواقع إلى مقدمات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بينما في البيئة الافتراضية يحتاج إلى كبسة زر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والمتابع للواقع يجد أننا على أعتاب تغير في معايير الذوق العام.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "حيث بدأت تنسحب من الواقع الافتراضي إلى الواقع الحقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتكمن الخطورة في ذلك بأن الذوق الطبيعي هو وليد تجارب بشرية وتفاعلها مع البيئة المحيطة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويتم اكتسابه إنسانيا بشكل سهل ومتسلسل وتلقائي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أما الذوق الافتراضي، فيتم صياغته من خلال عقلية مبرمجة ومصمم إلكتروني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حيث يختار ما يراه مناسبا، وليس ما يجب أن يكون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل يستند هؤلاء إلى علم في اختيارهم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فقلة من مطوري المواقع الافتراضية يعتمدون بأبحاثهم على علم النفس لتحديد معايير الذوق العام.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل يعتمدون على معلومات زبائنهم، رواد المواقع، في تطوير مواقعهم وخاصة الذوق العام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بالإضافة إلى لمسات هم يختارونها، ويفرضها واقع البرمجة وسياسة الخصوصية والقوانين العامة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن أمام موجة تفرز قيما واتجاهات وأذواقا ستجتاح الواقع الحقيقي.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وستخلق أزمة إنسانية لن تتعافى منها البشرية بسهولة، فإذا أردت أن تغير أمة، فعليك باختراق منهج تفكيرها وتقبلها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

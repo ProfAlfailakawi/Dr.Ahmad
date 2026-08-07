@@ -1,0 +1,250 @@
+{
+  "slug": "qabas-201611-002",
+  "bridgeAfter": [
+    11,
+    27
+  ],
+  "breathAfter": [
+    31
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "منذ فترة شهدت القنوات الفضائية، خاصة الكويتية، الحدث البارز:⏸ الانتخابات النيابية.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكان هناك لقاءات مع المنتخبين للمجلس والتابعين والناخبين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ورأينا مشاهد كثيرة لحضور ندوات وخطابات المنتخبين وأتباعهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يشهدون وقتا حافلا في إرسال الدعاوى وإجراء الاتصالات عن طريق الهاتف النقال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وغيره من التقنيات التي لا تتوقف، ونشر خطابات المنتخبين وكلماتهم لجذب أكبر عدد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والتأثير على العامة في كل مشهد من تلك المشاهد.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأثارت تلك المشاهد تفكيري:⏸ بأن سياسة الصانع تحدد ثقافة المنتج.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، فتلك الأجهزة التكنولوجية والتقنية الحديثة ساهمت في تحديد ثقافة المنتج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأثرت على ثقافة الأفراد، وتبقى سياسة الصانع محدودة في التطوير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولنستفض قليلا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فاحتياجات البيئة المحيطة التي تولد ثقافة الفرد أصبحت حاجة ملحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولتوليد هذه الثقافة لا بد من تهيئة البيئة المحيطة واحتياجاتها من وقت وجهد وأجهزة حديثة متطورة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل ثقافة الفرد تولد من الأجهزة الحديثة وحدها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل ثقافة الفرد كما يعرفها البعض، ما هي إلا حلول لتحديات يواجهها الفرد مع البيئة المحيطة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن الناس يقتبسون ثقافتهم من مواقع التواصل المختلفة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ووفرت نقلة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فظهورها وفر نقلة مجتمعية ثقافية للأفراد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولو نظرنا إلى أصحاب القرار في المجتمع، فإنهم يستخدمون مواقع التواصل بشكل كبير.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولم لا؟⏸ وهي التي تجتمع بها فئات المجتمع المختلفة، ويكتسبون ثقافاتهم المختلفة منها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والقلة القليلة هي وحدها التي ليس لها حضور في مواقع التواصل المختلفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويمكن لأصحاب القرار أن يعرفوا بشكل دقيق كل ما يدور حولهم من خلالها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبالتالي فإن تكوين القرار يحتاج إلى التواصل المستمر في مواقع التواصل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من أجل تكوين المعلومات والأخبار والفكر المنتشر والثقافة السائدة لدى المجتمع، ليصبح للقرار أساس يناط له.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن جهة أخرى يصبح لأصحاب القرار التأثير الكبير على هؤلاء وتغيير توجهاتهم الثقافية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بما يصب في مصالحهم الخاصة، وتكوين المؤيدين والأتباع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فثقافة أصحاب القرار هي المؤثرة على ثقافة الأفراد وعلاقتهم ببعضهم البعض.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهي نتيجة واضحة لسياسة أصحاب الواقع الافتراضي، الذين سخروا كل المقومات والعوامل المساعدة على تحديد ثقافة المنتج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا كله يكون على حساب القلة غير المستخدمة للواقع الافتراضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فماذا بعد هذا التزايد في أعداد الأتباع؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إذا كان أعداد المؤثرين في المجتمع والأتباع في تزايد على حساب القلة غير المستخدمة للواقع الافتراضي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فإن ما تفرضه مواقع التواصل من ثقافة تحدد علاقة الأفراد ببعضهم سيكون هو النمط السائد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبالتالي فإننا أمام ثورة ثقافية يصوغها أصحاب الواقع الافتراضي، وينفذها أصحاب القرار والأتباع.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ويكفي أن خمسة وسبعين بالمئة من مستخدمي الإنترنت يستخدمون مواقع التواصل الاجتماعي يوميا عبر الأجهزة الذكية والحاسوب وغيرها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

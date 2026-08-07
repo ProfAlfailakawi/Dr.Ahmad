@@ -1,0 +1,250 @@
+{
+  "slug": "qabas-201612-003",
+  "bridgeAfter": [
+    10,
+    23
+  ],
+  "breathAfter": [
+    31
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "لقرون طويلة من الزمن، اعتمد البشر على بعضهم البعض في الحصول على المعلومات ونقلها من جيل إلى آخر.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكان للذاكرة شأن كبير في هذا الأمر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وذلك بالطبع كان قبل بدء عصر الكتب التي سمحت بتوثيق الأحداث والوقائع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما اليوم،⏸ فكل شيء بات محفوظا في سحابة الإنترنت، وأصبح الوصول إليه سهلا ومتاحا للجميع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومع هذه الحقيقة، تضاءلت أهمية الذاكرة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بسبب الاعتماد الكبير على تخزين الأرقام والمعلومات والتواريخ في أجهزتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحفظها في صفحاتنا الخاصة على الإنترنت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك أثر آخر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا من دون ذكر أن مواقع التواصل الاجتماعي خلقت حالة من عدم التركيز المطول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بسبب كثرة المعلومات الواردة، وعدم القدرة على استيعاب كل ما تحمله بشكل كامل في الوقت القصير المتوفر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حتى بات الدماغ أن يفقد صوابه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن للتكنولوجيا فضلا لا ينكر، أليس كذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "صحيح، فالتكنولوجيا سمحت لنا بتطوير مهاراتنا الفنية، ومكنت الموهوبين من تطوير ملكاتهم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن الاستفادة من خبرات فنانين آخرين، بحيث يكون عمل الجميع جميلا ومبدعا ومتفردا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقوت القدرات البصرية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأن الاستخدام الدائم للإنترنت وللشاشات المضيئة يتسبب بتقوية القدرات البصرية لدينا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويجعل قدرتنا على اتخاذ القرارات السريعة أكثر دقة، اعتمادا على العوامل التي نشاهدها حولنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهناك بعض الباحثين يصفون الإنترنت بأنه تحول بصورة أو بأخرى إلى صديق عالم بكل شيء.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ليس فقط بما يخصك أنت شخصيا،⏸ بل أيضا كل شيء عن العلوم والتاريخ والطب والأديان والهندسة والجغرافيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هناك سرعة لتخزين المعلومات في الدماغ، فلكل شيء طاقة احتمالية معينة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يمكن أن نذكر الإيجابيات والمحاسن، وننسى أن لكل إيجابية وميزة تصل إلى السلبية من زخم ما تحتوي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والأعراض الاضطرابية التي تظهر على المستخدم، رغم اكتسابه للمهارات والقدرات الفنية والتكنولوجية العالية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بالإضافة إلى المعلومات التي لا حصر لها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومن هذه الاضطرابات القلق، وقلة النوم، والشعور بالإرهاق وقت الاستيقاظ في اليوم التالي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما علاقة الأجهزة بالنوم تحديدا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لأن الضوء الأزرق، وهو ما يعد طول الموجة الأكثر انتشارا في الهواتف الذكية وأجهزة الكمبيوتر اللوحية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "قد يؤدي إلى اضطراب الساعة البيولوجية لكل منا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولنتفكر قليلا في هذا العالم التكنولوجي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فالجميع أصبح يعتمد على التكنولوجيا في عرض المعلومات ونقلها، في الهاتف النقال والإعلانات والتلفزيون وغيرها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وجميع ما حولنا يشكل نوعا من المعلومات المخزنة، بالإضافة إلى ضغط على الجانب البصري على حساب باقي الحواس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فضلا على أن جميع المعلومات، مع كثرتها، تدخل للدماغ⏸ لكن بدون ترتيب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إن العادة البشرية في التخزين تقليدية، وبحاجة إلى عقود من الزمن حتى تتطور القدرة التخزينية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فهل ستبقى المعلومات في أدمغتنا حتى يأتي الزمن الذي تتطور فيه الأدمغة لتواكب سرعة التطور؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

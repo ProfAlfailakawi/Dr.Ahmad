@@ -1,0 +1,257 @@
+{
+  "slug": "qabas-201704-004",
+  "bridgeAfter": [
+    13,
+    25
+  ],
+  "breathAfter": [
+    32
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كنت جالسا بعد محاضراتي الطويلة، أقرأ بحثا لفت انتباهي.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد كان بحثا عن استخدام التكنولوجيا في التعليم والخطاب الديني.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "نعم، لقد لفت انتباهي أنه في الدين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتمت معالجة دروس دينية لآيات قرآنية وغيرها باستخدام برمجيات محوسبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فراقت لي التجربة،⏸ وما قد تحققه من أهداف تعليمية وتربوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في غرس المعلومة واكتساب القيم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وقد تتطور إلى كافة المجالات، وطرح الخطاب الديني بطريقة أكثر تشويقا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وراقت له نتائج الدراسة الإيجابية، وكيف أن الدين طوع التكنولوجيا لتحقيق الأهداف التعليمية والتربوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وذهب في فكره إلى الخطاب الديني:⏸ فلو كان بالإمكان تطويره تكنولوجيا، كيف سيبدو؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "من المعلوم أن الخطاب الديني يعتمد على نقل المأثور بالمشافهة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن يتصدر الخطاب الديني يجد صعوبة في تطويع التكنولوجيا لمصلحة الهدف الذي يسعى له.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نظرا للتسارع الهائل في التطورات التكنولوجية، والتي تحتاج متابعة وتركيزا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وعند الوهلة الأولى، نجد أن طبيعة التطورات في التكنولوجيا تركز على مجالات بعيدة عن الخطاب الديني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والقلة من المطورين يهتمون ببناء برمجيات وتطبيقات وأجهزة موجهة لخدمة الخطاب الديني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما أسباب هذه الفجوة في رأيك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "منها أن اهتمام علماء الدين على علوم الشريعة ينصب بشكل يجعل اهتمامهم بالتطور التكنولوجي ضعيفا جدا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد يكون قلة وعي واهتمام الشركات المطورة للأجهزة والبرمجيات بالخطاب الديني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويبدو أن افتقار المطورين للمعرفة بطبيعة الخطاب الديني، أخر عملية الدمج بينهما.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي الغالب سبب آخر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي الغالب قد يكون السبب القداسة التي تكتنف المعرفة الدينية، نتيجة ارتباطها بالقرآن الكريم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "جعلت البعض يقصرها على المجالس وحلقات الدين، والمشافهة والنقل المباشر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "دون الاستعانة بمعينات بصرية أو سمعية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إن نقل التراث الفكري الإسلامي من خلال معينات سمعية وبصرية، جعل البعض يفقد الثقة بالمحتوى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "نظرا لضعف الرقابة عليه، بالإضافة إلى سهولة الطعن والتزوير من خلال القنوات التكنولوجية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبالتالي، ولهذه الأسباب وغيرها، بقي الخطاب الديني يتقدم بحذر نحو تطويع التكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لخدمة الفكر والتراث الإسلامي، وبقي الأمر مقصورا على مجموعة ضيقة لا تفي هذا الدين حقه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نرى يوما صورة أخرى غير هذه؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويبقى السؤال:⏸ هل سنرى في يوم من الأيام أن خطيب الجمعة سيستعين بجهاز العرض؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أو شيخا في حلقة ذكر يستخدم تقنية الواقع المعزز؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كل تلك التصورات نأمل أن ترى النور في القريب العاجل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالعلم والتكنولوجيا ليست حصرية لمجال معين على حساب مجال آخر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل هي بحاجة إلى عزيمة وإرادة رجال ذلك المجال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تكون البداية من علماء الدين الذين يجتمعون كل فترة من الزمن بالمؤتمرات الإسلامية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وتكون شروط البحوث المقدمة للمؤتمر في إطار التقديم التكنولوجي، وعرضها من خلال التقنيات الحديثة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

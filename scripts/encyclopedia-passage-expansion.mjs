@@ -40,9 +40,14 @@ export const CACHE_VERSION = 4
 
 /* ═══ الكتب التي تُقرأ بهذا المحرك ═══
  *
- * شرطُ الدخول أن يحمل ملفُّها طبقةَ نصّ: الهندسة تقرأ ما رُسم لا ما صُوّر.
- * وثلاثةٌ من الكتب التسعة مصوَّرةٌ بلا نصّ (الطفل والتكنولوجيا ١٪، البيانات
- * الضخمة ٥٪، العالم الافتراضي ٠٪) فتبقى على مسار OCR كما كانت.
+ * لكل كتابٍ المسارُ الذي يناسب ملفَّه، والبوابات والبرهان واحدة للجميع:
+ *   · الموسوعة: هندسةُ صفحاتها وتصادُقُ مستخرجَيها — نصُّها كامل ومرسوم.
+ *   · الثمانية الباقية: تعرُّفٌ ضوئيّ محليّ (Vision في macOS، بلا شبكة ولا
+ *     خدمة مدفوعة). ثلاثةٌ منها مصوَّرةٌ بلا طبقة نصّ أصلاً (الطفل ١٪،
+ *     البيانات الضخمة ٥٪، العالم الافتراضي ٠٪)، وخمسةٌ هجينةٌ طبقةُ نصّها
+ *     مبتورة: من كل ثلاث صفحات واحدةٌ لا تُخرج حرفاً، والباقية تُخرج ثلث ما
+ *     فيها (٥١١–٧٤٦ حرفاً للصفحة مقابل ٢٬٢٥٤ في الموسوعة). وقياسُ الفرق
+ *     حاسم: «التلعيب» ٤١٪ تغطيةً بنصّ مجراه و٦٥٪ بتعرّفه الضوئي.
  *
  * حدود المتن تُشتقّ من محاور الكتاب (المقدمة ← الخاتمة، وقائمة المراجع
  * مستثناة)، إلا الموسوعة فمحاورها تخلط الخاتمة بالمراجع، فحدودُها مقيسةٌ
@@ -54,14 +59,14 @@ export const ENGINE_BOOKS = {
     body: { start: 34, end: 656 },
     sentinels: { opensWith: 'انتشرت التكنولوجيا', referencesAt: 658, referencesMark: /قائمة مصادر ومراجع/u },
   },
-  'digital-education': { source: 'stream', file: /^01-.*digital/i },
+  'digital-education': { ocr: 'digital-education', file: /^01-.*digital/i },
   'kids-tech': { ocr: 'kids' },
   'mega-data': { ocr: 'mega' },
   'virtual-world': { ocr: 'virtual' },
-  gamification: { source: 'stream', file: /^02-.*gamification/i },
-  'handy-tech': { source: 'stream', file: /^03-.*handy/i },
-  'smart-school': { source: 'stream', file: /^06-.*smart/i },
-  teaching: { source: 'stream', file: /^07-.*teaching/i },
+  gamification: { ocr: 'gamification', file: /^02-.*gamification/i },
+  'handy-tech': { ocr: 'handy-tech', file: /^03-.*handy/i },
+  'smart-school': { ocr: 'smart-school', file: /^06-.*smart/i },
+  teaching: { ocr: 'teaching', file: /^07-.*teaching/i },
 }
 
 const REFERENCE_SECTION = /قائمة المراجع|قائمة مصادر|المصادر|الفهرس|المحتويات/u
@@ -102,6 +107,10 @@ export const normalizeArabic = (value = '') => String(value)
   .replace(/([ء-يٱ-ۓ])[ \t]+([ً-ٍ])/g, '$1$2')
   .replace(/([ً-ٍ])\1+/g, '$1')
   .replace(/[ \t]+/g, ' ')
+  /* الفاصلة اللاتينية بين حرفين عربيين قراءةٌ خاطئة للفاصلة العربية لا حرفٌ
+     في الكتاب — تطبيعٌ من جنس تطبيع التنوين، لا تعديلَ نصّ. */
+  .replace(/([؀-ۿ])\s*,\s*(?=[؀-ۿ])/gu, '$1، ')
+  .replace(/([؀-ۿ])\s*;\s*(?=[؀-ۿ])/gu, '$1؛ ')
   /* هندسة الصفحة تفصل الترقيم عن كلمته («التعليم .») — المسافة أثر قياسٍ
      لا حرفٌ في الكتاب، فتُزال. والقوس والتنصيص يُلصقان بما يليهما. */
   .replace(/ +([.،؛:!؟»)”\]])/gu, '$1')
@@ -182,6 +191,10 @@ export function sentenceRejection(text = '', { standalone = true } = {}) {
   for (let index = 0; index + 1 < bare.length; index += 1) {
     if (bare[index].length >= 4 && bare[index] === bare[index + 1]) return 'تكرار متلاصق'
   }
+  /* التعرّف الضوئي يخطئ خطأً خاصاً به: يلصق حرفاً غريباً أو يقرأ الحرف
+     الأول من الكلمة فيبتره («ستخدم» بدل «تستخدم»). والحرف المكرر ثلاثاً
+     في كلمةٍ واحدة أثرُ تشويش لا لغةٌ عربية. */
+  if (/([؀-ۿ])\1\1/u.test(value)) return 'حرف مكرر ثلاثاً'
   if (/(?:^|\s)[ء-ي]\s*[-–—]\s/u.test(value)) return 'بند قائمة'
   /* «أ. كذا» عنوانٌ اندسّ في السطر عند الاستخراج فذيّل الجملة بحرفٍ منقوط. */
   if (/\s[ء-ي]\.$/u.test(value) || /(?:^|\s)[ء-ي]\.\s/u.test(value)) return 'ذيل ترقيم'
@@ -359,14 +372,15 @@ function blocksFromLines(text = '') {
   return { blocks, headings }
 }
 
-export function loadEngineBook(slug) {
+export function loadEngineBook(slug, { mode } = {}) {
   const config = ENGINE_BOOKS[slug]
   if (!config) throw new Error(`الكتاب «${slug}» ليس من كتب هذا المحرك.`)
-  if (config.ocr) return { pages: loadOcrPages(config.ocr), passthrough: true }
+  const source = mode || config.source || (config.ocr ? 'ocr' : 'geometry')
+  if (source === 'ocr') return { pages: loadOcrPages(config.ocr || slug), passthrough: true }
   const loaded = loadBookPages(slug)
   /* خطُّ بعض الكتب لا يناسب قراءة الهندسة (يبعثر الحروف ويخلط الكلمات)،
      بينما نصُّ مجراها سليم. فتُقرأ من مجراها بالأنبوب نفسه وبوابته نفسها. */
-  if (config.source === 'stream') {
+  if (source === 'stream') {
     return {
       pages: loaded.pages.map((page) => ({ ...page, ...blocksFromLines(page.text) })),
       passthrough: true,

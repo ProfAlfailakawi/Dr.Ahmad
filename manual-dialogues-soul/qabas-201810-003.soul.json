@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201810-003",
+  "bridgeAfter": [
+    16,
+    28
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "بقدر ما كنا نتحدث عن إيجابيات السوشيال ميديا في حياتنا.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكنا نستبشر بها الخير للجميع في كل مكان.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بدأنا نستاء لبعض محتوياتها التي ضاقت بها الصدور.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وسمعت تخوف الكثيرين منها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وسمعت من الكثيرين تخوفهم الشديد على أبنائهم رواد السوشيال ميديا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فقد انتشرت وبشكل ملحوظ مواقع الإلحاد بين الناس.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفاحت رائحتها بيننا حتى ضاق منها الخناق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويقع من يتابعها في مستنقع الإلحاد دون أن يشعر بذلك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو على الأقل يراجعون عقائدهم، وهنا يبدأ طريق الضلال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والوقوع في شباك الضالين، وهنا دق ناقوس الخطر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إن مواقع الإلحاد التي تنتشر في السوشيال ميديا تهدف إلى نشر الفكر العلماني.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتعمل على نشر الشبهات في الأمور العقائدية بين الشباب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والاستهزاء في نخب الإسلام وثوابتها،⏸ فهي مواقع مخصصة لذلك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويبدأ روادها في الرد على شبهاتهم بما يعرفونه هم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن الطامة الكبرى تكمن في أمر آخر أخطر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أن معظم الذين يتصفحون مثل هذه المواقع ليس لديهم خلفية إيمانية قوية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فتجد بعضهم يتأثر، والبعض يشك، والبعض يلحد للأسف.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما سبب ذلك كله في رأيك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وسبب ذلك عدم تمكنهم من علوم القرآن أو الحديث.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتعد مسألة انتشار ظاهرة الإلحاد عبر مواقع السوشيال ميديا من أخطر القضايا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "التي تهدد مجتمعاتنا الإسلامية كلها في السنوات الأخيرة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وقد يكون من أسبابها إتاحة مواقع السوشيال ميديا بأنواعها مساحة واسعة من الحرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "للفرد في التعبير عن آرائه، وجرأة التعبير دون أي قيود.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ودون وجود قيود خارجية تتحكم في استخدامها اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبعيدا عن المحاذير التي تفرضها الأعراف الدينية والاجتماعية علينا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وبالتالي كسر الحواجز الإنسانية، والجغرافية، والعمرية، والزمنية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بينما لو نظرنا في المقابل، تحولت تلك المواقع إلى ساحة للمعارك والصراعات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فعلى الرغم من الدور الهام لمواقع السوشيال ميديا كأداة لدعم حرية الرأي والتعبير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وترسيخ قيم الديمقراطية، إلا إنها في الوقت نفسه تثير مخاوف تتعلق بدورها السلبي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأين التوازن المطلوب في هذه المسألة كلها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومن أهم الإشكاليات التي تطرحها قضية التعامل مع العالم الافتراضي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يتعلق بكيفية تحقيق التوازن بين الحق في حرية الرأي والتعبير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبين ما يمثل استخدامها من تهديد لأمن الأفراد والمجتمع بشكل عام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فضلا عن إشكالية الفصل بين الاستخدام الإيجابي لتلك الشبكات وبين استخدامها السلبي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فمما لا شك فيه أن شبكة الإنترنت لعبت دورا محوريا في انتشار ظاهرة الإلحاد بين الشباب العربي.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فهل ستبقى العيون موصدة حتى يدخل الإلحاد بيوتنا؟⏸ ولكم حرية الرد وطرح الحلول.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

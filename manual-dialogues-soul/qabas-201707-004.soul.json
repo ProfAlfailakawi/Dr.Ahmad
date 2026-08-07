@@ -1,0 +1,265 @@
+{
+  "slug": "qabas-201707-004",
+  "bridgeAfter": [
+    19,
+    25
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كنت أجلس مع والدي في أحد الأيام، وكان معه عدد من أصدقائه.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكان أحدهم يقول:⏸ إن أحفاده لا يريدون أن يغيروا له مطبخه القديم المتهالك.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والكثير من تسريبات المياه التي تحتاج إلى تغيير.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فسأله: لماذا يا عم؟⏸ هؤلاء متكاسلون. فهز رأسه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فقال: ليتها كذلك،⏸ بل الأمر فاق الكسل والاتكالية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فكل أحفادي وأبنائي يحملون أحدث الهواتف الذكية في أيديهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والآيبادات، وأجهزة متطورة كثيرة، وغيرها مما لم نره في أيامنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يحرصون على تجديدها، ولكن لا يحرصون على تجديد أساسيات حياتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو تلبية احتياجاتنا الملحة في البيت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بقي ينظر إليه، وقد لمس من كلامه عمق وحقيقة هذا الواقع.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وما نحن عليه نتيجة للتطور الكبير الذي نعيش فيه على حساب حاجاتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلو نظرنا إلى عصرنا، نجد أنه بدأت التطورات التكنولوجية مع ظهور الكهرباء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبدأت في الانتشار في العالم مع نهايات النصف الأول من القرن الماضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك علاقة وثيقة بين نهاية الحرب العالمية الثانية والتطور السريع للتكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حيث يشير تقرير التطور التكنولوجي العالمي إلى أن التكنولوجيا غزت حوالي أربعين بالمئة من سكان الكوكب.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ويقاس ذلك المؤشر من خلال ثلاثة عوامل:⏸ الأشخاص، والحكومات، والأعمال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والعجيب في الأمر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والعجيب أن كثيرا من الدول النامية والفقيرة، تجد انتشارا واسعا لقطاع الاتصال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فتجد في كل بيت هاتف نقال،⏸ في حين لا تجد بنية تحتية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا مراحيض،⏸ ولا شبكة مياه في تلك البيوت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل يعقل أن يسبق الهاتف الماء في سلم الحاجات؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتجد الكثيرين ممن يسعون على مواكبة التطور والتجديد والتغيير.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن آخر اهتماماتهم أن يلبوا احتياجاتهم الأساسية، وتطوير بناهم التحتية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والسؤال الذي يتبادر إلى الذهن هو:⏸ لماذا قفزنا عن احتياجاتنا الأساسية؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "إلى رفاهية عجزت عن سد تلك الاحتياجات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "قد تكون الرغبة في التواصل البشري هي الإجابة على هذا التساؤل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والتساؤل الآخر:⏸ ما فائدة التطور التكنولوجي الذي يعجز عن سد احتياجاتنا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إن توجيه قطاع التكنولوجيا لخدمة البشرية يقع على عاتق البشر أنفسهم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فما التكنولوجيا إلا أداة تعجز عن خدمة نفسها إذا تخلى عنها البشر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالمطبخ المتهالك ما زال ينتظر، والهواتف تتجدد في كل عام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبين الحاجة والرفاهية مسافة، أضعناها في زحمة التطور والتجديد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتكنولوجيا غزت حوالي أربعين بالمئة من سكان الكوكب، ولم تسد حاجاتهم الأساسية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وما زالت البنية التحتية غائبة، ~~ والهاتف النقال حاضر في كل بيت.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالتكنولوجيا أداة، ونحن من يحدد إن كانت تسد حاجة، أم تزيد الفجوة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "وتوجيهها لخدمة البشرية يبقى على عاتق البشر أنفسهم،⏸ لا على عاتقها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

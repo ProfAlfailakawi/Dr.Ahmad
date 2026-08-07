@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201806-001",
+  "bridgeAfter": [
+    17,
+    29
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في ضوء كوني دكتورا في كلية التربية الأساسية، فإني أرى أن هناك رؤى مجحفة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في حق هذه الكلية العريقة، وكذلك في كلية التربية جامعة الكويت.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والتي تخرج الآلاف من التربويين والإداريين والنفسيين والتكنولوجيين والفنيين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وغيرهم الكثير من التخصصات التي تعج بها الكليات التربوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وعندما نجلس في مجالس الرجال أو العائلة، نجد من يريد ابنه أن يكون عالم ذرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكيميائي وطبيب ومهندس، وغيرها من التخصصات العلمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إلا أن المشكلة الحقيقية أنه لو نظرنا إلى مستوى هؤلاء الطلبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لوجدنا غير ما يقولون عنهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لوجدنا أنهم ليس كما يقولون مستويات متدنية ومعدلات أقل منها من التخصصات العلمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويرغبون أن يكونوا ضمن تخصصات كليات التربية الكثيرة والمختلفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن نظرة الأهل التي تقلل من قيمة كليات التربية، وتستهين بتخصصاتها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل يستوي سوق العمل وينتج بدون خريجي كليات التربية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي كل عام دراسي.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي كل عام تستنفذ طاقات كلية التربية، البقرة الحلوب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الأكاديميين والقائمين عليها، والجهود المبذولة من أجل مخرجات تلائم حاجة السوق ومتطلباته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن تلك النظرة الضيقة التي ما زالت في مجتمعنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "جعلت منها وكأنها أقل مكانة من الكليات العلمية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "إن كليات التربية هي البقرة الحلوب التي تغذي المجتمع وسوق العمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وماذا لو غابت هذه المخرجات عن السوق؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بكفاءات ومهارات وخبرات، لولاها لأصبح مجال الأعمال يفتقر لتلك التخصصات والكفاءات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وسنصبح مستوردين لها، بدل أن نستغل أيدينا العاملة الوطنية من مخرجات كليات التربية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وسنستيقظ ذات يوم نبحث عن إداري، ومرشد نفسي، ومعلمين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفنيي تكنولوجيا ومبرمجين، وغيرهم من خريجي كليات التربية، فلا نجد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وستتأخر عجلة الإنتاج، وستفشل الكثير من المؤسسات ومجالات العمل والتربية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وغيرها من المجالات الخدمية، فنقف في حيرة من أمرنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلا الوقت يسعفنا أن نبدأ في تفعيل تخصصات كليات التربية للحاجة الملحة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولن ينفعنا الكم الهائل من الأطباء والمهندسين والتخصصات العلمية لتقدم يد العون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهي بعيدة كل البعد عما نحتاجه في ذلك الوقت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لذلك، دعونا نرعى تلك البقرة الحلوب، كليات التربية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونؤمن بمخرجاتها المهمة التي يحتاجها سوق العمل في كل عام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نفاضل بين كليات التربية والكليات العلمية؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ليس هناك مفاضلة بينهم، ولسنا في معركة نخوضها لتحقيق أمنيات الآباء.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فمجتمعنا يحتاج إلى كل التخصصات الإنسانية والعلمية معا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكل تخصص له دوره الذي يحتاجه المجتمع في مكانه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونراعي أهمية كليات التربية بتخصصاتها المختلفة والكثيرة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولنوقف أسلوب قمع الأبناء الراغبين في الانتساب إلى كليات التربية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ونطلق الحرية لهم في تحقيق رغباتهم وأهدافهم التي رسموها طوال سنين طفولتهم ومراهقتهم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

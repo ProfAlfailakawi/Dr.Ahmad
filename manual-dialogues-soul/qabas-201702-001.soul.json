@@ -1,0 +1,251 @@
+{
+  "slug": "qabas-201702-001",
+  "bridgeAfter": [
+    12,
+    23
+  ],
+  "breathAfter": [
+    31
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في السابق كنا نبذل جهدا كبيرا في العمل أو الدراسة أو في المباني الحكومية.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في أي منحى من مناحي الحياة،⏸ فكل شيء كان يدويا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ويعتمد على الجهد الخاص، والحركة الدائمة لإنجاز أي عمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والأرشيف مكان للملفات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والأرشيف هو مكان لحفظ الملفات، وفي الغالب هي مخازن أو غرف مخصصة لأرشفة الملفات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "في أي مكان خاص أو عام، على الرغم من وجود بعض ظواهر التكنولوجيا الأولى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولم نكن نعرف طعم الراحة إلا في منازلنا بين أسرنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نستلقي بعد الغداء وننام لنأخذ قسطا من الراحة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حيث تتعطل وظيفة أعضائنا بعد يوم كثير الحركة، وهذه مقومات الراحة الأولية لدينا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فليس هناك تكنولوجيا متقدمة وهواتف ذكية كما اليوم، تزيح عنا الكثير من الجهد والتعب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتقرب المسافات، وتختصر الوقت في كل عمل نقوم به.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "هذا في السابق،⏸ أما اليوم، فما معنى الراحة؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل الراحة هي عدم القيام بأي عمل على الإطلاق؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فإذا كانت كذلك، فلماذا لا نتناول عقارا وندخل في سبات يعفينا من أدنى أنواع الحركة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لأن الراحة هي التقليل من آلية عمل الأشياء عند السعي لتحقيق إنتاج، دون الإخلال بالنظام الطبيعي لعمل الجسم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بمعنى أن لا يصل حد اختصار خطوات العمل بشكل يجعلك تعطل وظيفة أعضاء جسمك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما مفهوم الراحة في التكنولوجيا الحديثة،⏸ فهو سعي إلى تقديم الإنتاج دون أي جهد يذكر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "الأمر الذي جعل البشر يدخلون في سبات حركي وظيفي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "جعلهم أسرى للكثير من الأمراض العصرية، كالسكر والضغط والكوليسترول وغيرها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فضلا عن العزلة والكآبة وغيرها من أمراض هذا العصر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وللتكنولوجيا فضلها أيضا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالتكنولوجيا تمكن الإنسان من تطوير الموارد المتاحة أمامه لتسخيرها في خدمته وتحقيق الراحة والرفاهية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حيث دخلت التكنولوجيا في جميع جوانب حياة الإنسان، فأصبحت ظاهرة عامة ومهمة، ~~ موجودة في البيت والشارع والعمل.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد سهلت هذه التكنولوجيا حياة الإنسان، ومكنته من القيام بأعماله بشكل أفضل وأسرع وأدق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فأين الخلل إذا كانت بهذه المنفعة كلها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "باتت الإيجابيات مع الوقت سلبيات، وذلك لسوء استخدام الإنسان الصحيح للتكنولوجيا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والراحة أصبحت تساهلا وتواكلا وتبسيطا لكل الأمور.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبات علينا أن نعيد معالجة مفهوم الراحة عند تقديم التكنولوجيا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ونجعلها تركز على الاختصار دون الإخلال بالوظيفة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالتكنولوجيا أدوات تسهيل حياة الإنسان في كافة المجالات، لا أكثر من ذلك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وليست الاتكال على التكنولوجيا بشكل كبير، فنجد منهم من لا يقوم بأي جهد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "مما ولد الكثير من الأمراض، والأمر يحتاج إلى إعادة معالجة لمفهوم الراحة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فليست الراحة أن نعطل أعضاء أجسامنا،⏸ بل أن نختصر الجهد دون الإخلال بالوظيفة. وعليكم التصويب.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,264 @@
+{
+  "slug": "expectations-that-shape-a-studentarabic",
+  "bridgeAfter": [
+    7,
+    21
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "بعض الطلاب لا يسقطون لأنهم عاجزون.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل لأن أحدا أقنعهم، بصمت طويل، أنهم أقل مما يمكن أن يكونوا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي المقابل هناك من ينهضون لأن مُعلِّماً واحدا نظر إليهم نظرة مختلفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كما لو أنهم مشروع احتمال جميل لم يكتمل بعد.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فالمعلم لا يشرح الدرس فقط. أحيانا يشرح للطالب نفسه دون أن يشعر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف يشرحه؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بنبرة صوته، ونوع أسئلته، ومساحة الصبر التي يمنحها، وطريقة تعليقه على الخطأ.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كل ذلك قد يقول للطالب شيئا أخطر من أي درس:⏸ أنت قادر. أو: لا أتوقع منك كثيرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أليست هذه مبالغة أدبية؟⏸ نظرة معلم لا تصنع مصيرا.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال سبقك إلى هذا الاعتراض، ورد عليه بتجربة لا بشعر.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تجربة روزنتال وجاكوبسون، المعروفة باسم Pygmalion in the Classroom.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أخبروا بعض المعلمين أن طلابا معينين مرشحون لنمو أكاديمي أسرع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "مع أن الاختيار كان عشوائيا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والنتيجة أن أثر التوقعات ظهر في أداء بعض هؤلاء الطلاب، خصوصا في المراحل المبكرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأن نظرة المُعلِّم نفسها بدأت تغير طريقة تعامله معهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتوقع لم يبق شعورا في صدره،⏸ بل صار سلوكا في صفه.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ومن زاوية أخرى تشرح كارول دويك في أعمالها حول عقلية النمو أمرا قريبا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن الطالب حين يشعر أن قدرته قابلة للتطور يصبح أكثر قابلية للمحاولة بعد الإخفاق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن الجهد ليس علامة نقص⏸ بل طريق نمو.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أما حين يعامل الذكاء كحكم نهائي،⏸ فإن الخطأ يتحول إلى تهديد للهوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لا مجرد محطة في التعلم. وهنا الخلاصة الأولى.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ليست المشكلة دائما في المنهج،⏸ بل في السقف النفسي الذي نضعه فوق رأس الطالب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأنا لا أتهم المعلمين. أكثرهم يفعل ذلك بحسن نية.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا بيت القصيد:هذا حرفيا. بحسن نية يوزعون داخل الصف أحكاما غير مكتوبة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذا شاطر، وهذا عادي، وهذا لن يتغير.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ثم يبدأ كل طالب في السكن داخل الاسم الذي وضع له.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "السكن داخل الاسم. وصف موجع ودقيق.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتحليلات جون هاتي في Visible Learning تبين أن أثر المُعلِّم لا يختصر في شرح المحتوى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل يتعزز بقوة مع جودة التغذية الراجعة، وارتفاع التوقعات، وقوة العلاقة بين المُعلِّم والطالب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لهذا فالتوقع التربوي ليس شعورا داخليا بريئا. إنه مناخ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كلمة واحدة تغير الفهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فحين يدخل الطالب صفا يشعر فيه أن المُعلِّم يراه أكثر من درجته وتاريخه السابق، يبدأ في التحرر من صورته القديمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحين يلتقط رسالة خفية تقول لن تأتي منك، فإنه قد يتعلم الانسحاب قبل أن يتعلم الفهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فربما لا يحتاج بعض الطلاب إلى شرح أكثر،⏸ بل إلى عين تربوية لا تستعجل الحكم، ولسان لا يوزع السقوف.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالطالب لا ينمو فقط بما نعلمه،⏸ بل أيضا بما نتوقعه منه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

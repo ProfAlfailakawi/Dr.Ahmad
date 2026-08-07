@@ -1,0 +1,280 @@
+{
+  "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
+  "bridgeAfter": [
+    17,
+    24
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "حين تعلو صفارات الإنذار، ~~ لا يرتجف الصوت وحده.",
+      "feeling": "gravitas",
+      "feeling2": "hush",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ترتجف معه لحظة داخل القلب.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فالعدوان الإيراني الغاشم الذي يملأ نشرات الأخبار ليس مجرد عنوان سياسي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل هو حدث نسمعه في السماء، ونراه في العناوين، ونشعر به داخل بيوتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وصوت الصواريخ ليس مجرد صوت. هو سؤال مفاجئ عن الأمان، وعن الغد.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعن أطفالنا أيضا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "عن أطفال ينظرون إلى وجوهنا بحثا عن تفسير.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالكبار يتابعون التحليلات، والصغار يلتقطون النبرة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "قد لا يفهم الطفل الصغير معنى تصعيد أو منظومات دفاع.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكنه يفهم جيدا معنى القلق في صوت والده، ~~ ومعنى التوتر في نظرة أمه.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ففي الأزمات لا تنتقل الأخبار فقط. تنتقل المشاعر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لكن في اللحظة نفسها التي نسمع فيها صفارة الإنذار، هناك من يسهر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "رجال ونساء يقفون بين الخطر وسماء الكويت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لا يرفعون أصواتهم،⏸ ولا يبحثون عن صورة. يعملون في صمت لكي ننام نحن بطمأنينة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهؤلاء هم الأبطال حقا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالوطن لا يحمى بالشعارات،⏸ بل بيقظة العيون، وانضباط العقول، وثبات القلوب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي خضم هذا التوتر يظهر صوت آخر. صوت يبرر العدوان أو يخفف من خطورته.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو يخلط بين التحليل والولاء.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وليس الاختلاف في الرأي هو المشكلة. فالرأي يناقش.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لكن حين يتقدم التعاطف مع المعتدي على الانتماء للوطن، تختل البوصلة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحرية التعبير قيمة نحتمي بها جميعا،⏸ لكنها لا تعني أن نفقد حس الاتجاه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والوطن ليس بطاقة هوية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ليس وجهة نظر مؤقتة،⏸ ولا بطاقة هوية تستخدم عند الراحة وتعلق عند الأزمات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي لحظات الخطر لا يطلب من الجميع أن يتفقوا،⏸ لكن ينتظر منهم أن يعرفوا أين يقفون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والأزمات لا تختبر قوة الدفاع فقط،⏸ بل قوة الداخل.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل نصبح فوضى مع كل إشاعة تنتشر؟⏸ أم نصبح وعيا يزن الكلمة قبل أن ينقلها؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وصفارات الإنذار قد تعلن احتمال خطر،⏸ لكنها تعلن أيضا أن هناك دولة تعمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومؤسسات لا تنام، وأبطالا يسهرون من أجل الكويت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومع ذلك، ماذا نقول لأطفالنا؟⏸ الصمت التام ليس حلا.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هذه الحقيقة وحدها كافية لأن نعلمهم درسا مختلفا: أن القوة ليست صراخا،⏸ بل اتزان.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالخطر الأكبر ليس ما يأتي من الخارج فقط،⏸ بل ما ينكسر في الداخل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حين يفقد المجتمع هدوءه، تصبح الشائعة أقوى من الحقيقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا تحذير الأهل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وحين نبالغ في الخوف أمام أطفالنا، نزرع فيهم قلقا أطول عمرا من الحدث نفسه.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فحين تعلو صفارات الإنذار، يعلو معها معنى الانتماء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وحين يسهر الأبطال في السماء، علينا أن نسهر نحن على حماية وعينا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالكويت لا تختبر اليوم بقوة دفاعها فقط،⏸ بل بقوة تماسكها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

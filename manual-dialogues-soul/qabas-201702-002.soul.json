@@ -1,0 +1,250 @@
+{
+  "slug": "qabas-201702-002",
+  "bridgeAfter": [
+    17,
+    24
+  ],
+  "breathAfter": [
+    31
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "أصبحت مجتمعاتنا تعاني من غربة باتت من واقعنا، غربة رغم ما فيها من مقومات الترفيه والتسلية.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعندما ندخل البيت، نجد ما فيه يعيش عالمه مع الهاتف النقال.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وعلى المائدة، رفيق الملعقة التي باليمين، والهاتف بالشمال، وفي الديوانية لم نعد كما السابق.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نتحدث بموضوع فينقطع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نتحدث بموضوع، فنجد الهاتف يشغلنا عن إكمال ما بدأناه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي الوظيفة نجد متطفلا اسمه الهاتف، يقف عائقا بين الموظف وعمله، وبينه وبين زملائه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتسوق في الغالب لشراء إكسسوارات للهاتف، والتعرف على الجديد من الهواتف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأجياله التي أصبحت كالمرأة الولود، جيلا يتبعه جيل بلا توقف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما السيارة وعند الإشارة الضوئية، تجد الجميع ينتظر الإشارة لكي يمسك بهاتفه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ليتفحص من المتصل، ومن المرسل، وصديقه أو قريبه في السيارة التي بجانبه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يلاحظ أحدهم الآخر، على الرغم أننا كنا نتسابق لتجاوز الإشارة قبل أن تصبح حمراء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أصبحنا في عالم مليء بالاغتراب. أهو الإدمان على الهاتف؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "أم أننا لم نعد نشعر بالوقت؟⏸ يبدو أن هذا الأمر بات واقعا لا مفر منه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لم نعد نشعر بالوقت،⏸ بل نحتاج أضعاف أضعاف هذا الوقت لكي نستطيع تصفح المزيد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومتابعة الجميع، وتحميل ومشاهدة الفيديوهات واليوتيوبات وغيرها من كل جديد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولو نظرنا في إطار المجتمع، نجد أن أفراده في غربة مطلقة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ويحسد كل منهم الآخر لما يملك من هاتف وإكسسوارات وغيرها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فللهاتف النقال برستيج خاص، وعالم له خصوصياته.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل تكون خصوصية الجهاز أهم من خصوصية صاحبه؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هذا ما يقوله المقال:⏸ تعتبر أهم من خصوصية الفرد الشخصية، حالة من الجنون.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن أجل تسليط الضوء على الإدمان بصوره الحقيقية، والبحث عن علاج لهذا الإدمان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فإن هناك العديد من الأشخاص الذين باتوا في عداد المدمنين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأدركوا الصعوبات والاغتراب الذي يعيشونه في حياتهم كلها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد واجهوا الكثير من المشكلات العائلية والوظيفية والأكاديمية والصحية كذلك، وهي أخطرها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بالإضافة إلى عتب الأصدقاء الذي لا ينتهي، فالكل أصبح يبحث عن الكل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومنذ متى بدأ هذا كله في رأيك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمنذ دخول هذا المتطفل، الهاتف النقال، حياتنا، بدأت المشاكل والانحطاط.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبدأ الانطواء والاغتراب، وبدأنا نبتعد عن أهم أساسيات ومبادئ وعادات مجتمعنا الجميل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فمتى ستطرح في الأسواق أجهزة تساعدك على التخلص من إدمان الهاتف؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومتى سيكون هناك مركز لمعالجة الإدمان على الهاتف؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومتى ستدرج ضمن الدستور بنود استخدام الهاتف، وقواعد إتيكيت استخدامه؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا تتعجب! أليس هناك موضة الهاتف، وأجيال الهاتف، وبرستيج الهاتف؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "كلها مقدمات لما ذكر من أسئلة، ولكل مقدمة نتيجة لا مفر منها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

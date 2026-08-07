@@ -1,0 +1,243 @@
+{
+  "slug": "qabas-201611-001",
+  "bridgeAfter": [
+    10,
+    24
+  ],
+  "breathAfter": [
+    30
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في صغري كنت أشاهد في بعض أفلام الخيال العلمي أن سكان الفضاء قرروا زيارة الأرض.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعند وصولهم كانت هناك معضلة في التواصل مع هذا الذكاء الكوني من خلال قناة اتصال مشتركة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فكانت محاولات البشر تارة بالموسيقى، وتارة بلغة الضوء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأخرى بلغات قديمة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأخرى باستخدام لغات قديمة، كان يعتقد بأنها لغات لكائنات فضائية غزت الكرة الأرضية منذ ملايين السنين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مخلفة وراءها كثيرا من الأسرار الدفينة، كالأهرامات واختفاء جزيرة أطلنطا المتطورة بشكل غامض.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمهم في الأمر هو سعي البشرية لإيجاد لغة مشتركة نتوصل من خلالها إلى استيعاب هذا الذكاء الفضائي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبعد محاولات عديدة كانت النتيجة هي الفشل.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "مما خلق تصورا لدى الكثيرين، والاستسلام لفكرة أن البشرية ليست مستعدة بعد لاستقبال أي حضارة تسبقنا بتقدمها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والسؤال يفرض نفسه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل حالنا الآن مع التقدم الهائل في التكنولوجيا في جميع نواحي الحياة يختلف عن تلك الفكرة التي تصورها الأفلام؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن التكنولوجيا خدمتنا كثيرا. لماذا نقارنها بغزو فضائي؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يرفضها،⏸ بل يسأل عن التوازن: كيف نوازن بين عجلة التطور وبين واقع تقبلنا واستخدامنا لهذه التكنولوجيا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وعلى سبيل المثال لا الحصر، نجد أن الجوال قد غزا بكل تقنياته المتطورة أدق خصوصياتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "واستطاع بكل بساطة أن يغير بعض الديموغرافيا الاجتماعية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل بات يهدد بعض المسلمات المقدسة في مجتمعنا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالجلوس على طاولة الأسرة الواحدة وتبادل الحديث أصبح من الأمور المنقرضة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "بوجود برامج المحادثة المختبئة في صفحات الجوال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كما أننا استعضنا عن زيارة الأصدقاء والواجبات الاجتماعية برسالة جاهزة، ما علينا إلا إعادة إرسالها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو خدمة التهنئة بالنيابة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأظهر تقرير اقتصاد المعرفة العربي أن دول الخليج الست تصدرت التصنيف العام في مؤشرات تكنولوجيا المعلومات والاتصالات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وجاءت البحرين الأولى في استخدام الإنترنت، والكويت أعلى نسبة في انتشار الجوال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والجوال وحده.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "الجوال فقط من الثورة التكنولوجية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فلنعترف أننا أصبحنا حبيسي أنفسنا داخل واقع افتراضي، يملي علينا كيف نسير أبسط أبجديات حياتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل الكاتب بمنأى عن ذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يعترف بنفسه:⏸ والعجيب أنني أكتب هذا المقال وأنا أمسك جوالي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأحاول أن أنتزع ثقافتي الخاصة، التي هي ثقافتكم أيضا، نشأت في ظلال عصر التكنولوجيا المتنامي بشكل فاق التصور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي وقفة جادة، نحتاج إلى تقويم أنفسنا كي نواكب، وفي نفس الوقت لا ننسى ثقافة مجتمعاتنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "حتى لا ندور في حلقة مفرغة، هائمين بين تكنولوجيا عصرنا وثقافتنا التي تكاد تضيع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحاجتنا اليوم هي الفصل بين ساعة الترفيه والتواصل من خلال التكنولوجيا، وبين ساعة العمل والأهل ومتطلبات مجتمعنا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ولنبدأ بتحمل مسؤولية واقعنا الذي فرض علينا، بعقلانية ووعي،⏸ لنتقدم ونحن في القمة ولسنا في القاع.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

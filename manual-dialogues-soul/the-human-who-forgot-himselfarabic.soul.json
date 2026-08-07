@@ -1,0 +1,286 @@
+{
+  "slug": "the-human-who-forgot-himselfarabic",
+  "bridgeAfter": [
+    7,
+    25
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نعيش في زمن يعرف فيه الإنسان كل شيء عن العالم، إلا نفسه.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يتابع الأخبار في كل قارة، ويحلل الأزمات، ويحفظ تفاصيل حياة الغرباء على الشاشات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكنه لا يجد عشر دقائق يسأل فيها:⏸ ماذا يحدث في داخلي أنا؟",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يحتاج أن يغادر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فاليوم لا يحتاج الإنسان أن يغادر غرفته كي يستهلك عالما كاملا. شاشة صغيرة تكفي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هذا الحضور الدائم أمام الضوء له ثمن.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "مراجعة منهجية نشرت في JAMA Psychiatry شملت عشرات الدراسات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ووجدت أن ازدياد وقت الشاشة لدى الأطفال واليافعين يرتبط بارتفاع في مشكلات القلق والاكتئاب.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن المقال نفسه يقول إن الارتباط ضعيف إحصائيا.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يقولها بأمانة. والرسالة ليست في الرقم وحده،⏸ بل في الاتجاه.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كلما ابتعدنا عن أنفسنا، دفعت النفس ثمن ذلك في صمت.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وفي جامعة ستانفورد ظهر وجه آخر للمشكلة:⏸ تعدد المهام الإعلامية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن تشاهد وتمرر وتعلق في الوقت نفسه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يرتبط بانتباه أكثر هشاشة وذاكرة أضعف.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فكل شيء يخطفك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كل شيء يصبح قادرا على خطفك، حتى تنسى ما الذي كنت تريده أصلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن يعيش منبها لكل إشعار، ~~ يصعب عليه أن يصغي لصوته الداخلي.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن يتفتت انتباهه، يتفتت معه إحساسه بذاته.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والتقارير تؤكد.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "تقارير مثل Status of Mind الصادرة عن الجمعية الملكية للصحة العامة في بريطانيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تظهر أن الاستخدام الكثيف لوسائل التواصل يرتبط بارتفاع القلق والاكتئاب وضعف صورة الجسد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن جيلا يقيس نفسه بعداد الإعجابات ومقارنات الصور يخرج بشعور عميق بأنه أقل من الجميع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هكذا ينسى الإنسان نفسه وهو يحاول أن يطابق قالبا رقميا لا يشبهه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وفي المقابل يتحدث علم النفس عن شيء بسيط اسمه وقت الصمت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "دراسات متخصصة تشير إلى أن فترات من العزلة الإيجابية تخفض التوتر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتعيد تنظيم الأفكار، وتزيد من وضوح الهوية والقدرة على اتخاذ قرارات أكثر اتساقا مع القيم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل ساعة واحدة تكفي لكل هذا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يكفي أحيانا أن يقضي الإنسان ساعة أسبوعيا في تأمل هادئ.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو مشي بلا هاتف، أو كتابة صادقة، ليرتفع الوعي بالذات والمرونة النفسية بصورة ملحوظة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والمفارقة أن الطريق إلى اكتشاف الذات ليس دورة مدفوعة على منصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل لحظات قليلة من الصدق مع النفس.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وثلاثة أسئلة تكفي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ما الذي يتعبني حقا؟⏸ ما الذي أريده أنا لا ما يريده مني الجمهور؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومن أنا عندما تطفأ الشاشة ولا يبقى معي إلا صوت ضميري؟",
+      "feeling": "intimate",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولسنا مطالبين أن نهرب من العصر،⏸ ولا أن نكسر الشاشات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكننا مطالبون ألا نسمح لها أن تبتلعنا كاملين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أن نحجز لأنفسنا وقتا لا نقدم فيه عرضا لأحد،⏸ بل نجلس فيه مع أنفسنا كضيف كريم طال غيابه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فأخطر ما يحدث للإنسان ليس أن يجهل العالم،⏸ بل أن ينسى نفسه وهو يحفظ كل شيء سواها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

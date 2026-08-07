@@ -1,0 +1,292 @@
+{
+  "slug": "alternative-plans-for-distance-education",
+  "bridgeAfter": [
+    9,
+    31
+  ],
+  "breathAfter": [
+    37
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "قلت التجمعات التي كنا نحظى بها من قبل في تلك الأيام.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والجميع أصبحوا يخشون الخروج من منازلهم بعد العمل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والطلبة قابعون في منازلهم من دون تعليم يذكر لهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والكثير منهم يتساءلون عن الحل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والكثير من أولياء الأمور يتساءلون عن الحل أمامهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي حكم مسؤولياتنا الأكاديمية طرحنا الكثير وانتقدنا أكثر الوضع التعليمي في ظل كورونا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وسمعنا رد فعل وزير التربية نفسه في هذا الأمر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الذي أخبرنا أنه كانت هناك قناة تربوية دفع بها ثلاثة ملايين دينار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكنك تقول: كانت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن يا معالي الوزير تقول:⏸ كانت، وقد توقفت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بسبب تغيير المناهج من الصف الأول إلى التاسع، فأين هي؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يا ترى في ظل هذه الأزمة التعليمية التي نعيشها الآن.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "نحتاج إلى وعي أكبر في الأزمة التي نمر بها اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والموضوع بات واضحا جدا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والموضوع بات واضحا أن هناك خللا في إدارة الأزمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فإداراتنا ووزاراتنا لا تخصص لإدارة الأزمات فيها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولو كان غير ذلك، فلماذا الأزمة التعليمية ما زالت قائمة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فليس هناك وقت لنهدره، فالفصل الدراسي يشارف على الانتهاء.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وأبناؤنا الطلبة ينتظرون الحل من المسؤولين عندنا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأولياء الأمور قلقون على مستقبل أبنائهم كلهم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، فلا نعلم هذا الوباء القاتل إلى متى سيستمر،⏸ وما تبعاته.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلنفتح لهم منصات تعليمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلنفتح منصات وقنوات تعليمية يتم التدريس من خلالها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد أبدى الكثير من المعلمين الاستعداد الكامل للتدريس أونلاين اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهناك دول عربية قبل أن تعلن عن تعطيل مدارسها، وأنا مطلع على هذا الأمر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "قامت بوضع خطة لتدارك الأزمة الوبائية التي يعانيها الجميع في العالم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "واتخذوا التدابير اللازمة أنه في حال تعطيل المدارس سيتم اتخاذ خطة بديلة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأنه ستبث الحصص على التلفاز إذا اضطروا إلى ذلك.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وأن وزارة تلك الدولة وضعت خطة متكاملة للتعليم عن بعد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في حال كان هناك قرار بتعطيل المدارس إذا ما انتشر فيروس كورونا عندهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن الوزارة في تلك الدولة جهزت فيديوهات دروس لكل المراحل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وجرى تصويرها بالتعاون والتنسيق مع إدارة الإشراف وخبراء تربويين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومن أجل ماذا كل هذا الاستعداد المبكر؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إضافة للمدارس الخاصة، وذلك من أجل رفعها على المنصة الإلكترونية التفاعلية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لتتم متابعتها من قبل الطلبة في بيوتهم كلهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأكد وزير تلك الدولة أنه جرى تجهيز موقع الوزارة والمنصة الإلكترونية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لتكون بديلا عن الدوام الرسمي، وضمان عدم انقطاع الطلبة عن التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتلك الدولة لم تعطل مدارسها بعد، ورغم ذلك وضعت الخطة البديلة واتخذت كل الإجراءات.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فلنعمل على إدارة الأزمة التعليمية كما الدول، ولنستعن بخبرات الآخرين، فالوقت يداهمنا والله المستعان.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

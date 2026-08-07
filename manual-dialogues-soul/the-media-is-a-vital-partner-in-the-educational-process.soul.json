@@ -1,0 +1,279 @@
+{
+  "slug": "the-media-is-a-vital-partner-in-the-educational-process",
+  "bridgeAfter": [
+    10,
+    28
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كنت أشارك عددا من الأصدقاء المقربين الحديث عن دور الإعلام في التعليم.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتحاورنا بهذا الدور العظيم، والريادة التي قد تصل إليها رجالات الإعلام المتجددين باستمرار.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "برجالات الهمم والإنجاز، وعزيمة الشريك العضيد للعملية التعليمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالتواؤم بينهم قريب من مشيمة واحدة. ليس بعيدا ونحن نعلم أن الإعلام منبر الجميع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وانطلاقة الحدث وهموم الناس، ~~ ومنه يصل صوت كل مواطن.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ورسالاتنا التي يستوعبها رجالات الإعلام الرائدون.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومن خلاله تحررنا من الجهل والاحتلال، ومن قفزات الآخرين الضالة، وتعززت ثقافاتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد دخل الإعلام العالم الافتراضي منذ زمن.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وكان له مواقع خاصة أخرى غير الورقية، ينشر فيها لرواد العالم الافتراضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكانت سباقة لذلك، وتعلم أهمية العالم الافتراضي في وقتنا الحالي المعاصر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد دخلت التكنولوجيا كل مجال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فقد دخلت التكنولوجيا في كافة المجالات. فكيف لو كان هناك تعاون مشترك بين الإعلام والتربية والتعليم؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حقا سيكون عاملا مؤثرا في هذا المجال.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن الإعلام يلاحق الخبر السريع. هل يصبر على التربية؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يرى الأمر أعمق:⏸ ففي إطار المعاصرة والثورة التكنولوجية والمعلوماتية أصبح المُعلِّم وسيلة إعلامية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لما للإعلام دور مؤثر في فكر وثقافات وسلوك الآخرين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهو الموجه والمراقب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والموجه والمراقب في كثير من المواقف التعليمية وكافة المجالات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد ناقش الإعلام ووجه التعليم في ظل جائحة الكورونا.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعبر عن أهمية التعليم الإلكتروني عن بعد، واستخدام العالم الافتراضي للخروج من أزمة التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولنتحدى كل الصعاب التي تواجهها العملية التعليمية في وقتنا الحالي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فالإعلام قادر على توجيه الاتجاهات والميول نحو توظيف التعليم الإلكتروني وعن بعد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتسليط الضوء عليه بهدف الاستمرارية إلى ما بعد الجائحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فبه النجاة من أي أزمة عاصرها العالم بأسره.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حتى نكون مستعدين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حتى نكون على استعداد، ونتلاشى المشكلات التي واجهت العملية التعليمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن قادرون بهمم رجالات الإعلام على العمل المشترك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وخلق رأي عام يناصر فكر التعليم المعاصر، وتطوير الفكر التقليدي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بإسهام الإعلام التربوي لتحقيق الأهداف التعليمية داخل العالم الافتراضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل التجربة وحدها كافية لإقناع الناس؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يراهن عليها:⏸ لا مفر بعد التجربة التي عاشها العالم بالجائحة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن خير وسيلة لتجاوز الصعاب هو اعتماد التعليم الإلكتروني بكامل عناصره.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولنبقى مهيئين، لنستطيع السيطرة على الموقف،⏸ ولا نكون تحت أمر واقع غير مهيئين له.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولنفتح الحوار في الساحة التعليمية والإعلامية، لنصل بالعملية التعليمية لضفاف العالم الافتراضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويكون حاضرا دون مساومة، فوجوده يختصر علينا أزمات ومشكلات عديدة عشناها وكانت مريرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولنعمل كشريك عضيد، وأنتم تعلمون أهمية العالم الافتراضي، وقد أصبح حاجة ملحة سبقتنا لها الأمم ونحن ما زلنا نتدارسه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "هيا نعمل بعزيمة رجل واحد،⏸ لنكون عنصرا مؤثرا وقادرا على تحقيق أهداف الاستمرارية والديمومة في التعليم الإلكتروني.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

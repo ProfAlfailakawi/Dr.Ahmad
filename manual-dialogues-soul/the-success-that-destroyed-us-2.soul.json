@@ -1,0 +1,293 @@
+{
+  "slug": "the-success-that-destroyed-us-2",
+  "bridgeAfter": [
+    11,
+    31
+  ],
+  "breathAfter": [
+    37
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "لم نخلق لنركض طوال الوقت، لكننا حولنا الركض إلى طقس يومي.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعبدنا القمة حتى نسينا الطريق.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نطالب أبناءنا أن يكونوا الأوائل، ثم ننسى أن نسأل:⏸ ولم أصل أصلا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فصار النجاح مجرد لافتة.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "صار النجاح لافتة على الجدار أكثر منه حياة تعاش.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وصارت الدرجات جواز عبور إلى القبول، لا جسرا إلى المعنى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نتباهى بالكؤوس اللامعة، ونتغافل تماما عن الأكتاف التي حملتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونرفع صورة الإنجاز إلى الواجهة، ~~ ثم نخفض الصوت حين ينهار أحدهم في الكواليس.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هكذا تعلم جيل كامل أن يبتسم للمنصة ويختنق بعيدا عنها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "نربي أبناءنا على الخوف من الرسوب أكثر من شغف التعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونعطيهم شهادات معلقة بإبر دقيقة على الجدار، ونترك قلوبا معلقة بأسئلة لا تجد جوابا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن يختزل ذاته في رقم يرضي الآخرين ويخذل نفسه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هذا حدس أدبي جميل. أين الدليل عليه؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ثمة ميتا-تحليل واسع تتبع تغير الكمالية عبر أجيال طلاب الجامعات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بين ألف وتسعمئة وتسعة وثمانين وألفين وستة عشر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ووجد أنها ازدادت خطيا في أبعادها الثلاثة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "مطالب الذات، ومطالب الآخرين، ومطالبة الآخرين بالكمال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أي أن السقف يعلو بلا نهاية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أي أننا نرفع السقف على أنفسنا وعلى غيرنا بلا هوادة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا ليس ذوق عصر عابر،⏸ بل اتجاه تاريخي موثق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحين تتحول الكمالية إلى هوية، تبدأ ملامح الاحتراق بالظهور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تلك الحالة التي تصفها منظمة الصحة العالمية في تصنيفها الدولي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ضغط مهني مزمن غير مدار، يتجسد في الإنهاك، والابتعاد السلبي عن العمل، وتراجع الفاعلية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وليست تشخيصا طبيا أصلا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هي ليست تشخيصا طبيا،⏸ لكنها ظاهرة مهنية تطفئ المعنى ببطء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولأن مدارسنا وجامعاتنا جزء من هذه المهننة المبكرة للحياة، تظهر مراجعة منهجية حديثة أمرا خطيرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن الضغط الأكاديمي يرتبط بوضوح بارتفاع أعراض القلق والاكتئاب وإيذاء الذات لدى اليافعين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ثمان وأربعون من أصل اثنتين وخمسين دراسة وجدت هذا الارتباط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فليس كل تعب بطولة. أحيانا يكون ناقوس خطر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بل إن تحليلا عالميا لطلاب الجامعات يشير إلى نسب مرتفعة من أبعاد الاحتراق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إنهاك عاطفي، وتبلد، وإحساس منخفض بالإنجاز.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهي أرقام ليست لتخويفنا،⏸ بل لتذكيرنا بأننا نحاسب الأرواح بمقاييس لوحات الشرف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل ننسف فكرة النجاح إذن؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لسنا هنا لننسفها،⏸ بل لنستعيد إنسانيتها.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك فرق دقيق بينهما.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فرق بين أن تصل لأنك نضجت، وأن تصل لأنك تخاف أن تتأخر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الأول يبنيك، والثاني يستهلكك. والنجاح الذي لا يمنحك وقتا لتتأمل ليس نجاحا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل شكل آخر من الاستنزاف، وقناع جميل لوجع مؤجل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فلندرك أن الخسارة جزء من الوعي، وأن التوقف مهارة، وأن البطء أحيانا سرعة من نوع آخر.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

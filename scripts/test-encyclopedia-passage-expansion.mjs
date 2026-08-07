@@ -23,8 +23,8 @@ const passages = book.passages || []
 const pages = new Set(passages.map((item) => Number(item.page)))
 
 /* ═══ التغطية ═══ */
-check(passages.length >= 900, `عدد مقاطع الموسوعة ${passages.length} — والمرجو ٩٠٠ فأكثر`)
-check(pages.size >= 370, `الصفحات المفهرسة ${pages.size} — والمرجو ٣٧٠ صفحة فأكثر`)
+check(passages.length >= 1000, `عدد مقاطع الموسوعة ${passages.length} — والمرجو ١٠٠٠ فأكثر`)
+check(pages.size >= 400, `الصفحات المفهرسة ${pages.size} — والمرجو ٤٠٠ صفحة فأكثر`)
 check(payload.coverage?.encyclopediaPassages === passages.length, 'العدد المعلن في التغطية يطابق المحتوى')
 check(payload.coverage?.encyclopediaPagesIndexed === pages.size, 'الصفحات المعلنة تطابق المفهرس فعلاً')
 
@@ -67,15 +67,17 @@ check(encyclopediaQuotes.length >= 10, 'مختارات صفحة الكتاب م�
 check(encyclopediaQuotes.every((quote) => passages.some((item) => item.fingerprint === quote.fingerprint)), 'كل مختارٍ معروض مأخوذ من الفهرس نفسه')
 
 /* ═══ الكتب الثمانية الأخرى: البوابة نفسها تحرسها ═══ */
+/* الأرضيات مضبوطةٌ عند نحو ٨٨٪ من المستوى المحقَّق، فتلتقط أي انحدارٍ حقيقي
+   ولا تنكسر من تذبذبٍ يسير في المصدر. */
 const floors = {
-  'digital-education': [45, 26],
-  gamification: [38, 24],
-  'handy-tech': [75, 36],
+  'digital-education': [72, 39],
+  gamification: [58, 39],
+  'handy-tech': [90, 47],
   'kids-tech': [78, 46],
-  'mega-data': [112, 52],
-  'smart-school': [70, 40],
-  teaching: [145, 78],
-  'virtual-world': [52, 32],
+  'mega-data': [110, 52],
+  'smart-school': [79, 47],
+  teaching: [195, 105],
+  'virtual-world': [53, 32],
 }
 let otherPassages = 0
 let otherPages = 0

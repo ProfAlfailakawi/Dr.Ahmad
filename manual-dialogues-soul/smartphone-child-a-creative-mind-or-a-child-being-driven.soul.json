@@ -1,0 +1,251 @@
+{
+  "slug": "smartphone-child-a-creative-mind-or-a-child-being-driven",
+  "bridgeAfter": [
+    3,
+    27
+  ],
+  "breathAfter": [
+    31
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "سمعت ابني يتحدث لصديقه ويقول:⏸ أنا ذكي دون منازع، نحن أطفال الهواتف الذكية.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتفكرت كثيرا:⏸ أن أبناءنا يعتقدون أن ذكاءهم يرتبط بالهواتف الذكية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "غير مدركين أن المصطلح نتيجة للتطور التكنولوجي الكبير الحاصل على الهواتف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وذكاؤه غير مقرون بذكاء الهاتف.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وإن دل هذا الشيء يا ولدي، دل على أنك مساق ولست خلاقا. فأين عقلك؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ودعونا نسترسل قليلا بما يحدث لأطفالنا في عهد الأجهزة الذكية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لا ننكر أن تواصلهم معنا نقص، ومع أي جليس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وإن تحدثت معهم لا يركزون معنا. فعين علينا وعين على شاشة الهاتف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وإن نادته أمه لا يسمعها إلا بعد الصرخة الصاروخية الخامسة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأبناؤنا هاجرون لكتبهم وهي بين أيديهم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فهم مساقون للهواتف الذكية التي سلبتهم عقولهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن البعض يرى فيهم أذكياء. يتعاملون مع تقنية معقدة بسهولة.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يعرض هذا الرأي وينقضه. البعض ينظر للأطفال الذين يحملون الأجهزة ويتصفحون.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أنهم أطفال أذكياء وعقولهم خلاقة، كونهم قادرين على التعامل مع هذه التكنولوجيا المتطورة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن لماذا لا نرى هذا الذكاء والعقول الخلاقة في دروسهم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أو بإنصاتهم للآخرين، أو بمعلومة مفيدة يناقشها مع أحد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهنا يظهر العقل الخلاق،⏸ وما يستنبط من أفكار بإبداع وانتباه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأكاد أقسم أن لمسات الغباء والبلاهة تبدو عليهم،⏸ بل مرسومة بطريقة فنية يعجز عنها رسام محترف.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "نعم، هذا الواقع. عندما تسأل ابنك عن شيء تجده ينظر إليك أو لشاشة الهاتف صامتا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تعتقد أنه يفكر ويستنبط الإجابة، إلا أنه في الحقيقة مساق لهذا الهاتف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن شدة التركيز لا يكاد يعي من أين أتى الصوت، وبماذا سأل.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذه هي الحقيقة يا سادة:⏸ جيل ضائع، مسلوب، يساق بغير وعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلنتنبه قبل ألا ينفع أي تدخل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فتلك الأجهزة تأخذ من وقتهم وتركيزهم وحضورهم، وعلاقتهم مع أهليهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأثرت على علم الطالب ونفسه وأخلاقه،⏸ بل ومتعتهم بالإجمال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وللأسف، ~~ أطفالنا الصغار هم في الحقيقة عجائز كبار.",
+      "feeling": "intimate",
+      "feeling2": "hush",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لأن الأجهزة الحديثة صحيا تنحت من عافيتهم، وتضعف سمعهم وبصرهم وأعصابهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتنحني ظهورهم، وتقلل من قدراتهم وملكاتهم الفكرية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل الأطفال وحدهم في هذا الأسر؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال ينصفهم:⏸ لو تفكرنا قليلا سنجد أن هذا الجهاز سرق وقت وعقل الكبار أيضا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وخطف ألسنتهم عن ذكر الله، وقد يكون البعض قطع أرحامه ظنا منه أنه لا يملك الوقت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلننظر لأبنائنا نظرة عطف لحالهم، ولنتفكر بأساليب ترجعهم عن تلك المتاهة التي هم بها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ولا تدعوهم يكبرون وهم في هذه الحال، فهذا هو الفقد الحقيقي لما سيمتلكون من سلوكيات وأخلاقيات.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

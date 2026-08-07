@@ -1,0 +1,264 @@
+{
+  "slug": "when-the-teacher-knows-why-he-teachesarabic",
+  "bridgeAfter": [
+    9,
+    25
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "دخل المُعلِّم الصف كعادته. شرح الدرس بإتقان، ورتب الأفكار، وأنهى الأهداف المحددة في خطته.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لم يكن هناك خطأ ظاهر. ومع ذلك كان هناك شيء ناقص.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الوجوه أمامه صامتة، والعيون تنظر إليه،⏸ لكن التفاعل باهت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالمشكلة لم تكن في الشرح. كانت في المعنى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والطالب لا يحتاج دائما إلى معلومة إضافية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يحتاج إلى من يربط المعلومة بحياته، وإلى معلم يعرف لماذا يعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "قبل أن يسأل الطالب لماذا يتعلم. وهذا ترتيب لا نلتفت إليه كثيرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتجربة بيغماليون في الصف أظهرت أن توقعات المُعلِّم تؤثر فعليا في أداء الطلبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حين اعتقد بعض المعلمين، بناء على معلومات عشوائية، أن طلابا معينين سيحققون نموا أكبر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تحسن أداؤهم بالفعل. ولم يتغير المنهج ولا الكتاب ولا الجدول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فإذا لم يتغير شيء منها، ما الذي تغير إذن؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تغير السلوك اليومي. صبر أطول، وأسئلة أعمق، وثقة أوضح.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "التوقع نفسه أصبح بيئة. كلمة واحدة تختصر التجربة كلها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وتعزز أبحاث كارول دويك حول عقلية النمو هذه الفكرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "عندما ينظر إلى قدرات الطالب بوصفها قابلة للتطور، ويشجع الجهد بدل تثبيت الذكاء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يتغير تعامل الطالب مع الخطأ. فالفشل لا يصبح تهديدا للهوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل تصير خطوة في طريق التعلم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أما تحليلات جون هاتي في مشروع Visible Learning فقد جمعت مئات الدراسات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ووضعت جودة العلاقة بين المُعلِّم والطالب والتغذية الراجعة ضمن أقوى العوامل تأثيرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فليس المحتوى وحده ما يصنع الفرق،⏸ بل المناخ الذي يقدم فيه المحتوى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتبقى قطعة أخيرة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وحين نربط ذلك بنظرية الدافعية الذاتية لريان وديسي، نفهم الصورة كاملة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الطالب يحتاج أن يشعر بالقدرة، وبأن له صوتا، وبأنه جزء من بيئة تحترمه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمعلم هو من يخلق هذا الإحساس يوميا في صفه. أحيانا بكلمة، وأحيانا بنظرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالفرق بين صف صامت وصف حي ليس دائما في مستوى الطلاب.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "بل في مستوى الاتصال الإنساني بينهما. وهذا لا يقاس في أي جدول ولا خطة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن كيف يقيس المُعلِّم ذلك في نفسه؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بسؤالين. هل يشعر الطالب أن صوته مرحب به؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل يسمح له أن يخطئ دون أن يختزل كله في خطئه؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وحين يعرف المُعلِّم لماذا يعلم، تتغير نبرة صوته، ونوع أسئلته، وحتى صبره.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فيصير التعليم عندها شيئا آخر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يصبح علاقة قبل أن يكون محتوى.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويشعر الطالب، دون أن يقال له ذلك، أنه ليس رقما في سجل⏸ بل مشروع إنسان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فاسأل نفسك:⏸ هل أعلم لأن المنهج يطلب مني، أم لأن أمامي إنسانا يتشكل؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "وربما يبدأ التحول يوم يدرك المُعلِّم أن أثره لا يقاس بعدد الصفحات التي أنهاها،⏸ بل بعدد المعاني التي أيقظها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

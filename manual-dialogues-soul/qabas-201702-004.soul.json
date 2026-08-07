@@ -1,0 +1,273 @@
+{
+  "slug": "qabas-201702-004",
+  "bridgeAfter": [
+    22,
+    27
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في أحد الأسواق كنت أشتري بعض الحاجيات، فاستوقفني أحد الأشخاص.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ينظر لي ويبتسم ويقول لي:⏸ شلونك يا ويه الخير.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وفي الحقيقة كنت أنظر لهذا الشخص وأراه في مخيلتي، ولكن الذاكرة لم تسعفني أن أتعرف عليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فأشار لي أن نتمشى، وعرفني عن نفسه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وقد دمعت عيني لأني لم أتذكر رفيق لحظات الخوف والبحث عن الأمان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في وقت لم نكن نجد فيه الأمان، وكانت تجربة قاسية على الشعب الكويتي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهي زمن الغزو، لا أعادها الله، ~~ ولي معه ذكريات ضاع فيها الإحساس بالأمان.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالوطن سليب والحزن كبير.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبقينا معا حتى تم التحرير بحمد الله، وزال الخوف عنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وشعرنا وقتها بقيمة وطعم ولذة الإحساس بالأمان بعد طول غياب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وجلسنا نتحدث في الكافيه، ~~ وعن ذكرياتنا القديمة والتطورات في حياتنا حتى وقت لقائنا.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتحدثنا عن التطور والتقدم التكنولوجي، وكيف اقتحم خصوصياتنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فسألني سؤالا واحدا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فسألني:⏸ هل تشعر بالأمان في خضم التقدم التكنولوجي؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "سؤال جعلني أفكر فعلا:⏸ هل أحس بالأمان فعلا مع التقدم التكنولوجي أم ماذا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والسؤال لكم أيضا، دعونا نتحدث قليلا لنصل إلى نتيجة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "جميعنا يعلم أن الأمان من الحاجات الأساسية عند الإنسان.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والشعور بالأمان من الأمور الهامة لأي شخص، ليستطيع العمل والإنتاج والقيام بمسؤولياته بالشكل الصحيح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالأمان هو أحد بنود هرم ماسلو للحاجات الأساسية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وحتى الطالب نفسه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لأن الطالب إن لم يشعر بالأمان، فلن يستطيع التعلم والحياة بشكل سليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والأمان في القرآن الكريم ذكر مباشرة بعد حاجة الطعام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فكل إنسان بحاجة لهذه الميزة لكي يعيش، فبدونها ما قيمة حياتنا؟⏸ كجسد ينبض بلا روح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن التكنولوجيا قربت الناس، أفلا يكون هذا القرب أمانا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا ننكر أنها قربت الناس من بعضهم البعض، فهل هذا القرب سيوفر الإحساس بالأمان؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالتكنولوجيا تستخدم حيلا كثيرة حتى تقتحم خصوصياتنا، وتجعلها في متناول الجميع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في الحقيقة، إن خصوصياتنا أصبحت سلعة متداولة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "حيث تجمع خصوصياتنا وتباع لشركات أو جهات خاصة أو حكومية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما مصلحة هذه الجهات بخصوصياتنا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهل ما يحدث من جمع لمعلوماتنا سيدفع الفرد إلى الإحساس بالأمان؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إن اتساع حدود انتهاك الخصوصية وصل إلى مدى بعيد وخطير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويمس قدرة المتعاطين مع التكنولوجيا والتقدم الهائل فيه الإحساس بالأمان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمصلحة قائمة بارتفاع عدد المشاهدات والمتابعين، وغيرها من التجارة الرخيصة التي أقلقت الكثيرين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولقد سمعنا عن ارتفاع معدلات الانتحار بسبب الكآبة والخوف من الفضيحة، وحالات الابتزاز التكنولوجي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما يرتكب من جرائم شرف زادت من معدلها التكنولوجيا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "إذا، التكنولوجيا قربت مسافة الأمان الطبيعية بين البشر، فأخلت بالتوازن، وهدمت ميزان الأمان الطبيعي.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

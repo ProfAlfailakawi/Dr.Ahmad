@@ -1,0 +1,251 @@
+{
+  "slug": "qabas-201611-003",
+  "bridgeAfter": [
+    8,
+    25
+  ],
+  "breathAfter": [
+    31
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "وأنا أقف على الإشارة أمسك الجوال، ~~ كلما سمعت صوت إشعارات أصدقاء الفيس بوك.",
+      "feeling": "gravitas",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولما التفت جانبا تفاجأت بصديق الطفولة، وهو يمسك جواله أيضا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وفتحت الإشارة وانطلقنا. للأسف، هذا أصبح واقع أصدقاء العمر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولنعد إلى مارك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "انتهينا بالجزء الأول من المقال السابق بإعلان مارك في مؤتمر برشلونة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولنذكركم أنه قال:⏸ الواقع الافتراضي هو مستقبل الفيس بوك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأنه آن الأوان لصناعة تطبيق للواقع الافتراضي على هذا النهج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتساءلنا وقتها، في ظل المتاهة التي وضع مجتمع الفيس بوك فيه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "موقع يضم مجتمعا كاملا من الناس، متعدد الثقافات والجنسيات والأجناس والأعمار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فكيف سيكون في بيئة افتراضية؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ببساطة عملت شركة الفيس بوك حديثا على توفير الفرق الخاصة لصناعة تطبيقات الواقع الافتراضي الاجتماعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد سعى المصممان دانيال جيمس ومايكل بوث، اللذان يعملان على الواقع الافتراضي الاجتماعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "على صناعة أدوات تسمح لأصدقاء في أماكن مختلفة في هذا العالم بالاجتماع مع بعضهم في مكان واحد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكأنهم في غرفة واحدة. وهذان المصممان هما من يقومان بصناعة ألعاب متعددة اللاعبين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويلعب المجتمع كله.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويستطيع مجتمع الفيس بوك اللعب مع مجموعة من المجتمع الفيسبوكي ككل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بالإضافة إلى السماح بمشاهدة الفيديوهات التي يختارها المستخدم على الفيس بوك والعالم الافتراضي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "بكل سهولة من خلال نظارة جير في آر، والمشاركة ووضع لايك مع متابعيه عبر حسابه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويبدو أن هدف مارك الرئيسي هو الوصول إلى مليار شخص يستخدم الواقع الافتراضي على الفيس بوك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل هذا وعد قريب التحقق، أم حلم مؤجل؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والجواب عند الباحثين:⏸ سيبقى في إطار المستقبل القريب حتى تثبت الرؤية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وسيغرق الكثيرون في مستنقع أكثر افتراضية من الواقع الافتراضي في الفيس بوك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلنتحاور قليلا عن واقع صفحات الفيس بوك التي جعلت ثقافة الجميع موحدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في ظل اختلاف البيئات المنتجة للثقافة، وهذه حقيقة لا يمكن أن نختلف عليها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والأمر الذي يؤول على الجميع أن الإنسان في واقع الفيس بوك يأخذ راحته بدون قيود.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والدليل أنه يقضي ساعات في الواقع الافتراضي للفيس بوك على حساب الواقع الحقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن ما ضرر ثقافة يرتاح إليها الناس؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أن واقع الفيس بوك فرض ثقافة لا يمكن تطبيقها في الواقع، والذي قد يؤدي إلى اختلال في الشخصية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويمكن أن نلخص الفكرة بأن الذي نعيشه في الواقع الافتراضي للفيس بوك يروق لنا أكثر من الواقع الحقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لذلك سنبقى نعيش حالة من ازدواجية الشخصية، التي في الغالب ستوصلنا إلى نوع من الانفصام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مع الشعور بتعذيب الضمير للقصور نحو مجتمعنا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويبقى إمعان العقل للعودة إلى الواقع الحقيقي، وعدم الاعتماد على الواقع الافتراضي في الفيس بوك.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "والحقيقة التي اكتشفناها جميعا أننا نشتاق إلى صديق الأمس، الظل الدافئ. فإلى أين ستذهبين بنا يا تكنولوجيا؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

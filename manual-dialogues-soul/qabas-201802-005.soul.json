@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201802-005",
+  "bridgeAfter": [
+    16,
+    26
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "المطورون:⏸ المهندس أحمد الصالح، والمهندس ناصر الخالدي.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، هؤلاء عقول كويتية ابتكرت وحدة التحكم المصغرة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والتي تعد طفرة في عالم الابتكارات في هذا الزمن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وانتشر على مستوى العالم لاستخدامه في كافة المجالات والتخصصات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "جلست معهم، ورأيت فيهم روح الابتكار والإبداع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كنت سعيدا أن الكويت أخرجت عقولا كويتية نابغة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "استطاعوا أن يضعوا الكويت ضمن المراكز الأولى في الابتكارات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كأصغر وحدة تحكم، وأفضل ابتكار على مستوى الكويت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وإقليميا، فازوا كأفضل مشروع تقني في الشرق الأوسط.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بشهادة كبرى شركات التقنيات في العالم، والدول المتقدمة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فقد تم ترشيحه في منافسة دولية بين ما يقرب ست وثمانين دولة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتنافس وسط مئات المشاريع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تنافس وسط ثلاثمئة وستة وثمانين مشروعا حول العالم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وحصل على المركز الأول كأفضل ابتكار، وتم تكريمهم بالأمم المتحدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هؤلاء مبدعو شباب الكويت الذين نفتخر بهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "دعوني أعرفكم على هذا الابتكار الرائع المبدع.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وحدة التحكم المصغرة هي وحدة تحكم، تعد أصغر عقل إلكتروني في العالم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأين تستخدم هذه الوحدة تحديدا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تستخدم وحدة التحكم في التعليم، وفي المنتجات والأجهزة.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "مثل الأجهزة الطبية، والأجهزة الكهربائية، ولعب الأطفال، ومحركات السيارات، والآلات المكتبية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وواجهة التطبيق تتميز بسهولة استخدامها من الجميع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهي تبسط العلوم الإلكترونية وبرمجتها للمحترفين والهاوين والأفراد العاديين، حيث تسهم في صنع مبتكرين بوقت خرافي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتتميز وحدة التحكم المصغرة أنها اقتصادية، وقليلة التكلفة، بسيطة وسهلة الاستخدام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتعتبر أنسب المتحكمات المستخدمة في تطبيقات الروبوت وصناعة الأجهزة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "حيث يستطيع المستخدم المتقدم الاستفادة منها للقيام بعمليات معقدة في البرمجة وصناعة الأجهزة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويمكن استخدامها في التعليم بأبسط أشكالها، وقد تم تطوير مناهج تحتوي على أكثر من سبع وثلاثين قصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي كل قصة يتم تعلم مهارات وابتكارات تنمي مهارات الحياة ومهارات التفكير العليا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكم يحتاج الطالب من الوقت لذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي القصة الواحدة يمكن تحويل الخيال إلى واقع في وقت يصل إلى خمس وأربعين دقيقة فقط.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقام المطورون الكويتيون بالاتفاق مع شركات كبرى لإنجاز لغة البرمجة بطريقة سهلة وبسيطة جدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وسيصبح أبناؤنا مبرمجين دون الحاجة إلى مبرمجين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأنشؤوا مناهج تعليمية مطورة في العملية التعليمية بالكويت، والمنهج يدرس في عدد من المدارس خارج الكويت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تم تطبيقه في عدد منها كتجربة ميدانية، لقياس قدرة الطلبة في تعلم المنهج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكنتيجة مبدئية للتجربة،⏸ فإن هناك حضورا إيجابيا كبيرا للطلبة، ومنهم الطلبة المتعثرون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إن هذا إنجاز يحسب للكويت، وعلى المستوى الإقليمي والعالمي، وساعد على تقليل الفجوة الإلكترونية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالمهندس أحمد الصالح والمهندس ناصر الخالدي مفخرة الكويت والعالم العربي، وحازوا على احترام العالم أجمع.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

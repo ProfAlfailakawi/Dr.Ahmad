@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201802-001",
+  "bridgeAfter": [
+    23,
+    28
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "عند زيارتي للعديد من المدارس لإلقاء محاضرات، تيقنت أن الأصوات تتعالى.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تذمرا من منهج الكفايات الجديد الذي دخل مدارسنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فذهبت لتقصي أسباب هذا التذمر بين المعلمين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والكثير من الانتقادات، سواء من المعلمين أو الإدارة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وعدم قدرة المعلمين بالتعاطي والإنجاز في المناهج الجديدة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أما الطلبة فلا نجد نتائج مرضية عندهم. ترى لماذا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هناك العديد من الأمور التي إذا ما توافرت وتم التخطيط لها بشكل جيد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتم التعامل معها منذ اعتماد هذا المنهج في التدريس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فإنه سيكون منهجا ذا مخرجات مرضية للجميع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فلو نظرنا إلى المنهج، سنجده منهجا موصى به من البنك الدولي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "إن البنك الدولي غير معني في تعليمنا وبيئتنا من أجل الوصاية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل تم تقنينه؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل تم تقنين المنهج ليتلاءم مع البيئة الكويتية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إن هذه المرحلة الأولى، والتي تدخل من أولويات التخطيط في المنهج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن الملاحظ أن المنهج لم يتم تقنينه أصلا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلو كان كذلك لاستوعبه المعلمون ومن دربوهم عليه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والمرحلة الثانية هي التجربة قبل التعميم.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل تم تطبيقه كتجربة على مدارس عامة وخاصة محددة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا، لم تتم التجربة،⏸ بل قاموا بتعميم المنهج وتطبيقه في التعليم بشكل مباشر.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والتدريب لم يكن متمكنا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والتدريب عليه بطريقة غير متمكنة، لم يخرج المُعلِّم منها بأي فائدة تذكر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل بقي يجهل الفكرة الرئيسية من منهج الكفاية وطريقة تدريسها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والوسائل التي سيستخدمها من أجل تنفيذها ميدانيا في الصف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والمرحلة التالية:⏸ هل راعى المنهج الفروق الفردية بين الطلبة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لم يراع المنهج الفروق، فكيف سيتقن الطلبة الأقل فهما دروسهم كباقي أقرانهم؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالطلبة متفاوتون في المستوى،⏸ ولا يتلاءم الوقت والأسلوب وطريقة التقييم الجديدة مع كافة الطلبة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بالتالي لن يتحقق الهدف إذا أغفل واضعو المنهج هذه النقطة المهمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا ننس أن منهج الكفايات يقوم على مهارات التفكير العليا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل حقا وصل الطالب مستوى التمكين من الكفايات، من المعرفة والمهارات؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل استطاع المُعلِّم أن يوفر الأنشطة والواجبات ضمن الكفايات المطلوبة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بالإضافة إلى توفير طرق التدريس والأساليب التعليمية التي تلائم الطلبة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتوفير مساحة الحرية للطالب لإنجاز المطلوب منه أثناء التعليم والتعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أما عملية التقييم، فهناك فارق كبير بين عملية التقييم ووضع الاختبارات التقليدية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "القائمة على مهارات التفكير الدنيا، من الاختبارات القائمة على مهارات التفكير العليا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن ضمن الواقع،⏸ فإن الاختبارات ما زالت تقليدية ولا تقيس الكفايات الجديدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهناك سوء تخطيط في تهيئة منهج الكفايات لإدخاله في العملية التعليمية التعلمية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ونحن في الكويت نستطيع صنع مناهج تضاهي أرقى الجامعات العالمية، دون الحاجة إلى مناهجهم التي لا تتناسب مع بيئتنا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

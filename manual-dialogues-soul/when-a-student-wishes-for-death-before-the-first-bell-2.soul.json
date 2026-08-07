@@ -1,0 +1,278 @@
+{
+  "slug": "when-a-student-wishes-for-death-before-the-first-bell-2",
+  "bridgeAfter": [
+    11,
+    27
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في صباح أول يوم دراسي قال المُعلِّم لطلابه:⏸ كل عام وأنتم بخير وعودا حميدا.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فإذا بأحدهم يرد:⏸ أتمنى أن أموت ولا أعود للدراسة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهذه ليست قصة خيالية،⏸ بل حكاية حقيقية أخبر بها معلم في المرحلة الثانوية.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "جملة عابرة؟⏸ ربما.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لكنها صفعة على وجه منظومة التعليم والأسرة معا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إنها ليست مجرد نكتة أو تعبير عن الملل،⏸ بل صرخة مكتومة تكشف علاقة الطالب بالمدرسة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "علاقة خوف، أو كره، أو شعور بالاغتراب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن كل الأجيال تذمرت من المدرسة. فما الجديد؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "الخطير أن تصبح المدرسة رمزا للعقوبة لا بوابة للحياة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي كتب التاريخ نقرأ عن المعتصم بن هارون الرشيد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "الذي قال يوما لأبيه بعد وفاة غلامه:⏸ مات واستراح من الكتاب.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فحرمه الرشيد من الكتاب وصار أميا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كلمة كره للتعليم غيرت مصير خليفة عباسي كامل. فكيف بكلمة طالب في القرن الحادي والعشرين؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والأرقام تسند القصة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "تشير تقارير اليونسكو إلى أن أكثر من ثلاثين بالمئة من الطلبة عالميا يعانون من قلق المدرسة ويفكرون في الهروب منها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل إن بعض الدراسات تربط بين كره المدرسة وانخفاض الدافعية مدى الحياة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالتعليم الذي يبدأ بكره قد ينتهي بجيل يرى المعرفة عبئا لا فرصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحين يفقد الطالب شغفه في أول يوم، نكون قد خسرنا نصف المعركة قبل أن تبدأ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكن اللوم موزع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن المسؤولية لا تقع على المدرسة وحدها، فاليد الواحدة لا تصفق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالبيت الذي لا يتحدث عن العلم إلا وقت النتائج،⏸ ولا يزرع في أطفاله شغف السؤال، يصنع طالبا يرى المدرسة سجنا مؤقتا.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمعلم الذي يكتفي بتلقين الدروس دون أن يفتح حوارا أو يربط المعرفة بالحياة يزيد الفجوة عمقا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالبيئة التعليمية شبكة مترابطة:⏸ الأسرة تغرس الدافع، والمدرسة تصقله، والمجتمع يحتفي به.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وإن اختل ضلع واحد، تعطلت المنظومة كلها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وتخيلوا أما تجهز حقيبة ابنها في الصباح، وتضع فيها حلمها أن تراه ناجحا.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بينما قلبه يهمس: ليتني لا أذهب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتخيلوا أبا يوصله إلى باب المدرسة، يظن أنه أرسله إلى مستقبل أفضل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فيما عينا الطفل تبحثان عن مخرج للهروب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما الحل؟⏸ نفرض العودة بالقوة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا بيت القصيد:إن الحل ليس في فرض العودة،⏸ بل في إعادة تعريف العودة ذاتها.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن يصنع البيت أجواء تشجع الطفل على حب التعلم قبل حب الدرجات.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن تتحول المدرسة إلى مساحة حوار وتجربة، لا مجرد مكان لتلقي التعليمات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن يسمع صوته.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأن يشعر الطالب أن صوته مسموع وأن معاناته مفهومة، لا أن يوبخ على كل شكوى.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن تتحول بداية العام إلى احتفال بالمعرفة لا بموعد الاختبارات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالطالب الذي يتمنى الموت عند سماع الجرس ليس بحاجة إلى جدول حصص جديد،⏸ بل إلى سبب جديد ليعيش يومه الدراسي.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالسؤال الحقيقي ليس: متى نعيد أبناءنا إلى المدرسة؟⏸ بل: كيف نعيد المدرسة إلى أبنائنا؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

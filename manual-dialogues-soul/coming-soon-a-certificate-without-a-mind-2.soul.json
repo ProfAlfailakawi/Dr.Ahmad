@@ -1,0 +1,280 @@
+{
+  "slug": "coming-soon-a-certificate-without-a-mind-2",
+  "bridgeAfter": [
+    14,
+    29
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "قريبا:⏸ شهادة بدون عقل. الورق يتخرج، والعقل غائب.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في زمن الشهادات، لا أحد يسأل:⏸ ما الذي تعلمه هذا الخريج فعلا؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بل يسأل: من أين تخرج؟⏸ وكم المعدل؟⏸ وهل ختم الورقة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تحولت الشهادة من دليل على نضج العقل إلى بطاقة دخول للوظيفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حتى أصبح بعض الخريجين يلقب بدكتور،⏸ لكنه لا يتقن كتابة صفحة بلا نسخ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يجيد شرح فكرة دون محرك بحث.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي دراسة صادمة من مؤسسة Gallup رقم يوجع.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أن أحد عشر بالمئة فقط من أرباب العمل في العالم العربي يرون أن خريجي الجامعات مستعدون فعليا لسوق العمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن أكثر من نصفهم يفتقدون مهارات التفكير النقدي أو حل المشكلات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فما قيمة الشهادة إن لم يشتغل العقل؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما جدوى الألقاب إن كانت تغلف فراغا داخليا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وسؤال أخير.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل العقل يقاس بورقة، أم بقدرة صاحبها على طرح سؤال حقيقي؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي المشهد الرمزي يقف طالب في حفل التخرج، ~~ يسلم الشهادة بيده.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكنه لا يذكر من سنواته الجامعية سوى الامتحانات المنقولة، والعروض الجاهزة، والمشاريع المنسوخة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ألا نظلم جامعات كثيرة تجتهد فعلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يصف نمطا لا يعمم. لقد تحولت بعض الجامعات إلى مصانع ألقاب.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والمجتمع شريك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والمجتمع إلى مهرجان ألقاب بلا مضمون. كل شيء يقاس ببكالوريوس، وماجستير، ودكتوراه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن لا أحد يسأل: وماذا بعد؟⏸ فنحن لا ننتج خريجين،⏸ بل نكرر أوراقا مطبوعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والخطر لا يكمن في عدد الشهادات،⏸ بل في غياب السؤال خلفها.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "أن يتخرج الطالب وقد أجبر على الحفظ دون أن يدرب على التفكير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن يدرس منهجا لا علاقة له بحياته، ثم يطلب منه أن يغير وطنه لاحقا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي دراسة أجراها البنك الدولي تبين أن أكثر من ثمانية وخمسين بالمئة من خريجي الجامعات في الشرق الأوسط يعتمدون على التلقين فقط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن أقل من عشرين بالمئة فقط يشعرون بأنهم اكتسبوا مهارات قابلة للتطبيق العملي أو النقاش الحقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا يظهر التناقض.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كلما ارتفع عدد الشهادات تراجع عدد الأفكار، ~~ وكلما ازدادت الألقاب خفت صوت السؤال.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالجامعة في أصلها مكان للعقل الباحث، وللمخطئ الذي يتعلم، وللمجتهد الذي يصحح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكننا حولناها إلى منصة تجميل سير ذاتية، لا مختبرا للأفكار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وصار الطالب يحلم باللقب أكثر مما يحلم بتغيير حقيقي في حياته أو مجتمعه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف نختبر ذلك عمليا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يقترح اختبارا بسيطا:⏸ ماذا سيفعل هذا الخريج لو انقطع عنه الإنترنت يوما؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هل يستطيع أن يكتب فكرة؟⏸ وأن يعلق على ظاهرة دون الرجوع إلى الذكاء الاصطناعي؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالشهادة التي لا تصنع بالوعي هي شهادة موضوعة على الرف لا على العقل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "والعقل الذي لا يختبر بالسؤال لا يزال في الطور الأولي، مهما علق عليه من ألقاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن لا نحارب الشهادات،⏸ بل ندافع عن العقل الذي غيب تحتها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "حتى لا نصحو يوما على جمهورية الشهادات، وفيها كل شيء مذكور ما عدا الفكر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201804-001",
+  "bridgeAfter": [
+    21,
+    29
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "مو من زمان، كان فيه غابة يعيش فيها مجتمع طموح.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يملؤه الأمل والطيبة، ويريدون الخير للجميع.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "يعلمون أبناءهم كيف يبنون غابة الإبداع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فقد تأسست الغابة على أرض طيبة خالية من الغربان والجرذان السمان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يسودها الصدق والأمان، وهذا ما كان.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي الغابة مدرسة، مديرها الليث الأبيض، مرب فاضل يحب الجميع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويتحمل مسؤولية أبناء الغابة كلهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفيها المعلمون الأفاضل الذين عاهدوا الله على حسن التربية والتعليم لأبناء الغابة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهم مجتمع طموح يحب كل جديد في زمانه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يحفزهم الليث الأبيض دائما على التطوير واستخدام كل الوسائل الجديدة في التعليم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وأولياء أمورهم أسعد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والطالب فيها سعيد وفي تنام مستمر، وأولياء أمورهم أكثر سعادة بأبنائهم وإنجازاتهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكان الليث الأبيض مدير المدرسة يتعاون مع الغابات الأخرى في استقطاب كل ما هو جديد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومعاونوه كانوا من الأخيار، ومن يشتد بهم الظهر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكانت الغابة تدخل مسابقات الإبداع مع الغابات الأخرى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وكان مبدعوها يحصلون على المراكز الأولى في اختراعاتهم وأفكارهم الابتكارية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وملك الغابة سعيد بغابته وإنجازاتهم، وكان خير من يكرم مبدعيها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويحفز أبناءها إلى الأمام، وهذا ما كان يا سادة يا كرام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكان الليث الأبيض والقرد حكيم الغابة يذهبون إلى الذئب والثعلب، وهم المشرفون على الغابة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ليقدموا المزيد من الإنجازات، ويطلبون المزيد من التطور للتعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مجتمع طموح يا سادة يا كرام، لا يعرف اليأس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكان الذئب والثعلب يستعينون بعباقرة الغابة والغابات الأخرى للتقدم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما الذي حدث بعد ذلك يا ترى؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبعد الإعلان عن الحاجة إلى المزيد من الإبداعات التعليمية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكي تأخذ نصيبها من التجربة على بعض الصفوف، لإثبات نجاحها بعد التقييم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن ثم تعميم التجربة على باقي الصفوف، ليأخذ الطلبة نصيبهم من التطور التكنولوجي والإبداع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وشاءت الأقدار أن تسللت الغربان والجرذان السمان إلى الغابة بأهداف سامية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وبالاتفاق مع الذئب والثعلب، تم افتتاح مزرعة سميت باسم غال على قلوبهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبدأت بالفعل بالعمل من أجل تقديم تجارب جديدة من نوعها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن تلك التجارب لم تكن تؤتي أكلها في تلك الغابة الطيبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف استيقظ أهل الغابة على الحقيقة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفجأة في ليلة وضحاها، استيقظ أهل الغابة على وقع عجيب.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تفاجؤوا بأن اسم المزرعة قد تغير، بعد أن كان يحمل اسما عزيزا على قلوبهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فأصبحت مزرعة اللاشيء واللاجديد، وتساءل الجميع بما حصل في غابتهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأصبح من ذلك اليوم كل من يقدم اختراعا أو إبداعا يقابل بالصد والاستقصاء.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فمنذ أن دخلها الغربان والجرذان تسممت الغابة، ولم تعد غابة الإبداع،⏸ بل أصبحت غابة الضياع.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

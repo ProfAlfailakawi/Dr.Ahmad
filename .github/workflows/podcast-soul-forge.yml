@@ -100,6 +100,21 @@ jobs:
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
 
+      # الرفع يُبقي نسخاً احتياطية على R2 حتى تُثبَّت المعاملة. وهي لا تضرّ
+      # الصحّة (ملفُّ المعاملة يموت مع التشغيلة ولا يعيش بينها)، لكنّ تثبيتها
+      # ينظّف الدلو فلا يتراكم فيه ما لا يُقرأ.
+      - name: تثبيت معاملة R2
+        if: success()
+        run: node scripts/publish-audio-r2.mjs --commit-last
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+
       - name: تثبيت السجلّ في المستودع
         run: |
           if git diff --quiet -- src/data/audio-meta.json; then

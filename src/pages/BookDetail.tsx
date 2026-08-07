@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router'
 import { FadeUp, Page, Reveal } from '../components/ui'
+import { BranchGrove, useBranches } from '../components/ComposeScene'
 import { JsonLd, useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
 import { useCmsContent } from '../lib/content'
@@ -249,6 +250,8 @@ export default function BookDetail() {
   const { slug } = useParams()
   const { books, articles, papers, loading } = useCmsContent()
   const book = books.find((b) => b.slug === slug)
+  /* الأغصان: من خريطة المعرفة، بالقانون نفسه الذي في «اسأل المكتبة». */
+  const branches = useBranches({ seedTitle: book?.title || '', seedText: book?.desc || '', seedKind: 'book', excludeSlug: slug, articles, books, papers })
   const guide = book ? bookGuide(book.slug, book.desc) : null
   const longDescription = book && guide ? (book.longDescription || editorialDescription(book.title, guide)) : ''
   const toc = book ? verifiedToc(book.slug, book.toc) : []
@@ -406,6 +409,14 @@ export default function BookDetail() {
           </FadeUp>
         </div>
       </section>
+
+      {branches.length > 0 && (
+        <section className="px-6 pb-16 md:px-11 md:pb-20">
+          <div className="mx-auto max-w-3xl">
+            <BranchGrove items={branches} variant="sprig" />
+          </div>
+        </section>
+      )}
 
       <DeferredBookWorld book={book} seed={guide?.idea || book.desc || ''} articles={articles} books={books} papers={papers} />
     </Page>

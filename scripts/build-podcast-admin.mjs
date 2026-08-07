@@ -262,5 +262,39 @@ const playlists = themes.map((theme) => ({
 })).filter((playlist) => playlist.episodes.length)
 
 mkdirSync(dirname(OUT), { recursive: true })
-writeFileSync(OUT, `${JSON.stringify({ generatedAt, episodes, playlists }, null, 2)}\n`, 'utf8')
+/* حوارٌ جاهز يحبسه مقاله —
+   كل ما في هذا النظام معلَّقٌ بالمقال: الحلقة تُبنى من مقال، وتُعرض تحت مقال،
+   وخاتمتها تقول للمستمع «فليقرأ المقال الأصلي في موقع الدكتور». فإن لم يُنشر
+   المقال فلا يجوز أن تُنشر الحلقة — وإلا وجّه الصوتُ الناسَ إلى صفحةٍ لا وجود
+   لها. لكنّ الخطأ الحقيقي كان الصمت: المصنع يتخطّاها بلا كلمة، والمنظّف يمحو
+   مدخلها من السجلّ بلا كلمة، فتبقى حلقةٌ كاملةً مكنوسةً مضبوطةً بلا أن يعرف
+   أحدٌ لماذا لم تصل. تُسمّى هنا بسببها وبالفعل الذي يفكّها. */
+const dialogueTexts = existsSync(resolve(ROOT, 'manual-dialogues-soul'))
+  ? readdirSync(resolve(ROOT, 'manual-dialogues-soul')).filter((name) => name.endsWith('.soul.json'))
+  : []
+const blocked = dialogueTexts
+  .map((name) => name.slice(0, -'.soul.json'.length))
+  .filter((slug) => !knownSlugs.has(slug))
+  .map((slug) => {
+    let opening = ''
+    let turns = 0
+    try {
+      const soul = JSON.parse(readFileSync(resolve(ROOT, 'manual-dialogues-soul', `${slug}.soul.json`), 'utf8'))
+      turns = Array.isArray(soul.utterances) ? soul.utterances.length : 0
+      opening = String(soul.utterances?.[0]?.text || '').replace(/[⏸~]/g, '').replace(/\s+/g, ' ').trim()
+    } catch { /* الحوار يبقى مُسمّى بمعرّفه */ }
+    return {
+      slug,
+      turns,
+      opening,
+      reason: 'المقال غير منشور في الموقع',
+      action: `انشر مقال «${slug}» من لوحة المقالات، ثم شغّل مصنع الروح — تُولَّد الحلقة وتُرفع وحدها.`,
+    }
+  })
+
+writeFileSync(OUT, `${JSON.stringify({ generatedAt, episodes, playlists, blocked }, null, 2)}\n`, 'utf8')
 console.log(`✔ podcast-admin.json · ${episodes.length} حلقات حوارية · ${playlists.length} قوائم`)
+if (blocked.length) {
+  console.log(`⚠ ${blocked.length} حوار جاهز لا يُنشر لأن مقاله غير منشور:`)
+  for (const item of blocked) console.log(`  - ${item.slug} (${item.turns} مداخلة)`)
+}

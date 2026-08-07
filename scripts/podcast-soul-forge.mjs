@@ -714,6 +714,7 @@ async function main() {
   if (!KEY) { console.error('✘ AZURE_SPEECH_KEY مفقود'); process.exit(1) }
   const argv = process.argv.slice(2)
   let slugs = argv.filter((a) => !a.startsWith('--'))
+  const explicit = slugs.length > 0 && !argv.includes('--all')
   if (argv.includes('--all')) {
     slugs = readdirSync(SOUL_DIR).filter((f) => f.endsWith('.soul.json')).map((f) => f.slice(0, -10)).sort()
   }
@@ -728,15 +729,22 @@ async function main() {
   if (batch > 0 && limit > 0) slugs = slugs.slice((batch - 1) * limit, batch * limit)
   else if (limit > 0) slugs = slugs.slice(0, limit)
   if (argv.includes('--skip-done')) slugs = slugs.filter((s) => !existsSync(join(OUT_DIR, `${s}.dialogue.mp3`)))
-  /* حلقةٌ بلا مقالٍ ذي متنٍ كامل يرفضها حارس السجلّ فيتوقّف نشر الموقع كلّه.
-     فنُسقطها هنا قبل أن تُولَّد — لا بعد أن تُرفع. */
+  /* حلقةٌ بلا مقالٍ منشور: كنتُ أظنّ أنها توقف نشر الموقع، فأسقطتُها دائماً.
+     ثم جرّبتُها فتبيّن الظنّ خاطئاً — prune-orphan-audio يكنس مدخلها من السجلّ
+     ويمضي البناءُ أخضر، وbuildIndex لا يُدخلها المجلس أصلاً لأنه يمشي على
+     المقالات. فلا ضرر في توليدها ورفعها: تنتظر على R2، وحين يُنشر مقالها
+     يُعيدها reconcile-audio-meta إلى السجلّ وحدها بلا توليدٍ ثانٍ.
+
+     والقاعدة: في الدفعات (--all) تُتخطّى — لا تُنفَق الحصّة على ما لا يُسمع.
+     أمّا من سُمّيت باسمها في الطلب فتُولَّد: التسمية الصريحة قرارٌ لا سهو. */
   const bodiesPath = resolve(ROOT, 'src/data/bodies.json')
-  if (existsSync(bodiesPath)) {
+  if (existsSync(bodiesPath) && !explicit) {
     const bodies = JSON.parse(readFileSync(bodiesPath, 'utf8'))
     const known = new Set(Array.isArray(bodies) ? bodies.map((b) => b.slug) : Object.keys(bodies))
     const orphans = slugs.filter((s) => !known.has(s))
     if (orphans.length) {
       console.warn(`⚠ تُتخطّى ${orphans.length} حلقةً لا مقالَ لها: ${orphans.join(' · ')}`)
+      console.warn('  لتوليدها رغم ذلك: سمِّها باسمها في الطلب — تُرفع وتنتظر نشر مقالها.')
       slugs = slugs.filter((s) => known.has(s))
     }
   }

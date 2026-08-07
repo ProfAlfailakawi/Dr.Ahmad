@@ -1,4 +1,5 @@
 import { normalizeArabic } from './content-index.mjs'
+import { toRoot } from './dialect-lexicon.mjs'
 
 export function isVerbatimFromItem(item, text) {
   if (!item || !text) return false
@@ -14,16 +15,35 @@ function countWords(text) {
   return text.trim().split(/\s+/).filter(Boolean).length
 }
 
+/* حدود الوقف في متون الدكتور: النقطة والسؤال والتعجّب وعلامة الحذف والسطر
+   الجديد. الفاصلة المنقوطة تفصل شطري فكرةٍ واحدة فلا نقف عندها. */
+const STOP_MARK = /[.؟!…\n]/
+
+/* الاقتباس يبدأ من أول المتن، إلا أن يكون أول سطرٍ هو العنوان نفسه — فاقتباس
+   العنوان ليس كلاماً. والبداية تبقى موضعاً حقيقياً في الأصل، فالمقطع يظل
+   منسوخاً حرفاً بحرف. */
+function bodyStart(item, source) {
+  const title = String(item?.title || '').trim()
+  if (!title) return 0
+  const firstBreak = source.indexOf('\n')
+  const firstLine = (firstBreak < 0 ? source : source.slice(0, firstBreak)).trim()
+  if (firstBreak < 0 || normalizeArabic(firstLine) !== normalizeArabic(title)) return 0
+  const rest = source.slice(firstBreak)
+  return firstBreak + (rest.length - rest.replace(/^\s+/, '').length)
+}
+
 export function extractVerbatimAtSpeed(item, speed = '30s') {
   if (!item) return null
-  const source = (item.body && item.body.trim()) ? item.body.trim() : (item.excerpt || '').trim()
-  if (!source) return null
+  const raw = (item.body && item.body.trim()) ? item.body.trim() : (item.excerpt || '').trim()
+  if (!raw) return null
+  const source = raw.slice(bodyStart(item, raw))
+  if (!source.trim()) return null
 
   const is2min = speed === '2min'
   const minWords = is2min ? 180 : 40
   const maxWords = is2min ? 280 : 85
 
-  const words = source.split(/\s+/)
+  const words = source.split(/\s+/).filter(Boolean)
   let targetWordCount = is2min ? 220 : 60
   if (words.length < targetWordCount) {
     targetWordCount = words.length
@@ -32,21 +52,31 @@ export function extractVerbatimAtSpeed(item, speed = '30s') {
     targetWordCount = minWords
   }
 
-  // Find character index where word count reaches targetWordCount
+  /* الجذر: كان القطع يقع عند الكلمة رقم ٦٠ أينما وقعت، فيصل الاقتباس مبتوراً
+     («…يذاكر لا ليفهم، بل») ويبتلع سطوراً فارغة داخل علامتَي التنصيص. الآن
+     نمشي على الكلمات فنسجّل كل موضع وقفٍ يقع داخل النافذة المسموحة، ونختار
+     آخرها — فينتهي الكلام حيث أنهاه الدكتور، والعدّ يبقى داخل مدى الاختبار. */
   let count = 0
-  let endIdx = source.length
-  const regex = /\s+/g
-  let match
-  while ((match = regex.exec(source)) !== null) {
-    count++
-    if (count === targetWordCount) {
-      endIdx = match.index
-      break
+  let fallbackIdx = source.length
+  let stopIdx = -1
+  let stopWords = 0
+  for (let i = 0; i < source.length; i += 1) {
+    if (!/\s/.test(source[i])) continue
+    if (i > 0 && /\s/.test(source[i - 1])) continue
+    count += 1
+    if (count === targetWordCount) fallbackIdx = i
+    if (count >= minWords && count <= maxWords && STOP_MARK.test(source.slice(0, i).trimEnd().slice(-1))) {
+      stopIdx = i
+      stopWords = count
     }
+    if (count > maxWords) break
   }
 
-  const text = source.slice(0, endIdx).trim()
-  const actualWords = text.split(/\s+/).filter(Boolean).length
+  const endIdx = stopIdx > 0 && stopWords >= minWords ? stopIdx : fallbackIdx
+  /* المقطع يبقى قطعةً واحدة من الأصل حرفاً بحرف (شرط البوابة)، ولا نُهذّب منه
+     إلا علامات الوقف المعلّقة في آخره. */
+  const text = source.slice(0, endIdx).trim().replace(/[،,؛…]+$/, '').trim()
+  const actualWords = countWords(text)
 
   return {
     text,
@@ -109,24 +139,52 @@ export function selectDailyUnsentContent(db, options = {}) {
   return null
 }
 
+/* شبكة الأفكار كانت تُرجع «آخر ثلاث مواد» أياً كان المقال، وبـsharedConcepts
+   فارغة — فيقول البوت «امشِ مع الفكرة عبر…» ثم يسوق مقالاتٍ لا تصلها بها فكرة.
+   الآن نرجّح بالمشترك الحقيقي: كلمات العنوان والمتن مجذّرة، والعنوان أثقل. */
 export function buildQuietIdeaNetwork(db, item, limit = 3) {
   if (!item) return []
   const candidates = db.all(
-    "SELECT id, title, url FROM content_items WHERE id <> ? AND (trim(coalesce(body,''))<>'' OR trim(coalesce(excerpt,''))<>'') ORDER BY date DESC LIMIT 20",
+    "SELECT id, title, url, body, excerpt FROM content_items WHERE id <> ? AND (trim(coalesce(body,''))<>'' OR trim(coalesce(excerpt,''))<>'') ORDER BY date DESC LIMIT 60",
     item.id
   ) || []
 
-  const results = []
-  for (const cand of candidates) {
-    results.push({
-      contentId: cand.id,
-      title: cand.title,
-      url: cand.url,
-      sharedConcepts: [],
+  const keyOf = (value) => new Set(
+    normalizeArabic(value).split(' ').map(toRoot).filter((word) => word.length >= 3),
+  )
+  const seedTitle = keyOf(item.title || '')
+  const seedBody = keyOf(`${item.title || ''} ${item.body || item.excerpt || ''}`)
+
+  const ranked = []
+  for (const candidate of candidates) {
+    const titleWords = keyOf(candidate.title || '')
+    const bodyWords = keyOf(`${candidate.title || ''} ${candidate.body || candidate.excerpt || ''}`)
+    const shared = []
+    let score = 0
+    for (const word of seedBody) {
+      if (titleWords.has(word)) { score += 3; shared.push(word) }
+      else if (bodyWords.has(word) && seedTitle.has(word)) { score += 1; shared.push(word) }
+    }
+    if (score <= 0) continue
+    ranked.push({
+      contentId: candidate.id,
+      title: candidate.title,
+      url: candidate.url,
+      sharedConcepts: [...new Set(shared)].slice(0, 4),
+      score,
     })
-    if (results.length >= limit) break
   }
-  return results
+  ranked.sort((a, b) => b.score - a.score)
+
+  /* ولو لم تجمعها فكرة، فآخر المواد خيرٌ من لا شيء — لكن بعد المحاولة لا قبلها. */
+  const results = ranked.slice(0, limit).map(({ score, ...path }) => path)
+  if (results.length) return results
+  return candidates.slice(0, limit).map((candidate) => ({
+    contentId: candidate.id,
+    title: candidate.title,
+    url: candidate.url,
+    sharedConcepts: [],
+  }))
 }
 
 export function buildFifteenSecondChallenge(db, options = {}) {
@@ -146,10 +204,24 @@ export function buildFifteenSecondChallenge(db, options = {}) {
   const extract = extractVerbatimAtSpeed(eligibleTarget, '30s')
   if (!extract) return null
 
-  const distractors = items.filter(i => i.id !== eligibleTarget.id && !sentSet.has(i.id)).slice(0, 2)
-  if (distractors.length < 2) {
-    const fallbackDistractors = items.filter(i => i.id !== eligibleTarget.id).slice(0, 2)
-    distractors.push(...fallbackDistractors.slice(distractors.length))
+  /* المُلهيان كانا «آخر مقالين» دائماً — بعيدين عن الموضوع، فيُعرف الجواب من
+     العنوان بلا قراءة الاقتباس. نختارهما الآن من جيران الفكرة: قريبَين كفايةً
+     ليكون الاختيار اختباراً حقيقياً. */
+  const neighbours = buildQuietIdeaNetwork(db, eligibleTarget, 6)
+    .map((path) => items.find((item) => item.id === path.contentId))
+    .filter(Boolean)
+  const pool = [
+    ...neighbours.filter((item) => !sentSet.has(item.id)),
+    ...neighbours,
+    ...items.filter((item) => item.id !== eligibleTarget.id && !sentSet.has(item.id)),
+    ...items.filter((item) => item.id !== eligibleTarget.id),
+  ]
+  const distractors = []
+  for (const candidate of pool) {
+    if (candidate.id === eligibleTarget.id) continue
+    if (distractors.some((chosen) => chosen.id === candidate.id)) continue
+    distractors.push(candidate)
+    if (distractors.length >= 2) break
   }
   if (distractors.length < 2) return null
 
@@ -158,10 +230,24 @@ export function buildFifteenSecondChallenge(db, options = {}) {
     ...distractors.map(d => ({ contentId: d.id, title: d.title }))
   ]
 
-  // Stable deterministic shuffle or simple swap
-  allOptions.sort((a, b) => a.contentId.localeCompare(b.contentId))
+  /* الترتيب بـcontentId كان يضع الجواب في الموضع نفسه كل مرة (قِيس: الثاني في
+     كل تحدٍّ) فيُحلّ التحدّي بالتخمين. الترتيب الآن بمفتاحٍ مشتقٍّ من السائل
+     والمادة: ثابتٌ للجلسة الواحدة (فالرقم يظل يعني ما عُرض)، ومختلفٌ من تحدٍّ
+     إلى تحدٍّ ومن سائلٍ إلى سائل. */
+  const seed = `${jidKey || ''}|${eligibleTarget.id}`
+  const mix = (value) => {
+    let hash = 2166136261
+    for (const char of `${seed}|${value}`) {
+      hash ^= char.codePointAt(0)
+      hash = Math.imul(hash, 16777619) >>> 0
+    }
+    return hash
+  }
+  allOptions.sort((a, b) => mix(a.contentId) - mix(b.contentId))
 
   return {
+    id: `challenge-${mix(eligibleTarget.id).toString(36)}`,
+    /* الاقتباس هنا يُحفظ دليلاً ويُطابَق بالمتن حرفاً بحرف، فلا يُهذَّب. */
     quote: extract.text,
     options: allOptions,
     optionIds: allOptions.map(o => o.contentId),

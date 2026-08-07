@@ -67,17 +67,18 @@ check(encyclopediaQuotes.length >= 10, 'مختارات صفحة الكتاب م�
 check(encyclopediaQuotes.every((quote) => passages.some((item) => item.fingerprint === quote.fingerprint)), 'كل مختارٍ معروض مأخوذ من الفهرس نفسه')
 
 /* ═══ الكتب الثمانية الأخرى: البوابة نفسها تحرسها ═══ */
-/* الأرضيات مضبوطةٌ عند نحو ٨٨٪ من المستوى المحقَّق، فتلتقط أي انحدارٍ حقيقي
-   ولا تنكسر من تذبذبٍ يسير في المصدر. */
+/* الأرضيات عند نحو ٨٨٪ من المستوى **بعد المراجعة بالعين**، فتلتقط أي انحدارٍ
+   حقيقي ولا تنكسر من تذبذبٍ يسير في المصدر. ونزلت عن سابقتها لأن مئة مقطعٍ
+   حُجبت ببصمتها بعد قراءتها — نقصٌ مقصود لا انحدار. */
 const floors = {
-  'digital-education': [72, 39],
-  gamification: [58, 39],
-  'handy-tech': [90, 47],
-  'kids-tech': [78, 46],
-  'mega-data': [110, 52],
-  'smart-school': [79, 47],
-  teaching: [195, 105],
-  'virtual-world': [53, 32],
+  'digital-education': [56, 34],
+  gamification: [49, 34],
+  'handy-tech': [73, 40],
+  'kids-tech': [72, 44],
+  'mega-data': [106, 51],
+  'smart-school': [65, 41],
+  teaching: [177, 98],
+  'virtual-world': [49, 32],
 }
 let otherPassages = 0
 let otherPages = 0

@@ -184,8 +184,7 @@
       "topics": "",
       "transcriptStatus": "transcribed",
       "audioHostingRequired": true,
-      "audioFile": "Tarbawyah-14.mp3",
-      "audioUrl": "/media-audio/Tarbawyah-14.mp3"
+      "audioFile": "Tarbawyah-14.mp3"
     },
     {
       "id": "idaa",
@@ -201,8 +200,7 @@
       "topics": "",
       "transcriptStatus": "transcribed",
       "audioHostingRequired": true,
-      "audioFile": "idaa.mp3",
-      "audioUrl": "/media-audio/idaa.mp3"
+      "audioFile": "idaa.mp3"
     }
   ]
 }

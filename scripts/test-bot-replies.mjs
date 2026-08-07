@@ -16,7 +16,7 @@
  */
 import assert from 'node:assert/strict'
 import { openDatabase } from '../whatsapp-agent/db.mjs'
-import { syncContentIndex, findContent } from '../whatsapp-agent/content-index.mjs'
+import { buildContentIndex, syncContentIndex, findContent } from '../whatsapp-agent/content-index.mjs'
 import { classifyIntent, handleIncoming, INTENTS } from '../whatsapp-agent/intent-engine.mjs'
 import { isVerbatimFromItem } from '../whatsapp-agent/daily-experience.mjs'
 import fs from 'node:fs'
@@ -234,9 +234,19 @@ for (const [phrase, voice] of [['شغل الصوت', 'صوت فهد'], ['الص�
     assert.ok(text.includes(voice), `الصوت المُعطى ليس ${voice}`)
   })
 }
+/* كان هذا الفحص يسأل «اسمعني الحوار» بلا سياق، فيقع على أحدث مقالة ويشترط
+   ألّا يُعطى لها رابط. وقد صحّ ذلك يوم كُتب — يوم لم تكن حوارات المقالات قد
+   نُشرت. ثم أكملت قافلة الصوت المئة والثلاث والأربعين، فصار الفحص يُدين
+   الجوابَ الصحيح: رابطٌ لملفٍّ منشورٍ فعلاً على R2 وموثَّقٍ في سجلّ الصوت.
+   فالشرط يُقاس الآن على مادةٍ **لا حوار لها فعلاً** (كتاب أو بحث)، فيبقى
+   الحارس حارساً على القاعدة نفسها: لا رابطَ يقود إلى صمت. */
 check('audio', 'الطلب غير المنشور لا يُعطى رابطاً البتّة', () => {
-  const text = textOf(conversation().say('اسمعني الحوار'))
-  if (/\.dialogue\.mp3/.test(text)) throw new Error('أُعطي رابط حوارٍ غير منشور')
+  const silent = buildContentIndex(root).find((item) => !item.audio?.dialogue && String(item.title || '').length > 6)
+  assert.ok(silent, 'لا توجد مادةٌ بلا حوار منشور ليُقاس عليها الشرط')
+  const chat = conversation()
+  chat.say(silent.title)
+  const text = textOf(chat.say('اسمعني الحوار'))
+  if (/\.dialogue\.mp3/.test(text)) throw new Error(`أُعطي رابط حوارٍ غير منشور لـ«${silent.title}»`)
 })
 
 /* التذكير: «مساءً» مساءٌ فعلاً */

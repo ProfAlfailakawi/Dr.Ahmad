@@ -7,7 +7,8 @@ import { Pagination, usePagedList } from '../components/Pagination'
 import { usePersistentAudio, type PersistentTrack } from '../lib/persistent-audio'
 import { versionedAudioUrl } from '../components/extras'
 import { AudioPlayer, openAudioPlayer } from '../components/AudioPlayer'
-import { listenEpisodes, type ListenEpisode } from '../lib/listen-catalog'
+import { type ListenEpisode } from '../lib/listen-catalog'
+import { listenEpisodes } from '../lib/listen-episodes'
 import { SocialIcon } from '../components/icons'
 
 /* ═══════════ مجلس الفكرة ═══════════

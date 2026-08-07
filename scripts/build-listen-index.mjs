@@ -23,6 +23,17 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = resolve(ROOT, 'src/data/listen-index.json')
 const SPOKEN_OUT = resolve(ROOT, 'src/data/spoken-index.json')
+/* ── بصمات الصوت: السطر الذي أوقف النشر كلّه ──
+   `audio-meta.json` سجلٌّ إداريّ ثقيل (sha256 وsourceHash وbytes وحالة تحقّق
+   لكل ملف)، وكان يُستورد في `extras.tsx` — وهي في حزمة الدخول. فكان **كامل
+   جرد R2 يُشحن إلى كل زائر**، وينمو مع كل حلقةٍ ترفعها القافلة. يوم ٧ أغسطس
+   بلغ النموّ حدَّ الميزانية (٥٩١KB من سقف ٥٢٠KB) فاحمرّت `build-and-deploy`،
+   ومعها توقّف نشر dr-api نفسه — فبقي عقل الواتساب على نسخة ما قبل الإصلاح
+   مهما دُفع من إصلاحات. والمتصفّح لا يحتاج من ذلك السجلّ إلا شيئين: بصمةً
+   قصيرة تكسر التخزين المؤقت، وثوانيَ المدّة لعدّاد الأثر. فنكتبهما هنا في
+   ملفٍّ مضغوط [بصمة، ثانية] لا يتجاوز خُمس حجم الأصل، ويبقى السجلّ الكامل
+   للوحة التحكم وحدها (حزمة كسولة). */
+const FINGERPRINTS_OUT = resolve(ROOT, 'src/data/audio-fingerprints.json')
 const SELF_TEST = process.argv.includes('--self-test')
 
 const AUDIO_BASE = String(process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
@@ -227,7 +238,21 @@ writeFileSync(OUT, `${JSON.stringify({
 spoken.sort((left, right) => left.slug.localeCompare(right.slug))
 writeFileSync(SPOKEN_OUT, `${JSON.stringify({ schemaVersion: 1, episodes: spoken })}\n`)
 
+/* البصمات: ملفات mp3 وحدها، وقيمةٌ من عنصرين لا كائنٌ بمفاتيح — الاسم يتكرّر
+   مئات المرّات فلا نُضاعفه بمفاتيح. البصمة ١٦ خانة (تكفي لكسر التخزين المؤقت،
+   والسجلّ الكامل عند اللوحة إن أُريد التحقّق). */
+const fingerprints = {}
+for (const [file, row] of Object.entries(audioMeta)) {
+  if (!file.endsWith('.mp3')) continue
+  const version = /^[a-f0-9]{64}$/i.test(String(row?.sha256 || '')) ? String(row.sha256).slice(0, 16) : ''
+  const seconds = Number.isFinite(Number(row?.durationSeconds)) ? Math.max(0, Math.round(Number(row.durationSeconds))) : 0
+  if (!version && !seconds) continue
+  fingerprints[file] = [version, seconds]
+}
+writeFileSync(FINGERPRINTS_OUT, `${JSON.stringify({ schemaVersion: 1, files: fingerprints })}\n`)
+
 const timed = episodes.filter((episode) => typeof episode.startSec === 'number').length
 const lines = spoken.reduce((total, item) => total + item.lines.length, 0)
 console.log(`✔ مجلس الفكرة: ${episodes.length} حلقة منشورة · ${timed} منها تبدأ عند ثانية السؤال`)
 console.log(`✔ فهرس المنطوق: ${lines} جملة من ${spoken.length} حلقة · ${Math.round(statSync(SPOKEN_OUT).size / 1024)}KB`)
+console.log(`✔ بصمات الصوت: ${Object.keys(fingerprints).length} ملفاً · ${Math.round(statSync(FINGERPRINTS_OUT).size / 1024)}KB (بدل ${Math.round(statSync(resolve(ROOT, 'src/data/audio-meta.json')).size / 1024)}KB في حزمة الدخول)`)

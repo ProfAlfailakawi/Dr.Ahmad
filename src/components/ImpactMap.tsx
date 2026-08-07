@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCmsContent } from '../lib/content'
-import audioMeta from '../data/audio-meta.json'
+/* عدّاد الأثر لا يحتاج إلا ثوانيَ المدّة، فيقرؤها من ملف البصمات المضغوط
+   بدل جرد R2 الكامل (انظر التعليق في `scripts/build-listen-index.mjs`). */
+import audioFingerprints from '../data/audio-fingerprints.json'
 import {
   arabicCountLabel,
   ARTICLE_FORMS,
@@ -66,7 +68,7 @@ function Stat({ value, label, active }: { value: number; label: string; active: 
   )
 }
 
-type AudioMetaRow = { durationSeconds?: number }
+type AudioMetaRow = (string | number)[]
 
 type AudioEpisodeSummary = {
   count: number
@@ -78,7 +80,7 @@ function summarizeAudio(meta: Record<string, AudioMetaRow>): AudioEpisodeSummary
 
   for (const [file, row] of Object.entries(meta)) {
     if (!file.endsWith('.mp3')) continue
-    const seconds = typeof row?.durationSeconds === 'number' ? row.durationSeconds : 0
+    const seconds = Number(row?.[1]) || 0
     if (seconds <= 0) continue
 
     const isDialogue = file.endsWith('.dialogue.mp3')
@@ -111,7 +113,7 @@ export default function ImpactMap() {
     const years = articles.map((article) => Number(String(article.iso).slice(0, 4))).filter((year) => year > 1990)
     const span = years.length ? Math.max(...years) - Math.min(...years) + 1 : 0
     const categories = new Set(articles.map((article) => article.cat).filter(Boolean)).size
-    const audio = summarizeAudio(audioMeta as Record<string, AudioMetaRow>)
+    const audio = summarizeAudio((audioFingerprints as { files?: Record<string, AudioMetaRow> }).files || {})
     return { articles: articles.length, papers: papers.length, books: books.length, audioCount: audio.count, audioHours: audio.hours, span, categories }
   }, [articles, papers, books])
 

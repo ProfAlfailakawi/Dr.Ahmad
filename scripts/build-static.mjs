@@ -292,10 +292,17 @@ const books = mergeCloudAdditions('book', localBooks, cloudCms.books)
 /* مواد الأرشيف الصوتية تسكن media-archive.json ولا يوجد لها سطر في data.ts،
    وكانت تسقط من التوليد الساكن فيصير رابطها المباشر 404 ولا تدخل خريطة الموقع. */
 const mediaArchivePath = resolve(ROOT, 'src/data/media-archive.json')
+/* تفادي التكرار يكون بالمطابقة لا بالنوع: استبعادُ كل ما له رابط كان يُسقط اثنتي عشرة
+   مادة أرشيفٍ مرئية لا سطر لها في data.ts أصلاً — فتظهر في القائمة وتردّ ٤٠٤ عند فتح
+   رابطها المباشر أو مشاركته، بعنوان «الصفحة غير موجودة» في المعاينة. */
+const mediaVideoId = (url = '') => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
+const localMediaSlugs = new Set(localMedia.map((item) => item.slug))
+const localMediaVideoIds = new Set(localMedia.map((item) => mediaVideoId(item.url)).filter(Boolean))
 const archiveMedia = existsSync(mediaArchivePath)
   ? (JSON.parse(readFileSync(mediaArchivePath, 'utf8')).items || [])
-    // اللقاءات المرئية لها سطورها في data.ts؛ هنا نضيف المواد الصوتية وحدها لتفادي تكرار الصفحات.
-    .filter((item) => item.title && item.slug && !item.url && (item.audioUrl || item.audioFile))
+    .filter((item) => item.title && item.slug && (item.url || item.audioUrl || item.audioFile))
+    .filter((item) => !localMediaSlugs.has(item.slug))
+    .filter((item) => { const id = mediaVideoId(item.url); return !id || !localMediaVideoIds.has(id) })
   : []
 const media = mergeCloudAdditions('media', [...localMedia, ...archiveMedia], cloudCms.media)
   .filter((item) => item.title && item.slug && (item.url || item.audioUrl || item.audioFile))

@@ -31,6 +31,7 @@ const EXACT_KEYS = [
   'journey:last-path',
   'reader:preferences:v2',
   'idea-memory:v1',
+  'living-mind:sessions:v1',
 ]
 const PREFIX_KEYS = ['reader:progress:v2:']
 
@@ -135,7 +136,19 @@ export function mergeValue(key: string, localRaw: string, remoteRaw: string): st
   }
   const local = parse(localRaw)
   const remote = parse(remoteRaw)
-  if (Array.isArray(local) && Array.isArray(remote)) return JSON.stringify(unionArrays(local, remote))
+  if (Array.isArray(local) && Array.isArray(remote)) {
+    if (key === 'living-mind:sessions:v1') {
+      const byId = new Map<string, unknown>()
+      for (const item of [...local, ...remote]) {
+        const id = identity(item)
+        const previous = byId.get(id) as { updatedAt?: number } | undefined
+        const incoming = item as { updatedAt?: number }
+        if (!previous || Number(incoming?.updatedAt || 0) >= Number(previous?.updatedAt || 0)) byId.set(id, item)
+      }
+      return JSON.stringify([...byId.values()].sort((a, b) => Number((b as { updatedAt?: number })?.updatedAt || 0) - Number((a as { updatedAt?: number })?.updatedAt || 0)).slice(0, 24))
+    }
+    return JSON.stringify(unionArrays(local, remote))
+  }
   return remoteRaw
 }
 
@@ -149,7 +162,7 @@ export function mergeStates(localState: SyncState, remoteState: SyncState): Sync
   return merged
 }
 
-const CHANGE_EVENTS = ['reader:space-changed', 'reader:quotes-changed', 'reader:journey-changed', 'reader:preferences-changed', 'media:watch-later-changed']
+const CHANGE_EVENTS = ['reader:space-changed', 'reader:quotes-changed', 'reader:journey-changed', 'reader:preferences-changed', 'media:watch-later-changed', 'living-mind:sessions-changed']
 
 export function applyState(state: SyncState) {
   if (!hasWindow()) return
@@ -287,9 +300,9 @@ export type SyncOutcome = 'synced' | 'unavailable' | 'error'
  * مزامنةٌ كاملة: يسحب السحابة، يدمجها مع المحلي بلا فقد، يطبّق المدمَج محلياً،
  * ثم يدفعه ليتقارب الجهازان. يبقى محلياً بسلاسة إن غابت السحابة.
  */
-export async function syncNow(code: string): Promise<SyncOutcome> {
+export async function syncNow(code: string, force = false): Promise<SyncOutcome> {
   const now = Date.now()
-  if (code === lastSyncCode && now - lastSyncAt < SYNC_COOLDOWN_MS) return 'synced'
+  if (!force && code === lastSyncCode && now - lastSyncAt < SYNC_COOLDOWN_MS) return 'synced'
   lastSyncAt = now
   lastSyncCode = code
   const local = collectLocalState()

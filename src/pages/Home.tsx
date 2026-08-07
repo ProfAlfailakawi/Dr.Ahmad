@@ -35,22 +35,24 @@ function HomeMediaThumb({ url, title }: { url: string; title: string }) {
   if (!source) return <div className="h-full w-full bg-wash" aria-hidden="true" />
 
   return (
-    <img
-      src={source}
-      alt={title}
-      loading="lazy"
-      width="480"
-      height="360"
-      className="h-full w-full object-cover"
-      onLoad={(event) => {
-        if (event.currentTarget.naturalWidth <= 120 && source.includes('/hqdefault.')) {
-          setSource(source.replace('/hqdefault.', '/mqdefault.'))
-        }
-      }}
-      onError={() => {
-        if (source.includes('/hqdefault.')) setSource(source.replace('/hqdefault.', '/mqdefault.'))
-      }}
-    />
+    <div className="complete-media-frame h-full w-full" style={{ '--media-thumb': `url(${source})` } as CSSProperties}>
+      <img
+        src={source}
+        alt={title}
+        loading="lazy"
+        width="480"
+        height="360"
+        className="complete-media-image h-full w-full"
+        onLoad={(event) => {
+          if (event.currentTarget.naturalWidth <= 120 && source.includes('/hqdefault.')) {
+            setSource(source.replace('/hqdefault.', '/mqdefault.'))
+          }
+        }}
+        onError={() => {
+          if (source.includes('/hqdefault.')) setSource(source.replace('/hqdefault.', '/mqdefault.'))
+        }}
+      />
+    </div>
   )
 }
 
@@ -667,8 +669,8 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
         <FadeUp delay={0.12}>
           <div className="relative mx-auto max-w-[420px]">
             {cover ? (
-              <div className="overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-[0_16px_30px_-24px_rgba(0,0,0,.55)]">
-                <img src={cover} alt={title} className="aspect-[4/3] h-full w-full object-cover" />
+              <div className={`${book ? 'complete-book-frame' : 'complete-media-frame'} overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-[0_16px_30px_-24px_rgba(0,0,0,.55)]`} style={!book ? ({ '--media-thumb': `url(${cover})` } as CSSProperties) : undefined}>
+                <img src={cover} alt={title} className={`${book ? 'complete-book-image' : 'complete-media-image'} aspect-[4/3] h-full w-full`} />
               </div>
             ) : (
               <div className="flex aspect-square items-center justify-center rounded-full border border-white/15 bg-white/[.04] p-12 text-center">
@@ -838,8 +840,8 @@ function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
           {books.map((book, i) => (
             <Card key={book.slug} delay={Math.min(i * 0.035, 0.18)}>
               <Link to={`/publications/${book.slug}`} viewTransition className="group block">
-                <div className="overflow-hidden rounded-xl border border-hair bg-white" style={{ aspectRatio: '1024 / 700' }}>
-                  <img src={book.cover} alt={book.title} loading="lazy" width="1024" height="700" className="h-full w-full object-cover" />
+                <div className="complete-book-frame overflow-hidden rounded-xl border border-hair bg-white" style={{ aspectRatio: '1024 / 700' }}>
+                  <img src={book.cover} alt={book.title} loading="lazy" width="1024" height="700" className="complete-book-image h-full w-full" />
                 </div>
                 <h3 className="mt-3 text-wrap-balance font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent md:text-[1.08rem]">{book.title}</h3>
               </Link>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { FadeUp, Page, Reveal } from '../components/ui'
+import { BranchGrove, useBranches } from '../components/ComposeScene'
 import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { MediaSaveButton } from '../components/MySpace'
@@ -12,9 +13,11 @@ const normalize = (value = '') => value.normalize('NFKD').replace(/[\u064B-\u065
 export default function MediaDetail() {
   const { slug = '' } = useParams()
   const [params] = useSearchParams()
-  const { media: cmsMedia, loading } = useCmsContent()
+  const { media: cmsMedia, articles, books, papers, loading } = useCmsContent()
   const media = useMemo(() => mergeMediaArchive(cmsMedia), [cmsMedia])
   const item = media.find((entry) => entry.slug === slug)
+  /* الأغصان: من خريطة المعرفة، بالقانون نفسه الذي في «اسأل المكتبة». */
+  const branches = useBranches({ seedTitle: item?.title || '', seedText: item?.topics || '', seedKind: 'media', excludeSlug: slug, articles, books, papers, media: cmsMedia })
   const [start, setStart] = useState(() => Math.max(0, Number(params.get('t')) || 0))
   const [query, setQuery] = useState('')
   const transcript = item?.transcript || null
@@ -72,5 +75,12 @@ export default function MediaDetail() {
         </section></FadeUp>}
       </div>
     </article>
+    {branches.length > 0 && (
+      <section className="px-6 pb-16 md:px-11 md:pb-20">
+        <div className="mx-auto max-w-3xl">
+          <BranchGrove items={branches} variant="rail" />
+        </div>
+      </section>
+    )}
   </Page>
 }

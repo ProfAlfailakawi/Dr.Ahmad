@@ -105,6 +105,116 @@ export function useRevealOnView<T extends HTMLElement>() {
   return { ref, shown }
 }
 
+const KIND_LABEL: Record<string, string> = {
+  article: 'مقال', book: 'كتاب', paper: 'بحث محكّم', media: 'لقاء',
+}
+
+const STOP = new Set('من في على الى عن هذا هذه ذلك التي الذي مع كان كانت بين كل ما لا'.split(' '))
+
+/* تطبيعٌ خفيف: يكفي لقياس التقارب، ولا يكلّف كخريطة المعرفة كاملة. */
+const roots = (value = '') => new Set(String(value)
+  .normalize('NFKC').replace(/ـ+/g, '').replace(/[\u064B-\u0652\u0670]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+  .replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim().split(' ')
+  .map((word) => word.replace(/^ال(?=.{3,})/u, '').replace(/(?:ات|ون|ين|ية|يه)$/u, ''))
+  .filter((word) => word.length > 2 && !STOP.has(word)))
+
+const shareCount = (left: Set<string>, right: Set<string>) => {
+  let n = 0
+  for (const item of left) if (right.has(item)) n += 1
+  return n
+}
+
+/**
+ * غصنان لمادةٍ بعينها — بلغة «اسأل المكتبة» نفسها: التنويع أولاً، وسببُ
+ * الصلة مكتوبٌ تحت كلٍّ منهما.
+ *
+ * ولا تُبنى خريطة المعرفة هنا: بناؤها تربيعيٌّ على كل المواد، وثمنه على
+ * هاتفٍ متوسط أغلى من أن يُدفع في صفحة قراءة. هذا مسحٌ خطّيٌّ للبذرة وحدها.
+ */
+export function useBranches(input: {
+  seedTitle: string
+  seedText?: string
+  seedKind: string
+  excludeSlug?: string
+  articles: { slug: string; title: string; excerpt?: string; cat?: string }[]
+  books: { slug: string; title: string; desc?: string }[]
+  papers: { slug: string; title: string; titleAr?: string; abstractAr?: string; meta?: string }[]
+  media?: { slug: string; title: string; topics?: string }[]
+}) {
+  const { seedTitle, seedText, seedKind, excludeSlug, articles, books, papers, media } = input
+  const [branches, setBranches] = useState<Branch[]>([])
+
+  useEffect(() => {
+    if (!seedTitle) { setBranches([]); return }
+    let on = true
+
+    const build = () => {
+      if (!on) return
+      const seed = roots(`${seedTitle} ${seedText || ''}`)
+      const seedTitleRoots = roots(seedTitle)
+      if (seed.size < 2) { setBranches([]); return }
+
+      type Candidate = Branch & { score: number }
+      const found: Candidate[] = []
+      const consider = (kind: string, slug: string, title: string, text: string, url: string) => {
+        if (!slug || (kind === seedKind && slug === excludeSlug)) return
+        const body = roots(`${title} ${text}`)
+        const common = shareCount(seed, body)
+        if (common < 3) return
+        const titleCommon = shareCount(seedTitleRoots, roots(title))
+        const cross = kind !== seedKind
+        const why = titleCommon >= 2
+          ? 'الفكرة نفسها، بعنوانٍ آخر'
+          : cross ? 'الفكرة تمتدّ هنا في بابٍ آخر' : 'يلتقيان عند المحور نفسه'
+        found.push({
+          id: `${kind}:${slug}`,
+          kind: KIND_LABEL[kind] || 'مادة',
+          title, why, to: url,
+          score: common + titleCommon * 4 + (cross ? 3 : 0),
+        })
+      }
+
+      for (const a of articles) consider('article', a.slug, a.title, `${a.excerpt || ''} ${a.cat || ''}`, `/articles/${a.slug}`)
+      for (const b of books) consider('book', b.slug, b.title, b.desc || '', `/publications/${b.slug}`)
+      for (const r of papers) consider('paper', r.slug, r.titleAr || r.title, `${r.abstractAr || ''} ${r.meta || ''}`, `/research/${r.slug}`)
+      for (const m of media || []) consider('media', m.slug, m.title, m.topics || '', `/media/${m.slug}`)
+
+      found.sort((left, right) => right.score - left.score)
+      /* التنويع أولاً: ما اختلف نوعه يسبق، كقانون «الفصل التالي». */
+      const varied = found.filter((item) => item.kind !== (KIND_LABEL[seedKind] || ''))
+      const pool = varied.length >= 2 ? varied : found
+      const picked = pool.slice(0, 2).map(({ score: _score, ...branch }) => branch)
+      /* سببان متطابقان تحت غصنين يقرأان كتكرارٍ لا كتعليل. الثاني يأخذ
+         أقربَ سببٍ آخر يصفه بصدق. */
+      if (picked.length === 2 && picked[0].why === picked[1].why) {
+        picked[1] = {
+          ...picked[1],
+          why: picked[1].why === 'يلتقيان عند المحور نفسه'
+            ? 'الفكرة تمتدّ هنا في بابٍ آخر'
+            : 'يلتقيان عند المحور نفسه',
+        }
+      }
+      setBranches(picked)
+    }
+
+    const win = window as unknown as {
+      requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (handle: number) => void
+    }
+    const idle = win.requestIdleCallback
+    const cancelIdle = win.cancelIdleCallback
+    const handle = idle ? idle.call(window, build, { timeout: 1600 }) : window.setTimeout(build, 500)
+    return () => {
+      on = false
+      if (idle && cancelIdle) cancelIdle.call(window, handle)
+      else window.clearTimeout(handle)
+    }
+  }, [articles, books, excludeSlug, media, papers, seedKind, seedText, seedTitle])
+
+  return branches
+}
+
 export type Branch = {
   /** مفتاحٌ ثابت — سطر المفاتيح في React لا يُبنى من العنوان وحده. */
   id: string
@@ -122,9 +232,15 @@ export type Branch = {
 export function BranchGrove({
   items,
   onOpen,
+  variant = 'fork',
 }: {
   items: Branch[]
   onOpen?: (branch: Branch) => void
+  /* اللغة واحدة والصيغة تختلف، فلا يتكرّر المشهد نفسه من صفحةٍ لأخرى:
+     fork  — شوكةٌ متناظرة تتفرّع من الجواب
+     sprig — ساقٌ نازلة يخرج منها غصنان على عمقين مختلفين
+     rail  — رفٌّ أفقيّ تتدلّى منه المادّتان */
+  variant?: 'fork' | 'sprig' | 'rail'
 }) {
   const shown = items.slice(0, 2)
   const [grown, setGrown] = useState(false)
@@ -138,8 +254,19 @@ export function BranchGrove({
 
   if (!shown.length) return null
 
-  return (
-    <div className={`grove${grown ? ' grove--grown' : ''}`}>
+  const thread = variant === 'rail'
+    ? (
+      <svg className="grove-thread grove-thread--rail" viewBox="0 0 520 40" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M124 6 L396 6" vectorEffect="non-scaling-stroke" />
+        <path d="M124 6 L124 40" vectorEffect="non-scaling-stroke" />
+        <path d="M396 6 L396 40" vectorEffect="non-scaling-stroke" />
+        <circle cx="124" cy="6" r="2.4" />
+        <circle cx="396" cy="6" r="2.4" />
+      </svg>
+    )
+    : variant === 'sprig'
+    ? null
+    : (
       <svg className="grove-thread" viewBox="0 0 520 54" preserveAspectRatio="none" aria-hidden="true">
         {shown.length > 1 ? (
           <>
@@ -151,8 +278,13 @@ export function BranchGrove({
         )}
         <circle cx="260" cy="2" r="2.6" />
       </svg>
+    )
 
-      <div className={`grove-slots${shown.length > 1 ? '' : ' grove-slots--single'}`}>
+  return (
+    <div className={`grove grove--${variant}${grown ? ' grove--grown' : ''}`}>
+      {thread}
+
+      <div className={`grove-slots${shown.length > 1 && variant !== 'sprig' ? '' : ' grove-slots--single'}`}>
         {shown.map((branch, index) => (
           <div className="grove-slot" key={branch.id} style={{ ['--grove-delay' as string]: `${index * 380}ms` }}>
             <Link

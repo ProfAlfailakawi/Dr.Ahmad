@@ -32,6 +32,10 @@ export function beautify(text = '') {
     const next = (lines[index + 1] || '').trim()
     if (!current || /^https?:\/\//.test(current) || !/^https?:\/\//.test(next)) return line
     if (current.includes('*')) return line
+    /* التعريض للعناوين لا للاقتباسات. كلام الدكتور بين «» كان يقع قبل الرابط
+       فيُعرَّض كله — بل يُعرَّض شطره الأخير وحده إن كان في الاقتباس سطرٌ فارغ،
+       فتظهر نجمةٌ مفردة داخل كلامه. النصّ المنسوب إليه يُعرض كما هو. */
+    if (/^[«"]/.test(current) || /[»"]$/.test(current)) return line
     const match = current.match(/^(\d+[.)]\s*|[-•]\s*)?(.{3,})$/)
     if (!match) return line
     return line.replace(current, `${match[1] || ''}*${match[2]}*`)

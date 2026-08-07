@@ -35,9 +35,16 @@ jobs:
         run: npm run media:audio:r2:self-test
 
       - name: Install R2 tools
+        # رانر أوبنتو يأتي بـAWS CLI مثبّتاً؛ لا نُنزّله إلا إن غاب فعلاً،
+        # كي لا تسقط التشغيلة على قيود pip في الصور الحديثة بلا سبب.
         run: |
-          python -m pip install --user awscli
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          set -euo pipefail
+          if command -v aws >/dev/null 2>&1; then
+            aws --version
+          else
+            python3 -m pip install --user awscli
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Carry the archive audio to R2
         run: npm run media:audio:r2

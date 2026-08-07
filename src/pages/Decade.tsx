@@ -448,11 +448,11 @@ export default function Decade() {
                   <span className="text-[.78rem] font-semibold text-accent">منعطفات قابلة للقياس</span>
                   <h2 className="mt-3 font-display text-[clamp(1.7rem,3.5vw,2.5rem)] font-bold text-ink">حين تغيّرت الإشارة.</h2>
                 </FadeUp>
-                <ol className="mt-8 border-r border-hair pe-6 md:pe-9">
+                <ol className="mt-8 border-r border-hair ps-6 pe-6 md:ps-9 md:pe-9">
                   {document.turns.map((turn, index) => (
                     <FadeUp key={`${turn.title}-${turn.year}`} delay={index * 0.06}>
                       <li className="relative pb-9 last:pb-0">
-                        <span className="absolute -right-[5px] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent" />
+                        <span className="absolute -right-[29px] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent md:-right-[41px]" />
                         <time className="text-[.75rem] font-semibold text-accent">{turn.year}</time>
                         <h3 className="mt-1 font-display text-[1.18rem] font-semibold text-ink">{turn.title}</h3>
                         <p className="mt-2 text-[.88rem] font-light leading-[1.9] text-soft">{turn.description}</p>

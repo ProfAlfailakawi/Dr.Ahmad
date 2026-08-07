@@ -14,7 +14,7 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { voiceScore } from './book-voice.mjs'
-import { buildEncyclopediaBodyIndex, loadEncyclopediaBook } from './encyclopedia-passage-expansion.mjs'
+import { ENGINE_BOOKS, buildBookBodyIndex, loadEngineBook } from './encyclopedia-passage-expansion.mjs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -378,30 +378,39 @@ for (const book of evidence.books || []) {
   })
 }
 
-/* ═══ الموسوعة: فهرسٌ من صفحات الكتاب لا من مقاطع المتن العامة ═══
+/* ═══ الكتب التسعة: فهرسٌ من صفحات الكتاب لا من مقاطع المتن العامة ═══
  *
- * المتن العام (book-evidence) مستخرَجٌ بمجرى النص وحده، ومجراه يخلط أعمدة
- * الموسوعة المصمَّمة ويُسقط ما بين «» من تعريفات. فلها بانٍ خاص يقرأ صفحاتها
- * بهندستها وحروفها معاً. وإن تعذّر (لا PyMuPDF أو لا ملفّ) بقي فهرسها كما كان
- * ولم يسقط البناء — ويُعلَن السبب صريحاً. */
-const encyclopediaBook = passageBooks.find((book) => book.slug === 'encyclopedia')
-let encyclopediaReport = null
-if (encyclopediaBook) {
+ * المتن العام (book-evidence) مستخرَجٌ بمجرى النص وبمقسِّمٍ حرفيّ خشن، فيخلط
+ * أعمدة الكتب المصمَّمة ويقطع الجمل ويُسقط ما بين «». ولكل كتابٍ الآن مسارُه:
+ * الموسوعة بهندسة صفحاتها وتصادُقِ مستخرجَيها، والمصوَّرةُ بناتج تعرّفها
+ * الضوئي، وما خطُّه لا يناسب الهندسة بنصّ مجراه — والأنبوب وبواباتُه واحدة.
+ *
+ * وإن تعذّر بناءُ كتابٍ (لا PyMuPDF أو لا ملف) بقي فهرسه السابق ولم يسقط
+ * البناء، ويُعلَن السبب صريحاً.
+ */
+const engineReports = []
+for (const record of passageBooks) {
+  if (!ENGINE_BOOKS[record.slug]) continue
+  const previous = record.passages.length
   try {
-    const { pages } = loadEncyclopediaBook()
-    const built = buildEncyclopediaBodyIndex({
+    const { pages, passthrough } = loadEngineBook(record.slug)
+    const built = buildBookBodyIndex({
+      slug: record.slug,
       pages,
-      concepts: conceptsBySlug.get('encyclopedia') || [],
+      passthrough,
+      concepts: conceptsBySlug.get(record.slug) || [],
       blockedFingerprints: blockedPrints,
       voiceOf: (text) => voiceScore(text).score,
     })
-    encyclopediaBook.passages = built.passages
-    encyclopediaReport = built.report
-    const quotesRecord = books.find((item) => item.slug === 'encyclopedia')
+    if (!built.passages.length) throw new Error('لم يخرج أي مقطع')
+    record.passages = built.passages
+    engineReports.push({ slug: record.slug, title: record.title, previous, ...built.report })
+
+    /* المختارات المعروضة تُشتقّ من الفهرس نفسه: أقربها إلى قلمه، متباعدةً
+       على طول الكتاب كما يشترط حزام الكتب. */
+    const quotesRecord = books.find((item) => item.slug === record.slug)
     if (quotesRecord) {
-      /* المختارات المعروضة تُشتقّ من الفهرس الجديد نفسه: أقربها إلى قلمه،
-         متباعدةً على طول الكتاب كما يشترط حزام الكتب. */
-      const cap = highlightCap(knowledge.books.find((item) => item.slug === 'encyclopedia')?.indexedPages || 0)
+      const cap = highlightCap(knowledge.books.find((item) => item.slug === record.slug)?.indexedPages || 0)
       const chosenPages = []
       const chosen = []
       for (const passage of [...built.passages].sort((left, right) => (right.voice - left.voice) || left.page - right.page)) {
@@ -413,7 +422,7 @@ if (encyclopediaBook) {
       }
       chosen.sort((left, right) => left.page - right.page)
       quotesRecord.quotes = chosen.map((item, index) => ({
-        id: `encyclopedia-q${String(index + 1).padStart(3, '0')}`,
+        id: `${record.slug}-q${String(index + 1).padStart(3, '0')}`,
         text: item.text,
         page: item.page,
         section: item.section,
@@ -424,10 +433,11 @@ if (encyclopediaBook) {
       }))
     }
   } catch (error) {
-    console.error(`⚠ تعذّر بناء فهرس الموسوعة من صفحاتها: ${error.message}`)
-    console.error('  بقي فهرسها السابق كما هو. (يلزم: pip3 install pypdf pymupdf، وملف الكتاب في PrivateBooks)')
+    console.error(`⚠ تعذّر بناء فهرس «${record.title}» من صفحاته: ${error.message}`)
+    console.error('  بقي فهرسه السابق كما هو. (يلزم: pip3 install pypdf pymupdf، وملف الكتاب في PrivateBooks)')
   }
 }
+const encyclopediaReport = engineReports.find((item) => item.slug === 'encyclopedia') || null
 
 const total = books.reduce((sum, book) => sum + book.quotes.length, 0)
 const totalPassages = passageBooks.reduce((sum, book) => sum + book.passages.length, 0)
@@ -450,19 +460,24 @@ writeFileSync(OUT_PASSAGES, `${JSON.stringify({
   coverage: {
     books: passageBooks.length,
     passages: totalPassages,
-    encyclopediaPassages: encyclopediaBook?.passages.length || 0,
+    encyclopediaPassages: passageBooks.find((item) => item.slug === 'encyclopedia')?.passages.length || 0,
     encyclopediaPagesIndexed: encyclopediaReport?.coveredPageCount || 0,
     encyclopediaBodyPages: encyclopediaReport?.bodyPageCount || 0,
+    pagesIndexed: engineReports.reduce((sum, item) => sum + item.coveredPageCount, 0),
+    bodyPages: engineReports.reduce((sum, item) => sum + item.bodyPageCount, 0),
     expansionPolicy: 'فهرس الموسوعة مبنيّ من صفحات الكتاب نفسها: ترتيبُ الهندسة وحروفُ المجرى، بلا توليد ولا إعادة صياغة ولا نوافذ متداخلة.',
   },
   books: passageBooks,
 })}\n`, 'utf8')
 
 console.log(`✔ فهرس المتون: ${totalPassages} مقطعاً من ${passageBooks.length} كتاباً — من الجلدة إلى الجلدة`)
+for (const item of engineReports) {
+  const percent = Math.round((item.coveredPageCount / item.bodyPageCount) * 100)
+  console.log(`   ${String(item.previous).padStart(4)} ← ${String(item.passages ?? '').padStart(0)}${String(0).slice(0,0)}${String(item.coveredPageCount).padStart(0)}`.slice(0, 0) + `✔ ${item.title}: ${item.coveredPageCount} صفحة من ${item.bodyPageCount} (${percent}٪) · ${item.totalChars.toLocaleString('ar-EG')} حرفاً`)
+}
 if (encyclopediaReport) {
-  const { coveredPageCount, bodyPageCount, totalChars, ligatures, offPageWords } = encyclopediaReport
-  console.log(`✔ الموسوعة: ${coveredPageCount} صفحة مفهرسة من ${bodyPageCount} صفحة متن (${Math.round(coveredPageCount / bodyPageCount * 100)}٪) · ${totalChars.toLocaleString('ar-EG')} حرفاً`)
-  console.log(`   جدول لقاءات الخط: ${ligatures.learned} لقاءً تعلّمها المحرك من ${ligatures.explainedWords.toLocaleString('ar-EG')} كلمة · ${offPageWords} كلمة أثبتها المجرى من موضع آخر`)
+  const { ligatures, offPageWords, locatedByPosition } = encyclopediaReport
+  console.log(`   الموسوعة: ${ligatures.learned} لقاءً تعلّمها المحرك من ${ligatures.explainedWords.toLocaleString('ar-EG')} كلمة · ${offPageWords} كلمة أثبتها المجرى من موضع آخر · ${locatedByPosition} جملة حُسمت بموضعها`)
 }
 console.log(`✔ المختارات المعروضة: ${total} اقتباساً (أطولها ${longest} حرفاً)`)
 for (const book of books) {

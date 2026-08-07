@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { JsonLd, useSeo } from '../components/seo'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router'
@@ -14,6 +14,12 @@ import { arabicCountPhrase, BOOK_PLAIN_FORMS } from '../lib/arabic-count.ts'
 const bookCount = (count: number) => arabicCountPhrase(count, BOOK_PLAIN_FORMS)
 
 export default function Publications() {
+  /* الغلاف يُجلى حين يصل فعلاً — لا قبله، فلا يُرى وميضُ إطارٍ فارغ. */
+  const [settled, setSettled] = useState<Set<string>>(new Set())
+  const markSettled = useCallback((slug: string) => {
+    setSettled((current) => current.has(slug) ? current : new Set(current).add(slug))
+  }, [])
+
   const { books } = useCmsContent()
   const orderedBooks = useMemo(
     () => [...books].sort((left, right) => Number(right.slug === 'encyclopedia') - Number(left.slug === 'encyclopedia')),
@@ -90,7 +96,7 @@ export default function Publications() {
                   <>
                     <Link to={`/publications/${b.slug}`} viewTransition className="block">
                       <div className="group overflow-hidden rounded-xl border border-hair bg-white" style={{ aspectRatio: '1024 / 700' }}>
-                        {b.cover ? <img src={b.cover} alt={b.title} loading="lazy" width="1024" height="700" className="h-full w-full object-contain p-1" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
+                        {b.cover ? <img src={b.cover} alt={b.title} loading="lazy" width="1024" height="700" className={`plate h-full w-full object-contain p-1${settled.has(b.slug) ? ' plate--settled' : ''}`} style={{ ['--plate-delay' as string]: `${Math.min(i, 6) * 90}ms` }} onLoad={() => markSettled(b.slug)} ref={(node) => { if (node?.complete) markSettled(b.slug) }} /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
                       </div>
                     </Link>
                     <div className="mt-3 flex items-start gap-2 sm:mt-5">

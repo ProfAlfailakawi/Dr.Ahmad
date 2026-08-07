@@ -4169,3 +4169,27 @@ html, body, #root { max-inline-size: 100%; }
   .thread-node,
   .next-step-thread .next-step-node { transform: scale(1); }
 }
+
+/* ── لحظة الجلاء ──
+   في الفيديو لا تظهر الصورة، بل **تُجلى**: من ضبابٍ خفيفٍ وحجمٍ أصغر بقليل
+   إلى وضوحها الكامل، واحدةً بعد أخرى. هنا الأمر نفسه على الأغلفة الموجودة:
+   لا صورة جديدة، ولا كلمة — لحظةُ وصولٍ فقط. */
+.plate {
+  opacity: 0;
+  filter: blur(9px);
+  transform: scale(1.03);
+  transition:
+    opacity .85s cubic-bezier(.22, .8, .3, 1),
+    filter .85s cubic-bezier(.22, .8, .3, 1),
+    transform 1s cubic-bezier(.22, .8, .3, 1);
+  transition-delay: var(--plate-delay, 0ms);
+}
+.plate--settled {
+  opacity: 1;
+  filter: blur(0);
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plate { opacity: 1; filter: none; transform: none; transition: none; }
+}

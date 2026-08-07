@@ -3,11 +3,18 @@ import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
 import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
 import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
-import { distillItem } from '../../whatsapp-agent/daily-experience.mjs'
+import { distillItem, extractVerbatimAtSpeed } from '../../whatsapp-agent/daily-experience.mjs'
 import { conceptDefinition, conceptQueryFor, glossarySize } from '../../whatsapp-agent/domain-concepts.mjs'
 import { arabicCountPhrase, ARTICLE_FORMS, CONVERSATION_AFTER_PREPOSITION_FORMS, MUTED_CONVERSATION_FORMS, DAY_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS, MINUTE_FORMS, PASSAGE_AFTER_PREPOSITION_FORMS, RECOVERED_MESSAGE_OBJECT_FORMS, REPLY_AFTER_PREPOSITION_FORMS, SECOND_AFTER_PREPOSITION_FORMS, VERIFIED_MATERIAL_FORMS, WEEK_AFTER_PREPOSITION_FORMS } from '../lib/style-dna.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
+/* ── الصوت يرجع للمتصفح (أمر الدكتور، ٧ أغسطس) ──
+   إرسال الملف داخل واتساب كان يصل فقاعةً لا تُحمَّل: «Couldn't download
+   audio». وما لا يُسمع لا قيمةَ له، بل هو أسوأ من لا شيء: يشغل مكان الردّ
+   ويوهم أنّ ثمّة صوتاً. فالاستماع الآن في الموقع — حيث المشغّل والتصميم —
+   والآلة باقيةٌ كما هي لا مهدومة: أمر `send-audio` وفرعُه في الجسر في
+   مكانهما، ولا يُصفّ إلا إذا شُغّل صراحةً بمتغيّرٍ واحد. */
+const AUDIO_IN_CHAT = String(process.env.WHATSAPP_AUDIO_IN_CHAT || '').trim() === '1'
 const OWNER_ALERT_FALLBACK = 'طلب صاحب هذه الرسالة التواصل معك مباشرة. افتح محادثات واتساب من جهازك المرتبط.'
 const HUMAN_ACK = 'أفهم أنك تريد التواصل مع الدكتور مباشرة. اكتب رسالتك كاملة هنا؛ لا أستطيع أن أعدك بموعد رد، وبإمكاني الآن مساعدتك في محتوى الموقع أو البحث عن موضوع محدد.'
 const MEDIA_CLARIFY = 'وصلتني الصورة أو الملف. حتى ما أخمّن محتواه أو مقصدك، اكتب المطلوب بجملة واحدة: «لخّصها» · «ابحث عن موضوعها» · «أعطني المادة الأصلية».'
@@ -711,6 +718,121 @@ function distilledReply(item) {
   return `*${item.title}*\n\n${note}\n«${clipped}»\n\n${item.url}`
 }
 
+/* ── سلّم الوقت: «٣٠ ثانية» ليست «لخّص» ──
+   شكوى الدكتور (٧ أغسطس، بصورتين): كتب «لخّص» فوصلته الزبدة، ثم كتب «٣٠
+   ثانية» فوصله **الردّ نفسه حرفاً بحرف**. والجذر أن READ_SPEED وONE_MINUTE
+   كانتا مربوطتين بـSUMMARY في شرطٍ واحد يستدعي distilledReply — فالمدّة
+   المطلوبة لم تكن تُقرأ أصلاً، ولا وجود لفرقٍ بين ثلاثين ثانيةً ودقيقتين
+   وتعمّق. الآن لكلّ مدّةٍ قدرُها من متنه:
+     لخّص    → جملةٌ واحدة (الزبدة)
+     ٣٠ ثانية → مقطعٌ حرفيّ ٤٠-٨٥ كلمة
+     دقيقة    → الزبدة ثم مقطع الثلاثين ثانية
+     دقيقتان  → مقطعٌ حرفيّ ١٨٠-٢٨٠ كلمة
+     تعمّق    → الزبدة ثم مقطع الدقيقتين ثم ما بقي وأين يُكمل
+   والمقاطع كلّها من `extractVerbatimAtSpeed` — المستخرِج المعاير نفسه الذي
+   يقطع عند نهاية جملةٍ لا في وسطها، وتحرسه الاختبارات النووية على ٣٦ مقالة.
+   لا توليد ولا إعادة صياغة: نصّه كما نشره. */
+const READING_LADDER = Object.freeze({
+  '30s': { extract: '30s', cap: 0, path: false, label: 'قراءة في نحو ٣٠ ثانية من نصّه' },
+  '1min': { extract: '2min', cap: 150, path: false, label: 'قراءة في نحو دقيقة من نصّه' },
+  '2min': { extract: '2min', cap: 0, path: false, label: 'قراءة في نحو دقيقتين من نصّه' },
+  deep: { extract: '2min', cap: 0, path: true, label: 'تعمّقٌ في نصّه' },
+})
+/* حدُّ الإرسال ٢٠٠٠ حرف (bounded عند حافة الإرسال)، والتوقيع وسطر المتابعة
+   يُضافان بعد البناء — فنبني تحت السقف لا عنده، حتى لا يصل المقطع مبتوراً. */
+const READING_REPLY_LIMIT = 1_780
+
+function readingSpeedOf(cleanText, intent) {
+  const value = String(cleanText || '')
+  if (/(?:تعمق|اتعمق|عمقها|عميق|المطول|النص الكامل|كامل النص)/.test(value)) return 'deep'
+  const minutes = Number((value.match(/(\d{1,3})\s*دقيق/) || [])[1] || 0)
+  if (minutes >= 3 || /(?:دقيقتان|دقيقتين|دقيقتي)/.test(value)) return minutes >= 3 ? 'deep' : '2min'
+  if (minutes === 2) return '2min'
+  const seconds = Number((value.match(/(\d{1,3})\s*ثاني/) || [])[1] || 0)
+  if (seconds > 90) return '2min'
+  if (seconds >= 46) return '1min'
+  if (seconds > 0) return '30s'
+  if (minutes === 1 || intent === INTENTS.ONE_MINUTE || /دقيقه/.test(value)) return '1min'
+  return '30s'
+}
+
+/* موضع «كمل» بعد القراءة: المقطع قد يبدأ بعد عنوانٍ داخليّ (bodyStart)، فلا
+   يصحّ أن يكون المؤشر عدد كلماته وحدها — نحسب أين انتهى فعلاً داخل المتن. */
+function cursorAfterPassage(item, passage) {
+  const full = normalizeWhitespace(item?.body || item?.excerpt || '')
+  const needle = normalizeWhitespace(passage || '')
+  if (!full || !needle) return 0
+  const at = full.indexOf(needle)
+  const consumed = at < 0 ? needle : full.slice(0, at + needle.length)
+  return consumed.split(/\s+/).filter(Boolean).length
+}
+
+/* الدقيقة ليست عند المستخرِج المعاير (عنده ٣٠ ثانية ودقيقتان فقط)، فنبنيها
+   بقصّ مقطع الدقيقتين عند آخر جملةٍ تامّة تقع تحت السقف — لا في وسط كلام. */
+function trimVerbatimToWords(text, maxWords) {
+  const words = String(text || '').split(/\s+/).filter(Boolean)
+  if (!maxWords || words.length <= maxWords) return String(text || '')
+  const sentences = String(text).split(/(?<=[.؟!…])\s+/).filter(Boolean)
+  const kept = []
+  let count = 0
+  for (const sentence of sentences) {
+    const size = sentence.split(/\s+/).filter(Boolean).length
+    if (kept.length && count + size > maxWords) break
+    kept.push(sentence)
+    count += size
+  }
+  return kept.join(' ').replace(/[،,؛…]+$/, '').trim() || words.slice(0, maxWords).join(' ')
+}
+
+function timedReadingReply(item, speed = '30s', related = null) {
+  const plan = READING_LADDER[speed] || READING_LADDER['30s']
+  const extract = extractVerbatimAtSpeed(item, plan.extract)
+    || (plan.extract === '2min' ? extractVerbatimAtSpeed(item, '30s') : null)
+  if (!extract?.text) {
+    /* المواد بلا متنٍ منشور (كتاب · بحث · مختارة): لا نخترع لها قراءةً ولا
+       نعيد بطاقتها صامتين — نصارح ونحيل إلى صفحتها. */
+    return {
+      text: `*${item.title}*\n\nما عندي متنٌ منشورٌ لهذه ${itemLabel(item)} أقرأه لك هنا بنصّه. تجدها كاملة في صفحتها:\n\n${item.url}`,
+      cursor: 0,
+    }
+  }
+  const total = normalizeWhitespace(item?.body || item?.excerpt || '').split(/\s+/).filter(Boolean).length
+  /* «تعمّق» لا يعني كلماتٍ أكثر: سقف الرسالة لا يتّسع لأكثر من الدقيقتين
+     أصلاً، ولو زدنا لبُتر آخرُ كلامه. التعمّق أن يمتدّ الطريق — أين يُكمل،
+     وأين يسمعه بصوته المنشور، وأيُّ مادةٍ من أرشيفه تمدّ الفكرة نفسها. */
+  const deepLines = plan.path
+    ? [
+      item?.audio?.dialogue || item?.audio?.fahed || item?.audio?.noura
+        ? 'وإن أردت أن تسمعها بدل أن تقرأها، فالقراءة الصوتية منشورة في صفحتها — المشغّل أعلى الصفحة.'
+        : '',
+      related?.title && related?.url ? `ومن أرشيفه مادةٌ تمدّ الفكرة نفسها:\n«${related.title}»\n${related.url}` : '',
+    ].filter(Boolean)
+    : []
+  const build = (body) => {
+    const cursor = cursorAfterPassage(item, body)
+    const remaining = Math.max(0, total - cursor)
+    const tail = remaining > 0
+      ? `بقي نحو ${arabicCountPhrase(Math.ceil(remaining / 90), PASSAGE_AFTER_PREPOSITION_FORMS, arabicNumber)} من نصّها. قل «كمل» أكمل لك من هنا، أو «لخّصها» أعطيك زبدتها في جملة.`
+      : 'وبهذا اكتمل نصّها عندي.'
+    return {
+      cursor,
+      text: `*${item.title}*\n${plan.label}:\n\n${body}${remaining > 0 ? '…' : ''}\n\n${tail}\n\n${item.url}${deepLines.length ? `\n\n${deepLines.join('\n\n')}` : ''}`,
+    }
+  }
+  let built = build(trimVerbatimToWords(extract.text, plan.cap))
+  /* حارس السقف: نُسقط جملاً من آخر المقطع حتى يتّسع الردّ، ولا نقصّ حرفاً في
+     وسط كلمة — القصّ الأعمى عند ٢٠٠٠ كان سيبتر آخر جملةٍ للدكتور. والمؤشر
+     يُعاد حسابه مع كلّ إسقاط، فتبدأ «كمل» من حيث انتهت القراءة فعلاً. */
+  if (built.text.length > READING_REPLY_LIMIT) {
+    const sentences = trimVerbatimToWords(extract.text, plan.cap).split(/(?<=[.؟!…])\s+/).filter(Boolean)
+    while (sentences.length > 1 && built.text.length > READING_REPLY_LIMIT) {
+      sentences.pop()
+      built = build(sentences.join(' ').replace(/[،,؛…]+$/, '').trim())
+    }
+  }
+  return built
+}
+
 /* ── المضمر: ما يقوله الناس ولا يصوغونه أمراً ──
    «ما فهمت» ليست بحثاً عن مادةٍ عنوانها «ما فهمت» — هي طلبُ تبسيطٍ لما بين
    أيدينا. وكان البحث الأعمى يبتلعها فيعود بأقرب العناوين لفظاً، وهو ردٌّ
@@ -1355,15 +1477,27 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   }
 
   if ([INTENTS.SUMMARY, INTENTS.ONE_MINUTE, INTENTS.READ_SPEED].includes(intent)) {
-    return current
-      ? {
+    if (!current) return { kind: 'reply', reason: 'context-missing', intent, reply: signReply('أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أختصرها لك.', messages) }
+    if (intent === INTENTS.SUMMARY) {
+      return {
         kind: 'reply', reason: 'context-summary', intent,
         reply: signReply(distilledReply(current), messages),
         evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
         /* التلخيص يبدأ رحلة القراءة من أولها: «كمل» بعده تُعطي ما بعد الملخص. */
         patch: { readCursor: 42, readCursorItemId: current.id },
       }
-      : { kind: 'reply', reason: 'context-missing', intent, reply: signReply('أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أختصرها لك.', messages) }
+    }
+    const speed = readingSpeedOf(clean, intent)
+    const companion = speed === 'deep'
+      ? exactSiteResults(current.title, current.title, { excludeIds: [current.id, ...previousIds], limit: 1 })[0] || null
+      : null
+    const reading = timedReadingReply(current, speed, companion)
+    return {
+      kind: 'reply', reason: `timed-reading-${speed}`, intent,
+      reply: signReply(reading.text, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: reading.cursor, readCursorItemId: current.id },
+    }
   }
 
   /* «كمل»: يواصل المادة الحاضرة من حيث وقف لا يبحث عن كلمة جديدة (شكوى
@@ -1404,10 +1538,12 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   if ([INTENTS.SOURCE_PROOF, INTENTS.READ_ARTICLE, INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA, INTENTS.LISTEN_DIALOGUE].includes(intent)) {
     if (!current) return { kind: 'reply', reason: 'context-missing', intent, reply: signReply(clarifyText(messages, conversation), messages) }
     const listenIntents = [INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA, INTENTS.LISTEN_DIALOGUE]
+    const hasReading = Boolean(current.audio?.fahed || current.audio?.noura)
+    const hasDialogue = Boolean(current.audio?.dialogue)
     const audioLine = listenIntents.includes(intent)
-      ? (current.audio?.dialogue || current.audio?.fahed || current.audio?.noura
-        ? '\nالاستماع من داخل الصفحة: ستجد المشغّل أعلى المادة.'
-        : '\nهذه المادة لم تصدر لها نسخة صوتية بعد؛ النص كامل في الصفحة.')
+      ? (hasReading || hasDialogue
+        ? `\n\n${hasDialogue && !hasReading ? 'الحوار المسموع منشور' : 'القراءة الصوتية منشورة'} في صفحة المادة — افتح الرابط والمشغّل أعلى الصفحة مباشرة.`
+        : '\n\nهذه المادة لم تصدر لها نسخة صوتية بعد؛ النص كامل في الصفحة.')
       : ''
     /* ترقية ٤ — الصوت داخل واتساب: من طلب الاستماع يستحق أن يسمع في مكانه،
        لا أن يُدفع إلى المتصفح. الملف يُرسَل خلف الرد النصي كأمرٍ مستقل، فإن
@@ -1421,7 +1557,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       kind: 'reply', reason: 'context-source', intent,
       reply: signReply(`هذا رابط ${itemLabel(current)} في موقع الدكتور:\n\n*${current.title}*\n${current.url}${audioLine}`, messages),
       evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
-      ...(audioFile ? { audioAttachment: { url: audioFile, title: bounded(current.title, 120) } } : {}),
+      ...(AUDIO_IN_CHAT && audioFile ? { audioAttachment: { url: audioFile, title: bounded(current.title, 120) } } : {}),
     }
   }
   if ([INTENTS.MORE_LIKE_THIS, INTENTS.SIMILAR_CONTENT].includes(intent)) {
@@ -2600,6 +2736,10 @@ function decisionLabel(reason = '') {
     'near-suggestions': 'أقرب المواد المنشورة',
     'context-reference': 'تنقّل داخل النتائج',
     'context-summary': 'تلخيص المادة الحالية',
+    'timed-reading-30s': 'قراءة في ٣٠ ثانية',
+    'timed-reading-1min': 'قراءة في دقيقة',
+    'timed-reading-2min': 'قراءة في دقيقتين',
+    'timed-reading-deep': 'تعمّق في المادة',
     'context-source': 'رابط المصدر',
     'more-like-this': 'المزيد من المشابه',
     'latest-content': 'أحدث المنشور',

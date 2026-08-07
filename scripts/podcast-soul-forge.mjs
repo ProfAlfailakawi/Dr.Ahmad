@@ -130,11 +130,15 @@ const musicTracks = () => readdirSync(MUSIC_DIR).filter((f) => f.endsWith('.mp3'
 function cutAsset(source, seconds, target, outPath, fadeOutAt, startAt = 0) {
   if (existsSync(outPath)) return outPath
   /* نقتطع من قلب المقطوعة لا من مطلعها: أوائل المقاطع مدٌّ خافتٌ يصعد،
-     فلو أُخذ منها جسرٌ لخرج همهمةً يرفعها المعايِر رفعاً يُبرز الطنين وحده. */
+     فلو أُخذ منها جسرٌ لخرج همهمةً يرفعها المعايِر رفعاً يُبرز الطنين وحده.
+     ويُنزع الصمت من مطلع المقطع أولاً: الاقتطاع قد يقع على سكتةٍ بين عبارتين،
+     فتُضاف سكتةُ المقطوعة إلى سكتة الوصل فتصير فجوةً ميتة يسمعها السامع. */
   const args = ['-hide_banner', '-loglevel', 'error', '-y']
   if (startAt > 0) args.push('-ss', String(startAt))
-  args.push('-t', String(seconds), '-i', source,
-    '-af', `afade=t=in:st=0:d=0.32,afade=t=out:st=${fadeOutAt}:d=1.4,`
+  args.push('-t', String(seconds + 2.5), '-i', source,
+    '-af', 'silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.02:detection=peak,'
+      + `atrim=0:${seconds},asetpts=PTS-STARTPTS,`
+      + `afade=t=in:st=0:d=0.32,afade=t=out:st=${fadeOutAt}:d=1.4,`
       + `loudnorm=I=${target}:TP=-2:LRA=7,aresample=48000`,
     '-c:a', 'pcm_f32le', outPath)
   sh(FFMPEG, args, 'cut-asset')
@@ -154,6 +158,14 @@ function midrangeOf(file) {
   return m ? Number(m[1]) : -99
 }
 
+function startsSilent(file) {
+  const out = spawnSync(FFMPEG, ['-hide_banner', '-nostats', '-i', file,
+    '-af', 'silencedetect=noise=-50dB:d=0.25', '-f', 'null', '-'],
+  { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }).stderr || ''
+  const m = out.match(/silence_start:\s*([\d.]+)/)
+  return Boolean(m) && Number(m[1]) < 0.1
+}
+
 function cutAudibleBridge(candidates, outPath) {
   if (existsSync(outPath)) return outPath
   /* الامتدادان .wav لازمان: ffmpeg يستنتج الحاوية من الامتداد، فاسمٌ بلا امتدادٍ معروف يُفشل الكتابة */
@@ -164,7 +176,7 @@ function cutAudibleBridge(candidates, outPath) {
     for (const shift of [0, 17, 34]) {
       try { cutAsset(candidate.file, 5.6, '-16.8', probe, 4.2, candidate.startAt + shift) } catch { continue }
       const mid = midrangeOf(probe)
-      if (mid >= MID_FLOOR) { renameSync(probe, outPath); return outPath }
+      if (mid >= MID_FLOOR && !startsSilent(probe)) { renameSync(probe, outPath); return outPath }
       if (mid > bestMid) { bestMid = mid; renameSync(probe, stash) } else { unlinkSync(probe) }
     }
   }

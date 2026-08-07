@@ -26,6 +26,8 @@ export default function MediaDetail() {
   }, [query, transcript])
   const isAudio = item?.kind === 'audio' || item?.kind === 'radio'
   const audioBase = (import.meta.env.VITE_MEDIA_AUDIO_BASE_URL || import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+  /* الرابط المحفوظ في اللوحة (وهو رابط تنزيل موقّع من Firebase Storage) يعلو دائماً؛
+     ومجلد الاستضافة الخارجي لا يُستعمل إلا حين يُعرَّف متغيره فعلاً. */
   const hostedAudio = item?.audioFile && audioBase ? `${audioBase}/${item.audioFile.split('/').map(encodeURIComponent).join('/')}` : ''
   const audioSource = isAudio ? (item?.audioUrl || hostedAudio || item?.url || '').trim() : ''
   const player = !isAudio && item?.id ? `https://www.youtube-nocookie.com/embed/${item.id}?rel=0&start=${Math.floor(start)}` : ''

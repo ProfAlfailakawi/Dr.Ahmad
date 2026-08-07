@@ -191,6 +191,12 @@ export function sentenceRejection(text = '', { standalone = true } = {}) {
   for (let index = 0; index + 1 < bare.length; index += 1) {
     if (bare[index].length >= 4 && bare[index] === bare[index + 1]) return 'تكرار متلاصق'
   }
+  /* العبارة المكررة متلاصقةً («ومكبرات الصوت ومكبرات الصوت») تأتأةُ استخراجٍ
+     أيضاً، ولا يمسكها فحصُ الكلمة الواحدة. كشفتها مراجعةُ الدكتور بعينه. */
+  for (let index = 0; index + 3 < bare.length; index += 1) {
+    if (bare[index].length < 3 || bare[index + 1].length < 3) continue
+    if (bare[index] === bare[index + 2] && bare[index + 1] === bare[index + 3]) return 'تكرار عبارة'
+  }
   /* التعرّف الضوئي يخطئ خطأً خاصاً به: يلصق حرفاً غريباً أو يقرأ الحرف
      الأول من الكلمة فيبتره («ستخدم» بدل «تستخدم»). والحرف المكرر ثلاثاً
      في كلمةٍ واحدة أثرُ تشويش لا لغةٌ عربية. */
@@ -861,7 +867,9 @@ export function buildBookBodyIndex({
 
   passages.sort((left, right) => left.page - right.page)
   const shaped = passages.map((passage, order) => ({
-    id: `encyclopedia-p${String(order + 1).padStart(5, '0')}`,
+    /* المعرّف بسلاسة الكتاب: البادئة الثابتة كانت تجعل كل الكتب تبدأ من
+       encyclopedia-p00001 فتتصادم ٢٢٢ معرّفاً، فيحجب أمرُ الحجب غيرَ ما قُصد. */
+    id: `${slug}-p${String(order + 1).padStart(5, '0')}`,
     text: passage.text,
     page: passage.page,
     section: passage.section,

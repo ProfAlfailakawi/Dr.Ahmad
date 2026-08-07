@@ -90,10 +90,16 @@ export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[]
     const archiveId = videoId || item.slug
     const { transcript: legacyTranscript, ...baseItem } = item
     const transcript = archiveTranscript(archiveId)
+    /* سجل اللوحة يعلو، لكنه يرث بيانات الأرشيف الساكن (ملف الصوت مثلاً) إن تركها فارغة،
+       فلا تفقد المادة صوتها حين يُحرّر عنوانها أو موضوعها من اللوحة. */
+    const archived = items.find((entry) => entry.slug === item.slug || entry.id === archiveId)
     return {
+      ...(archived || {}),
       ...baseItem,
+      audioUrl: item.audioUrl || archived?.audioUrl,
+      audioFile: item.audioFile || archived?.audioFile,
       id: archiveId,
-      kind: detectMediaKind(item),
+      kind: detectMediaKind({ ...(archived || {}), ...item }),
       legacyTranscript,
       transcript,
       transcriptStatus: transcript?.available ? 'transcribed' : legacyTranscript ? 'legacy' : 'missing',

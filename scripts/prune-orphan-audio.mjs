@@ -55,13 +55,30 @@ function slugFromAudioMetaName(name) {
 if (existsSync(AUDIO_META)) {
   const meta = JSON.parse(readFileSync(AUDIO_META, 'utf8'))
   const nextMeta = {}
+  /* «يتيم» كانت تعني حالتين لا واحدة، فكُنس معها ما لا يجوز كنسه:
+     ملفٌ لمقالٍ حُذف فعلاً — حذفه صواب.
+     وحلقةٌ كاملةٌ مولّدةٌ ومرفوعةٌ على R2 ينتظر مقالها النشر — حذف مدخلها
+     يُخفيها عن اللوحة فيظنّ الدكتور أنها لم تُرفع أصلاً، وهي مرفوعةٌ منذ
+     ساعات. ووجودُ نصّها في manual-dialogues-soul هو الفارق بين الحالتين.
+     وإبقاؤها لا يُظهرها للزوار: فهرس المجلس يُبنى من المقالات لا من السجلّ. */
+  const soulDir = resolve(ROOT, 'manual-dialogues-soul')
+  const pending = []
   for (const [name, info] of Object.entries(meta).sort(([a], [b]) => a.localeCompare(b))) {
     const slug = slugFromAudioMetaName(name)
     if (slug && !knownSlugs.has(slug)) {
+      if (existsSync(resolve(soulDir, `${slug}.soul.json`))) {
+        pending.push(name)
+        nextMeta[name] = info
+        continue
+      }
       removedMeta.push(name)
       continue
     }
     nextMeta[name] = info
+  }
+  if (pending.length) {
+    console.log(`⏳ ${pending.length} ملفاً مرفوعاً ينتظر نشر مقاله — أُبقيت في السجلّ:`)
+    for (const name of pending) console.log(`  - ${name}`)
   }
 
   if (removedMeta.length) {

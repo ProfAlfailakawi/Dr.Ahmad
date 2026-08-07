@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T19:50:23.903Z",
+  "generatedAt": "2026-08-07T20:04:35.449Z",
   "episodes": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -815,46 +815,6 @@
         "pace": "مقبول",
         "pauses": "مقبول",
         "issues": []
-      }
-    },
-    {
-      "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
-      "title": "how-do-we-assess-without-breaking-the-human-beingarabic",
-      "category": "بودكاست",
-      "date": "",
-      "iso": "",
-      "status": "under_review",
-      "listen": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
-      "audio": "/audio/how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3",
-      "bytes": 7146285,
-      "audioHash": "848957337ceeb97a",
-      "hasTranscript": true,
-      "utterances": 75,
-      "quality": {
-        "score": 40,
-        "pass": false,
-        "metrics": {
-          "durationSeconds": 0,
-          "bytes": 7146285,
-          "sttRatio": null,
-          "importantRatio": null,
-          "longSilences": null,
-          "unexpectedLongSilences": null,
-          "peakDb": null,
-          "judgePass": false,
-          "humanLikeness": null,
-          "humanProxy": null
-        },
-        "pronunciation": "ينتظر فحص النطق والمعنى",
-        "pace": "يحتاج ضبط السرعة/المدة",
-        "pauses": "يحتاج تقليل الوقفات",
-        "issues": [
-          "لا يوجد تقرير جودة نهائي مجتاز للحلقة.",
-          "تطابق STT مع النص المقصود أقل من الحد الصارم.",
-          "مدة الحلقة خارج المجال الطبيعي المطلوب.",
-          "توجد وقفات طويلة تتجاوز الحد المقبول.",
-          "بوابة البشرية أقل من 95/100."
-        ]
       }
     },
     {

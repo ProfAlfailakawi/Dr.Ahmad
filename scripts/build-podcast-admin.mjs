@@ -272,9 +272,12 @@ mkdirSync(dirname(OUT), { recursive: true })
 const dialogueTexts = existsSync(resolve(ROOT, 'manual-dialogues-soul'))
   ? readdirSync(resolve(ROOT, 'manual-dialogues-soul')).filter((name) => name.endsWith('.soul.json'))
   : []
+const articleSlugs = new Set(articles.map((article) => article.slug))
 const blocked = dialogueTexts
   .map((name) => name.slice(0, -'.soul.json'.length))
-  .filter((slug) => !knownSlugs.has(slug))
+  /* المعيار هو المقال لا السجلّ: الحلقة قد تكون مرفوعةً ومسجّلةً وتبقى محبوسةً
+     لأن مقالها لم يُنشر — وهي الحالة التي أخفاها المنظّف شهراً. */
+  .filter((slug) => !articleSlugs.has(slug))
   .map((slug) => {
     let opening = ''
     let turns = 0
@@ -283,12 +286,16 @@ const blocked = dialogueTexts
       turns = Array.isArray(soul.utterances) ? soul.utterances.length : 0
       opening = String(soul.utterances?.[0]?.text || '').replace(/[⏸~]/g, '').replace(/\s+/g, ' ').trim()
     } catch { /* الحوار يبقى مُسمّى بمعرّفه */ }
+    const uploaded = Boolean(audioMeta?.[`${slug}.dialogue.mp3`])
     return {
       slug,
       turns,
       opening,
-      reason: 'المقال غير منشور في الموقع',
-      action: `انشر مقال «${slug}» من لوحة المقالات، ثم شغّل مصنع الروح — تُولَّد الحلقة وتُرفع وحدها.`,
+      uploaded,
+      reason: uploaded ? 'الصوت مرفوعٌ وجاهز — ينتظر نشر مقاله ليظهر' : 'المقال غير منشور في الموقع',
+      action: uploaded
+        ? `انشر مقال «${slug}» من لوحة المقالات — تظهر الحلقة فوراً بلا توليدٍ ولا رفع.`
+        : `انشر مقال «${slug}» ثم شغّل مصنع الروح — تُولَّد الحلقة وتُرفع وحدها.`,
     }
   })
 

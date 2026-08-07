@@ -197,7 +197,7 @@ export default function PaperDetail() {
                   </div>
                 </div>
 
-                <h1 dir="auto" className="mt-6 font-display text-[clamp(1.75rem,4.5vw,2.85rem)] font-extrabold leading-[1.42] text-ink"><Reveal>{p.title}</Reveal></h1>
+                <h1 dir="auto" className="mt-6 font-display text-[clamp(1.75rem,4.5vw,2.85rem)] font-extrabold leading-[1.25] text-ink"><Reveal>{p.title}</Reveal></h1>
                 {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-3 text-[1.05rem] font-light leading-[1.85] text-soft">{p.titleAr}</p>}
                 <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
 

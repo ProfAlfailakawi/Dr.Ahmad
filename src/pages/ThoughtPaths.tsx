@@ -251,7 +251,7 @@ export default function ThoughtPaths() {
               أكمل من حيث توقفت: {resumePath.title} ←
             </button>
           )}
-          <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex gap-6 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex gap-6 edge-fade overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {availablePaths.map((path) => (
               <button
                 key={path.id}

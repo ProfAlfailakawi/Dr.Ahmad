@@ -280,7 +280,7 @@ function InlineVideoCard({
         )}
       </div>
       <div className="p-4">
-        <div className="flex items-center justify-between gap-3 text-[.64rem] font-semibold text-accent">
+        <div className="flex items-center justify-between gap-3 text-[.7rem] font-semibold text-accent">
           <span>{video.chapterTitle || video.sequenceLabel || 'الموسوعة المرئية'}</span>
           {video.durationText && <span dir="ltr" className="font-normal text-soft">{video.durationText}</span>}
         </div>
@@ -353,7 +353,7 @@ function UnitVideoCarousel({
         ref={scrollRef}
         dir="rtl"
         data-horizontal-video-rail="true"
-        className="-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="-mx-1 flex gap-3 edge-fade overflow-x-auto overscroll-x-contain px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {unitVideos.map((video) => {
           const instanceKey = `${instancePrefix}-${video.id}`
@@ -449,7 +449,7 @@ function DoorRow({
               </ClarifiedIconAction>
             )}
           </span>
-          <span className="mt-1 block text-[.69rem] leading-relaxed text-soft">
+          <span className="mt-1 block text-[.7rem] leading-relaxed text-soft">
             {formatArabicNumber(door.units.length)} فصول · {doorVideos.length > 0 ? `${formatArabicNumber(doorVideos.length)} فيديو` : 'عروض ومواد تدريسية'}
           </span>
         </span>
@@ -464,7 +464,7 @@ function DoorRow({
             return (
               <section key={`${door.id}-${unit.number}`} className="border-b border-hair py-5 last:border-b-0" aria-labelledby={`${door.id}-unit-${unit.number}`}>
                 <div className="grid grid-cols-[2rem_minmax(0,1fr)_2.5rem] items-start gap-3">
-                  <span className="font-display text-[.64rem] text-accent">{formatArabicNumber(unit.number)}</span>
+                  <span className="font-display text-[.7rem] text-accent">{formatArabicNumber(unit.number)}</span>
                   <div className="min-w-0">
                     <h3 id={`${door.id}-unit-${unit.number}`} className="text-[.82rem] font-semibold leading-[1.75] text-ink">{unit.title}</h3>
                     <span className="mt-0.5 block text-[.62rem] text-soft">ص {formatArabicNumber(unit.pageStart)}</span>
@@ -858,7 +858,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
               <div>
                 <span className="sr-only">بوابة معرفية مستقلة</span>
                 <span className="text-[.72rem] font-semibold text-accent">كتاب منشور</span>
-                <h1 className="mt-3 max-w-4xl font-display text-[clamp(2.1rem,5vw,3.8rem)] font-bold leading-[1.2] text-ink"><Reveal>{book.title}</Reveal></h1>
+                <h1 className="mt-3 max-w-4xl font-display text-[clamp(2.1rem,5vw,3.8rem)] font-bold leading-[1.25] text-ink"><Reveal>{book.title}</Reveal></h1>
                 {book.coAuthors && <p className="mt-3 text-[.84rem] text-soft">بالاشتراك مع {book.coAuthors}</p>}
                 <OwnerEdit tab="books" slug={book.slug} className="mt-3" />
                 {book.desc && <p className="mt-5 max-w-3xl text-[.96rem] font-light leading-[1.9] text-ink/80">{book.desc}</p>}
@@ -921,7 +921,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
               <input id="encyclopedia-query" value={query} onChange={(event) => { const value = event.target.value; setQuery(value); searchStartedAt.current ||= Date.now() }} onKeyDown={(event) => { if (event.key === 'Enter') { const clean = normalizeSearchQuery(query); updateDeepLink({ q: clean, tab: resultTab }, 'push'); if (clean && clean !== lastTrackedQuery.current) { trackUsage(lastTrackedQuery.current ? 'search_refined' : 'search_submitted', { searchType: 'encyclopedia', query: clean }); lastTrackedQuery.current = clean } } }} placeholder="ابحث في فيديو أو صفحة أو شريحة" dir="rtl" className="w-0 min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[clamp(.66rem,3.05vw,.82rem)] text-ink outline-none placeholder:text-soft/[.6] sm:px-4" />
               {query ? <button type="button" onClick={() => { setQuery(''); setResultTab('all'); updateDeepLink({ q: null, tab: null, video: null, t: null, result: null }, 'push') }} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft hover:text-accent"><SocialIcon name="Close" size={13} /></button> : <span aria-label="ابحث في الموسوعة" title="ابحث في الموسوعة" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Search" size={15} /></span>}
             </div>
-            {query.trim().length >= 2 && <p className="mt-2 text-[.64rem] text-soft">{resultCount ? `${formatArabicNumber(resultCount)} نتيجة مرتبطة` : 'لا توجد نتيجة مطابقة.'}</p>}
+            {query.trim().length >= 2 && <p className="mt-2 text-[.7rem] text-soft">{resultCount ? `${formatArabicNumber(resultCount)} نتيجة مرتبطة` : 'لا توجد نتيجة مطابقة.'}</p>}
           </FadeUp>
 
           {query.trim().length >= 2 && (
@@ -1014,7 +1014,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 onPointerCancel={() => setFeaturedPaused(false)}
                 onMouseEnter={() => setFeaturedPaused(true)}
                 onMouseLeave={() => setFeaturedPaused(false)}
-                className="-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="-mx-1 flex gap-3 edge-fade overflow-x-auto overscroll-x-contain px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
                 {featuredVideos.map((video) => (
                   <InlineVideoCard
@@ -1078,9 +1078,9 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                   return (
                     <div key={`kit-${door.id}`} className="grid gap-3 border-b border-hair py-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                       <div>
-                        <span className="text-[.63rem] font-semibold text-accent">الباب {door.number}</span>
+                        <span className="text-[.7rem] font-semibold text-accent">الباب {door.number}</span>
                         <strong className="mt-1 block text-[.82rem] leading-relaxed text-ink">{door.title}</strong>
-                        {teachingDoor && <span className="mt-1 block text-[.64rem] text-soft">{formatArabicNumber(teachingDoor.slideCount)} شريحة</span>}
+                        {teachingDoor && <span className="mt-1 block text-[.7rem] text-soft">{formatArabicNumber(teachingDoor.slideCount)} شريحة</span>}
                       </div>
                       <button type="button" onClick={() => openTeachingMaterials(door)} className="inline-flex min-h-10 w-fit items-center rounded-full border border-hair px-4 text-[.68rem] font-semibold text-accent transition-colors hover:border-accent">مواد الباب</button>
                     </div>
@@ -1109,7 +1109,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
               <>
                 <p className="border-b border-hair py-5 text-[.75rem] leading-[1.85] text-ink/80">{teachingGuide.objective}</p>
                 <div className="py-5">
-                  <span className="text-[.63rem] font-semibold text-soft">خيط المادة</span>
+                  <span className="text-[.7rem] font-semibold text-soft">خيط المادة</span>
                   <div className="mt-3 grid grid-cols-2 border-y border-hair">
                     <span className="min-w-0 border-e border-hair px-2 py-4 text-center text-[.68rem] text-soft">المحور المرتبط</span>
                     <button type="button" disabled={!teachingVideo} onClick={() => {
@@ -1126,7 +1126,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 <div className="border-y border-hair py-5">
                   <div className="flex items-center justify-between gap-5">
                     <div className="min-w-0">
-                      <span className="text-[.63rem] font-semibold text-accent">موضع الموضوع في العرض</span>
+                      <span className="text-[.7rem] font-semibold text-accent">موضع الموضوع في العرض</span>
                       <p className="mt-1.5 font-display text-[1rem] font-semibold leading-[1.7] text-ink">{teachingSlideLabel}</p>
                       <p className="mt-1 text-[.65rem] text-soft">{formatArabicNumber(teachingSlidesCount)} شريحة مرتبطة.</p>
                     </div>

@@ -31,12 +31,12 @@ function nodeMatchesFilter(node: ImpactNode, filter: FilterKey) {
 function EvidenceLink({ node }: { node: ImpactNode }) {
   const content = (
     <>
-      <span className="block text-[.67rem] font-semibold text-accent">{node.label}{node.year ? ` · ${node.year}` : ''}</span>
+      <span className="block text-[.7rem] font-semibold text-accent">{node.label}{node.year ? ` · ${node.year}` : ''}</span>
       <strong className="mt-1.5 block font-display text-[.98rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{node.title}</strong>
       <span className="mt-1.5 block text-[.76rem] font-light leading-[1.78] text-soft">{node.note}</span>
-      {node.source && <span className="mt-2 block text-[.67rem] text-soft/75">المصدر: {node.source}</span>}
+      {node.source && <span className="mt-2 block text-[.7rem] text-soft/75">المصدر: {node.source}</span>}
       {node.kind !== 'origin' && (
-        <span className="mt-2 inline-block rounded-full border border-hair px-2.5 py-1 text-[.64rem] font-semibold text-soft transition-colors group-hover:border-accent group-hover:text-accent">
+        <span className="mt-2 inline-block rounded-full border border-hair px-2.5 py-1 text-[.7rem] font-semibold text-soft transition-colors group-hover:border-accent group-hover:text-accent">
           {node.confidence === 'موثق' ? 'أثر موثّق' : 'امتداد في الأرشيف'}
         </span>
       )}
@@ -150,7 +150,7 @@ export default function Impact() {
             <dl className="flex flex-wrap gap-x-8 gap-y-3">
               {headlineStats.map((item) => (
                 <div key={item.label}>
-                  <dt className="text-[.67rem] font-semibold text-accent">{item.label}</dt>
+                  <dt className="text-[.7rem] font-semibold text-accent">{item.label}</dt>
                   <dd className="mt-1 font-display text-[1.35rem] font-semibold text-ink">{number.format(item.value)}</dd>
                 </div>
               ))}

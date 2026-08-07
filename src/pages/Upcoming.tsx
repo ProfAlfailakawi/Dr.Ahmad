@@ -49,7 +49,7 @@ export default function Upcoming() {
             <Label>محتواي المعرفي</Label>
             <div className="flex flex-wrap items-end justify-between gap-5">
               <div>
-                <h1 className="font-display text-[clamp(2rem,5vw,3.2rem)] font-semibold leading-[1.3] text-ink">اللقاءات القادمة.</h1>
+                <h1 className="font-display text-[clamp(2rem,5vw,3.2rem)] font-semibold leading-[1.25] text-ink">اللقاءات القادمة.</h1>
                 <p className="mt-3 max-w-2xl text-[.95rem] font-light leading-[1.8] text-soft">محاضرات وورش ومؤتمرات — بموعدها ورابط التسجيل المباشر.</p>
               </div>
               <Magnetic to="/contact#booking-form" className="inline-block rounded-full border border-accent px-5 py-2.5 text-[.84rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">

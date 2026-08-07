@@ -55,40 +55,20 @@ function eachRule(css, visit) {
   }
 }
 
+/* متن المقال لا يُرصف من الطرفين في أيّ عرض.
+   قِيس على أربعة مقالات كاملة بعمود ٥٨٣px (حاسوب): وسيط تمدّد المسافة بين
+   الكلمات ١٫٦٥–١٫٩٢× وأكثر الفقرات فوق ١٫٥× — فالعلّة في الرصف مع العربية
+   لا في ضيق العمود. ولا كشيدة في نصّ الويب تسدّ الفجوة كما يسدّها الخطّاط. */
+const PROSE = /article-body|synced-paragraph/
 function checkJustify(css) {
-  const justified = new Map()   // المُحدِّد → رقم السطر
-  const cancelled = new Set()   // المُحدِّد الذي أُبطل رصفه على الجوال
-  /* المُحدِّدات المجموعة بفاصلة تُفكّ إلى وحداتها، وإلا حُوسب «أ، ب» كأنه محدِّدٌ ثالث.
-     والفصل يراعي الأقواس: الفاصلة داخل ‎:is(a, b)‎ جزءٌ من المحدِّد لا فاصلٌ بينه وبين غيره. */
-  const split = (prelude) => {
-    const parts = []
-    let depth = 0, cur = ''
-    for (const ch of prelude) {
-      if (ch === '(') depth++
-      else if (ch === ')') depth--
-      if (ch === ',' && depth === 0) { parts.push(cur.trim()); cur = '' }
-      else cur += ch
-    }
-    parts.push(cur.trim())
-    return parts.filter(Boolean)
-  }
-  eachRule(css, (prelude, body, inMobile, line) => {
-    const parts = split(prelude)
-    if (/text-align\s*:\s*justify/.test(body)) {
-      for (const s of parts) {
-        if (inMobile) cancelled.delete(s)
-        else if (!justified.has(s)) justified.set(s, line)
-      }
-    }
-    if (inMobile && /text-align\s*:\s*start/.test(body)) for (const s of parts) cancelled.add(s)
-  })
-  for (const [selector, line] of justified) {
-    if (cancelled.has(selector)) continue
+  eachRule(css, (prelude, body, _inMobile, line) => {
+    if (!/text-align\s*:\s*justify/.test(body)) return
+    if (!PROSE.test(prelude)) return
     problems.push(
-      `src/index.css:${line}  «${selector}» مرصوفٌ من الطرفين بلا إبطالٍ للمُحدِّد نفسه داخل ` +
-      `‎@media (max-width: 640px)‎ — فتعود «الأنهار البيضاء» إلى عمود الجوال الضيّق.`,
+      `src/index.css:${line}  «${prelude}» يرصف متن المقال من الطرفين — ` +
+      `وهذا يفتح «الأنهار البيضاء» في النصّ العربي. المتن يُرصف من اليمين وحده (text-align: start).`,
     )
-  }
+  })
 }
 
 /* ───────── ٢) تباعد الحروف يحتاج إعلاناً أنه لاتيني ───────── */

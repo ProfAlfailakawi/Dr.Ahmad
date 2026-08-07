@@ -331,8 +331,10 @@ console.log('\nDirect homepage + Serenity reading surfaces')
   const homePage = read('src/pages/Home.tsx')
   const articleDetail = read('src/pages/ArticleDetail.tsx')
   const stylesheet = read('src/index.css')
-  ok(homePage.includes('<FirstVisitOnboarding />')
-    && !app.includes('ConditionalOnboarding'), 'تهيئة الزائر الجديد FirstVisitOnboarding متاحة بجمال واحترافية عالية وبلا إرباك')
+  // ThresholdOverture خلَف FirstVisitOnboarding. الشرط نفسه يُحرَس في test-all-user-notes.mjs،
+  // فأيّ تغييرٍ هنا يلزمه تغييرٌ هناك وإلا احمرّ البناء بعد أن تخضرّ البوابة.
+  ok(homePage.includes('<ThresholdOverture')
+    && !app.includes('ConditionalOnboarding'), 'تهيئة الزائر الجديد ThresholdOverture متاحة بجمال واحترافية عالية وبلا إرباك')
   ok(articleDetail.includes("reader:serenity-surface")
     && articleDetail.includes("serenitySurface === 'sepia'")
     && articleDetail.includes("serenitySurface === 'dark'")

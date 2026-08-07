@@ -107,6 +107,9 @@ export const normalizeArabic = (value = '') => String(value)
   .replace(/([ء-يٱ-ۓ])[ \t]+([ً-ٍ])/g, '$1$2')
   .replace(/([ً-ٍ])\1+/g, '$1')
   .replace(/[ \t]+/g, ' ')
+  /* علامة الوقف يلتصق بها الحرف التالي أحياناً في التعرّف («المستخدمين.و
+     تحتاج») — والمسافة أثرُ قياسٍ لا حرفٌ في الكتاب. */
+  .replace(/([.؟!])(?=[؀-ۿ])/gu, '$1 ')
   /* الفاصلة اللاتينية بين حرفين عربيين قراءةٌ خاطئة للفاصلة العربية لا حرفٌ
      في الكتاب — تطبيعٌ من جنس تطبيع التنوين، لا تعديلَ نصّ. */
   .replace(/([؀-ۿ])\s*,\s*(?=[؀-ۿ])/gu, '$1، ')
@@ -228,6 +231,36 @@ export function hasSplicedHeading(sentence = '') {
 
 /* بداية المقطع: تُرفض ذيول التعداد التي لا تقوم جملةً افتتاحية بنفسها.
    («و» و«كما» تفتتحان جملاً تامة في نثر الكتاب فلا تُرفضان.) */
+/* ═══ خطأ الرقط في التعرّف الضوئي ═══
+ *
+ * الحروف العربية تفترق بالنقط وحدها: ب ت ث ن ي — فيخطئ التعرّف بينها فتخرج
+ * «بلعبون» و«نعليم» و«بمكن» و«بتضمن». كشفتها المراجعة بالعين: عشرون من
+ * سبعةٍ وعشرين مشتبهاً كانت رقطاً مقلوباً.
+ *
+ * **وهذه عدسةُ مراجعةٍ لا بوابةَ بناء** — وقياسُ ذلك حاسم: قلبُ النقطة في
+ * العربية يولّد كلمةً صحيحةً أخرى غالباً («نحقق» و«قيل» و«نوم» و«نتعلم» كلها
+ * سليمة)، فلو صارت بوابةً لأسقطت نثراً صحيحاً. لا يفصل بينهما إلا السياق،
+ * ولا يقرأ السياقَ إلا إنسان. فتُعرض المرشحات على العين، وما ثبت خطؤه يُحجب
+ * ببصمته في book-passage-blocklist.json.
+ *
+ *   node scripts/review-book-passages.mjs --misread
+ */
+const DOTTED = 'بتثني'
+export function looksMisread(word, frequency) {
+  const skeleton = String(word).replace(/[ً-ْٰـ]/g, '')
+  if (skeleton.length < 3 || skeleton.length > 9) return false
+  if ((frequency.get(skeleton) || 0) > 1) return false
+  for (let index = 0; index < Math.min(2, skeleton.length); index += 1) {
+    if (!DOTTED.includes(skeleton[index])) continue
+    for (const letter of DOTTED) {
+      if (letter === skeleton[index]) continue
+      const swapped = `${skeleton.slice(0, index)}${letter}${skeleton.slice(index + 1)}`
+      if ((frequency.get(swapped) || 0) >= 8) return swapped
+    }
+  }
+  return false
+}
+
 const TAIL_STARTERS = /^(?:ثم|أو|بل|أي|كذا|كذلك|وعليه|أمّا بعد)\s/u
 
 /* ═══ بوابة المقطع المجمَّع — يعيد الاختبار تطبيقها على الملف المنشور ═══ */
@@ -804,7 +837,9 @@ export function buildBookBodyIndex({
       const page = order === 0 ? firstPage : frame.page
       stats.sentences += 1
       /* الرفض المبكر يوفّر بناء الهجاء لما لن يُقبل أصلاً. */
-      const healed = passthrough ? normalizeArabic(raw) : healSplitWords(raw, page, index)
+      /* لأم الكلمة المنشقّة يعمل في كل المسارات: شاهدُه معجمُ الكتاب نفسه،
+         وهو قائمٌ في المسار الضوئي كما هو في مسار الهندسة. */
+      const healed = healSplitWords(raw, page, index)
       const early = sentenceRejection(healed, { standalone: false })
       if (early) { note('dropped', early, healed, page); closeGroup(); return }
       const sentence = passthrough ? healed : respell(healed, page, index, stats)

@@ -20,6 +20,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { voiceBand } from './book-voice.mjs'
+import { looksMisread } from './encyclopedia-passage-expansion.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const PASSAGES = resolve(ROOT, 'src/data/book-passages.json')
@@ -79,6 +80,38 @@ if (flag('blocked')) {
   if (!blocklist.blocked.length) { console.log('لا مقطع محجوباً حتى الآن.'); process.exit(0) }
   console.log(`المحجوب: ${blocklist.blocked.length} مقطعاً\n`)
   for (const item of blocklist.blocked) console.log(`  ${item.book} ص${item.page} — ${item.preview}…`)
+  process.exit(0)
+}
+
+/* ═══ عدسة الرقط المقلوب ═══
+   التعرّف الضوئي يخلط ب ت ث ن ي، فتخرج «بلعبون» و«نعليم» و«بمكن». وقلبُ
+   النقطة يولّد كلمةً صحيحةً أخرى غالباً، فلا تصلح بوابةً — لكنها تختصر
+   البحث عن أخطاء التعرّف من ألفٍ وتسعمئة مقطع إلى بضع عشرات تُقرأ بالعين. */
+if (flag('misread')) {
+  const RUN = /[؀-ۿ]+/gu
+  const skeleton = (word) => word.replace(/[ً-ْٰـ]/g, '')
+  const frequency = new Map()
+  for (const row of rows) for (const match of row.text.match(RUN) || []) {
+    const word = skeleton(match)
+    frequency.set(word, (frequency.get(word) || 0) + 1)
+  }
+  const only = value('book', '')
+  const pool = only ? rows.filter((row) => row.bookSlug === only) : rows
+  let found = 0
+  for (const row of pool) {
+    for (const match of row.text.match(RUN) || []) {
+      const fix = looksMisread(match, frequency)
+      if (!fix) continue
+      found += 1
+      const word = skeleton(match)
+      const at = row.text.indexOf(match)
+      console.log(`─ ${row.id}  ·  ${row.bookTitle} ص${row.page}`)
+      console.log(`  «${word}» ربما «${fix}»`)
+      console.log(`  …${row.text.slice(Math.max(0, at - 60), at + match.length + 55)}…\n`)
+      break
+    }
+  }
+  console.log(`${found} مرشحاً للنظر. ما ثبت خطؤه:  node scripts/review-book-passages.mjs --block <id>`)
   process.exit(0)
 }
 

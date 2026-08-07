@@ -205,23 +205,63 @@ function makeRoomTone(outPath, seconds) {
 /* الجسر يُسمع وحده، والفرش يُسمع تحت الكلام — وليسا سواء.
    مكتبة الموسيقى اختيرت أصلاً لتكون فرشاً: طاقتها تبتعد عن نطاق الصوت البشري
    عمداً كي لا تُغبّش كلمات فهد ونورة. وهذا يصلح تحت الحوار ولا يصلح جسراً:
-   يخرج طنيناً لا لحناً. فهذه المقطوعات وحدها — المقيسة بوسطٍ تردديٍّ مسموع —
-   تصلح للجسور، والبقية تبقى لما خُلقت له. */
+   يخرج طنيناً لا لحناً. والمقيس يتفق مع الموسوم: «الهادئ» و«التأمّلي» فرشٌ،
+   و«الجادّ» و«المشوّق» و«التربويّ» و«المتفائل» تقف وحدها. */
 const BRIDGE_POOL = [
   'oriental-world.mp3', 'eastern-night.mp3', 'eastern-spell.mp3',
   'cultural-echoes.mp3', 'eastern-tapestry.mp3', 'eastern-elegance.mp3',
 ]
 
-function bridgesFor(slug, count) {
+/* ولكلّ لحظةٍ مزاجُها: الجسر الذي يسبق اعتراضاً ليس كالذي يسبق حلاً.
+   المزاج يُقرأ من مشاعر الأدوار المحيطة بموضع الجسر، ثم يُختار من مكتبتك
+   الموسومة ما يوافقه — والوسوم من عندك لا من عندي. */
+const MOOD_TRACKS = {
+  'جاد': ['eastern-spell.mp3', 'eastern-night.mp3', 'oriental-world.mp3'],
+  'مشوق': ['oriental-world.mp3', 'eastern-spell.mp3'],
+  'تربوي': ['eastern-tapestry.mp3', 'cultural-echoes.mp3', 'eastern-elegance.mp3'],
+  'إنساني': ['cultural-echoes.mp3', 'eastern-elegance.mp3'],
+  'متفائل': ['eastern-elegance.mp3', 'eastern-tapestry.mp3'],
+  'تأملي': ['eastern-night.mp3', 'eastern-spell.mp3'],
+}
+
+function moodAt(utterances, index) {
+  /* نقرأ ما قبل الجسر وما بعده: الجسر يحمل معنى الانعطافة لا معنى الحلقة كلها */
+  const window = utterances.slice(Math.max(0, index - 2), Math.min(utterances.length, index + 4))
+  const score = { 'جاد': 0, 'مشوق': 0, 'تربوي': 0, 'إنساني': 0, 'متفائل': 0, 'تأملي': 0 }
+  for (const u of window) {
+    for (const f of [u.feeling, u.feeling2].filter(Boolean)) {
+      if (f === 'challenge') { score['جاد'] += 2; score['مشوق'] += 1 }
+      else if (f === 'firm') score['جاد'] += 2
+      else if (f === 'curious' || f === 'wonder') score['مشوق'] += 2
+      else if (f === 'warm' || f === 'hush') score['إنساني'] += 3
+      else if (f === 'intimate') { score['تأملي'] += 2; score['إنساني'] += 1 }
+      else if (f === 'resolve') score['متفائل'] += 2
+      else if (f === 'realization' || f === 'aphorism') score['تأملي'] += 1
+      else if (f === 'lively') score['مشوق'] += 1
+      else score['تربوي'] += 1
+    }
+  }
+  return Object.entries(score).sort((a, b) => b[1] - a[1])[0][0]
+}
+
+function bridgesFor(slug, count, utterances, positions) {
   const tracks = musicTracks()
-  const list = BRIDGE_POOL.filter((t) => tracks.includes(t))
-  const pool = list.length ? list : tracks
   const seed = parseInt(createHash('sha256').update(slug).digest('hex').slice(0, 8), 16)
-  return Array.from({ length: count }, (_, i) => ({
-    file: join(MUSIC_DIR, pool[(seed + i * 3) % pool.length]),
-    /* موضع الاقتطاع يختلف بالحلقة أيضاً، فلا يتكرر الجسر نفسه مرتين */
-    startAt: 12 + ((seed >> (i * 4)) % 22),
-  }))
+  const used = new Set()
+  return Array.from({ length: count }, (_, i) => {
+    const mood = utterances && positions ? moodAt(utterances, positions[i]) : 'تربوي'
+    const byMood = (MOOD_TRACKS[mood] || []).filter((t) => tracks.includes(t) && !used.has(t))
+    const rest = BRIDGE_POOL.filter((t) => tracks.includes(t) && !used.has(t))
+    const pool = byMood.length ? byMood : (rest.length ? rest : BRIDGE_POOL)
+    const pick = pool[(seed + i * 3) % pool.length]
+    used.add(pick)
+    return {
+      file: join(MUSIC_DIR, pick),
+      mood,
+      /* موضع الاقتطاع يختلف بالحلقة أيضاً، فلا يتكرر الجسر نفسه مرتين */
+      startAt: 12 + ((seed >> (i * 4)) % 22),
+    }
+  })
 }
 
 /* ═══════════ التركيب ═══════════ */
@@ -229,7 +269,8 @@ function buildVoiceTrack(doc, work) {
   const utterances = doc.utterances
   const bridges = new Set(doc.bridgeAfter || [])
   const breaths = new Set(doc.breathAfter || [])
-  const bridgeFiles = bridgesFor(doc.slug, Math.max(1, (doc.bridgeAfter || []).length))
+  const bridgeFiles = bridgesFor(doc.slug, Math.max(1, (doc.bridgeAfter || []).length),
+    utterances, doc.bridgeAfter || [])
   const breath = makeBreath(join(work, 'breath.wav'))
   const inputs = []
   const parts = []
@@ -246,7 +287,7 @@ function buildVoiceTrack(doc, work) {
   const bridgeIndexes = bridgeFiles.map((bridge, n) => {
     /* المرشّح الأول جسر الحلقة، ومن بعده بقية الصالحات — فلا تُنتج مقطوعةٌ صامتة جسراً أخرس */
     const rest = BRIDGE_POOL.filter((t) => musicTracks().includes(t))
-      .map((t) => ({ file: join(MUSIC_DIR, t), startAt: bridge.startAt }))
+      .map((t) => ({ file: join(MUSIC_DIR, t), startAt: bridge.startAt, mood: bridge.mood }))
       .filter((b) => b.file !== bridge.file)
     const cut = cutAudibleBridge([bridge, ...rest], join(work, `bridge${n}.wav`))
     inputs.push(cut)

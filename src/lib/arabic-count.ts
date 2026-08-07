@@ -956,6 +956,9 @@ export const TWEET_AFTER_PREPOSITION_FORMS: ArabicCountForms = {
 export const RECENT_DAY_FORMS: ArabicCountForms = {
   one: 'يوم', two: 'يومين', few: 'أيام', many: 'يوماً',
 }
+export const MUTED_CONVERSATION_FORMS: ArabicCountForms = {
+  one: 'محادثة مُسكتة', two: 'محادثتان مُسكتتان', few: 'محادثات مُسكتة', many: 'محادثة مُسكتة',
+}
 export const CONVERSATION_AFTER_PREPOSITION_FORMS: ArabicCountForms = {
   one: 'محادثة', two: 'محادثتين', few: 'محادثات', many: 'محادثة',
 }

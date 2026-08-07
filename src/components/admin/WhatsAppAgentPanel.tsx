@@ -3,7 +3,7 @@ import AudienceStudio from './AudienceStudio'
 import { BroadcastStudio } from './BroadcastStudio'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb } from '../../lib/firebase'
-import { ALIAS_FORMS, arabicCountPhrase, CONCEPT_FORMS, CONVERSATION_AFTER_PREPOSITION_FORMS, MINUTE_FORMS, OCCURRENCE_FORMS, RECENT_DAY_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
+import { ALIAS_FORMS, arabicCountPhrase, CONCEPT_FORMS, CONVERSATION_AFTER_PREPOSITION_FORMS, MINUTE_FORMS, MUTED_CONVERSATION_FORMS, OCCURRENCE_FORMS, RECENT_DAY_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
 
 type DiagnosticCheck = {
   id: string
@@ -889,7 +889,7 @@ export function WhatsAppAgentPanel() {
             )}
             {botCheck && botCheck.mutedCount > 0 && (
               <button type="button" className={`${secondary} mt-3`} disabled={botHealing} onClick={() => void healBotNow(true)}>
-                عالج أيضاً {botCheck.mutedCount} محادثة مُسكتة (لن يردّ فيها إلا بعد جملة الإيقاظ)
+                عالج أيضاً {arabicCountPhrase(botCheck.mutedCount, MUTED_CONVERSATION_FORMS)} (لن يردّ فيها إلا بعد جملة الإيقاظ)
               </button>
             )}
             <p className="mt-3 text-[.66rem] leading-relaxed text-soft">

@@ -91,7 +91,7 @@ export function QuoteImage({ text, attribution }: { text: string; attribution: s
   return (
     <span className="inline-flex max-w-full flex-col items-start gap-2">
       <span className="inline-flex flex-wrap items-center gap-2">
-        <img src={image} alt="بطاقة الاقتباس" className="h-16 w-16 rounded-xl border border-hair object-cover" />
+        <img decoding="async" src={image} alt="بطاقة الاقتباس" className="h-16 w-16 rounded-xl border border-hair object-cover" />
         <span className="inline-flex items-center gap-1.5">
           <button
             type="button"

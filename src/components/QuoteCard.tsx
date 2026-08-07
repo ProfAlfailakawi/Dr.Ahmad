@@ -119,7 +119,7 @@ export function QuoteCard() {
               onClick={(e) => e.stopPropagation()}
               className="quote-card-dialog w-full max-w-[440px]"
             >
-              <img src={img} alt="بطاقة اقتباس" className="w-full rounded-2xl shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)]" />
+              <img decoding="async" src={img} alt="بطاقة اقتباس" className="w-full rounded-2xl shadow-[0_40px_80px_-30px_rgba(0,0,0,.7)]" />
               <div className="quote-card-controls mt-5 flex justify-center gap-3">
                 <button type="button" onClick={() => void download()} aria-label="تنزيل الصورة" title="تنزيل الصورة" className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-canvas transition-colors hover:bg-accent-deep">
                   <SocialIcon name="Download" size={18} />

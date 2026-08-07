@@ -15,6 +15,19 @@ export { EASE } from './motion'
 export { SocialIcon } from './icons'
 import { EASE } from './motion'
 
+/* اسمٌ ثابت وآمن للانتقال المشترك بين بطاقة المادة وصفحتها.
+   لا يحمل العنوان نفسه (حتى لا تدخل العربية في custom-ident)، ولا يحتاج تخزيناً
+   أو listener؛ React Router يلتقط اللقطتين، والمتصفح يحرّك العنصر نفسه. */
+export function sharedViewName(kind: string, key: string) {
+  const source = `${kind}:${key}`
+  let hash = 2166136261
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return `vt-${kind.replace(/[^a-z0-9-]/gi, '-').toLowerCase()}-${(hash >>> 0).toString(36)}`
+}
+
 /* ---------- Masked reveal ----------
    يعتمد useInView مع شبكة أمان: إن كان العنصر داخل الشاشة ولم يُطلق المراقب
    (يحدث خلف شاشة التحميل أو مع انتقالات الصفحات) يُكشف النصّ قسراً.
@@ -97,12 +110,28 @@ export const Label = ({ children, center = false }: { children: React.ReactNode;
 
 /* ---------- Page heading (used by inner pages) ---------- */
 export function PageHead({ label, title, sub }: { label: string; title: string; sub?: string }) {
+  const headRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const node = headRef.current
+    if (!node || typeof window === 'undefined') return
+    const emit = (compact: boolean) => window.dispatchEvent(new CustomEvent('site:page-title', { detail: { title, label, compact } }))
+    emit(false)
+    if (!('IntersectionObserver' in window)) return () => emit(false)
+    const observer = new IntersectionObserver(([entry]) => emit(!entry.isIntersecting), { rootMargin: '-64px 0px 0px 0px', threshold: 0.08 })
+    observer.observe(node)
+    return () => {
+      observer.disconnect()
+      window.dispatchEvent(new CustomEvent('site:page-title', { detail: { title: '', label: '', compact: false } }))
+    }
+  }, [label, title])
+
   return (
-    <header className="page-head border-b border-hair px-6 pb-12 pt-28 md:px-11 md:pb-12 md:pt-32">
+    <header ref={headRef} className="page-head spatial-stage border-b border-hair px-6 pb-12 pt-28 md:px-11 md:pb-12 md:pt-32">
       <div className="mx-auto max-w-shell">
         <FadeUp>
           <Label>{label}</Label>
-          <h1 className="font-display text-[clamp(2.4rem,6vw,4rem)] font-bold leading-[1.25] text-ink">
+          <h1 style={{ viewTransitionName: 'page-title' }} className="font-display text-[clamp(2.4rem,6vw,4rem)] font-bold leading-[1.25] text-ink">
             <Reveal>{title}</Reveal>
           </h1>
           {sub && <p className="mt-4 max-w-[620px] text-[1.05rem] font-light leading-[1.9] text-ink/80">{sub}</p>}
@@ -111,6 +140,7 @@ export function PageHead({ label, title, sub }: { label: string; title: string; 
     </header>
   )
 }
+
 
 /* ---------- Safe link (old-site links gated) ---------- */
 export function SafeLink({
@@ -768,6 +798,7 @@ export function Nav() {
   const progress = useSpring(scrollYProgress, { stiffness: 200, damping: 40 })
   const loc = useLocation()
   const navigate = useNavigate()
+  const [pageEcho, setPageEcho] = useState<{ title: string; compact: boolean }>({ title: '', compact: false })
   const ownerPressTimer = useRef<number | null>(null)
   const ownerPressTriggered = useRef(false)
   const [ownerPressActive, setOwnerPressActive] = useState(false)
@@ -840,6 +871,16 @@ export function Nav() {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [loc.pathname])
 
+  useEffect(() => {
+    setPageEcho({ title: '', compact: false })
+    const sync = (event: Event) => {
+      const detail = (event as CustomEvent<{ title?: string; compact?: boolean }>).detail
+      setPageEcho({ title: String(detail?.title || ''), compact: Boolean(detail?.compact) })
+    }
+    window.addEventListener('site:page-title', sync)
+    return () => window.removeEventListener('site:page-title', sync)
+  }, [loc.pathname])
+
   const english = loc.pathname === '/en' || loc.pathname.startsWith('/en/')
   const solid = (scrolled || (loc.pathname !== '/' && loc.pathname !== '/en')) && !open
 
@@ -851,9 +892,14 @@ export function Nav() {
         <AnimatePresence>{open && <EnglishOverlay key="en-ov" close={closeMenu} openSearch={() => { closeMenu(); setSearchOpen(true) }} />}</AnimatePresence>
         <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
         <nav aria-label="Main navigation" dir="ltr" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
-          <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
+          <div className={`relative mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
+            <AnimatePresence initial={false}>
+              {pageEcho.compact && pageEcho.title && solid && !open && !searchOpen && (
+                <motion.span key={pageEcho.title} aria-hidden="true" initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -6, filter: 'blur(3px)' }} transition={{ duration: .34, ease: EASE }} className="nav-page-echo pointer-events-none absolute left-1/2 hidden max-w-[42vw] -translate-x-1/2 truncate font-display text-[.82rem] font-semibold text-ink/80 md:block">{pageEcho.title}</motion.span>
+              )}
+            </AnimatePresence>
             <Link to="/en" aria-label="Ahmad H. Alfailakawi" className={`pwa-owner-logo relative ${ownerPressActive ? 'is-holding' : ''}`} onContextMenu={ownerLogoContextMenu} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
-              <img src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
+              <img decoding="async" src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
               <span aria-hidden className="pwa-owner-progress" />
             </Link>
             <div className="flex items-center gap-3">
@@ -882,9 +928,14 @@ export function Nav() {
       <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
 
       <nav aria-label="التنقّل الرئيسي" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
-        <div className={`mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
+        <div className={`relative mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
+          <AnimatePresence initial={false}>
+            {pageEcho.compact && pageEcho.title && solid && !open && !searchOpen && (
+              <motion.span key={pageEcho.title} aria-hidden="true" initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -6, filter: 'blur(3px)' }} transition={{ duration: .34, ease: EASE }} className="nav-page-echo pointer-events-none absolute left-1/2 hidden max-w-[42vw] -translate-x-1/2 truncate font-display text-[.82rem] font-semibold text-ink/80 md:block">{pageEcho.title}</motion.span>
+            )}
+          </AnimatePresence>
           <Link to="/" aria-label={profile.name} className={`pwa-owner-logo relative ${ownerPressActive ? 'is-holding' : ''}`} onContextMenu={ownerLogoContextMenu} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
-            <img src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'right' }} />
+            <img decoding="async" src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'right' }} />
             <span aria-hidden className="pwa-owner-progress" />
           </Link>
 
@@ -941,7 +992,7 @@ export function Footer() {
         <div className="mx-auto max-w-shell">
           <div className="flex flex-wrap items-center justify-between gap-5">
             <Link to="/en">
-              <img src="/logo.png" alt="Ahmad H. Alfailakawi" className="h-10 w-16 object-contain dark:invert" style={{ objectPosition: 'left' }} />
+              <img decoding="async" src="/logo.png" alt="Ahmad H. Alfailakawi" className="h-10 w-16 object-contain dark:invert" style={{ objectPosition: 'left' }} />
             </Link>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-[.9rem] text-soft">
               <Link to="/" className="transition-colors hover:text-accent">العربية</Link>
@@ -981,7 +1032,7 @@ export function Footer() {
       <div className="mx-auto max-w-shell">
         <div className="flex flex-wrap items-center justify-between gap-5">
           <Link to="/">
-            <img src="/logo.png" alt={profile.name} className="h-10 w-16 object-contain dark:invert" style={{ objectPosition: 'right' }} />
+            <img decoding="async" src="/logo.png" alt={profile.name} className="h-10 w-16 object-contain dark:invert" style={{ objectPosition: 'right' }} />
           </Link>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-[.9rem] text-soft">
             <span className="flex items-center gap-3">
@@ -1056,5 +1107,47 @@ export function ScheduleProjectLink({ label = 'الجدول الدراسي', ico
 
 /* ---------- Page transition wrapper ---------- */
 export function Page({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`signature-page w-full max-w-full overflow-x-clip ${className}`}>{children}</div>
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  /* صفحات PageHead ترسل العنوان بنفسها. أمّا صفحات التفاصيل ذات الهيرو الخاص
+     فنلتقط أول H1 فقط، ونحوّله إلى صدى صغير في الشريط حين يغادر الشاشة.
+     لا scroll listener ولا إعادة رسم مستمرة: مراقب تقاطع واحد لكل صفحة. */
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root || typeof window === 'undefined' || root.querySelector('.page-head')) return
+    let intersection: IntersectionObserver | null = null
+    let mutation: MutationObserver | null = null
+    let bound = false
+
+    const bind = () => {
+      if (bound) return true
+      const heading = root.querySelector('h1') as HTMLElement | null
+      if (!heading) return false
+      const title = heading.textContent?.replace(/\s+/g, ' ').trim() || ''
+      if (!title) return false
+      bound = true
+      const emit = (compact: boolean) => window.dispatchEvent(new CustomEvent('site:page-title', { detail: { title, label: '', compact } }))
+      emit(false)
+      if ('IntersectionObserver' in window) {
+        intersection = new IntersectionObserver(([entry]) => emit(!entry.isIntersecting), { rootMargin: '-64px 0px 0px 0px', threshold: 0.08 })
+        intersection.observe(heading)
+      }
+      return true
+    }
+
+    if (!bind() && 'MutationObserver' in window) {
+      mutation = new MutationObserver(() => {
+        if (bind()) mutation?.disconnect()
+      })
+      mutation.observe(root, { childList: true, subtree: true })
+    }
+
+    return () => {
+      intersection?.disconnect()
+      mutation?.disconnect()
+      if (bound) window.dispatchEvent(new CustomEvent('site:page-title', { detail: { title: '', label: '', compact: false } }))
+    }
+  }, [className])
+
+  return <div ref={rootRef} className={`signature-page w-full max-w-full overflow-x-clip ${className}`}>{children}</div>
 }

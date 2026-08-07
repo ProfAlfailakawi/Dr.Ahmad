@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router'
-import { FadeUp, Page, Reveal } from '../components/ui'
+import { FadeUp, Page, Reveal, sharedViewName } from '../components/ui'
 import { BranchGrove, useBranches } from '../components/ComposeScene'
 import { JsonLd, useSeo } from '../components/seo'
 import { OwnerEdit } from '../components/extras'
@@ -310,14 +310,14 @@ export default function BookDetail() {
       <section className="px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-28 md:px-11 md:pb-24 md:pt-44">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <Link to="/publications" className="text-[.85rem] text-soft transition-colors hover:text-accent">← كل المؤلفات</Link>
+            <Link to="/publications" viewTransition className="text-[.85rem] text-soft transition-colors hover:text-accent">← كل المؤلفات</Link>
           </FadeUp>
 
           <div className="book-detail-layout mt-8 grid items-start gap-8 md:mt-10 md:grid-cols-[1fr_1.1fr] md:gap-16">
             <FadeUp>
               {/* الغلاف لا يفتح المتن ولا PDF الكامل. استخدام المتن يحدث في
                   خريطة المعرفة أدناه، أما القراءة العامة فتبقى للعينة المعتمدة. */}
-              <div className="book-detail-cover mx-auto w-full max-w-[20rem] overflow-hidden rounded-2xl border border-hair bg-white md:max-w-sm">
+              <div className="book-detail-cover spatial-hero spatial-media mx-auto w-full max-w-[20rem] overflow-hidden rounded-2xl border border-hair bg-white md:max-w-sm" style={{ viewTransitionName: sharedViewName('book-cover', book.slug), ['--spatial-image' as string]: book.cover ? `url(${book.cover})` : 'none' }}>
                 {book.cover ? (
                   <img src={book.cover} alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" sizes="(max-width: 768px) 320px, 420px" className="w-full" />
                 ) : (
@@ -328,7 +328,7 @@ export default function BookDetail() {
 
             <FadeUp delay={0.1}>
               <div className="book-detail-copy"><span className="text-[.76rem] font-semibold text-accent">كتاب منشور</span>
-              <h1 className="mt-4 font-display text-[clamp(2rem,4.6vw,3.2rem)] font-bold leading-[1.25] text-ink">
+              <h1 style={{ viewTransitionName: sharedViewName('book-title', book.slug) }} className="mt-4 font-display text-[clamp(2rem,4.6vw,3.2rem)] font-bold leading-[1.25] text-ink">
                 <Reveal>{book.title}</Reveal>
               </h1>
             <OwnerEdit tab="books" slug={book.slug} className="mt-3" />

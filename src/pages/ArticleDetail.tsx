@@ -383,12 +383,12 @@ function IdeaEvolutionCard({ a, articles }: { a: ArticleTimeSeed; articles: Arti
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {pair.older && (
-            <Link to={`/articles/${pair.older.slug}`} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">
+            <Link viewTransition to={`/articles/${pair.older.slug}`} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">
               الجذر: {pair.older.iso.slice(0, 4)}
             </Link>
           )}
           {pair.newer && (
-            <Link to={`/articles/${pair.newer.slug}`} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">
+            <Link viewTransition to={`/articles/${pair.newer.slug}`} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.76rem] text-soft transition-colors hover:border-accent hover:text-accent">
               التطور: {pair.newer.iso.slice(0, 4)}
             </Link>
           )}
@@ -412,7 +412,7 @@ function TimeDialogue({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTi
         <p className="text-[.76rem] font-semibold text-accent">✦ حوار عبر الزمن</p>
         <div className="mt-4 space-y-4">
           {pair.older && (
-            <Link to={`/articles/${pair.older.slug}`} className="group block">
+            <Link viewTransition to={`/articles/${pair.older.slug}`} className="group block">
               <p className="text-[.95rem] font-light leading-[1.9] text-soft">
                 كتبتُ في هذا قبل {yearsWord(diff(pair.older.iso))} —{' '}
                 <span className="font-medium text-ink transition-colors group-hover:text-accent">«{pair.older.title}» ({yr(pair.older.iso)})</span>. كيف تغيّر المشهد؟ قارن بنفسك{' '}
@@ -421,7 +421,7 @@ function TimeDialogue({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTi
             </Link>
           )}
           {pair.newer && (
-            <Link to={`/articles/${pair.newer.slug}`} className="group block">
+            <Link viewTransition to={`/articles/${pair.newer.slug}`} className="group block">
               <p className="text-[.95rem] font-light leading-[1.9] text-soft">
                 ثم عدتُ إلى هذا الموضوع عام {yr(pair.newer.iso)} —{' '}
                 <span className="font-medium text-ink transition-colors group-hover:text-accent">«{pair.newer.title}»</span>{' '}
@@ -636,7 +636,7 @@ function ArticleClosingNote({ next, related }: { next?: ArticleRecord; related: 
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           <a href="#time-dialogue" onClick={(event) => { event.preventDefault(); goToLayer('#time-dialogue') }} className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent">حوار عبر الزمن</a>
           {target && (
-            <Link to={`/articles/${target.slug}`} className="rounded-full border border-accent/30 px-4 py-2 text-[.78rem] text-accent transition-colors hover:bg-accent hover:text-white">
+            <Link viewTransition to={`/articles/${target.slug}`} className="rounded-full border border-accent/30 px-4 py-2 text-[.78rem] text-accent transition-colors hover:bg-accent hover:text-white">
               {target === next ? 'المقال التالي' : 'مقال قريب'} ←
             </Link>
           )}
@@ -878,20 +878,20 @@ export default function ArticleDetail() {
               <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 sm:gap-3">
                 <div className="flex min-w-0 items-center gap-1.5">
                   {next ? (
-                    <Link to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                    <Link viewTransition to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                     </Link>
                   ) : <span className="h-8 w-8 shrink-0" aria-hidden />}
                   <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={next?.title}>{next?.title || 'لا يوجد'}</p>
                 </div>
 
-                <Link to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-8 items-center gap-1 rounded-full border border-hair px-2 text-[.58rem] font-light text-soft transition-colors hover:border-accent hover:text-accent">
+                <Link viewTransition to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-8 items-center gap-1 rounded-full border border-hair px-2 text-[.58rem] font-light text-soft transition-colors hover:border-accent hover:text-accent">
                   <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M5 6h14M5 12h14M5 18h14" /></svg>
                 </Link>
 
                 <div className="flex min-w-0 flex-row-reverse items-center gap-1.5 text-left">
                   {prev ? (
-                    <Link to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                    <Link viewTransition to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
                     </Link>
                   ) : <span className="h-8 w-8 shrink-0" aria-hidden />}

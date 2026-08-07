@@ -300,6 +300,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
   const [tab, setTab] = useState<SpaceTab>("continue");
   const [query, setQuery] = useState("");
   const [syncActive, setSyncActive] = useState(false);
+  const [freshAskId, setFreshAskId] = useState("");
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -309,16 +310,23 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
 
   useEffect(() => {
     const sync = () => setVersion((value) => value + 1);
+    const syncAsk = (event: Event) => {
+      sync();
+      const id = String((event as CustomEvent<{ id?: string }>).detail?.id || "");
+      if (!id) return;
+      setFreshAskId(id);
+      window.setTimeout(() => setFreshAskId((current) => current === id ? "" : current), 5200);
+    };
     window.addEventListener(SPACE_EVENT, sync);
     window.addEventListener("reader:quotes-changed", sync);
     window.addEventListener("reader:journey-changed", sync);
-    window.addEventListener(ASK_LIBRARY_MEMORY_EVENT, sync);
+    window.addEventListener(ASK_LIBRARY_MEMORY_EVENT, syncAsk);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener(SPACE_EVENT, sync);
       window.removeEventListener("reader:quotes-changed", sync);
       window.removeEventListener("reader:journey-changed", sync);
-      window.removeEventListener(ASK_LIBRARY_MEMORY_EVENT, sync);
+      window.removeEventListener(ASK_LIBRARY_MEMORY_EVENT, syncAsk);
       window.removeEventListener("storage", sync);
     };
   }, []);
@@ -398,7 +406,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
         onClick={() => { setOpen(true); setTab("continue"); }}
         aria-label="فتح مساحتي"
         title={snapshot.last && resumeProgress > 0 ? `مساحتي · أكمل القراءة من ${arNumber(Math.round(resumeProgress * 100))}%` : "مساحتي"}
-        className={`my-space-trigger group relative flex items-center justify-center text-ink transition-all hover:text-accent ${variant === "footer" ? "h-10 w-10 bg-transparent" : "h-11 w-11 rounded-full border border-hair bg-canvas/[.92] shadow-[0_12px_32px_-16px_rgba(21,22,26,.52)] backdrop-blur hover:border-accent"}`}
+        className={`my-space-trigger ${freshAskId ? "my-space-trigger--fresh" : ""} group relative flex items-center justify-center text-ink transition-all hover:text-accent ${variant === "footer" ? "h-10 w-10 bg-transparent" : "h-11 w-11 rounded-full border border-hair bg-canvas/[.92] shadow-[0_12px_32px_-16px_rgba(21,22,26,.52)] backdrop-blur hover:border-accent"}`}
       >
         {variant === "floating" && resumeProgress > 0 && (
           <svg aria-hidden viewBox="0 0 44 44" className="pointer-events-none absolute inset-[-1px] h-[44px] w-[44px] -rotate-90 text-accent">
@@ -451,11 +459,19 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                             <p className="text-[.7rem] font-semibold text-accent">تابع من حيث توقفت</p>
                             <div className="mt-3 overflow-hidden rounded-2xl border border-accent/25 bg-wash/[.55]">
                               {latestIsAsk && latestAsk ? (
-                                <Link to={`/ask?q=${encodeURIComponent(latestAsk.question)}`} onClick={() => setOpen(false)} className="ask-memory-card group block p-5 md:p-6">
-                                  <div className="flex items-start justify-between gap-4"><strong className="line-clamp-2 font-display text-[1.08rem] leading-[1.65] text-ink transition-colors group-hover:text-accent">{latestAsk.question}</strong><span className="shrink-0 text-[.66rem] text-soft">{timeAgo(latestAsk.updatedAt)}</span></div>
-                                  <span className="mt-2 line-clamp-3 block text-[.76rem] font-light leading-[1.85] text-soft">{latestAsk.summary}</span>
-                                  {latestAsk.branches.length > 0 && <span className="mt-4 flex flex-wrap gap-1.5">{latestAsk.branches.slice(0, 2).map((branch) => <span key={branch.id} className="rounded-full border border-accent/[.15] bg-canvas/70 px-2.5 py-1 text-[.62rem] text-soft">{branch.title}</span>)}</span>}
-                                </Link>
+                                <motion.div
+                                  key={latestAsk.id}
+                                  initial={freshAskId === latestAsk.id ? { opacity: 0, y: 22, scale: .965, filter: "blur(7px)" } : false}
+                                  animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                                  transition={{ duration: .58, ease: EASE }}
+                                  className={freshAskId === latestAsk.id ? "ask-memory-arrival" : ""}
+                                >
+                                  <Link to={`/ask?q=${encodeURIComponent(latestAsk.question)}`} onClick={() => setOpen(false)} className="ask-memory-card group block p-5 md:p-6">
+                                    <div className="flex items-start justify-between gap-4"><strong className="line-clamp-2 font-display text-[1.08rem] leading-[1.65] text-ink transition-colors group-hover:text-accent">{latestAsk.question}</strong><span className="shrink-0 text-[.66rem] text-soft">{timeAgo(latestAsk.updatedAt)}</span></div>
+                                    <span className="mt-2 line-clamp-3 block text-[.76rem] font-light leading-[1.85] text-soft">{latestAsk.summary}</span>
+                                    {latestAsk.branches.length > 0 && <span className="mt-4 flex flex-wrap gap-1.5">{latestAsk.branches.slice(0, 2).map((branch) => <span key={branch.id} className="rounded-full border border-accent/[.15] bg-canvas/70 px-2.5 py-1 text-[.62rem] text-soft">{branch.title}</span>)}</span>}
+                                  </Link>
+                                </motion.div>
                               ) : latestIsAudio && snapshot.audio ? (
                                 <button type="button" onClick={() => void resumeAudio()} className="group flex w-full items-center gap-5 p-5 text-right md:p-6">
                                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-white"><PlayMark /></span>
@@ -501,7 +517,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                         <div className="space-y-8">
                           {savedCount >= 8 && <label className="relative block"><span className="sr-only">ابحث في محفوظاتي</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث في المقالات واللقاءات المحفوظة…" className="w-full rounded-full border border-hair bg-canvas py-3 pe-11 ps-4 text-[.8rem] text-ink outline-none placeholder:text-soft focus:border-accent" /><span aria-hidden className="absolute left-4 top-1/2 -translate-y-1/2 text-soft"><SocialIcon name="Search" size={16} /></span></label>}
                           {filteredArticles.length > 0 && <section><div className="flex items-baseline justify-between gap-4"><h3 className="font-display text-[1rem] font-semibold text-ink">مقالات للعودة</h3><span className="text-[.68rem] text-soft">{arNumber(filteredArticles.length)}</span></div><div className="mt-3 divide-y divide-hair border-y border-hair">{filteredArticles.map((item) => <div key={item.slug} className="flex items-center gap-2 py-2"><Link to={`/articles/${item.slug}`} onClick={() => setOpen(false)} className="group flex min-w-0 flex-1 items-center justify-between gap-4 py-1.5"><span className="min-w-0"><span className="block text-[.65rem] text-soft">{categoryLabel(item.cat)}</span><span className="mt-1 line-clamp-2 block text-[.82rem] font-medium leading-[1.55] text-ink group-hover:text-accent">{item.title}</span></span><span className="text-accent">←</span></Link><button type="button" onClick={() => toggleSavedArticle(item)} aria-label="إزالة المقال من محفوظاتي" title="إزالة من محفوظاتي" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-soft transition-colors hover:bg-wash hover:text-accent"><SocialIcon name="Trash" size={15} /></button></div>)}</div></section>}
-                          {filteredMedia.length > 0 && <section><div className="flex items-baseline justify-between gap-4"><h3 className="font-display text-[1rem] font-semibold text-ink">لقاءات إعلامية محفوظة</h3><span className="text-[.68rem] text-soft">{arNumber(filteredMedia.length)}</span></div><div className="mt-3 grid gap-3 sm:grid-cols-2">{filteredMedia.map((item) => { const videoId = (item.url || "").match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/)?.[1] || ""; return <div key={item.slug} className="group relative overflow-hidden rounded-xl border border-hair bg-canvas transition-colors hover:border-accent"><Link to={`/media/${item.slug}`} onClick={() => setOpen(false)} className="block"><div className={`relative aspect-video overflow-hidden bg-wash ${videoId ? "complete-media-frame" : ""}`} style={videoId ? ({ "--media-thumb": `url(${item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`})` } as CSSProperties) : undefined}>{videoId && <img src={item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`} alt="" loading="lazy" onLoad={(event) => { const img = event.currentTarget; if (!item.thumbnail && img.naturalWidth <= 120 && !img.dataset.fallback) { img.dataset.fallback = "1"; img.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`; } }} onError={(event) => { const img = event.currentTarget; if (!img.dataset.fallback) { img.dataset.fallback = "1"; img.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`; } else img.style.display = "none"; }} className="complete-media-image h-full w-full" />}<span className="absolute inset-0 flex items-center justify-center bg-ink/10"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas/[.92] text-accent"><PlayMark /></span></span></div><div className="p-3.5 pe-12"><span className="text-[.64rem] font-semibold text-accent">{item.program || item.outlet || "لقاء إعلامي"}</span><strong className="mt-1 line-clamp-2 block text-[.8rem] leading-[1.6] text-ink group-hover:text-accent">{item.title}</strong></div></Link><MediaSaveButton slug={item.slug} className="absolute bottom-3 left-3" /></div>; })}</div></section>}
+                          {filteredMedia.length > 0 && <section><div className="flex items-baseline justify-between gap-4"><h3 className="font-display text-[1rem] font-semibold text-ink">لقاءات إعلامية محفوظة</h3><span className="text-[.68rem] text-soft">{arNumber(filteredMedia.length)}</span></div><div className="mt-3 grid gap-3 sm:grid-cols-2">{filteredMedia.map((item) => { const videoId = (item.url || "").match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/)?.[1] || ""; return <div key={item.slug} className="group relative overflow-hidden rounded-xl border border-hair bg-canvas transition-colors hover:border-accent"><Link to={`/media/${item.slug}`} onClick={() => setOpen(false)} className="block"><div className={`relative aspect-video overflow-hidden bg-wash ${videoId ? "complete-media-frame" : ""}`} style={videoId ? ({ "--media-thumb": `url(${item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`})` } as CSSProperties) : undefined}>{videoId && <img decoding="async" src={item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`} alt="" loading="lazy" onLoad={(event) => { const img = event.currentTarget; if (!item.thumbnail && img.naturalWidth <= 120 && !img.dataset.fallback) { img.dataset.fallback = "1"; img.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`; } }} onError={(event) => { const img = event.currentTarget; if (!img.dataset.fallback) { img.dataset.fallback = "1"; img.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`; } else img.style.display = "none"; }} className="complete-media-image h-full w-full" />}<span className="absolute inset-0 flex items-center justify-center bg-ink/10"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas/[.92] text-accent"><PlayMark /></span></span></div><div className="p-3.5 pe-12"><span className="text-[.64rem] font-semibold text-accent">{item.program || item.outlet || "لقاء إعلامي"}</span><strong className="mt-1 line-clamp-2 block text-[.8rem] leading-[1.6] text-ink group-hover:text-accent">{item.title}</strong></div></Link><MediaSaveButton slug={item.slug} className="absolute bottom-3 left-3" /></div>; })}</div></section>}
                           {!filteredArticles.length && !filteredMedia.length && <p className="py-10 text-center text-[.84rem] text-soft">لا توجد نتيجة مطابقة في محفوظاتك.</p>}
                         </div>
                       )}

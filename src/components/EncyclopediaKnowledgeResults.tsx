@@ -129,7 +129,7 @@ export function EncyclopediaKnowledgeResults({
                   <iframe title={primaryVideo.title} src={selectedPlayerUrl} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen className="aspect-video w-full" />
                 ) : (
                   <button type="button" onClick={() => onPlay(primaryVideo, activeInstance, exactMoment ? primaryMoment?.startSeconds || 0 : 0)} className="group relative block aspect-video w-full text-start">
-                    <img src={primaryVideo.thumbnail} alt="" loading="lazy" className="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-75" />
+                    <img decoding="async" src={primaryVideo.thumbnail} alt="" loading="lazy" className="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-75" />
                     <span className="absolute inset-0 flex items-center justify-center"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-canvas/95 text-accent shadow-lg"><SocialIcon name="Play" size={18} /></span></span>
                   </button>
                 )}
@@ -192,7 +192,7 @@ export function EncyclopediaKnowledgeResults({
               return (
                 <button key={`${moment.videoId}-${moment.startSeconds}`} type="button" onClick={() => onPlay(video, `knowledge-${moment.videoId}-${moment.startSeconds}`, exact ? moment.startSeconds : 0)} className="w-[72vw] max-w-[18rem] shrink-0 snap-start rounded-xl border border-hair bg-wash/40 p-3 text-start transition-colors hover:border-accent">
                   <div className="flex items-center gap-3">
-                    <img src={video.thumbnail} alt="" loading="lazy" className="h-16 w-24 shrink-0 rounded-xl object-cover" />
+                    <img decoding="async" src={video.thumbnail} alt="" loading="lazy" className="h-16 w-24 shrink-0 rounded-xl object-cover" />
                     <div className="min-w-0"><span className="text-[.6rem] font-semibold text-accent">{exact ? `شاهد من ${formatMoment(moment.startSeconds)}` : 'الفيديو الأقرب'}</span><strong className="mt-1 line-clamp-2 block text-[.68rem] leading-relaxed text-ink">{video.title}</strong></div>
                   </div>
                 </button>

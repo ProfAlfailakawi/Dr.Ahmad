@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { JsonLd, useSeo } from '../components/seo'
 import { Link } from 'react-router'
-import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
+import { FadeUp, Page, PageHead, SocialIcon, sharedViewName } from '../components/ui'
 import { academicProfiles, doctorate, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { Pagination, usePagedList } from '../components/Pagination'
@@ -85,19 +85,19 @@ export default function Research() {
             </section>
           </FadeUp>
 
-          <ul id="research-list" className="mt-6 grid scroll-mt-28 gap-4">
+          <ul id="research-list" className="spatial-collection mt-6 grid scroll-mt-28 gap-4">
             {paged.pageItems.map(({ paper: p, intelligence }, i) => {
               const type = arabicOnly(p.studyType || intelligence.studyType)
               const year = intelligence.year
               const journal = p.journal || intelligence.journal
               return (
                 <FadeUp key={p.slug} delay={Math.min(i * 0.03, 0.3)}>
-                  <li className="research-list-card overflow-hidden rounded-[26px] border">
+                  <li className="research-list-card spatial-card overflow-hidden rounded-[26px] border">
                     <div className="grid gap-4 p-5 sm:grid-cols-[48px_minmax(0,1fr)] sm:items-start md:p-7">
                       <span className="pt-1 font-display text-[.86rem] font-bold text-accent sm:self-start">{ar((paged.page - 1) * 12 + i + 1)}</span>
                       <div className="min-w-0">
                         {type && <div className="mb-3 flex flex-wrap gap-2"><span className={badge}>{type}</span></div>}
-                        <Link to={`/research/${p.slug}`} dir="auto" className="research-title-link block text-[1.12rem] font-bold leading-[1.65] text-ink transition-colors hover:text-accent">{p.title}</Link>
+                        <Link to={`/research/${p.slug}`} viewTransition dir="auto" style={{ viewTransitionName: sharedViewName('paper-title', p.slug) }} className="research-title-link block text-[1.12rem] font-bold leading-[1.65] text-ink transition-colors hover:text-accent">{p.title}</Link>
                         {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-1 text-[.92rem] font-light leading-[1.8] text-soft">{p.titleAr}</p>}
                         {(journal || year) && (
                           <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[.74rem] text-soft">

@@ -4716,3 +4716,184 @@ img[loading="lazy"],
   html[data-theme-transition="radial"]::view-transition-new(root),
   .audio-wave-progress.is-playing .audio-wave-fill { animation: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPATIAL CONTINUITY — الجولة النهائية المستلهمة من الواجهات التوليدية
+   الفكرة: العناصر لا «تختفي ثم تظهر»؛ تتبدّل حالتها، ويبقى المشهد هادئاً.
+   كل التأثيرات هنا transform/opacity أو View Transition لحظي، بلا loop ثقيل.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --motion-fast: .22s;
+  --motion-base: .42s;
+  --motion-slow: .62s;
+  --motion-curve: cubic-bezier(.2,.72,.2,1);
+}
+
+/* العنوان الكبير يترك أثراً صغيراً في الشريط بعد أن يغادر مجال النظر. */
+.nav-page-echo {
+  letter-spacing: -.012em;
+  text-shadow: 0 1px 18px rgb(var(--c-canvas) / .9);
+}
+html.dark .nav-page-echo { text-shadow: 0 1px 20px rgb(0 0 0 / .55); }
+
+/* انتقال الصفحة القصير، بينما العناصر المشتركة تأخذ زمناً أطول قليلاً لتبدو
+   وكأن البطاقة نفسها أصبحت الصفحة. لا طبقة انتظار ولا spinner إضافي. */
+@supports (view-transition-name: root) {
+  ::view-transition-group(*) {
+    animation-duration: .5s;
+    animation-timing-function: var(--motion-curve);
+  }
+  ::view-transition-group(root) { animation-duration: .24s; }
+  ::view-transition-old(root) {
+    animation: spatial-root-out .2s ease both;
+  }
+  ::view-transition-new(root) {
+    animation: spatial-root-in .28s var(--motion-curve) both;
+  }
+  ::view-transition-group(page-title) {
+    animation-duration: .44s;
+    animation-timing-function: var(--motion-curve);
+  }
+  ::view-transition-image-pair(*) { isolation: auto; }
+  @keyframes spatial-root-out {
+    to { opacity: .22; }
+  }
+  @keyframes spatial-root-in {
+    from { opacity: .35; }
+    to { opacity: 1; }
+  }
+}
+
+/* ضوء سياقي لا يرسم شكلاً جديداً: فقط يرفع العنصر الذي صار مركز اللحظة. */
+.spatial-stage { position: relative; isolation: isolate; }
+.spatial-hero {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    0 34px 78px -48px rgb(var(--c-accent) / .36),
+    0 20px 52px -42px rgb(var(--c-ink) / .42);
+  transition: box-shadow var(--motion-slow) var(--motion-curve), border-color var(--motion-base) ease;
+}
+html.dark .spatial-hero {
+  box-shadow:
+    0 38px 86px -46px rgb(var(--c-accent) / .28),
+    0 26px 60px -38px rgb(0 0 0 / .78);
+}
+.spatial-media { background-color: rgb(var(--c-wash)); }
+
+/* التركيز السينمائي: لا نكبر البطاقة ولا نزاحم التخطيط؛ فقط يهدأ ما حولها.
+   يعمل على أجهزة المؤشر فقط كي تبقى الهواتف ساكنة وسريعة. */
+@media (hover: hover) and (pointer: fine) {
+  .spatial-collection .spatial-card {
+    transition:
+      opacity var(--motion-base) var(--motion-curve),
+      border-color var(--motion-fast) ease,
+      box-shadow var(--motion-base) var(--motion-curve);
+  }
+  .spatial-collection:has(.spatial-card:hover) .spatial-card:not(:hover),
+  .spatial-collection:has(.spatial-card:focus-within) .spatial-card:not(:focus-within) {
+    opacity: .58;
+  }
+  .spatial-collection .spatial-card:hover,
+  .spatial-collection .spatial-card:focus-within {
+    opacity: 1;
+    z-index: 2;
+  }
+}
+
+/* «الأثر» الذي وُلد في اسأل المكتبة يصل إلى مساحتي كشيءٍ استقرّ، لا إشعار. */
+.my-space-trigger--fresh {
+  color: rgb(var(--c-accent));
+  box-shadow: 0 0 0 1px rgb(var(--c-accent) / .12), 0 10px 30px -18px rgb(var(--c-accent) / .55);
+}
+.my-space-trigger--fresh::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border: 1px solid rgb(var(--c-accent) / .22);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: memory-arrival-ring 1.45s var(--motion-curve) 2;
+}
+.ask-memory-arrival {
+  position: relative;
+  isolation: isolate;
+}
+.ask-memory-arrival::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -12px;
+  border-radius: 1.3rem;
+  background: radial-gradient(70% 95% at 82% 28%, rgb(var(--c-accent) / .11), transparent 72%);
+  opacity: 0;
+  animation: memory-arrival-glow 1.9s var(--motion-curve) .08s both;
+  pointer-events: none;
+}
+@keyframes memory-arrival-ring {
+  0% { opacity: 0; transform: scale(.9); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+@keyframes memory-arrival-glow {
+  0% { opacity: 0; transform: scale(.94); }
+  34% { opacity: 1; }
+  100% { opacity: .16; transform: scale(1); }
+}
+
+/* مجلس الفكرة: الصف المفتوح يصبح «المجلس» نفسه، ولا يظهر كمشغّل ملصوق تحته. */
+.majlis-row {
+  position: relative;
+  border-radius: 1rem;
+  transition: margin var(--motion-base) var(--motion-curve), box-shadow var(--motion-base) var(--motion-curve);
+}
+.majlis-row.is-open {
+  margin-block: .45rem .75rem;
+  box-shadow: 0 24px 58px -46px rgb(var(--c-accent) / .62);
+}
+.majlis-player-shell {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .34);
+  transform-origin: top center;
+}
+html.dark .majlis-player-shell { box-shadow: inset 0 1px 0 rgb(255 255 255 / .055); }
+
+/* الصور التي تتحول بين القائمة والتفاصيل لا تُعاد صياغتها بفلتر ثقيل أثناء
+   السكون؛ المتصفح يحرك snapshot فقط وقت الانتقال. */
+.spatial-card,
+.spatial-media,
+.spatial-hero { backface-visibility: hidden; }
+
+/* الهاتف: الضوء أخف، ولا :has ولا filter جماعي؛ الأولوية للاستجابة. */
+@media (max-width: 767px) {
+  .spatial-hero {
+    box-shadow: 0 24px 58px -44px rgb(var(--c-accent) / .28), 0 16px 38px -34px rgb(var(--c-ink) / .32);
+  }
+  .my-space-trigger--fresh::after { animation-iteration-count: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @supports (view-transition-name: root) {
+    ::view-transition-group(*),
+    ::view-transition-old(root),
+    ::view-transition-new(root) { animation-duration: .01ms !important; animation-name: none !important; }
+  }
+  .my-space-trigger--fresh::after,
+  .ask-memory-arrival::before { animation: none !important; }
+  .majlis-row { transition: none !important; }
+}
+
+/* الأداء جزء من الجمال: البطاقات العادية لا تحتاج backdrop-filter في الأصل لأن
+   خلفيتها في الأصل Canvas/Gradient. نحتفظ بالضباب فقط للطبقات التي فوق الصفحة
+   (الهيدر، القوائم، مساحتي)، ونمنع تكلفة GPU المتكررة في القوائم الطويلة. */
+.signature-page:not(.admin-dashboard) :is(article, details)[class*="border"][class*="rounded"],
+.signature-page:not(.admin-dashboard) a.group[class*="border"][class*="rounded"],
+.signature-page:not(.admin-dashboard) .ask-memory-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+@media (max-width: 767px) {
+  /* الحبيبات لا تُرى عملياً على كثافة شاشات الهاتف؛ حذف الطبقة هناك يمنع
+     compositing إضافياً أثناء التمرير من أجل فرق بصري غير ملحوظ. */
+  body::after { display: none; }
+}

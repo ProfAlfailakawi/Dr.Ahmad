@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
-import { FadeUp, Page, Reveal } from '../components/ui'
+import { FadeUp, Page, Reveal, sharedViewName } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { CiteButton, OwnerEdit } from '../components/extras'
 import { profile, SITE_URL } from '../data'
@@ -177,7 +177,7 @@ export default function PaperDetail() {
         <div className="mx-auto max-w-[960px]">
           <FadeUp>
             <div className="flex items-center justify-between gap-4">
-              <Link to="/research" className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent">← كل المساهمات العلمية</Link>
+              <Link to="/research" viewTransition className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent">← كل المساهمات العلمية</Link>
             </div>
           </FadeUp>
 
@@ -197,7 +197,7 @@ export default function PaperDetail() {
                   </div>
                 </div>
 
-                <h1 dir="auto" className="mt-6 font-display text-[clamp(1.75rem,4.5vw,2.85rem)] font-extrabold leading-[1.25] text-ink"><Reveal>{p.title}</Reveal></h1>
+                <h1 dir="auto" style={{ viewTransitionName: sharedViewName('paper-title', p.slug) }} className="mt-6 font-display text-[clamp(1.75rem,4.5vw,2.85rem)] font-extrabold leading-[1.25] text-ink"><Reveal>{p.title}</Reveal></h1>
                 {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-3 text-[1.05rem] font-light leading-[1.85] text-soft">{p.titleAr}</p>}
                 <OwnerEdit tab="papers" slug={p.slug} className="mt-3" />
 
@@ -350,8 +350,8 @@ export default function PaperDetail() {
 
           <FadeUp>
             <nav className="mt-16 grid gap-6 border-t border-hair pt-8 sm:grid-cols-2">
-              {prev ? <Link to={`/research/${prev.slug}`} className="group"><span className="text-[.78rem] text-soft">السابق</span><span className="mt-1 block font-display text-[1.02rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{prev.title}</span></Link> : <span />}
-              {next && <Link to={`/research/${next.slug}`} className="group sm:text-left"><span className="text-[.78rem] text-soft">التالي</span><span className="mt-1 block font-display text-[1.02rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{next.title}</span></Link>}
+              {prev ? <Link viewTransition to={`/research/${prev.slug}`} className="group"><span className="text-[.78rem] text-soft">السابق</span><span className="mt-1 block font-display text-[1.02rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{prev.title}</span></Link> : <span />}
+              {next && <Link viewTransition to={`/research/${next.slug}`} className="group sm:text-left"><span className="text-[.78rem] text-soft">التالي</span><span className="mt-1 block font-display text-[1.02rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{next.title}</span></Link>}
             </nav>
           </FadeUp>
         </div>

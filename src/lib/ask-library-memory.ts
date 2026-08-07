@@ -49,9 +49,9 @@ const stableId = (question: string) => {
   return `ask-${(hash >>> 0).toString(36)}`
 }
 
-function notify() {
+function notify(id: string) {
   if (!hasWindow()) return
-  try { window.dispatchEvent(new CustomEvent(ASK_LIBRARY_MEMORY_EVENT)) } catch { /* noop */ }
+  try { window.dispatchEvent(new CustomEvent(ASK_LIBRARY_MEMORY_EVENT, { detail: { id } })) } catch { /* noop */ }
 }
 
 function queueCloudSync() {
@@ -125,7 +125,7 @@ export function saveAskLibraryMemory(input: {
 
   try {
     window.localStorage.setItem(ASK_LIBRARY_MEMORY_KEY, JSON.stringify(merged))
-    notify()
+    notify(id)
     queueCloudSync()
   } catch { /* التخزين قد يكون محجوباً */ }
 }

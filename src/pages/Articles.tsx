@@ -173,17 +173,17 @@ export default function Articles() {
             </h2>
             <span className="text-[.75rem] text-soft">3 عدسات موضوعية متجددة</span>
           </div>
-          <div className="article-featured-rail mx-0 flex snap-x snap-mandatory gap-4 overflow-x-auto px-0 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:pb-0">
+          <div className="article-featured-rail spatial-collection mx-0 flex snap-x snap-mandatory gap-4 overflow-x-auto px-0 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:pb-0">
             {featured.map((entry, index) => {
               const labels = ['الأبرز', 'من الأرشيف', 'زاوية مختلفة']
               return (
                 <FadeUp key={entry.slug} delay={index * 0.08} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
-                  <Link to={`/articles/${entry.slug}`} viewTransition className="group flex h-full min-w-0 flex-col rounded-2xl border border-hair bg-canvas p-6 transition-[border-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
+                  <Link to={`/articles/${entry.slug}`} viewTransition className="spatial-card group flex h-full min-w-0 flex-col rounded-2xl border border-hair bg-canvas p-6 transition-[border-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
                     <div className="flex items-center justify-between gap-3">
                       <span className="inline-flex rounded-full border border-hair bg-wash px-3 py-1 text-[.68rem] font-semibold text-accent">{entry.tag} · {labels[index] || 'مختارة'}</span>
                       <span className="text-[.7rem] font-semibold text-soft">0{index + 1}</span>
                     </div>
-                    <h3 style={{ viewTransitionName: `article-${entry.slug}` }} className="mt-4 break-words font-display text-[1.16rem] font-bold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.26rem]">{entry.title}</h3>
+                    <h3 className="mt-4 break-words font-display text-[1.16rem] font-bold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.26rem]">{entry.title}</h3>
                     <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.88rem] leading-[1.8] text-soft">{entry.quote}</blockquote>
                     <span aria-hidden className="mt-auto pt-6 text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1">←</span>
                   </Link>
@@ -203,9 +203,9 @@ export default function Articles() {
             </p>
           </FadeUp>
 
-          <ul id="articles-list" className="mt-10 scroll-mt-28">
+          <ul id="articles-list" className="spatial-collection mt-10 scroll-mt-28">
             {shown.map((a, i) => (
-              <li key={a.slug} className={i === 0 ? '' : 'border-t border-hair'}>
+              <li key={a.slug} className={`spatial-card ${i === 0 ? '' : 'border-t border-hair'}`}>
                 <Link
                   to={`/articles/${a.slug}`}
                   viewTransition

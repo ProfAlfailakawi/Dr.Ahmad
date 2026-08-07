@@ -50,7 +50,7 @@ function Row({ eyebrow, title, meta, note, icon, onOpen, thumbnail }: {
   const inner = (
     <>
       {thumbnail
-        ? <img src={thumbnail} alt="" loading="lazy" width={96} height={54} className="h-[3.4rem] w-24 shrink-0 rounded-lg object-cover" />
+        ? <img decoding="async" src={thumbnail} alt="" loading="lazy" width={96} height={54} className="h-[3.4rem] w-24 shrink-0 rounded-lg object-cover" />
         : <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent"><SocialIcon name={icon} size={14} /></span>}
       <span className="min-w-0 flex-1">
         <span className="block text-[.6rem] font-semibold text-accent">{eyebrow}</span>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router'
-import { LINK_OUT, SHOW_EN_TOGGLE, academicProfiles, profile, socials, links, upcoming, type Event } from '../data'
+import { LINK_OUT, SHOW_EN_TOGGLE, academicProfiles, profile, socials, links, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
 import { sortUpcomingEvents } from '../lib/events'
 import { listenIsOpen } from '../lib/listen-catalog'
@@ -318,7 +318,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
   /* «اللقاءات القادمة» تُخفى من القائمة حين لا لقاء مُعلَناً — كي لا يقود الرابط
      إلى صفحةٍ فارغة. القائمة مغلقةٌ حتى يفتحها الزائر، وبيانات اللقاءات تُحمَّل
      مع الصفحة، فتستقر الحالة قبل أن تُرى — بلا وميض. تعود فور إعلان لقاءٍ جديد. */
-  const cmsUpcoming = useExtras<Event & { id: string }>('site_upcoming')
+  const cmsUpcoming = useExtras<SiteEvent & { id: string }>('site_upcoming')
   /* «مجلس الفكرة» يخضع لقانون «اللقاء القادم» نفسه: لا يُعرض رابطٌ إلى صفحةٍ لم تمتلئ. */
   const hasUpcoming = useMemo(() => sortUpcomingEvents([...cmsUpcoming, ...upcoming]).length > 0, [cmsUpcoming])
   const groups = useMemo(

@@ -234,6 +234,7 @@ ok(waIntent.includes('صوت نورة:') && waIntent.includes('صوت فهد:') 
 console.log('\nRealtime audio ledger')
 const audioSync = read('scripts/sync-audio-firestore.mjs')
 const autoAudioWorkflow = read('.github/workflows/auto-audio-r2.yml')
+const contentManager = read('src/components/admin/ContentManager.tsx')
 const audioDashboardWorkflow = read('.github/workflows/audio-dashboard-sync.yml')
 const podcastWorkflow = read('.github/workflows/podcast-pilot-release.yml')
 ok(audioSync.includes("collection('content_overrides')") && audioSync.includes("collection('site_articles')"), 'مزامنة الصوت تكتب للمصدر الحي الذي تقرؤه لوحة التحكم')
@@ -282,8 +283,8 @@ ok(server.includes('r2InventoryVerified')
   && server.includes('لا توجد مشكلة حية مؤكدة؛ آخر تقرير للحارس انتهت صلاحيته'), 'مركز الصحة يقدّم الجرد الحي على أسرار الإدارة ولا يحوّل skipped أو تقرير الحارس القديم إلى عطل راهن')
 const audioClearWorkflow = read('.github/workflows/admin-audio-clear.yml')
 ok(audioClearWorkflow.includes('reading) FILES=') && audioClearWorkflow.includes('.noura.mp3'), 'إدارة القراءة تتعامل مع ملفي فهد ونورة معاً فلا يبقى صوت نورة خارج المزامنة')
-ok(!autoAudioWorkflow.includes('github.event.inputs.voice') && autoAudioWorkflow.includes('MODE="reading"') && autoAudioWorkflow.includes("github.event_name == 'schedule'"), 'الدورة المجدولة تستمر في فحص المقالات الجديدة وتولد مسارات القراءة دون اعتماد على لقطة ثابتة قديمة')
-ok(autoAudioWorkflow.includes('node scripts/idea-life-sync.mjs') && autoAudioWorkflow.includes("IDEA_LIFE_STALE_DAYS: '7'"), 'كل جولة مجدولة تُحدّث دليل حياة/أثر الفكرة للمقالات المنشورة من دون اختلاق أثر بلا مصدر')
+ok(!autoAudioWorkflow.includes('cron:') && autoAudioWorkflow.includes('workflow_dispatch:') && autoAudioWorkflow.includes("- 'src/data.ts'") && contentManager.includes('articleNeedsFreshReading') && contentManager.includes("manageArticleAudio({ user: getAuth(app).currentUser, slug, mode: 'reading', action: 'regenerate' })"), 'توليد القراءة حدثي عند إضافة/تعديل المقال ولا يوقظ GitHub دورياً بلا مادة جديدة')
+ok(autoAudioWorkflow.includes('node scripts/idea-life-sync.mjs') && autoAudioWorkflow.includes("IDEA_LIFE_STALE_DAYS: '7'"), 'تشغيلة الصوت الحدثية تُحدّث دليل حياة/أثر الفكرة للمقال من دون اختلاق أثر بلا مصدر')
 /* العقد انقلب بأمر الدكتور (١ أغسطس ٢٠٢٦): «ما نستخدم جيمناي إطلاقاً». كان
    الشرط القديم يقيس وجود المفتاح لا رصيده، فمات المحرك بالرمز ٤ ثلاثة أيام
    والتشغيلات «ناجحة». فالمطلوب الآن عكس ما كان: ألّا يعرف مسار الحوار مزوّداً

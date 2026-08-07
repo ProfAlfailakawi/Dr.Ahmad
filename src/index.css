@@ -4596,3 +4596,123 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   .site-nav :is(button, a),
   .ask-memory-card { transform: none !important; transition: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FINISHING LAYER — ملمس وحركة دقيقة بلا عناصر واجهة جديدة
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ملمس ورقي يكاد لا يُرى: يدفئ المساحات المسطحة ولا ينافس النص أو الصور. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.68'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  opacity: .012;
+  mix-blend-mode: multiply;
+}
+html.dark body::after {
+  opacity: .016;
+  mix-blend-mode: soft-light;
+}
+
+/* شريط التمرير لا يصبح عنصراً بصرياً مستقلاً على Windows/Linux. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--c-soft) / .28) transparent;
+}
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(var(--c-soft) / .24);
+}
+*::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-accent) / .42); }
+
+/* تقارب بصري محدود للعناوين الكبيرة فقط؛ النصوص العادية لا تتغير. */
+.signature-page:not(.admin-dashboard) h1.font-display,
+.page-head h1 {
+  letter-spacing: -.012em;
+  word-spacing: -.025em;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+
+/* حتى التصفح بلوحة المفاتيح يبقى من لغة الموقع، لا حلقة المتصفح الافتراضية. */
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid rgb(var(--c-accent) / .48);
+  outline-offset: 3px;
+}
+:where(input, textarea, select):focus-visible {
+  outline-color: rgb(var(--c-accent) / .34);
+  box-shadow: 0 0 0 4px rgb(var(--c-accent) / .075);
+}
+
+/* لا ومضة بيضاء أثناء وصول الصور البطيئة. */
+img[loading="lazy"],
+.complete-media-image,
+.complete-book-image,
+.plate img {
+  background-color: rgb(var(--c-wash));
+}
+
+/* الوضع الجديد ينتشر من زر الليل/النهار نفسه، بلا Overlay أو تحكم جديد. */
+@supports (view-transition-name: root) {
+  html[data-theme-transition="radial"]::view-transition-old(root),
+  html[data-theme-transition="radial"]::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  html[data-theme-transition="radial"]::view-transition-new(root) {
+    animation: theme-radial-reveal .58s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes theme-radial-reveal {
+    from { clip-path: circle(0 at var(--theme-x, 50%) var(--theme-y, 0)); }
+    to { clip-path: circle(var(--theme-radius, 150vmax) at var(--theme-x, 50%) var(--theme-y, 0)); }
+  }
+}
+
+/* شريط الصوت صار موجةً هادئة؛ نفس المساحة ونفس وظيفة القفز، بلا زر جديد. */
+.audio-wave-progress {
+  --audio-wave-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='28' viewBox='0 0 240 28' preserveAspectRatio='none'%3E%3Cg fill='black'%3E%3Crect x='1' y='10' width='3' height='8' rx='1.5'/%3E%3Crect x='7' y='7' width='3' height='14' rx='1.5'/%3E%3Crect x='13' y='3' width='3' height='22' rx='1.5'/%3E%3Crect x='19' y='8' width='3' height='12' rx='1.5'/%3E%3Crect x='25' y='5' width='3' height='18' rx='1.5'/%3E%3Crect x='31' y='11' width='3' height='6' rx='1.5'/%3E%3Crect x='37' y='6' width='3' height='16' rx='1.5'/%3E%3Crect x='43' y='2' width='3' height='24' rx='1.5'/%3E%3Crect x='49' y='9' width='3' height='10' rx='1.5'/%3E%3Crect x='55' y='4' width='3' height='20' rx='1.5'/%3E%3Crect x='61' y='7' width='3' height='14' rx='1.5'/%3E%3Crect x='67' y='11' width='3' height='6' rx='1.5'/%3E%3Crect x='73' y='5' width='3' height='18' rx='1.5'/%3E%3Crect x='79' y='1' width='3' height='26' rx='1.5'/%3E%3Crect x='85' y='8' width='3' height='12' rx='1.5'/%3E%3Crect x='91' y='4' width='3' height='20' rx='1.5'/%3E%3Crect x='97' y='9' width='3' height='10' rx='1.5'/%3E%3Crect x='103' y='6' width='3' height='16' rx='1.5'/%3E%3Crect x='109' y='2' width='3' height='24' rx='1.5'/%3E%3Crect x='115' y='10' width='3' height='8' rx='1.5'/%3E%3Crect x='121' y='7' width='3' height='14' rx='1.5'/%3E%3Crect x='127' y='3' width='3' height='22' rx='1.5'/%3E%3Crect x='133' y='8' width='3' height='12' rx='1.5'/%3E%3Crect x='139' y='5' width='3' height='18' rx='1.5'/%3E%3Crect x='145' y='11' width='3' height='6' rx='1.5'/%3E%3Crect x='151' y='4' width='3' height='20' rx='1.5'/%3E%3Crect x='157' y='1' width='3' height='26' rx='1.5'/%3E%3Crect x='163' y='8' width='3' height='12' rx='1.5'/%3E%3Crect x='169' y='5' width='3' height='18' rx='1.5'/%3E%3Crect x='175' y='9' width='3' height='10' rx='1.5'/%3E%3Crect x='181' y='6' width='3' height='16' rx='1.5'/%3E%3Crect x='187' y='2' width='3' height='24' rx='1.5'/%3E%3Crect x='193' y='10' width='3' height='8' rx='1.5'/%3E%3Crect x='199' y='4' width='3' height='20' rx='1.5'/%3E%3Crect x='205' y='7' width='3' height='14' rx='1.5'/%3E%3Crect x='211' y='3' width='3' height='22' rx='1.5'/%3E%3Crect x='217' y='9' width='3' height='10' rx='1.5'/%3E%3Crect x='223' y='5' width='3' height='18' rx='1.5'/%3E%3Crect x='229' y='8' width='3' height='12' rx='1.5'/%3E%3Crect x='235' y='11' width='3' height='6' rx='1.5'/%3E%3C/g%3E%3C/svg%3E");
+  position: relative;
+  isolation: isolate;
+  background: transparent !important;
+}
+.audio-wave-progress::before,
+.audio-wave-fill {
+  -webkit-mask-image: var(--audio-wave-mask);
+  mask-image: var(--audio-wave-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+.audio-wave-progress::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgb(var(--c-soft) / .22);
+}
+.audio-wave-fill {
+  position: relative;
+  z-index: 1;
+  background: rgb(var(--c-accent));
+  opacity: 1 !important;
+  transition: width .14s linear, opacity .3s ease, filter .3s ease;
+}
+.audio-wave-progress.is-playing .audio-wave-fill {
+  animation: audio-wave-alive 1.55s ease-in-out infinite alternate;
+}
+@keyframes audio-wave-alive {
+  from { opacity: .82; filter: saturate(.88) brightness(.97); }
+  to { opacity: 1; filter: saturate(1.12) brightness(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-transition="radial"]::view-transition-new(root),
+  .audio-wave-progress.is-playing .audio-wave-fill { animation: none !important; }
+}

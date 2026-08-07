@@ -5,6 +5,7 @@ import { useSeo } from '../components/seo'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import { MediaSaveButton } from '../components/MySpace'
+import { SocialIcon } from '../components/icons'
 import { mergeMediaArchive, searchArchiveMoments, formatMediaTime } from '../lib/media-archive'
 import { arabicCountPhrase, MOMENT_MATCH_FORMS } from '../lib/arabic-count.ts'
 
@@ -59,7 +60,7 @@ export default function Media() {
             return <motion.article key={item.slug} initial={reduce ? false : { opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .15 }} transition={{ duration: .55, delay: Math.min(index * .035, .2), ease: EASE }} className="group relative overflow-hidden rounded-[1.35rem] border border-hair bg-canvas transition hover:-translate-y-1 hover:border-accent hover:shadow-[0_20px_50px_rgba(20,31,45,.08)]">
               <Link to={`/media/${item.slug}`} className="block">
                 <div className={`relative overflow-hidden bg-wash ${video ? 'complete-media-frame' : ''}`} style={{ aspectRatio: '16 / 9', ...(video ? ({ '--media-thumb': `url(${thumbnail})` } as CSSProperties) : {}) }}>
-                  {video ? <img src={thumbnail} alt="" loading="lazy" onLoad={(event) => { const img = event.currentTarget; if (!item.thumbnail && img.naturalWidth <= 120 && img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; }} onError={(event) => { const img = event.currentTarget; if (img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; else img.style.display = 'none'; }} className="complete-media-image h-full w-full" /> : <div className="flex h-full items-center justify-center"><div className="text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-accent/25 bg-canvas text-2xl text-accent">◉</span><span className="mt-3 block text-[.72rem] font-semibold text-soft">مادة إذاعية</span></div></div>}
+                  {video ? <img src={thumbnail} alt="" loading="lazy" onLoad={(event) => { const img = event.currentTarget; if (!item.thumbnail && img.naturalWidth <= 120 && img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; }} onError={(event) => { const img = event.currentTarget; if (img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; else img.style.display = 'none'; }} className="complete-media-image h-full w-full" /> : <div className="flex h-full items-center justify-center"><div className="text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-accent/25 bg-canvas text-accent"><SocialIcon name="Play" size={19} /></span><span className="mt-3 block text-[.72rem] font-semibold text-soft">مادة إذاعية</span></div></div>}
                   <span className="absolute right-3 top-3 rounded-full border border-white/50 bg-ink/[.55] px-3 py-1 text-[.65rem] text-white backdrop-blur">{kindLabel[item.kind] || 'ظهور إعلامي'}</span>
                   {available && <span className="absolute bottom-3 right-3 rounded-full bg-accent px-3 py-1 text-[.62rem] font-bold text-white">مفهرس زمنياً</span>}
                 </div>

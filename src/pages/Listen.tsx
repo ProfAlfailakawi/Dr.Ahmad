@@ -13,8 +13,8 @@ import { SocialIcon } from '../components/icons'
 
 /* ═══════════ مجلس الفكرة ═══════════
    الأرشيف المسموع لا يُفهرَس بعناوينه. كلُّ حلقةٍ هنا يمثّلها سؤالٌ نطقه فهد أو
-   نورة داخلها بنصّه حرفاً، والنقر يبدأ الصوت عند الثانية التي يُسأل فيها —
-   فيُسمع الجوابُ حيث سُئل. لا شرح على الصفحة ولا عدّ: الواجهة تُعلّم نفسها. */
+   نورة داخلها بنصّه حرفاً؛ السؤال بابٌ للحلقة، لكن اختيار حلقةٍ جديدة يبدأها من
+   الصفر. الاستئناف محفوظ فقط لباب «افتح المجلس». */
 
 type Episode = ListenEpisode
 
@@ -73,7 +73,9 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
         className={`group flex w-full items-start gap-3.5 px-1 py-4 text-start transition-colors md:px-2 ${expanded ? '' : 'border-b border-hair hover:bg-wash/70'}`}
       >
         <span className={`mt-1.5 shrink-0 text-[.72rem] transition-colors ${playing ? 'text-accent' : 'text-accent/[.65] group-hover:text-accent'}`}>
-          {playing ? '❚❚' : '▷'}
+          {playing ? (
+            <svg aria-hidden width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2.5" width="3.2" height="11" rx="1" /><rect x="9.8" y="2.5" width="3.2" height="11" rx="1" /></svg>
+          ) : <SocialIcon name="Play" size={13} />}
         </span>
         <span className="min-w-0 flex-1">
           {/* الحلقة التي لا سؤال فيها يصلح باباً تُفتح بعنوانها — لا سطر مبتور. */}
@@ -100,6 +102,8 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
               avatar: 'dialogue',
               src: episodeSrc(episode.slug),
               transcript: versionedAudioUrl(`/audio/${episode.slug}.dialogue.json`),
+              fallbackTranscript: `/spoken/${encodeURIComponent(episode.slug)}.json`,
+              startFresh: true,
             }]}
             title={episode.title}
             controlId={`majlis-${episode.slug}`}
@@ -142,7 +146,7 @@ export default function Listen() {
   /* المجلس يمشي: كل حلقةٍ تحمل تاليتها بترتيب ما يراه الزائر الآن (بعد التصفية
      والبحث)، فإذا انتهت بدأت التي بعدها بلا نقرة، وإن غادر الصفحة ليقرأ مقالاً
      بقي المجلس يمشي معه. سلسلةٌ تُبنى مرّة عند النقر لا في كل رسم. */
-  const chainFrom = (start: number): PersistentTrack | undefined => {
+  const chainFrom = (start: number, resumeFirst = false): PersistentTrack | undefined => {
     const episode = filtered[start]
     if (!episode) return undefined
     const src = episodeSrc(episode.slug)
@@ -152,18 +156,24 @@ export default function Listen() {
       title: episode.title,
       label: 'مجلس الفكرة',
       path: `/articles/${episode.slug}`,
-      next: chainFrom(start + 1),
+      /* كل حلقةٍ تالية تبدأ من الصفر. الاستئناف استثناءٌ للحلقة الأولى فقط
+         عندما يضغط الزائر «افتح المجلس» ليستكمل ما تركه. */
+      startFresh: !resumeFirst,
+      next: chainFrom(start + 1, false),
     }
   }
 
-  const open = (episode: Episode, { atQuestion = true } = {}) => {
+  const open = (episode: Episode, { atQuestion = false, resumeSaved = false } = {}) => {
     setOpenSlug(episode.slug)
     const index = filtered.findIndex((item) => item.slug === episode.slug)
-    const track = chainFrom(index >= 0 ? index : 0)
+    const track = chainFrom(index >= 0 ? index : 0, resumeSaved)
     if (!track) return
-    /* الدخول من السؤال: البداية تُطلب مع المسار نفسه فيحسمها المشغّل عند معرفة
-       المدة — بلا سباقٍ مع استئناف الموضع المحفوظ. */
-    if (atQuestion && typeof episode.startSec === 'number' && episode.startSec > 1) track.startAt = episode.startSec
+    /* القفز إلى سؤالٍ يبقى ممكناً إن استُدعي صراحةً، لكن فتح حلقةٍ أخرى من
+       القائمة يبدأها من أولها ولا يحمل 2:20 مثلاً من الحلقة السابقة. */
+    if (atQuestion && typeof episode.startSec === 'number' && episode.startSec > 1) {
+      track.startAt = episode.startSec
+      track.startFresh = false
+    }
     void player.playTrack(track)
     /* المشغّل يُركَّب في الإطار التالي، فنطلب فتحه على مسار الحوار بعده. */
     window.requestAnimationFrame(() => openAudioPlayer(`majlis-${episode.slug}`, 'dialogue'))
@@ -211,7 +221,7 @@ export default function Listen() {
           <FadeUp>
             <button
               type="button"
-              onClick={() => open(resume, { atQuestion: !resumeIsContinuation })}
+              onClick={() => open(resume, { resumeSaved: resumeIsContinuation })}
               className="flex w-full items-center gap-3.5 rounded-xl border border-hair bg-wash/[.55] px-4 py-3.5 text-start transition-colors hover:border-accent/[.45] md:px-5"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Play" size={16} /></span>

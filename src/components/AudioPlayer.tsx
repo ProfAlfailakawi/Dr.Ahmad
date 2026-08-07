@@ -23,11 +23,48 @@ export type AudioSource = {
   transcript?: string
   /** بدايةٌ مقصودة بالثانية (رابط لحظة ‎?t=‎). */
   startAt?: number
+  /** نسخةٌ خفيفة من النص المنطوق تُستعمل إذا تعذّر Transcript المنشور. */
+  fallbackTranscript?: string
+  /** المادة الجديدة تبدأ من الصفر ولا تستأنف موضعاً قديماً. */
+  startFresh?: boolean
 }
 
 type DialogueLine = { speaker?: string; text: string; startSec?: number; endSec?: number }
 type DialogueChapter = { index: number; title: string; startSec: number; endSec: number }
 type DialogueScript = { chapters: DialogueChapter[]; utterances: DialogueLine[] }
+
+
+async function dialogueScriptFrom(primary?: string, fallback?: string): Promise<DialogueScript | null> {
+  const load = async (url?: string) => {
+    if (!url) return null
+    const response = await fetch(url, { cache: 'force-cache' })
+    if (!response.ok) return null
+    return response.json() as Promise<Record<string, unknown>>
+  }
+  try {
+    const data = await load(primary)
+    if (data && Array.isArray(data.utterances)) {
+      return {
+        chapters: Array.isArray(data.chapters) ? data.chapters as DialogueChapter[] : [],
+        utterances: (data.utterances as DialogueLine[]).filter((line) => line && typeof line.text === 'string'),
+      }
+    }
+  } catch { /* ننتقل إلى النسخة الخفيفة */ }
+  try {
+    const data = await load(fallback)
+    const lines = Array.isArray(data?.lines) ? data.lines as unknown[][] : []
+    if (!lines.length) return null
+    const utterances: DialogueLine[] = lines
+      .filter((row) => Array.isArray(row) && typeof row[0] === 'number' && typeof row[2] === 'string')
+      .map((row, index, all) => ({
+        startSec: Number(row[0]),
+        endSec: typeof all[index + 1]?.[0] === 'number' ? Number(all[index + 1][0]) : undefined,
+        speaker: Number(row[1]) === 1 ? 'نورة' : 'فهد',
+        text: String(row[2]),
+      }))
+    return utterances.length ? { chapters: [], utterances } : null
+  } catch { return null }
+}
 
 /* نصُّ الحلقة يتوهّج مع الصوت، وفصولٌ عند جسور المحرّر يقفز إليها المستمع.
    التوقيت من Timeline التركيب نفسه لا من تقدير، فإن غاب (حلقةٌ قديمة قبل
@@ -252,23 +289,17 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
   /* نصّ الحلقة لا يُجلب إلا حين يفتح المستمع المشغّل فعلاً: لا بايت واحد
      يُحمَّل على من لا يستمع، ولا يُثقَل أول رسمٍ للصفحة. */
   const transcriptSrc = source?.transcript
+  const fallbackTranscriptSrc = source?.fallbackTranscript
   const [script, setScript] = useState<DialogueScript | null>(null)
   useEffect(() => {
     setScript(null)
-    if (!expanded || !transcriptSrc) return
+    if (!expanded || (!transcriptSrc && !fallbackTranscriptSrc)) return
     let on = true
-    fetch(transcriptSrc, { cache: 'force-cache' })
-      .then((response) => response.ok ? response.json() : null)
-      .then((data) => {
-        if (!on || !data || !Array.isArray(data.utterances)) return
-        setScript({
-          chapters: Array.isArray(data.chapters) ? data.chapters : [],
-          utterances: data.utterances.filter((line: DialogueLine) => line && typeof line.text === 'string'),
-        })
-      })
+    void dialogueScriptFrom(transcriptSrc, fallbackTranscriptSrc)
+      .then((data) => { if (on && data) setScript(data) })
       .catch(() => { /* الحلقة تُسمع وإن تعذّر نصّها */ })
     return () => { on = false }
-  }, [expanded, transcriptSrc])
+  }, [expanded, fallbackTranscriptSrc, transcriptSrc])
 
   /* ═══ محاور الحلقة في شريط التقدّم ═══
      كانت المحاور مدفونةً داخل لوحة نصّ الحلقة، فلا تُرى إلا بفتحةٍ ثانية —
@@ -316,6 +347,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
     label: source.label,
     path: typeof window !== 'undefined' ? window.location.pathname : '',
     ...(source.startAt ? { startAt: source.startAt } : {}),
+    ...(source.startFresh ? { startFresh: true } : {}),
   })
 
   /* السطر المضيء: آخرُ مداخلةٍ بدأت قبل اللحظة الحالية. المداخلات مرتّبة
@@ -362,6 +394,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
         title,
         label: next.label,
         path: typeof window !== 'undefined' ? window.location.pathname : '',
+        ...(next.startFresh ? { startFresh: true } : {}),
       })
     }
   }
@@ -442,9 +475,9 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
                       jumpTo(segment.from + within * span)
                     }}
                     style={{ flexGrow: span, flexBasis: 0 }}
-                    className="block h-1.5 overflow-hidden rounded-full bg-canvas transition-opacity hover:opacity-80"
+                    className={`audio-wave-progress audio-wave-segment block h-7 overflow-hidden rounded-md transition-opacity hover:opacity-85${active && player.playing ? ' is-playing' : ''}`}
                   >
-                    <span className="block h-full rounded-full bg-accent transition-[width]" style={{ width: `${fill}%` }} />
+                    <span className="audio-wave-fill block h-full transition-[width]" style={{ width: `${fill}%` }} />
                   </button>
                 )
               })}
@@ -457,10 +490,10 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
                 const rect = event.currentTarget.getBoundingClientRect()
                 player.seekTo(((event.clientX - rect.left) / rect.width) * duration)
               }}
-              className="mt-4 block h-1.5 w-full overflow-hidden rounded-full bg-canvas"
+              className={`audio-wave-progress mt-4 block h-7 w-full overflow-hidden rounded-md${active && player.playing ? ' is-playing' : ''}`}
               aria-label="شريط تقدم الصوت"
             >
-              <span className="block h-full rounded-full bg-accent transition-[width]" style={{ width: `${percent}%` }} />
+              <span className="audio-wave-fill block h-full transition-[width]" style={{ width: `${percent}%` }} />
             </button>
           )}
 

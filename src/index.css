@@ -3880,3 +3880,231 @@ html, body, #root { max-inline-size: 100%; }
   #encyclopedia-search { overflow: hidden; }
   #encyclopedia-query { max-inline-size: calc(100% - 3rem); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   «الإجابة تُبنى أمامك» — مشهد التركيب والأغصان
+   يرافق src/components/ComposeScene.tsx. الأسماء مسبوقة بـcompose- و
+   grove- عمداً، فلا تصطدم بشيءٍ مما سبق في هذا الملف الطويل.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.compose-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .6rem;
+}
+
+/* الارتفاع محجوز، فلا يقفز ما تحته حين يحلّ الجواب محلّ المشهد. */
+.compose-frame {
+  position: relative;
+  inline-size: 100%;
+  max-inline-size: 30rem;
+  block-size: 8.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .8rem;
+  padding: 1.4rem 1.35rem;
+  overflow: hidden;
+}
+.compose-frame--compact { block-size: 6.6rem; gap: .62rem; padding: 1rem 1.2rem; }
+
+/* مسطرة السطور — مسطرة الصفّ لا شبكة طائرة. */
+.compose-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(var(--c-ink) / .05) 0 1px,
+    transparent 1px 15px
+  );
+  -webkit-mask-image: radial-gradient(72% 74% at 50% 50%, #000 12%, transparent 82%);
+  mask-image: radial-gradient(72% 74% at 50% 50%, #000 12%, transparent 82%);
+}
+
+/* عمودا الهامش. */
+.compose-guide {
+  position: absolute;
+  inset-block: .5rem;
+  inline-size: 1px;
+  background: var(--c-hair);
+  transform: scaleY(0);
+  transform-origin: top;
+  animation: compose-guide-drop .7s cubic-bezier(.2, .7, .2, 1) forwards;
+}
+.compose-guide--start { inset-inline-start: .85rem; }
+.compose-guide--end { inset-inline-end: .85rem; animation-delay: .1s; }
+@keyframes compose-guide-drop { to { transform: scaleY(1); } }
+
+/* الفقرة تُصفّ سطراً بعد سطر. */
+.compose-ghost {
+  block-size: 11px;
+  border-radius: 12px;
+  background: rgb(var(--c-ink) / .07);
+  opacity: 0;
+  transform: translateY(5px);
+  animation: compose-settle .62s cubic-bezier(.2, .7, .2, 1) forwards;
+}
+.compose-ghost--head {
+  block-size: 19px;
+  inline-size: 62%;
+  background: rgb(var(--c-accent) / .17);
+  animation-delay: .06s;
+}
+.compose-ghost--full { inline-size: 100%; animation-delay: .34s; }
+.compose-ghost--wide { inline-size: 88%; animation-delay: .62s; }
+/* آخرُ سطرٍ في الفقرة العربية يقصر من اليسار. */
+.compose-ghost--tail { inline-size: 46%; align-self: flex-end; animation-delay: .9s; }
+@keyframes compose-settle { to { opacity: 1; transform: translateY(0); } }
+
+/* قطرة حبرٍ تتنفّس — لا كرة معدنية. */
+.compose-drop {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 9px;
+  block-size: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  animation: compose-breathe 1.75s ease-in-out infinite;
+}
+.compose-drop::after {
+  content: "";
+  position: absolute;
+  inset: -11px;
+  border-radius: 50%;
+  border: 1px solid rgb(var(--c-accent) / .3);
+  animation: compose-ripple 1.75s ease-out infinite;
+}
+@keyframes compose-breathe {
+  0%, 100% { opacity: .34; transform: scale(.72); }
+  50% { opacity: .9; transform: scale(1.28); }
+}
+@keyframes compose-ripple {
+  0% { transform: scale(.5); opacity: .7; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+.compose-line {
+  margin: 0;
+  font-size: .83rem;
+  color: rgb(var(--c-soft));
+}
+.compose-rule {
+  position: relative;
+  display: block;
+  inline-size: 9.4rem;
+  block-size: 1px;
+  overflow: hidden;
+  background: var(--c-hair);
+}
+.compose-rule i {
+  position: absolute;
+  inset: 0;
+  background: rgb(var(--c-accent) / .75);
+  transform-origin: right;
+  animation: compose-fill 5.4s cubic-bezier(.3, .8, .4, 1) forwards;
+}
+@keyframes compose-fill {
+  0% { transform: scaleX(.04); }
+  100% { transform: scaleX(.97); }
+}
+
+/* ——— الأغصان ——— */
+.grove { display: flex; flex-direction: column; }
+.grove-thread {
+  inline-size: 100%;
+  block-size: 54px;
+  display: block;
+  overflow: visible;
+}
+.grove-thread path {
+  fill: none;
+  stroke: rgb(var(--c-ink) / .22);
+  stroke-width: 1;
+  stroke-dasharray: 240;
+  stroke-dashoffset: 240;
+  transition: stroke-dashoffset .78s cubic-bezier(.4, 0, .2, 1);
+}
+.grove-thread path:nth-of-type(2) { transition-delay: .16s; }
+.grove--grown .grove-thread path { stroke-dashoffset: 0; }
+.grove-thread circle {
+  fill: rgb(var(--c-accent));
+  opacity: 0;
+  transition: opacity .4s ease .6s;
+}
+.grove--grown .grove-thread circle { opacity: .85; }
+
+.grove-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.grove-slots--single { grid-template-columns: minmax(0, 22rem); justify-content: center; }
+.grove-slot { display: flex; flex-direction: column; gap: .55rem; }
+
+.grove-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .38rem;
+  min-block-size: 5.5rem;
+  padding: .8rem .9rem;
+  border: 1px solid var(--c-hair);
+  border-radius: 12px;
+  background: rgb(var(--c-ink) / .035);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .6s ease, transform .6s cubic-bezier(.2, .7, .2, 1),
+              border-color .25s ease, background-color .25s ease;
+  transition-delay: var(--grove-delay, 0ms);
+}
+.grove--grown .grove-box {
+  opacity: 1;
+  transform: none;
+  background: rgb(var(--c-accent) / .09);
+  border-color: rgb(var(--c-accent) / .26);
+}
+.grove-box:hover { border-color: rgb(var(--c-accent) / .55); }
+.grove-kind { font-size: .68rem; color: rgb(var(--c-accent)); }
+.grove-title {
+  font-family: "El Messiri", "Tajawal", serif;
+  font-weight: 600;
+  font-size: .94rem;
+  line-height: 1.55;
+  color: rgb(var(--c-ink));
+}
+.grove-why {
+  margin: 0;
+  font-size: .74rem;
+  line-height: 1.7;
+  color: rgb(var(--c-soft));
+  text-align: center;
+  opacity: 0;
+  transition: opacity .5s ease;
+  transition-delay: calc(var(--grove-delay, 0ms) + 220ms);
+}
+.grove--grown .grove-why { opacity: 1; }
+
+@media (max-width: 540px) {
+  .grove-slots { gap: .75rem; }
+  .grove-box { min-block-size: 4.6rem; padding: .7rem .75rem; }
+  .grove-title { font-size: .86rem; }
+}
+
+/* من أطفأ الحركة رأى المشهد ساكناً مكتملاً — لا ناقصاً. */
+@media (prefers-reduced-motion: reduce) {
+  .compose-guide,
+  .compose-ghost,
+  .compose-drop,
+  .compose-drop::after,
+  .compose-rule i {
+    animation: none;
+  }
+  .compose-guide { transform: scaleY(1); }
+  .compose-ghost { opacity: 1; transform: none; }
+  .compose-drop { opacity: .6; }
+  .compose-rule i { transform: scaleX(.5); }
+  .grove-thread path { stroke-dashoffset: 0; }
+  .grove-thread circle { opacity: .85; }
+  .grove-box { opacity: 1; transform: none; }
+  .grove-why { opacity: 1; }
+}

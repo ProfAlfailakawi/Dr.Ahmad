@@ -388,6 +388,12 @@ async function safeEmit(event, payload = {}, options = {}) {
 // 3. Set realistic macOS User-Agent so WhatsApp MD doesn't flag or pause the headless client
 const puppeteer = {
   headless: true,
+  /* ٧ أغسطس: أربع رسائل زوّار سقطت صمتاً في يومٍ واحد بخطأ
+     «Runtime.callFunctionOn timed out» — مهلة بروتوكول Chrome الافتراضية
+     (١٨٠ ثانية) تنتهي حين يثقُل واتساب ويب بمزامنةٍ كبيرة، فتفشل معالجة
+     الرسالة ولا يصل الزائر ردٌّ ولا يعرف أحد. الخطأ نفسه يطلب رفع المهلة.
+     خمس دقائق تسع أثقل مزامنة، ولا تُبقي عمليةً معلّقةً إلى الأبد. */
+  protocolTimeout: Math.max(180_000, Number(process.env.WHATSAPP_PROTOCOL_TIMEOUT_MS || 300_000)),
   args: [
     '--no-sandbox',
     '--disable-setuid-sandbox',
@@ -697,6 +703,30 @@ function selfChatJid() {
   const configured = String(config.ownerChatId || '').trim()
   if (configured) return configured
   return String(client.info?.wid?._serialized || '').trim()
+}
+
+/* جملة الإيقاظ بخطّ يد الدكتور — نفس تطبيع العقل حرفاً بحرف (WAKE_PHRASES).
+   حتى ٧ أغسطس كان الدكتور إن كتبها بيده أُغلقت جلسة البوت في تلك المحادثة:
+   الجسر يقرأ كل ما يكتبه بيده «تدخّلاً بشرياً» فيُنحّي البوت. فكان يجرّب
+   البوت من جهازه فلا يردّ أبداً — لا لعطبٍ في العقل، بل لأن رسالته لا تُقرأ
+   إيقاظاً أصلاً. وهي في الحقيقة أوضح ما يكون: «ارجع يا بوت». */
+const OWNER_WAKE_PHRASES = new Set(['موقع د احمد', 'موقع د الفيلكاوي'])
+function normalizeWakeText(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+    .replace(/[إأآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/[ؤئ]/g, 'ء')
+    .replace(/ـ/g, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+function isOwnerWakePhrase(value) {
+  return OWNER_WAKE_PHRASES.has(normalizeWakeText(value))
 }
 
 function isOwnerPrivateChat(value) {
@@ -1040,7 +1070,36 @@ client.on('message_create', async (message) => {
   if (!message.fromMe) return
   const jid = String(message.to || '').trim()
   const text = String(message.body || '')
-  if (!isIndividualJid(jid) || isOwnerPrivateChat(jid) || consumeAutomatedSend(jid, text)) return
+  if (!isIndividualJid(jid) || consumeAutomatedSend(jid, text)) return
+  /* الاستثناء الوحيد: أن يكتب الدكتور جملة الإيقاظ بنفسه. حينها لا يُنحّى
+     البوت بل يُستدعى — في محادثة الزائر تعني «تولَّ أنت»، وفي محادثته مع
+     نفسه تعني «أرني كيف تردّ». والردّ يمرّ من مسار الإرسال المعتمد فيُعلَّم
+     آلياً، فلا يعود إلينا تدخّلاً يدوياً ولا تدور حلقة. */
+  if (isOwnerWakePhrase(text)) {
+    try {
+      const result = await emit('incoming', {
+        jid,
+        text: text.slice(0, 12_000),
+        hasMedia: false,
+        mediaType: 'text',
+        messageId: String(message.id?._serialized || '').slice(0, 240),
+        timestamp: Number(message.timestamp || 0),
+        deliverySource: 'owner-wake',
+      })
+      const reply = sanitizeServerReply(result?.reply?.text)
+      if (reply && ['reply', 'reply-and-escalate'].includes(result?.action)) {
+        await sendTextWithRecovery(jid, reply)
+        log('info', 'owner_wake_reopened_bot', { jid, self: isOwnerPrivateChat(jid) })
+      } else {
+        log('info', 'owner_wake_without_reply', { jid, reason: String(result?.reason || 'none') })
+      }
+    } catch (error) {
+      runtime.lastError = error instanceof Error ? error.message : String(error)
+      log('error', 'owner_wake_failed', { jid, error: runtime.lastError })
+    }
+    return
+  }
+  if (isOwnerPrivateChat(jid)) return
   try {
     await emit('manual', {
       jid,

@@ -1,6 +1,7 @@
 import { arabicCountPhrase, toRoot, ARTICLE_ENTRY_FORMS, AUDIO_EPISODE_FORMS, BOOK_ENTRY_FORMS, CURATED_ENTRY_FORMS, NEW_MATERIAL_FORMS, PAPER_ENTRY_FORMS, RECORDED_VIEW_FORMS } from './dialect-lexicon.mjs'
 import { articlesByTopic, contentSummary, findContent, latestAudioContent, latestContent, mostPopularContent, normalizeArabic, searchContent, shortReadableContent, topArticleTopics } from './content-index.mjs'
 import { AUDIO_PUBLIC_BASE_URL, AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, redactJid } from './config.mjs'
+import { conceptDefinition } from './domain-concepts.mjs'
 import { hashOpaque } from './crypto.mjs'
 import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, needsHumanOnly, sign } from './bot-rules.mjs'
@@ -1420,6 +1421,23 @@ function topicSearchReply(db, jid, query, { exclude = [], coverageQuestion = fal
   const excludeSet = new Set(exclude)
   const keep = (item) => item && !excludeSet.has(item.id)
   recordInterest(db, jid, query)
+
+  /* سؤال المعنى يُجاب بالمعنى: تعريفٌ من معجم الدكتور نفسه، ثم مادةٌ منشورة
+     تفتح الفكرة. وكان يُجاب بأقرب مقالٍ بلا تعريفٍ البتّة. */
+  const definition = conceptDefinition(query)
+  if (definition) {
+    const related = searchContent(db, definition.concept.canonicalAr, { limit: 2 }).filter(keep)
+    const tail = related.length
+      ? `\n\nوله في هذا من الموقع:\n${related.map((item) => `• ${item.title}\n  ${item.url}`).join('\n')}`
+      : ''
+    return {
+      text: `من معجم الدكتور:\n${definition.text}${tail}`,
+      contentId: related[0]?.id || null,
+      contextItems: related.map((item) => item.id),
+      seenContentIds: related.map((item) => item.id),
+      replaceContextList: Boolean(related.length),
+    }
+  }
 
   /* المسار أولاً: من كتب اسم مسارٍ عرضناه عليه («التربية») يُعطى نقاط بداية
      من ذلك المسار بعينه — وفاءً بالوعد الذي ينتهي به ردّ المسارات. وما عداه

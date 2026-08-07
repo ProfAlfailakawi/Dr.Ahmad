@@ -88,6 +88,24 @@ export function conceptQueryFor(text, root = process.cwd()) {
   return { concept: primary, query: terms.join(' '), terms }
 }
 
+/* «وش معنى تكنولوجيا التعليم؟» — المعجم يعرف الجواب (٢٩٠ مفهوماً بمعانيها
+   بقلم الدكتور) وكان يُستعمل للاسترجاع وحده، فيُجاب سؤال المعنى بمقالٍ قريب
+   ولا يُقال المعنى. هنا نُخرج التعريف حين يُطلب صراحةً فقط — فلا نُقحمه على
+   من سأل عن مادة. والنصّ من معجمه هو، لا من عندنا. */
+const ASKS_MEANING = /(?:^|\s)(?:وش|شنو|ايش|ما)?\s*(?:معني|معناه|معناها|تعريف|يعني|تقصد ب|المقصود ب|شرح مصطلح|مصطلح)(?:\s|$)/
+
+export function conceptDefinition(text, root = process.cwd()) {
+  const value = clean(text)
+  if (!ASKS_MEANING.test(value)) return null
+  const matched = conceptsInText(text, root)
+  const concept = matched[0]
+  if (!concept || !String(concept.meaningAr || '').trim()) return null
+  return {
+    concept,
+    text: `${concept.canonicalAr}${concept.canonicalEn ? ` (${concept.canonicalEn})` : ''}${concept.domain ? ` · ${concept.domain}` : ''}\n${String(concept.meaningAr).trim()}`,
+  }
+}
+
 export function glossarySize(root = process.cwd()) {
   const { concepts, byAlias } = conceptIndex(root)
   return { concepts: concepts.length, aliases: byAlias.size }

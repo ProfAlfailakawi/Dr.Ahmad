@@ -122,19 +122,24 @@ function ListenVisual() {
   )
 }
 
-/** وثيقة العقد: السنوات تُضاء واحدةً واحدة، والخطُّ يُرسم فوقها. */
-const DECADE_POINTS = '58,196 106,178 154,186 202,148 250,156 298,112 346,120 394,74 442,86'
+/** وثيقة العقد: السنوات تُضاء واحدةً واحدة، والخطُّ يُرسم فوقها.
+ *  الزمن يجري من اليمين إلى اليسار كاتجاه القراءة: أقدمُ سنةٍ يميناً وأدناها ارتفاعاً،
+ *  فيصعد الخطّ كلّما تقدّمنا يساراً. (لو عُكس لقُرئ العقدُ هبوطاً.) */
+const DECADE_POINTS = '58,86 106,74 154,120 202,112 250,156 298,148 346,186 394,178 442,196'
+// يُرسم الخطّ معكوساً ليبدأ من أقصى اليمين، وتُضاء السنوات من اليمين كذلك.
+const DECADE_PATH = DECADE_POINTS.split(' ').reverse().join(' ')
 function DecadeVisual() {
+  const stops = DECADE_POINTS.split(' ')
   return (
     <svg viewBox="0 0 500 240" className="tho-art" aria-hidden="true">
       <line className="tho-dec-base" x1="46" y1="212" x2="454" y2="212" />
-      {Array.from({ length: 9 }, (_, i) => (
-        <g key={i} style={{ animationDelay: `${0.35 + i * 0.13}s` }} className="tho-dec-tick">
+      {stops.map((stop, i) => (
+        <g key={stop} style={{ animationDelay: `${0.35 + (stops.length - 1 - i) * 0.13}s` }} className="tho-dec-tick">
           <line x1={58 + i * 48} y1="206" x2={58 + i * 48} y2="218" />
-          <circle cx={58 + i * 48} cy={Number(DECADE_POINTS.split(' ')[i].split(',')[1])} r="3.2" />
+          <circle cx={58 + i * 48} cy={Number(stop.split(',')[1])} r="3.2" />
         </g>
       ))}
-      <polyline className="tho-dec-line" points={DECADE_POINTS} />
+      <polyline className="tho-dec-line" points={DECADE_PATH} />
     </svg>
   )
 }
@@ -257,10 +262,23 @@ function buildActs(c: Counts): Act[] {
 export default function ThresholdOverture({ articles = 0, books = 0, papers = 0 }: Partial<Counts> = {}) {
   const [open, setOpen] = useState(false)
   const [act, setAct] = useState(0)
+  // إيقافان منفصلان: «المسافة» قرارٌ يبقى، وضغطة الإصبع تزول برفعه.
+  // دمجُهما كان يجعل مرور الفأرة خارج المسرح يُلغي إيقاف لوحة المفاتيح.
   const [paused, setPaused] = useState(false)
-  const [done, setDone] = useState(false)
+  const [held, setHeld] = useState(false)
+  // مع تفضيل تقليل الحركة تُعرض لوحة الأبواب من أول رسمة، فلا يلمع مشهدٌ ثم يختفي.
+  const [done, setDone] = useState(
+    () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches),
+  )
   const navigate = useNavigate()
-  const reduced = useReducedMotion()
+  // لا نتّكل على useReducedMotion وحده: يقرأ الاستعلام مرةً عند الاستيراد ويحتفظ به،
+  // فنقرأ التفضيل بأنفسنا أيضاً ونأخذ بأيّهما أثبت التفضيل.
+  const framerReduced = useReducedMotion()
+  const systemReduced = useMemo(
+    () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches),
+    [],
+  )
+  const reduced = systemReduced || Boolean(framerReduced)
   const skipRef = useRef<HTMLButtonElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const touchX = useRef(0)
@@ -303,13 +321,13 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0 
 
   // محرّك التقدّم التلقائي — يتوقّف عند الإيقاف المؤقت وعند لوحة الأبواب.
   useEffect(() => {
-    if (!open || paused || atThreshold || reduced) return
+    if (!open || paused || held || atThreshold || reduced) return
     const timer = window.setTimeout(() => {
       if (act + 1 >= total) setDone(true)
       else setAct(act + 1)
     }, acts[act]?.ms ?? 3800)
     return () => window.clearTimeout(timer)
-  }, [open, paused, act, atThreshold, reduced, total, acts])
+  }, [open, paused, held, act, atThreshold, reduced, total, acts])
 
   // قفل التمرير + لوحة المفاتيح + حصر التنقّل داخل المسرح.
   useEffect(() => {
@@ -386,7 +404,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0 
                     onClick={() => { setDone(false); setAct(index) }}
                   >
                     {/* المفتاح يحمل رقم المشهد ليُعاد تركيب العنصر فتبدأ حركة التعبئة من جديد عند الرجوع. */}
-                    <i key={`${item.id}-${act}-${String(done)}`} style={index === act && !atThreshold ? { animationDuration: `${item.ms}ms`, animationPlayState: paused ? 'paused' : 'running' } : undefined} />
+                    <i key={`${item.id}-${act}-${String(done)}`} style={index === act && !atThreshold ? { animationDuration: `${item.ms}ms`, animationPlayState: paused || held ? 'paused' : 'running' } : undefined} />
                   </button>
                 ))}
               </div>
@@ -397,9 +415,10 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0 
           {/* المسرح */}
           <div
             className="tho-stage"
-            onPointerDown={() => !atThreshold && setPaused(true)}
-            onPointerUp={() => setPaused(false)}
-            onPointerLeave={() => setPaused(false)}
+            onPointerDown={() => !atThreshold && setHeld(true)}
+            onPointerUp={() => setHeld(false)}
+            onPointerCancel={() => setHeld(false)}
+            onPointerLeave={() => setHeld(false)}
             onTouchStart={(event) => { touchX.current = event.touches[0].clientX }}
             onTouchEnd={(event) => {
               const delta = event.changedTouches[0].clientX - touchX.current
@@ -497,7 +516,7 @@ const THEATRE_CSS = `
 .tho-root{
   --night:#0b0d12; --night-2:#141922; --glow:132 169 202; --ember:214 183 143;
   --ivory:#efece4; --soft:#9aa4b2; --line:rgba(239,236,228,.13);
-  position:fixed; inset:0; z-index:1200; display:flex; flex-direction:column;
+  position:fixed; top:0; right:0; bottom:0; left:0; inset:0; z-index:1200; display:flex; flex-direction:column;
   background:var(--night); color:var(--ivory);
   font-family:"Tajawal",system-ui,sans-serif; overflow:hidden;
   -webkit-tap-highlight-color:transparent;
@@ -513,13 +532,16 @@ const THEATRE_CSS = `
   position:absolute; inset:0; opacity:.5; mix-blend-mode:overlay; pointer-events:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");
 }
+/* dvh يتبع شريط سفاري المتحرّك في آيفون؛ وسطر vh يبقى للمتصفحات الأقدم. */
 .tho-bar{ position:absolute; left:0; right:0; height:clamp(26px,5vh,54px); background:#05070a; z-index:3; }
+.tho-bar{ height:clamp(26px,5dvh,54px); }
 .tho-bar--top{ top:0; transform-origin:top; }
 .tho-bar--bottom{ bottom:0; transform-origin:bottom; }
 
 .tho-top{
   position:relative; z-index:5; display:flex; align-items:center; gap:.75rem;
   padding:clamp(30px,5.4vh,60px) clamp(14px,4vw,30px) 0;
+  padding-top:max(clamp(30px,5.4dvh,60px), env(safe-area-inset-top));
 }
 .tho-skip{
   flex:none; border:1px solid var(--line); background:rgba(239,236,228,.04); color:var(--soft);
@@ -556,7 +578,8 @@ const THEATRE_CSS = `
 
 .tho-frame{
   position:relative; margin:0 auto clamp(16px,3.2vh,30px);
-  width:100%; max-width:470px; aspect-ratio:16/10;
+  /* min-height شبكةُ أمانٍ لمتصفّحٍ لا يعرف aspect-ratio، وإلا انهار الإطار إلى صفر. */
+  width:100%; max-width:470px; min-height:170px; aspect-ratio:16/10;
   display:flex; align-items:center; justify-content:center;
   border:1px solid var(--line); border-radius:16px; overflow:hidden;
   background:linear-gradient(160deg,rgba(239,236,228,.05),rgba(239,236,228,.015));
@@ -589,6 +612,7 @@ const THEATRE_CSS = `
 .tho-hint{
   position:relative; z-index:5; display:flex; align-items:center; justify-content:center; gap:1rem;
   padding:0 clamp(14px,4vw,30px) clamp(30px,5.4vh,60px); color:var(--soft); font-size:.68rem;
+  padding-bottom:max(clamp(30px,5.4dvh,60px), env(safe-area-inset-bottom));
 }
 .tho-nav{
   width:32px; height:32px; border-radius:999px; border:1px solid var(--line);
@@ -671,8 +695,12 @@ const THEATRE_CSS = `
 }
 .tho-field-glyph{ color:rgb(var(--glow)); display:flex; }
 .tho-typed{ flex:1; min-width:0; text-align:right; font-size:clamp(.66rem,2.7vw,.78rem); color:var(--ivory); }
-.tho-typed i{ display:inline-block; font-style:normal; clip-path:inset(0 0 0 100%); animation:tho-type 1.5s .3s steps(26) forwards; }
-@keyframes tho-type{ to{clip-path:inset(0 0 0 0)} }
+.tho-typed i{
+  display:inline-block; font-style:normal;
+  -webkit-clip-path:inset(0 0 0 100%); clip-path:inset(0 0 0 100%);
+  animation:tho-type 1.5s .3s steps(26) forwards;
+}
+@keyframes tho-type{ to{ -webkit-clip-path:inset(0 0 0 0); clip-path:inset(0 0 0 0) } }
 .tho-caret{ width:1.5px; height:1.05em; background:rgb(var(--glow)); animation:tho-blink .9s steps(2,start) infinite; }
 @keyframes tho-blink{ 50%{opacity:0} }
 .tho-chips{ display:flex; flex-direction:column; gap:5px; }

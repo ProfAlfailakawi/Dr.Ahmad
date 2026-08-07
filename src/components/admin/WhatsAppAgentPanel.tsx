@@ -129,6 +129,7 @@ type BotSelfCheckItem = {
   fix?: { action: 'restart-bridge' | 'bot-return-all'; label: string } | null
 }
 type BotSelfCheck = { ok: boolean; verdict: string; checks: BotSelfCheckItem[]; mutedCount: number; checkedAt: string }
+type BotSelfHeal = { ok: boolean; healed: number; summary: string; actions: { id: string; done: boolean; detail: string }[]; healedAt: string }
 
 const DEFAULT_PERSONALITY: KnowledgePersonality = {
   verbosity: 'layered', dialect: 'kuwaiti-light', initiative: 'one-question', signature: 'always', memoryConsent: 'explicit',
@@ -239,6 +240,8 @@ export function WhatsAppAgentPanel() {
      الجسر أم العقل أم محادثةٌ أسكتها استلامٌ يدوي. هذا يجيب بالعربية ويصلح. */
   const [botCheck, setBotCheck] = useState<BotSelfCheck | null>(null)
   const [botChecking, setBotChecking] = useState(false)
+  const [botHeal, setBotHeal] = useState<BotSelfHeal | null>(null)
+  const [botHealing, setBotHealing] = useState(false)
   const [evidenceForm, setEvidenceForm] = useState({ domain: 'education', sourceName: '', sourceType: 'جامعة أو دورية محكّمة', title: '', claim: '', quote: '', url: '', publishedAt: '', authority: '' })
   const bridge = '/api/admin/whatsapp'
 
@@ -379,6 +382,24 @@ export function WhatsAppAgentPanel() {
       setBotCheck(null)
       setNotice('تعذّر فحص البوت: الخادم لم يستجب. جرّب «إحياء آمن».')
     } finally { setBotChecking(false) }
+  }
+
+  /* المعالجة لا التشخيص (أمر الدكتور ٧ أغسطس): ضغطةٌ واحدة تُصلح ما يُصلَح
+     آلياً ثم تُعيد الفحص فوراً فيرى الدكتور الأثر لا الوعد. */
+  const healBotNow = async (returnMutedChats: boolean) => {
+    setBotHealing(true)
+    try {
+      const out = await request<BotSelfHeal>('/admin/self-heal', {
+        method: 'POST',
+        body: JSON.stringify({ returnMutedChats }),
+      })
+      setBotHeal(out)
+      setNotice(out.summary)
+      await runBotCheck()
+      await loadSilence()
+    } catch {
+      setNotice('تعذّرت المعالجة التلقائية — الخادم لم يستجب.')
+    } finally { setBotHealing(false) }
   }
 
   const returnBotNow = async () => {
@@ -838,8 +859,11 @@ export function WhatsAppAgentPanel() {
               {recoveringAll ? 'يُحيي النظام…' : diagnostics?.code === 'scan-qr' ? 'QR ظاهر أدناه' : 'إحياء آمن'}
             </button>
             <button type="button" className={secondary} disabled={busy} onClick={() => void refresh()}>{busy ? 'يفحص…' : 'فحص شامل'}</button>
-            <button type="button" className={primary} disabled={botChecking} onClick={() => void runBotCheck()}>
+            <button type="button" className={secondary} disabled={botChecking} onClick={() => void runBotCheck()}>
               {botChecking ? 'يفحص البوت…' : 'افحص البوت الآن'}
+            </button>
+            <button type="button" className={primary} disabled={botHealing || botChecking} onClick={() => void healBotNow(false)}>
+              {botHealing ? 'يعالج…' : 'عالج البوت تلقائياً'}
             </button>
           </div>
         </div>
@@ -847,6 +871,33 @@ export function WhatsAppAgentPanel() {
         {/* نتيجة «افحص البوت الآن»: حكمٌ بالعربية، وبطاقةٌ لكل طبقة، وزرُّ إصلاحٍ
             حيث يلزم. صُمّم يوم ٧ أغسطس بعد صمتٍ استغرق تشخيصه قراءةَ سجلّات
             خادم — وهذا ما لا ينبغي أن يُطلب من الدكتور مرةً أخرى. */}
+        {botHeal && (
+          <div className={`mt-5 rounded-2xl border p-4 ${botHeal.ok ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-amber-500/40 bg-amber-500/5'}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[.82rem] font-semibold text-ink">{botHeal.summary}</p>
+              <span className="text-[.66rem] text-soft">عولج: {new Date(botHeal.healedAt).toLocaleString('ar-KW', { timeZone: 'Asia/Kuwait' })}</span>
+            </div>
+            {botHeal.actions.length > 0 && (
+              <ul className="mt-3 grid gap-2">
+                {botHeal.actions.map((action, index) => (
+                  <li key={`${action.id}-${index}`} className="flex items-start gap-2 text-[.72rem] leading-relaxed text-soft">
+                    <span aria-hidden="true" className={action.done ? 'text-emerald-500' : 'text-amber-500'}>{action.done ? '✓' : '!'}</span>
+                    <span>{action.detail}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {botCheck && botCheck.mutedCount > 0 && (
+              <button type="button" className={`${secondary} mt-3`} disabled={botHealing} onClick={() => void healBotNow(true)}>
+                عالج أيضاً {botCheck.mutedCount} محادثة مُسكتة (لن يردّ فيها إلا بعد جملة الإيقاظ)
+              </button>
+            )}
+            <p className="mt-3 text-[.66rem] leading-relaxed text-soft">
+              هذه المعالجة نفسها تعمل تلقائياً على الخادم كل ربع ساعة مع نبضة الجسر — بلا ضغطة منك.
+            </p>
+          </div>
+        )}
+
         {botCheck && (
           <div className={`mt-5 rounded-2xl border p-4 ${botCheck.ok ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-amber-500/40 bg-amber-500/5'}`}>
             <div className="flex flex-wrap items-center justify-between gap-3">

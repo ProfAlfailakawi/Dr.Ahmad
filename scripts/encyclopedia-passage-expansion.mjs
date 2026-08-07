@@ -104,6 +104,9 @@ export const normalizeArabic = (value = '') => String(value)
   .replace(/ـ+/g, '')
   .replace(/ /g, ' ')
   .replaceAll(`${FATHATAN}ا`, `ا${FATHATAN}`)
+  /* والشدّة قد تفصل التنوين عن ألفه («صوتيًّا») فتُفلته من التطبيع ومن حارس
+     الموقع معاً — والسياسة واحدة: التنوين بعد الألف. */
+  .replace(new RegExp(`${FATHATAN}(\u0651)ا`, 'g'), `$1ا${FATHATAN}`)
   .replace(/([ء-يٱ-ۓ])[ \t]+([ً-ٍ])/g, '$1$2')
   .replace(/([ً-ٍ])\1+/g, '$1')
   .replace(/[ \t]+/g, ' ')

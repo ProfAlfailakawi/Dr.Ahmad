@@ -727,7 +727,7 @@ html.reader-paper .article-journey .bg-wash {
   font-size: .58rem !important;
   line-height: 1.2 !important;
   font-weight: 300 !important;
-  letter-spacing: .015em !important;
+  letter-spacing: .015em !important; /* latin — أرقام الاستشهاد بخانات ثابتة */
   color: rgb(var(--c-accent) / .68) !important;
   font-variant-numeric: tabular-nums;
   /* شارة عدّ لا نصّ مقال: تحديد القارئ كان يلتقط رقمها فيتسرب إلى بطاقة الاقتباس */
@@ -1366,7 +1366,7 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
       radial-gradient(68% 38% at 50% 45%, rgb(var(--c-accent) / .07), transparent 72%),
       linear-gradient(180deg, rgb(var(--c-canvas) / .92), rgb(var(--c-canvas) / .76) 54%, rgb(var(--c-canvas) / .96));
   }
-  .human-core__micro { margin-bottom: .65rem; font-size: .56rem; letter-spacing: .12em; }
+  .human-core__micro { margin-bottom: .65rem; font-size: .56rem; letter-spacing: .12em; } /* latin — direction: ltr */
   .human-core__words { opacity: .5; }
   .human-core__words span { font-size: .7rem; }
   .human-core__portrait-shell { margin-top: -.2rem; }
@@ -2393,7 +2393,8 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 }
 .pwa-launch__content { position: relative; width: min(88vw, 520px); text-align: center; }
 .pwa-launch__logo { margin-inline: auto; height: 3.25rem; width: 5.4rem; object-fit: contain; }
-.pwa-launch__eyebrow { margin-top: 1.4rem; color: rgb(var(--c-accent)); font-size: .72rem; font-weight: 700; letter-spacing: .08em; }
+/* نصّه عربي («مكتبة د. أحمد الفيلكاوي») فلا تباعد — التقطه حارس الطباعة العربية */
+.pwa-launch__eyebrow { margin-top: 1.4rem; color: rgb(var(--c-accent)); font-size: .72rem; font-weight: 700; letter-spacing: 0; }
 .pwa-launch h1 { margin-top: .65rem; color: rgb(var(--c-ink)); font-family: "El Messiri", serif; font-size: clamp(2rem, 9vw, 3.5rem); font-weight: 700; line-height: 1.25; }
 .pwa-launch p:not(.pwa-launch__eyebrow) { margin-top: .7rem; color: rgb(var(--c-soft)); font-size: .92rem; font-weight: 300; }
 .pwa-launch__line { margin: 2rem auto 0; height: 2px; width: min(52vw, 210px); overflow: hidden; border-radius: 999px; background: rgb(var(--c-ink) / .08); }
@@ -3173,10 +3174,11 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
 /* ============================================================
    خريطة الأثر — الحصيلة في أرقامٍ هادئة بهوية الموقع
    ============================================================ */
+/* نصّه عربي («الحصيلة في أرقام») فلا تباعد */
 .impact-map-eyebrow {
   font-size: .7rem;
   font-weight: 850;
-  letter-spacing: .01em;
+  letter-spacing: 0;
   color: rgb(var(--c-accent));
 }
 .impact-map-grid {
@@ -3568,7 +3570,7 @@ body.selection-active .floating-actions {
   right: 1rem;
   font-size: .54rem;
   font-weight: 700;
-  letter-spacing: .16em;
+  letter-spacing: .16em; /* latin — ESSAY · RESEARCH */
   color: rgb(var(--c-accent) / .72);
 }
 .archive-editorial-mark {
@@ -3585,7 +3587,7 @@ body.selection-active .floating-actions {
   right: 1rem;
   bottom: .9rem;
   font-size: .6rem;
-  letter-spacing: .08em;
+  letter-spacing: .08em; /* latin — أرقام السنوات · ARCHIVE */
   color: rgb(var(--c-soft) / .75);
 }
 

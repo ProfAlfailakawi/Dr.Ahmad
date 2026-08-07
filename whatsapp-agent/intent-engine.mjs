@@ -976,7 +976,12 @@ function welcomeReply(db, jid, at = new Date(), mood = 'neutral') {
     }
   }
   const extract = extractVerbatimAtSpeed(item, '30s')
-  const quote = extract?.text || item.excerpt || contentSummary(item, 1)
+  /* داخل علامتَي التنصيص لا تُعرض الأسطر الفارغة كما هي في المتن — كانت تشقّ
+     الاقتباس فقرتين فتبدو رسالة الإيقاظ مكسورة. النصّ المحفوظ دليلاً يبقى
+     كما نُسخ من المتن؛ والتهذيب للعرض وحده. */
+  const quote = String(extract?.text || item.excerpt || contentSummary(item, 1) || '')
+    .replace(/\s*\n+\s*/g, ' ')
+    .trim()
   return {
     text: `${greet} · ${MSG.welcomeLine}.
 

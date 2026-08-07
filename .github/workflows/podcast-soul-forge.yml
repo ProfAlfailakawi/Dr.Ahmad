@@ -8,16 +8,16 @@ on:
         required: false
         default: ''
       batch:
-        description: 'رقم الدفعة: ١ ثم ٢ ثم ٣ ثم ٤ — أربع دفعات تُنهي الأرشيف كله'
+        description: 'رقم الدفعة — اتركه ٠ ليولّد الأرشيف كلّه في تشغيلةٍ واحدة'
         required: false
-        default: '1'
+        default: '0'
       limit:
-        description: 'عدد الحلقات في الدفعة (٤٠ تسع في الحدّ الزمني)'
+        description: 'عدد الحلقات في الدفعة (٠ = بلا حدّ)'
         required: false
-        default: '40'
+        default: '0'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: podcast-soul-forge
@@ -43,8 +43,14 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # ناشر R2 يستدعي أداة aws — بلا تثبيتها ينجح التوليد ويفشل الرفع،
+      # فتُعاد التشغيلة وتُستهلك حصة الصوت مرّتين.
+      - name: تثبيت أدوات الوسائط وR2
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: التحقق من المفتاح
         run: |
@@ -56,8 +62,8 @@ jobs:
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
 
       - name: توليد الحلقات
-        # كل حلقة ~٣ دقائق (حدّ الباقة المجانية عشرون طلباً في الدقيقة)،
-        # فدفعة ٤٠ تستغرق ~ساعتين وتسع داخل مهلة الوِرشة.
+        # الحلقة تُطلب على مقاطعَ بين الجسور لا جملةً جملة، فتنزل من ثلاث دقائق
+        # إلى نحو أربعين ثانية — والأرشيف كلّه (١٤٤) في ساعةٍ ونصف داخل المهلة.
         run: |
           if [ -n "${{ github.event.inputs.slugs }}" ]; then
             node scripts/podcast-soul-forge.mjs ${{ github.event.inputs.slugs }}
@@ -68,13 +74,49 @@ jobs:
           AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
           AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
 
-      - name: رفع الحلقات المولَّدة
+      # الحلقة لا تبلغ لوحة الدكتور إلا بثلاث خطوات: تُرفع إلى R2، ثم يُحرَس
+      # السجلّ ويُصالَح مع الواقع، ثم تُبلَّغ Firestore فتتغيّر حالتها في اللوحة.
+      - name: رفع الحلقات إلى R2
+        run: node scripts/publish-audio-r2.mjs
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+
+      - name: حراسة السجلّ ومصالحته مع R2
+        run: |
+          node scripts/guard-audio-meta-regression.mjs --apply
+          node scripts/reconcile-audio-meta.mjs --apply
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+
+      - name: تثبيت السجلّ في المستودع
+        run: |
+          if git diff --quiet -- src/data/audio-meta.json; then
+            echo "لا تغييرات في السجلّ."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add src/data/audio-meta.json
+            git commit -m "chore: نشر سجلّ حلقات مصنع الروح"
+            git push origin HEAD:main
+          fi
+
+      - name: تقرير التشغيلة
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: soul-episodes
-          path: |
-            public/audio/*.dialogue.mp3
-            .soul-forge-work/last-run.json
+          name: soul-episodes-report
+          path: .soul-forge-work/last-run.json
           if-no-files-found: warn
           retention-days: 14

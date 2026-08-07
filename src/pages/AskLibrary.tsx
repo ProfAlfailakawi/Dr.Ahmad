@@ -28,6 +28,14 @@ const tokenize = (value: string) => smartRoots(value)
    وتُحفظ هنا: الصفحة الثانية التي تحتاجها تجدها جاهزة. */
 let knowledgeGraphCache: KnowledgeGraph | null = null
 
+/* عبارات المحرّك مكتوبةٌ بلسانه هو («امتداد بين نوعين من المحتوى») وهي لغة
+   بناءٍ لا لغة قارئ. تُترجَم هنا عند العرض فقط — والمحرّك يبقى كما هو. */
+const BRANCH_WHY_FOR_READER: Record<string, string> = {
+  'تقاطع مباشر في العنوان': 'الفكرة نفسها، بعنوانٍ آخر',
+  'محور معرفي مشترك': 'يلتقيان عند المحور نفسه',
+  'امتداد بين نوعين من المحتوى': 'الفكرة تمتدّ هنا في بابٍ آخر',
+}
+
 const BRANCH_KIND_LABEL: Record<KnowledgeKind, string> = {
   article: 'مقال',
   book: 'كتاب',
@@ -449,9 +457,8 @@ export default function AskLibrary() {
   }, [asked, passagesReady]);
 
   /* ── الأغصان ──
-     graphNeighbors مكتوبةٌ في knowledge-graph.ts ولم تُستدعَ في الواجهة قط،
-     وهي وحدها التي تعيد الجارَ **ومعه سببُ صلته**. وبناء الخريطة ثقيل، فلا
-     يبدأ إلا بعد أن يرى الزائر جوابه، وفي لحظة خمولٍ لا في الخيط الحارّ. */
+     خريطة المعرفة تعيد الجارَ ومعه سببُ صلته. وبناؤها ثقيل، فلا يبدأ إلا بعد
+     أن يرى الزائر جوابه، وفي لحظة خمولٍ لا في الخيط الحارّ. */
   const [grove, setGrove] = useState<Branch[]>([]);
   useEffect(() => {
     if (!asked || !result) { setGrove([]); return; }
@@ -471,7 +478,7 @@ export default function AskLibrary() {
           id: node.id,
           kind: BRANCH_KIND_LABEL[node.kind] || 'مادة',
           title: node.title,
-          why: edge.reasons[0] || 'قرابةٌ في الموضوع',
+          why: BRANCH_WHY_FOR_READER[edge.reasons[0]] || 'قرابةٌ في الموضوع',
           to: node.url,
         })));
       } catch {

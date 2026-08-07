@@ -620,4 +620,157 @@ assert.match(
 assert.match(controllerSource, /WHATSAPP_AUDIO_IN_CHAT/, 'مفتاح إعادة الصوت داخل واتساب يجب أن يبقى')
 assert.match(controllerSource, /AUDIO_IN_CHAT && audioFile/, 'المرفق الصوتي يجب أن يبقى خلف المفتاح لا محذوفاً')
 
+/* ١٦) المدّة نيّةٌ لا موضوع (تدقيق ٧ أغسطس بعد أمر الدكتور «شوف في نقص»):
+   «١٥ ثانية» و«٤٥ ثانية» و«خمس دقائق» كانت تسقط إلى البحث الأعمى فيفتّش
+   الأرشيف عن مادةٍ عنوانها «١٥ ثانية»؛ و«دقيقة ونص» و«٣ دقايق» تصلان إلى
+   «ما لقيت». كلّ مدّةٍ يكتبها إنسان تُترجَم الآن إلى درجةٍ في السلّم. */
+const speedExpectations = [
+  ['٣٠ ثانية', 'timed-reading-30s'], ['15 ثانية', 'timed-reading-30s'],
+  ['٢٠ ثانية', 'timed-reading-30s'], ['٤٥ ثانية', 'timed-reading-30s'],
+  ['نص دقيقة', 'timed-reading-30s'], ['نصف دقيقة', 'timed-reading-30s'],
+  ['دقيقة ونص', 'timed-reading-1min'], ['90 ثانية', 'timed-reading-1min'],
+  ['عندي دقيقة', 'timed-reading-1min'],
+  ['دقيقتان', 'timed-reading-2min'], ['دقيقتين', 'timed-reading-2min'],
+  ['٣ دقايق', 'timed-reading-deep'], ['خمس دقائق', 'timed-reading-deep'],
+  ['ربع ساعة', 'timed-reading-deep'], ['تعمق', 'timed-reading-deep'],
+]
+for (const [phrase, expected] of speedExpectations) {
+  const decision = decideGroundedResponse({ text: phrase, conversation: ladderConversation })
+  assert.equal(decision.reason, expected, `«${phrase}» يجب أن تُقرأ مدّةً (${expected}) لا موضوعَ بحث`)
+  assert.ok(String(decision.reply).length <= 2_000, `«${phrase}» تجاوز سقف الإرسال`)
+}
+
+/* «زدني» و«اتعمق» تمرّان على السلّم نفسه، لا على قصٍّ خاصٍّ في وسط الجملة. */
+for (const phrase of ['زدني', 'اتعمق', 'عمقها']) {
+  const decision = decideGroundedResponse({ text: phrase, conversation: ladderConversation })
+  assert.equal(decision.reason, 'implied-deepen')
+  assert.match(decision.reply, /تعمّقٌ في نصّه/, `«${phrase}» يجب أن تمرّ على سلّم القراءة`)
+}
+
+/* الاستئناف: طلبُ المدّة بعد قراءةٍ استئنافٌ لا إعادة. المؤشر يتقدّم في كل
+   دور، ولا يعود مقطعٌ قُرئ مرّتين — وهو جوهر شكوى الدكتور. */
+let walkConversation = { contextItemIds: ['article:qabas-201811-001'], contextIndex: 0 }
+const walkPassages = []
+const walkCursors = []
+for (let turn = 0; turn < 5; turn += 1) {
+  const decision = decideGroundedResponse({ text: '٣٠ ثانية', conversation: walkConversation })
+  const parts = String(decision.reply).split('\n\n')
+  const tailAt = parts.findIndex((part) => part.startsWith('بقي نحو') || part.startsWith('وبهذا اكتمل'))
+  if (tailAt > 1) walkPassages.push(parts.slice(1, tailAt).join('\n\n').replace(/…$/, ''))
+  walkCursors.push(Number(decision.patch?.readCursor ?? 0))
+  walkConversation = { ...walkConversation, lastDecisionReason: decision.reason, ...(decision.patch || {}) }
+}
+assert.ok(walkPassages.length >= 3, 'القراءة المتكرّرة يجب أن تُنتج مقاطع')
+assert.equal(new Set(walkPassages).size, walkPassages.length, 'تكرار «٣٠ ثانية» أعاد مقطعاً قُرئ — هو العطب نفسه بثوبٍ آخر')
+for (let i = 1; i < walkCursors.length; i += 1) {
+  assert.ok(walkCursors[i] >= walkCursors[i - 1], `المؤشر رجع للوراء: ${walkCursors[i - 1]}→${walkCursors[i]}`)
+}
+/* الحرفية بفقراتها: المقطع قطعةٌ من المتن **الخام** لا من نسخةٍ مسحوقة المسافات. */
+for (const passage of walkPassages) {
+  assert.ok(String(ladderItem.body).includes(passage), 'مقطعٌ ليس منقولاً من متن الدكتور بفقراته')
+}
+/* بلوغ النهاية يُعلَن، ولا يُعاد افتتاح المقالة خِفيةً. */
+let endConversation = walkConversation
+let endReply = ''
+for (let turn = 0; turn < 8; turn += 1) {
+  const decision = decideGroundedResponse({ text: 'دقيقتان', conversation: endConversation })
+  endReply = String(decision.reply)
+  endConversation = { ...endConversation, lastDecisionReason: decision.reason, ...(decision.patch || {}) }
+}
+assert.match(endReply, /وصلنا آخر ما عندي|اكتمل نصّها/, 'بعد استنفاد النصّ يجب أن يُصارح لا أن يعيد الافتتاح')
+assert.ok(!endReply.includes(walkPassages[0]), 'رجع إلى افتتاح المقالة بعد أن قرأها كلها')
+
+/* «لخّص» ليست قراءة: ما بعدها يبدأ من أوّل المتن لأن الافتتاح لم يُقرأ بعد. */
+const afterSummary = decideGroundedResponse({ text: 'لخص', conversation: ladderConversation })
+const readingAfterSummary = decideGroundedResponse({
+  text: '٣٠ ثانية',
+  conversation: { ...ladderConversation, lastDecisionReason: afterSummary.reason, ...(afterSummary.patch || {}) },
+})
+assert.equal(readingAfterSummary.reply, ladder.get('٣٠ ثانية'), 'القراءة بعد التلخيص يجب أن تبدأ من أوّل النصّ')
+
+/* لا سطرَ متابعةٍ عامّاً فوق ذيلٍ يقول ما يُفعل بالضبط — كان يعرض «ألخّصها» مرّتين. */
+for (const phrase of ['٣٠ ثانية', 'دقيقتان', 'تعمق']) {
+  const reply = String(decideGroundedResponse({ text: phrase, conversation: ladderConversation }).reply)
+  assert.ok(!reply.includes('شنو تحب أسوي بعدها'), `«${phrase}» تُذيَّل بسطر متابعةٍ عامّ يكرّر ما قاله ذيلها`)
+}
+
+/* الاعتذار بلا مادةٍ حاضرة يصف ما سيفعله: قراءةً لا اختصاراً. */
+assert.match(decideGroundedResponse({ text: '٣٠ ثانية' }).reply, /أقرأ لك منها/, 'اعتذار القراءة يجب ألا يَعِد باختصار')
+assert.match(decideGroundedResponse({ text: 'لخص' }).reply, /أختصرها لك/)
+
+/* عربيةٌ سليمة للمواد بلا متن: «لهذا كتاب» لا «لهذه كتاب». */
+assert.match(controllerSource, /itemDemonstrative/, 'الإشارة يجب أن تتبع جنس المسمّى')
+assert.doesNotMatch(controllerSource, /لهذه \$\{itemLabel/, 'إشارةٌ مؤنّثة ثابتة أمام مسمًّى قد يكون مذكّراً')
+
+/* السلّم يُذكر في قائمة «شنو تقدر تسوي»: كان يعمل ولا يعرفه أحد. */
+assert.match(decideGroundedResponse({ text: 'شنو تقدر تسوي؟' }).reply, /٣٠ ثانية.*دقيقتين|بالمدّة اللي تناسبك/, 'قائمة القدرات يجب أن تعلن سلّم المدّة')
+
+/* الفصل بين طلب الزبدة وطلب المدّة: ONE_MINUTE في المحرك خليطٌ من الاثنين،
+   وربطُها كلِّها بالقراءة الموقوتة جعل «اختصرها» تُجيب بمئةٍ وخمسين كلمة. */
+for (const phrase of ['اختصرها', 'الزبدة', 'ملخص سريع', 'باختصار', 'الفكرة بس', 'نبذة', 'الخلاصة']) {
+  assert.equal(decideGroundedResponse({ text: phrase, conversation: ladderConversation }).reason, 'context-summary',
+    `«${phrase}» طلبُ زبدةٍ صريح، لا مدّة قراءة`)
+}
+for (const [phrase, expected] of [['عندي دقيقة', 'timed-reading-1min'], ['دقيقة وحدة', 'timed-reading-1min'],
+  ['ما عندي وقت', 'timed-reading-30s'], ['وقت قصير', 'timed-reading-30s'], ['شي سريع', 'timed-reading-30s']]) {
+  assert.equal(decideGroundedResponse({ text: phrase, conversation: ladderConversation }).reason, expected,
+    `«${phrase}» يجب أن تُقرأ مدّةً بقدرها`)
+}
+
+/* «دقيقة» وحدها على مادةٍ حاضرة مدّةٌ لا موضوع — كانت تصل إلى «ما لقيت». */
+assert.equal(decideGroundedResponse({ text: 'دقيقة', conversation: ladderConversation }).reason, 'timed-reading-1min')
+assert.equal(decideGroundedResponse({ text: 'بسرعة', conversation: ladderConversation }).reason, 'timed-reading-30s')
+/* ولا تتوسّع بلا مادةٍ حاضرة: تبقى بحثاً كما كانت. */
+assert.notEqual(decideGroundedResponse({ text: 'دقيقة' }).reason, 'timed-reading-1min')
+
+/* ١٧) لفظ الدار لا يمسّ نصّ الدكتور (كشفه المسح الشامل، ٧ أغسطس):
+   `systemTerminology` كان يمرّ على الردّ كلِّه فيبدّل «التقنيات» بـ«التكنولوجيات»
+   داخل مقتطفٍ منقولٍ من مادةٍ منشورة — تحريفٌ في نصٍّ نُقدّمه على أنه نصّه.
+   القاعدة: اللفظ لكلامنا نحن، والاقتباس يُلفّ بعلامتين لا تُطبعان. */
+const siteIndexForTest = [...new Set(["تقنيات","التقنيه","التعليم","تكنولوجيا"].flatMap((seed) => scoredSiteResults(seed, { limit: 8 }).map((row) => row.item)))]
+const termItem = siteIndexForTest.find((item) => /التقنيات|التقنية|تقنية/.test(`${item.excerpt || ''}${item.body || ''}`))
+if (termItem) {
+  const termReply = String(decideGroundedResponse({
+    text: '٣٠ ثانية',
+    conversation: { contextItemIds: [termItem.id], contextIndex: 0 },
+  }).reply)
+  const termPassage = termReply.split('\n\n')[1].replace(/…$/, '')
+  assert.ok(
+    `${termItem.body || ''}\n${termItem.excerpt || ''}`.includes(termPassage),
+    'لفظ الدار بدّل كلمةً داخل نصّ الدكتور المنقول — نقضٌ للبوابة المقدّسة',
+  )
+}
+/* ولا تتسرّب العلامتان إلى الرسالة أبداً. */
+for (const phrase of ['٣٠ ثانية', 'لخص', 'كمل', 'اقتباس', 'اشرح لي']) {
+  const reply = String(decideGroundedResponse({ text: phrase, conversation: ladderConversation }).reply)
+  assert.doesNotMatch(reply, /[]/, `«${phrase}» سرّبت علامة الاقتباس الداخلية إلى الرسالة`)
+}
+/* واللفظ المعتمد باقٍ في صياغتنا نحن. */
+assert.match(controllerSource, /function houseTerminology/, 'قاعدة «تكنولوجيا لا تقنية» يجب أن تبقى على كلامنا')
+assert.match(controllerSource, /systemTerminology\(bounded\(value, 2_000\)\)/, 'اللفظ يُطبَّق على كل رد موقّع')
+
+/* «كمل» تتبع قاعدة السلّم: نقلٌ حرفيّ من المتن الخام بفقراته، ووقوفٌ عند
+   نهاية جملة، ومؤشرٌ لا يتخطّى طول النصّ ثم يرتدّ. */
+let continueConversation = { contextItemIds: ['article:qabas-201811-001'], contextIndex: 0 }
+const continueCursors = []
+for (let turn = 0; turn < 8; turn += 1) {
+  const decision = decideGroundedResponse({ text: 'كمل', conversation: continueConversation })
+  const parts = String(decision.reply).split('\n\n')
+  const titleAt = parts.findIndex((part) => part.trimStart().startsWith('*'))
+  const tailAt = parts.findIndex((part) => part.startsWith('بقي نحو') || part.startsWith('وبهذا اكتمل'))
+  if (titleAt >= 0 && tailAt > titleAt + 1) {
+    const chunk = parts.slice(titleAt + 1, tailAt).join('\n\n').replace(/…$/, '')
+    assert.ok(String(ladderItem.body).includes(chunk), '«كمل» تُسلّم نصّاً مسحوق الفقرات لا منقولاً من متنه')
+  }
+  continueCursors.push(Number(decision.patch?.readCursor ?? 0))
+  continueConversation = { ...continueConversation, lastDecisionReason: decision.reason, ...(decision.patch || {}) }
+}
+const bodyWords = String(ladderItem.body).replace(/\s+/g, ' ').trim().split(' ').length
+for (const cursor of continueCursors) {
+  assert.ok(cursor <= bodyWords, `مؤشر «كمل» تخطّى طول النصّ: ${cursor} > ${bodyWords}`)
+}
+for (let i = 1; i < continueCursors.length; i += 1) {
+  assert.ok(continueCursors[i] >= continueCursors[i - 1], `مؤشر «كمل» ارتدّ للوراء: ${continueCursors[i - 1]}→${continueCursors[i]}`)
+}
+
 console.log('WhatsApp central policy: passed')

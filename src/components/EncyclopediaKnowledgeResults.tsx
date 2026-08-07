@@ -4,6 +4,7 @@ import type { IndexedEncyclopediaVideo } from '../lib/encyclopedia-video-index'
 import { normalizeEncyclopediaText } from '../lib/encyclopedia-video-index'
 import type { EncyclopediaPassageMatch, EncyclopediaSlideMatch } from '../lib/encyclopedia-knowledge-search'
 import { encyclopediaSlideRangeLabel } from '../lib/encyclopedia-teaching-map'
+import { ComposeScene } from './ComposeScene'
 import { SocialIcon } from './icons'
 
 const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-arab').format(value)
@@ -149,7 +150,7 @@ export function EncyclopediaKnowledgeResults({
                 </div>
               )}
             </>
-          ) : <div className="mt-4 aspect-video animate-pulse rounded-xl border border-hair bg-wash" />}
+          ) : <div className="mt-4 flex aspect-video items-center justify-center rounded-xl border border-hair bg-wash"><ComposeScene compact lines={[]} /></div>}
         </article>
 
         <article className={`${tab === 'all' || tab === 'book' ? '' : 'hidden'} w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none`}>

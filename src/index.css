@@ -4108,3 +4108,64 @@ html, body, #root { max-inline-size: 100%; }
   .grove-box { opacity: 1; transform: none; }
   .grove-why { opacity: 1; }
 }
+
+/* ── «لا شيء يظهر جاهزاً» على مستوى الصفحة ──
+   الخيط يُرسم حين يصله القارئ، والمحطّات تستقرّ واحدةً بعد أخرى.
+   يرافق useRevealOnView في src/components/ComposeScene.tsx. */
+
+/* الحدّ الذي رسمه الدكتور يبقى كما هو تماماً — لا يُزاح ولا يُستبدل.
+   الجمال هنا في المحطّات وحدها: تستقرّ حين يصلها القارئ. */
+.thread-spine { position: relative; }
+
+/* المحطّة تستقرّ بعد أن يمرّ بها الخيط. */
+.thread-station {
+  opacity: 0;
+  transform: translateY(9px);
+  transition: opacity .62s ease, transform .62s cubic-bezier(.2, .7, .2, 1);
+  transition-delay: var(--station-delay, 0ms);
+}
+.thread-spine--drawn .thread-station { opacity: 1; transform: none; }
+
+/* عقدة المحطّة تكبر بعد استقرارها — لا قبلها. */
+.thread-node {
+  transform: scale(0);
+  transition: transform .5s cubic-bezier(.34, 1.56, .64, 1);
+  transition-delay: calc(var(--station-delay, 0ms) + 180ms);
+}
+.thread-spine--drawn .thread-node { transform: scale(1); }
+
+/* «الفصل التالي»: سطرٌ واحد كما أراده — يكسب عقدةً وخيطاً، لا بطاقة. */
+.next-step-thread { position: relative; }
+.next-step-thread::after {
+  content: "";
+  position: absolute;
+  inset-block-start: -1px;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  block-size: 1px;
+  background: rgb(var(--c-accent) / .55);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform .9s cubic-bezier(.25, .8, .3, 1);
+}
+.next-step-thread--drawn::after { transform: scaleX(1); }
+.next-step-node {
+  position: absolute;
+  inset-block-start: -4px;
+  inset-inline-end: -3px;
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  transform: scale(0);
+  transition: transform .5s cubic-bezier(.34, 1.56, .64, 1) .28s;
+}
+.next-step-thread--drawn .next-step-node { transform: scale(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .thread-spine::before,
+  .next-step-thread::after { transform: none; }
+  .thread-station { opacity: 1; transform: none; }
+  .thread-node,
+  .next-step-thread .next-step-node { transform: scale(1); }
+}

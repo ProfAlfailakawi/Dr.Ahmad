@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
 /**
@@ -52,10 +52,43 @@ export function ComposeScene({
         <i className="compose-ghost compose-ghost--tail" />
         <i className="compose-drop" />
       </div>
-      <p className="compose-line">{shown}</p>
-      <span className="compose-rule" aria-hidden="true"><i /></span>
+      {/* بلا جملة: يبقى المشهد وحده. لا نضع كلمةً لم يكتبها الدكتور. */}
+      {shown ? <p className="compose-line">{shown}</p> : null}
+      {shown ? <span className="compose-rule" aria-hidden="true"><i /></span> : null}
     </div>
   )
+}
+
+/**
+ * «لا شيء يظهر جاهزاً» على مستوى الصفحة: يُعلّم العنصرَ حين يدخل الشاشة،
+ * فيُرسم خيطُه وتستقرّ محطّاته بدل أن تكون مرسومةً قبل أن يصلها القارئ.
+ *
+ * ومن لا متصفّحه يعرف IntersectionObserver — أو أطفأ الحركة — يراه مكتملاً
+ * من أول لحظة: الميزة تُحسّن، ولا تحجب شيئاً حين تغيب.
+ */
+export function useRevealOnView<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null)
+  const [shown, setShown] = useState(false)
+
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+    if (typeof IntersectionObserver === 'undefined') { setShown(true); return }
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setShown(true); return }
+
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        setShown(true)
+        observer.disconnect()
+      }
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 })
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  return { ref, shown }
 }
 
 export type Branch = {

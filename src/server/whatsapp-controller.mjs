@@ -1133,7 +1133,16 @@ const STRONG_TITLE_SCORE = 20
 function ambiguousRivals(rows, query, isGuess) {
   if (!isGuess) return null
   if (contentTokens(query).length > 2) return null
-  const strong = rows.filter((row) => row.score >= STRONG_TITLE_SCORE)
+  /* المقال والحوار الصوتي قد يحملان العنوان نفسه؛ هما طريقان للمادة نفسها
+     لا وجهان مختلفان للسؤال. نحسب العنوان مرة واحدة، ونفضّل المادة المقروءة
+     ممثلاً للسياق كي لا تتحول نسخة البودكاست إلى «التباس» زائف. */
+  const byTitle = new Map()
+  for (const row of rows.filter((candidate) => candidate.score >= STRONG_TITLE_SCORE)) {
+    const titleKey = normalizeArabicMessage(row.item.title || '')
+    const previous = byTitle.get(titleKey)
+    if (!previous || (previous.item.kind === 'podcast' && row.item.kind !== 'podcast')) byTitle.set(titleKey, row)
+  }
+  const strong = [...byTitle.values()].sort((a, b) => b.score - a.score)
   if (strong.length !== 2) return null
   const [top, next] = strong
   if (next.score / top.score < .85) return null

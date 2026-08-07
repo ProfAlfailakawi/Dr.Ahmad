@@ -20,6 +20,7 @@ import { BranchGrove, ComposeScene, type Branch } from '../components/ComposeSce
 import { buildKnowledgeGraph, graphNeighbors, graphSearch, type KnowledgeGraph, type KnowledgeKind } from '../lib/knowledge-graph'
 import { buildSmartQueryPlan, scoreSmartFields, smartRoots } from '../lib/smart-search'
 import { arabicCountPhrase, EVIDENCE_FORMS, SOURCE_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
+import { saveAskLibraryMemory } from '../lib/ask-library-memory'
 
 const tokenize = (value: string) => smartRoots(value)
 
@@ -629,6 +630,15 @@ export default function AskLibrary() {
       : 'لا يظهر في الأرشيف الآن كتاب أو بحث قريب بما يكفي من هذا السؤال.'
     : '';
   const visibleAnswer = answerMode === 'timeline' ? timelineAnswer : answerMode === 'connections' ? connectionsAnswer : twin?.answer || '';
+  const memoryAnswer = twin?.answer || (result ? localGroundedAnswer(result).answer : '');
+  useEffect(() => {
+    if (!asked || !result || (!result.hits.length && !result.refs.length) || !memoryAnswer.trim()) return;
+    saveAskLibraryMemory({
+      question: asked,
+      summary: memoryAnswer,
+      branches: grove.map(({ id, kind, title, why, to }) => ({ id, kind, title, why, to })),
+    });
+  }, [asked, grove, memoryAnswer, result]);
   const personalBookChapters = result ? buildPersonalBookChapters(result) : [];
   const [printBlocked, setPrintBlocked] = useState(false);
   const handlePrintReadingRoute = () => {

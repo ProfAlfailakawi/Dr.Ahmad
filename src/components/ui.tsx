@@ -78,9 +78,9 @@ export function FadeUp({ children, delay = 0, className = '' }: { children: Reac
     <motion.div
       ref={ref}
       className={className}
-      initial={reduce ? false : { opacity: 0, y: 22 }}
-      animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: 22 }}
-      transition={{ duration: 0.48, ease: EASE, delay }}
+      initial={reduce ? false : { opacity: 0, y: 18, scale: .994 }}
+      animate={show ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 18, scale: .994 }}
+      transition={{ duration: 0.56, ease: EASE, delay }}
     >
       {children}
     </motion.div>

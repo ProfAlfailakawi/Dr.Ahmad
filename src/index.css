@@ -4301,3 +4301,298 @@ html, body, #root { max-inline-size: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .atlas-night circle { transition: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   GEN-UI 2026 — طبقة الجمال الشاملة
+   لا تغيّر نصاً ولا وظيفة: ضوء، عمق، زجاج، حركة، وحفظ الصورة كاملة.
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --ui-radius-card: 18px;
+  --ui-radius-panel: 26px;
+  --ui-glass: rgb(var(--c-canvas) / .82);
+  --ui-glass-strong: rgb(var(--c-canvas) / .93);
+  --ui-edge: rgb(var(--c-ink) / .075);
+  --ui-specular: rgb(255 255 255 / .72);
+  --ui-float-shadow: 0 22px 62px -38px rgb(24 37 50 / .42), 0 1px 0 rgb(255 255 255 / .72) inset;
+  --ui-hover-shadow: 0 30px 76px -38px rgb(24 37 50 / .52), 0 1px 0 rgb(255 255 255 / .82) inset;
+}
+html.dark {
+  --ui-glass: rgb(var(--c-canvas) / .78);
+  --ui-glass-strong: rgb(var(--c-canvas) / .9);
+  --ui-edge: rgb(255 255 255 / .1);
+  --ui-specular: rgb(255 255 255 / .075);
+  --ui-float-shadow: 0 24px 66px -36px rgb(0 0 0 / .74), 0 1px 0 rgb(255 255 255 / .06) inset;
+  --ui-hover-shadow: 0 32px 82px -36px rgb(0 0 0 / .86), 0 1px 0 rgb(255 255 255 / .08) inset;
+}
+
+/* خلفية حية هادئة: الإضاءة تتحرّك بصرياً مع الصفحة من غير عنصر جديد. */
+.signature-page:not(.admin-dashboard)::before,
+.signature-page:not(.admin-dashboard)::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(2px);
+}
+.signature-page:not(.admin-dashboard)::before {
+  inset-block-start: 4rem;
+  inset-inline-end: -18rem;
+  inline-size: min(46rem, 68vw);
+  block-size: min(36rem, 54vw);
+  background: radial-gradient(circle at 42% 50%, rgb(var(--c-accent) / .095), rgb(var(--c-accent) / .025) 42%, transparent 72%);
+  opacity: .74;
+}
+.signature-page:not(.admin-dashboard)::after {
+  inset-block-start: min(58rem, 46vh);
+  inset-inline-start: -22rem;
+  inline-size: min(50rem, 72vw);
+  block-size: min(42rem, 58vw);
+  background: radial-gradient(circle at 62% 48%, rgb(var(--c-accent) / .06), rgb(220 210 194 / .07) 38%, transparent 72%);
+  opacity: .72;
+}
+html.dark .signature-page:not(.admin-dashboard)::before { opacity: .95; }
+html.dark .signature-page:not(.admin-dashboard)::after { opacity: .52; }
+
+/* رأس كل شاشة صار «مشهداً» لا شريطاً مسطحاً. */
+.page-head {
+  isolation: isolate;
+  background:
+    radial-gradient(52% 125% at 87% 8%, rgb(var(--c-accent) / .12), transparent 66%),
+    radial-gradient(42% 95% at 4% 92%, rgb(223 214 199 / .13), transparent 72%),
+    linear-gradient(180deg, rgb(var(--c-canvas) / .98), rgb(var(--c-canvas) / .86)) !important;
+}
+.page-head::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-block-start: -42%;
+  inset-inline-end: -8%;
+  inline-size: min(34rem, 58vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 255 255 / .5), rgb(var(--c-accent) / .065) 38%, transparent 70%);
+  filter: blur(14px);
+  pointer-events: none;
+}
+.page-head::after {
+  display: block !important;
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-inline: 8%;
+  inset-block-end: -9rem;
+  block-size: 12rem;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgb(var(--c-accent) / .075), transparent 68%);
+  filter: blur(16px);
+  pointer-events: none;
+}
+html.dark .page-head {
+  background:
+    radial-gradient(54% 130% at 88% 5%, rgb(var(--c-accent) / .17), transparent 67%),
+    radial-gradient(42% 100% at 2% 95%, rgb(255 255 255 / .025), transparent 72%),
+    linear-gradient(180deg, rgb(var(--c-canvas) / .99), rgb(var(--c-canvas) / .88)) !important;
+}
+
+/* بطاقات عامة: شفافية دقيقة وحدّ مضيء بدل الصندوق المسطّح. */
+.signature-page:not(.admin-dashboard) :is(article, details)[class*="border"][class*="rounded"],
+.signature-page:not(.admin-dashboard) a.group[class*="border"][class*="rounded"],
+.signature-page:not(.admin-dashboard) .ask-memory-card,
+.my-space-panel :is(section, details)[class*="border"][class*="rounded"] {
+  border-color: var(--ui-edge) !important;
+  background-image: linear-gradient(145deg, rgb(255 255 255 / .34), transparent 44%) !important;
+  box-shadow: var(--ui-float-shadow);
+  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  backdrop-filter: blur(16px) saturate(1.12);
+}
+.signature-page:not(.admin-dashboard) :is(article, details)[class*="rounded-2xl"],
+.signature-page:not(.admin-dashboard) :is(article, details)[class*="rounded-3xl"],
+.signature-page:not(.admin-dashboard) a.group[class*="rounded-2xl"],
+.signature-page:not(.admin-dashboard) a.group[class*="rounded-3xl"] {
+  border-radius: var(--ui-radius-card) !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  .signature-page:not(.admin-dashboard) :is(article, a.group)[class*="border"][class*="rounded"] {
+    transition: transform .46s var(--E), border-color .34s var(--E), box-shadow .46s var(--E), background-color .34s var(--E) !important;
+  }
+  .signature-page:not(.admin-dashboard) :is(article, a.group)[class*="border"][class*="rounded"]:hover {
+    transform: translateY(-4px) scale(1.004);
+    border-color: rgb(var(--c-accent) / .24) !important;
+    box-shadow: var(--ui-hover-shadow);
+  }
+}
+
+/* الأزرار الدائرية والأيقونات: ملمس زجاجي موحّد في كل الشاشات. */
+.site-nav :is(button, a)[class*="rounded-full"][class*="border"],
+.signature-page:not(.admin-dashboard) :is(button, a)[class*="rounded-full"][class*="border"],
+.my-space-panel :is(button, a)[class*="rounded-full"][class*="border"],
+.article-tool-icon,
+.my-space-trigger[class*="rounded-full"] {
+  background-image: radial-gradient(circle at 38% 22%, var(--ui-specular), transparent 48%);
+  box-shadow: 0 9px 24px -18px rgb(21 34 47 / .55), 0 1px 0 rgb(255 255 255 / .52) inset;
+  -webkit-backdrop-filter: blur(14px) saturate(1.16);
+  backdrop-filter: blur(14px) saturate(1.16);
+}
+@media (hover: hover) and (pointer: fine) {
+  .site-nav :is(button, a)[class*="rounded-full"][class*="border"],
+  .signature-page:not(.admin-dashboard) :is(button, a)[class*="rounded-full"][class*="border"],
+  .my-space-panel :is(button, a)[class*="rounded-full"][class*="border"] {
+    transition: transform .32s var(--E), border-color .3s var(--E), box-shadow .32s var(--E), color .3s var(--E);
+  }
+  .site-nav :is(button, a)[class*="rounded-full"][class*="border"]:hover,
+  .signature-page:not(.admin-dashboard) :is(button, a)[class*="rounded-full"][class*="border"]:hover,
+  .my-space-panel :is(button, a)[class*="rounded-full"][class*="border"]:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 14px 32px -19px rgb(21 34 47 / .62), 0 1px 0 rgb(255 255 255 / .65) inset;
+  }
+}
+
+/* شريط التنقل يطفو كطبقة من الزجاج حين يستقر. */
+.site-nav.is-solid {
+  background: rgb(var(--c-canvas) / .77) !important;
+  border-color: rgb(var(--c-ink) / .055) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.38) !important;
+  backdrop-filter: blur(24px) saturate(1.38) !important;
+  box-shadow: 0 14px 38px -34px rgb(18 31 45 / .58), 0 1px 0 rgb(255 255 255 / .5) inset;
+}
+html.dark .site-nav.is-solid { background: rgb(var(--c-canvas) / .72) !important; }
+.site-scroll-progress { filter: drop-shadow(0 0 5px rgb(var(--c-accent) / .32)); }
+
+/* القوائم والبحث و«مساحتي»: عمق المشهد نفسه بدل نافذة منفصلة بصرياً. */
+.site-menu-overlay {
+  background:
+    radial-gradient(50% 72% at 82% 16%, rgb(var(--c-accent) / .105), transparent 70%),
+    radial-gradient(38% 58% at 8% 88%, rgb(220 210 194 / .1), transparent 74%),
+    rgb(var(--c-canvas) / .94) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.15);
+  backdrop-filter: blur(26px) saturate(1.15);
+}
+.my-space-overlay { background: rgb(var(--c-ink) / .19) !important; -webkit-backdrop-filter: blur(9px) saturate(.95) !important; backdrop-filter: blur(9px) saturate(.95) !important; }
+.my-space-panel {
+  border-radius: var(--ui-radius-panel) !important;
+  border-color: var(--ui-edge) !important;
+  background:
+    radial-gradient(70% 46% at 90% 0%, rgb(var(--c-accent) / .09), transparent 68%),
+    var(--ui-glass-strong) !important;
+  box-shadow: 0 48px 130px -46px rgb(11 23 37 / .64), 0 1px 0 rgb(255 255 255 / .7) inset !important;
+  -webkit-backdrop-filter: blur(30px) saturate(1.2);
+  backdrop-filter: blur(30px) saturate(1.2);
+}
+html.dark .my-space-panel { box-shadow: 0 50px 140px -42px rgb(0 0 0 / .9), 0 1px 0 rgb(255 255 255 / .07) inset !important; }
+.ask-memory-card { position: relative; overflow: hidden; }
+.ask-memory-card::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: -3rem;
+  inset-block-end: -4.5rem;
+  inline-size: 9rem;
+  block-size: 9rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(var(--c-accent) / .115), transparent 68%);
+  pointer-events: none;
+}
+
+/* الصور والكتب: الصورة كاملة دائماً؛ الفراغ يتحول إلى مشهد لا إلى قصّ. */
+.complete-media-frame {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 50%, rgb(var(--c-accent) / .08), transparent 70%),
+    rgb(var(--c-wash));
+}
+.complete-media-frame::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -9%;
+  background-image: var(--media-thumb);
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px) saturate(.74) brightness(.95);
+  transform: scale(1.08);
+  opacity: .3;
+}
+.complete-media-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgb(255 255 255 / .08), transparent 36%, rgb(10 18 27 / .055));
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .09);
+}
+.complete-media-image {
+  position: relative;
+  z-index: 1;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain !important;
+  object-position: center center !important;
+  transform: none !important;
+  filter: drop-shadow(0 12px 22px rgb(10 20 30 / .13));
+}
+.complete-book-frame {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(75% 90% at 50% 45%, rgb(255 255 255 / .96), rgb(var(--c-wash) / .82) 72%),
+    rgb(var(--c-wash));
+}
+html.dark .complete-book-frame {
+  background: radial-gradient(75% 90% at 50% 45%, rgb(255 255 255 / .075), rgb(var(--c-wash)) 72%);
+}
+.complete-book-frame::after {
+  content: "";
+  position: absolute;
+  inset-inline: 17%;
+  inset-block-end: 6%;
+  block-size: 8%;
+  border-radius: 50%;
+  background: rgb(20 27 34 / .12);
+  filter: blur(11px);
+  pointer-events: none;
+}
+.complete-book-image {
+  position: relative;
+  z-index: 1;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain !important;
+  object-position: center !important;
+  padding: clamp(.55rem, 1.5vw, 1rem);
+  transform: none !important;
+  filter: drop-shadow(0 11px 14px rgb(17 25 33 / .16));
+}
+.content-books a > div[style*="aspect-ratio"],
+html.dark .content-books a > div[style*="aspect-ratio"] {
+  box-shadow: var(--ui-float-shadow) !important;
+  border-radius: var(--ui-radius-card) !important;
+}
+
+/* التذييل ينهي الرحلة بسطح ضوئي واحد، لا كتلة منفصلة. */
+.site-footer {
+  background:
+    radial-gradient(45% 120% at 82% 110%, rgb(var(--c-accent) / .09), transparent 70%),
+    linear-gradient(180deg, transparent, rgb(var(--c-wash) / .58)) !important;
+}
+
+/* الهاتف: نفس الجمال، لكن بلا تكلفة حركة أو ضباب زائد. */
+@media (max-width: 767px) {
+  .signature-page:not(.admin-dashboard)::before { inset-inline-end: -23rem; opacity: .52; }
+  .signature-page:not(.admin-dashboard)::after { inset-inline-start: -25rem; opacity: .44; }
+  .page-head::before { inline-size: 25rem; inset-inline-end: -12rem; opacity: .72; }
+  .site-nav.is-solid { background: rgb(var(--c-canvas) / .9) !important; -webkit-backdrop-filter: blur(18px) saturate(1.22) !important; backdrop-filter: blur(18px) saturate(1.22) !important; }
+  .complete-media-frame::before { filter: blur(16px) saturate(.72); opacity: .25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signature-page:not(.admin-dashboard) :is(article, a.group)[class*="border"][class*="rounded"],
+  .site-nav :is(button, a),
+  .ask-memory-card { transform: none !important; transition: none !important; }
+}

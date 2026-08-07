@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T20:04:35.449Z",
+  "generatedAt": "2026-08-07T22:22:03.878Z",
   "episodes": [
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -5498,5 +5498,14 @@
       ]
     }
   ],
-  "blocked": []
+  "blocked": [
+    {
+      "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+      "turns": 75,
+      "opening": "أتعرفين ما الذي يخيفني في بعض الاختبارات؟",
+      "uploaded": false,
+      "reason": "المقال غير منشور في الموقع",
+      "action": "انشر مقال «how-do-we-assess-without-breaking-the-human-beingarabic» ثم شغّل مصنع الروح — تُولَّد الحلقة وتُرفع وحدها."
+    }
+  ]
 }

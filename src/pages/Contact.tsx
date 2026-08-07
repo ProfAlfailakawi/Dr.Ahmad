@@ -25,7 +25,7 @@ export default function Contact() {
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <Label center>للاستشارة أو التعاون</Label>
-            <h1 className="font-display text-[clamp(2.6rem,8vw,5.2rem)] font-bold text-ink">
+            <h1 className="font-display text-[clamp(2.6rem,8vw,5.2rem)] font-bold leading-[1.25] text-ink">
               <Reveal>لنعمل معاً.</Reveal>
             </h1>
             <p className="mx-auto mt-6 max-w-[520px] text-[1.12rem] font-light leading-[1.9] text-ink/80">

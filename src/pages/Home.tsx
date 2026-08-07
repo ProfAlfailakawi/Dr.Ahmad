@@ -379,7 +379,7 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
         <div className="flex min-w-0 flex-col items-start gap-3 text-accent">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="h-[1.5px] w-7 shrink-0 bg-accent" />
-            <p className="min-w-0 whitespace-nowrap text-[clamp(.62rem,2.25vw,.74rem)] font-semibold leading-none">
+            <p className="min-w-0 whitespace-nowrap text-[clamp(.7rem,2.25vw,.74rem)] font-semibold leading-none">
               في مثل هذا الأسبوع {yearsAgo(n)}
             </p>
           </div>
@@ -1018,7 +1018,9 @@ function HomeSocialFooter() {
               ))}
             </div>
           </div>
-          <div className="flex items-center justify-center gap-2.5" aria-label="أدوات الموقع">
+          {/* فاصلٌ أوسع قليلاً: المجموعتان مختلفتان فعلاً (منصّاته ثم أدوات الموقع)،
+              وتلاصقهما كان يجعل ٧+٣ تُقرأ صفاً واحداً مكسوراً لا مجموعتين. */}
+          <div className="mt-2.5 flex items-center justify-center gap-2.5" aria-label="أدوات الموقع">
             <button
               type="button"
               onClick={() => {

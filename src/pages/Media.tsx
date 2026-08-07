@@ -6,6 +6,7 @@ import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import { MediaSaveButton } from '../components/MySpace'
 import { mergeMediaArchive, searchArchiveMoments, formatMediaTime } from '../lib/media-archive'
+import { arabicCountPhrase, MOMENT_MATCH_FORMS } from '../lib/arabic-count.ts'
 
 const kindLabel: Record<string, string> = {
   youtube: 'يوتيوب', television: 'تلفزيون', radio: 'إذاعة', audio: 'إذاعة', podcast: 'بودكاست',
@@ -39,7 +40,7 @@ export default function Media() {
 
         {query.trim() && <FadeUp>
           <section className="mt-7" aria-label="نتائج البحث داخل اللقاءات">
-            <div className="flex items-end justify-between gap-4"><div><span className="text-[.7rem] font-semibold text-accent">نتائج داخل الكلام</span><h2 className="mt-1 font-display text-2xl font-semibold text-ink">{moments.length ? `${moments.length} لحظة مطابقة` : 'لا توجد لحظة موثقة مطابقة'}</h2></div></div>
+            <div className="flex items-end justify-between gap-4"><div><span className="text-[.7rem] font-semibold text-accent">نتائج داخل الكلام</span><h2 className="mt-1 font-display text-2xl font-semibold text-ink">{moments.length ? arabicCountPhrase(moments.length, MOMENT_MATCH_FORMS) : 'لا توجد لحظة موثقة مطابقة'}</h2></div></div>
             {moments.length > 0 && <div className="mt-4 grid gap-3">
               {moments.slice(0, 10).map(({ item, segment }, index) => <Link key={`${item.id}-${segment.start}-${index}`} to={`/media/${item.slug}?t=${Math.floor(segment.start)}`} className="group grid gap-3 rounded-2xl border border-hair bg-canvas p-4 transition hover:border-accent md:grid-cols-[8rem_minmax(0,1fr)_auto] md:items-center">
                 <span className="font-mono text-[.78rem] font-bold text-accent">{formatMediaTime(segment.start)}</span>

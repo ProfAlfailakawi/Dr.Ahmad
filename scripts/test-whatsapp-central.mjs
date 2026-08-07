@@ -6,6 +6,7 @@ import {
   applyTaughtPhrases,
   readerKindOf,
   qualityBucketFor,
+  scoredSiteResults,
   markOwnerActive,
   buildWhatsAppDiagnostics,
   normalizeArabicMessage,
@@ -546,5 +547,77 @@ const controllerNow = controllerSource
 assert.match(controllerNow, /getBotMessages/)
 assert.match(controllerNow, /refreshBotMessages/)
 assert.doesNotMatch(controllerNow, /^const WELCOME = /m)
+
+/* ١٥) سلّم الوقت والصوت في المتصفح (شكوى الدكتور بصورتين، ٧ أغسطس ٢٠٢٦):
+   كتب «لخّص» ثم «٣٠ ثانية» فوصله الردّ نفسه حرفاً بحرف — لأن READ_SPEED
+   وONE_MINUTE كانتا مربوطتين بـSUMMARY في شرطٍ واحد. وفي الطلب نفسه وصلته
+   فقاعةُ صوتٍ لا تُحمَّل («Couldn't download audio»)، فأمر أن يرجع الاستماع
+   إلى المتصفح. هذا الاختبار يمنع رجوع العطبين. */
+const ladderConversation = { contextItemIds: ['article:qabas-201811-001'], contextIndex: 0 }
+const ladder = new Map()
+for (const [phrase, expectedReason] of [
+  ['لخص', 'context-summary'],
+  ['٣٠ ثانية', 'timed-reading-30s'],
+  ['عندي دقيقة', 'timed-reading-1min'],
+  ['دقيقتان', 'timed-reading-2min'],
+  ['تعمق', 'timed-reading-deep'],
+]) {
+  const decision = decideGroundedResponse({ text: phrase, conversation: ladderConversation })
+  assert.equal(decision.reason, expectedReason, `«${phrase}» يجب أن تُصنَّف ${expectedReason}`)
+  assert.ok(String(decision.reply || '').length > 40, `«${phrase}» ردّ فارغ`)
+  /* حدّ الإرسال ٢٠٠٠ حرف: ما فوقه يصل مبتوراً في وسط كلام الدكتور. */
+  assert.ok(String(decision.reply).length <= 2_000, `«${phrase}» تجاوز سقف الإرسال: ${String(decision.reply).length}`)
+  assert.equal(qualityBucketFor(decision.reason), 'answered', `«${phrase}» يجب أن تُحسب ردّاً مُجاباً`)
+  ladder.set(phrase, String(decision.reply))
+}
+const ladderPhrases = [...ladder.keys()]
+for (let i = 0; i < ladderPhrases.length; i += 1) {
+  for (let j = i + 1; j < ladderPhrases.length; j += 1) {
+    assert.notEqual(
+      ladder.get(ladderPhrases[i]),
+      ladder.get(ladderPhrases[j]),
+      `«${ladderPhrases[i]}» و«${ladderPhrases[j]}» تعطيان الردّ نفسه حرفاً بحرف — العطب الذي اشتكى منه الدكتور`,
+    )
+  }
+}
+/* السلّم يتصاعد فعلاً: الزبدة أقصر من ٣٠ ثانية، وهي أقصر من الدقيقة، وهي
+   أقصر من الدقيقتين. تفاوت الطول وحده لا يكفي لكنه شرطٌ لا يُتنازل عنه. */
+assert.ok(ladder.get('لخص').length < ladder.get('٣٠ ثانية').length, 'الزبدة يجب أن تكون أقصر من قراءة ٣٠ ثانية')
+assert.ok(ladder.get('٣٠ ثانية').length < ladder.get('عندي دقيقة').length, 'قراءة الدقيقة يجب أن تزيد على الثلاثين ثانية')
+assert.ok(ladder.get('عندي دقيقة').length < ladder.get('دقيقتان').length, 'قراءة الدقيقتين يجب أن تزيد على الدقيقة')
+assert.match(ladder.get('تعمق'), /كمل/, 'التعمّق يدلّ على طريق الإكمال')
+/* المقاطع من نصّه حرفاً بحرف — لا توليد ولا إعادة صياغة. */
+const ladderItem = scoredSiteResults('وسائل الإعلام بين المجاملة والتمثيل')
+  .map((row) => row.item).find((item) => item.id === 'article:qabas-201811-001')
+assert.ok(ladderItem?.body, 'نحتاج متن المقالة لقياس الحرفية')
+const ladderBody = String(ladderItem.body).replace(/\s+/g, ' ').trim()
+for (const phrase of ['٣٠ ثانية', 'عندي دقيقة', 'دقيقتان']) {
+  const passage = String(ladder.get(phrase)).split('\n\n')[1].replace(/\s+/g, ' ').replace(/…$/, '').trim()
+  assert.ok(ladderBody.includes(passage), `مقطع «${phrase}» ليس منقولاً من متن الدكتور حرفاً بحرف`)
+}
+/* «كمل» بعد القراءة تُكمل من حيث وقفت، لا تعيد ما قُرئ. */
+const afterThirty = decideGroundedResponse({ text: '٣٠ ثانية', conversation: ladderConversation })
+const continued = decideGroundedResponse({
+  text: 'كمل',
+  conversation: { ...ladderConversation, ...afterThirty.patch },
+})
+assert.equal(continued.reason, 'continue-reading')
+assert.ok(
+  !String(continued.reply).includes(String(afterThirty.reply).split('\n\n')[1].slice(0, 60)),
+  '«كمل» بعد القراءة تعيد المقطع نفسه بدل أن تكمله',
+)
+/* الاستماع يرجع للمتصفح: لا مرفق صوتي في واتساب، والردّ يدلّ على المشغّل. */
+for (const phrase of ['اقرا لي', 'صوت نورة', 'الحوار']) {
+  const listen = decideGroundedResponse({ text: phrase, conversation: ladderConversation })
+  assert.equal(listen.audioAttachment, undefined, `«${phrase}» ما زالت ترسل ملفاً صوتياً داخل واتساب`)
+}
+assert.match(
+  decideGroundedResponse({ text: 'اقرا لي', conversation: ladderConversation }).reply,
+  /المشغّل أعلى الصفحة/,
+  'ردّ الاستماع يجب أن يدلّ على مشغّل الموقع',
+)
+/* الآلة باقية لا مهدومة: أمر الصوت وفرعه في الجسر في مكانهما خلف مفتاحٍ واحد. */
+assert.match(controllerSource, /WHATSAPP_AUDIO_IN_CHAT/, 'مفتاح إعادة الصوت داخل واتساب يجب أن يبقى')
+assert.match(controllerSource, /AUDIO_IN_CHAT && audioFile/, 'المرفق الصوتي يجب أن يبقى خلف المفتاح لا محذوفاً')
 
 console.log('WhatsApp central policy: passed')

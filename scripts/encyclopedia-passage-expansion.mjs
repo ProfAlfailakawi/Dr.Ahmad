@@ -36,7 +36,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-export const CACHE_VERSION = 4
+export const CACHE_VERSION = 5
 
 /* ═══ الكتب التي تُقرأ بهذا المحرك ═══
  *
@@ -157,6 +157,76 @@ export function looksLikeReference(text = '') {
  * النظيفة («ولهذا وجب الاهتمام بها.») جزءٌ أصيل من فقرتها، فتُضَمّ ولا
  * تُقصى — وإقصاؤها كان يكسر الفقرة من حولها فيضيع ما حولها معها.
  */
+const ARABIC_LETTER = /[ء-يٱ-ۓ]/
+const FOREIGN_RUN = /[0-9٠-٩۰-۹A-Za-z][0-9٠-٩۰-۹A-Za-z.&'\-]*/g
+
+/* أشكالُ الإسناد كما يُخرجها المستخرج من هذه الكتب. وقد خرج الرقمُ من قوسه
+   وانطبق القوسُ فارغاً («خميس 2003()» أصلها «خميس (2003)») — أثرٌ حتميّ
+   لاتجاه النص لا تشويشٌ عشوائي، فيُتعرَّف عليه.
+
+   والعملية هنا **حذفٌ لا نقل**: لا يُعاد بناء رقمٍ ولا يُغيَّر موضعُ كلمة، فترتيبُ
+   العربية حول الإسناد يبقى كما استُخرج. ولذلك لا يسري عليها اعتراضُ البيدي —
+   فاعتراضُه على استرجاع مواضع الأرقام، ونحن نُلغيها. ويبقى اسمُ العالِم فلا
+   يُنسب قولٌ إلى غير قائله، وتسقط السنة وحدها. */
+const CITATION_SHAPES = [
+  /* «قطامي:2003(282)» — سنةٌ بنقطتين يتلوها قوسٌ برقم الصفحة. مركّبٌ لا يلتبس
+     بكمٍّ قط، لأن العددَ لا يجيء بعد سنةٍ مسبوقةٍ بنقطتين. يُحذف بتمامه. */
+  /\s*:\s*([0-9٠-٩۰-۹]{4})\s*\(\s*[0-9٠-٩۰-۹]{1,4}\s*\)/g,
+  /* الترتيب مقصود: الشكلُ التامّ «(2003)» يُحذف قبل الناقص «2003)»، وإلا التهم
+     الناقصُ نصفَه وخلّف قوساً وحيداً يُسقط الجملةَ في حارس التوازن. */
+  /\s*\(\s*([0-9٠-٩۰-۹]{1,4})\s*\)/g,
+  /\s*([0-9٠-٩۰-۹]{2,4})\s*\(\s*\)/g,
+  /\s*:\s*([0-9٠-٩۰-۹]{4})/g,
+  /\s*([0-9٠-٩۰-۹]{2,4})\s*\)/g,
+]
+/* **لا يُحذف إلا ما كان سنة.** والعددُ يبقى فتُرفض جملتُه كما كانت تُرفض.
+   وهذا هو الفرق بين الإسناد والكمّ: «خميس (2003)» إسنادٌ يُحذف، و«من (40)
+   معلماً» عددٌ لو حُذف لانكسرت الجملة نحواً وخرجت كذباً على الكتاب. والحدّ
+   ١٣٠٠–٢١٠٠ يسع الهجريّ والميلاديّ ولا يسع أعداد العيّنات. */
+const YEAR_MIN = 1300
+const YEAR_MAX = 2100
+const arabicDigits = (value = '') => value.replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+  .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+const isYear = (value = '') => {
+  const digits = arabicDigits(value)
+  if (digits.length !== 4) return false
+  const number = Number(digits)
+  return number >= YEAR_MIN && number <= YEAR_MAX
+}
+/* الترقيمُ في أول السطر بنيةٌ لا معنى («-1 التكنولوجيا كعمليات»)، فيُحذف. */
+const LEADING_ENUMERATION = /^\s*-?\s*[0-9٠-٩۰-۹]{1,2}\s*[-–.]?\s+/
+/* **ولا تُمَسّ اللاتينية.** جُرِّبت فكشفت عيباً جسيماً: الاسمُ اللاتيني في هذه
+   الكتب ليس شرحاً لما قبله بل هو المُسنَد إليه نفسه. «ووصف Briggs التصميمَ
+   التعليمي» تصير بحذفه «ووصف التصميمَ التعليمي» بلا فاعل، و«إطار عمل TPACK»
+   تصير «إطار عمل». والسنةُ وحدها هي التي لا تكون فاعلاً قط، فهي التي تُحذف. */
+
+/**
+ * يجرّد الجملةَ من إسنادها ومن شرح الاسم الأجنبي، فتعود نصّاً عربياً خالصاً.
+ *
+ * يُرجع `null` — فتُرفض الجملة كما كانت تُرفض — في ثلاث حالات:
+ *  · بقي رقمٌ أو حرفٌ لاتيني بعد التجريد (رقمٌ في متن الجملة لا في إسنادها).
+ *  · كان الدخيلُ **ملتحماً بحرفٍ عربي** («نموذجSAMR») — فحذفُه يشقّ الكلمة
+ *    ويولّد لفظاً لم يوجد في الكتاب قط، وذلك نقضٌ لعقد الحرفية.
+ *  · لم يتغيّر شيء.
+ */
+export function stripCitations(text = '') {
+  const source = String(text)
+  /* الحارس الأول: أيُّ دخيلٍ يلامس حرفاً عربياً يمنع التجريد كلَّه. */
+  for (const match of source.matchAll(FOREIGN_RUN)) {
+    const before = source[match.index - 1]
+    const after = source[match.index + match[0].length]
+    if ((before && ARABIC_LETTER.test(before)) || (after && ARABIC_LETTER.test(after))) return null
+  }
+  let value = source.replace(LEADING_ENUMERATION, '')
+  for (const shape of CITATION_SHAPES) value = value.replace(shape, (whole, digits) => (isYear(digits) ? ' ' : whole))
+  /* لا يُلصَق شيءٌ بشيء: كلُّ ما يجري هنا حذفٌ وطيُّ فراغ. فلو أُلصقت علامةُ
+     ترقيمٍ بكلمةٍ لصارت كلمةً لا يشهدها مجرى النص، فأسقطت برهانَ الحرفية. */
+  value = value.replace(/\(\s*\)/g, ' ').replace(/\s{2,}/g, ' ').trim()
+  if (!value || value === source.trim()) return null
+  if (/[0-9٠-٩۰-۹A-Za-z]/.test(value)) return null
+  return value
+}
+
 export function sentenceRejection(text = '', { standalone = true } = {}) {
   const value = String(text).trim()
   if (standalone && value.length < BODY_LIMITS.minSentenceChars) return 'قصيرة'
@@ -843,9 +913,20 @@ export function buildBookBodyIndex({
       /* لأم الكلمة المنشقّة يعمل في كل المسارات: شاهدُه معجمُ الكتاب نفسه،
          وهو قائمٌ في المسار الضوئي كما هو في مسار الهندسة. */
       const healed = healSplitWords(raw, page, index)
-      const early = sentenceRejection(healed, { standalone: false })
-      if (early) { note('dropped', early, healed, page); closeGroup(); return }
-      const sentence = passthrough ? healed : respell(healed, page, index, stats)
+      let candidate = healed
+      let early = sentenceRejection(candidate, { standalone: false })
+      /* الإسنادُ وشرحُ الاسم الأجنبي كانا يُسقطان تعريفاتِ العلماء كلَّها — وهي
+         أثمنُ ما في المتن. فتُجرَّد الجملةُ منهما ثم تُعرض على البوابة ثانيةً،
+         ولا يُقبل إلا ما صار عربياً خالصاً. */
+      if (early === 'فيها أرقام') {
+        const stripped = stripCitations(candidate)
+        if (stripped) {
+          const retry = sentenceRejection(stripped, { standalone: false })
+          if (!retry) { candidate = stripped; early = ''; stats.citationsStripped = (stats.citationsStripped || 0) + 1 }
+        }
+      }
+      if (early) { note('dropped', early, candidate, page); closeGroup(); return }
+      const sentence = passthrough ? candidate : respell(candidate, page, index, stats)
       if (!sentence) { note('dropped', 'كلمة لم يثبتها المجرى', raw, page); closeGroup(); return }
       const reason = sentenceRejection(sentence, { standalone: false })
       if (reason) { note('dropped', reason, sentence, page); closeGroup(); return }
@@ -880,18 +961,23 @@ export function buildBookBodyIndex({
      والثانية ليست تساهلاً بل هي جوهر الكسب: المجرى يُسقط ما بين «» بتمامه
      (تعريفات العلماء المنقولة)، فتأتي من هندسة الصفحة ويُثبتها المجرى من
      موضعٍ آخر. والترتيب مُثبَت من الهندسة. ويُعاد هذا الفحص عند كل بناء. */
+  /* الهيكل: حروفٌ فقط. و`ARABIC_RUN` يلتقط كتلة U+0600–U+06FF كلَّها، وفيها
+     الفاصلةُ والفاصلةُ المنقوطة وعلامةُ الاستفهام العربية — فكانت «نظارات،»
+     تُحسب لفظاً غير «نظارات» فيسقط البرهانُ على فرقٍ في ترقيمٍ لا في لفظ.
+     والعقدُ أن كل **كلمة** مُثبَتة، والترقيمُ ليس من الكلمة. */
+  const skeletonOf = (word = '') => stripMarks(word).replace(/[^ء-يٱ-ۓ]/gu, '')
   const streamWords = new Set()
   for (const page of pages) {
-    for (const word of normalizeArabic(page.text || '').match(ARABIC_RUN) || []) streamWords.add(stripMarks(word))
+    for (const word of normalizeArabic(page.text || '').match(ARABIC_RUN) || []) streamWords.add(skeletonOf(word))
   }
   const pageWords = new Map(pages.map((page) => [
     page.page,
-    new Set((normalizeArabic(page.text || '').match(ARABIC_RUN) || []).map(stripMarks)),
+    new Set((normalizeArabic(page.text || '').match(ARABIC_RUN) || []).map(skeletonOf)),
   ]))
   let offPageWords = 0
   for (const passage of passages) {
     for (const word of normalizeArabic(passage.text).match(ARABIC_RUN) || []) {
-      const skeleton = stripMarks(word)
+      const skeleton = skeletonOf(word)
       if (skeleton.length < 3) continue
       if (!streamWords.has(skeleton)) {
         throw new Error(`برهان الحرفية سقط في ص${passage.page}: الكلمة «${word}» ليست في مجرى نصّ الكتاب`)

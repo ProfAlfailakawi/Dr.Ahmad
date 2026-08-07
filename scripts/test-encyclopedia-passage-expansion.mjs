@@ -23,8 +23,8 @@ const passages = book.passages || []
 const pages = new Set(passages.map((item) => Number(item.page)))
 
 /* ═══ التغطية ═══ */
-check(passages.length >= 700, `عدد مقاطع الموسوعة ${passages.length} — والمرجو ٧٠٠ فأكثر`)
-check(pages.size >= 320, `الصفحات المفهرسة ${pages.size} — والمرجو ٣٢٠ صفحة فأكثر`)
+check(passages.length >= 820, `عدد مقاطع الموسوعة ${passages.length} — والمرجو ٨٢٠ فأكثر`)
+check(pages.size >= 350, `الصفحات المفهرسة ${pages.size} — والمرجو ٣٥٠ صفحة فأكثر`)
 check(payload.coverage?.encyclopediaPassages === passages.length, 'العدد المعلن في التغطية يطابق المحتوى')
 check(payload.coverage?.encyclopediaPagesIndexed === pages.size, 'الصفحات المعلنة تطابق المفهرس فعلاً')
 
@@ -71,14 +71,14 @@ check(encyclopediaQuotes.every((quote) => passages.some((item) => item.fingerpri
    حقيقي ولا تنكسر من تذبذبٍ يسير في المصدر. ونزلت عن سابقتها لأن مئة مقطعٍ
    حُجبت ببصمتها بعد قراءتها — نقصٌ مقصود لا انحدار. */
 const floors = {
-  'digital-education': [56, 34],
-  gamification: [49, 34],
-  'handy-tech': [73, 40],
-  'kids-tech': [72, 44],
-  'mega-data': [106, 51],
-  'smart-school': [65, 41],
-  teaching: [177, 98],
-  'virtual-world': [49, 32],
+  'digital-education': [47, 29],
+  gamification: [45, 31],
+  'handy-tech': [64, 41],
+  'kids-tech': [65, 38],
+  'mega-data': [95, 48],
+  'smart-school': [58, 38],
+  teaching: [161, 93],
+  'virtual-world': [48, 31],
 }
 let otherPassages = 0
 let otherPages = 0

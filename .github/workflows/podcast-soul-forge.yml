@@ -120,17 +120,32 @@ jobs:
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
 
+      # الصوت يكون قد وصل R2 قبل هذه الخطوة، فلا يجوز أن يُسقط تعثّرُها
+      # التشغيلةَ كلَّها. وجلسةٌ أخرى قد تدفع أثناء التوليد (ساعتان) فيُرفض
+      # الدفع بـ«fetch first» — فنسحب أولاً ونعيد المحاولة، والسجلّ يبقى
+      # قابلاً لإعادة البناء من R2 بـreconcile-audio-meta على أي حال.
       - name: تثبيت السجلّ في المستودع
+        continue-on-error: true
         run: |
           if git diff --quiet -- src/data/audio-meta.json; then
             echo "لا تغييرات في السجلّ."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add src/data/audio-meta.json
-            git commit -m "chore: نشر سجلّ حلقات مصنع الروح"
-            git push origin HEAD:main
+            exit 0
           fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/data/audio-meta.json
+          git commit -m "chore: نشر سجلّ حلقات مصنع الروح"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "ثُبّت السجلّ (محاولة ${attempt})."
+              exit 0
+            fi
+            echo "::warning::تقدّم main أثناء النشر (محاولة ${attempt}/5) — أسحب وأعيد."
+            git pull --rebase --autostash origin main || git rebase --abort || true
+            sleep $((attempt * 5))
+          done
+          echo "::warning::تعذّر تثبيت السجلّ بعد خمس محاولات — الصوت على R2 سليم، ويُعاد بناء السجلّ بـreconcile-audio-meta."
+          exit 1
 
       - name: تقرير التشغيلة
         if: always()

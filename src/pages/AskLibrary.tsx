@@ -16,10 +16,29 @@ import { categoryLabel } from "../lib/content-taxonomy";
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
 import { loadBookPassages, matchBookQuotes, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
 import { SocialIcon } from '../components/icons'
+import { BranchGrove, ComposeScene, type Branch } from '../components/ComposeScene'
+import { buildKnowledgeGraph, graphNeighbors, graphSearch, type KnowledgeGraph, type KnowledgeKind } from '../lib/knowledge-graph'
 import { buildSmartQueryPlan, scoreSmartFields, smartRoots } from '../lib/smart-search'
 import { arabicCountPhrase, EVIDENCE_FORMS, SOURCE_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 
 const tokenize = (value: string) => smartRoots(value)
+
+/* ── الأغصان ──
+   خريطة المعرفة تربيعيةٌ على عدد المواد، فتُبنى مرةً واحدة في الجلسة كلها
+   وتُحفظ هنا: الصفحة الثانية التي تحتاجها تجدها جاهزة. */
+let knowledgeGraphCache: KnowledgeGraph | null = null
+
+const BRANCH_KIND_LABEL: Record<KnowledgeKind, string> = {
+  article: 'مقال',
+  book: 'كتاب',
+  paper: 'بحث محكّم',
+  media: 'لقاء',
+  curated: 'مختارات',
+  podcast: 'حلقة',
+  audio: 'قراءة صوتية',
+  social: 'منشور',
+  concept: 'مفهوم',
+}
 
 type Hit = {
   slug: string;
@@ -429,6 +448,53 @@ export default function AskLibrary() {
     return deep.length ? deep : matchBookQuotes(asked, 3);
   }, [asked, passagesReady]);
 
+  /* ── الأغصان ──
+     graphNeighbors مكتوبةٌ في knowledge-graph.ts ولم تُستدعَ في الواجهة قط،
+     وهي وحدها التي تعيد الجارَ **ومعه سببُ صلته**. وبناء الخريطة ثقيل، فلا
+     يبدأ إلا بعد أن يرى الزائر جوابه، وفي لحظة خمولٍ لا في الخيط الحارّ. */
+  const [grove, setGrove] = useState<Branch[]>([]);
+  useEffect(() => {
+    if (!asked || !result) { setGrove([]); return; }
+    let on = true;
+    const build = () => {
+      if (!on) return;
+      try {
+        const graph = knowledgeGraphCache
+          || (knowledgeGraphCache = buildKnowledgeGraph({ articles, books, papers, media }));
+        const seed = graphSearch(graph, asked, 1)[0];
+        if (!seed) { setGrove([]); return; }
+        const near = graphNeighbors(graph, seed.node.id, 6);
+        /* التنويع أولاً — كقانون «الفصل التالي»: ما اختلف نوعه يسبق. */
+        const varied = near.filter((item) => item.node.kind !== seed.node.kind);
+        const pool = varied.length ? varied : near;
+        setGrove(pool.slice(0, 2).map(({ edge, node }) => ({
+          id: node.id,
+          kind: BRANCH_KIND_LABEL[node.kind] || 'مادة',
+          title: node.title,
+          why: edge.reasons[0] || 'قرابةٌ في الموضوع',
+          to: node.url,
+        })));
+      } catch {
+        /* بلا أغصان: الجواب ومصادره كما هي. لا يستحق إزعاج القارئ. */
+        setGrove([]);
+      }
+    };
+    /* لا تُقاطَع Window هنا: lib.dom تعرّف requestIdleCallback إلزامياً، فتصير
+       القطعُ مع نسخةٍ اختيارية إلزاميةً فيسقط الحارس. وسفاري القديم لا يعرفها. */
+    const win = window as unknown as {
+      requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (handle: number) => void
+    };
+    const idle = win.requestIdleCallback;
+    const cancelIdle = win.cancelIdleCallback;
+    const handle = idle ? idle.call(window, build, { timeout: 2200 }) : window.setTimeout(build, 500);
+    return () => {
+      on = false;
+      if (idle && cancelIdle) cancelIdle.call(window, handle);
+      else window.clearTimeout(handle);
+    };
+  }, [articles, asked, books, media, papers, result]);
+
   const [twin, setTwin] = useState<TwinAnswer | null>(null);
   const [twinLoading, setTwinLoading] = useState(false);
   const [answerMode, setAnswerMode] = useState<AnswerMode>('direct');
@@ -613,12 +679,9 @@ export default function AskLibrary() {
           <div ref={resRef} className="scroll-mt-28">
             {asked && bodiesLoading && (
               <FadeUp>
-                <p
-                  className="mt-12 border-t border-hair pt-6 text-center text-soft"
-                  aria-live="polite"
-                >
-                  أرتّب مواد الأرشيف الأقرب إلى السؤال…
-                </p>
+                <div className="mt-12 border-t border-hair pt-6">
+                  <ComposeScene lines={["أرتّب مواد الأرشيف الأقرب إلى السؤال…"]} />
+                </div>
               </FadeUp>
             )}
             {result && (
@@ -652,7 +715,9 @@ export default function AskLibrary() {
                           </div>
                         )}
                         {answerMode === 'direct' && twinLoading && !twin ? (
-                          <p className="mt-5 animate-pulse text-[.88rem] leading-[1.95] text-soft">أرتّب الشواهد الأقرب إلى سؤالك…</p>
+                          <div className="mt-5">
+                            <ComposeScene compact lines={["أرتّب الشواهد الأقرب إلى سؤالك…"]} />
+                          </div>
                         ) : visibleAnswer ? (
                           <>
                             <p className="mt-5 whitespace-pre-line text-[.96rem] font-light leading-[2.05] text-ink/90">{visibleAnswer}</p>
@@ -670,6 +735,16 @@ export default function AskLibrary() {
                         ) : null}
                       </section>
                     </FadeUp>
+
+                    {/* الأغصان تنبت من الجواب نفسه، ويُكتب تحت كلٍّ سببُ صلته. */}
+                    {grove.length > 0 && (
+                      <div className="mt-1">
+                        <BranchGrove
+                          items={grove}
+                          onOpen={(branch) => trackUsage('living_mind_result_used', { type: 'open_source', resultId: branch.id })}
+                        />
+                      </div>
+                    )}
 
                     <section
                       className="mt-9"

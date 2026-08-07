@@ -74,6 +74,7 @@ export const MISSING_CAVEAT_FORMS = {
   many: 'تحفّظاً في الأصل لم يظهر في النسخ المشتقة',
 }
 export const REPLY_AFTER_PREPOSITION_FORMS = { one: 'رد', two: 'ردين', few: 'ردود', many: 'رداً' }
+export const MUTED_CONVERSATION_FORMS = { one: 'محادثة مُسكتة', two: 'محادثتان مُسكتتان', few: 'محادثات مُسكتة', many: 'محادثة مُسكتة' }
 export const CONVERSATION_AFTER_PREPOSITION_FORMS = { one: 'محادثة', two: 'محادثتين', few: 'محادثات', many: 'محادثة' }
 export const WORD_AFTER_PREPOSITION_FORMS = { one: 'كلمة', two: 'كلمتين', few: 'كلمات', many: 'كلمة' }
 export const WORD_PLAIN_FORMS = { one: 'كلمة', two: 'كلمتان', few: 'كلمات', many: 'كلمة' }

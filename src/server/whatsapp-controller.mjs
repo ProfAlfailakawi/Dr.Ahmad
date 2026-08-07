@@ -5,7 +5,7 @@ import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
 import { distillItem } from '../../whatsapp-agent/daily-experience.mjs'
 import { conceptDefinition, conceptQueryFor, glossarySize } from '../../whatsapp-agent/domain-concepts.mjs'
-import { arabicCountPhrase, CONVERSATION_AFTER_PREPOSITION_FORMS, DAY_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS, MINUTE_FORMS, PASSAGE_AFTER_PREPOSITION_FORMS, RECOVERED_MESSAGE_OBJECT_FORMS, REPLY_AFTER_PREPOSITION_FORMS, SECOND_AFTER_PREPOSITION_FORMS, VERIFIED_MATERIAL_FORMS, WEEK_AFTER_PREPOSITION_FORMS } from '../lib/style-dna.mjs'
+import { arabicCountPhrase, ARTICLE_FORMS, CONVERSATION_AFTER_PREPOSITION_FORMS, MUTED_CONVERSATION_FORMS, DAY_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS, MINUTE_FORMS, PASSAGE_AFTER_PREPOSITION_FORMS, RECOVERED_MESSAGE_OBJECT_FORMS, REPLY_AFTER_PREPOSITION_FORMS, SECOND_AFTER_PREPOSITION_FORMS, VERIFIED_MATERIAL_FORMS, WEEK_AFTER_PREPOSITION_FORMS } from '../lib/style-dna.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const OWNER_ALERT_FALLBACK = 'طلب صاحب هذه الرسالة التواصل معك مباشرة. افتح محادثات واتساب من جهازك المرتبط.'
@@ -3479,7 +3479,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           id: 'muted-chats',
           done: true,
           detail: rows.length
-            ? `أُتيح الإيقاظ في ${rows.length} محادثة — ولن يردّ البوت فيها إلا بعد جملة الإيقاظ.`
+            ? `أُتيح الإيقاظ في ${arabicCountPhrase(rows.length, CONVERSATION_AFTER_PREPOSITION_FORMS, arabicNumber)} — ولن يردّ البوت فيها إلا بعد جملة الإيقاظ.`
             : 'لا توجد محادثة مُسكتة.',
         })
       }
@@ -3569,7 +3569,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           label: 'فهرس الموقع داخل الخادم',
           state: indexArticles >= 100 ? 'ok' : indexArticles > 0 ? 'warn' : 'fail',
           detail: indexArticles >= 100
-            ? `الفهرس حاضر: ${indexTotal} مادة منها ${indexArticles} مقالاً.`
+            ? `الفهرس حاضر: ${arabicCountPhrase(indexTotal, MATERIAL_FORMS, arabicNumber)} منها ${arabicCountPhrase(indexArticles, ARTICLE_FORMS, arabicNumber)}.`
             : indexArticles > 0
               ? `الفهرس ناقص: ${indexArticles} مقالاً فقط (المتوقّع ١٤٣ فأكثر). تحقّق من نسخ ملفات البيانات إلى الخادم.`
               : 'الفهرس فارغ داخل الخادم — سيقول البوت «ما لقيت مادة» على كل سؤال. ملفات البيانات لم تصل الصورة.',
@@ -3579,7 +3579,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           label: 'محادثات مُسكتة باستلامك اليدوي',
           state: mutedCount ? 'warn' : 'ok',
           detail: mutedCount
-            ? `${mutedCount} محادثة لن يردّ فيها البوت لأنك كتبت فيها بيدك. تعود بكتابة «موقع د. أحمد» فيها — أو بضغطة هنا.`
+            ? `${arabicCountPhrase(mutedCount, MUTED_CONVERSATION_FORMS, arabicNumber)} لن يردّ فيها البوت لأنك كتبت فيها بيدك. تعود بكتابة «موقع د. أحمد» فيها — أو بضغطة هنا.`
             : 'لا توجد محادثة مُسكتة.',
           fix: mutedCount ? { action: 'bot-return-all', label: 'أرجع البوت لكل المحادثات' } : null,
         },

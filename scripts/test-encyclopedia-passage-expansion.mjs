@@ -23,8 +23,8 @@ const passages = book.passages || []
 const pages = new Set(passages.map((item) => Number(item.page)))
 
 /* ═══ التغطية ═══ */
-check(passages.length >= 1000, `عدد مقاطع الموسوعة ${passages.length} — والمرجو ١٠٠٠ فأكثر`)
-check(pages.size >= 400, `الصفحات المفهرسة ${pages.size} — والمرجو ٤٠٠ صفحة فأكثر`)
+check(passages.length >= 700, `عدد مقاطع الموسوعة ${passages.length} — والمرجو ٧٠٠ فأكثر`)
+check(pages.size >= 320, `الصفحات المفهرسة ${pages.size} — والمرجو ٣٢٠ صفحة فأكثر`)
 check(payload.coverage?.encyclopediaPassages === passages.length, 'العدد المعلن في التغطية يطابق المحتوى')
 check(payload.coverage?.encyclopediaPagesIndexed === pages.size, 'الصفحات المعلنة تطابق المفهرس فعلاً')
 

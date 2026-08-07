@@ -99,7 +99,7 @@ export default function CV() {
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <Label>د. أحمد حسين الفيلكاوي</Label>
-            <h1 className="max-w-[900px] font-display text-[clamp(2.55rem,7vw,5.2rem)] font-bold leading-[1.08] text-ink">
+            <h1 className="max-w-[900px] font-display text-[clamp(2.55rem,7vw,5.2rem)] font-bold leading-[1.25] text-ink">
               <Reveal>كلُّ ما تعلّمتُه…</Reveal>
               <span className="mt-2 block text-accent">
                 <Reveal delay={0.12}>حاولتُ أن أحوّله إلى أثر.</Reveal>

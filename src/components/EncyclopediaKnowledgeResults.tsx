@@ -191,7 +191,7 @@ export function EncyclopediaKnowledgeResults({
               return (
                 <button key={`${moment.videoId}-${moment.startSeconds}`} type="button" onClick={() => onPlay(video, `knowledge-${moment.videoId}-${moment.startSeconds}`, exact ? moment.startSeconds : 0)} className="w-[72vw] max-w-[18rem] shrink-0 snap-start rounded-xl border border-hair bg-wash/40 p-3 text-start transition-colors hover:border-accent">
                   <div className="flex items-center gap-3">
-                    <img src={video.thumbnail} alt="" loading="lazy" className="h-16 w-24 shrink-0 rounded-lg object-cover" />
+                    <img src={video.thumbnail} alt="" loading="lazy" className="h-16 w-24 shrink-0 rounded-xl object-cover" />
                     <div className="min-w-0"><span className="text-[.6rem] font-semibold text-accent">{exact ? `شاهد من ${formatMoment(moment.startSeconds)}` : 'الفيديو الأقرب'}</span><strong className="mt-1 line-clamp-2 block text-[.68rem] leading-relaxed text-ink">{video.title}</strong></div>
                   </div>
                 </button>

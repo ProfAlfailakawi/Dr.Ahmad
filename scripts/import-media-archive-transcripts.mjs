@@ -52,7 +52,9 @@ function parseVtt(file) {
     const end = seconds(to)
     if (start < 0 || end <= start) continue
     const displayText = correct(originalText)
-    segments.push({ start, end, text: originalText, originalText, displayText, searchText: normalize(displayText) })
+    /* نسختان لا أربع: المعروض في displayText والمعياري للبحث في searchText.
+       تكرار النص الخام والنص الكامل كان يضاعف حجم الفهرس الذي تحمّله صفحة الأرشيف. */
+    segments.push({ start, end, displayText, searchText: normalize(displayText) })
   }
   return segments.sort((a, b) => a.start - b.start)
 }
@@ -67,31 +69,36 @@ for (const legacy of legacyChapters.items || []) {
   const segments = (legacy.chapters || []).map((chapter, index, list) => ({
     start: Number(chapter.at) || 0,
     end: Number(list[index + 1]?.at) || Math.max((Number(chapter.at) || 0) + 30, Number(legacy.duration) || 0),
-    text: clean(chapter.text || chapter.label),
-    originalText: clean(chapter.text || chapter.label),
     displayText: correct(chapter.text || chapter.label),
     searchText: normalize(chapter.text || chapter.label),
-  })).filter((segment) => segment.text && segment.end > segment.start)
+  })).filter((segment) => segment.displayText && segment.end > segment.start)
   const legacyText = clean(legacyTexts[legacy.videoId] || segments.map((segment) => segment.displayText).join(' '))
   output[legacy.videoId] = {
     id: legacy.videoId, available: segments.length > 0 || Boolean(legacyText), source: 'legacy', language: 'ar',
-    segments, text: legacyText, segmentCount: segments.length, indexedAt: new Date().toISOString(),
+    segments, segmentCount: segments.length, indexedAt: new Date().toISOString(),
   }
 }
 
 const files = fs.existsSync(inputDir) ? fs.readdirSync(inputDir).filter((name) => name.toLowerCase().endsWith('.vtt')) : []
+/* الفهرسة تشمل كل ملف تفريغ موجود، لا مواد media-archive.json وحدها:
+   اللقاءات المسجّلة في data.ts (وفي اللوحة) تحمل معرّف يوتيوب نفسه ولا سطر لها في الأرشيف الساكن،
+   وكانت تفريغاتها تُهمل بصمت فلا يظهر لها فهرس زمني في الموقع. */
+const idFromFile = (name) => name.replace(/\.vtt$/i, '').replace(/\s*\(\d+\)$/, '').trim()
+const byId = new Map()
+for (const name of files) {
+  const id = idFromFile(name)
+  if (id && !byId.has(id)) byId.set(id, name)
+}
 let imported = 0
-for (const item of archive.items || []) {
-  const candidates = files.filter((name) => name === `${item.id}.vtt` || name.startsWith(`${item.id} `) || name.startsWith(`${item.id}(`))
-  if (!candidates.length) continue
-  const segments = parseVtt(path.join(inputDir, candidates[0]))
+for (const [id, file] of byId) {
+  const segments = parseVtt(path.join(inputDir, file))
   if (!segments.length) continue
-  output[item.id] = {
-    id: item.id, available: true, source: 'buzz', language: 'ar', segments,
-    text: segments.map((segment) => segment.displayText).join(' '), segmentCount: segments.length,
-    sourceFile: candidates[0], indexedAt: new Date().toISOString(),
+  output[id] = {
+    id, available: true, source: 'buzz', language: 'ar', segments,
+    segmentCount: segments.length, sourceFile: file, indexedAt: new Date().toISOString(),
   }
-  item.transcriptStatus = 'transcribed'
+  const item = (archive.items || []).find((entry) => entry.id === id)
+  if (item) item.transcriptStatus = 'transcribed'
   imported += 1
 }
 archive.generatedAt = new Date().toISOString()

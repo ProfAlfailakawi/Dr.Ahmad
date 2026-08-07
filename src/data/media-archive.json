@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-06T04:21:38.260Z",
+  "generatedAt": "2026-08-07T02:02:10.619Z",
   "items": [
     {
       "id": "RYwX7g3zxF0",
@@ -14,7 +14,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "Dns9BBG-yd4",
@@ -28,7 +28,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "cJPIOVA_GvM",
@@ -42,7 +42,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "thCSMaLRPjU",
@@ -56,7 +56,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "Z-ZrwzWcRG4",
@@ -70,7 +70,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "hajw1amlNJs",
@@ -84,7 +84,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "xvJ57Y2mgww",
@@ -98,7 +98,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "z27vfV1MZo4",
@@ -112,7 +112,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "Uq_1RcIQbjc",
@@ -126,7 +126,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "k7AaueDYZxQ",
@@ -140,7 +140,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "RuazVRH7eLM",
@@ -154,7 +154,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "C0Z4T1MWyac",
@@ -168,7 +168,7 @@
       "iso": "",
       "duration": "",
       "topics": "",
-      "transcriptStatus": "pending"
+      "transcriptStatus": "transcribed"
     },
     {
       "id": "Tarbawyah-14",
@@ -182,9 +182,10 @@
       "iso": "",
       "duration": "28:00",
       "topics": "",
-      "transcriptStatus": "pending",
+      "transcriptStatus": "transcribed",
       "audioHostingRequired": true,
-      "audioFile": "Tarbawyah-14.mp3"
+      "audioFile": "Tarbawyah-14.mp3",
+      "audioUrl": "/media-audio/Tarbawyah-14.mp3"
     },
     {
       "id": "idaa",
@@ -198,9 +199,10 @@
       "iso": "",
       "duration": "15:32",
       "topics": "",
-      "transcriptStatus": "pending",
+      "transcriptStatus": "transcribed",
       "audioHostingRequired": true,
-      "audioFile": "idaa.mp3"
+      "audioFile": "idaa.mp3",
+      "audioUrl": "/media-audio/idaa.mp3"
     }
   ]
 }

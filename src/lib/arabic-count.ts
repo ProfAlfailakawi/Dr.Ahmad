@@ -174,6 +174,20 @@ export const PASSAGE_FORMS: ArabicCountForms = {
   many: 'مقطعاً',
 }
 
+export const MOMENT_MATCH_FORMS: ArabicCountForms = {
+  one: 'لحظة مطابقة',
+  two: 'لحظتان مطابقتان',
+  few: 'لحظات مطابقة',
+  many: 'لحظة مطابقة',
+}
+
+export const TIMED_SEGMENT_FORMS: ArabicCountForms = {
+  one: 'مقطع زمني',
+  two: 'مقطعان زمنيان',
+  few: 'مقاطع زمنية',
+  many: 'مقطعاً زمنياً',
+}
+
 export const AUDIO_TRIAL_FORMS: ArabicCountForms = {
   one: 'تجربة صوتية',
   two: 'تجربتان صوتيتان',

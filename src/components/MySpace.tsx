@@ -272,7 +272,7 @@ function CrossDeviceSync({ onActiveChange }: { onActiveChange?: (active: boolean
               <div className="rounded-xl border border-hair bg-canvas p-3">
                 <p className="text-[.66rem] font-semibold text-soft">أو أدخل رمزاً من جهاز آخر</p>
                 <div className="mt-2 flex items-center gap-2">
-                  <input dir="ltr" value={entry} onChange={(event) => setEntry(event.target.value)} placeholder="xxxx-xxxx-xxxx" className="w-full rounded-lg border border-hair bg-canvas px-3 py-2 font-mono text-[.82rem] text-ink outline-none focus:border-accent" />
+                  <input dir="ltr" value={entry} onChange={(event) => setEntry(event.target.value)} placeholder="xxxx-xxxx-xxxx" className="w-full rounded-xl border border-hair bg-canvas px-3 py-2 font-mono text-[.82rem] text-ink outline-none focus:border-accent" />
                   <button type="button" onClick={connect} className="shrink-0 rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-soft hover:border-accent hover:text-accent">اربط</button>
                 </div>
               </div>

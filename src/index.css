@@ -212,6 +212,22 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   .rail { touch-action: pan-y; }
 }
 
+/* حافة الشريط الأفقي: تدرّجٌ شفّاف بدل القصّ الحادّ.
+   الشريط نفسه لا يتغيّر — لا عرضه ولا لفّه يميناً ويساراً ولا محتواه — وإنما
+   تُلطَّف الحافة التي يستمرّ منها، فتقول «ثمّة المزيد» بدل أن تبدو كلمةً مبتورة.
+   في اتجاه اليمين‑لليسار يفيض المحتوى يساراً، ولو لم يفض فالحافة فارغة أصلاً
+   ولا يظهر للتدرّج أثر. */
+.rail:dir(rtl),
+.article-featured-rail:dir(rtl) {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent 100%);
+  mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent 100%);
+}
+.rail:dir(ltr),
+.article-featured-rail:dir(ltr) {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent 100%);
+}
+
 /* hero portrait: monochrome -> color on hover (signature moment) */
 .portrait img { filter: grayscale(1) contrast(1.02); }
 .portrait::after { display: none; }
@@ -619,8 +635,8 @@ html.dark .content-media .page-head {
   .article-body p {
     font-size: calc(1.06rem * var(--article-scale, 1));
     line-height: var(--article-line, 2);
-    text-align: justify;
-    text-justify: inter-word;
+    text-align: start;
+    text-justify: auto;
     text-align-last: start;
     word-spacing: normal;
     overflow-wrap: break-word;
@@ -1106,9 +1122,11 @@ html.dark .book-detail-cover {
 .human-core__words span {
   position: absolute;
   color: rgb(var(--c-accent) / .16);
-  font-size: .62rem;
+  font-size: .7rem;
   font-weight: 600;
-  letter-spacing: .2em;
+  /* كلماتٌ عربية: العربية متّصلة الحروف، والتباعد يفكّ وصلاتها. وهذا ما تنصّ
+     عليه قاعدة الموقع نفسها `:dir(rtl){letter-spacing:0}` — وكانت تفلت منها. */
+  letter-spacing: 0;
   writing-mode: vertical-rl;
   text-orientation: mixed;
   animation: human-core-float 8s ease-in-out infinite alternate;
@@ -1350,7 +1368,7 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
   }
   .human-core__micro { margin-bottom: .65rem; font-size: .56rem; letter-spacing: .12em; }
   .human-core__words { opacity: .5; }
-  .human-core__words span { font-size: .54rem; }
+  .human-core__words span { font-size: .7rem; }
   .human-core__portrait-shell { margin-top: -.2rem; }
   .human-core__portrait { margin-inline: auto; }
   .human-core__signal { margin-block: 1.15rem; }
@@ -3113,7 +3131,8 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   display: grid;
   gap: .3rem;
   color: rgb(var(--c-soft));
-  font-size: .65rem;
+  /* أرضية ‎.7rem‎ — وهي أصغر مقاسٍ مستقرّ في الموقع نفسه، لا رقمٌ مستورد. */
+  font-size: .7rem;
   font-weight: 750;
 }
 .content-research .research-index-filters select {
@@ -3693,7 +3712,7 @@ body.selection-active .floating-actions {
   .content-articles article { padding-bottom: 2rem; }
   .content-articles .article-body,
   .content-articles .article-body p,
-  .content-articles .article-body-synced .synced-paragraph { text-align: justify; text-justify: inter-word; text-align-last: start; }
+  .content-articles .article-body-synced .synced-paragraph { text-align: start; text-justify: auto; text-align-last: start; }
 }
 
 /* 2026-08 final layout audit: no artificial blank screen before the footer. */
@@ -3715,6 +3734,19 @@ body.selection-active .floating-actions {
   text-align: justify;
   text-justify: inter-word;
   text-align-last: start;
+}
+
+/* تنفيذ قرار «الأنهار البيضاء» الموثّق أعلى الملف (سطر ٦١٣): الرصف الكامل يبقى
+   على الشاشات الواسعة، ويعود المتن على الجوال إلى الرصف من اليمين وحده.
+   قِيس على عمود ٣٤٢px: المسافة بين الكلمات كانت تتمدّد ٢٫٢٤× داخل الفقرة
+   الواحدة، وعلى ٥٨٣px تتمدّد ١٫١٩× — فالعلّة في ضيق العمود لا في الرصف نفسه.
+   هذه القاعدة أخيرة في الملف لتغلب على المُحدَّد الأعلى في السطر ٣٧١٤. */
+@media (max-width: 640px) {
+  .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote) {
+    text-align: start;
+    text-justify: auto;
+    text-align-last: start;
+  }
 }
 
 

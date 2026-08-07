@@ -3,14 +3,15 @@ import transcriptPayload from '../data/media-archive-transcripts.json' with { ty
 import type { MediaRecord } from './cms'
 
 export type MediaArchiveKind = 'youtube' | 'audio' | 'television' | 'radio' | 'podcast'
-export type MediaTranscriptSegment = { start: number; end: number; text: string; displayText?: string; searchText?: string }
+/* النص المعروض في displayText والمعياري للبحث في searchText؛ text يبقى اختيارياً لتوافق الفهارس القديمة. */
+export type MediaTranscriptSegment = { start: number; end: number; text?: string; displayText?: string; searchText?: string }
 export type MediaArchiveTranscript = {
   id: string
   available: boolean
   source: 'buzz' | 'manual' | 'legacy' | 'none'
   language: string
   segments: MediaTranscriptSegment[]
-  text: string
+  text?: string
   segmentCount: number
   indexedAt?: string
 }
@@ -89,10 +90,12 @@ export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[]
     const videoId = extractMediaId(item.url || '')
     const archiveId = videoId || item.slug
     const { transcript: legacyTranscript, ...baseItem } = item
-    const transcript = archiveTranscript(archiveId)
     /* سجل اللوحة يعلو، لكنه يرث بيانات الأرشيف الساكن (ملف الصوت مثلاً) إن تركها فارغة،
        فلا تفقد المادة صوتها حين يُحرّر عنوانها أو موضوعها من اللوحة. */
     const archived = items.find((entry) => entry.slug === item.slug || entry.id === archiveId)
+    /* المواد الإذاعية لا رابط لها، فيصير archiveId هو الاسم اللطيف (radio-idaa) بينما الفهرس
+       الزمني محفوظ بمعرّف الأرشيف (idaa) — فنسقط إليه كي لا تختفي الفهرسة عن مادة مفهرسة. */
+    const transcript = archiveTranscript(archiveId) || (archived?.id ? archiveTranscript(archived.id) : null)
     return {
       ...(archived || {}),
       ...baseItem,

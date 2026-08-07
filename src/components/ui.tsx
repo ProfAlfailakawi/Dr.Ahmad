@@ -102,7 +102,7 @@ export function PageHead({ label, title, sub }: { label: string; title: string; 
       <div className="mx-auto max-w-shell">
         <FadeUp>
           <Label>{label}</Label>
-          <h1 className="font-display text-[clamp(2.4rem,6vw,4rem)] font-bold leading-[1.15] text-ink">
+          <h1 className="font-display text-[clamp(2.4rem,6vw,4rem)] font-bold leading-[1.25] text-ink">
             <Reveal>{title}</Reveal>
           </h1>
           {sub && <p className="mt-4 max-w-[620px] text-[1.05rem] font-light leading-[1.9] text-ink/80">{sub}</p>}

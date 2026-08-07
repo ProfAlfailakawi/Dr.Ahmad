@@ -6,7 +6,7 @@ const westernDigits = (value: string) => value
 
 /**
  * يحوّل وقت اللقاء المكتوب بالعربية أو الإنجليزية إلى ساعة ودقيقة.
- * يدعم: 6:30 م، ٦ م، 5 pm، pm 5، 17:00.
+ * يدعم: 6:30 م، 6 م، 5 pm، pm 5، 17:00.
  */
 export function parseEventTime(value = ''): { hour: number; minute: number } | null {
   const raw = westernDigits(value).trim().toLowerCase()

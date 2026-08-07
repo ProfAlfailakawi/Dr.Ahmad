@@ -16,7 +16,7 @@ export async function getArticleBody(slug: string): Promise<string | undefined> 
   return bodies[slug] || undefined
 }
 
-/* المتون المشكّلة (نفس النصوص بحركاتٍ كاملة، ١٤٣/١٤٣). تُحمَّل كسولاً عند طلب
+/* المتون المشكّلة (نفس النصوص بحركاتٍ كاملة، 143/143). تُحمَّل كسولاً عند طلب
    «القراءة المشكّلة» فقط، فلا تُثقل أول تحميلٍ لغير الراغبين. */
 let vocalizedPromise: Promise<BodiesMap> | null = null
 

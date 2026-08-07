@@ -145,7 +145,7 @@ function latinize(value: string) {
 }
 
 const ARABIC_INDIC = /[\u0660-\u0669\u06f0-\u06f9]/g
-/** ٢٠٢٦ ← 2026 — لاستخراج السنة فقط، ولا يمسّ نص العنوان. */
+/** 2026 ← 2026 — لاستخراج السنة فقط، ولا يمسّ نص العنوان. */
 const latinDigits = (value: string) => value.replace(ARABIC_INDIC, (digit) => String(digit.charCodeAt(0) & 0xf))
 
 const capitalize = (value: string) => (value ? value[0].toUpperCase() + value.slice(1) : '')

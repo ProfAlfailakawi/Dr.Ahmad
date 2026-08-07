@@ -32,7 +32,7 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
     if (query.trim().length < 2) return []
     const list: Step[] = []
 
-    /* ١) مقالان قصيران أولاً: مدخلٌ لا يرهق. */
+    /* 1) مقالان قصيران أولاً: مدخلٌ لا يرهق. */
     for (const article of articles.slice(0, 2)) {
       list.push({
         order: list.length + 1,
@@ -43,7 +43,7 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
       })
     }
 
-    /* ٢) لحظةٌ مسموعة: يسمع صوته في الموضوع قبل أن يتعمّق. */
+    /* 2) لحظةٌ مسموعة: يسمع صوته في الموضوع قبل أن يتعمّق. */
     const chapter = searchMediaChapters(query, 1)[0]
     if (chapter) {
       list.push({
@@ -55,7 +55,7 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
       })
     }
 
-    /* ٣) ثم المتن: أعمق الطبقات وأثقلها — يُختم بها لا يُبدأ. */
+    /* 3) ثم المتن: أعمق الطبقات وأثقلها — يُختم بها لا يُبدأ. */
     const deep = searchBookPassages(query, 2)
     const fallback = deep.length ? deep : matchBookQuotes(query, 2)
     for (const match of fallback) {

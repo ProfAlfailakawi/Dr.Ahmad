@@ -17,7 +17,7 @@ function formatMoment(seconds: number) {
   const text = hours > 0
     ? `${hours}:${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`
     : `${minutes}:${String(rest).padStart(2, '0')}`
-  return text.replace(/\d/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
+  return text
 }
 
 function fileName(value: string) {

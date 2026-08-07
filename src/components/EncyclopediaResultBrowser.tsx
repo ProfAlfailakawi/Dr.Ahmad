@@ -8,7 +8,7 @@ import { SocialIcon } from './icons'
 /**
  * استعراض كل النتائج، لا أفضلَها وحدها.
  *
- * المحرّك كان يحسب أكثر مما تعرض الواجهة، فيقرأ الزائر «٢٤ نتيجة» ولا يستطيع
+ * المحرّك كان يحسب أكثر مما تعرض الواجهة، فيقرأ الزائر «24 نتيجة» ولا يستطيع
  * بلوغ إلا أربع. هنا يُلغى هذا الفرق: العدد المعلن هو العدد القابل للاستعراض.
  *
  * الأداء: لا يُحمّل فيديو ولا شريحة — بياناتٌ وصفية فقط، وكشفٌ تدريجي بدل
@@ -34,7 +34,7 @@ function formatMoment(seconds: number) {
   const text = hours > 0
     ? `${hours}:${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`
     : `${minutes}:${String(rest).padStart(2, '0')}`
-  return text.replace(/\d/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
+  return text
 }
 
 function Row({ eyebrow, title, meta, note, icon, onOpen, thumbnail }: {

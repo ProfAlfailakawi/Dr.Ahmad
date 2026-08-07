@@ -322,8 +322,7 @@ function localGroundedAnswer(result: Answer): TwinAnswer {
 }
 
 
-const arDigits = (value: number | string) =>
-  String(value).replace(/\d/g, (digit) => "٠١٢٣٤٥٦٧٨٩"[Number(digit)]);
+const arDigits = (value: number | string) => String(value)
 
 const escapePrint = (value = "") =>
   value
@@ -439,8 +438,8 @@ export default function AskLibrary() {
     trackUsage('living_mind_completed', { results: result.hits.length + result.refs.length, durationMs: Math.round(performance.now() - openedAtRef.current) })
   }, [result])
   /* ── من متن كتبه ──
-     المختارات (٢١٤ مقطعاً) محمّلة مع الصفحة فتظهر النتيجة فوراً؛ ثم يُجلب
-     فهرس المتون الكامل (٩٣٩ مقطعاً من تسعة كتب) في الخلفية فترتقي النتيجة
+     المختارات (214 مقطعاً) محمّلة مع الصفحة فتظهر النتيجة فوراً؛ ثم يُجلب
+     فهرس المتون الكامل (939 مقطعاً من تسعة كتب) في الخلفية فترتقي النتيجة
      من «مختارات» إلى «الكتب كاملة» بلا انتظارٍ يراه الزائر. */
   const [passagesReady, setPassagesReady] = useState(false);
   useEffect(() => {

@@ -99,7 +99,7 @@ function AskVisual() {
         <span className="tho-ln" style={{ animationDelay: '1.35s', width: '62%' }} />
         <span className="tho-cite">
           <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M3.9 12a5 5 0 015-5h3v2h-3a3 3 0 000 6h3v2h-3a5 5 0 01-5-5zm4.1-1h8v2H8v-2zm7.1-4h-3v2h3a3 3 0 010 6h-3v2h3a5 5 0 000-10z" /></svg>
-          من مقالة منشورة · ٢٠٢٣
+          من مقالة منشورة · 2023
         </span>
       </div>
     </div>

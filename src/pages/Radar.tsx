@@ -34,8 +34,7 @@ type RadarItem = {
   translationStatus?: string;
 };
 
-const arNum = (n: number | string) =>
-  String(n).replace(/\d/g, (digit) => "٠١٢٣٤٥٦٧٨٩"[Number(digit)]);
+const arNum = (value: number | string) => String(value)
 
 /** رقم الأسبوع ISO + مداه للعرض */
 function weekOf(dayIso: string) {

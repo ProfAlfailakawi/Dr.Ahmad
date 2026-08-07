@@ -19,8 +19,7 @@ import {
 } from "../lib/reading-space";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const arNumber = (value: number | string) =>
-  String(value).replace(/\d/g, (digit) => "٠١٢٣٤٥٦٧٨٩"[Number(digit)]);
+const arNumber = (value: number | string) => String(value);
 const timeAgo = (at: number) => {
   if (!at) return "";
   const days = Math.floor((Date.now() - at) / 86_400_000);

@@ -7,9 +7,9 @@ import { SITE_URL, profile } from '../data'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { PROJECT_START_ISO } from '../lib/project-meta'
 
-const arDigits = (value: number | string) => String(value).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])
+const arDigits = (value: number | string) => String(value)
 
-/* رقم الأسبوع منذ أول مقال — يمنح كل رسالة ترتيباً ثابتاً («الرسالة رقم ٨٤») */
+/* رقم الأسبوع منذ أول مقال — يمنح كل رسالة ترتيباً ثابتاً («الرسالة رقم 84») */
 function weekOrdinal(iso: string, earliestIso: string) {
   const ms = new Date(iso).getTime() - new Date(earliestIso).getTime()
   return Math.max(1, Math.floor(ms / (7 * 24 * 60 * 60 * 1000)) + 1)

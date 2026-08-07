@@ -83,7 +83,7 @@ export function pickQuotableSentence(body: string): string {
 
 function scoreQuotable(sentence: string): number {
   const words = sentence.split(/\s+/).length
-  const ideal = Math.max(0, 1 - Math.abs(words - 16) / 16)   // ذروةٌ عند ١٦ كلمة
+  const ideal = Math.max(0, 1 - Math.abs(words - 16) / 16)   // ذروةٌ عند 16 كلمة
   const hasContrast = /\bلا\b|لكن|بل|ليس|رغم|مع ذلك/.test(sentence) ? 0.3 : 0
   return ideal + hasContrast
 }

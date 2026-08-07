@@ -222,7 +222,7 @@ export default function ThoughtPaths() {
     })
 
     /* زمن المسار التقريبي (مقترح معتمد): متنا المقالين على سرعة قراءة عربية
-       مريحة (٢٠٠ كلمة/د) + دقيقة لكل محطة جانبية */
+       مريحة (200 كلمة/د) + دقيقة لكل محطة جانبية */
     const wordCount = (value = '') => value.split(/\s+/).filter(Boolean).length
     const articleWords = wordCount(earliest?.body || earliest?.excerpt) + (latest && latest.slug !== earliest?.slug ? wordCount(latest.body || latest.excerpt) : 0)
     const sideStops = nodes.length - (earliest ? 1 : 0) - (latest && latest.slug !== earliest?.slug ? 1 : 0)
@@ -305,7 +305,7 @@ export default function ThoughtPaths() {
             <FadeUp key={`${active.id}-journey`}>
             <ol
               ref={journeyRef}
-              className={`thread-spine mt-14 border-r border-hair pe-7 md:pe-10${journeyShown ? ' thread-spine--drawn' : ''}`}
+              className={`thread-spine mt-14 border-r border-hair ps-7 pe-7 md:ps-10 md:pe-10${journeyShown ? ' thread-spine--drawn' : ''}`}
             >
               {journey.nodes.map((node, index) => {
                 const content = (
@@ -325,7 +325,7 @@ export default function ThoughtPaths() {
                       className="thread-station relative pb-11 last:pb-0"
                       style={{ ['--station-delay' as string]: `${Math.min(index, 7) * 110}ms` }}
                     >
-                      <span className="thread-node absolute -right-[5px] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent" />
+                      <span className="thread-node absolute -right-[33px] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent md:-right-[45px]" />
                       {node.to ? (
                         <Link to={node.to} className="group block">{content}</Link>
                       ) : node.href ? (

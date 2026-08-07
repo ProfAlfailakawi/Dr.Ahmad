@@ -1,0 +1,39 @@
+{
+  "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "d920e8888a1ebe323646978699f9cc56da4fc193311a91e8baf53ea1ca6ea468",
+  "bytes": 4660365,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 232.967,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160035,
+      "peakDb": -1.7,
+      "lufs": -16.47,
+      "lra": 2.8,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

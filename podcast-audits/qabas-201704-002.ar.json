@@ -1,0 +1,39 @@
+{
+  "slug": "qabas-201704-002",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "0db27801ab6386ab9a32bafec08a18d187e8e1ab5383ca3b44c39be6a0f6833b",
+  "bytes": 4751565,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 237.509,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160046,
+      "peakDb": -1.8,
+      "lufs": -16.47,
+      "lra": 3.4,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

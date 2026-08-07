@@ -16,7 +16,7 @@
  * في الدقّة لا كسرٌ في الصفحة. وما لم يُنشر صوته لا يدخل الفهرس أصلاً: لا سطر
  * يقود إلى صمت.
  */
-import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync, statSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -278,8 +278,33 @@ console.log(`✔ فهرس المنطوق: ${lines} جملة من ${spoken.length
       at += row.dur + GAP_SECONDS
       return row
     })
-    writeFileSync(resolve(ROOT, 'src/data/radio-schedule.json'),
-      `${JSON.stringify({ schemaVersion: 1, loop: at, gap: GAP_SECONDS, items }, null, 1)}\n`)
+    const table = `${JSON.stringify({ schemaVersion: 1, loop: at, gap: GAP_SECONDS, items }, null, 1)}\n`
+    writeFileSync(resolve(ROOT, 'src/data/radio-schedule.json'), table)
+    /* ونسخةٌ في public/: شارة «على الهواء» في الصفحة الرئيسية تجلبه بالشبكة
+       بعد سكون الصفحة، فلا يُحزم جدولُ تسعِ ساعاتٍ في حزمة الدخول. */
+    writeFileSync(resolve(ROOT, 'public/radio-schedule.json'), table)
     console.log(`✔ جدول الإذاعة: ${items.length} حلقة · حلقة اليوم ${(at / 3600).toFixed(1)} ساعة`)
   }
+}
+
+/* جُمل كل حلقة على حدة: الإذاعة والصفحة الرئيسية تعرضان الجملة المنطوقة في
+   حلقةٍ واحدة، فلا معنى لأن تجرّا الفهرس كلّه (٦٥٠KB) من أجل خمسة كيلوبايت.
+   الفهرس الجامع يبقى كما هو لبحث «الجُمل المنطوقة» وحده — فهو وحده يحتاج
+   كلّ الحلقات معاً. تُكتب في public/ لتُجلب بالشبكة عند الطلب لا أن تُحزم. */
+{
+  const dir = resolve(ROOT, 'public/spoken')
+  mkdirSync(dir, { recursive: true })
+  /* الشوارد تُمسح: حلقةٌ حُذفت من المجلس تترك ملفّها يُجلب إلى الأبد. */
+  for (const file of (existsSync(dir) ? readdirSync(dir) : [])) {
+    if (file.endsWith('.json') && !spoken.some((item) => `${item.slug}.json` === file)) {
+      rmSync(resolve(dir, file), { force: true })
+    }
+  }
+  let bytes = 0
+  for (const item of spoken) {
+    const body = `${JSON.stringify({ slug: item.slug, lines: item.lines })}\n`
+    bytes += body.length
+    writeFileSync(resolve(dir, `${item.slug}.json`), body)
+  }
+  console.log(`✔ جُمل الحلقات المفردة: ${spoken.length} ملفاً · وسطي ${Math.round(bytes / Math.max(1, spoken.length) / 1024 * 10) / 10}KB للحلقة`)
 }

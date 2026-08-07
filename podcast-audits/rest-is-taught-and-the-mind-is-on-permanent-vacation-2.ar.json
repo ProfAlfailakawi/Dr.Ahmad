@@ -1,0 +1,39 @@
+{
+  "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "722c2827ccc0d2d5cca5d58f0c43480fcf4f648e3da2dee99b3b015ed3cfc18f",
+  "bytes": 5036205,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 251.76,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160031,
+      "peakDb": -1.37,
+      "lufs": -16.46,
+      "lra": 3.1,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

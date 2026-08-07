@@ -1,0 +1,39 @@
+{
+  "slug": "do-we-contain-or-raise-2",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "7399be5b9965c0cc413fa8662abc91557bcfd13fdb69ee2c7ae8f38506c92445",
+  "bytes": 4933485,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 246.623,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160033,
+      "peakDb": -1.72,
+      "lufs": -16.48,
+      "lra": 3,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

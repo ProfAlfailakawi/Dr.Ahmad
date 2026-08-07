@@ -1,0 +1,39 @@
+{
+  "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "4fb1ed047edb2737b4a7783e8a74fa246972d9c4b0dc384ab3a437e7070ae61c",
+  "bytes": 4687725,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 234.313,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160050,
+      "peakDb": -1.65,
+      "lufs": -16.47,
+      "lra": 3.2,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

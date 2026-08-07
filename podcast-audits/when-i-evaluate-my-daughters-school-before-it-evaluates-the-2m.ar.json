@@ -1,0 +1,39 @@
+{
+  "slug": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "3906375290509337d31c69e00b6b619417a737511f78158846b5aa90091d886c",
+  "bytes": 4715085,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 235.699,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160037,
+      "peakDb": -1.6,
+      "lufs": -16.47,
+      "lra": 3.1,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

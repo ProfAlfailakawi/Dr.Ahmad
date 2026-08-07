@@ -1,0 +1,39 @@
+{
+  "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "5a0b209389004efc59d43f04eefc9ddd782bd2bd4a2cfe3ddaf983fea8437612",
+  "bytes": 4481325,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 224.005,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160043,
+      "peakDb": -1.8,
+      "lufs": -16.47,
+      "lra": 3.3,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

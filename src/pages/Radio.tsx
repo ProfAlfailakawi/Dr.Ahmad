@@ -41,28 +41,27 @@ const kuwaitClock = (d: Date) =>
 
 const cleanLine = (t: string) => t.replace(/⏸/g, '').replace(/\s*~~\s*/g, ' ').replace(/\s+/g, ' ').trim()
 
-/* النصوص تسكن الموقع نفسه — فهرس المنطوق (٥٬٢٦٩ جملة بثوانيها ومتحدّثيها)
-   يُحمَّل حزمةً كسولة من الأصل ذاته: لا طلب خارجيّاً، ولا CORS، ولا انتظار. */
-type SpokenEpisode = { slug: string; lines: [number, number, string][] }
-let spokenReady: Promise<Map<string, Utterance[]>> | null = null
-function loadSpoken(): Promise<Map<string, Utterance[]>> {
-  if (!spokenReady) {
-    spokenReady = import('../data/spoken-index.json').then((mod) => {
-      const episodes = ((mod.default || mod) as unknown as { episodes?: SpokenEpisode[] }).episodes || []
-      const map = new Map<string, Utterance[]>()
-      for (const ep of episodes) {
-        const list: Utterance[] = ep.lines.map((row, i) => ({
-          s: row[0],
-          e: ep.lines[i + 1] ? ep.lines[i + 1][0] : row[0] + 8,
-          sp: row[1] === 1 ? 'نورة' : 'فهد',
-          t: cleanLine(row[2]),
-        }))
-        map.set(ep.slug, list)
-      }
-      return map
-    })
+/* النصوص تسكن الموقع نفسه — لا طلب خارجيّاً ولا CORS. وتُجلب حلقةً حلقة
+   (‎~٢٫٧KB) لا فهرساً جامعاً (٦٥٢KB): المستمع يسمع حلقةً واحدة في اللحظة،
+   فلا يدفع ثمن مئةٍ وأربعين لا تُقال الآن. والحلقة التالية تُجهَّز مسبقاً
+   فلا تُدرَك الفجوة عند الانتقال. */
+type SpokenFile = { slug: string; lines: [number, number, string][] }
+const spokenCache = new Map<string, Promise<Utterance[]>>()
+function loadEpisode(slug: string): Promise<Utterance[]> {
+  let ready = spokenCache.get(slug)
+  if (!ready) {
+    ready = fetch(`/spoken/${encodeURIComponent(slug)}.json`)
+      .then((res) => (res.ok ? res.json() : { lines: [] }))
+      .then((file: SpokenFile) => (file.lines || []).map((row, i, all) => ({
+        s: row[0],
+        e: all[i + 1] ? all[i + 1][0] : row[0] + 8,
+        sp: row[1] === 1 ? 'نورة' : 'فهد',
+        t: cleanLine(row[2]),
+      })))
+      .catch(() => [] as Utterance[])
+    spokenCache.set(slug, ready)
   }
-  return spokenReady
+  return ready
 }
 
 /* حبيباتٌ خفيفة تمنع الأسطح المسطّحة من أن تبدو رقميّةً باردة */
@@ -115,12 +114,15 @@ export default function Radio() {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  /* نصّ الحلقة الحالية — من فهرس المنطوق المحلي، قبل التشغيل وبعده */
+  /* نصّ الحلقة الحالية — قبل التشغيل وبعده. والتالية تُجهَّز في الخلفية كي
+     لا تُرى الصفحة فارغةً في لحظة الانتقال بين حلقتين. */
   useEffect(() => {
     let alive = true
-    loadSpoken().then((map) => { if (alive) setUtterances(map.get(pos.item.slug) || []) })
+    loadEpisode(pos.item.slug).then((list) => { if (alive) setUtterances(list) })
+    const next = ITEMS[(pos.idx + 1) % ITEMS.length]
+    if (next && next.slug !== pos.item.slug) loadEpisode(next.slug)
     return () => { alive = false }
-  }, [pos.item.slug])
+  }, [pos.item.slug, pos.idx])
 
   /* نبض الصفحة: كل ثانية يُعاد حساب الموضع من ساعة الكويت */
   useEffect(() => {

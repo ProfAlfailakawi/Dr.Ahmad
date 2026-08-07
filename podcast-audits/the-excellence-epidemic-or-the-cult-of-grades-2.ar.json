@@ -1,0 +1,39 @@
+{
+  "slug": "the-excellence-epidemic-or-the-cult-of-grades-2",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "050c3ec3f7e11fbb7e5733daa8704cf414062b0df5e77c7b85bbbfb4e8d3a735",
+  "bytes": 4740045,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 236.95,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160035,
+      "peakDb": -1.79,
+      "lufs": -16.48,
+      "lra": 3,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

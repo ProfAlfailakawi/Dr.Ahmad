@@ -1,0 +1,39 @@
+{
+  "slug": "the-classroom-that-fears-mistakesarabic",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "9e22cf7e1cbd85ec25fc27d45868059caed93a4aeb7e5fdec59ba98d00c8b954",
+  "bytes": 4589325,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 229.411979,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160037,
+      "peakDb": -1.73,
+      "lufs": -16.48,
+      "lra": 2.8,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

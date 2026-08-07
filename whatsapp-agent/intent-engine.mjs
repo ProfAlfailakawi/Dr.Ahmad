@@ -146,12 +146,16 @@ const patterns = [
   /* اللقاءات والسيرة والمختارات: يسأل عنها الناس كما يسألون عن المقالات،
      وكان البوت لا يعرفها إطلاقاً فيردّ ببحثٍ عشوائي أو يصمت. */
   [INTENTS.UPCOMING_EVENTS, [/(لقاءات|محاضرات|فعاليات|مشاركات|ندوات|مؤتمرات)\s*(ال)?(قادمه|القادمه|الجايه)?|(وين|متي)\s*(بتكون|راح تكون)?\s*(محاضرتك|لقاءك|ندوتك)/, 0.93]],
-  [INTENTS.ABOUT_DOCTOR, [/(السيره|سيره ذاتيه|سيرتك|من هو|منو|تعريف|نبذه عن|هويه|cv)\s*(ال)?(د|دكتور)?\s*(احمد)?/, 0.92]],
+  [INTENTS.ABOUT_DOCTOR, [/(السيره|سيره ذاتيه|سيرتك|من هو|مين هو|مين|منو|تعريف|نبذه عن|هويه|cv)\s*(ال)?(د|دكتور)?\s*(احمد)?/, 0.92]],
   [INTENTS.CURATED_PICKS, [/(مختارات|المختارات|اختياراتك|ترشيحات|ماذا تقرا|شنو تقرا)/, 0.92]],
   /* داخل الجلسة يريد الناس المزيد والمقارنة والتنقّل — لا أوامر جافّة فقط */
   [INTENTS.MORE_LIKE_THIS, [/^(?:(?:عطني|اعطني|ابي|اريد)\s+)?(?:في\s*)?(غيره|غيرها|زدني|كمان|بعد|المزيد|اكثر|شي ثاني|شيء ثاني|في بعد|واحد ثاني|ماده ثانيه)/, 0.93],
     /* «شنو عنده بعد الدكتور؟» «عنده بعد؟» «شنو بعد؟» — طلب المزيد بصياغةٍ سؤالية */
-    [/(شنو|وش|ايش)\s*(عنده|عندكم|فيه|بعد)\s*(بعد|شي|ثاني|غيره)?|عنده\s*(شي\s*)?بعد|بعده\s*شي/, 0.92],
+    /* كلمة «المزيد» كانت اختياريةً في آخر النمط، فابتلع كلَّ سؤالٍ عن موضوع:
+       «شنو عنده عن الغش» يُقرأ «زدني» فيردّ بمختاراتٍ لا صلة لها بالغش —
+       والمقال موجودٌ بعنوانه. الآن لا يُقرأ طلباً للمزيد إلا بلفظٍ صريح،
+       و«عن …» تُخرجه صراحةً فيمضي إلى البحث في موضوعه. */
+    [/(?!.*\bعن\s)(?:(شنو|وش|ايش)\s*(عنده|عندكم|فيه)\s*(بعد|شي ثاني|ثاني|غيره)|(شنو|وش|ايش)\s*بعد|عنده\s*(شي\s*)?بعد|بعده\s*شي)/, 0.92],
     /* «وين ال٨؟» «وين الباقي؟» «ورني البقية» «وينهم» — بعد أن يقول البوت «عاد
        ٨ مرات» ويعرض الطرفين، يسأل السائل عن البقية. هي «زدني» بصياغةٍ أخرى:
        تُكمِل من الصفّ المحفوظ نفسه لا من بحثٍ جديد. و«وين المصدر» و«وين محاضرتك»
@@ -837,6 +841,11 @@ ${dialogue}` : ''}`,
   }
 }
 
+/* داخل علامتَي التنصيص لا تُعرض الأسطر الفارغة كما هي في المتن — كانت تشقّ
+   الاقتباس فقرتين، فتبدو الرسالة مكسورة ويُعرِّض المُجمِّل شطره الأخير وحده.
+   النصّ المحفوظ دليلاً يبقى كما نُسخ من المتن؛ والتهذيب للعرض وحده. */
+const displayQuote = (value) => String(value || '').replace(/\s*\n+\s*/g, ' ').trim()
+
 function oneMinuteReply(db, session, selectedItem = null) {
   const selected = selectedItem || (session?.content_id ? findContent(db, session.content_id) : null)
   const item = selected || shortReadableContent(db, 1)[0] || latestContent(db, 'article', 1)[0]
@@ -846,7 +855,7 @@ function oneMinuteReply(db, session, selectedItem = null) {
   return {
     text: `قراءة حرفية في أقل من دقيقة من الموقع:
 ${item.title}${item.date ? ` · ${item.date}` : ''}
-«${summary}»
+«${displayQuote(summary)}»
 ${item.url}`,
     contentId: item.id,
     contextItems: [item.id],
@@ -976,12 +985,7 @@ function welcomeReply(db, jid, at = new Date(), mood = 'neutral') {
     }
   }
   const extract = extractVerbatimAtSpeed(item, '30s')
-  /* داخل علامتَي التنصيص لا تُعرض الأسطر الفارغة كما هي في المتن — كانت تشقّ
-     الاقتباس فقرتين فتبدو رسالة الإيقاظ مكسورة. النصّ المحفوظ دليلاً يبقى
-     كما نُسخ من المتن؛ والتهذيب للعرض وحده. */
-  const quote = String(extract?.text || item.excerpt || contentSummary(item, 1) || '')
-    .replace(/\s*\n+\s*/g, ' ')
-    .trim()
+  const quote = displayQuote(extract?.text || item.excerpt || contentSummary(item, 1))
   return {
     text: `${greet} · ${MSG.welcomeLine}.
 
@@ -1050,7 +1054,7 @@ ${doorway?.text ? `«${doorway.text}»\n` : ''}${item.url}${audio.length ? `\n\n
   return {
     text: `${label}:
 ${item.title}${item.date ? ` · ${item.date}` : ''}
-«${extract.text}»
+«${speed === '2min' ? extract.text : displayQuote(extract.text)}»
 ${item.url}`,
     contentId: item.id,
     contextItems: [item.id],
@@ -1094,7 +1098,7 @@ function sourceProofReply(item) {
   return {
     text: `المصدر المنشور:
 ${item.title}${item.date ? ` · ${item.date}` : ''}
-${extract?.text ? `«${extract.text}»\n` : ''}${item.url}`,
+${extract?.text ? `«${displayQuote(extract.text)}»\n` : ''}${item.url}`,
     contentId: item.id,
     contextItems: [item.id],
     seenContentIds: [item.id],
@@ -1124,7 +1128,7 @@ function challengeReply(db, jid) {
   if (!challenge) return { text: 'لا تتوافر الآن ثلاثة عناوين موثقة لبناء التحدّي.' }
   return {
     text: `تحدّي ١٥ ثانية — من أي مقال هذا النص؟
-«${challenge.quote}»
+«${displayQuote(challenge.quote)}»
 
 ${challenge.options.map((option, index) => `${index + 1}. ${option.title}`).join('\n')}
 
@@ -1449,7 +1453,7 @@ function summaryReply(db, item) {
   if (!distilled) return contentReply('المادة المنشورة', item)
   const note = distilled.whole ? 'هي مختصرةٌ أصلاً، وهذا لبّها بنصّه:' : 'الزبدة في جملةٍ من نصّه:'
   return {
-    text: `${note}\n${item.title}${item.date ? ` · ${item.date}` : ''}\n«${distilled.text}»\n${item.url}`,
+    text: `${note}\n${item.title}${item.date ? ` · ${item.date}` : ''}\n«${displayQuote(distilled.text)}»\n${item.url}`,
     contentId: item.id,
     contextItems: [item.id],
     seenContentIds: [item.id],
@@ -1587,9 +1591,19 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       }
       return { ...classification, ...contentReply('اخترت لك من الأرشيف', unseen, '\nهذه مادة لم تُرسل لك من قبل.') }
     }
-    case INTENTS.ONE_MINUTE:
-    case INTENTS.SUMMARY: {
+    case INTENTS.ONE_MINUTE: {
       return { ...classification, ...oneMinuteReply(db, session, selection.item), preserveContextList: Boolean(selection.item) }
+    }
+    /* «لخّص» كان يُوصل إلى ردّ الدقيقة، وردّ الدقيقة يقصّ رأس المتن — وهو بعينه
+       ما فُتحت به بوابة اليوم. فيرى السائل نصّاً يظنّه المادة معادةً لا ملخّصاً،
+       ودالّة التلخيص الحقيقي (summaryReply) لا تُستدعى إلا من الطلب المركّب.
+       الآن للتلخيص بابه: أكثفُ عبارةٍ من كلام الدكتور، منسوخةً حرفاً بحرف. */
+    case INTENTS.SUMMARY: {
+      const target = selection.item
+        || (session?.content_id ? findContent(db, session.content_id) : null)
+        || shortReadableContent(db, 1)[0]
+        || latestContent(db, 'article', 1)[0]
+      return { ...classification, ...summaryReply(db, target), preserveContextList: Boolean(selection.item) }
     }
     /* الترحيب: أول لقاءٍ بين الناس والخدمة. يعرض المدى كلَّه — لا المقالات
        وحدها — لأن من يكتب كلمة الدخول قد يريد بحثاً أو كتاباً أو مقارنة. */
@@ -1724,7 +1738,7 @@ ${SITE_URL}/research` }
     case INTENTS.QUOTE_CARD: {
       const item = selection.item || latestContent(db, 'article', 1)[0]
       const quote = String(item?.body || item?.excerpt || '').split(/(?<=[.!؟])/u).map((part) => part.trim()).find((part) => part.length >= 25 && part.length <= 180) || item?.excerpt
-      return item && quote ? { ...classification, text: `«${quote}»\n— ${item.title}\n${item.url}`, contentId: item.id, contextItems: [item.id], seenContentIds: [item.id], evidenceQuotes: [quote], quote, preserveContextList: Boolean(selection.item) } : { ...classification, text: 'لا أملك اقتباساً موثقاً مناسباً بعد.' }
+      return item && quote ? { ...classification, text: `«${displayQuote(quote)}»\n— ${item.title}\n${item.url}`, contentId: item.id, contextItems: [item.id], seenContentIds: [item.id], evidenceQuotes: [quote], quote, preserveContextList: Boolean(selection.item) } : { ...classification, text: 'لا أملك اقتباساً موثقاً مناسباً بعد.' }
     }
     case INTENTS.HELP:
     case INTENTS.SHOW_OPTIONS:

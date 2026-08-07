@@ -504,6 +504,11 @@ export default function Atlas() {
                           className="pointer-events-none fill-none stroke-accent"
                           strokeOpacity={isActive ? 0.55 : 0.24}
                           strokeWidth={isActive ? 2 : 1.25}
+                          /* الهالة تُحرَّك بمصفوفة مفاتيح، ومصفوفات المفاتيح لا تُحَلّ عند أول رسم؛
+                             فما لم نُعطِ Motion قيمةً ابتدائية لكل مفتاح يحرّكه، يكتب الإطار الأول
+                             r="undefined" فوق قيمة React (نصف قطر صفر ورسالة خطأ في الطرفية).
+                             القيمة هنا هي أول مفتاح بعينه، فلا يتغيّر شيء مما يراه الزائر. */
+                          initial={reduce ? false : { r: star.r + 8, opacity: 0.32 }}
                           animate={reduce ? undefined : { r: [star.r + 8, star.r + (isActive ? 14 : 12), star.r + 8], opacity: [0.32, 0.12, 0.32] }}
                           transition={{ duration: isActive ? 2.8 : 4.2, repeat: Infinity, ease: EASE }}
                         />
@@ -618,6 +623,8 @@ export default function Atlas() {
                           className="pointer-events-none fill-none stroke-accent"
                           strokeOpacity={isActive ? 0.42 : 0.22}
                           strokeWidth={isActive ? 1.4 : 1.05}
+                          /* القيمة الابتدائية لازمة هنا كما في نسخة الجوال أعلاه. */
+                          initial={reduce ? false : { r: star.r + 7, opacity: 0.3 }}
                           animate={reduce ? undefined : { r: [star.r + 7, star.r + (isActive ? 13 : 11), star.r + 7], opacity: [0.3, 0.1, 0.3] }}
                           transition={{ duration: isActive ? 2.8 : 4.4, repeat: Infinity, ease: EASE }}
                         />

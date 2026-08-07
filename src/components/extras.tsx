@@ -499,17 +499,38 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     return () => window.removeEventListener('reader:theme-changed', syncFromReader)
   }, [])
 
-  const toggle = () => {
+  const toggle = (event: { currentTarget: HTMLButtonElement }) => {
     const on = !dark
-    setDark(on)
-    document.documentElement.classList.toggle('dark', on)
-    document.documentElement.classList.remove('reader-paper')
-    try { localStorage.setItem('theme', on ? 'dark' : 'light') } catch { /* noop */ }
-    try {
-      const raw = localStorage.getItem('reader:preferences:v2')
-      if (raw) localStorage.setItem('reader:preferences:v2', JSON.stringify({ ...JSON.parse(raw), theme: on ? 'dark' : 'light' }))
-    } catch { /* noop */ }
-    window.dispatchEvent(new CustomEvent('reader:preferences-changed'))
+    const root = document.documentElement
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = rect.left + rect.width / 2
+    const y = rect.top + rect.height / 2
+    const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
+    root.style.setProperty('--theme-x', `${x}px`)
+    root.style.setProperty('--theme-y', `${y}px`)
+    root.style.setProperty('--theme-radius', `${Math.ceil(radius)}px`)
+
+    const apply = () => {
+      setDark(on)
+      root.classList.toggle('dark', on)
+      root.classList.remove('reader-paper')
+      try { localStorage.setItem('theme', on ? 'dark' : 'light') } catch { /* noop */ }
+      try {
+        const raw = localStorage.getItem('reader:preferences:v2')
+        if (raw) localStorage.setItem('reader:preferences:v2', JSON.stringify({ ...JSON.parse(raw), theme: on ? 'dark' : 'light' }))
+      } catch { /* noop */ }
+      window.dispatchEvent(new CustomEvent('reader:preferences-changed'))
+    }
+
+    /* إن كان المتصفح يدعم View Transitions ينتشر الوضع الجديد من موضع الزر
+       نفسه. لا طبقة إضافية ولا عنصرٌ جديد؛ وفي reduced-motion يبقى التبديل فورياً. */
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const transitionDocument = document as Document & { startViewTransition?: (update: () => void) => { finished: Promise<unknown> } }
+    if (!reduced && transitionDocument.startViewTransition) {
+      root.dataset.themeTransition = 'radial'
+      const transition = transitionDocument.startViewTransition(apply)
+      void transition.finished.finally(() => { delete root.dataset.themeTransition })
+    } else apply()
   }
 
   return (

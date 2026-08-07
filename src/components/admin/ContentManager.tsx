@@ -19,6 +19,7 @@ import { buildMultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
 import { advanceCascadeCorrection, buildCascadeCorrectionCase, cascadeCorrectionId, cascadeCorrectionSummary, correctionBlocksRelease, correctionReadyForPassport, type CascadeCorrectionCase, type CascadeCorrectionEvent } from '../../lib/cascade-correction.mjs'
 import { buildImpactMirror } from '../../lib/impact-mirror.mjs'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, RELATED_PAPER_FORMS, SENTENCE_WITH_ECHO_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
+import { manageArticleAudio } from '../../lib/audio-management'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -1692,6 +1693,16 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       const data = cleanData(kind, preparedForm)
       const slug = data.slug
       if (!slug) throw new Error('الرابط المختصر مطلوب')
+      /* توليد القراءة حدثٌ تابعٌ لتغيّر المادة، لا مؤقّتٌ يوقظ GitHub كل ساعة.
+         المقال الجديد/المجدول أو تعديلُ النص المنشور يطلق تشغيلةً واحدة فقط؛
+         المسودة لا تستهلك صوتاً قبل أن تصبح مادةً جاهزة للنشر. */
+      const articleNeedsFreshReading = kind === 'article'
+        && data.status !== 'draft'
+        && (!current
+          || String(current.status || 'published') === 'draft'
+          || !same(data.title, current.title)
+          || !same(data.body, current.body)
+          || !same(data.bodyVocalized, current.bodyVocalized))
 
       if (kind === 'article') {
         const readiness = publishReadiness('article', preparedForm)
@@ -1899,6 +1910,19 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
               updatedAt: serverTimestamp(),
             }, { merge: true })
           }))
+        }
+      }
+      if (articleNeedsFreshReading) {
+        try {
+          const app = await getFirebaseApp()
+          if (app) {
+            const { getAuth } = await import('firebase/auth')
+            await manageArticleAudio({ user: getAuth(app).currentUser, slug, mode: 'reading', action: 'regenerate' })
+          }
+        } catch (reason) {
+          /* نشر المقال لا يفشل بسبب قناة الإنتاج؛ المشرف الصوتي سيظهر حالة الطلب
+             عند نجاحه، ويمكن إعادة التوليد يدوياً من الأداة الموجودة أصلاً. */
+          console.warn('تعذّر إطلاق توليد القراءة للمقال المحفوظ.', reason)
         }
       }
       setCurrent(undefined)

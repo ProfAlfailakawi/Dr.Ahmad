@@ -41,6 +41,28 @@ const kuwaitClock = (d: Date) =>
 
 const cleanLine = (t: string) => t.replace(/⏸/g, '').replace(/\s*~~\s*/g, ' ').replace(/\s+/g, ' ').trim()
 
+const nameDiacritics = /[\u064B-\u065F\u0670]/g
+const bareNameKey = (value: string) => value
+  .replace(nameDiacritics, '')
+  .replace(/[إأآٱ]/g, 'ا')
+  .replace(/ى/g, 'ي')
+  .replace(/[^\p{L}]/gu, '')
+function nameWithoutTashkeel(value: string) {
+  const tokens = value.split(/(\s+)/)
+  const lexical = tokens.map((token, index) => ({ index, key: bareNameKey(token) })).filter((item) => item.key)
+  for (let cursor = 0; cursor < lexical.length; cursor += 1) {
+    if (lexical[cursor].key !== 'احمد') continue
+    const second = lexical[cursor + 1]
+    const third = lexical[cursor + 2]
+    const isFullName = second?.key === 'حسين' && third?.key === 'الفيلكاوي'
+    const isShortName = second?.key === 'الفيلكاوي'
+    if (!isFullName && !isShortName) continue
+    const targets = isFullName ? [lexical[cursor], second, third] : [lexical[cursor], second]
+    for (const target of targets) tokens[target.index] = tokens[target.index].replace(nameDiacritics, '')
+  }
+  return tokens.join('')
+}
+
 /* النصوص تسكن الموقع نفسه — لا طلب خارجيّاً ولا CORS. وتُجلب حلقةً حلقة
    (‎~٢٫٧KB) لا فهرساً جامعاً (٦٥٢KB): المستمع يسمع حلقةً واحدة في اللحظة،
    فلا يدفع ثمن مئةٍ وأربعين لا تُقال الآن. والحلقة التالية تُجهَّز مسبقاً
@@ -276,7 +298,7 @@ export default function Radio() {
           {/* بلا أسماء — اللون وحده يميّز الصوتين */}
           <div className="radio-who">{betweenEpisodes ? 'بعد لحظات' : ''}</div>
           <p ref={lineRef} className="radio-line">
-            {betweenEpisodes ? ITEMS[(pos.idx + 1) % ITEMS.length].title : (line.t || '…')}
+            {betweenEpisodes ? ITEMS[(pos.idx + 1) % ITEMS.length].title : nameWithoutTashkeel(line.t || '…')}
           </p>
           <div className="radio-rhythm" aria-hidden="true">{ticks}</div>
           <div className="radio-meta">

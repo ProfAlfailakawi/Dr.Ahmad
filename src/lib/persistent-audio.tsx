@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { trackListen } from './views'
 import { storeLastAudio } from './reading-space'
+import { SocialIcon } from '../components/icons'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 const clock = (seconds: number) => {
@@ -27,6 +28,9 @@ export type PersistentTrack = {
   /* بدايةٌ مقصودة بالثانية (الدخول من سؤالٍ بعينه). تغلب الموضعَ المحفوظ
      عمداً: من ضغط سؤالاً يريد سماعه هو، لا العودة إلى حيث توقّف أمس. */
   startAt?: number
+  /* فتح مادة جديدة من بطاقة/قائمة يبدأها من أولها عمداً. الاستئناف يبقى
+     متاحاً فقط للمسارات التي تطلبه صراحةً (مثل «افتح المجلس»). */
+  startFresh?: boolean
 }
 
 type Status = 'idle' | 'loading' | 'ready' | 'error'
@@ -55,6 +59,9 @@ const AudioContext = createContext<AudioApi | null>(null)
 
 export function PersistentAudioProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null)
+  /* المسار الحالي يُحدَّث قبل تبديل src؛ يمنع metadata للمصدر الجديد من
+     قراءة موضع المصدر السابق في الفاصل القصير قبل دورة React التالية. */
+  const trackRef = useRef<PersistentTrack | null>(null)
   const milestones = useRef<Set<number>>(new Set())
   const [state, setState] = useState<AudioState>({
     track: null,
@@ -71,34 +78,40 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
     if (!el) return
 
     const savePosition = () => {
-      if (!state.track || !Number.isFinite(el.currentTime)) return
-      try { localStorage.setItem(`audio:pos:${state.track.id}`, String(el.currentTime)) } catch { /* noop */ }
-      storeLastAudio(state.track, el.currentTime, Number.isFinite(el.duration) ? el.duration : state.duration)
+      const track = trackRef.current
+      if (!track || !Number.isFinite(el.currentTime)) return
+      try { localStorage.setItem(`audio:pos:${track.id}`, String(el.currentTime)) } catch { /* noop */ }
+      storeLastAudio(track, el.currentTime, Number.isFinite(el.duration) ? el.duration : state.duration)
     }
     const onTime = () => {
       setState((prev) => ({ ...prev, current: el.currentTime || 0 }))
-      if (state.track && el.duration && Number.isFinite(el.duration)) {
+      const track = trackRef.current
+      if (track && el.duration && Number.isFinite(el.duration)) {
         const ratio = el.currentTime / el.duration
         for (const m of [25, 50, 75]) {
           if (ratio >= m / 100 && !milestones.current.has(m)) {
             milestones.current.add(m)
-            trackListen(state.track.path, state.track.title, m, state.track.label)
+            trackListen(track.path, track.title, m, track.label)
           }
         }
       }
     }
     const onMeta = () => {
       setState((prev) => ({ ...prev, duration: Number.isFinite(el.duration) ? el.duration : 0, status: 'ready', error: '' }))
-      if (state.track) {
+      const track = trackRef.current
+      if (track) {
         /* البداية المقصودة تغلب الموضع المحفوظ: من دخل من سؤالٍ بعينه يريد
            سماعه، لا العودة إلى حيث توقّف أمس. وكان الاستئناف يسبق القفز
            فيبتلعه — فيبدأ الصوت في غير موضع السؤال. */
-        const intended = Number(state.track.startAt)
+        const intended = Number(track.startAt)
         if (Number.isFinite(intended) && intended > 1 && intended < (el.duration || 0) - 2) {
           el.currentTime = intended
+        } else if (track.startFresh) {
+          /* لا يرث الحوار الجديد موضع الحوار السابق ولا موضعاً قديماً محفوظاً. */
+          el.currentTime = 0
         } else {
           try {
-            const saved = Number(localStorage.getItem(`audio:pos:${state.track.id}`) || 0)
+            const saved = Number(localStorage.getItem(`audio:pos:${track.id}`) || 0)
             if (saved > 5 && saved < (el.duration || 0) - 5) el.currentTime = saved
           } catch { /* noop */ }
         }
@@ -108,18 +121,20 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
     const onLoad = () => setState((prev) => ({ ...prev, status: 'loading', error: '' }))
     const onWaiting = () => { if (!el.paused) setState((prev) => ({ ...prev, status: 'loading' })) }
     const onPlaying = () => {
-      if (state.track) storeLastAudio(state.track, el.currentTime || 0, Number.isFinite(el.duration) ? el.duration : 0)
+      const track = trackRef.current
+      if (track) storeLastAudio(track, el.currentTime || 0, Number.isFinite(el.duration) ? el.duration : 0)
       setState((prev) => ({ ...prev, playing: true, status: 'ready', error: '' }))
     }
     const onPause = () => { savePosition(); setState((prev) => ({ ...prev, playing: false })) }
     const onEnd = () => {
       savePosition()
-      const next = state.track?.next
+      const next = trackRef.current?.next
       if (next) {
         /* المجلس يمشي: لا نعيد بناء المشغّل ولا ننقل الزائر، نبدّل المصدر
            ونواصل. وإن منع المتصفّح التشغيل التلقائي توقّفنا بهدوء بلا خطأ
            أحمر — فالمنع قرارُ متصفّحٍ لا عطبٌ في الموقع. */
         milestones.current = new Set()
+        trackRef.current = next
         setState((prev) => ({ ...prev, track: next, current: 0, duration: 0, playing: false, status: 'loading', error: '' }))
         el.src = next.src
         el.playbackRate = state.speed
@@ -168,8 +183,12 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
       if (!el) return
       const same = state.track?.src === track.src
       milestones.current = same ? milestones.current : new Set()
+      trackRef.current = track
       if (!same) {
         setState((prev) => ({ ...prev, track, current: 0, duration: 0, status: 'loading', error: '' }))
+        /* إعادة الضبط هنا أيضاً تغلق نافذةً صغيرةً بين تبديل src ووصول metadata
+           كانت بعض المتصفحات تعرض خلالها زمن الملف السابق على الملف الجديد. */
+        try { el.currentTime = 0 } catch { /* metadata لم تصل بعد */ }
         el.src = track.src
         el.playbackRate = state.speed
         el.load()
@@ -193,6 +212,7 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
     const pause = () => audioRef.current?.pause()
     const close = () => {
       const el = audioRef.current
+      trackRef.current = null
       if (el) {
         el.pause()
         el.removeAttribute('src')
@@ -256,7 +276,7 @@ export function PersistentAudioDock() {
       <div className="persistent-audio-dock fixed inset-x-3 bottom-[calc(5.7rem+env(safe-area-inset-bottom))] z-[275] mx-auto max-w-[520px] rounded-2xl border border-hair bg-canvas/[.97] p-2.5 shadow-[0_22px_65px_-34px_rgba(21,22,26,.6)] backdrop-blur md:bottom-5 md:left-5 md:right-auto md:mx-0 md:w-[min(420px,calc(100vw-2.5rem))]">
         <div className="flex items-center gap-2.5">
           <button onClick={() => void audio.toggle()} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white" aria-label={audio.playing ? 'إيقاف مؤقت' : 'تشغيل'}>
-            {audio.playing ? '❚❚' : '▶'}
+            {audio.playing ? <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2.5" width="3.2" height="11" rx="1"/><rect x="9.8" y="2.5" width="3.2" height="11" rx="1"/></svg> : <SocialIcon name="Play" size={14} />}
           </button>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
@@ -269,14 +289,14 @@ export function PersistentAudioDock() {
                 const rect = event.currentTarget.getBoundingClientRect()
                 audio.seekTo(((rect.right - event.clientX) / rect.width) * audio.duration)
               }}
-              className="mt-1.5 block h-1.5 w-full overflow-hidden rounded-full bg-wash"
+              className={`audio-wave-progress mt-1.5 block h-4 w-full overflow-hidden rounded-md${audio.playing ? ' is-playing' : ''}`}
               aria-label="شريط تقدم الصوت"
             >
-              <span className="block h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
+              <span className="audio-wave-fill block h-full" style={{ width: `${percent}%` }} />
             </button>
           </div>
           <button onClick={audio.cycleSpeed} className="hidden rounded-full border border-hair px-2 py-1 text-[.68rem] text-soft sm:inline-flex">{audio.speed}x</button>
-          <button onClick={audio.close} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft" aria-label="إغلاق المشغل">×</button>
+          <button onClick={audio.close} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft" aria-label="إغلاق المشغل"><SocialIcon name="Close" size={12} /></button>
         </div>
       </div>
     )
@@ -286,7 +306,7 @@ export function PersistentAudioDock() {
     <div className="reader-hide-focus fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[230] mx-auto max-w-3xl rounded-2xl border border-hair bg-canvas/95 p-3 shadow-[0_24px_70px_-34px_rgba(21,22,26,.55)] backdrop-blur md:bottom-5">
       <div className="flex items-center gap-3">
         <button onClick={() => void audio.toggle()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white" aria-label={audio.playing ? 'إيقاف مؤقت' : 'تشغيل'}>
-          {audio.playing ? '❚❚' : '▶'}
+          {audio.playing ? <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2.5" width="3.2" height="11" rx="1"/><rect x="9.8" y="2.5" width="3.2" height="11" rx="1"/></svg> : <SocialIcon name="Play" size={14} />}
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
@@ -299,10 +319,10 @@ export function PersistentAudioDock() {
               const rect = event.currentTarget.getBoundingClientRect()
               audio.seekTo(((rect.right - event.clientX) / rect.width) * audio.duration)
             }}
-            className="mt-2 block h-2 w-full overflow-hidden rounded-full bg-wash"
+            className={`audio-wave-progress mt-2 block h-5 w-full overflow-hidden rounded-md${audio.playing ? ' is-playing' : ''}`}
             aria-label="شريط تقدم الصوت"
           >
-            <span className="block h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
+            <span className="audio-wave-fill block h-full" style={{ width: `${percent}%` }} />
           </button>
           {audio.error ? <p className="mt-1 text-[.72rem] text-soft">{audio.error}</p> : (
             <p className="mt-1 text-[.72rem] text-soft">{clock(audio.current)} / {clock(audio.duration)}</p>
@@ -312,12 +332,12 @@ export function PersistentAudioDock() {
         <button onClick={() => audio.jump(15)} className="hidden rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft sm:inline-flex">١٥+</button>
         {canJumpArticleSentence && (
           <span className="flex shrink-0 items-center gap-1.5" aria-label="التنقل بين الجمل">
-            <button type="button" onClick={() => jumpArticleSentence('prev')} className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent" aria-label="السابق" title="السابق">◀</button>
-            <button type="button" onClick={() => jumpArticleSentence('next')} className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent" aria-label="التالي" title="التالي">▶</button>
+            <button type="button" onClick={() => jumpArticleSentence('prev')} className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent" aria-label="السابق" title="السابق"><SocialIcon name="ArrowBack" size={12} /></button>
+            <button type="button" onClick={() => jumpArticleSentence('next')} className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent" aria-label="التالي" title="التالي"><span className="rotate-180"><SocialIcon name="ArrowBack" size={12} /></span></button>
           </span>
         )}
         <button onClick={audio.cycleSpeed} className="rounded-full border border-hair px-2.5 py-1 text-[.75rem] text-soft">{ar(audio.speed)}x</button>
-        <button onClick={audio.close} className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft" aria-label="إغلاق المشغل">×</button>
+        <button onClick={audio.close} className="flex h-8 w-8 items-center justify-center rounded-full border border-hair text-soft" aria-label="إغلاق المشغل"><SocialIcon name="Close" size={12} /></button>
       </div>
     </div>
   )

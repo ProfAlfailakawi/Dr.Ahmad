@@ -84,6 +84,10 @@ const thoughtOverview = read('src/pages/ThoughtOverview.tsx')
 const paperDetail = read('src/pages/PaperDetail.tsx')
 const conceptLife = read('src/pages/ConceptLife.tsx')
 const radar = read('src/pages/Radar.tsx')
+const radio = read('src/pages/Radio.tsx')
+const audioPlayer = read('src/components/AudioPlayer.tsx')
+const persistentAudio = read('src/lib/persistent-audio.tsx')
+const contentManager = read('src/components/admin/ContentManager.tsx')
 
 const rawCountPattern = /(?:\$\{([^}\n]+)\}|\{([^}\n]+)\})\s*(?:<\/(?:strong|span|b)>\s*)?(?:مقال(?:اً|ة|ات)?|بحث(?:اً|ان|ين|ون)?|كتاب(?:اً|ان|ين|ات)?|باب(?:اً|ان|ين)?|سنة|سنوات|حلقة|حلقات|ساعة|ساعات|مداخلة|مداخلات|طبقة|طبقات|قطعة|قطع|بطاقة|بطاقات|لفظ(?:اً|ان|ين)?|ألفاظ|مشترك(?:اً|ان|ين|ون)?|رد(?:اً|ان|ين|ود)?|كلمة|كلمات|فقرة|فقرات|صفحة|صفحات|مادة|مواد|دقيقة|دقائق|ثانية|ثوانٍ|يوم|أيام|أسبوع|أسابيع|ملف|ملفات|جهة|جهات|مشكلة|مشكلات|تنبيه|تنبيهات|قاعدة|قواعد|محادثة|محادثات|مجموعة|مجموعات|رقم|أرقام|حالة|حالات|صورة|صور|نسخة|نسخ|اتجاه|اتجاهات|مصدر|مصادر|رابط|روابط|جملة|جمل|قرار|قرارات|نقطة|نقاط|مشهد|مشاهد|تغريدة|تغريدات|مشاركة|مشاركات|مشاهدة|مشاهدات|قراءة|قراءات|نص|نصوص|خانة|خانات|عنقود(?:اً|ان|ين)?|مقالة|مقالات|جهاز|أجهزة)/u
 function rawDynamicCountLines() {
@@ -299,6 +303,18 @@ check('مختبر الجودة يفحص الامتناع واللهجة والم
 check('أيقونة مواد الباب انتقلت بجانب عنوان الباب', encyclopediaPortal.includes('مواد التدريس المرتبطة بهذا الباب') && !encyclopediaPortal.includes('<div className="mt-4 flex justify-end">\n          {door.presentation ?'))
 check('الأيقونات غير الواضحة تشرح نفسها في أول لمسة فقط', read('src/components/ClarifiedIconAction.tsx').includes('localStorage') && read('src/components/ClarifiedIconAction.tsx').includes('(hover: none), (pointer: coarse)'))
 check('جواب الكتاب لا يفتح PDF الكامل ويحافظ على العودة المنطقية أعلى النتائج', !search.includes('#page=${Math.max(1, Number(match.quote.page || 1))}') && search.includes('window.scrollTo({ top: 0'))
+
+
+console.log('\nالجولة النهائية — الصوت والأثر والجمال')
+check('الحوار الجديد يبدأ من الصفر ولا يرث زمن الحوار السابق', listen.includes('startFresh: !resumeFirst') && persistentAudio.includes('trackRef.current = track') && persistentAudio.includes('track.startFresh'))
+check('استئناف مجلس الفكرة محصور في باب افتح المجلس', listen.includes('resumeSaved: resumeIsContinuation') && listen.includes('startFresh = false'))
+check('نص الحوار يعود من النسخة الخفيفة إذا تعذّر ملف R2', listen.includes('fallbackTranscript: `/spoken/${encodeURIComponent(episode.slug)}.json`') && audioPlayer.includes('dialogueScriptFrom') && audioPlayer.includes('fallbackTranscriptSrc'))
+check('اسم الدكتور في الراديو يُعرض بلا تشكيل من دون تجريد بقية النص', radio.includes('nameWithoutTashkeel') && radio.includes("second?.key === 'حسين'") && radio.includes("third?.key === 'الفيلكاوي'") && radio.includes("second?.key === 'الفيلكاوي'"))
+check('توليد R2 حدثي بلا cron دوري', !autoAudioWorkflow.includes('cron:') && autoAudioWorkflow.includes('workflow_dispatch:') && autoAudioWorkflow.includes("paths:\n      - 'src/data.ts'"))
+check('حفظ المقال الجاهز يطلق توليد القراءة مرةً عند التغيير', contentManager.includes('articleNeedsFreshReading') && contentManager.includes("manageArticleAudio({ user: getAuth(app).currentUser, slug, mode: 'reading', action: 'regenerate' })"))
+check('طبقة الجمال النهائية بلا عناصر واجهة إضافية', css.includes('FINISHING LAYER') && css.includes('body::after') && css.includes('scrollbar-width: thin') && css.includes(':focus-visible') && css.includes('theme-radial-reveal') && css.includes('audio-wave-progress'))
+check('صور الوسائط والكتب تظهر كاملة بدل القص', css.includes('complete-media-image') && css.includes('object-fit: contain !important') && homePage.includes('complete-book-frame') && media.includes('complete-media-frame'))
+check('أثر اسأل المكتبة محفوظ داخل مساحتي ومشمّول بالمزامنة', exists('src/lib/ask-library-memory.ts') && ask.includes('saveAskLibraryMemory') && mySpace.includes('askLibraryMemories') && sync.includes("'living-mind:sessions:v1'"))
 
 console.log(`\nالنتيجة: ${passed} تحققاً ناجحاً، ${failed} إخفاقاً.`)
 if (failed) process.exit(1)

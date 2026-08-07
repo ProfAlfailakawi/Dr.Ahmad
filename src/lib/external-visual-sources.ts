@@ -46,7 +46,7 @@ const PEXELS_FALLBACK_KEY = 'VnPsE0iQsD1In8AckghcrXNPYkoODZGdK7bGhN25IGKHadcTV7P
 
 /* نداءات المخازن كانت بلا مهلة إطلاقاً: مزوّد واحد معلّق (أوبنفيرس خاصة)
    يجمّد Promise.allSettled فتبقى «أبحث الآن…» مضاءة للأبد — لقطة الدكتور
-   ٣١ يوليو. تسع ثوانٍ سقف أي مزوّد، والبطيء يسقط وحده ويكمل إخوته. */
+   31 يوليو. تسع ثوانٍ سقف أي مزوّد، والبطيء يسقط وحده ويكمل إخوته. */
 async function fetchWithDeadline(input: string, init: RequestInit = {}, timeoutMs = 9_000): Promise<Response> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -214,7 +214,7 @@ function computeCandidateScore(item: Omit<ExternalVisualResult, 'score' | 'orien
   const haystack = normalize(`${item.title} ${item.description}`)
   /* جذر «الصورة ما لها علاقة بالكلام»: الكلمات كانت تُجمع من تسع عباراتٍ بلا
      تفريدٍ على مستوى الكلمة، فكلمة «education» المتكررة في خمس عبارات تمنح
-     ٢٥ نقطة وحدها. الآن: تفريدٌ بالكلمة، إسقاطٌ للكلمات العامة، وسقفٌ للمكافأة. */
+     25 نقطة وحدها. الآن: تفريدٌ بالكلمة، إسقاطٌ للكلمات العامة، وسقفٌ للمكافأة. */
   const qTerms = [...new Set(
     unique([...plan.queries, ...plan.englishQueries])
       .flatMap((entry) => normalize(entry).split(/\s+/))
@@ -396,9 +396,9 @@ export async function searchExternalVisualSources(plan: VisualSearchPlan, limit 
   }
   /* لا نعرض صورة جاهزة لمجرد أنها جميلة أو قريبة من كلمة عامة. المرشح الذي
      لا يحمل المفهوم الأساسي في وصفه يُستبعد بدل أن يُركّب على التصميم خطأً.
-     لكن عتبة السبعين وحدها كانت تُجوّع الأفكار المجردة حتى الصفر (خصم -٣٨
+     لكن عتبة السبعين وحدها كانت تُجوّع الأفكار المجردة حتى الصفر (خصم -38
      لغياب المصطلح الأكاديمي من أوصاف المخازن) فيموت المسار كله — لقطة
-     ٣١ يوليو. الحل تدرّج صادق: الصارم أولاً، فإن جاع نزلنا لمطابقة مرنة
+     31 يوليو. الحل تدرّج صادق: الصارم أولاً، فإن جاع نزلنا لمطابقة مرنة
      معلنة في مبررها بدل يدين فارغتين. */
   const pool = [...deduped.values()]
     .sort((a, b) => b.score - a.score || a.providerLabel.localeCompare(b.providerLabel))

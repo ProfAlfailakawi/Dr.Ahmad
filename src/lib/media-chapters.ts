@@ -31,7 +31,7 @@ export function chaptersForVideo(videoId = ''): MediaChapter[] {
   return byVideo.get(videoId)?.chapters || []
 }
 
-/** «نحو ٠٣:٤٥» — الصيغة التي تُعرض للزائر، بصدقها لا بادّعائها. */
+/** «نحو 03:45» — الصيغة التي تُعرض للزائر، بصدقها لا بادّعائها. */
 export function stamp(at: number) {
   const minutes = Math.floor(at / 60)
   const rest = at % 60

@@ -1,7 +1,7 @@
 /* أربع لمسات «نووية» أنيقة — أحادية اللون + لكنة #3E5C78، بلا تلوث بصري:
-   ١) الجسر: كاتب ↔ باحث   — يربط هويتَي الدكتور حول الفكرة نفسها.
-   ٢) الاقتباس السينمائي     — كشفٌ متحرك، كلمةً كلمة، لجملةٍ مختارة.
-   ٣) بصمة القارئ           — أثرٌ شخصيّ محليّ بالكامل (بلا خادم، بلا تتبّع) يُهدى للقارئ.
+   1) الجسر: كاتب ↔ باحث   — يربط هويتَي الدكتور حول الفكرة نفسها.
+   2) الاقتباس السينمائي     — كشفٌ متحرك، كلمةً كلمة، لجملةٍ مختارة.
+   3) بصمة القارئ           — أثرٌ شخصيّ محليّ بالكامل (بلا خادم، بلا تتبّع) يُهدى للقارئ.
    إشارة المقال الموحّدة انتقلت إلى ArticlePivot كي لا تتكرر هنا كميزة مستقلة.
    كل مكوّن مستقل ونقيّ: يستقبل بياناته أو يقرأ التخزين المحلي، ويختفي بلطف حين لا مادة له. */
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -13,7 +13,7 @@ import { SocialIcon } from './icons'
 const READER_QUOTES_KEY = 'reader:quotes:v2'
 const READER_READ_KEY = 'reader:read:v1'
 
-/* ═══════════════ ١) الجسر: كاتب ↔ باحث ═══════════════ */
+/* ═══════════════ 1) الجسر: كاتب ↔ باحث ═══════════════ */
 type BridgePaper = { slug: string; title: string }
 export function WriterResearcherBridge({ articleTitle, paper }: { articleTitle: string; paper?: BridgePaper | null }) {
   const reduce = useReducedMotion()
@@ -55,7 +55,7 @@ export function WriterResearcherBridge({ articleTitle, paper }: { articleTitle: 
   )
 }
 
-/* ═══════════════ ٢) الاقتباس السينمائي المتحرك ═══════════════ */
+/* ═══════════════ 2) الاقتباس السينمائي المتحرك ═══════════════ */
 export function CinematicQuote({ quote }: { quote?: string }) {
   const reduce = useReducedMotion()
   const ref = useRef<HTMLDivElement>(null)
@@ -85,7 +85,7 @@ export function CinematicQuote({ quote }: { quote?: string }) {
   )
 }
 
-/* ═══════════════ ٣) بصمة القارئ ═══════════════ */
+/* ═══════════════ 3) بصمة القارئ ═══════════════ */
 type SavedQuote = { slug: string; title: string; cat?: string; savedAt: number; quote: string }
 const CAT_LABEL: Record<string, string> = {
   'مقال': 'مقالات', 'تعليم': 'التعليم', 'تقنية': 'التكنولوجيا والتعلم', 'ذكاء': 'الذكاء الاصطناعي',

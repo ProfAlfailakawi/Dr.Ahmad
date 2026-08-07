@@ -37,7 +37,7 @@ function hijriParts(date: Date): { month: number; day: number } | null {
 
 /** الموسم النشط الآن، أو null في سائر أيام السنة — فالأصل هو الهدوء. */
 export function currentSeason(date = new Date()): Season | null {
-  // الأعياد الوطنية الكويتية: ٢٥ و٢٦ فبراير (مع يوم ٢٤ عشية الاحتفال)
+  // الأعياد الوطنية الكويتية: 25 و26 فبراير (مع يوم 24 عشية الاحتفال)
   const gregorian = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait', month: '2-digit', day: '2-digit' }).format(date)
   if (gregorian === '02-24' || gregorian === '02-25' || gregorian === '02-26') {
     return { id: 'kuwait-national', ...SEASONS['kuwait-national'] }

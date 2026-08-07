@@ -40,7 +40,7 @@ export interface RenderPreferences {
   pattern: BackgroundPattern
   /** بصمة الموسم: خيطٌ سفليّ واحد بلون الفصل يرث كل تصاميم الفترة (هوية عائلة) */
   familySignature: boolean
-  /** الأرقام الهندية (٢٠٢٦) بدل العربية الغربية في البيانات الوصفية */
+  /** الأرقام الهندية (2026) بدل العربية الغربية في البيانات الوصفية */
   arabicNumerals: boolean
 }
 
@@ -84,7 +84,7 @@ function familySignatureMark(s: Scene): string {
 /*        الطباعة العربية المتقدمة: أرقام هندية وكشيدة صحيحة            */
 /* ------------------------------------------------------------------ */
 
-const ARABIC_INDIC = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+const ARABIC_INDIC = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 /** يحوّل الأرقام الغربية إلى هندية — للبيانات الوصفية لا لنص الدكتور. */
 export function toArabicIndic(value: string): string {
@@ -277,7 +277,7 @@ const normalizeForCompare = (value: string) => String(value || '')
 function distinctBody(plan: CompositionPlan) {
   const title = normalizeForCompare(plan.content.title)
   /* المتن أولاً ثم العنوان الفرعي: حين يحرّر الدكتور حقلاً في الاستوديو يجب
-     أن ينعكس فوراً مهما قصُر — كان الشرط «٣ كلمات» يبتلع كتابته فتظهر
+     أن ينعكس فوراً مهما قصُر — كان الشرط «3 كلمات» يبتلع كتابته فتظهر
      المعاينة فارغة. نقبل الآن أي نصٍّ غير فارغ لا يكرّر العنوان. */
   /* العنوان الفرعي صار له مكانه الخاص (الشارة/التمهيد)، فلا يزاحم المتن هنا —
      وبذلك يظهر الاثنان معاً حين يملؤهما الدكتور. */
@@ -316,7 +316,7 @@ interface TextBlockOptions {
 
 /** يحسم الوزن المتاح فعلياً: Tajawal المحلي ينتهي عند 500 فلا نطلب تغليظاً اصطناعياً. */
 /**
- * جذر «الخط غير جميل» (ملاحظة الدكتور ٣١ يوليو مساءً) — أعمقُ من نسيان
+ * جذر «الخط غير جميل» (ملاحظة الدكتور 31 يوليو مساءً) — أعمقُ من نسيان
  * fonts.load: **«Alexandria Variable» لا وجود له في المشروع أصلاً**. لا ملف
  * ولا ‎@font-face، واسمه لا يظهر إلا في جدول أنماط الطباعة داخل المحرك. وكان
  * الرسم يُخرج `font-family="Alexandria Variable"` عارياً بلا بديل، فيسقط كل
@@ -803,7 +803,7 @@ function cleanEventTitle(title: string, timing: string[]) {
 }
 
 /**
- * استخراج ٣–٥ نقاط قصيرة للإنفوجرافيك: الأسطر المرقّمة/المنقّطة أولاً، ثم الجُمل
+ * استخراج 3–5 نقاط قصيرة للإنفوجرافيك: الأسطر المرقّمة/المنقّطة أولاً، ثم الجُمل
  * الكاملة، ثم الشظايا المفصولة بفواصل، ثم الكلمات المفتاحية ملاذاً أخيراً. كل نقطة
  * تُقصَّر إلى ثماني كلمات ولا تكرّر العنوان — كي تبقى القائمة نظيفة بلا حشو.
  */
@@ -884,7 +884,7 @@ function seasonalDecor(s: Scene, sealVisible: boolean) {
 
 type Painter = (s: Scene) => { defs?: string; markup: string }
 
-/** ١ — تحريرية صافية: افتتاحية مجلة فاخرة بمحور جانبي وترقيم صفحة. */
+/** 1 — تحريرية صافية: افتتاحية مجلة فاخرة بمحور جانبي وترقيم صفحة. */
 const paintEditorialAxis: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const zoneW = w - s.safeX * 2 - w * .1
@@ -911,7 +911,7 @@ const paintEditorialAxis: Painter = (s) => {
   }
 }
 
-/** ٢ — الكلمة البطلة: كلمة ضخمة محفورة في الخلفية والعنوان يتقدمها. */
+/** 2 — الكلمة البطلة: كلمة ضخمة محفورة في الخلفية والعنوان يتقدمها. */
 const paintHeroWord: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const hero = s.hero || words(s.titleText)[0] || ''
@@ -933,7 +933,7 @@ const paintHeroWord: Painter = (s) => {
   }
 }
 
-/** ٣ — منصة الاقتباس: علامة تنصيص معمارية واقتباس يتنفس وتوقيع. */
+/** 3 — منصة الاقتباس: علامة تنصيص معمارية واقتباس يتنفس وتوقيع. */
 const paintQuoteStage: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const quoteText = s.plan.content.quote || s.titleText
@@ -969,7 +969,7 @@ const paintQuoteStage: Painter = (s) => {
   }
 }
 
-/** ٤ — الأطروحة المزدوجة: لوح جانبي محكم يواجه متناً هادئاً. */
+/** 4 — الأطروحة المزدوجة: لوح جانبي محكم يواجه متناً هادئاً. */
 const paintDualThesis: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const full = s.sparse || s.isTall
@@ -1011,7 +1011,7 @@ const paintDualThesis: Painter = (s) => {
   return { markup: [stack, identityFooter(s)].join('') }
 }
 
-/** ٥ — سجل الدليل: الرقم بطلاً على دفتر معرفي مسطور. */
+/** 5 — سجل الدليل: الرقم بطلاً على دفتر معرفي مسطور. */
 const paintEvidenceLedger: Painter = (s) => {
   const { palette: p, w, min } = s
   const figure = extractFigure(`${s.titleText} ${s.bodyText} ${s.plan.content.original}`)
@@ -1048,7 +1048,7 @@ const paintEvidenceLedger: Painter = (s) => {
   return { markup: [stack, identityFooter(s)].join('') }
 }
 
-/** ٦ — واجهة الحدث: شريط علوي محكم وتفاصيل زمن ودعوة واضحة. */
+/** 6 — واجهة الحدث: شريط علوي محكم وتفاصيل زمن ودعوة واضحة. */
 const paintEventMarquee: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const bandH = h * (s.isTall ? .1 : .13)
@@ -1088,7 +1088,7 @@ const paintEventMarquee: Painter = (s) => {
   }
 }
 
-/** ٧ — خريطة المعرفة: عقدة مركزية ومفاهيم تدور حولها بخيوط هادئة. */
+/** 7 — خريطة المعرفة: عقدة مركزية ومفاهيم تدور حولها بخيوط هادئة. */
 const paintKnowledgeMap: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const title = fitTitle(s, w - s.safeX * 2, { base: min * .052, maxLines: 3 })
@@ -1129,7 +1129,7 @@ const paintKnowledgeMap: Painter = (s) => {
   }
 }
 
-/** ٨ — المدار الهادئ: أفلاك رقيقة تحتضن فكرة مركزية. */
+/** 8 — المدار الهادئ: أفلاك رقيقة تحتضن فكرة مركزية. */
 const paintQuietOrbit: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const cx = w / 2
@@ -1157,7 +1157,7 @@ const paintQuietOrbit: Painter = (s) => {
   }
 }
 
-/** ٩ — فصول الفكرة: أوراق متراكبة بترقيم فصلي، مهيأة للسلاسل. */
+/** 9 — فصول الفكرة: أوراق متراكبة بترقيم فصلي، مهيأة للسلاسل. */
 const paintChapterStack: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const sheetX = s.safeX * .9
@@ -1192,7 +1192,7 @@ const paintChapterStack: Painter = (s) => {
   }
 }
 
-/** ١٠ — النافذة السينمائية: أشرطة عرض ولوح عنوان عالي التباين. */
+/** 10 — النافذة السينمائية: أشرطة عرض ولوح عنوان عالي التباين. */
 const paintCinematicWindow: Painter = (s) => {
   const { palette: p, w, h, min, uid } = s
   const heroImage = s.plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
@@ -1327,7 +1327,7 @@ const paintCinematicWindow: Painter = (s) => {
   }
 }
 
-/** ١١ — الملاحظة الإنسانية: ورقة دافئة بشريط لاصق وخط تحتي مرسوم باليد. */
+/** 11 — الملاحظة الإنسانية: ورقة دافئة بشريط لاصق وخط تحتي مرسوم باليد. */
 const paintHumanNote: Painter = (s) => {
   const { palette: p, w, h, min, uid } = s
   const sheetX = s.safeX
@@ -1367,7 +1367,7 @@ const paintHumanNote: Painter = (s) => {
   }
 }
 
-/** ١٢ — الملخص المركب: وحدات متدرجة المقام كأنها صفحة هوية مؤسسية. */
+/** 12 — الملخص المركب: وحدات متدرجة المقام كأنها صفحة هوية مؤسسية. */
 const paintModularBrief: Painter = (s) => {
   const { palette: p, w, min, uid } = s
   const gap = min * .022
@@ -1416,7 +1416,7 @@ const paintModularBrief: Painter = (s) => {
   return { markup: [stack, identityFooter(s)].join('') }
 }
 
-/* ١٣ — إنفوجرافيك مرقّم بخمسة اتجاهاتٍ فنية (أمر الدكتور: إبداعٌ وتنويع).
+/* 13 — إنفوجرافيك مرقّم بخمسة اتجاهاتٍ فنية (أمر الدكتور: إبداعٌ وتنويع).
    جوهرٌ واحد (عنوان + إحصاءةٌ اختيارية + نقاطٌ مرقّمة)، وخمسُ كسواتٍ متمايزة —
    يُنتقى الاتجاه ببصمة التصميم فيتنوّع بين الاتجاهات والدفعات بلا تكرارٍ ولا عشوائية:
    • السكة    — أقراصٌ فهرسيةٌ يميناً وفواصلُ شعرية (تحريريّ صافٍ).
@@ -1705,7 +1705,7 @@ const paintInfographic: Painter = (s) => {
   return { defs: infoDefs, markup: [stack, identityFooter(s, variant === 'spotlight' ? { mode: 'center' } : {})].join('') }
 }
 
-/** ١٤ — نول السدو: حزامان منسوجان من مثلثات السدو الكويتي يحرسان الفكرة —
+/** 14 — نول السدو: حزامان منسوجان من مثلثات السدو الكويتي يحرسان الفكرة —
     هوية خليجية معاصرة إجرائية بالكامل (لا صور، لا خطوط زخرفية جاهزة)، فلا
     تتكرر نسجةٌ بين تصميمين لاختلاف المقاس واللوحة والإيقاع. */
 const paintSaduWeave: Painter = (s) => {
@@ -1746,7 +1746,7 @@ const paintSaduWeave: Painter = (s) => {
   return { markup: [band(topBandY), band(bottomBandY), stack, identityFooter(s, { mode: 'center' })].join('') }
 }
 
-/** ١٥ — نَفَس الحبر: الكلمة الأقوى بحبرٍ ممتلئ يتنفس خلف العنوان عبر إزاحة
+/** 15 — نَفَس الحبر: الكلمة الأقوى بحبرٍ ممتلئ يتنفس خلف العنوان عبر إزاحة
     اضطرابية حتمية (بذرتها من بصمة الخطة نفسها)، فلكل تصميم نزفُ حبرٍ يخصّه. */
 const paintInkVeil: Painter = (s) => {
   const { palette: p, w, h, min, uid } = s
@@ -1773,7 +1773,7 @@ const paintInkVeil: Painter = (s) => {
   return { defs, markup: [inkWord, drops, stack, identityFooter(s, { mode: 'center' })].join('') }
 }
 
-/** ١٦ — كوكبة عصبية: عقدٌ ووصلاتٌ تُحسب حتمياً من بذرة التصميم، ومسارٌ واحد
+/** 16 — كوكبة عصبية: عقدٌ ووصلاتٌ تُحسب حتمياً من بذرة التصميم، ومسارٌ واحد
     مضيء يحمل الفكرة عبر الشبكة — لغة أستاذ الذكاء الاصطناعي بلا أيقونات مبتذلة. */
 const paintNeuralConstellation: Painter = (s) => {
   const { palette: p, w, h, min, uid } = s
@@ -1825,7 +1825,7 @@ const paintNeuralConstellation: Painter = (s) => {
   return { markup: [constellation, stack, identityFooter(s)].join('') }
 }
 
-/** ١٧ — زخرفة السيليكون: النجمة الثمانية تُرسم مساراتِ دوائرَ إلكترونية
+/** 17 — زخرفة السيليكون: النجمة الثمانية تُرسم مساراتِ دوائرَ إلكترونية
     بلحاماتها وانعطافاتها المتعامدة — التراث الهندسي بلغة الرقاقة. */
 const paintSiliconArabesque: Painter = (s) => {
   const { palette: p, w, h, min, uid } = s
@@ -1872,7 +1872,7 @@ const paintSiliconArabesque: Painter = (s) => {
 /*      خمس عائلات تكوين جديدة — لكلٍّ لغةٌ بصرية مستقلة لا شكلٌ مختلف   */
 /* ------------------------------------------------------------------ */
 
-/** ١٨ — الشبكة السويسرية: اثنا عشر عموداً حقيقية، والعنوان يجلس على خط الشبكة
+/** 18 — الشبكة السويسرية: اثنا عشر عموداً حقيقية، والعنوان يجلس على خط الشبكة
     لا في وسطٍ تقريبي. الشبكة تُرى خافتةً فتُعلن قانونها، وكل كتلةٍ تبدأ من
     عمودٍ معلوم — انضباط بازل بحرفٍ عربي. */
 const paintSwissGrid: Painter = (s) => {
@@ -1882,7 +1882,7 @@ const paintSwissGrid: Painter = (s) => {
   const right = w - s.safeX
   const span = right - left
   const colW = (span - gutter * 11) / 12
-  /* الأعمدة تُعدّ من اليمين لأن القراءة عربية: العمود ١ أقصى اليمين. */
+  /* الأعمدة تُعدّ من اليمين لأن القراءة عربية: العمود 1 أقصى اليمين. */
   const colRight = (index: number) => right - index * (colW + gutter)
   const colLeft = (index: number, spanCols: number) => colRight(index) - spanCols * colW - (spanCols - 1) * gutter
   const guides = Array.from({ length: 12 }, (_, index) => {
@@ -1929,7 +1929,7 @@ const paintSwissGrid: Painter = (s) => {
   return { markup: [guides, rows.join(''), identityFooter(s)].join('') }
 }
 
-/** ١٩ — المجلة بعمودين: نصٌّ عربي في عمودين يفصلهما خطٌّ شعري، وحرفٌ استهلالي
+/** 19 — المجلة بعمودين: نصٌّ عربي في عمودين يفصلهما خطٌّ شعري، وحرفٌ استهلالي
     يفتح العمود الأول. المتن يُقسَم قسمةً حقيقية بين العمودين (لا نسخاً)، فتقرأ
     من اليمين إلى اليسار كصفحة مجلةٍ لا كبطاقة. */
 const paintMagazineColumns: Painter = (s) => {
@@ -1990,7 +1990,7 @@ const paintMagazineColumns: Painter = (s) => {
   }
 }
 
-/** ٢٠ — الملصق التايبوغرافي: بلا صورةٍ ولا زخرفةٍ إطلاقاً. الكلمة نفسها هي
+/** 20 — الملصق التايبوغرافي: بلا صورةٍ ولا زخرفةٍ إطلاقاً. الكلمة نفسها هي
     التصميم: كلماتُ العنوان تنزل سطراً سطراً بأحجامٍ متدرّجة تملأ العرض، وكلمةٌ
     واحدة تحمل اللون. لا إطار ولا مدار ولا نمط — الحرف وحده. */
 const paintTypePoster: Painter = (s) => {
@@ -2026,7 +2026,7 @@ const paintTypePoster: Painter = (s) => {
   return { markup: [kicker, stack, cta, identityFooter(s, { mode: 'center' })].join('') }
 }
 
-/** ٢١ — الحاشية: متنٌ مركزيٌّ صغير محكوم العرض، وهامشٌ واسع على اليسار تسكنه
+/** 21 — الحاشية: متنٌ مركزيٌّ صغير محكوم العرض، وهامشٌ واسع على اليسار تسكنه
     تعليقاتٌ مرقّمة بخطٍّ رفيع — كمخطوطة عالِمٍ يحاور متنه على الطُرّة. */
 const paintMarginalia: Painter = (s) => {
   const { palette: p, w, h, min } = s
@@ -2068,7 +2068,7 @@ const paintMarginalia: Painter = (s) => {
   }
 }
 
-/** ٢٢ — الجدول الزمني الرأسي: خطٌّ ينزل من أعلى اللوحة إلى أسفلها، وعليه
+/** 22 — الجدول الزمني الرأسي: خطٌّ ينزل من أعلى اللوحة إلى أسفلها، وعليه
     محطاتٌ مؤرّخة بنقاطٍ ونصٍّ قصير. التواريخ تُلتقط من النص نفسه؛ وحين لا
     تاريخ، تُرقَّم المحطات ترقيماً عربياً بلا اختلاق زمنٍ لم يُكتب. */
 const paintVerticalTimeline: Painter = (s) => {

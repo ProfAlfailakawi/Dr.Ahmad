@@ -560,7 +560,7 @@ export interface DesignHistoryEntry {
   generatedAt?: string
 }
 
-/* ═══════════ محلل الأوامر العربية والخليجية (مقترحات صديق الدكتور ١-٧ و١١) ═══════════
+/* ═══════════ محلل الأوامر العربية والخليجية (مقترحات صديق الدكتور 1-7 و11) ═══════════
    «أبي بوستر فاخر لمحاضرة بعنوان مستقبل المعلم» تُفهم محلياً بلا أي سحابة:
    يُستخرج النوع والنبرة والمقاس والقيود، وتُجرَّد كلمات الأمر من المحتوى الحقيقي،
    ويُعرض للدكتور ما فُهم بدرجة ثقة وافتراضات صريحة — فهمٌ قاعدي صادق لا ادعاء ذكاء. */
@@ -1735,7 +1735,7 @@ const geometryFor = (format: SocialFormatSpec, spatialId: SpatialPatternId, typo
 }
 
 /**
- * نقاط الإنفوجرافيك (٣–٥) — مصدرٌ واحد يتشاركه الرسّام (يرسمها) والناقد (يقيس
+ * نقاط الإنفوجرافيك (3–5) — مصدرٌ واحد يتشاركه الرسّام (يرسمها) والناقد (يقيس
  * الحمولة عليها). الأولوية للأسطر المرقّمة/المنقّطة، ثم الجُمل، ثم الشظايا
  * المفصولة بفواصل، ثم الكلمات المفتاحية ملاذاً أخيراً. كل نقطة ≤ ثماني كلمات
  * ولا تكرّر العنوان.
@@ -1899,7 +1899,7 @@ const noveltyAgainst = (signature: DesignSignature, history: readonly DesignHist
 
 const planId = (seed: string, index: number, signature: DesignSignature) => `social-${hashHex(`${seed}:${index}:${signatureString(signature)}`)}`
 
-/* قراءة المخرج الفنّي (مقترح الصديق ١): لكل اتجاهٍ شعورٌ يصنعه وجمهورٌ يؤثّر فيه —
+/* قراءة المخرج الفنّي (مقترح الصديق 1): لكل اتجاهٍ شعورٌ يصنعه وجمهورٌ يؤثّر فيه —
    فالاستوديو يفكّر كمخرجٍ لا كمحرّر قوالب. تُعرض في لوحة الناقد داخل المحرّر. */
 const TONE_DIRECTION: Record<ContentTone, { feeling: string; audience: string }> = {
   formal: { feeling: 'وقارٍ ومصداقية', audience: 'المؤسسات وصنّاع القرار' },
@@ -2160,11 +2160,11 @@ export function generateSocialDesigns(request: SocialDesignRequest): SocialDesig
     layoutFitness(layout, analysis, density, format) + preferenceBoost(layout.id) + (directedRequest.preferLayout === layout.id ? 0 : layoutJitter(layout.id, seed))
   const rankedLayouts = seededOrder(Object.values(LAYOUT_FAMILIES), seed, 'layout-order')
     .sort((left, right) => layoutRank(right) - layoutRank(left))
-  /* «تنويع كل شيء» (طلب الدكتور ٣١ يوليو): كان فرزُ الجدارة يُصعّد العائلات
+  /* «تنويع كل شيء» (طلب الدكتور 31 يوليو): كان فرزُ الجدارة يُصعّد العائلات
      نفسها لكل فكرةٍ من طرازٍ واحد، فتبدو المخرجات إخوةً وإن كانت المكتبة سبع
      عشرة عائلة. علاجان معاً:
-     ١) فضاء أوسع: تسعة تنويعات لكل عائلة بدل ستة (١٥٣ مرشحاً بدل ١٠٢).
-     ٢) ذاكرة العائلات: ما استُعمل في الجلسات الأخيرة يُخفَّض قليلاً — خفضٌ
+     1) فضاء أوسع: تسعة تنويعات لكل عائلة بدل ستة (153 مرشحاً بدل 102).
+     2) ذاكرة العائلات: ما استُعمل في الجلسات الأخيرة يُخفَّض قليلاً — خفضٌ
         لطيف لا يكسر الجدارة، لكنه يكفي لتصعيد عائلةٍ جديدة حين تتقارب
         الدرجات. النتيجة: تنقّلٌ حقيقي بين لغات التكوين لا دورانٌ حول ثلاث. */
   const candidates: CompositionPlan[] = []
@@ -2460,7 +2460,7 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
     ? (plan.density === 'minimal' ? .3 : .48)
     : plan.density === 'minimal' ? .34 : plan.density === 'rich' ? .68 : .51
   /* القائمة المرقّمة تملأ اللوحة بصفوفها لا بعدد كلماتها؛ فكثافتها تُقاس بعدد
-     النقاط (٣–٥ = ملأى) لا بحمولة متنٍ ملفوف — وإلا ظُلمت بكثافةٍ منخفضة زوراً. */
+     النقاط (3–5 = ملأى) لا بحمولة متنٍ ملفوف — وإلا ظُلمت بكثافةٍ منخفضة زوراً. */
   const density = structuredList
     ? boundedQuality(82 + (infographicPoints.length >= 3 ? 6 : 0) - Math.max(0, 3 - infographicPoints.length) * 12)
     : boundedQuality(100 - Math.abs(textLoad - idealLoad) * 118 - Math.max(0, plan.geometry.decorationBudget - (plan.density === 'rich' ? 2 : 1)) * 7)
@@ -2616,7 +2616,7 @@ export function professionalReleaseGate(plan: CompositionPlan, peers: readonly C
   }
 }
 
-/* ═══════════ مختبر الأداء: متنبّئ التفاعل (مقترح البناء أ-٣) ═══════════
+/* ═══════════ مختبر الأداء: متنبّئ التفاعل (مقترح البناء أ-3) ═══════════
    مختلفٌ جوهرياً عن الناقد البصري: الناقد يقيس جودة التصميم (تباين، هرمية،
    قراءة، فراغ، محاذاة)؛ وهذا يتنبّأ بقوة «إيقاف الإبهام» والتفاعل عبر إشاراتٍ
    نصّيةٍ وتسويقية — قوة الخطّاف، الشحنة العاطفية، وجود الدعوة، صدمة التباين
@@ -2640,15 +2640,15 @@ export interface EngagementForecast {
 }
 
 const PLATFORM_TITLE_WINDOW: Record<SocialPlatform, { min: number; max: number; name: string; ideal: string }> = {
-  reel: { min: 3, max: 7, name: 'الريل', ideal: '٣–٧ كلمات' },
-  facebook: { min: 5, max: 13, name: 'فيسبوك', ideal: '٥–١٣ كلمة' },
-  thumbnail: { min: 3, max: 7, name: 'الثَمبنيل', ideal: '٣–٧ كلمات' },
-  story: { min: 4, max: 9, name: 'الستوري', ideal: '٤–٩ كلمات' },
-  instagram: { min: 5, max: 11, name: 'إنستغرام', ideal: '٥–١١ كلمة' },
-  x: { min: 6, max: 12, name: 'إكس', ideal: '٦–١٢ كلمة' },
-  pinterest: { min: 6, max: 13, name: 'بنترست', ideal: '٦–١٣ كلمة' },
-  presentation: { min: 4, max: 10, name: 'الغلاف', ideal: '٤–١٠ كلمات' },
-  linkedin: { min: 7, max: 14, name: 'لينكدإن', ideal: '٧–١٤ كلمة' },
+  reel: { min: 3, max: 7, name: 'الريل', ideal: '3–7 كلمات' },
+  facebook: { min: 5, max: 13, name: 'فيسبوك', ideal: '5–13 كلمة' },
+  thumbnail: { min: 3, max: 7, name: 'الثَمبنيل', ideal: '3–7 كلمات' },
+  story: { min: 4, max: 9, name: 'الستوري', ideal: '4–9 كلمات' },
+  instagram: { min: 5, max: 11, name: 'إنستغرام', ideal: '5–11 كلمة' },
+  x: { min: 6, max: 12, name: 'إكس', ideal: '6–12 كلمة' },
+  pinterest: { min: 6, max: 13, name: 'بنترست', ideal: '6–13 كلمة' },
+  presentation: { min: 4, max: 10, name: 'الغلاف', ideal: '4–10 كلمات' },
+  linkedin: { min: 7, max: 14, name: 'لينكدإن', ideal: '7–14 كلمة' },
 }
 
 // كلماتٌ ذاتُ شحنةٍ معرفية/عاطفية تناسب سجلّ الدكتور — للكشف لا للحقن.
@@ -2667,31 +2667,31 @@ export function predictEngagement(plan: CompositionPlan): EngagementForecast {
   const normalizedAll = normalizeArabicForDesign(`${title} ${plan.content.subtitle} ${plan.content.body} ${plan.content.quote} ${plan.content.heroWord}`)
   const titleWords = wordsOf(title).length
 
-  // ١) قوة الخطّاف: سؤال/رقم/مقابلة «لا…بل»/فضول + كلمة بطلة.
+  // 1) قوة الخطّاف: سؤال/رقم/مقابلة «لا…بل»/فضول + كلمة بطلة.
   const hasQuestion = /[؟?]/.test(title) || ENGAGEMENT_HOOK_OPENERS.test(title.trim())
   const hasNumber = /[0-9٠-٩]/.test(title)
   const hasContrast = /(?:لا\s.+بل|ليس\s.+بل)/.test(normalizedTitle)
   const hasCuriosity = ENGAGEMENT_CURIOSITY.test(normalizedAll)
   const hook = roundScore(38 + (hasQuestion ? 30 : 0) + (hasNumber ? 22 : 0) + (hasContrast ? 20 : 0) + (hasCuriosity ? 16 : 0) + (plan.content.heroWord ? 8 : 0))
 
-  // ٢) إيقاف الإبهام: صدمة التباين البصري (لا مقروئية) + كلمة بطلة + عمقٌ داكن + عنوانٌ كبير.
+  // 2) إيقاف الإبهام: صدمة التباين البصري (لا مقروئية) + كلمة بطلة + عمقٌ داكن + عنوانٌ كبير.
   const palette = resolvePalette(plan)
   const typography = TYPOGRAPHY_MODES[plan.typography]
   const accentPunch = contrastQuality(contrastRatio(palette.background, palette.accent))
   const thumbstop = roundScore(30 + accentPunch * .5 + (plan.content.heroWord ? 12 : 0) + (palette.isDark ? 8 : 0) + (typography.titleScale >= 1.1 ? 8 : 0) + (['hero-word', 'cinematic-window', 'quiet-orbit', 'event-marquee'].includes(plan.layout) ? 6 : 0))
 
-  // ٣) الشحنة العاطفية: عدد الكلمات ذات الشحنة الحاضرة (بلا مبالغة).
+  // 3) الشحنة العاطفية: عدد الكلمات ذات الشحنة الحاضرة (بلا مبالغة).
   const emotionHits = ENGAGEMENT_EMOTION_WORDS.filter((word) => word && normalizedAll.includes(word)).length
   const emotion = roundScore(46 + Math.min(4, emotionHits) * 13)
 
-  // ٤) طول العنوان الأمثل للمنصّة.
+  // 4) طول العنوان الأمثل للمنصّة.
   const window = PLATFORM_TITLE_WINDOW[plan.format.platform]
   const length = titleWords === 0 ? 40
     : titleWords >= window.min && titleWords <= window.max ? 96
     : titleWords < window.min ? roundScore(96 - (window.min - titleWords) * 16)
     : roundScore(96 - (titleWords - window.max) * 11)
 
-  // ٥) الدعوة للتفاعل: حاضرةٌ ترفع، وغيابها يؤذي أكثر في المحتوى الدعويّ.
+  // 5) الدعوة للتفاعل: حاضرةٌ ترفع، وغيابها يؤذي أكثر في المحتوى الدعويّ.
   const hasCta = Boolean((plan.content.cta || '').trim())
   const needsCta = ['announcement', 'invitation', 'course', 'consultation', 'lecture', 'media-appearance', 'recommendation'].includes(plan.analysis.primaryKind)
   const cta = hasCta ? 94 : needsCta ? 44 : 66
@@ -2709,13 +2709,13 @@ export function predictEngagement(plan: CompositionPlan): EngagementForecast {
   return { score, band: qualityBand(score), signals, tips, highlights }
 }
 
-/* ═══════════ خريطة الانتباه ومحاكاة مسار العين (النقطة ٨) ═══════════
+/* ═══════════ خريطة الانتباه ومحاكاة مسار العين (النقطة 8) ═══════════
    محاكاةٌ تقديريّةٌ لا قياسٌ فعليّ للعين: تستنتج بؤر الجذب من هرميّة
    العناصر ومواقعها الحقيقيّة (من هندسة الخطّة) ووزنها البصريّ، ثمّ
    ترتّبها على مسار قراءةٍ عربيٍّ يبدأ من أعلى اليمين. تُعرَض فوق
    المعاينة كطبقةٍ حراريّةٍ ومسارٍ مرقّم، فيرى الدكتور أين تقع العين
    أوّلاً — وهل تتوزّع بنضجٍ أم تتكدّس — قبل النشر. */
-const toArabicDigits = (value: number | string) => String(value).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[Number(d)])
+const toArabicDigits = (value: number | string) => String(value)
 
 export interface AttentionHotspot {
   id: string
@@ -2753,7 +2753,7 @@ export function computeAttentionMap(plan: CompositionPlan): AttentionMap {
     gaze.push({ x: hotspot.x, y: hotspot.y, order: ++order, label: gazeLabel })
   }
 
-  // ١) البؤرة الأقوى: كلمةٌ بطلة (أضخم عنصر) وإلا العنوان.
+  // 1) البؤرة الأقوى: كلمةٌ بطلة (أضخم عنصر) وإلا العنوان.
   const hero = (c.heroWord || '').trim()
   const titleY = clamp(g.titleZone.y + 0.04, 0.08, 0.9)
   if (hero) {
@@ -2764,7 +2764,7 @@ export function computeAttentionMap(plan: CompositionPlan): AttentionMap {
     gaze.push({ x: readX(g.titleZone), y: titleY, order: ++order, label: 'العنوان' })
   }
 
-  // ٢) الكتلة الثانية: نقاط الإنفوجرافيك المرقّمة، وإلا الاقتباس أو المتن.
+  // 2) الكتلة الثانية: نقاط الإنفوجرافيك المرقّمة، وإلا الاقتباس أو المتن.
   const points = c.points && c.points.length ? c.points : []
   if (points.length) {
     const step = 0.5 / Math.max(1, Math.min(4, points.length))
@@ -2778,7 +2778,7 @@ export function computeAttentionMap(plan: CompositionPlan): AttentionMap {
     push({ id: 'body', label: 'المتن', x: readX(g.bodyZone), y: clamp(g.bodyZone.y + 0.06, 0.3, 0.92), radius: 0.24, intensity: 0.58 })
   }
 
-  // ٣) الدعوة للتفاعل حسب موضعها المقرّر في الخطّة.
+  // 3) الدعوة للتفاعل حسب موضعها المقرّر في الخطّة.
   const cta = (c.cta || '').trim()
   if (cta && plan.ctaPlacement !== 'none') {
     const place = plan.ctaPlacement
@@ -2801,7 +2801,7 @@ export function computeAttentionMap(plan: CompositionPlan): AttentionMap {
   return { hotspots, gaze, summary, balance, firstFixation }
 }
 
-/* ═══════════ الاستوديو يشرح تعثّره (النقطة ٢٢) ═══════════
+/* ═══════════ الاستوديو يشرح تعثّره (النقطة 22) ═══════════
    حين لا يبلغ التصميم القمّة لا يكتفي بعرض رقمٍ صامت: يشخّص أضعف
    أبعاده بلغةٍ بشريّةٍ صريحة — لماذا ضعُف البُعد وكيف يُعالَج — مرتّبةً
    الأسوأ أوّلاً، مع إنصافٍ لمواطن قوّته وخطوةٍ تاليةٍ واحدةٍ أعلى أثراً. */
@@ -2892,7 +2892,7 @@ export function generateSocialCampaign(request: SocialCampaignRequest): SocialCa
   const history = [...normalizeHistory(request.history)]
   const assets: SocialCampaignAsset[] = []
   const usedLayouts = new Set<LayoutFamilyId>()
-  /* تماسك ألوان الحملة (مقترح الصديق ١٧): لوحة الأساس تُورَّث للحملة كلها فقط
+  /* تماسك ألوان الحملة (مقترح الصديق 17): لوحة الأساس تُورَّث للحملة كلها فقط
      إن كانت قوية التباين — الضعيفة تُستبدل بأقوى اللوحات تبايناً فلا تسمّم
      القطع السبع كلها بميراثٍ باهت */
   let base = request.basePlan

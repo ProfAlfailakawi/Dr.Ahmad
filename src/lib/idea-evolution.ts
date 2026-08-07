@@ -32,7 +32,7 @@ const count = (text: string, list: string[]) =>
 export type EvolutionSide = {
   year: string
   articles: number
-  /** نسبة نبرة التحفّظ إلى مجموع الإشارتين — ٠ إلى ١٠٠. */
+  /** نسبة نبرة التحفّظ إلى مجموع الإشارتين — 0 إلى 100. */
   caution: number
   title: string
   slug: string

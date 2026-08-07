@@ -57,7 +57,7 @@ const BOOKS: Record<string, string> = {
   'digital-education': 'digital-education',
 }
 
-/** /:slug — صفحة قديمة ثابتة. إن لم تُعرف، تُعرض ٤٠٤ مباشرة (لا تحويل، لا حلقة). */
+/** /:slug — صفحة قديمة ثابتة. إن لم تُعرف، تُعرض 404 مباشرة (لا تحويل، لا حلقة). */
 export function LegacyPage() {
   const { slug = '' } = useParams()
   const to = LEGACY_PAGES[slug]

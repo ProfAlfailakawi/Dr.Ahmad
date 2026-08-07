@@ -60,7 +60,7 @@ export type EditorialPortfolioEvidence = {
   relatedArticleCount: number
   relatedBookCount: number
   relatedPaperCount: number
-  /* المواد القريبة التي لصوت الدكتور فيها قراءة أو حوار منطوق (فكرة المجلس ٤). */
+  /* المواد القريبة التي لصوت الدكتور فيها قراءة أو حوار منطوق (فكرة المجلس 4). */
   relatedAudioCount?: number
   saturationScore: number | null
   strategicNeedScore: number | null

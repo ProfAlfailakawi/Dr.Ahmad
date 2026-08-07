@@ -1,8 +1,8 @@
 import { arabicCountPhrase, CONNECTION_FORMS } from '../lib/arabic-count.ts'
 /* أداة تحديدٍ واحدة أنيقة (أحادية اللون، بلا تلوث بصري): تظهر عند تظليل أي جملةٍ في المقال،
    وتقدّم فعلين متباعدين في شريطٍ واحد لا يتداخلان:
-   ١) تتبّع الجملة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
-   ٢) 🖼 بطاقة اقتباس: صورة أنيقة بجملةٍ منتقاة + توقيع الدكتور، للمشاركة الراقية. */
+   1) تتبّع الجملة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
+   2) 🖼 بطاقة اقتباس: صورة أنيقة بجملةٍ منتقاة + توقيع الدكتور، للمشاركة الراقية. */
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router'
@@ -109,7 +109,7 @@ const tokens = (s: string) => norm(s).replace(/[^ء-ي\s]/g, ' ').split(/\s+/)
 
 const ar = (n: number) => String(n)
 
-/* ═══════════ استوديو بطاقات الاقتباس — ٦ قوالب × ٣ مقاسات ═══════════
+/* ═══════════ استوديو بطاقات الاقتباس — 6 قوالب × 3 مقاسات ═══════════
    كل قالب شخصية بصرية كاملة ضمن هوية الموقع (أحادية + اللون المعتمد):
    المداد · الليل · الجريدة · الشريط · اللوح · التوقيع */
 export type CardFormatKey = 'square' | 'portrait' | 'story'

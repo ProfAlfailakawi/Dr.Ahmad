@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
 /**
@@ -13,12 +13,12 @@ import { Link } from 'react-router'
  * تُصفّ الفقرة — وآخرُ سطرٍ يقصر من اليسار كما تقصر الفقرة العربية.
  *
  * القواعد الستّ التي يقوم عليها هذا الملف، وتنتقل معه إلى بقيّة الصفحات:
- *   ١) لا شيء يظهر جاهزاً — يُركَّب أمام العين.
- *   ٢) الانتظار يُصمَّم، ويتكلّم بصوت الدكتور لا بلغة الأنظمة.
- *   ٣) البنية تُرى: خيطٌ رفيع وعقدة، ويُكتب **سبب** الصلة تحتها.
- *   ٤) الصندوق لا يقفز: الارتفاع محجوز، فيتبدّل المحتوى في مكانه.
- *   ٥) الجرأة في موضعٍ واحد: لون الاعتماد في نقطةٍ واحدة، وما حولها شعرة.
- *   ٦) زواياه ١٢، وخطّاه المسيري وتجوال، وألوانه ألوان الموقع — لا استعارة.
+ *   1) لا شيء يظهر جاهزاً — يُركَّب أمام العين.
+ *   2) الانتظار يُصمَّم، ويتكلّم بصوت الدكتور لا بلغة الأنظمة.
+ *   3) البنية تُرى: خيطٌ رفيع وعقدة، ويُكتب **سبب** الصلة تحتها.
+ *   4) الصندوق لا يقفز: الارتفاع محجوز، فيتبدّل المحتوى في مكانه.
+ *   5) الجرأة في موضعٍ واحد: لون الاعتماد في نقطةٍ واحدة، وما حولها شعرة.
+ *   6) زواياه 12، وخطّاه المسيري وتجوال، وألوانه ألوان الموقع — لا استعارة.
  */
 
 export function ComposeScene({
@@ -67,14 +67,22 @@ export function ComposeScene({
  * من أول لحظة: الميزة تُحسّن، ولا تحجب شيئاً حين تغيب.
  */
 export function useRevealOnView<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null)
   const [shown, setShown] = useState(false)
+  const observerRef = useRef<IntersectionObserver | null>(null)
 
-  useEffect(() => {
-    const node = ref.current
+  /* مرجعٌ دالّة لا كائن: العنصر قد يُركَّب متأخّراً — بعد أن يصل المسار من
+     الأرشيف مثلاً — فلو راقبنا مرةً واحدة عند التركيب لبقي بلا مراقب،
+     ولظلّ المحتوى مخفيّاً إلى الأبد. هنا نبدأ المراقبة لحظة تعلّقه. */
+  const ref = useCallback((node: T | null) => {
+    observerRef.current?.disconnect()
+    observerRef.current = null
     if (!node) return
-    if (typeof IntersectionObserver === 'undefined') { setShown(true); return }
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setShown(true); return }
+
+    if (typeof IntersectionObserver === 'undefined'
+      || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setShown(true)
+      return
+    }
 
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
@@ -85,7 +93,13 @@ export function useRevealOnView<T extends HTMLElement>() {
     }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 })
 
     observer.observe(node)
-    return () => observer.disconnect()
+    observerRef.current = observer
+  }, [])
+
+  /* حزامُ أمان: لو تعطّل المراقب لأي سبب، لا يبقى المحتوى محجوباً. */
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShown(true), 1200)
+    return () => { window.clearTimeout(timer); observerRef.current?.disconnect() }
   }, [])
 
   return { ref, shown }

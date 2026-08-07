@@ -2773,15 +2773,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T14:45:00.000Z"
   },
-  "how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.mp3": {
-    "bytes": 7146285,
-    "sha256": "41be1c02b8930ce8664261b62ea8e5e477c78f86ce33271b905d44688c9f3e83",
-    "contentType": "audio/mpeg",
-    "durationSeconds": 357,
-    "publishedAt": "2026-08-07T14:45:00.000Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-07T14:45:00.000Z"
-  },
   "i-earned-more-than-harvard-but-it-doesnt-teach-brains.dialogue.mp3": {
     "bytes": 4561005,
     "sha256": "25becf23fa358b7216a885dcf6473a7d0956d5fd730a88ef8764731a1cd13e35",
@@ -4024,14 +4015,6 @@
   "he-passed-the-exam-but-failed-the-question-2.dialogue.json": {
     "bytes": 9167,
     "sha256": "ae7c76e5b9609dedd79382372485d37ccdfd9abd5c04edd17691e9377b0fcc76",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-08-07T14:45:00.000Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-07T14:45:00.000Z"
-  },
-  "how-do-we-assess-without-breaking-the-human-beingarabic.dialogue.json": {
-    "bytes": 15548,
-    "sha256": "74531c064bbebaa30a8de7f5d564612d4e3da54e97e8c87cf09b0c5ffe28970d",
     "contentType": "application/json; charset=utf-8",
     "publishedAt": "2026-08-07T14:45:00.000Z",
     "validationStatus": "verified-r2",

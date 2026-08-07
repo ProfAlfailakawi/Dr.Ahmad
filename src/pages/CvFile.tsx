@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { getDb } from '../lib/firebase'
+import { ComposeScene } from '../components/ComposeScene'
 
 type CvFileMetadata = {
   version?: string
@@ -125,7 +126,7 @@ export default function CvFile() {
       <div className="max-w-md text-center">
         {status === 'loading' ? (
           <>
-            <span className="mx-auto block h-8 w-8 animate-spin rounded-full border-2 border-hair border-t-accent" aria-hidden="true" />
+            <ComposeScene compact lines={[]} />
             <p className="mt-5 font-display text-[1.05rem] font-semibold text-ink">{kind === 'ar' ? 'جارٍ تجهيز السيرة الذاتية…' : 'Preparing the CV…'}</p>
             <p className="mt-2 text-[.78rem] leading-relaxed text-soft">{kind === 'ar' ? 'ستفتح نسخة PDF تلقائياً.' : 'The PDF will open automatically.'}</p>
           </>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
+import { ComposeScene, useRevealOnView } from '../components/ComposeScene'
 import { useCmsContent, useExtras } from '../lib/content'
 import { normalizeArabic } from '../lib/cms'
 import { staticQuestions } from './Questions'
@@ -151,6 +152,9 @@ export default function ThoughtPaths() {
     return () => window.removeEventListener('hashchange', sync)
   }, [availablePaths])
 
+  /* الخيط يُرسم حين يصله القارئ، ثم تستقرّ محطّاته واحدةً بعد أخرى. */
+  const { ref: journeyRef, shown: journeyShown } = useRevealOnView<HTMLOListElement>()
+
   const journey = useMemo(() => {
     const rankedArticles = articles
       .map((article) => ({ article, score: matchScore(`${article.title} ${article.excerpt} ${article.body || ''} ${article.cat}`, active) }))
@@ -291,7 +295,7 @@ export default function ThoughtPaths() {
           </FadeUp>
 
           {loading && journey.nodes.length === 0 ? (
-            <p className="mt-14 text-soft">يُجمع المسار من الأرشيف…</p>
+            <div className="mt-14"><ComposeScene lines={["يُجمع المسار من الأرشيف…"]} /></div>
           ) : journey.nodes.length === 0 ? (
             <div className="mt-14 rounded-2xl border border-hair bg-wash p-7 text-center">
               <p className="font-display text-[1.2rem] font-semibold text-ink">لا توجد مواد متطابقة بوضوح بعد.</p>
@@ -299,7 +303,10 @@ export default function ThoughtPaths() {
             </div>
           ) : (
             <FadeUp key={`${active.id}-journey`}>
-            <ol className="mt-14 border-r border-hair pe-7 md:pe-10">
+            <ol
+              ref={journeyRef}
+              className={`thread-spine mt-14 border-r border-hair pe-7 md:pe-10${journeyShown ? ' thread-spine--drawn' : ''}`}
+            >
               {journey.nodes.map((node, index) => {
                 const content = (
                   <>
@@ -313,8 +320,12 @@ export default function ThoughtPaths() {
                   </>
                 )
                 return (
-                    <li key={`${active.id}-${node.key}`} className="relative pb-11 last:pb-0">
-                      <span className="absolute -right-[5px] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent" />
+                    <li
+                      key={`${active.id}-${node.key}`}
+                      className="thread-station relative pb-11 last:pb-0"
+                      style={{ ['--station-delay' as string]: `${Math.min(index, 7) * 110}ms` }}
+                    >
+                      <span className="thread-node absolute -right-[5px] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent" />
                       {node.to ? (
                         <Link to={node.to} className="group block">{content}</Link>
                       ) : node.href ? (

@@ -112,7 +112,7 @@ function buildWakeWelcome(messages = botMessagesNow(), at = new Date(), conversa
   const label = attentive
     ? `تسأل عن ${attentive.interest}، ونشر الدكتور بعد آخر زيارتك:`
     : (messages.dailyGateLabel || 'بوابة اليوم:')
-  const text = `${header}\n\n${label}\n*${gate.title}*\n${quote ? `«${quote}…»\n` : ''}${gate.url}\n\n${options}`
+  const text = `${header}\n\n${label}\n*${gate.title}*\n${quote ? `«${verbatim(quote)}…»\n` : ''}${gate.url}\n\n${options}`
   return { text, contextItemIds: [gate.id], evidence: [gate.id], lastTopic: gate.title, attentive: Boolean(attentive) }
 }
 function welcomeText(messages = botMessagesNow(), at = new Date()) {
@@ -136,8 +136,10 @@ function clarifyText(messages = botMessagesNow(), conversation = {}) {
 function noMatchText(messages = botMessagesNow()) {
   return `${messages.noMatch || 'ما لقيت مادة منشورة مطابقة الآن.'}\n\nجرّب كلمة أقرب للموضوع، أو قل لي: مقالة، كتاب، بحث، أو بودكاست.`
 }
+/* سلّم المدّة صار حقيقياً، فحقُّه أن يُذكر: كان يعمل ولا يعرفه أحد لأن
+   القائمة لا تسمّيه إلا في الترحيب وحده. والمدّة تُكتب كما تُقال — أيّ مدّة. */
 function helpText() {
-  return `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• آخر مقالة / كتاب / بحث / بودكاست\n• عندك شي عن موضوع معيّن؟\n• لخّصها / افتحها / عطني المصدر\n• عطني غيرها / اللي بعدها / الأولى\n• فاجئني / عندي دقيقة / اختبرني\n\n${SITE_URL}`
+  return `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• آخر مقالة / كتاب / بحث / بودكاست\n• عندك شي عن موضوع معيّن؟\n• لخّصها / افتحها / عطني المصدر\n• اقرأ لي بالمدّة اللي تناسبك: ٣٠ ثانية · دقيقة · دقيقتين · تعمّق\n• كمل / زدني / عطني غيرها / اللي بعدها / الأولى\n• فاجئني / اختبرني\n\n${SITE_URL}`
 }
 const BRIDGE_ONLINE_MS = Math.max(60_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 180_000))
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
@@ -347,7 +349,20 @@ function isGreetingOnly(text) {
    يقول «تكنولوجيا» لا «تقنية». يُطبَّق على ما يكتبه البوت من عنده — التصنيفات
    وأبواب الأرشيف والجُمل — دون المساس بعناوين المقالات ونصوصها المنشورة،
    فتلك كلماته هو في مادةٍ صدرت باسمه ولا تُحرَّر من خلف ظهره. */
-function systemTerminology(value) {
+/* ── لفظ الموقع، ونصّ الدكتور ──
+   قاعدة الدار: نكتب «تكنولوجيا» لا «تقنية» في **كلامنا نحن**. وكان المبدّل
+   يمرّ على الردّ كلِّه فيصيب المقتطف المنقول من مادةٍ منشورة: كتب الدكتور
+   «التقنيات المساعِدة» فوصل القارئ «التكنولوجيات المساعِدة» — تحريفٌ في
+   نصٍّ نقدّمه على أنه نصّه، وهو نقضٌ للبوابة المقدّسة نفسها (وقد نصّ الدكتور
+   صراحةً على منع الاستبدال الشامل على متونه). فما يُقتبس منه يُلفّ بعلامتين
+   لا تُطبعان، والمبدّل يقفز فوقهما. */
+const VERBATIM_OPEN = '\u0001'
+const VERBATIM_CLOSE = '\u0002'
+function verbatim(value) {
+  const text = String(value || '')
+  return text ? `${VERBATIM_OPEN}${text}${VERBATIM_CLOSE}` : text
+}
+function houseTerminology(value) {
   return String(value || '')
     .replace(/التقنيات/g, 'التكنولوجيات')
     .replace(/تقنيات/g, 'تكنولوجيات')
@@ -356,6 +371,22 @@ function systemTerminology(value) {
     .replace(/والتقنية|والتقنيه/g, 'والتكنولوجيا')
     .replace(/التقنية|التقنيه/g, 'التكنولوجيا')
     .replace(/تقنية|تقنيه/g, 'تكنولوجيا')
+}
+function systemTerminology(value) {
+  const text = String(value || '')
+  if (!text.includes(VERBATIM_OPEN)) return houseTerminology(text).replace(/[\u0001\u0002]/g, '')
+  return text
+    .split(VERBATIM_OPEN)
+    .map((chunk, index) => {
+      if (index === 0) return houseTerminology(chunk)
+      const close = chunk.indexOf(VERBATIM_CLOSE)
+      /* اقتباسٌ بلا إغلاق يعني أن القصّ عند حدّ الإرسال بتره — يبقى كما هو،
+         فالأصل في نصّه ألّا يُمسّ عند الشكّ. */
+      if (close < 0) return chunk
+      return chunk.slice(0, close) + houseTerminology(chunk.slice(close + 1))
+    })
+    .join('')
+    .replace(/[\u0001\u0002]/g, '')
 }
 
 /* ترقية ٧ — خفض التوقيع: «رد آلي من موقع د. أحمد» تحت كل رسالة يثقل المحادثة
@@ -534,6 +565,11 @@ function itemLabel(item) {
   })[item?.kind] || 'مادة'
 }
 
+/* «لهذه كتاب» عربيةٌ مكسورة. الإشارة تتبع جنس المسمّى لا جنس «المادة». */
+function itemDemonstrative(item) {
+  return ['book', 'paper', 'podcast'].includes(item?.kind) ? 'لهذا' : 'لهذه'
+}
+
 const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
 function arabicNumber(value) {
   return String(value).replace(/\d/g, (digit) => AR_DIGITS[Number(digit)])
@@ -567,7 +603,7 @@ function siteResultReply(items, intro = 'وجدت لك من موقع الدكت�
     const item = items[0]
     const source = normalizeWhitespace(item.excerpt || item.body || '')
     const preview = source.split(/\s+/).filter(Boolean).slice(0, 30).join(' ')
-    return `${intro}\n\n*${item.title}*\n${itemMetaLine(item)}${preview ? `\n\n${preview}${source.split(/\s+/).filter(Boolean).length > 30 ? '…' : ''}` : ''}\n\n${item.url}\n\nماذا تريد بعدها؟ لخّصها · أعطني المصدر · أطلع لي غيرها.`
+    return `${intro}\n\n*${item.title}*\n${itemMetaLine(item)}${preview ? `\n\n${verbatim(preview)}${source.split(/\s+/).filter(Boolean).length > 30 ? '…' : ''}` : ''}\n\n${item.url}\n\nماذا تريد بعدها؟ لخّصها · أعطني المصدر · أطلع لي غيرها.`
   }
   const lines = items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${itemMetaLine(item)}\n${item.url}`)
   return `${intro}\n\n${lines.join('\n\n')}\n\nاختر رقماً، أو اكتب: لخّص الأولى · أعطني غيرها.`
@@ -658,7 +694,7 @@ function buildChallenge(conversation = {}, seedText = '') {
   const fragment = normalizeWhitespace(correct.excerpt || correct.body).split(/\s+/).slice(0, 18).join(' ')
   const lines = arranged.map((item, index) => `${arabicNumber(index + 1)}) ${item.title}`)
   return {
-    reply: `تحدي ١٥ ثانية — من أي مادة أُخذت هذه العبارة؟\n\n«${fragment}…»\n\n${lines.join('\n')}\n\nاكتب رقم إجابتك: ١ أو ٢ أو ٣.`,
+    reply: `تحدي ١٥ ثانية — من أي مادة أُخذت هذه العبارة؟\n\n«${verbatim(fragment)}…»\n\n${lines.join('\n')}\n\nاكتب رقم إجابتك: ١ أو ٢ أو ٣.`,
     state: { answerIndex, itemIds: arranged.map((item) => item.id), askedAt: asIso() },
     evidence: [correct.id],
   }
@@ -692,7 +728,7 @@ function excerptReply(item, short = false) {
   const excerpt = words.slice(0, limit).join(' ')
   /* أناقة «بوابة اليوم» نفسها (طلب الدكتور ٣١ يوليو): المقتطف اقتباسٌ يتنفس
      بين «…»، بلا سطر البيانات الوصفية الذي كان يزاحم العنوان. */
-  return `*${item.title}*\n\n${excerpt ? `«${excerpt}${words.length > limit ? '…' : ''}»` : 'هذه المادة متاحة كاملة في موقع الدكتور.'}\n\n${item.url}`
+  return `*${item.title}*\n\n${excerpt ? `«${verbatim(excerpt)}${words.length > limit ? '…' : ''}»` : 'هذه المادة متاحة كاملة في موقع الدكتور.'}\n\n${item.url}`
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -715,7 +751,7 @@ function distilledReply(item) {
   const note = distilled.whole
     ? 'المادة مختصرةٌ أصلاً، وهذا لبّها بنصّه:'
     : 'زبدتها في جملةٍ من نصّ الدكتور:'
-  return `*${item.title}*\n\n${note}\n«${clipped}»\n\n${item.url}`
+  return `*${item.title}*\n\n${note}\n«${verbatim(clipped)}»\n\n${item.url}`
 }
 
 /* ── سلّم الوقت: «٣٠ ثانية» ليست «لخّص» ──
@@ -733,27 +769,88 @@ function distilledReply(item) {
    يقطع عند نهاية جملةٍ لا في وسطها، وتحرسه الاختبارات النووية على ٣٦ مقالة.
    لا توليد ولا إعادة صياغة: نصّه كما نشره. */
 const READING_LADDER = Object.freeze({
-  '30s': { extract: '30s', cap: 0, path: false, label: 'قراءة في نحو ٣٠ ثانية من نصّه' },
-  '1min': { extract: '2min', cap: 150, path: false, label: 'قراءة في نحو دقيقة من نصّه' },
-  '2min': { extract: '2min', cap: 0, path: false, label: 'قراءة في نحو دقيقتين من نصّه' },
-  deep: { extract: '2min', cap: 0, path: true, label: 'تعمّقٌ في نصّه' },
+  '30s': { extract: '30s', cap: 0, words: 60, path: false, label: 'قراءة في نحو ٣٠ ثانية من نصّه' },
+  '1min': { extract: '2min', cap: 150, words: 150, path: false, label: 'قراءة في نحو دقيقة من نصّه' },
+  '2min': { extract: '2min', cap: 0, words: 220, path: false, label: 'قراءة في نحو دقيقتين من نصّه' },
+  deep: { extract: '2min', cap: 0, words: 220, path: true, label: 'تعمّقٌ في نصّه' },
 })
 /* حدُّ الإرسال ٢٠٠٠ حرف (bounded عند حافة الإرسال)، والتوقيع وسطر المتابعة
    يُضافان بعد البناء — فنبني تحت السقف لا عنده، حتى لا يصل المقطع مبتوراً. */
 const READING_REPLY_LIMIT = 1_780
 
+/* أسماء الأعداد كما يكتبها الناس، مطبَّعةً (ة→ه). لا نستقصي العربية كلها —
+   نستقصي ما يُكتب فعلاً في محادثةٍ عن مدّة قراءة. */
+const SPOKEN_COUNTS = new Map([
+  ['واحده', 1], ['وحده', 1], ['اثنتين', 2], ['ثنتين', 2], ['ثنتان', 2],
+  ['ثلاث', 3], ['ثلاثه', 3], ['اربع', 4], ['اربعه', 4], ['خمس', 5], ['خمسه', 5],
+  ['ست', 6], ['سته', 6], ['سبع', 7], ['سبعه', 7], ['ثمان', 8], ['ثمانيه', 8],
+  ['تسع', 9], ['تسعه', 9], ['عشر', 10], ['عشره', 10],
+])
+const FRACTIONS = new Map([['نص', .5], ['نصف', .5], ['ربع', .25], ['ثلث', 1 / 3]])
+
+/* المدّة تُقرأ ثوانيَ واحدة ثم تُترجم إلى درجةٍ في السلّم. الترجمة بالثواني
+   لا بالألفاظ، فتستوي «٤٥ ثانية» و«نص دقيقة» و«دقيقة ونص» على ميزانٍ واحد. */
+function requestedSeconds(value) {
+  const text = String(value || '')
+  /* «دقايق» جمعٌ لا يحوي «دقيق» — كان يسقط الوحدةَ فتُقرأ «خمس دقائق» ثلاثين ثانية. */
+  const unit = /ثاني|ثواني/.test(text) ? 1 : /ساعه/.test(text) ? 3_600 : /دقيق|دقاي/.test(text) ? 60 : 0
+  if (!unit) return 0
+  /* «دقيقتان/دقيقتين» مثنّى: عددُه في صيغته لا قبله. */
+  const dual = /دقيقتين|دقيقتان/.test(text) ? 2 : 0
+  const digits = Number((text.match(/(\d{1,3})\s*(?:ثاني|ثواني|دقيق|دقاي|ساعه)/) || [])[1] || 0)
+  let count = digits || dual
+  if (!count) {
+    for (const [word, number] of SPOKEN_COUNTS) {
+      if (new RegExp(`(?:^|\\s)${word}\\s*(?:ثانيه|ثواني|دقيقه|دقايق|ساعه)`).test(text)) { count = number; break }
+    }
+  }
+  if (!count) {
+    for (const [word, ratio] of FRACTIONS) {
+      if (new RegExp(`(?:^|\\s)${word}\\s*(?:ثانيه|دقيقه|ساعه)`).test(text)) { count = ratio; break }
+    }
+  }
+  if (!count) count = 1
+  /* «ونص/وربع» كسرٌ يُضاف بعد العدد: «دقيقة ونص» تسعون ثانية لا ستون. */
+  const tail = (text.match(/و\s*(نص|نصف|ربع)\s*$/) || [])[1]
+  if (tail) count += FRACTIONS.get(tail) || 0
+  return Math.round(count * unit)
+}
+
 function readingSpeedOf(cleanText, intent) {
   const value = String(cleanText || '')
   if (/(?:تعمق|اتعمق|عمقها|عميق|المطول|النص الكامل|كامل النص)/.test(value)) return 'deep'
-  const minutes = Number((value.match(/(\d{1,3})\s*دقيق/) || [])[1] || 0)
-  if (minutes >= 3 || /(?:دقيقتان|دقيقتين|دقيقتي)/.test(value)) return minutes >= 3 ? 'deep' : '2min'
-  if (minutes === 2) return '2min'
-  const seconds = Number((value.match(/(\d{1,3})\s*ثاني/) || [])[1] || 0)
-  if (seconds > 90) return '2min'
-  if (seconds >= 46) return '1min'
-  if (seconds > 0) return '30s'
-  if (minutes === 1 || intent === INTENTS.ONE_MINUTE || /دقيقه/.test(value)) return '1min'
+  const seconds = requestedSeconds(value)
+  if (seconds > 0) {
+    /* الحدود عند منتصف المسافة بين درجتين، و«دقيقتان ونصف» آخر ما يُعدّ
+       دقيقتين — وما فوقها طلبُ تعمّقٍ لا طلبُ مدّةٍ أطول (السقف واحد). */
+    if (seconds <= 45) return '30s'
+    if (seconds <= 95) return '1min'
+    if (seconds <= 150) return '2min'
+    return 'deep'
+  }
+  /* «ما عندي وقت» ليست «عندي دقيقة»: من يعتذر عن الوقت لا يُعطى مئةً وخمسين
+     كلمة. الاستعجال الصريح ينزل درجةً إلى أقصر ما في السلّم. */
+  if (/(?:ما عندي وقت|وقت قصير|مستعجل|بسرعه|بسرعة|شي سريع|سريع|قصيره|قصير)/.test(value)) return '30s'
+  if (intent === INTENTS.ONE_MINUTE) return '1min'
   return '30s'
+}
+
+/* ── من أين تبدأ القراءة؟ ──
+   من أوّل المقالة في الأصل. إلا أن يكون الدورُ السابق قراءةً على المادة
+   نفسها — فطلبُ مدّةٍ بعد قراءةٍ هو استئنافٌ لا إعادة: من قال «٣٠ ثانية»
+   مرتين يريد الثلاثين التالية، لا الأولى مكرّرة. أما بعد «لخّص» أو بعد فتح
+   المادة فنبدأ من أوّلها، لأن الافتتاح لم يُقرأ بعد. */
+const RESUMING_REASONS = /^(?:timed-reading-|implied-deepen$|continue-reading$)/
+function readingStartOf(conversation = {}, item = null) {
+  if (!item) return 0
+  if (!RESUMING_REASONS.test(String(conversation.lastDecisionReason || ''))) return 0
+  if (String(conversation.readCursorItemId || '') !== String(item.id)) return 0
+  return Math.max(0, Number(conversation.readCursor || 0))
+}
+
+function deepCompanion(item, previousIds = []) {
+  if (!item?.title) return null
+  return exactSiteResults(item.title, item.title, { excludeIds: [item.id, ...previousIds], limit: 1 })[0] || null
 }
 
 /* موضع «كمل» بعد القراءة: المقطع قد يبدأ بعد عنوانٍ داخليّ (bodyStart)، فلا
@@ -768,35 +865,87 @@ function cursorAfterPassage(item, passage) {
 }
 
 /* الدقيقة ليست عند المستخرِج المعاير (عنده ٣٠ ثانية ودقيقتان فقط)، فنبنيها
-   بقصّ مقطع الدقيقتين عند آخر جملةٍ تامّة تقع تحت السقف — لا في وسط كلام. */
+   بقصّ مقطع الدقيقتين عند آخر جملةٍ تامّة تقع تحت السقف — لا في وسط كلام.
+   والقصّ **باقتطاعٍ من الأصل** لا بتفكيكٍ وإعادةِ وصلٍ بمسافة: الوصلُ كان
+   يسحق فواصل فقراته فيصل نصّه كتلةً واحدة، ويكفّ المقطع عن كونه منقولاً من
+   المتن حرفاً بحرف — وهو شرط البوابة المقدّسة. */
 function trimVerbatimToWords(text, maxWords) {
-  const words = String(text || '').split(/\s+/).filter(Boolean)
-  if (!maxWords || words.length <= maxWords) return String(text || '')
-  const sentences = String(text).split(/(?<=[.؟!…])\s+/).filter(Boolean)
-  const kept = []
-  let count = 0
-  for (const sentence of sentences) {
-    const size = sentence.split(/\s+/).filter(Boolean).length
-    if (kept.length && count + size > maxWords) break
-    kept.push(sentence)
-    count += size
+  const source = String(text || '')
+  if (!maxWords) return source
+  const total = normalizeWhitespace(source).split(/\s+/).filter(Boolean).length
+  if (total <= maxWords) return source
+  const stops = /[.؟!…]+(?=\s|$)/g
+  let cut = -1
+  let counted = 0
+  let scanned = 0
+  let match = null
+  while ((match = stops.exec(source))) {
+    const end = match.index + match[0].length
+    const size = counted + normalizeWhitespace(source.slice(scanned, end)).split(/\s+/).filter(Boolean).length
+    if (size > maxWords) break
+    cut = end
+    counted = size
+    scanned = end
   }
-  return kept.join(' ').replace(/[،,؛…]+$/, '').trim() || words.slice(0, maxWords).join(' ')
+  /* بلا وقفةٍ داخل النافذة نقطع عند حدّ الكلمة — أضعف الحلّين، ولا يقع إلا
+     في نصٍّ بلا علامات وقفٍ أصلاً. */
+  if (cut <= 0) return source.slice(0, rawOffsetOfWord(source, maxWords)).trim()
+  return source.slice(0, cut).replace(/[،,؛]+$/, '').trim()
 }
 
-function timedReadingReply(item, speed = '30s', related = null) {
+/* القطع عند الكلمة رقم N **في النصّ الخام**، لا في نسخةٍ مسحوقة المسافات:
+   فقرات الدكتور جزءٌ من كلامه، وكانت تُفقد في الاستئناف فيصل نصّه كتلةً
+   واحدة بينما وصلته القراءةُ الأولى مفقَّرة. */
+function rawOffsetOfWord(raw, wordIndex) {
+  if (wordIndex <= 0) return 0
+  let count = 0
+  for (let i = 0; i < raw.length; i += 1) {
+    if (!/\s/.test(raw[i])) continue
+    if (i > 0 && /\s/.test(raw[i - 1])) continue
+    count += 1
+    if (count === wordIndex) return i + 1
+  }
+  return raw.length
+}
+
+/* الاستئناف من موضعٍ داخل المتن: المستخرِج المعاير يبدأ من أوّل المقالة
+   دائماً، فلا يصلح للدور الثاني. نأخذ ما بعد المؤشر ونقتطع منه جملاً تامّة
+   بقدر المدّة — القاعدة نفسها (نهاية جملةٍ لا وسطها) بمَبدَإٍ آخر. */
+function resumedPassage(item, startWords, targetWords) {
+  const raw = String(item?.body || item?.excerpt || '')
+  if (!raw.trim()) return ''
+  const totalWords = normalizeWhitespace(raw).split(/\s+/).filter(Boolean).length
+  if (startWords >= totalWords) return ''
+  return trimVerbatimToWords(raw.slice(rawOffsetOfWord(raw, startWords)).trim(), targetWords)
+}
+
+function timedReadingReply(item, speed = '30s', related = null, startWords = 0) {
   const plan = READING_LADDER[speed] || READING_LADDER['30s']
-  const extract = extractVerbatimAtSpeed(item, plan.extract)
-    || (plan.extract === '2min' ? extractVerbatimAtSpeed(item, '30s') : null)
+  const total = normalizeWhitespace(item?.body || item?.excerpt || '').split(/\s+/).filter(Boolean).length
+  /* الاستئناف طريقٌ مغلقٌ على نفسه: إن نفد النصّ فلا نسقط إلى المستخرِج —
+     السقوط كان يُعيد افتتاح المقالة وكأنّ شيئاً لم يُقرأ، وهو أسوأ من الصمت. */
+  let extract = null
+  if (startWords > 0) {
+    const resumed = resumedPassage(item, startWords, plan.words)
+    if (!resumed) {
+      return {
+        text: `*${item.title}*\n\nوصلنا آخر ما عندي من نصّها. تقرأها كاملة في صفحتها:\n\n${item.url}\n\nوقل لي «لخّصها» أعطيك زبدتها في جملة، أو «عطني غيرها» أفتح لك مادةً قريبة منها.`,
+        cursor: total,
+      }
+    }
+    extract = { text: resumed }
+  } else {
+    extract = extractVerbatimAtSpeed(item, plan.extract)
+      || (plan.extract === '2min' ? extractVerbatimAtSpeed(item, '30s') : null)
+  }
   if (!extract?.text) {
     /* المواد بلا متنٍ منشور (كتاب · بحث · مختارة): لا نخترع لها قراءةً ولا
        نعيد بطاقتها صامتين — نصارح ونحيل إلى صفحتها. */
     return {
-      text: `*${item.title}*\n\nما عندي متنٌ منشورٌ لهذه ${itemLabel(item)} أقرأه لك هنا بنصّه. تجدها كاملة في صفحتها:\n\n${item.url}`,
+      text: `*${item.title}*\n\nما عندي متنٌ منشورٌ ${itemDemonstrative(item)} ${itemLabel(item)} أقرأه لك هنا بنصّه. تجده كاملاً في صفحتها:\n\n${item.url}`,
       cursor: 0,
     }
   }
-  const total = normalizeWhitespace(item?.body || item?.excerpt || '').split(/\s+/).filter(Boolean).length
   /* «تعمّق» لا يعني كلماتٍ أكثر: سقف الرسالة لا يتّسع لأكثر من الدقيقتين
      أصلاً، ولو زدنا لبُتر آخرُ كلامه. التعمّق أن يمتدّ الطريق — أين يُكمل،
      وأين يسمعه بصوته المنشور، وأيُّ مادةٍ من أرشيفه تمدّ الفكرة نفسها. */
@@ -808,27 +957,35 @@ function timedReadingReply(item, speed = '30s', related = null) {
       related?.title && related?.url ? `ومن أرشيفه مادةٌ تمدّ الفكرة نفسها:\n«${related.title}»\n${related.url}` : '',
     ].filter(Boolean)
     : []
+  /* «تعمّق» بلا صوتٍ ولا مادةٍ مجاورة كان يصير دقيقتين بلافتةٍ أخرى. لا يخرج
+     التعمّق أبداً بلا طريقٍ يمتدّ: شبكة الأفكار حاضرةٌ لكل مادةٍ في الفهرس. */
+  if (plan.path && !deepLines.length) deepLines.push('وقل لي «شبكة الأفكار» أفتح لك تقاطعات هذه الفكرة في أرشيفه.')
+  const resumedLabel = startWords > 0 ? `${plan.label} — تكملة` : plan.label
   const build = (body) => {
-    const cursor = cursorAfterPassage(item, body)
+    /* عند الاستئناف المؤشر حسابٌ صريح (البداية + كلمات المقطع)، لا بحثٌ عن
+       المقطع في المتن — فقد تتكرّر عبارةٌ فيُصاب موضعٌ سابق. */
+    const cursor = startWords > 0
+      ? Math.min(total, startWords + body.split(/\s+/).filter(Boolean).length)
+      : cursorAfterPassage(item, body)
     const remaining = Math.max(0, total - cursor)
     const tail = remaining > 0
-      ? `بقي نحو ${arabicCountPhrase(Math.ceil(remaining / 90), PASSAGE_AFTER_PREPOSITION_FORMS, arabicNumber)} من نصّها. قل «كمل» أكمل لك من هنا، أو «لخّصها» أعطيك زبدتها في جملة.`
-      : 'وبهذا اكتمل نصّها عندي.'
+      ? `بقي نحو ${arabicCountPhrase(Math.ceil(remaining / 90), PASSAGE_AFTER_PREPOSITION_FORMS, arabicNumber)} من نصّها. قل لي «كمل» أكمل من هنا، أو «لخّصها» أعطيك زبدتها في جملة.`
+      : 'وبهذا اكتمل نصّها عندي — وقل لي «عطني غيرها» أفتح لك مادةً قريبة منها.'
     return {
       cursor,
-      text: `*${item.title}*\n${plan.label}:\n\n${body}${remaining > 0 ? '…' : ''}\n\n${tail}\n\n${item.url}${deepLines.length ? `\n\n${deepLines.join('\n\n')}` : ''}`,
+      text: `*${item.title}*\n${resumedLabel}:\n\n${verbatim(body)}${remaining > 0 ? '…' : ''}\n\n${tail}\n\n${item.url}${deepLines.length ? `\n\n${deepLines.join('\n\n')}` : ''}`,
     }
   }
-  let built = build(trimVerbatimToWords(extract.text, plan.cap))
-  /* حارس السقف: نُسقط جملاً من آخر المقطع حتى يتّسع الردّ، ولا نقصّ حرفاً في
-     وسط كلمة — القصّ الأعمى عند ٢٠٠٠ كان سيبتر آخر جملةٍ للدكتور. والمؤشر
-     يُعاد حسابه مع كلّ إسقاط، فتبدأ «كمل» من حيث انتهت القراءة فعلاً. */
-  if (built.text.length > READING_REPLY_LIMIT) {
-    const sentences = trimVerbatimToWords(extract.text, plan.cap).split(/(?<=[.؟!…])\s+/).filter(Boolean)
-    while (sentences.length > 1 && built.text.length > READING_REPLY_LIMIT) {
-      sentences.pop()
-      built = build(sentences.join(' ').replace(/[،,؛…]+$/, '').trim())
-    }
+  const passage = trimVerbatimToWords(extract.text, plan.cap)
+  let built = build(passage)
+  /* حارس السقف: نضيّق النافذة تدريجياً — بالمقصّ نفسه لا بتفكيكٍ وإعادة وصل —
+     حتى يتّسع الردّ تحت حدّ الإرسال. القصّ الأعمى عند ٢٠٠٠ كان سيبتر آخر
+     جملةٍ للدكتور، والمؤشر يُعاد حسابه في كل تضييق فتبدأ «كمل» من حيث انتهت
+     القراءة فعلاً. */
+  let budget = normalizeWhitespace(passage).split(/\s+/).filter(Boolean).length
+  while (built.text.length > READING_REPLY_LIMIT && budget > 30) {
+    budget = Math.max(30, Math.floor(budget * .85))
+    built = build(trimVerbatimToWords(passage, budget))
   }
   return built
 }
@@ -842,6 +999,10 @@ const IMPLIED_READINGS = [
   ['simplify', /(?:^|\s)(?:ما|مو|مب|مهوب)\s*(?:فهمت|فاهم|فاهمه|واضح|واضحه)|(?:^|\s)(?:غير|مو)\s*(?:واضح|مفهوم)|ما\s*وضح|(?:^|\s)(?:صعب|صعبه|معقد|معقده|ثقيل|ثقيله|طويل|طويله|طولت|كثير|كثيره)(?:\s|$)|بسطها|بسطه|سهلها|وضحها/],
   ['deepen', /(?:^|\s)(?:زدني|زد|عمقها|اتعمق|قليل|قليله|ناقص|ما يكفي|ابي اكثر|اكثر من كذا)(?:\s|$)/],
   ['whyMatters', /^(?:ليش|لماذا|وليش|طيب ليش|ليه)(?:\s+(?:مهم|مهمه|يهمني|تهمني))?\s*[؟?]?$/],
+  /* مدّةٌ مجرّدة على مادةٍ حاضرة: «دقيقة» وحدها بعد قائمةٍ تعرض «٣٠ ثانية ·
+     دقيقتان» اختيارُ مدّةٍ لا موضوعُ بحث — وكانت تصل إلى «ما لقيت مادة».
+     نشترط حضور المادة وقِصَر الجملة كشرطَي المضمر كلّه، فلا تتوسّع. */
+  ['timedRead', /^(?:دقيقه|الدقيقه|بسرعه|بسرعة)$/],
 ]
 function impliedReading(cleanText) {
   const words = String(cleanText || '').split(/\s+/).filter(Boolean)
@@ -1299,7 +1460,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       const cardHint = intent === INTENTS.QUOTE_CARD ? '\n\nوبطاقات الاقتباس المصمّمة تجدها في صفحة المختارات نفسها.' : ''
       return {
         kind: 'reply', reason: 'curated-quote', intent,
-        reply: signReply(`«${pick.title}»${note ? `\n\n${note}` : ''}${cardHint}\n\n${pick.url}`, messages),
+        reply: signReply(`«${pick.title}»${note ? `\n\n${verbatim(note)}` : ''}${cardHint}\n\n${pick.url}`, messages),
         evidence: [pick.id], contextItemIds: [pick.id], contextIndex: 0,
       }
     }
@@ -1317,15 +1478,28 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       patch: { readCursor: 42, readCursorItemId: current.id },
     }
   }
+  /* «زدني» و«اتعمق» كانتا تقصّان ١٢٠ كلمةً من أوّل المتن أينما وقع القطع —
+     في وسط جملةٍ غالباً — وتبدآن من الصفر مهما قرأ السائل قبلها. فمن قرأ
+     «٣٠ ثانية» ثم قال «زدني» كان يُعاد عليه ما قرأه للتوّ: هو العطب نفسه
+     الذي اشتكى منه الدكتور في «٣٠ ثانية». الآن تمرّان على السلّم نفسه،
+     وتكملان من حيث وقف لا من أوّل المقالة. */
   if (implied === 'deepen') {
-    const full = normalizeWhitespace(current.body || current.excerpt || '')
-    const words = full.split(/\s+/).filter(Boolean)
-    const chunk = words.slice(0, 120).join(' ')
+    const reading = timedReadingReply(current, 'deep', deepCompanion(current, previousIds), readingStartOf(conversation, current))
     return {
       kind: 'reply', reason: 'implied-deepen', intent,
-      reply: signReply(`فهمت، تبي أعمق. هذا نصّ الدكتور موسّعاً:\n\n*${current.title}*\n\n${chunk}${words.length > 120 ? '…' : ''}\n\nوقل «كمل» أواصل، أو «المصدر» أعطيك الرابط:\n${current.url}`, messages),
+      reply: signReply(`فهمت، تبي أعمق.\n\n${reading.text}`, messages),
       evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
-      patch: { readCursor: Math.min(words.length, 120), readCursorItemId: current.id },
+      patch: { readCursor: reading.cursor, readCursorItemId: current.id },
+    }
+  }
+  if (implied === 'timedRead') {
+    const speed = readingSpeedOf(clean, intent)
+    const reading = timedReadingReply(current, speed, speed === 'deep' ? deepCompanion(current, previousIds) : null, readingStartOf(conversation, current))
+    return {
+      kind: 'reply', reason: `timed-reading-${speed}`, intent,
+      reply: signReply(reading.text, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: reading.cursor, readCursorItemId: current.id },
     }
   }
   if (implied === 'whyMatters') {
@@ -1408,7 +1582,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       const sentences = source.split(/(?<=[.!؟])/u).map((part) => part.trim()).filter(Boolean).slice(0, 3).join(' ')
       return {
         kind: 'reply', reason: 'explain-grounded', intent,
-        reply: signReply(`${intro}هذا جوهر المادة بكلام الدكتور نفسه:\n\n*${target.title}*\n\n${sentences || 'التفصيل الكامل في الصفحة.'}\n\nوالسياق الكامل هنا:\n${target.url}`, messages),
+        reply: signReply(`${intro}هذا جوهر المادة بكلام الدكتور نفسه:\n\n*${target.title}*\n\n${sentences ? verbatim(sentences) : 'التفصيل الكامل في الصفحة.'}\n\nوالسياق الكامل هنا:\n${target.url}`, messages),
         evidence: [target.id], contextItemIds: [target.id], contextIndex: 0, lastTopic: target.title,
       }
     }
@@ -1421,7 +1595,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       const firstSentence = source.split(/(?<=[.!؟])/u).map((part) => part.trim()).filter(Boolean)[0] || target.title
       return {
         kind: 'reply', reason: 'dialogue-opener', intent,
-        reply: signReply(`خذ هذه من *${target.title}*:\n\n«${firstSentence}»\n\nشرايك — توافق الدكتور أم عندك زاوية أخرى؟ اكتب رأيك، وأنا أقابل رأيك بما كتبه في بقية المادة:\n${target.url}`, messages),
+        reply: signReply(`خذ هذه من *${target.title}*:\n\n«${verbatim(firstSentence)}»\n\nشرايك — توافق الدكتور أم عندك زاوية أخرى؟ اكتب رأيك، وأنا أقابل رأيك بما كتبه في بقية المادة:\n${target.url}`, messages),
         evidence: [target.id], contextItemIds: [target.id], contextIndex: 0, lastTopic: target.title,
       }
     }
@@ -1477,8 +1651,19 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   }
 
   if ([INTENTS.SUMMARY, INTENTS.ONE_MINUTE, INTENTS.READ_SPEED].includes(intent)) {
-    if (!current) return { kind: 'reply', reason: 'context-missing', intent, reply: signReply('أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أختصرها لك.', messages) }
-    if (intent === INTENTS.SUMMARY) {
+    /* الاعتذار يصف ما سيفعله بالضبط: من طلب قراءةً بمدّة لا يُوعَد باختصار. */
+    if (!current) return {
+      kind: 'reply', reason: 'context-missing', intent,
+      reply: signReply(intent === INTENTS.SUMMARY
+        ? 'أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أختصرها لك.'
+        : 'أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أقرأ لك منها بالمدّة التي تناسبك.', messages),
+    }
+    /* ONE_MINUTE خليطٌ في المحرك: فيها تعبيرُ وقتٍ («عندي دقيقة» · «وقت
+       قصير») وفيها طلبُ زبدةٍ صريح («الزبدة» · «اختصرها» · «ملخص سريع» ·
+       «الفكرة بس»). ربطُها كلِّها بالقراءة الموقوتة جعل «اختصرها» تُجيب بمئةٍ
+       وخمسين كلمة — نقيضَ ما طُلب. اللفظ الصريح يحكم قبل المدّة. */
+    const asksForGist = /(?:الزبده|زبده|اختصر|ملخص|لخص|الفكره بس|باختصار|الخلاصه|نبذه)/.test(clean)
+    if (intent === INTENTS.SUMMARY || asksForGist) {
       return {
         kind: 'reply', reason: 'context-summary', intent,
         reply: signReply(distilledReply(current), messages),
@@ -1488,10 +1673,8 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       }
     }
     const speed = readingSpeedOf(clean, intent)
-    const companion = speed === 'deep'
-      ? exactSiteResults(current.title, current.title, { excludeIds: [current.id, ...previousIds], limit: 1 })[0] || null
-      : null
-    const reading = timedReadingReply(current, speed, companion)
+    const companion = speed === 'deep' ? deepCompanion(current, previousIds) : null
+    const reading = timedReadingReply(current, speed, companion, readingStartOf(conversation, current))
     return {
       kind: 'reply', reason: `timed-reading-${speed}`, intent,
       reply: signReply(reading.text, messages),
@@ -1509,28 +1692,32 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
         reply: signReply('ما عندي مادة مفتوحة الآن لأكمل منها. قل «آخر مقالة» أو اكتب الموضوع، وبعدها أكمل معك فقرة فقرة.', messages),
       }
     }
-    const full = normalizeWhitespace(current.body || current.excerpt || '')
-    const words = full.split(/\s+/).filter(Boolean)
+    /* «كمل» تتبع قاعدة السلّم نفسها بعد تدقيق ٧ أغسطس: القطع من النصّ الخام
+       بفقراته (كان `join(' ')` يسحقها فيصل كلامه كتلةً واحدة، ويكفّ المقطع عن
+       كونه منقولاً حرفاً بحرف)، والوقوف عند نهاية جملة لا في وسطها، والمؤشر
+       لا يتجاوز طول النصّ (كان يقفز ٩٠ فيتخطّى النهاية ثم يرتدّ). */
+    const raw = String(current.body || current.excerpt || '')
+    const totalWords = normalizeWhitespace(raw).split(/\s+/).filter(Boolean).length
     const sameItem = String(conversation.readCursorItemId || '') === String(current.id)
     const cursor = sameItem ? Math.max(0, Number(conversation.readCursor || 0)) : 0
-    if (!words.length || cursor >= words.length) {
+    if (!totalWords || cursor >= totalWords) {
       return {
         kind: 'reply', reason: 'continue-finished', intent,
         reply: signReply(`وصلنا آخر ما عندي من نص «${current.title}» هنا. تقرأها كاملة في صفحتها:\n\n${current.url}\n\nأو قل «عطني غيرها» وأفتح لك مادة قريبة.`, messages),
         evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
-        patch: { readCursor: words.length, readCursorItemId: current.id },
+        patch: { readCursor: totalWords, readCursorItemId: current.id },
       }
     }
     const step = 90
-    const chunk = words.slice(cursor, cursor + step).join(' ')
-    const nextCursor = cursor + step
-    const remaining = Math.max(0, words.length - nextCursor)
+    const chunk = trimVerbatimToWords(raw.slice(rawOffsetOfWord(raw, cursor)).trim(), step)
+    const nextCursor = Math.min(totalWords, cursor + normalizeWhitespace(chunk).split(/\s+/).filter(Boolean).length)
+    const remaining = Math.max(0, totalWords - nextCursor)
     const tail = remaining > 0
-      ? `\n\nبقي نحو ${arabicCountPhrase(Math.ceil(remaining / 90), PASSAGE_AFTER_PREPOSITION_FORMS, arabicNumber)}. قل «كمل» أكمل، أو «المصدر» أعطيك الرابط.`
+      ? `\n\nبقي نحو ${arabicCountPhrase(Math.ceil(remaining / 90), PASSAGE_AFTER_PREPOSITION_FORMS, arabicNumber)}. قل لي «كمل» أكمل، أو «المصدر» أعطيك الرابط.`
       : `\n\nوبهذا اكتمل النص عندي. الصفحة الكاملة:\n${current.url}`
     return {
       kind: 'reply', reason: 'continue-reading', intent,
-      reply: signReply(`*${current.title}* — تكملة\n\n${chunk}${remaining > 0 ? '…' : ''}${tail}`, messages),
+      reply: signReply(`*${current.title}* — تكملة\n\n${verbatim(chunk)}${remaining > 0 ? '…' : ''}${tail}`, messages),
       evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
       patch: { readCursor: nextCursor, readCursorItemId: current.id },
     }

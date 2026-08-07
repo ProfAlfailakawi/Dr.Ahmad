@@ -728,6 +728,18 @@ async function main() {
   if (batch > 0 && limit > 0) slugs = slugs.slice((batch - 1) * limit, batch * limit)
   else if (limit > 0) slugs = slugs.slice(0, limit)
   if (argv.includes('--skip-done')) slugs = slugs.filter((s) => !existsSync(join(OUT_DIR, `${s}.dialogue.mp3`)))
+  /* حلقةٌ بلا مقالٍ ذي متنٍ كامل يرفضها حارس السجلّ فيتوقّف نشر الموقع كلّه.
+     فنُسقطها هنا قبل أن تُولَّد — لا بعد أن تُرفع. */
+  const bodiesPath = resolve(ROOT, 'src/data/bodies.json')
+  if (existsSync(bodiesPath)) {
+    const bodies = JSON.parse(readFileSync(bodiesPath, 'utf8'))
+    const known = new Set(Array.isArray(bodies) ? bodies.map((b) => b.slug) : Object.keys(bodies))
+    const orphans = slugs.filter((s) => !known.has(s))
+    if (orphans.length) {
+      console.warn(`⚠ تُتخطّى ${orphans.length} حلقةً لا مقالَ لها: ${orphans.join(' · ')}`)
+      slugs = slugs.filter((s) => known.has(s))
+    }
+  }
   if (!slugs.length) { console.error('✘ لم تُحدَّد حلقة'); process.exit(1) }
   mkdirSync(WORK, { recursive: true })
   const results = []

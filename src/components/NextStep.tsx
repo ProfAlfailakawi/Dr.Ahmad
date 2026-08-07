@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import type { ArticleRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import { loadBookPassages } from '../lib/book-quotes'
 import { pickNextStep, rememberStep, type NextStep as Step } from '../lib/next-step'
+import { useRevealOnView } from './ComposeScene'
 
 /**
  * الفصل التالي — سطرٌ واحد في نهاية الصفحة.
@@ -26,6 +27,8 @@ export function NextStep({
   excludeKey?: string
 }) {
   const [step, setStep] = useState<Step | null>(null)
+  /* الخيط يُرسم حين يصل القارئ إليه — بلا بطاقة ولا عنوان، كما أراده. */
+  const { ref: lineRef, shown: lineShown } = useRevealOnView<HTMLAnchorElement>()
 
   useEffect(() => {
     let on = true
@@ -46,10 +49,12 @@ export function NextStep({
   return (
     <div className="mx-auto max-w-shell px-6 pb-8 md:px-11 md:pb-10">
       <Link
+        ref={lineRef}
         to={step.to}
         onClick={() => rememberStep(step.key)}
-        className="group flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-hair pt-6 transition-colors"
+        className={`next-step-thread group flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-hair pt-6 transition-colors${lineShown ? ' next-step-thread--drawn' : ''}`}
       >
+        <span className="next-step-node" aria-hidden="true" />
         {/* بلا عنوان «التالي»: الصفحة فيها تنقّل مقالات يحمل الاسم نفسه،
             وتكراره زحمة. الدعوة وحدها تكفي وتقول أكثر. */}
         <span className="text-[.82rem] text-soft">{step.invite}</span>

@@ -9,9 +9,8 @@
  *
  * ثلاثة فحوص، كلها طباعية بحتة ولا تمسّ ميزة:
  *
- *  ١) الرصف: كل `text-align: justify` في متن المقال يجب أن يقابله في الملف
- *     نفسه إبطالٌ داخل `@media (max-width: 640px)`. العربية تُرصف بالكشيدة لا
- *     بتوسيع الفراغ، والمتصفّح لا يجيدها.
+ *  ١) الرصف: بطلب الدكتور، متن المقال مرصوف من الطرفين في كل العروض، لكن آخر
+ *     سطر يبقى من جهة البدء كي لا يتمدّد السطر القصير تمدداً مصطنعاً.
  *
  *  ٢) تباعد الحروف: العربية متّصلة الحروف، والتباعد يفكّ وصلاتها. فكل
  *     `letter-spacing` موجب يجب أن يحمل في سطره الوسم `latin` ليعلن أن نصّه
@@ -33,9 +32,7 @@ const SKIP_DIRS = new Set(['admin'])
 const MIN_DISPLAY_LEADING = 1.2
 const problems = []
 
-/* ───────── ١) الرصف الكامل يحتاج إبطالاً على الجوال ─────────
-   لا يكفي وجود «start» في مكانٍ ما من الملف: يجب أن يكون **للمُحدِّد نفسه**
-   إبطالٌ داخل استعلام الجوال، وإلا بقي ذلك المتن مرصوفاً على الشاشة الضيّقة. */
+/* ───────── ١) عقد رصف متن المقال ───────── */
 function eachRule(css, visit) {
   const clean = css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' ')) // نُفرِغ التعليقات ونُبقي الأسطر
   const stack = []
@@ -55,20 +52,12 @@ function eachRule(css, visit) {
   }
 }
 
-/* متن المقال لا يُرصف من الطرفين في أيّ عرض.
-   قِيس على أربعة مقالات كاملة بعمود ٥٨٣px (حاسوب): وسيط تمدّد المسافة بين
-   الكلمات ١٫٦٥–١٫٩٢× وأكثر الفقرات فوق ١٫٥× — فالعلّة في الرصف مع العربية
-   لا في ضيق العمود. ولا كشيدة في نصّ الويب تسدّ الفجوة كما يسدّها الخطّاط. */
-const PROSE = /article-body|synced-paragraph/
 function checkJustify(css) {
-  eachRule(css, (prelude, body, _inMobile, line) => {
-    if (!/text-align\s*:\s*justify/.test(body)) return
-    if (!PROSE.test(prelude)) return
-    problems.push(
-      `src/index.css:${line}  «${prelude}» يرصف متن المقال من الطرفين — ` +
-      `وهذا يفتح «الأنهار البيضاء» في النصّ العربي. المتن يُرصف من اليمين وحده (text-align: start).`,
-    )
-  })
+  const hasArticleContract = /\.content-articles[\s\S]{0,620}text-align:\s*justify\s*!important[\s\S]{0,220}text-align-last:\s*start\s*!important/.test(css)
+  const hasMobileContract = /@media \(max-width:\s*640px\)[\s\S]{0,520}\.content-articles[\s\S]{0,520}text-align:\s*justify\s*!important[\s\S]{0,220}text-align-last:\s*start\s*!important/.test(css)
+  if (!hasArticleContract || !hasMobileContract) {
+    problems.push('src/index.css  متن المقال يجب أن يبقى justify في الحاسوب والهاتف، مع text-align-last: start.')
+  }
 }
 
 /* ───────── ٢) تباعد الحروف يحتاج إعلاناً أنه لاتيني ───────── */
@@ -136,4 +125,4 @@ if (problems.length) {
   console.error('فشل حارس الطباعة العربية:\n' + problems.map((p) => `- ${p}`).join('\n'))
   process.exit(1)
 }
-console.log('✓ الطباعة العربية سليمة (الرصف · تباعد الحروف · ارتفاع سطر العناوين)')
+console.log('✓ الطباعة العربية سليمة (رصف المتن · تباعد الحروف · ارتفاع سطر العناوين)')

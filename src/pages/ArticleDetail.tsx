@@ -59,9 +59,11 @@ function ClosingSignature() {
 
 function SelectionDiscoveryHint() {
   const [visible, setVisible] = useState(false)
+  const [touch, setTouch] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    try { setTouch(window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) } catch { /* noop */ }
     const usedKey = 'reader:selection-discovered:v2'
     const sessionKey = 'reader:selection-discovery-shown:v2'
     try {
@@ -105,9 +107,9 @@ function SelectionDiscoveryHint() {
       aria-label="إخفاء تلميح أدوات تحديد النص"
     >
       <span className="selection-discovery-chip__dot" aria-hidden="true" />
-      <span>حدّد أي جملة</span>
+      <span>{touch ? 'المس جملةً مطولاً' : 'حدّد أي جملة'}</span>
       <span className="selection-discovery-chip__sep" aria-hidden="true">·</span>
-      <span className="font-normal">تظهر أدواتها مباشرة</span>
+      <span className="font-normal">عبر السنين · بطاقة اقتباس</span>
     </button>
   )
 }

@@ -52,6 +52,16 @@ function sourceFiles(root) {
   }
 }
 
+const mediaIdFromUrl = (value = '') => (String(value).match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
+
+function mediaTranscriptText(record) {
+  if (!record?.available || !Array.isArray(record.segments)) return ''
+  return record.segments
+    .map((segment) => String(segment?.displayText || segment?.text || '').trim())
+    .filter(Boolean)
+    .join('\n')
+}
+
 function hashItem(item) { return crypto.createHash('sha256').update(JSON.stringify(item)).digest('hex') }
 
 function audioFor(slug, audio, audioMeta) {
@@ -120,6 +130,8 @@ export function buildContentIndex(root = projectRoot, siteUrl = SITE_URL) {
   const audio = readJson(path.join(root, 'src', 'data', 'audio.json'), {})
   const audioMeta = readJson(path.join(root, 'src', 'data', 'audio-meta.json'), {})
   const podcast = readJson(path.join(root, 'src', 'data', 'podcast-admin.json'), {})
+  const mediaArchive = readJson(path.join(root, 'src', 'data', 'media-archive.json'), {})
+  const mediaTranscripts = readJson(path.join(root, 'src', 'data', 'media-archive-transcripts.json'), {})
   const items = []
 
   for (const row of findArraySection(sources.data, 'export const articles')) {
@@ -131,6 +143,50 @@ export function buildContentIndex(root = projectRoot, siteUrl = SITE_URL) {
   for (const row of findArraySection(sources.data, 'export const books')) {
     const value = parseObject(row); const slug = String(value.slug || '').trim(); if (!slug) continue
     items.push({ id: `book:${slug}`, kind: 'book', slug, title: String(value.title || slug), excerpt: String(value.desc || ''), body: '', url: `${siteUrl}/publications/${slug}`, image: value.cover || null, date: '', words: 0, audio: null, keywords: 'كتاب مؤلف', hash: '' })
+  }
+
+  /* الظهور الإعلامي كان موجوداً في الموقع ومفهرساً زمنياً، لكنه غائب كلياً عن
+     عقل واتساب؛ لذلك كان «لقاءات الدكتور» و«ابحث داخل ما قيل» ينتهيان إلى
+     مقالات. نستخدم سجلات الموقع نفسها وروابط صفحات الموقع، لا روابط خارجية. */
+  const indexedMediaKeys = new Set()
+  let mediaPosition = 0
+  for (const row of findArraySection(sources.data, 'export const media')) {
+    const value = parseObject(row)
+    const sourceId = mediaIdFromUrl(value.url)
+    const slug = `media-${sourceId || ++mediaPosition}`
+    const title = String(value.title || '').trim()
+    if (!title) continue
+    const body = mediaTranscriptText(mediaTranscripts[sourceId])
+    items.push({
+      id: `media:${slug}`, kind: 'media', slug, title,
+      excerpt: String(value.topics || ''), body,
+      url: `${siteUrl}/media/${slug}`, image: null,
+      date: value.iso || value.date || '', words: body.split(/\s+/).filter(Boolean).length,
+      audio: null,
+      keywords: [value.outlet, value.channel, value.program, value.topics, 'ظهور إعلامي لقاء مقابلة فيديو تلفزيون شاهد'].filter(Boolean).join(' '),
+      hash: '',
+    })
+    indexedMediaKeys.add(sourceId)
+    indexedMediaKeys.add(slug)
+  }
+
+  for (const value of Array.isArray(mediaArchive.items) ? mediaArchive.items : []) {
+    const slug = String(value?.slug || '').trim()
+    const sourceId = String(value?.id || '').trim()
+    if (!slug || !sourceId || indexedMediaKeys.has(sourceId) || indexedMediaKeys.has(slug)) continue
+    const title = String(value.title || '').trim()
+    if (!title) continue
+    const body = mediaTranscriptText(mediaTranscripts[sourceId])
+    const audioKind = ['audio', 'radio', 'podcast'].includes(String(value.kind || '').toLowerCase())
+    items.push({
+      id: `media:${slug}`, kind: 'media', slug, title,
+      excerpt: String(value.topics || ''), body,
+      url: `${siteUrl}/media/${slug}`, image: value.thumbnail || null,
+      date: value.iso || value.date || '', words: body.split(/\s+/).filter(Boolean).length,
+      audio: null,
+      keywords: [value.outlet, value.program, value.topics, audioKind ? 'إذاعة راديو تسجيل صوتي استمع' : 'ظهور إعلامي لقاء مقابلة فيديو شاهد'].filter(Boolean).join(' '),
+      hash: '',
+    })
   }
 
   for (const row of findArraySection(sources.papers, 'export const researchPapers')) {

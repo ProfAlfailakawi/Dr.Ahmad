@@ -1073,7 +1073,7 @@ export function Footer() {
               ))}
             </span>
             <span className="inline-flex items-center gap-2">
-              <Link to="/inbox" aria-label="النشرة البريدية" title="النشرة البريدية" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Mail" size={18} /></Link>
+              <Link to="/inbox" aria-label="رسائل على الهامش" title="رسائل على الهامش" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Mail" size={18} /></Link>
               <TebyanProjectLink />
               <ScheduleProjectLink />
             </span>

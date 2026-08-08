@@ -28,7 +28,7 @@ const timeAgo = (at: number) => {
   if (days <= 0) return "اليوم";
   if (days === 1) return "أمس";
   if (days < 7) return `قبل ${arabicCountPhrase(days, DAY_AFTER_PREPOSITION_FORMS, (value) => arNumber(value))}`;
-  return new Date(at).toLocaleDateString("ar-KW-u-nu-arab", {
+  return new Date(at).toLocaleDateString("ar-KW-u-nu-latn", {
     day: "numeric",
     month: "short",
   });
@@ -414,6 +414,13 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
   const latestAsk = askSessions[0] || null;
   const latestIsAsk = Boolean(latestAsk && (!snapshot.last || latestAsk.updatedAt >= snapshot.last.at) && (!snapshot.audio || latestAsk.updatedAt >= snapshot.audio.updatedAt));
   const otherAskSessions = askSessions.slice(latestIsAsk ? 1 : 0, latestIsAsk ? 3 : 2);
+  const journeySummary = useMemo(() => {
+    const ordered = [...snapshot.recent].sort((left, right) => left.at - right.at);
+    const byCategory = new Map<string, number>();
+    ordered.forEach((item) => byCategory.set(item.cat, (byCategory.get(item.cat) || 0) + 1));
+    const top = [...byCategory.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] || "";
+    return { count: ordered.length, top, first: ordered[0], last: ordered[ordered.length - 1] };
+  }, [snapshot.recent]);
 
   if (location.pathname.startsWith("/admin") || location.pathname.startsWith("/cv-file/")) return null;
 
@@ -527,6 +534,19 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                               latestIsAudio ? <Link to={`/articles/${snapshot.last.slug}`} onClick={() => setOpen(false)} className="mt-3 inline-flex text-[.74rem] font-semibold text-accent">أكمل القراءة أيضاً ←</Link> : <button type="button" onClick={() => void resumeAudio()} className="mt-3 inline-flex text-[.74rem] font-semibold text-accent">أكمل الاستماع أيضاً ←</button>
                             )}
                           </section>
+
+                          {journeySummary.count > 0 && (
+                            <section className="rounded-2xl border border-hair bg-canvas p-4 md:p-5" aria-label="بصمة القارئ">
+                              <div className="flex flex-wrap items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  <p className="text-[.68rem] font-semibold text-accent">بصمتي القارئة</p>
+                                  <p className="mt-1.5 font-display text-[.92rem] font-semibold leading-[1.7] text-ink">قرأتَ {arNumber(journeySummary.count)} من {arNumber(articles.length)}{journeySummary.top ? ` · محورك الغالب: ${categoryLabel(journeySummary.top)}` : ""}</p>
+                                  {journeySummary.first && journeySummary.last && <p className="mt-1 line-clamp-2 text-[.68rem] font-light leading-[1.7] text-soft">من «{journeySummary.first.title}» إلى «{journeySummary.last.title}» — محفوظة على هذا الجهاز فقط.</p>}
+                                </div>
+                                <Link to="/atlas?journey=1" onClick={() => setOpen(false)} className="min-h-11 shrink-0 rounded-full border border-hair px-4 py-3 text-[.7rem] font-semibold text-accent transition-colors hover:border-accent">شاهد كوكبتي</Link>
+                              </div>
+                            </section>
+                          )}
 
                           {otherAskSessions.length > 0 && (
                             <div className="grid gap-3 sm:grid-cols-2">

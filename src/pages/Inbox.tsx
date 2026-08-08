@@ -316,7 +316,7 @@ export default function Inbox() {
     ),
   );
   const updateLabel = lastUpdated
-    ? new Date(lastUpdated).toLocaleDateString("ar-KW-u-nu-arab", {
+    ? new Date(lastUpdated).toLocaleDateString("ar-KW-u-nu-latn", {
         day: "numeric",
         month: "long",
         year: "numeric",

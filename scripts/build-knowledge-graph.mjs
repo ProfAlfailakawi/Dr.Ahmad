@@ -245,6 +245,32 @@ function writeJsonVerified(relativePath, payload) {
 }
 writeJsonVerified('src/data/knowledge-graph.json', `${JSON.stringify(graph, null, 2)}\n`)
 writeJsonVerified('src/data/knowledge-graph-index.json', `${JSON.stringify(browserIndex)}\n`)
+/* صفحة القراءة لا تبني الخريطة التربيعية ولا تحمل الستة ميغابايت. نشتق أثناء
+   البناء جيوب الجوار التي تحتاجها «حياة هذه الفكرة» فقط، من الحواف نفسها التي
+   يغذي بها graphNeighbors العقل الحي. */
+const byId = new Map(nodes.map((node) => [node.id, node]))
+const articleGraphNeighbors = Object.fromEntries(nodes
+  .filter((node) => node.kind === 'article')
+  .map((node) => [node.id, edges
+    .filter((edge) => edge.from === node.id)
+    .filter((edge) => ['article', 'book', 'paper', 'media'].includes(byId.get(edge.to)?.kind || ''))
+    .slice(0, 5)
+    .map((edge) => {
+      const neighbor = byId.get(edge.to)
+      return neighbor ? {
+        id: neighbor.id,
+        kind: neighbor.kind,
+        slug: neighbor.slug,
+        title: neighbor.title,
+        excerpt: String(neighbor.excerpt || '').slice(0, 170),
+        url: neighbor.url,
+        year: neighbor.year || '',
+        score: edge.score,
+        reasons: edge.reasons,
+      } : null
+    })
+    .filter(Boolean)]))
+writeJsonVerified('src/data/article-graph-neighbors.json', `${JSON.stringify({ version: 1, builtAt, neighbors: articleGraphNeighbors })}\n`)
 const legacyProfile = buildLegacyProfile(nodes, edges, builtAt)
 writeJsonVerified('src/data/legacy-profile.json', `${JSON.stringify(legacyProfile, null, 2)}\n`)
 console.log(`Knowledge graph v2: ${nodes.length} nodes / ${edges.length} directed edges — ${Object.entries(kinds).map(([kind, count]) => `${kind}:${count}`).join(' · ')} · legacy:${legacyProfile.themes.length} themes/${legacyProfile.timeline.length} years`)

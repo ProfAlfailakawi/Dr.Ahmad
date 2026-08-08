@@ -1022,6 +1022,12 @@ body:has(.reader-modal-overlay) .floating-actions {
   border-radius: 999px;
   background: rgb(var(--c-accent) / .35);
 }
+@media (max-width: 767px) {
+  /* في الهاتف تكون «مساحتي» bottom sheet بمقدار محتواها، لا لوحةً تتمدّد
+     لتملأ الفراغ المتاح. وإذا طال المحتوى تنكمش منطقة المتن وحدها وتتمرّر. */
+  .my-space-panel { max-block-size: calc(100dvh - 1.5rem - env(safe-area-inset-bottom)); }
+  .my-space-body { flex: 0 1 auto; min-block-size: 0; }
+}
 body:has(.my-space-overlay) .floating-actions {
   opacity: 0;
   visibility: hidden;

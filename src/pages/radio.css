@@ -159,9 +159,12 @@ html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-l
   min-height: 2.5em;
   opacity: 1;
   transform: translateY(0);
-  transition: opacity .5s cubic-bezier(.4, 0, .2, 1), transform .5s cubic-bezier(.4, 0, .2, 1);
+  animation: radio-line-enter .26s cubic-bezier(.22, 1, .36, 1) both;
 }
-.radio-line.radio-out { opacity: 0; transform: translateY(7px) }
+@keyframes radio-line-enter {
+  from { opacity: .48; transform: translateY(4px) }
+  to { opacity: 1; transform: translateY(0) }
+}
 
 /* إيقاع الحوار — كل عمودٍ جملةٌ قيلت، ولونه من قالها */
 .radio-rhythm {

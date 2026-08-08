@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
 /**
@@ -244,6 +244,25 @@ export function BranchGrove({
 }) {
   const shown = items.slice(0, 2)
   const [grown, setGrown] = useState(false)
+  const slotsRef = useRef<HTMLDivElement>(null)
+  const sizingKey = shown.map((item) => `${item.id}:${item.title}`).join('|')
+
+  useLayoutEffect(() => {
+    const slots = slotsRef.current
+    if (!slots || shown.length < 2) return
+    let active = true
+    const syncHeight = () => {
+      if (!active) return
+      const boxes = Array.from(slots.querySelectorAll<HTMLElement>(':scope > .grove-slot > .grove-box'))
+      slots.style.removeProperty('--grove-box-height')
+      const height = Math.max(0, ...boxes.map((box) => box.getBoundingClientRect().height))
+      if (height > 0) slots.style.setProperty('--grove-box-height', `${Math.ceil(height)}px`)
+    }
+    syncHeight()
+    window.addEventListener('resize', syncHeight)
+    void document.fonts?.ready.then(syncHeight)
+    return () => { active = false; window.removeEventListener('resize', syncHeight) }
+  }, [sizingKey, shown.length, variant])
 
   useEffect(() => {
     if (!shown.length) return
@@ -284,7 +303,7 @@ export function BranchGrove({
     <div className={`grove grove--${variant}${grown ? ' grove--grown' : ''}`}>
       {thread}
 
-      <div className={`grove-slots${shown.length > 1 && variant !== 'sprig' ? '' : ' grove-slots--single'}`}>
+      <div ref={slotsRef} className={`grove-slots${shown.length > 1 && variant !== 'sprig' ? '' : ' grove-slots--single'}`}>
         {shown.map((branch, index) => (
           <div className="grove-slot" key={branch.id} style={{ ['--grove-delay' as string]: `${index * 380}ms` }}>
             <Link

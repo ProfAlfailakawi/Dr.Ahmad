@@ -4046,7 +4046,7 @@ html, body, #root { max-inline-size: 100%; }
   flex-direction: column;
   justify-content: center;
   gap: .38rem;
-  min-block-size: 5.5rem;
+  min-block-size: var(--grove-box-height, 5.5rem);
   padding: .8rem .9rem;
   border: 1px solid var(--c-hair);
   border-radius: 12px;
@@ -4086,7 +4086,7 @@ html, body, #root { max-inline-size: 100%; }
 
 @media (max-width: 540px) {
   .grove-slots { gap: .75rem; }
-  .grove-box { min-block-size: 4.6rem; padding: .7rem .75rem; }
+  .grove-box { min-block-size: var(--grove-box-height, 4.6rem); padding: .7rem .75rem; }
   .grove-title { font-size: .86rem; }
 }
 
@@ -4251,7 +4251,7 @@ html, body, #root { max-inline-size: 100%; }
 .grove--sprig.grove--grown .grove-slot::before { transform: scaleX(1); }
 .grove--sprig.grove--grown .grove-slot::after { opacity: .85; transform: scale(1); }
 .grove--sprig .grove-why { text-align: start; padding-inline-start: .2rem; }
-.grove--sprig .grove-box { min-block-size: 4.4rem; }
+.grove--sprig .grove-box { min-block-size: var(--grove-box-height, 4.4rem); }
 
 /* رفٌّ أفقيّ تتدلّى منه المادّتان — للحظةٍ في الزمن لا لفكرةٍ تتفرّع. */
 .grove--rail .grove-thread--rail { block-size: 40px; }
@@ -4262,7 +4262,7 @@ html, body, #root { max-inline-size: 100%; }
 .grove-thread--rail path:nth-of-type(3) { transition-delay: .3s; }
 .grove--rail .grove-slots { gap: 1.5rem; }
 .grove--rail .grove-box {
-  min-block-size: 4.6rem;
+  min-block-size: var(--grove-box-height, 4.6rem);
   border-radius: 12px;
   border-block-start: 1px solid rgb(var(--c-accent) / .3);
 }

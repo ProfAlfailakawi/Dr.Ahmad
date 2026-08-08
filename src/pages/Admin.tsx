@@ -58,6 +58,7 @@ const BotMessagesPanel = lazy(() => import('../components/admin/BotMessagesPanel
 const ProductionMonitor = lazy(() => import('../components/admin/ProductionMonitor').then((module) => ({ default: module.ProductionMonitor })))
 const VisitorJourneySuggestion = lazy(() => import('../components/admin/VisitorJourneySuggestion').then((module) => ({ default: module.VisitorJourneySuggestion })))
 const SoundCaravanBoard = lazy(() => import('../components/admin/SoundCaravanBoard').then((module) => ({ default: module.SoundCaravanBoard })))
+const AtlasEditorialSettings = lazy(() => import('../components/admin/AtlasEditorialSettings').then((module) => ({ default: module.AtlasEditorialSettings })))
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.95rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const btn = 'rounded-full bg-accent px-7 py-2.5 font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
@@ -361,7 +362,7 @@ function Panel({ email }: { email: string }) {
     'content-health': <ProductionHealthCenter view="health" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
     production: <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
     analytics: <div className="grid gap-4"><UsageAnalytics /><ReaderPulse /><VisitorJourneySuggestion articles={cms.articles} /><Indicators articles={cms.articles} /></div>,
-    studio: <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} />,
+    studio: <div className="grid gap-5"><PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} /><AtlasEditorialSettings articles={cms.articles} /></div>,
     'social-posts': <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} initialView="pulse" />,
     design: <SocialDesignStudio />,
     tweets: <TweetStudio />,

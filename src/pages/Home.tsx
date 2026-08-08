@@ -15,11 +15,12 @@ import { ideaContinuation } from '../lib/idea-memory'
 import { sortUpcomingEvents } from '../lib/events'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { PROJECT_START_YEAR } from '../lib/project-meta'
-import { listenIsOpen, rotatingQuestion, type ListenEpisode } from '../lib/listen-catalog'
+import { listenCount, listenIsOpen, rotatingQuestion, type ListenEpisode } from '../lib/listen-catalog'
 import { SPACE_EVENT, isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
 import { SocialIcon as ActionIcon } from '../components/icons'
 import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_THOUGHT_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, BOOK_FORMS, BOOK_PLAIN_FORMS, NEW_ARTICLE_FORMS, PAPER_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
+import { useAtlasSettings } from '../lib/atlas-settings'
 
 /* افتتاحيةُ العتبة 768 سطراً ولا يراها إلا الزائر الأول (تحرسها localStorage)،
    فإبقاؤها في حزمة الدخول يُثقل كلَّ زائرٍ عائد بلا فائدة ويتجاوز ميزانية الأداء */
@@ -736,6 +737,7 @@ function ArchiveCardCover({ item }: { item: SelectedArchiveItem }) {
 }
 
 function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media: MediaRecord[] }) {
+  const atlasSettings = useAtlasSettings()
   const items = useMemo(() => {
     const random = (max: number) => {
       if (max <= 1) return 0
@@ -753,7 +755,14 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
       const source = alternatives.length ? alternatives : pool
       return source[random(source.length)]
     }
-    const article = choose(articles, 'article')
+    /* نجمةُ اليوم لا تضيف بطاقةً خامسة ولا قسماً جديداً: تستعمل مكان المقال
+       الموجود أصلاً في «من الأرشيف اليوم». اختيار الاستوديو يتقدّم، وإلا
+       يتغيّر الاختيار ذاتياً كل يوم ويبقى ثابتاً طوال اليوم. */
+    const managedArticle = atlasSettings.dailyStarSlug
+      ? articles.find((item) => item.slug === atlasSettings.dailyStarSlug)
+      : undefined
+    const daySeed = Math.floor(Date.now() / 86_400_000)
+    const article = managedArticle || articles[(daySeed * 17 + articles.length * 11) % Math.max(articles.length, 1)] || choose(articles, 'article')
     const book = choose(books, 'book')
     const paper = choose(papers, 'paper')
     const mediaItem = choose(media, 'media')
@@ -769,7 +778,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
          build-static) تصلح غلافاً حقيقياً — فلا يبقى صفُّ «أربع زوايا»
          نصفَه صوراً ونصفَه حروفاً مجردة. وإن غابت البطاقة سقط الغلاف
          التحريري المرسوم تلقائياً كما كان (onError في البطاقة). */
-      article && { type: 'مقال', kind: 'article', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: `/og/articles/${article.slug}.jpg`, year: article.iso?.slice(0, 4), article },
+      article && { type: 'نجمة اليوم', kind: 'article', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: `/og/articles/${article.slug}.jpg`, year: article.iso?.slice(0, 4), article },
       book && { type: 'كتاب', kind: 'book', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover, year: '' },
       paper && { type: 'بحث محكّم', kind: 'paper', title: paper.titleAr || paper.title, note: paper.meta, to: `/research/${paper.slug}`, image: '', year: paper.iso?.slice(0, 4) },
       mediaItem && { type: 'ظهور إعلامي', kind: 'media', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.slug ? `/media/${mediaItem.slug}` : '/media', image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', year: '' },
@@ -779,7 +788,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
       .map((item) => ({ item, order: random(1_000_000) }))
       .sort((left, right) => left.order - right.order)
       .map(({ item }) => item)
-  }, [articles, books, papers, media])
+  }, [articles, atlasSettings.dailyStarSlug, books, papers, media])
 
   return (
     <section className="border-t border-hair bg-wash px-6 py-[52px] md:px-11 md:py-[84px]">
@@ -1089,7 +1098,7 @@ export default function Home() {
       <LaunchSpotlight articles={articles} books={books} papers={papers} media={media} />
 
       <Suspense fallback={null}>
-        <ThresholdOverture articles={articles.length} books={books.length} papers={papers.length} />
+        <ThresholdOverture articles={articles.length} books={books.length} papers={papers.length} episodes={listenCount} />
       </Suspense>
 
       <HumanCoreHero />

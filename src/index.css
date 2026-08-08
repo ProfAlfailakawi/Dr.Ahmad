@@ -1704,8 +1704,10 @@ html.dark .atlas-map-mobile {
 /* توهّج النجمة تحت اليد فقط — بلا كلفة أداء على بقية النجوم */
 @media (hover: hover) and (pointer: fine) {
   .atlas-map-desktop g:hover .fill-accent,
-  .atlas-map-mobile g:hover .fill-accent {
-    filter: drop-shadow(0 0 7px rgb(var(--c-accent) / .55));
+  .atlas-map-mobile g:hover .fill-accent,
+  .atlas-map-desktop g:hover .atlas-star-core,
+  .atlas-map-mobile g:hover .atlas-star-core {
+    filter: drop-shadow(0 0 7px rgb(var(--atlas-axis, var(--c-accent)) / .55));
   }
 }
 
@@ -2218,6 +2220,7 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
   details,
   .floating-actions { display: none !important; }
   .article-journey { padding: 0 !important; }
+  .article-journey > :not(article) { display: none !important; }
   .article-journey article { max-width: none !important; margin: 0 !important; }
   .article-journey article::before {
     content: "د. أحمد حسين الفيلكاوي  ·  dr-alfailakawi.com\A" attr(data-print-citation);
@@ -4296,6 +4299,15 @@ html, body, #root { max-inline-size: 100%; }
   --c-accent-deep: 164 194 220;
   --c-wash: 23 26 31;
   --c-hair: rgba(234, 234, 231, .11);
+  /* لوحة محاور ليلية هادئة: اختلافٌ واضح في الدرجة، بلا نيون ولا لون خارج
+     طيف الموقع الرمادي-الأزرق. تُستهلك عبر --atlas-axis لكل نجمة. */
+  --atlas-education: 132 169 202;
+  --atlas-pedagogy: 151 178 192;
+  --atlas-society: 177 164 183;
+  --atlas-technology: 124 184 183;
+  --atlas-identity: 190 167 137;
+  --atlas-media: 157 157 204;
+  --atlas-research: 174 190 156;
   background: rgb(var(--c-canvas));
   background-image:
     radial-gradient(62% 42% at 76% 0%, rgb(var(--c-accent) / .085), transparent 70%),
@@ -4304,12 +4316,35 @@ html, body, #root { max-inline-size: 100%; }
 }
 /* النجمة تُضيء بدل أن تكون نقطةً مطفأة. */
 .atlas-night circle { transition: filter .3s ease; }
-.atlas-night circle[fill]:not([fill="none"]) {
+.atlas-night circle[fill]:not([fill="none"]),
+.atlas-night .atlas-star-core {
   filter: drop-shadow(0 0 3px rgb(var(--c-accent) / .55));
 }
+.atlas-star-core { fill: rgb(var(--atlas-axis, var(--c-accent))); }
+.atlas-star-core.is-visited { filter: drop-shadow(0 0 7px rgb(var(--atlas-axis, var(--c-accent)) / .58)); }
+.atlas-star-core.is-compared { stroke: rgb(255 255 255 / .88); stroke-width: 1.4px; }
+.atlas-legend[open] { z-index: 40; }
+.atlas-legend summary::-webkit-details-marker { display: none; }
+.atlas-night::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .26;
+  background: radial-gradient(42% 36% at 72% 16%, rgb(var(--atlas-education) / .08), transparent 72%);
+  animation: atlas-breathe 12s ease-in-out infinite alternate;
+}
+.atlas-night > * { position: relative; z-index: 1; }
+.atlas-night.atlas-atmosphere--morning::after { opacity: .18; transform: translate3d(8%, -4%, 0); }
+.atlas-night.atlas-atmosphere--dusk::after { opacity: .31; transform: translate3d(-6%, 3%, 0); }
+.atlas-night.atlas-atmosphere--night::after { opacity: .24; }
+.atlas-night.is-seasonal::after { background: radial-gradient(44% 38% at 74% 14%, rgb(var(--atlas-identity) / .11), transparent 74%); }
+@keyframes atlas-breathe { to { opacity: .36; } }
 
 @media (prefers-reduced-motion: reduce) {
   .atlas-night circle { transition: none; }
+  .atlas-night::after { animation: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -5503,6 +5538,10 @@ html.reader-paper .sentence-item.is-sentence-active {
   padding: 0 !important;
   vertical-align: -.34em;
   white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  contain: layout paint;
 }
 .article-pull-quote--marker-only::before,
 .article-pull-quote--marker-only::after { display: none !important; }
@@ -5511,6 +5550,27 @@ html.reader-paper .sentence-item.is-sentence-active {
   inset: auto !important;
   inline-size: 1.65rem !important;
   block-size: 1.65rem !important;
+  touch-action: manipulation;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* «حياة هذه الفكرة»: خريطة جيب من الحواف المبنية مسبقاً؛ العقد HTML قابلة
+   للتركيز والنقر، والخيوط SVG فقط كي لا يُعاد حساب خريطة المعرفة في القارئ. */
+.idea-mini-graph__node {
+  left: clamp(6rem, var(--graph-x), calc(100% - 6rem));
+  top: clamp(3.4rem, var(--graph-y), calc(100% - 3.4rem));
+  transform: translate(-50%, -50%);
+}
+.idea-mini-graph__node:hover,
+.idea-mini-graph__node:focus-visible { transform: translate(-50%, calc(-50% - 2px)); }
+@media (max-width: 640px) {
+  .idea-mini-graph { min-height: 31rem; }
+  .idea-mini-graph__node {
+    left: clamp(4rem, var(--graph-x), calc(100% - 4rem));
+    width: 7.65rem;
+    padding: .65rem .7rem;
+  }
 }
 @media (max-width: 640px) {
   .article-pull-quote {
@@ -5790,7 +5850,7 @@ html.reader-paper .sentence-item.is-sentence-active {
     rgb(var(--c-canvas));
 }
 .atlas-night.is-graph .atlas-star-core {
-  filter: drop-shadow(0 0 5px rgb(var(--c-accent) / .12));
+  filter: drop-shadow(0 0 5px rgb(var(--atlas-axis, var(--c-accent)) / .18));
 }
 .atlas-night.is-timeline { background: rgb(var(--c-canvas)); }
 
@@ -5801,9 +5861,14 @@ html.reader-paper .sentence-item.is-sentence-active {
   .selection-discovery-chip,
   .audio-sync-whisper,
   .article-pull-quote__action,
+  .article-pull-quote--marker-only,
   .reader-selection-toolbar,
   .my-space-overlay,
   .site-menu-overlay { display: none !important; }
+
+  /* يبقى في الورقة المقالُ نفسه فقط: لا مجلس الفكرة، ولا المسارات، ولا
+     أزرار التنقّل. هذه العناصر تحمل serenity-hide في واجهة القراءة. */
+  .article-journey .serenity-hide { display: none !important; }
 
   .article-journey article {
     font-kerning: normal;

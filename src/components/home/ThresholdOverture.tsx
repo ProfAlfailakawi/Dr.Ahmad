@@ -21,7 +21,7 @@ import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, BOOK_PLAIN_FORMS, PAPER_FORMS }
 
 const STORAGE_KEY = 'visitor:threshold-overture:v1'
 
-type Counts = { articles: number; books: number; papers: number }
+type Counts = { articles: number; books: number; papers: number; episodes: number }
 
 /* ───────────────────────── المشاهد المصغّرة ───────────────────────── */
 
@@ -179,6 +179,7 @@ type Act = {
   line: string
   path?: string
   door?: string
+  count?: number
   visual: ReactNode
   ms: number
 }
@@ -200,6 +201,7 @@ function buildActs(c: Counts): Act[] {
       line: 'كل نجمةٍ مقالة، وكل خطٍّ بينهما صلةٌ موثّقة — لا زينة.',
       path: '/atlas',
       door: 'سماء المقالات',
+      count: c.articles,
       visual: <SkyVisual />,
       ms: 3900,
     },
@@ -210,6 +212,7 @@ function buildActs(c: Counts): Act[] {
       line: 'يفهم ما تقصده وإن لم تعرف عنوان المادة، ثم يفتح الكتب والمقالات والأبحاث واللقاءات معاً.',
       path: '/search',
       door: 'البحث العميق',
+      count: c.articles + c.books + c.papers,
       visual: <SearchVisual />,
       ms: 4100,
     },
@@ -220,6 +223,7 @@ function buildActs(c: Counts): Act[] {
       line: 'يركّب الجواب من نصوصي وحدها ويعيدك إلى الفقرة التي استند إليها. وإن لم يجد دليلاً قال ذلك بوضوح.',
       path: '/ask',
       door: 'اسأل الأرشيف',
+      count: c.articles + c.books + c.papers,
       visual: <AskVisual />,
       ms: 4100,
     },
@@ -231,6 +235,7 @@ function buildActs(c: Counts): Act[] {
       line: 'ما لا تجد وقتاً لقراءته، تجد وقتاً لسماعه: مقالةٌ كاملة بصوتٍ متمهّل، يفتحها سؤال.',
       path: '/listen',
       door: 'مجلس الفكرة',
+      count: c.episodes,
       visual: <ListenVisual />,
       ms: 3900,
     },
@@ -241,6 +246,7 @@ function buildActs(c: Counts): Act[] {
       line: 'أين بدأ السؤال، ومتى اتّسع، وما الذي بقي يُلحّ عاماً بعد عام — بالنصوص والتواريخ لا بالانطباع.',
       path: '/decade',
       door: 'وثيقة العقد',
+      count: Math.max(1, new Date().getFullYear() - 2015 + 1),
       visual: <DecadeVisual />,
       ms: 3900,
     },
@@ -251,6 +257,7 @@ function buildActs(c: Counts): Act[] {
       line: 'اختر فكرةً لترى كيف انتقلت بين المقالة والبحث والكتاب والحوار العام.',
       path: '/thought-paths',
       door: 'مسار الفكرة',
+      count: c.articles + c.books + c.papers,
       visual: <PathVisual />,
       ms: 3900,
     },
@@ -259,7 +266,7 @@ function buildActs(c: Counts): Act[] {
 
 /* ───────────────────────── المكوّن ───────────────────────── */
 
-export default function ThresholdOverture({ articles = 0, books = 0, papers = 0 }: Partial<Counts> = {}) {
+export default function ThresholdOverture({ articles = 0, books = 0, papers = 0, episodes = 0 }: Partial<Counts> = {}) {
   const [open, setOpen] = useState(false)
   const [act, setAct] = useState(0)
   // إيقافان منفصلان: «المسافة» قرارٌ يبقى، وضغطة الإصبع تزول برفعه.
@@ -283,7 +290,12 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0 
   const rootRef = useRef<HTMLDivElement>(null)
   const touchX = useRef(0)
 
-  const acts = useMemo(() => buildActs({ articles, books, papers }), [articles, books, papers])
+  const acts = useMemo(() => buildActs({ articles, books, papers, episodes }), [articles, books, papers, episodes])
+  const doorGroups = useMemo(() => [
+    { label: 'أفهم', ids: new Set(['ask', 'search']) },
+    { label: 'أستكشف', ids: new Set(['sky', 'paths', 'decade']) },
+    { label: 'أستمتع', ids: new Set(['listen']) },
+  ].map((group) => ({ ...group, items: acts.filter((item) => item.path && group.ids.has(item.id)) })), [acts])
   // اللمس يُوجَّه بكلامٍ يخصّه، والفأرة بلوحة المفاتيح.
   const coarsePointer = useMemo(() => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(pointer: coarse)').matches), [])
   const total = acts.length
@@ -440,19 +452,26 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0 
                   <h2 className="tho-title tho-title--sm">كل بابٍ مفتوح.</h2>
                   <p className="tho-line">ادخل من حيث شئت — أو تصفّح على مهلك، فالأرشيف كلّه أمامك.</p>
 
-                  <div className="tho-doors">
-                    {acts.filter((item) => item.path).map((item, index) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className="tho-door"
-                        style={{ animationDelay: `${0.18 + index * 0.07}s` }}
-                        onClick={() => close(item.path)}
-                      >
-                        <span className="tho-door-name">{item.door}</span>
-                        <span className="tho-door-line">{item.kicker}</span>
-                        <span className="tho-door-arrow" aria-hidden="true">↖</span>
-                      </button>
+                  <div className="tho-door-groups">
+                    {doorGroups.map((group, groupIndex) => (
+                      <section key={group.label} className="tho-door-group" aria-label={group.label}>
+                        <p className="tho-door-group-title">{group.label}</p>
+                        <div className="tho-doors">
+                          {group.items.map((item, index) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              className="tho-door"
+                              style={{ animationDelay: `${0.18 + (groupIndex * 2 + index) * 0.07}s` }}
+                              onClick={() => close(item.path)}
+                            >
+                              <span className="tho-door-name">{item.door}{item.count ? <small> · {item.count}</small> : null}</span>
+                              <span className="tho-door-line">{item.kicker}</span>
+                              <span className="tho-door-arrow" aria-hidden="true">↖</span>
+                            </button>
+                          ))}
+                        </div>
+                      </section>
                     ))}
                   </div>
 
@@ -623,9 +642,12 @@ const THEATRE_CSS = `
 .tho-nav:disabled{ opacity:.28; cursor:default; }
 
 /* لوحة الأبواب */
+.tho-door-groups{ display:grid; gap:12px; margin:clamp(18px,3.4vh,28px) 0 0; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.tho-door-group{ min-width:0; }
+.tho-door-group-title{ margin:0 0 6px; padding-inline:.25rem; color:rgb(var(--glow)/.78); font-size:.63rem; font-weight:700; letter-spacing:.08em; }
 .tho-doors{
-  display:grid; gap:8px; margin:clamp(18px,3.4vh,28px) 0 0;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  display:grid; gap:8px; margin:0;
+  grid-template-columns:1fr;
 }
 .tho-door{
   position:relative; text-align:right; padding:.85rem .95rem; cursor:pointer;
@@ -636,6 +658,7 @@ const THEATRE_CSS = `
 }
 .tho-door:hover{ border-color:rgb(var(--glow)/.6); background:rgb(var(--glow)/.11); transform:translateY(-2px); }
 .tho-door-name{ display:block; font-family:"El Messiri",serif; font-weight:600; font-size:.92rem; }
+.tho-door-name small{ color:var(--soft); font-family:"Tajawal",sans-serif; font-size:.62rem; font-weight:500; }
 .tho-door-line{ display:block; margin-top:.15rem; font-size:.66rem; color:var(--soft); }
 .tho-door-arrow{ position:absolute; top:.7rem; left:.75rem; font-size:.75rem; color:rgb(var(--glow)); opacity:0; transition:opacity .25s; }
 .tho-door:hover .tho-door-arrow{ opacity:1; }
@@ -759,6 +782,9 @@ const THEATRE_CSS = `
 @media (max-width:420px){
   .tho-frame{ max-width:100%; aspect-ratio:4/3; }
   .tho-mark{ display:none; }
+  .tho-door-groups{ grid-template-columns:1fr; gap:9px; }
+  .tho-door-group{ display:grid; grid-template-columns:3.2rem minmax(0,1fr); gap:7px; align-items:start; }
+  .tho-door-group-title{ margin-top:.72rem; }
   .tho-doors{ grid-template-columns:1fr 1fr; }
 }
 @media (prefers-reduced-motion:reduce){

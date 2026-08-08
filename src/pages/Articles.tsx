@@ -134,7 +134,7 @@ export default function Articles() {
               <button
                 key={c}
                 onClick={() => setCat(c)}
-                className={`shrink-0 rounded-full border px-4 py-2 text-[.82rem] font-medium transition-colors duration-300 ${cat === c ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+                className={`min-h-11 shrink-0 rounded-full border px-4 py-2 text-[.82rem] font-medium transition-colors duration-300 ${cat === c ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
               >
                 {categoryLabel(c)}
               </button>

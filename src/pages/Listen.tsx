@@ -83,7 +83,7 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
           ) : <SocialIcon name="Play" size={13} />}
         </span>
         <span className="min-w-0 flex-1">
-          <span className={`block font-display text-[1.04rem] leading-[1.75] transition-colors ${playing ? 'text-accent' : 'text-ink'}`}>
+          <span className={`measure block font-display text-[1.04rem] leading-[1.75] transition-colors ${playing ? 'text-accent' : 'text-ink'}`}>
             {episode.question || episode.title}
           </span>
           <span className="mt-1 block truncate text-[.71rem] text-soft">

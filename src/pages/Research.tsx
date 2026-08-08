@@ -97,8 +97,8 @@ export default function Research() {
                       <span className="pt-1 font-display text-[.86rem] font-bold text-accent sm:self-start">{ar((paged.page - 1) * 12 + i + 1)}</span>
                       <div className="min-w-0">
                         {type && <div className="mb-3 flex flex-wrap gap-2"><span className={badge}>{type}</span></div>}
-                        <Link to={`/research/${p.slug}`} viewTransition dir="auto" style={{ viewTransitionName: sharedViewName('paper-title', p.slug) }} className="research-title-link block text-[1.12rem] font-bold leading-[1.65] text-ink transition-colors hover:text-accent">{p.title}</Link>
-                        {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="mt-1 text-[.92rem] font-light leading-[1.8] text-soft">{p.titleAr}</p>}
+                        <Link to={`/research/${p.slug}`} viewTransition dir="auto" style={{ viewTransitionName: sharedViewName('paper-title', p.slug) }} className="research-title-link measure block text-[1.12rem] font-bold leading-[1.65] text-ink transition-colors hover:text-accent">{p.title}</Link>
+                        {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="measure mt-1 text-[.92rem] font-light leading-[1.8] text-soft">{p.titleAr}</p>}
                         {(journal || year) && (
                           <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[.74rem] text-soft">
                             {journal && <span dir="auto">{journal}</span>}
@@ -121,9 +121,9 @@ export default function Research() {
           <FadeUp delay={0.15}>
             <div className="mt-16 border-t border-hair pt-9">
               <span className="text-[.76rem] font-semibold text-soft">أطروحة الدكتوراه</span>
-              <h2 className="mt-4 text-[1.1rem] font-medium leading-[1.75] text-ink">{doctorate.title}</h2>
-              <p className="mt-4 text-[.92rem] text-soft">{doctorate.university}</p>
-              <p className="mt-1 text-[.92rem] text-soft">{doctorate.note}</p>
+              <h2 className="measure mt-4 text-[1.1rem] font-medium leading-[1.75] text-ink">{doctorate.title}</h2>
+              <p className="measure mt-4 text-[.92rem] text-soft">{doctorate.university}</p>
+              <p className="measure mt-1 text-[.92rem] text-soft">{doctorate.note}</p>
             </div>
           </FadeUp>
         </div>

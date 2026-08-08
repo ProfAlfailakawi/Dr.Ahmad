@@ -35,7 +35,7 @@ export default function Media() {
               <input id="media-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="مثال: التعليم الإلكتروني، الذكاء الاصطناعي، المهارات…" className="min-w-0 flex-1 bg-transparent text-[.92rem] text-ink outline-none placeholder:text-soft/70" />
               {query && <button type="button" onClick={() => setQuery('')} className="text-[.72rem] text-soft hover:text-accent">مسح</button>}
             </div>
-            <p className="mt-3 text-[.7rem] leading-relaxed text-soft">عند وجود تفريغ زمني موثّق، تنقلك النتيجة مباشرة إلى اللحظة التي قيلت فيها العبارة.</p>
+            <p className="measure mt-3 text-[.7rem] leading-relaxed text-soft">عند وجود تفريغ زمني موثّق، تنقلك النتيجة مباشرة إلى اللحظة التي قيلت فيها العبارة.</p>
           </div>
         </FadeUp>
 

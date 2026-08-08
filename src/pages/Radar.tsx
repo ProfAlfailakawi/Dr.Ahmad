@@ -111,7 +111,7 @@ function RadarCard({ item, index = 0, deep = false }: { item: RadarItem; index?:
           {item.ar}
         </h4>
         {item.arNote && (
-          <p className="mt-1.5 text-[.87rem] font-light leading-[1.85] text-soft">
+          <p className="measure mt-1.5 text-[.87rem] font-light leading-[1.85] text-soft">
             {item.arNote}
           </p>
         )}

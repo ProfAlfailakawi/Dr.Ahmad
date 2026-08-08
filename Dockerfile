@@ -22,6 +22,8 @@ COPY src/data/book-passages.json /app/src/data/book-passages.json
 COPY src/data/book-quotes.json /app/src/data/book-quotes.json
 COPY src/data/spoken-index.json /app/src/data/spoken-index.json
 COPY src/data/bodies.json /app/src/data/bodies.json
+COPY src/data/media-archive.json /app/src/data/media-archive.json
+COPY src/data/media-archive-transcripts.json /app/src/data/media-archive-transcripts.json
 COPY src/data/dr-ahmad-domain-glossary.json /app/src/data/dr-ahmad-domain-glossary.json
 COPY src/data/editorial-policy.json /app/src/data/editorial-policy.json
 COPY src/data/encyclopedia-search-synonyms.json /app/src/data/encyclopedia-search-synonyms.json

@@ -1,6 +1,6 @@
 import { normalizeArabic } from './content-index.mjs'
 
-const VALID_KINDS = new Set(['article', 'paper', 'book', 'podcast', 'curated', 'audio', 'report', 'research', 'question', 'dialogue'])
+const VALID_KINDS = new Set(['article', 'paper', 'book', 'podcast', 'curated', 'media', 'audio', 'report', 'research', 'question', 'dialogue'])
 
 export function isSiteContentId(id) {
   if (typeof id !== 'string' || !id) return false

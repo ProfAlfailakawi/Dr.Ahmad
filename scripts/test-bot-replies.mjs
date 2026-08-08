@@ -100,6 +100,9 @@ const PHRASES = [
   ['صوت فهد', INTENTS.LISTEN_FAHED], ['صوت نورة', INTENTS.LISTEN_NOURA],
   ['اسمعني الحوار', INTENTS.LISTEN_DIALOGUE], ['ابي اسمع الحوار', INTENTS.LISTEN_DIALOGUE],
   ['الحوار الصوتي', INTENTS.LISTEN_DIALOGUE], ['ابي الحوار', INTENTS.LISTEN_DIALOGUE], ['عنده كتب', INTENTS.LATEST_BOOK], ['عندك كتب', INTENTS.LATEST_BOOK],
+  ['حوار مسموع', INTENTS.DIALOGUE_LIBRARY], ['ابي ابحث داخل الكتاب', INTENTS.BOOK_SEARCH],
+  ['فيديوهات داخل الكتاب', INTENTS.BOOK_VIDEOS], ['الظهور الإعلامي', INTENTS.MEDIA_LIBRARY],
+  ['لقاءات الدكتور عن التعليم', INTENTS.MEDIA_LIBRARY], ['الراديو', INTENTS.RADIO],
   ['ورني كتبه', INTENTS.LATEST_BOOK], ['عنده مؤلفات', INTENTS.LATEST_BOOK], ['عنده حلقات', INTENTS.LATEST_PODCAST], ['عندك حلقات', INTENTS.LATEST_PODCAST], ['ابي بحث', INTENTS.LATEST_PAPER], ['عندك ابحاث', INTENTS.LATEST_PAPER], ['عطني المقالات', INTENTS.LATEST_ARTICLES], ['ورني مقالاتك', INTENTS.LATEST_ARTICLES], ['شنو يديدك', INTENTS.LATEST_CONTENT], ['عندك شي يديد', INTENTS.LATEST_CONTENT], ['زيدني', INTENTS.MORE_LIKE_THIS],
   ['شنو عنده عن الغش', INTENTS.SEARCH_TOPIC],
   ['قارن بين التلقين والفهم', INTENTS.COMPARE], ['ذكرني بعد ساعتين', INTENTS.REMIND_ME],
@@ -120,6 +123,17 @@ for (const [phrase] of PHRASES) {
     assert.equal(FALLBACK.test(text), false, `«${phrase}» تُقابَل بالردّ العامّ:\n${text.split('\n')[0]}`)
   })
 }
+
+check('navigation', 'بوابات الكتاب والصوت والإعلام لا تعود إلى مقالات عشوائية', () => {
+  const chat = conversation()
+  const book = textOf(chat.say('ابي ابحث داخل الكتاب'))
+  assert.match(book, /\/search\?tab=askbook/)
+  assert.equal(/\/articles\//.test(book), false)
+  assert.match(textOf(chat.say('فيديوهات داخل الكتاب')), /\/publications\/encyclopedia\?tab=video#encyclopedia-map/)
+  assert.match(textOf(chat.say('حوار مسموع')), /\.dialogue\.mp3|\/listen/)
+  assert.match(textOf(chat.say('الظهور الإعلامي')), /\/media/)
+  assert.match(textOf(chat.say('الراديو')), /\/radio/)
+})
 
 /* المجاملة: التحية والشكر لا يُقابلان ببرودٍ ولا بمقالٍ عشوائي */
 for (const [phrase, must] of [['السلام عليكم', /وعليكم السلام/], ['صباح الخير', /(صباح|نهارك|مساء)/], ['شكرا', /الله يعافيك/], ['الله يعطيك العافية', /الله يعافيك/]]) {

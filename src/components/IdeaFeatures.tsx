@@ -29,6 +29,14 @@ type SavedReaderQuote = {
 
 type SelectionOffsets = { startOffset: number; endOffset: number }
 
+type ReaderHighlightRegistry = {
+  set: (name: string, highlight: unknown) => void
+  delete: (name: string) => void
+}
+
+const readerHighlightRegistry = () => (CSS as unknown as { highlights?: ReaderHighlightRegistry }).highlights
+const readerHighlightConstructor = () => (window as unknown as { Highlight?: new (...ranges: Range[]) => unknown }).Highlight
+
 const READER_QUOTES_KEY = 'reader:quotes:v2'
 
 function normalizeReaderQuote(quote: string) {
@@ -333,6 +341,8 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [offsets, setOffsets] = useState<SelectionOffsets>({ startOffset: 0, endOffset: 0 })
   const [pos, setPos] = useState<{ x: number; y: number; bottom: number } | null>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
+  const customRangeRef = useRef<Range | null>(null)
+  const customHighlightActiveRef = useRef(false)
   const [toolbarX, setToolbarX] = useState<number | null>(null)
   /* في اللمس تفتح المنظومة قائمتها (نسخ · ترجمة) فوق النص المحدَّد، وهو المكان
      نفسه الذي كان شريطنا يقف فيه — فيُحجب. لا تملك CSS إخفاء تلك القائمة ما دام
@@ -347,6 +357,18 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     query.addEventListener('change', sync)
     return () => query.removeEventListener('change', sync)
   }, [])
+
+  useEffect(() => {
+    const preventNativeMenu = (event: Event) => {
+      const target = event.target
+      if (!(target instanceof Element) || !target.closest('.article-body')) return
+      if (!coarse) return
+      event.preventDefault()
+      event.stopPropagation()
+    }
+    document.addEventListener('contextmenu', preventNativeMenu, true)
+    return () => document.removeEventListener('contextmenu', preventNativeMenu, true)
+  }, [coarse])
   const [view, setView] = useState<null | 'thread' | 'card'>(null)
   /* أثناء التحديد تنزوي الأزرار العائمة (ملاحظة الدكتور: كانت تركب فوق
      التحديد وشريطه في الهاتف) — تعود فور زوال التحديد */
@@ -364,6 +386,24 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
 
   useEffect(() => {
     let timer = 0
+    const clearCustomHighlight = () => {
+      readerHighlightRegistry()?.delete('reader-selection')
+      customRangeRef.current = null
+      customHighlightActiveRef.current = false
+    }
+    const positionRange = (range: Range) => {
+      const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0)
+      const rect = rects[0] || range.getBoundingClientRect()
+      if (!rect || (!rect.width && !rect.height)) return null
+      const viewport = window.visualViewport
+      const viewportLeft = viewport?.offsetLeft || 0
+      const viewportWidth = viewport?.width || window.innerWidth
+      const rawX = rect.left + rect.width / 2
+      const x = Math.min(viewportLeft + viewportWidth - 12, Math.max(viewportLeft + 12, rawX))
+      const viewportTop = viewport?.offsetTop || 0
+      const y = Math.max(viewportTop + 74, rect.top - 10)
+      return { x, y, bottom: range.getBoundingClientRect().bottom }
+    }
     /* التحديد نفسه اقتباس (أمر الدكتور): من ظلّل جملةً فقد صوّت لها — لا يشترط
        صنع بطاقة ولا حفظ. يُحتسب مرة عند اكتمال التحديد (رفع الإصبع)، وذاكرة
        الجلسة تمنع تكرار الإرسال، وعضوية القارئ في الخادم تمنع تكرار العدّ. */
@@ -380,6 +420,11 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         const selection = window.getSelection()
         const text = selection?.toString().replace(/\s+/g, ' ').trim() || ''
         if (!selection || !selection.rangeCount || text.length < 12 || text.length > 800) {
+          if (customHighlightActiveRef.current && customRangeRef.current) {
+            const customPosition = positionRange(customRangeRef.current)
+            if (customPosition) setPos(customPosition)
+            return
+          }
           setPos(null)
           return
         }
@@ -409,21 +454,27 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
             endOffset = startOffset + text.length
           }
         }
-        const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0)
-        const rect = rects[0] || range.getBoundingClientRect()
-        if (!rect || (!rect.width && !rect.height)) return
-        const viewport = window.visualViewport
-        const viewportLeft = viewport?.offsetLeft || 0
-        const viewportWidth = viewport?.width || window.innerWidth
-        const rawX = rect.left + rect.width / 2
-        const x = Math.min(viewportLeft + viewportWidth - 12, Math.max(viewportLeft + 12, rawX))
-        const viewportTop = window.visualViewport?.offsetTop || 0
-        const y = Math.max(viewportTop + 74, rect.top - 10)
+        const position = positionRange(range)
+        if (!position) return
         setSel(text)
         setParagraph(Number.isInteger(paragraphIndex) ? paragraphIndex : 0)
         setOffsets({ startOffset, endOffset })
         /* أسفل التحديد كلّه (لا أول سطر منه) — عليه نُلصق الشريط في الجوال */
-        setPos({ x, y, bottom: range.getBoundingClientRect().bottom })
+        setPos(position)
+        /* بعد اكتمال تحديد اللمس نحفظه في طبقة Highlight خاصة بالموقع ثم
+           نمحو Selection النظام نفسه. بهذا يختفي شريط Copy/Look Up الخاص بـ
+           iOS، بينما يبقى التظليل وشريط «عبر السنين/البطاقة» كما هما. */
+        if (coarse && settled) {
+          const registry = readerHighlightRegistry()
+          const HighlightConstructor = readerHighlightConstructor()
+          if (registry && HighlightConstructor) {
+            const preservedRange = range.cloneRange()
+            registry.set('reader-selection', new HighlightConstructor(preservedRange))
+            customRangeRef.current = preservedRange
+            customHighlightActiveRef.current = true
+            selection.removeAllRanges()
+          }
+        }
         if (settled && text.split(/\s+/).filter(Boolean).length >= 4) {
           settledPending = false
           const countKey = `${current.slug}:${Number.isInteger(paragraphIndex) ? paragraphIndex : 0}:${text.slice(0, 90)}`
@@ -441,7 +492,13 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
             }))
           }
         }
-      }, 90)
+      }, event instanceof PointerEvent || event instanceof TouchEvent ? 0 : 90)
+    }
+    const clearOnOutsidePress = (event: PointerEvent) => {
+      if (!customHighlightActiveRef.current || toolbarRef.current?.contains(event.target as Node)) return
+      clearCustomHighlight()
+      setPos(null)
+      setSel('')
     }
     document.addEventListener('selectionchange', inspectSelection)
     document.addEventListener('pointerup', inspectSelection)
@@ -450,6 +507,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     window.addEventListener('resize', inspectSelection)
     window.visualViewport?.addEventListener('scroll', inspectSelection)
     window.visualViewport?.addEventListener('resize', inspectSelection)
+    document.addEventListener('pointerdown', clearOnOutsidePress, true)
     return () => {
       window.clearTimeout(timer)
       document.removeEventListener('selectionchange', inspectSelection)
@@ -459,8 +517,10 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
       window.removeEventListener('resize', inspectSelection)
       window.visualViewport?.removeEventListener('scroll', inspectSelection)
       window.visualViewport?.removeEventListener('resize', inspectSelection)
+      document.removeEventListener('pointerdown', clearOnOutsidePress, true)
+      clearCustomHighlight()
     }
-  }, [view])
+  }, [view, coarse, current.slug, body])
 
   // في Safari وPWA قد يكون موضع التحديد عند حافة الشاشة، لذلك نقيس الشريط الحقيقي
   // بعد رسمه ونحصر مركزه داخل الـ visual viewport، بدلاً من تخمين نصف عرضه.

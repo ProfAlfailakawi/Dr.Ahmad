@@ -5242,14 +5242,13 @@ html.dark .content-book-detail .book-detail-cover {
    إضافة وظائف جديدة أو تغيير مسارات المحتوى. العربية فقط في إشارات الاكتشاف.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* 1) متن المقالات — العربية تُرصف من جهة البدء فقط.
-   الرصف من الطرفين يوسّع فراغات الكلمات ويصنع «أنهاراً بيضاء»؛ لذلك نحرس
-   start في الحاسوب والهاتف والطباعة، مع إبقاء عرض القراءة الافتراضي 66ch. */
+/* 1) متن المقالات — رصفٌ كامل بطلب الدكتور، مع إبقاء آخر سطر من جهة البدء
+   كي لا يتمدّد السطر العربي القصير تمدداً مصطنعاً. */
 .content-articles .article-body,
 .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote),
 .content-articles .article-body-synced .synced-paragraph {
-  text-align: start !important;
-  text-justify: auto !important;
+  text-align: justify !important;
+  text-justify: inter-word !important;
   text-align-last: start !important;
   word-spacing: normal;
 }
@@ -5258,8 +5257,8 @@ html.dark .content-book-detail .book-detail-cover {
   .content-articles .article-body,
   .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote),
   .content-articles .article-body-synced .synced-paragraph {
-    text-align: start !important;
-    text-justify: auto !important;
+    text-align: justify !important;
+    text-justify: inter-word !important;
     text-align-last: start !important;
     word-spacing: normal;
   }
@@ -5277,6 +5276,11 @@ html.dark .content-book-detail .book-detail-cover {
     -webkit-user-select: text;
     user-select: text;
   }
+}
+
+::highlight(reader-selection) {
+  background: rgb(var(--c-accent) / .19);
+  color: rgb(var(--c-ink));
 }
 
 .reader-selection-toolbar {
@@ -5478,6 +5482,17 @@ html.reader-paper .sentence-item.is-sentence-active {
   background: rgb(var(--c-canvas) / .9) !important;
   box-shadow: 0 6px 18px -15px rgb(var(--c-ink) / .5);
 }
+.article-pull-quote--marker-only {
+  min-block-size: 2rem;
+  margin: .05rem 0 .8rem !important;
+  padding: 0 !important;
+}
+.article-pull-quote--marker-only::before,
+.article-pull-quote--marker-only::after { display: none !important; }
+.article-pull-quote--marker-only .article-pull-quote__action {
+  inset-inline-end: .05rem !important;
+  inset-block: 0 auto !important;
+}
 @media (max-width: 640px) {
   .article-pull-quote {
     margin-block: .1rem 1.15rem !important;
@@ -5488,6 +5503,11 @@ html.reader-paper .sentence-item.is-sentence-active {
     max-inline-size: none !important;
     font-size: calc(.98rem * var(--article-scale, 1)) !important;
     line-height: 1.86 !important;
+  }
+  .article-pull-quote--marker-only {
+    min-block-size: 1.85rem;
+    margin-block: 0 .65rem !important;
+    padding: 0 !important;
   }
 }
 

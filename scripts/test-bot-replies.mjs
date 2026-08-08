@@ -101,6 +101,8 @@ const PHRASES = [
   ['اسمعني الحوار', INTENTS.LISTEN_DIALOGUE], ['ابي اسمع الحوار', INTENTS.LISTEN_DIALOGUE],
   ['الحوار الصوتي', INTENTS.LISTEN_DIALOGUE], ['ابي الحوار', INTENTS.LISTEN_DIALOGUE], ['عنده كتب', INTENTS.LATEST_BOOK], ['عندك كتب', INTENTS.LATEST_BOOK],
   ['حوار مسموع', INTENTS.DIALOGUE_LIBRARY], ['ابي ابحث داخل الكتاب', INTENTS.BOOK_SEARCH],
+  ['ابحث داخل كتاب المدارس الذكية', INTENTS.BOOK_SEARCH], ['فصول الكتاب', INTENTS.BOOK_CHAPTERS],
+  ['فصول كتاب المدارس الذكية', INTENTS.BOOK_CHAPTERS],
   ['فيديوهات داخل الكتاب', INTENTS.BOOK_VIDEOS], ['الظهور الإعلامي', INTENTS.MEDIA_LIBRARY],
   ['لقاءات الدكتور عن التعليم', INTENTS.MEDIA_LIBRARY], ['الراديو', INTENTS.RADIO],
   ['ورني كتبه', INTENTS.LATEST_BOOK], ['عنده مؤلفات', INTENTS.LATEST_BOOK], ['عنده حلقات', INTENTS.LATEST_PODCAST], ['عندك حلقات', INTENTS.LATEST_PODCAST], ['ابي بحث', INTENTS.LATEST_PAPER], ['عندك ابحاث', INTENTS.LATEST_PAPER], ['عطني المقالات', INTENTS.LATEST_ARTICLES], ['ورني مقالاتك', INTENTS.LATEST_ARTICLES], ['شنو يديدك', INTENTS.LATEST_CONTENT], ['عندك شي يديد', INTENTS.LATEST_CONTENT], ['زيدني', INTENTS.MORE_LIKE_THIS],

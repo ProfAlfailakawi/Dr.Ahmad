@@ -7,7 +7,7 @@ import { createReminder, parseReminderTime } from './reminders.mjs'
 import { applyBotRules, needsHumanOnly, sign } from './bot-rules.mjs'
 import { getBotMessages } from './bot-messages.mjs'
 import { spokenReply } from './spoken-index.mjs'
-import { bookQuoteReply } from './book-quotes.mjs'
+import { bookChaptersReply, bookQuoteReply } from './book-quotes.mjs'
 import { answer as scholarAnswer, SCAFFOLD as SCHOLAR_SCAFFOLD, scoreItem as scholarScore, tokens as scholarTokens } from './scholar.mjs'
 import {
   dialogueModeReply,
@@ -45,12 +45,12 @@ function readFollowup(session) {
 }
 
 export const INTENTS = Object.freeze({
-  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_ARTICLES: 'LATEST_ARTICLES', MOST_VIEWED_ARTICLE: 'MOST_VIEWED_ARTICLE', CONTENT_OVERVIEW: 'CONTENT_OVERVIEW', TOP_ARTICLE_TOPIC: 'TOP_ARTICLE_TOPIC', LATEST_BOOK: 'LATEST_BOOK', BOOK_SEARCH: 'BOOK_SEARCH', BOOK_VIDEOS: 'BOOK_VIDEOS', MEDIA_LIBRARY: 'MEDIA_LIBRARY', RADIO: 'RADIO', DIALOGUE_LIBRARY: 'DIALOGUE_LIBRARY', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', VERIFIED_RESEARCH: 'VERIFIED_RESEARCH', EXPLAIN_MODE: 'EXPLAIN_MODE', DIALOGUE_MODE: 'DIALOGUE_MODE', HUMAN_HANDOFF: 'HUMAN_HANDOFF', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', COMPOUND_REQUEST: 'COMPOUND_REQUEST', CONTEXT_REFERENCE: 'CONTEXT_REFERENCE', READ_SPEED: 'READ_SPEED', IDEA_NETWORK: 'IDEA_NETWORK', CHALLENGE: 'CHALLENGE', CHALLENGE_ANSWER: 'CHALLENGE_ANSWER', SOURCE_PROOF: 'SOURCE_PROOF', SAVE_CONTENT: 'SAVE_CONTENT', LIST_SAVED: 'LIST_SAVED', REMOVE_SAVED: 'REMOVE_SAVED', CORRECTION: 'CORRECTION', CONTINUE_READING: 'CONTINUE_READING', UNKNOWN: 'UNKNOWN' })
+  LATEST_CONTENT: 'LATEST_CONTENT', LATEST_ARTICLE: 'LATEST_ARTICLE', LATEST_ARTICLES: 'LATEST_ARTICLES', MOST_VIEWED_ARTICLE: 'MOST_VIEWED_ARTICLE', CONTENT_OVERVIEW: 'CONTENT_OVERVIEW', TOP_ARTICLE_TOPIC: 'TOP_ARTICLE_TOPIC', LATEST_BOOK: 'LATEST_BOOK', BOOK_SEARCH: 'BOOK_SEARCH', BOOK_CHAPTERS: 'BOOK_CHAPTERS', BOOK_VIDEOS: 'BOOK_VIDEOS', MEDIA_LIBRARY: 'MEDIA_LIBRARY', RADIO: 'RADIO', DIALOGUE_LIBRARY: 'DIALOGUE_LIBRARY', LATEST_SELECTION: 'LATEST_SELECTION', LATEST_PODCAST: 'LATEST_PODCAST', LATEST_PAPER: 'LATEST_PAPER', WELCOME: 'WELCOME', MORE_LIKE_THIS: 'MORE_LIKE_THIS', COMPARE: 'COMPARE', ABOUT_TOPIC: 'ABOUT_TOPIC', UPCOMING_EVENTS: 'UPCOMING_EVENTS', ABOUT_DOCTOR: 'ABOUT_DOCTOR', CURATED_PICKS: 'CURATED_PICKS', MISSED_CONTENT: 'MISSED_CONTENT', SURPRISE_ME: 'SURPRISE_ME', ONE_MINUTE: 'ONE_MINUTE', SUMMARY: 'SUMMARY', SEARCH_TOPIC: 'SEARCH_TOPIC', SIMILAR_CONTENT: 'SIMILAR_CONTENT', READ_ARTICLE: 'READ_ARTICLE', LISTEN_FAHED: 'LISTEN_FAHED', LISTEN_NOURA: 'LISTEN_NOURA', LISTEN_DIALOGUE: 'LISTEN_DIALOGUE', SHOW_OPTIONS: 'SHOW_OPTIONS', HELP: 'HELP', CONTENT_BY_MOOD: 'CONTENT_BY_MOOD', QUOTE: 'QUOTE', QUOTE_CARD: 'QUOTE_CARD', REMIND_ME: 'REMIND_ME', CONTINUE_LISTENING: 'CONTINUE_LISTENING', WEEKLY_DIGEST: 'WEEKLY_DIGEST', STOP_MESSAGES: 'STOP_MESSAGES', RESUME_MESSAGES: 'RESUME_MESSAGES', DELETE_PREFERENCES: 'DELETE_PREFERENCES', VERIFIED_RESEARCH: 'VERIFIED_RESEARCH', EXPLAIN_MODE: 'EXPLAIN_MODE', DIALOGUE_MODE: 'DIALOGUE_MODE', HUMAN_HANDOFF: 'HUMAN_HANDOFF', HUMAN_RESPONSE_REQUIRED: 'HUMAN_RESPONSE_REQUIRED', COMPOUND_REQUEST: 'COMPOUND_REQUEST', CONTEXT_REFERENCE: 'CONTEXT_REFERENCE', READ_SPEED: 'READ_SPEED', IDEA_NETWORK: 'IDEA_NETWORK', CHALLENGE: 'CHALLENGE', CHALLENGE_ANSWER: 'CHALLENGE_ANSWER', SOURCE_PROOF: 'SOURCE_PROOF', SAVE_CONTENT: 'SAVE_CONTENT', LIST_SAVED: 'LIST_SAVED', REMOVE_SAVED: 'REMOVE_SAVED', CORRECTION: 'CORRECTION', CONTINUE_READING: 'CONTINUE_READING', UNKNOWN: 'UNKNOWN' })
 
 const LEARNABLE_INTENTS = new Set([
   INTENTS.LATEST_CONTENT, INTENTS.LATEST_ARTICLE, INTENTS.LATEST_ARTICLES,
   INTENTS.MOST_VIEWED_ARTICLE, INTENTS.CONTENT_OVERVIEW, INTENTS.TOP_ARTICLE_TOPIC,
-  INTENTS.LATEST_BOOK, INTENTS.BOOK_SEARCH, INTENTS.BOOK_VIDEOS,
+  INTENTS.LATEST_BOOK, INTENTS.BOOK_SEARCH, INTENTS.BOOK_CHAPTERS, INTENTS.BOOK_VIDEOS,
   INTENTS.MEDIA_LIBRARY, INTENTS.RADIO, INTENTS.DIALOGUE_LIBRARY,
   INTENTS.LATEST_SELECTION, INTENTS.LATEST_PODCAST,
   INTENTS.LATEST_PAPER, INTENTS.MORE_LIKE_THIS, INTENTS.ABOUT_TOPIC,
@@ -118,8 +118,9 @@ const patterns = [
   /* بوابات كانت تسقط في البحث العام: هي طلباتُ أداة/قسم، لا موضوعات. يجب أن
      تسبق «كتاب» و«حوار» العامّين كي لا يعود الرد إلى مقالة عشوائية. */
   [INTENTS.BOOK_VIDEOS, [/(?:فيديوهات|فيديو|مقاطع|شروحات)\s*(?:ال)?(?:كتاب|الموسوعه)|(?:شاهد|مشاهده|اشوف|ابي اشوف).*?(?:فيديوهات|فيديو|مقاطع).*?(?:داخل|في)\s*(?:ال)?(?:كتاب|الموسوعه)|(?:فيديوهات|فيديو|مقاطع).*?(?:داخل|في)\s*(?:ال)?(?:كتاب|الموسوعه)/, 0.98]],
-  [INTENTS.BOOK_SEARCH, [/^(?:(?:ابي|اريد|ابغي|ابغى|ممكن)\s+)?(?:ابحث|بحث|دور|فتش)\s*(?:لي\s*)?(?:داخل|في)\s*(?:ال)?كتاب(?:\s+عن\s+.+)?[!.؟]*$/, 0.98],
-    [/^(?:(?:ابي|اريد|ممكن)\s+)?(?:اسال|اسأل)\s*(?:ال)?كتاب(?:\s+عن\s+.+)?[!.؟]*$/, 0.98]],
+  [INTENTS.BOOK_CHAPTERS, [/^(?:(?:ابي|اريد|ممكن|عطني|اعطني|ورني)\s+)?(?:فصول|ابواب|محتويات|فهرس)\s*(?:ال)?كتاب(?:\s+.+)?[!.؟]*$|^(?:فصوله|ابوابه|محتوياته|فهرسه)[!.؟]*$/, 0.99]],
+  [INTENTS.BOOK_SEARCH, [/^(?:(?:ابي|اريد|ابغي|ابغى|ممكن)\s+)?(?:ابحث|بحث|دور|فتش)\s*(?:لي\s*)?(?:داخل|في)\s*(?:ال)?كتاب(?:\s+.+)?[!.؟]*$/, 0.98],
+    [/^(?:(?:ابي|اريد|ممكن)\s+)?(?:اسال|اسأل)\s*(?:ال)?كتاب(?:\s+.+)?[!.؟]*$/, 0.98]],
   [INTENTS.DIALOGUE_LIBRARY, [/^(?:(?:ابي|اريد|ممكن)\s+)?(?:حوار|الحوار)\s*(?:مسموع|مسموعه)[!.؟]*$|^(?:الحوارات|حوارات)\s*(?:المسموعه|الصوتيه)?[!.؟]*$|^(?:كل|قائمه|وين|ورني|عطني|اعطني)\s*(?:ال)?حوارات(?:\s+(?:المسموعه|الصوتيه))?[!.؟]*$|^مجلس الفكره[!.؟]*$/, 0.98]],
   [INTENTS.MEDIA_LIBRARY, [/(?:الظهور|ظهور)\s*(?:ال)?اعلامي|(?:لقاءات|مقابلات|فيديوهات)\s*(?:الدكتور|د\s*احمد|الفيلكاوي)|(?:شاهد|مشاهده|اشوف|ورني|عطني|اعطني).*?(?:لقاءات|مقابلات|الظهور الاعلامي)/, 0.97]],
   [INTENTS.RADIO, [/^(?:(?:ابي|اريد|ممكن|شغل|شغلي|افتح|ودني|وين)\s+)?(?:ال)?(?:راديو|اذاعه|الاذاعه|بث)\s*(?:الدكتور|د\s*احمد|الفيلكاوي|الموقع|المباشر|الصوتي)?[!.؟]*$/, 0.98]],
@@ -945,10 +946,23 @@ function commandTopic(input, commandPattern) {
 /* «ابحث داخل الكتاب» بوابةٌ لا موضوع. وإن أكمل السائل سؤاله في الجملة نفسها
    نجيبه من corpus الكتب الموثّق، ثم نفتح له الأداة على الكتاب الذي جاء منه
    الاقتباس. لا يعود هذا الطلب إلى بحث المقالات إطلاقاً. */
-function bookSearchGatewayReply(db, input) {
-  const topic = commandTopic(input, /^(?:(?:ابي|اريد|ابغي|ابغى|ممكن)\s+)?(?:(?:ابحث|بحث|دور|فتش)\s*(?:لي\s*)?(?:داخل|في)\s*(?:ال)?كتاب|(?:اسال|اسأل)\s*(?:ال)?كتاب)\s*/)
+function bookNamedInRequest(db, input, current = null) {
+  const normalized = clean(input)
+  const books = db.all("SELECT * FROM content_items WHERE kind='book'") || []
+  const named = books
+    .map((book) => ({ book, title: clean(book.title || '') }))
+    .filter(({ title }) => title && normalized.includes(title))
+    .sort((left, right) => right.title.length - left.title.length)[0]?.book
+  return named || (current?.kind === 'book' ? current : null)
+}
+
+function bookSearchGatewayReply(db, input, current = null) {
+  const book = bookNamedInRequest(db, input, current)
+  let topic = commandTopic(input, /^(?:(?:ابي|اريد|ابغي|ابغى|ممكن)\s+)?(?:(?:ابحث|بحث|دور|فتش)\s*(?:لي\s*)?(?:داخل|في)\s*(?:ال)?كتاب|(?:اسال|اسأل)\s*(?:ال)?كتاب)\s*/)
+  if (book) topic = clean(topic).replace(clean(book.title || ''), '').replace(/^(?:عن|حول|بخصوص)\s+/, '').trim()
   if (topic) {
-    const grounded = bookQuoteReply(topic)
+    const slug = book?.slug || String(book?.id || '').replace(/^book:/, '')
+    const grounded = bookQuoteReply(topic, slug ? { bookSlug: slug } : {})
     if (grounded?.found) {
       const bookUrl = `${SITE_URL}/search?tab=askbook&book=${encodeURIComponent(grounded.found.bookSlug)}`
       return {
@@ -958,7 +972,16 @@ function bookSearchGatewayReply(db, input) {
       }
     }
     return {
-      text: `لم أجد مقطعاً موثقاً كافياً لهذا السؤال داخل متون الكتب، لذلك لن أنسب للدكتور جواباً غير موجود.\n\nاكتب سؤالك داخل أداة «اسأل كتاباً» واختر الكتاب:\n${SITE_URL}/search?tab=askbook`,
+      text: `لم أجد مقطعاً موثقاً كافياً لهذا السؤال ${book ? `داخل «${book.title}»` : 'داخل متون الكتب'}، لذلك لن أنسب للدكتور جواباً غير موجود.\n\nاكتب سؤالك داخل أداة «اسأل كتاباً»${book ? '' : ' واختر الكتاب'}:\n${SITE_URL}/search?tab=askbook${book ? `&book=${encodeURIComponent(slug)}` : ''}`,
+      ...(book ? { contentId: book.id, contextItems: [book.id], seenContentIds: [book.id] } : {}),
+    }
+  }
+
+  if (book) {
+    const slug = book.slug || String(book.id || '').replace(/^book:/, '')
+    return {
+      text: `أنا داخل كتاب «${book.title}» الآن. اكتب سؤالك بطريقتك — مثلاً: «ماذا يقول عن المعلم؟» — وأبحث لك في متنه الموثّق، لا في المقالات.\n${SITE_URL}/search?tab=askbook&book=${encodeURIComponent(slug)}`,
+      contentId: book.id, contextItems: [book.id], seenContentIds: [book.id],
     }
   }
 
@@ -968,6 +991,21 @@ function bookSearchGatewayReply(db, input) {
     contextItems: books.map((item) => item.id),
     seenContentIds: books.map((item) => item.id),
   }
+}
+
+function bookChaptersGatewayReply(db, input, current = null) {
+  const book = bookNamedInRequest(db, input, current)
+  if (!book) {
+    const books = db.all("SELECT * FROM content_items WHERE kind='book'") || []
+    return {
+      text: `أي كتاب تقصد؟ اكتب اسمه، مثل: «فصول المدارس الذكية».\n\nالكتب المتاحة:\n${books.slice(0, 9).map((item) => `• ${item.title}`).join('\n')}\n\n${SITE_URL}/publications`,
+      contextItems: books.map((item) => item.id), seenContentIds: books.map((item) => item.id),
+    }
+  }
+  const slug = book.slug || String(book.id || '').replace(/^book:/, '')
+  const chapters = bookChaptersReply(slug)
+  if (!chapters) return { text: `لم أجد فهرساً موثقاً لهذا الكتاب الآن، لذلك لن أخمّن فصوله.\n${book.url}`, contentId: book.id, contextItems: [book.id], seenContentIds: [book.id] }
+  return { text: chapters.text, contentId: book.id, contextItems: [book.id], seenContentIds: [book.id] }
 }
 
 function bookVideosReply(input) {
@@ -1850,7 +1888,9 @@ export function handleIntent({ db, jid = '', input, session = pendingSession(db,
       return { ...classification, ...contentReply(book?.date ? 'أحدث كتاب منشور' : 'كتاب من مؤلفات الدكتور', book) }
     }
     case INTENTS.BOOK_SEARCH:
-      return { ...classification, ...bookSearchGatewayReply(db, input) }
+      return { ...classification, ...bookSearchGatewayReply(db, input, selection.item) }
+    case INTENTS.BOOK_CHAPTERS:
+      return { ...classification, ...bookChaptersGatewayReply(db, input, selection.item) }
     case INTENTS.BOOK_VIDEOS:
       return { ...classification, ...bookVideosReply(input) }
     case INTENTS.MEDIA_LIBRARY:

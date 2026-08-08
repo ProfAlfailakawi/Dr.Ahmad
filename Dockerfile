@@ -19,6 +19,7 @@ COPY src/data/audio.json /app/src/data/audio.json
 COPY src/data/audio-meta.json /app/src/data/audio-meta.json
 COPY src/data/podcast-admin.json /app/src/data/podcast-admin.json
 COPY src/data/book-passages.json /app/src/data/book-passages.json
+COPY src/data/book-knowledge.json /app/src/data/book-knowledge.json
 COPY src/data/book-quotes.json /app/src/data/book-quotes.json
 COPY src/data/spoken-index.json /app/src/data/spoken-index.json
 COPY src/data/bodies.json /app/src/data/bodies.json

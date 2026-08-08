@@ -24,6 +24,7 @@ src/data/*
 !src/data/research-papers.ts
 !src/data/book-quotes.json
 !src/data/book-passages.json
+!src/data/book-knowledge.json
 !src/data/media-archive.json
 !src/data/media-archive-transcripts.json
 !src/data/encyclopedia-structure.json

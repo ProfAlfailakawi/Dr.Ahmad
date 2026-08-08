@@ -427,7 +427,7 @@ export default function AskLibrary() {
     initialQuestion.length >= 4 ? initialQuestion : "",
   );
   const [bodies, setBodies] = useState<Record<string, string> | null>(null);
-  const [bodiesLoading, setBodiesLoading] = useState(false);
+  const [, setBodiesLoading] = useState(false);
   const resRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const result = useMemo(
@@ -695,13 +695,6 @@ export default function AskLibrary() {
           </FadeUp>
 
           <div ref={resRef} className="scroll-mt-28">
-            {asked && bodiesLoading && (
-              <FadeUp>
-                <div className="mt-12 border-t border-hair pt-6">
-                  <ComposeScene lines={["أرتّب مواد الأرشيف الأقرب إلى السؤال…"]} />
-                </div>
-              </FadeUp>
-            )}
             {result && (
               <div className="mt-12">
                 {result.hits.length > 0 || result.refs.length > 0 ? (

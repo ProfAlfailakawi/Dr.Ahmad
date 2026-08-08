@@ -26,7 +26,6 @@
 | الاستشهادات | `src/lib/bibtex.ts` | [docs/CITATIONS.md](docs/CITATIONS.md) |
 | التحليلات | `usage-analytics.ts` · `admin-usage*.ts` | [docs/ANALYTICS.md](docs/ANALYTICS.md) |
 | أنظمة التحرير | `editorial-*` · `PublishingStudio` | مجلس التحرير والذاكرة والاستشراف |
-| الترحيل | `audit-legacy-links.mjs` | [docs/MIGRATION.md](docs/MIGRATION.md) |
 | النشر | ثلاث طبقاتٍ مستقلّة | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
 
 ## الحدود الأمنية

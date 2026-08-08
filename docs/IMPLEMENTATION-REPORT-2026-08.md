@@ -23,11 +23,6 @@
 - `src/components/extras.tsx` (`CiteButton`): APA وMLA وChicago وRIS.
 - أضيف مولد واحد مشترك في `src/lib/bibtex.ts` وخيار نسخ وتنزيل `.bib` من الأدوات نفسها، دون أداة موازية.
 
-### الروابط القديمة
-- المصدر التنفيذي: `firebase.json` وتحويلات `server.mjs`.
-- التحقق الحالي: `verify-domain-migration.mjs` و`verify-legacy-retirement.mjs` وsitemap/canonical في مسار البناء.
-- أضيف `scripts/audit-legacy-links.mjs` لتوحيد الجرد الساكن وكشف السلاسل والحلقات، مع إبقاء التحقق الحي في الأدوات الحالية.
-
 ### التوثيق
 - React الفعلي: 19.2.8 وفق `package.json`.
 - Node المطلوب: `>=24 <25`.

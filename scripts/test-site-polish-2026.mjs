@@ -49,21 +49,6 @@ ok(buildStatic.includes('mergeCloudAdditions') && buildStatic.includes('override
 ok(buildStatic.includes('href="/decade"') && buildStatic.includes('وثيقة العقد'), 'التنقل الثابت يبرز وثيقة العقد بدل إعادة About إلى الواجهة')
 ok(buildStatic.includes("desc: `Official website") && buildStatic.includes("desc: `${nPapers} peer-reviewed"), 'أرقام النسخة الإنجليزية ديناميكية وليست نصوصاً ثابتة قديمة')
 
-console.log('\nRetired-index URL migration')
-const redirects = firebase.hosting.redirects || []
-const redirectMap = new Map(redirects.map((entry) => [entry.source, entry]))
-const researchSource = read('src/data/research-papers.ts')
-const slugs = [...researchSource.matchAll(/\bslug:\s*'([^']+)'/g)].map((match) => match[1])
-ok(slugs.length >= 15, `تم التعرف على ${slugs.length} مسارات بحث محلية للفحص`)
-for (const slug of slugs) {
-  for (const prefix of ['', '/ar', '/en']) {
-    const source = `${prefix}/scholarly_contributi/${slug}`
-    const target = redirectMap.get(source)
-    ok(target?.type === 301 && target?.destination === `/research/${slug}`, `301 مباشر للبحث القديم ${source}`)
-  }
-}
-ok(redirectMap.get('/scholarly_contributi/اتجاهات-الهيئة-التدريسية-نحو-استخدام-2')?.destination === '/research/faculty-attitudes-edtech', 'المسار العربي القديم المفهرس يتحول مباشرة إلى البحث الصحيح')
-
 console.log('\nHomepage polish')
 ok(home.includes('من الأرشيف اليوم') && home.includes('أربع زوايا، ورؤية تتجدّد.'), 'قسم الأعمال أصبح «من الأرشيف اليوم» مع بقاء الاكتشاف المتجدد')
 ok(home.includes('archive-editorial-cover') && home.includes("item.kind === 'paper' ? 'RESEARCH'") && home.includes("item.kind === 'media' ? 'MEDIA' : 'ESSAY'"), 'المقال والبحث يحصلان على أغلفة تحريرية أصلية، مع هوية احتياطية صحيحة لكل نوع بلا صور stock')

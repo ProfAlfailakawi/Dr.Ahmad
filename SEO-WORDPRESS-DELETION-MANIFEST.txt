@@ -1,0 +1,15 @@
+السبب الجذري
+كانت تحويلات ترحيل WordPress القديمة تُبقي مئات المسارات القديمة حية، وتحوّل كثيراً منها إلى صفحات عامة غير مكافئة؛ وهذا سبّب Soft 404 وCrawled - currently not indexed داخل Google Search Console.
+
+الحذف المطلوب عند تطبيق الحزمة
+ROOT-CAUSES-AND-FILES.txt
+docs/MIGRATION.md
+reports/legacy-links-report.json
+reports/legacy-links-report.md
+reports/legacy-links.json
+scripts/audit-legacy-links.mjs
+scripts/verify-legacy-retirement.mjs
+src/pages/Legacy.tsx
+
+ملاحظة
+الحزمة لا تحتوي المشروع كاملاً. بعد نسخ الملفات المعدلة إلى الجذر، احذف الملفات الثمانية أعلاه. لا توجد تغييرات على التصميم أو المحتوى أو WhatsApp أو المسارات الحالية الصحيحة.

@@ -14,7 +14,6 @@ const obsolete = [
   'agent.mjs',
   'intent-engine.mjs',
   'verify-domain-migration.mjs',
-  'verify-legacy-retirement.mjs',
   'public/sitemap.xml',
 ]
 

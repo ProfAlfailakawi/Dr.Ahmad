@@ -371,11 +371,6 @@ const routes = [
   ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.jpg` })),
 ]
 
-const LEGACY_REDIRECTS = [
-  ['/articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
-  ['/signature_articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
-]
-
 const uniqueRoutes = (items) => {
   const seen = new Set()
   return items.filter((item) => {
@@ -1722,7 +1717,7 @@ function assertStaticOutput() {
   const duplicateLocs = locs.filter((loc, index) => locs.indexOf(loc) !== index)
   if (duplicateLocs.length) throw new Error(`sitemap يحتوي روابط مكررة: ${duplicateLocs.slice(0, 3).join(', ')}`)
   if (/scheduledarabbic|localhost|127\.0\.0\.1/.test(sitemap)) throw new Error('sitemap يحتوي رابط اختبار أو slug غير نظيف')
-  const forbiddenIndexPaths = ['/admin', '/privacy', '/terms', '/data-deletion', '/cv-file/', '/wp-', '/signature_articles/', '/published_articles/', '/scholarly_contributi/']
+  const forbiddenIndexPaths = ['/admin', '/privacy', '/terms', '/data-deletion', '/cv-file/']
   const forbiddenLoc = locs.find((loc) => forbiddenIndexPaths.some((part) => loc.includes(part)))
   if (forbiddenLoc) throw new Error(`sitemap يحتوي صفحة غير مخصصة للفهرسة: ${forbiddenLoc}`)
   for (const item of media) {

@@ -58,7 +58,6 @@ npm run citations:bibtex:self-test  # الاستشهادات وBibTeX
 npm run analytics:self-test         # محرّك «استخدام أدواتي»
 npm run search:deeplink:self-test   # الرابط العميق واستعراض النتائج
 npm run podcast:ar:self-test        # قفل الحوار اليدوي وبوابات البودكاست
-npm run legacy:audit                # جرد الروابط القديمة
 npm run docs:check                  # تطابق التوثيق مع المشروع
 npm run upgrades:self-test          # عقود الترقيات المجمّعة
 ```
@@ -126,7 +125,6 @@ dist/               ناتج البناء — لا يُعدَّل يدوياً
 | التحليلات والخصوصية | [docs/ANALYTICS.md](docs/ANALYTICS.md) |
 | لوحة الإدارة | [docs/ADMIN.md](docs/ADMIN.md) |
 | مجموعات Firestore | [docs/FIRESTORE.md](docs/FIRESTORE.md) |
-| ترحيل الروابط القديمة | [docs/MIGRATION.md](docs/MIGRATION.md) |
 | الأمان وحدوده | [SECURITY-NOTES.md](SECURITY-NOTES.md) |
 | النشر | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
 

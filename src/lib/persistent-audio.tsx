@@ -4,6 +4,7 @@ import { useLocation } from 'react-router'
 import { trackListen } from './views'
 import { storeLastAudio } from './reading-space'
 import { SocialIcon } from '../components/icons'
+import { rtlSeekSeconds } from './audio-seek'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 const clock = (seconds: number) => {
@@ -286,8 +287,7 @@ export function PersistentAudioDock() {
             <button
               type="button"
               onClick={(event) => {
-                const rect = event.currentTarget.getBoundingClientRect()
-                audio.seekTo(((rect.right - event.clientX) / rect.width) * audio.duration)
+                audio.seekTo(rtlSeekSeconds(event.currentTarget, event.clientX, audio.duration))
               }}
               className={`audio-wave-progress mt-1.5 block h-4 w-full overflow-hidden rounded-md${audio.playing ? ' is-playing' : ''}`}
               aria-label="شريط تقدم الصوت"
@@ -316,8 +316,7 @@ export function PersistentAudioDock() {
           <button
             type="button"
             onClick={(event) => {
-              const rect = event.currentTarget.getBoundingClientRect()
-              audio.seekTo(((rect.right - event.clientX) / rect.width) * audio.duration)
+              audio.seekTo(rtlSeekSeconds(event.currentTarget, event.clientX, audio.duration))
             }}
             className={`audio-wave-progress mt-2 block h-5 w-full overflow-hidden rounded-md${audio.playing ? ' is-playing' : ''}`}
             aria-label="شريط تقدم الصوت"

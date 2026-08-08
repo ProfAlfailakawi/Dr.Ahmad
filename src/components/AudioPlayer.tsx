@@ -1,8 +1,10 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { usePersistentAudio } from '../lib/persistent-audio'
+import { rtlSeekFraction, rtlSeekSeconds } from '../lib/audio-seek'
 import { listenIsOpen } from '../lib/listen-catalog'
 import { SocialIcon } from './icons'
+import { VoiceFigure, voiceKindForSpeaker } from './VoiceFigure'
 import { arabicCountPhrase, AUDIO_TRIAL_FORMS } from '../lib/arabic-count.ts'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (digit) => '0123456789'[+digit])
@@ -154,7 +156,15 @@ const DialogueScriptView = memo(function DialogueScriptView({ script, activeInde
                 onClick={() => seekable && onJump(line.startSec as number)}
                 className={`block w-full rounded-lg px-2.5 py-1.5 text-start text-[.78rem] leading-relaxed transition-colors ${isActive ? 'bg-accent/[.08] text-ink' : 'text-soft'} ${seekable ? 'hover:bg-wash hover:text-ink' : 'cursor-default'}`}
               >
-                {line.speaker && <span className={`me-1.5 text-[.68rem] font-semibold ${isActive ? 'text-accent' : 'text-soft/80'}`}>{line.speaker}:</span>}
+                {line.speaker && (
+                  <span
+                    className={`me-2 inline-flex h-6 w-6 translate-y-[2px] items-center justify-center rounded-full border align-middle ${isActive ? 'border-accent/35 bg-accent/[.08] text-accent' : 'border-hair bg-canvas text-soft/80'}`}
+                    aria-label={voiceKindForSpeaker(line.speaker) === 'woman' ? 'المتحدثة' : 'المتحدث'}
+                    title={voiceKindForSpeaker(line.speaker) === 'woman' ? 'المتحدثة' : 'المتحدث'}
+                  >
+                    <VoiceFigure kind={voiceKindForSpeaker(line.speaker)} size={14} />
+                  </span>
+                )}
                 {line.text}
               </button>
             </li>
@@ -171,22 +181,6 @@ const DialogueScriptView = memo(function DialogueScriptView({ script, activeInde
     </div>
   )
 })
-
-/* صورة صوت بلا كلام: رجل/امرأة — أحادية اللون، تحترم هوية الموقع */
-function VoiceFigure({ kind, size = 16 }: { kind: 'man' | 'woman'; size?: number }) {
-  return kind === 'woman' ? (
-    <svg aria-hidden width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-      <path d="M7.2 10.4a4.8 4.8 0 1 1 9.6 0c0 1.9.5 3 1.2 4.1-1.5.6-2.6.8-4 .8h-4c-1.4 0-2.5-.2-4-.8.7-1.1 1.2-2.2 1.2-4.1Z" />
-      <circle cx="12" cy="9.6" r="3.1" fill="currentColor" stroke="none" opacity=".9" />
-      <path d="M5.4 20.2c1.3-2.6 3.8-3.9 6.6-3.9s5.3 1.3 6.6 3.9" />
-    </svg>
-  ) : (
-    <svg aria-hidden width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-      <circle cx="12" cy="8.6" r="3.4" fill="currentColor" stroke="none" opacity=".9" />
-      <path d="M5.2 20.2c1.3-2.9 3.9-4.4 6.8-4.4s5.5 1.5 6.8 4.4" />
-    </svg>
-  )
-}
 
 function AudioWave({ dialogue = false, size = 22 }: { dialogue?: boolean; size?: number }) {
   return (
@@ -470,8 +464,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
                     aria-label={`المحور ${index + 1}${segment.title ? `: ${segment.title}` : ''}`}
                     aria-current={activeSegment === index ? 'true' : undefined}
                     onClick={(event) => {
-                      const rect = event.currentTarget.getBoundingClientRect()
-                      const within = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
+                      const within = rtlSeekFraction(event.currentTarget, event.clientX)
                       jumpTo(segment.from + within * span)
                     }}
                     style={{ flexGrow: span, flexBasis: 0 }}
@@ -487,8 +480,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
               type="button"
               onClick={(event) => {
                 if (!active || !duration) return
-                const rect = event.currentTarget.getBoundingClientRect()
-                player.seekTo(((event.clientX - rect.left) / rect.width) * duration)
+                player.seekTo(rtlSeekSeconds(event.currentTarget, event.clientX, duration))
               }}
               className={`audio-wave-progress mt-4 block h-7 w-full overflow-hidden rounded-md${active && player.playing ? ' is-playing' : ''}`}
               aria-label="شريط تقدم الصوت"

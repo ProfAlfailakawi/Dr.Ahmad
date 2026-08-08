@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router";
 import { SocialIcon } from "./icons";
+import { VoiceFigure, voiceKindForSpeaker } from "./VoiceFigure";
 import { useCmsContent } from "../lib/content";
 import { categoryLabel } from "../lib/content-taxonomy";
 import { usePersistentAudio } from "../lib/persistent-audio";
@@ -475,7 +476,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                               ) : latestIsAudio && snapshot.audio ? (
                                 <button type="button" onClick={() => void resumeAudio()} className="group flex w-full items-center gap-5 p-5 text-right md:p-6">
                                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-white"><PlayMark /></span>
-                                  <span className="min-w-0 flex-1"><span className="text-[.68rem] font-semibold text-accent">أكمل الاستماع</span><strong className="mt-1 line-clamp-2 block font-display text-[1.08rem] leading-[1.65] text-ink group-hover:text-accent">{snapshot.audio.track.title}</strong><span className="mt-1 line-clamp-2 block text-[.76rem] leading-[1.8] text-soft">{leftAtLine ? <><b className="text-accent">{leftAtLine.speaker}:</b> {leftAtLine.text}</> : <>توقفت عند {arNumber(Math.floor(snapshot.audio.current / 60))}:{arNumber(String(Math.floor(snapshot.audio.current % 60)).padStart(2, "0"))}</>}</span></span>
+                                  <span className="min-w-0 flex-1"><span className="text-[.68rem] font-semibold text-accent">أكمل الاستماع</span><strong className="mt-1 line-clamp-2 block font-display text-[1.08rem] leading-[1.65] text-ink group-hover:text-accent">{snapshot.audio.track.title}</strong><span className="mt-1 line-clamp-2 block text-[.76rem] leading-[1.8] text-soft">{leftAtLine ? <><span className="me-1.5 inline-flex h-5 w-5 translate-y-[3px] items-center justify-center rounded-full border border-hair bg-canvas text-accent" aria-label={voiceKindForSpeaker(leftAtLine.speaker) === 'woman' ? 'المتحدثة' : 'المتحدث'}><VoiceFigure kind={voiceKindForSpeaker(leftAtLine.speaker)} size={12} /></span>{leftAtLine.text}</> : <>توقفت عند {arNumber(Math.floor(snapshot.audio.current / 60))}:{arNumber(String(Math.floor(snapshot.audio.current % 60)).padStart(2, "0"))}</>}</span></span>
                                 </button>
                               ) : snapshot.last ? (
                                 <Link to={`/articles/${snapshot.last.slug}`} onClick={() => setOpen(false)} className="group block p-5 md:p-6">

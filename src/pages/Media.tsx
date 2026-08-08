@@ -30,9 +30,9 @@ export default function Media() {
         <FadeUp>
           <div className="rounded-[1.6rem] border border-hair bg-wash p-4 md:p-6">
             <label className="block text-[.74rem] font-bold text-accent" htmlFor="media-search">ابحث داخل ما قيل</label>
-            <div className="mt-3 flex items-center gap-3 rounded-2xl border border-hair bg-canvas px-4 py-3 focus-within:border-accent">
+            <div className="mt-3 flex items-center gap-3 rounded-2xl border border-hair bg-canvas px-4 focus-within:border-accent">
               <span aria-hidden className="text-accent">⌕</span>
-              <input id="media-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="مثال: التعليم الإلكتروني، الذكاء الاصطناعي، المهارات…" className="min-w-0 flex-1 bg-transparent text-[.92rem] text-ink outline-none placeholder:text-soft/70" />
+              <input id="media-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="مثال: التعليم الإلكتروني، الذكاء الاصطناعي، المهارات…" className="min-w-0 flex-1 self-stretch bg-transparent py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/70" />
               {query && <button type="button" onClick={() => setQuery('')} className="text-[.72rem] text-soft hover:text-accent">مسح</button>}
             </div>
             <p className="measure mt-3 text-[.7rem] leading-relaxed text-soft">عند وجود تفريغ زمني موثّق، تنقلك النتيجة مباشرة إلى اللحظة التي قيلت فيها العبارة.</p>

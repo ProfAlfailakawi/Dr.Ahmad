@@ -310,7 +310,10 @@ export default function Radio() {
         <div className="radio-now">
           {/* بلا أسماء — اللون وحده يميّز الصوتين */}
           <div className="radio-who">{betweenEpisodes ? 'بعد لحظات' : ''}</div>
-          <p key={betweenEpisodes ? `gap-${pos.idx}` : `line-${line.i}`} className="radio-line">
+          <p
+            key={betweenEpisodes ? `gap-${pos.idx}` : `line-${line.i}`}
+            className={`radio-line${!betweenEpisodes && !line.t ? ' radio-line--waiting' : ''}`}
+          >
             {betweenEpisodes ? ITEMS[(pos.idx + 1) % ITEMS.length].title : nameWithoutTashkeel(line.t || '…')}
           </p>
           <div className="radio-rhythm" aria-hidden="true">{ticks}</div>

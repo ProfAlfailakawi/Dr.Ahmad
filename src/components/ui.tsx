@@ -997,17 +997,17 @@ export function Footer() {
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-[.9rem] text-soft">
               <Link to="/" className="transition-colors hover:text-accent">العربية</Link>
               <span className="flex items-center gap-3">
-                <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" aria-label="CV (PDF)" title="CV (PDF)" className="text-soft transition-colors hover:text-accent">
+                <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" aria-label="CV (PDF)" title="CV (PDF)" className="tap-44 text-soft transition-colors hover:text-accent">
                   <SocialIcon name="CV" />
                 </a>
                 {socials.map((s) => (
-                  <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="text-soft transition-colors hover:text-accent">
+                  <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="tap-44 text-soft transition-colors hover:text-accent">
                     <SocialIcon name={s.label} />
                   </a>
                 ))}
                 <span aria-hidden className="h-4 w-px bg-hair" />
                 {academicProfiles.map((profileLink) => (
-                  <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="text-soft transition-colors hover:text-accent">
+                  <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="tap-44 text-soft transition-colors hover:text-accent">
                     <SocialIcon name={profileLink.label} />
                   </a>
                 ))}
@@ -1037,17 +1037,17 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-[.9rem] text-soft">
             <span className="flex items-center gap-3">
               <MySpace variant="footer" />
-              <a href={cv.ar} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية PDF" title="السيرة الذاتية PDF" className="text-soft transition-colors hover:text-accent">
+              <a href={cv.ar} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية PDF" title="السيرة الذاتية PDF" className="tap-44 text-soft transition-colors hover:text-accent">
                 <SocialIcon name="CV" />
               </a>
               {socials.map((s) => (
-                <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="text-soft transition-colors hover:text-accent">
+                <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="tap-44 text-soft transition-colors hover:text-accent">
                   <SocialIcon name={s.label} />
                 </a>
               ))}
               <span aria-hidden className="h-4 w-px bg-hair" />
               {academicProfiles.map((profileLink) => (
-                <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="text-soft transition-colors hover:text-accent">
+                <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="tap-44 text-soft transition-colors hover:text-accent">
                   <SocialIcon name={profileLink.label} />
                 </a>
               ))}

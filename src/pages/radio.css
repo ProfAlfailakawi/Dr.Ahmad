@@ -312,3 +312,21 @@ html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-l
   .radio-nx { grid-template-columns: 54px 1fr; gap: 12px }
   .radio-rhythm { height: 26px }
 }
+
+/* ── اللحظة الأولى ──
+   قبل أن يبدأ الصوت لا جملةَ تُعرض، فكان المسرح يقف على ثلاث نقاطٍ ساكنة.
+   هنا تتنفّس النقاط بإيقاع نبضة «على الهواء» نفسها — الرسالة أن المحطة
+   تعمل وأن الكلام آتٍ، بلا كلمةٍ واحدة تُضاف. */
+.radio-line--waiting {
+  color: color-mix(in srgb, currentColor 42%, transparent);
+  letter-spacing: .18em;
+  animation: radio-line-enter .26s cubic-bezier(.22, 1, .36, 1) both,
+             radio-waiting 2.4s ease-in-out .3s infinite;
+}
+@keyframes radio-waiting {
+  0%, 100% { opacity: .42 }
+  50% { opacity: .92 }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radio-line--waiting { animation: none; opacity: .6 }
+}

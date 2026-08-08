@@ -5214,3 +5214,15 @@ html.dark .content-book-detail .book-detail-cover {
 .measure { max-inline-size: 68ch; }
 /* وما كان موسّطاً يبقى موسّطاً بعد الحدّ. */
 .measure-center { max-inline-size: 68ch; margin-inline: auto; }
+
+/* ── مساحة اللمس ──
+   الإصبع تحتاج نحو 44 بكسل، والعين تكتفي بأقلّ. هذه توسّع ما تلمسه اليد
+   دون أن تُكبّر ما تراه العين — فلا يتغيّر تخطيطٌ ولا حجم. */
+.tap-44 { position: relative; }
+.tap-44::after {
+  content: "";
+  position: absolute;
+  /* توسيعٌ متساوٍ في الاتجاهات الأربعة: 36 تصير 44، و40 تصير 48.
+     ولا يعرف يميناً من يسار، فيصحّ في العربية والإنجليزية معاً. */
+  inset: -4px;
+}

@@ -141,7 +141,7 @@ export function MediaSaveButton({ slug, className = '', compact = true }: { slug
       aria-label={saved ? "إزالة اللقاء من محفوظاتي" : "حفظ اللقاء في مساحتي"}
       aria-pressed={saved}
       title={saved ? "محفوظ في مساحتي" : "حفظ اللقاء في مساحتي"}
-      className={`${compact ? "flex h-9 w-9 items-center justify-center rounded-full" : "inline-flex min-h-11 items-center gap-2 rounded-full px-4"} border transition-colors ${saved ? "border-accent bg-accent text-white" : "border-hair bg-canvas/[.92] text-soft hover:border-accent hover:text-accent"} ${className}`}
+      className={`${compact ? "tap-44 flex h-9 w-9 items-center justify-center rounded-full" : "inline-flex min-h-11 items-center gap-2 rounded-full px-4"} border transition-colors ${saved ? "border-accent bg-accent text-white" : "border-hair bg-canvas/[.92] text-soft hover:border-accent hover:text-accent"} ${className}`}
     >
       <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill={saved ? "currentColor" : "none"} aria-hidden="true">
         <path d="M7 4.75h10v14.5L12 16.2 7 19.25V4.75Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />

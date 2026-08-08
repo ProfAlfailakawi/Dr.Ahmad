@@ -449,7 +449,6 @@ export default function Atlas() {
                 <button type="button" onClick={() => { setView('timeline'); trackUsage('atlas_interaction', { type: 'view_timeline' }) }} aria-pressed={view === 'timeline'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'timeline' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>المسار الزمني</button>
                 <button type="button" onClick={chooseGraphView} aria-pressed={view === 'graph'} className={`atlas-graph-switch relative rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'} ${showGraphDiscovery ? 'is-discovering' : ''}`}>
                   شبكة الأفكار
-                  {showGraphDiscovery && <span className="atlas-graph-discovery-copy" aria-hidden="true"> · جرّبها</span>}
                 </button>
               </div>
             </div>

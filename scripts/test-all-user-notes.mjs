@@ -45,6 +45,7 @@ const gcloudignore = read('.gcloudignore')
 const gitignore = read('.gitignore')
 const nodeServer = read('server.mjs')
 const search = read('src/pages/Search.tsx')
+const atlas = read('src/pages/Atlas.tsx')
 const media = read('src/pages/Media.tsx')
 const mediaDetail = read('src/pages/MediaDetail.tsx')
 const autoSiteWorkflow = read('.github/workflows/auto-site-content.yml')
@@ -178,10 +179,21 @@ check('عناوين ومحاور الكتب تعود دليلاً حتى عند 
 check('واجهة البحث تشرح فهم السؤال وتقترح إعادة صياغته', search.includes('فهم البحث') && search.includes('حوّلها إلى إجابة موثقة') && search.includes('اكتب بطريقتك: سؤال، موقف، فكرة'))
 check('العقل الحي وعالم الكتاب يستعملان المحرك الدلالي نفسه', ask.includes('buildSmartQueryPlan') && ask.includes('scoreSmartFields') && bookWorld.includes('buildSmartQueryPlan') && bookWorld.includes('لم تظهر شواهد كافية'))
 check('تنقل المقالات صف واحد صغير والعناوين موجودة بلا تسميات زائدة', articleDetail.includes('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]') && !articleDetail.includes('السابق:</span>') && !articleDetail.includes('التالي:</span>') && articleDetail.includes('text-[.6rem]'))
-/* طلب المالك الآن رصف متن المقالات من الطرفين في الهاتف والحاسوب.
-   نحرس هنا override النهائي حتى لا تعيده قواعد المقاسات القديمة إلى start،
-   مع إبقاء السطر الأخير على بدايته الطبيعية حتى لا يتمدّد بصرياً. */
-check('متون المقالات القديمة والجديدة مرصوفة Justify مع حفظ نهاية السطر الطبيعية', css.includes('.article-body-synced') && /\.content-articles[\s\S]{0,520}text-align: justify !important/.test(css) && css.includes('text-align-last: start !important'))
+/* القياس وحارس الطباعة العربية حَسَما القرار: الرصف من الطرفين يفتح أنهاراً
+   بيضاء في العربية. نحرس start في المتن المتزامن والعادي والهاتف والطباعة. */
+check('متون المقالات العربية تُرصف من جهة البدء بلا أنهار Justify', css.includes('.article-body-synced') && /\.content-articles[\s\S]{0,620}text-align: start !important/.test(css) && css.includes('text-align-last: start !important') && !/\.content-articles[\s\S]{0,620}text-align: justify !important/.test(css))
+check('عرض القراءة الافتراضي أدبي 66ch وارتفاع السطر 2', articleReader.includes('lineHeight: 2,') && articleReader.includes('width: 66,'))
+check('تحديد النص يكتشف نفسه مرة ويمنع قائمة اللمس الأصلية قدر الإمكان', articleDetail.includes('reader:selection-discovered:v2') && articleDetail.includes('حدّد أي جملة') && articleReader.includes("addEventListener('contextmenu'") && css.includes('-webkit-touch-callout: none') && css.includes('-webkit-user-select: text'))
+check('Aa يشرح نفسه مرة واحدة ثم يعود إلى رمزه', articleReader.includes('reader:aa-discovered:v2') && articleReader.includes('reader-aa-discovery-label') && articleReader.includes('>القراءة</span>'))
+check('المقال أثناء الاستماع يكشف المتابعة ويضيء الجملة بهدوء', articleDetail.includes('النص يتابع الصوت الآن') && articleDetail.includes('is-audio-active') && css.includes('.article-body-synced .synced-paragraph.is-audio-active') && css.includes('.sentence-item.is-sentence-active'))
+check('إشارة المقال صارت هامشاً تحريرياً صغيراً بلا الطبقة الخلفية الكبيرة', css.includes('.article-pull-quote::after') && /\.article-pull-quote::after\s*\{\s*display: none !important/.test(css) && css.includes('max-inline-size: 46ch !important'))
+check('مساحتي تكشف أثر القراءة مرة واحدة بلا tracking عربي', mySpace.includes('myspace:discovered:v2') && mySpace.includes('أثرك هنا') && mySpace.includes('أثر القراءة') && css.includes('.my-space-eyebrow { letter-spacing: 0; }'))
+check('القائمة تكشف نفسها مرة وتعرض مجموعاتها بعدّاد خافت من دون المساس بالإنجليزية', ui.includes('site:menu-discovered:v2') && ui.includes('كل أبواب الموقع هنا') && ui.includes("g.items.length.toLocaleString('ar-KW')") && ui.includes('function EnglishOverlay'))
+check('لوحة البحث السريع تحفظ المسارات كروابط نصية لا ثلاث بطاقات ضخمة', ui.includes('search-palette-shortcuts') && ui.includes('search-palette-shortcut') && !ui.includes('className="grid grid-cols-3 gap-1.5 border-b border-hair bg-wash/[.45]'))
+check('الحالة الفارغة للبحث هادئة بلا مدار زخرفي والنتائج لا ترتفع عند التحويم', !search.includes('search-empty-orbit') && css.includes('.search-empty-state::before') && !/\.search-result-row:hover\s*\{[^}]*transform:/s.test(css))
+check('فهم البحث واقتراحاته خطية بلا حاوية كروت أو كبسولات مكررة', search.includes('search-query-understanding') && search.includes('search-query-suggestion') && !search.includes('rounded-[1.4rem] border border-hair bg-wash px-4 py-3.5'))
+check('شبكة الأفكار لها كشف بصري صامت وخيوط قرابة ظاهرة بلا عبارة إرشادية', atlas.includes('atlas:graph-discovered:v2') && atlas.includes("view === 'graph' && !connected && !ambientLinkIds.has") && !atlas.includes('· جرّبها') && css.includes('.atlas-graph-switch.is-discovering::after'))
+check('الطباعة A4 تحفظ الاستشهاد ومحاذاة العربية من البدء', articleDetail.includes('data-print-citation=') && css.includes('@page { size: A4;') && /@media print[\s\S]{0,2200}text-align: start !important/.test(css) && !/@media print[\s\S]{0,2200}text-align: justify !important/.test(css))
 
 console.log('\nالإعلام ومساحتي')
 check('رأس الأرشيف الإعلامي بلا الوصف المحذوف', !media.includes('لقاءات مرئية ومسموعة، مفهرسة زمنياً، قابلة للبحث داخل الكلام نفسه.'))

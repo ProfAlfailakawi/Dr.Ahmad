@@ -63,3 +63,4 @@ whatsapp-agent/*
 !whatsapp-agent/domain-concepts.mjs
 !whatsapp-agent/spoken-index.mjs
 !whatsapp-agent/book-quotes.mjs
+!whatsapp-agent/sovereign-brain.mjs

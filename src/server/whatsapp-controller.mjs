@@ -6,6 +6,7 @@ import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
 import { distillItem, extractVerbatimAtSpeed } from '../../whatsapp-agent/daily-experience.mjs'
 import { conceptDefinition, conceptQueryFor, glossarySize } from '../../whatsapp-agent/domain-concepts.mjs'
+import { sovereignAnswer, sovereignFollowup } from '../../whatsapp-agent/sovereign-brain.mjs'
 import { arabicCountPhrase, ARTICLE_FORMS, CONVERSATION_AFTER_PREPOSITION_FORMS, MUTED_CONVERSATION_FORMS, DAY_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS, MINUTE_FORMS, PASSAGE_AFTER_PREPOSITION_FORMS, RECOVERED_MESSAGE_OBJECT_FORMS, REPLY_AFTER_PREPOSITION_FORMS, SECOND_AFTER_PREPOSITION_FORMS, VERIFIED_MATERIAL_FORMS, WEEK_AFTER_PREPOSITION_FORMS } from '../lib/style-dna.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
@@ -104,16 +105,17 @@ function attentiveGateItem(conversation = {}, at = new Date()) {
 function buildWakeWelcome(messages = botMessagesNow(), at = new Date(), conversation = {}) {
   const header = `${timeGreeting(at)} · ${messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'}.`
   const options = messages.optionsPrompt || 'شنو يناسب وقتك؟ ٣٠ ثانية · دقيقتان · تعمّق · اختبرني'
+  const intelligence = 'اسألني بطريقتك؛ أقدر أجمع لك جواباً واحداً من الكتب والمقالات والأبحاث والفيديو والصوت، مع الصفحة أو التوقيت الدقيق.'
   /* بوابةٌ تخصّه تسبق بوابة اليوم العامة — فما نُشر بعد زيارته في موضوعه هو
      أولى بوقته مما اخترناه للناس جميعاً. */
   const attentive = attentiveGateItem(conversation, at)
   const gate = attentive?.item || dailyGateItem(at)
-  if (!gate) return { text: `${header}\n\n${options}`, contextItemIds: [], evidence: [], attentive: false }
+  if (!gate) return { text: `${header}\n\n${intelligence}\n\n${options}`, contextItemIds: [], evidence: [], attentive: false }
   const quote = normalizeWhitespace(gate.excerpt || gate.body || '').split(/\s+/).slice(0, 26).join(' ')
   const label = attentive
     ? `تسأل عن ${attentive.interest}، ونشر الدكتور بعد آخر زيارتك:`
     : (messages.dailyGateLabel || 'بوابة اليوم:')
-  const text = `${header}\n\n${label}\n*${gate.title}*\n${quote ? `«${verbatim(quote)}…»\n` : ''}${gate.url}\n\n${options}`
+  const text = `${header}\n\n${label}\n*${gate.title}*\n${quote ? `«${verbatim(quote)}…»\n` : ''}${gate.url}\n\n${intelligence}\n\n${options}`
   return { text, contextItemIds: [gate.id], evidence: [gate.id], lastTopic: gate.title, attentive: Boolean(attentive) }
 }
 function welcomeText(messages = botMessagesNow(), at = new Date()) {
@@ -140,7 +142,7 @@ function noMatchText(messages = botMessagesNow()) {
 /* سلّم المدّة صار حقيقياً، فحقُّه أن يُذكر: كان يعمل ولا يعرفه أحد لأن
    القائمة لا تسمّيه إلا في الترحيب وحده. والمدّة تُكتب كما تُقال — أيّ مدّة. */
 function helpText() {
-  return `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• آخر مقالة / كتاب / بحث / بودكاست\n• ابحث داخل الكتاب / فصول الكتاب / فيديوهات الكتاب\n• الظهور الإعلامي / حوار مسموع / الراديو\n• عندك شي عن موضوع معيّن؟\n• لخّصها / افتحها / عطني المصدر\n• اقرأ لي بالمدّة اللي تناسبك: ٣٠ ثانية · دقيقة · دقيقتين · تعمّق\n• كمل / زدني / عطني غيرها / اللي بعدها / الأولى\n• فاجئني / اختبرني\n\n${SITE_URL}`
+  return `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• اسأل: «شنو يقول الدكتور عن…؟» وأجمع لك الجواب من أكثر من باب مع الصفحة والتوقيت\n• آخر مقالة / كتاب / بحث / بودكاست\n• ابحث داخل الكتاب / فصول الكتاب / فيديوهات الكتاب\n• الظهور الإعلامي / حوار مسموع / الراديو\n• لخّصها / وين قالها؟ / افتح الفيديو / عطني المصدر\n• اقرأ لي بالمدّة اللي تناسبك: ٣٠ ثانية · دقيقة · دقيقتين · تعمّق\n• كمل / زدني / عطني غيرها / اللي بعدها / الأولى\n• فاجئني / اختبرني\n\n${SITE_URL}`
 }
 const BRIDGE_ONLINE_MS = Math.max(60_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 180_000))
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
@@ -1626,7 +1628,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     return {
       kind: 'reply', reason: 'delete-preferences', intent,
       reply: signReply('تم. مسحت ما احتفظت به لهذه المحادثة من سياق وتفضيلات ومحفوظات. نبدأ من صفحة بيضاء متى ما أردت.', messages),
-      patch: { contextItemIds: [], contextIndex: 0, seenContentIds: [], savedItemIds: [], lastTopic: null, challenge: null, topicMemory: [], lastInitiativeAt: null },
+      patch: { contextItemIds: [], contextIndex: 0, seenContentIds: [], savedItemIds: [], lastTopic: null, challenge: null, topicMemory: [], lastInitiativeAt: null, sovereignTrail: [], sovereignDigest: null, sovereignTopic: null, sovereignIndex: 0 },
     }
   }
 
@@ -1797,6 +1799,15 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     }
   }
 
+  /* المتابعة على جوابٍ متعدد المصادر تسبق البحث العام: «الثاني» و«وين قالها»
+     تشيران إلى خريطة الدليل التي شاهدها القارئ، لا إلى كلمةٍ نبحث عنها من
+     جديد. ولا تعمل الخريطة إلا بعد رد سيادي مباشرةً، فلا تخطف سياقاً قديماً. */
+  const sovereignContinuation = sovereignFollowup({ text, conversation })
+  if (sovereignContinuation) return {
+    kind: 'reply', intent, ...sovereignContinuation,
+    reply: signReply(sovereignContinuation.reply, messages),
+  }
+
   /* ─── المضمر: إيماءةٌ قصيرة على مادةٍ حاضرة ───
      تُقرأ قبل آلة البحث لأن البحث كان يبتلعها: «ما فهمت» تعود بأقرب عنوانٍ
      يشبهها لفظاً، وهو ردٌّ يفضح أن أحداً لم يقرأ ما قيل. */
@@ -1871,6 +1882,19 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
         }
       }
     }
+  }
+
+  /* السؤال الذي يطلب رأياً/جواباً لا يُجاب بقائمة روابط. العقل السيادي يجمع
+     الشواهد المتطابقة من متن المقال والبحث وصفحة الكتاب وثانية الفيديو أو
+     الحوار، ويعود null إن لم يجد دليلاً كافياً؛ عندها يكمل المحرك القديم
+     مساره كما كان بلا أي تغيير. */
+  /* تعليم الدكتور لعبارةٍ أخطأ فيها المحرك أسبق من أي استدلال جديد؛ فلا
+     تنسى الآلة تصحيحاً صريحاً لمجرد أن السؤال صار صالحاً للجمع السيادي. */
+  const taughtBeforeSovereign = (classification.fallback || intent === INTENTS.UNKNOWN) ? taughtQueryFor(clean) : ''
+  const sovereign = taughtBeforeSovereign ? null : sovereignAnswer({ text, items: siteIndex(), conversation, siteUrl: SITE_URL })
+  if (sovereign) return {
+    kind: 'reply', intent, ...sovereign,
+    reply: signReply(sovereign.reply, messages),
   }
 
   /* ─── مزاج القارئ ─── */
@@ -5073,6 +5097,7 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
           ...(decision.lastTopic ? { lastTopic: bounded(decision.lastTopic, 500) } : {}),
           ...(Array.isArray(decision.evidence) ? { seenContentIds: [...new Set([...(conversation.seenContentIds || []), ...decision.evidence])].slice(-40) } : {}),
+          ...(decision.patch && typeof decision.patch === 'object' ? decision.patch : {}),
         }
         return {
           turn: index + 1,

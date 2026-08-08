@@ -55,6 +55,7 @@ assert.equal(isStaleInboundMessage({
 }), false, 'only the bounded clock/timestamp grace may cross the ready cutover')
 
 const controllerSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/server/whatsapp-controller.mjs', import.meta.url), 'utf8'))
+const sovereignBrainSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../whatsapp-agent/sovereign-brain.mjs', import.meta.url), 'utf8'))
 assert.match(controllerSource, /runtime-resume/)
 assert.match(controllerSource, /\\d\{5,30\}.*s\\\.whatsapp\\\.net/)
 assert.doesNotMatch(controllerSource, /resumedAutomaticallyAt/)
@@ -74,6 +75,11 @@ assert.match(controllerSource, /reason: 'stale-after-bridge-start'/)
 assert.match(controllerSource, /media-burst-suppressed/)
 assert.match(controllerSource, /cleanAudienceName/)
 assert.doesNotMatch(controllerSource, /wakeActive: true,\s*\n\s*wakeVersion: 1,/, 'لا فتح جلسات بنسخة الإيقاظ الملغاة')
+assert.match(controllerSource, /sovereignAnswer/)
+assert.match(controllerSource, /sovereignFollowup/)
+assert.match(sovereignBrainSource, /externalAi: false/)
+assert.match(sovereignBrainSource, /productionWrites: false/)
+assert.doesNotMatch(sovereignBrainSource, /\bfetch\s*\(/, 'العقل السيادي محلي ولا يرسل محتوى الناس أو الموقع إلى خدمة خارجية')
 
 const now = Date.parse('2026-07-29T18:30:00.000Z')
 const healthyDiagnostics = buildWhatsAppDiagnostics({
@@ -282,6 +288,80 @@ assert.equal(decideGroundedResponse({ text: 'العقل الحي' }).reason, 'as
 assert.match(decideGroundedResponse({ text: 'العقل الحي' }).reply, /\/ask/)
 assert.equal(decideGroundedResponse({ text: 'أطلس الأفكار' }).reason, 'atlas-door')
 assert.equal(decideGroundedResponse({ text: 'السيرة الذاتية' }).reason, 'cv-door')
+
+/* ═══ العقل السيادي: جواب واحد من الموقع كله لا قائمة عمياء ═══
+   السؤال المركّب يجمع نصاً حرفياً من مصادر مختلفة مع الصفحة أو الثانية، ثم
+   تحمل المحادثة خريطة الدليل نفسها إلى «وين قالها؟» و«الفيديو» و«لخصها». */
+const sovereignStartedAt = Date.now()
+const sovereign = decideGroundedResponse({ text: 'جاوبني من كل الموقع: شنو يقول الدكتور عن دمج التكنولوجيا في التعليم؟' })
+assert.equal(sovereign.reason, 'sovereign-synthesis')
+assert.ok((sovereign.evidence || []).length >= 3)
+assert.ok(Array.isArray(sovereign.patch?.sovereignTrail))
+assert.ok(sovereign.patch.sovereignTrail.length >= 3)
+const sovereignKinds = new Set(sovereign.patch.sovereignTrail.map((row) => row.kind))
+assert.equal(sovereignKinds.has('book'), true, 'الجواب المركب يستشهد بصفحة كتاب حين يجدها')
+assert.equal([...sovereignKinds].some((kind) => ['video', 'media', 'dialogue'].includes(kind)), true, 'الجواب المركب يصل إلى الصوت أو الصورة بتوقيتهما')
+assert.match(sovereign.reply, /الزبدة من نصوص الدكتور نفسها/)
+assert.match(sovereign.reply, /الشواهد الدقيقة/)
+assert.match(sovereign.reply, /ص [٠-٩0-9]+/)
+assert.match(sovereign.reply, /عند [٠-٩0-9]+:[٠-٩0-9]+/)
+assert.ok(String(sovereign.reply).length <= 2_000, 'جواب واتساب المركب يبقى داخل حد الرسالة')
+assert.ok(Date.now() - sovereignStartedAt < 3_000, 'العقل السيادي محلي وسريع بلا API مدفوع')
+
+let sovereignConversation = {
+  lastDecisionReason: sovereign.reason,
+  ...(sovereign.patch || {}),
+  contextItemIds: sovereign.contextItemIds,
+  contextIndex: sovereign.contextIndex,
+  lastTopic: sovereign.lastTopic,
+}
+const proof = decideGroundedResponse({ text: 'وين قالها بالضبط؟', conversation: sovereignConversation })
+assert.equal(proof.reason, 'sovereign-proof')
+assert.match(proof.reply, /هذا التوثيق بلا اختصار/)
+assert.match(proof.reply, /youtube\.com\/watch\?v=.*&t=\d+s/)
+sovereignConversation = { ...sovereignConversation, lastDecisionReason: proof.reason, ...(proof.patch || {}) }
+const videoProof = decideGroundedResponse({ text: 'الفيديو', conversation: sovereignConversation })
+assert.equal(videoProof.reason, 'sovereign-select-evidence')
+assert.match(videoProof.reply, /فيديو عند|ظهور إعلامي عند/)
+assert.match(videoProof.reply, /youtube\.com\/watch\?v=.*&t=\d+s/)
+sovereignConversation = { ...sovereignConversation, lastDecisionReason: videoProof.reason, ...(videoProof.patch || {}) }
+const openProof = decideGroundedResponse({ text: 'شغله', conversation: sovereignConversation })
+assert.equal(openProof.reason, 'sovereign-open-evidence')
+assert.match(openProof.reply, /هذا هو الدليل المطلوب مباشرة/)
+sovereignConversation = { ...sovereignConversation, lastDecisionReason: openProof.reason, ...(openProof.patch || {}) }
+const sovereignSummary = decideGroundedResponse({ text: 'لخصها', conversation: sovereignConversation })
+assert.equal(sovereignSummary.reason, 'sovereign-summary')
+assert.match(sovereignSummary.reply, /الزبدة من الشواهد/)
+sovereignConversation = { ...sovereignConversation, lastDecisionReason: sovereignSummary.reason, ...(sovereignSummary.patch || {}) }
+const contextBridge = decideGroundedResponse({ text: 'وش علاقته بالمعلم؟', conversation: sovereignConversation })
+assert.equal(contextBridge.reason, 'sovereign-context-bridge')
+assert.match(contextBridge.reply, /ربطت سؤالك الجديد/)
+
+const directVideoProof = decideGroundedResponse({ text: 'أبي فيديو عن الواقع الافتراضي' })
+assert.equal(directVideoProof.reason, 'sovereign-synthesis')
+assert.equal(directVideoProof.patch.sovereignTrail.some((row) => row.kind === 'video' || row.kind === 'media'), true)
+assert.match(directVideoProof.reply, /&t=\d+s/)
+
+/* الطلب الكويتي القصير لا يسقط في قائمة نتائج عامة، والمقتطفات المعروضة
+   يجب أن تكون متنوّعة فعلاً لا نسختين من المقال نفسه بصوتٍ ونص. */
+const directAudioProof = decideGroundedResponse({ text: 'ابي اسمع حوار عن الخوف' })
+assert.equal(directAudioProof.reason, 'sovereign-synthesis')
+assert.equal(directAudioProof.patch.sovereignTrail.some((row) => row.kind === 'dialogue'), true)
+assert.match(directAudioProof.reply, /حوار مسموع (?:عند [٠-٩0-9]+:[٠-٩0-9]+|كامل)/)
+const evidenceSignatures = directAudioProof.patch.sovereignTrail.map((row) => String(row.excerpt || '')
+  .normalize('NFKD').replace(/\p{M}/gu, '').replace(/[^\p{L}\p{N}]/gu, ''))
+assert.equal(new Set(evidenceSignatures).size, evidenceSignatures.length, 'الدليل السيادي كرر المقتطف نفسه كأنه شاهد جديد')
+
+const singleWordSovereign = decideGroundedResponse({ text: 'شنو يقول الدكتور عن التقويم؟' })
+assert.equal(singleWordSovereign.reason, 'sovereign-synthesis')
+assert.equal(singleWordSovereign.patch.sovereignTrail.every((row) => /التقويم/.test(`${row.title} ${row.excerpt} ${row.locator}`)), true,
+  'السؤال الدلالي من كلمة واحدة عرض دليلاً لا يذكر الكلمة في العنوان أو النص أو الموضع')
+assert.notEqual(decideGroundedResponse({ text: 'جاوبني من كل الموقع عن كيمياء المريخ' }).reason, 'sovereign-synthesis',
+  'العقل السيادي يجب أن يمتنع عن موضوع غير موجود بدلاً من اختلاق جواب')
+
+const clearedSovereign = decideGroundedResponse({ text: 'امسح بياناتي' })
+assert.deepEqual(clearedSovereign.patch.sovereignTrail, [])
+assert.equal(clearedSovereign.patch.sovereignTopic, null)
 
 /* محادثة واحدة لا ثلاثة اختبارات منفصلة: يفتح مادة، يتذكرها عند «لخصها»،
    ثم ينتقل إلى مادة أخرى من دون أن يسكت بعد الرد الأول. */

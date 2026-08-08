@@ -56,6 +56,7 @@ COPY whatsapp-agent/knowledge-modes.mjs /app/whatsapp-agent/knowledge-modes.mjs
 COPY whatsapp-agent/reminders.mjs /app/whatsapp-agent/reminders.mjs
 COPY whatsapp-agent/scholar.mjs /app/whatsapp-agent/scholar.mjs
 COPY whatsapp-agent/spoken-index.mjs /app/whatsapp-agent/spoken-index.mjs
+COPY whatsapp-agent/sovereign-brain.mjs /app/whatsapp-agent/sovereign-brain.mjs
 
 USER node
 EXPOSE 8080

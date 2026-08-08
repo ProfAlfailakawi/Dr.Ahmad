@@ -44,6 +44,8 @@ const dockerfile = read('Dockerfile')
 const gcloudignore = read('.gcloudignore')
 const gitignore = read('.gitignore')
 const nodeServer = read('server.mjs')
+const whatsappController = read('src/server/whatsapp-controller.mjs')
+const sovereignBrain = read('whatsapp-agent/sovereign-brain.mjs')
 const search = read('src/pages/Search.tsx')
 const atlas = read('src/pages/Atlas.tsx')
 const media = read('src/pages/Media.tsx')
@@ -93,13 +95,25 @@ const articleBodies = JSON.parse(read('src/data/bodies.json'))
 const domainGlossary = JSON.parse(read('src/data/dr-ahmad-domain-glossary.json'))
 const compactSignalCandidatesForAudit = (body = '') => String(body).split(/\n\s*\n/).flatMap((paragraph) => {
   const sentences = (paragraph.match(/[^.!?؟؛:…\n]+[.!?؟؛:…]*/g) || [paragraph]).map((value) => value.replace(/\s+/g, ' ').trim())
-  return sentences.flatMap((sentence) => sentence.length <= 145
-    ? [sentence]
-    : (sentence.match(/[^،؛:]+[،؛:]?/g) || []).map((value) => value.replace(/\s+/g, ' ').trim()))
+  return sentences.flatMap((sentence) => {
+    if (sentence.length <= 145) return [sentence]
+    const clauses = (sentence.match(/[^،؛:]+[،؛:]?/g) || []).map((value) => value.replace(/\s+/g, ' ').trim()).filter(Boolean)
+    const compact = []
+    for (let start = 0; start < clauses.length; start += 1) {
+      let combined = ''
+      for (let end = start; end < clauses.length; end += 1) {
+        const next = [combined, clauses[end]].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
+        if (next.length > 145) break
+        combined = next
+        if (combined.length >= 34) { compact.push(combined); break }
+      }
+    }
+    return compact
+  })
     .filter((sentence) => sentence.length >= 34 && sentence.length <= 145 && !/https?:\/\//i.test(sentence))
 })
 const articlesWithoutCompactSignals = Object.entries(articleBodies)
-  .filter(([, body]) => compactSignalCandidatesForAudit(body).length < 5)
+  .filter(([, body]) => compactSignalCandidatesForAudit(body).length < 3)
   .map(([slug]) => slug)
 
 const normalizeGlossaryAudit = (value = '') => String(value)
@@ -226,7 +240,7 @@ check('شريط التحديد كبسولة نظيفة بلا الإطار ال�
 check('Aa يشرح نفسه مرة واحدة ثم يعود إلى رمزه', articleReader.includes('reader:aa-discovered:v2') && articleReader.includes('reader-aa-discovery-label') && articleReader.includes('>القراءة</span>'))
 check('المقال أثناء الاستماع يكشف المتابعة ويضيء الجملة بهدوء', articleDetail.includes('النص يتابع الصوت الآن') && articleDetail.includes('is-audio-active') && css.includes('.article-body-synced .synced-paragraph.is-audio-active') && css.includes('.sentence-item.is-sentence-active'))
 check('إشارة المقال علامة فقط ولا تكشف الاقتباس إلا في البطاقة', articleSignal.includes('article-pull-quote--marker-only') && !articleSignal.includes('<blockquote>{signal.text}</blockquote>') && css.includes('.article-pull-quote--marker-only'))
-check('كل مقالة حالية أو جديدة تختار تلقائياً 3–5 جمل قصيرة ومتنوعة بين أثلاث المقال بعدّاد 7–38 يتصاعد مع القارئ الحي', Object.keys(articleBodies).length === 143 && Object.values(articleBodies).every((body) => String(body).trim().length > 0) && articlesWithoutCompactSignals.length === 0 && articleSignal.includes('export function articleSignalsOf') && articleSignal.includes('const target = 3 +') && articleSignal.includes('MAX_SIGNAL_LENGTH = 145') && articleSignal.includes('MIN_SEEDED_SIGNAL_COUNT = 7') && articleSignal.includes('SEEDED_SIGNAL_SPAN = 32') && articleSignal.includes('zoneForSignal') && articleSignal.includes('occupiedZones') && articleSignal.includes('rotatedZones') && articleSignal.includes('seededSignalCount(slug, selected) + Math.max') && articleDetail.includes('articleSignals.forEach') && articleDetail.includes('count: signal.count') && articleReader.includes('POPULAR_THRESHOLD = 1'), articlesWithoutCompactSignals.join('، '))
+check('كل مقالة حالية أو جديدة تختار 3 جمل، و3–4 في الطويل فقط، موزعة بين الأثلاث بأرقام مختلفة تتصاعد مع القارئ الحي', Object.keys(articleBodies).length === 143 && Object.values(articleBodies).every((body) => String(body).trim().length > 0) && articlesWithoutCompactSignals.length === 0 && articleSignal.includes('export function articleSignalsOf') && articleSignal.includes('meaningfulParagraphs >= 12') && articleSignal.includes("stableHash(`${slug}:density`) % 2") && articleSignal.includes('MAX_SIGNAL_LENGTH = 145') && articleSignal.includes('MIN_SEEDED_SIGNAL_COUNT = 7') && articleSignal.includes('SEEDED_SIGNAL_SPAN = 32') && articleSignal.includes('usedCounts') && articleSignal.includes('while (usedCounts.has(uniqueCount)) uniqueCount += 1') && articleSignal.includes('zoneForSignal') && articleSignal.includes('occupiedZones') && articleSignal.includes('rotatedZones') && articleSignal.includes('seededSignalCount(slug, selected) + Math.max') && articleDetail.includes('const paragraphQuotes: PopularQuote[] = []') && articleDetail.includes("articleVersion: signal.source === 'readers' ? 'reader-signal' : 'editorial-signal'") && articleDetail.includes('articleSignals.forEach') && articleDetail.includes('count: signal.count') && articleReader.includes('POPULAR_THRESHOLD = 1'), articlesWithoutCompactSignals.join('، '))
 check('توضيح داخل المقال يستعمل المعجم المركزي ويغطي المقالات كلها', articleReader.includes("dr-ahmad-domain-glossary.json") && articleReader.includes('articleGlossaryPlan') && articlesWithoutGlossary.length === 0, articlesWithoutGlossary.join('، '))
 check('الأيقونات الدائرية العامة بلا لمعان Glossy', !css.includes('--ui-specular') && !css.includes('radial-gradient(circle at 38% 22%') && /الأزرار الدائرية والأيقونات:[\s\S]{0,900}background-image: none !important/.test(css))
 check('مساحتي تكشف أثر القراءة مرة واحدة بلا tracking عربي', mySpace.includes('myspace:discovered:v2') && mySpace.includes('أثرك هنا') && mySpace.includes('أثر القراءة') && css.includes('.my-space-eyebrow { letter-spacing: 0; }'))
@@ -303,6 +317,7 @@ check('خطأ ArchiveEchoCard في TypeScript معالج بنوع وسيط صر�
 check('صفحة الرسائل تؤجل البيانات الحية وتحمل التبويبات عند الطلب', inbox.includes('liveDataReady') && inbox.includes('{ enabled: activeView === "questions" }') && inbox.includes('{ enabled: activeView === "echoes" }'))
 check('متون المقالات الثقيلة لا تحمل قبل فتح أصداء الأرشيف', inbox.includes('activeView !== "echoes" || !articles.length'))
 check('إشارة المقال موحّدة وتغني كلياً عن نبض المقال', articleSignal.includes('article-pull-quote') && articleSignal.includes("source: 'readers'") && articleSignal.includes("source: 'pivot'") && articleSignal.includes("source: 'text'") && articleDetail.includes('articleSignalsOf(slug, body, popularQuotes)') && articleDetail.includes('<ArticleSignal signal={articleSignal} title={title} />') && !resonance.includes('ArticlePulse') && !articleSignal.includes('نبض المقال') && !articleDetail.includes('ArticlePulse'))
+check('واتساب يجمع جواباً موثقاً من المقال والبحث والكتاب والفيديو والحوار ويتابع الدليل بلا API خارجي', whatsappController.includes('sovereignAnswer') && whatsappController.includes('sovereignFollowup') && sovereignBrain.includes("sources: ['article', 'paper', 'book', 'media', 'video', 'dialogue']") && sovereignBrain.includes('externalAi: false') && !/\bfetch\s*\(/.test(sovereignBrain) && dockerfile.includes('COPY whatsapp-agent/sovereign-brain.mjs') && gcloudignore.includes('!whatsapp-agent/sovereign-brain.mjs'))
 check('موسوعة تكنولوجيا التعليم لها بوابة مستقلة عن قالب الكتب العام', bookDetail.includes("book.slug === 'encyclopedia'") && bookDetail.includes('<EncyclopediaPortal') && encyclopediaPortal.includes('بوابة معرفية مستقلة'))
 // ThresholdOverture خلَف FirstVisitOnboarding. الشرط نفسه يُحرَس في test-site-polish-2026.mjs،
 // فأيّ تغييرٍ هنا يلزمه تغييرٌ هناك وإلا احمرّت البوابة بعد أن يخضرّ البناء.

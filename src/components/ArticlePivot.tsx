@@ -65,7 +65,28 @@ const sentenceCandidates = (paragraph: string) => {
    مكتملة عند فاصلة/فاصلة منقوطة — لا قصّاً أعمى في منتصف الكلمة. */
 const compactSentenceCandidates = (paragraph: string) => sentenceCandidates(paragraph).flatMap((sentence) => {
   if (sentence.length <= MAX_SIGNAL_LENGTH) return [sentence]
-  return (sentence.match(/[^،؛:]+[،؛:]?/g) || []).map(normalizeSentence)
+  const clauses = (sentence.match(/[^،؛:]+[،؛:]?/g) || []).map(normalizeSentence).filter(Boolean)
+  const compact: string[] = []
+  /* الجملة العربية الطويلة قد تتكون من مقاطع قصيرة يفشل كلٌّ منها وحده في
+     الحد الأدنى. نضم مقطعين أو أكثر حتى نحصل على عبارة مكتملة قصيرة، بدل
+     إسقاط الفقرة كلها والاعتماد مؤقتاً على إشارات Firestore وحدها. */
+  for (let start = 0; start < clauses.length; start += 1) {
+    let combined = ''
+    for (let end = start; end < clauses.length; end += 1) {
+      const next = normalizeSentence([combined, clauses[end]].filter(Boolean).join(' '))
+      if (next.length > MAX_SIGNAL_LENGTH) break
+      combined = next
+      if (combined.length >= MIN_SIGNAL_LENGTH) { compact.push(combined); break }
+    }
+  }
+  if (compact.length) return compact
+  const words = sentence.split(/\s+/).filter(Boolean)
+  for (let start = 0; start < words.length; start += 16) {
+    const part = normalizeSentence(words.slice(start, start + 24).join(' '))
+    if (part.length >= MIN_SIGNAL_LENGTH) compact.push(part.slice(0, MAX_SIGNAL_LENGTH).trim())
+    if (start + 24 >= words.length) break
+  }
+  return compact
 }).filter((sentence) => sentence.length >= MIN_SIGNAL_LENGTH && sentence.length <= MAX_SIGNAL_LENGTH)
 
 function fallbackSignal(body: string, count: number): ArticleSignalData | null {
@@ -104,22 +125,46 @@ export function articleSignalOf(slug: string, body: string, popularQuotes: Quote
   return articleSignalsOf(slug, body, popularQuotes)[0] || null
 }
 
-/** يختار تلقائياً 3–5 جمل ثابتة من كل مقال، حالي أو جديد. الاختيار متنوع
+/** يختار تلقائياً 3 جمل ثابتة من المقال العادي، و3–4 في الطويل فقط. الاختيار متنوع
  * بين الفقرات ولا يتبدل عند تحديث الصفحة؛ إشارات القراء الحقيقية تبقى أولى
  * وتزيد أرقامها فوق الرقم الافتتاحي من دون كتابة بيانات وهمية إلى Firestore. */
 export function articleSignalsOf(slug: string, body: string, popularQuotes: QuoteSignal[]): ArticleSignalData[] {
   const paragraphs = body.split(/\n\s*\n/)
-  const target = 3 + (stableHash(slug) % 3)
-  const readerCandidates = [...popularQuotes].sort((left, right) => right.count - left.count)
+  const meaningfulParagraphs = paragraphs.filter((paragraph) => normalizeSentence(paragraph).length >= MIN_SIGNAL_LENGTH).length
+  const target = 3 + (meaningfulParagraphs >= 12 ? stableHash(`${slug}:density`) % 2 : 0)
+  /* إشارتان حيّتان كحد أقصى، ثم جملة تحريرية ذكية على الأقل. هذا يحفظ أثر
+     القرّاء من دون أن تتحول المقالة إلى خريطة تظليل مزدحمة أو تختفي الخطة
+     خلف ثلاث تحديدات قديمة متقاربة. */
+  const readerCandidates = [...popularQuotes].sort((left, right) => right.count - left.count).slice(0, 2)
   const signals: ArticleSignalData[] = []
   const keys = new Set<string>()
+  const usedCounts = new Set<number>()
   const occupiedZones = new Set<number>()
   const add = (signal: ArticleSignalData | null) => {
     if (!signal || signal.paragraph < 0 || signal.paragraph >= paragraphs.length) return false
     const key = normalizeSentence(signal.text).toLowerCase()
     if (key.length < 12 || keys.has(key)) return false
+    const paragraphText = normalizeSentence(paragraphs[signal.paragraph]).toLowerCase()
+    const localStart = paragraphText.indexOf(key)
+    if (localStart < 0) return false
+    const localEnd = localStart + key.length
+    /* لا نختار عبارتين متداخلتين من الفقرة نفسها. كان هذا يحدث أحياناً
+       عندما تصل اقتباسات Firestore الحية: الخطة تحسب ثلاث إشارات لكن طبقة
+       العرض تدمج المتداخلتين، فيبقى رقمان فقط. */
+    const overlapsExisting = signals.some((existing) => {
+      if (existing.paragraph !== signal.paragraph) return false
+      const existingKey = normalizeSentence(existing.text).toLowerCase()
+      const existingStart = paragraphText.indexOf(existingKey)
+      if (existingStart < 0) return false
+      const existingEnd = existingStart + existingKey.length
+      return Math.max(localStart, existingStart) < Math.min(localEnd, existingEnd)
+    })
+    if (overlapsExisting) return false
+    let uniqueCount = Math.max(1, Math.round(Number(signal.count) || 1))
+    while (usedCounts.has(uniqueCount)) uniqueCount += 1
     keys.add(key)
-    signals.push(signal)
+    usedCounts.add(uniqueCount)
+    signals.push(uniqueCount === signal.count ? signal : { ...signal, count: uniqueCount })
     occupiedZones.add(zoneForSignal(signal, paragraphs))
     return true
   }

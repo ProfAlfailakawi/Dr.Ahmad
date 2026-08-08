@@ -35,18 +35,23 @@
   }
   if (location.protocol !== 'https:') return;
 
-  var isAdmin = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
-  if (isAdmin && navigator.serviceWorker.controller) {
-    var swReloaded = false;
+  var hadServiceWorkerController = !!navigator.serviceWorker.controller;
+  if (hadServiceWorkerController) {
     navigator.serviceWorker.addEventListener('controllerchange', function () {
-      if (swReloaded) return;
-      swReloaded = true;
+      var now = Date.now();
+      var lastReload = 0;
+      try { lastReload = Number(sessionStorage.getItem('sw-controller-reload-at') || 0); } catch (error) {}
+      if (now - lastReload < 10000) return;
+      try { sessionStorage.setItem('sw-controller-reload-at', String(now)); } catch (error) {}
       location.reload();
     });
   }
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function (registration) {
-      if (isAdmin) registration.update().catch(function () {});
+      // لا نعتمد على دورة التحقق الدورية للمتصفح: افحص إصدار الخدمة عند كل فتح.
+      // إذا وُجد إصدار جديد فـ skipWaiting + clients.claim في sw.js يستبدلانه فوراً،
+      // وcontrollerchange أعلاه يعيد الصفحة مرة واحدة فقط لتأخذ أصول الإصدار الجديد.
+      registration.update().catch(function () {});
     }).catch(function () {});
   });
 })();

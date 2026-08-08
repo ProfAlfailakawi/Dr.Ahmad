@@ -285,7 +285,7 @@ check('الموقع العام لا يفتح خمس قنوات Firestore دائ�
 check('محتوى CMS العام محفوظ محلياً ويُحدّث بعد استقرار الواجهة', content.includes('site:cms-cache:v1') && content.includes('hasCmsCache(initialCache) ? 12000 : 4500') && content.includes('writeCmsCache(next)'))
 check('التحميل العام المسبق للمجموعات الحساسة أزيل من بداية التطبيق', !app.includes('warmPublicExtras') && !app.includes('CriticalContentWarmup'))
 check('حارس الأرقام يجمع تغييرات DOM بدلاً من فحصها فوراً', app.includes('const pending = new Set<Node>()') && app.includes('requestIdleCallback(flush'))
-check('خدمة العمل تعرض غلاف التطبيق فوراً وتحدّث الشبكة في الخلفية', serviceWorker.includes('navigationPreload.enable') && serviceWorker.includes('e.waitUntil(networkUpdate') && serviceWorker.includes("cache.match('/index.html')"))
+check('خدمة العمل تفضّل HTML الحديث وتحتفظ بالكاش كبديل عند انقطاع الشبكة', serviceWorker.includes('navigationPreload.enable') && serviceWorker.includes("fetch(request, { cache: 'no-cache' })") && serviceWorker.includes("cache.match('/index.html')"))
 check('اتصال Firestore المبكر لا ينافس أصول الصفحة الحرجة', !indexHtml.includes('preconnect" href="https://firestore.googleapis.com') && !indexHtml.includes('dns-prefetch" href="https://firestore.googleapis.com'))
 
 console.log('\nصياغة العقل الحي')

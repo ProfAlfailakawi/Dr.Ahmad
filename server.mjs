@@ -4397,7 +4397,11 @@ function safePublicPath(value) {
 }
 
 function clientAddress(req) {
-  return String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim().slice(0, 100)
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').map((value) => value.trim()).filter(Boolean)
+  // Google external HTTP(S) proxies append: <existing>, <client-ip>, <load-balancer-ip>.
+  // Values before those final two are client-supplied and must not key a rate limiter.
+  const trustedClient = forwarded.length >= 2 ? forwarded[forwarded.length - 2] : ''
+  return String(trustedClient || req.socket?.remoteAddress || 'unknown').slice(0, 100)
 }
 function createRateLimiter(limit = envNumber('AI_RATE_LIMIT_PER_MINUTE', 12, 1, 60)) {
   const entries = new Map()

@@ -52,7 +52,11 @@ function createLimiter(limit, windowMs = 60_000) {
 }
 
 function clientIp(req) {
-  return String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim().slice(0, 120)
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').map((value) => value.trim()).filter(Boolean)
+  // Google external HTTP(S) proxies append: <existing>, <client-ip>, <load-balancer-ip>.
+  // Ignore any caller-supplied prefix so contact/subscription limits cannot be rotated with forged XFF.
+  const trustedClient = forwarded.length >= 2 ? forwarded[forwarded.length - 2] : ''
+  return String(trustedClient || req.socket?.remoteAddress || 'unknown').slice(0, 120)
 }
 
 function unsubscribeSignature(email, secret) {

@@ -158,7 +158,7 @@ const DialogueScriptView = memo(function DialogueScriptView({ script, activeInde
               >
                 {line.speaker && (
                   <span
-                    className={`me-2 inline-flex h-6 w-6 translate-y-[2px] items-center justify-center rounded-full border align-middle ${isActive ? 'border-accent/35 bg-accent/[.08] text-accent' : 'border-hair bg-canvas text-soft/80'}`}
+                    className={`me-2 inline-flex h-6 w-6 translate-y-[2px] items-center justify-center rounded-full border align-middle ${isActive ? 'border-accent/[.35] bg-accent/[.08] text-accent' : 'border-hair bg-canvas text-soft/80'}`}
                     aria-label={voiceKindForSpeaker(line.speaker) === 'woman' ? 'المتحدثة' : 'المتحدث'}
                     title={voiceKindForSpeaker(line.speaker) === 'woman' ? 'المتحدثة' : 'المتحدث'}
                   >

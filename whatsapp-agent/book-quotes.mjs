@@ -18,6 +18,10 @@ const CANDIDATES = [
   resolve(HERE, '../src/data/book-passages.json'),
   resolve(process.cwd(), 'src/data/book-passages.json'),
 ]
+const KNOWLEDGE_CANDIDATES = [
+  resolve(HERE, '../src/data/book-knowledge.json'),
+  resolve(process.cwd(), 'src/data/book-knowledge.json'),
+]
 
 const SITE_URL = (process.env.SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 
@@ -27,6 +31,14 @@ function load() {
   const path = CANDIDATES.find((item) => existsSync(item))
   corpus = path ? JSON.parse(readFileSync(path, 'utf8')) : { books: [] }
   return corpus
+}
+
+let knowledge = null
+function loadKnowledge() {
+  if (knowledge) return knowledge
+  const path = KNOWLEDGE_CANDIDATES.find((item) => existsSync(item))
+  knowledge = path ? JSON.parse(readFileSync(path, 'utf8')) : { books: [] }
+  return knowledge
 }
 
 const STOP = new Set('في من على الى عن هذا هذه ذلك التي الذي مع كان كانت يكون تكون هل كيف ماذا لماذا شنو وش يعني رايك رايه الدكتور دكتور احمد الفيلكاوي كتاب كتب'.split(' '))
@@ -63,12 +75,14 @@ const roots = (value = '') => new Set(String(value)
    يكفيه تطابقها، وسؤالٌ من أربع لا يكفيه تطابق واحدة منها. */
 const MIN_SCORE = 8
 
-export function findBookQuote(rawText = '') {
+export function findBookQuote(rawText = '', options = {}) {
   const query = roots(rawText)
   if (query.size < 1) return null
+  const onlySlug = String(options.bookSlug || '').trim()
 
   let best = null
   for (const book of load().books || []) {
+    if (onlySlug && book.slug !== onlySlug) continue
     const titleRoots = roots(book.title)
     for (const passage of book.passages || []) {
       const text = roots(passage.text)
@@ -95,11 +109,31 @@ export function findBookQuote(rawText = '') {
 }
 
 /** الردّ الجاهز للإرسال — مقطعٌ واحد، منسوبٌ، ورابط صفحة الكتاب لا ملفه. */
-export function bookQuoteReply(rawText = '') {
-  const found = findBookQuote(rawText)
+export function bookQuoteReply(rawText = '', options = {}) {
+  const found = findBookQuote(rawText, options)
   if (!found) return null
   return {
     text: `من كتابه «${found.bookTitle}» (ص ${found.passage.page}):\n«${found.passage.text}»\n${SITE_URL}/publications/${found.bookSlug}#book-knowledge`,
     found,
+  }
+}
+
+/** فهرسٌ موثّق من خريطة الكتاب: عناوين المحاور وصفحاتها فقط، بلا اختلاق. */
+export function bookChaptersReply(bookSlug = '', maxChars = 1_450) {
+  const book = (loadKnowledge().books || []).find((item) => item.slug === bookSlug)
+  if (!book || !Array.isArray(book.concepts) || !book.concepts.length) return null
+  const lines = []
+  for (const concept of book.concepts) {
+    const page = Number(concept.pageStart) || 0
+    const end = Number(concept.pageEnd) || page
+    const range = page ? `ص ${page}${end > page ? `–${end}` : ''}` : ''
+    const line = `${lines.length + 1}. ${concept.title}${range ? ` — ${range}` : ''}`
+    if (lines.length && lines.join('\n').length + line.length + 1 > maxChars) break
+    lines.push(line)
+  }
+  const omitted = Math.max(0, book.concepts.length - lines.length)
+  return {
+    text: `فصول ومحاور «${book.title}» كما في فهرسه:\n\n${lines.join('\n')}${omitted ? `\n\nوبقية الفهرس (${omitted}) في صفحة الكتاب.` : ''}\n\n${SITE_URL}/publications/${book.slug}#book-knowledge`,
+    found: { bookSlug: book.slug, bookTitle: book.title, count: book.concepts.length },
   }
 }

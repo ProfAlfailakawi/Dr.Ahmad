@@ -14,6 +14,7 @@ import {
   isDuplicateInboundDelivery,
   isInvalidBridgeRegression,
   isStaleInboundMessage,
+  parseCompoundFilters,
   stripArabicGreetings,
   whatsappPolicy,
 } from '../src/server/whatsapp-controller.mjs'
@@ -237,6 +238,50 @@ assert.equal(archive.kind, 'reply')
 assert.match(archive.reply, /https:\/\/dr-alfailakawi\.com\//)
 assert.match(archive.reply, /لخّصها|لخّص الأولى|غيرها/)
 assert.match(archive.reply, /رد آلي من موقع/)
+
+/* العبارتان اللتان أثبتتهما صور واتساب (٨ أغسطس): لا تُقرآن بحثاً عاماً،
+   ولا تُخلط «ابحث» مع الاسم «بحث». والكتاب الحالي يبقى حاضراً للفهرس
+   والسؤال اللاحق، بينما الصوت والفيديو والإعلام والراديو تفتح أبوابها الفعلية. */
+assert.deepEqual(parseCompoundFilters('ابحث داخل الكتاب').kinds, [], 'الفعل «ابحث» ليس نوع المحتوى «بحث»')
+const bookGateway = decideGroundedResponse({ text: 'ابحث داخل الكتاب' })
+assert.equal(bookGateway.reason, 'book-search-gateway')
+assert.match(bookGateway.reply, /search\?tab=askbook/)
+assert.doesNotMatch(bookGateway.reply, /أبحاث وكتب|articles\//)
+const smartSchoolConversation = { contextItemIds: ['book:smart-school'], contextIndex: 0 }
+const bookReady = decideGroundedResponse({ text: 'ابحث داخل الكتاب', conversation: smartSchoolConversation })
+assert.equal(bookReady.reason, 'book-search-ready')
+assert.match(bookReady.reply, /أنا داخل كتاب «المدارس الذكية» الآن/)
+const bookSearch = decideGroundedResponse({ text: 'ابحث داخل الكتاب عن مساحة الصانع', conversation: smartSchoolConversation })
+assert.equal(bookSearch.reason, 'book-search-grounded')
+assert.match(bookSearch.reply, /من كتابه «المدارس الذكية» \(ص ٥١\)|من كتابه «المدارس الذكية» \(ص 51\)/)
+assert.deepEqual(bookSearch.contextItemIds, ['book:smart-school'])
+const chapters = decideGroundedResponse({ text: 'فصول الكتاب', conversation: smartSchoolConversation })
+assert.equal(chapters.reason, 'book-chapters')
+assert.match(chapters.reply, /فصول ومحاور «المدارس الذكية»/)
+assert.match(chapters.reply, /مساحة الصانع.*ص ٤٧–٨٠|مساحة الصانع.*ص 47–80/)
+const namedChapters = decideGroundedResponse({ text: 'فصول كتاب المدارس الذكية' })
+assert.equal(namedChapters.reason, 'book-chapters')
+assert.deepEqual(namedChapters.contextItemIds, ['book:smart-school'])
+const bookVideos = decideGroundedResponse({ text: 'فيديوهات داخل الكتاب', conversation: smartSchoolConversation })
+assert.equal(bookVideos.reason, 'book-videos-unavailable')
+assert.match(bookVideos.reply, /publications\/encyclopedia\?tab=video#encyclopedia-map/)
+assert.equal(decideGroundedResponse({ text: 'حوار مسموع' }).reason, 'dialogue-library')
+assert.match(decideGroundedResponse({ text: 'حوار مسموع' }).reply, /#article-audio/)
+assert.equal(decideGroundedResponse({ text: 'الظهور الإعلامي' }).reason, 'media-library')
+assert.match(decideGroundedResponse({ text: 'الظهور الإعلامي' }).reply, /\/media/)
+assert.equal(decideGroundedResponse({ text: 'الراديو' }).reason, 'radio-library')
+assert.match(decideGroundedResponse({ text: 'الراديو' }).reply, /\/radio/)
+const siteMap = decideGroundedResponse({ text: 'شنو في الموقع' })
+assert.equal(siteMap.reason, 'site-map')
+for (const path of ['/articles', '/publications', '/research', '/listen', '/radio', '/media', '/search', '/ask', '/decade', '/thought-paths', '/atlas', '/questions', '/radar', '/cv', '/impact', '/upcoming', '/contact', '/en']) {
+  assert.match(siteMap.reply, new RegExp(path.replace('/', '\\/')), `خريطة البوت يجب أن تعرف ${path}`)
+}
+assert.equal(decideGroundedResponse({ text: 'عبر السنين' }).reason, 'decade-door')
+assert.match(decideGroundedResponse({ text: 'عبر السنين' }).reply, /\/decade/)
+assert.equal(decideGroundedResponse({ text: 'العقل الحي' }).reason, 'ask-library-door')
+assert.match(decideGroundedResponse({ text: 'العقل الحي' }).reply, /\/ask/)
+assert.equal(decideGroundedResponse({ text: 'أطلس الأفكار' }).reason, 'atlas-door')
+assert.equal(decideGroundedResponse({ text: 'السيرة الذاتية' }).reason, 'cv-door')
 
 /* محادثة واحدة لا ثلاثة اختبارات منفصلة: يفتح مادة، يتذكرها عند «لخصها»،
    ثم ينتقل إلى مادة أخرى من دون أن يسكت بعد الرد الأول. */

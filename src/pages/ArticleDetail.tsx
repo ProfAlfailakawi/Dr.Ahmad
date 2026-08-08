@@ -5,10 +5,10 @@ import { ComposeScene } from '../components/ComposeScene'
 import { getArticleNeighbors, type ArticleRecord, type BookRecord, type MediaRecord, type PaperRecord } from '../lib/cms'
 import { SITE_URL } from '../data'
 import { NextStep } from '../components/NextStep'
-import { ArticleSignal, articleSignalOf } from '../components/ArticlePivot'
+import { ArticleSignal, articleSignalsOf } from '../components/ArticlePivot'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
-import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, useReaderPreferences, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
+import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, articleGlossaryPlan, useReaderPreferences, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
 import { openAudioPlayer } from '../components/AudioPlayer'
 import { markArticleRead } from '../components/ReaderResonance'
@@ -199,7 +199,9 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
     }
   }, [body])
 
-  const articleSignal = useMemo(() => articleSignalOf(slug, body, popularQuotes), [body, popularQuotes, slug])
+  const articleSignals = useMemo(() => articleSignalsOf(slug, body, popularQuotes), [body, popularQuotes, slug])
+  const articleSignal = articleSignals[0] || null
+  const glossaryPlan = useMemo(() => articleGlossaryPlan(body), [body])
 
   const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.src.includes('.dialogue.') && audio.duration > 0)
 
@@ -321,7 +323,31 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
           </div>
         )}
         {paragraphs.map((paragraph, pIdx) => {
-          const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === pIdx)
+          const liveParagraphQuotes = popularQuotes.filter((quote) => quote.paragraph === pIdx)
+          const paragraphQuotes = liveParagraphQuotes.map((quote) => {
+            const matchingSignal = articleSignals.find((signal) => (
+              signal.source === 'readers'
+              && signal.paragraph === pIdx
+              && (signal.highlightKey ? quote.highlightKey === signal.highlightKey : quote.quote === signal.text)
+            ))
+            return matchingSignal ? { ...quote, count: matchingSignal.count } : quote
+          })
+          articleSignals.forEach((signal, signalIndex) => {
+            if (signal.paragraph !== pIdx || signal.source === 'readers') return
+            paragraphQuotes.push({
+              slug,
+              articleVersion: 'editorial-signal',
+              highlightKey: `editorial:${slug}:${signalIndex}`,
+              quoteHash: `editorial:${slug}:${signalIndex}`,
+              quote: signal.text,
+              paragraph: pIdx,
+              paragraphId: String(pIdx),
+              startOffset: -1,
+              endOffset: -1,
+              count: signal.count,
+            })
+          })
+          const paragraphTerms = glossaryPlan.get(pIdx) || []
           const isParagraphActive = pIdx === activeParagraph
 
           return (
@@ -368,17 +394,15 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
                             <span /><span /><span />
                           </span>
                         )}
-                        <ReaderParagraphText text={sentence.text} popularQuotes={sentenceQuotes} />
+                        <ReaderParagraphText text={sentence.text} popularQuotes={sentenceQuotes} xrayTerms={paragraphTerms} />
                       </span>
                     )
                   })
                 ) : (
-                  <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
+                  <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} xrayTerms={paragraphTerms} />
                 )}
+                {articleSignal?.paragraph === pIdx && <><span aria-hidden="true">{'⁠'}</span><ArticleSignal signal={articleSignal} title={title} /></>}
               </p>
-              {/* إشارة واحدة موحّدة: رنين القرّاء إن وُجد، وإلا لحظة الانعطاف،
-                  وإلا جملة محورية من كلام المقال نفسه. لا بطاقة دائمة ولا ازدواج. */}
-              {articleSignal?.paragraph === pIdx && <ArticleSignal signal={articleSignal} title={title} />}
             </div>
           )
         })}

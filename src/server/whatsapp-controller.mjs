@@ -1,5 +1,6 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
 import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
+import { bookChaptersReply, bookQuoteReply } from '../../whatsapp-agent/book-quotes.mjs'
 import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
 import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
@@ -139,7 +140,7 @@ function noMatchText(messages = botMessagesNow()) {
 /* سلّم المدّة صار حقيقياً، فحقُّه أن يُذكر: كان يعمل ولا يعرفه أحد لأن
    القائمة لا تسمّيه إلا في الترحيب وحده. والمدّة تُكتب كما تُقال — أيّ مدّة. */
 function helpText() {
-  return `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• آخر مقالة / كتاب / بحث / بودكاست\n• عندك شي عن موضوع معيّن؟\n• لخّصها / افتحها / عطني المصدر\n• اقرأ لي بالمدّة اللي تناسبك: ٣٠ ثانية · دقيقة · دقيقتين · تعمّق\n• كمل / زدني / عطني غيرها / اللي بعدها / الأولى\n• فاجئني / اختبرني\n\n${SITE_URL}`
+  return `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• آخر مقالة / كتاب / بحث / بودكاست\n• ابحث داخل الكتاب / فصول الكتاب / فيديوهات الكتاب\n• الظهور الإعلامي / حوار مسموع / الراديو\n• عندك شي عن موضوع معيّن؟\n• لخّصها / افتحها / عطني المصدر\n• اقرأ لي بالمدّة اللي تناسبك: ٣٠ ثانية · دقيقة · دقيقتين · تعمّق\n• كمل / زدني / عطني غيرها / اللي بعدها / الأولى\n• فاجئني / اختبرني\n\n${SITE_URL}`
 }
 const BRIDGE_ONLINE_MS = Math.max(60_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 180_000))
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
@@ -503,11 +504,11 @@ function siteIndex() {
    ٢٠١٤. نستخرج النوع والزمن من نص السؤال نفسه ونطبّقهما مرشِّحَين حقيقيين،
    ونعلن في الرد أننا فهمنا الشرطين — بلا اختلاق مادةٍ غير موجودة. */
 const KIND_HINTS = [
-  [/بحث|ابحاث|بحوث|محكم|محكمه|دراسه|دراسات|ورقه علميه/, 'paper'],
-  [/كتاب|كتب|مؤلف|مؤلفات/, 'book'],
-  [/بودكاست|حلقه|حلقات|بودكاستات/, 'podcast'],
-  [/مقال|مقاله|مقالات/, 'article'],
-  [/مختارات|مختاره/, 'curated'],
+  [/(?:^|\s)(?:بحث|ابحاث|بحوث|محكم|محكمه|دراسه|دراسات|ورقه علميه)(?=\s|$)/, 'paper'],
+  [/(?:^|\s)(?:كتاب|كتب|مولف|مولفات)(?=\s|$)/, 'book'],
+  [/(?:^|\s)(?:بودكاست|حلقه|حلقات|بودكاستات)(?=\s|$)/, 'podcast'],
+  [/(?:^|\s)(?:مقال|مقاله|مقالات)(?=\s|$)/, 'article'],
+  [/(?:^|\s)(?:مختارات|مختاره)(?=\s|$)/, 'curated'],
 ]
 export function parseCompoundFilters(text = '') {
   const clean = normalizeArabicMessage(text)
@@ -749,6 +750,179 @@ function currentConversationItem(conversation = {}) {
   const items = conversationContextItems(conversation)
   const index = Math.max(0, Math.min(items.length - 1, Number(conversation.contextIndex || 0)))
   return items[index] || null
+}
+
+/* ── الكتاب يبقى حاضراً في المجلس ──
+   كانت نيات «ابحث داخل الكتاب» و«فصول الكتاب» و«فيديوهات الكتاب» صحيحة في
+   المصنّف، لكن متحكم الإنتاج لم يمنحها مساراً متخصصاً؛ فسقطت إلى بحث الموقع
+   العام. هنا نربطها بالكتاب المذكور صراحةً أو بالكتاب الحالي في ذاكرة
+   المحادثة، ونجيب من المتن/الفهرس الموثّق فقط. */
+function namedBookInText(text = '') {
+  const cleanText = normalizeArabicMessage(text)
+  const books = siteIndex().filter((item) => item.kind === 'book')
+  const named = books
+    .map((book) => ({ book, title: normalizeArabicMessage(book.title || '') }))
+    .filter(({ title }) => title && cleanText.includes(title))
+    .sort((left, right) => right.title.length - left.title.length)[0]?.book
+  if (named) return named
+  if (/(?:^|\s)(?:الموسوعه|موسوعه تكنولوجيا التعليم)(?:\s|$)/.test(cleanText)) return books.find((book) => book.slug === 'encyclopedia') || null
+  return null
+}
+
+function contextualBook(text = '', conversation = {}) {
+  return namedBookInText(text) || (() => {
+    const current = currentConversationItem(conversation)
+    return current?.kind === 'book' ? current : null
+  })()
+}
+
+function bookSearchTopic(text = '', book = null) {
+  let topic = normalizeArabicMessage(text)
+    .replace(/^(?:(?:ابي|اريد|ابغي|ابغى|ممكن)\s+)?(?:(?:ابحث|بحث|دور|فتش)\s*(?:لي\s*)?(?:داخل|في)\s*(?:ال)?كتاب|(?:اسال|اسأل)\s*(?:ال)?كتاب)\s*/, '')
+  if (book) topic = topic.replace(normalizeArabicMessage(book.title || ''), '')
+  return topic.replace(/^(?:عن|حول|بخصوص)\s+/, '').trim()
+}
+
+function bookSearchDecision(text = '', conversation = {}) {
+  const book = contextualBook(text, conversation)
+  const slug = book?.slug || String(book?.id || '').replace(/^book:/, '')
+  const topic = bookSearchTopic(text, book)
+  if (topic) {
+    const grounded = bookQuoteReply(topic, slug ? { bookSlug: slug } : {})
+    if (grounded?.found) {
+      const foundBook = siteIndex().find((item) => item.id === `book:${grounded.found.bookSlug}`) || book
+      const foundId = foundBook?.id || `book:${grounded.found.bookSlug}`
+      return {
+        reason: 'book-search-grounded',
+        reply: `${grounded.text}\n\nوللبحث أكثر في متن الكتاب نفسه:\n${SITE_URL}/search?tab=askbook&book=${encodeURIComponent(grounded.found.bookSlug)}`,
+        evidence: [foundId], contextItemIds: [foundId], contextIndex: 0, lastTopic: topic,
+      }
+    }
+    return {
+      reason: 'book-search-no-quote',
+      reply: `بحثت ${book ? `داخل «${book.title}»` : 'داخل متون الكتب'}، ولم أجد مقطعاً موثقاً كافياً لهذا السؤال؛ لذلك لن أنسب للدكتور جواباً غير موجود.\n\nجرّب صياغة السؤال داخل «اسأل كتاباً»${book ? '' : ' واختر الكتاب'}:\n${SITE_URL}/search?tab=askbook${slug ? `&book=${encodeURIComponent(slug)}` : ''}`,
+      ...(book ? { evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title } : {}),
+    }
+  }
+  if (book) return {
+    reason: 'book-search-ready',
+    reply: `أنا داخل كتاب «${book.title}» الآن. اكتب سؤالك بطريقتك — مثلاً: «ماذا يقول عن المعلم؟» — وأبحث لك في متنه الموثّق، لا في المقالات.\n\n${SITE_URL}/search?tab=askbook&book=${encodeURIComponent(slug)}`,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+  const books = siteIndex().filter((item) => item.kind === 'book')
+  return {
+    reason: 'book-search-gateway',
+    reply: `أكيد — هذا بحث داخل متون الكتب نفسها، لا داخل المقالات. اختر الكتاب ثم اكتب سؤالك بطريقتك:\n\n${SITE_URL}/search?tab=askbook\n\nالكتب المتاحة: ${books.map((item) => `«${item.title}»`).join(' · ')}`,
+  }
+}
+
+function bookChaptersDecision(text = '', conversation = {}) {
+  const book = contextualBook(text, conversation)
+  if (!book) return {
+    reason: 'book-chapters-clarify',
+    reply: `أي كتاب تقصد؟ اكتب اسمه، مثل: «فصول المدارس الذكية».\n\n${SITE_URL}/publications`,
+  }
+  const slug = book.slug || String(book.id || '').replace(/^book:/, '')
+  const chapters = bookChaptersReply(slug)
+  if (!chapters) return {
+    reason: 'book-chapters-missing',
+    reply: `لم أجد فهرساً موثقاً لهذا الكتاب الآن، لذلك لن أخمّن فصوله.\n\n${book.url}`,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+  return {
+    reason: 'book-chapters', reply: chapters.text,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+}
+
+function bookVideosDecision(text = '', conversation = {}) {
+  const book = contextualBook(text, conversation)
+  const encyclopedia = siteIndex().find((item) => item.id === 'book:encyclopedia')
+  const topic = normalizeArabicMessage(text).match(/(?:عن|حول|بخصوص)\s+(.+)$/)?.[1]?.trim() || ''
+  const query = topic ? `?q=${encodeURIComponent(topic)}&tab=video` : '?tab=video'
+  if (book && book.slug !== 'encyclopedia') return {
+    reason: 'book-videos-unavailable',
+    reply: `لا توجد في الموقع الآن خريطة فيديو موثقة مرتبطة بكتاب «${book.title}»، لذلك لن أعرض مقاطع على أنها منه.\n\nالخريطة المرئية الموثقة موجودة داخل «موسوعة تكنولوجيا التعليم»:\n${SITE_URL}/publications/encyclopedia${query}#encyclopedia-map\n\nوالظهور الإعلامي الكامل:\n${SITE_URL}/media`,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+  return {
+    reason: 'book-videos',
+    reply: `فيديوهات الكتاب موجودة داخل الخريطة المرئية للموسوعة؛ ابحث بالمفهوم وشاهد المقطع المرتبط به مباشرة:\n\n${SITE_URL}/publications/encyclopedia${query}#encyclopedia-map`,
+    ...(encyclopedia ? { evidence: [encyclopedia.id], contextItemIds: [encyclopedia.id], contextIndex: 0, lastTopic: encyclopedia.title } : {}),
+  }
+}
+
+function mediaLibraryDecision(text = '') {
+  const cleanText = normalizeArabicMessage(text)
+  const topic = cleanText.match(/(?:عن|حول|بخصوص)\s+(.+)$/)?.[1]?.trim() || ''
+  const items = topic
+    ? scoredSiteResults(topic, { kinds: ['media'], limit: 3 }).map((row) => row.item)
+    : latestSiteItems(['media'], 3)
+  if (!items.length) return {
+    reason: 'media-library',
+    reply: `${topic ? `لم أجد ظهوراً إعلامياً موثقاً مطابقاً لـ«${topic}» الآن.` : 'الظهور الإعلامي المرئي والمسموع'}\n\nافتح الأرشيف وابحث داخل الكلام نفسه:\n${SITE_URL}/media`,
+  }
+  return {
+    reason: 'media-library',
+    reply: `${topic ? `هذه أقرب اللقاءات التي ورد فيها «${topic}»:` : 'هذه أحدث محطات الظهور الإعلامي:'}\n\n${items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${item.url}`).join('\n\n')}\n\nوالأرشيف الكامل والبحث داخل ما قيل:\n${SITE_URL}/media`,
+    evidence: items.map((item) => item.id), contextItemIds: items.map((item) => item.id), contextIndex: 0, lastTopic: topic || 'الظهور الإعلامي',
+  }
+}
+
+function dialogueLibraryDecision() {
+  const items = siteIndex()
+    .filter((item) => item.kind === 'article' && item.audio?.dialogue)
+    .sort((left, right) => String(right.date || '').localeCompare(String(left.date || '')))
+    .slice(0, 3)
+  if (!items.length) return { reason: 'dialogue-library', reply: `مجلس الفكرة والحوارات المسموعة هنا:\n${SITE_URL}/listen` }
+  return {
+    reason: 'dialogue-library',
+    reply: `هذه أحدث الحوارات المسموعة الجاهزة الآن:\n\n${items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${item.url}#article-audio`).join('\n\n')}\n\nولكل القراءات والحوارات:\n${SITE_URL}/listen`,
+    evidence: items.map((item) => item.id), contextItemIds: items.map((item) => item.id), contextIndex: 0, lastTopic: 'الحوارات المسموعة',
+  }
+}
+
+function radioDecision() {
+  const recordings = siteIndex()
+    .filter((item) => item.kind === 'media' && /(?:اذاعه|راديو|تسجيل صوتي)/.test(normalizeArabicMessage(`${item.title || ''} ${item.keywords || ''}`)))
+    .sort((left, right) => String(right.date || '').localeCompare(String(left.date || '')))
+    .slice(0, 2)
+  return {
+    reason: 'radio-library',
+    reply: `راديو د. أحمد جاهز للاستماع المتواصل من هنا:\n${SITE_URL}/radio${recordings.length ? `\n\nومن اللقاءات الإذاعية المحفوظة:\n${recordings.map((item) => `• *${item.title}*\n${item.url}`).join('\n\n')}` : ''}\n\nأما الحوارات المقالية:\n${SITE_URL}/listen`,
+    ...(recordings.length ? { evidence: recordings.map((item) => item.id), contextItemIds: recordings.map((item) => item.id), contextIndex: 0, lastTopic: 'الراديو' } : {}),
+  }
+}
+
+/* أبواب الموقع العامة التي لا تمثل «مادة» داخل الفهرس. حصرها هنا يجعل
+   البوت دليلاً للموقع كله — لا للمقالات والكتب وحدها — مع مطابقة قصيرة
+   وصريحة حتى لا نخطف سؤالاً موضوعياً فيه الكلمة عرضاً. */
+const SITE_DOORS = [
+  { reason: 'ask-library-door', pattern: /^(?:اسال المكتبه|العقل الحي|اسال الموقع|سوال للمكتبه)$/, title: 'اسأل المكتبة', note: 'جواب موثّق يجمع ما نشره الدكتور فقط', path: '/ask' },
+  { reason: 'search-door', pattern: /^(?:ابحث في الموقع|مركز البحث|بحث الموقع|البحث الشامل)$/, title: 'البحث الشامل', note: 'بحث في المقالات والكتب والأبحاث والإعلام', path: '/search' },
+  { reason: 'decade-door', pattern: /^(?:عبر السنين|عشر سنوات|مسيره عشر سنوات|الارشيف الزمني)$/, title: 'عبر السنين', note: 'رحلة الأفكار زمنياً', path: '/decade' },
+  { reason: 'thought-paths-door', pattern: /^(?:مسارات الفكر|مسارات الافكار|خيوط الفكر|شبكه الافكار)$/, title: 'مسارات الفكر', note: 'الروابط بين الأفكار والمواد', path: '/thought-paths' },
+  { reason: 'atlas-door', pattern: /^(?:اطلس الافكار|الاطلس|اطلس الدكتور)$/, title: 'أطلس الأفكار', note: 'خريطة موضوعات الدكتور ومفاهيمها', path: '/atlas' },
+  { reason: 'questions-door', pattern: /^(?:اسئله التعليم|الاسئله|سوال اليوم|اسئله تقلق التعليم)$/, title: 'أسئلة تُقلق التعليم', note: 'أسئلة فكرية متجددة', path: '/questions' },
+  { reason: 'radar-door', pattern: /^(?:الرادار|رادار التعليم|الرادار اليومي)$/, title: 'الرادار', note: 'ما يستحق الانتباه في المشهد التعليمي', path: '/radar' },
+  { reason: 'cv-door', pattern: /^(?:السيره الذاتيه|سيره الدكتور|السيره الاكاديميه|cv)$/, title: 'السيرة الأكاديمية', note: 'المؤهلات والخبرة والإنتاج العلمي', path: '/cv' },
+  { reason: 'impact-door', pattern: /^(?:الاثر|اثر الدكتور|ارقام الاثر|اثر الموقع)$/, title: 'الأثر', note: 'أثر المسيرة والمحتوى بالأرقام والشواهد', path: '/impact' },
+  { reason: 'contact-door', pattern: /^(?:صفحه التواصل|بيانات التواصل|تواصل الموقع)$/, title: 'التواصل', note: 'القنوات الرسمية ونموذج التواصل', path: '/contact' },
+  { reason: 'english-door', pattern: /^(?:الموقع الانجليزي|النسخه الانجليزيه|english)$/, title: 'English', note: 'السيرة والأبحاث والتواصل باللغة الإنجليزية', path: '/en' },
+  { reason: 'app-door', pattern: /^(?:تطبيق الموقع|ثبت الموقع|تثبيت الموقع|نسخه الجوال)$/, title: 'تطبيق الموقع', note: 'تثبيت الموقع كتطبيق على الجهاز', path: '/launch' },
+]
+
+function siteDoorDecision(text = '') {
+  const cleanText = normalizeArabicMessage(text)
+  if (/^(?:خريطه الموقع|كل اقسام الموقع|ابواب الموقع|شنو في الموقع|وش في الموقع)$/.test(cleanText)) {
+    return {
+      reason: 'site-map',
+      reply: `هذه خريطة موقع الدكتور كاملة:\n\n• القراءة: المقالات ${SITE_URL}/articles · الكتب ${SITE_URL}/publications · الأبحاث ${SITE_URL}/research · المختارات ${SITE_URL}/curated\n\n• الصوت والصورة: الاستماع ${SITE_URL}/listen · الراديو ${SITE_URL}/radio · الظهور الإعلامي ${SITE_URL}/media\n\n• المعرفة: البحث ${SITE_URL}/search · اسأل المكتبة ${SITE_URL}/ask · عبر السنين ${SITE_URL}/decade · مسارات الفكر ${SITE_URL}/thought-paths · الأطلس ${SITE_URL}/atlas · الأسئلة ${SITE_URL}/questions · الرادار ${SITE_URL}/radar\n\n• الدكتور: السيرة ${SITE_URL}/cv · الأثر ${SITE_URL}/impact · القادم ${SITE_URL}/upcoming · التواصل ${SITE_URL}/contact · English ${SITE_URL}/en`,
+    }
+  }
+  const door = SITE_DOORS.find((item) => item.pattern.test(cleanText))
+  if (!door) return null
+  return { reason: door.reason, reply: `تفضّل — *${door.title}*:\n${door.note}.\n\n${SITE_URL}${door.path}` }
 }
 
 function excerptReply(item, short = false) {
@@ -1483,11 +1657,13 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       ...(welcome.contextItemIds.length ? { contextItemIds: welcome.contextItemIds, contextIndex: 0, evidence: welcome.evidence, lastTopic: welcome.lastTopic } : {}),
     }
   }
+  const siteDoor = siteDoorDecision(text)
+  if (siteDoor) return { kind: 'reply', intent, ...siteDoor, reply: signReply(siteDoor.reply, messages) }
   if ([INTENTS.HELP, INTENTS.SHOW_OPTIONS, INTENTS.CONTENT_OVERVIEW].includes(intent)) {
     return { kind: 'reply', reason: 'help', intent, reply: signReply(helpText(), messages) }
   }
   if (intent === INTENTS.ABOUT_DOCTOR) {
-    return { kind: 'reply', reason: 'about-doctor', intent, reply: signReply(`هذه السيرة الرسمية للدكتور أحمد حسين الفيلكاوي، ومؤلفاته وأبحاثه وخبراته:\n\n${SITE_URL}/about`, messages) }
+    return { kind: 'reply', reason: 'about-doctor', intent, reply: signReply(`هذه السيرة الرسمية للدكتور أحمد حسين الفيلكاوي، ومؤلفاته وأبحاثه وخبراته:\n\nنبذة المسيرة: ${SITE_URL}/about\nالسيرة الأكاديمية: ${SITE_URL}/cv\nالأثر والشواهد: ${SITE_URL}/impact`, messages) }
   }
   /* «منو نورة؟» سؤالٌ يتكرّر لأن الاسمين منشوران على كل مادةٍ لها صوت. وكان
      يُجاب بسيرة الدكتور — جوابٌ عن غير سؤال. والصدق هنا واجب: هما صوتا قراءةٍ
@@ -1497,6 +1673,35 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
       kind: 'reply', reason: 'about-narrators', intent,
       reply: signReply('فهد ونورة صوتا القراءة في الموقع: يقرآن نصّ الدكتور كما نُشر، حرفاً بحرف، فيُسمَع ما كُتب. وبعض المواد لها حوارٌ مسموع بينهما يشرح فكرتها.\n\nتلقى القراءات كلها هنا:\n' + `${SITE_URL}/listen`, messages),
     }
+  }
+
+  /* هذه الأبواب ليست «بحثاً عاماً»: لكل واحد منها أداةٌ وبياناتٌ وسياقٌ
+     منشور في الموقع. تشغيلها قبل البحث يمنع الردود الآلية التي ظهرت في صور
+     الدكتور: «ابحث داخل الكتاب» لا يعود (أبحاث وكتب)، و«فصول الكتاب» لا
+     يعود قائمة مؤلفات. */
+  if (intent === INTENTS.BOOK_SEARCH) {
+    const decision = bookSearchDecision(text, conversation)
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.BOOK_CHAPTERS) {
+    const decision = bookChaptersDecision(text, conversation)
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.BOOK_VIDEOS) {
+    const decision = bookVideosDecision(text, conversation)
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.MEDIA_LIBRARY) {
+    const decision = mediaLibraryDecision(text)
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.DIALOGUE_LIBRARY) {
+    const decision = dialogueLibraryDecision()
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.RADIO) {
+    const decision = radioDecision()
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
   }
 
   /* ─── التصحيح: «مو صح» أو «مو عن هذا» اعتذارٌ وبحثٌ من زاوية أخرى ─── */

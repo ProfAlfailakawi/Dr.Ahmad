@@ -419,6 +419,14 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         if (view) return
         const selection = window.getSelection()
         const text = selection?.toString().replace(/\s+/g, ' ').trim() || ''
+        /* عند بدء تحديد ثانٍ يكون iOS قد بدأ Selection أصلية جديدة بينما تبقى
+           طبقة التحديد المحفوظة من المرة السابقة. نمسح القديمة مع أول حرف من
+           التحديد الجديد، لا بعد رفع الإصبع، كي لا تظهر فقرتان محددتين معاً. */
+        if (selection?.rangeCount && !selection.isCollapsed && text && customHighlightActiveRef.current) {
+          clearCustomHighlight()
+          setPos(null)
+          setSel('')
+        }
         if (!selection || !selection.rangeCount || text.length < 12 || text.length > 800) {
           if (customHighlightActiveRef.current && customRangeRef.current) {
             const customPosition = positionRange(customRangeRef.current)
@@ -750,14 +758,14 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
           <div
             ref={toolbarRef}
             style={{ left: toolbarX ?? pos.x, top: toolbarY ?? pos.y, transform: below ? 'translate3d(-50%,0,0)' : 'translate3d(-50%,-100%,0)' }}
-            className="reader-selection-toolbar fixed z-[260]"
+            className="reader-selection-toolbar reader-selection-toolbar-shell fixed z-[260]"
           >
             <motion.div
               initial={{ opacity: 0, y: 6, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 4, scale: 0.94 }}
               transition={{ duration: 0.18 }}
-              className="flex items-stretch overflow-hidden rounded-full border border-hair bg-canvas shadow-[0_16px_38px_-16px_rgba(0,0,0,.5)]"
+              className="reader-selection-toolbar-pill flex items-stretch overflow-hidden rounded-full border border-hair bg-canvas shadow-[0_16px_38px_-16px_rgba(0,0,0,.5)]"
             >
               <button
                 type="button"

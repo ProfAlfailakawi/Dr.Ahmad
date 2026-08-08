@@ -4322,7 +4322,6 @@ html, body, #root { max-inline-size: 100%; }
   --ui-glass: rgb(var(--c-canvas) / .82);
   --ui-glass-strong: rgb(var(--c-canvas) / .93);
   --ui-edge: rgb(var(--c-ink) / .075);
-  --ui-specular: rgb(255 255 255 / .72);
   --ui-float-shadow: 0 22px 62px -38px rgb(24 37 50 / .42), 0 1px 0 rgb(255 255 255 / .72) inset;
   --ui-hover-shadow: 0 30px 76px -38px rgb(24 37 50 / .52), 0 1px 0 rgb(255 255 255 / .82) inset;
 }
@@ -4330,7 +4329,6 @@ html.dark {
   --ui-glass: rgb(var(--c-canvas) / .78);
   --ui-glass-strong: rgb(var(--c-canvas) / .9);
   --ui-edge: rgb(255 255 255 / .1);
-  --ui-specular: rgb(255 255 255 / .075);
   --ui-float-shadow: 0 24px 66px -36px rgb(0 0 0 / .74), 0 1px 0 rgb(255 255 255 / .06) inset;
   --ui-hover-shadow: 0 32px 82px -36px rgb(0 0 0 / .86), 0 1px 0 rgb(255 255 255 / .08) inset;
 }
@@ -4433,16 +4431,18 @@ html.dark .page-head {
   }
 }
 
-/* الأزرار الدائرية والأيقونات: ملمس زجاجي موحّد في كل الشاشات. */
+/* الأزرار الدائرية والأيقونات: سطح هادئ ومتّسق مع بقية الموقع.
+   أُلغي اللمعان الشعاعي العام لأنه كان يحوّل كل أيقونة إلى زر Glossy مختلف
+   عن الهوية، خصوصاً داخل بطاقة الاقتباس. الحالات النشطة وألوانها لم تتغير. */
 .site-nav :is(button, a)[class*="rounded-full"][class*="border"],
 .signature-page:not(.admin-dashboard) :is(button, a)[class*="rounded-full"][class*="border"],
 .my-space-panel :is(button, a)[class*="rounded-full"][class*="border"],
 .article-tool-icon,
 .my-space-trigger[class*="rounded-full"] {
-  background-image: radial-gradient(circle at 38% 22%, var(--ui-specular), transparent 48%);
-  box-shadow: 0 9px 24px -18px rgb(21 34 47 / .55), 0 1px 0 rgb(255 255 255 / .52) inset;
-  -webkit-backdrop-filter: blur(14px) saturate(1.16);
-  backdrop-filter: blur(14px) saturate(1.16);
+  background-image: none !important;
+  box-shadow: 0 8px 20px -18px rgb(var(--c-ink) / .38);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 @media (hover: hover) and (pointer: fine) {
   .site-nav :is(button, a)[class*="rounded-full"][class*="border"],
@@ -4454,7 +4454,7 @@ html.dark .page-head {
   .signature-page:not(.admin-dashboard) :is(button, a)[class*="rounded-full"][class*="border"]:hover,
   .my-space-panel :is(button, a)[class*="rounded-full"][class*="border"]:hover {
     transform: translateY(-1.5px);
-    box-shadow: 0 14px 32px -19px rgb(21 34 47 / .62), 0 1px 0 rgb(255 255 255 / .65) inset;
+    box-shadow: 0 12px 26px -20px rgb(var(--c-ink) / .48);
   }
 }
 
@@ -5292,6 +5292,20 @@ html.dark .content-book-detail .book-detail-cover {
   backdrop-filter: blur(14px) saturate(135%);
   -webkit-backdrop-filter: blur(14px) saturate(135%);
 }
+.reader-selection-toolbar.reader-selection-toolbar-shell {
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 999px;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.reader-selection-toolbar-pill {
+  border-color: rgb(var(--c-accent) / .22) !important;
+  background: rgb(var(--c-canvas) / .98) !important;
+  box-shadow: 0 14px 30px -20px rgb(var(--c-ink) / .5) !important;
+}
 .reader-selection-toolbar button {
   transition: color .2s var(--E), background-color .2s var(--E), transform .2s var(--E);
 }
@@ -5483,15 +5497,20 @@ html.reader-paper .sentence-item.is-sentence-active {
   box-shadow: 0 6px 18px -15px rgb(var(--c-ink) / .5);
 }
 .article-pull-quote--marker-only {
-  min-block-size: 2rem;
-  margin: .05rem 0 .8rem !important;
+  display: inline-flex !important;
+  min-block-size: 0;
+  margin: 0 .28em 0 0 !important;
   padding: 0 !important;
+  vertical-align: -.34em;
+  white-space: nowrap;
 }
 .article-pull-quote--marker-only::before,
 .article-pull-quote--marker-only::after { display: none !important; }
 .article-pull-quote--marker-only .article-pull-quote__action {
-  inset-inline-end: .05rem !important;
-  inset-block: 0 auto !important;
+  position: static !important;
+  inset: auto !important;
+  inline-size: 1.65rem !important;
+  block-size: 1.65rem !important;
 }
 @media (max-width: 640px) {
   .article-pull-quote {
@@ -5505,8 +5524,8 @@ html.reader-paper .sentence-item.is-sentence-active {
     line-height: 1.86 !important;
   }
   .article-pull-quote--marker-only {
-    min-block-size: 1.85rem;
-    margin-block: 0 .65rem !important;
+    min-block-size: 0;
+    margin: 0 .24em 0 0 !important;
     padding: 0 !important;
   }
 }
@@ -5575,22 +5594,28 @@ html.reader-paper .sentence-item.is-sentence-active {
 .my-space-eyebrow { letter-spacing: 0; }
 @media (max-width: 640px) {
   .my-space-discovery {
-    inset-inline-end: .15rem;
-    top: auto;
-    bottom: calc(100% + .55rem);
-    min-inline-size: 6.6rem;
-    transform: none;
+    inset: auto calc(100% + .55rem) auto auto;
+    top: 50%;
+    min-inline-size: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    border-radius: 999px;
+    padding: .42rem .7rem;
+    transform: translateY(-50%);
+    white-space: nowrap;
   }
   .my-space-discovery::after {
-    inset-inline-start: auto;
-    inset-inline-end: 1.25rem;
-    top: 100%;
-    inline-size: 1px;
-    block-size: .55rem;
+    left: 100%;
+    right: auto;
+    top: 50%;
+    inline-size: .55rem;
+    block-size: 1px;
   }
+  .my-space-discovery__kicker::after { content: " ·"; color: rgb(var(--c-soft) / .55); }
   @keyframes my-space-discovery-in {
-    from { opacity: 0; transform: translateY(.35rem); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translate(.3rem,-50%); }
+    to { opacity: 1; transform: translate(0,-50%); }
   }
 }
 

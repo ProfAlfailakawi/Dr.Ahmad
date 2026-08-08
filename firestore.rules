@@ -12,7 +12,10 @@ service cloud.firestore {
 
     // المشتركون في النشرة: إضافة فقط.
     match /subscribers/{email} {
-      allow create: if isValidEmail(request.resource.data.email);
+      allow create: if request.resource.data.keys().hasOnly(['email', 'createdAt'])
+        && request.resource.data.email == email
+        && isValidEmail(request.resource.data.email)
+        && request.resource.data.createdAt is timestamp;
       allow read, update, delete: if isAdmin();
     }
 

@@ -110,7 +110,6 @@ export default function Radio() {
 
   const grainRef = useRef<HTMLCanvasElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
-  const lineRef = useRef<HTMLParagraphElement>(null)
   const loadedSlugRef = useRef<string>('')
 
   const [playing, setPlaying] = useState(false)
@@ -156,29 +155,43 @@ export default function Radio() {
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('focus', onVisible) }
   }, [])
 
-  /* الجملة المنطوقة الآن — بذوبانٍ لا بقفزة */
+  /* الجملة المنطوقة الآن — تتبع الصوت نفسه لا نبضة الثانية.
+     النسخة السابقة كانت تحدّث الموضع مرةً كل ثانية ثم تنتظر 520ms كي تذيب
+     السطر القديم؛ لذلك كان النص يتأخر أحياناً أكثر من ثانية عن الصوت. هنا
+     نفحص currentTime مباشرةً كل 90ms أثناء الاستماع (250ms قبل التشغيل)،
+     ولا نحدّث React إلا عند انتقالنا فعلياً إلى جملة جديدة. */
   useEffect(() => {
     if (!utterances.length) return
     const total = utterances[utterances.length - 1].e || 1
-    const audio = audioRef.current
-    const anchor = playing && audio && !audio.paused && loadedSlugRef.current === pos.item.slug
-      ? audio.currentTime
-      : (pos.into / pos.item.dur) * total
-    let idx = 0
-    for (let i = 0; i < utterances.length; i += 1) if (anchor >= utterances[i].s) idx = i
-    const u = utterances[idx]
-    if (!u || u.t === line.t) return
-    const el = lineRef.current
-    if (el) {
-      el.classList.add('radio-out')
-      window.setTimeout(() => {
-        setLine({ sp: u.sp, t: u.t, i: idx })
-        el.classList.remove('radio-out')
-      }, 520)
-    } else {
+    let lastIndex = line.i
+
+    const syncLine = () => {
+      const q = positionNow()
+      const audio = audioRef.current
+      const usingAudio = Boolean(playing && audio && !audio.paused && loadedSlugRef.current === q.item.slug)
+      const anchor = usingAudio && audio
+        ? audio.currentTime + 0.08
+        : (q.into / q.item.dur) * total
+
+      let lo = 0
+      let hi = utterances.length - 1
+      let idx = 0
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1
+        if (utterances[mid].s <= anchor) { idx = mid; lo = mid + 1 }
+        else hi = mid - 1
+      }
+      if (idx === lastIndex) return
+      const u = utterances[idx]
+      if (!u) return
+      lastIndex = idx
       setLine({ sp: u.sp, t: u.t, i: idx })
     }
-  }, [pos, utterances, playing, line.t])
+
+    syncLine()
+    const id = window.setInterval(syncLine, playing ? 90 : 250)
+    return () => window.clearInterval(id)
+  }, [playing, utterances, pos.item.slug, line.i])
 
   /* نبضُ الضوء من الكلام نفسه: توقيتات الجُمل تقول متى يُنطق ومتى يُسكت،
      فيتوهّج الضوء مع الكلام ويخفت في الوقفات — صوتٌ مرئيّ بلا تحليل طيف. */
@@ -297,7 +310,7 @@ export default function Radio() {
         <div className="radio-now">
           {/* بلا أسماء — اللون وحده يميّز الصوتين */}
           <div className="radio-who">{betweenEpisodes ? 'بعد لحظات' : ''}</div>
-          <p ref={lineRef} className="radio-line">
+          <p key={betweenEpisodes ? `gap-${pos.idx}` : `line-${line.i}`} className="radio-line">
             {betweenEpisodes ? ITEMS[(pos.idx + 1) % ITEMS.length].title : nameWithoutTashkeel(line.t || '…')}
           </p>
           <div className="radio-rhythm" aria-hidden="true">{ticks}</div>

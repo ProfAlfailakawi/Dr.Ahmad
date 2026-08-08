@@ -441,9 +441,9 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                   </nav>
                 </header>
 
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                <div className="my-space-body min-h-0 overflow-y-auto overscroll-contain md:flex-1">
                   {!hasJourney ? (
-                    <div className="px-7 py-12 text-center md:px-12 md:py-14">
+                    <div className="px-6 py-7 text-center md:px-12 md:py-14">
                       <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-accent/25 bg-wash text-accent"><SpaceIcon /></span>
                       <h3 className="mt-5 font-display text-[1.15rem] font-semibold text-ink">تبدأ المساحة مع أول خطوة.</h3>
                       <p className="mx-auto mt-2 max-w-md text-[.86rem] font-light leading-[1.9] text-soft">اقرأ مقالاً، احفظ لقاءً إعلامياً، احتفظ باقتباس، أو شغّل حلقة؛ وستجد خيطك هنا.</p>
@@ -453,7 +453,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                       </div>
                     </div>
                   ) : (
-                    <div className="px-5 py-6 md:px-8 md:py-8">
+                    <div className="px-5 py-4 md:px-8 md:py-8">
                       {tab === "continue" && (
                         <div className="space-y-7">
                           <section>
@@ -524,7 +524,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                       )}
 
                       {tab === "quotes" && (
-                        snapshot.quotes.length ? <ol className="space-y-6">{snapshot.quotes.map((item, index) => <li key={`${item.slug}-${item.id || index}`} className="border-r-2 border-accent/25 pr-4"><blockquote className="font-display text-[.92rem] leading-[1.9] text-ink">«{item.quote}»</blockquote>{item.note && <p className="mt-2 text-[.72rem] leading-relaxed text-soft">{item.note}</p>}<Link to={`/articles/${item.slug}`} onClick={() => setOpen(false)} className="mt-2 inline-flex text-[.7rem] font-semibold text-accent">{item.title || "عد إلى المصدر"} ←</Link></li>)}</ol> : <div className="py-12 text-center"><p className="font-display text-[1.05rem] font-semibold text-ink">دفتر الاقتباسات ينتظر أول جملة.</p><p className="mx-auto mt-2 max-w-md text-[.82rem] leading-[1.8] text-soft">حدّد جملة داخل أي مقال، ثم اختر حفظها؛ ستظهر هنا تلقائياً.</p></div>
+                        snapshot.quotes.length ? <ol className="space-y-6">{snapshot.quotes.map((item, index) => <li key={`${item.slug}-${item.id || index}`} className="border-r-2 border-accent/25 pr-4"><blockquote className="font-display text-[.92rem] leading-[1.9] text-ink">«{item.quote}»</blockquote>{item.note && <p className="mt-2 text-[.72rem] leading-relaxed text-soft">{item.note}</p>}<Link to={`/articles/${item.slug}`} onClick={() => setOpen(false)} className="mt-2 inline-flex text-[.7rem] font-semibold text-accent">{item.title || "عد إلى المصدر"} ←</Link></li>)}</ol> : <div className="py-8 text-center md:py-12"><p className="font-display text-[1.05rem] font-semibold text-ink">دفتر الاقتباسات ينتظر أول جملة.</p><p className="mx-auto mt-2 max-w-md text-[.82rem] leading-[1.8] text-soft">حدّد جملة داخل أي مقال، ثم اختر حفظها؛ ستظهر هنا تلقائياً.</p></div>
                       )}
                     </div>
                   )}

@@ -126,7 +126,7 @@ export function ArticleSignal({ signal, title }: { signal: ArticleSignalData; ti
             onClick={(event) => { event.stopPropagation(); setOpen(true) }}
             aria-label="خيارات الاقتباس"
             title="خيارات الاقتباس"
-            className="article-pull-quote__action"
+            className="article-signal-mark article-pull-quote__action"
           >
             <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M2 2v5a2 2 0 0 0 2 2h6" />

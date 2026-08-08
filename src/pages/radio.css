@@ -37,6 +37,7 @@ html.dark {
 .radio-root {
   position: relative;
   min-height: 100vh;
+  min-height: 100svh; /* آيفون يحسب vh بأكبر من المرئي فيفيض ويترك بياضاً */
   background: var(--radio-bg);
   color: var(--radio-fg);
   font-family: 'El Messiri Radio', 'SF Arabic', 'Geeza Pro', 'Noto Naskh Arabic', system-ui, sans-serif;
@@ -98,6 +99,7 @@ html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-l
   max-width: 800px;
   margin: 0 auto;
   min-height: 100vh;
+  min-height: 100svh; /* آيفون يحسب vh بأكبر من المرئي فيفيض ويترك بياضاً */
   /* رأس الموقع ثابتٌ فوق الصفحة — الحشوة العلوية تُخلي له مكانه */
   padding: clamp(104px, 16vh, 148px) clamp(20px, 5vw, 36px) clamp(96px, 14vh, 130px);
   display: flex;

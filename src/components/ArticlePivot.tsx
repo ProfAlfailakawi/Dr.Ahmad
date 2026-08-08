@@ -31,6 +31,8 @@ export const pivotOf = (slug: string): Pivot | null => PIVOTS[slug] || null
 const normalizeSentence = (value = '') => value.replace(/\s+/g, ' ').trim()
 const MIN_SIGNAL_LENGTH = 34
 const MAX_SIGNAL_LENGTH = 145
+const MIN_SEEDED_SIGNAL_COUNT = 7
+const SEEDED_SIGNAL_SPAN = 32
 /* رقم افتتاحي ثابت لكل مقالة: يبدو متنوعاً بين المقالات لكنه لا يتبدّل مع كل
    إعادة تحميل. وعندما تصل إشارات القراء الحية يحل عدّاد Firestore الحقيقي
    مكانه فوراً. */
@@ -42,7 +44,18 @@ const stableHash = (value: string) => {
   }
   return hash >>> 0
 }
-const seededSignalCount = (slug: string, text = '') => 4 + (stableHash(`${slug}:${text}`) % 23)
+const seededSignalCount = (slug: string, text = '') => MIN_SEEDED_SIGNAL_COUNT + (stableHash(`${slug}:${text}`) % SEEDED_SIGNAL_SPAN)
+const zoneForSignal = (signal: Pick<ArticleSignalData, 'paragraph' | 'text'>, paragraphs: string[]) => {
+  const lengths = paragraphs.map((paragraph) => normalizeSentence(paragraph).length + 2)
+  const totalLength = lengths.reduce((sum, length) => sum + length, 0)
+  if (totalLength <= 1) return 1
+  const paragraphText = normalizeSentence(paragraphs[signal.paragraph] || '')
+  const selectedText = normalizeSentence(signal.text)
+  const exactOffset = paragraphText.indexOf(selectedText)
+  const localOffset = exactOffset >= 0 ? exactOffset : Math.max(0, (paragraphText.length - selectedText.length) / 2)
+  const articleOffset = lengths.slice(0, signal.paragraph).reduce((sum, length) => sum + length, 0) + localOffset
+  return Math.min(2, Math.floor((articleOffset / Math.max(1, totalLength - 1)) * 3))
+}
 const sentenceCandidates = (paragraph: string) => {
   const matches = paragraph.match(/[^.!?؟؛:…\n]+[.!?؟؛:…]*/g)
   return (matches?.length ? matches : [paragraph]).map(normalizeSentence).filter(Boolean)
@@ -100,14 +113,18 @@ export function articleSignalsOf(slug: string, body: string, popularQuotes: Quot
   const readerCandidates = [...popularQuotes].sort((left, right) => right.count - left.count)
   const signals: ArticleSignalData[] = []
   const keys = new Set<string>()
+  const occupiedZones = new Set<number>()
   const add = (signal: ArticleSignalData | null) => {
-    if (!signal || signal.paragraph < 0 || signal.paragraph >= paragraphs.length) return
+    if (!signal || signal.paragraph < 0 || signal.paragraph >= paragraphs.length) return false
     const key = normalizeSentence(signal.text).toLowerCase()
-    if (key.length < 12 || keys.has(key)) return
+    if (key.length < 12 || keys.has(key)) return false
     keys.add(key)
     signals.push(signal)
+    occupiedZones.add(zoneForSignal(signal, paragraphs))
+    return true
   }
 
+  const readerSignals: ArticleSignalData[] = []
   for (const candidate of readerCandidates) {
     const paragraph = paragraphs[candidate.paragraph] || ''
     const start = Number(candidate.startOffset)
@@ -115,20 +132,20 @@ export function articleSignalsOf(slug: string, body: string, popularQuotes: Quot
     if (!paragraph || !Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end <= start || end > paragraph.length) continue
     const selected = normalizeSentence(paragraph.slice(start, end))
     if (selected.length < 12 || selected.length > MAX_SIGNAL_LENGTH) continue
-    add({
+    readerSignals.push({
       paragraph: candidate.paragraph,
       text: selected,
       source: 'readers',
       count: seededSignalCount(slug, selected) + Math.max(0, Number(candidate.count) || 0),
       highlightKey: candidate.highlightKey,
     })
-    if (signals.length >= target) return signals
   }
 
   const pivot = pivotOf(slug)
+  let pivotSignal: ArticleSignalData | null = null
   if (pivot && paragraphs[pivot.paragraph]) {
     const text = compactSentenceCandidates(pivot.text)[0] || ''
-    if (text) add({ text, paragraph: pivot.paragraph, source: 'pivot', count: seededSignalCount(slug, text) })
+    if (text) pivotSignal = { text, paragraph: pivot.paragraph, source: 'pivot', count: seededSignalCount(slug, text) }
   }
 
   const automatic: { signal: ArticleSignalData; score: number }[] = []
@@ -149,23 +166,35 @@ export function articleSignalsOf(slug: string, body: string, popularQuotes: Quot
   }
   automatic.sort((left, right) => right.score - left.score || left.signal.paragraph - right.signal.paragraph)
 
-  /* نختار أولاً من الثلث الأول ثم الأوسط ثم الأخير (بترتيب ثابت متنوع لكل
-     مقال)، وبعدها نكمل بالأقوى. فيتنوّع الاقتباس معنىً وموضعاً ولا تتكدّس
-     الأرقام في المقدمة أو في فقرة واحدة. */
+  /* نغطي أولاً الثلث الأول والأوسط والأخير بترتيب ثابت مختلف لكل مقال.
+     داخل كل ثلث نقدّم اختيار القراء الحقيقي، ثم الانعطافة المحررة، ثم أقوى
+     جملة آلية. هكذا يصبح التنوع مضموناً لا احتمالياً، ولا تبدأ العلامة دائماً
+     من أعلى المقال. */
   const zoneOrder = [0, 1, 2]
   const rotation = stableHash(`${slug}:zones`) % zoneOrder.length
   const rotatedZones = [...zoneOrder.slice(rotation), ...zoneOrder.slice(0, rotation)]
   for (const zone of rotatedZones) {
     if (signals.length >= target) break
-    const candidate = automatic.find(({ signal }) => {
-      const position = paragraphs.length > 1 ? signal.paragraph / (paragraphs.length - 1) : .5
-      const candidateZone = Math.min(2, Math.floor(position * 3))
-      return candidateZone === zone && !signals.some((existing) => existing.paragraph === signal.paragraph)
-    })
-    if (candidate) add(candidate.signal)
+    if (occupiedZones.has(zone)) continue
+    const zoneCandidates = [
+      ...readerSignals.filter((signal) => zoneForSignal(signal, paragraphs) === zone),
+      ...(pivotSignal && zoneForSignal(pivotSignal, paragraphs) === zone ? [pivotSignal] : []),
+      ...automatic
+        .filter(({ signal }) => zoneForSignal(signal, paragraphs) === zone)
+        .map(({ signal }) => signal),
+    ]
+    for (const candidate of zoneCandidates) {
+      if (add(candidate)) break
+    }
   }
 
-  /* نوزع الباقي على فقرات مختلفة، ثم نسمح باثنتين في الفقرة عند الضرورة. */
+  /* بعد ضمان التوزيع المكاني، نحفظ أولوية تفاعل القراء والانعطافة المحررة،
+     ثم نكمل بالأقوى على فقرات مختلفة قبل السماح بالتكرار عند الضرورة. */
+  for (const candidate of readerSignals) {
+    if (signals.length >= target) break
+    add(candidate)
+  }
+  if (signals.length < target) add(pivotSignal)
   for (const distinctPass of [true, false]) {
     for (const candidate of automatic) {
       if (signals.length >= target) break

@@ -573,7 +573,7 @@ export default function Search() {
                     onClick={() => setQuery('')}
                     aria-label="مسح البحث"
                     title="مسح البحث"
-                    className="absolute left-11 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full text-soft transition-colors hover:text-accent"
+                    className="absolute left-11 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full text-soft transition-colors hover:text-accent"
                   >
                     <SocialIcon name="Close" size={14} />
                   </button>
@@ -676,7 +676,7 @@ export default function Search() {
               </div>
 
               {tab !== 'spoken' && (smartPlan.interpretation || smartPlan.suggestions.length > 0 || domainSuggestions.length > 0) && (
-                <section className="rounded-[1.4rem] border border-hair bg-wash px-4 py-3.5" aria-label="فهم محرك البحث وصياغاته المقترحة">
+                <section className="search-query-understanding" aria-label="فهم محرك البحث وصياغاته المقترحة">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <span className="text-[.66rem] font-semibold text-accent">فهم البحث</span>
@@ -684,12 +684,12 @@ export default function Search() {
                     </div>
                     <Link to={`/ask?q=${encodeURIComponent(normalizedQuery)}`} className="shrink-0 text-[.7rem] font-semibold text-accent transition-colors hover:text-accent-deep">حوّلها إلى إجابة موثقة ←</Link>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="search-query-suggestions mt-2">
                     {smartPlan.suggestions.slice(0, 3).map((suggestion) => (
-                      <button key={suggestion} type="button" onClick={() => setQuery(suggestion)} className="rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.7rem] leading-relaxed text-soft transition-colors hover:border-accent hover:text-accent">{suggestion}</button>
+                      <button key={suggestion} type="button" onClick={() => setQuery(suggestion)} className="search-query-suggestion">{suggestion}</button>
                     ))}
                     {domainSuggestions.slice(0, 3).map((suggestion) => (
-                      <button key={`domain-${suggestion}`} type="button" onClick={() => setQuery(suggestion)} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft transition-colors hover:border-accent hover:text-accent">{suggestion}</button>
+                      <button key={`domain-${suggestion}`} type="button" onClick={() => setQuery(suggestion)} className="search-query-suggestion">{suggestion}</button>
                     ))}
                   </div>
                 </section>
@@ -857,7 +857,7 @@ export default function Search() {
                       to={`/search?tab=askbook&book=${encodeURIComponent(row.slug)}`}
                       aria-label={`ابحث داخل كتاب ${row.title}`}
                       title="ابحث في هذا الكتاب"
-                      className="absolute bottom-3 left-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-accent/[.35] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+                      className="absolute bottom-3 left-0 inline-flex h-11 w-11 items-center justify-center rounded-full border border-accent/[.35] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
                     >
                       <SocialIcon name="Search" size={14} />
                     </Link>
@@ -872,8 +872,7 @@ export default function Search() {
           {!searchStarted && tab !== 'askbook' && (
             <FadeUp delay={0.05}>
               <div className="search-empty-state py-16 text-center md:py-20">
-                <div className="search-empty-orbit" aria-hidden="true"><span /><span /><span /></div>
-                <h2 className="mt-5 font-display text-[clamp(1.35rem,3vw,1.8rem)] font-semibold text-ink">عمّ تبحث اليوم؟</h2>
+                <h2 className="font-display text-[clamp(1.35rem,3vw,1.8rem)] font-semibold text-ink">عمّ تبحث اليوم؟</h2>
                 <p className="mx-auto mt-2 max-w-md text-[.9rem] leading-[1.8] text-soft">
                   اكتب حرفين على الأقل — البحث يفتح مقالات الدكتور وأبحاثه وكتبه ولقاءاته والأسئلة معاً.
                 </p>

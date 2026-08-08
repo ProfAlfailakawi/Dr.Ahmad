@@ -2478,7 +2478,7 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 .selected-media-thumb { object-fit: contain !important; object-position: center top !important; transform: none !important; }
 .article-source-tools { display: inline-flex; align-items: center; gap: .55rem; padding: .28rem; border: 1px solid var(--c-hair); border-radius: 999px; background: rgb(var(--c-canvas) / .82); backdrop-filter: blur(12px); }
 .article-tool-icon { display: inline-flex; width: 2.75rem; height: 2.75rem; flex: 0 0 2.75rem; align-items: center; justify-content: center; border: 1px solid var(--c-hair); border-radius: 999px; background: rgb(var(--c-canvas)); color: rgb(var(--c-soft)); transition: border-color .25s var(--E), color .25s var(--E), background-color .25s var(--E), transform .25s var(--E); }
-.article-tool-icon:hover { border-color: rgb(var(--c-accent)); color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .07); transform: translateY(-1px); }
+.article-tool-icon:hover { border-color: rgb(var(--c-accent)); color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .07); transform: none; }
 
 /* أي نافذة «خرائط الفكر والأثر» تُنشأ مباشرة في body؛ لا تسمح لأزرار الصفحة العائمة بالظهور فوقها. */
 body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -4650,6 +4650,15 @@ html.dark body::after {
   text-rendering: optimizeLegibility;
 }
 
+
+/* العربية المتصلة لا تستعمل tracking؛ الإنجليزية تبقى على قواعدها الحالية. */
+html[dir="rtl"] .signature-page:not(.admin-dashboard) h1.font-display,
+html[dir="rtl"] .page-head h1,
+html[dir="rtl"] .nav-page-echo {
+  letter-spacing: 0;
+  word-spacing: normal;
+}
+
 /* حتى التصفح بلوحة المفاتيح يبقى من لغة الموقع، لا حلقة المتصفح الافتراضية. */
 :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
   outline: 2px solid rgb(var(--c-accent) / .48);
@@ -5233,22 +5242,26 @@ html.dark .content-book-detail .book-detail-cover {
    إضافة وظائف جديدة أو تغيير مسارات المحتوى. العربية فقط في إشارات الاكتشاف.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* 1) متن المقالات — تنفيذ طلب الرصف الكامل في جميع المقالات وكل المقاسات. */
+/* 1) متن المقالات — العربية تُرصف من جهة البدء فقط.
+   الرصف من الطرفين يوسّع فراغات الكلمات ويصنع «أنهاراً بيضاء»؛ لذلك نحرس
+   start في الحاسوب والهاتف والطباعة، مع إبقاء عرض القراءة الافتراضي 66ch. */
 .content-articles .article-body,
 .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote),
 .content-articles .article-body-synced .synced-paragraph {
-  text-align: justify !important;
-  text-justify: inter-word !important;
+  text-align: start !important;
+  text-justify: auto !important;
   text-align-last: start !important;
+  word-spacing: normal;
 }
 
 @media (max-width: 640px) {
   .content-articles .article-body,
   .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote),
   .content-articles .article-body-synced .synced-paragraph {
-    text-align: justify !important;
-    text-justify: inter-word !important;
+    text-align: start !important;
+    text-justify: auto !important;
     text-align-last: start !important;
+    word-spacing: normal;
   }
 }
 
@@ -5539,7 +5552,7 @@ html.reader-paper .sentence-item.is-sentence-active {
   background-repeat: repeat-x, repeat-x, repeat-x, no-repeat;
   pointer-events: none;
 }
-.my-space-eyebrow { letter-spacing: .01em; }
+.my-space-eyebrow { letter-spacing: 0; }
 @media (max-width: 640px) {
   .my-space-discovery {
     inset-inline-end: .15rem;
@@ -5610,7 +5623,7 @@ html.reader-paper .sentence-item.is-sentence-active {
   }
 }
 
-/* 8) البحث — حتى الحالة الفارغة تبدو «حيّة»، والنتائج ترتفع من السطح لا بصناديق. */
+/* 8) البحث — حتى الحالة الفارغة تبقى حيّة بهدوء، والنتائج تستجيب بالسطح بلا قفز أو صناديق ثقيلة. */
 .search-field-shell::after {
   content: "";
   position: absolute;
@@ -5625,31 +5638,14 @@ html.reader-paper .sentence-item.is-sentence-active {
 }
 .search-field-shell:focus-within::after { opacity: 1; transform: scaleX(1); }
 .search-empty-state { position: relative; isolation: isolate; }
-.search-empty-orbit {
-  position: relative;
-  inline-size: 3.2rem;
-  block-size: 3.2rem;
-  margin-inline: auto;
-  border: 1px solid rgb(var(--c-accent) / .13);
-  border-radius: 50%;
-}
-.search-empty-orbit::before {
+.search-empty-state::before {
   content: "";
-  position: absolute;
-  inset: .72rem;
-  border: 1px solid rgb(var(--c-accent) / .1);
-  border-radius: 50%;
+  display: block;
+  inline-size: 2.25rem;
+  block-size: 1px;
+  margin: 0 auto 1.15rem;
+  background: rgb(var(--c-accent) / .45);
 }
-.search-empty-orbit span {
-  position: absolute;
-  inline-size: .34rem;
-  block-size: .34rem;
-  border-radius: 50%;
-  background: rgb(var(--c-accent) / .56);
-}
-.search-empty-orbit span:nth-child(1) { top: .28rem; right: 1.3rem; }
-.search-empty-orbit span:nth-child(2) { left: .25rem; bottom: .85rem; opacity: .7; }
-.search-empty-orbit span:nth-child(3) { right: .3rem; bottom: .42rem; opacity: .42; }
 .search-empty-kinds i {
   align-self: center;
   inline-size: 2px;
@@ -5661,14 +5657,63 @@ html.reader-paper .sentence-item.is-sentence-active {
   margin-inline: -.65rem;
   padding-inline: .65rem;
   border-radius: 1rem;
-  transition: background-color .26s ease, transform .26s var(--motion-curve), box-shadow .26s ease;
+  transition: background-color .24s ease;
 }
 @media (hover: hover) and (pointer: fine) {
-  .search-result-row:hover {
-    background: rgb(var(--c-wash) / .48);
-    transform: translateY(-2px);
-    box-shadow: 0 16px 34px -32px rgb(var(--c-ink) / .6);
-  }
+  .search-result-row:hover { background: rgb(var(--c-wash) / .48); }
+}
+
+/* لوحة البحث السريع: المسارات تبقى وظائفها كاملة، لكن كروابط نصية لا كبطاقات. */
+.search-palette-shortcuts {
+  display: flex;
+  align-items: center;
+  gap: .2rem 1rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--c-hair);
+  padding: .25rem 1rem;
+  scrollbar-width: none;
+}
+.search-palette-shortcuts::-webkit-scrollbar { display: none; }
+.search-palette-shortcut {
+  position: relative;
+  min-block-size: 2.75rem;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: .35rem;
+  color: rgb(var(--c-soft));
+  font-size: .72rem;
+  font-weight: 600;
+  transition: color .2s ease;
+}
+.search-palette-shortcut + .search-palette-shortcut::before {
+  content: "";
+  inline-size: 1px;
+  block-size: .9rem;
+  margin-inline-end: .75rem;
+  background: var(--c-hair);
+}
+.search-palette-shortcut:hover,
+.search-palette-shortcut:focus-visible { color: rgb(var(--c-accent)); }
+.search-query-understanding {
+  border-block: 1px solid var(--c-hair);
+  padding-block: .9rem;
+}
+.search-query-suggestions { display: flex; flex-wrap: wrap; gap: .45rem 1rem; }
+.search-query-suggestion {
+  min-block-size: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  border-bottom: 1px solid var(--c-hair);
+  color: rgb(var(--c-soft));
+  font-size: .7rem;
+  line-height: 1.6;
+  transition: border-color .2s ease, color .2s ease;
+}
+.search-query-suggestion:hover,
+.search-query-suggestion:focus-visible {
+  border-color: rgb(var(--c-accent));
+  color: rgb(var(--c-accent));
 }
 
 /* 9) الأطلس — «شبكة الأفكار» تُكتشف ولا تتحول إلى شبكة أسلاك. */
@@ -5677,15 +5722,21 @@ html.reader-paper .sentence-item.is-sentence-active {
   color: rgb(var(--c-accent));
   box-shadow: inset 0 0 0 1px rgb(var(--c-accent) / .2), 0 8px 20px -17px rgb(var(--c-accent) / .45);
 }
-.atlas-graph-discovery-copy {
-  display: inline-block;
-  font-size: .66rem;
-  font-weight: 700;
-  animation: atlas-graph-discovery-in .34s var(--motion-curve) both;
+.atlas-graph-switch.is-discovering::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: .42rem;
+  top: .38rem;
+  inline-size: .32rem;
+  block-size: .32rem;
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  box-shadow: 0 0 0 0 rgb(var(--c-accent) / .22);
+  animation: atlas-graph-discovery-pulse 1.65s ease-out 2;
 }
-@keyframes atlas-graph-discovery-in {
-  from { opacity: 0; transform: translateX(.25rem); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes atlas-graph-discovery-pulse {
+  55% { box-shadow: 0 0 0 7px rgb(var(--c-accent) / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(var(--c-accent) / 0); }
 }
 .atlas-night.is-graph {
   background:
@@ -5729,9 +5780,10 @@ html.reader-paper .sentence-item.is-sentence-active {
     font-size: 12pt !important;
     line-height: 1.82 !important;
     color: #161616 !important;
-    text-align: justify !important;
-    text-justify: inter-word !important;
+    text-align: start !important;
+    text-justify: auto !important;
     text-align-last: start !important;
+    word-spacing: normal !important;
     widows: 3;
     orphans: 3;
   }
@@ -5763,7 +5815,7 @@ html.reader-paper .sentence-item.is-sentence-active {
   .audio-sync-whisper,
   .my-space-discovery,
   .site-menu-discovery,
-  .atlas-graph-discovery-copy { animation: none !important; }
+  .atlas-graph-switch.is-discovering::after { animation: none !important; }
   .reader-aa-button,
   .search-result-row,
   .article-body-synced .synced-paragraph { transition: none !important; }

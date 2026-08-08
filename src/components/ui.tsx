@@ -399,7 +399,8 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.34, delay: 0.18 + gi * 0.05, ease: EASE }}
               >
-                {g.label}
+                <span>{g.label}</span>
+                <span className="ms-2 font-sans text-[.62rem] font-normal text-soft" aria-hidden="true">{g.items.length.toLocaleString('ar-KW')}</span>
               </motion.span>
 
               <ul className="mt-3 space-y-1 md:mt-4">
@@ -747,23 +748,14 @@ function SearchPalette({ close }: { close: () => void }) {
             aria-label="مركز البحث الذكي"
             className="min-w-0 flex-1 bg-transparent text-[1rem] text-ink outline-none placeholder:text-soft/70"
           />
-          {query && <button type="button" onClick={() => setQuery('')} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft transition-colors hover:bg-wash hover:text-accent"><SocialIcon name="Close" size={15} /></button>}
-          <button type="button" onClick={close} aria-label="إغلاق البحث" title="إغلاق" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Close" size={16} /></button>
+          {query && <button type="button" onClick={() => setQuery('')} aria-label="مسح البحث" title="مسح البحث" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-soft transition-colors hover:bg-wash hover:text-accent"><SocialIcon name="Close" size={15} /></button>}
+          <button type="button" onClick={close} aria-label="إغلاق البحث" title="إغلاق" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Close" size={16} /></button>
         </div>
 
-        <nav aria-label="مسارات البحث" className="grid grid-cols-3 gap-1.5 border-b border-hair bg-wash/[.45] px-3 py-3 sm:gap-2 sm:px-5">
-          <Link to={deepTo} onClick={close} className="group min-w-0 rounded-xl border border-hair bg-canvas px-2.5 py-3 transition hover:border-accent sm:px-4">
-            <span className="block truncate text-[.56rem] font-bold text-accent sm:text-[.62rem]">نتائج وفلاتر</span>
-            <span className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[.7rem] font-semibold text-ink group-hover:text-accent sm:text-[.82rem]"><span className="truncate">البحث المتقدم</span><span aria-hidden className="shrink-0">←</span></span>
-          </Link>
-          <Link to={askTo} onClick={close} className="group min-w-0 rounded-xl border border-accent/30 bg-accent/[.05] px-2.5 py-3 transition hover:border-accent sm:px-4">
-            <span className="block truncate text-[.56rem] font-bold text-accent sm:text-[.62rem]">جواب من المتون</span>
-            <span className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[.7rem] font-semibold text-ink group-hover:text-accent sm:text-[.82rem]"><span className="truncate">اسأل الأرشيف</span><span aria-hidden className="shrink-0">←</span></span>
-          </Link>
-          <Link to={bookTo} onClick={close} className="group min-w-0 rounded-xl border border-hair bg-canvas px-2.5 py-3 transition hover:border-accent sm:px-4">
-            <span className="block truncate text-[.56rem] font-bold text-accent sm:text-[.62rem]">كتاب واحد</span>
-            <span className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[.7rem] font-semibold text-ink group-hover:text-accent sm:text-[.82rem]"><span className="truncate">ابحث في كتاب</span><span aria-hidden className="shrink-0">←</span></span>
-          </Link>
+        <nav aria-label="مسارات البحث" className="search-palette-shortcuts">
+          <Link to={deepTo} onClick={close} className="search-palette-shortcut"><span>البحث المتقدم</span><span aria-hidden>←</span></Link>
+          <Link to={askTo} onClick={close} className="search-palette-shortcut"><span>اسأل الأرشيف</span><span aria-hidden>←</span></Link>
+          <Link to={bookTo} onClick={close} className="search-palette-shortcut"><span>ابحث في كتاب</span><span aria-hidden>←</span></Link>
         </nav>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[48vh]">
@@ -780,8 +772,7 @@ function SearchPalette({ close }: { close: () => void }) {
           )) : (
             <div className="px-5 py-10 text-center">
               <p className="font-display text-[1rem] font-semibold text-ink">لم أجد تطابقاً واضحاً.</p>
-              <p className="mt-2 text-[.8rem] text-soft">جرّب عبارة أقصر، أو أرسل السؤال نفسه إلى «العقل الحي».</p>
-              <p className="mt-4 text-[.76rem] font-medium text-accent">اختر أحد مسارات البحث الواضحة أعلى النتائج.</p>
+              <p className="mt-2 text-[.8rem] text-soft">جرّب عبارة أقصر، أو استخدم أحد مسارات البحث أعلاه.</p>
             </div>
           )}
         </div>

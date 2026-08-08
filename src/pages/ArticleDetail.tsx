@@ -930,23 +930,23 @@ export default function ArticleDetail() {
               <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 sm:gap-3">
                 <div className="flex min-w-0 items-center gap-1.5">
                   {next ? (
-                    <Link viewTransition to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                    <Link viewTransition to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white sm:h-8 sm:w-8">
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                     </Link>
-                  ) : <span className="h-8 w-8 shrink-0" aria-hidden />}
+                  ) : <span className="h-11 w-11 shrink-0 sm:h-8 sm:w-8" aria-hidden />}
                   <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={next?.title}>{next?.title || 'لا يوجد'}</p>
                 </div>
 
-                <Link viewTransition to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-8 items-center gap-1 rounded-full border border-hair px-2 text-[.58rem] font-light text-soft transition-colors hover:border-accent hover:text-accent">
+                <Link viewTransition to="/articles" aria-label="جميع المقالات" title="جميع المقالات" className="inline-flex h-11 items-center gap-1 rounded-full border border-hair px-3 text-[.58rem] font-light text-soft transition-colors hover:border-accent hover:text-accent sm:h-8 sm:px-2">
                   <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M5 6h14M5 12h14M5 18h14" /></svg>
                 </Link>
 
                 <div className="flex min-w-0 flex-row-reverse items-center gap-1.5 text-left">
                   {prev ? (
-                    <Link viewTransition to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                    <Link viewTransition to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white sm:h-8 sm:w-8">
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
                     </Link>
-                  ) : <span className="h-8 w-8 shrink-0" aria-hidden />}
+                  ) : <span className="h-11 w-11 shrink-0 sm:h-8 sm:w-8" aria-hidden />}
                   <p className="min-w-0 truncate text-[.6rem] font-light leading-none text-soft" title={prev?.title}>{prev?.title || 'لا يوجد'}</p>
                 </div>
               </div>

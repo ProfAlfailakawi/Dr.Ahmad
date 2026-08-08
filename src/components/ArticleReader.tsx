@@ -346,7 +346,21 @@ export function ArticleProgressBar({ slug }: { slug: string }) {
     }
   }, [slug])
 
-  return null
+  return (
+    <div
+      className="reader-progress-track fixed inset-x-0 top-0 z-[245] h-[2px]"
+      role="progressbar"
+      aria-label="تقدم القراءة"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(progress * 100)}
+    >
+      <span
+        className="block h-full w-full origin-right bg-accent"
+        style={{ transform: `scaleX(${Math.min(1, Math.max(0, progress))})` }}
+      />
+    </div>
+  )
 }
 
 export function ReadingTimeLabel({ slug, text }: { slug: string; text?: string }) {

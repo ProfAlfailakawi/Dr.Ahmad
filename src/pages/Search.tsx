@@ -17,6 +17,7 @@ import { ReadingShelf } from '../components/ReadingShelf'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { staticQuestions } from '../questions-data'
 import { SocialIcon } from '../components/icons'
+import { VoiceFigure, voiceKindForSpeaker } from '../components/VoiceFigure'
 import { buildSmartQueryPlan, diversifySmartRows, scoreSmartFields, suggestedDomainTerms } from '../lib/smart-search'
 import { normalizeSearchQuery, trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, RESULT_FORMS } from '../lib/arabic-count.ts'
@@ -808,10 +809,10 @@ export default function Search() {
                       <span className="block font-display text-[1.05rem] leading-[1.8] text-ink transition-colors group-hover:text-accent">
                         {hit.text}
                       </span>
-                      <span className="mt-1.5 block truncate text-[.72rem] text-soft">
-                        {hit.speaker}
-                        <span className="mx-1.5 opacity-45">·</span>
-                        {hit.title}
+                      <span className="mt-1.5 flex min-w-0 items-center gap-1.5 truncate text-[.72rem] text-soft">
+                        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-hair bg-canvas text-accent" aria-label={voiceKindForSpeaker(hit.speaker) === 'woman' ? 'المتحدثة' : 'المتحدث'}><VoiceFigure kind={voiceKindForSpeaker(hit.speaker)} size={12} /></span>
+                        <span className="opacity-45">·</span>
+                        <span className="truncate">{hit.title}</span>
                         <span className="mx-1.5 opacity-45">·</span>
                         {Math.floor(hit.startSec / 60)}:{String(Math.floor(hit.startSec % 60)).padStart(2, '0')}
                       </span>

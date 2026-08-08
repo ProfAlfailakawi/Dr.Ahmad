@@ -645,12 +645,9 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
 
   const title = item.title
   const description = settings.note || (article?.excerpt ?? book?.desc ?? paper?.meta ?? mediaItem?.outlet ?? '')
-  const to = article ? `/articles/${article.slug}` : book ? `/publications/${book.slug}` : paper ? `/research/${paper.slug}` : mediaItem?.url || '/'
+  const to = article ? `/articles/${article.slug}` : book ? `/publications/${book.slug}` : paper ? `/research/${paper.slug}` : mediaItem?.slug ? `/media/${mediaItem.slug}` : '/media'
   const kindLabel = article ? 'مقال جديد' : book ? 'إصدار جديد' : paper ? 'بحث جديد' : 'ظهور جديد'
   const cover = book?.cover || (mediaItem && ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '')
-  const LinkTag = mediaItem ? 'a' : Link
-  const linkProps = mediaItem ? { href: to, target: '_blank', rel: 'noreferrer' } : { to }
-
   return (
     <section className="relative flex min-h-[88svh] items-center overflow-hidden border-b border-hair bg-ink px-6 py-24 text-canvas md:px-11">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_65%_at_75%_45%,rgba(138,173,204,.23),transparent_66%)]" />
@@ -662,9 +659,9 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
           </p>
           <h2 className="mt-6 max-w-3xl font-display text-[clamp(2.35rem,6vw,4.7rem)] font-bold leading-[1.24] text-white">{title}</h2>
           {description && <p className="mt-6 max-w-2xl text-[1.05rem] font-light leading-[2] text-white/70">{description}</p>}
-          <LinkTag {...(linkProps as any)} className="mt-9 inline-flex rounded-full bg-white px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:bg-white/90">
+          <Link to={to} className="mt-9 inline-flex rounded-full bg-white px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:bg-white/90">
             اقرأ الآن ←
-          </LinkTag>
+          </Link>
         </FadeUp>
         <FadeUp delay={0.12}>
           <div className="relative mx-auto max-w-[420px]">
@@ -701,16 +698,15 @@ function NowHub() {
   )
 }
 
-type SelectedArchiveItem = { type: string; kind: 'article' | 'book' | 'paper' | 'media'; title: string; note?: string; to: string; image?: string; external?: boolean; year?: string; article?: ArticleRecord }
+type SelectedArchiveItem = { type: string; kind: 'article' | 'book' | 'paper' | 'media'; title: string; note?: string; to: string; image?: string; year?: string; article?: ArticleRecord }
 
 function ArchiveCardCover({ item }: { item: SelectedArchiveItem }) {
   const [failed, setFailed] = useState(false)
   const [source, setSource] = useState(item.image || '')
-  const isBook = item.kind === 'book'
   const showImage = Boolean(source && !failed)
   if (!showImage) {
     return (
-      <div className={`archive-editorial-cover archive-editorial-cover--${item.kind} pointer-events-none`} aria-hidden="true">
+      <div className={`archive-card-visual archive-editorial-cover archive-editorial-cover--${item.kind} pointer-events-none`} aria-hidden="true">
         <span className="archive-editorial-orbit" />
         <span className="archive-editorial-kicker">{item.kind === 'paper' ? 'RESEARCH' : item.kind === 'book' ? 'BOOK' : item.kind === 'media' ? 'MEDIA' : 'ESSAY'}</span>
         <span className="archive-editorial-mark">{item.kind === 'paper' ? 'R' : item.kind === 'book' ? 'B' : item.kind === 'media' ? 'M' : 'A'}</span>
@@ -719,19 +715,21 @@ function ArchiveCardCover({ item }: { item: SelectedArchiveItem }) {
     )
   }
   return (
-    <div className={`pointer-events-none relative z-[1] flex w-full items-center justify-center ${isBook ? 'h-28 bg-wash p-3 md:h-32' : item.external ? 'selected-media-frame h-28 overflow-hidden md:h-32' : 'h-28 overflow-hidden md:h-32'}`} style={item.external ? ({ '--media-thumb': `url(${source})` } as CSSProperties) : undefined}>
+    <div
+      className={`archive-card-visual archive-card-visual--${item.kind} pointer-events-none relative z-[1] w-full overflow-hidden`}
+    >
       <img decoding="async"
         src={source}
         alt=""
         loading="lazy"
         onLoad={(event) => {
-          if (item.external && event.currentTarget.naturalWidth <= 120 && source.includes('/hqdefault.')) setSource(source.replace('/hqdefault.', '/mqdefault.'))
+          if (item.kind === 'media' && event.currentTarget.naturalWidth <= 120 && source.includes('/hqdefault.')) setSource(source.replace('/hqdefault.', '/mqdefault.'))
         }}
         onError={() => {
-          if (item.external && source.includes('/hqdefault.')) setSource(source.replace('/hqdefault.', '/mqdefault.'))
+          if (item.kind === 'media' && source.includes('/hqdefault.')) setSource(source.replace('/hqdefault.', '/mqdefault.'))
           else setFailed(true)
         }}
-        className={`${isBook ? 'h-full w-full object-contain' : item.external ? 'selected-media-thumb h-full w-full opacity-95' : 'h-full w-full object-cover opacity-90'}`}
+        className={`archive-card-image archive-card-image--${item.kind}`}
       />
     </div>
   )
@@ -774,7 +772,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
       article && { type: 'مقال', kind: 'article', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: `/og/articles/${article.slug}.jpg`, year: article.iso?.slice(0, 4), article },
       book && { type: 'كتاب', kind: 'book', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover, year: '' },
       paper && { type: 'بحث محكّم', kind: 'paper', title: paper.titleAr || paper.title, note: paper.meta, to: `/research/${paper.slug}`, image: '', year: paper.iso?.slice(0, 4) },
-      mediaItem && { type: 'ظهور إعلامي', kind: 'media', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.url, image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', external: true, year: '' },
+      mediaItem && { type: 'ظهور إعلامي', kind: 'media', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.slug ? `/media/${mediaItem.slug}` : '/media', image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', year: '' },
     ].filter(Boolean) as SelectedArchiveItem[]
     // لا يثبت ترتيب الأنواع أيضاً؛ كل زيارة مدخل جديد فعلياً إلى الأرشيف.
     return selected
@@ -790,7 +788,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
         <div className="mobile-card-rail grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {items.map((item, index) => {
             const inner = (
-              <div className="group relative flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/[.45] md:min-h-[270px]">
+              <div className="archive-card group relative flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/[.45] md:min-h-[270px]">
                 {item.article && <Link to={item.to} aria-label={`اقرأ مقال: ${item.title}`} className="absolute inset-0 z-0"><span className="sr-only">{item.title}</span></Link>}
                 <ArchiveCardCover item={item} />
                 <div className="pointer-events-none relative z-10 flex flex-1 flex-col p-4 md:p-7">
@@ -803,7 +801,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
             )
             return (
               <FadeUp key={`${item.type}-${item.to}`} delay={index * 0.06} className="min-w-0">
-                {item.article ? inner : item.external ? <a href={item.to} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : <Link to={item.to} className="block h-full">{inner}</Link>}
+                {item.article ? inner : <Link to={item.to} className="block h-full">{inner}</Link>}
               </FadeUp>
             )
           })}
@@ -912,9 +910,9 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
           <SectionHead label="الظهور الإعلامي" title="على الشاشة." to="/media" cta="عرض الكل" />
           <div className="grid gap-8 md:grid-cols-[1.55fr_.45fr] md:gap-12">
             <FadeUp>
-              {topMedia[0] && <a href={topMedia[0].url} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-2xl"><div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}><HomeMediaThumb url={topMedia[0].url} title={topMedia[0].title} /><span className="absolute inset-0 bg-ink/10" /><span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/40 text-white"><SocialIcon name="Play" size={22} /></span></div><div className="mt-4"><span className="text-[.74rem] font-semibold text-accent">{topMedia[0].outlet}</span><h3 className="mt-1.5 font-display text-[1.2rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{topMedia[0].title}</h3></div></a>}
+              {topMedia[0] && <Link to={topMedia[0].slug ? `/media/${topMedia[0].slug}` : '/media'} className="group block overflow-hidden rounded-2xl"><div className="relative overflow-hidden bg-wash" style={{ aspectRatio: '16 / 9' }}><HomeMediaThumb url={topMedia[0].url} title={topMedia[0].title} /><span className="absolute inset-0 bg-ink/10" /><span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-ink/40 text-white"><SocialIcon name="Play" size={22} /></span></div><div className="mt-4"><span className="text-[.74rem] font-semibold text-accent">{topMedia[0].outlet}</span><h3 className="mt-1.5 font-display text-[1.2rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{topMedia[0].title}</h3></div></Link>}
             </FadeUp>
-            <FadeUp delay={0.12} className="hidden md:block"><div className="flex flex-col divide-y divide-hair border-r border-hair pr-8">{topMedia.slice(1, 3).map((item) => <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="group flex items-start gap-3 py-5 first:pt-0"><span className="mt-1 text-accent"><SocialIcon name="Play" size={13} /></span><span><span className="block text-[.72rem] font-semibold text-accent">{item.outlet}</span><span className="mt-1 block text-[.98rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span></span></a>)}</div></FadeUp>
+            <FadeUp delay={0.12} className="hidden md:block"><div className="flex flex-col divide-y divide-hair border-r border-hair pr-8">{topMedia.slice(1, 3).map((item) => <Link key={item.slug || item.url} to={item.slug ? `/media/${item.slug}` : '/media'} className="group flex items-start gap-3 py-5 first:pt-0"><span className="mt-1 text-accent"><SocialIcon name="Play" size={13} /></span><span><span className="block text-[.72rem] font-semibold text-accent">{item.outlet}</span><span className="mt-1 block text-[.98rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{item.title}</span></span></Link>)}</div></FadeUp>
           </div>
         </div>
       </section>

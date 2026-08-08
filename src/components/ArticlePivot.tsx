@@ -118,20 +118,23 @@ export function ArticleSignal({ signal, title }: { signal: ArticleSignalData; ti
 
   return (
     <>
-      <ClarifiedIconAction id="article-signal" label="إشارة المقال: جملة محورية أو موضع لفت انتباه القرّاء">
-        <button
-          type="button"
-          onClick={(event) => { event.stopPropagation(); setOpen(true) }}
-          aria-label="إشارة المقال"
-          title="إشارة المقال"
-          className={`article-signal-mark${signal.source === 'readers' ? ' is-readers' : ''}`}
-        >
-          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M2 2v5a2 2 0 0 0 2 2h6" />
-            <path d="M7.5 6.5 10 9l-2.5 2.5" />
-          </svg>
-        </button>
-      </ClarifiedIconAction>
+      <aside className={`article-pull-quote${signal.source === 'readers' ? ' is-readers' : ''}`} aria-label="اقتباس محوري من المقال">
+        <blockquote>{signal.text}</blockquote>
+        <ClarifiedIconAction id="article-signal" label="إشارة المقال: جملة محورية أو موضع لفت انتباه القرّاء">
+          <button
+            type="button"
+            onClick={(event) => { event.stopPropagation(); setOpen(true) }}
+            aria-label="خيارات الاقتباس"
+            title="خيارات الاقتباس"
+            className="article-pull-quote__action"
+          >
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M2 2v5a2 2 0 0 0 2 2h6" />
+              <path d="M7.5 6.5 10 9l-2.5 2.5" />
+            </svg>
+          </button>
+        </ClarifiedIconAction>
+      </aside>
 
       {open && createPortal((
         <span role="presentation" onClick={() => setOpen(false)} className="fixed inset-0 z-[560] flex items-end justify-center bg-ink/25 px-5 pb-6 backdrop-blur-[2px] sm:items-center sm:pb-0">

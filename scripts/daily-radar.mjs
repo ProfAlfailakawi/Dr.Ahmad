@@ -391,9 +391,10 @@ function selfTest() {
   if (cardA.url !== selected.link) throw new Error('الرابط تغيّر')
 
   /* ٢) التنويع فعّالٌ لا شعار: مصدرٌ ظهر أمس يخسر أمام مصدرٍ لم يظهر. */
+  const rivalPublishedAt = new Date()
   const rivals = [
-    { source: 'Tired', title: 'AI in the classroom for teachers', link: 'https://a.org/1', desc: 'A long piece about artificial intelligence and student learning in school.'.repeat(3), publishedAt: new Date() },
-    { source: 'Fresh', title: 'AI in the classroom for teachers', link: 'https://b.org/1', desc: 'A long piece about artificial intelligence and student learning in school.'.repeat(3), publishedAt: new Date() },
+    { source: 'Tired', title: 'AI in the classroom for teachers', link: 'https://a.org/1', desc: 'A long piece about artificial intelligence and student learning in school.'.repeat(3), publishedAt: rivalPublishedAt },
+    { source: 'Fresh', title: 'AI in the classroom for teachers', link: 'https://b.org/1', desc: 'A long piece about artificial intelligence and student learning in school.'.repeat(3), publishedAt: rivalPublishedAt },
   ]
   if (pickCandidate(rivals, new Map()).source !== 'Tired') throw new Error('الترتيب الأساسي اختلّ')
   if (pickCandidate(rivals, new Map([['Tired', 1]])).source !== 'Fresh') throw new Error('التنويع لا يعمل — المصدر المُرهَق ما زال يفوز')

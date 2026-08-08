@@ -246,7 +246,10 @@ function normalizedTextMap(value: string) {
 
 function findTermRange(text: string, term: string) {
   const mapped = normalizedTextMap(text)
-  const needle = normalizeHighlightText(term).toLowerCase()
+  /* نبني الإبرة بالطريقة نفسها التي بُني بها النص. الاقتباس المختار قد
+     يحتوي فاصلة أو علامة سؤال؛ إبقاؤها في الإبرة بينما تتحول في النص إلى
+     مسافة كان يُسقط بعض الإشارات، فيظهر رقمان فقط بدل الخطة الكاملة. */
+  const needle = normalizedTextMap(term).normalized.trim()
   if (!needle) return null
   let from = 0
   while (from < mapped.normalized.length) {

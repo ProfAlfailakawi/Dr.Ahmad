@@ -199,7 +199,24 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
     }
   }, [body])
 
-  const articleSignals = useMemo(() => articleSignalsOf(slug, body, popularQuotes), [body, popularQuotes, slug])
+  const articleSignals = useMemo(() => {
+    /* يبقى توزيع العلامات تحريرياً ثابتاً (بداية/وسط/نهاية)، فلا تعيد لقطة
+       Firestore ترتيب المقال أو تُسقط علامة بسبب تحديد قديم متداخل. وإذا
+       وافق تفاعل القراء إحدى الجمل المخططة نرفع رقمها الحي فقط. */
+    const planned = articleSignalsOf(slug, body, [])
+    if (!popularQuotes.length) return planned
+    const live = articleSignalsOf(slug, body, popularQuotes)
+    const compact = (value: string) => value.replace(/\s+/g, ' ').trim().toLowerCase()
+    return planned.map((signal) => {
+      const signalText = compact(signal.text)
+      const match = live.find((candidate) => {
+        if (candidate.paragraph !== signal.paragraph || candidate.source !== 'readers') return false
+        const candidateText = compact(candidate.text)
+        return signalText === candidateText || signalText.includes(candidateText) || candidateText.includes(signalText)
+      })
+      return match ? { ...signal, source: 'readers' as const, count: Math.max(signal.count, match.count) } : signal
+    })
+  }, [body, popularQuotes, slug])
   const articleSignal = articleSignals[0] || null
   const glossaryPlan = useMemo(() => articleGlossaryPlan(body), [body])
 
@@ -323,22 +340,18 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
           </div>
         )}
         {paragraphs.map((paragraph, pIdx) => {
-          const liveParagraphQuotes = popularQuotes.filter((quote) => quote.paragraph === pIdx)
-          const paragraphQuotes = liveParagraphQuotes.map((quote) => {
-            const matchingSignal = articleSignals.find((signal) => (
-              signal.source === 'readers'
-              && signal.paragraph === pIdx
-              && (signal.highlightKey ? quote.highlightKey === signal.highlightKey : quote.quote === signal.text)
-            ))
-            return matchingSignal ? { ...quote, count: matchingSignal.count } : quote
-          })
+          const paragraphQuotes: PopularQuote[] = []
+          /* لا نعرض كل اختيارٍ خام من Firestore؛ خطة المقال هي المصدر الوحيد
+             لما يظهر في المتن: 3–4 إشارات مختارة سواء جاءت من القراء أو من
+             التحرير. إعادة بناء النطاق من نص الإشارة تمنع اختلاف مفاتيح
+             التجميع الحية من إخفاء الرقم بعد وصول لقطة Firestore. */
           articleSignals.forEach((signal, signalIndex) => {
-            if (signal.paragraph !== pIdx || signal.source === 'readers') return
+            if (signal.paragraph !== pIdx) return
             paragraphQuotes.push({
               slug,
-              articleVersion: 'editorial-signal',
-              highlightKey: `editorial:${slug}:${signalIndex}`,
-              quoteHash: `editorial:${slug}:${signalIndex}`,
+              articleVersion: signal.source === 'readers' ? 'reader-signal' : 'editorial-signal',
+              highlightKey: signal.highlightKey || `editorial:${slug}:${signalIndex}`,
+              quoteHash: signal.highlightKey || `editorial:${slug}:${signalIndex}`,
               quote: signal.text,
               paragraph: pIdx,
               paragraphId: String(pIdx),

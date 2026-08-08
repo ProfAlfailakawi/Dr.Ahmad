@@ -19,10 +19,10 @@ export default function Media() {
   const media = useMemo(() => mergeMediaArchive(cmsMedia), [cmsMedia])
   const [query, setQuery] = useState('')
   const moments = useMemo(() => searchArchiveMoments(query, media), [query, media])
-  useSeo({ title: 'الأرشيف الإعلامي', path: '/media', description: 'أرشيف مرئي ومسموع قابل للبحث داخل اللحظة، يجمع اللقاءات التلفزيونية والإذاعية واستضافات يوتيوب.' })
+  useSeo({ title: 'الظهور الإعلامي', path: '/media', description: 'أرشيف مرئي ومسموع قابل للبحث داخل اللحظة، يجمع اللقاءات التلفزيونية والإذاعية واستضافات يوتيوب.' })
 
   return <Page className="content-media page-journey">
-    <PageHead label="الأرشيف الإعلامي" title="الفكرة كما قيلت، في لحظتها." />
+    <PageHead label="الظهور الإعلامي" title="الفكرة كما قيلت، في لحظتها." />
 
 
     <section className="px-6 py-8 md:px-11">

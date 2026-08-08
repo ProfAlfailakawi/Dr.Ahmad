@@ -18,6 +18,12 @@ const normalize = (value = '') => value
   .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
   .replace(/^ال(?=.{3,})/, '')
   .trim()
+const POLISHED_TERMS: Record<string, string> = {
+  الانترنت: 'الإنترنت', الاجهزه: 'الأجهزة', اجهزه: 'أجهزة', الالكتروني: 'الإلكتروني', الالكترونيه: 'الإلكترونية',
+  التربيه: 'التربية', الطلبه: 'الطلبة', المعرفه: 'المعرفة', الالعاب: 'الألعاب', التقنيه: 'التقنية',
+  المدرسه: 'المدرسة', ذكيه: 'ذكية', التعليميه: 'التعليمية', التكنولوجيه: 'التكنولوجية', الرقميه: 'الرقمية',
+}
+const polishedTerm = (value: string) => POLISHED_TERMS[value] || value
 
 /* ألفاظٌ تعبر كل الكتب فلا تدلّ على جسرٍ خاص — «التعليم» في تسعة كتبٍ عن
    التعليم ليست اكتشافاً. نستبعدها ليظهر ما يميّز فعلاً. */
@@ -54,7 +60,7 @@ export function BooksAtlas() {
       for (const term of terms) {
         const key = normalize(term)
         if (key.length < 4 || TOO_COMMON.has(key) || STRUCTURAL.has(key)) continue
-        if (!carriers.has(key)) carriers.set(key, { term, books: new Map() })
+        if (!carriers.has(key)) carriers.set(key, { term: polishedTerm(term), books: new Map() })
         carriers.get(key)!.books.set(book.slug, book.title)
       }
     }

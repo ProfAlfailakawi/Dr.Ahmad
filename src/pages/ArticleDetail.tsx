@@ -59,26 +59,57 @@ function ClosingSignature() {
 
 function SelectionDiscoveryHint() {
   const [visible, setVisible] = useState(false)
+
   useEffect(() => {
     if (typeof window === 'undefined') return
-    try { if (localStorage.getItem('reader:selection-hint-seen:v1') === '1') return } catch { /* noop */ }
-    let timer = 0
+    const usedKey = 'reader:selection-discovered:v2'
+    const sessionKey = 'reader:selection-discovery-shown:v2'
+    try {
+      if (localStorage.getItem(usedKey) === '1' || sessionStorage.getItem(sessionKey) === '1') return
+      sessionStorage.setItem(sessionKey, '1')
+    } catch { /* التخزين تحسين بصري فقط. */ }
+
+    let hideTimer = 0
+    const showTimer = window.setTimeout(() => {
+      setVisible(true)
+      hideTimer = window.setTimeout(() => setVisible(false), 5600)
+    }, 1850)
+
     const onSelection = () => {
       const selection = window.getSelection()
       const text = selection?.toString().trim() || ''
       const node = selection?.anchorNode
       const element = node instanceof Element ? node : node?.parentElement
       if (text.length < 4 || !element?.closest('#article-body')) return
-      try { localStorage.setItem('reader:selection-hint-seen:v1', '1') } catch { /* noop */ }
-      setVisible(true)
-      timer = window.setTimeout(() => setVisible(false), 4200)
-      document.removeEventListener('selectionchange', onSelection)
+      try { localStorage.setItem(usedKey, '1') } catch { /* noop */ }
+      setVisible(false)
     }
+
     document.addEventListener('selectionchange', onSelection)
-    return () => { document.removeEventListener('selectionchange', onSelection); window.clearTimeout(timer) }
+    return () => {
+      document.removeEventListener('selectionchange', onSelection)
+      window.clearTimeout(showTimer)
+      window.clearTimeout(hideTimer)
+    }
   }, [])
+
   if (!visible) return null
-  return <div role="status" className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[230] mx-auto max-w-sm rounded-2xl border border-hair bg-canvas/[.96] px-4 py-3 text-center text-[.74rem] leading-[1.75] text-soft shadow-[0_22px_60px_-34px_rgba(21,22,26,.65)] backdrop-blur">ظهرت أدوات الجملة المحددة: عبر السنوات وبطاقة الاقتباس.</div>
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        try { localStorage.setItem('reader:selection-discovered:v2', '1') } catch { /* noop */ }
+        setVisible(false)
+      }}
+      className="selection-discovery-chip reader-hide-focus fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[228] mx-auto w-fit max-w-[calc(100vw-2rem)]"
+      aria-label="إخفاء تلميح أدوات تحديد النص"
+    >
+      <span className="selection-discovery-chip__dot" aria-hidden="true" />
+      <span>حدّد أي جملة</span>
+      <span className="selection-discovery-chip__sep" aria-hidden="true">·</span>
+      <span className="font-normal">تظهر أدواتها مباشرة</span>
+    </button>
+  )
 }
 
 
@@ -92,6 +123,7 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
     if (typeof window === 'undefined') return true
     return localStorage.getItem('article-audio-follow') !== 'off'
   })
+  const [showSyncWhisper, setShowSyncWhisper] = useState(false)
 
   // Parse body into structured paragraphs & sentences with word offsets
   const { paragraphs, flatSentences, totalWords } = useMemo(() => {
@@ -168,6 +200,20 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
   const articleSignal = useMemo(() => articleSignalOf(slug, body, popularQuotes), [body, popularQuotes, slug])
 
   const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.src.includes('.dialogue.') && audio.duration > 0)
+
+  useEffect(() => {
+    if (!activeAudio || !audio.playing || !followEnabled) {
+      setShowSyncWhisper(false)
+      return
+    }
+    try {
+      if (sessionStorage.getItem('reader:audio-sync-whisper:v1') === '1') return
+      sessionStorage.setItem('reader:audio-sync-whisper:v1', '1')
+    } catch { /* noop */ }
+    setShowSyncWhisper(true)
+    const timer = window.setTimeout(() => setShowSyncWhisper(false), 4300)
+    return () => window.clearTimeout(timer)
+  }, [activeAudio, audio.playing, followEnabled])
 
   // Determine active paragraph and sentence
   const { activeParagraph, activeSentence, currentFlatIndex } = useMemo(() => {
@@ -265,7 +311,13 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
 
   return (
     <>
-      <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`}>
+      <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`} data-native-selection="custom">
+        {showSyncWhisper && (
+          <div className="audio-sync-whisper reader-hide-focus" role="status">
+            <span className="audio-sync-whisper__pulse" aria-hidden="true" />
+            النص يتابع الصوت الآن
+          </div>
+        )}
         {paragraphs.map((paragraph, pIdx) => {
           const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === pIdx)
           const isParagraphActive = pIdx === activeParagraph

@@ -5226,3 +5226,545 @@ html.dark .content-book-detail .book-detail-cover {
      ولا يعرف يميناً من يسار، فيصحّ في العربية والإنجليزية معاً. */
   inset: -4px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DISCOVERY POLISH — 2026-08-08
+   كشفٌ هادئ للمزايا الموجودة أصلاً، وتحسين القراءة/الأطلس/الطباعة من دون
+   إضافة وظائف جديدة أو تغيير مسارات المحتوى. العربية فقط في إشارات الاكتشاف.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1) متن المقالات — تنفيذ طلب الرصف الكامل في جميع المقالات وكل المقاسات. */
+.content-articles .article-body,
+.content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote),
+.content-articles .article-body-synced .synced-paragraph {
+  text-align: justify !important;
+  text-justify: inter-word !important;
+  text-align-last: start !important;
+}
+
+@media (max-width: 640px) {
+  .content-articles .article-body,
+  .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote),
+  .content-articles .article-body-synced .synced-paragraph {
+    text-align: justify !important;
+    text-justify: inter-word !important;
+    text-align-last: start !important;
+  }
+}
+
+/* 2) تحديد النص — يبقى النص قابلاً للتحديد، ويُمنع callout/context menu الأصلي
+   قدر ما يسمح به WebKit على أجهزة اللمس حتى تكون أشرطة الموقع هي الواجهة. */
+@media (pointer: coarse) {
+  .content-articles .article-body,
+  .content-articles .article-body * {
+    -webkit-touch-callout: none;
+  }
+  .content-articles .article-body,
+  .content-articles .article-body :is(p, span, mark, blockquote) {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+.reader-selection-toolbar {
+  border-color: rgb(var(--c-accent) / .22) !important;
+  background: rgb(var(--c-canvas) / .965) !important;
+  box-shadow:
+    0 16px 38px -18px rgb(var(--c-ink) / .52),
+    0 0 0 1px rgb(var(--c-canvas) / .7) inset !important;
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+}
+.reader-selection-toolbar button {
+  transition: color .2s var(--E), background-color .2s var(--E), transform .2s var(--E);
+}
+.reader-selection-toolbar button:active { transform: scale(.94); }
+
+.selection-discovery-chip {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: .48rem;
+  border: 1px solid rgb(var(--c-accent) / .22);
+  border-radius: 999px;
+  padding: .62rem 1rem;
+  background: rgb(var(--c-canvas) / .96);
+  color: rgb(var(--c-ink) / .88);
+  font-size: .73rem;
+  font-weight: 650;
+  line-height: 1.35;
+  box-shadow: 0 18px 44px -26px rgb(var(--c-ink) / .62);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  animation: selection-discovery-arrive .42s var(--motion-curve) both;
+}
+.selection-discovery-chip__dot {
+  inline-size: .42rem;
+  block-size: .42rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  box-shadow: 0 0 0 5px rgb(var(--c-accent) / .08);
+}
+.selection-discovery-chip__sep { color: rgb(var(--c-soft) / .6); }
+@keyframes selection-discovery-arrive {
+  from { opacity: 0; transform: translateY(10px) scale(.975); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 3) Aa — تتسع مرةً واحدة إلى «القراءة» ثم تعود لأيقونتها الأصلية. */
+.reader-aa-button {
+  gap: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow: 0 8px 26px -22px rgb(var(--c-ink) / .45);
+  transition:
+    width .4s var(--motion-curve),
+    min-width .4s var(--motion-curve),
+    gap .4s var(--motion-curve),
+    padding .4s var(--motion-curve),
+    border-color .25s ease,
+    color .25s ease,
+    background-color .25s ease;
+}
+.reader-aa-button.is-discovering {
+  min-width: 6.35rem;
+  gap: .45rem;
+  padding-inline: .82rem;
+  border-color: rgb(var(--c-accent) / .34);
+  box-shadow: 0 12px 30px -22px rgb(var(--c-accent) / .62);
+}
+.reader-aa-glyph {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -.04em;
+}
+.reader-aa-discovery-label {
+  color: rgb(var(--c-accent));
+  font-size: .7rem;
+  font-weight: 700;
+  animation: reader-aa-label-in .35s var(--motion-curve) both;
+}
+@keyframes reader-aa-label-in {
+  from { opacity: 0; transform: translateX(.35rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.reader-settings-sheet {
+  background:
+    radial-gradient(85% 58% at 88% 0%, rgb(var(--c-accent) / .055), transparent 72%),
+    rgb(var(--c-canvas)) !important;
+}
+.reader-settings-sheet > header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgb(var(--c-canvas) / .93);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.reader-setting-choice {
+  min-height: 2.45rem;
+  padding-inline: 1rem;
+  box-shadow: inset 0 1px 0 rgb(var(--c-ink) / .02);
+}
+.reader-setting-choice.is-active {
+  box-shadow: 0 8px 20px -16px rgb(var(--c-accent) / .6);
+}
+
+/* 4) الاستماع المتزامن — جملة حية، لا karaoke ولا صندوق ثقيل. */
+.audio-sync-whisper {
+  position: sticky;
+  top: 5.15rem;
+  z-index: 5;
+  inline-size: fit-content;
+  margin: 0 0 1rem auto;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  border: 1px solid rgb(var(--c-accent) / .18);
+  border-radius: 999px;
+  padding: .45rem .78rem;
+  background: rgb(var(--c-canvas) / .94);
+  color: rgb(var(--c-soft));
+  font-size: .68rem;
+  font-weight: 600;
+  box-shadow: 0 12px 30px -24px rgb(var(--c-ink) / .5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: audio-sync-whisper-in .4s var(--motion-curve) both;
+}
+.audio-sync-whisper__pulse {
+  inline-size: .42rem;
+  block-size: .42rem;
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  box-shadow: 0 0 0 4px rgb(var(--c-accent) / .09);
+}
+@keyframes audio-sync-whisper-in {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.article-body-synced .synced-paragraph {
+  margin-inline: -.5rem;
+  padding: .28rem .5rem;
+  border-radius: .8rem;
+  transition: background-color .32s var(--E), box-shadow .32s var(--E), opacity .32s var(--E) !important;
+}
+.article-body-synced .synced-paragraph.is-audio-active {
+  background: linear-gradient(90deg, transparent 0%, rgb(var(--c-accent) / .035) 18%, rgb(var(--c-accent) / .06) 100%) !important;
+  box-shadow: inset -2px 0 0 rgb(var(--c-accent) / .62) !important;
+  transform: none !important;
+}
+.sentence-item {
+  padding-inline: .08em !important;
+  padding-block: .04em !important;
+  border-radius: .28em !important;
+}
+.sentence-item.is-sentence-active {
+  background: linear-gradient(180deg, transparent 58%, rgb(var(--c-accent) / .13) 58%) !important;
+  color: rgb(var(--c-ink)) !important;
+  font-weight: inherit !important;
+  box-shadow: none !important;
+}
+html.dark .sentence-item.is-sentence-active,
+html.reader-paper .sentence-item.is-sentence-active {
+  box-shadow: none !important;
+}
+.sentence-equalizer {
+  opacity: .68;
+  transform: scale(.82);
+  transform-origin: center;
+}
+
+/* 5) إشارة المقال — تبقى موجودة، لكنها هامش تحريري صغير لا بطاقة ضخمة. */
+.article-pull-quote {
+  margin: .2rem 0 1.35rem !important;
+  padding: .22rem 1rem .24rem .35rem !important;
+}
+.article-pull-quote::before {
+  inset-block: .42rem !important;
+  opacity: .72;
+}
+.article-pull-quote::after {
+  display: none !important;
+}
+.article-pull-quote blockquote {
+  max-inline-size: 46ch !important;
+  font-size: calc(clamp(.98rem, 1.7vw, 1.08rem) * var(--article-scale, 1)) !important;
+  font-weight: 500 !important;
+  line-height: 1.82 !important;
+  color: rgb(var(--c-ink) / .84) !important;
+}
+.article-pull-quote__action {
+  inset-inline-end: .05rem !important;
+  inset-block-end: .12rem !important;
+  inline-size: 1.75rem !important;
+  block-size: 1.75rem !important;
+  background: rgb(var(--c-canvas) / .9) !important;
+  box-shadow: 0 6px 18px -15px rgb(var(--c-ink) / .5);
+}
+@media (max-width: 640px) {
+  .article-pull-quote {
+    margin-block: .1rem 1.15rem !important;
+    padding-inline-start: .78rem !important;
+    padding-inline-end: 2rem !important;
+  }
+  .article-pull-quote blockquote {
+    max-inline-size: none !important;
+    font-size: calc(.98rem * var(--article-scale, 1)) !important;
+    line-height: 1.86 !important;
+  }
+}
+
+/* 6) مساحتي — «الأثر» يُكتشف مرة، واللوحة نفسها تتنفس من رأسها لا من صناديق إضافية. */
+.my-space-trigger { overflow: visible; }
+.my-space-discovery {
+  position: absolute;
+  inset-inline-end: calc(100% + .65rem);
+  top: 50%;
+  display: grid;
+  min-inline-size: 7.2rem;
+  gap: .05rem;
+  transform: translateY(-50%);
+  border: 1px solid rgb(var(--c-accent) / .18);
+  border-radius: .9rem;
+  padding: .48rem .72rem;
+  background: rgb(var(--c-canvas) / .96);
+  box-shadow: 0 14px 32px -24px rgb(var(--c-ink) / .6);
+  text-align: right;
+  pointer-events: none;
+  animation: my-space-discovery-in .42s var(--motion-curve) both;
+}
+.my-space-discovery::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 100%;
+  top: 50%;
+  inline-size: .62rem;
+  block-size: 1px;
+  background: rgb(var(--c-accent) / .28);
+}
+.my-space-discovery__kicker { font-size: .62rem; font-weight: 750; color: rgb(var(--c-accent)); }
+.my-space-discovery__copy { font-size: .68rem; font-weight: 550; color: rgb(var(--c-soft)); }
+@keyframes my-space-discovery-in {
+  from { opacity: 0; transform: translate(.4rem,-50%); }
+  to { opacity: 1; transform: translate(0,-50%); }
+}
+.my-space-panel {
+  background:
+    radial-gradient(78% 44% at 88% 0%, rgb(var(--c-accent) / .055), transparent 76%),
+    rgb(var(--c-canvas)) !important;
+}
+.my-space-head {
+  position: relative;
+  isolation: isolate;
+}
+.my-space-head::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-inline: 2rem;
+  top: 1.4rem;
+  block-size: 4rem;
+  opacity: .32;
+  background:
+    radial-gradient(circle at 12% 68%, rgb(var(--c-accent) / .28) 0 1.2px, transparent 1.5px),
+    radial-gradient(circle at 36% 34%, rgb(var(--c-accent) / .22) 0 1px, transparent 1.4px),
+    radial-gradient(circle at 67% 62%, rgb(var(--c-accent) / .18) 0 1px, transparent 1.4px),
+    linear-gradient(90deg, transparent, rgb(var(--c-accent) / .08), transparent);
+  background-size: 7rem 4rem, 8rem 4rem, 9rem 4rem, 100% 1px;
+  background-position: 0 0, 1rem 0, 2rem 0, 0 72%;
+  background-repeat: repeat-x, repeat-x, repeat-x, no-repeat;
+  pointer-events: none;
+}
+.my-space-eyebrow { letter-spacing: .01em; }
+@media (max-width: 640px) {
+  .my-space-discovery {
+    inset-inline-end: .15rem;
+    top: auto;
+    bottom: calc(100% + .55rem);
+    min-inline-size: 6.6rem;
+    transform: none;
+  }
+  .my-space-discovery::after {
+    inset-inline-start: auto;
+    inset-inline-end: 1.25rem;
+    top: 100%;
+    inline-size: 1px;
+    block-size: .55rem;
+  }
+  @keyframes my-space-discovery-in {
+    from { opacity: 0; transform: translateY(.35rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* 7) القائمة — دعوة صامتة مرةً واحدة، وعمق بصري داخل اللوحة نفسها. */
+.site-menu-trigger.is-discovering > span:last-child {
+  border-color: rgb(var(--c-accent) / .34);
+  box-shadow: 0 0 0 5px rgb(var(--c-accent) / .045);
+}
+.site-menu-discovery {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + .55rem);
+  inline-size: max-content;
+  max-inline-size: min(13rem, calc(100vw - 2rem));
+  border: 1px solid rgb(var(--c-accent) / .18);
+  border-radius: 999px;
+  padding: .48rem .78rem;
+  background: rgb(var(--c-canvas) / .96);
+  color: rgb(var(--c-soft));
+  font-size: .67rem;
+  font-weight: 600;
+  line-height: 1.3;
+  box-shadow: 0 12px 30px -22px rgb(var(--c-ink) / .55);
+  pointer-events: none;
+  animation: site-menu-discovery-in .4s var(--motion-curve) both;
+}
+@keyframes site-menu-discovery-in {
+  from { opacity: 0; transform: translateY(-.28rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.site-menu-overlay--ar::after {
+  content: "";
+  position: absolute;
+  inset: auto 7% 8% 7%;
+  block-size: 1px;
+  background: linear-gradient(90deg, transparent, rgb(var(--c-accent) / .12), transparent);
+  pointer-events: none;
+}
+.site-menu-groups > div {
+  position: relative;
+}
+@media (min-width: 768px) {
+  .site-menu-groups > div + div::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: -1.5rem;
+    inset-block: .25rem 1.2rem;
+    inline-size: 1px;
+    background: linear-gradient(180deg, transparent, var(--c-hair), transparent);
+  }
+}
+
+/* 8) البحث — حتى الحالة الفارغة تبدو «حيّة»، والنتائج ترتفع من السطح لا بصناديق. */
+.search-field-shell::after {
+  content: "";
+  position: absolute;
+  inset-inline: 8% 8%;
+  bottom: -1px;
+  block-size: 1px;
+  background: linear-gradient(90deg, transparent, rgb(var(--c-accent) / .25), transparent);
+  opacity: 0;
+  transform: scaleX(.7);
+  transition: opacity .3s ease, transform .3s var(--motion-curve);
+  pointer-events: none;
+}
+.search-field-shell:focus-within::after { opacity: 1; transform: scaleX(1); }
+.search-empty-state { position: relative; isolation: isolate; }
+.search-empty-orbit {
+  position: relative;
+  inline-size: 3.2rem;
+  block-size: 3.2rem;
+  margin-inline: auto;
+  border: 1px solid rgb(var(--c-accent) / .13);
+  border-radius: 50%;
+}
+.search-empty-orbit::before {
+  content: "";
+  position: absolute;
+  inset: .72rem;
+  border: 1px solid rgb(var(--c-accent) / .1);
+  border-radius: 50%;
+}
+.search-empty-orbit span {
+  position: absolute;
+  inline-size: .34rem;
+  block-size: .34rem;
+  border-radius: 50%;
+  background: rgb(var(--c-accent) / .56);
+}
+.search-empty-orbit span:nth-child(1) { top: .28rem; right: 1.3rem; }
+.search-empty-orbit span:nth-child(2) { left: .25rem; bottom: .85rem; opacity: .7; }
+.search-empty-orbit span:nth-child(3) { right: .3rem; bottom: .42rem; opacity: .42; }
+.search-empty-kinds i {
+  align-self: center;
+  inline-size: 2px;
+  block-size: 2px;
+  border-radius: 50%;
+  background: rgb(var(--c-accent) / .38);
+}
+.search-result-row {
+  margin-inline: -.65rem;
+  padding-inline: .65rem;
+  border-radius: 1rem;
+  transition: background-color .26s ease, transform .26s var(--motion-curve), box-shadow .26s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .search-result-row:hover {
+    background: rgb(var(--c-wash) / .48);
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px -32px rgb(var(--c-ink) / .6);
+  }
+}
+
+/* 9) الأطلس — «شبكة الأفكار» تُكتشف ولا تتحول إلى شبكة أسلاك. */
+.atlas-view-switch { box-shadow: 0 8px 24px -22px rgb(var(--c-ink) / .55); }
+.atlas-graph-switch.is-discovering {
+  color: rgb(var(--c-accent));
+  box-shadow: inset 0 0 0 1px rgb(var(--c-accent) / .2), 0 8px 20px -17px rgb(var(--c-accent) / .45);
+}
+.atlas-graph-discovery-copy {
+  display: inline-block;
+  font-size: .66rem;
+  font-weight: 700;
+  animation: atlas-graph-discovery-in .34s var(--motion-curve) both;
+}
+@keyframes atlas-graph-discovery-in {
+  from { opacity: 0; transform: translateX(.25rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.atlas-night.is-graph {
+  background:
+    radial-gradient(42% 58% at 50% 50%, rgb(var(--c-accent) / .055), transparent 72%),
+    radial-gradient(30% 36% at 18% 20%, rgb(var(--c-accent) / .025), transparent 75%),
+    rgb(var(--c-canvas));
+}
+.atlas-night.is-graph .atlas-star-core {
+  filter: drop-shadow(0 0 5px rgb(var(--c-accent) / .12));
+}
+.atlas-night.is-timeline { background: rgb(var(--c-canvas)); }
+
+/* 10) طباعة المقال — ورقة أكاديمية هادئة لا لقطة شاشة من واجهة ويب. */
+@media print {
+  @page { size: A4; margin: 20mm 18mm 22mm; }
+
+  .selection-discovery-chip,
+  .audio-sync-whisper,
+  .article-pull-quote__action,
+  .reader-selection-toolbar,
+  .my-space-overlay,
+  .site-menu-overlay { display: none !important; }
+
+  .article-journey article {
+    font-kerning: normal;
+    text-rendering: optimizeLegibility;
+  }
+  .article-journey h1 {
+    margin-top: 0 !important;
+    margin-bottom: 12pt !important;
+    font-size: 22pt !important;
+    line-height: 1.42 !important;
+    color: #111 !important;
+  }
+  .article-journey h1 + div { background: #4f6273 !important; }
+  .article-body,
+  .article-body-synced { max-width: 100% !important; }
+  .article-body p,
+  .article-body-synced p {
+    margin-bottom: 11pt !important;
+    font-size: 12pt !important;
+    line-height: 1.82 !important;
+    color: #161616 !important;
+    text-align: justify !important;
+    text-justify: inter-word !important;
+    text-align-last: start !important;
+    widows: 3;
+    orphans: 3;
+  }
+  .article-pull-quote {
+    margin: 6pt 0 10pt !important;
+    padding: 3pt 10pt !important;
+    border-right: 1.5pt solid #61788d;
+  }
+  .article-pull-quote::before,
+  .article-pull-quote::after { display: none !important; }
+  .article-pull-quote blockquote {
+    max-width: none !important;
+    font-size: 11.2pt !important;
+    line-height: 1.72 !important;
+    color: #333 !important;
+  }
+  .sentence-item.is-sentence-active,
+  .article-body-synced .synced-paragraph.is-audio-active {
+    background: none !important;
+    box-shadow: none !important;
+  }
+  .sentence-equalizer { display: none !important; }
+  .closing-signature { margin-top: 18pt !important; break-inside: avoid; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selection-discovery-chip,
+  .reader-aa-discovery-label,
+  .audio-sync-whisper,
+  .my-space-discovery,
+  .site-menu-discovery,
+  .atlas-graph-discovery-copy { animation: none !important; }
+  .reader-aa-button,
+  .search-result-row,
+  .article-body-synced .synced-paragraph { transition: none !important; }
+}

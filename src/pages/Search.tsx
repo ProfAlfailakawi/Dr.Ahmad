@@ -558,7 +558,7 @@ export default function Search() {
         <div className="mx-auto max-w-shell">
           {tab !== 'askbook' && <FadeUp>
             <div className="border-b border-hair pb-8">
-              <div className="relative">
+              <div className="search-field-shell relative">
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -835,7 +835,7 @@ export default function Search() {
           {searchStarted && tab !== 'spoken' && tab !== 'askbook' && <ul id="search-results" className="mt-8 scroll-mt-28">
             {visibleRows.map((row, index) => (
               <FadeUp key={`${row.kind}-${row.url}-${row.title.slice(0, 30)}`} delay={Math.min(index * 0.025, 0.25)}>
-                <li className={`relative ${index === 0 ? '' : 'border-t border-hair'}`}>
+                <li className={`search-result-row relative ${index === 0 ? '' : 'border-t border-hair'}`}>
                   <Link to={row.url} onClick={() => { resultOpenedRef.current = true; trackUsage('search_result_opened', { searchType: 'general', query: normalizeSearchQuery(normalizedQuery), resultType: row.kind, resultId: row.slug || row.url, position: (paged.page - 1) * 20 + index + 1, timeToResultMs: 0 }) }} className={`group grid gap-3 py-6 md:grid-cols-[7rem_1fr_5.5rem] md:items-baseline ${row.kind === 'book' ? 'pb-16' : ''}`}>
                     <span className={`h-fit w-fit rounded-full px-3 py-1 text-[.7rem] font-bold ${row.kind === 'article' ? 'bg-accent/10 text-accent' : 'border border-hair text-soft'}`}>
                       {KIND_BADGE[row.kind]}
@@ -871,11 +871,15 @@ export default function Search() {
 
           {!searchStarted && tab !== 'askbook' && (
             <FadeUp delay={0.05}>
-              <div className="py-16 text-center md:py-20">
-                <h2 className="font-display text-[clamp(1.35rem,3vw,1.8rem)] font-semibold text-ink">عمّ تبحث اليوم؟</h2>
+              <div className="search-empty-state py-16 text-center md:py-20">
+                <div className="search-empty-orbit" aria-hidden="true"><span /><span /><span /></div>
+                <h2 className="mt-5 font-display text-[clamp(1.35rem,3vw,1.8rem)] font-semibold text-ink">عمّ تبحث اليوم؟</h2>
                 <p className="mx-auto mt-2 max-w-md text-[.9rem] leading-[1.8] text-soft">
                   اكتب حرفين على الأقل — البحث يفتح مقالات الدكتور وأبحاثه وكتبه ولقاءاته والأسئلة معاً.
                 </p>
+                <div className="search-empty-kinds mt-5 flex flex-wrap justify-center gap-x-3 gap-y-2 text-[.7rem] text-soft" aria-hidden="true">
+                  <span>فكرة</span><i /> <span>سؤال</span><i /> <span>مفهوم</span><i /> <span>مقال</span>
+                </div>
               </div>
             </FadeUp>
           )}

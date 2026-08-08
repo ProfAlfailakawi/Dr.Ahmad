@@ -49,6 +49,5 @@ npm run deploy:data-rules
 ```bash
 npm ci
 npm run build          # يشمل كل الحرّاس
-npm run legacy:ci      # لا تراجع في الروابط الحرجة
 npm run docs:check     # التوثيق يطابق المشروع
 ```

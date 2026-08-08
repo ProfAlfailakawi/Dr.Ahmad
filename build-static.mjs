@@ -258,11 +258,6 @@ const routes = [
   ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.jpg` })),
 ]
 
-const LEGACY_REDIRECTS = [
-  ['/articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
-  ['/signature_articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
-]
-
 const uniqueRoutes = (items) => {
   const seen = new Set()
   return items.filter((item) => {

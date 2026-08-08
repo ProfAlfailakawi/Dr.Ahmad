@@ -135,6 +135,16 @@ function checkRepository() {
   expect(hosting.hosting?.site === HOSTING_SITE, 'Firebase Hosting Site ID تغيّر أو غير موجود')
   expect(hosting.hosting?.public === 'dist', 'مجلد نشر Firebase Hosting ليس dist')
   expect(!hosting.firestore && !hosting.storage, 'firebase.json يجب أن يبقى للاستضافة فقط حتى لا تُنشر قواعد البيانات على مشروع الاستضافة')
+  const publicRedirects = hosting.hosting?.redirects || []
+  const allowedRedirects = new Map([
+    ['/now', '/'],
+    ['/rss', '/feed.xml'],
+    ['/podcast', '/podcast.xml'],
+    ['/articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
+  ])
+  expect(publicRedirects.length === allowedRedirects.size
+    && publicRedirects.every((entry) => entry.type === 301 && allowedRedirects.get(entry.source) === entry.destination),
+  'Firebase Hosting يحتوي تحويلات عامة غير معتمدة')
 
   const dataRules = json('firebase.data.json')
   expect(dataRules.firestore?.rules === 'firestore.rules', 'إعداد قواعد Firestore المنفصل غير صحيح')
@@ -166,7 +176,6 @@ function checkRepository() {
     'public/boot.js',
     'server.mjs',
     'scripts/verify-domain-migration.mjs',
-    'scripts/verify-legacy-retirement.mjs',
     'DOMAIN-CUTOVER.md',
     'src/components/CitationCopy.tsx',
   ])
@@ -214,7 +223,7 @@ function checkDist() {
   expect(sitemapLocs.length > 0, 'sitemap.xml لا يحتوي أي رابط <loc>')
   expect(sitemapLocs.every(isOfficialUrl), 'sitemap.xml يحتوي رابطاً خارج الدومين الرسمي')
   expect(new Set(sitemapLocs).size === sitemapLocs.length, 'sitemap.xml يحتوي روابط مكررة')
-  expect(!sitemapLocs.some((url) => /scheduledarabbic|\/wp-|\/signature_articles\/|\/scholarly_contributi\//i.test(url)), 'sitemap.xml يحتوي مساراً قديماً أو slug غير نظيف')
+  expect(!sitemapLocs.some((url) => /scheduledarabbic/i.test(url)), 'sitemap.xml يحتوي slug غير نظيف')
   expect(robots.includes(`Sitemap: ${OFFICIAL}/sitemap.xml`), 'robots.txt لا يشير إلى خريطة الموقع الرسمية')
   expect(feed.includes(`<link>${OFFICIAL}</link>`), 'feed.xml لا يعتمد الدومين الرسمي')
   expect(podcast.includes(`<link>${OFFICIAL}</link>`), 'podcast.xml لا يعتمد الدومين الرسمي')

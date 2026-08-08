@@ -4,7 +4,6 @@
 - التحليلات الحالية كانت تعتمد Plausible/Reader Pulse ورحلات الزائر، ولم يكن هناك مخطط موحد للأحداث الدلالية. تم توسيع البنية الحالية عبر `/api/analytics/event` ومجموعة `analytics_events` الخاصة بقراءة الأدمن.
 - البحث العام في `src/pages/Search.tsx`، وبحث الموسوعة في `EncyclopediaPortal.tsx` مع محركات الفيديو واللحظات والكتاب والشرائح، و«اسأل المكتبة» في `AskLibrary.tsx`.
 - الاستشهاد كان في `CitationCopy.tsx` و`CiteButton` ويدعم APA/MLA/Chicago وRIS في المسارات البحثية؛ أضيف BibTeX لنفس الأداة.
-- الترحيل موزع بين `_redirects` و`vercel.json` و`firebase.json` واختبارات `verify-domain-migration` و`verify-legacy-retirement` وخرائط sitemap/canonical القائمة.
 - مسار البودكاست اليدوي: `ManualDialogueEditor` → `podcast_dialogues` و`podcast_production` → `/api/admin/podcast/dispatch` → workflow `podcast-pilot-release.yml` → `fetch-manual-dialogues.mjs` → `podcast-dialogue.mjs`/Azure/FFmpeg → بوابات الجودة وR2 → `report-dialogue-status.mjs` → Firestore والواجهة.
 
 ## السبب الجذري للبودكاست

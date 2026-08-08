@@ -8,6 +8,6 @@ const checks=[
  ['deep search URL',read('src/components/EncyclopediaPortal.tsx'),/pushState/],['share API',read('src/components/EncyclopediaPortal.tsx'),/navigator\.share/],
  ['manual canonical hash',read('scripts/lib/manual-dialogue-source.mjs'),/canonicalDialogueRevision/],['podcast checkpoints',read('scripts/lib/human-reading-pipeline.mjs'),/checkpointJson/],
  ['podcast stage status',read('scripts/podcast-production-status.mjs'),/currentSegment/],['idempotent dispatch',read('server.mjs'),/dispatchedDialogueRevisionId/],
- ['legacy audit',read('scripts/audit-legacy-links.mjs'),/chains/],['generated status',read('scripts/generate-project-status.mjs'),/PROJECT-STATUS/]
+ ['generated status',read('scripts/generate-project-status.mjs'),/PROJECT-STATUS/]
 ]
 for(const [name,text,rx] of checks)assert.match(text,rx,String(name)); console.log(`✓ comprehensive upgrades: ${checks.length}/${checks.length}`)

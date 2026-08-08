@@ -27,7 +27,6 @@
 - `node scripts/test-comprehensive-upgrades.mjs`: ناجح 14/14.
 - `node scripts/test-manual-dialogue-lock.mjs`: ناجح.
 - `node scripts/guard-visual-tokens.mjs`: ناجح.
-- `node scripts/audit-legacy-links.mjs`: 91 رابطًا، صفر سلاسل، صفر حلقات.
 - `node scripts/generate-project-status.mjs`: ناجح.
 
 ## قيود التحقق في بيئة العمل الحالية

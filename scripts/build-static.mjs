@@ -1125,9 +1125,25 @@ function youtubeId(value = '') {
   return (String(value).match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
 }
 
+/* Google VideoObject requires uploadDate as DateTime, not a bare calendar date.
+   The archive intentionally stores many historical media dates as YYYY-MM-DD only.
+   Normalize those to an ISO 8601 DateTime with the site's Kuwait timezone while
+   preserving any already-valid timestamp supplied by future CMS entries. */
+function schemaMediaDateTime(value = '') {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const normalized = `${raw}T00:00:00+03:00`
+    return Number.isNaN(Date.parse(normalized)) ? '' : normalized
+  }
+  if (!Number.isNaN(Date.parse(raw)) && /T/.test(raw)) return raw
+  return ''
+}
+
 function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar', isbn, year, edition, publisher, pageCount, url: videoUrl, duration, topics, thumbnail, program, channel, clipStart, clipEnd, audioUrl, audioFile }) {
   const en = lang === 'en'
   const isAdmin = path === '/admin'
+  const mediaUploadDate = schemaMediaDateTime(iso)
   // ما دامت المرآة مخفية: صفحاتها الإنجليزية لا تُفهرس
   if (en && !SHOW_EN) robots = 'noindex, nofollow'
   // لا تُلحق الاسم إن كان العنوان يحمله أصلاً — يمنع تضاعفه
@@ -1181,7 +1197,7 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
     // المادة الإذاعية ليست فيديو: AudioObject هو النوع الصحيح، ولا تُطلب صورة مصغّرة.
     graph = [{
       '@type': 'AudioObject', name: title, description: topics || desc,
-      ...(iso ? { uploadDate: iso } : {}), ...(schemaDuration(duration) ? { duration: schemaDuration(duration) } : {}),
+      ...(mediaUploadDate ? { uploadDate: mediaUploadDate } : {}), ...(schemaDuration(duration) ? { duration: schemaDuration(duration) } : {}),
       ...(audioUrl ? { contentUrl: audioUrl } : {}),
       inLanguage: lang, creator: { '@id': `${SITE}/#person` },
       ...(program || channel ? { isPartOf: { '@type': 'CreativeWorkSeries', name: [program, channel].filter(Boolean).join(' — ') } } : {}),
@@ -1192,7 +1208,7 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
     const end = clockSeconds(clipEnd)
     graph = [{
       '@type': 'VideoObject', name: title, description: topics || desc, thumbnailUrl: img,
-      ...(iso ? { uploadDate: iso } : {}), ...(schemaDuration(duration) ? { duration: schemaDuration(duration) } : {}),
+      ...(mediaUploadDate ? { uploadDate: mediaUploadDate } : {}), ...(schemaDuration(duration) ? { duration: schemaDuration(duration) } : {}),
       contentUrl: videoUrl, ...(id ? { embedUrl: `https://www.youtube-nocookie.com/embed/${id}` } : {}),
       inLanguage: lang, creator: { '@id': `${SITE}/#person` },
       ...(program || channel ? { isPartOf: { '@type': 'CreativeWorkSeries', name: [program, channel].filter(Boolean).join(' — ') } } : {}),

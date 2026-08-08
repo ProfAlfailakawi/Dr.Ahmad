@@ -68,7 +68,7 @@ function CurioBody({ c }: { c: Curio }) {
         {title}
       </h3>
       {note && (
-        <p className="mt-2 text-[.9rem] font-light leading-relaxed text-soft">
+        <p className="measure mt-2 text-[.9rem] font-light leading-relaxed text-soft">
           {note}
         </p>
       )}
@@ -346,7 +346,7 @@ export default function Curated() {
                 <Link to="/questions" data-hover className="group flex min-h-[12rem] flex-col rounded-2xl border border-hair bg-canvas p-7 transition-colors hover:border-accent md:p-9">
                   <span className="text-[.74rem] font-semibold text-accent">سؤال متجدد</span>
                   <h3 className="mt-3 font-display text-[1.3rem] font-semibold leading-[1.7] text-ink">سؤال يُقلق التعليم</h3>
-                  <p className="mt-2 text-[.9rem] font-light leading-relaxed text-soft">سؤال قصير في صياغته، واسع في أثره؛ يفتح زاوية جديدة كل مرة.</p>
+                  <p className="measure mt-2 text-[.9rem] font-light leading-relaxed text-soft">سؤال قصير في صياغته، واسع في أثره؛ يفتح زاوية جديدة كل مرة.</p>
                   <span className="mt-auto pt-5 text-[.82rem] text-soft transition-colors group-hover:text-accent">إلى الزاوية ←</span>
                 </Link>
               </FadeUp>

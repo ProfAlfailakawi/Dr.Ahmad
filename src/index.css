@@ -5202,3 +5202,11 @@ html.dark .content-book-detail .book-detail-cover {
   .cinematic-play,
   .article-pull-quote__action { transition: none !important; }
 }
+
+/* ── عمود القراءة ──
+   السطر الذي يتجاوز نحو خمسةٍ وسبعين حرفاً تتعب العين في تتبّعه: تقفز من
+   آخره إلى أول التالي فتضيع. قِيست في هذا الموقع سطورٌ بلغت 188 حرفاً.
+   هذه لا تغيّر تخطيطاً ولا تُزيح عنصراً — تحدّ عرض النصّ وحده. */
+.measure { max-inline-size: 68ch; }
+/* وما كان موسّطاً يبقى موسّطاً بعد الحدّ. */
+.measure-center { max-inline-size: 68ch; margin-inline: auto; }

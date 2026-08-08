@@ -123,29 +123,26 @@ self.addEventListener('fetch', (e) => {
     return
   }
 
-  // الصفحات العامة: غلاف التطبيق من الذاكرة فوراً، وتحديث الشبكة في الخلفية.
-  // الاستراتيجية السابقة كانت تنتظر الشبكة في كل فتح مباشر، ولذلك بدا الموقع
-  // سريعاً مرة وبطيئاً مرة أخرى بحسب زمن الخادم والاتصال.
+  // الصفحات العامة: الشبكة أولاً عند وجود اتصال، والكاش fallback فقط عند الفشل.
+  // هذا يمنع Safari/Chrome من عرض HTML قديم بعد النشر، مع إبقاء القراءة دون
+  // إنترنت كما هي. navigationPreload (المفعّل في activate) يمنع طلباً شبكياً
+  // إضافياً ويُبقي الفتح المباشر سريعاً قدر الإمكان.
   if (request.mode === 'navigate') {
-    const networkUpdate = (async () => {
-      const preload = e.preloadResponse ? await e.preloadResponse.catch(() => null) : null
-      const response = preload || await fetch(request, { cache: 'no-cache' })
-      if (response?.status === 200 && !response.redirected) {
-        const cache = await caches.open(CACHE)
-        await cache.put(request, response.clone())
-      }
-      return response
-    })()
-
-    e.waitUntil(networkUpdate.catch(() => undefined))
     e.respondWith((async () => {
       const cache = await caches.open(CACHE)
-      const cached = await cache.match(request) || await cache.match('/index.html') || await cache.match('/')
-      if (cached) return cached
       try {
-        return await networkUpdate
+        const preload = e.preloadResponse ? await e.preloadResponse.catch(() => null) : null
+        const response = preload || await fetch(request, { cache: 'no-cache' })
+        if (response?.status === 200 && !response.redirected) {
+          await cache.put(request, response.clone())
+        }
+        return response
       } catch {
-        return await caches.match('/offline.html') || new Response('Offline', { status: 503 })
+        return await cache.match(request)
+          || await cache.match('/index.html')
+          || await cache.match('/')
+          || await caches.match('/offline.html')
+          || new Response('Offline', { status: 503 })
       }
     })())
     return

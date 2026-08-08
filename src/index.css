@@ -5016,31 +5016,11 @@ html.dark .content-book-detail .book-detail-cover {
 }
 
 /* ============================================================
-   2026-08-08 — الحالة النشطة الموحّدة في كل الموقع
-   المرجع البصري: زر «الأحدث» — تعبئة Accent صافية بلا لمعان زجاجي.
-   السبب: قاعدة الزجاج العامة كانت تضيف radial-gradient و inset shadow
-   إلى بعض الأزرار النشطة التي تحتفظ بحد border (مثل «الكل»)، بينما
-   أزرار نشطة أخرى بلا border (مثل «الأحدث») كانت تبقى مسطّحة وأجمل.
+   2026-08-08 — تنقية الأزرار الدائرية النشطة فقط
+   المرجع البصري: زر «الأحدث». لا نعمّم هذا على Tabs أو فلاتر مستطيلة؛
+   نحصره في الـpill الذي يحمل border-accent + bg-accent صراحةً.
    ============================================================ */
-:where(
-  button[class~="rounded-full"][aria-selected="true"],
-  a[class~="rounded-full"][aria-selected="true"],
-  button[class~="rounded-full"][aria-pressed="true"],
-  a[class~="rounded-full"][aria-pressed="true"],
-  button[class~="rounded-full"][aria-current="page"],
-  a[class~="rounded-full"][aria-current="page"],
-  button[class~="rounded-full"][data-state="active"],
-  a[class~="rounded-full"][data-state="active"],
-  button[class~="rounded-full"].is-active,
-  a[class~="rounded-full"].is-active,
-  button[class~="rounded-full"][class~="bg-accent"][class*="border"],
-  a[class~="rounded-full"][class~="bg-accent"][class*="border"],
-  button[class~="rounded-full"][class~="bg-accent/[.07]"],
-  a[class~="rounded-full"][class~="bg-accent/[.07]"],
-  button[class~="rounded-full"][class~="bg-accent/[.08]"],
-  a[class~="rounded-full"][class~="bg-accent/[.08]"],
-  [role="tab"][aria-selected="true"]
-) {
+.signature-page:not(.admin-dashboard) :is(button, a)[class~="rounded-full"][class~="border-accent"][class~="bg-accent"] {
   background-color: rgb(var(--c-accent)) !important;
   background-image: none !important;
   border-color: rgb(var(--c-accent)) !important;
@@ -5052,32 +5032,12 @@ html.dark .content-book-detail .book-detail-cover {
   filter: none !important;
 }
 
-/* لا نعيد اللمعة عند hover على العنصر المختار؛ يبقى مطابقاً لـ«الأحدث». */
 @media (hover: hover) and (pointer: fine) {
-  :where(
-    button[class~="rounded-full"][aria-selected="true"],
-    a[class~="rounded-full"][aria-selected="true"],
-    button[class~="rounded-full"][aria-pressed="true"],
-    a[class~="rounded-full"][aria-pressed="true"],
-    button[class~="rounded-full"][aria-current="page"],
-    a[class~="rounded-full"][aria-current="page"],
-    button[class~="rounded-full"][data-state="active"],
-    a[class~="rounded-full"][data-state="active"],
-    button[class~="rounded-full"].is-active,
-    a[class~="rounded-full"].is-active,
-    button[class~="rounded-full"][class~="bg-accent"][class*="border"],
-    a[class~="rounded-full"][class~="bg-accent"][class*="border"],
-    button[class~="rounded-full"][class~="bg-accent/[.07]"],
-    a[class~="rounded-full"][class~="bg-accent/[.07]"],
-    button[class~="rounded-full"][class~="bg-accent/[.08]"],
-    a[class~="rounded-full"][class~="bg-accent/[.08]"],
-    [role="tab"][aria-selected="true"]
-  ):hover {
+  .signature-page:not(.admin-dashboard) :is(button, a)[class~="rounded-full"][class~="border-accent"][class~="bg-accent"]:hover {
     background-color: rgb(var(--c-accent)) !important;
     background-image: none !important;
     border-color: rgb(var(--c-accent)) !important;
     color: #fff !important;
     box-shadow: none !important;
-    transform: none !important;
   }
 }

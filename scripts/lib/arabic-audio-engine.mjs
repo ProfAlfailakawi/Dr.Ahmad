@@ -203,13 +203,87 @@ export function numberToArabicWords(value) {
   return parts.join(' و')
 }
 
+/* ═══ حارس حدود الكلمة ═══
+   القاموس كان يُستبدل بالمطابقة الجزئية العمياء (split/join)، فمدخلٌ قصير يلتصق
+   بما حوله ويمسخه: «Rosenthal» صارت «Rosenthآل» بسبب مدخل al، و«12000» صارت
+   «واحدألفين» بسبب مدخل 2000، و«تجرح» صارت «تجَرْح». وهي ليست فرضيات: ٤٨ إصابة
+   مقيسة في متون المقالات المنشورة.
+
+   والقاعدة هنا تُسقط الاستبدالَ عند الشكّ ولا تُخاطر به: فأسوأُ ما يقع أن تُترك
+   كلمةٌ بلا ضبط (وهو حالها قبلاً)، لا أن تُنطق ممسوخة. */
+const ARABIC_LETTER = /[ء-يٱ-ۓ]/
+const LATIN_OR_DIGIT = /[A-Za-z0-9]/
+/* السوابق المتّصلة المسموح بها قبل مدخلٍ عربي — حروف الجرّ والعطف والتعريف
+   وحدها. و«ت» و«ي» و«ن» غائبة عمداً: بها تدخل صيغُ الفعل فيقع المسخ. */
+const ARABIC_CLITICS = new Set(['', 'و', 'ف', 'ب', 'ك', 'ل', 'س', 'ال', 'وال', 'فال', 'بال', 'كال', 'لل',
+  'ولل', 'فلل', 'بلل', 'وب', 'وف', 'ول', 'وك', 'وس', 'فب', 'فل', 'فس',
+  'وبال', 'فبال', 'وكال', 'فكال', 'ولل', 'وسال'])
+/* اللواحق المتّصلة المسموح بها بعده — الضمائر وعلامات الجمع والتأنيث وألف النصب */
+const ARABIC_SUFFIXES = new Set(['', 'ا', 'ت', 'ه', 'ها', 'هم', 'هن', 'هما', 'هات', 'نا', 'ي', 'ك', 'كم', 'كن',
+  'ة', 'ات', 'ان', 'ين', 'ون', 'ية', 'يّة', 'يين', 'يون', 'يات', 'تي', 'تين', 'تها', 'تهم'])
+
+function arabicRunBefore(text, index) {
+  let start = index
+  while (start > 0 && ARABIC_LETTER.test(text[start - 1])) start -= 1
+  return text.slice(start, index)
+}
+function arabicRunAfter(text, index) {
+  let end = index
+  while (end < text.length && ARABIC_LETTER.test(text[end])) end += 1
+  return text.slice(index, end)
+}
+
+/** أيجوز استبدال المدخل عند هذا الموضع بعينه؟ */
+export function substitutionAllowed(text, written, index) {
+  const before = text[index - 1] || ''
+  const after = text[index + written.length] || ''
+  const opensArabic = ARABIC_LETTER.test(written[0] || '')
+  const closesArabic = ARABIC_LETTER.test(written[written.length - 1] || '')
+
+  /* اللاتيني والرقم: لا التصاق البتّة — al داخل Rosenthal و2000 داخل 12000 */
+  if (!opensArabic && LATIN_OR_DIGIT.test(before)) return false
+  if (!closesArabic && LATIN_OR_DIGIT.test(after)) return false
+  /* ولا يُلصق مدخلٌ عربيّ بحرفٍ لاتينيّ أو رقمٍ عن يمينه أو يساره */
+  if (opensArabic && LATIN_OR_DIGIT.test(before)) return false
+  if (closesArabic && LATIN_OR_DIGIT.test(after)) return false
+
+  if (opensArabic && ARABIC_LETTER.test(before)) {
+    const run = arabicRunBefore(text, index)
+    if (!ARABIC_CLITICS.has(run)) return false
+    /* والسابقة نفسها يجب أن تبدأ كلمةً: «بالكويت» نعم، «كتابالكويت» لا */
+    const beforeRun = text[index - run.length - 1] || ''
+    if (ARABIC_LETTER.test(beforeRun)) return false
+  }
+  if (closesArabic && ARABIC_LETTER.test(after)) {
+    if (!ARABIC_SUFFIXES.has(arabicRunAfter(text, index + written.length))) return false
+  }
+  return true
+}
+
+/** استبدالٌ محروس: يمرّ على كل موضعٍ ويحكم عليه وحده */
+export function replaceGuarded(text, written, spoken) {
+  let out = ''
+  let cursor = 0
+  let applied = 0
+  for (;;) {
+    const index = text.indexOf(written, cursor)
+    if (index === -1) break
+    out += text.slice(cursor, index)
+    if (substitutionAllowed(text, written, index)) { out += spoken; applied += 1 } else out += written
+    cursor = index + written.length
+  }
+  return { text: out + text.slice(cursor), applied }
+}
+
 export function buildPronunciationText(sourceText) {
   let pronunciationText = String(sourceText || '')
   const risks = []
   for (const [written, rule] of lexiconEntries()) {
     if (!pronunciationText.includes(written)) continue
     const spoken = rule.sub || rule.diacritics || written
-    pronunciationText = pronunciationText.split(written).join(spoken)
+    const guarded = replaceGuarded(pronunciationText, written, spoken)
+    if (!guarded.applied) continue
+    pronunciationText = guarded.text
     risks.push({ word: written, type: rule.type || 'قاموس', riskLevel: 'high', selectedPronunciation: spoken,
       method: rule.sub ? 'sub' : 'selective_diacritics', reason: rule.note || 'قاعدة معتمدة في قاموس النطق' })
   }

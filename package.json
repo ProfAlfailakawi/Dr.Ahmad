@@ -18,7 +18,7 @@
     "audio:dry-run": "node scripts/auto-audio.mjs --dry-run",
     "audio:base": "node scripts/auto-audio.mjs --base-only",
     "audio:human:self-test": "node scripts/test-human-audio-engine.mjs",
-    "audio:quality:self-test": "node scripts/test-human-audio-engine.mjs && node scripts/test-audio-idempotency.mjs && node scripts/podcast-dialogue.mjs --self-test && node scripts/podcast-release-gate.mjs --self-test && node scripts/publish-audio-r2.mjs --self-test && node scripts/audio-supervisor.mjs --self-test",
+    "audio:quality:self-test": "node scripts/test-human-audio-engine.mjs && node scripts/test-lexicon-boundary.mjs && node scripts/test-audio-idempotency.mjs && node scripts/podcast-dialogue.mjs --self-test && node scripts/podcast-release-gate.mjs --self-test && node scripts/publish-audio-r2.mjs --self-test && node scripts/audio-supervisor.mjs --self-test",
     "audio:human:pilot": "node scripts/human-audio-pilot.mjs",
     "audio:human:pilot:execute": "node scripts/human-audio-pilot.mjs --execute",
     "audio:legacy": "node scripts/generate-audio.mjs",

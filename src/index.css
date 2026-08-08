@@ -620,7 +620,11 @@ html.dark .content-media .page-head {
   word-spacing: normal;
   hyphens: none;
 }
-.article-body p:last-child { margin-bottom: 0; }
+/* كل فقرةٍ صارت ملفوفةً في div خاصّ بها (للتظليل)، فأصبح كلُّ p آخرَ ابنٍ
+   لأبيه — فألغت هذه القاعدةُ فاصلَ الفقرات في المتن كلّه لا في آخره وحده.
+   المقصود آخرُ فقرةٍ في المقال حقيقةً، لا آخرُ فقرةٍ في كل غلاف. */
+.article-body > p:last-child,
+.article-body > :last-child > p:last-child { margin-bottom: 0; }
 .article-body p.dropcap::first-letter {
   float: right;
   margin: .16em 0 0 .28em;

@@ -73,7 +73,7 @@ export function EnglishHome() {
   return (
     <Page>
       {/* المشهد الأول — الهوية */}
-      <section className="flex min-h-[92vh] flex-col justify-center border-b border-hair px-6 pt-24 md:px-11">
+      <section className="flex min-h-[92svh] flex-col justify-center border-b border-hair px-6 pt-24 md:px-11">
         <div className="mx-auto w-full max-w-shell">
           <FadeUp>
             <Label>{profileEn.eyebrow}</Label>

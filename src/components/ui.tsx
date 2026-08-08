@@ -379,7 +379,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
       aria-modal="true"
       aria-label="القائمة الرئيسية"
       tabIndex={-1}
-      className="site-menu-overlay fixed inset-0 z-[220] isolate flex flex-col bg-canvas outline-none"
+      className="site-menu-overlay site-menu-overlay--ar fixed inset-0 z-[220] isolate flex flex-col bg-canvas outline-none"
       style={{ backgroundColor: 'rgb(var(--c-canvas))' }}
       initial={reduce ? { opacity: 0 } : { y: '-100%' }}
       animate={reduce ? { opacity: 1 } : { y: 0 }}
@@ -390,7 +390,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
 
       <div className="relative flex-1 overflow-y-auto overscroll-contain">
         <div className="flex min-h-full items-start px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(5.4rem+env(safe-area-inset-top))] md:items-center md:px-11 md:py-28">
-        <div className="mx-auto grid w-full max-w-shell gap-5 md:grid-cols-3 md:gap-x-12 md:gap-y-10">
+        <div className="site-menu-groups mx-auto grid w-full max-w-shell gap-5 md:grid-cols-3 md:gap-x-12 md:gap-y-10">
           {groups.map((g, gi) => (
             <div key={g.label} className="border-b border-hair pb-5 md:border-0 md:pb-0">
               <motion.span
@@ -794,6 +794,7 @@ export function Nav() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [showMenuDiscovery, setShowMenuDiscovery] = useState(false)
   const { scrollY, scrollYProgress } = useScroll()
   const progress = useSpring(scrollYProgress, { stiffness: 200, damping: 40 })
   const loc = useLocation()
@@ -881,6 +882,29 @@ export function Nav() {
     return () => window.removeEventListener('site:page-title', sync)
   }, [loc.pathname])
 
+  useEffect(() => {
+    const englishPath = loc.pathname === '/en' || loc.pathname.startsWith('/en/')
+    if (englishPath) return
+    const usedKey = 'site:menu-discovered:v2'
+    const sessionKey = 'site:menu-discovery-shown:v2'
+    try {
+      if (localStorage.getItem(usedKey) === '1' || sessionStorage.getItem(sessionKey) === '1') return
+      sessionStorage.setItem(sessionKey, '1')
+    } catch { /* التخزين تحسين بصري فقط. */ }
+    const show = window.setTimeout(() => setShowMenuDiscovery(true), 1650)
+    const hide = window.setTimeout(() => setShowMenuDiscovery(false), 6800)
+    return () => {
+      window.clearTimeout(show)
+      window.clearTimeout(hide)
+    }
+  }, [loc.pathname])
+
+  const toggleArabicMenu = () => {
+    try { localStorage.setItem('site:menu-discovered:v2', '1') } catch { /* noop */ }
+    setShowMenuDiscovery(false)
+    setOpen((value) => !value)
+  }
+
   const english = loc.pathname === '/en' || loc.pathname.startsWith('/en/')
   const solid = (scrolled || (loc.pathname !== '/' && loc.pathname !== '/en')) && !open
 
@@ -951,12 +975,17 @@ export function Nav() {
             </button>
           <button
             type="button"
-            onClick={() => setOpen(!open)}
+            onClick={toggleArabicMenu}
             aria-label={open ? 'إغلاق القائمة' : 'فتح القائمة'}
             aria-expanded={open}
             aria-controls="site-menu-dialog"
-            className="group flex min-h-11 items-center gap-3.5"
+            className={`site-menu-trigger group relative flex min-h-11 items-center gap-3.5 ${showMenuDiscovery ? 'is-discovering' : ''}`}
           >
+            {showMenuDiscovery && (
+              <span className="site-menu-discovery" aria-hidden="true">
+                كل أبواب الموقع هنا
+              </span>
+            )}
             <span className="hidden text-[.9rem] font-medium text-ink transition-colors group-hover:text-accent sm:block">
               {open ? 'إغلاق' : 'القائمة'}
             </span>

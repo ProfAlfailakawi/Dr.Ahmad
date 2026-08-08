@@ -132,7 +132,7 @@ check('لا يبقى عداد ديناميكي خام قبل اسم عربي ف�
 console.log('\nالمقالات والقراءة')
 check('رأس المقال يضع أدوات القارئ في ReaderControls', articleDetail.includes('<ReaderControls') && articleReader.includes('Aa'))
 check('الرمز المكسور ۩ محذوف من القارئ', !articleReader.includes('۩') && !articleDetail.includes('۩'))
-check('تلميح تحديد الجملة يظهر مرة واحدة محلياً', articleDetail.includes('reader:selection-hint-seen:v1'))
+check('تلميح تحديد الجملة يُكتشف استباقياً مرة واحدة محلياً', articleDetail.includes('reader:selection-discovered:v2') && articleDetail.includes('reader:selection-discovery-shown:v2'))
 check('فلاتر المقالات تفصل التصنيفات عن البحث والسنة', articles.includes('overflow-x-auto') && articles.includes('sm:grid-cols-[minmax(0,1fr)_auto_auto]') && articles.includes('استكشف الأرشيف'))
 check('ذيل المقال يبقي الأسهم والعناوين ويحذف الكلمات الثلاث المرئية فقط', articleDetail.includes('بعد القراءة') && articleDetail.includes('مشاركة المقال والاستشهاد به') && articleDetail.includes('aria-label="جميع المقالات"') && !articleDetail.includes('<span className="text-ink">السابق:</span>') && !articleDetail.includes('<span className="text-ink">التالي:</span>') && !articleDetail.includes('>جميع المقالات</span>'))
 check('إعدادات القارئ لا تكرر الخلفية ولا شرح التشكيل', !articleReader.includes('>الخلفية</p>') && !articleReader.includes('كل المقالات متوفّرة بنص'))
@@ -178,11 +178,10 @@ check('عناوين ومحاور الكتب تعود دليلاً حتى عند 
 check('واجهة البحث تشرح فهم السؤال وتقترح إعادة صياغته', search.includes('فهم البحث') && search.includes('حوّلها إلى إجابة موثقة') && search.includes('اكتب بطريقتك: سؤال، موقف، فكرة'))
 check('العقل الحي وعالم الكتاب يستعملان المحرك الدلالي نفسه', ask.includes('buildSmartQueryPlan') && ask.includes('scoreSmartFields') && bookWorld.includes('buildSmartQueryPlan') && bookWorld.includes('لم تظهر شواهد كافية'))
 check('تنقل المقالات صف واحد صغير والعناوين موجودة بلا تسميات زائدة', articleDetail.includes('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]') && !articleDetail.includes('السابق:</span>') && !articleDetail.includes('التالي:</span>') && articleDetail.includes('text-[.6rem]'))
-/* الرصف من الطرفين أُلغي بعد قياس: على عمود ٥٨٣px (حاسوب) كان وسيط تمدّد المسافة
-   بين الكلمات ١٫٦٥–١٫٩٢× وأقصاه ٢٫٧٨×، وأكثر الفقرات فوق ١٫٥× — أي «أنهار بيضاء»
-   في النصّ العربي، ولا كشيدة في الويب تسدّها. فصار المتن يُرصف من اليمين وحده.
-   الشرط الآن يحرس القرار الجديد: محاذاةٌ من البدء، وبلا رصفٍ من الطرفين. */
-check('متون المقالات القديمة والجديدة مضبوطة المحاذاة', css.includes('.article-body-synced') && css.includes('text-align: start') && css.includes('text-align-last: start') && !/\.article-body[^{]*\{[^}]*text-align: justify/.test(css))
+/* طلب المالك الآن رصف متن المقالات من الطرفين في الهاتف والحاسوب.
+   نحرس هنا override النهائي حتى لا تعيده قواعد المقاسات القديمة إلى start،
+   مع إبقاء السطر الأخير على بدايته الطبيعية حتى لا يتمدّد بصرياً. */
+check('متون المقالات القديمة والجديدة مرصوفة Justify مع حفظ نهاية السطر الطبيعية', css.includes('.article-body-synced') && /\.content-articles[\s\S]{0,520}text-align: justify !important/.test(css) && css.includes('text-align-last: start !important'))
 
 console.log('\nالإعلام ومساحتي')
 check('رأس الأرشيف الإعلامي بلا الوصف المحذوف', !media.includes('لقاءات مرئية ومسموعة، مفهرسة زمنياً، قابلة للبحث داخل الكلام نفسه.'))

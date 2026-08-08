@@ -302,6 +302,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
   const [query, setQuery] = useState("");
   const [syncActive, setSyncActive] = useState(false);
   const [freshAskId, setFreshAskId] = useState("");
+  const [showDiscovery, setShowDiscovery] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -331,6 +332,29 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
       window.removeEventListener("storage", sync);
     };
   }, []);
+
+  useEffect(() => {
+    if (variant !== "floating" || location.pathname.startsWith("/en")) return;
+    const usedKey = "myspace:discovered:v2";
+    const sessionKey = "myspace:discovery-shown:v2";
+    try {
+      if (localStorage.getItem(usedKey) === "1" || sessionStorage.getItem(sessionKey) === "1") return;
+      sessionStorage.setItem(sessionKey, "1");
+    } catch { /* التخزين تحسين بصري فقط. */ }
+    const show = window.setTimeout(() => setShowDiscovery(true), 2600);
+    const hide = window.setTimeout(() => setShowDiscovery(false), 7600);
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(hide);
+    };
+  }, [location.pathname, variant]);
+
+  const openSpace = () => {
+    try { localStorage.setItem("myspace:discovered:v2", "1"); } catch { /* noop */ }
+    setShowDiscovery(false);
+    setOpen(true);
+    setTab("continue");
+  };
 
   const closeSpace = useCallback((restoreFocus = true) => {
     setOpen(false);
@@ -404,11 +428,17 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
       <button
         type="button"
         ref={triggerRef}
-        onClick={() => { setOpen(true); setTab("continue"); }}
+        onClick={openSpace}
         aria-label="فتح مساحتي"
         title={snapshot.last && resumeProgress > 0 ? `مساحتي · أكمل القراءة من ${arNumber(Math.round(resumeProgress * 100))}%` : "مساحتي"}
         className={`my-space-trigger ${freshAskId ? "my-space-trigger--fresh" : ""} group relative flex items-center justify-center text-ink transition-all hover:text-accent ${variant === "footer" ? "h-10 w-10 bg-transparent" : "h-11 w-11 rounded-full border border-hair bg-canvas/[.92] shadow-[0_12px_32px_-16px_rgba(21,22,26,.52)] backdrop-blur hover:border-accent"}`}
       >
+        {variant === "floating" && showDiscovery && (
+          <span className="my-space-discovery" aria-hidden="true">
+            <span className="my-space-discovery__kicker">مساحتي</span>
+            <span className="my-space-discovery__copy">أثرك هنا</span>
+          </span>
+        )}
         {variant === "floating" && resumeProgress > 0 && (
           <svg aria-hidden viewBox="0 0 44 44" className="pointer-events-none absolute inset-[-1px] h-[44px] w-[44px] -rotate-90 text-accent">
             <circle cx="22" cy="22" r="20.5" fill="none" stroke="currentColor" strokeOpacity=".12" strokeWidth="1.5" />
@@ -423,10 +453,11 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
           {open && (
             <motion.div className="my-space-overlay fixed inset-0 z-[310] flex items-end justify-center bg-ink/25 px-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] backdrop-blur-[3px] md:items-center md:p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .2 }} onMouseDown={(event) => { if (event.target === event.currentTarget) closeSpace(); }} role="presentation">
               <motion.section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="my-space-title" initial={{ opacity: 0, y: 28, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: .99 }} transition={{ duration: .38, ease: EASE }} className="my-space-panel relative flex max-h-[min(780px,90dvh)] w-full max-w-[780px] flex-col overflow-hidden rounded-[1.75rem] border border-hair bg-canvas shadow-[0_40px_120px_-44px_rgba(15,25,36,.7)]">
-                <header className="shrink-0 border-b border-hair bg-canvas/[.95] px-5 pt-5 backdrop-blur md:px-8 md:pt-6">
+                <header className="my-space-head shrink-0 border-b border-hair bg-canvas/[.95] px-5 pt-5 backdrop-blur md:px-8 md:pt-6">
                   <div className="flex items-start justify-between gap-5">
                     <div>
-                      <h2 id="my-space-title" className="font-display text-[1.45rem] font-semibold text-ink">مساحتي</h2>
+                      <p className="my-space-eyebrow text-[.64rem] font-semibold text-accent">أثر القراءة</p>
+                      <h2 id="my-space-title" className="mt-1 font-display text-[1.45rem] font-semibold text-ink">مساحتي</h2>
                       <p className="mt-1 text-[.74rem] font-light text-soft">{syncActive ? "متزامنة بين أجهزتك · مشفّرة قبل الرفع" : "لا حساب · بياناتك محفوظة على جهازك"}</p>
                     </div>
                     <button ref={closeRef} type="button" onClick={() => closeSpace()} aria-label="إغلاق مساحتي" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Close" size={16} /></button>

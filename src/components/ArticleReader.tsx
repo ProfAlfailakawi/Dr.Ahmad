@@ -389,7 +389,7 @@ function SettingChoice<T extends string | number | boolean>({ value, current, la
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-full border px-3.5 py-2 text-[.76rem] font-medium transition-colors ${active ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+      className={`reader-setting-choice rounded-full border px-3.5 py-2 text-[.76rem] font-medium transition-colors ${active ? 'is-active border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
     >
       {label}
     </button>
@@ -413,6 +413,29 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
   const [quotes, setQuotesState] = useState<SavedQuote[]>(() => readSavedQuotes())
   const [copiedId, setCopiedId] = useState('')
   const [xray, setXray] = useState<XrayTerm | null>(null)
+  const [showAaDiscovery, setShowAaDiscovery] = useState(false)
+
+  useEffect(() => {
+    const usedKey = 'reader:aa-discovered:v2'
+    const sessionKey = 'reader:aa-discovery-shown:v2'
+    try {
+      if (localStorage.getItem(usedKey) === '1' || sessionStorage.getItem(sessionKey) === '1') return
+      sessionStorage.setItem(sessionKey, '1')
+    } catch { /* التخزين تحسين بصري فقط. */ }
+    const show = window.setTimeout(() => setShowAaDiscovery(true), 1200)
+    const hide = window.setTimeout(() => setShowAaDiscovery(false), 6200)
+    return () => {
+      window.clearTimeout(show)
+      window.clearTimeout(hide)
+    }
+  }, [article.slug])
+
+  const openReaderTools = () => {
+    try { localStorage.setItem('reader:aa-discovered:v2', '1') } catch { /* noop */ }
+    setShowAaDiscovery(false)
+    setTab('settings')
+    setOpen(true)
+  }
 
   // بطاقة مفتوحة = زر «العودة للأعلى» يختفي فلا يغطي كلامها (ملاحظة الدكتور: السهم مغطي)
   useEffect(() => {
@@ -538,12 +561,13 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
       <div className="reader-control-anchor flex items-center">
         <button
           type="button"
-          onClick={() => { setTab('settings'); setOpen(true) }}
+          onClick={openReaderTools}
           aria-label="أدوات القراءة"
           title="أدوات القراءة"
-          className="reader-aa-button flex h-11 min-w-11 items-center justify-center rounded-full border border-hair bg-canvas px-2 text-[.82rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+          className={`reader-aa-button ${showAaDiscovery ? 'is-discovering' : ''} flex h-11 min-w-11 items-center justify-center rounded-full border border-hair bg-canvas px-2 text-[.82rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent`}
         >
-          Aa
+          <span className="reader-aa-glyph" aria-hidden="true">Aa</span>
+          {showAaDiscovery && <span className="reader-aa-discovery-label" aria-hidden="true">القراءة</span>}
         </button>
       </div>
 
@@ -1161,6 +1185,18 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
 
   useEffect(() => { selectionRef.current = selection }, [selection])
   useEffect(() => () => { if (cardUrl) URL.revokeObjectURL(cardUrl) }, [cardUrl])
+
+  useEffect(() => {
+    const preventNativeSelectionMenu = (event: Event) => {
+      const target = event.target
+      if (!(target instanceof Element) || !target.closest('.article-body')) return
+      let coarse = false
+      try { coarse = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0 } catch { /* noop */ }
+      if (coarse) event.preventDefault()
+    }
+    document.addEventListener('contextmenu', preventNativeSelectionMenu, true)
+    return () => document.removeEventListener('contextmenu', preventNativeSelectionMenu, true)
+  }, [])
 
   useEffect(() => {
     let timer = 0

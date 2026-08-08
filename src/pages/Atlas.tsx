@@ -104,6 +104,30 @@ export default function Atlas() {
     return new URLSearchParams(window.location.search).get('q') || ''
   })
   const [lens, setLens] = useState<{ x: number; y: number; scope: AtlasScope } | null>(null)
+  const [showGraphDiscovery, setShowGraphDiscovery] = useState(false)
+
+  useEffect(() => {
+    if (view === 'graph') return
+    const usedKey = 'atlas:graph-discovered:v2'
+    const sessionKey = 'atlas:graph-discovery-shown:v2'
+    try {
+      if (localStorage.getItem(usedKey) === '1' || sessionStorage.getItem(sessionKey) === '1') return
+      sessionStorage.setItem(sessionKey, '1')
+    } catch { /* التخزين تحسين بصري فقط. */ }
+    const show = window.setTimeout(() => setShowGraphDiscovery(true), 1200)
+    const hide = window.setTimeout(() => setShowGraphDiscovery(false), 6500)
+    return () => {
+      window.clearTimeout(show)
+      window.clearTimeout(hide)
+    }
+  }, [view])
+
+  const chooseGraphView = () => {
+    try { localStorage.setItem('atlas:graph-discovered:v2', '1') } catch { /* noop */ }
+    setShowGraphDiscovery(false)
+    setView('graph')
+    trackUsage('atlas_interaction', { type: 'view_graph' })
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -309,7 +333,7 @@ export default function Atlas() {
     [...links]
       .filter((link) => link.kind === 'affinity')
       .sort((left, right) => right.score - left.score)
-      .slice(0, Math.min(42, Math.max(18, Math.round(stars.length * 0.4))))
+      .slice(0, Math.min(24, Math.max(10, Math.round(stars.length * 0.16))))
       .map(linkKey),
   ), [links, stars.length])
   const dayStarIndex = useMemo(() => {
@@ -421,15 +445,18 @@ export default function Atlas() {
                 )}
               </div>
               <p className="hidden max-w-[30rem] text-[.78rem] font-light text-soft lg:block">{viewHint}</p>
-              <div className="ms-auto inline-flex rounded-full border border-hair bg-canvas p-1" role="group" aria-label="طريقة عرض خريطة الأفكار">
+              <div className="atlas-view-switch ms-auto inline-flex rounded-full border border-hair bg-canvas p-1" role="group" aria-label="طريقة عرض خريطة الأفكار">
                 <button type="button" onClick={() => { setView('timeline'); trackUsage('atlas_interaction', { type: 'view_timeline' }) }} aria-pressed={view === 'timeline'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'timeline' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>المسار الزمني</button>
-                <button type="button" onClick={() => { setView('graph'); trackUsage('atlas_interaction', { type: 'view_graph' }) }} aria-pressed={view === 'graph'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>شبكة الأفكار</button>
+                <button type="button" onClick={chooseGraphView} aria-pressed={view === 'graph'} className={`atlas-graph-switch relative rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'} ${showGraphDiscovery ? 'is-discovering' : ''}`}>
+                  شبكة الأفكار
+                  {showGraphDiscovery && <span className="atlas-graph-discovery-copy" aria-hidden="true"> · جرّبها</span>}
+                </button>
               </div>
             </div>
           </FadeUp>
 
           <FadeUp delay={0.08}>
-            <div className="atlas-night relative overflow-hidden rounded-2xl border border-hair lg:overflow-x-auto" onPointerLeave={() => { setHover(null); setLens(null) }}>
+            <div className={`atlas-night relative overflow-hidden rounded-2xl border border-hair lg:overflow-x-auto ${view === 'graph' ? 'is-graph' : 'is-timeline'}`} onPointerLeave={() => { setHover(null); setLens(null) }}>
               {/* نسخة الهاتف: تتكيّف مع العرض، بلا تمرير جانبي ولا نافذة عائمة مقصوصة. */}
               <svg
                 viewBox={`0 0 ${MOBILE_W} ${mobileH}`}

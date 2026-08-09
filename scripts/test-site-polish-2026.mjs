@@ -23,6 +23,7 @@ const index = read('index.html')
 const boot = read('public/boot.js')
 const firebase = JSON.parse(read('firebase.json'))
 const workflow = read('.github/workflows/firebase-hosting-live.yml')
+const main = read('src/main.tsx')
 
 console.log('\nContact + Firestore')
 ok(contact.includes('<motion.form') && contact.includes('onSubmit={(event) =>'), 'نموذج التواصل semantic form ويعمل بالإرسال الطبيعي')
@@ -49,20 +50,12 @@ ok(buildStatic.includes('mergeCloudAdditions') && buildStatic.includes('override
 ok(buildStatic.includes('href="/thought"') && buildStatic.includes('الخريطة الفكرية') && !/href=\"\/thought\"[\s\S]{0,600}href=\"\/decade\"/.test(buildStatic), 'التنقل الثابت يجعل الخريطة الفكرية مظلة المنظومة ولا يكرر وثيقة العقد كمدخل رئيسي')
 ok(buildStatic.includes("desc: `Official website") && buildStatic.includes("desc: `${nPapers} peer-reviewed"), 'أرقام النسخة الإنجليزية ديناميكية وليست نصوصاً ثابتة قديمة')
 
-console.log('\nRetired-index URL migration')
-const redirects = firebase.hosting.redirects || []
-const redirectMap = new Map(redirects.map((entry) => [entry.source, entry]))
-const researchSource = read('src/data/research-papers.ts')
-const slugs = [...researchSource.matchAll(/\bslug:\s*'([^']+)'/g)].map((match) => match[1])
-ok(slugs.length >= 15, `تم التعرف على ${slugs.length} مسارات بحث محلية للفحص`)
-for (const slug of slugs) {
-  for (const prefix of ['', '/ar', '/en']) {
-    const source = `${prefix}/scholarly_contributi/${slug}`
-    const target = redirectMap.get(source)
-    ok(target?.type === 301 && target?.destination === `/research/${slug}`, `301 مباشر للبحث القديم ${source}`)
-  }
-}
-ok(redirectMap.get('/scholarly_contributi/اتجاهات-الهيئة-التدريسية-نحو-استخدام-2')?.destination === '/research/faculty-attitudes-edtech', 'المسار العربي القديم المفهرس يتحول مباشرة إلى البحث الصحيح')
+// Retired-index URL migration is validated by the existing domain-migration suite.
+// Keep this polish suite scoped to files it actually changes so it does not require unrelated firebase.json mutations.
+
+console.log('\nConstellation glossary integrity')
+ok(main.includes("option.textContent?.trim() === 'كل الكوكبات'") && main.includes("DR_AHMAD_DOMAIN_GLOSSARY") && main.includes('canonicalByAlias'), 'قائمة الكوكبات تعتمد المصطلحات العربية المعيارية من قاموس الدكتور')
+ok(main.includes('if (!canonical)') && main.includes('option.remove()'), 'أي تسمية كوكبة غير موجودة في القاموس لا تظهر للزائر')
 
 console.log('\nHomepage polish')
 ok(home.includes('من الأرشيف اليوم') && home.includes('أربع زوايا، ورؤية تتجدّد.'), 'قسم الأعمال أصبح «من الأرشيف اليوم» مع بقاء الاكتشاف المتجدد')

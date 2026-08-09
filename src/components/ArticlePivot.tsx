@@ -31,45 +31,15 @@ export const pivotOf = (slug: string): Pivot | null => PIVOTS[slug] || null
 const normalizeSentence = (value = '') => value.replace(/\s+/g, ' ').trim()
 const MIN_SIGNAL_LENGTH = 34
 const MAX_SIGNAL_LENGTH = 145
-const MIN_SEEDED_SIGNAL_COUNT = 7
-const SEEDED_SIGNAL_SPAN = 32
-/* رقم افتتاحي ثابت لكل مقالة: يبدو متنوعاً بين المقالات لكنه لا يتبدّل مع كل
-   إعادة تحميل. وعندما تصل إشارات القراء الحية يحل عدّاد Firestore الحقيقي
-   مكانه فوراً. */
-const stableHash = (value: string) => {
-  let hash = 2166136261
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index)
-    hash = Math.imul(hash, 16777619)
-  }
-  return hash >>> 0
-}
-const seededSignalCount = (slug: string, text = '') => MIN_SEEDED_SIGNAL_COUNT + (stableHash(`${slug}:${text}`) % SEEDED_SIGNAL_SPAN)
-const zoneForSignal = (signal: Pick<ArticleSignalData, 'paragraph' | 'text'>, paragraphs: string[]) => {
-  const lengths = paragraphs.map((paragraph) => normalizeSentence(paragraph).length + 2)
-  const totalLength = lengths.reduce((sum, length) => sum + length, 0)
-  if (totalLength <= 1) return 1
-  const paragraphText = normalizeSentence(paragraphs[signal.paragraph] || '')
-  const selectedText = normalizeSentence(signal.text)
-  const exactOffset = paragraphText.indexOf(selectedText)
-  const localOffset = exactOffset >= 0 ? exactOffset : Math.max(0, (paragraphText.length - selectedText.length) / 2)
-  const articleOffset = lengths.slice(0, signal.paragraph).reduce((sum, length) => sum + length, 0) + localOffset
-  return Math.min(2, Math.floor((articleOffset / Math.max(1, totalLength - 1)) * 3))
-}
 const sentenceCandidates = (paragraph: string) => {
-  const matches = paragraph.match(/[^.!?؟؛:…\n]+[.!?؟؛:…]*/g)
+  const matches = paragraph.match(/[^.!?؟؛:\n]+[.!?؟؛:]*/g)
   return (matches?.length ? matches : [paragraph]).map(normalizeSentence).filter(Boolean)
 }
-/* بعض مقالات الأرشيف القديمة كُتبت في جملة طويلة جداً. لا نضعها كلها تحت
-   التظليل على الهاتف: نحتفظ بالجملة الكاملة متى اتسعت، وإلا نأخذ منها عبارة
-   مكتملة عند فاصلة/فاصلة منقوطة — لا قصّاً أعمى في منتصف الكلمة. */
+/* العبارات الطويلة تُكثّف عند حدود عربية طبيعية، لا بقصّ كلمة أو نصف جملة. */
 const compactSentenceCandidates = (paragraph: string) => sentenceCandidates(paragraph).flatMap((sentence) => {
   if (sentence.length <= MAX_SIGNAL_LENGTH) return [sentence]
   const clauses = (sentence.match(/[^،؛:]+[،؛:]?/g) || []).map(normalizeSentence).filter(Boolean)
   const compact: string[] = []
-  /* الجملة العربية الطويلة قد تتكون من مقاطع قصيرة يفشل كلٌّ منها وحده في
-     الحد الأدنى. نضم مقطعين أو أكثر حتى نحصل على عبارة مكتملة قصيرة، بدل
-     إسقاط الفقرة كلها والاعتماد مؤقتاً على إشارات Firestore وحدها. */
   for (let start = 0; start < clauses.length; start += 1) {
     let combined = ''
     for (let end = start; end < clauses.length; end += 1) {
@@ -89,7 +59,27 @@ const compactSentenceCandidates = (paragraph: string) => sentenceCandidates(para
   return compact
 }).filter((sentence) => sentence.length >= MIN_SIGNAL_LENGTH && sentence.length <= MAX_SIGNAL_LENGTH)
 
-function fallbackSignal(body: string, count: number): ArticleSignalData | null {
+const stableHash = (value: string) => {
+  let hash = 2166136261
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+const zoneForSignal = (signal: Pick<ArticleSignalData, 'paragraph' | 'text'>, paragraphs: string[]) => {
+  const lengths = paragraphs.map((paragraph) => normalizeSentence(paragraph).length + 2)
+  const totalLength = lengths.reduce((sum, length) => sum + length, 0)
+  if (totalLength <= 1) return 1
+  const paragraphText = normalizeSentence(paragraphs[signal.paragraph] || '')
+  const selectedText = normalizeSentence(signal.text)
+  const exactOffset = paragraphText.indexOf(selectedText)
+  const localOffset = exactOffset >= 0 ? exactOffset : Math.max(0, (paragraphText.length - selectedText.length) / 2)
+  const articleOffset = lengths.slice(0, signal.paragraph).reduce((sum, length) => sum + length, 0) + localOffset
+  return Math.min(2, Math.floor((articleOffset / Math.max(1, totalLength - 1)) * 3))
+}
+
+function fallbackSignal(body: string, count = 0): ArticleSignalData | null {
   const paragraphs = body.split(/\n\s*\n/).map((text) => text.trim()).filter(Boolean)
   if (!paragraphs.length) return null
 
@@ -125,21 +115,17 @@ export function articleSignalOf(slug: string, body: string, popularQuotes: Quote
   return articleSignalsOf(slug, body, popularQuotes)[0] || null
 }
 
-/** يختار تلقائياً 1–3 جمل ثابتة بحسب طول المقال وبصمته. الاختيار متنوع
- * بين الفقرات ولا يتبدل عند تحديث الصفحة؛ إشارات القراء الحقيقية تبقى أولى
- * وتزيد أرقامها فوق الرقم الافتتاحي من دون كتابة بيانات وهمية إلى Firestore. */
+/** يختار تلقائياً 1–3 جمل ثابتة بحسب طول المقال وبصمته. الاختيار موزع
+ * بين الأثلاث ولا يتبدل عند تحديث الصفحة. أرقام القراء وحدها حقيقية وحية؛
+ * الإشارات التحريرية لا تحمل رقماً افتتاحياً مصطنعاً. */
 export function articleSignalsOf(slug: string, body: string, popularQuotes: QuoteSignal[]): ArticleSignalData[] {
   const paragraphs = body.split(/\n\s*\n/)
   const meaningfulParagraphs = paragraphs.filter((paragraph) => normalizeSentence(paragraph).length >= MIN_SIGNAL_LENGTH).length
   const ceiling = meaningfulParagraphs >= 10 ? 3 : meaningfulParagraphs >= 5 ? 2 : 1
   const target = 1 + (stableHash(`${slug}:density`) % ceiling)
-  /* إشارتان حيّتان كحد أقصى، ثم جملة تحريرية ذكية على الأقل. هذا يحفظ أثر
-     القرّاء من دون أن تتحول المقالة إلى خريطة تظليل مزدحمة أو تختفي الخطة
-     خلف ثلاث تحديدات قديمة متقاربة. */
   const readerCandidates = [...popularQuotes].sort((left, right) => right.count - left.count).slice(0, 2)
   const signals: ArticleSignalData[] = []
   const keys = new Set<string>()
-  const usedCounts = new Set<number>()
   const occupiedZones = new Set<number>()
   const add = (signal: ArticleSignalData | null) => {
     if (!signal || signal.paragraph < 0 || signal.paragraph >= paragraphs.length) return false
@@ -149,9 +135,6 @@ export function articleSignalsOf(slug: string, body: string, popularQuotes: Quot
     const localStart = paragraphText.indexOf(key)
     if (localStart < 0) return false
     const localEnd = localStart + key.length
-    /* لا نختار عبارتين متداخلتين من الفقرة نفسها. كان هذا يحدث أحياناً
-       عندما تصل اقتباسات Firestore الحية: الخطة تحسب ثلاث إشارات لكن طبقة
-       العرض تدمج المتداخلتين، فيبقى رقمان فقط. */
     const overlapsExisting = signals.some((existing) => {
       if (existing.paragraph !== signal.paragraph) return false
       const existingKey = normalizeSentence(existing.text).toLowerCase()
@@ -161,11 +144,8 @@ export function articleSignalsOf(slug: string, body: string, popularQuotes: Quot
       return Math.max(localStart, existingStart) < Math.min(localEnd, existingEnd)
     })
     if (overlapsExisting) return false
-    let uniqueCount = Math.max(1, Math.round(Number(signal.count) || 1))
-    while (usedCounts.has(uniqueCount)) uniqueCount += 1
     keys.add(key)
-    usedCounts.add(uniqueCount)
-    signals.push(uniqueCount === signal.count ? signal : { ...signal, count: uniqueCount })
+    signals.push(signal)
     occupiedZones.add(zoneForSignal(signal, paragraphs))
     return true
   }
@@ -182,7 +162,7 @@ export function articleSignalsOf(slug: string, body: string, popularQuotes: Quot
       paragraph: candidate.paragraph,
       text: selected,
       source: 'readers',
-      count: seededSignalCount(slug, selected) + Math.max(0, Number(candidate.count) || 0),
+      count: Math.max(1, Math.round(Number(candidate.count) || 1)),
       highlightKey: candidate.highlightKey,
     })
   }
@@ -191,7 +171,7 @@ export function articleSignalsOf(slug: string, body: string, popularQuotes: Quot
   let pivotSignal: ArticleSignalData | null = null
   if (pivot && paragraphs[pivot.paragraph]) {
     const text = compactSentenceCandidates(pivot.text)[0] || ''
-    if (text) pivotSignal = { text, paragraph: pivot.paragraph, source: 'pivot', count: seededSignalCount(slug, text) }
+    if (text) pivotSignal = { text, paragraph: pivot.paragraph, source: 'pivot', count: 0 }
   }
 
   const automatic: { signal: ArticleSignalData; score: number }[] = []
@@ -205,17 +185,13 @@ export function articleSignalsOf(slug: string, body: string, popularQuotes: Quot
       const lengthWeight = text.length >= 58 && text.length <= 170 ? 4 : 1
       const variety = stableHash(`${slug}:${paragraph}:${text}`) % 7
       automatic.push({
-        signal: { text, paragraph, source: 'text', count: seededSignalCount(slug, text) },
+        signal: { text, paragraph, source: 'text', count: 0 },
         score: markerWeight + middleWeight + lengthWeight + variety,
       })
     }
   }
   automatic.sort((left, right) => right.score - left.score || left.signal.paragraph - right.signal.paragraph)
 
-  /* نغطي أولاً الثلث الأول والأوسط والأخير بترتيب ثابت مختلف لكل مقال.
-     داخل كل ثلث نقدّم اختيار القراء الحقيقي، ثم الانعطافة المحررة، ثم أقوى
-     جملة آلية. هكذا يصبح التنوع مضموناً لا احتمالياً، ولا تبدأ العلامة دائماً
-     من أعلى المقال. */
   const zoneOrder = [0, 1, 2]
   const rotation = stableHash(`${slug}:zones`) % zoneOrder.length
   const rotatedZones = [...zoneOrder.slice(rotation), ...zoneOrder.slice(0, rotation)]
@@ -225,17 +201,13 @@ export function articleSignalsOf(slug: string, body: string, popularQuotes: Quot
     const zoneCandidates = [
       ...readerSignals.filter((signal) => zoneForSignal(signal, paragraphs) === zone),
       ...(pivotSignal && zoneForSignal(pivotSignal, paragraphs) === zone ? [pivotSignal] : []),
-      ...automatic
-        .filter(({ signal }) => zoneForSignal(signal, paragraphs) === zone)
-        .map(({ signal }) => signal),
+      ...automatic.filter(({ signal }) => zoneForSignal(signal, paragraphs) === zone).map(({ signal }) => signal),
     ]
     for (const candidate of zoneCandidates) {
       if (add(candidate)) break
     }
   }
 
-  /* بعد ضمان التوزيع المكاني، نحفظ أولوية تفاعل القراء والانعطافة المحررة،
-     ثم نكمل بالأقوى على فقرات مختلفة قبل السماح بالتكرار عند الضرورة. */
   for (const candidate of readerSignals) {
     if (signals.length >= target) break
     add(candidate)
@@ -249,7 +221,7 @@ export function articleSignalsOf(slug: string, body: string, popularQuotes: Quot
     }
   }
 
-  if (!signals.length) add(fallbackSignal(body, seededSignalCount(slug, body.slice(0, 120))))
+  if (!signals.length) add(fallbackSignal(body, 0))
   return signals
 }
 

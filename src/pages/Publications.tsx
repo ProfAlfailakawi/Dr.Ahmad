@@ -91,7 +91,6 @@ export default function Publications() {
                           </ClarifiedIconAction>
                       </div>
                       
-                      <p className="mt-3 max-w-[42rem] text-[.85rem] leading-[1.8] text-soft sm:mt-4 md:text-[1rem] md:leading-[1.85]">الموسوعة المرئية والكتاب ومواد التدريس في بوابة معرفية واحدة، مع بحث يصل إلى الفصل والصفحة واللحظة الزمنية الموثقة.</p>
                     </div>
                   </div>
                 ) : (

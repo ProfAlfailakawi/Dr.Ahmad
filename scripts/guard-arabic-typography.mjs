@@ -9,8 +9,9 @@
  *
  * ثلاثة فحوص، كلها طباعية بحتة ولا تمسّ ميزة:
  *
- *  ١) الرصف: بطلب الدكتور، متن المقال مرصوف من الطرفين في كل العروض، لكن آخر
- *     سطر يبقى من جهة البدء كي لا يتمدّد السطر القصير تمدداً مصطنعاً.
+ *  ١) الرصف: عقد العرض الحالي للمقالات هو justify مع inter-word، لكن آخر
+ *     السطر يبقى من جهة البدء. الحارس يتأكد أن القواعد التي ترصف متن المقال
+ *     تصرّح بالثلاثة معاً، في الشاشة والطباعة، حتى لا ينزلق عقد إلى آخر.
  *
  *  ٢) تباعد الحروف: العربية متّصلة الحروف، والتباعد يفكّ وصلاتها. فكل
  *     `letter-spacing` موجب يجب أن يحمل في سطره الوسم `latin` ليعلن أن نصّه
@@ -34,7 +35,7 @@ const problems = []
 
 /* ───────── ١) عقد رصف متن المقال ───────── */
 function eachRule(css, visit) {
-  const clean = css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' ')) // نُفرِغ التعليقات ونُبقي الأسطر
+  const clean = css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
   const stack = []
   let buf = '', line = 1
   for (let i = 0; i < clean.length; i++) {
@@ -43,21 +44,28 @@ function eachRule(css, visit) {
     if (ch === '{') { stack.push({ prelude: buf.trim(), line }); buf = '' }
     else if (ch === '}') {
       const top = stack.pop()
-      if (top && !top.prelude.startsWith('@')) {
-        const inMobile = stack.some((s) => /max-width:\s*640px/.test(s.prelude))
-        visit(top.prelude.replace(/\s+/g, ' '), buf, inMobile, top.line)
-      }
+      if (top && !top.prelude.startsWith('@')) visit(top.prelude.replace(/\s+/g, ' '), buf, top.line)
       buf = ''
     } else buf += ch
   }
 }
 
+const PROSE = /article-body|synced-paragraph/
 function checkJustify(css) {
-  const hasArticleContract = /\.content-articles[\s\S]{0,620}text-align:\s*justify\s*!important[\s\S]{0,220}text-align-last:\s*start\s*!important/.test(css)
-  const hasMobileContract = /@media \(max-width:\s*640px\)[\s\S]{0,520}\.content-articles[\s\S]{0,520}text-align:\s*justify\s*!important[\s\S]{0,220}text-align-last:\s*start\s*!important/.test(css)
-  if (!hasArticleContract || !hasMobileContract) {
-    problems.push('src/index.css  متن المقال يجب أن يبقى justify في الحاسوب والهاتف، مع text-align-last: start.')
-  }
+  let proseJustifyRules = 0
+  eachRule(css, (prelude, body, line) => {
+    if (!PROSE.test(prelude) || !/text-align\s*:\s*justify/.test(body)) return
+    proseJustifyRules += 1
+    if (!/text-justify\s*:\s*inter-word/.test(body)) {
+      problems.push(`src/index.css:${line}  «${prelude}» يرصف متن المقال بلا text-justify: inter-word.`)
+    }
+    if (!/text-align-last\s*:\s*start/.test(body)) {
+      problems.push(`src/index.css:${line}  «${prelude}» يرصف متن المقال بلا text-align-last: start.`)
+    }
+  })
+  if (!proseJustifyRules) problems.push('src/index.css: لا توجد قاعدة justify صريحة لمتن المقال وفق عقد العرض الحالي.')
+  const screenContract = /\.content-articles[\s\S]{0,900}text-align\s*:\s*justify[^}]*text-justify\s*:\s*inter-word[^}]*text-align-last\s*:\s*start/.test(css)
+  if (!screenContract) problems.push('src/index.css: عقد شاشة المقال لا يجمع justify + inter-word + text-align-last:start في قاعدة واحدة.')
 }
 
 /* ───────── ٢) تباعد الحروف يحتاج إعلاناً أنه لاتيني ───────── */
@@ -125,4 +133,4 @@ if (problems.length) {
   console.error('فشل حارس الطباعة العربية:\n' + problems.map((p) => `- ${p}`).join('\n'))
   process.exit(1)
 }
-console.log('✓ الطباعة العربية سليمة (رصف المتن · تباعد الحروف · ارتفاع سطر العناوين)')
+console.log('✓ الطباعة العربية سليمة (justify/inter-word/آخر السطر · تباعد الحروف · ارتفاع سطر العناوين)')

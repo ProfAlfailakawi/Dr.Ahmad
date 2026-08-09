@@ -294,6 +294,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { to: '/curated', label: 'المختارات', allLabel: 'جميع المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
         { to: '/radar', label: 'أرشيف الرادار', description: 'ما يستحق المتابعة' },
+        { to: '/inbox', label: 'رسائل على الهامش', description: 'رسائل قصيرة وأسئلة تفتح زوايا جديدة' },
       ] },
     ],
   },
@@ -309,7 +310,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
 
 const isPrimaryNavActive = (item: NavItem, pathname: string) => {
   if (item.to === '/thought') return pathname === '/thought' || pathname === '/thought-paths' || pathname === '/decade' || pathname === '/atlas' || pathname === '/impact' || pathname.startsWith('/impact/')
-  if (item.to === '/curated') return pathname === '/curated' || pathname === '/questions' || pathname === '/radar'
+  if (item.to === '/curated') return pathname === '/curated' || pathname === '/questions' || pathname === '/radar' || pathname === '/inbox'
   return pathname === item.to || Boolean(item.sub?.some((sub) => sub.to === pathname))
 }
 
@@ -404,9 +405,8 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.32, delay: 0.09 + gi * 0.025, ease: EASE }}
               >
-                {/* بلا عددٍ بجانب اسم المجموعة: القائمة تقلّل القرارات لا تعرض
-                    إحصاءً عن نفسها. */}
                 <span>{g.label}</span>
+                <span className="ms-2 font-sans text-[.62rem] font-normal text-soft" aria-hidden="true">{g.items.length.toLocaleString('ar-KW')}</span>
               </motion.span>
 
               <ul className="mt-3 space-y-1 md:mt-4">
@@ -530,7 +530,6 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
           >
             احجز موعداً مباشراً
           </Link>
-          <Link to="/inbox" onClick={close} className="site-menu-secondary-link min-h-11 px-2 py-2 text-[.76rem] font-medium text-soft transition-colors hover:text-accent">رسائل على الهامش</Link>
           <div className="flex flex-wrap items-center gap-3 text-soft">
             <div className="flex items-center gap-2">
               <ThemeToggle className="h-11 w-11" />

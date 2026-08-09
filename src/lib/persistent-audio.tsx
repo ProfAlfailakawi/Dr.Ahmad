@@ -84,8 +84,32 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
       try { localStorage.setItem(`audio:pos:${track.id}`, String(el.currentTime)) } catch { /* noop */ }
       storeLastAudio(track, el.currentTime, Number.isFinite(el.duration) ? el.duration : state.duration)
     }
+    /* timeupdate في Safari قد يصل متباعداً بما يكفي لأن يسبق الصوتُ تظليلَ
+       الجملة بصرياً. أثناء التشغيل فقط نقرأ currentTime من عنصر الصوت نفسه
+       عبر ساعة الرسم؛ لا offset ولا تخمين زمني، والنص يستقبل الزمن الحقيقي. */
+    let clockFrame = 0
+    let lastClockTime = -1
+    const stopClock = () => {
+      if (clockFrame) window.cancelAnimationFrame(clockFrame)
+      clockFrame = 0
+    }
+    const tickClock = () => {
+      if (el.paused || el.ended) { stopClock(); return }
+      const current = Number.isFinite(el.currentTime) ? el.currentTime : 0
+      if (Math.abs(current - lastClockTime) >= .025) {
+        lastClockTime = current
+        setState((prev) => Math.abs(prev.current - current) < .012 ? prev : { ...prev, current })
+      }
+      clockFrame = window.requestAnimationFrame(tickClock)
+    }
+    const startClock = () => {
+      stopClock()
+      lastClockTime = -1
+      clockFrame = window.requestAnimationFrame(tickClock)
+    }
     const onTime = () => {
-      setState((prev) => ({ ...prev, current: el.currentTime || 0 }))
+      const current = el.currentTime || 0
+      setState((prev) => Math.abs(prev.current - current) < .012 ? prev : ({ ...prev, current }))
       const track = trackRef.current
       if (track && el.duration && Number.isFinite(el.duration)) {
         const ratio = el.currentTime / el.duration
@@ -124,10 +148,12 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
     const onPlaying = () => {
       const track = trackRef.current
       if (track) storeLastAudio(track, el.currentTime || 0, Number.isFinite(el.duration) ? el.duration : 0)
+      startClock()
       setState((prev) => ({ ...prev, playing: true, status: 'ready', error: '' }))
     }
-    const onPause = () => { savePosition(); setState((prev) => ({ ...prev, playing: false })) }
+    const onPause = () => { stopClock(); savePosition(); setState((prev) => ({ ...prev, playing: false })) }
     const onEnd = () => {
+      stopClock()
       savePosition()
       const next = trackRef.current?.next
       if (next) {
@@ -146,6 +172,7 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
       setState((prev) => ({ ...prev, playing: false, current: el.duration || prev.current }))
     }
     const onError = () => {
+      stopClock()
       setState((prev) => ({
         ...prev,
         playing: false,
@@ -165,6 +192,7 @@ export function PersistentAudioProvider({ children }: { children: ReactNode }) {
     el.addEventListener('error', onError)
     window.addEventListener('beforeunload', savePosition)
     return () => {
+      stopClock()
       el.removeEventListener('timeupdate', onTime)
       el.removeEventListener('loadedmetadata', onMeta)
       el.removeEventListener('canplay', onCanPlay)

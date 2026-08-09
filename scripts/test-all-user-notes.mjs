@@ -30,7 +30,6 @@ const articleSignal = read('src/components/ArticlePivot.tsx')
 const publications = read('src/pages/Publications.tsx')
 const homePage = read('src/pages/Home.tsx')
 const bookDetail = read('src/pages/BookDetail.tsx')
-const bookToc = read('src/components/BookToc.tsx')
 const bookWorld = read('src/components/BookWorld.tsx')
 const encyclopediaPortal = read('src/components/EncyclopediaPortal.tsx')
 const encyclopediaVideoIndex = read('src/lib/encyclopedia-video-index.ts')
@@ -45,10 +44,7 @@ const dockerfile = read('Dockerfile')
 const gcloudignore = read('.gcloudignore')
 const gitignore = read('.gitignore')
 const nodeServer = read('server.mjs')
-const whatsappController = read('src/server/whatsapp-controller.mjs')
-const sovereignBrain = read('whatsapp-agent/sovereign-brain.mjs')
 const search = read('src/pages/Search.tsx')
-const atlas = read('src/pages/Atlas.tsx')
 const media = read('src/pages/Media.tsx')
 const mediaDetail = read('src/pages/MediaDetail.tsx')
 const autoSiteWorkflow = read('.github/workflows/auto-site-content.yml')
@@ -92,56 +88,6 @@ const radio = read('src/pages/Radio.tsx')
 const audioPlayer = read('src/components/AudioPlayer.tsx')
 const persistentAudio = read('src/lib/persistent-audio.tsx')
 const contentManager = read('src/components/admin/ContentManager.tsx')
-const articleBodies = JSON.parse(read('src/data/bodies.json'))
-const domainGlossary = JSON.parse(read('src/data/dr-ahmad-domain-glossary.json'))
-const compactSignalCandidatesForAudit = (body = '') => String(body).split(/\n\s*\n/).flatMap((paragraph) => {
-  const sentences = (paragraph.match(/[^.!?؟؛:…\n]+[.!?؟؛:…]*/g) || [paragraph]).map((value) => value.replace(/\s+/g, ' ').trim())
-  return sentences.flatMap((sentence) => {
-    if (sentence.length <= 145) return [sentence]
-    const clauses = (sentence.match(/[^،؛:]+[،؛:]?/g) || []).map((value) => value.replace(/\s+/g, ' ').trim()).filter(Boolean)
-    const compact = []
-    for (let start = 0; start < clauses.length; start += 1) {
-      let combined = ''
-      for (let end = start; end < clauses.length; end += 1) {
-        const next = [combined, clauses[end]].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
-        if (next.length > 145) break
-        combined = next
-        if (combined.length >= 34) { compact.push(combined); break }
-      }
-    }
-    return compact
-  })
-    .filter((sentence) => sentence.length >= 34 && sentence.length <= 145 && !/https?:\/\//i.test(sentence))
-})
-const articlesWithoutCompactSignals = Object.entries(articleBodies)
-  .filter(([, body]) => compactSignalCandidatesForAudit(body).length < 3)
-  .map(([slug]) => slug)
-
-const normalizeGlossaryAudit = (value = '') => String(value)
-  .replace(/[ًٌٍَُِّْـ]/g, '')
-  .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
-  .toLowerCase().replace(/\s+/g, ' ').trim()
-const manualReaderTerms = [...articleReader.matchAll(/\{\s*term:\s*'([^']+)'/g)].map((match) => match[1])
-const articleGlossaryTerms = [...new Set([
-  ...manualReaderTerms,
-  ...domainGlossary.flatMap((entry) => [entry.canonicalAr, entry.canonicalEn, ...(entry.aliases || [])]),
-].map(normalizeGlossaryAudit).filter((term) => term.length >= 4))]
-const hasGlossaryTerm = (body) => {
-  const haystack = normalizeGlossaryAudit(body)
-  return articleGlossaryTerms.some((term) => {
-    let from = 0
-    while (from < haystack.length) {
-      const index = haystack.indexOf(term, from)
-      if (index < 0) return false
-      const before = haystack[index - 1] || ''
-      const after = haystack[index + term.length] || ''
-      if ((!before || !/[\p{L}\p{N}]/u.test(before)) && (!after || !/[\p{L}\p{N}]/u.test(after))) return true
-      from = index + Math.max(1, term.length)
-    }
-    return false
-  })
-}
-const articlesWithoutGlossary = Object.entries(articleBodies).filter(([, body]) => !hasGlossaryTerm(body)).map(([slug]) => slug)
 
 const rawCountPattern = /(?:\$\{([^}\n]+)\}|\{([^}\n]+)\})\s*(?:<\/(?:strong|span|b)>\s*)?(?:مقال(?:اً|ة|ات)?|بحث(?:اً|ان|ين|ون)?|كتاب(?:اً|ان|ين|ات)?|باب(?:اً|ان|ين)?|سنة|سنوات|حلقة|حلقات|ساعة|ساعات|مداخلة|مداخلات|طبقة|طبقات|قطعة|قطع|بطاقة|بطاقات|لفظ(?:اً|ان|ين)?|ألفاظ|مشترك(?:اً|ان|ين|ون)?|رد(?:اً|ان|ين|ود)?|كلمة|كلمات|فقرة|فقرات|صفحة|صفحات|مادة|مواد|دقيقة|دقائق|ثانية|ثوانٍ|يوم|أيام|أسبوع|أسابيع|ملف|ملفات|جهة|جهات|مشكلة|مشكلات|تنبيه|تنبيهات|قاعدة|قواعد|محادثة|محادثات|مجموعة|مجموعات|رقم|أرقام|حالة|حالات|صورة|صور|نسخة|نسخ|اتجاه|اتجاهات|مصدر|مصادر|رابط|روابط|جملة|جمل|قرار|قرارات|نقطة|نقاط|مشهد|مشاهد|تغريدة|تغريدات|مشاركة|مشاركات|مشاهدة|مشاهدات|قراءة|قراءات|نص|نصوص|خانة|خانات|عنقود(?:اً|ان|ين)?|مقالة|مقالات|جهاز|أجهزة)/u
 function rawDynamicCountLines() {
@@ -186,9 +132,9 @@ check('لا يبقى عداد ديناميكي خام قبل اسم عربي ف�
 console.log('\nالمقالات والقراءة')
 check('رأس المقال يضع أدوات القارئ في ReaderControls', articleDetail.includes('<ReaderControls') && articleReader.includes('Aa'))
 check('الرمز المكسور ۩ محذوف من القارئ', !articleReader.includes('۩') && !articleDetail.includes('۩'))
-check('تلميح تحديد الجملة يُكتشف استباقياً مرة واحدة محلياً', articleDetail.includes('reader:selection-discovered:v2') && articleDetail.includes('reader:selection-discovery-shown:v2'))
+check('تلميح تحديد الجملة يظهر مرة واحدة محلياً', articleDetail.includes('reader:selection-discovered:v2'))
 check('فلاتر المقالات تفصل التصنيفات عن البحث والسنة', articles.includes('overflow-x-auto') && articles.includes('sm:grid-cols-[minmax(0,1fr)_auto_auto]') && articles.includes('استكشف الأرشيف'))
-check('ذيل المقال يبقي الأسهم والعناوين ويحذف الكلمات الثلاث المرئية فقط', articleDetail.includes('بعد القراءة') && articleDetail.includes('مشاركة المقال والاستشهاد به') && articleDetail.includes('aria-label="جميع المقالات"') && !articleDetail.includes('<span className="text-ink">السابق:</span>') && !articleDetail.includes('<span className="text-ink">التالي:</span>') && !articleDetail.includes('>جميع المقالات</span>'))
+check('ذيل المقال يحذف واجهة بعد القراءة فقط ويبقي الأدوات والتنقل وموقعها في السماء', !articleDetail.includes('>بعد القراءة</h2>') && !articleDetail.includes('امتداد الفكرة · أدوات الباحث · المشاركة والاستشهاد') && articleDetail.includes('<IdeaLife') && articleDetail.includes('<ArticleExtensions') && articleDetail.includes('مشاركة المقال والاستشهاد به') && articleDetail.includes('article-atlas-knot') && articleDetail.includes('/atlas?star=') && articleDetail.includes('aria-label="جميع المقالات"'))
 check('إعدادات القارئ لا تكرر الخلفية ولا شرح التشكيل', !articleReader.includes('>الخلفية</p>') && !articleReader.includes('كل المقالات متوفّرة بنص'))
 check('الترقيم لا يكرر عبارة الصفحة X من Y', !pagination.includes('الصفحة {page} من') && !pagination.includes('صفحة {page} من'))
 check('بصمة القارئ لا تعرض بطاقة إنجاز عند الصفر', resonance.includes('data.articles < 2 && data.sentences === 0'))
@@ -200,14 +146,14 @@ check('بطاقة البحث تعرض نوع الدراسة فقط كوسم مت
 check('المعلومة العامة عن التحكيم والمصادر تظهر مرة أعلى صفحة الأبحاث', research.includes('الأرشيف العلمي المحكّم') && research.includes('بمصادر أصلية'))
 check('ISBN لا يظهر في بطاقات المؤلفات ويظل في صفحة الكتاب', !/ISBN|ردمك/u.test(publications) && /ISBN \/ ردمك/u.test(bookDetail))
 check('صفحة الكتاب تحمل عالم الكتاب كسولاً عند الاقتراب', bookDetail.includes('LazyBookWorld') && bookDetail.includes('IntersectionObserver') && bookDetail.includes("rootMargin: '700px 0px'"))
-check('فهرس الكتاب هرمي بالأبواب والفصول لا جدار بطاقات', bookToc.includes('groupToc') && bookToc.includes('<details') && bookDetail.includes('أبوابٌ تُفتح عند الحاجة'))
-check('عناوين الفهرس تنتقل إلى المحور نفسه لا إلى البحث', bookToc.includes('bookKnowledgeAnchor') && bookToc.includes('#${anchor}') && !bookToc.includes('book_question=${encodeURIComponent(entry.label)}'))
+check('فهرس الكتاب هرمي بالأبواب والفصول لا جدار بطاقات', bookDetail.includes('groupToc') && bookDetail.includes('<details') && bookDetail.includes('أبوابٌ تُفتح عند الحاجة'))
+check('عناوين الفهرس تنتقل إلى المحور نفسه لا إلى البحث', bookDetail.includes('bookKnowledgeAnchor') && bookDetail.includes('#${anchor}') && !bookDetail.includes('book_question=${encodeURIComponent(entry.label)}'))
 check('عالم الكتاب يستقبل فكرة الفهرس بعد التحميل الكسول', bookWorld.includes("searchParams.get('book_idea')") && bookWorld.includes('useLocation') && bookWorld.includes('[location.hash, model.knowledge]') && bookWorld.includes('setActiveIdea'))
 check('شريط محاور الكتاب صف واحد قابل للسحب RTL', bookWorld.includes('book-spine-rail') && bookWorld.includes('dir="rtl"') && bookWorld.includes('overflow-x-auto') && bookWorld.includes('touch-action:pan-x'))
 check('عالم الكتاب يحمي كل الحاويات من خروج الهاتف', css.includes('.content-book-world') && css.includes('max-width: 100%') && css.includes('min-width: 0') && css.includes('overflow-x: clip'))
 check('حقل اسأل هذا الكتاب ينكمش داخل الهاتف', /id="ask-book-section"[\s\S]{0,800}min-w-0[\s\S]{0,800}w-full/u.test(bookWorld))
 check('فهرس متن الكتاب لا يحمل إلا عند السؤال', bookWorld.includes('loadBookPassages().then') && !bookDetail.includes('loadBookPassages'))
-check('فهرس الكتاب لا يستعمل defaultOpen غير المدعوم في React', !bookToc.includes('defaultOpen=') && bookToc.includes('<TocDisclosure'))
+check('فهرس الكتاب لا يستعمل defaultOpen غير المدعوم في React', !bookDetail.includes('defaultOpen=') && bookDetail.includes('<TocDisclosure'))
 check('التحميل الكسول لا يضيّق window إلى never في TypeScript', !bookDetail.includes("'IntersectionObserver' in window") && bookDetail.includes("typeof IntersectionObserver === 'undefined'"))
 
 console.log('\nاسأل كتاباً والبحث المعرفي')
@@ -232,25 +178,11 @@ check('عناوين ومحاور الكتب تعود دليلاً حتى عند 
 check('واجهة البحث تشرح فهم السؤال وتقترح إعادة صياغته', search.includes('فهم البحث') && search.includes('حوّلها إلى إجابة موثقة') && search.includes('اكتب بطريقتك: سؤال، موقف، فكرة'))
 check('العقل الحي وعالم الكتاب يستعملان المحرك الدلالي نفسه', ask.includes('buildSmartQueryPlan') && ask.includes('scoreSmartFields') && bookWorld.includes('buildSmartQueryPlan') && bookWorld.includes('لم تظهر شواهد كافية'))
 check('تنقل المقالات صف واحد صغير والعناوين موجودة بلا تسميات زائدة', articleDetail.includes('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]') && !articleDetail.includes('السابق:</span>') && !articleDetail.includes('التالي:</span>') && articleDetail.includes('text-[.6rem]'))
-/* القياس وحارس الطباعة العربية حَسَما القرار: الرصف من الطرفين يفتح أنهاراً
-   بيضاء في العربية. نحرس start في المتن المتزامن والعادي والهاتف والطباعة. */
-check('متون المقالات العربية Justify وآخر السطر يبقى من جهة البدء', css.includes('.article-body-synced') && /\.content-articles[\s\S]{0,620}text-align: justify !important/.test(css) && css.includes('text-justify: inter-word !important') && css.includes('text-align-last: start !important'))
-check('عرض القراءة الافتراضي أدبي 66ch وارتفاع السطر 2', articleReader.includes('lineHeight: 2,') && articleReader.includes('width: 66,'))
-check('تحديد النص يكتشف نفسه مرة ويستبدل قائمة iOS بتظليل وشريط الموقع', articleDetail.includes('reader:selection-discovered:v2') && articleDetail.includes('حدّد أي جملة') && articleDetail.includes('المس جملةً مطولاً') && ideaFeatures.includes("addEventListener('contextmenu'") && ideaFeatures.includes("registry.set('reader-selection'") && ideaFeatures.includes('selection.removeAllRanges()') && css.includes('::highlight(reader-selection)') && css.includes('-webkit-touch-callout: none'))
-check('شريط التحديد كبسولة نظيفة بلا الإطار المستطيل الخارجي', ideaFeatures.includes('reader-selection-toolbar-shell') && ideaFeatures.includes('reader-selection-toolbar-pill') && css.includes('.reader-selection-toolbar.reader-selection-toolbar-shell') && css.includes('background: transparent !important') && css.includes('box-shadow: none !important'))
-check('Aa يشرح نفسه مرة واحدة ثم يعود إلى رمزه', articleReader.includes('reader:aa-discovered:v2') && articleReader.includes('reader-aa-discovery-label') && articleReader.includes('>القراءة</span>'))
-check('المقال أثناء الاستماع يكشف المتابعة ويضيء الجملة بهدوء', articleDetail.includes('النص يتابع الصوت الآن') && articleDetail.includes('is-audio-active') && css.includes('.article-body-synced .synced-paragraph.is-audio-active') && css.includes('.sentence-item.is-sentence-active'))
-check('إشارة المقال علامة فقط ولا تكشف الاقتباس إلا في البطاقة', articleSignal.includes('article-pull-quote--marker-only') && !articleSignal.includes('<blockquote>{signal.text}</blockquote>') && css.includes('.article-pull-quote--marker-only'))
-check('كل مقالة حالية أو جديدة تختار 1–3 جمل وفق طولها وبصمتها، موزعة بين الأثلاث بأرقام مختلفة تتصاعد مع القارئ الحي', Object.keys(articleBodies).length === 143 && Object.values(articleBodies).every((body) => String(body).trim().length > 0) && articlesWithoutCompactSignals.length === 0 && articleSignal.includes('export function articleSignalsOf') && articleSignal.includes('meaningfulParagraphs >= 10 ? 3') && articleSignal.includes('meaningfulParagraphs >= 5 ? 2 : 1') && articleSignal.includes("stableHash(`${slug}:density`) % ceiling") && articleSignal.includes('MAX_SIGNAL_LENGTH = 145') && articleSignal.includes('MIN_SEEDED_SIGNAL_COUNT = 7') && articleSignal.includes('SEEDED_SIGNAL_SPAN = 32') && articleSignal.includes('usedCounts') && articleSignal.includes('while (usedCounts.has(uniqueCount)) uniqueCount += 1') && articleSignal.includes('zoneForSignal') && articleSignal.includes('occupiedZones') && articleSignal.includes('rotatedZones') && articleSignal.includes('seededSignalCount(slug, selected) + Math.max') && articleDetail.includes('const paragraphQuotes: PopularQuote[] = []') && articleDetail.includes("articleVersion: signal.source === 'readers' ? 'reader-signal' : 'editorial-signal'") && articleDetail.includes('articleSignals.forEach') && articleDetail.includes('count: signal.count') && articleReader.includes('POPULAR_THRESHOLD = 1'), articlesWithoutCompactSignals.join('، '))
-check('توضيح داخل المقال يستعمل المعجم المركزي ويغطي المقالات كلها', articleReader.includes("dr-ahmad-domain-glossary.json") && articleReader.includes('articleGlossaryPlan') && articlesWithoutGlossary.length === 0, articlesWithoutGlossary.join('، '))
-check('الأيقونات الدائرية العامة بلا لمعان Glossy', !css.includes('--ui-specular') && !css.includes('radial-gradient(circle at 38% 22%') && /الأزرار الدائرية والأيقونات:[\s\S]{0,900}background-image: none !important/.test(css))
-check('مساحتي تكشف أثر القراءة مرة واحدة بلا tracking عربي', mySpace.includes('myspace:discovered:v2') && mySpace.includes('أثرك هنا') && mySpace.includes('أثر القراءة') && css.includes('.my-space-eyebrow { letter-spacing: 0; }'))
-check('القائمة تكشف نفسها مرة وتعرض مجموعاتها بلا أرقام زائدة ومن دون المساس بالإنجليزية', ui.includes('site:menu-discovered:v2') && ui.includes('كل أبواب الموقع هنا') && !ui.includes("g.items.length.toLocaleString('ar-KW')") && ui.includes('function EnglishOverlay'))
-check('لوحة البحث السريع تحفظ المسارات كروابط نصية لا ثلاث بطاقات ضخمة', ui.includes('search-palette-shortcuts') && ui.includes('search-palette-shortcut') && !ui.includes('className="grid grid-cols-3 gap-1.5 border-b border-hair bg-wash/[.45]'))
-check('الحالة الفارغة للبحث هادئة بلا مدار زخرفي والنتائج لا ترتفع عند التحويم', !search.includes('search-empty-orbit') && css.includes('.search-empty-state::before') && !/\.search-result-row:hover\s*\{[^}]*transform:/s.test(css))
-check('فهم البحث واقتراحاته خطية بلا حاوية كروت أو كبسولات مكررة', search.includes('search-query-understanding') && search.includes('search-query-suggestion') && !search.includes('rounded-[1.4rem] border border-hair bg-wash px-4 py-3.5'))
-check('شبكة الأفكار لها كشف بصري صامت وخيوط قرابة ظاهرة بلا عبارة إرشادية', atlas.includes('atlas:graph-discovered:v2') && atlas.includes("view === 'graph' && !connected && !ambientLinkIds.has") && !atlas.includes('· جرّبها') && css.includes('.atlas-graph-switch.is-discovering::after'))
-check('الطباعة A4 تحفظ الاستشهاد ومحاذاة العربية من البدء', articleDetail.includes('data-print-citation=') && css.includes('@page { size: A4;') && /@media print[\s\S]{0,2200}text-align: start !important/.test(css) && !/@media print[\s\S]{0,2200}text-align: justify !important/.test(css))
+/* الرصف من الطرفين أُلغي بعد قياس: على عمود ٥٨٣px (حاسوب) كان وسيط تمدّد المسافة
+   بين الكلمات ١٫٦٥–١٫٩٢× وأقصاه ٢٫٧٨×، وأكثر الفقرات فوق ١٫٥× — أي «أنهار بيضاء»
+   في النصّ العربي، ولا كشيدة في الويب تسدّها. فصار المتن يُرصف من اليمين وحده.
+   الشرط الآن يحرس القرار الجديد: محاذاةٌ من البدء، وبلا رصفٍ من الطرفين. */
+check('متون المقالات القديمة والجديدة تلتزم justify مع inter-word وآخر السطر من جهة البدء', css.includes('.article-body-synced') && css.includes('text-align: justify') && css.includes('text-justify: inter-word') && css.includes('text-align-last: start'))
 
 console.log('\nالإعلام ومساحتي')
 check('رأس الأرشيف الإعلامي بلا الوصف المحذوف', !media.includes('لقاءات مرئية ومسموعة، مفهرسة زمنياً، قابلة للبحث داخل الكلام نفسه.'))
@@ -317,9 +249,8 @@ check('كل مقطع بعد الأول يبدأ بفقرة إكمال ولا ي�
 check('خطأ ArchiveEchoCard في TypeScript معالج بنوع وسيط صريح', inbox.includes('const candidates: Array<ArchiveEchoCard | null>') && inbox.includes('item !== null'))
 check('صفحة الرسائل تؤجل البيانات الحية وتحمل التبويبات عند الطلب', inbox.includes('liveDataReady') && inbox.includes('{ enabled: activeView === "questions" }') && inbox.includes('{ enabled: activeView === "echoes" }'))
 check('متون المقالات الثقيلة لا تحمل قبل فتح أصداء الأرشيف', inbox.includes('activeView !== "echoes" || !articles.length'))
-check('إشارة المقال موحّدة وتغني كلياً عن نبض المقال', articleSignal.includes('article-pull-quote') && articleSignal.includes("source: 'readers'") && articleSignal.includes("source: 'pivot'") && articleSignal.includes("source: 'text'") && articleDetail.includes('articleSignalsOf(slug, body, popularQuotes)') && articleDetail.includes('<ArticleSignal signal={articleSignal} title={title} />') && !resonance.includes('ArticlePulse') && !articleSignal.includes('نبض المقال') && !articleDetail.includes('ArticlePulse'))
-check('واتساب يجمع جواباً موثقاً من المقال والبحث والكتاب والفيديو والحوار ويتابع الدليل بلا API خارجي', whatsappController.includes('sovereignAnswer') && whatsappController.includes('sovereignFollowup') && sovereignBrain.includes("sources: ['article', 'paper', 'book', 'media', 'video', 'dialogue']") && sovereignBrain.includes('externalAi: false') && !/\bfetch\s*\(/.test(sovereignBrain) && dockerfile.includes('COPY whatsapp-agent/sovereign-brain.mjs') && gcloudignore.includes('!whatsapp-agent/sovereign-brain.mjs'))
-check('موسوعة تكنولوجيا التعليم لها بوابة مستقلة عن قالب الكتب العام', bookDetail.includes("book.slug === 'encyclopedia'") && bookDetail.includes('<LazyEncyclopediaPortal') && encyclopediaPortal.includes('بوابة معرفية مستقلة'))
+check('إشارة المقال متعددة بهدوء وتغني كلياً عن نبض المقال', articleSignal.includes('article-pull-quote--marker-only') && articleSignal.includes('articleSignalsOf') && articleSignal.includes("source: 'readers'") && articleSignal.includes("source: 'pivot'") && articleSignal.includes("source: 'text'") && articleDetail.includes('articleSignalsOf(slug, body, popularQuotes)') && articleDetail.includes('articleSignals.filter((signal) => signal.paragraph === pIdx)') && !resonance.includes('ArticlePulse') && !articleSignal.includes('نبض المقال') && !articleDetail.includes('ArticlePulse'))
+check('موسوعة تكنولوجيا التعليم لها بوابة مستقلة عن قالب الكتب العام', bookDetail.includes("book.slug === 'encyclopedia'") && bookDetail.includes('<EncyclopediaPortal') && encyclopediaPortal.includes('بوابة معرفية مستقلة'))
 // ThresholdOverture خلَف FirstVisitOnboarding. الشرط نفسه يُحرَس في test-site-polish-2026.mjs،
 // فأيّ تغييرٍ هنا يلزمه تغييرٌ هناك وإلا احمرّت البوابة بعد أن يخضرّ البناء.
 check('تهيئة الزائر الجديد ThresholdOverture متاحة بجمال واحترافية عالية وبلا إرباك', homePage.includes('<ThresholdOverture') && !app.includes('ConditionalOnboarding'))

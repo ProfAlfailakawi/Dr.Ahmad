@@ -108,7 +108,7 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
           </Link>
           <button
             type="button"
-            onClick={(event) => { event.preventDefault(); event.stopPropagation(); window.requestAnimationFrame(() => window.print()) }}
+            onClick={(event) => { event.preventDefault(); event.stopPropagation(); window.print() }}
             aria-label="طباعة خطة القراءة"
             title="طباعة خطة القراءة"
             className="relative z-20 inline-flex h-11 w-11 shrink-0 touch-manipulation cursor-pointer items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"

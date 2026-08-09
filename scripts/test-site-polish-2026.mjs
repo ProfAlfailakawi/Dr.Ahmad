@@ -154,11 +154,17 @@ ok(extras.includes(`transcript: versionedAudioUrl(\`/audio/\${slug}.dialogue.jso
   && audioPlayer.includes('followSuspendedUntil') && audioPlayer.includes('list.scrollTo({ top: target')
   && audioPlayer.includes('setPendingSeek'), 'نصّ الحلقة يسير مع صوتها داخل المشغّل: محاور يقفز إليها المستمع وسطرٌ يتوهّج ويتبع الصوت ويسكن لمن يقرأ بيده')
 ok(articleDetail.includes("!audio.track?.src.includes('.dialogue.')"), 'تتبّع نص المقال يميّز النسخة الثنائية من مسار الملف لا من اسمها الظاهر')
+/* أعيدت الشروط الأربعة إلى صيغتها الأصلية: التزامُ التلميع غيّرها لتوافق كوداً
+   مُنزَلَ الرتبة (إشارة واحدة بدل خطة ١–٣)، فصار الفاحصان متناقضين — هذا يشترط
+   المفرد وtest-all-user-notes يشترط الجمع. القرار المعتمد هو تعدّد الإشارات. */
 ok(articleSignal.includes('article-signal-mark')
   && articleSignal.includes("source: 'readers'")
   && articleSignal.includes("source: 'pivot'")
   && articleSignal.includes("source: 'text'")
-  && articleDetail.includes('articleSignalOf(slug, body, popularQuotes)')
+  && articleSignal.includes('export function articleSignalsOf')
+  && articleDetail.includes('articleSignalsOf(slug, body, popularQuotes)')
+  && articleDetail.includes('const articleSignal = articleSignals[0] || null')
+  && articleDetail.includes('articleSignals.forEach')
   && articleDetail.includes('<ArticleSignal signal={articleSignal} title={title} />')
   && !readerResonance.includes('ArticlePulse')
   && !articleSignal.includes('نبض المقال')

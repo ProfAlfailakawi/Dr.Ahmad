@@ -95,15 +95,15 @@ function IdeaTrace({ article, model, embedded = false }: { article: ArticleRecor
         </div>
         <Link to="/thought" className="text-[.7rem] font-semibold text-accent transition-opacity hover:opacity-70">المشهد الفكري الكامل ←</Link>
       </div>
-      <ol className="edge-fade relative mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden before:absolute before:right-4 before:top-[.55rem] before:h-px before:w-[calc(100%-2rem)] before:bg-hair">
+      <ol className="idea-trace-rail edge-fade relative mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden before:absolute before:right-4 before:top-[.55rem] before:h-px before:w-[calc(100%-2rem)] before:bg-hair">
         {points.map((point, index) => {
           const body = <>
             <span className={`relative z-10 block h-3 w-3 rounded-full border ${point.current ? 'border-accent bg-accent' : 'border-accent/40 bg-canvas'}`} />
             <span className="mt-3 block text-[.62rem] font-semibold text-accent">{point.label}{point.year ? ` · ${point.year}` : ''}</span>
             <strong className="mt-1.5 block line-clamp-2 font-display text-[.8rem] font-medium leading-[1.6] text-ink">{point.title}</strong>
           </>
-          const cls = `group relative w-[72vw] max-w-[17rem] shrink-0 snap-start rounded-xl border px-4 pb-4 pt-3 text-start transition-colors md:w-auto md:flex-1 ${point.current ? 'border-accent/[.35] bg-accent/[.045]' : 'border-hair bg-canvas hover:border-accent/[.35]'}`
-          return <li key={`${point.label}-${point.title}-${index}`} className="contents">{point.to ? <Link to={point.to} className={cls}>{body}</Link> : point.href ? <a href={point.href} target="_blank" rel="noreferrer" className={cls}>{body}</a> : <div className={cls}>{body}</div>}</li>
+          const cls = `group relative block h-full w-full rounded-xl border px-4 pb-4 pt-3 text-start transition-colors ${point.current ? 'border-accent/[.35] bg-accent/[.045]' : 'border-hair bg-canvas hover:border-accent/[.35]'}`
+          return <li key={`${point.label}-${point.title}-${index}`} className="idea-trace-item w-full shrink-0 snap-start md:flex-1">{point.to ? <Link to={point.to} className={cls}>{body}</Link> : point.href ? <a href={point.href} target="_blank" rel="noreferrer" className={cls}>{body}</a> : <div className={cls}>{body}</div>}</li>
         })}
       </ol>
       <p className="mt-3 text-[.68rem] font-light leading-[1.75] text-soft">يمتد هذا المسار بين محطات الفكرة كما ظهرت في الأرشيف عبر الزمن.</p>

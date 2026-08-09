@@ -5,6 +5,7 @@ import { isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
 import { matchBookQuotes, searchBookPassages } from '../lib/book-quotes'
 import { searchMediaChapters, stamp } from '../lib/media-chapters'
 import { SocialIcon } from './icons'
+import { printSiteContent } from '../lib/print'
 
 /**
  * الرفّ الشخصي — من نتيجة بحثٍ إلى خطة قراءة.
@@ -86,10 +87,12 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
     event.preventDefault()
     event.stopPropagation()
     const cleanup = () => document.body.classList.remove('print-reading-shelf')
-    document.body.classList.add('print-reading-shelf')
-    window.addEventListener('afterprint', cleanup, { once: true })
-    // Keep print() in the same trusted click: iOS/Safari can otherwise drop user activation.
-    window.print()
+    printSiteContent({
+      selector: '.reading-shelf-print',
+      title: `خطة قراءة عن ${query}`,
+      beforePrint: () => document.body.classList.add('print-reading-shelf'),
+      afterPrint: cleanup,
+    })
   }
 
   return (

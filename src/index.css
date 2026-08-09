@@ -6734,3 +6734,202 @@ html.site-silent .signature-label > span:first-child { animation: none !importan
   .scene-heading__rule > i,
   .signature-label > span:first-child { animation: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   2026-08-09 — MOBILE CARD RAIL FINAL CONTRACT
+   البطاقة كاملة دائماً؛ لا «peek» ولا قصّ. إشارتان نقطيتان بالغتا الصغر
+   تظهران فقط في الاتجاه الذي بقي فيه محتوى فعلي، وتختفيان عند نهايته.
+   data-* تُدار في MobileCardRailGuard داخل App.tsx.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  [data-mobile-card-rail="true"] {
+    --rail-cue-left: transparent;
+    --rail-cue-right: transparent;
+    inline-size: 100% !important;
+    max-inline-size: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    padding-bottom: 1.05rem !important;
+    gap: .8rem !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    scroll-padding-inline: 0 !important;
+    scroll-snap-type: none !important;
+    overscroll-behavior-inline: contain !important;
+    touch-action: pan-x pan-y pinch-zoom !important;
+    -webkit-overflow-scrolling: touch;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    scrollbar-width: none;
+    background-image:
+      radial-gradient(circle, var(--rail-cue-left) 0 1.65px, transparent 1.8px),
+      radial-gradient(circle, var(--rail-cue-right) 0 1.65px, transparent 1.8px);
+    background-repeat: no-repeat;
+    background-size: 3.6px 3.6px, 3.6px 3.6px;
+    background-position: left 1px bottom 2px, right 1px bottom 2px;
+  }
+  [data-mobile-card-rail="true"]::-webkit-scrollbar { display: none; }
+  [data-mobile-card-rail="true"][data-can-left="true"] { --rail-cue-left: rgb(var(--c-accent) / .62); }
+  [data-mobile-card-rail="true"][data-can-right="true"] { --rail-cue-right: rgb(var(--c-accent) / .62); }
+  [data-mobile-card-rail="true"] > :not([aria-hidden="true"]) {
+    flex: 0 0 100% !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    min-inline-size: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    scroll-snap-align: none !important;
+  }
+
+  /* «مساحتي» لم تعد رمزاً غامضاً عائماً: على الهاتف يظهر الاسم نفسه.
+     على الشاشات الواسعة تبقى الأيقونة الدائرية المختصرة. */
+  .my-space-trigger--floating {
+    inline-size: auto !important;
+    min-inline-size: 4.9rem !important;
+    padding-inline: .72rem !important;
+    background: rgb(var(--c-canvas)) !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .my-space-trigger__label {
+    display: inline !important;
+    font-size: .67rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    color: currentColor;
+  }
+  .my-space-trigger--floating .my-space-discovery { display: none !important; }
+}
+@media (min-width: 768px) {
+  .my-space-trigger__label { display: none !important; }
+}
+
+/* شريط مستويات البحث: هندسة ثابتة تماماً. لا سالب margins ولا transform ولا
+   انتقالات هندسية؛ scroll-spy نفسه يملك hysteresis حتمياً في PaperDetail. */
+.research-section-nav {
+  inline-size: 100% !important;
+  max-inline-size: 100% !important;
+  margin-inline: 0 !important;
+  transform: none !important;
+  translate: none !important;
+  scale: none !important;
+  rotate: none !important;
+  contain: none !important;
+  will-change: auto !important;
+  isolation: isolate;
+  background: rgb(var(--c-canvas)) !important;
+}
+.research-section-nav nav,
+.research-section-nav button {
+  transform: none !important;
+  translate: none !important;
+  will-change: auto !important;
+}
+
+/* ============================================================
+   ATLAS RESTORE — سماء المقالات المرجعية فقط
+   استعادة هوية الأطلس من النسخة المرجعية التي اختارها صاحب الموقع،
+   من دون استعادة طبقات اللمعان العامة أو التأثير على بقية الصفحات.
+   ============================================================ */
+:root {
+  --atlas-education: 58 118 170;
+  --atlas-pedagogy: 78 140 148;
+  --atlas-society: 152 100 138;
+  --atlas-technology: 42 137 124;
+  --atlas-identity: 156 118 58;
+  --atlas-media: 105 96 172;
+  --atlas-research: 108 148 78;
+  --atlas-warm: 150 114 66;
+}
+html.dark {
+  --atlas-education: 122 174 219;
+  --atlas-pedagogy: 151 196 202;
+  --atlas-society: 198 158 187;
+  --atlas-technology: 101 195 181;
+  --atlas-identity: 211 174 116;
+  --atlas-media: 161 153 220;
+  --atlas-research: 166 201 137;
+  --atlas-warm: 194 160 112;
+}
+
+.atlas-night {
+  --c-canvas: 15 17 21;
+  --c-ink: 236 234 228;
+  --c-soft: 181 184 190;
+  --c-accent: 132 169 202;
+  --c-accent-deep: 164 194 220;
+  --c-wash: 23 26 31;
+  --c-hair: rgba(234, 234, 231, .11);
+  --atlas-education: 122 174 219;
+  --atlas-pedagogy: 151 196 202;
+  --atlas-society: 198 158 187;
+  --atlas-technology: 101 195 181;
+  --atlas-identity: 211 174 116;
+  --atlas-media: 161 153 220;
+  --atlas-research: 166 201 137;
+  --atlas-warm: 194 160 112;
+  position: relative;
+  background: rgb(var(--c-canvas));
+  background-image:
+    radial-gradient(62% 42% at 76% 0%, rgb(var(--c-accent) / .085), transparent 70%),
+    radial-gradient(48% 34% at 12% 96%, rgb(var(--c-accent) / .06), transparent 72%);
+  color: rgb(var(--c-ink));
+  isolation: isolate;
+}
+.atlas-night circle { transition: filter .3s ease; }
+.atlas-night circle[fill]:not([fill="none"]),
+.atlas-night .atlas-star-core {
+  filter: drop-shadow(0 0 4px rgb(var(--atlas-axis, var(--c-accent)) / .46));
+}
+.atlas-star-core {
+  fill: var(--atlas-star-color, rgb(var(--c-accent)));
+  stroke: var(--atlas-star-heat, transparent);
+  stroke-width: .9px;
+  paint-order: stroke fill;
+}
+.atlas-star-core.is-visited { filter: drop-shadow(0 0 7px rgb(var(--c-accent) / .58)); }
+.atlas-star-core.is-compared { stroke: rgb(255 255 255 / .88); stroke-width: 1.4px; }
+.atlas-legend[open] { z-index: 40; }
+.atlas-legend summary::-webkit-details-marker { display: none; }
+.atlas-heat-key {
+  inline-size: 6.5rem;
+  block-size: 3px;
+  border-radius: 999px;
+  background: linear-gradient(270deg, rgb(var(--c-accent)), rgb(var(--atlas-warm)));
+}
+.atlas-night::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .26;
+  background: radial-gradient(42% 36% at 72% 16%, rgb(var(--atlas-education) / .08), transparent 72%);
+  animation: atlas-breathe 12s ease-in-out infinite alternate;
+}
+.atlas-night > * { position: relative; z-index: 1; }
+.atlas-night.atlas-atmosphere--morning::after { opacity: .18; transform: translate3d(8%, -4%, 0); }
+.atlas-night.atlas-atmosphere--dusk::after { opacity: .31; transform: translate3d(-6%, 3%, 0); }
+.atlas-night.atlas-atmosphere--night::after { opacity: .24; }
+.atlas-night.is-seasonal::after {
+  background: radial-gradient(44% 38% at 74% 14%, rgb(var(--atlas-identity) / .11), transparent 74%);
+}
+@keyframes atlas-breathe { to { opacity: .36; } }
+
+@media (hover: hover) and (pointer: fine) {
+  .atlas-map-desktop g:hover .atlas-star-core,
+  .atlas-map-mobile g:hover .atlas-star-core {
+    filter: drop-shadow(0 0 7px rgb(var(--atlas-axis, var(--c-accent)) / .55));
+  }
+}
+.atlas-night.is-graph .atlas-star-core {
+  filter: drop-shadow(0 0 5px rgb(var(--atlas-axis, var(--c-accent)) / .38));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-night circle { transition: none; }
+  .atlas-night::after { animation: none; }
+}

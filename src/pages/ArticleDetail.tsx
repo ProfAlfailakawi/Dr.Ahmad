@@ -26,6 +26,7 @@ import IdeaLife from '../components/IdeaLife'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
 import { arabicCountPhrase, SHARE_FORMS, VIEW_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
+import { printSiteContent } from '../lib/print'
 import { Pagination, usePagedList } from '../components/Pagination'
 
 const canUseDropCap = (paragraph: string) =>
@@ -1006,7 +1007,7 @@ export default function ArticleDetail() {
                     </a>
                   )}
                   <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
-                  <button type="button" onClick={() => { setSerenity(false); window.dispatchEvent(new CustomEvent('reader:close-overlays')); window.print() }} className="article-tool-icon" aria-label="طباعة المقال كورقة أكاديمية" title="طباعة المقال">
+                  <button type="button" onClick={() => { setSerenity(false); window.dispatchEvent(new CustomEvent('reader:close-overlays')); printSiteContent({ selector: '.article-journey', title: a.title }) }} className="article-tool-icon" aria-label="طباعة المقال كورقة أكاديمية" title="طباعة المقال">
                     <svg aria-hidden viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round"><path d="M7 8V3h10v5"/><path d="M6 17H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/></svg>
                   </button>
                 </div>

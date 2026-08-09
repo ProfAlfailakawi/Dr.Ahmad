@@ -163,42 +163,57 @@ export default function PaperDetail() {
   const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer1')
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
 
-  /* المؤشر يتبع موضع القارئ فعلياً. IntersectionObserver يراقب شريطاً ضيقاً
-     في الثلث العلوي من الشاشة؛ لا scroll listener ولا قياسات تتصارع مع sticky،
-     ولذلك لا يقفز المؤشر بين ١ و٢ عند الحد الفاصل ولا يسبب رجفة للشريط. */
+  /* Scroll-spy بحساب واحد ثابت عند كل إطار: نختار آخر مستوى عبر خطاً
+     مرجعياً واضحاً أسفل الشريط. لا مناطق Intersection متداخلة، لذلك لا
+     يتبادل 01/02 الحالة عند الحدود ولا يظهر «رجفان» بصري على Safari. */
   useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return
-    const candidates: Array<[ResearchLayer, HTMLElement | null]> = [
-      ['layer1', document.getElementById('research-passport-layer1')],
-      ['layer2', document.getElementById('research-passport-layer2')],
-      ['layer3', document.getElementById('research-passport-layer3')],
+    let frame = 0
+    const ids: Array<[ResearchLayer, string]> = [
+      ['layer1', 'research-passport-layer1'],
+      ['layer2', 'research-passport-layer2'],
+      ['layer3', 'research-passport-layer3'],
     ]
-    const layers: Array<{ key: ResearchLayer; node: HTMLElement }> = candidates.flatMap(([key, node]) =>
-      node instanceof HTMLElement ? [{ key, node }] : [],
-    )
-    if (!layers.length) return
-    const visible = new Map<ResearchLayer, IntersectionObserverEntry>()
-    const choose = () => {
-      const candidates = [...visible.entries()].filter(([, entry]) => entry.isIntersecting)
-      if (!candidates.length) return
-      candidates.sort(([, left], [, right]) => {
-        const anchor = window.innerHeight * .28
-        return Math.abs(left.boundingClientRect.top - anchor) - Math.abs(right.boundingClientRect.top - anchor)
+    const update = () => {
+      frame = 0
+      const available = ids.flatMap(([key, id]) => {
+        const node = document.getElementById(id)
+        return node instanceof HTMLElement ? [{ key, node }] : []
       })
-      setPassportLayer(candidates[0][0])
-    }
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        const layer = (entry.target as HTMLElement).dataset.researchLayer as ResearchLayer | undefined
-        if (layer) visible.set(layer, entry)
+      if (!available.length) return
+      const nav = document.querySelector<HTMLElement>('.research-section-nav')
+      const anchorViewport = (nav?.getBoundingClientRect().bottom || 88) + 20
+      const anchorDocument = window.scrollY + anchorViewport
+      // offsetTop لا يتأثر بتحويلات FadeUp العابرة؛ getBoundingClientRect يتأثر
+      // بها، وكان ذلك كافياً ليعيد 01/02 التبديل قرب الحد على Safari.
+      const documentTop = (node: HTMLElement) => {
+        let top = 0
+        let current: HTMLElement | null = node
+        while (current) {
+          top += current.offsetTop
+          current = current.offsetParent instanceof HTMLElement ? current.offsetParent : null
+        }
+        return top
       }
-      choose()
-    }, { rootMargin: '-18% 0px -58% 0px', threshold: [0, .15, .35, .6] })
-    for (const { key, node } of layers) {
-      node.dataset.researchLayer = key
-      observer.observe(node)
+      let next = available[0].key
+      for (const item of available) {
+        if (documentTop(item.node) <= anchorDocument) next = item.key
+        else break
+      }
+      setPassportLayer((current) => current === next ? current : next)
     }
-    return () => observer.disconnect()
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update)
+    }
+    schedule()
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule, { passive: true })
+    window.addEventListener('orientationchange', schedule)
+    return () => {
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      window.removeEventListener('orientationchange', schedule)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
   }, [dataCards.length])
 
   const toggleCard = (key: string) => {

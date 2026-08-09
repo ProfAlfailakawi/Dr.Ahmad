@@ -250,6 +250,111 @@ function ExclusiveDetailsGuard() {
   return null
 }
 
+/* سكة الهاتف: البطاقة تظهر كاملة، والدائرتان الدقيقتان تقولان فقط إن كان
+   هناك محتوى فعلي في اليسار/اليمين. لا peek ولا قصّ لبطاقة أخرى. نكتشف
+   السكك بصرياً حتى يشمل القانون الصفحات القديمة والجديدة من دون تحويل
+   التبويبات القصيرة أو صفوف الأيقونات إلى بطاقات. */
+function MobileCardRailGuard() {
+  const location = useLocation()
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)')
+    const selector = [
+      '.rail', '.edge-fade', '.mobile-card-rail', '.mobile-paired-grid',
+      '.article-featured-rail', '.signatures-rail', '.media-related-rail',
+      '.ask-book-rail', '.book-spine-rail', '.home-motion-rail', '.idea-trace-rail',
+      '[data-horizontal-video-rail="true"]',
+    ].join(',')
+    const enhanced = new Set<HTMLElement>()
+    let frame = 0
+
+    const childrenOf = (rail: HTMLElement) => Array.from(rail.children).filter((node): node is HTMLElement => node instanceof HTMLElement && node.offsetParent !== null && node.getAttribute('aria-hidden') !== 'true')
+
+    const eligible = (rail: HTMLElement) => {
+      if (!media.matches || rail.closest('.admin-dashboard, [role="dialog"]')) return false
+      if (rail.matches('nav, [role="tablist"], [role="group"], .editorial-tablist') || rail.closest('nav')) return false
+      if (rail.querySelector(':scope > [role="tablist"], :scope > [role="group"], :scope > nav')) return false
+      if (rail.closest('.content-books')) return false
+      const children = childrenOf(rail)
+      if (!children.length) return false
+      const style = getComputedStyle(rail)
+      const horizontallyScrollable = rail.scrollWidth > rail.clientWidth + 3 && /(auto|scroll)/.test(style.overflowX)
+      const knownCardRail = rail.matches('.mobile-card-rail, .mobile-paired-grid, .article-featured-rail, .signatures-rail, .media-related-rail, .ask-book-rail, .book-spine-rail, .home-motion-rail, .idea-trace-rail, [data-horizontal-video-rail="true"]')
+      if (knownCardRail && children.length === 1) return true
+      if (!horizontallyScrollable) return false
+      const railWidth = Math.max(rail.clientWidth, 1)
+      const widest = Math.max(...children.map((child) => child.getBoundingClientRect().width))
+      return knownCardRail || widest >= railWidth * .44
+    }
+
+    const updateRail = (rail: HTMLElement) => {
+      if (!eligible(rail)) {
+        rail.removeAttribute('data-mobile-card-rail')
+        rail.removeAttribute('data-can-left')
+        rail.removeAttribute('data-can-right')
+        enhanced.delete(rail)
+        return
+      }
+      rail.setAttribute('data-mobile-card-rail', 'true')
+      enhanced.add(rail)
+      const rect = rail.getBoundingClientRect()
+      const children = childrenOf(rail)
+      const overflow = rail.scrollWidth > rail.clientWidth + 3 && children.length > 1
+      if (!overflow) {
+        rail.setAttribute('data-can-left', 'false')
+        rail.setAttribute('data-can-right', 'false')
+        return
+      }
+      let minLeft = Infinity
+      let maxRight = -Infinity
+      for (const child of children) {
+        const childRect = child.getBoundingClientRect()
+        minLeft = Math.min(minLeft, childRect.left)
+        maxRight = Math.max(maxRight, childRect.right)
+      }
+      rail.setAttribute('data-can-left', minLeft < rect.left - 2 ? 'true' : 'false')
+      rail.setAttribute('data-can-right', maxRight > rect.right + 2 ? 'true' : 'false')
+    }
+
+    const refresh = () => {
+      frame = 0
+      document.querySelectorAll<HTMLElement>(selector).forEach(updateRail)
+      // إضافة data تغيّر عرض البطاقة من peek إلى 100%؛ نقيس مرة ثانية بعد الرسم.
+      window.requestAnimationFrame(() => enhanced.forEach(updateRail))
+    }
+    const schedule = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(refresh)
+    }
+    const onScroll = (event: Event) => {
+      const target = event.target
+      if (target instanceof HTMLElement && target.dataset.mobileCardRail === 'true') updateRail(target)
+    }
+    const observer = new MutationObserver(schedule)
+    observer.observe(document.getElementById('main') || document.body, { childList: true, subtree: true })
+    document.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', schedule, { passive: true })
+    window.addEventListener('orientationchange', schedule)
+    media.addEventListener?.('change', schedule)
+    schedule()
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', schedule)
+      window.removeEventListener('orientationchange', schedule)
+      media.removeEventListener?.('change', schedule)
+      if (frame) window.cancelAnimationFrame(frame)
+      enhanced.forEach((rail) => {
+        rail.removeAttribute('data-mobile-card-rail')
+        rail.removeAttribute('data-can-left')
+        rail.removeAttribute('data-can-right')
+      })
+    }
+  }, [location.pathname])
+
+  return null
+}
+
 function AnimatedRoutes() {
   const loc = useLocation()
   return (
@@ -390,6 +495,7 @@ function RoutedApplication() {
       <SitewideIconClarifications />
         <AdaptiveSilence />
         <ExclusiveDetailsGuard />
+        <MobileCardRailGuard />
         <ReadingMemoryGuard />
         <PwaResumeHome />
         <RouteJourneyTracker />

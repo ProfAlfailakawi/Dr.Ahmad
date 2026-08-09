@@ -6965,3 +6965,316 @@ html.dark {
   .atlas-axis-filter__item,
   .atlas-constellation-select { transition: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   نسيج الفكرة — سيرة المفهوم + صدى الفكرة
+   طبقة معرفية خافتة: لا بطاقات داخل المتن، ولا إشارات إلا حين توجد صلة موثوقة.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* المصطلح لا يتوقف عند تعريفه: السطر السفلي في نافذة المعجم يعرض خطاً زمنياً
+   صغيراً فقط، ثم يترك السيرة الكاملة لصفحتها. */
+.concept-life-peek {
+  margin-block-start: 1rem;
+  padding-block-start: .9rem;
+  border-block-start: 1px solid var(--c-hair);
+}
+.concept-life-peek__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.concept-life-peek__head p {
+  margin: 0;
+  color: rgb(var(--c-accent));
+  font-size: .66rem;
+  font-weight: 600;
+}
+.concept-life-peek__head strong {
+  display: block;
+  margin-block-start: .18rem;
+  color: rgb(var(--c-ink) / .84);
+  font-size: .72rem;
+  font-weight: 450;
+  font-variant-numeric: tabular-nums;
+}
+.concept-life-peek__head > span {
+  color: rgb(var(--c-soft));
+  font-size: .62rem;
+  font-weight: 350;
+}
+.concept-life-peek__timeline {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .35rem;
+  margin-block: .85rem .7rem;
+  padding-inline: .12rem;
+}
+.concept-life-peek__timeline::before {
+  content: "";
+  position: absolute;
+  inset-inline: .25rem;
+  top: 50%;
+  block-size: 1px;
+  background: rgb(var(--c-accent) / .2);
+}
+.concept-life-peek__timeline span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  inline-size: .45rem;
+  block-size: .45rem;
+  place-items: center;
+  border: 2px solid rgb(var(--c-canvas));
+  border-radius: 50%;
+  background: rgb(var(--c-accent) / .72);
+}
+.concept-life-peek__timeline span::after {
+  content: attr(data-year);
+  position: absolute;
+  top: .6rem;
+  color: rgb(var(--c-soft) / .8);
+  font-size: .5rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.concept-life-peek__milestones {
+  display: grid;
+  gap: .18rem;
+  margin-block-start: 1.25rem;
+}
+.concept-life-peek__milestones a {
+  display: grid;
+  grid-template-columns: 2.7rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: .6rem;
+  min-block-size: 2.35rem;
+  padding-block: .35rem;
+  color: inherit;
+  border-block-end: 1px solid var(--c-hair);
+  text-decoration: none;
+}
+.concept-life-peek__milestones a:last-child { border-block-end: 0; }
+.concept-life-peek__milestones span {
+  color: rgb(var(--c-accent) / .82);
+  font-size: .57rem;
+  font-variant-numeric: tabular-nums;
+}
+.concept-life-peek__milestones strong {
+  overflow: hidden;
+  color: rgb(var(--c-ink) / .78);
+  font-size: .67rem;
+  font-weight: 420;
+  line-height: 1.65;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.concept-life-peek__open {
+  display: inline-flex;
+  align-items: center;
+  gap: .38rem;
+  margin-block-start: .65rem;
+  color: rgb(var(--c-accent));
+  font-size: .64rem;
+  font-weight: 560;
+  text-decoration: none;
+}
+
+/* صدى الفكرة: نقطة واحدة في الهامش، أصغر من أن تقطع القراءة وأوضح من أن تبدو
+   عيباً طباعياً. لا تظهر أصلاً إن لم يجد المحرك صلة قوية. */
+.concept-echo-dot {
+  position: absolute;
+  inset-inline-start: -1.05rem;
+  top: 1.18rem;
+  z-index: 4;
+  display: grid;
+  inline-size: 1.45rem;
+  block-size: 1.45rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgb(var(--c-accent));
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.concept-echo-dot > span {
+  position: relative;
+  display: block;
+  inline-size: .36rem;
+  block-size: .36rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .66;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.concept-echo-dot > span::after {
+  content: "";
+  position: absolute;
+  inset: -.32rem;
+  border: 1px solid rgb(var(--c-accent) / .14);
+  border-radius: inherit;
+  opacity: .7;
+  animation: concept-echo-breathe 4.8s ease-in-out infinite;
+}
+@keyframes concept-echo-breathe {
+  0%, 100% { opacity: .2; transform: scale(.78); }
+  48% { opacity: .78; transform: scale(1.08); }
+}
+@media (hover: hover) and (pointer: fine) {
+  .concept-echo-dot:hover > span,
+  .concept-echo-dot:focus-visible > span { opacity: 1; transform: scale(1.18); }
+}
+.concept-echo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 570;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  padding: 1rem;
+  padding-block-end: calc(1rem + env(safe-area-inset-bottom));
+  background: rgb(var(--c-ink) / .22);
+}
+.concept-echo-sheet {
+  inline-size: min(100%, 27rem);
+  padding: 1.15rem 1.2rem 1rem;
+  border: 1px solid var(--c-hair);
+  border-radius: 1.35rem;
+  background: rgb(var(--c-canvas));
+  box-shadow: 0 28px 68px -48px rgb(var(--c-ink) / .72);
+}
+.concept-echo-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.concept-echo-kicker {
+  margin: 0;
+  color: rgb(var(--c-accent));
+  font-size: .62rem;
+  font-weight: 600;
+}
+.concept-echo-relation {
+  margin: .15rem 0 0;
+  color: rgb(var(--c-ink));
+  font-family: var(--font-display, inherit);
+  font-size: 1.02rem;
+  font-weight: 620;
+}
+.concept-echo-close {
+  display: grid;
+  inline-size: 2rem;
+  block-size: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--c-hair);
+  border-radius: 50%;
+  background: transparent;
+  color: rgb(var(--c-soft));
+}
+.concept-echo-thread {
+  position: relative;
+  block-size: 1px;
+  margin-block: .82rem .72rem;
+  background: linear-gradient(to left, rgb(var(--c-accent) / .5), var(--c-hair) 58%, transparent);
+}
+.concept-echo-thread span {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 50%;
+  inline-size: .38rem;
+  block-size: .38rem;
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  transform: translateY(-50%);
+}
+.concept-echo-context {
+  margin: 0;
+  color: rgb(var(--c-soft));
+  font-size: .68rem;
+  font-weight: 350;
+  line-height: 1.8;
+}
+.concept-echo-concept {
+  margin: .75rem 0 0;
+  color: rgb(var(--c-accent) / .85);
+  font-size: .6rem;
+  font-weight: 560;
+}
+.concept-echo-title {
+  margin: .3rem 0 0;
+  color: rgb(var(--c-ink));
+  font-family: var(--font-display, inherit);
+  font-size: 1rem;
+  font-weight: 570;
+  line-height: 1.72;
+}
+.concept-echo-note {
+  margin: .55rem 0 0;
+  color: rgb(var(--c-soft));
+  font-size: .73rem;
+  font-weight: 350;
+  line-height: 1.85;
+}
+.concept-echo-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-block-start: .85rem;
+  padding-block-start: .7rem;
+  border-block-start: 1px solid var(--c-hair);
+  color: rgb(var(--c-soft) / .86);
+  font-size: .61rem;
+}
+.concept-echo-foot a {
+  color: rgb(var(--c-accent));
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* صفحة سيرة المفهوم تشرح التحول في سطر واحد مشتق من الأرشيف نفسه؛ لا بطاقة
+   جديدة ولا ادعاء فلسفي مولّد. */
+.concept-shift-note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .9rem;
+  align-items: baseline;
+  margin-block: 1.25rem 1.75rem;
+  padding-block: .8rem;
+  border-block: 1px solid var(--c-hair);
+}
+.concept-shift-note > span {
+  color: rgb(var(--c-accent));
+  font-size: .64rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.concept-shift-note p {
+  margin: 0;
+  color: rgb(var(--c-soft));
+  font-size: .74rem;
+  font-weight: 350;
+  line-height: 1.85;
+}
+
+@media (min-width: 640px) {
+  .concept-echo-overlay { align-items: center; }
+  .concept-echo-sheet { padding: 1.35rem 1.45rem 1.1rem; }
+}
+@media (max-width: 639px) {
+  .concept-echo-dot { inset-inline-start: -.72rem; }
+  .concept-shift-note { grid-template-columns: 1fr; gap: .25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .concept-echo-dot > span::after { animation: none !important; }
+}
+@media print {
+  .concept-echo-dot,
+  .concept-echo-overlay,
+  .concept-life-peek { display: none !important; }
+}

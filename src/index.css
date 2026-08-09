@@ -6202,3 +6202,165 @@ html.reader-paper .sentence-item.is-sentence-active {
   body.print-reading-shelf .reading-shelf-print > div > div:last-child { display: none !important; }
   body.print-reading-shelf .reading-shelf-print li { break-inside: avoid; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2026-08-09 — NO-GLOSS EDITORIAL CONTRACT
+   Public UI stays matte: paper/canvas, hairline borders, restrained depth.
+   No specular highlights, translucent glass cards, or backdrop blur.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --ui-edge: rgb(var(--c-ink) / .09);
+  --ui-float-shadow: 0 16px 40px -32px rgb(21 22 26 / .34);
+  --ui-hover-shadow: 0 20px 46px -34px rgb(21 22 26 / .38);
+}
+html.dark {
+  --ui-edge: rgb(255 255 255 / .11);
+  --ui-float-shadow: 0 18px 42px -32px rgb(0 0 0 / .72);
+  --ui-hover-shadow: 0 22px 50px -34px rgb(0 0 0 / .82);
+}
+
+/* The previous global finishing pass painted glass on almost every public card.
+   Keep the hierarchy and spacing, but return surfaces to the site's matte language. */
+.signature-page:not(.admin-dashboard)::before,
+.signature-page:not(.admin-dashboard)::after,
+.page-head::before,
+.page-head::after {
+  display: none !important;
+}
+.page-head {
+  background: rgb(var(--c-canvas)) !important;
+}
+.signature-page:not(.admin-dashboard) :is(article, details)[class*="border"][class*="rounded"],
+.signature-page:not(.admin-dashboard) a.group[class*="border"][class*="rounded"],
+.signature-page:not(.admin-dashboard) .ask-memory-card,
+.my-space-panel :is(section, details)[class*="border"][class*="rounded"] {
+  border-color: var(--ui-edge) !important;
+  background-image: none !important;
+  box-shadow: var(--ui-float-shadow) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  .signature-page:not(.admin-dashboard) :is(article, a.group)[class*="border"][class*="rounded"]:hover {
+    transform: none !important;
+    border-color: rgb(var(--c-accent) / .28) !important;
+    box-shadow: var(--ui-hover-shadow) !important;
+  }
+}
+
+/* Circular controls are controls, not glass beads. */
+.site-nav :is(button, a)[class*="rounded-full"][class*="border"],
+.signature-page:not(.admin-dashboard) :is(button, a)[class*="rounded-full"][class*="border"],
+.my-space-panel :is(button, a)[class*="rounded-full"][class*="border"],
+.article-tool-icon,
+.my-space-trigger[class*="rounded-full"],
+.quote-card-controls button {
+  background-image: none !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  .site-nav :is(button, a)[class*="rounded-full"][class*="border"]:hover,
+  .signature-page:not(.admin-dashboard) :is(button, a)[class*="rounded-full"][class*="border"]:hover,
+  .my-space-panel :is(button, a)[class*="rounded-full"][class*="border"]:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Navigation, menu and My Space become opaque editorial surfaces. */
+.site-nav.is-solid {
+  background: rgb(var(--c-canvas) / .985) !important;
+  border-color: rgb(var(--c-ink) / .07) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: 0 8px 24px -24px rgb(21 22 26 / .42) !important;
+}
+html.dark .site-nav.is-solid { background: rgb(var(--c-canvas) / .985) !important; }
+.site-scroll-progress { filter: none !important; }
+.site-menu-overlay {
+  background: rgb(var(--c-canvas)) !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.my-space-overlay {
+  background: rgb(var(--c-ink) / .28) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.my-space-panel {
+  border-color: var(--ui-edge) !important;
+  background: rgb(var(--c-canvas)) !important;
+  background-image: none !important;
+  box-shadow: 0 28px 80px -46px rgb(11 23 37 / .58) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html.dark .my-space-panel { box-shadow: 0 30px 86px -46px rgb(0 0 0 / .86) !important; }
+.ask-memory-card::after { display: none !important; }
+
+/* Portalled reading/share sheets sit above a dimmed page, never a glass pane. */
+.reader-modal-overlay,
+.reader-modal-overlay[class*="backdrop-blur"],
+.reader-modal-overlay [class*="backdrop-blur"],
+.quote-card-controls,
+.signature-page:not(.admin-dashboard) [class*="backdrop-blur"] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.quote-card-controls {
+  background: rgb(var(--c-ink)) !important;
+  background-image: none !important;
+  box-shadow: 0 18px 40px -32px rgb(0 0 0 / .82) !important;
+}
+
+/* Media stays complete, but without fake reflected light / blurred duplicate layers. */
+.complete-media-frame,
+.complete-book-frame {
+  background: rgb(var(--c-wash)) !important;
+  background-image: none !important;
+}
+.complete-media-frame::before,
+.complete-book-frame::after {
+  display: none !important;
+}
+.complete-media-frame::after {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px rgb(var(--c-ink) / .06) !important;
+}
+.complete-media-image {
+  filter: none !important;
+}
+.complete-book-image {
+  filter: drop-shadow(0 10px 14px rgb(17 25 33 / .12)) !important;
+}
+.content-books a > div[style*="aspect-ratio"],
+html.dark .content-books a > div[style*="aspect-ratio"] {
+  box-shadow: var(--ui-float-shadow) !important;
+}
+.site-footer {
+  background: rgb(var(--c-wash)) !important;
+  background-image: none !important;
+}
+
+@media (max-width: 767px) {
+  .site-nav.is-solid {
+    background: rgb(var(--c-canvas) / .99) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* In-text scholarly references are quiet links. DOI links resolve directly; other
+   author-year citations go to Crossref's official metadata search in a new tab. */
+.reader-reference-term {
+  color: inherit;
+  cursor: pointer;
+  text-decoration-skip-ink: auto;
+}
+.reader-reference-term:focus-visible {
+  color: rgb(var(--c-accent));
+  text-decoration-color: rgb(var(--c-accent) / .62);
+}

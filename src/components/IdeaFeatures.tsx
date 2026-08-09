@@ -805,20 +805,20 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         {view === 'card' && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="reader-modal-overlay quote-card-overlay fixed inset-0 z-[300] bg-ink/60 backdrop-blur-sm" onClick={close}
+            className="reader-modal-overlay quote-card-overlay fixed inset-0 z-[300] bg-ink/[.65]" onClick={close}
           >
             {/* تمريرٌ واحد داخل البطاقة فقط: تمرير الغلاف كان يدفع الشريط اللاصق خارج أعلى الشاشة */}
             <motion.div
               initial={{ scale: 0.94, y: 14 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }}
               transition={{ duration: 0.32 }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()} className="quote-card-dialog pb-2"
             >
-              <div className="quote-card-controls sticky top-0 z-10 mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-2xl bg-ink/90 p-2 shadow-lg backdrop-blur">
+              <div className="quote-card-controls sticky top-0 z-10 mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-canvas/[.15] bg-ink p-2 shadow-[0_18px_40px_-32px_rgba(0,0,0,.8)]">
                 {CARD_TEMPLATES.map((t) => {
                   const isSmart = smartTone != null && template === t.key
                   return (
                     <button key={t.key} type="button" onPointerDown={(event) => firstPress(event, () => chooseTemplate(t.key))} onClick={(event) => { if (event.detail === 0) chooseTemplate(t.key) }}
                       title={isSmart ? `اخترناه لك — النصّ ${TONE_LABEL[smartTone]}` : t.hint}
-                      className={`rounded-full px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${template === t.key ? 'bg-canvas text-ink' : 'border border-canvas/[.35] text-canvas/[.85] hover:border-canvas'}`}>
+                      className={`rounded-full px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${template === t.key ? 'bg-canvas text-ink' : 'border border-canvas/30 bg-transparent text-canvas/[.85] hover:border-canvas/70'}`}>
                       {isSmart && '✨ '}{t.label}
                     </button>
                   )
@@ -826,7 +826,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                 <span className="mx-1 h-4 w-px bg-canvas/30" />
                 {CARD_FORMATS.map((f) => (
                   <button key={f.key} type="button" onPointerDown={(event) => firstPress(event, () => chooseFormat(f.key))} onClick={(event) => { if (event.detail === 0) chooseFormat(f.key) }} title={f.hint}
-                    className={`rounded-full px-3 py-1.5 text-[.72rem] font-semibold transition-colors ${format === f.key ? 'bg-canvas text-ink' : 'border border-canvas/[.35] text-canvas/[.85] hover:border-canvas'}`}>
+                    className={`rounded-full px-3 py-1.5 text-[.72rem] font-semibold transition-colors ${format === f.key ? 'bg-canvas text-ink' : 'border border-canvas/30 bg-transparent text-canvas/[.85] hover:border-canvas/70'}`}>
                     {f.label}
                   </button>
                 ))}
@@ -857,7 +857,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                     aria-label={quoteSaved ? 'إزالة من دفتر القراءة' : 'حفظ في دفتر القراءة'}
                     title={quoteSaved ? 'إزالة من دفتر القراءة' : 'حفظ في دفتر القراءة'}
                     aria-pressed={quoteSaved}
-                    className={`flex h-[52px] w-[52px] items-center justify-center rounded-full border transition-colors ${quoteSaved ? 'border-canvas bg-canvas text-ink' : 'border-canvas/60 bg-canvas/10 text-canvas hover:bg-canvas hover:text-ink'}`}
+                    className={`flex h-[52px] w-[52px] items-center justify-center rounded-full border transition-colors ${quoteSaved ? 'border-canvas bg-canvas text-ink' : 'border-canvas/[.45] bg-transparent text-canvas hover:border-canvas hover:bg-canvas hover:text-ink'}`}
                   >
                     <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill={quoteSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4.8A1.8 1.8 0 0 1 7.8 3h8.4A1.8 1.8 0 0 1 18 4.8V21l-6-3.6L6 21Z"/></svg>
                   </button>

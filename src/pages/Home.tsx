@@ -148,7 +148,6 @@ function DailySpark({ compact = false }: { compact?: boolean }) {
       data-hover
       className={`group relative block h-full overflow-hidden rounded-2xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent ${compact ? 'p-6 md:p-7' : 'p-8 md:p-11'}`}
     >
-      <span aria-hidden className="pointer-events-none absolute left-5 top-5 h-8 w-8 rounded-full border border-accent/20" />
       <p className="relative mb-4 flex items-center gap-2.5 text-[.76rem] font-semibold text-accent">
         <span className="pulse relative h-1.5 w-1.5 rounded-full bg-accent" />
         فكرة اليوم · {c.kind}

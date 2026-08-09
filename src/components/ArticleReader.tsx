@@ -807,6 +807,18 @@ function dispatchXray(term: XrayTerm) {
   window.dispatchEvent(new CustomEvent('reader:xray', { detail: term }))
 }
 
+const DOI_TOKEN = /\b10\.\d{4,9}\/[A-Z0-9._;()/:+-]+/i
+
+function scholarlyReferenceHref(reference: string, context: string) {
+  const doi = reference.match(DOI_TOKEN)?.[0]?.replace(/[),.;:]+$/, '')
+  if (doi) return `https://doi.org/${doi}`
+
+  /* لا نخمن ناشراً أو DOI غير موجود. عند غياب الرابط الصريح نرسل القارئ إلى
+     بحث Crossref الرسمي، مع سياق قريب من الإحالة لرفع دقة المطابقة. */
+  const query = `${reference} ${context}`.replace(/\s+/g, ' ').trim().slice(0, 520)
+  return `https://search.crossref.org/?q=${encodeURIComponent(query)}&from_ui=yes`
+}
+
 export function ReaderParagraphText({ text, popularQuotes = [], xrayTerms }: { text: string; popularQuotes?: PopularQuote[]; xrayTerms?: XrayTerm[] }) {
   const matches: { start: number; end: number; kind: 'popular' | 'term' | 'reference'; popular?: PopularQuote; term?: XrayTerm }[] = []
 
@@ -855,15 +867,27 @@ export function ReaderParagraphText({ text, popularQuotes = [], xrayTerms }: { t
     }
   }
 
-  matches.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start))
-  const accepted: typeof matches = []
+  /* الإحالات العلمية لها أولوية تفاعلية مطلقة: حتى لو صادف أن اقتباساً
+     شعبياً يمر فوقها، يبقى المرجع قابلاً للضغط ولا يتحول إلى تظليل صامت. */
+  const overlaps = (left: { start: number; end: number }, right: { start: number; end: number }) => left.start < right.end && right.start < left.end
+  const references = matches.filter((match) => match.kind === 'reference').sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start))
+  const acceptedReferences: typeof matches = []
+  for (const reference of references) {
+    if (!acceptedReferences.some((current) => overlaps(current, reference))) acceptedReferences.push(reference)
+  }
+
+  const nonReferences = matches
+    .filter((match) => match.kind !== 'reference' && !acceptedReferences.some((reference) => overlaps(reference, match)))
+    .sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start))
+  const acceptedOthers: typeof matches = []
   let cursor = -1
-  for (const match of matches) {
+  for (const match of nonReferences) {
     if (match.start >= cursor) {
-      accepted.push(match)
+      acceptedOthers.push(match)
       cursor = match.end
     }
   }
+  const accepted = [...acceptedReferences, ...acceptedOthers].sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start))
 
   if (!accepted.length) return <>{text}</>
   const nodes: ReactNode[] = []
@@ -889,7 +913,24 @@ export function ReaderParagraphText({ text, popularQuotes = [], xrayTerms }: { t
         </span>,
       )
     } else {
-      nodes.push(<span key={`reference-${matchIndex}`} className="reader-reference-term">{content}</span>)
+      const contextStart = Math.max(0, match.start - 190)
+      const contextEnd = Math.min(text.length, match.end + 190)
+      const referenceContext = text.slice(contextStart, contextEnd)
+      const href = scholarlyReferenceHref(content, referenceContext)
+      nodes.push(
+        <a
+          key={`reference-${matchIndex}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="reader-reference-term"
+          title="افتح المرجع في المصدر الأكاديمي"
+          aria-label={`${content} — افتح المرجع في المصدر الأكاديمي`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {content}
+        </a>,
+      )
     }
     index = match.end
   })

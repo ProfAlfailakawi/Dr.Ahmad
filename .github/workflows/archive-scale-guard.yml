@@ -31,6 +31,7 @@ on:
       - 'scripts/archive-sitemap.mjs'
       - 'package.json'
       - 'src/lib/archive-scale.d.ts'
+      - 'src/lib/archive-scale.d.mts'
       - '.github/workflows/archive-scale-guard.yml'
 
 concurrency:

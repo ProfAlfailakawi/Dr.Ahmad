@@ -19,6 +19,7 @@
 import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync, statSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { mergeCanonicalRecords, readCanonicalCms } from './canonical-cms.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = resolve(ROOT, 'src/data/listen-index.json')
@@ -201,7 +202,7 @@ if (SELF_TEST) {
   process.exit(0)
 }
 
-const articles = staticArticles()
+const articles = mergeCanonicalRecords('article', staticArticles(), readCanonicalCms(ROOT))
 const audioMeta = existsSync(resolve(ROOT, 'src/data/audio-meta.json'))
   ? JSON.parse(readFileSync(resolve(ROOT, 'src/data/audio-meta.json'), 'utf8')) : {}
 const dialogueOf = (slug) => {

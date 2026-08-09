@@ -182,6 +182,7 @@ const podcastDispatchPath = '/api/admin/podcast/dispatch'
 const audioManagePath = '/api/admin/audio/manage'
 const sourcesCheckPath = '/api/admin/sources/check'
 const controlCenterPath = '/api/admin/control-center'
+const contentPublishSyncPath = '/api/admin/content/publish-sync'
 const publicationPassportPath = '/api/admin/publication-passport/sign'
 /* ١٢٨ كانت ضيّقةً على نداءٍ يحمل فهرس أرشيفٍ كامل، فكان يُرفض بـ٤١٣ قبل بلوغ
    المحرك. المتون انتقلت إلى القرص، والحدّ رُفع ثلاثة أضعاف بهامشٍ حقيقي. */
@@ -4317,13 +4318,13 @@ async function dispatchAdminWorkflow({ workflow, inputs }) {
         body: JSON.stringify({ ref: githubRef, inputs }),
       }, 15_000)
   } catch {
-    throw new HttpError(502, 'تعذّر الاتصال بـ GitHub لبدء أمر الصوت')
+    throw new HttpError(502, 'تعذّر الاتصال بـ GitHub لبدء المهمة الآلية')
   }
   let payload = {}
   try { payload = await response.json() } catch { /* workflow_dispatch يعيد عادة جسماً فارغاً */ }
   if (![200, 201, 202, 204].includes(response.status)) {
     const detail = boundedString(payload?.message, 500) || `GitHub HTTP ${response.status}`
-    throw new HttpError(response.status === 401 || response.status === 403 ? 503 : 502, `رفض GitHub أمر الصوت: ${detail}`)
+    throw new HttpError(response.status === 401 || response.status === 403 ? 503 : 502, `رفض GitHub المهمة الآلية: ${detail}`)
   }
   return { workflow }
 }
@@ -4918,6 +4919,97 @@ export function createRequestHandler({
         updatedAt: FieldValue.serverTimestamp(),
       })
       sendJson(res, 200, { ok: true, id: ref.id }, { 'cache-control': 'no-store' })
+      return
+    }
+
+    /* Canonical Publishing Pipeline: every CMS save is registered here.
+       Published material dispatches the same guarded deployment workflow used by
+       the control center. Drafts are recorded without publishing; future
+       scheduled articles wait for the scheduled-release sweeper. */
+    if (url.pathname === contentPublishSyncPath) {
+      if (method !== 'POST') {
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
+        return
+      }
+      const contentType = String(req.headers['content-type'] || '').toLowerCase()
+      if (contentType.split(';', 1)[0].trim() !== 'application/json') {
+        req.resume()
+        throw new HttpError(415, 'Content-Type must be application/json')
+      }
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      if (claims?.admin !== true || typeof claims.sub !== 'string' || !claims.sub) {
+        req.resume()
+        throw new HttpError(403, 'Admin access required')
+      }
+      const body = await readJsonBody(req, 8_192)
+      const kind = boundedString(body?.kind, 20)
+      const slug = boundedString(body?.slug, 180)
+      const status = boundedString(body?.status, 32) || (kind === 'article' ? 'published' : 'published')
+      const scheduledAtText = boundedString(body?.scheduledAt, 80)
+      if (!['article', 'book', 'paper', 'media'].includes(kind)) throw new HttpError(400, 'نوع المحتوى غير صالح')
+      if (!/^[a-z0-9][a-z0-9-]{0,179}$/i.test(slug)) throw new HttpError(400, 'slug غير صالح')
+
+      const now = Date.now()
+      const scheduledMs = scheduledAtText ? Date.parse(scheduledAtText) : 0
+      const futureScheduled = kind === 'article' && status === 'scheduled' && Number.isFinite(scheduledMs) && scheduledMs > now
+      const draft = kind === 'article' && status === 'draft'
+      const state = draft ? 'draft' : futureScheduled ? 'scheduled' : 'queued'
+      const { db, FieldValue, Timestamp } = await getAdminFirestore()
+      const jobId = `${kind}__${slug}`
+      const jobRef = db.collection('admin_content_pipeline').doc(jobId)
+      const basePatch = {
+        kind,
+        slug,
+        status,
+        state,
+        requestedBy: claims.sub,
+        requestedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        releaseAt: futureScheduled ? Timestamp.fromDate(new Date(scheduledMs)) : null,
+        lastError: '',
+      }
+      await jobRef.set(basePatch, { merge: true })
+
+      if (draft || futureScheduled) {
+        sendJson(res, 200, {
+          ok: true,
+          state,
+          dispatched: false,
+          message: draft
+            ? 'حُفظت المسودة في خط النشر؛ لن تُنشر قبل اعتمادها.'
+            : 'سُجل موعد النشر، وسيطلقه الحارس المجدول آلياً عند حلول الوقت.',
+        }, { 'cache-control': 'no-store' })
+        return
+      }
+
+      const workflow = String(process.env.CONTENT_PUBLISH_GITHUB_WORKFLOW || 'firebase-hosting-live.yml').trim()
+      try {
+        await dispatchAdminWorkflow({ workflow, inputs: {} })
+        await jobRef.set({
+          state: 'queued',
+          workflow,
+          dispatchRequestedAt: FieldValue.serverTimestamp(),
+          dispatchAttempts: FieldValue.increment(1),
+          lastError: '',
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true })
+      } catch (error) {
+        await jobRef.set({
+          state: 'queued',
+          dispatchAttempts: FieldValue.increment(1),
+          lastError: boundedString(error instanceof Error ? error.message : 'تعذّر بدء النشر.', 500),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true }).catch(() => undefined)
+        throw error
+      }
+      sendJson(res, 200, {
+        ok: true,
+        state: 'queued',
+        dispatched: true,
+        workflow,
+        message: 'حُفظ المحتوى وبدأت بوابة الربط والفهرسة والنشر تلقائياً.',
+      }, { 'cache-control': 'no-store' })
       return
     }
 

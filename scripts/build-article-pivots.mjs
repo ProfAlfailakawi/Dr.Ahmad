@@ -18,6 +18,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { mergeCanonicalArticleBodies, mergeCanonicalRecords, readCanonicalCms } from './canonical-cms.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const BODIES = resolve(ROOT, 'src/data/bodies.json')
@@ -31,15 +32,18 @@ if (!existsSync(BODIES)) {
   process.exit(1)
 }
 
-const bodies = JSON.parse(readFileSync(BODIES, 'utf8'))
+const staticBodies = JSON.parse(readFileSync(BODIES, 'utf8'))
+const canonical = readCanonicalCms(ROOT)
+const bodies = mergeCanonicalArticleBodies(staticBodies, {}, canonical).normal
 const dataText = readFileSync(DATA, 'utf8')
 const block = dataText.slice(dataText.indexOf('export const articles = ['), dataText.indexOf('export const articlesWithBody'))
-const titles = new Map()
+const staticArticles = []
 for (const record of block.split(/\n(?=  \{ slug: ')/).slice(1)) {
   const slug = record.split("'")[1]
   const title = record.match(/title: '((?:[^'\\]|\\.)*)'/)?.[1]
-  if (slug) titles.set(slug, title || slug)
+  if (slug) staticArticles.push({ slug, title: title || slug })
 }
+const titles = new Map(mergeCanonicalRecords('article', staticArticles, canonical).map((article) => [article.slug, article.title || article.slug]))
 
 /* ═══ علامات الانعطاف، مرجّحةً بقوّتها في نصّه ═══ */
 const AR = 'ء-ي'

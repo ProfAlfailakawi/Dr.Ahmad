@@ -43,6 +43,7 @@ import {
   type TransformingCampaign,
 } from '../../lib/sovereign-publishing.mjs'
 import { requestPublicationPassportSignature } from '../../lib/publication-passport-client'
+import { requestContentPublicationSync } from '../../lib/content-publication-sync'
 import { audioProofAssets } from '../../lib/audio-proof'
 import { buildMultimodalMeaningCourt, type MultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
 import { buildImpactMirror, type EditorialImpactMirror, type ImpactObservationSource } from '../../lib/impact-mirror.mjs'
@@ -3626,6 +3627,11 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           updatedAt: serverTimestamp(),
         }, { merge: true })
         setEditorialImpactMirrorByDecision((items) => ({ ...items, [editorialDecision.id]: impactMirror }))
+      }
+      try {
+        await requestContentPublicationSync({ kind: 'article', slug: bundle.slug, status: 'draft', scheduledAt: '' })
+      } catch (reason) {
+        console.warn('تعذّر تسجيل مسودة الاستوديو في خط النشر التلقائي.', reason)
       }
       setNotice(`نُقل المقال إلى «المقالات» كمسودة بجواز موقّع ${signedPassport.fingerprint.slice(0, 12)}…${signedPassport.manifest.releaseReady ? ' ومكتمل الطبقات' : `؛ وتبقى قبل النشر: ${signedPassport.manifest.blocking.join('، ')}`} ✓`)
       await onTransferToArticles?.(bundle.slug)

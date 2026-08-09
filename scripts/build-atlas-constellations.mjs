@@ -21,6 +21,22 @@ const read = (path) => JSON.parse(readFileSync(resolve(root, path), 'utf8'))
 
 const graph = read('src/data/knowledge-graph.json')
 const index = read('src/data/knowledge-graph-index.json')
+/* معجم الدكتور هو مرجع الأسماء الوحيد. لا يُعرض للزائر مصطلحٌ إلا إذا كان
+   اسماً معتمداً فيه (canonicalAr)، والاسم البديل يُردّ إلى المعتمد. فلا نضع
+   على السماء لفظاً استنتاجياً ونقدّمه بوصفه مصطلحاً علمياً. */
+const glossary = read('src/data/dr-ahmad-domain-glossary.json')
+const canonicalTitles = new Set()
+const aliasToCanonical = new Map()
+for (const entry of Array.isArray(glossary) ? glossary : []) {
+  const canonical = String(entry?.canonicalAr || '').trim()
+  if (!canonical) continue
+  canonicalTitles.add(canonical)
+  aliasToCanonical.set(canonical, canonical)
+  for (const alias of [entry?.canonicalEn, ...(Array.isArray(entry?.aliases) ? entry.aliases : [])]) {
+    const value = String(alias || '').trim()
+    if (value) aliasToCanonical.set(value, canonical)
+  }
+}
 
 const nodes = Array.isArray(index.nodes) ? index.nodes : Object.values(index.nodes)
 const byId = new Map(nodes.map((node) => [node.id, node]))
@@ -72,9 +88,14 @@ for (const [conceptId, articles] of conceptArticles) {
   const years = path.map(yearOf).filter(Boolean)
   const span = years.length > 1 ? Math.max(...years) - Math.min(...years) : 0
 
+  const rawTitle = concept.title.trim()
+  const canonical = aliasToCanonical.get(rawTitle)
+  /* ليس في المعجم؟ لا يُعرض. المصطلح المعتمد وحده يليق بأن يُسمّى كوكبة. */
+  if (!canonical || !canonicalTitles.has(canonical)) continue
+
   candidates.push({
     id: `concept-${concept.slug || conceptId.slice('concept:'.length)}`,
-    title: concept.title.trim(),
+    title: canonical,
     slugs: path.map((id) => (byId.get(id) || {}).slug).filter(Boolean),
     /* الأفضلية لمسارٍ يمتدّ عبر السنين ويكتمل عدده: هو الأدلّ على فكرةٍ رافقته. */
     weight: span * 2 + path.length,
@@ -95,5 +116,8 @@ const payload = {
 }
 
 writeFileSync(resolve(root, 'src/data/atlas-constellations.json'), `${JSON.stringify(payload, null, 2)}\n`, 'utf8')
+for (const item of chosen) {
+  if (!canonicalTitles.has(item.title)) throw new Error(`اسم كوكبة خارج المعجم: ${item.title}`)
+}
 console.log(`كوكبات مولّدة: ${chosen.length}`)
 for (const item of chosen) console.log(` · ${item.title} — ${item.slugs.length} محطات`)

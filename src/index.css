@@ -24,6 +24,31 @@ html {
   --shadow-soft: 0 22px 44px -26px rgba(21, 22, 26, 0.4);
   --shadow-deep: 0 36px 64px -36px rgba(21, 22, 26, 0.42);
   color-scheme: light;
+
+  /* ألوان محاور الأطلس. كانت معرّفةً داخل لوحة السماء وحدها (.atlas-night)،
+     فخرجت قائمة «ألوان المحاور» — وهي فوق اللوحة لا داخلها — بنقاطٍ شفافة:
+     عنوانٌ يَعِد بألوانٍ لا تظهر. هنا تُعرَّف للصفحة كلها، بدرجاتٍ أعمق قليلاً
+     تليق بالورق الفاتح، وتبقى درجات الليل كما هي داخل اللوحة. */
+  --atlas-education: 58 118 170;
+  --atlas-pedagogy: 78 140 148;
+  --atlas-society: 152 100 138;
+  --atlas-technology: 42 137 124;
+  --atlas-identity: 156 118 58;
+  --atlas-media: 105 96 172;
+  --atlas-research: 108 148 78;
+  --atlas-warm: 150 114 66;
+}
+
+/* في الوضع الليلي تُستعمل درجات السماء نفسها خارج اللوحة أيضاً. */
+html.dark {
+  --atlas-education: 122 174 219;
+  --atlas-pedagogy: 151 196 202;
+  --atlas-society: 198 158 187;
+  --atlas-technology: 101 195 181;
+  --atlas-identity: 211 174 116;
+  --atlas-media: 161 153 220;
+  --atlas-research: 166 201 137;
+  --atlas-warm: 194 160 112;
 }
 
 /* الوضع الليلي — حبر دافئ لا أسود قاسٍ */
@@ -326,6 +351,9 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   inset: 0;
   background: linear-gradient(90deg, transparent, rgb(var(--c-canvas) / .92), transparent);
   transform: translateX(140%);
+  /* لا لفٌّ كل بضع ثوانٍ: الخط يمرّ مرةً واحدة حين يدخل القسم الشاشة، ثم يسكن.
+     (كانت هنا animation لانهائية على keyframes حُذفت مع تلميع الموقع، فبقي
+     الإعلان يشير إلى حركةٍ غير موجودة.) */
   opacity: 0;
 }
 .signature-label.is-visible > span:first-child::after {
@@ -439,6 +467,43 @@ html.dark .signature-page :is(.bg-canvas, .bg-wash) {
   border-radius: 999px;
   background: linear-gradient(180deg, rgb(var(--c-accent) / .34), rgb(var(--c-accent) / 0));
   opacity: .52;
+}
+.content-articles .article-body:has(.reader-margin-thread)::before { opacity: 0; }
+.reader-margin-thread {
+  position: absolute;
+  inset-inline-start: -1.15rem;
+  inset-block: .45rem 1rem;
+  inline-size: 1px;
+  background: var(--c-hair);
+  pointer-events: none;
+}
+.reader-margin-thread__fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: top;
+  border-radius: 999px;
+  background: rgb(var(--c-accent) / .62);
+  transition: transform .12s linear;
+}
+.reader-margin-thread__node {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: var(--reader-node-at, 0%);
+  inline-size: 7px;
+  block-size: 7px;
+  transform: translate(50%, -50%);
+  border: 1px solid rgb(var(--c-accent) / .48);
+  border-radius: 50%;
+  background: rgb(var(--c-canvas));
+  transition: transform .28s ease, background-color .28s ease;
+}
+.reader-margin-thread__node.is-inherited { background: rgb(var(--c-accent) / .55); }
+.reader-margin-thread__node.is-reached {
+  transform: translate(50%, -50%) scale(1.28);
+  background: rgb(var(--c-accent));
+}
+@media (max-width: 640px) {
+  .reader-margin-thread { inset-inline-start: -.72rem; }
 }
 
 .content-books .page-head {
@@ -1357,6 +1422,33 @@ html.dark .human-core__portrait-base { filter: grayscale(1) contrast(.96) bright
 .human-core__orbit span:nth-child(3) { bottom: 6%; left: 22%; width: 4px; height: 4px; }
 @keyframes human-core-orbit { to { transform: rotate(360deg); } }
 
+/* حلقة عُمر المقال. كانت عند inset-inline-start: 0 — أي فوق طرف التاريخ نفسه في
+   الاتجاه العربي — فتقصّ رقم اليوم. الآن للصفّ هامشٌ خاصٌّ بها تسكنه وحدها،
+   ومركزها على سطر التاريخ لا فوقه. */
+.article-patina-card { position: relative; }
+@media (min-width: 640px) {
+  .article-patina-card > a { padding-inline-start: 2.5rem; }
+}
+.article-patina {
+  position: absolute;
+  inset-block-start: 1.5rem;
+  inset-inline-start: .1rem;
+  inline-size: 1.55rem;
+  block-size: 1.55rem;
+  border: 1px solid var(--c-hair);
+  border-radius: 999px;
+  pointer-events: none;
+}
+.article-patina::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(from -90deg, rgb(var(--c-accent)) calc(var(--article-age) * 1turn), transparent 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+}
+
 .human-core__cv {
   position: relative;
   overflow: hidden;
@@ -1483,6 +1575,9 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
   .human-core__scan { display: none; }
 }
 
+@media (max-width: 639px) {
+  .article-patina { display: none; }
+}
 
 /* حقول التحكم تعتمد حدودها الداخلية فقط؛ يمنع الإطار المزدوج الداكن عند التركيز. */
 .admin-shell :is(input, textarea, select):focus-visible {
@@ -2261,6 +2356,25 @@ html.site-silent .site-fade-up {
 /* إخراج أكاديمي نظيف عند الطباعة/PDF. */
 @page { size: A4; margin: 22mm 19mm 24mm; }
 @media print {
+  /* الورقة نهارٌ دائماً. كان الزائر إن طبع وهو في الوضع الليلي خرجت له صفحةٌ
+     بيضاء بحبرٍ عاجيٍّ باهت — لأن الخلفية وحدها كانت تُجبَر على البياض وتبقى
+     ألوان الليل في المتغيّرات. هنا تُستعاد لوحة النهار كاملةً قبل كل شيء. */
+  html.dark,
+  html.serenity-mode,
+  html.serenity-dark,
+  html.serenity-sepia {
+    --c-canvas: 255 255 255;
+    --c-ink: 21 22 26;
+    --c-soft: 88 95 106;
+    --c-accent: 62 92 120;
+    --c-accent-deep: 51 80 107;
+    --c-wash: 255 255 255;
+    --c-hair: rgba(21, 22, 26, 0.22);
+    color-scheme: light;
+  }
+  /* الشعار يُطبع بحبره الأصلي: قلبُ الليل يجعله أبيض على أبيض. */
+  html.dark .mark-invertible { filter: none !important; }
+
   html, body { background: #fff !important; color: #111 !important; }
   body::before,
   nav,
@@ -2273,6 +2387,7 @@ html.site-silent .site-fade-up {
   details,
   .floating-actions { display: none !important; }
   .article-journey { padding: 0 !important; }
+  .article-journey > :not(article) { display: none !important; }
   .article-journey article { max-width: none !important; margin: 0 !important; }
   .article-journey article::before {
     content: "د. أحمد حسين الفيلكاوي  ·  dr-alfailakawi.com\A" attr(data-print-citation);
@@ -3077,6 +3192,20 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.research-section-navigator {
+  inset-block-start: calc(4rem + env(safe-area-inset-top, 0px));
+  isolation: isolate;
+  contain: paint;
+  background: rgb(var(--c-canvas));
+}
+.research-section-navigator nav {
+  contain: layout paint;
+}
+.research-section-navigator button {
+  font-variant-numeric: tabular-nums;
+  transform: none !important;
+}
+
 .content-research .research-smart-reader {
   border-bottom: 1px solid rgb(var(--c-ink) / .1);
   background:
@@ -4181,6 +4310,120 @@ html, body, #root { max-inline-size: 100%; }
 /* الحدّ الذي رسمه الدكتور يبقى كما هو تماماً — لا يُزاح ولا يُستبدل.
    الجمال هنا في المحطّات وحدها: تستقرّ حين يصلها القارئ. */
 .thread-spine { position: relative; }
+.thread-passer {
+  position: absolute;
+  z-index: 2;
+  inset-inline-end: -4px;
+  inset-block-start: .45rem;
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  opacity: 0;
+  pointer-events: none;
+}
+.thread-spine--drawn .thread-passer {
+  animation: thread-passer var(--thread-duration, 1.3s) cubic-bezier(.2,.72,.2,1) both;
+}
+@keyframes thread-passer {
+  0% { opacity: 0; inset-block-start: .45rem; }
+  8%, 90% { opacity: 1; }
+  100% { opacity: 0; inset-block-start: calc(100% - .45rem); }
+}
+
+/* سيرة المفهوم: المفهوم يمرّ على خيطه مرةً واحدة، فيملأ ما عبره فقط. */
+.concept-bloom {
+  position: relative;
+  --concept-line-inset: 0px;
+}
+.concept-bloom::before,
+.concept-bloom::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: var(--concept-line-inset);
+  inset-block-start: .35rem;
+  pointer-events: none;
+}
+.concept-bloom::before {
+  inline-size: 1px;
+  block-size: calc(100% - .7rem);
+  background: linear-gradient(to bottom, rgb(var(--c-accent) / .55) 0 50%, var(--c-hair) 50% 100%);
+  background-size: 100% 200%;
+  background-position: 0 100%;
+}
+.concept-bloom::after {
+  inline-size: 7px;
+  block-size: 7px;
+  margin-inline-end: -3px;
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  opacity: 0;
+  transform: translateY(0);
+  box-shadow: 0 0 0 4px rgb(var(--c-accent) / .08);
+}
+.concept-bloom--ready .concept-bloom__station { opacity: 0; transform: translateY(9px); }
+.concept-bloom--run::before { animation: concept-thread-fill var(--concept-duration) cubic-bezier(.2,.72,.2,1) both; }
+.concept-bloom--run::after { animation: concept-passer var(--concept-duration) cubic-bezier(.2,.72,.2,1) both; }
+.concept-bloom__station {
+  transition: opacity .46s ease, transform .56s cubic-bezier(.2,.72,.2,1);
+  transition-delay: var(--concept-delay, 0ms);
+}
+.concept-bloom--run .concept-bloom__station { opacity: 1; transform: none; }
+.concept-bloom__node {
+  inset-inline-end: -5px;
+  transform: scale(0);
+  transition: transform .42s cubic-bezier(.34,1.56,.64,1);
+  transition-delay: calc(var(--concept-delay, 0ms) + 120ms);
+}
+.concept-bloom--run .concept-bloom__node { transform: scale(1); }
+.concept-bloom__station > div:last-child {
+  transition: opacity .42s ease;
+  transition-delay: calc(var(--concept-delay, 0ms) + 200ms);
+}
+.concept-bloom--ready .concept-bloom__station > div:last-child { opacity: 0; }
+.concept-bloom--run .concept-bloom__station > div:last-child { opacity: 1; }
+@keyframes concept-thread-fill { to { background-position: 0 0; } }
+@keyframes concept-passer {
+  0% { opacity: 0; inset-block-start: .35rem; }
+  4%, 94% { opacity: 1; }
+  100% { opacity: 0; inset-block-start: calc(100% - .7rem); }
+}
+
+/* وثيقة العقد: كل السنوات موجودة في التخطيط منذ البداية؛ الزمن يمرّ عليها
+   مرةً واحدة فيبدّل نبرتها من السكون إلى الحضور. */
+.decade-bloom::before {
+  content: "";
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block: .75rem;
+  inline-size: 1px;
+  background: rgb(var(--c-accent) / .5);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 1.9s cubic-bezier(.2,.72,.2,1);
+}
+.decade-bloom { position: relative; }
+.decade-bloom.is-lit::before { transform: scaleY(1); }
+.decade-bloom__year {
+  opacity: .68;
+  transition: opacity .48s ease, background-color .48s ease;
+  transition-delay: var(--decade-delay, 0ms);
+}
+.decade-bloom.is-lit .decade-bloom__year { opacity: 1; background: rgb(var(--c-accent) / .018); }
+.decade-bloom__node {
+  position: absolute;
+  inset-inline-end: -4px;
+  inset-block-start: 1.9rem;
+  inline-size: 8px;
+  block-size: 8px;
+  border: 2px solid rgb(var(--c-canvas));
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  transform: scale(0);
+  transition: transform .38s cubic-bezier(.34,1.56,.64,1);
+  transition-delay: calc(var(--decade-delay, 0ms) + 90ms);
+}
+.decade-bloom.is-lit .decade-bloom__node { transform: scale(1); }
 
 /* المحطّة تستقرّ بعد أن يمرّ بها الخيط. */
 .thread-station {
@@ -4233,6 +4476,17 @@ html, body, #root { max-inline-size: 100%; }
   .thread-station { opacity: 1; transform: none; }
   .thread-node,
   .next-step-thread .next-step-node { transform: scale(1); }
+  .thread-passer { display: none; }
+  .concept-bloom::before { animation: none; background-position: 0 0; }
+  .concept-bloom::after { display: none; }
+  .concept-bloom .concept-bloom__station,
+  .concept-bloom .concept-bloom__station > div:last-child { opacity: 1; transform: none; transition: none; }
+  .concept-bloom .concept-bloom__node { transform: scale(1); transition: none; }
+  .decade-bloom::before { transform: scaleY(1); transition: none; }
+  .decade-bloom .decade-bloom__year { opacity: 1; transition: none; }
+  .decade-bloom .decade-bloom__node { transform: scale(1); transition: none; }
+  .reader-margin-thread__fill,
+  .reader-margin-thread__node { transition: none; }
 }
 
 /* ── لحظة الجلاء ──
@@ -4351,6 +4605,16 @@ html, body, #root { max-inline-size: 100%; }
   --c-accent-deep: 164 194 220;
   --c-wash: 23 26 31;
   --c-hair: rgba(234, 234, 231, .11);
+  /* لوحة محاور ليلية هادئة: اختلافٌ واضح في الدرجة، بلا نيون ولا لون خارج
+     طيف الموقع الرمادي-الأزرق. تُستهلك عبر --atlas-axis لكل نجمة. */
+  --atlas-education: 122 174 219;
+  --atlas-pedagogy: 151 196 202;
+  --atlas-society: 198 158 187;
+  --atlas-technology: 101 195 181;
+  --atlas-identity: 211 174 116;
+  --atlas-media: 161 153 220;
+  --atlas-research: 166 201 137;
+  --atlas-warm: 194 160 112;
   background: rgb(var(--c-canvas));
   background-image:
     radial-gradient(62% 42% at 76% 0%, rgb(var(--c-accent) / .085), transparent 70%),
@@ -4365,6 +4629,7 @@ html, body, #root { max-inline-size: 100%; }
 
 @media (prefers-reduced-motion: reduce) {
   .atlas-night circle { transition: none; }
+  .atlas-night::after { animation: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -4377,7 +4642,6 @@ html, body, #root { max-inline-size: 100%; }
   --ui-glass: rgb(var(--c-canvas) / .82);
   --ui-glass-strong: rgb(var(--c-canvas) / .93);
   --ui-edge: rgb(var(--c-ink) / .075);
-  --ui-specular: rgb(255 255 255 / .72);
   --ui-float-shadow: 0 22px 62px -38px rgb(24 37 50 / .42), 0 1px 0 rgb(255 255 255 / .72) inset;
   --ui-hover-shadow: 0 30px 76px -38px rgb(24 37 50 / .52), 0 1px 0 rgb(255 255 255 / .82) inset;
 }
@@ -4385,7 +4649,6 @@ html.dark {
   --ui-glass: rgb(var(--c-canvas) / .78);
   --ui-glass-strong: rgb(var(--c-canvas) / .9);
   --ui-edge: rgb(255 255 255 / .1);
-  --ui-specular: rgb(255 255 255 / .075);
   --ui-float-shadow: 0 24px 66px -36px rgb(0 0 0 / .74), 0 1px 0 rgb(255 255 255 / .06) inset;
   --ui-hover-shadow: 0 32px 82px -36px rgb(0 0 0 / .86), 0 1px 0 rgb(255 255 255 / .08) inset;
 }
@@ -4494,10 +4757,10 @@ html.dark .page-head {
 .my-space-panel :is(button, a)[class*="rounded-full"][class*="border"],
 .article-tool-icon,
 .my-space-trigger[class*="rounded-full"] {
-  background-image: radial-gradient(circle at 38% 22%, var(--ui-specular), transparent 48%);
-  box-shadow: 0 9px 24px -18px rgb(21 34 47 / .55), 0 1px 0 rgb(255 255 255 / .52) inset;
-  -webkit-backdrop-filter: blur(14px) saturate(1.16);
-  backdrop-filter: blur(14px) saturate(1.16);
+  background-image: none !important;
+  box-shadow: 0 8px 20px -18px rgb(var(--c-ink) / .38);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 @media (hover: hover) and (pointer: fine) {
   .site-nav :is(button, a)[class*="rounded-full"][class*="border"],
@@ -4509,6 +4772,7 @@ html.dark .page-head {
   .signature-page:not(.admin-dashboard) :is(button, a)[class*="rounded-full"][class*="border"]:hover,
   .my-space-panel :is(button, a)[class*="rounded-full"][class*="border"]:hover {
     transform: translateY(-1.5px);
+    box-shadow: 0 12px 26px -20px rgb(var(--c-ink) / .48);
     box-shadow: 0 14px 32px -19px rgb(21 34 47 / .62), 0 1px 0 rgb(255 255 255 / .65) inset;
   }
 }
@@ -4732,6 +4996,11 @@ img[loading="lazy"],
   background-color: rgb(var(--c-wash));
 }
 
+/* استثناء: العلامة التي تنقلب في الوضع الليلي (dark:invert). القلب يشمل خلفية
+   العنصر لا صورته وحدها، فتنقلب خلفية الانتظار الداكنة إلى مربّعٍ فاتحٍ يحوط
+   الشعار. الشعار شفّاف أصلاً ولا يحتاج خلفيةَ انتظار. */
+img.mark-invertible { background-color: transparent; }
+
 /* الوضع الجديد ينتشر من زر الليل/النهار نفسه، بلا Overlay أو تحكم جديد. */
 @supports (view-transition-name: root) {
   html[data-theme-transition="radial"]::view-transition-old(root),
@@ -4771,6 +5040,17 @@ img[loading="lazy"],
   pointer-events: none;
   background: rgb(var(--c-soft) / .22);
 }
+.audio-wave-progress.has-measured-wave::before { display: none; }
+.audio-measured-wave,
+.audio-measured-wave svg {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.audio-measured-wave svg { color: rgb(var(--c-soft) / .22); }
+.audio-measured-wave path { fill: none; stroke: currentColor; stroke-width: .72; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.audio-measured-wave .audio-measured-wave__fill { color: rgb(var(--c-accent)); transition: clip-path .14s linear; }
 .audio-wave-fill {
   position: relative;
   z-index: 1;
@@ -5287,8 +5567,15 @@ html.dark .content-book-detail .book-detail-cover {
   content: "";
   position: absolute;
   /* توسيعٌ متساوٍ في الاتجاهات الأربعة: 36 تصير 44، و40 تصير 48.
-     ولا يعرف يميناً من يسار، فيصحّ في العربية والإنجليزية معاً. */
-  inset: -4px;
+     ولا يعرف يميناً من يسار، فيصحّ في العربية والإنجليزية معاً.
+     وأربعةٌ وحدها لا تكفي الأيقونة الصغيرة: أيقونات التواصل في التذييل
+     عشرون بكسلاً، فكانت مساحة اللمس ٢٨ لا ٤٤ — والاسم يَعِد بأربعةٍ وأربعين.
+     المربّع هنا يبلغها دائماً، ويبقى الفراغ بين الأيقونات أوسع من أن تتداخل. */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  inline-size: max(44px, calc(100% + 8px));
+  block-size: max(44px, calc(100% + 8px));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -5297,6 +5584,8 @@ html.dark .content-book-detail .book-detail-cover {
    إضافة وظائف جديدة أو تغيير مسارات المحتوى. العربية فقط في إشارات الاكتشاف.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* 1) متن المقالات — رصفٌ كامل بطلب الدكتور، مع إبقاء آخر سطر من جهة البدء
+   كي لا يتمدّد السطر العربي القصير تمدداً مصطنعاً. */
 /* 1) متن المقالات — العربية تُرصف من جهة البدء فقط.
    الرصف من الطرفين يوسّع فراغات الكلمات ويصنع «أنهاراً بيضاء»؛ لذلك نحرس
    start في الحاسوب والهاتف والطباعة، مع إبقاء عرض القراءة الافتراضي 66ch. */
@@ -5334,6 +5623,12 @@ html.dark .content-book-detail .book-detail-cover {
   }
 }
 
+/* تظليل القارئ الخاصّ: يحلّ محلّ تظليل النظام فلا تظهر قائمة iOS فوق النصّ. */
+::highlight(reader-selection) {
+  background: rgb(var(--c-accent) / .19);
+  color: rgb(var(--c-ink));
+}
+
 .reader-selection-toolbar {
   border-color: rgb(var(--c-accent) / .22) !important;
   background: rgb(var(--c-canvas) / .965) !important;
@@ -5342,6 +5637,20 @@ html.dark .content-book-detail .book-detail-cover {
     0 0 0 1px rgb(var(--c-canvas) / .7) inset !important;
   backdrop-filter: blur(14px) saturate(135%);
   -webkit-backdrop-filter: blur(14px) saturate(135%);
+}
+.reader-selection-toolbar.reader-selection-toolbar-shell {
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 999px;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.reader-selection-toolbar-pill {
+  border-color: rgb(var(--c-accent) / .22) !important;
+  background: rgb(var(--c-canvas) / .98) !important;
+  box-shadow: 0 14px 30px -20px rgb(var(--c-ink) / .5) !important;
 }
 .reader-selection-toolbar button {
   transition: color .2s var(--E), background-color .2s var(--E), transform .2s var(--E);
@@ -5533,6 +5842,47 @@ html.reader-paper .sentence-item.is-sentence-active {
   background: rgb(var(--c-canvas) / .9) !important;
   box-shadow: 0 6px 18px -15px rgb(var(--c-ink) / .5);
 }
+.article-pull-quote--marker-only {
+  display: inline-flex !important;
+  min-block-size: 0;
+  margin: 0 .28em 0 0 !important;
+  padding: 0 !important;
+  vertical-align: -.34em;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  contain: layout paint;
+}
+.article-pull-quote--marker-only::before,
+.article-pull-quote--marker-only::after { display: none !important; }
+.article-pull-quote--marker-only .article-pull-quote__action {
+  position: static !important;
+  inset: auto !important;
+  inline-size: 1.65rem !important;
+  block-size: 1.65rem !important;
+  touch-action: manipulation;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* «حياة هذه الفكرة»: خريطة جيب من الحواف المبنية مسبقاً؛ العقد HTML قابلة
+   للتركيز والنقر، والخيوط SVG فقط كي لا يُعاد حساب خريطة المعرفة في القارئ. */
+.idea-mini-graph__node {
+  left: clamp(6rem, var(--graph-x), calc(100% - 6rem));
+  top: clamp(3.4rem, var(--graph-y), calc(100% - 3.4rem));
+  transform: translate(-50%, -50%);
+}
+.idea-mini-graph__node:hover,
+.idea-mini-graph__node:focus-visible { transform: translate(-50%, calc(-50% - 2px)); }
+@media (max-width: 640px) {
+  .idea-mini-graph { min-height: 31rem; }
+  .idea-mini-graph__node {
+    left: clamp(4rem, var(--graph-x), calc(100% - 4rem));
+    width: 7.65rem;
+    padding: .65rem .7rem;
+  }
+}
 @media (max-width: 640px) {
   .article-pull-quote {
     margin-block: .1rem 1.15rem !important;
@@ -5544,12 +5894,21 @@ html.reader-paper .sentence-item.is-sentence-active {
     font-size: calc(.98rem * var(--article-scale, 1)) !important;
     line-height: 1.86 !important;
   }
+  .article-pull-quote--marker-only {
+    min-block-size: 0;
+    margin: 0 .24em 0 0 !important;
+    padding: 0 !important;
+  }
 }
 
 /* 6) مساحتي — «الأثر» يُكتشف مرة، واللوحة نفسها تتنفس من رأسها لا من صناديق إضافية. */
 .my-space-trigger { overflow: visible; }
+/* الهمسة تسكن يسار الأيقونة. كانت عند inset-inline-end: calc(100% + .65rem) —
+   وهذه في الاتجاه العربي تدفعها إلى يمين الأيقونة، والأيقونة نفسها ملتصقة بحافة
+   الشاشة اليمنى، فتخرج الهمسة عن الشاشة ولا يظهر منها إلا حرفها المقصوص. */
 .my-space-discovery {
   position: absolute;
+  inset-inline-start: calc(100% + .65rem);
   inset-inline-end: calc(100% + .65rem);
   top: 50%;
   display: grid;
@@ -5568,6 +5927,7 @@ html.reader-paper .sentence-item.is-sentence-active {
 .my-space-discovery::after {
   content: "";
   position: absolute;
+  inset-inline-end: 100%;
   inset-inline-start: 100%;
   top: 50%;
   inline-size: .62rem;
@@ -5610,6 +5970,16 @@ html.reader-paper .sentence-item.is-sentence-active {
 .my-space-eyebrow { letter-spacing: 0; }
 @media (max-width: 640px) {
   .my-space-discovery {
+    inset: auto calc(100% + .55rem) auto auto;
+    top: 50%;
+    min-inline-size: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    border-radius: 999px;
+    padding: .42rem .7rem;
+    transform: translateY(-50%);
+    white-space: nowrap;
     inset-inline-end: .15rem;
     top: auto;
     bottom: calc(100% + .55rem);
@@ -5617,6 +5987,11 @@ html.reader-paper .sentence-item.is-sentence-active {
     transform: none;
   }
   .my-space-discovery::after {
+    left: 100%;
+    right: auto;
+    top: 50%;
+    inline-size: .55rem;
+    block-size: 1px;
     inset-inline-start: auto;
     inset-inline-end: 1.25rem;
     top: 100%;
@@ -5624,6 +5999,8 @@ html.reader-paper .sentence-item.is-sentence-active {
     block-size: .55rem;
   }
   @keyframes my-space-discovery-in {
+    from { opacity: 0; transform: translate(.3rem,-50%); }
+    to { opacity: 1; transform: translate(0,-50%); }
     from { opacity: 0; transform: translateY(.35rem); }
     to { opacity: 1; transform: translateY(0); }
   }
@@ -5800,6 +6177,7 @@ html.reader-paper .sentence-item.is-sentence-active {
     rgb(var(--c-canvas));
 }
 .atlas-night.is-graph .atlas-star-core {
+  filter: drop-shadow(0 0 5px rgb(var(--atlas-axis, var(--c-accent)) / .38));
   filter: drop-shadow(0 0 5px rgb(var(--c-accent) / .12));
 }
 .atlas-night.is-timeline { background: rgb(var(--c-canvas)); }
@@ -5811,9 +6189,14 @@ html.reader-paper .sentence-item.is-sentence-active {
   .selection-discovery-chip,
   .audio-sync-whisper,
   .article-pull-quote__action,
+  .article-pull-quote--marker-only,
   .reader-selection-toolbar,
   .my-space-overlay,
   .site-menu-overlay { display: none !important; }
+
+  /* يبقى في الورقة المقالُ نفسه فقط: لا مجلس الفكرة، ولا المسارات، ولا
+     أزرار التنقّل. هذه العناصر تحمل serenity-hide في واجهة القراءة. */
+  .article-journey .serenity-hide { display: none !important; }
 
   .article-journey article {
     font-kerning: normal;
@@ -5835,8 +6218,11 @@ html.reader-paper .sentence-item.is-sentence-active {
     font-size: 12pt !important;
     line-height: 1.82 !important;
     color: #161616 !important;
-    text-align: justify !important;
-    text-justify: inter-word !important;
+    /* الورقة غير الشاشة: عرض السطر على A4 أضيق، والضبط عليه يفتح فجواتٍ بين
+       الكلمات ويمطّ العربية. الشاشة تبقى justify (عقد .content-articles)،
+       والورقة تبدأ من أولها كما هو عقد الطباعة المسجَّل في اختبارات المشروع. */
+    text-align: start !important;
+    text-justify: auto !important;
     text-align-last: start !important;
     word-spacing: normal !important;
     widows: 3;
@@ -5962,4 +6348,16 @@ html.reader-paper .sentence-item.is-sentence-active {
   background: rgb(var(--c-accent));
   box-shadow: 0 0 0 1px rgb(var(--c-accent) / .32);
   pointer-events: none;
+}
+
+/* ═══ حقول الإدخال على iOS: لا تكبير تلقائي ═══
+   Safari يكبّر الصفحة تلقائياً عند لمس أي حقلٍ خطُّه أصغر من ١٦ بكسل، ثم لا
+   يعود إلى حجمه بعد إغلاق لوحة المفاتيح — فيبقى الموقع مكبَّراً ويختلّ التخطيط.
+   العلاج ليس تعطيل التكبير (user-scalable=no يضرّ من يحتاجه)، بل رفع خطّ الحقل
+   نفسه إلى ١٦. التناسب البصري يبقى بالحشو والارتفاع لا بتصغير الخط.
+   لوحة التحكم مستثناة: نماذجها كثيفة ومصمّمة لشاشة الدكتور. */
+@media (max-width: 767px) {
+  :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(.admin-shell :is(input, textarea, select)) {
+    font-size: 16px;
+  }
 }

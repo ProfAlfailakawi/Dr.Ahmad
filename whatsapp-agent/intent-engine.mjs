@@ -1,5 +1,6 @@
 import { arabicCountPhrase, toRoot, ARTICLE_ENTRY_FORMS, AUDIO_EPISODE_FORMS, BOOK_ENTRY_FORMS, CURATED_ENTRY_FORMS, NEW_MATERIAL_FORMS, PAPER_ENTRY_FORMS, RECORDED_VIEW_FORMS } from './dialect-lexicon.mjs'
-import { articlesByTopic, contentSummary, findContent, latestAudioContent, latestContent, mostPopularContent, normalizeArabic, searchContent, shortReadableContent, topArticleTopics } from './content-index.mjs'
+import { articlesByTopic, contentSummary, findContent, latestAudioContent, latestContent, messageVocabulary, mostPopularContent, normalizeArabic, searchContent, shortReadableContent, topArticleTopics } from './content-index.mjs'
+import { looksArabizi, repairMessage } from './comprehension.mjs'
 import { AUDIO_PUBLIC_BASE_URL, AUTO_REPLY_ALLOWLIST, AUTO_REPLY_TRIGGERS, MANUAL_TAKEOVER_MINUTES, MAX_MESSAGE_CHARS, SITE_URL, TIME_ZONE, flags, redactJid } from './config.mjs'
 import { conceptDefinition } from './domain-concepts.mjs'
 import { hashOpaque } from './crypto.mjs'
@@ -773,6 +774,41 @@ export function classifyIntent(text) {
      كلَّ ما يُكتب، ومنه ما ليس سؤالاً أصلاً. فالبوّابة تعرفه الآن وتردّه. */
   if (value.length >= 3) return { intent: INTENTS.SEARCH_TOPIC, confidence: 0.72, normalized: value, fallback: true }
   return { intent: INTENTS.UNKNOWN, confidence: 0.2, normalized: value }
+}
+
+/* ── ما قصده السائل ──
+   يُستدعى حين تعجز القراءة الأولى: تُعاد كتابة الرسالة بأقرب ما يعرفه معجم
+   الدكتور — تُقرأ الحروف اللاتينية عربيةً («maqal 3an el ta3leem»)، ويُصحَّح
+   حرفٌ سقط أو انقلب. ولا تُقبل الإعادة إلا إذا فتحت باباً كان مغلقاً: نيّةً
+   واضحةً أو مادةً في الموقع. وإلا فالأصلُ أولى، فلا نضع في فمه ما لم يقله. */
+export function understandMessage(db, text) {
+  const original = String(text || '')
+  if (!db || !original.trim()) return { text: original, changed: false, repairs: [] }
+  const normalized = clean(original)
+  if (!normalized) return { text: original, changed: false, repairs: [] }
+  let vocabulary
+  try { vocabulary = messageVocabulary(db) } catch { return { text: original, changed: false, repairs: [] } }
+  if (!vocabulary || !vocabulary.size) return { text: original, changed: false, repairs: [] }
+  /* لا نمسّ رسالةً فُهمت أصلاً، ولا رسالةً تخصّ إنساناً لا أرشيفاً: الدعاء
+     والشكوى والسؤال الشخصي تُقرأ كما كُتبت وتُحوَّل إلى الدكتور. */
+  const before = classifyIntent(normalized)
+  const alreadyUnderstood = before.intent !== INTENTS.UNKNOWN && !before.fallback
+  /* حتى النيّة الواضحة لا تنفع إن كان موضوعها مكتوباً بالحروف اللاتينية: «ابي
+     maqal 3an el ta3leem» تُقرأ طلباً، ثم يُبحث عن «maqal» فلا يوجد. */
+  const carriesArabizi = normalized.split(' ').some((word) => looksArabizi(word))
+  if (alreadyUnderstood && !carriesArabizi) return { text: original, changed: false, repairs: [] }
+  if (needsHumanOnly(original) || sensitiveDomain(original)) return { text: original, changed: false, repairs: [] }
+  /* بحثٌ يجد نتائجَ لنصٍّ لاتينيٍّ ليس فهماً: العناوين تتشابه حروفُها فيردّ
+     البوت بما لا صلة له. فلا يُعدّ العثورُ حجّةً حين تكون الرسالة عربيزي. */
+  if (!carriesArabizi && searchContent(db, normalized, { limit: 1 }).length > 0) return { text: original, changed: false, repairs: [] }
+
+  const repaired = repairMessage(normalized, vocabulary)
+  if (!repaired.changed) return { text: original, changed: false, repairs: [] }
+  const after = classifyIntent(repaired.text)
+  const opensIntent = after.intent !== INTENTS.UNKNOWN && !after.fallback
+  const findsContent = searchContent(db, repaired.text, { limit: 1 }).length > 0
+  if (!opensIntent && !findsContent) return { text: original, changed: false, repairs: [] }
+  return { text: repaired.text, changed: true, repairs: repaired.repairs }
 }
 
 export function classifyIntentWithLearning(db, text) {
@@ -2281,7 +2317,11 @@ export function shouldRespondToMessage({ db, jid, text, isReplyToAgent = false, 
   return { allowed: false, reason: 'personal-chat-default' }
 }
 
-export function handleIncoming({ db, jid, text, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date() }) {
+export function handleIncoming({ db, jid, text: rawText, isReplyToAgent = false, explicitContentSession = false, hasMedia = false, at = new Date() }) {
+  /* قبل كل شيء: أن نقرأ ما كُتب كما قُصد. لا يتغيّر النصّ إلا إذا كان تغييرُه
+     هو الفارق بين فهمٍ وصمت. */
+  const understood = understandMessage(db, rawText)
+  const text = understood.changed ? understood.text : rawText
   /* التصنيف كان يُنفّذ ثلاث مرات للرسالة نفسها: في البوابة، وفي قواعد الأدب،
      ثم في الرد. نُنشئه مرةً واحدة ونمرّره، فتقلّ كلفة كل تفاعل بلا تغيير المعنى. */
   let classification = classifyIntentWithLearning(db, text)

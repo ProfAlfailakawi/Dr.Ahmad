@@ -24,6 +24,31 @@ html {
   --shadow-soft: 0 22px 44px -26px rgba(21, 22, 26, 0.4);
   --shadow-deep: 0 36px 64px -36px rgba(21, 22, 26, 0.42);
   color-scheme: light;
+
+  /* ألوان محاور الأطلس. كانت معرّفةً داخل لوحة السماء وحدها (.atlas-night)،
+     فخرجت قائمة «ألوان المحاور» — وهي فوق اللوحة لا داخلها — بنقاطٍ شفافة:
+     عنوانٌ يَعِد بألوانٍ لا تظهر. هنا تُعرَّف للصفحة كلها، بدرجاتٍ أعمق قليلاً
+     تليق بالورق الفاتح، وتبقى درجات الليل كما هي داخل اللوحة. */
+  --atlas-education: 58 118 170;
+  --atlas-pedagogy: 78 140 148;
+  --atlas-society: 152 100 138;
+  --atlas-technology: 42 137 124;
+  --atlas-identity: 156 118 58;
+  --atlas-media: 105 96 172;
+  --atlas-research: 108 148 78;
+  --atlas-warm: 150 114 66;
+}
+
+/* في الوضع الليلي تُستعمل درجات السماء نفسها خارج اللوحة أيضاً. */
+html.dark {
+  --atlas-education: 122 174 219;
+  --atlas-pedagogy: 151 196 202;
+  --atlas-society: 198 158 187;
+  --atlas-technology: 101 195 181;
+  --atlas-identity: 211 174 116;
+  --atlas-media: 161 153 220;
+  --atlas-research: 166 201 137;
+  --atlas-warm: 194 160 112;
 }
 
 /* الوضع الليلي — حبر دافئ لا أسود قاسٍ */
@@ -1374,11 +1399,17 @@ html.dark .human-core__portrait-base { filter: grayscale(1) contrast(.96) bright
 .human-core__orbit span:nth-child(3) { bottom: 6%; left: 22%; width: 4px; height: 4px; }
 @keyframes human-core-orbit { to { transform: rotate(360deg); } }
 
+/* حلقة عُمر المقال. كانت عند inset-inline-start: 0 — أي فوق طرف التاريخ نفسه في
+   الاتجاه العربي — فتقصّ رقم اليوم. الآن للصفّ هامشٌ خاصٌّ بها تسكنه وحدها،
+   ومركزها على سطر التاريخ لا فوقه. */
 .article-patina-card { position: relative; }
+@media (min-width: 640px) {
+  .article-patina-card > a { padding-inline-start: 2.5rem; }
+}
 .article-patina {
   position: absolute;
-  inset-block-start: 1.1rem;
-  inset-inline-start: 0;
+  inset-block-start: 1.5rem;
+  inset-inline-start: .1rem;
   inline-size: 1.55rem;
   block-size: 1.55rem;
   border: 1px solid var(--c-hair);
@@ -2269,6 +2300,25 @@ html.site-silent .human-core__title-line::after { animation: none !important; op
 /* إخراج أكاديمي نظيف عند الطباعة/PDF. */
 @page { size: A4; margin: 22mm 19mm 24mm; }
 @media print {
+  /* الورقة نهارٌ دائماً. كان الزائر إن طبع وهو في الوضع الليلي خرجت له صفحةٌ
+     بيضاء بحبرٍ عاجيٍّ باهت — لأن الخلفية وحدها كانت تُجبَر على البياض وتبقى
+     ألوان الليل في المتغيّرات. هنا تُستعاد لوحة النهار كاملةً قبل كل شيء. */
+  html.dark,
+  html.serenity-mode,
+  html.serenity-dark,
+  html.serenity-sepia {
+    --c-canvas: 255 255 255;
+    --c-ink: 21 22 26;
+    --c-soft: 88 95 106;
+    --c-accent: 62 92 120;
+    --c-accent-deep: 51 80 107;
+    --c-wash: 255 255 255;
+    --c-hair: rgba(21, 22, 26, 0.22);
+    color-scheme: light;
+  }
+  /* الشعار يُطبع بحبره الأصلي: قلبُ الليل يجعله أبيض على أبيض. */
+  html.dark .mark-invertible { filter: none !important; }
+
   html, body { background: #fff !important; color: #111 !important; }
   body::before,
   nav,
@@ -4931,6 +4981,11 @@ img[loading="lazy"],
   background-color: rgb(var(--c-wash));
 }
 
+/* استثناء: العلامة التي تنقلب في الوضع الليلي (dark:invert). القلب يشمل خلفية
+   العنصر لا صورته وحدها، فتنقلب خلفية الانتظار الداكنة إلى مربّعٍ فاتحٍ يحوط
+   الشعار. الشعار شفّاف أصلاً ولا يحتاج خلفيةَ انتظار. */
+img.mark-invertible { background-color: transparent; }
+
 /* الوضع الجديد ينتشر من زر الليل/النهار نفسه، بلا Overlay أو تحكم جديد. */
 @supports (view-transition-name: root) {
   html[data-theme-transition="radial"]::view-transition-old(root),
@@ -5499,8 +5554,15 @@ html.dark .content-book-detail .book-detail-cover {
   content: "";
   position: absolute;
   /* توسيعٌ متساوٍ في الاتجاهات الأربعة: 36 تصير 44، و40 تصير 48.
-     ولا يعرف يميناً من يسار، فيصحّ في العربية والإنجليزية معاً. */
-  inset: -4px;
+     ولا يعرف يميناً من يسار، فيصحّ في العربية والإنجليزية معاً.
+     وأربعةٌ وحدها لا تكفي الأيقونة الصغيرة: أيقونات التواصل في التذييل
+     عشرون بكسلاً، فكانت مساحة اللمس ٢٨ لا ٤٤ — والاسم يَعِد بأربعةٍ وأربعين.
+     المربّع هنا يبلغها دائماً، ويبقى الفراغ بين الأيقونات أوسع من أن تتداخل. */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  inline-size: max(44px, calc(100% + 8px));
+  block-size: max(44px, calc(100% + 8px));
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -5824,9 +5886,12 @@ html.reader-paper .sentence-item.is-sentence-active {
 
 /* 6) مساحتي — «الأثر» يُكتشف مرة، واللوحة نفسها تتنفس من رأسها لا من صناديق إضافية. */
 .my-space-trigger { overflow: visible; }
+/* الهمسة تسكن يسار الأيقونة. كانت عند inset-inline-end: calc(100% + .65rem) —
+   وهذه في الاتجاه العربي تدفعها إلى يمين الأيقونة، والأيقونة نفسها ملتصقة بحافة
+   الشاشة اليمنى، فتخرج الهمسة عن الشاشة ولا يظهر منها إلا حرفها المقصوص. */
 .my-space-discovery {
   position: absolute;
-  inset-inline-end: calc(100% + .65rem);
+  inset-inline-start: calc(100% + .65rem);
   top: 50%;
   display: grid;
   min-inline-size: 7.2rem;
@@ -5844,7 +5909,7 @@ html.reader-paper .sentence-item.is-sentence-active {
 .my-space-discovery::after {
   content: "";
   position: absolute;
-  inset-inline-start: 100%;
+  inset-inline-end: 100%;
   top: 50%;
   inline-size: .62rem;
   block-size: 1px;

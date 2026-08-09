@@ -36,7 +36,15 @@ function check(category, label, fn) {
 const source = fs.readFileSync('whatsapp-agent/intent-engine.mjs', 'utf8')
 const declared = [...source.matchAll(/(\w+): '\1'/g)].map((row) => row[1])
 const patterned = new Set([...source.matchAll(/\[INTENTS\.(\w+), \[/g)].map((row) => row[1]))
-const handled = new Set([...source.matchAll(/case INTENTS\.(\w+)/g)].map((row) => row[1]))
+/* الردود تُبنى في موضعين: مُحرّك النيّات، والعقل الحيّ في خادم dr-api. كان
+   الفحص يقرأ المحرّك وحده، فأبلغ عن BOOK_INSIGHT «نيّةٌ بلا غرفة» وغرفتُها
+   قائمةٌ في العقل الحيّ — إنذارٌ كاذبٌ يقفل بوابةَ الاختبارات كلها. */
+const brainSource = fs.readFileSync('src/server/whatsapp-controller.mjs', 'utf8')
+const handled = new Set([
+  ...[...source.matchAll(/case INTENTS\.(\w+)/g)].map((row) => row[1]),
+  ...[...brainSource.matchAll(/case INTENTS\.(\w+)/g)].map((row) => row[1]),
+  ...[...brainSource.matchAll(/intent === INTENTS\.(\w+)/g)].map((row) => row[1]),
+])
 const assigned = new Set([...source.matchAll(/intent: INTENTS\.(\w+)/g)].map((row) => row[1]))
 /* هذه تُبلَغ من غير جدول الأنماط: أوامر الخصوصية تُلتقط قبل التصنيف، و
    SHOW_OPTIONS يشترك مع HELP، و SIMILAR_CONTENT يشترك مع SEARCH_TOPIC. */

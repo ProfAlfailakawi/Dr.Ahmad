@@ -1142,7 +1142,11 @@ export function Page({ children, className = '' }: { children: React.ReactNode; 
       if (bound) return true
       const heading = root.querySelector('h1') as HTMLElement | null
       if (!heading) return false
-      const title = heading.textContent?.replace(/\s+/g, ' ').trim() || ''
+      /* عنوانٌ من سطرين في الصفحة يخرج من textContent ملتصقاً: «أَبقي الإنسانَ»
+         و«في قلب الآلة.» كانتا تصلان شريط القائمة «الإنسانَفي». innerText يحترم
+         فواصل السطور كما تُعرض، وtextContent يبقى شبكةَ أمانٍ حين لا يتوفّر. */
+      const rawTitle = (heading as HTMLElement).innerText || heading.textContent || ''
+      const title = rawTitle.replace(/\s+/g, ' ').trim()
       if (!title) return false
       bound = true
       const emit = (compact: boolean) => window.dispatchEvent(new CustomEvent('site:page-title', { detail: { title, label: '', compact } }))

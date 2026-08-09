@@ -108,7 +108,7 @@ export function QuoteCard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="reader-modal-overlay quote-card-overlay fixed inset-0 z-[260] flex items-start justify-center overflow-y-auto bg-ink/70 p-5 backdrop-blur-sm"
+            className="reader-modal-overlay quote-card-overlay fixed inset-0 z-[260] flex items-start justify-center overflow-y-auto bg-ink/70 p-5"
             onClick={() => setImg(null)}
           >
             <motion.div

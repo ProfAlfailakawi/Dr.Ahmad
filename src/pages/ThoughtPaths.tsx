@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
+import { ThoughtSystemNav } from '../components/ThoughtSystemNav'
 import { ComposeScene, useRevealOnView } from '../components/ComposeScene'
 import { useCmsContent, useExtras } from '../lib/content'
 import { normalizeArabic } from '../lib/cms'
@@ -243,6 +244,7 @@ export default function ThoughtPaths() {
         title="مسار الفكرة."
         sub="لا تبدأ من نوع المحتوى، بل من سؤال. اختر فكرة لترى كيف انتقلت بين المقال والبحث والكتاب والحوار العام."
       />
+      <ThoughtSystemNav />
 
       <section className="border-b border-hair px-6 py-10 md:px-11 md:py-12">
         <div className="mx-auto max-w-shell">
@@ -306,9 +308,7 @@ export default function ThoughtPaths() {
             <ol
               ref={journeyRef}
               className={`thread-spine mt-14 border-r border-hair ps-7 pe-7 md:ps-10 md:pe-10${journeyShown ? ' thread-spine--drawn' : ''}`}
-              style={{ ['--thread-duration' as string]: `${Math.max(520, Math.min(journey.nodes.length, 8) * 110 + 420)}ms` }}
             >
-              <li className="thread-passer" aria-hidden="true" />
               {journey.nodes.map((node, index) => {
                 const content = (
                   <>

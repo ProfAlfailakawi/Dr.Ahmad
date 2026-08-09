@@ -42,8 +42,15 @@ export default function HumanCoreHero() {
   const current = useRef<Point>({ x: 0.64, y: 0.42 })
   const lastInteraction = useRef(0)
   const [mobileVisual, setMobileVisual] = useState(false)
+  const [settled, setSettled] = useState(false)
   const { scrollY } = useScroll()
   const portraitY = useTransform(scrollY, [0, 800], [0, 34])
+
+  useEffect(() => {
+    if (reduce) { setSettled(true); return }
+    const timer = window.setTimeout(() => setSettled(true), 4000)
+    return () => window.clearTimeout(timer)
+  }, [reduce])
 
   useEffect(() => {
     const query = window.matchMedia('(hover: none), (pointer: coarse), (max-width: 767px)')
@@ -274,7 +281,7 @@ export default function HumanCoreHero() {
   }, [mobileVisual, reduce])
 
   return (
-    <header ref={heroRef} className="human-core relative flex min-h-[92svh] items-center overflow-hidden px-6 pb-24 pt-24 md:px-11 md:pb-24 md:pt-24">
+    <header ref={heroRef} className={`human-core ${settled ? 'is-settled' : ''} relative flex min-h-[92svh] items-center overflow-hidden px-6 pb-24 pt-24 md:px-11 md:pb-24 md:pt-24`.trim()}>
       <SeasonalGrace />
       <canvas ref={canvasRef} className="human-core__canvas pointer-events-none absolute inset-0" aria-hidden="true" />
       <div className="human-core__wash pointer-events-none absolute inset-0" aria-hidden="true" />
@@ -294,7 +301,7 @@ export default function HumanCoreHero() {
                 animate={{ y: 0 }}
                 transition={{ duration: 0.76, delay: 0.18, ease: EASE }}
               >
-                أَبقي <span className="human-core__human">الإنسانَ</span>
+                أُبقي <span className="human-core__human">الإنسانَ</span>
               </motion.span>
             </span>
             <span className="-my-[0.3em] block overflow-hidden py-[0.3em]">
@@ -304,7 +311,7 @@ export default function HumanCoreHero() {
                 animate={{ y: 0 }}
                 transition={{ duration: 0.76, delay: 0.28, ease: EASE }}
               >
-                في قلب الآلة.
+                في قلبِ الآلة.
               </motion.span>
             </span>
           </h1>

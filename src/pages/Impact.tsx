@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
+import { ThoughtSystemNav } from '../components/ThoughtSystemNav'
 import ImpactMap from '../components/ImpactMap'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { useSeo } from '../components/seo'
@@ -135,6 +136,7 @@ export default function Impact() {
         title="سجل الأثر الموثق."
         sub="خريطةٌ تتبع انتقال الفكرة بين المقال والبحث والكتاب والحوار العام. كل محطة تعود إلى مصدرها، وتبقى القرابة الموضوعية منفصلة بوضوح عن الأثر الذي تثبته جهة مستقلة."
       />
+      <ThoughtSystemNav />
 
       <section className="border-b border-hair px-6 py-5 md:px-11">
         <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-3">
@@ -157,7 +159,7 @@ export default function Impact() {
               ))}
             </dl>
           )}
-          <div role="tablist" aria-label="تصفية سجل الأثر" className="flex max-w-full gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div role="tablist" aria-label="تصفية سجل الأثر" className="edge-fade flex max-w-full gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {[
               ['all', 'الكل'], ['paper', 'علمي'], ['media', 'إعلامي'], ['archive', 'أرشيفي'],
             ].map(([key, label]) => (

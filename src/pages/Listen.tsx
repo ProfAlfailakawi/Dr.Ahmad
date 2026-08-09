@@ -98,10 +98,10 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
         {expanded && (
           <motion.div
             key="player"
-            initial={reduce ? false : { opacity: 0, height: 0, y: -8, filter: 'blur(5px)' }}
-            animate={{ opacity: 1, height: 'auto', y: 0, filter: 'blur(0px)' }}
-            exit={reduce ? undefined : { opacity: 0, height: 0, y: -6, filter: 'blur(4px)' }}
-            transition={{ duration: reduce ? 0 : .46, ease: EASE }}
+            initial={reduce ? false : { opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={reduce ? undefined : { opacity: 0, height: 0 }}
+            transition={{ duration: reduce ? 0 : .22, ease: EASE }}
             className="majlis-player-shell overflow-hidden rounded-b-2xl border-x border-b border-accent/[.18] bg-wash/[.35] px-3 pb-5 md:px-4"
           >
             <AudioPlayer

@@ -371,6 +371,11 @@ const routes = [
   ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.jpg` })),
 ]
 
+const LEGACY_REDIRECTS = [
+  ['/articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
+  ['/signature_articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
+]
+
 const uniqueRoutes = (items) => {
   const seen = new Set()
   return items.filter((item) => {
@@ -631,7 +636,6 @@ function generateBodyHtml(path, lang = 'ar') {
           <a href="/research" style="color: #3E5C78; text-decoration: none; font-weight: 500;">الأبحاث</a>
           <a href="/cv" style="color: #3E5C78; text-decoration: none; font-weight: 500;">السيرة</a>
           <a href="/thought" style="color: #3E5C78; text-decoration: none; font-weight: 500;">الخريطة الفكرية</a>
-          <a href="/decade" style="color: #3E5C78; text-decoration: none; font-weight: 500;">وثيقة العقد</a>
           <a href="/contact" style="color: #3E5C78; text-decoration: none; font-weight: 500;">اتصل بي</a>
         </nav>
       </div>
@@ -1717,7 +1721,7 @@ function assertStaticOutput() {
   const duplicateLocs = locs.filter((loc, index) => locs.indexOf(loc) !== index)
   if (duplicateLocs.length) throw new Error(`sitemap يحتوي روابط مكررة: ${duplicateLocs.slice(0, 3).join(', ')}`)
   if (/scheduledarabbic|localhost|127\.0\.0\.1/.test(sitemap)) throw new Error('sitemap يحتوي رابط اختبار أو slug غير نظيف')
-  const forbiddenIndexPaths = ['/admin', '/privacy', '/terms', '/data-deletion', '/cv-file/']
+  const forbiddenIndexPaths = ['/admin', '/privacy', '/terms', '/data-deletion', '/cv-file/', '/wp-', '/signature_articles/', '/published_articles/', '/scholarly_contributi/']
   const forbiddenLoc = locs.find((loc) => forbiddenIndexPaths.some((part) => loc.includes(part)))
   if (forbiddenLoc) throw new Error(`sitemap يحتوي صفحة غير مخصصة للفهرسة: ${forbiddenLoc}`)
   for (const item of media) {

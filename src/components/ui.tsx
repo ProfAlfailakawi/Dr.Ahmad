@@ -90,10 +90,10 @@ export function FadeUp({ children, delay = 0, className = '' }: { children: Reac
   return (
     <motion.div
       ref={ref}
-      className={className}
-      initial={reduce ? false : { opacity: 0, y: 18, scale: .994 }}
-      animate={show ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 18, scale: .994 }}
-      transition={{ duration: 0.56, ease: EASE, delay }}
+      className={`site-fade-up ${className}`.trim()}
+      initial={reduce ? false : { opacity: 0, y: 11 }}
+      animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: 11 }}
+      transition={{ duration: 0.42, ease: EASE, delay: Math.min(delay, 0.12) }}
     >
       {children}
     </motion.div>
@@ -101,12 +101,17 @@ export function FadeUp({ children, delay = 0, className = '' }: { children: Reac
 }
 
 /* ---------- Label ---------- */
-export const Label = ({ children, center = false }: { children: React.ReactNode; center?: boolean }) => (
-  <div className={`signature-label mb-5 flex items-center gap-3 ${center ? 'justify-center' : ''}`}>
-    <span className="h-[1.5px] w-7 bg-accent" />
-    <span className="text-[.8rem] font-semibold uppercase text-accent">{children}</span>
-  </div>
-)
+export function Label({ children, center = false }: { children: React.ReactNode; center?: boolean }) {
+  const reduce = useReducedMotion()
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, amount: 0.5 })
+  return (
+    <div ref={ref} className={`signature-label mb-5 flex items-center gap-3 ${inView && !reduce ? 'is-visible' : ''} ${center ? 'justify-center' : ''}`}>
+      <span className="h-[1.5px] w-7 bg-accent" />
+      <span className="text-[.8rem] font-semibold uppercase text-accent">{children}</span>
+    </div>
+  )
+}
 
 /* ---------- Page heading (used by inner pages) ---------- */
 export function PageHead({ label, title, sub }: { label: string; title: string; sub?: string }) {
@@ -278,12 +283,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
          في /search و/ask)، فسردهما هنا تكرارٌ لما سيراه بعد نقرةٍ واحدة.
          الوصلة الآن مباشرةٌ إلى الأداة، والطريقان يُختاران داخلها. */
       { to: '/search', label: 'البحث في المعرفة', description: 'مادة منشورة أو سؤال موثّق' },
-      { to: '/thought', label: 'الخريطة الفكرية', allLabel: 'افتح الخريطة الفكرية', sub: [
-        { to: '/atlas', label: 'سماء المقالات', description: 'المشهد البصري للأرشيف' },
-        { to: '/thought-paths', label: 'مسارات الفكرة', description: 'كيف تطوّرت الموضوعات' },
-        { to: '/decade', label: 'وثيقة العقد', description: 'الرحلة عبر الزمن' },
-        { to: '/impact', label: 'سجل الأثر', description: 'الامتدادات الموثقة' },
-      ] },
+      { to: '/thought', label: 'الخريطة الفكرية', description: 'الصورة الكبرى للمشروع الفكري' },
     ],
   },
   {
@@ -291,12 +291,10 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/research', label: 'الأبحاث المحكمة' },
       { to: '/publications', label: 'الكتب المنشورة' },
-      { to: '/inbox', label: 'رسائل على الهامش' },
       { to: '/curated', label: 'المختارات', allLabel: 'جميع المختارات', sub: [
         { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
         { to: '/radar', label: 'أرشيف الرادار', description: 'ما يستحق المتابعة' },
       ] },
-      { to: '/upcoming', label: 'اللقاءات القادمة' },
     ],
   },
   {
@@ -304,9 +302,16 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/cv', label: 'السيرة الأكاديمية' },
       { to: '/media', label: 'الظهور الإعلامي' },
+      { to: '/upcoming', label: 'اللقاءات القادمة' },
     ],
   },
 ]
+
+const isPrimaryNavActive = (item: NavItem, pathname: string) => {
+  if (item.to === '/thought') return pathname === '/thought' || pathname === '/thought-paths' || pathname === '/decade' || pathname === '/atlas' || pathname === '/impact' || pathname.startsWith('/impact/')
+  if (item.to === '/curated') return pathname === '/curated' || pathname === '/questions' || pathname === '/radar'
+  return pathname === item.to || Boolean(item.sub?.some((sub) => sub.to === pathname))
+}
 
 function Overlay({ close, openSearch }: { close: () => void; openSearch: () => void }) {
   const reduce = useReducedMotion()
@@ -397,22 +402,23 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                 className="block text-[.68rem] font-semibold uppercase text-accent md:text-[.72rem]"
                 initial={reduce ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.34, delay: 0.18 + gi * 0.05, ease: EASE }}
+                transition={{ duration: 0.32, delay: 0.09 + gi * 0.025, ease: EASE }}
               >
                 <span>{g.label}</span>
+                <span className="ms-2 font-sans text-[.62rem] font-normal text-soft" aria-hidden="true">{g.items.length.toLocaleString('ar-KW')}</span>
               </motion.span>
 
               <ul className="mt-3 space-y-1 md:mt-4">
                 {g.items.map((it, ii) => {
                   const expanded = openSub === it.to
-                  const active = loc.pathname === it.to || Boolean(it.sub?.some((sub) => sub.to === loc.pathname))
+                  const active = isPrimaryNavActive(it, loc.pathname)
                   const subId = `menu-sub-${gi}-${ii}`
                   return (
                   <li key={it.to} className="-my-[0.2em] overflow-hidden py-[0.2em]">
                     <motion.div
                       initial={reduce ? false : { y: '150%' }}
                       animate={{ y: 0 }}
-                      transition={{ duration: 0.42, delay: 0.24 + gi * 0.05 + ii * 0.035, ease: EASE }}
+                      transition={{ duration: 0.34, delay: 0.12 + gi * 0.025 + ii * 0.018, ease: EASE }}
                     >
                       {it.sub ? (
                         <div className="py-1">
@@ -458,8 +464,9 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                         <Link
                           to={it.to}
                           onClick={close}
+                          aria-current={active ? 'page' : undefined}
                           className={`site-menu-control flex items-center gap-2.5 py-1 font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.35rem] ${
-                            loc.pathname === it.to ? 'text-accent' : 'text-ink'
+                            active ? 'text-accent' : 'text-ink'
                           }`}
                         >
                           <span>
@@ -484,6 +491,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                                   <Link
                                     to={s.to}
                                     onClick={close}
+                                    aria-current={loc.pathname === s.to ? 'page' : undefined}
                                     className={`site-menu-control block py-1.5 text-[.9rem] font-light transition-colors duration-300 hover:text-accent ${
                                       loc.pathname === s.to ? 'text-accent' : 'text-soft'
                                     }`}
@@ -521,6 +529,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
           >
             احجز موعداً مباشراً
           </Link>
+          <Link to="/inbox" onClick={close} className="site-menu-secondary-link min-h-11 px-2 py-2 text-[.76rem] font-medium text-soft transition-colors hover:text-accent">رسائل على الهامش</Link>
           <div className="flex flex-wrap items-center gap-3 text-soft">
             <div className="flex items-center gap-2">
               <ThemeToggle className="h-11 w-11" />
@@ -897,16 +906,17 @@ export function Nav() {
 
   const english = loc.pathname === '/en' || loc.pathname.startsWith('/en/')
   const solid = (scrolled || (loc.pathname !== '/' && loc.pathname !== '/en')) && !open
+  const showReadingProgress = /^\/articles\/[^/]+$/.test(loc.pathname) || /^\/research\/[^/]+$/.test(loc.pathname) || loc.pathname === '/decade' || loc.pathname === '/thought-paths' || loc.pathname.startsWith('/impact') || loc.pathname.startsWith('/concept/')
 
   /* ---- الهيدر الإنجليزي: الشعار والبحث والقائمة فقط؛ الروابط داخل القائمة. ---- */
   if (english) {
     return (
       <>
-        <motion.div className="site-scroll-progress fixed left-0 z-[240] h-[2px] w-full origin-left bg-accent" style={{ scaleX: progress }} animate={{ top: solid ? 63 : 75 }} transition={{ duration: .25, ease: EASE }} />
+        {showReadingProgress && <motion.div className="site-scroll-progress fixed left-0 z-[240] h-[2px] w-full origin-left bg-accent" style={{ scaleX: progress }} animate={{ top: solid ? 63 : 75 }} transition={{ duration: .25, ease: EASE }} />}
         <AnimatePresence>{open && <EnglishOverlay key="en-ov" close={closeMenu} openSearch={() => { closeMenu(); setSearchOpen(true) }} />}</AnimatePresence>
         <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
         <nav aria-label="Main navigation" dir="ltr" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
-          <div className={`relative mx-auto flex max-w-shell items-center justify-between px-6 transition-[height] duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
+          <div className={`relative mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
             <AnimatePresence initial={false}>
               {pageEcho.compact && pageEcho.title && solid && !open && !searchOpen && (
                 <motion.span key={pageEcho.title} aria-hidden="true" initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -6, filter: 'blur(3px)' }} transition={{ duration: .34, ease: EASE }} className="nav-page-echo pointer-events-none absolute left-1/2 hidden max-w-[42vw] -translate-x-1/2 truncate font-display text-[.82rem] font-semibold text-ink/80 md:block">{pageEcho.title}</motion.span>
@@ -936,13 +946,13 @@ export function Nav() {
 
   return (
     <>
-      <motion.div className="site-scroll-progress fixed right-0 z-[240] h-[2px] w-full origin-right bg-accent" style={{ scaleX: progress }} animate={{ top: solid ? 63 : 75 }} transition={{ duration: .25, ease: EASE }} />
+      {showReadingProgress && <motion.div className="site-scroll-progress fixed right-0 z-[240] h-[2px] w-full origin-right bg-accent" style={{ scaleX: progress }} animate={{ top: solid ? 63 : 75 }} transition={{ duration: .25, ease: EASE }} />}
 
       <AnimatePresence>{open && <Overlay key="ov" close={closeMenu} openSearch={() => { closeMenu(); setSearchOpen(true) }} />}</AnimatePresence>
       <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
 
       <nav aria-label="التنقّل الرئيسي" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
-        <div className={`relative mx-auto flex max-w-shell items-center justify-between px-6 transition-[height] duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
+        <div className={`relative mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
           <AnimatePresence initial={false}>
             {pageEcho.compact && pageEcho.title && solid && !open && !searchOpen && (
               <motion.span key={pageEcho.title} aria-hidden="true" initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -6, filter: 'blur(3px)' }} transition={{ duration: .34, ease: EASE }} className="nav-page-echo pointer-events-none absolute left-1/2 hidden max-w-[42vw] -translate-x-1/2 truncate font-display text-[.82rem] font-semibold text-ink/80 md:block">{pageEcho.title}</motion.span>
@@ -1072,7 +1082,7 @@ export function Footer() {
               ))}
             </span>
             <span className="inline-flex items-center gap-2">
-              <Link to="/inbox" aria-label="رسائل على الهامش" title="رسائل على الهامش" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Mail" size={18} /></Link>
+              <Link to="/inbox" aria-label="رسائل على الهامش" title="رسائل على الهامش" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-hair px-3 text-[.7rem] font-medium text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Mail" size={16} /><span className="hidden sm:inline">رسائل على الهامش</span></Link>
               <TebyanProjectLink />
               <ScheduleProjectLink />
             </span>
@@ -1142,11 +1152,7 @@ export function Page({ children, className = '' }: { children: React.ReactNode; 
       if (bound) return true
       const heading = root.querySelector('h1') as HTMLElement | null
       if (!heading) return false
-      /* عنوانٌ من سطرين في الصفحة يخرج من textContent ملتصقاً: «أَبقي الإنسانَ»
-         و«في قلب الآلة.» كانتا تصلان شريط القائمة «الإنسانَفي». innerText يحترم
-         فواصل السطور كما تُعرض، وtextContent يبقى شبكةَ أمانٍ حين لا يتوفّر. */
-      const rawTitle = (heading as HTMLElement).innerText || heading.textContent || ''
-      const title = rawTitle.replace(/\s+/g, ' ').trim()
+      const title = heading.textContent?.replace(/\s+/g, ' ').trim() || ''
       if (!title) return false
       bound = true
       const emit = (compact: boolean) => window.dispatchEvent(new CustomEvent('site:page-title', { detail: { title, label: '', compact } }))

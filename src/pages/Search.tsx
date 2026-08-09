@@ -834,7 +834,7 @@ export default function Search() {
 
           {searchStarted && tab !== 'spoken' && tab !== 'askbook' && <ul id="search-results" className="mt-8 scroll-mt-28">
             {visibleRows.map((row, index) => (
-              <FadeUp key={`${row.kind}-${row.url}-${row.title.slice(0, 30)}`} delay={Math.min(index * 0.025, 0.25)}>
+              <FadeUp key={`${row.kind}-${row.url}-${row.title.slice(0, 30)}`} delay={Math.min(index * 0.008, 0.04)}>
                 <li className={`search-result-row relative ${index === 0 ? '' : 'border-t border-hair'}`}>
                   <Link to={row.url} onClick={() => { resultOpenedRef.current = true; trackUsage('search_result_opened', { searchType: 'general', query: normalizeSearchQuery(normalizedQuery), resultType: row.kind, resultId: row.slug || row.url, position: (paged.page - 1) * 20 + index + 1, timeToResultMs: 0 }) }} className={`group grid gap-3 py-6 md:grid-cols-[7rem_1fr_5.5rem] md:items-baseline ${row.kind === 'book' ? 'pb-16' : ''}`}>
                     <span className={`h-fit w-fit rounded-full px-3 py-1 text-[.7rem] font-bold ${row.kind === 'article' ? 'bg-accent/10 text-accent' : 'border border-hair text-soft'}`}>

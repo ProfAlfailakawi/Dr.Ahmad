@@ -1,5 +1,6 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
+import { motion, useReducedMotion } from 'framer-motion'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import { useSeo } from '../components/seo'
@@ -8,7 +9,6 @@ import { ReaderFingerprint } from '../components/ReaderResonance'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { SocialIcon } from '../components/icons'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, MATCHING_RESULT_FORMS } from '../lib/arabic-count.ts'
-import { PROJECT_START_YEAR } from '../lib/project-meta'
 
 const stableHash = (value: string) => {
   let hash = 2166136261
@@ -56,10 +56,10 @@ function diversifyArticles<T extends { cat?: string; iso: string; slug: string }
 
 export default function Articles() {
   const { articles } = useCmsContent()
+  const reduce = useReducedMotion()
   // السنة الأولى تُحسب من المقالات نفسها — تتحدّث تلقائياً مع أي إضافة
   const years = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
   const firstYear = years.length ? Math.min(...years) : new Date().getFullYear()
-  const latestYear = years.length ? Math.max(...years) : PROJECT_START_YEAR
   useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مقالات فكرية تتتبّع تحولات التعليم والتكنولوجيا والمجتمع منذ انطلاق الرحلة العلمية عام 2015 — ${arabicCountPhrase(articles.length, ARTICLE_PLAIN_FORMS)}.` })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
@@ -136,7 +136,7 @@ export default function Articles() {
               <button
                 key={c}
                 onClick={() => setCat(c)}
-                className={`min-h-11 shrink-0 rounded-full border px-4 py-2 text-[.82rem] font-medium transition-colors duration-300 ${cat === c ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+                className={`shrink-0 rounded-full border px-4 py-2 text-[.82rem] font-medium transition-colors duration-300 ${cat === c ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
               >
                 {categoryLabel(c)}
               </button>
@@ -175,11 +175,11 @@ export default function Articles() {
             </h2>
             <span className="text-[.75rem] text-soft">3 عدسات موضوعية متجددة</span>
           </div>
-          <div className="article-featured-rail spatial-collection mx-0 flex snap-x snap-mandatory gap-4 overflow-x-auto px-0 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:pb-0">
+          <motion.div key={`featured:${cat}:${year}`} initial={reduce ? false : { opacity: .58 }} animate={{ opacity: 1 }} transition={{ duration: reduce ? 0 : .16 }} className="article-featured-rail spatial-collection mx-0 flex snap-x snap-mandatory gap-4 overflow-x-auto px-0 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:pb-0">
             {featured.map((entry, index) => {
               const labels = ['الأبرز', 'من الأرشيف', 'زاوية مختلفة']
               return (
-                <FadeUp key={entry.slug} delay={index * 0.08} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
+                <div key={entry.slug} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
                   <Link to={`/articles/${entry.slug}`} viewTransition className="spatial-card group flex h-full min-w-0 flex-col rounded-2xl border border-hair bg-canvas p-6 transition-[border-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
                     <div className="flex items-center justify-between gap-3">
                       <span className="inline-flex rounded-full border border-hair bg-wash px-3 py-1 text-[.68rem] font-semibold text-accent">{entry.tag} · {labels[index] || 'مختارة'}</span>
@@ -189,10 +189,10 @@ export default function Articles() {
                     <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.88rem] leading-[1.8] text-soft">{entry.quote}</blockquote>
                     <span aria-hidden className="mt-auto pt-6 text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1">←</span>
                   </Link>
-                </FadeUp>
+                </div>
               )
             })}
-          </div>
+          </motion.div>
         </div>
       </section>}
 
@@ -205,20 +205,15 @@ export default function Articles() {
             </p>
           </FadeUp>
 
-          <ul id="articles-list" className="spatial-collection mt-10 scroll-mt-28">
+          <motion.ul key={`articles:${cat}:${year}:${term}:${paged.page}`} initial={reduce ? false : { opacity: .55 }} animate={{ opacity: 1 }} transition={{ duration: reduce ? 0 : .16 }} id="articles-list" className="spatial-collection mt-10 scroll-mt-28">
             {shown.map((a, i) => (
-              <li
-                key={a.slug}
-                className={`spatial-card article-patina-card ${i === 0 ? '' : 'border-t border-hair'}`}
-                style={{ '--article-age': Math.max(0, Math.min(1, (Number(a.iso.slice(0, 4)) - PROJECT_START_YEAR) / Math.max(1, latestYear - PROJECT_START_YEAR))) } as CSSProperties}
-              >
+              <li key={a.slug} className={`spatial-card ${i === 0 ? '' : 'border-t border-hair'}`}>
                 <Link
                   to={`/articles/${a.slug}`}
                   viewTransition
                   className="group flex flex-col gap-1 py-5 sm:flex-row sm:items-baseline sm:gap-6"
                 >
                   <time className="w-32 shrink-0 text-[.8rem] text-soft">{a.date}</time>
-                  <span className="article-patina" aria-hidden="true" />
                   <span className="flex-1">
                     <span style={{ viewTransitionName: `article-${a.slug}` }} className="block text-[1.08rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">
                       {a.title}
@@ -233,7 +228,7 @@ export default function Articles() {
                 </Link>
               </li>
             ))}
-          </ul>
+          </motion.ul>
 
           {filtered.length === 0 && (
             <p className="py-16 text-center text-[1rem] font-light text-soft">لا نتائج مطابقة.</p>

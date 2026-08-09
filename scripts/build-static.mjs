@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import sharp from 'sharp'
 import { buildSitemapDocuments, sitemapLocsFromDist } from './archive-sitemap.mjs'
+import { isPublicArticle, readCanonicalCms } from './canonical-cms.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = resolve(ROOT, 'dist')
@@ -134,57 +135,62 @@ const normalizeArabicTanweenDeep = (value) => {
 const deletedKeys = new Set()
 const overridePatches = new Map()
 const cloudCms = { articles: [], books: [], papers: [], media: [] }
-try {
-  const saPath = resolve(ROOT, process.env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
-  if (existsSync(saPath) && process.env.FIREBASE_PROJECT_ID) {
-    const { initializeApp, cert, getApps } = await import('firebase-admin/app')
-    const { getFirestore } = await import('firebase-admin/firestore')
-    const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
-    const db = getFirestore(app)
-    const [snapshot, articlesSnapshot, booksSnapshot, papersSnapshot, mediaSnapshot] = await Promise.all([
-      db.collection('content_overrides').get(),
-      db.collection('site_articles').get(),
-      db.collection('site_books').get(),
-      db.collection('site_papers').get(),
-      db.collection('site_media').get(),
-    ])
-    const snapshotRows = (value) => normalizeArabicTanweenDeep(value.docs.map((document) => ({ id: document.id, ...document.data() })))
-    cloudCms.articles = snapshotRows(articlesSnapshot)
-    cloudCms.books = snapshotRows(booksSnapshot)
-    cloudCms.papers = snapshotRows(papersSnapshot)
-    cloudCms.media = snapshotRows(mediaSnapshot)
-    /* قاعدة الإسقاط هنا يجب أن تطابق قاعدة اللوحة حرفاً بحرف (src/lib/cms.ts)،
-       وإلا اختلف عدّان لمكتبةٍ واحدة — وهذا ما حدث: اللوحة تعدّ ١٤٣ والموقع
-       يعلن ١٦٤، لأن البناء كان يعرف «محذوف» وحده ويجهل «مخفيّ» و«مسودة»
-       و«مجدولٌ لم يحن وقته». */
-    const scheduledMs = (value) => {
-      if (!value) return 0
-      const ms = Date.parse(typeof value === 'string' ? value : value?.toDate?.() || value)
-      return Number.isNaN(ms) ? 0 : ms
-    }
-    const isPublic = (data) => {
-      const status = String(data?.status || 'published')
-      if (status === 'draft') return false
-      const at = scheduledMs(data?.scheduledAt)
-      if (status === 'scheduled') return at > 0 && at <= Date.now()
-      if (at > Date.now()) return false
-      return status === 'published' || !status
-    }
-    const reasons = { deleted: 0, hidden: 0, unpublished: 0 }
-    snapshot.forEach((document) => {
-      const data = document.data()
-      if (data?.patch && typeof data.patch === 'object' && !Array.isArray(data.patch)) overridePatches.set(document.id, normalizeArabicTanweenDeep(data.patch))
-      if (data?.deleted === true) { deletedKeys.add(document.id); reasons.deleted += 1; return }
-      if (data?.hidden === true) { deletedKeys.add(document.id); reasons.hidden += 1; return }
-      if (document.id.startsWith('article:') && !isPublic(data)) { deletedKeys.add(document.id); reasons.unpublished += 1 }
-    })
-    console.log(`قرارات اللوحة: ${deletedKeys.size} عنصراً لن يُبنى ولا يُحصى `
-      + `(محذوف ${reasons.deleted} · مخفيّ ${reasons.hidden} · مسودة أو مجدول ${reasons.unpublished}).`)
-  } else {
-    console.log('⚠ بناء بلا مفاتيح Firestore: لن تُطبَّق قرارات الحذف من اللوحة.')
+let panelDecisionsLoaded = false
+const applyPanelSnapshot = (snapshot) => {
+  const normalized = normalizeArabicTanweenDeep(snapshot || {})
+  cloudCms.articles = Array.isArray(normalized.articles) ? normalized.articles : []
+  cloudCms.books = Array.isArray(normalized.books) ? normalized.books : []
+  cloudCms.papers = Array.isArray(normalized.papers) ? normalized.papers : []
+  cloudCms.media = Array.isArray(normalized.media) ? normalized.media : []
+  const reasons = { deleted: 0, hidden: 0, unpublished: 0 }
+  for (const row of Array.isArray(normalized.overrides) ? normalized.overrides : []) {
+    const id = String(row?.id || '')
+    const patch = row?.patch && typeof row.patch === 'object' && !Array.isArray(row.patch) ? row.patch : null
+    if (patch) overridePatches.set(id, patch)
+    if (row?.deleted === true) { deletedKeys.add(id); reasons.deleted += 1; continue }
+    if (row?.hidden === true) { deletedKeys.add(id); reasons.hidden += 1; continue }
+    if (id.startsWith('article:') && patch && !isPublicArticle(patch)) { deletedKeys.add(id); reasons.unpublished += 1 }
   }
-} catch (error) {
-  console.log(`⚠ تعذّرت قراءة قرارات الحذف (${String(error.message).slice(0, 80)}) — البناء بالملفات الثابتة.`)
+  panelDecisionsLoaded = true
+  console.log(`قرارات اللوحة: ${deletedKeys.size} عنصراً لن يُبنى ولا يُحصى `
+    + `(محذوف ${reasons.deleted} · مخفيّ ${reasons.hidden} · مسودة أو مجدول ${reasons.unpublished}).`)
+}
+
+/* Canonical Publishing Pipeline: build-static no longer performs a second,
+   potentially different Firestore read. The snapshot taken before the graph,
+   archive shards and Vite is the same source of truth used here for SEO/RSS. */
+const canonicalCms = readCanonicalCms(ROOT)
+if (canonicalCms.source === 'firestore') {
+  applyPanelSnapshot(canonicalCms)
+} else {
+  try {
+    const saPath = resolve(ROOT, process.env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
+    if (existsSync(saPath) && process.env.FIREBASE_PROJECT_ID) {
+      const { initializeApp, cert, getApps } = await import('firebase-admin/app')
+      const { getFirestore } = await import('firebase-admin/firestore')
+      const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
+      const db = getFirestore(app)
+      const [overridesSnapshot, articlesSnapshot, booksSnapshot, papersSnapshot, mediaSnapshot] = await Promise.all([
+        db.collection('content_overrides').get(),
+        db.collection('site_articles').get(),
+        db.collection('site_books').get(),
+        db.collection('site_papers').get(),
+        db.collection('site_media').get(),
+      ])
+      const snapshotRows = (value) => value.docs.map((document) => ({ id: document.id, ...document.data() }))
+      applyPanelSnapshot({
+        overrides: snapshotRows(overridesSnapshot),
+        articles: snapshotRows(articlesSnapshot),
+        books: snapshotRows(booksSnapshot),
+        papers: snapshotRows(papersSnapshot),
+        media: snapshotRows(mediaSnapshot),
+      })
+    } else {
+      console.log('⚠ بناء بلا Canonical CMS أو مفاتيح Firestore: لن تُطبَّق قرارات اللوحة.')
+    }
+  } catch (error) {
+    console.log(`⚠ تعذّرت قراءة قرارات اللوحة (${String(error.message).slice(0, 80)}) — البناء بالملفات الثابتة.`)
+  }
 }
 
 /* ما حذفه الدكتور من اللوحة يجب ألا يُنشر أبداً. وكان يُنشر: نشرُ الموقع يبني
@@ -193,7 +199,7 @@ try {
    والتحذير وحده لا يكفي: سطرٌ رماديّ في سجلٍّ لا يقرؤه أحد. فمتى أُعلن هذا
    البناءُ بناءَ نشرٍ، صار غيابُ المفاتيح خطأً يُسقطه — أهونُ من موقعٍ يعرض
    ما أمر صاحبُه بمحوه. */
-if (process.env.REQUIRE_PANEL_DECISIONS === '1' && deletedKeys.size === 0) {
+if (process.env.REQUIRE_PANEL_DECISIONS === '1' && !panelDecisionsLoaded) {
   console.error('\n✘ بناء نشرٍ بلا قرارات اللوحة.')
   console.error('  السبب: تعذّر الوصول إلى Firestore، فلا يعرف البناءُ ما حذفتَه.')
   console.error('  الأثر لو مضى: تُنشر الصفحات المحذوفة وتُفهرَس.')

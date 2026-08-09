@@ -20,6 +20,7 @@ import { advanceCascadeCorrection, buildCascadeCorrectionCase, cascadeCorrection
 import { buildImpactMirror } from '../../lib/impact-mirror.mjs'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, RELATED_PAPER_FORMS, SENTENCE_WITH_ECHO_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
 import { manageArticleAudio } from '../../lib/audio-management'
+import { requestContentPublicationSync } from '../../lib/content-publication-sync'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -1925,8 +1926,27 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
           console.warn('تعذّر إطلاق توليد القراءة للمقال المحفوظ.', reason)
         }
       }
+      let pipelineWarning = ''
+      try {
+        await requestContentPublicationSync({
+          kind,
+          slug,
+          status: kind === 'article' ? data.status || 'published' : 'published',
+          scheduledAt: kind === 'article' ? data.scheduledAt || '' : '',
+        })
+      } catch (reason) {
+        pipelineWarning = ` · ⚠ حُفظ المحتوى، لكن تعذّر إطلاق خط الربط والنشر التلقائي: ${reason instanceof Error ? reason.message : 'حاول من مركز التشغيل.'}`
+        console.warn('تعذّر إطلاق Canonical Publishing Pipeline بعد الحفظ.', reason)
+      }
       setCurrent(undefined)
-      await done(kind === 'article' && data.status === 'scheduled' ? `✓ حُفظ المقال مجدولاً بجواز موقّع ${publicationPassport?.fingerprint.slice(0, 12) || ''}… ولن يظهر قبل موعده.` : kind === 'article' && data.status === 'draft' ? '✓ حُفظ المقال كمسودة ولم يظهر للزوار.' : kind === 'article' && publicationPassport ? `✓ نُشر بجواز سيادي موقّع ${publicationPassport.fingerprint.slice(0, 12)}…` : '✓ حُفظ التعديل ويظهر للزوار فوراً.')
+      const successMessage = kind === 'article' && data.status === 'scheduled'
+        ? `✓ حُفظ المقال مجدولاً بجواز موقّع ${publicationPassport?.fingerprint.slice(0, 12) || ''}… وسيطلقه خط النشر تلقائياً عند موعده.`
+        : kind === 'article' && data.status === 'draft'
+          ? '✓ حُفظ المقال كمسودة وسُجّل في خط النشر؛ لن يظهر للزوار قبل اعتماده.'
+          : kind === 'article' && publicationPassport
+            ? `✓ نُشر بجواز سيادي موقّع ${publicationPassport.fingerprint.slice(0, 12)}… وبدأ الربط والفهرسة والنشر تلقائياً.`
+            : '✓ حُفظ التعديل وبدأ تحديث الربط والفهارس والنشر تلقائياً.'
+      await done(`${successMessage}${pipelineWarning}`)
       task.complete(`تم حفظ ${labels[kind].singular}`)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر الحفظ')
@@ -1963,6 +1983,24 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
     window.dispatchEvent(new CustomEvent('studio:live-director-seed', { detail: seed }))
   }
 
+  const refreshPublishedSystems = async (item: ManagedRecord, action: string) => {
+    try {
+      await requestContentPublicationSync({
+        kind,
+        slug: item.slug,
+        /* تغييرات الإظهار/الإخفاء/الحذف/الاستعادة تغيّر السطح العام أو النسخة
+           المخبوزة حتى لو كان السجل القديم موسوماً draft/scheduled؛ لذا نطلب
+           مزامنة فورية، بينما Canonical نفسه يقرر ما يجوز ظهوره للعامة. */
+        status: 'published',
+        scheduledAt: '',
+      })
+      return ''
+    } catch (reason) {
+      console.warn(`تعذّر إطلاق التحديث التلقائي بعد ${action}.`, reason)
+      return ' · حُفظ القرار، لكن تعذّر الاتصال بخط النشر الآن؛ سيبقى المحتوى الحي صحيحاً ويحتاج إعادة تشغيل خط النشر إذا استمر الانقطاع.'
+    }
+  }
+
   const toggleVisibility = async (item: ManagedRecord) => {
     const task = beginAdminTask(item._cms.hidden ? 'إظهار عنصر' : 'إخفاء عنصر')
     setBusy(true)
@@ -1981,7 +2019,8 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
           updatedAt: serverTimestamp(),
         }, { merge: true })
       }
-      await done(item._cms.hidden ? '✓ أُعيد إظهار العنصر.' : '✓ أُخفي العنصر من الموقع مع بقائه محفوظاً في اللوحة.')
+      const pipelineWarning = await refreshPublishedSystems(item, item._cms.hidden ? 'إعادة الإظهار' : 'الإخفاء')
+      await done(`${item._cms.hidden ? '✓ أُعيد إظهار العنصر.' : '✓ أُخفي العنصر من الموقع مع بقائه محفوظاً في اللوحة.'}${pipelineWarning}`)
       task.complete('اكتملت العملية')
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : 'تعذّر تنفيذ العملية')
@@ -2015,7 +2054,8 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
           updatedAt: serverTimestamp(),
         }, { merge: true })
       }
-      await done('✓ نُقل إلى سلة المحذوفات — محفوظٌ بالكامل، استعِده متى شئت بزرّ «إظهار».')
+      const pipelineWarning = await refreshPublishedSystems(item, 'النقل إلى السلة')
+      await done(`✓ نُقل إلى سلة المحذوفات — محفوظٌ بالكامل، استعِده متى شئت بزرّ «إظهار».${pipelineWarning}`)
       task.complete('نُقل إلى السلة')
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : 'تعذّر نقل العنصر إلى السلة')
@@ -2044,7 +2084,8 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
           updatedAt: serverTimestamp(),
         }, { merge: true })
       }
-      await done('✓ حُذف العنصر نهائياً.')
+      const pipelineWarning = await refreshPublishedSystems(item, 'الحذف النهائي')
+      await done(`✓ حُذف العنصر نهائياً.${pipelineWarning}`)
       task.complete('حُذف نهائياً')
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : 'تعذّر الحذف النهائي')
@@ -2063,7 +2104,8 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       if (!db) throw new Error('Firebase غير متاح')
       const { deleteDoc, doc } = await import('firebase/firestore')
       await deleteDoc(doc(db, 'content_overrides', `${kind}:${item._cms.baseSlug || item.slug}`))
-      await done('✓ استُعيدت نسخة الأصل.')
+      const pipelineWarning = await refreshPublishedSystems(item, 'استعادة الأصل')
+      await done(`✓ استُعيدت نسخة الأصل.${pipelineWarning}`)
       task.complete('استُعيدت النسخة الأصلية')
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : 'تعذّرت استعادة الأصل')

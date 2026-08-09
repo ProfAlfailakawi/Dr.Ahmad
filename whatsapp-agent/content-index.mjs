@@ -5,6 +5,7 @@ import { projectRoot, SITE_URL } from './config.mjs'
 import { toRoot } from './dialect-lexicon.mjs'
 import { collapseElongation, foldArabicLetters, stripInvisible } from './comprehension.mjs'
 import { buildSimilarityGraph } from '../src/lib/archive-scale.mjs'
+import { mergeCanonicalContentIndex, readCanonicalCms } from '../scripts/canonical-cms.mjs'
 
 const SEARCH_CACHE_LIMIT = 128
 const searchCacheByDb = new WeakMap()
@@ -213,8 +214,13 @@ export function buildContentIndex(root = projectRoot, siteUrl = SITE_URL) {
     items.push({ id: `podcast:${slug}`, kind: 'podcast', slug, title: String(episode.title || slug), excerpt: String(episode.description || episode.excerpt || ''), body: '', url: `${siteUrl}/podcast/${slug}`, image: episode.image || null, date: episode.date || episode.publishedAt || '', words: 0, audio: { dialogue: Boolean(episode.audioUrl || episode.url || episode.status === 'Published'), duration: Number(episode.duration || 0) || null }, keywords: 'بودكاست حواري', hash: '' })
   }
 
+  /* Canonical Publishing Pipeline: during every production build Firestore is
+     snapshotted once, then the same snapshot feeds WhatsApp/search/knowledge graph.
+     Added CMS material and base overrides therefore enter the deep index in the
+     same deploy that publishes the page, instead of waiting for manual source edits. */
+  const canonicalItems = mergeCanonicalContentIndex(items, readCanonicalCms(root), siteUrl)
   const unique = new Map()
-  for (const item of items) { item.hash = hashItem({ ...item, hash: undefined }); if (!unique.has(item.id)) unique.set(item.id, item) }
+  for (const item of canonicalItems) { item.hash = hashItem({ ...item, hash: undefined }); if (!unique.has(item.id)) unique.set(item.id, item) }
   // رسم معرفة خفيف داخل الفهرس: يضيف عناوين أقرب الامتدادات إلى حقل البحث.
   // Archive 2036: كانت هذه الخطوة تقارن كل مادة بكل مادة (O(n²)). عند 100k
   // تصبح مليارات المقارنات. الآن نبني جيب مرشحين من posting lists نادرة ثم

@@ -113,3 +113,6 @@ local-data/encyclopedia-auto-transcribe-state.json
 
 # generated at build time — Archive 2036 body shards
 public/archive/bodies/
+
+# build-time canonical CMS snapshot (contains public Firestore content + deletion decisions)
+.cache/canonical-cms.json

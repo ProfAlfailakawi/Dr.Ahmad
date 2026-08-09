@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
+import { mergeCanonicalArticleBodies, readCanonicalCms } from './canonical-cms.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dataDir = path.join(root, 'src', 'data')
@@ -22,8 +23,7 @@ function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'))
 }
 
-function writeKind(kind, sourceFile, revision, width) {
-  const source = readJson(path.join(dataDir, sourceFile))
+function writeKind(kind, source, revision, width) {
   const target = path.join(outputRoot, 'shards', revision, kind)
   fs.rmSync(target, { recursive: true, force: true })
   fs.mkdirSync(target, { recursive: true })
@@ -48,10 +48,12 @@ function writeKind(kind, sourceFile, revision, width) {
 
 const normalFile = path.join(dataDir, 'bodies.json')
 const vocalizedFile = path.join(dataDir, 'bodies-vocalized.json')
+const canonical = readCanonicalCms(root)
+const mergedBodies = mergeCanonicalArticleBodies(readJson(normalFile), readJson(vocalizedFile), canonical)
 const revision = crypto.createHash('sha256')
   .update(`archive-shard-v1:${BUCKETS}:fnv1a32:`)
-  .update(fs.existsSync(normalFile) ? fs.readFileSync(normalFile) : '')
-  .update(fs.existsSync(vocalizedFile) ? fs.readFileSync(vocalizedFile) : '')
+  .update(JSON.stringify(mergedBodies.normal))
+  .update(JSON.stringify(mergedBodies.vocalized))
   .digest('hex')
   .slice(0, 16)
 
@@ -60,8 +62,8 @@ const revision = crypto.createHash('sha256')
 fs.rmSync(outputRoot, { recursive: true, force: true })
 fs.mkdirSync(outputRoot, { recursive: true })
 const width = String(BUCKETS - 1).length
-const normal = writeKind('normal', 'bodies.json', revision, width)
-const vocalized = writeKind('vocalized', 'bodies-vocalized.json', revision, width)
+const normal = writeKind('normal', mergedBodies.normal, revision, width)
+const vocalized = writeKind('vocalized', mergedBodies.vocalized, revision, width)
 const meta = {
   version: 1,
   buckets: BUCKETS,
@@ -69,6 +71,7 @@ const meta = {
   revision,
   width,
   generatedAt: new Date().toISOString(),
+  canonicalCmsGeneratedAt: canonical.generatedAt || '',
   normal,
   vocalized,
 }

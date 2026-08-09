@@ -17,6 +17,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { mergeCanonicalRecords, readCanonicalCms } from './canonical-cms.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DATA = resolve(ROOT, 'src/data.ts')
@@ -37,9 +38,20 @@ const transcripts = JSON.parse(readFileSync(TRANSCRIPTS, 'utf8'))
 const dataText = readFileSync(DATA, 'utf8')
 
 const mediaBlock = dataText.slice(dataText.indexOf('export const media = ['))
-const entries = [...mediaBlock.slice(0, mediaBlock.indexOf('\n]')).matchAll(/\{[^}]*\}/g)].map((match) => match[0])
+const rawEntries = [...mediaBlock.slice(0, mediaBlock.indexOf('\n]')).matchAll(/\{[^}]*\}/g)].map((match) => match[0])
 
-const field = (entry, key) => entry.match(new RegExp(`${key}:\\s*'([^']*)'`))?.[1] || ''
+const field = (entry, key) => typeof entry === 'string'
+  ? entry.match(new RegExp(`${key}:\\s*'([^']*)'`))?.[1] || ''
+  : String(entry?.[key] || '')
+const staticMedia = rawEntries.map((entry) => ({
+  slug: field(entry, 'slug') || field(entry, 'title'),
+  title: field(entry, 'title'),
+  url: field(entry, 'url'),
+  duration: field(entry, 'duration'),
+  transcript: field(entry, 'transcript'),
+})).filter((item) => item.slug && item.title)
+const entries = mergeCanonicalRecords('media', staticMedia, readCanonicalCms(ROOT))
+
 const seconds = (value) => {
   const parts = String(value).split(':').map(Number)
   if (parts.length !== 3 || parts.some(Number.isNaN)) return 0
@@ -76,7 +88,7 @@ const items = []
 for (const entry of entries) {
   const url = field(entry, 'url')
   const videoId = url.split('v=')[1]?.split('&')[0] || ''
-  const transcript = normalizeTanween(String(transcripts[videoId] || '')).trim()
+  const transcript = normalizeTanween(String(field(entry, 'transcript') || transcripts[videoId] || '')).trim()
   const duration = seconds(field(entry, 'duration'))
   if (!videoId || !transcript || !duration) continue
 

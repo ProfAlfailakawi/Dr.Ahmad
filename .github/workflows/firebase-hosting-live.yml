@@ -113,6 +113,8 @@ jobs:
           check "Idea life self-test" node scripts/idea-life-sync.mjs --self-test
           check "Editorial source policy" node scripts/test-editorial-policy.mjs
           check "Personal editorial intelligence" node scripts/test-editorial-memory.mjs
+          check "Canonical publishing pipeline" node scripts/test-canonical-publishing-pipeline.mjs
+          check "Live CMS refresh" node scripts/test-live-cms-refresh.mjs
           check "Source desk watch self-test" node scripts/source-desk-watch.mjs --self-test
           check "Cascade correction protocol" npm run cascade-correction:self-test
           check "Editorial foresight, Dr Ahmad room and live director" npm run smart-command-room:self-test
@@ -378,3 +380,19 @@ jobs:
           rm -f "$RUNNER_TEMP/firebase-hosting-service-account.json"
         env:
           FIREBASE_HOSTING_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+
+      - name: Mark canonical content jobs deployed
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is required to close publication jobs."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/content-pipeline-sa.json"
+          FIREBASE_SERVICE_ACCOUNT="$RUNNER_TEMP/content-pipeline-sa.json" \
+          FIREBASE_PROJECT_ID=drahmad-8e9e2 \
+          node scripts/mark-content-pipeline-deployed.mjs
+          rm -f "$RUNNER_TEMP/content-pipeline-sa.json"
+        env:
+          FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}

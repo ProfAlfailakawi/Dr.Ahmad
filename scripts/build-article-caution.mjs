@@ -7,16 +7,19 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { articles } from '../src/data.ts'
 import { articleCaution } from '../src/lib/idea-evolution.ts'
+import { mergeCanonicalArticleBodies, mergeCanonicalRecords, readCanonicalCms } from './canonical-cms.mjs'
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)))
-const bodies = JSON.parse(readFileSync(resolve(ROOT, 'src/data/bodies.json'), 'utf8'))
+const canonical = readCanonicalCms(ROOT)
+const bodies = mergeCanonicalArticleBodies(JSON.parse(readFileSync(resolve(ROOT, 'src/data/bodies.json'), 'utf8')), {}, canonical).normal
+const liveArticles = mergeCanonicalRecords('article', articles, canonical)
 const scores = {}
 
-for (const article of articles) {
+for (const article of liveArticles) {
   const score = articleCaution(`${article.title} ${article.excerpt || ''} ${bodies[article.slug] || ''}`)
   if (score !== null) scores[article.slug] = score
 }
 
 const output = { version: 1, scores }
 writeFileSync(resolve(ROOT, 'src/data/article-caution.json'), `${JSON.stringify(output)}\n`)
-console.log(`✔ حرارة المقالات: ${Object.keys(scores).length} من ${articles.length}`)
+console.log(`✔ حرارة المقالات: ${Object.keys(scores).length} من ${liveArticles.length}`)

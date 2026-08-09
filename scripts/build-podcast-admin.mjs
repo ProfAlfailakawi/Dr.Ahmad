@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { createHash } from 'node:crypto'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { mergeCanonicalRecords, readCanonicalCms } from './canonical-cms.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO = resolve(ROOT, 'audio')
@@ -19,12 +20,13 @@ const podcastState = existsSync(podcastStatePath) ? JSON.parse(readFileSync(podc
 
 const articlesSource = DATA.slice(DATA.indexOf('export const articles = ['), DATA.indexOf('export const articlesWithBody'))
 const pick = (block, key) => block.match(new RegExp(`${key}:\\s*'([^']*)'`))?.[1] || ''
-const articles = [...articlesSource.matchAll(/\{\s*slug:\s*'[^']+'[\s\S]*?\},/g)]
+const staticArticles = [...articlesSource.matchAll(/\{\s*slug:\s*'[^']+'[\s\S]*?\},/g)]
   .map((m) => {
     const block = m[0]
     return { slug: pick(block, 'slug'), title: pick(block, 'title'), date: pick(block, 'date'), iso: pick(block, 'iso'), cat: pick(block, 'cat') }
   })
   .filter((article) => article.slug && article.title)
+const articles = mergeCanonicalRecords('article', staticArticles, readCanonicalCms(ROOT))
 
 const articleBySlug = new Map(articles.map((article) => [article.slug, article]))
 const files = existsSync(AUDIO) ? readdirSync(AUDIO) : []

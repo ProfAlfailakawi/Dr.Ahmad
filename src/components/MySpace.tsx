@@ -444,7 +444,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
         onClick={openSpace}
         aria-label="فتح مساحتي"
         title={snapshot.last && resumeProgress > 0 ? `مساحتي · أكمل القراءة من ${arNumber(Math.round(resumeProgress * 100))}%` : "مساحتي"}
-        className={`my-space-trigger ${freshAskId ? "my-space-trigger--fresh" : ""} group relative flex items-center justify-center text-ink transition-all hover:text-accent ${variant === "footer" ? "h-10 w-10 bg-transparent" : "h-11 w-11 rounded-full border border-hair bg-canvas/[.92] shadow-[0_12px_32px_-16px_rgba(21,22,26,.52)] backdrop-blur hover:border-accent"}`}
+        className={`my-space-trigger ${freshAskId ? "my-space-trigger--fresh" : ""} group relative flex items-center justify-center gap-2 text-ink transition-all hover:text-accent ${variant === "footer" ? "h-10 w-10 bg-transparent" : "my-space-trigger--floating h-11 min-w-11 rounded-full border border-hair bg-canvas hover:border-accent"}`}
       >
         {variant === "floating" && showDiscovery && (
           <span className="my-space-discovery" aria-hidden="true">
@@ -459,6 +459,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
           </svg>
         )}
         <SpaceIcon />
+        {variant === "floating" && <span className="my-space-trigger__label">مساحتي</span>}
       </button>
 
       {typeof document !== "undefined" && createPortal(

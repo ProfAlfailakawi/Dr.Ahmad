@@ -10,6 +10,7 @@ import { useCmsContent, useExtras } from '../lib/content'
 import { buildIdeaLife, type IdeaLifeRemoteRecord, type ImpactKind, type ImpactNode } from '../lib/idea-life'
 import { liveLink } from '../lib/dead-links'
 import { arabicCountPhrase, JOURNEY_FORMS } from '../lib/arabic-count.ts'
+import { printSiteContent } from '../lib/print'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 type FilterKey = 'all' | 'paper' | 'media' | 'archive'
@@ -182,7 +183,7 @@ export default function Impact() {
             ))}
             <button
               type="button"
-              onClick={() => window.print()}
+              onClick={() => printSiteContent({ selector: '.content-impact', title: 'سجل الأثر' })}
               aria-label="طباعة نسخة رسمية"
               title="طباعة نسخة رسمية"
               className="ms-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"

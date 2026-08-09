@@ -308,6 +308,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
          الوصلة الآن مباشرةٌ إلى الأداة، والطريقان يُختاران داخلها. */
       { to: '/search', label: 'البحث في المعرفة', description: 'مادة منشورة أو سؤال موثّق' },
       { to: '/thought', label: 'الخريطة الفكرية', description: 'الصورة الكبرى للمشروع الفكري' },
+      { to: '/atlas', label: 'سماء المقالات', description: 'خريطة تفاعلية للمقالات عبر الزمن وصلات الأفكار' },
     ],
   },
   {
@@ -333,7 +334,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
 ]
 
 const isPrimaryNavActive = (item: NavItem, pathname: string) => {
-  if (item.to === '/thought') return pathname === '/thought' || pathname === '/thought-paths' || pathname === '/decade' || pathname === '/atlas' || pathname === '/impact' || pathname.startsWith('/impact/')
+  if (item.to === '/thought') return pathname === '/thought' || pathname === '/thought-paths' || pathname === '/decade' || pathname === '/impact' || pathname.startsWith('/impact/')
   if (item.to === '/curated') return pathname === '/curated' || pathname === '/questions' || pathname === '/radar' || pathname === '/inbox'
   return pathname === item.to || Boolean(item.sub?.some((sub) => sub.to === pathname))
 }

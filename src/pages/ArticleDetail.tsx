@@ -23,6 +23,7 @@ import { rememberIdeaVisit } from '../lib/idea-memory'
 import { recordArticleVisit } from '../lib/reading-space'
 import { SaveForLaterButton } from '../components/MySpace'
 import IdeaLife from '../components/IdeaLife'
+import { SocialIcon } from '../components/icons'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
 import { arabicCountPhrase, SHARE_FORMS, VIEW_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
@@ -912,7 +913,12 @@ export default function ArticleDetail() {
             {article.body && (
               <div className="article-reading-actions serenity-hide mt-4 flex flex-wrap items-center gap-x-3 gap-y-3 pb-1">
                 <div id="article-audio" className="order-2 w-full min-w-0 sm:order-1 sm:w-auto sm:flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
-                <div className="order-1 flex shrink-0 items-center sm:order-2"><ReaderControls article={article} saveControl={<SaveForLaterButton slug={article.slug} />} onSerenity={() => setSerenity(true)} /></div>
+                <div className="order-1 flex shrink-0 items-center gap-2 sm:order-2">
+                  <button type="button" onClick={() => window.print()} className="article-tool-icon" aria-label="طباعة المقال كورقة أكاديمية" title="طباعة المقال">
+                    <SocialIcon name="Print" size={17} />
+                  </button>
+                  <ReaderControls article={article} saveControl={<SaveForLaterButton slug={article.slug} />} onSerenity={() => setSerenity(true)} />
+                </div>
               </div>
             )}
           </FadeUp>

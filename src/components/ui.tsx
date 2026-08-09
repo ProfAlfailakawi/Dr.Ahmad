@@ -400,7 +400,6 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                 transition={{ duration: 0.34, delay: 0.18 + gi * 0.05, ease: EASE }}
               >
                 <span>{g.label}</span>
-                <span className="ms-2 font-sans text-[.62rem] font-normal text-soft" aria-hidden="true">{g.items.length.toLocaleString('ar-KW')}</span>
               </motion.span>
 
               <ul className="mt-3 space-y-1 md:mt-4">
@@ -907,7 +906,7 @@ export function Nav() {
         <AnimatePresence>{open && <EnglishOverlay key="en-ov" close={closeMenu} openSearch={() => { closeMenu(); setSearchOpen(true) }} />}</AnimatePresence>
         <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
         <nav aria-label="Main navigation" dir="ltr" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
-          <div className={`relative mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
+          <div className={`relative mx-auto flex max-w-shell items-center justify-between px-6 transition-[height] duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
             <AnimatePresence initial={false}>
               {pageEcho.compact && pageEcho.title && solid && !open && !searchOpen && (
                 <motion.span key={pageEcho.title} aria-hidden="true" initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -6, filter: 'blur(3px)' }} transition={{ duration: .34, ease: EASE }} className="nav-page-echo pointer-events-none absolute left-1/2 hidden max-w-[42vw] -translate-x-1/2 truncate font-display text-[.82rem] font-semibold text-ink/80 md:block">{pageEcho.title}</motion.span>
@@ -943,7 +942,7 @@ export function Nav() {
       <AnimatePresence>{searchOpen && <SearchPalette key="search" close={closeSearch} />}</AnimatePresence>
 
       <nav aria-label="التنقّل الرئيسي" className={`site-nav ${solid ? 'is-solid' : ''} fixed inset-x-0 top-0 z-[230] border-b transition-[background-color,border-color] duration-500 ${solid ? 'border-hair bg-canvas/[.9] backdrop-blur-lg backdrop-saturate-150' : 'border-transparent'}`}>
-        <div className={`relative mx-auto flex max-w-shell items-center justify-between px-6 transition-all duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
+        <div className={`relative mx-auto flex max-w-shell items-center justify-between px-6 transition-[height] duration-300 md:px-11 ${solid ? 'h-16' : 'h-[76px]'}`}>
           <AnimatePresence initial={false}>
             {pageEcho.compact && pageEcho.title && solid && !open && !searchOpen && (
               <motion.span key={pageEcho.title} aria-hidden="true" initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -6, filter: 'blur(3px)' }} transition={{ duration: .34, ease: EASE }} className="nav-page-echo pointer-events-none absolute left-1/2 hidden max-w-[42vw] -translate-x-1/2 truncate font-display text-[.82rem] font-semibold text-ink/80 md:block">{pageEcho.title}</motion.span>

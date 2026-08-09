@@ -1200,31 +1200,6 @@ html.dark .book-detail-cover {
   color: rgb(var(--c-soft));
   color: color-mix(in srgb, rgb(var(--c-soft)) 90%, rgb(var(--c-ink)) 10%);
 }
-.human-core__voice-mark {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  inline-size: 2.75rem;
-  block-size: 2.75rem;
-  flex: 0 0 auto;
-  border: 1px solid var(--c-hair);
-  border-radius: 999px;
-  color: rgb(var(--c-accent));
-  background: rgb(var(--c-canvas) / .72);
-  transition: border-color .25s var(--E), background-color .25s var(--E), transform .25s var(--E);
-}
-.human-core__voice-mark:hover,
-.human-core__voice-mark:focus-visible { border-color: rgb(var(--c-accent) / .68); background: rgb(var(--c-accent) / .06); }
-.human-core__voice-mark > span {
-  inline-size: 1.35rem;
-  block-size: .82rem;
-  background: currentColor;
-  -webkit-mask: var(--audio-wave-mask) center / 100% 100% no-repeat;
-  mask: var(--audio-wave-mask) center / 100% 100% no-repeat;
-  transform-origin: center;
-}
-.human-core__voice-mark.is-speaking > span { animation: human-name-wave .58s ease-in-out infinite alternate; }
-@keyframes human-name-wave { to { transform: scaleY(.42); opacity: .62; } }
 .human-core__title-line { position: relative; width: max-content; max-width: 100%; }
 .human-core__title-line::before,
 .human-core__title-line::after {
@@ -1519,11 +1494,6 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
 @media (max-width: 639px) {
   .article-patina { display: none; }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .human-core__voice-mark.is-speaking > span { animation: none; }
-}
-
 
 /* حقول التحكم تعتمد حدودها الداخلية فقط؛ يمنع الإطار المزدوج الداكن عند التركيز. */
 .admin-shell :is(input, textarea, select):focus-visible {
@@ -3116,6 +3086,20 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.research-section-navigator {
+  inset-block-start: calc(4rem + env(safe-area-inset-top, 0px));
+  isolation: isolate;
+  contain: paint;
+  background: rgb(var(--c-canvas));
+}
+.research-section-navigator nav {
+  contain: layout paint;
+}
+.research-section-navigator button {
+  font-variant-numeric: tabular-nums;
+  transform: none !important;
+}
+
 .content-research .research-smart-reader {
   border-bottom: 1px solid rgb(var(--c-ink) / .1);
   background:
@@ -4517,13 +4501,13 @@ html, body, #root { max-inline-size: 100%; }
   --c-hair: rgba(234, 234, 231, .11);
   /* لوحة محاور ليلية هادئة: اختلافٌ واضح في الدرجة، بلا نيون ولا لون خارج
      طيف الموقع الرمادي-الأزرق. تُستهلك عبر --atlas-axis لكل نجمة. */
-  --atlas-education: 132 169 202;
-  --atlas-pedagogy: 151 178 192;
-  --atlas-society: 177 164 183;
-  --atlas-technology: 124 184 183;
-  --atlas-identity: 190 167 137;
-  --atlas-media: 157 157 204;
-  --atlas-research: 174 190 156;
+  --atlas-education: 122 174 219;
+  --atlas-pedagogy: 151 196 202;
+  --atlas-society: 198 158 187;
+  --atlas-technology: 101 195 181;
+  --atlas-identity: 211 174 116;
+  --atlas-media: 161 153 220;
+  --atlas-research: 166 201 137;
   --atlas-warm: 194 160 112;
   background: rgb(var(--c-canvas));
   background-image:
@@ -4535,9 +4519,14 @@ html, body, #root { max-inline-size: 100%; }
 .atlas-night circle { transition: filter .3s ease; }
 .atlas-night circle[fill]:not([fill="none"]),
 .atlas-night .atlas-star-core {
-  filter: drop-shadow(0 0 3px rgb(var(--c-accent) / .55));
+  filter: drop-shadow(0 0 4px rgb(var(--atlas-axis, var(--c-accent)) / .46));
 }
-.atlas-star-core { fill: var(--atlas-star-color, rgb(var(--c-accent))); }
+.atlas-star-core {
+  fill: var(--atlas-star-color, rgb(var(--c-accent)));
+  stroke: var(--atlas-star-heat, transparent);
+  stroke-width: .9px;
+  paint-order: stroke fill;
+}
 .atlas-star-core.is-visited { filter: drop-shadow(0 0 7px rgb(var(--c-accent) / .58)); }
 .atlas-star-core.is-compared { stroke: rgb(255 255 255 / .88); stroke-width: 1.4px; }
 .atlas-legend[open] { z-index: 40; }
@@ -6093,7 +6082,7 @@ html.reader-paper .sentence-item.is-sentence-active {
     rgb(var(--c-canvas));
 }
 .atlas-night.is-graph .atlas-star-core {
-  filter: drop-shadow(0 0 5px rgb(var(--atlas-axis, var(--c-accent)) / .18));
+  filter: drop-shadow(0 0 5px rgb(var(--atlas-axis, var(--c-accent)) / .38));
 }
 .atlas-night.is-timeline { background: rgb(var(--c-canvas)); }
 

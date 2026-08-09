@@ -118,6 +118,37 @@ export function bookQuoteReply(rawText = '', options = {}) {
   }
 }
 
+/**
+ * «معلومة من الكتاب» ليست بحثاً بكلمة مفتاحية. نختار مقطعاً حقيقياً مكتفياً
+ * بذاته من الكتاب الحاضر في المحادثة، ونديره يومياً بحساب حتمي حتى يتنوّع
+ * من غير عشوائيةٍ مربكة أو نموذجٍ يولّد كلاماً غير منشور.
+ */
+export function usefulBookQuoteReply(bookSlug = '', seedKey = '') {
+  const book = (load().books || []).find((item) => item.slug === String(bookSlug || '').trim())
+  if (!book) return null
+  const candidates = (book.passages || []).filter((passage) => {
+    const text = String(passage.text || '').trim()
+    const section = String(passage.section || passage.conceptTitle || '')
+    return text.length >= 90 && text.length <= 430
+      && !/(?:قائمه|قائمة)\s*(?:المراجع|المصادر)|^المراجع|https?:\/\//iu.test(`${section} ${text}`)
+      && !/^(?:الفصل|الباب)\s+(?:الاول|الثاني|الثالث|الرابع|الخامس|السادس|السابع|الثامن|التاسع|العاشر)\s*$/iu.test(text)
+  })
+  if (!candidates.length) return null
+  const day = new Date().toISOString().slice(0, 10)
+  const seed = `${book.slug}:${day}:${seedKey}`
+  let hash = 2166136261
+  for (const char of seed) hash = Math.imul(hash ^ char.codePointAt(0), 16777619) >>> 0
+  const ranked = candidates
+    .map((passage) => ({ passage, quality: (Number(passage.voice) || 50) - Math.abs(String(passage.text).length - 230) / 18 }))
+    .sort((left, right) => right.quality - left.quality)
+  const pool = ranked.slice(0, Math.min(18, ranked.length))
+  const passage = pool[hash % pool.length].passage
+  return {
+    text: `هذه فكرة موثّقة من «${book.title}» (ص ${passage.page}):\n«${passage.text}»\n\nإذا تبي، أشرحها لك أو أبحث عن فكرةٍ ثانية داخل الكتاب نفسه.\n${SITE_URL}/publications/${book.slug}#book-knowledge`,
+    found: { bookSlug: book.slug, bookTitle: book.title, passage },
+  }
+}
+
 /** فهرسٌ موثّق من خريطة الكتاب: عناوين المحاور وصفحاتها فقط، بلا اختلاق. */
 export function bookChaptersReply(bookSlug = '', maxChars = 1_450) {
   const book = (loadKnowledge().books || []).find((item) => item.slug === bookSlug)

@@ -95,9 +95,13 @@ const axisOf = (category = ''): AtlasAxis => {
 const axisStyle = (category: string) => ({ '--atlas-axis': `var(--atlas-${axisOf(category)})` } as CSSProperties)
 const starStyle = (category: string, caution: number | null) => ({
   ...axisStyle(category),
-  '--atlas-star-color': caution === null
-    ? 'rgb(var(--c-accent))'
-    : `color-mix(in srgb, rgb(var(--atlas-warm)) ${100 - caution}%, rgb(var(--c-accent)) ${caution}%)`,
+  /* لون المركز يجيب عن «إلى أي محور تنتمي؟»، أمّا الحلقة الدقيقة فتجيب عن
+     «أين تقع نبرتها بين الوعد والتحفّظ؟». مزجهما في fill واحد كان يمحو
+     المحاور كلّها بصرياً ويجعل الأسطورة تقول شيئاً لا ترسمه السماء. */
+  '--atlas-star-color': 'rgb(var(--atlas-axis))',
+  '--atlas-star-heat': caution === null
+    ? 'transparent'
+    : `color-mix(in srgb, rgb(var(--atlas-warm)) ${100 - caution}%, rgb(var(--c-accent-deep)) ${caution}%)`,
 } as CSSProperties)
 const articleExcerptLine = (value = '') => {
   const compact = value.replace(/\s+/g, ' ').trim()
@@ -664,12 +668,12 @@ export default function Atlas() {
             <div className="mb-5 flex flex-wrap items-center gap-2.5">
               <details className="atlas-legend group relative">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
-                  <span className="h-2 w-2 rounded-full bg-[rgb(var(--atlas-education))]" aria-hidden="true" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[rgb(var(--atlas-education))] shadow-[0_0_0_3px_rgb(var(--atlas-education)/.13)]" aria-hidden="true" />
                   ألوان المحاور
                   <span aria-hidden className="transition-transform group-open:rotate-45">+</span>
                 </summary>
                 <div className="absolute right-0 top-[calc(100%+.45rem)] z-30 grid min-w-[12rem] gap-2 rounded-xl border border-hair bg-canvas/95 p-3 text-[.7rem] text-soft shadow-xl backdrop-blur">
-                  {AXES.map((axis) => <span key={axis.id} className="flex items-center gap-2"><i className="h-2 w-2 rounded-full" style={{ background: `rgb(var(--atlas-${axis.id}))` }} />{axis.label}</span>)}
+                  {AXES.map((axis) => <span key={axis.id} className="flex items-center gap-2.5"><i className="h-3 w-3 rounded-full ring-2 ring-white/10" style={{ background: `rgb(var(--atlas-${axis.id}))`, boxShadow: `0 0 8px rgb(var(--atlas-${axis.id}) / .34)` }} />{axis.label}</span>)}
                 </div>
               </details>
               <button type="button" onClick={() => { setCompareMode((value) => !value); setCompareIndexes([]) }} aria-pressed={compareMode} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>مقارنة نجمتين</button>

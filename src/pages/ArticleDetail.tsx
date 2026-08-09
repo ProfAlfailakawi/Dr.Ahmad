@@ -126,7 +126,8 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
   })
   const [showSyncWhisper, setShowSyncWhisper] = useState(false)
 
-  // Parse body into structured paragraphs & sentences with word offsets
+  // Parse body into structured paragraphs & sentences. Timing weights add natural punctuation pauses
+  // so sentence-following tracks speech cadence rather than assuming every word lasts equally.
   const { paragraphs, flatSentences, totalWords } = useMemo(() => {
     const rawParagraphs = body.split(/\n\s*\n/)
     let globalWordOffset = 0
@@ -146,6 +147,10 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
         const sCharStart = pCharOffset
         pCharOffset += sText.length
 
+        const softPauses = (trimmed.match(/[،؛:]/g) || []).length * .28
+        const hardPauses = (trimmed.match(/[.!؟!]/g) || []).length * .62
+        const lengthWeight = Math.min(2.4, trimmed.length / 95)
+
         return {
           sIdx,
           text: sText,
@@ -155,6 +160,7 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
           wordStart: sWordStart,
           wordEnd: pWordOffset,
           words,
+          timingWeight: Math.max(1, words + softPauses + hardPauses + lengthWeight),
         }
       })
 
@@ -177,16 +183,27 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
       text: string
       wordStart: number
       wordEnd: number
+      timingWeight: number
+      timingStartRatio: number
+      timingEndRatio: number
     }[] = []
 
+    const totalTimingWeight = Math.max(1, parsedParagraphs.reduce((sum, paragraph) =>
+      sum + paragraph.sentences.reduce((sentenceSum, sentence) => sentenceSum + sentence.timingWeight, 0), 0))
+    let timingCursor = 0
     parsedParagraphs.forEach((p) => {
-      p.sentences.forEach((s) => {
+      p.sentences.forEach((sentence) => {
+        const timingStartRatio = timingCursor / totalTimingWeight
+        timingCursor += sentence.timingWeight
         flat.push({
           pIdx: p.pIdx,
-          sIdx: s.sIdx,
-          text: s.trimmedText,
-          wordStart: s.wordStart,
-          wordEnd: s.wordEnd,
+          sIdx: sentence.sIdx,
+          text: sentence.trimmedText,
+          wordStart: sentence.wordStart,
+          wordEnd: sentence.wordEnd,
+          timingWeight: sentence.timingWeight,
+          timingStartRatio,
+          timingEndRatio: timingCursor / totalTimingWeight,
         })
       })
     })
@@ -236,11 +253,11 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
     if (!activeAudio || !followEnabled || !audio.duration || !totalWords || flatSentences.length === 0) {
       return { activeParagraph: -1, activeSentence: -1, currentFlatIndex: -1 }
     }
-    const currentWords = Math.min(totalWords - 1, Math.max(0, (audio.current / audio.duration) * totalWords))
+    const playbackRatio = Math.min(.999999, Math.max(0, audio.current / audio.duration))
 
     let flatIdx = 0
     for (let i = 0; i < flatSentences.length; i += 1) {
-      if (currentWords >= flatSentences[i].wordStart) {
+      if (playbackRatio >= flatSentences[i].timingStartRatio) {
         flatIdx = i
       } else {
         break
@@ -287,14 +304,14 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
         nextFlatIdx = Math.max(0, currentFlatIndex - 1)
       }
 
-      const targetWord = flatSentences[nextFlatIdx]?.wordStart ?? 0
-      audio.seekTo((targetWord / totalWords) * audio.duration)
+      const targetRatio = flatSentences[nextFlatIdx]?.timingStartRatio ?? 0
+      audio.seekTo(targetRatio * audio.duration)
       if (!audio.playing) void audio.toggle()
     }
 
     window.addEventListener('article-audio-jump-sentence', handleJumpSentence)
     return () => window.removeEventListener('article-audio-jump-sentence', handleJumpSentence)
-  }, [activeAudio, audio, currentFlatIndex, flatSentences, totalWords])
+  }, [activeAudio, audio, currentFlatIndex, flatSentences])
 
   // Smooth scroll active sentence into optimal reading area
   useEffect(() => {
@@ -313,7 +330,10 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
 
   const seekWord = (wordIndex: number) => {
     if (!activeAudio || !audio.duration) return
-    audio.seekTo((wordIndex / totalWords) * audio.duration)
+    const sentence = flatSentences.find((item) => wordIndex >= item.wordStart && wordIndex < item.wordEnd)
+      || flatSentences.find((item) => item.wordStart >= wordIndex)
+    const ratio = sentence?.timingStartRatio ?? Math.min(1, Math.max(0, wordIndex / totalWords))
+    audio.seekTo(ratio * audio.duration)
     if (!audio.playing) void audio.toggle()
   }
 

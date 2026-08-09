@@ -356,6 +356,19 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
     setTab("continue");
   };
 
+  /* «اقتباساتي» تعيش في مساحتي وحدها. أي دعوة من داخل القارئ تفتح
+     الدفتر هنا بدلاً من تكرار التبويب داخل أدوات القراءة. */
+  useEffect(() => {
+    const openQuotes = () => {
+      try { localStorage.setItem("myspace:discovered:v2", "1"); } catch { /* noop */ }
+      setShowDiscovery(false);
+      setTab("quotes");
+      setOpen(true);
+    };
+    window.addEventListener("reader:open-notebook", openQuotes);
+    return () => window.removeEventListener("reader:open-notebook", openQuotes);
+  }, []);
+
   const closeSpace = useCallback((restoreFocus = true) => {
     setOpen(false);
     if (restoreFocus) window.setTimeout(() => triggerRef.current?.focus(), 30);

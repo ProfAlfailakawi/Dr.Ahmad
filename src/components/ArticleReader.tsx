@@ -459,9 +459,6 @@ function scrollToSavedQuote(quote: SavedQuote) {
 export function ReaderControls({ article, saveControl, onSerenity }: { article: ReaderArticle; saveControl?: ReactNode; onSerenity?: () => void }) {
   const { preferences, setPreferences } = useReaderPreferences()
   const [open, setOpen] = useState(false)
-  const [tab, setTab] = useState<'settings' | 'quotes'>('settings')
-  const [quotes, setQuotesState] = useState<SavedQuote[]>(() => readSavedQuotes())
-  const [copiedId, setCopiedId] = useState('')
   const [xray, setXray] = useState<XrayTerm | null>(null)
   const [showAaDiscovery, setShowAaDiscovery] = useState(false)
 
@@ -483,7 +480,6 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
   const openReaderTools = () => {
     try { localStorage.setItem('reader:aa-discovered:v2', '1') } catch { /* noop */ }
     setShowAaDiscovery(false)
-    setTab('settings')
     setOpen(true)
   }
 
@@ -510,12 +506,6 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
   }, [showResume])
 
   useEffect(() => {
-    const refreshQuotes = () => setQuotesState(readSavedQuotes())
-    const openNotebook = () => {
-      setQuotesState(readSavedQuotes())
-      setTab('quotes')
-      setOpen(true)
-    }
     const onXray = (event: Event) => setXray((event as CustomEvent<XrayTerm>).detail || null)
     const onPopularLinked = (event: Event) => {
       const detail = (event as CustomEvent<{ localQuoteId?: string; articleVersion?: string; highlightKey?: string; startOffset?: number; endOffset?: number }>).detail
@@ -526,13 +516,9 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
         : quote)
       if (JSON.stringify(next) !== JSON.stringify(current)) saveQuotes(next)
     }
-    window.addEventListener('reader:quotes-changed', refreshQuotes)
-    window.addEventListener('reader:open-notebook', openNotebook)
     window.addEventListener('reader:xray', onXray)
     window.addEventListener('reader:popular-quote-linked', onPopularLinked)
     return () => {
-      window.removeEventListener('reader:quotes-changed', refreshQuotes)
-      window.removeEventListener('reader:open-notebook', openNotebook)
       window.removeEventListener('reader:xray', onXray)
       window.removeEventListener('reader:popular-quote-linked', onPopularLinked)
     }
@@ -560,51 +546,6 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
     if (body) body.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const removeQuote = (id: string) => {
-    const removed = quotes.find((quote) => quote.id === id)
-    if (removed) {
-      window.dispatchEvent(new CustomEvent('reader:quote-removed', {
-        detail: {
-          slug: removed.slug,
-          body: removed.slug === article.slug ? (article.body || '') : '',
-          quote: removed.quote,
-          paragraph: removed.paragraph,
-          startOffset: removed.startOffset,
-          endOffset: removed.endOffset,
-          articleVersion: removed.articleVersion,
-          highlightKey: removed.highlightKey,
-        },
-      }))
-    }
-    const next = quotes.filter((quote) => quote.id !== id)
-    setQuotesState(next)
-    saveQuotes(next)
-  }
-
-  const goToQuote = (quote: SavedQuote) => {
-    setOpen(false)
-    if (quote.slug === article.slug) {
-      window.setTimeout(() => scrollToSavedQuote(quote), 80)
-      return
-    }
-    writeJson(PENDING_QUOTE_KEY, { slug: quote.slug, paragraph: quote.paragraph })
-    window.location.assign(`/articles/${quote.slug}#article-body`)
-  }
-
-  const shareSavedQuote = async (quote: SavedQuote) => {
-    const text = `«${quote.quote}»\n— د. أحمد حسين الفيلكاوي\n${quote.title}\n${quote.url}`
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: quote.title, text, url: quote.url })
-        return
-      }
-    } catch (error) {
-      if ((error as DOMException)?.name === 'AbortError') return
-    }
-    await copyText(text)
-    setCopiedId(quote.id)
-    window.setTimeout(() => setCopiedId(''), 1400)
-  }
 
   return (
     <>
@@ -649,18 +590,13 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
               <header className="flex items-center justify-between gap-4 border-b border-hair pb-4">
                 <div>
                   <p className="text-[.72rem] font-semibold text-accent">قارئ هادئ</p>
-                  <h2 className="mt-1 font-display text-[1.22rem] font-semibold text-ink">{tab === 'settings' ? 'أدوات القراءة' : 'اقتباساتي'}</h2>
+                  <h2 className="mt-1 font-display text-[1.22rem] font-semibold text-ink">أدوات القراءة</h2>
                 </div>
                 <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق" title="إغلاق" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft"><SocialIcon name="Close" size={15} /></button>
               </header>
 
-              <div className="mt-4 flex gap-2" role="tablist" aria-label="أقسام القارئ">
-                <button type="button" role="tab" aria-selected={tab === 'settings'} onClick={() => setTab('settings')} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold ${tab === 'settings' ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>القراءة</button>
-                <button type="button" role="tab" aria-selected={tab === 'quotes'} onClick={() => setTab('quotes')} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold ${tab === 'quotes' ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>اقتباساتي{quotes.length ? ` · ${quotes.length.toLocaleString('en-US')}` : ''}</button>
-              </div>
 
-              {tab === 'settings' ? (
-                <div className="mt-6 space-y-6">
+              <div className="mt-6 space-y-6">
                   {(saveControl || onSerenity) && (
                     <section className="rounded-2xl border border-hair bg-wash/[.45] p-4">
                       <p className="text-[.76rem] font-semibold text-ink">أدوات المقال</p>
@@ -706,33 +642,6 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
                   </section>
                   <p className="text-[.7rem] leading-[1.8] text-soft">تُحفظ هذه الاختيارات على هذا الجهاز فقط، وتُطبّق تلقائياً على بقية المقالات.</p>
                 </div>
-              ) : (
-                <div className="mt-6">
-                  <p className="rounded-2xl border border-hair bg-wash/[.45] px-4 py-3 text-[.74rem] leading-[1.8] text-soft">الاقتباسات محفوظة على هذا الجهاز فقط، من دون حساب أو بريد إلكتروني.</p>
-                  {quotes.length ? (
-                    <div className="mt-4 space-y-3">
-                      {quotes.map((quote) => (
-                        <article key={quote.id} className="rounded-2xl border border-hair bg-canvas p-4">
-                          <blockquote className="font-display text-[.94rem] font-light leading-[1.9] text-ink">«{quote.quote}»</blockquote>
-                      <p className="mt-2 text-[.7rem] leading-relaxed text-soft">{quote.title} · {new Date(quote.savedAt).toLocaleDateString('ar-KW')}</p>
-                      {quote.note && <p className="mt-2 rounded-xl bg-wash/[.55] px-3 py-2 text-[.72rem] leading-relaxed text-soft">ملاحظتك: {quote.note}</p>}
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <button type="button" onClick={() => goToQuote(quote)} aria-label="الرجوع إلى موضع الاقتباس" title="الرجوع إلى موضعه" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent"><SocialIcon name="ArrowBack" size={15} /></button>
-                            <button type="button" onClick={async () => { await copyText(quote.quote); setCopiedId(quote.id); window.setTimeout(() => setCopiedId(''), 1200) }} aria-label="نسخ الاقتباس" title={copiedId === quote.id ? 'نُسخ الاقتباس' : 'نسخ الاقتباس'} className={`flex h-9 w-9 items-center justify-center rounded-full border text-soft hover:border-accent hover:text-accent ${copiedId === quote.id ? 'border-accent text-accent' : 'border-hair'}`}><SocialIcon name={copiedId === quote.id ? 'Check' : 'Copy'} size={15} /></button>
-                            <button type="button" onClick={() => void shareSavedQuote(quote)} aria-label="مشاركة الاقتباس" title="مشاركة الاقتباس" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent"><SocialIcon name="Share" size={15} /></button>
-                            <button type="button" onClick={() => removeQuote(quote.id)} aria-label="حذف الاقتباس" title="حذف الاقتباس" className="ms-auto flex h-9 w-9 items-center justify-center rounded-full text-soft hover:bg-wash hover:text-accent"><SocialIcon name="Trash" size={15} /></button>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="py-12 text-center">
-                      <p className="font-display text-[1.05rem] font-semibold text-ink">دفترك هادئ حتى الآن.</p>
-                      <p className="mt-2 text-[.78rem] leading-relaxed text-soft">حدّد جملة داخل أي مقال، ثم افتح «بطاقة الاقتباس» واختر «احتفظ بالجملة في دفتر القراءة».</p>
-                    </div>
-                  )}
-                </div>
-              )}
             </motion.section>
           </motion.div>
         )}
@@ -765,8 +674,18 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
   )
 }
 
+function nativeArticleSelectionActive() {
+  if (typeof window === 'undefined') return false
+  const selection = window.getSelection()
+  if (!selection || selection.isCollapsed || !selection.rangeCount) return false
+  const node = selection.getRangeAt(0).commonAncestorContainer
+  const element = node.nodeType === Node.ELEMENT_NODE ? node as Element : node.parentElement
+  return Boolean(element?.closest('.article-body'))
+}
+
 export function usePopularQuotes(slug: string, body = '') {
   const [quotes, setQuotes] = useState<PopularQuote[]>([])
+  const pendingQuotesRef = useRef<PopularQuote[] | null>(null)
   const { preferences } = useReaderPreferences()
   const version = articleContentVersion(body)
 
@@ -798,7 +717,8 @@ export function usePopularQuotes(slug: string, body = '') {
         if (!active) return
         const next = shape(snapshot.docs)
         popularHighlightCache.set(cacheKey, next)
-        setQuotes(next)
+        if (nativeArticleSelectionActive()) pendingQuotesRef.current = next
+        else setQuotes(next)
       }, () => undefined)
       if (active) unsubscribe = stop
       else stop()
@@ -835,11 +755,20 @@ export function usePopularQuotes(slug: string, body = '') {
         highlightKey: detail.highlightKey,
       })
     }
+    const flushPending = () => {
+      if (nativeArticleSelectionActive() || !pendingQuotesRef.current) return
+      const next = pendingQuotesRef.current
+      pendingQuotesRef.current = null
+      popularHighlightCache.set(cacheKey, next)
+      setQuotes(next)
+    }
+    document.addEventListener('selectionchange', flushPending)
     window.addEventListener('reader:quote-saved', onSaved)
     window.addEventListener('reader:quote-removed', onRemoved)
     return () => {
       active = false
       unsubscribe?.()
+      document.removeEventListener('selectionchange', flushPending)
       window.removeEventListener('reader:quote-saved', onSaved)
       window.removeEventListener('reader:quote-removed', onRemoved)
     }
@@ -851,6 +780,10 @@ export function usePopularQuotes(slug: string, body = '') {
       /* لا نشترط تطابق نسخة النص هنا: التحديث قادم من اقتباس هذا القارئ نفسه على
          هذه الصفحة، وحجبه كان يمنع ظهور الرقم فور الاقتباس. */
       if (!detail || detail.slug !== slug) return
+      /* لا نعيد تشكيل عقد النص بينما مقابض iOS ما زالت حيّة؛ تغيير DOM تحت
+         Range نشط كان يجعل Safari يوسّع التحديد من تلقائه. الرقم الحي يظهر
+         في شريط التحديد، والتظليل يُطبّق فور انهيار التحديد. */
+      if (nativeArticleSelectionActive()) return
       setQuotes((current) => {
         if (detail.count < POPULAR_THRESHOLD) {
           const next = current.filter((quote) => quote.highlightKey !== detail.highlightKey)
@@ -985,7 +918,7 @@ function PopularHighlightMark({ children, count, hideBadge }: { children: ReactN
       >{children}</mark>
       {!hideBadge && (
         <>
-          {'\u2060'}<span className="reader-popular-note" aria-hidden="true">{count.toLocaleString('en-US')}</span>
+          <span className="reader-popular-note" aria-hidden="true" data-count={count.toLocaleString('en-US')} />
           {open && (
             <span role="tooltip" className="reader-popular-tip absolute top-full z-20 mt-2 w-max max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-hair bg-canvas px-3 py-2 text-[.68rem] font-normal leading-[1.7] text-soft shadow-[0_12px_30px_-18px_rgba(0,0,0,.45)]">
               {label} · من أكثر العبارات التي احتفظ بها القراء

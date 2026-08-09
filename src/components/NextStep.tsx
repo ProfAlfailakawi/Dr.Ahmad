@@ -57,8 +57,8 @@ export function NextStep({
         <span className="next-step-node" aria-hidden="true" />
         {/* بلا عنوان «التالي»: الصفحة فيها تنقّل مقالات يحمل الاسم نفسه،
             وتكراره زحمة. الدعوة وحدها تكفي وتقول أكثر. */}
-        <span className="text-[.82rem] text-soft">{step.invite}</span>
-        <strong className="text-[.95rem] font-semibold leading-relaxed text-ink transition-colors group-hover:text-accent">
+        <span className="text-[.68rem] font-light leading-relaxed text-soft/80 md:text-[.72rem]">{step.invite}</span>
+        <strong className="text-[.78rem] font-normal leading-relaxed text-accent/90 transition-colors group-hover:text-accent md:text-[.84rem]">
           {step.title} ←
         </strong>
       </Link>

@@ -361,6 +361,24 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [format, setFormat] = useState<CardFormatKey>('square')
   const [quoteSaved, setQuoteSaved] = useState(false)
   const [downloadFeedback, setDownloadFeedback] = useState('')
+  const [livePopularCount, setLivePopularCount] = useState<number | null>(null)
+
+  useEffect(() => { setLivePopularCount(null) }, [sel, paragraph, offsets.startOffset, offsets.endOffset])
+  useEffect(() => {
+    const onPopular = (event: Event) => {
+      const detail = (event as CustomEvent<{ slug?: string; paragraph?: number; startOffset?: number; endOffset?: number; count?: number }>).detail
+      if (!detail || detail.slug !== current.slug || Number(detail.paragraph) !== paragraph || !sel) return
+      const left = Math.max(Number(detail.startOffset || 0), offsets.startOffset)
+      const right = Math.min(Number(detail.endOffset || 0), offsets.endOffset)
+      const overlap = Math.max(0, right - left)
+      const span = Math.max(1, offsets.endOffset - offsets.startOffset)
+      if (overlap / span < .55) return
+      const count = Number(detail.count || 0)
+      setLivePopularCount(count > 0 ? count : null)
+    }
+    window.addEventListener('reader:popular-quote-updated', onPopular)
+    return () => window.removeEventListener('reader:popular-quote-updated', onPopular)
+  }, [current.slug, offsets.endOffset, offsets.startOffset, paragraph, sel])
 
   useEffect(() => {
     let timer = 0
@@ -373,7 +391,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
        أصليين ويمكن تمديد الاختيار بلا سقف، ثم نقرأ النتيجة النهائية. */
     const inspectSelection = (event?: Event) => {
       const trigger = event?.type || 'layout'
-      const countWhenSettled = trigger === 'pointerup' || trigger === 'touchend' || (trigger === 'selectionchange' && coarse)
+      const countWhenSettled = trigger === 'pointerup' || trigger === 'touchend'
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
         if (view) return
@@ -449,7 +467,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
             }))
           }
         }
-      }, trigger === 'selectionchange' && coarse ? 240 : trigger === 'selectionchange' ? 80 : 0)
+      }, trigger === 'selectionchange' && coarse ? 150 : trigger === 'selectionchange' ? 70 : 0)
     }
     document.addEventListener('selectionchange', inspectSelection)
     document.addEventListener('pointerup', inspectSelection)
@@ -728,6 +746,11 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
               >
                 <SocialIcon name="Image" size={18} />
               </button>
+              {livePopularCount !== null && (
+                <span className="reader-live-popular-count flex min-w-9 items-center justify-center border-r border-hair px-2 font-mono text-[.64rem] font-medium tabular-nums text-accent" aria-live="polite" title="عدد القراء الذين احتفظوا بهذه العبارة">
+                  {livePopularCount.toLocaleString('en-US')}
+                </span>
+              )}
             </motion.div>
           </div>
         )}

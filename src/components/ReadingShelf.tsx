@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { type MouseEvent, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import type { ArticleRecord } from '../lib/cms'
 import { isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
@@ -82,8 +82,18 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
     setSaved(true)
   }
 
+  const printShelf = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const cleanup = () => document.body.classList.remove('print-reading-shelf')
+    document.body.classList.add('print-reading-shelf')
+    window.addEventListener('afterprint', cleanup, { once: true })
+    // Keep print() in the same trusted click: iOS/Safari can otherwise drop user activation.
+    window.print()
+  }
+
   return (
-    <section className="mt-10 rounded-2xl border border-hair bg-wash px-5 py-5 md:px-7 md:py-6" aria-labelledby="reading-shelf-title">
+    <section className="reading-shelf-print mt-10 rounded-2xl border border-hair bg-wash px-5 py-5 md:px-7 md:py-6" aria-labelledby="reading-shelf-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <span className="text-[.7rem] font-semibold uppercase tracking-[.08em] text-accent">رفّك</span>
@@ -108,7 +118,7 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
           </Link>
           <button
             type="button"
-            onClick={(event) => { event.preventDefault(); event.stopPropagation(); window.print() }}
+            onClick={printShelf}
             aria-label="طباعة خطة القراءة"
             title="طباعة خطة القراءة"
             className="relative z-20 inline-flex h-11 w-11 shrink-0 touch-manipulation cursor-pointer items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"

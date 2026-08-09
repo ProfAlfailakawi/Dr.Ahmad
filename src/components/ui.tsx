@@ -406,7 +406,6 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                 transition={{ duration: 0.32, delay: 0.09 + gi * 0.025, ease: EASE }}
               >
                 <span>{g.label}</span>
-                <span className="ms-2 font-sans text-[.62rem] font-normal text-soft" aria-hidden="true">{g.items.length.toLocaleString('ar-KW')}</span>
               </motion.span>
 
               <ul className="mt-3 space-y-1 md:mt-4">

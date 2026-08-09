@@ -526,7 +526,7 @@ function TimeDialogue({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTi
   return (
     <FadeUp>
       <aside id="time-dialogue" className="mt-14 border-t border-hair pt-8">
-        <p className="text-[.76rem] font-semibold text-accent">✦ حوار عبر الزمن</p>
+        <p className="flex items-center text-[.76rem] font-semibold text-accent"><span aria-hidden className="me-2 inline-block h-px w-4 bg-accent/[.5]" />حوار عبر الزمن</p>
         <div className="mt-4 space-y-4">
           {pair.older && (
             <Link viewTransition to={`/articles/${pair.older.slug}`} className="group block">

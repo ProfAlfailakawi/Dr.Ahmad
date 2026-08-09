@@ -321,12 +321,12 @@ export default function PaperDetail() {
                       const isExpanded = Boolean(expandedCards[card.key])
                       return (
                         <div id={`research-card-${card.key}`} key={card.key} className={`rounded-2xl border border-hair bg-canvas p-5 transition ${readerKey === card.key ? 'border-accent bg-accent/[.03] shadow-md' : ''}`}>
-                          <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={() => toggleCard(card.key)}>
+                          <button type="button" aria-expanded={isExpanded} aria-controls={`research-card-${card.key}`} onClick={() => toggleCard(card.key)} className="flex w-full items-center justify-between gap-2 text-start">
                             <h3 className="text-[.8rem] font-bold text-accent">{card.label}</h3>
-                            <button type="button" className="text-[.72rem] font-bold text-soft hover:text-accent">
+                            <span className="shrink-0 text-[.72rem] font-bold text-soft transition-colors group-hover:text-accent">
                               {isExpanded ? 'إخفاء ▴' : 'عرض التفاصيل ▾'}
-                            </button>
-                          </div>
+                            </span>
+                          </button>
                           {isExpanded ? (
                             <>
                               <p className="mt-3 whitespace-pre-line text-[.9rem] leading-[1.9] text-ink">{card.value}</p>

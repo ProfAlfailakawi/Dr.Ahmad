@@ -71,7 +71,7 @@ export default function Media() {
                     {available && <><span className="text-hair">·</span><span className="font-semibold text-soft">مفهرس زمنياً</span></>}
                   </div>
                   <div className="flex items-center justify-between gap-3 text-[.68rem] text-soft"><span className="font-semibold text-accent">{item.program || item.outlet}</span><span dir="ltr">{item.duration || ''}</span></div>
-                  <h2 style={{ viewTransitionName: sharedViewName('media-title', item.slug) }} className="mt-2 font-display text-[1.08rem] font-semibold leading-[1.65] text-ink">{item.title}</h2>
+                  <h2 style={{ viewTransitionName: sharedViewName('media-title', item.slug) }} className="mt-2 line-clamp-3 font-display text-[1.08rem] font-semibold leading-[1.65] text-ink">{item.title}</h2>
                   <p className="mt-2 line-clamp-2 min-h-[2.7rem] text-[.74rem] leading-relaxed text-soft">{item.topics || (available ? 'يمكن البحث داخل هذا اللقاء والانتقال إلى اللحظة الدقيقة.' : 'مادة محفوظة في الأرشيف الإعلامي.')}</p>
                   <div className="mt-4 flex items-center justify-between border-t border-hair pt-4 text-[.7rem]"><span className="text-soft">{item.outlet}</span><span className="font-semibold text-accent">افتح الأرشيف ←</span></div>
                 </div>

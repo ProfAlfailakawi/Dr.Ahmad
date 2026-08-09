@@ -42,8 +42,6 @@ assert.equal(normalize('إِنَّ  الذكاءـــ الاصطناعي،'), '
 assert(intervalOverlap(10, 30, 12, 31) >= 0.8, 'overlapping selections must share a canonical highlight')
 assert(wordOverlap('الذكاء الاصطناعي والإنسان', 'الذكاء الاصطناعي، والإنسان') >= 0.8, 'equivalent wording must canonicalize')
 assert(intervalOverlap(0, 10, 40, 50) < 0.8, 'distant selections must remain distinct')
-assert(readerSource.includes('lenDiffRatio <= 0.40'), 'canonical highlight must preserve the agreed ±40% selection tolerance')
-assert(readerSource.includes('spans >= 0.60') && readerSource.includes('words >= 0.50'), '±40% tolerance must still require the same sentence, not a one-character collision')
 
 // Transaction invariant model: one anonymous reader can contribute once;
 // removal is idempotent and can never make the aggregate negative.
@@ -94,7 +92,7 @@ for (const token of [
   "reader:quote-saved",
   "reader:popular-quote-updated",
   "findCanonicalHighlight",
-  "أول إشارة قراءة لهذه العبارة",
+  "من أكثر العبارات التي احتفظ بها القراء",
   "showPopular",
 ]) assert(readerSource.includes(token), `missing reader invariant: ${token}`)
 

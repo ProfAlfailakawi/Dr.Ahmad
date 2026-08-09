@@ -6,7 +6,7 @@ import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { trackUsage } from '../lib/usage-analytics'
-import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from '../lib/arabic-count.ts'
+import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS, YEAR_FORMS } from '../lib/arabic-count.ts'
 
 const W = 1160
 const PAD_R = 150
@@ -24,6 +24,11 @@ const MOBILE_TOP = 38
 
 const arDigits = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+
+/* ألوان محاور هادئة من النسخة المحبوبة القديمة: تُستخدم كترميز معرفي صغير
+   للنجوم والمحاور، لا كزينة. البصمة ثابتة لكل تصنيف حتى لا تتبدل الألوان. */
+const ATLAS_AXIS_COLORS = ['#3E5C78', '#7A6B4F', '#617965', '#716684', '#865F65', '#557A78', '#756F60', '#5F7087']
+const categoryColor = (category: string, categories: string[]) => ATLAS_AXIS_COLORS[Math.max(0, categories.indexOf(category)) % ATLAS_AXIS_COLORS.length]
 
 const ATLAS_STOP = new Set(['هذا','هذه','ذلك','الذي','التي','على','الى','من','في','عن','مع','بين','بعد','قبل','كان','كانت','يكون','تكون','كيف','لكن','لان','وقد','وهو','وهي','كل','غير','عند','حتى','حول','ماذا','لماذا'])
 const foldAtlas = (text = '') => text
@@ -103,6 +108,15 @@ export default function Atlas() {
     if (typeof window === 'undefined') return ''
     return new URLSearchParams(window.location.search).get('q') || ''
   })
+  const [colorsEnabled, setColorsEnabled] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return new URLSearchParams(window.location.search).get('colors') !== '0'
+  })
+  const [compareMode, setCompareMode] = useState(false)
+  const [compareIndex, setCompareIndex] = useState<number | null>(null)
+  /* لا نعيد كتابة الرابط قبل قراءة ?star/?compare لأول مرة؛ وإلا فإن أثر
+     مزامنة URL يسبق أثر deep-link ويمحو النجمة القادمة من المقال قبل تثبيتها. */
+  const [queryHydrated, setQueryHydrated] = useState(false)
   const [lens, setLens] = useState<{ x: number; y: number; scope: AtlasScope } | null>(null)
   const [showGraphDiscovery, setShowGraphDiscovery] = useState(false)
 
@@ -129,14 +143,6 @@ export default function Atlas() {
     trackUsage('atlas_interaction', { type: 'view_graph' })
   }
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (view === 'graph') params.set('view', 'graph'); else params.delete('view')
-    if (activeCat) params.set('cat', activeCat); else params.delete('cat')
-    if (query.trim()) params.set('q', query.trim()); else params.delete('q')
-    const search = params.toString()
-    window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`)
-  }, [view, activeCat, query])
 
   const stars = useMemo(() => {
     const activeYears = Array.from(new Set(articles.map((a) => a.iso.slice(0, 4)).filter(Boolean)))
@@ -167,6 +173,57 @@ export default function Atlas() {
       return { ...a, x, y, r, words: w, i, t, row, jitter }
     })
   }, [articles, cats])
+
+  useEffect(() => {
+    if (!queryHydrated) return
+    const params = new URLSearchParams(window.location.search)
+    if (view === 'graph') params.set('view', 'graph'); else params.delete('view')
+    if (activeCat) params.set('cat', activeCat); else params.delete('cat')
+    if (query.trim()) params.set('q', query.trim()); else params.delete('q')
+    if (!colorsEnabled) params.set('colors', '0'); else params.delete('colors')
+    const selectedSlug = selected === null ? '' : stars.find((star) => star.i === selected)?.slug || ''
+    const compareSlug = compareIndex === null ? '' : stars.find((star) => star.i === compareIndex)?.slug || ''
+    if (selectedSlug) params.set('star', selectedSlug); else params.delete('star')
+    if (compareSlug && compareSlug !== selectedSlug) params.set('compare', compareSlug); else params.delete('compare')
+    const search = params.toString()
+    window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`)
+  }, [view, activeCat, query, colorsEnabled, selected, compareIndex, stars, queryHydrated])
+
+  /* deep-link من المقال: /atlas?star=slug يفتح السماء والنجمة مثبتة فوراً.
+     compare يعيد المقارنة نفسها عند تحديث الصفحة. */
+  useEffect(() => {
+    if (!stars.length || typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const starSlug = params.get('star')
+    const compareSlug = params.get('compare')
+    if (starSlug) {
+      const found = stars.find((star) => star.slug === starSlug)
+      if (found) setSelected((current) => current === null ? found.i : current)
+    }
+    if (compareSlug) {
+      const found = stars.find((star) => star.slug === compareSlug)
+      if (found) setCompareIndex((current) => current === null ? found.i : current)
+    }
+    setQueryHydrated(true)
+  }, [stars])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !stars.length) return
+    const restore = () => {
+      const params = new URLSearchParams(window.location.search)
+      setView(params.get('view') === 'graph' ? 'graph' : 'timeline')
+      setActiveCat(params.get('cat') || null)
+      setQuery(params.get('q') || '')
+      setColorsEnabled(params.get('colors') !== '0')
+      const star = stars.find((item) => item.slug === params.get('star'))
+      const compare = stars.find((item) => item.slug === params.get('compare'))
+      setSelected(star?.i ?? null)
+      setCompareIndex(compare?.i ?? null)
+      setCompareMode(false)
+    }
+    window.addEventListener('popstate', restore)
+    return () => window.removeEventListener('popstate', restore)
+  }, [stars])
 
   const mobileStars = useMemo(() => stars.map((star) => ({
     ...star,
@@ -295,6 +352,22 @@ export default function Atlas() {
   const activeIndex = hover ?? selected
   const active = activeIndex !== null ? layout.find((star) => star.i === activeIndex) : null
   const mobileActive = activeIndex !== null ? mobileLayout.find((star) => star.i === activeIndex) : null
+  const selectedStar = selected !== null ? stars.find((star) => star.i === selected) || null : null
+  const compareStar = compareIndex !== null ? stars.find((star) => star.i === compareIndex) || null : null
+  const comparisonBase = selectedStar || active
+  const comparison = useMemo(() => {
+    if (!comparisonBase || !compareStar || comparisonBase.i === compareStar.i) return null
+    const leftTokens = ideaTokens(`${comparisonBase.title} ${comparisonBase.excerpt || ''}`)
+    const rightTokens = ideaTokens(`${compareStar.title} ${compareStar.excerpt || ''}`)
+    const shared = [...leftTokens].filter((token) => rightTokens.has(token)).slice(0, 6)
+    return {
+      left: comparisonBase,
+      right: compareStar,
+      years: Math.abs(Number(comparisonBase.iso.slice(0, 4)) - Number(compareStar.iso.slice(0, 4))),
+      wordDelta: Math.abs(Number(comparisonBase.words || 0) - Number(compareStar.words || 0)),
+      shared,
+    }
+  }, [comparisonBase, compareStar])
   const activeLinks = useMemo(() => activeIndex === null ? [] : links.filter((link) => link.from === activeIndex || link.to === activeIndex), [links, activeIndex])
   const connectedIndexes = useMemo(() => {
     const set = new Set<number>()
@@ -381,19 +454,28 @@ export default function Atlas() {
     : 'شبكة الأفكار تعرض أقوى القرابات فقط: كوكبات ذكية لا شبكة أسلاك مزدحمة.'
 
   const pick = (index: number, slug: string, _pointerType: string) => {
-    /* الكمبيوتر كالهاتف الآن: الضغطة الأولى تُظهر بطاقة المقال وتُثبتها (ومنها رابط
-       القراءة ومسار الفكرة)، والضغطة الثانية على النجمة نفسها تفتح المقال. */
+    if (compareMode) {
+      if (selected === index) return
+      setCompareIndex(index)
+      setCompareMode(false)
+      setHover(null)
+      trackUsage('atlas_interaction', { type: 'compare_complete' })
+      window.setTimeout(() => document.getElementById('atlas-comparison')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80)
+      return
+    }
+    /* الضغطة الأولى تثبّت النجمة والعلاقات؛ الثانية على النجمة نفسها تفتح المقال. */
     if (selected === index) {
       nav(`/articles/${slug}`)
       return
     }
     setSelected(index)
+    if (compareIndex === index) setCompareIndex(null)
     setHover(null)
     window.setTimeout(() => document.getElementById('atlas-selection')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80)
   }
 
   const categoryButtons = (
-    <div className="edge-fade mb-8 flex flex-nowrap gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden">
+    <div className="atlas-category-rail mb-8 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden">
       <button
         onClick={() => { setActiveCat(null); setSelected(null) }}
         className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
@@ -410,6 +492,7 @@ export default function Atlas() {
             activeCat === category ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
           }`}
         >
+          <span aria-hidden className="me-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" style={{ backgroundColor: colorsEnabled ? categoryColor(category, cats) : undefined }} />
           {categoryLabel(category)}
         </button>
       ))}
@@ -436,7 +519,7 @@ export default function Atlas() {
                   onChange={(event) => { setQuery(event.target.value); setSelected(null) }}
                   placeholder="ابحث عن فكرة في السماء…"
                   aria-label="ابحث عن فكرة في خريطة المقالات"
-                  className="w-full rounded-full border border-hair bg-canvas px-4 py-2 text-[.82rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
+                  className="w-full rounded-full border border-hair bg-canvas px-4 py-2 text-base text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent md:text-[.82rem]"
                 />
                 {searchMatches !== null && (
                   <p className="mt-1.5 ps-4 text-[.7rem] font-light text-soft">
@@ -445,7 +528,11 @@ export default function Atlas() {
                 )}
               </div>
               <p className="hidden max-w-[30rem] text-[.78rem] font-light text-soft lg:block">{viewHint}</p>
-              <div className="atlas-view-switch ms-auto inline-flex rounded-full border border-hair bg-canvas p-1" role="group" aria-label="طريقة عرض خريطة الأفكار">
+              <button type="button" onClick={() => setColorsEnabled((value) => !value)} aria-pressed={colorsEnabled} className={`atlas-color-switch inline-flex min-h-10 items-center gap-2 rounded-full border px-3 text-[.72rem] font-semibold transition-colors ${colorsEnabled ? 'border-accent text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
+                <span aria-hidden className="flex gap-0.5">{ATLAS_AXIS_COLORS.slice(0, 3).map((color) => <span key={color} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colorsEnabled ? color : 'currentColor' }} />)}</span>
+                ألوان المحاور
+              </button>
+              <div className="atlas-view-switch inline-flex rounded-full border border-hair bg-canvas p-1" role="group" aria-label="طريقة عرض خريطة الأفكار">
                 <button type="button" onClick={() => { setView('timeline'); trackUsage('atlas_interaction', { type: 'view_timeline' }) }} aria-pressed={view === 'timeline'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'timeline' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>المسار الزمني</button>
                 <button type="button" onClick={chooseGraphView} aria-pressed={view === 'graph'} className={`atlas-graph-switch relative rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'} ${showGraphDiscovery ? 'is-discovering' : ''}`}>
                   شبكة الأفكار
@@ -544,17 +631,17 @@ export default function Atlas() {
                         className="cursor-pointer fill-transparent"
                         tabIndex={0}
                         onPointerDown={(event) => { event.preventDefault(); pick(star.i, star.slug, event.pointerType) }}
-                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') nav(`/articles/${star.slug}`) }}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); pick(star.i, star.slug, 'keyboard') } }}
                       />
                       <motion.circle
                         cx={star.x}
                         cy={star.y}
                         r={star.r}
                         className="atlas-star-core pointer-events-none fill-accent"
+                        style={{ fill: colorsEnabled ? categoryColor(star.cat, cats) : undefined, transformOrigin: `${star.x}px ${star.y}px` }}
                         initial={reduce ? false : { opacity: 0, scale: 0 }}
                         animate={{ opacity: presence, scale: isActive ? 1.5 : star.i === latestStarIndex ? 1.12 : 1 }}
                         transition={{ duration: 0.35, delay: reduce ? 0 : Math.min(star.i * 0.004, 0.3), ease: EASE }}
-                        style={{ transformOrigin: `${star.x}px ${star.y}px` }}
                       />
                     </g>
                   )
@@ -610,7 +697,7 @@ export default function Atlas() {
                   const activeCategory = activeCat === category
                   return (
                     <g key={`desktop-graph-label-${category}`} role="button" tabIndex={0} aria-label={`تصفية السماء بمحور ${label}`} aria-pressed={activeCategory} className="cursor-pointer outline-none" opacity={!activeCat || activeCategory ? 1 : 0.34} onClick={() => { setActiveCat(activeCategory ? null : category); setSelected(null) }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveCat(activeCategory ? null : category); setSelected(null) } }}>
-                      <circle cx={x} cy={y} r={activeCategory ? 5 : 3.5} className="fill-accent" opacity={activeCategory ? .9 : .48} />
+                      <circle cx={x} cy={y} r={activeCategory ? 5 : 3.5} className="fill-accent" style={{ fill: colorsEnabled ? categoryColor(category, cats) : undefined }} opacity={activeCategory ? .9 : .48} />
                       <text x={x} y={y + (y < graphGeometry.cy ? -10 : 17)} textAnchor="middle" className={activeCategory ? 'fill-accent font-sans' : 'fill-soft font-sans'} style={{ fontSize: 10.5, fontWeight: activeCategory ? 700 : 500 }}>{label}</text>
                     </g>
                   )
@@ -678,17 +765,17 @@ export default function Atlas() {
                         onFocus={() => setHover(star.i)}
                         onBlur={() => setHover(null)}
                         onPointerDown={(event) => { event.preventDefault(); pick(star.i, star.slug, event.pointerType) }}
-                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') nav(`/articles/${star.slug}`) }}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); pick(star.i, star.slug, 'keyboard') } }}
                       />
                       <motion.circle
                         cx={star.x}
                         cy={star.y}
                         r={star.r}
                         className="atlas-star-core pointer-events-none fill-accent"
+                        style={{ fill: colorsEnabled ? categoryColor(star.cat, cats) : undefined, transformOrigin: `${star.x}px ${star.y}px` }}
                         initial={reduce ? false : { opacity: 0, scale: 0 }}
                         animate={{ opacity: presence, scale: isActive ? 1.65 : star.i === latestStarIndex ? 1.12 : 1 }}
                         transition={{ duration: 0.45, delay: reduce ? 0 : Math.min(star.i * 0.006, 0.4), ease: EASE }}
-                        style={{ transformOrigin: `${star.x}px ${star.y}px` }}
                       />
                     </g>
                   )
@@ -713,12 +800,19 @@ export default function Atlas() {
           <div id="atlas-selection" className="mt-4 min-h-[94px] scroll-mt-24">
             {active ? (
               <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-hair bg-canvas p-5">
-                <div className="flex flex-wrap items-center gap-2 text-[.74rem] text-soft">
-                  <span className="font-semibold text-accent">{categoryLabel(active.cat)}</span>
-                  <span>·</span><time>{active.date}</time><span>·</span><span>{arabicCountPhrase(active.words, WORD_PLAIN_FORMS, arDigits)}</span>
-                  {active.hasAudio && <><span>·</span><span>له صوت</span></>}
-                  {active.i === dayStarIndex && <><span>·</span><span className="text-accent">نجمة اليوم</span></>}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2 text-[.74rem] text-soft">
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-accent"><span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colorsEnabled ? categoryColor(active.cat, cats) : undefined }} />{categoryLabel(active.cat)}</span>
+                    <span>·</span><time>{active.date}</time><span>·</span><span>{arabicCountPhrase(active.words, WORD_PLAIN_FORMS, arDigits)}</span>
+                    {active.hasAudio && <><span>·</span><span>له صوت</span></>}
+                    {active.i === dayStarIndex && <><span>·</span><span className="text-accent">نجمة اليوم</span></>}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={() => { setSelected(active.i); setCompareIndex(null); setCompareMode(true); setHover(null); trackUsage('atlas_interaction', { type: 'compare_start' }) }} className={`min-h-9 rounded-full border px-3 text-[.7rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent/[.06] text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`} aria-pressed={compareMode}>قارن بنجمة</button>
+                    {compareIndex !== null && <button type="button" onClick={() => { setCompareIndex(null); setCompareMode(false) }} className="min-h-9 px-2 text-[.68rem] text-soft transition-colors hover:text-accent">مسح المقارنة</button>}
+                  </div>
                 </div>
+                {compareMode && <p className="mt-2 text-[.72rem] font-medium text-accent" role="status">اختر نجمة ثانية من السماء؛ لن يفتح المقال أثناء هذه الخطوة.</p>}
                 <Link to={`/articles/${active.slug}`} className="mt-2 block break-words font-display text-[1.08rem] font-semibold leading-[1.75] text-ink transition-colors hover:text-accent md:text-[1.35rem]">
                   {active.title}
                   <span className="mt-3 block text-[.78rem] font-sans font-semibold text-accent">فتح المقال ←</span>
@@ -765,6 +859,27 @@ export default function Atlas() {
                       </div>
                     </div>
                   </div>
+                )}
+                {comparison && (
+                  <section id="atlas-comparison" className="mt-5 scroll-mt-28 border-t border-hair pt-5" aria-label="مقارنة بين مقالتين في سماء المقالات">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[.72rem] font-semibold text-accent">مقارنة النجمتين</p>
+                      <span className="text-[.66rem] text-soft">{comparison.years ? `${arabicCountPhrase(comparison.years, YEAR_FORMS, arDigits)} بينهما` : 'من السنة نفسها'}</span>
+                    </div>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      {[comparison.left, comparison.right].map((star) => (
+                        <Link key={`compare-${star.slug}`} to={`/articles/${star.slug}`} className="rounded-xl border border-hair p-3 transition-colors hover:border-accent">
+                          <span className="block text-[.64rem] font-semibold text-accent">{categoryLabel(star.cat)} · {arDigits(star.iso.slice(0, 4))}</span>
+                          <strong className="mt-1 block font-display text-[.88rem] leading-[1.65] text-ink">{star.title}</strong>
+                          <span className="mt-2 block text-[.66rem] text-soft">{arabicCountPhrase(star.words, WORD_PLAIN_FORMS, arDigits)}</span>
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[.7rem] text-soft">
+                      <span>فرق الطول: {arabicCountPhrase(comparison.wordDelta, WORD_PLAIN_FORMS, arDigits)}</span>
+                      {comparison.shared.length > 0 && <span>مشترك: <span className="text-ink">{comparison.shared.join(' · ')}</span></span>}
+                    </div>
+                  </section>
                 )}
               </motion.div>
             ) : (

@@ -5,7 +5,6 @@ import { getDb, getFirebaseAuth } from '../lib/firebase'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { SocialIcon } from './icons'
 import { highlightMergeVerdict } from '../lib/quote-merge'
-import { IconTooltipPortal } from './IconTooltipPortal'
 
 export type ReaderArticle = {
   slug: string
@@ -92,9 +91,15 @@ const PREFS_KEY = 'reader:preferences:v2'
 const QUOTES_KEY = 'reader:quotes:v2'
 const PROGRESS_PREFIX = 'reader:progress:v2:'
 const PENDING_QUOTE_KEY = 'reader:pending-quote:v1'
-/* أثر القارئ يظهر من أول تحديد مكتمل. كانت عتبة الثلاثة تجعل العداد يبدو
-   مختفياً، مع أن الكتابة وصلت Firestore فعلاً. الصياغة أدناه تعدّ مرات الحفظ
-   ولا تدّعي أن الجملة «الأكثر شعبية» عندما يكون صاحبها قارئاً واحداً. */
+/* الرقم يظهر من أول اقتباس: عتبة الخمسة كانت تُخفي أثر القارئ تماماً، فيقتبس
+   ولا يرى شيئاً يتغيّر — وتموت الفكرة الحماسية للموقع. الآن كل جملة اقتُبست
+   تحمل أثرها ظاهراً، ويتصاعد الرقم أمام الجميع مع كل قارئ جديد. */
+/* عتبة «العبارة التي احتفظ بها القراء».
+   كانت 10 ثم 5، وهُبطت إلى 1 في 19 يوليو داخل لقطةٍ عن مزامنة الاقتباسات —
+   على الأرجح لتيسير التجريب — ولم تُعَد. وبقيمة 1 يصير حفظُ قارئٍ واحد سبباً
+   لتظليل العبارة ووسمها «من أكثر ما احتفظ به القراء»، ويظهر فوقها الرقم 1.
+   وهذا يقلب معنى المؤشّر: يَعِد بحكمِ جماعةٍ ويعرض رأي فرد. */
+/* عتبة ظهور الخط والرقم تحت الجملة — 3 قراء (كانت 5 فبدت الميزة ميتة في أي اختبار صغير) */
 export const POPULAR_THRESHOLD = 1
 
 const popularHighlightCache = new Map<string, PopularQuote[]>()
@@ -130,213 +135,60 @@ const ideaTokens = (value: string) => normalizeArabic(value).replace(/[^ء-ي\s]
   .map((word) => word.replace(/^(وال|فال|بال|كال|ال|و|ف|ب|ل|ك)/, ''))
   .filter((word) => word.length >= 4 && !AR_STOP.has(word))
 
-const BASE_GLOSSARY: XrayTerm[] = [
-  { term: 'الذكاء الاصطناعي', title: 'الذكاء الاصطناعي', definition: 'أنظمة حاسوبية تنفّذ مهاماً ترتبط عادةً بالإدراك البشري، مثل التعلّم والتحليل والتنبؤ وتوليد المحتوى.', note: 'المعنى التربوي الأهم ليس الأداة وحدها، بل طريقة استخدامها وأثرها في الإنسان.' },
-  { term: 'التعلم الآلي', title: 'التعلّم الآلي', definition: 'فرع من الذكاء الاصطناعي يتعلّم الأنماط من البيانات بدل الاعتماد على تعليمات ثابتة لكل حالة.' },
-  { term: 'التعلّم الآلي', title: 'التعلّم الآلي', definition: 'فرع من الذكاء الاصطناعي يتعلّم الأنماط من البيانات بدل الاعتماد على تعليمات ثابتة لكل حالة.' },
-  { term: 'التعلم العميق', title: 'التعلّم العميق', definition: 'أسلوب في التعلّم الآلي يستخدم شبكات عصبية متعددة الطبقات للتعامل مع أنماط شديدة التعقيد.' },
-  { term: 'التفكير النقدي', title: 'التفكير النقدي', definition: 'فحص الادعاءات والأدلة والافتراضات قبل قبول النتيجة، مع القدرة على التفسير والمقارنة وتغيير الرأي عند ظهور دليل أفضل.' },
-  { term: 'التقييم التكويني', title: 'التقييم التكويني', definition: 'تقييم يحدث أثناء التعلّم ليكشف ما يحتاجه المتعلّم الآن، ويقود الخطوة التعليمية التالية بدل الاكتفاء بدرجة نهائية.' },
-  { term: 'التقويم التكويني', title: 'التقويم التكويني', definition: 'استخدام أدلة التعلّم أثناء الدرس لتحسين التدريس ومساعدة المتعلّم على التقدّم قبل الحكم النهائي.' },
-  { term: 'التعليم المدمج', title: 'التعليم المدمج', definition: 'تصميم يجمع التعلّم الحضوري والرقمي ضمن تجربة واحدة مترابطة، لا بوصفهما مسارين منفصلين.' },
-  { term: 'الواقع الافتراضي', title: 'الواقع الافتراضي', definition: 'بيئة رقمية غامرة تمنح المستخدم إحساساً بالحضور داخل مكان أو موقف مُحاكى.' },
-  { term: 'الميتافيرس', title: 'الميتافيرس', definition: 'تصوّر لفضاءات رقمية مستمرة يتفاعل فيها الناس بهويات وتمثيلات رقمية، وقد تشمل التعلّم والعمل والخدمات.' },
-  { term: 'التنمر الإلكتروني', title: 'التنمّر الإلكتروني', definition: 'إيذاء متكرر عبر المنصات الرقمية، مثل الإهانة أو التهديد أو الإقصاء أو نشر محتوى بقصد الإضرار.' },
-  { term: 'المرونة النفسية', title: 'المرونة النفسية', definition: 'القدرة على التكيّف والتعافي ومواصلة العمل بعد الضغوط أو الإخفاقات، مع طلب الدعم عند الحاجة.' },
-  { term: 'الرفاه النفسي', title: 'الرفاه النفسي', definition: 'حالة تشمل الإحساس بالمعنى والاتزان والقدرة على التعامل مع الحياة، وليست مجرد غياب الاضطراب.' },
-  { term: 'الدافعية', title: 'الدافعية', definition: 'القوى الداخلية والخارجية التي تبدأ السلوك وتوجّهه وتحافظ عليه نحو هدف معين.' },
-  { term: 'محو الأمية الرقمية', title: 'محو الأمية الرقمية', definition: 'القدرة على الوصول إلى المعلومات الرقمية وفهمها وتقييمها واستخدامها وإنتاجها بأمان ومسؤولية.' },
-  { term: 'ChatGPT', title: 'ChatGPT', definition: 'مساعد يعتمد نماذج لغوية لتوليد النصوص وتحليلها والحوار حولها. جودة النتيجة ترتبط بالسؤال والمصدر والتحقق البشري.' },
-  { term: 'OECD', title: 'منظمة التعاون الاقتصادي والتنمية', definition: 'منظمة دولية تنتج بيانات وتحليلات وسياسات مقارنة، ومن أشهر أعمالها في التعليم دراسات ومؤشرات دولية واسعة.' },
-  { term: 'الانتماء', title: 'الانتماء الوطني', definition: 'ارتباط الفرد بوطنه شعوراً ومسؤوليةً وسلوكاً، بما يشمل حماية وحدته وتقديم المصلحة العامة وقت الأزمات.', priority: 8 },
-  { term: 'منظومات دفاع', title: 'منظومات الدفاع', definition: 'شبكة مترابطة من وسائل الرصد والإنذار والاعتراض والاستجابة، تعمل لحماية المجال والسكان من الأخطار.', priority: 8 },
-  { term: 'الاغتراب الوظيفي', title: 'الاغتراب الوظيفي', definition: 'شعور الإنسان بأن عمله فقد المعنى أو الأثر أو الصلة الحقيقية بمن يخدمهم، حتى مع استمراره في أداء مهامه.', priority: 9 },
-  { term: 'الحضور الذهني', title: 'الحضور الذهني', definition: 'وجود الانتباه والفهم والتفاعل في اللحظة التعليمية، لا مجرد وجود الجسد في المكان.', priority: 9 },
-  { term: 'التشريعات', title: 'التشريعات الرقمية', definition: 'القوانين واللوائح التي تنظّم السلوك والحقوق والمسؤوليات في البيئات والخدمات التقنية.', priority: 7 },
-  { term: 'الإحساس بالأمان', title: 'الإحساس بالأمان', definition: 'شعور داخلي بالطمأنينة والثقة بوجود حماية واستقرار، وهو أوسع من غياب الخطر المادي وحده.', priority: 7 },
-  { term: 'أمراض العصر', title: 'أمراض العصر', definition: 'تعبير يصف مشكلات صحية ترتبط بأنماط الحياة الحديثة، مثل قلة الحركة والجلوس الطويل والضغط المستمر.', priority: 7 },
-  { term: 'التوقيع الرقمي', title: 'التوقيع الرقمي', definition: 'آلية تشفير تثبت هوية الموقّع وسلامة المستند الإلكتروني، وتكشف ما إذا عُدّل بعد توقيعه.', priority: 9 },
-  { term: 'بنية تحتية', title: 'البنية التحتية', definition: 'الأنظمة والخدمات الأساسية التي تقوم عليها حياة المجتمع، مثل المياه والطاقة والاتصالات والنقل.', priority: 7 },
-  { term: 'خبر كاذب', title: 'المعلومات المضللة', definition: 'محتوى غير صحيح أو محرّف ينتشر بوصفه حقيقة، وقد يكون خطأً غير مقصود أو تضليلاً متعمداً.', priority: 9 },
-  { term: 'الحرب الافتراضية', title: 'الحرب الافتراضية', definition: 'صراع يجري عبر الفضاء الرقمي باستخدام التأثير المعلوماتي أو الهجمات الإلكترونية أو توجيه الرأي العام.', priority: 9 },
-  { term: 'الغش', title: 'النزاهة الأكاديمية', definition: 'الالتزام بالصدق والعدالة وتحمل المسؤولية في التعلّم والتقويم، ورفض الغش والانتحال والتلاعب بالنتائج.', priority: 6 },
-  { term: 'حرية الاختيار', title: 'حرية الاختيار', definition: 'قدرة الإنسان على اتخاذ قرار واعٍ يخص مساره، مع فهم نتائجه وتحمل مسؤوليته بعيداً عن الإكراه.', priority: 8 },
-  { term: 'معركة بقاء', title: 'معركة البقاء', definition: 'حالة يتحول فيها النجاح من نموٍّ ذي معنى إلى محاولة مستمرة للنجاة من الضغط والمحافظة على المكان.', priority: 8 },
-  { term: 'وسيلة قياس', title: 'وسيلة القياس', definition: 'أداة تجمع دليلاً على التعلّم أو الأداء؛ قيمتها في دقة ما تكشفه، لا في تحوّلها إلى غاية قائمة بذاتها.', priority: 8 },
-  { term: 'الاحتراق الوظيفي', title: 'الاحتراق الوظيفي', definition: 'إنهاك متراكم يرتبط بضغط العمل المزمن، ويظهر في استنزاف الطاقة والفتور وتراجع الإحساس بجدوى العمل.', priority: 9 },
-  { term: 'الانشغال', title: 'الانشغال الدائم', definition: 'امتلاء الوقت بالمهام والحركة؛ وقد يصبح ستاراً لتأجيل مواجهة سؤال أو قرار أهم.', priority: 7 },
-  { term: 'أثر البداية الجديدة', title: 'أثر البداية الجديدة', definition: 'التغيير الذي تصنعه العودة أو المحاولة الجديدة فعلاً، لا مجرد الشعور المؤقت بأن صفحةً مختلفة قد بدأت.', priority: 8 },
-  { term: 'الإنجاز', title: 'الإنجاز', definition: 'تحقق نتيجة أو هدف يمكن ملاحظته؛ ولا يساوي بالضرورة الرضا أو الاتزان أو جودة الحياة.', priority: 7 },
-  { term: 'الإثارة الدائمة', title: 'الإثارة الدائمة', definition: 'تعوّد الذهن على تدفق سريع ومتواصل من المنبهات، بما قد يضعف الصبر على الهدوء والتركيز المتدرج.', priority: 9 },
-  { term: 'الحنان غير المؤطر', title: 'الحنان غير المؤطّر', definition: 'محبة لا يصاحبها حدّ تربوي واضح أو توجيه ثابت؛ فتمنح الدفء من دون أن تبني المسؤولية.', priority: 9 },
-  { term: 'معرفة ميوله', title: 'الميول الشخصية', definition: 'وعي الإنسان بما يجذبه ويحفّزه ويناسب قدراته، ليكون اختياره مبنياً على معرفة لا على ضغط الآخرين.', priority: 8 },
-  { term: 'لغة واضحة', title: 'الوضوح اللغوي', definition: 'قدرة المتحدث أو الكاتب على نقل المعنى بدقة وترابط وبألفاظ تناسب المقام والمتلقي.', priority: 8 },
-  { term: 'بلغة واضحة', title: 'الوضوح اللغوي', definition: 'قدرة المتحدث أو الكاتب على نقل المعنى بدقة وترابط وبألفاظ تناسب المقام والمتلقي.', priority: 8 },
-  { term: 'منطقة الراحة', title: 'منطقة الراحة', definition: 'نطاق مألوف يقل فيه القلق والمخاطرة، لكنه قد يحدّ التعلم والنمو إذا تحوّل إلى إقامة دائمة.', priority: 9 },
-  { term: 'تفوق شكلي', title: 'التفوّق الشكلي', definition: 'صورة نجاح تؤكدها الدرجة أو الشهادة، من دون دليل كافٍ على عمق الفهم أو استقلال الشخصية.', priority: 9 },
-  { term: 'تقييم نمطي', title: 'التقييم النمطي', definition: 'قياس موحّد يحاكم المتعلمين بالقالب نفسه، وقد يغفل اختلاف قدراتهم وطرق تعبيرهم وسياقاتهم.', priority: 9 },
-  { term: 'بتقييم نمطي', title: 'التقييم النمطي', definition: 'قياس موحّد يحاكم المتعلمين بالقالب نفسه، وقد يغفل اختلاف قدراتهم وطرق تعبيرهم وسياقاتهم.', priority: 9 },
-  { term: 'الهواتف الذكية', title: 'الهواتف الذكية', definition: 'أجهزة اتصال محمولة تجمع التطبيقات والإنترنت والحساسات والوسائط، ويتحدد أثرها بطريقة الاستخدام وحدوده.', priority: 7 },
-  { term: 'إدمان عمليات التجميل', title: 'إدمان عمليات التجميل', definition: 'انشغال قهري ومتكرر بتغيير المظهر عبر إجراءات تجميلية، مع صعوبة بلوغ الرضا رغم تكرارها.', priority: 9 },
-  { term: 'أرشفة الملفات', title: 'أرشفة الملفات', definition: 'تنظيم الملفات وحفظها وفق بنية تتيح استرجاعها والتحقق منها عند الحاجة، ورقياً أو رقمياً.', priority: 8 },
-  { term: 'لأرشفة الملفات', title: 'أرشفة الملفات', definition: 'تنظيم الملفات وحفظها وفق بنية تتيح استرجاعها والتحقق منها عند الحاجة، ورقياً أو رقمياً.', priority: 8 },
-  { term: 'الرأسمالية', title: 'الرأسمالية', definition: 'نظام اقتصادي يقوم أساساً على الملكية الخاصة والأسواق وتراكم رأس المال، ويؤثر في اتجاه الاستثمار والتقنية.', priority: 8 },
-  { term: 'الذوق العام', title: 'الذوق العام', definition: 'مجموعة المعايير الجمالية والسلوكية المشتركة التي تتشكل اجتماعياً وتتغير بتغير البيئة والإعلام والتقنية.', priority: 8 },
-  { term: 'التقدم التكنولوجي', title: 'التقدم التكنولوجي', definition: 'تطور الأدوات والأنظمة والقدرات التقنية؛ ولا يضمن وحده تحسّن التنظيم أو جودة الحياة.', priority: 8 },
-  { term: 'بالتقدم التكنولوجي', title: 'التقدم التكنولوجي', definition: 'تطور الأدوات والأنظمة والقدرات التقنية؛ ولا يضمن وحده تحسّن التنظيم أو جودة الحياة.', priority: 8 },
-  { term: 'السعادة', title: 'السعادة', definition: 'خبرة إنسانية تجمع الرضا والمعنى والاتزان، ولا تختزل في المتعة اللحظية أو كثرة الوسائل.', priority: 6 },
-  { term: 'شبكات التواصل', title: 'شبكات التواصل الاجتماعي', definition: 'منصات رقمية تربط الأفراد والمجتمعات لتبادل المحتوى والتفاعل، وتؤثر في المعرفة والرأي والسلوك.', priority: 8 },
-  { term: 'تعطل النظام', title: 'تعطّل النظام', definition: 'توقف منظومة تقنية أو إجرائية عن أداء وظيفتها المتوقعة، كلياً أو جزئياً، بسبب خلل أو انقطاع أو اعتماد مفرط.', priority: 8 },
-  { term: 'التصحر النفسي', title: 'التصحّر النفسي', definition: 'تعبير مجازي عن جفاف المشاعر وتراجع التعاطف والروابط الإنسانية تحت ضغط العزلة أو النمط المادي للحياة.', priority: 9 },
-  { term: 'المعلم كوسيلة إعلامية', title: 'المعلّم كوسيلة إعلامية', definition: 'دور يرى المعلّم ناقلاً للمعنى ومشكّلاً للوعي العام، لا مقدّم معلومات داخل الصف فقط.', priority: 9 },
-  { term: 'القدوة العلمية', title: 'القدوة العلمية', definition: 'شخص يجسّد في سلوكه أمانة المعرفة ومنهج التفكير، فيتعلّم الآخرون من طريقته كما يتعلّمون من معلوماته.', priority: 9 },
-  { term: 'السوشيل ميديا', title: 'وسائل التواصل الاجتماعي', definition: 'المنصات الرقمية التي تتيح صناعة المحتوى وتداوله والتفاعل معه ضمن شبكات اجتماعية واسعة.', priority: 8 },
-  { term: 'الفروق الفردية', title: 'الفروق الفردية', definition: 'اختلاف المتعلمين في الاستعداد والخبرة والسرعة والدافعية وأساليب الفهم، بما يستلزم مرونة في التعليم والتقويم.', priority: 9 },
-  { term: 'وسائل الإعلام', title: 'وسائل الإعلام', definition: 'القنوات والمنصات التي تنتج الرسائل العامة وتنشرها، وتشارك في تشكيل المعرفة والاتجاهات والصورة الاجتماعية.', priority: 7 },
-  { term: 'الثراء الكاذب', title: 'الثراء الكاذب', definition: 'صورة رقمية توحي بالغنى والقيمة من خلال كثرة المحتوى أو الحضور، من دون عمق معرفي أو أثر إنساني مكافئ.', priority: 9 },
-]
+const domainGlossaryEntries = domainGlossaryData as DomainGlossaryEntry[]
 
-/* المعجم التخصصي المركزي يحوي 290 مفهوماً أُعدّ للموقع أصلاً. كان القارئ
-   يستعمل قائمة صغيرة منفصلة، لذلك اختفت التوضيحات من معظم المقالات. نشتق هنا
-   نسخة القراءة من المصدر نفسه، مع إبقاء التعريفات اليدوية الأعلى دقة أولاً. */
+/* المعجم المركزي هو المرجع الوحيد للمصطلحات العلمية الظاهرة داخل المقال.
+   canonicalAr هو الاسم المعروض دائماً؛ aliases تُستعمل للمطابقة فقط، فلا
+   ننسب إلى الدكتور مصطلحاً استنتاجياً أو تسميةً غير معتمدة. */
 const GLOSSARY: XrayTerm[] = (() => {
-  const terms = new Map<string, XrayTerm>()
-  const add = (item: XrayTerm) => {
-    const key = normalizeHighlightText(item.term)
-    if (!key || (key.length < 4 && !/^[a-z0-9+#.]{2,10}$/i.test(key)) || terms.has(key)) return
-    terms.set(key, item)
-  }
-  BASE_GLOSSARY.forEach(add)
-  for (const entry of domainGlossaryData as DomainGlossaryEntry[]) {
-    const aliases = [entry.canonicalAr, entry.canonicalEn || '', ...(entry.aliases || [])]
-    for (const alias of aliases) {
-      const term = String(alias || '').trim()
-      if (!term) continue
-      add({
-        term,
-        title: entry.canonicalAr,
-        definition: entry.meaningAr,
-        note: entry.domain ? `ضمن ${entry.domain}.` : undefined,
-        priority: term === entry.canonicalAr ? 6 : 4,
-      })
+  const seen = new Set<string>()
+  const output: XrayTerm[] = []
+  for (const entry of domainGlossaryEntries) {
+    const canonical = String(entry?.canonicalAr || '').trim()
+    const definition = String(entry?.meaningAr || '').trim()
+    if (!canonical || !definition) continue
+    const terms = [canonical, ...(Array.isArray(entry.aliases) ? entry.aliases : [])]
+      .map((term) => String(term || '').trim())
+      .filter(Boolean)
+    for (const term of terms) {
+      const key = normalizeHighlightText(term)
+      if (!key || seen.has(key)) continue
+      seen.add(key)
+      output.push({ term, title: canonical, definition, priority: term === canonical ? 12 : 10 })
     }
   }
-  return [...terms.values()].sort((left, right) => right.term.length - left.term.length)
+  return output
 })()
 
-function normalizedTextMap(value: string) {
-  let normalized = ''
-  const offsets: number[] = []
-  let previousWasSpace = false
-  for (let index = 0; index < value.length; index += 1) {
-    const folded = normalizeArabic(value[index]).toLowerCase()
-    if (!folded) continue
-    if (/\s/.test(folded) || /[“”«»"'،؛:!?؟.,()[\]{}]/.test(folded)) {
-      if (previousWasSpace) continue
-      normalized += ' '
-      offsets.push(index)
-      previousWasSpace = true
-      continue
-    }
-    normalized += folded
-    offsets.push(index)
-    previousWasSpace = false
-  }
-  return { normalized, offsets }
-}
 
-function findTermRange(text: string, term: string) {
-  const mapped = normalizedTextMap(text)
-  /* نبني الإبرة بالطريقة نفسها التي بُني بها النص. الاقتباس المختار قد
-     يحتوي فاصلة أو علامة سؤال؛ إبقاؤها في الإبرة بينما تتحول في النص إلى
-     مسافة كان يُسقط بعض الإشارات، فيظهر رقمان فقط بدل الخطة الكاملة. */
-  const needle = normalizedTextMap(term).normalized.trim()
-  if (!needle) return null
-  let from = 0
-  while (from < mapped.normalized.length) {
-    const index = mapped.normalized.indexOf(needle, from)
-    if (index < 0) return null
-    const before = mapped.normalized[index - 1] || ''
-    const after = mapped.normalized[index + needle.length] || ''
-    const beginsAtBoundary = !before || !/[\p{L}\p{N}]/u.test(before)
-    const endsAtBoundary = !after || !/[\p{L}\p{N}]/u.test(after)
-    if (beginsAtBoundary && endsAtBoundary) {
-      const start = mapped.offsets[index]
-      const last = mapped.offsets[index + needle.length - 1]
-      if (Number.isInteger(start) && Number.isInteger(last)) return { start, end: last + 1 }
-    }
-    from = index + Math.max(1, needle.length)
-  }
-  return null
-}
-
-/** يختار المصطلحات الأوضح قيمةً للقارئ عبر المقال كله، لا كل تكرار في كل
- * فقرة. النتيجة موزعة على المتن وبحد أقصى ستة توضيحات كي تبقى نادرة وراقية. */
+/** خطة هادئة للمصطلحات: من المعجم المركزي فقط، بحد أقصى ستة مواضع عبر
+ * المقال كله. aliases للمطابقة، بينما canonicalAr هو الاسم الذي يظهر في
+ * التوضيح دائماً. لا توجد تسمية سياقية مخترعة عند غياب المطابقة. */
 export function articleGlossaryPlan(body: string, limit = 6) {
   const paragraphs = body.split(/\n\s*\n/)
-  const candidates: { paragraph: number; start: number; term: XrayTerm; score: number }[] = []
+  const candidates: { paragraph: number; index: number; term: XrayTerm; score: number }[] = []
   for (const term of GLOSSARY) {
+    const needle = /[A-Za-z]/.test(term.term) ? term.term.toLowerCase() : term.term
     for (let paragraph = 0; paragraph < paragraphs.length; paragraph += 1) {
-      const range = findTermRange(paragraphs[paragraph], term.term)
-      if (!range) continue
-      const words = term.term.trim().split(/\s+/).length
-      const score = Number(term.priority || 0) * 10 + Math.min(32, term.term.length) + words * 8 - paragraph * .025
-      candidates.push({ paragraph, start: range.start, term, score })
+      const haystack = /[A-Za-z]/.test(term.term) ? paragraphs[paragraph].toLowerCase() : paragraphs[paragraph]
+      const index = haystack.indexOf(needle)
+      if (index < 0) continue
+      candidates.push({ paragraph, index, term, score: Number(term.priority || 0) * 10 + Math.min(36, term.term.length) - paragraph * .02 })
       break
     }
   }
-
-  const chosen: typeof candidates = []
+  const selected: typeof candidates = []
   const titles = new Set<string>()
-  const paragraphCounts = new Map<number, number>()
-  for (const candidate of candidates.sort((left, right) => right.score - left.score || left.paragraph - right.paragraph)) {
-    if (titles.has(candidate.term.title) || (paragraphCounts.get(candidate.paragraph) || 0) >= 2) continue
-    chosen.push(candidate)
+  const perParagraph = new Map<number, number>()
+  for (const candidate of candidates.sort((a, b) => b.score - a.score || a.paragraph - b.paragraph || a.index - b.index)) {
+    if (titles.has(candidate.term.title) || (perParagraph.get(candidate.paragraph) || 0) >= 2) continue
+    selected.push(candidate)
     titles.add(candidate.term.title)
-    paragraphCounts.set(candidate.paragraph, (paragraphCounts.get(candidate.paragraph) || 0) + 1)
-    if (chosen.length >= limit) break
+    perParagraph.set(candidate.paragraph, (perParagraph.get(candidate.paragraph) || 0) + 1)
+    if (selected.length >= limit) break
   }
-
-  /* ضمانٌ للمقالات الجديدة: إن تناول المقال موضوعاً جديداً لا يوجد بعد في
-     المعجم المركزي، نختار تعبيراً واضحاً من كلام الكاتب نفسه ونشرح وظيفته
-     داخل السياق من دون اختلاق تعريف تخصصي. وعند إضافة المصطلح إلى المعجم
-     لاحقاً يحل تعريفه الدقيق محل هذا الاحتياط تلقائياً. */
-  if (!chosen.length && body.trim()) {
-    const contextual = paragraphs.flatMap((paragraphText, paragraph) => {
-      const sentences = paragraphText.match(/[^.!?؟؛:…\n]+[.!?؟؛:…]*/g) || [paragraphText]
-      return sentences.flatMap((sentence) => {
-        const words = [...sentence.matchAll(/[ء-ي][ء-يًٌٍَُِّْـ]{3,}/g)]
-        return words.slice(0, -1).flatMap((match, index) => {
-          const next = words[index + 1]
-          const first = match[0]
-          const second = next?.[0] || ''
-          const firstNormalized = normalizeHighlightText(first)
-          const secondNormalized = normalizeHighlightText(second)
-          if (!second || AR_STOP.has(firstNormalized) || AR_STOP.has(secondNormalized)) return []
-          const term = `${first} ${second}`
-          const range = findTermRange(paragraphText, term)
-          if (!range) return []
-          const sentenceText = sentence.replace(/\s+/g, ' ').trim()
-          return [{
-            paragraph,
-            start: range.start,
-            score: term.length + (paragraph > 0 ? 4 : 0),
-            term: {
-              term,
-              title: term,
-              definition: 'تعبير محوري في هذا المقال؛ يحدّد معناه السياق الذي وضعه فيه الكاتب، ويربط بين الفكرة وما يترتب عليها في بقية النص.',
-              note: sentenceText.length <= 150 ? `سياقه في المقال: «${sentenceText}»` : undefined,
-              priority: 1,
-            } satisfies XrayTerm,
-          }]
-        })
-      })
-    }).sort((left, right) => right.score - left.score || left.paragraph - right.paragraph)
-    if (contextual[0]) chosen.push(contextual[0])
-  }
-
   const plan = new Map<number, XrayTerm[]>()
-  for (const candidate of chosen.sort((left, right) => left.paragraph - right.paragraph || left.start - right.start)) {
+  for (const candidate of selected.sort((a, b) => a.paragraph - b.paragraph || a.index - b.index)) {
     plan.set(candidate.paragraph, [...(plan.get(candidate.paragraph) || []), candidate.term])
   }
   return plan
@@ -1022,16 +874,15 @@ function dispatchXray(term: XrayTerm) {
   window.dispatchEvent(new CustomEvent('reader:xray', { detail: term }))
 }
 
-export function ReaderParagraphText({ text, popularQuotes = [], xrayTerms = [] }: { text: string; popularQuotes?: PopularQuote[]; xrayTerms?: XrayTerm[] }) {
-  const matches: { start: number; end: number; kind: 'popular' | 'term'; popular?: PopularQuote; term?: XrayTerm }[] = []
+export function ReaderParagraphText({ text, popularQuotes = [], xrayTerms }: { text: string; popularQuotes?: PopularQuote[]; xrayTerms?: XrayTerm[] }) {
+  const matches: { start: number; end: number; kind: 'popular' | 'term' | 'reference'; popular?: PopularQuote; term?: XrayTerm }[] = []
 
   for (const popular of popularQuotes.slice().sort((a, b) => b.count - a.count).slice(0, 3)) {
-    const fallbackRange = popular.quote ? findTermRange(text, popular.quote) : null
-    const fallbackIndex = fallbackRange?.start ?? -1
+    const fallbackIndex = popular.quote ? text.indexOf(popular.quote) : -1
     const start = popular.startOffset >= 0 && popular.endOffset > popular.startOffset && popular.endOffset <= text.length
       ? popular.startOffset
       : fallbackIndex
-    const rawEnd = start >= 0 ? (popular.endOffset > start ? popular.endOffset : (fallbackRange?.end ?? start + (popular.quote?.length || 0))) : -1
+    const rawEnd = start >= 0 ? (popular.endOffset > start ? popular.endOffset : start + (popular.quote?.length || 0)) : -1
     /* ═══ محاذاة حدود التظليل لحدود الكلمات ═══
        الإزاحات تأتي من تحديد القارئ وقد تقع داخل كلمة، فينشطر النص: «الروح»
        تصير «ال» + «روح» ويُحشر رقم العدّاد بينهما فيقصّ الكلمة — وهذا تشويهٌ
@@ -1051,12 +902,27 @@ export function ReaderParagraphText({ text, popularQuotes = [], xrayTerms = [] }
     if (alignedStart >= 0 && end - alignedStart >= 12) matches.push({ start: alignedStart, end, kind: 'popular', popular })
   }
 
-  for (const term of xrayTerms) {
-    const range = findTermRange(text, term.term)
-    if (range) matches.push({ start: range.start, end: range.end, kind: 'term', term })
+  for (const term of xrayTerms ?? GLOSSARY) {
+    const haystack = /[A-Za-z]/.test(term.term) ? text.toLowerCase() : text
+    const needle = /[A-Za-z]/.test(term.term) ? term.term.toLowerCase() : term.term
+    const index = haystack.indexOf(needle)
+    if (index >= 0) matches.push({ start: index, end: index + term.term.length, kind: 'term', term })
   }
 
-  matches.sort((a, b) => a.start - b.start || (a.kind === b.kind ? 0 : a.kind === 'popular' ? -1 : 1) || (b.end - b.start) - (a.end - a.start))
+  /* المراجع داخل المتن تبرز بصرياً فقط؛ لا نغيّر النص ولا نجعلها زرّاً.
+     الأنماط متحفظة عمداً: إحالة بين قوسين فيها سنة، أو DOI صريح. */
+  const referencePatterns = [
+    /\([^()\n]{1,100}(?:19|20)\d{2}[a-z]?[^()\n]{0,45}\)/gi,
+    /\b10\.\d{4,9}\/[A-Z0-9._;()/:+-]+/gi,
+  ]
+  for (const pattern of referencePatterns) {
+    for (const match of text.matchAll(pattern)) {
+      if (typeof match.index !== 'number' || !match[0]) continue
+      matches.push({ start: match.index, end: match.index + match[0].length, kind: 'reference' })
+    }
+  }
+
+  matches.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start))
   const accepted: typeof matches = []
   let cursor = -1
   for (const match of matches) {
@@ -1089,6 +955,8 @@ export function ReaderParagraphText({ text, popularQuotes = [], xrayTerms = [] }
           {content}
         </span>,
       )
+    } else {
+      nodes.push(<span key={`reference-${matchIndex}`} className="reader-reference-term">{content}</span>)
     }
     index = match.end
   })
@@ -1098,20 +966,17 @@ export function ReaderParagraphText({ text, popularQuotes = [], xrayTerms = [] }
 
 function PopularHighlightMark({ children, count, hideBadge }: { children: ReactNode; count: number; hideBadge?: boolean }) {
   const [open, setOpen] = useState(false)
-  const markRef = useRef<HTMLElement | null>(null)
   const label = `حُفظت ${arabicCountPhrase(count, OCCURRENCE_FORMS, (value) => value.toLocaleString('en-US'))}`
-  const readerNote = count === 1 ? 'أول إشارة قراءة لهذه العبارة' : 'عبارة توقّف عندها القرّاء'
   const toggle = () => setOpen((current) => !current)
   return (
     <span className="reader-popular-wrap relative inline">
       <mark
-        ref={markRef}
         className="reader-popular-mark cursor-help"
         title={label}
         role="button"
         tabIndex={0}
         aria-expanded={open}
-        aria-label={`${label}. ${readerNote}`}
+        aria-label={`${label}. من أكثر العبارات التي احتفظ بها القراء`}
         onClick={(event) => { event.stopPropagation(); toggle() }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle() }
@@ -1121,7 +986,11 @@ function PopularHighlightMark({ children, count, hideBadge }: { children: ReactN
       {!hideBadge && (
         <>
           {'\u2060'}<span className="reader-popular-note" aria-hidden="true">{count.toLocaleString('en-US')}</span>
-          {open && <IconTooltipPortal targetEl={markRef.current} label={`${label} · ${readerNote}`} />}
+          {open && (
+            <span role="tooltip" className="reader-popular-tip absolute top-full z-20 mt-2 w-max max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-hair bg-canvas px-3 py-2 text-[.68rem] font-normal leading-[1.7] text-soft shadow-[0_12px_30px_-18px_rgba(0,0,0,.45)]">
+              {label} · من أكثر العبارات التي احتفظ بها القراء
+            </span>
+          )}
         </>
       )}
     </span>
@@ -1138,12 +1007,6 @@ type PopularQuoteInput = {
   articleVersion?: string
   highlightKey?: string
   localQuoteId?: string
-}
-
-function intervalOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
-  const overlap = Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart))
-  const shortest = Math.max(1, Math.min(aEnd - aStart, bEnd - bStart))
-  return overlap / shortest
 }
 
 function wordOverlap(left: string, right: string) {
@@ -1173,8 +1036,6 @@ async function findCanonicalHighlight(input: PopularQuoteInput, version: string,
        نقبل الاندماج متى تقاطع التحديدان فعلياً وتشاركا نصف الكلمات على الأقل،
        ونختار الأقوى تقاطعاً عند تعدد المرشحين.
        نسمح باختلاف في الطول يصل إلى 40% زيادة أو نقصان من التحديد الأصلي لرفع العداد نفسه. */
-    /* القرار نفسه، لكن في وحدةٍ خالصة تُختبر بالأرقام (src/lib/quote-merge.ts):
-       ±٤٠٪ من طول التحديد القائم مع تقاطعٍ حقيقيٍّ أو تشارك مفردات. */
     const scored = candidates
       .map((item) => {
         const existingText = paragraphText.slice(item.start, item.end)
@@ -1186,7 +1047,7 @@ async function findCanonicalHighlight(input: PopularQuoteInput, version: string,
           existingEnd: item.end,
           wordsRatio: words,
         })
-        return { item, spans: verdict.spans, words, lenDiffRatio: verdict.lenDiffRatio, withinFortyPercent: verdict.withinTolerance, merges: verdict.merges }
+        return { item, spans: verdict.spans, words: verdict.words, lenDiffRatio: verdict.lenDiffRatio, withinFortyPercent: verdict.withinTolerance, merges: verdict.merges }
       })
       .filter(({ merges }) => merges)
       .sort((left, right) => {
@@ -1381,18 +1242,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
   useEffect(() => { selectionRef.current = selection }, [selection])
   useEffect(() => () => { if (cardUrl) URL.revokeObjectURL(cardUrl) }, [cardUrl])
 
-  useEffect(() => {
-    const preventNativeSelectionMenu = (event: Event) => {
-      const target = event.target
-      if (!(target instanceof Element) || !target.closest('.article-body')) return
-      let coarse = false
-      try { coarse = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0 } catch { /* noop */ }
-      if (coarse) event.preventDefault()
-    }
-    document.addEventListener('contextmenu', preventNativeSelectionMenu, true)
-    return () => document.removeEventListener('contextmenu', preventNativeSelectionMenu, true)
-  }, [])
-
+  /* اختيار النص يبقى Native بالكامل على iOS؛ لا نحجب قائمة النظام ولا مقابضه. */
   useEffect(() => {
     let timer = 0
     const inspect = () => {
@@ -1401,7 +1251,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
         if (sheet) return
         const nativeSelection = window.getSelection()
         const text = nativeSelection?.toString().replace(/\s+/g, ' ').trim() || ''
-        if (!nativeSelection || !nativeSelection.rangeCount || text.length < 8 || text.length > 600) {
+        if (!nativeSelection || !nativeSelection.rangeCount || text.length < 8) {
           if (!toolbarRef.current?.matches(':active')) setSelection(null)
           return
         }

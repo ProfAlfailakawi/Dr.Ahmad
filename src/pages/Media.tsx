@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead, sharedViewName } from '../components/ui'
@@ -16,7 +16,10 @@ export default function Media() {
   const { media: cmsMedia } = useCmsContent()
   const media = useMemo(() => mergeMediaArchive(cmsMedia), [cmsMedia])
   const [query, setQuery] = useState('')
+  const [visibleCount, setVisibleCount] = useState(25)
   const moments = useMemo(() => searchArchiveMoments(query, media), [query, media])
+  const visibleMedia = useMemo(() => media.slice(0, visibleCount), [media, visibleCount])
+  useEffect(() => { setVisibleCount((count) => Math.min(Math.max(25, count), Math.max(25, media.length))) }, [media.length])
   useSeo({ title: 'الأرشيف الإعلامي', path: '/media', description: 'أرشيف مرئي ومسموع قابل للبحث داخل اللحظة، يجمع اللقاءات التلفزيونية والإذاعية واستضافات يوتيوب.' })
 
   return <Page className="content-media page-journey">
@@ -50,12 +53,12 @@ export default function Media() {
           </section>
         </FadeUp>}
 
-        <div className="spatial-collection media-archive-grid mt-6 grid gap-6 md:mt-10 md:grid-cols-2 xl:grid-cols-3">
-          {media.map((item) => {
+        <div className="spatial-collection media-archive-grid mt-6 grid gap-3 md:mt-10 md:grid-cols-2 md:gap-6 xl:grid-cols-3">
+          {visibleMedia.map((item, mediaIndex) => {
             const video = item.id && item.kind !== 'audio' && item.kind !== 'radio'
             const available = Boolean(item.transcript?.available)
             const thumbnail = item.thumbnail || (item.id ? `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg` : '')
-            return <article key={item.slug} className="spatial-card group relative overflow-hidden rounded-[1.35rem] border border-hair bg-canvas transition hover:-translate-y-1 hover:border-accent hover:shadow-[0_20px_50px_rgba(20,31,45,.08)]">
+            return <article key={item.slug} className={`media-archive-card spatial-card group relative overflow-hidden rounded-[1.35rem] border border-hair bg-canvas transition-colors hover:border-accent ${mediaIndex === 0 ? 'is-featured' : 'is-compact-mobile'}`}>
               <Link to={`/media/${item.slug}`} viewTransition className="block">
                 <div className={`spatial-media relative overflow-hidden bg-wash ${video ? 'complete-media-frame' : ''}`} style={{ aspectRatio: '16 / 9', viewTransitionName: sharedViewName('media-visual', item.slug), ['--spatial-image' as string]: thumbnail ? `url(${thumbnail})` : 'none', ...(video ? ({ '--media-thumb': `url(${thumbnail})` } as CSSProperties) : {}) }}>
                   {video ? <><img decoding="async" src={thumbnail} alt="" loading="lazy" onLoad={(event) => { const img = event.currentTarget; if (!item.thumbnail && img.naturalWidth <= 120 && img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; }} onError={(event) => { const img = event.currentTarget; if (img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; else img.style.display = 'none'; }} className="complete-media-image h-full w-full" /><span className="cinematic-play" aria-hidden><SocialIcon name="Play" size={16} /></span></> : <div className="flex h-full items-center justify-center"><div className="text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-accent/25 bg-canvas text-accent"><SocialIcon name="Play" size={19} /></span><span className="mt-3 hidden text-[.72rem] font-semibold text-soft sm:block">مادة إذاعية</span></div></div>}
@@ -77,6 +80,13 @@ export default function Media() {
             </article>
           })}
         </div>
+        {visibleCount < media.length && (
+          <div className="mt-7 flex justify-center">
+            <button type="button" onClick={() => setVisibleCount((count) => Math.min(media.length, count + 24))} className="min-h-11 rounded-full border border-hair px-5 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
+              أظهر المزيد <span className="ms-1 text-[.68rem] opacity-75">({Math.min(24, media.length - visibleCount).toLocaleString('en-US')})</span>
+            </button>
+          </div>
+        )}
       </div>
     </section>
   </Page>

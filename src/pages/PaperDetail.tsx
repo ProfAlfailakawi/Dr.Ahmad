@@ -160,8 +160,46 @@ export default function PaperDetail() {
   }
 
   const { isAdmin } = useAdminAuth()
-  const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer2')
+  const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer1')
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
+
+  /* المؤشر يتبع موضع القارئ فعلياً. IntersectionObserver يراقب شريطاً ضيقاً
+     في الثلث العلوي من الشاشة؛ لا scroll listener ولا قياسات تتصارع مع sticky،
+     ولذلك لا يقفز المؤشر بين ١ و٢ عند الحد الفاصل ولا يسبب رجفة للشريط. */
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return
+    const candidates: Array<[ResearchLayer, HTMLElement | null]> = [
+      ['layer1', document.getElementById('research-passport-layer1')],
+      ['layer2', document.getElementById('research-passport-layer2')],
+      ['layer3', document.getElementById('research-passport-layer3')],
+    ]
+    const layers: Array<{ key: ResearchLayer; node: HTMLElement }> = candidates.flatMap(([key, node]) =>
+      node instanceof HTMLElement ? [{ key, node }] : [],
+    )
+    if (!layers.length) return
+    const visible = new Map<ResearchLayer, IntersectionObserverEntry>()
+    const choose = () => {
+      const candidates = [...visible.entries()].filter(([, entry]) => entry.isIntersecting)
+      if (!candidates.length) return
+      candidates.sort(([, left], [, right]) => {
+        const anchor = window.innerHeight * .28
+        return Math.abs(left.boundingClientRect.top - anchor) - Math.abs(right.boundingClientRect.top - anchor)
+      })
+      setPassportLayer(candidates[0][0])
+    }
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const layer = (entry.target as HTMLElement).dataset.researchLayer as ResearchLayer | undefined
+        if (layer) visible.set(layer, entry)
+      }
+      choose()
+    }, { rootMargin: '-18% 0px -58% 0px', threshold: [0, .15, .35, .6] })
+    for (const { key, node } of layers) {
+      node.dataset.researchLayer = key
+      observer.observe(node)
+    }
+    return () => observer.disconnect()
+  }, [dataCards.length])
 
   const toggleCard = (key: string) => {
     setExpandedCards((prev) => ({ ...prev, [key]: !prev[key] }))

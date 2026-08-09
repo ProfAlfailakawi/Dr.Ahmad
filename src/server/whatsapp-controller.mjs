@@ -1,6 +1,6 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
 import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
-import { bookChaptersReply, bookQuoteReply } from '../../whatsapp-agent/book-quotes.mjs'
+import { bookChaptersReply, bookQuoteReply, usefulBookQuoteReply } from '../../whatsapp-agent/book-quotes.mjs'
 import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
 import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
@@ -833,6 +833,25 @@ function bookChaptersDecision(text = '', conversation = {}) {
   }
   return {
     reason: 'book-chapters', reply: chapters.text,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+}
+
+function bookInsightDecision(text = '', conversation = {}) {
+  const book = contextualBook(text, conversation)
+  if (!book) return {
+    reason: 'book-insight-clarify',
+    reply: `من أي كتاب تبي الفكرة؟ اكتب اسمه، وأنا أختار لك مقطعاً حقيقياً من متنه مع الصفحة.\n\n${SITE_URL}/publications`,
+  }
+  const slug = book.slug || String(book.id || '').replace(/^book:/, '')
+  const grounded = usefulBookQuoteReply(slug, normalizeArabicMessage(text))
+  if (!grounded) return {
+    reason: 'book-insight-missing',
+    reply: `ما لقيت مقطعاً مناسباً أقدر أنسبه بأمان إلى «${book.title}» الآن؛ لذلك ما راح أخمّن.\n\n${book.url}`,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+  return {
+    reason: 'book-insight', reply: grounded.text,
     evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
   }
 }
@@ -1687,6 +1706,10 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   }
   if (intent === INTENTS.BOOK_CHAPTERS) {
     const decision = bookChaptersDecision(text, conversation)
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.BOOK_INSIGHT) {
+    const decision = bookInsightDecision(text, conversation)
     return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
   }
   if (intent === INTENTS.BOOK_VIDEOS) {

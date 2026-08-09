@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
 import { FadeUp, Page, Reveal, sharedViewName } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
@@ -82,6 +82,10 @@ export default function PaperDetail() {
   const p = papers[index]
   const [openSection, setOpenSection] = useState<ResearchSection | null>(null)
   const [readerKey, setReaderKey] = useState('')
+  const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer1')
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
+  const passportLayerRef = useRef<ResearchLayer>('layer1')
+  const { isAdmin } = useAdminAuth()
   const intelligence = useMemo(() => analyzeResearch(p || {}), [p])
   const bookRoots = useMemo(() => {
     if (!p) return []
@@ -104,6 +108,45 @@ export default function PaperDetail() {
     revealSection('science', 'research-passport')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.hash, p?.slug])
+
+  /* الشريط يعكس موضع القراءة الحقيقي. قياسٌ واحد لكل frame، ومنطقة قرار
+     ثابتة تحت الشريط؛ فلا تتصارع ثلاث IntersectionObservers عند حدود الأقسام
+     ولا يتبدّل التظليل ذهاباً وإياباً في Safari. */
+  useEffect(() => {
+    if (!p) return
+    const layers: Array<{ key: ResearchLayer; id: string }> = [
+      { key: 'layer1', id: 'research-passport-layer1' },
+      { key: 'layer2', id: 'research-passport-layer2' },
+      { key: 'layer3', id: 'research-passport-layer3' },
+    ]
+    passportLayerRef.current = 'layer1'
+    setPassportLayer('layer1')
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const navigatorBottom = document.querySelector<HTMLElement>('.research-section-navigator')?.getBoundingClientRect().bottom || 128
+      const decisionLine = Math.min(window.innerHeight * .46, navigatorBottom + 36)
+      let next: ResearchLayer = 'layer1'
+      for (const layer of layers) {
+        const element = document.getElementById(layer.id)
+        if (element && element.getBoundingClientRect().top <= decisionLine) next = layer.key
+      }
+      if (next === passportLayerRef.current) return
+      passportLayerRef.current = next
+      setPassportLayer(next)
+    }
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update)
+    }
+    schedule()
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule, { passive: true })
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+    }
+  }, [p?.slug])
 
   if (!p && loading) return <Page className="content-research"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!p) return <Page><div className="px-6 pt-44 text-center text-soft">صفحة البحث غير موجودة.</div></Page>
@@ -142,10 +185,6 @@ export default function PaperDetail() {
     setReaderKey(card.key)
     window.requestAnimationFrame(() => document.getElementById(`research-card-${card.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
   }
-
-  const { isAdmin } = useAdminAuth()
-  const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer1')
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
 
   const toggleCard = (key: string) => {
     setExpandedCards((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -208,6 +247,7 @@ export default function PaperDetail() {
           <ResearchSectionNavigator
             active={passportLayer}
             onSelect={(layer) => {
+              passportLayerRef.current = layer
               setPassportLayer(layer)
               const target = layer === 'layer1' ? ['metadata', 'research-passport-layer1'] : layer === 'layer2' ? ['science', 'research-passport-layer2'] : ['sources', 'research-passport-layer3']
               revealSection(target[0] as ResearchSection, target[1])

@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
-import { getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
+import type { BookKnowledgeConcept } from '../lib/book-knowledge'
+import type { EncyclopediaKnowledgeSearchResult } from '../lib/encyclopedia-knowledge-search'
 import structureData from '../data/encyclopedia-structure.json'
 import {
   getEncyclopediaFallbackCatalog,
@@ -12,7 +13,6 @@ import {
   type EncyclopediaVideoMoment,
   type EncyclopediaTranscriptProgress,
 } from '../lib/encyclopedia-videos'
-import { searchEncyclopediaKnowledge } from '../lib/encyclopedia-knowledge-search'
 import {
   encyclopediaSlideCount,
   encyclopediaSlideRangeLabel,
@@ -502,8 +502,7 @@ function DoorRow({
 }
 
 export function EncyclopediaPortal({ book, articles: _articles, papers: _papers }: { book: BookRecord; articles: ArticleRecord[]; papers: PaperRecord[] }) {
-  const knowledge = getBookKnowledge(book.slug)
-  const concepts = useMemo(() => knowledge?.concepts.filter((concept) => !/^(?:مقدمة|الخاتمة|قائمة المراجع)/u.test(concept.title)) || [], [knowledge])
+  const [concepts, setConcepts] = useState<BookKnowledgeConcept[]>([])
   const [catalog, setCatalog] = useState<EncyclopediaVideoCatalog | null>(() => getEncyclopediaFallbackCatalog())
   const [catalogError, setCatalogError] = useState(false)
   const [catalogAttempt, setCatalogAttempt] = useState(0)
@@ -526,6 +525,32 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
   const [spokenProgress, setSpokenProgress] = useState<EncyclopediaTranscriptProgress | null>(null)
   const [spokenStatus, setSpokenStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const pendingDoorAnchor = useRef<{ id: string; top: number } | null>(null)
+
+  /* خريطة المعرفة كبيرة ومفيدة، لكنها ليست شرطاً لرسم غلاف الموسوعة وأبوابها.
+     نُحضرها بعد أول رسم في وقت الخمول؛ فتظهر الصفحة فوراً، وتصل الصلات قبل أن
+     يفتح القارئ باباً في المعتاد. لا طلب شبكة جديد: القطعة من البناء نفسه. */
+  useEffect(() => {
+    let active = true
+    const win = window as unknown as {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (handle: number) => void
+    }
+    const load = () => {
+      void import('../lib/book-knowledge').then((module) => {
+        if (!active) return
+        const knowledge = module.getBookKnowledge(book.slug)
+        setConcepts(knowledge?.concepts.filter((concept) => !/^(?:مقدمة|الخاتمة|قائمة المراجع)/u.test(concept.title)) || [])
+      }).catch(() => undefined)
+    }
+    const idle = win.requestIdleCallback
+    const cancelIdle = win.cancelIdleCallback
+    const handle = idle ? idle.call(window, load, { timeout: 900 }) : window.setTimeout(load, 260)
+    return () => {
+      active = false
+      if (idle && cancelIdle) cancelIdle.call(window, handle)
+      else window.clearTimeout(handle)
+    }
+  }, [book.slug])
 
   const updateDeepLink = (changes: Record<string, string | number | null>, mode: 'push' | 'replace' = 'replace') => {
     const url = new URL(window.location.href)
@@ -679,10 +704,31 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
       chapterNumber: exact.chapterNumber || exact.sequence.chapterNumber,
     } : {}
   }, [spokenMoments])
-  const knowledgeResults = useMemo(
-    () => searchEncyclopediaKnowledge(query, { passageLimit: 40, slideLimit: 40, context: knowledgeContext }),
-    [knowledgeContext, query],
-  )
+  const [knowledgeResults, setKnowledgeResults] = useState<EncyclopediaKnowledgeSearchResult>({ query: '', passages: [], slides: [] })
+  const [knowledgePending, setKnowledgePending] = useState(false)
+  useEffect(() => {
+    const cleanQuery = query.trim()
+    if (cleanQuery.length < 2) {
+      setKnowledgePending(false)
+      setKnowledgeResults({ query: cleanQuery, passages: [], slides: [] })
+      return
+    }
+    let active = true
+    setKnowledgePending(true)
+    const timer = window.setTimeout(() => {
+      void import('../lib/encyclopedia-knowledge-search').then((module) => {
+        if (!active) return
+        setKnowledgeResults(module.searchEncyclopediaKnowledge(cleanQuery, { passageLimit: 40, slideLimit: 40, context: knowledgeContext }))
+        setKnowledgePending(false)
+      }).catch(() => {
+        if (active) setKnowledgePending(false)
+      })
+    }, 90)
+    return () => {
+      active = false
+      window.clearTimeout(timer)
+    }
+  }, [knowledgeContext, query])
   const videoById = useMemo(() => new Map(visibleVideos.map((video) => [video.id, video])), [visibleVideos])
   const knowledgeFallbackVideos = useMemo(
     () => searchResults.videos.slice(0, 6).map((item) => item.video),
@@ -921,7 +967,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
               <input id="encyclopedia-query" value={query} onChange={(event) => { const value = event.target.value; setQuery(value); searchStartedAt.current ||= Date.now() }} onKeyDown={(event) => { if (event.key === 'Enter') { const clean = normalizeSearchQuery(query); updateDeepLink({ q: clean, tab: resultTab }, 'push'); if (clean && clean !== lastTrackedQuery.current) { trackUsage(lastTrackedQuery.current ? 'search_refined' : 'search_submitted', { searchType: 'encyclopedia', query: clean }); lastTrackedQuery.current = clean } } }} placeholder="ابحث في فيديو أو صفحة أو شريحة" dir="rtl" className="w-0 min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[clamp(.66rem,3.05vw,.82rem)] text-ink outline-none placeholder:text-soft/[.6] sm:px-4" />
               {query ? <button type="button" onClick={() => { setQuery(''); setResultTab('all'); updateDeepLink({ q: null, tab: null, video: null, t: null, result: null }, 'push') }} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft hover:text-accent"><SocialIcon name="Close" size={13} /></button> : <span aria-label="ابحث في الموسوعة" title="ابحث في الموسوعة" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Search" size={15} /></span>}
             </div>
-            {query.trim().length >= 2 && <p className="mt-2 text-[.7rem] text-soft">{resultCount ? `${formatArabicNumber(resultCount)} نتيجة مرتبطة` : 'لا توجد نتيجة مطابقة.'}</p>}
+            {query.trim().length >= 2 && <p className="mt-2 text-[.7rem] text-soft">{resultCount ? `${formatArabicNumber(resultCount)} نتيجة مرتبطة` : knowledgePending ? 'أبحث في صفحات الموسوعة…' : 'لا توجد نتيجة مطابقة.'}</p>}
           </FadeUp>
 
           {query.trim().length >= 2 && (

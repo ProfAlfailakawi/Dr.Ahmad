@@ -17,9 +17,18 @@ export default function Media() {
   const media = useMemo(() => mergeMediaArchive(cmsMedia), [cmsMedia])
   const [query, setQuery] = useState('')
   const [visibleCount, setVisibleCount] = useState(25)
-  const moments = useMemo(() => searchArchiveMoments(query, media), [query, media])
-  const visibleMedia = useMemo(() => media.slice(0, visibleCount), [media, visibleCount])
-  useEffect(() => { setVisibleCount((count) => Math.min(Math.max(25, count), Math.max(25, media.length))) }, [media.length])
+  const [yearFilter, setYearFilter] = useState('all')
+  const [kindFilter, setKindFilter] = useState('all')
+  const archiveYears = useMemo(() => Array.from(new Set(media.map((item) => String(item.iso || item.date || '').slice(0, 4)).filter((year) => /^\d{4}$/.test(year)))).sort((a, b) => Number(b) - Number(a)), [media])
+  const archiveKinds = useMemo(() => Array.from(new Set(media.map((item) => item.kind).filter(Boolean))), [media])
+  const filteredMedia = useMemo(() => media.filter((item) => {
+    const year = String(item.iso || item.date || '').slice(0, 4)
+    return (yearFilter === 'all' || year === yearFilter) && (kindFilter === 'all' || item.kind === kindFilter)
+  }), [kindFilter, media, yearFilter])
+  const moments = useMemo(() => searchArchiveMoments(query, filteredMedia), [query, filteredMedia])
+  const visibleMedia = useMemo(() => (yearFilter === 'all' && kindFilter === 'all' ? media.slice(0, visibleCount) : filteredMedia.slice(0, visibleCount)), [filteredMedia, kindFilter, media, visibleCount, yearFilter])
+  useEffect(() => { setVisibleCount(25) }, [yearFilter, kindFilter])
+  useEffect(() => { setVisibleCount((count) => Math.min(Math.max(25, count), Math.max(25, filteredMedia.length))) }, [filteredMedia.length])
   useSeo({ title: 'الأرشيف الإعلامي', path: '/media', description: 'أرشيف مرئي ومسموع قابل للبحث داخل اللحظة، يجمع اللقاءات التلفزيونية والإذاعية واستضافات يوتيوب.' })
 
   return <Page className="content-media page-journey">
@@ -38,6 +47,23 @@ export default function Media() {
             </div>
             <p className="media-search-note measure mt-2 text-[.68rem] leading-relaxed text-soft md:mt-3 md:text-[.7rem]">عند وجود تفريغ زمني موثّق، تنقلك النتيجة مباشرة إلى اللحظة التي قيلت فيها العبارة.</p>
           </div>
+        </FadeUp>
+
+        <FadeUp delay={0.04}>
+          <section className="media-archive-index mt-5 border-y border-hair py-4" aria-label="فهرس الأرشيف الإعلامي">
+            <div className="flex items-center justify-between gap-3">
+              <div><p className="text-[.66rem] font-semibold text-accent">المسار الإعلامي</p><p className="mt-0.5 text-[.7rem] font-light text-soft">{filteredMedia.length.toLocaleString('en-US')} ظهوراً في النطاق الحالي</p></div>
+              {(yearFilter !== 'all' || kindFilter !== 'all') && <button type="button" onClick={() => { setYearFilter('all'); setKindFilter('all') }} className="text-[.68rem] font-semibold text-accent">إظهار الكل</button>}
+            </div>
+            <div className="edge-fade mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="تصفية حسب السنة">
+              <button type="button" onClick={() => setYearFilter('all')} aria-pressed={yearFilter === 'all'} className={`shrink-0 rounded-full border px-3 py-1.5 text-[.7rem] font-semibold transition-colors ${yearFilter === 'all' ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>كل السنوات</button>
+              {archiveYears.map((year) => <button key={year} type="button" onClick={() => setYearFilter(year)} aria-pressed={yearFilter === year} className={`shrink-0 rounded-full border px-3 py-1.5 font-mono text-[.7rem] transition-colors ${yearFilter === year ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{year}</button>)}
+            </div>
+            <div className="edge-fade mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="تصفية حسب نوع الظهور">
+              <button type="button" onClick={() => setKindFilter('all')} aria-pressed={kindFilter === 'all'} className={`shrink-0 rounded-full border px-3 py-1.5 text-[.68rem] font-medium transition-colors ${kindFilter === 'all' ? 'border-accent text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>كل الأنواع</button>
+              {archiveKinds.map((kind) => <button key={kind} type="button" onClick={() => setKindFilter(kind)} aria-pressed={kindFilter === kind} className={`shrink-0 rounded-full border px-3 py-1.5 text-[.68rem] font-medium transition-colors ${kindFilter === kind ? 'border-accent text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{kindLabel[kind] || 'ظهور إعلامي'}</button>)}
+            </div>
+          </section>
         </FadeUp>
 
         {query.trim() && <FadeUp>
@@ -70,7 +96,7 @@ export default function Media() {
                     <span className="font-semibold text-accent">{kindLabel[item.kind] || 'ظهور إعلامي'}</span>
                     {available && <><span className="text-hair">·</span><span className="font-semibold text-soft">مفهرس زمنياً</span></>}
                   </div>
-                  <div className="flex items-center justify-between gap-3 text-[.68rem] text-soft"><span className="font-semibold text-accent">{item.program || item.outlet}</span><span dir="ltr">{item.duration || ''}</span></div>
+                  <div className="flex items-center justify-between gap-3 text-[.68rem] text-soft"><span className="min-w-0 truncate font-semibold text-accent">{item.program || item.outlet}</span><span className="shrink-0" dir="ltr">{String(item.iso || item.date || '').slice(0, 4)}{item.duration ? ` · ${item.duration}` : ''}</span></div>
                   <h2 style={{ viewTransitionName: sharedViewName('media-title', item.slug) }} className="mt-2 line-clamp-3 font-display text-[1.08rem] font-semibold leading-[1.65] text-ink">{item.title}</h2>
                   <p className="mt-2 line-clamp-2 min-h-[2.7rem] text-[.74rem] leading-relaxed text-soft">{item.topics || (available ? 'يمكن البحث داخل هذا اللقاء والانتقال إلى اللحظة الدقيقة.' : 'مادة محفوظة في الأرشيف الإعلامي.')}</p>
                   <div className="mt-4 flex items-center justify-between border-t border-hair pt-4 text-[.7rem]"><span className="text-soft">{item.outlet}</span><span className="font-semibold text-accent">افتح الأرشيف ←</span></div>
@@ -80,10 +106,10 @@ export default function Media() {
             </article>
           })}
         </div>
-        {visibleCount < media.length && (
+        {visibleCount < filteredMedia.length && (
           <div className="mt-7 flex justify-center">
-            <button type="button" onClick={() => setVisibleCount((count) => Math.min(media.length, count + 24))} className="min-h-11 rounded-full border border-hair px-5 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
-              أظهر المزيد <span className="ms-1 text-[.68rem] opacity-75">({Math.min(24, media.length - visibleCount).toLocaleString('en-US')})</span>
+            <button type="button" onClick={() => setVisibleCount((count) => Math.min(filteredMedia.length, count + 24))} className="min-h-11 rounded-full border border-hair px-5 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
+              أظهر المزيد <span className="ms-1 text-[.68rem] opacity-75">({Math.min(24, filteredMedia.length - visibleCount).toLocaleString('en-US')})</span>
             </button>
           </div>
         )}

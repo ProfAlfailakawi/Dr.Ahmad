@@ -1081,7 +1081,6 @@ export function Footer() {
               ))}
             </span>
             <span className="inline-flex items-center gap-2">
-              <Link to="/inbox" aria-label="رسائل على الهامش" title="رسائل على الهامش" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-hair px-3 text-[.7rem] font-medium text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Mail" size={16} /><span className="hidden sm:inline">رسائل على الهامش</span></Link>
               <TebyanProjectLink />
               <ScheduleProjectLink />
             </span>

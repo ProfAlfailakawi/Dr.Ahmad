@@ -117,6 +117,7 @@ export default function Atlas() {
   /* لا نعيد كتابة الرابط قبل قراءة ?star/?compare لأول مرة؛ وإلا فإن أثر
      مزامنة URL يسبق أثر deep-link ويمحو النجمة القادمة من المقال قبل تثبيتها. */
   const [queryHydrated, setQueryHydrated] = useState(false)
+  const [entrySlug] = useState(() => typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('star') || '')
   const [lens, setLens] = useState<{ x: number; y: number; scope: AtlasScope } | null>(null)
   const [showGraphDiscovery, setShowGraphDiscovery] = useState(false)
 
@@ -353,6 +354,7 @@ export default function Atlas() {
   const active = activeIndex !== null ? layout.find((star) => star.i === activeIndex) : null
   const mobileActive = activeIndex !== null ? mobileLayout.find((star) => star.i === activeIndex) : null
   const selectedStar = selected !== null ? stars.find((star) => star.i === selected) || null : null
+  const entryStar = entrySlug ? stars.find((star) => star.slug === entrySlug) || null : null
   const compareStar = compareIndex !== null ? stars.find((star) => star.i === compareIndex) || null : null
   const comparisonBase = selectedStar || active
   const comparison = useMemo(() => {
@@ -455,6 +457,14 @@ export default function Atlas() {
 
   const pick = (index: number, slug: string, _pointerType: string) => {
     if (compareMode) {
+      /* زر المقارنة متاح حتى قبل اختيار نجمة: الأولى تصبح مرجع المقارنة،
+         والثانية تكملها. بهذه الصورة لا يوجد زر «ميت» في أعلى الخريطة. */
+      if (selected === null) {
+        setSelected(index)
+        setHover(null)
+        trackUsage('atlas_interaction', { type: 'compare_first_star' })
+        return
+      }
       if (selected === index) return
       setCompareIndex(index)
       setCompareMode(false)
@@ -472,6 +482,13 @@ export default function Atlas() {
     if (compareIndex === index) setCompareIndex(null)
     setHover(null)
     window.setTimeout(() => document.getElementById('atlas-selection')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80)
+  }
+
+  const startCompare = () => {
+    setCompareIndex(null)
+    setCompareMode(true)
+    setHover(null)
+    trackUsage('atlas_interaction', { type: 'compare_start' })
   }
 
   const categoryButtons = (
@@ -511,6 +528,18 @@ export default function Atlas() {
         <div className="mx-auto max-w-shell">
           <FadeUp>{categoryButtons}</FadeUp>
 
+          {entryStar && (
+            <FadeUp delay={0.02}>
+              <aside className="atlas-arrival mb-5 flex flex-col gap-3 rounded-2xl border border-accent/25 bg-accent/[.035] px-4 py-4 sm:flex-row sm:items-center sm:justify-between" aria-live="polite">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-[.68rem] font-semibold text-accent"><span aria-hidden className="relative h-3 w-3 shrink-0"><span className="absolute inset-[3px] rounded-full bg-accent" /><span className="absolute inset-0 rounded-full border border-accent/[.35]" /></span>موقع المقالة في السماء</p>
+                  <h2 className="mt-1.5 break-words font-display text-[.98rem] font-semibold leading-[1.7] text-ink md:text-[1.12rem]">{entryStar.title}</h2>
+                </div>
+                <span className="shrink-0 text-[.68rem] font-light text-soft">نجمتها محددة وجاهزة للاستكشاف</span>
+              </aside>
+            </FadeUp>
+          )}
+
           <FadeUp delay={0.04}>
             <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
               <div className="w-full sm:max-w-[19rem]">
@@ -528,6 +557,10 @@ export default function Atlas() {
                 )}
               </div>
               <p className="hidden max-w-[30rem] text-[.78rem] font-light text-soft lg:block">{viewHint}</p>
+              <button type="button" onClick={startCompare} aria-pressed={compareMode} className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-3 text-[.72rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent/[.06] text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
+                <span aria-hidden className="flex items-center gap-1"><span className="h-2 w-2 rounded-full border border-accent" /><span className="h-px w-3 bg-accent/40" /><span className="h-2 w-2 rounded-full bg-accent" /></span>
+                مقارنة نجمتين
+              </button>
               <button type="button" onClick={() => setColorsEnabled((value) => !value)} aria-pressed={colorsEnabled} className={`atlas-color-switch inline-flex min-h-10 items-center gap-2 rounded-full border px-3 text-[.72rem] font-semibold transition-colors ${colorsEnabled ? 'border-accent text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>
                 <span aria-hidden className="flex gap-0.5">{ATLAS_AXIS_COLORS.slice(0, 3).map((color) => <span key={color} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colorsEnabled ? color : 'currentColor' }} />)}</span>
                 ألوان المحاور
@@ -808,11 +841,11 @@ export default function Atlas() {
                     {active.i === dayStarIndex && <><span>·</span><span className="text-accent">نجمة اليوم</span></>}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={() => { setSelected(active.i); setCompareIndex(null); setCompareMode(true); setHover(null); trackUsage('atlas_interaction', { type: 'compare_start' }) }} className={`min-h-9 rounded-full border px-3 text-[.7rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent/[.06] text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`} aria-pressed={compareMode}>قارن بنجمة</button>
+                    <button type="button" onClick={() => { setSelected(active.i); startCompare() }} className={`min-h-9 rounded-full border px-3 text-[.7rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent/[.06] text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`} aria-pressed={compareMode}>مقارنة نجمتين</button>
                     {compareIndex !== null && <button type="button" onClick={() => { setCompareIndex(null); setCompareMode(false) }} className="min-h-9 px-2 text-[.68rem] text-soft transition-colors hover:text-accent">مسح المقارنة</button>}
                   </div>
                 </div>
-                {compareMode && <p className="mt-2 text-[.72rem] font-medium text-accent" role="status">اختر نجمة ثانية من السماء؛ لن يفتح المقال أثناء هذه الخطوة.</p>}
+                {compareMode && <p className="mt-2 text-[.72rem] font-medium text-accent" role="status">{selected === null ? 'اختر النجمة الأولى، ثم الثانية.' : 'اختر نجمة ثانية من السماء؛ لن يفتح المقال أثناء هذه الخطوة.'}</p>}
                 <Link to={`/articles/${active.slug}`} className="mt-2 block break-words font-display text-[1.08rem] font-semibold leading-[1.75] text-ink transition-colors hover:text-accent md:text-[1.35rem]">
                   {active.title}
                   <span className="mt-3 block text-[.78rem] font-sans font-semibold text-accent">فتح المقال ←</span>

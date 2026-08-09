@@ -753,8 +753,8 @@ html.reader-paper .article-journey .bg-wash {
   white-space: normal;
 }
 .reader-popular-note {
-  /* الرقم لصيقٌ بنهاية الخط المظلَّل ولا يزاحم الكلمات: لا يُلحق بكلمة فتنكسر
-     عندها، ولا يُلفّ إلى سطرٍ وحده. يعلو قليلاً كإشارةٍ هامشية هادئة. */
+  /* عقدة الشارة نفسها فارغة؛ الرقم يُرسم كـ pseudo-content فلا يدخل أبداً في
+     Selection.toString() ولا يستطيع Safari ضمّه إلى النص المحدد. */
   display: inline-block !important;
   margin: 0 .2em 0 0 !important;
   transform: translateY(-.42em);
@@ -763,12 +763,15 @@ html.reader-paper .article-journey .bg-wash {
   font-size: .58rem !important;
   line-height: 1.2 !important;
   font-weight: 300 !important;
-  letter-spacing: .015em !important; /* latin — أرقام الاستشهاد بخانات ثابتة */
   color: rgb(var(--c-accent) / .68) !important;
   font-variant-numeric: tabular-nums;
-  /* شارة عدّ لا نصّ مقال: تحديد القارئ كان يلتقط رقمها فيتسرب إلى بطاقة الاقتباس */
   user-select: none;
   -webkit-user-select: none;
+  pointer-events: none;
+}
+.reader-popular-note::after {
+  content: attr(data-count);
+  letter-spacing: .015em; /* latin — شارة رقمية لا نص عربي */
 }
 html[data-reader-popular="off"] .reader-popular-mark {
   background: none;
@@ -6178,4 +6181,24 @@ html.reader-paper .sentence-item.is-sentence-active {
   .article-atlas-knot,
   .article-share-actions,
   .research-section-nav { display: none !important; }
+
+  /* خطة القراءة تُطبع كوثيقة مستقلة، لا كل صفحة البحث المحيطة بها. */
+  body.print-reading-shelf #root * { visibility: hidden !important; }
+  body.print-reading-shelf .reading-shelf-print,
+  body.print-reading-shelf .reading-shelf-print * { visibility: visible !important; }
+  body.print-reading-shelf .reading-shelf-print {
+    position: absolute !important;
+    inset: 0 !important;
+    inline-size: 100% !important;
+    max-inline-size: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+  body.print-reading-shelf .reading-shelf-print button,
+  body.print-reading-shelf .reading-shelf-print > div > div:last-child { display: none !important; }
+  body.print-reading-shelf .reading-shelf-print li { break-inside: avoid; }
 }

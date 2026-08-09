@@ -119,7 +119,7 @@ export function EncyclopediaKnowledgeResults({
         </div>
       </div>
 
-      <div dir="rtl" data-horizontal-video-rail="true" className={`grid snap-x snap-mandatory auto-cols-[82vw] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:p-6 xl:grid-flow-row ${desktopGridClass} xl:auto-cols-auto xl:overflow-visible`}>
+      <div dir="rtl" data-horizontal-video-rail="true" className={`edge-fade grid snap-x snap-mandatory auto-cols-[82vw] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:p-6 xl:grid-flow-row ${desktopGridClass} xl:auto-cols-auto xl:overflow-visible`}>
         <article className={`${tab === 'all' || tab === 'video' ? '' : 'hidden'} w-[82vw] max-w-[25rem] shrink-0 snap-start rounded-2xl border border-hair bg-wash/[.45] p-4 md:p-5 xl:w-auto xl:max-w-none`}>
           <SourceHeader icon="Play" eyebrow={exactMoment ? `من اللحظة ${formatMoment(primaryMoment?.startSeconds || 0)}` : 'الفيديو الأقرب'} title={exactMoment ? `شاهد من ${formatMoment(primaryMoment?.startSeconds || 0)}` : 'شاهد من البداية'} />
           {primaryVideo ? (
@@ -184,7 +184,7 @@ export function EncyclopediaKnowledgeResults({
       {moments.length > 1 && (
         <div className="border-t border-hair px-4 py-4 md:px-6">
           <span className="text-[.62rem] font-semibold text-accent">لحظات أخرى موثقة أو فيديوهات قريبة</span>
-          <div dir="rtl" data-horizontal-video-rail="true" className="mt-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain pe-[18vw] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div dir="rtl" data-horizontal-video-rail="true" className="edge-fade mt-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain pe-[18vw] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {moments.slice(1, 6).map((moment) => {
               const video = videoById.get(moment.videoId)
               if (!video) return null

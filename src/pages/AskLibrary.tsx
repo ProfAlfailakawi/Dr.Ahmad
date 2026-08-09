@@ -740,10 +740,10 @@ export default function AskLibrary() {
                           ) : visibleAnswer ? (
                             <motion.div
                               key={answerMode}
-                              initial={reduce ? false : { opacity: 0, y: 10, filter: 'blur(2px)' }}
-                              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                              exit={reduce ? undefined : { opacity: 0, y: -7, filter: 'blur(1.5px)' }}
-                              transition={{ duration: reduce ? 0 : .34, ease: EASE }}
+                              initial={reduce ? false : { opacity: 0, y: 4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={reduce ? undefined : { opacity: 0, y: -3 }}
+                              transition={{ duration: reduce ? 0 : .2, ease: EASE }}
                             >
                               <p className="mt-5 whitespace-pre-line text-[.96rem] font-light leading-[2.05] text-ink/90">{visibleAnswer}</p>
                               {answerMode !== 'direct' && (
@@ -803,7 +803,7 @@ export default function AskLibrary() {
                       ) : null}
                       <div className="mt-7 space-y-8">
                         {result.hits.map((h) => (
-                          <FadeUp key={h.slug}>
+                          <div key={h.slug}>
                             <figure className="border-r border-hair pr-5">
                               <blockquote className="font-display text-[1.06rem] font-light leading-[2] text-ink">
                                 «{h.para}»
@@ -817,7 +817,7 @@ export default function AskLibrary() {
                                 </Link>
                               </figcaption>
                             </figure>
-                          </FadeUp>
+                          </div>
                         ))}
                       </div>
 

@@ -46,8 +46,23 @@ for (const path of ['/about', '/contact', '/impact', '/thought-paths', '/atlas',
 }
 ok(buildStatic.includes("db.collection('site_papers').get()") && buildStatic.includes("db.collection('site_articles').get()"), 'البناء الثابت يدمج إضافات CMS الحية عند توفر حساب الخدمة')
 ok(buildStatic.includes('mergeCloudAdditions') && buildStatic.includes('overridePatches'), 'SEO يطبق إضافات CMS وتعديلات المحتوى بدل الاعتماد على نسخة محلية فقط')
-ok(buildStatic.includes('href="/decade"') && buildStatic.includes('وثيقة العقد'), 'التنقل الثابت يبرز وثيقة العقد بدل إعادة About إلى الواجهة')
+ok(buildStatic.includes('href="/thought"') && buildStatic.includes('الخريطة الفكرية') && !/href=\"\/thought\"[\s\S]{0,600}href=\"\/decade\"/.test(buildStatic), 'التنقل الثابت يجعل الخريطة الفكرية مظلة المنظومة ولا يكرر وثيقة العقد كمدخل رئيسي')
 ok(buildStatic.includes("desc: `Official website") && buildStatic.includes("desc: `${nPapers} peer-reviewed"), 'أرقام النسخة الإنجليزية ديناميكية وليست نصوصاً ثابتة قديمة')
+
+console.log('\nRetired-index URL migration')
+const redirects = firebase.hosting.redirects || []
+const redirectMap = new Map(redirects.map((entry) => [entry.source, entry]))
+const researchSource = read('src/data/research-papers.ts')
+const slugs = [...researchSource.matchAll(/\bslug:\s*'([^']+)'/g)].map((match) => match[1])
+ok(slugs.length >= 15, `تم التعرف على ${slugs.length} مسارات بحث محلية للفحص`)
+for (const slug of slugs) {
+  for (const prefix of ['', '/ar', '/en']) {
+    const source = `${prefix}/scholarly_contributi/${slug}`
+    const target = redirectMap.get(source)
+    ok(target?.type === 301 && target?.destination === `/research/${slug}`, `301 مباشر للبحث القديم ${source}`)
+  }
+}
+ok(redirectMap.get('/scholarly_contributi/اتجاهات-الهيئة-التدريسية-نحو-استخدام-2')?.destination === '/research/faculty-attitudes-edtech', 'المسار العربي القديم المفهرس يتحول مباشرة إلى البحث الصحيح')
 
 console.log('\nHomepage polish')
 ok(home.includes('من الأرشيف اليوم') && home.includes('أربع زوايا، ورؤية تتجدّد.'), 'قسم الأعمال أصبح «من الأرشيف اليوم» مع بقاء الاكتشاف المتجدد')
@@ -150,10 +165,7 @@ ok(articleSignal.includes('article-signal-mark')
   && articleSignal.includes("source: 'readers'")
   && articleSignal.includes("source: 'pivot'")
   && articleSignal.includes("source: 'text'")
-  && articleSignal.includes('export function articleSignalsOf')
-  && articleDetail.includes('articleSignalsOf(slug, body, popularQuotes)')
-  && articleDetail.includes('const articleSignal = articleSignals[0] || null')
-  && articleDetail.includes('articleSignals.forEach')
+  && articleDetail.includes('articleSignalOf(slug, body, popularQuotes)')
   && articleDetail.includes('<ArticleSignal signal={articleSignal} title={title} />')
   && !readerResonance.includes('ArticlePulse')
   && !articleSignal.includes('نبض المقال')

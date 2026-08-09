@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router'
@@ -9,7 +9,6 @@ import { findIdeaRevisions, type IdeaRevision } from '../lib/idea-revision'
 import { liveLink } from '../lib/dead-links'
 import { staticQuestions } from '../questions-data'
 import { arabicCountPhrase, TOPICAL_CONNECTION_FORMS } from '../lib/arabic-count.ts'
-import rawArticleGraph from '../data/article-graph-neighbors.json' with { type: 'json' }
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 const updateDate = new Intl.DateTimeFormat('ar-KW-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -29,53 +28,13 @@ type Props = {
 }
 
 type ThreadNode = {
-  id: string
-  kind: 'مقال' | 'كتاب' | 'بحث' | 'لقاء' | 'سؤال'
+  kind: 'كتاب' | 'بحث' | 'لقاء' | 'سؤال'
   title: string
-  excerpt?: string
-  year?: string
-  relation: 'امتداد' | 'تضاد' | 'سياق'
   to?: string
   href?: string
 }
 
-type IndexedNeighbor = {
-  id: string
-  kind: string
-  slug: string
-  title: string
-  excerpt?: string
-  url?: string
-  year?: string
-  reasons?: string[]
-  relation?: ThreadNode['relation']
-  reason?: string
-}
-const ARTICLE_GRAPH = (rawArticleGraph as { neighbors?: Record<string, IndexedNeighbor[]> }).neighbors || {}
-const threadRelation = (item: IndexedNeighbor): ThreadNode['relation'] => {
-  return item.relation || ((item.reasons || []).some((reason) => reason.includes('امتداد')) ? 'امتداد' : 'سياق')
-}
-const threadKind = (kind: string): ThreadNode['kind'] => kind === 'book' ? 'كتاب' : kind === 'paper' ? 'بحث' : kind === 'media' ? 'لقاء' : 'مقال'
-
 function ideaThreadFor(article: ArticleRecord, books: BookRecord[], papers: PaperRecord[], media: MediaRecord[]): ThreadNode[] {
-  const indexed = (ARTICLE_GRAPH[`article:${article.slug}`] || [])
-    .filter((item) => ['article', 'book', 'paper', 'media'].includes(item.kind))
-    .slice(0, 5)
-    .map((item): ThreadNode => {
-      const internal = item.url?.startsWith('https://dr-alfailakawi.com/') ? new URL(item.url).pathname : ''
-      return {
-        id: item.id,
-        kind: threadKind(item.kind),
-        title: item.title,
-        excerpt: item.excerpt,
-        year: item.year,
-        relation: threadRelation(item),
-        to: internal || (item.kind === 'article' ? `/articles/${item.slug}` : item.kind === 'book' ? `/publications/${item.slug}` : item.kind === 'paper' ? `/research/${item.slug}` : item.kind === 'media' ? `/media/${item.slug}` : undefined),
-        href: internal ? undefined : item.url,
-      }
-    })
-  if (indexed.length >= 2) return indexed
-
   const mine = new Set(ideaWords(`${article.title} ${article.excerpt || ''} ${article.cat || ''}`))
   const score = (value: string) => ideaWords(value).reduce((total, token) => total + (mine.has(token) ? 1 : 0), 0)
   const best = <T,>(items: T[], text: (item: T) => string, minimum = 1) => {
@@ -93,10 +52,10 @@ function ideaThreadFor(article: ArticleRecord, books: BookRecord[], papers: Pape
   const question = best(staticQuestions, (item) => `${item.ar} ${item.take}`)
 
   return [
-    book && { id: `book:${book.slug}`, kind: 'كتاب' as const, title: book.title, relation: 'امتداد' as const, to: `/publications/${book.slug}` },
-    paper && { id: `paper:${paper.slug}`, kind: 'بحث' as const, title: paper.titleAr || paper.title, relation: 'امتداد' as const, to: `/research/${paper.slug}` },
-    appearance && appearanceUrl && { id: `media:${appearance.slug}`, kind: 'لقاء' as const, title: appearance.title, relation: 'سياق' as const, href: appearanceUrl },
-    question && { id: `question:${question.ar}`, kind: 'سؤال' as const, title: question.ar, relation: 'سياق' as const, to: '/questions' },
+    book && { kind: 'كتاب' as const, title: book.title, to: `/publications/${book.slug}` },
+    paper && { kind: 'بحث' as const, title: paper.titleAr || paper.title, to: `/research/${paper.slug}` },
+    appearance && appearanceUrl && { kind: 'لقاء' as const, title: appearance.title, href: appearanceUrl },
+    question && { kind: 'سؤال' as const, title: question.ar, to: '/questions' },
   ].filter(Boolean) as ThreadNode[]
 }
 
@@ -136,7 +95,7 @@ function IdeaTrace({ article, model, embedded = false }: { article: ArticleRecor
         </div>
         <Link to="/thought" className="text-[.7rem] font-semibold text-accent transition-opacity hover:opacity-70">المشهد الفكري الكامل ←</Link>
       </div>
-      <ol className="relative mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden before:absolute before:right-4 before:top-[.55rem] before:h-px before:w-[calc(100%-2rem)] before:bg-hair">
+      <ol className="edge-fade relative mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden before:absolute before:right-4 before:top-[.55rem] before:h-px before:w-[calc(100%-2rem)] before:bg-hair">
         {points.map((point, index) => {
           const body = <>
             <span className={`relative z-10 block h-3 w-3 rounded-full border ${point.current ? 'border-accent bg-accent' : 'border-accent/40 bg-canvas'}`} />
@@ -164,46 +123,28 @@ function SectionTitle({ index, title, sub }: { index: string; title: string; sub
   )
 }
 
-const MINI_POSITIONS = [
-  { x: 18, y: 23 }, { x: 80, y: 21 }, { x: 13, y: 75 }, { x: 50, y: 88 }, { x: 86, y: 72 },
-]
-
-function ThreadPanel({ article, nodes, close }: { article: ArticleRecord; nodes: ThreadNode[]; close: () => void }) {
-  const [hovered, setHovered] = useState('')
+function ThreadPanel({ nodes, close }: { nodes: ThreadNode[]; close: () => void }) {
   return (
     <div>
       <SectionTitle index="01" title="الفكرة لا تعيش في صفحة واحدة." sub="مسار يصل المقال بأقرب كتاب وبحث ولقاء وسؤال من الأرشيف نفسه." />
-      <div className="idea-mini-graph relative mt-7 min-h-[25rem] overflow-hidden rounded-2xl border border-hair bg-wash/[.32]" aria-label={`خيط معرفي حول ${article.title}`}>
-        <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
-          {nodes.map((node, index) => {
-            const point = MINI_POSITIONS[index] || MINI_POSITIONS[MINI_POSITIONS.length - 1]
-            return <line key={node.id} x1="50" y1="50" x2={point.x} y2={point.y} vectorEffect="non-scaling-stroke" className={hovered === node.id ? 'stroke-accent' : 'stroke-soft'} strokeOpacity={hovered === node.id ? .72 : .24} strokeWidth={hovered === node.id ? 1.8 : 1} />
-          })}
-        </svg>
-        <span className="idea-mini-graph__center absolute left-1/2 top-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-accent/[.35] bg-canvas shadow-sm" aria-label="المقال الحالي">
-          <span className="h-2.5 w-2.5 rounded-full bg-accent" />
-        </span>
-        <ol className="contents">
+      <ol className="relative mt-7 grid gap-4 md:grid-cols-4 md:gap-5 before:absolute before:bottom-6 before:right-[.7rem] before:top-6 before:w-px before:bg-hair md:before:bottom-auto md:before:left-4 md:before:right-4 md:before:top-[1.05rem] md:before:h-px md:before:w-auto">
         {nodes.map((node, index) => {
-          const point = MINI_POSITIONS[index] || MINI_POSITIONS[MINI_POSITIONS.length - 1]
           const content = (
             <>
-              <span className="block text-[.61rem] font-semibold text-accent">{node.relation} · {node.kind}{node.year ? ` · ${node.year}` : ''}</span>
-              <span dir="auto" className="mt-1 block line-clamp-2 break-words text-start font-display text-[.76rem] font-medium leading-[1.55] text-ink transition-colors [overflow-wrap:anywhere] group-hover:text-accent">{node.title}</span>
+              <span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full border border-accent/30 bg-canvas shadow-sm"><span className="h-2 w-2 rounded-full bg-accent" /></span>
+              <span className="mt-3 block text-[.62rem] font-semibold text-accent">{String(index + 1).padStart(2, '0')} · {node.kind}</span>
+              <span dir="auto" className="mt-1.5 block break-words text-start font-display text-[.88rem] font-medium leading-[1.65] text-ink transition-colors [overflow-wrap:anywhere] [text-wrap:balance] group-hover:text-accent md:text-[.94rem]">{node.title}</span>
             </>
           )
-          const style = { '--graph-x': `${point.x}%`, '--graph-y': `${point.y}%` } as CSSProperties
-          const cls = "idea-mini-graph__node group absolute z-20 block w-[10.5rem] rounded-xl border border-hair bg-canvas/95 px-3 py-3 shadow-sm backdrop-blur transition-[border-color,transform] hover:border-accent/[.45]"
           return (
-            <li key={node.id} className="contents">
+            <li key={`${node.kind}-${node.title}`} className="relative pe-9 md:pe-0">
               {node.to
-                ? <Link to={node.to} onClick={close} onPointerEnter={() => setHovered(node.id)} onPointerLeave={() => setHovered('')} style={style} className={cls}>{content}</Link>
-                : <a href={node.href} target="_blank" rel="noreferrer" onPointerEnter={() => setHovered(node.id)} onPointerLeave={() => setHovered('')} style={style} className={cls}>{content}</a>}
+                ? <Link to={node.to} onClick={close} className="group block h-full rounded-2xl border border-hair bg-wash/[.45] px-4 py-4 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent/[.35] hover:bg-wash">{content}</Link>
+                : <a href={node.href} target="_blank" rel="noreferrer" className="group block h-full rounded-2xl border border-hair bg-wash/[.45] px-4 py-4 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-accent/[.35] hover:bg-wash">{content}</a>}
             </li>
           )
         })}
-        </ol>
-      </div>
+      </ol>
       <p className="mt-6 border-t border-hair pt-4 text-[.72rem] font-light leading-[1.8] text-soft">خيطٌ يقرّب المواد المتجاورة في المعنى، لتستكمل قراءة الفكرة من أكثر من زاوية.</p>
     </div>
   )
@@ -565,7 +506,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
                   <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="m6 6 12 12" /><path d="M18 6 6 18" /></svg>
                 </button>
               </div>
-              <div role="tablist" aria-label="أقسام حياة الفكرة" className="mt-5 flex gap-5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div role="tablist" aria-label="أقسام حياة الفكرة" className="edge-fade mt-5 flex gap-5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {availableTabs.map((item) => (
                   <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} onClick={() => setTab(item.key)} className={`relative shrink-0 pb-3 text-[.78rem] font-semibold transition-colors ${tab === item.key ? 'text-ink' : 'text-soft hover:text-accent'}`}>
                     <span className="inline-flex items-center gap-1.5">{item.label}{item.key === 'time' && model.updates.length > 0 && <span aria-label="توجد مستجدات موثقة" className="h-1.5 w-1.5 rounded-full bg-accent" />}</span>
@@ -578,7 +519,7 @@ export default function IdeaLife({ article, articles, books, papers, media }: Pr
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: .2 }}>
                   {tab === 'test' && <TestPanel model={model} />}
-                  {tab === 'thread' && <ThreadPanel article={article} nodes={threadNodes} close={() => setOpen(false)} />}
+                  {tab === 'thread' && <ThreadPanel nodes={threadNodes} close={() => setOpen(false)} />}
                   {tab === 'time' && <TimePanel article={article} model={model} close={() => setOpen(false)} />}
                   {tab === 'impact' && <ImpactPanel article={article} model={model} close={() => setOpen(false)} />}
                   {tab === 'revision' && <RevisionPanel revisions={revisions} close={() => setOpen(false)} />}

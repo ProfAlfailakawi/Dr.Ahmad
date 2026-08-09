@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
+import { motion, useMotionValue, useMotionValueEvent, useReducedMotion, useScroll } from 'framer-motion'
 import { FadeUp, Page, Reveal, sharedViewName } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
 import { CiteButton, OwnerEdit } from '../components/extras'
@@ -74,6 +75,11 @@ function EvidenceStamp({ evidence, fallback = 'المصدر الأصلي' }: { e
   )
 }
 
+function EvidenceLevelNode() {
+  const reduce = useReducedMotion()
+  return <motion.span aria-hidden className="research-evidence-thread-node" initial={reduce ? false : { opacity: .3, scale: .68 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: .7 }} transition={{ duration: .3 }} />
+}
+
 export default function PaperDetail() {
   const { slug } = useParams()
   const location = useLocation()
@@ -82,10 +88,16 @@ export default function PaperDetail() {
   const p = papers[index]
   const [openSection, setOpenSection] = useState<ResearchSection | null>(null)
   const [readerKey, setReaderKey] = useState('')
-  const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer1')
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
-  const passportLayerRef = useRef<ResearchLayer>('layer1')
-  const { isAdmin } = useAdminAuth()
+  const evidenceThreadRef = useRef<HTMLDivElement>(null)
+  const reduceMotion = useReducedMotion()
+  const { scrollYProgress: evidenceThreadProgress } = useScroll({ target: evidenceThreadRef, offset: ['start 78%', 'end 48%'] })
+  const evidenceThreadDraw = useMotionValue(0)
+  const evidenceThreadMax = useRef(0)
+  useMotionValueEvent(evidenceThreadProgress, 'change', (latest) => {
+    if (latest <= evidenceThreadMax.current) return
+    evidenceThreadMax.current = latest
+    evidenceThreadDraw.set(latest)
+  })
   const intelligence = useMemo(() => analyzeResearch(p || {}), [p])
   const bookRoots = useMemo(() => {
     if (!p) return []
@@ -108,45 +120,6 @@ export default function PaperDetail() {
     revealSection('science', 'research-passport')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.hash, p?.slug])
-
-  /* الشريط يعكس موضع القراءة الحقيقي. قياسٌ واحد لكل frame، ومنطقة قرار
-     ثابتة تحت الشريط؛ فلا تتصارع ثلاث IntersectionObservers عند حدود الأقسام
-     ولا يتبدّل التظليل ذهاباً وإياباً في Safari. */
-  useEffect(() => {
-    if (!p) return
-    const layers: Array<{ key: ResearchLayer; id: string }> = [
-      { key: 'layer1', id: 'research-passport-layer1' },
-      { key: 'layer2', id: 'research-passport-layer2' },
-      { key: 'layer3', id: 'research-passport-layer3' },
-    ]
-    passportLayerRef.current = 'layer1'
-    setPassportLayer('layer1')
-    let frame = 0
-    const update = () => {
-      frame = 0
-      const navigatorBottom = document.querySelector<HTMLElement>('.research-section-navigator')?.getBoundingClientRect().bottom || 128
-      const decisionLine = Math.min(window.innerHeight * .46, navigatorBottom + 36)
-      let next: ResearchLayer = 'layer1'
-      for (const layer of layers) {
-        const element = document.getElementById(layer.id)
-        if (element && element.getBoundingClientRect().top <= decisionLine) next = layer.key
-      }
-      if (next === passportLayerRef.current) return
-      passportLayerRef.current = next
-      setPassportLayer(next)
-    }
-    const schedule = () => {
-      if (!frame) frame = window.requestAnimationFrame(update)
-    }
-    schedule()
-    window.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('resize', schedule, { passive: true })
-    return () => {
-      if (frame) window.cancelAnimationFrame(frame)
-      window.removeEventListener('scroll', schedule)
-      window.removeEventListener('resize', schedule)
-    }
-  }, [p?.slug])
 
   if (!p && loading) return <Page className="content-research"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
   if (!p) return <Page><div className="px-6 pt-44 text-center text-soft">صفحة البحث غير موجودة.</div></Page>
@@ -185,6 +158,10 @@ export default function PaperDetail() {
     setReaderKey(card.key)
     window.requestAnimationFrame(() => document.getElementById(`research-card-${card.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
   }
+
+  const { isAdmin } = useAdminAuth()
+  const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer2')
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
 
   const toggleCard = (key: string) => {
     setExpandedCards((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -247,7 +224,6 @@ export default function PaperDetail() {
           <ResearchSectionNavigator
             active={passportLayer}
             onSelect={(layer) => {
-              passportLayerRef.current = layer
               setPassportLayer(layer)
               const target = layer === 'layer1' ? ['metadata', 'research-passport-layer1'] : layer === 'layer2' ? ['science', 'research-passport-layer2'] : ['sources', 'research-passport-layer3']
               revealSection(target[0] as ResearchSection, target[1])
@@ -255,9 +231,10 @@ export default function PaperDetail() {
           />
 
           {/* Layer 1: Visual Identity & Passport Stamp */}
-          <div className="mt-7 grid gap-6">
+          <div ref={evidenceThreadRef} className="research-evidence-thread-wrap mt-7 grid gap-6"><motion.span aria-hidden className="research-evidence-thread-line" style={{ scaleY: reduceMotion ? 1 : evidenceThreadDraw }} />
             <FadeUp delay={0.09}>
               <div id="research-passport-layer1" className={`scroll-mt-28 rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer1' ? 'ring-2 ring-accent/40' : ''}`}>
+                <EvidenceLevelNode />
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                   <div>
                     <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 1</span>
@@ -282,6 +259,7 @@ export default function PaperDetail() {
             {dataCards.length > 0 && (
               <FadeUp delay={0.11}>
                 <div id="research-passport-layer2" className={`scroll-mt-28 rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer2' ? 'ring-2 ring-accent/40' : ''}`}>
+                <EvidenceLevelNode />
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                     <div>
                       <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 2</span>
@@ -330,6 +308,7 @@ export default function PaperDetail() {
             {/* Layer 3: Interactive Field Evidence & Citations Ledger */}
             <FadeUp delay={0.13}>
               <div id="research-passport-layer3" className={`scroll-mt-28 rounded-[28px] border border-hair bg-paper p-6 transition ${passportLayer === 'layer3' ? 'ring-2 ring-accent/40' : ''}`}>
+                <EvidenceLevelNode />
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                   <div>
                     <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 3</span>

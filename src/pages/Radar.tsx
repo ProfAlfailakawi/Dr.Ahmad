@@ -203,7 +203,7 @@ export default function Radar() {
               </FadeUp>
 
               <FadeUp delay={0.05}>
-                <div className="mb-10 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="edge-fade mb-10 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <div className="flex min-w-max items-center gap-1.5" role="tablist" aria-label="تصفية أرشيف الرادار حسب السنة">
                     <button
                       type="button"

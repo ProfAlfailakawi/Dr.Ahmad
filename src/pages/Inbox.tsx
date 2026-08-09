@@ -316,7 +316,7 @@ export default function Inbox() {
     ),
   );
   const updateLabel = lastUpdated
-    ? new Date(lastUpdated).toLocaleDateString("ar-KW-u-nu-latn", {
+    ? new Date(lastUpdated).toLocaleDateString("ar-KW-u-nu-arab", {
         day: "numeric",
         month: "long",
         year: "numeric",
@@ -340,7 +340,7 @@ export default function Inbox() {
       </div>
 
       <nav className="border-b border-hair px-6 md:px-11" aria-label="أقسام رسائل على الهامش">
-        <div className="mx-auto max-w-shell overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="edge-fade mx-auto max-w-shell overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex min-w-max items-center gap-1 py-4" role="tablist" aria-label="اختر القسم">
             {inboxTabs.map((tab) => (
               <button

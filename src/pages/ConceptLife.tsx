@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
@@ -6,9 +6,6 @@ import { useCmsContent } from '../lib/content'
 import { loadBookPassages, matchBookQuotes, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
 import { chapterUrl, searchMediaChapters, stamp } from '../lib/media-chapters'
 import { QuoteCite } from '../components/QuoteCite'
-import { loadArticleBodies } from '../lib/article-bodies'
-import { ideaEvolution } from '../lib/idea-evolution'
-import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, POINT_AFTER_PREPOSITION_FORMS, YEAR_FORMS } from '../lib/arabic-count.ts'
 
 /**
  * سيرة مفهوم — «المعلّم الرقمي عبر عشرين سنة».
@@ -80,8 +77,6 @@ export default function ConceptLife() {
   const { articles, papers, books, media } = useCmsContent()
   const [deepReady, setDeepReady] = useState(false)
   const [activeKind, setActiveKind] = useState<Station['kind'] | null>(null)
-  const timelineRef = useRef<HTMLOListElement>(null)
-  const [bloomPhase, setBloomPhase] = useState<'idle' | 'ready' | 'run'>('idle')
 
   useSeo({
     title: term ? `سيرة مفهوم: ${term}` : 'سيرة مفهوم',
@@ -95,16 +90,6 @@ export default function ConceptLife() {
     void loadBookPassages().then(() => { if (on) setDeepReady(true) })
     return () => { on = false }
   }, [deepReady, term])
-
-  /* متون المقالات تلزم لقياس النبرة واختيار الجملة الدالّة — لا للعرض.
-     تُجلب بعد أول رسم فلا تؤخّر ظهور المحطات. */
-  const [bodies, setBodies] = useState<Record<string, string> | null>(null)
-  useEffect(() => {
-    if (!term || bodies) return
-    let on = true
-    void loadArticleBodies().then((map) => { if (on) setBodies(map as Record<string, string>) })
-    return () => { on = false }
-  }, [bodies, term])
 
   const stations = useMemo<Station[]>(() => {
     if (term.length < 2) return []
@@ -182,39 +167,12 @@ export default function ConceptLife() {
     })
   }, [articles, books, deepReady, media, papers, term])
 
-  /* «ما تغيّر رأيه فيه»: مقياسٌ لا تفسير — انظر src/lib/idea-evolution.ts */
-  const evolution = useMemo(() => {
-    if (!bodies || term.length < 2) return null
-    const seed = [...roots(term)]
-    const matched = articles
-      .filter((article) => overlap(roots(term), roots(`${article.title} ${article.excerpt || ''} ${article.cat || ''}`)) >= 1)
-      .map((article) => ({ ...article, body: bodies[article.slug] || '' }))
-    return ideaEvolution(matched, seed)
-  }, [articles, bodies, term])
-
   const span = useMemo(() => {
     const years = stations.map((item) => Number(item.year)).filter((year) => year > 1900)
     return years.length >= 2 ? { from: Math.min(...years), to: Math.max(...years) } : null
   }, [stations])
 
   const visibleStations = useMemo(() => activeKind ? stations.filter((item) => item.kind === activeKind) : stations, [activeKind, stations])
-
-  useEffect(() => {
-    setBloomPhase('idle')
-    const element = timelineRef.current
-    if (!element || !visibleStations.length) return
-    let observer: IntersectionObserver | null = null
-    const frame = window.requestAnimationFrame(() => {
-      setBloomPhase('ready')
-      observer = new IntersectionObserver(([entry]) => {
-        if (!entry.isIntersecting) return
-        setBloomPhase('run')
-        observer?.disconnect()
-      }, { threshold: .12, rootMargin: '0px 0px -8% 0px' })
-      observer.observe(element)
-    })
-    return () => { window.cancelAnimationFrame(frame); observer?.disconnect() }
-  }, [term, visibleStations.length])
 
   useEffect(() => { setActiveKind(null) }, [term])
 
@@ -248,44 +206,7 @@ export default function ConceptLife() {
             </FadeUp>
           )}
 
-          {evolution && (
-            <FadeUp>
-              <section className="mt-8 rounded-2xl border border-hair bg-wash px-5 py-6 md:px-7" aria-labelledby="evolution-title">
-                <div className="flex flex-wrap items-baseline justify-between gap-3">
-                  <h2 id="evolution-title" className="font-display text-[1.15rem] font-semibold text-ink">
-                    {evolution.meaningful ? 'كيف تحوّلت نبرته' : 'كيف امتدّ الموقف'}
-                  </h2>
-                  <span className="text-[.7rem] text-soft">{arabicCountPhrase(evolution.years, YEAR_FORMS)} بين الطرفين</span>
-                </div>
 
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  {[evolution.early, evolution.late].map((side, index) => (
-                    <figure key={side.slug || index} className="rounded-xl border border-hair bg-canvas px-4 py-4">
-                      <figcaption className="flex items-baseline justify-between gap-2">
-                        <span className="font-display text-[1.05rem] font-semibold text-accent tabular-nums">{side.year}</span>
-                        <span className="text-[.7rem] text-soft">{arabicCountPhrase(side.articles, ARTICLE_PLAIN_FORMS)} · تحفّظ {side.caution}٪</span>
-                      </figcaption>
-                      <blockquote className="mt-2 border-r-2 border-accent/30 pr-3 text-[.86rem] font-light leading-[1.9] text-ink/[.85]">
-                        {side.line}
-                      </blockquote>
-                      {side.slug && (
-                        <Link to={`/articles/${side.slug}`} className="mt-2 inline-block pr-3 text-[.66rem] text-soft transition-colors hover:text-accent">
-                          {side.title} ←
-                        </Link>
-                      )}
-                    </figure>
-                  ))}
-                </div>
-
-                <p className="mt-4 border-t border-hair pt-3 text-[.72rem] leading-relaxed text-soft">
-                  {evolution.meaningful
-                    ? `نبرة التحفّظ في كتابته عن «${term}» ${evolution.shift > 0 ? 'ارتفعت' : 'انخفضت'} بمقدار ${arabicCountPhrase(Math.abs(evolution.shift), POINT_AFTER_PREPOSITION_FORMS)} بين الطرفين.`
-                    : `النبرة ثابتة تقريباً (بفارق ${arabicCountPhrase(Math.abs(evolution.shift), POINT_AFTER_PREPOSITION_FORMS)}) — الفكرة امتدّت ولم تنقلب.`}
-                  {' '}المقياس آليّ من مفردات الوعد والتحفّظ، لا حكم تحريري.
-                </p>
-              </section>
-            </FadeUp>
-          )}
 
           {stations.length === 0 && (
             <FadeUp>
@@ -296,19 +217,12 @@ export default function ConceptLife() {
             </FadeUp>
           )}
 
-          <ol
-            ref={timelineRef}
-            className={`concept-bloom mt-8 grid gap-0 concept-bloom--${bloomPhase}`}
-            style={{ '--concept-duration': `${Math.min(6000, Math.max(1200, Math.min(8, visibleStations.length) * 650 + 650))}ms` } as CSSProperties}
-          >
+          <ol className="mt-8 grid gap-0">
             {visibleStations.map((station, index) => (
-                <li
-                  key={station.key}
-                  className="concept-bloom__station relative grid gap-2 pe-6 pb-8 sm:grid-cols-[6.5rem_minmax(0,1fr)] sm:gap-5"
-                  style={{ '--concept-delay': `${index < 8 ? index * 650 : 5200}ms` } as CSSProperties}
-                >
+              <FadeUp key={station.key} delay={Math.min(index * 0.03, 0.3)}>
+                <li className="relative grid gap-2 border-r border-hair pr-6 pb-8 sm:grid-cols-[6.5rem_minmax(0,1fr)] sm:gap-5">
                   {/* نقطة المحطة على خيط الزمن */}
-                  <span aria-hidden="true" className="concept-bloom__node absolute top-1.5 block h-2.5 w-2.5 rounded-full bg-accent" />
+                  <span aria-hidden="true" className="absolute right-0 top-1.5 -mr-[5px] block h-2.5 w-2.5 rounded-full bg-accent" />
                   <div className="pt-0.5">
                     <span className="block font-display text-[1.05rem] font-semibold text-accent tabular-nums">{station.year || '—'}</span>
                     <span className="mt-0.5 block text-[.66rem] text-soft">{station.kind}</span>
@@ -336,6 +250,7 @@ export default function ConceptLife() {
                     )}
                   </div>
                 </li>
+              </FadeUp>
             ))}
           </ol>
 

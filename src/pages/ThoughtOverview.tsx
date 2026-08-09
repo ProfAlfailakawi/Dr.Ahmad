@@ -1,13 +1,13 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
+import { ThoughtSystemNav } from '../components/ThoughtSystemNav'
 import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { ideaWords } from '../lib/idea-life'
 import { PROJECT_START_YEAR, getMinimumCompletedJourneyYears } from '../lib/project-meta'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { arabicCountPhrase, DIFFERENT_YEAR_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS } from '../lib/arabic-count.ts'
-import { ReaderResonanceSky } from '../components/ReaderResonanceSky'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -95,6 +95,7 @@ export default function ThoughtOverview() {
         title="فكر د. أحمد في لقطة واحدة."
         sub={`لوحة تتولّد من الأرشيف المنشور نفسه: ما الذي تكرّر، وما الذي اتسع، وكيف اتصل المقال بالبحث والكتاب منذ بداية الرحلة العلمية عام 2015 حتى ${model.latestYear}.`}
       />
+      <ThoughtSystemNav />
 
       <section className="px-6 py-14 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
@@ -176,6 +177,7 @@ export default function ThoughtOverview() {
                   </div>
                 ))}
               </div>
+              <Link to="/decade" className="mt-6 inline-flex min-h-11 items-center text-[.78rem] font-semibold text-accent transition-colors hover:text-accent-deep">استكشف الرحلة الزمنية كاملة ←</Link>
             </section>
           </FadeUp>
 
@@ -193,10 +195,21 @@ export default function ThoughtOverview() {
                   {model.strongest.book ? <Link to={`/publications/${model.strongest.book.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent"><span className="text-[.7rem] font-semibold text-accent">كتاب</span><strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{model.strongest.book.title}</strong></Link> : <div className="rounded-2xl border border-dashed border-hair p-5 text-[.78rem] text-soft">لا صلة كتابية قوية بما يكفي للعرض.</div>}
                 </div>
                 <p className="mt-5 text-[.72rem] font-light leading-relaxed text-soft">هنا تتجاور المواد التي تدور حول فكرةٍ واحدة، لتكشف امتدادها بين المقال والبحث والكتاب.</p>
+                <Link to="/thought-paths" className="mt-4 inline-flex min-h-11 items-center text-[.78rem] font-semibold text-accent transition-colors hover:text-accent-deep">استكشف مسارات الفكرة ←</Link>
               </section>
             </FadeUp>
           )}
-          <ReaderResonanceSky articles={articles} />
+
+          <FadeUp delay={0.12}>
+            <nav className="mt-6 grid overflow-hidden rounded-[1.4rem] border border-hair bg-paper sm:grid-cols-2" aria-label="استكشاف أعمق للخريطة الفكرية">
+              <Link to="/atlas" className="group flex min-h-16 items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-wash sm:border-l sm:border-hair">
+                <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">افتح سماء المقالات</strong><span className="mt-1 block text-[.7rem] text-soft">استكشاف بصري تفاعلي للأرشيف</span></span><span aria-hidden className="text-accent">←</span>
+              </Link>
+              <Link to="/impact" className="group flex min-h-16 items-center justify-between gap-4 border-t border-hair px-5 py-4 transition-colors hover:bg-wash sm:border-t-0">
+                <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">استكشف سجل الأثر</strong><span className="mt-1 block text-[.7rem] text-soft">الدليل الخارجي الموثّق</span></span><span aria-hidden className="text-accent">←</span>
+              </Link>
+            </nav>
+          </FadeUp>
         </div>
       </section>
     </Page>

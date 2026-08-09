@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
@@ -7,10 +7,6 @@ import { useCmsContent } from '../lib/content'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from '../lib/arabic-count.ts'
-import { readArticleJourney, SPACE_EVENT, type StoredArticle } from '../lib/reading-space'
-import { useAtlasSettings, visibleConstellations } from '../lib/atlas-settings'
-import { currentSeason } from '../lib/seasons'
-import rawArticleCaution from '../data/article-caution.json' with { type: 'json' }
 
 const W = 1160
 const PAD_R = 150
@@ -28,7 +24,6 @@ const MOBILE_TOP = 38
 
 const arDigits = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
-const ARTICLE_CAUTION = (rawArticleCaution as { scores?: Record<string, number> }).scores || {}
 
 const ATLAS_STOP = new Set(['هذا','هذه','ذلك','الذي','التي','على','الى','من','في','عن','مع','بين','بعد','قبل','كان','كانت','يكون','تكون','كيف','لكن','لان','وقد','وهو','وهي','كل','غير','عند','حتى','حول','ماذا','لماذا'])
 const foldAtlas = (text = '') => text
@@ -38,9 +33,13 @@ const foldAtlas = (text = '') => text
 const ideaTokens = (text = '') => new Set(foldAtlas(text)
   .replace(/[^\p{L}\p{N} ]/gu, ' ')
   .split(/\s+/).filter((word) => word.length > 3 && !ATLAS_STOP.has(word)))
-type AtlasRelation = 'امتداد' | 'تضاد' | 'سياق'
-type AtlasLink = { from: number; to: number; kind: 'evolution' | 'affinity'; score: number; relation: AtlasRelation; reason?: string }
-type IndexedNeighbor = { kind?: string; slug?: string; score?: number; relation?: AtlasRelation; reason?: string }
+const ideaOverlap = (left: Set<string>, right: Set<string>) => {
+  if (!left.size || !right.size) return 0
+  let shared = 0
+  for (const token of left) if (right.has(token)) shared += 1
+  return shared / Math.sqrt(left.size * right.size)
+}
+type AtlasLink = { from: number; to: number; kind: 'evolution' | 'affinity'; score: number }
 type AtlasView = 'timeline' | 'graph'
 type AtlasScope = 'mobile' | 'desktop'
 type AtlasPoint = { i: number; x: number; y: number; r: number }
@@ -72,46 +71,6 @@ const pointerToSvg = (event: ReactPointerEvent<SVGSVGElement>, width: number, he
   }
 }
 
-type AtlasAxis = 'education' | 'pedagogy' | 'society' | 'technology' | 'identity' | 'media' | 'research'
-const AXES: { id: AtlasAxis; label: string }[] = [
-  { id: 'education', label: 'التعليم' },
-  { id: 'pedagogy', label: 'التربية' },
-  { id: 'society', label: 'المجتمع' },
-  { id: 'technology', label: 'التكنولوجيا' },
-  { id: 'identity', label: 'الهوية' },
-  { id: 'media', label: 'الإعلام' },
-  { id: 'research', label: 'البحث' },
-]
-const axisOf = (category = ''): AtlasAxis => {
-  const value = foldAtlas(category)
-  if (/بحث|علم|دراس/.test(value)) return 'research'
-  if (/اعلام|صحاف|اذاعة|راديو/.test(value)) return 'media'
-  if (/هويه|ثقاف|انتماء/.test(value)) return 'identity'
-  if (/تقني|تكنولوج|رقمي|ذكاء|الكترون/.test(value)) return 'technology'
-  if (/مجتمع|اسر|انسان/.test(value)) return 'society'
-  if (/تربي|معلم|طالب|مدرس/.test(value)) return 'pedagogy'
-  return 'education'
-}
-const axisStyle = (category: string) => ({ '--atlas-axis': `var(--atlas-${axisOf(category)})` } as CSSProperties)
-const starStyle = (category: string, caution: number | null) => ({
-  ...axisStyle(category),
-  /* لون المركز يجيب عن «إلى أي محور تنتمي؟»، أمّا الحلقة الدقيقة فتجيب عن
-     «أين تقع نبرتها بين الوعد والتحفّظ؟». مزجهما في fill واحد كان يمحو
-     المحاور كلّها بصرياً ويجعل الأسطورة تقول شيئاً لا ترسمه السماء. */
-  '--atlas-star-color': 'rgb(var(--atlas-axis))',
-  '--atlas-star-heat': caution === null
-    ? 'transparent'
-    : `color-mix(in srgb, rgb(var(--atlas-warm)) ${100 - caution}%, rgb(var(--c-accent-deep)) ${caution}%)`,
-} as CSSProperties)
-const articleExcerptLine = (value = '') => {
-  const compact = value.replace(/\s+/g, ' ').trim()
-  const sentence = compact.match(/^.{24,150}?[.!؟؛…](?:\s|$)/u)?.[0] || compact
-  return sentence.length > 122 ? `${sentence.slice(0, 119).trim()}…` : sentence
-}
-function readJourney() {
-  return typeof window === 'undefined' ? [] as StoredArticle[] : readArticleJourney()
-}
-
 export default function Atlas() {
   const openedAt = useMemo(() => performance.now(), [])
   useEffect(() => {
@@ -119,13 +78,6 @@ export default function Atlas() {
     return () => trackUsage('atlas_interaction', { type: 'session_duration', durationMs: Math.round(performance.now() - openedAt) })
   }, [openedAt])
   const { articles } = useCmsContent()
-  const atlasSettings = useAtlasSettings()
-  /* المحرَّرة بيده ثم المولّدة من الأرشيف — مُنتقٍ يستحقّ أن يُفتح. */
-  const constellations = useMemo(() => visibleConstellations(atlasSettings), [atlasSettings])
-  const atmosphere = useMemo(() => {
-    const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kuwait', hour: '2-digit', hour12: false }).format(new Date()))
-    return { period: hour >= 5 && hour < 11 ? 'morning' : hour >= 11 && hour < 17 ? 'day' : hour >= 17 && hour < 21 ? 'dusk' : 'night', seasonal: Boolean(currentSeason()) }
-  }, [])
   const cats = useMemo(() => dynamicArticleCategories(articles, false), [articles])
   const H = TOP + Math.max(cats.length, 1) * ROW + 46
   const mobileH = MOBILE_TOP + Math.max(cats.length, 1) * MOBILE_ROW + 48
@@ -153,55 +105,6 @@ export default function Atlas() {
   })
   const [lens, setLens] = useState<{ x: number; y: number; scope: AtlasScope } | null>(null)
   const [showGraphDiscovery, setShowGraphDiscovery] = useState(false)
-  const [compareMode, setCompareMode] = useState(false)
-  const [compareIndexes, setCompareIndexes] = useState<number[]>([])
-  const [activeConstellation, setActiveConstellation] = useState('')
-  const [showJourney, setShowJourney] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('journey') === '1')
-  const [journey, setJourney] = useState<StoredArticle[]>(() => readJourney())
-  const [graphNeighbors, setGraphNeighbors] = useState<Record<string, IndexedNeighbor[]> | null>(null)
-  const [readerResonance, setReaderResonance] = useState<Map<string, number>>(new Map())
-
-  /* الشبكة والتفاعل المجمع يصلان بعد أول رسم. هكذا لا تدخل خريطة العلاقات
-     ولا Firebase في مسار الرسم الحرج، ولا نبني تشابهاً تربيعياً في المتصفح. */
-  useEffect(() => {
-    let active = true
-    const timer = window.setTimeout(() => {
-      void import('../data/article-graph-neighbors.json').then((module) => {
-        if (!active) return
-        const raw = (module.default || module) as { neighbors?: Record<string, IndexedNeighbor[]> }
-        setGraphNeighbors(raw.neighbors || {})
-      })
-      void (async () => {
-        try {
-          const [{ getDb }, firestore] = await Promise.all([import('../lib/firebase'), import('firebase/firestore')])
-          const db = await getDb()
-          if (!db || !active) return
-          const snapshot = await firestore.getDocs(firestore.collection(db, 'article_highlights'))
-          const totals = new Map<string, number>()
-          snapshot.forEach((row) => {
-            const data = row.data() as { slug?: unknown; count?: unknown }
-            const slug = typeof data.slug === 'string' ? data.slug : ''
-            const count = Math.max(0, Number(data.count) || 0)
-            if (slug && count >= 3) totals.set(slug, (totals.get(slug) || 0) + count)
-          })
-          if (active) setReaderResonance(totals)
-        } catch { /* الصدى تحسين؛ السماء تبقى كاملة عند تعذّره. */ }
-      })()
-    }, 900)
-    return () => { active = false; window.clearTimeout(timer) }
-  }, [])
-
-  useEffect(() => {
-    const sync = () => setJourney(readJourney())
-    window.addEventListener(SPACE_EVENT, sync)
-    window.addEventListener('reader:journey-changed', sync)
-    window.addEventListener('storage', sync)
-    return () => {
-      window.removeEventListener(SPACE_EVENT, sync)
-      window.removeEventListener('reader:journey-changed', sync)
-      window.removeEventListener('storage', sync)
-    }
-  }, [])
 
   useEffect(() => {
     if (view === 'graph') return
@@ -260,13 +163,10 @@ export default function Atlas() {
       /* العين تقرأ المساحة لا نصف القطر. المدى القديم (3٫4 ← 12) كان يجعل
          أطول مقال أكبر 12 ضعفاً مساحةً وهو أطول مرّتين فقط، فتبتلع نجمةٌ
          واحدة السماء. المدى هنا يجعل الأكبر ضِعف الأصغر مساحةً — كما هو حقاً. */
-      const baseRadius = 4.5 + ((w - wMin) / (wMax - wMin || 1)) * 2.5
-      const resonance = readerResonance.get(a.slug) || 0
-      const r = baseRadius * (1 + Math.min(.12, Math.log2(resonance + 1) * .018))
-      const caution = Number.isFinite(ARTICLE_CAUTION[a.slug]) ? ARTICLE_CAUTION[a.slug] : null
-      return { ...a, x, y, r, words: w, i, t, row, jitter, caution, resonance }
+      const r = 4.5 + ((w - wMin) / (wMax - wMin || 1)) * 2.5
+      return { ...a, x, y, r, words: w, i, t, row, jitter }
     })
-  }, [articles, cats, readerResonance])
+  }, [articles, cats])
 
   const mobileStars = useMemo(() => stars.map((star) => ({
     ...star,
@@ -329,40 +229,39 @@ export default function Atlas() {
   const layout = view === 'graph' ? graphStars : stars
   const mobileLayout = view === 'graph' ? graphMobileStars : mobileStars
 
-  useEffect(() => {
-    const slug = new URLSearchParams(window.location.search).get('star')
-    if (!slug) return
-    const target = stars.find((star) => star.slug === slug)
-    if (target) setSelected(target.i)
-  }, [stars])
-
   const links = useMemo<AtlasLink[]>(() => {
     const output: AtlasLink[] = []
     const seen = new Set<string>()
-    const add = (from: number, to: number, kind: AtlasLink['kind'], score: number, relation: AtlasRelation, reason?: string) => {
+    const add = (from: number, to: number, kind: AtlasLink['kind'], score: number) => {
       if (from === to) return
       const pair = from < to ? `${from}:${to}` : `${to}:${from}`
       const key = `${kind}:${pair}`
       if (seen.has(key)) return
       seen.add(key)
-      output.push({ from, to, kind, score, relation, reason })
+      output.push({ from, to, kind, score })
     }
 
     for (const category of cats) {
       const thread = stars.filter((star) => star.cat === category).sort((left, right) => left.iso.localeCompare(right.iso))
-      for (let index = 1; index < thread.length; index += 1) add(thread[index - 1].i, thread[index].i, 'evolution', 1, 'امتداد', 'تعاقب زمني داخل المحور نفسه')
+      for (let index = 1; index < thread.length; index += 1) add(thread[index - 1].i, thread[index].i, 'evolution', 1)
     }
-    if (graphNeighbors) {
-      const bySlug = new Map(stars.map((star) => [star.slug, star]))
-      for (const star of stars) for (const neighbor of graphNeighbors[`article:${star.slug}`] || []) {
-        if (neighbor.kind !== 'article' || !neighbor.slug) continue
-        const target = bySlug.get(neighbor.slug)
-        if (!target || target.cat === star.cat) continue
-        add(star.i, target.i, 'affinity', Number(neighbor.score) || 0, neighbor.relation || 'سياق', neighbor.reason)
-      }
-    }
+
+    const tokens = stars.map((star) => ideaTokens(`${star.title} ${star.excerpt || ''} ${String(star.body || '').slice(0, 900)}`))
+    stars.forEach((star, index) => {
+      let bestIndex = -1
+      let bestScore = 0
+      stars.forEach((candidate, candidateIndex) => {
+        if (candidateIndex === index || candidate.cat === star.cat) return
+        const score = ideaOverlap(tokens[index], tokens[candidateIndex])
+        if (score >= 0.13 && score > bestScore) {
+          bestIndex = candidateIndex
+          bestScore = score
+        }
+      })
+      if (bestIndex >= 0) add(star.i, stars[bestIndex].i, 'affinity', bestScore)
+    })
     return output
-  }, [stars, cats, graphNeighbors])
+  }, [stars, cats])
 
   const years = useMemo(() => {
     const map = new Map<string, { desktop: number[]; mobile: number[] }>()
@@ -389,30 +288,8 @@ export default function Atlas() {
       .map((star) => star.i))
   }, [query, stars])
 
-  const constellation = useMemo(
-    () => constellations.find((item) => item.id === activeConstellation) || null,
-    [activeConstellation, constellations],
-  )
-  const constellationIndexes = useMemo(() => new Set(
-    (constellation?.slugs || []).map((slug) => stars.find((star) => star.slug === slug)?.i).filter((index): index is number => index !== undefined),
-  ), [constellation, stars])
-  const constellationPath = useMemo(() => (constellation?.slugs || [])
-    .map((slug) => layout.find((star) => star.slug === slug))
-    .filter((star): star is (typeof layout)[number] => Boolean(star)), [constellation, layout])
-  const mobileConstellationPath = useMemo(() => (constellation?.slugs || [])
-    .map((slug) => mobileLayout.find((star) => star.slug === slug))
-    .filter((star): star is (typeof mobileLayout)[number] => Boolean(star)), [constellation, mobileLayout])
-  const journeyStars = useMemo(() => journey
-    .map((item) => layout.find((star) => star.slug === item.slug))
-    .filter((star): star is (typeof layout)[number] => Boolean(star)), [journey, layout])
-  const mobileJourneyStars = useMemo(() => journey
-    .map((item) => mobileLayout.find((star) => star.slug === item.slug))
-    .filter((star): star is (typeof mobileLayout)[number] => Boolean(star)), [journey, mobileLayout])
-  const journeyIndexes = useMemo(() => new Set(journeyStars.map((star) => star.i)), [journeyStars])
-
   const dim = (star: (typeof stars)[number]) => {
     if (searchMatches && !searchMatches.has(star.i)) return 0.08
-    if (constellation && !constellationIndexes.has(star.i)) return 0.11
     return activeCat && star.cat !== activeCat ? 0.12 : 1
   }
   const activeIndex = hover ?? selected
@@ -461,12 +338,10 @@ export default function Atlas() {
   ), [links, stars.length])
   const dayStarIndex = useMemo(() => {
     if (!stars.length) return null
-    const managed = atlasSettings.dailyStarSlug && stars.find((star) => star.slug === atlasSettings.dailyStarSlug)
-    if (managed) return managed.i
     const today = new Date()
     const seed = Math.floor(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86_400_000)
     return stars[(seed * 17 + stars.length * 11) % stars.length]?.i ?? null
-  }, [atlasSettings.dailyStarSlug, stars])
+  }, [stars])
   const latestStarIndex = useMemo(() => {
     if (!stars.length) return null
     return stars.reduce((best, star) => star.iso > best.iso ? star : best, stars[0]).i
@@ -488,7 +363,7 @@ export default function Atlas() {
       if (distance <= far) return 0.72
       return view === 'graph' ? 0.48 : 0.54
     }
-    if (star.i === dayStarIndex || star.i === latestStarIndex || (showJourney && journeyIndexes.has(star.i))) return 0.9
+    if (star.i === dayStarIndex || star.i === latestStarIndex) return 0.82
     return view === 'graph' ? 0.58 : 0.64
   }
   const related = useMemo(() => activeLinks.map((link) => {
@@ -498,117 +373,30 @@ export default function Atlas() {
     .sort((left, right) => left.star.iso.localeCompare(right.star.iso)).slice(0, 6), [activeLinks, activeIndex, stars])
   const ideaSignature = useMemo(() => active ? Array.from(ideaTokens(`${active.title} ${active.excerpt || ''}`)).slice(0, 4) : [], [active])
   const tooltipWidth = 310
-  const tooltipHeight = 126
+  const tooltipHeight = 108
   const tooltipX = active ? clamp(active.x - tooltipWidth / 2, PAD_L, W - PAD_R - tooltipWidth) : 0
   const tooltipY = active ? (active.y > 125 ? active.y - tooltipHeight - 18 : active.y + 18) : 0
   const viewHint = view === 'timeline'
     ? 'المسار الزمني صار يقرأ ولادة الفكرة: سنوات خافتة، ونهرٌ يظهر قبل النجمة وبعدها عند الاختيار.'
     : 'شبكة الأفكار تعرض أقوى القرابات فقط: كوكبات ذكية لا شبكة أسلاك مزدحمة.'
-  const comparedStars = compareIndexes.map((index) => stars.find((star) => star.i === index)).filter((star): star is (typeof stars)[number] => Boolean(star))
-  const journeyTopAxis = useMemo(() => {
-    const counts = new Map<string, number>()
-    journeyStars.forEach((star) => counts.set(star.cat, (counts.get(star.cat) || 0) + 1))
-    return [...counts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] || ''
-  }, [journeyStars])
 
   const pick = (index: number, slug: string, _pointerType: string) => {
-    if (compareMode) {
-      setCompareIndexes((current) => current.includes(index)
-        ? current.filter((item) => item !== index)
-        : [...current.slice(-1), index])
-      setSelected(index)
-      setHover(null)
-      return
-    }
     /* الكمبيوتر كالهاتف الآن: الضغطة الأولى تُظهر بطاقة المقال وتُثبتها (ومنها رابط
        القراءة ومسار الفكرة)، والضغطة الثانية على النجمة نفسها تفتح المقال. */
     if (selected === index) {
-      nav(`/articles/${slug}`, { viewTransition: !reduce })
+      nav(`/articles/${slug}`)
       return
     }
     setSelected(index)
     setHover(null)
-    window.setTimeout(() => document.getElementById('atlas-selection')?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' }), 80)
-  }
-
-  const handleStarKey = (event: ReactKeyboardEvent<SVGCircleElement>, star: (typeof layout)[number], scope: AtlasScope) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      pick(star.i, star.slug, 'keyboard')
-      return
-    }
-    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return
-    event.preventDefault()
-    const points = scope === 'mobile' ? mobileLayout : layout
-    const direction = event.key
-    const candidate = points
-      .filter((item) => item.i !== star.i)
-      .map((item) => ({
-        item,
-        dx: item.x - star.x,
-        dy: item.y - star.y,
-      }))
-      .filter(({ dx, dy }) => direction === 'ArrowLeft' ? dx < -1 : direction === 'ArrowRight' ? dx > 1 : direction === 'ArrowUp' ? dy < -1 : dy > 1)
-      .sort((left, right) => Math.hypot(left.dx, left.dy) - Math.hypot(right.dx, right.dy))[0]?.item
-    if (!candidate) return
-    document.querySelector<SVGCircleElement>(`[data-atlas-scope="${scope}"][data-star-index="${candidate.i}"]`)?.focus()
-  }
-
-  const shareJourney = async () => {
-    if (!journeyStars.length) return
-    const { renderQuoteCard } = await import('../lib/quote-card')
-    const branded = await renderQuoteCard('', {
-      attribution: `بصمتي القارئة · قرأت ${journeyStars.length} من ${articles.length}`,
-      dark: true,
-    })
-    const canvas = document.createElement('canvas')
-    canvas.width = 1080
-    canvas.height = 1080
-    const context = canvas.getContext('2d')
-    if (!context) return
-    const base = new Image()
-    base.src = branded
-    await new Promise<void>((resolve) => { base.onload = () => resolve(); base.onerror = () => resolve() })
-    if (base.complete && base.naturalWidth) context.drawImage(base, 0, 0, 1080, 1080)
-    else { context.fillStyle = '#111215'; context.fillRect(0, 0, 1080, 1080) }
-    context.strokeStyle = 'rgba(132,169,202,.22)'
-    context.lineWidth = 3
-    context.beginPath()
-    journeyStars.forEach((star, index) => {
-      const x = 100 + ((star.x / W) * 880)
-      const y = 250 + ((star.y / H) * 520)
-      if (!index) context.moveTo(x, y); else context.lineTo(x, y)
-    })
-    context.stroke()
-    journeyStars.forEach((star) => {
-      const x = 100 + ((star.x / W) * 880)
-      const y = 250 + ((star.y / H) * 520)
-      context.beginPath()
-      context.fillStyle = `rgb(${getComputedStyle(document.querySelector('.atlas-night') || document.documentElement).getPropertyValue(`--atlas-${axisOf(star.cat)}`).trim() || '132 169 202'})`
-      context.arc(x, y, Math.max(8, star.r * 1.8), 0, Math.PI * 2)
-      context.fill()
-    })
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
-    if (!blob) return
-    const file = new File([blob], 'reader-constellation.png', { type: 'image/png' })
-    try {
-      if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], title: 'بصمتي القارئة' })
-      else {
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = file.name
-        link.click()
-        window.setTimeout(() => URL.revokeObjectURL(url), 30_000)
-      }
-    } catch { /* إلغاء المشاركة لا يحتاج رسالة خطأ. */ }
+    window.setTimeout(() => document.getElementById('atlas-selection')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80)
   }
 
   const categoryButtons = (
-    <div className="mb-8 flex flex-wrap gap-2 md:pb-0">
+    <div className="edge-fade mb-8 flex flex-nowrap gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden">
       <button
         onClick={() => { setActiveCat(null); setSelected(null) }}
-        className={`min-h-11 shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
+        className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
           !activeCat ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
         }`}
       >
@@ -618,7 +406,7 @@ export default function Atlas() {
         <button
           key={category}
           onClick={() => { setActiveCat(activeCat === category ? null : category); setSelected(null) }}
-          className={`min-h-11 shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
+          className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
             activeCat === category ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
           }`}
         >
@@ -648,7 +436,7 @@ export default function Atlas() {
                   onChange={(event) => { setQuery(event.target.value); setSelected(null) }}
                   placeholder="ابحث عن فكرة في السماء…"
                   aria-label="ابحث عن فكرة في خريطة المقالات"
-                  className="min-h-11 w-full rounded-full border border-hair bg-canvas px-4 py-2 text-[.82rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
+                  className="w-full rounded-full border border-hair bg-canvas px-4 py-2 text-[.82rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent"
                 />
                 {searchMatches !== null && (
                   <p className="mt-1.5 ps-4 text-[.7rem] font-light text-soft">
@@ -658,44 +446,16 @@ export default function Atlas() {
               </div>
               <p className="hidden max-w-[30rem] text-[.78rem] font-light text-soft lg:block">{viewHint}</p>
               <div className="atlas-view-switch ms-auto inline-flex rounded-full border border-hair bg-canvas p-1" role="group" aria-label="طريقة عرض خريطة الأفكار">
-                <button type="button" onClick={() => { setView('timeline'); trackUsage('atlas_interaction', { type: 'view_timeline' }) }} aria-pressed={view === 'timeline'} className={`min-h-11 rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'timeline' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>المسار الزمني</button>
-                <button type="button" onClick={chooseGraphView} aria-pressed={view === 'graph'} className={`atlas-graph-switch relative min-h-11 rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'} ${showGraphDiscovery ? 'is-discovering' : ''}`}>
+                <button type="button" onClick={() => { setView('timeline'); trackUsage('atlas_interaction', { type: 'view_timeline' }) }} aria-pressed={view === 'timeline'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'timeline' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>المسار الزمني</button>
+                <button type="button" onClick={chooseGraphView} aria-pressed={view === 'graph'} className={`atlas-graph-switch relative rounded-full px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${view === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'} ${showGraphDiscovery ? 'is-discovering' : ''}`}>
                   شبكة الأفكار
                 </button>
               </div>
             </div>
           </FadeUp>
 
-          <FadeUp delay={0.06}>
-            <div className="mb-5 flex flex-wrap items-center gap-2.5">
-              <details className="atlas-legend group relative">
-                <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
-                  {/* الصنف المولّد لهذه النقطة لم يكن يخرج من Tailwind أصلاً، فكانت
-                      شفافةً دائماً؛ اللون يُكتب هنا كما يُكتب في نقاط القائمة. */}
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'rgb(var(--atlas-education))', boxShadow: '0 0 0 3px rgb(var(--atlas-education) / .13)' }} aria-hidden="true" />
-                  ألوان المحاور
-                  <span aria-hidden className="transition-transform group-open:rotate-45">+</span>
-                </summary>
-                <div className="absolute right-0 top-[calc(100%+.45rem)] z-30 grid min-w-[12rem] gap-2 rounded-xl border border-hair bg-canvas/95 p-3 text-[.7rem] text-soft shadow-xl backdrop-blur">
-                  {AXES.map((axis) => <span key={axis.id} className="flex items-center gap-2.5"><i className="h-3 w-3 rounded-full ring-2 ring-white/10" style={{ background: `rgb(var(--atlas-${axis.id}))`, boxShadow: `0 0 8px rgb(var(--atlas-${axis.id}) / .34)` }} />{axis.label}</span>)}
-                </div>
-              </details>
-              <button type="button" onClick={() => { setCompareMode((value) => !value); setCompareIndexes([]) }} aria-pressed={compareMode} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>مقارنة نجمتين</button>
-              {journeyStars.length > 0 && <button type="button" onClick={() => setShowJourney((value) => !value)} aria-pressed={showJourney} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${showJourney ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>بصمتي · {arDigits(journeyStars.length)}</button>}
-              {constellations.length > 0 && (
-                <label className="sr-only" htmlFor="atlas-constellation">اختر كوكبة</label>
-              )}
-              {constellations.length > 0 && (
-                <select id="atlas-constellation" value={activeConstellation} onChange={(event) => setActiveConstellation(event.target.value)} className="min-h-11 max-w-full rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-semibold text-soft outline-none focus:border-accent">
-                  <option value="">كل الكوكبات</option>
-                  {constellations.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-                </select>
-              )}
-            </div>
-          </FadeUp>
-
           <FadeUp delay={0.08}>
-            <div className={`atlas-night atlas-atmosphere--${atmosphere.period}${atmosphere.seasonal ? ' is-seasonal' : ''} relative overflow-hidden rounded-2xl border border-hair lg:overflow-x-auto ${view === 'graph' ? 'is-graph' : 'is-timeline'}`} onPointerLeave={() => { setHover(null); setLens(null) }}>
+            <div className={`atlas-night relative overflow-hidden rounded-2xl border border-hair lg:overflow-x-auto ${view === 'graph' ? 'is-graph' : 'is-timeline'}`} onPointerLeave={() => { setHover(null); setLens(null) }}>
               {/* نسخة الهاتف: تتكيّف مع العرض، بلا تمرير جانبي ولا نافذة عائمة مقصوصة. */}
               <svg
                 viewBox={`0 0 ${MOBILE_W} ${mobileH}`}
@@ -712,11 +472,8 @@ export default function Atlas() {
                   const y = MOBILE_TOP + row * MOBILE_ROW + MOBILE_ROW / 2
                   const on = !activeCat || activeCat === category
                   return (
-                    <g key={category} opacity={on ? 1 : 0.25}>
+                    <g key={category} opacity={on ? 1 : 0.25} aria-hidden="true">
                       <line x1={MOBILE_PAD_L} y1={y} x2={MOBILE_W - MOBILE_PAD_R + 8} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.055} />
-                      <text x={MOBILE_W - MOBILE_PAD_R + 18} y={y + 7} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 21, fontWeight: 600 }}>
-                        {categoryLabel(category)}
-                      </text>
                     </g>
                   )
                 })}
@@ -743,13 +500,6 @@ export default function Atlas() {
                   const graphVisible = view === 'graph' && !connected
                   return <path key={`mobile-link-${link.kind}-${link.from}-${link.to}`} d={pathBetween(from, to, view)} fill="none" className={link.kind === 'evolution' ? 'stroke-accent' : 'stroke-soft'} strokeWidth={connected ? 2.2 : 1.05} strokeOpacity={hiddenByCategory ? 0.025 : connected ? 0.52 : graphVisible ? 0.18 : link.kind === 'evolution' ? 0.105 : 0.08} strokeDasharray={link.kind === 'affinity' ? '4 5' : undefined} strokeLinecap="round" />
                 })}
-
-                {mobileConstellationPath.length > 1 && mobileConstellationPath.slice(1).map((star, index) => (
-                  <motion.path key={`mobile-constellation-${star.slug}`} d={pathBetween(mobileConstellationPath[index], star, view)} fill="none" className="stroke-accent" strokeWidth={2.4} strokeOpacity={0.54} strokeLinecap="round" initial={reduce ? false : { pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.54 }} transition={{ duration: 0.48, delay: reduce ? 0 : index * 0.08, ease: EASE }} />
-                ))}
-                {showJourney && mobileJourneyStars.length > 1 && mobileJourneyStars.slice(1).map((star, index) => (
-                  <path key={`mobile-journey-${star.slug}`} d={pathBetween(mobileJourneyStars[index], star, view)} fill="none" className="stroke-accent" strokeWidth={2} strokeOpacity={0.38} strokeDasharray="2 6" strokeLinecap="round" />
-                ))}
 
                 {activeIndex !== null && timelineTrail.length > 1 && timelineTrail.slice(1).map((item, index) => {
                   const from = mobileLayout.find((star) => star.i === timelineTrail[index].star.i)
@@ -783,7 +533,7 @@ export default function Atlas() {
                              القيمة هنا هي أول مفتاح بعينه، فلا يتغيّر شيء مما يراه الزائر. */
                           initial={reduce ? false : { r: star.r + 8, opacity: 0.32 }}
                           animate={reduce ? undefined : { r: [star.r + 8, star.r + (isActive ? 14 : 12), star.r + 8], opacity: [0.32, 0.12, 0.32] }}
-                          transition={{ duration: isActive ? 2.8 : 4.2, repeat: Infinity, ease: EASE }}
+                          transition={{ duration: isActive ? 2.4 : 3.2, repeat: isActive ? 1 : 0, ease: EASE }}
                         />
                       )}
                       {star.hasAudio && <circle cx={star.x} cy={star.y} r={star.r + 4.6} className="pointer-events-none fill-none stroke-accent" strokeOpacity={presence * 0.18} strokeWidth={0.9} strokeDasharray="1 4" />}
@@ -793,24 +543,19 @@ export default function Atlas() {
                         r={star.r + 18}
                         className="cursor-pointer fill-transparent"
                         tabIndex={0}
-                        data-atlas-scope="mobile"
-                        data-star-index={star.i}
                         onPointerDown={(event) => { event.preventDefault(); pick(star.i, star.slug, event.pointerType) }}
-                        onFocus={() => setHover(star.i)}
-                        onBlur={() => setHover(null)}
-                        onKeyDown={(event) => handleStarKey(event, star, 'mobile')}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') nav(`/articles/${star.slug}`) }}
                       />
                       <motion.circle
                         cx={star.x}
                         cy={star.y}
                         r={star.r}
-                        className={`atlas-star-core pointer-events-none${compareIndexes.includes(star.i) ? ' is-compared' : ''}${showJourney && journeyIndexes.has(star.i) ? ' is-visited' : ''}`}
+                        className="atlas-star-core pointer-events-none fill-accent"
                         initial={reduce ? false : { opacity: 0, scale: 0 }}
                         animate={{ opacity: presence, scale: isActive ? 1.5 : star.i === latestStarIndex ? 1.12 : 1 }}
                         transition={{ duration: 0.35, delay: reduce ? 0 : Math.min(star.i * 0.004, 0.3), ease: EASE }}
-                        style={{ ...starStyle(star.cat, star.caution), transformOrigin: `${star.x}px ${star.y}px`, ...(isActive ? { viewTransitionName: `article-${star.slug}` } : {}) }}
+                        style={{ transformOrigin: `${star.x}px ${star.y}px` }}
                       />
-                      {constellationIndexes.has(star.i) && <text x={star.x + 12} y={star.y - 9} className="fill-soft font-sans" style={{ fontSize: 15, fontWeight: 700 }}>{constellationPath.findIndex((item) => item.i === star.i) + 1}</text>}
                     </g>
                   )
                 })}
@@ -831,12 +576,22 @@ export default function Atlas() {
                 {view === 'timeline' && cats.map((category, row) => {
                   const y = TOP + row * ROW + ROW / 2
                   const on = !activeCat || activeCat === category
+                  const label = categoryLabel(category)
                   return (
-                    <g key={category} opacity={on ? 1 : 0.25}>
+                    <g
+                      key={category}
+                      opacity={on ? 1 : 0.3}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`تصفية السماء بمحور ${label}`}
+                      aria-pressed={activeCat === category}
+                      className="cursor-pointer outline-none"
+                      onClick={() => { setActiveCat(activeCat === category ? null : category); setSelected(null) }}
+                      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveCat(activeCat === category ? null : category); setSelected(null) } }}
+                    >
                       <line x1={PAD_L} y1={y} x2={W - PAD_R + 10} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.05} />
-                      <text x={W - PAD_R + 26} y={y + 5} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 13.5, fontWeight: 500 }}>
-                        {categoryLabel(category)}
-                      </text>
+                      <rect x={W - PAD_R + 16} y={y - 17} width={PAD_R - 24} height={34} rx={17} className={activeCat === category ? 'fill-accent/10 stroke-accent' : 'fill-transparent stroke-transparent'} />
+                      <text x={W - PAD_R + 28} y={y + 4} textAnchor="start" className={activeCat === category ? 'fill-accent font-sans' : 'fill-soft font-sans'} style={{ fontSize: 11.5, fontWeight: activeCat === category ? 700 : 500 }}>{label}</text>
                     </g>
                   )
                 })}
@@ -845,22 +600,27 @@ export default function Atlas() {
                   <circle key={`desktop-orbit-${radius}`} cx={graphGeometry.cx} cy={graphGeometry.cy} r={radius} className="fill-none stroke-accent" strokeOpacity={index === 2 ? 0.075 : 0.045} strokeWidth={1} />
                 ))}
 
+                {view === 'graph' && cats.map((category, row) => {
+                  const sector = (2 * Math.PI) / Math.max(cats.length, 1)
+                  const angle = row * sector + sector * 0.5 - Math.PI / 2
+                  const radius = graphGeometry.maxR * 1.04
+                  const x = graphGeometry.cx + Math.cos(angle) * radius
+                  const y = graphGeometry.cy + Math.sin(angle) * radius
+                  const label = categoryLabel(category)
+                  const activeCategory = activeCat === category
+                  return (
+                    <g key={`desktop-graph-label-${category}`} role="button" tabIndex={0} aria-label={`تصفية السماء بمحور ${label}`} aria-pressed={activeCategory} className="cursor-pointer outline-none" opacity={!activeCat || activeCategory ? 1 : 0.34} onClick={() => { setActiveCat(activeCategory ? null : category); setSelected(null) }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveCat(activeCategory ? null : category); setSelected(null) } }}>
+                      <circle cx={x} cy={y} r={activeCategory ? 5 : 3.5} className="fill-accent" opacity={activeCategory ? .9 : .48} />
+                      <text x={x} y={y + (y < graphGeometry.cy ? -10 : 17)} textAnchor="middle" className={activeCategory ? 'fill-accent font-sans' : 'fill-soft font-sans'} style={{ fontSize: 10.5, fontWeight: activeCategory ? 700 : 500 }}>{label}</text>
+                    </g>
+                  )
+                })}
+
                 {view === 'timeline' && years.map((item) => (
                   <text key={item.year} x={item.x} y={H - 16} textAnchor="middle" className="fill-soft font-sans" style={{ fontSize: 12 }}>
                     {arDigits(item.year)}
                   </text>
                 ))}
-
-                {view === 'graph' && cats.map((category, row) => {
-                  const example = graphStars.find((star) => star.cat === category)
-                  if (!example) return null
-                  const on = !activeCat || activeCat === category
-                  return (
-                    <text key={`glabel-${category}`} x={example.x} y={example.y - 22} textAnchor="middle" opacity={on ? 0.9 : 0.25} className="fill-soft font-sans" style={{ fontSize: 13, fontWeight: 600 }}>
-                      {categoryLabel(category)}
-                    </text>
-                  )
-                })}
 
                 {links.map((link) => {
                   const from = layout.find((star) => star.i === link.from)
@@ -874,13 +634,6 @@ export default function Atlas() {
                   const graphVisible = view === 'graph' && !connected
                   return <path key={`desktop-link-${link.kind}-${link.from}-${link.to}`} d={pathBetween(from, to, view)} fill="none" className={link.kind === 'evolution' ? 'stroke-accent' : 'stroke-soft'} strokeWidth={connected ? 1.9 : .82} strokeOpacity={hiddenByCategory ? 0.022 : connected ? 0.44 : graphVisible ? 0.16 : link.kind === 'evolution' ? 0.092 : 0.064} strokeDasharray={link.kind === 'affinity' ? '3 5' : undefined} strokeLinecap="round" />
                 })}
-
-                {constellationPath.length > 1 && constellationPath.slice(1).map((star, index) => (
-                  <motion.path key={`desktop-constellation-${star.slug}`} d={pathBetween(constellationPath[index], star, view)} fill="none" className="stroke-accent" strokeWidth={2} strokeOpacity={0.5} strokeLinecap="round" initial={reduce ? false : { pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.5 }} transition={{ duration: 0.5, delay: reduce ? 0 : index * 0.08, ease: EASE }} />
-                ))}
-                {showJourney && journeyStars.length > 1 && journeyStars.slice(1).map((star, index) => (
-                  <path key={`desktop-journey-${star.slug}`} d={pathBetween(journeyStars[index], star, view)} fill="none" className="stroke-accent" strokeWidth={1.7} strokeOpacity={0.36} strokeDasharray="2 6" strokeLinecap="round" />
-                ))}
 
                 {activeIndex !== null && timelineTrail.length > 1 && timelineTrail.slice(1).map((item, index) => {
                   const from = layout.find((star) => star.i === timelineTrail[index].star.i)
@@ -911,7 +664,7 @@ export default function Atlas() {
                           /* القيمة الابتدائية لازمة هنا كما في نسخة الجوال أعلاه. */
                           initial={reduce ? false : { r: star.r + 7, opacity: 0.3 }}
                           animate={reduce ? undefined : { r: [star.r + 7, star.r + (isActive ? 13 : 11), star.r + 7], opacity: [0.3, 0.1, 0.3] }}
-                          transition={{ duration: isActive ? 2.8 : 4.4, repeat: Infinity, ease: EASE }}
+                          transition={{ duration: isActive ? 2.4 : 3.2, repeat: isActive ? 1 : 0, ease: EASE }}
                         />
                       )}
                       {star.hasAudio && <circle cx={star.x} cy={star.y} r={star.r + 4.2} className="pointer-events-none fill-none stroke-accent" strokeOpacity={presence * 0.18} strokeWidth={0.75} strokeDasharray="1 4" />}
@@ -921,25 +674,22 @@ export default function Atlas() {
                         r={star.r + 11}
                         className="cursor-pointer fill-transparent"
                         tabIndex={0}
-                        data-atlas-scope="desktop"
-                        data-star-index={star.i}
                         onPointerEnter={(event) => { if (event.pointerType === 'mouse') setHover(star.i) }}
                         onFocus={() => setHover(star.i)}
                         onBlur={() => setHover(null)}
                         onPointerDown={(event) => { event.preventDefault(); pick(star.i, star.slug, event.pointerType) }}
-                        onKeyDown={(event) => handleStarKey(event, star, 'desktop')}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') nav(`/articles/${star.slug}`) }}
                       />
                       <motion.circle
                         cx={star.x}
                         cy={star.y}
                         r={star.r}
-                        className={`atlas-star-core pointer-events-none${compareIndexes.includes(star.i) ? ' is-compared' : ''}${showJourney && journeyIndexes.has(star.i) ? ' is-visited' : ''}`}
+                        className="atlas-star-core pointer-events-none fill-accent"
                         initial={reduce ? false : { opacity: 0, scale: 0 }}
                         animate={{ opacity: presence, scale: isActive ? 1.65 : star.i === latestStarIndex ? 1.12 : 1 }}
                         transition={{ duration: 0.45, delay: reduce ? 0 : Math.min(star.i * 0.006, 0.4), ease: EASE }}
-                        style={{ ...starStyle(star.cat, star.caution), transformOrigin: `${star.x}px ${star.y}px`, ...(isActive ? { viewTransitionName: `article-${star.slug}` } : {}) }}
+                        style={{ transformOrigin: `${star.x}px ${star.y}px` }}
                       />
-                      {constellationIndexes.has(star.i) && <text x={star.x + 9} y={star.y - 7} className="fill-soft font-sans" style={{ fontSize: 10.5, fontWeight: 700 }}>{constellationPath.findIndex((item) => item.i === star.i) + 1}</text>}
                     </g>
                   )
                 })}
@@ -949,10 +699,9 @@ export default function Atlas() {
                     <circle cx={active.x} cy={active.y} r={active.r + 10} className="fill-none stroke-accent" strokeOpacity={0.42} strokeWidth={1.4} />
                     <foreignObject className="atlas-tooltip-foreign" x={tooltipX} y={tooltipY} width={tooltipWidth} height={tooltipHeight}>
                       <div className="atlas-tooltip h-full rounded-xl border border-accent/[.35] bg-canvas/95 px-4 py-3 text-right shadow-xl backdrop-blur" dir="rtl">
-                        <p className="truncate text-[11px] font-semibold" style={{ ...axisStyle(active.cat), color: 'rgb(var(--atlas-axis))' }}>{categoryLabel(active.cat)} · {arDigits(active.iso.slice(0, 4))}</p>
-                        <p className="mt-1 truncate font-display text-[13px] font-semibold leading-[1.5] text-ink">{active.title}</p>
-                        <p className="mt-1 line-clamp-1 text-[11px] font-light leading-[1.65] text-soft">{articleExcerptLine(active.excerpt || active.body || '')}</p>
-                        <p className="mt-1 text-[9.5px] font-medium text-soft/80">اضغط لتثبيت المسار · اضغط مرة ثانية للقراءة</p>
+                        <p className="truncate text-[11px] font-semibold text-accent">{categoryLabel(active.cat)} · {active.date}</p>
+                        <p className="mt-1 line-clamp-2 font-display text-[14px] font-semibold leading-[1.55] text-ink">{active.title}</p>
+                        <p className="mt-1 text-[10px] font-medium text-soft">اضغط لتثبيت المسار · اضغط مرة ثانية للقراءة</p>
                       </div>
                     </foreignObject>
                   </g>
@@ -960,55 +709,6 @@ export default function Atlas() {
               </svg>
             </div>
           </FadeUp>
-
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-hair pt-3 text-[.66rem] text-soft">
-            <div className="flex items-center gap-2" aria-label="مفتاح حرارة نبرة النجوم">
-              <span>وعد</span>
-              <span className="atlas-heat-key" aria-hidden="true" />
-              <span>تحفّظ</span>
-            </div>
-            <p>المقياس آليّ من مفردات الوعد والتحفّظ، لا حكم تحريري.</p>
-          </div>
-
-          {compareMode && (
-            <section className="mt-4 rounded-xl border border-hair bg-wash/[.42] p-4" aria-live="polite">
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-[.72rem] font-semibold text-accent">كيف تتحاور الفكرتان؟</p>
-                <span className="text-[.68rem] text-soft">{comparedStars.length}/2</span>
-              </div>
-              {comparedStars.length < 2 ? (
-                <p className="mt-2 text-[.76rem] font-light text-soft">اختر نجمتين من السماء.</p>
-              ) : (
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  {comparedStars.map((star) => (
-                    <Link key={star.slug} to={`/articles/${star.slug}`} className="group rounded-xl border border-hair bg-canvas p-4 transition-colors hover:border-accent">
-                      <span className="text-[.66rem] font-semibold" style={{ ...axisStyle(star.cat), color: 'rgb(var(--atlas-axis))' }}>{categoryLabel(star.cat)} · {arDigits(star.iso.slice(0, 4))}</span>
-                      <strong className="mt-1.5 block font-display text-[.92rem] leading-[1.65] text-ink transition-colors group-hover:text-accent">{star.title}</strong>
-                      <span className="mt-2 line-clamp-2 block text-[.72rem] font-light leading-[1.75] text-soft">{articleExcerptLine(star.excerpt || star.body || '')}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          {showJourney && journeyStars.length > 0 && (
-            <section className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-accent/[.22] bg-canvas p-4">
-              <div>
-                <p className="text-[.72rem] font-semibold text-accent">قرأتَ {arDigits(journeyStars.length)} من {arDigits(articles.length)} · محورك الغالب: {categoryLabel(journeyTopAxis)}</p>
-                <p className="mt-1 text-[.68rem] font-light text-soft">أول نجمة: {journeyStars[0]?.title} · آخر نجمة: {journeyStars[journeyStars.length - 1]?.title}</p>
-              </div>
-              <button type="button" onClick={() => void shareJourney()} className="min-h-11 rounded-full border border-hair px-4 text-[.72rem] font-semibold text-accent transition-colors hover:border-accent">شارك بصمتي</button>
-            </section>
-          )}
-
-          {constellation && constellationPath.length > 1 && (
-            <ol className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label={`ترتيب قراءة ${constellation.title}`}>
-              {constellationPath.map((star, index) => (
-                <li key={star.slug} className="contents"><Link to={`/articles/${star.slug}`} className="min-w-[12rem] rounded-xl border border-hair bg-canvas p-3 text-[.72rem] text-soft transition-colors hover:border-accent hover:text-accent"><span className="font-bold text-accent">{index + 1}</span><span className="mx-2">←</span>{star.title}</Link></li>
-              ))}
-            </ol>
-          )}
 
           <div id="atlas-selection" className="mt-4 min-h-[94px] scroll-mt-24">
             {active ? (
@@ -1023,7 +723,6 @@ export default function Atlas() {
                   {active.title}
                   <span className="mt-3 block text-[.78rem] font-sans font-semibold text-accent">فتح المقال ←</span>
                 </Link>
-                {active.excerpt && <p className="mt-2 line-clamp-2 text-[.76rem] font-light leading-[1.8] text-soft">{active.excerpt}</p>}
                 {(ideaSignature.length > 0 || timelineTrail.length > 0 || related.length > 0) && (
                   <div className="mt-4 grid gap-4 border-t border-hair pt-4 md:grid-cols-[1fr_1.1fr]">
                     <div>
@@ -1058,10 +757,8 @@ export default function Atlas() {
                           const shared = [...activeTokens].filter((token) => otherTokens.has(token)).slice(0, 2)
                           return (
                             <Link key={`idea-${item.kind}-${item.star.slug}`} to={`/articles/${item.star.slug}`} className="rounded-full border border-hair px-3 py-1.5 text-[.7rem] text-soft transition-colors hover:border-accent hover:text-accent">
-                              {item.relation} · {arDigits(item.star.iso.slice(0, 4))} · {item.star.title}
-                              {item.reason
-                                ? <span className="text-accent/80"> · {item.reason}</span>
-                                : item.kind === 'affinity' && shared.length > 0 && <span className="text-accent/80"> · يجمعهما: {shared.join('، ')}</span>}
+                              {item.kind === 'evolution' ? 'تطور' : 'صلة'} · {arDigits(item.star.iso.slice(0, 4))} · {item.star.title}
+                              {item.kind === 'affinity' && shared.length > 0 && <span className="text-accent/80"> · يجمعهما: {shared.join('، ')}</span>}
                             </Link>
                           )
                         })}

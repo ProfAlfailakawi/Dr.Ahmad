@@ -1,14 +1,14 @@
 import { Link, useParams } from 'react-router'
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { ComposeScene } from '../components/ComposeScene'
 import { getArticleNeighbors, type ArticleRecord, type BookRecord, type MediaRecord, type PaperRecord } from '../lib/cms'
 import { SITE_URL } from '../data'
 import { NextStep } from '../components/NextStep'
-import { ArticleSignal, articleSignalsOf } from '../components/ArticlePivot'
+import { ArticleSignal, articleSignalOf } from '../components/ArticlePivot'
 import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
-import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, articleGlossaryPlan, useReaderPreferences, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
+import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, useReaderPreferences, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
 import { openAudioPlayer } from '../components/AudioPlayer'
 import { markArticleRead } from '../components/ReaderResonance'
@@ -23,10 +23,10 @@ import { rememberIdeaVisit } from '../lib/idea-memory'
 import { recordArticleVisit } from '../lib/reading-space'
 import { SaveForLaterButton } from '../components/MySpace'
 import IdeaLife from '../components/IdeaLife'
-import { SocialIcon } from '../components/icons'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
 import { arabicCountPhrase, SHARE_FORMS, VIEW_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
+import { Pagination, usePagedList } from '../components/Pagination'
 
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
@@ -52,7 +52,7 @@ function ClosingSignature() {
   return (
     <div ref={ref} className={`closing-signature mt-14 text-center ${visible ? 'is-visible' : ''}`} aria-hidden="true">
       <span className="closing-signature__rule mx-auto block h-px w-14 bg-accent/50" />
-      <img src="/logo.png" alt="" width={72} height={44} className="closing-signature__mark mark-invertible mx-auto mt-5 h-11 w-[72px] object-contain opacity-85 dark:invert" loading="lazy" decoding="async" />
+      <img src="/logo.png" alt="" width={72} height={44} className="closing-signature__mark mx-auto mt-5 h-11 w-[72px] object-contain opacity-85 dark:invert" loading="lazy" decoding="async" />
       <span className="closing-signature__name mt-3 block font-display text-[1.02rem] font-semibold text-ink/[.85]">{'\u062F. \u0623\u062D\u0645\u062F \u062D\u0633\u064A\u0646 \u0627\u0644\u0641\u064A\u0644\u0643\u0627\u0648\u064A'}</span>
     </div>
   )
@@ -60,11 +60,9 @@ function ClosingSignature() {
 
 function SelectionDiscoveryHint() {
   const [visible, setVisible] = useState(false)
-  const [touch, setTouch] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    try { setTouch(window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) } catch { /* noop */ }
     const usedKey = 'reader:selection-discovered:v2'
     const sessionKey = 'reader:selection-discovery-shown:v2'
     try {
@@ -108,9 +106,9 @@ function SelectionDiscoveryHint() {
       aria-label="إخفاء تلميح أدوات تحديد النص"
     >
       <span className="selection-discovery-chip__dot" aria-hidden="true" />
-      <span>{touch ? 'المس جملةً مطولاً' : 'حدّد أي جملة'}</span>
+      <span>حدّد أي جملة</span>
       <span className="selection-discovery-chip__sep" aria-hidden="true">·</span>
-      <span className="font-normal">عبر السنين · بطاقة اقتباس</span>
+      <span className="font-normal">تظهر أدواتها مباشرة</span>
     </button>
   )
 }
@@ -200,38 +198,18 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
     }
   }, [body])
 
-  const articleSignals = useMemo(() => {
-    /* يبقى توزيع العلامات تحريرياً ثابتاً (بداية/وسط/نهاية)، فلا تعيد لقطة
-       Firestore ترتيب المقال أو تُسقط علامة بسبب تحديد قديم متداخل. وإذا
-       وافق تفاعل القراء إحدى الجمل المخططة نرفع رقمها الحي فقط. */
-    const planned = articleSignalsOf(slug, body, [])
-    if (!popularQuotes.length) return planned
-    const live = articleSignalsOf(slug, body, popularQuotes)
-    const compact = (value: string) => value.replace(/\s+/g, ' ').trim().toLowerCase()
-    return planned.map((signal) => {
-      const signalText = compact(signal.text)
-      const match = live.find((candidate) => {
-        if (candidate.paragraph !== signal.paragraph || candidate.source !== 'readers') return false
-        const candidateText = compact(candidate.text)
-        return signalText === candidateText || signalText.includes(candidateText) || candidateText.includes(signalText)
-      })
-      return match ? { ...signal, source: 'readers' as const, count: Math.max(signal.count, match.count) } : signal
-    })
-  }, [body, popularQuotes, slug])
-  const articleSignal = articleSignals[0] || null
-  const glossaryPlan = useMemo(() => articleGlossaryPlan(body), [body])
-  const [readerProgress, setReaderProgress] = useState(0)
-
-  /* لا مستمع تمرير ثانٍ: الخيط يستهلك الحدث الذي يبثه ArticleProgressBar
-     القائم، ولذلك يبقى حساب التقدم في موضعٍ واحد فقط. */
-  useEffect(() => {
-    const update = (event: Event) => {
-      const progress = Number((event as CustomEvent<{ progress?: number }>).detail?.progress || 0)
-      setReaderProgress(Math.min(1, Math.max(0, progress)))
-    }
-    window.addEventListener('reader:progress', update)
-    return () => window.removeEventListener('reader:progress', update)
-  }, [])
+  const articleSignal = useMemo(() => articleSignalOf(slug, body, popularQuotes), [body, popularQuotes, slug])
+  const readerMade = useMemo(() => {
+    const sourceParagraphs = body.split('\n\n')
+    return [...popularQuotes]
+      .sort((left, right) => right.count - left.count || left.paragraph - right.paragraph || left.startOffset - right.startOffset)
+      .map((quote) => ({
+        ...quote,
+        text: (sourceParagraphs[quote.paragraph] || '').slice(quote.startOffset, quote.endOffset).trim(),
+      }))
+      .filter((quote) => quote.text.length >= 12)
+  }, [body, popularQuotes])
+  const readerMadePages = usePagedList(readerMade, 6, `${slug}:${readerMade.map((item) => item.highlightKey).join('|')}`)
 
   const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.src.includes('.dialogue.') && audio.duration > 0)
 
@@ -346,15 +324,6 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
   return (
     <>
       <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`} data-native-selection="custom">
-        <span className="reader-margin-thread reader-hide-focus" aria-hidden="true">
-          <span className="reader-margin-thread__fill" style={{ transform: `scaleY(${readerProgress})` }} />
-          {articleSignals.map((signal, index) => {
-            const at = paragraphs.length > 1 ? signal.paragraph / (paragraphs.length - 1) : .5
-            const reached = readerProgress + .015 >= at
-            const inherited = signal.source === 'readers' && signal.count >= 3
-            return <span key={`${signal.paragraph}-${index}`} className={`reader-margin-thread__node${reached ? ' is-reached' : ''}${inherited ? ' is-inherited' : ''}`} style={{ '--reader-node-at': `${at * 100}%` } as CSSProperties} />
-          })}
-        </span>
         {showSyncWhisper && (
           <div className="audio-sync-whisper reader-hide-focus" role="status">
             <span className="audio-sync-whisper__pulse" aria-hidden="true" />
@@ -362,27 +331,7 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
           </div>
         )}
         {paragraphs.map((paragraph, pIdx) => {
-          const paragraphQuotes: PopularQuote[] = []
-          /* لا نعرض كل اختيارٍ خام من Firestore؛ خطة المقال هي المصدر الوحيد
-             لما يظهر في المتن: 1–3 إشارات مختارة سواء جاءت من القراء أو من
-             التحرير. إعادة بناء النطاق من نص الإشارة تمنع اختلاف مفاتيح
-             التجميع الحية من إخفاء الرقم بعد وصول لقطة Firestore. */
-          articleSignals.forEach((signal, signalIndex) => {
-            if (signal.paragraph !== pIdx) return
-            paragraphQuotes.push({
-              slug,
-              articleVersion: signal.source === 'readers' ? 'reader-signal' : 'editorial-signal',
-              highlightKey: signal.highlightKey || `editorial:${slug}:${signalIndex}`,
-              quoteHash: signal.highlightKey || `editorial:${slug}:${signalIndex}`,
-              quote: signal.text,
-              paragraph: pIdx,
-              paragraphId: String(pIdx),
-              startOffset: -1,
-              endOffset: -1,
-              count: signal.count,
-            })
-          })
-          const paragraphTerms = glossaryPlan.get(pIdx) || []
+          const paragraphQuotes = popularQuotes.filter((quote) => quote.paragraph === pIdx)
           const isParagraphActive = pIdx === activeParagraph
 
           return (
@@ -429,19 +378,65 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
                             <span /><span /><span />
                           </span>
                         )}
-                        <ReaderParagraphText text={sentence.text} popularQuotes={sentenceQuotes} xrayTerms={paragraphTerms} />
+                        <ReaderParagraphText text={sentence.text} popularQuotes={sentenceQuotes} />
                       </span>
                     )
                   })
                 ) : (
-                  <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} xrayTerms={paragraphTerms} />
+                  <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} />
                 )}
-                {articleSignal?.paragraph === pIdx && <><span aria-hidden="true">{'⁠'}</span><ArticleSignal signal={articleSignal} title={title} /></>}
               </p>
+              {/* إشارة واحدة موحّدة: رنين القرّاء إن وُجد، وإلا لحظة الانعطاف،
+                  وإلا جملة محورية من كلام المقال نفسه. لا بطاقة دائمة ولا ازدواج. */}
+              {articleSignal?.paragraph === pIdx && <ArticleSignal signal={articleSignal} title={title} />}
             </div>
           )
         })}
       </div>
+
+      {readerMade.length > 0 && (
+        <section className="reader-made-archive mt-12 border-t border-hair pt-8" aria-labelledby="reader-made-title">
+          <details className="group">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-2xl border border-hair bg-wash px-5 py-4 marker:content-none">
+              <span>
+                <span className="block text-[.7rem] font-semibold text-accent">ما صنعه القرّاء</span>
+                <strong id="reader-made-title" className="mt-1 block font-display text-[1.1rem] font-semibold text-ink">سماء التظليل</strong>
+              </span>
+              <span className="flex items-center gap-2 text-[.72rem] text-soft">
+                <span>{readerMade.length.toLocaleString('en-US')} موضع</span>
+                <span aria-hidden="true" className="text-accent transition-transform group-open:rotate-45">＋</span>
+              </span>
+            </summary>
+
+            <div id="reader-made-highlights" className="mt-4 scroll-mt-28 rounded-2xl border border-hair bg-canvas p-4 md:p-6">
+              <div className="grid gap-3">
+                {readerMadePages.pageItems.map((quote) => (
+                  <button
+                    key={quote.highlightKey}
+                    type="button"
+                    onClick={() => document.querySelector<HTMLElement>(`[data-reader-paragraph="${quote.paragraph}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                    className="group rounded-xl border border-hair bg-wash/[.38] px-4 py-4 text-right transition-colors hover:border-accent"
+                  >
+                    <span className="block text-[.66rem] font-semibold text-accent">حُفظت {quote.count.toLocaleString('en-US')} مرة</span>
+                    <span className="mt-1.5 block line-clamp-3 text-[.84rem] font-light leading-[1.9] text-ink/85">{quote.text}</span>
+                  </button>
+                ))}
+              </div>
+              <Pagination
+                page={readerMadePages.page}
+                pageCount={readerMadePages.pageCount}
+                onChange={readerMadePages.setPage}
+                totalItems={readerMade.length}
+                firstItem={readerMadePages.firstItem}
+                lastItem={readerMadePages.lastItem}
+                scrollTargetId="reader-made-highlights"
+                label="صفحات ما صنعه القرّاء"
+                className="mt-6"
+              />
+            </div>
+          </details>
+        </section>
+      )}
     </>
   )
 }
@@ -850,18 +845,6 @@ export default function ArticleDetail() {
     return () => window.removeEventListener('keydown', onKey)
   }, [serenity])
 
-  /* الطباعة: الورقة تُطبع من الصفحة نفسها، فما كان مفتوحاً على الشاشة يدخلها.
-     نُغلق السكينة وأي طبقةٍ عائمة، ونطوي التوسّعات المفتوحة، ونترك للمتصفّح
-     إطاراً واحداً يعيد فيه الرسم قبل أن يفتح صندوق الطباعة. */
-  const printArticle = () => {
-    setSerenity(false)
-    try {
-      document.querySelectorAll<HTMLDetailsElement>('.article-journey details[open]').forEach((item) => { item.open = false })
-      window.dispatchEvent(new CustomEvent('reader:close-overlays'))
-    } catch { /* الطباعة لا تتعطّل لأجل تهيئةٍ تجميلية. */ }
-    window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.print()))
-  }
-
   if (!a && loading)
     return (
       <Page className="content-articles article-journey">
@@ -925,9 +908,7 @@ export default function ArticleDetail() {
             {article.body && (
               <div className="article-reading-actions serenity-hide mt-4 flex flex-wrap items-center gap-x-3 gap-y-3 pb-1">
                 <div id="article-audio" className="order-2 w-full min-w-0 sm:order-1 sm:w-auto sm:flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
-                <div className="order-1 flex shrink-0 items-center gap-2 sm:order-2">
-                  <ReaderControls article={article} saveControl={<SaveForLaterButton slug={article.slug} />} onSerenity={() => setSerenity(true)} />
-                </div>
+                <div className="order-1 flex shrink-0 items-center sm:order-2"><ReaderControls article={article} saveControl={<SaveForLaterButton slug={article.slug} />} onSerenity={() => setSerenity(true)} /></div>
               </div>
             )}
           </FadeUp>
@@ -981,19 +962,13 @@ export default function ArticleDetail() {
             <section className="mt-10 border-y border-hair py-5" aria-labelledby="after-reading-title">
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <h2 id="after-reading-title" className="font-display text-[1.05rem] font-semibold text-ink">بعد القراءة</h2>
-                <div className="flex flex-wrap items-center gap-3 text-[.7rem] text-soft">
-                  <p>امتداد الفكرة · أدوات الباحث · المشاركة والاستشهاد</p>
-                  <Link to={`/atlas?star=${encodeURIComponent(article.slug)}`} className="article-atlas-knot inline-flex min-h-11 items-center gap-2 text-accent transition-opacity hover:opacity-70">
-                    <span aria-hidden className="h-2 w-2 rounded-full border border-accent bg-canvas" />
-                    موقعها في السماء
-                  </Link>
-                </div>
+                <p className="text-[.7rem] text-soft">امتداد الفكرة · أدوات الباحث · المشاركة والاستشهاد</p>
               </div>
               <IdeaLife article={article} articles={articles} books={books} papers={papers} media={media} />
               {article.body && <ArticleExtensions article={article} articles={articles} books={books} papers={papers} />}
               <div className="mt-6 border-t border-hair pt-5" aria-label="مشاركة المقال والاستشهاد به">
                 <p className="mb-3 text-[.76rem] font-medium text-soft">شارك المقال</p>
-                <div className="flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="edge-fade flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <Share compact title={a.title} path={`/articles/${a.slug}`} />
                   {liveLink(article.source) && (
                     <a href={liveLink(article.source)} target="_blank" rel="noreferrer" className="article-tool-icon" aria-label="فتح المصدر الأصلي" title="المصدر الأصلي">
@@ -1001,10 +976,6 @@ export default function ArticleDetail() {
                     </a>
                   )}
                   <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
-                  {/* الطباعة أخت المشاركة: كلتاهما إخراج المقال خارج الشاشة. */}
-                  <button type="button" onClick={printArticle} className="article-tool-icon" aria-label="طباعة المقال كورقة أكاديمية" title="طباعة المقال">
-                    <SocialIcon name="Print" size={17} />
-                  </button>
                 </div>
               </div>
             </section>

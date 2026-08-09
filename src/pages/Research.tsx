@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { JsonLd, useSeo } from '../components/seo'
 import { Link } from 'react-router'
+import { motion, useReducedMotion } from 'framer-motion'
 import { FadeUp, Page, PageHead, SocialIcon, sharedViewName } from '../components/ui'
 import { academicProfiles, doctorate, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
@@ -16,6 +17,7 @@ const normalizeSearch = (value = '') => value.toLowerCase().replace(/[ًٌَُّ
 
 export default function Research() {
   const { papers } = useCmsContent()
+  const reduce = useReducedMotion()
   const [query, setQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState('الكل')
   const [yearFilter, setYearFilter] = useState('الكل')
@@ -85,14 +87,13 @@ export default function Research() {
             </section>
           </FadeUp>
 
-          <ul id="research-list" className="spatial-collection mt-6 grid scroll-mt-28 gap-4">
+          <motion.ul key={`research:${term}:${typeFilter}:${yearFilter}:${paged.page}`} initial={reduce ? false : { opacity: .55 }} animate={{ opacity: 1 }} transition={{ duration: reduce ? 0 : .16 }} id="research-list" className="spatial-collection mt-6 grid scroll-mt-28 gap-4">
             {paged.pageItems.map(({ paper: p, intelligence }, i) => {
               const type = arabicOnly(p.studyType || intelligence.studyType)
               const year = intelligence.year
               const journal = p.journal || intelligence.journal
               return (
-                <FadeUp key={p.slug} delay={Math.min(i * 0.03, 0.3)}>
-                  <li className="research-list-card spatial-card overflow-hidden rounded-[26px] border">
+                <li key={p.slug} className="research-list-card spatial-card overflow-hidden rounded-[26px] border">
                     <div className="grid gap-4 p-5 sm:grid-cols-[48px_minmax(0,1fr)] sm:items-start md:p-7">
                       <span className="pt-1 font-display text-[.86rem] font-bold text-accent sm:self-start">{ar((paged.page - 1) * 12 + i + 1)}</span>
                       <div className="min-w-0">
@@ -109,10 +110,9 @@ export default function Research() {
                       </div>
                     </div>
                   </li>
-                </FadeUp>
               )
             })}
-          </ul>
+          </motion.ul>
 
           {filtered.length === 0 && <div className="py-16 text-center text-[.95rem] text-soft">جرّب كلمة أخرى أو أعد الفلاتر إلى «الكل».</div>}
 

@@ -42,6 +42,7 @@ export default function HumanCoreHero() {
   const current = useRef<Point>({ x: 0.64, y: 0.42 })
   const lastInteraction = useRef(0)
   const [mobileVisual, setMobileVisual] = useState(false)
+  const [nameSpeaking, setNameSpeaking] = useState(false)
   const { scrollY } = useScroll()
   const portraitY = useTransform(scrollY, [0, 800], [0, 34])
 
@@ -52,6 +53,25 @@ export default function HumanCoreHero() {
     query.addEventListener?.('change', update)
     return () => query.removeEventListener?.('change', update)
   }, [])
+
+  useEffect(() => () => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel()
+  }, [])
+
+  const speakName = () => {
+    if (!('speechSynthesis' in window)) return
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance('أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي')
+    utterance.lang = 'ar-KW'
+    /* العبارة القصيرة تبقى في حدود ثانيتين؛ السرعة المختصرة هنا تحافظ على
+       السكون المرسوم من غير أن تتحول العلامة إلى مقطعٍ صوتي طويل. */
+    utterance.rate = 2.2
+    utterance.pitch = 0.92
+    utterance.onstart = () => setNameSpeaking(true)
+    utterance.onend = () => setNameSpeaking(false)
+    utterance.onerror = () => setNameSpeaking(false)
+    window.speechSynthesis.speak(utterance)
+  }
 
   useEffect(() => {
     const hero = heroRef.current
@@ -319,7 +339,19 @@ export default function HumanCoreHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.52, delay: 0.62, ease: EASE }}
           >
-            <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
+            <div className="flex items-center gap-2.5">
+              <p className="font-display text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold text-ink">{profile.name}</p>
+              <button
+                type="button"
+                onClick={speakName}
+                aria-label="استمع إلى النطق المعتمد للاسم"
+                aria-pressed={nameSpeaking}
+                title="استمع إلى الاسم"
+                className={`human-core__voice-mark ${nameSpeaking ? 'is-speaking' : ''}`}
+              >
+                <span aria-hidden="true" />
+              </button>
+            </div>
             <p className="human-core__tagline mt-1.5 whitespace-nowrap text-[clamp(.72rem,2.45vw,.95rem)] font-light tracking-[-.025em]">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار</p>
           </motion.div>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
@@ -80,6 +80,8 @@ export default function ConceptLife() {
   const { articles, papers, books, media } = useCmsContent()
   const [deepReady, setDeepReady] = useState(false)
   const [activeKind, setActiveKind] = useState<Station['kind'] | null>(null)
+  const timelineRef = useRef<HTMLOListElement>(null)
+  const [bloomPhase, setBloomPhase] = useState<'idle' | 'ready' | 'run'>('idle')
 
   useSeo({
     title: term ? `سيرة مفهوم: ${term}` : 'سيرة مفهوم',
@@ -197,6 +199,23 @@ export default function ConceptLife() {
 
   const visibleStations = useMemo(() => activeKind ? stations.filter((item) => item.kind === activeKind) : stations, [activeKind, stations])
 
+  useEffect(() => {
+    setBloomPhase('idle')
+    const element = timelineRef.current
+    if (!element || !visibleStations.length) return
+    let observer: IntersectionObserver | null = null
+    const frame = window.requestAnimationFrame(() => {
+      setBloomPhase('ready')
+      observer = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) return
+        setBloomPhase('run')
+        observer?.disconnect()
+      }, { threshold: .12, rootMargin: '0px 0px -8% 0px' })
+      observer.observe(element)
+    })
+    return () => { window.cancelAnimationFrame(frame); observer?.disconnect() }
+  }, [term, visibleStations.length])
+
   useEffect(() => { setActiveKind(null) }, [term])
 
   const kinds = useMemo(() => {
@@ -277,12 +296,19 @@ export default function ConceptLife() {
             </FadeUp>
           )}
 
-          <ol className="mt-8 grid gap-0">
+          <ol
+            ref={timelineRef}
+            className={`concept-bloom mt-8 grid gap-0 concept-bloom--${bloomPhase}`}
+            style={{ '--concept-duration': `${Math.min(6000, Math.max(1200, Math.min(8, visibleStations.length) * 650 + 650))}ms` } as CSSProperties}
+          >
             {visibleStations.map((station, index) => (
-              <FadeUp key={station.key} delay={Math.min(index * 0.03, 0.3)}>
-                <li className="relative grid gap-2 border-r border-hair pr-6 pb-8 sm:grid-cols-[6.5rem_minmax(0,1fr)] sm:gap-5">
+                <li
+                  key={station.key}
+                  className="concept-bloom__station relative grid gap-2 pe-6 pb-8 sm:grid-cols-[6.5rem_minmax(0,1fr)] sm:gap-5"
+                  style={{ '--concept-delay': `${index < 8 ? index * 650 : 5200}ms` } as CSSProperties}
+                >
                   {/* نقطة المحطة على خيط الزمن */}
-                  <span aria-hidden="true" className="absolute right-0 top-1.5 -mr-[5px] block h-2.5 w-2.5 rounded-full bg-accent" />
+                  <span aria-hidden="true" className="concept-bloom__node absolute top-1.5 block h-2.5 w-2.5 rounded-full bg-accent" />
                   <div className="pt-0.5">
                     <span className="block font-display text-[1.05rem] font-semibold text-accent tabular-nums">{station.year || '—'}</span>
                     <span className="mt-0.5 block text-[.66rem] text-soft">{station.kind}</span>
@@ -310,7 +336,6 @@ export default function ConceptLife() {
                     )}
                   </div>
                 </li>
-              </FadeUp>
             ))}
           </ol>
 

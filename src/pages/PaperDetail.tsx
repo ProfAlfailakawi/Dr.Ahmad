@@ -144,7 +144,7 @@ export default function PaperDetail() {
   }
 
   const { isAdmin } = useAdminAuth()
-  const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer2')
+  const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer1')
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
 
   const toggleCard = (key: string) => {

@@ -145,6 +145,13 @@ export function loadBookPassages(): Promise<PassagesFile> {
 
 export const bookPassagesReady = () => Boolean(passagesCache)
 
+export function bookPassageAtPage(slug: string, page: number): BookQuote | null {
+  const book = passagesCache?.books.find((item) => item.slug === slug)
+  if (!book?.passages.length) return null
+  return [...book.passages].sort((left, right) =>
+    Math.abs(Number(left.page) - page) - Math.abs(Number(right.page) - page))[0] || null
+}
+
 /**
  * البحث الدلالي في متون الكتب التسعة كاملة.
  *

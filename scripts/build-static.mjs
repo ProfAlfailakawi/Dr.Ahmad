@@ -1721,7 +1721,7 @@ function assertStaticOutput() {
   const duplicateLocs = locs.filter((loc, index) => locs.indexOf(loc) !== index)
   if (duplicateLocs.length) throw new Error(`sitemap يحتوي روابط مكررة: ${duplicateLocs.slice(0, 3).join(', ')}`)
   if (/scheduledarabbic|localhost|127\.0\.0\.1/.test(sitemap)) throw new Error('sitemap يحتوي رابط اختبار أو slug غير نظيف')
-  const forbiddenIndexPaths = ['/admin', '/privacy', '/terms', '/data-deletion', '/cv-file/', '/wp-', '/signature_articles/', '/published_articles/', '/scholarly_contributi/']
+  const forbiddenIndexPaths = ['/admin', '/privacy', '/terms', '/data-deletion', '/cv-file/', '/ar/', '/wp-', '/category/', '/signature_articles/', '/published_articles/', '/scholarly_contributi/', '/mini-library', '/article-worth-reading', '/book-of-the-month', '/en/reading-room/']
   const forbiddenLoc = locs.find((loc) => forbiddenIndexPaths.some((part) => loc.includes(part)))
   if (forbiddenLoc) throw new Error(`sitemap يحتوي صفحة غير مخصصة للفهرسة: ${forbiddenLoc}`)
   for (const item of media) {

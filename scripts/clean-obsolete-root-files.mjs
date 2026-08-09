@@ -15,6 +15,16 @@ const obsolete = [
   'intent-engine.mjs',
   'verify-domain-migration.mjs',
   'public/sitemap.xml',
+  // بقايا خطة تحويل WordPress القديمة: وجودها بعد إلغاء المسارات يربك تدقيقات
+  // Search Console ويعيد اقتراح تحويلات عامة سببت soft 404 سابقاً.
+  'ROOT-CAUSES-AND-FILES.txt',
+  'docs/MIGRATION.md',
+  'reports/legacy-links-report.json',
+  'reports/legacy-links-report.md',
+  'reports/legacy-links.json',
+  'scripts/audit-legacy-links.mjs',
+  'scripts/verify-legacy-retirement.mjs',
+  'src/pages/Legacy.tsx',
 ]
 
 const root = process.cwd()

@@ -10,6 +10,221 @@
     ],
     "redirects": [
       {
+        "source": "/ar",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/home-2",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/ar/home-2",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/en/home",
+        "destination": "/en",
+        "type": 301
+      },
+      {
+        "source": "/academic-biography",
+        "destination": "/cv",
+        "type": 301
+      },
+      {
+        "source": "/academic-biography-2",
+        "destination": "/cv",
+        "type": 301
+      },
+      {
+        "source": "/ar/academic-biography",
+        "destination": "/cv",
+        "type": 301
+      },
+      {
+        "source": "/ar/academic-biography-2",
+        "destination": "/cv",
+        "type": 301
+      },
+      {
+        "source": "/en/academic-biography",
+        "destination": "/en/cv",
+        "type": 301
+      },
+      {
+        "source": "/en/academic-biography-2",
+        "destination": "/en/cv",
+        "type": 301
+      },
+      {
+        "source": "/scholarly-contributions",
+        "destination": "/research",
+        "type": 301
+      },
+      {
+        "source": "/scholarly-contributions-2",
+        "destination": "/research",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly-contributions",
+        "destination": "/research",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly-contributions-2",
+        "destination": "/research",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly-contributions",
+        "destination": "/en/research",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly-contributions-2",
+        "destination": "/en/research",
+        "type": 301
+      },
+      {
+        "source": "/published-books",
+        "destination": "/publications",
+        "type": 301
+      },
+      {
+        "source": "/published-books-2",
+        "destination": "/publications",
+        "type": 301
+      },
+      {
+        "source": "/ar/published-books",
+        "destination": "/publications",
+        "type": 301
+      },
+      {
+        "source": "/ar/published-books-2",
+        "destination": "/publications",
+        "type": 301
+      },
+      {
+        "source": "/signature-thought-articles",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/signature-thought-articles-2",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/ar/signature-thought-articles",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/ar/signature-thought-articles-2",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/recorded-interviews-media-appearances",
+        "destination": "/media",
+        "type": 301
+      },
+      {
+        "source": "/recorded-interviews-media-appearances-2",
+        "destination": "/media",
+        "type": 301
+      },
+      {
+        "source": "/ar/recorded-interviews-media-appearances",
+        "destination": "/media",
+        "type": 301
+      },
+      {
+        "source": "/ar/recorded-interviews-media-appearances-2",
+        "destination": "/media",
+        "type": 301
+      },
+      {
+        "source": "/upcoming-speaking-engagements",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "source": "/upcoming-speaking-engagements-2",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "source": "/ar/upcoming-speaking-engagements",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "source": "/ar/upcoming-speaking-engagements-2",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "source": "/from-my-inbox",
+        "destination": "/inbox",
+        "type": 301
+      },
+      {
+        "source": "/ar/from-my-inbox",
+        "destination": "/inbox",
+        "type": 301
+      },
+      {
+        "source": "/about-the-website",
+        "destination": "/about",
+        "type": 301
+      },
+      {
+        "source": "/about-the-website-2",
+        "destination": "/about",
+        "type": 301
+      },
+      {
+        "source": "/ar/about-the-website",
+        "destination": "/about",
+        "type": 301
+      },
+      {
+        "source": "/ar/about-the-website-2",
+        "destination": "/about",
+        "type": 301
+      },
+      {
+        "source": "/contact-consultation",
+        "destination": "/contact",
+        "type": 301
+      },
+      {
+        "source": "/contact-consultation-2",
+        "destination": "/contact",
+        "type": 301
+      },
+      {
+        "source": "/ar/contact-consultation",
+        "destination": "/contact",
+        "type": 301
+      },
+      {
+        "source": "/ar/contact-consultation-2",
+        "destination": "/contact",
+        "type": 301
+      },
+      {
+        "source": "/signature_articles/a-society-that-fears-the-different-scheduledarabbic",
+        "destination": "/articles/a-society-that-fears-the-different-arabic",
+        "type": 301
+      },
+      {
         "source": "/now",
         "destination": "/",
         "type": 301

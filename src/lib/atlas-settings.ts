@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getDb } from './firebase'
+import { DR_AHMAD_DOMAIN_GLOSSARY, normalizeDomainTerm } from './dr-ahmad-domain-glossary'
 import generatedConstellations from '../data/atlas-constellations.json'
 
 export type AtlasConstellation = {
@@ -16,25 +17,31 @@ export type AtlasEditorialSettings = {
 const CACHE_KEY = 'atlas:editorial-settings:v1'
 const DEFAULT_SETTINGS: AtlasEditorialSettings = {
   dailyStarSlug: '',
-  constellations: [
-    {
-      id: 'educational-anxiety',
-      title: 'رحلة القلق التربوي',
-      slugs: ['the-classroom-that-fears-mistakesarabic', 'when-a-student-wishes-for-death-before-the-first-bell-2', 'he-passed-the-exam-but-failed-the-question-2'],
-    },
-    {
-      id: 'human-and-machine',
-      title: 'الإنسان مقابل الآلة',
-      slugs: ['qabas-201702-001', 'qabas-201712-002', 'artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2', 'students-minds-are-on-vacation-while-chatgpt-works-full-time-2'],
-    },
-  ],
+  /* لا نزرع أسماءً افتراضية من عندنا. أسماء الكوكبات تأتي حصراً من
+     قاموس الدكتور أو من الملف المولّد منه، حتى تبقى لغة السماء هي لغة
+     المشروع نفسها لا عناوين تحريرية عابرة. */
+  constellations: [],
 }
 const clean = (value: unknown) => typeof value === 'string' ? value.trim() : ''
+
+const canonicalByAlias = new Map<string, string>()
+for (const entry of DR_AHMAD_DOMAIN_GLOSSARY) {
+  for (const label of [entry.canonicalAr, ...entry.aliases]) {
+    const normalized = normalizeDomainTerm(label)
+    if (normalized && !canonicalByAlias.has(normalized)) canonicalByAlias.set(normalized, entry.canonicalAr)
+  }
+}
+
+export function canonicalConstellationTitle(value: unknown) {
+  const title = clean(value)
+  if (!title) return null
+  return canonicalByAlias.get(normalizeDomainTerm(title)) || null
+}
 
 const normalizeConstellation = (value: unknown, index: number): AtlasConstellation | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const row = value as Record<string, unknown>
-  const title = clean(row.title)
+  const title = canonicalConstellationTitle(row.title)
   const slugs = Array.isArray(row.slugs)
     ? [...new Set(row.slugs.map(clean).filter(Boolean))].slice(0, 16)
     : []
@@ -75,7 +82,7 @@ function cachedSettings() {
 
 export function cacheAtlasSettings(value: AtlasEditorialSettings) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(value)) } catch { /* التخزين تحسين تشغيلي فقط. */ }
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(normalizeAtlasSettings(value))) } catch { /* التخزين تحسين تشغيلي فقط. */ }
 }
 
 export async function fetchAtlasSettings() {
@@ -92,14 +99,25 @@ export async function fetchAtlasSettings() {
   }
 }
 
-/* الكوكبات التي تُعرض للزائر: المحرَّرة بيده أولاً، ثم المولّدة من خريطة المعرفة.
-   تبقى المولّدة خارج `constellations` عمداً حتى لا تتسرّب إلى محرّر اللوحة
-   فتُحفظ في Firestore وكأنها من كتابته. */
+/* الكوكبات التي تُعرض للزائر: ما حرّره الدكتور إن كان اسمه من القاموس، ثم
+   الكوكبات المولّدة من القاموس نفسه. نزيل التكرار بالاسم المعياري وبالمعرّف،
+   فلا يظهر المصطلح مرتين بصيغتين أو بمرادفين مختلفين. */
 export function visibleConstellations(settings: AtlasEditorialSettings): AtlasConstellation[] {
-  const seen = new Set(settings.constellations.map((item) => item.id))
-  const generated = (generatedConstellations.constellations as AtlasConstellation[])
-    .filter((item) => item && !seen.has(item.id) && Array.isArray(item.slugs) && item.slugs.length >= 2)
-  return [...settings.constellations, ...generated]
+  const output: AtlasConstellation[] = []
+  const seenIds = new Set<string>()
+  const seenTitles = new Set<string>()
+
+  const append = (raw: AtlasConstellation, index: number) => {
+    const item = normalizeConstellation(raw, index)
+    if (!item || seenIds.has(item.id) || seenTitles.has(item.title)) return
+    seenIds.add(item.id)
+    seenTitles.add(item.title)
+    output.push(item)
+  }
+
+  settings.constellations.forEach(append)
+  ;(generatedConstellations.constellations as AtlasConstellation[]).forEach((item, index) => append(item, settings.constellations.length + index))
+  return output
 }
 
 export function useAtlasSettings() {

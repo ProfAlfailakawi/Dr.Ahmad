@@ -634,8 +634,8 @@ html.dark .content-media .page-head {
   line-height: var(--article-line, 2);
   color: rgb(var(--c-ink) / .88);
   margin-bottom: 1.6em;
-  text-align: start;
-  text-justify: auto;
+  text-align: justify;
+  text-justify: inter-word;
   text-align-last: start;
   word-spacing: normal;
   hyphens: none;
@@ -671,8 +671,8 @@ html.dark .content-media .page-head {
   .article-body p {
     font-size: calc(1.06rem * var(--article-scale, 1));
     line-height: var(--article-line, 2);
-    text-align: start;
-    text-justify: auto;
+    text-align: justify;
+    text-justify: inter-word;
     text-align-last: start;
     word-spacing: normal;
     overflow-wrap: break-word;
@@ -3804,7 +3804,7 @@ body.selection-active .floating-actions {
   .content-articles article { padding-bottom: 2rem; }
   .content-articles .article-body,
   .content-articles .article-body p,
-  .content-articles .article-body-synced .synced-paragraph { text-align: start; text-justify: auto; text-align-last: start; }
+   .content-articles .article-body-synced .synced-paragraph { text-align: justify; text-justify: inter-word; text-align-last: start; }
 }
 
 /* 2026-08 final layout audit: no artificial blank screen before the footer. */
@@ -3823,8 +3823,8 @@ body.selection-active .floating-actions {
 
 /* Article prose: full alignment for old imported bodies and new synced bodies. */
 .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote) {
-  text-align: start;
-  text-justify: auto;
+  text-align: justify;
+  text-justify: inter-word;
   text-align-last: start;
 }
 
@@ -3832,8 +3832,8 @@ body.selection-active .floating-actions {
    اليمين وحده في كل العروض. (القياس الكامل في التعليق أعلى الملف.) */
 @media (max-width: 640px) {
   .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote) {
-    text-align: start;
-    text-justify: auto;
+    text-align: justify;
+    text-justify: inter-word;
     text-align-last: start;
   }
 }
@@ -5303,8 +5303,8 @@ html.dark .content-book-detail .book-detail-cover {
 .content-articles .article-body,
 .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote),
 .content-articles .article-body-synced .synced-paragraph {
-  text-align: start !important;
-  text-justify: auto !important;
+  text-align: justify !important;
+  text-justify: inter-word !important;
   text-align-last: start !important;
   word-spacing: normal;
 }
@@ -5313,8 +5313,8 @@ html.dark .content-book-detail .book-detail-cover {
   .content-articles .article-body,
   .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote),
   .content-articles .article-body-synced .synced-paragraph {
-    text-align: start !important;
-    text-justify: auto !important;
+    text-align: justify !important;
+    text-justify: inter-word !important;
     text-align-last: start !important;
     word-spacing: normal;
   }
@@ -5835,8 +5835,8 @@ html.reader-paper .sentence-item.is-sentence-active {
     font-size: 12pt !important;
     line-height: 1.82 !important;
     color: #161616 !important;
-    text-align: start !important;
-    text-justify: auto !important;
+    text-align: justify !important;
+    text-justify: inter-word !important;
     text-align-last: start !important;
     word-spacing: normal !important;
     widows: 3;

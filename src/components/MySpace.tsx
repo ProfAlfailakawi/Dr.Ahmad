@@ -302,7 +302,6 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
   const [query, setQuery] = useState("");
   const [syncActive, setSyncActive] = useState(false);
   const [freshAskId, setFreshAskId] = useState("");
-  const [showDiscovery, setShowDiscovery] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -333,25 +332,8 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
     };
   }, []);
 
-  useEffect(() => {
-    if (variant !== "floating" || location.pathname.startsWith("/en")) return;
-    const usedKey = "myspace:discovered:v2";
-    const sessionKey = "myspace:discovery-shown:v2";
-    try {
-      if (localStorage.getItem(usedKey) === "1" || sessionStorage.getItem(sessionKey) === "1") return;
-      sessionStorage.setItem(sessionKey, "1");
-    } catch { /* التخزين تحسين بصري فقط. */ }
-    const show = window.setTimeout(() => setShowDiscovery(true), 2600);
-    const hide = window.setTimeout(() => setShowDiscovery(false), 7600);
-    return () => {
-      window.clearTimeout(show);
-      window.clearTimeout(hide);
-    };
-  }, [location.pathname, variant]);
-
   const openSpace = () => {
     try { localStorage.setItem("myspace:discovered:v2", "1"); } catch { /* noop */ }
-    setShowDiscovery(false);
     setOpen(true);
     setTab("continue");
   };
@@ -361,7 +343,6 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
   useEffect(() => {
     const openQuotes = () => {
       try { localStorage.setItem("myspace:discovered:v2", "1"); } catch { /* noop */ }
-      setShowDiscovery(false);
       setTab("quotes");
       setOpen(true);
     };
@@ -444,14 +425,8 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
         onClick={openSpace}
         aria-label="فتح مساحتي"
         title={snapshot.last && resumeProgress > 0 ? `مساحتي · أكمل القراءة من ${arNumber(Math.round(resumeProgress * 100))}%` : "مساحتي"}
-        className={`my-space-trigger ${freshAskId ? "my-space-trigger--fresh" : ""} group relative flex items-center justify-center gap-2 text-ink transition-all hover:text-accent ${variant === "footer" ? "h-10 w-10 bg-transparent" : "my-space-trigger--floating h-11 min-w-11 rounded-full border border-hair bg-canvas hover:border-accent"}`}
+        className={`my-space-trigger ${freshAskId ? "my-space-trigger--fresh" : ""} group relative flex items-center justify-center text-ink transition-colors hover:text-accent ${variant === "footer" ? "h-10 w-10 bg-transparent" : "my-space-trigger--floating h-11 w-11 rounded-full border border-hair bg-canvas hover:border-accent"}`}
       >
-        {variant === "floating" && showDiscovery && (
-          <span className="my-space-discovery" aria-hidden="true">
-            <span className="my-space-discovery__kicker">مساحتي</span>
-            <span className="my-space-discovery__copy">أثرك هنا</span>
-          </span>
-        )}
         {variant === "floating" && resumeProgress > 0 && (
           <svg aria-hidden viewBox="0 0 44 44" className="pointer-events-none absolute inset-[-1px] h-[44px] w-[44px] -rotate-90 text-accent">
             <circle cx="22" cy="22" r="20.5" fill="none" stroke="currentColor" strokeOpacity=".12" strokeWidth="1.5" />
@@ -459,7 +434,6 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
           </svg>
         )}
         <SpaceIcon />
-        {variant === "floating" && <span className="my-space-trigger__label">مساحتي</span>}
       </button>
 
       {typeof document !== "undefined" && createPortal(

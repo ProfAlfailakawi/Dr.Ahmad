@@ -67,6 +67,94 @@ function canonicalRedirectLocation(req) {
   return `https://${canonicalHost}${path}`
 }
 
+/* SEO migration guard: old WordPress namespaces must never fall through to the SPA
+   shell with HTTP 200. Google classifies that pattern as a soft 404. Only URLs with
+   a true one-to-one replacement receive 301; the retired namespaces return 410 so
+   crawlers can retire them decisively while still being allowed to crawl them. */
+const legacyEquivalentRedirects = new Map([
+  /* صفحات هوية/أرشيف لها بديل واحد حقيقي في الموقع الحالي. لا نستخدم
+     تحويلات عامة إلى الرئيسية لأن ذلك يعيد مشكلة soft-404. */
+  ['/ar', '/'],
+  ['/home-2', '/'],
+  ['/ar/home-2', '/'],
+  ['/en/home', '/en'],
+  ['/academic-biography', '/cv'],
+  ['/academic-biography-2', '/cv'],
+  ['/ar/academic-biography', '/cv'],
+  ['/ar/academic-biography-2', '/cv'],
+  ['/en/academic-biography', '/en/cv'],
+  ['/en/academic-biography-2', '/en/cv'],
+  ['/scholarly-contributions', '/research'],
+  ['/scholarly-contributions-2', '/research'],
+  ['/ar/scholarly-contributions', '/research'],
+  ['/ar/scholarly-contributions-2', '/research'],
+  ['/en/scholarly-contributions', '/en/research'],
+  ['/en/scholarly-contributions-2', '/en/research'],
+  ['/published-books', '/publications'],
+  ['/published-books-2', '/publications'],
+  ['/ar/published-books', '/publications'],
+  ['/ar/published-books-2', '/publications'],
+  ['/signature-thought-articles', '/articles'],
+  ['/signature-thought-articles-2', '/articles'],
+  ['/ar/signature-thought-articles', '/articles'],
+  ['/ar/signature-thought-articles-2', '/articles'],
+  ['/recorded-interviews-media-appearances', '/media'],
+  ['/recorded-interviews-media-appearances-2', '/media'],
+  ['/ar/recorded-interviews-media-appearances', '/media'],
+  ['/ar/recorded-interviews-media-appearances-2', '/media'],
+  ['/upcoming-speaking-engagements', '/upcoming'],
+  ['/upcoming-speaking-engagements-2', '/upcoming'],
+  ['/ar/upcoming-speaking-engagements', '/upcoming'],
+  ['/ar/upcoming-speaking-engagements-2', '/upcoming'],
+  ['/from-my-inbox', '/inbox'],
+  ['/ar/from-my-inbox', '/inbox'],
+  ['/about-the-website', '/about'],
+  ['/about-the-website-2', '/about'],
+  ['/ar/about-the-website', '/about'],
+  ['/ar/about-the-website-2', '/about'],
+  ['/contact-consultation', '/contact'],
+  ['/contact-consultation-2', '/contact'],
+  ['/ar/contact-consultation', '/contact'],
+  ['/ar/contact-consultation-2', '/contact'],
+  ['/signature_articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
+])
+
+/* هذه صفحات/تصنيفات ووردبريس قديمة بلا بديل واحد مكافئ. نعيد 410 بدلاً
+   من تقديم shell التطبيق بـ200 أو جمع عشرات الصفحات في صفحة عامة واحدة. */
+const retiredLegacyExactPaths = new Set([
+  '/article-worth-reading', '/book-of-the-month', '/scientific-research',
+  '/video-pick', '/audio-pick', '/from-xtwitter', '/watch-listen-2',
+  '/quote-reflection', '/thought-experiment', '/disruptive-question', '/reframe-it',
+  '/silent-wisdom', '/behind-the-ideas', '/visual-insights', '/infographic',
+  '/mind-map-visual-notes', '/map-of-meaning', '/image-that-says-it-all',
+  '/tool-of-the-week', '/ai-summary-corner', '/emerging-concept', '/trend-watch',
+  '/web-platform-i-recommended', '/mini-library', '/mini-library-ai-society',
+  '/behind-the-quote', '/flash-insight', '/the-misunderstood-term',
+  '/what-schools-dont-teach', '/spotlight-on-innovation-2', '/arabic-revival', '/debatable',
+  '/en/reading-room', '/en/watch-listen', '/en/thought-reflection', '/en/visual-zone',
+  '/en/ai-tools', '/en/curated-insights', '/en/education-society',
+])
+const retiredLegacyPathPatterns = [
+  /^\/ar(?:\/|$)/i,
+  /^\/(?:category|tag|author)(?:\/|$)/i,
+  /^\/en\/(?:category|tag|author)(?:\/|$)/i,
+  /^\/en\/(?:reading-room|watch-listen|thought-reflection|visual-zone|ai-tools|curated-insights|education-society)(?:\/|$)/i,
+  /^\/(?:signature_articles|published_articles|scholarly_contributi)(?:\/|$)/i,
+  /^\/(?:wp-admin|wp-content|wp-json)(?:\/|$)/i,
+  /^\/wp-login\.php(?:\/|$)/i,
+  /^\/xmlrpc\.php(?:\/|$)/i,
+]
+
+function legacySeoDecision(pathname = '') {
+  const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  const destination = legacyEquivalentRedirects.get(normalized)
+  if (destination) return { status: 301, destination }
+  if (retiredLegacyExactPaths.has(normalized) || retiredLegacyPathPatterns.some((pattern) => pattern.test(normalized))) {
+    return { status: 410, destination: '' }
+  }
+  return null
+}
+
 const articleSuggestionPath = '/api/ai/article-suggestion'
 const contentSuggestionPath = '/api/ai/content-suggestion'
 const paperAnalysisPath = '/api/ai/paper-analysis'
@@ -4564,6 +4652,26 @@ export function createRequestHandler({
       return
     }
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
+
+    if (method === 'GET' || method === 'HEAD') {
+      const legacySeo = legacySeoDecision(url.pathname)
+      if (legacySeo?.status === 301) {
+        res.writeHead(301, {
+          location: legacySeo.destination,
+          'cache-control': 'public, max-age=86400',
+          'x-content-type-options': 'nosniff',
+        })
+        res.end()
+        return
+      }
+      if (legacySeo?.status === 410) {
+        sendText(res, 410, 'Gone', method, {
+          'cache-control': 'public, max-age=3600',
+          'x-robots-tag': 'noindex, nofollow',
+        })
+        return
+      }
+    }
 
     if (await handleWhatsAppRequest(req, res, url, method)) return
     if (await handleCommunicationsRequest(req, res, url, method)) return

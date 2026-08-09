@@ -73,15 +73,6 @@ const pointerToSvg = (event: ReactPointerEvent<SVGSVGElement>, width: number, he
 }
 
 type AtlasAxis = 'education' | 'pedagogy' | 'society' | 'technology' | 'identity' | 'media' | 'research'
-const AXES: { id: AtlasAxis; label: string }[] = [
-  { id: 'education', label: 'التعليم' },
-  { id: 'pedagogy', label: 'التربية' },
-  { id: 'society', label: 'المجتمع' },
-  { id: 'technology', label: 'التكنولوجيا' },
-  { id: 'identity', label: 'الهوية' },
-  { id: 'media', label: 'الإعلام' },
-  { id: 'research', label: 'البحث' },
-]
 const axisOf = (category = ''): AtlasAxis => {
   const value = foldAtlas(category)
   if (/بحث|علم|دراس/.test(value)) return 'research'
@@ -619,23 +610,26 @@ export default function Atlas() {
   }
 
   const categoryButtons = (
-    <div className="mb-8 flex flex-wrap gap-2 md:pb-0">
+    <div className="atlas-axis-filter mb-8 flex flex-wrap gap-x-4 gap-y-2 md:pb-0" aria-label="تصفية السماء حسب المحور">
       <button
         onClick={() => { setActiveCat(null); setSelected(null) }}
-        className={`min-h-11 shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
-          !activeCat ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
+        className={`atlas-axis-filter__item min-h-11 shrink-0 whitespace-nowrap border-b px-1 py-1.5 text-[.8rem] font-medium transition-colors duration-200 ${
+          !activeCat ? 'border-accent text-ink' : 'border-transparent text-soft hover:border-hair hover:text-ink'
         }`}
       >
+        <span className="atlas-axis-filter__spectrum" aria-hidden="true" />
         الكل
       </button>
       {cats.map((category) => (
         <button
           key={category}
           onClick={() => { setActiveCat(activeCat === category ? null : category); setSelected(null) }}
-          className={`min-h-11 shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
-            activeCat === category ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
+          className={`atlas-axis-filter__item min-h-11 shrink-0 whitespace-nowrap border-b px-1 py-1.5 text-[.8rem] font-medium transition-colors duration-200 ${
+            activeCat === category ? 'border-accent text-ink' : 'border-transparent text-soft hover:border-hair hover:text-ink'
           }`}
+          style={axisStyle(category)}
         >
+          <span className="atlas-axis-filter__dot" aria-hidden="true" />
           {categoryLabel(category)}
         </button>
       ))}
@@ -690,25 +684,13 @@ export default function Atlas() {
 
           <FadeUp delay={0.06}>
             <div className="mb-5 flex flex-wrap items-center gap-2.5">
-              <details className="atlas-legend group relative">
-                <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
-                  {/* الصنف المولّد لهذه النقطة لم يكن يخرج من Tailwind أصلاً، فكانت
-                      شفافةً دائماً؛ اللون يُكتب هنا كما يُكتب في نقاط القائمة. */}
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'rgb(var(--atlas-education))', boxShadow: '0 0 0 3px rgb(var(--atlas-education) / .13)' }} aria-hidden="true" />
-                  ألوان المحاور
-                  <span aria-hidden className="transition-transform group-open:rotate-45">+</span>
-                </summary>
-                <div className="absolute right-0 top-[calc(100%+.45rem)] z-30 grid min-w-[12rem] gap-2 rounded-xl border border-hair bg-canvas/95 p-3 text-[.7rem] text-soft shadow-xl backdrop-blur">
-                  {AXES.map((axis) => <span key={axis.id} className="flex items-center gap-2.5"><i className="h-3 w-3 rounded-full ring-2 ring-white/10" style={{ background: `rgb(var(--atlas-${axis.id}))`, boxShadow: `0 0 8px rgb(var(--atlas-${axis.id}) / .34)` }} />{axis.label}</span>)}
-                </div>
-              </details>
               <button type="button" onClick={() => { setCompareMode((value) => !value); setCompareIndexes([]) }} aria-pressed={compareMode} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>مقارنة نجمتين</button>
               {journeyStars.length > 0 && <button type="button" onClick={() => setShowJourney((value) => !value)} aria-pressed={showJourney} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${showJourney ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>بصمتي · {arDigits(journeyStars.length)}</button>}
               {constellations.length > 0 && (
                 <label className="sr-only" htmlFor="atlas-constellation">اختر كوكبة</label>
               )}
               {constellations.length > 0 && (
-                <select id="atlas-constellation" value={activeConstellation} onChange={(event) => setActiveConstellation(event.target.value)} className="min-h-11 max-w-full rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-semibold text-soft outline-none focus:border-accent">
+                <select id="atlas-constellation" value={activeConstellation} onChange={(event) => setActiveConstellation(event.target.value)} className="atlas-constellation-select min-h-11 w-[12.5rem] max-w-full rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-semibold text-soft outline-none focus:border-accent">
                   <option value="">كل الكوكبات</option>
                   {constellations.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
                 </select>
@@ -736,9 +718,7 @@ export default function Atlas() {
                   return (
                     <g key={category} opacity={on ? 1 : 0.25}>
                       <line x1={MOBILE_PAD_L} y1={y} x2={MOBILE_W - MOBILE_PAD_R + 8} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.055} />
-                      <text x={MOBILE_W - MOBILE_PAD_R + 18} y={y + 7} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 21, fontWeight: 600 }}>
-                        {categoryLabel(category)}
-                      </text>
+                      <line x1={MOBILE_W - MOBILE_PAD_R + 5} y1={y} x2={MOBILE_W - MOBILE_PAD_R + 17} y2={y} stroke={`rgb(var(--atlas-${axisOf(category)}))`} strokeWidth={3} strokeLinecap="round" />
                     </g>
                   )
                 })}
@@ -856,9 +836,7 @@ export default function Atlas() {
                   return (
                     <g key={category} opacity={on ? 1 : 0.25}>
                       <line x1={PAD_L} y1={y} x2={W - PAD_R + 10} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.05} />
-                      <text x={W - PAD_R + 26} y={y + 5} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 13.5, fontWeight: 500 }}>
-                        {categoryLabel(category)}
-                      </text>
+                      <line x1={W - PAD_R + 7} y1={y} x2={W - PAD_R + 20} y2={y} stroke={`rgb(var(--atlas-${axisOf(category)}))`} strokeWidth={2.5} strokeLinecap="round" />
                     </g>
                   )
                 })}
@@ -872,17 +850,6 @@ export default function Atlas() {
                     {arDigits(item.year)}
                   </text>
                 ))}
-
-                {view === 'graph' && cats.map((category, row) => {
-                  const example = graphStars.find((star) => star.cat === category)
-                  if (!example) return null
-                  const on = !activeCat || activeCat === category
-                  return (
-                    <text key={`glabel-${category}`} x={example.x} y={example.y - 22} textAnchor="middle" opacity={on ? 0.9 : 0.25} className="fill-soft font-sans" style={{ fontSize: 13, fontWeight: 600 }}>
-                      {categoryLabel(category)}
-                    </text>
-                  )
-                })}
 
                 {links.map((link) => {
                   const from = layout.find((star) => star.i === link.from)

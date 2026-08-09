@@ -136,15 +136,35 @@ function checkRepository() {
   expect(hosting.hosting?.public === 'dist', 'مجلد نشر Firebase Hosting ليس dist')
   expect(!hosting.firestore && !hosting.storage, 'firebase.json يجب أن يبقى للاستضافة فقط حتى لا تُنشر قواعد البيانات على مشروع الاستضافة')
   const publicRedirects = hosting.hosting?.redirects || []
+  /* تحويلات الهجرة المسموحة هنا كلها exact 1:1 فقط. لا wildcard ولا regex ولا
+     تحويل مجلد كامل إلى صفحة عامة؛ هذا يحرسنا من إعادة soft-404 بسبب migration. */
+  const migrationPairs = [
+    ['/ar', '/'], ['/home-2', '/'], ['/ar/home-2', '/'], ['/en/home', '/en'],
+    ['/academic-biography', '/cv'], ['/academic-biography-2', '/cv'], ['/ar/academic-biography', '/cv'], ['/ar/academic-biography-2', '/cv'],
+    ['/en/academic-biography', '/en/cv'], ['/en/academic-biography-2', '/en/cv'],
+    ['/scholarly-contributions', '/research'], ['/scholarly-contributions-2', '/research'], ['/ar/scholarly-contributions', '/research'], ['/ar/scholarly-contributions-2', '/research'],
+    ['/en/scholarly-contributions', '/en/research'], ['/en/scholarly-contributions-2', '/en/research'],
+    ['/published-books', '/publications'], ['/published-books-2', '/publications'], ['/ar/published-books', '/publications'], ['/ar/published-books-2', '/publications'],
+    ['/signature-thought-articles', '/articles'], ['/signature-thought-articles-2', '/articles'], ['/ar/signature-thought-articles', '/articles'], ['/ar/signature-thought-articles-2', '/articles'],
+    ['/recorded-interviews-media-appearances', '/media'], ['/recorded-interviews-media-appearances-2', '/media'], ['/ar/recorded-interviews-media-appearances', '/media'], ['/ar/recorded-interviews-media-appearances-2', '/media'],
+    ['/upcoming-speaking-engagements', '/upcoming'], ['/upcoming-speaking-engagements-2', '/upcoming'], ['/ar/upcoming-speaking-engagements', '/upcoming'], ['/ar/upcoming-speaking-engagements-2', '/upcoming'],
+    ['/from-my-inbox', '/inbox'], ['/ar/from-my-inbox', '/inbox'],
+    ['/about-the-website', '/about'], ['/about-the-website-2', '/about'], ['/ar/about-the-website', '/about'], ['/ar/about-the-website-2', '/about'],
+    ['/contact-consultation', '/contact'], ['/contact-consultation-2', '/contact'], ['/ar/contact-consultation', '/contact'], ['/ar/contact-consultation-2', '/contact'],
+  ]
   const allowedRedirects = new Map([
+    ...migrationPairs,
     ['/now', '/'],
     ['/rss', '/feed.xml'],
     ['/podcast', '/podcast.xml'],
     ['/articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
+    ['/signature_articles/a-society-that-fears-the-different-scheduledarabbic', '/articles/a-society-that-fears-the-different-arabic'],
   ])
   expect(publicRedirects.length === allowedRedirects.size
-    && publicRedirects.every((entry) => entry.type === 301 && allowedRedirects.get(entry.source) === entry.destination),
-  'Firebase Hosting يحتوي تحويلات عامة غير معتمدة')
+    && publicRedirects.every((entry) => entry.type === 301
+      && typeof entry.source === 'string' && !/[{}:*]/.test(entry.source)
+      && allowedRedirects.get(entry.source) === entry.destination),
+  'Firebase Hosting يحتوي تحويلات عامة أو غير معتمدة')
 
   const dataRules = json('firebase.data.json')
   expect(dataRules.firestore?.rules === 'firestore.rules', 'إعداد قواعد Firestore المنفصل غير صحيح')

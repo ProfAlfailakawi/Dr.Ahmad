@@ -5549,40 +5549,7 @@ html.reader-paper .sentence-item.is-sentence-active {
   }
 }
 
-/* 6) مساحتي — «الأثر» يُكتشف مرة، واللوحة نفسها تتنفس من رأسها لا من صناديق إضافية. */
-.my-space-trigger { overflow: visible; }
-.my-space-discovery {
-  position: absolute;
-  inset-inline-end: calc(100% + .65rem);
-  top: 50%;
-  display: grid;
-  min-inline-size: 7.2rem;
-  gap: .05rem;
-  transform: translateY(-50%);
-  border: 1px solid rgb(var(--c-accent) / .18);
-  border-radius: .9rem;
-  padding: .48rem .72rem;
-  background: rgb(var(--c-canvas) / .96);
-  box-shadow: 0 14px 32px -24px rgb(var(--c-ink) / .6);
-  text-align: right;
-  pointer-events: none;
-  animation: my-space-discovery-in .42s var(--motion-curve) both;
-}
-.my-space-discovery::after {
-  content: "";
-  position: absolute;
-  inset-inline-start: 100%;
-  top: 50%;
-  inline-size: .62rem;
-  block-size: 1px;
-  background: rgb(var(--c-accent) / .28);
-}
-.my-space-discovery__kicker { font-size: .62rem; font-weight: 750; color: rgb(var(--c-accent)); }
-.my-space-discovery__copy { font-size: .68rem; font-weight: 550; color: rgb(var(--c-soft)); }
-@keyframes my-space-discovery-in {
-  from { opacity: 0; transform: translate(.4rem,-50%); }
-  to { opacity: 1; transform: translate(0,-50%); }
-}
+/* 6) مساحتي — لوحة هادئة؛ زرّها العائم يعود أيقونة خالصة بلا تلميح نصي. */
 .my-space-panel {
   background:
     radial-gradient(78% 44% at 88% 0%, rgb(var(--c-accent) / .055), transparent 76%),
@@ -5611,27 +5578,6 @@ html.reader-paper .sentence-item.is-sentence-active {
   pointer-events: none;
 }
 .my-space-eyebrow { letter-spacing: 0; }
-@media (max-width: 640px) {
-  .my-space-discovery {
-    inset-inline-end: .15rem;
-    top: auto;
-    bottom: calc(100% + .55rem);
-    min-inline-size: 6.6rem;
-    transform: none;
-  }
-  .my-space-discovery::after {
-    inset-inline-start: auto;
-    inset-inline-end: 1.25rem;
-    top: 100%;
-    inline-size: 1px;
-    block-size: .55rem;
-  }
-  @keyframes my-space-discovery-in {
-    from { opacity: 0; transform: translateY(.35rem); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-}
-
 /* 7) القائمة — دعوة صامتة مرةً واحدة، وعمق بصري داخل اللوحة نفسها. */
 .site-menu-trigger.is-discovering > span:last-child {
   border-color: rgb(var(--c-accent) / .34);
@@ -5871,7 +5817,6 @@ html.reader-paper .sentence-item.is-sentence-active {
   .selection-discovery-chip,
   .reader-aa-discovery-label,
   .audio-sync-whisper,
-  .my-space-discovery,
   .site-menu-discovery,
   .atlas-graph-switch.is-discovering::after { animation: none !important; }
   .reader-aa-button,
@@ -6782,29 +6727,18 @@ html.site-silent .signature-label > span:first-child { animation: none !importan
     scroll-snap-align: none !important;
   }
 
-  /* «مساحتي» لم تعد رمزاً غامضاً عائماً: على الهاتف يظهر الاسم نفسه.
-     على الشاشات الواسعة تبقى الأيقونة الدائرية المختصرة. */
+  /* زر «مساحتي» يعود دائرياً ومختصراً كما كان؛ لا تسمية مرئية ولا تمدد على الهاتف. */
   .my-space-trigger--floating {
-    inline-size: auto !important;
-    min-inline-size: 4.9rem !important;
-    padding-inline: .72rem !important;
+    inline-size: 2.75rem !important;
+    min-inline-size: 2.75rem !important;
+    padding-inline: 0 !important;
     background: rgb(var(--c-canvas)) !important;
     box-shadow: none !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
-  .my-space-trigger__label {
-    display: inline !important;
-    font-size: .67rem;
-    font-weight: 700;
-    line-height: 1;
-    white-space: nowrap;
-    color: currentColor;
-  }
-  .my-space-trigger--floating .my-space-discovery { display: none !important; }
 }
 @media (min-width: 768px) {
-  .my-space-trigger__label { display: none !important; }
 }
 
 /* شريط مستويات البحث: هندسة ثابتة تماماً. لا سالب margins ولا transform ولا
@@ -6978,3 +6912,56 @@ html.dark {
    العنوان نفسه يبقى صغيراً وهادئاً مثل تنقّل المقالات. */
 .research-neighbor-nav a { text-decoration: none; }
 .research-neighbor-nav svg { pointer-events: none; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   2026-08-09 — ATLAS VOCABULARY + STABILITY PASS
+   مفتاح اللون صار جزءاً من الفلتر نفسه: الاسم يظهر مرة واحدة، والسماء
+   تحتفظ بإشارة لونية صامتة بدل تكرار تسميات المحاور داخل الرسم.
+   ═══════════════════════════════════════════════════════════════════ */
+.atlas-axis-filter__item {
+  display: inline-flex;
+  align-items: center;
+  gap: .42rem;
+  border-radius: 0;
+  background: transparent;
+  transform: none;
+}
+.atlas-axis-filter__dot {
+  inline-size: .38rem;
+  block-size: .38rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgb(var(--atlas-axis));
+  box-shadow: 0 0 0 2px rgb(var(--atlas-axis) / .1);
+}
+.atlas-axis-filter__spectrum {
+  inline-size: 1.25rem;
+  block-size: 2px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+    rgb(var(--atlas-education)),
+    rgb(var(--atlas-pedagogy)),
+    rgb(var(--atlas-society)),
+    rgb(var(--atlas-technology)),
+    rgb(var(--atlas-identity)),
+    rgb(var(--atlas-media)),
+    rgb(var(--atlas-research)));
+}
+.atlas-constellation-select {
+  contain: layout style;
+  transform: none !important;
+  transition: border-color .18s ease, color .18s ease, background-color .18s ease;
+}
+@media (max-width: 767px) {
+  .atlas-axis-filter {
+    gap-inline: .9rem;
+  }
+  .atlas-constellation-select {
+    inline-size: min(12.5rem, 100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-axis-filter__item,
+  .atlas-constellation-select { transition: none !important; }
+}

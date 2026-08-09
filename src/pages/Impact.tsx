@@ -159,11 +159,11 @@ export default function Impact() {
               ))}
             </dl>
           )}
-          <div role="tablist" aria-label="تصفية سجل الأثر" className="edge-fade flex max-w-full gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div role="tablist" aria-label="تصفية سجل الأثر" className="editorial-tablist edge-fade flex max-w-full gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {[
               ['all', 'الكل'], ['paper', 'علمي'], ['media', 'إعلامي'], ['archive', 'أرشيفي'],
             ].map(([key, label]) => (
-              <button key={key} type="button" role="tab" aria-selected={filter === key} onClick={() => setFilter(key as FilterKey)} className={`shrink-0 rounded-full border px-4 py-1.5 text-[.74rem] font-semibold transition-colors ${filter === key ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
+              <button key={key} type="button" role="tab" aria-selected={filter === key} onClick={() => setFilter(key as FilterKey)} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.74rem] font-semibold ${filter === key ? 'is-active' : ''}`}>{label}</button>
             ))}
           </div>
         </div>

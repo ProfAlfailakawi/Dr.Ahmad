@@ -308,14 +308,14 @@ export default function Curated() {
                 <p className="mt-1 text-[.74rem] text-soft">{radarLive ? today : latestAdded ? `آخر إضافة: ${latestAdded}` : "مسارات مختارة للقراءة"}</p>
               </div>
               <div className="max-w-full edge-fade overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex min-w-max gap-1" role="tablist" aria-label="واجهة مختارات د. أحمد">
+                <div className="editorial-tablist flex min-w-max gap-1" role="tablist" aria-label="واجهة مختارات د. أحمد">
                   {[
                     ["today", "اختيار اليوم"],
                     ["book", "كتاب الشهر"],
                     ["question", "سؤال"],
                     ["radar", "الرادار"],
                   ].map(([key, label]) => (
-                    <button key={key} type="button" role="tab" aria-selected={feature === key} onClick={() => setFeature(key as typeof feature)} className={`min-h-11 rounded-full px-4 text-[.78rem] font-semibold transition-colors ${feature === key ? "bg-accent text-white" : "text-soft hover:bg-wash hover:text-ink"}`}>{label}</button>
+                    <button key={key} type="button" role="tab" aria-selected={feature === key} onClick={() => setFeature(key as typeof feature)} className={`editorial-tab min-h-11 px-3 text-[.78rem] font-semibold ${feature === key ? "is-active" : ""}`}>{label}</button>
                   ))}
                 </div>
               </div>
@@ -360,7 +360,7 @@ export default function Curated() {
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <div className="edge-fade overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="flex min-w-max gap-1.5" role="tablist" aria-label="تصفية مختارات د. أحمد">
+              <div className="editorial-tablist flex min-w-max gap-1.5" role="tablist" aria-label="تصفية مختارات د. أحمد">
                 {["الكل", ...curioKinds].map((itemKind) => (
                   <button
                     key={itemKind}
@@ -368,7 +368,7 @@ export default function Curated() {
                     role="tab"
                     aria-selected={kind === itemKind}
                     onClick={() => setKind(itemKind)}
-                    className={`min-h-11 rounded-full border px-5 text-[.85rem] font-medium transition-colors duration-300 ${kind === itemKind ? "border-accent bg-accent text-white" : "border-hair text-soft hover:border-accent hover:text-accent"}`}
+                    className={`editorial-tab min-h-11 px-4 text-[.85rem] font-medium ${kind === itemKind ? "is-active" : ""}`}
                   >
                     {itemKind}
                   </button>

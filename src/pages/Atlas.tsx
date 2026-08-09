@@ -492,12 +492,10 @@ export default function Atlas() {
   }
 
   const categoryButtons = (
-    <div className="atlas-category-rail mb-8 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden">
+    <div className="atlas-category-rail editorial-tablist mb-8 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden">
       <button
         onClick={() => { setActiveCat(null); setSelected(null) }}
-        className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
-          !activeCat ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
-        }`}
+        className={`editorial-tab shrink-0 whitespace-nowrap px-3 py-1.5 text-[.83rem] font-medium ${!activeCat ? 'is-active' : ''}`}
       >
         الكل
       </button>
@@ -505,9 +503,7 @@ export default function Atlas() {
         <button
           key={category}
           onClick={() => { setActiveCat(activeCat === category ? null : category); setSelected(null) }}
-          className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-[.83rem] font-medium transition-colors duration-300 ${
-            activeCat === category ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
-          }`}
+          className={`editorial-tab shrink-0 whitespace-nowrap px-3 py-1.5 text-[.83rem] font-medium ${activeCat === category ? 'is-active' : ''}`}
         >
           <span aria-hidden className="me-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" style={{ backgroundColor: colorsEnabled ? categoryColor(category, cats) : undefined }} />
           {categoryLabel(category)}

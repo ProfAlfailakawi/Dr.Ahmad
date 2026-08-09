@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
+import { motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { LINK_OUT, SHOW_EN_TOGGLE, academicProfiles, profile, socials, links, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
@@ -113,6 +113,28 @@ export function Label({ children, center = false }: { children: React.ReactNode;
   )
 }
 
+/* ---------- أثر الفكرة: توقيع بصري حيّ، لا شريط تقدّم تقليدي ---------- */
+export function ThoughtTrace() {
+  const location = useLocation()
+  const reduce = useReducedMotion()
+  const { scrollYProgress } = useScroll()
+  const progress = useSpring(scrollYProgress, { stiffness: 90, damping: 24, mass: 0.32 })
+  const dotY = useTransform(progress, [0, 1], ['0%', '100%'])
+
+  if (location.pathname === '/admin' || location.pathname === '/launch' || location.pathname.startsWith('/cv-file/')) return null
+
+  return (
+    <div className="idea-signature-trace" aria-hidden="true">
+      <span className="idea-signature-trace__base" />
+      <motion.span className="idea-signature-trace__ink" style={reduce ? undefined : { scaleY: progress }} />
+      <i className="idea-signature-trace__branch idea-signature-trace__branch--a" />
+      <i className="idea-signature-trace__branch idea-signature-trace__branch--b" />
+      <i className="idea-signature-trace__branch idea-signature-trace__branch--c" />
+      <motion.b className="idea-signature-trace__dot" style={reduce ? { top: '18%' } : { top: dotY }} />
+    </div>
+  )
+}
+
 /* ---------- Page heading (used by inner pages) ---------- */
 export function PageHead({ label, title, sub }: { label: string; title: string; sub?: string }) {
   const headRef = useRef<HTMLElement>(null)
@@ -132,14 +154,15 @@ export function PageHead({ label, title, sub }: { label: string; title: string; 
   }, [label, title])
 
   return (
-    <header ref={headRef} className="page-head spatial-stage border-b border-hair px-6 pb-12 pt-28 md:px-11 md:pb-12 md:pt-32">
-      <div className="mx-auto max-w-shell">
+    <header ref={headRef} className="page-head page-head-scene spatial-stage border-b border-hair px-6 pb-12 pt-28 md:px-11 md:pb-12 md:pt-32">
+      <div className="page-head-scene__inner mx-auto max-w-shell">
         <FadeUp>
           <Label>{label}</Label>
-          <h1 style={{ viewTransitionName: 'page-title' }} className="font-display text-[clamp(2.4rem,6vw,4rem)] font-bold leading-[1.25] text-ink">
+          <h1 style={{ viewTransitionName: 'page-title' }} className="scene-heading__title font-display text-[clamp(2.4rem,6vw,4rem)] font-bold leading-[1.25] text-ink">
             <Reveal>{title}</Reveal>
           </h1>
-          {sub && <p className="mt-4 max-w-[620px] text-[1.05rem] font-light leading-[1.9] text-ink/80">{sub}</p>}
+          <span className="scene-heading__rule" aria-hidden="true"><i /></span>
+          {sub && <p className="page-head-scene__sub mt-4 max-w-[620px] text-[1.05rem] font-light leading-[1.9] text-ink/80">{sub}</p>}
         </FadeUp>
       </div>
     </header>
@@ -198,12 +221,13 @@ export function Magnetic({ children, className = '', to, href }: { children: Rea
 /* ---------- Section head: label + title + "الكل" ---------- */
 export function SectionHead({ label, title, to, cta = 'الكل' }: { label: string; title: string; to?: string; cta?: string }) {
   return (
-    <div className="mb-10 flex items-end justify-between gap-6">
+    <div className="section-head-scene mb-10 flex items-end justify-between gap-6">
       <FadeUp>
         <Label>{label}</Label>
-        <h2 className="font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink">
+        <h2 className="scene-heading__title font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink">
           <Reveal>{title}</Reveal>
         </h2>
+        <span className="scene-heading__rule scene-heading__rule--section" aria-hidden="true"><i /></span>
       </FadeUp>
       {to && (
         <Link to={to} className="group shrink-0 pb-2 text-[.92rem] font-semibold text-accent">

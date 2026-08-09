@@ -6364,3 +6364,373 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   color: rgb(var(--c-accent));
   text-decoration-color: rgb(var(--c-accent) / .62);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2026-08-09 — SIGNATURE EDITORIAL PASS
+   «أثر الفكرة» + عناوين كمشاهد + هواء مقصود + فلاتر نصية + أرشيف تحريري.
+   القاعدة: لا Gloss، لا مؤثر استعراضي، ولا حركة تتقدم على المحتوى.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1) أثر الفكرة — خط واحد حيّ يمر على الموقع كله دون أن يتحول إلى progress bar صريح. */
+.idea-signature-trace {
+  position: fixed;
+  z-index: 44;
+  inset-inline-end: max(7px, env(safe-area-inset-right));
+  top: 18vh;
+  width: 18px;
+  height: 64vh;
+  pointer-events: none;
+  opacity: .62;
+}
+.idea-signature-trace__base,
+.idea-signature-trace__ink {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 7px;
+  width: 1px;
+  transform-origin: top;
+}
+.idea-signature-trace__base {
+  background: linear-gradient(to bottom, transparent, rgb(var(--c-accent) / .13) 8%, rgb(var(--c-accent) / .13) 92%, transparent);
+}
+.idea-signature-trace__ink {
+  background: linear-gradient(to bottom, rgb(var(--c-accent) / .18), rgb(var(--c-accent) / .72), rgb(var(--c-accent) / .28));
+}
+.idea-signature-trace__dot {
+  position: absolute;
+  inset-inline-end: 4px;
+  width: 7px;
+  height: 7px;
+  margin-top: -3px;
+  border: 1px solid rgb(var(--c-accent) / .62);
+  border-radius: 50%;
+  background: rgb(var(--c-canvas));
+  box-shadow: 0 0 0 4px rgb(var(--c-canvas) / .74);
+  transform: translateZ(0);
+}
+.idea-signature-trace__branch {
+  position: absolute;
+  inset-inline-end: 7px;
+  width: 9px;
+  height: 1px;
+  background: linear-gradient(to left, rgb(var(--c-accent) / .26), transparent);
+  transform-origin: right center;
+}
+.idea-signature-trace__branch--a { top: 27%; transform: rotate(-18deg); }
+.idea-signature-trace__branch--b { top: 57%; width: 12px; transform: rotate(14deg); }
+.idea-signature-trace__branch--c { top: 82%; width: 7px; transform: rotate(-12deg); }
+
+@media (min-width: 1180px) {
+  .idea-signature-trace {
+    inset-inline-end: max(1.1rem, calc((100vw - 1340px) / 2));
+    opacity: .72;
+  }
+}
+@media (max-width: 430px) {
+  .idea-signature-trace { inset-inline-end: 2px; width: 10px; opacity: .38; }
+  .idea-signature-trace__base,
+  .idea-signature-trace__ink { inset-inline-end: 4px; }
+  .idea-signature-trace__dot { inset-inline-end: 1px; width: 6px; height: 6px; }
+  .idea-signature-trace__branch { display: none; }
+}
+
+/* 2) أقل Pills — الفلاتر التحريرية صارت نصاً وحبراً، لا مجموعة كبسولات. */
+.editorial-tablist {
+  position: relative;
+  align-items: center;
+  border-block-end: 1px solid rgb(var(--c-ink) / .07);
+}
+.editorial-tab {
+  position: relative;
+  min-height: 2.65rem;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: rgb(var(--c-soft));
+  box-shadow: none !important;
+  white-space: nowrap;
+  transition: color .24s ease, opacity .24s ease !important;
+}
+.editorial-tab::after {
+  content: "";
+  position: absolute;
+  inset-inline: .55rem;
+  inset-block-end: -1px;
+  height: 1.5px;
+  background: rgb(var(--c-accent));
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform .3s var(--motion-curve);
+}
+.editorial-tab:hover,
+.editorial-tab:focus-visible { color: rgb(var(--c-ink)); }
+.editorial-tab.is-active {
+  color: rgb(var(--c-accent)) !important;
+  font-weight: 700;
+}
+.editorial-tab.is-active::after { transform: scaleX(1); }
+.editorial-micro-label {
+  display: inline-flex;
+  align-items: center;
+  gap: .42rem;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.editorial-micro-label::before {
+  content: "";
+  width: 1.15rem;
+  height: 1px;
+  background: rgb(var(--c-accent) / .5);
+}
+
+/* البحث العلمي تحديداً: نوع الدراسة معلومة تحريرية، لا Badge. */
+.content-research .research-badge {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: rgb(var(--c-accent)) !important;
+}
+
+/* 3) العنوان كمشهد — العنوان، ثم خيطٌ يتحرك، ثم الوصف. */
+.page-head-scene {
+  display: flex;
+  min-height: clamp(22rem, 48vh, 34rem);
+  align-items: center;
+  overflow: hidden;
+  padding-block-start: clamp(7.5rem, 13vh, 9.5rem) !important;
+  padding-block-end: clamp(4.7rem, 9vh, 7rem) !important;
+}
+.page-head-scene__inner { width: 100%; position: relative; }
+.scene-heading__title {
+  max-width: 18ch;
+  text-wrap: balance;
+  letter-spacing: -.026em;
+}
+.scene-heading__rule {
+  display: block;
+  position: relative;
+  width: min(28rem, 62vw);
+  height: 1px;
+  margin-top: 1.35rem;
+  overflow: hidden;
+  background: rgb(var(--c-ink) / .07);
+}
+.scene-heading__rule > i {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 34%;
+  background: linear-gradient(to left, rgb(var(--c-accent) / .82), rgb(var(--c-accent) / .16));
+  transform-origin: right center;
+  animation: scene-rule-arrive .78s var(--motion-curve) both;
+}
+.scene-heading__rule--section { width: min(15rem, 44vw); margin-top: .9rem; }
+.page-head-scene__sub {
+  margin-top: 1.75rem !important;
+  max-width: 54ch !important;
+  text-wrap: pretty;
+}
+.section-head-scene { margin-bottom: clamp(2.7rem, 5vw, 4.5rem) !important; }
+.section-head-scene .scene-heading__title { max-width: 16ch; }
+@keyframes scene-rule-arrive {
+  from { opacity: 0; transform: translateX(34%) scaleX(.22); }
+  to { opacity: 1; transform: translateX(0) scaleX(1); }
+}
+
+/* 4) المساحة البيضاء المقصودة — مساحات لها إيقاع، لا فراغات اتفاقية. */
+.editorial-breath-section {
+  padding-block-start: clamp(2.5rem, 7vw, 5.8rem) !important;
+  padding-block-end: clamp(5.5rem, 11vw, 9rem) !important;
+}
+.content-home .section-head-scene { margin-top: .25rem; }
+.content-home .home-idea-thread > section {
+  padding-block-start: clamp(3.8rem, 7vw, 5.8rem);
+  padding-block-end: clamp(3.8rem, 7vw, 5.8rem);
+}
+.content-home .home-idea-thread > section + section {
+  border-top-color: rgb(var(--c-ink) / .07) !important;
+}
+@media (max-width: 640px) {
+  .page-head-scene {
+    min-height: 24rem;
+    padding-block-start: 7rem !important;
+    padding-block-end: 4.5rem !important;
+  }
+  .scene-heading__title { max-width: 13.5ch; }
+  .page-head-scene__sub { margin-top: 1.35rem !important; }
+  .content-home .home-idea-thread > section {
+    padding-block-start: 3.2rem;
+    padding-block-end: 3.2rem;
+  }
+}
+
+/* 5) التجربة التحريرية — الأرشيف الإعلامي يبدأ بمشهد، ثم يتحول إلى تاريخ مضغوط. */
+.media-feature-grid {
+  display: grid;
+  gap: 1rem;
+}
+.media-feature-card {
+  border-radius: 1.1rem;
+  box-shadow: none !important;
+}
+.media-feature-card.is-lead h3 { font-size: clamp(1.1rem, 2.2vw, 1.45rem); }
+.media-editorial-intro { align-items: end; }
+.media-year-groups { border-block-start: 1px solid rgb(var(--c-ink) / .08); }
+.media-year-group {
+  display: grid;
+  grid-template-columns: 5rem minmax(0,1fr);
+  gap: clamp(1rem, 3vw, 2.2rem);
+  border-block-end: 1px solid rgb(var(--c-ink) / .08);
+}
+.media-year-mark {
+  position: relative;
+  padding-block: 1.25rem;
+  color: rgb(var(--c-accent));
+  font-family: "El Messiri", "Tajawal", serif;
+  font-size: .82rem;
+  font-weight: 700;
+  direction: ltr;
+  text-align: right;
+}
+.media-year-mark i {
+  position: absolute;
+  inset-inline-end: -.45rem;
+  top: 1.72rem;
+  width: .45rem;
+  height: 1px;
+  background: rgb(var(--c-accent) / .46);
+}
+.media-year-items { min-width: 0; }
+.media-editorial-row {
+  position: relative;
+  border-block-end: 1px solid rgb(var(--c-ink) / .07);
+}
+.media-editorial-row:last-child { border-block-end: 0; }
+.media-editorial-row__link {
+  display: grid;
+  grid-template-columns: 6.4rem minmax(0,1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  min-height: 7.1rem;
+  padding-block: .85rem;
+  padding-inline-end: 3rem;
+}
+.media-editorial-row__visual {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: .6rem;
+  background: rgb(var(--c-wash));
+}
+.media-editorial-row__visual img { width: 100%; height: 100%; object-fit: cover; transition: transform .7s var(--motion-curve); }
+.media-editorial-row__visual > span { display: grid; width: 100%; height: 100%; place-items: center; color: rgb(var(--c-accent)); }
+.media-editorial-row__meta { min-width: 2.6rem; text-align: left; color: rgb(var(--c-soft)); font-size: .66rem; }
+.media-editorial-row__save {
+  position: absolute !important;
+  inset-inline-end: auto !important;
+  inset-inline-start: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  border-color: transparent !important;
+  background: transparent !important;
+}
+.editorial-more-link { border-bottom: 1px solid rgb(var(--c-accent) / .34); }
+
+@media (min-width: 760px) {
+  .media-feature-grid { grid-template-columns: minmax(0,1.35fr) minmax(0,.82fr); grid-template-rows: repeat(2, minmax(0,1fr)); gap: 1.15rem; }
+  .media-feature-card.is-lead { grid-row: 1 / span 2; }
+  .media-feature-card.is-secondary { display: grid; }
+  .media-feature-card.is-secondary > a { display: grid; grid-template-columns: minmax(8.5rem,.9fr) minmax(0,1.1fr); align-items: stretch; }
+  .media-feature-card.is-secondary .spatial-media { height: 100%; aspect-ratio: auto !important; }
+  .media-feature-card.is-secondary > a > div:last-child { display: flex; flex-direction: column; justify-content: center; }
+}
+@media (max-width: 640px) {
+  .media-feature-grid { gap: .8rem; }
+  .media-feature-card.is-secondary > a { display: grid; grid-template-columns: 7rem minmax(0,1fr); }
+  .media-feature-card.is-secondary .spatial-media { height: 100%; min-height: 7.6rem; aspect-ratio: auto !important; }
+  .media-feature-card.is-secondary > a > div:last-child { padding: .85rem; }
+  .media-feature-card.is-secondary h3 { font-size: .88rem; line-height: 1.55; }
+  .media-feature-card.is-secondary > a > div:last-child > div:last-child { display: none; }
+  .media-year-group { grid-template-columns: 3.5rem minmax(0,1fr); gap: .65rem; }
+  .media-year-mark { font-size: .68rem; }
+  .media-editorial-row__link { grid-template-columns: 4.8rem minmax(0,1fr); gap: .7rem; min-height: 6.1rem; padding-inline-end: 2.3rem; }
+  .media-editorial-row__meta { display: none; }
+  .media-editorial-row__save { transform: translateY(-50%) scale(.88) !important; }
+}
+
+/* الأبحاث أيضاً تتحول من بطاقات متكررة إلى سجل تحريري واضح. */
+.content-research .research-editorial-row {
+  border-width: 0 0 1px 0 !important;
+  border-radius: 0 !important;
+  border-color: rgb(var(--c-ink) / .1) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: border-color .25s ease !important;
+}
+.content-research .research-editorial-row:first-child { border-top: 1px solid rgb(var(--c-ink) / .1) !important; }
+.content-research .research-editorial-row:hover {
+  border-color: rgb(var(--c-accent) / .32) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.content-research .research-understand-link {
+  min-height: auto !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: .2rem 0 !important;
+  font-weight: 700 !important;
+}
+.content-research .research-understand-link:hover { background: transparent !important; transform: translateX(-2px); }
+
+/* 6) «الموقع الذي يتنفس» — حركة صغيرة بطيئة، وتُطفأ عند القراءة العميقة. */
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.site-silent) .idea-signature-trace__dot {
+    animation: signature-dot-breathe 4.8s ease-in-out infinite;
+  }
+  html:not(.site-silent) .scene-heading__rule > i {
+    animation: scene-rule-arrive .78s var(--motion-curve) both, scene-rule-breathe 7.5s ease-in-out 1s infinite alternate;
+  }
+  html:not(.site-silent) .signature-label > span:first-child {
+    animation: signature-label-breathe 6.5s ease-in-out infinite alternate;
+    transform-origin: right center;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .signature-page:not(.admin-dashboard) .spatial-media img,
+    .media-editorial-row__visual img {
+      transition: transform .72s var(--motion-curve), opacity .35s ease !important;
+    }
+    .signature-page:not(.admin-dashboard) a:hover .spatial-media img,
+    .media-editorial-row:hover .media-editorial-row__visual img {
+      transform: scale(1.016);
+    }
+  }
+}
+@keyframes signature-dot-breathe {
+  0%, 100% { opacity: .58; transform: scale(.92); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+@keyframes scene-rule-breathe {
+  from { transform: translateX(0); }
+  to { transform: translateX(-5px); }
+}
+@keyframes signature-label-breathe {
+  from { transform: scaleX(.9); opacity: .72; }
+  to { transform: scaleX(1.08); opacity: 1; }
+}
+
+html.site-silent .idea-signature-trace { opacity: .22; }
+html.site-silent .idea-signature-trace__dot,
+html.site-silent .scene-heading__rule > i,
+html.site-silent .signature-label > span:first-child { animation: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .idea-signature-trace__ink { transform: scaleY(.18); }
+  .idea-signature-trace__dot { top: 18% !important; }
+  .scene-heading__rule > i,
+  .signature-label > span:first-child { animation: none !important; }
+}

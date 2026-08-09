@@ -465,16 +465,14 @@ function ThoughtCompass() {
         </FadeUp>
 
         <FadeUp delay={0.1}>
-          <div className="rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:gap-2.5 md:overflow-visible md:px-0">
+          <div className="editorial-tablist rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:gap-2.5 md:overflow-visible md:px-0">
             {axes.map((a) => (
               <button
                 key={a.key}
                 onMouseEnter={() => setActive(a.key)}
                 onClick={() => setActive(a.key)}
                 data-hover
-                className={`shrink-0 rounded-full border px-4 py-2 font-display text-[.92rem] transition-colors duration-300 md:px-5 md:text-[1.02rem] ${
-                  active === a.key ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'
-                }`}
+                className={`editorial-tab shrink-0 px-3 py-2 font-display text-[.92rem] md:px-4 md:text-[1.02rem] ${active === a.key ? 'is-active' : ''}`}
               >
                 {a.label}
               </button>
@@ -499,7 +497,7 @@ function ThoughtCompass() {
           <div className="rail -mx-6 mt-7 flex gap-3 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
             {quickLinks.map((item) => (
               <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex min-h-[108px] w-[62vw] max-w-[252px] shrink-0 flex-col justify-between rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent md:w-auto md:max-w-none">
-                <span className="inline-flex w-fit rounded-full border border-hair px-2 py-0.5 text-[.66rem] text-soft">{item.tag}</span>
+                <span className="editorial-micro-label w-fit text-[.66rem] text-soft">{item.tag}</span>
                 <span className="line-clamp-2 text-[.86rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{item.label}</span>
                 <span aria-hidden className="text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1">←</span>
               </Link>

@@ -11,7 +11,7 @@ import { arabicCountPhrase, PAPER_FORMS, RESULT_FORMS } from '../lib/arabic-coun
 
 const ar = (n: number) => String(n).padStart(2, '0')
 const paperCount = (count: number) => arabicCountPhrase(count, PAPER_FORMS)
-const badge = 'research-badge inline-flex items-center rounded-full px-3 py-1.5 text-[.72rem] font-semibold'
+const badge = 'research-badge editorial-micro-label inline-flex items-center text-[.72rem] font-semibold'
 const arabicOnly = (value = '') => /[\u0600-\u06ff]/.test(value) ? value.trim() : ''
 const normalizeSearch = (value = '') => value.toLowerCase().replace(/[ًٌٍَُِّْـ]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
 
@@ -44,7 +44,7 @@ export default function Research() {
       }} />
       <PageHead label="المساهمات العلمية" title="مسارٌ من السؤال إلى الدليل." sub="أبحاثٌ محكّمة تكشف سؤال كل دراسة ومنهجها ونتيجتها وحدودها، مع وصول مباشر إلى بياناتها ومصادرها الأصلية." />
 
-      <section className="px-6 py-16 md:px-11 md:py-24">
+      <section className="editorial-breath-section px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <div className="mb-8 flex flex-wrap items-center justify-between gap-5 border-b border-hair pb-6">
@@ -93,7 +93,7 @@ export default function Research() {
               const year = intelligence.year
               const journal = p.journal || intelligence.journal
               return (
-                <li key={p.slug} className="research-list-card spatial-card overflow-hidden rounded-[26px] border">
+                <li key={p.slug} className="research-list-card research-editorial-row spatial-card overflow-hidden border">
                     <div className="grid gap-4 p-5 sm:grid-cols-[48px_minmax(0,1fr)] sm:items-start md:p-7">
                       <span className="pt-1 font-display text-[.86rem] font-bold text-accent sm:self-start">{ar((paged.page - 1) * 12 + i + 1)}</span>
                       <div className="min-w-0">

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router'
-import { Footer, Nav } from './components/ui'
+import { Footer, Nav, ThoughtTrace } from './components/ui'
 import { FloatingActions } from './components/extras'
 import { CmsProvider } from './lib/content'
 import { useTrackJourney, useTrackView } from './lib/views'
@@ -397,6 +397,7 @@ function RoutedApplication() {
         <RouteScrollManager />
         <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
         <ConditionalNav />
+        <ThoughtTrace />
         <main id="main">
           <AnimatedRoutes />
         </main>

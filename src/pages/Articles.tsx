@@ -131,12 +131,12 @@ export default function Articles() {
 
       <section className="sticky top-16 z-[120] border-b border-hair bg-canvas/[.92] px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
         <div className="mx-auto max-w-shell">
-          <div className="rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="editorial-tablist rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCat(c)}
-                className={`shrink-0 rounded-full border px-4 py-2 text-[.82rem] font-medium transition-colors duration-300 ${cat === c ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+                className={`editorial-tab shrink-0 px-3 py-2 text-[.82rem] font-medium ${cat === c ? 'is-active' : ''}`}
               >
                 {categoryLabel(c)}
               </button>
@@ -182,7 +182,7 @@ export default function Articles() {
                 <div key={entry.slug} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
                   <Link to={`/articles/${entry.slug}`} viewTransition className="spatial-card group flex h-full min-w-0 flex-col rounded-2xl border border-hair bg-canvas p-6 transition-[border-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="inline-flex rounded-full border border-hair bg-wash px-3 py-1 text-[.68rem] font-semibold text-accent">{entry.tag} · {labels[index] || 'مختارة'}</span>
+                      <span className="editorial-micro-label text-[.68rem] font-semibold text-accent">{entry.tag} · {labels[index] || 'مختارة'}</span>
                       <span className="text-[.7rem] font-semibold text-soft">0{index + 1}</span>
                     </div>
                     <h3 className="mt-4 break-words font-display text-[1.16rem] font-bold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.26rem]">{entry.title}</h3>
@@ -197,7 +197,7 @@ export default function Articles() {
       </section>}
 
       {/* archive */}
-      <section className="px-6 py-12 md:px-11 md:py-16">
+      <section className="editorial-breath-section px-6 py-12 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <p className="text-[.82rem] text-soft">

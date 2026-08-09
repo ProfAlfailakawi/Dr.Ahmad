@@ -6,7 +6,7 @@ import { FadeUp, Page, PageHead, SocialIcon, sharedViewName } from '../component
 import { academicProfiles, doctorate, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { Pagination, usePagedList } from '../components/Pagination'
-import { analyzeResearch } from '../lib/research-intelligence'
+import { analyzeResearch, researchArchiveProjection } from '../lib/research-intelligence'
 import { arabicCountPhrase, PAPER_FORMS, RESULT_FORMS } from '../lib/arabic-count.ts'
 
 const ar = (n: number) => String(n).padStart(2, '0')
@@ -21,15 +21,15 @@ export default function Research() {
   const [query, setQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState('الكل')
   const [yearFilter, setYearFilter] = useState('الكل')
-  const indexed = useMemo(() => papers.map((paper) => ({ paper, intelligence: analyzeResearch(paper) })), [papers])
-  const types = useMemo(() => ['الكل', ...Array.from(new Set(indexed.map(({ intelligence }) => arabicOnly(intelligence.studyType)).filter(Boolean))).sort((left, right) => left.localeCompare(right, 'ar'))], [indexed])
-  const years = useMemo(() => ['الكل', ...Array.from(new Set(indexed.map(({ intelligence }) => intelligence.year).filter(Boolean))).sort((left, right) => right.localeCompare(left))], [indexed])
+  const indexed = useMemo(() => papers.map((paper) => ({ paper, projection: researchArchiveProjection(paper) })), [papers])
+  const types = useMemo(() => ['الكل', ...Array.from(new Set(indexed.map(({ projection }) => arabicOnly(projection.studyType)).filter(Boolean))).sort((left, right) => left.localeCompare(right, 'ar'))], [indexed])
+  const years = useMemo(() => ['الكل', ...Array.from(new Set(indexed.map(({ projection }) => projection.year).filter(Boolean))).sort((left, right) => right.localeCompare(left))], [indexed])
   const term = normalizeSearch(query)
-  const filtered = useMemo(() => indexed.filter(({ intelligence }) => {
-    if (typeFilter !== 'الكل' && intelligence.studyType !== typeFilter) return false
-    if (yearFilter !== 'الكل' && intelligence.year !== yearFilter) return false
+  const filtered = useMemo(() => indexed.filter(({ projection }) => {
+    if (typeFilter !== 'الكل' && projection.studyType !== typeFilter) return false
+    if (yearFilter !== 'الكل' && projection.year !== yearFilter) return false
     if (!term) return true
-    return intelligence.searchText.includes(term)
+    return projection.searchText.includes(term)
   }), [indexed, term, typeFilter, yearFilter])
   const paged = usePagedList(filtered, 12, `${papers.length}|${term}|${typeFilter}|${yearFilter}`)
   const count = paperCount(papers.length)
@@ -40,7 +40,7 @@ export default function Research() {
       <JsonLd data={{
         '@context': 'https://schema.org', '@type': 'CollectionPage', '@id': `${SITE_URL}/research#collection`,
         name: 'المساهمات العلمية', url: `${SITE_URL}/research`, inLanguage: 'ar',
-        mainEntity: { '@type': 'ItemList', numberOfItems: papers.length, itemListElement: papers.map((paper, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE_URL}/research/${paper.slug}`, name: paper.title })) },
+        mainEntity: { '@type': 'ItemList', numberOfItems: papers.length, itemListElement: papers.slice(0, 100).map((paper, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE_URL}/research/${paper.slug}`, name: paper.title })) },
       }} />
       <PageHead label="المساهمات العلمية" title="مسارٌ من السؤال إلى الدليل." sub="أبحاثٌ محكّمة تكشف سؤال كل دراسة ومنهجها ونتيجتها وحدودها، مع وصول مباشر إلى بياناتها ومصادرها الأصلية." />
 
@@ -88,9 +88,10 @@ export default function Research() {
           </FadeUp>
 
           <motion.ul key={`research:${term}:${typeFilter}:${yearFilter}:${paged.page}`} initial={reduce ? false : { opacity: .55 }} animate={{ opacity: 1 }} transition={{ duration: reduce ? 0 : .16 }} id="research-list" className="spatial-collection mt-6 grid scroll-mt-28 gap-4">
-            {paged.pageItems.map(({ paper: p, intelligence }, i) => {
-              const type = arabicOnly(p.studyType || intelligence.studyType)
-              const year = intelligence.year
+            {paged.pageItems.map(({ paper: p, projection }, i) => {
+              const intelligence = analyzeResearch(p)
+              const type = arabicOnly(p.studyType || projection.studyType || intelligence.studyType)
+              const year = projection.year || intelligence.year
               const journal = p.journal || intelligence.journal
               return (
                 <li key={p.slug} className="research-list-card research-editorial-row spatial-card overflow-hidden border">

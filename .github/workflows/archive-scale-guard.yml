@@ -1,0 +1,52 @@
+name: Archive 2036 scale guard
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * 1'
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/archive-scale.mjs'
+      - 'src/lib/knowledge-graph.ts'
+      - 'src/lib/concept-weave.ts'
+      - 'src/lib/article-bodies.ts'
+      - 'scripts/build-knowledge-graph.mjs'
+      - 'scripts/build-archive-shards.mjs'
+      - 'scripts/test-archive-scale-100k.mjs'
+      - 'scripts/guard-archive-2036.mjs'
+      - 'whatsapp-agent/content-index.mjs'
+      - 'src/lib/content.ts'
+      - 'src/lib/media-archive.ts'
+      - 'src/lib/research-intelligence.ts'
+      - 'src/lib/intelligence.ts'
+      - 'src/pages/Search.tsx'
+      - 'src/pages/Research.tsx'
+      - 'src/pages/Atlas.tsx'
+      - 'server.mjs'
+      - 'firebase.json'
+      - 'scripts/build-static.mjs'
+      - 'scripts/archive-sitemap.mjs'
+      - 'package.json'
+      - 'src/lib/archive-scale.d.ts'
+      - '.github/workflows/archive-scale-guard.yml'
+
+concurrency:
+  group: archive-2036-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hundred-thousand-content:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Architecture contract
+        run: node scripts/guard-archive-2036.mjs
+      - name: Stress 100,000 archive records
+        run: node scripts/test-archive-scale-100k.mjs

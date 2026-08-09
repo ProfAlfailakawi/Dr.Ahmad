@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildContentIndex, normalizeArabic } from '../whatsapp-agent/content-index.mjs'
+import { buildSimilarityGraph } from '../src/lib/archive-scale.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const bookKnowledgeFile = path.join(root, 'src', 'data', 'book-knowledge.json')
@@ -106,29 +107,43 @@ async function liveSocialNodes() {
 
 function buildEdges(nodes) {
   const edges = []
-  const byId = new Map(nodes.map((node) => [node.id, node]))
+  const byId = new Map(nodes.map((node, index) => [node.id, { node, index }]))
+  const directKeys = new Set()
   for (const node of nodes) {
-    if (node.linkedTo && byId.has(node.linkedTo)) addEdge(edges, node.id, node.linkedTo, 100, ['امتداد مباشر للمادة نفسها'])
+    if (!node.linkedTo || !byId.has(node.linkedTo)) continue
+    addEdge(edges, node.id, node.linkedTo, 100, ['امتداد مباشر للمادة نفسها'])
+    directKeys.add(`${node.id}>${node.linkedTo}`)
+    directKeys.add(`${node.linkedTo}>${node.id}`)
   }
-  for (let i = 0; i < nodes.length; i += 1) for (let j = i + 1; j < nodes.length; j += 1) {
-    const a = nodes[i], b = nodes[j]
-    if (a.linkedTo === b.id || b.linkedTo === a.id) continue
-    const common = overlap(a.tokens || [], b.tokens || [])
-    if (!common) continue
-    const titleCommon = overlap(tok(a.title), tok(b.title))
-    const conceptBridge = a.kind === 'concept' || b.kind === 'concept'
-    const crossKind = a.kind !== b.kind
-    const score = common * (conceptBridge ? 3 : 2) + titleCommon * 6 + (crossKind ? 1 : 0)
-    const threshold = conceptBridge ? 6 : 8
-    if (score < threshold) continue
-    const reasons = [titleCommon ? 'تقاطع مباشر في العنوان' : '', conceptBridge ? 'صلة بمفهوم من قاموس د. أحمد' : '', common >= 4 ? 'محور معرفي مشترك' : '', crossKind ? 'امتداد بين نوعين من المحتوى' : ''].filter(Boolean)
-    addEdge(edges, a.id, b.id, score, reasons)
+
+  /* Archive 2036: no quadratic all-pairs walk. Rare token postings create a
+     bounded candidate neighborhood for each node, then the existing semantic
+     scoring is applied only inside that pocket. 100k nodes stay practical. */
+  const similar = buildSimilarityGraph(nodes, {
+    getText: (node) => `${node.title || ''} ${node.excerpt || ''} ${(node.tokens || []).join(' ')}`,
+    getTitle: (node) => node.title || '',
+    getKind: (node) => node.kind || '',
+    maxNeighbors: 18,
+    maxCandidates: 360,
+    maxCandidateTokens: 8,
+    maxPostingRatio: .018,
+    maxPostingAbsolute: 1200,
+    minScore: 8,
+    conceptKind: 'concept',
+  })
+  for (const edge of similar) {
+    const from = nodes[edge.from]?.id
+    const to = nodes[edge.to]?.id
+    if (!from || !to || directKeys.has(`${from}>${to}`)) continue
+    edges.push({ from, to, score: edge.score, reasons: edge.reasons })
   }
-  // لا نُحمّل المتصفح شبكة O(n²) كاملة. نحتفظ بأقوى 18 صلة لكل عقدة؛
-  // هذا يحفظ المعنى والروابط المباشرة ويمنع تضخم JSON إلى عشرات الميغابايت.
+
   edges.sort((a, b) => b.score - a.score)
   const perNode = new Map()
   return edges.filter((edge) => {
+    /* Direct material links always survive. Similarity remains capped so the
+       browser never receives a giant graph even when the archive reaches 100k. */
+    if (edge.score >= 100) return true
     const count = perNode.get(edge.from) || 0
     if (count >= 18) return false
     perNode.set(edge.from, count + 1)
@@ -138,11 +153,16 @@ function buildEdges(nodes) {
 
 function buildLegacyProfile(nodes, edges, builtAt) {
   const byId = new Map(nodes.map((node) => [node.id, node]))
+  const byFrom = new Map()
+  for (const edge of edges) {
+    const list = byFrom.get(edge.from) || []
+    list.push(edge)
+    byFrom.set(edge.from, list)
+  }
   const contentKinds = new Set(['article', 'book', 'paper', 'curated', 'podcast', 'social', 'media'])
   const themes = []
   for (const concept of nodes.filter((node) => node.kind === 'concept')) {
-    const links = edges
-      .filter((edge) => edge.from === concept.id)
+    const links = (byFrom.get(concept.id) || [])
       .map((edge) => ({ edge, node: byId.get(edge.to) }))
       .filter((row) => row.node && contentKinds.has(row.node.kind))
     if (!links.length) continue
@@ -171,7 +191,7 @@ function buildLegacyProfile(nodes, edges, builtAt) {
   const representatives = nodes
     .filter((node) => contentKinds.has(node.kind))
     .map((node) => {
-      const links = edges.filter((edge) => edge.from === node.id)
+      const links = byFrom.get(node.id) || []
       const concepts = links.map((edge) => byId.get(edge.to)).filter((linked) => linked?.kind === 'concept')
       const kindSpread = new Set(links.map((edge) => byId.get(edge.to)?.kind).filter(Boolean)).size
       const centrality = links.reduce((sum, edge) => sum + Number(edge.score || 0), 0) + concepts.length * 7 + kindSpread * 4
@@ -249,10 +269,15 @@ writeJsonVerified('src/data/knowledge-graph-index.json', `${JSON.stringify(brows
    البناء جيوب الجوار التي تحتاجها «حياة هذه الفكرة» فقط، من الحواف نفسها التي
    يغذي بها graphNeighbors العقل الحي. */
 const byId = new Map(nodes.map((node) => [node.id, node]))
+const graphEdgesByFrom = new Map()
+for (const edge of edges) {
+  const list = graphEdgesByFrom.get(edge.from) || []
+  list.push(edge)
+  graphEdgesByFrom.set(edge.from, list)
+}
 const articleGraphNeighbors = Object.fromEntries(nodes
   .filter((node) => node.kind === 'article')
-  .map((node) => [node.id, edges
-    .filter((edge) => edge.from === node.id)
+  .map((node) => [node.id, (graphEdgesByFrom.get(node.id) || [])
     .filter((edge) => ['article', 'book', 'paper', 'media'].includes(byId.get(edge.to)?.kind || ''))
     .slice(0, 5)
     .map((edge) => {

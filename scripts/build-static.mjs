@@ -14,6 +14,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import sharp from 'sharp'
+import { buildSitemapDocuments, sitemapLocsFromDist } from './archive-sitemap.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = resolve(ROOT, 'dist')
@@ -1429,12 +1430,15 @@ const ogCount = await generateArticleOg()
 console.log(`✔ بطاقات مشاركة المقالات: ${ogCount} بطاقة بهوية الموقع`)
 
 /* ---------- sitemap ---------- */
-const sm = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${publicRoutes.filter((r) => (SHOW_EN || r.lang !== 'en') && !r.robots).map((r) => `  <url><loc>${SITE}${r.path}</loc>${r.iso ? `<lastmod>${r.iso}</lastmod>` : ''}<priority>${r.path === '/' ? '1.0' : r.type === 'article' ? '0.6' : '0.8'}</priority></url>`).join('\n')}
-</urlset>
-`
-writeFileSync(resolve(DIST, 'sitemap.xml'), sm, 'utf8')
+const sitemapEntries = publicRoutes
+  .filter((r) => (SHOW_EN || r.lang !== 'en') && !r.robots)
+  .map((r) => ({
+    loc: `${SITE}${r.path}`,
+    lastmod: r.iso || '',
+    priority: r.path === '/' ? '1.0' : r.type === 'article' ? '0.6' : '0.8',
+  }))
+const sitemapDocuments = buildSitemapDocuments(sitemapEntries, SITE)
+for (const [name, contents] of sitemapDocuments) writeFileSync(resolve(DIST, name), contents, 'utf8')
 
 /* ---------- robots.txt (مولّد من النطاق المركزي — لا يتقادم أبداً) ---------- */
 writeFileSync(resolve(DIST, 'robots.txt'), `User-agent: *
@@ -1716,11 +1720,10 @@ function assertStaticOutput() {
     })
   if (badPages.length) throw new Error(`Prerender ناقص في ${badPages.length} صفحة: ${badPages.slice(0, 5).map((file) => file.replace(ROOT, '')).join(', ')}`)
 
-  const sitemap = readFileSync(resolve(DIST, 'sitemap.xml'), 'utf8')
-  const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1])
+  const locs = sitemapLocsFromDist(DIST)
   const duplicateLocs = locs.filter((loc, index) => locs.indexOf(loc) !== index)
   if (duplicateLocs.length) throw new Error(`sitemap يحتوي روابط مكررة: ${duplicateLocs.slice(0, 3).join(', ')}`)
-  if (/scheduledarabbic|localhost|127\.0\.0\.1/.test(sitemap)) throw new Error('sitemap يحتوي رابط اختبار أو slug غير نظيف')
+  if (locs.some((loc) => /scheduledarabbic|localhost|127\.0\.0\.1/.test(loc))) throw new Error('sitemap يحتوي رابط اختبار أو slug غير نظيف')
   const forbiddenIndexPaths = ['/admin', '/privacy', '/terms', '/data-deletion', '/cv-file/', '/ar/', '/wp-', '/category/', '/signature_articles/', '/published_articles/', '/scholarly_contributi/', '/mini-library', '/article-worth-reading', '/book-of-the-month', '/en/reading-room/']
   const forbiddenLoc = locs.find((loc) => forbiddenIndexPaths.some((part) => loc.includes(part)))
   if (forbiddenLoc) throw new Error(`sitemap يحتوي صفحة غير مخصصة للفهرسة: ${forbiddenLoc}`)

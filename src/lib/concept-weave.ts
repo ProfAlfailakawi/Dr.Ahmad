@@ -57,6 +57,57 @@ const conceptAliases = (entry: DrAhmadGlossaryEntry) => [entry.canonicalAr, entr
   .map((value) => String(value || '').trim())
   .filter((value) => value.length >= 2)
 
+
+/* Archive 2036: concept postings are lazy per concept and per immutable CMS
+   snapshot. Opening one concept no longer scans the archive against the entire
+   glossary; it scans once for that concept, then every later interaction reuses
+   the posting. This keeps first interaction bounded even at 100k records. */
+type ConceptPostingIndex = Map<string, number[]>
+const articleConceptCache = new WeakMap<ArticleRecord[], ConceptPostingIndex>()
+const paperConceptCache = new WeakMap<PaperRecord[], ConceptPostingIndex>()
+const bookConceptCache = new WeakMap<BookRecord[], ConceptPostingIndex>()
+
+function cachedConceptPosting<T extends object>(
+  items: T[],
+  cache: WeakMap<T[], ConceptPostingIndex>,
+  entry: DrAhmadGlossaryEntry,
+  getText: (item: T) => string,
+) {
+  let index = cache.get(items)
+  if (!index) {
+    index = new Map()
+    cache.set(items, index)
+  }
+  const cached = index.get(entry.id)
+  if (cached) return cached
+  const posting: number[] = []
+  for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
+    if (containsConcept(getText(items[itemIndex]), entry)) posting.push(itemIndex)
+  }
+  index.set(entry.id, posting)
+  return posting
+}
+
+function conceptCandidateIndexes<T extends object>(
+  items: T[],
+  cache: WeakMap<T[], ConceptPostingIndex>,
+  concepts: DrAhmadGlossaryEntry[],
+  getText: (item: T) => string,
+  ceiling = 4000,
+) {
+  const output = new Set<number>()
+  const postings = concepts
+    .map((entry) => cachedConceptPosting(items, cache, entry, getText))
+    .sort((a, b) => a.length - b.length)
+  for (const posting of postings) {
+    for (const itemIndex of posting) {
+      output.add(itemIndex)
+      if (output.size >= ceiling) return [...output]
+    }
+  }
+  return [...output]
+}
+
 function containsConcept(text: string, entry: DrAhmadGlossaryEntry) {
   const haystack = normalizeDomainTerm(text)
   if (!haystack) return false
@@ -113,14 +164,14 @@ export function buildConceptArchivePreview(term: string, articles: ArticleRecord
   if (!entry) return null
   const rows: ConceptArchivePreview['milestones'] = []
 
-  for (const article of articles) {
-    const text = `${article.title} ${article.excerpt || ''} ${article.cat || ''}`
-    if (!containsConcept(text, entry)) continue
+  const articlePosting = cachedConceptPosting(articles, articleConceptCache, entry, (article) => `${article.title} ${article.excerpt || ''} ${article.cat || ''}`)
+  const paperPosting = cachedConceptPosting(papers, paperConceptCache, entry, (paper) => `${paper.titleAr || paper.title} ${paper.meta || ''} ${paper.abstractAr || ''} ${paper.keywords || ''} ${paper.keyFinding || ''}`)
+  for (const itemIndex of articlePosting) {
+    const article = articles[itemIndex]
     rows.push({ key: `a:${article.slug}`, year: yearOf(article.iso || article.year), title: article.title, kind: 'مقال', to: `/articles/${article.slug}` })
   }
-  for (const paper of papers) {
-    const text = `${paper.titleAr || paper.title} ${paper.meta || ''} ${paper.abstractAr || ''} ${paper.keywords || ''} ${paper.keyFinding || ''}`
-    if (!containsConcept(text, entry)) continue
+  for (const itemIndex of paperPosting) {
+    const paper = papers[itemIndex]
     rows.push({ key: `p:${paper.slug}`, year: yearOf(paper.year || paper.iso || paper.journal), title: paper.titleAr || paper.title, kind: 'بحث', to: `/research/${paper.slug}` })
   }
 
@@ -190,7 +241,8 @@ export function buildConceptEchoes(
     if (!concepts.length) return
     const seed = `${paragraph} ${concepts.map((entry) => entry.canonicalAr).join(' ')}`
 
-    for (const paper of papers) {
+    for (const paperIndexValue of conceptCandidateIndexes(papers, paperConceptCache, concepts, (paper) => `${paper.titleAr || paper.title} ${paper.meta || ''} ${paper.abstractAr || ''} ${paper.keywords || ''} ${paper.keyFinding || ''}`)) {
+      const paper = papers[paperIndexValue]
       const evidence = `${paper.keyFinding || ''} ${paper.abstractAr || ''} ${paper.contribution || ''}`.trim()
       const searchable = `${paper.titleAr || paper.title} ${paper.meta || ''} ${paper.keywords || ''} ${evidence}`
       const score = scoreCandidate(seed, searchable, concepts) + (paper.keyFinding ? 5 : 1)
@@ -213,7 +265,8 @@ export function buildConceptEchoes(
       })
     }
 
-    for (const article of articles) {
+    for (const articleIndexValue of conceptCandidateIndexes(articles, articleConceptCache, concepts, (article) => `${article.title} ${article.excerpt || ''} ${article.cat || ''}`)) {
+      const article = articles[articleIndexValue]
       if (article.slug === current.slug) continue
       const searchable = `${article.title} ${article.excerpt || ''} ${article.cat || ''}`
       const score = scoreCandidate(seed, searchable, concepts)
@@ -236,7 +289,8 @@ export function buildConceptEchoes(
       })
     }
 
-    for (const book of books) {
+    for (const bookIndexValue of conceptCandidateIndexes(books, bookConceptCache, concepts, (book) => `${book.title} ${book.desc || ''} ${bookKnowledgeText(book.slug)}`, 1200)) {
+      const book = books[bookIndexValue]
       const searchable = `${book.title} ${book.desc || ''} ${bookKnowledgeText(book.slug)}`
       const score = scoreCandidate(seed, searchable, concepts)
       if (score < 16) continue

@@ -193,17 +193,62 @@ const maxArticleRequestBytes = 384 * 1024
    «المقال غير الاحترافي» كان أثر هذا العطب لا سبباً مستقلاً.
    و`src/data/bodies.json` منسوخٌ في الصورة أصلاً (Dockerfile) — فالخادم يملك
    الأرشيف ولا حاجة لرفعه إليه. */
-let archiveBodiesCache = null
-function archiveBodies() {
-  if (archiveBodiesCache) return archiveBodiesCache
-  archiveBodiesCache = new Map()
+let archiveBodiesFallbackCache = null
+let archiveBodyShardMetaCache = undefined
+const archiveBodyShardCache = new Map()
+
+function archiveStableHash(value) {
+  let hash = 2166136261
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+
+function archiveBodyShardMeta() {
+  if (archiveBodyShardMetaCache !== undefined) return archiveBodyShardMetaCache
+  try {
+    const file = join(root, 'archive', 'bodies', 'v1', 'meta.json')
+    const parsed = JSON.parse(readFileSync(file, 'utf8'))
+    archiveBodyShardMetaCache = parsed?.hash === 'fnv1a32' && Number(parsed?.buckets) > 0 && parsed?.revision ? parsed : null
+  } catch { archiveBodyShardMetaCache = null }
+  return archiveBodyShardMetaCache
+}
+
+function archiveBodyFromShard(slug) {
+  const meta = archiveBodyShardMeta()
+  if (!meta) return ''
+  const bucket = archiveStableHash(slug) % Number(meta.buckets)
+  const key = `${meta.revision}:${bucket}`
+  let shard = archiveBodyShardCache.get(key)
+  if (!shard) {
+    try {
+      const file = join(root, 'archive', 'bodies', 'v1', 'shards', String(meta.revision), 'normal', `${String(bucket).padStart(Number(meta.width || String(Number(meta.buckets) - 1).length), '0')}.json`)
+      shard = JSON.parse(readFileSync(file, 'utf8'))
+      archiveBodyShardCache.set(key, shard)
+      /* A generation request can touch many buckets. Keep only a small hot set;
+         the durable archive remains on disk, not pinned in server heap. */
+      if (archiveBodyShardCache.size > 24) archiveBodyShardCache.delete(archiveBodyShardCache.keys().next().value)
+    } catch { return '' }
+  }
+  return typeof shard?.[slug] === 'string' ? shard[slug] : ''
+}
+
+function archiveBodiesFallback() {
+  if (archiveBodiesFallbackCache) return archiveBodiesFallbackCache
+  archiveBodiesFallbackCache = new Map()
   try {
     const raw = JSON.parse(readFileSync(new URL('./src/data/bodies.json', import.meta.url), 'utf8'))
     for (const [slug, body] of Object.entries(raw)) {
-      if (typeof body === 'string' && body.trim().length > 100) archiveBodiesCache.set(slug, body)
+      if (typeof body === 'string' && body.trim().length > 100) archiveBodiesFallbackCache.set(slug, body)
     }
-  } catch { /* غير متاح في بيئة الاختبار: نكتفي بما ترسله الواجهة */ }
-  return archiveBodiesCache
+  } catch { /* tests / stripped runtime: caller can still use body sent by UI */ }
+  return archiveBodiesFallbackCache
+}
+
+function archiveBodyForSlug(slug) {
+  return archiveBodyFromShard(slug) || archiveBodiesFallback().get(slug) || ''
 }
 const firebaseJwksUrl = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const articleCategories = Object.freeze(['التعليم', 'التربية', 'مجتمع', 'تكنولوجيا', 'هوية', 'إعلام', 'بحث'])
@@ -2560,7 +2605,6 @@ function perfectArticleInput(value) {
   } : null)
   /* المتن من القرص أولاً، ومن الواجهة لما لم يُبنَ بعد (مقالٌ جديد في
      Firestore لم يدخل bodies.json). الحمولة تهبط ٦٣٦ ← ١١٦ كيلوبايت. */
-  const disk = archiveBodies()
   const existing = boundedArray(value.existing, 180, (item) => {
     if (!item || typeof item !== 'object') return null
     const slug = boundedString(item.slug, 220)
@@ -2569,7 +2613,7 @@ function perfectArticleInput(value) {
       slug,
       title: boundedString(item.title, 300),
       excerpt: boundedString(item.excerpt, 450),
-      body: sent || boundedString(disk.get(slug) || '', 1_800),
+      body: sent || boundedString(archiveBodyForSlug(slug), 1_800),
     }
   })
   const selectedEventIds = boundedArray(value.selectedEventIds, 12, (item) => typeof item === 'string' ? boundedString(item, 200) : null)
@@ -4550,6 +4594,7 @@ function resolveFile(pathname) {
 
 function cacheControl(pathname) {
   if (pathname.startsWith('/assets/')) return 'public, max-age=31536000, immutable'
+  if (pathname.startsWith('/archive/bodies/v1/shards/')) return 'public, max-age=31536000, immutable'
   if (/^\/(audio|covers|files)\//.test(pathname)) return 'public, max-age=2592000, stale-while-revalidate=86400'
   if (pathname.startsWith('/og/') || ['/og.png', '/og-dark.png'].includes(pathname)) return 'public, max-age=86400, stale-while-revalidate=86400'
   if (['/favicon.png', '/logo.png', '/portrait.webp'].includes(pathname)) return 'public, max-age=604800, stale-while-revalidate=86400'

@@ -5,6 +5,8 @@ import { getDb, getFirebaseAuth } from '../lib/firebase'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { SocialIcon } from './icons'
 import { highlightMergeVerdict } from '../lib/quote-merge'
+import type { ArticleRecord, PaperRecord } from '../lib/cms'
+import { buildConceptArchivePreview } from '../lib/concept-weave'
 
 export type ReaderArticle = {
   slug: string
@@ -13,6 +15,11 @@ export type ReaderArticle = {
   cat: string
   excerpt?: string
   body?: string
+}
+
+export type ReaderConceptArchive = {
+  articles: ArticleRecord[]
+  papers: PaperRecord[]
 }
 
 export type PopularQuote = {
@@ -456,11 +463,14 @@ function scrollToSavedQuote(quote: SavedQuote) {
   return true
 }
 
-export function ReaderControls({ article, saveControl, onSerenity }: { article: ReaderArticle; saveControl?: ReactNode; onSerenity?: () => void }) {
+export function ReaderControls({ article, saveControl, onSerenity, conceptArchive }: { article: ReaderArticle; saveControl?: ReactNode; onSerenity?: () => void; conceptArchive?: ReaderConceptArchive }) {
   const { preferences, setPreferences } = useReaderPreferences()
   const [open, setOpen] = useState(false)
   const [xray, setXray] = useState<XrayTerm | null>(null)
   const [showAaDiscovery, setShowAaDiscovery] = useState(false)
+  const conceptLife = useMemo(() => xray && conceptArchive
+    ? buildConceptArchivePreview(xray.title, conceptArchive.articles, conceptArchive.papers)
+    : null, [conceptArchive, xray])
 
   useEffect(() => {
     const usedKey = 'reader:aa-discovered:v2'
@@ -665,6 +675,31 @@ export function ReaderControls({ article, saveControl, onSerenity }: { article: 
                   <blockquote className="mt-1.5 text-[.8rem] font-light leading-[1.9] text-ink/80">{VOICE[xray.title].text}</blockquote>
                   <p className="mt-1.5 text-[.66rem] text-soft">{VOICE[xray.title].book} · ص {VOICE[xray.title].page}</p>
                 </figure>
+              )}
+              {conceptLife && conceptLife.count > 0 && (
+                <section className="concept-life-peek" aria-label={`سيرة مفهوم ${xray.title}`}>
+                  <div className="concept-life-peek__head">
+                    <div>
+                      <p>سيرة المفهوم</p>
+                      <strong>{conceptLife.firstYear && conceptLife.latestYear ? `${conceptLife.firstYear} — ${conceptLife.latestYear}` : 'عبر الأرشيف'}</strong>
+                    </div>
+                    <span>{conceptLife.count.toLocaleString('en-US')} مادة</span>
+                  </div>
+                  <div className="concept-life-peek__timeline" aria-hidden="true">
+                    {conceptLife.milestones.map((item) => <span key={item.key} data-year={item.year || '•'} />)}
+                  </div>
+                  <div className="concept-life-peek__milestones">
+                    {conceptLife.milestones.slice(0, 3).map((item) => (
+                      <Link key={item.key} viewTransition to={item.to} onClick={() => setXray(null)}>
+                        <span>{item.year || item.kind}</span>
+                        <strong>{item.title}</strong>
+                      </Link>
+                    ))}
+                  </div>
+                  <Link viewTransition to={`/concept/${encodeURIComponent(xray.title)}`} onClick={() => setXray(null)} className="concept-life-peek__open">
+                    افتح سيرة المفهوم كاملة <span aria-hidden="true">←</span>
+                  </Link>
+                </section>
               )}
             </motion.aside>
           </motion.div>

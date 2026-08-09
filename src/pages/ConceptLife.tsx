@@ -6,6 +6,7 @@ import { useCmsContent } from '../lib/content'
 import { loadBookPassages, matchBookQuotes, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
 import { chapterUrl, searchMediaChapters, stamp } from '../lib/media-chapters'
 import { QuoteCite } from '../components/QuoteCite'
+import { conceptContextShift, resolveGlossaryConcept } from '../lib/concept-weave'
 
 /**
  * سيرة مفهوم — «المعلّم الرقمي عبر عشرين سنة».
@@ -73,7 +74,10 @@ const KIND_ORDER: Record<Station['kind'], number> = { 'مقال': 0, 'لقاء':
 export default function ConceptLife() {
   const params = useParams()
   const [search] = useSearchParams()
-  const term = decodeURIComponent(params.term || search.get('term') || '').trim()
+  const rawTerm = decodeURIComponent(params.term || search.get('term') || '').trim()
+  const concept = useMemo(() => resolveGlossaryConcept(rawTerm), [rawTerm])
+  const term = concept?.canonicalAr || rawTerm
+  const conceptSeed = concept ? [concept.canonicalAr, concept.canonicalEn, ...(concept.aliases || [])].join(' ') : ''
   const { articles, papers, books, media } = useCmsContent()
   const [deepReady, setDeepReady] = useState(false)
   const [activeKind, setActiveKind] = useState<Station['kind'] | null>(null)
@@ -92,8 +96,8 @@ export default function ConceptLife() {
   }, [deepReady, term])
 
   const stations = useMemo<Station[]>(() => {
-    if (term.length < 2) return []
-    const seed = roots(term)
+    if (!concept || term.length < 2) return []
+    const seed = roots(conceptSeed || term)
     if (!seed.size) return []
     const list: Station[] = []
 
@@ -165,13 +169,14 @@ export default function ConceptLife() {
       const yr = Number(right.year) || 9999
       return yl - yr || KIND_ORDER[left.kind] - KIND_ORDER[right.kind]
     })
-  }, [articles, books, deepReady, media, papers, term])
+  }, [articles, books, concept, conceptSeed, deepReady, media, papers, term])
 
   const span = useMemo(() => {
     const years = stations.map((item) => Number(item.year)).filter((year) => year > 1900)
     return years.length >= 2 ? { from: Math.min(...years), to: Math.max(...years) } : null
   }, [stations])
 
+  const contextShift = useMemo(() => conceptContextShift(term, stations.map((station) => ({ year: station.year, text: `${station.title} ${station.note}` }))), [stations, term])
   const visibleStations = useMemo(() => activeKind ? stations.filter((item) => item.kind === activeKind) : stations, [activeKind, stations])
 
   useEffect(() => { setActiveKind(null) }, [term])
@@ -208,10 +213,19 @@ export default function ConceptLife() {
 
 
 
+          {contextShift && (
+            <FadeUp>
+              <aside className="concept-shift-note" aria-label="ما الذي تغيّر؟">
+                <span>ما الذي تغيّر؟</span>
+                <p>{contextShift}</p>
+              </aside>
+            </FadeUp>
+          )}
+
           {stations.length === 0 && (
             <FadeUp>
               <p className="py-16 text-center text-[.9rem] leading-relaxed text-soft">
-                {term ? `لم أجد أثراً لـ«${term}» في الأرشيف. جرّب كلمة أقرب إلى محاوره،` : 'اكتب مفهوماً في الرابط، أو'}{' '}
+                {rawTerm && !concept ? `«${rawTerm}» ليس اسماً معتمداً في المعجم المفاهيمي للموقع.` : term ? `لم أجد أثراً لـ«${term}» في الأرشيف.` : 'اكتب مفهوماً في الرابط، أو'}{' '}
                 <Link to="/search" className="text-accent">ابدأ من البحث</Link>.
               </p>
             </FadeUp>

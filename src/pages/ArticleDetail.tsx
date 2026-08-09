@@ -28,6 +28,8 @@ import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/
 import { arabicCountPhrase, SHARE_FORMS, VIEW_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 import { printSiteContent } from '../lib/print'
 import { Pagination, usePagedList } from '../components/Pagination'
+import { ConceptEchoMarker } from '../components/ConceptEcho'
+import { buildConceptEchoes } from '../lib/concept-weave'
 
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
@@ -115,7 +117,8 @@ function SelectionDiscoveryHint() {
 }
 
 
-function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; title: string }) {
+function SyncedArticleBody({ article, body, articles, papers, books }: { article: ArticleRecord; body: string; articles: ArticleRecord[]; papers: PaperRecord[]; books: BookRecord[] }) {
+  const { slug, title } = article
   const audio = usePersistentAudio()
   const popularQuotes = usePopularQuotes(slug, body)
   const paragraphRefs = useRef<(HTMLParagraphElement | null)[]>([])
@@ -221,6 +224,7 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
      فوراً من Firestore من دون تحويل المتن إلى غابة من العلامات. */
   const articleSignals = useMemo(() => articleSignalsOf(slug, body, popularQuotes), [body, popularQuotes, slug])
   const glossaryPlan = useMemo(() => articleGlossaryPlan(body), [body])
+  const conceptEchoes = useMemo(() => buildConceptEchoes(article, body, articles, papers, books), [article.slug, article.title, article.iso, article.excerpt, articles, body, books, papers])
   const readerMade = useMemo(() => {
     const sourceParagraphs = body.split('\n\n')
     return [...popularQuotes]
@@ -414,6 +418,9 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
                   <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} xrayTerms={paragraphTerms} />
                 )}
               </p>
+              {conceptEchoes.filter((echo) => echo.paragraph === pIdx).map((echo) => (
+                <ConceptEchoMarker key={echo.id} echo={echo} />
+              ))}
               {/* 1–3 علامات صغيرة موزعة عبر المقال؛ النص الكامل لا يظهر إلا
                   عند طلب القارئ، فلا تتحول الصفحة إلى بطاقات اقتباس. */}
               {articleSignals.filter((signal) => signal.paragraph === pIdx).map((signal, index) => (
@@ -938,7 +945,7 @@ export default function ArticleDetail() {
             {article.body && (
               <div className="article-reading-actions serenity-hide mt-4 flex flex-wrap items-center gap-x-3 gap-y-3 pb-1">
                 <div id="article-audio" className="order-2 w-full min-w-0 sm:order-1 sm:w-auto sm:flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
-                <div className="order-1 flex shrink-0 items-center sm:order-2"><ReaderControls article={article} saveControl={<SaveForLaterButton slug={article.slug} />} onSerenity={() => setSerenity(true)} /></div>
+                <div className="order-1 flex shrink-0 items-center sm:order-2"><ReaderControls article={article} saveControl={<SaveForLaterButton slug={article.slug} />} onSerenity={() => setSerenity(true)} conceptArchive={{ articles, papers }} /></div>
               </div>
             )}
             <Link to={`/atlas?star=${encodeURIComponent(article.slug)}`} className="article-atlas-knot serenity-hide mt-3 inline-flex min-h-11 items-center gap-2 text-[.74rem] font-medium text-soft transition-colors hover:text-accent focus-visible:text-accent">
@@ -954,7 +961,7 @@ export default function ArticleDetail() {
               </div>
             ) : article.body ? (
               <>
-                <SyncedArticleBody slug={article.slug} body={article.body} title={article.title} />
+                <SyncedArticleBody article={article} body={article.body} articles={articles} papers={papers} books={books} />
                 <ClosingSignature />
                 {/* أداة التحديد لا تظهر إلا حين يختار القارئ نصاً؛ لا تزاحم نهاية المقال. */}
                 <SelectionTools current={article} articles={articles} body={article.body} excerpt={article.excerpt} />

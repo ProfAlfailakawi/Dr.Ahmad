@@ -183,7 +183,8 @@
     "search:deeplink:self-test": "node scripts/test-search-deeplink.mjs",
     "docs:check": "node scripts/check-docs-freshness.mjs",
     "guard:typography": "node scripts/guard-arabic-typography.mjs",
-    "seo:check": "node scripts/audit-search-console-readiness.mjs"
+    "seo:check": "node scripts/audit-search-console-readiness.mjs",
+    "concept:weave:check": "node scripts/test-concept-weave.mjs"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

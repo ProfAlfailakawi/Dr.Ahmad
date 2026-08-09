@@ -88,11 +88,11 @@ for (const token of [
   "article_highlight_members",
   "signInAnonymously",
   "articleContentVersion",
-  "POPULAR_THRESHOLD = 3",
+  "POPULAR_THRESHOLD = 1",
   "reader:quote-saved",
   "reader:popular-quote-updated",
   "findCanonicalHighlight",
-  "من أكثر العبارات التي احتفظ بها القراء",
+  "أول إشارة قراءة لهذه العبارة",
   "showPopular",
 ]) assert(readerSource.includes(token), `missing reader invariant: ${token}`)
 

@@ -267,10 +267,14 @@ const articleGraphNeighbors = Object.fromEntries(nodes
         year: neighbor.year || '',
         score: edge.score,
         reasons: edge.reasons,
+        /* نوع الصلة يُحسم وقت البناء من الدليل نفسه. لا نخمن «تضاداً» من
+           كلمةٍ عابرة داخل عنوانين في المتصفح. */
+        relation: (edge.reasons || []).some((reason) => /امتداد|مباشر/u.test(reason)) ? 'امتداد' : 'سياق',
+        reason: (edge.reasons || [])[0] || 'قرابة موضوعية محسوبة من الأرشيف',
       } : null
     })
     .filter(Boolean)]))
-writeJsonVerified('src/data/article-graph-neighbors.json', `${JSON.stringify({ version: 1, builtAt, neighbors: articleGraphNeighbors })}\n`)
+writeJsonVerified('src/data/article-graph-neighbors.json', `${JSON.stringify({ version: 2, builtAt, neighbors: articleGraphNeighbors })}\n`)
 const legacyProfile = buildLegacyProfile(nodes, edges, builtAt)
 writeJsonVerified('src/data/legacy-profile.json', `${JSON.stringify(legacyProfile, null, 2)}\n`)
 console.log(`Knowledge graph v2: ${nodes.length} nodes / ${edges.length} directed edges — ${Object.entries(kinds).map(([kind, count]) => `${kind}:${count}`).join(' · ')} · legacy:${legacyProfile.themes.length} themes/${legacyProfile.timeline.length} years`)

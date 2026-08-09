@@ -7,6 +7,7 @@ import { ideaWords } from '../lib/idea-life'
 import { PROJECT_START_YEAR, getMinimumCompletedJourneyYears } from '../lib/project-meta'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { arabicCountPhrase, DIFFERENT_YEAR_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS } from '../lib/arabic-count.ts'
+import { ReaderResonanceSky } from '../components/ReaderResonanceSky'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -195,6 +196,7 @@ export default function ThoughtOverview() {
               </section>
             </FadeUp>
           )}
+          <ReaderResonanceSky articles={articles} />
         </div>
       </section>
     </Page>

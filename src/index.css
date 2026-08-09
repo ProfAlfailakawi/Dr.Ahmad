@@ -420,6 +420,43 @@ html.dark .signature-page :is(.bg-canvas, .bg-wash) {
   background: linear-gradient(180deg, rgb(var(--c-accent) / .34), rgb(var(--c-accent) / 0));
   opacity: .52;
 }
+.content-articles .article-body:has(.reader-margin-thread)::before { opacity: 0; }
+.reader-margin-thread {
+  position: absolute;
+  inset-inline-start: -1.15rem;
+  inset-block: .45rem 1rem;
+  inline-size: 1px;
+  background: var(--c-hair);
+  pointer-events: none;
+}
+.reader-margin-thread__fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: top;
+  border-radius: 999px;
+  background: rgb(var(--c-accent) / .62);
+  transition: transform .12s linear;
+}
+.reader-margin-thread__node {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: var(--reader-node-at, 0%);
+  inline-size: 7px;
+  block-size: 7px;
+  transform: translate(50%, -50%);
+  border: 1px solid rgb(var(--c-accent) / .48);
+  border-radius: 50%;
+  background: rgb(var(--c-canvas));
+  transition: transform .28s ease, background-color .28s ease;
+}
+.reader-margin-thread__node.is-inherited { background: rgb(var(--c-accent) / .55); }
+.reader-margin-thread__node.is-reached {
+  transform: translate(50%, -50%) scale(1.28);
+  background: rgb(var(--c-accent));
+}
+@media (max-width: 640px) {
+  .reader-margin-thread { inset-inline-start: -.72rem; }
+}
 
 .content-books .page-head {
   background:
@@ -1163,6 +1200,31 @@ html.dark .book-detail-cover {
   color: rgb(var(--c-soft));
   color: color-mix(in srgb, rgb(var(--c-soft)) 90%, rgb(var(--c-ink)) 10%);
 }
+.human-core__voice-mark {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--c-hair);
+  border-radius: 999px;
+  color: rgb(var(--c-accent));
+  background: rgb(var(--c-canvas) / .72);
+  transition: border-color .25s var(--E), background-color .25s var(--E), transform .25s var(--E);
+}
+.human-core__voice-mark:hover,
+.human-core__voice-mark:focus-visible { border-color: rgb(var(--c-accent) / .68); background: rgb(var(--c-accent) / .06); }
+.human-core__voice-mark > span {
+  inline-size: 1.35rem;
+  block-size: .82rem;
+  background: currentColor;
+  -webkit-mask: var(--audio-wave-mask) center / 100% 100% no-repeat;
+  mask: var(--audio-wave-mask) center / 100% 100% no-repeat;
+  transform-origin: center;
+}
+.human-core__voice-mark.is-speaking > span { animation: human-name-wave .58s ease-in-out infinite alternate; }
+@keyframes human-name-wave { to { transform: scaleY(.42); opacity: .62; } }
 .human-core__title-line { position: relative; width: max-content; max-width: 100%; }
 .human-core__title-line::before,
 .human-core__title-line::after {
@@ -1337,6 +1399,27 @@ html.dark .human-core__portrait-base { filter: grayscale(1) contrast(.96) bright
 .human-core__orbit span:nth-child(3) { bottom: 6%; left: 22%; width: 4px; height: 4px; }
 @keyframes human-core-orbit { to { transform: rotate(360deg); } }
 
+.article-patina-card { position: relative; }
+.article-patina {
+  position: absolute;
+  inset-block-start: 1.1rem;
+  inset-inline-start: 0;
+  inline-size: 1.55rem;
+  block-size: 1.55rem;
+  border: 1px solid var(--c-hair);
+  border-radius: 999px;
+  pointer-events: none;
+}
+.article-patina::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(from -90deg, rgb(var(--c-accent)) calc(var(--article-age) * 1turn), transparent 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+}
+
 .human-core__cv {
   position: relative;
   overflow: hidden;
@@ -1431,6 +1514,14 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
     opacity: 1;
   }
   .human-core__scan { display: none; }
+}
+
+@media (max-width: 639px) {
+  .article-patina { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .human-core__voice-mark.is-speaking > span { animation: none; }
 }
 
 
@@ -4129,6 +4220,120 @@ html, body, #root { max-inline-size: 100%; }
 /* الحدّ الذي رسمه الدكتور يبقى كما هو تماماً — لا يُزاح ولا يُستبدل.
    الجمال هنا في المحطّات وحدها: تستقرّ حين يصلها القارئ. */
 .thread-spine { position: relative; }
+.thread-passer {
+  position: absolute;
+  z-index: 2;
+  inset-inline-end: -4px;
+  inset-block-start: .45rem;
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  opacity: 0;
+  pointer-events: none;
+}
+.thread-spine--drawn .thread-passer {
+  animation: thread-passer var(--thread-duration, 1.3s) cubic-bezier(.2,.72,.2,1) both;
+}
+@keyframes thread-passer {
+  0% { opacity: 0; inset-block-start: .45rem; }
+  8%, 90% { opacity: 1; }
+  100% { opacity: 0; inset-block-start: calc(100% - .45rem); }
+}
+
+/* سيرة المفهوم: المفهوم يمرّ على خيطه مرةً واحدة، فيملأ ما عبره فقط. */
+.concept-bloom {
+  position: relative;
+  --concept-line-inset: 0px;
+}
+.concept-bloom::before,
+.concept-bloom::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: var(--concept-line-inset);
+  inset-block-start: .35rem;
+  pointer-events: none;
+}
+.concept-bloom::before {
+  inline-size: 1px;
+  block-size: calc(100% - .7rem);
+  background: linear-gradient(to bottom, rgb(var(--c-accent) / .55) 0 50%, var(--c-hair) 50% 100%);
+  background-size: 100% 200%;
+  background-position: 0 100%;
+}
+.concept-bloom::after {
+  inline-size: 7px;
+  block-size: 7px;
+  margin-inline-end: -3px;
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  opacity: 0;
+  transform: translateY(0);
+  box-shadow: 0 0 0 4px rgb(var(--c-accent) / .08);
+}
+.concept-bloom--ready .concept-bloom__station { opacity: 0; transform: translateY(9px); }
+.concept-bloom--run::before { animation: concept-thread-fill var(--concept-duration) cubic-bezier(.2,.72,.2,1) both; }
+.concept-bloom--run::after { animation: concept-passer var(--concept-duration) cubic-bezier(.2,.72,.2,1) both; }
+.concept-bloom__station {
+  transition: opacity .46s ease, transform .56s cubic-bezier(.2,.72,.2,1);
+  transition-delay: var(--concept-delay, 0ms);
+}
+.concept-bloom--run .concept-bloom__station { opacity: 1; transform: none; }
+.concept-bloom__node {
+  inset-inline-end: -5px;
+  transform: scale(0);
+  transition: transform .42s cubic-bezier(.34,1.56,.64,1);
+  transition-delay: calc(var(--concept-delay, 0ms) + 120ms);
+}
+.concept-bloom--run .concept-bloom__node { transform: scale(1); }
+.concept-bloom__station > div:last-child {
+  transition: opacity .42s ease;
+  transition-delay: calc(var(--concept-delay, 0ms) + 200ms);
+}
+.concept-bloom--ready .concept-bloom__station > div:last-child { opacity: 0; }
+.concept-bloom--run .concept-bloom__station > div:last-child { opacity: 1; }
+@keyframes concept-thread-fill { to { background-position: 0 0; } }
+@keyframes concept-passer {
+  0% { opacity: 0; inset-block-start: .35rem; }
+  4%, 94% { opacity: 1; }
+  100% { opacity: 0; inset-block-start: calc(100% - .7rem); }
+}
+
+/* وثيقة العقد: كل السنوات موجودة في التخطيط منذ البداية؛ الزمن يمرّ عليها
+   مرةً واحدة فيبدّل نبرتها من السكون إلى الحضور. */
+.decade-bloom::before {
+  content: "";
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block: .75rem;
+  inline-size: 1px;
+  background: rgb(var(--c-accent) / .5);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 1.9s cubic-bezier(.2,.72,.2,1);
+}
+.decade-bloom { position: relative; }
+.decade-bloom.is-lit::before { transform: scaleY(1); }
+.decade-bloom__year {
+  opacity: .68;
+  transition: opacity .48s ease, background-color .48s ease;
+  transition-delay: var(--decade-delay, 0ms);
+}
+.decade-bloom.is-lit .decade-bloom__year { opacity: 1; background: rgb(var(--c-accent) / .018); }
+.decade-bloom__node {
+  position: absolute;
+  inset-inline-end: -4px;
+  inset-block-start: 1.9rem;
+  inline-size: 8px;
+  block-size: 8px;
+  border: 2px solid rgb(var(--c-canvas));
+  border-radius: 50%;
+  background: rgb(var(--c-accent));
+  transform: scale(0);
+  transition: transform .38s cubic-bezier(.34,1.56,.64,1);
+  transition-delay: calc(var(--decade-delay, 0ms) + 90ms);
+}
+.decade-bloom.is-lit .decade-bloom__node { transform: scale(1); }
 
 /* المحطّة تستقرّ بعد أن يمرّ بها الخيط. */
 .thread-station {
@@ -4181,6 +4386,17 @@ html, body, #root { max-inline-size: 100%; }
   .thread-station { opacity: 1; transform: none; }
   .thread-node,
   .next-step-thread .next-step-node { transform: scale(1); }
+  .thread-passer { display: none; }
+  .concept-bloom::before { animation: none; background-position: 0 0; }
+  .concept-bloom::after { display: none; }
+  .concept-bloom .concept-bloom__station,
+  .concept-bloom .concept-bloom__station > div:last-child { opacity: 1; transform: none; transition: none; }
+  .concept-bloom .concept-bloom__node { transform: scale(1); transition: none; }
+  .decade-bloom::before { transform: scaleY(1); transition: none; }
+  .decade-bloom .decade-bloom__year { opacity: 1; transition: none; }
+  .decade-bloom .decade-bloom__node { transform: scale(1); transition: none; }
+  .reader-margin-thread__fill,
+  .reader-margin-thread__node { transition: none; }
 }
 
 /* ── لحظة الجلاء ──
@@ -4308,6 +4524,7 @@ html, body, #root { max-inline-size: 100%; }
   --atlas-identity: 190 167 137;
   --atlas-media: 157 157 204;
   --atlas-research: 174 190 156;
+  --atlas-warm: 194 160 112;
   background: rgb(var(--c-canvas));
   background-image:
     radial-gradient(62% 42% at 76% 0%, rgb(var(--c-accent) / .085), transparent 70%),
@@ -4320,11 +4537,24 @@ html, body, #root { max-inline-size: 100%; }
 .atlas-night .atlas-star-core {
   filter: drop-shadow(0 0 3px rgb(var(--c-accent) / .55));
 }
-.atlas-star-core { fill: rgb(var(--atlas-axis, var(--c-accent))); }
-.atlas-star-core.is-visited { filter: drop-shadow(0 0 7px rgb(var(--atlas-axis, var(--c-accent)) / .58)); }
+.atlas-star-core { fill: var(--atlas-star-color, rgb(var(--c-accent))); }
+.atlas-star-core.is-visited { filter: drop-shadow(0 0 7px rgb(var(--c-accent) / .58)); }
 .atlas-star-core.is-compared { stroke: rgb(255 255 255 / .88); stroke-width: 1.4px; }
 .atlas-legend[open] { z-index: 40; }
 .atlas-legend summary::-webkit-details-marker { display: none; }
+.atlas-heat-key {
+  inline-size: 6.5rem;
+  block-size: 3px;
+  border-radius: 999px;
+  background: linear-gradient(270deg, rgb(var(--c-accent)), rgb(var(--atlas-warm)));
+}
+
+/* أرض الكتاب: مسار SVG واحد مهما بلغ عدد الصفحات، بلا مئات عناصر DOM. */
+.book-terrain { margin-block: .45rem .2rem; }
+.book-terrain path { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+.book-terrain__base { stroke: rgb(var(--c-soft) / .34); stroke-width: .72; }
+.book-terrain__active { stroke: rgb(var(--c-accent)); stroke-width: 1.35; }
+.book-terrain:focus-visible { outline: 1px solid rgb(var(--c-accent) / .45); outline-offset: 3px; border-radius: .35rem; }
 .atlas-night::after {
   content: "";
   position: absolute;
@@ -4729,8 +4959,10 @@ img[loading="lazy"],
 }
 
 /* شريط الصوت صار موجةً هادئة؛ نفس المساحة ونفس وظيفة القفز، بلا زر جديد. */
-.audio-wave-progress {
+:root {
   --audio-wave-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='28' viewBox='0 0 240 28' preserveAspectRatio='none'%3E%3Cg fill='black'%3E%3Crect x='1' y='10' width='3' height='8' rx='1.5'/%3E%3Crect x='7' y='7' width='3' height='14' rx='1.5'/%3E%3Crect x='13' y='3' width='3' height='22' rx='1.5'/%3E%3Crect x='19' y='8' width='3' height='12' rx='1.5'/%3E%3Crect x='25' y='5' width='3' height='18' rx='1.5'/%3E%3Crect x='31' y='11' width='3' height='6' rx='1.5'/%3E%3Crect x='37' y='6' width='3' height='16' rx='1.5'/%3E%3Crect x='43' y='2' width='3' height='24' rx='1.5'/%3E%3Crect x='49' y='9' width='3' height='10' rx='1.5'/%3E%3Crect x='55' y='4' width='3' height='20' rx='1.5'/%3E%3Crect x='61' y='7' width='3' height='14' rx='1.5'/%3E%3Crect x='67' y='11' width='3' height='6' rx='1.5'/%3E%3Crect x='73' y='5' width='3' height='18' rx='1.5'/%3E%3Crect x='79' y='1' width='3' height='26' rx='1.5'/%3E%3Crect x='85' y='8' width='3' height='12' rx='1.5'/%3E%3Crect x='91' y='4' width='3' height='20' rx='1.5'/%3E%3Crect x='97' y='9' width='3' height='10' rx='1.5'/%3E%3Crect x='103' y='6' width='3' height='16' rx='1.5'/%3E%3Crect x='109' y='2' width='3' height='24' rx='1.5'/%3E%3Crect x='115' y='10' width='3' height='8' rx='1.5'/%3E%3Crect x='121' y='7' width='3' height='14' rx='1.5'/%3E%3Crect x='127' y='3' width='3' height='22' rx='1.5'/%3E%3Crect x='133' y='8' width='3' height='12' rx='1.5'/%3E%3Crect x='139' y='5' width='3' height='18' rx='1.5'/%3E%3Crect x='145' y='11' width='3' height='6' rx='1.5'/%3E%3Crect x='151' y='4' width='3' height='20' rx='1.5'/%3E%3Crect x='157' y='1' width='3' height='26' rx='1.5'/%3E%3Crect x='163' y='8' width='3' height='12' rx='1.5'/%3E%3Crect x='169' y='5' width='3' height='18' rx='1.5'/%3E%3Crect x='175' y='9' width='3' height='10' rx='1.5'/%3E%3Crect x='181' y='6' width='3' height='16' rx='1.5'/%3E%3Crect x='187' y='2' width='3' height='24' rx='1.5'/%3E%3Crect x='193' y='10' width='3' height='8' rx='1.5'/%3E%3Crect x='199' y='4' width='3' height='20' rx='1.5'/%3E%3Crect x='205' y='7' width='3' height='14' rx='1.5'/%3E%3Crect x='211' y='3' width='3' height='22' rx='1.5'/%3E%3Crect x='217' y='9' width='3' height='10' rx='1.5'/%3E%3Crect x='223' y='5' width='3' height='18' rx='1.5'/%3E%3Crect x='229' y='8' width='3' height='12' rx='1.5'/%3E%3Crect x='235' y='11' width='3' height='6' rx='1.5'/%3E%3C/g%3E%3C/svg%3E");
+}
+.audio-wave-progress {
   position: relative;
   isolation: isolate;
   background: transparent !important;
@@ -4751,6 +4983,17 @@ img[loading="lazy"],
   pointer-events: none;
   background: rgb(var(--c-soft) / .22);
 }
+.audio-wave-progress.has-measured-wave::before { display: none; }
+.audio-measured-wave,
+.audio-measured-wave svg {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.audio-measured-wave svg { color: rgb(var(--c-soft) / .22); }
+.audio-measured-wave path { fill: none; stroke: currentColor; stroke-width: .72; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.audio-measured-wave .audio-measured-wave__fill { color: rgb(var(--c-accent)); transition: clip-path .14s linear; }
 .audio-wave-fill {
   position: relative;
   z-index: 1;

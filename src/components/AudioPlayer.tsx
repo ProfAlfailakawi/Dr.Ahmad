@@ -6,6 +6,7 @@ import { listenIsOpen } from '../lib/listen-catalog'
 import { SocialIcon } from './icons'
 import { VoiceFigure, voiceKindForSpeaker } from './VoiceFigure'
 import { arabicCountPhrase, AUDIO_TRIAL_FORMS } from '../lib/arabic-count.ts'
+import { loadAudioPeaks } from '../lib/audio-peaks'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (digit) => '0123456789'[+digit])
 const ARTICLE_VOICE_PREFERENCE_KEY = 'article-audio-reading-voice-v1'
@@ -200,6 +201,21 @@ function AudioWave({ dialogue = false, size = 22 }: { dialogue?: boolean; size?:
   )
 }
 
+function MeasuredWave({ peaks, fill }: { peaks: number[]; fill: number }) {
+  const path = useMemo(() => peaks.map((peak, index) => {
+    const x = index + .5
+    const half = Math.max(2, Math.min(48, peak * .48))
+    return `M${x} ${50 - half}V${50 + half}`
+  }).join(''), [peaks])
+  const width = Math.max(1, peaks.length)
+  return (
+    <span className="audio-measured-wave" aria-hidden="true">
+      <svg viewBox={`0 0 ${width} 100`} preserveAspectRatio="none"><path d={path} /></svg>
+      <svg className="audio-measured-wave__fill" viewBox={`0 0 ${width} 100`} preserveAspectRatio="none" style={{ clipPath: `inset(0 0 0 ${100 - Math.max(0, Math.min(100, fill))}%)` }}><path d={path} /></svg>
+    </span>
+  )
+}
+
 export const openAudioPlayer = (controlId: string, sourceKey?: string) => {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new CustomEvent('audio-player:open', { detail: { controlId, sourceKey } }))
@@ -219,6 +235,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
     return sources.find((item) => item.avatar === 'man')?.key ?? sources[0]?.key ?? ''
   })
   const [expanded, setExpanded] = useState(false)
+  const [peaks, setPeaks] = useState<number[] | null>(null)
   const [articleFollow, setArticleFollow] = useState(() => {
     if (typeof window === 'undefined') return true
     return localStorage.getItem('article-audio-follow') !== 'off'
@@ -294,6 +311,14 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
       .catch(() => { /* الحلقة تُسمع وإن تعذّر نصّها */ })
     return () => { on = false }
   }, [expanded, fallbackTranscriptSrc, transcriptSrc])
+
+  useEffect(() => {
+    setPeaks(null)
+    if (!expanded || !source?.src) return
+    let active = true
+    void loadAudioPeaks(source.src).then((values) => { if (active) setPeaks(values) })
+    return () => { active = false }
+  }, [expanded, source?.src])
 
   /* ═══ محاور الحلقة في شريط التقدّم ═══
      كانت المحاور مدفونةً داخل لوحة نصّ الحلقة، فلا تُرى إلا بفتحةٍ ثانية —
@@ -468,9 +493,11 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
                       jumpTo(segment.from + within * span)
                     }}
                     style={{ flexGrow: span, flexBasis: 0 }}
-                    className={`audio-wave-progress audio-wave-segment block h-7 overflow-hidden rounded-md transition-opacity hover:opacity-85${active && player.playing ? ' is-playing' : ''}`}
+                    className={`audio-wave-progress audio-wave-segment block h-7 overflow-hidden rounded-md transition-opacity hover:opacity-85${peaks ? ' has-measured-wave' : ''}${active && player.playing ? ' is-playing' : ''}`}
                   >
-                    <span className="audio-wave-fill block h-full transition-[width]" style={{ width: `${fill}%` }} />
+                    {peaks
+                      ? <MeasuredWave peaks={peaks.slice(Math.floor((segment.from / duration) * peaks.length), Math.max(1, Math.ceil((segment.to / duration) * peaks.length)))} fill={fill} />
+                      : <span className="audio-wave-fill block h-full transition-[width]" style={{ width: `${fill}%` }} />}
                   </button>
                 )
               })}
@@ -482,10 +509,10 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
                 if (!active || !duration) return
                 player.seekTo(rtlSeekSeconds(event.currentTarget, event.clientX, duration))
               }}
-              className={`audio-wave-progress mt-4 block h-7 w-full overflow-hidden rounded-md${active && player.playing ? ' is-playing' : ''}`}
+              className={`audio-wave-progress mt-4 block h-7 w-full overflow-hidden rounded-md${peaks ? ' has-measured-wave' : ''}${active && player.playing ? ' is-playing' : ''}`}
               aria-label="شريط تقدم الصوت"
             >
-              <span className="audio-wave-fill block h-full transition-[width]" style={{ width: `${percent}%` }} />
+              {peaks ? <MeasuredWave peaks={peaks} fill={percent} /> : <span className="audio-wave-fill block h-full transition-[width]" style={{ width: `${percent}%` }} />}
             </button>
           )}
 

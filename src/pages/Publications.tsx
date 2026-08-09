@@ -10,6 +10,7 @@ import { BooksAtlas } from '../components/BooksAtlas'
 import { SocialIcon } from '../components/icons'
 import { ClarifiedIconAction } from '../components/ClarifiedIconAction'
 import { arabicCountPhrase, BOOK_PLAIN_FORMS } from '../lib/arabic-count.ts'
+import { BookTerrain } from '../components/BookTerrain'
 
 const bookCount = (count: number) => arabicCountPhrase(count, BOOK_PLAIN_FORMS)
 
@@ -66,6 +67,7 @@ export default function Publications() {
                       {b.cover ? <img decoding="async" src={b.cover} alt={b.title} loading="eager" width="1024" height="700" className="h-full w-full object-contain p-2 transition-transform duration-700 group-hover/portal:scale-[1.02]" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
                     </Link>
                     <div className="relative flex flex-col p-5 sm:p-8 md:p-0">
+                      <BookTerrain slug={b.slug} title={b.title} compact />
                       <div className="pe-14 sm:pe-16 md:pe-0">
                         <Link to={`/publications/${b.slug}`} viewTransition className="min-w-0 block">
                           <h2 style={{ viewTransitionName: sharedViewName('book-title', b.slug) }} className="font-display text-2xl font-extrabold leading-[1.35] text-ink transition-colors hover:text-accent md:text-3xl lg:text-4xl">{b.title}</h2>
@@ -99,6 +101,7 @@ export default function Publications() {
                         {b.cover ? <img decoding="async" src={b.cover} alt={b.title} loading="lazy" width="1024" height="700" className={`plate h-full w-full object-contain p-1${settled.has(b.slug) ? ' plate--settled' : ''}`} style={{ ['--plate-delay' as string]: `${Math.min(i, 6) * 90}ms` }} onLoad={() => markSettled(b.slug)} ref={(node) => { if (node?.complete) markSettled(b.slug) }} /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
                       </div>
                     </Link>
+                    <BookTerrain slug={b.slug} title={b.title} compact />
                     <div className="mt-3 flex items-start gap-2 sm:mt-5">
                       <Link to={`/publications/${b.slug}`} viewTransition className="min-w-0 flex-1"><h2 style={{ viewTransitionName: sharedViewName('book-title', b.slug) }} className="break-words font-display text-[1rem] font-medium leading-[1.45] text-ink transition-colors hover:text-accent sm:text-[1.2rem] md:text-[1.3rem]">{b.title}</h2></Link>
                       <ClarifiedIconAction id="book-search-list" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/[.35] text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={14} /></Link></ClarifiedIconAction>

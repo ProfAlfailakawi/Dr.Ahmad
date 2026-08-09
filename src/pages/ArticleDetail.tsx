@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { ComposeScene } from '../components/ComposeScene'
 import { getArticleNeighbors, type ArticleRecord, type BookRecord, type MediaRecord, type PaperRecord } from '../lib/cms'
@@ -219,6 +219,18 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
   }, [body, popularQuotes, slug])
   const articleSignal = articleSignals[0] || null
   const glossaryPlan = useMemo(() => articleGlossaryPlan(body), [body])
+  const [readerProgress, setReaderProgress] = useState(0)
+
+  /* لا مستمع تمرير ثانٍ: الخيط يستهلك الحدث الذي يبثه ArticleProgressBar
+     القائم، ولذلك يبقى حساب التقدم في موضعٍ واحد فقط. */
+  useEffect(() => {
+    const update = (event: Event) => {
+      const progress = Number((event as CustomEvent<{ progress?: number }>).detail?.progress || 0)
+      setReaderProgress(Math.min(1, Math.max(0, progress)))
+    }
+    window.addEventListener('reader:progress', update)
+    return () => window.removeEventListener('reader:progress', update)
+  }, [])
 
   const activeAudio = Boolean(audio.track?.path === `/articles/${slug}` && !audio.track?.src.includes('.dialogue.') && audio.duration > 0)
 
@@ -333,6 +345,15 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
   return (
     <>
       <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`} data-native-selection="custom">
+        <span className="reader-margin-thread reader-hide-focus" aria-hidden="true">
+          <span className="reader-margin-thread__fill" style={{ transform: `scaleY(${readerProgress})` }} />
+          {articleSignals.map((signal, index) => {
+            const at = paragraphs.length > 1 ? signal.paragraph / (paragraphs.length - 1) : .5
+            const reached = readerProgress + .015 >= at
+            const inherited = signal.source === 'readers' && signal.count >= 3
+            return <span key={`${signal.paragraph}-${index}`} className={`reader-margin-thread__node${reached ? ' is-reached' : ''}${inherited ? ' is-inherited' : ''}`} style={{ '--reader-node-at': `${at * 100}%` } as CSSProperties} />
+          })}
+        </span>
         {showSyncWhisper && (
           <div className="audio-sync-whisper reader-hide-focus" role="status">
             <span className="audio-sync-whisper__pulse" aria-hidden="true" />
@@ -342,7 +363,7 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
         {paragraphs.map((paragraph, pIdx) => {
           const paragraphQuotes: PopularQuote[] = []
           /* لا نعرض كل اختيارٍ خام من Firestore؛ خطة المقال هي المصدر الوحيد
-             لما يظهر في المتن: 3–4 إشارات مختارة سواء جاءت من القراء أو من
+             لما يظهر في المتن: 1–3 إشارات مختارة سواء جاءت من القراء أو من
              التحرير. إعادة بناء النطاق من نص الإشارة تمنع اختلاف مفاتيح
              التجميع الحية من إخفاء الرقم بعد وصول لقطة Firestore. */
           articleSignals.forEach((signal, signalIndex) => {
@@ -945,7 +966,13 @@ export default function ArticleDetail() {
             <section className="mt-10 border-y border-hair py-5" aria-labelledby="after-reading-title">
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <h2 id="after-reading-title" className="font-display text-[1.05rem] font-semibold text-ink">بعد القراءة</h2>
-                <p className="text-[.7rem] text-soft">امتداد الفكرة · أدوات الباحث · المشاركة والاستشهاد</p>
+                <div className="flex flex-wrap items-center gap-3 text-[.7rem] text-soft">
+                  <p>امتداد الفكرة · أدوات الباحث · المشاركة والاستشهاد</p>
+                  <Link to={`/atlas?star=${encodeURIComponent(article.slug)}`} className="article-atlas-knot inline-flex min-h-11 items-center gap-2 text-accent transition-opacity hover:opacity-70">
+                    <span aria-hidden className="h-2 w-2 rounded-full border border-accent bg-canvas" />
+                    موقعها في السماء
+                  </Link>
+                </div>
               </div>
               <IdeaLife article={article} articles={articles} books={books} papers={papers} media={media} />
               {article.body && <ArticleExtensions article={article} articles={articles} books={books} papers={papers} />}

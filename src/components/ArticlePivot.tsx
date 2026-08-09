@@ -125,13 +125,14 @@ export function articleSignalOf(slug: string, body: string, popularQuotes: Quote
   return articleSignalsOf(slug, body, popularQuotes)[0] || null
 }
 
-/** يختار تلقائياً 3 جمل ثابتة من المقال العادي، و3–4 في الطويل فقط. الاختيار متنوع
+/** يختار تلقائياً 1–3 جمل ثابتة بحسب طول المقال وبصمته. الاختيار متنوع
  * بين الفقرات ولا يتبدل عند تحديث الصفحة؛ إشارات القراء الحقيقية تبقى أولى
  * وتزيد أرقامها فوق الرقم الافتتاحي من دون كتابة بيانات وهمية إلى Firestore. */
 export function articleSignalsOf(slug: string, body: string, popularQuotes: QuoteSignal[]): ArticleSignalData[] {
   const paragraphs = body.split(/\n\s*\n/)
   const meaningfulParagraphs = paragraphs.filter((paragraph) => normalizeSentence(paragraph).length >= MIN_SIGNAL_LENGTH).length
-  const target = 3 + (meaningfulParagraphs >= 12 ? stableHash(`${slug}:density`) % 2 : 0)
+  const ceiling = meaningfulParagraphs >= 10 ? 3 : meaningfulParagraphs >= 5 ? 2 : 1
+  const target = 1 + (stableHash(`${slug}:density`) % ceiling)
   /* إشارتان حيّتان كحد أقصى، ثم جملة تحريرية ذكية على الأقل. هذا يحفظ أثر
      القرّاء من دون أن تتحول المقالة إلى خريطة تظليل مزدحمة أو تختفي الخطة
      خلف ثلاث تحديدات قديمة متقاربة. */

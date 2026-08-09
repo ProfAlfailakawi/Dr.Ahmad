@@ -655,13 +655,8 @@ export default function Atlas() {
           {entryStar && (
             <FadeUp>
               <aside className="atlas-arrival mb-6 border-y border-accent/20 py-4" aria-live="polite">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <span className="text-[.66rem] font-semibold text-accent">وصلت من المقال · نجمتك جاهزة</span>
-                    <strong className="mt-1 block break-words font-display text-[1rem] font-semibold leading-[1.7] text-ink md:text-[1.15rem]">{entryStar.title}</strong>
-                  </div>
-                  <button type="button" onClick={() => { setSelected(entryStar.i); setActiveCat(null); setQuery(''); window.setTimeout(() => document.getElementById('atlas-selection')?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' }), 80) }} className="min-h-11 shrink-0 border-b border-accent/[.35] px-1 text-[.72rem] font-semibold text-accent">أظهر موقعها</button>
-                </div>
+                <span className="text-[.66rem] font-semibold text-accent">المقال القادم</span>
+                <strong className="mt-1 block break-words font-display text-[1rem] font-semibold leading-[1.7] text-ink md:text-[1.15rem]">{entryStar.title}</strong>
               </aside>
             </FadeUp>
           )}

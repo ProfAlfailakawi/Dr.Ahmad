@@ -421,9 +421,27 @@ export default function PaperDetail() {
           </FadeUp>}
 
           <FadeUp>
-            <nav className="mt-16 grid gap-6 border-t border-hair pt-8 sm:grid-cols-2">
-              {prev ? <Link viewTransition to={`/research/${prev.slug}`} className="group"><span className="text-[.78rem] text-soft">السابق</span><span className="mt-1 block font-display text-[1.02rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{prev.title}</span></Link> : <span />}
-              {next && <Link viewTransition to={`/research/${next.slug}`} className="group sm:text-left"><span className="text-[.78rem] text-soft">التالي</span><span className="mt-1 block font-display text-[1.02rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent">{next.title}</span></Link>}
+            <nav className="research-neighbor-nav mt-14 grid grid-cols-2 gap-3 border-t border-hair pt-5" aria-label="التنقل بين الأبحاث">
+              <div className="min-w-0">
+                {prev ? (
+                  <Link viewTransition to={`/research/${prev.slug}`} aria-label={`البحث السابق: ${prev.title}`} title="البحث السابق" className="group flex min-w-0 items-center gap-2.5">
+                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors group-hover:border-accent group-hover:text-accent sm:h-8 sm:w-8">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                    </span>
+                    <span className="min-w-0 line-clamp-2 text-[.64rem] font-light leading-[1.6] text-soft transition-colors group-hover:text-accent sm:text-[.66rem]">{prev.title}</span>
+                  </Link>
+                ) : <span aria-hidden className="block h-11 sm:h-8" />}
+              </div>
+              <div className="min-w-0 text-left">
+                {next ? (
+                  <Link viewTransition to={`/research/${next.slug}`} aria-label={`البحث التالي: ${next.title}`} title="البحث التالي" className="group flex min-w-0 flex-row-reverse items-center gap-2.5">
+                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors group-hover:border-accent group-hover:text-accent sm:h-8 sm:w-8">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
+                    </span>
+                    <span className="min-w-0 line-clamp-2 text-[.64rem] font-light leading-[1.6] text-soft transition-colors group-hover:text-accent sm:text-[.66rem]">{next.title}</span>
+                  </Link>
+                ) : <span aria-hidden className="block h-11 sm:h-8" />}
+              </div>
             </nav>
           </FadeUp>
         </div>

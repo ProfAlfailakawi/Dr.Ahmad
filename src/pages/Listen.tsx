@@ -253,7 +253,7 @@ export default function Listen() {
         )}
       </section>
 
-      <section className="sticky top-16 z-[120] mt-6 border-y border-hair bg-canvas/[.92] px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
+      <section className="listen-filter-bar mt-6 border-y border-hair bg-canvas px-4 py-3 sm:px-6 md:sticky md:top-16 md:z-[120] md:bg-canvas/[.96] md:px-11 md:backdrop-blur-md">
         <div className="mx-auto grid max-w-shell gap-3 lg:grid-cols-[minmax(240px,.55fr)_minmax(0,1fr)] lg:items-center">
           <div className="relative">
             <input
@@ -265,7 +265,7 @@ export default function Listen() {
             />
             <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft"><SocialIcon name="Search" size={17} /></span>
           </div>
-          <div className="rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
+          <div className="listen-filter-tabs flex flex-wrap items-center gap-2 pb-1 lg:pb-0" role="group" aria-label="تصفية أسئلة المجلس">
             {categories.map((item) => (
               <button
                 key={item}
@@ -281,7 +281,7 @@ export default function Listen() {
         </div>
       </section>
 
-      <section id="listen-list" className="mx-auto max-w-shell px-6 pb-16 md:px-11">
+      <section id="listen-list" className="mx-auto max-w-shell px-6 pb-16 pt-3 md:px-11 md:pt-0">
         {!filtered.length && <p className="py-14 text-[.88rem] text-soft">لا سؤال يطابق هذا البحث.</p>}
         <>
         {eras.map((era) => (

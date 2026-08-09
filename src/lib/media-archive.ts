@@ -42,6 +42,8 @@ export type MediaArchiveRecord = Omit<MediaRecord, 'transcript'> & MediaArchiveI
 
 const items = ((archivePayload as { items?: MediaArchiveItem[] }).items || [])
 const transcripts = (transcriptPayload as Record<string, MediaArchiveTranscript>) || {}
+const archiveItemBySlug = new Map(items.map((item) => [item.slug, item]))
+const archiveItemById = new Map(items.map((item) => [item.id, item]))
 
 export const extractMediaId = (url = '') => (url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{6,})/) || [])[1] || ''
 
@@ -92,7 +94,7 @@ export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[]
     const { transcript: legacyTranscript, ...baseItem } = item
     /* سجل اللوحة يعلو، لكنه يرث بيانات الأرشيف الساكن (ملف الصوت مثلاً) إن تركها فارغة،
        فلا تفقد المادة صوتها حين يُحرّر عنوانها أو موضوعها من اللوحة. */
-    const archived = items.find((entry) => entry.slug === item.slug || entry.id === archiveId)
+    const archived = archiveItemBySlug.get(item.slug) || archiveItemById.get(archiveId)
     /* المواد الإذاعية لا رابط لها، فيصير archiveId هو الاسم اللطيف (radio-idaa) بينما الفهرس
        الزمني محفوظ بمعرّف الأرشيف (idaa) — فنسقط إليه كي لا تختفي الفهرسة عن مادة مفهرسة. */
     const transcript = archiveTranscript(archiveId) || (archived?.id ? archiveTranscript(archived.id) : null)
@@ -126,22 +128,92 @@ export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[]
   return [...cms, ...additions]
 }
 
+type MomentIndexRow = { itemIndex: number; segmentIndex: number; text: string }
+type MomentIndex = { rows: MomentIndexRow[]; postings: Map<string, Uint32Array>; rowsByItem: number[][] }
+const momentIndexCache = new WeakMap<ReturnType<typeof mergeMediaArchive>, MomentIndex>()
+
+function momentTokens(value: string) {
+  return [...new Set(normalize(value).split(' ').filter((word) => word.length > 1))].slice(0, 64)
+}
+
+function buildMomentIndex(media: ReturnType<typeof mergeMediaArchive>): MomentIndex {
+  const cached = momentIndexCache.get(media)
+  if (cached) return cached
+  const rows: MomentIndexRow[] = []
+  const rowsByItem: number[][] = Array.from({ length: media.length }, () => [])
+  const postingArrays = new Map<string, number[]>()
+  for (let itemIndex = 0; itemIndex < media.length; itemIndex += 1) {
+    const item = media[itemIndex]
+    const transcript = item.transcript || archiveTranscript(item.id)
+    if (!transcript?.available) continue
+    for (let segmentIndex = 0; segmentIndex < (transcript.segments || []).length; segmentIndex += 1) {
+      const segment = transcript.segments[segmentIndex]
+      const text = normalize(segment.searchText || segment.displayText || segment.text)
+      if (!text) continue
+      const rowIndex = rows.length
+      rows.push({ itemIndex, segmentIndex, text })
+      rowsByItem[itemIndex].push(rowIndex)
+      for (const token of momentTokens(text)) {
+        const posting = postingArrays.get(token) || []
+        posting.push(rowIndex)
+        postingArrays.set(token, posting)
+      }
+    }
+  }
+  const postings = new Map<string, Uint32Array>()
+  for (const [token, posting] of postingArrays) postings.set(token, Uint32Array.from(posting))
+  const index = { rows, postings, rowsByItem }
+  momentIndexCache.set(media, index)
+  return index
+}
+
 export function searchArchiveMoments(query: string, media: ReturnType<typeof mergeMediaArchive>) {
   const q = normalize(query)
   if (!q) return []
   const words = q.split(' ').filter((word) => word.length > 1)
-  const results: Array<{ item: (typeof media)[number]; segment: MediaTranscriptSegment; score: number }> = []
-  for (const item of media) {
-    const transcript = item.transcript || archiveTranscript(item.id)
-    if (!transcript?.available) continue
-    for (const segment of transcript.segments || []) {
-      const text = normalize(segment.searchText || segment.displayText || segment.text)
-      if (!text) continue
-      let score = text.includes(q) ? 120 : 0
-      score += words.reduce((sum, word) => sum + (text.includes(word) ? 18 : 0), 0)
-      if (normalize(item.title).includes(q)) score += 25
-      if (score > 0) results.push({ item, segment, score })
+  const index = buildMomentIndex(media)
+  const candidateRows = new Set<number>()
+  const postingRows = words
+    .map((word) => index.postings.get(word))
+    .filter((posting): posting is Uint32Array => Boolean(posting))
+    .sort((a, b) => a.length - b.length)
+  /* Search only transcript segments containing at least one query token. This
+     turns repeated searches over large media archives into posting lookups. */
+  for (const posting of postingRows.slice(0, 6)) {
+    for (const rowIndex of posting) {
+      candidateRows.add(rowIndex)
+      if (candidateRows.size >= 12_000) break
     }
+    if (candidateRows.size >= 12_000) break
+  }
+  /* Preserve the old title-search behavior without rescanning transcript text:
+     if the material title matches, its already-indexed segments are candidates. */
+  if (candidateRows.size < 12_000) {
+    for (let itemIndex = 0; itemIndex < media.length; itemIndex += 1) {
+      if (!normalize(media[itemIndex].title).includes(q)) continue
+      for (const rowIndex of index.rowsByItem[itemIndex]) {
+        candidateRows.add(rowIndex)
+        if (candidateRows.size >= 12_000) break
+      }
+      if (candidateRows.size >= 12_000) break
+    }
+  }
+  if (!candidateRows.size) return []
+
+  const results: Array<{ item: (typeof media)[number]; segment: MediaTranscriptSegment; score: number }> = []
+  for (const rowIndex of candidateRows) {
+    const row = index.rows[rowIndex]
+    if (!row) continue
+    const item = media[row.itemIndex]
+    const transcript = item.transcript || archiveTranscript(item.id)
+    const segment = transcript?.segments?.[row.segmentIndex]
+    if (!item || !segment) continue
+    let score = row.text.includes(q) ? 120 : 0
+    score += words.reduce((sum, word) => sum + (row.text.includes(word) ? 18 : 0), 0)
+    if (normalize(item.title).includes(q)) score += 25
+    if (score <= 0) continue
+    results.push({ item, segment, score })
   }
   return results.sort((a, b) => b.score - a.score || a.segment.start - b.segment.start).slice(0, 40)
 }
+

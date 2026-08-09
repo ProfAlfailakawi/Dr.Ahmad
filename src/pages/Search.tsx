@@ -4,7 +4,7 @@ import { FadeUp, Page, PageHead } from '../components/ui'
 import { KnowledgeEntry } from '../components/KnowledgeEntry'
 import { useSeo } from '../components/seo'
 import { topKeywordsFor } from '../lib/cms'
-import { buildKnowledgeGraph, graphSearch, type KnowledgeKind } from '../lib/knowledge-graph'
+import { buildKnowledgeGraph, graphSearch, graphVocabulary, type KnowledgeKind } from '../lib/knowledge-graph'
 import { useCmsContent } from '../lib/content'
 import { bestBookConcept, bookKnowledgeAnchor, getBookKnowledge } from '../lib/book-knowledge'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
@@ -21,6 +21,7 @@ import { VoiceFigure, voiceKindForSpeaker } from '../components/VoiceFigure'
 import { buildSmartQueryPlan, diversifySmartRows, scoreSmartFields, suggestedDomainTerms } from '../lib/smart-search'
 import { normalizeSearchQuery, trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, RESULT_FORMS } from '../lib/arabic-count.ts'
+import { buildSearchPostings, searchPostingCandidates } from '../lib/archive-scale.mjs'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
@@ -259,16 +260,25 @@ export default function Search() {
     return () => window.clearTimeout(timer)
   }, [query, tab])
 
-  const knowledgeGraph = useMemo(() => buildKnowledgeGraph({ articles, books, papers, media }), [articles, books, media, papers])
+  /* Archive 2036: البحث لا يعيد تطبيع/تقييم كامل أرشيف المقالات مع كل حرف.
+     نبني posting index مرة عند بدء البحث، ثم نقيّم جيب مرشحين محدوداً. بقية
+     الأنواع لها graph خفيف مستقل؛ لا حاجة لتكرار 100k مقال داخله. */
+  const articleSearchPostings = useMemo(() => searchStarted ? buildSearchPostings(articles, {
+    getText: (article) => `${article.title} ${article.excerpt || ''} ${article.cat || ''}`,
+    maxTokensPerItem: 56,
+  }) : null, [articles, searchStarted])
+  const knowledgeGraph = useMemo(() => searchStarted
+    ? buildKnowledgeGraph({ articles: [], books, papers, media }, { edges: false, tokenize: false })
+    : null, [books, media, papers, searchStarted])
 
-
-  /* نتائج المقالات الغنية (النص الكامل + فلاتر الفئة والسنة) */
+  /* نتائج المقالات الغنية: postings أولاً، ثم الترتيب الذكي على المرشحين فقط. */
   const articleResults = useMemo(() => {
-    if (!searchStarted) return []
-    const graphRanks = new Map(graphSearch(knowledgeGraph, expandedQuery, 160)
-      .filter((row) => row.node.kind === 'article')
-      .map((row) => [row.node.slug, row.score]))
-    return articles
+    if (!searchStarted || !articleSearchPostings) return []
+    const candidateLimit = Math.min(12_000, Math.max(1_200, articles.length))
+    const candidateIndexes = searchPostingCandidates(articleSearchPostings, expandedQuery, candidateLimit)
+    return candidateIndexes
+      .map((index) => articles[index])
+      .filter((article): article is (typeof articles)[number] => Boolean(article))
       .filter((article) => cat === 'الكل' || article.cat === cat)
       .filter((article) => year === 'الكل' || article.year === year)
       .map((article) => ({
@@ -278,17 +288,17 @@ export default function Search() {
           { value: article.excerpt, weight: 2.8, phraseWeight: 1.2 },
           { value: article.body, weight: 1.15 },
           { value: article.cat, weight: 1.1 },
-        ]) + (graphRanks.get(article.slug) || 0) * .45,
+        ]),
       }))
       .filter((row) => row.score > 7)
       .sort((left, right) => right.score - left.score || right.article.iso.localeCompare(left.article.iso))
       .map((row) => row.article)
-  }, [articles, cat, expandedQuery, knowledgeGraph, searchStarted, smartPlan, year])
+  }, [articleSearchPostings, articles, cat, expandedQuery, searchStarted, smartPlan, year])
 
-  /* بقية الأنواع من الخريطة المعرفية — العنوان والوصف العام والمجلة والباحثون */
+  /* بقية الأنواع من خريطة معرفية خفيفة لا تكرر المقالات داخل الذاكرة. */
   const graphResults = useMemo(() => {
-    if (!searchStarted) return []
-    return graphSearch(knowledgeGraph, expandedQuery, 60).filter((row) => row.node.kind !== 'article')
+    if (!searchStarted || !knowledgeGraph) return []
+    return graphSearch(knowledgeGraph, expandedQuery, 80)
   }, [expandedQuery, searchStarted, knowledgeGraph])
 
   /* الأسئلة: بحث مباشر في نص السؤال ورأي الدكتور */
@@ -529,19 +539,29 @@ export default function Search() {
 
   /* «هل تقصد؟» — يُحسب فقط حين لا نتائج إطلاقاً */
   const didYouMean = useMemo(() => {
-    if (!searchStarted || counts.all > 0) return ''
+    if (!searchStarted || counts.all > 0 || !articleSearchPostings || !knowledgeGraph) return ''
     const lastWord = normalizeArabic(normalizedQuery).split(' ').filter(Boolean).pop() || ''
     if (lastWord.length < 3) return ''
-    const vocabulary = new Set<string>()
-    for (const node of knowledgeGraph.nodes) for (const token of node.tokens.slice(0, 30)) vocabulary.add(token)
     let best = ''
     let bestDistance = 3
-    for (const candidate of vocabulary) {
+    let inspected = 0
+    const inspect = (candidate: string) => {
+      if (inspected >= 8_000 || !candidate || candidate === lastWord) return
+      if (Math.abs(candidate.length - lastWord.length) > 2 || candidate[0] !== lastWord[0]) return
+      inspected += 1
       const distance = editDistance(lastWord, candidate)
       if (distance < bestDistance) { bestDistance = distance; best = candidate }
     }
-    return best && best !== lastWord ? normalizedQuery.replace(/\S+\s*$/u, best) : ''
-  }, [counts.all, knowledgeGraph, normalizedQuery, searchStarted])
+    for (const candidate of articleSearchPostings.keys()) {
+      inspect(candidate)
+      if (inspected >= 8_000 || bestDistance === 1) break
+    }
+    if (bestDistance > 1) for (const candidate of graphVocabulary(knowledgeGraph, 12_000)) {
+      inspect(candidate)
+      if (inspected >= 8_000 || bestDistance === 1) break
+    }
+    return best ? normalizedQuery.replace(/\S+\s*$/u, best) : ''
+  }, [articleSearchPostings, counts.all, knowledgeGraph, normalizedQuery, searchStarted])
 
 
   return (

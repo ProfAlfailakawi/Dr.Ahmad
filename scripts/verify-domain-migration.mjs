@@ -2,6 +2,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { sitemapLocsFromDist } from './archive-sitemap.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST_ONLY = process.argv.includes('--dist')
@@ -233,13 +234,12 @@ function checkDist() {
     expect(existsSync(resolve(dist, required)), `ملف النشر مفقود: dist/${required}`)
   }
 
-  const sitemap = readFileSync(resolve(dist, 'sitemap.xml'), 'utf8')
   const robots = readFileSync(resolve(dist, 'robots.txt'), 'utf8')
   const feed = readFileSync(resolve(dist, 'feed.xml'), 'utf8')
   const podcast = readFileSync(resolve(dist, 'podcast.xml'), 'utf8')
   const runtimeFirebase = JSON.parse(readFileSync(resolve(dist, 'firebase-applet-config.json'), 'utf8'))
 
-  const sitemapLocs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1].trim())
+  const sitemapLocs = sitemapLocsFromDist(dist)
   expect(sitemapLocs.length > 0, 'sitemap.xml لا يحتوي أي رابط <loc>')
   expect(sitemapLocs.every(isOfficialUrl), 'sitemap.xml يحتوي رابطاً خارج الدومين الرسمي')
   expect(new Set(sitemapLocs).size === sitemapLocs.length, 'sitemap.xml يحتوي روابط مكررة')

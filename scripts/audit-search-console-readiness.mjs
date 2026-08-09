@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { sitemapLocsFromDist } from './archive-sitemap.mjs'
 
 const ROOT = process.cwd()
 const useDist = process.argv.includes('--dist')
@@ -46,6 +47,7 @@ check('robots يعلن sitemap على النطاق المركزي', staticBuild.
 check('sitemap يحظر إدراج /ar وبقايا WordPress', staticBuild.includes("'/ar/'") && staticBuild.includes("'/signature_articles/'") && staticBuild.includes("'/published_articles/'") && staticBuild.includes("'/category/'") && staticBuild.includes("'/mini-library'"))
 check('صفحات SEO الثابتة تدعم Google verification من بيئة البناء', staticBuild.includes('VITE_GOOGLE_SITE_VERIFICATION') || staticBuild.includes('GOOGLE_SITE_VERIFICATION'))
 check('canonical يُكتب لكل صفحة ثابتة', staticBuild.includes('rel="canonical"') && staticBuild.includes('canonical'))
+check('sitemap يتجزأ تلقائياً قبل حد 50 ألف رابط', staticBuild.includes('buildSitemapDocuments') && read('scripts/archive-sitemap.mjs').includes('45_000'))
 
 if (useDist) {
   console.log('\nBuilt output')
@@ -57,10 +59,10 @@ if (useDist) {
     check('sitemap.xml مولّد', existsSync(sitemapPath))
     check('robots.txt مولّد', existsSync(robotsPath))
     if (existsSync(sitemapPath)) {
-      const sitemap = readFileSync(sitemapPath, 'utf8')
-      check('sitemap لا يحتوي /ar القديمة', !/https?:\/\/[^<]+\/ar\//i.test(sitemap))
-      check('sitemap لا يحتوي مسارات WordPress المتقاعدة', !/(?:signature_articles|published_articles|scholarly_contributi|\/wp-)/i.test(sitemap))
-      check('كل loc يستخدم النطاق canonical', [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].every((match) => match[1].startsWith(`${site}/`) || match[1] === site))
+      const sitemapLocs = sitemapLocsFromDist(dist)
+      check('sitemap لا يحتوي /ar القديمة', !sitemapLocs.some((url) => /\/ar\//i.test(url)))
+      check('sitemap لا يحتوي مسارات WordPress المتقاعدة', !sitemapLocs.some((url) => /(?:signature_articles|published_articles|scholarly_contributi|\/wp-)/i.test(url)))
+      check('كل loc يستخدم النطاق canonical', sitemapLocs.every((url) => url.startsWith(`${site}/`) || url === site))
     }
     if (existsSync(robotsPath)) {
       const robots = readFileSync(robotsPath, 'utf8')

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
@@ -11,6 +11,7 @@ import { readArticleJourney, SPACE_EVENT, type StoredArticle } from '../lib/read
 import { useAtlasSettings, visibleConstellations } from '../lib/atlas-settings'
 import { currentSeason } from '../lib/seasons'
 import rawArticleCaution from '../data/article-caution.json' with { type: 'json' }
+import { sampleVisualArchive } from '../lib/archive-scale.mjs'
 
 const W = 1160
 const PAD_R = 150
@@ -25,6 +26,13 @@ const MOBILE_PAD_L = 22
 const MOBILE_STAR_R_MAX = 12
 const MOBILE_ROW = 64
 const MOBILE_TOP = 38
+
+/* Archive 2036: two SVG surfaces (desktop + mobile) must never grow with the
+   entire corpus. Above this threshold the sky switches to deterministic LOD;
+   direct-entry, latest, managed and reader-journey stars stay pinned. */
+const ATLAS_STAR_BUDGET = 1600
+const ATLAS_QUERY_PIN_BUDGET = 80
+const ATLAS_FULL_GRAPH_LIMIT = 3200
 
 const arDigits = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
@@ -123,9 +131,12 @@ export default function Atlas() {
   useSeo({
     title: 'سماء المقالات',
     path: '/atlas',
-    description: `خريطة بصرية لـ${arabicCountPhrase(articles.length, ARTICLE_AFTER_PREPOSITION_FORMS)} — كل نجمة مقال، وحجمها طوله.`,
+    description: `خريطة بصرية لـ${arabicCountPhrase(articles.length, ARTICLE_AFTER_PREPOSITION_FORMS)} — كل نجمة تمثّل مقالاً، وحجمها طوله.`,
   })
-  const reduce = useReducedMotion()
+  const systemReduce = useReducedMotion()
+  /* عند اتساع الأرشيف نحافظ على السماء نفسها بصرياً، لكن نوقف الحركة
+     الفردية لكل نجمة حتى لا تتحول آلاف النجوم إلى آلاف حلقات animation. */
+  const reduce = Boolean(systemReduce) || articles.length > ATLAS_STAR_BUDGET
   const nav = useNavigate()
   const [hover, setHover] = useState<number | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
@@ -158,22 +169,35 @@ export default function Atlas() {
   const [graphNeighbors, setGraphNeighbors] = useState<Record<string, IndexedNeighbor[]> | null>(null)
   const [readerResonance, setReaderResonance] = useState<Map<string, number>>(new Map())
 
-  /* الشبكة والتفاعل المجمع يصلان بعد أول رسم. هكذا لا تدخل خريطة العلاقات
-     ولا Firebase في مسار الرسم الحرج، ولا نبني تشابهاً تربيعياً في المتصفح. */
+  /* الشبكة والتفاعل المجمع يصلان بعد أول رسم. في الأرشيف الكبير لا نحمل
+     ملف علاقاتٍ ضخماً إلى الهاتف لمجرد فتح السماء؛ مسار التطور الزمني يبقى
+     كاملاً بصرياً ضمن LOD، بينما البحث/الدخول المباشر يثبت النجمة المطلوبة. */
   useEffect(() => {
     let active = true
     const timer = window.setTimeout(() => {
-      void import('../data/article-graph-neighbors.json').then((module) => {
-        if (!active) return
-        const raw = (module.default || module) as { neighbors?: Record<string, IndexedNeighbor[]> }
-        setGraphNeighbors(raw.neighbors || {})
-      })
+      if (articles.length <= ATLAS_FULL_GRAPH_LIMIT) {
+        void import('../data/article-graph-neighbors.json').then((module) => {
+          if (!active) return
+          const raw = (module.default || module) as { neighbors?: Record<string, IndexedNeighbor[]> }
+          setGraphNeighbors(raw.neighbors || {})
+        })
+      } else {
+        setGraphNeighbors({})
+      }
       void (async () => {
         try {
           const [{ getDb }, firestore] = await Promise.all([import('../lib/firebase'), import('firebase/firestore')])
           const db = await getDb()
           if (!db || !active) return
-          const snapshot = await firestore.getDocs(firestore.collection(db, 'article_highlights'))
+          /* لا نسحب سجل التفاعل كاملاً كلما كبر الأرشيف. يكفي أعلى الإشارات
+             لقياس الصدى البصري، والنجوم الأخرى تبقى بحجمها التحريري الطبيعي. */
+          const highlights = firestore.collection(db, 'article_highlights')
+          let snapshot
+          try {
+            snapshot = await firestore.getDocs(firestore.query(highlights, firestore.orderBy('count', 'desc'), firestore.limit(1200)))
+          } catch {
+            snapshot = await firestore.getDocs(firestore.query(highlights, firestore.limit(1200)))
+          }
           const totals = new Map<string, number>()
           snapshot.forEach((row) => {
             const data = row.data() as { slug?: unknown; count?: unknown }
@@ -186,7 +210,7 @@ export default function Atlas() {
       })()
     }, 900)
     return () => { active = false; window.clearTimeout(timer) }
-  }, [])
+  }, [articles.length])
 
   useEffect(() => {
     const sync = () => setJourney(readJourney())
@@ -232,16 +256,53 @@ export default function Atlas() {
     window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`)
   }, [view, activeCat, query])
 
+  const deferredAtlasQuery = useDeferredValue(query)
+  const articleIndexBySlug = useMemo(() => new Map(articles.map((article, index) => [article.slug, index])), [articles])
+  const latestArticleSlug = useMemo(() => {
+    let latest = articles[0]
+    for (let index = 1; index < articles.length; index += 1) if (!latest || articles[index].iso > latest.iso) latest = articles[index]
+    return latest?.slug || ''
+  }, [articles])
+  const atlasBaseArticles = useMemo(() => sampleVisualArchive(articles, ATLAS_STAR_BUDGET, {
+    keyOf: (article) => article.slug,
+    groupOf: (article) => `${article.cat}|${article.iso.slice(0, 4)}`,
+    pinKeys: [entrySlug, atlasSettings.dailyStarSlug || '', latestArticleSlug, ...journey.slice(-80).map((item) => item.slug)].filter(Boolean),
+  }), [articles, atlasSettings.dailyStarSlug, entrySlug, journey, latestArticleSlug])
+  const queryPinnedArticles = useMemo(() => {
+    if (articles.length <= ATLAS_STAR_BUDGET) return []
+    const needle = foldAtlas(deferredAtlasQuery.trim())
+    if (needle.length < 2) return []
+    const output: typeof articles = []
+    for (const article of articles) {
+      if (!foldAtlas(`${article.title} ${article.excerpt || ''} ${categoryLabel(article.cat)}`).includes(needle)) continue
+      output.push(article)
+      if (output.length >= ATLAS_QUERY_PIN_BUDGET) break
+    }
+    return output
+  }, [articles, deferredAtlasQuery])
+  const atlasArticles = useMemo(() => {
+    if (!queryPinnedArticles.length) return atlasBaseArticles
+    const merged = new Map(atlasBaseArticles.map((article) => [article.slug, article]))
+    for (const article of queryPinnedArticles) merged.set(article.slug, article)
+    return [...merged.values()].sort((left, right) => (articleIndexBySlug.get(left.slug) ?? 0) - (articleIndexBySlug.get(right.slug) ?? 0))
+  }, [articleIndexBySlug, atlasBaseArticles, queryPinnedArticles])
+
   const stars = useMemo(() => {
     const activeYears = Array.from(new Set(articles.map((a) => a.iso.slice(0, 4)).filter(Boolean)))
       .sort((a, b) => Number(a) - Number(b))
     const yearIndex = new Map(activeYears.map((year, index) => [year, index]))
     const yearDenominator = Math.max(activeYears.length - 1 + 0.72, 1)
-    const words = articles.map((a) => (a.body ? a.body.trim().split(/\s+/).length : Math.max(a.words || 0, 260)))
-    const wMin = Math.min(...words, 260)
-    const wMax = Math.max(...words, 260)
+    let wMin = Number.POSITIVE_INFINITY
+    let wMax = 260
+    for (const article of articles) {
+      const count = article.body ? article.body.trim().split(/\s+/).length : Math.max(article.words || 0, 260)
+      wMin = Math.min(wMin, count)
+      wMax = Math.max(wMax, count)
+    }
+    if (!Number.isFinite(wMin)) wMin = 260
 
-    return articles.map((a, i) => {
+    return atlasArticles.map((a, sampleIndex) => {
+      const i = articleIndexBySlug.get(a.slug) ?? sampleIndex
       const date = new Date(a.iso)
       const year = a.iso.slice(0, 4)
       const start = new Date(`${year}-01-01T00:00:00Z`).getTime()
@@ -253,7 +314,7 @@ export default function Atlas() {
       const row = Math.max(0, cats.indexOf(a.cat))
       const jitter = ((i * 37) % 21) - 10
       const y = TOP + row * ROW + ROW / 2 + jitter * 0.55
-      const w = words[i]
+      const w = a.body ? a.body.trim().split(/\s+/).length : Math.max(a.words || 0, 260)
       /* العين تقرأ المساحة لا نصف القطر. المدى القديم (3٫4 ← 12) كان يجعل
          أطول مقال أكبر 12 ضعفاً مساحةً وهو أطول مرّتين فقط، فتبتلع نجمةٌ
          واحدة السماء. المدى هنا يجعل الأكبر ضِعف الأصغر مساحةً — كما هو حقاً. */
@@ -263,7 +324,7 @@ export default function Atlas() {
       const caution = Number.isFinite(ARTICLE_CAUTION[a.slug]) ? ARTICLE_CAUTION[a.slug] : null
       return { ...a, x, y, r, words: w, i, t, row, jitter, caution, resonance }
     })
-  }, [articles, cats, readerResonance])
+  }, [articleIndexBySlug, articles, atlasArticles, cats, readerResonance])
 
   const entryStar = useMemo(() => entrySlug ? stars.find((star) => star.slug === entrySlug) || null : null, [entrySlug, stars])
 
@@ -371,6 +432,11 @@ export default function Atlas() {
 
   const years = useMemo(() => {
     const map = new Map<string, { desktop: number[]; mobile: number[] }>()
+    const fullCounts = new Map<string, number>()
+    for (const article of articles) {
+      const year = article.iso.slice(0, 4)
+      if (year) fullCounts.set(year, (fullCounts.get(year) || 0) + 1)
+    }
     stars.forEach((star, index) => {
       const year = star.iso.slice(0, 4)
       if (!map.has(year)) map.set(year, { desktop: [], mobile: [] })
@@ -381,9 +447,9 @@ export default function Atlas() {
       year,
       x: points.desktop.reduce((a, b) => a + b, 0) / points.desktop.length,
       mobileX: points.mobile.reduce((a, b) => a + b, 0) / points.mobile.length,
-      count: points.desktop.length,
+      count: fullCounts.get(year) || points.desktop.length,
     }))
-  }, [stars, mobileStars])
+  }, [articles, stars, mobileStars])
 
   /* «ابحث عن فكرة في السماء» (مقترح معتمد): النجوم غير المطابقة تخفت ولا تختفي */
   const searchMatches = useMemo(() => {

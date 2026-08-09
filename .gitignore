@@ -110,3 +110,6 @@ local-data/**/*.webm
 local-data/encyclopedia-audio-temp/
 local-data/encyclopedia-auto-transcribe-state.json
 *.info.json
+
+# generated at build time — Archive 2036 body shards
+public/archive/bodies/

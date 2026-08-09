@@ -1,5 +1,6 @@
 import type { ArticleRecord, BookRecord, PaperRecord } from './cms.ts'
 import { bookKnowledgeText } from './book-knowledge.ts'
+import { selectTopK } from './archive-scale.mjs'
 
 type SimpleBook = Pick<BookRecord, 'slug' | 'title' | 'desc'>
 type SimplePaper = Pick<PaperRecord, 'slug' | 'title' | 'meta' | 'abstractAr' | 'journal'>
@@ -76,12 +77,14 @@ export function relatedForIdea<T extends { title: string }>(
   limit = 5,
 ) {
   const tokens = ideaTokens(idea)
-  return items
-    .map((item) => ({ item, score: scoreText(tokens, `${item.title} ${textOf(item)}`) }))
-    .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title))
-    .slice(0, limit)
-    .map((entry) => entry.item)
+  /* Archive 2036: keep only K best rows while scanning. Sorting every record
+     allocates an O(n) scored array for a result that only needs 2–5 items. */
+  return selectTopK(
+    items,
+    limit,
+    (item) => scoreText(tokens, `${item.title} ${textOf(item)}`),
+    (item) => item.title,
+  ).filter((item) => scoreText(tokens, `${item.title} ${textOf(item)}`) > 0)
 }
 
 export function suggestStrongTitle(idea: string) {
@@ -130,9 +133,23 @@ export function strongestQuote(text = '') {
     || 'الفكرة القوية تبدأ حين نرى الإنسان قبل الأداة.'
 }
 
+function representativeArchiveSample<T>(items: T[], limit = 1600) {
+  if (items.length <= limit) return items
+  const newest = Math.min(240, Math.floor(limit * .2))
+  const output = items.slice(0, newest)
+  const remaining = limit - output.length
+  const span = items.length - newest
+  for (let index = 0; index < remaining; index += 1) {
+    const sourceIndex = newest + Math.min(span - 1, Math.floor((index + .5) * span / remaining))
+    output.push(items[sourceIndex])
+  }
+  return output
+}
+
 export function styleFingerprint(articles: ArticleLike[]) {
   const complete = articles.filter((article) => (article.body || article.excerpt || '').trim().length > 80)
-  const corpus = complete.map((article) => `${article.title}. ${article.excerpt || ''}. ${article.body || ''}`).join('\n\n')
+  const styleSample = representativeArchiveSample(complete)
+  const corpus = styleSample.map((article) => `${article.title}. ${article.excerpt || ''}. ${article.body || ''}`).join('\n\n')
   const sentences = corpus
     .replace(/\s+/g, ' ')
     .split(/(?<=[.!؟])\s+/)
@@ -387,14 +404,13 @@ export function articleSimilarityReport(title: string, body: string, articles: A
   const titleTokens = textTokens(title)
   const bodyTokens = textTokens(body)
   const bodyPhrases = ngrams(bodyTokens, 3)
-  const matches: SimilarityMatch[] = articles.map((article) => {
+  const scoreArticle = (article: ArticleLike): SimilarityMatch => {
     const sourceTitle = textTokens(article.title)
     const sourceIdea = textTokens(`${article.title} ${article.excerpt || ''}`)
     const sourceBody = textTokens(article.body || article.excerpt || '')
     const titleScore = jaccard(titleTokens, sourceTitle)
     const ideaScore = jaccard([...titleTokens, ...bodyTokens.slice(0, 90)], sourceIdea)
     const phraseScore = jaccard(bodyPhrases, ngrams(sourceBody, 3))
-    // الوزن الأعلى للزاوية والمعنى، ثم العبارات، ثم العنوان.
     const score = titleScore * .28 + ideaScore * .42 + phraseScore * .30
     return {
       slug: article.slug,
@@ -404,7 +420,12 @@ export function articleSimilarityReport(title: string, body: string, articles: A
       ideaScore: Math.round(ideaScore * 1000) / 1000,
       phraseScore: Math.round(phraseScore * 1000) / 1000,
     }
-  }).sort((left, right) => right.score - left.score).slice(0, limit)
+  }
+  /* Same full-archive scoring, but O(limit) retained rows instead of materializing
+     and sorting 100k score objects. This preserves correctness and bounds memory. */
+  const matches = selectTopK(articles, limit, (article) => scoreArticle(article).score, (article) => article.title)
+    .map(scoreArticle)
+    .sort((left, right) => right.score - left.score || left.title.localeCompare(right.title))
 
   const highest = matches[0]?.score || 0
   return {
@@ -420,13 +441,14 @@ export function articleSimilarityReport(title: string, body: string, articles: A
 export function editorialStyleProfile(articles: ArticleLike[]) {
   const base = styleFingerprint(articles)
   const complete = articles.filter((article) => (article.body || '').trim().length >= 300)
-  const articleWords = complete.map((article) => arabicWordCount(article.body || ''))
-  const paragraphs = complete.map((article) => (article.body || '').split(/\n\s*\n/).filter((part) => part.trim()).length)
-  const corpus = complete.map((article) => article.body || '').join('\n\n')
+  const profileSample = representativeArchiveSample(complete)
+  const articleWords = profileSample.map((article) => arabicWordCount(article.body || ''))
+  const paragraphs = profileSample.map((article) => (article.body || '').split(/\n\s*\n/).filter((part) => part.trim()).length)
+  const corpus = profileSample.map((article) => article.body || '').join('\n\n')
   const sentences = corpus.replace(/\s+/g, ' ').split(/(?<=[.!؟])\s+/).filter((sentence) => sentence.trim().length > 15)
   const questionRate = sentences.length ? sentences.filter((sentence) => sentence.includes('؟')).length / sentences.length : 0
   const shortSentenceRate = sentences.length ? sentences.filter((sentence) => arabicWordCount(sentence) <= 9).length / sentences.length : 0
-  const openings = complete.map((article) => (article.body || '').trim().split(/\s+/).slice(0, 8).join(' '))
+  const openings = profileSample.map((article) => (article.body || '').trim().split(/\s+/).slice(0, 8).join(' '))
   const openingModes = {
     question: openings.filter((value) => /هل|كيف|لماذا|ماذا|متى|أين/.test(value)).length,
     contrast: openings.filter((value) => /ليس|ليست|لكن|بينما|قد يبدو/.test(value)).length,

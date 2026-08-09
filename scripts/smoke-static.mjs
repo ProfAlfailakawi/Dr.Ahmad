@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
+import { sitemapLocsFromDist } from './archive-sitemap.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = resolve(ROOT, 'dist')
@@ -40,9 +41,9 @@ for (const route of expected) {
   if (!html.includes('id="root"')) fail(`جذر React مفقود: ${route}`)
 }
 
-const sitemap = readFileSync(resolve(DIST, 'sitemap.xml'), 'utf8')
+const sitemapLocs = new Set(sitemapLocsFromDist(DIST))
 for (const route of ['/articles', '/publications', '/research', '/ask', '/thought', '/atlas']) {
-  if (!sitemap.includes(`https://dr-alfailakawi.com${route}`)) fail(`sitemap لا يحتوي ${route}`)
+  if (!sitemapLocs.has(`https://dr-alfailakawi.com${route}`)) fail(`sitemap لا يحتوي ${route}`)
 }
 
 /* العتبة تُحسب من الحيّ لا من الخام: الخام يعدّ ما حذفه الدكتور فتسقط

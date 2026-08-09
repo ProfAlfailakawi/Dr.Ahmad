@@ -297,6 +297,31 @@ const afterFirstPaint = (callback: () => void, delay = 2500) => {
   }
 }
 
+const PUBLIC_REMOTE_WINDOW = 320
+
+/* Archive 2036 policy: the public bundle is the durable archive; Firestore is a
+   small live delta between deployments. Downloading an entire 100k collection
+   on every visitor defeats pagination before the page even renders. Public
+   refreshes therefore read only the newest bounded window. Admin realtime keeps
+   its existing behavior because it is an authenticated editing surface. */
+async function getPublicCollectionWindow(db: Awaited<ReturnType<typeof getDb>>, name: string) {
+  if (!db) return [] as RemoteDocument[]
+  const { collection, getDocs, limit, orderBy, query } = await import('firebase/firestore')
+  const ref = collection(db, name)
+  for (const field of ['updatedAt', 'createdAt']) {
+    try {
+      const snapshot = await getDocs(query(ref, orderBy(field, 'desc'), limit(PUBLIC_REMOTE_WINDOW)))
+      if (snapshot.docs.length) return documents(snapshot)
+    } catch { /* بعض السجلات القديمة بلا هذا الحقل؛ نجرب التالي. */ }
+  }
+  try {
+    const snapshot = await getDocs(query(ref, limit(PUBLIC_REMOTE_WINDOW)))
+    return documents(snapshot)
+  } catch {
+    return []
+  }
+}
+
 export function CmsProvider({ children, realtime = false }: { children: ReactNode; realtime?: boolean }) {
   const initialCache = useMemo(() => realtime ? {} : readCmsCache(), [realtime])
   const [remote, setRemote] = useState<RemoteCmsData>(initialCache)
@@ -310,11 +335,15 @@ export function CmsProvider({ children, realtime = false }: { children: ReactNod
       return
     }
     try {
-      const { collection, getDocs } = await import('firebase/firestore')
       const entries = await Promise.all(
         (Object.keys(collectionMap) as CollectionName[]).map(async (name) => {
-          const snapshot = await getDocs(collection(db, name))
-          return [collectionMap[name], documents(snapshot)] as const
+          const rows = realtime
+            ? await (async () => {
+                const { collection, getDocs } = await import('firebase/firestore')
+                return documents(await getDocs(collection(db, name)))
+              })()
+            : await getPublicCollectionWindow(db, name)
+          return [collectionMap[name], rows] as const
         }),
       )
       const next = Object.fromEntries(entries) as RemoteCmsData

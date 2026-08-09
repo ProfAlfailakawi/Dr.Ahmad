@@ -4,6 +4,7 @@ import crypto from 'node:crypto'
 import { projectRoot, SITE_URL } from './config.mjs'
 import { toRoot } from './dialect-lexicon.mjs'
 import { collapseElongation, foldArabicLetters, stripInvisible } from './comprehension.mjs'
+import { buildSimilarityGraph } from '../src/lib/archive-scale.mjs'
 
 const SEARCH_CACHE_LIMIT = 128
 const searchCacheByDb = new WeakMap()
@@ -214,24 +215,42 @@ export function buildContentIndex(root = projectRoot, siteUrl = SITE_URL) {
 
   const unique = new Map()
   for (const item of items) { item.hash = hashItem({ ...item, hash: undefined }); if (!unique.has(item.id)) unique.set(item.id, item) }
-  // رسم معرفة خفيف داخل الفهرس: يضيف عناوين أقرب الامتدادات إلى حقل البحث،
-  // فيفهم الوكيل السؤال غير المباشر من دون توليد معلومة خارج الموقع.
+  // رسم معرفة خفيف داخل الفهرس: يضيف عناوين أقرب الامتدادات إلى حقل البحث.
+  // Archive 2036: كانت هذه الخطوة تقارن كل مادة بكل مادة (O(n²)). عند 100k
+  // تصبح مليارات المقارنات. الآن نبني جيب مرشحين من posting lists نادرة ثم
+  // نحتفظ بأقرب خمسة فقط لكل مادة.
   const indexed = [...unique.values()]
-  const tokenSet = (value) => new Set(semanticSearchText(value, 80).split(/\s+/).filter(Boolean))
-  const sets = new Map(indexed.map((item) => [item.id, tokenSet(`${item.title} ${item.excerpt} ${item.keywords}`)]))
-  for (const item of indexed) {
-    const own = sets.get(item.id) || new Set()
-    const related = indexed.filter((candidate) => candidate.id !== item.id).map((candidate) => {
-      const other = sets.get(candidate.id) || new Set(); let common = 0
-      for (const token of own) if (other.has(token)) common += 1
-      return { candidate, score: common * 2 + (candidate.kind !== item.kind ? 1 : 0) }
-    }).filter((row) => row.score >= 5).sort((a, b) => b.score - a.score).slice(0, 5)
-    item.related = related.map((row) => row.candidate.id)
+  const similarity = buildSimilarityGraph(indexed, {
+    getText: (item) => `${item.title || ''} ${item.excerpt || ''} ${item.keywords || ''}`,
+    getTitle: (item) => item.title || '',
+    getKind: (item) => item.kind || '',
+    maxNeighbors: 5,
+    maxCandidates: 240,
+    maxCandidateTokens: 7,
+    maxPostingRatio: .02,
+    maxPostingAbsolute: 1000,
+    minScore: 5,
+    conceptKind: '__none__',
+  })
+  const relatedByIndex = new Map()
+  for (const edge of similarity) {
+    const list = relatedByIndex.get(edge.from) || []
+    list.push(edge)
+    relatedByIndex.set(edge.from, list)
+  }
+  for (let index = 0; index < indexed.length; index += 1) {
+    const item = indexed[index]
+    const related = (relatedByIndex.get(index) || [])
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+      .map((edge) => indexed[edge.to])
+      .filter(Boolean)
+    item.related = related.map((candidate) => candidate.id)
     /* عناوين الامتدادات تُضاف للبحث وحده. وكانت تُلصق بالتصنيف بلا فاصل، فصار
        حقل التصنيف كتلةً من عناوين الأبحاث — و«أكثر موضوع يكتب عنه» يعرضها
        بوصفها «مسارات»، فيقرأ الزائر سطراً بطول فقرة. الفاصل «‖» يفصل تصنيف
        الدكتور عن حصيلة الرسم، فيقرأ العرضُ التصنيفَ ويقرأ البحثُ الاثنين. */
-    const graphTitles = related.map((row) => row.candidate.title).join(' ')
+    const graphTitles = related.map((candidate) => candidate.title).join(' ')
     item.keywords = graphTitles ? `${String(item.keywords || '').trim()} ‖ ${graphTitles}`.trim() : String(item.keywords || '').trim()
     item.hash = hashItem({ ...item, hash: undefined })
   }

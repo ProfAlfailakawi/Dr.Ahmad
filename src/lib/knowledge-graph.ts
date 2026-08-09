@@ -1,6 +1,7 @@
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from './cms'
 import { bookKnowledgeText } from './book-knowledge'
 import { buildSmartQueryPlan, scoreSmartFields, smartRoots } from './smart-search.ts'
+import { buildSearchPostings, buildSimilarityGraph, searchPostingCandidates } from './archive-scale.mjs'
 
 export type KnowledgeKind = 'article' | 'book' | 'paper' | 'media' | 'curated' | 'podcast' | 'audio' | 'social' | 'concept'
 export type KnowledgeNode = {
@@ -28,7 +29,7 @@ const overlap = (left: string[], right: string[]) => {
   const rightSet = new Set(right)
   return left.filter((item) => rightSet.has(item)).length
 }
-const node = (kind: KnowledgeKind, item: { slug: string; title: string; year?: string; iso?: string }, text: string, url: string): KnowledgeNode => ({
+const node = (kind: KnowledgeKind, item: { slug: string; title: string; year?: string; iso?: string }, text: string, url: string, includeTokens = true): KnowledgeNode => ({
   id: `${kind}:${item.slug}`,
   kind,
   slug: item.slug,
@@ -36,57 +37,61 @@ const node = (kind: KnowledgeKind, item: { slug: string; title: string; year?: s
   text,
   url,
   year: String(item.year || item.iso || '').slice(0, 4) || undefined,
-  tokens: tokens(`${item.title} ${text}`),
+  tokens: includeTokens ? tokens(`${item.title} ${text}`) : [],
 })
 
-export function buildKnowledgeGraph(input: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media?: MediaRecord[] }): KnowledgeGraph {
+export function buildKnowledgeGraph(input: { articles: ArticleRecord[]; books: BookRecord[]; papers: PaperRecord[]; media?: MediaRecord[] }, options: { edges?: boolean; tokenize?: boolean } = {}): KnowledgeGraph {
+  const includeTokens = options.tokenize !== false
   const nodes: KnowledgeNode[] = [
     ...input.articles.map((item) => node(
       'article',
       item,
       `${item.cat || ''} ${item.excerpt || ''} ${item.body || ''}`,
       `/articles/${item.slug}`,
+      includeTokens,
     )),
     ...input.books.map((item) => node(
       'book',
       item,
       `${item.desc || ''} ${item.longDescription || ''} ${item.targetAudience || ''} ${item.whyWritten || ''} ${item.toc || ''} ${bookKnowledgeText(item.slug)}`,
       `/publications/${item.slug}`,
+      includeTokens,
     )),
     ...input.papers.map((item) => node(
       'paper',
       { ...item, title: item.titleAr || item.title },
       `${item.abstractAr || ''} ${item.meta || ''} ${item.journal || ''} ${item.keywords || ''} ${item.researchQuestion || ''} ${item.keyFinding || ''} ${item.contribution || ''} ${item.applications || ''} ${item.limitations || ''} ${item.methodology || ''} ${item.analysisText || ''} ${item.pdfText || ''}`,
       `/research/${item.slug}`,
+      includeTokens,
     )),
     ...(input.media || []).map((item) => node(
       'media',
       item,
       `${item.outlet || ''} ${item.program || ''} ${item.channel || ''} ${item.topics || ''} ${item.transcript || ''}`,
       `/media/${item.slug}`,
+      includeTokens,
     )),
   ].filter((item) => item.slug)
 
-  const edges: KnowledgeEdge[] = []
-  for (let leftIndex = 0; leftIndex < nodes.length; leftIndex += 1) {
-    for (let rightIndex = leftIndex + 1; rightIndex < nodes.length; rightIndex += 1) {
-      const left = nodes[leftIndex]
-      const right = nodes[rightIndex]
-      const common = overlap(left.tokens, right.tokens)
-      const titleCommon = overlap(tokens(left.title), tokens(right.title))
-      const crossKind = left.kind !== right.kind ? 1 : 0
-      const score = common * 2 + titleCommon * 5 + crossKind + (left.year && left.year === right.year ? 1 : 0)
-      if (score < 7) continue
-      const reasons = [
-        titleCommon ? 'تقاطع مباشر في العنوان' : '',
-        common >= 4 ? 'محور معرفي مشترك' : '',
-        crossKind ? 'امتداد بين نوعين من المحتوى' : '',
-      ].filter(Boolean)
-      edges.push({ from: left.id, to: right.id, score, reasons })
-      edges.push({ from: right.id, to: left.id, score, reasons })
-    }
-  }
-
+  /* Archive 2036: the old nested node×node comparison was O(n²), which turns
+     100k items into ~5 billion pairs. Rare-token postings now narrow each node
+     to a bounded candidate pocket before scoring; semantic quality is kept,
+     while work grows approximately linearly with archive size. */
+  const compactEdges = options.edges === false ? [] : buildSimilarityGraph(nodes, {
+    getText: (item: KnowledgeNode) => `${item.title} ${item.text}`,
+    getTitle: (item: KnowledgeNode) => item.title,
+    getKind: (item: KnowledgeNode) => item.kind,
+    maxNeighbors: 12,
+    maxCandidates: 320,
+    maxCandidateTokens: 8,
+    minScore: 7,
+  })
+  const edges: KnowledgeEdge[] = compactEdges.map((edge) => ({
+    from: nodes[edge.from].id,
+    to: nodes[edge.to].id,
+    score: edge.score,
+    reasons: edge.reasons,
+  }))
   edges.sort((left, right) => right.score - left.score)
   const byId = Object.fromEntries(nodes.map((item) => [item.id, item]))
   const neighbors: Record<string, KnowledgeEdge[]> = {}
@@ -95,9 +100,35 @@ export function buildKnowledgeGraph(input: { articles: ArticleRecord[]; books: B
   return { version: 2, builtAt: new Date().toISOString(), nodes, edges, byId, neighbors }
 }
 
+const graphSearchPostings = new WeakMap<KnowledgeGraph, Map<string, Uint32Array>>()
+
+function postingsForGraph(graph: KnowledgeGraph) {
+  let postings = graphSearchPostings.get(graph)
+  if (!postings) {
+    postings = buildSearchPostings(graph.nodes, {
+      getText: (item: KnowledgeNode) => `${item.title} ${item.text} ${item.tokens.join(' ')}`,
+      maxTokensPerItem: 96,
+    })
+    graphSearchPostings.set(graph, postings)
+  }
+  return postings
+}
+
+export function graphVocabulary(graph: KnowledgeGraph, limit = 30_000) {
+  const output: string[] = []
+  for (const token of postingsForGraph(graph).keys()) {
+    output.push(token)
+    if (output.length >= limit) break
+  }
+  return output
+}
+
 export function graphSearch(graph: KnowledgeGraph, query: string, limit = 20) {
   const plan = buildSmartQueryPlan(query)
-  return graph.nodes
+  const postings = postingsForGraph(graph)
+  const candidates = searchPostingCandidates(postings, query, Math.max(240, limit * 24))
+  const pool = candidates.length ? candidates.map((index) => graph.nodes[index]).filter((item): item is KnowledgeNode => Boolean(item)) : []
+  return pool
     .map((item) => ({
       node: item,
       score: scoreSmartFields(plan, [

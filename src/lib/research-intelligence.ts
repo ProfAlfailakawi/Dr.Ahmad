@@ -363,3 +363,23 @@ export function analyzeResearch(input: ResearchIntelligenceInput = {}): Research
 }
 
 export const researchEvidenceLabel = (intelligence: ResearchIntelligence, field: string) => intelligence.fieldEvidence[field]?.label || `موثّق من ${evidenceLabels[field] || 'المصدر الأصلي'}`
+
+/**
+ * Archive-list projection: intentionally cheaper than analyzeResearch().
+ * It powers filtering/searching across very large archives without running the
+ * evidence/quality pipeline for every hidden row. Full intelligence is still
+ * computed for the 12 records that are actually rendered.
+ */
+export function researchArchiveProjection(input: ResearchIntelligenceInput = {}) {
+  const compactSource = [
+    clean(input.title), clean(input.titleAr), clean(input.meta), clean(input.abstractAr).slice(0, 2_400),
+    clean(input.journal), clean(input.coAuthors), clean(input.studyType), clean(input.methodology).slice(0, 900),
+    clean(input.sample).slice(0, 500), clean(input.researchQuestion).slice(0, 900), clean(input.keyFinding).slice(0, 1_200),
+    clean(input.keywords), clean(input.doi),
+  ].filter(Boolean).join(' ')
+  return {
+    studyType: clean(input.studyType) || inferStudyType(compactSource),
+    year: extractYear(input, `${clean(input.journal)} ${compactSource}`),
+    searchText: normalizeForMatch(compactSource),
+  }
+}

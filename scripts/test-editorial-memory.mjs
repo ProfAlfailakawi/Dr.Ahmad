@@ -16,11 +16,48 @@ mkdirSync(fixture, { recursive: true })
 // ملفات ‎.ts مباشرةً (type stripping) ولا يخمّن الامتدادات. أمّا مختبرُنا هنا فيصرّف
 // بـ‎--moduleResolution node، وهي لا تقبل الامتداد الصريح. فننزعه عند النسخ فقط،
 // ولا نمسّ المصدر نفسه.
-const forFixture = (code) => code.replace(/(\bfrom\s+['"]\.{1,2}\/[^'"]+?)\.ts(['"])/g, '$1$2')
+const forFixture = (code) => code
+  .replace(/(\bfrom\s+['"]\.{1,2}\/[^'"]+?)\.ts(['"])/g, '$1$2')
+  .replace(/(\bfrom\s+['"]\.{1,2}\/[^'"]+?)\.mjs(['"])/g, '$1$2')
 const copyLib = (name) => writeFileSync(join(fixture, name), forFixture(readFileSync(join(root, `src/lib/${name}`), 'utf8')))
 copyLib('editorial-memory.ts')
 copyLib('intelligence.ts')
 copyLib('smart-search.ts')
+
+// Archive 2036 صار جزءاً من intelligence.ts عبر selectTopK. المختبر هنا يصرّف
+// CommonJS مستقلّاً عن حزمة الموقع، لذلك نزرع بديلاً صغيراً *مطابق الدلالة* للدالة
+// التي يحتاجها الاختبار فقط. بقية archive-scale.mjs لها حارس واختبار 100k مستقلان؛
+// نسخ الوحدة كاملة إلى fixture كان سيجعل TypeScript يستنتج أنواع JS غير مقصودة.
+writeFileSync(join(fixture, 'archive-scale.ts'), `
+type RankedRow<T> = { index:number; item:T; score:number; tie:unknown }
+function topInsert<T>(rows: RankedRow<T>[], value: RankedRow<T>, limit: number, compare: (a: RankedRow<T>, b: RankedRow<T>) => number) {
+  let lo = 0
+  let hi = rows.length
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    if (compare(value, rows[mid]) < 0) hi = mid
+    else lo = mid + 1
+  }
+  rows.splice(lo, 0, value)
+  if (rows.length > limit) rows.pop()
+}
+export function selectTopK<T>(
+  items: readonly T[],
+  limit: number,
+  scoreOf: (item: T, index: number) => number,
+  tieOf: (item: T, index: number) => unknown = () => '',
+) {
+  const safeLimit = Math.max(0, Math.floor(limit || 0))
+  if (!safeLimit) return [] as T[]
+  const rows: RankedRow<T>[] = []
+  const compare = (a: RankedRow<T>, b: RankedRow<T>) => b.score - a.score || String(a.tie).localeCompare(String(b.tie))
+  for (let index = 0; index < items.length; index += 1) {
+    const row: RankedRow<T> = { index, item: items[index], score: Number(scoreOf(items[index], index)) || 0, tie: tieOf(items[index], index) }
+    if (rows.length < safeLimit || compare(row, rows[rows.length - 1]) < 0) topInsert(rows, row, safeLimit, compare)
+  }
+  return rows.map((row) => row.item)
+}
+`)
 
 // محرك البحث الذكي يعتمد على قاموس المجال المستورد من JSON. نزرع القاموس الحقيقي
 // داخل نسخة المختبر حتى يبقى الاختبار ممثلاً للسلوك الحي ولا يتعطل بسبب JSON modules.

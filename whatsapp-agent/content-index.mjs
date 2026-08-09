@@ -3,12 +3,20 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { projectRoot, SITE_URL } from './config.mjs'
 import { toRoot } from './dialect-lexicon.mjs'
+import { collapseElongation, foldArabicLetters, stripInvisible } from './comprehension.mjs'
 
 const SEARCH_CACHE_LIMIT = 128
 const searchCacheByDb = new WeakMap()
 
 const stripDiacritics = (value) => String(value || '').normalize('NFKD').replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
-export const normalizeArabic = (value) => stripDiacritics(value).toLowerCase().replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[ؤئ]/g, 'ء').replace(/[ـ]/g, '').replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim()
+/* التطبيع بابُ الفهم كلّه: منه تمرّ نيّة السائل وبحثُه وقواعدُ الردّ والمفاهيم.
+   كان يقرأ الفصحى السليمة وحدها، فيُخرج من الفهم المطَّ («شلوووونك») وعلاماتِ
+   اللصق غير المرئية وصورَ الهمزة على كرسيّها («سؤال» = «سوال»). */
+export const normalizeArabic = (value) => foldArabicLetters(collapseElongation(stripDiacritics(stripInvisible(value)).toLowerCase()))
+  .replace(/\u0649/g, '\u064A')
+  .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
 const unescape = (value) => String(value || '').replace(/\\([\\'"`])/g, '$1').replace(/\\n/g, '\n')
 const readJson = (file, fallback) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')) } catch { return fallback } }
@@ -451,4 +459,37 @@ export function contentSummary(item, maxSentences = 3) {
   if (!source) return ''
   const parts = source.split(/(?<=[.!؟])/u).map((part) => part.trim()).filter(Boolean)
   return parts.slice(0, maxSentences).join(' ')
+}
+
+/* ── مفردات الدكتور ──
+   لتصحيح ما يكتبه السائل نحتاج معجماً نقيس عليه. وهو موجود أصلاً: عناوين
+   المواد وكلماتها المفتاحية، ومعجم المفاهيم بأسمائه العربية والإنجليزية.
+   يُبنى مرةً لكل قاعدة ويُحفظ، فلا كلفةَ على كل رسالة. */
+const vocabularyByDb = new WeakMap()
+
+export function messageVocabulary(db) {
+  if (!db) return new Set()
+  const cached = vocabularyByDb.get(db)
+  if (cached) return cached
+  const words = new Set()
+  const add = (value) => {
+    for (const word of normalizeArabic(value).split(' ')) {
+      if (word.length >= 4 && word.length <= 24) words.add(word)
+    }
+  }
+  const rows = db.all('SELECT title, keywords FROM content_items') || []
+  for (const row of rows) { add(row.title); add(String(row.keywords || '').split('‖').join(' ')) }
+  try {
+    const file = path.join(projectRoot, 'src', 'data', 'dr-ahmad-domain-glossary.json')
+    const glossary = JSON.parse(fs.readFileSync(file, 'utf8'))
+    if (Array.isArray(glossary)) {
+      for (const entry of glossary) {
+        add(entry?.canonicalAr)
+        add(entry?.canonicalEn)
+        for (const alias of Array.isArray(entry?.aliases) ? entry.aliases : []) add(alias)
+      }
+    }
+  } catch { /* المعجم تحسينٌ للفهم، وغيابه لا يُسكت البوت. */ }
+  vocabularyByDb.set(db, words)
+  return words
 }

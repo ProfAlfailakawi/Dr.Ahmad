@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getDb } from './firebase'
+import generatedConstellations from '../data/atlas-constellations.json'
 
 export type AtlasConstellation = {
   id: string
@@ -89,6 +90,16 @@ export async function fetchAtlasSettings() {
   } catch {
     return cachedSettings()
   }
+}
+
+/* الكوكبات التي تُعرض للزائر: المحرَّرة بيده أولاً، ثم المولّدة من خريطة المعرفة.
+   تبقى المولّدة خارج `constellations` عمداً حتى لا تتسرّب إلى محرّر اللوحة
+   فتُحفظ في Firestore وكأنها من كتابته. */
+export function visibleConstellations(settings: AtlasEditorialSettings): AtlasConstellation[] {
+  const seen = new Set(settings.constellations.map((item) => item.id))
+  const generated = (generatedConstellations.constellations as AtlasConstellation[])
+    .filter((item) => item && !seen.has(item.id) && Array.isArray(item.slugs) && item.slugs.length >= 2)
+  return [...settings.constellations, ...generated]
 }
 
 export function useAtlasSettings() {

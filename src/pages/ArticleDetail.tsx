@@ -52,7 +52,7 @@ function ClosingSignature() {
   return (
     <div ref={ref} className={`closing-signature mt-14 text-center ${visible ? 'is-visible' : ''}`} aria-hidden="true">
       <span className="closing-signature__rule mx-auto block h-px w-14 bg-accent/50" />
-      <img src="/logo.png" alt="" width={72} height={44} className="closing-signature__mark mx-auto mt-5 h-11 w-[72px] object-contain opacity-85 dark:invert" loading="lazy" decoding="async" />
+      <img src="/logo.png" alt="" width={72} height={44} className="closing-signature__mark mark-invertible mx-auto mt-5 h-11 w-[72px] object-contain opacity-85 dark:invert" loading="lazy" decoding="async" />
       <span className="closing-signature__name mt-3 block font-display text-[1.02rem] font-semibold text-ink/[.85]">{'\u062F. \u0623\u062D\u0645\u062F \u062D\u0633\u064A\u0646 \u0627\u0644\u0641\u064A\u0644\u0643\u0627\u0648\u064A'}</span>
     </div>
   )
@@ -850,6 +850,18 @@ export default function ArticleDetail() {
     return () => window.removeEventListener('keydown', onKey)
   }, [serenity])
 
+  /* الطباعة: الورقة تُطبع من الصفحة نفسها، فما كان مفتوحاً على الشاشة يدخلها.
+     نُغلق السكينة وأي طبقةٍ عائمة، ونطوي التوسّعات المفتوحة، ونترك للمتصفّح
+     إطاراً واحداً يعيد فيه الرسم قبل أن يفتح صندوق الطباعة. */
+  const printArticle = () => {
+    setSerenity(false)
+    try {
+      document.querySelectorAll<HTMLDetailsElement>('.article-journey details[open]').forEach((item) => { item.open = false })
+      window.dispatchEvent(new CustomEvent('reader:close-overlays'))
+    } catch { /* الطباعة لا تتعطّل لأجل تهيئةٍ تجميلية. */ }
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.print()))
+  }
+
   if (!a && loading)
     return (
       <Page className="content-articles article-journey">
@@ -914,9 +926,6 @@ export default function ArticleDetail() {
               <div className="article-reading-actions serenity-hide mt-4 flex flex-wrap items-center gap-x-3 gap-y-3 pb-1">
                 <div id="article-audio" className="order-2 w-full min-w-0 sm:order-1 sm:w-auto sm:flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
                 <div className="order-1 flex shrink-0 items-center gap-2 sm:order-2">
-                  <button type="button" onClick={() => window.print()} className="article-tool-icon" aria-label="طباعة المقال كورقة أكاديمية" title="طباعة المقال">
-                    <SocialIcon name="Print" size={17} />
-                  </button>
                   <ReaderControls article={article} saveControl={<SaveForLaterButton slug={article.slug} />} onSerenity={() => setSerenity(true)} />
                 </div>
               </div>
@@ -992,6 +1001,10 @@ export default function ArticleDetail() {
                     </a>
                   )}
                   <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
+                  {/* الطباعة أخت المشاركة: كلتاهما إخراج المقال خارج الشاشة. */}
+                  <button type="button" onClick={printArticle} className="article-tool-icon" aria-label="طباعة المقال كورقة أكاديمية" title="طباعة المقال">
+                    <SocialIcon name="Print" size={17} />
+                  </button>
                 </div>
               </div>
             </section>

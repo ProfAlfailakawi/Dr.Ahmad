@@ -49,6 +49,7 @@ src/server/*
 !whatsapp-agent/
 whatsapp-agent/*
 !whatsapp-agent/content-index.mjs
+!whatsapp-agent/comprehension.mjs
 !whatsapp-agent/config.mjs
 !whatsapp-agent/dialect-lexicon.mjs
 !whatsapp-agent/intent-engine.mjs

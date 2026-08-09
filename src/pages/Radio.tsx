@@ -302,6 +302,10 @@ export default function Radio() {
       <div className="radio-vignette" aria-hidden="true" />
 
       <div className="radio-stage">
+        {/* الصفحة كانت بلا عنوانٍ من أي مستوى: قارئ الشاشة يدخلها فلا يعرف أين
+            هو، ومحرّكات البحث تراها بلا اسم. عنوانٌ مسموعٌ غير مرئي — لا يغيّر
+            من المشهد شيئاً. */}
+        <h1 className="sr-only">الإذاعة — بثٌّ متواصل من فكر د. أحمد الفيلكاوي</h1>
         <div className="radio-onair">
           <span className="radio-pulse" aria-hidden="true" />
           <span>على الهواء · بساعة الكويت</span>

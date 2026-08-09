@@ -44,6 +44,7 @@ COPY src/server/whatsapp-controller.mjs /app/src/server/whatsapp-controller.mjs
 COPY whatsapp-agent/book-quotes.mjs /app/whatsapp-agent/book-quotes.mjs
 COPY whatsapp-agent/bot-messages.mjs /app/whatsapp-agent/bot-messages.mjs
 COPY whatsapp-agent/bot-rules.mjs /app/whatsapp-agent/bot-rules.mjs
+COPY whatsapp-agent/comprehension.mjs /app/whatsapp-agent/comprehension.mjs
 COPY whatsapp-agent/config.mjs /app/whatsapp-agent/config.mjs
 COPY whatsapp-agent/content-index.mjs /app/whatsapp-agent/content-index.mjs
 COPY whatsapp-agent/conversation-context.mjs /app/whatsapp-agent/conversation-context.mjs

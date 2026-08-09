@@ -2,6 +2,7 @@ import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
 import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
 import { bookChaptersReply, bookQuoteReply, usefulBookQuoteReply } from '../../whatsapp-agent/book-quotes.mjs'
 import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
+import { collapseElongation, foldArabicLetters, looksArabizi, repairMessage, stripInvisible } from '../../whatsapp-agent/comprehension.mjs'
 import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
 import { distillItem, extractVerbatimAtSpeed } from '../../whatsapp-agent/daily-experience.mjs'
@@ -270,18 +271,59 @@ function normalizeWhitespace(value) {
   return String(value || '').replace(/\s+/g, ' ').trim()
 }
 
+/* التطبيع أوّل ما يمسّ رسالة المتابع، ومنه تُقرأ نيّتُه وتُطابَق قواعدُ الردّ.
+   رُفع إلى ما يكتبه الناس فعلاً لا إلى الفصحى المصحّحة: المطُّ («شلوووونك»)
+   يُردّ، والعلاماتُ غير المرئية الآتية مع اللصق تُحذف قبل أن تشطر الكلمة،
+   والهمزةُ تُردّ إلى كرسيّها فيلتقي «سؤال» و«سوال». */
 export function normalizeArabicMessage(value) {
-  return normalizeWhitespace(String(value || '')
+  const base = String(stripInvisible(value))
     .normalize('NFKD')
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
-    .replace(/[إأآٱ]/g, 'ا')
-    .replace(/ى/g, 'ي')
-    .replace(/ة/g, 'ه')
-    .replace(/[ؤئ]/g, 'ء')
-    .replace(/ـ/g, '')
-    .replace(/[٠-٩۰-۹]/g, (digit) => ARABIC_DIGITS[digit] || digit)
+  return normalizeWhitespace(foldArabicLetters(collapseElongation(base))
+    .replace(/\u0649/g, '\u064A')
+    .replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (digit) => ARABIC_DIGITS[digit] || digit)
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, ' '))
+}
+
+/* ── مفردات الموقع ──
+   ما يُقاس عليه خطأُ الكتابة: عناوين المواد وكلماتها المفتاحية. يُبنى مرةً
+   واحدة مع الفهرس فلا كلفةَ على كل رسالة. */
+let messageVocabularyCache = null
+function messageVocabulary() {
+  if (messageVocabularyCache) return messageVocabularyCache
+  const words = new Set()
+  const add = (value) => {
+    for (const word of normalizeArabicMessage(value).split(' ')) {
+      if (word.length >= 4 && word.length <= 24) words.add(word)
+    }
+  }
+  for (const item of siteIndex()) {
+    add(item?.title)
+    add(String(item?.keywords || '').split('\u2016').join(' '))
+  }
+  messageVocabularyCache = words
+  return words
+}
+
+/* ── ما قصده المتابع ──
+   لا تُعاد كتابة رسالةٍ إلا حين تكون كما هي بلا معنى: لا نيّةَ تُقرأ منها ولا
+   مادةَ تجدها. حينئذٍ تُقرأ حروفُها اللاتينية عربيةً ويُصحَّح ما انقلب — بشرط
+   أن يفتح ذلك باباً كان مغلقاً، وإلا فالأصلُ أولى. */
+export function understandInboundMessage(text) {
+  const original = String(text || '')
+  const normalized = normalizeArabicMessage(original)
+  if (!normalized) return { text: original, changed: false, repairs: [] }
+  const carriesArabizi = normalized.split(' ').some((word) => looksArabizi(word))
+  const understoodAlready = classifyIntent(original).intent !== INTENTS.UNKNOWN
+  if (understoodAlready && !carriesArabizi) return { text: original, changed: false, repairs: [] }
+  if (!carriesArabizi && scoredSiteResults(normalized, { limit: 1 }).length > 0) return { text: original, changed: false, repairs: [] }
+  const repaired = repairMessage(normalized, messageVocabulary())
+  if (!repaired.changed) return { text: original, changed: false, repairs: [] }
+  const opensIntent = classifyIntent(repaired.text).intent !== INTENTS.UNKNOWN
+  const findsContent = scoredSiteResults(repaired.text, { limit: 1 }).length > 0
+  if (!opensIntent && !findsContent) return { text: original, changed: false, repairs: [] }
+  return { text: repaired.text, changed: true, repairs: repaired.repairs }
 }
 
 export function stripArabicGreetings(value) {
@@ -1558,7 +1600,11 @@ function intentKinds(intent) {
   return []
 }
 
-export function decideGroundedResponse({ text, hasMedia = false, rules = [], priorReplyHash = '', conversation = {} } = {}) {
+export function decideGroundedResponse({ text: inboundText, hasMedia = false, rules = [], priorReplyHash = '', conversation = {} } = {}) {
+  /* قبل كل شيء: أن يُقرأ ما كُتب كما قُصد. لا يتغيّر النصّ إلا إذا كان تغييرُه
+     هو الفارق بين جوابٍ وصمت — والرسالةُ المفهومة أصلاً لا تُمسّ. */
+  const understood = understandInboundMessage(inboundText)
+  const text = understood.changed ? understood.text : inboundText
   const clean = normalizeArabicMessage(text)
   const messages = botMessagesNow()
   if (hasMedia) {

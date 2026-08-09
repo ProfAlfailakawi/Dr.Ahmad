@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "builtAt": "2026-08-09",
+  "note": "مولّدة من خريطة المعرفة؛ تُدمج بعد الكوكبات المحرَّرة يدوياً في /atlas.",
+  "constellations": [
+    {
+      "id": "concept-connectivism",
+      "title": "الاتصالية",
+      "slugs": [
+        "qabas-201711-002",
+        "a-generation-that-knows-everything-and-understands-nothing",
+        "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+        "children-who-know-what-is-required-but-do-not-know-whyarabic",
+        "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+        "when-the-teacher-knows-why-he-teachesarabic"
+      ]
+    },
+    {
+      "id": "concept-augmented-reality",
+      "title": "الواقع المعزّز",
+      "slugs": [
+        "qabas-201611-003",
+        "qabas-201611-004",
+        "qabas-201706-001",
+        "qabas-201708-002",
+        "qabas-201712-002",
+        "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2"
+      ]
+    },
+    {
+      "id": "concept-text-to-speech",
+      "title": "تحويل النص إلى كلام",
+      "slugs": [
+        "qabas-201612-002",
+        "qabas-201709-002",
+        "lets-achieve-a-higher-level-of-quality-education",
+        "turning-video-game-obsession-into-creative-meditation-2",
+        "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+        "i-earned-more-than-harvard-but-it-doesnt-teach-brains"
+      ]
+    },
+    {
+      "id": "concept-speech-to-text",
+      "title": "تحويل الكلام إلى نص",
+      "slugs": [
+        "qabas-201709-002",
+        "qabas-201803-003",
+        "lets-achieve-a-higher-level-of-quality-education",
+        "turning-video-game-obsession-into-creative-meditation-2",
+        "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+        "from-the-schoolyard-to-the-food-court-2",
+        "i-earned-more-than-harvard-but-it-doesnt-teach-brains"
+      ]
+    },
+    {
+      "id": "concept-teaching-methods",
+      "title": "مناهج وطرق التدريس",
+      "slugs": [
+        "qabas-201612-002",
+        "qabas-201802-001",
+        "qabas-201802-004",
+        "the-teacher-the-last-to-know-2"
+      ]
+    },
+    {
+      "id": "concept-kemp-model",
+      "title": "نموذج كيمب",
+      "slugs": [
+        "qabas-201707-002",
+        "e-learning-initiatives-and-solutions-2",
+        "past-mistakes-still-persist-in-the-age",
+        "when-the-teacher-knows-why-he-teachesarabic"
+      ]
+    },
+    {
+      "id": "concept-qr-attendance",
+      "title": "الحضور الإلكتروني بالرمز السريع",
+      "slugs": [
+        "qabas-201709-002",
+        "e-learning-culture-2",
+        "e-learning-initiatives-and-solutions-2",
+        "past-mistakes-still-persist-in-the-age",
+        "the-mind-present-in-absence-absent-in-presence-2"
+      ]
+    },
+    {
+      "id": "concept-digital-divide",
+      "title": "الفجوة الرقمية",
+      "slugs": [
+        "qabas-201612-003",
+        "qabas-201802-002",
+        "a-society-that-fears-the-different-arabic"
+      ]
+    },
+    {
+      "id": "concept-ai-chatbots",
+      "title": "روبوتات المحادثة الذكية",
+      "slugs": [
+        "qabas-201707-003",
+        "qabas-201711-003",
+        "smartphone-child-a-creative-mind-or-a-child-being-driven",
+        "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+        "i-earned-more-than-harvard-but-it-doesnt-teach-brains"
+      ]
+    },
+    {
+      "id": "concept-mobile-learning-smart-devices",
+      "title": "التعلّم بالأجهزة الذكية",
+      "slugs": [
+        "qabas-201707-003",
+        "qabas-201711-003",
+        "smartphone-child-a-creative-mind-or-a-child-being-driven",
+        "we-handed-them-the-phone-so-theyd-leave-us-alone-2"
+      ]
+    },
+    {
+      "id": "concept-inclusive-education",
+      "title": "التعليم الدامج",
+      "slugs": [
+        "qabas-201707-001",
+        "qabas-201709-002",
+        "e-learning-culture-2",
+        "the-mind-present-in-absence-absent-in-presence-2"
+      ]
+    },
+    {
+      "id": "concept-pedagogy",
+      "title": "علم التربية والتعليم",
+      "slugs": [
+        "qabas-201802-004",
+        "e-learning-culture-2",
+        "past-mistakes-still-persist-in-the-age",
+        "children-who-know-what-is-required-but-do-not-know-whyarabic-2"
+      ]
+    },
+    {
+      "id": "concept-plagiarism-detection",
+      "title": "كشف الانتحال",
+      "slugs": [
+        "qabas-201805-002",
+        "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+        "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+        "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
+        "the-blackboard-that-no-longer-sees-anyone-2",
+        "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m"
+      ]
+    },
+    {
+      "id": "concept-automated-grading",
+      "title": "التصحيح الآلي",
+      "slugs": [
+        "qabas-201712-002",
+        "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+        "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m"
+      ]
+    }
+  ]
+}

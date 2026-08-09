@@ -8,7 +8,7 @@ import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy
 import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from '../lib/arabic-count.ts'
 import { readArticleJourney, SPACE_EVENT, type StoredArticle } from '../lib/reading-space'
-import { useAtlasSettings } from '../lib/atlas-settings'
+import { useAtlasSettings, visibleConstellations } from '../lib/atlas-settings'
 import { currentSeason } from '../lib/seasons'
 import rawArticleCaution from '../data/article-caution.json' with { type: 'json' }
 
@@ -120,6 +120,8 @@ export default function Atlas() {
   }, [openedAt])
   const { articles } = useCmsContent()
   const atlasSettings = useAtlasSettings()
+  /* المحرَّرة بيده ثم المولّدة من الأرشيف — مُنتقٍ يستحقّ أن يُفتح. */
+  const constellations = useMemo(() => visibleConstellations(atlasSettings), [atlasSettings])
   const atmosphere = useMemo(() => {
     const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kuwait', hour: '2-digit', hour12: false }).format(new Date()))
     return { period: hour >= 5 && hour < 11 ? 'morning' : hour >= 11 && hour < 17 ? 'day' : hour >= 17 && hour < 21 ? 'dusk' : 'night', seasonal: Boolean(currentSeason()) }
@@ -388,8 +390,8 @@ export default function Atlas() {
   }, [query, stars])
 
   const constellation = useMemo(
-    () => atlasSettings.constellations.find((item) => item.id === activeConstellation) || null,
-    [activeConstellation, atlasSettings.constellations],
+    () => constellations.find((item) => item.id === activeConstellation) || null,
+    [activeConstellation, constellations],
   )
   const constellationIndexes = useMemo(() => new Set(
     (constellation?.slugs || []).map((slug) => stars.find((star) => star.slug === slug)?.i).filter((index): index is number => index !== undefined),
@@ -668,7 +670,9 @@ export default function Atlas() {
             <div className="mb-5 flex flex-wrap items-center gap-2.5">
               <details className="atlas-legend group relative">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[rgb(var(--atlas-education))] shadow-[0_0_0_3px_rgb(var(--atlas-education)/.13)]" aria-hidden="true" />
+                  {/* الصنف المولّد لهذه النقطة لم يكن يخرج من Tailwind أصلاً، فكانت
+                      شفافةً دائماً؛ اللون يُكتب هنا كما يُكتب في نقاط القائمة. */}
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'rgb(var(--atlas-education))', boxShadow: '0 0 0 3px rgb(var(--atlas-education) / .13)' }} aria-hidden="true" />
                   ألوان المحاور
                   <span aria-hidden className="transition-transform group-open:rotate-45">+</span>
                 </summary>
@@ -678,13 +682,13 @@ export default function Atlas() {
               </details>
               <button type="button" onClick={() => { setCompareMode((value) => !value); setCompareIndexes([]) }} aria-pressed={compareMode} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>مقارنة نجمتين</button>
               {journeyStars.length > 0 && <button type="button" onClick={() => setShowJourney((value) => !value)} aria-pressed={showJourney} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${showJourney ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>بصمتي · {arDigits(journeyStars.length)}</button>}
-              {atlasSettings.constellations.length > 0 && (
+              {constellations.length > 0 && (
                 <label className="sr-only" htmlFor="atlas-constellation">اختر كوكبة</label>
               )}
-              {atlasSettings.constellations.length > 0 && (
+              {constellations.length > 0 && (
                 <select id="atlas-constellation" value={activeConstellation} onChange={(event) => setActiveConstellation(event.target.value)} className="min-h-11 max-w-full rounded-full border border-hair bg-canvas px-4 text-[.72rem] font-semibold text-soft outline-none focus:border-accent">
                   <option value="">كل الكوكبات</option>
-                  {atlasSettings.constellations.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                  {constellations.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
                 </select>
               )}
             </div>

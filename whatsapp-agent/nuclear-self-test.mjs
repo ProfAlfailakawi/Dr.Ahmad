@@ -47,6 +47,7 @@ import {
   INTENTS,
   chatKindLabel,
   classifyIntent,
+  understandMessage,
   handleIncoming,
   handleIntent,
   isPrivateChat,
@@ -306,6 +307,70 @@ export async function runNuclearSelfTest(root = process.cwd()) {
       check('arabic-normalization', `${variant} -> ${canonical}`, () => {
         assert.equal(normalizeArabic(variant), normalizeArabic(canonical))
         assert.equal(normalizeContextText(variant), normalizeContextText(canonical))
+      })
+    }
+
+    /* ═══ ٤ب) الفهم: أن يُقرأ ما كُتب كما قُصد ═══
+       المتابع لا يكتب فصحى مصحَّحة: يمطّ الحرف، ويكتب بالعربيزي، ويسقط منه
+       حرف. هذه الحالات كانت تخرج من الفهم إلى «ما لقيت». */
+    const elongationPairs = [
+      ['شلوووونك', 'شلونك'], ['مررررحبا', 'مرحبا'], ['مقااااال', 'مقال'],
+      ['التعلييييم', 'التعليم'], ['ابييييي', 'ابي'], ['شكراااا', 'شكرا'],
+    ]
+    for (const [stretched, plain] of elongationPairs) {
+      check('comprehension-elongation', `${stretched} = ${plain}`, () => {
+        assert.equal(normalizeArabic(stretched), normalizeArabic(plain))
+      })
+    }
+
+    /* علاماتٌ غير مرئية تأتي مع اللصق من التطبيقات: كانت تشطر الكلمة. */
+    const invisiblePairs = [
+      ['التعليم\u200f', 'التعليم'], ['\u200bمقال', 'مقال'], ['التربية\ufeff', 'التربية'],
+      ['الذكاء\u200dالاصطناعي', 'الذكاءالاصطناعي'],
+    ]
+    for (const [dirty, clean] of invisiblePairs) {
+      check('comprehension-invisible', `${JSON.stringify(dirty)} = ${clean}`, () => {
+        assert.equal(normalizeArabic(dirty), normalizeArabic(clean))
+      })
+    }
+
+    /* الهمزة على كرسيّها: من يكتب بسرعةٍ يكتب «سوال» و«مسوول». */
+    const hamzaPairs = [
+      ['سؤال', 'سوال'], ['مسؤول', 'مسوول'], ['رؤية', 'روية'], ['بيئة', 'بييه'], ['مبادئ', 'مبادي'],
+    ]
+    for (const [formal, typed] of hamzaPairs) {
+      check('comprehension-hamza', `${formal} = ${typed}`, () => {
+        assert.equal(normalizeArabic(formal), normalizeArabic(typed))
+      })
+    }
+
+    /* العربيزي: رسالةٌ بالحروف اللاتينية تُقرأ عربيةً فتُفتح لها نيّة. */
+    const arabiziCases = [
+      ['3ndk maqal 3an el ta3leem', 'عندك مقال عن التعليم'],
+      ['abi maqal 3an alta3leem', 'ابي مقال عن التعليم'],
+      ['wain maqalat el doctor', 'وين مقالات الدكتور'],
+      ['3ndk kitab 3an altarbiya', 'عندك كتاب عن التربية'],
+    ]
+    for (const [latin, arabic] of arabiziCases) {
+      check('comprehension-arabizi', latin, () => {
+        const understood = understandMessage(db, latin)
+        assert.equal(understood.changed, true)
+        assert.equal(understood.text, normalizeArabic(arabic))
+        assert.equal(classifyIntent(understood.text).intent, classifyIntent(arabic).intent)
+      })
+    }
+
+    /* ولا يُعاد كتابة ما فُهم أصلاً، ولا ما كان لإنسانٍ لا لأرشيف. */
+    const untouchedMessages = [
+      'ابي مقال عن التعليم',
+      'ادعيلي',
+      'لخص الأولى',
+      'ألغاء الاشتراك',
+      'عندي حالة صحية وأبي نصيحة',
+    ]
+    for (const message of untouchedMessages) {
+      check('comprehension-restraint', message, () => {
+        assert.equal(understandMessage(db, message).changed, false)
       })
     }
 

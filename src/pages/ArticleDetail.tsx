@@ -418,7 +418,7 @@ function SyncedArticleBody({ slug, body, title }: { slug: string; body: string; 
                     className="group rounded-xl border border-hair bg-wash/[.38] px-4 py-4 text-right transition-colors hover:border-accent"
                   >
                     <span className="block text-[.66rem] font-semibold text-accent">حُفظت {quote.count.toLocaleString('en-US')} مرة</span>
-                    <span className="mt-1.5 block line-clamp-3 text-[.84rem] font-light leading-[1.9] text-ink/85">{quote.text}</span>
+                    <span className="mt-1.5 block line-clamp-3 text-[.84rem] font-light leading-[1.9] text-ink/[.85]">{quote.text}</span>
                   </button>
                 ))}
               </div>

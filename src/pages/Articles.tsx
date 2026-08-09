@@ -129,13 +129,15 @@ export default function Articles() {
         sub="مقالاتٌ أكتبها منذ انطلاق رحلتي العلمية عام 2015؛ أقرأ فيها تحولات التعليم والتكنولوجيا والمجتمع، وأتتبع ما تتركه في الإنسان والممارسة والحياة العامة."
       />
 
-      <section className="sticky top-16 z-[120] border-b border-hair bg-canvas/[.92] px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
+      <section className="articles-filter-bar border-b border-hair bg-canvas px-4 py-3 sm:px-6 md:sticky md:top-16 md:z-[120] md:bg-canvas/[.96] md:px-11 md:backdrop-blur-md">
         <div className="mx-auto max-w-shell">
-          <div className="editorial-tablist rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="editorial-tablist flex flex-wrap items-center gap-x-3 gap-y-1 pb-2" role="tablist" aria-label="تصنيفات المقالات">
             {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCat(c)}
+                role="tab"
+                aria-selected={cat === c}
                 className={`editorial-tab shrink-0 px-3 py-2 text-[.82rem] font-medium ${cat === c ? 'is-active' : ''}`}
               >
                 {categoryLabel(c)}
@@ -157,7 +159,7 @@ export default function Articles() {
             </label>
             <details className="group relative">
               <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف الأرشيف <span aria-hidden className="transition-transform group-open:rotate-180"><SocialIcon name="ChevronDown" size={13} /></span></summary>
-              <div className="absolute left-0 top-[calc(100%+.5rem)] z-20 min-w-44 rounded-xl border border-hair bg-canvas p-2 shadow-[0_18px_50px_-30px_rgba(21,22,26,.55)]">
+              <div className="absolute end-0 top-[calc(100%+.5rem)] z-20 min-w-44 max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-hair bg-canvas p-2 shadow-[0_18px_50px_-30px_rgba(21,22,26,.55)]">
                 <Link to="/search" className="block rounded-lg px-3 py-2 text-[.76rem] font-semibold text-ink hover:bg-wash hover:text-accent">البحث العميق</Link>
                 <Link to="/atlas" className="block rounded-lg px-3 py-2 text-[.76rem] font-semibold text-ink hover:bg-wash hover:text-accent">سماء المقالات</Link>
               </div>

@@ -7420,19 +7420,21 @@ html.dark {
     transform: translateY(-4px);
     transition: max-height .28s ease, opacity .2s ease, transform .28s ease;
   }
-  /* ٧rem كانت تقصّ صفَّ الحسابات الأكاديمية صامتةً (الأيقونات تُرسم خارج الصندوق
-     المخفيّ overflow) — والصفّان مع الفاصل يحتاجان ضِعف ذلك. */
-  .site-social-dock.is-open .site-social-dock__panel { max-height: 13rem; opacity: 1; transform: translateY(0); }
+  /* ٧rem كما كانت: اللوحة في عرضها الأصلي (٢٢rem وسطاً) ارتفاعها ٥٫٩rem فتسع
+     الصفّين والفاصل بلا قصّ. القصّ الذي رأيته كان من تمديدي للوحة عرضَ التذييل
+     كلّه لا من الرقم — فرُدّ التمديد ورُدّ الرقم معه. */
+  .site-social-dock.is-open .site-social-dock__panel { max-height: 7rem; opacity: 1; transform: translateY(0); }
 
-  /* داخل تذييل القائمة: الدوك يذوب فيصير زرُّه في صفّ القمر نفسه، ولوحته سطراً
-     كاملاً تحته. كان `width:100%` يدفعه سطراً مستقلاً فيتفكّك الصفّ وتختلف
-     محاذاة الزرّ عن القمر عن أيقونة التواصل — وهو سبب «القائمة غير مرتّبة». */
+  /* التذييل: القمر وزرّ التواصل أيقونتان متجاورتان في صفٍّ واحد وسطاً، واللوحة
+     تحتهما بكتلتها الأصلية (٢٢rem وسطاً) لا ممدودةً عرض التذييل — التمديد هو ما
+     بعثر الأيقونات فبدت مزدحمة. `display:contents` يُصعد الزرّ إلى صفّ القمر،
+     و`flex-basis:100%` يحجز للّوحة سطرها وحدها من غير أن يمسّ عرضها المرسوم. */
   .site-menu-footer .site-social-dock { display: contents; }
-  /* `margin-inline:auto` العام كان يبتلع الفراغ كلّه فيقذف القمر إلى الحافة ويترك
-     زرّ التواصل وحده في الوسط — وهو ما بدا «غير مرتّب». */
+  /* `margin-inline:auto` العام يبتلع فراغ الصفّ فيقذف القمر إلى الحافة. */
   .site-menu-footer .site-social-dock__trigger { margin-inline: 0; }
-  /* اللوحة تأخذ سطرها كاملاً دائماً، وإلا حشرت نفسها بين القمر وزرّ التواصل فباعدت بينهما. */
-  .site-menu-footer .site-social-dock__panel { flex: 0 0 100%; width: 100%; max-width: none; }
+  /* `flex-basis` يكسر السطر، و`max-width` يُبقي العرض المرسوم ٢٢rem كما كان —
+     فالأيقونات تبقى متقاربةً في كتلةٍ واحدة لا مبعثرةً على عرض التذييل. */
+  .site-menu-footer .site-social-dock__panel { flex-basis: 100%; max-width: 22rem; margin-inline: auto; }
   .site-menu-footer__tools { width: 100%; }
   .site-social-dock__divider { width: 4rem; height: 1px; }
   .site-social-dock__academic { justify-content: center; }

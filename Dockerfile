@@ -10,6 +10,7 @@ RUN npm ci --omit=dev --ignore-scripts
 
 COPY server.mjs /app/server.mjs
 COPY scripts/editorial-policy.mjs /app/scripts/editorial-policy.mjs
+COPY scripts/canonical-cms.mjs /app/scripts/canonical-cms.mjs
 # متون الموقع: مصادر الفهرس التي يقرأها content-index.mjs وقت التشغيل.
 # غيابها لا يُسقط الصورة — يُفرغ الفهرس بصمت فيردّ البوت «ما لقيت مادة» على كل سؤال.
 COPY src/data.ts /app/src/data.ts
@@ -34,6 +35,7 @@ COPY src/data/encyclopedia-transcript-corrections.json /app/src/data/encyclopedi
 COPY src/data/encyclopedia-video-transcripts.json /app/src/data/encyclopedia-video-transcripts.json
 COPY src/data/encyclopedia-videos-fallback.json /app/src/data/encyclopedia-videos-fallback.json
 COPY src/lib/adversarial-misunderstanding.mjs /app/src/lib/adversarial-misunderstanding.mjs
+COPY src/lib/archive-scale.mjs /app/src/lib/archive-scale.mjs
 COPY src/lib/encyclopedia-transcript-quality.mjs /app/src/lib/encyclopedia-transcript-quality.mjs
 COPY src/lib/semantic-court.mjs /app/src/lib/semantic-court.mjs
 COPY src/lib/sovereign-publishing.mjs /app/src/lib/sovereign-publishing.mjs

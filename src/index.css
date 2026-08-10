@@ -6015,17 +6015,6 @@ html.reader-paper .sentence-item.is-sentence-active {
 }
 .atlas-category-rail > * { flex: 0 0 auto; }
 
-/* The research navigator stays on the compositor's simplest path: no transform,
-   no animated geometry, only deterministic colour state. */
-.research-section-nav {
-  transform: none !important;
-  -webkit-transform: none !important;
-  backface-visibility: visible;
-  contain: none;
-  will-change: auto;
-}
-.research-section-nav nav { box-shadow: none !important; }
-.research-section-nav button { transform: none !important; }
 
 /* Media at 1000+ items: the first item remains the visual lead; subsequent items
    become compact scan-friendly rows on phones. Rendering is also batched in React. */
@@ -6741,27 +6730,6 @@ html.site-silent .signature-label > span:first-child { animation: none !importan
 @media (min-width: 768px) {
 }
 
-/* شريط مستويات البحث: هندسة ثابتة تماماً. لا سالب margins ولا transform ولا
-   انتقالات هندسية؛ scroll-spy نفسه يملك hysteresis حتمياً في PaperDetail. */
-.research-section-nav {
-  inline-size: 100% !important;
-  max-inline-size: 100% !important;
-  margin-inline: 0 !important;
-  transform: none !important;
-  translate: none !important;
-  scale: none !important;
-  rotate: none !important;
-  contain: none !important;
-  will-change: auto !important;
-  isolation: isolate;
-  background: rgb(var(--c-canvas)) !important;
-}
-.research-section-nav nav,
-.research-section-nav button {
-  transform: none !important;
-  translate: none !important;
-  will-change: auto !important;
-}
 
 /* ============================================================
    ATLAS RESTORE — سماء المقالات المرجعية فقط

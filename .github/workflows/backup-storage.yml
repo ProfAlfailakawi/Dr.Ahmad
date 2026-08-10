@@ -1,0 +1,57 @@
+name: درع ملفات Storage — نسخة مستقلة (GitHub)
+
+# Firebase Storage (الأغلفة، ملفات السيرة الخاصة، تصاميم الاستوديو، فيديو المخرج)
+# كان بلا أي نسخة. هذا يمرآته أسبوعياً إلى أثر GitHub مستقلّ عن Google (مجاني، ~٧١م.ب).
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * 0'   # أسبوعياً الأحد 05:00 UTC = 08:00 الكويت
+
+concurrency:
+  group: backup-storage
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: توثيق حساب الخدمة (قراءة Storage)
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}' > "$RUNNER_TEMP/sa.json"
+          gcloud auth activate-service-account --key-file="$RUNNER_TEMP/sa.json" --project=drahmad-8e9e2
+
+      - name: مرآة الباكت + بيان SHA-256 لكل ملف
+        run: |
+          mkdir -p storage-mirror
+          gsutil -m rsync -r gs://drahmad-8e9e2.firebasestorage.app storage-mirror
+          N=$(find storage-mirror -type f | wc -l | tr -d ' ')
+          SZ=$(du -sh storage-mirror | cut -f1)
+          echo "files: $N · size: $SZ"
+          ( cd storage-mirror && find . -type f -print0 | sort -z | xargs -0 shasum -a 256 ) > storage-manifest.txt
+          echo "manifest lines: $(wc -l < storage-manifest.txt | tr -d ' ')"
+          echo "SFILES=$N" >> "$GITHUB_ENV"; echo "SSIZE=$SZ" >> "$GITHUB_ENV"
+
+      - name: نسخة مستقلة عن Google — أثر GitHub (٩٠ يوماً)
+        uses: actions/upload-artifact@v4
+        with:
+          name: storage-backup-${{ github.run_id }}
+          path: |
+            storage-mirror/**
+            storage-manifest.txt
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: ملخّص
+        if: always()
+        continue-on-error: true
+        run: |
+          {
+            echo "## درع ملفات Storage"
+            echo "- الملفات: **${SFILES:-؟}** · الحجم: **${SSIZE:-؟}**"
+            echo "- الوجهة: أثر GitHub مستقلّ عن Google (٩٠ يوماً) + بيان SHA-256 لكل ملف"
+          } >> "$GITHUB_STEP_SUMMARY"

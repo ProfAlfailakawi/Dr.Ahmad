@@ -92,7 +92,15 @@ node scripts/backup-firestore.mjs --out=~/dr-backups   # النسخة البار
 - **يومي:** نسخة Firestore عودية + تحقّق + بروفة معزولة (workflow، RPO ٢٤س).
 - **أسبوعي:** مرآة Storage + R2 (أمر المالك، حتى يُؤتمت).
 - **شهري:** نسخة باردة محلية مستقلة عن المزوّدَين (الأمر في §3) — طويلة الاحتفاظ.
-- **ربع سنوي:** بروفة استرجاع كاملة إلى مشروع معزول (§4)، ثم حذفه.
+- **ربع سنوي:** بروفة استرجاع كاملة إلى **قاعدة معزولة منفصلة**، ثم حذفها. مُبرهنة (٧٧/٧٧، تغطية عربية/طوابع/arrays/maps/bytes/chunks). الأمر (بحساب مالكٍ له صلاحية Firestore Admin):
+  ```bash
+  gcloud firestore databases create --database=restore-drill --location=nam5 --type=firestore-native --project=drahmad-8e9e2
+  export GOOGLE_ACCESS_TOKEN="$(gcloud auth print-access-token)"
+  node scripts/backup-firestore.mjs --sample=3 --out=/tmp/drill && \
+  npm run restore:drill:isolated -- /tmp/drill/firestore-backup-*.json.gz --project=drahmad-8e9e2 --database=restore-drill --cleanup
+  gcloud firestore databases delete --database=restore-drill --project=drahmad-8e9e2 --quiet
+  ```
+  (يُنفّذ يدوياً لأنه يتطلّب إنشاء/حذف قاعدة — صلاحية مالك لا يملكها حساب خدمة CI. الدرع اليومي يبرهن الاسترجاع داخلياً بينهما.)
 
 ## 8) الأمان
 أقلّ صلاحيات لكل حساب خدمة. لا تطبع الأسرار في السجلّات. النسخ الخاصة (source-desk،

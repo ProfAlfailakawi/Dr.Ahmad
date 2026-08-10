@@ -42,6 +42,16 @@ const OUT_DIR = resolve(ROOT, opt('out', 'build'))
 const DRILL_COLLECTION = '_restore_drill'
 const SAMPLE = opt('sample') ? Math.max(1, Number(opt('sample'))) : 0
 
+/* المجموعات التي لها فرعيات (من الجرد) — نهبط فيها فقط بدل استدعاء listCollectionIds
+   لكل مستند في كل مجموعة (كان بطيئاً جداً على حجم الإنتاج). أي فرعيّ جديد يُضاف
+   للجرد فيُلتقط، وحارس التغطية يفرض ذلك. --deep-scan يعيد الهبوط الشامل عند الحاجة. */
+let SUBCOLLECTION_PARENTS = new Set()
+try {
+  const inv = JSON.parse(readFileSync(resolve(ROOT, 'backup-inventory.json'), 'utf8'))
+  SUBCOLLECTION_PARENTS = new Set((inv.firestore?.subcollections || []).map((s) => s.path.split('/')[0]))
+} catch { /* بلا جرد: الوضع الشامل أدناه */ }
+const DEEP_SCAN = flag('deep-scan')
+
 function loadServiceAccount() {
   return JSON.parse(readFileSync(resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json'), 'utf8'))
 }
@@ -106,6 +116,8 @@ async function listCollectionIds(parentPath) {
 /* يفرّغ مجموعة تحت مسار أب معطى، ويهبط عودياً في مجموعات كل مستند. */
 async function dumpCollection(parentPath, name, out, stats) {
   const docs = []
+  /* نهبط في مستندات هذه المجموعة فقط إن كانت معروفةً بفرعيات (أو --deep-scan). */
+  const descend = DEEP_SCAN || SUBCOLLECTION_PARENTS.size === 0 || SUBCOLLECTION_PARENTS.has(name)
   let pageToken = ''
   do {
     const q = new URLSearchParams({ pageSize: '300' })
@@ -116,7 +128,7 @@ async function dumpCollection(parentPath, name, out, stats) {
       docs.push(doc)
       stats.docs += 1
       /* الهبوط العودي: مجموعات فرعية لهذا المستند (doc.name مسار كامل نسبي للـv1). */
-      const docPath = doc.name.split('/databases/(default)/documents/')[1]
+      const docPath = descend ? doc.name.split('/databases/(default)/documents/')[1] : null
       if (docPath) {
         const subIds = await listCollectionIds(`${basePath()}/${docPath}`)
         for (const sub of subIds) {

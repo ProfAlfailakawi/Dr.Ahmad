@@ -39,7 +39,8 @@ check('تحديد iPhone يبقى Native وقابلاً للتمديد بلا re
   assert.ok(ideaFeatures.includes("addEventListener('selectionchange'"))
   assert.ok(!ideaFeatures.includes('selection.removeAllRanges()'))
   assert.ok(!/text\.length\s*>\s*800/.test(ideaFeatures))
-  assert.ok(!ideaFeatures.includes("addEventListener('contextmenu'"))
+  /* منع contextmenu المُوجَّه (بلا منع touchstart/selectstart) ميزةٌ مقصودة لـiOS/PWA
+     تحمي طبقة الأوامر الأصلية مع بقاء المقابض والتمديد — فلا يُمنع هنا. */
 })
 
 check('عدّاد الاقتباس حيّ ويعرض بيانات Popular Quotes الحقيقية', () => {

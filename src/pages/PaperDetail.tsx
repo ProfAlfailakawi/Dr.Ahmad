@@ -163,56 +163,47 @@ export default function PaperDetail() {
   const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer1')
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
 
+  const isManualScrolling = useRef(false)
+  const manualScrollTimeout = useRef<number | null>(null)
+
   /* Scroll-spy بحساب واحد ثابت عند كل إطار: نختار آخر مستوى عبر خطاً
      مرجعياً واضحاً أسفل الشريط. لا مناطق Intersection متداخلة، لذلك لا
      يتبادل 01/02 الحالة عند الحدود ولا يظهر «رجفان» بصري على Safari. */
   useEffect(() => {
-    let frame = 0
-    const ids: Array<[ResearchLayer, string]> = [
-      ['layer1', 'research-passport-layer1'],
-      ['layer2', 'research-passport-layer2'],
-      ['layer3', 'research-passport-layer3'],
+    const ids: Array<{ key: ResearchLayer; id: string }> = [
+      { key: 'layer1', id: 'research-passport-layer1' },
+      { key: 'layer2', id: 'research-passport-layer2' },
+      { key: 'layer3', id: 'research-passport-layer3' },
     ]
-    const update = () => {
-      frame = 0
-      const available = ids.flatMap(([key, id]) => {
-        const node = document.getElementById(id)
-        return node instanceof HTMLElement ? [{ key, node }] : []
-      })
-      if (!available.length) return
-      const nav = document.querySelector<HTMLElement>('.research-section-nav')
-      const anchorViewport = (nav?.getBoundingClientRect().bottom || 88) + 20
-      const anchorDocument = window.scrollY + anchorViewport
-      // offsetTop لا يتأثر بتحويلات FadeUp العابرة؛ getBoundingClientRect يتأثر
-      // بها، وكان ذلك كافياً ليعيد 01/02 التبديل قرب الحد على Safari.
-      const documentTop = (node: HTMLElement) => {
-        let top = 0
-        let current: HTMLElement | null = node
-        while (current) {
-          top += current.offsetTop
-          current = current.offsetParent instanceof HTMLElement ? current.offsetParent : null
+
+    const handleScroll = () => {
+      if (isManualScrolling.current) return
+
+      // استخدام خط مرجعي ثابت ومريح للتمرير والتحديد الأكاديمي
+      const threshold = 180
+      let activeLayer: ResearchLayer = 'layer1'
+
+      for (const item of ids) {
+        const el = document.getElementById(item.id)
+        if (el) {
+          const rect = el.getBoundingClientRect()
+          if (rect.top <= threshold + 20) {
+            activeLayer = item.key
+          }
         }
-        return top
       }
-      let next = available[0].key
-      for (const item of available) {
-        if (documentTop(item.node) <= anchorDocument) next = item.key
-        else break
-      }
-      setPassportLayer((current) => current === next ? current : next)
+
+      setPassportLayer(activeLayer)
     }
-    const schedule = () => {
-      if (!frame) frame = window.requestAnimationFrame(update)
-    }
-    schedule()
-    window.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('resize', schedule, { passive: true })
-    window.addEventListener('orientationchange', schedule)
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+
     return () => {
-      window.removeEventListener('scroll', schedule)
-      window.removeEventListener('resize', schedule)
-      window.removeEventListener('orientationchange', schedule)
-      if (frame) window.cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', handleScroll)
+      if (manualScrollTimeout.current) {
+        window.clearTimeout(manualScrollTimeout.current)
+      }
     }
   }, [dataCards.length])
 
@@ -277,9 +268,16 @@ export default function PaperDetail() {
           <ResearchSectionNavigator
             active={passportLayer}
             onSelect={(layer) => {
+              isManualScrolling.current = true
+              if (manualScrollTimeout.current) {
+                window.clearTimeout(manualScrollTimeout.current)
+              }
               setPassportLayer(layer)
               const target = layer === 'layer1' ? ['metadata', 'research-passport-layer1'] : layer === 'layer2' ? ['science', 'research-passport-layer2'] : ['sources', 'research-passport-layer3']
               revealSection(target[0] as ResearchSection, target[1])
+              manualScrollTimeout.current = window.setTimeout(() => {
+                isManualScrolling.current = false
+              }, 800)
             }}
           />
 

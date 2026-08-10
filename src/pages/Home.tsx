@@ -20,6 +20,7 @@ import { SPACE_EVENT, isArticleSaved, toggleSavedArticle } from '../lib/reading-
 import { SocialIcon as ActionIcon } from '../components/icons'
 import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_THOUGHT_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, BOOK_FORMS, BOOK_PLAIN_FORMS, NEW_ARTICLE_FORMS, PAPER_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
+import { coverSrcSet } from '../lib/cover-image'
 
 /* افتتاحيةُ العتبة 768 سطراً ولا يراها إلا الزائر الأول (تحرسها localStorage)،
    فإبقاؤها في حزمة الدخول يُثقل كلَّ زائرٍ عائد بلا فائدة ويتجاوز ميزانية الأداء */
@@ -664,7 +665,7 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
           <div className="relative mx-auto max-w-[420px]">
             {cover ? (
               <div className={`${book ? 'complete-book-frame' : 'complete-media-frame'} overflow-hidden rounded-xl border border-white/15 bg-white/5 shadow-[0_16px_30px_-24px_rgba(0,0,0,.55)]`} style={!book ? ({ '--media-thumb': `url(${cover})` } as CSSProperties) : undefined}>
-                <img decoding="async" src={cover} alt={title} fetchPriority="high" className={`${book ? 'complete-book-image' : 'complete-media-image'} aspect-[4/3] h-full w-full`} />
+                <img decoding="async" src={cover} srcSet={coverSrcSet(cover)} sizes="(max-width: 640px) 92vw, 420px" alt={title} fetchPriority="high" className={`${book ? 'complete-book-image' : 'complete-media-image'} aspect-[4/3] h-full w-full`} />
               </div>
             ) : (
               <div className="flex aspect-square items-center justify-center rounded-full border border-white/15 bg-white/[.04] p-12 text-center">
@@ -717,6 +718,8 @@ function ArchiveCardCover({ item }: { item: SelectedArchiveItem }) {
     >
       <img decoding="async"
         src={source}
+        srcSet={coverSrcSet(source)}
+        sizes="(max-width: 640px) 88vw, 340px"
         alt=""
         loading="lazy"
         onLoad={(event) => {
@@ -836,7 +839,7 @@ function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
             <Card key={book.slug} delay={Math.min(i * 0.035, 0.18)}>
               <Link to={`/publications/${book.slug}`} className="group block">
                 <div className="complete-book-frame overflow-hidden rounded-xl border border-hair bg-white" style={{ aspectRatio: '1024 / 700' }}>
-                  <img decoding="async" src={book.cover} alt={book.title} loading="lazy" width="1024" height="700" className="complete-book-image h-full w-full" />
+                  <img decoding="async" src={book.cover} srcSet={coverSrcSet(book.cover)} sizes="(max-width: 640px) 45vw, 340px" alt={book.title} loading="lazy" width="1024" height="700" className="complete-book-image h-full w-full" />
                 </div>
                 <h3 className="mt-3 text-wrap-balance font-display text-[1rem] font-medium leading-[1.55] text-ink transition-colors group-hover:text-accent md:text-[1.08rem]">{book.title}</h3>
               </Link>

@@ -10,6 +10,7 @@ import tocData from '../data/book-toc-links.json'
 import { SocialIcon } from '../components/icons'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { arabicCountPhrase, TITLE_FORMS } from '../lib/arabic-count.ts'
+import { coverSrcSet } from '../lib/cover-image'
 
 type BookGuide = { idea: string; audience: string; entry: string }
 
@@ -244,7 +245,7 @@ export default function BookDetail() {
                   خريطة المعرفة أدناه، أما القراءة العامة فتبقى للعينة المعتمدة. */}
               <div className="book-detail-cover spatial-hero spatial-media mx-auto w-full max-w-[20rem] overflow-hidden rounded-2xl border border-hair bg-white md:max-w-sm" style={{ viewTransitionName: sharedViewName('book-cover', book.slug), ['--spatial-image' as string]: book.cover ? `url(${book.cover})` : 'none' }}>
                 {book.cover ? (
-                  <img src={book.cover} alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" sizes="(max-width: 768px) 320px, 420px" className="w-full" />
+                  <img src={book.cover} srcSet={coverSrcSet(book.cover)} alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" sizes="(max-width: 768px) 320px, 420px" className="w-full" />
                 ) : (
                   <div className="flex min-h-72 items-center justify-center bg-wash px-10 text-center font-display text-2xl font-semibold text-soft">{book.title}</div>
                 )}

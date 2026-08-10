@@ -283,32 +283,30 @@ export function Accordion({
 }
 
 /* ---------- Nav: closed menu, opens full-screen ---------- */
+/* القائمة مسطّحة بأمر الدكتور: لا فروعاً تُطوى ولا «جميع…» ولا حالة مفتوحة/مغلقة.
+   كل وجهةٍ سطرٌ واحد يُنقر فيفتح — فالعين تقرأ عموداً واحداً بإيقاعٍ واحد،
+   بدل شرائح «فروع» وأسهمٍ تكسر الصفّ. الوصف يبقى حيث يوضّح فعلاً، ويسقط حيث
+   يكرّر الاسم. */
 type NavItem = {
   to: string
   label: string
   description?: string
-  allLabel?: string
-  showAllLink?: boolean
   action?: 'search'
-  sub?: { to: string; label: string; description?: string }[]
 }
 const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'ابدأ من هنا',
     items: [
-      { to: '/articles', label: 'المقالات الفكرية', allLabel: 'جميع المقالات' },
-      /* الإذاعة تسكن تحت مجلس الفكرة لأنّ مادتها منه: الحلقات نفسها تُبثّ
-         متتابعةً بساعة الكويت. وتختفي معه حين لا حلقة — بقانون «لا رابط
-         إلى صفحةٍ فارغة» نفسه. */
-      { to: '/listen', label: 'مجلس الفكرة', allLabel: 'كل الحلقات', sub: [
-        { to: '/radio', label: 'الإذاعة', description: 'بثٌّ متواصل بساعة الكويت' },
-      ] },
+      { to: '/articles', label: 'المقالات الفكرية' },
+      { to: '/listen', label: 'مجلس الفكرة' },
+      /* الإذاعة مادتها من مجلس الفكرة نفسه، فتختفي معه حين لا حلقة — بقانون
+         «لا رابط إلى صفحةٍ فارغة». */
+      { to: '/radio', label: 'الإذاعة', description: 'بثٌّ متواصل بساعة الكويت' },
       /* «أبحث عن مادة» و«أسأل الأرشيف» يظهران داخل الأداة نفسها (KnowledgeEntry
-         في /search و/ask)، فسردهما هنا تكرارٌ لما سيراه بعد نقرةٍ واحدة.
-         الوصلة الآن مباشرةٌ إلى الأداة، والطريقان يُختاران داخلها. */
+         في /search و/ask)، فسردهما هنا تكرارٌ لما سيراه بعد نقرةٍ واحدة. */
       { to: '/search', label: 'البحث في المعرفة', description: 'مادة منشورة أو سؤال موثّق' },
       { to: '/thought', label: 'الخريطة الفكرية', description: 'الصورة الكبرى للمشروع الفكري' },
-      { to: '/atlas', label: 'سماء المقالات', description: 'خريطة تفاعلية للمقالات عبر الزمن وصلات الأفكار' },
+      { to: '/atlas', label: 'سماء المقالات', description: 'المقالات عبر الزمن وصلات الأفكار' },
     ],
   },
   {
@@ -316,11 +314,10 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { to: '/research', label: 'الأبحاث المحكمة' },
       { to: '/publications', label: 'الكتب المنشورة' },
-      { to: '/curated', label: 'المختارات', allLabel: 'جميع المختارات', sub: [
-        { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
-        { to: '/radar', label: 'أرشيف الرادار', description: 'ما يستحق المتابعة' },
-        { to: '/inbox', label: 'رسائل على الهامش', description: 'رسائل قصيرة وأسئلة تفتح زوايا جديدة' },
-      ] },
+      { to: '/curated', label: 'المختارات' },
+      { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
+      { to: '/radar', label: 'أرشيف الرادار', description: 'ما يستحق المتابعة' },
+      { to: '/inbox', label: 'رسائل على الهامش', description: 'رسائل قصيرة تفتح زوايا جديدة' },
     ],
   },
   {
@@ -335,16 +332,13 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
 
 const isPrimaryNavActive = (item: NavItem, pathname: string) => {
   if (item.to === '/thought') return pathname === '/thought' || pathname === '/thought-paths' || pathname === '/decade' || pathname === '/impact' || pathname.startsWith('/impact/')
-  if (item.to === '/curated') return pathname === '/curated' || pathname === '/questions' || pathname === '/radar' || pathname === '/inbox'
-  return pathname === item.to || Boolean(item.sub?.some((sub) => sub.to === pathname))
+  return pathname === item.to
 }
 
 function Overlay({ close, openSearch }: { close: () => void; openSearch: () => void }) {
   const reduce = useReducedMotion()
   const loc = useLocation()
   const dialogRef = useRef<HTMLDivElement>(null)
-  // العنوان والسهم يفتحان الفروع معاً؛ ورابط «جميع…» يبقى واضحاً ومستقلاً.
-  const [openSub, setOpenSub] = useState<string | null>(null)
 
   /* «اللقاءات القادمة» تُخفى من القائمة حين لا لقاء مُعلَناً — كي لا يقود الرابط
      إلى صفحةٍ فارغة. القائمة مغلقةٌ حتى يفتحها الزائر، وبيانات اللقاءات تُحمَّل
@@ -356,7 +350,10 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
     () => GROUPS.map((group) => ({
       ...group,
       items: group.items.filter((item) =>
-        (item.to !== '/upcoming' || hasUpcoming) && (item.to !== '/listen' || listenIsOpen)),
+        (item.to !== '/upcoming' || hasUpcoming)
+        && (item.to !== '/listen' || listenIsOpen)
+        /* الإذاعة تسقط مع مجلس الفكرة: مادتها منه، فلا تبقى وصلةً إلى بثٍّ بلا حلقات. */
+        && (item.to !== '/radio' || listenIsOpen)),
     })).filter((group) => group.items.length),
     [hasUpcoming],
   )
@@ -435,9 +432,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
 
               <ul className="mt-3 space-y-1 md:mt-4">
                 {g.items.map((it, ii) => {
-                  const expanded = openSub === it.to
                   const active = isPrimaryNavActive(it, loc.pathname)
-                  const subId = `menu-sub-${gi}-${ii}`
                   return (
                   <li key={it.to} className="-my-[0.2em] overflow-hidden py-[0.2em]">
                     <motion.div
@@ -445,36 +440,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                       animate={{ y: 0 }}
                       transition={{ duration: 0.34, delay: 0.12 + gi * 0.025 + ii * 0.018, ease: EASE }}
                     >
-                      {it.sub ? (
-                        <div className="py-1">
-                          <button
-                            type="button"
-                            onClick={() => setOpenSub(expanded ? null : it.to)}
-                            aria-label={expanded ? `طي فروع ${it.label}` : `عرض فروع ${it.label}`}
-                            aria-expanded={expanded}
-                            aria-controls={subId}
-                            className={`site-menu-control group flex min-h-11 w-full items-start justify-between gap-4 text-right transition-colors duration-300 hover:text-accent ${active ? 'text-accent' : 'text-ink'}`}
-                          >
-                            <span className="min-w-0 flex-1 font-display text-[1.15rem] font-medium leading-[1.5] md:text-[1.35rem]">
-                              <span className="block">{it.label}</span>
-                              {it.description && <span className="mt-0.5 block font-sans text-[.7rem] font-normal text-soft">{it.description}</span>}
-                            </span>
-                            <span className="inline-flex shrink-0 items-center gap-1.5 self-center rounded-full border border-hair px-2.5 py-1.5 text-[.62rem] font-normal text-soft transition-colors group-hover:border-accent group-hover:text-accent">
-                              <span>{expanded ? 'إغلاق' : 'فروع'}</span>
-                              <motion.svg aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.3, ease: EASE }}><path d="M6 9l6 6 6-6" /></motion.svg>
-                            </span>
-                          </button>
-                          {it.showAllLink !== false && (
-                            <Link
-                              to={it.to}
-                              onClick={close}
-                              className="site-menu-control mt-0.5 inline-flex min-h-11 items-center py-2 text-[.72rem] font-medium text-soft transition-colors hover:text-accent"
-                            >
-                              {it.allLabel} <span aria-hidden className="ms-1">←</span>
-                            </Link>
-                          )}
-                        </div>
-                      ) : it.action === 'search' ? (
+                      {it.action === 'search' ? (
                         <button
                           type="button"
                           onClick={openSearch}
@@ -500,36 +466,6 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                           </span>
                         </Link>
                       )}
-                      {it.sub && (
-                        <AnimatePresence initial={false}>
-                          {expanded && (
-                            <motion.ul
-                              id={subId}
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.35, ease: EASE }}
-                              className="mt-1 overflow-hidden border-r border-hair pr-4"
-                            >
-                              {it.sub.map((s) => (
-                                <li key={s.to}>
-                                  <Link
-                                    to={s.to}
-                                    onClick={close}
-                                    aria-current={loc.pathname === s.to ? 'page' : undefined}
-                                    className={`site-menu-control block py-1.5 text-[.9rem] font-light transition-colors duration-300 hover:text-accent ${
-                                      loc.pathname === s.to ? 'text-accent' : 'text-soft'
-                                    }`}
-                                  >
-                                    <span className="block text-ink">{s.label}</span>
-                                    {s.description && <span className="mt-0.5 block text-[.68rem] text-soft/80">{s.description}</span>}
-                                  </Link>
-                                </li>
-                              ))}
-                            </motion.ul>
-                          )}
-                        </AnimatePresence>
-                      )}
                     </motion.div>
                   </li>
                 )})}
@@ -546,22 +482,22 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
         animate={{ opacity: 1 }}
         transition={{ duration: 0.36, delay: 0.42 }}
       >
-        <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-3.5 md:gap-5">
+        {/* الشاشات الضيقة: الزرّ سطرٌ كامل، ثم صفٌّ واحد مرتّب يضم القمر وزرّ التواصل.
+            الشاشات الواسعة: الزرّ يميناً والأدوات يساراً كما كان. */}
+        <div className="mx-auto flex max-w-shell flex-col items-stretch gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-5">
           <Link
             to="/contact#booking-form"
             onClick={close}
-            className="rounded-full bg-accent px-5 py-2 text-[.82rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep md:px-6 md:py-2.5 md:text-[.88rem]"
+            className="rounded-full bg-accent px-5 py-2.5 text-center text-[.82rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep md:px-6 md:text-[.88rem]"
           >
             احجز موعداً مباشراً
           </Link>
-          <div className="flex flex-wrap items-center gap-3 text-soft">
-            <div className="flex items-center gap-2">
-              <ThemeToggle className="h-11 w-11" />
-              {SHOW_EN_TOGGLE && (
-                <Link to="/en" onClick={close} className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-[.66rem] font-semibold">EN</Link>
-              )}
-            </div>
-            <span className="mx-1 hidden h-5 w-px bg-hair sm:block" />
+          <div className="site-menu-footer__tools flex flex-wrap items-center justify-center gap-2.5 text-soft md:justify-start md:gap-3">
+            <ThemeToggle className="h-11 w-11" />
+            {SHOW_EN_TOGGLE && (
+              <Link to="/en" onClick={close} className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-[.66rem] font-semibold">EN</Link>
+            )}
+            <span className="mx-1 hidden h-5 w-px bg-hair md:block" />
             {/* الحسابات (الاجتماعية + الأكاديمية) مجموعةٌ داخل أيقونةٍ واحدة كبقية الموقع — القمر يبقى مستقلاً. */}
             <SocialDock />
           </div>

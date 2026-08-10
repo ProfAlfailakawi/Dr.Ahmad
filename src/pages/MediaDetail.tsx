@@ -7,7 +7,7 @@ import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { MediaSaveButton } from '../components/MySpace'
 import { SocialIcon } from '../components/icons'
-import { mergeMediaArchive, formatMediaTime } from '../lib/media-archive'
+import { mergeMediaArchive, formatMediaTime, useArchiveTranscripts } from '../lib/media-archive'
 import { arabicCountPhrase, PASSAGE_FORMS, TIMED_SEGMENT_FORMS } from '../lib/arabic-count.ts'
 
 const normalize = (value = '') => value.normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g, '').replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').toLowerCase()
@@ -24,7 +24,9 @@ export default function MediaDetail() {
   const [query, setQuery] = useState('')
   const [transcriptOpen, setTranscriptOpen] = useState(false)
   const reduce = useReducedMotion()
-  const transcript = item?.transcript || null
+  /* صفحة اللقاء تعرض المقاطع، فتُطلب فور فتحها — ويعيد رقم الإصدار الحسابَ حين تصل. */
+  const transcriptsRevision = useArchiveTranscripts(true)
+  const transcript = useMemo(() => item?.transcript || null, [item, transcriptsRevision])
   const audioRef = useRef<HTMLAudioElement>(null)
   const related = useMemo(() => item ? media.filter((entry) => entry.slug !== item.slug).slice(0, 8) : [], [item, media])
   const matches = useMemo(() => {

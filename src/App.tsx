@@ -591,6 +591,81 @@ function MobileCardRailGuard() {
   return null
 }
 
+/* استباق المسارات: حزمة كل صفحة تُنزَّل عند النقر عليها أول مرة، فيبقى الزائر
+   لحظةً أمام شريط التحميل. هنا نسبق نقرته: نُدفئ أثقل المسارات المشتركة وقت خمول
+   المتصفح بعد استقرار الصفحة الأولى، ونجلب مسار الرابط بمجرد أن يلمسه المؤشر.
+   الوحدة تُخزَّن في ذاكرة المتصفح فيصير الانتقال فورياً، ولا شيء في السلوك يتغيّر.
+   ونمتنع تماماً حين يطلب النظام توفير البيانات أو تكون الشبكة بطيئة. */
+const routeChunkLoaders: Array<[RegExp, () => Promise<unknown>]> = [
+  [/^\/articles\/[^/]+/, () => import('./pages/ArticleDetail')],
+  [/^\/articles\/?$/, () => import('./pages/Articles')],
+  [/^\/publications\/[^/]+/, () => import('./pages/BookDetail')],
+  [/^\/publications\/?$/, () => import('./pages/Publications')],
+  [/^\/research\/[^/]+/, () => import('./pages/PaperDetail')],
+  [/^\/research\/?$/, () => import('./pages/Research')],
+  [/^\/media\/[^/]+/, () => import('./pages/MediaDetail')],
+  [/^\/media\/?$/, () => import('./pages/Media')],
+  [/^\/listen\/?$/, () => import('./pages/Listen')],
+  [/^\/search\/?$/, () => import('./pages/Search')],
+  [/^\/ask\/?$/, () => import('./pages/AskLibrary')],
+  [/^\/atlas\/?$/, () => import('./pages/Atlas')],
+  [/^\/cv\/?$/, () => import('./pages/CV')],
+  [/^\/thought-paths\/?$/, () => import('./pages/ThoughtPaths')],
+  [/^\/radar\/?$/, () => import('./pages/Radar')],
+  [/^\/questions\/?$/, () => import('./pages/Questions')],
+  [/^\/contact\/?$/, () => import('./pages/Contact')],
+]
+
+const warmedRoutes = new Set<string>()
+function warmRoute(pathname: string) {
+  const entry = routeChunkLoaders.find(([pattern]) => pattern.test(pathname))
+  if (!entry) return
+  const key = String(entry[0])
+  if (warmedRoutes.has(key)) return
+  warmedRoutes.add(key)
+  entry[1]().catch(() => { warmedRoutes.delete(key) })
+}
+
+function RoutePrefetcher() {
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
+    if (connection?.saveData) return
+    if (connection?.effectiveType && /2g/.test(connection.effectiveType)) return
+
+    const win = window as typeof window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+    /* المقال أول ما يقصده الزائر، ثم الكتب والأرشيف والبحث. */
+    const queue = ['/articles/x', '/articles', '/publications', '/media', '/search']
+    let idle = 0
+    let timer = 0
+    const step = () => {
+      const next = queue.shift()
+      if (!next) return
+      warmRoute(next)
+      if (win.requestIdleCallback) idle = win.requestIdleCallback(step, { timeout: 4000 })
+      else timer = window.setTimeout(step, 400)
+    }
+    timer = window.setTimeout(step, 1500)
+
+    const onHover = (event: Event) => {
+      const link = (event.target as Element | null)?.closest?.('a[href^="/"]') as HTMLAnchorElement | null
+      if (!link) return
+      warmRoute(new URL(link.href, window.location.origin).pathname)
+    }
+    document.addEventListener('pointerover', onHover, { passive: true })
+    document.addEventListener('touchstart', onHover, { passive: true })
+    return () => {
+      document.removeEventListener('pointerover', onHover)
+      document.removeEventListener('touchstart', onHover)
+      if (idle && win.cancelIdleCallback) win.cancelIdleCallback(idle)
+      window.clearTimeout(timer)
+    }
+  }, [])
+  return null
+}
+
 function AnimatedRoutes() {
   const loc = useLocation()
   return (
@@ -737,6 +812,7 @@ function RoutedApplication() {
         <RouteJourneyTracker />
         <RouteViewTracker />
         <RouteScrollManager />
+        <RoutePrefetcher />
         <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
         <ConditionalNav />
         <ThoughtTrace />

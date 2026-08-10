@@ -51,6 +51,18 @@ check('بطاقة السحب على الهاتف كاملة العرض ولا ت
   assert.match(css, /\[data-mobile-card-rail="true"\][\s\S]*?-webkit-mask-image:\s*none !important/)
 })
 
+check('تعليم السحب يظهر مرة واحدة فقط عند أول سكة مرئية ويعمل على الهاتف والكمبيوتر بلا زر ضغط', () => {
+  assert.match(app, /const SWIPE_DISCOVERY_KEY = 'dr-ahmad:swipe-discovery:v1'/)
+  assert.match(app, /window\.localStorage\.setItem\(SWIPE_DISCOVERY_KEY, 'seen'\)/)
+  assert.match(app, /new IntersectionObserver/)
+  assert.match(app, /rail-swipe-discovery__label">اسحب للتنقّل<\/span>/)
+  assert.match(app, /finePointerMedia/)
+  assert.match(app, /rail\.scrollLeft = startScrollLeft - delta/)
+  assert.match(css, /\.rail-swipe-discovery\s*\{[\s\S]*?pointer-events:\s*none/)
+  assert.match(css, /rail-swipe-discovery-pulse[\s\S]*?1 both/)
+  assert.match(css, /\[data-swipe-rail="true"\]\[data-swipe-drag="true"\][\s\S]*?cursor:\s*grab/)
+})
+
 check('مقياس الوعد/التحفّظ حُذف بصرياً من سماء المقالات', () => {
   assert.doesNotMatch(atlas, />\s*وعد\s*</)
   assert.doesNotMatch(atlas, />\s*تحفّظ\s*</)

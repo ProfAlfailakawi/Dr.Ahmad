@@ -250,61 +250,85 @@ function ExclusiveDetailsGuard() {
   return null
 }
 
-/* سكة الهاتف: البطاقة تظهر كاملة، والدائرتان الدقيقتان تقولان فقط إن كان
-   هناك محتوى فعلي في اليسار/اليمين. لا peek ولا قصّ لبطاقة أخرى. نكتشف
-   السكك بصرياً حتى يشمل القانون الصفحات القديمة والجديدة من دون تحويل
-   التبويبات القصيرة أو صفوف الأيقونات إلى بطاقات. */
+/* لغة التنقّل الأفقية للموقع:
+   - الهاتف: البطاقة كاملة، ونقطتان دقيقتان تظهران فقط في الاتجاه المتاح.
+   - الكمبيوتر: السكة نفسها قابلة للسحب بالماوس، لا نعتمد hover ولا أزرار.
+   - أول نقطة يراها الزائر فقط تعرّف نفسها بنبضة واحدة وعبارة «اسحب للتنقّل»،
+     ثم تُحفظ المعرفة محلياً فلا يتكرر التعليم في بقية الموقع أو الزيارات التالية. */
+const SWIPE_DISCOVERY_KEY = 'dr-ahmad:swipe-discovery:v1'
+
 function MobileCardRailGuard() {
   const location = useLocation()
 
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 767px)')
+    const mobileMedia = window.matchMedia('(max-width: 767px)')
+    const finePointerMedia = window.matchMedia('(hover: hover) and (pointer: fine)')
     const selector = [
       '.rail', '.edge-fade', '.mobile-card-rail', '.mobile-paired-grid',
       '.article-featured-rail', '.signatures-rail', '.media-related-rail',
       '.ask-book-rail', '.book-spine-rail', '.home-motion-rail', '.idea-trace-rail',
       '[data-horizontal-video-rail="true"]',
     ].join(',')
-    const enhanced = new Set<HTMLElement>()
+    const enhancedMobile = new Set<HTMLElement>()
+    const enhancedSwipe = new Set<HTMLElement>()
+    const dragCleanups = new Map<HTMLElement, () => void>()
     let frame = 0
+    let discoverySeen = false
+    let discoveryOverlay: HTMLElement | null = null
+    let discoveryTimer = 0
+    let discoveryPositionFrame = 0
+    let discoveryRail: HTMLElement | null = null
 
-    const childrenOf = (rail: HTMLElement) => Array.from(rail.children).filter((node): node is HTMLElement => node instanceof HTMLElement && node.offsetParent !== null && node.getAttribute('aria-hidden') !== 'true')
+    try {
+      discoverySeen = window.localStorage.getItem(SWIPE_DISCOVERY_KEY) === 'seen'
+    } catch {
+      discoverySeen = document.documentElement.dataset.swipeDiscoverySeen === 'true'
+    }
 
-    const eligible = (rail: HTMLElement) => {
-      if (!media.matches || rail.closest('.admin-dashboard, [role="dialog"]')) return false
+    const markDiscoverySeen = () => {
+      if (discoverySeen) return
+      discoverySeen = true
+      document.documentElement.dataset.swipeDiscoverySeen = 'true'
+      try { window.localStorage.setItem(SWIPE_DISCOVERY_KEY, 'seen') } catch { /* storage may be blocked */ }
+    }
+
+    const childrenOf = (rail: HTMLElement) => Array.from(rail.children).filter((node): node is HTMLElement => (
+      node instanceof HTMLElement
+      && node.offsetParent !== null
+      && node.getAttribute('aria-hidden') !== 'true'
+      && !node.classList.contains('rail-swipe-discovery')
+    ))
+
+    const isKnownCardRail = (rail: HTMLElement) => rail.matches([
+      '.mobile-card-rail', '.mobile-paired-grid', '.article-featured-rail', '.signatures-rail',
+      '.media-related-rail', '.ask-book-rail', '.book-spine-rail', '.home-motion-rail',
+      '.idea-trace-rail', '[data-horizontal-video-rail="true"]',
+    ].join(','))
+
+    const baseEligible = (rail: HTMLElement) => {
+      if (rail.closest('.admin-dashboard, [role="dialog"]')) return false
       const signatureRail = rail.matches('.signatures-rail')
       if (!signatureRail && (rail.matches('nav, [role="tablist"], [role="group"], .editorial-tablist') || rail.closest('nav'))) return false
       if (!signatureRail && rail.querySelector(':scope > [role="tablist"], :scope > [role="group"], :scope > nav')) return false
       if (rail.closest('.content-books')) return false
       const children = childrenOf(rail)
-      if (!children.length) return false
+      if (children.length < 2) return false
       const style = getComputedStyle(rail)
       const horizontallyScrollable = rail.scrollWidth > rail.clientWidth + 3 && /(auto|scroll)/.test(style.overflowX)
-      const knownCardRail = rail.matches('.mobile-card-rail, .mobile-paired-grid, .article-featured-rail, .signatures-rail, .media-related-rail, .ask-book-rail, .book-spine-rail, .home-motion-rail, .idea-trace-rail, [data-horizontal-video-rail="true"]')
-      if (knownCardRail && children.length === 1) return true
       if (!horizontallyScrollable) return false
       const railWidth = Math.max(rail.clientWidth, 1)
       const widest = Math.max(...children.map((child) => child.getBoundingClientRect().width))
-      return knownCardRail || widest >= railWidth * .44
+      return isKnownCardRail(rail) || widest >= railWidth * .44
     }
 
-    const updateRail = (rail: HTMLElement) => {
-      if (!eligible(rail)) {
-        rail.removeAttribute('data-mobile-card-rail')
-        rail.removeAttribute('data-can-left')
-        rail.removeAttribute('data-can-right')
-        enhanced.delete(rail)
-        return
-      }
-      rail.setAttribute('data-mobile-card-rail', 'true')
-      enhanced.add(rail)
+    const setAvailability = (rail: HTMLElement) => {
       const rect = rail.getBoundingClientRect()
       const children = childrenOf(rail)
       const overflow = rail.scrollWidth > rail.clientWidth + 3 && children.length > 1
       if (!overflow) {
         rail.setAttribute('data-can-left', 'false')
         rail.setAttribute('data-can-right', 'false')
-        return
+        return false
       }
       let minLeft = Infinity
       let maxRight = -Infinity
@@ -315,13 +339,207 @@ function MobileCardRailGuard() {
       }
       rail.setAttribute('data-can-left', minLeft < rect.left - 2 ? 'true' : 'false')
       rail.setAttribute('data-can-right', maxRight > rect.right + 2 ? 'true' : 'false')
+      return true
+    }
+
+    const removeDesktopDrag = (rail: HTMLElement) => {
+      dragCleanups.get(rail)?.()
+      dragCleanups.delete(rail)
+      rail.removeAttribute('data-swipe-drag')
+      rail.removeAttribute('data-swipe-dragging')
+    }
+
+    const ensureDesktopDrag = (rail: HTMLElement) => {
+      if (!finePointerMedia.matches || dragCleanups.has(rail)) return
+      let pointerId: number | null = null
+      let startX = 0
+      let startScrollLeft = 0
+      let moved = false
+      let suppressClickUntil = 0
+
+      const endDrag = (event?: PointerEvent) => {
+        if (pointerId === null) return
+        if (event && rail.hasPointerCapture?.(pointerId)) {
+          try { rail.releasePointerCapture(pointerId) } catch { /* already released */ }
+        }
+        if (moved) suppressClickUntil = performance.now() + 260
+        pointerId = null
+        moved = false
+        rail.removeAttribute('data-swipe-dragging')
+      }
+      const onPointerDown = (event: PointerEvent) => {
+        if (event.pointerType !== 'mouse' || event.button !== 0) return
+        if ((event.target as Element | null)?.closest('input, textarea, select, [contenteditable="true"]')) return
+        pointerId = event.pointerId
+        startX = event.clientX
+        startScrollLeft = rail.scrollLeft
+        moved = false
+        try { rail.setPointerCapture(event.pointerId) } catch { /* optional */ }
+      }
+      const onPointerMove = (event: PointerEvent) => {
+        if (pointerId !== event.pointerId) return
+        const delta = event.clientX - startX
+        if (!moved && Math.abs(delta) < 6) return
+        moved = true
+        rail.setAttribute('data-swipe-dragging', 'true')
+        event.preventDefault()
+        rail.scrollLeft = startScrollLeft - delta
+      }
+      const onPointerUp = (event: PointerEvent) => {
+        if (pointerId !== event.pointerId) return
+        endDrag(event)
+      }
+      const onClickCapture = (event: MouseEvent) => {
+        if (performance.now() < suppressClickUntil) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      }
+      const onDragStart = (event: DragEvent) => {
+        if (pointerId !== null) event.preventDefault()
+      }
+
+      rail.addEventListener('pointerdown', onPointerDown)
+      rail.addEventListener('pointermove', onPointerMove)
+      rail.addEventListener('pointerup', onPointerUp)
+      rail.addEventListener('pointercancel', onPointerUp)
+      rail.addEventListener('click', onClickCapture, true)
+      rail.addEventListener('dragstart', onDragStart)
+      rail.setAttribute('data-swipe-drag', 'true')
+      dragCleanups.set(rail, () => {
+        rail.removeEventListener('pointerdown', onPointerDown)
+        rail.removeEventListener('pointermove', onPointerMove)
+        rail.removeEventListener('pointerup', onPointerUp)
+        rail.removeEventListener('pointercancel', onPointerUp)
+        rail.removeEventListener('click', onClickCapture, true)
+        rail.removeEventListener('dragstart', onDragStart)
+      })
+    }
+
+    const updateRail = (rail: HTMLElement) => {
+      if (!baseEligible(rail)) {
+        rail.removeAttribute('data-mobile-card-rail')
+        rail.removeAttribute('data-swipe-rail')
+        rail.removeAttribute('data-can-left')
+        rail.removeAttribute('data-can-right')
+        enhancedMobile.delete(rail)
+        enhancedSwipe.delete(rail)
+        removeDesktopDrag(rail)
+        return
+      }
+
+      rail.setAttribute('data-swipe-rail', 'true')
+      enhancedSwipe.add(rail)
+      const mobile = mobileMedia.matches
+      if (mobile) {
+        rail.setAttribute('data-mobile-card-rail', 'true')
+        enhancedMobile.add(rail)
+        removeDesktopDrag(rail)
+      } else {
+        rail.removeAttribute('data-mobile-card-rail')
+        enhancedMobile.delete(rail)
+        if (finePointerMedia.matches) ensureDesktopDrag(rail)
+        else removeDesktopDrag(rail)
+      }
+      setAvailability(rail)
+    }
+
+    const hideDiscovery = (remember = true) => {
+      if (remember) markDiscoverySeen()
+      if (discoveryTimer) window.clearTimeout(discoveryTimer)
+      discoveryTimer = 0
+      if (discoveryPositionFrame) window.cancelAnimationFrame(discoveryPositionFrame)
+      discoveryPositionFrame = 0
+      discoveryRail = null
+      const overlay = discoveryOverlay
+      discoveryOverlay = null
+      if (!overlay) return
+      overlay.classList.add('is-leaving')
+      window.setTimeout(() => overlay.remove(), 260)
+    }
+
+    const positionDiscovery = () => {
+      discoveryPositionFrame = 0
+      if (!discoveryOverlay || !discoveryRail?.isConnected) return
+      const rect = discoveryRail.getBoundingClientRect()
+      const direction = discoveryOverlay.dataset.direction === 'left' ? 'left' : 'right'
+      const x = direction === 'left' ? rect.left + 12 : rect.right - 12
+      const y = Math.min(window.innerHeight - 22, Math.max(22, rect.bottom - 7))
+      discoveryOverlay.style.left = `${Math.round(x)}px`
+      discoveryOverlay.style.top = `${Math.round(y)}px`
+    }
+
+    const scheduleDiscoveryPosition = () => {
+      if (discoveryPositionFrame || !discoveryOverlay) return
+      discoveryPositionFrame = window.requestAnimationFrame(positionDiscovery)
+    }
+
+    const showDiscovery = (rail: HTMLElement) => {
+      if (discoverySeen || discoveryOverlay || !rail.isConnected) return
+      const canLeft = rail.dataset.canLeft === 'true'
+      const canRight = rail.dataset.canRight === 'true'
+      if (!canLeft && !canRight) return
+      const direction = canRight && !canLeft ? 'right' : 'left'
+      const overlay = document.createElement('div')
+      overlay.className = `rail-swipe-discovery rail-swipe-discovery--${direction}`
+      overlay.dataset.direction = direction
+      overlay.setAttribute('role', 'status')
+      overlay.setAttribute('aria-live', 'polite')
+      overlay.innerHTML = '<span class="rail-swipe-discovery__dot" aria-hidden="true"></span><span class="rail-swipe-discovery__label">اسحب للتنقّل</span>'
+      document.body.appendChild(overlay)
+      discoveryOverlay = overlay
+      discoveryRail = rail
+      positionDiscovery()
+      // التعليم يظهر تلقائياً مرة واحدة فقط؛ النقطة ليست زرّاً ولا تستجيب للضغط.
+      discoveryTimer = window.setTimeout(() => hideDiscovery(true), 4300)
+      const dismissOnSwipe = () => {
+        if (discoveryOverlay) hideDiscovery(true)
+        rail.removeEventListener('scroll', dismissOnSwipe)
+      }
+      rail.addEventListener('scroll', dismissOnSwipe, { passive: true })
+      window.setTimeout(markDiscoverySeen, 900)
+    }
+
+    const discoveryObserver = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
+      if (discoverySeen || discoveryOverlay) return
+      const visible = entries
+        .filter((entry) => entry.isIntersecting && entry.intersectionRatio >= .18)
+        .map((entry) => entry.target)
+        .filter((target): target is HTMLElement => target instanceof HTMLElement && target.dataset.swipeRail === 'true')
+        .filter((rail) => rail.dataset.canLeft === 'true' || rail.dataset.canRight === 'true')
+        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)
+      if (visible[0]) showDiscovery(visible[0])
+    }, { threshold: [.18, .35, .6] }) : null
+
+    const syncDiscoveryTargets = () => {
+      if (discoverySeen) return
+      if (discoveryObserver) {
+        enhancedSwipe.forEach((rail) => discoveryObserver.observe(rail))
+        return
+      }
+      // fallback للمتصفحات القديمة: اختر أول سكة ظاهرة فعلياً فقط.
+      const firstVisible = Array.from(enhancedSwipe)
+        .filter((rail) => rail.dataset.canLeft === 'true' || rail.dataset.canRight === 'true')
+        .filter((rail) => {
+          const rect = rail.getBoundingClientRect()
+          return rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth
+        })
+        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0]
+      if (firstVisible) showDiscovery(firstVisible)
     }
 
     const refresh = () => {
       frame = 0
       document.querySelectorAll<HTMLElement>(selector).forEach(updateRail)
-      // إضافة data تغيّر عرض البطاقة من peek إلى 100%؛ نقيس مرة ثانية بعد الرسم.
-      window.requestAnimationFrame(() => enhanced.forEach(updateRail))
+      // على الهاتف، إضافة data تجعل البطاقة 100%؛ نعيد القياس بعد الرسم حتى تكون
+      // إشارات الاتجاه دقيقة بعد إلغاء الـ peek.
+      window.requestAnimationFrame(() => {
+        enhancedSwipe.forEach((rail) => {
+          setAvailability(rail)
+          if (!mobileMedia.matches) ensureDesktopDrag(rail)
+        })
+        syncDiscoveryTargets()
+      })
     }
     const schedule = () => {
       if (frame) return
@@ -329,24 +547,41 @@ function MobileCardRailGuard() {
     }
     const onScroll = (event: Event) => {
       const target = event.target
-      if (target instanceof HTMLElement && target.dataset.mobileCardRail === 'true') updateRail(target)
+      if (target instanceof HTMLElement && target.dataset.swipeRail === 'true') setAvailability(target)
+      scheduleDiscoveryPosition()
     }
     const observer = new MutationObserver(schedule)
     observer.observe(document.getElementById('main') || document.body, { childList: true, subtree: true })
     document.addEventListener('scroll', onScroll, true)
+    window.addEventListener('scroll', scheduleDiscoveryPosition, { passive: true })
     window.addEventListener('resize', schedule, { passive: true })
+    window.addEventListener('resize', scheduleDiscoveryPosition, { passive: true })
     window.addEventListener('orientationchange', schedule)
-    media.addEventListener?.('change', schedule)
+    mobileMedia.addEventListener?.('change', schedule)
+    finePointerMedia.addEventListener?.('change', schedule)
     schedule()
+
     return () => {
       observer.disconnect()
+      discoveryObserver?.disconnect()
       document.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('scroll', scheduleDiscoveryPosition)
       window.removeEventListener('resize', schedule)
+      window.removeEventListener('resize', scheduleDiscoveryPosition)
       window.removeEventListener('orientationchange', schedule)
-      media.removeEventListener?.('change', schedule)
+      mobileMedia.removeEventListener?.('change', schedule)
+      finePointerMedia.removeEventListener?.('change', schedule)
       if (frame) window.cancelAnimationFrame(frame)
-      enhanced.forEach((rail) => {
+      hideDiscovery(false)
+      dragCleanups.forEach((cleanup, rail) => {
+        cleanup()
+        rail.removeAttribute('data-swipe-drag')
+        rail.removeAttribute('data-swipe-dragging')
+      })
+      dragCleanups.clear()
+      enhancedSwipe.forEach((rail) => {
         rail.removeAttribute('data-mobile-card-rail')
+        rail.removeAttribute('data-swipe-rail')
         rail.removeAttribute('data-can-left')
         rail.removeAttribute('data-can-right')
       })

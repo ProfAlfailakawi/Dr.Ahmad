@@ -1,0 +1,72 @@
+name: درع الصوت — نسخة مستقلة (GitHub Releases)
+
+# الصوت (~٦.٦ج) بلا نسخة. هذا يمرآته إلى GitHub Release مستقلّ عن Cloudflare
+# (مجاني للمستودع العام؛ الصوت عامّ أصلاً على r2.dev فلا كشف جديد).
+# مرآة R2→R2 رُفضت لأنها تتجاوز حصة R2 المجانية (كلفة) — يخالف «لا مدفوع».
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 0'   # أسبوعياً الأحد 06:00 UTC = 09:00 الكويت
+
+concurrency:
+  group: backup-audio-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # لإنشاء/تحديث الـRelease وأصوله
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: تنزيل الصوت من R2 (إعادة محاولة تتحمّل الكائن المعطِب)
+        run: |
+          mkdir -p audio-mirror
+          ok=0
+          for i in 1 2 3 4; do
+            if aws s3 sync "s3://${{ vars.CLOUDFLARE_R2_BUCKET }}" audio-mirror \
+                 --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" --no-progress --exclude "backups/*" --only-show-errors; then
+              ok=1; break
+            fi
+            echo "محاولة $i أخفقت — إعادة (sync يستأنف الناقص فقط)…"; sleep 10
+          done
+          N=$(find audio-mirror -maxdepth 1 -type f | wc -l | tr -d ' ')
+          echo "ملفات الصوت: $N · الحجم: $(du -sh audio-mirror | cut -f1) · sync ok=$ok"
+          [ "$N" -gt 0 ] || { echo "::error::لا ملفات صوت نُزّلت"; exit 1; }
+          echo "AN=$N" >> "$GITHUB_ENV"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'
+
+      - name: بيان SHA-256 لكل ملف
+        run: |
+          ( cd audio-mirror && find . -maxdepth 1 -type f -print0 | sort -z | xargs -0 shasum -a 256 ) > audio-manifest.txt
+          echo "بيان: $(wc -l < audio-manifest.txt | tr -d ' ') ملف"
+
+      - name: رفع إلى GitHub Release مستقلّ (على دفعات، idempotent)
+        run: |
+          gh release view audio-backup >/dev/null 2>&1 || \
+            gh release create audio-backup --title "نسخة الصوت الاحتياطية" \
+              --notes "مرآة صوت R2 مستقلة عن Cloudflare — تُحدَّث دورياً. الاستعادة: نزّل الأصول ثم اجمعها في مجلد وارفعها إلى R2 بـ aws s3 sync."
+          gh release upload audio-backup audio-manifest.txt --clobber
+          find audio-mirror -maxdepth 1 -type f -print0 | xargs -0 -n 30 gh release upload audio-backup --clobber
+          echo "رُفع $AN ملفاً + البيان إلى Release: audio-backup"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: التحقّق — عدد أصول الـRelease ≥ عدد الملفات
+        continue-on-error: true
+        run: |
+          ASSETS=$(gh release view audio-backup --json assets -q '.assets | length')
+          echo "أصول الـRelease: $ASSETS · ملفات المصدر: $AN"
+          {
+            echo "## درع الصوت — GitHub Release"
+            echo "- ملفات الصوت: **$AN**"
+            echo "- أصول الـRelease: **$ASSETS** (يشمل البيان)"
+            if [ "$ASSETS" -gt "$AN" ]; then echo "- الحالة: ✅ مكتمل ومستقلّ عن Cloudflare"; else echo "- الحالة: ⚠️ نقص — راجع"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ github.token }}

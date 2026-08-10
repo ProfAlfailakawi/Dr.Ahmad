@@ -7278,3 +7278,232 @@ html.dark {
   .concept-echo-overlay,
   .concept-life-peek { display: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   2026-08-10 — conversation-wide precision pass
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* مؤشرات السحب: صغيرة جداً لكن مقروءة، ومبتعدة عن إطار البطاقة. */
+@media (max-width: 767px) {
+  [data-mobile-card-rail="true"] {
+    padding-bottom: 1.2rem !important;
+    background-image:
+      radial-gradient(circle, var(--rail-cue-left) 0 2.15px, rgb(var(--c-canvas) / .92) 2.25px 2.8px, transparent 2.95px),
+      radial-gradient(circle, var(--rail-cue-right) 0 2.15px, rgb(var(--c-canvas) / .92) 2.25px 2.8px, transparent 2.95px) !important;
+    background-size: 6px 6px, 6px 6px !important;
+    background-position: left 10px bottom 5px, right 10px bottom 5px !important;
+  }
+  [data-mobile-card-rail="true"][data-can-left="true"] { --rail-cue-left: rgb(var(--c-accent) / .82); }
+  [data-mobile-card-rail="true"][data-can-right="true"] { --rail-cue-right: rgb(var(--c-accent) / .82); }
+}
+
+/* فلتر سجل الأثر: حالة الضغط مرئية بلا كبسولة أو ضجيج. */
+.content-impact .impact-filter-tab.is-active {
+  color: rgb(var(--c-accent)) !important;
+  font-weight: 750;
+}
+.content-impact .impact-filter-tab.is-active::after {
+  height: 2px;
+  inset-inline: .38rem;
+  background: rgb(var(--c-accent));
+  transform: scaleX(1) !important;
+  box-shadow: 0 1px 0 rgb(var(--c-accent) / .14);
+}
+
+/* مشاركة المقال: كل الأدوات في صف واحد؛ لا تنزل الطباعة وحدها. */
+.article-share-actions {
+  flex-wrap: nowrap !important;
+  justify-content: flex-start !important;
+  gap: .5rem !important;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+  padding-block: .1rem .25rem;
+}
+.article-share-actions::-webkit-scrollbar { display: none; }
+.article-share-actions > div { flex-wrap: nowrap !important; flex: 0 0 auto; }
+@media (max-width: 520px) {
+  .article-share-actions { justify-content: flex-start !important; }
+  .article-share-actions .article-tool-icon,
+  .article-share-actions > div > a,
+  .article-share-actions > div > button {
+    width: 2.45rem !important;
+    height: 2.45rem !important;
+    flex-basis: 2.45rem !important;
+  }
+}
+
+/* سماء التظليل: حضور خفيف يناسب قيمة المحتوى، لا بطاقة ضخمة. */
+.reader-made-archive .reader-made-summary {
+  box-shadow: 0 12px 28px -28px rgb(var(--c-ink) / .5);
+}
+
+/* حقول البحث تبقى مقروءة وتترك الأيقونة خارج حساب النص. */
+.research-index-input-wrap input,
+.content-media .media-search-input input {
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+@media (max-width: 520px) {
+  .research-index-input-wrap input { font-size: .88rem; }
+  .content-media .media-search-input input { font-size: .9rem; }
+}
+
+/* شريط التحديد الخاص بالموقع يعلو كل طبقات المقال؛ WebKit callout ممنوع في المقال فقط. */
+@media (pointer: coarse) {
+  .content-articles #article-body,
+  .content-articles #article-body * {
+    -webkit-touch-callout: none !important;
+  }
+  .content-articles #article-body,
+  .content-articles #article-body :is(p, span, mark, blockquote, strong, em, a) {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+  }
+}
+.reader-selection-toolbar { z-index: 10050 !important; }
+
+/* Footer 2026: شعار → dock رقمي → روابط خفيفة → حقوق. */
+.site-social-dock {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: .6rem;
+}
+.site-social-dock__trigger {
+  display: inline-flex;
+  min-height: 2.45rem;
+  align-items: center;
+  gap: .55rem;
+  border: 1px solid rgb(var(--c-hair));
+  border-radius: 999px;
+  padding: .45rem .82rem;
+  background: rgb(var(--c-canvas));
+  color: rgb(var(--c-ink));
+  font-size: .7rem;
+  font-weight: 650;
+  transition: border-color .2s ease, color .2s ease, background-color .2s ease;
+}
+.site-social-dock__trigger:hover { border-color: rgb(var(--c-accent) / .45); color: rgb(var(--c-accent)); }
+.site-social-dock__signal { display: inline-flex; align-items: center; gap: 2px; }
+.site-social-dock__signal i { width: 3px; height: 3px; border-radius: 999px; background: rgb(var(--c-accent)); opacity: .4; }
+.site-social-dock__signal i:nth-child(2) { opacity: .9; transform: translateY(-2px); }
+.site-social-dock__chevron { color: rgb(var(--c-accent)); transition: transform .24s ease; }
+.site-social-dock.is-open .site-social-dock__chevron { transform: rotate(45deg); }
+.site-social-dock__panel { display: flex; min-width: 0; align-items: center; gap: .65rem; }
+.site-social-dock__socials { display: flex; align-items: center; gap: .28rem; }
+.site-social-dock__socials a {
+  display: inline-flex; width: 2.25rem; height: 2.25rem; align-items: center; justify-content: center;
+  border-radius: 999px; color: rgb(var(--c-soft)); transition: color .2s ease, background-color .2s ease;
+}
+.site-social-dock__socials a:hover { color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .06); }
+.site-social-dock__divider { width: 1px; height: 1.25rem; background: rgb(var(--c-hair)); }
+.site-social-dock__academic { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; }
+.site-social-dock__academic a { color: rgb(var(--c-soft)); font-size: .62rem; font-weight: 550; transition: color .2s ease; }
+.site-social-dock__academic a:hover { color: rgb(var(--c-accent)); }
+.site-social-dock.is-centered { justify-content: center; }
+
+.site-footer--calm { background: rgb(var(--c-canvas)); }
+.site-footer__main { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 1.25rem; }
+.site-footer__mark { display: inline-flex; align-items: center; }
+.site-footer__utility { display: inline-flex; justify-self: end; flex-wrap: wrap; align-items: center; gap: .45rem .75rem; }
+.site-footer__text-link { color: rgb(var(--c-soft)); font-size: .68rem; font-weight: 550; transition: color .2s ease; }
+.site-footer__text-link:hover { color: rgb(var(--c-accent)); }
+.site-footer__project { height: 2.3rem !important; border: 0 !important; padding-inline: .35rem !important; background: transparent !important; font-size: .68rem !important; }
+.site-footer__project svg { width: 14px; height: 14px; }
+.site-footer__rights,
+.home-footer-rights {
+  margin-top: 1.15rem;
+  border-top: 1px solid rgb(var(--c-hair));
+  padding-top: .85rem;
+  color: rgb(var(--c-soft));
+  font-size: .66rem;
+  font-weight: 400;
+  line-height: 1.7;
+}
+.home-footer-rights { text-align: center; margin-inline: auto; max-width: 32rem; }
+.home-footer-tools { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .35rem; }
+.home-footer-tools__item {
+  display: inline-flex !important; min-height: 2.25rem !important; height: 2.25rem !important; align-items: center; justify-content: center; gap: .4rem;
+  border: 0 !important; border-radius: 999px; padding-inline: .72rem !important; background: transparent !important;
+  color: rgb(var(--c-soft)); font-size: .66rem !important; font-weight: 600; transition: color .2s ease, background-color .2s ease;
+}
+.home-footer-tools__item:hover,
+.home-footer-tools__item.is-active { color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .055) !important; }
+.home-footer-tools__item svg { width: 14px !important; height: 14px !important; }
+
+@media (max-width: 760px) {
+  .site-social-dock { width: 100%; flex-direction: column; gap: .45rem; }
+  .site-social-dock__trigger { margin-inline: auto; }
+  .site-social-dock__panel {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    width: min(100%, 22rem);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: max-height .28s ease, opacity .2s ease, transform .28s ease;
+  }
+  .site-social-dock.is-open .site-social-dock__panel { max-height: 7rem; opacity: 1; transform: translateY(0); }
+  .site-social-dock__divider { width: 4rem; height: 1px; }
+  .site-social-dock__academic { justify-content: center; }
+  .site-footer__main { grid-template-columns: 1fr; justify-items: center; gap: .9rem; }
+  .site-footer__utility { justify-self: center; justify-content: center; }
+  .site-footer__rights { text-align: center; margin-top: .95rem; padding-top: .75rem; }
+  .site-footer--calm { padding-block: 1.65rem !important; }
+}
+
+/* iOS/PWA — التحديد يظل أصلياً، لكن قائمة النظام لا تصبح طبقة منافسة لأداة المقال. */
+@supports (-webkit-touch-callout: none) {
+  @media (pointer: coarse) {
+    .content-articles #article-body,
+    .content-articles #article-body * {
+      -webkit-touch-callout: none !important;
+    }
+    .content-articles #article-body :is(p, span, mark, blockquote, strong, em, a, li) {
+      -webkit-user-select: text !important;
+      user-select: text !important;
+    }
+  }
+}
+
+/* إشارات المقال المنحنية: تبقى ملتصقة بنهاية الفقرة نفسها، من دون صف مستقل. */
+.article-signal-inline-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  margin-inline-start: .55rem;
+  white-space: nowrap;
+  vertical-align: -.32em;
+}
+.article-signal-inline-cluster .article-pull-quote.article-pull-quote--marker-only {
+  display: inline-flex !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1;
+  vertical-align: baseline;
+}
+.article-signal-inline-cluster .article-pull-quote--marker-only .article-pull-quote__action {
+  inline-size: 1.74rem !important;
+  block-size: 1.74rem !important;
+  opacity: .82;
+}
+@media (max-width: 520px) {
+  .article-signal-inline-cluster { gap: .22rem; margin-inline-start: .38rem; }
+  .article-signal-inline-cluster .article-pull-quote--marker-only .article-pull-quote__action {
+    inline-size: 1.62rem !important;
+    block-size: 1.62rem !important;
+  }
+}
+
+/* Social Dock: على الشاشات الواسعة نعرض الشريط نفسه فقط؛ على الهاتف يصبح زرّاً واحداً يفتح الحضور الرقمي عند الطلب. */
+@media (min-width: 761px) {
+  .site-social-dock__trigger { display: none; }
+}
+@media (max-width: 760px) {
+  .site-social-dock__panel { visibility: hidden; }
+  .site-social-dock.is-open .site-social-dock__panel { visibility: visible; }
+}

@@ -590,10 +590,11 @@
   },
   {
     "id": "augmented-reality",
-    "canonicalAr": "الواقع المعزّز",
+    "canonicalAr": "الواقع المعزز",
     "canonicalEn": "Augmented Reality",
     "domain": "البيئات الغامرة",
     "aliases": [
+      "الواقع المعزّز",
       "واقع معزز",
       "الواقع المعزز",
       "augmented reality",
@@ -1176,10 +1177,11 @@
   },
   {
     "id": "teaching-methods",
-    "canonicalAr": "مناهج وطرق التدريس",
+    "canonicalAr": "المناهج وطرائق التدريس",
     "canonicalEn": "Teaching Methods",
     "domain": "المناهج والتدريس",
     "aliases": [
+      "مناهج وطرق التدريس",
       "طرق التدريس",
       "استراتيجيات التدريس",
       "teaching methods",

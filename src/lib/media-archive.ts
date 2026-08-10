@@ -103,6 +103,8 @@ export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[]
       ...baseItem,
       audioUrl: item.audioUrl || archived?.audioUrl,
       audioFile: item.audioFile || archived?.audioFile,
+      date: item.date || archived?.date,
+      iso: item.iso || archived?.iso,
       id: archiveId,
       kind: detectMediaKind({ ...(archived || {}), ...item }),
       legacyTranscript,

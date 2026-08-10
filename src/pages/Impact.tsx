@@ -164,7 +164,7 @@ export default function Impact() {
             {[
               ['all', 'الكل'], ['paper', 'علمي'], ['media', 'إعلامي'], ['archive', 'أرشيفي'],
             ].map(([key, label]) => (
-              <button key={key} type="button" role="tab" aria-selected={filter === key} onClick={() => setFilter(key as FilterKey)} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.74rem] font-semibold ${filter === key ? 'is-active' : ''}`}>{label}</button>
+              <button key={key} type="button" role="tab" aria-selected={filter === key} onClick={() => setFilter(key as FilterKey)} className={`impact-filter-tab editorial-tab shrink-0 px-3 py-1.5 text-[.74rem] font-semibold ${filter === key ? 'is-active' : ''}`}>{label}</button>
             ))}
           </div>
         </div>

@@ -334,9 +334,9 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [pos, setPos] = useState<{ x: number; y: number; bottom: number } | null>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [toolbarX, setToolbarX] = useState<number | null>(null)
-  /* في اللمس تفتح المنظومة قائمتها (نسخ · ترجمة) فوق النص المحدَّد، وهو المكان
-     نفسه الذي كان شريطنا يقف فيه — فيُحجب. لا تملك CSS إخفاء تلك القائمة ما دام
-     النص قابلاً للتحديد، فالحلّ أن ننزل نحن إلى أسفل الشاشة حيث لا تصلنا. */
+  /* على اللمس نمنع قائمة السياق/الـ callout الخاصة بالمتصفح داخل متن المقال فقط،
+     ونُبقي التحديد النصي ومقابضه الأصلية. هكذا تبقى أداة «عبر السنين + الاقتباس»
+     هي الشريط التفاعلي الوحيد في المسار المعتاد، من دون التضحية بدقة التحديد. */
   const [toolbarY, setToolbarY] = useState<number | null>(null)
   const [below, setBelow] = useState(false)
   const [coarse, setCoarse] = useState(false)
@@ -347,6 +347,41 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     query.addEventListener('change', sync)
     return () => query.removeEventListener('change', sync)
   }, [])
+  useEffect(() => {
+    const article = document.getElementById('article-body')
+    if (!article) return
+    const coarsePointer = window.matchMedia('(pointer: coarse)')
+    const suppressNativeMenu = (event: Event) => {
+      if (!coarsePointer.matches) return
+      event.preventDefault()
+      event.stopPropagation()
+    }
+    const suppressNativeSelectionAction = (event: Event) => {
+      if (!coarsePointer.matches || !event.cancelable) return
+      const selection = window.getSelection()
+      if (!selection || selection.isCollapsed || !selection.rangeCount) return
+      const range = selection.getRangeAt(0)
+      const start = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer as Element : range.startContainer.parentElement
+      const end = range.endContainer.nodeType === Node.ELEMENT_NODE ? range.endContainer as Element : range.endContainer.parentElement
+      if (!start?.closest('#article-body') || !end?.closest('#article-body')) return
+      /* في WebKit إلغاء الحدث النهائي بعد اكتمال Range يمنع طبقة الأوامر
+         الأصلية في الحالات التي لا يكفي فيها touch-callout:none، ولا يمسح
+         الـ Range نفسه؛ لذلك تبقى المقابض والتظليل وشريطنا قابلين للعمل. */
+      event.preventDefault()
+    }
+    /* capture مهم في iOS/PWA: يمنع contextmenu قبل أن تصل إليه طبقات المقال
+       المتداخلة، من دون منع touchstart/selectstart لأنهما لازمان لمقابض التحديد. */
+    article.addEventListener('contextmenu', suppressNativeMenu, { capture: true })
+    article.addEventListener('dragstart', suppressNativeMenu, { capture: true })
+    article.addEventListener('touchend', suppressNativeSelectionAction, { capture: true, passive: false })
+    article.addEventListener('pointerup', suppressNativeSelectionAction, { capture: true })
+    return () => {
+      article.removeEventListener('contextmenu', suppressNativeMenu, { capture: true })
+      article.removeEventListener('dragstart', suppressNativeMenu, { capture: true })
+      article.removeEventListener('touchend', suppressNativeSelectionAction, { capture: true })
+      article.removeEventListener('pointerup', suppressNativeSelectionAction, { capture: true })
+    }
+  }, [current.slug])
   const [view, setView] = useState<null | 'thread' | 'card'>(null)
   /* أثناء التحديد تنزوي الأزرار العائمة (ملاحظة الدكتور: كانت تركب فوق
      التحديد وشريطه في الهاتف) — تعود فور زوال التحديد */
@@ -510,16 +545,17 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         ? Math.min(maximum, Math.max(minimum, pos.x))
         : viewportLeft + viewportWidth / 2)
       if (!coarse) { setToolbarY(null); setBelow(false); return }
-      /* ملاصقاً للفقرة من تحتها: قريبٌ فيُرى، وقائمة النظام فوق النص فلا تزاحمه.
-         وإن كان التحديد في آخر الشاشة فلا مكان تحته — عندها يعود فوقه كما في
-         الكمبيوتر. ولا يرسو في أسفل الشاشة: هناك يغطّي الجملة التي حدّدها بنفسه. */
+      /* بعد تعطيل callout الأصلي لا نحتاج الهروب إلى أسفل الشاشة دائماً.
+         نفضّل أعلى التحديد مثل سطح المكتب؛ وإن لم توجد مساحة آمنة هناك نضع
+         شريطنا مباشرةً تحت آخر سطر محدد، مع إبقائه داخل visual viewport. */
       const viewportTop = viewport?.offsetTop || 0
       const viewportHeight = viewport?.height || window.innerHeight
       const height = toolbar.getBoundingClientRect().height
       const under = pos.bottom + 12
-      const fits = under + height <= viewportTop + viewportHeight - 12
-      setBelow(fits)
-      setToolbarY(fits ? under : null)
+      const roomAbove = pos.y - height >= viewportTop + 10
+      const fitsBelow = under + height <= viewportTop + viewportHeight - 12
+      setBelow(!roomAbove && fitsBelow)
+      setToolbarY(!roomAbove && fitsBelow ? under : null)
     }
     fitInsideViewport()
     const frame = window.requestAnimationFrame(fitInsideViewport)

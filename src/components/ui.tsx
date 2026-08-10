@@ -1033,87 +1033,85 @@ export function Nav() {
   )
 }
 
+/* ---------- Social dock: حضور رقمي واحد بدلاً من جدار أيقونات ---------- */
+export function SocialDock({ english = false, centered = false }: { english?: boolean; centered?: boolean }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className={`site-social-dock ${open ? 'is-open' : ''} ${centered ? 'is-centered' : ''}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className="site-social-dock__trigger"
+      >
+        <span className="site-social-dock__signal" aria-hidden="true"><i /><i /><i /></span>
+        <span>{english ? 'Connect' : 'تواصل معي'}</span>
+        <span className="site-social-dock__chevron" aria-hidden="true">＋</span>
+      </button>
+      <div className="site-social-dock__panel" aria-label={english ? 'Social and academic profiles' : 'الحضور الرقمي والأكاديمي'}>
+        <div className="site-social-dock__socials">
+          {socials.map((item) => (
+            <a key={item.label} href={item.url} target="_blank" rel="noreferrer" aria-label={item.label} title={item.label}>
+              <SocialIcon name={item.label} size={16} />
+            </a>
+          ))}
+        </div>
+        <span className="site-social-dock__divider" aria-hidden="true" />
+        <div className="site-social-dock__academic">
+          {academicProfiles.map((item) => (
+            <a key={item.label} href={item.url} target="_blank" rel="noreferrer">{item.label}</a>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ---------- Footer ---------- */
 export function Footer() {
   const cv = useCvLinks()
   const loc = useLocation()
   const english = loc.pathname === '/en' || loc.pathname.startsWith('/en/')
+  const year = new Date().getFullYear()
 
   if (english) {
     return (
-      <footer dir="ltr" className="site-footer border-t border-hair px-6 py-12 md:px-11">
+      <footer dir="ltr" className="site-footer site-footer--calm border-t border-hair px-6 py-8 md:px-11 md:py-10">
         <div className="mx-auto max-w-shell">
-          <div className="flex flex-wrap items-center justify-between gap-5">
-            <Link to="/en">
-              <img decoding="async" src="/logo.png" alt="Ahmad H. Alfailakawi" className="h-10 w-16 object-contain dark:invert" style={{ objectPosition: 'left' }} />
+          <div className="site-footer__main">
+            <Link to="/en" className="site-footer__mark">
+              <img decoding="async" src="/logo.png" alt="Ahmad H. Alfailakawi" className="h-9 w-14 object-contain dark:invert" />
             </Link>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-[.9rem] text-soft">
-              <Link to="/" className="transition-colors hover:text-accent">العربية</Link>
-              <span className="flex items-center gap-3">
-                <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" aria-label="CV (PDF)" title="CV (PDF)" className="tap-44 text-soft transition-colors hover:text-accent">
-                  <SocialIcon name="CV" />
-                </a>
-                {socials.map((s) => (
-                  <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="tap-44 text-soft transition-colors hover:text-accent">
-                    <SocialIcon name={s.label} />
-                  </a>
-                ))}
-                <span aria-hidden className="h-4 w-px bg-hair" />
-                {academicProfiles.map((profileLink) => (
-                  <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="tap-44 text-soft transition-colors hover:text-accent">
-                    <SocialIcon name={profileLink.label} />
-                  </a>
-                ))}
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Link to="/inbox" aria-label="Newsletter" title="Newsletter" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"><SocialIcon name="Mail" size={18} /></Link>
-                <TebyanProjectLink label="Tebyan" />
-                <ScheduleProjectLink label="Schedule" />
-              </span>
-            </div>
+            <SocialDock english />
+            <nav className="site-footer__utility" aria-label="Site links">
+              <Link to="/" className="site-footer__text-link">العربية</Link>
+              <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" className="site-footer__text-link">CV</a>
+              <TebyanProjectLink label="Tebyan" iconOnly={false} className="site-footer__project" />
+              <ScheduleProjectLink label="Schedule" iconOnly={false} className="site-footer__project" />
+            </nav>
           </div>
-          <div className="mt-8 border-t border-hair pt-5 text-[.78rem] text-soft">
-            <span>© {new Date().getFullYear()} Ahmad H. Alfailakawi — All rights reserved</span>
-          </div>
+          <div className="site-footer__rights">© {year} Ahmad H. Alfailakawi · All rights reserved</div>
         </div>
       </footer>
     )
   }
 
   return (
-    <footer className="site-footer border-t border-hair px-6 py-12 md:px-11">
+    <footer className="site-footer site-footer--calm border-t border-hair px-6 py-8 md:px-11 md:py-10">
       <div className="mx-auto max-w-shell">
-        <div className="flex flex-wrap items-center justify-between gap-5">
-          <Link to="/">
-            <img decoding="async" src="/logo.png" alt={profile.name} className="h-10 w-16 object-contain dark:invert" style={{ objectPosition: 'right' }} />
+        <div className="site-footer__main">
+          <Link to="/" className="site-footer__mark">
+            <img decoding="async" src="/logo.png" alt={profile.name} className="h-9 w-14 object-contain dark:invert" />
           </Link>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-[.9rem] text-soft">
-            <span className="flex items-center gap-3">
-              <MySpace variant="footer" />
-              <a href={cv.ar} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية PDF" title="السيرة الذاتية PDF" className="tap-44 text-soft transition-colors hover:text-accent">
-                <SocialIcon name="CV" />
-              </a>
-              {socials.map((s) => (
-                <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className="tap-44 text-soft transition-colors hover:text-accent">
-                  <SocialIcon name={s.label} />
-                </a>
-              ))}
-              <span aria-hidden className="h-4 w-px bg-hair" />
-              {academicProfiles.map((profileLink) => (
-                <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="tap-44 text-soft transition-colors hover:text-accent">
-                  <SocialIcon name={profileLink.label} />
-                </a>
-              ))}
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <TebyanProjectLink />
-              <ScheduleProjectLink />
-            </span>
-          </div>
+          <SocialDock />
+          <nav className="site-footer__utility" aria-label="روابط الموقع المختصرة">
+            <MySpace variant="footer" />
+            <a href={cv.ar} target="_blank" rel="noreferrer" className="site-footer__text-link">السيرة الذاتية</a>
+            <TebyanProjectLink label="تبيان" iconOnly={false} className="site-footer__project" />
+            <ScheduleProjectLink label="الجدول" iconOnly={false} className="site-footer__project" />
+          </nav>
         </div>
-        <div className="mt-8 border-t border-hair pt-5 text-[.78rem] text-soft">
-          <span>© {new Date().getFullYear()} {profile.fullName} — جميع الحقوق محفوظة</span>
-        </div>
+        <div className="site-footer__rights">© {year} {profile.fullName} · جميع الحقوق محفوظة</div>
       </div>
     </footer>
   )

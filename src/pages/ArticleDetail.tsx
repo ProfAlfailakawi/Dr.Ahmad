@@ -352,7 +352,7 @@ function SyncedArticleBody({ article, body, articles, papers, books }: { article
 
   return (
     <>
-      <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`} data-native-selection="custom">
+      <div id="article-body" className={`article-body mt-7 ${activeAudio ? 'article-body-synced' : ''}`} data-native-selection="custom" onContextMenu={(event) => { if (window.matchMedia('(pointer: coarse)').matches) event.preventDefault() }}>
         {showSyncWhisper && (
           <div className="audio-sync-whisper reader-hide-focus" role="status">
             <span className="audio-sync-whisper__pulse" aria-hidden="true" />
@@ -364,6 +364,7 @@ function SyncedArticleBody({ article, body, articles, papers, books }: { article
              لها علامتها المستقلة ولا تتنكر كاقتباس قرّاء برقم مصطنع. */
           const paragraphQuotes: PopularQuote[] = popularQuotes.filter((quote) => quote.paragraph === pIdx)
           const paragraphTerms = glossaryPlan.get(pIdx) || []
+          const paragraphSignals = articleSignals.filter((signal) => signal.paragraph === pIdx)
           const isParagraphActive = pIdx === activeParagraph
 
           return (
@@ -417,14 +418,17 @@ function SyncedArticleBody({ article, body, articles, papers, books }: { article
                 ) : (
                   <ReaderParagraphText text={paragraph.text} popularQuotes={paragraphQuotes} xrayTerms={paragraphTerms} />
                 )}
+                {/* إشارات المقال تبقى جزءاً من السطر الأخير للفقرة، لا صفاً مستقلاً. */}
+                {paragraphSignals.length > 0 && (
+                  <span className="article-signal-inline-cluster" aria-label="إشارات المقال">
+                    {paragraphSignals.map((signal, index) => (
+                      <ArticleSignal key={`${signal.paragraph}-${index}-${signal.highlightKey || signal.text.slice(0, 24)}`} signal={signal} title={title} />
+                    ))}
+                  </span>
+                )}
               </p>
               {conceptEchoes.filter((echo) => echo.paragraph === pIdx).map((echo) => (
                 <ConceptEchoMarker key={echo.id} echo={echo} />
-              ))}
-              {/* 1–3 علامات صغيرة موزعة عبر المقال؛ النص الكامل لا يظهر إلا
-                  عند طلب القارئ، فلا تتحول الصفحة إلى بطاقات اقتباس. */}
-              {articleSignals.filter((signal) => signal.paragraph === pIdx).map((signal, index) => (
-                <ArticleSignal key={`${signal.paragraph}-${index}-${signal.highlightKey || signal.text.slice(0, 24)}`} signal={signal} title={title} />
               ))}
             </div>
           )
@@ -432,27 +436,27 @@ function SyncedArticleBody({ article, body, articles, papers, books }: { article
       </div>
 
       {readerMade.length > 0 && (
-        <section className="reader-made-archive mt-12 border-t border-hair pt-8" aria-labelledby="reader-made-title">
+        <section className="reader-made-archive mt-9 border-t border-hair pt-5" aria-labelledby="reader-made-title">
           <details className="group">
-            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-2xl border border-hair bg-wash px-5 py-4 marker:content-none">
-              <span>
-                <span className="block text-[.7rem] font-semibold text-accent">ما صنعه القرّاء</span>
-                <strong id="reader-made-title" className="mt-1 block font-display text-[1.1rem] font-semibold text-ink">سماء التظليل</strong>
+            <summary className="reader-made-summary flex min-h-0 cursor-pointer list-none items-center justify-between gap-3 rounded-[1.35rem] border border-hair bg-wash px-4 py-3 marker:content-none md:px-5 md:py-3.5">
+              <span className="min-w-0">
+                <span className="block text-[.64rem] font-semibold text-accent">ما صنعه القرّاء</span>
+                <strong id="reader-made-title" className="mt-0.5 block font-display text-[.98rem] font-semibold leading-tight text-ink">سماء التظليل</strong>
               </span>
-              <span className="flex items-center gap-2 text-[.72rem] text-soft">
+              <span className="flex shrink-0 items-center gap-1.5 text-[.68rem] text-soft">
                 <span>{readerMade.length.toLocaleString('en-US')} موضع</span>
-                <span aria-hidden="true" className="text-accent transition-transform group-open:rotate-45">＋</span>
+                <span aria-hidden="true" className="text-[.9rem] leading-none text-accent transition-transform group-open:rotate-45">＋</span>
               </span>
             </summary>
 
-            <div id="reader-made-highlights" className="mt-4 scroll-mt-28 rounded-2xl border border-hair bg-canvas p-4 md:p-6">
+            <div id="reader-made-highlights" className="mt-3 scroll-mt-28 rounded-[1.35rem] border border-hair bg-canvas p-3.5 md:p-5">
               <div className="grid gap-3">
                 {readerMadePages.pageItems.map((quote) => (
                   <button
                     key={quote.highlightKey}
                     type="button"
                     onClick={() => document.querySelector<HTMLElement>(`[data-reader-paragraph="${quote.paragraph}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                    className="group rounded-xl border border-hair bg-wash/[.38] px-4 py-4 text-right transition-colors hover:border-accent"
+                    className="group rounded-xl border border-hair bg-wash/[.38] px-3.5 py-3 text-right transition-colors hover:border-accent"
                   >
                     <span className="block text-[.66rem] font-semibold text-accent">حُفظت {quote.count.toLocaleString('en-US')} مرة</span>
                     <span className="mt-1.5 block line-clamp-3 text-[.84rem] font-light leading-[1.9] text-ink/[.85]">{quote.text}</span>
@@ -468,7 +472,7 @@ function SyncedArticleBody({ article, body, articles, papers, books }: { article
                 lastItem={readerMadePages.lastItem}
                 scrollTargetId="reader-made-highlights"
                 label="صفحات ما صنعه القرّاء"
-                className="mt-6"
+                className="mt-4"
               />
             </div>
           </details>

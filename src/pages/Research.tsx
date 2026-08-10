@@ -3,7 +3,7 @@ import { JsonLd, useSeo } from '../components/seo'
 import { Link } from 'react-router'
 import { motion, useReducedMotion } from 'framer-motion'
 import { FadeUp, Page, PageHead, SocialIcon, sharedViewName } from '../components/ui'
-import { academicProfiles, doctorate, SITE_URL } from '../data'
+import { doctorate, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { analyzeResearch, researchArchiveProjection } from '../lib/research-intelligence'
@@ -46,28 +46,12 @@ export default function Research() {
 
       <section className="editorial-breath-section px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
-          <FadeUp>
-            <div className="mb-8 flex flex-wrap items-center justify-between gap-5 border-b border-hair pb-6">
-              <div>
-                <span className="block text-[.82rem] font-semibold text-ink">الأرشيف العلمي المحكّم</span>
-                <span className="mt-1 block text-[.74rem] text-soft">{count} بمصادر أصلية، مع وصول مباشر إلى البيانات والمنهج والنتائج</span>
-              </div>
-              <span className="flex items-center gap-2.5">
-                {academicProfiles.map((profileLink) => (
-                  <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent">
-                    <SocialIcon name={profileLink.label} size={18} />
-                  </a>
-                ))}
-              </span>
-            </div>
-          </FadeUp>
-
           <FadeUp delay={0.04}>
             <section className="research-index-panel" aria-label="الفهرسة الداخلية للأبحاث">
               <div className="research-index-search">
                 <label htmlFor="research-index-input">فهرسة داخلية قوية</label>
                 <div className="research-index-input-wrap">
-                  <input id="research-index-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث بالعنوان، الباحث، الكلمات المفتاحية، المنهج، العينة، المجلة أو DOI…" />
+                  <input id="research-index-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث: عنوان، باحث، كلمة مفتاحية" />
                   <span aria-hidden><SocialIcon name="Search" size={15} /></span>
                 </div>
               </div>

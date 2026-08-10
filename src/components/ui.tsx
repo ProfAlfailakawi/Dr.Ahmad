@@ -1042,11 +1042,11 @@ export function SocialDock({ english = false, centered = false }: { english?: bo
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
+        aria-label={english ? 'Open social profiles' : 'فتح روابط التواصل'}
+        title={english ? 'Social profiles' : 'تواصل معي'}
         className="site-social-dock__trigger"
       >
-        <span className="site-social-dock__signal" aria-hidden="true"><i /><i /><i /></span>
-        <span>{english ? 'Connect' : 'تواصل معي'}</span>
-        <span className="site-social-dock__chevron" aria-hidden="true">＋</span>
+        <SocialIcon name="Share" size={17} />
       </button>
       <div className="site-social-dock__panel" aria-label={english ? 'Social and academic profiles' : 'الحضور الرقمي والأكاديمي'}>
         <div className="site-social-dock__socials">
@@ -1059,7 +1059,11 @@ export function SocialDock({ english = false, centered = false }: { english?: bo
         <span className="site-social-dock__divider" aria-hidden="true" />
         <div className="site-social-dock__academic">
           {academicProfiles.map((item) => (
-            <a key={item.label} href={item.url} target="_blank" rel="noreferrer">{item.label}</a>
+            <ClarifiedIconAction key={item.label} id={`social-dock-${item.label.toLowerCase().replace(/\s+/g, '-')}`} label={item.label}>
+              <a href={item.url} target="_blank" rel="noreferrer" aria-label={item.label} title={item.label}>
+                <SocialIcon name={item.label} size={17} />
+              </a>
+            </ClarifiedIconAction>
           ))}
         </div>
       </div>
@@ -1085,9 +1089,11 @@ export function Footer() {
             <SocialDock english />
             <nav className="site-footer__utility" aria-label="Site links">
               <Link to="/" className="site-footer__text-link">العربية</Link>
-              <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" className="site-footer__text-link">CV</a>
-              <TebyanProjectLink label="Tebyan" iconOnly={false} className="site-footer__project" />
-              <ScheduleProjectLink label="Schedule" iconOnly={false} className="site-footer__project" />
+              <ClarifiedIconAction id="footer-cv-en" label="CV">
+                <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" aria-label="CV" title="CV" className="site-footer__icon-link"><SocialIcon name="CV" size={17} /></a>
+              </ClarifiedIconAction>
+              <TebyanProjectLink label="Tebyan" iconOnly className="site-footer__project" />
+              <ScheduleProjectLink label="Schedule" iconOnly className="site-footer__project" />
             </nav>
           </div>
           <div className="site-footer__rights">© {year} Ahmad H. Alfailakawi · All rights reserved</div>
@@ -1106,9 +1112,11 @@ export function Footer() {
           <SocialDock />
           <nav className="site-footer__utility" aria-label="روابط الموقع المختصرة">
             <MySpace variant="footer" />
-            <a href={cv.ar} target="_blank" rel="noreferrer" className="site-footer__text-link">السيرة الذاتية</a>
-            <TebyanProjectLink label="تبيان" iconOnly={false} className="site-footer__project" />
-            <ScheduleProjectLink label="الجدول" iconOnly={false} className="site-footer__project" />
+            <ClarifiedIconAction id="footer-cv-ar" label="السيرة الذاتية">
+              <a href={cv.ar} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية" title="السيرة الذاتية" className="site-footer__icon-link"><SocialIcon name="CV" size={17} /></a>
+            </ClarifiedIconAction>
+            <TebyanProjectLink label="تبيان" iconOnly className="site-footer__project" />
+            <ScheduleProjectLink label="الجدول" iconOnly className="site-footer__project" />
           </nav>
         </div>
         <div className="site-footer__rights">© {year} {profile.fullName} · جميع الحقوق محفوظة</div>

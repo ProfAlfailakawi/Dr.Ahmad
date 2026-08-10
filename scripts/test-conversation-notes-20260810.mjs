@@ -30,6 +30,9 @@ const selection = text('src/components/IdeaFeatures.tsx')
 const entry = text('src/components/KnowledgeEntry.tsx')
 const ui = text('src/components/ui.tsx')
 const home = text('src/pages/Home.tsx')
+const card = text('src/pages/Card.tsx')
+const conceptWeave = text('src/lib/concept-weave.ts')
+const conceptEcho = text('src/components/ConceptEcho.tsx')
 const mediaMerge = text('src/lib/media-archive.ts')
 const mediaArchive = json('src/data/media-archive.json')
 const atlasPayload = json('src/data/atlas-constellations.json')
@@ -186,6 +189,43 @@ check('التحديد في المقال يبقى نصياً مع منع callout/
   assert.match(css, /\.content-articles #article-body[\s\S]*?-webkit-touch-callout:\s*none !important/)
   assert.match(css, /-webkit-user-select:\s*text !important/)
   assert.match(css, /\.reader-selection-toolbar\s*\{\s*z-index:\s*10050 !important/)
+})
+
+check('مصطلح صدى الفكرة استبدل «يوسّعها» بلفظ عربي محايد وأنيق', () => {
+  assert.doesNotMatch(conceptWeave, /يوسّعها/)
+  assert.doesNotMatch(conceptEcho, /يوسّعها/)
+  assert.match(conceptWeave, /يعمّقها/)
+  assert.match(conceptEcho, /'يعمّقها':/)
+})
+
+check('تسميات محاور سماء المقالات تعيش في هامش مستقل ولا تتقاطع مع النجوم', () => {
+  assert.match(atlas, /<text x=\{MOBILE_W - 18\}[^>]*textAnchor="end"[^>]*>\{categoryLabel\(category\)\}<\/text>/)
+  assert.match(atlas, /<line x1=\{MOBILE_W - 105\}[^>]*x2=\{MOBILE_W - 91\}/)
+  assert.match(atlas, /<text x=\{W - 18\}[^>]*textAnchor="end"[^>]*>\{categoryLabel\(category\)\}<\/text>/)
+  assert.match(atlas, /<line x1=\{W - 116\}[^>]*x2=\{W - 102\}/)
+})
+
+check('الأرشيف الإعلامي مرتب حسب الظهور من الأحدث إلى الأقدم مع احترام التاريخ الدقيق', () => {
+  assert.match(media, /const mediaAppearanceOrder/)
+  assert.match(media, /mergeMediaArchive\(cmsMedia\)\.sort\(\(left, right\) => mediaAppearanceOrder\(right\) - mediaAppearanceOrder\(left\)\)/)
+})
+
+check('ResearchGate وGoogle Scholar وروابط الفوتر المهمة أيقونات فقط بلا أسماء مرئية', () => {
+  assert.match(ui, /site-social-dock__academic[\s\S]*?<SocialIcon name=\{item\.label\} size=\{17\}/)
+  assert.doesNotMatch(ui, /<a key=\{item\.label\}[^>]*>\{item\.label\}<\/a>/)
+  assert.match(ui, /<SocialIcon name="Share" size=\{17\} \/>/)
+  assert.doesNotMatch(ui, /<span>\{english \? 'Connect' : 'تواصل معي'\}<\/span>/)
+  assert.match(ui, /id="footer-cv-ar"[\s\S]*?<SocialIcon name="CV"/)
+  assert.match(ui, /<TebyanProjectLink label="تبيان" iconOnly className="site-footer__project" \/>/)
+  assert.match(ui, /<ScheduleProjectLink label="الجدول" iconOnly className="site-footer__project" \/>/)
+  assert.match(home, /<TebyanProjectLink label="تبيان" iconOnly className="home-footer-tools__item is-icon-only" \/>/)
+  assert.match(home, /<ScheduleProjectLink label="الجدول" iconOnly className="home-footer-tools__item is-icon-only" \/>/)
+  assert.match(card, /aria-label="الملفات الأكاديمية"[\s\S]*?<SocialIcon name=\{item\.label\} size=\{18\}/)
+})
+
+check('توكن الحافة الكامل لا يُغلّف داخل rgb() مرة أخرى', () => {
+  assert.doesNotMatch(css, /rgb\(var\(--c-hair/)
+  assert.match(css, /border:\s*1px solid var\(--c-hair\)/)
 })
 
 console.log(`\nالنتيجة: ${passed} تحققاً ناجحاً، 0 إخفاقاً.`)

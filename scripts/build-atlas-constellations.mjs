@@ -1,16 +1,11 @@
 #!/usr/bin/env node
 /**
- * كوكبات السماء المولّدة من الأرشيف نفسه.
+ * كوكبات «سماء المقالات» المستخرجة من النص الفعلي للمقالات.
  *
- * كان مُنتقي الكوكبات في /atlas يعرض كوكبتين محرَّرتين باليد لا غير، فلا يستحقّ
- * أن يُفتح. هنا تُستخرج كوكباتٌ إضافية من خريطة المعرفة المبنيّة أصلاً: كل مفهومٍ
- * من قاموس د. أحمد تربطه الخريطة بثلاثة مقالاتٍ فأكثر يصير مساراً للقراءة،
- * مرتَّباً من الأقدم إلى الأحدث حتى يُقرأ كرحلةٍ لا كقائمة.
- *
- * لا نموذج لغويّ ولا خدمة مدفوعة: العناوين مفاهيمه هو كما كتبها، والروابط
- * من خريطةٍ محسوبةٍ في المستودع.
- *
- *   node scripts/build-atlas-constellations.mjs
+ * العقدة هنا صارمة عمداً: لا نعرض مصطلحاً لمجرد تشابه دلالي في خريطة المعرفة.
+ * يجب أن يظهر المصطلح المعتمد — أو أحد أسمائه العربية المعتمدة — حرفياً في نص
+ * مقالتين على الأقل. هكذا يبقى اسم الكوكبة وصفاً لما كتبه الدكتور فعلاً، لا
+ * تسمية مولّدة قد تبدو أكاديمية وهي لا تمثل المادة.
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -18,106 +13,96 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (path) => JSON.parse(readFileSync(resolve(root, path), 'utf8'))
-
-const graph = read('src/data/knowledge-graph.json')
 const index = read('src/data/knowledge-graph-index.json')
-/* معجم الدكتور هو مرجع الأسماء الوحيد. لا يُعرض للزائر مصطلحٌ إلا إذا كان
-   اسماً معتمداً فيه (canonicalAr)، والاسم البديل يُردّ إلى المعتمد. فلا نضع
-   على السماء لفظاً استنتاجياً ونقدّمه بوصفه مصطلحاً علمياً. */
+const bodies = read('src/data/bodies.json')
 const glossary = read('src/data/dr-ahmad-domain-glossary.json')
-const canonicalTitles = new Set()
-const aliasToCanonical = new Map()
-for (const entry of Array.isArray(glossary) ? glossary : []) {
-  const canonical = String(entry?.canonicalAr || '').trim()
-  if (!canonical) continue
-  canonicalTitles.add(canonical)
-  aliasToCanonical.set(canonical, canonical)
-  for (const alias of [entry?.canonicalEn, ...(Array.isArray(entry?.aliases) ? entry.aliases : [])]) {
-    const value = String(alias || '').trim()
-    if (value) aliasToCanonical.set(value, canonical)
-  }
-}
 
-const nodes = Array.isArray(index.nodes) ? index.nodes : Object.values(index.nodes)
-const byId = new Map(nodes.map((node) => [node.id, node]))
-
-/* حدّ الصلة: الخريطة تربط بدرجات، وما دون هذا الحدّ صلةٌ عارضة لا تصنع مساراً. */
-const MIN_SCORE = 12
-/* مسارٌ أقصر من ثلاث محطات ليس رحلة، وأطول من سبعٍ لا يُقرأ في جلسة. */
-const MIN_STOPS = 3
+const MIN_STOPS = 2
 const MAX_STOPS = 7
-/* سقف المُنتقي: قائمةٌ تُقرأ بنظرة، لا جدولٌ يُتصفّح. */
 const MAX_CONSTELLATIONS = 14
 
-const conceptArticles = new Map()
-for (const edge of graph.edges || []) {
-  const pairs = [[edge.from, edge.to], [edge.to, edge.from]]
-  for (const [concept, article] of pairs) {
-    if (typeof concept !== 'string' || typeof article !== 'string') continue
-    if (!concept.startsWith('concept:') || !article.startsWith('article:')) continue
-    if (Number(edge.score) < MIN_SCORE) continue
-    if (!conceptArticles.has(concept)) conceptArticles.set(concept, new Map())
-    const current = conceptArticles.get(concept).get(article) || 0
-    conceptArticles.get(concept).set(article, Math.max(current, Number(edge.score) || 0))
-  }
+const normalize = (value) => String(value || '')
+  .normalize('NFKD')
+  .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+  .replace(/[أإآ]/g, 'ا')
+  .replace(/ى/g, 'ي')
+  .replace(/ة/g, 'ه')
+  .replace(/ؤ/g, 'و')
+  .replace(/ئ/g, 'ي')
+  .toLowerCase()
+  .replace(/[^\p{L}\p{N}\s-]+/gu, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const isArabic = (value) => /[\u0600-\u06FF]/.test(String(value || ''))
+const isSpecific = (value) => {
+  const normal = normalize(value)
+  const words = normal.split(/\s+/).filter(Boolean)
+  // العبارة المركبة آمنة. والكلمة المفردة لا تدخل إلا إن كانت طويلة مميزة.
+  return normal.length >= 6 && (words.length >= 2 || normal.length >= 10)
 }
 
-const yearOf = (id) => {
-  const value = Number((byId.get(id) || {}).year)
-  return Number.isFinite(value) && value > 1990 ? value : 0
-}
+const articleNodes = (Array.isArray(index.nodes) ? index.nodes : Object.values(index.nodes || {}))
+  .filter((node) => node?.kind === 'article' && node?.slug)
+const articleMeta = new Map(articleNodes.map((node) => [String(node.slug), node]))
+const normalizedBodies = new Map(Object.entries(bodies || {}).map(([slug, body]) => [slug, normalize(body)]))
+const yearOf = (slug) => Number(articleMeta.get(slug)?.year || 0)
 
 const candidates = []
-for (const [conceptId, articles] of conceptArticles) {
-  const concept = byId.get(conceptId)
-  if (!concept || !concept.title) continue
+for (const entry of Array.isArray(glossary) ? glossary : []) {
+  const title = String(entry?.canonicalAr || '').trim()
+  if (!title) continue
 
-  const ordered = [...articles.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, MAX_STOPS)
-    .map(([id]) => id)
-    .filter((id) => byId.has(id))
-  if (ordered.length < MIN_STOPS) continue
+  const aliases = [title, ...(Array.isArray(entry.aliases) ? entry.aliases : [])]
+    .filter((value) => isArabic(value) && isSpecific(value))
+    .map((value) => normalize(value))
+    .filter(Boolean)
+  const uniqueAliases = [...new Set(aliases)]
+  if (!uniqueAliases.length) continue
 
-  /* المسار يُقرأ من الأقدم إلى الأحدث: فكرةٌ تكبر، لا قائمةُ نتائج. */
-  const path = ordered
-    .map((id) => ({ id, year: yearOf(id) }))
-    .sort((a, b) => a.year - b.year || a.id.localeCompare(b.id))
-    .map((item) => item.id)
+  const matching = []
+  for (const [slug, text] of normalizedBodies) {
+    if (!articleMeta.has(slug)) continue
+    if (uniqueAliases.some((alias) => text.includes(alias))) matching.push(slug)
+  }
+  if (matching.length < MIN_STOPS) continue
+
+  const path = matching
+    .sort((a, b) => yearOf(a) - yearOf(b) || a.localeCompare(b))
+    .slice(-MAX_STOPS)
 
   const years = path.map(yearOf).filter(Boolean)
   const span = years.length > 1 ? Math.max(...years) - Math.min(...years) : 0
-
-  const rawTitle = concept.title.trim()
-  const canonical = aliasToCanonical.get(rawTitle)
-  /* ليس في المعجم؟ لا يُعرض. المصطلح المعتمد وحده يليق بأن يُسمّى كوكبة. */
-  if (!canonical || !canonicalTitles.has(canonical)) continue
-
   candidates.push({
-    id: `concept-${concept.slug || conceptId.slice('concept:'.length)}`,
-    title: canonical,
-    slugs: path.map((id) => (byId.get(id) || {}).slug).filter(Boolean),
-    /* الأفضلية لمسارٍ يمتدّ عبر السنين ويكتمل عدده: هو الأدلّ على فكرةٍ رافقته. */
-    weight: span * 2 + path.length,
+    id: `concept-${String(entry.id || title).replace(/[^a-z0-9-]+/gi, '-').replace(/^-|-$/g, '')}`,
+    title,
+    slugs: path,
+    weight: matching.length * 4 + span,
   })
 }
 
-const chosen = candidates
-  .filter((item) => item.slugs.length >= MIN_STOPS)
-  .sort((a, b) => b.weight - a.weight || a.title.localeCompare(b.title, 'ar'))
-  .slice(0, MAX_CONSTELLATIONS)
-  .map(({ id, title, slugs }) => ({ id, title, slugs }))
+/* لا نعرض كوكبتين مختلفتي الاسم إذا كانتا عملياً المجموعة نفسها من المقالات. */
+const chosen = []
+for (const item of candidates.sort((a, b) => b.weight - a.weight || a.title.localeCompare(b.title, 'ar'))) {
+  const set = new Set(item.slugs)
+  const duplicate = chosen.some((previous) => {
+    const other = new Set(previous.slugs)
+    const overlap = [...set].filter((slug) => other.has(slug)).length
+    const union = new Set([...set, ...other]).size
+    return union > 0 && overlap / union >= 0.50
+  })
+  if (duplicate) continue
+  chosen.push(item)
+  if (chosen.length >= MAX_CONSTELLATIONS) break
+}
 
 const payload = {
-  version: 1,
+  version: 2,
   builtAt: new Date().toISOString().slice(0, 10),
-  note: 'مولّدة من خريطة المعرفة؛ تُدمج بعد الكوكبات المحرَّرة يدوياً في /atlas.',
-  constellations: chosen,
+  note: 'مبنية من الظهور النصي الفعلي لمصطلحات قاموس الدكتور داخل المقالات؛ لا تعتمد التشابه الدلالي وحده.',
+  constellations: chosen.map(({ id, title, slugs }) => ({ id, title, slugs })),
 }
 
 writeFileSync(resolve(root, 'src/data/atlas-constellations.json'), `${JSON.stringify(payload, null, 2)}\n`, 'utf8')
-for (const item of chosen) {
-  if (!canonicalTitles.has(item.title)) throw new Error(`اسم كوكبة خارج المعجم: ${item.title}`)
-}
-console.log(`كوكبات مولّدة: ${chosen.length}`)
-for (const item of chosen) console.log(` · ${item.title} — ${item.slugs.length} محطات`)
+console.log(`كوكبات موثّقة نصياً: ${payload.constellations.length}`)
+for (const item of payload.constellations) console.log(` · ${item.title} — ${item.slugs.length} محطات`)

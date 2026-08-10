@@ -35,9 +35,9 @@ check('كل محطة مقالٌ منشور فعلاً', () => {
   assert.deepEqual(missing, [], 'محطات لا تقابلها مقالات')
 })
 
-check('المسار ثلاث محطات فأكثر ولا يكرّر مقالاً', () => {
+check('المسار محطتان موثقتان فأكثر ولا يكرّر مقالاً', () => {
   for (const item of payload.constellations) {
-    assert.ok(item.slugs.length >= 3, `${item.title}: ${item.slugs.length} محطات`)
+    assert.ok(item.slugs.length >= 2, `${item.title}: ${item.slugs.length} محطات`)
     assert.equal(new Set(item.slugs).size, item.slugs.length, `${item.title}: محطة مكررة`)
   }
 })

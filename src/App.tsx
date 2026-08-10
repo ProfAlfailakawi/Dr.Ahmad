@@ -272,8 +272,9 @@ function MobileCardRailGuard() {
 
     const eligible = (rail: HTMLElement) => {
       if (!media.matches || rail.closest('.admin-dashboard, [role="dialog"]')) return false
-      if (rail.matches('nav, [role="tablist"], [role="group"], .editorial-tablist') || rail.closest('nav')) return false
-      if (rail.querySelector(':scope > [role="tablist"], :scope > [role="group"], :scope > nav')) return false
+      const signatureRail = rail.matches('.signatures-rail')
+      if (!signatureRail && (rail.matches('nav, [role="tablist"], [role="group"], .editorial-tablist') || rail.closest('nav'))) return false
+      if (!signatureRail && rail.querySelector(':scope > [role="tablist"], :scope > [role="group"], :scope > nav')) return false
       if (rail.closest('.content-books')) return false
       const children = childrenOf(rail)
       if (!children.length) return false

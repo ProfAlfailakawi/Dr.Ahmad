@@ -3,8 +3,8 @@ import { Suspense, lazy, useEffect, useMemo, useRef, useState, type CSSPropertie
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router'
-import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, SectionHead, SocialIcon, TebyanProjectLink } from '../components/ui'
-import { academicProfiles, profile, roundDown10, socials, upcoming, type Event as SiteEvent } from '../data'
+import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, SectionHead, SocialDock, SocialIcon, TebyanProjectLink } from '../components/ui'
+import { profile, roundDown10, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 import { Newsletter } from '../components/extras'
@@ -996,45 +996,29 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
 
 function HomeSocialFooter() {
   const [newsletterOpen, setNewsletterOpen] = useState(false)
-  const iconButton = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-[border-color,color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-accent hover:text-accent'
+  const year = new Date().getFullYear()
   return (
-    <section className="border-t border-hair px-6 py-7 md:px-11 md:py-9">
+    <section className="home-social-footer border-t border-hair px-6 py-7 md:px-11 md:py-9">
       <div className="mx-auto max-w-shell">
-        <div className="grid justify-items-center gap-3.5">
-          <div className="edge-fade max-w-full overflow-x-auto px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="منصات الدكتور">
-            <div className="mx-auto flex min-w-max items-center justify-center gap-2.5">
-              {socials.map((s) => (
-                <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} title={s.label} className={iconButton}>
-                  <SocialIcon name={s.label} size={16} />
-                </a>
-              ))}
-              {academicProfiles.map((profileLink) => (
-                <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className={iconButton}>
-                  <SocialIcon name={profileLink.label} size={17} />
-                </a>
-              ))}
-            </div>
-          </div>
-          {/* فاصلٌ أوسع قليلاً: المجموعتان مختلفتان فعلاً (منصّاته ثم أدوات الموقع)،
-              وتلاصقهما كان يجعل 7+3 تُقرأ صفاً واحداً مكسوراً لا مجموعتين. */}
-          <div className="mt-2.5 flex items-center justify-center gap-2.5" aria-label="أدوات الموقع">
+        <div className="grid justify-items-center gap-4 text-center">
+          <img src="/logo.png" alt="" aria-hidden="true" decoding="async" className="h-9 w-14 object-contain opacity-90 dark:invert" />
+          <SocialDock centered />
+          <div className="home-footer-tools" aria-label="أدوات الموقع">
             <button
               type="button"
               onClick={() => {
                 const willOpen = !newsletterOpen
                 setNewsletterOpen(willOpen)
-                /* بأمر الدكتور: ضغطة البريد توصل المؤشر مباشرة إلى حقل البريد */
                 if (willOpen) window.setTimeout(() => document.getElementById('newsletter-inline-email')?.focus(), 320)
               }}
               aria-expanded={newsletterOpen}
-              aria-label="النشرة البريدية"
-              title="النشرة البريدية"
-              className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-[border-color,color,background-color,transform] duration-300 hover:-translate-y-0.5 hover:border-accent hover:text-accent ${newsletterOpen ? 'border-accent bg-accent text-white hover:text-white' : ''}`}
+              className={`home-footer-tools__item ${newsletterOpen ? 'is-active' : ''}`}
             >
-              <SocialIcon name="Mail" size={18} />
+              <SocialIcon name="Mail" size={14} />
+              <span>النشرة</span>
             </button>
-            <TebyanProjectLink />
-            <ScheduleProjectLink />
+            <TebyanProjectLink label="تبيان" iconOnly={false} className="home-footer-tools__item" />
+            <ScheduleProjectLink label="الجدول" iconOnly={false} className="home-footer-tools__item" />
           </div>
         </div>
         <AnimatePresence initial={false}>
@@ -1044,11 +1028,11 @@ function HomeSocialFooter() {
             </motion.div>
           )}
         </AnimatePresence>
+        <p className="home-footer-rights">© {year} {profile.fullName} · جميع الحقوق محفوظة</p>
       </div>
     </section>
   )
 }
-
 
 /* ---------- Soft card wrapper ---------- */
 function Card({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {

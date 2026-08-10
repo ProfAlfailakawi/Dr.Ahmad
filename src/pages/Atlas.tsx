@@ -785,6 +785,7 @@ export default function Atlas() {
                     <g key={category} opacity={on ? 1 : 0.25}>
                       <line x1={MOBILE_PAD_L} y1={y} x2={MOBILE_W - MOBILE_PAD_R + 8} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.055} />
                       <line x1={MOBILE_W - MOBILE_PAD_R + 5} y1={y} x2={MOBILE_W - MOBILE_PAD_R + 17} y2={y} stroke={`rgb(var(--atlas-${axisOf(category)}))`} strokeWidth={3} strokeLinecap="round" />
+                      <text x={MOBILE_W - MOBILE_PAD_R + 25} y={y + 5} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 13.5, fontWeight: activeCat === category ? 700 : 500 }}>{categoryLabel(category)}</text>
                     </g>
                   )
                 })}
@@ -903,6 +904,7 @@ export default function Atlas() {
                     <g key={category} opacity={on ? 1 : 0.25}>
                       <line x1={PAD_L} y1={y} x2={W - PAD_R + 10} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.05} />
                       <line x1={W - PAD_R + 7} y1={y} x2={W - PAD_R + 20} y2={y} stroke={`rgb(var(--atlas-${axisOf(category)}))`} strokeWidth={2.5} strokeLinecap="round" />
+                      <text x={W - PAD_R + 28} y={y + 4} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 10.5, fontWeight: activeCat === category ? 700 : 500 }}>{categoryLabel(category)}</text>
                     </g>
                   )
                 })}
@@ -1015,15 +1017,6 @@ export default function Atlas() {
               </svg>
             </div>
           </FadeUp>
-
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-hair pt-3 text-[.66rem] text-soft">
-            <div className="flex items-center gap-2" aria-label="مفتاح حرارة نبرة النجوم">
-              <span>وعد</span>
-              <span className="atlas-heat-key" aria-hidden="true" />
-              <span>تحفّظ</span>
-            </div>
-            <p>المقياس آليّ من مفردات الوعد والتحفّظ، لا حكم تحريري.</p>
-          </div>
 
           {compareMode && (
             <section className="mt-4 rounded-xl border border-hair bg-wash/[.42] p-4" aria-live="polite">

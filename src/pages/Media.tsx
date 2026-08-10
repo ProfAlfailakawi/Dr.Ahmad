@@ -14,7 +14,7 @@ const kindLabel: Record<string, string> = {
 
 const mediaYear = (item: { iso?: string; date?: string }) => {
   const match = String(item.iso || item.date || '').match(/(?:19|20)\d{2}/)
-  return match?.[0] || 'غير مؤرخ'
+  return match?.[0] || ''
 }
 
 export default function Media() {
@@ -24,7 +24,7 @@ export default function Media() {
   const [visibleCount, setVisibleCount] = useState(25)
   const [yearFilter, setYearFilter] = useState('all')
   const [kindFilter, setKindFilter] = useState('all')
-  const archiveYears = useMemo(() => Array.from(new Set(media.map((item) => mediaYear(item)).filter((year) => year !== 'غير مؤرخ'))).sort((a, b) => Number(b) - Number(a)), [media])
+  const archiveYears = useMemo(() => Array.from(new Set(media.map((item) => mediaYear(item)).filter(Boolean))).sort((a, b) => Number(b) - Number(a)), [media])
   const archiveKinds = useMemo(() => Array.from(new Set(media.map((item) => item.kind).filter(Boolean))), [media])
   const filteredMedia = useMemo(() => media.filter((item) => {
     const year = mediaYear(item)
@@ -36,7 +36,7 @@ export default function Media() {
   const archiveGroups = useMemo(() => {
     const groups = new Map<string, typeof visibleMedia>()
     for (const item of visibleMedia.slice(3)) {
-      const year = mediaYear(item)
+      const year = mediaYear(item) || 'قيد التحقق'
       const current = groups.get(year) || []
       current.push(item)
       groups.set(year, current)
@@ -58,7 +58,7 @@ export default function Media() {
             <label className="media-search-label block text-[.72rem] font-bold text-accent md:text-[.74rem]" htmlFor="media-search">ابحث داخل ما قيل</label>
             <div className="media-search-input mt-2 flex items-center gap-3 rounded-xl border border-hair bg-canvas px-3 focus-within:border-accent md:mt-3 md:rounded-2xl md:px-4">
               <span aria-hidden className="text-accent">⌕</span>
-              <input id="media-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="مثال: التعليم الإلكتروني، الذكاء الاصطناعي، المهارات…" className="min-w-0 flex-1 self-stretch bg-transparent py-2.5 text-base text-ink outline-none placeholder:text-soft/70 md:py-3 md:text-[.92rem]" />
+              <input id="media-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="مثال: التعليم الإلكتروني، الذكاء الاصطناعي" className="min-w-0 flex-1 self-stretch bg-transparent py-2.5 text-base text-ink outline-none placeholder:text-soft/70 md:py-3 md:text-[.92rem]" />
               {query && <button type="button" onClick={() => setQuery('')} className="text-[.72rem] text-soft hover:text-accent">مسح</button>}
             </div>
             <p className="media-search-note measure mt-2 text-[.68rem] leading-relaxed text-soft md:mt-3 md:text-[.7rem]">عند وجود تفريغ زمني موثّق، تنقلك النتيجة مباشرة إلى اللحظة التي قيلت فيها العبارة.</p>

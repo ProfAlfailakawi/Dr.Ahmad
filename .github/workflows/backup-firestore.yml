@@ -52,19 +52,19 @@ jobs:
           node scripts/backup-restore.mjs verify "$FILE"
 
       # ═══ 3-2-1: نسخة ١ في R2 (المزوّد أ) ═══
-      - name: إيداع النسخة + Manifest في R2 (مؤرخة + الأحدث)
+      - name: إيداع النسخة + Manifest في باكت R2 الخاصّ بالنسخ (مؤرخة + الأحدث)
         run: |
           FILE=$(ls build/firestore-backup-*.json.gz | head -1)
           MAN=$(ls build/firestore-backup-*.manifest.json | head -1)
-          BUCKET="${{ vars.CLOUDFLARE_R2_BUCKET }}"
-          EP="${{ secrets.CLOUDFLARE_R2_ENDPOINT }}"
+          BUCKET="${{ secrets.CLOUDFLARE_R2_BACKUP_BUCKET }}"
+          EP="${{ secrets.CLOUDFLARE_R2_BACKUP_ENDPOINT }}"
           aws s3 cp "$FILE" "s3://$BUCKET/backups/$(basename $FILE)" --endpoint-url "$EP" --no-progress
           aws s3 cp "$MAN"  "s3://$BUCKET/backups/$(basename $MAN)"  --endpoint-url "$EP" --no-progress
           aws s3 cp "$FILE" "s3://$BUCKET/backups/firestore-latest.json.gz" --endpoint-url "$EP" --no-progress
           aws s3 cp "$MAN"  "s3://$BUCKET/backups/firestore-latest.manifest.json" --endpoint-url "$EP" --no-progress
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_BACKUP_SECRET_ACCESS_KEY }}
           AWS_EC2_METADATA_DISABLED: 'true'
 
       # ═══ 3-2-1: نسخة ٢ مستقلة عن R2 تماماً — أثر GitHub (المزوّد ب، مجاني، ٩٠ يوماً) ═══
@@ -81,6 +81,7 @@ jobs:
 
       - name: ملخّص (ماذا نُسخ، أين، وهل تحقّق)
         if: always()
+        continue-on-error: true
         run: |
           {
             echo "## درع النسخ الاحتياطي"

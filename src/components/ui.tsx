@@ -562,17 +562,8 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
               )}
             </div>
             <span className="mx-1 hidden h-5 w-px bg-hair sm:block" />
-            {socials.map((s) => (
-              <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} className="transition-colors hover:text-accent">
-                <SocialIcon name={s.label} />
-              </a>
-            ))}
-            <span aria-hidden className="mx-0.5 h-4 w-px bg-hair" />
-            {academicProfiles.map((profileLink) => (
-              <a key={profileLink.label} href={profileLink.url} target="_blank" rel="noreferrer" aria-label={profileLink.label} title={profileLink.label} className="transition-colors hover:text-accent">
-                <SocialIcon name={profileLink.label} />
-              </a>
-            ))}
+            {/* الحسابات (الاجتماعية + الأكاديمية) مجموعةٌ داخل أيقونةٍ واحدة كبقية الموقع — القمر يبقى مستقلاً. */}
+            <SocialDock />
           </div>
         </div>
       </motion.div>

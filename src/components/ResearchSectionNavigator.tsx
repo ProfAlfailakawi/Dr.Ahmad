@@ -9,7 +9,7 @@ const levels: Array<{ key: ResearchLayer; label: string; short: string }> = [
 export function ResearchSectionNavigator({ active, onSelect }: { active: ResearchLayer; onSelect: (layer: ResearchLayer) => void }) {
   return (
     <div
-      className="research-section-nav sticky z-[35] mb-6 mt-4 bg-canvas pb-3 pt-2"
+      className="research-section-nav sticky z-[35] mb-6 mt-4 bg-canvas pb-3 pt-2 will-change-transform transform-gpu"
       style={{ top: 'calc(4rem + env(safe-area-inset-top, 0px))' }}
     >
       <nav className="mx-auto max-w-[960px] rounded-2xl border border-hair bg-paper p-1.5" aria-label="التنقل داخل البحث">

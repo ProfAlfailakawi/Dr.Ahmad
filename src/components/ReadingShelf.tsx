@@ -1,4 +1,4 @@
-import { type MouseEvent, useMemo, useState } from 'react'
+import { type MouseEvent, useEffect, useMemo } from 'react'
 import { Link } from 'react-router'
 import type { ArticleRecord } from '../lib/cms'
 import { isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
@@ -27,8 +27,6 @@ type Step = {
 }
 
 export function ReadingShelf({ query, articles }: { query: string; articles: ArticleRecord[] }) {
-  const [saved, setSaved] = useState(false)
-
   const steps = useMemo<Step[]>(() => {
     if (query.trim().length < 2) return []
     const list: Step[] = []
@@ -72,16 +70,16 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
     return list.length >= 2 ? list : []
   }, [articles, query])
 
-  if (!steps.length) return null
-
-  /* toggleSavedArticle يقلب الحالة: استدعاؤه على محفوظٍ يحذفه. لذلك نضيف
-     غير المحفوظ فقط — الحفظ لا يجوز أن يمحو ما حفظه الزائر قبلُ. */
-  const saveAll = () => {
+  /* حفظٌ تلقائيّ صامت: بمجرد ظهور الخطة تُحفظ مقالاتها في «مساحتي» (غير المحفوظ فقط،
+     فلا يُمحى ما حفظه الزائر). لا زرّ دفشاً — تظهر أنيقةً داخل مساحته. */
+  useEffect(() => {
+    if (steps.length < 2) return
     for (const article of articles.slice(0, 2)) {
       if (!isArticleSaved(article.slug)) toggleSavedArticle(article)
     }
-    setSaved(true)
-  }
+  }, [articles, query, steps.length])
+
+  if (!steps.length) return null
 
   const printShelf = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
@@ -106,13 +104,10 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
           <p className="mt-1 text-[.76rem] leading-relaxed text-soft">مرتّبة من الأقصر إلى الأعمق: مقالٌ يفتح، ولقاءٌ يقرّب، ومتنٌ يُرسّخ.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={saveAll}
-            className="rounded-full border border-accent/[.35] px-4 py-2 text-[.72rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
-          >
-            {saved ? 'حُفظت في مساحتي ✓' : 'احفظ في مساحتي'}
-          </button>
+          <span className="inline-flex items-center gap-1.5 px-1 text-[.7rem] font-medium text-soft" title="حُفظت تلقائياً في مساحتك">
+            <span aria-hidden className="inline-block h-px w-3 bg-accent/[.5]" />
+            محفوظة في مساحتك
+          </span>
           <Link
             to={`/concept/${encodeURIComponent(query)}`}
             className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"

@@ -12,7 +12,7 @@ const checks = [
   ['المعجم المركزي هو مصدر سيرة المفهوم', weave.includes('DR_AHMAD_DOMAIN_GLOSSARY') && weave.includes('resolveGlossaryConcept')],
   ['aliases تستخدم للمطابقة والاسم العربي المعياري للعرض', weave.includes('entry.canonicalAr') && weave.includes('entry.aliases')],
   ['صدى الفكرة محدود إلى 2–4 إشارات', weave.includes('paragraphCount >= 14 ? 4 : paragraphCount >= 7 ? 3 : 2')],
-  ['العلاقات الخمس موجودة ولا تظهر دفعة واحدة', ['يؤيدها','يعارضها','يوسّعها','سبقتها','تطورت منها'].every((label) => weave.includes(label))],
+  ['العلاقات الخمس موجودة ولا تظهر دفعة واحدة', ['يؤيدها','يعارضها','يعمّقها','سبقتها','تطورت منها'].every((label) => weave.includes(label))],
   ['التأييد/التعارض البحثي يحتاج نتيجة ومطابقة قوية', weave.includes('findingOverlap >= 4') && weave.includes('paper.keyFinding')],
   ['المصطلح داخل المقال يفتح سيرة مصغرة لا صفحة مزدحمة', reader.includes('concept-life-peek') && reader.includes('افتح سيرة المفهوم كاملة')],
   ['سيرة المفهوم الكاملة تبقى خلف رابط المفهوم نفسه', reader.includes('/concept/${encodeURIComponent(xray.title)}')],

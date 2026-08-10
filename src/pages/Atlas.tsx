@@ -783,9 +783,9 @@ export default function Atlas() {
                   const on = !activeCat || activeCat === category
                   return (
                     <g key={category} opacity={on ? 1 : 0.25}>
-                      <line x1={MOBILE_PAD_L} y1={y} x2={MOBILE_W - MOBILE_PAD_R + 8} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.055} />
-                      <line x1={MOBILE_W - MOBILE_PAD_R + 5} y1={y} x2={MOBILE_W - MOBILE_PAD_R + 17} y2={y} stroke={`rgb(var(--atlas-${axisOf(category)}))`} strokeWidth={3} strokeLinecap="round" />
-                      <text x={MOBILE_W - MOBILE_PAD_R + 25} y={y + 5} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 13.5, fontWeight: activeCat === category ? 700 : 500 }}>{categoryLabel(category)}</text>
+                      <line x1={MOBILE_PAD_L} y1={y} x2={MOBILE_W - MOBILE_PAD_R + 4} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.055} />
+                      <line x1={MOBILE_W - 105} y1={y} x2={MOBILE_W - 91} y2={y} stroke={`rgb(var(--atlas-${axisOf(category)}))`} strokeWidth={3} strokeLinecap="round" />
+                      <text x={MOBILE_W - 18} y={y + 5} textAnchor="end" className="fill-soft font-sans" style={{ fontSize: 13, fontWeight: activeCat === category ? 700 : 500 }}>{categoryLabel(category)}</text>
                     </g>
                   )
                 })}
@@ -902,9 +902,9 @@ export default function Atlas() {
                   const on = !activeCat || activeCat === category
                   return (
                     <g key={category} opacity={on ? 1 : 0.25}>
-                      <line x1={PAD_L} y1={y} x2={W - PAD_R + 10} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.05} />
-                      <line x1={W - PAD_R + 7} y1={y} x2={W - PAD_R + 20} y2={y} stroke={`rgb(var(--atlas-${axisOf(category)}))`} strokeWidth={2.5} strokeLinecap="round" />
-                      <text x={W - PAD_R + 28} y={y + 4} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 10.5, fontWeight: activeCat === category ? 700 : 500 }}>{categoryLabel(category)}</text>
+                      <line x1={PAD_L} y1={y} x2={W - PAD_R + 4} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.05} />
+                      <line x1={W - 116} y1={y} x2={W - 102} y2={y} stroke={`rgb(var(--atlas-${axisOf(category)}))`} strokeWidth={2.5} strokeLinecap="round" />
+                      <text x={W - 18} y={y + 4} textAnchor="end" className="fill-soft font-sans" style={{ fontSize: 10.5, fontWeight: activeCat === category ? 700 : 500 }}>{categoryLabel(category)}</text>
                     </g>
                   )
                 })}

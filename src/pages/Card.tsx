@@ -49,7 +49,6 @@ export default function Card() {
   )
   const profileLinks = [
     { label: 'الموقع الرسمي', url: site.url, icon: null as string | null },
-    ...academicProfiles.map((item) => ({ label: item.label, url: item.url, icon: item.label as string | null })),
     ...socials.map((item) => ({ label: item.label, url: item.url, icon: item.label as string | null })),
   ]
 
@@ -79,7 +78,23 @@ export default function Card() {
           </button>
           <p className="mt-3 text-[.7rem] text-soft/75">تُضاف إلى جهات اتصال هاتفك مباشرةً (ملف vCard).</p>
 
-          <div className="mt-10 grid gap-2.5">
+          <div className="mt-10 flex items-center justify-center gap-2.5" aria-label="الملفات الأكاديمية">
+            {academicProfiles.map((item) => (
+              <a
+                key={item.url}
+                href={item.url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={item.label}
+                title={item.label}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"
+              >
+                <SocialIcon name={item.label} size={18} />
+              </a>
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-2.5">
             {profileLinks.map((item) => (
               <a
                 key={item.url}

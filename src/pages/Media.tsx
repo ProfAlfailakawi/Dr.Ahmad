@@ -17,9 +17,17 @@ const mediaYear = (item: { iso?: string; date?: string }) => {
   return match?.[0] || ''
 }
 
+const mediaAppearanceOrder = (item: { iso?: string; date?: string }) => {
+  const iso = String(item.iso || '').trim()
+  const exact = iso.match(/^((?:19|20)\d{2})-(\d{2})-(\d{2})/)
+  if (exact) return Number(`${exact[1]}${exact[2]}${exact[3]}`)
+  const year = mediaYear(item)
+  return year ? Number(year) * 10_000 : 0
+}
+
 export default function Media() {
   const { media: cmsMedia } = useCmsContent()
-  const media = useMemo(() => mergeMediaArchive(cmsMedia), [cmsMedia])
+  const media = useMemo(() => mergeMediaArchive(cmsMedia).sort((left, right) => mediaAppearanceOrder(right) - mediaAppearanceOrder(left)), [cmsMedia])
   const [query, setQuery] = useState('')
   const [visibleCount, setVisibleCount] = useState(25)
   const [yearFilter, setYearFilter] = useState('all')

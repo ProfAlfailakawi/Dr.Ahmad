@@ -1017,8 +1017,8 @@ function HomeSocialFooter() {
               <SocialIcon name="Mail" size={14} />
               <span>النشرة</span>
             </button>
-            <TebyanProjectLink label="تبيان" iconOnly={false} className="home-footer-tools__item" />
-            <ScheduleProjectLink label="الجدول" iconOnly={false} className="home-footer-tools__item" />
+            <TebyanProjectLink label="تبيان" iconOnly className="home-footer-tools__item is-icon-only" />
+            <ScheduleProjectLink label="الجدول" iconOnly className="home-footer-tools__item is-icon-only" />
           </div>
         </div>
         <AnimatePresence initial={false}>

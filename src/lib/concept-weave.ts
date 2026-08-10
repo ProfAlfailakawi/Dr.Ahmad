@@ -10,7 +10,7 @@ export type ConceptArchivePreview = {
   milestones: { key: string; year: string; title: string; kind: 'مقال' | 'بحث'; to: string }[]
 }
 
-export type ConceptEchoRelation = 'يؤيدها' | 'يعارضها' | 'يوسّعها' | 'سبقتها' | 'تطورت منها'
+export type ConceptEchoRelation = 'يؤيدها' | 'يعارضها' | 'يعمّقها' | 'سبقتها' | 'تطورت منها'
 export type ConceptEcho = {
   id: string
   paragraph: number
@@ -247,7 +247,7 @@ export function buildConceptEchoes(
       const searchable = `${paper.titleAr || paper.title} ${paper.meta || ''} ${paper.keywords || ''} ${evidence}`
       const score = scoreCandidate(seed, searchable, concepts) + (paper.keyFinding ? 5 : 1)
       if (score < 15) continue
-      let relation: ConceptEchoRelation = 'يوسّعها'
+      let relation: ConceptEchoRelation = 'يعمّقها'
       const findingOverlap = paper.keyFinding ? tokenOverlap(paragraph, paper.keyFinding) : 0
       if (paper.keyFinding && concepts.length >= 2 && negativeResearch.test(paper.keyFinding) && findingOverlap >= 4) relation = 'يعارضها'
       else if (paper.keyFinding && affirmativeResearch.test(paper.keyFinding) && findingOverlap >= 4) relation = 'يؤيدها'
@@ -273,8 +273,8 @@ export function buildConceptEchoes(
       if (score < 14) continue
       const candidateYear = Number(yearOf(article.iso || article.year)) || 0
       const relation: ConceptEchoRelation = candidateYear && currentYear
-        ? candidateYear < currentYear ? 'سبقتها' : candidateYear > currentYear ? 'تطورت منها' : 'يوسّعها'
-        : 'يوسّعها'
+        ? candidateYear < currentYear ? 'سبقتها' : candidateYear > currentYear ? 'تطورت منها' : 'يعمّقها'
+        : 'يعمّقها'
       all.push({
         id: `article:${article.slug}:${paragraphIndex}`,
         paragraph: paragraphIndex,
@@ -297,7 +297,7 @@ export function buildConceptEchoes(
       all.push({
         id: `book:${book.slug}:${paragraphIndex}`,
         paragraph: paragraphIndex,
-        relation: 'يوسّعها',
+        relation: 'يعمّقها',
         sourceKind: 'كتاب',
         title: book.title,
         note: clip(book.desc || bookKnowledgeText(book.slug)),

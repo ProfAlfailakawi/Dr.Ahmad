@@ -66,7 +66,7 @@ type ReaderPreferences = {
 
 import glossaryVoice from '../data/glossary-voice.json' with { type: 'json' }
 import domainGlossaryData from '../data/dr-ahmad-domain-glossary.json' with { type: 'json' }
-import { arabicCountPhrase, CONNECTION_FORMS, MINUTE_FORMS, OCCURRENCE_FORMS } from '../lib/arabic-count.ts'
+import { arabicCountPhrase, CONNECTION_FORMS, MATERIAL_FORMS, MINUTE_FORMS, OCCURRENCE_FORMS } from '../lib/arabic-count.ts'
 
 const VOICE = (glossaryVoice as { voice?: Record<string, { text: string; book: string; slug: string; page: number }> }).voice || {}
 
@@ -683,7 +683,7 @@ export function ReaderControls({ article, saveControl, onSerenity, conceptArchiv
                       <p>سيرة المفهوم</p>
                       <strong>{conceptLife.firstYear && conceptLife.latestYear ? `${conceptLife.firstYear} — ${conceptLife.latestYear}` : 'عبر الأرشيف'}</strong>
                     </div>
-                    <span>{conceptLife.count.toLocaleString('en-US')} مادة</span>
+                    <span>{arabicCountPhrase(conceptLife.count, MATERIAL_FORMS, (value) => value.toLocaleString('en-US'))}</span>
                   </div>
                   <div className="concept-life-peek__timeline" aria-hidden="true">
                     {conceptLife.milestones.map((item) => <span key={item.key} data-year={item.year || '•'} />)}

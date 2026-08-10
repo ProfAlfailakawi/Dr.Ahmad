@@ -108,8 +108,9 @@ check('فلتر الأثر يبيّن الحالة النشطة بخط سفلي 
   assert.match(css, /\.editorial-tab\.is-active::after\s*\{\s*transform:\s*scaleX\(1\)/)
 })
 
-check('كتلة الأرشيف العلمي المحكّم محذوفة من صفحة الأبحاث وحقل البحث مختصر', () => {
-  assert.doesNotMatch(research, /الأرشيف العلمي المحكّم/)
+check('معلومة التحكيم والمصادر تبقى مرة واحدة أعلى الأبحاث من دون كتلة مستقلة', () => {
+  assert.equal((research.match(/الأرشيف العلمي المحكّم/g) || []).length, 1)
+  assert.match(research, /PageHead[\s\S]*?الأرشيف العلمي المحكّم[\s\S]*?بمصادر أصلية/)
   assert.doesNotMatch(research, /17 بحثاً محكّماً/)
   assert.match(research, /placeholder="ابحث: عنوان، باحث، كلمة مفتاحية"/)
 })

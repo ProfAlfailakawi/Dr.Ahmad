@@ -1012,10 +1012,11 @@ function HomeSocialFooter() {
                 if (willOpen) window.setTimeout(() => document.getElementById('newsletter-inline-email')?.focus(), 320)
               }}
               aria-expanded={newsletterOpen}
-              className={`home-footer-tools__item ${newsletterOpen ? 'is-active' : ''}`}
+              aria-label="النشرة"
+              title="النشرة"
+              className={`home-footer-tools__item is-icon-only ${newsletterOpen ? 'is-active' : ''}`}
             >
-              <SocialIcon name="Mail" size={14} />
-              <span>النشرة</span>
+              <SocialIcon name="Mail" size={16} />
             </button>
             <TebyanProjectLink label="تبيان" iconOnly className="home-footer-tools__item is-icon-only" />
             <ScheduleProjectLink label="الجدول" iconOnly className="home-footer-tools__item is-icon-only" />

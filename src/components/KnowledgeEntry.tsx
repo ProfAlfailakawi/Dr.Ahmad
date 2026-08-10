@@ -45,6 +45,8 @@ export function KnowledgeEntry({ compact = false }: { compact?: boolean }) {
         </div>
         <Link
           to="/search?tab=askbook"
+          aria-label="ابحث في كتاب"
+          title="ابحث في كتاب"
           aria-current={bookActive ? 'page' : undefined}
           className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[.66rem] font-semibold transition-colors ${bookActive ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
         >

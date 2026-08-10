@@ -42,7 +42,7 @@ export default function Research() {
         name: 'المساهمات العلمية', url: `${SITE_URL}/research`, inLanguage: 'ar',
         mainEntity: { '@type': 'ItemList', numberOfItems: papers.length, itemListElement: papers.slice(0, 100).map((paper, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE_URL}/research/${paper.slug}`, name: paper.title })) },
       }} />
-      <PageHead label="المساهمات العلمية" title="مسارٌ من السؤال إلى الدليل." sub="أبحاثٌ محكّمة تكشف سؤال كل دراسة ومنهجها ونتيجتها وحدودها، مع وصول مباشر إلى بياناتها ومصادرها الأصلية." />
+      <PageHead label="المساهمات العلمية" title="مسارٌ من السؤال إلى الدليل." sub="الأرشيف العلمي المحكّم يكشف سؤال كل دراسة ومنهجها ونتيجتها وحدودها، مع وصول مباشر إلى بياناتها بمصادر أصلية." />
 
       <section className="editorial-breath-section px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">

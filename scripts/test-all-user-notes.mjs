@@ -230,7 +230,7 @@ check('بطاقة في مثل هذا الأسبوع تفصل العنوان عن
 check('عبارة في مثل هذا الأسبوع بلا نقطة فاصلة أو فراغ وهمي', !home.includes('في مثل هذا الأسبوع <span') && !homeExperience.includes('في مثل هذا الأسبوع ·'))
 check('الضغط على أدوات البطاقة لا يفتح المقال', home.includes('event.preventDefault(); event.stopPropagation()'))
 check('بطاقات المقالات الكاملة لا تكرر اقرأ المقال أو افتح المسار', !/>\s*اقرأ المقال\s*</u.test(home) && !/>\s*افتح المسار\s*</u.test(home))
-check('النشرة وتبيان والجدول الدراسي عادت أيقونات دائرية', ui.includes('SocialIcon name="Mail"') && ui.includes('<TebyanProjectLink') && ui.includes('<ScheduleProjectLink') && ui.includes('iconOnly = true'))
+check('النشرة وتبيان والجدول الدراسي عادت أيقونات دائرية', home.includes('SocialIcon name="Mail"') && home.includes('aria-label="النشرة"') && !home.includes('<span>النشرة</span>') && ui.includes('<TebyanProjectLink') && ui.includes('<ScheduleProjectLink') && ui.includes('iconOnly = true'))
 check('PROFESSIONAL لم تتغير والخط العربي للمنشور المستقل Alexandria', /PROFESSIONAL/u.test(socialTemplates + publishingStudio) && /المنشور المستقل[\s\S]{0,500}Alexandria/u.test(socialTemplates))
 check('صور الإعلام في الرئيسية تفحص الصورة الرمادية', home.includes('function HomeMediaThumb') && homeExperience.includes('function YouTubeThumb') && home.includes('naturalWidth <= 120'))
 check('سطر المهنة يمنع الفاصلة من الانفراد', home.includes('QuickArticleActions') && read('src/components/home/HumanCoreHero.tsx').includes('whitespace-nowrap') && read('src/components/home/HumanCoreHero.tsx').includes('أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار'))

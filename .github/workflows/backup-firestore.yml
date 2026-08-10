@@ -56,7 +56,7 @@ jobs:
         run: |
           FILE=$(ls build/firestore-backup-*.json.gz | head -1)
           MAN=$(ls build/firestore-backup-*.manifest.json | head -1)
-          BUCKET="${{ secrets.CLOUDFLARE_R2_BACKUP_BUCKET }}"
+          BUCKET="${{ vars.CLOUDFLARE_R2_BACKUP_BUCKET }}"
           EP="${{ secrets.CLOUDFLARE_R2_BACKUP_ENDPOINT }}"
           aws s3 cp "$FILE" "s3://$BUCKET/backups/$(basename $FILE)" --endpoint-url "$EP" --no-progress
           aws s3 cp "$MAN"  "s3://$BUCKET/backups/$(basename $MAN)"  --endpoint-url "$EP" --no-progress

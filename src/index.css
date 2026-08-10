@@ -7420,7 +7420,20 @@ html.dark {
     transform: translateY(-4px);
     transition: max-height .28s ease, opacity .2s ease, transform .28s ease;
   }
-  .site-social-dock.is-open .site-social-dock__panel { max-height: 7rem; opacity: 1; transform: translateY(0); }
+  /* ٧rem كانت تقصّ صفَّ الحسابات الأكاديمية صامتةً (الأيقونات تُرسم خارج الصندوق
+     المخفيّ overflow) — والصفّان مع الفاصل يحتاجان ضِعف ذلك. */
+  .site-social-dock.is-open .site-social-dock__panel { max-height: 13rem; opacity: 1; transform: translateY(0); }
+
+  /* داخل تذييل القائمة: الدوك يذوب فيصير زرُّه في صفّ القمر نفسه، ولوحته سطراً
+     كاملاً تحته. كان `width:100%` يدفعه سطراً مستقلاً فيتفكّك الصفّ وتختلف
+     محاذاة الزرّ عن القمر عن أيقونة التواصل — وهو سبب «القائمة غير مرتّبة». */
+  .site-menu-footer .site-social-dock { display: contents; }
+  /* `margin-inline:auto` العام كان يبتلع الفراغ كلّه فيقذف القمر إلى الحافة ويترك
+     زرّ التواصل وحده في الوسط — وهو ما بدا «غير مرتّب». */
+  .site-menu-footer .site-social-dock__trigger { margin-inline: 0; }
+  /* اللوحة تأخذ سطرها كاملاً دائماً، وإلا حشرت نفسها بين القمر وزرّ التواصل فباعدت بينهما. */
+  .site-menu-footer .site-social-dock__panel { flex: 0 0 100%; width: 100%; max-width: none; }
+  .site-menu-footer__tools { width: 100%; }
   .site-social-dock__divider { width: 4rem; height: 1px; }
   .site-social-dock__academic { justify-content: center; }
   .site-footer__main { grid-template-columns: 1fr; justify-items: center; gap: .9rem; }

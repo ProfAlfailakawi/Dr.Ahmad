@@ -1,6 +1,9 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
-import { bookChaptersReply, bookQuoteReply, usefulBookQuoteReply } from '../../whatsapp-agent/book-quotes.mjs'
+import { bookAnswerReply, bookChaptersReply, bookQuoteReply, encyclopediaVideoReply, usefulBookQuoteReply } from '../../whatsapp-agent/book-quotes.mjs'
 import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
 import { collapseElongation, foldArabicLetters, looksArabizi, repairMessage, stripInvisible } from '../../whatsapp-agent/comprehension.mjs'
 import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
@@ -663,15 +666,17 @@ function itemMetaLine(item) {
   return parts.join(' · ')
 }
 
-function siteResultReply(items, intro = 'وجدت لك من موقع الدكتور:') {
+function siteResultReply(items, intro = 'وجدت لك من موقع الدكتور:', tail = '') {
+  /* الذيل يسبق سطر «اختر رقماً»: موضع اللقاء جزءٌ من النتيجة لا حاشيةٌ بعد الدعوة. */
+  const body = tail ? `${tail}\n` : ''
   if (items.length === 1) {
     const item = items[0]
     const source = normalizeWhitespace(item.excerpt || item.body || '')
     const preview = source.split(/\s+/).filter(Boolean).slice(0, 30).join(' ')
-    return `${intro}\n\n*${item.title}*\n${itemMetaLine(item)}${preview ? `\n\n${verbatim(preview)}${source.split(/\s+/).filter(Boolean).length > 30 ? '…' : ''}` : ''}\n\n${item.url}\n\nماذا تريد بعدها؟ لخّصها · أعطني المصدر · أطلع لي غيرها.`
+    return `${intro}\n\n*${item.title}*\n${itemMetaLine(item)}${preview ? `\n\n${verbatim(preview)}${source.split(/\s+/).filter(Boolean).length > 30 ? '…' : ''}` : ''}\n\n${item.url}\n${body}\nماذا تريد بعدها؟ لخّصها · أعطني المصدر · أطلع لي غيرها.`
   }
   const lines = items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${itemMetaLine(item)}\n${item.url}`)
-  return `${intro}\n\n${lines.join('\n\n')}\n\nاختر رقماً، أو اكتب: لخّص الأولى · أعطني غيرها.`
+  return `${intro}\n\n${lines.join('\n\n')}\n${body}\nاختر رقماً، أو اكتب: لخّص الأولى · أعطني غيرها.`
 }
 
 /* حين لا يطابق البحثُ الدقيق شيئاً، لا نكتفي بـ«ما لقيت»: نعرض أقرب المواد
@@ -827,31 +832,67 @@ function bookSearchTopic(text = '', book = null) {
   return topic.replace(/^(?:عن|حول|بخصوص)\s+/, '').trim()
 }
 
+/* ── جلسة الكتاب ──
+   العطب الذي رآه الدكتور: البوت يقول «أنا داخل كتاب كذا الآن، اكتب سؤالك
+   وأبحث لك في متنه»، ثم يأتي السؤال التالي فيذهب إلى البحث العام ويردّ
+   ببودكاست. الوعد كان بلا ذاكرة: السياق يحمل الكتاب، لكن لا شيء يقول
+   «نحن داخله». `bookSession` هي تلك الذاكرة، وتُمحى بكلمةٍ صريحة أو ببابٍ آخر. */
+const LEAVE_BOOK_PATTERN = /(?:اخرج|اطلع|خلصنا|كفى|بس)\s*(?:من)?\s*(?:ال)?كتاب|خارج\s*(?:ال)?كتاب|ابحث\s*في\s*الموقع|بحث\s*عام|المقالات\s*بدل/u
+
+/* طلب المرئي بأي صياغة: «فيديو»، «مقطع»، «يوتيوب»، «أبي أشوف». و«لقاء/مقابلة»
+   مقصودةٌ خارج النمط لأن لها باب الأرشيف الإعلامي. */
+const VIDEO_REQUEST_PATTERN = /(?:^|\s)(?:فيديو|فيديوهات|فديو|مقطع|مقاطع|يوتيوب)(?:\s|$)/u
+const VIDEO_TOPIC_STRIP = /(?:^|\s)(?:ابي|ابغي|ابغى|اريد|ودي|ممكن|عطني|اعطني|وريني|شوف|اشوف|شاهد|في|من|هل|عندك|عندكم|لك|لي|الدكتور|فيديو|فيديوهات|فديو|مقطع|مقاطع|يوتيوب|الموسوعه|الكتاب|عن|حول|بخصوص)(?=\s|$)/gu
+
+function videoRequestTopic(cleanText = '') {
+  return String(cleanText).replace(VIDEO_TOPIC_STRIP, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function bookSessionSlug(conversation = {}) {
+  return String(conversation.bookSession || '').trim()
+}
+
+function bookSessionAnswer(topic, book, slug) {
+  const answer = bookAnswerReply(topic, slug ? { bookSlug: slug } : {})
+  const id = book?.id || (slug ? `book:${slug}` : '')
+  const deeper = `\n\nوللبحث أكثر داخل متن الكتاب:\n${SITE_URL}/search?tab=askbook${slug ? `&book=${encodeURIComponent(slug)}` : ''}`
+  if (answer) {
+    return {
+      reason: answer.grounded ? 'book-search-grounded' : 'book-search-concept',
+      reply: `${answer.text}${deeper}`,
+      ...(id ? { evidence: [id], contextItemIds: [id], contextIndex: 0 } : {}),
+      lastTopic: topic,
+      patch: { bookSession: answer.found?.bookSlug || slug || null },
+    }
+  }
+  return {
+    reason: 'book-search-no-quote',
+    reply: `دوّرت في متن ${book ? `«${book.title}»` : 'الكتب'} عن «${topic}» وما لقيت موضعاً يتناوله، وما أنسب للدكتور كلاماً ما كتبه.\n\nتبي أدوّر عنه في بقية الموقع (مقالات وأبحاث ولقاءات)؟ اكتب «ابحث في الموقع». أو اسألني عن محورٍ ثانٍ داخل الكتاب — واكتب «فصول الكتاب» لتشوف محاوره.${deeper}`,
+    ...(id ? { evidence: [id], contextItemIds: [id], contextIndex: 0, lastTopic: book?.title || topic } : {}),
+    patch: { bookSession: slug || null },
+  }
+}
+
+/** يُستدعى قبل البحث العام: السؤال العادي داخل جلسة كتابٍ يبقى داخل الكتاب. */
+function bookSessionDecision(text = '', conversation = {}) {
+  const slug = bookSessionSlug(conversation)
+  if (!slug) return null
+  const topic = normalizeArabicMessage(text).replace(/^(?:عن|حول|بخصوص)\s+/, '').trim()
+  if (topic.length < 2) return null
+  const book = siteIndex().find((item) => item.id === `book:${slug}`) || null
+  return bookSessionAnswer(topic, book, slug)
+}
+
 function bookSearchDecision(text = '', conversation = {}) {
   const book = contextualBook(text, conversation)
   const slug = book?.slug || String(book?.id || '').replace(/^book:/, '')
   const topic = bookSearchTopic(text, book)
-  if (topic) {
-    const grounded = bookQuoteReply(topic, slug ? { bookSlug: slug } : {})
-    if (grounded?.found) {
-      const foundBook = siteIndex().find((item) => item.id === `book:${grounded.found.bookSlug}`) || book
-      const foundId = foundBook?.id || `book:${grounded.found.bookSlug}`
-      return {
-        reason: 'book-search-grounded',
-        reply: `${grounded.text}\n\nوللبحث أكثر في متن الكتاب نفسه:\n${SITE_URL}/search?tab=askbook&book=${encodeURIComponent(grounded.found.bookSlug)}`,
-        evidence: [foundId], contextItemIds: [foundId], contextIndex: 0, lastTopic: topic,
-      }
-    }
-    return {
-      reason: 'book-search-no-quote',
-      reply: `بحثت ${book ? `داخل «${book.title}»` : 'داخل متون الكتب'}، ولم أجد مقطعاً موثقاً كافياً لهذا السؤال؛ لذلك لن أنسب للدكتور جواباً غير موجود.\n\nجرّب صياغة السؤال داخل «اسأل كتاباً»${book ? '' : ' واختر الكتاب'}:\n${SITE_URL}/search?tab=askbook${slug ? `&book=${encodeURIComponent(slug)}` : ''}`,
-      ...(book ? { evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title } : {}),
-    }
-  }
+  if (topic) return bookSessionAnswer(topic, book, slug)
   if (book) return {
     reason: 'book-search-ready',
     reply: `أنا داخل كتاب «${book.title}» الآن. اكتب سؤالك بطريقتك — مثلاً: «ماذا يقول عن المعلم؟» — وأبحث لك في متنه الموثّق، لا في المقالات.\n\n${SITE_URL}/search?tab=askbook&book=${encodeURIComponent(slug)}`,
     evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+    patch: { bookSession: slug },
   }
   const books = siteIndex().filter((item) => item.kind === 'book')
   return {
@@ -903,6 +944,18 @@ function bookVideosDecision(text = '', conversation = {}) {
   const encyclopedia = siteIndex().find((item) => item.id === 'book:encyclopedia')
   const topic = normalizeArabicMessage(text).match(/(?:عن|حول|بخصوص)\s+(.+)$/)?.[1]?.trim() || ''
   const query = topic ? `?q=${encodeURIComponent(topic)}&tab=video` : '?tab=video'
+
+  /* التفريغات المفهرسة بالثانية كانت حاضرةً في الخادم بلا استعمال، فكان الجواب
+     رابطاً يقول «ابحث بنفسك». الآن نبحث نحن ونعيد اللحظة التي قيلت فيها الفكرة. */
+  if (topic) {
+    const moments = encyclopediaVideoReply(topic, 3)
+    if (moments) return {
+      reason: 'book-videos-moments',
+      reply: moments.text,
+      ...(encyclopedia ? { evidence: [encyclopedia.id], contextItemIds: [encyclopedia.id], contextIndex: 0 } : {}),
+      lastTopic: topic,
+    }
+  }
   if (book && book.slug !== 'encyclopedia') return {
     reason: 'book-videos-unavailable',
     reply: `لا توجد في الموقع الآن خريطة فيديو موثقة مرتبطة بكتاب «${book.title}»، لذلك لن أعرض مقاطع على أنها منه.\n\nالخريطة المرئية الموثقة موجودة داخل «موسوعة تكنولوجيا التعليم»:\n${SITE_URL}/publications/encyclopedia${query}#encyclopedia-map\n\nوالظهور الإعلامي الكامل:\n${SITE_URL}/media`,
@@ -915,12 +968,71 @@ function bookVideosDecision(text = '', conversation = {}) {
   }
 }
 
+/* ── اللقاء بالثانية لا بالعنوان ──
+   تفريغات الأرشيف مفهرسة زمنياً وتُستعمل في البحث، لكن الردّ كان عنواناً ورابطاً
+   فقط: «موجود في هذا اللقاء» — ثم يبحث السائل عن الجملة في عشرين دقيقة. الآن
+   نعيد الموضع ونصّه ورابطاً يفتح على الثانية نفسها. */
+const CONTROLLER_DIR = dirname(fileURLToPath(import.meta.url))
+let mediaTranscriptRecords = null
+function loadMediaTranscripts() {
+  if (mediaTranscriptRecords) return mediaTranscriptRecords
+  const candidates = [
+    resolve(CONTROLLER_DIR, '../data/media-archive-transcripts.json'),
+    resolve(process.cwd(), 'src/data/media-archive-transcripts.json'),
+  ]
+  try {
+    const path = candidates.find((item) => existsSync(item))
+    mediaTranscriptRecords = path ? JSON.parse(readFileSync(path, 'utf8')) : {}
+  } catch {
+    mediaTranscriptRecords = {}
+  }
+  return mediaTranscriptRecords
+}
+
+function mediaMomentFor(slug = '', topic = '') {
+  const sourceId = String(slug).replace(/^media-/, '')
+  const record = loadMediaTranscripts()[sourceId]
+  if (!record?.available || !Array.isArray(record.segments)) return null
+  const words = normalizeArabicMessage(topic).split(/\s+/).filter((word) => word.length > 2)
+  if (!words.length) return null
+  let best = null
+  for (const segment of record.segments) {
+    const spoken = normalizeArabicMessage(segment.searchText || segment.displayText || segment.text || '')
+    if (!spoken) continue
+    const score = words.reduce((sum, word) => sum + (spoken.includes(word) ? 1 : 0), 0)
+    if (!score) continue
+    if (!best || score > best.score) best = { score, segment }
+  }
+  if (!best || best.score < Math.min(2, words.length)) return null
+  const total = Math.max(0, Math.floor(Number(best.segment.start) || 0))
+  /* التفريغات القديمة مقاطعها طويلة جداً، فالمقطع الأول يبتلع دقائق ويعطي «0:00»
+     — وهي إشارةٌ لا تفيد وتوهم بدقّةٍ لا نملكها. فلا نعرض موضعاً إلا إذا كان
+     موضعاً فعلاً. والواجهة تقول «نحو» صراحةً كما في محاور الموقع. */
+  if (total < 5) return null
+  return {
+    seconds: total,
+    stamp: `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`,
+    text: String(best.segment.displayText || best.segment.text || '').replace(/\s+/g, ' ').trim().slice(0, 180),
+  }
+}
+
 function mediaLibraryDecision(text = '') {
   const cleanText = normalizeArabicMessage(text)
   const topic = cleanText.match(/(?:عن|حول|بخصوص)\s+(.+)$/)?.[1]?.trim() || ''
   const items = topic
     ? scoredSiteResults(topic, { kinds: ['media'], limit: 3 }).map((row) => row.item)
     : latestSiteItems(['media'], 3)
+
+  if (topic && items.length) {
+    const withMoments = items
+      .map((item) => ({ item, moment: mediaMomentFor(item.slug, topic) }))
+      .filter((row) => row.moment)
+    if (withMoments.length) return {
+      reason: 'media-library-moments',
+      reply: `لقيت «${topic}» مقولاً في هذي اللقاءات، وهذي المواضع:\n\n${withMoments.map((row, index) => `${arabicNumber(index + 1)}) *${row.item.title}* — الدقيقة ${row.moment.stamp}\n«${row.moment.text}…»\n${row.item.url}?t=${row.moment.seconds}`).join('\n\n')}\n\nوالأرشيف كاملاً:\n${SITE_URL}/media`,
+      evidence: withMoments.map((row) => row.item.id), contextItemIds: withMoments.map((row) => row.item.id), contextIndex: 0, lastTopic: topic,
+    }
+  }
   if (!items.length) return {
     reason: 'media-library',
     reply: `${topic ? `لم أجد ظهوراً إعلامياً موثقاً مطابقاً لـ«${topic}» الآن.` : 'الظهور الإعلامي المرئي والمسموع'}\n\nافتح الأرشيف وابحث داخل الكلام نفسه:\n${SITE_URL}/media`,
@@ -1724,8 +1836,19 @@ export function decideGroundedResponse({ text: inboundText, hasMedia = false, ru
       ...(welcome.contextItemIds.length ? { contextItemIds: welcome.contextItemIds, contextIndex: 0, evidence: welcome.evidence, lastTopic: welcome.lastTopic } : {}),
     }
   }
+  /* الخروج من جلسة الكتاب بكلمةٍ صريحة — قبل أبواب الموقع، وإلا ابتلع الباب
+     العبارةَ وبقيت الجلسة قائمة فيعود السؤال التالي إلى الكتاب رغم طلبه الخروج. */
+  if (bookSessionSlug(conversation) && LEAVE_BOOK_PATTERN.test(clean)) {
+    return {
+      kind: 'reply', reason: 'book-session-left', intent,
+      reply: signReply(`تمام، خرجنا من الكتاب. اكتب الموضوع وأدوّر لك في الموقع كلّه — مقالات وأبحاث ولقاءات.\n\n${SITE_URL}/search`, messages),
+      patch: { bookSession: null },
+    }
+  }
+
   const siteDoor = siteDoorDecision(text)
-  if (siteDoor) return { kind: 'reply', intent, ...siteDoor, reply: signReply(siteDoor.reply, messages) }
+  /* أيّ بابٍ آخر يُنهي جلسة الكتاب: الزائر غادره بفعله لا بكلمته. */
+  if (siteDoor) return { kind: 'reply', intent, ...siteDoor, reply: signReply(siteDoor.reply, messages), ...(bookSessionSlug(conversation) ? { patch: { ...(siteDoor.patch || {}), bookSession: null } } : {}) }
   if ([INTENTS.HELP, INTENTS.SHOW_OPTIONS, INTENTS.CONTENT_OVERVIEW].includes(intent)) {
     return { kind: 'reply', reason: 'help', intent, reply: signReply(helpText(), messages) }
   }
@@ -1750,6 +1873,13 @@ export function decideGroundedResponse({ text: inboundText, hasMedia = false, ru
     const decision = bookSearchDecision(text, conversation)
     return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
   }
+  /* ثم السؤال العاديّ داخل جلسة كتاب: يُجاب من متن الكتاب لا من الموقع كله.
+     محصورٌ في نيّة «موضوع» أو غير المفهوم، فلا يخطف «لخّصها» ولا «عطني غيرها»
+     ولا التصحيح ولا أبواب الموقع — لكلٍّ منها مسارها الذي يسبق هذا السطر. */
+  if (bookSessionSlug(conversation) && (intent === INTENTS.SEARCH_TOPIC || intent === INTENTS.UNKNOWN || classification.fallback)) {
+    const decision = bookSessionDecision(text, conversation)
+    if (decision) return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
   if (intent === INTENTS.BOOK_CHAPTERS) {
     const decision = bookChaptersDecision(text, conversation)
     return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
@@ -1761,6 +1891,22 @@ export function decideGroundedResponse({ text: inboundText, hasMedia = false, ru
   if (intent === INTENTS.BOOK_VIDEOS) {
     const decision = bookVideosDecision(text, conversation)
     return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  /* «أبي فيديو عن كذا» لم يكن يُصنَّف فيديوهات كتاب، فيسقط إلى البحث العام
+     ويردّ بمقالات — بينما التفريغ المفهرس يعرف الثانية التي قيلت فيها الفكرة.
+     هذا الباب يلتقط طلب المرئي بأي صياغة، ولا يمسّ «لقاء/مقابلة» فلها بابها. */
+  if (VIDEO_REQUEST_PATTERN.test(clean)) {
+    const topic = videoRequestTopic(clean)
+    const moments = topic ? encyclopediaVideoReply(topic, 3) : null
+    if (moments) {
+      const encyclopedia = siteIndex().find((item) => item.id === 'book:encyclopedia')
+      return {
+        kind: 'reply', reason: 'video-moments', intent,
+        reply: signReply(moments.text, messages),
+        ...(encyclopedia ? { evidence: [encyclopedia.id], contextItemIds: [encyclopedia.id], contextIndex: 0 } : {}),
+        lastTopic: topic,
+      }
+    }
   }
   if (intent === INTENTS.MEDIA_LIBRARY) {
     const decision = mediaLibraryDecision(text)
@@ -2425,9 +2571,19 @@ export function decideGroundedResponse({ text: inboundText, hasMedia = false, ru
       : conceptUsed && conceptHit
         ? `فهمت أنك تقصد «${conceptHit.concept.canonicalAr}» — وهذا ما كتبه الدكتور فيه:`
         : undefined
+    /* اللقاء الذي قيلت فيه الكلمة يستحق ثانيته: نضيف الموضع ورابطاً يفتح عليه،
+       فيصل السائل إلى الجملة بدل أن يمسح عشرين دقيقة بحثاً عنها. */
+    const spokenMoments = found
+      .filter((item) => item.kind === 'media')
+      .map((item) => ({ item, moment: mediaMomentFor(item.slug, query) }))
+      .filter((row) => row.moment)
+      .slice(0, 2)
+    const momentsTail = spokenMoments.length
+      ? `\nوقيلت فيها هنا:\n${spokenMoments.map((row) => `• *${row.item.title}* — نحو الدقيقة ${row.moment.stamp}\n  ${row.item.url}?t=${row.moment.seconds}`).join('\n')}`
+      : ''
     return {
       kind: 'reply', reason: conceptUsed ? 'concept-search' : classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
-      reply: signReply(`${siteResultReply(found, intro)}${offer}`, messages),
+      reply: signReply(`${siteResultReply(found, intro, momentsTail)}${offer}`, messages),
       evidence: found.map((item) => item.id),
       contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: query,
       ...(Object.keys(patch).length ? { patch } : {}),

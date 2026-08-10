@@ -37,6 +37,7 @@ import { OwnerEdit } from './extras'
 import { EncyclopediaKnowledgeResults } from './EncyclopediaKnowledgeResults'
 import { EncyclopediaResultBrowser } from './EncyclopediaResultBrowser'
 import { normalizeSearchQuery, trackUsage } from '../lib/usage-analytics'
+import { coverSrcSet } from '../lib/cover-image'
 
 const CHANNEL_URL = 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'
 const ENCYCLOPEDIA_SAMPLE_PDF = '/files/encyclopedia.pdf?v=20260803-4'
@@ -896,7 +897,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
           <div className="mt-8 grid items-start gap-9 lg:grid-cols-[minmax(15rem,.58fr)_minmax(0,1.42fr)] lg:gap-16">
             <FadeUp delay={0.04}>
               <div className="mx-auto w-full max-w-[18rem] overflow-hidden rounded-2xl border border-hair bg-white shadow-[0_24px_70px_-48px_rgba(20,31,45,.55)] lg:mx-0">
-                <img src={book.cover} alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" className="w-full" />
+                <img src={book.cover} srcSet={coverSrcSet(book.cover)} sizes="(max-width: 768px) 320px, 420px" alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" className="w-full" />
               </div>
             </FadeUp>
 

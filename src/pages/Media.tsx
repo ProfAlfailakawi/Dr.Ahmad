@@ -5,7 +5,7 @@ import { FadeUp, Page, PageHead, sharedViewName } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import { MediaSaveButton } from '../components/MySpace'
 import { SocialIcon } from '../components/icons'
-import { mergeMediaArchive, searchArchiveMoments, formatMediaTime } from '../lib/media-archive'
+import { mergeMediaArchive, searchArchiveMoments, formatMediaTime, ensureArchiveTranscripts, useArchiveTranscripts } from '../lib/media-archive'
 import { arabicCountPhrase, MOMENT_MATCH_FORMS } from '../lib/arabic-count.ts'
 
 const kindLabel: Record<string, string> = {
@@ -38,7 +38,16 @@ export default function Media() {
     const year = mediaYear(item)
     return (yearFilter === 'all' || year === yearFilter) && (kindFilter === 'all' || item.kind === kindFilter)
   }), [kindFilter, media, yearFilter])
-  const moments = useMemo(() => searchArchiveMoments(query, filteredMedia), [query, filteredMedia])
+  /* البحث داخل الكلام يحتاج المقاطع كاملة (١٫١ ميغابايت)، والقائمة لا تحتاجها.
+     فتُجلب في أول فراغٍ للمتصفح بعد رسم الصفحة — أو فور لمس حقل البحث إن سبق الزائرُ
+     الفراغ — فلا تُثقل الفتحة الأولى ولا يشعر الباحث بانتظار. */
+  const transcriptsRevision = useArchiveTranscripts()
+  useEffect(() => {
+    const idle = window.requestIdleCallback?.(() => { void ensureArchiveTranscripts() }, { timeout: 2500 })
+    const timer = idle === undefined ? window.setTimeout(() => { void ensureArchiveTranscripts() }, 1200) : 0
+    return () => { if (idle !== undefined) window.cancelIdleCallback?.(idle); else window.clearTimeout(timer) }
+  }, [])
+  const moments = useMemo(() => searchArchiveMoments(query, filteredMedia), [query, filteredMedia, transcriptsRevision])
   const visibleMedia = useMemo(() => filteredMedia.slice(0, visibleCount), [filteredMedia, visibleCount])
   const featuredMedia = useMemo(() => visibleMedia.slice(0, 3), [visibleMedia])
   const archiveGroups = useMemo(() => {
@@ -66,7 +75,7 @@ export default function Media() {
             <label className="media-search-label block text-[.72rem] font-bold text-accent md:text-[.74rem]" htmlFor="media-search">ابحث داخل ما قيل</label>
             <div className="media-search-input mt-2 flex items-center gap-3 rounded-xl border border-hair bg-canvas px-3 focus-within:border-accent md:mt-3 md:rounded-2xl md:px-4">
               <span aria-hidden className="text-accent">⌕</span>
-              <input id="media-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="مثال: التعليم الإلكتروني، الذكاء الاصطناعي" className="min-w-0 flex-1 self-stretch bg-transparent py-2.5 text-base text-ink outline-none placeholder:text-soft/70 md:py-3 md:text-[.92rem]" />
+              <input id="media-search" value={query} onFocus={() => { void ensureArchiveTranscripts() }} onChange={(event) => setQuery(event.target.value)} placeholder="مثال: التعليم الإلكتروني، الذكاء الاصطناعي" className="min-w-0 flex-1 self-stretch bg-transparent py-2.5 text-base text-ink outline-none placeholder:text-soft/70 md:py-3 md:text-[.92rem]" />
               {query && <button type="button" onClick={() => setQuery('')} className="text-[.72rem] text-soft hover:text-accent">مسح</button>}
             </div>
             <p className="media-search-note measure mt-2 text-[.68rem] leading-relaxed text-soft md:mt-3 md:text-[.7rem]">عند وجود تفريغ زمني موثّق، تنقلك النتيجة مباشرة إلى اللحظة التي قيلت فيها العبارة.</p>

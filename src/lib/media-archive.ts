@@ -1,5 +1,6 @@
+import { useEffect, useSyncExternalStore } from 'react'
 import archivePayload from '../data/media-archive.json' with { type: 'json' }
-import transcriptPayload from '../data/media-archive-transcripts.json' with { type: 'json' }
+import transcriptIndexPayload from '../data/media-archive-transcript-index.json' with { type: 'json' }
 import type { MediaRecord } from './cms'
 
 export type MediaArchiveKind = 'youtube' | 'audio' | 'television' | 'radio' | 'podcast'
@@ -41,7 +42,48 @@ export type MediaArchiveRecord = Omit<MediaRecord, 'transcript'> & MediaArchiveI
 }
 
 const items = ((archivePayload as { items?: MediaArchiveItem[] }).items || [])
-const transcripts = (transcriptPayload as Record<string, MediaArchiveTranscript>) || {}
+
+/* التفريغ الكامل (١٫١ ميغابايت) لا يدخل حزمة الصفحة: يبدأ الفهرس ببطاقاتٍ بلا مقاطع
+   — وهو كل ما تحتاجه قائمة الأرشيف لتعرض شارة «مفهرس زمنياً» — ثم تُستبدل بالكامل
+   حين يطلب الزائر البحثَ داخل الكلام أو يفتح لقاءً بعينه. الشكل نفسه في الحالتين،
+   فما يقرأ `transcript.available` لا يشعر بالفرق، ومن يقرأ `segments` ينتظر الوعد. */
+type TranscriptCard = Omit<MediaArchiveTranscript, 'segments'> & { segments?: MediaTranscriptSegment[] }
+const transcriptIndex = (transcriptIndexPayload as Record<string, TranscriptCard>) || {}
+let transcripts: Record<string, MediaArchiveTranscript> = Object.fromEntries(
+  Object.entries(transcriptIndex).map(([id, card]) => [id, { ...card, segments: card.segments || [] }]),
+)
+
+let fullTranscriptsPromise: Promise<void> | null = null
+let transcriptsRevision = 0
+const transcriptListeners = new Set<() => void>()
+
+/** يجلب المقاطع الكاملة مرّةً واحدة، ثم يوقظ من ينتظرها. */
+export function ensureArchiveTranscripts() {
+  if (!fullTranscriptsPromise) {
+    fullTranscriptsPromise = import('../data/media-archive-transcripts.json')
+      .then((module) => {
+        transcripts = (module.default as Record<string, MediaArchiveTranscript>) || transcripts
+        transcriptsRevision += 1
+        transcriptListeners.forEach((listener) => listener())
+      })
+      .catch(() => { fullTranscriptsPromise = null })
+  }
+  return fullTranscriptsPromise
+}
+
+const archiveTranscriptsRevision = () => transcriptsRevision
+function subscribeArchiveTranscripts(listener: () => void) {
+  transcriptListeners.add(listener)
+  return () => { transcriptListeners.delete(listener) }
+}
+
+/** ترجع رقم الإصدار فتعيد الحساباتُ المحفوظة نفسها حين تصل المقاطع الكاملة. */
+export function useArchiveTranscripts(load = false) {
+  const revision = useSyncExternalStore(subscribeArchiveTranscripts, archiveTranscriptsRevision, archiveTranscriptsRevision)
+  useEffect(() => { if (load) void ensureArchiveTranscripts() }, [load])
+  return revision
+}
+
 const archiveItemBySlug = new Map(items.map((item) => [item.slug, item]))
 const archiveItemById = new Map(items.map((item) => [item.id, item]))
 
@@ -86,6 +128,17 @@ export function archiveTranscript(id: string) {
   return transcripts[id] || null
 }
 
+/* السجل لا يحمل نسخةً من التفريغ بل نافذةً عليه: يقرأ من الخريطة الحيّة عند كل وصول،
+   فحين تصل المقاطع الكاملة تراها السجلاتُ المحفوظة في useMemo من غير أن تُبنى ثانية. */
+function withLiveTranscript<T extends object>(record: T, transcriptId: string, fallbackId?: string): T {
+  Object.defineProperty(record, 'transcript', {
+    enumerable: true,
+    configurable: true,
+    get: () => archiveTranscript(transcriptId) || (fallbackId ? archiveTranscript(fallbackId) : null),
+  })
+  return record
+}
+
 export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[] {
   const existingKeys = new Set(cmsMedia.flatMap((item) => [extractMediaId(item.url || ''), item.slug]).filter(Boolean))
   const cms: MediaArchiveRecord[] = cmsMedia.map((item) => {
@@ -98,7 +151,7 @@ export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[]
     /* المواد الإذاعية لا رابط لها، فيصير archiveId هو الاسم اللطيف (radio-idaa) بينما الفهرس
        الزمني محفوظ بمعرّف الأرشيف (idaa) — فنسقط إليه كي لا تختفي الفهرسة عن مادة مفهرسة. */
     const transcript = archiveTranscript(archiveId) || (archived?.id ? archiveTranscript(archived.id) : null)
-    return {
+    return withLiveTranscript({
       ...(archived || {}),
       ...baseItem,
       audioUrl: item.audioUrl || archived?.audioUrl,
@@ -110,11 +163,11 @@ export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[]
       legacyTranscript,
       transcript,
       transcriptStatus: transcript?.available ? 'transcribed' : legacyTranscript ? 'legacy' : 'missing',
-    }
+    }, archiveId, archived?.id)
   })
   const additions: MediaArchiveRecord[] = items
     .filter((item) => !existingKeys.has(item.id) && !existingKeys.has(item.slug))
-    .map((item) => ({
+    .map((item) => withLiveTranscript({
       ...item,
       _cms: {
         kind: 'media',
@@ -126,13 +179,14 @@ export function mergeMediaArchive(cmsMedia: MediaRecord[]): MediaArchiveRecord[]
         baseSlug: item.slug,
       },
       transcript: archiveTranscript(item.id),
-    }))
+    }, item.id))
   return [...cms, ...additions]
 }
 
 type MomentIndexRow = { itemIndex: number; segmentIndex: number; text: string }
 type MomentIndex = { rows: MomentIndexRow[]; postings: Map<string, Uint32Array>; rowsByItem: number[][] }
-const momentIndexCache = new WeakMap<ReturnType<typeof mergeMediaArchive>, MomentIndex>()
+/* الفهرس مبنيٌّ على المقاطع، فيُختم برقم إصدار التفريغات كي لا يبقى فهرسٌ بُني قبل وصولها. */
+const momentIndexCache = new WeakMap<ReturnType<typeof mergeMediaArchive>, { revision: number; index: MomentIndex }>()
 
 function momentTokens(value: string) {
   return [...new Set(normalize(value).split(' ').filter((word) => word.length > 1))].slice(0, 64)
@@ -140,7 +194,7 @@ function momentTokens(value: string) {
 
 function buildMomentIndex(media: ReturnType<typeof mergeMediaArchive>): MomentIndex {
   const cached = momentIndexCache.get(media)
-  if (cached) return cached
+  if (cached && cached.revision === transcriptsRevision) return cached.index
   const rows: MomentIndexRow[] = []
   const rowsByItem: number[][] = Array.from({ length: media.length }, () => [])
   const postingArrays = new Map<string, number[]>()
@@ -165,7 +219,7 @@ function buildMomentIndex(media: ReturnType<typeof mergeMediaArchive>): MomentIn
   const postings = new Map<string, Uint32Array>()
   for (const [token, posting] of postingArrays) postings.set(token, Uint32Array.from(posting))
   const index = { rows, postings, rowsByItem }
-  momentIndexCache.set(media, index)
+  momentIndexCache.set(media, { revision: transcriptsRevision, index })
   return index
 }
 

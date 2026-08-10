@@ -1,7 +1,7 @@
 import { type MouseEvent, useEffect, useMemo } from 'react'
 import { Link } from 'react-router'
 import type { ArticleRecord } from '../lib/cms'
-import { isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
+import { isArticleSaved, isMediaSaved, toggleSavedArticle, toggleSavedMedia } from '../lib/reading-space'
 import { matchBookQuotes, searchBookPassages } from '../lib/book-quotes'
 import { searchMediaChapters, stamp } from '../lib/media-chapters'
 import { SocialIcon } from './icons'
@@ -70,14 +70,20 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
     return list.length >= 2 ? list : []
   }, [articles, query])
 
-  /* حفظٌ تلقائيّ صامت: بمجرد ظهور الخطة تُحفظ مقالاتها في «مساحتي» (غير المحفوظ فقط،
-     فلا يُمحى ما حفظه الزائر). لا زرّ دفشاً — تظهر أنيقةً داخل مساحته. */
+  /* حفظٌ تلقائيّ صامت: بمجرد ظهور الخطة تُحفظ موادّها في «مساحتي» (غير المحفوظ فقط،
+     فلا يُمحى ما حفظه الزائر). لا زرّ دفشاً — تظهر أنيقةً داخل مساحته.
+     كانت المقالات وحدها تُحفظ بينما السطر يَعِد بحفظ «الخطة»، فاللقاء الذي في
+     الخطة لا يصل مساحته. الآن يُحفظ معها. */
   useEffect(() => {
     if (steps.length < 2) return
     for (const article of articles.slice(0, 2)) {
       if (!isArticleSaved(article.slug)) toggleSavedArticle(article)
     }
-  }, [articles, query, steps.length])
+    for (const step of steps) {
+      const mediaSlug = step.to?.startsWith('/media/') ? step.to.slice('/media/'.length) : ''
+      if (mediaSlug && !isMediaSaved(mediaSlug)) toggleSavedMedia(mediaSlug)
+    }
+  }, [articles, query, steps])
 
   if (!steps.length) return null
 
@@ -102,12 +108,14 @@ export function ReadingShelf({ query, articles }: { query: string; articles: Art
             خطة قراءة عن «{query}»
           </h2>
           <p className="mt-1 text-[.76rem] leading-relaxed text-soft">مرتّبة من الأقصر إلى الأعمق: مقالٌ يفتح، ولقاءٌ يقرّب، ومتنٌ يُرسّخ.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1.5 px-1 text-[.7rem] font-medium text-soft" title="حُفظت تلقائياً في مساحتك">
-            <span aria-hidden className="inline-block h-px w-3 bg-accent/[.5]" />
-            محفوظة في مساحتك
+          {/* كانت شريحةً في صفّ الأزرار فتزاحمها وتنكسر إلى سطر ثالث. الآن علامةٌ
+              قصيرة هادئة تحت الوصف، خارج صفّ الأزرار تماماً. */}
+          <span className="mt-1.5 inline-flex items-center gap-1 text-[.68rem] font-medium text-soft/90" title="حُفظت موادّ هذه الخطة تلقائياً في «مساحتي»">
+            <svg aria-hidden width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="text-accent"><path d="M20 6L9 17l-5-5" /></svg>
+            في مساحتك
           </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             to={`/concept/${encodeURIComponent(query)}`}
             className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"

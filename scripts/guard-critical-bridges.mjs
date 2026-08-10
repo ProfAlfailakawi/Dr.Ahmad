@@ -311,7 +311,7 @@ const assertions = [
   'standalone publishing must preserve all 24 laboratory layouts while promoting phrase-aware professional directions and server-side creative quality repair'],
   [articleDetail.includes('<StudentArchive') && articleDetail.includes('openAudioPlayer(`article-audio-${slug}`)') && (articleDetail.match(/<ArticleExtensions/g) || []).length === 1, 'article features must remain preserved inside the single related-content ending layer'],
   [homePage.includes('home:selected-works:v2') && !homePage.includes('لا مواعيد معلنة حالياً') && !homePage.includes('عرض بصري واحد بلا تكرار'), 'home selections must vary and empty/upholstery copy must remain hidden'],
-  [uiSource.includes('جميع المقالات') && uiSource.includes("expanded ? 'إغلاق' : 'فروع'") && uiSource.includes('EnglishOverlay'), 'menus must keep clear all-content links and discoverable branches in both languages'],
+  [uiSource.includes('المقالات الفكرية') && uiSource.includes('EnglishOverlay'), 'menus must keep clear all-content links and discoverable branches in both languages'],
   [cvSource.includes('SHOW_CITATION_IMPACT = false') && cvSource.includes('<CitationImpact'), 'Scholar impact module must stay preserved but hidden for future activation'],
 ]
 

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import schedule from '../data/radio-schedule.json'
+import kuwaitiSchedule from '../data/radio-schedule-kw.json'
 import { versionedAudioUrl } from '../components/extras'
 import { useSeo } from '../components/seo'
+import { dialogueVariantPreference, dialogueVariantSuffix, rememberDialogueVariant, type DialogueAudioVariant } from '../lib/dialogue-variant'
 import './radio.css'
 
 /* ═══════════ الإذاعة — بثٌّ متزامن بساعة الكويت ═══════════
@@ -14,8 +16,14 @@ import './radio.css'
 type Item = { slug: string; title: string; cat: string; at: number; dur: number }
 type Utterance = { s: number; e: number; sp: string; t: string }
 
-const ITEMS = (schedule as { items: Item[] }).items
-const LOOP = (schedule as { loop: number }).loop
+const STANDARD_ITEMS = (schedule as { items: Item[] }).items
+const STANDARD_LOOP = (schedule as { loop: number }).loop
+const KUWAITI_ITEMS = (kuwaitiSchedule as { items: Item[] }).items
+const KUWAITI_LOOP = (kuwaitiSchedule as { loop: number }).loop
+const KUWAITI_AVAILABLE = KUWAITI_ITEMS.length > 0 && KUWAITI_LOOP > 0
+const scheduleOf = (variant: DialogueAudioVariant) => variant === 'kuwaiti' && KUWAITI_AVAILABLE
+  ? { items: KUWAITI_ITEMS, loop: KUWAITI_LOOP }
+  : { items: STANDARD_ITEMS, loop: STANDARD_LOOP }
 
 /* ساعة الكويت ثابتة على +3 بلا توقيت صيفي — فالحساب حتميٌّ على كل جهاز */
 const kuwaitSecondsOfDay = (d: Date) => {
@@ -23,16 +31,17 @@ const kuwaitSecondsOfDay = (d: Date) => {
   return (utc + 3 * 3600) % 86400
 }
 
-function positionNow(now = new Date()) {
-  const at = kuwaitSecondsOfDay(now) % LOOP
+function positionNow(now = new Date(), items = STANDARD_ITEMS, loop = STANDARD_LOOP) {
+  if (!items.length || loop <= 0) throw new Error('جدول الإذاعة فارغ')
+  const at = kuwaitSecondsOfDay(now) % loop
   let lo = 0
-  let hi = ITEMS.length - 1
+  let hi = items.length - 1
   let idx = 0
   while (lo <= hi) {
     const mid = (lo + hi) >> 1
-    if (ITEMS[mid].at <= at) { idx = mid; lo = mid + 1 } else hi = mid - 1
+    if (items[mid].at <= at) { idx = mid; lo = mid + 1 } else hi = mid - 1
   }
-  return { idx, item: ITEMS[idx], into: at - ITEMS[idx].at }
+  return { idx, item: items[idx], into: at - items[idx].at }
 }
 
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
@@ -69,10 +78,11 @@ function nameWithoutTashkeel(value: string) {
    فلا تُدرَك الفجوة عند الانتقال. */
 type SpokenFile = { slug: string; lines: [number, number, string][] }
 const spokenCache = new Map<string, Promise<Utterance[]>>()
-function loadEpisode(slug: string): Promise<Utterance[]> {
-  let ready = spokenCache.get(slug)
+function loadEpisode(slug: string, variant: DialogueAudioVariant): Promise<Utterance[]> {
+  const cacheKey = `${variant}:${slug}`
+  let ready = spokenCache.get(cacheKey)
   if (!ready) {
-    ready = fetch(`/spoken/${encodeURIComponent(slug)}.json`)
+    ready = fetch(`/${variant === 'kuwaiti' ? 'spoken-kw' : 'spoken'}/${encodeURIComponent(slug)}.json`)
       .then((res) => (res.ok ? res.json() : { lines: [] }))
       .then((file: SpokenFile) => (file.lines || []).map((row, i, all) => ({
         s: row[0],
@@ -81,7 +91,7 @@ function loadEpisode(slug: string): Promise<Utterance[]> {
         t: cleanLine(row[2]),
       })))
       .catch(() => [] as Utterance[])
-    spokenCache.set(slug, ready)
+    spokenCache.set(cacheKey, ready)
   }
   return ready
 }
@@ -112,8 +122,18 @@ export default function Radio() {
   const audioRef = useRef<HTMLAudioElement>(null)
   const loadedSlugRef = useRef<string>('')
 
+  const [variant, setVariant] = useState<DialogueAudioVariant>(() =>
+    KUWAITI_AVAILABLE && dialogueVariantPreference() === 'kuwaiti' ? 'kuwaiti' : 'standard')
+  const activeSchedule = scheduleOf(variant)
+  const items = activeSchedule.items
+  const loop = activeSchedule.loop
+  const currentPosition = useCallback((now = new Date()) => positionNow(now, items, loop), [items, loop])
+
   const [playing, setPlaying] = useState(false)
-  const [pos, setPos] = useState(() => positionNow())
+  const [pos, setPos] = useState(() => {
+    const initial = scheduleOf(KUWAITI_AVAILABLE && dialogueVariantPreference() === 'kuwaiti' ? 'kuwaiti' : 'standard')
+    return positionNow(new Date(), initial.items, initial.loop)
+  })
   const [utterances, setUtterances] = useState<Utterance[]>([])
   const [line, setLine] = useState<{ sp: string; t: string; i: number }>({ sp: '', t: '', i: -1 })
   const [hint, setHint] = useState('')
@@ -139,21 +159,21 @@ export default function Radio() {
      لا تُرى الصفحة فارغةً في لحظة الانتقال بين حلقتين. */
   useEffect(() => {
     let alive = true
-    loadEpisode(pos.item.slug).then((list) => { if (alive) setUtterances(list) })
-    const next = ITEMS[(pos.idx + 1) % ITEMS.length]
-    if (next && next.slug !== pos.item.slug) loadEpisode(next.slug)
+    loadEpisode(pos.item.slug, variant).then((list) => { if (alive) setUtterances(list) })
+    const next = items[(pos.idx + 1) % items.length]
+    if (next && next.slug !== pos.item.slug) loadEpisode(next.slug, variant)
     return () => { alive = false }
-  }, [pos.item.slug, pos.idx])
+  }, [items, pos.item.slug, pos.idx, variant])
 
   /* نبض الصفحة: كل ثانية يُعاد حساب الموضع من ساعة الكويت */
   useEffect(() => {
-    const tick = () => setPos(positionNow())
+    const tick = () => setPos(currentPosition())
     const id = setInterval(tick, 1000)
     const onVisible = () => { if (!document.hidden) tick() }
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('focus', onVisible)
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('focus', onVisible) }
-  }, [])
+  }, [currentPosition])
 
   /* الجملة المنطوقة الآن — تتبع الصوت نفسه لا نبضة الثانية.
      النسخة السابقة كانت تحدّث الموضع مرةً كل ثانية ثم تنتظر 520ms كي تذيب
@@ -166,7 +186,7 @@ export default function Radio() {
     let lastIndex = line.i
 
     const syncLine = () => {
-      const q = positionNow()
+      const q = currentPosition()
       const audio = audioRef.current
       const usingAudio = Boolean(playing && audio && !audio.paused && loadedSlugRef.current === q.item.slug)
       const anchor = usingAudio && audio
@@ -191,7 +211,7 @@ export default function Radio() {
     syncLine()
     const id = window.setInterval(syncLine, playing ? 90 : 250)
     return () => window.clearInterval(id)
-  }, [playing, utterances, pos.item.slug, line.i])
+  }, [currentPosition, playing, utterances, pos.item.slug, line.i])
 
   /* نبضُ الضوء من الكلام نفسه: توقيتات الجُمل تقول متى يُنطق ومتى يُسكت،
      فيتوهّج الضوء مع الكلام ويخفت في الوقفات — صوتٌ مرئيّ بلا تحليل طيف. */
@@ -200,22 +220,22 @@ export default function Radio() {
     const root = document.documentElement
     const tick = () => {
       const audio = audioRef.current
-      const anchorNow = playing && audio && !audio.paused && loadedSlugRef.current === positionNow().item.slug
+      const anchorNow = playing && audio && !audio.paused && loadedSlugRef.current === currentPosition().item.slug
         ? audio.currentTime
-        : (() => { const q = positionNow(); const total = utterances.length ? utterances[utterances.length - 1].e : 1; return (q.into / q.item.dur) * total })()
+        : (() => { const q = currentPosition(); const total = utterances.length ? utterances[utterances.length - 1].e : 1; return (q.into / q.item.dur) * total })()
       let speaking = false
       for (const u of utterances) if (anchorNow >= u.s && anchorNow < u.e - 0.25) { speaking = true; break }
       const t = performance.now() / 1000
       const wave = 0.5 + 0.5 * Math.sin(t * 2.1) * Math.sin(t * 3.7)
       const level = speaking ? 0.16 + wave * 0.1 : 0.06
       root.style.setProperty('--radio-level', level.toFixed(3))
-      const q = positionNow()
+      const q = currentPosition()
       root.style.setProperty('--radio-prog', `${Math.min(100, (q.into / q.item.dur) * 100).toFixed(1)}%`)
       raf = window.requestAnimationFrame(tick)
     }
     raf = window.requestAnimationFrame(tick)
     return () => { window.cancelAnimationFrame(raf); root.style.removeProperty('--radio-level'); root.style.removeProperty('--radio-prog') }
-  }, [playing, utterances])
+  }, [currentPosition, playing, utterances])
 
   /* لون الصوت يتنفّس بمن يتكلّم */
   useEffect(() => {
@@ -227,20 +247,20 @@ export default function Radio() {
   const syncAudio = useCallback(() => {
     const audio = audioRef.current
     if (!audio || !playing) return
-    const { item, into } = positionNow()
+    const { item, into } = currentPosition()
     if (into >= item.dur) { audio.pause(); return } /* فاصلٌ بين حلقتين — ننتظر التالية */
     if (loadedSlugRef.current !== item.slug) {
       loadedSlugRef.current = item.slug
-      audio.src = versionedAudioUrl(`/audio/${item.slug}.dialogue.mp3`)
+      audio.src = versionedAudioUrl(`/audio/${item.slug}${dialogueVariantSuffix(variant)}.mp3`)
       audio.currentTime = 0
-      const seek = () => { audio.currentTime = positionNow().into; audio.play().catch(() => setPlaying(false)) }
+      const seek = () => { audio.currentTime = currentPosition().into; audio.play().catch(() => setPlaying(false)) }
       audio.addEventListener('loadedmetadata', seek, { once: true })
       audio.load()
       return
     }
     if (audio.paused) { audio.play().catch(() => setPlaying(false)); return }
     if (Math.abs(audio.currentTime - into) > 2.5) audio.currentTime = into
-  }, [playing])
+  }, [currentPosition, playing, variant])
 
   useEffect(() => { syncAudio() }, [pos, syncAudio])
 
@@ -249,10 +269,10 @@ export default function Radio() {
     if (!('mediaSession' in navigator)) return
     navigator.mediaSession.metadata = new MediaMetadata({
       title: pos.item.title,
-      artist: 'إذاعة د. أحمد الفيلكاوي',
+      artist: variant === 'kuwaiti' ? 'إذاعة د. أحمد الفيلكاوي · كويتي' : 'إذاعة د. أحمد الفيلكاوي · العربية الفصحى',
       album: 'بثٌّ متزامن بساعة الكويت',
     })
-  }, [pos.item.title])
+  }, [pos.item.title, variant])
 
   const toggle = () => {
     const audio = audioRef.current
@@ -265,10 +285,10 @@ export default function Radio() {
       setPlaying(true)
       setHint('')
       /* التشغيل من إيماءة المستخدم مباشرةً — شرط المتصفحات */
-      const { item, into } = positionNow()
+      const { item, into } = currentPosition()
       loadedSlugRef.current = item.slug
-      audio.src = versionedAudioUrl(`/audio/${item.slug}.dialogue.mp3`)
-      const seek = () => { audio.currentTime = positionNow().into; }
+      audio.src = versionedAudioUrl(`/audio/${item.slug}${dialogueVariantSuffix(variant)}.mp3`)
+      const seek = () => { audio.currentTime = currentPosition().into; }
       audio.addEventListener('loadedmetadata', seek, { once: true })
       audio.play().catch(() => { setPlaying(false); setHint('تعذّر التشغيل — جرّب مرة أخرى') })
     }
@@ -285,14 +305,38 @@ export default function Radio() {
     const rows: { at: string; title: string }[] = []
     let ahead = pos.item.dur - pos.into
     for (let k = 1; k <= 3; k += 1) {
-      const nx = ITEMS[(pos.idx + k) % ITEMS.length]
+      const nx = items[(pos.idx + k) % items.length]
       rows.push({ at: kuwaitClock(new Date(Date.now() + ahead * 1000)), title: nx.title })
       ahead += nx.dur + 8
     }
     return rows
-  }, [pos])
+  }, [items, pos])
 
   const betweenEpisodes = pos.into >= pos.item.dur
+
+  const chooseVariant = (nextVariant: DialogueAudioVariant) => {
+    if (nextVariant === 'kuwaiti' && !KUWAITI_AVAILABLE) return
+    if (nextVariant === variant) return
+    const audio = audioRef.current
+    audio?.pause()
+    loadedSlugRef.current = ''
+    rememberDialogueVariant(nextVariant)
+    setVariant(nextVariant)
+    const nextSchedule = scheduleOf(nextVariant)
+    setPos(positionNow(new Date(), nextSchedule.items, nextSchedule.loop))
+    setUtterances([])
+    setLine({ sp: '', t: '', i: -1 })
+    if (playing) window.setTimeout(() => {
+      const target = audioRef.current
+      if (!target) return
+      const q = positionNow(new Date(), nextSchedule.items, nextSchedule.loop)
+      loadedSlugRef.current = q.item.slug
+      target.src = versionedAudioUrl(`/audio/${q.item.slug}${dialogueVariantSuffix(nextVariant)}.mp3`)
+      const seek = () => { target.currentTime = q.into; target.play().catch(() => setPlaying(false)) }
+      target.addEventListener('loadedmetadata', seek, { once: true })
+      target.load()
+    }, 0)
+  }
 
   return (
     <div className={`radio-root${entered ? ' radio-entered' : ''}`} dir="rtl">
@@ -310,6 +354,12 @@ export default function Radio() {
           <span className="radio-pulse" aria-hidden="true" />
           <span>على الهواء · بساعة الكويت</span>
         </div>
+        {KUWAITI_AVAILABLE && (
+          <div className="radio-variants" aria-label="لغة بث الإذاعة">
+            <button type="button" onClick={() => chooseVariant('standard')} aria-pressed={variant === 'standard'} className={`radio-variant${variant === 'standard' ? ' is-active' : ''}`}>فصحى</button>
+            <button type="button" onClick={() => chooseVariant('kuwaiti')} aria-pressed={variant === 'kuwaiti'} className={`radio-variant${variant === 'kuwaiti' ? ' is-active' : ''}`}>كويتي</button>
+          </div>
+        )}
 
         <div className="radio-now">
           {/* بلا أسماء — اللون وحده يميّز الصوتين */}
@@ -318,7 +368,7 @@ export default function Radio() {
             key={betweenEpisodes ? `gap-${pos.idx}` : `line-${line.i}`}
             className={`radio-line${!betweenEpisodes && !line.t ? ' radio-line--waiting' : ''}`}
           >
-            {betweenEpisodes ? ITEMS[(pos.idx + 1) % ITEMS.length].title : nameWithoutTashkeel(line.t || '…')}
+            {betweenEpisodes ? items[(pos.idx + 1) % items.length].title : nameWithoutTashkeel(line.t || '…')}
           </p>
           <div className="radio-rhythm" aria-hidden="true">{ticks}</div>
           <div className="radio-meta">

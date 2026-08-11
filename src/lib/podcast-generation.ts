@@ -7,6 +7,8 @@ type DialogueProof = {
   turnCount: number
 }
 
+export type PodcastGenerationVariant = 'standard' | 'kuwaiti'
+
 type DispatchResult = {
   ok: boolean
   duplicate?: boolean
@@ -31,10 +33,12 @@ export async function dispatchPodcastGeneration({
   user,
   slug,
   proof,
+  variant = 'standard',
 }: {
   user: TokenUser | null
   slug: string
   proof: DialogueProof
+  variant?: PodcastGenerationVariant
 }): Promise<DispatchResult> {
   if (!user) throw new Error('انتهت جلسة المشرف؛ سجّل الدخول من جديد.')
   const token = await user.getIdToken(true)
@@ -50,6 +54,7 @@ export async function dispatchPodcastGeneration({
       expectedDialogueRevisionSha256: proof.revisionSha256,
       expectedDialogueRevisionId: proof.revisionId,
       expectedTurnCount: proof.turnCount,
+      variant,
     }),
   })
   const payload = await responsePayload(response)
@@ -65,3 +70,35 @@ export async function dispatchPodcastGeneration({
     message: typeof payload.message === 'string' ? payload.message : undefined,
   }
 }
+
+export async function approveKuwaitiPodcastCandidate({
+  user,
+  slug,
+  revisionId,
+}: {
+  user: TokenUser | null
+  slug: string
+  revisionId: string
+}): Promise<DispatchResult> {
+  if (!user) throw new Error('انتهت جلسة المشرف؛ سجّل الدخول من جديد.')
+  const token = await user.getIdToken(true)
+  const response = await fetch('/api/admin/podcast/approve-kuwaiti', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ slug, revisionId }),
+  })
+  const payload = await responsePayload(response)
+  if (!response.ok) {
+    const detail = String(payload.detail || payload.error || '').trim()
+    throw new Error(detail || 'تعذّر اعتماد النسخة الكويتية للنشر.')
+  }
+  return {
+    ok: payload.ok === true,
+    duplicate: payload.duplicate === true,
+    message: typeof payload.message === 'string' ? payload.message : undefined,
+  }
+}
+

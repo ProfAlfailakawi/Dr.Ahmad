@@ -18,6 +18,7 @@ export type AdminTab =
   | 'lab'
   | 'voice'
   | 'manual-dialogue'
+  | 'manual-dialogue-kuwaiti'
   | 'audio-library'
   | 'sound-caravan'
   | 'pronunciation'
@@ -92,6 +93,7 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
           { tab: 'sound-caravan', label: 'قافلة الصوت', note: 'النظرة العامة للمقالات والأصوات الثلاثة' },
           { tab: 'production', label: 'غرفة الإنتاج', note: 'طابور البودكاست من المسودة إلى النشر' },
           { tab: 'manual-dialogue', label: 'الحوار اليدوي', note: 'تحرير الحلقة مداخلةً مداخلة' },
+          { tab: 'manual-dialogue-kuwaiti', label: 'الحوار اليدوي الكويتي', note: '144 نسخة كويتية حضرية مستقلة وجاهزة' },
           { tab: 'audio-library', label: 'مكتبة الصوت', note: 'السماع وإعادة التوليد والحذف' },
         ],
       },

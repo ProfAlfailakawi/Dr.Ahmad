@@ -22,6 +22,7 @@ import { buildSmartQueryPlan, diversifySmartRows, scoreSmartFields, suggestedDom
 import { normalizeSearchQuery, trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, RESULT_FORMS } from '../lib/arabic-count.ts'
 import { buildSearchPostings, searchPostingCandidates } from '../lib/archive-scale.mjs'
+import { dialogueVariantPreference, dialogueVariantSuffix, rememberDialogueVariant, type DialogueAudioVariant } from '../lib/dialogue-variant'
 
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
@@ -322,14 +323,35 @@ export default function Search() {
      الفهرس ثقيل، فلا يُجلب إلا حين يفتح الزائر التبويب فعلاً. وبعد جلبه مرّة
      يبقى في الذاكرة، فتصير النتائج فورية مع كل حرفٍ يكتبه. */
   const player = usePersistentAudio()
+  const [spokenVariant, setSpokenVariant] = useState<DialogueAudioVariant>(() => dialogueVariantPreference())
   const [spokenReady, setSpokenReady] = useState(false)
   const [spokenIndex, setSpokenIndex] = useState<Awaited<ReturnType<typeof loadSpokenIndex>>>([])
+  const [kuwaitiSpokenAvailable, setKuwaitiSpokenAvailable] = useState(false)
+
   useEffect(() => {
-    if (tab !== 'spoken' || spokenReady) return
+    if (tab !== 'spoken') return
     let on = true
-    void loadSpokenIndex().then((index) => { if (on) { setSpokenIndex(index); setSpokenReady(true) } })
+    void loadSpokenIndex('kuwaiti').then((index) => {
+      if (!on) return
+      setKuwaitiSpokenAvailable(index.length > 0)
+      if (!index.length && spokenVariant === 'kuwaiti') setSpokenVariant('standard')
+    })
     return () => { on = false }
-  }, [spokenReady, tab])
+  }, [spokenVariant, tab])
+
+  useEffect(() => {
+    if (tab !== 'spoken') return
+    let on = true
+    setSpokenReady(false)
+    void loadSpokenIndex(spokenVariant).then((index) => { if (on) { setSpokenIndex(index); setSpokenReady(true) } })
+    return () => { on = false }
+  }, [spokenVariant, tab])
+
+  const chooseSpokenVariant = (variant: DialogueAudioVariant) => {
+    if (variant === 'kuwaiti' && !kuwaitiSpokenAvailable) return
+    rememberDialogueVariant(variant)
+    setSpokenVariant(variant)
+  }
 
   const spokenHits: SpokenHit[] = useMemo(
     () => (searchStarted && spokenReady ? searchSpoken(spokenIndex, normalizedQuery) : []),
@@ -400,12 +422,12 @@ export default function Search() {
   /* الاستماع من نتيجة البحث: لا ينتقل الزائر ولا تُفتح صفحة — يشتغل المشغّل
      المقيم أسفل الشاشة عند ثانية الجملة نفسها. */
   const playSpoken = (hit: SpokenHit) => {
-    const src = versionedAudioUrl(`/audio/${hit.slug}.dialogue.mp3`)
+    const src = versionedAudioUrl(`/audio/${hit.slug}${dialogueVariantSuffix(spokenVariant)}.mp3`)
     void player.playTrack({
       id: src,
       src,
       title: hit.title,
-      label: 'مجلس الفكرة',
+      label: spokenVariant === 'kuwaiti' ? 'مجلس الفكرة · كويتي' : 'مجلس الفكرة · العربية الفصحى',
       path: `/articles/${hit.slug}`,
       startAt: hit.startSec,
     })
@@ -815,7 +837,14 @@ export default function Search() {
           {/* نتائج المنطوق: جملةٌ قيلت، وتحتها متحدثها وحلقتها وثانيتها. لا رابط
               ينقل الزائر — النقر يشغّل الصوت عند الجملة نفسها والزائر مكانه. */}
           {searchStarted && tab === 'spoken' && (
-            <ul id="search-results" className="mt-8 scroll-mt-28">
+            <div className="mt-8 scroll-mt-28" id="search-results">
+              {kuwaitiSpokenAvailable && (
+                <div className="mb-3 flex items-center justify-end gap-1.5" aria-label="لهجة الجمل المنطوقة">
+                  <button type="button" onClick={() => chooseSpokenVariant('standard')} aria-pressed={spokenVariant === 'standard'} className={`rounded-full border px-3 py-1.5 text-[.7rem] transition-colors ${spokenVariant === 'standard' ? 'border-accent bg-accent/[.08] text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>العربية الفصحى</button>
+                  <button type="button" onClick={() => chooseSpokenVariant('kuwaiti')} aria-pressed={spokenVariant === 'kuwaiti'} className={`rounded-full border px-3 py-1.5 text-[.7rem] transition-colors ${spokenVariant === 'kuwaiti' ? 'border-accent bg-accent/[.08] text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>كويتي</button>
+                </div>
+              )}
+              <ul>
               {!spokenReady && <li className="py-10 text-[.88rem] text-soft">يفتح المنطوق…</li>}
               {spokenReady && spokenHits.map((hit, index) => (
                 <li key={`${hit.slug}-${hit.startSec}`} className={index === 0 ? '' : 'border-t border-hair'}>
@@ -845,7 +874,8 @@ export default function Search() {
                   {spokenIndex.length ? 'لم تُقل هذه الكلمة في أي حلقة بعد.' : 'الحلقات المسموعة في طريقها.'}
                 </li>
               )}
-            </ul>
+              </ul>
+            </div>
           )}
 
           {/* الرفّ: من قائمة نتائج إلى خطة قراءة مرتّبة — قبل القائمة نفسها،

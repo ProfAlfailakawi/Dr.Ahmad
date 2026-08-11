@@ -136,6 +136,35 @@ html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-l
   55% { transform: scale(1.5); opacity: 0 }
 }
 
+/* الفصحى والكويتي بثّان مستقلان بزمنين مستقلين. لا يظهر المفتاح أصلاً قبل
+   أول حلقة كويتية منشورة، فيبقى المشهد الحالي حرفياً كما هو إلى ذلك الحين. */
+.radio-variants {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+.radio-variant {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--radio-soft) 28%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--radio-soft);
+  padding: 5px 11px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.radio-variant:hover, .radio-variant:focus-visible { border-color: var(--radio-voice); color: var(--radio-voice) }
+.radio-variant:focus-visible { outline: 2px solid var(--radio-voice); outline-offset: 3px }
+.radio-variant.is-active {
+  border-color: color-mix(in srgb, var(--radio-voice) 56%, transparent);
+  background: color-mix(in srgb, var(--radio-voice) 9%, transparent);
+  color: var(--radio-voice);
+}
+
 /* الجملة — بطلة الصفحة */
 .radio-now {
   flex: 1;

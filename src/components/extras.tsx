@@ -582,9 +582,10 @@ export const versionedAudioUrl = (path: string) => {
   return `${raw}${raw.includes('?') ? '&' : '?'}v=${version}`
 }
 
-async function hasDialogueAudio(slug: string, disabled = false) {
+async function hasDialogueAudio(slug: string, disabled = false, variant: 'standard' | 'kuwaiti' = 'standard') {
   if (disabled) return false
-  const path = versionedAudioUrl(`/audio/${slug}.dialogue.mp3`)
+  const suffix = variant === 'kuwaiti' ? '.dialogue-kw.mp3' : '.dialogue.mp3'
+  const path = versionedAudioUrl(`/audio/${slug}${suffix}`)
   try {
     const response = await fetch(path, { method: 'HEAD', cache: 'no-store' })
     const type = (response.headers.get('content-type') || '').toLowerCase()
@@ -619,10 +620,13 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
   // والحوار إضاءة تفسيرية بجانبها لا بديلاً عنها.
   const dialogueListed = !audioControl?.dialogueDisabled && Boolean(voices.dialogue)
   const [dialogueOk, setDialogueOk] = useState(dialogueListed)
+  const [kuwaitiDialogueOk, setKuwaitiDialogueOk] = useState(false)
   useEffect(() => {
     let on = true
     setDialogueOk(dialogueListed)
+    setKuwaitiDialogueOk(false)
     if (!dialogueListed && !audioControl?.dialogueDisabled) hasDialogueAudio(slug).then((ok) => { if (on) setDialogueOk(ok) })
+    if (!audioControl?.dialogueDisabled) hasDialogueAudio(slug, false, 'kuwaiti').then((ok) => { if (on) setKuwaitiDialogueOk(ok) })
     return () => { on = false }
   }, [audioControl?.dialogueDisabled, dialogueListed, slug])
 
@@ -644,7 +648,8 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
   const sources = [
     ...readingSources,
     // نصّ الحلقة يسير مع صوتها: منه المحاور القابلة للنقر والسطر المتوهّج.
-    ...(dialogueOk ? [{ key: 'dialogue', label: 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue.json`), startAt: momentSeconds || undefined }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: kuwaitiDialogueOk ? 'العربية الفصحى' : 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue.json`), startAt: momentSeconds || undefined }] : []),
+    ...(kuwaitiDialogueOk ? [{ key: 'dialogue-kuwaiti', label: 'كويتي', avatar: 'dialogue' as const, src: versionedAudioUrl(`/audio/${slug}.dialogue-kw.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue-kw.json`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)
 

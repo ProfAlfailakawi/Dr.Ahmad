@@ -7,6 +7,7 @@ import { SocialIcon } from './icons'
 import { VoiceFigure, voiceKindForSpeaker } from './VoiceFigure'
 import { arabicCountPhrase, AUDIO_TRIAL_FORMS } from '../lib/arabic-count.ts'
 import { loadAudioPeaks } from '../lib/audio-peaks'
+import { dialogueVariantKey, dialogueVariantPreference, rememberDialogueVariant } from '../lib/dialogue-variant'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (digit) => '0123456789'[+digit])
 const ARTICLE_VOICE_PREFERENCE_KEY = 'article-audio-reading-voice-v1'
@@ -232,6 +233,10 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
         if (remembered && sources.some((item) => item.key === remembered)) return remembered
       } catch { /* التخزين اختياري */ }
     }
+    if (sources.length > 0 && sources.every((item) => item.avatar === 'dialogue')) {
+      const dialoguePreferred = dialogueVariantKey(dialogueVariantPreference())
+      if (sources.some((item) => item.key === dialoguePreferred)) return dialoguePreferred
+    }
     return sources.find((item) => item.avatar === 'man')?.key ?? sources[0]?.key ?? ''
   })
   const [expanded, setExpanded] = useState(false)
@@ -245,6 +250,13 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
 
 
   useEffect(() => {
+    if (!anyActive && sources.length > 0 && sources.every((item) => item.avatar === 'dialogue')) {
+      const preferred = dialogueVariantKey(dialogueVariantPreference())
+      if (preferred !== selectedKey && sources.some((item) => item.key === preferred)) {
+        setSelectedKey(preferred)
+        return
+      }
+    }
     if (sources.some((item) => item.key === selectedKey)) return
     let remembered = ''
     if (typeof window !== 'undefined') {
@@ -254,7 +266,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
       ?? sources.find((item) => item.avatar === 'man')
       ?? sources[0]
     setSelectedKey(fallback?.key ?? '')
-  }, [selectedKey, sources])
+  }, [anyActive, selectedKey, sources])
 
   useEffect(() => {
     if (anyActive) setExpanded(true)
@@ -405,6 +417,8 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
     const next = sources.find((item) => item.key === key)
     if (next?.avatar === 'man' || next?.avatar === 'woman') {
       try { window.localStorage.setItem(ARTICLE_VOICE_PREFERENCE_KEY, key) } catch { /* يبقى الاختيار في الجلسة */ }
+    } else if (next?.avatar === 'dialogue') {
+      rememberDialogueVariant(key === 'dialogue-kuwaiti' ? 'kuwaiti' : 'standard')
     }
     if (next && anyActive) {
       void player.playTrack({
@@ -462,8 +476,8 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
             </button>
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 truncate text-[.78rem] font-semibold text-ink">
-                {source.key !== 'dialogue' && <VoiceFigure kind={(source as { avatar?: 'man' | 'woman' }).avatar === 'woman' ? 'woman' : 'man'} size={15} />}
-                {source.key === 'dialogue' ? 'استمع' : source.label}
+                {!isDialogue && <VoiceFigure kind={(source as { avatar?: 'man' | 'woman' }).avatar === 'woman' ? 'woman' : 'man'} size={15} />}
+                {source.label}
               </p>
               <p className="mt-0.5 truncate text-[.68rem] text-soft">
                 {active

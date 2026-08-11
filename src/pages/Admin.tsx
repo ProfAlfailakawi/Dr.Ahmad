@@ -49,6 +49,7 @@ const TweetStudio = lazy(() => import('../components/admin/TweetStudio').then((m
 const ImageLab = lazy(() => import('../components/admin/ImageLab').then((module) => ({ default: module.ImageLab })))
 const VoiceBakeoffCard = lazy(() => import('../components/admin/VoiceBakeoff').then((module) => ({ default: module.VoiceBakeoffCard })))
 const ManualDialogueEditor = lazy(() => import('../components/admin/ManualDialogueEditor').then((module) => ({ default: module.ManualDialogueEditor })))
+const KuwaitiManualDialogueEditor = lazy(() => import('../components/admin/KuwaitiManualDialogueEditor').then((module) => ({ default: module.KuwaitiManualDialogueEditor })))
 const AudioLibrary = lazy(() => import('../components/admin/AudioLibrary').then((module) => ({ default: module.AudioLibrary })))
 const PronunciationLexicon = lazy(() => import('../components/admin/PronunciationLexicon').then((module) => ({ default: module.PronunciationLexicon })))
 const ReaderPulse = lazy(() => import('../components/admin/ReaderPulse').then((module) => ({ default: module.ReaderPulse })))
@@ -379,6 +380,7 @@ function Panel({ email }: { email: string }) {
     'bot-messages': <BotMessagesPanel />,
     voice: <VoiceBakeoffCard />,
     'manual-dialogue': <ManualDialogueEditor articles={cms.articles} onQueued={() => chooseTab('production')} />,
+    'manual-dialogue-kuwaiti': <KuwaitiManualDialogueEditor articles={cms.articles} />,
     'audio-library': <AudioLibrary articles={cms.articles} onChanged={cms.reload} />,
     'sound-caravan': <SoundCaravanBoard articles={cms.articles} />,
     pronunciation: <PronunciationLexicon />,

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
@@ -29,6 +29,20 @@ const clock = (seconds: number) => {
   return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
 }
 const episodeSrc = (slug: string) => versionedAudioUrl(`/audio/${slug}.dialogue.mp3`)
+const episodeKwSrc = (slug: string) => versionedAudioUrl(`/audio/${slug}.dialogue-kw.mp3`)
+
+async function hasKuwaitiEpisode(slug: string) {
+  const url = episodeKwSrc(slug)
+  try {
+    const response = await fetch(url, { method: 'HEAD', cache: 'no-store' })
+    const type = (response.headers.get('content-type') || '').toLowerCase()
+    if (response.ok && !type.includes('text/html')) return true
+  } catch { /* Range fallback */ }
+  try {
+    const response = await fetch(url, { headers: { Range: 'bytes=0-0' }, cache: 'no-store' })
+    return response.ok && !(response.headers.get('content-type') || '').toLowerCase().includes('text/html')
+  } catch { return false }
+}
 
 /* العصور تُشتقّ من الأرشيف نفسه لا من قائمةٍ مكتوبة بيدنا: نقطة الانقسام هي
    أوسع فجوةٍ بين سنتين متتاليتين. فإن كتب الدكتور بلا انقطاع لم ينقسم شيء. */
@@ -65,6 +79,13 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
   onOpen: (episode: Episode) => void
 }) {
   const reduce = useReducedMotion()
+  const [kuwaitiReady, setKuwaitiReady] = useState(false)
+  useEffect(() => {
+    let alive = true
+    if (!expanded) return () => { alive = false }
+    void hasKuwaitiEpisode(episode.slug).then((ready) => { if (alive) setKuwaitiReady(ready) })
+    return () => { alive = false }
+  }, [episode.slug, expanded])
   return (
     <li
       data-majlis-slug={episode.slug}
@@ -105,15 +126,25 @@ function QuestionRow({ episode, playing, expanded, onOpen }: {
             className="majlis-player-shell overflow-hidden rounded-b-2xl border-x border-b border-accent/[.18] bg-wash/[.35] px-3 pb-5 md:px-4"
           >
             <AudioPlayer
-              sources={[{
-                key: 'dialogue',
-                label: 'استمع',
-                avatar: 'dialogue',
-                src: episodeSrc(episode.slug),
-                transcript: versionedAudioUrl(`/audio/${episode.slug}.dialogue.json`),
-                fallbackTranscript: `/spoken/${encodeURIComponent(episode.slug)}.json`,
-                startFresh: true,
-              }]}
+              sources={[
+                {
+                  key: 'dialogue',
+                  label: kuwaitiReady ? 'العربية الفصحى' : 'استمع',
+                  avatar: 'dialogue',
+                  src: episodeSrc(episode.slug),
+                  transcript: versionedAudioUrl(`/audio/${episode.slug}.dialogue.json`),
+                  fallbackTranscript: `/spoken/${encodeURIComponent(episode.slug)}.json`,
+                  startFresh: true,
+                },
+                ...(kuwaitiReady ? [{
+                  key: 'dialogue-kuwaiti',
+                  label: 'كويتي',
+                  avatar: 'dialogue' as const,
+                  src: episodeKwSrc(episode.slug),
+                  transcript: versionedAudioUrl(`/audio/${episode.slug}.dialogue-kw.json`),
+                  startFresh: true,
+                }] : []),
+              ]}
               title={episode.title}
               controlId={`majlis-${episode.slug}`}
               showChapters
@@ -298,7 +329,7 @@ export default function Listen() {
                 <QuestionRow
                   key={episode.slug}
                   episode={episode}
-                  playing={player.isActive(episodeSrc(episode.slug))}
+                  playing={player.isActive(episodeSrc(episode.slug)) || player.isActive(episodeKwSrc(episode.slug))}
                   expanded={openSlug === episode.slug}
                   onOpen={open}
                 />

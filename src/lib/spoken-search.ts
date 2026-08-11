@@ -7,6 +7,8 @@
    واحدة لمن فتح التبويب فعلاً، ويبقى في الذاكرة بعدها. من لا يبحث في الصوت
    لا يدفع بايتاً واحداً. */
 
+import type { DialogueAudioVariant } from './dialogue-variant'
+
 export type SpokenHit = {
   slug: string
   title: string
@@ -17,28 +19,31 @@ export type SpokenHit = {
 
 type SpokenEpisode = { slug: string; title: string; lines: [number, number, string][] }
 
-let cache: SpokenEpisode[] | null = null
-let loading: Promise<SpokenEpisode[]> | null = null
+const caches: Record<DialogueAudioVariant, SpokenEpisode[] | null> = { standard: null, kuwaiti: null }
+const loadings: Partial<Record<DialogueAudioVariant, Promise<SpokenEpisode[]>>> = {}
 
-export function spokenIndexReady() {
-  return cache !== null
+export function spokenIndexReady(variant: DialogueAudioVariant = 'standard') {
+  return caches[variant] !== null
 }
 
-export async function loadSpokenIndex(): Promise<SpokenEpisode[]> {
-  if (cache) return cache
-  if (!loading) {
-    loading = import('../data/spoken-index.json')
+export async function loadSpokenIndex(variant: DialogueAudioVariant = 'standard'): Promise<SpokenEpisode[]> {
+  if (caches[variant]) return caches[variant] as SpokenEpisode[]
+  if (!loadings[variant]) {
+    const importer = variant === 'kuwaiti'
+      ? import('../data/spoken-index-kw.json')
+      : import('../data/spoken-index.json')
+    loadings[variant] = importer
       .then((module) => {
         const data = (module.default || module) as unknown as { episodes?: SpokenEpisode[] }
-        cache = Array.isArray(data.episodes) ? data.episodes : []
-        return cache
+        caches[variant] = Array.isArray(data.episodes) ? data.episodes : []
+        return caches[variant] as SpokenEpisode[]
       })
       .catch(() => {
-        cache = []
-        return cache
+        caches[variant] = []
+        return caches[variant] as SpokenEpisode[]
       })
   }
-  return loading
+  return loadings[variant] as Promise<SpokenEpisode[]>
 }
 
 export const normalizeSpoken = (value = '') => value

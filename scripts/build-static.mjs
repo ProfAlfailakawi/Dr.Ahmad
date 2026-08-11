@@ -320,13 +320,13 @@ const siteArticlesFeed = existsSync(siteArticlesFeedPath)
 
 /* أعداد وسنوات تُحسب من المحتوى — تتجدّد أوصاف SEO تلقائياً مع أي إضافة */
 const artYears = articles.map((a) => Number(String(a.iso || '').slice(0, 4))).filter((y) => y >= 1990)
-const firstYear = artYears.length ? Math.min(...artYears) : new Date().getFullYear()
+const firstYear = 2015
 const nArticles = Math.floor(articles.length / 10) * 10   // «أكثر من ١٦٠»
 const nBooks = books.length
 const nPapers = papers.length
 
 const STATIC = [
-  { path: '/', title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', desc: `الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، والكاتب والباحث والمستشار التربوي الكويتي. ${nBooks} كتب، ${nPapers} بحثاً محكّماً، وأكثر من ${nArticles} مقالاً فكرياً منذ ${firstYear}.` },
+  { path: '/', title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', desc: `الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، والكاتب والباحث والمستشار الكويتي. ${nBooks} كتب، ${nPapers} بحثاً محكّماً، وأكثر من ${nArticles} مقالاً منذ ${firstYear}.` },
   { path: '/publications', title: 'الكتب المنشورة', desc: `كتب د. أحمد حسين الفيلكاوي في التعليم وتكنولوجيا التعليم والذكاء الاصطناعي والتحول المجتمعي.` },
   { path: '/research', title: 'المساهمات العلمية', desc: `أبحاث د. أحمد حسين الفيلكاوي المحكمة في تكنولوجيا التعليم والتعلم الإلكتروني والذكاء الاصطناعي.` },
   { path: '/articles', title: 'مقالاتي الفكرية', desc: `مقالات د. أحمد حسين الفيلكاوي الفكرية في التعليم والتقنية والمجتمع، منذ ${firstYear}.` },
@@ -725,7 +725,7 @@ function generateBodyHtml(path, lang = 'ar') {
         <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem; text-align: center;" dir="rtl">
           <h1 style="font-size: 3rem; margin-bottom: 1.5rem; font-family: 'El Messiri', serif; font-weight: bold; color: #15161A; line-height: 1.2;">أُبقي الإنسان<br>في قلب الآلة.</h1>
           <p style="font-size: 1.25rem; color: #626A76; line-height: 1.7; margin-bottom: 2.5rem; font-family: 'Tajawal', sans-serif;">
-            الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، الكاتب والباحث والمستشار التربوي الكويتي.
+            الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، الكاتب والباحث والمستشار الكويتي.
           </p>
           <div style="background: rgba(62, 92, 120, 0.05); padding: 2rem; border-radius: 8px; margin-bottom: 3rem; text-align: right; border-right: 4px solid #3E5C78;">
             <h2 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'El Messiri', serif; font-weight: bold; color: #3E5C78;">السيرة الأكاديمية والمهنية</h2>
@@ -1052,7 +1052,7 @@ function generateBodyHtml(path, lang = 'ar') {
         <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
           <h1 style="font-size: 2.5rem; font-family: 'El Messiri', serif; font-weight: bold; margin-bottom: 1.5rem; text-align: right; color: #15161A;">السيرة الأكاديمية والمهنية</h1>
           <p style="font-size: 1.15rem; color: #626A76; line-height: 1.7; margin-bottom: 3rem; text-align: right; font-family: 'Tajawal', sans-serif;">
-            د. أحمد حسين الفيلكاوي - أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، الكاتب والمستشار التربوي.
+            د. أحمد حسين الفيلكاوي - أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، الكاتب والمستشار الكويتي.
           </p>
 
           <section style="margin-bottom: 3rem; text-align: right;">

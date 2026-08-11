@@ -648,7 +648,7 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
   const sources = [
     ...readingSources,
     // نصّ الحلقة يسير مع صوتها: منه المحاور القابلة للنقر والسطر المتوهّج.
-    ...(dialogueOk ? [{ key: 'dialogue', label: kuwaitiDialogueOk ? 'العربية الفصحى' : 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue.json`), startAt: momentSeconds || undefined }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue.json`), startAt: momentSeconds || undefined }] : []),
     ...(kuwaitiDialogueOk ? [{ key: 'dialogue-kuwaiti', label: 'كويتي', avatar: 'dialogue' as const, src: versionedAudioUrl(`/audio/${slug}.dialogue-kw.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue-kw.json`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)

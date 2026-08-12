@@ -24,6 +24,7 @@ import { mergeCanonicalRecords, readCanonicalCms } from './canonical-cms.mjs'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = resolve(ROOT, 'src/data/listen-index.json')
 const SPOKEN_OUT = resolve(ROOT, 'src/data/spoken-index.json')
+const SPOKEN_KW_OUT = resolve(ROOT, 'src/data/spoken-index-kw.json')
 const SELF_TEST = process.argv.includes('--self-test')
 
 const AUDIO_BASE = String(process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
@@ -98,6 +99,35 @@ function staticArticles() {
       iso: match[4],
       cat: match[5] || '',
     }))
+}
+
+async function fetchVariantSpoken(episodes, suffix, spoken) {
+  if (!AUDIO_BASE || !episodes.length) return
+  const queue = [...episodes]
+  const worker = async () => {
+    for (;;) {
+      const episode = queue.shift()
+      if (!episode) return
+      try {
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 12_000)
+        const response = await fetch(`${AUDIO_BASE}/${episode.slug}${suffix}`, { signal: controller.signal })
+        clearTimeout(timer)
+        if (!response.ok) continue
+        const transcript = await response.json()
+        const utterances = Array.isArray(transcript?.utterances) ? transcript.utterances : []
+        if (!utterances.some((item) => typeof item?.startSec === 'number')) continue
+        spoken.push({
+          slug: episode.slug,
+          title: episode.title,
+          lines: utterances
+            .filter((item) => typeof item?.startSec === 'number' && typeof item?.text === 'string')
+            .map((item) => [Number(Number(item.startSec).toFixed(1)), item.speaker === 'نورة' ? 1 : 0, item.text]),
+        })
+      } catch { /* الفهرس المتغيّر يبقى ناقصاً بدل أن يحمل توقيتاً كاذباً. */ }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(6, episodes.length) }, worker))
 }
 
 async function fetchTimings(episodes, spoken) {
@@ -215,6 +245,20 @@ const episodes = buildIndex({ articles, audioMeta, dialogueOf })
 const spoken = []
 await fetchTimings(episodes, spoken)
 
+/* الكويتي هوية صوتية مستقلة: لا نعيد استعمال توقيت الفصحى لأن طول الجمل
+   والوقفات يتغيّر. لا يدخل هذا الفهرس إلا ملف كويتي موثّق على R2، ثم نقرأ
+   Transcript الكويتي نفسه ونأخذ ثوانيه الحقيقية. */
+const kuwaitiEpisodes = articles
+  .map((article) => ({ article, published: audioMeta[`${article.slug}.dialogue-kw.mp3`] }))
+  .filter(({ published }) => published?.validationStatus === 'verified-r2' && Number(published?.durationSeconds) > 0)
+  .map(({ article, published }) => ({
+    slug: article.slug, title: article.title, cat: article.cat || '',
+    durationSec: Number(published.durationSeconds || 0),
+  }))
+  .sort((left, right) => left.slug.localeCompare(right.slug, 'en'))
+const spokenKuwaiti = []
+await fetchVariantSpoken(kuwaitiEpisodes, '.dialogue-kw.json', spokenKuwaiti)
+
 mkdirSync(dirname(OUT), { recursive: true })
 writeFileSync(OUT, `${JSON.stringify({
   schemaVersion: 1,
@@ -227,11 +271,14 @@ writeFileSync(OUT, `${JSON.stringify({
    ويُكتب مضغوطاً بلا مسافات: مصفوفة [ثانية، متحدث، نص] لا كائن بمفاتيح. */
 spoken.sort((left, right) => left.slug.localeCompare(right.slug))
 writeFileSync(SPOKEN_OUT, `${JSON.stringify({ schemaVersion: 1, episodes: spoken })}\n`)
+spokenKuwaiti.sort((left, right) => left.slug.localeCompare(right.slug))
+writeFileSync(SPOKEN_KW_OUT, `${JSON.stringify({ schemaVersion: 1, episodes: spokenKuwaiti })}\n`)
 
 const timed = episodes.filter((episode) => typeof episode.startSec === 'number').length
 const lines = spoken.reduce((total, item) => total + item.lines.length, 0)
 console.log(`✔ مجلس الفكرة: ${episodes.length} حلقة منشورة · ${timed} منها تبدأ عند ثانية السؤال`)
 console.log(`✔ فهرس المنطوق: ${lines} جملة من ${spoken.length} حلقة · ${Math.round(statSync(SPOKEN_OUT).size / 1024)}KB`)
+console.log(`✔ فهرس المنطوق الكويتي: ${spokenKuwaiti.reduce((total, item) => total + item.lines.length, 0)} جملة من ${spokenKuwaiti.length} حلقة`)
 
 /* بصمات الصوت المصغّرة: حزمة الدخول تحتاج ست عشرة خانةً من بصمة كل ملف
    لكسر تخزين المتصفح، لا السجلّ كلّه. تُولَّد هنا فلا تتخلّف عن السجلّ. */
@@ -285,6 +332,37 @@ console.log(`✔ فهرس المنطوق: ${lines} جملة من ${spoken.length
        بعد سكون الصفحة، فلا يُحزم جدولُ تسعِ ساعاتٍ في حزمة الدخول. */
     writeFileSync(resolve(ROOT, 'public/radio-schedule.json'), table)
     console.log(`✔ جدول الإذاعة: ${items.length} حلقة · حلقة اليوم ${(at / 3600).toFixed(1)} ساعة`)
+  }
+}
+
+/* جدول إذاعة كويتي مستقل: المدد ليست هي مدد الفصحى، لذلك لا يجوز إعادة
+   استعمال ساعة الفصحى. يظل الجدول فارغاً إلى أن تُنشر أول حلقة كويتية موثّقة. */
+{
+  const GAP_SECONDS = 8
+  let at = 0
+  const items = kuwaitiEpisodes.map((episode) => {
+    const row = { slug: episode.slug, title: episode.title, cat: episode.cat, at, dur: Math.round(episode.durationSec) }
+    at += row.dur + GAP_SECONDS
+    return row
+  })
+  const table = `${JSON.stringify({ schemaVersion: 1, loop: at, gap: GAP_SECONDS, items }, null, 1)}\n`
+  writeFileSync(resolve(ROOT, 'src/data/radio-schedule-kw.json'), table)
+  writeFileSync(resolve(ROOT, 'public/radio-schedule-kw.json'), table)
+  console.log(`✔ جدول الإذاعة الكويتي: ${items.length} حلقة${items.length ? ` · حلقة اليوم ${(at / 3600).toFixed(1)} ساعة` : ' · ينتظر أول نشر معتمد'}`)
+}
+
+/* ملفات الجمل الكويتية المفردة تُبنى من Transcript الكويتي نفسه، لكي تتبع
+   الإذاعة توقيت اللهجة الحقيقي ولا تستعير توقيت الفصحى. */
+{
+  const dir = resolve(ROOT, 'public/spoken-kw')
+  mkdirSync(dir, { recursive: true })
+  for (const file of (existsSync(dir) ? readdirSync(dir) : [])) {
+    if (file.endsWith('.json') && !spokenKuwaiti.some((item) => `${item.slug}.json` === file)) {
+      rmSync(resolve(dir, file), { force: true })
+    }
+  }
+  for (const item of spokenKuwaiti) {
+    writeFileSync(resolve(dir, `${item.slug}.json`), `${JSON.stringify({ slug: item.slug, lines: item.lines })}\n`)
   }
 }
 

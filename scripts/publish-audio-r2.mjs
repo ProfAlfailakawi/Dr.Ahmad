@@ -61,7 +61,9 @@ function atomicWrite(path, value) {
 function hashFile(file) { return createHash('sha256').update(readFileSync(file)).digest('hex') }
 const podcastState = existsSync(STATE) ? JSON.parse(readFileSync(STATE, 'utf8')) : { done: {} }
 function dialogueIdentity(name) {
-  let match = name.match(/^(.*)\.dialogue\.(mp3|json)$/)
+  let match = name.match(/^(.*)\.dialogue-kw\.(mp3|json)$/)
+  if (match) return { slug: match[1], lang: 'kw', kind: match[2] === 'mp3' ? 'audio' : 'transcript' }
+  match = name.match(/^(.*)\.dialogue\.(mp3|json)$/)
   if (match) return { slug: match[1], lang: 'ar', kind: match[2] === 'mp3' ? 'audio' : 'transcript' }
   match = name.match(/^(.*)\.dialogue-en\.mp3$/)
   if (match) return { slug: match[1], lang: 'en', kind: 'audio' }
@@ -80,8 +82,10 @@ if (SELF_TEST) {
   assert.deepEqual(dialogueIdentity('article.dialogue.mp3'), { slug: 'article', lang: 'ar', kind: 'audio' })
   assert.deepEqual(dialogueIdentity('article.dialogue.json'), { slug: 'article', lang: 'ar', kind: 'transcript' })
   assert.deepEqual(dialogueIdentity('article.dialogue-en.mp3'), { slug: 'article', lang: 'en', kind: 'audio' })
+  assert.deepEqual(dialogueIdentity('article.dialogue-kw.mp3'), { slug: 'article', lang: 'kw', kind: 'audio' })
+  assert.deepEqual(dialogueIdentity('article.dialogue-kw.json'), { slug: 'article', lang: 'kw', kind: 'transcript' })
   assert.equal(dialogueIdentity('article.mp3'), null)
-  console.log('✓ اختبارات ناشر R2 الذري: 4/4')
+  console.log('✓ اختبارات ناشر R2 الذري: 6/6')
   process.exit(0)
 }
 function aws(params, { allowFailure = false, timeout = 120_000 } = {}) {
@@ -112,7 +116,7 @@ function remoteDelete(name) {
 function upload(name, releaseId) {
   const file = resolve(AUDIO, name)
   const isJson = name.endsWith('.json')
-  const isDialogue = /\.dialogue(?:-en)?\.mp3$/i.test(name)
+  const isDialogue = /\.dialogue(?:-en|-kw)?\.mp3$/i.test(name)
   const cacheControl = isJson || isDialogue
     ? 'public, max-age=300, must-revalidate'
     : 'public, max-age=31536000, immutable'
@@ -132,7 +136,7 @@ function durationSeconds(file) {
   return Number.isFinite(seconds) && seconds > 0 ? seconds : null
 }
 function acceptedReadingAudit(name) {
-  if (/\.dialogue(?:-en)?\.mp3$/i.test(name) || !name.endsWith('.mp3')) return null
+  if (/\.dialogue(?:-en|-kw)?\.mp3$/i.test(name) || !name.endsWith('.mp3')) return null
   const voice = name.endsWith('.noura.mp3') ? 'noura' : 'fahed'
   const slug = name.replace(/\.noura\.mp3$/, '').replace(/\.mp3$/, '')
   const file = resolve(READING_AUDITS, `${slug}.${voice}.json`)

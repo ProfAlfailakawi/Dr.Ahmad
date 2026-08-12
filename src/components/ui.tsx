@@ -54,7 +54,7 @@ export function Reveal({ children, delay = 0, className = '' }: { children: Reac
 
   return (
     // الحشوة العمودية تمنع قصّ التنوين والهمزات فوق الحروف وذيولها تحتها، والهامش السالب يلغي أثرها على التخطيط
-    <span ref={ref} className={`-my-[0.3em] block overflow-hidden py-[0.3em] ${className}`}>
+    <span ref={ref} className={`site-reveal -my-[0.3em] block overflow-hidden py-[0.3em] ${className}`}>
       <motion.span
         className="block"
         initial={reduce ? false : { y: '150%' }}

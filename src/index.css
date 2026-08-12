@@ -2248,6 +2248,14 @@ html.site-silent .site-fade-up {
   transform: none !important;
   transition: none !important;
 }
+/* الصمت يشمل انزلاق العناوين أيضاً: كانت الـ«fade-up» تهدأ بينما تظل عناوين
+   الصفحات تنزلق من خلف أقنعتها، فيبقى في وضع الصمت أثرٌ متحرّك وحيد — وهو
+   أضخم عنصر في الصفحة. القناع يبقى (يحرس التنوين فوق الحروف وذيولها تحتها)،
+   والانزلاق وحده يسكن، فيستقرّ العنوان فوراً كما تستقرّ بقية الطبقات. */
+html.site-silent .site-reveal > span {
+  transform: none !important;
+  transition: none !important;
+}
 
 /* أهداف لمس مريحة ومتساوية. */
 @media (pointer: coarse) {

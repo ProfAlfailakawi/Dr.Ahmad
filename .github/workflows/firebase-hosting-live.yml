@@ -149,6 +149,10 @@ jobs:
           check "Dialogue staging self-test" node scripts/stage-dialogues-local.mjs --self-test
           check "Majlis index self-test" node scripts/build-listen-index.mjs --self-test
           check "Dialogue upload self-test" node scripts/upload-dialogues.mjs --self-test
+          # الـ144 الكويتية كانت بلا حارسٍ في النشر: انزلاقٌ لهجيٌّ واحد أو تنوينٌ
+          # ناجٍ كان يمرّ والبناء أخضر. البوابة نفسها موجودة منذ أول يوم؛ ما كان
+          # ينقصها إلا أن تُوصَل.
+          check "Kuwaiti dialogue dialect gate" node scripts/verify-kuwaiti-dialogues.mjs
           check "Article body audit self-test" node scripts/audit-article-bodies.mjs --self-test
 
       - name: TypeScript

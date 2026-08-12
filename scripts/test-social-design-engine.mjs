@@ -40,6 +40,16 @@ const ideaDnaCompiled = ts.transpileModule(ideaDnaSource, {
 assert.equal((ideaDnaCompiled.diagnostics || []).filter((item) => item.category === ts.DiagnosticCategory.Error).length, 0, 'بصمة الفكرة يجب أن تترجم بلا أخطاء')
 const ideaDnaOutput = ideaDnaCompiled.outputText.replace('./dr-ahmad-domain-glossary', glossaryDataUrl)
 const ideaDnaDataUrl = `data:text/javascript;base64,${Buffer.from(ideaDnaOutput).toString('base64')}`
+const designSystemPath = resolve('src/lib/design-system.ts')
+const designSystemSource = await readFile(designSystemPath, 'utf8')
+const designSystemCompiled = ts.transpileModule(designSystemSource, {
+  compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ES2020, strict: true },
+  reportDiagnostics: true,
+  fileName: designSystemPath,
+})
+assert.equal((designSystemCompiled.diagnostics || []).filter((item) => item.category === ts.DiagnosticCategory.Error).length, 0, 'نظام التصميم يجب أن يترجم بلا أخطاء')
+const designSystemDataUrl = `data:text/javascript;base64,${Buffer.from(designSystemCompiled.outputText).toString('base64')}`
+
 const compiled = ts.transpileModule(source, {
   compilerOptions: {
     target: ts.ScriptTarget.ES2020,
@@ -55,6 +65,7 @@ const engineOutput = compiled.outputText
   .replace('./dr-ahmad-domain-glossary', glossaryDataUrl)
   .replace('./idea-dna', ideaDnaDataUrl)
   .replace('./arabic-count.ts', countDataUrl)
+  .replace('./design-system', designSystemDataUrl)
 const engine = await import(`data:text/javascript;base64,${Buffer.from(engineOutput).toString('base64')}`)
 
 const virtualReality = engine.analyzeSocialContent('الواقع الافتراضي')

@@ -2958,7 +2958,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       preferLayout: undefined,
       // بتوجيه الدكتور: المنشور المستقل وحده يحافظ على الخط العربي نفسه
       // في الرؤى كلها؛ التنويع يبقى في التكوين واللون لا في وجه الخط.
-      preferTypography: 'studio-clean',
+      preferTypography: undefined,
       seed: `${request.seed}:independent-art-direction`,
       noveltyThreshold: .42,
     })

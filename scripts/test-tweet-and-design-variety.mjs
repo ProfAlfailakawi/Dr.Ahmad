@@ -34,20 +34,22 @@ const compile = async (path, replacements = {}) => {
 
 const glossaryJson = await readFile(resolve('src/data/dr-ahmad-domain-glossary.json'), 'utf8')
 const glossarySource = (await readFile(resolve('src/lib/dr-ahmad-domain-glossary.ts'), 'utf8'))
-  .replace("import glossaryData from '../data/dr-ahmad-domain-glossary.json'", `const glossaryData = ${glossaryJson}`)
+  .replace(/^import\s+glossaryData\s+from\s+['\"]\.\.\/data\/dr-ahmad-domain-glossary\.json['\"][^\n]*$/m, `const glossaryData = ${glossaryJson}`)
 const glossaryCompiled = ts.transpileModule(glossarySource, {
   compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ES2020, strict: true },
   fileName: resolve('src/lib/dr-ahmad-domain-glossary.ts'),
 })
 const glossaryUrl = `data:text/javascript;base64,${Buffer.from(glossaryCompiled.outputText).toString('base64')}`
 const ideaDnaUrl = await compile('src/lib/idea-dna.ts', { './dr-ahmad-domain-glossary': glossaryUrl })
-const engineUrl = await compile('src/lib/social-design-engine.ts', { './dr-ahmad-domain-glossary': glossaryUrl, './idea-dna': ideaDnaUrl })
+const countUrl = await compile('src/lib/arabic-count.ts')
+const designSystemUrl = await compile('src/lib/design-system.ts')
+const engineUrl = await compile('src/lib/social-design-engine.ts', { './dr-ahmad-domain-glossary': glossaryUrl, './idea-dna': ideaDnaUrl, './design-system': designSystemUrl, './arabic-count.ts': countUrl })
 const engine = await import(engineUrl)
 const rendererUrl = await compile('src/lib/social-design-renderer.ts', { './social-design-engine': engineUrl, './seasons': await compile('src/lib/seasons.ts') })
 const renderer = await import(rendererUrl)
 const echoesUrl = await compile('src/lib/voice-echoes.ts')
 const resonanceUrl = await compile('src/lib/resonance-quotes.ts')
-const forge = await import(await compile('src/lib/tweet-forge.ts', { './dr-ahmad-domain-glossary': glossaryUrl, './voice-echoes': echoesUrl, './resonance-quotes': resonanceUrl }))
+const forge = await import(await compile('src/lib/tweet-forge.ts', { './dr-ahmad-domain-glossary': glossaryUrl, './voice-echoes': echoesUrl, './resonance-quotes': resonanceUrl, './arabic-count.ts': countUrl }))
 
 const guards = []
 const guard = (name) => guards.push(name)
@@ -169,7 +171,7 @@ guard('concept-hero-not-a-person')
 
 /* ═══ ٥ ــ دفتر «ما نُشر» وخطة الأسبوع ═════════════════════════════ */
 
-const mem = await import(await compile('src/lib/tweet-memory.ts', { './tweet-forge': await compile('src/lib/tweet-forge.ts', { './dr-ahmad-domain-glossary': glossaryUrl, './voice-echoes': echoesUrl, './resonance-quotes': resonanceUrl }) }))
+const mem = await import(await compile('src/lib/tweet-memory.ts', { './tweet-forge': await compile('src/lib/tweet-forge.ts', { './dr-ahmad-domain-glossary': glossaryUrl, './voice-echoes': echoesUrl, './resonance-quotes': resonanceUrl, './arabic-count.ts': countUrl }) }))
 
 let ledger = mem.createEmptyTweetMemory()
 const hook = () => ({

@@ -129,11 +129,38 @@ export function describeShape(node, prefix = '', depth = 0, out = []) {
   return out
 }
 
+/* الطبقة المجانية تسمح بعشرة طلباتٍ في الدقيقة لهذا النموذج، وحلقةٌ واحدة
+   تحتاج سبعةً وثلاثين. إطلاقها بلا إيقاعٍ يستنزف الحصة عند المقطع الثالث
+   والعشرين تقريباً — وهي علّة تشغيلة ١٢ أغسطس الثالثة. نافذةٌ منزلقة تحفظ
+   وقت كل طلبٍ فتنتظر بالضبط ما يلزم: لا أبطأ مما يجب ولا أسرع مما يُسمح. */
+const RPM = Math.max(1, Number(process.env.PODCAST_KW_RPM || 9))
+const requestTimes = []
+async function paceRequest() {
+  for (;;) {
+    const now = Date.now()
+    while (requestTimes.length && now - requestTimes[0] >= 60_000) requestTimes.shift()
+    if (requestTimes.length < RPM) { requestTimes.push(now); return }
+    const wait = 60_000 - (now - requestTimes[0]) + 250
+    console.log(`⏳ حصة ${RPM} طلبات/دقيقة: انتظار ${(wait / 1000).toFixed(1)} ثانية`)
+    await sleep(wait)
+  }
+}
+
+/* الخادم يقول متى نعود: «Please retry in 1.875s» أو details[].retryDelay. */
+function retryAfterMs(body, message) {
+  const fromDetails = (body?.error?.details || []).map((item) => item?.retryDelay).find(Boolean)
+  const raw = fromDetails || (String(message || '').match(/retry in ([\d.]+)s/i) || [])[1]
+  const seconds = Number(String(raw || '').replace(/s$/, ''))
+  return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds * 1000) + 750 : 0
+}
+
 async function geminiPcm(prompt) {
   if (!KEY) throw new Error('GEMINI_API_KEY/GOOGLE_API_KEY مفقود')
   let last = null
-  for (let attempt = 1; attempt <= 4; attempt += 1) {
+  let quotaWaitMs = 0
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
     try {
+      await paceRequest()
       const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 90_000)
       const response = await fetch(API, {
         method: 'POST', signal: controller.signal,
@@ -182,9 +209,16 @@ async function geminiPcm(prompt) {
       const message = body?.error?.message || body?.message
         || `HTTP ${response.status} بلا صوت — ${shape}`
       if (response.status !== 429 && response.status < 500) throw new Error(message)
+      /* 429: تُحترم مهلة الخادم نفسها، ويُفرَّغ سجلّ النافذة كي لا يُطلق
+         الطلبُ التالي في دقيقةٍ ما زالت مستهلكة. */
+      if (response.status === 429) {
+        quotaWaitMs = retryAfterMs(body, message) || 15_000 * attempt
+        requestTimes.length = 0
+        console.log(`⏳ الحصة امتلأت — انتظار ${(quotaWaitMs / 1000).toFixed(1)} ثانية (محاولة ${attempt}/6)`)
+      }
       last = new Error(message)
     } catch (error) { last = error }
-    if (attempt < 4) await sleep(1200 * attempt)
+    if (attempt < 6) { await sleep(quotaWaitMs || 1200 * attempt); quotaWaitMs = 0 }
   }
   throw last || new Error('فشل Gemini TTS')
 }
@@ -330,6 +364,13 @@ if (SELF_TEST) {
   assert.equal(extractPcmBase64({ id:'v1_x', status:'completed', usage:{ total_tokens:5 } }), null)
   assert.equal(extractPcmBase64(null), null)
   assert.ok(describeShape({ steps:[{ type:'audio', data:'x' }] }).join('|').includes('steps[0].type'), 'الخريطة تُظهر مسارات الردّ')
+
+  /* حصة الطبقة المجانية: عشرة طلباتٍ في الدقيقة. المنظّم يبقى دونها،
+     ومهلة الخادم تُقرأ من الحقل ومن نصّ الرسالة معاً. */
+  assert.ok(RPM <= 10, `إيقاع ${RPM} طلباً/دقيقة يتجاوز حصة النموذج المجانية`)
+  assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
+  assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
+  assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')
 
   console.log('✓ Gemini Kuwaiti pipeline self-test: chunking + prompt + PCM/WAV + عقد الطلب والاستخراج')
   process.exit(0)

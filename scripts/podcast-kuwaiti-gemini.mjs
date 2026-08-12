@@ -30,6 +30,7 @@ const SELF_TEST = args.includes('--self-test')
 const DRY_RUN = args.includes('--dry-run')
 const slug = (args.find((item) => item.startsWith('--slug=')) || '').slice(7)
 const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg'
+const MUSIC_BRIDGE = process.env.PODCAST_KW_BRIDGE || resolve(ROOT, 'music', 'quiet-echoes.mp3')
 const FFPROBE = process.env.FFPROBE_BIN || 'ffprobe'
 
 const sha256 = (value) => createHash('sha256').update(value).digest('hex')
@@ -48,7 +49,7 @@ function wavHeader(pcmBytes, sampleRate = 24000, channels = 1, bits = 16) {
 }
 function writePcmWav(path, pcm) { writeFileSync(path, Buffer.concat([wavHeader(pcm.length), pcm])) }
 
-function chunkTurns(turns, { maxTurns = 8, maxChars = 4300 } = {}) {
+function chunkTurns(turns, { maxTurns = 1, maxChars = 4300 } = {}) {
   const chunks = []
   let row = []
   let chars = 0
@@ -71,7 +72,7 @@ const directionFor = (type) => ({
 
 function promptFor(turns, index, total) {
   const transcript = turns.map((turn) => `${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${turn.text}`.replace(/:\s+\[/, ': [')).join('\n')
-  return `AUDIO PROFILE\nFahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical.\n\nSCENE\nA quiet modern studio in Kuwait. Two colleagues are discussing an idea for a thoughtful general audience. It must feel like a real relaxed Kuwaiti conversation, not an announcer reading copy.\n\nDIRECTOR'S NOTES\n- Speak in contemporary URBAN KUWAITI ARABIC exactly as written in the transcript.\n- Accent target: educated urban Kuwait City. Soft, modern, clear and broadly understandable across the Arab world.\n- Do NOT drift into Egyptian, Levantine/Syrian, Saudi, Emirati, Bedouin, or Modern Standard Arabic pronunciation patterns.\n- Do not caricature Kuwaiti speech and do not exaggerate slang.\n- Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.\n- Natural turn-taking, subtle reactions, short human pauses, gentle intellectual chemistry. No radio-news cadence, no commercial voice, no melodrama.\n- Keep Fahad and Noura audibly consistent with earlier chunks. This is chunk ${index + 1} of ${total}.\n- Inline English performance tags guide delivery only; never speak the tags aloud.\n\nTRANSCRIPT\n${transcript}`
+  return `AUDIO PROFILE\nFahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical.\n\nSCENE\nA quiet modern studio in Kuwait. Two colleagues are discussing an idea for a thoughtful general audience. It must feel like a real relaxed Kuwaiti conversation, not an announcer reading copy.\n\nDIRECTOR'S NOTES\n- Speak in contemporary URBAN KUWAITI ARABIC exactly as written in the transcript.\n- Accent target: educated urban Kuwait City. Soft, modern, clear and broadly understandable across the Arab world.\n- IMPORTANT: even when a sentence contains an academic term, proper name, quotation, or a word shared with MSA, pronounce the surrounding Arabic with Kuwaiti phonology and Kuwaiti conversational rhythm. Never switch the sentence into a formal MSA reading voice.\n- Treat question marks as Kuwaiti spoken questions; do not add formal interrogative cadence.\n- Do NOT drift into Egyptian, Levantine/Syrian, Saudi, Emirati, Bedouin, or Modern Standard Arabic pronunciation patterns.\n- Do not caricature Kuwaiti speech and do not exaggerate slang.\n- Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.\n- Natural turn-taking, subtle reactions, short human pauses, gentle intellectual chemistry. No radio-news cadence, no commercial voice, no melodrama.\n- Keep Fahad and Noura audibly consistent with earlier chunks. This is chunk ${index + 1} of ${total}.\n- Inline English performance tags guide delivery only; never speak the tags aloud.\n\nTRANSCRIPT\n${transcript}`
 }
 
 async function geminiPcm(prompt) {
@@ -115,32 +116,90 @@ function duration(file) {
   return value
 }
 
-function timelineFor(chunks, durations) {
-  const utterances = []; const chapters = []
-  let global = 0; let turnIndex = 0
-  chunks.forEach((chunk, chunkIndex) => {
-    const seconds = durations[chunkIndex]
-    const weights = chunk.map((turn) => Math.max(1, words(turn.text).length + (turn.pauseAfterMs || 0) / 330))
-    const sum = weights.reduce((a,b)=>a+b,0) || 1
-    let local = 0
-    chapters.push({ index: chunkIndex + 1, title: chunk[0]?.text.slice(0, 52).replace(/[.!؟…،].*$/u,'').trim() || `المقطع ${chunkIndex + 1}`, startSec: Number(global.toFixed(3)), endSec: Number((global + seconds).toFixed(3)) })
-    chunk.forEach((turn, idx) => {
-      const span = seconds * weights[idx] / sum
-      utterances.push({ index: turnIndex++, speaker: turn.speaker === 'male' ? 'فهد' : 'نورة', text: turn.text, startSec: Number((global + local).toFixed(3)), endSec: Number((global + local + span).toFixed(3)) })
-      local += span
-    })
-    global += seconds
+function buildTimedMaster(turns, files, output) {
+  if (turns.length !== files.length) throw new Error('precise timing requires one generated file per dialogue turn')
+  const items = []
+  let cursor = 0.20
+  for (let i = 0; i < turns.length; i += 1) {
+    const turn = turns[i]
+    const file = files[i]
+    const dur = duration(file)
+    if (i > 0) {
+      const previous = items.at(-1)
+      const requestedOverlap = Math.max(0, Math.min(150, Number(turn.overlapMs || 0)))
+      if (requestedOverlap > 0) cursor = Math.max(0, previous.startSec + previous.durationSec - requestedOverlap / 1000)
+      else cursor = previous.startSec + previous.durationSec + Math.max(80, Math.min(1200, Number(turns[i - 1].pauseAfterMs || 320))) / 1000
+      if (turns[i - 1].musicBridgeAfter) cursor = Math.max(cursor, previous.startSec + previous.durationSec + 0.55)
+    }
+    items.push({ index: i, file, startSec: cursor, durationSec: dur, isBridge: false })
+  }
+
+  const bridgeItems = []
+  if (existsSync(MUSIC_BRIDGE)) {
+    let bridgeNo = 0
+    for (let i = 0; i < turns.length - 1; i += 1) {
+      if (!turns[i].musicBridgeAfter) continue
+      const current = items[i]
+      const next = items[i + 1]
+      const bridgeFile = resolve(TMP, `bridge-${String(++bridgeNo).padStart(2, '0')}.wav`)
+      const bridgeDuration = 1.35
+      const bridge = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-i',MUSIC_BRIDGE,'-t',String(bridgeDuration),
+        '-af',`afade=t=in:d=0.20,afade=t=out:st=0.75:d=0.60,volume=0.075`,'-ar','24000','-ac','1','-c:a','pcm_s16le',bridgeFile], { encoding:'utf8' })
+      if (bridge.status !== 0) throw new Error(bridge.stderr || 'فشل إنشاء الجسر الموسيقي')
+      const bridgeStart = Math.max(0, current.startSec + current.durationSec - 0.12)
+      bridgeItems.push({ file: bridgeFile, startSec: bridgeStart, durationSec: bridgeDuration, isBridge: true })
+      // Let the next speaker enter under the tail of the bridge, but never over the previous spoken turn.
+      next.startSec = Math.max(current.startSec + current.durationSec + 0.18, bridgeStart + 0.72)
+      for (let j = i + 2; j < items.length; j += 1) {
+        const prev = items[j - 1]
+        const overlap = Math.max(0, Math.min(150, Number(turns[j].overlapMs || 0)))
+        items[j].startSec = overlap > 0
+          ? Math.max(0, prev.startSec + prev.durationSec - overlap / 1000)
+          : prev.startSec + prev.durationSec + Math.max(80, Math.min(1200, Number(turns[j - 1].pauseAfterMs || 320))) / 1000
+        if (turns[j - 1].musicBridgeAfter) items[j].startSec = Math.max(items[j].startSec, prev.startSec + prev.durationSec + 0.55)
+      }
+    }
+  }
+
+  const all = [...items, ...bridgeItems].sort((a,b)=>a.startSec-b.startSec)
+  const ffInputs = []; const filters = []
+  all.forEach((item, idx) => {
+    ffInputs.push('-i', item.file)
+    const delay = Math.max(0, Math.round(item.startSec * 1000))
+    filters.push(`[${idx}:a]adelay=${delay}|${delay}[a${idx}]`)
   })
-  return { schemaVersion: 2, dialect: PROFILE, generatedBy: MODEL, chapters, utterances, durationSec: Number(global.toFixed(3)) }
+  const mixed = all.map((_,idx)=>`[a${idx}]`).join('')
+  filters.push(`${mixed}amix=inputs=${all.length}:normalize=0[mix]`)
+  filters.push('[mix]highpass=f=55,acompressor=threshold=-18dB:ratio=1.6:attack=18:release=180,loudnorm=I=-16:TP=-1.5:LRA=11[out]')
+  const total = Math.max(...all.map((item)=>item.startSec+item.durationSec), 0) + 0.35
+  const result = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y',...ffInputs,'-filter_complex',filters.join(';'),'-map','[out]','-t',total.toFixed(3),
+    '-ar','48000','-ac','1','-c:a','libmp3lame','-b:a','160k',output], { encoding:'utf8' })
+  if (result.status !== 0) throw new Error(result.stderr || 'فشل precise mastering')
+  return { items, bridges: bridgeItems, durationSec: total }
 }
 
-function master(chunks, output) {
-  const list = resolve(TMP, 'concat.txt')
-  writeFileSync(list, chunks.map((file) => `file '${file.replaceAll("'", "'\\''")}'`).join('\n') + '\n')
-  const result = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i',list,
-    '-af','highpass=f=55,acompressor=threshold=-18dB:ratio=1.6:attack=18:release=180,loudnorm=I=-16:TP=-1.5:LRA=11',
-    '-ar','48000','-ac','1','-c:a','libmp3lame','-b:a','160k',output], { encoding:'utf8' })
-  if (result.status !== 0) throw new Error(result.stderr || 'فشل mastering')
+function timelineFor(turns, assembly) {
+  const utterances = assembly.items.map((item, index) => ({
+    index,
+    speaker: turns[index].speaker === 'male' ? 'فهد' : 'نورة',
+    text: turns[index].text,
+    startSec: Number(item.startSec.toFixed(3)),
+    endSec: Number((item.startSec + item.durationSec).toFixed(3)),
+    pauseAfterMs: Number(turns[index].pauseAfterMs || 0),
+    overlapMs: Number(turns[index].overlapMs || 0),
+    musicBridgeAfter: Boolean(turns[index].musicBridgeAfter),
+  }))
+  const chapters = []
+  turns.forEach((turn,index)=>{
+    if (index === 0 || turns[index - 1].musicBridgeAfter) {
+      chapters.push({ index: chapters.length + 1, title: turn.text.slice(0,52).replace(/[.!؟…،].*$/u,'').trim() || `المقطع ${chapters.length + 1}`,
+        startSec: utterances[index].startSec })
+    }
+  })
+  chapters.forEach((chapter,index)=>{ chapter.endSec = index + 1 < chapters.length ? chapters[index + 1].startSec : Number(assembly.durationSec.toFixed(3)) })
+  return { schemaVersion: 3, dialect: PROFILE, generatedBy: MODEL, preciseTiming: true,
+    chapters, utterances, musicBridges: assembly.bridges.map((b)=>({ startSec:Number(b.startSec.toFixed(3)), durationSec:b.durationSec })),
+    durationSec: Number(assembly.durationSec.toFixed(3)) }
 }
 
 function saveState(slugValue, audioFile, transcriptFile) {
@@ -161,9 +220,9 @@ if (SELF_TEST) {
     { speaker:'male', text:'هني يبين الفرق.', deliveryType:'reflection', pauseAfterMs:300, musicBridgeAfter:false },
   ]
   const chunks = chunkTurns(turns)
-  assert.equal(chunks.length, 2)
-  const prompt = promptFor(chunks[0],0,2)
-  assert.match(prompt,/URBAN KUWAITI ARABIC/); assert.match(prompt,/Fahad:/); assert.match(prompt,/Noura:/)
+  assert.equal(chunks.length, 3)
+  const prompt = promptFor(chunks[0],0,chunks.length)
+  assert.match(prompt,/URBAN KUWAITI ARABIC/); assert.match(prompt,/Fahad:/); assert.match(promptFor(chunks[1],1,chunks.length),/Noura:/)
   const header = wavHeader(100)
   assert.equal(header.toString('ascii',0,4),'RIFF'); assert.equal(header.readUInt32LE(24),24000)
   console.log('✓ Gemini Kuwaiti pipeline self-test: chunking + prompt + PCM/WAV')
@@ -203,8 +262,8 @@ for (let i=0;i<chunks.length;i+=1) {
 }
 const audioFile=resolve(AUDIO,`${slug}.dialogue-kw.mp3`)
 const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
-master(chunkFiles,audioFile)
-const timeline=timelineFor(chunks,durations)
+const assembly=buildTimedMaster(turns,chunkFiles,audioFile)
+const timeline=timelineFor(turns,assembly)
 writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
 const audit={
   schemaVersion:1, slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,

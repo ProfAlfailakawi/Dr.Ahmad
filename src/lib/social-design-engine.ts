@@ -9,6 +9,7 @@
 
 import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
 import { createIdeaDna, type IdeaDna } from './idea-dna'
+import { DARK, LIGHT } from './design-system'
 import { arabicCountPhrase, DISTINCT_DIRECTION_AFTER_PREPOSITION_FORMS, WORD_FORMS } from './arabic-count.ts'
 
 export const SOCIAL_DESIGN_ENGINE_VERSION = '3.2.0'
@@ -962,8 +963,11 @@ export const CTA_PLACEMENTS: Record<CtaPlacementId, CtaPlacement> = {
 }
 
 export const PALETTES: Record<PaletteId, Palette> = {
-  'brand-paper': { id: 'brand-paper', label: 'ورق الهوية', background: '#F8F6F0', surface: '#FFFFFF', ink: '#17191D', muted: '#68717A', accent: '#3E5C78', accentSoft: '#DCE5EC', rule: '#D9D7D0', isDark: false },
-  'brand-night': { id: 'brand-night', label: 'ليل الهوية', background: '#111820', surface: '#192430', ink: '#F7F5EF', muted: '#B8C1C8', accent: '#90AEC7', accentSoft: '#263D51', rule: '#344654', isDark: true },
+  /* لوحتا الهوية تُشتقّان من الموقع نفسه لا تُكتبان بالتقريب — كانت الأرضية
+     ‎#F8F6F0‎ بدل ‎#FCFCFA‎ والحبر ‎#17191D‎ بدل ‎#15161A‎، فيخرج التصميم
+     «بهوية الموقع» قريباً منها لا مطابقاً لها. المصدر: src/lib/design-system.ts */
+  'brand-paper': { id: 'brand-paper', label: 'ورق الهوية', background: LIGHT.canvas, surface: LIGHT.wash, ink: LIGHT.ink, muted: LIGHT.soft, accent: LIGHT.accent, accentSoft: LIGHT.accentSoft, rule: LIGHT.hair, isDark: false },
+  'brand-night': { id: 'brand-night', label: 'ليل الهوية', background: DARK.canvas, surface: DARK.wash, ink: DARK.ink, muted: DARK.soft, accent: DARK.accent, accentSoft: DARK.accentSoft, rule: DARK.hair, isDark: true },
   'ink-white': { id: 'ink-white', label: 'حبر وأبيض', background: '#FFFFFF', surface: '#F7F7F5', ink: '#111214', muted: '#6B6F75', accent: '#24272C', accentSoft: '#E8E9E8', rule: '#DADBDA', isDark: false },
   'scholar-blue': { id: 'scholar-blue', label: 'أزرق الباحث', background: '#EAF0F4', surface: '#F8FBFD', ink: '#152434', muted: '#607180', accent: '#294E6D', accentSoft: '#C8D9E5', rule: '#BFCED8', isDark: false },
   'warm-parchment': { id: 'warm-parchment', label: 'مخطوط دافئ', background: '#F3ECDD', surface: '#FCF9F1', ink: '#201B15', muted: '#756B5C', accent: '#3E5C78', accentSoft: '#DED3BB', rule: '#D4C7AE', isDark: false },

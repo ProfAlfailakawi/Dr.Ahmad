@@ -21,8 +21,9 @@ html {
   --c-wash: 244 245 243;        /* #F4F5F3 */
   --c-hair: rgba(21, 22, 26, 0.09);
 
-  --shadow-soft: 0 22px 44px -26px rgba(21, 22, 26, 0.4);
-  --shadow-deep: 0 36px 64px -36px rgba(21, 22, 26, 0.42);
+  /* سلّم العمق يُعرَّف مرّةً واحدة — وهي الكتلة الأدنى في هذا الملف (قرب
+     --section-space). كان معرَّفاً هنا أيضاً بقيمٍ أعمق، فيدهسه التعريف
+     الثاني صامتاً ولا يُطبَّق قطّ. أُزيل المكرَّر ولم تتغيّر صورةُ الموقع. */
   color-scheme: light;
 }
 
@@ -36,8 +37,7 @@ html.dark {
   --c-wash: 23 26 31;           /* سطح داكن بطبقة مختلفة */
   --c-hair: rgba(234, 234, 231, 0.11);
 
-  --shadow-soft: 0 22px 44px -26px rgba(0, 0, 0, 0.75);
-  --shadow-deep: 0 36px 64px -36px rgba(0, 0, 0, 0.8);
+  /* المكرَّر المدهوس نفسه — التعريف العامل في الأسفل. */
   color-scheme: dark;
 }
 
@@ -1039,6 +1039,9 @@ body:has(.reader-modal-overlay) .floating-actions {
   touch-action: none;
 }
 .my-space-panel {
+  /* لوحةٌ عائمة فوق الصفحة بلا أيّ ارتفاع — كانت تلتصق بما تحتها. سلّم
+     الارتفاع (canvas ← wash ← حدّ ← ظلّ) يبلغ آخر درجته هنا وحدها. */
+  box-shadow: var(--shadow-deep);
   overscroll-behavior: contain;
   touch-action: pan-y;
   scrollbar-width: thin;

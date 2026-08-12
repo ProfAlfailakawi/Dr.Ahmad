@@ -870,7 +870,7 @@ export function Nav() {
           <div className="relative mx-auto flex h-16 max-w-shell items-center justify-between px-6 md:px-11">
             <AnimatePresence initial={false}>
               {pageEcho.compact && pageEcho.title && solid && !open && !searchOpen && (
-                <motion.span key={pageEcho.title} aria-hidden="true" initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -6, filter: 'blur(3px)' }} transition={{ duration: .34, ease: EASE }} className="nav-page-echo pointer-events-none absolute left-1/2 hidden max-w-[42vw] -translate-x-1/2 truncate font-display text-[.82rem] font-semibold text-ink/80 md:block">{pageEcho.title}</motion.span>
+                <motion.span key={pageEcho.title} aria-hidden="true" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: .34, ease: EASE }} className="nav-page-echo pointer-events-none absolute left-1/2 hidden max-w-[42vw] -translate-x-1/2 truncate font-display text-[.82rem] font-semibold text-ink/80 md:block">{pageEcho.title}</motion.span>
               )}
             </AnimatePresence>
             <Link to="/en" aria-label="Ahmad H. Alfailakawi" className={`pwa-owner-logo relative ${ownerPressActive ? 'is-holding' : ''}`} onContextMenu={ownerLogoContextMenu} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
@@ -906,7 +906,7 @@ export function Nav() {
         <div className="relative mx-auto flex h-16 max-w-shell items-center justify-between px-6 md:px-11">
           <AnimatePresence initial={false}>
             {pageEcho.compact && pageEcho.title && solid && !open && !searchOpen && (
-              <motion.span key={pageEcho.title} aria-hidden="true" initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -6, filter: 'blur(3px)' }} transition={{ duration: .34, ease: EASE }} className="nav-page-echo pointer-events-none absolute left-1/2 hidden max-w-[42vw] -translate-x-1/2 truncate font-display text-[.82rem] font-semibold text-ink/80 md:block">{pageEcho.title}</motion.span>
+              <motion.span key={pageEcho.title} aria-hidden="true" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: .34, ease: EASE }} className="nav-page-echo pointer-events-none absolute left-1/2 hidden max-w-[42vw] -translate-x-1/2 truncate font-display text-[.82rem] font-semibold text-ink/80 md:block">{pageEcho.title}</motion.span>
             )}
           </AnimatePresence>
           <Link to="/" aria-label={profile.name} className={`pwa-owner-logo relative ${ownerPressActive ? 'is-holding' : ''}`} onContextMenu={ownerLogoContextMenu} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>

@@ -34,6 +34,8 @@ import {
   type BackgroundPattern,
 } from '../../lib/social-design-renderer'
 import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES } from '../../lib/social-design-engine'
+import { dressPlanInWorld, planWorldId, undressPlanFromWorld, type DesignWorld } from '../../lib/design-worlds'
+import DesignWorldsGallery from './DesignWorldsGallery'
 import { analyzeStudioImageFromFile, analyzeStudioImageFromUrl, extractVisualDnaFromFile, type StudioImagePassport, type VisualDna } from '../../lib/visual-dna'
 import { buildArtDirections, buildCreativeBrief, detectVisualCliches, DEFAULT_CREATIVE_IDENTITY, identityContext, type ArtDirection, type CreativeIdentity } from '../../lib/creative-director'
 import { buildVisualSearchPlan, searchExternalVisualSources, type ExternalVisualResult } from '../../lib/external-visual-sources'
@@ -353,7 +355,8 @@ function selectDistinctTriptych(plans: CompositionPlan[]) {
   const selected: CompositionPlan[] = []
   const heroSource = (plan: CompositionPlan) => plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background')?.src || ''
   const treatment = (plan: CompositionPlan) => plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background')?.imageTreatment || 'none'
-  const surface = (plan: CompositionPlan) => PALETTES[plan.palette]?.isDark ? 'dark' : 'light'
+  /* الكسوة (بصمةً كانت أو عالماً) تتقدم على اللوحة الأم في حكم «داكن/فاتح». */
+  const surface = (plan: CompositionPlan) => (plan.paletteOverride?.isDark ?? PALETTES[plan.palette]?.isDark) ? 'dark' : 'light'
   const ranked = [...plans].sort((left, right) => (right.quality?.score || 0) - (left.quality?.score || 0))
   while (selected.length < 3 && ranked.length) {
     let bestIndex = 0
@@ -948,6 +951,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
      والقادمة حتى تُزال — بلا خدمةٍ خارجية ولا رفعٍ لأي خادم. */
   const [dna, setDna] = useState<VisualDna | null>(null)
   const [dnaBusy, setDnaBusy] = useState(false)
+  /* عالم التصميم الحي: دستورٌ متكامل (جوّ ولون وطباعة وعمق) يكسو الدفعة
+     الحالية والقادمة حتى يُزال — درس دساتير DESIGN.md العالمية. */
+  const [worldDress, setWorldDress] = useState<DesignWorld | null>(null)
   const textRef = useRef<HTMLTextAreaElement | null>(null)
   const commitIdeaNow = () => {
     const latest = textRef.current?.value ?? text
@@ -1443,7 +1449,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const [commandParse, setCommandParse] = useState<StudioCommandParse | null>(null)
   const [speechEdit, setSpeechEdit] = useState('')
 
-  const generate = (overrides: { tone?: ContentTone | 'auto'; density?: DesignDensity | 'auto'; platform?: SocialPlatform | 'auto'; count?: number; preferLayout?: LayoutFamilyId } = {}) => {
+  const generate = (overrides: { tone?: ContentTone | 'auto'; density?: DesignDensity | 'auto'; platform?: SocialPlatform | 'auto'; count?: number; preferLayout?: LayoutFamilyId; world?: DesignWorld } = {}) => {
     if (text.trim().length < 2) {
       setNotice('اكتب كلمة أو فكرة أولاً؛ المحرك لا يصنع تصميماً فارغاً.')
       textRef.current?.focus()
@@ -1470,13 +1476,19 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       tasteProfile,
       ...((overrides.preferLayout || parsed.preferLayout) ? { preferLayout: overrides.preferLayout || parsed.preferLayout } : {}),
       ...(parsed.preferPalette ? { preferPalette: parsed.preferPalette } : {}),
+      /* الولادة من داخل عالمٍ: دستوره يقود العائلة واللوحة والطباعة معاً. */
+      ...(overrides.world ? { preferLayout: overrides.world.layout, preferPalette: overrides.world.palette.id, preferTypography: overrides.world.typography } : {}),
     })
     setGeneration(nextGeneration)
     localStorage.setItem('dr-ahmad-social-design-generated-count', String(Number(localStorage.getItem('dr-ahmad-social-design-generated-count') || 0) + result.generation.requestedCount))
     // البصمة البصرية القائمة تكسو الدفعة الجديدة أيضاً، ويعيد الناقد حكمه عليها.
+    // وعالم التصميم الحي كذلك: الدفعة الجديدة تولد لابسةً جوَّه حتى يُزال.
+    const activeWorld = overrides.world || worldDress
     const finalPlans = dna
       ? result.plans.map((plan) => { const skinned = { ...plan, paletteOverride: dna.palette }; return { ...skinned, quality: critiqueCompositionPlan(skinned, result.plans) } })
-      : result.plans
+      : activeWorld
+        ? result.plans.map((plan) => dressPlanInWorld(plan, activeWorld))
+        : result.plans
     const triptych = selectDistinctTriptych(finalPlans)
     setPlans(triptych)
     setReservePlans(finalPlans.filter((plan) => !triptych.some((item) => item.id === plan.id)))
@@ -1854,6 +1866,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
   /* ═══ البصمة البصرية: استخراج لوحةٍ من صورةٍ ثم كسوةُ كل الاتجاهات بها ═══ */
   const applyDnaOverride = (palette: Palette | null) => {
+    /* البصمة والعالم كسوتان على المقعد نفسه — الأحدث يجلس والأقدم يقوم. */
+    setWorldDress(null)
     setPlans((list) => list.map((plan) => { const skinned = { ...plan, paletteOverride: palette ?? undefined }; return { ...skinned, quality: critiqueCompositionPlan(skinned, list.filter((peer) => peer.id !== plan.id)) } }))
     setSelected((current) => { if (!current) return current; const skinned = { ...current, paletteOverride: palette ?? undefined }; return { ...skinned, quality: critiqueCompositionPlan(skinned) } })
   }
@@ -3906,6 +3920,32 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setStage(next)
   }
 
+  /* ═══ عوالم التصميم: دساتير جمالٍ متكاملة تُطبَّق بضغطة (درس awesome-design-md) ═══ */
+  const dressAllInWorld = (world: DesignWorld) => {
+    if (!approvedPlan) {
+      setNotice(`اكتب فكرتك واضغط «صمّم لي» أولاً — ثم يكسوها عالم «${world.label}».`)
+      return
+    }
+    setDna(null)
+    setWorldDress(world)
+    setPlans((list) => list.map((plan) => dressPlanInWorld(plan, world)))
+    setReservePlans((list) => list.map((plan) => dressPlanInWorld(plan, world)))
+    setSelected(dressPlanInWorld(approvedPlan, world))
+    setNotice(`لبست التصاميم عالم «${world.label}» — ${world.tagline}`)
+  }
+  const clearWorldDress = () => {
+    setWorldDress(null)
+    setPlans((list) => list.map((plan) => undressPlanFromWorld(plan)))
+    setReservePlans((list) => list.map((plan) => undressPlanFromWorld(plan)))
+    setSelected((current) => current ? undressPlanFromWorld(current) : current)
+    setNotice('أُزيلت كسوة العالم وعادت اللوحات المختارة.')
+  }
+  const generateInsideWorld = (world: DesignWorld) => {
+    setDna(null)
+    setWorldDress(world)
+    generate({ world })
+  }
+
   return (
     <div className="grid gap-5">
       <section className={`${card} overflow-hidden`}>
@@ -4220,6 +4260,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={`${primary} rounded-[1.2rem] py-3.5`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>افتح التحرير</button><button type="button" className={`${ghost} rounded-[1.2rem] py-3.5`} onClick={() => handleStageChange('publish')}>انتقل إلى النشر</button><button type="button" className="rounded-[1.2rem] border border-violet-200 bg-violet-50 px-4 py-3 text-[.72rem] font-bold text-violet-700 transition hover:border-violet-400 disabled:opacity-50" onClick={() => void runZeroDecisionMode('generate')} disabled={zeroDecisionBusy}>{zeroDecisionBusy && visualMode === 'generate' ? 'يولّد من الصفر…' : 'أعد التوليد من الصفر'}</button><button type="button" className="rounded-[1.2rem] border border-accent/25 bg-accent/[.055] px-4 py-3 text-[.72rem] font-bold text-accent transition hover:border-accent/50 disabled:opacity-50" onClick={() => void runZeroDecisionMode('ready')} disabled={zeroDecisionBusy}>{zeroDecisionBusy && visualMode === 'ready' ? 'يبحث عن جاهز مختلف…' : 'اختر جاهزاً مختلفاً'}</button></div>
             </div>
           </div> : <div className="grid min-h-[360px] place-items-center rounded-[1.6rem] border border-dashed border-hair bg-canvas p-8 text-center"><div><h3 className="font-display text-2xl font-bold text-ink">لا توجد نتيجة معتمدة بعد.</h3><p className="mt-2 text-[.78rem] text-soft">ارجع إلى تبويب الفكرة واضغط «صمّم لي».</p><button type="button" className={`${primary} mt-4`} onClick={() => setStage('idea')}>العودة إلى الفكرة</button></div></div>}
+          <DesignWorldsGallery
+            activeWorldId={approvedPlan ? planWorldId(approvedPlan) : null}
+            onDress={dressAllInWorld}
+            onGenerate={generateInsideWorld}
+            onClear={clearWorldDress}
+          />
         </section>
       )}
 

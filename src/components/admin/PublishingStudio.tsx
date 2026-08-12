@@ -34,6 +34,8 @@ import {
   type CompositionPlan,
 } from '../../lib/social-design-engine'
 import { downloadCompositionRaster, renderCompositionSvg } from '../../lib/social-design-renderer'
+import { dressPlanInWorld, planWorldId, type DesignWorld } from '../../lib/design-worlds'
+import DesignWorldsGallery from './DesignWorldsGallery'
 import {
   buildOpportunityRadar,
   buildPublicationPassportDraft,
@@ -2642,6 +2644,9 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   const [pulsePreviewCopy, setPulsePreviewCopy] = useState({ idea: '', purpose: '' })
   const [pulseAudience, setPulseAudience] = useState('الجمهور العام')
   const [pulsePack, setPulsePack] = useState<PerfectSocialPack | null>(null)
+  /* عالم التصميم في المنشور المستقل: كسوةٌ للجوّ واللون فقط — وجه الخط العربي
+     النظيف يبقى ثابتاً في الرؤى كلها بتوجيه الدكتور. */
+  const [pulseWorld, setPulseWorld] = useState<DesignWorld | null>(null)
   const [pulseBusy, setPulseBusy] = useState(false)
   const [pulseQueueBusy, setPulseQueueBusy] = useState(false)
   const [pulseEvents, setPulseEvents] = useState<CurrentEvent[]>([])
@@ -2980,6 +2985,10 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     }
     return selected.slice(0, 3)
   }, [pulseDesignResult, pulsePreviewReady])
+  /* الكسوة تُطبَّق بعد بوابة المصمم: الترتيب يُحسم على البنية، والعالم يلبس الفائزين. */
+  const pulseWorldPlans = useMemo(() => pulseWorld
+    ? pulseProfessionalPlans.map((item) => ({ ...item, plan: dressPlanInWorld(item.plan, pulseWorld) }))
+    : pulseProfessionalPlans, [pulseProfessionalPlans, pulseWorld])
   const pulseApprovedCount = pulseProfessionalPlans.filter((item) => item.release.ready).length
   const pulseTemplatePages = usePagedList(pulseTemplateShowcase, 8, `${pulsePreviewCopy.idea}|${pulsePreviewCopy.purpose}`)
 
@@ -4146,8 +4155,14 @@ ${effectivePurpose}`,
               <div className="min-w-0"><span className="block text-[.67rem] text-soft">العبارة المحورية</span><strong className="mt-1 line-clamp-2 block text-[.8rem] leading-relaxed text-ink">{pulseCopyAnalysis.keyPhrase || 'اكتب الفكرة ليقرأها المخرج البصري.'}</strong></div>
             </div>
 
+            <DesignWorldsGallery
+              compact
+              activeWorldId={pulseWorld ? pulseWorld.id : (pulseWorldPlans[0] ? planWorldId(pulseWorldPlans[0].plan) : null)}
+              onDress={(world) => setPulseWorld(world)}
+              onClear={() => setPulseWorld(null)}
+            />
             <div className="mt-5 grid gap-4 md:grid-cols-3" data-professional-standalone-directions="true">
-              {pulseProfessionalPlans.map(({ plan }, index) => <ProfessionalStandaloneDesignCard key={plan.id} plan={plan} rank={index + 1} />)}
+              {pulseWorldPlans.map(({ plan }, index) => <ProfessionalStandaloneDesignCard key={`${plan.id}:${plan.paletteOverride?.label || 'base'}`} plan={plan} rank={index + 1} />)}
             </div>
             <details className="mt-5 rounded-2xl border border-hair bg-canvas">
               <summary className="cursor-pointer list-none px-4 py-3 text-[.7rem] font-semibold text-soft">مختبر التكوينات الكامل — مكتبة القوالب كاملة — 24 تكويناً</summary>

@@ -1599,6 +1599,54 @@ ${podcastEpisodes}
 `, 'utf8')
 
 
+/* ---------- podcast-kw.xml: مجلس الفكرة باللهجة الكويتية — قناة موازية لا تستبدل الفصحى ---------- */
+const kuwaitiPodcastEpisodes = episodeItem(feedArticles, (a) => {
+    const rel = `${a.slug}.dialogue-kw.mp3`
+    const file = resolve(ROOT, 'audio', rel)
+    return { file: existsSync(file) ? file : null, rel }
+  })
+  .map(({ a, rel, asset }) => {
+    const bytes = asset.bytes
+    const duration = asset.duration
+    return `    <item>
+      <title>${esc(a.title)} — كويتي</title>
+      <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
+      <description>${esc(a.excerpt)}</description>
+      <link>${SITE}/articles/${a.slug}</link>
+      <guid isPermaLink="false">podcast-kw-${a.slug}</guid>
+      <pubDate>${new Date(`${a.iso}T08:30:00Z`).toUTCString()}</pubDate>
+      <enclosure url="${audioPublicUrl(rel)}" length="${bytes}" type="audio/mpeg"/>
+      ${duration ? `<itunes:duration>${duration}</itunes:duration>` : ''}
+      <podcast:transcript url="${audioPublicUrl(`${a.slug}.dialogue-kw.json`)}" type="application/json"/>
+      <itunes:image href="${podcastArt}"/>
+      <itunes:explicit>false</itunes:explicit>
+    </item>`
+  }).join('\n')
+
+if (kuwaitiPodcastEpisodes) writeFileSync(resolve(DIST, 'podcast-kw.xml'), `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:podcast="https://podcastindex.org/namespace/1.0">
+  <channel>
+    <title>مجلس الفكرة — كويتي</title>
+    <link>${SITE}/listen</link>
+    <atom:link href="${SITE}/podcast-kw.xml" rel="self" type="application/rss+xml"/>
+    <language>ar-KW</language>
+    <generator>Dr. Ahmad Alfailakawi Kuwaiti Podcast Engine</generator>
+    <copyright>© د. أحمد حسين الفيلكاوي</copyright>
+    <description>النسخة الكويتية الحضرية من مجلس الفكرة: حوار فكري كويتي ناعم وواضح، موازٍ للنسخة العربية ولا يستبدلها.</description>
+    <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
+    <itunes:type>episodic</itunes:type>
+    <itunes:owner><itunes:name>د. أحمد حسين الفيلكاوي</itunes:name><itunes:email>ah_f@hotmail.com</itunes:email></itunes:owner>
+    <itunes:image href="${podcastArt}"/>
+    <itunes:category text="Education"/>
+    <itunes:category text="Society &amp; Culture"/>
+    <itunes:explicit>false</itunes:explicit>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+${kuwaitiPodcastEpisodes}
+  </channel>
+</rss>
+`, 'utf8')
+
+
 /* ---------- podcast-en.xml: القناة الإنجليزية المستقلة (حوار Andrew وAva) ---------- */
 const enEpisodes = episodeItem(articles, (a) => {
     const f = resolve(ROOT, 'audio', `${a.slug}.dialogue-en.mp3`)

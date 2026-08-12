@@ -481,8 +481,8 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                               {latestIsAsk && latestAsk ? (
                                 <motion.div
                                   key={latestAsk.id}
-                                  initial={freshAskId === latestAsk.id ? { opacity: 0, y: 22, scale: .965, filter: "blur(7px)" } : false}
-                                  animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                                  initial={freshAskId === latestAsk.id ? { opacity: 0, y: 22, scale: .965 } : false}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
                                   transition={{ duration: .58, ease: EASE }}
                                   className={freshAskId === latestAsk.id ? "ask-memory-arrival" : ""}
                                 >

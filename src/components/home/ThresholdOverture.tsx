@@ -398,7 +398,10 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
           aria-label="تقديم الموقع"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.42, ease: EASE } }}
+          /* التسليم يكون سريعاً لأن الطبقة معتمة (‎--night‎): كل مِلّي في هذا
+             التلاشي هو مِلّي يرى فيه الزائر التقديمَ والصفحةَ معاً — شبحاً
+             مزدوجاً. ٠٫٢٦ تكفي لتبقى الحركة ناعمة ولا يظهر التراكب. */
+          exit={{ opacity: 0, transition: { duration: 0.26, ease: EASE } }}
           transition={{ duration: 0.55, ease: EASE }}
         >
           <style>{THEATRE_CSS}</style>
@@ -504,10 +507,13 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
                 <motion.div
                   key={current.id}
                   className="tho-scene"
-                  initial={{ opacity: 0, y: 22, filter: 'blur(6px)' }}
-                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, y: -14, filter: 'blur(6px)', transition: { duration: 0.28, ease: EASE } }}
-                  transition={{ duration: 0.6, ease: EASE }}
+                  /* بلا تمويه: التمويه يُعيد رسم الطبقة كلَّ إطار، فيبقى العنوان
+                     غير مقروءٍ طوال الانتقال ويتعثّر على الأجهزة المتوسطة.
+                     الإزاحة والشفافية وحدهما تعطيان الأثر نفسه بلا كلفة. */
+                  initial={{ opacity: 0, y: 22 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -14, transition: { duration: 0.24, ease: EASE } }}
+                  transition={{ duration: 0.52, ease: EASE }}
                 >
                   <div className="tho-frame is-live">{current.visual}</div>
                   <p className="tho-kicker">{current.kicker}</p>

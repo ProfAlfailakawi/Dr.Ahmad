@@ -40,8 +40,21 @@ export function NextStep({
       if (next) setStep(next)
     }
     decide(false)
-    void loadBookPassages().then(() => decide(true))
-    return () => { on = false }
+    /* الخطوة تظهر فوراً من الاقتباسات المقيسة. ترقيتها من متون الكتب تحسينٌ
+       لسطرٍ واحد في ذيل الصفحة — فلا تُزاحم قراءة المقال. كانت تُجلب فور
+       التركيب فتحمّل كلَّ قارئ مقالٍ متونَ الكتب؛ الآن تنتظر خمول المتصفّح. */
+    const win = window as unknown as {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (handle: number) => void
+    }
+    const upgrade = () => { void loadBookPassages().then(() => decide(true)) }
+    const idle = win.requestIdleCallback
+    const handle = idle ? idle.call(window, upgrade, { timeout: 4_000 }) : window.setTimeout(upgrade, 2_000)
+    return () => {
+      on = false
+      if (idle && win.cancelIdleCallback) win.cancelIdleCallback.call(window, handle)
+      else window.clearTimeout(handle)
+    }
   }, [articles, excludeKey, from, media, papers, seed])
 
   if (!step) return null

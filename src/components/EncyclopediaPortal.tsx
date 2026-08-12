@@ -553,6 +553,29 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     }
   }, [book.slug])
 
+  /* متن الموسوعة يُهيَّأ في وقت الخمول بعد أوّل رسم — لا عند أوّل حرفٍ يكتبه
+     القارئ. الشريحة ١٢٧ ك.ب، وأوّل مسحٍ يبني خرائط المواضع؛ إن دُفع ثمنهما
+     وقت الانشغال جمّدا الكتابة، وإن دُفعا في الخمول صار البحث فورياً. */
+  useEffect(() => {
+    let active = true
+    const win = window as unknown as {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (handle: number) => void
+    }
+    const warm = () => {
+      void import('../lib/encyclopedia-knowledge-search')
+        .then((module) => (active ? module.primeEncyclopediaPassages() : false))
+        .catch(() => undefined)
+    }
+    const idle = win.requestIdleCallback
+    const handle = idle ? idle.call(window, warm, { timeout: 2_500 }) : window.setTimeout(warm, 1_200)
+    return () => {
+      active = false
+      if (idle && win.cancelIdleCallback) win.cancelIdleCallback.call(window, handle)
+      else window.clearTimeout(handle)
+    }
+  }, [])
+
   const updateDeepLink = (changes: Record<string, string | number | null>, mode: 'push' | 'replace' = 'replace') => {
     const url = new URL(window.location.href)
     for (const [key, value] of Object.entries(changes)) {
@@ -717,14 +740,20 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     let active = true
     setKnowledgePending(true)
     const timer = window.setTimeout(() => {
-      void import('../lib/encyclopedia-knowledge-search').then((module) => {
+      void import('../lib/encyclopedia-knowledge-search').then(async (module) => {
+        if (!active) return
+        /* المتن يصل بشريحة الموسوعة وحدها؛ ننتظره قبل أوّل بحث فقط، وبعدها
+           يكون في الذاكرة فيصير البحث فورياً. */
+        await module.primeEncyclopediaPassages()
         if (!active) return
         setKnowledgeResults(module.searchEncyclopediaKnowledge(cleanQuery, { passageLimit: 40, slideLimit: 40, context: knowledgeContext }))
         setKnowledgePending(false)
       }).catch(() => {
         if (active) setKnowledgePending(false)
       })
-    }, 90)
+    /* ٩٠ مِلّي كانت أقصر من البحث نفسه، فكان كلُّ حرفٍ يُطلق مسحاً كاملاً
+       ويُزاحم سابقه. ٢٤٠ تنتظر انتهاء الكلمة، فيُمسح المتن مرّةً لا خمساً. */
+    }, 240)
     return () => {
       active = false
       window.clearTimeout(timer)

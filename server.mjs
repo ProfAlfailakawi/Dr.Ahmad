@@ -5689,23 +5689,38 @@ export function createRequestHandler({
         throw new HttpError(400, 'بيانات قفل الحوار غير مكتملة')
       }
 
+      /* ═══ نصف العقد كان منشوراً ═══
+         اللوحة الكويتية تكتب في podcast_dialogues_kw و podcast_production_kw
+         وترسل variant:'kuwaiti'. وهذا الخادم لم يكن يقرأ `variant` إطلاقاً،
+         فيفتش في مجموعتَي الفصحى فلا يجد شيئاً ويردّ ٤٠٩ «قرار الإرسال للتوليد
+         غير موجود» — فتبقى الحلقة التجريبية «بانتظار التوليد» أبداً مهما كان
+         مفتاح Gemini سليماً. ومع ذلك: ورشة الكويتية تُلزم `revision_id` أيضاً،
+         وكان الخادم يرسل `slugs` وحدها فتُرفض بـ٤٢٢ لو وصلت. الاثنان هنا. */
+      const variant = boundedString(body?.variant, 20) === 'kuwaiti' ? 'kuwaiti' : 'standard'
+      const dialogueCollection = variant === 'kuwaiti' ? 'podcast_dialogues_kw' : 'podcast_dialogues'
+      const productionCollection = variant === 'kuwaiti' ? 'podcast_production_kw' : 'podcast_production'
+
       const { db, FieldValue } = await getAdminFirestore()
       const [dialogueSnapshot, productionSnapshot] = await Promise.all([
-        db.collection('podcast_dialogues').doc(slug).get(),
-        db.collection('podcast_production').doc(slug).get(),
+        db.collection(dialogueCollection).doc(slug).get(),
+        db.collection(productionCollection).doc(slug).get(),
       ])
       if (!dialogueSnapshot.exists) throw new HttpError(409, 'الحوار المرفوع غير موجود')
       if (!productionSnapshot.exists) throw new HttpError(409, 'قرار الإرسال للتوليد غير موجود')
       const dialogue = dialogueSnapshot.data() || {}
       const production = productionSnapshot.data() || {}
-      const exactLock = dialogue.source === 'admin-upload'
+      /* المحرّر الكويتي يختم مصدره «admin-upload-kuwaiti» تمييزاً له عن الفصحى؛
+         وكان القفل يوجب «admin-upload» حرفياً فيرفض الكويتية حتى بعد إصلاح
+         المجموعات. لكلِّ سجلٍّ ختمُه. */
+      const expectedSource = variant === 'kuwaiti' ? 'admin-upload-kuwaiti' : 'admin-upload'
+      const exactLock = dialogue.source === expectedSource
         && Number(dialogue.schemaVersion) === 2
         && dialogue.contentSha256 === contentSha256
         && dialogue.revisionSha256 === revisionSha256
         && dialogue.revisionId === revisionId
         && Number(dialogue.turnCount) === turnCount
         && production.status === 'queued'
-        && production.sourceCollection === 'podcast_dialogues'
+        && production.sourceCollection === dialogueCollection
         && production.expectedDialogueContentSha256 === contentSha256
         && production.expectedDialogueRevisionSha256 === revisionSha256
         && production.expectedDialogueRevisionId === revisionId
@@ -5727,7 +5742,11 @@ export function createRequestHandler({
 
       const githubToken = String(process.env.GITHUB_WORKFLOW_TOKEN || process.env.GITHUB_ACTIONS_TOKEN || '').trim()
       const githubRepository = String(process.env.PODCAST_GITHUB_REPOSITORY || 'ProfAlfailakawi/Dr.Ahmad').trim()
-      const githubWorkflow = String(process.env.PODCAST_GITHUB_WORKFLOW || 'podcast-pilot-release.yml').trim()
+      /* لكل سجلٍّ ورشته: الفصحى لها podcast-pilot-release، والكويتية لها
+         podcast-kuwaiti-pilot — وهي التي تُلزم revision_id أيضاً. */
+      const githubWorkflow = variant === 'kuwaiti'
+        ? String(process.env.PODCAST_KUWAITI_GITHUB_WORKFLOW || 'podcast-kuwaiti-pilot.yml').trim()
+        : String(process.env.PODCAST_GITHUB_WORKFLOW || 'podcast-pilot-release.yml').trim()
       const githubRef = String(process.env.PODCAST_GITHUB_REF || 'main').trim()
       if (!githubToken) throw new HttpError(503, 'الربط الآلي مع GitHub غير مفعّل على الخادم: أضف GITHUB_WORKFLOW_TOKEN مرة واحدة إلى خدمة dr-api')
       if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(githubRepository)
@@ -5736,7 +5755,7 @@ export function createRequestHandler({
         throw new HttpError(503, 'إعدادات مستودع GitHub على الخادم غير صالحة')
       }
 
-      const productionRef = db.collection('podcast_production').doc(slug)
+      const productionRef = db.collection(productionCollection).doc(slug)
       await productionRef.set({
         dispatchState: 'requested',
         dispatchedDialogueRevisionId: revisionId,
@@ -5758,7 +5777,7 @@ export function createRequestHandler({
               'user-agent': 'dr-alfailakawi-podcast-admin/1.0',
               'x-github-api-version': '2026-03-10',
             },
-            body: JSON.stringify({ ref: githubRef, inputs: { slugs: slug } }),
+            body: JSON.stringify({ ref: githubRef, inputs: variant === 'kuwaiti' ? { slugs: slug, revision_id: revisionId } : { slugs: slug } }),
           }, 15_000)
       } catch (error) {
         await productionRef.set({

@@ -4,7 +4,7 @@ import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { createIdeaDna } from '../lib/idea-dna'
 import { ideaWords } from '../lib/idea-life'
 import { bookArchiveDate, buildBookWorldTimeline } from '../lib/book-world-timeline'
-import { bookPassageAtPage, bookQuotes, loadBookPassages, quotesForConcept, searchBookPassages, type BookQuote, type BookQuoteMatch } from '../lib/book-quotes'
+import { bookPassageAtPage, bookQuotes, loadBookPassagesFor, quotesForConcept, searchBookPassages, type BookQuote, type BookQuoteMatch } from '../lib/book-quotes'
 import { QuoteCite } from './QuoteCite'
 import { QuoteImage } from './QuoteImage'
 import { RESONANCE_FLOOR, loadPassageResonance, recordPassageHighlight } from '../lib/passage-resonance'
@@ -207,11 +207,11 @@ export function BookWorld({
     setAsked(cleanQuestion)
     setAskOpen(true)
     if (askReady) return
-    void loadBookPassages().then(() => setAskReady(true))
+    void loadBookPassagesFor(book.slug).then(() => setAskReady(true))
   }
   const openTerrainPage = (page: number) => {
     setAskOpen(true)
-    void loadBookPassages().then(() => {
+    void loadBookPassagesFor(book.slug).then(() => {
       setAskReady(true)
       setTerrainQuote(bookPassageAtPage(book.slug, page))
       window.history.replaceState(null, '', `${location.pathname}${location.search}#book-page-${page}`)
@@ -268,7 +268,7 @@ export function BookWorld({
     const terrainPage = Number(hash.match(/^book-page-(\d+)$/)?.[1] || 0)
     if (terrainPage > 0) {
       setAskOpen(true)
-      void loadBookPassages().then(() => {
+      void loadBookPassagesFor(book.slug).then(() => {
         setAskReady(true)
         setTerrainQuote(bookPassageAtPage(book.slug, terrainPage))
         window.requestAnimationFrame(() => document.getElementById('ask-book-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }))

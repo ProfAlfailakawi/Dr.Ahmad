@@ -75,13 +75,58 @@ function promptFor(turns, index, total) {
   return `AUDIO PROFILE\nFahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical.\n\nSCENE\nA quiet modern studio in Kuwait. Two colleagues are discussing an idea for a thoughtful general audience. It must feel like a real relaxed Kuwaiti conversation, not an announcer reading copy.\n\nDIRECTOR'S NOTES\n- Speak in contemporary URBAN KUWAITI ARABIC exactly as written in the transcript.\n- Accent target: educated urban Kuwait City. Soft, modern, clear and broadly understandable across the Arab world.\n- IMPORTANT: even when a sentence contains an academic term, proper name, quotation, or a word shared with MSA, pronounce the surrounding Arabic with Kuwaiti phonology and Kuwaiti conversational rhythm. Never switch the sentence into a formal MSA reading voice.\n- Treat question marks as Kuwaiti spoken questions; do not add formal interrogative cadence.\n- Do NOT drift into Egyptian, Levantine/Syrian, Saudi, Emirati, Bedouin, or Modern Standard Arabic pronunciation patterns.\n- Do not caricature Kuwaiti speech and do not exaggerate slang.\n- Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.\n- Natural turn-taking, subtle reactions, short human pauses, gentle intellectual chemistry. No radio-news cadence, no commercial voice, no melodrama.\n- Keep Fahad and Noura audibly consistent with earlier chunks. This is chunk ${index + 1} of ${total}.\n- Inline English performance tags guide delivery only; never speak the tags aloud.\n\nTRANSCRIPT\n${transcript}`
 }
 
-/* الصوت قد يعود في غلافٍ أعلى (interaction) بحسب مراجعة الواجهة؛ نقبل الشكلين
-   بدل أن نسقط بصمتٍ لو غيّرت جوجل الغلاف. */
+/* `output_audio` خاصيةُ راحةٍ في مكتبات Gemini، لا حقلٌ في ردّ REST الخام:
+   المكتبة تصنعها من «آخر كتلة صوت» داخل `steps`. ولأننا نستدعي REST مباشرةً
+   وجب أن نحفر في steps بأنفسنا — وهذه علّة تشغيلتَي ١٢ أغسطس ٢٠٢٦: الردّ كان
+   ناجحاً (status=completed وusage يعلن رموزاً مولَّدة) والصوت موجود، لكن
+   السكربت كان يبحث عنه في حقلٍ لا وجود له فيسقط. */
+const isBase64Audio = (value) => typeof value === 'string' && value.length > 512 && /^[A-Za-z0-9+/\r\n]*={0,2}$/.test(value)
+
+export function collectAudioBlocks(body) {
+  const blocks = []
+  const seen = new Set()
+  const walk = (node, key, inAudio) => {
+    if (!node || typeof node !== 'object') return
+    if (seen.has(node)) return
+    seen.add(node)
+    if (Array.isArray(node)) { for (const item of node) walk(item, key, inAudio) ; return }
+    const audioHere = inAudio || node.type === 'audio' || node.modality === 'audio'
+      || String(node.mime_type || node.mimeType || '').startsWith('audio/')
+    for (const [childKey, value] of Object.entries(node)) {
+      if (isBase64Audio(value) && (audioHere || /^(data|audio|b64_audio|audio_data)$/.test(childKey))) blocks.push(value)
+      else walk(value, childKey, audioHere)
+    }
+  }
+  walk(body, '', false)
+  return blocks
+}
+
 export function extractPcmBase64(body) {
-  return body?.output_audio?.data
-    || body?.interaction?.output_audio?.data
-    || body?.response?.output_audio?.data
-    || null
+  const direct = body?.output_audio?.data || body?.interaction?.output_audio?.data || body?.response?.output_audio?.data
+  if (isBase64Audio(direct)) return direct
+  const blocks = collectAudioBlocks(body)
+  /* «آخر كتلة» هي دلالة المكتبة نفسها حين تتعدّد الكتل. */
+  return blocks.length ? blocks[blocks.length - 1] : null
+}
+
+/* خريطة مسارات الردّ بلا حمولته: لو تغيّر الغلاف مرةً أخرى ظهر الشكل كاملاً
+   في السجل بدل أن نعود إلى تخمينٍ ثالث. */
+export function describeShape(node, prefix = '', depth = 0, out = []) {
+  if (depth > 4 || out.length > 60) return out
+  if (Array.isArray(node)) {
+    out.push(`${prefix}[] (${node.length})`)
+    if (node.length) describeShape(node[0], `${prefix}[0]`, depth + 1, out)
+    return out
+  }
+  if (node && typeof node === 'object') {
+    for (const [key, value] of Object.entries(node)) {
+      const path = prefix ? `${prefix}.${key}` : key
+      if (typeof value === 'string') out.push(`${path}:string(${value.length})`)
+      else if (value === null || typeof value !== 'object') out.push(`${path}:${typeof value}`)
+      else describeShape(value, path, depth + 1, out)
+    }
+  }
+  return out
 }
 
 async function geminiPcm(prompt) {
@@ -112,18 +157,30 @@ async function geminiPcm(prompt) {
       const raw = await response.text()
       let body = null
       try { body = JSON.parse(raw) } catch { /* غلاف غير JSON: يُشخَّص أدناه */ }
-      const data = extractPcmBase64(body)
+      let data = extractPcmBase64(body)
+      /* لو عاد الردّ إحالةً (معرّف تفاعلٍ مكتمل بلا حمولة) سُحب التفاعل نفسه
+         مرّةً واحدة؛ أرخص من إسقاط التوليد كلّه على شكل غلافٍ متغيّر. */
+      if (response.ok && !data && body?.id && body?.status === 'completed') {
+        const followUp = await fetch(`${API}/${encodeURIComponent(body.id)}`, {
+          headers: { 'x-goog-api-key': KEY },
+        }).catch(() => null)
+        if (followUp?.ok) {
+          const followBody = await followUp.json().catch(() => null)
+          data = extractPcmBase64(followBody)
+          if (data) console.log('ℹ️ الصوت جاء من سحب التفاعل بمعرّفه لا من ردّ الطلب')
+        }
+      }
       if (response.ok && data) {
         const pcm = Buffer.from(data, 'base64')
         if (pcm.length < 4000) throw new Error('Gemini أعاد صوتاً قصيراً/فارغاً')
         return pcm
       }
-      /* الرسالة تحمل ما وصل فعلاً: بلا هذا كانت تُختصر إلى «HTTP 200». */
+      /* الرسالة تحمل خريطة الردّ كاملة: بلا هذا كانت تُختصر إلى «HTTP 200». */
       const shape = body && typeof body === 'object'
-        ? `مفاتيح الرد: ${Object.keys(body).join('، ') || '(فارغ)'}`
-        : `رد غير JSON (${raw.length} حرفاً)`
+        ? `شكل الردّ: ${describeShape(body).join(' | ')}`
+        : `ردّ غير JSON (${raw.length} حرفاً): ${raw.slice(0, 200).replace(/\s+/g, ' ')}`
       const message = body?.error?.message || body?.message
-        || `HTTP ${response.status} بلا output_audio — ${shape} · ${raw.slice(0, 240).replace(/\s+/g, ' ')}`
+        || `HTTP ${response.status} بلا صوت — ${shape}`
       if (response.status !== 429 && response.status < 500) throw new Error(message)
       last = new Error(message)
     } catch (error) { last = error }
@@ -256,10 +313,23 @@ if (SELF_TEST) {
   const requestBlock = source.slice(source.indexOf('const response = await fetch(API'), source.indexOf('const raw = await response.text()'))
   /* يُطابَق شكل الترويسة لا اسمها، وإلا لأمسك الحارسُ شرحه المكتوب أعلاه. */
   assert.ok(!/['"]Api-Revision['"]\s*:/.test(requestBlock), 'ترويسة Api-Revision للبثّ وحده؛ وجودها على طلبٍ غير متدفّق يعيد 200 بلا صوت')
-  assert.equal(extractPcmBase64({ output_audio:{ data:'AAAA' } }),'AAAA')
-  assert.equal(extractPcmBase64({ interaction:{ output_audio:{ data:'BBBB' } } }),'BBBB')
-  assert.equal(extractPcmBase64({ candidates:[] }), null)
+  const b64 = (seed) => seed.repeat(Math.ceil(600 / seed.length)).slice(0, 600)
+  const A = b64('QUJD'), B = b64('WFla'), C = b64('MTIz')
+  assert.equal(extractPcmBase64({ output_audio:{ data:A } }), A, 'غلاف المكتبة إن وُجد')
+  assert.equal(extractPcmBase64({ interaction:{ output_audio:{ data:B } } }), B)
+  /* الشكل الحقيقي الذي أعادته الواجهة في تشغيلة ١٢ أغسطس: الصوت داخل steps. */
+  assert.equal(extractPcmBase64({
+    id:'v1_x', object:'interaction', status:'completed', model:MODEL,
+    usage:{ total_tokens:763 },
+    steps:[{ type:'audio', data:C }],
+  }), C, 'الصوت داخل steps هو شكل REST الخام')
+  assert.equal(extractPcmBase64({ steps:[{ content:[{ type:'audio', audio:{ data:C } }] }] }), C, 'تعشيش أعمق داخل steps')
+  assert.equal(extractPcmBase64({ steps:[{ type:'audio', data:A },{ type:'audio', data:C }] }), C, 'تُؤخذ آخر كتلة كما تفعل المكتبة')
+  /* لا يُخطف نصٌّ طويل ليس صوتاً. */
+  assert.equal(extractPcmBase64({ steps:[{ type:'text', text:'ا'.repeat(900) }] }), null, 'النص الطويل ليس صوتاً')
+  assert.equal(extractPcmBase64({ id:'v1_x', status:'completed', usage:{ total_tokens:5 } }), null)
   assert.equal(extractPcmBase64(null), null)
+  assert.ok(describeShape({ steps:[{ type:'audio', data:'x' }] }).join('|').includes('steps[0].type'), 'الخريطة تُظهر مسارات الردّ')
 
   console.log('✓ Gemini Kuwaiti pipeline self-test: chunking + prompt + PCM/WAV + عقد الطلب والاستخراج')
   process.exit(0)

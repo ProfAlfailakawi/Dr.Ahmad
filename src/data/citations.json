@@ -2,7 +2,7 @@
   "profileId": "WVAtInIAAAAJ",
   "profileUrl": "https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en",
   "total": 8,
-  "updatedAt": "2026-08-10T02:43:17.101Z",
+  "updatedAt": "2026-08-12T11:28:07.912Z",
   "history": [
     {
       "date": "2026-07-16",
@@ -26,6 +26,10 @@
     },
     {
       "date": "2026-08-10",
+      "total": 8
+    },
+    {
+      "date": "2026-08-12",
       "total": 8
     }
   ],

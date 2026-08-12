@@ -815,6 +815,19 @@ function namedBookInText(text = '') {
     .sort((left, right) => right.title.length - left.title.length)[0]?.book
   if (named) return named
   if (/(?:^|\s)(?:الموسوعه|موسوعه تكنولوجيا التعليم)(?:\s|$)/.test(cleanText)) return books.find((book) => book.slug === 'encyclopedia') || null
+
+  /* الناس تختصر: «كتاب التلعيب» لا «التلعيب Gamification وعالم الألعاب».
+     فنطابق كلمةً مميّزة من العنوان — بشرط أن تكون طويلةً (٤ أحرف فأكثر) وألّا
+     تكون مشتركةً بين كتابين، فلا نخمّن كتاباً على كلمةٍ عامة مثل «التعليم». */
+  const NOISE = new Set(['كتاب', 'كتب', 'الكتاب', 'فصول', 'ابواب', 'محتويات', 'فهرس', 'عن', 'في', 'من', 'التعليم', 'تكنولوجيا', 'العصر', 'عالم', 'وعالم'])
+  const words = cleanText.split(/\s+/).filter((word) => word.length >= 4 && !NOISE.has(word))
+  if (!words.length) return null
+  const scored = books.map((book) => {
+    const title = normalizeArabicMessage(book.title || '')
+    const titleWords = new Set(title.split(/\s+/).filter((word) => word.length >= 4 && !NOISE.has(word)))
+    return { book, hits: words.filter((word) => titleWords.has(word)).length }
+  }).filter((item) => item.hits > 0).sort((left, right) => right.hits - left.hits)
+  if (scored.length === 1 || (scored[0] && scored[0].hits > (scored[1]?.hits || 0))) return scored[0].book
   return null
 }
 
@@ -903,6 +916,10 @@ function bookSearchDecision(text = '', conversation = {}) {
 
 function bookChaptersDecision(text = '', conversation = {}) {
   const book = contextualBook(text, conversation)
+  /* «فصول <اسم>» صار مقبولاً في المصنّف. فإن لم يكن الاسمُ كتاباً ولم تُذكر
+     كلمة «كتاب» أصلاً، فالسؤال ليس عن كتاب («فصول السنة») — نعيده إلى البحث
+     العام بدل أن نسأل «أي كتاب تقصد؟» عن شيءٍ لا كتاب فيه. */
+  if (!book && !/(?:^|\s)كتاب/.test(normalizeArabicMessage(text))) return null
   if (!book) return {
     reason: 'book-chapters-clarify',
     reply: `أي كتاب تقصد؟ اكتب اسمه، مثل: «فصول المدارس الذكية».\n\n${SITE_URL}/publications`,
@@ -1085,17 +1102,60 @@ const SITE_DOORS = [
   { reason: 'contact-door', pattern: /^(?:صفحه التواصل|بيانات التواصل|تواصل الموقع)$/, title: 'التواصل', note: 'القنوات الرسمية ونموذج التواصل', path: '/contact' },
   { reason: 'english-door', pattern: /^(?:الموقع الانجليزي|النسخه الانجليزيه|english)$/, title: 'English', note: 'السيرة والأبحاث والتواصل باللغة الإنجليزية', path: '/en' },
   { reason: 'app-door', pattern: /^(?:تطبيق الموقع|ثبت الموقع|تثبيت الموقع|نسخه الجوال)$/, title: 'تطبيق الموقع', note: 'تثبيت الموقع كتطبيق على الجهاز', path: '/launch' },
+  /* أبوابٌ كان الموقع يملكها والبوت لا يعرفها، فكان يردّ عنها بمقالات. */
+  { reason: 'articles-door', pattern: /^(?:مقالات|المقالات|كل المقالات|ارشيف المقالات)$/, title: 'المقالات', note: 'أرشيف مقالات الدكتور كاملاً', path: '/articles' },
+  { reason: 'publications-door', pattern: /^(?:الكتب|كتب الدكتور|المولفات|الاصدارات|المطبوعات)$/, title: 'الكتب', note: 'الكتب التسعة وموسوعة تكنولوجيا التعليم', path: '/publications' },
+  { reason: 'research-door', pattern: /^(?:الابحاث|البحوث|الاوراق العلميه|النشر العلمي)$/, title: 'الأبحاث', note: 'الأوراق العلمية المحكّمة وملخصاتها', path: '/research' },
+  { reason: 'curated-door', pattern: /^(?:المختارات|مختارات|المختارات المعرفيه)$/, title: 'المختارات', note: 'ما يختاره الدكتور من كتب العالم وأفكاره', path: '/curated' },
+  { reason: 'listen-door', pattern: /^(?:الاستماع|صفحه الاستماع|المسموع|الحوارات المسموعه)$/, title: 'الاستماع', note: 'حوارات وقراءات مسموعة لمواد الموقع', path: '/listen' },
+  { reason: 'media-door', pattern: /^(?:الظهور الاعلامي|الاعلام|الارشيف الاعلامي|اللقاءات|المقابلات)$/, title: 'الظهور الإعلامي', note: 'اللقاءات التلفزيونية والإذاعية مفرّغةً ومفهرسة', path: '/media' },
+  { reason: 'upcoming-door', pattern: /^(?:القادم|اللقاءات القادمه|الفعاليات|المواعيد)$/, title: 'القادم', note: 'اللقاءات والفعاليات القادمة', path: '/upcoming' },
+  { reason: 'about-door', pattern: /^(?:عن الموقع|عن هذا الموقع|فكره الموقع|قصه الموقع)$/, title: 'عن الموقع', note: 'فكرة الموقع ومنهجه وطريقة بنائه', path: '/about' },
+  { reason: 'thought-door', pattern: /^(?:الفكر|مشروع الفكر|نظره عامه على الفكر|خلاصه الفكر)$/, title: 'الفكر', note: 'نظرة جامعة على مشروع الدكتور الفكري', path: '/thought' },
 ]
+
+/* ── أبواب الموقع تُفهم بصياغة الناس ──
+   كانت أنماط الأبواب مقفلةً على المطابقة التامة (`^…$`)، فـ«الأطلس» وحدها
+   تعمل و«شنو في صفحة الأطلس» أو «ودّني على الأطلس» تسقط إلى بحث المقالات.
+   هذه القشرة تنزع سقالة السؤال — أفعال الطلب وكلمة «صفحة» وأدوات الاستفهام —
+   ثم تُطابق ما بقي على النمط نفسه. فلا نوسّع النمط (ولا نخطف سؤالاً موضوعياً)
+   بل ننظّف السؤال قبله. */
+const DOOR_SCAFFOLD = new RegExp(
+  '^(?:'
+  + '(?:من فضلك|لو سمحت|ممكن|ابي|ابغي|ابغى|اريد|ودي|عطني|اعطني|ورني|وريني|افتح|افتحلي|ودني|خذني|روح|شوف|اشوف|اعرض|اعرضلي)\\s+'
+  + '|(?:شنو|وش|ايش|شو|ماذا|ما|هل|وين|اين)\\s+(?:هو|هي|في|فيه|فيها|موجود|يوجد|عندك|عندكم|يعني)?\\s*'
+  /* التطبيع يحوّل «على» إلى «علي»، فتُذكر الصيغتان. */
+  + '|(?:علي|على|الي|الى|في|عن)\\s+'
+  + ')*'
+  + '(?:صفحه|صفحة|قسم|باب|رابط|وصله)?\\s*'
+  , 'u')
+
+/* الأنماط مكتوبةٌ بالتعريف («الاطلس»)، فلا نجرّد «ال» — بل نجرّب الصيغتين. */
+function doorCandidates(cleanText = '') {
+  let phrase = String(cleanText).trim()
+  for (let pass = 0; pass < 4; pass += 1) {
+    const next = phrase.replace(DOOR_SCAFFOLD, '').trim()
+    if (next === phrase || !next) break
+    phrase = next
+  }
+  phrase = phrase.replace(/[؟?!.،]+$/u, '').trim()
+  if (!phrase) return []
+  const bare = phrase.replace(/^ال/u, '')
+  return [...new Set([phrase, `ال${bare}`, bare])].filter(Boolean)
+}
 
 function siteDoorDecision(text = '') {
   const cleanText = normalizeArabicMessage(text)
-  if (/^(?:خريطه الموقع|كل اقسام الموقع|ابواب الموقع|شنو في الموقع|وش في الموقع)$/.test(cleanText)) {
+  if (/^(?:خريطه الموقع|كل اقسام الموقع|ابواب الموقع|شنو في الموقع|وش في الموقع)$/.test(cleanText)
+    || /(?:خريطه|اقسام|ابواب|محتويات|صفحات)\s+(?:ال)?موقع|(?:شنو|وش|ايش|شو)\s+(?:في|فيه|عندك|عندكم|موجود)\s+(?:في\s+)?(?:ال)?موقع/u.test(cleanText)) {
     return {
       reason: 'site-map',
       reply: `هذه خريطة موقع الدكتور كاملة:\n\n• القراءة: المقالات ${SITE_URL}/articles · الكتب ${SITE_URL}/publications · الأبحاث ${SITE_URL}/research · المختارات ${SITE_URL}/curated\n\n• الصوت والصورة: الاستماع ${SITE_URL}/listen · الراديو ${SITE_URL}/radio · الظهور الإعلامي ${SITE_URL}/media\n\n• المعرفة: البحث ${SITE_URL}/search · اسأل المكتبة ${SITE_URL}/ask · عبر السنين ${SITE_URL}/decade · مسارات الفكر ${SITE_URL}/thought-paths · الأطلس ${SITE_URL}/atlas · الأسئلة ${SITE_URL}/questions · الرادار ${SITE_URL}/radar\n\n• الدكتور: السيرة ${SITE_URL}/cv · الأثر ${SITE_URL}/impact · القادم ${SITE_URL}/upcoming · التواصل ${SITE_URL}/contact · English ${SITE_URL}/en`,
     }
   }
+  const candidates = doorCandidates(cleanText)
   const door = SITE_DOORS.find((item) => item.pattern.test(cleanText))
+    || SITE_DOORS.find((item) => candidates.some((candidate) => item.pattern.test(candidate)))
   if (!door) return null
   return { reason: door.reason, reply: `تفضّل — *${door.title}*:\n${door.note}.\n\n${SITE_URL}${door.path}` }
 }
@@ -1882,7 +1942,8 @@ export function decideGroundedResponse({ text: inboundText, hasMedia = false, ru
   }
   if (intent === INTENTS.BOOK_CHAPTERS) {
     const decision = bookChaptersDecision(text, conversation)
-    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+    /* لا قرار = الاسم ليس كتاباً ولا ذُكر كتاب؛ يكمل إلى البحث العام. */
+    if (decision) return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
   }
   if (intent === INTENTS.BOOK_INSIGHT) {
     const decision = bookInsightDecision(text, conversation)

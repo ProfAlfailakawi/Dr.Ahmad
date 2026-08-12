@@ -75,6 +75,7 @@ const serviceWorker = read('public/sw.js')
 const indexHtml = read('index.html')
 const smartSearch = read('src/lib/smart-search.ts')
 const bookQuotesSearch = read('src/lib/book-quotes.ts')
+const encyclopediaKnowledge = read('src/lib/encyclopedia-knowledge-search.ts')
 const bookKnowledgeSearch = read('src/lib/book-knowledge.ts')
 const knowledgeGraphSearch = read('src/lib/knowledge-graph.ts')
 const knowledgeFingerprint = read('src/components/KnowledgeFingerprint.tsx')
@@ -153,7 +154,12 @@ check('عالم الكتاب يستقبل فكرة الفهرس بعد التح�
 check('شريط محاور الكتاب صف واحد قابل للسحب RTL', bookWorld.includes('book-spine-rail') && bookWorld.includes('dir="rtl"') && bookWorld.includes('overflow-x-auto') && bookWorld.includes('touch-action:pan-x'))
 check('عالم الكتاب يحمي كل الحاويات من خروج الهاتف', css.includes('.content-book-world') && css.includes('max-width: 100%') && css.includes('min-width: 0') && css.includes('overflow-x: clip'))
 check('حقل اسأل هذا الكتاب ينكمش داخل الهاتف', /id="ask-book-section"[\s\S]{0,800}min-w-0[\s\S]{0,800}w-full/u.test(bookWorld))
-check('فهرس متن الكتاب لا يحمل إلا عند السؤال', bookWorld.includes('loadBookPassages().then') && !bookDetail.includes('loadBookPassages'))
+/* الشرط نفسه، أشدّ: المتن لا يُحمّل إلا عند السؤال — ولا يُحمّل منه إلا الكتاب
+   المفتوح. كان زائر «التلعيب» (٣٨ ك.ب) يحمّل الكتب التسعة (١٣٣٤ ك.ب). */
+check('فهرس متن الكتاب لا يحمل إلا عند السؤال', bookWorld.includes('loadBookPassagesFor(book.slug).then') && !bookDetail.includes('loadBookPassages'))
+check('صفحة الكتاب تحمّل متن كتابها وحده لا الكتب التسعة', !bookWorld.includes('loadBookPassages()') && bookQuotesSearch.includes('export function loadBookPassagesFor') && bookQuotesSearch.includes('/books/passages/v1/'))
+check('بوابة الموسوعة لا تستورد المتون استيراداً ساكناً', !encyclopediaKnowledge.includes("import rawPassages from '../data/book-passages.json'") && encyclopediaKnowledge.includes('primeEncyclopediaPassages'))
+check('شهادة ورود العبارة تُحسب للنتائج الظاهرة لا للمقاطع كلها', /pageBuckets\.set\(page, pageCount \+ 1\)[\s\S]{0,400}passageEvidenceText\(/u.test(encyclopediaKnowledge))
 check('فهرس الكتاب لا يستعمل defaultOpen غير المدعوم في React', !bookToc.includes('defaultOpen=') && bookToc.includes('<TocDisclosure'))
 check('التحميل الكسول لا يضيّق window إلى never في TypeScript', !bookDetail.includes("'IntersectionObserver' in window") && bookDetail.includes("typeof IntersectionObserver === 'undefined'"))
 

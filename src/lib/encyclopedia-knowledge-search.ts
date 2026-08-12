@@ -1,4 +1,4 @@
-import rawPassages from '../data/book-passages.json'
+import { loadBookPassagesFor } from './book-quotes'
 import structureData from '../data/encyclopedia-structure.json'
 import {
   encyclopediaTeachingTopics,
@@ -80,8 +80,23 @@ type RawDoor = {
 }
 
 const doors = (structureData.doors || []) as RawDoor[]
-const encyclopediaBook = ((rawPassages as RawPassageFile).books || []).find((book) => book.slug === 'encyclopedia')
-const passages = encyclopediaBook?.passages || []
+/* متن الموسوعة يصل بشريحته وحده (٦٩٢ ك.ب) لا بالكتب التسعة (١٣٣٤ ك.ب).
+   كان استيراده هنا ساكناً، فكانت أوّل كتابةٍ في مربّع البحث تجرّ المتون كلها
+   وتجمّد الخيط الرئيسي في تحليلها. `primeEncyclopediaPassages` تُستدعى من
+   البوّابة قبل أوّل بحث، والشرائح تُخزَّن فلا تُجلب مرّتين. */
+let passages: RawPassage[] = []
+
+export async function primeEncyclopediaPassages(): Promise<boolean> {
+  if (passages.length) return true
+  const file = await loadBookPassagesFor('encyclopedia')
+  passages = (file.books || []).find((book) => book.slug === 'encyclopedia')?.passages as RawPassage[] || []
+  locationCache = []
+  evidenceCache = []
+  return passages.length > 0
+}
+
+/** هل وصل المتن؟ (الشرائح تصل بعد أوّل نداء؛ قبلها تُردّ الشرائح التعليمية وحدها.) */
+export const encyclopediaPassagesReady = () => passages.length > 0
 
 const unitLocations = doors.flatMap((door) => door.units.map((unit, index) => {
   const next = door.units[index + 1]
@@ -135,13 +150,42 @@ function normalizedEvidenceText(value = '') {
     .trim()
 }
 
+/* ═══ ما يخصّ المقطع يُحسب مرّةً واحدة ═══
+   كان كلُّ بحثٍ يعيد — لكلٍّ من المقاطع الـ٩٣٦ — البحثَ الخطّيَّ عن موضع
+   المقطع في الأبواب. وهو لا يتعلّق بالسؤال أصلاً، فيُحفظ عند أوّل حساب. */
+type PassageLocation = ReturnType<typeof locationForPassage>
+let locationCache: (PassageLocation | undefined)[] = []
+let evidenceCache: (string | undefined)[] = []
+
+function passageLocation(passage: RawPassage, index: number): PassageLocation {
+  const cached = locationCache[index]
+  if (cached !== undefined) return cached
+  const location = locationForPassage(passage)
+  locationCache[index] = location
+  return location
+}
+
+/* التطبيع الكامل لنصّ المقطع مكلف (سبع مراحل regex، منها اثنتان على خصائص
+   يونيكود). ولا يلزم إلا لشهادة «وردت العبارة نصّاً» — وهي تُعرض ولا تُرتّب.
+   فلا يُدفع ثمنه إلا للنتائج الظاهرة، ويُحفظ بعدها. */
+function passageEvidenceText(passage: RawPassage, index: number): string {
+  const cached = evidenceCache[index]
+  if (cached !== undefined) return cached
+  const text = normalizedEvidenceText(`${passage.text} ${passage.conceptTitle || ''} ${passage.section || ''}`)
+  evidenceCache[index] = text
+  return text
+}
+
 function searchPassages(query: string, limit: number, context: EncyclopediaKnowledgeSearchContext = {}): EncyclopediaPassageMatch[] {
   const plan = buildSmartQueryPlan(query)
   const transcriptPlan = context.transcriptExcerpt ? buildSmartQueryPlan(context.transcriptExcerpt) : null
   if (!plan.directRoots.length && !plan.semanticRoots.length) return []
 
-  const ranked = passages.map((passage) => {
-    const location = locationForPassage(passage)
+  /* هذه القيمة لا تتعلّق بالمقطع، وكانت تُحسب داخل الحلقة — ٩٣٦ مرّة لكل بحث. */
+  const normalizedQuery = normalizedEvidenceText(query)
+
+  const ranked = passages.map((passage, index) => {
+    const location = passageLocation(passage, index)
     let score = scoreSmartFields(plan, [
       { value: passage.text, weight: 5.8, phraseWeight: 1.7, exactWeight: 1.25 },
       { value: passage.conceptTitle, weight: 4.7, phraseWeight: 1.45, exactWeight: 1.45 },
@@ -159,14 +203,7 @@ function searchPassages(query: string, limit: number, context: EncyclopediaKnowl
     const sameDoor = Boolean(context.doorNumber && location?.door.doorNumber === context.doorNumber)
     if (sameChapter) score += 13
     else if (sameDoor) score += 5
-    const normalizedQuery = normalizedEvidenceText(query)
-    const exactPhrase = Boolean(normalizedQuery && normalizedEvidenceText(`${passage.text} ${passage.conceptTitle || ''} ${passage.section || ''}`).includes(normalizedQuery))
-    const evidence = [
-      exactPhrase ? 'وردت العبارة أو صيغتها المباشرة في متن الكتاب.' : '',
-      sameChapter ? 'المقطع يقع في الباب والفصل نفسيهما للفيديو.' : sameDoor ? 'المقطع يقع في الباب نفسه.' : '',
-      transcriptPlan ? 'عزز سياق الكلام المفرغ ترتيب هذا المقطع.' : '',
-    ].filter(Boolean)
-    return { passage, location, score, exactPhrase, sameChapter, sameDoor, evidence }
+    return { passage, index, location, score, sameChapter, sameDoor }
   })
     .filter((item) => item.score >= 12)
     .sort((left, right) => right.score - left.score || Number(left.passage.page) - Number(right.passage.page))
@@ -182,6 +219,15 @@ function searchPassages(query: string, limit: number, context: EncyclopediaKnowl
     if (seen.has(signature)) continue
     seen.add(signature)
     pageBuckets.set(page, pageCount + 1)
+    /* «وردت العبارة نصّاً» شهادةٌ تُعرض ولا تدخل في الترتيب. فحسابها هنا —
+       على النتائج الظاهرة وحدها (٤٠ على الأكثر) — لا على المقاطع الـ٩٣٦.
+       هذا وحده ما كان يجمّد أوّل بحثٍ ثلاثَ ثوانٍ. */
+    const exactPhrase = Boolean(normalizedQuery && passageEvidenceText(item.passage, item.index).includes(normalizedQuery))
+    const evidence = [
+      exactPhrase ? 'وردت العبارة أو صيغتها المباشرة في متن الكتاب.' : '',
+      item.sameChapter ? 'المقطع يقع في الباب والفصل نفسيهما للفيديو.' : item.sameDoor ? 'المقطع يقع في الباب نفسه.' : '',
+      transcriptPlan ? 'عزز سياق الكلام المفرغ ترتيب هذا المقطع.' : '',
+    ].filter(Boolean)
     output.push({
       id: item.passage.id,
       text: String(item.passage.text || '').trim(),
@@ -195,12 +241,12 @@ function searchPassages(query: string, limit: number, context: EncyclopediaKnowl
       doorTitle: item.location?.door.title || '',
       chapterNumber: item.location?.unit.number || null,
       chapterTitle: item.location?.unit.title || '',
-      matchReason: item.exactPhrase
+      matchReason: exactPhrase
         ? 'أقرب موضع وردت فيه العبارة داخل متن الكتاب.'
         : item.sameChapter
           ? 'أقرب مقطع في الباب والفصل نفسيهما، مدعوم بسياق التفريغ.'
           : 'أقرب مقطع كتاب وفق المصطلحات والسياق العلمي.',
-      evidence: item.evidence,
+      evidence,
     })
     if (output.length >= limit) break
   }

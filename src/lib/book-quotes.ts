@@ -127,23 +127,111 @@ type PassagesFile = {
   books: { slug: string; title: string; year: string; passages: BookQuote[] }[]
 }
 
+type PassagesBook = PassagesFile['books'][number]
+type ShardMeta = { version: number; revision: string; books: { slug: string; passages: number }[] }
+
 let passagesCache: PassagesFile | null = null
 let passagesPromise: Promise<PassagesFile> | null = null
 
-export function loadBookPassages(): Promise<PassagesFile> {
-  if (passagesCache) return Promise.resolve(passagesCache)
-  if (!passagesPromise) {
-    passagesPromise = import('../data/book-passages.json')
-      .then((module) => {
-        passagesCache = (module.default || module) as unknown as PassagesFile
-        return passagesCache
-      })
+/* ═══ شريحةٌ لكل كتاب ═══
+   كان تحميل متنٍ واحد يجرّ الكتب التسعة (١٣٣٤ ك.ب) ويجمّد الخيط الرئيسي في
+   تحليلها. الشرائح مولَّدةٌ وقت البناء (scripts/build-book-passage-shards.mjs)
+   على نمط شرائح المقالات نفسه في article-bodies.ts، ومفتاحها `revision`
+   فتُخزَّن أبداً. وحين تغيب — تطويرٌ قبل بناء، أو نشرٌ ناقص — نسقط إلى الملف
+   الكامل كما كان، فلا تنكسر صفحةٌ أبداً. */
+const shardBooks = new Map<string, Promise<PassagesBook | null>>()
+let shardMetaPromise: Promise<ShardMeta | null> | null = null
+let fullCorpusPromise: Promise<PassagesFile> | null = null
+
+/* المصيدة المعروفة: ملفٌ ناقص في public/ يردّ صفحة HTML بحالة ٢٠٠، فيمرّ
+   `ok` ويسقط `json()` صامتاً. لذلك نتحقّق من الشكل لا من الحالة وحدها. */
+async function fetchJson<T>(url: string, cache: RequestCache): Promise<T | null> {
+  try {
+    const response = await fetch(url, { cache })
+    if (!response.ok) return null
+    const type = response.headers.get('content-type') || ''
+    if (!type.includes('json')) return null
+    return await response.json() as T
+  } catch {
+    return null
+  }
+}
+
+function shardMeta(): Promise<ShardMeta | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null)
+  if (!shardMetaPromise) {
+    shardMetaPromise = fetchJson<ShardMeta>('/books/passages/v1/meta.json', 'no-cache')
+      .then((meta) => (meta && Array.isArray(meta.books) && meta.revision ? meta : null))
+  }
+  return shardMetaPromise
+}
+
+function mergeBook(book: PassagesBook) {
+  const current = passagesCache || { coverage: { books: 0, passages: 0 }, books: [] }
+  if (!current.books.some((item) => item.slug === book.slug)) current.books.push(book)
+  current.coverage = {
+    books: current.books.length,
+    passages: current.books.reduce((total, item) => total + item.passages.length, 0),
+  }
+  passagesCache = current
+}
+
+/** متن كتابٍ واحد — وهو ما تحتاجه صفحة الكتاب فعلاً. */
+export function loadBookPassagesFor(slug: string): Promise<PassagesFile> {
+  const clean = String(slug || '').trim()
+  if (!clean) return loadBookPassages()
+  if (passagesCache?.books.some((item) => item.slug === clean)) return Promise.resolve(passagesCache)
+  let promise = shardBooks.get(clean)
+  if (!promise) {
+    promise = shardMeta().then(async (meta) => {
+      if (!meta?.books.some((item) => item.slug === clean)) return null
+      return await fetchJson<PassagesBook>(`/books/passages/v1/${encodeURIComponent(meta.revision)}/${encodeURIComponent(clean)}.json`, 'force-cache')
+    }).then((book) => (book && Array.isArray(book.passages) ? book : null))
+    shardBooks.set(clean, promise)
+  }
+  return promise.then((book) => {
+    if (book) {
+      mergeBook(book)
+      return passagesCache as PassagesFile
+    }
+    /* لا شريحة — نسقط إلى المتن الكامل بدل أن نترك الصفحة بلا جواب. */
+    return loadBookPassages()
+  })
+}
+
+function loadFullCorpus(): Promise<PassagesFile> {
+  if (!fullCorpusPromise) {
+    fullCorpusPromise = import('../data/book-passages.json')
+      .then((module) => (module.default || module) as unknown as PassagesFile)
       .catch(() => ({ coverage: { books: 0, passages: 0 }, books: [] }))
+  }
+  return fullCorpusPromise
+}
+
+/** المتون التسعة — للبحث الشامل وحده (‏/search و‏/ask). */
+export function loadBookPassages(): Promise<PassagesFile> {
+  if (!passagesPromise) {
+    passagesPromise = shardMeta().then(async (meta) => {
+      if (!meta) return await loadFullCorpus()
+      const books = await Promise.all(meta.books.map((entry) =>
+        fetchJson<PassagesBook>(`/books/passages/v1/${encodeURIComponent(meta.revision)}/${encodeURIComponent(entry.slug)}.json`, 'force-cache')))
+      const usable = books.filter((book): book is PassagesBook => Boolean(book && Array.isArray(book.passages)))
+      if (usable.length !== meta.books.length) return await loadFullCorpus()
+      for (const book of usable) mergeBook(book)
+      return passagesCache as PassagesFile
+    }).then((file) => {
+      if (!passagesCache) passagesCache = file
+      return passagesCache
+    })
   }
   return passagesPromise
 }
 
 export const bookPassagesReady = () => Boolean(passagesCache)
+
+/** هل متن هذا الكتاب حاضرٌ بعينه؟ (‏`bookPassagesReady` تعني «أيُّ متن»). */
+export const bookPassagesReadyFor = (slug: string) =>
+  Boolean(passagesCache?.books.some((item) => item.slug === slug))
 
 export function bookPassageAtPage(slug: string, page: number): BookQuote | null {
   const book = passagesCache?.books.find((item) => item.slug === slug)

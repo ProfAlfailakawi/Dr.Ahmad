@@ -12,7 +12,7 @@ import { createIdeaDna, type IdeaDna } from './idea-dna'
 import { DARK, LIGHT } from './design-system'
 import { arabicCountPhrase, DISTINCT_DIRECTION_AFTER_PREPOSITION_FORMS, WORD_FORMS } from './arabic-count.ts'
 
-export const SOCIAL_DESIGN_ENGINE_VERSION = '3.2.0'
+export const SOCIAL_DESIGN_ENGINE_VERSION = '3.3.0'
 
 export type ContentKind =
   | 'quote'
@@ -271,6 +271,39 @@ export interface CtaPlacement extends DesignLibraryEntry<CtaPlacementId> {
   reserveRatio: number
 }
 
+/** توهجٌ شفقيّ واحد: موضعه نسبيّ (0..1) ولونه من طيف العالم لا من خارجه. */
+export interface WorldGlow { x: number; y: number; r: number; color: string; opacity: number }
+
+/**
+ * الغلاف الجوّي — ما تعلّمناه من دساتير DESIGN.md العالمية (Linear وApple
+ * وStripe وSuperhuman…): اللوحة وحدها «لون»، أما العالم فجوٌّ كامل: غسلٌ
+ * متدرّج، وتوهجاتٌ متعددة، ونسيجٌ (حبيبات/حرير/شبكة مهندس/نجوم)، وحبرُ
+ * عنوانٍ متدرّج، ومعدنٌ للّمسات، وخيطُ ضوءٍ على الحافة. يقرؤه المصيّر في
+ * `backdrop()` وحدها فيسري على كل العائلات والشرائح بلا استثناء.
+ */
+export interface WorldAtmosphere {
+  /** غسل الأرضية: تدرّج خطي حتى ثلاث محطات (زاوية بالدرجات، 0 = من اليسار). */
+  wash?: { angle: number; stops: { offset: number; color: string }[] }
+  /** توهجات شفقية متعددة تحل محل التوهج الواحد الافتراضي. */
+  glows?: WorldGlow[]
+  /** حقل نجوم حتميّ لعوالم الليل — بذرته من بصمة التصميم نفسها لا من الصدفة. */
+  stars?: boolean
+  /** ورق مهندس: شبكة دقيقة كدفاتر المختبرات، بخطٍّ أثقل كل أربع خلايا. */
+  gridPaper?: boolean
+  /** لمعان حريري قطري خافت لعوالم الفخامة. */
+  silk?: boolean
+  /** تعتيم الأطراف 0..1 — يشدّ العين إلى مركز اللوحة. */
+  vignette?: number
+  /** مضاعف الحبيبات فوق الأساس؛ 1 = كما هي، 0 = بلا حبيبات. */
+  grain?: number
+  /** تدرّج حبر العنوان [بداية، نهاية] — يقرؤه titleInk في المصيّر. */
+  titleGradient?: [string, string]
+  /** معدنٌ ذهبيّ للمسات: المسطرة ونقطة الشارة وخط التوقيع. */
+  foil?: boolean
+  /** خيط ضوء على الحافة العلوية — بصمة الأسطح الزجاجية في العوالم الليلية. */
+  edgeLight?: boolean
+}
+
 export interface Palette {
   id: PaletteId
   label: string
@@ -286,6 +319,8 @@ export interface Palette {
   spectrum?: string[]
   /** علامة أن اللوحة مستخرجة من صورة، لا لوحة جاهزة. */
   dna?: boolean
+  /** الغلاف الجوّي حين تكون اللوحة قلبَ «عالمِ تصميمٍ» متكامل. */
+  atmo?: WorldAtmosphere
 }
 
 export interface TextMetrics {
@@ -2282,6 +2317,59 @@ export function regenerateFromPlan(
     basePlan,
     history: [...(options.history || []), designHistoryEntry(basePlan)],
   })
+}
+
+/**
+ * إعادة تشكيل خطةٍ قائمة على توقيع «عالمِ تصميمٍ» متكامل: محاور الدستور
+ * تُستبدل معاً (طباعة/فضاء/لمسة/إطار/لوحة)، والهندسة تُحسب من جديد لأن مناطق
+ * النص تتبع الفضاء والطباعة، والناقد يعيد حكمه فلا يبقى انطباعٌ من عهدٍ سابق.
+ * تمرير `paletteOverride: null` يمسح الكسوة، وإغفاله يبقيها كما هي.
+ */
+export function reshapePlanSignature(
+  plan: CompositionPlan,
+  spec: Partial<Pick<CompositionPlan, 'typography' | 'spatial' | 'accent' | 'framing' | 'ctaPlacement' | 'palette'>> & { paletteOverride?: Palette | null },
+): CompositionPlan {
+  const typography = spec.typography ?? plan.typography
+  const spatial = spec.spatial ?? plan.spatial
+  const reshaped: CompositionPlan = {
+    ...plan,
+    typography,
+    spatial,
+    accent: spec.accent ?? plan.accent,
+    framing: spec.framing ?? plan.framing,
+    ctaPlacement: spec.ctaPlacement ?? plan.ctaPlacement,
+    palette: spec.palette ?? plan.palette,
+    paletteOverride: spec.paletteOverride === null ? undefined : (spec.paletteOverride ?? plan.paletteOverride),
+    geometry: geometryFor(plan.format, spatial, typography, LAYOUT_FAMILIES[plan.layout]),
+  }
+  const fingerprinted = { ...reshaped, fingerprint: fingerprintDesign(reshaped) }
+  return { ...fingerprinted, quality: critiqueCompositionPlan(fingerprinted) }
+}
+
+/**
+ * خطة معاينةٍ خفيفة لعالمٍ واحد: مرشحٌ واحد يُصاغ ويُنقد — لملصقات معرض
+ * العوالم الحية لا لتوليد الدفعات (التوليد الكامل يمرّ من generateSocialDesigns
+ * بلجنته كاملة). كلفتها نحو واحدٍ من مئةٍ وخمسين من كلفة الدفعة.
+ */
+export function draftWorldPreview(
+  text: string,
+  spec: { layout: LayoutFamilyId; typography?: TypographyModeId; palette?: PaletteId; format?: SocialFormatId; seed?: string },
+): CompositionPlan {
+  const analysis = analyzeSocialContent(text)
+  const format = SOCIAL_FORMATS[spec.format || 'instagram-portrait']
+  const candidate = makeCandidate(
+    LAYOUT_FAMILIES[spec.layout],
+    analysis,
+    format,
+    analysis.density,
+    String(spec.seed ?? `world-preview:${spec.layout}`),
+    0,
+    [],
+    spec.palette,
+    spec.typography,
+    createIdeaDna(text),
+  )
+  return { ...candidate, quality: critiqueCompositionPlan(candidate) }
 }
 
 export function compositionCssVariables(plan: CompositionPlan): Record<string, string> {

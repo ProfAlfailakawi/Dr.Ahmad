@@ -560,24 +560,125 @@ function patternLayer(s: Scene): { def: string; rect: string } {
   }
 }
 
+/* ══════════ الغلاف الجوّي — درس دساتير DESIGN.md العالمية ══════════
+   العالم أكثر من لوحة: غسلٌ وتوهجاتٌ ونسيجٌ ونجومٌ وضوء حافة. كل الطبقات
+   تُرسم هنا في `backdrop()` وحدها فتسري على العائلات كلها وشرائح الكاروسيل،
+   وغياب `palette.atmo` يُبقي كل لوحةٍ قديمة كما كانت حرفياً. */
+
+/** مولّد عشوائية حتمي: البذرة من بصمة التصميم فلا يتبدل نجمٌ بين تصديرين. */
+function seededRandom(seedText: string) {
+  let state = 0
+  for (const ch of seedText) state = ((state * 31 + ch.charCodeAt(0)) & 0x7fffffff) >>> 0
+  state = state || 7
+  return () => {
+    state = ((state * 1664525 + 1013904223) & 0x7fffffff) >>> 0
+    return state / 0x7fffffff
+  }
+}
+
+/** حقل نجوم مرصد الليل: نثرٌ حتمي دقيق وثلاث نجماتٍ ساطعة بشعاع صليبي. */
+function starFieldLayer(s: Scene): string {
+  const { palette: p, w, h, min, uid } = s
+  const rand = seededRandom(`${uid}:stars`)
+  const parts: string[] = []
+  const count = 64 + Math.round(rand() * 26)
+  for (let index = 0; index < count; index += 1) {
+    const x = round(rand() * w)
+    const y = round(rand() * h * .94)
+    const r = (0.55 + rand() * 1.4).toFixed(1)
+    const o = (0.08 + rand() * 0.45).toFixed(2)
+    parts.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="${p.ink}" opacity="${o}"/>`)
+  }
+  for (let index = 0; index < 3; index += 1) {
+    const x = round(w * .06 + rand() * w * .88)
+    const y = round(h * .05 + rand() * h * .48)
+    const len = round(min * (.011 + rand() * .009))
+    parts.push(`<g stroke="${p.ink}" stroke-width="1" opacity=".55"><line x1="${x - len}" y1="${y}" x2="${x + len}" y2="${y}"/><line x1="${x}" y1="${y - len}" x2="${x}" y2="${y + len}"/></g>`)
+  }
+  return `<g>${parts.join('')}</g>`
+}
+
+/** ورق مهندس: شبكة دقيقة بخطٍّ أثقل كل أربع خلايا — الدقة نفسها زخرفة. */
+function gridPaperLayer(s: Scene): { def: string; rect: string } {
+  const { palette: p, w, h, uid, min } = s
+  const cell = Math.max(18, round(min * .026))
+  const major = cell * 4
+  return {
+    def: `<pattern id="${uid}-gridm" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse"><path d="M ${cell} 0 H 0 V ${cell}" fill="none" stroke="${p.ink}" stroke-width="1" opacity=".05"/></pattern><pattern id="${uid}-gridM" width="${major}" height="${major}" patternUnits="userSpaceOnUse"><path d="M ${major} 0 H 0 V ${major}" fill="none" stroke="${p.accent}" stroke-width="1" opacity=".09"/></pattern>`,
+    rect: `<rect width="${w}" height="${h}" fill="url(#${uid}-gridm)"/><rect width="${w}" height="${h}" fill="url(#${uid}-gridM)"/>`,
+  }
+}
+
+/** لمعان حريري قطري لعوالم الفخامة: حزامان خافتان لا يمسّان قراءة النص. */
+function silkLayer(s: Scene): { def: string; rect: string } {
+  const { w, h, uid } = s
+  return {
+    def: `<linearGradient id="${uid}-silk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset=".45" stop-color="#FFFFFF" stop-opacity=".05"/><stop offset=".55" stop-color="#FFFFFF" stop-opacity=".05"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>`,
+    rect: `<g transform="rotate(-16 ${round(w / 2)} ${round(h / 2)})"><rect x="${round(-w * .3)}" y="${round(h * .08)}" width="${round(w * 1.6)}" height="${round(h * .26)}" fill="url(#${uid}-silk)"/><rect x="${round(-w * .3)}" y="${round(h * .58)}" width="${round(w * 1.6)}" height="${round(h * .18)}" fill="url(#${uid}-silk)" opacity=".6"/></g>`,
+  }
+}
+
+/** يحوّل زاوية الغسل (بالدرجات، 180 = من الأعلى للأسفل) إلى متجه تدرّج SVG. */
+function washVectorOf(angle: number) {
+  const rad = ((angle % 360) * Math.PI) / 180
+  const vx = Math.sin(rad) / 2
+  const vy = -Math.cos(rad) / 2
+  const fix = (value: number) => Number((0.5 + value).toFixed(3))
+  return { x1: fix(-vx), y1: fix(-vy), x2: fix(vx), y2: fix(vy) }
+}
+
+/** حبر العنوان: يتدرّج حين يحمل العالم تدرّجاً، وإلا فحبر اللوحة الصلب. */
+function titleInk(s: Scene): string {
+  return s.palette.atmo?.titleGradient ? `url(#${s.uid}-titleink)` : s.palette.ink
+}
+
+/** لون اللمسة: ذهبٌ معدنيّ في عوالم الفخامة، وإلا لون الهوية الصلب. */
+function accentInk(s: Scene): string {
+  return s.palette.atmo?.foil ? `url(#${s.uid}-foil)` : s.palette.accent
+}
+
 function backdrop(s: Scene, options: { glow?: 'top-left' | 'top-right' | 'bottom' | 'center' | 'none'; grain?: boolean } = {}) {
   const { palette: p, w, h, uid } = s
+  const atmo = p.atmo
   const spectrum = p.spectrum?.length ? p.spectrum : [p.accent, p.accentSoft, p.rule]
   const pat = patternLayer(s)
   const glow = options.glow ?? 'top-left'
   const glowPos = glow === 'top-left' ? { cx: .18, cy: .12 } : glow === 'top-right' ? { cx: .84, cy: .14 } : glow === 'bottom' ? { cx: .5, cy: .95 } : { cx: .5, cy: .5 }
+  /* توهجات العالم تحل محل التوهج الواحد؛ وعالمٌ بلا توهجات (كالرخام) صمتٌ مقصود. */
+  const auroraDefs = atmo?.glows?.length
+    ? atmo.glows.map((g, index) => `<radialGradient id="${uid}-aur${index}" cx="${g.x}" cy="${g.y}" r="${g.r}"><stop offset="0" stop-color="${g.color}" stop-opacity="${g.opacity}"/><stop offset="1" stop-color="${g.color}" stop-opacity="0"/></radialGradient>`).join('')
+    : ''
+  const auroraRects = atmo?.glows?.length
+    ? atmo.glows.map((_, index) => `<rect width="${w}" height="${h}" fill="url(#${uid}-aur${index})"/>`).join('')
+    : ''
+  const washVec = atmo?.wash ? washVectorOf(atmo.wash.angle) : { x1: 0, y1: 0, x2: 1, y2: 1 }
+  const washStops = atmo?.wash
+    ? atmo.wash.stops.map((stop) => `<stop offset="${stop.offset}" stop-color="${stop.color}"/>`).join('')
+    : `<stop offset="0" stop-color="${p.background}"/><stop offset="1" stop-color="${p.surface}"/>`
+  const grid = atmo?.gridPaper ? gridPaperLayer(s) : null
+  const silk = atmo?.silk ? silkLayer(s) : null
+  const grainStrength = (p.isDark ? .05 : .035) * (atmo?.grain ?? 1)
+  const vignetteStrength = (atmo?.vignette || 0) * (p.isDark ? .5 : .2)
+  const vignetteColor = p.isDark ? '#05070D' : '#2A2118'
+  const edgeColor = p.isDark ? '#FFFFFF' : p.accent
   const parts = [
     `<rect width="${w}" height="${h}" fill="url(#${uid}-wash)"/>`,
-    glow === 'none' ? '' : `<rect width="${w}" height="${h}" fill="url(#${uid}-glow)"/>`,
+    atmo ? auroraRects : (glow === 'none' ? '' : `<rect width="${w}" height="${h}" fill="url(#${uid}-glow)"/>`),
     p.dna ? `<rect width="${w}" height="${h}" fill="url(#${uid}-dna-a)"/><rect width="${w}" height="${h}" fill="url(#${uid}-dna-b)"/>` : '',
     pat.rect,
-    options.grain === false ? '' : `<rect width="${w}" height="${h}" filter="url(#${uid}-grain)" opacity="${p.isDark ? .05 : .035}"/>`,
+    grid ? grid.rect : '',
+    silk ? silk.rect : '',
+    atmo?.stars ? starFieldLayer(s) : '',
+    options.grain === false || grainStrength <= 0 ? '' : `<rect width="${w}" height="${h}" filter="url(#${uid}-grain)" opacity="${Number(grainStrength.toFixed(3))}"/>`,
+    vignetteStrength > 0 ? `<rect width="${w}" height="${h}" fill="url(#${uid}-vig)"/>` : '',
+    atmo?.edgeLight ? `<rect x="0" y="0" width="${w}" height="1.5" fill="url(#${uid}-edge)"/>` : '',
   ]
-  const defs = `${pat.def}
-    <linearGradient id="${uid}-wash" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${p.background}"/>
-      <stop offset="1" stop-color="${p.surface}"/>
-    </linearGradient>
+  const defs = `${pat.def}${auroraDefs}${grid ? grid.def : ''}${silk ? silk.def : ''}
+    ${vignetteStrength > 0 ? `<radialGradient id="${uid}-vig" cx=".5" cy=".46" r=".78"><stop offset=".58" stop-color="${vignetteColor}" stop-opacity="0"/><stop offset="1" stop-color="${vignetteColor}" stop-opacity="${Number(vignetteStrength.toFixed(3))}"/></radialGradient>` : ''}
+    ${atmo?.edgeLight ? `<linearGradient id="${uid}-edge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${edgeColor}" stop-opacity="0"/><stop offset=".5" stop-color="${edgeColor}" stop-opacity="${p.isDark ? .3 : .4}"/><stop offset="1" stop-color="${edgeColor}" stop-opacity="0"/></linearGradient>` : ''}
+    ${atmo?.titleGradient ? `<linearGradient id="${uid}-titleink" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${atmo.titleGradient[0]}"/><stop offset="1" stop-color="${atmo.titleGradient[1]}"/></linearGradient>` : ''}
+    ${atmo?.foil ? `<linearGradient id="${uid}-foil" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3E3C2"/><stop offset=".45" stop-color="#D8B36A"/><stop offset="1" stop-color="#9A7A42"/></linearGradient>` : ''}
+    <linearGradient id="${uid}-wash" x1="${washVec.x1}" y1="${washVec.y1}" x2="${washVec.x2}" y2="${washVec.y2}">${washStops}</linearGradient>
     <radialGradient id="${uid}-glow" cx="${glowPos.cx}" cy="${glowPos.cy}" r="${s.isWide ? .75 : .62}">
       <stop offset="0" stop-color="${spectrum[0]}" stop-opacity="${p.isDark ? .34 : .22}"/>
       <stop offset="1" stop-color="${spectrum[0]}" stop-opacity="0"/>
@@ -680,7 +781,7 @@ function kickerItem(s: Scene, options: { x?: number; anchor?: Anchor; fill?: str
   if (!s.kicker) return { h: 0, draw: () => '' }
   const { palette: p, w, min } = s
   const size = Math.max(14, min * .0215)
-  const fill = options.fill ?? p.accent
+  const fill = options.fill ?? accentInk(s)
   const anchor = options.anchor ?? 'end'
   const x = options.x ?? w - s.safeX
   return {
@@ -709,7 +810,8 @@ function ruleItem(s: Scene, options: { x?: number; width?: number; anchor?: 'end
     draw: (top) => {
       const x1 = anchor === 'middle' ? x - lineW / 2 : x - lineW
       const x2 = anchor === 'middle' ? x + lineW / 2 : x
-      return `<line x1="${round(x1)}" y1="${round(top + 1.5)}" x2="${round(x2)}" y2="${round(top + 1.5)}" stroke="${p.accent}" stroke-width="2.6"/>`
+      /* مستطيلٌ لا خطّ: تدرّج المعدن لا يظهر على bbox عديم الارتفاع في SVG. */
+      return `<rect x="${round(x1)}" y="${round(top)}" width="${round(x2 - x1)}" height="2.6" rx="1.3" fill="${accentInk(s)}"/>`
     },
   }
 }
@@ -728,8 +830,8 @@ function ctaItem(s: Scene, options: { x?: number; align?: 'right' | 'center'; ga
   return {
     h: pillH,
     gap: options.gap,
-    draw: (top) => `<g filter="url(#${s.uid}-shadow)"><rect x="${round(x)}" y="${round(top)}" width="${round(pillW)}" height="${round(pillH)}" rx="${round(pillH / 2)}" fill="${p.accent}"/></g>
-      ${textBlock({ lines: [label], x: x + pillW / 2, y: top + pillH * .655, size, fill: '#FFFFFF', weight: 700, anchor: 'middle', family: 'Tajawal' })}`,
+    draw: (top) => `<g filter="url(#${s.uid}-shadow)"><rect x="${round(x)}" y="${round(top)}" width="${round(pillW)}" height="${round(pillH)}" rx="${round(pillH / 2)}" fill="${accentInk(s)}"/></g>
+      ${textBlock({ lines: [label], x: x + pillW / 2, y: top + pillH * .655, size, fill: s.palette.atmo?.foil ? '#241B10' : '#FFFFFF', weight: 700, anchor: 'middle', family: 'Tajawal' })}`,
   }
 }
 
@@ -853,7 +955,7 @@ function identitySeal(s: Scene, href: string) {
   const cy = Math.max(s.safeY + r, topOffset + r)
   const size = r * 1.34
   return `<g opacity=".96">
-    <circle cx="${round(cx)}" cy="${round(cy)}" r="${round(r)}" fill="#FCFBF7" stroke="${p.rule}" stroke-width="1.2"/>
+    <circle cx="${round(cx)}" cy="${round(cy)}" r="${round(r)}" fill="#FCFBF7" stroke="${s.palette.atmo?.foil ? accentInk(s) : p.rule}" stroke-width="${s.palette.atmo?.foil ? 1.8 : 1.2}"/>
     <image href="${esc(href)}" x="${round(cx - size / 2)}" y="${round(cy - size / 2)}" width="${round(size)}" height="${round(size)}" preserveAspectRatio="xMidYMid meet"/>
   </g>`
 }
@@ -894,7 +996,7 @@ const paintEditorialAxis: Painter = (s) => {
   const band = contentBand(s)
   const stack = drawStack([
     kickerItem(s),
-    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .035 }),
+    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: titleInk(s), weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s), gap: min * .035 }),
     ruleItem(s, { gap: min * .05 }),
     textItem({ lines: body.lines, x: w - s.safeX, size: body.size, fill: p.muted, weight: 400, family: s.bodyFamily, lineHeight: 1.62, gap: min * .05 }),
     ctaItem(s, { gap: min * .06 }),
@@ -923,7 +1025,7 @@ const paintHeroWord: Painter = (s) => {
   const stack = drawStack([
     kickerItem(s, { x: w / 2, anchor: 'middle' }),
     ruleItem(s, { x: w / 2, anchor: 'middle', width: min * .07, gap: min * .028 }),
-    textItem({ lines: title.lines, x: w / 2, size: title.size, fill: p.ink, weight: 700, anchor: 'middle', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .05 }),
+    textItem({ lines: title.lines, x: w / 2, size: title.size, fill: titleInk(s), weight: 700, anchor: 'middle', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s), gap: min * .05 }),
     textItem({ lines: body.lines, x: w / 2, size: body.size, fill: p.muted, weight: 400, anchor: 'middle', family: s.bodyFamily, lineHeight: 1.6, gap: min * .045 }),
     ctaItem(s, { align: 'center', gap: min * .06 }),
     carouselItem(s),
@@ -947,7 +1049,7 @@ const paintQuoteStage: Painter = (s) => {
     gap: min * .06,
     draw: (top) => [
       `<text x="${round(w - s.safeX * .82)}" y="${round(top - min * .01)}" fill="${p.accent}" opacity=".16" font-family="${esc(fontStack(s.displayFamily))}" font-weight="700" font-size="${round(markSize)}" text-anchor="end">”</text>`,
-      textBlock({ lines, x: w - s.safeX, y: top + size * .82, size, fill: p.ink, weight: 500, family: s.displayFamily, lineHeight: 1.58 }),
+      textBlock({ lines, x: w - s.safeX, y: top + size * .82, size, fill: titleInk(s), weight: 500, family: s.displayFamily, lineHeight: 1.58 }),
     ].join(''),
   }
   const signature: StackItem = {
@@ -991,7 +1093,7 @@ const paintDualThesis: Painter = (s) => {
       `<rect x="${round(panelX + panelW - pad * .42)}" y="${round(top + pad * .9)}" width="${round(min * .006)}" height="${round(panelH - pad * 1.8)}" rx="3" fill="${p.accent}" opacity=".9"/>`,
       drawStack([
         kickerItem(s, { x: panelX + panelW - pad }),
-        textItem({ lines: title.lines, x: panelX + panelW - pad, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .03 }),
+        textItem({ lines: title.lines, x: panelX + panelW - pad, size: title.size, fill: titleInk(s), weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s), gap: min * .03 }),
       ], { top: top + pad * .8, bottom: top + panelH - pad * .8 }, .35),
       !full && body.lines.length ? [
         textBlock({ lines: [arabicIndex(1)], x: panelX - min * .06, y: top + pad + min * .012, size: min * .03, fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal', opacity: .9 }),
@@ -1040,7 +1142,7 @@ const paintEvidenceLedger: Painter = (s) => {
   const stack = drawStack([
     kickerItem(s),
     figureItem,
-    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: figure ? '' : s.hero, emphasisFill: p.accent, gap: min * .04 }),
+    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: titleInk(s), weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: figure ? '' : s.hero, emphasisFill: accentInk(s), gap: min * .04 }),
     ledgerBody,
     ctaItem(s, { gap: min * .06 }),
     carouselItem(s),
@@ -1070,7 +1172,7 @@ const paintEventMarquee: Painter = (s) => {
     }).join(''),
   } : { h: 0, draw: () => '' }
   const stack = drawStack([
-    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s) }),
     chipsItem,
     textItem({ lines: body.lines, x: w - s.safeX, size: body.size, fill: p.muted, weight: 400, family: s.bodyFamily, lineHeight: 1.6, gap: min * .05 }),
     ctaItem(s, { gap: min * .065 }),
@@ -1119,7 +1221,7 @@ const paintKnowledgeMap: Painter = (s) => {
   return {
     markup: [
       kickerItem(s).draw(titleTop - min * .045),
-      showTitleHeading ? textBlock({ lines: title.lines, x: w - s.safeX, y: titleTop + title.size * .82, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight }) : '',
+      showTitleHeading ? textBlock({ lines: title.lines, x: w - s.safeX, y: titleTop + title.size * .82, size: title.size, fill: titleInk(s), weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight }) : '',
       `<circle cx="${round(centerX)}" cy="${round(centerY)}" r="${round(orbitR)}" fill="none" stroke="${p.rule}" stroke-width="1.1" opacity=".55"/>`,
       `<g filter="url(#${s.uid}-shadow)"><circle cx="${round(centerX)}" cy="${round(centerY)}" r="${round(coreR)}" fill="${p.accent}"/></g>`,
       textBlock({ lines: [hero], x: centerX, y: centerY + min * .013, size: clamp((coreR * 1.55) / Math.max(1, textUnits(hero) * .555), min * .022, min * .04), fill: '#FFFFFF', weight: 700, anchor: 'middle', family: s.displayFamily }),
@@ -1140,7 +1242,7 @@ const paintQuietOrbit: Painter = (s) => {
   const angle = -Math.PI / 3.4
   const stack = drawStack([
     kickerItem(s, { x: cx, anchor: 'middle' }),
-    textItem({ lines: title.lines, x: cx, size: title.size, fill: p.ink, weight: s.titleWeight, anchor: 'middle', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .045 }),
+    textItem({ lines: title.lines, x: cx, size: title.size, fill: titleInk(s), weight: s.titleWeight, anchor: 'middle', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s), gap: min * .045 }),
     textItem({ lines: body.lines, x: cx, size: body.size, fill: p.muted, weight: 400, anchor: 'middle', family: s.bodyFamily, lineHeight: 1.6, gap: min * .045 }),
   ], { top: cy - outer * .62, bottom: cy + outer * .62 }, .5)
   return {
@@ -1167,7 +1269,7 @@ const paintChapterStack: Painter = (s) => {
   const body = fitBody(s, sheetW - pad * 2 - w * .04)
   const headerH = min * .1
   const innerStackItems: StackItem[] = [
-    textItem({ lines: title.lines, x: sheetX + sheetW - pad, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+    textItem({ lines: title.lines, x: sheetX + sheetW - pad, size: title.size, fill: titleInk(s), weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s) }),
     ruleItem(s, { x: sheetX + sheetW - pad, gap: min * .04 }),
     textItem({ lines: body.lines, x: sheetX + sheetW - pad, size: body.size, fill: p.muted, weight: 400, family: s.bodyFamily, lineHeight: 1.64, gap: min * .05 }),
     ctaItem(s, { x: sheetX + pad, gap: min * .06 }),
@@ -1254,7 +1356,7 @@ const paintCinematicWindow: Painter = (s) => {
       family: s.displayFamily,
       lineHeight: s.titleLineHeight,
       emphasisWord: s.hero,
-      emphasisFill: p.accent,
+      emphasisFill: accentInk(s),
     })
     const bodyMarkup = body.lines.length ? textBlock({
       lines: body.lines,
@@ -1395,7 +1497,7 @@ const paintModularBrief: Painter = (s) => {
     draw: (top) => [
       `<g filter="url(#${uid}-shadow)"><rect x="${round(x0)}" y="${round(top)}" width="${round(contentW)}" height="${round(titleCardH)}" rx="${round(min * .02)}" fill="${p.surface}"/></g>`,
       `<rect x="${round(x1 - min * .034)}" y="${round(top + min * .05)}" width="${round(min * .006)}" height="${round(titleCardH - min * .1)}" rx="3" fill="${p.accent}"/>`,
-      textBlock({ lines: title.lines, x: x1 - min * .062, y: top + min * .06 + title.size * .82, size: title.size, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+      textBlock({ lines: title.lines, x: x1 - min * .062, y: top + min * .06 + title.size * .82, size: title.size, fill: titleInk(s), weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s) }),
     ].join(''),
   }
   const bodyItem: StackItem = body.lines.length ? {
@@ -1696,7 +1798,7 @@ const paintInfographic: Painter = (s) => {
   const titleAnchor = variant === 'spotlight' ? 'middle' : 'end'
   const stack = drawStack([
     variant === 'spotlight' ? kickerItem({ ...kickerScene, kicker: kickerScene.kicker } as Scene, { x: w / 2, anchor: 'middle' }) : kickerItem(kickerScene),
-    textItem({ lines: title.lines, x: variant === 'spotlight' ? w / 2 : w - s.safeX, size: title.size, fill: p.ink, weight: s.titleWeight, anchor: titleAnchor, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: figure ? '' : s.hero, emphasisFill: p.accent, gap: min * .03 }),
+    textItem({ lines: title.lines, x: variant === 'spotlight' ? w / 2 : w - s.safeX, size: title.size, fill: titleInk(s), weight: s.titleWeight, anchor: titleAnchor, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: figure ? '' : s.hero, emphasisFill: accentInk(s), gap: min * .03 }),
     statItem,
     ...rowItems,
     ctaItem(ctaScene, { align: variant === 'spotlight' ? 'center' : 'right', gap: min * .05 }),
@@ -1737,7 +1839,7 @@ const paintSaduWeave: Painter = (s) => {
   const body = fitBody(s, w * .58, { maxLines: 3 })
   const stack = drawStack([
     kickerItem(s, { x: w / 2, anchor: 'middle' }),
-    textItem({ lines: title.lines, x: w / 2, size: title.size, fill: p.ink, weight: 700, anchor: 'middle', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .045 }),
+    textItem({ lines: title.lines, x: w / 2, size: title.size, fill: titleInk(s), weight: 700, anchor: 'middle', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s), gap: min * .045 }),
     ruleItem(s, { x: w / 2, anchor: 'middle', width: min * .09, gap: min * .04 }),
     textItem({ lines: body.lines, x: w / 2, size: body.size, fill: p.muted, weight: 400, anchor: 'middle', family: s.bodyFamily, lineHeight: 1.6, gap: min * .05 }),
     ctaItem(s, { align: 'center', gap: min * .055 }),
@@ -1764,7 +1866,7 @@ const paintInkVeil: Painter = (s) => {
   const body = fitBody(s, w * .58, { maxLines: 2 })
   const stack = drawStack([
     kickerItem(s, { x: w / 2, anchor: 'middle' }),
-    textItem({ lines: title.lines, x: w / 2, size: title.size, fill: p.ink, weight: 800, anchor: 'middle', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: hero, emphasisFill: p.accent, gap: min * .05 }),
+    textItem({ lines: title.lines, x: w / 2, size: title.size, fill: titleInk(s), weight: 800, anchor: 'middle', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: hero, emphasisFill: accentInk(s), gap: min * .05 }),
     ruleItem(s, { x: w / 2, anchor: 'middle', width: min * .06, gap: min * .034 }),
     textItem({ lines: body.lines, x: w / 2, size: body.size, fill: p.muted, weight: 400, anchor: 'middle', family: s.bodyFamily, lineHeight: 1.6, gap: min * .05 }),
     ctaItem(s, { align: 'center', gap: min * .06 }),
@@ -1816,7 +1918,7 @@ const paintNeuralConstellation: Painter = (s) => {
   const body = fitBody(s, zoneW * .92, { maxLines: 3 })
   const stack = drawStack([
     kickerItem(s),
-    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .04 }),
+    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s), gap: min * .04 }),
     ruleItem(s, { gap: min * .045 }),
     textItem({ lines: body.lines, x: w - s.safeX, size: body.size, fill: p.muted, weight: 400, family: s.bodyFamily, lineHeight: 1.6, gap: min * .05 }),
     ctaItem(s, { gap: min * .055 }),
@@ -1858,7 +1960,7 @@ const paintSiliconArabesque: Painter = (s) => {
   const body = fitBody(s, zoneW * .9, { maxLines: 3 })
   const stack = drawStack([
     kickerItem(s),
-    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .04 }),
+    textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s), gap: min * .04 }),
     ruleItem(s, { gap: min * .045 }),
     textItem({ lines: body.lines, x: w - s.safeX, size: body.size, fill: p.muted, weight: 400, family: s.bodyFamily, lineHeight: 1.6, gap: min * .05 }),
     ctaItem(s, { gap: min * .055 }),
@@ -1900,7 +2002,7 @@ const paintSwissGrid: Painter = (s) => {
     `<line x1="${round(left)}" y1="${round(baselineY)}" x2="${round(right)}" y2="${round(baselineY)}" stroke="${p.ink}" stroke-width="2" opacity=".85"/>`,
     s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: colRight(0), y: baselineY - min * .018, size: Math.max(13, min * .019), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
     /* «العنوان على خط الشبكة»: أعلى كتلة العنوان ملتصقٌ بالخط الأفقي تماماً. */
-    textBlock({ lines: title.lines, x: colRight(0), y: baselineY + title.size * .92, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+    textBlock({ lines: title.lines, x: colRight(0), y: baselineY + title.size * .92, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s) }),
   ]
   const afterTitle = baselineY + title.size * .92 + blockHeight(title.lines, title.size, s.titleLineHeight)
   let cursor = afterTitle + min * .06
@@ -1982,7 +2084,7 @@ const paintMagazineColumns: Painter = (s) => {
   return {
     markup: [
       s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: w - s.safeX, y: headTop - min * .012, size: Math.max(12, min * .018), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
-      textBlock({ lines: title.lines, x: w - s.safeX, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+      textBlock({ lines: title.lines, x: w - s.safeX, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s) }),
       `<line x1="${round(s.safeX)}" y1="${round(ruleY)}" x2="${round(w - s.safeX)}" y2="${round(ruleY)}" stroke="${p.rule}" stroke-width="1.4"/>`,
       divider, drop, rightBlocks, leftBlocks,
       identityFooter(s),
@@ -2015,7 +2117,7 @@ const paintTypePoster: Painter = (s) => {
   const stack = lines.map((word, index) => {
     const size = sizes[index]
     const isHero = heroKey && normalizeForCompare(word) === heroKey
-    const markup = textBlock({ lines: [word], x: w / 2, y: y + size * .84, size, fill: isHero ? p.accent : p.ink, weight: 800, anchor: 'middle', family: s.displayFamily })
+    const markup = textBlock({ lines: [word], x: w / 2, y: y + size * .84, size, fill: isHero ? accentInk(s) : titleInk(s), weight: 800, anchor: 'middle', family: s.displayFamily })
     y += size * 1.06
     return markup
   }).join('')
@@ -2059,7 +2161,7 @@ const paintMarginalia: Painter = (s) => {
     markup: [
       rail,
       s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: textRight, y: top - min * .022, size: Math.max(12, min * .018), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
-      textBlock({ lines: title.lines, x: textRight, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+      textBlock({ lines: title.lines, x: textRight, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s) }),
       body.lines.length ? textBlock({ lines: body.lines, x: textRight, y: bodyTop + body.size, size: body.size, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.72 }) : '',
       marginParts.join(''),
       cta.h ? cta.draw(h - s.safeY - min * .17) : '',
@@ -2090,7 +2192,7 @@ const paintVerticalTimeline: Painter = (s) => {
     const body = fitBody(s, w - s.safeX * 2, { maxLines: 5 })
     const stack = drawStack([
       kickerItem(s),
-      textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent, gap: min * .04 }),
+      textItem({ lines: title.lines, x: w - s.safeX, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s), gap: min * .04 }),
       ruleItem(s, { gap: min * .035 }),
       textItem({ lines: body.lines, x: w - s.safeX, size: body.size, fill: p.muted, weight: 400, anchor: 'end', family: s.bodyFamily, lineHeight: 1.68, gap: min * .04 }),
       ctaItem(s, { gap: min * .05 }),
@@ -2116,7 +2218,7 @@ const paintVerticalTimeline: Painter = (s) => {
     markup: [
       `<line x1="${round(railX)}" y1="${round(railTop)}" x2="${round(railX)}" y2="${round(railBottom)}" stroke="${p.rule}" stroke-width="1.6"/>`,
       s.kicker ? textBlock({ lines: [toArabicIndic(s.kicker)], x: w - s.safeX, y: top - min * .018, size: Math.max(12, min * .018), fill: p.accent, weight: 700, anchor: 'end', family: 'Tajawal' }) : '',
-      textBlock({ lines: title.lines, x: w - s.safeX, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: p.accent }),
+      textBlock({ lines: title.lines, x: w - s.safeX, y: titleBase, size: title.size, fill: p.ink, weight: 700, anchor: 'end', family: s.displayFamily, lineHeight: s.titleLineHeight, emphasisWord: s.hero, emphasisFill: accentInk(s) }),
       stops,
       identityFooter(s),
     ].join(''),
@@ -2374,7 +2476,7 @@ function renderCarouselSlideSvg(plan: CompositionPlan, slideIndex: number, optio
 
   const stack = drawStack([
     kickerItem({ ...s, kicker: slide.kicker || `${slideIndex + 1} / ${total}` } as Scene, isClosing ? { x: w / 2, anchor: 'middle' } : {}),
-    textItem({ lines: titleLines, x: isClosing ? w / 2 : w - s.safeX, size: titleSize, fill: p.ink, weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, anchor: isClosing ? 'middle' : 'end', gap: min * .045 }),
+    textItem({ lines: titleLines, x: isClosing ? w / 2 : w - s.safeX, size: titleSize, fill: titleInk(s), weight: s.titleWeight, family: s.displayFamily, lineHeight: s.titleLineHeight, anchor: isClosing ? 'middle' : 'end', gap: min * .045 }),
     ruleItem(s, isClosing ? { x: w / 2, anchor: 'middle', gap: min * .04 } : { gap: min * .04 }),
     textItem({ lines: bodyLines, x: isClosing ? w / 2 : w - s.safeX, size: bodySize, fill: p.muted, weight: 400, family: s.bodyFamily, lineHeight: 1.66, anchor: isClosing ? 'middle' : 'end', gap: min * .05 }),
     closingCta,

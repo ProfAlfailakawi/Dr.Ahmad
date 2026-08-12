@@ -179,6 +179,7 @@ const adminAnalyticsPath = '/api/admin/analytics/events'
 const adminNowPath = '/api/admin/site-now'
 const adminJourneysPath = '/api/admin/journeys'
 const podcastDispatchPath = '/api/admin/podcast/dispatch'
+const podcastKuwaitiApprovePath = '/api/admin/podcast/approve-kuwaiti'
 const audioManagePath = '/api/admin/audio/manage'
 const sourcesCheckPath = '/api/admin/sources/check'
 const controlCenterPath = '/api/admin/control-center'
@@ -5681,7 +5682,18 @@ export function createRequestHandler({
       const revisionSha256 = boundedString(body?.expectedDialogueRevisionSha256, 64).toLowerCase()
       const revisionId = boundedString(body?.expectedDialogueRevisionId, 128)
       const turnCount = Number(body?.expectedTurnCount)
+      const variant = boundedString(body?.variant || 'standard', 20)
+      if (!['standard', 'kuwaiti'].includes(variant)) throw new HttpError(400, 'نسخة الحوار غير صالحة')
+      const isKuwaiti = variant === 'kuwaiti'
+      const dialogueCollection = isKuwaiti ? 'podcast_dialogues_kw' : 'podcast_dialogues'
+      const productionCollection = isKuwaiti ? 'podcast_production_kw' : 'podcast_production'
+      const expectedSource = isKuwaiti ? 'admin-upload-kuwaiti' : 'admin-upload'
+      const kuwaitiGenerationMode = String(process.env.PODCAST_KW_GENERATION_MODE || 'pilot').trim().toLowerCase()
+      const kuwaitiPilotSlug = String(process.env.PODCAST_KW_PILOT_SLUG || 'success-that-does-not-bring-joy-to-its-ownerarabic').trim()
       if (!/^[a-z0-9-]+$/.test(slug)) throw new HttpError(400, 'slug غير صالح')
+      if (isKuwaiti && kuwaitiGenerationMode !== 'all' && slug !== kuwaitiPilotSlug) {
+        throw new HttpError(409, 'الـ144 حواراً الكويتيين جاهزون، لكن توليد Gemini مقفول حالياً على الحلقة التجريبية المعتمدة فقط')
+      }
       if (!/^[a-f0-9]{64}$/.test(contentSha256) || !/^[a-f0-9]{64}$/.test(revisionSha256)) {
         throw new HttpError(400, 'بصمة الحوار غير صالحة')
       }
@@ -5691,21 +5703,21 @@ export function createRequestHandler({
 
       const { db, FieldValue } = await getAdminFirestore()
       const [dialogueSnapshot, productionSnapshot] = await Promise.all([
-        db.collection('podcast_dialogues').doc(slug).get(),
-        db.collection('podcast_production').doc(slug).get(),
+        db.collection(dialogueCollection).doc(slug).get(),
+        db.collection(productionCollection).doc(slug).get(),
       ])
       if (!dialogueSnapshot.exists) throw new HttpError(409, 'الحوار المرفوع غير موجود')
       if (!productionSnapshot.exists) throw new HttpError(409, 'قرار الإرسال للتوليد غير موجود')
       const dialogue = dialogueSnapshot.data() || {}
       const production = productionSnapshot.data() || {}
-      const exactLock = dialogue.source === 'admin-upload'
+      const exactLock = dialogue.source === expectedSource
         && Number(dialogue.schemaVersion) === 2
         && dialogue.contentSha256 === contentSha256
         && dialogue.revisionSha256 === revisionSha256
         && dialogue.revisionId === revisionId
         && Number(dialogue.turnCount) === turnCount
         && production.status === 'queued'
-        && production.sourceCollection === 'podcast_dialogues'
+        && production.sourceCollection === dialogueCollection
         && production.expectedDialogueContentSha256 === contentSha256
         && production.expectedDialogueRevisionSha256 === revisionSha256
         && production.expectedDialogueRevisionId === revisionId
@@ -5727,7 +5739,9 @@ export function createRequestHandler({
 
       const githubToken = String(process.env.GITHUB_WORKFLOW_TOKEN || process.env.GITHUB_ACTIONS_TOKEN || '').trim()
       const githubRepository = String(process.env.PODCAST_GITHUB_REPOSITORY || 'ProfAlfailakawi/Dr.Ahmad').trim()
-      const githubWorkflow = String(process.env.PODCAST_GITHUB_WORKFLOW || 'podcast-pilot-release.yml').trim()
+      const githubWorkflow = String(isKuwaiti
+        ? (process.env.PODCAST_KW_GITHUB_WORKFLOW || 'podcast-kuwaiti-pilot.yml')
+        : (process.env.PODCAST_GITHUB_WORKFLOW || 'podcast-pilot-release.yml')).trim()
       const githubRef = String(process.env.PODCAST_GITHUB_REF || 'main').trim()
       if (!githubToken) throw new HttpError(503, 'الربط الآلي مع GitHub غير مفعّل على الخادم: أضف GITHUB_WORKFLOW_TOKEN مرة واحدة إلى خدمة dr-api')
       if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(githubRepository)
@@ -5736,7 +5750,7 @@ export function createRequestHandler({
         throw new HttpError(503, 'إعدادات مستودع GitHub على الخادم غير صالحة')
       }
 
-      const productionRef = db.collection('podcast_production').doc(slug)
+      const productionRef = db.collection(productionCollection).doc(slug)
       await productionRef.set({
         dispatchState: 'requested',
         dispatchedDialogueRevisionId: revisionId,
@@ -5758,7 +5772,7 @@ export function createRequestHandler({
               'user-agent': 'dr-alfailakawi-podcast-admin/1.0',
               'x-github-api-version': '2026-03-10',
             },
-            body: JSON.stringify({ ref: githubRef, inputs: { slugs: slug } }),
+            body: JSON.stringify({ ref: githubRef, inputs: isKuwaiti ? { slugs: slug, revision_id: revisionId } : { slugs: slug } }),
           }, 15_000)
       } catch (error) {
         await productionRef.set({
@@ -5790,7 +5804,9 @@ export function createRequestHandler({
         githubWorkflowRunId: workflowRunId,
         githubWorkflowRunUrl: workflowRunUrl,
         dispatchError: '',
-        note: 'بدأ GitHub Actions تلقائياً من لوحة التحكم للحوار المرفوع والمقفول نفسه.',
+        note: isKuwaiti
+          ? 'بدأ GitHub Actions لمسار Gemini الكويتي المقفول نفسه.'
+          : 'بدأ GitHub Actions تلقائياً من لوحة التحكم للحوار المرفوع والمقفول نفسه.',
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true })
       sendJson(res, 200, {
@@ -5798,8 +5814,95 @@ export function createRequestHandler({
         duplicate: false,
         workflowRunId,
         workflowRunUrl,
-        message: 'بدأ التوليد تلقائياً من لوحة التحكم.',
+        message: isKuwaiti ? 'بدأ توليد الحلقة الكويتية عبر Gemini 3.1 Flash TTS.' : 'بدأ التوليد تلقائياً من لوحة التحكم.',
       })
+      return
+    }
+
+    if (url.pathname === podcastKuwaitiApprovePath) {
+      if (method !== 'POST') {
+        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
+        return
+      }
+      const contentType = String(req.headers['content-type'] || '').toLowerCase()
+      if (contentType.split(';', 1)[0].trim() !== 'application/json') {
+        req.resume()
+        throw new HttpError(415, 'Content-Type must be application/json')
+      }
+      const token = bearerToken(req.headers.authorization)
+      const claims = await verifyToken(token)
+      if (claims?.admin !== true || typeof claims.sub !== 'string' || !claims.sub) {
+        req.resume()
+        throw new HttpError(403, 'Admin access required')
+      }
+      const body = await readJsonBody(req, 4_096)
+      const slug = boundedString(body?.slug, 180)
+      const revisionId = boundedString(body?.revisionId, 128)
+      if (!/^[a-z0-9-]+$/.test(slug) || !/^[A-Za-z0-9._:-]{8,128}$/.test(revisionId)) {
+        throw new HttpError(400, 'بيانات اعتماد النسخة الكويتية غير صالحة')
+      }
+      const generationMode = String(process.env.PODCAST_KW_GENERATION_MODE || 'pilot').trim().toLowerCase()
+      const pilotSlug = String(process.env.PODCAST_KW_PILOT_SLUG || 'success-that-does-not-bring-joy-to-its-ownerarabic').trim()
+      if (generationMode !== 'all' && slug !== pilotSlug) throw new HttpError(409, 'الاعتماد التجريبي مقفول على الحلقة الأولى فقط')
+
+      const { db, FieldValue } = await getAdminFirestore()
+      const ref = db.collection('podcast_production_kw').doc(slug)
+      const snap = await ref.get()
+      if (!snap.exists) throw new HttpError(409, 'لا توجد نسخة كويتية مرشحة للاعتماد')
+      const production = snap.data() || {}
+      const exact = production.status === 'awaiting_approval'
+        && production.stage === 'awaiting_approval'
+        && production.candidateRevisionId === revisionId
+        && /^[a-f0-9]{64}$/.test(String(production.candidateAudioSha256 || ''))
+        && /^[a-f0-9]{64}$/.test(String(production.candidateTranscriptSha256 || ''))
+      if (!exact) throw new HttpError(409, 'النسخة المرشحة تغيّرت أو لم تكتمل؛ أعد فتح التبويب قبل الاعتماد')
+      if (production.approvalState === 'accepted' && production.approvedRevisionId === revisionId) {
+        sendJson(res, 200, { ok: true, duplicate: true, message: 'هذه النسخة معتمدة ويجري نشرها بالفعل.' })
+        return
+      }
+
+      const githubToken = String(process.env.GITHUB_WORKFLOW_TOKEN || process.env.GITHUB_ACTIONS_TOKEN || '').trim()
+      const githubRepository = String(process.env.PODCAST_GITHUB_REPOSITORY || 'ProfAlfailakawi/Dr.Ahmad').trim()
+      const githubWorkflow = String(process.env.PODCAST_KW_PROMOTE_WORKFLOW || 'podcast-kuwaiti-promote.yml').trim()
+      const githubRef = String(process.env.PODCAST_GITHUB_REF || 'main').trim()
+      if (!githubToken) throw new HttpError(503, 'الربط الآلي مع GitHub غير مفعّل على الخادم')
+      if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(githubRepository)
+        || !/^[A-Za-z0-9_.-]+\.ya?ml$/i.test(githubWorkflow)
+        || !/^[A-Za-z0-9._/-]+$/.test(githubRef)) throw new HttpError(503, 'إعدادات نشر النسخة الكويتية غير صالحة')
+
+      await ref.set({
+        approvalState: 'accepted', approvedRevisionId: revisionId,
+        approvedBy: claims.sub, approvalRequestedAt: FieldValue.serverTimestamp(),
+        approvalError: '', status: 'publishing', stage: 'approval_accepted', updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true })
+      let githubResponse
+      try {
+        githubResponse = await fetchWithTimeout(fetch,
+          `https://api.github.com/repos/${githubRepository}/actions/workflows/${encodeURIComponent(githubWorkflow)}/dispatches`, {
+            method: 'POST',
+            headers: {
+              accept: 'application/vnd.github+json', authorization: `Bearer ${githubToken}`,
+              'content-type': 'application/json', 'user-agent': 'dr-alfailakawi-kuwaiti-approval/1.0',
+              'x-github-api-version': '2026-03-10',
+            },
+            body: JSON.stringify({ ref: githubRef, inputs: { slug, revision_id: revisionId } }),
+          }, 15_000)
+      } catch (error) {
+        await ref.set({
+          approvalState: 'waiting', status: 'awaiting_approval', stage: 'awaiting_approval',
+          approvalError: boundedString(error instanceof Error ? error.message : 'GitHub request failed', 700),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true })
+        throw new HttpError(502, 'تعذّر بدء نشر النسخة المعتمدة؛ بقي المرشح محفوظاً للمراجعة')
+      }
+      if (![200, 201, 202, 204].includes(githubResponse.status)) {
+        let payload = {}
+        try { payload = await githubResponse.json() } catch { /* noop */ }
+        const message = boundedString(payload?.message, 500) || `GitHub HTTP ${githubResponse.status}`
+        await ref.set({ approvalState: 'waiting', status: 'awaiting_approval', stage: 'awaiting_approval', approvalError: message, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+        throw new HttpError(502, `رفض GitHub نشر النسخة المعتمدة: ${message}`)
+      }
+      sendJson(res, 200, { ok: true, duplicate: false, message: 'اعتُمدت النسخة نفسها وبدأت ترقيتها إلى مجلس الفكرة.' })
       return
     }
 

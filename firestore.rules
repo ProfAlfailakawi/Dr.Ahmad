@@ -111,6 +111,13 @@ service cloud.firestore {
     match /podcast_production/{slug} {
       allow read, create, update, delete: if isAdmin();
     }
+    // نسخة كويتية موازية تماماً؛ لا تشارك مستندات الفصحى ولا طابور إنتاجها.
+    match /podcast_dialogues_kw/{slug} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /podcast_production_kw/{slug} {
+      allow read, create, update, delete: if isAdmin();
+    }
     // رادار الشبكة: يكتبه سكربت الالتقاط اليومي بحساب الخدمة
     // (حساب الخدمة يتجاوز القواعد) — للزوار قراءة فقط.
     match /site_radar/{id} {

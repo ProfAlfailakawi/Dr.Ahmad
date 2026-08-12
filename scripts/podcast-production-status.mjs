@@ -14,6 +14,9 @@ const numberArg = (name) => {
 }
 const status = readArg('status')
 const stage = readArg('stage', status)
+const variant = readArg('variant', 'standard')
+const isKuwaiti = variant === 'kuwaiti'
+const productionCollection = isKuwaiti ? 'podcast_production_kw' : 'podcast_production'
 const slugs = readArg('slugs').split(',').map((item) => item.trim()).filter(Boolean)
 if (!status || !slugs.length) process.exit(0)
 const saPath = resolve(ROOT, process.env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
@@ -28,7 +31,9 @@ const runUrl = runId && repository ? `https://github.com/${repository}/actions/r
 
 for (const slug of slugs) {
   let note = readArg('note')
-  const auditPath = resolve(ROOT, 'podcast-audits', `${slug}.ar.json`)
+  const auditPath = isKuwaiti
+    ? resolve(ROOT, 'podcast-audits', 'kuwaiti', `${slug}.json`)
+    : resolve(ROOT, 'podcast-audits', `${slug}.ar.json`)
   let audit = null
   if (existsSync(auditPath)) {
     try { audit = JSON.parse(readFileSync(auditPath, 'utf8')) } catch { audit = null }
@@ -55,7 +60,7 @@ for (const slug of slugs) {
     lastWorkflowRun: runId,
     workflowRunUrl: runUrl,
   }
-  await db.doc(`podcast_production/${slug}`).set({
+  await db.doc(`${productionCollection}/${slug}`).set({
     ...patch,
     stageHistory: FieldValue.arrayUnion({
       stage,

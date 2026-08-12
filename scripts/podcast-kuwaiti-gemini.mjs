@@ -75,6 +75,15 @@ function promptFor(turns, index, total) {
   return `AUDIO PROFILE\nFahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical.\n\nSCENE\nA quiet modern studio in Kuwait. Two colleagues are discussing an idea for a thoughtful general audience. It must feel like a real relaxed Kuwaiti conversation, not an announcer reading copy.\n\nDIRECTOR'S NOTES\n- Speak in contemporary URBAN KUWAITI ARABIC exactly as written in the transcript.\n- Accent target: educated urban Kuwait City. Soft, modern, clear and broadly understandable across the Arab world.\n- IMPORTANT: even when a sentence contains an academic term, proper name, quotation, or a word shared with MSA, pronounce the surrounding Arabic with Kuwaiti phonology and Kuwaiti conversational rhythm. Never switch the sentence into a formal MSA reading voice.\n- Treat question marks as Kuwaiti spoken questions; do not add formal interrogative cadence.\n- Do NOT drift into Egyptian, Levantine/Syrian, Saudi, Emirati, Bedouin, or Modern Standard Arabic pronunciation patterns.\n- Do not caricature Kuwaiti speech and do not exaggerate slang.\n- Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.\n- Natural turn-taking, subtle reactions, short human pauses, gentle intellectual chemistry. No radio-news cadence, no commercial voice, no melodrama.\n- Keep Fahad and Noura audibly consistent with earlier chunks. This is chunk ${index + 1} of ${total}.\n- Inline English performance tags guide delivery only; never speak the tags aloud.\n\nTRANSCRIPT\n${transcript}`
 }
 
+/* الصوت قد يعود في غلافٍ أعلى (interaction) بحسب مراجعة الواجهة؛ نقبل الشكلين
+   بدل أن نسقط بصمتٍ لو غيّرت جوجل الغلاف. */
+export function extractPcmBase64(body) {
+  return body?.output_audio?.data
+    || body?.interaction?.output_audio?.data
+    || body?.response?.output_audio?.data
+    || null
+}
+
 async function geminiPcm(prompt) {
   if (!KEY) throw new Error('GEMINI_API_KEY/GOOGLE_API_KEY مفقود')
   let last = null
@@ -83,7 +92,11 @@ async function geminiPcm(prompt) {
       const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 90_000)
       const response = await fetch(API, {
         method: 'POST', signal: controller.signal,
-        headers: { 'x-goog-api-key': KEY, 'Content-Type': 'application/json', 'Api-Revision': '2026-05-20' },
+        /* بلا ترويسة Api-Revision: هي ترويسة البثّ المتدفّق (stream:true) وحدها.
+           إرسالها على طلبٍ غير متدفّق يعيد 200 بغلافٍ متدفّقٍ لا يحمل
+           output_audio، فيسقط التوليد ورسالته «HTTP 200» بلا سبب — وهي
+           بالضبط علّة تشغيلة ١٢ أغسطس ٢٠٢٦. */
+        headers: { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: MODEL,
           input: prompt,
@@ -94,13 +107,23 @@ async function geminiPcm(prompt) {
           ] },
         }),
       }).finally(() => clearTimeout(timer))
-      const body = await response.json().catch(() => ({}))
-      if (response.ok && body?.output_audio?.data) {
-        const pcm = Buffer.from(body.output_audio.data, 'base64')
+      /* يُقرأ نصاً أولاً: الغلاف غير المتوقّع (أو المتدفّق) ليس JSON دائماً،
+         و.json().catch(()=>({})) كان يبتلعه فتضيع كل قرينة على سبب السقوط. */
+      const raw = await response.text()
+      let body = null
+      try { body = JSON.parse(raw) } catch { /* غلاف غير JSON: يُشخَّص أدناه */ }
+      const data = extractPcmBase64(body)
+      if (response.ok && data) {
+        const pcm = Buffer.from(data, 'base64')
         if (pcm.length < 4000) throw new Error('Gemini أعاد صوتاً قصيراً/فارغاً')
         return pcm
       }
-      const message = body?.error?.message || body?.message || `HTTP ${response.status}`
+      /* الرسالة تحمل ما وصل فعلاً: بلا هذا كانت تُختصر إلى «HTTP 200». */
+      const shape = body && typeof body === 'object'
+        ? `مفاتيح الرد: ${Object.keys(body).join('، ') || '(فارغ)'}`
+        : `رد غير JSON (${raw.length} حرفاً)`
+      const message = body?.error?.message || body?.message
+        || `HTTP ${response.status} بلا output_audio — ${shape} · ${raw.slice(0, 240).replace(/\s+/g, ' ')}`
       if (response.status !== 429 && response.status < 500) throw new Error(message)
       last = new Error(message)
     } catch (error) { last = error }
@@ -225,7 +248,20 @@ if (SELF_TEST) {
   assert.match(prompt,/URBAN KUWAITI ARABIC/); assert.match(prompt,/Fahad:/); assert.match(promptFor(chunks[1],1,chunks.length),/Noura:/)
   const header = wavHeader(100)
   assert.equal(header.toString('ascii',0,4),'RIFF'); assert.equal(header.readUInt32LE(24),24000)
-  console.log('✓ Gemini Kuwaiti pipeline self-test: chunking + prompt + PCM/WAV')
+
+  /* حارس علّة «HTTP 200»: تشغيلة ١٢ أغسطس ٢٠٢٦ سقطت لأن طلباً غير متدفّق
+     حمل ترويسة البثّ، فعاد ٢٠٠ بغلافٍ بلا output_audio ولم تُبلّغ الرسالةُ
+     شيئاً. الحارسان أدناه يمنعان عودة الوجهين معاً. */
+  const source = readFileSync(resolve(ROOT,'scripts','podcast-kuwaiti-gemini.mjs'),'utf8')
+  const requestBlock = source.slice(source.indexOf('const response = await fetch(API'), source.indexOf('const raw = await response.text()'))
+  /* يُطابَق شكل الترويسة لا اسمها، وإلا لأمسك الحارسُ شرحه المكتوب أعلاه. */
+  assert.ok(!/['"]Api-Revision['"]\s*:/.test(requestBlock), 'ترويسة Api-Revision للبثّ وحده؛ وجودها على طلبٍ غير متدفّق يعيد 200 بلا صوت')
+  assert.equal(extractPcmBase64({ output_audio:{ data:'AAAA' } }),'AAAA')
+  assert.equal(extractPcmBase64({ interaction:{ output_audio:{ data:'BBBB' } } }),'BBBB')
+  assert.equal(extractPcmBase64({ candidates:[] }), null)
+  assert.equal(extractPcmBase64(null), null)
+
+  console.log('✓ Gemini Kuwaiti pipeline self-test: chunking + prompt + PCM/WAV + عقد الطلب والاستخراج')
   process.exit(0)
 }
 

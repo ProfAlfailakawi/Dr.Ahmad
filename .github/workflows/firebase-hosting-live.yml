@@ -153,6 +153,8 @@ jobs:
           # ناجٍ كان يمرّ والبناء أخضر. البوابة نفسها موجودة منذ أول يوم؛ ما كان
           # ينقصها إلا أن تُوصَل.
           check "Kuwaiti dialogue dialect gate" node scripts/verify-kuwaiti-dialogues.mjs
+          # ومحرّك الصوت الكويتي معه: عقد الطلب (بلا ترويسة بثّ) واستخراج الصوت.
+          check "Kuwaiti Gemini engine self-test" node scripts/podcast-kuwaiti-gemini.mjs --self-test
           check "Article body audit self-test" node scripts/audit-article-bodies.mjs --self-test
 
       - name: TypeScript

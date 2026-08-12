@@ -29,19 +29,37 @@ for (const slug of slugs) {
   const dialogue = dialogueSnap.data() || {}
   const production = productionSnap.data() || {}
   const proof = dialogueHashes(dialogue.turns)
-  const exact = dialogue.source === 'admin-upload-kuwaiti'
-    && Number(dialogue.schemaVersion) === 2
-    && dialogue.contentSha256 === proof.contentSha256
-    && dialogue.revisionSha256 === proof.revisionSha256
-    && dialogue.revisionId === proof.revisionId
-    && Number(dialogue.turnCount) === proof.turnCount
-    && production.status === 'queued'
-    && production.sourceCollection === 'podcast_dialogues_kw'
-    && production.expectedDialogueContentSha256 === proof.contentSha256
-    && production.expectedDialogueRevisionSha256 === proof.revisionSha256
-    && production.expectedDialogueRevisionId === proof.revisionId
-    && Number(production.expectedTurnCount) === proof.turnCount
-  if (!exact) throw new Error(`${slug}: قفل الحوار الكويتي لا يطابق قرار التوليد`)
+  /* شرطُ السلامة الحقيقي هو تطابق البصمات: الصوت يجب أن يُولَّد من النصّ
+     المعتمد نفسه حرفاً بحرف. تُفحص كل شرطٍ على حدة ويُسمّى ما سقط منها،
+     لأن رسالة «لا يطابق» المجملة كانت تُخفي أيّ الشروط الاثني عشر انكسر. */
+  const integrity = [
+    ['مصدر الحوار admin-upload-kuwaiti', dialogue.source === 'admin-upload-kuwaiti', dialogue.source],
+    ['schemaVersion=2', Number(dialogue.schemaVersion) === 2, dialogue.schemaVersion],
+    ['بصمة المتن', dialogue.contentSha256 === proof.contentSha256, `${String(dialogue.contentSha256).slice(0, 12)}≠${proof.contentSha256.slice(0, 12)}`],
+    ['بصمة المراجعة', dialogue.revisionSha256 === proof.revisionSha256, `${String(dialogue.revisionSha256).slice(0, 12)}≠${proof.revisionSha256.slice(0, 12)}`],
+    ['معرّف المراجعة', dialogue.revisionId === proof.revisionId, `${String(dialogue.revisionId).slice(0, 12)}≠${proof.revisionId.slice(0, 12)}`],
+    ['عدد المداخلات', Number(dialogue.turnCount) === proof.turnCount, `${dialogue.turnCount}≠${proof.turnCount}`],
+    ['مجموعة المصدر', production.sourceCollection === 'podcast_dialogues_kw', production.sourceCollection],
+    ['بصمة المتن في قرار الإنتاج', production.expectedDialogueContentSha256 === proof.contentSha256, String(production.expectedDialogueContentSha256).slice(0, 12)],
+    ['بصمة المراجعة في قرار الإنتاج', production.expectedDialogueRevisionSha256 === proof.revisionSha256, String(production.expectedDialogueRevisionSha256).slice(0, 12)],
+    ['معرّف المراجعة في قرار الإنتاج', production.expectedDialogueRevisionId === proof.revisionId, String(production.expectedDialogueRevisionId).slice(0, 12)],
+    ['عدد المداخلات في قرار الإنتاج', Number(production.expectedTurnCount) === proof.turnCount, production.expectedTurnCount],
+  ]
+  const brokenIntegrity = integrity.filter(([, ok]) => !ok)
+  if (brokenIntegrity.length) {
+    throw new Error(`${slug}: قفل الحوار الكويتي لا يطابق قرار التوليد — ${brokenIntegrity.map(([label, , got]) => `${label} (الموجود: ${got})`).join(' · ')}`)
+  }
+  /* حالة الطابور بكرٌ بحسابها لا بسلامتها: تشغيلةٌ سقطت تترك المستند عند
+     generating أو needs_review، فتُرفض كلُّ إعادةِ محاولةٍ بعدها ويُظنّ العطب
+     في النص. البصمات أعلاه اجتازت، فالنصّ هو المعتمد نفسه — تُستأنف المحاولة
+     ويُعلَن ذلك في السجل. أما status غير معروفة (مثل published) فتبقى مرفوضة. */
+  const RESUMABLE = new Set(['queued', 'generating', 'needs_review', 'failed'])
+  if (!RESUMABLE.has(String(production.status))) {
+    throw new Error(`${slug}: حالة الإنتاج «${production.status}» لا تسمح بالتوليد؛ أعد وضعه في الطابور من اللوحة`)
+  }
+  if (production.status !== 'queued') {
+    console.log(`↻ ${slug}: استئناف بعد محاولةٍ سابقة (الحالة «${production.status}») — البصمات مطابقة والنصّ لم يتغيّر`)
+  }
   writeFileSync(resolve(outDir, `${slug}.json`), `${JSON.stringify(proof.turns, null, 2)}\n`)
   writeFileSync(resolve(lockDir, `${slug}.json`), `${JSON.stringify({
     schemaVersion: 1, mode: 'manual-kuwaiti-upload-locked', slug,

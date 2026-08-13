@@ -8,7 +8,7 @@
 import { useSeo } from "../components/seo";
 import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Link, useSearchParams } from "react-router";
+import { Link } from "react-router";
 import { EASE, FadeUp, Page, PageHead } from "../components/ui";
 import {
   curatedBank,
@@ -20,7 +20,6 @@ import { useExtras } from "../lib/content";
 import { radarArabicNote, radarArabicTitle, radarSourceArabic } from "../lib/radar-display";
 import { liveLink } from "../lib/dead-links";
 import { Pagination, usePagedList } from "../components/Pagination";
-import { ContextualViewer } from "../components/ContextualViewer";
 /* روابط خارجية ثبت موتها (404/410) عبر الفاحص الأسبوعي — تُصفّى فلا يظهر كرتٌ ميّت.
    وحدات site_radar الميتة تُحذف من Firestore مباشرةً، فلا تصل الصفحة أصلاً. */
 import deadLinks from "../data/curated-dead-links.json";
@@ -186,14 +185,14 @@ const dedupe = (items: Curio[]) =>
     return allItems.findIndex((candidate) => (resolvedCurioUrl(candidate.url) || candidate.ar) === key) === index;
   });
 
-function SourceLine({ c, actionLabel = "اذهب للمصدر ←" }: { c: Curio; actionLabel?: string }) {
+function SourceLine({ c }: { c: Curio }) {
   return (
     <div className="mt-4 border-t border-hair pt-3 text-[.78rem] text-soft">
       <p className="flex items-center justify-between gap-3">
         <span>المصدر: {radarSourceArabic(c.source)}</span>
         {resolvedCurioUrl(c.url) && (
           <span className="shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">
-            {actionLabel}
+            اذهب للمصدر ←
           </span>
         )}
       </p>
@@ -237,10 +236,7 @@ export default function Curated() {
       "مواد حديثة وأدوات وأبحاث من الإنترنت، منتقاة بعناية من مصادر موثوقة وروابط أصلية.",
   });
   const reduce = useReducedMotion();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const kind = searchParams.get("kind") || "الكل";
-  const view = searchParams.get("view") === "scene" ? "scene" : "read";
-  const order = searchParams.get("order") === "latest" ? "latest" : "selected";
+  const [kind, setKind] = useState<"الكل" | string>("الكل");
   const [feature, setFeature] = useState<"today" | "book" | "question" | "radar">("today");
   const [today, setToday] = useState("");
 
@@ -283,35 +279,11 @@ export default function Curated() {
      بغباءٍ حتى لو كان التصميم جميلاً. */
   const radarHighlights = dynamic.slice(1, 3);
   const curioKey = (item: Curio) => resolvedCurioUrl(item.url) || item.ar;
-  const curioId = (item: Curio) => {
-    const value = curioKey(item);
-    let hash = 2166136261;
-    for (let index = 0; index < value.length; index += 1) {
-      hash ^= value.charCodeAt(index);
-      hash = Math.imul(hash, 16777619);
-    }
-    return (hash >>> 0).toString(36);
-  };
   const highlightedKeys = new Set([daily, book, ...radarHighlights].filter(Boolean).map((item) => curioKey(item as Curio)));
   const all = dedupe([...dynamic, ...curatedBank]).filter((item) => !highlightedKeys.has(curioKey(item)));
-  const filtered = kind === "الكل" ? all : all.filter((item) => item.kind === kind);
-  const shown = order === "latest"
-    ? [...filtered].sort((left, right) => (right.added || "").localeCompare(left.added || ""))
-    : filtered;
-  const pagedReading = usePagedList(shown, 2, `${kind}|${order}|read`);
-  const pagedScene = usePagedList(shown, 12, `${kind}|${order}|scene`);
-  const paged = view === "scene" ? pagedScene : pagedReading;
-  const selectedId = searchParams.get("pick") || "";
-  const selectedIndex = shown.findIndex((item) => curioId(item) === selectedId);
-  const selected = selectedIndex >= 0 ? shown[selectedIndex] : undefined;
-  const setParam = (key: "kind" | "view" | "order" | "pick", value: string, replace = true) => {
-    const next = new URLSearchParams(searchParams);
-    const defaults: Record<string, string> = { kind: "الكل", view: "read", order: "selected", pick: "" };
-    if (!value || value === defaults[key]) next.delete(key);
-    else next.set(key, value);
-    if (key !== "pick") next.delete("pick");
-    setSearchParams(next, { replace });
-  };
+  const shown =
+    kind === "الكل" ? all : all.filter((item) => item.kind === kind);
+  const paged = usePagedList(shown, 2, kind);
   /* صدق الوسم: «الأحدث من الإنترنت» لا تُقال حين نعمل على الاحتياطي */
   const radarLive = radarItems.length > 0;
   const latestAdded = dynamic[0]?.added ? fmtAdded(dynamic[0].added) : "";
@@ -395,7 +367,7 @@ export default function Curated() {
                     type="button"
                     role="tab"
                     aria-selected={kind === itemKind}
-                    onClick={() => setParam("kind", itemKind)}
+                    onClick={() => setKind(itemKind)}
                     className={`editorial-tab min-h-11 px-4 text-[.85rem] font-medium ${kind === itemKind ? "is-active" : ""}`}
                   >
                     {itemKind}
@@ -405,20 +377,7 @@ export default function Curated() {
             </div>
           </FadeUp>
 
-          <FadeUp delay={0.03}>
-            <div className="curated-explore-controls mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-hair/70 pt-3">
-              <div className="editorial-tablist flex gap-1" role="group" aria-label="ترتيب المختارات">
-                <button type="button" onClick={() => setParam("order", "selected")} aria-pressed={order === "selected"} className={`editorial-tab min-h-10 px-3 text-[.72rem] font-semibold ${order === "selected" ? "is-active" : ""}`}>مختارة</button>
-                <button type="button" onClick={() => setParam("order", "latest")} aria-pressed={order === "latest"} className={`editorial-tab min-h-10 px-3 text-[.72rem] font-semibold ${order === "latest" ? "is-active" : ""}`}>الأحدث</button>
-              </div>
-              <div className="editorial-tablist flex gap-1" role="group" aria-label="طريقة عرض المختارات">
-                <button type="button" onClick={() => setParam("view", "read")} aria-pressed={view === "read"} className={`editorial-tab min-h-10 px-3 text-[.72rem] font-semibold ${view === "read" ? "is-active" : ""}`}>قراءة</button>
-                <button type="button" onClick={() => setParam("view", "scene")} aria-pressed={view === "scene"} className={`editorial-tab min-h-10 px-3 text-[.72rem] font-semibold ${view === "scene" ? "is-active" : ""}`}>مشهد</button>
-              </div>
-            </div>
-          </FadeUp>
-
-          <div id="curated-grid" className={`mx-auto mt-10 max-w-4xl scroll-mt-28 space-y-4 ${view === "scene" ? "curated-scene-grid !max-w-shell !space-y-0" : ""}`}>
+          <div id="curated-grid" className="mx-auto mt-10 max-w-4xl scroll-mt-28 space-y-4">
             {paged.pageItems.map((item, index) => (
               <motion.div
                 key={item.url || item.ar}
@@ -432,11 +391,9 @@ export default function Curated() {
                 }}
                 className="w-full"
               >
-                <button
-                  type="button"
-                  onClick={() => setParam("pick", curioId(item), false)}
-                  aria-label={`معاينة ${radarArabicTitle(item.ar, item.en)}`}
-                  className={`group flex w-full flex-col border border-hair bg-canvas text-start transition-colors hover:border-accent ${view === "read" ? "min-h-[13rem] rounded-2xl p-7 md:p-9" : "curated-scene-card rounded-xl p-5 md:p-6"}`}
+                <CardWrap
+                  c={item}
+                  className="flex min-h-[13rem] flex-col rounded-2xl border border-hair bg-canvas p-7 transition-colors hover:border-accent md:p-9"
                 >
                   <span className="text-[.74rem] font-semibold text-accent">
                     {item.kind}
@@ -444,8 +401,8 @@ export default function Curated() {
                   <div className="mt-3 flex-1">
                     <CurioBody c={item} />
                   </div>
-                  <SourceLine c={item} actionLabel="معاينة السياق ←" />
-                </button>
+                  <SourceLine c={item} />
+                </CardWrap>
               </motion.div>
             ))}
           </div>
@@ -465,25 +422,6 @@ export default function Curated() {
 
         </div>
       </section>
-
-      <ContextualViewer
-        open={Boolean(selected)}
-        onClose={() => setParam("pick", "")}
-        eyebrow={selected?.kind || "مختارات د. أحمد"}
-        title={selected ? radarArabicTitle(selected.ar, selected.en) : ""}
-        description={selected ? radarArabicNote(selected.arNote, selected.en) : undefined}
-        visual={selected ? <div className="curated-context-poster"><span>{selected.kind}</span><strong>{radarArabicTitle(selected.ar, selected.en)}</strong><small>{radarSourceArabic(selected.source)}</small></div> : null}
-        onPrevious={selectedIndex > 0 ? () => setParam("pick", curioId(shown[selectedIndex - 1]), false) : undefined}
-        onNext={selectedIndex >= 0 && selectedIndex < shown.length - 1 ? () => setParam("pick", curioId(shown[selectedIndex + 1]), false) : undefined}
-        position={selectedIndex >= 0 ? `${selectedIndex + 1} / ${shown.length}` : undefined}
-        textualVisual
-        footer={selected && resolvedCurioUrl(selected.url) ? <a href={resolvedCurioUrl(selected.url)} target="_blank" rel="noreferrer" className="context-viewer-primary">اقرأ من المصدر الأول ↗</a> : undefined}
-      >
-        {selected && <dl className="context-viewer-facts">
-          <div><dt>المصدر</dt><dd>{radarSourceArabic(selected.source)}</dd></div>
-          {selected.added && <div><dt>أضيفت</dt><dd>{fmtAdded(selected.added)}</dd></div>}
-        </dl>}
-      </ContextualViewer>
     </Page>
   );
 }

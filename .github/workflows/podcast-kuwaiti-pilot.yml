@@ -9,6 +9,11 @@ on:
       revision_id:
         description: 'بصمة مراجعة الحوار المقفول من لوحة التحكم'
         required: true
+      regenerate:
+        description: 'استبدال مرشّحٍ ينتظر الاعتماد (يلزم فقط بعد تشغيلةٍ ناجحة)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -65,6 +70,8 @@ jobs:
         run: node scripts/fetch-kuwaiti-dialogues.mjs --slugs="$RELEASED_SLUGS"
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
+          # لا يُستبدل مرشّحٌ ينتظر الاعتماد إلا بطلبٍ صريح من مُطلِق التشغيلة.
+          PODCAST_KW_REGENERATE: ${{ inputs.regenerate && '1' || '' }}
 
       - name: Mark Gemini generation
         run: node scripts/podcast-production-status.mjs --variant=kuwaiti --status=processing --stage=generating_audio --slugs="$RELEASED_SLUGS" --note="قُفل النص الكويتي وبدأ Gemini 3.1 Flash TTS متعدد المتحدثين في Staging."

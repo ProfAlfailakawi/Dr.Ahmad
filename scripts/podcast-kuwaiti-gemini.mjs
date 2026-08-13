@@ -307,7 +307,9 @@ const MUSIC = {
      تحت الكلام لا فوقه. */
   introSec: 5.6, introLufs: -19, introFadeIn: 0.55, introFadeOut: 1.15, introOverlapSec: 1.15,
   outroSec: 6.5, outroLufs: -19, outroFadeIn: 0.65, outroFadeOut: 2.20, outroOverlapSec: 0.76,
-  bridgeSec: 1.60, bridgeLufs: -24,
+  /* الجسر فاصلٌ يُنتظر، لا نغمةٌ تمرّ تحت الكلام. كان ١.٦٠ث والمتحدث التالي
+     يدخل بعد ٠.٧٢ث من بدايته، فيدهسه قبل أن يأخذ حقّه — وهذه شكوى الدكتور. */
+  bridgeSec: 2.40, bridgeLufs: -24, bridgeTailSec: 0.30,
 }
 
 /* لكل حلقةٍ نغمتها: مكتبة الموسيقى المرخّصة تُوزَّع على الحلقات ببصمة الـslug
@@ -454,7 +456,7 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
       const bridgeStart = Math.max(0, current.startSec + current.durationSec - 0.12)
       bridgeItems.push({ file: bridgeFile, startSec: bridgeStart, durationSec: bridgeDuration, isBridge: true })
       // Let the next speaker enter under the tail of the bridge, but never over the previous spoken turn.
-      next.startSec = Math.max(current.startSec + current.durationSec + 0.18, bridgeStart + 0.72)
+      next.startSec = Math.max(current.startSec + current.durationSec + 0.18, bridgeStart + MUSIC.bridgeSec - MUSIC.bridgeTailSec)
       for (let j = i + 2; j < items.length; j += 1) {
         const prev = items[j - 1]
         const overlap = Math.max(0, Math.min(150, Number(turns[j].overlapMs || 0)))
@@ -576,6 +578,10 @@ if (SELF_TEST) {
   assert.ok(MUSIC.introLufs >= -22 && MUSIC.introLufs <= -16, 'المقدّمة تُسمع ولا تطغى')
   assert.ok(MUSIC.outroLufs >= -22 && MUSIC.outroLufs <= -16, 'الخاتمة تُسمع — وهذه شكوى الدكتور')
   assert.ok(MUSIC.bridgeLufs < MUSIC.introLufs, 'الجسر يمرّ تحت الكلام لا فوقه')
+  /* الجسر فاصلٌ يُنتظر لا نغمةٌ تمرّ. كان ١.٦٠ث والمتحدث التالي يدخل بعد
+     ٠.٧٢ث من بدايته فيدهسه قبل أن يأخذ حقّه — وهذه شكوى الدكتور بأذنه. */
+  assert.ok(MUSIC.bridgeSec >= 2.0, 'الجسر أقصر من أن يُحسّ فاصلاً')
+  assert.ok(MUSIC.bridgeSec - MUSIC.bridgeTailSec >= 1.8, 'المتحدث التالي يدهس الجسر قبل أن يأخذ حقّه')
   for (const word of ['«إي»','«مو»','«هني»','«شلون»']) {
     assert.ok(prompt.includes(word), `توجيه نطق ${word} مفقود`)
   }

@@ -8,6 +8,7 @@ import { useTrackJourney, useTrackView } from './lib/views'
 import { PersistentAudioDock, PersistentAudioProvider } from './lib/persistent-audio'
 import { ReadingMemoryGuard } from './components/MySpace'
 import { SitewideIconClarifications } from './components/SitewideIconClarifications'
+import { MediaSkeletonGuard, StaggerRevealGuard } from './components/InterfacePolish'
 import Home from './pages/Home'
 
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
@@ -816,6 +817,8 @@ function RoutedApplication() {
         <AdaptiveSilence />
         <ExclusiveDetailsGuard />
         <MobileCardRailGuard />
+        <MediaSkeletonGuard />
+        <StaggerRevealGuard />
         <ReadingMemoryGuard />
         <PwaResumeHome />
         <RouteJourneyTracker />

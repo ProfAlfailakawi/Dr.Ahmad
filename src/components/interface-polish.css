@@ -1,0 +1,86 @@
+/* ═══════════════════════════════════════════════════════════════════
+   2026-08-13 — تلميع الواجهة: هيكل الانتظار وتتابع الظهور
+   ملفٌ مستقلّ عن index.css عمداً: الأخير أكثر ملفات المستودع تعديلاً
+   (١٠ التزامات منذ ١٠ أغسطس)، وفصلُ هذه الأنماط يمنع دهس عمل الجلسات
+   الأخرى عند التسليم. المنطق كلّه في InterfacePolish.tsx.
+   الحركة بمنحنى الموقع الموحّد --E لا بمنحنى غريب عنه.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── ١) هيكل الانتظار ─────────────────────────────────────────────────
+   إطار الصورة عنده نسبةٌ ثابتة وخلفية wash مسطّحة، فاللحظة قبل وصول
+   الصورة رمادٌ ميت — وفي الأرشيف الإعلامي عشرات الأطر معاً.
+   اللمعة تجعل الانتظار حياً، ولا تُزيح بكسلاً واحداً لأن النسبة محجوزة.
+
+   عنصرٌ حقيقي لا ::after عمداً: الإطار نفسه يحمل .complete-media-frame
+   وله ::before و::after مشغولان في index.css، فأيّ pseudo هنا يدهسهما
+   صامتاً. */
+.polish-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-color: rgb(var(--c-wash));
+  background-image: linear-gradient(
+    100deg,
+    rgb(var(--c-wash)) 24%,
+    rgb(var(--c-canvas)) 46%,
+    rgb(var(--c-wash)) 68%
+  );
+  background-size: 260% 100%;
+  background-repeat: no-repeat;
+  animation: polish-shimmer 1.5s linear infinite;
+  transition: opacity .34s var(--E);
+}
+
+/* الخروج ناعم: الصورة لا تنطّ فوق اللمعة بل تحلّ محلّها. */
+.polish-skeleton.is-leaving { opacity: 0; }
+
+@keyframes polish-shimmer {
+  from { background-position: 180% 0; }
+  to { background-position: -80% 0; }
+}
+
+/* الليل: الرمادان أقرب، فاللمعة همسٌ لا وميض. */
+html.dark .polish-skeleton {
+  background-color: rgb(var(--c-wash));
+  background-image: linear-gradient(
+    100deg,
+    rgb(var(--c-wash)) 24%,
+    rgb(var(--c-canvas)) 46%,
+    rgb(var(--c-wash)) 68%
+  );
+  opacity: .72;
+}
+
+/* ── ٢) تتابع الظهور ──────────────────────────────────────────────────
+   .spatial-collection هي الحاضنة المشتركة لخمس صفحات (المقالات ·
+   الأرشيف · تفاصيل الأرشيف · الأبحاث · الإصدارات)، فالتتابع يُضبط من
+   محلٍّ واحد بلا لمس متن أيّ صفحة.
+
+   ★★ لا حالةَ إخفاءٍ هنا إطلاقاً — وهذا قرارُ تصميمٍ لا تفصيلَ كتابة.
+   الصيغة الأولى كانت حالتين (مخفيّ ثم ظاهر) وعلقت في الفحص مرتين عند
+   opacity:0 حين تعذّر التمرير، أي: بطاقاتٌ لا يراها أحد. فصار الكشف
+   **حركةً** تبدأ من العدم وتنتهي عند الظهور بـboth: العنصر الذي لا
+   تلمسه حركةٌ مرئيٌّ بطبعه، فأسوأ ما يقع عند تعطّل المنطق كلّه أن
+   يظهر المحتوى بلا تتابع. لا صفحةَ بيضاء بحالٍ.
+   (سابقة محطّات «مسار الفكرة» التي بقيت opacity:0 للأبد.) */
+.spatial-collection[data-polish-stagger='in'] > * {
+  animation: polish-rise .52s var(--E) both;
+  animation-delay: calc(var(--polish-i, 0) * 68ms);
+}
+
+@keyframes polish-rise {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* من طلب تقليل الحركة في جهازه لا يُخفى عنه شيء ولا يُؤخَّر. */
+@media (prefers-reduced-motion: reduce) {
+  .polish-skeleton {
+    animation: none;
+    background-image: none;
+  }
+  .spatial-collection[data-polish-stagger='in'] > * {
+    animation: none;
+  }
+}

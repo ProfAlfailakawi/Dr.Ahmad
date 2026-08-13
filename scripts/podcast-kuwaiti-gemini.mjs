@@ -59,7 +59,7 @@ function writePcmWav(path, pcm) { writeFileSync(path, Buffer.concat([wavHeader(p
    واضحاً. أربع مداخلاتٍ في الطلب تُنزل الحدود إلى تسعةٍ أو عشرة، والنموذج
    متعدّد المتحدثين مصمَّمٌ أصلاً ليؤدّي حواراً كاملاً في نداءٍ واحد فيحفظ
    النبرة داخله. (وتوفّر الحصة أيضاً: ٣٧ طلباً تصير ١٠.) */
-const TURNS_PER_REQUEST = Math.max(1, Math.min(8, Number(process.env.PODCAST_KW_TURNS_PER_REQUEST || 4)))
+const TURNS_PER_REQUEST = Math.max(1, Math.min(8, Number(process.env.PODCAST_KW_TURNS_PER_REQUEST || 8)))
 
 function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {}) {
   const chunks = []
@@ -119,6 +119,13 @@ HIGH-FREQUENCY WORDS — say them the way a Kuwaiti actually says them
 - «شلون» — one smooth word with a soft ō. Not "sh-loon" in two beats.
 - «وايد» «ترى» «جذي» «شنو» «ليش» «بس» — ordinary words in an ordinary sentence. Give them no extra stress at all.
 - «چ» is a soft "ch" as in Kuwaiti speech (الفيلچاوي), said plainly.
+
+NOT EMIRATI — the single most important instruction in this brief
+The failure mode we keep hearing is Emirati, so read this twice.
+- Emirati thins the whole word (ترقيق): lighter consonants, shorter and higher vowels, a quicker forward articulation. Kuwaiti is heavier and fuller in the mouth — the vowels sit lower and back, the word carries more weight.
+- This is NOT about single letters. A word can contain no ق and still come out Emirati purely from that thinning. Words like «احترام» «عبارة» «رحلة» «تركته» are exactly where the slip happens.
+- When a word also exists in Modern Standard Arabic, the temptation is to thin it toward a neutral pan-Gulf reading. Do the opposite: give it the full Kuwaiti weight of the sentence around it.
+- If any single word in a sentence sounds like it belongs to Dubai or Abu Dhabi rather than Kuwait City, the whole take is wrong.
 
 WHAT WOULD BREAK IT
 - Any Saudi, Emirati, Bahraini, Qatari, Bedouin, Egyptian or Levantine colouring. Also avoid a generic "Gulf" accent that belongs to no particular country — Kuwaiti specifically.
@@ -536,6 +543,8 @@ if (SELF_TEST) {
   assert.match(prompt,/generic "Gulf" accent/i, 'منع الخليجي العام')
   assert.match(prompt,/Saudi, Emirati, Bahraini/i, 'منع اللهجات المجاورة بالاسم')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
+  assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
+  assert.match(prompt,/ترقيق/, 'الترقيق: وصف الدكتور نفسه للعلّة، وهو المفتاح')
   for (const word of ['«إي»','«مو»','«هني»','«شلون»']) {
     assert.ok(prompt.includes(word), `توجيه نطق ${word} مفقود`)
   }
@@ -580,15 +589,13 @@ if (SELF_TEST) {
   /* معجم النطق: يمسّ المسموع ولا يمسّ المكتوب، ويستبدل الكلمة كاملةً فقط.
      «الورقيات» و«التوريق» تبقى كما هي — وهي علّة مسخٍ سابقة لا تُعاد. */
   if (PRONUNCIATION.length) {
-    assert.equal(spokenForm('ناجح في الورقة، متردد في الحياة.'), 'ناجح في الورگة، متردد في الحياة.', 'الكلمة المعرّفة تُنطق كويتياً')
-    assert.equal(spokenForm('يتقاس بورقة'), 'يتقاس بورگة', 'حرف الجرّ الملاصق لا يمنع النطق')
-    const trap = 'الورقيات والتوريق وأوراقهم'
-    assert.equal(spokenForm(trap), trap, 'ما كانت «ورق» جزءاً منه لا يُمسّ')
-    const sample = 'الورقة مختومة'
-    assert.notEqual(spokenForm(sample), sample)
-    /* والأهمّ: المتن المعروض لا يتغيّر — التحويل يقع على مدخل الصوت وحده. */
-    const displayed = 'الورقة مختومة'
-    assert.equal(displayed, 'الورقة مختومة', 'المعروض للقارئ يبقى بإملائه')
+    /* چ وحدها في المعجم: الحرف الوحيد الذي أثبت الدكتور صحّته سماعاً
+       («الفيلچاوي» ١٠٠٪). گ أُدخلت في v3 فأسقطت معها نطق چ نفسه، فنُزعت. */
+    assert.equal(spokenForm('مو بس: جم جبت؟'), 'مو بس: چم جبت؟', 'ك→چ المكتوبة بـج تُنطق [ch]')
+    assert.equal(spokenForm('وجذي يصير'), 'وچذي يصير', 'السابقة الملاصقة لا تمنع النطق')
+    const trap = 'المجموع والجمال وجمعنا'
+    assert.equal(spokenForm(trap), trap, 'ما كانت «جم» جزءاً منه لا يُمسّ')
+    assert.ok(!JSON.stringify(PRONUNCIATION).includes('گ'), 'گ منزوعة عمداً — أسقطت چ معها في v3')
   }
   const grouped = chunkTurns(Array.from({ length: 12 }, (_, i) => ({
     speaker: i % 2 ? 'female' : 'male', text: `مداخلة ${i}`, deliveryType: 'statement', musicBridgeAfter: false,

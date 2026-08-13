@@ -54,10 +54,20 @@ for (const slug of slugs) {
      في النص. البصمات أعلاه اجتازت، فالنصّ هو المعتمد نفسه — تُستأنف المحاولة
      ويُعلَن ذلك في السجل. أما status غير معروفة (مثل published) فتبقى مرفوضة. */
   const RESUMABLE = new Set(['queued', 'generating', 'needs_review', 'failed'])
-  if (!RESUMABLE.has(String(production.status))) {
-    throw new Error(`${slug}: حالة الإنتاج «${production.status}» لا تسمح بالتوليد؛ أعد وضعه في الطابور من اللوحة`)
+  /* `awaiting_approval` تعني أن مرشّحاً مكتملاً ينتظر حكم الدكتور. التوليد
+     فوقه يستبدله، ولذلك لا يُسمح به إلا بطلبٍ صريح: PODCAST_KW_REGENERATE=1.
+     بلا هذا الشرط كانت تشغيلةٌ عابرةٌ تمحو مرشّحاً لم يُسمع بعد. */
+  const REGENERATE = /^(1|true|yes)$/i.test(String(process.env.PODCAST_KW_REGENERATE || ''))
+  const replacesCandidate = String(production.status) === 'awaiting_approval'
+  if (!RESUMABLE.has(String(production.status)) && !(replacesCandidate && REGENERATE)) {
+    const hint = replacesCandidate
+      ? 'مرشّحٌ سابقٌ ينتظر اعتمادك؛ اعتمده أو ارفضه من اللوحة، أو أعد التشغيل بـPODCAST_KW_REGENERATE=1 لاستبداله'
+      : 'أعد وضعه في الطابور من اللوحة'
+    throw new Error(`${slug}: حالة الإنتاج «${production.status}» لا تسمح بالتوليد؛ ${hint}`)
   }
-  if (production.status !== 'queued') {
+  if (replacesCandidate) {
+    console.log(`⚠️ ${slug}: يُستبدل مرشّحٌ كان ينتظر الاعتماد (بصمة ${String(production.lockedDialogueRevisionId || '—').slice(0, 12)}) — بطلبٍ صريح`)
+  } else if (production.status !== 'queued') {
     console.log(`↻ ${slug}: استئناف بعد محاولةٍ سابقة (الحالة «${production.status}») — البصمات مطابقة والنصّ لم يتغيّر`)
   }
   writeFileSync(resolve(outDir, `${slug}.json`), `${JSON.stringify(proof.turns, null, 2)}\n`)

@@ -260,7 +260,7 @@
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "no-cache"
+            "value": "public, max-age=0, must-revalidate, s-maxage=600, stale-while-revalidate=86400"
           },
           {
             "key": "X-Content-Type-Options",
@@ -401,6 +401,24 @@
           {
             "key": "Cache-Control",
             "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "/sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/@(manifest.webmanifest|robots.txt)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
           }
         ]
       }

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { JsonLd, useSeo } from '../components/seo'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { EASE, Page, PageHead, sharedViewName } from '../components/ui'
 import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
@@ -12,6 +12,7 @@ import { ClarifiedIconAction } from '../components/ClarifiedIconAction'
 import { arabicCountPhrase, BOOK_PLAIN_FORMS } from '../lib/arabic-count.ts'
 import { BookTerrain } from '../components/BookTerrain'
 import { coverSrcSet } from '../lib/cover-image'
+import { ContextualViewer } from '../components/ContextualViewer'
 
 const bookCount = (count: number) => arabicCountPhrase(count, BOOK_PLAIN_FORMS)
 
@@ -23,11 +24,26 @@ export default function Publications() {
   }, [])
 
   const { books } = useCmsContent()
+  const [searchParams, setSearchParams] = useSearchParams()
   const orderedBooks = useMemo(
     () => [...books].sort((left, right) => Number(right.slug === 'encyclopedia') - Number(left.slug === 'encyclopedia')),
     [books],
   )
   const paged = usePagedList(orderedBooks, 12, String(orderedBooks.length))
+  const selectedSlug = searchParams.get('book') || ''
+  const selectedIndex = orderedBooks.findIndex((book) => book.slug === selectedSlug)
+  const selectedBook = selectedIndex >= 0 ? orderedBooks[selectedIndex] : undefined
+  const setSelectedBook = (slug: string, replace = true) => {
+    const next = new URLSearchParams(searchParams)
+    if (slug) next.set('book', slug)
+    else next.delete('book')
+    setSearchParams(next, { replace })
+  }
+  const bookPreviewHref = (slug: string) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('book', slug)
+    return `?${next.toString()}`
+  }
   const count = bookCount(books.length)
   useSeo({ title: 'الكتب المنشورة', path: '/publications', description: `${count} ضمن مشروع علمي وفكري بدأ عام 2015، ويتتبع التعليم والتكنولوجيا والتحول المجتمعي وأثرها في الإنسان.` })
   const reduce = useReducedMotion()
@@ -64,7 +80,7 @@ export default function Publications() {
               >
                 {featured ? (
                   <div className="group/portal flex w-full flex-col overflow-hidden rounded-[24px] border border-accent/[.15] bg-paper shadow-lg transition-shadow duration-500 hover:shadow-xl md:grid md:grid-cols-[1.1fr_1fr] md:items-center md:gap-8 lg:gap-12 md:p-8">
-                    <Link to={`/publications/${b.slug}`} viewTransition className="block w-full overflow-hidden bg-white md:rounded-2xl" style={{ aspectRatio: '1024 / 700', viewTransitionName: sharedViewName('book-cover', b.slug) }}>
+                    <Link to={bookPreviewHref(b.slug)} className="block w-full overflow-hidden bg-white md:rounded-2xl" aria-label={`معاينة كتاب ${b.title}`} style={{ aspectRatio: '1024 / 700', viewTransitionName: sharedViewName('book-cover', b.slug) }}>
                       {b.cover ? <img decoding="async" src={b.cover} srcSet={coverSrcSet(b.cover)} sizes="(max-width: 640px) 45vw, 420px" alt={b.title} loading="eager" width="1024" height="700" className="h-full w-full object-contain p-2 transition-transform duration-700 group-hover/portal:scale-[1.02]" /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
                     </Link>
                     <div className="relative flex flex-col p-5 sm:p-8 md:p-0">
@@ -96,7 +112,7 @@ export default function Publications() {
                   </div>
                 ) : (
                   <>
-                    <Link to={`/publications/${b.slug}`} viewTransition className="block">
+                    <Link to={bookPreviewHref(b.slug)} className="block" aria-label={`معاينة كتاب ${b.title}`}>
                       <div className="group spatial-media overflow-hidden rounded-xl border border-hair bg-white" style={{ aspectRatio: '1024 / 700', viewTransitionName: sharedViewName('book-cover', b.slug), ['--spatial-image' as string]: b.cover ? `url(${b.cover})` : 'none' }}>
                         {b.cover ? <img decoding="async" src={b.cover} srcSet={coverSrcSet(b.cover)} sizes="(max-width: 640px) 45vw, 340px" alt={b.title} loading="lazy" width="1024" height="700" className={`plate h-full w-full object-contain p-1${settled.has(b.slug) ? ' plate--settled' : ''}`} style={{ ['--plate-delay' as string]: `${Math.min(i, 6) * 90}ms` }} onLoad={() => markSettled(b.slug)} ref={(node) => { if (node?.complete) markSettled(b.slug) }} /> : <div className="flex h-full items-center justify-center bg-wash px-8 text-center font-display text-[1.1rem] font-semibold text-soft">{b.title}</div>}
                       </div>
@@ -116,6 +132,28 @@ export default function Publications() {
       </section>
 
       <BooksAtlas />
+
+      <ContextualViewer
+        open={Boolean(selectedBook)}
+        onClose={() => setSelectedBook('')}
+        eyebrow={selectedBook?.year ? `كتاب · ${selectedBook.year}` : 'من المؤلفات'}
+        title={selectedBook?.title || ''}
+        description={selectedBook?.desc || selectedBook?.longDescription}
+        visual={selectedBook?.cover ? <div className="book-context-cover"><img src={selectedBook.cover} srcSet={coverSrcSet(selectedBook.cover)} sizes="(max-width: 720px) 92vw, 62vw" alt={`غلاف ${selectedBook.title}`} decoding="async" /></div> : <div className="context-viewer-empty"><span>{selectedBook?.title}</span></div>}
+        onPrevious={selectedIndex > 0 ? () => setSelectedBook(orderedBooks[selectedIndex - 1].slug, false) : undefined}
+        onNext={selectedIndex >= 0 && selectedIndex < orderedBooks.length - 1 ? () => setSelectedBook(orderedBooks[selectedIndex + 1].slug, false) : undefined}
+        position={selectedIndex >= 0 ? `${selectedIndex + 1} / ${orderedBooks.length}` : undefined}
+        footer={selectedBook ? <div className="flex flex-wrap gap-3">
+          <Link to={`/publications/${selectedBook.slug}`} viewTransition className="context-viewer-primary">افتح صفحة الكتاب ←</Link>
+          <Link to={`/search?tab=askbook&book=${encodeURIComponent(selectedBook.slug)}`} className="context-viewer-secondary"><SocialIcon name="Search" size={14} /> ابحث داخله</Link>
+        </div> : undefined}
+      >
+        {selectedBook && <dl className="context-viewer-facts">
+          {selectedBook.publisher && <div><dt>الناشر</dt><dd>{selectedBook.publisher}</dd></div>}
+          {selectedBook.edition && <div><dt>الطبعة</dt><dd>{selectedBook.edition}</dd></div>}
+          {selectedBook.isbn && <div><dt>ISBN</dt><dd dir="ltr">{selectedBook.isbn}</dd></div>}
+        </dl>}
+      </ContextualViewer>
     </Page>
   )
 }

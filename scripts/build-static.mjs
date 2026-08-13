@@ -16,6 +16,7 @@ import ts from 'typescript'
 import sharp from 'sharp'
 import { buildSitemapDocuments, sitemapLocsFromDist } from './archive-sitemap.mjs'
 import { isPublicArticle, readCanonicalCms } from './canonical-cms.mjs'
+import { INDEXNOW_KEY } from './indexnow-ping.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = resolve(ROOT, 'dist')
@@ -294,7 +295,37 @@ const mergeCloudAdditions = (kind, base, additions) => {
 const articles = mergeCloudAdditions('article', localArticles, cloudCms.articles)
   .filter((item) => item.title && item.slug)
   .sort((a, b) => String(b.iso || '').localeCompare(String(a.iso || '')))
-const books = mergeCloudAdditions('book', localBooks, cloudCms.books)
+/* بيانات نشر الكتاب — سنةٌ وطبعةٌ وناشرٌ وعدد صفحات — موجودة كلّها في
+   `src/data.ts` منذ البداية، وبنّاء البيانات المنظَّمة أدناه يعرف كيف
+   يبثّها (`datePublished` و`bookEdition` و`publisher` و`numberOfPages`).
+   لكنها **لم تكن تصله قطّ**: التعبير النمطي أعلاه يلتقط ستة حقول فقط،
+   وهذه الأربعة تقع خارجها فتُفقد صامتة. النتيجة: تسعة كتب على الموقع
+   بلا سنة نشرٍ ولا ناشرٍ في نظر محركات البحث.
+
+   ولا يُمسّ ذلك التعبير: توسيعه قد يُسقط كتاباً كاملاً بلا خطأ. نقرأ
+   كتلة كل كتاب على حدة ونستخرج منها بـ`literalField` نفسها المستعملة
+   في الوسائط. إضافةٌ محضة: ما كان يُلتقط يبقى كما هو. */
+const booksSource = grab('books')
+const bookBlock = (slug) => {
+  const start = booksSource.indexOf(`slug: '${slug}'`)
+  if (start < 0) return ''
+  const next = booksSource.indexOf("{ slug: '", start + 1)
+  return booksSource.slice(start, next < 0 ? undefined : next)
+}
+const withPublishing = (list) => list.map((book) => {
+  const block = bookBlock(book.slug)
+  if (!block) return book
+  const pick = (name) => book[name] || literalField(block, name) || undefined
+  return {
+    ...book,
+    year: pick('year'),
+    edition: pick('edition'),
+    publisher: pick('publisher'),
+    pageCount: pick('pageCount'),
+  }
+})
+
+const books = withPublishing(mergeCloudAdditions('book', localBooks, cloudCms.books))
   .filter((item) => item.title && item.slug)
 /* مواد الأرشيف الصوتية تسكن media-archive.json ولا يوجد لها سطر في data.ts،
    وكانت تسقط من التوليد الساكن فيصير رابطها المباشر 404 ولا تدخل خريطة الموقع. */
@@ -1435,27 +1466,87 @@ await generateCanonicalOg()
 const ogCount = await generateArticleOg()
 console.log(`✔ بطاقات مشاركة المقالات: ${ogCount} بطاقة بهوية الموقع`)
 
-/* ---------- sitemap ---------- */
+/* ---------- sitemap ----------
+   `lastmod` كان يأتي من `r.iso` وحده، و50 رابطاً من 199 بلا iso فخرجت
+   بلا تاريخ: الكتب والأبحاث وصفحات الأبواب. والوسم ليس زينة — به يعرف
+   الزاحف أن الصفحة تغيّرت فيعود إليها بدل انتظار دورته.
+
+   القاعدة هنا **صادقة لا ملفَّقة**، وGoogle يتجاهل خرائط المواقع التي
+   تكذب في lastmod:
+   - الكتاب والبحث: سنة نشره الحقيقية (من `year`، أو من ذيل اسم المجلة).
+   - صفحة الباب: أحدث تاريخٍ بين ما تعرضه — فهي تتغيّر حين يُضاف إليها.
+   - ما لا تاريخ له حقاً (صفحات ثابتة كـ«حول الموقع»): يبقى بلا وسم. */
+const yearToIso = (value) => {
+  const year = String(value || '').match(/\b(19|20)\d{2}\b/)
+  return year ? `${year[0]}-01-01` : ''
+}
+const bookIso = new Map(books.map((b) => [`/publications/${b.slug}`, yearToIso(b.year)]))
+const paperIso = new Map(papers.map((p) => [`/research/${p.slug}`, yearToIso(p.year || p.journal)]))
+
+const isoFor = (route) => route.iso || bookIso.get(route.path) || paperIso.get(route.path) || ''
+
+/* أحدث تاريخٍ تحت مسارٍ أب — لصفحات الأبواب. */
+const newestUnder = (prefix) => publicRoutes
+  .filter((r) => r.path.startsWith(`${prefix}/`))
+  .map((r) => isoFor(r))
+  .filter(Boolean)
+  .sort()
+  .pop() || ''
+
+const HUB_ISO = {
+  '/articles': newestUnder('/articles'),
+  '/research': newestUnder('/research'),
+  '/publications': newestUnder('/publications'),
+  '/media': newestUnder('/media'),
+}
+HUB_ISO['/'] = Object.values(HUB_ISO).filter(Boolean).sort().pop() || ''
+
+/* أبوابٌ محسوبة من المقالات نفسها: تتغيّر حين يُضاف مقال، فتاريخها
+   تاريخُه. أما «حول الموقع» و«للتواصل» والأدوات فلا تاريخ لها حقاً —
+   وتُترك بلا وسمٍ عمداً، فوسمٌ كاذب أسوأ من غيابه. */
+for (const derived of ['/atlas', '/thought', '/decade', '/impact', '/thought-paths']) {
+  HUB_ISO[derived] = HUB_ISO['/articles']
+}
+
+
+
 const sitemapEntries = publicRoutes
   .filter((r) => (SHOW_EN || r.lang !== 'en') && !r.robots)
   .map((r) => ({
     loc: `${SITE}${r.path}`,
-    lastmod: r.iso || '',
+    lastmod: isoFor(r) || HUB_ISO[r.path] || '',
     priority: r.path === '/' ? '1.0' : r.type === 'article' ? '0.6' : '0.8',
   }))
 const sitemapDocuments = buildSitemapDocuments(sitemapEntries, SITE)
 for (const [name, contents] of sitemapDocuments) writeFileSync(resolve(DIST, name), contents, 'utf8')
 
 /* ---------- robots.txt (مولّد من النطاق المركزي — لا يتقادم أبداً) ---------- */
+/* `Disallow: /*?*` كان يحجب **كل** رابطٍ فيه علامة استفهام. القصد منع
+   فهرسة روابط المشاركة، لكن أثره أوسع: رابط «وثيقة العقد» أو «السماء»
+   الذي يشاركه قارئ — وفيه معاملات — يصير محجوباً عن الزحف. والأسوأ أن
+   الحجب يمنع الزاحف من رؤية وسم canonical داخل الصفحة، وهو الوسم الذي
+   يوحّد النسخ من أصله. فالنتيجة عكس المقصود: تشتّتٌ بلا توحيد.
+
+   العلاج: نحجب ما يستحق الحجب بعينه (نتائج البحث ومعاملات المشاركة
+   والتقديم) ونترك الباقي يُزحف ليُوحَّد بـcanonical الموجود أصلاً في
+   كل صفحة. */
 writeFileSync(resolve(DIST, 'robots.txt'), `User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /login
 Disallow: /_share
-Disallow: /*?*
+Disallow: /search?
+Disallow: /*?ref=
+Disallow: /*?intro=
+Disallow: /*?utm_
 
 Sitemap: ${SITE}/sitemap.xml
 `, 'utf8')
+
+/* ---------- مفتاح IndexNow ----------
+   إثباتُ الملكية أن هذا الملف مستضاف على النطاق نفسه ومحتواه المفتاح.
+   يُكتب مع كل بناء فلا يضيع، ويُقرأ من مصدرٍ واحد مع سكربت الإرسال. */
+writeFileSync(resolve(DIST, `${INDEXNOW_KEY}.txt`), INDEXNOW_KEY, 'utf8')
 
 /* ---------- llms.txt (خريطة الموقع لوكلاء الذكاء الاصطناعي) ----------
    محركات الإجابة تقرأ الصفحة كنصّ بلا تنقّل، فتخمّن من هو صاحبها وماذا

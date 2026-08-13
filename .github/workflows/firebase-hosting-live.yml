@@ -387,6 +387,13 @@ jobs:
         env:
           FIREBASE_HOSTING_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
 
+      # إشعار محركات البحث بالجديد بدل انتظار زحفها (Bing وYandex وNaver).
+      # بعد النشر لا قبله: الروابط يجب أن تكون حيّةً قبل أن نطرق الباب.
+      # `|| true` مقصود: خدمة خارجية متعثّرة لا توقف نشر الموقع.
+      - name: Notify search engines (IndexNow)
+        continue-on-error: true
+        run: node scripts/indexnow-ping.mjs || true
+
 
       - name: Mark canonical content jobs deployed
         run: |

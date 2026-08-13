@@ -302,9 +302,12 @@ function duration(file) {
    تُسمع الحلقة الكويتية غريبةً عن بيتها: مقدّمة ٤٫٨ ثانية عند ٠٫١٦، وخاتمة
    ٥٫٥ عند ٠٫١٢، والجسر عند ٠٫١١ لا ٠٫٠٧٥ (كان أخفتَ من أن يُسمع). */
 const MUSIC = {
-  introSec: 4.8, introVol: 0.16, introFadeIn: 0.55, introFadeOut: 1.15, introOverlapSec: 1.15,
-  outroSec: 5.5, outroVol: 0.12, outroFadeIn: 0.65, outroFadeOut: 1.45, outroOverlapSec: 0.76,
-  bridgeSec: 1.35, bridgeVol: 0.11,
+  /* الأهداف بالـLUFS لا بمعاملٍ خطّي. الكلام يُتقن عند ‎-16‎؛ فالمقدّمة
+     والخاتمة عند ‎-19‎ تُسمعان حاضرتين بلا أن تطغيا، والجسر عند ‎-24‎ يمرّ
+     تحت الكلام لا فوقه. */
+  introSec: 5.6, introLufs: -19, introFadeIn: 0.55, introFadeOut: 1.15, introOverlapSec: 1.15,
+  outroSec: 6.5, outroLufs: -19, outroFadeIn: 0.65, outroFadeOut: 2.20, outroOverlapSec: 0.76,
+  bridgeSec: 1.60, bridgeLufs: -24,
 }
 
 /* لكل حلقةٍ نغمتها: مكتبة الموسيقى المرخّصة تُوزَّع على الحلقات ببصمة الـslug
@@ -392,10 +395,23 @@ function tightenChunk(input, output) {
   return output
 }
 
-function makeMusicClip(source, file, seconds, volume, fadeInSec, fadeOutSec, startSec = 0) {
-  const fadeOutAt = Math.max(0, seconds - fadeOutSec)
+/* الموسيقى تُعاير إلى مستوىً مُعلَن، لا تُضرب بمعاملٍ أعمى.
+ *
+ * المعامل الخطّي (volume=0.12) يفترض أن كل المقطوعات بالجهارة نفسها، وهذا
+ * غير صحيح: الفارق بين مقطوعةٍ وأخرى في المكتبة يبلغ عشرة ديسيبل. وحين صارت
+ * كل حلقةٍ تختار نغمتها، صار مستوى الموسيقى يتغيّر بين حلقةٍ وأخرى بلا سبب.
+ * والأسوأ أن سلسلة الإتقان (ضاغط + loudnorm) تُطبَّق بعدها على المزيج كله،
+ * فترفع أول الملف وتترك آخره — ولهذا خرجت خاتمة v4 عند ‎-32dB‎ بينما مقدّمتها
+ * عند ‎-15dB‎، والفارق المفترض بينهما ديسيبلان ونصف لا سبعة عشر.
+ *
+ * الحلّ: loudnorm على المقطع نفسه إلى هدفٍ ثابت، ثم التلاشي. النتيجة أن
+ * المقدّمة والخاتمة والجسر تُسمع بالمستوى نفسه في الحلقات الـ144 كلها، أياً
+ * كانت المقطوعة وأياً كان موضع الاقتطاع منها.
+ */
+function makeMusicClip(source, file, seconds, targetLufs, fadeInSec, fadeOutSec, startSec = 0) {
+  const fadeOutAt = Math.max(fadeInSec + 0.15, seconds - fadeOutSec)
   const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-ss',String(startSec),'-i',source,'-t',String(seconds),
-    '-af',`afade=t=in:d=${fadeInSec},afade=t=out:st=${fadeOutAt.toFixed(2)}:d=${fadeOutSec},volume=${volume}`,
+    '-af',`loudnorm=I=${targetLufs}:TP=-3:LRA=7,afade=t=in:d=${fadeInSec},afade=t=out:st=${fadeOutAt.toFixed(2)}:d=${fadeOutSec}`,
     '-ar','24000','-ac','1','-c:a','pcm_s16le',file], { encoding:'utf8' })
   if (run.status !== 0) throw new Error(run.stderr || `فشل إنشاء مقطع موسيقي: ${file}`)
   return file
@@ -434,7 +450,7 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
       const next = items[i + 1]
       const bridgeFile = resolve(TMP, `bridge-${String(++bridgeNo).padStart(2, '0')}.wav`)
       const bridgeDuration = MUSIC.bridgeSec
-      makeMusicClip(musicPath, bridgeFile, bridgeDuration, MUSIC.bridgeVol, 0.20, 0.60, chosen.offset + MUSIC.introSec + 1.2)
+      makeMusicClip(musicPath, bridgeFile, bridgeDuration, MUSIC.bridgeLufs, 0.22, 0.70, chosen.offset + MUSIC.introSec + 1.2)
       const bridgeStart = Math.max(0, current.startSec + current.durationSec - 0.12)
       bridgeItems.push({ file: bridgeFile, startSec: bridgeStart, durationSec: bridgeDuration, isBridge: true })
       // Let the next speaker enter under the tail of the bridge, but never over the previous spoken turn.
@@ -454,12 +470,12 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
      المجلس ببرودٍ ولا ينقطع فجأةً عند آخر كلمة. */
   const identity = { intro: null, outro: null }
   if (hasMusic) {
-    const introFile = makeMusicClip(musicPath, resolve(TMP, 'music-intro.wav'), MUSIC.introSec, MUSIC.introVol, MUSIC.introFadeIn, MUSIC.introFadeOut, chosen.offset)
+    const introFile = makeMusicClip(musicPath, resolve(TMP, 'music-intro.wav'), MUSIC.introSec, MUSIC.introLufs, MUSIC.introFadeIn, MUSIC.introFadeOut, chosen.offset)
     identity.intro = { file: introFile, startSec: 0, durationSec: MUSIC.introSec, isMusic: true, role: 'intro' }
     identity.track = chosen.track
     const lastSpoken = items.at(-1)
     const outroStart = Math.max(0, lastSpoken.startSec + lastSpoken.durationSec - MUSIC.outroOverlapSec)
-    const outroFile = makeMusicClip(musicPath, resolve(TMP, 'music-outro.wav'), MUSIC.outroSec, MUSIC.outroVol, MUSIC.outroFadeIn, MUSIC.outroFadeOut, chosen.offset + MUSIC.introSec + 1.2)
+    const outroFile = makeMusicClip(musicPath, resolve(TMP, 'music-outro.wav'), MUSIC.outroSec, MUSIC.outroLufs, MUSIC.outroFadeIn, MUSIC.outroFadeOut, chosen.offset + MUSIC.introSec + 1.2)
     identity.outro = { file: outroFile, startSec: outroStart, durationSec: MUSIC.outroSec, isMusic: true, role: 'outro' }
   }
 
@@ -507,8 +523,8 @@ function timelineFor(turns, assembly) {
   return { schemaVersion: 3, dialect: PROFILE, generatedBy: MODEL, preciseTiming: true,
     chapters, utterances, musicBridges: assembly.bridges.map((b)=>({ startSec:Number(b.startSec.toFixed(3)), durationSec:b.durationSec })),
     musicIdentity: {
-      intro: assembly.identity?.intro ? { startSec: 0, durationSec: MUSIC.introSec, volume: MUSIC.introVol } : null,
-      outro: assembly.identity?.outro ? { startSec: Number(assembly.identity.outro.startSec.toFixed(3)), durationSec: MUSIC.outroSec, volume: MUSIC.outroVol } : null,
+      intro: assembly.identity?.intro ? { startSec: 0, durationSec: MUSIC.introSec, targetLufs: MUSIC.introLufs } : null,
+      outro: assembly.identity?.outro ? { startSec: Number(assembly.identity.outro.startSec.toFixed(3)), durationSec: MUSIC.outroSec, targetLufs: MUSIC.outroLufs } : null,
     },
     durationSec: Number(assembly.durationSec.toFixed(3)) }
 }
@@ -545,6 +561,21 @@ if (SELF_TEST) {
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
   assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
   assert.match(prompt,/ترقيق/, 'الترقيق: وصف الدكتور نفسه للعلّة، وهو المفتاح')
+
+  /* عقد الموسيقى: تُعاير بالـLUFS لا بمعاملٍ خطّي. المعامل الخام أخرج خاتمة
+     v4 عند ‎-32dB‎ — خمسة عشر ديسيبل تحت الكلام، أي مكتومة. ولأن كل حلقةٍ
+     تختار مقطوعةً غير الأخرى، المعامل الأعمى يجعل المستوى يتأرجح بين حلقةٍ
+     وأخرى بلا سبب. */
+  const engineSource = readFileSync(resolve(ROOT, 'scripts', 'podcast-kuwaiti-gemini.mjs'), 'utf8')
+  const clipSource = engineSource.slice(engineSource.indexOf('function makeMusicClip'), engineSource.indexOf('function buildTimedMaster'))
+  assert.match(clipSource, /loudnorm=I=\$\{targetLufs\}/, 'المقاطع الموسيقية تُعاير بالـLUFS')
+  assert.ok(!/volume=\$\{volume\}/.test(clipSource), 'المعامل الخطّي الأعمى أعاد الخاتمة مكتومة — لا يُستعاد')
+  for (const key of ['introVol', 'outroVol', 'bridgeVol']) {
+    assert.ok(!(key in MUSIC), `${key} استُبدل بهدف LUFS`)
+  }
+  assert.ok(MUSIC.introLufs >= -22 && MUSIC.introLufs <= -16, 'المقدّمة تُسمع ولا تطغى')
+  assert.ok(MUSIC.outroLufs >= -22 && MUSIC.outroLufs <= -16, 'الخاتمة تُسمع — وهذه شكوى الدكتور')
+  assert.ok(MUSIC.bridgeLufs < MUSIC.introLufs, 'الجسر يمرّ تحت الكلام لا فوقه')
   for (const word of ['«إي»','«مو»','«هني»','«شلون»']) {
     assert.ok(prompt.includes(word), `توجيه نطق ${word} مفقود`)
   }

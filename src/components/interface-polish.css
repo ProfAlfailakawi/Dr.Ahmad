@@ -84,3 +84,73 @@ html.dark .polish-skeleton {
     animation: none;
   }
 }
+
+/* ── ٣) إشارة الشريط على الحاسوب ──────────────────────────────────────
+   الشريط يُسحب بالماوس فعلاً (ensureDesktopDrag في App.tsx)، لكن لا شيء
+   يقول ذلك للزائر: مؤشّر «اليد القابضة» لا يظهر إلا بعد أن يجرّب.
+
+   والعلاج بلغته هو لا بلغةٍ جديدة: **النقطتان نفسهما** اللتان يستعملهما
+   على الجوال (background-image بتدرّجين شعاعيين في زاويتي الشريط)، لا
+   زرّ ولا سهم — فيبقى قانون «لا أزرار ولا click» المكتوب في index.css
+   قائماً كما هو.
+
+   ولا تُضاء نقطةٌ إلا إذا كان في جهتها مادةٌ فعلاً: `data-can-left`
+   و`data-can-right` يكتبهما حارس الأشرطة ويحدّثهما مع كل تمرير، فالنقطة
+   تخفت وحدها عند بلوغ الطرف. ولا شيء يظهر قبل أن يقترب المؤشّر. */
+
+/* التدرّج الشعاعي لا يقبل transition على لونٍ داخل متغيّر إلا بتسجيله. */
+@property --polish-cue-start {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+@property --polish-cue-end {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* الجوال له معالجته الكاملة أصلاً؛ هذه للحاسوب وحده. */
+  [data-swipe-rail='true']:not([data-mobile-card-rail='true']) {
+    background-image:
+      radial-gradient(circle, var(--polish-cue-start) 0 2.1px, transparent 2.25px),
+      radial-gradient(circle, var(--polish-cue-end) 0 2.1px, transparent 2.25px);
+    background-repeat: no-repeat;
+    background-size: 4.2px 4.2px, 4.2px 4.2px;
+    background-position: left 2px bottom 2px, right 2px bottom 2px;
+    transition:
+      --polish-cue-start .42s var(--E),
+      --polish-cue-end .42s var(--E);
+  }
+
+  /* ★ الظهور فوريّ والاختفاء وحده ناعم (transition: none هنا، والانتقال
+     في القاعدة الأساس فوق يعمل عند المغادرة وحدها).
+
+     ليست زخرفة: القيمة المتحرّكة تبقى عند بدايتها ما دامت الساعة واقفة
+     (تبويبٌ في الخلفية، إطارٌ مخفي). فلو كان الظهور بانتقال، لبقيت
+     النقطة شفافةً هناك ولم يرَ الزائر شيئاً — رأيتُها كذلك في الفحص.
+     أما هكذا فالإشارة تصل دائماً، والنعومة تبقى حيث لا تضرّ. */
+  [data-swipe-rail='true']:not([data-mobile-card-rail='true']):is(:hover, :focus-within)[data-can-left='true'] {
+    --polish-cue-start: rgb(var(--c-accent) / .5);
+    transition: none;
+  }
+  [data-swipe-rail='true']:not([data-mobile-card-rail='true']):is(:hover, :focus-within)[data-can-right='true'] {
+    --polish-cue-end: rgb(var(--c-accent) / .5);
+    transition: none;
+  }
+
+  /* الليل: الورق أغمق فالنقطة تحتاج حضوراً أوضح قليلاً. */
+  html.dark [data-swipe-rail='true']:not([data-mobile-card-rail='true']):is(:hover, :focus-within)[data-can-left='true'] {
+    --polish-cue-start: rgb(var(--c-accent) / .72);
+  }
+  html.dark [data-swipe-rail='true']:not([data-mobile-card-rail='true']):is(:hover, :focus-within)[data-can-right='true'] {
+    --polish-cue-end: rgb(var(--c-accent) / .72);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-swipe-rail='true']:not([data-mobile-card-rail='true']) {
+    transition: none;
+  }
+}

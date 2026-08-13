@@ -6,6 +6,7 @@ import ImpactMap from '../components/ImpactMap'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { useSeo } from '../components/seo'
 import { ComposeScene } from '../components/ComposeScene'
+import { CountUp } from '../components/InterfacePolish'
 import { useCmsContent, useExtras } from '../lib/content'
 import { buildIdeaLife, type IdeaLifeRemoteRecord, type ImpactKind, type ImpactNode } from '../lib/idea-life'
 import { liveLink } from '../lib/dead-links'
@@ -155,7 +156,7 @@ export default function Impact() {
               {headlineStats.map((item) => (
                 <div key={item.label}>
                   <dt className="text-[.7rem] font-semibold text-accent">{item.label}</dt>
-                  <dd className="mt-1 font-display text-[1.35rem] font-semibold text-ink">{number.format(item.value)}</dd>
+                  <dd className="mt-1 font-display text-[1.35rem] font-semibold text-ink"><CountUp value={item.value} format={(input) => number.format(input)} /></dd>
                 </div>
               ))}
             </dl>

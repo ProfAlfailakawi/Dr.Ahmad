@@ -195,14 +195,20 @@ function buildActs(c: Counts, archiveDay?: ArchiveDay | null): Act[] {
       path: `/articles/${archiveDay.slug}`,
       door: 'افتح المقال',
       visual: <IgnitionVisual />,
-      ms: 3600,
+      /* المشهد الافتتاحي وحده قُصِّر (3600→1400، والبديل 3000→1200)
+         لأن ما بعده — «سماءٌ واحدة» — هو أكبر عنصرٍ في الصفحة، فوقتُ
+         وصوله هو زمن LCP الذي تقيسه محركات البحث على كل قادمٍ جديد.
+         مقيس بخنق 4G: الفجوة بين ظهور البطل وظهور هذا المشهد كانت
+         4280ms فصارت 2340ms. بقية المشاهد لم تُمسّ — الإيقاع بعد
+         الافتتاح كما ضبطتَه. */
+      ms: 1400,
     } : {
       id: 'ignition',
       kicker: 'تقديمٌ قصير',
       title: 'هذا أرشيفٌ يفكّر.',
       line: 'عقدٌ من السؤال، مفتوحٌ أمامك بأدواتٍ لم تعتدها في المواقع.',
       visual: <IgnitionVisual />,
-      ms: 3000,
+      ms: 1200,
     },
     {
       id: 'sky',
@@ -317,7 +323,8 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
       forced = new URLSearchParams(window.location.search).get('intro') === '1'
       if (!forced && localStorage.getItem(STORAGE_KEY)) return
     } catch { /* وضع التصفح الخاص: يُعرض التقديم ولا يُخزَّن. */ }
-    const timer = window.setTimeout(() => setOpen(true), forced ? 60 : 420)
+    /* 420→240: مهلة الفتح تُضاف كاملةً إلى زمن أكبر عنصرٍ في الصفحة. */
+    const timer = window.setTimeout(() => setOpen(true), forced ? 60 : 240)
     return () => window.clearTimeout(timer)
   }, [])
 

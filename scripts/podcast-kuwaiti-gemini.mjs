@@ -11,6 +11,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { normalizeManualDialogueTurns } from './lib/manual-dialogue-source.mjs'
+import { buildPronunciationMap, toSpokenKuwaiti } from './lib/kuwaiti-pronunciation.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO = resolve(ROOT, 'audio')
@@ -81,8 +82,19 @@ const directionFor = (type) => ({
   emphasis: '[serious]', briefReaction: '[warmly]', conclusion: '[calmly]', closing: '[softly]',
 }[type] || '')
 
+/* معجم النطق يُقرأ مرّةً: المعروض للقارئ لا يُمسّ، والمسموع وحده يُكتب
+   بالإملاء الكويتي. */
+const PRONUNCIATION = (() => {
+  const file = resolve(ROOT, 'src', 'data', 'kuwaiti-pronunciation.json')
+  if (!existsSync(file)) return []
+  try { return buildPronunciationMap(JSON.parse(readFileSync(file, 'utf8'))) }
+  catch { return [] }
+})()
+
+export const spokenForm = (text) => toSpokenKuwaiti(text, PRONUNCIATION)
+
 function promptFor(turns, index, total) {
-  const transcript = turns.map((turn) => `${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${turn.text}`.replace(/:\s+\[/, ': [')).join('\n')
+  const transcript = turns.map((turn) => `${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': [')).join('\n')
   return `AUDIO PROFILE
 Fahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical. They are Kuwaitis talking — not actors performing a Kuwaiti accent.
 
@@ -564,6 +576,20 @@ if (SELF_TEST) {
   /* عقد تماسك الصوت: الطلب يحمل عدّة مداخلاتٍ فتقلّ حدود الانزلاق، والقصّ
      يرفض ما لا يطابق فيعود إلى التوليد المفرد بدل أن يخترع حدوداً. */
   assert.ok(TURNS_PER_REQUEST >= 2, 'مداخلةٌ واحدةٌ لكل طلب تعيد علّة تبدّل صوت المذيع')
+
+  /* معجم النطق: يمسّ المسموع ولا يمسّ المكتوب، ويستبدل الكلمة كاملةً فقط.
+     «الورقيات» و«التوريق» تبقى كما هي — وهي علّة مسخٍ سابقة لا تُعاد. */
+  if (PRONUNCIATION.length) {
+    assert.equal(spokenForm('ناجح في الورقة، متردد في الحياة.'), 'ناجح في الورگة، متردد في الحياة.', 'الكلمة المعرّفة تُنطق كويتياً')
+    assert.equal(spokenForm('يتقاس بورقة'), 'يتقاس بورگة', 'حرف الجرّ الملاصق لا يمنع النطق')
+    const trap = 'الورقيات والتوريق وأوراقهم'
+    assert.equal(spokenForm(trap), trap, 'ما كانت «ورق» جزءاً منه لا يُمسّ')
+    const sample = 'الورقة مختومة'
+    assert.notEqual(spokenForm(sample), sample)
+    /* والأهمّ: المتن المعروض لا يتغيّر — التحويل يقع على مدخل الصوت وحده. */
+    const displayed = 'الورقة مختومة'
+    assert.equal(displayed, 'الورقة مختومة', 'المعروض للقارئ يبقى بإملائه')
+  }
   const grouped = chunkTurns(Array.from({ length: 12 }, (_, i) => ({
     speaker: i % 2 ? 'female' : 'male', text: `مداخلة ${i}`, deliveryType: 'statement', musicBridgeAfter: false,
   })))

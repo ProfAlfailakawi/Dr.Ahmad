@@ -30,7 +30,9 @@ const SELF_TEST = args.includes('--self-test')
 const DRY_RUN = args.includes('--dry-run')
 const slug = (args.find((item) => item.startsWith('--slug=')) || '').slice(7)
 const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg'
-const MUSIC_BRIDGE = process.env.PODCAST_KW_BRIDGE || resolve(ROOT, 'music', 'quiet-echoes.mp3')
+/* PODCAST_KW_BRIDGE يثبّت المقطوعة يدوياً إن أردت؛ وإلا اختيرت لكل حلقةٍ
+   نغمتُها من المكتبة (انظر pickEpisodeMusic أدناه). */
+const MUSIC_OVERRIDE = process.env.PODCAST_KW_BRIDGE || ''
 const FFPROBE = process.env.FFPROBE_BIN || 'ffprobe'
 
 const sha256 = (value) => createHash('sha256').update(value).digest('hex')
@@ -230,10 +232,69 @@ function duration(file) {
   return value
 }
 
-function buildTimedMaster(turns, files, output) {
+/* الهوية الموسيقية بمقاييس محرّك الفصحى نفسها (podcast-dialogue.mjs) كي لا
+   تُسمع الحلقة الكويتية غريبةً عن بيتها: مقدّمة ٤٫٨ ثانية عند ٠٫١٦، وخاتمة
+   ٥٫٥ عند ٠٫١٢، والجسر عند ٠٫١١ لا ٠٫٠٧٥ (كان أخفتَ من أن يُسمع). */
+const MUSIC = {
+  introSec: 4.8, introVol: 0.16, introFadeIn: 0.55, introFadeOut: 1.15, introOverlapSec: 1.15,
+  outroSec: 5.5, outroVol: 0.12, outroFadeIn: 0.65, outroFadeOut: 1.45, outroOverlapSec: 0.76,
+  bridgeSec: 1.35, bridgeVol: 0.11,
+}
+
+/* لكل حلقةٍ نغمتها: مكتبة الموسيقى المرخّصة تُوزَّع على الحلقات ببصمة الـslug
+   لا عشوائياً — فالنتيجة حتميّة (الحلقة نفسها تعطي النغمة نفسها كل مرّة)
+   ومختلفة بين حلقةٍ وأخرى، بدل أن تُفتتح الـ١٤٤ كلّها باللحن نفسه. وتُزاح
+   نافذة الاقتطاع داخل المقطوعة أيضاً فلا تتشابه حتى الحلقتان اللتان تقعان
+   على المقطوعة نفسها. */
+const MUSIC_LIBRARY = [
+  'quiet-echoes.mp3', 'still-light.mp3', 'quiet-resolve.mp3', 'open-horizon.mp3',
+  'maqam-reflections.mp3', 'eastern-elegance.mp3', 'cultural-echoes.mp3', 'heritage-echoes.mp3',
+  'eastern-tapestry.mp3', 'oriental-world.mp3', 'east-journey.mp3', 'eastern-night.mp3',
+]
+
+export function pickEpisodeMusic(slug, available = MUSIC_LIBRARY) {
+  if (!available.length) return null
+  const digest = sha256(String(slug || ''))
+  const track = available[parseInt(digest.slice(0, 8), 16) % available.length]
+  /* إزاحة بين ٠ و٢٤ ثانية داخل المقطوعة: مدخلٌ مختلف للنغمة نفسها. */
+  const offset = (parseInt(digest.slice(8, 14), 16) % 24)
+  return { track, offset }
+}
+
+/* قصُّ الهواء الميّت من طرفَي المداخلة وتنظيفٌ خفيف: عتبة ‎-42dB‎ تلتقط
+   الصمت لا الهمس، و‎afftdn‎ عند ‎nr=10‎ يزيل أزيز الخلفية بلا ذلك الرنين
+   المعدني الذي يفضح المعالجة. النبرة والوقفات داخل الجملة تبقى كما نطقها. */
+function tightenChunk(input, output) {
+  const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-i',input,
+    '-af','silenceremove=start_periods=1:start_silence=0.06:start_threshold=-42dB:detection=peak,'
+      + 'areverse,silenceremove=start_periods=1:start_silence=0.10:start_threshold=-42dB:detection=peak,areverse,'
+      + 'afftdn=nr=10:nf=-30:tn=1,highpass=f=70',
+    '-ar','24000','-ac','1','-c:a','pcm_s16le',output], { encoding:'utf8' })
+  /* لو تعذّر التنظيف يُستعمل الأصل: تأخيرُ حلقةٍ خيرٌ من إسقاطها. */
+  if (run.status !== 0 || !existsSync(output)) return input
+  try { if (duration(output) < 0.35) return input } catch { return input }
+  return output
+}
+
+function makeMusicClip(source, file, seconds, volume, fadeInSec, fadeOutSec, startSec = 0) {
+  const fadeOutAt = Math.max(0, seconds - fadeOutSec)
+  const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-ss',String(startSec),'-i',source,'-t',String(seconds),
+    '-af',`afade=t=in:d=${fadeInSec},afade=t=out:st=${fadeOutAt.toFixed(2)}:d=${fadeOutSec},volume=${volume}`,
+    '-ar','24000','-ac','1','-c:a','pcm_s16le',file], { encoding:'utf8' })
+  if (run.status !== 0) throw new Error(run.stderr || `فشل إنشاء مقطع موسيقي: ${file}`)
+  return file
+}
+
+function buildTimedMaster(turns, files, output, episodeSlug = '') {
   if (turns.length !== files.length) throw new Error('precise timing requires one generated file per dialogue turn')
+  const library = MUSIC_LIBRARY.filter((name) => existsSync(resolve(ROOT, 'music', name)))
+  const chosen = MUSIC_OVERRIDE ? { track: MUSIC_OVERRIDE, offset: 0 } : pickEpisodeMusic(episodeSlug, library)
+  const musicPath = chosen ? (MUSIC_OVERRIDE || resolve(ROOT, 'music', chosen.track)) : ''
+  const hasMusic = Boolean(musicPath) && existsSync(musicPath)
+  if (hasMusic) console.log(`♪ نغمة الحلقة: ${chosen.track}${chosen.offset ? ` (من الثانية ${chosen.offset})` : ''}`)
   const items = []
-  let cursor = 0.20
+  /* الكلام يدخل تحت ذيل المقدّمة لا بعد صمتها، تماماً كالفصحى. */
+  let cursor = hasMusic ? Math.max(0.20, MUSIC.introSec - MUSIC.introOverlapSec) : 0.20
   for (let i = 0; i < turns.length; i += 1) {
     const turn = turns[i]
     const file = files[i]
@@ -249,17 +310,15 @@ function buildTimedMaster(turns, files, output) {
   }
 
   const bridgeItems = []
-  if (existsSync(MUSIC_BRIDGE)) {
+  if (hasMusic) {
     let bridgeNo = 0
     for (let i = 0; i < turns.length - 1; i += 1) {
       if (!turns[i].musicBridgeAfter) continue
       const current = items[i]
       const next = items[i + 1]
       const bridgeFile = resolve(TMP, `bridge-${String(++bridgeNo).padStart(2, '0')}.wav`)
-      const bridgeDuration = 1.35
-      const bridge = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-i',MUSIC_BRIDGE,'-t',String(bridgeDuration),
-        '-af',`afade=t=in:d=0.20,afade=t=out:st=0.75:d=0.60,volume=0.075`,'-ar','24000','-ac','1','-c:a','pcm_s16le',bridgeFile], { encoding:'utf8' })
-      if (bridge.status !== 0) throw new Error(bridge.stderr || 'فشل إنشاء الجسر الموسيقي')
+      const bridgeDuration = MUSIC.bridgeSec
+      makeMusicClip(musicPath, bridgeFile, bridgeDuration, MUSIC.bridgeVol, 0.20, 0.60, chosen.offset + MUSIC.introSec + 1.2)
       const bridgeStart = Math.max(0, current.startSec + current.durationSec - 0.12)
       bridgeItems.push({ file: bridgeFile, startSec: bridgeStart, durationSec: bridgeDuration, isBridge: true })
       // Let the next speaker enter under the tail of the bridge, but never over the previous spoken turn.
@@ -275,7 +334,21 @@ function buildTimedMaster(turns, files, output) {
     }
   }
 
-  const all = [...items, ...bridgeItems].sort((a,b)=>a.startSec-b.startSec)
+  /* المقدّمة تفتح الحلقة والخاتمة تغلقها؛ الكلام يعبر تحت ذيليهما فلا يبدأ
+     المجلس ببرودٍ ولا ينقطع فجأةً عند آخر كلمة. */
+  const identity = { intro: null, outro: null }
+  if (hasMusic) {
+    const introFile = makeMusicClip(musicPath, resolve(TMP, 'music-intro.wav'), MUSIC.introSec, MUSIC.introVol, MUSIC.introFadeIn, MUSIC.introFadeOut, chosen.offset)
+    identity.intro = { file: introFile, startSec: 0, durationSec: MUSIC.introSec, isMusic: true, role: 'intro' }
+    identity.track = chosen.track
+    const lastSpoken = items.at(-1)
+    const outroStart = Math.max(0, lastSpoken.startSec + lastSpoken.durationSec - MUSIC.outroOverlapSec)
+    const outroFile = makeMusicClip(musicPath, resolve(TMP, 'music-outro.wav'), MUSIC.outroSec, MUSIC.outroVol, MUSIC.outroFadeIn, MUSIC.outroFadeOut, chosen.offset + MUSIC.introSec + 1.2)
+    identity.outro = { file: outroFile, startSec: outroStart, durationSec: MUSIC.outroSec, isMusic: true, role: 'outro' }
+  }
+
+  const musicItems = [identity.intro, identity.outro].filter(Boolean)
+  const all = [...items, ...bridgeItems, ...musicItems].sort((a,b)=>a.startSec-b.startSec)
   const ffInputs = []; const filters = []
   all.forEach((item, idx) => {
     ffInputs.push('-i', item.file)
@@ -284,12 +357,16 @@ function buildTimedMaster(turns, files, output) {
   })
   const mixed = all.map((_,idx)=>`[a${idx}]`).join('')
   filters.push(`${mixed}amix=inputs=${all.length}:normalize=0[mix]`)
-  filters.push('[mix]highpass=f=55,acompressor=threshold=-18dB:ratio=1.6:attack=18:release=180,loudnorm=I=-16:TP=-1.5:LRA=11[out]')
+  /* سلسلة الإتقان: مرشّح ٦٥Hz يرفع الهدير، ضاغطٌ لطيف (نسبة ١٫٧) يثبّت
+     الحضور بلا سحق الديناميكا، وloudnorm عند ‎-16 LUFS‎ وذروة ‎-1.5dBTP‎ —
+     معيار البودكاست. LRA ٩ بدل ١١: تماسكٌ أعلى فلا يضطرّ السامع إلى رفع
+     الصوت وخفضه بين مداخلةٍ وأخرى. */
+  filters.push('[mix]highpass=f=65,acompressor=threshold=-19dB:ratio=1.7:attack=15:release=200,loudnorm=I=-16:TP=-1.5:LRA=9[out]')
   const total = Math.max(...all.map((item)=>item.startSec+item.durationSec), 0) + 0.35
   const result = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y',...ffInputs,'-filter_complex',filters.join(';'),'-map','[out]','-t',total.toFixed(3),
     '-ar','48000','-ac','1','-c:a','libmp3lame','-b:a','160k',output], { encoding:'utf8' })
   if (result.status !== 0) throw new Error(result.stderr || 'فشل precise mastering')
-  return { items, bridges: bridgeItems, durationSec: total }
+  return { items, bridges: bridgeItems, identity, durationSec: total }
 }
 
 function timelineFor(turns, assembly) {
@@ -313,6 +390,10 @@ function timelineFor(turns, assembly) {
   chapters.forEach((chapter,index)=>{ chapter.endSec = index + 1 < chapters.length ? chapters[index + 1].startSec : Number(assembly.durationSec.toFixed(3)) })
   return { schemaVersion: 3, dialect: PROFILE, generatedBy: MODEL, preciseTiming: true,
     chapters, utterances, musicBridges: assembly.bridges.map((b)=>({ startSec:Number(b.startSec.toFixed(3)), durationSec:b.durationSec })),
+    musicIdentity: {
+      intro: assembly.identity?.intro ? { startSec: 0, durationSec: MUSIC.introSec, volume: MUSIC.introVol } : null,
+      outro: assembly.identity?.outro ? { startSec: Number(assembly.identity.outro.startSec.toFixed(3)), durationSec: MUSIC.outroSec, volume: MUSIC.outroVol } : null,
+    },
     durationSec: Number(assembly.durationSec.toFixed(3)) }
 }
 
@@ -404,12 +485,16 @@ for (let i=0;i<chunks.length;i+=1) {
   console.log(`🎙️ Gemini ${i+1}/${chunks.length}`)
   const prompt=prompts[i]; requestHashes.push(sha256(prompt))
   const pcm=await geminiPcm(prompt)
-  const wav=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}.wav`); writePcmWav(wav,pcm)
-  chunkFiles.push(wav); durations.push(duration(wav))
+  const rawWav=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}.raw.wav`); writePcmWav(rawWav,pcm)
+  /* Gemini يترك هواءً ميّتاً في طرفَي كل مداخلة، فيتراكم على سبعٍ وثلاثين
+     مداخلةً إلى بطءٍ محسوس. يُقصّ الصمت من الطرفين فقط — لا يُمسّ صمتٌ داخل
+     الجملة، فتبقى الوقفة الطبيعية التي تصنع المعنى. */
+  const wav=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}.wav`)
+  chunkFiles.push(tightenChunk(rawWav, wav)); durations.push(duration(wav))
 }
 const audioFile=resolve(AUDIO,`${slug}.dialogue-kw.mp3`)
 const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
-const assembly=buildTimedMaster(turns,chunkFiles,audioFile)
+const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)
 const timeline=timelineFor(turns,assembly)
 writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
 const audit={

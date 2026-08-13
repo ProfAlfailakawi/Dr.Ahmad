@@ -257,7 +257,7 @@ export default function ThoughtPaths() {
               أكمل من حيث توقفت: {resumePath.title} ←
             </button>
           )}
-          <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex gap-6 edge-fade overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div role="tablist" aria-label="اختر مساراً فكرياً" className="thought-path-picker edge-fade flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {availablePaths.map((path) => (
               <button
                 key={path.id}
@@ -267,11 +267,12 @@ export default function ThoughtPaths() {
                 aria-selected={active.id === path.id}
                 aria-controls="thought-path-panel"
                 onClick={() => selectPath(path.id)}
-                className={`shrink-0 border-b py-2 text-[.84rem] transition-colors ${
-                  active.id === path.id ? 'border-ink font-semibold text-ink' : 'border-transparent text-soft hover:text-ink'
+                className={`thought-path-choice shrink-0 rounded-xl border p-4 text-start transition-colors ${
+                  active.id === path.id ? 'is-active border-accent bg-wash text-ink' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-ink'
                 }`}
               >
-                {path.title}
+                <span className="block font-display text-[.96rem] font-semibold leading-[1.55]">{path.title}</span>
+                <span className="mt-2 line-clamp-2 block text-[.7rem] font-light leading-[1.7]">{path.intro}</span>
               </button>
             ))}
           </div>

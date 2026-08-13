@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router'
+import { useMemo } from 'react'
+import { Link, useSearchParams } from 'react-router'
 import { motion, useReducedMotion } from 'framer-motion'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
@@ -57,13 +57,23 @@ function diversifyArticles<T extends { cat?: string; iso: string; slug: string }
 export default function Articles() {
   const { articles } = useCmsContent()
   const reduce = useReducedMotion()
+  const [searchParams, setSearchParams] = useSearchParams()
   // السنة الأولى تُحسب من المقالات نفسها — تتحدّث تلقائياً مع أي إضافة
   const years = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
   const firstYear = years.length ? Math.min(...years) : new Date().getFullYear()
   useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مقالات فكرية تتتبّع تحولات التعليم والتكنولوجيا والمجتمع منذ انطلاق الرحلة العلمية عام 2015 — ${arabicCountPhrase(articles.length, ARTICLE_PLAIN_FORMS)}.` })
-  const [q, setQ] = useState('')
-  const [cat, setCat] = useState('الكل')
-  const [year, setYear] = useState('الكل')
+  const q = searchParams.get('q') || ''
+  const cat = searchParams.get('cat') || 'الكل'
+  const year = searchParams.get('year') || 'الكل'
+  const order = searchParams.get('order') === 'latest' ? 'latest' : 'selected'
+  const view = searchParams.get('view') === 'scene' ? 'scene' : 'read'
+  const setParam = (key: 'q' | 'cat' | 'year' | 'order' | 'view', value: string) => {
+    const next = new URLSearchParams(searchParams)
+    const defaults: Record<string, string> = { q: '', cat: 'الكل', year: 'الكل', order: 'selected', view: 'read' }
+    if (!value || value === defaults[key]) next.delete(key)
+    else next.set(key, value)
+    setSearchParams(next, { replace: true })
+  }
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
   const archiveYears = useMemo(() => Array.from(new Set(articles.map((article) => article.iso.slice(0, 4)).filter(Boolean))).sort((left, right) => right.localeCompare(left)), [articles])
   const featured = useMemo(() => {
@@ -117,8 +127,14 @@ export default function Articles() {
     .filter((a) => (cat === 'الكل' ? true : a.cat === cat))
     .filter((a) => (year === 'الكل' ? true : a.iso.startsWith(year)))
     .filter((a) => (term ? (a.title + ' ' + (a.excerpt || '')).includes(term) : true))
-  const displayArticles = archiveActive ? filtered : diversifyArticles(filtered)
-  const paged = usePagedList(displayArticles, 18, `${cat}|${year}|${term}`)
+  const displayArticles = useMemo(() => {
+    if (order === 'latest') return [...filtered].sort((left, right) => right.iso.localeCompare(left.iso))
+    const diversified = archiveActive ? filtered : diversifyArticles(filtered)
+    const featuredSlugs = new Set(featured.map((item) => item.slug))
+    const selected = featured.map((item) => filtered.find((article) => article.slug === item.slug)).filter(Boolean) as typeof filtered
+    return [...selected, ...diversified.filter((article) => !featuredSlugs.has(article.slug))]
+  }, [archiveActive, featured, filtered, order])
+  const paged = usePagedList(displayArticles, view === 'scene' ? 12 : 18, `${cat}|${year}|${term}|${order}|${view}`)
   const shown = paged.pageItems
 
   return (
@@ -135,7 +151,7 @@ export default function Articles() {
             {categories.map((c) => (
               <button
                 key={c}
-                onClick={() => setCat(c)}
+                onClick={() => setParam('cat', c)}
                 role="tab"
                 aria-selected={cat === c}
                 className={`editorial-tab shrink-0 px-3 py-2 text-[.82rem] font-medium ${cat === c ? 'is-active' : ''}`}
@@ -146,12 +162,12 @@ export default function Articles() {
           </div>
           <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
             <div className="relative">
-              <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="ابحث في المقالات…" aria-label="بحث" className="w-full rounded-full border border-hair bg-canvas py-3 pe-12 ps-5 text-[.9rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent" />
+              <input value={q} onChange={(event) => setParam('q', event.target.value)} placeholder="ابحث في المقالات…" aria-label="بحث" className="w-full rounded-full border border-hair bg-canvas py-3 pe-12 ps-5 text-[.9rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent" />
               <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft"><SocialIcon name="Search" size={17} /></span>
             </div>
             <label className="relative min-w-36">
               <span className="sr-only">تصفية المقالات حسب السنة</span>
-              <select value={year} onChange={(event) => setYear(event.target.value)} className="min-h-11 w-full appearance-none rounded-full border border-hair bg-canvas py-2 pe-9 ps-4 text-[.82rem] font-medium text-soft outline-none transition-colors hover:border-accent focus:border-accent">
+              <select value={year} onChange={(event) => setParam('year', event.target.value)} className="min-h-11 w-full appearance-none rounded-full border border-hair bg-canvas py-2 pe-9 ps-4 text-[.82rem] font-medium text-soft outline-none transition-colors hover:border-accent focus:border-accent">
                 <option value="الكل">كل السنوات</option>
                 {archiveYears.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
@@ -164,6 +180,16 @@ export default function Articles() {
                 <Link to="/atlas" className="block rounded-lg px-3 py-2 text-[.76rem] font-semibold text-ink hover:bg-wash hover:text-accent">سماء المقالات</Link>
               </div>
             </details>
+          </div>
+          <div className="articles-explore-controls mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-hair/70 pt-2">
+            <div className="editorial-tablist flex gap-1" role="group" aria-label="ترتيب المقالات">
+              <button type="button" onClick={() => setParam('order', 'selected')} aria-pressed={order === 'selected'} className={`editorial-tab min-h-10 px-3 text-[.72rem] font-semibold ${order === 'selected' ? 'is-active' : ''}`}>مختارة</button>
+              <button type="button" onClick={() => setParam('order', 'latest')} aria-pressed={order === 'latest'} className={`editorial-tab min-h-10 px-3 text-[.72rem] font-semibold ${order === 'latest' ? 'is-active' : ''}`}>الأحدث</button>
+            </div>
+            <div className="editorial-tablist flex gap-1" role="group" aria-label="طريقة عرض المقالات">
+              <button type="button" onClick={() => setParam('view', 'read')} aria-pressed={view === 'read'} className={`editorial-tab min-h-10 px-3 text-[.72rem] font-semibold ${view === 'read' ? 'is-active' : ''}`}>قراءة</button>
+              <button type="button" onClick={() => setParam('view', 'scene')} aria-pressed={view === 'scene'} className={`editorial-tab min-h-10 px-3 text-[.72rem] font-semibold ${view === 'scene' ? 'is-active' : ''}`}>مشهد</button>
+            </div>
           </div>
         </div>
       </section>
@@ -207,30 +233,33 @@ export default function Articles() {
             </p>
           </FadeUp>
 
-          <motion.ul key={`articles:${cat}:${year}:${term}:${paged.page}`} initial={reduce ? false : { opacity: .55 }} animate={{ opacity: 1 }} transition={{ duration: reduce ? 0 : .16 }} id="articles-list" className="spatial-collection mt-10 scroll-mt-28">
-            {shown.map((a, i) => (
-              <li key={a.slug} className={`spatial-card ${i === 0 ? '' : 'border-t border-hair'}`}>
-                <Link
-                  to={`/articles/${a.slug}`}
-                  viewTransition
-                  className="group flex flex-col gap-1 py-5 sm:flex-row sm:items-baseline sm:gap-6"
-                >
-                  <time className="w-32 shrink-0 text-[.8rem] text-soft">{a.date}</time>
-                  <span className="flex-1">
-                    <span style={{ viewTransitionName: `article-${a.slug}` }} className="block text-[1.08rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">
-                      {a.title}
+          {view === 'read' ? (
+            <motion.ul key={`articles:read:${cat}:${year}:${term}:${order}:${paged.page}`} initial={reduce ? false : { opacity: .55 }} animate={{ opacity: 1 }} transition={{ duration: reduce ? 0 : .16 }} id="articles-list" className="spatial-collection mt-10 scroll-mt-28">
+              {shown.map((a, i) => (
+                <li key={a.slug} className={`spatial-card ${i === 0 ? '' : 'border-t border-hair'}`}>
+                  <Link to={`/articles/${a.slug}`} viewTransition className="group flex flex-col gap-1 py-5 sm:flex-row sm:items-baseline sm:gap-6">
+                    <time className="w-32 shrink-0 text-[.8rem] text-soft">{a.date}</time>
+                    <span className="flex-1">
+                      <span style={{ viewTransitionName: `article-${a.slug}` }} className="block text-[1.08rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{a.title}</span>
+                      {a.excerpt && <span className="mt-1.5 block max-w-[62ch] text-[.9rem] font-light leading-[1.75] text-soft">{a.excerpt}</span>}
                     </span>
-                    {a.excerpt && (
-                      <span className="mt-1.5 block max-w-[62ch] text-[.9rem] font-light leading-[1.75] text-soft">
-                        {a.excerpt}
-                      </span>
-                    )}
-                  </span>
-                  <span className="shrink-0 text-[.78rem] text-soft">{categoryLabel(a.cat)}</span>
+                    <span className="shrink-0 text-[.78rem] text-soft">{categoryLabel(a.cat)}</span>
+                  </Link>
+                </li>
+              ))}
+            </motion.ul>
+          ) : (
+            <motion.div key={`articles:scene:${cat}:${year}:${term}:${order}:${paged.page}`} initial={reduce ? false : { opacity: .55 }} animate={{ opacity: 1 }} transition={{ duration: reduce ? 0 : .16 }} id="articles-list" className="article-scene-grid mt-10 scroll-mt-28">
+              {shown.map((a, index) => (
+                <Link key={a.slug} to={`/articles/${a.slug}`} viewTransition className="article-scene-card group">
+                  <div className="flex items-center justify-between gap-3 text-[.68rem] text-soft"><span className="font-semibold text-accent">{categoryLabel(a.cat)}</span><span>{String(index + 1).padStart(2, '0')}</span></div>
+                  <h3 style={{ viewTransitionName: `article-${a.slug}` }} className="mt-5 font-display text-[1.22rem] font-semibold leading-[1.6] text-ink transition-colors group-hover:text-accent">{a.title}</h3>
+                  {a.excerpt && <p className="mt-3 line-clamp-4 text-[.84rem] font-light leading-[1.85] text-soft">{a.excerpt}</p>}
+                  <div className="mt-auto flex items-center justify-between border-t border-hair pt-4 text-[.72rem] text-soft"><time>{a.date}</time><span className="text-accent transition-transform group-hover:-translate-x-1">اقرأ ←</span></div>
                 </Link>
-              </li>
-            ))}
-          </motion.ul>
+              ))}
+            </motion.div>
+          )}
 
           {filtered.length === 0 && (
             <p className="py-16 text-center text-[1rem] font-light text-soft">لا نتائج مطابقة.</p>

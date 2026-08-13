@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead, sharedViewName } from '../components/ui'
 import { useCmsContent } from '../lib/content'
@@ -7,6 +7,7 @@ import { MediaSaveButton } from '../components/MySpace'
 import { SocialIcon } from '../components/icons'
 import { mergeMediaArchive, searchArchiveMoments, formatMediaTime, ensureArchiveTranscripts, useArchiveTranscripts } from '../lib/media-archive'
 import { arabicCountPhrase, MOMENT_MATCH_FORMS } from '../lib/arabic-count.ts'
+import { ContextualViewer } from '../components/ContextualViewer'
 
 const kindLabel: Record<string, string> = {
   youtube: 'يوتيوب', television: 'تلفزيون', radio: 'إذاعة', audio: 'إذاعة', podcast: 'بودكاست',
@@ -28,10 +29,11 @@ const mediaAppearanceOrder = (item: { iso?: string; date?: string }) => {
 export default function Media() {
   const { media: cmsMedia } = useCmsContent()
   const media = useMemo(() => mergeMediaArchive(cmsMedia).sort((left, right) => mediaAppearanceOrder(right) - mediaAppearanceOrder(left)), [cmsMedia])
+  const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [visibleCount, setVisibleCount] = useState(25)
-  const [yearFilter, setYearFilter] = useState('all')
-  const [kindFilter, setKindFilter] = useState('all')
+  const yearFilter = searchParams.get('year') || 'all'
+  const kindFilter = searchParams.get('kind') || 'all'
   const archiveYears = useMemo(() => Array.from(new Set(media.map((item) => mediaYear(item)).filter(Boolean))).sort((a, b) => Number(b) - Number(a)), [media])
   const archiveKinds = useMemo(() => Array.from(new Set(media.map((item) => item.kind).filter(Boolean))), [media])
   const filteredMedia = useMemo(() => media.filter((item) => {
@@ -61,6 +63,22 @@ export default function Media() {
     return Array.from(groups.entries())
   }, [visibleMedia])
 
+  const selectedSlug = searchParams.get('item') || ''
+  const selectedMedia = filteredMedia.find((item) => item.slug === selectedSlug)
+  const selectedIndex = selectedMedia ? filteredMedia.findIndex((item) => item.slug === selectedMedia.slug) : -1
+  const setParam = (key: 'year' | 'kind' | 'item', value: string, replace = true) => {
+    const next = new URLSearchParams(searchParams)
+    if (!value || value === 'all') next.delete(key)
+    else next.set(key, value)
+    if (key !== 'item') next.delete('item')
+    setSearchParams(next, { replace })
+  }
+  const itemHref = (slug: string) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('item', slug)
+    return `?${next.toString()}`
+  }
+
   useEffect(() => { setVisibleCount(25) }, [yearFilter, kindFilter])
   useEffect(() => { setVisibleCount((count) => Math.min(Math.max(25, count), Math.max(25, filteredMedia.length))) }, [filteredMedia.length])
   useSeo({ title: 'الأرشيف الإعلامي', path: '/media', description: 'أرشيف مرئي ومسموع قابل للبحث داخل اللحظة، يجمع اللقاءات التلفزيونية والإذاعية واستضافات يوتيوب.' })
@@ -89,15 +107,15 @@ export default function Media() {
                 <span className="editorial-micro-label text-[.66rem] font-semibold text-accent">المسار الإعلامي</span>
                 <p className="mt-1 text-[.7rem] font-light text-soft">{filteredMedia.length.toLocaleString('en-US')} ظهوراً في النطاق الحالي</p>
               </div>
-              {(yearFilter !== 'all' || kindFilter !== 'all') && <button type="button" onClick={() => { setYearFilter('all'); setKindFilter('all') }} className="border-b border-accent/[.35] pb-0.5 text-[.68rem] font-semibold text-accent">إظهار الكل</button>}
+              {(yearFilter !== 'all' || kindFilter !== 'all') && <button type="button" onClick={() => { const next = new URLSearchParams(searchParams); next.delete('year'); next.delete('kind'); next.delete('item'); setSearchParams(next, { replace: true }) }} className="border-b border-accent/[.35] pb-0.5 text-[.68rem] font-semibold text-accent">إظهار الكل</button>}
             </div>
             <div className="editorial-tablist edge-fade mt-3 flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="تصفية حسب السنة">
-              <button type="button" onClick={() => setYearFilter('all')} aria-pressed={yearFilter === 'all'} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.7rem] font-semibold ${yearFilter === 'all' ? 'is-active' : ''}`}>كل السنوات</button>
-              {archiveYears.map((year) => <button key={year} type="button" onClick={() => setYearFilter(year)} aria-pressed={yearFilter === year} className={`editorial-tab shrink-0 px-3 py-1.5 font-mono text-[.7rem] ${yearFilter === year ? 'is-active' : ''}`}>{year}</button>)}
+              <button type="button" onClick={() => setParam('year', 'all')} aria-pressed={yearFilter === 'all'} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.7rem] font-semibold ${yearFilter === 'all' ? 'is-active' : ''}`}>كل السنوات</button>
+              {archiveYears.map((year) => <button key={year} type="button" onClick={() => setParam('year', year)} aria-pressed={yearFilter === year} className={`editorial-tab shrink-0 px-3 py-1.5 font-mono text-[.7rem] ${yearFilter === year ? 'is-active' : ''}`}>{year}</button>)}
             </div>
             <div className="editorial-tablist edge-fade mt-1 flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="تصفية حسب نوع الظهور">
-              <button type="button" onClick={() => setKindFilter('all')} aria-pressed={kindFilter === 'all'} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.68rem] font-medium ${kindFilter === 'all' ? 'is-active' : ''}`}>كل الأنواع</button>
-              {archiveKinds.map((kind) => <button key={kind} type="button" onClick={() => setKindFilter(kind)} aria-pressed={kindFilter === kind} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.68rem] font-medium ${kindFilter === kind ? 'is-active' : ''}`}>{kindLabel[kind] || 'ظهور إعلامي'}</button>)}
+              <button type="button" onClick={() => setParam('kind', 'all')} aria-pressed={kindFilter === 'all'} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.68rem] font-medium ${kindFilter === 'all' ? 'is-active' : ''}`}>كل الأنواع</button>
+              {archiveKinds.map((kind) => <button key={kind} type="button" onClick={() => setParam('kind', kind)} aria-pressed={kindFilter === kind} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.68rem] font-medium ${kindFilter === kind ? 'is-active' : ''}`}>{kindLabel[kind] || 'ظهور إعلامي'}</button>)}
             </div>
           </section>
         </FadeUp>
@@ -132,7 +150,7 @@ export default function Media() {
                   const available = Boolean(item.transcript?.available)
                   const thumbnail = item.thumbnail || (item.id ? `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg` : '')
                   return <article key={item.slug} className={`media-feature-card spatial-card group relative overflow-hidden border border-hair bg-canvas ${mediaIndex === 0 ? 'is-lead' : 'is-secondary'}`}>
-                    <Link to={`/media/${item.slug}`} viewTransition className="block h-full">
+                    <Link to={itemHref(item.slug)} className="block h-full" aria-label={`معاينة ${item.title}`}>
                       <div className={`spatial-media relative overflow-hidden bg-wash ${video ? 'complete-media-frame' : ''}`} style={{ aspectRatio: '16 / 9', viewTransitionName: sharedViewName('media-visual', item.slug), ['--spatial-image' as string]: thumbnail ? `url(${thumbnail})` : 'none', ...(video ? ({ '--media-thumb': `url(${thumbnail})` } as CSSProperties) : {}) }}>
                         {video ? <><img decoding="async" src={thumbnail} alt="" loading={mediaIndex === 0 ? 'eager' : 'lazy'} onLoad={(event) => { const img = event.currentTarget; if (!item.thumbnail && img.naturalWidth <= 120 && img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; }} onError={(event) => { const img = event.currentTarget; if (img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; else img.style.display = 'none'; }} className="complete-media-image h-full w-full" /><span className="cinematic-play" aria-hidden><SocialIcon name="Play" size={16} /></span></> : <div className="flex h-full items-center justify-center"><div className="text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-accent/25 bg-canvas text-accent"><SocialIcon name="Play" size={18} /></span></div></div>}
                       </div>
@@ -171,7 +189,7 @@ export default function Media() {
                       const video = item.id && item.kind !== 'audio' && item.kind !== 'radio'
                       const thumbnail = item.thumbnail || (item.id ? `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg` : '')
                       return <article key={item.slug} className="media-editorial-row group relative">
-                        <Link to={`/media/${item.slug}`} viewTransition className="media-editorial-row__link">
+                        <Link to={itemHref(item.slug)} className="media-editorial-row__link" aria-label={`معاينة ${item.title}`}>
                           <div className="media-editorial-row__visual" style={{ ['--spatial-image' as string]: thumbnail ? `url(${thumbnail})` : 'none' }}>
                             {video && thumbnail ? <img src={thumbnail} alt="" loading="lazy" decoding="async" /> : <span aria-hidden><SocialIcon name="Play" size={15} /></span>}
                           </div>
@@ -200,5 +218,31 @@ export default function Media() {
         )}
       </div>
     </section>
+
+    <ContextualViewer
+      open={Boolean(selectedMedia)}
+      onClose={() => setParam('item', '')}
+      eyebrow={selectedMedia ? `${kindLabel[selectedMedia.kind] || 'ظهور إعلامي'} · ${selectedMedia.outlet || selectedMedia.program || ''}` : 'الأرشيف الإعلامي'}
+      title={selectedMedia?.title || ''}
+      description={selectedMedia?.topics || 'معاينة هادئة داخل سياق الأرشيف؛ التشغيل لا يبدأ إلا حين تختار فتح المادة.'}
+      visual={selectedMedia ? (() => {
+        const video = selectedMedia.id && selectedMedia.kind !== 'audio' && selectedMedia.kind !== 'radio'
+        const thumbnail = video ? (selectedMedia.thumbnail || `https://i.ytimg.com/vi/${selectedMedia.id}/hqdefault.jpg`) : '/podcast-cover.png'
+        return <div className={video ? 'h-full w-full' : 'media-context-audio'}><img src={thumbnail} alt="" decoding="async" className={video ? 'h-full w-full object-cover' : 'h-full w-full object-contain'} /></div>
+      })() : null}
+      onPrevious={selectedIndex > 0 ? () => setParam('item', filteredMedia[selectedIndex - 1].slug, false) : undefined}
+      onNext={selectedIndex >= 0 && selectedIndex < filteredMedia.length - 1 ? () => setParam('item', filteredMedia[selectedIndex + 1].slug, false) : undefined}
+      position={selectedIndex >= 0 ? `${selectedIndex + 1} / ${filteredMedia.length}` : undefined}
+      footer={selectedMedia ? <div className="flex flex-wrap items-center gap-3">
+        <Link to={`/media/${selectedMedia.slug}`} viewTransition className="context-viewer-primary">افتح المادة كاملة ←</Link>
+        <MediaSaveButton slug={selectedMedia.slug} className="context-viewer-save" />
+      </div> : undefined}
+    >
+      {selectedMedia && <dl className="context-viewer-facts">
+        {selectedMedia.date && <div><dt>التاريخ</dt><dd>{selectedMedia.date}</dd></div>}
+        {selectedMedia.duration && <div><dt>المدة</dt><dd dir="ltr">{selectedMedia.duration}</dd></div>}
+        <div><dt>الفهرسة</dt><dd>{selectedMedia.transcript?.available ? 'متاحة داخل الكلام' : 'بيانات اللقاء فقط'}</dd></div>
+      </dl>}
+    </ContextualViewer>
   </Page>
 }

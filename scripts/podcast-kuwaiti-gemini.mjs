@@ -51,7 +51,16 @@ function wavHeader(pcmBytes, sampleRate = 24000, channels = 1, bits = 16) {
 }
 function writePcmWav(path, pcm) { writeFileSync(path, Buffer.concat([wavHeader(pcm.length), pcm])) }
 
-function chunkTurns(turns, { maxTurns = 1, maxChars = 4300 } = {}) {
+/* كم مداخلةً في الطلب الواحد؟ هذا هو مقبض علّة «تغيّر صوت المذيع فجأة».
+   كل طلبٍ إلى Gemini مستقلٌّ تماماً: النموذج لا يسمع ما ولّده قبله، فيعيد
+   بناء نبرة فهد ونورة من الصفر في كل مرّة. بمداخلةٍ واحدةٍ للطلب صار في
+   الحلقة سبعةٌ وثلاثون حدّاً، وعند كل حدٍّ فرصةُ انزلاق — ولهذا يُسمع التبدّل
+   واضحاً. أربع مداخلاتٍ في الطلب تُنزل الحدود إلى تسعةٍ أو عشرة، والنموذج
+   متعدّد المتحدثين مصمَّمٌ أصلاً ليؤدّي حواراً كاملاً في نداءٍ واحد فيحفظ
+   النبرة داخله. (وتوفّر الحصة أيضاً: ٣٧ طلباً تصير ١٠.) */
+const TURNS_PER_REQUEST = Math.max(1, Math.min(8, Number(process.env.PODCAST_KW_TURNS_PER_REQUEST || 4)))
+
+function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {}) {
   const chunks = []
   let row = []
   let chars = 0
@@ -74,7 +83,45 @@ const directionFor = (type) => ({
 
 function promptFor(turns, index, total) {
   const transcript = turns.map((turn) => `${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${turn.text}`.replace(/:\s+\[/, ': [')).join('\n')
-  return `AUDIO PROFILE\nFahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical.\n\nSCENE\nA quiet modern studio in Kuwait. Two colleagues are discussing an idea for a thoughtful general audience. It must feel like a real relaxed Kuwaiti conversation, not an announcer reading copy.\n\nDIRECTOR'S NOTES\n- Speak in contemporary URBAN KUWAITI ARABIC exactly as written in the transcript.\n- Accent target: educated urban Kuwait City. Soft, modern, clear and broadly understandable across the Arab world.\n- IMPORTANT: even when a sentence contains an academic term, proper name, quotation, or a word shared with MSA, pronounce the surrounding Arabic with Kuwaiti phonology and Kuwaiti conversational rhythm. Never switch the sentence into a formal MSA reading voice.\n- Treat question marks as Kuwaiti spoken questions; do not add formal interrogative cadence.\n- Do NOT drift into Egyptian, Levantine/Syrian, Saudi, Emirati, Bedouin, or Modern Standard Arabic pronunciation patterns.\n- Do not caricature Kuwaiti speech and do not exaggerate slang.\n- Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.\n- Natural turn-taking, subtle reactions, short human pauses, gentle intellectual chemistry. No radio-news cadence, no commercial voice, no melodrama.\n- Keep Fahad and Noura audibly consistent with earlier chunks. This is chunk ${index + 1} of ${total}.\n- Inline English performance tags guide delivery only; never speak the tags aloud.\n\nTRANSCRIPT\n${transcript}`
+  return `AUDIO PROFILE
+Fahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical. They are Kuwaitis talking — not actors performing a Kuwaiti accent.
+
+SCENE
+A quiet modern studio in Kuwait. Two colleagues are discussing an idea for a thoughtful general audience. It must feel like a real relaxed Kuwaiti conversation, not an announcer reading copy.
+
+THE ONE TEST THAT MATTERS
+A Kuwaiti listener must hear a natural Kuwaiti — never someone imitating the accent. If a choice sounds "performed", make the plainer choice.
+
+ACCENT — educated urban Kuwait City (حضري), soft and modern
+- Speak the transcript exactly as written, with Kuwaiti phonology and everyday Kuwaiti conversational rhythm.
+- Even when a sentence carries an academic term, a proper name, a quotation, or a word shared with MSA, keep the surrounding Arabic Kuwaiti. Never slip into a formal MSA reading voice mid-sentence.
+- Intonation must rise and fall the Kuwaiti way: light, uneven, conversational. Not the flat descending cadence of news reading, and not the sing-song lilt of a dramatised reading.
+- Vowel length is where imitation shows. Keep madd natural and short; do not stretch vowels for effect.
+- Pauses belong to thought, not to punctuation. Breathe where a person thinking would breathe.
+
+HIGH-FREQUENCY WORDS — say them the way a Kuwaiti actually says them
+- «إي» — a short, soft, almost swallowed yes. Never a long drawn-out "eeeh", never emphatic.
+- «مو» — clipped and light, glued to what follows. Not a heavy separate word.
+- «هني» — quick and flat, the way you'd say "here" in passing.
+- «يي» / «ياي» / «الياي» — the natural Kuwaiti ج→ي, said unselfconsciously, never spelled out or emphasised.
+- «شلون» — one smooth word with a soft ō. Not "sh-loon" in two beats.
+- «وايد» «ترى» «جذي» «شنو» «ليش» «بس» — ordinary words in an ordinary sentence. Give them no extra stress at all.
+- «چ» is a soft "ch" as in Kuwaiti speech (الفيلچاوي), said plainly.
+
+WHAT WOULD BREAK IT
+- Any Saudi, Emirati, Bahraini, Qatari, Bedouin, Egyptian or Levantine colouring. Also avoid a generic "Gulf" accent that belongs to no particular country — Kuwaiti specifically.
+- Comedic or folkloric exaggeration of the dialect. This is a thoughtful podcast, not a sketch.
+- Emphasising dialect markers to prove the accent. A real speaker never does this.
+- Radio-news cadence, commercial voice-over energy, or melodrama.
+
+FIDELITY
+- Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.
+- Natural turn-taking, subtle reactions, short human pauses, gentle intellectual chemistry.
+- Keep Fahad and Noura audibly identical to the other parts of this same episode: same person, same room, same microphone. This is part ${index + 1} of ${total}.
+- Inline English performance tags guide delivery only; never speak the tags aloud.
+
+TRANSCRIPT
+${transcript}`
 }
 
 /* `output_audio` خاصيةُ راحةٍ في مكتبات Gemini، لا حقلٌ في ردّ REST الخام:
@@ -264,6 +311,56 @@ export function pickEpisodeMusic(slug, available = MUSIC_LIBRARY) {
 /* قصُّ الهواء الميّت من طرفَي المداخلة وتنظيفٌ خفيف: عتبة ‎-42dB‎ تلتقط
    الصمت لا الهمس، و‎afftdn‎ عند ‎nr=10‎ يزيل أزيز الخلفية بلا ذلك الرنين
    المعدني الذي يفضح المعالجة. النبرة والوقفات داخل الجملة تبقى كما نطقها. */
+/* الطلب صار يحمل عدّة مداخلات، لكن الجدول الزمني (نص الإذاعة المتزامن) يحتاج
+   ملفاً لكل مداخلة. فبدل أن نضحّي بأحدهما، تُقرأ مواضع الصمت داخل المقطع
+   ونُقصّ عندها: النموذج يترك بين متحدّثٍ وآخر صمتاً أطول ممّا يتركه داخل
+   الجملة، فأطولُ (ن-١) صمتةً هي حدود المداخلات. وإن لم يُطابق العدد — لأي
+   سببٍ — يعود المقطع مداخلةً مداخلةً كما كان، فلا تُفقد حلقةٌ أبداً. */
+function detectSilences(file) {
+  const run = spawnSync(FFMPEG, ['-hide_banner','-nostats','-i',file,'-af','silencedetect=noise=-38dB:d=0.24','-f','null','-'], { encoding:'utf8' })
+  const log = `${run.stderr || ''}`
+  const gaps = []
+  const starts = [...log.matchAll(/silence_start:\s*([\d.]+)/g)].map((m) => Number(m[1]))
+  const ends = [...log.matchAll(/silence_end:\s*([\d.]+)/g)].map((m) => Number(m[1]))
+  for (let i = 0; i < starts.length; i += 1) {
+    const from = starts[i]
+    const to = Number.isFinite(ends[i]) ? ends[i] : null
+    if (to === null || !(to > from)) continue
+    gaps.push({ from, to, mid: (from + to) / 2, span: to - from })
+  }
+  return gaps
+}
+
+export function chooseSplitPoints(gaps, expectedTurns, totalSec, edgeGuardSec = 0.45) {
+  if (expectedTurns <= 1) return []
+  const inner = gaps.filter((gap) => gap.mid > edgeGuardSec && gap.mid < totalSec - edgeGuardSec)
+  if (inner.length < expectedTurns - 1) return null
+  const strongest = [...inner].sort((a, b) => b.span - a.span).slice(0, expectedTurns - 1)
+  return strongest.map((gap) => gap.mid).sort((a, b) => a - b)
+}
+
+function splitChunk(file, chunkTurnsList, outPrefix) {
+  const expected = chunkTurnsList.length
+  if (expected === 1) return [file]
+  let total = 0
+  try { total = duration(file) } catch { return null }
+  const cuts = chooseSplitPoints(detectSilences(file), expected, total)
+  if (!cuts) return null
+  const bounds = [0, ...cuts, total]
+  const parts = []
+  for (let i = 0; i < expected; i += 1) {
+    const from = bounds[i]
+    const to = bounds[i + 1]
+    if (!(to - from > 0.35)) return null
+    const part = `${outPrefix}-${String(i + 1).padStart(2, '0')}.wav`
+    const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-ss',from.toFixed(3),'-t',(to - from).toFixed(3),
+      '-i',file,'-ar','24000','-ac','1','-c:a','pcm_s16le',part], { encoding:'utf8' })
+    if (run.status !== 0 || !existsSync(part)) return null
+    parts.push(part)
+  }
+  return parts
+}
+
 function tightenChunk(input, output) {
   const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-i',input,
     '-af','silenceremove=start_periods=1:start_silence=0.06:start_threshold=-42dB:detection=peak,'
@@ -415,9 +512,23 @@ if (SELF_TEST) {
     { speaker:'male', text:'هني يبين الفرق.', deliveryType:'reflection', pauseAfterMs:300, musicBridgeAfter:false },
   ]
   const chunks = chunkTurns(turns)
-  assert.equal(chunks.length, 3)
+  /* مداخلتان في المقطع الأول (يقفله الجسر الموسيقي) ثم الثالثة: الطلب يحمل
+     أكثر من مداخلةٍ الآن، والجسر يبقى حدّاً طبيعياً لا يُعبر. */
+  assert.equal(chunks.length, 2, 'الجسر الموسيقي يقفل المقطع، وما عداه يتجمّع')
+  assert.deepEqual(chunks.map((chunk) => chunk.length), [2, 1])
   const prompt = promptFor(chunks[0],0,chunks.length)
-  assert.match(prompt,/URBAN KUWAITI ARABIC/); assert.match(prompt,/Fahad:/); assert.match(promptFor(chunks[1],1,chunks.length),/Noura:/)
+  /* عقد الأداء الكويتي: هذه البنود هي ما يفصل «كويتيّاً طبيعياً» عن «مقلّدٍ
+     للهجة»، وحذفُ أيّها سهوٌ يعود بالأداء إلى خليجيٍّ عام. */
+  assert.match(prompt,/urban Kuwait City/i, 'هدف اللهجة: حضري كويتي محدّد')
+  assert.match(prompt,/never someone imitating the accent/i, 'محكّ الأصالة')
+  assert.match(prompt,/generic "Gulf" accent/i, 'منع الخليجي العام')
+  assert.match(prompt,/Saudi, Emirati, Bahraini/i, 'منع اللهجات المجاورة بالاسم')
+  assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
+  for (const word of ['«إي»','«مو»','«هني»','«شلون»']) {
+    assert.ok(prompt.includes(word), `توجيه نطق ${word} مفقود`)
+  }
+  assert.match(prompt,/Fahad:/)
+  assert.match(prompt,/Noura:/, 'المقطع الواحد يحمل المتحدثين معاً فيثبت الصوت داخله')
   const header = wavHeader(100)
   assert.equal(header.toString('ascii',0,4),'RIFF'); assert.equal(header.readUInt32LE(24),24000)
 
@@ -449,6 +560,19 @@ if (SELF_TEST) {
   /* حصة الطبقة المجانية: عشرة طلباتٍ في الدقيقة. المنظّم يبقى دونها،
      ومهلة الخادم تُقرأ من الحقل ومن نصّ الرسالة معاً. */
   assert.ok(RPM <= 10, `إيقاع ${RPM} طلباً/دقيقة يتجاوز حصة النموذج المجانية`)
+
+  /* عقد تماسك الصوت: الطلب يحمل عدّة مداخلاتٍ فتقلّ حدود الانزلاق، والقصّ
+     يرفض ما لا يطابق فيعود إلى التوليد المفرد بدل أن يخترع حدوداً. */
+  assert.ok(TURNS_PER_REQUEST >= 2, 'مداخلةٌ واحدةٌ لكل طلب تعيد علّة تبدّل صوت المذيع')
+  const grouped = chunkTurns(Array.from({ length: 12 }, (_, i) => ({
+    speaker: i % 2 ? 'female' : 'male', text: `مداخلة ${i}`, deliveryType: 'statement', musicBridgeAfter: false,
+  })))
+  assert.ok(grouped.length < 12, `التجميع لم يحدث: ${grouped.length} مقاطع لـ12 مداخلة`)
+  assert.equal(grouped.flat().length, 12, 'التجميع لا يفقد مداخلةً ولا يكرّرها')
+  const fakeGaps = [{ mid: 2.0, span: 0.5 }, { mid: 3.7, span: 0.5 }, { mid: 6.3, span: 0.5 }]
+  assert.deepEqual(chooseSplitPoints(fakeGaps, 4, 8.1), [2.0, 3.7, 6.3], 'حدود المداخلات تُقرأ من أطول الصمتات')
+  assert.equal(chooseSplitPoints(fakeGaps, 9, 8.1), null, 'نقصُ الصمتات يعني الرجوع للتوليد المفرد لا اختراع حدود')
+  assert.deepEqual(chooseSplitPoints([], 1, 5), [], 'مداخلةٌ واحدةٌ لا تحتاج قصّاً')
   assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')
@@ -481,17 +605,48 @@ if (DRY_RUN) {
 
 mkdirSync(AUDIO,{recursive:true}); rmSync(TMP,{recursive:true,force:true}); mkdirSync(TMP,{recursive:true}); mkdirSync(AUDITS,{recursive:true})
 const chunkFiles=[]; const durations=[]; const requestHashes=[]
+let rescuedChunks=0
 for (let i=0;i<chunks.length;i+=1) {
-  console.log(`🎙️ Gemini ${i+1}/${chunks.length}`)
+  const group=chunks[i]
+  console.log(`🎙️ Gemini ${i+1}/${chunks.length} (${group.length} مداخلة)`)
   const prompt=prompts[i]; requestHashes.push(sha256(prompt))
   const pcm=await geminiPcm(prompt)
-  const rawWav=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}.raw.wav`); writePcmWav(rawWav,pcm)
-  /* Gemini يترك هواءً ميّتاً في طرفَي كل مداخلة، فيتراكم على سبعٍ وثلاثين
-     مداخلةً إلى بطءٍ محسوس. يُقصّ الصمت من الطرفين فقط — لا يُمسّ صمتٌ داخل
-     الجملة، فتبقى الوقفة الطبيعية التي تصنع المعنى. */
-  const wav=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}.wav`)
-  chunkFiles.push(tightenChunk(rawWav, wav)); durations.push(duration(wav))
+  const stem=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}`)
+  const rawWav=`${stem}.raw.wav`; writePcmWav(rawWav,pcm)
+
+  /* المقطع يحمل عدّة مداخلات بصوتٍ متّسق؛ يُقصّ إلى مداخلاته ليبقى التوقيت
+     الدقيق لكل واحدةٍ منها. وإن تعذّر القصّ رجعنا لهذا المقطع وحده إلى
+     مداخلةٍ لكل طلب: صوتٌ يتبدّل في أربع مداخلاتٍ خيرٌ من حلقةٍ تسقط. */
+  let parts=splitChunk(rawWav, group, stem)
+  if (!parts) {
+    if (group.length > 1) {
+      console.log(`↻ تعذّر قصّ المقطع ${i+1} إلى ${group.length} مداخلات — يُعاد توليدها مفردة`)
+      rescuedChunks += 1
+      parts=[]
+      for (let j=0;j<group.length;j+=1) {
+        const singlePrompt=promptFor([group[j]], i, chunks.length)
+        requestHashes.push(sha256(singlePrompt))
+        const singlePcm=await geminiPcm(singlePrompt)
+        const singleRaw=`${stem}-solo-${String(j+1).padStart(2,'0')}.raw.wav`
+        writePcmWav(singleRaw, singlePcm)
+        parts.push(singleRaw)
+      }
+    } else parts=[rawWav]
+  }
+
+  /* Gemini يترك هواءً ميّتاً في طرفَي كل مداخلة، فيتراكم على عشرات المداخلات
+     إلى بطءٍ محسوس. يُقصّ الصمت من الطرفين فقط — لا يُمسّ صمتٌ داخل الجملة،
+     فتبقى الوقفة الطبيعية التي تصنع المعنى. */
+  parts.forEach((part, j) => {
+    const clean=`${stem}-turn-${String(j+1).padStart(2,'0')}.wav`
+    const finalFile=tightenChunk(part, clean)
+    chunkFiles.push(finalFile); durations.push(duration(finalFile))
+  })
 }
+if (chunkFiles.length !== turns.length) {
+  throw new Error(`عدد المقاطع ${chunkFiles.length} لا يطابق ${turns.length} مداخلة`)
+}
+console.log(`✓ ${chunks.length} طلباً لـ${turns.length} مداخلة${rescuedChunks ? ` · ${rescuedChunks} مقطعاً عاد إلى التوليد المفرد` : ''}`)
 const audioFile=resolve(AUDIO,`${slug}.dialogue-kw.mp3`)
 const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
 const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)

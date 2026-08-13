@@ -31,6 +31,7 @@ const Impact = lazy(() => import('./pages/Impact'))
 const CvFile = lazy(() => import('./pages/CvFile'))
 const Contact = lazy(() => import('./pages/Contact'))
 const Card = lazy(() => import('./pages/Card'))
+const CardLive = lazy(() => import('./pages/CardLive'))
 const BookDetail = lazy(() => import('./pages/BookDetail'))
 const ArticleDetail = lazy(() => import('./pages/ArticleDetail'))
 const Curated = lazy(() => import('./pages/Curated'))
@@ -706,6 +707,8 @@ function AnimatedRoutes() {
         <Route path="/cv-file/:kind" element={<CvFile />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/card" element={<Card />} />
+        {/* البطاقة الحيّة: مسرحُ الجسيمات للمؤتمرات، و/card تبقى الهادئة. */}
+        <Route path="/cards" element={<CardLive />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
         <Route path="/data-deletion" element={<DataDeletion />} />
@@ -723,14 +726,20 @@ function AnimatedRoutes() {
   )
 }
 
+/* المسارات المستقلّة: صفحاتٌ تملأ الشاشة بهويّتها الخاصّة ولا تحتمل قشرة
+   الموقع فوقها — لوحة التحكم، شاشة الإطلاق، ملفات السيرة، والبطاقة الحيّة
+   التي تُعرض على شاشةٍ في قاعة مؤتمر. */
+const STANDALONE_ROUTES = new Set(['/admin', '/launch', '/cards'])
+const isStandaloneRoute = (pathname: string) => STANDALONE_ROUTES.has(pathname) || pathname.startsWith('/cv-file/')
+
 function ConditionalNav() {
   const location = useLocation()
-  return location.pathname === '/admin' || location.pathname === '/launch' || location.pathname.startsWith('/cv-file/') ? null : <Nav />
+  return isStandaloneRoute(location.pathname) ? null : <Nav />
 }
 
 function ConditionalActions() {
   const location = useLocation()
-  if (location.pathname === '/admin' || location.pathname === '/launch' || location.pathname.startsWith('/cv-file/')) return null
+  if (isStandaloneRoute(location.pathname)) return null
   return (
     <>
       <FloatingActions />
@@ -741,7 +750,7 @@ function ConditionalActions() {
 
 function ConditionalFooter() {
   const location = useLocation()
-  return location.pathname === '/' || location.pathname === '/admin' || location.pathname === '/launch' || location.pathname.startsWith('/cv-file/') ? null : <Footer />
+  return location.pathname === '/' || isStandaloneRoute(location.pathname) ? null : <Footer />
 }
 
 

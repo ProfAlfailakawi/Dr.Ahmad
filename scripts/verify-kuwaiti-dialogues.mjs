@@ -39,7 +39,10 @@ for (const slug of slugs) {
   const turns=normalizeManualDialogueTurns(episodes[slug])
   assert.ok(turns.length>=15,`${slug}: الحوار أقصر من الحد المتوقع`)
   const text=turns.map(t=>t.text).join(' ')
-  const contamination=(text.match(/[\u0621-\u064A]+/gu)||[]).filter(token=>forbiddenTokens.has(token))
+  /* \u0627\u0644\u0645\u062F\u0649 \u200E0621\u2013064A\u200E \u0648\u062D\u062F\u0647 \u0644\u0627 \u064A\u0639\u0631\u0641 \u062D\u0631\u0648\u0641 \u0627\u0644\u062E\u0644\u064A\u062C \u0627\u0644\u0645\u0639\u0631\u064E\u0651\u0628\u0629 (\u0686 \u06AF \u067E \u06A4)\u060C \u0641\u0643\u0627\u0646
+     \u064A\u0634\u0637\u0631 \u00AB\u0627\u0644\u0641\u064A\u0644\u0686\u0627\u0648\u064A\u00BB \u0625\u0644\u0649 \u00AB\u0627\u0644\u0641\u064A\u0644\u00BB \u0648\u00AB\u0627\u0648\u064A\u00BB \u062B\u0645 \u064A\u062A\u0651\u0647\u0645\u0647\u0627 \u0628\u0627\u0644\u0645\u0635\u0631\u064A\u0629. \u0627\u0644\u062D\u0631\u0641 \u062C\u0632\u0621\u064C \u0645\u0646
+     \u0627\u0644\u0643\u0644\u0645\u0629 \u0644\u0627 \u0641\u0627\u0635\u0644\u064C \u0628\u064A\u0646 \u0643\u0644\u0645\u062A\u064A\u0646. */
+  const contamination=(text.match(/[\u0621-\u064A\u0686\u067E\u06A4\u06AF]+/gu)||[]).filter(token=>forbiddenTokens.has(token))
   assert.equal(contamination.length,0,`${slug}: انزلاق لهجي غير كويتي: ${contamination.join('، ')}`)
   for (const bad of malformed) assert.ok(!text.includes(bad),`${slug}: تركيب آلي فاسد: ${bad}`)
   assert.ok(!/[\u064B-\u0652\u0670]/u.test(text),`${slug}: بقي تشكيل/تنوين في النص المنطوق`)

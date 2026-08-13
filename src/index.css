@@ -6854,6 +6854,27 @@ html.dark {
    الطبيعي ولا تغطي المحتوى، ولا تُقصّ أطراف تبويباتها بتدرّج السكك.
    على الشاشات الأوسع يعود الالتصاق حيث يفيد ولا يزاحم مساحة القراءة.
    ═══════════════════════════════════════════════════════════════════ */
+/* على الشاشة الواسعة كان الشريط يخسر معركتين صامتتين أمام قواعدَ عامّة أقوى
+   منه في الترجيح، فيظهر عطبٌ واحدٌ سببه اثنان:
+     ١ ــ ‏.signature-page :is(section,header):not(…):not(…)‏ تفرض
+          position:relative فتغلب md:sticky، ويبقى md:top-16 نافذاً — فبدل أن
+          يلتصق الشريط يُدفع ٦٤ بكسل إلى **داخل** القائمة فيغطّي أول سطر.
+     ٢ ــ ‏.page-journey > section:nth-of-type(even){background:transparent}‏
+          تمسح لون الشريط، فيُرى السطر المغطّى من خلفه شبحاً — وهو ما ظهر
+          في لقطة الدكتور: ذيل «؟» طافياً بجانب حقل البحث.
+   القصد المكتوب في المكوّن (md:sticky · top-16 · z-120 · قماشة ٩٦٪ مع تمويه)
+   يُستعاد هنا بالوزن نفسه الذي تستعمله كتلة الهاتف أدناه، بلا مساس بالقاعدتين
+   العامّتين اللتين تخدمان بقيّة الصفحات. */
+@media (min-width: 768px) {
+  .articles-filter-bar,
+  .listen-filter-bar {
+    position: sticky !important;
+    inset-block-start: 4rem !important;
+    z-index: 120 !important;
+    background: rgb(var(--c-canvas) / .96) !important;
+  }
+}
+
 @media (max-width: 767px) {
   .articles-filter-bar,
   .listen-filter-bar {

@@ -28,15 +28,14 @@ const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
 const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-/* الجولة الثالثة (١٤ أغسطس ٢٠٢٦): حكم الدكتور بأذنه أن گ لم تعالج شيئاً —
-   «ورگة/سبگ» في الجولة الثانية ظلّت تنحرف إماراتيةً وإيرانيةً وعراقية. فماتت
-   فكرة الحروف (بقيت چ وحدها المثبتة سماعاً)، وانتقلت المعركة إلى البرومت:
-   حظرٌ مسمّى بسبعة سجلات + قفلٌ يركب كل سطر + فحصٌ ختامي بعد النص + تمهيدٌ
-   كويتيٌّ بكلماتٍ مثبتة (شلون/ترى/وايد/چذي) يسبق كلمات الفخ فيقفل اللهجة
-   قبل وصولها. النص هنا بإملاء الإنتاج حرفياً (ورقه/الورقه كما يخرجها
-   المعجم) — ما يُختبر هو ما سيُبثّ فعلاً. */
+/* الجولة الرابعة (١٤ أغسطس ٢٠٢٦ مساءً) — بعد حكم الدكتور على الثالثة:
+   «اعتمد ٥، الرجل ممتاز، لكنتها غير جيدة، والورقة ما زالت خطأ». فأمر:
+   «أي شي يميل إماراتي أو عراقي أو إيراني — بدله أو احذفه وأعد الصياغة».
+   وُلدت مصفاة اللهجة في المعجم: الكلمات المسموعة تُستبدل في الصوت وحده
+   (ورقة→شهاده وأخواتها سياقاً سياقاً). هذي الجولة تختبر الزوج المعتمد ٥
+   وحده على الواقع الجديد: لا «ورقه» بعد اليوم — «الشهاده» مكانها.
+   وسطر نورة يحمل أثقل الفخاخ عمداً لأن لكنتها هي المشكوك فيها. */
 const PAIRS = [
-  ['أربعة', 'Orus', 'Callirrhoe'],
   ['خمسة', 'Puck', 'Despina'],
 ]
 
@@ -44,9 +43,9 @@ const PAIRS = [
 const OPEN_FAHAD = 'هلا والله، شلونكم؟ اليوم بنسولف شوي عن الدرجات والعيال.'
 const OPEN_NOURA = 'إي حياك، ترى الموضوع وايد يستاهل — خل نبدأ چذي على طول.'
 
-/* الفخاخ الست التي سُمعت غير كويتية، بإملاء الإنتاج نفسه (بلا گ). */
-const TRAP_FAHAD = 'شوف، الطالب بالنهاية ايعرف إن الدرجة مجرد ورقه، وعقله يفهمها بس ما يفرح.'
-const TRAP_NOURA = 'إي، بس منو قال إن اللي سبق لازم يفرح؟ الورقه تعرفها، بس الفكرة ما تعرفها.'
+/* الفخاخ بإملاء الإنتاج بعد المصفاة — وأثقلها في فم نورة عمداً. */
+const TRAP_FAHAD = 'شوف، الطالب بالنهاية ايعرف إن الدرجة شهاده وبس، ومخه فاهمها بس ما يفرح فيها.'
+const TRAP_NOURA = 'إي، بس منو قال إن الشهاده تكفي؟ الشهاده بيدها اليوم، والفكرة بعدها بعيده عنها.'
 
 const PROMPT_HEAD = `ABSOLUTE RULE — APPLY TO EVERY SINGLE WORD
 This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers are FORBIDDEN outright; each is an automatic hard failure:
@@ -57,7 +56,10 @@ This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers 
 5. Levantine — imala and softened articulation. FORBIDDEN.
 6. Egyptian — its stress pattern and vowel colour. FORBIDDEN.
 7. Generic pan-Gulf blend belonging to no city. FORBIDDEN.
-No "close enough": one drifted word ruins the take — re-read it as a Kuwait City Kuwaiti. Two natural Kuwaitis talking, not actors imitating an accent. The six trap words a Kuwaiti listener catches instantly: «ايعرف» «ورقه» «عقله» «يفهمها» «منو» «سبق» — give each the full Kuwait City weight of the sentence around it.`
+No "close enough": one drifted word ruins the take — re-read it as a Kuwait City Kuwaiti. Two natural Kuwaitis talking, not actors imitating an accent.
+
+NOURA — TARGETED CORRECTION (the heard failures live on her lines)
+The Emirati thinning keeps surfacing on Noura's lines specifically: the male lines hold Kuwait City weight while hers drift. Give Noura's every single line the same full Kuwaiti weight, the same city, the same register as Fahad's — never lighter, never more forward. Her hard test words in this take: «منو» «الشهاده» «بعيده» — if any of them comes out Emirati, the whole take is rejected.`
 
 const PROMPT_TAIL = `FINAL CHECK — LAST INSTRUCTION BEFORE SPEAKING
 Re-scan every word above. Any word that would come out Emirati, Iraqi, Persian, Saudi, Levantine, Egyptian, or generic-Gulf must be corrected to Kuwait City Kuwaiti before the take. Every word, every line, both speakers: Kuwait City Kuwaiti only.`

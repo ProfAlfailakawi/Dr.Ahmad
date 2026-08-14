@@ -172,6 +172,7 @@ The Emirati thinning keeps surfacing on Noura's lines specifically: the male lin
 FIDELITY
 - Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.
 - Natural turn-taking, subtle reactions, short human pauses, gentle intellectual chemistry.
+- Fahad is ALWAYS the male voice and Noura is ALWAYS the female voice. A line labeled Fahad must never come out in a female voice, and a line labeled Noura must never come out in a male voice — no swapping, no blending, not for a single line.
 - Keep Fahad and Noura audibly identical to the other parts of this same episode: same person, same room, same microphone. This is part ${index + 1} of ${total}.
 - Inline English performance tags guide delivery only; never speak the tags aloud.
 
@@ -329,6 +330,49 @@ async function geminiPcm(prompt) {
   }
   throw last || new Error('فشل Gemini TTS')
 }
+
+/* ═══ بوابة الطبقة الصوتية ═══
+   أذن الدكتور مسكت التبديل («في تبديل واضح بين المذيعين بعد ميتا»)، والقياس
+   أكّدها: 9 أدوار من 37 في تشغيلة 31833238215 خرجت بتردد حنجرة الجنس المعاكس
+   (نورة 111-140Hz وفهد 167-193Hz). تردد الحنجرة يُقاس بالارتباط الذاتي مع
+   علاج خطأ الأوكتاف (أطول مهلة ضمن 85% من القمة)، والحكم بنطاقات مطلقة:
+   ذكر ≤ 150Hz، أنثى ≥ 165Hz، وما بينهما رمادي لا يُنذر — فلا إنذارات كاذبة
+   تحرق الحصة. الدور المعكوس يُعاد توليده مفرداً حتى مرتين، فإن أصرّ سقطت
+   التشغيلة بأسماء الأدوار — مرشحٌ معكوس الأصوات لا يصل بوابة الاعتماد. */
+const F0_SR = 16000
+function medianF0(file) {
+  const dec = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-i',file,'-f','s16le','-ac','1','-ar',String(F0_SR),'-'], { maxBuffer: 1 << 27 })
+  if (dec.status !== 0 || !dec.stdout?.length) return null
+  const pcm = new Int16Array(dec.stdout.buffer, dec.stdout.byteOffset, dec.stdout.byteLength >> 1)
+  const F = Math.floor(0.04 * F0_SR), H = Math.floor(0.02 * F0_SR)
+  const minLag = Math.floor(F0_SR / 350), maxLag = Math.floor(F0_SR / 60)
+  const f0s = []
+  for (let off = 0; off + F <= pcm.length; off += H) {
+    let rms = 0
+    for (let i = 0; i < F; i++) rms += pcm[off + i] * pcm[off + i]
+    if (Math.sqrt(rms / F) < 300) continue
+    let best = 0, bestLag = 0, energy = 0
+    for (let i = 0; i < F; i++) energy += pcm[off + i] * pcm[off + i]
+    for (let lag = minLag; lag <= maxLag; lag++) {
+      let sum = 0
+      for (let i = 0; i < F - lag; i++) sum += pcm[off + i] * pcm[off + i + lag]
+      if (sum > best) { best = sum; bestLag = lag }
+    }
+    if (!bestLag || best / energy < 0.45) continue
+    let lag = bestLag
+    for (let cand = maxLag; cand >= minLag; cand--) {
+      let sum = 0
+      for (let i = 0; i < F - cand; i++) sum += pcm[off + i] * pcm[off + i + cand]
+      if (sum >= 0.85 * best) { lag = cand; break }
+    }
+    f0s.push(F0_SR / lag)
+  }
+  if (f0s.length < 5) return null
+  f0s.sort((a, b) => a - b)
+  return f0s[Math.floor(f0s.length / 2)]
+}
+/* معكوس = تردد في نطاق الجنس الآخر صراحةً؛ الرمادي بريء. */
+const voiceSwapped = (expectMale, f0) => f0 !== null && (expectMale ? f0 >= 165 : f0 <= 150)
 
 function duration(file) {
   const out = spawnSync(FFPROBE, ['-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',file], { encoding:'utf8' })
@@ -602,6 +646,11 @@ if (SELF_TEST) {
   /* الأقفال الثلاثة (١٤ أغسطس ٢٠٢٦) — أمر الدكتور: «تحذير صارم جداً». */
   assert.match(prompt,/Seven registers are FORBIDDEN/i, 'القفل الأول: الحظر السباعي المسمّى في الرأس')
   assert.match(prompt,/NOURA — TARGETED CORRECTION/i, 'تصويب نورة: العطب المسموع يعيش في سطورها فالعلاج يصوَّب إليها')
+  assert.match(prompt,/ALWAYS the male voice/i, 'منع تبديل الأصوات: فهد ذكر دائماً ونورة أنثى دائماً')
+  /* بوابة الطبقة: النطاقات لا تتلامس فلا يقع دورٌ في الجنسين معاً. */
+  assert.ok(voiceSwapped(true, 180) && !voiceSwapped(true, 120) && voiceSwapped(false, 120) && !voiceSwapped(false, 180), 'بوابة الطبقة تحكم بالنطاق الصحيح')
+  assert.ok(!voiceSwapped(true, 157) && !voiceSwapped(false, 157), 'المنطقة الرمادية 150-165 بريئة لا تحرق إعادات')
+  assert.ok(!voiceSwapped(true, null), 'غياب القياس لا يُنذر')
   assert.match(prompt,/FINAL CHECK — LAST INSTRUCTION/i, 'القفل الثالث: الفحص الختامي بعد النص')
   assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes('Kuwaiti Kuwait-City accent only')), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
@@ -766,6 +815,35 @@ if (chunkFiles.length !== turns.length) {
   throw new Error(`عدد المقاطع ${chunkFiles.length} لا يطابق ${turns.length} مداخلة`)
 }
 console.log(`✓ ${chunks.length} طلباً لـ${turns.length} مداخلة${rescuedChunks ? ` · ${rescuedChunks} مقطعاً عاد إلى التوليد المفرد` : ''}`)
+
+/* بوابة الطبقة: كل دورٍ يُقاس، والمعكوس يُعاد مفرداً حتى مرتين. */
+let regenerated = 0
+const stubborn = []
+for (let t = 0; t < turns.length; t += 1) {
+  const expectMale = turns[t].speaker === 'male'
+  let f0 = medianF0(chunkFiles[t])
+  let tries = 0
+  while (voiceSwapped(expectMale, f0) && tries < 2) {
+    tries += 1; regenerated += 1
+    console.log(`↻ الدور ${t + 1} (${expectMale ? 'فهد' : 'نورة'}): طبقة معكوسة ${f0.toFixed(0)}Hz — إعادة ${tries}/2`)
+    const singlePrompt = promptFor([turns[t]], 0, 1)
+    requestHashes.push(sha256(singlePrompt))
+    const pcm = await geminiPcm(singlePrompt)
+    const raw = resolve(TMP, `pitch-regen-${t + 1}-${tries}.raw.wav`)
+    writePcmWav(raw, pcm)
+    const clean = resolve(TMP, `pitch-regen-${t + 1}-${tries}.wav`)
+    chunkFiles[t] = tightenChunk(raw, clean)
+    durations[t] = duration(chunkFiles[t])
+    f0 = medianF0(chunkFiles[t])
+  }
+  if (voiceSwapped(expectMale, f0)) stubborn.push(`${t + 1} (${expectMale ? 'فهد' : 'نورة'} ${f0.toFixed(0)}Hz)`)
+}
+if (stubborn.length) {
+  throw new Error(`أصوات معكوسة رغم إعادتين — الأدوار: ${stubborn.join(' · ')}. مرشح معكوس لا يصل بوابة الاعتماد.`)
+}
+if (regenerated) console.log(`✓ بوابة الطبقة: أُعيد ${regenerated} توليداً وكل الأدوار على جنسها الصحيح`)
+else console.log('✓ بوابة الطبقة: كل الأدوار على جنسها الصحيح من أول رمية')
+
 const audioFile=resolve(AUDIO,`${slug}.dialogue-kw.mp3`)
 const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
 const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)
@@ -776,7 +854,8 @@ const audit={
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
   sourceSha256:sha256(readFileSync(source)), turnCount:turns.length, chunkCount:chunks.length,
   requestHashes, audioSha256:sha256(readFileSync(audioFile)), transcriptSha256:sha256(readFileSync(transcriptFile)),
-  durationSec:duration(audioFile), mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160},
+  durationSec:duration(audioFile), pitchGate:{regenerated,maleMaxHz:150,femaleMinHz:165},
+  mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160},
   generatedAt:new Date().toISOString(),
 }
 writeFileSync(resolve(AUDITS,`${slug}.json`),`${JSON.stringify(audit,null,2)}\n`)

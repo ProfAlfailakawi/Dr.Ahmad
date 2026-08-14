@@ -20,8 +20,14 @@ const AUDITS = resolve(ROOT, 'podcast-audits', 'kuwaiti')
 const STATE = resolve(ROOT, '.podcast-state.json')
 const API = 'https://generativelanguage.googleapis.com/v1beta/interactions'
 const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-3.1-flash-tts-preview'
-const MALE_VOICE = process.env.GEMINI_TTS_MALE_VOICE || 'Sadaltager'
-const FEMALE_VOICE = process.env.GEMINI_TTS_FEMALE_VOICE || 'Sulafat'
+/* اعتماد الدكتور ١٤ أغسطس ٢٠٢٦ بعد سماع الجولة الثالثة: المقطع ٥ —
+   فهد Puck («الرجل ممتاز») ونورة Despina. سُمع ضعفٌ في لكنة Despina وبقيت
+   «الورقه» إماراتيةً في سطرها وحده بينما صمدت في سطر Puck بالإملاء نفسه —
+   فالعلّة قدرة الصوت لا الإملاء. إن لم تستقم في الحلقة الكاملة فالبديل
+   الجاهز Callirrhoe (أنثى المقطع ٤)، والتبديل بلا كود:
+   GEMINI_TTS_FEMALE_VOICE=Callirrhoe. */
+const MALE_VOICE = process.env.GEMINI_TTS_MALE_VOICE || 'Puck'
+const FEMALE_VOICE = process.env.GEMINI_TTS_FEMALE_VOICE || 'Despina'
 const PROFILE = process.env.PODCAST_KW_PROFILE || 'kuwaiti-urban-soft-v2'
 const GENERATION_MODE = String(process.env.PODCAST_KW_GENERATION_MODE || 'pilot').trim().toLowerCase()
 const PILOT_SLUG = String(process.env.PODCAST_KW_PILOT_SLUG || 'success-that-does-not-bring-joy-to-its-ownerarabic').trim()
@@ -157,7 +163,11 @@ FOREIGN AND ACADEMIC TERMS — DO NOT CHANGE VOICE
 The clearest drift a Kuwaiti listener catches: the voice changes the moment a foreign word, a study reference, a researcher's name, or an academic term arrives (a journal name, «ميتا تحليل», a transliterated proper name). This is a hard failure.
 - The same Kuwaiti speaker keeps talking. A foreign or academic term is dropped plainly into the Kuwaiti sentence — same voice, same weight, same rhythm — never announced, never switched into an English, MSA, or Persian register.
 - Do not slow down, do not brighten the tone, do not "present" the term. Say it and move straight on, the way a Kuwaiti academic mentions a term mid-conversation.
-- These specific words keep coming out non-Kuwaiti — give each the full Kuwaiti weight of the sentence, never a thinner or more forward Emirati/Persian reading: «ايعرف» «ايعرفها» «عقله» «يعقله» «الورقه» «ايفهمون» «سبقت» «منو».
+- These specific words keep coming out non-Kuwaiti — give each the full Kuwaiti weight of the sentence, never a thinner or more forward Emirati/Persian reading: «ايعرف» «ايعرفها» «مخه» «الشهاده» «ايفهمون» «منو».
+
+NOURA — TARGETED CORRECTION (the heard failures live on her lines)
+The Emirati thinning keeps surfacing on Noura's lines specifically: the male lines hold Kuwait City weight while hers drift. Give Noura's every single line the same full Kuwaiti weight, the same city, the same register as Fahad's — never lighter, never more forward.
+- The historically failing words were sieved out of the audio text entirely (they no longer reach you). What remains must hold: «منو» «الشهاده» «مخه» and every word around them carry full Kuwait City weight on Noura's lines — if any word comes out Emirati on her lines, the whole take is rejected.
 
 FIDELITY
 - Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.
@@ -591,6 +601,7 @@ if (SELF_TEST) {
   assert.match(prompt,/Emirati, Iraqi, Iranian\/Persian, Saudi/i, 'منع اللهجات المجاورة بالاسم — والعراقي معها (كان غائباً وهو مسموع)')
   /* الأقفال الثلاثة (١٤ أغسطس ٢٠٢٦) — أمر الدكتور: «تحذير صارم جداً». */
   assert.match(prompt,/Seven registers are FORBIDDEN/i, 'القفل الأول: الحظر السباعي المسمّى في الرأس')
+  assert.match(prompt,/NOURA — TARGETED CORRECTION/i, 'تصويب نورة: العطب المسموع يعيش في سطورها فالعلاج يصوَّب إليها')
   assert.match(prompt,/FINAL CHECK — LAST INSTRUCTION/i, 'القفل الثالث: الفحص الختامي بعد النص')
   assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes('Kuwaiti Kuwait-City accent only')), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')

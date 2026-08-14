@@ -8,6 +8,7 @@ import { Pagination, usePagedList } from '../components/Pagination'
 import { usePersistentAudio, type PersistentTrack } from '../lib/persistent-audio'
 import { versionedAudioUrl } from '../components/extras'
 import { AudioPlayer, openAudioPlayer } from '../components/AudioPlayer'
+import { PodcastPlatforms } from '../components/PodcastPlatforms'
 import { type ListenEpisode } from '../lib/listen-catalog'
 import { listenEpisodes } from '../lib/listen-episodes'
 import { SocialIcon } from '../components/icons'
@@ -282,6 +283,7 @@ export default function Listen() {
             </button>
           </FadeUp>
         )}
+        <PodcastPlatforms />
       </section>
 
       <section className="listen-filter-bar mt-6 border-y border-hair bg-canvas px-4 py-3 sm:px-6 md:sticky md:top-16 md:z-[120] md:bg-canvas/[.96] md:px-11 md:backdrop-blur-md">

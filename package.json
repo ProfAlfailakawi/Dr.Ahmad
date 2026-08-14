@@ -203,9 +203,10 @@
     "content:live:self-test": "node scripts/test-live-cms-refresh.mjs",
     "dialogues:kw:verify": "node scripts/verify-kuwaiti-dialogues.mjs",
     "dialogues:kw:upload": "node scripts/upload-kuwaiti-dialogues.mjs",
-    "podcast:kw:self-test": "node scripts/verify-kuwaiti-dialogues.mjs && node scripts/podcast-kuwaiti-gemini.mjs --self-test",
+    "podcast:kw:self-test": "node scripts/guard-kuwaiti-pronunciation.mjs && node scripts/verify-kuwaiti-dialogues.mjs && node scripts/podcast-kuwaiti-gemini.mjs --self-test",
     "podcast:kw:dry-run": "node scripts/podcast-kuwaiti-gemini.mjs --slug=success-that-does-not-bring-joy-to-its-ownerarabic --dry-run",
-    "podcast:kw:pilot": "node scripts/podcast-kuwaiti-gemini.mjs --slug=success-that-does-not-bring-joy-to-its-ownerarabic"
+    "podcast:kw:pilot": "node scripts/podcast-kuwaiti-gemini.mjs --slug=success-that-does-not-bring-joy-to-its-ownerarabic",
+    "guard:kuwaiti-pronunciation": "node scripts/guard-kuwaiti-pronunciation.mjs"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

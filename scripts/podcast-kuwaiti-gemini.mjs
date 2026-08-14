@@ -116,7 +116,7 @@ This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers 
 2. Iraqi — the Mesopotamian colouring: backed vowels, its drawl, its cadence. FORBIDDEN.
 3. Iranian/Persian — stretched long vowels, soft rolling consonants, any Persian softness. FORBIDDEN.
 4. Saudi — Najdi or Hejazi rhythm, the harder qaf, the desert cadence. FORBIDDEN.
-5. Levantine (Syrian/Lebanese/Jordanian/Palestinian) — imala and softened articulation. FORBIDDEN.
+5. Levantine (Syrian/Lebanese/Jordanian/Palestinian) — imala, softened articulation, and the Levantine greeting melody («هلا والله» cadence). FORBIDDEN. A greeting or welcome locks the register: its very first syllable must already be Kuwait City.
 6. Egyptian — its stress pattern and its vowel colour. FORBIDDEN.
 7. Generic pan-Gulf blend (Bahraini/Qatari/Bedouin mix) that belongs to no city. FORBIDDEN.
 There is no "close enough" and no acceptable percentage of drift. If one word in one line tilts toward any register above, the entire take is wrong and must be re-read as a Kuwait City Kuwaiti. Hold Kuwait City weight on every word, including academic terms and proper names. This rule outranks everything below.

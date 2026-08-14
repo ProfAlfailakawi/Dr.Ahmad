@@ -45,3 +45,4 @@ jobs:
           path: |
             audio/voice-test.mp3
             audio/voice-test-legend.json
+            audio/voice-test/

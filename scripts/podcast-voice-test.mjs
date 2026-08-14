@@ -36,9 +36,20 @@ const PAIRS = [
   ['خمسة', 'Puck', 'Despina'],
 ]
 
-/* منطوقٌ مثبَّتٌ يدوياً لهذه الجولة: ألف الوصل (ايعرف) محفوظة، وگ في ورگة/سبگ. */
-const FAHAD = 'شوف، الطالب بالنهاية ايعرف إن الدرجة مجرد ورگة، وعقله يفهمها بس ما يفرح.'
-const NOURA = 'إي، بس منو قال إن اللي سبگ لازم يفرح؟ الورگة تعرفها، بس الفكرة ما تعرفها.'
+/* الجولة الثالثة (بأمر الدكتور «خل اسمع اول الاخطاء»): كل زوجٍ يُولَّد مرّتين —
+   مرّةً بالإملاء الخاطئ الذي سمعه إماراتياً (ورقة/سبق بالقاف الفصيحة)، ومرّةً
+   بالإملاء المصحّح (ورگة/سبگ). فيسمع الخطأ والعلاج متجاورَين في التشغيلة الواحدة،
+   ويحكم على الأصوات وعلى گ معاً بلا تخمين. المقطع خالٍ من چ فلا يقع تعارض گ↔چ. */
+const FAHAD_WRONG = 'شوف، الطالب بالنهاية ايعرف إن الدرجة مجرد ورقة، وعقله يفهمها بس ما يفرح.'
+const NOURA_WRONG = 'إي، بس منو قال إن اللي سبق لازم يفرح؟ الورقة تعرفها، بس الفكرة ما تعرفها.'
+const FAHAD_RIGHT = 'شوف، الطالب بالنهاية ايعرف إن الدرجة مجرد ورگة، وعقله يفهمها بس ما يفرح.'
+const NOURA_RIGHT = 'إي، بس منو قال إن اللي سبگ لازم يفرح؟ الورگة تعرفها، بس الفكرة ما تعرفها.'
+
+/* الوسم يُنطق داخل المقطع نفسه — الدكتور يسمع على الجوال بلا دليلٍ مكتوب أمامه. */
+const VARIANTS = [
+  ['قبل', 'بالإملاء القديم', FAHAD_WRONG, NOURA_WRONG],
+  ['بعد', 'بالإملاء المصحّح', FAHAD_RIGHT, NOURA_RIGHT],
+]
 
 const PROMPT_HEAD = `ABSOLUTE RULE: This is Kuwait City (حضري) Arabic — never Emirati, never Iranian/Persian. Keep full Kuwaiti weight on every word; if any word thins toward Dubai/Abu Dhabi the take is wrong. Two natural Kuwaitis talking, not actors imitating the accent.`
 
@@ -102,25 +113,41 @@ async function gen(maleVoice, femaleVoice, transcript) {
 
 async function main() {
   if (!KEY) throw new Error('GEMINI_API_KEY مفقود')
-  rmSync(TMP, { recursive: true, force: true }); mkdirSync(TMP, { recursive: true }); mkdirSync(dirname(OUT), { recursive: true })
+  rmSync(TMP, { recursive: true, force: true }); mkdirSync(TMP, { recursive: true })
+  const PARTS = resolve(dirname(OUT), 'voice-test')
+  rmSync(PARTS, { recursive: true, force: true }); mkdirSync(PARTS, { recursive: true })
+
   const files = []
+  const legend = []
   for (const [label, male, female] of PAIRS) {
-    console.log(`🎙️ المقطع «${label}» = ${male} + ${female}`)
-    const transcript = `Fahad: المقطع رقم ${label}. ${FAHAD}\nNoura: ${NOURA}`
-    const pcm = await gen(male, female, transcript)
-    const wav = resolve(TMP, `seg-${label}.wav`); writeFileSync(wav, Buffer.concat([wavHeader(pcm.length), pcm]))
-    files.push(wav)
+    for (const [tag, spokenTag, fahad, noura] of VARIANTS) {
+      console.log(`🎙️ ${label} · ${tag} = ${male} + ${female}`)
+      const transcript = `Fahad: المقطع رقم ${label}، ${spokenTag}. ${fahad}\nNoura: ${noura}`
+      const pcm = await gen(male, female, transcript)
+      const wav = resolve(TMP, `seg-${label}-${tag}.wav`)
+      writeFileSync(wav, Buffer.concat([wavHeader(pcm.length), pcm]))
+      files.push(wav)
+
+      /* ملفٌّ مستقلٌّ باسمٍ ناطق — الاسم وحده يكفي للتمييز على الجوال. */
+      const solo = resolve(PARTS, `${label}-${tag}.mp3`)
+      const s1 = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', wav,
+        '-af', 'loudnorm=I=-16:TP=-1.5', '-ar', '48000', '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '160k', solo], { encoding: 'utf8' })
+      if (s1.status !== 0) throw new Error(s1.stderr || 'فشل ترميز المقطع المفرد')
+      legend.push({ pair: label, variant: tag, male, female, file: `audio/voice-test/${label}-${tag}.mp3` })
+    }
   }
+
   const inputs = []; const filters = []
   files.forEach((f, i) => { inputs.push('-i', f); filters.push(`[${i}:a]apad=pad_dur=0.7[a${i}]`) })
   const concat = files.map((_, i) => `[a${i}]`).join('')
   filters.push(`${concat}concat=n=${files.length}:v=0:a=1,loudnorm=I=-16:TP=-1.5[out]`)
   const r = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', ...inputs, '-filter_complex', filters.join(';'), '-map', '[out]', '-ar', '48000', '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '160k', OUT], { encoding: 'utf8' })
   if (r.status !== 0) throw new Error(r.stderr || 'فشل الدمج')
-  console.log(`\n✓ جاهز: audio/voice-test.mp3`)
-  console.log('الدليل (الرقم ← فهد + نورة):')
-  PAIRS.forEach(([label, m, f]) => console.log(`  ${label} = ${m} + ${f}`))
-  writeFileSync(resolve(dirname(OUT), 'voice-test-legend.json'), JSON.stringify({ fahad: FAHAD, noura: NOURA, pairs: PAIRS }, null, 2))
+
+  console.log(`\n✓ جاهز: audio/voice-test.mp3 (الأربعة متتالية)`)
+  console.log('  وأربعة ملفات مفردة في audio/voice-test/')
+  legend.forEach((l) => console.log(`  ${l.pair}-${l.variant} = ${l.male} + ${l.female}`))
+  writeFileSync(resolve(dirname(OUT), 'voice-test-legend.json'), JSON.stringify({ variants: VARIANTS.map(([t, s]) => ({ tag: t, spoken: s })), pairs: PAIRS, files: legend }, null, 2))
 }
 
 main().catch((e) => { console.error('✗', e.message); process.exit(1) })

@@ -1,16 +1,15 @@
 #!/usr/bin/env node
 /**
- * تجربة أصوات — مقارنة لهجة.
+ * تجربة أصوات — مقارنة لهجة (أزواج بصوتين).
  *
- * الغرض: حكم «إماراتي مليون بالمية» (أذن كويتية أصلية) جذرُه صوتُ المحرّك نفسه،
- * لا النص. فنجرّب عدّة أصوات Gemini على **نفس المقطع** المليء بالكلمات التي
+ * حكم «إماراتي مليون بالمية» (أذن كويتية أصلية) جذرُه صوتُ المحرّك لا النص.
+ * فنجرّب عدّة أزواج أصوات Gemini على **نفس المقطع** المليء بالكلمات التي
  * سُمعت إماراتيةً (يعرف · ورقة · عقله · يفهمها · منو · سبق)، ونجمعها في ملفٍ
- * واحد يسمعه الدكتور وزوجته: أيّ صوتٍ كويتيّ وأيّها إماراتي.
+ * واحد يسمعه الدكتور وزوجته: أيّ زوجٍ كويتيّ وأيّها إماراتي.
  *
- * كلّ صوتٍ نداءٌ مستقل يقول رقمه بصوته ثم المقطع. مجموعها ملفٌّ واحد.
- * التشغيل عبر الورشة (podcast-voice-test.yml) حيث GEMINI_API_KEY سرٌّ.
+ * كلّ مقطع حوارٌ قصير بصوتين (نفس عقد الإنتاج المُثبَت: متحدّثان Fahad/Noura)
+ * يبدأ برقمه. مجموعها ملفٌّ واحد. التشغيل عبر الورشة حيث GEMINI_API_KEY سرٌّ.
  */
-import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -29,29 +28,25 @@ const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
 const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-/* الأصوات المرشّحة — نبدأ بالحالي (Sadaltager/Sulafat) كخطِّ أساسٍ ثم بدائل
-   من مجموعة Gemini. الحكم بالأذن: أيّها لا يُسمع إماراتياً. */
-const VOICES = [
-  ['واحد', 'Sadaltager'],   // الحالي (فهد) — خط الأساس
-  ['اثنين', 'Sulafat'],     // الحالي (نورة) — خط الأساس
-  ['ثلاثة', 'Charon'],
-  ['أربعة', 'Kore'],
-  ['خمسة', 'Fenrir'],
-  ['ستة', 'Orus'],
-  ['سبعة', 'Puck'],
-  ['ثمانية', 'Aoede'],
-  ['تسعة', 'Enceladus'],
-  ['عشرة', 'Algieba'],
+/* أزواج مرشّحة: [الرقم, صوت فهد, صوت نورة]. الأول هو الحالي (خط الأساس). */
+const PAIRS = [
+  ['واحد', 'Sadaltager', 'Sulafat'],   // الحالي — خط الأساس
+  ['اثنين', 'Charon', 'Aoede'],
+  ['ثلاثة', 'Fenrir', 'Kore'],
+  ['أربعة', 'Orus', 'Callirrhoe'],
+  ['خمسة', 'Puck', 'Despina'],
 ]
 
-/* المقطع: مكتنزٌ بالكلمات التي سُمعت إماراتية. يمرّ بنفس طبقة الصوت الإنتاجية. */
 const SRC = JSON.parse(readFileSync(resolve(ROOT, 'src', 'data', 'kuwaiti-pronunciation.json'), 'utf8'))
 const PRON = buildPronunciationMap(SRC)
 const FOREIGN = buildForeignRedactions(SRC)
 const spokenForm = (t) => toSpokenKuwaiti(redactForeignNames(t, FOREIGN), PRON)
-const PASSAGE = spokenForm('الطالب بالنهاية يعرف إن الدرجة مجرد ورقة، وعقله يفهمها بس ما يفرح. منو قال إن اللي سبق لازم يفرح؟ الورقة تعرفها، بس الفكرة ما تعرفها.')
 
-const PROMPT_HEAD = `ABSOLUTE RULE: This is Kuwait City (حضري) Arabic — never Emirati, never Iranian/Persian. Keep full Kuwaiti weight on every word; if any word thins toward Dubai/Abu Dhabi the take is wrong. A natural Kuwaiti speaker, not someone imitating the accent.`
+/* مقطعٌ مكتنزٌ بالكلمات التي سُمعت إماراتية، موزّعٌ على المتحدّثَين. */
+const FAHAD = spokenForm('شوف، الطالب بالنهاية يعرف إن الدرجة مجرد ورقة، وعقله يفهمها بس ما يفرح.')
+const NOURA = spokenForm('إي، بس منو قال إن اللي سبق لازم يفرح؟ الورقة تعرفها، بس الفكرة ما تعرفها.')
+
+const PROMPT_HEAD = `ABSOLUTE RULE: This is Kuwait City (حضري) Arabic — never Emirati, never Iranian/Persian. Keep full Kuwaiti weight on every word; if any word thins toward Dubai/Abu Dhabi the take is wrong. Two natural Kuwaitis talking, not actors imitating the accent.`
 
 function wavHeader(pcmBytes, sampleRate = 24000, channels = 1, bits = 16) {
   const h = Buffer.alloc(44); const blockAlign = channels * bits / 8
@@ -75,8 +70,8 @@ function pcmFromBody(body) {
   return out.length ? out[out.length - 1] : null
 }
 
-async function gen(voice, text) {
-  const input = `${PROMPT_HEAD}\n\nSpeaker: ${text}`
+async function gen(maleVoice, femaleVoice, transcript) {
+  const input = `${PROMPT_HEAD}\n\n${transcript}`
   for (let attempt = 1; attempt <= 6; attempt += 1) {
     try {
       const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 90_000)
@@ -85,7 +80,10 @@ async function gen(voice, text) {
         headers: { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: MODEL, input, response_format: { type: 'audio' },
-          generation_config: { speech_config: [{ speaker: 'Speaker', voice }] },
+          generation_config: { speech_config: [
+            { speaker: 'Fahad', voice: maleVoice },
+            { speaker: 'Noura', voice: femaleVoice },
+          ] },
         }),
       }).finally(() => clearTimeout(timer))
       const raw = await res.text()
@@ -112,23 +110,23 @@ async function main() {
   if (!KEY) throw new Error('GEMINI_API_KEY مفقود')
   rmSync(TMP, { recursive: true, force: true }); mkdirSync(TMP, { recursive: true }); mkdirSync(dirname(OUT), { recursive: true })
   const files = []
-  for (const [label, voice] of VOICES) {
-    console.log(`🎙️ الصوت «${label}» = ${voice}`)
-    const pcm = await gen(voice, `الصوت رقم ${label}. ${PASSAGE}`)
-    const wav = resolve(TMP, `v-${voice}.wav`); writeFileSync(wav, Buffer.concat([wavHeader(pcm.length), pcm]))
+  for (const [label, male, female] of PAIRS) {
+    console.log(`🎙️ المقطع «${label}» = ${male} + ${female}`)
+    const transcript = `Fahad: المقطع رقم ${label}. ${FAHAD}\nNoura: ${NOURA}`
+    const pcm = await gen(male, female, transcript)
+    const wav = resolve(TMP, `seg-${label}.wav`); writeFileSync(wav, Buffer.concat([wavHeader(pcm.length), pcm]))
     files.push(wav)
   }
-  // إدراج صمت 0.6s بين المقاطع ثم دمج في mp3 واحد
   const inputs = []; const filters = []
-  files.forEach((f, i) => { inputs.push('-i', f); filters.push(`[${i}:a]apad=pad_dur=0.6[a${i}]`) })
+  files.forEach((f, i) => { inputs.push('-i', f); filters.push(`[${i}:a]apad=pad_dur=0.7[a${i}]`) })
   const concat = files.map((_, i) => `[a${i}]`).join('')
   filters.push(`${concat}concat=n=${files.length}:v=0:a=1,loudnorm=I=-16:TP=-1.5[out]`)
   const r = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', ...inputs, '-filter_complex', filters.join(';'), '-map', '[out]', '-ar', '48000', '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '160k', OUT], { encoding: 'utf8' })
   if (r.status !== 0) throw new Error(r.stderr || 'فشل الدمج')
   console.log(`\n✓ جاهز: audio/voice-test.mp3`)
-  console.log('الدليل (الرقم ← الصوت):')
-  VOICES.forEach(([label, voice]) => console.log(`  ${label} = ${voice}`))
-  writeFileSync(resolve(dirname(OUT), 'voice-test-legend.json'), JSON.stringify({ passage: PASSAGE, voices: VOICES }, null, 2))
+  console.log('الدليل (الرقم ← فهد + نورة):')
+  PAIRS.forEach(([label, m, f]) => console.log(`  ${label} = ${m} + ${f}`))
+  writeFileSync(resolve(dirname(OUT), 'voice-test-legend.json'), JSON.stringify({ fahad: FAHAD, noura: NOURA, pairs: PAIRS }, null, 2))
 }
 
 main().catch((e) => { console.error('✗', e.message); process.exit(1) })

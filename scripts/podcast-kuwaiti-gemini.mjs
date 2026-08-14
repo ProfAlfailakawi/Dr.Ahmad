@@ -77,10 +77,16 @@ function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {
   return chunks
 }
 
+/* قفل اللهجة يركب كل دورٍ — الانزلاق يقع عند حدود الأدوار والدفعات، فتحذيرٌ
+   واحدٌ في رأس الطلب لا يحرس آخره. وقبل هذا كانت أدوار الـstatement — وهي
+   أكثر الحلقة — تسافر بلا أي تاجٍ أصلاً. (أمر الدكتور ١٤ أغسطس ٢٠٢٦:
+   «تحذير صارم جداً — لا إماراتي ولا عراقي ولا إيراني ولا سعودي ولا شامي
+   ولا مصري».) */
+const KW_LOCK = 'Kuwaiti Kuwait-City accent only'
 const directionFor = (type) => ({
-  question: '[curious]', reflection: '[reflective]', objection: '[gently skeptical]', gentleObjection: '[gently skeptical]',
-  emphasis: '[serious]', briefReaction: '[warmly]', conclusion: '[calmly]', closing: '[softly]',
-}[type] || '')
+  question: `[curious — ${KW_LOCK}]`, reflection: `[reflective — ${KW_LOCK}]`, objection: `[gently skeptical — ${KW_LOCK}]`, gentleObjection: `[gently skeptical — ${KW_LOCK}]`,
+  emphasis: `[serious — ${KW_LOCK}]`, briefReaction: `[warmly — ${KW_LOCK}]`, conclusion: `[calmly — ${KW_LOCK}]`, closing: `[softly — ${KW_LOCK}]`,
+}[type] || `[${KW_LOCK}]`)
 
 /* معجم النطق يُقرأ مرّةً: المعروض للقارئ لا يُمسّ، والمسموع وحده يُكتب
    بالإملاء الكويتي. */
@@ -98,8 +104,16 @@ export const spokenForm = (text) => toSpokenKuwaiti(redactForeignNames(text, FOR
 
 function promptFor(turns, index, total) {
   const transcript = turns.map((turn) => `${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': [')).join('\n')
-  return `ABSOLUTE RULE — READ FIRST
-This is Kuwait City (حضري) Arabic. It is NOT Emirati, and NOT Iranian/Persian, under any circumstance. There is no acceptable "close enough". The instant a single word tilts toward Dubai/Abu Dhabi thinning, or toward a Persian softness on the vowels, the whole take is wrong and must be re-read as a Kuwaiti. Hold Kuwait City weight on every word, including academic terms and proper names. This rule outranks everything below.
+  return `ABSOLUTE RULE — READ FIRST, APPLY TO EVERY SINGLE WORD
+This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers are FORBIDDEN outright — every one of them has ruined real takes, and every one is an automatic hard failure:
+1. Emirati (Dubai/Abu Dhabi) — the thinned, lighter, forward articulation. FORBIDDEN.
+2. Iraqi — the Mesopotamian colouring: backed vowels, its drawl, its cadence. FORBIDDEN.
+3. Iranian/Persian — stretched long vowels, soft rolling consonants, any Persian softness. FORBIDDEN.
+4. Saudi — Najdi or Hejazi rhythm, the harder qaf, the desert cadence. FORBIDDEN.
+5. Levantine (Syrian/Lebanese/Jordanian/Palestinian) — imala and softened articulation. FORBIDDEN.
+6. Egyptian — its stress pattern and its vowel colour. FORBIDDEN.
+7. Generic pan-Gulf blend (Bahraini/Qatari/Bedouin mix) that belongs to no city. FORBIDDEN.
+There is no "close enough" and no acceptable percentage of drift. If one word in one line tilts toward any register above, the entire take is wrong and must be re-read as a Kuwait City Kuwaiti. Hold Kuwait City weight on every word, including academic terms and proper names. This rule outranks everything below.
 
 AUDIO PROFILE
 Fahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical. They are Kuwaitis talking — not actors performing a Kuwaiti accent.
@@ -134,7 +148,7 @@ The failure mode we keep hearing is Emirati, so read this twice.
 - If any single word in a sentence sounds like it belongs to Dubai or Abu Dhabi rather than Kuwait City, the whole take is wrong.
 
 WHAT WOULD BREAK IT
-- Any Saudi, Emirati, Bahraini, Qatari, Bedouin, Egyptian, Levantine, or Iranian/Persian colouring. Persian creeps in on stretched long vowels and a soft rolling articulation — cut it out completely. Also avoid a generic "Gulf" accent that belongs to no particular country — Kuwaiti specifically.
+- Any Emirati, Iraqi, Iranian/Persian, Saudi, Levantine, Egyptian, Bahraini, Qatari, or Bedouin colouring. Persian creeps in on stretched long vowels and a soft rolling articulation; Iraqi creeps in on backed vowels and its drawl — cut both out completely. Also avoid a generic "Gulf" accent that belongs to no particular country — Kuwaiti specifically.
 - Comedic or folkloric exaggeration of the dialect. This is a thoughtful podcast, not a sketch.
 - Emphasising dialect markers to prove the accent. A real speaker never does this.
 - Radio-news cadence, commercial voice-over energy, or melodrama.
@@ -143,7 +157,7 @@ FOREIGN AND ACADEMIC TERMS — DO NOT CHANGE VOICE
 The clearest drift a Kuwaiti listener catches: the voice changes the moment a foreign word, a study reference, a researcher's name, or an academic term arrives (a journal name, «ميتا تحليل», a transliterated proper name). This is a hard failure.
 - The same Kuwaiti speaker keeps talking. A foreign or academic term is dropped plainly into the Kuwaiti sentence — same voice, same weight, same rhythm — never announced, never switched into an English, MSA, or Persian register.
 - Do not slow down, do not brighten the tone, do not "present" the term. Say it and move straight on, the way a Kuwaiti academic mentions a term mid-conversation.
-- These specific words keep coming out non-Kuwaiti — give each the full Kuwaiti weight of the sentence, never a thinner or more forward Emirati/Persian reading: «يعرف» «يعرفها» «عقله» «يعقله» «الورقة» «يفهمون» «سبقت» «منو».
+- These specific words keep coming out non-Kuwaiti — give each the full Kuwaiti weight of the sentence, never a thinner or more forward Emirati/Persian reading: «ايعرف» «ايعرفها» «عقله» «يعقله» «الورقه» «ايفهمون» «سبقت» «منو».
 
 FIDELITY
 - Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.
@@ -152,7 +166,10 @@ FIDELITY
 - Inline English performance tags guide delivery only; never speak the tags aloud.
 
 TRANSCRIPT
-${transcript}`
+${transcript}
+
+FINAL CHECK — LAST INSTRUCTION BEFORE SPEAKING
+Re-scan the transcript word by word before the take. Any word that would come out Emirati, Iraqi, Persian, Saudi, Levantine, Egyptian, or generic-Gulf must be corrected to Kuwait City Kuwaiti first. Every word, every line, both speakers: Kuwait City Kuwaiti only.`
 }
 
 /* `output_audio` خاصيةُ راحةٍ في مكتبات Gemini، لا حقلٌ في ردّ REST الخام:
@@ -571,7 +588,11 @@ if (SELF_TEST) {
   assert.match(prompt,/urban Kuwait City/i, 'هدف اللهجة: حضري كويتي محدّد')
   assert.match(prompt,/never someone imitating the accent/i, 'محكّ الأصالة')
   assert.match(prompt,/generic "Gulf" accent/i, 'منع الخليجي العام')
-  assert.match(prompt,/Saudi, Emirati, Bahraini/i, 'منع اللهجات المجاورة بالاسم')
+  assert.match(prompt,/Emirati, Iraqi, Iranian\/Persian, Saudi/i, 'منع اللهجات المجاورة بالاسم — والعراقي معها (كان غائباً وهو مسموع)')
+  /* الأقفال الثلاثة (١٤ أغسطس ٢٠٢٦) — أمر الدكتور: «تحذير صارم جداً». */
+  assert.match(prompt,/Seven registers are FORBIDDEN/i, 'القفل الأول: الحظر السباعي المسمّى في الرأس')
+  assert.match(prompt,/FINAL CHECK — LAST INSTRUCTION/i, 'القفل الثالث: الفحص الختامي بعد النص')
+  assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes('Kuwaiti Kuwait-City accent only')), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
   assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
   assert.match(prompt,/ترقيق/, 'الترقيق: وصف الدكتور نفسه للعلّة، وهو المفتاح')

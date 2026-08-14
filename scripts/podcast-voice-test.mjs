@@ -28,30 +28,41 @@ const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
 const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-/* الجولة الثانية: الدكتور حسم على ٤ و٥ (يميل لـ٥). نبقيهما وحدهما، ونصحّح
-   الكلمتين اللتين سمعهما غلطاً بالقاف المعقودة گ: «ورقة»→«ورگة» و«سبق»→«سبگ».
-   المقطع خالٍ من چ فلا يقع تعارض گ↔چ الموثّق. */
+/* الجولة الثالثة (١٤ أغسطس ٢٠٢٦): حكم الدكتور بأذنه أن گ لم تعالج شيئاً —
+   «ورگة/سبگ» في الجولة الثانية ظلّت تنحرف إماراتيةً وإيرانيةً وعراقية. فماتت
+   فكرة الحروف (بقيت چ وحدها المثبتة سماعاً)، وانتقلت المعركة إلى البرومت:
+   حظرٌ مسمّى بسبعة سجلات + قفلٌ يركب كل سطر + فحصٌ ختامي بعد النص + تمهيدٌ
+   كويتيٌّ بكلماتٍ مثبتة (شلون/ترى/وايد/چذي) يسبق كلمات الفخ فيقفل اللهجة
+   قبل وصولها. النص هنا بإملاء الإنتاج حرفياً (ورقه/الورقه كما يخرجها
+   المعجم) — ما يُختبر هو ما سيُبثّ فعلاً. */
 const PAIRS = [
   ['أربعة', 'Orus', 'Callirrhoe'],
   ['خمسة', 'Puck', 'Despina'],
 ]
 
-/* الجولة الثالثة (بأمر الدكتور «خل اسمع اول الاخطاء»): كل زوجٍ يُولَّد مرّتين —
-   مرّةً بالإملاء الخاطئ الذي سمعه إماراتياً (ورقة/سبق بالقاف الفصيحة)، ومرّةً
-   بالإملاء المصحّح (ورگة/سبگ). فيسمع الخطأ والعلاج متجاورَين في التشغيلة الواحدة،
-   ويحكم على الأصوات وعلى گ معاً بلا تخمين. المقطع خالٍ من چ فلا يقع تعارض گ↔چ. */
-const FAHAD_WRONG = 'شوف، الطالب بالنهاية ايعرف إن الدرجة مجرد ورقة، وعقله يفهمها بس ما يفرح.'
-const NOURA_WRONG = 'إي، بس منو قال إن اللي سبق لازم يفرح؟ الورقة تعرفها، بس الفكرة ما تعرفها.'
-const FAHAD_RIGHT = 'شوف، الطالب بالنهاية ايعرف إن الدرجة مجرد ورگة، وعقله يفهمها بس ما يفرح.'
-const NOURA_RIGHT = 'إي، بس منو قال إن اللي سبگ لازم يفرح؟ الورگة تعرفها، بس الفكرة ما تعرفها.'
+/* التمهيد — يقفل السجل الكويتي قبل أول كلمة فخ. */
+const OPEN_FAHAD = 'هلا والله، شلونكم؟ اليوم بنسولف شوي عن الدرجات والعيال.'
+const OPEN_NOURA = 'إي حياك، ترى الموضوع وايد يستاهل — خل نبدأ چذي على طول.'
 
-/* الوسم يُنطق داخل المقطع نفسه — الدكتور يسمع على الجوال بلا دليلٍ مكتوب أمامه. */
-const VARIANTS = [
-  ['قبل', 'بالإملاء القديم', FAHAD_WRONG, NOURA_WRONG],
-  ['بعد', 'بالإملاء المصحّح', FAHAD_RIGHT, NOURA_RIGHT],
-]
+/* الفخاخ الست التي سُمعت غير كويتية، بإملاء الإنتاج نفسه (بلا گ). */
+const TRAP_FAHAD = 'شوف، الطالب بالنهاية ايعرف إن الدرجة مجرد ورقه، وعقله يفهمها بس ما يفرح.'
+const TRAP_NOURA = 'إي، بس منو قال إن اللي سبق لازم يفرح؟ الورقه تعرفها، بس الفكرة ما تعرفها.'
 
-const PROMPT_HEAD = `ABSOLUTE RULE: This is Kuwait City (حضري) Arabic — never Emirati, never Iranian/Persian. Keep full Kuwaiti weight on every word; if any word thins toward Dubai/Abu Dhabi the take is wrong. Two natural Kuwaitis talking, not actors imitating the accent.`
+const PROMPT_HEAD = `ABSOLUTE RULE — APPLY TO EVERY SINGLE WORD
+This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers are FORBIDDEN outright; each is an automatic hard failure:
+1. Emirati (Dubai/Abu Dhabi) — thinned, lighter, forward articulation. FORBIDDEN.
+2. Iraqi — backed vowels, Mesopotamian drawl and cadence. FORBIDDEN.
+3. Iranian/Persian — stretched long vowels, soft rolling consonants. FORBIDDEN.
+4. Saudi — Najdi or Hejazi rhythm, harder qaf, desert cadence. FORBIDDEN.
+5. Levantine — imala and softened articulation. FORBIDDEN.
+6. Egyptian — its stress pattern and vowel colour. FORBIDDEN.
+7. Generic pan-Gulf blend belonging to no city. FORBIDDEN.
+No "close enough": one drifted word ruins the take — re-read it as a Kuwait City Kuwaiti. Two natural Kuwaitis talking, not actors imitating an accent. The six trap words a Kuwaiti listener catches instantly: «ايعرف» «ورقه» «عقله» «يفهمها» «منو» «سبق» — give each the full Kuwait City weight of the sentence around it.`
+
+const PROMPT_TAIL = `FINAL CHECK — LAST INSTRUCTION BEFORE SPEAKING
+Re-scan every word above. Any word that would come out Emirati, Iraqi, Persian, Saudi, Levantine, Egyptian, or generic-Gulf must be corrected to Kuwait City Kuwaiti before the take. Every word, every line, both speakers: Kuwait City Kuwaiti only.`
+
+const KW_LOCK = '[Kuwaiti Kuwait-City accent only]'
 
 function wavHeader(pcmBytes, sampleRate = 24000, channels = 1, bits = 16) {
   const h = Buffer.alloc(44); const blockAlign = channels * bits / 8
@@ -76,7 +87,7 @@ function pcmFromBody(body) {
 }
 
 async function gen(maleVoice, femaleVoice, transcript) {
-  const input = `${PROMPT_HEAD}\n\n${transcript}`
+  const input = `${PROMPT_HEAD}\n\n${transcript}\n\n${PROMPT_TAIL}`
   for (let attempt = 1; attempt <= 6; attempt += 1) {
     try {
       const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 90_000)
@@ -113,28 +124,30 @@ async function gen(maleVoice, femaleVoice, transcript) {
 
 async function main() {
   if (!KEY) throw new Error('GEMINI_API_KEY مفقود')
-  rmSync(TMP, { recursive: true, force: true }); mkdirSync(TMP, { recursive: true })
+  rmSync(TMP, { recursive: true, force: true }); mkdirSync(TMP, { recursive: true }); mkdirSync(dirname(OUT), { recursive: true })
   const PARTS = resolve(dirname(OUT), 'voice-test')
   rmSync(PARTS, { recursive: true, force: true }); mkdirSync(PARTS, { recursive: true })
 
   const files = []
   const legend = []
   for (const [label, male, female] of PAIRS) {
-    for (const [tag, spokenTag, fahad, noura] of VARIANTS) {
-      console.log(`🎙️ ${label} · ${tag} = ${male} + ${female}`)
-      const transcript = `Fahad: المقطع رقم ${label}، ${spokenTag}. ${fahad}\nNoura: ${noura}`
-      const pcm = await gen(male, female, transcript)
-      const wav = resolve(TMP, `seg-${label}-${tag}.wav`)
-      writeFileSync(wav, Buffer.concat([wavHeader(pcm.length), pcm]))
-      files.push(wav)
+    console.log(`🎙️ المقطع «${label}» = ${male} + ${female}`)
+    const transcript = [
+      `Fahad: ${KW_LOCK} المقطع رقم ${label}. ${OPEN_FAHAD}`,
+      `Noura: ${KW_LOCK} ${OPEN_NOURA}`,
+      `Fahad: ${KW_LOCK} ${TRAP_FAHAD}`,
+      `Noura: ${KW_LOCK} ${TRAP_NOURA}`,
+    ].join('\n')
+    const pcm = await gen(male, female, transcript)
+    const wav = resolve(TMP, `seg-${label}.wav`); writeFileSync(wav, Buffer.concat([wavHeader(pcm.length), pcm]))
+    files.push(wav)
 
-      /* ملفٌّ مستقلٌّ باسمٍ ناطق — الاسم وحده يكفي للتمييز على الجوال. */
-      const solo = resolve(PARTS, `${label}-${tag}.mp3`)
-      const s1 = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', wav,
-        '-af', 'loudnorm=I=-16:TP=-1.5', '-ar', '48000', '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '160k', solo], { encoding: 'utf8' })
-      if (s1.status !== 0) throw new Error(s1.stderr || 'فشل ترميز المقطع المفرد')
-      legend.push({ pair: label, variant: tag, male, female, file: `audio/voice-test/${label}-${tag}.mp3` })
-    }
+    /* ملفٌّ مفردٌ باسمٍ ناطق — يكفي وحده للتمييز على الجوال. */
+    const solo = resolve(PARTS, `${label}.mp3`)
+    const s1 = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', wav,
+      '-af', 'loudnorm=I=-16:TP=-1.5', '-ar', '48000', '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '160k', solo], { encoding: 'utf8' })
+    if (s1.status !== 0) throw new Error(s1.stderr || 'فشل ترميز المقطع المفرد')
+    legend.push({ pair: label, male, female, file: `audio/voice-test/${label}.mp3` })
   }
 
   const inputs = []; const filters = []
@@ -144,10 +157,10 @@ async function main() {
   const r = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', ...inputs, '-filter_complex', filters.join(';'), '-map', '[out]', '-ar', '48000', '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '160k', OUT], { encoding: 'utf8' })
   if (r.status !== 0) throw new Error(r.stderr || 'فشل الدمج')
 
-  console.log(`\n✓ جاهز: audio/voice-test.mp3 (الأربعة متتالية)`)
-  console.log('  وأربعة ملفات مفردة في audio/voice-test/')
-  legend.forEach((l) => console.log(`  ${l.pair}-${l.variant} = ${l.male} + ${l.female}`))
-  writeFileSync(resolve(dirname(OUT), 'voice-test-legend.json'), JSON.stringify({ variants: VARIANTS.map(([t, s]) => ({ tag: t, spoken: s })), pairs: PAIRS, files: legend }, null, 2))
+  console.log(`\n✓ جاهز: audio/voice-test.mp3 (المقطعان متتاليان)`)
+  console.log('  وملفان مفردان في audio/voice-test/')
+  legend.forEach((l) => console.log(`  ${l.pair} = ${l.male} + ${l.female}`))
+  writeFileSync(resolve(dirname(OUT), 'voice-test-legend.json'), JSON.stringify({ round: 3, pairs: PAIRS, files: legend }, null, 2))
 }
 
 main().catch((e) => { console.error('✗', e.message); process.exit(1) })

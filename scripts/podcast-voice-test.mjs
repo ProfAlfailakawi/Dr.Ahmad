@@ -28,23 +28,17 @@ const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
 const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-/* أزواج مرشّحة: [الرقم, صوت فهد, صوت نورة]. الأول هو الحالي (خط الأساس). */
+/* الجولة الثانية: الدكتور حسم على ٤ و٥ (يميل لـ٥). نبقيهما وحدهما، ونصحّح
+   الكلمتين اللتين سمعهما غلطاً بالقاف المعقودة گ: «ورقة»→«ورگة» و«سبق»→«سبگ».
+   المقطع خالٍ من چ فلا يقع تعارض گ↔چ الموثّق. */
 const PAIRS = [
-  ['واحد', 'Sadaltager', 'Sulafat'],   // الحالي — خط الأساس
-  ['اثنين', 'Charon', 'Aoede'],
-  ['ثلاثة', 'Fenrir', 'Kore'],
   ['أربعة', 'Orus', 'Callirrhoe'],
   ['خمسة', 'Puck', 'Despina'],
 ]
 
-const SRC = JSON.parse(readFileSync(resolve(ROOT, 'src', 'data', 'kuwaiti-pronunciation.json'), 'utf8'))
-const PRON = buildPronunciationMap(SRC)
-const FOREIGN = buildForeignRedactions(SRC)
-const spokenForm = (t) => toSpokenKuwaiti(redactForeignNames(t, FOREIGN), PRON)
-
-/* مقطعٌ مكتنزٌ بالكلمات التي سُمعت إماراتية، موزّعٌ على المتحدّثَين. */
-const FAHAD = spokenForm('شوف، الطالب بالنهاية يعرف إن الدرجة مجرد ورقة، وعقله يفهمها بس ما يفرح.')
-const NOURA = spokenForm('إي، بس منو قال إن اللي سبق لازم يفرح؟ الورقة تعرفها، بس الفكرة ما تعرفها.')
+/* منطوقٌ مثبَّتٌ يدوياً لهذه الجولة: ألف الوصل (ايعرف) محفوظة، وگ في ورگة/سبگ. */
+const FAHAD = 'شوف، الطالب بالنهاية ايعرف إن الدرجة مجرد ورگة، وعقله يفهمها بس ما يفرح.'
+const NOURA = 'إي، بس منو قال إن اللي سبگ لازم يفرح؟ الورگة تعرفها، بس الفكرة ما تعرفها.'
 
 const PROMPT_HEAD = `ABSOLUTE RULE: This is Kuwait City (حضري) Arabic — never Emirati, never Iranian/Persian. Keep full Kuwaiti weight on every word; if any word thins toward Dubai/Abu Dhabi the take is wrong. Two natural Kuwaitis talking, not actors imitating the accent.`
 

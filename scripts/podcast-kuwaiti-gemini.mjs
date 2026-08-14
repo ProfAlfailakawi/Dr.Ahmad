@@ -11,7 +11,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { normalizeManualDialogueTurns } from './lib/manual-dialogue-source.mjs'
-import { buildPronunciationMap, toSpokenKuwaiti } from './lib/kuwaiti-pronunciation.mjs'
+import { buildPronunciationMap, toSpokenKuwaiti, buildForeignRedactions, redactForeignNames } from './lib/kuwaiti-pronunciation.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO = resolve(ROOT, 'audio')
@@ -84,18 +84,24 @@ const directionFor = (type) => ({
 
 /* معجم النطق يُقرأ مرّةً: المعروض للقارئ لا يُمسّ، والمسموع وحده يُكتب
    بالإملاء الكويتي. */
-const PRONUNCIATION = (() => {
+const PRONUNCIATION_SOURCE = (() => {
   const file = resolve(ROOT, 'src', 'data', 'kuwaiti-pronunciation.json')
-  if (!existsSync(file)) return []
-  try { return buildPronunciationMap(JSON.parse(readFileSync(file, 'utf8'))) }
-  catch { return [] }
+  if (!existsSync(file)) return {}
+  try { return JSON.parse(readFileSync(file, 'utf8')) }
+  catch { return {} }
 })()
+const PRONUNCIATION = buildPronunciationMap(PRONUNCIATION_SOURCE)
+const FOREIGN_REDACTIONS = buildForeignRedactions(PRONUNCIATION_SOURCE)
 
-export const spokenForm = (text) => toSpokenKuwaiti(text, PRONUNCIATION)
+/* الحذف أولاً (يمسح الاسم اللاتيني الذي يكسر الصوت) ثم قلب الإملاء الكويتي. */
+export const spokenForm = (text) => toSpokenKuwaiti(redactForeignNames(text, FOREIGN_REDACTIONS), PRONUNCIATION)
 
 function promptFor(turns, index, total) {
   const transcript = turns.map((turn) => `${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': [')).join('\n')
-  return `AUDIO PROFILE
+  return `ABSOLUTE RULE — READ FIRST
+This is Kuwait City (حضري) Arabic. It is NOT Emirati, and NOT Iranian/Persian, under any circumstance. There is no acceptable "close enough". The instant a single word tilts toward Dubai/Abu Dhabi thinning, or toward a Persian softness on the vowels, the whole take is wrong and must be re-read as a Kuwaiti. Hold Kuwait City weight on every word, including academic terms and proper names. This rule outranks everything below.
+
+AUDIO PROFILE
 Fahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical. They are Kuwaitis talking — not actors performing a Kuwaiti accent.
 
 SCENE
@@ -128,10 +134,16 @@ The failure mode we keep hearing is Emirati, so read this twice.
 - If any single word in a sentence sounds like it belongs to Dubai or Abu Dhabi rather than Kuwait City, the whole take is wrong.
 
 WHAT WOULD BREAK IT
-- Any Saudi, Emirati, Bahraini, Qatari, Bedouin, Egyptian or Levantine colouring. Also avoid a generic "Gulf" accent that belongs to no particular country — Kuwaiti specifically.
+- Any Saudi, Emirati, Bahraini, Qatari, Bedouin, Egyptian, Levantine, or Iranian/Persian colouring. Persian creeps in on stretched long vowels and a soft rolling articulation — cut it out completely. Also avoid a generic "Gulf" accent that belongs to no particular country — Kuwaiti specifically.
 - Comedic or folkloric exaggeration of the dialect. This is a thoughtful podcast, not a sketch.
 - Emphasising dialect markers to prove the accent. A real speaker never does this.
 - Radio-news cadence, commercial voice-over energy, or melodrama.
+
+FOREIGN AND ACADEMIC TERMS — DO NOT CHANGE VOICE
+The clearest drift a Kuwaiti listener catches: the voice changes the moment a foreign word, a study reference, a researcher's name, or an academic term arrives (a journal name, «ميتا تحليل», a transliterated proper name). This is a hard failure.
+- The same Kuwaiti speaker keeps talking. A foreign or academic term is dropped plainly into the Kuwaiti sentence — same voice, same weight, same rhythm — never announced, never switched into an English, MSA, or Persian register.
+- Do not slow down, do not brighten the tone, do not "present" the term. Say it and move straight on, the way a Kuwaiti academic mentions a term mid-conversation.
+- These specific words keep coming out non-Kuwaiti — give each the full Kuwaiti weight of the sentence, never a thinner or more forward Emirati/Persian reading: «يعرف» «يعرفها» «عقله» «يعقله» «الورقة» «يفهمون» «سبقت» «منو».
 
 FIDELITY
 - Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.
@@ -563,6 +575,8 @@ if (SELF_TEST) {
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
   assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
   assert.match(prompt,/ترقيق/, 'الترقيق: وصف الدكتور نفسه للعلّة، وهو المفتاح')
+  assert.match(prompt,/Iranian\/Persian/i, 'منع الانحراف الفارسي — علّة رصدها الدكتور بأذنه')
+  assert.match(prompt,/DO NOT CHANGE VOICE/i, 'المصطلح الأجنبي لا يغيّر الصوت — أوضح انحراف سمعه الدكتور')
 
   /* عقد الموسيقى: تُعاير بالـLUFS لا بمعاملٍ خطّي. المعامل الخام أخرج خاتمة
      v4 عند ‎-32dB‎ — خمسة عشر ديسيبل تحت الكلام، أي مكتومة. ولأن كل حلقةٍ
@@ -633,6 +647,9 @@ if (SELF_TEST) {
     const trap = 'المجموع والجمال وجمعنا'
     assert.equal(spokenForm(trap), trap, 'ما كانت «جم» جزءاً منه لا يُمسّ')
     assert.ok(!JSON.stringify(PRONUNCIATION).includes('گ'), 'گ منزوعة عمداً — أسقطت چ معها في v3')
+    /* حذف الأسماء اللاتينية: أوضح سبب تبدّل الصوت (Frontiers سمعها الدكتور «فلنتير»). */
+    assert.equal(spokenForm('منشور في Frontiers in Psychology عن القلق'), 'منشور في مجلة علمية عن القلق', 'الاسم اللاتيني يُحذف ويُستبدل بعربية عامة')
+    assert.ok(!/[A-Za-z]/.test(spokenForm('حسب OECD وUNICEF')), 'لا يبقى أيّ حرف لاتيني في مدخل الصوت')
   }
   const grouped = chunkTurns(Array.from({ length: 12 }, (_, i) => ({
     speaker: i % 2 ? 'female' : 'male', text: `مداخلة ${i}`, deliveryType: 'statement', musicBridgeAfter: false,

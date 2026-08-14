@@ -40,7 +40,10 @@ const PAIRS = [
 ]
 
 /* التمهيد — يقفل السجل الكويتي قبل أول كلمة فخ. */
-const OPEN_FAHAD = 'هلا والله، شلونكم؟ اليوم بنسولف شوي عن الدرجات والعيال.'
+/* «هلا والله» حُذفت من الافتتاح — سمعها الدكتور (الجولة الرابعة) تجر المقطع
+   كله إلى اللحن السوري: أول كلمتين تقفلان السجل، ومسلسلات الشام أشبع النموذج
+   بهذي العبارة. البديل تحية خليجية لا يملكها الشامي. */
+const OPEN_FAHAD = 'حياكم الله، شخباركم؟ اليوم بنسولف شوي عن الدرجات والعيال.'
 const OPEN_NOURA = 'إي حياك، ترى الموضوع وايد يستاهل — خل نبدأ چذي على طول.'
 
 /* الفخاخ بإملاء الإنتاج بعد المصفاة — وأثقلها في فم نورة عمداً. */
@@ -53,7 +56,7 @@ This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers 
 2. Iraqi — backed vowels, Mesopotamian drawl and cadence. FORBIDDEN.
 3. Iranian/Persian — stretched long vowels, soft rolling consonants. FORBIDDEN.
 4. Saudi — Najdi or Hejazi rhythm, harder qaf, desert cadence. FORBIDDEN.
-5. Levantine — imala and softened articulation. FORBIDDEN.
+5. Levantine — imala, softened articulation, and the Levantine greeting melody. FORBIDDEN. The greeting locks the register: the very first syllable must already be Kuwait City.
 6. Egyptian — its stress pattern and vowel colour. FORBIDDEN.
 7. Generic pan-Gulf blend belonging to no city. FORBIDDEN.
 No "close enough": one drifted word ruins the take — re-read it as a Kuwait City Kuwaiti. Two natural Kuwaitis talking, not actors imitating an accent.

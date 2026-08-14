@@ -3,15 +3,22 @@
  *
  * النصّ يصل Gemini بإملائه المكتوب، فيخمّن النموذج حركات كلمةٍ مثل «ورقة»
  * ويقع أحياناً على الإماراتية أو على خليجيٍّ عامٍّ لا ينتمي لبلد. الحلّ ليس
- * تغيير ما يقرأه الزائر — بل أن يُكتب للنموذج ما يُنطق: «ورگة».
+ * تغيير ما يقرأه الزائر — بل أن يُكتب للنموذج ما يُنطق.
  *
- * قاعدتان صارمتان:
+ * قواعد صارمة:
  *  ١ ــ الاستبدال يقع على **مدخل الصوت فقط**. متن الحوار المعروض في الموقع
  *       وفي النص المتزامن يبقى كما كتبه الدكتور حرفاً بحرف.
  *  ٢ ــ الكلمة تُستبدل كاملةً لا جزءاً منها. حدّ الكلمة في العربية ليس ‎\b‎
  *       (وهي مبنيّة على ASCII فلا ترى الحرف العربي أصلاً) — ولهذا يُحسب الحدّ
  *       هنا بحروف العربية نفسها. بلا هذا يمسخ الاستبدالُ «ورقة» داخل «الورقة»
  *       فيخرج «الورگة» مرّةً و«الورقة» مرّة، وهي علّة مسخٍ سابقة لا تُعاد.
+ *  ٣ ــ **السوابق المتّصلة تُقتنص ولا تُكسر** (إصلاح ١٤ أغسطس ٢٠٢٦). قاعدة الحدّ
+ *       في النسخة السابقة كانت تشترط محرفاً غير عربيٍّ قبل الكلمة، فـ«الورقة»
+ *       لا تُطابَق أبداً لأن «ل» حرفٌ عربي — فتمرّ بإملائها إلى النموذج فيخمّنها
+ *       إماراتية. هذي علّة سمعها الدكتور بأذنه في «الورقة» و«سبق».
+ *       العلاج: سابقةٌ من مجموعةٍ مغلقة تُلتقط وتُعاد كما هي أمام النطق المستبدل.
+ *       والمجموعة مغلقة عمداً: أداة التعريف وأخواتها آمنة لأن «ال» لا تلتبس،
+ *       أمّا «و/ف» المفردتان فتُمنعان عن الجذوع القصيرة لئلا يصير «لجم» → «لچم».
  */
 
 const ARABIC_LETTER = '\\u0621-\\u063A\\u0641-\\u064A\\u0660-\\u0669\\u066E-\\u06D3\\u0671-\\u06D5'
@@ -19,26 +26,59 @@ const TASHKEEL = /[ً-ْٰ]/g
 
 const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-/** حرفٌ عربيٌّ ملاصق يعني أننا داخل كلمةٍ أخرى، فلا يقع الاستبدال. */
-const wordPattern = (word) => new RegExp(
-  `(^|[^${ARABIC_LETTER}])(${escapeRegExp(word)})(?![${ARABIC_LETTER}])`,
-  'gu',
-)
+/* أداة التعريف وما يسبقها من حروف — لا تلتبس بجذعٍ عربيٍّ آخر، فتُسمح من طول ٣. */
+const ARTICLE_PROCLITICS = ['وبال', 'وكال', 'فبال', 'بال', 'كال', 'وال', 'فال', 'ولل', 'فلل', 'لل', 'ال']
+/* الحروف المفردة — تلتصق بجذوعٍ حقيقية أخرى، فتُمنع عن القصير.
+ * «ب» و«ك» مستبعدتان عمداً: «ب» أداةُ استقبالٍ في الخليجية تسبق الفعل
+ * («بيعرف» = سوف يعرف)، فلو سُمحت لأُقحمت ألفُ الوصل داخلها («بايعرف») وهو مسخ.
+ * الفوات أهون من المسخ — فلا تُفتحان إلا بسماعٍ يثبتهما. */
+const BARE_PROCLITICS = ['و', 'ف']
+const ARTICLE_MIN = 3
+const BARE_MIN = 4
+
+function procliticsFor(word, allowed) {
+  if (allowed === false) return []
+  const list = []
+  if (word.length >= ARTICLE_MIN) list.push(...ARTICLE_PROCLITICS)
+  if (word.length >= BARE_MIN) list.push(...BARE_PROCLITICS)
+  /* الأطول أولاً داخل البديل حتى تلتقط «وبال» قبل «و». */
+  return list.sort((a, b) => b.length - a.length)
+}
+
+/**
+ * حرفٌ عربيٌّ ملاصق يعني أننا داخل كلمةٍ أخرى، فلا يقع الاستبدال —
+ * إلّا أن يكون الملاصقُ سابقةً معروفة، فتُقتنص في مجموعةٍ مستقلّة وتُعاد كما هي.
+ */
+const wordPattern = (word, allowProclitics) => {
+  const pro = procliticsFor(word, allowProclitics)
+  const head = pro.length ? `(?:${pro.map(escapeRegExp).join('|')})?` : ''
+  return new RegExp(
+    `(^|[^${ARABIC_LETTER}])(${head})(${escapeRegExp(word)})(?![${ARABIC_LETTER}])`,
+    'gu',
+  )
+}
 
 export function buildPronunciationMap(source) {
   const words = source?.words && typeof source.words === 'object' ? source.words : {}
+  /* الجذوع الممنوعة من السوابق — تُعلن بالبيانات لا بالكود. */
+  const blocked = new Set(Array.isArray(source?.noProclitic) ? source.noProclitic : [])
   /* الأطول أولاً: «الأوراق» قبل «ورق» وإلا التهم القصيرُ جزءاً من الطويل. */
   return Object.entries(words)
     .filter(([from, to]) => from && to && from !== to)
     .sort((a, b) => b[0].length - a[0].length)
-    .map(([from, to]) => ({ from, to, pattern: wordPattern(from) }))
+    .map(([from, to]) => ({
+      from,
+      to,
+      pattern: wordPattern(from, !blocked.has(from)),
+    }))
 }
 
 export function toSpokenKuwaiti(text, entries) {
   let spoken = String(text ?? '')
   for (const entry of entries) {
     entry.pattern.lastIndex = 0
-    spoken = spoken.replace(entry.pattern, (_match, before, word) => `${before}${entry.to}${word.slice(word.length)}`)
+    /* السابقة تُعاد حرفياً؛ المستبدَل هو الجذع وحده. */
+    spoken = spoken.replace(entry.pattern, (_m, before, proclitic) => `${before}${proclitic}${entry.to}`)
   }
   return spoken
 }

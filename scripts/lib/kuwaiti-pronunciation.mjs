@@ -43,6 +43,32 @@ export function toSpokenKuwaiti(text, entries) {
   return spoken
 }
 
+/* حذف الأسماء اللاتينية من مدخل الصوت.
+ *
+ * العلّة (رصدها الدكتور بأذنه): الحرف اللاتينيّ وسط الجملة الكويتية يجبر المحرّك
+ * على القفز إلى النطق الإنجليزي، فيتبدّل صوت المتحدّث عند اسم المجلة أو المنظمة
+ * («Frontiers in Psychology» سمعها الدكتور «فلنتير» وتغيّر الصوت). الحلّ حذفُ
+ * الاسم من الصوت واستبداله بعربيةٍ عامّة دالّة — بأمر الدكتور «خله في دراسة بدون
+ * ما يقول اسم الدراسة». يقع على الصوت وحده؛ النص المعروض للقارئ يبقى بالأسماء
+ * كاملةً. الخريطة المعتمدة أولاً، ثم أيّ بقيّةٍ لاتينية → بديلٌ عامّ آمن (الحرف
+ * اللاتينيّ لا يوجد في العربية، فالقاعدة العامّة هنا آمنة ولا تمسخ عربياً). */
+const LATIN_RUN = /[A-Za-z][A-Za-z0-9&.'’\-، ]*[A-Za-z0-9]|[A-Za-z]/g
+
+export function buildForeignRedactions(source) {
+  const names = source?.foreignNames && typeof source.foreignNames === 'object' ? source.foreignNames : {}
+  return Object.entries(names)
+    .filter(([from]) => from)
+    .sort((a, b) => b[0].length - a[0].length)
+    .map(([from, to]) => ({ from, to, pattern: new RegExp(escapeRegExp(from), 'gu') }))
+}
+
+export function redactForeignNames(text, redactions = [], fallback = 'مصدر علمي') {
+  let out = String(text ?? '')
+  for (const r of redactions) { r.pattern.lastIndex = 0; out = out.replace(r.pattern, r.to) }
+  out = out.replace(LATIN_RUN, fallback)
+  return out.replace(/ {2,}/g, ' ').replace(/ ([،.؟!])/g, '$1').trim()
+}
+
 /** يُستعمل في الفحص: أي كلمةٍ في المعجم ما زالت في النصّ المنطوق؟ */
 export function remainingWrittenForms(text, entries) {
   return entries

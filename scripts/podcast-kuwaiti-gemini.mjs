@@ -145,7 +145,7 @@ HIGH-FREQUENCY WORDS — say them the way a Kuwaiti actually says them
 - «شلون» — one smooth word with a soft ō. Not "sh-loon" in two beats.
 - «وايد» «ترى» «جذي» «شنو» «ليش» «بس» — ordinary words in an ordinary sentence. Give them no extra stress at all.
 - «چ» is a soft "ch" as in Kuwaiti speech (چذي، چان), said plainly.
-- The surname «الفيلاجاوي» is read exactly as spelled, syllable by syllable: al-fee-LA-JA-wee — a plain Arabic ج with full long vowels — never with ك, never with چ, never shortened.
+- The surname «الفِيلجَاوي» is read exactly as the doctor wrote it, syllable by syllable: al-FEEL-JA-wee — a plain Arabic ج — never with ك, never with چ.
 
 NOT EMIRATI — the single most important instruction in this brief
 The failure mode we keep hearing is Emirati, so read this twice.
@@ -172,7 +172,7 @@ The Emirati thinning keeps surfacing on Noura's lines specifically: the male lin
 
 FIDELITY
 - Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.
-- Read each line EXACTLY ONCE, in order. Never re-read a line, never echo a phrase you already said, never restart a sentence — one repeated sentence ruins the whole take.
+- Read each line EXACTLY ONCE, in order. Never re-read a line, never echo a phrase you already said, never restart a sentence, never say the closing two or three words a second time in a different tone — one repeated phrase ruins the whole take. When a line ends, move straight to the next speaker's line.
 - Natural turn-taking, subtle reactions, short human pauses, gentle intellectual chemistry.
 - Fahad is ALWAYS the male voice and Noura is ALWAYS the female voice. A line labeled Fahad must never come out in a female voice, and a line labeled Noura must never come out in a male voice — no swapping, no blending, not for a single line.
 - Keep Fahad and Noura audibly identical to the other parts of this same episode: same person, same room, same microphone. This is part ${index + 1} of ${total}.
@@ -864,14 +864,20 @@ const sortedRates = [...secPerChar].sort((a, b) => a - b)
 const medianRate = sortedRates[Math.floor(sortedRates.length / 2)] || 0.1
 const repeatSuspects = []
 let repeatRegens = 0
+/* بوابةٌ زمنيةٌ ذات طرفَين: الدور الطويل جداً (تكرار/صدى) والدور القصير جداً
+   (اقتطاعٌ من قصّ الصمت الخاطئ — دور «معلقة» خرج ١٫٩ث لجملة ٦٥ حرفاً في تشغيلة
+   ٣١٨٥٠. كلاهما يُعاد مفرداً حتى مرتين وتُقبل الأقرب زمناً بشرط سلامة الجنس. */
 for (let t = 0; t < turns.length; t += 1) {
   const expected = Math.max(String(turns[t].text || '').length, 1) * medianRate
-  const isSuspect = () => durations[t] > expected * 1.9 && durations[t] - expected > 2.5
+  const tooLong = () => durations[t] > expected * 1.9 && durations[t] - expected > 2.5
+  const tooShort = () => durations[t] < expected * 0.55 && expected - durations[t] > 1.5
+  const isSuspect = () => tooLong() || tooShort()
   if (!isSuspect()) continue
   let tries = 0
   while (isSuspect() && tries < 2) {
     tries += 1; repeatRegens += 1
-    console.log(`↻ الدور ${t + 1} (${turns[t].speaker === 'male' ? 'فهد' : 'نورة'}): ${durations[t].toFixed(1)}ث لنصٍّ متوقعه ${expected.toFixed(1)}ث — اشتباه تكرار، إعادة ${tries}/2`)
+    const kind = durations[t] < expected ? 'اقتطاع' : 'تكرار'
+    console.log(`↻ الدور ${t + 1} (${turns[t].speaker === 'male' ? 'فهد' : 'نورة'}): ${durations[t].toFixed(1)}ث لنصٍّ متوقعه ${expected.toFixed(1)}ث — اشتباه ${kind}، إعادة ${tries}/2`)
     const singlePrompt = promptFor([turns[t]], 0, 1)
     requestHashes.push(sha256(singlePrompt))
     const pcm = await geminiPcm(singlePrompt)

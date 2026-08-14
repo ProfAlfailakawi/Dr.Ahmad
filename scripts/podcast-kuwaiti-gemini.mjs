@@ -144,7 +144,8 @@ HIGH-FREQUENCY WORDS — say them the way a Kuwaiti actually says them
 - «يي» / «ياي» / «الياي» — the natural Kuwaiti ج→ي, said unselfconsciously, never spelled out or emphasised.
 - «شلون» — one smooth word with a soft ō. Not "sh-loon" in two beats.
 - «وايد» «ترى» «جذي» «شنو» «ليش» «بس» — ordinary words in an ordinary sentence. Give them no extra stress at all.
-- «چ» is a soft "ch" as in Kuwaiti speech (الفيلچاوي), said plainly.
+- «چ» is a soft "ch" as in Kuwaiti speech (چذي، چان), said plainly.
+- The surname «الفيلاجاوي» is read exactly as spelled, syllable by syllable: al-fee-LA-JA-wee — a plain Arabic ج with full long vowels — never with ك, never with چ, never shortened.
 
 NOT EMIRATI — the single most important instruction in this brief
 The failure mode we keep hearing is Emirati, so read this twice.
@@ -171,6 +172,7 @@ The Emirati thinning keeps surfacing on Noura's lines specifically: the male lin
 
 FIDELITY
 - Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.
+- Read each line EXACTLY ONCE, in order. Never re-read a line, never echo a phrase you already said, never restart a sentence — one repeated sentence ruins the whole take.
 - Natural turn-taking, subtle reactions, short human pauses, gentle intellectual chemistry.
 - Fahad is ALWAYS the male voice and Noura is ALWAYS the female voice. A line labeled Fahad must never come out in a female voice, and a line labeled Noura must never come out in a male voice — no swapping, no blending, not for a single line.
 - Keep Fahad and Noura audibly identical to the other parts of this same episode: same person, same room, same microphone. This is part ${index + 1} of ${total}.
@@ -722,7 +724,8 @@ if (SELF_TEST) {
      «الورقيات» و«التوريق» تبقى كما هي — وهي علّة مسخٍ سابقة لا تُعاد. */
   if (PRONUNCIATION.length) {
     /* چ وحدها في المعجم: الحرف الوحيد الذي أثبت الدكتور صحّته سماعاً
-       («الفيلچاوي» ١٠٠٪). گ أُدخلت في v3 فأسقطت معها نطق چ نفسه، فنُزعت. */
+       (چذي/چان). الاسم نُطقه المعتمد «الفيلاجاوي» — هجّاه الدكتور بنفسه حرفاً
+       حرفاً: «ال · في · لا · جا · وي». گ أُدخلت في v3 فأسقطت نطق چ، فنُزعت. */
     assert.equal(spokenForm('مو بس: جم جبت؟'), 'مو بس: چم جبت؟', 'ك→چ المكتوبة بـج تُنطق [ch]')
     assert.equal(spokenForm('وجذي يصير'), 'وچذي يصير', 'السابقة الملاصقة لا تمنع النطق')
     const trap = 'المجموع والجمال وجمعنا'
@@ -844,6 +847,50 @@ if (stubborn.length) {
 if (regenerated) console.log(`✓ بوابة الطبقة: أُعيد ${regenerated} توليداً وكل الأدوار على جنسها الصحيح`)
 else console.log('✓ بوابة الطبقة: كل الأدوار على جنسها الصحيح من أول رمية')
 
+/* ═══ بوابة التكرار ═══
+   أذن الدكتور مسكتها («يكرر بعض الجمل ليش؟ كثير من الجمل مكررة») والقياس
+   أكّدها: ٦ أدوار من ٣٧ في تشغيلة ٣١٨٣٦٥٣٠٠٥٦ — كلها لنورة — تجاوزت ×١٫٧
+   من وسيط ثانية/حرف، وأسوأها ١٧٫٩ث لنصٍّ من ٥١ حرفاً (×٣٫٧ = الجملة قُرئت
+   مراراً). وآلية الانبلاع مقروءة في القصّ: splitChunk يقسم عند أطول الصمتات
+   مهما طال المقطع، فالتكرار يُحشر داخل الدور بصمت ولا يفشل شيء.
+   القياس ذاتيّ الحلقة: وسيط ثانية/حرف يُحسب من أدوارها هي (لا ثابت خارجي —
+   سرعة اللقطة تختلف بين رمية وأخرى)، والدور فوق ×١٫٩ من الوسيط وبفائضٍ
+   مطلق فوق ٢٫٥ث يُعاد مفرداً حتى مرتين، وتُقبل اللقطة الأقرب زمناً للمتوقع
+   بشرط سلامة جنس الصوت — لا نصلح تكراراً بحنجرة معكوسة. العنيد بعد
+   المحاولتين لا يُسقط التشغيلة: يُسمّى في السجل ويحكم عليه الدكتور من
+   البوابة، فالدور التأملي البطيء إنذارٌ كاذبٌ محتمل وإسقاط الحلقة أغلى منه. */
+const secPerChar = turns.map((t, i) => durations[i] / Math.max(String(t.text || '').length, 1))
+const sortedRates = [...secPerChar].sort((a, b) => a - b)
+const medianRate = sortedRates[Math.floor(sortedRates.length / 2)] || 0.1
+const repeatSuspects = []
+let repeatRegens = 0
+for (let t = 0; t < turns.length; t += 1) {
+  const expected = Math.max(String(turns[t].text || '').length, 1) * medianRate
+  const isSuspect = () => durations[t] > expected * 1.9 && durations[t] - expected > 2.5
+  if (!isSuspect()) continue
+  let tries = 0
+  while (isSuspect() && tries < 2) {
+    tries += 1; repeatRegens += 1
+    console.log(`↻ الدور ${t + 1} (${turns[t].speaker === 'male' ? 'فهد' : 'نورة'}): ${durations[t].toFixed(1)}ث لنصٍّ متوقعه ${expected.toFixed(1)}ث — اشتباه تكرار، إعادة ${tries}/2`)
+    const singlePrompt = promptFor([turns[t]], 0, 1)
+    requestHashes.push(sha256(singlePrompt))
+    const pcm = await geminiPcm(singlePrompt)
+    const raw = resolve(TMP, `repeat-regen-${t + 1}-${tries}.raw.wav`)
+    writePcmWav(raw, pcm)
+    const clean = resolve(TMP, `repeat-regen-${t + 1}-${tries}.wav`)
+    const cand = tightenChunk(raw, clean)
+    const candDur = duration(cand)
+    const expectMale = turns[t].speaker === 'male'
+    if (!voiceSwapped(expectMale, medianF0(cand)) && Math.abs(candDur - expected) < Math.abs(durations[t] - expected)) {
+      chunkFiles[t] = cand
+      durations[t] = candDur
+    }
+  }
+  if (isSuspect()) repeatSuspects.push(`${t + 1} (${durations[t].toFixed(1)}ث/${expected.toFixed(1)}ث)`)
+}
+if (repeatRegens) console.log(`✓ بوابة التكرار: أُعيد ${repeatRegens} توليداً${repeatSuspects.length ? ` — بقي تحت السمع: ${repeatSuspects.join(' · ')}` : ''}`)
+else console.log('✓ بوابة التكرار: كل الأدوار في مداها الزمني من أول رمية')
+
 const audioFile=resolve(AUDIO,`${slug}.dialogue-kw.mp3`)
 const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
 const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)
@@ -855,6 +902,7 @@ const audit={
   sourceSha256:sha256(readFileSync(source)), turnCount:turns.length, chunkCount:chunks.length,
   requestHashes, audioSha256:sha256(readFileSync(audioFile)), transcriptSha256:sha256(readFileSync(transcriptFile)),
   durationSec:duration(audioFile), pitchGate:{regenerated,maleMaxHz:150,femaleMinHz:165},
+  repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,medianSecPerChar:Number(medianRate.toFixed(4))},
   mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160},
   generatedAt:new Date().toISOString(),
 }

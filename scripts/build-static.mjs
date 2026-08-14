@@ -1699,19 +1699,19 @@ const podcastEpisodes = episodeItem(feedArticles, (a) => {
 writeFileSync(resolve(DIST, 'podcast.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:podcast="https://podcastindex.org/namespace/1.0">
   <channel>
-    <title>مقالات د. أحمد حسين الفيلكاوي المسموعة</title>
+    <title>مجلس الفكرة · د. أحمد حسين الفيلكاوي</title>
     <link>${SITE}</link>
     <atom:link href="${SITE}/podcast.xml" rel="self" type="application/rss+xml"/>
     <language>ar-KW</language>
     <generator>Dr. Ahmad Alfailakawi Podcast Engine</generator>
     <copyright>© د. أحمد حسين الفيلكاوي</copyright>
-    <description>أفكاري عن التعليم والتقنية والمجتمع، وكيف نُبقي الإنسان في قلب الآلة — بصوتي، مقالاً تلو الآخر. حلقة جديدة مع كل مقال.
+    <description>في مجلس الفكرة، يتحوّل كل مقالٍ إلى حوارٍ بصوتين: سؤالٌ يُطرح، وفكرةٌ تُبنى أمامك. أفكار د. أحمد حسين الفيلكاوي في التعليم والتكنولوجيا والمجتمع — وكيف نُبقي الإنسان في قلب الآلة. حلقةٌ جديدة مع كل مقال.
 
-My reflections on education, technology, and society — and how we keep the human at the heart of the machine. In my own voice, essay by essay. A new episode with every article.
+Majlis Al-Fikra turns every essay into a two-voice conversation: a question raised, an idea built before you. Dr. Ahmad Hussein Alfailakawi's reflections on education, technology, and society — and how we keep the human at the heart of the machine. A new episode with every article.
 
-تُنتج النسخة الصوتية باستخدام تقنيات صوتية متقدمة، تحت الإشراف والتحرير الكامل للدكتور أحمد حسين الفيلكاوي.</description>
+تُنتَج الحلقات بأصواتٍ توليدية متقدمة، تحت الإشراف والتحرير الكامل للدكتور أحمد حسين الفيلكاوي.</description>
     <itunes:author>د. أحمد حسين الفيلكاوي · Dr. Ahmad Alfailakawi</itunes:author>
-    <itunes:summary>قناة صوتية رسمية لمقالات د. أحمد حسين الفيلكاوي في التعليم والتقنية والمجتمع.</itunes:summary>
+    <itunes:summary>مجلس الفكرة — حواراتٌ بصوتين من مقالات د. أحمد حسين الفيلكاوي في التعليم والتكنولوجيا والمجتمع.</itunes:summary>
     <itunes:type>episodic</itunes:type>
     <itunes:owner><itunes:name>د. أحمد حسين الفيلكاوي</itunes:name><itunes:email>ah_f@hotmail.com</itunes:email></itunes:owner>
     <itunes:image href="${podcastArt}"/>
@@ -1725,7 +1725,7 @@ ${podcastEpisodes}
 `, 'utf8')
 
 
-/* ---------- podcast-kw.xml: مجلس الفكرة باللهجة الكويتية — قناة موازية لا تستبدل الفصحى ---------- */
+/* ---------- podcast-kw.xml: ديوانية الفكرة — النسخة الكويتية، قناة موازية لا تستبدل الفصحى ---------- */
 const kuwaitiPodcastEpisodes = episodeItem(feedArticles, (a) => {
     const rel = `${a.slug}.dialogue-kw.mp3`
     const file = resolve(ROOT, 'audio', rel)
@@ -1735,7 +1735,7 @@ const kuwaitiPodcastEpisodes = episodeItem(feedArticles, (a) => {
     const bytes = asset.bytes
     const duration = asset.duration
     return `    <item>
-      <title>${esc(a.title)} — كويتي</title>
+      <title>${esc(a.title)}</title>
       <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
       <description>${esc(a.excerpt)}</description>
       <link>${SITE}/articles/${a.slug}</link>
@@ -1752,14 +1752,17 @@ const kuwaitiPodcastEpisodes = episodeItem(feedArticles, (a) => {
 if (kuwaitiPodcastEpisodes) writeFileSync(resolve(DIST, 'podcast-kw.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:podcast="https://podcastindex.org/namespace/1.0">
   <channel>
-    <title>مجلس الفكرة — كويتي</title>
+    <title>ديوانية الفكرة · د. أحمد حسين الفيلكاوي</title>
     <link>${SITE}/listen</link>
     <atom:link href="${SITE}/podcast-kw.xml" rel="self" type="application/rss+xml"/>
     <language>ar-KW</language>
     <generator>Dr. Ahmad Alfailakawi Kuwaiti Podcast Engine</generator>
     <copyright>© د. أحمد حسين الفيلكاوي</copyright>
-    <description>النسخة الكويتية الحضرية من مجلس الفكرة: حوار فكري كويتي ناعم وواضح، موازٍ للنسخة العربية ولا يستبدلها.</description>
+    <description>نفس الأفكار، بلهجة الديوانية. في ديوانية الفكرة يجلس صوتان كويتيّان يتحاوران حول التعليم والتكنولوجيا والمجتمع، من مقالات د. أحمد حسين الفيلكاوي — قريبٌ من الأذن، صريحٌ كأنك بين أهلك. حلقةٌ جديدة مع كل مقال.
+
+The same ideas, in the Kuwaiti tongue. In Diwaniyat Al-Fikra, two Kuwaiti voices talk through education, technology, and society — drawn from Dr. Ahmad Hussein Alfailakawi's essays. Close, warm, and candid, as if among family. A new episode with every article.</description>
     <itunes:author>د. أحمد حسين الفيلكاوي</itunes:author>
+    <itunes:summary>ديوانية الفكرة — حواراتٌ كويتية بصوتين من مقالات د. أحمد حسين الفيلكاوي.</itunes:summary>
     <itunes:type>episodic</itunes:type>
     <itunes:owner><itunes:name>د. أحمد حسين الفيلكاوي</itunes:name><itunes:email>ah_f@hotmail.com</itunes:email></itunes:owner>
     <itunes:image href="${podcastArt}"/>

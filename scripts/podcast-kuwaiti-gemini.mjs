@@ -282,10 +282,18 @@ async function geminiPcm(prompt) {
   if (!KEY) throw new Error('GEMINI_API_KEY/GOOGLE_API_KEY مفقود')
   let last = null
   let quotaWaitMs = 0
-  for (let attempt = 1; attempt <= 6; attempt += 1) {
+  /* الطلب الضخم يُعاد مرّتين لا ستّاً: مهلته عشر دقائق، ومهلة الوظيفة كلها
+     خمسٌ وأربعون — فمحاولتان (عشرون دقيقة) تتركان متّسعاً للسقوط الآمن
+     بالشطر، وهو أنفعُ من انتظارٍ يستنزف الوظيفة والحصة معاً. */
+  const maxAttempts = prompt.length > 4000 ? 2 : 6
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       await paceRequest()
-      const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 90_000)
+      /* المهلة تتناسب مع حجم الطلب: النداء الواحد للحلقة كلها يولّد أربع دقائق
+         ونصفاً من الصوت، وتسعون ثانيةً ثابتةً كانت تجهضه ست مرّاتٍ متتالية
+         (تشغيلة ٣١٨٧٦١٦٧٧٥٥: AbortError بعد تسع دقائق ونصف). */
+      const timeoutMs = Math.min(600_000, Math.max(90_000, prompt.length * 80))
+      const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs)
       const response = await fetch(API, {
         method: 'POST', signal: controller.signal,
         /* بلا ترويسة Api-Revision: هي ترويسة البثّ المتدفّق (stream:true) وحدها.
@@ -796,9 +804,37 @@ for (let i=0;i<chunks.length;i+=1) {
   const group=chunks[i]
   console.log(`🎙️ Gemini ${i+1}/${chunks.length} (${group.length} مداخلة)`)
   const prompt=prompts[i]; requestHashes.push(sha256(prompt))
-  const pcm=await geminiPcm(prompt)
   const stem=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}`)
-  const rawWav=`${stem}.raw.wav`; writePcmWav(rawWav,pcm)
+  const rawWav=`${stem}.raw.wav`
+  let pcm=null
+  try { pcm=await geminiPcm(prompt) }
+  catch (error) {
+    /* إخفاق النداء الضخم (مهلة أو خطأ) لا يُسقط الحلقة: تُشطر المجموعة
+       نصفين ويُولَّد كلٌّ منهما — نبرتان خيرٌ من لا حلقة. */
+    if (group.length < 2) throw error
+    console.log(`↻ أخفق نداء المقطع ${i+1} (${group.length} مداخلة): ${error.message} — يُشطر نصفين`)
+    rescuedChunks += 1
+    const half=Math.ceil(group.length/2)
+    const halves=[group.slice(0,half), group.slice(half)]
+    const files=[]
+    for (let h=0;h<halves.length;h+=1) {
+      const hp=promptFor(halves[h], i, chunks.length)
+      requestHashes.push(sha256(hp))
+      const hraw=`${stem}-fb${h+1}.raw.wav`
+      writePcmWav(hraw, await geminiPcm(hp))
+      const hsplit=splitChunk(hraw, halves[h], `${stem}-fb${h+1}`)
+      files.push(...(hsplit || [hraw]))
+    }
+    if (files.length === group.length) {
+      files.forEach((part, j) => {
+        const clean=`${stem}-turn-${String(j+1).padStart(2,'0')}.wav`
+        chunkFiles.push(tightenChunk(part, clean)); durations.push(duration(chunkFiles.at(-1)))
+      })
+      continue
+    }
+    throw new Error(`تعذّر إنقاذ المقطع ${i+1}: ${files.length} ملفاً لـ${group.length} مداخلة`)
+  }
+  writePcmWav(rawWav,pcm)
 
   /* المقطع يحمل عدّة مداخلات بصوتٍ متّسق؛ يُقصّ إلى مداخلاته ليبقى التوقيت
      الدقيق لكل واحدةٍ منها. وإن تعذّر القصّ رجعنا لهذا المقطع وحده إلى

@@ -199,19 +199,17 @@ NOURA — TARGETED CORRECTION (the heard failures live on her lines)
 The Emirati thinning keeps surfacing on Noura's lines specifically: the male lines hold Kuwait City weight while hers drift. Give Noura's every single line the same full Kuwaiti weight, the same city, the same register as Fahad's — never lighter, never more forward.
 - The historically failing words were sieved out of the audio text entirely (they no longer reach you). What remains must hold: «منو» «الشهاده» «مخه» and every word around them carry full Kuwait City weight on Noura's lines — if any word comes out Emirati on her lines, the whole take is rejected.
 
-KUWAITI SOUND — described in Arabic only, never in Latin letters
-The text is normal Arabic orthography. Speak it with Kuwaiti sounds, not with a careful MSA reading. Three sounds carry the whole accent:
-
-١) القاف في الكلام اليومي تُنطق كالجيم القاهرية — صوتٌ بين القاف والكاف، مجهورٌ خفيف.
-   قُلها هكذا في مثل: قال · وقت · فوق · قبل · يقول · يقدر · قاعد · أقرب · أقوى · طريق · صدق.
-   وتبقى قافاً فصيحةً في المتعلَّم وحده: القرآن · القانون · القرار · المقال · المنطق · التقييم.
-   انطق الصوت ولا تغيّر الحرف المكتوب.
-
-٢) الفعل المضارع يبدأ بألف وصلٍ قصيرة: «يعرف» تُسمع «ايعرف»، «يفهمون» تُسمع «ايفهمون».
-
-٣) الضاد والظاء صوتٌ واحدٌ مطبق. النصّ مكتوبٌ بالظاء عمداً.
-
-ولا إعراب ولا تنوين ولا حركاتِ آخرِ الكلمة إطلاقاً.
+/* حُذف وصف القاف نهائياً (١٥ أغسطس، حكمه: «اللكنة صارت خطأ ١٠٠٠٠٪ — مو
+   كويتي»). كنتُ أصفها «كالجيم القاهرية» فطلبتُ من المحرّك صوتاً مصرياً
+   صراحةً، فخرج بدوياً مصرياً لا كويتياً. والدرس: لا يُوصف صوتٌ بلهجةٍ
+   أخرى — التشبيه بلهجةٍ أجنبية يجرّ اللكنة إليها كلها لا إلى صوتٍ واحدٍ
+   منها. الكويتيّة تُطلب باسمها وحده، والأصوات تأتي معها. */
+TWO DISTINCT PEOPLE — never one narrator doing both parts
+Fahad and Noura are two different human beings sitting together. Their voices must stay clearly apart for the whole episode:
+- فهد: رجلٌ كويتيٌّ ناضج — صوتٌ أعمق وأثقل، نبرةٌ هادئةٌ واثقة.
+- نورة: امرأةٌ كويتيةٌ ناضجة — صوتٌ أعلى وأصفى، نبرةٌ حيّةٌ متسائلة.
+A listener must know who is speaking from the voice alone, without reading names. Never let the two drift toward one middle voice, and never let one of them carry the other's line. If both start sounding alike, the take is rejected — this is exactly what the doctor caught: «فقط البنت قاعد تتكلم بدون الولد».
+Keep the accent identical for both; only the voice differs.
 
 ACCENT STRENGTH — the single thing the doctor judges hardest
 - The accent must be THICK, not merely correct. A neutral, careful, MSA-leaning delivery with Kuwaiti words in it is a failure even when every word is right. Speak like two Kuwaitis in a diwaniya, not like broadcasters reading Kuwaiti.
@@ -744,14 +742,12 @@ if (SELF_TEST) {
   assert.match(prompt,/Seven registers are FORBIDDEN/i, 'القفل الأول: الحظر السباعي المسمّى في الرأس')
   assert.match(prompt,/NOURA — TARGETED CORRECTION/i, 'تصويب نورة: العطب المسموع يعيش في سطورها فالعلاج يصوَّب إليها')
   assert.match(prompt,/ACCENT STRENGTH/i, 'قسم اللكنة: الثقل مطلوبٌ لا مجرّد الصواب')
-  assert.match(prompt,/كالجيم القاهرية/, 'القاف تُوصف بالعربية — النقحرة اللاتينية جرّت المحرّك إلى الفارسي')
+  /* قياس ١٥ أغسطس: الفجوة بين الحنجرتين ضاقت من ٣٤ هرتزاً إلى ٢٢ حين رُكّز
+     على اللهجة وحدها، فسمعهما الدكتور صوتاً واحداً. فصل الشخصيتين شرطٌ. */
+  assert.match(prompt,/TWO DISTINCT PEOPLE/i, 'فصل الشخصيتين: صوتان لا راوٍ واحد')
   /* الحرف اللاتيني في وصف الأصوات جرّ المحرّك إلى سجلٍّ أجنبي (١٥ أغسطس). */
   /* العناوين والتوجيهات بالإنجليزية مقبولة؛ المحظور نقحرةُ الأصوات نفسها
      (agrab · i-yaʿraf) — حروفٌ أعجميةٌ منقوطةٌ تُكتب بها الفارسيةُ لاتينياً. */
-  const soundBlock = prompt.slice(prompt.indexOf('KUWAITI SOUND'), prompt.indexOf('ACCENT STRENGTH'))
-  assert.ok(!/[ʿṣḍʾāīūǧḫṭẓ]/.test(soundBlock), 'لا نقحرةَ أعجميةً في وصف الأصوات — جرّت المحرّك إلى الفارسي')
-  const arabicExamples = soundBlock.split('\n').filter((line) => /^[١٢٣]\)/.test(line.trim()))
-  assert.ok(arabicExamples.length >= 3, 'أمثلة الأصوات مكتوبةٌ بالعربية')
   /* التذكير يظهر بعد العاشر، فيُختبر على حلقةٍ بطول حقيقيّ لا على أربعة أدوار. */
   const longTurns = Array.from({ length: 25 }, (_, i) => ({
     speaker: i % 2 ? 'female' : 'male', text: `سطر رقم ${i + 1} فيه ضاد واضحة.`,
@@ -1024,7 +1020,16 @@ if (maleMid && femaleMid && femaleMid - maleMid > 12) {
     }
   }
 }
+/* فجوة الحنجرتين: قياسٌ يمسك «صوتٌ واحدٌ يقرأ الحوار كله» قبل أذن الدكتور.
+   المقيس على نسخةٍ أعجبته: ٣٤ هرتزاً. وعلى نسخةٍ سمعها صوتاً واحداً: ٢٢.
+   فما دون الخامس والعشرين إنذارٌ يُعلن ولا يُسقط — الحكم النهائي لأذنه. */
+const voiceGap = (maleMid && femaleMid) ? femaleMid - maleMid : null
 console.log(`✓ بوابة الطبقة: وسيط فهد ${maleMid ? maleMid.toFixed(0) : '—'}Hz · نورة ${femaleMid ? femaleMid.toFixed(0) : '—'}Hz${swapped.length ? ` · أدوار مشتبهة: ${swapped.join(' · ')}` : ' · لا انعكاس'}`)
+if (voiceGap !== null) {
+  console.log(voiceGap < 25
+    ? `⚠️ فجوة الحنجرتين ${voiceGap.toFixed(0)} هرتزاً — الصوتان متقاربان وقد يُسمعان صوتاً واحداً (المريح ≥ ٣٠)`
+    : `✓ فجوة الحنجرتين ${voiceGap.toFixed(0)} هرتزاً — صوتان متمايزان`)
+}
 const regenerated = 0
 
 /* ═══ بوابة الزمن — تقيس ولا تُرقّع ═══
@@ -1058,7 +1063,7 @@ const audit={
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
   sourceSha256:sha256(readFileSync(source)), turnCount:turns.length, chunkCount:chunks.length,
   requestHashes, audioSha256:sha256(readFileSync(audioFile)), transcriptSha256:sha256(readFileSync(transcriptFile)),
-  durationSec:duration(audioFile), pitchGate:{maleMedianHz:maleMid?Math.round(maleMid):null,femaleMedianHz:femaleMid?Math.round(femaleMid):null,suspects:swapped},
+  durationSec:duration(audioFile), pitchGate:{maleMedianHz:maleMid?Math.round(maleMid):null,femaleMedianHz:femaleMid?Math.round(femaleMid):null,voiceGapHz:voiceGap?Math.round(voiceGap):null,suspects:swapped},
   repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,medianSecPerChar:Number(medianRate.toFixed(4))},
   mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160},
   generatedAt:new Date().toISOString(),

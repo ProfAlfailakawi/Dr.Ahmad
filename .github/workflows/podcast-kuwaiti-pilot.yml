@@ -68,6 +68,26 @@ jobs:
 
       - name: Lock the exact Kuwaiti admin dialogue
         run: node scripts/fetch-kuwaiti-dialogues.mjs --slugs="$RELEASED_SLUGS"
+
+      # بصمة الحوار تُقرأ من القفل الذي كتبه fetch من Firestore نفسه، لا من
+      # قيمةٍ تُكتب باليد. العلّة التي أنتجت هذه الخطوة: بصمة Firestore تُحسب
+      # على مستند الحوار بحقوله كاملةً، وبصمة ملف المستودع تُحسب على المتن
+      # وحده — فتختلفان وإن كان النصّ متطابقاً حرفاً بحرف (تحقّقنا: ٣٧ دوراً
+      # متطابقة تماماً). فكانت كل تشغيلةٍ تسقط في خطوتها الأخيرة بعد أن يكون
+      # الصوت قد وُلد وسُلّم إلى R2 — يضيع الوقت والحصة، ولا يصل المرشّح إلى
+      # بوابة الاعتماد. ومع ١٤٣ حلقة كان هذا سيعني ١٤٣ سقطة.
+      - name: Read the revision the generator will actually use
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOCK="podcast-audits/source-locks-kuwaiti/$RELEASED_SLUGS.json"
+          test -f "$LOCK" || { echo "::error::قفل المصدر مفقود: $LOCK"; exit 1; }
+          LOCKED="$(node -e "process.stdout.write(String(JSON.parse(require('fs').readFileSync('$LOCK','utf8')).revisionId||''))")"
+          [[ "$LOCKED" =~ ^[A-Za-z0-9._:-]{8,128}$ ]] || { echo "::error::معرّف المراجعة في القفل غير صالح"; exit 1; }
+          if [ "$LOCKED" != "$DIALOGUE_REVISION" ]; then
+            echo "::notice::بصمة القفل ($LOCKED) تخالف المُمرَّرة ($DIALOGUE_REVISION) — تُعتمد بصمة القفل لأنها ما يولّد عنه المحرّك."
+          fi
+          echo "DIALOGUE_REVISION=$LOCKED" >> "$GITHUB_ENV"
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           # لا يُستبدل مرشّحٌ ينتظر الاعتماد إلا بطلبٍ صريح من مُطلِق التشغيلة.
@@ -102,6 +122,43 @@ jobs:
           AWS_EC2_METADATA_DISABLED: 'true'
           CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
           CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+
+      # ملخّصٌ يُقرأ من صفحة التشغيلة بلا فتح سجل: الدكتور يسأل «ليش يفشل وما
+      # يظهر لي شي؟» — فيظهر هنا رابط الصوت وقراءة البوابتين مهما كانت النتيجة.
+      - name: Publish a readable summary
+        if: always()
+        shell: bash
+        run: |
+          AUDIT="podcast-audits/kuwaiti/$RELEASED_SLUGS.json"
+          {
+            echo "## الحلقة الكويتية — $RELEASED_SLUGS"
+            if [ -f "audio/$RELEASED_SLUGS.dialogue-kw.mp3" ]; then
+              SIZE=$(du -h "audio/$RELEASED_SLUGS.dialogue-kw.mp3" | cut -f1)
+              echo "**الصوت وُلد بنجاح** ($SIZE) — وهو على R2 حتى لو سقطت خطوةٌ بعده:"
+              echo '```'
+              echo "$AUDIO_PUBLIC_BASE_URL/staging/kuwaiti/$RELEASED_SLUGS/$DIALOGUE_REVISION/$RELEASED_SLUGS.dialogue-kw.mp3"
+              echo '```'
+            else
+              echo "**لم يُولَّد صوت** — العطب قبل التوليد."
+            fi
+            if [ -f "$AUDIT" ]; then
+              echo ""
+              echo "| القياس | القيمة |"
+              echo "|---|---|"
+              node -e "
+                const a=require('./$AUDIT');
+                const p=a.pitchGate||{}, r=a.repeatGate||{};
+                console.log('| المدة | '+Math.round(a.durationSec||0)+' ثانية |');
+                console.log('| الأدوار | '+(a.turnCount||0)+' |');
+                console.log('| النداءات | '+(a.chunkCount||0)+' |');
+                console.log('| وسيط فهد / نورة | '+(p.maleMedianHz||'—')+' / '+(p.femaleMedianHz||'—')+' هرتز |');
+                console.log('| أدوار مشتبهة بالنبرة | '+((p.suspects||[]).length)+' |');
+                console.log('| أدوار شاذة زمنياً | '+((r.suspects||[]).length)+' |');
+              " || echo "| — | تعذّرت قراءة السجل |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
 
       - name: Expose candidate only to the admin review state
         run: node scripts/record-kuwaiti-candidate.mjs --slug="$RELEASED_SLUGS" --revision="$DIALOGUE_REVISION"

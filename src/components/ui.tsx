@@ -360,12 +360,8 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
     }
     return set
   })
-  const toggleGroup = (to: string) => setOpenGroups((prev) => {
-    const next = new Set(prev)
-    if (next.has(to)) next.delete(to)
-    else next.add(to)
-    return next
-  })
+  /* مفتوحٌ واحدٌ فقط: فتح رئيسٍ يُغلق الآخر تلقائياً (طلب الدكتور). */
+  const toggleGroup = (to: string) => setOpenGroups((prev) => new Set(prev.has(to) ? [] : [to]))
 
   /* «اللقاءات القادمة» تُخفى من القائمة حين لا لقاء مُعلَناً — كي لا يقود الرابط
      إلى صفحةٍ فارغة. القائمة مغلقةٌ حتى يفتحها الزائر، وبيانات اللقاءات تُحمَّل

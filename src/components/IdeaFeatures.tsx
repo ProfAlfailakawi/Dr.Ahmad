@@ -340,6 +340,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
   const [toolbarY, setToolbarY] = useState<number | null>(null)
   const [below, setBelow] = useState(false)
   const [coarse, setCoarse] = useState(false)
+  const [coach, setCoach] = useState(false)
   useEffect(() => {
     const query = window.matchMedia('(pointer: coarse)')
     const sync = () => setCoarse(query.matches)
@@ -347,6 +348,60 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
     query.addEventListener('change', sync)
     return () => query.removeEventListener('change', sync)
   }, [])
+
+  /* تلميح أول مرّة (بلا تلوث بصري): للقارئ الجديد وحده، مرّةً أو مرّتين على الأكثر،
+     ولا يطفو إلا بعد أن يبدأ القراءة فعلاً — أي حين ينزل أعلى المتن فوق الشاشة — ثم
+     يذوب من تلقائه. ولحظة يظلّل القارئ أوّل جملة (فقد اكتشف الأداة) يُسكَت للأبد. */
+  useEffect(() => {
+    let learned = false
+    let shownCount = 0
+    try {
+      learned = localStorage.getItem('reader:highlight-learned') === '1'
+      shownCount = Number(localStorage.getItem('reader:highlight-coach-count') || '0') || 0
+    } catch { /* التخزين تحسين بصري فقط */ }
+    if (learned || shownCount >= 2) return
+    let armed = false
+    let dwell = 0
+    const maybeShow = () => {
+      if (armed) return
+      const article = document.getElementById('article-body')
+      if (!article) return
+      // بدأ القارئ يقرأ حين ينزل أعلى المتن فوق الربع العلوي من الشاشة
+      if (article.getBoundingClientRect().top > window.innerHeight * 0.28) return
+      armed = true
+      window.clearTimeout(dwell)
+      dwell = window.setTimeout(() => {
+        setCoach(true)
+        try { localStorage.setItem('reader:highlight-coach-count', String(shownCount + 1)) } catch { /* noop */ }
+      }, 1100)
+    }
+    window.addEventListener('scroll', maybeShow, { passive: true })
+    const first = window.setTimeout(maybeShow, 2600)
+    return () => {
+      window.removeEventListener('scroll', maybeShow)
+      window.clearTimeout(first)
+      window.clearTimeout(dwell)
+    }
+  }, [current.slug])
+
+  // اكتشاف الأداة (ظهور شريط التحديد) يُسكِت التلميح نهائياً
+  useEffect(() => {
+    if (!pos) return
+    setCoach(false)
+    try { localStorage.setItem('reader:highlight-learned', '1') } catch { /* noop */ }
+  }, [pos])
+
+  // التلميح يذوب وحده بعد لحظاتٍ فلا يبقى معلّقاً على الشاشة
+  useEffect(() => {
+    if (!coach) return
+    const timer = window.setTimeout(() => setCoach(false), 9000)
+    return () => window.clearTimeout(timer)
+  }, [coach])
+
+  const dismissCoach = () => {
+    setCoach(false)
+    try { localStorage.setItem('reader:highlight-learned', '1') } catch { /* noop */ }
+  }
   useEffect(() => {
     const article = document.getElementById('article-body')
     if (!article) return
@@ -792,6 +847,39 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
         )}
       </AnimatePresence>,
       document.body)}
+
+      {/* تلميح القارئ الجديد: يشرح أنّ تظليل الجملة يفتح «عبر السنين + الاقتباس».
+          بوابة إلى <body> كالشريط، ولا يظهر أثناء التحديد أو فتح اللوحات. */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {coach && !pos && !view && (
+            <motion.aside
+              key="reader-highlight-coach"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.3 }}
+              dir="rtl"
+              role="note"
+              className="reader-highlight-coach fixed inset-x-4 bottom-[calc(1.15rem+env(safe-area-inset-bottom))] z-[240] mx-auto flex max-w-[26rem] items-center gap-3 rounded-2xl border border-hair bg-canvas/[.97] px-4 py-3 shadow-[0_22px_60px_-34px_rgba(21,22,26,.6)] backdrop-blur"
+            >
+              <span aria-hidden="true" className="shrink-0 select-none rounded-[.32rem] bg-accent/[.16] px-1.5 py-0.5 font-display text-[.86rem] font-semibold leading-none text-accent">جملة</span>
+              <p className="min-w-0 text-[.8rem] leading-[1.7] text-ink">
+                ظلِّل جملةً تلمسك: يتراءى صداها <span className="font-semibold text-accent">عبر السنين</span>، وتصنع منها بطاقة.
+              </p>
+              <button
+                type="button"
+                onClick={dismissCoach}
+                aria-label="فهمت"
+                title="فهمت"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:text-accent"
+              >
+                <SocialIcon name="Close" size={13} />
+              </button>
+            </motion.aside>
+          )}
+        </AnimatePresence>,
+        document.body)}
 
       {/* لوحة تتبّع الجملة */}
       <AnimatePresence>

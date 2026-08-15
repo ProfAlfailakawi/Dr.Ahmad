@@ -65,12 +65,18 @@ function writePcmWav(path, pcm) { writeFileSync(path, Buffer.concat([wavHeader(p
    واضحاً. أربع مداخلاتٍ في الطلب تُنزل الحدود إلى تسعةٍ أو عشرة، والنموذج
    متعدّد المتحدثين مصمَّمٌ أصلاً ليؤدّي حواراً كاملاً في نداءٍ واحد فيحفظ
    النبرة داخله. (وتوفّر الحصة أيضاً: ٣٧ طلباً تصير ١٠.) */
-/* الدفعة الكبيرة تعطي النموذج مساحةَ استرسالٍ: يعيد عبارةً، يكمل بنبرةٍ ثانية،
-   وينزلق سجلّه في منتصفها — وكلّها شكاوى سمعها الدكتور («عادها مرتين وبدل
-   الصوت»). والدور المفرد ممنوع: الفحص الذاتي أدناه يبرهن أنه يعيد علّة تبدّل
-   صوت المذيع (النموذج بلا متحدّثَين في الطلب لا يميّز الحنجرتين). فالوسط هو
-   الحل: ثلاثة أدوار — تكفي للتباين الصوتي وتضيّق مساحة الاسترسال إلى الثلث. */
-const TURNS_PER_REQUEST = Math.max(2, Math.min(8, Number(process.env.PODCAST_KW_TURNS_PER_REQUEST || 3)))
+/* ═══ نداءٌ واحدٌ للحلقة كلها ═══
+   أثقلُ شكوى سمعها الدكتور بعد كل إصلاحٍ آخر: «الصوت عندي تبدّل بين ٤ إلى ٥
+   مرات… وأول صوت كان جداً جداً جميل وأقرب للواقع». والسبب أن كلَّ نداءٍ
+   يُخرج نبرةً مختلفةً قليلاً للحنجرة نفسها — فثلاثة عشر نداءً تعني ثلاث عشرة
+   نبرة. وتضييقي الدفعةَ من ثمانية إلى ثلاثة (علاجاً للاسترسال) ضاعف العلّة
+   من خمس نبراتٍ إلى ثلاث عشرة: صلّحتُ عيباً فأفسدتُ ما هو أثمن منه.
+   والحلقة كلها ٢٦١٠ حرفاً — تدخل في نداءٍ واحدٍ تحت سقف ٤٣٠٠. فنداءٌ واحد
+   يعني نبرةً واحدةً من أول الحلقة إلى آخرها: صفر تبدّل، وبنبرة النداء الأول
+   التي وصفها بأنها «معدومة الأخطاء».
+   والدور المفرد يبقى ممنوعاً (الفحص الذاتي أدناه يبرهن أنه يعيد تبدّل الصوت)،
+   لكنه لم يعد مطلوباً أصلاً. */
+const TURNS_PER_REQUEST = Math.max(2, Math.min(64, Number(process.env.PODCAST_KW_TURNS_PER_REQUEST || 64)))
 
 function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {}) {
   const chunks = []
@@ -82,7 +88,10 @@ function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {
       chunks.push(row); row = []; chars = 0
     }
     row.push(turn); chars += turn.text.length
-    if (turn.musicBridgeAfter && row.length >= 2) { chunks.push(row); row = []; chars = 0 }
+    /* الجسر يُركَّب في التجميع لا في التوليد، فلا يقفل النداء: إقفاله كان
+       يشطر الحلقة إلى ثلاثة نداءات = ثلاث نبرات. يبقى قافلاً حين تُطلب
+       دفعاتٌ صغيرة صراحةً (PODCAST_KW_TURNS_PER_REQUEST). */
+    if (turn.musicBridgeAfter && row.length >= 2 && maxTurns < 16) { chunks.push(row); row = []; chars = 0 }
   }
   if (row.length) chunks.push(row)
   return chunks
@@ -638,10 +647,11 @@ if (SELF_TEST) {
     { speaker:'female', text:'إي، خلنا نشوف الدليل أول.', deliveryType:'response', pauseAfterMs:300, musicBridgeAfter:true },
     { speaker:'male', text:'هني يبين الفرق.', deliveryType:'reflection', pauseAfterMs:300, musicBridgeAfter:false },
   ]
-  const chunks = chunkTurns(turns)
-  /* مداخلتان في المقطع الأول (يقفله الجسر الموسيقي) ثم الثالثة: الطلب يحمل
-     أكثر من مداخلةٍ الآن، والجسر يبقى حدّاً طبيعياً لا يُعبر. */
-  assert.equal(chunks.length, 2, 'الجسر الموسيقي يقفل المقطع، وما عداه يتجمّع')
+  /* الوضع المعتمد: الحلقة كلها نداءٌ واحدٌ — نبرةٌ واحدةٌ بلا تبدّل. */
+  assert.equal(chunkTurns(turns).length, 1, 'الحلقة تُولَّد بنداءٍ واحدٍ فتثبت النبرة')
+  /* وحين تُطلب دفعاتٌ صغيرةٌ صراحةً يعود الجسر حدّاً طبيعياً لا يُعبر. */
+  const chunks = chunkTurns(turns, { maxTurns: 8 })
+  assert.equal(chunks.length, 2, 'الجسر الموسيقي يقفل المقطع في الدفعات الصغيرة')
   assert.deepEqual(chunks.map((chunk) => chunk.length), [2, 1])
   const prompt = promptFor(chunks[0],0,chunks.length)
   /* عقد الأداء الكويتي: هذه البنود هي ما يفصل «كويتيّاً طبيعياً» عن «مقلّدٍ
@@ -796,17 +806,32 @@ for (let i=0;i<chunks.length;i+=1) {
   let parts=splitChunk(rawWav, group, stem)
   if (!parts) {
     if (group.length > 1) {
-      console.log(`↻ تعذّر قصّ المقطع ${i+1} إلى ${group.length} مداخلات — يُعاد توليدها مفردة`)
+      /* الإنقاذ بالنصفين لا بالأفراد: النداء الواحد للحلقة كلها قد يتعذّر قصّه
+         إلى سبعةٍ وثلاثين، فالسقوط إلى سبعةٍ وثلاثين نداءً مفرداً يعني سبعاً
+         وثلاثين نبرة — وهو أسوأ ما يكون لأثقل شكاوى الدكتور. فيُشطر المقطع
+         نصفين ويُعاد توليد كلٍّ منهما، ثم يُشطر ما يتعذّر منهما، حتى يُقصّ
+         أو يبلغ الفرد. النبرات تُعدّ باللوغاريتم لا بالعدد. */
+      console.log(`↻ تعذّر قصّ المقطع ${i+1} إلى ${group.length} مداخلة — يُشطر نصفين`)
       rescuedChunks += 1
-      parts=[]
-      for (let j=0;j<group.length;j+=1) {
-        const singlePrompt=promptFor([group[j]], i, chunks.length)
-        requestHashes.push(sha256(singlePrompt))
-        const singlePcm=await geminiPcm(singlePrompt)
-        const singleRaw=`${stem}-solo-${String(j+1).padStart(2,'0')}.raw.wav`
-        writePcmWav(singleRaw, singlePcm)
-        parts.push(singleRaw)
+      const rescue = async (subgroup, tag) => {
+        if (subgroup.length === 1) {
+          const p=promptFor(subgroup, i, chunks.length)
+          requestHashes.push(sha256(p))
+          const raw=`${stem}-${tag}.raw.wav`
+          writePcmWav(raw, await geminiPcm(p))
+          return [raw]
+        }
+        const p=promptFor(subgroup, i, chunks.length)
+        requestHashes.push(sha256(p))
+        const raw=`${stem}-${tag}.raw.wav`
+        writePcmWav(raw, await geminiPcm(p))
+        const split=splitChunk(raw, subgroup, `${stem}-${tag}`)
+        if (split) return split
+        const mid=Math.ceil(subgroup.length/2)
+        return [...await rescue(subgroup.slice(0,mid), `${tag}a`), ...await rescue(subgroup.slice(mid), `${tag}b`)]
       }
+      const mid=Math.ceil(group.length/2)
+      parts=[...await rescue(group.slice(0,mid), 'h1'), ...await rescue(group.slice(mid), 'h2')]
     } else parts=[rawWav]
   }
 

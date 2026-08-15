@@ -885,83 +885,60 @@ if (chunkFiles.length !== turns.length) {
 }
 console.log(`✓ ${chunks.length} طلباً لـ${turns.length} مداخلة${rescuedChunks ? ` · ${rescuedChunks} مقطعاً عاد إلى التوليد المفرد` : ''}`)
 
-/* بوابة الطبقة: كل دورٍ يُقاس، والمعكوس يُعاد مفرداً حتى مرتين. */
-let regenerated = 0
-const stubborn = []
-for (let t = 0; t < turns.length; t += 1) {
-  const expectMale = turns[t].speaker === 'male'
-  let f0 = medianF0(chunkFiles[t])
-  let tries = 0
-  while (voiceSwapped(expectMale, f0) && tries < 2) {
-    tries += 1; regenerated += 1
-    console.log(`↻ الدور ${t + 1} (${expectMale ? 'فهد' : 'نورة'}): طبقة معكوسة ${f0.toFixed(0)}Hz — إعادة ${tries}/2`)
-    const singlePrompt = promptFor([turns[t]], 0, 1)
-    requestHashes.push(sha256(singlePrompt))
-    const pcm = await geminiPcm(singlePrompt)
-    const raw = resolve(TMP, `pitch-regen-${t + 1}-${tries}.raw.wav`)
-    writePcmWav(raw, pcm)
-    const clean = resolve(TMP, `pitch-regen-${t + 1}-${tries}.wav`)
-    chunkFiles[t] = tightenChunk(raw, clean)
-    durations[t] = duration(chunkFiles[t])
-    f0 = medianF0(chunkFiles[t])
+/* ═══ بوابة الطبقة — بالنسبة لا بالعتبة المطلقة ═══
+   العتبتان المطلقتان (ذكر ≤١٥٠ · أنثى ≥١٦٥) كانتا خطأً فادحاً: القياس على
+   حلقةٍ سليمةٍ كاملة أظهر أن Puck يقع بين ١١٥ و١٦٥ (وسيطه ١٣٧) وDespina بين
+   ١٥١ و١٨٤ (وسيطها ١٦٥) — أي أن حنجرتَي هذا الزوج **متداخلتان** في النطاق
+   ١٥١‑١٦٥. فاتّهمت البوابةُ اثني عشر دوراً سليماً وأعادت توليدها: أحرقت
+   الحصة، وكسرت وحدة النبرة التي وُلد النداء الواحد لأجلها، وهي أثمن ما في
+   الحلقة عند الدكتور.
+   العلاج: يُقاس كل دورٍ بالنسبة إلى **وسيط متحدّثه نفسه** في هذه الحلقة.
+   والانعكاس الحقيقي شاذٌّ صارخ: الدور يقع أقرب إلى وسيط المتحدّث الآخر منه
+   إلى وسيط متحدّثه، وبفارقٍ معتبر. ولا يُعاد توليده — لأن إعادة دورٍ مفردٍ
+   وسط نداءٍ واحدٍ تُدخل نبرةً غريبةً هي نفسها العلّة — بل يُسمّى في السجل
+   وفي سجلّ التدقيق ليحكم عليه الدكتور بأذنه. */
+const pitchOf = turns.map((_, t) => medianF0(chunkFiles[t]))
+const medianOf = (isMale) => {
+  const vals = pitchOf.filter((f, t) => f && (turns[t].speaker === 'male') === isMale).sort((a, b) => a - b)
+  return vals.length ? vals[Math.floor(vals.length / 2)] : null
+}
+const maleMid = medianOf(true), femaleMid = medianOf(false)
+const swapped = []
+if (maleMid && femaleMid && femaleMid - maleMid > 12) {
+  for (let t = 0; t < turns.length; t += 1) {
+    const f0 = pitchOf[t]; if (!f0) continue
+    const expectMale = turns[t].speaker === 'male'
+    const own = expectMale ? maleMid : femaleMid
+    const other = expectMale ? femaleMid : maleMid
+    /* شاذٌّ صارخ: أقرب إلى الحنجرة الأخرى بفارق يتجاوز نصف المسافة بينهما. */
+    if (Math.abs(f0 - other) + (femaleMid - maleMid) * 0.5 < Math.abs(f0 - own)) {
+      swapped.push(`${t + 1} (${expectMale ? 'فهد' : 'نورة'} ${f0.toFixed(0)}Hz)`)
+    }
   }
-  if (voiceSwapped(expectMale, f0)) stubborn.push(`${t + 1} (${expectMale ? 'فهد' : 'نورة'} ${f0.toFixed(0)}Hz)`)
 }
-if (stubborn.length) {
-  throw new Error(`أصوات معكوسة رغم إعادتين — الأدوار: ${stubborn.join(' · ')}. مرشح معكوس لا يصل بوابة الاعتماد.`)
-}
-if (regenerated) console.log(`✓ بوابة الطبقة: أُعيد ${regenerated} توليداً وكل الأدوار على جنسها الصحيح`)
-else console.log('✓ بوابة الطبقة: كل الأدوار على جنسها الصحيح من أول رمية')
+console.log(`✓ بوابة الطبقة: وسيط فهد ${maleMid ? maleMid.toFixed(0) : '—'}Hz · نورة ${femaleMid ? femaleMid.toFixed(0) : '—'}Hz${swapped.length ? ` · أدوار مشتبهة: ${swapped.join(' · ')}` : ' · لا انعكاس'}`)
+const regenerated = 0
 
-/* ═══ بوابة التكرار ═══
-   أذن الدكتور مسكتها («يكرر بعض الجمل ليش؟ كثير من الجمل مكررة») والقياس
-   أكّدها: ٦ أدوار من ٣٧ في تشغيلة ٣١٨٣٦٥٣٠٠٥٦ — كلها لنورة — تجاوزت ×١٫٧
-   من وسيط ثانية/حرف، وأسوأها ١٧٫٩ث لنصٍّ من ٥١ حرفاً (×٣٫٧ = الجملة قُرئت
-   مراراً). وآلية الانبلاع مقروءة في القصّ: splitChunk يقسم عند أطول الصمتات
-   مهما طال المقطع، فالتكرار يُحشر داخل الدور بصمت ولا يفشل شيء.
-   القياس ذاتيّ الحلقة: وسيط ثانية/حرف يُحسب من أدوارها هي (لا ثابت خارجي —
-   سرعة اللقطة تختلف بين رمية وأخرى)، والدور فوق ×١٫٩ من الوسيط وبفائضٍ
-   مطلق فوق ٢٫٥ث يُعاد مفرداً حتى مرتين، وتُقبل اللقطة الأقرب زمناً للمتوقع
-   بشرط سلامة جنس الصوت — لا نصلح تكراراً بحنجرة معكوسة. العنيد بعد
-   المحاولتين لا يُسقط التشغيلة: يُسمّى في السجل ويحكم عليه الدكتور من
-   البوابة، فالدور التأملي البطيء إنذارٌ كاذبٌ محتمل وإسقاط الحلقة أغلى منه. */
+/* ═══ بوابة الزمن — تقيس ولا تُرقّع ═══
+   طرفان: الدور الطويل جداً (تكرار/صدى) والقصير جداً (اقتطاع). وكانت تعيد
+   توليد الشاذّ مفرداً — وهذا في وضع النداء الواحد يُدخل نبرةً غريبةً وسط
+   نبرةٍ موحّدة، أي يُفسد أثمن ما في الحلقة إصلاحاً لأهون منه. فصارت تقيس
+   وتُسمّي فقط؛ والحكم على اللقطة كلها: إن كثر شذوذها أُعيدت **الحلقة
+   بأكملها** بنداءٍ واحدٍ جديد (نبرة واحدة أخرى) لا أن تُرقَّع دوراً دوراً. */
 const secPerChar = turns.map((t, i) => durations[i] / Math.max(String(t.text || '').length, 1))
 const sortedRates = [...secPerChar].sort((a, b) => a - b)
 const medianRate = sortedRates[Math.floor(sortedRates.length / 2)] || 0.1
 const repeatSuspects = []
-let repeatRegens = 0
-/* بوابةٌ زمنيةٌ ذات طرفَين: الدور الطويل جداً (تكرار/صدى) والدور القصير جداً
-   (اقتطاعٌ من قصّ الصمت الخاطئ — دور «معلقة» خرج ١٫٩ث لجملة ٦٥ حرفاً في تشغيلة
-   ٣١٨٥٠. كلاهما يُعاد مفرداً حتى مرتين وتُقبل الأقرب زمناً بشرط سلامة الجنس. */
 for (let t = 0; t < turns.length; t += 1) {
   const expected = Math.max(String(turns[t].text || '').length, 1) * medianRate
-  const tooLong = () => durations[t] > expected * 1.9 && durations[t] - expected > 2.5
-  const tooShort = () => durations[t] < expected * 0.55 && expected - durations[t] > 1.5
-  const isSuspect = () => tooLong() || tooShort()
-  if (!isSuspect()) continue
-  let tries = 0
-  while (isSuspect() && tries < 2) {
-    tries += 1; repeatRegens += 1
-    const kind = durations[t] < expected ? 'اقتطاع' : 'تكرار'
-    console.log(`↻ الدور ${t + 1} (${turns[t].speaker === 'male' ? 'فهد' : 'نورة'}): ${durations[t].toFixed(1)}ث لنصٍّ متوقعه ${expected.toFixed(1)}ث — اشتباه ${kind}، إعادة ${tries}/2`)
-    const singlePrompt = promptFor([turns[t]], 0, 1)
-    requestHashes.push(sha256(singlePrompt))
-    const pcm = await geminiPcm(singlePrompt)
-    const raw = resolve(TMP, `repeat-regen-${t + 1}-${tries}.raw.wav`)
-    writePcmWav(raw, pcm)
-    const clean = resolve(TMP, `repeat-regen-${t + 1}-${tries}.wav`)
-    const cand = tightenChunk(raw, clean)
-    const candDur = duration(cand)
-    const expectMale = turns[t].speaker === 'male'
-    if (!voiceSwapped(expectMale, medianF0(cand)) && Math.abs(candDur - expected) < Math.abs(durations[t] - expected)) {
-      chunkFiles[t] = cand
-      durations[t] = candDur
-    }
-  }
-  if (isSuspect()) repeatSuspects.push(`${t + 1} (${durations[t].toFixed(1)}ث/${expected.toFixed(1)}ث)`)
+  const tooLong = durations[t] > expected * 1.9 && durations[t] - expected > 2.5
+  const tooShort = durations[t] < expected * 0.55 && expected - durations[t] > 1.5
+  if (tooLong || tooShort) repeatSuspects.push(`${t + 1}${tooLong ? '↑' : '↓'} (${durations[t].toFixed(1)}ث/${expected.toFixed(1)}ث)`)
 }
-if (repeatRegens) console.log(`✓ بوابة التكرار: أُعيد ${repeatRegens} توليداً${repeatSuspects.length ? ` — بقي تحت السمع: ${repeatSuspects.join(' · ')}` : ''}`)
-else console.log('✓ بوابة التكرار: كل الأدوار في مداها الزمني من أول رمية')
+const repeatRegens = 0
+console.log(repeatSuspects.length
+  ? `✓ بوابة الزمن: ${repeatSuspects.length} دوراً تحت السمع — ${repeatSuspects.join(' · ')}`
+  : '✓ بوابة الزمن: كل الأدوار في مداها')
 
 const audioFile=resolve(AUDIO,`${slug}.dialogue-kw.mp3`)
 const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
@@ -973,7 +950,7 @@ const audit={
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
   sourceSha256:sha256(readFileSync(source)), turnCount:turns.length, chunkCount:chunks.length,
   requestHashes, audioSha256:sha256(readFileSync(audioFile)), transcriptSha256:sha256(readFileSync(transcriptFile)),
-  durationSec:duration(audioFile), pitchGate:{regenerated,maleMaxHz:150,femaleMinHz:165},
+  durationSec:duration(audioFile), pitchGate:{maleMedianHz:maleMid?Math.round(maleMid):null,femaleMedianHz:femaleMid?Math.round(femaleMid):null,suspects:swapped},
   repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,medianSecPerChar:Number(medianRate.toFixed(4))},
   mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160},
   generatedAt:new Date().toISOString(),

@@ -106,7 +106,10 @@ function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {
    بحت ١٠٠٠٠٠٪ — أتكلم عن اللكنة لا اللهجة». وسببُ الضعف أن النداء الواحد
    يُبعِد تعليماتِ الرأس عن أواخر الأدوار، بينما كانت تتكرّر ثلاث عشرة مرّةً
    حين كانت الدفعات ثلاث عشرة. فيثقُل تاجُ الدور نفسه ليحمل الأمر كاملاً. */
-const KW_LOCK = 'HEAVY Kuwait-City Kuwaiti accent — thick and local, never MSA-neutral'
+/* «احنا ما نفخم ترى الكلمات… احنا دايم نرقق» — حكمه ١٥ أغسطس، وهو أثمن
+   مفتاحٍ في المشروع. كان القفل يطلب الغِلَظ فيُخرج تفخيماً
+   بدوياً؛ والكويتية الحضرية مرقَّقةٌ خفيفة. */
+const KW_LOCK = 'light, soft Kuwait-City Kuwaiti — never heavy, never emphatic'
 const directionFor = (type) => ({
   question: `[curious — ${KW_LOCK}]`, reflection: `[reflective — ${KW_LOCK}]`, objection: `[gently skeptical — ${KW_LOCK}]`, gentleObjection: `[gently skeptical — ${KW_LOCK}]`,
   emphasis: `[serious — ${KW_LOCK}]`, briefReaction: `[warmly — ${KW_LOCK}]`, conclusion: `[calmly — ${KW_LOCK}]`, closing: `[softly — ${KW_LOCK}]`,
@@ -134,7 +137,7 @@ function promptFor(turns, index, total) {
   const lines = []
   turns.forEach((turn, index) => {
     if (index > 0 && index % 10 === 0) {
-      lines.push('[REMINDER — the accent must stay exactly as thick as the first line: Kuwait City Kuwaiti, never drifting toward MSA, Emirati, Iraqi, Levantine or Persian.]')
+      lines.push('[REMINDER — keep the same light, soft Kuwait-City delivery as the first line: never heavier, never emphatic, never drifting toward MSA, Emirati, Iraqi, Levantine or Persian.]')
     }
     lines.push(`${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': ['))
   })
@@ -148,7 +151,7 @@ This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers 
 5. Levantine (Syrian/Lebanese/Jordanian/Palestinian) — imala, softened articulation, and the Levantine greeting melody («هلا والله» cadence). FORBIDDEN. A greeting or welcome locks the register: its very first syllable must already be Kuwait City.
 6. Egyptian — its stress pattern and its vowel colour. FORBIDDEN.
 7. Generic pan-Gulf blend (Bahraini/Qatari/Bedouin mix) that belongs to no city. FORBIDDEN.
-There is no "close enough" and no acceptable percentage of drift. If one word in one line tilts toward any register above, the entire take is wrong and must be re-read as a Kuwait City Kuwaiti. Hold Kuwait City weight on every word, including academic terms and proper names. This rule outranks everything below.
+There is no "close enough" and no acceptable percentage of drift. If one word in one line tilts toward any register above, the entire take is wrong and must be re-read as a Kuwait City Kuwaiti. Keep the same light Kuwaiti delivery on every word, including academic terms and proper names. This rule outranks everything below.
 
 AUDIO PROFILE
 Fahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical. They are Kuwaitis talking — not actors performing a Kuwaiti accent.
@@ -178,9 +181,9 @@ HIGH-FREQUENCY WORDS — say them the way a Kuwaiti actually says them
 
 NOT EMIRATI — the single most important instruction in this brief
 The failure mode we keep hearing is Emirati, so read this twice.
-- Emirati thins the whole word (ترقيق): lighter consonants, shorter and higher vowels, a quicker forward articulation. Kuwaiti is heavier and fuller in the mouth — the vowels sit lower and back, the word carries more weight.
+- Kuwait City Kuwaiti is LIGHT and SOFT (مرقَّق), not heavy. Consonants stay relaxed, vowels short and unforced, the articulation easy and unhurried. What separates it from Emirati is not weight — both are light — but the vowel colour and the rhythm of the city. Never add emphasis or fullness to a word to sound «more Kuwaiti»: that produces a Bedouin reading, which the doctor rejects outright.
 - This is NOT about single letters. A word can contain no ق and still come out Emirati purely from that thinning. Words like «احترام» «عبارة» «رحلة» «تركته» are exactly where the slip happens.
-- When a word also exists in Modern Standard Arabic, the temptation is to thin it toward a neutral pan-Gulf reading. Do the opposite: give it the full Kuwaiti weight of the sentence around it.
+- When a word also exists in Modern Standard Arabic, do not read it in the MSA register — say it the relaxed Kuwaiti way, still light. Never compensate by emphasising it.
 - If any single word in a sentence sounds like it belongs to Dubai or Abu Dhabi rather than Kuwait City, the whole take is wrong.
 
 WHAT WOULD BREAK IT
@@ -191,12 +194,12 @@ WHAT WOULD BREAK IT
 
 FOREIGN AND ACADEMIC TERMS — DO NOT CHANGE VOICE
 The clearest drift a Kuwaiti listener catches: the voice changes the moment a foreign word, a study reference, a researcher's name, or an academic term arrives (a journal name, «ميتا تحليل», a transliterated proper name). This is a hard failure.
-- The same Kuwaiti speaker keeps talking. A foreign or academic term is dropped plainly into the Kuwaiti sentence — same voice, same weight, same rhythm — never announced, never switched into an English, MSA, or Persian register.
+- The same Kuwaiti speaker keeps talking. A foreign or academic term is dropped plainly into the Kuwaiti sentence — same voice, same lightness, same rhythm — never announced, never switched into an English, MSA, or Persian register.
 - Do not slow down, do not brighten the tone, do not "present" the term. Say it and move straight on, the way a Kuwaiti academic mentions a term mid-conversation.
-- These specific words keep coming out non-Kuwaiti — give each the full Kuwaiti weight of the sentence, never a thinner or more forward Emirati/Persian reading: «ايعرف» «ايعرفها» «مخه» «الشهاده» «ايفهمون» «منو».
+- These specific words keep coming out non-Kuwaiti. Say each one the relaxed Kuwait-City way — light, unforced, never emphasised and never pushed forward in the mouth: «ايعرف» «ايعرفها» «مخه» «الشهاده» «ايفهمون» «منو».
 
 NOURA — TARGETED CORRECTION (the heard failures live on her lines)
-The Emirati thinning keeps surfacing on Noura's lines specifically: the male lines hold Kuwait City weight while hers drift. Give Noura's every single line the same full Kuwaiti weight, the same city, the same register as Fahad's — never lighter, never more forward.
+Noura's lines drift out of Kuwait City more often than Fahad's. Give her every line the same city and the same register as his — equally light and relaxed, never emphasised to compensate, and never pushed forward in the mouth.
 - The historically failing words were sieved out of the audio text entirely (they no longer reach you). What remains must hold: «منو» «الشهاده» «مخه» and every word around them carry full Kuwait City weight on Noura's lines — if any word comes out Emirati on her lines, the whole take is rejected.
 
 /* حُذف وصف القاف نهائياً (١٥ أغسطس، حكمه: «اللكنة صارت خطأ ١٠٠٠٠٪ — مو
@@ -212,9 +215,9 @@ A listener must know who is speaking from the voice alone, without reading names
 Keep the accent identical for both; only the voice differs.
 
 ACCENT STRENGTH — the single thing the doctor judges hardest
-- The accent must be THICK, not merely correct. A neutral, careful, MSA-leaning delivery with Kuwaiti words in it is a failure even when every word is right. Speak like two Kuwaitis in a diwaniya, not like broadcasters reading Kuwaiti.
+- The accent must be NATIVE, not merely correct — and native Kuwaiti is light. A careful MSA-leaning delivery is a failure; so is a heavy emphatic one. Speak like two Kuwaitis relaxed in a diwaniya, not like broadcasters, and not like a Bedouin reciter.
 - ض is written ظ throughout this text on purpose — say it as the Kuwaiti emphatic ظ, never as a classical ض.
-- The last line of the episode must carry exactly the same accent weight as the first. Do not soften as you go.
+- The last line must carry exactly the same light Kuwaiti colour as the first. Do not drift toward MSA as you go, and do not add weight to compensate.
 
 FIDELITY
 - Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.
@@ -745,6 +748,13 @@ if (SELF_TEST) {
   /* قياس ١٥ أغسطس: الفجوة بين الحنجرتين ضاقت من ٣٤ هرتزاً إلى ٢٢ حين رُكّز
      على اللهجة وحدها، فسمعهما الدكتور صوتاً واحداً. فصل الشخصيتين شرطٌ. */
   assert.match(prompt,/TWO DISTINCT PEOPLE/i, 'فصل الشخصيتين: صوتان لا راوٍ واحد')
+  /* «احنا ما نفخم ترى الكلمات… احنا دايم نرقق» — حكمه ١٥ أغسطس. كان البرومت
+     يطلب الثقل صراحةً («Kuwaiti is heavier and fuller in the mouth») وهو عكس
+     الحقيقة، فأخرج تفخيماً بدوياً. لا يعود طلبُ ثقلٍ إلى البرومت أبداً. */
+  /* يُمنع **طلبُ** الثقل لا نفيُه: «Not a heavy separate word» نفيٌ مطلوب. */
+  const demandsWeight = /(?<!not a |never |no )\b(HEAVY Kuwait|thick and local|as thick as|heavier and fuller|full Kuwaiti weight|never lighter)\b/i
+  assert.ok(!demandsWeight.test(prompt), 'لا يُطلب تفخيمٌ في البرومت — الكويتية الحضرية مرقَّقة')
+  assert.match(prompt,/light, soft Kuwait-City Kuwaiti/, 'قفل الدور يطلب الترقيق لا التفخيم')
   /* الحرف اللاتيني في وصف الأصوات جرّ المحرّك إلى سجلٍّ أجنبي (١٥ أغسطس). */
   /* العناوين والتوجيهات بالإنجليزية مقبولة؛ المحظور نقحرةُ الأصوات نفسها
      (agrab · i-yaʿraf) — حروفٌ أعجميةٌ منقوطةٌ تُكتب بها الفارسيةُ لاتينياً. */
@@ -754,7 +764,7 @@ if (SELF_TEST) {
     deliveryType: 'statement', pauseAfterMs: 300, musicBridgeAfter: false,
   }))
   const longPrompt = promptFor(longTurns, 0, 1)
-  assert.equal((longPrompt.match(/REMINDER — the accent must stay/g) || []).length, 2,
+  assert.equal((longPrompt.match(/REMINDER — keep the same light/g) || []).length, 2,
     'التذكير يتخلّل النصّ مرّةً كل عشرة أدوار')
   assert.ok(!/ض/.test(longPrompt.split('\n').filter((line) => /^(Fahad|Noura):/.test(line)).join(' ')),
     'الضاد صارت ظاءً في كل سطور الصوت')
@@ -767,7 +777,9 @@ if (SELF_TEST) {
   assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes(KW_LOCK)), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
   assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
-  assert.match(prompt,/ترقيق/, 'الترقيق: وصف الدكتور نفسه للعلّة، وهو المفتاح')
+  /* «ترقيق» كانت تُنسب إلى الإماراتية وتُطلب للكويتية ضدُّها — وقد انقلب
+     الحكم بسماعه: الكويتية الحضرية هي المرقَّقة. فيُحرس المعنى الجديد. */
+  assert.match(prompt,/مرقَّق/, 'الترقيق صفةُ الكويتية نفسها — حكمه ١٥ أغسطس')
   assert.match(prompt,/Iranian\/Persian/i, 'منع الانحراف الفارسي — علّة رصدها الدكتور بأذنه')
   assert.match(prompt,/DO NOT CHANGE VOICE/i, 'المصطلح الأجنبي لا يغيّر الصوت — أوضح انحراف سمعه الدكتور')
 

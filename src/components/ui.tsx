@@ -292,18 +292,24 @@ type NavItem = {
   label: string
   description?: string
   action?: 'search'
+  /* فروعٌ تُطوى تحت رئيسها في القائمة نفسها (لا منسدلة منفصلة): النقر على الرئيس
+     يفتحها/يطويها، و«كل [الرئيس]» يظهر أولاً لفتح صفحة الرئيس ذاتها.
+     سماء تحت المقالات، الإذاعة تحت مجلس الفكرة، وسؤال/أرشيف/رسائل تحت المختارات. */
+  children?: NavItem[]
 }
 const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: 'ابدأ من هنا',
     items: [
-      /* عائلة المقالات متجاورة: المقال ثم عدسته الزمنية «سماء المقالات». */
-      { to: '/articles', label: 'المقالات الفكرية' },
-      { to: '/atlas', label: 'سماء المقالات', description: 'المقالات عبر الزمن وصلات الأفكار' },
-      { to: '/listen', label: 'مجلس الفكرة' },
-      /* الإذاعة مادتها من مجلس الفكرة نفسه، فتختفي معه حين لا حلقة — بقانون
-         «لا رابط إلى صفحةٍ فارغة». تبقى لصيقةً بالمجلس. */
-      { to: '/radio', label: 'الإذاعة', description: 'بثٌّ متواصل بساعة الكويت' },
+      /* «سماء المقالات» فرعٌ يُفتح بالنقر تحت «المقالات الفكرية» (عدسته الزمنية). */
+      { to: '/articles', label: 'المقالات الفكرية', children: [
+        { to: '/atlas', label: 'سماء المقالات', description: 'المقالات عبر الزمن وصلات الأفكار' },
+      ] },
+      /* «الإذاعة» فرعٌ تحت «مجلس الفكرة»: مادتها منه، فتختفي معه حين لا حلقة —
+         بقانون «لا رابط إلى صفحةٍ فارغة». */
+      { to: '/listen', label: 'مجلس الفكرة', children: [
+        { to: '/radio', label: 'الإذاعة', description: 'بثٌّ متواصل بساعة الكويت' },
+      ] },
       /* الخريطة الفكرية تختم عمود المداخل: الصورة الكبرى بعد أن تقرأ التفاصيل. */
       { to: '/thought', label: 'الخريطة الفكرية', description: 'الصورة الكبرى للمشروع الفكري' },
     ],
@@ -317,11 +323,12 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { to: '/search', label: 'البحث في المعرفة', description: 'مادة منشورة أو سؤال موثّق' },
       { to: '/publications', label: 'الكتب المنشورة' },
       { to: '/research', label: 'الأبحاث المحكمة' },
-      /* المختارات ثم ما يتفرّع عنها متجاوراً: سؤال، أرشيف، رسائل. */
-      { to: '/curated', label: 'المختارات' },
-      { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
-      { to: '/radar', label: 'أرشيف الرادار', description: 'ما يستحق المتابعة' },
-      { to: '/inbox', label: 'رسائل على الهامش', description: 'رسائل قصيرة تفتح زوايا جديدة' },
+      /* «المختارات» رئيسٌ يُفتح بالنقر فتظهر تحته: سؤال، أرشيف، رسائل. */
+      { to: '/curated', label: 'المختارات', children: [
+        { to: '/questions', label: 'سؤال يُقلق التعليم', description: 'أسئلة تربوية' },
+        { to: '/radar', label: 'أرشيف الرادار', description: 'ما يستحق المتابعة' },
+        { to: '/inbox', label: 'رسائل على الهامش', description: 'رسائل قصيرة تفتح زوايا جديدة' },
+      ] },
     ],
   },
   {
@@ -344,20 +351,42 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
   const loc = useLocation()
   const dialogRef = useRef<HTMLDivElement>(null)
 
+  /* أكاردیون القائمة: النقر على رئيسٍ ذي فروع يفتحها/يطويها في مكانها (لا منسدلة).
+     يُفتح تلقائياً الرئيسُ الذي أنت في صفحته أو صفحة أحد فروعه. */
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
+    const set = new Set<string>()
+    for (const group of GROUPS) for (const item of group.items) {
+      if (item.children && (item.to === loc.pathname || item.children.some((child) => child.to === loc.pathname))) set.add(item.to)
+    }
+    return set
+  })
+  const toggleGroup = (to: string) => setOpenGroups((prev) => {
+    const next = new Set(prev)
+    if (next.has(to)) next.delete(to)
+    else next.add(to)
+    return next
+  })
+
   /* «اللقاءات القادمة» تُخفى من القائمة حين لا لقاء مُعلَناً — كي لا يقود الرابط
      إلى صفحةٍ فارغة. القائمة مغلقةٌ حتى يفتحها الزائر، وبيانات اللقاءات تُحمَّل
      مع الصفحة، فتستقر الحالة قبل أن تُرى — بلا وميض. تعود فور إعلان لقاءٍ جديد. */
   const cmsUpcoming = useExtras<SiteEvent & { id: string }>('site_upcoming')
   /* «مجلس الفكرة» يخضع لقانون «اللقاء القادم» نفسه: لا يُعرض رابطٌ إلى صفحةٍ لم تمتلئ. */
   const hasUpcoming = useMemo(() => sortUpcomingEvents([...cmsUpcoming, ...upcoming]).length > 0, [cmsUpcoming])
+  /* «اللقاءات القادمة» و«مجلس الفكرة» و«الإذاعة» تُحجب حين لا مادة (بقانون
+     «لا رابط إلى صفحةٍ فارغة»). حجب الرئيس يُسقط فروعه معه. */
+  const navAllows = (to: string) =>
+    (to !== '/upcoming' || hasUpcoming)
+    && (to !== '/listen' || listenIsOpen)
+    && (to !== '/radio' || listenIsOpen)
   const groups = useMemo(
     () => GROUPS.map((group) => ({
       ...group,
-      items: group.items.filter((item) =>
-        (item.to !== '/upcoming' || hasUpcoming)
-        && (item.to !== '/listen' || listenIsOpen)
-        /* الإذاعة تسقط مع مجلس الفكرة: مادتها منه، فلا تبقى وصلةً إلى بثٍّ بلا حلقات. */
-        && (item.to !== '/radio' || listenIsOpen)),
+      items: group.items
+        .filter((item) => navAllows(item.to))
+        .map((item) => item.children
+          ? { ...item, children: item.children.filter((child) => navAllows(child.to)) }
+          : item),
     })).filter((group) => group.items.length),
     [hasUpcoming],
   )
@@ -444,7 +473,75 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
                       animate={{ y: 0 }}
                       transition={{ duration: 0.34, delay: 0.12 + gi * 0.025 + ii * 0.018, ease: EASE }}
                     >
-                      {it.action === 'search' ? (
+                      {it.children && it.children.length ? (
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => toggleGroup(it.to)}
+                            aria-expanded={openGroups.has(it.to)}
+                            aria-controls={`nav-sub-${it.to}`}
+                            className={`site-menu-control flex w-full items-center justify-between gap-2.5 py-1 text-right font-display text-[1.15rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.35rem] ${
+                              active ? 'text-accent' : 'text-ink'
+                            }`}
+                          >
+                            <span className="block">{it.label}</span>
+                            <motion.span
+                              aria-hidden="true"
+                              className="shrink-0 text-soft"
+                              initial={false}
+                              animate={{ rotate: openGroups.has(it.to) ? 180 : 0 }}
+                              transition={{ duration: 0.28, ease: EASE }}
+                            >
+                              <SocialIcon name="ChevronDown" size={16} />
+                            </motion.span>
+                          </button>
+                          <AnimatePresence initial={false}>
+                            {openGroups.has(it.to) && (
+                              <motion.ul
+                                id={`nav-sub-${it.to}`}
+                                className="mt-1 space-y-0.5 overflow-hidden border-r border-hair pe-0 ps-4"
+                                initial={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                                animate={reduce ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
+                                exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3, ease: EASE }}
+                              >
+                                {/* «كل [الرئيس]» يفتح صفحة الرئيس نفسها */}
+                                {(() => {
+                                  const selfActive = isPrimaryNavActive(it, loc.pathname)
+                                  return (
+                                    <li>
+                                      <Link
+                                        to={it.to}
+                                        onClick={close}
+                                        aria-current={selfActive ? 'page' : undefined}
+                                        className={`block py-1 font-display text-[1rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.12rem] ${selfActive ? 'text-accent' : 'text-ink/80'}`}
+                                      >
+                                        كل {it.label}
+                                      </Link>
+                                    </li>
+                                  )
+                                })()}
+                                {it.children.map((child) => {
+                                  const childActive = isPrimaryNavActive(child, loc.pathname)
+                                  return (
+                                    <li key={child.to}>
+                                      <Link
+                                        to={child.to}
+                                        onClick={close}
+                                        aria-current={childActive ? 'page' : undefined}
+                                        className={`block py-1 font-display text-[1rem] font-medium leading-[1.5] transition-colors duration-300 hover:text-accent md:py-1.5 md:text-[1.12rem] ${childActive ? 'text-accent' : 'text-soft'}`}
+                                      >
+                                        <span className="block">{child.label}</span>
+                                        {child.description && <span className="mt-0.5 block font-sans text-[.7rem] font-normal text-soft">{child.description}</span>}
+                                      </Link>
+                                    </li>
+                                  )
+                                })}
+                              </motion.ul>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      ) : it.action === 'search' ? (
                         <button
                           type="button"
                           onClick={openSearch}

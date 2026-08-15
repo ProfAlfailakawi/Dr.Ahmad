@@ -66,8 +66,15 @@ jobs:
       - name: Validate the complete Kuwaiti library
         run: npm run podcast:kw:self-test
 
+      # المتغيّران يركبان هذه الخطوة نفسها: fetch هو مَن يقرأ حالة الإنتاج
+      # ويحتاج إذن الاستبدال. كانا على الخطوة التالية — انزاحا حين أُدرجت
+      # خطوةُ قراءة البصمة بينهما، فصار fetch يسقط عند «awaiting_approval»
+      # مهما مرّرتَ regenerate. عطبٌ من صنعي، وهذا موضعه الصحيح.
       - name: Lock the exact Kuwaiti admin dialogue
         run: node scripts/fetch-kuwaiti-dialogues.mjs --slugs="$RELEASED_SLUGS"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          PODCAST_KW_REGENERATE: ${{ inputs.regenerate && '1' || '' }}
 
       # بصمة الحوار تُقرأ من القفل الذي كتبه fetch من Firestore نفسه، لا من
       # قيمةٍ تُكتب باليد. العلّة التي أنتجت هذه الخطوة: بصمة Firestore تُحسب

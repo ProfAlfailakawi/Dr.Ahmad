@@ -73,6 +73,18 @@ export function buildPronunciationMap(source) {
     }))
 }
 
+/* ═══ الضاد ظاءٌ في الكويتية ═══
+ * قاعدةٌ صوتيةٌ شاملةٌ لا معجميّة، أملاها الدكتور (١٥ أغسطس ٢٠٢٦): «كل ضاد
+ * ظاد». وهي حقيقةٌ لهجيةٌ راسخة: الضاد والظاء اندمجتا في الخليجية إلى صوتٍ
+ * واحدٍ مُطبَقٍ مجهور، فكتابةُ الضاد تدفع المحرّك إلى ضادٍ فصيحةٍ لا يقولها
+ * كويتيٌّ قط — وهي أظهر ما يُضعف اللكنة. المتن كله فيه ١٣٠٢ موضعاً موزّعةً
+ * على الحلقات الـ١٤٤ جميعاً، فالمكسب أكبر من أيّ مدخلٍ معجميٍّ مفرد.
+ * تقع على مدخل الصوت وحده؛ ما يقرؤه الزائر يبقى بالضاد كما كتبه.
+ * تُطبَّق بعد المعجم كي تشمل ما استبدله أيضاً. */
+export function daadToDhaa(text) {
+  return String(text ?? '').replace(/ض/g, 'ظ')
+}
+
 export function toSpokenKuwaiti(text, entries) {
   let spoken = String(text ?? '')
   for (const entry of entries) {
@@ -80,7 +92,7 @@ export function toSpokenKuwaiti(text, entries) {
     /* السابقة تُعاد حرفياً؛ المستبدَل هو الجذع وحده. */
     spoken = spoken.replace(entry.pattern, (_m, before, proclitic) => `${before}${proclitic}${entry.to}`)
   }
-  return spoken
+  return daadToDhaa(spoken)
 }
 
 /* حذف الأسماء اللاتينية من مدخل الصوت.

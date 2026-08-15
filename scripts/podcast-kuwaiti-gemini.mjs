@@ -462,12 +462,49 @@ function detectSilences(file) {
   return gaps
 }
 
-export function chooseSplitPoints(gaps, expectedTurns, totalSec, edgeGuardSec = 0.45) {
+/* اختيار حدود المداخلات داخل مقطعٍ واحد.
+ *
+ * كان الاختيار «أطولَ (ن‑١) صمتة» — وهو يصحّ لأربع مداخلاتٍ ويسقط لسبعٍ
+ * وثلاثين: الوقفةُ التأمليةُ داخل الجملة قد تطول أكثر من الفاصل بين متحدّثَين،
+ * فتُنتزع حدوداً في غير مواضعها. رصده القياس في تشغيلة ٣١٨٧٨٥٠٧٣٤٩: الدور
+ * السادس نال ١٨٫٩ ثانيةً (خمسةَ أضعاف حقّه) والثاني والثلاثون ٠٫٤ ثانية.
+ *
+ * الصواب أن لكل مداخلةٍ حصّةً متوقّعةً من الزمن بمقدار طول نصّها، فتُحسب
+ * المواضع المتوقّعة للحدود، ويُختار لكلٍّ منها أقربُ صمتةٍ إليه — يساراً
+ * فيميناً كي تبقى الحدود متزايدةً ولا تتقاطع. وإن بَعُدت صمتةٌ عن موضعها
+ * بأكثر من نصف متوسّط المداخلة، فالقصّ غير موثوق: يُرَدُّ ‎null‎ فيسقط
+ * التوليد إلى الشطر — نبرتان صادقتان خيرٌ من سبعٍ وثلاثين حدّاً كاذباً.
+ */
+export function chooseSplitPoints(gaps, expectedTurns, totalSec, edgeGuardSec = 0.45, weights = null) {
   if (expectedTurns <= 1) return []
   const inner = gaps.filter((gap) => gap.mid > edgeGuardSec && gap.mid < totalSec - edgeGuardSec)
   if (inner.length < expectedTurns - 1) return null
-  const strongest = [...inner].sort((a, b) => b.span - a.span).slice(0, expectedTurns - 1)
-  return strongest.map((gap) => gap.mid).sort((a, b) => a - b)
+  if (!weights || weights.length !== expectedTurns) {
+    const strongest = [...inner].sort((a, b) => b.span - a.span).slice(0, expectedTurns - 1)
+    return strongest.map((gap) => gap.mid).sort((a, b) => a - b)
+  }
+  const totalWeight = weights.reduce((sum, w) => sum + Math.max(w, 1), 0)
+  const ordered = [...inner].sort((a, b) => a.mid - b.mid)
+  const tolerance = (totalSec / expectedTurns) * 0.5
+  const cuts = []
+  let acc = 0
+  let from = 0
+  for (let i = 0; i < expectedTurns - 1; i += 1) {
+    acc += Math.max(weights[i], 1)
+    const target = totalSec * (acc / totalWeight)
+    let best = -1
+    let bestDistance = Infinity
+    /* يبقى مكانٌ لكل حدٍّ باقٍ بعد هذا الحدّ. */
+    const limit = ordered.length - (expectedTurns - 2 - i)
+    for (let k = from; k < limit; k += 1) {
+      const distance = Math.abs(ordered[k].mid - target)
+      if (distance < bestDistance) { bestDistance = distance; best = k }
+    }
+    if (best < 0 || bestDistance > tolerance) return null
+    cuts.push(ordered[best].mid)
+    from = best + 1
+  }
+  return cuts
 }
 
 function splitChunk(file, chunkTurnsList, outPrefix) {
@@ -475,7 +512,8 @@ function splitChunk(file, chunkTurnsList, outPrefix) {
   if (expected === 1) return [file]
   let total = 0
   try { total = duration(file) } catch { return null }
-  const cuts = chooseSplitPoints(detectSilences(file), expected, total)
+  const weights = chunkTurnsList.map((turn) => String(turn.text || '').length)
+  const cuts = chooseSplitPoints(detectSilences(file), expected, total, 0.45, weights)
   if (!cuts) return null
   const bounds = [0, ...cuts, total]
   const parts = []
@@ -767,6 +805,13 @@ if (SELF_TEST) {
   assert.deepEqual(chooseSplitPoints(fakeGaps, 4, 8.1), [2.0, 3.7, 6.3], 'حدود المداخلات تُقرأ من أطول الصمتات')
   assert.equal(chooseSplitPoints(fakeGaps, 9, 8.1), null, 'نقصُ الصمتات يعني الرجوع للتوليد المفرد لا اختراع حدود')
   assert.deepEqual(chooseSplitPoints([], 1, 5), [], 'مداخلةٌ واحدةٌ لا تحتاج قصّاً')
+  /* الأوزان تُرجّح الموضع المتوقّع على طول الصمتة: مداخلةٌ طويلةٌ ثم قصيرة،
+     والصمتة الأطول واقعةٌ باكراً — القديم كان يقتنصها فيمنح القصيرة أكثرَ حقّها. */
+  const weighted = [{ mid: 1.0, span: 1.2 }, { mid: 6.0, span: 0.3 }]
+  assert.deepEqual(chooseSplitPoints(weighted, 2, 8, 0.45, [70, 10]), [6.0],
+    'الحدّ يُختار بموضعه المتوقّع لا بطول صمتته')
+  assert.equal(chooseSplitPoints([{ mid: 1.0, span: 0.5 }], 2, 20, 0.45, [50, 50]), null,
+    'الصمتة البعيدة عن موضعها المتوقّع تُرَدّ فيسقط التوليد إلى الشطر')
   assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')

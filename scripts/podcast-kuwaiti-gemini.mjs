@@ -199,29 +199,21 @@ NOURA — TARGETED CORRECTION (the heard failures live on her lines)
 The Emirati thinning keeps surfacing on Noura's lines specifically: the male lines hold Kuwait City weight while hers drift. Give Noura's every single line the same full Kuwaiti weight, the same city, the same register as Fahad's — never lighter, never more forward.
 - The historically failing words were sieved out of the audio text entirely (they no longer reach you). What remains must hold: «منو» «الشهاده» «مخه» and every word around them carry full Kuwait City weight on Noura's lines — if any word comes out Emirati on her lines, the whole take is rejected.
 
-KUWAITI PHONOLOGY — RULES, NOT A WORD LIST
-Apply these to EVERY word you say, including words not spelled this way in the text. The text is written in normal Arabic orthography; you must speak it with Kuwaiti sounds. This is the difference between a Kuwaiti and a Gulf-flavoured MSA reader, and it is the single thing that keeps failing.
+KUWAITI PHONOLOGY — APPLY TO EVERY WORD
+Speak the written Arabic with Kuwaiti sounds. Examples below are written in Arabic only — never read any Latin letters aloud, and never let Latin script pull you toward a foreign register.
 
-1. PROSTHETIC ALIF ON VERBS — the most audible Kuwaiti marker.
-   Present-tense verbs beginning with ي / ت / ن are pronounced with a short "i" in front:
-     يعرف → "i-yaʿraf"   ·  يفهمون → "i-yifhamoon"  ·  يردون → "i-yirdoon"
-     يعود → "i-yiʿood"   ·  يضايق → "i-yiḍaayij"    ·  نعلقه → "in-ʿalliga"
-   Past-tense verbs beginning with a cluster take it too: طلعوا → "iṭlaʿaw".
-   Never pronounce a bare MSA "ya-ʿrifu" — that is the Emirati/MSA reading the doctor rejects.
+1. الفعل المضارع يأخذ ألف وصل قصيرة في أوله:
+   «يعرف» تُقال «ايعرف» · «يفهمون» تُقال «ايفهمون» · «يردون» تُقال «ايردون»
+   والماضي كذلك حين يبدأ بساكنين: «طلعوا» تُقال «اطلعوا».
+   لا تقرأ الفعل قراءةً فصيحةً معربة.
 
-2. ق IS A HARD ENGLISH "G" IN EVERYDAY WORDS.
-   Say it like the g in "go", never the deep MSA qaf:
-     أقرب → "agrab"  ·  أقوى → "agwa"  ·  أصدق → "aṣdag"  ·  قال → "gaal"
-     وقت → "wagt"    ·  فوق → "foog"   ·  حقيقة → "ḥagooga"
-   EXCEPTION — keep a proper qaf only in learned/【formal】words: القرآن، القانون، المنطق، التقييم، القرار.
+2. القاف في الكلام اليومي تُقال جيماً قاهرية (صوت الجيم المصرية):
+   «قال» «وقت» «فوق» «أقرب» «أقوى» «أصدق» — كلها بهذا الصوت.
+   وتبقى قافاً فصيحةً في المتعلَّم وحده: القرآن · القانون · المنطق · التقييم · القرار.
 
-3. ض AND ظ ARE ONE SOUND.
-   The text already writes ظ where the doctor writes ض. Say the emphatic ظ, never a classical ض.
+3. الضاد والظاء صوتٌ واحدٌ مطبق. النصّ مكتوبٌ بالظاء عمداً — انطقها ظاءً.
 
-4. ك BEFORE FRONT VOWELS IS "CH".
-   Written as تش in this text where it applies — say it as the ch in "church".
-
-5. NO MSA CASE ENDINGS, EVER. No tanween, no -un/-in/-an. Word-final vowels are dropped.
+4. لا إعراب ولا تنوين ولا حركات آخر الكلمة إطلاقاً.
 
 ACCENT STRENGTH — the single thing the doctor judges hardest
 - The accent must be THICK, not merely correct. A neutral, careful, MSA-leaning delivery with Kuwaiti words in it is a failure even when every word is right. Speak like two Kuwaitis in a diwaniya, not like broadcasters reading Kuwaiti.
@@ -756,9 +748,14 @@ if (SELF_TEST) {
   assert.match(prompt,/ACCENT STRENGTH/i, 'قسم اللكنة: الثقل مطلوبٌ لا مجرّد الصواب')
   /* القواعد الصوتية هي الحلّ القابل للتوسّع: المتن فيه ٢٨٤٣ فعلاً محتملاً
      و١٩٩٨ كلمةً فيها قاف — لا يُلاحَق ذلك كلمةً كلمةً في ١٤٣ حلقة. */
-  assert.match(prompt,/KUWAITI PHONOLOGY — RULES, NOT A WORD LIST/i, 'القواعد الصوتية تسري على كل كلمة لا على قائمة')
-  assert.match(prompt,/PROSTHETIC ALIF ON VERBS/i, 'ألف الوصل قاعدةً لا مدخلاتٍ معجمية')
-  assert.match(prompt,/HARD ENGLISH "G"/i, 'القاف جيمٌ مصريةٌ في الموروث — تُقال تعليمةً لأن الحرف گ يُبتلع')
+  assert.match(prompt,/KUWAITI PHONOLOGY — APPLY TO EVERY WORD/i, 'القواعد الصوتية تسري على كل كلمة لا على قائمة')
+  assert.match(prompt,/ألف وصل قصيرة/, 'ألف الوصل قاعدةً بالعربية لا نقحرةً لاتينية')
+  assert.match(prompt,/جيماً قاهرية/, 'القاف جيمٌ مصريةٌ — تُوصف بالعربية لا بحروفٍ لاتينية')
+  /* الحرف اللاتيني في مدخل الصوت يجرّ المحرّك إلى سجلٍّ أجنبي — علّةٌ موثّقةٌ
+     في أسماء المجلات، وأعدتُها اليوم بنقحرةٍ لاتينية (agrab · i-yaʿraf) فانحرف
+     إلى الفارسي. فلا نقحرة لاتينية في وصف الأصوات بعد اليوم. */
+  const phonologyBlock = prompt.slice(prompt.indexOf('KUWAITI PHONOLOGY'), prompt.indexOf('ACCENT STRENGTH'))
+  assert.ok(!/[ʿṣḍʾāīūǧḫṭẓ]/.test(phonologyBlock), 'لا حروف نقحرةٍ أعجميةٍ في قواعد الأصوات')
   /* التذكير يظهر بعد العاشر، فيُختبر على حلقةٍ بطول حقيقيّ لا على أربعة أدوار. */
   const longTurns = Array.from({ length: 25 }, (_, i) => ({
     speaker: i % 2 ? 'female' : 'male', text: `سطر رقم ${i + 1} فيه ضاد واضحة.`,
@@ -847,7 +844,8 @@ if (SELF_TEST) {
     /* چ وحدها في المعجم: الحرف الوحيد الذي أثبت الدكتور صحّته سماعاً
        (چذي/چان). الاسم نُطقه المعتمد «الفيلاجاوي» — هجّاه الدكتور بنفسه حرفاً
        حرفاً: «ال · في · لا · جا · وي». گ أُدخلت في v3 فأسقطت نطق چ، فنُزعت. */
-    assert.equal(spokenForm('مو بس: جم جبت؟'), 'مو بس: تشم جبت؟', 'صوت الچ يُكتب «تش» — المحرّك يتجاهل الحرف نفسه')
+    /* «جم» سقطت بالچ وبـ«تش» معاً في سماعه، فحكمها الاستبدال لا الإملاء. */
+    assert.equal(spokenForm('مو بس: جم جبت؟'), 'مو بس: شكثر جبت؟', 'ما يعجز عنه المحرّك يُستبدل بمرادفٍ كويتيٍّ نظيف')
     assert.equal(spokenForm('وجذي يصير'), 'وتشذي يصير', 'السابقة الملاصقة لا تمنع النطق')
     const trap = 'المجموع والجمال وجمعنا'
     assert.equal(spokenForm(trap), trap, 'ما كانت «جم» جزءاً منه لا يُمسّ')

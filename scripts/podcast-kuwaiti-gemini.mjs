@@ -102,7 +102,11 @@ function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {
    أكثر الحلقة — تسافر بلا أي تاجٍ أصلاً. (أمر الدكتور ١٤ أغسطس ٢٠٢٦:
    «تحذير صارم جداً — لا إماراتي ولا عراقي ولا إيراني ولا سعودي ولا شامي
    ولا مصري».) */
-const KW_LOCK = 'Kuwaiti Kuwait-City accent only'
+/* القفل صار أصرح بعد سماع الدكتور (١٥ أغسطس): «اللكنة كانت أمس أقوى… كويتي
+   بحت ١٠٠٠٠٠٪ — أتكلم عن اللكنة لا اللهجة». وسببُ الضعف أن النداء الواحد
+   يُبعِد تعليماتِ الرأس عن أواخر الأدوار، بينما كانت تتكرّر ثلاث عشرة مرّةً
+   حين كانت الدفعات ثلاث عشرة. فيثقُل تاجُ الدور نفسه ليحمل الأمر كاملاً. */
+const KW_LOCK = 'HEAVY Kuwait-City Kuwaiti accent — thick and local, never MSA-neutral'
 const directionFor = (type) => ({
   question: `[curious — ${KW_LOCK}]`, reflection: `[reflective — ${KW_LOCK}]`, objection: `[gently skeptical — ${KW_LOCK}]`, gentleObjection: `[gently skeptical — ${KW_LOCK}]`,
   emphasis: `[serious — ${KW_LOCK}]`, briefReaction: `[warmly — ${KW_LOCK}]`, conclusion: `[calmly — ${KW_LOCK}]`, closing: `[softly — ${KW_LOCK}]`,
@@ -123,7 +127,18 @@ const FOREIGN_REDACTIONS = buildForeignRedactions(PRONUNCIATION_SOURCE)
 export const spokenForm = (text) => toSpokenKuwaiti(redactForeignNames(text, FOREIGN_REDACTIONS), PRONUNCIATION)
 
 function promptFor(turns, index, total) {
-  const transcript = turns.map((turn) => `${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': [')).join('\n')
+  /* تذكيرٌ يتخلّل النصّ كل عشرة أدوار: في النداء الواحد تبتعد تعليماتُ الرأس
+     عن أواخر الحلقة فتفتر اللكنة تدريجياً — وهو ما سمعه الدكتور. السطر
+     المتخلّل يُعيد شدَّ اللكنة من داخل النصّ نفسه، ولا يُنطق لأنه تعليمةٌ
+     بين قوسين معقوفين على سطرٍ مستقلٍّ بلا اسم متحدّث. */
+  const lines = []
+  turns.forEach((turn, index) => {
+    if (index > 0 && index % 10 === 0) {
+      lines.push('[REMINDER — the accent must stay exactly as thick as the first line: Kuwait City Kuwaiti, never drifting toward MSA, Emirati, Iraqi, Levantine or Persian.]')
+    }
+    lines.push(`${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': ['))
+  })
+  const transcript = lines.join('\n')
   return `ABSOLUTE RULE — READ FIRST, APPLY TO EVERY SINGLE WORD
 This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers are FORBIDDEN outright — every one of them has ruined real takes, and every one is an automatic hard failure:
 1. Emirati (Dubai/Abu Dhabi) — the thinned, lighter, forward articulation. FORBIDDEN.
@@ -183,6 +198,11 @@ The clearest drift a Kuwaiti listener catches: the voice changes the moment a fo
 NOURA — TARGETED CORRECTION (the heard failures live on her lines)
 The Emirati thinning keeps surfacing on Noura's lines specifically: the male lines hold Kuwait City weight while hers drift. Give Noura's every single line the same full Kuwaiti weight, the same city, the same register as Fahad's — never lighter, never more forward.
 - The historically failing words were sieved out of the audio text entirely (they no longer reach you). What remains must hold: «منو» «الشهاده» «مخه» and every word around them carry full Kuwait City weight on Noura's lines — if any word comes out Emirati on her lines, the whole take is rejected.
+
+ACCENT STRENGTH — the single thing the doctor judges hardest
+- The accent must be THICK, not merely correct. A neutral, careful, MSA-leaning delivery with Kuwaiti words in it is a failure even when every word is right. Speak like two Kuwaitis in a diwaniya, not like broadcasters reading Kuwaiti.
+- ض is written ظ throughout this text on purpose — say it as the Kuwaiti emphatic ظ, never as a classical ض.
+- The last line of the episode must carry exactly the same accent weight as the first. Do not soften as you go.
 
 FIDELITY
 - Preserve every word, number, proper name, research attribution and factual qualifier. Never paraphrase, summarize, translate, add, or omit words.
@@ -709,13 +729,24 @@ if (SELF_TEST) {
   /* الأقفال الثلاثة (١٤ أغسطس ٢٠٢٦) — أمر الدكتور: «تحذير صارم جداً». */
   assert.match(prompt,/Seven registers are FORBIDDEN/i, 'القفل الأول: الحظر السباعي المسمّى في الرأس')
   assert.match(prompt,/NOURA — TARGETED CORRECTION/i, 'تصويب نورة: العطب المسموع يعيش في سطورها فالعلاج يصوَّب إليها')
+  assert.match(prompt,/ACCENT STRENGTH/i, 'قسم اللكنة: الثقل مطلوبٌ لا مجرّد الصواب')
+  /* التذكير يظهر بعد العاشر، فيُختبر على حلقةٍ بطول حقيقيّ لا على أربعة أدوار. */
+  const longTurns = Array.from({ length: 25 }, (_, i) => ({
+    speaker: i % 2 ? 'female' : 'male', text: `سطر رقم ${i + 1} فيه ضاد واضحة.`,
+    deliveryType: 'statement', pauseAfterMs: 300, musicBridgeAfter: false,
+  }))
+  const longPrompt = promptFor(longTurns, 0, 1)
+  assert.equal((longPrompt.match(/REMINDER — the accent must stay/g) || []).length, 2,
+    'التذكير يتخلّل النصّ مرّةً كل عشرة أدوار')
+  assert.ok(!/ض/.test(longPrompt.split('\n').filter((line) => /^(Fahad|Noura):/.test(line)).join(' ')),
+    'الضاد صارت ظاءً في كل سطور الصوت')
   assert.match(prompt,/ALWAYS the male voice/i, 'منع تبديل الأصوات: فهد ذكر دائماً ونورة أنثى دائماً')
   /* بوابة الطبقة: النطاقات لا تتلامس فلا يقع دورٌ في الجنسين معاً. */
   assert.ok(voiceSwapped(true, 180) && !voiceSwapped(true, 120) && voiceSwapped(false, 120) && !voiceSwapped(false, 180), 'بوابة الطبقة تحكم بالنطاق الصحيح')
   assert.ok(!voiceSwapped(true, 157) && !voiceSwapped(false, 157), 'المنطقة الرمادية 150-165 بريئة لا تحرق إعادات')
   assert.ok(!voiceSwapped(true, null), 'غياب القياس لا يُنذر')
   assert.match(prompt,/FINAL CHECK — LAST INSTRUCTION/i, 'القفل الثالث: الفحص الختامي بعد النص')
-  assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes('Kuwaiti Kuwait-City accent only')), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
+  assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes(KW_LOCK)), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
   assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
   assert.match(prompt,/ترقيق/, 'الترقيق: وصف الدكتور نفسه للعلّة، وهو المفتاح')
@@ -791,7 +822,16 @@ if (SELF_TEST) {
     assert.equal(spokenForm('وجذي يصير'), 'وتشذي يصير', 'السابقة الملاصقة لا تمنع النطق')
     const trap = 'المجموع والجمال وجمعنا'
     assert.equal(spokenForm(trap), trap, 'ما كانت «جم» جزءاً منه لا يُمسّ')
-    assert.ok(!JSON.stringify(PRONUNCIATION).includes('گ'), 'گ منزوعة عمداً — أسقطت چ معها في v3')
+    /* گ كانت ممنوعةً كلياً لأنها في v3 أُدخلت قاعدةً عامّةً على كل قاف فأسقطت
+       چ معها. والآن چ نفسها لم تعد تُكتب حرفاً بل صوتاً («تش»)، فزال التعارض،
+       وأذن الدكتور اعتمدت «أَصْدَگ» في موضعها. فالحارس يمنع التعميم لا الحرف:
+       تبقى گ في كلماتٍ معدودةٍ مسموعةٍ فردياً، ولا تتجاوزها. */
+    const gafWords = Object.values(PRONUNCIATION_SOURCE.words || {}).filter((value) => String(value).includes('گ'))
+    assert.ok(gafWords.length <= 5, `گ تبقى في كلماتٍ معدودةٍ بالسماع لا قاعدةً عامّة (الآن ${gafWords.length})`)
+    /* الچ مسموحةٌ في المفاتيح (نصّ الدكتور يكتبها) وممنوعةٌ في النواتج
+       (المحرّك يبتلعها) — فتُفحص جهةُ الخرج وحدها. */
+    const chehOut = Object.values(PRONUNCIATION_SOURCE.words || {}).filter((value) => String(value).includes('چ'))
+    assert.equal(chehOut.length, 0, 'چ لا تصل المحرّك حرفاً — تُكتب صوتاً «تش»')
     /* حذف الأسماء اللاتينية: أوضح سبب تبدّل الصوت (Frontiers سمعها الدكتور «فلنتير»). */
     assert.equal(spokenForm('منشور في Frontiers in Psychology عن القلق'), 'منشور في مجلة علمية عن القلق', 'الاسم اللاتيني يُحذف ويُستبدل بعربية عامة')
     assert.ok(!/[A-Za-z]/.test(spokenForm('حسب OECD وUNICEF')), 'لا يبقى أيّ حرف لاتيني في مدخل الصوت')

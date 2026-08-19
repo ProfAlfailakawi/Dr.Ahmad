@@ -239,6 +239,11 @@ jobs:
           # ثم يُبنى السجلّ وتُحدّث لوحة التحكم من الحقيقة نفسها قبل النشر.
           node scripts/guard-audio-meta-regression.mjs --apply
           node scripts/reconcile-audio-meta.mjs --apply
+          # يعيد بناء اعتماد الحوارات الفصحى من audio-meta قبل البناء: سجل
+          # الاعتماد .podcast-state.json مُستبعَدٌ من المستودع فلا يصل هنا،
+          # فكانت الخلاصة تخدم القراءة المفردة على كل المنصات. اعتمدها
+          # الدكتور كلَّها (١٦ أغسطس). لا يمسّ الكويتي (:ar وحدها).
+          node scripts/restore-dialogue-approvals.mjs
           node scripts/sync-audio.mjs
           npm run audio:firestore:sync -- --from-r2
         env:

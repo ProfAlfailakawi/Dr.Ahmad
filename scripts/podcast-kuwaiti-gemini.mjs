@@ -207,10 +207,18 @@ Noura's lines drift out of Kuwait City more often than Fahad's. Give her every l
    صراحةً، فخرج بدوياً مصرياً لا كويتياً. والدرس: لا يُوصف صوتٌ بلهجةٍ
    أخرى — التشبيه بلهجةٍ أجنبية يجرّ اللكنة إليها كلها لا إلى صوتٍ واحدٍ
    منها. الكويتيّة تُطلب باسمها وحده، والأصوات تأتي معها. */
+LIGHT ARTICULATION — never emphatic, never «مفخّم»
+This is urban Kuwait City speech: every consonant is relaxed and lightly voiced. Do not press or thicken any letter.
+- القاف: قُلها خفيفةً غيرَ مفخّمة، لا قافاً فصيحةً ثقيلةً من أقصى الحلق. مثل: أقوى · بقاء · حقيقية · ضيق · صدق — كلها بقافٍ خفيفةٍ مرتخية.
+  استثناءٌ واحد: تبقى القاف فصيحةً في المتعلَّم فقط: القرآن · القانون · القرار · المقال.
+- كل الحروف تُرقَّق: لا تشديدَ ولا تفخيمَ في الضاد والطاء والصاد والقاف. الكلمة تخرج خفيفةً سريعةً كما في مجلسٍ عادي.
+- إن وجدتَ نفسك تُثقّل كلمةً لتبدو «أفصح» أو «أقوى» فأنت تُخطئ: الكويتيّ الحضريّ يُرقّق كل شيء.
+
 TWO DISTINCT PEOPLE — never one narrator doing both parts
 Fahad and Noura are two different human beings sitting together. Their voices must stay clearly apart for the whole episode:
-- فهد: رجلٌ كويتيٌّ ناضج — صوتٌ أعمق وأثقل، نبرةٌ هادئةٌ واثقة.
-- نورة: امرأةٌ كويتيةٌ ناضجة — صوتٌ أعلى وأصفى، نبرةٌ حيّةٌ متسائلة.
+- فهد: رجلٌ كويتيٌّ ناضج — صوتٌ رجاليٌّ واضحٌ منخفض، أعمق بكثيرٍ من صوت نورة. نبرةٌ هادئةٌ واثقة.
+- نورة: امرأةٌ كويتيةٌ ناضجة — صوتٌ نسائيٌّ واضحٌ أعلى، أرفع بكثيرٍ من صوت فهد. نبرةٌ حيّةٌ متسائلة.
+- الفرق بينهما كبيرٌ وثابت: رجلٌ وامرأةٌ لا يلتبسان، لا صوتٌ وسطيٌّ يجمعهما. من يسمعُ سطراً واحداً يعرفُ فوراً أذكرٌ هو أم أنثى، بلا قراءة الاسم. هذا شرطٌ لا يُكسر.
 A listener must know who is speaking from the voice alone, without reading names. Never let the two drift toward one middle voice, and never let one of them carry the other's line. If both start sounding alike, the take is rejected — this is exactly what the doctor caught: «فقط البنت قاعد تتكلم بدون الولد».
 Keep the accent identical for both; only the voice differs.
 
@@ -748,6 +756,12 @@ if (SELF_TEST) {
   /* قياس ١٥ أغسطس: الفجوة بين الحنجرتين ضاقت من ٣٤ هرتزاً إلى ٢٢ حين رُكّز
      على اللهجة وحدها، فسمعهما الدكتور صوتاً واحداً. فصل الشخصيتين شرطٌ. */
   assert.match(prompt,/TWO DISTINCT PEOPLE/i, 'فصل الشخصيتين: صوتان لا راوٍ واحد')
+  assert.match(prompt,/LIGHT ARTICULATION/i, 'الترقيق: القاف خفيفةٌ غير مفخّمة (حكمه ١٦ أغسطس: «القاف حيل فخّمها… احنا نرقق»)')
+  assert.match(prompt,/قُلها خفيفةً غيرَ مفخّمة/, 'وصف القاف بالعربية بلا تشبيهٍ بلهجة')
+  /* لا تشبيه بلهجةٍ أخرى في **وصف** الأصوات — الحظر السباعي يسمّي اللهجات
+     ليمنعها، وهذا مطلوب. يُفحص قسم الترقيق وحده. (كارثة «الجيم القاهرية».) */
+  const lightBlock = prompt.slice(prompt.indexOf('LIGHT ARTICULATION'), prompt.indexOf('TWO DISTINCT PEOPLE'))
+  assert.ok(!/قاهري|مصري|Egyptian|Cairo|Najdi|نجدي/i.test(lightBlock), 'لا تشبيهٌ بلهجةٍ أخرى في وصف الترقيق')
   /* «احنا ما نفخم ترى الكلمات… احنا دايم نرقق» — حكمه ١٥ أغسطس. كان البرومت
      يطلب الثقل صراحةً («Kuwaiti is heavier and fuller in the mouth») وهو عكس
      الحقيقة، فأخرج تفخيماً بدوياً. لا يعود طلبُ ثقلٍ إلى البرومت أبداً. */

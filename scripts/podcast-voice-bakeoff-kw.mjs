@@ -31,11 +31,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 /* الأزواج. الأول هو الحالي — مرجعٌ يقارن عليه لا مرشّح.
    أسماء أصوات Gemini قد يُرفض بعضها؛ الفشل يُلتقط ويُبلَّغ ولا يُسقط الجولة. */
 const PAIRS = [
-  ['واحد', 'Puck',       'Callirrhoe', 'الحالي — مرجع'],
-  ['اثنين', 'Charon',     'Aoede',      ''],
-  ['ثلاثة', 'Enceladus',  'Leda',       ''],
-  ['أربعة', 'Iapetus',    'Autonoe',    ''],
-  ['خمسة', 'Algieba',    'Erinome',    ''],
+  /* الجولة الثانية (٢٠ أغسطس ٢٠٢٦ مساءً) — بحكمه على الجولة الأولى:
+     «١ الرجل جيد» و«٤ المرأة ممتازة و١ جيدة». فالتركيبة التي يريدها
+     (Puck + Autonoe) لم تُختبر أصلاً — كل زوجٍ في الجولة الأولى كان مغلقاً.
+     فهذي الجولة تختبرها، ومعها المنافسان اللذان أثنى عليهما مفردَين. */
+  ['واحد', 'Puck',    'Autonoe',    'تركيبتك — رجل ١ + امرأة ٤'],
+  ['اثنين', 'Iapetus', 'Autonoe',    'الأوسع فجوةً في الجولة الأولى (٤٠)'],
+  ['ثلاثة', 'Puck',    'Callirrhoe', 'الحالي — مرجع'],
 ]
 
 const KW = '[Kuwaiti Kuwait-City accent only]'
@@ -155,7 +157,10 @@ function medianF0(file) {
 /* الفجوة تُقاس بعزل نصفَي المقطع: أدوار فهد الثلاثة ثم أدوار نورة الاثنان.
    ولأن الأدوار متتابعة بلا علامةٍ في الصوت، نولّد لكل متحدّثٍ نداءً منفصلاً
    للقياس وحده — لا للاستماع. أرخصُ من محاولة تقطيع المقطع بالصمت وأدقّ. */
-async function measureGap(male, female) {
+/* التذبذب هو المشكلة: Puck وحده قيس ١٢٥ و١٣٦ و١٦٠ و١٦٢ و١٩٠ عبر التشغيلات.
+   فقياسٌ واحدٌ لا يحكم على زوج. نقيس ثلاث مرات ونعطي المدى والوسيط —
+   والزوج الذي فجوته موجبةٌ في القياسات الثلاث هو وحده الذي يُوثق به. */
+async function measureGapOnce(male, female) {
   const one = await gen(male, female, `Fahad: ${KW} الطالب ايعرف إن الدرجة شهاده وبس، ومخه فاهمها بس ما يفرح فيها.`)
   const two = await gen(male, female, `Noura: ${KW} بس منو قال إن الشهاده تكفي؟ الشهاده بيدها اليوم، والفكرة بعدها بعيده عنها.`)
   if (one.error || two.error) return null
@@ -164,9 +169,27 @@ async function measureGap(male, female) {
     writeFileSync(p, Buffer.concat([wavHeader(pcm.length), pcm]))
     return p
   }
-  const m = medianF0(wav(one.pcm, `m-${male}.wav`))
-  const f = medianF0(wav(two.pcm, `f-${female}.wav`))
+  const m = medianF0(wav(one.pcm, `m-${male}-${Math.random().toString(36).slice(2, 8)}.wav`))
+  const f = medianF0(wav(two.pcm, `f-${female}-${Math.random().toString(36).slice(2, 8)}.wav`))
   return (m && f) ? { male: m, female: f, gap: f - m } : null
+}
+
+async function measureGap(male, female, rounds = 3) {
+  const runs = []
+  for (let i = 0; i < rounds; i += 1) {
+    const r = await measureGapOnce(male, female)
+    if (r) runs.push(r)
+    if (i < rounds - 1) await sleep(800)
+  }
+  if (!runs.length) return null
+  const gaps = runs.map((r) => r.gap).sort((a, b) => a - b)
+  return {
+    runs: runs.map((r) => ({ male: Math.round(r.male), female: Math.round(r.female), gap: Math.round(r.gap) })),
+    gap: gaps[Math.floor(gaps.length / 2)],
+    min: gaps[0],
+    max: gaps[gaps.length - 1],
+    allPositive: gaps[0] > 0,
+  }
 }
 
 async function main() {
@@ -194,7 +217,10 @@ async function main() {
       '-af','loudnorm=I=-16:TP=-1.5','-ar','48000','-ac','1','-c:a','libmp3lame','-b:a','160k',mp3], { encoding: 'utf8' })
     if (enc.status !== 0) throw new Error(enc.stderr || 'فشل الترميز')
     const g = await measureGap(male, female)
-    if (g) console.log(`   فجوة ${g.gap.toFixed(0)} هرتزاً (فهد ${g.male.toFixed(0)} · نورة ${g.female.toFixed(0)})`)
+    if (g) {
+      console.log(`   الفجوة: وسيط ${g.gap} · المدى ${g.min}..${g.max} هرتزاً${g.allPositive ? ' · موجبة في الثلاثة ✓' : ' · انقلبت في قياسٍ واحدٍ على الأقل ⚠️'}`)
+      console.log(`   القياسات: ${g.runs.map((r) => `فهد ${r.male}/نورة ${r.female} = ${r.gap}`).join(' · ')}`)
+    }
     else console.log('   الفجوة لم تُقَس')
     legend.push({ label, male, female, note, file: `audio/voice-bakeoff/${slug}.mp3`, ...(g || {}) })
     await sleep(1000)
@@ -216,7 +242,7 @@ async function main() {
   const ranked = ok.filter((l) => typeof l.gap === 'number').sort((a, b) => b.gap - a.gap)
   if (ranked.length) {
     console.log('  ترتيب الفجوة (الرقم وحده — اللهجة لأذنه):')
-    for (const l of ranked) console.log(`    ${l.label}: ${l.gap.toFixed(0)} هرتزاً — ${l.male0 || l.male} + ${l.female0 || l.female}`)
+    for (const l of ranked) console.log(`    ${l.label}: وسيط ${l.gap} (${l.min}..${l.max})${l.allPositive ? ' ✓' : ' ⚠️ انقلبت'} — ${l.male} + ${l.female}`)
   }
   const failed = legend.filter((l) => l.failed)
   if (failed.length) console.log(`  سقط ${failed.length} زوجاً: ${failed.map((f) => `${f.label} (${f.male}+${f.female})`).join(' · ')}`)

@@ -105,14 +105,41 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
 
+      # المحرّك يخرج بالرمز ٣ حين تسقط فجوة الحنجرتين تحت العتبة — عيّنةٌ
+      # سيئة تُرمى وتُعاد. ثلاث محاولات؛ والأخيرة بلا عتبة (MIN_GAP=0) حتى
+      # لا نبقى بلا حلقة إن كان اليوم كله سيئاً. أي رمزٍ آخر يُسقط الخطوة فوراً.
       - name: Generate Kuwaiti candidate with Gemini 3.1 Flash TTS
-        run: node scripts/podcast-kuwaiti-gemini.mjs --slug="$RELEASED_SLUGS"
+        shell: bash
+        run: |
+          set -uo pipefail
+          ATTEMPTS=3
+          for i in $(seq 1 $ATTEMPTS); do
+            if [ "$i" -eq "$ATTEMPTS" ]; then
+              echo "المحاولة $i/$ATTEMPTS — الأخيرة، تُقبل كما هي بلا عتبة."
+              export PODCAST_KW_MIN_GAP=0
+            else
+              echo "المحاولة $i/$ATTEMPTS — العتبة $PODCAST_KW_MIN_GAP هرتزاً."
+            fi
+            node scripts/podcast-kuwaiti-gemini.mjs --slug="$RELEASED_SLUGS"
+            CODE=$?
+            if [ "$CODE" -eq 0 ]; then
+              echo "✓ قُبلت في المحاولة $i."
+              exit 0
+            fi
+            if [ "$CODE" -ne 3 ]; then
+              echo "::error::سقط التوليد بالرمز $CODE — ليس رفضَ عيّنة."
+              exit "$CODE"
+            fi
+          done
+          echo "::error::لم تُقبل أي عيّنة بعد $ATTEMPTS محاولات."
+          exit 1
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: pilot
           PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
+          PODCAST_KW_MIN_GAP: '12'
 
       - name: Upload candidate to isolated R2 staging
         shell: bash

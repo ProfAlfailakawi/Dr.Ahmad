@@ -106,7 +106,7 @@ const PERSON = {
     ...(ORCID ? [`https://orcid.org/${ORCID}`] : []),
     ...(WIKIDATA ? [`https://www.wikidata.org/wiki/${WIKIDATA}`] : []),
   ],
-  ...(ORCID ? { identifier: { '@type': 'PropertyValue', propertyID: 'https://orcid.org/', value: `https://orcid.org/${ORCID}`, url: `https://orcid.org/${ORCID}` } } : {}),
+  ...(ORCID ? { identifier: { '@type': 'PropertyValue', propertyID: 'https://orcid.org/', value: `https://orcid.org/${ORCID}` } } : {}),
 }
 const PUBLISHER = { '@type': 'Person', '@id': `${SITE}/#person`, name: AUTHOR, description: PERSON.description }
 const podcastStatePath = resolve(ROOT, '.podcast-state.json')

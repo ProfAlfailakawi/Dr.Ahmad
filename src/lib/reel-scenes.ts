@@ -10,6 +10,7 @@
  */
 
 import { analyzeSocialContent, type ContentTone, type ContentTopic } from './social-design-engine'
+import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from './arabic-count.ts'
 
 /* ------------------------------- الأنواع ------------------------------- */
 
@@ -346,7 +347,7 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
   scenes.push({ kind: 'close', slug: `FINAL / ${String(scenes.length + 1).padStart(2, '0')}`, eyebrow: tightLine(title, 40), line: 'المقال كاملاً في الموقع', seconds: 3.6 })
 
   const seconds = Math.round(scenes.reduce((total, scene) => total + scene.seconds, 0) * 10) / 10
-  rationale.push(`${scenes.length} مشاهد · ${seconds} ثانية · زخارف: ${motifs.join(' + ')}`)
+  rationale.push(`${arabicCountPhrase(scenes.length, REEL_SCENE_FORMS)} · ${arabicCountPhrase(seconds, SECOND_FORMS)} · زخارف: ${motifs.join(' + ')}`)
 
   return {
     templateId,

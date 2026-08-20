@@ -391,6 +391,14 @@ export const SCENE_FORMS: ArabicCountForms = {
   many: 'مشهداً مولَّداً مستقلاً',
 }
 
+/** مشاهد الريل السينمائي — لقطات متتابعة داخل فيديو واحد. */
+export const REEL_SCENE_FORMS: ArabicCountForms = {
+  one: 'مشهد',
+  two: 'مشهدان',
+  few: 'مشاهد',
+  many: 'مشهداً',
+}
+
 export const ENDING_FORMS: ArabicCountForms = {
   one: 'نهاية عالمية',
   two: 'نهايتان عالميتان',

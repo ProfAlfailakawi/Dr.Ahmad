@@ -81,8 +81,12 @@ const PERSON = {
   nationality: { '@type': 'Country', name: 'Kuwait' },
   url: SITE,
   image: `${SITE}/portrait.jpg`,
-  description: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث ومستشار تربوي كويتي؛ مؤلّف موسوعة تكنولوجيا التعليم.',
+  description: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث كويتي؛ مؤلّف موسوعة تكنولوجيا التعليم. شغل سابقاً مهامّ استشارية حكومية، منها مستشار الشؤون التنظيمية والعلاقات الدولية بمكتب وزير الدولة لشؤون الشباب، وعضو اللجنة الاستشارية العليا لمتحف الكويت الوطني.',
   jobTitle: 'أستاذ مشارك في تكنولوجيا التعليم',
+  hasOccupation: [
+    { '@type': 'Role', roleName: 'مستشار سابق — الشؤون التنظيمية والعلاقات الدولية', memberOf: { '@type': 'GovernmentOrganization', name: 'مكتب وزير الدولة لشؤون الشباب — الهيئة العامة للشباب' } },
+    { '@type': 'Role', roleName: 'عضو سابق — اللجنة الاستشارية العليا لمتحف الكويت الوطني', memberOf: { '@type': 'GovernmentOrganization', name: 'المجلس الوطني للثقافة والفنون والآداب' } },
+  ],
   affiliation: [
     { '@type': 'CollegeOrUniversity', name: 'كلية التربية الأساسية — الهيئة العامة للتعليم التطبيقي والتدريب (PAAET)', sameAs: 'https://www.paaet.edu.kw' },
     { '@type': 'CollegeOrUniversity', name: 'جامعة الكويت', sameAs: 'https://www.ku.edu.kw' },

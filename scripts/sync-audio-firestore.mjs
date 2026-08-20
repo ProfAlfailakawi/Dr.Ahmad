@@ -27,7 +27,7 @@ const normalizeAudio = (value) => {
   if (value === true) return { fahed: true }
   const source = objectMap(value)
   const next = {}
-  for (const key of ['fahed', 'noura', 'dialogue']) {
+  for (const key of ['fahed', 'noura', 'dialogue', 'dialogueKuwaiti']) {
     if (typeof source[key] === 'boolean' || typeof source[key] === 'string') next[key] = source[key]
   }
   return next
@@ -77,6 +77,9 @@ const r2Candidates = (slug) => ({
   fahed: `${slug}.mp3`,
   noura: `${slug}.noura.mp3`,
   dialogue: `${slug}.dialogue.mp3`,
+  /* الحوار الكويتي — مسارٌ رابع يُمسح كبقية المسارات؛ غيابه يُقرأ صفراً صادقاً
+     ولا يُنقص اكتمال الجرد لأن الفحص يميّز «غير موجود» عن «تعذّر الفحص». */
+  dialogueKuwaiti: `${slug}.dialogue-kw.mp3`,
 })
 
 const sha256 = (value) => createHash('sha256').update(value).digest('hex')
@@ -213,6 +216,8 @@ if (process.argv.includes('--self-test')) {
   if (control.dialogueDisabled !== false || control.dialogueStatus !== 'published' || control.fahedStatus !== 'published') throw new Error('control self-test failed')
   const candidates = r2Candidates('article-slug')
   if (candidates.fahed !== 'article-slug.mp3' || candidates.noura !== 'article-slug.noura.mp3' || candidates.dialogue !== 'article-slug.dialogue.mp3') throw new Error('R2 candidates self-test failed')
+  if (candidates.dialogueKuwaiti !== 'article-slug.dialogue-kw.mp3') throw new Error('R2 Kuwaiti candidate self-test failed')
+  if (!('dialogueKuwaiti' in normalizeAudio({ dialogueKuwaiti: true }))) throw new Error('Kuwaiti normalize self-test failed')
   const parsed = parseR2ListXml('<ListBucketResult><Contents><Key>a.mp3</Key><Size>321</Size></Contents><Contents><Key>b.noura.mp3</Key><Size>654</Size></Contents><NextContinuationToken>x&amp;y</NextContinuationToken></ListBucketResult>')
   if (parsed.objects.get('a.mp3')?.bytes !== 321 || parsed.objects.get('b.noura.mp3')?.bytes !== 654 || parsed.nextToken !== 'x&y') throw new Error('R2 ListObjects XML self-test failed')
   const indexed = inventoryFromObjects(['a', 'b'], parsed.objects)
@@ -345,19 +350,23 @@ const inventory = [...manifest.values()].reduce((summary, audio) => ({
   fahed: summary.fahed + Number(Boolean(audio.fahed)),
   noura: summary.noura + Number(Boolean(audio.noura)),
   dialogue: summary.dialogue + Number(Boolean(audio.dialogue)),
+  dialogueKuwaiti: summary.dialogueKuwaiti + Number(Boolean(audio.dialogueKuwaiti)),
   readingArticles: summary.readingArticles + Number(Boolean(audio.fahed || audio.noura)),
-}), { fahed: 0, noura: 0, dialogue: 0, readingArticles: 0 })
+}), { fahed: 0, noura: 0, dialogue: 0, dialogueKuwaiti: 0, readingArticles: 0 })
 const bySlug = Object.fromEntries([...allSlugs].map((slug) => {
   const item = normalizeAudio(manifest.get(slug))
   return [slug, {
     fahed: Boolean(item.fahed),
     noura: Boolean(item.noura),
     dialogue: Boolean(item.dialogue),
+    dialogueKuwaiti: Boolean(item.dialogueKuwaiti),
   }]
 }))
 await inventoryRef.set({
   ...inventory,
   totalAudioFiles: inventory.fahed + inventory.noura + inventory.dialogue,
+  /* الكويتي يُحصى بجانب الثلاثة لا داخلها، كي لا يهبط الإنجاز المُثبت بمسارٍ ناشئ. */
+  dialogueKuwaiti: inventory.dialogueKuwaiti,
   source: FROM_R2 ? 'r2-authoritative-inventory' : 'verified-audio-manifest',
   scanVersion: 2,
   scanComplete: FROM_R2 ? liveScan?.complete === true : false,
@@ -365,7 +374,7 @@ await inventoryRef.set({
   scanMethod: FROM_R2 ? liveScan?.method || 'r2-live-scan' : 'verified-audio-manifest',
   scanMessage: '',
   unknownObjects: 0,
-  objectCount: FROM_R2 ? Number(liveScan?.objectCount || 0) : inventory.fahed + inventory.noura + inventory.dialogue,
+  objectCount: FROM_R2 ? Number(liveScan?.objectCount || 0) : inventory.fahed + inventory.noura + inventory.dialogue + inventory.dialogueKuwaiti,
   articleCount: allSlugs.size,
   expectedAudioObjects: allSlugs.size * 3,
   bySlug,

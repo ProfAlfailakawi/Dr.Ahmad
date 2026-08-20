@@ -331,12 +331,16 @@ export function ProductionHealthCenter({
                       فتح المسودة
                     </button>
                   )}
-                  {status === 'draft' || status === 'queued' ? (
+                  {/* الحلقة المعتمدة لا تُطلب مرة أخرى: يحلّ ختمُ الاعتماد محلّ الزر،
+                      ويبقى «إعادتها للمراجعة» وحده مخرجاً إن أراد الدكتور سحب الاعتماد. */}
+                  {status === 'published' ? (
+                    <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-accent/30 bg-accent/[.08] px-3 py-2 text-[.72rem] font-semibold leading-tight text-accent sm:px-4 sm:text-[.74rem]" data-episode-approved="1">✓ معتمدة</span>
+                  ) : status === 'draft' || status === 'queued' ? (
                     <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'queued' ? 'جارٍ بدء التوليد' : '🎬 ابدأ التوليد الآن'}</button>
                   ) : (
                     <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'published')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">اعتماد الحلقة</button>
                   )}
-                  <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'needs_review')} className="min-w-0 rounded-full border border-hair px-3 py-2 text-[.72rem] font-semibold leading-tight text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50 sm:px-4 sm:text-[.74rem]">إعادتها للمراجعة</button>
+                  <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'needs_review')} className="min-w-0 rounded-full border border-hair px-3 py-2 text-[.72rem] font-semibold leading-tight text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'published' ? 'سحب الاعتماد للمراجعة' : 'إعادتها للمراجعة'}</button>
                 </div>
               </div>
               {episode?.listen && (

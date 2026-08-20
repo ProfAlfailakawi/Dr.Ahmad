@@ -112,6 +112,11 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
+          # GitHub يشغّل الخطوة بـ«bash -e»، و«set -uo pipefail» لا يُطفئ الـ-e.
+          # فحين خرج المحرّك بالرمز ٣ (رفضُ عيّنة) قتل الـ-e السكربت قبل فحص
+          # الرمز، فسقطت التشغيلة بدل أن تُعيد — ٢٠ أغسطس ٢٠٢٦، run 32412429765.
+          # «set +e» صريحةً هي العلاج: نحن نفحص كل رمزٍ بأنفسنا هنا.
+          set +e
           ATTEMPTS=3
           for i in $(seq 1 $ATTEMPTS); do
             if [ "$i" -eq "$ATTEMPTS" ]; then

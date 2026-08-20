@@ -40,30 +40,22 @@ const NUM = ['واحد', 'اثنين', 'ثلاثة', 'أربعة']
      • استبدالٌ بكلمةٍ كويتيةٍ حقيقية بلا قاف — الطريق الذي نجح في «معلقة→مربوطة»
    لا كلمة مخترعة هنا. */
 const WORDS = [
-  { key: 'ضيق', speaker: 'Fahad',
-    carrier: 'ودخل من باب {W} ما يوسع إلا واحد.',
-    options: ['ضيق', 'ضيّج', 'ضيّگ'] },
-  { key: 'أقوى', speaker: 'Noura',
-    carrier: 'ووضعت جودة العلاقة بين المعلم والطالب ضمن {W} العوامل تأثيرا.',
-    options: ['أقوى', 'أگوى', 'أشد'] },
-  { key: 'أقرب', speaker: 'Fahad',
+  /* الجولة الثانية (٢٠ أغسطس ٢٠٢٦): اختار الدكتور سبعاً من ثمانٍ بقراءة الجدول
+     لا بالسماع، فحُسمت. بقيت الگ وحدها لأنه قال: «رقم ٢ خايف اختار ويقولها شي غلط».
+     فهذي الجولة تسمعه الگ في ثلاثة مواضع — أهي حرفٌ يقوله المحرّك أم يبتلعه؟
+     وموضعٌ رابع لـ«أصدق» التي لم يقرّر فيها بعد. */
+  { key: 'أقرب — اختياره', speaker: 'Fahad',
     carrier: 'ويصبح التعلم {W} إلى حياة يعيشها الطالب لا مهمة ينجو منها.',
-    options: ['أقرب', 'أگرب', 'أشبه'] },
-  { key: 'أصدق', speaker: 'Noura',
+    options: ['أگرب', 'أقرب', 'أشبه'] },
+  { key: 'الأقرب — بالسابقة', speaker: 'Noura',
+    carrier: 'وهو {W} إليه من كل الناس.',
+    options: ['الأگرب', 'الأقرب', 'الأشبه'] },
+  { key: 'الگ في كلمة ثانية', speaker: 'Fahad',
+    carrier: 'وقال له بصوت {W} من صوته.',
+    options: ['أگوى', 'أقوى', 'أشد'] },
+  { key: 'أصدق — بلا قرار', speaker: 'Noura',
     carrier: 'وما في كلمة {W} من كلمة يقولها وهو يعرف ثمنها.',
     options: ['أصدق', 'أصدگ', 'أصح'] },
-  { key: 'يعودون', speaker: 'Fahad',
-    carrier: 'لكن كثيرا من الطلبة {W} بعد عام أو عامين بتخصص لا يشبههم.',
-    options: ['يعودون', 'يرجعون', 'يردون'] },
-  { key: 'بان', speaker: 'Noura',
-    carrier: 'وفجأة قام أحد الجالسين من الشباب يشتم، وقد {W} عليه الغضب.',
-    options: ['بان', 'بيّن', 'طلع'] },
-  { key: 'يفهمون', speaker: 'Fahad',
-    carrier: 'وهل تعلموا كيف {W}، لا فقط كيف يتذكرون؟',
-    options: ['يفهمون', 'يفتهمون', 'يدرون'] },
-  { key: 'يدري', speaker: 'Noura',
-    carrier: 'فيقع في عبودية جديدة تصفق له وهو لا {W}.',
-    options: ['يدري', 'يعرف', 'يحس'] },
 ]
 
 const PROMPT_HEAD = `ABSOLUTE RULE — APPLY TO EVERY SINGLE WORD
@@ -156,9 +148,10 @@ async function main() {
     const wav = resolve(TMP, `w-${n}.wav`)
     writeFileSync(wav, Buffer.concat([wavHeader(pcm.length), pcm]))
     wavs.push(wav)
-    const mp3 = resolve(OUTDIR, `${n}-${w.key}.mp3`)
+    const slug = w.key.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '')
+    const mp3 = resolve(OUTDIR, `${n}-${slug}.mp3`)
     encode(wav, mp3)
-    legend.push({ n, word: w.key, speaker: w.speaker, options: w.options, file: `audio/word-audition/${n}-${w.key}.mp3` })
+    legend.push({ n, word: w.key, speaker: w.speaker, options: w.options, file: `audio/word-audition/${n}-${slug}.mp3` })
     if (i < WORDS.length - 1) await sleep(1200)
   }
 

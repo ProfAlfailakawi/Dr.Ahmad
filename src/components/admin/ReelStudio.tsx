@@ -58,8 +58,11 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
     return next
   }
 
-  const preview = async () => {
-    const active = plan || buildPlan()
+  /* الخطة تُمرَّر صراحةً لا تُقرأ من الحالة: حالة React لا تكون قد تحدّثت بعد
+     في النقرة نفسها، فقراءتها هنا كانت تعيد تشغيل خطة المادة السابقة —
+     فتبدو كل الريلات متشابهة وإن اختلف نصها. */
+  const preview = async (planToPlay?: ReelPlan) => {
+    const active = planToPlay || plan || buildPlan()
     if (!active || !canvasRef.current) return
     handleRef.current?.stop()
     setBusy('preview')
@@ -72,11 +75,11 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
     const nextVariant = variant + 1
     setVariant(nextVariant)
     const next = buildPlan(nextVariant)
-    if (next && canvasRef.current) void preview()
+    if (next) void preview(next)
   }
 
-  const exportVideo = async () => {
-    const active = plan || buildPlan()
+  const exportVideo = async (planToRecord?: ReelPlan) => {
+    const active = planToRecord || plan || buildPlan()
     if (!active) return
     handleRef.current?.stop()
     setBusy('export')
@@ -121,7 +124,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
           </label>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" className={primary} disabled={busy === 'export'} onClick={() => { setVariant(0); const next = buildPlan(0); if (next) void preview() }}>جهّز الريل وشغّل المعاينة</button>
+            <button type="button" className={primary} disabled={busy === 'export'} onClick={() => { setVariant(0); const next = buildPlan(0); if (next) void preview(next) }}>جهّز الريل وشغّل المعاينة</button>
             <button type="button" className={ghost} disabled={!plan || busy === 'export'} onClick={anotherTake}>لقطة أخرى</button>
             {busy === 'preview'
               ? <button type="button" className={ghost} onClick={stopPreview}>إيقاف المعاينة</button>

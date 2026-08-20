@@ -147,6 +147,8 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
                 <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">العالم: {plan.world.label}</span>
                 <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">الموسيقى: {MOOD_LABELS[plan.mood]}</span>
                 <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">{arabicCountPhrase(plan.scenes.length, REEL_SCENE_FORMS)} · {arabicCountPhrase(plan.seconds, SECOND_FORMS)}</span>
+                {plan.concept && <span className="rounded-full bg-accent/10 px-3 py-1 text-accent">المعجم: {plan.concept}</span>}
+                {plan.metaphors.length > 0 && <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">استعارة: {plan.metaphors.join(' · ')}</span>}
               </div>
               <ol className="grid gap-1.5">
                 {plan.scenes.map((scene, index) => (

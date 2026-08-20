@@ -8,8 +8,9 @@
  * يمنحان الصورة ملمس الفيلم، وكل قالب يحمل زخارفه وضرباته الصوتية.
  */
 
-import type { ReelPlan, ReelScene, ReelMotifId } from './reel-scenes'
+import type { ReelPlan, ReelScene, ReelMotifId, ReelWorld } from './reel-scenes'
 import { mulberry } from './reel-scenes'
+import { paintMetaphor } from './reel-metaphors'
 
 export const REEL_WIDTH = 1080
 export const REEL_HEIGHT = 1920
@@ -376,6 +377,14 @@ function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene
       ctx.shadowBlur = 0
       ctx.globalAlpha = 1
     }
+  } else if (scene.kind === 'metaphor' && scene.metaphor) {
+    /* الفكرة تُرسم: الاستعارة تتصدّر، والسطر يجلس تحتها لا فوقها. */
+    paintMetaphor(ctx, scene.metaphor, REEL_WIDTH / 2, REEL_HEIGHT * 0.38, REEL_WIDTH * 0.62, t, Math.min(1, progress * 1.5), {
+      ink: world.ink, dim: world.dim, accent: world.accent, accent2: world.accent2, danger: world.danger,
+    })
+    if (scene.eyebrow) fadeLine(ctx, scene.eyebrow, 38, world.accent, REEL_HEIGHT * 0.585, Math.min(1, (progress - 0.15) * 2.6), 600, DISPLAY_FONT)
+    const px = fitSize(scene.line, 62)
+    writeLine(ctx, scene.line, px, world.ink, REEL_HEIGHT * 0.66, Math.min(1, (progress - 0.25) * 1.8), undefined, nib)
   } else {
     if (scene.eyebrow) fadeLine(ctx, scene.eyebrow, 42, world.dim, centerY - 150, Math.min(1, progress * 3))
     const px = fitSize(scene.line, scene.accent ? 84 : 74)
@@ -402,6 +411,42 @@ function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene
       fadeLine(ctx, `${value}٪`, 190, world.accent, centerY - 260, Math.min(1, progress * 2.2), 700, DISPLAY_FONT, 0)
     }
   }
+}
+
+/**
+ * ترجمة محروقة: السطر يُقسَّم كلماتٍ تضيء تباعاً مع زمن المشهد.
+ * سببها أن أغلب المشاهدة تجري صامتة، فالكلمة المضيئة تُبقي العين ممسوكة.
+ */
+function drawCaption(ctx: CanvasRenderingContext2D, world: ReelWorld, text: string, progress: number) {
+  const words = text.split(/\s+/).filter(Boolean)
+  if (!words.length) return
+  const px = 34
+  const gap = 14
+  const lit = Math.min(words.length, Math.floor(progress * words.length) + 1)
+  const sprites = words.map((word, index) => lineSprite(word, px, index < lit ? world.ink : world.dim, index < lit ? 700 : 500, BODY_FONT))
+  /* لفٌّ على سطرين كحدٍّ أقصى — الترجمة تخدم النص ولا تزاحمه. */
+  const maxWidth = REEL_WIDTH * 0.84
+  const rows: { items: typeof sprites; width: number }[] = []
+  let current: typeof sprites = []
+  let width = 0
+  for (const sprite of sprites) {
+    const next = width + sprite.canvas.width + (current.length ? gap : 0)
+    if (next > maxWidth && current.length) { rows.push({ items: current, width }); current = [sprite]; width = sprite.canvas.width }
+    else { current.push(sprite); width = next }
+  }
+  if (current.length) rows.push({ items: current, width })
+  const shown = rows.slice(-2)
+  const baseY = REEL_HEIGHT - 210 - (shown.length - 1) * (px * 1.5)
+  shown.forEach((row, rowIndex) => {
+    /* عربيٌّ من اليمين: نبدأ من الحافة اليمنى للسطر ونمضي يساراً. */
+    let x = (REEL_WIDTH + row.width) / 2
+    const y = baseY + rowIndex * px * 1.5
+    for (const sprite of row.items) {
+      x -= sprite.canvas.width
+      ctx.drawImage(sprite.canvas, x, y - sprite.height / 2)
+      x -= gap
+    }
+  })
 }
 
 function drawChrome(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene, t: number) {
@@ -464,6 +509,9 @@ export function drawReelFrame(ctx: CanvasRenderingContext2D, stage: Stage, t: nu
   }
 
   ctx.drawImage(stage.vignette, 0, 0)
+  if (scene.kind !== 'signature' && scene.kind !== 'close' && plan.captions !== false) {
+    drawCaption(ctx, plan.world, scene.line, Math.max(0, Math.min(1, local / Math.max(0.1, scene.seconds - 0.4))))
+  }
   drawChrome(ctx, stage, scene, t)
   const sheet = stage.grain[Math.floor(t * FPS) % stage.grain.length]
   ctx.drawImage(sheet, 0, 0)
@@ -696,7 +744,9 @@ export async function exportReelVideo(plan: ReelPlan, options: { canvas?: HTMLCa
 
   const videoStream = canvas.captureStream(FPS)
   const mixed = new MediaStream([...videoStream.getVideoTracks(), ...sink.stream.getAudioTracks()])
-  const recorder = new MediaRecorder(mixed, { mimeType: mime, videoBitsPerSecond: 9_000_000 })
+  /* 5.2 ميغابت/ث تكفي لنصٍّ حادٍّ على تدرّجٍ هادئ عند 1080×1920، وتنزل
+     بالملف إلى نحو نصف حجمه السابق بلا فرقٍ مرئي على الهاتف. */
+  const recorder = new MediaRecorder(mixed, { mimeType: mime, videoBitsPerSecond: 5_200_000, audioBitsPerSecond: 128_000 })
   const chunks: BlobPart[] = []
   recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data) }
   const finished = new Promise<Blob>((resolve) => { recorder.onstop = () => resolve(new Blob(chunks, { type: mime.split(';')[0] })) })

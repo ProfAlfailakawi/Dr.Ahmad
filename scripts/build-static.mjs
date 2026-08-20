@@ -103,6 +103,7 @@ const PERSON = {
     'https://www.instagram.com/DrAhmadkw/',
     'https://www.facebook.com/d.ahmd.alfylkawy',
     'https://youtube.com/@drahmadalfailakawi',
+    'https://www.webofscience.com/wos/author/record/LXA-2190-2024',
     ...(ORCID ? [`https://orcid.org/${ORCID}`] : []),
     ...(WIKIDATA ? [`https://www.wikidata.org/wiki/${WIKIDATA}`] : []),
   ],

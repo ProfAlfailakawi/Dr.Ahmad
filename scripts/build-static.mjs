@@ -64,7 +64,7 @@ const portraitDataUri = `data:image/jpeg;base64,${readFileSync(resolve(ROOT, 'pu
 // WIKIDATA: كِيان ويكيداتا (يبدأ بحرف Q ثم أرقام، مثل Q12345678).
 // اتركهما فارغين إن لم يتوفّرا؛ يُضافان تلقائياً إلى الهوية حالما تُملأ القيمة.
 const ORCID = '0000-0002-1767-4963'  // معرّف الباحث العالمي — موثّق باسم Dr. Ahmad Alfailakawi
-const WIKIDATA = ''    // ← الصق معرّف ويكيداتا هنا حين تُنشئه (Q...)
+const WIKIDATA = 'Q141131823'  // كِيان ويكيداتا الرسمي — Ahmad H. Alfailakawi
 
 // كيان الهوية المركزي (Person) — يُربط عبر @id في كل Schema، فيبني غوغل كِيان المؤلف الواحد
 const PERSON = {

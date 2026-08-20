@@ -144,8 +144,13 @@ function promptFor(turns, index, total) {
      بين قوسين معقوفين على سطرٍ مستقلٍّ بلا اسم متحدّث. */
   const lines = []
   turns.forEach((turn, index) => {
-    if (index > 0 && index % 10 === 0) {
-      lines.push('[REMINDER — keep the same light, soft Kuwait-City delivery as the first line: never heavier, never emphatic, never drifting toward MSA, Emirati, Omani, Iraqi, Levantine or Persian.]')
+      /* [٢١ أغسطس ٢٠٢٦] كان التذكير إنجليزيّاً كل عشرة أدوار — منعٌ لا مرساة.
+         وحكم الدكتور على أول حلقةٍ بالمرساة العربية: «البداية كانت كويتية ١٠٠٠٠٠٪»
+         ثم تنجرف بعد الدقيقة الثانية. فالمرساة تعمل ويتلاشى أثرها. فصار التذكير
+         **نسخةً مصغّرة من المرساة نفسها بالعربية**، وكل ستة أدوارٍ لا عشرة —
+         لأن الانجراف يبدأ نحو الدور العشرين. */
+      if (index > 0 && index % 6 === 0) {
+        lines.push('[تذكير — نفس لسان مدينة الكويت الذي بدأتَ به: «شخبارك؟ شلونك اليوم؟» · خفيفٌ في الفم، لا تفخيم ولا إطالة، ونهاية الجملة تنزل هادئة. لا تسترخِ كلما طال التسجيل.]')
     }
     lines.push(`${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': ['))
   })
@@ -830,8 +835,13 @@ if (SELF_TEST) {
     deliveryType: 'statement', pauseAfterMs: 300, musicBridgeAfter: false,
   }))
   const longPrompt = promptFor(longTurns, 0, 1)
-  assert.equal((longPrompt.match(/REMINDER — keep the same light/g) || []).length, 2,
-    'التذكير يتخلّل النصّ مرّةً كل عشرة أدوار')
+    /* [٢١ أغسطس ٢٠٢٦] التذكير صار عربيّاً وكل ستة أدوار، فالعدد المتوقّع تغيّر.
+       يُحسب من طول النصّ لا برقمٍ ثابت، حتى لا يكذب التأكيد إن تغيّرت الوتيرة. */
+    const expectedReminders = Math.floor((longTurns.length - 1) / 6)
+    assert.equal((longPrompt.match(/\[تذكير — نفس لسان مدينة الكويت/g) || []).length, expectedReminders,
+      'التذكير العربيّ يتخلّل النصّ مرّةً كل ستة أدوار')
+    assert.ok(!/\[REMINDER —/.test(longPrompt), 'لم يبقَ تذكيرٌ إنجليزيّ قديم')
+    assert.ok(expectedReminders >= 2, 'النصّ الطويل يحمل تذكيرين على الأقل')
   assert.ok(!/ض/.test(longPrompt.split('\n').filter((line) => /^(Fahad|Noura):/.test(line)).join(' ')),
     'الضاد صارت ظاءً في كل سطور الصوت')
   assert.match(prompt,/ALWAYS the male voice/i, 'منع تبديل الأصوات: فهد ذكر دائماً ونورة أنثى دائماً')

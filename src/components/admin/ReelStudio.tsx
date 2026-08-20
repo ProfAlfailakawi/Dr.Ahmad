@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { planReel, type ReelPlan } from '../../lib/reel-scenes'
 import { downloadReelBlob, exportReelVideo, playReelPreview, reelExportSupported, type ReelHandle } from '../../lib/reel-motion'
+import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
@@ -84,7 +85,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
     try {
       const result = await exportReelVideo(active, { canvas: canvasRef.current || undefined, onProgress: setProgress })
       downloadReelBlob(result, active.title)
-      setNotice(`نزل الفيديو (${result.mime.includes('mp4') ? 'MP4' : 'WebM'} · ${Math.round(result.blob.size / 1024 / 102.4) / 10} MB · ${active.seconds} ثانية) — جاهز للنشر.`)
+      setNotice(`نزل الفيديو (${result.mime.includes('mp4') ? 'MP4' : 'WebM'} · ${Math.round(result.blob.size / 1024 / 102.4) / 10} MB · ${arabicCountPhrase(active.seconds, SECOND_FORMS)}) — جاهز للنشر.`)
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'تعذّر التصدير — جرّب متصفح Chrome.')
     } finally {
@@ -142,7 +143,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
                 <span className="rounded-full bg-accent/10 px-3 py-1 text-accent">القالب: {TEMPLATE_LABELS[plan.templateId]}</span>
                 <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">العالم: {plan.world.label}</span>
                 <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">الموسيقى: {MOOD_LABELS[plan.mood]}</span>
-                <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">{plan.scenes.length} مشاهد · {plan.seconds} ثانية</span>
+                <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">{arabicCountPhrase(plan.scenes.length, REEL_SCENE_FORMS)} · {arabicCountPhrase(plan.seconds, SECOND_FORMS)}</span>
               </div>
               <ol className="grid gap-1.5">
                 {plan.scenes.map((scene, index) => (

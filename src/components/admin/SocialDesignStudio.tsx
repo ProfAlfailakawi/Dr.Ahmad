@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
 import {
   analyzeSocialContent,
   createEmptyTasteProfile,
@@ -49,6 +49,9 @@ import { buildMeaningFingerprint } from '../../lib/editorial-memory'
 import { trackAdminUsage } from '../../lib/admin-usage'
 import { buildMultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
 import { arabicCountPhrase, CONCEPT_FORMS, DIRECTION_AFTER_PREPOSITION_FORMS, DISPLAYABLE_IMAGE_AFTER_PREPOSITION_FORMS, CAMPAIGN_PIECE_AFTER_PREPOSITION_FORMS, CAMPAIGN_PIECE_FORMS, ENDING_OBJECT_FORMS, FINAL_READY_COPY_FORMS, HIGHLIGHT_FORMS, INDEPENDENT_DIRECTION_AFTER_PREPOSITION_FORMS, LAYER_AFTER_PREPOSITION_FORMS, LAYER_FORMS, SAVED_COPY_FORMS, SCENE_AFTER_PREPOSITION_FORMS, SECOND_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
+
+/* استوديو الريل السينمائي — كسول حتى لا يثقل حزمة اللوحة قبل الحاجة. */
+const ReelStudioLazy = lazy(() => import('./ReelStudio'))
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
@@ -4685,6 +4688,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           </div>
         </div>
       )}
+      <Suspense fallback={<section className="rounded-[1.75rem] border border-hair bg-paper p-6 text-[.72rem] text-soft">يجهّز استوديو الريل…</section>}>
+        <ReelStudioLazy seedText={text} />
+      </Suspense>
     </div>
   )
 }

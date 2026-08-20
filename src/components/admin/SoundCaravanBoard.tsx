@@ -9,15 +9,16 @@ import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, READY_PATH_FORMS } from '../../
  * بينما واجهة المقال العامة وحدها تخفي أسماء الأصوات وتقول «قراءة المقال».
  * الحالة الحية القادمة من Firestore تتقدّم على لقطة audio.json الثابتة.
  */
-type Voice = { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string }
+type Voice = { fahed?: boolean | string; noura?: boolean | string; dialogue?: boolean | string; dialogueKuwaiti?: boolean | string }
 type Article = { slug: string; title?: string; ar?: string; audio?: Voice }
-type Row = { n: number; slug: string; title: string; fahed: boolean; noura: boolean; dialogue: boolean }
-type VoiceKey = 'fahed' | 'noura' | 'dialogue'
+type Row = { n: number; slug: string; title: string; fahed: boolean; noura: boolean; dialogue: boolean; dialogueKuwaiti: boolean }
+type VoiceKey = 'fahed' | 'noura' | 'dialogue' | 'dialogueKuwaiti'
 type DetailSelection = { voice: VoiceKey | 'all'; state: 'ready' | 'missing' }
 type CloudInventory = {
   fahed?: number
   noura?: number
   dialogue?: number
+  dialogueKuwaiti?: number
   totalAudioFiles?: number
   articleCount?: number
   source?: string
@@ -35,6 +36,8 @@ type SyncState = 'idle' | 'checking' | 'queued' | 'error'
 const FAHED = '#2E7D8A'
 const NOURA = '#6B5A8E'
 const DIALOGUE = '#C2913C'
+/* الحوار الكويتي — أخضر نخيلي يميّزه عن الحوار الفصيح بلا صخب. */
+const KUWAITI = '#3F7D58'
 const exists = (value: unknown) => value === true || (typeof value === 'string' && Boolean(value.trim()))
 const AUTO_SYNC_COOLDOWN_MS = 8 * 60 * 1000
 const INVENTORY_STALE_MS = 20 * 60 * 1000
@@ -67,10 +70,11 @@ const voiceMeta: Record<VoiceKey, { label: string; color: string }> = {
   fahed: { label: 'صوت فهد', color: FAHED },
   noura: { label: 'صوت نورة', color: NOURA },
   dialogue: { label: 'الحوار', color: DIALOGUE },
+  dialogueKuwaiti: { label: 'الحوار الكويتي', color: KUWAITI },
 }
 
 function Meter({
-  name, note, val, total, color, onReady, onMissing,
+  name, note, val, total, color, onReady, onMissing, pendingNote,
 }: {
   name: string
   note: string
@@ -79,6 +83,8 @@ function Meter({
   color: string
   onReady: () => void
   onMissing: () => void
+  /** يُعرض بدل شريط الإنجاز حين لم يبدأ المسار بعد — صدقٌ بدل صفرٍ صامت. */
+  pendingNote?: string
 }) {
   const pct = total ? Math.round((val / total) * 100) : 0
   const missing = Math.max(0, total - val)
@@ -103,16 +109,18 @@ function Meter({
       <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-wash">
         <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%`, background: color }} />
       </div>
-      {missing ? (
-        <button
-          type="button"
-          onClick={onMissing}
-          className="mt-1 min-h-9 text-[.72rem] text-soft transition-colors hover:text-accent"
-          aria-label={`عرض المقالات المتبقية في ${name}: ${missing}`}
-        >
-          باقٍ {arabicCountPhrase(missing, ARTICLE_PLAIN_FORMS)} ← اعرضها
-        </button>
-      ) : <div className="mt-2 text-[.72rem] text-soft">اكتمل المسار</div>}
+      {pendingNote
+        ? <p className="mt-2 text-[.72rem] leading-relaxed text-soft">{pendingNote}</p>
+        : missing ? (
+          <button
+            type="button"
+            onClick={onMissing}
+            className="mt-1 min-h-9 text-[.72rem] text-soft transition-colors hover:text-accent"
+            aria-label={`عرض المقالات المتبقية في ${name}: ${missing}`}
+          >
+            باقٍ {arabicCountPhrase(missing, ARTICLE_PLAIN_FORMS)} ← اعرضها
+          </button>
+        ) : <div className="mt-2 text-[.72rem] text-soft">اكتمل المسار</div>}
     </div>
   )
 }
@@ -297,13 +305,19 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
     const fahed = authoritative ? exists(cloud.fahed) : exists(live.fahed) || exists(fallback.fahed)
     const noura = authoritative ? exists(cloud.noura) : exists(live.noura) || exists(fallback.noura)
     const dialogue = authoritative ? exists(cloud.dialogue) : exists(live.dialogue) || exists(fallback.dialogue)
-    return { n: index + 1, slug: article.slug, title: article.title || article.ar || article.slug, fahed, noura, dialogue }
+    /* الحوار الكويتي مسارٌ رابع مُجهَّز: يقرأ من الجرد فور أن يمسح مفاتيحه،
+       ويبقى قبل ذلك صفراً صادقاً لا رقماً متوهَّماً. */
+    const dialogueKuwaiti = authoritative ? exists(cloud.dialogueKuwaiti) : exists(live.dialogueKuwaiti) || exists(fallback.dialogueKuwaiti)
+    return { n: index + 1, slug: article.slug, title: article.title || article.ar || article.slug, fahed, noura, dialogue, dialogueKuwaiti }
   }), [articles, authoritative, cloudInventory?.bySlug, snapshot])
 
   const total = rows.length
   const fahed = rows.filter((row) => row.fahed).length
   const noura = rows.filter((row) => row.noura).length
   const dialogue = rows.filter((row) => row.dialogue).length
+  const dialogueKuwaiti = rows.filter((row) => row.dialogueKuwaiti).length
+  /* النسبة العامة تبقى على المسارات الثلاثة المكتملة؛ الكويتي مسارٌ ناشئ
+     يُعرض بعدّاده الخاص كي لا يهبط الإنجاز المُثبت بمسارٍ لم يبدأ بعد. */
   const done = fahed + noura + dialogue
   const target = total * 3
   const overall = target ? Math.round((done / target) * 100) : 0
@@ -322,7 +336,7 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-extrabold text-ink">قافلة الصوت</h2>
-          <p className="mt-1 text-sm text-soft">لكل مقال ثلاثة مسارات إنتاج ظاهرة للإدارة: فهد، نورة، والحوار — {arabicCountPhrase(done, READY_PATH_FORMS)} من أصل {target} ({overall}٪). كل رقم قابل للفتح لمعرفة المقالات التي وراءه.</p>
+          <p className="mt-1 text-sm text-soft">لكل مقال ثلاثة مسارات إنتاج ظاهرة للإدارة: فهد، نورة، والحوار — {arabicCountPhrase(done, READY_PATH_FORMS)} من أصل {target} ({overall}٪). كل رقم قابل للفتح لمعرفة المقالات التي وراءه. ومعها مسارٌ رابع مُجهَّز للحوار الكويتي يُحسب على حدة حتى تكتمل حلقاته.</p>
         </div>
         <button
           type="button"
@@ -355,10 +369,20 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
         </p>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Meter name="صوت فهد" note="قراءة صوتية" val={fahed} total={total} color={FAHED} onReady={() => setDetail({ voice: 'fahed', state: 'ready' })} onMissing={() => setDetail({ voice: 'fahed', state: 'missing' })} />
         <Meter name="صوت نورة" note="قراءة صوتية" val={noura} total={total} color={NOURA} onReady={() => setDetail({ voice: 'noura', state: 'ready' })} onMissing={() => setDetail({ voice: 'noura', state: 'missing' })} />
         <Meter name="الحوار" note="الحلقة الحوارية" val={dialogue} total={total} color={DIALOGUE} onReady={() => setDetail({ voice: 'dialogue', state: 'ready' })} onMissing={() => setDetail({ voice: 'dialogue', state: 'missing' })} />
+        <Meter
+          name="الحوار الكويتي"
+          note="الحلقة باللهجة"
+          val={dialogueKuwaiti}
+          total={total}
+          color={KUWAITI}
+          pendingNote={dialogueKuwaiti === 0 ? 'المسار مُجهَّز وينتظر أول حلقة كويتية؛ ستظهر الأرقام هنا فور أن يمسحها الجرد.' : undefined}
+          onReady={() => setDetail({ voice: 'dialogueKuwaiti', state: 'ready' })}
+          onMissing={() => setDetail({ voice: 'dialogueKuwaiti', state: 'missing' })}
+        />
       </div>
 
       {detail && <DetailPanel selection={detail} rows={detailRows} onClose={() => setDetail(null)} />}

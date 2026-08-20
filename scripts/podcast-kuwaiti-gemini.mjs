@@ -25,13 +25,17 @@ const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-3.1-flash-tts-preview'
    «الورقه» إماراتيةً في سطرها وحده بينما صمدت في سطر Puck بالإملاء نفسه —
    فالعلّة قدرة الصوت لا الإملاء. إن لم تستقم في الحلقة الكاملة فالبديل
    الجاهز Callirrhoe (أنثى المقطع ٤)، والتبديل بلا كود:
-   GEMINI_TTS_FEMALE_VOICE=Callirrhoe. */
+   GEMINI_TTS_FEMALE_VOICE=Callirrhoe.
+   [٢٠ أغسطس ٢٠٢٦] صار الافتراض Zephyr بحكمه سماعاً على البيك أوف الثالث
+   («روعه» — وهو أرفع ثنائه في المشروع كله)، ووافقه القياس: أحد زوجين
+   وحيدين بقيت فجوتهما موجبةً في القياسات الثلاث (وسيط ١٥ · المدى ١٢..٢٣).
+   وCallirrhoe كانت تقع تحت Puck فتنقلب الفجوة — وهو سبب «صوت واحد بس». */
 const MALE_VOICE = process.env.GEMINI_TTS_MALE_VOICE || 'Puck'
 /* فُعِّل البديل (١٦ أغسطس): فجوة الحنجرتين مع Despina انهارت عبر التشغيلات
    ٣٤ ← ٢٧ ← ٢٢ ← ٨ ← ٧ هرتزاً، فسمعهما الدكتور «صوت واحد بس». وشكواه
    الأولى عن لكنتها (١٤ أغسطس: «لكنتها غير جيدة») تأكّدت بالقياس. فتُعتمد
    Callirrhoe — أنثى المقطع ٤ التي بقيت في تصفيته النهائية. */
-const FEMALE_VOICE = process.env.GEMINI_TTS_FEMALE_VOICE || 'Callirrhoe'
+const FEMALE_VOICE = process.env.GEMINI_TTS_FEMALE_VOICE || 'Zephyr'
 const PROFILE = process.env.PODCAST_KW_PROFILE || 'kuwaiti-urban-soft-v2'
 const GENERATION_MODE = String(process.env.PODCAST_KW_GENERATION_MODE || 'pilot').trim().toLowerCase()
 const PILOT_SLUG = String(process.env.PODCAST_KW_PILOT_SLUG || 'success-that-does-not-bring-joy-to-its-ownerarabic').trim()
@@ -1098,6 +1102,22 @@ if (voiceGap !== null) {
   console.log(voiceGap < 25
     ? `⚠️ فجوة الحنجرتين ${voiceGap.toFixed(0)} هرتزاً — الصوتان متقاربان وقد يُسمعان صوتاً واحداً (المريح ≥ ٣٠)`
     : `✓ فجوة الحنجرتين ${voiceGap.toFixed(0)} هرتزاً — صوتان متمايزان`)
+}
+
+/* ═══ عتبة الإعادة ═══
+   قياس Puck عبر ١٨ نداءً في جلسةٍ واحدة: ١٤٧..٢٠٥ — مدىً ٥٨ هرتزاً.
+   فالصوت نفسه يتنقّل بين طبقة رجلٍ وطبقة امرأة، ولا وجود لزوجٍ يضمن
+   التمايز دائماً — جُرّبت إحدى عشرة امرأة، ولا واحدة فوق ٢١٠.
+   فالعلاج ليس زوجاً أفضل بل **إعادةً عند السقوط**: العيّنة السيئة تُرمى.
+
+   يُفعَّل بـPODCAST_KW_MIN_GAP فقط؛ صفرٌ أو غيابه = السلوك القديم حرفياً.
+   والخروج بالرمز ٣ يقع **قبل** كتابة الصوت النهائي وقبل أي رفع، فلا
+   يترك أثراً نصف مكتوب. والورك-فلو يعيد، ويقبل آخر محاولةٍ كما هي
+   حتى لا نبقى بلا حلقة. */
+const MIN_GAP = Number(process.env.PODCAST_KW_MIN_GAP || 0)
+if (MIN_GAP > 0 && voiceGap !== null && voiceGap < MIN_GAP) {
+  console.error(`↻ الفجوة ${voiceGap.toFixed(0)} هرتزاً دون العتبة ${MIN_GAP} — عيّنةٌ مرفوضة، تُعاد.`)
+  process.exit(3)
 }
 const regenerated = 0
 

@@ -58,25 +58,55 @@ const HOME_OG = HOME_OG_AR
 const AUTHOR = 'د. أحمد حسين الفيلكاوي'
 const logoDataUri = `data:image/png;base64,${readFileSync(resolve(ROOT, 'public/logo.png')).toString('base64')}`
 const portraitDataUri = `data:image/jpeg;base64,${readFileSync(resolve(ROOT, 'public/portrait.jpg')).toString('base64')}`
+// ── المعرّفات الرسمية للهوية ─────────────────────────────────────────────
+// أقوى أدوات فكّ تلوّث الاسم وتمييزك كشخصية أكاديمية واحدة محددة.
+// ORCID: معرّف الباحث العالمي (16 رقماً بالصيغة 0000-0000-0000-0000).
+// WIKIDATA: كِيان ويكيداتا (يبدأ بحرف Q ثم أرقام، مثل Q12345678).
+// اتركهما فارغين إن لم يتوفّرا؛ يُضافان تلقائياً إلى الهوية حالما تُملأ القيمة.
+const ORCID = '0000-0002-1767-4963'  // معرّف الباحث العالمي — موثّق باسم Dr. Ahmad Alfailakawi
+const WIKIDATA = ''    // ← الصق معرّف ويكيداتا هنا حين تُنشئه (Q...)
+
 // كيان الهوية المركزي (Person) — يُربط عبر @id في كل Schema، فيبني غوغل كِيان المؤلف الواحد
 const PERSON = {
   '@type': 'Person',
   '@id': `${SITE}/#person`,
+  mainEntityOfPage: `${SITE}/`,
   name: AUTHOR,
-  alternateName: 'Dr. Ahmad H. Alfailakawi',
+  alternateName: ['Dr. Ahmad H. Alfailakawi', 'Ahmad Hussain Alfailakawi', 'Ahmad Alfailakawi', 'أحمد حسين الفيلكاوي'],
+  honorificPrefix: 'د.',
+  givenName: 'أحمد',
+  additionalName: 'حسين',
+  familyName: 'الفيلكاوي',
+  gender: 'Male',
+  nationality: { '@type': 'Country', name: 'Kuwait' },
   url: SITE,
-  image: `${SITE}${HOME_OG}`,
-  description: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث ومستشار تربوي كويتي.',
-  jobTitle: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث ومستشار تربوي كويتي',
+  image: `${SITE}/portrait.jpg`,
+  description: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، كاتب وباحث ومستشار تربوي كويتي؛ مؤلّف موسوعة تكنولوجيا التعليم.',
+  jobTitle: 'أستاذ مشارك في تكنولوجيا التعليم',
   affiliation: [
-    { '@type': 'CollegeOrUniversity', name: 'كلية التربية الأساسية — الهيئة العامة للتعليم التطبيقي والتدريب (PAAET)' },
-    { '@type': 'CollegeOrUniversity', name: 'جامعة الكويت' },
+    { '@type': 'CollegeOrUniversity', name: 'كلية التربية الأساسية — الهيئة العامة للتعليم التطبيقي والتدريب (PAAET)', sameAs: 'https://www.paaet.edu.kw' },
+    { '@type': 'CollegeOrUniversity', name: 'جامعة الكويت', sameAs: 'https://www.ku.edu.kw' },
   ],
-  alumniOf: { '@type': 'CollegeOrUniversity', name: 'University of Northern Colorado' },
+  worksFor: { '@type': 'CollegeOrUniversity', name: 'الهيئة العامة للتعليم التطبيقي والتدريب (PAAET)', sameAs: 'https://www.paaet.edu.kw' },
+  alumniOf: { '@type': 'CollegeOrUniversity', name: 'University of Northern Colorado', sameAs: 'https://www.unco.edu' },
+  knowsAbout: [
+    'تكنولوجيا التعليم', 'الذكاء الاصطناعي في التعليم', 'التعلّم الرقمي',
+    'التلعيب (Gamification)', 'الواقع الافتراضي والواقع المعزّز', 'المدارس الذكية',
+    'حوكمة الذكاء الاصطناعي والبيانات الضخمة', 'تصميم بيئات التعلّم',
+  ],
+  knowsLanguage: ['ar', 'en'],
   sameAs: [
     'https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en',
     'https://www.researchgate.net/profile/Ahmad-Alfailakawi',
+    'https://www.linkedin.com/in/prof-ahmad-alfailakawi-5922251a5',
+    'https://twitter.com/drahmadkw',
+    'https://www.instagram.com/DrAhmadkw/',
+    'https://www.facebook.com/d.ahmd.alfylkawy',
+    'https://youtube.com/@drahmadalfailakawi',
+    ...(ORCID ? [`https://orcid.org/${ORCID}`] : []),
+    ...(WIKIDATA ? [`https://www.wikidata.org/wiki/${WIKIDATA}`] : []),
   ],
+  ...(ORCID ? { identifier: { '@type': 'PropertyValue', propertyID: 'https://orcid.org/', value: `https://orcid.org/${ORCID}`, url: `https://orcid.org/${ORCID}` } } : {}),
 }
 const PUBLISHER = { '@type': 'Person', '@id': `${SITE}/#person`, name: AUTHOR, description: PERSON.description }
 const podcastStatePath = resolve(ROOT, '.podcast-state.json')

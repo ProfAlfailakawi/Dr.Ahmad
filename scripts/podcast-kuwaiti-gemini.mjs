@@ -145,7 +145,7 @@ function promptFor(turns, index, total) {
   const lines = []
   turns.forEach((turn, index) => {
     if (index > 0 && index % 10 === 0) {
-      lines.push('[REMINDER — keep the same light, soft Kuwait-City delivery as the first line: never heavier, never emphatic, never drifting toward MSA, Emirati, Iraqi, Levantine or Persian.]')
+      lines.push('[REMINDER — keep the same light, soft Kuwait-City delivery as the first line: never heavier, never emphatic, never drifting toward MSA, Emirati, Omani, Iraqi, Levantine or Persian.]')
     }
     lines.push(`${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': ['))
   })
@@ -153,6 +153,7 @@ function promptFor(turns, index, total) {
   return `ABSOLUTE RULE — READ FIRST, APPLY TO EVERY SINGLE WORD
 This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers are FORBIDDEN outright — every one of them has ruined real takes, and every one is an automatic hard failure:
 1. Emirati (Dubai/Abu Dhabi) — the thinned, lighter, forward articulation. FORBIDDEN.
+1b. Omani (Muscat/Batinah) — its slower tempo, its rounded vowels and trailing sentence-final lilt. FORBIDDEN. (Named ٢٠ أغسطس ٢٠٢٦: the listener heard it repeatedly and it was absent from this list.)
 2. Iraqi — the Mesopotamian colouring: backed vowels, its drawl, its cadence. FORBIDDEN.
 3. Iranian/Persian — stretched long vowels, soft rolling consonants, any Persian softness. FORBIDDEN.
 4. Saudi — Najdi or Hejazi rhythm, the harder qaf, the desert cadence. FORBIDDEN.
@@ -267,6 +268,14 @@ FIDELITY
 
 TRANSCRIPT
 ${transcript}
+
+مرساةُ اللسان — اقرأ هذي الأسطر في نفسك قبل أن تنطق، فهي مقياسُ الصوت المطلوب:
+  «شخبارك؟ شلونك اليوم؟ زين الحمدلله.»
+  «ترى الموضوع وايد يستاهل، خل نسولف فيه على راحتنا.»
+  «هذا اللي أقصده بالضبط، وانت عارف شنو أقصد.»
+  «لا لا، مو جذي… خل أفهمك الفكرة من أولها.»
+هذا هو لسان مدينة الكويت: خفيفٌ في الفم، لا تفخيم ولا إطالة، ونهايةُ الجملة تنزل هادئةً لا ترتفع.
+كل سطرٍ في النص أدناه يُقرأ بهذا اللسان نفسه، من أوله إلى آخره.
 
 FINAL CHECK — LAST INSTRUCTION BEFORE SPEAKING
 Re-scan the transcript word by word before the take. Any word that would come out Emirati, Iraqi, Persian, Saudi, Levantine, Egyptian, or generic-Gulf must be corrected to Kuwait City Kuwaiti first. Every word, every line, both speakers: Kuwait City Kuwaiti only.
@@ -834,6 +843,12 @@ if (SELF_TEST) {
   assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes(KW_LOCK)), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
   assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
+    /* [٢١ أغسطس ٢٠٢٦] القفلان الجديدان يُثبَّتان بتأكيدٍ لا بثقة — درس «معلقة»:
+       ملاحظةٌ تصف إصلاحاً ومدخلةٌ غائبة أضاعت ثلاث جولات قبل أن تُكتشف. */
+    assert.match(prompt, /Omani \(Muscat\/Batinah\)/i, 'العُماني محظورٌ صراحةً — سمعه الدكتور وكان غائباً عن القائمة')
+    assert.match(prompt, /مرساةُ اللسان/, 'المرساة العربية الإيجابية داخل الأمر')
+    assert.match(prompt, /شخبارك؟ شلونك اليوم؟/, 'جمل المرساة النموذجية بالعربية')
+    assert.ok(prompt.indexOf('مرساةُ اللسان') < prompt.indexOf('FINAL CHECK'), 'المرساة قبل الفحص الختامي لا بعده')
   /* «ترقيق» كانت تُنسب إلى الإماراتية وتُطلب للكويتية ضدُّها — وقد انقلب
      الحكم بسماعه: الكويتية الحضرية هي المرقَّقة. فيُحرس المعنى الجديد. */
   assert.match(prompt,/مرقَّق/, 'الترقيق صفةُ الكويتية نفسها — حكمه ١٥ أغسطس')

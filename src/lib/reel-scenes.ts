@@ -11,6 +11,8 @@
 
 import { analyzeSocialContent, type ContentTone, type ContentTopic } from './social-design-engine'
 import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from './arabic-count.ts'
+import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
+import { chooseMetaphors, type MetaphorId } from './reel-metaphors'
 
 /* ------------------------------- الأنواع ------------------------------- */
 
@@ -57,7 +59,9 @@ export interface ReelWorld {
 }
 
 export interface ReelScene {
-  kind: 'signature' | 'hook' | 'shift' | 'idea' | 'truth' | 'close'
+  kind: 'signature' | 'hook' | 'shift' | 'idea' | 'truth' | 'close' | 'metaphor'
+  /** استعارة مرسومة تتصدّر المشهد — مصدرها معجم الدكتور لا ذوقٌ عام. */
+  metaphor?: MetaphorId
   slug: string
   /** سطر تمهيد صغير فوق السطر الكبير. */
   eyebrow?: string
@@ -88,6 +92,11 @@ export interface ReelPlan {
   footerMark: string
   seed: number
   variant: number
+  /** المفهوم الذي تعرّف عليه المعجم، ومشاهده البصرية — للعرض والتفسير. */
+  concept: string | null
+  metaphors: MetaphorId[]
+  /** ترجمة محروقة أسفل الشاشة — تُطفأ بأمر المحرر إن أرادها نظيفة. */
+  captions?: boolean
   /** ملخص قرارات المخطِّط — يُعرض للدكتور كي يفهم لماذا اختلف هذا الريل. */
   rationale: string[]
 }
@@ -217,17 +226,48 @@ function mineText(title: string, body: string): MinedText {
 
   const numberMatch = full.match(/(?:^|\s)(\d{2,3})\s*[%٪]/) || full.match(/(?:^|\s)(\d{2,3})(?=\s)/)
   const parsedNumber = numberMatch ? parseInt(numberMatch[1], 10) : NaN
-  const number = Number.isFinite(parsedNumber) && parsedNumber >= 10 && parsedNumber <= 999 ? parsedNumber : null
+  /* أرقام الدكتور تُكتب حروفاً غالباً («تسعين بالمئة»)، فلو اكتفينا بالخانات
+     اللاتينية لبقي قالب العدّاد معطّلاً على أغلب متونه. */
+  const WORD_NUMBERS: [RegExp, number][] = [
+    [/تسعين|تسعون/, 90], [/ثمانين|ثمانون/, 80], [/سبعين|سبعون/, 70], [/ستين|ستون/, 60],
+    [/خمسين|خمسون/, 50], [/أربعين|اربعين|أربعون/, 40], [/ثلاثين|ثلاثون/, 30], [/عشرين|عشرون/, 20],
+    [/مئة|مائة|المئة الكاملة/, 100], [/ثلثين|ثلثي/, 66], [/نصف/, 50], [/ربع/, 25],
+  ]
+  let wordNumber: number | null = null
+  for (const [pattern, value] of WORD_NUMBERS) {
+    if (pattern.test(full)) { wordNumber = value; break }
+  }
+  const number = Number.isFinite(parsedNumber) && parsedNumber >= 10 && parsedNumber <= 999
+    ? parsedNumber
+    : wordNumber
 
+  /* انتقاء الجُمل: الشذرة المبتورة تقتل المشهد. نرفض ما يبدأ بحرف عطفٍ أو
+     ربطٍ معلَّق، وما ينتهي معلَّقاً، ونرجّح الجملة التامة القصيرة الحاملة لمقابلة. */
+  const DANGLING_START = /^(?:لكن|لكنّ|بل|و|ف|ثم|أو|أي|حيث|الذي|التي|كما|لأن|إذ|بينما|رغم)\b/
+  const DANGLING_END = /(?:و|أو|من|إلى|على|في|عن|أن|إن|مع|بين|بعد|قبل|كل|هذا|هذه|التي|الذي)$/
+  const selfContained = (line: string) => {
+    const words = line.split(/\s+/).filter(Boolean)
+    if (words.length < 4 || words.length > 12) return false
+    if (DANGLING_START.test(line)) return false
+    if (DANGLING_END.test(line.replace(/[،؛:.]$/, '').trim())) return false
+    return true
+  }
+  const scoreLine = (line: string) => {
+    let score = 0
+    if (/(ليس|لا يزال|لم يعد|بل |وحده|أخطر|الحقيقة|السؤال|لأول مرة)/.test(line)) score += 3
+    if (/[؟]/.test(line)) score += 2
+    const words = line.split(/\s+/).length
+    if (words >= 5 && words <= 9) score += 2
+    else if (words <= 11) score += 1
+    if (line.length <= 46) score += 1
+    if (/[«»"]/.test(line)) score += 1
+    return score
+  }
   const strongLines = sentences
-    .filter((sentence) => sentence.length >= 12 && sentence.length <= 70)
-    .sort((a, b) => {
-      const score = (line: string) =>
-        (/(ليس|لا |لم |بل |وحده|كل |أخطر|الحقيقة|السؤال)/.test(line) ? 2 : 0) + (line.length <= 46 ? 1 : 0)
-      return score(b) - score(a)
-    })
+    .map((sentence) => tightLine(sentence))
+    .filter((line) => line.length >= 14 && line.length <= 64 && selfContained(line))
+    .sort((a, b) => scoreLine(b) - scoreLine(a))
     .slice(0, 6)
-    .map((line) => tightLine(line))
 
   const stop = new Set(['الذي', 'التي', 'الذين', 'هذا', 'هذه', 'ذلك', 'كان', 'كانت', 'لكن', 'حين', 'حتى', 'إلى', 'على', 'عن', 'في', 'من', 'ما', 'لا', 'أن', 'إن', 'قد', 'كل', 'ثم', 'هو', 'هي', 'بين', 'بعد', 'قبل', 'غير', 'عند', 'فيه', 'كما', 'لأن', 'وهو', 'وهي'])
   const frequency = new Map<string, number>()
@@ -257,6 +297,42 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
   const title = source.title.trim()
   const body = source.body.trim()
   const analysis = analyzeSocialContent(`${title}\n${body}`.slice(0, 4000))
+  /* المعجم يقرأ المادة قبل أي قرار بصري: هو من يسمّي المفهوم ويقترح مشاهده
+     وعوالمه ومزاجه ومحظوراته — فالاستعارة تخرج من علم الدكتور لا من ذوقٍ عام. */
+  const domain = interpretDrAhmadDomain(`${title} ${body.slice(0, 1200)}`)
+  /* بوابة صدق حرفية. المعجم يرتّب المفاهيم بالتشابه، فيخرج أحياناً مرشَّحٌ
+     عالي الثقة لا سند له في المتن، أو مرشَّحٌ يخالف المصطلح الذي التُقط فعلاً:
+       «الوطن ليس وجهة نظر»      ← رُشِّح «برنامج حضور إلكتروني» بلا مصطلح أصلاً
+       «جيلٌ بلا جذور»            ← التُقطت «حماية» ورُشِّح «الواقع الافتراضي»
+       «السبورة التي لم تعد ترى» ← رُشِّح «Microsoft Teams» بكلمةٍ ليست في النص
+     لذلك لا نثق بالترتيب: نطالب بأن يظهر اسم المفهوم نفسه — أو أحد مرادفاته
+     المعتبرة — حرفياً في المادة. ما لا يُنطق في المتن لا يحكم صورته. */
+  /* تطبيع عربي خفيف قبل المطابقة: التشكيل والهمزات وصور الألف والياء والتاء
+     المربوطة تختلف بين المعجم والمتن، فلولا التطبيع لسقطت مطابقاتٌ صحيحة
+     («ذكائنا» مقابل «الذكاء»). ويبقى ما لا أثر له في المتن مرفوضاً. */
+  const normalizeAr = (value: string) => value
+    .replace(/[\u064B-\u0652\u0640]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/[ؤئء]/g, '')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const haystack = normalizeAr(`${title} ${body}`)
+  const literalIn = (term: string) => {
+    const clean = normalizeAr(term)
+    if (clean.length < 4) return false
+    if (haystack.includes(clean)) return true
+    /* المصطلح المركّب يُقبل إذا حضرت كلماته الجوهرية كلها في المتن. */
+    const words = clean.split(' ').filter((word) => word.length >= 4 && !/^(في|من|على|عن|الى|مع)$/.test(word))
+    return words.length >= 2 && words.every((word) => haystack.includes(word))
+  }
+  const primaryEntry = domain.primary
+  const grounded = Boolean(primaryEntry) && (
+    literalIn(primaryEntry!.canonicalAr)
+    || (primaryEntry!.aliases || []).some((alias) => literalIn(alias))
+  )
+  const conceptName = grounded ? primaryEntry?.canonicalAr || null : null
   const mined = mineText(title, body)
   const seed = (fnv(`${title}|${body.slice(0, 400)}|لقطة${variant}`) + variant * 7919) >>> 0
   const random = mulberry(seed)
@@ -270,6 +346,26 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
       : /(ذكاء|خوارزم|روبوت|بيانات)/.test(lexicon) ? 'ai'
       : /(طالب|معلم|مدرسة|امتحان|صف)/.test(lexicon) ? 'education'
       : analysis.topic
+
+  const minedMetaphors = chooseMetaphors(grounded
+    ? [conceptName || '', domain.visualScenes.join(' · '), domain.primary?.meaningAr || '', `${title} ${body.slice(0, 600)}`]
+    : [`${title} ${body.slice(0, 900)}`], 3)
+  /* لا مشهد بلا صورة: المادة الوجدانية قد لا تحمل مفردة استعارية صريحة،
+     فنسندها باستعارة تليق بمقامها بدل أن تخرج نصاً عارياً. */
+  const TOPIC_FALLBACK: Partial<Record<ContentTopic, MetaphorId[]>> = {
+    human: ['ripple', 'constellation'],
+    family: ['seed', 'roots'],
+    education: ['stairs', 'orbit-loop'],
+    ai: ['dissolving-grid', 'lock-key'],
+    research: ['lens', 'signal-bars'],
+    media: ['ripple', 'constellation'],
+    leadership: ['compass', 'stairs'],
+    book: ['roots', 'constellation'],
+    general: ['ripple', 'orbit-loop'],
+  }
+  const metaphors = minedMetaphors.length
+    ? minedMetaphors
+    : (TOPIC_FALLBACK[nudgedTopic] || TOPIC_FALLBACK.general || [])
 
   /* القالب — شكل النص يرشّح، والموضوع يرجّح، والبذرة تحسم. */
   /* ترجيحٌ صريح: ما ينطق به المتن يسبق ما يميل إليه الموضوع، والبذرة تحسم
@@ -309,12 +405,22 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
   const worldPool = TOPIC_WORLDS[nudgedTopic] || TOPIC_WORLDS.general
   /* مجرى عشوائي مستقل للعالم: لو اقتسم العالمُ مجرى القالب، لتجمّعت نصوصُ
      موضوعٍ واحد على لونٍ واحد كلما تشابه طول نصّها. */
-  const worldRandom = mulberry((seed ^ fnv(`${title}·عالم·${templateId}`)) >>> 0)
-  const world = worldById.get(worldPool[Math.floor(worldRandom() * worldPool.length) % worldPool.length]) || WORLDS[0]
+  /* دوران حتمي بإزاحة مشتقة من العنوان: يضمن أن نصّين مختلفين على موضوع واحد
+     لا يقعان على اللون نفسه إلا إذا استُنفدت المجموعة كلها. */
+  const rotate = fnv(`${title}·${body.slice(0, 220)}·عالم·${templateId}·${variant}`) % worldPool.length
+  const world = worldById.get(worldPool[rotate]) || WORLDS[0]
   rationale.push(`الموضوع «${nudgedTopic}» فتح عوالم: ${worldPool.map((id) => worldById.get(id)?.label).join(' · ')} — ووقع الاختيار على «${world.label}»`)
 
   /* المزاج الموسيقي: القالب يفرض طبعه أولاً، والنبرة تهذّبه. */
-  const tonalMood = MOOD_BY_TONE[analysis.primaryTone]
+  /* مزاج المعجم يسبق تخمين المحلّل: هو مكتوبٌ لكل مفهوم بيد الدكتور. */
+  const GLOSSARY_MOOD: Record<string, ReelMoodId> = {
+    human: 'warm', warm: 'warm', calm: 'warm', optimistic: 'warm', collaborative: 'warm',
+    academic: 'scholar', precise: 'scholar', data: 'scholar', intellectual: 'scholar', critical: 'scholar',
+    bright: 'bright', playful: 'bright', energetic: 'bright', creative: 'bright', dynamic: 'bright',
+    dignified: 'dark', institutional: 'dark', confident: 'dark', future: 'dark', immersive: 'dark',
+  }
+  const domainMood = grounded ? domain.moods.map((m) => GLOSSARY_MOOD[m]).find(Boolean) : undefined
+  const tonalMood = domainMood || MOOD_BY_TONE[analysis.primaryTone]
   /* الإشراق الاحتفالي لا يليق بمادة ثقيلة: الذكاء والإعلام والرثاء تُخفَض
      نبرتها إلى الرصانة مهما بدت لغتها لامعة للمحلّل. */
   const grave = solemn || nudgedTopic === 'ai' || nudgedTopic === 'media'
@@ -323,7 +429,9 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
     templateId === 'siren' ? 'dark'
       : templateId === 'manuscript' ? (solemn ? 'warm' : softened === 'bright' ? 'warm' : 'warm')
       : templateId === 'counter' ? (grave ? 'scholar' : 'bright')
-      : templateId === 'question' ? (softened === 'warm' || softened === 'bright' ? softened : grave ? 'scholar' : 'dark')
+      /* السؤال مقامٌ متأمِّل: الإشراق الاحتفالي لا يليق بمن يسأل، فيُخفَض
+         إلى الرصانة ويبقى الدفء وحده مسموحاً به. */
+      : templateId === 'question' ? (softened === 'warm' ? 'warm' : softened === 'bright' ? 'scholar' : grave ? 'scholar' : 'dark')
       : softened || 'scholar'
   rationale.push(`قالب «${templateId}» طبع الموسيقى «${mood}» (النبرة: ${analysis.primaryTone})`)
 
@@ -373,6 +481,19 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
     scenes.push({ kind: 'idea', slug: 'MORE / 05', line: strong[3], seconds: 3.0 })
   }
 
+  /* مشهد الاستعارة: الفكرة تُرسم لا تُكتب — يدخل قبل الختام كي يستقر أثره. */
+  if (metaphors.length) {
+    scenes.push({
+      kind: 'metaphor',
+      slug: `IMAGE / ${String(scenes.length + 1).padStart(2, '0')}`,
+      /* الأقوى دلالةً أولاً (المكتبة رتّبتها بقوة المطابقة)، و«لقطة أخرى»
+         تدور على التالية — فالذوق مضمون والتنويع محفوظ معاً. */
+      metaphor: metaphors[variant % metaphors.length],
+      eyebrow: conceptName || undefined,
+      line: strong[4] || strong[0] || tightLine(title, 40),
+      seconds: 3.2,
+    })
+  }
   scenes.push({ kind: 'close', slug: `FINAL / ${String(scenes.length + 1).padStart(2, '0')}`, eyebrow: tightLine(title, 40), line: 'المقال كاملاً في الموقع', seconds: 3.6 })
 
   /* الإيقاع جزءٌ من الهوية: القالب يفرض نَفَسه (الصفارة تلهث، المخطوطة تتمهّل)،
@@ -388,6 +509,7 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
     scene.seconds = Math.round(scene.seconds * tempo * drift * 10) / 10
   }
   const seconds = Math.round(scenes.reduce((total, scene) => total + scene.seconds, 0) * 10) / 10
+  if (conceptName) rationale.push(`المعجم تعرّف على «${conceptName}» فاقترح مشاهده البصرية${metaphors.length ? ` — واخترتُ منها: ${metaphors.join(' · ')}` : ''}`)
   rationale.push(`${arabicCountPhrase(scenes.length, REEL_SCENE_FORMS)} · ${arabicCountPhrase(seconds, SECOND_FORMS)} · زخارف: ${motifs.join(' + ')}`)
 
   return {
@@ -405,6 +527,8 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
     footerMark: 'الإنسان قبل الآلة',
     seed,
     variant,
+    concept: conceptName,
+    metaphors,
     rationale,
   }
 }

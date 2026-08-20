@@ -269,7 +269,8 @@ TRANSCRIPT
 ${transcript}
 
 FINAL CHECK — LAST INSTRUCTION BEFORE SPEAKING
-Re-scan the transcript word by word before the take. Any word that would come out Emirati, Iraqi, Persian, Saudi, Levantine, Egyptian, or generic-Gulf must be corrected to Kuwait City Kuwaiti first. Every word, every line, both speakers: Kuwait City Kuwaiti only.`
+Re-scan the transcript word by word before the take. Any word that would come out Emirati, Iraqi, Persian, Saudi, Levantine, Egyptian, or generic-Gulf must be corrected to Kuwait City Kuwaiti first. Every word, every line, both speakers: Kuwait City Kuwaiti only.
+HOLD TO THE LAST SECOND — the drift happens late: the listener judged minute 3+ hardest, and Noura's register slid to Emirati exactly there after a flawless start. The final third of this take must be read with the same full Kuwait City register as the first line. Do not relax as the take progresses.`
 }
 
 /* `output_audio` خاصيةُ راحةٍ في مكتبات Gemini، لا حقلٌ في ردّ REST الخام:
@@ -673,8 +674,10 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
       makeMusicClip(musicPath, bridgeFile, bridgeDuration, MUSIC.bridgeLufs, 0.22, 0.70, chosen.offset + MUSIC.introSec + 1.2)
       const bridgeStart = Math.max(0, current.startSec + current.durationSec - 0.12)
       bridgeItems.push({ file: bridgeFile, startSec: bridgeStart, durationSec: bridgeDuration, isBridge: true })
-      // Let the next speaker enter under the tail of the bridge, but never over the previous spoken turn.
-      next.startSec = Math.max(current.startSec + current.durationSec + 0.18, bridgeStart + MUSIC.bridgeSec - MUSIC.bridgeTailSec)
+      /* [٢٠ أغسطس ٢٠٢٦] كان المتحدّث التالي يدخل تحت ذيل الجسر (آخر ٠.٣ث)
+         فتُداس أول كلمته — سمعها الدكتور في «عشان جذي الإصلاح…»: «ما خلاه
+         يكمل على طول شغل الجسر». صار الكلام يبدأ بعد انتهاء الجسر كاملاً. */
+      next.startSec = Math.max(current.startSec + current.durationSec + 0.18, bridgeStart + MUSIC.bridgeSec + 0.15)
       for (let j = i + 2; j < items.length; j += 1) {
         const prev = items[j - 1]
         const overlap = Math.max(0, Math.min(150, Number(turns[j].overlapMs || 0)))

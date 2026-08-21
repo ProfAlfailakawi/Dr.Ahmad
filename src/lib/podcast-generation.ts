@@ -34,11 +34,13 @@ export async function dispatchPodcastGeneration({
   slug,
   proof,
   variant = 'standard',
+  regenerate = false,
 }: {
   user: TokenUser | null
   slug: string
   proof: DialogueProof
   variant?: PodcastGenerationVariant
+  regenerate?: boolean
 }): Promise<DispatchResult> {
   if (!user) throw new Error('انتهت جلسة المشرف؛ سجّل الدخول من جديد.')
   const token = await user.getIdToken(true)
@@ -55,6 +57,7 @@ export async function dispatchPodcastGeneration({
       expectedDialogueRevisionId: proof.revisionId,
       expectedTurnCount: proof.turnCount,
       variant,
+      regenerate,
     }),
   })
   const payload = await responsePayload(response)

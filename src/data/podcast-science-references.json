@@ -1,0 +1,31 @@
+{
+  "success-that-does-not-bring-joy-to-its-ownerarabic": [
+    {
+      "title": "Test anxiety effects, predictors, and correlates: A 30-year meta-analytic review",
+      "authors": "von der Embse NP, Jester D, Roy D, Post J",
+      "year": 2018,
+      "journal": "Journal of Affective Disorders",
+      "doi": "10.1016/j.jad.2017.11.048",
+      "url": "https://doi.org/10.1016/j.jad.2017.11.048",
+      "note": "مراجعة تجميعية لـ238 دراسة؛ وجدت ارتباطاً سلبياً بين قلق الاختبار ومجموعة من مؤشرات الأداء التعليمي، بحجم علاقة صغير إلى متوسط."
+    },
+    {
+      "title": "The association between academic stress and test anxiety in college students: The mediating role of regulatory emotional self-efficacy and the moderating role of parental expectations",
+      "authors": "Zheng G, Zhang Q, Ran G",
+      "year": 2023,
+      "journal": "Frontiers in Psychology",
+      "doi": "10.3389/fpsyg.2023.1008679",
+      "url": "https://doi.org/10.3389/fpsyg.2023.1008679",
+      "note": "دراسة على 1,315 طالباً؛ وجدت ارتباطاً موجباً بين الضغط الأكاديمي وقلق الاختبار، مع دور لتنظيم المشاعر وتوقعات الوالدين في بنية العلاقة."
+    },
+    {
+      "title": "When Insecure Self-Worth Drains Students' Energy: Academic Contingent Self-Esteem and Parents' and Teachers' Perceived Conditional Regard as Predictors of School Burnout",
+      "authors": "Lavrijsen J, Soenens B, Vansteenkiste M, Verschueren K",
+      "year": 2023,
+      "journal": "Journal of Youth and Adolescence",
+      "doi": "10.1007/s10964-023-01749-y",
+      "url": "https://doi.org/10.1007/s10964-023-01749-y",
+      "note": "دراسة طولية على 3,409 مراهقين؛ وجدت أن تقدير الذات الأكاديمي المشروط تنبأ بالاحتراق الدراسي، وأن القبول المشروط من الوالدين والمعلمين ساهم في الخطر."
+    }
+  ]
+}

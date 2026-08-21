@@ -117,7 +117,12 @@ function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {
 /* «احنا ما نفخم ترى الكلمات… احنا دايم نرقق» — حكمه ١٥ أغسطس، وهو أثمن
    مفتاحٍ في المشروع. كان القفل يطلب الغِلَظ فيُخرج تفخيماً
    بدوياً؛ والكويتية الحضرية مرقَّقةٌ خفيفة. */
-const KW_LOCK = 'light, soft Kuwait-City Kuwaiti — never heavy, never emphatic'
+/* [٢١ أغسطس ٢٠٢٦ — متغيّر الجولة الوحيد] حكم الدكتور على حلقة إصلاح الموسيقى:
+   «بعد دقيقة مرات كويتي ومرات اماراتي… تغير الصوت وتغير الأسلوب وتحول اماراتي».
+   رأس الطلب يحرّم الإماراتي بالاسم، لكن التاج الذي يركب كل دورٍ — وهو ما يبقى
+   حيّاً حين تبتعد تعليمات الرأس — لم يسمِّه قط. والانجراف المسموع إماراتيٌّ
+   تحديداً لا غيره، فالاسم يُثبَّت حيث يقع الانزلاق: على الدور نفسه. */
+const KW_LOCK = 'light, soft Kuwait-City Kuwaiti — never heavy, never emphatic, never Emirati'
 const directionFor = (type) => ({
   question: `[curious — ${KW_LOCK}]`, reflection: `[reflective — ${KW_LOCK}]`, objection: `[gently skeptical — ${KW_LOCK}]`, gentleObjection: `[gently skeptical — ${KW_LOCK}]`,
   emphasis: `[serious — ${KW_LOCK}]`, briefReaction: `[warmly — ${KW_LOCK}]`, conclusion: `[calmly — ${KW_LOCK}]`, closing: `[softly — ${KW_LOCK}]`,
@@ -860,6 +865,10 @@ if (SELF_TEST) {
   assert.ok(!voiceSwapped(true, null), 'غياب القياس لا يُنذر')
   assert.match(prompt,/FINAL CHECK — LAST INSTRUCTION/i, 'القفل الثالث: الفحص الختامي بعد النص')
   assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes(KW_LOCK)), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
+  /* [٢١ أغسطس ٢٠٢٦] الانجراف المسموع إماراتيٌّ بالاسم («مرات كويتي ومرات
+     اماراتي»)، ورأس الطلب وحده لا يحرس أواخر الحلقة — فالاسم يجب أن يركب
+     التاج نفسه في كل دور. التأكيد هنا يمنع كنسةً مستقبلية من إسقاطه. */
+  assert.match(KW_LOCK, /never Emirati/, 'تاج كل دورٍ يسمّي الإماراتي — موضع الانجراف الذي سمعه الدكتور بعد الدقيقة الأولى')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
   assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
     /* [٢١ أغسطس ٢٠٢٦] القفلان الجديدان يُثبَّتان بتأكيدٍ لا بثقة — درس «معلقة»:

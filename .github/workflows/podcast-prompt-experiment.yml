@@ -1,4 +1,4 @@
-name: تجربة البرومت — الأدنى ضد الكامل على حلقة قصيرة
+name: تجربة البرومت — ثلاثة رؤوس × ثلاث بذور على حلقة قصيرة
 
 # [٢٢ أغسطس ٢٠٢٦ — تجربة صديق الدكتور] فرضيته: مع Gemini «كل ما زدت
 # القيود تتعب»، والقصر يسبق الانجراف. التجربة المنضبطة: أول ١٩ دوراً من
@@ -66,12 +66,24 @@ jobs:
             console.log('✓ حلقة قصيرة: ' + turns.length + ' دوراً');
           "
 
-      - name: توليد الذراع الأولى — البرومت الأدنى
+      # [نسخة ٢ — بمنهج الصديق] عيّنة واحدة لكل ذراع لا تكفي والتذبذب
+      # مبرهن؛ ثلاث بذور متطابقة عبر الأذرع الثلاثة = تسعة مقاطع قصيرة،
+      # كل بذرة تقارن نفسها عبر الرؤوس الثلاثة. التعمية بأسماء مخلوطة
+      # (خلطة ثابتة مشتقة من رقم التشغيلة) والمفتاح مغلق حتى حكم الأذن.
+      - name: توليد الأذرع التسعة — ٣ برومتات × ٣ بذور متطابقة
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/podcast-kuwaiti-gemini.mjs --slug="success-that-does-not-bring-joy-to-its-ownerarabic"
-          mv audio/success-that-does-not-bring-joy-to-its-ownerarabic.dialogue-kw.mp3 audio/arm-minimal.mp3
+          SLUG="success-that-does-not-bring-joy-to-its-ownerarabic"
+          mkdir -p exp
+          for MODE in minimal full c; do
+            for SEED in 1101 1102 1103; do
+              echo "── ذراع $MODE · بذرة $SEED"
+              PODCAST_KW_PROMPT_MODE="$MODE" PODCAST_KW_SEED="$SEED" \
+                node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
+              mv "audio/$SLUG.dialogue-kw.mp3" "exp/$MODE-$SEED.mp3"
+            done
+          done
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
@@ -79,41 +91,34 @@ jobs:
           PODCAST_KW_GENERATION_MODE: pilot
           PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
           PODCAST_KW_MIN_GAP: '0'
-          PODCAST_KW_PROMPT_MODE: minimal
 
-      - name: توليد الذراع الثانية — البرومت الكامل
+      - name: التعمية والرفع — تسعة مقاطع بأسماء مخلوطة ومفتاح مغلق
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/podcast-kuwaiti-gemini.mjs --slug="success-that-does-not-bring-joy-to-its-ownerarabic"
-          mv audio/success-that-does-not-bring-joy-to-its-ownerarabic.dialogue-kw.mp3 audio/arm-full.mp3
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
-          PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
-          PODCAST_KW_GENERATION_MODE: pilot
-          PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
-          PODCAST_KW_MIN_GAP: '0'
-          PODCAST_KW_PROMPT_MODE: full
-
-      - name: التعمية والرفع — «س» و«ص» والمفتاح مغلق
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ $(( GITHUB_RUN_ID % 2 )) -eq 0 ]; then
-            cp audio/arm-minimal.mp3 audio/seen.mp3; cp audio/arm-full.mp3 audio/saad.mp3
-            KEY='{"س":"minimal","ص":"full"}'
-          else
-            cp audio/arm-full.mp3 audio/seen.mp3; cp audio/arm-minimal.mp3 audio/saad.mp3
-            KEY='{"س":"full","ص":"minimal"}'
-          fi
-          printf '%s' "$KEY" > audio/experiment-key.json
+          node -e "
+            const fs = require('fs');
+            const files = fs.readdirSync('exp').filter((f) => f.endsWith('.mp3')).sort();
+            // خلطة حتمية مشتقة من رقم التشغيلة — لا عشوائية وقت التنفيذ
+            let x = Number(process.env.GITHUB_RUN_ID) % 2147483647;
+            const rnd = () => (x = (x * 48271) % 2147483647) / 2147483647;
+            const order = files.map((f) => ({ f, r: rnd() })).sort((a, b) => a.r - b.r).map((o) => o.f);
+            const key = {};
+            order.forEach((f, i) => {
+              const name = 'مقطع-' + String(i + 1).padStart(2, '0') + '.mp3';
+              fs.copyFileSync('exp/' + f, 'exp/' + name);
+              key[name] = f.replace('.mp3', '');
+            });
+            fs.writeFileSync('exp/experiment-key.json', JSON.stringify(key, null, 2));
+            console.log('✓ تسعة مقاطع معماة والمفتاح مغلق');
+          "
           AWS=(aws --endpoint-url "$CLOUDFLARE_R2_ENDPOINT" s3api)
           P="staging/prompt-experiment"
-          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$P/seen.mp3" --body audio/seen.mp3 --content-type audio/mpeg --cache-control no-store
-          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$P/saad.mp3" --body audio/saad.mp3 --content-type audio/mpeg --cache-control no-store
-          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$P/experiment-key.json" --body audio/experiment-key.json --content-type application/json --cache-control no-store
-          echo "✓ رُفعت س وص — المفتاح مغلق حتى يحكم الدكتور"
+          for i in 01 02 03 04 05 06 07 08 09; do
+            "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$P/clip-$i.mp3" --body "exp/مقطع-$i.mp3" --content-type audio/mpeg --cache-control no-store
+          done
+          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$P/experiment-key.json" --body exp/experiment-key.json --content-type application/json --cache-control no-store
+          echo "✓ رفعت clip-01..09 — المفتاح مغلق حتى حكم الأذنين"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}

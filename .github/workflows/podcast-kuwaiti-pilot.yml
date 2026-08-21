@@ -23,7 +23,7 @@ on:
         required: false
         default: '1'
       prompt_mode:
-        description: 'تجربة الصديق: minimal = برومت إيجابي قصير بلا تعداد اللهجات المحرمة وبلا تذكيرات (فخ الفيل الوردي) — full الافتراض الحرفي'
+        description: 'أوضاع البرومت: full الجدار الحرفي · minimal وصفة الصديق (عربي قصير + منع بأسماء مجردة) · c صياغة الصديق ببنية Google الرسمية بلا أي منع'
         required: false
         default: 'full'
 
@@ -32,8 +32,11 @@ permissions:
   # [٢٢ أغسطس ٢٠٢٦] مسار «التثبيت الحقيقي» يقرأ مرفقات تشغيلة سابقة
   actions: read
 
+# [٢٢ أغسطس — مقترح الصديق] القفل كان لكل slug فتتوازى عشر حلقات ويدعس
+# مجموعُ عملياتها حصةَ RPM المشتركة وكل عملية تظن نفسها ملتزمة.
+# قفل عام واحد لكل توليد كويتي = طابور طبيعي يحمي الحصة.
 concurrency:
-  group: podcast-kuwaiti-pilot-${{ inputs.slugs }}
+  group: podcast-kuwaiti-gemini-global
   cancel-in-progress: false
 
 jobs:
@@ -160,15 +163,16 @@ jobs:
           for t in $(seq 1 "$TAKES"); do
             ACCEPTED=0
             for i in $(seq 1 $ATTEMPTS); do
-              if [ "$i" -eq "$ATTEMPTS" ]; then
-                echo "نسخة $t/$TAKES · المحاولة $i/$ATTEMPTS — الأخيرة، تُقبل كما هي بلا عتبة."
-                export PODCAST_KW_MIN_GAP=0
-              else
-                # العتبة تُعاد لكل محاولة: تصفيرها في المحاولة الأخيرة كان
-                # سيتسرب إلى النسخ التالية فتُقبل عيّناتها السيئة بلا فحص.
-                export PODCAST_KW_MIN_GAP="$BASE_GAP"
-                echo "نسخة $t/$TAKES · المحاولة $i/$ATTEMPTS — العتبة $PODCAST_KW_MIN_GAP هرتزاً."
-              fi
+              # [٢٢ أغسطس ٢٠٢٦ — مقترح الصديق] كانت المحاولة الأخيرة تصفّر
+              # العتبة وتقبل أي شيء «حتى لا نبقى بلا حلقة» — وهذا عكس مفهوم
+              # البوابة، ودليله بأذن الدكتور: عيّنتا التجربة بلا عتبة خرجتا
+              # «صوت واحد بدون شخص ثاني». البوابة تصدق دائماً: ثلاث سقطات
+              # = تشغيلة فاشلة تُعاد، لا حلقة رديئة تمر.
+              export PODCAST_KW_MIN_GAP="$BASE_GAP"
+              # بذور معلومة (مقترحه): 1101/1102/1103 للنسخ، والمحاولة
+              # الفاشلة تنزاح بذرتها +10 كي لا تعيد نفس العينة المرفوضة.
+              export PODCAST_KW_SEED=$(( 1100 + t + (i - 1) * 10 ))
+              echo "نسخة $t/$TAKES · المحاولة $i/$ATTEMPTS — العتبة $PODCAST_KW_MIN_GAP هرتزاً · البذرة $PODCAST_KW_SEED"
               node scripts/podcast-kuwaiti-gemini.mjs --slug="$RELEASED_SLUGS"
               CODE=$?
               if [ "$CODE" -eq 0 ]; then
@@ -182,7 +186,7 @@ jobs:
               fi
             done
             if [ "$ACCEPTED" -ne 1 ]; then
-              echo "::error::النسخة $t: لم تُقبل أي عيّنة بعد $ATTEMPTS محاولات."
+              echo "::error::النسخة $t: ثلاث عينات متتالية دون العتبة — اليوم رديء عند المحرك؛ أعد التشغيلة لاحقاً بدل قبول حلقة بصوت واحد."
               exit 1
             fi
             if [ "$TAKES" -gt 1 ]; then

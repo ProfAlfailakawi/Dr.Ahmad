@@ -91,6 +91,27 @@ export function LivingIconToggle({ className = '' }: { className?: string }) {
   )
 }
 
+interface ManualPos { top: number; left: number; size: number }
+
+const posKey = (plan: CompositionPlan) => `reel:living-icon-pos:${plan.fingerprint || plan.id}`
+
+function readManualPos(plan: CompositionPlan): ManualPos | null {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(posKey(plan))
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as ManualPos
+    if (typeof parsed.top === 'number' && typeof parsed.left === 'number' && typeof parsed.size === 'number') return parsed
+    return null
+  } catch { return null }
+}
+function writeManualPos(plan: CompositionPlan, pos: ManualPos) {
+  try { localStorage.setItem(posKey(plan), JSON.stringify(pos)) } catch { /* محجوب */ }
+}
+function clearManualPos(plan: CompositionPlan) {
+  try { localStorage.removeItem(posKey(plan)) } catch { /* محجوب */ }
+}
+
 function metaphorFor(plan: CompositionPlan): MetaphorId {
   const c = plan.content
   const text = [c.title, c.heroWord, c.quote, c.kicker, c.subtitle, c.body].filter(Boolean).join(' ')
@@ -188,14 +209,20 @@ async function computePlacement(plan: CompositionPlan): Promise<Placement> {
 export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
   const [motion] = useLivingIconMotion()
   const [placement, setPlacement] = useState<Placement | null>(null)
+  const [manual, setManual] = useState<ManualPos | null>(() => readManualPos(plan))
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
   const metaphor = useMemo(() => metaphorFor(plan), [plan])
   const colors = useMemo(() => {
     const pal = resolvePalette(plan)
     return { ink: pal.ink, dim: pal.muted, accent: pal.accent, accent2: pal.accentSoft || pal.accent, danger: pal.accent, surface: pal.surface, isDark: pal.isDark }
   }, [plan])
 
+  /* عند تغيّر التصميم: نقرأ موضعه اليدوي إن وُجد، وإلا نحسب التلقائي بالبكسل. */
   useEffect(() => {
+    const saved = readManualPos(plan)
+    setManual(saved)
+    if (saved) { setPlacement({ hide: false, top: saved.top, left: saved.left, size: saved.size }); return }
     let alive = true
     setPlacement(null)
     computePlacement(plan).then((next) => { if (alive) setPlacement(next) }).catch(() => { if (alive) setPlacement({ hide: true, top: 0, left: 0, size: 18 }) })
@@ -209,7 +236,7 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
-    const animate = motion && !reduce   // «بدون حركة» أو تقليل الحركة ⇒ صورة ثابتة
+    const animate = motion && !reduce
     const S = 260
     canvas.width = S
     canvas.height = S
@@ -229,7 +256,6 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
       ctx.strokeStyle = colors.accent
       ctx.stroke()
       ctx.restore()
-      /* بلا حركة: نرسم الشكل مكتملاً (تقدّم = 1) إطاراً واحداً ثابتاً. */
       const prog = animate ? Math.min(1, ((performance.now() - started) / 1000 % 6) / 2.4) : 1
       paintMetaphor(ctx, metaphor, S / 2, S / 2, S * 0.6, t, prog, paint)
       if (animate) raf = requestAnimationFrame(frame)
@@ -238,14 +264,78 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
     return () => cancelAnimationFrame(raf)
   }, [metaphor, colors, placement, motion])
 
+  /* السحب للتحريك، وسحب الزاوية للتكبير — بوحدات نسبية تُحفظ لكل تصميم. */
+  const drag = (event: React.PointerEvent, mode: 'move' | 'resize') => {
+    event.preventDefault()
+    event.stopPropagation()
+    const parent = wrapRef.current?.parentElement
+    if (!parent || !placement) return
+    const rect = parent.getBoundingClientRect()
+    const aspect = rect.width / rect.height
+    const start = { x: event.clientX, y: event.clientY, top: placement.top, left: placement.left, size: placement.size }
+    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
+    const onMove = (moveEvent: PointerEvent) => {
+      if (mode === 'move') {
+        const dx = (moveEvent.clientX - start.x) / rect.width
+        const dy = (moveEvent.clientY - start.y) / rect.height
+        const sizeW = placement.size / 100
+        const sizeH = sizeW * aspect
+        const left = clamp(start.left + dx, 0, 1 - sizeW)
+        const top = clamp(start.top + dy, 0, 1 - sizeH)
+        setPlacement((prev) => (prev ? { ...prev, top, left } : prev))
+      } else {
+        const d = ((moveEvent.clientX - start.x) / rect.width + (moveEvent.clientY - start.y) / rect.height) / 2
+        const size = clamp(start.size + d * 100, 8, 42)
+        setPlacement((prev) => (prev ? { ...prev, size } : prev))
+      }
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      setPlacement((prev) => {
+        if (prev) { const pos = { top: prev.top, left: prev.left, size: prev.size }; writeManualPos(plan, pos); setManual(pos) }
+        return prev
+      })
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
+  const resetAuto = (event: React.PointerEvent) => {
+    event.preventDefault(); event.stopPropagation()
+    clearManualPos(plan); setManual(null)
+    setPlacement(null)
+    computePlacement(plan).then(setPlacement).catch(() => setPlacement({ hide: true, top: 0, left: 0, size: 18 }))
+  }
+
   if (!placement || placement.hide) return null
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none absolute z-10 aspect-square max-w-[128px] min-w-14 drop-shadow"
+    <div
+      ref={wrapRef}
+      className="group absolute z-10 aspect-square max-w-[160px] min-w-14 cursor-move touch-none"
       style={{ top: `${(placement.top * 100).toFixed(2)}%`, left: `${(placement.left * 100).toFixed(2)}%`, width: `${placement.size}%` }}
-      aria-hidden="true"
-    />
+      onPointerDown={(event) => drag(event, 'move')}
+      title="اسحب لتحريكها · اسحب الزاوية لتكبيرها · ↺ للعودة للتلقائي"
+    >
+      <canvas ref={canvasRef} className="pointer-events-none h-full w-full drop-shadow" aria-hidden="true" />
+      {/* إطارٌ خفيف يظهر عند التمرير ليدلّ أنها قابلة للتحريك. */}
+      <span className="pointer-events-none absolute inset-0 rounded-full border border-accent/0 transition-colors group-hover:border-accent/50" />
+      {/* مقبض التكبير في الزاوية السفلى. */}
+      <span
+        onPointerDown={(event) => drag(event, 'resize')}
+        className="absolute -bottom-1 left-1/2 h-3.5 w-3.5 -translate-x-1/2 cursor-nwse-resize rounded-full border-2 border-accent bg-white opacity-0 shadow transition-opacity group-hover:opacity-100"
+        aria-label="تكبير/تصغير"
+      />
+      {/* زر العودة للتموضع التلقائي — يظهر فقط حين يكون هناك موضعٌ يدوي. */}
+      {manual && (
+        <button
+          type="button"
+          onPointerDown={resetAuto}
+          className="absolute -top-2 -left-2 flex h-5 w-5 items-center justify-center rounded-full border border-accent bg-white text-[.62rem] font-bold text-accent opacity-0 shadow transition-opacity group-hover:opacity-100"
+          title="عودة للتموضع التلقائي"
+        >↺</button>
+      )}
+    </div>
   )
 }

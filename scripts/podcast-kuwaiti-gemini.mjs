@@ -147,11 +147,11 @@ const KW_LOCK = 'light, soft Kuwait-City Kuwaiti — never heavy, never emphatic
    تتأثر — تعمل في الوضعين. متغير تجربة واحد يُفعَّل بـ
    PODCAST_KW_PROMPT_MODE=minimal، والافتراض full حرفياً. */
 const PROMPT_MODE = process.env.PODCAST_KW_PROMPT_MODE === 'minimal' ? 'minimal' : 'full'
-const MINIMAL_HEAD = `Two lifelong friends from Kuwait City are chatting in a diwaniya — warm, natural, unhurried, genuinely interested in what they are saying.
-Speak the whole conversation in authentic urban Kuwaiti Arabic (اللهجة الكويتية الحضرية — لهجة أهل مدينة الكويت), exactly the way real Kuwaitis talk at home: light and soft in the mouth, sentence endings settling down gently.
-Fahad is a calm, warm man. Noura is a bright, curious woman.
-Read every line exactly as written, letter for letter.`
-const MINIMAL_TAIL = 'Same two voices, same Kuwait City register, first line to last.'
+const MINIMAL_HEAD = `كويتي حضري من أهل مدينة الكويت، خفيف في الفم — يرققون الكلام وما يفخمون، ونهاية الجملة تنزل هادئة.
+اثنان من أهل الكويت يتسولفون في ديوانية بكل طبيعية ودفء وحيوية، مهتمان بما يقولان: فهد رجل هادئ دافئ عارف، ونورة امرأة ذكية فضولية غير مسرحية.
+تجنب ولا تستخدم: سوري، شامي، مصري، عراقي، إيراني، إماراتي، عماني، سعودي بكل تفاصيله (نجدي، حساوي، حجازي)، ولا أي خليجي عام.
+اقرأ كل سطر كما هو مكتوب حرفاً بحرف.`
+const MINIMAL_TAIL = 'نفس الصوتين ونفس لسان مدينة الكويت، من أول سطر إلى آخر سطر.'
 const directionFor = (type, mode = PROMPT_MODE) => mode === 'minimal' ? ({
   question: '[curious]', reflection: '[reflective]', objection: '[gently skeptical]', gentleObjection: '[gently skeptical]',
   emphasis: '[serious]', briefReaction: '[warmly]', conclusion: '[calmly]', closing: '[softly]',
@@ -928,10 +928,15 @@ if (SELF_TEST) {
   assert.match(prompt, /diwaniya/, 'المشهد ديوانية كويتية — اسم البودكاست وهويته')
   /* [٢٢ أغسطس ٢٠٢٦] فحوص الوضع الأدنى — تجربة صديق الدكتور: */
   const minimalPrompt = promptFor(chunks[0], 0, chunks.length, 'minimal')
-  assert.ok(!/Emirati|Saudi|Najdi|Hejazi|Iraqi|Levantine|Egyptian|Omani|Persian|FORBIDDEN/i.test(minimalPrompt),
-    'الأدنى بلا اسم أي لهجة أجنبية — فخ الفيل الوردي: النفي يستدعي المنفي')
+  /* وصفة الصديق كما نقلها الدكتور (٢٢ أغسطس): عربي قصير، والمنع قائمة
+     أسماء مجردة في سطر واحد — الخطر ليس ذكر الاسم بل الوصف الحي لصوت
+     اللهجة (rhythm/cadence/articulation) الذي يكاد يعلّمها للمحرك. */
+  assert.ok(!/FORBIDDEN|cadence|rhythm|articulation|lilt|drawl/i.test(minimalPrompt),
+    'الأدنى بلا وصف حي لأصوات اللهجات المحرمة — الأسماء المجردة وحدها')
+  assert.ok(minimalPrompt.includes('تجنب ولا تستخدم'), 'قائمة المنع المضغوطة بصيغة الصديق حاضرة')
   assert.ok(!/\[تذكير/.test(minimalPrompt), 'الأدنى بلا تذكيرات متخللة')
-  assert.ok(minimalPrompt.includes('لهجة أهل مدينة الكويت'), 'الأدنى إيجابي: يسمي المطلوب لا الممنوع')
+  assert.ok(minimalPrompt.includes('أهل مدينة الكويت') && minimalPrompt.includes('يرققون'),
+    'الجوهر الإيجابي بألفاظ الوصفة: أهل مدينة الكويت، الترقيق لا التفخيم')
   assert.ok(minimalPrompt.length < transcriptOf(chunks[0]).length + 900,
     'الأدنى قصير فعلاً — رأس وذيل دون ٩٠٠ حرف فوق النص')
   function transcriptOf(group){ return group.map((t)=>spokenForm(t.text)).join('\n') }

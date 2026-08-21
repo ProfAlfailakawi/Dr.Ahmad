@@ -190,7 +190,15 @@ AUDIO PROFILE
 Fahad and Noura are educated contemporary Kuwait City speakers in an intimate ideas podcast. Fahad is calm, knowledgeable and warm. Noura is warm, intelligent, naturally curious and never theatrical. They are Kuwaitis talking — not actors performing a Kuwaiti accent.
 
 SCENE
-A quiet modern studio in Kuwait. Two colleagues are discussing an idea for a thoughtful general audience. It must feel like a real relaxed Kuwaiti conversation, not an announcer reading copy.
+A relaxed evening gathering in a Kuwaiti diwaniya (ديوانية) in Kuwait City. Two colleagues are discussing an idea for a thoughtful general audience. It must feel like a real relaxed Kuwaiti conversation among friends, not an announcer reading copy.
+
+REGISTER REFERENCE — REAL KUWAIT CITY SPEECH
+The exchange below is the exact target register, drawn from real Kuwait City speakers. It is REFERENCE ONLY — never read these four lines aloud; they are not part of the episode. Hear them in your head before reading, and make every line of the actual episode sound like it came from the same two mouths:
+— «خوش سؤال. خل نكون واقعيين شوي — هالشي وايد أهم من اللي نتصوّره.»
+— «إي والله. وأنا أدري شنو اللي يقلقك فيه، بس ترى الموظوع أهون.»
+— «صج؟ عيل ليش كل ما نسولف فيه نحس إنه بعيد؟»
+— «لأنه محد قاعد يشوفه من قريب. تعال نشوفه سوا.»
+That register — light in the mouth, urban, warm, unhurried, sentence endings settling down gently — is the single voice of this whole episode. Words like خوش، وايد، هالشي، صج، عيل، ترى، شلون، أكو are home ground; say them the Kuwait City way, never the Dubai way and never the Muscat way.
 
 THE ONE TEST THAT MATTERS
 A Kuwaiti listener must hear a natural Kuwaiti — never someone imitating the accent. If a choice sounds "performed", make the plainer choice.
@@ -889,6 +897,16 @@ if (SELF_TEST) {
      اماراتي»)، ورأس الطلب وحده لا يحرس أواخر الحلقة — فالاسم يجب أن يركب
      التاج نفسه في كل دور. التأكيد هنا يمنع كنسةً مستقبلية من إسقاطه. */
   assert.match(KW_LOCK, /never Emirati/, 'تاج كل دورٍ يسمّي الإماراتي — موضع الانجراف الذي سمعه الدكتور بعد الدقيقة الأولى')
+  /* [٢١ أغسطس ٢٠٢٦ — الجولة التاسعة، بأمره «ابحث عن لهجة مدينة الكويت وحطها
+     عندك… فكر بطريقة مختلفة»] المحرّك يقلّد المثال الملموس أفضل بكثير من
+     امتثاله للتحريم المجرّد (وثائق Gemini TTS نفسها: السجل يُقاد بالأمثلة).
+     فوُضعت عيّنة سجلٍ مرجعية بلسان مدينة الكويت — عباراتها مقتناة من كلام
+     الدكتور الحقيقي في تفريغات لقاءاته (خوش سؤال · خل نكون واقعيين · وايد ·
+     هالشي · ما أدري شنو · نسولف) لا من اختراعي. والمشهد صار ديوانية —
+     اسم البودكاست نفسه. */
+  assert.match(prompt, /REGISTER REFERENCE/, 'عيّنة السجل المرجعية حاضرة في رأس الطلب')
+  assert.match(prompt, /خوش سؤال\. خل نكون واقعيين/, 'العيّنة بلسانه الحقيقي المقتنى من تفريغات لقاءاته')
+  assert.match(prompt, /diwaniya/, 'المشهد ديوانية كويتية — اسم البودكاست وهويته')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
   assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
     /* [٢١ أغسطس ٢٠٢٦] القفلان الجديدان يُثبَّتان بتأكيدٍ لا بثقة — درس «معلقة»:

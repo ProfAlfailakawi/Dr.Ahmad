@@ -119,20 +119,9 @@ function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {
    بدوياً؛ والكويتية الحضرية مرقَّقةٌ خفيفة. */
 const KW_LOCK = 'light, soft Kuwait-City Kuwaiti — never heavy, never emphatic'
 const directionFor = (type) => ({
-  setup: `[opening a real conversation, not announcing — ${KW_LOCK}]`,
-  question: `[curious, spontaneous, slightly quicker — ${KW_LOCK}]`,
-  response: `[immediate conversational response — ${KW_LOCK}]`,
-  reflection: `[thinking aloud, warmer and a little slower — ${KW_LOCK}]`,
-  objection: `[gently skeptical, natural interruption energy — ${KW_LOCK}]`,
-  gentleObjection: `[gently skeptical, natural interruption energy — ${KW_LOCK}]`,
-  explanation: `[plain-language explanation, never lecturing — ${KW_LOCK}]`,
-  clarification: `[clarifying naturally, concise — ${KW_LOCK}]`,
-  example: `[practical and human, slightly brighter — ${KW_LOCK}]`,
-  emphasis: `[quiet emphasis, not dramatic — ${KW_LOCK}]`,
-  briefReaction: `[quick human reaction, do not over-enunciate — ${KW_LOCK}]`,
-  conclusion: `[calmly, with room after the thought — ${KW_LOCK}]`,
-  closing: `[softly, unhurried, no announcer cadence — ${KW_LOCK}]`,
-}[type] || `[natural conversational statement — ${KW_LOCK}]`)
+  question: `[curious — ${KW_LOCK}]`, reflection: `[reflective — ${KW_LOCK}]`, objection: `[gently skeptical — ${KW_LOCK}]`, gentleObjection: `[gently skeptical — ${KW_LOCK}]`,
+  emphasis: `[serious — ${KW_LOCK}]`, briefReaction: `[warmly — ${KW_LOCK}]`, conclusion: `[calmly — ${KW_LOCK}]`, closing: `[softly — ${KW_LOCK}]`,
+}[type] || `[${KW_LOCK}]`)
 
 /* معجم النطق يُقرأ مرّةً: المعروض للقارئ لا يُمسّ، والمسموع وحده يُكتب
    بالإملاء الكويتي. */
@@ -144,16 +133,6 @@ const PRONUNCIATION_SOURCE = (() => {
 })()
 const PRONUNCIATION = buildPronunciationMap(PRONUNCIATION_SOURCE)
 const FOREIGN_REDACTIONS = buildForeignRedactions(PRONUNCIATION_SOURCE)
-
-/* المراجع العلمية جزء من الحلقة نفسها لا ملاحظة منفصلة في الواجهة. تُضمَّن
-   في Transcript المنشور فيقرأها المشغّل تحت الصوت، ويبقى الصوت خفيفاً من
-   سرد DOI وأسماء المجلات الطويلة. */
-const PODCAST_SCIENCE_REFERENCES = (() => {
-  const file = resolve(ROOT, 'src', 'data', 'podcast-science-references.json')
-  if (!existsSync(file)) return {}
-  try { return JSON.parse(readFileSync(file, 'utf8')) }
-  catch { return {} }
-})()
 
 /* الحذف أولاً (يمسح الاسم اللاتيني الذي يكسر الصوت) ثم قلب الإملاء الكويتي. */
 export const spokenForm = (text) => toSpokenKuwaiti(redactForeignNames(text, FOREIGN_REDACTIONS), PRONUNCIATION)
@@ -193,14 +172,6 @@ Fahad and Noura are educated contemporary Kuwait City speakers in an intimate id
 
 SCENE
 A quiet modern studio in Kuwait. Two colleagues are discussing an idea for a thoughtful general audience. It must feel like a real relaxed Kuwaiti conversation, not an announcer reading copy.
-
-NATURAL CONVERSATION — SECOND HARD RULE
-- This is a conversation first and a script second. Each line must sound as if the speaker is responding to what was just said, not waiting to recite a paragraph.
-- Short reactions are quick and lightly overlapped in energy; explanations slow down only enough to be understood. Do not give every line the same pace, loudness, pause, or sentence melody.
-- Fahad carries the core idea calmly. Noura is genuinely curious and occasionally skeptical; she is not a second lecturer.
-- Preserve tiny human imperfections in rhythm: a brief thinking pause, a quicker answer, a softened ending. Never add filler words or change the written text.
-- Do not turn every strong sentence into a quotation. Most lines should sound ordinary and lived-in; reserve weight for the few lines marked emphasis/conclusion/closing.
-- Academic findings must sound like something an educated person explains to a friend. Never switch to conference, newsreader, or paper-summary delivery.
 
 THE ONE TEST THAT MATTERS
 A Kuwaiti listener must hear a natural Kuwaiti — never someone imitating the accent. If a choice sounds "performed", make the plainer choice.
@@ -530,11 +501,11 @@ const MUSIC = {
   /* الأهداف بالـLUFS لا بمعاملٍ خطّي. الكلام يُتقن عند ‎-16‎؛ فالمقدّمة
      والخاتمة عند ‎-19‎ تُسمعان حاضرتين بلا أن تطغيا، والجسر عند ‎-24‎ يمرّ
      تحت الكلام لا فوقه. */
-  /* هوية أقصر: ٢–٣ ثوانٍ تكفي كي تُعرف الحلقة من أولها، ولا نستهلك
-     نصف دقيقة من الحلقة في مقدمات وجسور. */
-  introSec: 3.0, introLufs: -22, introFadeIn: 0.25, introFadeOut: 0.85, introOverlapSec: 0.72,
-  outroSec: 3.8, outroLufs: -22, outroFadeIn: 0.35, outroFadeOut: 1.45, outroOverlapSec: 0.55,
-  bridgeSec: 1.55, bridgeLufs: -26, bridgeTailSec: 0.20,
+  introSec: 5.6, introLufs: -19, introFadeIn: 0.55, introFadeOut: 1.15, introOverlapSec: 1.15,
+  outroSec: 6.5, outroLufs: -19, outroFadeIn: 0.65, outroFadeOut: 2.20, outroOverlapSec: 0.76,
+  /* الجسر فاصلٌ يُنتظر، لا نغمةٌ تمرّ تحت الكلام. كان ١.٦٠ث والمتحدث التالي
+     يدخل بعد ٠.٧٢ث من بدايته، فيدهسه قبل أن يأخذ حقّه — وهذه شكوى الدكتور. */
+  bridgeSec: 2.40, bridgeLufs: -24, bridgeTailSec: 0.30,
 }
 
 /* لكل حلقةٍ نغمتها: مكتبة الموسيقى المرخّصة تُوزَّع على الحلقات ببصمة الـslug
@@ -547,9 +518,6 @@ const MUSIC_LIBRARY = [
   'maqam-reflections.mp3', 'eastern-elegance.mp3', 'cultural-echoes.mp3', 'heritage-echoes.mp3',
   'eastern-tapestry.mp3', 'oriental-world.mp3', 'east-journey.mp3', 'eastern-night.mp3',
 ]
-
-/* المقدمة والخاتمة توقيع ثابت للموقع؛ الجسور وحدها تتنوع بحسب الحلقة. */
-const SIGNATURE_MUSIC = 'quiet-resolve.mp3'
 
 export function pickEpisodeMusic(slug, available = MUSIC_LIBRARY) {
   if (!available.length) return null
@@ -690,15 +658,11 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
   const library = MUSIC_LIBRARY.filter((name) => existsSync(resolve(ROOT, 'music', name)))
   const chosen = MUSIC_OVERRIDE ? { track: MUSIC_OVERRIDE, offset: 0 } : pickEpisodeMusic(episodeSlug, library)
   const musicPath = chosen ? (MUSIC_OVERRIDE || resolve(ROOT, 'music', chosen.track)) : ''
-  const signatureCandidate = resolve(ROOT, 'music', SIGNATURE_MUSIC)
-  const signaturePath = MUSIC_OVERRIDE || (existsSync(signatureCandidate) ? signatureCandidate : musicPath)
   const hasMusic = Boolean(musicPath) && existsSync(musicPath)
-  const hasSignature = Boolean(signaturePath) && existsSync(signaturePath)
-  if (hasMusic) console.log(`♪ نغمة الجسور: ${chosen.track}${chosen.offset ? ` (من الثانية ${chosen.offset})` : ''}`)
-  if (hasSignature) console.log(`♪ توقيع الموقع: ${MUSIC_OVERRIDE ? 'override' : SIGNATURE_MUSIC}`)
+  if (hasMusic) console.log(`♪ نغمة الحلقة: ${chosen.track}${chosen.offset ? ` (من الثانية ${chosen.offset})` : ''}`)
   const items = []
   /* الكلام يدخل تحت ذيل المقدّمة لا بعد صمتها، تماماً كالفصحى. */
-  let cursor = hasSignature ? Math.max(0.20, MUSIC.introSec - MUSIC.introOverlapSec) : 0.20
+  let cursor = hasMusic ? Math.max(0.20, MUSIC.introSec - MUSIC.introOverlapSec) : 0.20
   for (let i = 0; i < turns.length; i += 1) {
     const turn = turns[i]
     const file = files[i]
@@ -743,13 +707,13 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
   /* المقدّمة تفتح الحلقة والخاتمة تغلقها؛ الكلام يعبر تحت ذيليهما فلا يبدأ
      المجلس ببرودٍ ولا ينقطع فجأةً عند آخر كلمة. */
   const identity = { intro: null, outro: null }
-  if (hasSignature) {
-    const introFile = makeMusicClip(signaturePath, resolve(TMP, 'music-intro.wav'), MUSIC.introSec, MUSIC.introLufs, MUSIC.introFadeIn, MUSIC.introFadeOut, 0)
+  if (hasMusic) {
+    const introFile = makeMusicClip(musicPath, resolve(TMP, 'music-intro.wav'), MUSIC.introSec, MUSIC.introLufs, MUSIC.introFadeIn, MUSIC.introFadeOut, chosen.offset)
     identity.intro = { file: introFile, startSec: 0, durationSec: MUSIC.introSec, isMusic: true, role: 'intro' }
-    identity.track = MUSIC_OVERRIDE ? 'override' : SIGNATURE_MUSIC
+    identity.track = chosen.track
     const lastSpoken = items.at(-1)
     const outroStart = Math.max(0, lastSpoken.startSec + lastSpoken.durationSec - MUSIC.outroOverlapSec)
-    const outroFile = makeMusicClip(signaturePath, resolve(TMP, 'music-outro.wav'), MUSIC.outroSec, MUSIC.outroLufs, MUSIC.outroFadeIn, MUSIC.outroFadeOut, MUSIC.introSec + 0.8)
+    const outroFile = makeMusicClip(musicPath, resolve(TMP, 'music-outro.wav'), MUSIC.outroSec, MUSIC.outroLufs, MUSIC.outroFadeIn, MUSIC.outroFadeOut, chosen.offset + MUSIC.introSec + 1.2)
     identity.outro = { file: outroFile, startSec: outroStart, durationSec: MUSIC.outroSec, isMusic: true, role: 'outro' }
   }
 
@@ -767,7 +731,7 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
      الحضور بلا سحق الديناميكا، وloudnorm عند ‎-16 LUFS‎ وذروة ‎-1.5dBTP‎ —
      معيار البودكاست. LRA ٩ بدل ١١: تماسكٌ أعلى فلا يضطرّ السامع إلى رفع
      الصوت وخفضه بين مداخلةٍ وأخرى. */
-  filters.push('[mix]highpass=f=65,acompressor=threshold=-18dB:ratio=1.35:attack=25:release=260,loudnorm=I=-16:TP=-1.5:LRA=11[out]')
+  filters.push('[mix]highpass=f=65,acompressor=threshold=-19dB:ratio=1.7:attack=15:release=200,loudnorm=I=-16:TP=-1.5:LRA=9[out]')
   const total = Math.max(...all.map((item)=>item.startSec+item.durationSec), 0) + 0.35
   const result = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y',...ffInputs,'-filter_complex',filters.join(';'),'-map','[out]','-t',total.toFixed(3),
     '-ar','48000','-ac','1','-c:a','libmp3lame','-b:a','160k',output], { encoding:'utf8' })
@@ -775,7 +739,7 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
   return { items, bridges: bridgeItems, identity, durationSec: total }
 }
 
-function timelineFor(turns, assembly, episodeSlug = '') {
+function timelineFor(turns, assembly) {
   const utterances = assembly.items.map((item, index) => ({
     index,
     speaker: turns[index].speaker === 'male' ? 'فهد' : 'نورة',
@@ -794,10 +758,8 @@ function timelineFor(turns, assembly, episodeSlug = '') {
     }
   })
   chapters.forEach((chapter,index)=>{ chapter.endSec = index + 1 < chapters.length ? chapters[index + 1].startSec : Number(assembly.durationSec.toFixed(3)) })
-  const references = Array.isArray(PODCAST_SCIENCE_REFERENCES?.[episodeSlug]) ? PODCAST_SCIENCE_REFERENCES[episodeSlug] : []
-  return { schemaVersion: 4, dialect: PROFILE, generatedBy: MODEL, preciseTiming: true,
-    chapters, utterances, references,
-    musicBridges: assembly.bridges.map((b)=>({ startSec:Number(b.startSec.toFixed(3)), durationSec:b.durationSec })),
+  return { schemaVersion: 3, dialect: PROFILE, generatedBy: MODEL, preciseTiming: true,
+    chapters, utterances, musicBridges: assembly.bridges.map((b)=>({ startSec:Number(b.startSec.toFixed(3)), durationSec:b.durationSec })),
     musicIdentity: {
       intro: assembly.identity?.intro ? { startSec: 0, durationSec: MUSIC.introSec, targetLufs: MUSIC.introLufs } : null,
       outro: assembly.identity?.outro ? { startSec: Number(assembly.identity.outro.startSec.toFixed(3)), durationSec: MUSIC.outroSec, targetLufs: MUSIC.outroLufs } : null,
@@ -920,12 +882,10 @@ if (SELF_TEST) {
   assert.ok(MUSIC.introLufs >= -22 && MUSIC.introLufs <= -16, 'المقدّمة تُسمع ولا تطغى')
   assert.ok(MUSIC.outroLufs >= -22 && MUSIC.outroLufs <= -16, 'الخاتمة تُسمع — وهذه شكوى الدكتور')
   assert.ok(MUSIC.bridgeLufs < MUSIC.introLufs, 'الجسر يمرّ تحت الكلام لا فوقه')
-  /* الجسر الجديد مقصود أن يكون خاطفاً: انتقالٌ مسموع لا فاصلٌ إذاعي طويل.
-     يبقى أطول من ثانية وأربع أعشار، ثم يبدأ الكلام بعد نهايته كاملة. */
-  assert.ok(MUSIC.bridgeSec >= 1.4 && MUSIC.bridgeSec <= 1.8, 'الجسر خرج عن نطاق الانتقال القصير الطبيعي')
-  assert.ok(MUSIC.bridgeSec - MUSIC.bridgeTailSec >= 1.3, 'المتحدث التالي يدهس الجسر قبل أن يأخذ حقّه')
-  assert.ok(MUSIC.introSec <= 3.2, 'توقيع البداية أطول من المطلوب')
-  assert.ok(MUSIC.outroSec <= 4.2, 'توقيع النهاية أطول من المطلوب')
+  /* الجسر فاصلٌ يُنتظر لا نغمةٌ تمرّ. كان ١.٦٠ث والمتحدث التالي يدخل بعد
+     ٠.٧٢ث من بدايته فيدهسه قبل أن يأخذ حقّه — وهذه شكوى الدكتور بأذنه. */
+  assert.ok(MUSIC.bridgeSec >= 2.0, 'الجسر أقصر من أن يُحسّ فاصلاً')
+  assert.ok(MUSIC.bridgeSec - MUSIC.bridgeTailSec >= 1.8, 'المتحدث التالي يدهس الجسر قبل أن يأخذ حقّه')
   for (const word of ['«إي»','«مو»','«هني»','«شلون»']) {
     assert.ok(prompt.includes(word), `توجيه نطق ${word} مفقود`)
   }
@@ -1216,7 +1176,7 @@ console.log(repeatSuspects.length
 const audioFile=resolve(AUDIO,`${slug}.dialogue-kw.mp3`)
 const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
 const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)
-const timeline=timelineFor(turns,assembly,slug)
+const timeline=timelineFor(turns,assembly)
 writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
 const audit={
   schemaVersion:1, slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,

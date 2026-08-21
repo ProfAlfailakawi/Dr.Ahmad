@@ -179,7 +179,6 @@ const adminAnalyticsPath = '/api/admin/analytics/events'
 const adminNowPath = '/api/admin/site-now'
 const adminJourneysPath = '/api/admin/journeys'
 const podcastDispatchPath = '/api/admin/podcast/dispatch'
-const podcastApproveKuwaitiPath = '/api/admin/podcast/approve-kuwaiti'
 const audioManagePath = '/api/admin/audio/manage'
 const sourcesCheckPath = '/api/admin/sources/check'
 const controlCenterPath = '/api/admin/control-center'
@@ -5698,7 +5697,6 @@ export function createRequestHandler({
          مفتاح Gemini سليماً. ومع ذلك: ورشة الكويتية تُلزم `revision_id` أيضاً،
          وكان الخادم يرسل `slugs` وحدها فتُرفض بـ٤٢٢ لو وصلت. الاثنان هنا. */
       const variant = boundedString(body?.variant, 20) === 'kuwaiti' ? 'kuwaiti' : 'standard'
-      const regenerate = body?.regenerate === true || String(body?.regenerate || '').toLowerCase() === 'true'
       const dialogueCollection = variant === 'kuwaiti' ? 'podcast_dialogues_kw' : 'podcast_dialogues'
       const productionCollection = variant === 'kuwaiti' ? 'podcast_production_kw' : 'podcast_production'
 
@@ -5731,7 +5729,7 @@ export function createRequestHandler({
 
       const priorRevision = boundedString(production.dispatchedDialogueRevisionId, 128)
       const priorState = boundedString(production.dispatchState, 40)
-      if (!regenerate && priorRevision === revisionId && ['requested', 'accepted'].includes(priorState)) {
+      if (priorRevision === revisionId && ['requested', 'accepted'].includes(priorState)) {
         sendJson(res, 200, {
           ok: true,
           duplicate: true,
@@ -5763,7 +5761,6 @@ export function createRequestHandler({
         dispatchedDialogueRevisionId: revisionId,
         dispatchRequestedAt: FieldValue.serverTimestamp(),
         dispatchRequestedBy: claims.sub,
-        regenerationRequested: regenerate,
         dispatchError: '',
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true })
@@ -5780,7 +5777,7 @@ export function createRequestHandler({
               'user-agent': 'dr-alfailakawi-podcast-admin/1.0',
               'x-github-api-version': '2026-03-10',
             },
-            body: JSON.stringify({ ref: githubRef, inputs: variant === 'kuwaiti' ? { slugs: slug, revision_id: revisionId, regenerate: regenerate ? 'true' : 'false' } : { slugs: slug } }),
+            body: JSON.stringify({ ref: githubRef, inputs: variant === 'kuwaiti' ? { slugs: slug, revision_id: revisionId } : { slugs: slug } }),
           }, 15_000)
       } catch (error) {
         await productionRef.set({
@@ -5812,7 +5809,7 @@ export function createRequestHandler({
         githubWorkflowRunId: workflowRunId,
         githubWorkflowRunUrl: workflowRunUrl,
         dispatchError: '',
-        note: regenerate ? 'بدأت إعادة توليد نسخة صوتية جديدة للحوار المقفول نفسه.' : 'بدأ GitHub Actions تلقائياً من لوحة التحكم للحوار المرفوع والمقفول نفسه.',
+        note: 'بدأ GitHub Actions تلقائياً من لوحة التحكم للحوار المرفوع والمقفول نفسه.',
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true })
       sendJson(res, 200, {
@@ -5820,116 +5817,8 @@ export function createRequestHandler({
         duplicate: false,
         workflowRunId,
         workflowRunUrl,
-        message: regenerate ? 'بدأت إعادة توليد نسخة صوتية جديدة من لوحة التحكم.' : 'بدأ التوليد تلقائياً من لوحة التحكم.',
+        message: 'بدأ التوليد تلقائياً من لوحة التحكم.',
       })
-      return
-    }
-
-    if (url.pathname === podcastApproveKuwaitiPath) {
-      if (method !== 'POST') {
-        sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
-        return
-      }
-      const contentType = String(req.headers['content-type'] || '').toLowerCase()
-      if (contentType.split(';', 1)[0].trim() !== 'application/json') {
-        req.resume()
-        throw new HttpError(415, 'Content-Type must be application/json')
-      }
-      const token = bearerToken(req.headers.authorization)
-      const claims = await verifyToken(token)
-      if (claims?.admin !== true || typeof claims.sub !== 'string' || !claims.sub) {
-        req.resume()
-        throw new HttpError(403, 'Admin access required')
-      }
-      const body = await readJsonBody(req, 4_096)
-      const slug = boundedString(body?.slug, 180)
-      const revisionId = boundedString(body?.revisionId, 128)
-      if (!/^[a-z0-9-]+$/.test(slug)) throw new HttpError(400, 'slug غير صالح')
-      if (!/^[A-Za-z0-9._:-]{8,128}$/.test(revisionId)) throw new HttpError(400, 'revision غير صالح')
-
-      const { db, FieldValue } = await getAdminFirestore()
-      const productionRef = db.collection('podcast_production_kw').doc(slug)
-      const productionSnapshot = await productionRef.get()
-      if (!productionSnapshot.exists) throw new HttpError(409, 'مرشح الحلقة الكويتية غير موجود')
-      const production = productionSnapshot.data() || {}
-      const exactCandidate = boundedString(production.candidateRevisionId, 128) === revisionId
-        && /^https:\/\//i.test(boundedString(production.candidateAudioUrl, 2_000))
-        && /^[a-f0-9]{64}$/i.test(boundedString(production.candidateAudioSha256, 64))
-        && /^[a-f0-9]{64}$/i.test(boundedString(production.candidateTranscriptSha256, 64))
-      if (!exactCandidate) throw new HttpError(409, 'النسخة المطلوب اعتمادها لا تطابق آخر مرشح سمعته')
-
-      if (production.approvalState === 'accepted' && ['publishing', 'published'].includes(String(production.status || ''))) {
-        sendJson(res, 200, { ok: true, duplicate: true, message: 'هذه النسخة نفسها معتمدة ويجري نشرها أو نُشرت بالفعل.' })
-        return
-      }
-      if (String(production.status || '') !== 'awaiting_approval') {
-        throw new HttpError(409, `حالة الحلقة الحالية «${boundedString(production.status, 80) || 'غير معروفة'}» لا تسمح بالاعتماد`)
-      }
-
-      const githubToken = String(process.env.GITHUB_WORKFLOW_TOKEN || process.env.GITHUB_ACTIONS_TOKEN || '').trim()
-      const githubRepository = String(process.env.PODCAST_GITHUB_REPOSITORY || 'ProfAlfailakawi/Dr.Ahmad').trim()
-      const githubWorkflow = String(process.env.PODCAST_KUWAITI_PROMOTE_WORKFLOW || 'podcast-kuwaiti-promote.yml').trim()
-      const githubRef = String(process.env.PODCAST_GITHUB_REF || 'main').trim()
-      if (!githubToken) throw new HttpError(503, 'الربط الآلي مع GitHub غير مفعّل على الخادم: أضف GITHUB_WORKFLOW_TOKEN مرة واحدة إلى خدمة dr-api')
-      if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(githubRepository)
-        || !/^[A-Za-z0-9_.-]+\.ya?ml$/i.test(githubWorkflow)
-        || !/^[A-Za-z0-9._/-]+$/.test(githubRef)) {
-        throw new HttpError(503, 'إعدادات نشر البودكاست على GitHub غير صالحة')
-      }
-
-      await productionRef.set({
-        approvalState: 'accepted',
-        approvalRevisionId: revisionId,
-        approvalRequestedAt: FieldValue.serverTimestamp(),
-        approvalRequestedBy: claims.sub,
-        approvalError: '',
-        status: 'publishing',
-        stage: 'promotion_requested',
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true })
-
-      let githubResponse
-      try {
-        githubResponse = await fetchWithTimeout(fetch,
-          `https://api.github.com/repos/${githubRepository}/actions/workflows/${encodeURIComponent(githubWorkflow)}/dispatches`, {
-            method: 'POST',
-            headers: {
-              accept: 'application/vnd.github+json',
-              authorization: `Bearer ${githubToken}`,
-              'content-type': 'application/json',
-              'user-agent': 'dr-alfailakawi-podcast-admin/1.0',
-              'x-github-api-version': '2026-03-10',
-            },
-            body: JSON.stringify({ ref: githubRef, inputs: { slug, revision_id: revisionId } }),
-          }, 15_000)
-      } catch (error) {
-        await productionRef.set({
-          approvalState: 'waiting', status: 'awaiting_approval', stage: 'awaiting_approval',
-          approvalError: boundedString(error instanceof Error ? error.message : 'GitHub request failed', 700),
-          updatedAt: FieldValue.serverTimestamp(),
-        }, { merge: true })
-        throw new HttpError(502, 'تعذّر الاتصال بـ GitHub لنشر النسخة المعتمدة؛ بقي المرشح محفوظاً للمراجعة')
-      }
-
-      let githubPayload = {}
-      try { githubPayload = await githubResponse.json() } catch { /* workflow_dispatch غالباً يعيد 204 */ }
-      if (![200, 201, 202, 204].includes(githubResponse.status)) {
-        const githubMessage = boundedString(githubPayload?.message, 500) || `GitHub HTTP ${githubResponse.status}`
-        await productionRef.set({
-          approvalState: 'waiting', status: 'awaiting_approval', stage: 'awaiting_approval',
-          approvalError: githubMessage, updatedAt: FieldValue.serverTimestamp(),
-        }, { merge: true })
-        throw new HttpError(githubResponse.status === 401 || githubResponse.status === 403 ? 503 : 502,
-          `رفض GitHub نشر النسخة المعتمدة: ${githubMessage}`)
-      }
-
-      await productionRef.set({
-        approvalDispatchState: 'accepted',
-        approvalDispatchedAt: FieldValue.serverTimestamp(),
-        approvalError: '',
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true })
-      sendJson(res, 200, { ok: true, duplicate: false, message: 'اعتمدت النسخة وبدأ نشرها من لوحة التحكم.' })
       return
     }
 

@@ -521,7 +521,7 @@ export function KuwaitiManualDialogueEditor({ articles, onQueued }: { articles: 
     }
   }
 
-  const queueForGeneration = async (regenerate = false) => {
+  const queueForGeneration = async () => {
     if (warnings.some((item) => item.includes('بلا نص')) || turns.length < 2) {
       setNotice('أكمل الحوار أولاً؛ لن يُرسل أي نص ناقص إلى Gemini.')
       return
@@ -561,7 +561,7 @@ export function KuwaitiManualDialogueEditor({ articles, onQueued }: { articles: 
         throw new Error('queue-readback-mismatch')
       }
       if (!isPilotEpisode) throw new Error('pilot-only: الـ144 جاهزة نصياً؛ التوليد الأول مقفول على حلقة التجربة فقط')
-      const dispatch = await dispatchPodcastGeneration({ user, slug, proof, variant: 'kuwaiti', regenerate })
+      const dispatch = await dispatchPodcastGeneration({ user, slug, proof, variant: 'kuwaiti' })
       /* نتيجةٌ عملية حقيقية: حوارٌ يدويّ صار إنتاجاً في الطريق — لا مجرد شاشة. */
       void trackAdminUsage('admin_result_converted', {
         tool: 'manual-dialogue-kuwaiti', taskId: slug, taskType: 'حوار يدوي كويتي',
@@ -571,7 +571,7 @@ export function KuwaitiManualDialogueEditor({ articles, onQueued }: { articles: 
       setQueuedProof({ turnCount: proof.turnCount, sha: proof.contentSha256.slice(0, 12), runId: dispatch.workflowRunId ? String(dispatch.workflowRunId) : undefined })
       setNotice(dispatch.duplicate
         ? `الحوار نفسه مقفول والتوليد يعمل بالفعل ✓ ${arabicCountPhrase(proof.turnCount, INTERVENTION_FORMS)} · بصمة ${proof.contentSha256.slice(0, 12)}`
-        : `${regenerate ? 'بدأ توليد نسخة صوتية جديدة' : 'بدأ التوليد تلقائياً من لوحة التحكم'} ✓ ${arabicCountPhrase(proof.turnCount, INTERVENTION_FORMS)} · بصمة ${proof.contentSha256.slice(0, 12)}${dispatch.workflowRunId ? ` · تشغيل ${dispatch.workflowRunId}` : ''}. لا تحتاج إلى دخول GitHub.`)
+        : `بدأ التوليد تلقائياً من لوحة التحكم ✓ ${arabicCountPhrase(proof.turnCount, INTERVENTION_FORMS)} · بصمة ${proof.contentSha256.slice(0, 12)}${dispatch.workflowRunId ? ` · تشغيل ${dispatch.workflowRunId}` : ''}. لا تحتاج إلى دخول GitHub.`)
       /* التحويل المباشر إلى صفحة التوليد: الدكتور يرى حالة حلقته فوراً، ولا تبقى
          بين يديه شاشةٌ فيها زرّ إرسالٍ قد يُضغط مرّةً ثانية فيُنتج تكراراً. */
       onQueued?.()
@@ -766,11 +766,11 @@ export function KuwaitiManualDialogueEditor({ articles, onQueued }: { articles: 
             <button type="button" onClick={() => void save(false)} disabled={cloudBusy || queueBusy} className={dirty ? primary : ghost}>{cloudBusy ? 'أثبت الحفظ…' : dirty ? 'حفظ وتثبيت البصمة' : isAdmin ? 'الحوار الكويتي محفوظ ومثبت' : 'المسودة محفوظة'}</button>
             <button
               type="button"
-              onClick={() => void queueForGeneration(Boolean(candidate || audioAvailable))}
+              onClick={() => void queueForGeneration()}
               disabled={cloudBusy || queueBusy || turns.length < 2 || Boolean(queuedProof) || !isPilotEpisode}
               className={queuedProof || !isPilotEpisode ? `${primary} cursor-default opacity-60` : primary}
             >
-              {queueBusy ? 'أحفظ وأبدأ التوليد…' : queuedProof ? '✓ أُرسل للتوليد' : isPilotEpisode ? (candidate || audioAvailable ? 'إعادة توليد نسخة صوتية جديدة' : 'حفظ وإرسال الحلقة التجريبية إلى Gemini') : 'جاهز — التوليد بعد اعتماد الحلقة التجريبية'}
+              {queueBusy ? 'أحفظ وأبدأ التوليد…' : queuedProof ? '✓ أُرسل للتوليد' : isPilotEpisode ? 'حفظ وإرسال الحلقة التجريبية إلى Gemini' : 'جاهز — التوليد بعد اعتماد الحلقة التجريبية'}
             </button>
           </div>
         </div>
@@ -799,14 +799,9 @@ export function KuwaitiManualDialogueEditor({ articles, onQueued }: { articles: 
               <p className="mt-1 text-[.72rem] leading-relaxed text-soft">هذه النسخة غير ظاهرة للزائر. اسمعها كاملة هنا؛ زر الاعتماد يرقّي الملف نفسه بلا إعادة توليد.</p>
               <audio className="mt-3 w-full" controls preload="metadata" src={candidate.audioUrl} />
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button type="button" className={primary} disabled={approvalBusy || candidate.status === 'publishing' || queueBusy} onClick={() => void approveCandidate()}>
+                <button type="button" className={primary} disabled={approvalBusy || candidate.status === 'publishing'} onClick={() => void approveCandidate()}>
                   {approvalBusy ? 'أثبت الاعتماد…' : candidate.status === 'publishing' ? '✓ معتمد — يجري النشر' : 'اعتماد ونشر هذه النسخة للزائر'}
                 </button>
-                {candidate.status !== 'publishing' && (
-                  <button type="button" className={ghost} disabled={queueBusy || cloudBusy} onClick={() => void queueForGeneration(true)}>
-                    {queueBusy ? 'أولد نسخة جديدة…' : 'إعادة توليد نسخة جديدة'}
-                  </button>
-                )}
                 <span className="text-[.7rem] text-soft">{candidate.model || 'Gemini 3.1 Flash TTS'}{candidate.durationSec ? ` · ${Math.round(candidate.durationSec)} ثانية` : ''}</span>
               </div>
             </div>

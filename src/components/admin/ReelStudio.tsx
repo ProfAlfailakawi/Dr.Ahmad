@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { planReel, type ReelPlan } from '../../lib/reel-scenes'
+import { planReel, planReelWithMemory, commitReelMemory, type ReelPlan } from '../../lib/reel-scenes'
 import { downloadReelBlob, exportReelVideo, playReelPreview, reelExportSupported, type ReelHandle } from '../../lib/reel-motion'
 import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
 
@@ -38,6 +38,8 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
   const [busy, setBusy] = useState<'idle' | 'preview' | 'export'>('idle')
   const [progress, setProgress] = useState(0)
   const [notice, setNotice] = useState('')
+  const [memoryNote, setMemoryNote] = useState('')
+  const memoryKeyRef = useRef<string>('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const handleRef = useRef<ReelHandle | null>(null)
   const supported = useMemo(() => reelExportSupported(), [])
@@ -49,10 +51,23 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
 
   useEffect(() => () => { handleRef.current?.stop() }, [])
 
-  const buildPlan = (nextVariant = variant) => {
+  const buildPlan = (nextVariant = variant, useMemory = false) => {
     const cleanTitle = title.trim() || body.trim().split(/[\n.!؟…]/)[0]?.trim() || 'مادة جديدة'
     if (!body.trim() && !title.trim()) { setNotice('اكتب المادة أولاً — عنواناً أو فقرة من المقال.'); return null }
-    const next = planReel({ title: cleanTitle, body: body.trim() || cleanTitle }, nextVariant)
+    const source = { title: cleanTitle, body: body.trim() || cleanTitle }
+    if (useMemory) {
+      /* أول بناءٍ للمادة يستشير الذاكرة: إن سبق تناول المفهوم، يعطي نسخةً مختلفة. */
+      const aware = planReelWithMemory(source)
+      memoryKeyRef.current = aware.key
+      setVariant(aware.plan.variant)
+      setPlan(aware.plan)
+      setNotice('')
+      setMemoryNote(aware.timesSeenBefore > 0
+        ? `تناولتَ هذا المفهوم من قبل ${aware.timesSeenBefore === 1 ? 'مرةً واحدة' : `${aware.timesSeenBefore} مرات`} — نوّعتُ لك القالب والعالم والاستعارة.`
+        : 'أول مرة تتناول هذا المفهوم — سأتذكّره وأنوّع في المرات القادمة.')
+      return aware.plan
+    }
+    const next = planReel(source, nextVariant)
     setPlan(next)
     setNotice('')
     return next
@@ -88,6 +103,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
     try {
       const result = await exportReelVideo(active, { canvas: canvasRef.current || undefined, onProgress: setProgress })
       downloadReelBlob(result, active.title)
+      if (memoryKeyRef.current) commitReelMemory(memoryKeyRef.current, active)
       setNotice(`نزل الفيديو (${result.mime.includes('mp4') ? 'MP4' : 'WebM'} · ${Math.round(result.blob.size / 1024 / 102.4) / 10} MB · ${arabicCountPhrase(active.seconds, SECOND_FORMS)}) — جاهز للنشر.`)
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'تعذّر التصدير — جرّب متصفح Chrome.')
@@ -124,7 +140,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
           </label>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" className={primary} disabled={busy === 'export'} onClick={() => { setVariant(0); const next = buildPlan(0); if (next) void preview(next) }}>جهّز الريل وشغّل المعاينة</button>
+            <button type="button" className={primary} disabled={busy === 'export'} onClick={() => { const next = buildPlan(0, true); if (next) void preview(next) }}>جهّز الريل وشغّل المعاينة</button>
             <button type="button" className={ghost} disabled={!plan || busy === 'export'} onClick={anotherTake}>لقطة أخرى</button>
             {busy === 'preview'
               ? <button type="button" className={ghost} onClick={stopPreview}>إيقاف المعاينة</button>
@@ -138,6 +154,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
               <div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
             </div>
           )}
+          {memoryNote && <p className="rounded-xl border border-accent/25 bg-accent/[.06] px-3 py-2 text-[.72rem] leading-relaxed text-accent">{memoryNote}</p>}
           {notice && <p className="rounded-xl border border-hair bg-canvas px-3 py-2 text-[.72rem] leading-relaxed text-ink" role="status">{notice}</p>}
 
           {plan && (

@@ -1,0 +1,122 @@
+name: تجربة البرومت — الأدنى ضد الكامل على حلقة قصيرة
+
+# [٢٢ أغسطس ٢٠٢٦ — تجربة صديق الدكتور] فرضيته: مع Gemini «كل ما زدت
+# القيود تتعب»، والقصر يسبق الانجراف. التجربة المنضبطة: أول ١٩ دوراً من
+# حلقة التجربة (≈ دقيقتان ونصف) تُولَّد مرتين — برومت أدنى إيجابي ضد
+# البرومت الكامل — نفس النص حرفاً بحرف، نداء واحد بلا قطع في الحالين.
+# وبتعمية: تخرجان «س» و«ص» بترتيب عشوائي (زوجية رقم التشغيلة)، والمفتاح
+# في ملف مغلق لا يُفتح إلا بعد حكم الأذن. إذا ما نفع الأدنى نرجع للأصل
+# بلا أي أثر — الإنتاج لم يُمس.
+
+on:
+  workflow_dispatch:
+    inputs:
+      turns:
+        description: 'عدد الأدوار من بداية حلقة التجربة (الافتراض ١٩ ≈ دقيقتان ونصف)'
+        required: false
+        default: '19'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: podcast-prompt-experiment
+  cancel-in-progress: false
+
+jobs:
+  experiment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: تجهيز الحلقة القصيرة من متن التجربة المعتمد
+        shell: bash
+        run: |
+          set -euo pipefail
+          N="${{ inputs.turns }}"
+          [[ "$N" =~ ^[0-9]{1,2}$ ]] || N=19
+          node -e "
+            const fs = require('fs');
+            const slug = 'success-that-does-not-bring-joy-to-its-ownerarabic';
+            const lib = JSON.parse(fs.readFileSync('src/data/kuwaiti-dialogues.json','utf8'));
+            const turns = Object.values(lib.episodes[slug]).slice(0, Number('$N'));
+            // لا جسر في آخر دور، ولا قطع أصلاً — نداء واحد في الحالين
+            turns.forEach((t) => { t.musicBridgeAfter = false });
+            fs.mkdirSync('manual-dialogues-kuwaiti', { recursive: true });
+            fs.mkdirSync('podcast-audits/source-locks-kuwaiti', { recursive: true });
+            fs.writeFileSync('manual-dialogues-kuwaiti/' + slug + '.json', JSON.stringify(turns, null, 2));
+            fs.writeFileSync('podcast-audits/source-locks-kuwaiti/' + slug + '.json',
+              JSON.stringify({ slug, revisionId: 'prompt-experiment-short' }, null, 2));
+            console.log('✓ حلقة قصيرة: ' + turns.length + ' دوراً');
+          "
+
+      - name: توليد الذراع الأولى — البرومت الأدنى
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/podcast-kuwaiti-gemini.mjs --slug="success-that-does-not-bring-joy-to-its-ownerarabic"
+          mv audio/success-that-does-not-bring-joy-to-its-ownerarabic.dialogue-kw.mp3 audio/arm-minimal.mp3
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
+          PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
+          PODCAST_KW_GENERATION_MODE: pilot
+          PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
+          PODCAST_KW_MIN_GAP: '0'
+          PODCAST_KW_PROMPT_MODE: minimal
+
+      - name: توليد الذراع الثانية — البرومت الكامل
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/podcast-kuwaiti-gemini.mjs --slug="success-that-does-not-bring-joy-to-its-ownerarabic"
+          mv audio/success-that-does-not-bring-joy-to-its-ownerarabic.dialogue-kw.mp3 audio/arm-full.mp3
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
+          PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
+          PODCAST_KW_GENERATION_MODE: pilot
+          PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
+          PODCAST_KW_MIN_GAP: '0'
+          PODCAST_KW_PROMPT_MODE: full
+
+      - name: التعمية والرفع — «س» و«ص» والمفتاح مغلق
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ $(( GITHUB_RUN_ID % 2 )) -eq 0 ]; then
+            cp audio/arm-minimal.mp3 audio/seen.mp3; cp audio/arm-full.mp3 audio/saad.mp3
+            KEY='{"س":"minimal","ص":"full"}'
+          else
+            cp audio/arm-full.mp3 audio/seen.mp3; cp audio/arm-minimal.mp3 audio/saad.mp3
+            KEY='{"س":"full","ص":"minimal"}'
+          fi
+          printf '%s' "$KEY" > audio/experiment-key.json
+          AWS=(aws --endpoint-url "$CLOUDFLARE_R2_ENDPOINT" s3api)
+          P="staging/prompt-experiment"
+          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$P/seen.mp3" --body audio/seen.mp3 --content-type audio/mpeg --cache-control no-store
+          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$P/saad.mp3" --body audio/saad.mp3 --content-type audio/mpeg --cache-control no-store
+          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$P/experiment-key.json" --body audio/experiment-key.json --content-type application/json --cache-control no-store
+          echo "✓ رُفعت س وص — المفتاح مغلق حتى يحكم الدكتور"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}

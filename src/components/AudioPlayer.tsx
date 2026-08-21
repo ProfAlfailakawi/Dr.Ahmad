@@ -35,7 +35,8 @@ export type AudioSource = {
 
 type DialogueLine = { speaker?: string; text: string; startSec?: number; endSec?: number }
 type DialogueChapter = { index: number; title: string; startSec: number; endSec: number }
-type DialogueScript = { chapters: DialogueChapter[]; utterances: DialogueLine[] }
+type DialogueReference = { title: string; authors?: string; year?: number; journal?: string; doi?: string; url?: string; note?: string }
+type DialogueScript = { chapters: DialogueChapter[]; utterances: DialogueLine[]; references?: DialogueReference[] }
 
 
 async function dialogueScriptFrom(primary?: string, fallback?: string): Promise<DialogueScript | null> {
@@ -51,6 +52,9 @@ async function dialogueScriptFrom(primary?: string, fallback?: string): Promise<
       return {
         chapters: Array.isArray(data.chapters) ? data.chapters as DialogueChapter[] : [],
         utterances: (data.utterances as DialogueLine[]).filter((line) => line && typeof line.text === 'string'),
+        references: Array.isArray(data.references)
+          ? (data.references as DialogueReference[]).filter((item) => item && typeof item.title === 'string')
+          : [],
       }
     }
   } catch { /* ننتقل إلى النسخة الخفيفة */ }
@@ -564,6 +568,25 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
 
           {script && script.utterances.length > 0 && (
             <DialogueScriptView script={script} activeIndex={activeIndex} onJump={jumpTo} />
+          )}
+
+          {script?.references && script.references.length > 0 && (
+            <details className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3">
+              <summary className="cursor-pointer text-[.72rem] font-semibold text-ink">المراجع العلمية للحلقة</summary>
+              <ol className="mt-3 grid gap-3">
+                {script.references.map((reference, index) => (
+                  <li key={`${reference.doi || reference.title}-${index}`} className="text-[.7rem] leading-[1.75] text-soft">
+                    {reference.url ? (
+                      <a href={reference.url} target="_blank" rel="noreferrer" className="font-semibold text-accent underline decoration-accent/25 underline-offset-4 hover:decoration-accent">{reference.title}</a>
+                    ) : <span className="font-semibold text-ink">{reference.title}</span>}
+                    {(reference.authors || reference.journal || reference.year) && (
+                      <span className="mt-0.5 block">{[reference.authors, reference.journal, reference.year ? String(reference.year) : ''].filter(Boolean).join(' · ')}</span>
+                    )}
+                    {reference.note && <span className="mt-1 block">{reference.note}</span>}
+                  </li>
+                ))}
+              </ol>
+            </details>
           )}
 
           {active && player.error && <p className="mt-3 text-[.7rem] leading-relaxed text-soft">{player.error}</p>}

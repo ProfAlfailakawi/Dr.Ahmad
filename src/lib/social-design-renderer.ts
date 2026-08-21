@@ -369,10 +369,44 @@ function textBlock(options: TextBlockOptions) {
   // المسافة بين الحروف تقطع اتصال العربية — تُطبَّق على اللاتينية فقط.
   const spacing = rtl ? 0 : (options.letterSpacing || 0)
   const lineHeight = options.lineHeight ?? 1.3
-  return lines.map((line, index) => {
+  const inner = lines.map((line, index) => {
     const lineY = y + index * size * lineHeight
     return `<text x="${round(x)}" y="${round(lineY)}" fill="${fill}" opacity="${options.opacity ?? 1}" font-family="${esc(fontStack(family))}" font-size="${round(size)}" font-weight="${weight}" text-anchor="${anchor}" direction="${direction}" unicode-bidi="plaintext"${spacing ? ` letter-spacing="${spacing}"` : ''}>${lineContent(line, options)}</text>`
   }).join('')
+  /* كل كتلة نصية تُلفّ بمجموعةٍ لها مفتاحٌ ثابت — فيمسكها الدكتور ويحرّكها،
+     وتُطبَّق إزاحته المخزّنة على السلسلة النهائية فتُخبز في المعاينة والتصدير. */
+  const wk = wordKey(`${joined}|${Math.round(x)}|${Math.round(y)}|${Math.round(size)}`)
+  return `<g class="dw" data-wk="${wk}">${inner}</g>`
+}
+
+/** مفتاحٌ قصير ثابت لكتلة نصية — لا يتغيّر بين رسمةٍ وأخرى لنفس التصميم. */
+function wordKey(seed: string): string {
+  let h = 0x811c9dc5
+  for (let i = 0; i < seed.length; i += 1) { h ^= seed.charCodeAt(i); h = Math.imul(h, 0x01000193) }
+  return (h >>> 0).toString(36)
+}
+
+/** يقرأ إزاحات الكلمات المخزّنة لهذا التصميم (بلا استيراد كي لا يكسر الفاحص). */
+function readWordOffsetsForRender(plan: CompositionPlan): Record<string, { dx: number; dy: number }> {
+  if (typeof localStorage === 'undefined') return {}
+  try { return JSON.parse(localStorage.getItem(`reel:word-offsets:${plan.fingerprint || plan.id}`) || '{}') || {} } catch { return {} }
+}
+
+/** يطبّق الإزاحات على السلسلة: يحقن transform=translate في مجموعة كل كلمة محرّكة. */
+function applyWordOffsets(svg: string, plan: CompositionPlan): string {
+  const map = readWordOffsetsForRender(plan)
+  const keys = Object.keys(map)
+  if (!keys.length) return svg
+  const W = plan.format.width || 1080, H = plan.format.height || 1080
+  let out = svg
+  for (const wk of keys) {
+    const o = map[wk]
+    if (!o) continue
+    const tx = Math.round((o.dx || 0) * W), ty = Math.round((o.dy || 0) * H)
+    if (!tx && !ty) continue
+    out = out.split(`<g class="dw" data-wk="${wk}">`).join(`<g class="dw" data-wk="${wk}" transform="translate(${tx} ${ty})">`)
+  }
+  return out
 }
 
 /** ارتفاع كتلة نصية بعدد أسطرها. */
@@ -2410,7 +2444,7 @@ export function renderCompositionSvg(plan: CompositionPlan, options: RenderSvgOp
   const hero = typographicOnly ? { defs: '', markup: '' } : imageUnderlayLayer(s)
   const accessible = esc(options.ariaLabel || `${plan.directionLabel}: ${plan.content.title}`)
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}${hero.defs}</defs>${bg.markup}${hero.markup}${frameDecor(s)}${scenePaint.markup}${dnaSignature(s)}${overlaysLayer(s)}${identityLayer(s, options)}</svg>`
+  return applyWordOffsets(`<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${esc(options.title || plan.content.title)}</title><defs>${fontStyle}${bg.defs}${scenePaint.defs || ''}${hero.defs}</defs>${bg.markup}${hero.markup}${frameDecor(s)}${scenePaint.markup}${dnaSignature(s)}${overlaysLayer(s)}${identityLayer(s, options)}</svg>`, plan)
 }
 
 /* ------------------------------------------------------------------ */
@@ -2486,7 +2520,7 @@ function renderCarouselSlideSvg(plan: CompositionPlan, slideIndex: number, optio
   const ghostIndex = `<text x="${round(s.safeX)}" y="${round(s.safeY + min * .16)}" fill="${p.accent}" opacity=".14" font-family="Tajawal, 'El Messiri', sans-serif" font-weight="500" font-size="${round(min * .17)}" text-anchor="start">${arabicIndex(slideIndex + 1)}</text>`
   const fontStyle = options.fontCss ? `<style>${options.fontCss}</style>` : ''
   const accessible = esc(`شريحة ${slideIndex + 1} من ${total}: ${slide.title}`)
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${accessible}</title><defs>${fontStyle}${bg.defs}</defs>${bg.markup}${ghostIndex}${roleDecor}${stack}${identityFooter(s)}${identityLayer(s, options)}</svg>`
+  return applyWordOffsets(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${accessible}" direction="rtl" style="width:100%;height:100%;display:block"><title>${accessible}</title><defs>${fontStyle}${bg.defs}</defs>${bg.markup}${ghostIndex}${roleDecor}${stack}${identityFooter(s)}${identityLayer(s, options)}</svg>`, plan)
 }
 
 /** كل لوحات التصميم: الغلاف ثم بقية الشرائح إن كانت الخطة سلسلة. */

@@ -45,6 +45,7 @@ import { useCmsContent } from '../../lib/content'
 import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
 import { LivingMetaphorIcon, LivingIconToggle, LivingIconPicker, useLivingIconEnabled } from './LivingMetaphorIcon'
 import { MovableWordsLayer, MoveWordsToggle } from './MovableWords'
+import { downloadDesignVideo, designVideoSupported, designHasMotion } from '../../lib/design-video'
 import { resolveResonantQuotes, type ResonanceRow } from '../../lib/resonance-quotes'
 import { GenerationLibraryPanel, type GeneratedDesignLibraryAsset, type GeneratedLibraryAsset } from './GenerationLibraryPanel'
 import { buildMeaningFingerprint } from '../../lib/editorial-memory'
@@ -921,6 +922,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }, [tasteProfile, tasteLedger])
   const [campaign, setCampaign] = useState<SocialCampaign | null>(null)
   const [campaignBusy, setCampaignBusy] = useState(false)
+  const [videoBusy, setVideoBusy] = useState(false)
+  const [videoPct, setVideoPct] = useState(0)
   const [autopilotBusy, setAutopilotBusy] = useState(false)
   const [autopilotPack, setAutopilotPack] = useState<AutoPilotCandidate[]>([])
   const [autoFinalsBusy, setAutoFinalsBusy] = useState(false)
@@ -3163,6 +3166,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     return false
   }
 
+  const exportPlanVideo = async (plan: CompositionPlan) => {
+    setVideoBusy(true); setVideoPct(0)
+    try { await downloadDesignVideo(plan, { onProgress: (r) => setVideoPct(Math.round(r * 100)) }) }
+    catch (error) { setNotice(error instanceof Error ? error.message : 'تعذّر تصدير الفيديو') }
+    finally { setVideoBusy(false) }
+  }
   const exportPlan = async (plan: CompositionPlan, type: 'png' | 'jpeg') => {
     if (!authorizeMeaningExport([plan])) return
     const score = plan.quality?.score || 0
@@ -4280,7 +4289,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       {SIMPLIFIED_STUDIO && stage === 'publish' && (
         <section className={`${card} overflow-hidden`}>
           {approvedPlan ? <>
-            <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[.68rem] font-black uppercase tracking-[.15em] text-accent">Publish without noise</p><h3 className="mt-1 font-display text-3xl font-bold text-ink">كل شيء جاهز للنشر من مكان واحد.</h3><p className="mt-2 max-w-2xl text-[.8rem] leading-loose text-soft">النسخة المعتمدة، المقاسات، والحملة السردية. لا خيارات تصميم إضافية هنا؛ فقط القرار النهائي والتنزيل.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void exportPlan(approvedPlan, 'png')}>تنزيل التصميم PNG</button><button type="button" className={ghost} onClick={() => void exportAllSizes(approvedPlan)}>كل المقاسات</button></div></div>
+            <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[.68rem] font-black uppercase tracking-[.15em] text-accent">Publish without noise</p><h3 className="mt-1 font-display text-3xl font-bold text-ink">كل شيء جاهز للنشر من مكان واحد.</h3><p className="mt-2 max-w-2xl text-[.8rem] leading-loose text-soft">النسخة المعتمدة، المقاسات، والحملة السردية. لا خيارات تصميم إضافية هنا؛ فقط القرار النهائي والتنزيل.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void exportPlan(approvedPlan, 'png')}>تنزيل PNG (ثابت)</button>{designVideoSupported() && <button type="button" className={ghost} disabled={videoBusy} title={designHasMotion(approvedPlan) ? 'يسجّل التصميم بأيقونته المتحركة فيديو MP4/WebM' : 'فعّل الأيقونة الحيّة أولاً كي تظهر الحركة'} onClick={() => void exportPlanVideo(approvedPlan)}>{videoBusy ? `يسجّل… ${videoPct}%` : '🎬 فيديو متحرّك'}</button>}<button type="button" className={ghost} onClick={() => void exportAllSizes(approvedPlan)}>كل المقاسات</button></div></div>
             <div className="mt-6 grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]"><div className="rounded-[1.4rem] border border-hair bg-canvas p-3"><Preview plan={approvedPlan} /><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>التحرير</button><button type="button" className={ghost} onClick={() => void exportCompositionSvg(approvedPlan)}>SVG</button><button type="button" className={ghost} onClick={() => exportCompositionPdf(approvedPlan)}>PDF</button></div></div>
               <div>{campaign ? <><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">الحملة السردية</p><p className="mt-1 text-[.72rem] text-soft">{arabicCountPhrase(campaign.assets.length, CAMPAIGN_PIECE_FORMS)}، لكل واحدة وظيفة بصرية مختلفة.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">جودة {campaign.qualityScore}٪</span><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">تماسك {campaign.coherenceScore}٪</span><button type="button" className={primary} disabled={!campaign.ready} onClick={() => void exportCampaignRaster(campaign)}>تنزيل الحملة</button><button type="button" className={ghost} disabled={!campaign.ready} onClick={() => exportCampaignPdf(campaign)}>PDF</button></div></div><div className="mt-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><div className="flex min-w-max gap-3">{campaign.assets.map((asset) => <article key={asset.id} className="w-[220px] shrink-0 rounded-2xl border border-hair bg-canvas p-2.5"><Preview plan={asset.plan} /><strong className="mt-2 block text-[.72rem] text-ink">{asset.label}</strong><p className="mt-1 text-[.62rem] leading-relaxed text-soft">{asset.purpose}</p></article>)}</div></div></> : <div className="grid min-h-[280px] place-items-center rounded-[1.5rem] border border-dashed border-hair bg-canvas p-6 text-center"><div><h4 className="font-display text-xl font-bold text-ink">الحملة لم تُبنَ بعد.</h4><p className="mt-2 text-[.72rem] text-soft">ابنها حول النسخة المعتمدة من دون تغيير التصميم الأساسي.</p><button type="button" className={`${primary} mt-4`} onClick={() => runCampaign(text, context, approvedPlan, { preserveSelection: true })}>ابنِ الحملة الآن</button></div></div>}</div></div>
           </> : <div className="grid min-h-[340px] place-items-center text-center"><div><h3 className="font-display text-2xl font-bold text-ink">ابدأ بالفكرة أولاً.</h3><button type="button" className={`${primary} mt-4`} onClick={() => setStage('idea')}>العودة</button></div></div>}

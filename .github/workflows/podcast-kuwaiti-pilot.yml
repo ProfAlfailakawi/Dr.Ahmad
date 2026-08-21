@@ -14,6 +14,10 @@ on:
         required: false
         type: boolean
         default: false
+      restore_from_run:
+        description: 'التثبيت الحقيقي: رقم تشغيلة سابقة — تُسترجع نسختها من الأرشيف وتُنصب مرشحاً كما هي، بلا توليد ولا مقامرة عينات (جواب «ليش ما نولد نفس المعتمدة»: لا نولدها، نرجعها هي نفسها)'
+        required: false
+        default: ''
       takes:
         description: 'بيك أوف الحلقة: عدد النسخ الكاملة (1-3) — العينة تتذبذب بين التشغيلات، فبدل محاربة التذبذب نحصده: يولّد نسخاً ويختار الدكتور أفضلها بأذنه'
         required: false
@@ -21,6 +25,8 @@ on:
 
 permissions:
   contents: read
+  # [٢٢ أغسطس ٢٠٢٦] مسار «التثبيت الحقيقي» يقرأ مرفقات تشغيلة سابقة
+  actions: read
 
 concurrency:
   group: podcast-kuwaiti-pilot-${{ inputs.slugs }}
@@ -68,6 +74,7 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
 
       - name: Validate the complete Kuwaiti library
+        if: ${{ !inputs.restore_from_run }}
         run: npm run podcast:kw:self-test
 
       # المتغيّران يركبان هذه الخطوة نفسها: fetch هو مَن يقرأ حالة الإنتاج
@@ -80,6 +87,7 @@ jobs:
       # regenerate=true مُمرَّر. الكتلة أعيدت لموضعها على fetch نفسه،
       # والحارس بعده بلا بيئة — لا يحتاجها: يقرأ الملفات المجلوبة فقط.
       - name: Lock the exact Kuwaiti admin dialogue
+        if: ${{ !inputs.restore_from_run }}
         run: node scripts/fetch-kuwaiti-dialogues.mjs --slugs="$RELEASED_SLUGS"
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
@@ -90,6 +98,7 @@ jobs:
       # المعتمد أو المعجم توقف التوليد وتُعرض بجملتها ليحسمها المختبر.
       # الكلمة لا تعتمد إلا لما تثبت في معجمه — هذا الباب الوحيد.
       - name: حارس الكلمات الجديدة — لا جديد قبل أذن الدكتور
+        if: ${{ !inputs.restore_from_run }}
         run: node scripts/guard-new-dialogue-words.mjs --dir=manual-dialogues-kuwaiti
 
       # بصمة الحوار تُقرأ من القفل الذي كتبه fetch من Firestore نفسه، لا من
@@ -100,6 +109,7 @@ jobs:
       # الصوت قد وُلد وسُلّم إلى R2 — يضيع الوقت والحصة، ولا يصل المرشّح إلى
       # بوابة الاعتماد. ومع ١٤٣ حلقة كان هذا سيعني ١٤٣ سقطة.
       - name: Read the revision the generator will actually use
+        if: ${{ !inputs.restore_from_run }}
         shell: bash
         run: |
           set -euo pipefail
@@ -117,6 +127,7 @@ jobs:
           PODCAST_KW_REGENERATE: ${{ inputs.regenerate && '1' || '' }}
 
       - name: Mark Gemini generation
+        if: ${{ !inputs.restore_from_run }}
         run: node scripts/podcast-production-status.mjs --variant=kuwaiti --status=processing --stage=generating_audio --slugs="$RELEASED_SLUGS" --note="قُفل النص الكويتي وبدأ Gemini 3.1 Flash TTS متعدد المتحدثين في Staging."
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
@@ -125,6 +136,7 @@ jobs:
       # سيئة تُرمى وتُعاد. ثلاث محاولات؛ والأخيرة بلا عتبة (MIN_GAP=0) حتى
       # لا نبقى بلا حلقة إن كان اليوم كله سيئاً. أي رمزٍ آخر يُسقط الخطوة فوراً.
       - name: Generate Kuwaiti candidate with Gemini 3.1 Flash TTS
+        if: ${{ !inputs.restore_from_run }}
         shell: bash
         run: |
           set -uo pipefail
@@ -194,6 +206,38 @@ jobs:
           # عدد الإعادات بيده: خانة «موسيقى» في محرر اللوحة لكل دور.
           PODCAST_KW_SPLIT_AT_BRIDGES: '1'
           PODCAST_KW_TAKES: ${{ inputs.takes || '1' }}
+
+      # [٢٢ أغسطس ٢٠٢٦ — «التثبيت الحقيقي»] المحرك احتمالي فلن يعيد نسخة
+      # أحبها الدكتور أبداً؛ لكن كل تشغيلة تحفظ صوتها مرفقاً دائماً.
+      # هذا المسار يسترجع نسخة تشغيلة بعينها من الأرشيف ويعيد حساب بصماتها
+      # وينصبها مرشحاً — صفر توليد، صفر حصة، صفر مقامرة.
+      - name: استرجاع نسخة محفوظة من أرشيف تشغيلة سابقة
+        if: ${{ inputs.restore_from_run }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${{ inputs.restore_from_run }}" =~ ^[0-9]{6,}$ ]] || { echo "::error::رقم التشغيلة غير صالح"; exit 1; }
+          gh run download "${{ inputs.restore_from_run }}" -R "$GITHUB_REPOSITORY" -n "kuwaiti-pilot-$RELEASED_SLUGS" -D restored
+          mkdir -p audio "podcast-audits/kuwaiti"
+          cp "restored/audio/$RELEASED_SLUGS.dialogue-kw.mp3" "audio/"
+          cp "restored/audio/$RELEASED_SLUGS.dialogue-kw.json" "audio/"
+          node -e '
+            const { createHash } = require("crypto"); const fs = require("fs");
+            const slug = process.env.RELEASED_SLUGS, rev = process.env.DIALOGUE_REVISION;
+            const sha = (f) => createHash("sha256").update(fs.readFileSync(f)).digest("hex");
+            const audit = {
+              slug, revisionId: rev,
+              audioSha256: sha(`audio/${slug}.dialogue-kw.mp3`),
+              transcriptSha256: sha(`audio/${slug}.dialogue-kw.json`),
+              restoredFromRun: "${{ inputs.restore_from_run }}",
+              restoredAt: new Date().toISOString(),
+              note: "نسخة مسترجعة من الأرشيف بطلب الدكتور — لا توليد جديد",
+            };
+            fs.writeFileSync(`podcast-audits/kuwaiti/${slug}.json`, JSON.stringify(audit, null, 2));
+          '
+          echo "✓ استُرجعت نسخة التشغيلة ${{ inputs.restore_from_run }} وبُصمت — جاهزة للرفع والتنصيب"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Upload candidate to isolated R2 staging
         shell: bash

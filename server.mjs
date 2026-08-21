@@ -5697,6 +5697,11 @@ export function createRequestHandler({
          مفتاح Gemini سليماً. ومع ذلك: ورشة الكويتية تُلزم `revision_id` أيضاً،
          وكان الخادم يرسل `slugs` وحدها فتُرفض بـ٤٢٢ لو وصلت. الاثنان هنا. */
       const variant = boundedString(body?.variant, 20) === 'kuwaiti' ? 'kuwaiti' : 'standard'
+      /* [٢١ أغسطس ٢٠٢٦] إعادة التوليد من اللوحة. جالبُ الحوار يرفض استبدال مرشّحٍ
+         ينتظر الاعتماد إلا بـPODCAST_KW_REGENERATE=1، وهذا الخادم لم يكن يرسل
+         الحقل إطلاقاً — فكانت الإعادة تتطلّب دخول GitHub يدوياً. والحماية تبقى:
+         لا يُرسل إلا حين يطلبه المشرف صراحةً من اللوحة، لا تلقائياً. */
+      const regenerate = body?.regenerate === true || String(body?.regenerate || '') === 'true'
       const dialogueCollection = variant === 'kuwaiti' ? 'podcast_dialogues_kw' : 'podcast_dialogues'
       const productionCollection = variant === 'kuwaiti' ? 'podcast_production_kw' : 'podcast_production'
 
@@ -5777,7 +5782,9 @@ export function createRequestHandler({
               'user-agent': 'dr-alfailakawi-podcast-admin/1.0',
               'x-github-api-version': '2026-03-10',
             },
-            body: JSON.stringify({ ref: githubRef, inputs: variant === 'kuwaiti' ? { slugs: slug, revision_id: revisionId } : { slugs: slug } }),
+            body: JSON.stringify({ ref: githubRef, inputs: variant === 'kuwaiti'
+              ? { slugs: slug, revision_id: revisionId, ...(regenerate ? { regenerate: true } : {}) }
+              : { slugs: slug } }),
           }, 15_000)
       } catch (error) {
         await productionRef.set({

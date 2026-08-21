@@ -687,7 +687,8 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
       const bridgeFile = resolve(TMP, `bridge-${String(++bridgeNo).padStart(2, '0')}.wav`)
       const bridgeDuration = MUSIC.bridgeSec
       makeMusicClip(musicPath, bridgeFile, bridgeDuration, MUSIC.bridgeLufs, 0.22, 0.70, chosen.offset + MUSIC.introSec + 1.2)
-      const bridgeStart = Math.max(0, current.startSec + current.durationSec - 0.12)
+      /* وكذلك الجسر: كان يبدأ قبل نهاية المداخلة بـ٠.١٢ ثانية فيبتلع آخرها. */
+      const bridgeStart = current.startSec + current.durationSec + 0.10
       bridgeItems.push({ file: bridgeFile, startSec: bridgeStart, durationSec: bridgeDuration, isBridge: true })
       /* [٢٠ أغسطس ٢٠٢٦] كان المتحدّث التالي يدخل تحت ذيل الجسر (آخر ٠.٣ث)
          فتُداس أول كلمته — سمعها الدكتور في «عشان جذي الإصلاح…»: «ما خلاه
@@ -712,7 +713,11 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
     identity.intro = { file: introFile, startSec: 0, durationSec: MUSIC.introSec, isMusic: true, role: 'intro' }
     identity.track = chosen.track
     const lastSpoken = items.at(-1)
-    const outroStart = Math.max(0, lastSpoken.startSec + lastSpoken.durationSec - MUSIC.outroOverlapSec)
+    /* [٢١ أغسطس ٢٠٢٦] كانت الخاتمة تبدأ قبل نهاية آخر كلمةٍ بـ٠.٧٦ ثانية
+       (outroOverlapSec) — تداخلٌ مقصودٌ لتفادي القطع المفاجئ، لكنه كان
+       **يبتلع آخر الكلام**. سمعها الدكتور: «حتى اسمي ما كمّله، ظهرت الموسيقى».
+       فصارت تبدأ بعد آخر كلمةٍ بربع ثانية: لا ابتلاع ولا قطعٌ مفاجئ. */
+    const outroStart = lastSpoken.startSec + lastSpoken.durationSec + 0.25
     const outroFile = makeMusicClip(musicPath, resolve(TMP, 'music-outro.wav'), MUSIC.outroSec, MUSIC.outroLufs, MUSIC.outroFadeIn, MUSIC.outroFadeOut, chosen.offset + MUSIC.introSec + 1.2)
     identity.outro = { file: outroFile, startSec: outroStart, durationSec: MUSIC.outroSec, isMusic: true, role: 'outro' }
   }
@@ -749,6 +754,9 @@ function timelineFor(turns, assembly) {
     pauseAfterMs: Number(turns[index].pauseAfterMs || 0),
     overlapMs: Number(turns[index].overlapMs || 0),
     musicBridgeAfter: Boolean(turns[index].musicBridgeAfter),
+    /* [٢١ أغسطس ٢٠٢٦] يُحفظ للتشخيص: غيابُه عن الوصف أوهمني أن توجيهات الأداء
+       مفقودةٌ من المصدر، وهي موجودة. الوصف الناقص يُنتج تشخيصاً خاطئاً. */
+    deliveryType: turns[index].deliveryType || null,
   }))
   const chapters = []
   turns.forEach((turn,index)=>{

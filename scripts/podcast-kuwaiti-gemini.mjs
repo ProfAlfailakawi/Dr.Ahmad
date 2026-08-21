@@ -86,7 +86,21 @@ function writePcmWav(path, pcm) { writeFileSync(path, Buffer.concat([wavHeader(p
    لكنه لم يعد مطلوباً أصلاً. */
 const TURNS_PER_REQUEST = Math.max(2, Math.min(64, Number(process.env.PODCAST_KW_TURNS_PER_REQUEST || 64)))
 
-function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {}) {
+/* ═══ الجسر يقفل النداء — مقترح الدكتور نفسه (٢١ أغسطس ٢٠٢٦ مساءً) ═══
+   حكمه على حلقة إصلاح الموسيقى: «الصوت بعد دقيقتين تبدل وقاعد يتبدل…
+   وبعدها تحول اماراتي. كان في البداية محترف بشكل فضيع». ومقترحه:
+   «بعد الجسر يرد نفس الروح اللي كان في البداية، ونزيد الجسور إذا فعلا
+   نبي نثبت الصوت».
+   وهذا يحلّ معضلة النداء الواحد من طرفها الآخر: النداء الواحد اختير لأن
+   ثلاثة عشر نداءً أخرجت ثلاث عشرة نبرةً تتبدل وسط الكلام. لكن النبرة
+   تبيّن أنها تنجرف داخل النداء الطويل نفسه بعد دقيقتين. العلاج: القطع
+   عند الجسر الموسيقي وحده — فبداية كل نداءٍ هي «روح البداية» التي
+   يحبها، ونقطة اللحام تختبئ خلف الموسيقى فلا تُسمع نقلةً وسط جملة.
+   عدد الإعادات بيد الدكتور: كل خانة «موسيقى» يعلّمها في اللوحة تصير
+   حدَّ نداءٍ جديد. المفتاح صريحٌ كي يبقى السلوك القديم حرفياً بدونه. */
+const SPLIT_AT_BRIDGES = process.env.PODCAST_KW_SPLIT_AT_BRIDGES === '1'
+
+function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300, splitAtBridges = SPLIT_AT_BRIDGES } = {}) {
   const chunks = []
   let row = []
   let chars = 0
@@ -99,7 +113,7 @@ function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {
     /* الجسر يُركَّب في التجميع لا في التوليد، فلا يقفل النداء: إقفاله كان
        يشطر الحلقة إلى ثلاثة نداءات = ثلاث نبرات. يبقى قافلاً حين تُطلب
        دفعاتٌ صغيرة صراحةً (PODCAST_KW_TURNS_PER_REQUEST). */
-    if (turn.musicBridgeAfter && row.length >= 2 && maxTurns < 16) { chunks.push(row); row = []; chars = 0 }
+    if (turn.musicBridgeAfter && row.length >= 2 && (maxTurns < 16 || splitAtBridges)) { chunks.push(row); row = []; chars = 0 }
   }
   if (row.length) chunks.push(row)
   return chunks
@@ -803,6 +817,12 @@ if (SELF_TEST) {
   const chunks = chunkTurns(turns, { maxTurns: 8 })
   assert.equal(chunks.length, 2, 'الجسر الموسيقي يقفل المقطع في الدفعات الصغيرة')
   assert.deepEqual(chunks.map((chunk) => chunk.length), [2, 1])
+  /* [٢١ أغسطس ٢٠٢٦] مقترح الدكتور: القطع عند الجسر يعيد «روح البداية»
+     بعد كل موسيقى، والمفتاح الصريح وحده يفعّله — بدونه نداءٌ واحدٌ حرفياً. */
+  const bridged = chunkTurns(turns, { splitAtBridges: true })
+  assert.equal(bridged.length, 2, 'مفتاح القطع عند الجسر: كل جسرٍ يبدأ نداءً جديداً بروح البداية')
+  assert.deepEqual(bridged.map((chunk) => chunk.length), [2, 1], 'القطع يقع عند الجسر نفسه لا قبله ولا بعده')
+  assert.equal(chunkTurns(turns, { splitAtBridges: false }).length, 1, 'بلا المفتاح يبقى النداء الواحد حرفياً — لا تغيير خلسة')
   const prompt = promptFor(chunks[0],0,chunks.length)
   /* عقد الأداء الكويتي: هذه البنود هي ما يفصل «كويتيّاً طبيعياً» عن «مقلّدٍ
      للهجة»، وحذفُ أيّها سهوٌ يعود بالأداء إلى خليجيٍّ عام. */

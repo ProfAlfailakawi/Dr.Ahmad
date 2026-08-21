@@ -11,13 +11,19 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
 import { paintMetaphor, chooseMetaphors, type MetaphorId } from '../../lib/reel-metaphors'
 import { resolvePalette, type CompositionPlan } from '../../lib/social-design-engine'
+import { renderCompositionSvg } from '../../lib/social-design-renderer'
 
 const STORAGE_KEY = 'reel:living-icon:v1'
+const MOTION_KEY = 'reel:living-icon-motion:v1'
 const CHANGE_EVENT = 'living-icon-change'
 
 function readEnabled(): boolean {
   if (typeof localStorage === 'undefined') return true
   return localStorage.getItem(STORAGE_KEY) !== 'off'
+}
+function readMotion(): boolean {
+  if (typeof localStorage === 'undefined') return true
+  return localStorage.getItem(MOTION_KEY) !== 'off'
 }
 
 /** مفتاحٌ مشترك: يُبقي كل الأماكن متزامنةً في الصفحة نفسها وعبر التبويبات. */
@@ -37,20 +43,51 @@ export function useLivingIconEnabled(): [boolean, (next: boolean) => void] {
   return [enabled, update]
 }
 
-/** زرّ صغير أنيق للاختيار — أبيه أو لا. */
+/** مفتاح الحركة: أيقونةٌ متحركة أم ثابتة — مشتركٌ متزامنٌ كسابقه. */
+export function useLivingIconMotion(): [boolean, (next: boolean) => void] {
+  const [motion, setMotion] = useState<boolean>(readMotion)
+  useEffect(() => {
+    const sync = () => setMotion(readMotion())
+    window.addEventListener(CHANGE_EVENT, sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener(CHANGE_EVENT, sync); window.removeEventListener('storage', sync) }
+  }, [])
+  const update = (next: boolean) => {
+    try { localStorage.setItem(MOTION_KEY, next ? 'on' : 'off') } catch { /* محجوب */ }
+    setMotion(next)
+    window.dispatchEvent(new Event(CHANGE_EVENT))
+  }
+  return [motion, update]
+}
+
+/** خيار الأيقونة: مفعّلة/متوقفة، وحين تُفعَّل — مع حركة أو بدون. */
 export function LivingIconToggle({ className = '' }: { className?: string }) {
   const [enabled, setEnabled] = useLivingIconEnabled()
+  const [motion, setMotion] = useLivingIconMotion()
   return (
-    <button
-      type="button"
-      onClick={() => setEnabled(!enabled)}
-      aria-pressed={enabled}
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[.68rem] font-semibold transition-colors ${enabled ? 'border-accent bg-accent/[.08] text-accent' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'} ${className}`}
-      title="أيقونة حيّة تُختار من المكتبة بحسب معنى التصميم وتتحرّك بألوانه — في المعاينة فقط"
-    >
-      <span className={`inline-block h-2.5 w-2.5 rounded-full ${enabled ? 'bg-accent' : 'bg-soft/40'}`} />
-      الأيقونة الحيّة {enabled ? 'مفعّلة' : 'متوقفة'}
-    </button>
+    <span className={`inline-flex items-center gap-1.5 ${className}`}>
+      <button
+        type="button"
+        onClick={() => setEnabled(!enabled)}
+        aria-pressed={enabled}
+        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[.68rem] font-semibold transition-colors ${enabled ? 'border-accent bg-accent/[.08] text-accent' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+        title="أيقونة حيّة تُختار من المكتبة بحسب معنى التصميم — تظهر في المعاينة، وتتجنّب النص، وتختفي إن لم تجد فراغاً"
+      >
+        <span className={`inline-block h-2.5 w-2.5 rounded-full ${enabled ? 'bg-accent' : 'bg-soft/40'}`} />
+        الأيقونة {enabled ? 'مفعّلة' : 'متوقفة'}
+      </button>
+      {enabled && (
+        <button
+          type="button"
+          onClick={() => setMotion(!motion)}
+          aria-pressed={motion}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[.66rem] font-semibold transition-colors ${motion ? 'border-accent/40 bg-accent/[.05] text-accent' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+          title="مع حركة: الأيقونة تتحرّك. بدون: صورة ثابتة."
+        >
+          {motion ? '✦ مع حركة' : '● بدون حركة'}
+        </button>
+      )}
+    </span>
   )
 }
 
@@ -62,36 +99,12 @@ function metaphorFor(plan: CompositionPlan): MetaphorId {
   return chosen[0] || 'figure-contemplate'
 }
 
-/** مواضع الأيقونة داخل التصميم — تسع نقاط، تتنوّع بحسب التصميم بلا مساسٍ بالنص. */
-export type LivingIconCorner =
-  | 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end'
-  | 'bottom-center' | 'top-center' | 'mid-start' | 'mid-end' | 'center'
-
-const CORNER_CLASS: Record<LivingIconCorner, string> = {
-  'bottom-start': 'bottom-[4%] left-[4%]',
-  'bottom-end': 'bottom-[4%] right-[4%]',
-  'top-start': 'top-[4%] left-[4%]',
-  'top-end': 'top-[4%] right-[4%]',
-  'bottom-center': 'bottom-[4%] left-1/2 -translate-x-1/2',
-  'top-center': 'top-[5%] left-1/2 -translate-x-1/2',
-  'mid-start': 'top-1/2 left-[4%] -translate-y-1/2',
-  'mid-end': 'top-1/2 right-[4%] -translate-y-1/2',
-  'center': 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-}
-
 /**
- * اختيار الموضع بإبداعٍ لا عشوائية: التكوين يحكم أولاً (أين الفراغ الأرجح في
- * هذا التخطيط)، وبصمةُ التصميم ترجّح بين المواضع المسموحة فيتنوّع المكان بين
- * تصميمٍ وآخر ويبقى ثابتاً للتصميم نفسه. والحجم يتنفّس قليلاً مع البصمة.
+ * وضعٌ يقرأ الحقيقة لا يخمّنها: نرسم SVG التصميم على لوحةٍ صغيرة، ونقيس ازدحام
+ * البكسلات في مواضع مرشّحة، فنضع الأيقونة في أخلى بقعةٍ تتّسع لها. وإن كان
+ * التصميم مزدحماً في كل مكان، تختفي الأيقونة. لا تصادمَ مع نصٍّ أو عنصرٍ أبداً.
  */
-const LAYOUT_ANCHORS: Record<string, LivingIconCorner[]> = {
-  // العنوان أعلى غالباً → الفراغ أسفل
-  default: ['bottom-start', 'bottom-end', 'bottom-center', 'mid-end'],
-  // تخطيطات يتصدّرها النص في الوسط → الزوايا آمنة
-  centered: ['top-start', 'top-end', 'bottom-start', 'bottom-end'],
-  // تخطيطات الشريط الجانبي → الجهة المقابلة
-  rail: ['mid-end', 'bottom-end', 'top-end'],
-}
+interface Placement { hide: boolean; top: number; left: number; size: number }
 
 function hashString(value: string): number {
   let hash = 0x811c9dc5
@@ -99,22 +112,82 @@ function hashString(value: string): number {
   return hash >>> 0
 }
 
-function choosePlacement(plan: CompositionPlan): { corner: LivingIconCorner; size: number } {
-  const layout = String(plan.layout || '')
-  const family = /center|axis|stage|hero/i.test(layout) ? 'centered' : /rail|side|column|split/i.test(layout) ? 'rail' : 'default'
-  const anchors = LAYOUT_ANCHORS[family] || LAYOUT_ANCHORS.default
-  const seed = hashString(`${plan.fingerprint || plan.id}:${layout}`)
-  const corner = anchors[seed % anchors.length]
-  /* الحجم يتنوّع بين ١٦٪ و٢٤٪ — الأصغر للزوايا الحسّاسة، والأكبر حين يتّسع الفراغ. */
-  const sizeBase = corner === 'center' ? 26 : corner.includes('center') ? 22 : 18
-  const size = sizeBase + ((seed >> 8) % 3) * 2
-  return { corner, size }
+/* يقيس ازدحام مستطيلٍ على صورة الرمادي: نسبة البكسلات التي تنحرف عن متوسّط
+   المستطيل انحرافاً محسوساً (نصٌّ ورسومٌ = تباينٌ عالٍ، خلفيةٌ متدرّجة = هدوء). */
+function busyness(gray: Uint8ClampedArray, W: number, H: number, x0: number, y0: number, x1: number, y1: number): number {
+  const ix0 = Math.max(0, Math.floor(x0 * W)), ix1 = Math.min(W, Math.ceil(x1 * W))
+  const iy0 = Math.max(0, Math.floor(y0 * H)), iy1 = Math.min(H, Math.ceil(y1 * H))
+  let sum = 0, n = 0
+  for (let y = iy0; y < iy1; y += 1) for (let x = ix0; x < ix1; x += 1) { sum += gray[y * W + x]; n += 1 }
+  if (!n) return 1
+  const mean = sum / n
+  let edges = 0
+  for (let y = iy0; y < iy1; y += 1) for (let x = ix0; x < ix1; x += 1) { if (Math.abs(gray[y * W + x] - mean) > 22) edges += 1 }
+  return edges / n
 }
 
-export function LivingMetaphorIcon({ plan, corner, size }: { plan: CompositionPlan; corner?: LivingIconCorner; size?: number }) {
-  const placement = useMemo(() => choosePlacement(plan), [plan])
-  const resolvedCorner = corner ?? placement.corner
-  const resolvedSize = size ?? placement.size
+async function computePlacement(plan: CompositionPlan): Promise<Placement> {
+  const aspect = (plan.format.width || 1080) / (plan.format.height || 1350)
+  const seed = hashString(plan.fingerprint || plan.id)
+  const sizePct = 17 + (seed % 3) * 2
+  const iconW = sizePct / 100
+  const iconH = iconW * aspect
+  const inset = 0.045
+
+  /* نرسم التصميم على لوحةٍ منخفضة الدقة ونستخرج الرمادي. */
+  const RW = 132, RH = Math.round(RW / aspect)
+  let gray: Uint8ClampedArray | null = null
+  try {
+    const svg = renderCompositionSvg(plan)
+    const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+    const img = new Image()
+    img.decoding = 'async'
+    await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(new Error('svg')); img.src = url })
+    const off = document.createElement('canvas'); off.width = RW; off.height = RH
+    const octx = off.getContext('2d', { willReadFrequently: true })
+    if (octx) {
+      octx.drawImage(img, 0, 0, RW, RH)
+      const data = octx.getImageData(0, 0, RW, RH).data
+      gray = new Uint8ClampedArray(RW * RH)
+      for (let i = 0; i < RW * RH; i += 1) gray[i] = (data[i * 4] * 0.299 + data[i * 4 + 1] * 0.587 + data[i * 4 + 2] * 0.114)
+    }
+  } catch { gray = null }
+
+  /* مواضع مرشّحة: شبكةٌ من المراكز، كلٌّ يحمل مستطيل الأيقونة حوله. */
+  const cols = [inset + iconW / 2, 0.5, 1 - inset - iconW / 2]
+  const rows = [inset + iconH / 2, 0.30, 0.5, 0.70, 1 - inset - iconH / 2]
+  type Cand = { cx: number; cy: number; score: number }
+  const cands: Cand[] = []
+  for (const cy of rows) for (const cx of cols) {
+    const x0 = cx - iconW / 2, x1 = cx + iconW / 2, y0 = cy - iconH / 2, y1 = cy + iconH / 2
+    if (x0 < inset - 0.01 || x1 > 1 - inset + 0.01 || y0 < inset - 0.01 || y1 > 1 - inset + 0.01) continue
+    /* هامش أمانٍ حول الأيقونة يُقاس أيضاً كي لا تُلامس النص من الأطراف. */
+    const pad = 0.02
+    if (!gray) continue
+    const score = busyness(gray, RW, RH, x0 - pad, y0 - pad, x1 + pad, y1 + pad)
+    cands.push({ cx, cy, score })
+  }
+  if (!cands.length) return { hide: true, top: 0, left: 0, size: sizePct }
+
+  /* الأخلى أولاً؛ وعند التساوي نميل للأطراف بعيداً عن المركز، والبذرة تكسر التعادل. */
+  cands.sort((a, b) => {
+    if (Math.abs(a.score - b.score) > 0.004) return a.score - b.score
+    const da = Math.abs(a.cx - 0.5) + Math.abs(a.cy - 0.5)
+    const db = Math.abs(b.cx - 0.5) + Math.abs(b.cy - 0.5)
+    if (Math.abs(da - db) > 0.02) return db - da
+    return ((seed % 7) - 3) * (a.cy - b.cy)
+  })
+  const best = cands[0]
+
+  /* حذرٌ صريح: لو أخلى بقعةٍ ما زالت مزدحمة (>٥٪ حواف)، لا نضع أيقونة. */
+  if (gray && best.score > 0.05) return { hide: true, top: 0, left: 0, size: sizePct }
+
+  return { hide: false, top: best.cy - iconH / 2, left: best.cx - iconW / 2, size: sizePct }
+}
+
+export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
+  const [motion] = useLivingIconMotion()
+  const [placement, setPlacement] = useState<Placement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const metaphor = useMemo(() => metaphorFor(plan), [plan])
   const colors = useMemo(() => {
@@ -123,11 +196,20 @@ export function LivingMetaphorIcon({ plan, corner, size }: { plan: CompositionPl
   }, [plan])
 
   useEffect(() => {
+    let alive = true
+    setPlacement(null)
+    computePlacement(plan).then((next) => { if (alive) setPlacement(next) }).catch(() => { if (alive) setPlacement({ hide: true, top: 0, left: 0, size: 18 }) })
+    return () => { alive = false }
+  }, [plan])
+
+  useEffect(() => {
+    if (!placement || placement.hide) return
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+    const animate = motion && !reduce   // «بدون حركة» أو تقليل الحركة ⇒ صورة ثابتة
     const S = 260
     canvas.width = S
     canvas.height = S
@@ -135,7 +217,7 @@ export function LivingMetaphorIcon({ plan, corner, size }: { plan: CompositionPl
     const started = performance.now()
     const paint = { ink: colors.ink, dim: colors.dim, accent: colors.accent, accent2: colors.accent2, danger: colors.danger }
     const frame = () => {
-      const t = (performance.now() - started) / 1000
+      const t = animate ? (performance.now() - started) / 1000 : 0.9
       ctx.clearRect(0, 0, S, S)
       ctx.save()
       ctx.beginPath(); ctx.arc(S / 2, S / 2, S * 0.46, 0, Math.PI * 2)
@@ -147,20 +229,22 @@ export function LivingMetaphorIcon({ plan, corner, size }: { plan: CompositionPl
       ctx.strokeStyle = colors.accent
       ctx.stroke()
       ctx.restore()
-      const prog = reduce ? 1 : Math.min(1, (t % 6) / 2.4)
+      /* بلا حركة: نرسم الشكل مكتملاً (تقدّم = 1) إطاراً واحداً ثابتاً. */
+      const prog = animate ? Math.min(1, ((performance.now() - started) / 1000 % 6) / 2.4) : 1
       paintMetaphor(ctx, metaphor, S / 2, S / 2, S * 0.6, t, prog, paint)
-      if (!reduce) raf = requestAnimationFrame(frame)
+      if (animate) raf = requestAnimationFrame(frame)
     }
-    if (reduce) frame()
-    else raf = requestAnimationFrame(frame)
+    frame()
     return () => cancelAnimationFrame(raf)
-  }, [metaphor, colors])
+  }, [metaphor, colors, placement, motion])
+
+  if (!placement || placement.hide) return null
 
   return (
     <canvas
       ref={canvasRef}
-      className={`pointer-events-none absolute z-10 aspect-square max-w-[128px] min-w-14 drop-shadow ${CORNER_CLASS[resolvedCorner]}`}
-      style={{ width: `${resolvedSize}%` }}
+      className="pointer-events-none absolute z-10 aspect-square max-w-[128px] min-w-14 drop-shadow"
+      style={{ top: `${(placement.top * 100).toFixed(2)}%`, left: `${(placement.left * 100).toFixed(2)}%`, width: `${placement.size}%` }}
       aria-hidden="true"
     />
   )

@@ -15,12 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # العلاج الجذري: كان الجلب يعدّد ملفاتٍ مفردة، فتفشل السلسلة دائماً حين
+      # يحتاج ملفٌ استيراداً غير مُدرَج (style-dna.mjs) بـERR_MODULE_NOT_FOUND.
+      # نجلب الآن مجلدَي src/lib وsrc/data كاملَين فيُحلّ أيّ استيرادٍ حالي أو
+      # مستقبلي بلا صيانةِ قائمةٍ هشّة. لا تبعيات node_modules في السلسلة كلها،
+      # وحجم المجلدين معاً (~18MB) يُجلب في ثوانٍ ضمن مهلة العشر دقائق.
       - uses: actions/checkout@v5
         with:
           sparse-checkout: |
             scripts/editorial-board-calibration.mjs
-            src/lib/impact-mirror.mjs
-            src/lib/adversarial-misunderstanding.mjs
+            src/lib
+            src/data
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v5
         with:

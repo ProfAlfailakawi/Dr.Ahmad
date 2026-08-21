@@ -14,6 +14,10 @@ on:
         required: false
         type: boolean
         default: false
+      takes:
+        description: 'بيك أوف الحلقة: عدد النسخ الكاملة (1-3) — العينة تتذبذب بين التشغيلات، فبدل محاربة التذبذب نحصده: يولّد نسخاً ويختار الدكتور أفضلها بأذنه'
+        required: false
+        default: '1'
 
 permissions:
   contents: read
@@ -118,26 +122,54 @@ jobs:
           # «set +e» صريحةً هي العلاج: نحن نفحص كل رمزٍ بأنفسنا هنا.
           set +e
           ATTEMPTS=3
-          for i in $(seq 1 $ATTEMPTS); do
-            if [ "$i" -eq "$ATTEMPTS" ]; then
-              echo "المحاولة $i/$ATTEMPTS — الأخيرة، تُقبل كما هي بلا عتبة."
-              export PODCAST_KW_MIN_GAP=0
-            else
-              echo "المحاولة $i/$ATTEMPTS — العتبة $PODCAST_KW_MIN_GAP هرتزاً."
+          BASE_GAP="$PODCAST_KW_MIN_GAP"
+          # بيك أوف الحلقة (٢١ أغسطس ٢٠٢٦): العيّنة تتذبذب بين التشغيلات
+          # والمدخل واحد (طبقة variance في المعجم مبرهنة). فبدل محاربة
+          # التذبذب نحصده: نولّد نسخاً كاملة ويختار الدكتور أفضلها بأذنه —
+          # نفس نمط بيك أوف الأصوات الذي اختار Zephyr.
+          TAKES="${PODCAST_KW_TAKES:-1}"
+          case "$TAKES" in 1|2|3) ;; *) TAKES=1 ;; esac
+          for t in $(seq 1 "$TAKES"); do
+            ACCEPTED=0
+            for i in $(seq 1 $ATTEMPTS); do
+              if [ "$i" -eq "$ATTEMPTS" ]; then
+                echo "نسخة $t/$TAKES · المحاولة $i/$ATTEMPTS — الأخيرة، تُقبل كما هي بلا عتبة."
+                export PODCAST_KW_MIN_GAP=0
+              else
+                # العتبة تُعاد لكل محاولة: تصفيرها في المحاولة الأخيرة كان
+                # سيتسرب إلى النسخ التالية فتُقبل عيّناتها السيئة بلا فحص.
+                export PODCAST_KW_MIN_GAP="$BASE_GAP"
+                echo "نسخة $t/$TAKES · المحاولة $i/$ATTEMPTS — العتبة $PODCAST_KW_MIN_GAP هرتزاً."
+              fi
+              node scripts/podcast-kuwaiti-gemini.mjs --slug="$RELEASED_SLUGS"
+              CODE=$?
+              if [ "$CODE" -eq 0 ]; then
+                echo "✓ نسخة $t: قُبلت في المحاولة $i."
+                ACCEPTED=1
+                break
+              fi
+              if [ "$CODE" -ne 3 ]; then
+                echo "::error::سقط التوليد بالرمز $CODE — ليس رفضَ عيّنة."
+                exit "$CODE"
+              fi
+            done
+            if [ "$ACCEPTED" -ne 1 ]; then
+              echo "::error::النسخة $t: لم تُقبل أي عيّنة بعد $ATTEMPTS محاولات."
+              exit 1
             fi
-            node scripts/podcast-kuwaiti-gemini.mjs --slug="$RELEASED_SLUGS"
-            CODE=$?
-            if [ "$CODE" -eq 0 ]; then
-              echo "✓ قُبلت في المحاولة $i."
-              exit 0
-            fi
-            if [ "$CODE" -ne 3 ]; then
-              echo "::error::سقط التوليد بالرمز $CODE — ليس رفضَ عيّنة."
-              exit "$CODE"
+            if [ "$TAKES" -gt 1 ]; then
+              cp "audio/$RELEASED_SLUGS.dialogue-kw.mp3" "audio/$RELEASED_SLUGS.dialogue-kw.take$t.mp3"
+              cp "audio/$RELEASED_SLUGS.dialogue-kw.json" "audio/$RELEASED_SLUGS.dialogue-kw.take$t.json"
             fi
           done
-          echo "::error::لم تُقبل أي عيّنة بعد $ATTEMPTS محاولات."
-          exit 1
+          # الملف المعتمد في خط الاعتماد يبقى النسخة الأولى؛ والبقية للمفاضلة
+          # بالأذن. حين يختار الدكتور نسخةً أخرى تُرفَع مكانه بإعادة توليدٍ
+          # أو بطلبٍ صريح.
+          if [ "$TAKES" -gt 1 ]; then
+            cp "audio/$RELEASED_SLUGS.dialogue-kw.take1.mp3" "audio/$RELEASED_SLUGS.dialogue-kw.mp3"
+            cp "audio/$RELEASED_SLUGS.dialogue-kw.take1.json" "audio/$RELEASED_SLUGS.dialogue-kw.json"
+          fi
+          exit 0
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
@@ -149,6 +181,7 @@ jobs:
           # فترجع «روح البداية» بعد كل موسيقى، ونقطة اللحام تختبئ خلف الجسر.
           # عدد الإعادات بيده: خانة «موسيقى» في محرر اللوحة لكل دور.
           PODCAST_KW_SPLIT_AT_BRIDGES: '1'
+          PODCAST_KW_TAKES: ${{ inputs.takes || '1' }}
 
       - name: Upload candidate to isolated R2 staging
         shell: bash
@@ -159,6 +192,12 @@ jobs:
           "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$RELEASED_SLUGS.dialogue-kw.mp3" --body "audio/$RELEASED_SLUGS.dialogue-kw.mp3" --content-type audio/mpeg --cache-control no-store
           "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$RELEASED_SLUGS.dialogue-kw.json" --body "audio/$RELEASED_SLUGS.dialogue-kw.json" --content-type application/json --cache-control no-store
           "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$RELEASED_SLUGS.audit.json" --body "podcast-audits/kuwaiti/$RELEASED_SLUGS.json" --content-type application/json --cache-control no-store
+          # نسخ البيك أوف إن وُجدت — تُرفع للمفاضلة بالأذن ولا تمس الملف المعتمد
+          for f in audio/"$RELEASED_SLUGS".dialogue-kw.take*.mp3; do
+            [ -f "$f" ] || continue
+            "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$(basename "$f")" --body "$f" --content-type audio/mpeg --cache-control no-store
+            echo "⬆ نسخة بيك أوف: $PREFIX/$(basename "$f")"
+          done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}

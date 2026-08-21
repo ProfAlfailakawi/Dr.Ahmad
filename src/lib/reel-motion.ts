@@ -221,6 +221,35 @@ function fadeLine(ctx: CanvasRenderingContext2D, text: string, px: number, color
   ctx.restore()
 }
 
+/** يلفّ نصاً إلى أسطر لا تتجاوز عرضاً معطى — للعناوين الطويلة كي لا تُقصّ. */
+function wrapWords(text: string, px: number, maxWidth: number, font: string, weight: number): string[] {
+  const probe = offscreen(8, 8).ctx
+  probe.font = `${weight} ${px}px ${font}`
+  const words = text.split(' ')
+  const lines: string[] = []
+  let cur = ''
+  for (const word of words) {
+    const trial = cur ? `${cur} ${word}` : word
+    if (!cur || probe.measureText(trial).width <= maxWidth) cur = trial
+    else { lines.push(cur); cur = word }
+  }
+  if (cur) lines.push(cur)
+  return lines
+}
+
+/** يعرض عنواناً كاملاً ملفوفاً ومقيساً تلقائياً حول محورٍ رأسي — بلا قصّ. */
+function fadeWrapped(ctx: CanvasRenderingContext2D, text: string, basePx: number, color: string, cyCenter: number, alpha: number, maxWidthFrac = 0.84, maxLines = 2, weight = 600, font = DISPLAY_FONT): number {
+  if (alpha <= 0 || !text) return 0
+  const maxW = REEL_WIDTH * maxWidthFrac
+  let px = basePx
+  let lines = wrapWords(text, px, maxW, font, weight)
+  while (lines.length > maxLines && px > 30) { px -= 3; lines = wrapWords(text, px, maxW, font, weight) }
+  const lh = px * 1.24
+  const top = cyCenter - ((lines.length - 1) * lh) / 2
+  lines.forEach((line, index) => fadeLine(ctx, line, px, color, top + index * lh, alpha, weight, font, 14))
+  return lines.length * lh
+}
+
 /* ------------------------------- الزخارف ------------------------------- */
 
 function drawMotifs(ctx: CanvasRenderingContext2D, stage: Stage, motifs: ReelMotifId[], t: number, dt: number, sceneKind: ReelScene['kind'], crisis: number) {
@@ -360,9 +389,10 @@ function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene
     ctx.restore()
     fadeLine(ctx, plan.title, 42, world.accent, centerY + 92, Math.min(1, (progress - 0.35) * 2.4), 600, DISPLAY_FONT)
   } else if (scene.kind === 'close') {
-    fadeLine(ctx, scene.eyebrow || '', 44, world.dim, REEL_HEIGHT * 0.33, Math.min(1, progress * 3))
+    /* العنوان كاملاً — ملفوفاً على سطرين ومقيساً، لا يُقصّ أبداً. */
+    fadeWrapped(ctx, scene.eyebrow || '', 46, world.dim, REEL_HEIGHT * 0.31, Math.min(1, progress * 3), 0.84, 2, 600, DISPLAY_FONT)
     const px = fitSize(scene.line, 78)
-    writeLine(ctx, scene.line, px, world.accent, REEL_HEIGHT * 0.43, Math.min(1, progress * 1.6), world.accent, nib)
+    writeLine(ctx, scene.line, px, world.accent, REEL_HEIGHT * 0.45, Math.min(1, progress * 1.6), world.accent, nib)
     fadeLine(ctx, plan.author, 40, world.ink, REEL_HEIGHT * 0.55, Math.min(1, (progress - 0.3) * 2.6), 600, DISPLAY_FONT)
     fadeLine(ctx, plan.site, 36, world.accent, REEL_HEIGHT * 0.61, Math.min(1, (progress - 0.45) * 2.6), 700, BODY_FONT)
     if (progress > 0.55) {

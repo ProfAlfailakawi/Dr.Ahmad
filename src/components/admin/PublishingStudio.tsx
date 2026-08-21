@@ -36,6 +36,7 @@ import {
 import { downloadCompositionRaster, renderCompositionSvg } from '../../lib/social-design-renderer'
 import { LivingMetaphorIcon, LivingIconToggle, LivingIconPicker, useLivingIconEnabled } from './LivingMetaphorIcon'
 import { MovableWordsLayer, MoveWordsToggle } from './MovableWords'
+import { downloadDesignVideo, designVideoSupported, designHasMotion } from '../../lib/design-video'
 import { dressPlanInWorld, planWorldId, type DesignWorld } from '../../lib/design-worlds'
 import DesignWorldsGallery from './DesignWorldsGallery'
 import {
@@ -2274,6 +2275,8 @@ function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
 
 function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPlan; rank: number }) {
   const [draftPlan, setDraftPlan] = useState<CompositionPlan>(plan)
+  const [videoBusy, setVideoBusy] = useState(false)
+  const [videoPct, setVideoPct] = useState(0)
   useEffect(() => setDraftPlan(plan), [plan.id, plan.fingerprint])
 
   const patchContent = (patch: Partial<CompositionPlan['content']>) => {
@@ -2354,7 +2357,18 @@ function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPla
           </div>
         </details>
 
-        <button type="button" onClick={() => void downloadCompositionRaster(draftPlan, 'png')} disabled={!release.ready} className={`${release.ready ? primary : ghost} mt-3 w-full text-[.7rem]`}>{release.ready ? 'تنزيل PNG المعتمد' : 'محجوب حتى يجتاز البوابة'}</button>
+        <div className="mt-3 flex gap-2">
+          <button type="button" onClick={() => void downloadCompositionRaster(draftPlan, 'png')} disabled={!release.ready} className={`${release.ready ? primary : ghost} flex-1 text-[.7rem]`}>{release.ready ? 'تنزيل PNG (ثابت)' : 'محجوب حتى يجتاز البوابة'}</button>
+          {designVideoSupported() && (
+            <button
+              type="button"
+              disabled={!release.ready || videoBusy}
+              title={designHasMotion(draftPlan) ? 'يسجّل التصميم بأيقونته المتحركة فيديو MP4/WebM' : 'فعّل الأيقونة الحيّة أولاً كي يظهر فيها حركة'}
+              onClick={async () => { setVideoBusy(true); setVideoPct(0); try { await downloadDesignVideo(draftPlan, { onProgress: (r) => setVideoPct(Math.round(r * 100)) }) } catch (error) { window.alert(error instanceof Error ? error.message : 'تعذّر تصدير الفيديو') } finally { setVideoBusy(false) } }}
+              className={`${release.ready ? ghost : ghost} flex-1 text-[.7rem]`}
+            >{videoBusy ? `يسجّل… ${videoPct}%` : '🎬 فيديو متحرّك'}</button>
+          )}
+        </div>
       </div>
     </article>
   )

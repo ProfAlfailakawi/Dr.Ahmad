@@ -2708,6 +2708,35 @@ async function livingIconOverlay(plan: CompositionPlan): Promise<((ctx: CanvasRe
   }
 }
 
+/**
+ * يرسم التصميم صورةً جاهزة (بخطوطٍ مضمّنة) — أساسٌ ثابت لتصدير الفيديو المتحرّك،
+ * حيث تُرسم الأيقونة الحيّة فوقها إطاراً بعد إطار. نضمن تحميل الأوزان أولاً كي لا
+ * يسقط الخط لبديل النظام.
+ */
+export async function rasterizeCompositionToImage(plan: CompositionPlan): Promise<HTMLImageElement> {
+  await Promise.race([
+    Promise.allSettled([
+      '700 64px "El Messiri"', '600 48px "El Messiri"', '400 32px "El Messiri"',
+      '700 40px Tajawal', '500 32px Tajawal', '400 28px Tajawal',
+    ].map((font) => document.fonts?.load(font, 'أ') ?? Promise.resolve())),
+    new Promise((resolve) => window.setTimeout(resolve, 3500)),
+  ])
+  await document.fonts?.ready
+  const fontCss = await embeddedFontCss()
+  const svg = renderCompositionSvg(plan, { fontCss })
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  try {
+    const image = new Image()
+    image.decoding = 'async'
+    image.src = url
+    await image.decode()
+    return image
+  } finally {
+    window.setTimeout(() => URL.revokeObjectURL(url), 5000)
+  }
+}
+
 /** يصدّر التصميم؛ وإن كان سلسلة صدّر كل شرائحها ملفاً ملفاً — كما يليق بكاروسيل حقيقي. */
 export async function downloadCompositionRaster(plan: CompositionPlan, type: 'png' | 'jpeg' = 'png') {
   /* نفس جذر «الخطوط غير جيدة»: ctx/SVG لا يُنزّل خطاً لم تستعمله الصفحة بعد،

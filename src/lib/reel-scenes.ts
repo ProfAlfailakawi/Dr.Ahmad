@@ -528,7 +528,7 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
       })
     }
   }
-  scenes.push({ kind: 'close', slug: `FINAL / ${String(scenes.length + 1).padStart(2, '0')}`, eyebrow: tightLine(title, 40), line: 'المقال كاملاً في الموقع', seconds: 3.6 })
+  scenes.push({ kind: 'close', slug: `FINAL / ${String(scenes.length + 1).padStart(2, '0')}`, eyebrow: title.replace(/\s+/g, ' ').trim(), line: 'المقال كاملاً في الموقع', seconds: 3.6 })
 
   /* الإيقاع جزءٌ من الهوية: القالب يفرض نَفَسه (الصفارة تلهث، المخطوطة تتمهّل)،
      والبذرة تزيح الإيقاع قليلاً — فلا تخرج الريلات كلها بطولٍ واحد ممل. */

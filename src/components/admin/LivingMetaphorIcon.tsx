@@ -1,21 +1,26 @@
 /**
  * الأيقونة الحيّة — استعارةٌ من مكتبة الريل (٥٣ صورة) تُختار بحسب معنى التصميم
- * من معجم الدكتور، وتتحرّك بألوان التصميم نفسه في زاويته: كخاتمٍ لا كلصقة.
+ * من معجم الدكتور، أو يدوياً من المنتقي، وتتحرّك بألوان التصميم نفسه في زاويته.
  *
- * تُستعمل في استوديو التصاميم والمنشور المستقل معاً عبر مكوّنٍ واحد، ولها
- * مفتاح تشغيل/إيقاف يحفظه المتصفح فيتذكّره الدكتور. تظهر في المعاينة فقط ولا
- * تدخل SVG المُصدَّر، فتبقى تصاميم العارض سليمة. وتُحترم رغبة تقليل الحركة.
+ * تُستعمل في استوديو التصاميم والمنشور المستقل معاً عبر مكوّنٍ واحد. لها مفتاح
+ * تشغيل/إيقاف، ومفتاح حركة، ومنتقٍ لتبديل الصورة. تُسحب لتتحرّك وتُكبَّر بزاويتها.
+ * وموضعها الفعلي يُخزَّن كي يُخبز في PNG المُصدَّر — فما تراه هو ما يُنشر.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
-import { paintMetaphor, chooseMetaphors, type MetaphorId } from '../../lib/reel-metaphors'
+import { paintMetaphor, METAPHOR_IDS, type MetaphorId } from '../../lib/reel-metaphors'
 import { resolvePalette, type CompositionPlan } from '../../lib/social-design-engine'
 import { renderCompositionSvg } from '../../lib/social-design-renderer'
+import {
+  LIVING_ICON_CHANGE, METAPHOR_LABELS_AR,
+  readManualPos, writeManualPos, clearManualPos, writeEffectivePlacement,
+  readMetaphorChoice, writeMetaphorChoice, resolveMetaphor, emitLivingIconChange,
+  type ManualPos,
+} from '../../lib/design-overrides'
 
 const STORAGE_KEY = 'reel:living-icon:v1'
 const MOTION_KEY = 'reel:living-icon-motion:v1'
-const CHANGE_EVENT = 'living-icon-change'
+const CHANGE_EVENT = LIVING_ICON_CHANGE
 
 function readEnabled(): boolean {
   if (typeof localStorage === 'undefined') return true
@@ -71,7 +76,7 @@ export function LivingIconToggle({ className = '' }: { className?: string }) {
         onClick={() => setEnabled(!enabled)}
         aria-pressed={enabled}
         className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[.68rem] font-semibold transition-colors ${enabled ? 'border-accent bg-accent/[.08] text-accent' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
-        title="أيقونة حيّة تُختار من المكتبة بحسب معنى التصميم — تظهر في المعاينة، وتتجنّب النص، وتختفي إن لم تجد فراغاً"
+        title="أيقونة حيّة تُختار من المكتبة بحسب معنى التصميم — تظهر في المعاينة وتُخبز في المنشور، وتتجنّب النص"
       >
         <span className={`inline-block h-2.5 w-2.5 rounded-full ${enabled ? 'bg-accent' : 'bg-soft/40'}`} />
         الأيقونة {enabled ? 'مفعّلة' : 'متوقفة'}
@@ -91,40 +96,87 @@ export function LivingIconToggle({ className = '' }: { className?: string }) {
   )
 }
 
-interface ManualPos { top: number; left: number; size: number }
+/* ------------------------------------------------------------------ */
+/*        منتقي الصورة — يبدّل استعارة الأيقونة من مكتبة الـ٥٣          */
+/* ------------------------------------------------------------------ */
 
-const posKey = (plan: CompositionPlan) => `reel:living-icon-pos:${plan.fingerprint || plan.id}`
-
-function readManualPos(plan: CompositionPlan): ManualPos | null {
-  if (typeof localStorage === 'undefined') return null
-  try {
-    const raw = localStorage.getItem(posKey(plan))
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as ManualPos
-    if (typeof parsed.top === 'number' && typeof parsed.left === 'number' && typeof parsed.size === 'number') return parsed
-    return null
-  } catch { return null }
-}
-function writeManualPos(plan: CompositionPlan, pos: ManualPos) {
-  try { localStorage.setItem(posKey(plan), JSON.stringify(pos)) } catch { /* محجوب */ }
-}
-function clearManualPos(plan: CompositionPlan) {
-  try { localStorage.removeItem(posKey(plan)) } catch { /* محجوب */ }
-}
-
-function metaphorFor(plan: CompositionPlan): MetaphorId {
-  const c = plan.content
-  const text = [c.title, c.heroWord, c.quote, c.kicker, c.subtitle, c.body].filter(Boolean).join(' ')
-  const domain = interpretDrAhmadDomain(text.slice(0, 1200))
-  const chosen = chooseMetaphors([domain.primary?.canonicalAr || '', domain.visualScenes.join(' · '), text.slice(0, 600)], 1)
-  return chosen[0] || 'figure-contemplate'
+/** مربّعٌ صغير يرسم استعارةً ثابتة بلونٍ محايد — لبطاقة المنتقي. */
+function MetaphorThumb({ id, active }: { id: MetaphorId; active: boolean }) {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = ref.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const S = 96
+    canvas.width = S; canvas.height = S
+    ctx.clearRect(0, 0, S, S)
+    const ink = active ? '#8A3B2E' : '#3A3F4E'
+    paintMetaphor(ctx, id, S / 2, S / 2, S * 0.66, 0.9, 1, { ink, dim: '#9AA0AE', accent: '#8A3B2E', accent2: '#C08457', danger: '#8A3B2E' })
+  }, [id, active])
+  return <canvas ref={ref} className="h-11 w-11" aria-hidden="true" />
 }
 
-/**
- * وضعٌ يقرأ الحقيقة لا يخمّنها: نرسم SVG التصميم على لوحةٍ صغيرة، ونقيس ازدحام
- * البكسلات في مواضع مرشّحة، فنضع الأيقونة في أخلى بقعةٍ تتّسع لها. وإن كان
- * التصميم مزدحماً في كل مكان، تختفي الأيقونة. لا تصادمَ مع نصٍّ أو عنصرٍ أبداً.
- */
+/** المنتقي: زرٌّ يفتح شبكةَ الصور؛ اختيارٌ يبدّل صورة الأيقونة لهذا التصميم. */
+export function LivingIconPicker({ plan, className = '' }: { plan: CompositionPlan; className?: string }) {
+  const [enabled] = useLivingIconEnabled()
+  const [open, setOpen] = useState(false)
+  const [choice, setChoice] = useState<MetaphorId | null>(() => readMetaphorChoice(plan))
+  useEffect(() => { setChoice(readMetaphorChoice(plan)) }, [plan])
+  useEffect(() => {
+    const sync = () => setChoice(readMetaphorChoice(plan))
+    window.addEventListener(CHANGE_EVENT, sync)
+    return () => window.removeEventListener(CHANGE_EVENT, sync)
+  }, [plan])
+  if (!enabled) return null
+  const pick = (id: MetaphorId | null) => {
+    writeMetaphorChoice(plan, id)
+    setChoice(id)
+    emitLivingIconChange()
+    setOpen(false)
+  }
+  const current = resolveMetaphor(plan)
+  return (
+    <span className={`relative inline-flex ${className}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.66rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent"
+        title="بدّل صورة الأيقونة من المكتبة"
+      >
+        <span className="inline-block h-2.5 w-2.5 rounded-full bg-accent/70" />
+        الصورة: {METAPHOR_LABELS_AR[current]}{choice ? '' : ' (تلقائي)'}
+      </button>
+      {open && (
+        <div className="absolute bottom-full right-0 z-30 mb-2 max-h-[19rem] w-[19rem] overflow-y-auto rounded-2xl border border-hair bg-white p-2 shadow-xl">
+          <div className="mb-1.5 flex items-center justify-between px-1">
+            <span className="text-[.66rem] font-bold text-ink">اختر صورة من المكتبة</span>
+            <button type="button" onClick={() => pick(null)} className={`rounded-full border px-2.5 py-1 text-[.6rem] font-semibold transition-colors ${choice ? 'border-hair text-soft hover:border-accent hover:text-accent' : 'border-accent bg-accent/[.08] text-accent'}`} title="اترك الاختيار للنظام بحسب معنى النص">↺ تلقائي</button>
+          </div>
+          <div className="grid grid-cols-4 gap-1">
+            {METAPHOR_IDS.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => pick(id)}
+                className={`flex flex-col items-center gap-0.5 rounded-xl border p-1 transition-colors ${current === id ? 'border-accent bg-accent/[.06]' : 'border-transparent hover:border-hair hover:bg-canvas'}`}
+                title={METAPHOR_LABELS_AR[id]}
+              >
+                <MetaphorThumb id={id} active={current === id} />
+                <span className="w-full truncate text-center text-[.52rem] leading-tight text-soft">{METAPHOR_LABELS_AR[id]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </span>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*                      الأيقونة الحيّة على المعاينة                    */
+/* ------------------------------------------------------------------ */
+
 interface Placement { hide: boolean; top: number; left: number; size: number }
 
 function hashString(value: string): number {
@@ -133,8 +185,7 @@ function hashString(value: string): number {
   return hash >>> 0
 }
 
-/* يقيس ازدحام مستطيلٍ على صورة الرمادي: نسبة البكسلات التي تنحرف عن متوسّط
-   المستطيل انحرافاً محسوساً (نصٌّ ورسومٌ = تباينٌ عالٍ، خلفيةٌ متدرّجة = هدوء). */
+/* يقيس ازدحام مستطيلٍ على صورة الرمادي: نسبة البكسلات المنحرفة عن المتوسّط. */
 function busyness(gray: Uint8ClampedArray, W: number, H: number, x0: number, y0: number, x1: number, y1: number): number {
   const ix0 = Math.max(0, Math.floor(x0 * W)), ix1 = Math.min(W, Math.ceil(x1 * W))
   const iy0 = Math.max(0, Math.floor(y0 * H)), iy1 = Math.min(H, Math.ceil(y1 * H))
@@ -155,7 +206,6 @@ async function computePlacement(plan: CompositionPlan): Promise<Placement> {
   const iconH = iconW * aspect
   const inset = 0.045
 
-  /* نرسم التصميم على لوحةٍ منخفضة الدقة ونستخرج الرمادي. */
   const RW = 132, RH = Math.round(RW / aspect)
   let gray: Uint8ClampedArray | null = null
   try {
@@ -174,7 +224,6 @@ async function computePlacement(plan: CompositionPlan): Promise<Placement> {
     }
   } catch { gray = null }
 
-  /* مواضع مرشّحة: شبكةٌ من المراكز، كلٌّ يحمل مستطيل الأيقونة حوله. */
   const cols = [inset + iconW / 2, 0.5, 1 - inset - iconW / 2]
   const rows = [inset + iconH / 2, 0.30, 0.5, 0.70, 1 - inset - iconH / 2]
   type Cand = { cx: number; cy: number; score: number }
@@ -182,7 +231,6 @@ async function computePlacement(plan: CompositionPlan): Promise<Placement> {
   for (const cy of rows) for (const cx of cols) {
     const x0 = cx - iconW / 2, x1 = cx + iconW / 2, y0 = cy - iconH / 2, y1 = cy + iconH / 2
     if (x0 < inset - 0.01 || x1 > 1 - inset + 0.01 || y0 < inset - 0.01 || y1 > 1 - inset + 0.01) continue
-    /* هامش أمانٍ حول الأيقونة يُقاس أيضاً كي لا تُلامس النص من الأطراف. */
     const pad = 0.02
     if (!gray) continue
     const score = busyness(gray, RW, RH, x0 - pad, y0 - pad, x1 + pad, y1 + pad)
@@ -190,7 +238,6 @@ async function computePlacement(plan: CompositionPlan): Promise<Placement> {
   }
   if (!cands.length) return { hide: true, top: 0, left: 0, size: sizePct }
 
-  /* الأخلى أولاً؛ وعند التساوي نميل للأطراف بعيداً عن المركز، والبذرة تكسر التعادل. */
   cands.sort((a, b) => {
     if (Math.abs(a.score - b.score) > 0.004) return a.score - b.score
     const da = Math.abs(a.cx - 0.5) + Math.abs(a.cy - 0.5)
@@ -199,10 +246,7 @@ async function computePlacement(plan: CompositionPlan): Promise<Placement> {
     return ((seed % 7) - 3) * (a.cy - b.cy)
   })
   const best = cands[0]
-
-  /* حذرٌ صريح: لو أخلى بقعةٍ ما زالت مزدحمة (>٥٪ حواف)، لا نضع أيقونة. */
   if (gray && best.score > 0.05) return { hide: true, top: 0, left: 0, size: sizePct }
-
   return { hide: false, top: best.cy - iconH / 2, left: best.cx - iconW / 2, size: sizePct }
 }
 
@@ -210,13 +254,21 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
   const [motion] = useLivingIconMotion()
   const [placement, setPlacement] = useState<Placement | null>(null)
   const [manual, setManual] = useState<ManualPos | null>(() => readManualPos(plan))
+  const [choiceVersion, setChoiceVersion] = useState(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const metaphor = useMemo(() => metaphorFor(plan), [plan])
+  const metaphor = useMemo(() => resolveMetaphor(plan), [plan, choiceVersion])
   const colors = useMemo(() => {
     const pal = resolvePalette(plan)
     return { ink: pal.ink, dim: pal.muted, accent: pal.accent, accent2: pal.accentSoft || pal.accent, danger: pal.accent, surface: pal.surface, isDark: pal.isDark }
   }, [plan])
+
+  /* تبديل الصورة من المنتقي يصل عبر هذا الحدث فتُعاد الأيقونة فوراً. */
+  useEffect(() => {
+    const sync = () => setChoiceVersion((v) => v + 1)
+    window.addEventListener(CHANGE_EVENT, sync)
+    return () => window.removeEventListener(CHANGE_EVENT, sync)
+  }, [])
 
   /* عند تغيّر التصميم: نقرأ موضعه اليدوي إن وُجد، وإلا نحسب التلقائي بالبكسل. */
   useEffect(() => {
@@ -228,6 +280,12 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
     computePlacement(plan).then((next) => { if (alive) setPlacement(next) }).catch(() => { if (alive) setPlacement({ hide: true, top: 0, left: 0, size: 18 }) })
     return () => { alive = false }
   }, [plan])
+
+  /* نخزّن الموضع الفعلي المعروض كي يقرأه التصدير فيخبز الأيقونة في PNG. */
+  useEffect(() => {
+    if (!placement) return
+    writeEffectivePlacement(plan, { top: placement.top, left: placement.left, size: placement.size, hidden: placement.hide })
+  }, [plan, placement])
 
   useEffect(() => {
     if (!placement || placement.hide) return
@@ -319,15 +377,12 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
       title="اسحب لتحريكها · اسحب الزاوية لتكبيرها · ↺ للعودة للتلقائي"
     >
       <canvas ref={canvasRef} className="pointer-events-none h-full w-full drop-shadow" aria-hidden="true" />
-      {/* إطارٌ خفيف يظهر عند التمرير ليدلّ أنها قابلة للتحريك. */}
       <span className="pointer-events-none absolute inset-0 rounded-full border border-accent/0 transition-colors group-hover:border-accent/50" />
-      {/* مقبض التكبير في الزاوية السفلى. */}
       <span
         onPointerDown={(event) => drag(event, 'resize')}
         className="absolute -bottom-1 left-1/2 h-3.5 w-3.5 -translate-x-1/2 cursor-nwse-resize rounded-full border-2 border-accent bg-white opacity-0 shadow transition-opacity group-hover:opacity-100"
         aria-label="تكبير/تصغير"
       />
-      {/* زر العودة للتموضع التلقائي — يظهر فقط حين يكون هناك موضعٌ يدوي. */}
       {manual && (
         <button
           type="button"

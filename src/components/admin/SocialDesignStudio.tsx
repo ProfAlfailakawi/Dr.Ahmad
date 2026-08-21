@@ -43,7 +43,7 @@ import { currentSeason } from '../../lib/seasons'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
 import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
-import { LivingMetaphorIcon, LivingIconToggle, useLivingIconEnabled } from './LivingMetaphorIcon'
+import { LivingMetaphorIcon, LivingIconToggle, LivingIconPicker, useLivingIconEnabled } from './LivingMetaphorIcon'
 import { resolveResonantQuotes, type ResonanceRow } from '../../lib/resonance-quotes'
 import { GenerationLibraryPanel, type GeneratedDesignLibraryAsset, type GeneratedLibraryAsset } from './GenerationLibraryPanel'
 import { buildMeaningFingerprint } from '../../lib/editorial-memory'
@@ -4468,6 +4468,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 {/* الكانفس الحر: المعاينة نفسها تصير سطح سحبٍ للطبقات. نحدّ عرضها
                    بحسب نسبة المقاس كي لا يتجاوز ارتفاعُها الشاشة فتُقصّ («المعاينة
                    مو كامله») — الآن يظهر التصميمُ كاملاً مهما طال (ستوري وغيره). */}
+                <div className="mb-2 flex flex-wrap items-center gap-2"><LivingIconPicker plan={selected} /></div>
                 <div ref={canvasRef} className={`social-editor-canvas relative mx-auto w-full ${phoneView ? 'hidden' : ''}`} style={{ '--preview-ratio': selected.format.width / selected.format.height, touchAction: freeMode ? 'none' : undefined } as CSSProperties}>
                   <Preview plan={selected} className="w-full" />
                   {attention && <AttentionOverlay map={attention} w={selected.format.width} h={selected.format.height} />}

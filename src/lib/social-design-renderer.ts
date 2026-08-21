@@ -2607,7 +2607,7 @@ export async function downloadCompositionSvg(plan: CompositionPlan) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1_000)
 }
 
-async function rasterizeSvg(svg: string, width: number, height: number, type: 'png' | 'jpeg', background: string, name: string) {
+async function rasterizeSvg(svg: string, width: number, height: number, type: 'png' | 'jpeg', background: string, name: string, overlay?: (ctx: CanvasRenderingContext2D, w: number, h: number) => void) {
   const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   try {
@@ -2625,6 +2625,7 @@ async function rasterizeSvg(svg: string, width: number, height: number, type: 'p
       context.fillRect(0, 0, width, height)
     }
     context.drawImage(image, 0, 0, width, height)
+    if (overlay) { try { overlay(context, width, height) } catch { /* لا نُفشل التصدير بسبب الأيقونة */ } }
     const mime = type === 'jpeg' ? 'image/jpeg' : 'image/png'
     const output = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error('تعذّر تصدير التصميم.')), mime, type === 'jpeg' ? .94 : undefined))
     const outputUrl = URL.createObjectURL(output)
@@ -2632,6 +2633,44 @@ async function rasterizeSvg(svg: string, width: number, height: number, type: 'p
     window.setTimeout(() => URL.revokeObjectURL(outputUrl), 1_000)
   } finally {
     URL.revokeObjectURL(url)
+  }
+}
+
+/**
+ * تُخبز الأيقونة الحيّة في الصورة المُصدَّرة تماماً كما تظهر في المعاينة: نقرأ
+ * موضعها الفعلي المخزَّن وصورتها المعتمدة، ونرسم الإطار الدائري ثم الاستعارة
+ * بألوان التصميم. فما يراه الدكتور في اللوحة هو ما يُنشر. تُلغى إن كانت متوقفةً
+ * أو مخفيةً أو بلا موضعٍ مخزَّن (لم تُعايَن بعد).
+ */
+async function livingIconOverlay(plan: CompositionPlan): Promise<((ctx: CanvasRenderingContext2D, w: number, h: number) => void) | undefined> {
+  const [{ paintMetaphor }, { readIconEnabled, readEffectivePlacement, resolveMetaphor }] = await Promise.all([
+    import('./reel-metaphors'),
+    import('./design-overrides'),
+  ])
+  if (!readIconEnabled()) return undefined
+  const place = readEffectivePlacement(plan)
+  if (!place || place.hidden) return undefined
+  const metaphor = resolveMetaphor(plan)
+  const pal = resolvePalette(plan)
+  return (ctx, w, h) => {
+    const iconW = (place.size / 100) * w
+    const cx = place.left * w + iconW / 2
+    const cy = place.top * h + iconW / 2
+    const r = iconW * 0.46
+    ctx.save()
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2)
+    ctx.fillStyle = pal.surface
+    ctx.globalAlpha = pal.isDark ? 0.42 : 0.66
+    ctx.fill()
+    ctx.globalAlpha = 0.35
+    ctx.lineWidth = Math.max(2, iconW * 0.008)
+    ctx.strokeStyle = pal.accent
+    ctx.stroke()
+    ctx.restore()
+    ctx.save()
+    ctx.globalAlpha = 1
+    paintMetaphor(ctx, metaphor, cx, cy, iconW * 0.6, 0.9, 1, { ink: pal.ink, dim: pal.muted, accent: pal.accent, accent2: pal.accentSoft || pal.accent, danger: pal.accent })
+    ctx.restore()
   }
 }
 
@@ -2653,10 +2692,11 @@ export async function downloadCompositionRaster(plan: CompositionPlan, type: 'pn
   const series = renderCompositionSeries(plan, { fontCss, ...(sealHref ? { sealHref } : {}) })
   const extension = type === 'jpeg' ? 'jpg' : 'png'
   const background = resolvePalette(plan).background
+  const iconOverlay = await livingIconOverlay(plan)
   for (const [index, svg] of series.entries()) {
     const base = fileName(plan, extension)
     const name = series.length > 1 ? base.replace(`.${extension}`, `-${index + 1}of${series.length}.${extension}`) : base
-    await rasterizeSvg(svg, plan.format.width, plan.format.height, type, background, name)
+    await rasterizeSvg(svg, plan.format.width, plan.format.height, type, background, name, iconOverlay)
     if (index < series.length - 1) await new Promise((resolve) => window.setTimeout(resolve, 160))
   }
 }

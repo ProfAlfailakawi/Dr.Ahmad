@@ -34,7 +34,7 @@ import {
   type CompositionPlan,
 } from '../../lib/social-design-engine'
 import { downloadCompositionRaster, renderCompositionSvg } from '../../lib/social-design-renderer'
-import { LivingMetaphorIcon, LivingIconToggle, useLivingIconEnabled } from './LivingMetaphorIcon'
+import { LivingMetaphorIcon, LivingIconToggle, LivingIconPicker, useLivingIconEnabled } from './LivingMetaphorIcon'
 import { dressPlanInWorld, planWorldId, type DesignWorld } from '../../lib/design-worlds'
 import DesignWorldsGallery from './DesignWorldsGallery'
 import {
@@ -2317,6 +2317,7 @@ function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPla
         <span className="absolute right-3 top-3 rounded-full border border-white/30 bg-black/55 px-2.5 py-1 text-[.56rem] font-black uppercase tracking-[.08em] text-white backdrop-blur">{tier}</span>
       </div>
       <div className="p-3.5">
+        {livingIconOn && <div className="mb-2 flex justify-end"><LivingIconPicker plan={draftPlan} /></div>}
         <div className="flex items-start justify-between gap-3">
           <div><span className="text-[.58rem] font-bold text-accent">رؤية {rank}</span><strong className="mt-1 block text-[.78rem] text-ink">{draftPlan.directionLabel}</strong></div>
           <span className={`rounded-full px-2.5 py-1 text-[.6rem] font-black ${release.ready ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{release.score}٪</span>

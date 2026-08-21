@@ -76,6 +76,13 @@ jobs:
       # مهما مرّرتَ regenerate. عطبٌ من صنعي، وهذا موضعه الصحيح.
       - name: Lock the exact Kuwaiti admin dialogue
         run: node scripts/fetch-kuwaiti-dialogues.mjs --slugs="$RELEASED_SLUGS"
+
+      # [٢١ أغسطس ٢٠٢٦ — قفل «الكمال» للمقالات القادمة] لا كلمة تصل
+      # المحرك قبل أذن الدكتور: أي مفردة في الحوار المجلوب ليست من المتن
+      # المعتمد أو المعجم توقف التوليد وتُعرض بجملتها ليحسمها المختبر.
+      # الكلمة لا تعتمد إلا لما تثبت في معجمه — هذا الباب الوحيد.
+      - name: حارس الكلمات الجديدة — لا جديد قبل أذن الدكتور
+        run: node scripts/guard-new-dialogue-words.mjs --dir=manual-dialogues-kuwaiti
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           PODCAST_KW_REGENERATE: ${{ inputs.regenerate && '1' || '' }}

@@ -22,6 +22,10 @@ on:
         description: 'بيك أوف الحلقة: عدد النسخ الكاملة (1-3) — العينة تتذبذب بين التشغيلات، فبدل محاربة التذبذب نحصده: يولّد نسخاً ويختار الدكتور أفضلها بأذنه'
         required: false
         default: '1'
+      prompt_mode:
+        description: 'تجربة الصديق: minimal = برومت إيجابي قصير بلا تعداد اللهجات المحرمة وبلا تذكيرات (فخ الفيل الوردي) — full الافتراض الحرفي'
+        required: false
+        default: 'full'
 
 permissions:
   contents: read
@@ -206,6 +210,7 @@ jobs:
           # عدد الإعادات بيده: خانة «موسيقى» في محرر اللوحة لكل دور.
           PODCAST_KW_SPLIT_AT_BRIDGES: '1'
           PODCAST_KW_TAKES: ${{ inputs.takes || '1' }}
+          PODCAST_KW_PROMPT_MODE: ${{ inputs.prompt_mode || 'full' }}
 
       # [٢٢ أغسطس ٢٠٢٦ — «التثبيت الحقيقي»] المحرك احتمالي فلن يعيد نسخة
       # أحبها الدكتور أبداً؛ لكن كل تشغيلة تحفظ صوتها مرفقاً دائماً.
@@ -253,6 +258,11 @@ jobs:
             [ -f "$f" ] || continue
             "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$(basename "$f")" --body "$f" --content-type audio/mpeg --cache-control no-store
             echo "⬆ نسخة بيك أوف: $PREFIX/$(basename "$f")"
+          done
+          # توقيتات كل نسخة — بدونها لا يُبنى شريط الفحص السريع إلا للأخيرة
+          for f in audio/"$RELEASED_SLUGS".dialogue-kw.take*.json; do
+            [ -f "$f" ] || continue
+            "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$(basename "$f")" --body "$f" --content-type application/json --cache-control no-store
           done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}

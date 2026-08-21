@@ -169,13 +169,13 @@ jobs:
               cp "audio/$RELEASED_SLUGS.dialogue-kw.json" "audio/$RELEASED_SLUGS.dialogue-kw.take$t.json"
             fi
           done
-          # الملف المعتمد في خط الاعتماد يبقى النسخة الأولى؛ والبقية للمفاضلة
-          # بالأذن. حين يختار الدكتور نسخةً أخرى تُرفَع مكانه بإعادة توليدٍ
-          # أو بطلبٍ صريح.
-          if [ "$TAKES" -gt 1 ]; then
-            cp "audio/$RELEASED_SLUGS.dialogue-kw.take1.mp3" "audio/$RELEASED_SLUGS.dialogue-kw.mp3"
-            cp "audio/$RELEASED_SLUGS.dialogue-kw.take1.json" "audio/$RELEASED_SLUGS.dialogue-kw.json"
-          fi
+          # [٢١ أغسطس ٢٠٢٦ ليلاً — علاج «رفض ينزلها»] كان الملف المعتمد
+          # يُرجَّع للنسخة الأولى، بينما سجل البصمات (audit) يحمل بصمة
+          # النسخة الأخيرة التي ولّدها المحرك — فتعارضت البصمتان وسقط
+          # record-kuwaiti-candidate بـ«مرشح لا يطابق قفل المصدر/بصماته»
+          # (تشغيلة 32513812990). الصواب: الملف المعتمد يبقى النسخة
+          # الأخيرة كما تركها المحرك (بصمتها هي المسجلة)، والنسخ كلها
+          # مرفوعة للمفاضلة بالأذن، وحين يختار الدكتور غيرها تُرقّى.
           exit 0
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

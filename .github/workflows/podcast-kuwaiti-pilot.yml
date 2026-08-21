@@ -74,8 +74,16 @@ jobs:
       # ويحتاج إذن الاستبدال. كانا على الخطوة التالية — انزاحا حين أُدرجت
       # خطوةُ قراءة البصمة بينهما، فصار fetch يسقط عند «awaiting_approval»
       # مهما مرّرتَ regenerate. عطبٌ من صنعي، وهذا موضعه الصحيح.
+      # [٢١ أغسطس ٢٠٢٦ متأخراً — العطب الموثق أعلاه وقع ثالثةً!] إدراج خطوة
+      # حارس الكلمات بين fetch وكتلة بيئته أزاح PODCAST_KW_REGENERATE إلى
+      # الحارس، فسقطت تشغيلة 32521445188 عند «awaiting_approval» مع أن
+      # regenerate=true مُمرَّر. الكتلة أعيدت لموضعها على fetch نفسه،
+      # والحارس بعده بلا بيئة — لا يحتاجها: يقرأ الملفات المجلوبة فقط.
       - name: Lock the exact Kuwaiti admin dialogue
         run: node scripts/fetch-kuwaiti-dialogues.mjs --slugs="$RELEASED_SLUGS"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          PODCAST_KW_REGENERATE: ${{ inputs.regenerate && '1' || '' }}
 
       # [٢١ أغسطس ٢٠٢٦ — قفل «الكمال» للمقالات القادمة] لا كلمة تصل
       # المحرك قبل أذن الدكتور: أي مفردة في الحوار المجلوب ليست من المتن
@@ -83,9 +91,6 @@ jobs:
       # الكلمة لا تعتمد إلا لما تثبت في معجمه — هذا الباب الوحيد.
       - name: حارس الكلمات الجديدة — لا جديد قبل أذن الدكتور
         run: node scripts/guard-new-dialogue-words.mjs --dir=manual-dialogues-kuwaiti
-        env:
-          FIREBASE_SERVICE_ACCOUNT: sa.json
-          PODCAST_KW_REGENERATE: ${{ inputs.regenerate && '1' || '' }}
 
       # بصمة الحوار تُقرأ من القفل الذي كتبه fetch من Firestore نفسه، لا من
       # قيمةٍ تُكتب باليد. العلّة التي أنتجت هذه الخطوة: بصمة Firestore تُحسب

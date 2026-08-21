@@ -140,7 +140,16 @@ if (SELF_TEST) {
   /* والنقيض: مداخلة من المتن المعتمد نفسه تمر بلا رصد */
   const clean = scanTurns([{ text: 'وهني بالضبط السؤال اللي يهم.' }], vocab)
   assert.equal(clean.filter((x) => !x.cls.includes('متعدد المعاني')).length, 0, 'المتن المعتمد لا يُرصد كجديد')
-  console.log('✓ حارس الكلمات الجديدة: الفحص الذاتي 7/7 — كل صنف مزروع يُمسك، والمعتمد يمر')
+  /* [٢١ أغسطس ٢٠٢٦ متأخراً] عطب «انزياح إذن الاستبدال» وقع مرتين رغم
+     التعليق التحذيري: أي خطوةٍ تُحشر بين fetch وكتلة بيئته تسحب
+     PODCAST_KW_REGENERATE منها فيسقط التوليد عند «awaiting_approval»
+     مهما مرّرتَ regenerate (تشغيلتا العطب: قديمة موثقة + 32521445188).
+     التعليق لا يمنع؛ الفاحص يمنع. */
+  const wf = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-pilot.yml'), 'utf8')
+  const fetchBlock = wf.split(/- name: /).find((b) => b.startsWith('Lock the exact Kuwaiti admin dialogue'))
+  assert.ok(fetchBlock && fetchBlock.includes('PODCAST_KW_REGENERATE'),
+    'إذن الاستبدال يركب خطوة fetch نفسها — انزاح مرتين حين حُشرت خطوة بينها وبين بيئتها')
+  console.log('✓ حارس الكلمات الجديدة: الفحص الذاتي 8/8 — كل صنف مزروع يُمسك، والمعتمد يمر، وإذن الاستبدال في موضعه')
   process.exit(0)
 }
 

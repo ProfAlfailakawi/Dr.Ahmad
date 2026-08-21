@@ -94,6 +94,25 @@ export function resolveMetaphor(plan: CompositionPlan): MetaphorId {
   return readMetaphorChoice(plan) || autoMetaphorFor(plan)
 }
 
+/* --------------------------- إزاحات الكلمات --------------------------- */
+/* لكل كتلة نصية مفتاحٌ ثابت (wk)؛ نخزّن إزاحتها كنسبةٍ من عرض/ارتفاع التصميم.
+   يقرأها المحرّك مباشرةً من التخزين نفسه فتُخبز في المعاينة والتصدير. */
+export interface WordOffset { dx: number; dy: number }
+const wordKeyStore = (fp: string) => `reel:word-offsets:${fp}`
+
+export function readWordOffsets(plan: CompositionPlan): Record<string, WordOffset> {
+  if (typeof localStorage === 'undefined') return {}
+  try { return JSON.parse(localStorage.getItem(wordKeyStore(fpOf(plan))) || '{}') || {} } catch { return {} }
+}
+export function writeWordOffset(plan: CompositionPlan, wk: string, offset: WordOffset) {
+  const all = readWordOffsets(plan)
+  all[wk] = offset
+  try { localStorage.setItem(wordKeyStore(fpOf(plan)), JSON.stringify(all)) } catch { /* محجوب */ }
+}
+export function clearWordOffsets(plan: CompositionPlan) {
+  try { localStorage.removeItem(wordKeyStore(fpOf(plan))) } catch { /* محجوب */ }
+}
+
 /** أسماءٌ عربية لكل رموز المكتبة — تُعرض في المنتقي. */
 export const METAPHOR_LABELS_AR: Record<MetaphorId, string> = {
   bridge: 'جسر', roots: 'جذور', 'orbit-loop': 'مدار', weave: 'نسيج', scale: 'ميزان',

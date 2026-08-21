@@ -44,6 +44,7 @@ import { getDb, getFirebaseApp } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
 import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
 import { LivingMetaphorIcon, LivingIconToggle, LivingIconPicker, useLivingIconEnabled } from './LivingMetaphorIcon'
+import { MovableWordsLayer, MoveWordsToggle } from './MovableWords'
 import { resolveResonantQuotes, type ResonanceRow } from '../../lib/resonance-quotes'
 import { GenerationLibraryPanel, type GeneratedDesignLibraryAsset, type GeneratedLibraryAsset } from './GenerationLibraryPanel'
 import { buildMeaningFingerprint } from '../../lib/editorial-memory'
@@ -713,7 +714,7 @@ function storeTasteLedger(ledger: TasteSignalLedger) {
   try { window.localStorage.setItem(TASTE_LEDGER_KEY, JSON.stringify(ledger)) } catch { /* الذاكرة اختيارية ولا تعطل التصدير */ }
 }
 
-function Preview({ plan, className = '', livingIcon }: { plan: CompositionPlan; className?: string; livingIcon?: boolean }) {
+function Preview({ plan, className = '', livingIcon, arrange }: { plan: CompositionPlan; className?: string; livingIcon?: boolean; arrange?: boolean }) {
   const [enabledPref] = useLivingIconEnabled()
   const showIcon = livingIcon ?? enabledPref
   return (
@@ -723,6 +724,7 @@ function Preview({ plan, className = '', livingIcon }: { plan: CompositionPlan; 
     >
       <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: renderCompositionSvg(plan) }} />
       {showIcon && <LivingMetaphorIcon plan={plan} />}
+      {arrange && <MovableWordsLayer plan={plan} />}
     </div>
   )
 }
@@ -4468,9 +4470,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 {/* الكانفس الحر: المعاينة نفسها تصير سطح سحبٍ للطبقات. نحدّ عرضها
                    بحسب نسبة المقاس كي لا يتجاوز ارتفاعُها الشاشة فتُقصّ («المعاينة
                    مو كامله») — الآن يظهر التصميمُ كاملاً مهما طال (ستوري وغيره). */}
-                <div className="mb-2 flex flex-wrap items-center gap-2"><LivingIconPicker plan={selected} /></div>
+                <div className="mb-2 flex flex-wrap items-center gap-2"><LivingIconPicker plan={selected} /><MoveWordsToggle /></div>
                 <div ref={canvasRef} className={`social-editor-canvas relative mx-auto w-full ${phoneView ? 'hidden' : ''}`} style={{ '--preview-ratio': selected.format.width / selected.format.height, touchAction: freeMode ? 'none' : undefined } as CSSProperties}>
-                  <Preview plan={selected} className="w-full" />
+                  <Preview plan={selected} className="w-full" arrange />
                   {attention && <AttentionOverlay map={attention} w={selected.format.width} h={selected.format.height} />}
                   {freeMode && activeGuides.x != null && <span aria-hidden className="pointer-events-none absolute inset-y-0 z-30 w-px bg-accent/70" style={{ left: `${activeGuides.x * 100}%` }} />}
                   {freeMode && activeGuides.y != null && <span aria-hidden className="pointer-events-none absolute inset-x-0 z-30 h-px bg-accent/70" style={{ top: `${activeGuides.y * 100}%` }} />}

@@ -149,7 +149,7 @@ function promptFor(turns, index, total) {
          ثم تنجرف بعد الدقيقة الثانية. فالمرساة تعمل ويتلاشى أثرها. فصار التذكير
          **نسخةً مصغّرة من المرساة نفسها بالعربية**، وكل ستة أدوارٍ لا عشرة —
          لأن الانجراف يبدأ نحو الدور العشرين. */
-      if (index > 0 && index % 4 === 0) {
+      if (index > 0 && index % 6 === 0) {
         lines.push('[تذكير — نفس لسان مدينة الكويت الذي بدأتَ به: «شخبارك؟ شلونك اليوم؟» · خفيفٌ في الفم، لا تفخيم ولا إطالة، ونهاية الجملة تنزل هادئة. وبنفس حماس أول سطرٍ وحيويته: أنتما اثنان مهتمّان بما تقولان، لا قارئان لنصّ. الحيوية في الحوار لا في ثِقَل النطق. لا تسترخِ ولا تبرد كلما طال التسجيل.]')
     }
     lines.push(`${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': ['))
@@ -838,9 +838,9 @@ if (SELF_TEST) {
   const longPrompt = promptFor(longTurns, 0, 1)
     /* [٢١ أغسطس ٢٠٢٦] التذكير صار عربيّاً وكل ستة أدوار، فالعدد المتوقّع تغيّر.
        يُحسب من طول النصّ لا برقمٍ ثابت، حتى لا يكذب التأكيد إن تغيّرت الوتيرة. */
-    const expectedReminders = Math.floor((longTurns.length - 1) / 4)
+    const expectedReminders = Math.floor((longTurns.length - 1) / 6)
     assert.equal((longPrompt.match(/\[تذكير — نفس لسان مدينة الكويت/g) || []).length, expectedReminders,
-      'التذكير العربيّ يتخلّل النصّ مرّةً كل أربعة أدوار')
+      'التذكير العربيّ يتخلّل النصّ مرّةً كل ستة أدوار — رُدّت من ٤ بأمره بعد أن أكثرت الأخطاء')
     assert.ok(!/\[REMINDER —/.test(longPrompt), 'لم يبقَ تذكيرٌ إنجليزيّ قديم')
     assert.ok(expectedReminders >= 2, 'النصّ الطويل يحمل تذكيرين على الأقل')
   assert.ok(!/ض/.test(longPrompt.split('\n').filter((line) => /^(Fahad|Noura):/.test(line)).join(' ')),
@@ -990,6 +990,45 @@ if (GENERATION_MODE !== 'all' && slug !== PILOT_SLUG) {
 const source = resolve(ROOT, 'manual-dialogues-kuwaiti', `${slug}.json`)
 if (!existsSync(source)) throw new Error(`الحوار الكويتي غير موجود: ${slug}`)
 const turns = normalizeManualDialogueTurns(JSON.parse(readFileSync(source,'utf8')))
+
+/* ═══ استرداد توجيهات الأداء ═══
+   المحرّك يترجم deliveryType إلى توجيهٍ مسموع ([curious] · [gently skeptical] ·
+   [warmly] · [reflective]). لكن المصدر الكويتي لا يحمل الحقل — قيست حلقةٌ
+   كاملة (٢١ أغسطس ٢٠٢٦): ٣٧ مداخلةً كلها deliveryType فارغ، فتأخذ التاج
+   المجرّد بلا أي توجيه. فآلية الأداء كانت معطّلةً في المسار الكويتي وحده،
+   وهذا سببُ «كأن كل متحدث يقرأ فقرة» في ملاحظات المراجعة.
+
+   والمصدر الفصيح لنفس الحلقة يحملها كاملةً. فتُستردّ بالفهرس — لكن بشرطين
+   لا ثالث لهما، وإلا تُترك كما هي: تطابقُ عدد المداخلات، وتطابقُ تسلسل
+   المتحدّثين كاملاً. بلا الشرطين قد يُلصق توجيه سؤالٍ على جملةٍ خبرية. */
+const recoverDeliveryTypes = (kuwaitiTurns, articleSlug) => {
+  const missing = kuwaitiTurns.filter((t) => !t.deliveryType).length
+  if (!missing) return { turns: kuwaitiTurns, recovered: 0, reason: 'المصدر يحملها أصلاً' }
+  const fusha = resolve(ROOT, 'manual-dialogues', `${articleSlug}.json`)
+  if (!existsSync(fusha)) return { turns: kuwaitiTurns, recovered: 0, reason: 'لا مصدر فصيح' }
+  let ref = null
+  try { ref = normalizeManualDialogueTurns(JSON.parse(readFileSync(fusha, 'utf8'))) }
+  catch { return { turns: kuwaitiTurns, recovered: 0, reason: 'تعذّرت قراءة الفصيح' } }
+  if (!Array.isArray(ref) || ref.length !== kuwaitiTurns.length) {
+    return { turns: kuwaitiTurns, recovered: 0, reason: `عدد مختلف (${ref?.length} مقابل ${kuwaitiTurns.length})` }
+  }
+  const aligned = kuwaitiTurns.every((t, i) => t.speaker === ref[i].speaker)
+  if (!aligned) return { turns: kuwaitiTurns, recovered: 0, reason: 'تسلسل المتحدّثين مختلف' }
+  let recovered = 0
+  const merged = kuwaitiTurns.map((t, i) => {
+    if (t.deliveryType || !ref[i].deliveryType) return t
+    recovered += 1
+    return { ...t, deliveryType: ref[i].deliveryType }
+  })
+  return { turns: merged, recovered, reason: '' }
+}
+const delivery = recoverDeliveryTypes(turns, slug)
+if (delivery.recovered) {
+  turns.splice(0, turns.length, ...delivery.turns)
+  console.log(`✓ توجيهات الأداء: استُردّت ${delivery.recovered} من ${turns.length} من المصدر الفصيح`)
+} else if (delivery.reason && delivery.reason !== 'المصدر يحملها أصلاً') {
+  console.log(`⚠️ توجيهات الأداء لم تُستردّ (${delivery.reason}) — النبرة ستكون موحّدة`)
+}
 const sourceLockFile = resolve(ROOT, 'podcast-audits', 'source-locks-kuwaiti', `${slug}.json`)
 const sourceLock = existsSync(sourceLockFile) ? JSON.parse(readFileSync(sourceLockFile, 'utf8')) : null
 if (!DRY_RUN && (!sourceLock || sourceLock.slug !== slug || !sourceLock.revisionId)) {

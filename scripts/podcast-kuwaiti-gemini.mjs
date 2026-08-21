@@ -146,13 +146,47 @@ const KW_LOCK = 'light, soft Kuwait-City Kuwaiti — never heavy, never emphatic
    وتيجانُ الأداء بلا نص القفل. طبقة النص (المعجم بأحكامه العشرين) لا
    تتأثر — تعمل في الوضعين. متغير تجربة واحد يُفعَّل بـ
    PODCAST_KW_PROMPT_MODE=minimal، والافتراض full حرفياً. */
-const PROMPT_MODE = process.env.PODCAST_KW_PROMPT_MODE === 'minimal' ? 'minimal' : 'full'
+const PROMPT_MODE = ['minimal','c'].includes(process.env.PODCAST_KW_PROMPT_MODE) ? process.env.PODCAST_KW_PROMPT_MODE : 'full'
+const SEED = Number.isInteger(Number(process.env.PODCAST_KW_SEED)) && Number(process.env.PODCAST_KW_SEED) > 0 ? Number(process.env.PODCAST_KW_SEED) : null
 const MINIMAL_HEAD = `كويتي حضري من أهل مدينة الكويت، خفيف في الفم — يرققون الكلام وما يفخمون، ونهاية الجملة تنزل هادئة.
 اثنان من أهل الكويت يتسولفون في ديوانية بكل طبيعية ودفء وحيوية، مهتمان بما يقولان: فهد رجل هادئ دافئ عارف، ونورة امرأة ذكية فضولية غير مسرحية.
 تجنب ولا تستخدم: سوري، شامي، مصري، عراقي، إيراني، إماراتي، عماني، سعودي بكل تفاصيله (نجدي، حساوي، حجازي)، ولا أي خليجي عام.
 اقرأ كل سطر كما هو مكتوب حرفاً بحرف.`
 const MINIMAL_TAIL = 'نفس الصوتين ونفس لسان مدينة الكويت، من أول سطر إلى آخر سطر.'
-const directionFor = (type, mode = PROMPT_MODE) => mode === 'minimal' ? ({
+
+/* البرومت C — صياغة الصديق الخبير حرفياً (٢٢ أغسطس ٢٠٢٦): بنية Google
+   الرسمية (AUDIO PROFILE / SCENE / DIRECTOR'S NOTES / TRANSCRIPT)، النص
+   آخر شيء في الطلب، الوسوم للأداء وحده بلا قفل لهجة، ولا قائمة منع أصلاً. */
+const PROMPT_C_HEAD = `Synthesize speech from the TRANSCRIPT section only.
+Do not speak headings, instructions, or bracketed performance tags.
+
+# AUDIO PROFILE
+
+Fahad is a mature male podcaster from Kuwait City. His voice is warm, thoughtful, calm, and naturally lower in pitch.
+
+Noura is a mature female podcaster from Kuwait City. Her voice is intelligent, warm, naturally curious, and clearly distinct from Fahad.
+
+They are two native, educated, contemporary urban Kuwait City speakers who know each other and genuinely care about the discussion.
+
+# SCENE
+
+A relaxed evening conversation in a real diwaniya in Kuwait City. They are sitting near each other on close microphones, discussing one idea with natural interest and quiet chemistry.
+
+# DIRECTOR'S NOTES
+
+Accent: Native contemporary urban Kuwait City Arabic (حضري). Everyday local speech with light, relaxed articulation, natural short vowels, and calm sentence endings. The transcript already contains the intended Kuwaiti words and pronunciation spellings; follow them naturally without exaggerating dialect markers.
+
+Style: A real conversation between two Kuwaitis, not a news bulletin, commercial voice-over, lecture, or performed imitation of an accent.
+
+Pacing: Conversational and unhurried. Pauses follow thought and meaning, not punctuation. Keep the energy alive without sounding theatrical.
+
+Continuity: Keep Fahad and Noura as the same two people, in the same room and on the same microphones, from the first line to the last line of this chunk.
+
+Fidelity: Speak every labelled line exactly once and in order. Do not add, omit, repeat, paraphrase, or swap speakers. Bracketed English tags guide delivery silently and must never be spoken.
+
+# TRANSCRIPT
+`
+const directionFor = (type, mode = PROMPT_MODE) => (mode === 'minimal' || mode === 'c') ? ({
   question: '[curious]', reflection: '[reflective]', objection: '[gently skeptical]', gentleObjection: '[gently skeptical]',
   emphasis: '[serious]', briefReaction: '[warmly]', conclusion: '[calmly]', closing: '[softly]',
 }[type] || '') : ({
@@ -186,13 +220,14 @@ function promptFor(turns, index, total, mode = PROMPT_MODE) {
          ثم تنجرف بعد الدقيقة الثانية. فالمرساة تعمل ويتلاشى أثرها. فصار التذكير
          **نسخةً مصغّرة من المرساة نفسها بالعربية**، وكل ستة أدوارٍ لا عشرة —
          لأن الانجراف يبدأ نحو الدور العشرين. */
-      if (mode !== 'minimal' && index > 0 && index % 6 === 0) {
+      if (mode === 'full' && index > 0 && index % 6 === 0) {
         lines.push('[تذكير — نفس لسان مدينة الكويت الذي بدأتَ به: «شخبارك؟ شلونك اليوم؟» · خفيفٌ في الفم، لا تفخيم ولا إطالة، ونهاية الجملة تنزل هادئة. وبنفس حماس أول سطرٍ وحيويته: أنتما اثنان مهتمّان بما تقولان، لا قارئان لنصّ. الحيوية في الحوار لا في ثِقَل النطق. لا تسترخِ ولا تبرد كلما طال التسجيل.]')
     }
     lines.push(`${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType, mode)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': ['))
   })
   const transcript = lines.join('\n')
   if (mode === 'minimal') return `${MINIMAL_HEAD}\n\n${transcript}\n\n${MINIMAL_TAIL}`
+  if (mode === 'c') return `${PROMPT_C_HEAD}\n${transcript}`
   return `ABSOLUTE RULE — READ FIRST, APPLY TO EVERY SINGLE WORD
 This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers are FORBIDDEN outright — every one of them has ruined real takes, and every one is an automatic hard failure:
 1. Emirati (Dubai/Abu Dhabi) — the thinned, lighter, forward articulation. FORBIDDEN.
@@ -440,7 +475,10 @@ async function geminiPcm(prompt) {
           model: MODEL,
           input: prompt,
           response_format: { type: 'audio' },
-          generation_config: { speech_config: [
+          /* البذرة (مقترح الصديق ٢٢ أغسطس): موثقة لإعادة إنتاج أقرب —
+             وتجعل تجارب البرومت أزواجاً متطابقة (نفس البذرة × رأسين).
+             لا تضمن تطابق الطابع عبر نصوص مختلفة؛ الأرشيف يبقى التثبيت. */
+          generation_config: { ...(SEED ? { seed: SEED } : {}), speech_config: [
             { speaker: 'Fahad', voice: MALE_VOICE },
             { speaker: 'Noura', voice: FEMALE_VOICE },
           ] },
@@ -937,6 +975,13 @@ if (SELF_TEST) {
   assert.ok(!/\[تذكير/.test(minimalPrompt), 'الأدنى بلا تذكيرات متخللة')
   assert.ok(minimalPrompt.includes('أهل مدينة الكويت') && minimalPrompt.includes('يرققون'),
     'الجوهر الإيجابي بألفاظ الوصفة: أهل مدينة الكويت، الترقيق لا التفخيم')
+  /* [٢٢ أغسطس ٢٠٢٦] البرومت C — صياغة الصديق: النص آخر شيء، وسوم بلا
+     قفل، بلا قائمة منع، وبنية Google الرسمية. */
+  const cPrompt = promptFor(chunks[0], 0, chunks.length, 'c')
+  assert.ok(cPrompt.includes("# DIRECTOR'S NOTES") && cPrompt.trimEnd().endsWith(spokenForm(chunks[0][chunks[0].length-1].text)),
+    'C ببنية Google والنص المنطوق آخر شيء في الطلب')
+  assert.ok(!/FORBIDDEN|Emirati|Saudi|Najdi|Levantine|Omani|تجنب ولا تستخدم/i.test(cPrompt), 'C بلا أي قائمة منع لهجات — إيجابي صرف')
+  assert.ok(!/\[تذكير/.test(cPrompt) && !cPrompt.includes(KW_LOCK), 'C بلا تذكيرات وتيجانه أداء صرف بلا قفل لهجة')
   assert.ok(minimalPrompt.length < transcriptOf(chunks[0]).length + 900,
     'الأدنى قصير فعلاً — رأس وذيل دون ٩٠٠ حرف فوق النص')
   function transcriptOf(group){ return group.map((t)=>spokenForm(t.text)).join('\n') }

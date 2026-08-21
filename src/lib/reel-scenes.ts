@@ -28,6 +28,10 @@ export type ReelWorldId =
   | 'lab-notebook'
   | 'dawn-orchard'
   | 'graphite-dusk'
+  | 'cream-daylight'
+  | 'sand-warm'
+  | 'linen-blue'
+  | 'pearl-mint'
 
 export type ReelMotifId =
   | 'dust'
@@ -62,6 +66,8 @@ export interface ReelScene {
   kind: 'signature' | 'hook' | 'shift' | 'idea' | 'truth' | 'close' | 'metaphor'
   /** استعارة مرسومة تتصدّر المشهد — مصدرها معجم الدكتور لا ذوقٌ عام. */
   metaphor?: MetaphorId
+  /** بذرة الشكل: تختار من عائلة أشكال الاستعارة نسخةً محدّدة. */
+  metaphorVariation?: number
   slug: string
   /** سطر تمهيد صغير فوق السطر الكبير. */
   eyebrow?: string
@@ -113,21 +119,28 @@ const WORLDS: ReelWorld[] = [
   { id: 'lab-notebook', label: 'دفتر المختبر', scheme: 'dark', bgTop: '#1a2430', bgMid: '#121a24', bgBottom: '#0c121a', glow: '#23374a', ink: '#e8eef4', dim: '#8fa2b3', accent: '#6fc7c0', accent2: '#e9c069', danger: '#d9584a' },
   { id: 'dawn-orchard', label: 'بستان الفجر', scheme: 'dark', bgTop: '#1d2e22', bgMid: '#132018', bgBottom: '#0d1710', glow: '#2c4633', ink: '#e9f0e6', dim: '#93a894', accent: '#dcb45f', accent2: '#8fbf8a', danger: '#c95340' },
   { id: 'graphite-dusk', label: 'غسق الغرافيت', scheme: 'dark', bgTop: '#232733', bgMid: '#171a23', bgBottom: '#0f1117', glow: '#333a4d', ink: '#eceef4', dim: '#9aa2b5', accent: '#c9a227', accent2: '#6f8fbf', danger: '#cf5344' },
+  // عوالم فاتحة أنيقة — كي لا تخرج كل الريلات داكنة
+  { id: 'cream-daylight', label: 'نهار كريمي', scheme: 'light', bgTop: '#faf6ec', bgMid: '#f3ecdb', bgBottom: '#e9dec5', glow: '#fffdf6', ink: '#2a2419', dim: '#8b7d63', accent: '#b25e28', accent2: '#3f6d74', danger: '#a5342a' },
+  { id: 'sand-warm', label: 'رمل دافئ', scheme: 'light', bgTop: '#f7efe1', bgMid: '#efe1c9', bgBottom: '#e4d0ad', glow: '#fdf8ee', ink: '#3a2c18', dim: '#907a56', accent: '#c07316', accent2: '#5c6f4a', danger: '#ab3b25' },
+  { id: 'linen-blue', label: 'كتان أزرق', scheme: 'light', bgTop: '#f2f5f8', bgMid: '#e6ecf2', bgBottom: '#d5e0ea', glow: '#fbfcfe', ink: '#1f2a36', dim: '#6c7d8e', accent: '#2f6f9e', accent2: '#b0762c', danger: '#b23a2e' },
+  { id: 'pearl-mint', label: 'لؤلؤ نعناعي', scheme: 'light', bgTop: '#f3f7f4', bgMid: '#e7efe9', bgBottom: '#d6e5db', glow: '#fbfefc', ink: '#1e2a24', dim: '#6f8177', accent: '#2f8f6f', accent2: '#b08a2c', danger: '#b23a2e' },
 ]
 
 const worldById = new Map(WORLDS.map((world) => [world.id, world]))
 
 /** أي العوالم يليق بأي موضوع — القائمة مرتبة والأولى هي الميل الطبيعي. */
+/* كل موضوع يمزج داكناً وفاتحاً كي لا تخرج الريلات كلها سوداء ولا كلها بيضاء —
+   والبذرة تدور على المجموعة فيتنوّع المزاج البصري بين مادةٍ وأخرى. */
 const TOPIC_WORLDS: Record<ContentTopic, ReelWorldId[]> = {
-  ai: ['sadu-night', 'lab-notebook', 'observatory-night', 'graphite-dusk'],
-  education: ['observatory-night', 'ink-marble', 'lab-notebook', 'magazine-paper'],
-  family: ['dawn-orchard', 'magazine-paper', 'dawn-blush', 'ink-marble'],
-  research: ['lab-notebook', 'ink-marble', 'observatory-night', 'graphite-dusk'],
-  media: ['majlis-velvet', 'sadu-night', 'dawn-blush', 'graphite-dusk'],
-  leadership: ['majlis-velvet', 'sadu-night', 'observatory-night', 'graphite-dusk'],
-  human: ['dawn-blush', 'magazine-paper', 'majlis-velvet', 'dawn-orchard'],
-  book: ['ink-marble', 'majlis-velvet', 'magazine-paper', 'dawn-orchard'],
-  general: ['observatory-night', 'dawn-blush', 'sadu-night', 'magazine-paper'],
+  ai: ['sadu-night', 'graphite-dusk', 'linen-blue', 'observatory-night', 'lab-notebook', 'pearl-mint'],
+  education: ['observatory-night', 'cream-daylight', 'ink-marble', 'dawn-blush', 'sand-warm', 'lab-notebook'],
+  family: ['sand-warm', 'dawn-orchard', 'cream-daylight', 'dawn-blush', 'magazine-paper'],
+  research: ['lab-notebook', 'linen-blue', 'graphite-dusk', 'ink-marble', 'pearl-mint'],
+  media: ['majlis-velvet', 'sand-warm', 'sadu-night', 'dawn-blush', 'graphite-dusk'],
+  leadership: ['majlis-velvet', 'graphite-dusk', 'linen-blue', 'observatory-night', 'sadu-night'],
+  human: ['dawn-blush', 'cream-daylight', 'majlis-velvet', 'sand-warm', 'dawn-orchard'],
+  book: ['ink-marble', 'sand-warm', 'majlis-velvet', 'magazine-paper', 'cream-daylight'],
+  general: ['observatory-night', 'cream-daylight', 'dawn-blush', 'sadu-night', 'sand-warm', 'linen-blue'],
 }
 
 const MOOD_BY_TONE: Partial<Record<ContentTone, ReelMoodId>> = {
@@ -363,9 +376,16 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
     book: ['roots', 'constellation'],
     general: ['ripple', 'orbit-loop'],
   }
-  const metaphors = minedMetaphors.length
-    ? minedMetaphors
-    : (TOPIC_FALLBACK[nudgedTopic] || TOPIC_FALLBACK.general || [])
+  /* بركة الصور تُبنى واسعةً كي تدور عبر مرّات تناول المفهوم بلا تكرار:
+     المطابقات المنقّبة أولاً (أدقّها دلالةً)، ثم استعارات الموضوع الاحتياطية،
+     ثم عاماتٌ تكمّل العدد — بلا تكرار. */
+  const generalPool: MetaphorId[] = ['figure-contemplate', 'ripple', 'horizon-sun', 'open-book', 'constellation', 'orbit-loop', 'spotlight', 'network-grow']
+  const metaphorPool: MetaphorId[] = []
+  for (const m of [...minedMetaphors, ...(TOPIC_FALLBACK[nudgedTopic] || []), ...(TOPIC_FALLBACK.general || []), ...generalPool]) {
+    if (!metaphorPool.includes(m)) metaphorPool.push(m)
+    if (metaphorPool.length >= 6) break
+  }
+  const metaphors: MetaphorId[] = metaphorPool.length ? metaphorPool : ['figure-contemplate']
 
   /* القالب — شكل النص يرشّح، والموضوع يرجّح، والبذرة تحسم. */
   /* ترجيحٌ صريح: ما ينطق به المتن يسبق ما يميل إليه الموضوع، والبذرة تحسم
@@ -383,9 +403,10 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
   if (mined.number !== null) weigh('counter', 4)
   if (mined.question) weigh('question', 3)
   if (mined.quote) weigh('manuscript', 3)
-  if (nudgedTopic === 'ai' || nudgedTopic === 'research') weigh('weave', 2)
+  if (nudgedTopic === 'ai' || nudgedTopic === 'research') weigh('weave', 1)
   if (nudgedTopic === 'human' || nudgedTopic === 'family' || nudgedTopic === 'book') weigh('manuscript', 2)
-  if (nudgedTopic === 'education') weigh('question', 1)
+  if (nudgedTopic === 'education') weigh('question', 2)
+  if (nudgedTopic === 'leadership' || nudgedTopic === 'media') weigh('siren', 1)
   /* حتى النص القصير العاري يستحق تنويعاً: القوالب التي لا تشترط مادةً
      منقّبة تبقى مفتوحة، فتحسم البذرة بدل أن يتكرّر قالبٌ واحد أبداً. */
   weigh('weave', 1)
@@ -407,7 +428,7 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
      موضوعٍ واحد على لونٍ واحد كلما تشابه طول نصّها. */
   /* دوران حتمي بإزاحة مشتقة من العنوان: يضمن أن نصّين مختلفين على موضوع واحد
      لا يقعان على اللون نفسه إلا إذا استُنفدت المجموعة كلها. */
-  const rotate = fnv(`${title}·${body.slice(0, 220)}·عالم·${templateId}·${variant}`) % worldPool.length
+  const rotate = fnv(`${title}·${body.slice(0, 260)}·عالم·${templateId}·${analysis.primaryTone}·${variant}`) % worldPool.length
   const world = worldById.get(worldPool[rotate]) || WORLDS[0]
   rationale.push(`الموضوع «${nudgedTopic}» فتح عوالم: ${worldPool.map((id) => worldById.get(id)?.label).join(' · ')} — ووقع الاختيار على «${world.label}»`)
 
@@ -481,18 +502,31 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
     scenes.push({ kind: 'idea', slug: 'MORE / 05', line: strong[3], seconds: 3.0 })
   }
 
-  /* مشهد الاستعارة: الفكرة تُرسم لا تُكتب — يدخل قبل الختام كي يستقر أثره. */
+  /* مشاهد الاستعارة: الفكرة تُرسم لا تُكتب. الأقوى دلالةً أولاً (المكتبة رتّبتها
+     بقوة المطابقة) و«لقطة أخرى» تدور على التالية. والمادة الغنية تأخذ مشهدين
+     باستعارتين مختلفتين، فيزداد التنويع داخل الريل لا بينه فقط. */
   if (metaphors.length) {
+    const firstMetaphor = metaphors[variant % metaphors.length]
     scenes.push({
       kind: 'metaphor',
       slug: `IMAGE / ${String(scenes.length + 1).padStart(2, '0')}`,
-      /* الأقوى دلالةً أولاً (المكتبة رتّبتها بقوة المطابقة)، و«لقطة أخرى»
-         تدور على التالية — فالذوق مضمون والتنويع محفوظ معاً. */
-      metaphor: metaphors[variant % metaphors.length],
+      metaphor: firstMetaphor,
+      metaphorVariation: (seed >> 3) + variant * 13,
       eyebrow: conceptName || undefined,
-      line: strong[4] || strong[0] || tightLine(title, 40),
+      line: strong[3] || strong[0] || tightLine(title, 40),
       seconds: 3.2,
     })
+    const secondMetaphor = metaphors.find((m) => m !== firstMetaphor)
+    if (secondMetaphor && body.length > 700 && strong[4]) {
+      scenes.push({
+        kind: 'metaphor',
+        slug: `IMAGE / ${String(scenes.length + 1).padStart(2, '0')}`,
+        metaphor: secondMetaphor,
+        metaphorVariation: (seed >> 5) + variant * 29 + 7,
+        line: strong[4],
+        seconds: 3.0,
+      })
+    }
   }
   scenes.push({ kind: 'close', slug: `FINAL / ${String(scenes.length + 1).padStart(2, '0')}`, eyebrow: tightLine(title, 40), line: 'المقال كاملاً في الموقع', seconds: 3.6 })
 
@@ -534,3 +568,75 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
 }
 
 export const REEL_WORLDS = WORLDS
+
+
+/* ------------------------------- الذاكرة ------------------------------- */
+
+/**
+ * ذاكرة التنويع: تتذكّر كم مرةً تناول الدكتور كل مفهوم، فتعطي كل مرةٍ نسخةً
+ * مختلفة (قالباً وعالماً واستعارة) بدل تكرار الشكل نفسه. تسكن localStorage
+ * فتبقى عبر الجلسات، وتنهار بهدوءٍ إلى صفرٍ إن غاب التخزين.
+ */
+const MEMORY_KEY = 'reel:concept-history:v1'
+
+type ConceptHistory = Record<string, { count: number; lastTemplate?: ReelTemplateId; lastWorld?: string; lastMetaphor?: string; usedMetaphors?: string[] }>
+
+function readHistory(): ConceptHistory {
+  if (typeof localStorage === 'undefined') return {}
+  try { return JSON.parse(localStorage.getItem(MEMORY_KEY) || '{}') as ConceptHistory } catch { return {} }
+}
+
+function writeHistory(history: ConceptHistory) {
+  if (typeof localStorage === 'undefined') return
+  try { localStorage.setItem(MEMORY_KEY, JSON.stringify(history)) } catch { /* تخزينٌ ممتلئ أو محجوب */ }
+}
+
+/** مفتاح الذاكرة: اسم المفهوم من المعجم إن وُجد، وإلا بصمة العنوان المطبّعة. */
+export function reelMemoryKey(source: ReelSource): string {
+  const probe = planReel(source, 0)
+  if (probe.concept) return `c:${probe.concept}`
+  const norm = source.title
+    .replace(/[\u064B-\u0652\u0640]/g, '')
+    .replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
+    .replace(/\s+/g, ' ').trim()
+  return `t:${norm}`
+}
+
+export interface MemoryAwarePlan { plan: ReelPlan; timesSeenBefore: number; key: string }
+
+/**
+ * يبني ريلاً واعياً بالذاكرة: يقرأ كم مرةً ظهر المفهوم، ويختار variant التالي،
+ * ويضمن اختلاف القالب عن آخر مرة ما أمكن. لا يكتب الذاكرة — الكتابة عند
+ * الاعتماد (commit) كي لا تُستهلك النسخ بمجرّد المعاينة.
+ */
+export function planReelWithMemory(source: ReelSource): MemoryAwarePlan {
+  const key = reelMemoryKey(source)
+  const history = readHistory()
+  const record = history[key] || { count: 0 }
+  const primaryMetaphor = (candidate: ReelPlan) => candidate.scenes.find((scene) => scene.kind === 'metaphor')?.metaphor
+  const used = new Set(record.usedMetaphors || [])
+  let variant = record.count
+  let plan = planReel(source, variant)
+  /* ضمان اختلاف القالب والصورة عن آخر مرة، وتجنّب الصور المستهلكة سابقاً
+     ما دام في البركة متسع — نجرّب حتى اثنتي عشرة نسخة. */
+  for (let attempt = 0; attempt < 12 && record.count > 0; attempt += 1) {
+    const met = primaryMetaphor(plan)
+    const templateClash = plan.templateId === record.lastTemplate
+    const metaphorClash = met === record.lastMetaphor || (met !== undefined && used.has(met) && used.size < plan.metaphors.length)
+    if (!templateClash && !metaphorClash) break
+    variant += 1
+    plan = planReel(source, variant)
+  }
+  return { plan, timesSeenBefore: record.count, key }
+}
+
+/** يثبّت أن هذه النسخة استُعملت — يُستدعى عند التصدير لا المعاينة. */
+export function commitReelMemory(key: string, plan: ReelPlan) {
+  const history = readHistory()
+  const record = history[key] || { count: 0 }
+  const metaphor = plan.scenes.find((scene) => scene.kind === 'metaphor')?.metaphor
+  /* نحتفظ بآخر ثماني صورٍ مستعملة كي لا تعود إحداها قبل استنفاد التنوّع. */
+  const usedMetaphors = [...(record.usedMetaphors || []), metaphor].filter(Boolean).slice(-8) as string[]
+  history[key] = { count: record.count + 1, lastTemplate: plan.templateId, lastWorld: plan.world.label, lastMetaphor: metaphor, usedMetaphors }
+  writeHistory(history)
+}

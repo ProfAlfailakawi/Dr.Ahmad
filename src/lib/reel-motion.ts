@@ -378,10 +378,26 @@ function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene
       ctx.globalAlpha = 1
     }
   } else if (scene.kind === 'metaphor' && scene.metaphor) {
-    /* الفكرة تُرسم: الاستعارة تتصدّر، والسطر يجلس تحتها لا فوقها. */
-    paintMetaphor(ctx, scene.metaphor, REEL_WIDTH / 2, REEL_HEIGHT * 0.38, REEL_WIDTH * 0.62, t, Math.min(1, progress * 1.5), {
+    /* الفكرة تُرسم أمام العين: الاستعارة تدخل بمسحٍ رأسيٍّ ناعم من الأسفل
+       (كأنها تُخطّ الآن) مع تكبيرٍ طفيف يستقر — لا ظهورٌ فوري بارد. */
+    const drawP = Math.min(1, progress * 1.5)
+    const enter = 1 - Math.pow(1 - Math.min(1, progress * 2.2), 3)
+    ctx.save()
+    const scale = 0.9 + 0.1 * enter
+    ctx.translate(REEL_WIDTH / 2, REEL_HEIGHT * 0.38)
+    ctx.scale(scale, scale)
+    ctx.translate(-REEL_WIDTH / 2, -REEL_HEIGHT * 0.38)
+    if (enter < 0.999) {
+      /* قناع كشفٍ يصعد: يُظهر الرسم تدريجياً من أسفله إلى أعلاه. */
+      const revealY = REEL_HEIGHT * 0.38 + REEL_WIDTH * 0.34 - (REEL_WIDTH * 0.7) * enter
+      ctx.beginPath()
+      ctx.rect(0, revealY, REEL_WIDTH, REEL_HEIGHT)
+      ctx.clip()
+    }
+    paintMetaphor(ctx, scene.metaphor, REEL_WIDTH / 2, REEL_HEIGHT * 0.38, REEL_WIDTH * 0.62, t, drawP, {
       ink: world.ink, dim: world.dim, accent: world.accent, accent2: world.accent2, danger: world.danger,
-    })
+    }, scene.metaphorVariation || 0)
+    ctx.restore()
     if (scene.eyebrow) fadeLine(ctx, scene.eyebrow, 38, world.accent, REEL_HEIGHT * 0.585, Math.min(1, (progress - 0.15) * 2.6), 600, DISPLAY_FONT)
     const px = fitSize(scene.line, 62)
     writeLine(ctx, scene.line, px, world.ink, REEL_HEIGHT * 0.66, Math.min(1, (progress - 0.25) * 1.8), undefined, nib)
@@ -485,7 +501,17 @@ function drawChrome(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScen
 /** الإطار الكامل عند لحظة زمنية — مع تلاشٍ متبادل بين المشاهد. */
 export function drawReelFrame(ctx: CanvasRenderingContext2D, stage: Stage, t: number, dt: number) {
   const plan = stage.plan
+  /* الخلفية تتنفّس: تكبيرٌ بطيءٌ جداً وإزاحةٌ خفيفة تمنحان المشهد حياةً
+     بدل صورةٍ جامدة — بمقدارٍ لا يُلاحَظ واعياً لكنه يُحسّ. */
+  const breathe = 1.015 + 0.015 * Math.sin(t * 0.28)
+  const driftX = Math.sin(t * 0.16) * REEL_WIDTH * 0.006
+  const driftY = Math.cos(t * 0.13) * REEL_HEIGHT * 0.004
+  ctx.save()
+  ctx.translate(REEL_WIDTH / 2 + driftX, REEL_HEIGHT / 2 + driftY)
+  ctx.scale(breathe, breathe)
+  ctx.translate(-REEL_WIDTH / 2, -REEL_HEIGHT / 2)
   ctx.drawImage(stage.bg, 0, 0)
+  ctx.restore()
 
   let start = 0
   let index = 0
@@ -612,15 +638,53 @@ function buildScore(audio: AudioContext, destination: AudioNode, plan: ReelPlan)
     }
   }
 
+  const pluck = (time: number, freq: number, peak: number) => {
+    const osc = audio.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq
+    const gain = audio.createGain()
+    gain.gain.setValueAtTime(0.0001, time)
+    gain.gain.exponentialRampToValueAtTime(peak, time + 0.006)
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.5)
+    osc.connect(gain); gain.connect(master); osc.start(time); osc.stop(time + 0.55)
+  }
+  const shaker = (time: number, peak: number) => noise(time, 0.08, peak, 6000, 4000)
+
   /* فراش متحوّل على طول الريل. */
   const segment = plan.seconds / mood.roots.length
   mood.roots.forEach((freqs, index) => chord(t0 + index * segment, freqs, segment + 0.8))
+
+  /* بصمة صوتية لكل قالب — كي لا تتشابه الريلات سمعياً:
+     - السؤال: نبضة قلبٍ خافتة تحت الفراش (تأمّل)
+     - الصفارة: طبقة توتر منخفضة مستمرة (ترقّب)
+     - العدّاد: إيقاع نقرات صاعد (عدّ)
+     - المخطوطة: خشخشة ورقٍ ناعمة (حميمية)
+     - النسيج: أربيجيو رفيع متكرر (تشابك) */
+  const beatEvery = plan.templateId === 'counter' ? 0.5 : plan.templateId === 'weave' ? 0.66 : plan.templateId === 'question' ? 1.0 : 0
+  if (beatEvery > 0) {
+    for (let b = t0 + 1.2; b < t0 + plan.seconds - 1.2; b += beatEvery) {
+      if (plan.templateId === 'question') kick(b, mood.kickLevel * 0.4)
+      else if (plan.templateId === 'counter') { shaker(b, 0.05); if (Math.round((b - t0) / beatEvery) % 4 === 0) kick(b, mood.kickLevel * 0.5) }
+      else pluck(b, mood.roots[0][0] * 4, 0.03)
+    }
+  }
+  if (plan.templateId === 'siren') {
+    /* طبقة توتر منخفضة تحت كامل المشهد. */
+    const drone = audio.createOscillator(); drone.type = 'sawtooth'; drone.frequency.value = mood.roots[0][0] * 0.5
+    const dg = audio.createGain(); dg.gain.value = 0.02
+    const df = audio.createBiquadFilter(); df.type = 'lowpass'; df.frequency.value = 200
+    drone.connect(df); df.connect(dg); dg.connect(master); drone.start(t0); drone.stop(t0 + plan.seconds)
+  }
 
   /* ضربات المشاهد. */
   let cursor = 0
   plan.scenes.forEach((scene, index) => {
     const at = t0 + cursor
-    if (index > 0) noise(at, 0.4, 0.16, 3800, 260)
+    if (index > 0) {
+      /* تنويع صوت الانتقال: مسحٌ عالٍ، أو هبوطٌ منخفض، أو نبضةُ جرس — بالتناوب. */
+      const kind = index % 3
+      if (kind === 0) noise(at, 0.4, 0.16, 3800, 260)
+      else if (kind === 1) noise(at - 0.2, 0.5, 0.12, 260, 2600)
+      else bellHit(at, mood.roots[0][0] * 8, 0.04)
+    }
     if (scene.kind === 'hook') { kick(at + 0.12); bellHit(at + 0.14, 523.25, 0.06) }
     if (scene.kind === 'shift') {
       noise(at - 0.5, 0.6, 0.1, 260, 3200)

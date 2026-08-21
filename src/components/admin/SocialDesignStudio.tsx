@@ -33,7 +33,7 @@ import {
   seasonIdentityFor,
   type BackgroundPattern,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES } from '../../lib/social-design-engine'
+import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, resolvePalette, PALETTES } from '../../lib/social-design-engine'
 import { dressPlanInWorld, planWorldId, undressPlanFromWorld, type DesignWorld } from '../../lib/design-worlds'
 import DesignWorldsGallery from './DesignWorldsGallery'
 import { analyzeStudioImageFromFile, analyzeStudioImageFromUrl, extractVisualDnaFromFile, type StudioImagePassport, type VisualDna } from '../../lib/visual-dna'
@@ -43,6 +43,7 @@ import { currentSeason } from '../../lib/seasons'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
 import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
+import { paintMetaphor, chooseMetaphors, type MetaphorId } from '../../lib/reel-metaphors'
 import { resolveResonantQuotes, type ResonanceRow } from '../../lib/resonance-quotes'
 import { GenerationLibraryPanel, type GeneratedDesignLibraryAsset, type GeneratedLibraryAsset } from './GenerationLibraryPanel'
 import { buildMeaningFingerprint } from '../../lib/editorial-memory'
@@ -712,15 +713,79 @@ function storeTasteLedger(ledger: TasteSignalLedger) {
   try { window.localStorage.setItem(TASTE_LEDGER_KEY, JSON.stringify(ledger)) } catch { /* الذاكرة اختيارية ولا تعطل التصدير */ }
 }
 
-function Preview({ plan, className = '' }: { plan: CompositionPlan; className?: string }) {
+/**
+ * الأيقونة الحيّة: استعارةٌ من مكتبة الريل (٥٣ صورة) تُختار بحسب معنى التصميم
+ * من معجم الدكتور، وتتحرّك بألوان التصميم نفسه في زاويته. تظهر في المعاينة
+ * فقط — لا تدخل SVG المُصدَّر، فتبقى تصاميم الدكتور سليمةً كما رسمها العارض.
+ * تُحترم رغبة تقليل الحركة، فتُرسم إطاراً ساكناً لمن اختار ذلك.
+ */
+function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const metaphor = useMemo<MetaphorId>(() => {
+    const c = plan.content
+    const text = [c.title, c.heroWord, c.quote, c.kicker, c.subtitle, c.body].filter(Boolean).join(' ')
+    const domain = interpretDrAhmadDomain(text.slice(0, 1200))
+    const chosen = chooseMetaphors([domain.primary?.canonicalAr || '', domain.visualScenes.join(' · '), text.slice(0, 600)], 1)
+    return chosen[0] || 'figure-contemplate'
+  }, [plan])
+  const colors = useMemo(() => {
+    const pal = resolvePalette(plan)
+    return { ink: pal.ink, dim: pal.muted, accent: pal.accent, accent2: pal.accentSoft || pal.accent, danger: pal.accent, surface: pal.surface, isDark: pal.isDark }
+  }, [plan])
 
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+    const S = 260
+    canvas.width = S
+    canvas.height = S
+    let raf = 0
+    const started = performance.now()
+    const paint = { ink: colors.ink, dim: colors.dim, accent: colors.accent, accent2: colors.accent2, danger: colors.danger }
+    const frame = () => {
+      const t = (performance.now() - started) / 1000
+      ctx.clearRect(0, 0, S, S)
+      /* خلفية دائرية ناعمة كي تقرأ الأيقونة على أي تصميم — كخاتمٍ لا كلصقة. */
+      ctx.save()
+      ctx.beginPath(); ctx.arc(S / 2, S / 2, S * 0.46, 0, Math.PI * 2)
+      ctx.fillStyle = colors.surface
+      ctx.globalAlpha = colors.isDark ? 0.42 : 0.66
+      ctx.fill()
+      ctx.globalAlpha = 0.35
+      ctx.lineWidth = 2
+      ctx.strokeStyle = colors.accent
+      ctx.stroke()
+      ctx.restore()
+      const prog = reduce ? 1 : Math.min(1, ((t % 6) / 2.4))
+      paintMetaphor(ctx, metaphor, S / 2, S / 2, S * 0.6, t, prog, paint)
+      if (!reduce) raf = requestAnimationFrame(frame)
+    }
+    if (reduce) frame()
+    else raf = requestAnimationFrame(frame)
+    return () => cancelAnimationFrame(raf)
+  }, [metaphor, colors])
 
   return (
-    <div
-      className={`overflow-hidden rounded-2xl border border-hair bg-canvas shadow-sm ${className}`}
-      style={{ aspectRatio: `${plan.format.width} / ${plan.format.height}` }}
-      dangerouslySetInnerHTML={{ __html: renderCompositionSvg(plan) }}
+    <canvas
+      ref={canvasRef}
+      className="pointer-events-none absolute bottom-[4%] left-[4%] z-10 aspect-square w-[20%] max-w-[112px] min-w-16 drop-shadow"
+      aria-hidden="true"
     />
+  )
+}
+
+function Preview({ plan, className = '', livingIcon = true }: { plan: CompositionPlan; className?: string; livingIcon?: boolean }) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl border border-hair bg-canvas shadow-sm ${className}`}
+      style={{ aspectRatio: `${plan.format.width} / ${plan.format.height}` }}
+    >
+      <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: renderCompositionSvg(plan) }} />
+      {livingIcon && <LivingMetaphorIcon plan={plan} />}
+    </div>
   )
 }
 

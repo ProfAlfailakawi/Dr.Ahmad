@@ -561,7 +561,14 @@ export function KuwaitiManualDialogueEditor({ articles, onQueued }: { articles: 
         throw new Error('queue-readback-mismatch')
       }
       if (!isPilotEpisode) throw new Error('pilot-only: الـ144 جاهزة نصياً؛ التوليد الأول مقفول على حلقة التجربة فقط')
-      const dispatch = await dispatchPodcastGeneration({ user, slug, proof, variant: 'kuwaiti' })
+      /* [٢١ أغسطس ٢٠٢٦] مرشّحٌ ينتظر اعتمادك؟ فهذي إعادةُ توليدٍ لا توليدٌ أول،
+           وجالبُ الحوار يرفضها بلا طلبٍ صريح. كانت تُطلب بدخول GitHub يدوياً؛
+           صارت تُرسل من هنا. والشرط بقاءُ الحماية: تُرسل حين يوجد مرشّحٌ فعلاً
+           وأنت من ضغط الزر — لا تلقائياً في كل إرسال. */
+        const replacingCandidate = Boolean(candidate) && candidate?.status === 'awaiting_approval'
+        const dispatch = await dispatchPodcastGeneration({
+          user, slug, proof, variant: 'kuwaiti', regenerate: replacingCandidate,
+        })
       /* نتيجةٌ عملية حقيقية: حوارٌ يدويّ صار إنتاجاً في الطريق — لا مجرد شاشة. */
       void trackAdminUsage('admin_result_converted', {
         tool: 'manual-dialogue-kuwaiti', taskId: slug, taskType: 'حوار يدوي كويتي',

@@ -32,6 +32,93 @@ const MAX_TURNS = 28
 const EVIDENCE = /دراسة|بحث|تقرير|بالمئة|بالمية|جامعة|منظمة|مجلة|إحصائ|أرقام|نسبة/
 const KW_MARKERS = ['مو','هني','شنو','شلون','الحين','وايد','ماكو','تبي','ترى','إي','بس','قاعد','هال','ليش','وين','إحنا','عشان','جذي','راح','نبي','نقدر','اللي']
 
+
+/* ═══ كاشف المراجع المعلّقة (مراجعة الصديق الخبير، ٢٢ أغسطس ٢٠٢٦) ═══
+   شخّص العيب الحقيقي: «تصريح قبول مؤقت… صج، هذي كلمة تلخص» بقيت،
+   والدور الذي قدّم العبارة (٢٣) حُذف — فالمستمع يحس أن مقطعاً طاح.
+   الخطر ليس ضياع المعلومة بل بقاء: اقتباسٍ لعبارةٍ محذوفة · جوابٍ بلا
+   سؤال · ضميرٍ بلا مرجع · تكرارٍ صار متلاصقاً.
+   والعلاج داخل عقد المشروع: **يُجَرّ الدور المُقدِّم من الأصل**، لا
+   يُكتب سطرٌ جديد — فتبقى كل كلمة من كلام الدكتور. */
+const STOP = new Set(['من','في','على','إلى','عن','مع','بس','مو','هذا','هذي','هالشي','اللي','إن','أن','لا','ما','هو','هي','إي','يعني','ترى','كل','لو','إذا','بعد','قبل','عشان','لأن','صار','صارت','كان','وايد','شي','بين','عند','له','لها','لهم','أو','ثم','حتى','قد','هني','جذي','نحن','إحنا','انت','أنت'])
+const words = (t) => String(t || '').replace(/[^\u0621-\u064A\s]/g, ' ').split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w))
+/* عبارات مميزة: ثنائيات وثلاثيات من كلمات المعنى — أقوى إشارة للاقتباس */
+function phrasesOf (text) {
+  const w = words(text); const out = []
+  for (let i = 0; i + 1 < w.length; i += 1) out.push(w[i] + ' ' + w[i + 1])
+  for (let i = 0; i + 2 < w.length; i += 1) out.push(w[i] + ' ' + w[i + 1] + ' ' + w[i + 2])
+  return out
+}
+const ANSWER_OPENERS = /^(إي|اي|لا|صح|أكيد|أكيد،|بالضبط|صج|تماما|تمام|طبعا)\b/
+const BACKREF_OPENERS = /^(و?هذا|و?هذي|و?هالشي|و?هالكلام|و?هو|و?هي|و?هم|و?هني|و?جذي|و?نفسه|و?نفسها)\b/
+
+/** يرصد مواضع التعليق ويعيد اقتراح جرٍّ لكل موضع (دور الأصل المُقدِّم). */
+export function danglingRefs (turns, keptIdx) {
+  const kept = new Set(keptIdx)
+  const issues = []
+  /* خريطة: أول ظهورٍ لكل عبارة مميزة في الأصل */
+  const firstAt = new Map()
+  const firstWordAt = new Map()
+  const freq = new Map()
+  turns.forEach((t, i) => {
+    for (const ph of phrasesOf(t.text)) if (!firstAt.has(ph)) firstAt.set(ph, i)
+    for (const w of words(t.text)) { freq.set(w, (freq.get(w) || 0) + 1); if (!firstWordAt.has(w)) firstWordAt.set(w, i) }
+  })
+
+  for (const i of keptIdx) {
+    const prevOriginal = i - 1
+    const prevKept = keptIdx.filter((k) => k < i).pop()
+    const cutBefore = prevOriginal >= 0 && !kept.has(prevOriginal)
+
+    /* ١) اقتباسٌ معلّق — بإشارتين، لأن الاقتباس نادراً ما يكون حرفياً:
+       (أ) عبارةٌ مميزة أول ظهورها في دورٍ محذوف؛
+       (ب) **كلمةٌ نادرة** (≤٣ مرات في الحلقة) أول ظهورها في دورٍ محذوفٍ
+           قريب — وهذه هي التي تمسك «تصريح مؤقت ← تصريح قبول مؤقت»،
+           والحرفيةُ وحدها كانت تفوتها (شخّصها الصديق بأذنه لا بالآلة). */
+    let flagged = false
+    for (const ph of phrasesOf(turns[i].text)) {
+      const src = firstAt.get(ph)
+      if (src === undefined || src >= i || kept.has(src)) continue
+      if (keptIdx.some((k) => k < i && phrasesOf(turns[k].text).includes(ph))) continue
+      issues.push({ at: i, kind: 'اقتباس معلّق', phrase: ph, pull: src })
+      flagged = true
+      break
+    }
+    if (!flagged) {
+      for (const w of words(turns[i].text)) {
+        if ((freq.get(w) || 0) > 3) continue
+        const src = firstWordAt.get(w)
+        if (src === undefined || src >= i || kept.has(src) || i - src > 4) continue
+        if (keptIdx.some((k) => k < i && words(turns[k].text).includes(w))) continue
+        issues.push({ at: i, kind: 'كلمة نادرة بلا تقديم', phrase: w, pull: src })
+        break
+      }
+    }
+
+    /* ٢) جوابٌ بلا سؤال: مداخلةٌ تبدأ بأداة تصديق وسؤالُها محذوف */
+    if (cutBefore && ANSWER_OPENERS.test(String(turns[i].text).trim())) {
+      const q = turns.slice(0, i).map((t, k) => ({ t, k })).reverse()
+        .find(({ t }) => t.deliveryType === 'question' || /[؟?]\s*$/.test(String(t.text)))
+      if (q && !kept.has(q.k)) issues.push({ at: i, kind: 'جواب بلا سؤال', pull: q.k })
+    }
+
+    /* ٣) ضميرٌ أو إشارةٌ بلا مرجع: تبدأ بعائدٍ وسابقها الأصلي محذوف */
+    if (cutBefore && BACKREF_OPENERS.test(String(turns[i].text).trim())) {
+      issues.push({ at: i, kind: 'إشارة بلا مرجع', pull: prevOriginal })
+    }
+
+    /* ٤) تكرارٌ متلاصق — **بشرط أن يكون من صنع التكثيف**: إن كان
+       الدوران متجاورَين في الأصل فالتكرار أسلوبُ الدكتور نفسه (سطرٌ
+       قصيرٌ ثم بسطه: «جيل عدى سنين.» / «جيل عدى سنين دراسية كاملة…»)،
+       ولا يُوسم. يُوسم فقط ما قرّب بينهما الحذف. */
+    if (prevKept !== undefined && prevKept !== i - 1) {
+      const shared = phrasesOf(turns[i].text).filter((ph) => ph.split(' ').length === 3 && phrasesOf(turns[prevKept].text).includes(ph))
+      if (shared.length) issues.push({ at: i, kind: 'تكرار متلاصق', phrase: shared[0], pull: null })
+    }
+  }
+  return issues
+}
+
 const durOf = (t) => String(t.text || '').length * SEC_PER_CHAR + (Number(t.pauseAfterMs) || 560) / 1000
 
 export function condenseEpisode(turns) {
@@ -98,6 +185,35 @@ export function condenseEpisode(turns) {
     picked.delete(removable[0])
   }
 
+  /* ٨.٥) إصلاح المراجع المعلّقة — بجرّ الدور المُقدِّم من الأصل (مراجعة
+     الصديق). دورةٌ متكررة: الدور المجرور قد يحمل تعليقاً بدوره. وحين
+     يفيض الوقت نضحّي بمداخلةٍ منخفضة المركزية لا بالسياق — لأن الفهم
+     أهم من ثوانٍ معدودة. */
+  let repairRounds = 0
+  for (;;) {
+    const idxNow = [...picked].sort((a, b) => a - b)
+    const issues = danglingRefs(turns, idxNow).filter((x) => x.pull !== null && !picked.has(x.pull))
+    if (!issues.length || repairRounds++ >= 6) break
+    for (const x of issues) {
+      pick(x.pull)
+      flags.push(`${x.kind} في مداخلة ${x.at}${x.phrase ? ` («${x.phrase}»)` : ''} — جُرّ الدور ${x.pull} من الأصل`)
+    }
+    /* توازن الميزانية بعد الجرّ: تُنزع الأقل مركزيةً وحدها */
+    while (budget() > TARGET_SEC + 18 && picked.size > MIN_TURNS) {
+      const removable = [...picked]
+        .filter((i) => i > firstQ && i < tailStart && i !== pivot && !issues.some((x) => x.pull === i || x.at === i))
+        .sort((a, b) => t2s(turns[a].deliveryType) - t2s(turns[b].deliveryType))
+      if (!removable.length) break
+      picked.delete(removable[0])
+    }
+  }
+  /* ما بقي معلّقاً بلا إصلاح ممكن (تكرار متلاصق مثلاً) يُوسم لعينه. */
+  for (const x of danglingRefs(turns, [...picked].sort((a, b) => a - b))) {
+    if (x.pull === null || picked.has(x.pull)) {
+      if (x.kind === 'تكرار متلاصق') flags.push(`${x.kind} («${x.phrase}») في مداخلة ${x.at} — نظرٌ يدوي`)
+    }
+  }
+
   /* ٩) التجميع + إصلاح الواو اليتيمة + الجسر الواحد. */
   const idx = [...picked].sort((a, b) => a - b)
   const out = idx.map((i) => ({ ...turns[i] }))
@@ -140,6 +256,9 @@ if (SELF_TEST) {
   process.exit(0)
 }
 
+/* التنفيذ المباشر وحده يشغّل المصنع — الاستيراد للفحص لا يكتب شيئاً. */
+const RUN_MAIN = process.argv[1] && process.argv[1].endsWith('condense-kuwaiti-dialogues.mjs')
+if (!RUN_MAIN) { /* مستورد: لا شيء */ } else {
 const lib = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-dialogues.json'), 'utf8'))
 const short = { schemaVersion: lib.schemaVersion, profile: lib.profile, count: 0, pilotSlug: lib.pilotSlug, note: 'نسخة الدقيقتين والنصف — مكثفة من نصوص الدكتور المدققة حرفياً (٢٢ أغسطس ٢٠٢٦)؛ الأصل الكامل محفوظ في kuwaiti-dialogues.json', episodes: {}, review: lib.review }
 const report = []
@@ -154,3 +273,4 @@ writeFileSync(resolve(ROOT, 'podcast-audits/condense-report.json'), JSON.stringi
 const flagged = report.filter((r) => r.flags.length)
 console.log(`✓ كُثفت ${short.count} حلقة → kuwaiti-dialogues-short.json`)
 console.log(`  متوسط: ${Math.round(report.reduce((s, r) => s + r.estSec, 0) / report.length)}ث · موسومة للمراجعة: ${flagged.length}`)
+}

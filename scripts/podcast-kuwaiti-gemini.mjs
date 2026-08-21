@@ -137,7 +137,25 @@ function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300, spli
    حيّاً حين تبتعد تعليمات الرأس — لم يسمِّه قط. والانجراف المسموع إماراتيٌّ
    تحديداً لا غيره، فالاسم يُثبَّت حيث يقع الانزلاق: على الدور نفسه. */
 const KW_LOCK = 'light, soft Kuwait-City Kuwaiti — never heavy, never emphatic, never Emirati'
-const directionFor = (type) => ({
+/* ═══ وضع البرومت الأدنى — تجربة صديق الدكتور (٢٢ أغسطس ٢٠٢٦) ═══
+   فرضيته: «كل ما زدت القيود تتعب» مع Gemini — وهي وجيهة بميزانَي هندسة
+   الأوامر: (١) فخ الفيل الوردي: تعداد اللهجات المحرمة بالاسم (نجدي،
+   حجازي، إماراتي…) يزرعها في سياق المحرك — و«نجدي جدة» الذي سمعه الدكتور
+   الليلة قد يكون من الجدار نفسه؛ (٢) تخفيف التعليمات يركز وزنها.
+   الوضع الأدنى: رأسٌ إيجابي قصير بلا اسم أي لهجة أجنبية، بلا تذكيرات،
+   وتيجانُ الأداء بلا نص القفل. طبقة النص (المعجم بأحكامه العشرين) لا
+   تتأثر — تعمل في الوضعين. متغير تجربة واحد يُفعَّل بـ
+   PODCAST_KW_PROMPT_MODE=minimal، والافتراض full حرفياً. */
+const PROMPT_MODE = process.env.PODCAST_KW_PROMPT_MODE === 'minimal' ? 'minimal' : 'full'
+const MINIMAL_HEAD = `Two lifelong friends from Kuwait City are chatting in a diwaniya — warm, natural, unhurried, genuinely interested in what they are saying.
+Speak the whole conversation in authentic urban Kuwaiti Arabic (اللهجة الكويتية الحضرية — لهجة أهل مدينة الكويت), exactly the way real Kuwaitis talk at home: light and soft in the mouth, sentence endings settling down gently.
+Fahad is a calm, warm man. Noura is a bright, curious woman.
+Read every line exactly as written, letter for letter.`
+const MINIMAL_TAIL = 'Same two voices, same Kuwait City register, first line to last.'
+const directionFor = (type, mode = PROMPT_MODE) => mode === 'minimal' ? ({
+  question: '[curious]', reflection: '[reflective]', objection: '[gently skeptical]', gentleObjection: '[gently skeptical]',
+  emphasis: '[serious]', briefReaction: '[warmly]', conclusion: '[calmly]', closing: '[softly]',
+}[type] || '') : ({
   question: `[curious — ${KW_LOCK}]`, reflection: `[reflective — ${KW_LOCK}]`, objection: `[gently skeptical — ${KW_LOCK}]`, gentleObjection: `[gently skeptical — ${KW_LOCK}]`,
   emphasis: `[serious — ${KW_LOCK}]`, briefReaction: `[warmly — ${KW_LOCK}]`, conclusion: `[calmly — ${KW_LOCK}]`, closing: `[softly — ${KW_LOCK}]`,
 }[type] || `[${KW_LOCK}]`)
@@ -156,7 +174,7 @@ const FOREIGN_REDACTIONS = buildForeignRedactions(PRONUNCIATION_SOURCE)
 /* الحذف أولاً (يمسح الاسم اللاتيني الذي يكسر الصوت) ثم قلب الإملاء الكويتي. */
 export const spokenForm = (text) => toSpokenKuwaiti(redactForeignNames(text, FOREIGN_REDACTIONS), PRONUNCIATION)
 
-function promptFor(turns, index, total) {
+function promptFor(turns, index, total, mode = PROMPT_MODE) {
   /* تذكيرٌ يتخلّل النصّ كل عشرة أدوار: في النداء الواحد تبتعد تعليماتُ الرأس
      عن أواخر الحلقة فتفتر اللكنة تدريجياً — وهو ما سمعه الدكتور. السطر
      المتخلّل يُعيد شدَّ اللكنة من داخل النصّ نفسه، ولا يُنطق لأنه تعليمةٌ
@@ -168,12 +186,13 @@ function promptFor(turns, index, total) {
          ثم تنجرف بعد الدقيقة الثانية. فالمرساة تعمل ويتلاشى أثرها. فصار التذكير
          **نسخةً مصغّرة من المرساة نفسها بالعربية**، وكل ستة أدوارٍ لا عشرة —
          لأن الانجراف يبدأ نحو الدور العشرين. */
-      if (index > 0 && index % 6 === 0) {
+      if (mode !== 'minimal' && index > 0 && index % 6 === 0) {
         lines.push('[تذكير — نفس لسان مدينة الكويت الذي بدأتَ به: «شخبارك؟ شلونك اليوم؟» · خفيفٌ في الفم، لا تفخيم ولا إطالة، ونهاية الجملة تنزل هادئة. وبنفس حماس أول سطرٍ وحيويته: أنتما اثنان مهتمّان بما تقولان، لا قارئان لنصّ. الحيوية في الحوار لا في ثِقَل النطق. لا تسترخِ ولا تبرد كلما طال التسجيل.]')
     }
-    lines.push(`${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': ['))
+    lines.push(`${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType, mode)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': ['))
   })
   const transcript = lines.join('\n')
+  if (mode === 'minimal') return `${MINIMAL_HEAD}\n\n${transcript}\n\n${MINIMAL_TAIL}`
   return `ABSOLUTE RULE — READ FIRST, APPLY TO EVERY SINGLE WORD
 This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers are FORBIDDEN outright — every one of them has ruined real takes, and every one is an automatic hard failure:
 1. Emirati (Dubai/Abu Dhabi) — the thinned, lighter, forward articulation. FORBIDDEN.
@@ -907,6 +926,16 @@ if (SELF_TEST) {
   assert.match(prompt, /REGISTER REFERENCE/, 'عيّنة السجل المرجعية حاضرة في رأس الطلب')
   assert.match(prompt, /خوش سؤال\. خل نكون واقعيين/, 'العيّنة بلسانه الحقيقي المقتنى من تفريغات لقاءاته')
   assert.match(prompt, /diwaniya/, 'المشهد ديوانية كويتية — اسم البودكاست وهويته')
+  /* [٢٢ أغسطس ٢٠٢٦] فحوص الوضع الأدنى — تجربة صديق الدكتور: */
+  const minimalPrompt = promptFor(chunks[0], 0, chunks.length, 'minimal')
+  assert.ok(!/Emirati|Saudi|Najdi|Hejazi|Iraqi|Levantine|Egyptian|Omani|Persian|FORBIDDEN/i.test(minimalPrompt),
+    'الأدنى بلا اسم أي لهجة أجنبية — فخ الفيل الوردي: النفي يستدعي المنفي')
+  assert.ok(!/\[تذكير/.test(minimalPrompt), 'الأدنى بلا تذكيرات متخللة')
+  assert.ok(minimalPrompt.includes('لهجة أهل مدينة الكويت'), 'الأدنى إيجابي: يسمي المطلوب لا الممنوع')
+  assert.ok(minimalPrompt.length < transcriptOf(chunks[0]).length + 900,
+    'الأدنى قصير فعلاً — رأس وذيل دون ٩٠٠ حرف فوق النص')
+  function transcriptOf(group){ return group.map((t)=>spokenForm(t.text)).join('\n') }
+  assert.equal(promptFor(chunks[0], 0, chunks.length), prompt, 'الافتراض full حرفياً — التجربة لا تلمس الإنتاج إلا بالمفتاح')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
   assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
     /* [٢١ أغسطس ٢٠٢٦] القفلان الجديدان يُثبَّتان بتأكيدٍ لا بثقة — درس «معلقة»:

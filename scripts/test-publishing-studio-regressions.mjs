@@ -50,7 +50,7 @@ assert.match(studio, /data-standalone-design-state="empty"/, 'standalone placeho
 assert.match(studio, /function withHashtagsOnce/, 'Instagram hashtags must be deduplicated before display')
 assert.match(calibrationWorkflow, /cron: '10 5 \* \* \*'/, '7/30 calibration must run automatically every day')
 assert.match(calibrationWorkflow, /editorial-board-calibration\.mjs --self-test/, 'scheduled calibration must self-test before touching Firestore')
-assert.match(calibrationWorkflow, /src\/lib\/impact-mirror\.mjs[\s\S]*src\/lib\/adversarial-misunderstanding\.mjs/, 'impact mirror dependencies must exist in the sparse scheduled checkout')
+assert.match(calibrationWorkflow, /sparse-checkout:[\s\S]*^\s*src\/lib\s*$[\s\S]*^\s*src\/data\s*$/m, 'the scheduled checkout must pull whole src/lib and src/data so every import (impact-mirror, adversarial-misunderstanding, style-dna, and transitive deps) resolves')
 assert.match(studio, /data-adversarial-misunderstanding=/, 'the adversarial simulator must stay inside the sovereign passport surface')
 assert.match(studio, /data-impact-mirror=/, 'the impact mirror must stay inside Editorial Board history')
 assert.match(studio, /الانتشار لا يساوي الفهم/, 'impact analytics must never be presented as proof of understanding')

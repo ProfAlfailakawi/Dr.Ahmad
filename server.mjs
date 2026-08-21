@@ -5734,7 +5734,13 @@ export function createRequestHandler({
 
       const priorRevision = boundedString(production.dispatchedDialogueRevisionId, 128)
       const priorState = boundedString(production.dispatchState, 40)
-      if (priorRevision === revisionId && ['requested', 'accepted'].includes(priorState)) {
+      /* [٢١ أغسطس ٢٠٢٦] حارسُ التكرار يمنع ضغطتين متتاليتين بالخطأ — وهو صحيح.
+         لكنه كان يمنع **إعادة التوليد** أيضاً: المراجعة نفسها ودولةُ إرسالٍ
+         سابقة، فيردّ «التوليد بدأ بالفعل ✓» ولا يُرسل شيئاً. رسالةٌ تبدو نجاحاً
+         والزرّ لا يفعل شيئاً — شكا منها الدكتور: «ضغط على توليد ولا ضبط».
+         فصار الطلبُ الصريح بالإعادة يتجاوزه: إن قال المشرف «أعد» فهو يعلم أن
+         مرشّحاً قائماً وأنه يستبدله. وبلا الطلب يبقى الحارس كما هو. */
+      if (!regenerate && priorRevision === revisionId && ['requested', 'accepted'].includes(priorState)) {
         sendJson(res, 200, {
           ok: true,
           duplicate: true,

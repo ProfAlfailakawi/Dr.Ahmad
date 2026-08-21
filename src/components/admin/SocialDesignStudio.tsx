@@ -33,7 +33,7 @@ import {
   seasonIdentityFor,
   type BackgroundPattern,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, resolvePalette, PALETTES } from '../../lib/social-design-engine'
+import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES } from '../../lib/social-design-engine'
 import { dressPlanInWorld, planWorldId, undressPlanFromWorld, type DesignWorld } from '../../lib/design-worlds'
 import DesignWorldsGallery from './DesignWorldsGallery'
 import { analyzeStudioImageFromFile, analyzeStudioImageFromUrl, extractVisualDnaFromFile, type StudioImagePassport, type VisualDna } from '../../lib/visual-dna'
@@ -43,7 +43,7 @@ import { currentSeason } from '../../lib/seasons'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
 import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
-import { paintMetaphor, chooseMetaphors, type MetaphorId } from '../../lib/reel-metaphors'
+import { LivingMetaphorIcon, LivingIconToggle, useLivingIconEnabled } from './LivingMetaphorIcon'
 import { resolveResonantQuotes, type ResonanceRow } from '../../lib/resonance-quotes'
 import { GenerationLibraryPanel, type GeneratedDesignLibraryAsset, type GeneratedLibraryAsset } from './GenerationLibraryPanel'
 import { buildMeaningFingerprint } from '../../lib/editorial-memory'
@@ -713,78 +713,16 @@ function storeTasteLedger(ledger: TasteSignalLedger) {
   try { window.localStorage.setItem(TASTE_LEDGER_KEY, JSON.stringify(ledger)) } catch { /* الذاكرة اختيارية ولا تعطل التصدير */ }
 }
 
-/**
- * الأيقونة الحيّة: استعارةٌ من مكتبة الريل (٥٣ صورة) تُختار بحسب معنى التصميم
- * من معجم الدكتور، وتتحرّك بألوان التصميم نفسه في زاويته. تظهر في المعاينة
- * فقط — لا تدخل SVG المُصدَّر، فتبقى تصاميم الدكتور سليمةً كما رسمها العارض.
- * تُحترم رغبة تقليل الحركة، فتُرسم إطاراً ساكناً لمن اختار ذلك.
- */
-function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const metaphor = useMemo<MetaphorId>(() => {
-    const c = plan.content
-    const text = [c.title, c.heroWord, c.quote, c.kicker, c.subtitle, c.body].filter(Boolean).join(' ')
-    const domain = interpretDrAhmadDomain(text.slice(0, 1200))
-    const chosen = chooseMetaphors([domain.primary?.canonicalAr || '', domain.visualScenes.join(' · '), text.slice(0, 600)], 1)
-    return chosen[0] || 'figure-contemplate'
-  }, [plan])
-  const colors = useMemo(() => {
-    const pal = resolvePalette(plan)
-    return { ink: pal.ink, dim: pal.muted, accent: pal.accent, accent2: pal.accentSoft || pal.accent, danger: pal.accent, surface: pal.surface, isDark: pal.isDark }
-  }, [plan])
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
-    const S = 260
-    canvas.width = S
-    canvas.height = S
-    let raf = 0
-    const started = performance.now()
-    const paint = { ink: colors.ink, dim: colors.dim, accent: colors.accent, accent2: colors.accent2, danger: colors.danger }
-    const frame = () => {
-      const t = (performance.now() - started) / 1000
-      ctx.clearRect(0, 0, S, S)
-      /* خلفية دائرية ناعمة كي تقرأ الأيقونة على أي تصميم — كخاتمٍ لا كلصقة. */
-      ctx.save()
-      ctx.beginPath(); ctx.arc(S / 2, S / 2, S * 0.46, 0, Math.PI * 2)
-      ctx.fillStyle = colors.surface
-      ctx.globalAlpha = colors.isDark ? 0.42 : 0.66
-      ctx.fill()
-      ctx.globalAlpha = 0.35
-      ctx.lineWidth = 2
-      ctx.strokeStyle = colors.accent
-      ctx.stroke()
-      ctx.restore()
-      const prog = reduce ? 1 : Math.min(1, ((t % 6) / 2.4))
-      paintMetaphor(ctx, metaphor, S / 2, S / 2, S * 0.6, t, prog, paint)
-      if (!reduce) raf = requestAnimationFrame(frame)
-    }
-    if (reduce) frame()
-    else raf = requestAnimationFrame(frame)
-    return () => cancelAnimationFrame(raf)
-  }, [metaphor, colors])
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none absolute bottom-[4%] left-[4%] z-10 aspect-square w-[20%] max-w-[112px] min-w-16 drop-shadow"
-      aria-hidden="true"
-    />
-  )
-}
-
-function Preview({ plan, className = '', livingIcon = true }: { plan: CompositionPlan; className?: string; livingIcon?: boolean }) {
+function Preview({ plan, className = '', livingIcon }: { plan: CompositionPlan; className?: string; livingIcon?: boolean }) {
+  const [enabledPref] = useLivingIconEnabled()
+  const showIcon = livingIcon ?? enabledPref
   return (
     <div
       className={`relative overflow-hidden rounded-2xl border border-hair bg-canvas shadow-sm ${className}`}
       style={{ aspectRatio: `${plan.format.width} / ${plan.format.height}` }}
     >
       <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: renderCompositionSvg(plan) }} />
-      {livingIcon && <LivingMetaphorIcon plan={plan} />}
+      {showIcon && <LivingMetaphorIcon plan={plan} />}
     </div>
   )
 }
@@ -4383,7 +4321,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               />
               <button type="button" className={ghost} onClick={applySpeechEdit}>طبّق</button>
             </div>
-            <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {arabicCountPhrase(Object.keys(tasteLedger).length, DIRECTION_AFTER_PREPOSITION_FORMS)}</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={ghost} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يعيد بناء الأفضل…' : 'أعد بناء 5 نهايات'}</button><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'ابنِ Final / Safer / Viral'}</button><button type="button" className={ghost} onClick={() => void runZeroDecisionMode()} disabled={zeroDecisionBusy}>{zeroDecisionBusy ? 'يحسم القرار…' : 'القرار الصفري'}</button><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy || (!autopilotPack.length && !plans.length)}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'صدّر 3 نهائيات'}</button><button type="button" className={primary} disabled={campaignBusy} onClick={() => { buildCampaign(); setStage('publish') }}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة سردية'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
+            <div className="flex flex-wrap items-center gap-2"><LivingIconToggle /><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {arabicCountPhrase(Object.keys(tasteLedger).length, DIRECTION_AFTER_PREPOSITION_FORMS)}</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={ghost} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يعيد بناء الأفضل…' : 'أعد بناء 5 نهايات'}</button><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'ابنِ Final / Safer / Viral'}</button><button type="button" className={ghost} onClick={() => void runZeroDecisionMode()} disabled={zeroDecisionBusy}>{zeroDecisionBusy ? 'يحسم القرار…' : 'القرار الصفري'}</button><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy || (!autopilotPack.length && !plans.length)}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'صدّر 3 نهائيات'}</button><button type="button" className={primary} disabled={campaignBusy} onClick={() => { buildCampaign(); setStage('publish') }}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة سردية'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {artDirections.map((direction, index) => <article key={direction.id} className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-[.62rem] font-bold text-accent">الرؤية {index + 1}</span><h4 className="mt-1 text-[.9rem] font-bold text-ink">{direction.title}</h4></div><span className="rounded-full bg-paper px-2 py-1 text-[.62rem] font-semibold text-accent">قرب الهوية {direction.identityFit}٪</span></div><p className="mt-2 text-[.72rem] leading-relaxed text-soft">{direction.description}</p><dl className="mt-3 grid gap-2"><div><dt className="text-[.6rem] font-semibold text-soft">الشعور</dt><dd className="text-[.68rem] text-ink">{direction.feeling}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الصورة المطلوبة</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.imageNeed}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الخطر</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.risk}</dd></div></dl><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => generate({ tone: direction.tone, platform: direction.platform, preferLayout: direction.preferLayout })}>أعد بناء هذه الرؤية</button></article>)}

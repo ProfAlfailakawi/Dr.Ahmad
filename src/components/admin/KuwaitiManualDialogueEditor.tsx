@@ -565,7 +565,15 @@ export function KuwaitiManualDialogueEditor({ articles, onQueued }: { articles: 
            وجالبُ الحوار يرفضها بلا طلبٍ صريح. كانت تُطلب بدخول GitHub يدوياً؛
            صارت تُرسل من هنا. والشرط بقاءُ الحماية: تُرسل حين يوجد مرشّحٌ فعلاً
            وأنت من ضغط الزر — لا تلقائياً في كل إرسال. */
-        const replacingCandidate = Boolean(candidate) && candidate?.status === 'awaiting_approval'
+        /* [٢١ أغسطس ٢٠٢٦ — التصحيح الثاني] كان الشرط
+             Boolean(candidate) && candidate?.status === 'awaiting_approval'
+           فلم يتحقق عند الدكتور، فبقي الزر يقول «تم» ولا يرسل. والسبب أن حالة
+           المرشّح تُقرأ من Firestore وقد تكون 'publishing' أو لم تُحمَّل بعد.
+           والضغط على «حفظ وإرسال» في هذا المحرر **قصدٌ صريح دائماً**: قبله
+           قفلٌ سحابيّ وقراءةٌ راجعة للطابور. فحمايةُ الضغطتين لا تحتاج هذا
+           الشرط — يكفيها queueBusy الذي يعطّل الزر أثناء الطلب، ومجموعةُ
+           التزامن في الورك-فلو. */
+        const replacingCandidate = true
         const dispatch = await dispatchPodcastGeneration({
           user, slug, proof, variant: 'kuwaiti', regenerate: replacingCandidate,
         })

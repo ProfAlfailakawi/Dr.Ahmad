@@ -34,6 +34,7 @@ import {
   type CompositionPlan,
 } from '../../lib/social-design-engine'
 import { downloadCompositionRaster, renderCompositionSvg } from '../../lib/social-design-renderer'
+import { LivingMetaphorIcon, LivingIconToggle, useLivingIconEnabled } from './LivingMetaphorIcon'
 import { dressPlanInWorld, planWorldId, type DesignWorld } from '../../lib/design-worlds'
 import DesignWorldsGallery from './DesignWorldsGallery'
 import {
@@ -2287,6 +2288,7 @@ function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPla
     }))
   }
   const svg = useMemo(() => renderCompositionSvg(draftPlan), [draftPlan])
+  const [livingIconOn] = useLivingIconEnabled()
   const preview = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, [svg])
   const release = useMemo(() => professionalReleaseGate(draftPlan), [draftPlan])
   const tier = release.tier === 'masterpiece'
@@ -2311,6 +2313,7 @@ function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPla
     <article className="overflow-hidden rounded-[1.35rem] border border-hair bg-canvas shadow-[0_16px_46px_rgba(15,23,42,.06)]">
       <div className="relative overflow-hidden bg-wash" style={{ aspectRatio: `${draftPlan.format.width} / ${draftPlan.format.height}` }}>
         <img src={preview} alt={`الاتجاه الاحترافي ${rank}: ${draftPlan.content.title}`} draggable={false} className="h-full w-full select-none object-cover" />
+        {livingIconOn && <LivingMetaphorIcon plan={draftPlan} />}
         <span className="absolute right-3 top-3 rounded-full border border-white/30 bg-black/55 px-2.5 py-1 text-[.56rem] font-black uppercase tracking-[.08em] text-white backdrop-blur">{tier}</span>
       </div>
       <div className="p-3.5">
@@ -4117,6 +4120,7 @@ ${effectivePurpose}`,
             <p className="text-[.76rem] font-semibold uppercase text-accent">منشور مستقل</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-ink">غرّد أو انشر فكرة… من دون أن تكتب مقالاً.</h2>
             <p className="mt-2 max-w-3xl text-[.84rem] leading-relaxed text-soft">اكتب خاطراً، موقفاً، سؤالاً أو تعليقاً على حدث. الاستوديو يصنع لكل منصة صياغتها وقالبها البصري، ويغيّر الشكل والنبرة في كل مرة.</p>
+            <div className="mt-3"><LivingIconToggle /></div>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_13rem_auto]">
               <Field label="الفكرة أو الجملة"><textarea className={`${input} min-h-28`} value={pulseIdea} onChange={(event) => { setPulseIdea(event.target.value); setPulsePack(null) }} placeholder="مثال: ليست المشكلة أن التكنولوجيا تتقدم… بل أن أسئلتنا التربوية تتأخر." /></Field>
               <Field label="الهدف أو الزاوية"><textarea className={`${input} min-h-28`} value={pulsePurpose} onChange={(event) => { setPulsePurpose(event.target.value); setPulsePack(null) }} placeholder="ماذا تريد أن يبقى في ذهن القارئ؟" /></Field>

@@ -67,6 +67,26 @@ export type MetaphorId =
   | 'balance-human-machine'
   | 'sprout-hand'
   | 'clock-gears'
+  | 'lightbulb'
+  | 'magnet'
+  | 'funnel'
+  | 'telescope'
+  | 'fingerprint'
+  | 'handshake'
+  | 'book-stack'
+  | 'graduation-cap'
+  | 'speech-bubbles'
+  | 'tree-grow'
+  | 'river-flow'
+  | 'infinity-loop'
+  | 'rocket'
+  | 'pyramid'
+  | 'spiral'
+  | 'atom'
+  | 'microscope'
+  | 'dna-helix'
+  | 'lantern'
+  | 'signpost'
 
 export interface MetaphorPaint {
   ink: string
@@ -1266,6 +1286,256 @@ const PAINTERS: Record<MetaphorId, Draw> = {
     ctx.globalAlpha = 1
   },
 
+
+  /* مصباحٌ يُضيء — الفكرة والإلهام والحلّ. */
+  lightbulb: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    stroke(ctx, paint.accent2, s * 0.012, 0.7 * g)
+    for (let i = 0; i < 8; i += 1) { const a = (i / 8) * TAU, r0 = s * 0.2, r1 = s * 0.27 + Math.sin(t * 2 + i) * s * 0.012; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r0, -s * 0.06 + Math.sin(a) * r0); ctx.lineTo(Math.cos(a) * r1, -s * 0.06 + Math.sin(a) * r1); ctx.stroke() }
+    ctx.fillStyle = paint.accent; ctx.globalAlpha = 0.14 * g; ctx.beginPath(); ctx.arc(0, -s * 0.06, s * 0.15, 0, TAU); ctx.fill(); ctx.globalAlpha = 1
+    stroke(ctx, paint.accent, s * 0.02, g); ctx.beginPath(); ctx.arc(0, -s * 0.06, s * 0.15, 0, TAU); ctx.stroke()
+    stroke(ctx, paint.ink, s * 0.012, g); ctx.beginPath(); ctx.moveTo(-s * 0.05, -s * 0.02); ctx.lineTo(-s * 0.02, -s * 0.09); ctx.lineTo(s * 0.02, -s * 0.02); ctx.lineTo(s * 0.05, -s * 0.09); ctx.stroke()
+    stroke(ctx, paint.dim, s * 0.016, g); ctx.beginPath(); ctx.moveTo(-s * 0.06, s * 0.1); ctx.lineTo(s * 0.06, s * 0.1); ctx.moveTo(-s * 0.05, s * 0.14); ctx.lineTo(s * 0.05, s * 0.14); ctx.stroke()
+    ctx.globalAlpha = 1
+  },
+
+  /* مغناطيسٌ على شكل حدوة — الجذب والتأثير والدافعية. */
+  magnet: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    stroke(ctx, paint.accent, s * 0.055, g)
+    ctx.beginPath(); ctx.moveTo(-s * 0.14, s * 0.16); ctx.lineTo(-s * 0.14, -s * 0.02); ctx.arc(0, -s * 0.02, s * 0.14, Math.PI, 0, false); ctx.lineTo(s * 0.14, s * 0.16); ctx.stroke()
+    stroke(ctx, paint.danger, s * 0.055, g); ctx.beginPath(); ctx.moveTo(-s * 0.14, s * 0.16); ctx.lineTo(-s * 0.14, s * 0.07); ctx.stroke()
+    stroke(ctx, paint.ink, s * 0.055, g); ctx.beginPath(); ctx.moveTo(s * 0.14, s * 0.16); ctx.lineTo(s * 0.14, s * 0.07); ctx.stroke()
+    stroke(ctx, paint.accent2, s * 0.01, 0.6 * g)
+    for (let i = 1; i <= 2; i += 1) { const off = i * s * 0.06; ctx.beginPath(); ctx.moveTo(-s * 0.14, s * 0.16 - off * 0.2); ctx.quadraticCurveTo(0, s * 0.14 - off - s * 0.08, s * 0.14, s * 0.16 - off * 0.2); ctx.stroke() }
+    ctx.globalAlpha = 1
+  },
+
+  /* قمعٌ يصفّي الكثرة إلى جوهر — التصفية والتلخيص والانتقاء. */
+  funnel: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    stroke(ctx, paint.accent, s * 0.018, g)
+    ctx.beginPath(); ctx.moveTo(-s * 0.22, -s * 0.16); ctx.lineTo(s * 0.22, -s * 0.16); ctx.lineTo(s * 0.05, s * 0.04); ctx.lineTo(s * 0.05, s * 0.16); ctx.lineTo(-s * 0.05, s * 0.16); ctx.lineTo(-s * 0.05, s * 0.04); ctx.closePath(); ctx.stroke()
+    stroke(ctx, paint.dim, s * 0.012, 0.7 * g)
+    for (let i = 0; i < 4; i += 1) { const x = -s * 0.16 + i * s * 0.1; ctx.beginPath(); ctx.arc(x, -s * 0.12, s * 0.02, 0, TAU); ctx.stroke() }
+    const drop = (t * 0.5) % 1
+    ctx.fillStyle = paint.accent2; ctx.globalAlpha = g; ctx.beginPath(); ctx.arc(0, s * 0.16 + drop * s * 0.08, s * 0.022, 0, TAU); ctx.fill()
+    ctx.globalAlpha = 1
+  },
+
+  /* تلسكوبٌ يستشرف البعيد — الرؤية والاستشراف والمستقبل. */
+  telescope: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    ctx.save(); ctx.rotate(-0.5)
+    stroke(ctx, paint.ink, s * 0.05, g); ctx.beginPath(); ctx.moveTo(-s * 0.16, 0); ctx.lineTo(s * 0.14, 0); ctx.stroke()
+    stroke(ctx, paint.accent, s * 0.07, g); ctx.beginPath(); ctx.moveTo(s * 0.08, 0); ctx.lineTo(s * 0.2, 0); ctx.stroke()
+    ctx.restore()
+    stroke(ctx, paint.dim, s * 0.014, g); ctx.beginPath(); ctx.moveTo(-s * 0.06, s * 0.06); ctx.lineTo(-s * 0.12, s * 0.2); ctx.moveTo(-s * 0.02, s * 0.07); ctx.lineTo(s * 0.04, s * 0.2); ctx.stroke()
+    stroke(ctx, paint.accent2, s * 0.01, 0.7 * g)
+    for (let i = 0; i < 3; i += 1) { const a = -0.9 + i * 0.25, r = s * 0.24 + i * s * 0.03; ctx.beginPath(); ctx.arc(s * 0.16, -s * 0.09, r, a - 0.12, a + 0.12); ctx.stroke() }
+    ctx.globalAlpha = 1
+  },
+
+  /* بصمةٌ — الهوية والخصوصية والتفرّد. */
+  fingerprint: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    for (let i = 0; i < 5; i += 1) {
+      const rr = s * (0.06 + i * 0.038)
+      stroke(ctx, i % 2 ? paint.accent : paint.ink, s * 0.012, (0.5 + i * 0.1) * g)
+      ctx.beginPath(); ctx.arc(0, 0, rr, Math.PI * 0.15, Math.PI * 1.75); ctx.stroke()
+    }
+    stroke(ctx, paint.accent2, s * 0.012, g); ctx.beginPath(); ctx.arc(0, 0, s * 0.024, 0, TAU); ctx.stroke()
+    ctx.globalAlpha = 1
+  },
+
+  /* مصافحةٌ — الاتفاق والشراكة والثقة. */
+  handshake: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    stroke(ctx, paint.accent, s * 0.05, g)
+    ctx.beginPath(); ctx.moveTo(-s * 0.24, -s * 0.02); ctx.lineTo(-s * 0.04, s * 0.06); ctx.stroke()
+    stroke(ctx, paint.ink, s * 0.05, g)
+    ctx.beginPath(); ctx.moveTo(s * 0.24, -s * 0.02); ctx.lineTo(s * 0.04, s * 0.06); ctx.stroke()
+    ctx.fillStyle = paint.accent2; ctx.globalAlpha = g; ctx.beginPath(); ctx.arc(0, s * 0.055, s * 0.055, 0, TAU); ctx.fill(); ctx.globalAlpha = 1
+    stroke(ctx, paint.accent2, s * 0.01, 0.6 * g)
+    for (let i = -1; i <= 1; i += 1) { ctx.beginPath(); ctx.moveTo(i * s * 0.05, -s * 0.06); ctx.lineTo(i * s * 0.07, -s * 0.12); ctx.stroke() }
+    ctx.globalAlpha = 1
+  },
+
+  /* كومةُ كتب — المعرفة المتراكمة والمرجعية والعمق. */
+  'book-stack': (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    const cols = [paint.accent, paint.ink, paint.accent2]
+    for (let i = 0; i < 3; i += 1) {
+      const y = s * 0.14 - i * s * 0.11, w = s * (0.34 - i * 0.03), off = (i % 2 ? 1 : -1) * s * 0.02
+      const rise = ease(Math.max(0, (p - i * 0.18) / 0.5))
+      stroke(ctx, cols[i], s * 0.014, rise)
+      ctx.beginPath(); ctx.rect(-w / 2 + off, y - s * 0.08 * rise, w, s * 0.08 * rise); ctx.stroke()
+      stroke(ctx, paint.dim, s * 0.008, 0.6 * rise); ctx.beginPath(); ctx.moveTo(-w / 2 + off + s * 0.03, y - s * 0.04 * rise); ctx.lineTo(w / 2 + off - s * 0.03, y - s * 0.04 * rise); ctx.stroke()
+    }
+    ctx.globalAlpha = 1
+  },
+
+  /* قبعةُ تخرّج — التعليم والإنجاز والكفاءة. */
+  'graduation-cap': (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    ctx.fillStyle = paint.ink; ctx.globalAlpha = g
+    ctx.beginPath(); ctx.moveTo(0, -s * 0.14); ctx.lineTo(s * 0.26, -s * 0.02); ctx.lineTo(0, s * 0.1); ctx.lineTo(-s * 0.26, -s * 0.02); ctx.closePath(); ctx.fill()
+    ctx.globalAlpha = 1
+    stroke(ctx, paint.accent, s * 0.016, g); ctx.beginPath(); ctx.moveTo(-s * 0.14, s * 0.02); ctx.lineTo(-s * 0.14, s * 0.13); ctx.quadraticCurveTo(0, s * 0.2, s * 0.14, s * 0.13); ctx.lineTo(s * 0.14, s * 0.02); ctx.stroke()
+    stroke(ctx, paint.accent2, s * 0.012, g); ctx.beginPath(); ctx.moveTo(s * 0.26, -s * 0.02); ctx.lineTo(s * 0.26, s * 0.1); ctx.stroke()
+    ctx.fillStyle = paint.accent2; ctx.beginPath(); ctx.arc(s * 0.26, s * 0.12, s * 0.022, 0, TAU); ctx.fill()
+    ctx.globalAlpha = 1
+  },
+
+  /* فقاعتا حوار — النقاش والتواصل والرأي. */
+  'speech-bubbles': (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    const bub = (x: number, y: number, r: number, col: string, a: number) => { stroke(ctx, col, s * 0.016, a); ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x - r * 0.3, y + r * 0.8); ctx.lineTo(x - r * 0.1, y + r * 1.25); ctx.lineTo(x + r * 0.2, y + r * 0.9); ctx.stroke() }
+    bub(-s * 0.1, -s * 0.06, s * 0.14, paint.accent, g)
+    bub(s * 0.12, s * 0.02, s * 0.11, paint.accent2, ease(Math.max(0, (p - 0.3) / 0.7)))
+    stroke(ctx, paint.ink, s * 0.012, 0.7 * g)
+    for (let i = -1; i <= 1; i += 1) { ctx.beginPath(); ctx.arc(-s * 0.1 + i * s * 0.05, -s * 0.06, s * 0.012, 0, TAU); ctx.stroke() }
+    ctx.globalAlpha = 1
+  },
+
+  /* شجرةٌ تنمو — النموّ والتجذّر والثمر. */
+  'tree-grow': (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    stroke(ctx, paint.ink, s * 0.03, g); ctx.beginPath(); ctx.moveTo(0, s * 0.2); ctx.lineTo(0, -s * 0.02); ctx.stroke()
+    const branch = (ang: number, len: number, depth: number) => { if (depth <= 0) return; const gr = ease(Math.max(0, (p - (3 - depth) * 0.2) / 0.6)); if (gr <= 0) return; ctx.save(); ctx.rotate(ang); stroke(ctx, depth === 3 ? paint.ink : paint.accent, s * 0.012 * depth, gr); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -len * gr); ctx.stroke(); ctx.translate(0, -len * gr); branch(-0.5, len * 0.7, depth - 1); branch(0.5, len * 0.7, depth - 1); ctx.restore() }
+    ctx.save(); ctx.translate(0, -s * 0.02); branch(0, s * 0.14, 3); ctx.restore()
+    ctx.fillStyle = paint.accent2; ctx.globalAlpha = 0.16 * g; ctx.beginPath(); ctx.arc(0, -s * 0.16, s * 0.16, 0, TAU); ctx.fill(); ctx.globalAlpha = 1
+  },
+
+  /* نهرٌ يجري — التدفّق والاستمرار والمسار. */
+  'river-flow': (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    for (let i = 0; i < 3; i += 1) {
+      stroke(ctx, i === 1 ? paint.accent : paint.accent2, s * (0.02 - i * 0.004), (0.5 + (2 - i) * 0.2) * g)
+      ctx.beginPath()
+      for (let x = -0.26; x <= 0.26; x += 0.02) { const y = Math.sin(x * 10 + t + i) * s * 0.05 + (i - 1) * s * 0.03; const px = x * s; if (x === -0.26) ctx.moveTo(px, y); else ctx.lineTo(px, y) }
+      ctx.stroke()
+    }
+    ctx.globalAlpha = 1
+  },
+
+  /* لانهاية — الاستمرارية والدورة والترابط. */
+  'infinity-loop': (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    stroke(ctx, paint.accent, s * 0.02, g)
+    ctx.beginPath()
+    for (let i = 0; i <= 60; i += 1) { const a = (i / 60) * TAU, x = Math.sin(a) * s * 0.22, y = Math.sin(a * 2) * s * 0.11; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y) }
+    ctx.stroke()
+    const a = (t * 0.6) % TAU
+    ctx.fillStyle = paint.accent2; ctx.globalAlpha = g; ctx.beginPath(); ctx.arc(Math.sin(a) * s * 0.22, Math.sin(a * 2) * s * 0.11, s * 0.03, 0, TAU); ctx.fill()
+    ctx.globalAlpha = 1
+  },
+
+  /* صاروخٌ ينطلق — الانطلاق والتسارع والطموح. */
+  rocket: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    stroke(ctx, paint.ink, s * 0.018, g)
+    ctx.beginPath(); ctx.moveTo(0, -s * 0.22); ctx.quadraticCurveTo(s * 0.1, -s * 0.05, s * 0.08, s * 0.08); ctx.lineTo(-s * 0.08, s * 0.08); ctx.quadraticCurveTo(-s * 0.1, -s * 0.05, 0, -s * 0.22); ctx.stroke()
+    stroke(ctx, paint.accent, s * 0.014, g); ctx.beginPath(); ctx.arc(0, -s * 0.06, s * 0.04, 0, TAU); ctx.stroke()
+    stroke(ctx, paint.accent2, s * 0.014, g)
+    ctx.beginPath(); ctx.moveTo(-s * 0.08, s * 0.02); ctx.lineTo(-s * 0.16, s * 0.12); ctx.lineTo(-s * 0.08, s * 0.08); ctx.moveTo(s * 0.08, s * 0.02); ctx.lineTo(s * 0.16, s * 0.12); ctx.lineTo(s * 0.08, s * 0.08); ctx.stroke()
+    const fl = 0.6 + Math.sin(t * 8) * 0.4
+    ctx.fillStyle = paint.danger; ctx.globalAlpha = g; ctx.beginPath(); ctx.moveTo(-s * 0.05, s * 0.09); ctx.lineTo(0, s * 0.09 + s * 0.12 * fl); ctx.lineTo(s * 0.05, s * 0.09); ctx.closePath(); ctx.fill()
+    ctx.globalAlpha = 1
+  },
+
+  /* هرمٌ — التراتب والأساس المتين والبناء. */
+  pyramid: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    const cols = [paint.accent, paint.ink, paint.accent2]
+    for (let i = 0; i < 3; i += 1) {
+      const rise = ease(Math.max(0, (p - (2 - i) * 0.2) / 0.6)); if (rise <= 0) continue
+      const yTop = s * 0.16 - (i + 1) * s * 0.1, yBot = s * 0.16 - i * s * 0.1
+      const wTop = (i + 1) * s * 0.08, wBot = i * s * 0.08
+      stroke(ctx, cols[i], s * 0.012, rise)
+      ctx.beginPath(); ctx.moveTo(-wBot, yBot); ctx.lineTo(-wTop, yTop); ctx.lineTo(wTop, yTop); ctx.lineTo(wBot, yBot); ctx.stroke()
+    }
+    stroke(ctx, paint.accent2, s * 0.014, g); ctx.beginPath(); ctx.moveTo(-s * 0.24, s * 0.16); ctx.lineTo(s * 0.24, s * 0.16); ctx.stroke()
+    ctx.globalAlpha = 1
+  },
+
+  /* حلزونٌ — التطوّر التدريجي والتعمّق. */
+  spiral: (ctx, s, t, p, paint) => {
+    const turns = 3.2, g = ease(p)
+    stroke(ctx, paint.accent, s * 0.016, g)
+    ctx.beginPath()
+    const N = Math.floor(90 * g)
+    for (let i = 0; i <= N; i += 1) { const f = i / 90, a = f * turns * TAU + t * 0.3, r = f * s * 0.24; const x = Math.cos(a) * r, y = Math.sin(a) * r; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y) }
+    ctx.stroke()
+    ctx.fillStyle = paint.accent2; ctx.globalAlpha = g; ctx.beginPath(); ctx.arc(0, 0, s * 0.024, 0, TAU); ctx.fill()
+    ctx.globalAlpha = 1
+  },
+
+  /* ذرّةٌ — العلم والبنية والطاقة. */
+  atom: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    for (let i = 0; i < 3; i += 1) {
+      ctx.save(); ctx.rotate((i / 3) * Math.PI)
+      stroke(ctx, paint.accent, s * 0.012, 0.8 * g)
+      ctx.beginPath(); ctx.ellipse(0, 0, s * 0.24, s * 0.09, 0, 0, TAU); ctx.stroke()
+      const a = t * 1.6 + i * 2.1
+      ctx.fillStyle = paint.accent2; ctx.globalAlpha = g; ctx.beginPath(); ctx.arc(Math.cos(a) * s * 0.24, Math.sin(a) * s * 0.09, s * 0.022, 0, TAU); ctx.fill()
+      ctx.restore()
+    }
+    ctx.fillStyle = paint.ink; ctx.globalAlpha = g; ctx.beginPath(); ctx.arc(0, 0, s * 0.04, 0, TAU); ctx.fill()
+    ctx.globalAlpha = 1
+  },
+
+  /* مجهرٌ — البحث والتدقيق والملاحظة الدقيقة. */
+  microscope: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    stroke(ctx, paint.ink, s * 0.02, g)
+    ctx.beginPath(); ctx.moveTo(-s * 0.02, -s * 0.18); ctx.lineTo(s * 0.08, -s * 0.02); ctx.stroke()
+    stroke(ctx, paint.accent, s * 0.03, g); ctx.beginPath(); ctx.arc(-s * 0.02, -s * 0.18, s * 0.03, 0, TAU); ctx.stroke()
+    stroke(ctx, paint.ink, s * 0.016, g); ctx.beginPath(); ctx.moveTo(s * 0.02, -s * 0.08); ctx.lineTo(-s * 0.06, s * 0.08); ctx.stroke()
+    stroke(ctx, paint.accent2, s * 0.018, g); ctx.beginPath(); ctx.moveTo(-s * 0.18, s * 0.16); ctx.lineTo(s * 0.14, s * 0.16); ctx.stroke()
+    stroke(ctx, paint.ink, s * 0.014, g); ctx.beginPath(); ctx.moveTo(-s * 0.06, s * 0.08); ctx.lineTo(-s * 0.02, s * 0.16); ctx.stroke()
+    ctx.fillStyle = paint.accent; ctx.globalAlpha = 0.5 * g; ctx.beginPath(); ctx.arc(-s * 0.02, s * 0.13, s * 0.02, 0, TAU); ctx.fill()
+    ctx.globalAlpha = 1
+  },
+
+  /* حلزونٌ وراثي — الأصل والتكوين والتوريث. */
+  'dna-helix': (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    const N = 10
+    for (let i = 0; i <= N; i += 1) {
+      const f = i / N, y = (f - 0.5) * s * 0.44, a = f * TAU * 1.6 + t
+      const x1 = Math.cos(a) * s * 0.14, x2 = Math.cos(a + Math.PI) * s * 0.14
+      const app = ease(Math.max(0, (p - f * 0.4)))
+      if (app <= 0) continue
+      stroke(ctx, paint.dim, s * 0.008, 0.5 * app); ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke()
+      ctx.fillStyle = paint.accent; ctx.globalAlpha = app; ctx.beginPath(); ctx.arc(x1, y, s * 0.02, 0, TAU); ctx.fill()
+      ctx.fillStyle = paint.accent2; ctx.beginPath(); ctx.arc(x2, y, s * 0.02, 0, TAU); ctx.fill()
+    }
+    ctx.globalAlpha = 1
+  },
+
+  /* فانوسٌ — الهداية والتراث والنور في العتمة. */
+  lantern: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    ctx.fillStyle = paint.accent; ctx.globalAlpha = 0.16 * g; ctx.beginPath(); ctx.arc(0, s * 0.02, s * 0.2, 0, TAU); ctx.fill(); ctx.globalAlpha = 1
+    stroke(ctx, paint.ink, s * 0.016, g)
+    ctx.beginPath(); ctx.moveTo(-s * 0.1, -s * 0.1); ctx.lineTo(s * 0.1, -s * 0.1); ctx.lineTo(s * 0.12, s * 0.12); ctx.lineTo(-s * 0.12, s * 0.12); ctx.closePath(); ctx.stroke()
+    stroke(ctx, paint.dim, s * 0.014, g); ctx.beginPath(); ctx.moveTo(-s * 0.13, s * 0.12); ctx.lineTo(s * 0.13, s * 0.12); ctx.moveTo(-s * 0.07, -s * 0.1); ctx.lineTo(-s * 0.07, -s * 0.16); ctx.lineTo(s * 0.07, -s * 0.16); ctx.lineTo(s * 0.07, -s * 0.1); ctx.stroke()
+    const fl = 0.7 + Math.sin(t * 6) * 0.3
+    ctx.fillStyle = paint.danger; ctx.globalAlpha = g; ctx.beginPath(); ctx.moveTo(0, s * 0.06); ctx.quadraticCurveTo(s * 0.04, -s * 0.02, 0, -s * 0.06 * fl); ctx.quadraticCurveTo(-s * 0.04, -s * 0.02, 0, s * 0.06); ctx.fill()
+    ctx.globalAlpha = 1
+  },
+
+  /* لافتةُ اتجاه — القرار والتوجيه ووضوح المسار. */
+  signpost: (ctx, s, t, p, paint) => {
+    const g = ease(p)
+    stroke(ctx, paint.ink, s * 0.022, g); ctx.beginPath(); ctx.moveTo(0, s * 0.22); ctx.lineTo(0, -s * 0.16); ctx.stroke()
+    const board = (y: number, dir: number, col: string, a: number) => { const w = s * 0.24; ctx.fillStyle = col; ctx.globalAlpha = 0.85 * a; ctx.beginPath(); if (dir > 0) { ctx.moveTo(-s * 0.02, y - s * 0.05); ctx.lineTo(w * 0.7, y - s * 0.05); ctx.lineTo(w * 0.85, y); ctx.lineTo(w * 0.7, y + s * 0.05); ctx.lineTo(-s * 0.02, y + s * 0.05); } else { ctx.moveTo(s * 0.02, y - s * 0.05); ctx.lineTo(-w * 0.7, y - s * 0.05); ctx.lineTo(-w * 0.85, y); ctx.lineTo(-w * 0.7, y + s * 0.05); ctx.lineTo(s * 0.02, y + s * 0.05); } ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1 }
+    board(-s * 0.08, 1, paint.accent, g)
+    board(s * 0.04, -1, paint.accent2, ease(Math.max(0, (p - 0.3) / 0.7)))
+    ctx.globalAlpha = 1
+  },
 }
 
 /** يرسم استعارةً في المركز المعطى. */
@@ -1327,6 +1597,23 @@ const METAPHOR_CUES: { id: MetaphorId; cues: RegExp }[] = [
   // الموجة الثانية — مقدَّمة كي تُرجَّح عند وجود مصطلحها الخاص
   { id: 'balance-human-machine', cues: /(الإنسان قبل الآلة|إنسانية الآلة|توازن الإنسان|الإنسان والآلة|يتنازل الإنسان|الآلة والإنسان)/ },
   { id: 'brain-circuit', cues: /(تعلّم آلي|تعلم آلي|شبكة عصبية|ذكاء اصطناعي|نموذج لغوي|خوارزمية تتعلم|عقل رقمي)/ },
+  // الموجة الثالثة — رموزٌ جديدة تُرجَّح عند مصطلحها الخاص
+  { id: 'lightbulb', cues: /(فكرة|إلهام|ابتكار|إبداع|حلّ|ومضة|بصيرة)/ },
+  { id: 'rocket', cues: /(انطلاق|تسارع|إطلاق|طموح|قفزة|نهضة|تسريع)/ },
+  { id: 'tree-grow', cues: /(نموّ|نمو|تجذّر|ازدهار|ثمر|رعاية|تنمية)/ },
+  { id: 'graduation-cap', cues: /(تخرّج|تعلّم|تعليم|كفاءة|شهادة|إتقان|مهارة)/ },
+  { id: 'microscope', cues: /(بحث علمي|تدقيق|فحص|ملاحظة|منهج|دقّة|تمحيص)/ },
+  { id: 'telescope', cues: /(استشراف|رؤية مستقبلية|المستقبل|أفق|تنبّؤ|بُعد النظر)/ },
+  { id: 'handshake', cues: /(اتفاق|شراكة|تعاون|توافق|تحالف|ثقة متبادلة)/ },
+  { id: 'speech-bubbles', cues: /(حوار|نقاش|تواصل|مناظرة|رأي|أخذ وردّ)/ },
+  { id: 'signpost', cues: /(قرار|توجيه|اتجاه|اختيار مسار|بوصلة القرار|وجهة)/ },
+  { id: 'funnel', cues: /(تصفية|تلخيص|انتقاء|تقطير|جوهر|خلاصة)/ },
+  { id: 'fingerprint', cues: /(هوية|خصوصية|بصمة|تفرّد|أصالة شخصية)/ },
+  { id: 'atom', cues: /(علم|فيزياء|بنية|طاقة|جوهر المادة|أساس علمي)/ },
+  { id: 'infinity-loop', cues: /(استمرارية|دورة|لا نهاية|تكرار|دوام|حلقة)/ },
+  { id: 'dna-helix', cues: /(أصل|تكوين|توريث|جينات|شيفرة|تركيبة)/ },
+  { id: 'book-stack', cues: /(معرفة متراكمة|مرجع|مصادر|قراءة|مكتبة|اطّلاع)/ },
+  { id: 'lantern', cues: /(هداية|تراث|نور|إرشاد|ضياء|منارة)/ },
   { id: 'data-flow', cues: /(بيانات|تدفّق|تدفق|معالجة|بيانات ضخمة|تحليل بيانات|قاعدة بيانات|معلومات)/ },
   { id: 'vr-portal', cues: /(واقع افتراضي|واقع معزز|بيئة غامرة|ميتافيرس|عالم افتراضي|محاكاة|غامر)/ },
   { id: 'megaphone', cues: /(إعلام|رسالة|صوت|منبر|خطاب|دعوة|نشر|تأثير إعلامي|رأي عام)/ },

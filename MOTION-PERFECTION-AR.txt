@@ -4,6 +4,7 @@
 الملفات المعدلة
 package.json
 scripts/test-motion-perfection.mjs
+scripts/test-studio-ui-contract.mjs
 src/components/admin/DesignWorldsGallery.tsx
 src/components/admin/LivingMetaphorIcon.tsx
 src/components/admin/PublishingStudio.tsx

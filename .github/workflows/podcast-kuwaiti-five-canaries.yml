@@ -34,7 +34,7 @@ jobs:
           set -euo pipefail
           node - <<'NODE'
           const fs = require('fs'); const crypto = require('crypto');
-          const lib = JSON.parse(fs.readFileSync('src/data/kuwaiti-dialogues-short.json', 'utf8'));
+          const lib = JSON.parse(fs.readFileSync('src/data/kuwaiti-diwania-v2-canaries.json', 'utf8'));
           const slugs = [
             'success-that-does-not-bring-joy-to-its-ownerarabic',
             'the-classroom-that-fears-mistakesarabic',
@@ -51,12 +51,12 @@ jobs:
             const hash = crypto.createHash('sha256').update(body).digest('hex');
             fs.writeFileSync(`manual-dialogues-kuwaiti/${slug}.json`, body);
             fs.writeFileSync(`podcast-audits/source-locks-kuwaiti/${slug}.json`, JSON.stringify({
-              slug, revisionId: `canary-${hash.slice(0, 24)}`, sourceVariant: 'condensed-2m30-v1',
+              slug, revisionId: `diwania-v2-${hash.slice(0, 24)}`, sourceVariant: 'human-diwania-dna-v2',
               turnCount: turns.length, bridgeCount: 2, shortContentSha256: hash,
             }, null, 2));
           }
           fs.writeFileSync('five-canary-slugs.txt', slugs.join('\n') + '\n');
-          console.log('✓ خمس حلقات مختلفة، كل واحدة ~2:30 وبجسرين');
+          console.log('✓ خمس محادثات ديوانية v2، كل واحدة ~2:30 وبجسرين مونتاجيين');
           NODE
 
       - name: Generate the five episodes sequentially
@@ -67,7 +67,9 @@ jobs:
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
           PODCAST_KW_PROMPT_MODE: c
-          PODCAST_KW_SPLIT_AT_BRIDGES: '1'
+          # الجسر يبقى في المكساج، ولا يفتح نداء TTS جديداً. كل نداء جديد
+          # أعاد تكوين الحنجرة واللهجة من الصفر في عينات ٢٢ أغسطس.
+          PODCAST_KW_SPLIT_AT_BRIDGES: '0'
           PODCAST_KW_MIN_GAP: '12'
         run: |
           set -uo pipefail
@@ -97,7 +99,7 @@ jobs:
       - name: Upload one listening package
         uses: actions/upload-artifact@v6
         with:
-          name: five-kuwaiti-2m30-canaries
+          name: five-kuwaiti-diwania-v2-single-call
           path: five-canaries/
           if-no-files-found: error
           retention-days: 30

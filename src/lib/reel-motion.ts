@@ -171,16 +171,40 @@ function lineSprite(text: string, px: number, color: string, weight = 700, font 
   return sprite
 }
 
-/** حجم يلائم العرض — السطر الطويل ينزل حجمه بدل أن ينكسر. */
-function fitSize(text: string, base: number): number {
+interface TextBlockLayout { px: number; lines: string[]; lineHeight: number; height: number }
+
+/** لفّ عربي مقاس فعلياً بالخط النهائي — لا قصّ حروف ولا خروج من إطار 9:16. */
+function fitTextBlock(text: string, base: number, maxLines = 3, maxWidth = REEL_WIDTH * 0.84): TextBlockLayout {
   const probe = offscreen(8, 8).ctx
-  let px = base
-  while (px > 40) {
+  const words = text.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean)
+  for (let px = base; px >= 34; px -= 3) {
     probe.font = `700 ${px}px ${DISPLAY_FONT}`
-    if (probe.measureText(text).width <= REEL_WIDTH * 0.86) break
-    px -= 4
+    const lines: string[] = []
+    let current = ''
+    for (const word of words) {
+      const next = current ? `${current} ${word}` : word
+      if (probe.measureText(next).width <= maxWidth || !current) current = next
+      else { lines.push(current); current = word }
+    }
+    if (current) lines.push(current)
+    if (lines.length <= maxLines && lines.every((line) => probe.measureText(line).width <= maxWidth)) {
+      const lineHeight = px * 1.2
+      return { px, lines, lineHeight, height: lines.length * lineHeight }
+    }
   }
-  return px
+  /* لا نبتُر النص حتى في الحالة القصوى؛ نزيد الأسطر ويظل كله داخل العرض. */
+  const px = 34
+  probe.font = `700 ${px}px ${DISPLAY_FONT}`
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word
+    if (probe.measureText(next).width <= maxWidth || !current) current = next
+    else { lines.push(current); current = word }
+  }
+  if (current) lines.push(current)
+  const lineHeight = px * 1.2
+  return { px, lines, lineHeight, height: lines.length * lineHeight }
 }
 
 /** كشف من اليمين لليسار مع ريشة متوهجة عند جبهة الكتابة. */
@@ -212,42 +236,31 @@ function writeLine(ctx: CanvasRenderingContext2D, text: string, px: number, colo
   }
 }
 
+function writeTextBlock(ctx: CanvasRenderingContext2D, text: string, base: number, color: string, cy: number, progress: number, glowColor?: string, nib = false, maxLines = 3) {
+  const block = fitTextBlock(text, base, maxLines)
+  const startY = cy - (block.lines.length - 1) * block.lineHeight / 2
+  block.lines.forEach((line, index) => {
+    const lineStart = index / block.lines.length * 0.34
+    const lineProgress = Math.max(0, Math.min(1, (progress - lineStart) / Math.max(0.2, 1 - lineStart)))
+    writeLine(ctx, line, block.px, color, startY + index * block.lineHeight, lineProgress, glowColor, nib && index === block.lines.length - 1)
+  })
+  return block
+}
+
 function fadeLine(ctx: CanvasRenderingContext2D, text: string, px: number, color: string, cy: number, alpha: number, weight = 500, font = BODY_FONT, rise = 14) {
   if (alpha <= 0) return
-  const sprite = lineSprite(text, px, color, weight, font)
+  const probe = offscreen(8, 8).ctx
+  let fitted = px
+  while (fitted > 22) {
+    probe.font = `${weight} ${fitted}px ${font}`
+    if (probe.measureText(text).width <= REEL_WIDTH * 0.86) break
+    fitted -= 2
+  }
+  const sprite = lineSprite(text, fitted, color, weight, font)
   ctx.save()
   ctx.globalAlpha = Math.min(1, alpha)
   ctx.drawImage(sprite.canvas, (REEL_WIDTH - sprite.canvas.width) / 2, cy - sprite.height / 2 + (1 - Math.min(1, alpha)) * rise)
   ctx.restore()
-}
-
-/** يلفّ نصاً إلى أسطر لا تتجاوز عرضاً معطى — للعناوين الطويلة كي لا تُقصّ. */
-function wrapWords(text: string, px: number, maxWidth: number, font: string, weight: number): string[] {
-  const probe = offscreen(8, 8).ctx
-  probe.font = `${weight} ${px}px ${font}`
-  const words = text.split(' ')
-  const lines: string[] = []
-  let cur = ''
-  for (const word of words) {
-    const trial = cur ? `${cur} ${word}` : word
-    if (!cur || probe.measureText(trial).width <= maxWidth) cur = trial
-    else { lines.push(cur); cur = word }
-  }
-  if (cur) lines.push(cur)
-  return lines
-}
-
-/** يعرض عنواناً كاملاً ملفوفاً ومقيساً تلقائياً حول محورٍ رأسي — بلا قصّ. */
-function fadeWrapped(ctx: CanvasRenderingContext2D, text: string, basePx: number, color: string, cyCenter: number, alpha: number, maxWidthFrac = 0.84, maxLines = 2, weight = 600, font = DISPLAY_FONT): number {
-  if (alpha <= 0 || !text) return 0
-  const maxW = REEL_WIDTH * maxWidthFrac
-  let px = basePx
-  let lines = wrapWords(text, px, maxW, font, weight)
-  while (lines.length > maxLines && px > 30) { px -= 3; lines = wrapWords(text, px, maxW, font, weight) }
-  const lh = px * 1.24
-  const top = cyCenter - ((lines.length - 1) * lh) / 2
-  lines.forEach((line, index) => fadeLine(ctx, line, px, color, top + index * lh, alpha, weight, font, 14))
-  return lines.length * lh
 }
 
 /* ------------------------------- الزخارف ------------------------------- */
@@ -362,6 +375,56 @@ function drawMotifs(ctx: CanvasRenderingContext2D, stage: Stage, motifs: ReelMot
   }
 }
 
+/** حقلٌ دلالي يحرك العالم نفسه بحسب فعل الكلمة، لا بحسب اسم القالب فقط. */
+function drawSemanticField(ctx: CanvasRenderingContext2D, plan: ReelPlan, progress: number, t: number) {
+  const world = plan.world
+  const cx = REEL_WIDTH / 2
+  const cy = REEL_HEIGHT * 0.46
+  const breathe = 0.5 + 0.5 * Math.sin(t * 1.35)
+  ctx.save()
+  ctx.strokeStyle = world.accent
+  ctx.fillStyle = world.accent
+  ctx.lineWidth = 3
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.globalAlpha = world.scheme === 'light' ? 0.1 : 0.14
+  if (plan.motionVerb === 'root') {
+    const grow = Math.min(1, progress * 1.8)
+    for (let branch = -4; branch <= 4; branch += 1) {
+      ctx.beginPath(); ctx.moveTo(cx, cy + 260); ctx.bezierCurveTo(cx + branch * 25, cy + 330, cx + branch * 58, cy + 410 * grow, cx + branch * 92, cy + 470 * grow); ctx.stroke()
+    }
+  } else if (plan.motionVerb === 'connect') {
+    const nodes = Array.from({ length: 9 }, (_, index) => ({ x: cx + Math.cos(index * 1.7 + t * 0.08) * (190 + (index % 3) * 78), y: cy + Math.sin(index * 1.2) * 330 }))
+    nodes.forEach((node, index) => { const other = nodes[(index + 4) % nodes.length]; ctx.beginPath(); ctx.moveTo(node.x, node.y); ctx.lineTo(other.x, other.y); ctx.stroke(); ctx.beginPath(); ctx.arc(node.x, node.y, 5 + breathe * 4, 0, Math.PI * 2); ctx.fill() })
+  } else if (plan.motionVerb === 'split') {
+    const gap = 18 + progress * 65
+    ctx.globalAlpha *= 1.35
+    ctx.beginPath(); ctx.moveTo(cx - gap, 300); ctx.lineTo(cx - gap, 1540); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(cx + gap, 300); ctx.lineTo(cx + gap, 1540); ctx.stroke()
+  } else if (plan.motionVerb === 'rise') {
+    ctx.beginPath(); ctx.moveTo(120, 1400); ctx.bezierCurveTo(340, 1310, 610, 1060 - progress * 80, 940, 570 - progress * 130); ctx.stroke()
+  } else if (plan.motionVerb === 'weave') {
+    for (let row = 0; row < 7; row += 1) { const y = 530 + row * 125; ctx.beginPath(); ctx.moveTo(80, y); ctx.bezierCurveTo(340, y + Math.sin(t + row) * 34, 740, y - Math.sin(t + row) * 34, 1000, y); ctx.stroke() }
+  } else if (plan.motionVerb === 'orbit') {
+    for (let ring = 0; ring < 4; ring += 1) { ctx.beginPath(); ctx.ellipse(cx, cy, 130 + ring * 105, 80 + ring * 72, ring * 0.38 + t * 0.018, 0, Math.PI * 2); ctx.stroke() }
+  } else if (plan.motionVerb === 'path') {
+    ctx.setLineDash([5, 20]); ctx.beginPath(); ctx.moveTo(120, 1400); ctx.bezierCurveTo(350, 420, 690, 1510, 950, 470); ctx.stroke(); ctx.setLineDash([])
+  } else if (plan.motionVerb === 'question') {
+    ctx.font = `700 520px ${DISPLAY_FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('؟', cx, cy)
+  } else if (plan.motionVerb === 'balance') {
+    ctx.beginPath(); ctx.moveTo(cx, 520); ctx.lineTo(cx, 1360); ctx.moveTo(250, 720); ctx.lineTo(830, 720); ctx.stroke()
+    ;[315, 765].forEach((x, index) => { ctx.beginPath(); ctx.arc(x, 930 + (index ? -1 : 1) * Math.sin(t) * 24, 120, 0, Math.PI); ctx.stroke() })
+  } else if (plan.motionVerb === 'pulse') {
+    for (let ring = 0; ring < 4; ring += 1) { ctx.globalAlpha = (world.scheme === 'light' ? 0.1 : 0.16) * (1 - ring * 0.16); ctx.beginPath(); ctx.arc(cx, cy, 120 + ring * 110 + breathe * 22, 0, Math.PI * 2); ctx.stroke() }
+  } else {
+    const sweep = (t * 0.12 % 1) * REEL_HEIGHT
+    const gradient = ctx.createLinearGradient(0, sweep - 180, 0, sweep + 180)
+    gradient.addColorStop(0, 'rgba(255,255,255,0)'); gradient.addColorStop(0.5, world.accent); gradient.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = gradient; ctx.globalAlpha = 0.08; ctx.fillRect(0, sweep - 180, REEL_WIDTH, 360)
+  }
+  ctx.restore()
+}
+
 /* ------------------------------- رسم المشهد ------------------------------- */
 
 function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene, local: number, t: number, dt: number) {
@@ -371,6 +434,7 @@ function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene
   const crisis = scene.kind === 'shift' ? Math.min(1, progress * 1.8) : scene.kind === 'truth' || scene.kind === 'close' ? 1 : 0
 
   drawMotifs(ctx, stage, plan.motifs, t, dt, scene.kind, crisis)
+  drawSemanticField(ctx, plan, progress, t)
 
   const centerY = REEL_HEIGHT * 0.46
   const accentColor = scene.accent ? world.accent : world.ink
@@ -378,21 +442,18 @@ function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene
 
   if (scene.kind === 'signature') {
     const settle = Math.min(1, progress * 1.5)
-    const px = fitSize(scene.line, 96)
     ctx.save()
     ctx.globalAlpha = settle
     const scale = 1.22 - 0.22 * (1 - Math.pow(1 - settle, 3))
     ctx.translate(REEL_WIDTH / 2, centerY)
     ctx.scale(scale, scale)
     ctx.translate(-REEL_WIDTH / 2, -centerY)
-    writeLine(ctx, scene.line, px, world.ink, centerY - 30, settle, world.accent)
+    writeTextBlock(ctx, scene.line, 92, world.ink, centerY - 30, settle, world.accent, false, 3)
     ctx.restore()
-    fadeLine(ctx, plan.title, 42, world.accent, centerY + 92, Math.min(1, (progress - 0.35) * 2.4), 600, DISPLAY_FONT)
+    fadeLine(ctx, plan.footerMark, 36, world.accent, centerY + 150, Math.min(1, (progress - 0.35) * 2.4), 600, DISPLAY_FONT)
   } else if (scene.kind === 'close') {
-    /* العنوان كاملاً — ملفوفاً على سطرين ومقيساً، لا يُقصّ أبداً. */
-    fadeWrapped(ctx, scene.eyebrow || '', 46, world.dim, REEL_HEIGHT * 0.31, Math.min(1, progress * 3), 0.84, 2, 600, DISPLAY_FONT)
-    const px = fitSize(scene.line, 78)
-    writeLine(ctx, scene.line, px, world.accent, REEL_HEIGHT * 0.45, Math.min(1, progress * 1.6), world.accent, nib)
+    fadeLine(ctx, scene.eyebrow || '', 44, world.dim, REEL_HEIGHT * 0.33, Math.min(1, progress * 3))
+    writeTextBlock(ctx, scene.line, 78, world.accent, REEL_HEIGHT * 0.43, Math.min(1, progress * 1.6), world.accent, nib, 2)
     fadeLine(ctx, plan.author, 40, world.ink, REEL_HEIGHT * 0.55, Math.min(1, (progress - 0.3) * 2.6), 600, DISPLAY_FONT)
     fadeLine(ctx, plan.site, 36, world.accent, REEL_HEIGHT * 0.61, Math.min(1, (progress - 0.45) * 2.6), 700, BODY_FONT)
     if (progress > 0.55) {
@@ -429,15 +490,12 @@ function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene
     }, scene.metaphorVariation || 0)
     ctx.restore()
     if (scene.eyebrow) fadeLine(ctx, scene.eyebrow, 38, world.accent, REEL_HEIGHT * 0.585, Math.min(1, (progress - 0.15) * 2.6), 600, DISPLAY_FONT)
-    const px = fitSize(scene.line, 62)
-    writeLine(ctx, scene.line, px, world.ink, REEL_HEIGHT * 0.66, Math.min(1, (progress - 0.25) * 1.8), undefined, nib)
+    writeTextBlock(ctx, scene.line, 62, world.ink, REEL_HEIGHT * 0.68, Math.min(1, (progress - 0.25) * 1.8), undefined, nib, 3)
   } else {
     if (scene.eyebrow) fadeLine(ctx, scene.eyebrow, 42, world.dim, centerY - 150, Math.min(1, progress * 3))
-    const px = fitSize(scene.line, scene.accent ? 84 : 74)
-    writeLine(ctx, scene.line, px, accentColor, centerY, Math.min(1, progress * 1.55), scene.accent ? world.accent : undefined, nib)
+    const block = writeTextBlock(ctx, scene.line, scene.accent ? 84 : 74, accentColor, centerY, Math.min(1, progress * 1.55), scene.accent ? world.accent : undefined, nib, 3)
     if (scene.line2) {
-      const px2 = fitSize(scene.line2, 64)
-      writeLine(ctx, scene.line2, px2, world.ink, centerY + px * 0.95, Math.min(1, (progress - 0.3) * 1.8), undefined, nib)
+      writeTextBlock(ctx, scene.line2, 60, world.ink, centerY + block.height * 0.72, Math.min(1, (progress - 0.3) * 1.8), undefined, nib, 2)
     }
     if (plan.motifs.includes('underline') && progress > 0.66) {
       const grow = Math.min(1, (progress - 0.66) * 3.2)
@@ -447,8 +505,8 @@ function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene
       ctx.lineWidth = 5
       ctx.lineCap = 'round'
       ctx.beginPath()
-      ctx.moveTo(REEL_WIDTH / 2 + 160, centerY + px * 0.72)
-      ctx.lineTo(REEL_WIDTH / 2 + 160 - width, centerY + px * 0.72)
+      ctx.moveTo(REEL_WIDTH / 2 + 160, centerY + block.height * 0.72)
+      ctx.lineTo(REEL_WIDTH / 2 + 160 - width, centerY + block.height * 0.72)
       ctx.stroke()
       ctx.globalAlpha = 1
     }
@@ -677,6 +735,12 @@ function buildScore(audio: AudioContext, destination: AudioNode, plan: ReelPlan)
     osc.connect(gain); gain.connect(master); osc.start(time); osc.stop(time + 0.55)
   }
   const shaker = (time: number, peak: number) => noise(time, 0.08, peak, 6000, 4000)
+
+  /* بصمة افتتاحية من نغمتين مشتقة من بذرة المادة؛ ثابتة لنفس الفكرة ومختلفة
+     للأفكار الأخرى، وتبقى أخفض من الكلام كي لا تتحول إلى شعار صاخب. */
+  const markRoot = 220 * Math.pow(2, (plan.seed % 7) / 12)
+  tone(t0 + 0.04, markRoot, 0.46, 0.035, 'triangle', -3, 4200)
+  tone(t0 + 0.16, markRoot * Math.pow(2, 7 / 12), 0.62, 0.026, 'sine', 2, 5200)
 
   /* فراش متحوّل على طول الريل. */
   const segment = plan.seconds / mood.roots.length

@@ -6,9 +6,9 @@
  * تُخلط بمحاور مستقلة، بل عالمٌ واحد كل مفتاحٍ فيه مضبوطٌ مع أخيه — الجوّ
  * والألوان وأدوارها والطباعة والفضاء والعمق واللمسات والمحظورات، دفعةً واحدة.
  *
- * هنا ثمانية عوالم مطوّعة لهوية الدكتور (لا منسوخة عن أحد): كل عالمٍ يحمل
+ * هنا اثنا عشر عالماً مطوّعاً لهوية الدكتور (لا منسوخاً عن أحد): كل عالمٍ يحمل
  * لوحته الكاملة مع غلافها الجوّي (WorldAtmosphere) وتوقيعه على محاور المحرك
- * الثمانية ودستوره المصغّر (افعل/لا تفعل). المصيّر يقرأ الغلاف الجوّي في
+ * العوالم ودستورها المصغّر (افعل/لا تفعل). المصيّر يقرأ الغلاف الجوّي في
  * `backdrop()` وحدها فيسري العالم على كل العائلات والشرائح.
  *
  * قاعدة الإسناد: نصوص المعاينة أمثلةٌ محايدة تُعرض بلا توقيع المؤلف —
@@ -33,7 +33,7 @@ import {
   reshapePlanSignature,
 } from './social-design-engine'
 
-export const DESIGN_WORLDS_VERSION = '1.0.0'
+export const DESIGN_WORLDS_VERSION = '1.1.0'
 
 export type DesignWorldId =
   | 'observatory-night'
@@ -44,6 +44,10 @@ export type DesignWorldId =
   | 'sadu-night'
   | 'lab-notebook'
   | 'dawn-orchard'
+  | 'copper-eclipse'
+  | 'indigo-archive'
+  | 'emerald-atlas'
+  | 'coral-future'
 
 export interface DesignWorld {
   id: DesignWorldId
@@ -73,7 +77,7 @@ export interface DesignWorld {
 }
 
 /* ------------------------------------------------------------------ */
-/*                         الدساتير الثمانية                            */
+/*                         دساتير العوالم                               */
 /* ------------------------------------------------------------------ */
 
 export const DESIGN_WORLDS: Record<DesignWorldId, DesignWorld> = {
@@ -392,6 +396,62 @@ export const DESIGN_WORLDS: Record<DesignWorldId, DesignWorld> = {
     donts: ['لا سواد قاسياً — أدكن درجةٍ هي البُنّي', 'لا حواف حادة في عالم البستان'],
     sampleIdea: 'نكتب لنفهم، ونشارك لنكتمل',
   },
+
+  'copper-eclipse': {
+    id: 'copper-eclipse',
+    label: 'كسوف النحاس',
+    tagline: 'حكمٌ بصري: نصفان يفترقان ثم يكشفان الجوهر.',
+    essence: 'مسرح داكن بلون الفحم المحروق، يشقه ضوء نحاسي كحافة كسوف. عالم المفارقات والقرارات والأسئلة الأخلاقية؛ فيه يتحرك النصفان بعيداً ثم يعودان على جواب واحد.',
+    reference: 'مستلهم من معدن العمارة الخليجية ومنطق الملصق السينمائي',
+    palette: { id: 'graphite-gold', label: 'كسوف النحاس', background: '#100C0A', surface: '#241915', ink: '#F3E8DC', muted: '#A88C7E', accent: '#D98B4C', accentSoft: '#4A2D22', rule: '#5A382A', isDark: true, spectrum: ['#D98B4C', '#7E9BB8', '#6B3527'], atmo: { wash: { angle: 140, stops: [{ offset: 0, color: '#100C0A' }, { offset: .54, color: '#241512' }, { offset: 1, color: '#0C1016' }] }, glows: [{ x: .5, y: .18, r: .56, color: '#D98B4C', opacity: .18 }], vignette: .42, grain: 1.2, edgeLight: true } },
+    layout: 'dual-thesis', typography: 'rational-sans', spatial: 'split-balance', accent: 'contrast-band', framing: 'architectural-arch',
+    idealKinds: ['provocative-question', 'core-idea', 'consultation', 'statistic'], idealTones: ['deep', 'bold', 'institutional'],
+    dos: ['اجعل الانقسام يخدم مفارقة حقيقية', 'النحاس للحكم لا للزينة', 'اترك مركز الكسوف يتنفس'],
+    donts: ['لا نصفين يحملان الفكرة نفسها', 'لا توهجات بلا سبب دلالي'],
+    sampleIdea: 'ليست التقنية هي السؤال؛ بل الإنسان الذي يقرر بها',
+  },
+
+  'indigo-archive': {
+    id: 'indigo-archive',
+    label: 'أرشيف النيلي',
+    tagline: 'ذاكرةٌ مضيئة: هامشٌ حي ومتنٌ يخرج من العتمة.',
+    essence: 'نيلي عميق كغلاف مخطوط نادر، بهوامش بنفسجية دقيقة وذهب مطفأ. عالم الكتب والبحث والذاكرة؛ تظهر فيه الملاحظة قبل المتن كأن القارئ اكتشفها بقلمه.',
+    reference: 'مستلهم من أرشيفات المخطوطات ومن أناقة الفهارس الأكاديمية',
+    palette: { id: 'scholar-blue', label: 'أرشيف النيلي', background: '#0D1028', surface: '#191D3B', ink: '#F0F1FF', muted: '#9B9FC6', accent: '#D4B76A', accentSoft: '#30355C', rule: '#3A406B', isDark: true, spectrum: ['#D4B76A', '#8998FF', '#795A9E'], atmo: { wash: { angle: 160, stops: [{ offset: 0, color: '#0D1028' }, { offset: .7, color: '#171936' }, { offset: 1, color: '#221A39' }] }, glows: [{ x: .82, y: .12, r: .5, color: '#8998FF', opacity: .13 }], vignette: .34, grain: 1.32, edgeLight: true } },
+    layout: 'marginalia', typography: 'academic-index', spatial: 'right-rail', accent: 'editorial-index', framing: 'editorial-folio',
+    idealKinds: ['book', 'research', 'article', 'quote'], idealTones: ['academic', 'intellectual', 'deep'],
+    dos: ['الهامش يسبق المتن كاكتشاف', 'الذهب للمرجع أو الكلمة المفتاح', 'رقم الفهرس جزء من الإيقاع'],
+    donts: ['لا زخرفة مكتبية مزيفة', 'لا تجعل الهامش أثقل من الحجة'],
+    sampleIdea: 'المعرفة التي لا تعود إلى أصولها تفقد نصف معناها',
+  },
+
+  'emerald-atlas': {
+    id: 'emerald-atlas',
+    label: 'أطلس الزمرد',
+    tagline: 'خريطة قرار: نقاط تتصل ومسار يتضح.',
+    essence: 'أخضر زمردي عميق فوق شبكة خرائط دقيقة، بعلامات ذهبية صغيرة تتصل لتكوّن مساراً. عالم الأنظمة والقيادة والتخطيط؛ تتحول العلاقة بين العناصر فيه إلى خريطة قابلة للقراءة.',
+    reference: 'مستلهم من الأطالس العلمية ولوحات قيادة الأنظمة الحديثة',
+    palette: { id: 'emerald-sand', label: 'أطلس الزمرد', background: '#081C19', surface: '#12312B', ink: '#E9F5F0', muted: '#8FAFA6', accent: '#E0B760', accentSoft: '#244E45', rule: '#2D5D52', isDark: true, spectrum: ['#E0B760', '#72C7B3', '#4F8779'], atmo: { wash: { angle: 130, stops: [{ offset: 0, color: '#081C19' }, { offset: .55, color: '#0E2924' }, { offset: 1, color: '#153D34' }] }, glows: [{ x: .18, y: .82, r: .55, color: '#72C7B3', opacity: .15 }], vignette: .3, grain: .82 } },
+    layout: 'knowledge-map', typography: 'rational-sans', spatial: 'modular-grid', accent: 'data-marker', framing: 'corner-marks',
+    idealKinds: ['knowledge-design', 'research', 'summary', 'information'], idealTones: ['institutional', 'academic', 'intellectual'],
+    dos: ['كل نقطة لها علاقة ظاهرة', 'الذهب يحدد القرار النهائي', 'الشبكة تقود العين ولا تسجنها'],
+    donts: ['لا عقد بلا روابط', 'لا خريطة مزدحمة على حساب العنوان'],
+    sampleIdea: 'حين تتضح العلاقات يصبح القرار أقرب من الحدس',
+  },
+
+  'coral-future': {
+    id: 'coral-future',
+    label: 'مستقبل مرجاني',
+    tagline: 'تقنية إنسانية: نبضٌ مرجاني داخل شبكة سماوية.',
+    essence: 'بياض دافئ تتنفس فوقه هالات مرجانية وسماوية، وشبكة دقيقة تنحني حول الكلمة لا فوقها. عالم المستقبل حين يُروى من جهة الإنسان لا من جهة الآلة.',
+    reference: 'مستلهم من واجهات المستقبل الهادئة ومن دفء الأنسجة الحية',
+    palette: { id: 'electric-cobalt', label: 'مستقبل مرجاني', background: '#FFF6F2', surface: '#FFFFFF', ink: '#33242B', muted: '#896E77', accent: '#C85161', accentSoft: '#F6D9DB', rule: '#E7C9CA', isDark: false, spectrum: ['#C85161', '#2E7C88', '#F1A37B', '#8F83D8'], atmo: { glows: [{ x: .18, y: .16, r: .52, color: '#F1A37B', opacity: .2 }, { x: .84, y: .78, r: .58, color: '#56B1BC', opacity: .14 }, { x: .72, y: .12, r: .42, color: '#8F83D8', opacity: .11 }], grain: .72, vignette: .06, titleGradient: ['#B64054', '#24717C'] } },
+    layout: 'neural-constellation', typography: 'display-monumental', spatial: 'asymmetric-air', accent: 'soft-orbit', framing: 'open-canvas',
+    idealKinds: ['core-idea', 'announcement', 'recommendation', 'provocative-question'], idealTones: ['human', 'inspiring', 'bold'],
+    dos: ['الشبكة تنبض حول الإنسان', 'المرجاني للعاطفة والسماوي للنظام', 'مساحة بيضاء واسعة للمستقبل'],
+    donts: ['لا أزرق تقني بارد وحده', 'لا عقدة شبكة تمر فوق النص'],
+    sampleIdea: 'المستقبل الأجمل لا ينسى من صُمم من أجله',
+  },
 }
 
 /** ترتيب العرض في المعرض: تعاقب ليلٍ ونهارٍ يجعل الشريط نفسه لوحة. */
@@ -404,6 +464,10 @@ export const WORLD_ORDER: DesignWorldId[] = [
   'ink-marble',
   'lab-notebook',
   'dawn-orchard',
+  'copper-eclipse',
+  'indigo-archive',
+  'emerald-atlas',
+  'coral-future',
 ]
 
 /* ------------------------------------------------------------------ */

@@ -34,9 +34,9 @@ import {
   type CompositionPlan,
 } from '../../lib/social-design-engine'
 import { downloadCompositionRaster, renderCompositionSvg } from '../../lib/social-design-renderer'
+import { auditDesignMotion, downloadDesignVideo, MOTION_PROFILES, motionSupported, type MotionProfileId } from '../../lib/design-motion'
 import { LivingMetaphorIcon, LivingIconToggle, LivingIconPicker, useLivingIconEnabled } from './LivingMetaphorIcon'
 import { MovableWordsLayer, MoveWordsToggle } from './MovableWords'
-import { downloadDesignVideo, designVideoSupported, designHasMotion } from '../../lib/design-video'
 import { dressPlanInWorld, planWorldId, type DesignWorld } from '../../lib/design-worlds'
 import DesignWorldsGallery from './DesignWorldsGallery'
 import {
@@ -60,6 +60,17 @@ const primary = 'rounded-full bg-accent px-6 py-2.5 text-[.84rem] font-semibold 
 const ghost = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50'
 const MIN_ARTICLE_WORDS = 350
 const MAX_GENERATION_WORDS = 4000
+
+/** مسافة إدراكية: شكل الكتلة واتجاه القراءة والإطار والسطوع أهم من تبديل اللون. */
+function perceptualDesignDistance(left: CompositionPlan, right: CompositionPlan) {
+  let distance = 1 - designSimilarity(left, right)
+  if (left.layout !== right.layout) distance += .24
+  if (left.spatial !== right.spatial) distance += .15
+  if (left.framing !== right.framing) distance += .09
+  if (left.palette !== right.palette || left.paletteOverride?.label !== right.paletteOverride?.label) distance += .12
+  if (left.geometry.visualWeight !== right.geometry.visualWeight) distance += .08
+  return Math.min(1, distance)
+}
 
 type SocialKey = 'x' | 'linkedin' | 'facebook' | 'instagram' | 'threads' | 'whatsapp' | 'newsletter'
 
@@ -2275,8 +2286,11 @@ function VisualTemplateCard({ template }: { template: SocialVisualTemplate }) {
 
 function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPlan; rank: number }) {
   const [draftPlan, setDraftPlan] = useState<CompositionPlan>(plan)
-  const [videoBusy, setVideoBusy] = useState(false)
-  const [videoPct, setVideoPct] = useState(0)
+  const [motionProfile, setMotionProfile] = useState<MotionProfileId>('loop')
+  const [motionAudio, setMotionAudio] = useState(false)
+  const [motionBusy, setMotionBusy] = useState(false)
+  const [motionProgress, setMotionProgress] = useState(0)
+  const [motionNotice, setMotionNotice] = useState('')
   useEffect(() => setDraftPlan(plan), [plan.id, plan.fingerprint])
 
   const patchContent = (patch: Partial<CompositionPlan['content']>) => {
@@ -2295,6 +2309,8 @@ function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPla
   const [livingIconOn] = useLivingIconEnabled()
   const preview = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, [svg])
   const release = useMemo(() => professionalReleaseGate(draftPlan), [draftPlan])
+  const motionAudit = useMemo(() => auditDesignMotion(draftPlan, motionProfile), [draftPlan, motionProfile])
+  const canExportMotion = useMemo(() => motionSupported(), [])
   const tier = release.tier === 'masterpiece'
     ? 'Masterpiece'
     : release.tier === 'professional'
@@ -2357,17 +2373,37 @@ function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPla
           </div>
         </details>
 
-        <div className="mt-3 flex gap-2">
-          <button type="button" onClick={() => void downloadCompositionRaster(draftPlan, 'png')} disabled={!release.ready} className={`${release.ready ? primary : ghost} flex-1 text-[.7rem]`}>{release.ready ? 'تنزيل PNG (ثابت)' : 'محجوب حتى يجتاز البوابة'}</button>
-          {designVideoSupported() && (
+        <div className="mt-3 grid gap-2 rounded-xl border border-accent/20 bg-accent/[.045] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div><strong className="block text-[.68rem] text-ink">فيديو المنشور الدلالي</strong><span className="text-[.58rem] text-soft">{motionAudit.verb} ← {motionAudit.metaphor} · بوابة {motionAudit.score}٪</span></div>
+            <span className={`rounded-full px-2 py-1 text-[.56rem] font-bold ${motionAudit.ready ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{motionAudit.ready ? 'جاهز' : 'يحتاج مراجعة'}</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <select className={`${input} min-h-0 px-3 py-2 text-[.66rem]`} value={motionProfile} onChange={(event) => setMotionProfile(event.target.value as MotionProfileId)} aria-label="مدة فيديو المنشور">
+              {(Object.entries(MOTION_PROFILES) as Array<[MotionProfileId, (typeof MOTION_PROFILES)[MotionProfileId]]>).map(([id, profile]) => <option key={id} value={id}>{profile.label} — {profile.description}</option>)}
+            </select>
+            <label className="inline-flex items-center justify-center gap-2 rounded-xl border border-hair bg-canvas px-3 py-2 text-[.62rem] text-soft"><input type="checkbox" checked={motionAudio} onChange={(event) => setMotionAudio(event.target.checked)} /> بصمة صوتية</label>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button type="button" onClick={() => void downloadCompositionRaster(draftPlan, 'png')} disabled={!release.ready || motionBusy} className={`${release.ready ? ghost : ghost} w-full text-[.66rem]`}>{release.ready ? 'تنزيل PNG المعتمد' : 'PNG محجوب حتى يجتاز البوابة'}</button>
             <button
               type="button"
-              disabled={!release.ready || videoBusy}
-              title={designHasMotion(draftPlan) ? 'يسجّل التصميم بأيقونته المتحركة فيديو MP4/WebM' : 'فعّل الأيقونة الحيّة أولاً كي يظهر فيها حركة'}
-              onClick={async () => { setVideoBusy(true); setVideoPct(0); try { await downloadDesignVideo(draftPlan, { onProgress: (r) => setVideoPct(Math.round(r * 100)) }) } catch (error) { window.alert(error instanceof Error ? error.message : 'تعذّر تصدير الفيديو') } finally { setVideoBusy(false) } }}
-              className={`${release.ready ? ghost : ghost} flex-1 text-[.7rem]`}
-            >{videoBusy ? `يسجّل… ${videoPct}%` : '🎬 فيديو متحرّك'}</button>
-          )}
+              disabled={!release.ready || !motionAudit.ready || !canExportMotion || motionBusy}
+              className={`${primary} w-full text-[.66rem]`}
+              onClick={async () => {
+                setMotionBusy(true); setMotionProgress(0); setMotionNotice('')
+                try {
+                  const result = await downloadDesignVideo(draftPlan, { style: 'semantic', profile: motionProfile, audio: motionAudio, onProgress: setMotionProgress })
+                  setMotionNotice(`نزل ${result.extension.toUpperCase()} · ${result.seconds}ث · اجتاز ${result.audit.score}٪`)
+                } catch (reason) {
+                  setMotionNotice(reason instanceof Error ? reason.message : 'تعذّر تصدير فيديو المنشور.')
+                } finally { setMotionBusy(false); setMotionProgress(0) }
+              }}
+            >{motionBusy ? `أحيي الفكرة… ${Math.round(motionProgress * 100)}٪` : canExportMotion ? 'تنزيل الفيديو المتحرك' : 'الفيديو يحتاج Chrome'}</button>
+          </div>
+          {motionBusy && <div className="h-1.5 overflow-hidden rounded-full bg-canvas"><div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${Math.round(motionProgress * 100)}%` }} /></div>}
+          {motionNotice && <p className="text-[.6rem] leading-relaxed text-accent" role="status">{motionNotice}</p>}
+          {motionAudit.warnings.length > 0 && <p className="text-[.58rem] leading-relaxed text-amber-700">{motionAudit.warnings.join(' · ')}</p>}
         </div>
       </div>
     </article>
@@ -2991,17 +3027,14 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     const ranked = pulseDesignResult.plans
       .map((plan) => ({ plan, release: professionalReleaseGate(plan) }))
       .sort((left, right) => Number(right.release.ready) - Number(left.release.ready) || right.release.score - left.release.score)
-    const selected: typeof ranked = []
-    for (const candidate of ranked) {
-      if (selected.every((item) => item.plan.layout !== candidate.plan.layout && designSimilarity(item.plan, candidate.plan) < .74)) selected.push(candidate)
-      if (selected.length === 3) break
-    }
-    if (selected.length < 3) {
-      for (const candidate of ranked) {
-        if (selected.some((item) => item.plan.id === candidate.plan.id)) continue
-        selected.push(candidate)
-        if (selected.length === 3) break
-      }
+    const selected: typeof ranked = ranked.length ? [ranked[0]] : []
+    while (selected.length < Math.min(3, ranked.length)) {
+      const candidate = ranked
+        .filter((item) => !selected.some((chosen) => chosen.plan.id === item.plan.id))
+        .map((item) => ({ item, distance: Math.min(...selected.map((chosen) => perceptualDesignDistance(item.plan, chosen.plan))) }))
+        .sort((left, right) => right.distance - left.distance || right.item.release.score - left.item.release.score)[0]?.item
+      if (!candidate) break
+      selected.push(candidate)
     }
     return selected.slice(0, 3)
   }, [pulseDesignResult, pulsePreviewReady])
@@ -3850,8 +3883,7 @@ ${effectivePurpose}`,
         pack = mergeSocialPacks(local, pack, variation, selectedEvent)
       } else pack = local
       setPulsePack(pack)
-      const approvedCount = pulseProfessionalPlans.filter((item) => item.release.ready).length
-      setNotice(`فهم المخرج العبارة وبنى حزمة مستقلة لموضوع «${visualTopicLabel(detectVisualTopic(`${cleanIdea} ${effectivePurpose}`))}»، ومعها ${arabicCountPhrase(approvedCount, DIRECTION_FORMS)} من أصل 3 ✓`)
+      setNotice(`فهم المخرج العبارة وبنى حزمة مستقلة لموضوع «${visualTopicLabel(detectVisualTopic(`${cleanIdea} ${effectivePurpose}`))}»، ومعها ثلاث رؤى متباعدة إدراكياً تُفحص أمامك مباشرة ✓`)
       task.needsInput('المنشور جاهز للمراجعة')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر بناء المنشور المستقل.')

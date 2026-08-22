@@ -1,5 +1,5 @@
 /**
- * معرض عوالم التصميم — شريط الدساتير الثمانية.
+ * معرض عوالم التصميم — شريط الدساتير المتكاملة.
  *
  * كل بطاقة ملصقٌ حيّ يُصاغ بمحرك التصميم نفسه (مرشح خفيف عبر worldPreviewPlan)
  * ويُجسَّد في عالمه كاملاً: الجوّ واللون والطباعة والعمق. البطاقة تلبس ألوان
@@ -64,7 +64,7 @@ export default function DesignWorldsGallery({ activeWorldId, onDress, onGenerate
         <div className="min-w-0">
           <p className="font-display text-[.95rem] font-bold" style={{ color: '#EDF2FB' }}>
             عوالم التصميم
-            <span className="mr-2 rounded-full px-2 py-0.5 text-[.55rem] font-semibold tracking-wide" style={{ background: 'rgba(134,168,240,.14)', color: '#A9C2F5', border: '1px solid rgba(134,168,240,.3)' }}>8 دساتير متكاملة</span>
+            <span className="mr-2 rounded-full px-2 py-0.5 text-[.55rem] font-semibold tracking-wide" style={{ background: 'rgba(134,168,240,.14)', color: '#A9C2F5', border: '1px solid rgba(134,168,240,.3)' }}>{WORLD_ORDER.length} دستوراً متكاملاً</span>
           </p>
           <p className="mt-0.5 text-[.62rem]" style={{ color: '#93A3C0' }}>
             جوٌّ ولونٌ وطباعةٌ وعمقٌ بضغطة واحدة — على نهج دساتير العلامات العالمية، مطوّعةً لهويتك لا منسوخة.

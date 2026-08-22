@@ -314,8 +314,28 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
       ctx.strokeStyle = colors.accent
       ctx.stroke()
       ctx.restore()
-      const prog = animate ? Math.min(1, ((performance.now() - started) / 1000 % 6) / 2.4) : 1
-      paintMetaphor(ctx, metaphor, S / 2, S / 2, S * 0.6, t, prog, paint)
+      if (animate) {
+        /* مدارٌ واضح لكن هادئ يجعل الحركة مقروءة حتى حين تكون الاستعارة نفسها
+           ساكنة في طورها المكتمل؛ كان الثبات الطويل يوهم أن الأيقونة صورة. */
+        const angle = t * .82
+        const radius = S * .405
+        ctx.save()
+        ctx.globalAlpha = .42
+        ctx.strokeStyle = colors.accent2
+        ctx.lineWidth = 1.5
+        ctx.setLineDash([3, 9])
+        ctx.beginPath(); ctx.arc(S / 2, S / 2, radius, angle, angle + Math.PI * 1.35); ctx.stroke()
+        ctx.setLineDash([])
+        ctx.fillStyle = colors.accent
+        ctx.shadowColor = colors.accent
+        ctx.shadowBlur = 10
+        ctx.beginPath(); ctx.arc(S / 2 + Math.cos(angle) * radius, S / 2 + Math.sin(angle) * radius, 4.5, 0, Math.PI * 2); ctx.fill()
+        ctx.restore()
+      }
+      const cycle = animate ? t % 6 : 3
+      const prog = !animate ? 1 : cycle < 2.1 ? Math.min(1, cycle / 2.1) : cycle < 4.8 ? 1 : Math.max(0, 1 - (cycle - 4.8) / 1.2)
+      const breathe = animate ? .97 + .03 * Math.sin(t * 1.6) : 1
+      paintMetaphor(ctx, metaphor, S / 2, S / 2, S * 0.6 * breathe, t, prog, paint)
       if (animate) raf = requestAnimationFrame(frame)
     }
     frame()

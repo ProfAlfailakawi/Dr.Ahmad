@@ -2,6 +2,11 @@ name: خمس حلقات كويتية قصيرة — باقة السماع
 
 on:
   workflow_dispatch:
+    inputs:
+      library:
+        description: 'مكتبة المصدر: v3 = إيقاع الديوانية بكلمات الدكتور (وفاء ١٠٠٪) · v2 = النص المخترع (للمقارنة التاريخية فقط)'
+        required: false
+        default: 'v3'
 
 permissions:
   contents: read
@@ -34,7 +39,15 @@ jobs:
           set -euo pipefail
           node - <<'NODE'
           const fs = require('fs'); const crypto = require('crypto');
-          const lib = JSON.parse(fs.readFileSync('src/data/kuwaiti-diwania-v2-canaries.json', 'utf8'));
+          /* [٢٢ أغسطس مساءً — بحكم الدكتور] كانت الورشة تقرأ v2 المخترع
+             («مو كويتي إطلاقاً» بأذنه: وفاء المصدر ٠٪ · حشو ١٤–٣١٪ ·
+             اسمه مفقود من الختام). الافتراض صار v3: نفس إيقاع الديوانية
+             لكن كل سطر منتقىً من متن الدكتور المدقق. */
+          const LIB = process.env.CANARY_LIBRARY === 'v2'
+            ? 'src/data/kuwaiti-diwania-v2-canaries.json'
+            : 'src/data/kuwaiti-diwania-v3.json';
+          const lib = JSON.parse(fs.readFileSync(LIB, 'utf8'));
+          console.log('المصدر: ' + LIB);
           const slugs = [
             'success-that-does-not-bring-joy-to-its-ownerarabic',
             'the-classroom-that-fears-mistakesarabic',
@@ -58,6 +71,9 @@ jobs:
           fs.writeFileSync('five-canary-slugs.txt', slugs.join('\n') + '\n');
           console.log('✓ خمس محادثات ديوانية v3 مصححة بالأذن، كل واحدة ~2:30 وبجسرين مونتاجيين');
           NODE
+        env:
+          CANARY_LIBRARY: ${{ inputs.library || 'v3' }}
+
 
       - name: Preserve the new-word audition ledger
         shell: bash
@@ -68,7 +84,7 @@ jobs:
         run: |
           mkdir -p five-canaries
           node scripts/guard-new-dialogue-words.mjs \
-            --library=src/data/kuwaiti-diwania-v2-canaries.json \
+            --library=src/data/kuwaiti-diwania-v3.json \
             | tee five-canaries/new-word-audition-ledger.txt
 
       - name: Generate the five episodes sequentially

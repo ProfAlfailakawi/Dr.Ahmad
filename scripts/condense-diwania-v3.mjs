@@ -40,24 +40,30 @@ const projected = (turns) => turns.reduce((s, t) => s + String(t.text || '').len
    ≤٥٥ حرفاً (إيقاع v2 متوسطه ٤١)، ومتن الدكتور وسيطه ٥٨. فالتفكيك عند
    حدود الجمل هو ما يصنع الإيقاع — بكلماته لا بكلماتٍ جديدة. */
 const SPLIT_AT = 60
-function splitLong (turn) {
+function splitLong (turn, limit = SPLIT_AT) {
   const text = String(turn.text || '')
-  if (text.length <= SPLIT_AT) return [turn]
-  const parts = text.split(/(?<=[.!؟…])\s+/).filter(Boolean)
+  if (text.length <= limit) return [turn]
+  let parts = text.split(/(?<=[.!؟…])\s+/).filter(Boolean)
+  /* جملةٌ واحدة طويلة بلا حدّ جملة (١٢١ حرفاً في qabas-201611-002) لا
+     تنقسم بالنقاط. فتُقطع عند **الفاصلة** — وهي موضع تنفّسٍ طبيعي في
+     الكلام، ولا تغيّر كلمةً واحدة. */
+  if (parts.length < 2 && text.length > limit * 1.5 && text.includes('،')) {
+    parts = text.split(/(?<=،)\s+/).filter(Boolean)
+  }
   if (parts.length < 2) return [turn]
   const out = []; let buf = ''
   for (const p of parts) {
-    if (buf && (buf + ' ' + p).length > SPLIT_AT) { out.push(buf.trim()); buf = p } else buf = buf ? buf + ' ' + p : p
+    if (buf && (buf + ' ' + p).length > limit) { out.push(buf.trim()); buf = p } else buf = buf ? buf + ' ' + p : p
   }
   if (buf.trim()) out.push(buf.trim())
   return out.map((t, i) => ({ ...turn, text: t, musicBridgeAfter: false, pauseAfterMs: i === out.length - 1 ? turn.pauseAfterMs : 320 }))
 }
 
-export function condenseV3 (original) {
+export function condenseV3 (original, splitLimit = SPLIT_AT) {
   const log = []
   /* ١) تفكيك الخطب الطويلة أولاً — يرفع نسبة القصير بلا اختراع */
   const pool = []
-  original.forEach((t, i) => { const parts = splitLong(t); if (parts.length > 1) log.push(`قُسمت المداخلة ${i} إلى ${parts.length} عند حدود الجمل`); parts.forEach((p) => pool.push({ ...p, _src: i })) })
+  original.forEach((t, i) => { const parts = splitLong(t, splitLimit); if (parts.length > 1) log.push(`قُسمت المداخلة ${i} إلى ${parts.length} عند حدود الجمل`); parts.forEach((p) => pool.push({ ...p, _src: i })) })
 
   const n = pool.length
   const picked = new Set()
@@ -72,7 +78,17 @@ export function condenseV3 (original) {
   for (let i = n - 1; i >= Math.max(0, n - 7); i -= 1) if (/المقال|موقع الدكتور|الفيل/.test(String(pool[i].text))) { ref = i; break }
   const tailStart = ref >= 0 ? Math.min(ref, n - 3) : n - 3
   for (let i = Math.max(0, tailStart); i < n; i += 1) pick(i)
-  /* ٤) الاعتراض — شرط صريح في مواصفة الصديق */
+  /* ٤) الاعتراض — شرط صريح في مواصفة الصديق. و٢٧ حلقة من متن الدكتور
+     تحمل اعتراضاً نصّاً («بس مو قاعدين نكبر الموضوع؟») بلا وسمٍ له.
+     فيُستنتج الوسم من النص — بياناتٌ لا نص، وهو عين ما يفعله محرر
+     اللوحة حين يستورد حواراً. لا كلمة تتغير. */
+  pool.forEach((t) => {
+    if (['gentleObjection', 'objection'].includes(t.deliveryType)) return
+    if (/^(بس |طيب بس|لكن |مو قاعدين|بس مو)/.test(String(t.text).trim())) {
+      t.deliveryType = 'gentleObjection'
+      log.push('اعتراضٌ استُنتج من نصّه: «' + String(t.text).slice(0, 34) + '…» — وسمٌ لا كلمة')
+    }
+  })
   const obj = pool.findIndex((t) => ['gentleObjection', 'objection'].includes(t.deliveryType))
   if (obj > 0) { pick(obj); pick(obj + 1) }
   /* ٥) أسئلة: ثلاثة على الأقل */
@@ -149,6 +165,19 @@ export function condenseV3 (original) {
   return { turns, log }
 }
 
+/* [٢٢ أغسطس مساءً] حلقتان شذّتا عن الروح الموحّدة (قصيرها دون النصف،
+   وخطبةٌ طويلة باقية) لأن جملها أطول من غيرها. الحلّ: حدّ تقسيمٍ متكيّف
+   يُشدّ لتلك الحلقات وحدها حتى تلتحق بالروح — بكلماته كما هي دائماً. */
+export function condenseV3Adaptive (original) {
+  for (const limit of [60, 52, 46, 40]) {
+    const r = condenseV3(original, limit)
+    const c = checkSpec(r.turns)
+    const structural = c.fails.filter((f) => /^(قصير|طويلة|مداخلات|مدة|الجسران|أخذ)/.test(f))
+    if (!structural.length) { if (limit !== 60) r.log.push(`حدّ التقسيم شُدّ إلى ${limit} حرفاً لتلتحق الحلقة بالروح الموحّدة`); return r }
+  }
+  return condenseV3(original, 40)
+}
+
 export function checkSpec (turns) {
   const text = turns.map((t) => t.text).join(' ')
   const short = turns.filter((t) => String(t.text).length <= SPEC.shortMax).length
@@ -190,7 +219,7 @@ if (RUN_MAIN) {
   const out = { schemaVersion: 1, profile: 'kuwaiti-diwania-v3', note: 'إيقاع الديوانية بكلمات الدكتور — كل سطر منتقى من متنه المدقق؛ التدخلان: تقسيم عند حدود الجمل، وتعجّب واحد عند اللزوم (مسجّل).', count: 0, episodes: {} }
   const report = []
   for (const [slug, ep] of Object.entries(lib.episodes)) {
-    const r = condenseV3(Object.values(ep))
+    const r = condenseV3Adaptive(Object.values(ep))
     const c = checkSpec(r.turns)
     out.episodes[slug] = Object.fromEntries(r.turns.map((t, i) => [String(i), t]))
     report.push({ slug, turns: r.turns.length, sec: c.sec, shortPct: c.shortPct, fails: c.fails, log: r.log })

@@ -23,9 +23,9 @@ on:
         required: false
         default: '1'
       prompt_mode:
-        description: 'أوضاع البرومت: full الجدار الحرفي · minimal وصفة الصديق (عربي قصير + منع بأسماء مجردة) · c صياغة الصديق ببنية Google الرسمية بلا أي منع'
+        description: 'أوضاع البرومت: c الفائز ببنية Google + مرساة كويتية ومنعٍ اسمي مضغوط · full الجدار التاريخي · minimal التجربة القديمة'
         required: false
-        default: 'full'
+        default: 'c'
 
 permissions:
   contents: read
@@ -99,6 +99,13 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
           PODCAST_KW_REGENERATE: ${{ inputs.regenerate && '1' || '' }}
+
+      # الإنتاج الصوتي لا يقرأ متن الأربع دقائق بعد اليوم. تُستبدل النسخة
+      # المجلوبة بمكثف الدقيقتين والنصف فقط بعد برهان أنه ترتيبٌ فرعي من
+      # الحوار المقفول نفسه؛ أي اختلاف يوقف التوليد قبل صرف حصة Gemini.
+      - name: Select the locked 2m30 dialogue with two bridges
+        if: ${{ !inputs.restore_from_run }}
+        run: node scripts/select-kuwaiti-short-source.mjs --slugs="$RELEASED_SLUGS"
 
       # [٢١ أغسطس ٢٠٢٦ — قفل «الكمال» للمقالات القادمة] لا كلمة تصل
       # المحرك قبل أذن الدكتور: أي مفردة في الحوار المجلوب ليست من المتن
@@ -214,7 +221,7 @@ jobs:
           # عدد الإعادات بيده: خانة «موسيقى» في محرر اللوحة لكل دور.
           PODCAST_KW_SPLIT_AT_BRIDGES: '1'
           PODCAST_KW_TAKES: ${{ inputs.takes || '1' }}
-          PODCAST_KW_PROMPT_MODE: ${{ inputs.prompt_mode || 'full' }}
+          PODCAST_KW_PROMPT_MODE: ${{ inputs.prompt_mode || 'c' }}
 
       # [٢٢ أغسطس ٢٠٢٦ — «التثبيت الحقيقي»] المحرك احتمالي فلن يعيد نسخة
       # أحبها الدكتور أبداً؛ لكن كل تشغيلة تحفظ صوتها مرفقاً دائماً.

@@ -3,6 +3,10 @@ name: خمس حلقات كويتية قصيرة — باقة السماع
 on:
   workflow_dispatch:
     inputs:
+      prompt_mode:
+        description: 'ضبط البرومت: full = جدار الحلقة الجبارة (٢١ أغسطس، محفوظ حرفياً ١٢٧٢٥ حرفاً) · c = الحالي ببنية Google'
+        required: false
+        default: 'c'
       library:
         description: 'مكتبة المصدر: v3 = إيقاع الديوانية بكلمات الدكتور (وفاء ١٠٠٪) · v2 = النص المخترع (للمقارنة التاريخية فقط)'
         required: false
@@ -103,11 +107,11 @@ jobs:
       - name: Generate the five episodes sequentially
         shell: bash
         env:
+          PODCAST_KW_PROMPT_MODE: ${{ inputs.prompt_mode || 'c' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
-          PODCAST_KW_PROMPT_MODE: c
           # الجسر يبقى في المكساج، ولا يفتح نداء TTS جديداً. كل نداء جديد
           # أعاد تكوين الحنجرة واللهجة من الصفر في عينات ٢٢ أغسطس.
           PODCAST_KW_SPLIT_AT_BRIDGES: '0'

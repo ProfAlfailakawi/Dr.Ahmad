@@ -2,6 +2,12 @@ name: بيك أوف الأصوات الكويتية
 
 on:
   workflow_dispatch:
+    inputs:
+      male_bakeoff:
+        description: 'اقلب الاتجاه: جرّب رجالاً أعمق من Puck (Zephyr ثابتة) — علاج انهيار الفجوة في المداخلات القصيرة'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -31,7 +37,7 @@ jobs:
           sudo apt-get install -y ffmpeg
 
       - name: Run the bakeoff
-        run: node scripts/podcast-voice-bakeoff-kw.mjs
+        run: node scripts/podcast-voice-bakeoff-kw.mjs ${{ inputs.male_bakeoff && '--male-bakeoff' || '' }}
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview

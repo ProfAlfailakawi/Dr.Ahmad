@@ -59,6 +59,18 @@ jobs:
           console.log('✓ خمس محادثات ديوانية v2، كل واحدة ~2:30 وبجسرين مونتاجيين');
           NODE
 
+      - name: Preserve the new-word audition ledger
+        shell: bash
+        env:
+          # هذه الخمس نفسها مختبر سياقي؛ التحذير يُحفظ ولا يمنح أي كلمة
+          # اعتماد heardByEar تلقائياً. إنتاج الـ144 يبقى خلف الحارس الصارم.
+          PODCAST_KW_ALLOW_NEW_WORDS: '1'
+        run: |
+          mkdir -p five-canaries
+          node scripts/guard-new-dialogue-words.mjs \
+            --library=src/data/kuwaiti-diwania-v2-canaries.json \
+            | tee five-canaries/new-word-audition-ledger.txt
+
       - name: Generate the five episodes sequentially
         shell: bash
         env:

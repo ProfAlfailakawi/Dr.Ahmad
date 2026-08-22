@@ -32,7 +32,6 @@ import { buildPronunciationMap, toSpokenKuwaiti, buildForeignRedactions, redactF
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SELF_TEST = process.argv.includes('--self-test')
 const DIR = process.argv.find((a) => a.startsWith('--dir='))?.slice(6) || 'manual-dialogues-kuwaiti'
-const LIBRARY = process.argv.find((a) => a.startsWith('--library='))?.slice(10) || ''
 const ALLOW = process.env.PODCAST_KW_ALLOW_NEW_WORDS === '1'
 
 const SRC = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-pronunciation.json'), 'utf8'))
@@ -154,22 +153,12 @@ if (SELF_TEST) {
   process.exit(0)
 }
 
-const vocab = buildVocabulary()
-if (LIBRARY) {
-  const library = JSON.parse(readFileSync(resolve(ROOT, LIBRARY), 'utf8'))
-  let findings = []
-  for (const turns of Object.values(library.episodes || {})) {
-    findings = findings.concat(scanTurns(Object.values(turns), vocab, { isNewDialogue: true }))
-  }
-  report(findings)
-  process.exit(findings.length && !ALLOW ? 1 : 0)
-}
-
 const dir = resolve(ROOT, DIR)
 if (!existsSync(dir)) {
   console.log('ℹ لا مجلد حوارات مجلوبة (' + DIR + ') — الحارس يعمل في الورشة بعد خطوة الجلب.')
   process.exit(0)
 }
+const vocab = buildVocabulary()
 const seedSlugs = new Set(Object.keys(JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-dialogues.json'), 'utf8')).episodes))
 let all = []
 for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {

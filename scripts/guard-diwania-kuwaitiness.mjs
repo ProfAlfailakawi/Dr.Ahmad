@@ -38,7 +38,12 @@ const FILLERS = ['يعني','يمكن','ممكن','طبعا','أكيد']
    فليست هي العلّة. العلّتان المقيستان: طوفان الحشو العام (١٤–٣١٪ = خمسة
    إلى عشرة أضعاف عادته) وانعدام وفاء المصدر. */
 export const THRESHOLDS = {
-  density: 0.82,        /* المئين العاشر لمتنه — ٩٠٪ من كتابته تعبره */
+  /* [تصحيح ٢٢ أغسطس مساءً] كانت الكثافة تُقاس «لكل مداخلة» — وهذا مقياسٌ
+     غير ثابتٍ مع المقياس: تقسيمُ مداخلةٍ من مئة حرفٍ إلى اثنتين يوزّع
+     علاماتها فتهبط الكثافة إلى النصف بلا أن تتغيّر كلمةٌ واحدة. فانقلب
+     المقياس إلى **علامات لكل مئة حرف** — ثابتٌ مهما تغيّر طول المداخلة،
+     ومعايرته من متن الدكتور نفسه. */
+  density: 1.38,        /* المئين العاشر لمتنه بمقياس المئة حرف */
   fillerRatio: 0.10,    /* مئينه الخامس والتسعون */
   sourceFidelity: 0.60, /* كم مداخلةٍ أصلُها كلامُ الدكتور */
   nameInClosing: true,  /* «موقع الدكتور أحمد … الفيلچاوي» في الختام */
@@ -51,10 +56,11 @@ export function measure (episodes, originals = {}) {
   for (const [slug, ep] of Object.entries(episodes)) {
     const turns = Array.isArray(ep) ? ep : Object.values(ep)
     const orig = originals[slug] ? (Array.isArray(originals[slug]) ? originals[slug] : Object.values(originals[slug])).map((t) => norm(t.text)) : null
-    let hits = 0; let fillerTurns = 0; let fromSource = 0
+    let hits = 0; let chars = 0; let fillerTurns = 0; let fromSource = 0
     for (const t of turns) {
       const s = String(t.text || '')
       for (const m of MARKERS) hits += s.split(m).length - 1
+      chars += s.length
       if (FILLERS.some((f) => new RegExp('(^|[\\s،.!؟…])' + f + '($|[\\s،.!؟…])', 'u').test(s))) fillerTurns += 1
       if (orig) { const n = norm(s); if (orig.some((o) => o === n || o === 'و' + n || (n.length > 25 && o.includes(n.slice(0, 25))))) fromSource += 1 }
     }
@@ -62,7 +68,7 @@ export function measure (episodes, originals = {}) {
     per.push({
       slug,
       turns: turns.length,
-      density: +(hits / turns.length).toFixed(2),
+      density: +(hits / Math.max(1, chars) * 100).toFixed(2),
       fillerRatio: +(fillerTurns / turns.length).toFixed(2),
       sourceFidelity: orig ? +(fromSource / turns.length).toFixed(2) : null,
       nameInClosing: /الفيلچاوي|الفيلكاوي|موقع الدكتور/.test(last),
@@ -76,7 +82,7 @@ function report (per) {
   console.log('حلقة'.padEnd(34) + 'كثافة  حشو   وفاء   الاسم')
   for (const r of per) {
     const bad = []
-    if (r.density < THRESHOLDS.density) bad.push(`كثافة ${r.density} < ${THRESHOLDS.density}`)
+    if (r.density < THRESHOLDS.density) bad.push(`كثافة ${r.density}/100حرف < ${THRESHOLDS.density}`)
     if (r.fillerRatio > THRESHOLDS.fillerRatio) bad.push(`حشو ${Math.round(r.fillerRatio * 100)}% > ${THRESHOLDS.fillerRatio * 100}%`)
     if (r.sourceFidelity !== null && r.sourceFidelity < THRESHOLDS.sourceFidelity) bad.push(`وفاء المصدر ${Math.round(r.sourceFidelity * 100)}% < ${THRESHOLDS.sourceFidelity * 100}%`)
     if (THRESHOLDS.nameInClosing && !r.nameInClosing) bad.push('الختام بلا اسم الدكتور وموقعه')
@@ -88,7 +94,7 @@ function report (per) {
   if (!fails.length) { console.log('\n✅ كويتية الديوانية سليمة في كل الحلقات.'); return 0 }
   console.log('\n⛔ ' + fails.length + ' حلقة دون العتبة:')
   for (const f of fails) console.log('   · ' + f.slug + ' → ' + f.bad.join(' · '))
-  console.log('\nالعتبات معايَرة على توزيع متن الدكتور: الكثافة مئينه العاشر (٠٫٨٢) والحشو مئينه ٩٥ (١٠٪).')
+  console.log('\nالعتبات معايَرة على توزيع متن الدكتور: الكثافة مئينه العاشر (١٫٣٨ علامة/١٠٠حرف) والحشو مئينه ٩٥ (١٠٪).')
   console.log('العلاج: كتابة المداخلات من كلام الدكتور نفسه (وفاء المصدر)، وزيادة العلامات القحّة،')
   console.log('وإعادة سطر الإحالة كاملاً: «تلقى المقال الأصلي في موقع الدكتور أحمد حسين الفيلچاوي».')
   return 1

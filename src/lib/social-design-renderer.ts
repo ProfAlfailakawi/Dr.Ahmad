@@ -2626,6 +2626,35 @@ export async function embeddedCompositionSeal(): Promise<string> {
   return sealDataUri()
 }
 
+/**
+ * جسر توافق لمحرك الفيديو السابق الموجود في بعض نسخ المستودع.
+ * محرك الحركة الجديد يقرأ الأصول المضمّنة مباشرة، لكن إبقاء هذا التصدير يمنع
+ * كسر TypeScript إلى أن يُزال design-video.ts القديم في ترحيل مستقل وآمن.
+ */
+export async function rasterizeCompositionToImage(plan: CompositionPlan): Promise<HTMLImageElement> {
+  await Promise.race([
+    Promise.allSettled([
+      '700 64px "El Messiri"', '600 48px "El Messiri"', '400 32px "El Messiri"',
+      '700 40px Tajawal', '500 32px Tajawal', '400 28px Tajawal',
+    ].map((font) => document.fonts?.load(font, 'أ') ?? Promise.resolve())),
+    new Promise((resolve) => window.setTimeout(resolve, 3500)),
+  ])
+  await document.fonts?.ready
+  const fontCss = await embeddedFontCss()
+  const svg = renderCompositionSvg(plan, { fontCss })
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  try {
+    const image = new Image()
+    image.decoding = 'async'
+    image.src = url
+    await image.decode()
+    return image
+  } finally {
+    window.setTimeout(() => URL.revokeObjectURL(url), 5000)
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*                        التصدير والتنزيل والطباعة                     */
 /* ------------------------------------------------------------------ */

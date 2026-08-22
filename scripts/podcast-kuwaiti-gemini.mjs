@@ -186,28 +186,24 @@ A relaxed evening conversation in a real diwaniya in Kuwait City. They are sitti
 
 Accent: Native contemporary urban Kuwait City Arabic (حضري). Everyday local speech with light, relaxed articulation, natural short vowels, and calm sentence endings. The transcript already contains the intended Kuwaiti words and pronunciation spellings; follow them naturally without exaggerating dialect markers.
 
-Qaf: No qalqalah at all. Never release ق with a formal echo, bounce, or recitation-like pop. Keep it light and absorbed into the surrounding Kuwait City speech, including across pauses and turn boundaries.
+Style: A real conversation between two Kuwaitis, not a news bulletin, commercial voice-over, lecture, or performed imitation of an accent.
 
-Daad: The audio transcript deliberately writes every ض as ظ. Respect that spelling and pronounce the Kuwaiti merged sound; never correct it back to formal ض.
+Pacing: Conversational and unhurried. Pauses follow thought and meaning, not punctuation. Keep the energy alive without sounding theatrical.
 
-Style: Sound human before sounding polished. This is a real conversation between two Kuwaitis, not an AI assistant, audiobook, news bulletin, commercial voice-over, lecture, or performed imitation of an accent.
-
-Pacing: Vary naturally. Simple lines can move quickly; a genuinely important thought may slow slightly. Pauses follow thought, not punctuation. Do not give every sentence the same weight, timing, or solemn ending.
-
-Turn-taking: Speak to the other person, not to an audience. Each person genuinely listens and reacts to the line before theirs. Brief reactions stay quick and effortless; questions are interested; objections have friendly chemistry rather than debate-club formality.
+Turn-taking: Each person genuinely listens and reacts to the line before theirs. Brief reactions are quick and alive, questions are interested, and gentle objections have friendly chemistry rather than debate-club formality.
 
 Human texture: Allow tiny natural breaths, micro-hesitations, and a smile in the voice. A very brief spontaneous chuckle is welcome only when the actual line is genuinely witty; never paste laughter onto serious material and never turn the scene into comedy.
 
-Continuity: Keep Fahad and Noura as the same two people, in the same room and on the same microphones, from the first line to the last line. A music bridge is added later in editing; it is not a new recording session.
+Continuity: Keep Fahad and Noura as the same two people, in the same room and on the same microphones, from the first line to the last line of this chunk.
 
 Fidelity: Speak every labelled line exactly once and in order. Do not add, omit, repeat, paraphrase, or swap speakers. Bracketed English tags guide delivery silently and must never be spoken.
 
 # SAMPLE CONTEXT — SILENT ACCENT ANCHOR, NEVER SPEAK THIS
 
-«لا، مو هذا قصدي.»
-«عيل شنو تقصد؟»
-«خلنا ناخذها من صوب ثاني.»
-«إي بس مو لهالدرجة… كمل.»
+«خوش سؤال. خل نكون واقعيين شوي — هالشي وايد أهم من اللي نتصوره.»
+«إي والله. بس ترى الموضوع أهون مما تتوقع.»
+«صج؟ عيل خل نشوفه حبة حبة.»
+«هذا اللي أقصده بالضبط. يلا نكمل.»
 
 # DIALECT BOUNDARY
 
@@ -257,9 +253,7 @@ function promptFor(turns, index, total, mode = PROMPT_MODE) {
   const transcript = lines.join('\n')
   if (mode === 'minimal') return `${MINIMAL_HEAD}\n\n${transcript}\n\n${MINIMAL_TAIL}`
   if (mode === 'c') {
-    const continuity = total === 1
-      ? 'This is the complete episode in one continuous recording. Keep the exact same two voices, native Kuwait City accent, room, microphones, and conversational energy from the first word to the last.'
-      : index === 0
+    const continuity = index === 0
       ? 'This is the opening part. Establish the exact Fahad and Noura described above; the next parts must preserve them.'
       : 'This part starts immediately after a short music bridge. Resume the exact same Fahad and Noura, with the same native Kuwait City accent, conversational energy, microphone distance, and room. It is one continuous diwaniya conversation, not a new recording and not a fresh performance.'
     return `${PROMPT_C_HEAD}
@@ -1029,14 +1023,12 @@ if (SELF_TEST) {
      فقط؛ لا وصفَ حياً لصوت أي لهجة حتى لا نزرعها في سياق المحرك. */
   const cPrompt = promptFor(chunks[0], 0, chunks.length, 'c')
   const cContinuation = promptFor(chunks.at(-1), 1, chunks.length, 'c')
-  const cSingleCall = promptFor(turns, 0, 1, 'c')
   assert.ok(cPrompt.includes("# DIRECTOR'S NOTES") && cPrompt.trimEnd().endsWith(spokenForm(chunks[0][chunks[0].length-1].text)),
     'C ببنية Google والنص المنطوق آخر شيء في الطلب')
   assert.match(cPrompt, /# SAMPLE CONTEXT/, 'C يحمل مرساةً كويتيةً صامتة كما توصي بنية Google')
   assert.match(cPrompt, /# DIALECT BOUNDARY/, 'C يحمل حدَّ لهجةٍ مضغوطاً')
   assert.match(cPrompt, /This is the opening part/, 'المقطع الأول لا يدّعي وجود جسر قبله')
   assert.match(cContinuation, /starts immediately after a short music bridge/, 'كل مقطع لاحق يستأنف الهوية بعد الجسر')
-  assert.match(cSingleCall, /complete episode in one continuous recording/, 'الإنتاج بنداء واحد يصرّح أن الحلقة تسجيل متصل لا أجزاء')
   assert.match(cPrompt, /عُماني.*إماراتي.*قطري.*بحريني.*سعودي.*عراقي.*يمني.*الفارسية/s,
     'كل العائلات المجاورة ممنوعة بالأسماء فقط')
   assert.ok(!/Omani.*(cadence|rhythm|articulation|lilt|drawl)|Emirati.*(cadence|rhythm|articulation|lilt|drawl)/is.test(cPrompt),

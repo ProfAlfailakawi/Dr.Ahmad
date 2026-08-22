@@ -28,7 +28,11 @@ assert.match(source, /preferPalette: effectivePalette/)
 assert.match(publishingSource, /data-standalone-phrase-understanding="true"/)
 assert.match(publishingSource, /data-professional-standalone-directions="true"/)
 assert.match(publishingSource, /independent-art-direction/)
-assert.match(publishingSource, /designSimilarity\(item\.plan, candidate\.plan\) < \.74/)
+/* لا نربط العقد بعتبة التشابه القديمة: الاختيار الحالي يعظّم أقل مسافة
+   إدراكية بين الخطط ويضم القالب والاتجاه والإطار واللون والوزن البصري. */
+assert.match(publishingSource, /function perceptualDesignDistance/)
+assert.match(publishingSource, /1 - designSimilarity\(left, right\)/)
+assert.match(publishingSource, /Math\.min\(\.\.\.selected\.map\(\(chosen\) => perceptualDesignDistance\(item\.plan, chosen\.plan\)\)\)/)
 assert.match(publishingSource, /return selected\.slice\(0, 3\)/)
 assert.match(source, /const id = 'latest-approved'/)
 assert.match(source, /admin-generated-designs\/latest-approved\.json/)
@@ -42,4 +46,4 @@ assert.doesNotMatch(zeroDecision, /requestedMode === 'library'/)
 assert.match(manualGenerator, /buildImageLedPlan/)
 assert.match(manualGenerator, /runAutopilot/)
 
-console.log('Studio UI contract: two visual routes, premium ready-image curation, automatic recovery, professional release gate, and latest-approved storage passed')
+console.log('Studio UI contract: two visual routes, perceptual diversity, premium ready-image curation, automatic recovery, professional release gate, and latest-approved storage passed')

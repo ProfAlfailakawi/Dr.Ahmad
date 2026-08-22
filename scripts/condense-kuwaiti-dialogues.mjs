@@ -50,6 +50,10 @@ function phrasesOf (text) {
   return out
 }
 const ANSWER_OPENERS = /^(إي|اي|لا|صح|أكيد|أكيد،|بالضبط|صج|تماما|تمام|طبعا)\b/
+/* [٢٢ أغسطس] فواتح الاستئناف: مداخلةٌ تبدأ بـ«إن» أو «لأن» ليست جملةً
+   قائمة بذاتها بل تكملةُ ما قبلها («عندهم رأي ثاني.» / «إن هالذبذبات…»)
+   — فإن حُذف سابقها صار الكلام معلّقاً. رُصدت في موضعين من ١٤٤. */
+const CONTINUATION_OPENERS = /^(إن|أن|لأن|لأنه|لأنها)\s/
 const BACKREF_OPENERS = /^(و?هذا|و?هذي|و?هالشي|و?هالكلام|و?هو|و?هي|و?هم|و?هني|و?جذي|و?نفسه|و?نفسها)\b/
 
 /** يرصد مواضع التعليق ويعيد اقتراح جرٍّ لكل موضع (دور الأصل المُقدِّم). */
@@ -100,6 +104,11 @@ export function danglingRefs (turns, keptIdx) {
       const q = turns.slice(0, i).map((t, k) => ({ t, k })).reverse()
         .find(({ t }) => t.deliveryType === 'question' || /[؟?]\s*$/.test(String(t.text)))
       if (q && !kept.has(q.k)) issues.push({ at: i, kind: 'جواب بلا سؤال', pull: q.k })
+    }
+
+    /* ٣ب) فاتحة استئناف بلا ما تستأنفه */
+    if (cutBefore && CONTINUATION_OPENERS.test(String(turns[i].text).trim())) {
+      issues.push({ at: i, kind: 'تكملة بلا مبتدأ', pull: prevOriginal })
     }
 
     /* ٣) ضميرٌ أو إشارةٌ بلا مرجع: تبدأ بعائدٍ وسابقها الأصلي محذوف */
@@ -190,18 +199,23 @@ export function condenseEpisode(turns) {
      يفيض الوقت نضحّي بمداخلةٍ منخفضة المركزية لا بالسياق — لأن الفهم
      أهم من ثوانٍ معدودة. */
   let repairRounds = 0
+  /* الأدوار المجرورة تُحمى من الموازنة اللاحقة — بلا هذا يُدهس جرُّ
+     الجولة الأولى في ميزانية الجولة الثانية فيعود التعليق (٣ مواضع). */
+  const protectedPulls = new Set()
   for (;;) {
     const idxNow = [...picked].sort((a, b) => a - b)
     const issues = danglingRefs(turns, idxNow).filter((x) => x.pull !== null && !picked.has(x.pull))
     if (!issues.length || repairRounds++ >= 6) break
     for (const x of issues) {
       pick(x.pull)
+      protectedPulls.add(x.pull)
+      protectedPulls.add(x.at)
       flags.push(`${x.kind} في مداخلة ${x.at}${x.phrase ? ` («${x.phrase}»)` : ''} — جُرّ الدور ${x.pull} من الأصل`)
     }
     /* توازن الميزانية بعد الجرّ: تُنزع الأقل مركزيةً وحدها */
     while (budget() > TARGET_SEC + 18 && picked.size > MIN_TURNS) {
       const removable = [...picked]
-        .filter((i) => i > firstQ && i < tailStart && i !== pivot && !issues.some((x) => x.pull === i || x.at === i))
+        .filter((i) => i > firstQ && i < tailStart && i !== pivot && !protectedPulls.has(i))
         .sort((a, b) => t2s(turns[a].deliveryType) - t2s(turns[b].deliveryType))
       if (!removable.length) break
       picked.delete(removable[0])

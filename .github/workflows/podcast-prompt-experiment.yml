@@ -90,7 +90,9 @@ jobs:
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: pilot
           PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
-          PODCAST_KW_MIN_GAP: '0'
+          # [٢٢ أغسطس] كان صفراً «لأنها تجربة» فخرجت التسعة كلها بصوت
+          # واحد («كلهم صوت واحد مو ٢» — حكمه). البوابة تصدق هنا أيضاً.
+          PODCAST_KW_MIN_GAP: '12'
 
       - name: التعمية والرفع — تسعة مقاطع بأسماء مخلوطة ومفتاح مغلق
         shell: bash

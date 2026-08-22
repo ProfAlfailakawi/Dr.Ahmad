@@ -143,12 +143,39 @@ export function condenseV3 (original, splitLimit = SPLIT_AT) {
     .sort((a, b) => String(a.t.text).length - String(b.t.text).length).slice(0, 4)
   shortIdx.forEach(({ i }) => { turns[i].overlapMs = 70 })
 
-  /* ٩) الجسران — لا بعد سؤال ولا بعد الأخيرة */
+  /* ٩) الجسران — بأمره «الجسور لازم تكون في مكانها الصحيح» (٢٢ أغسطس).
+     كان الموضع يُحسب بالزمن وحده، فوقع في الحلقتين ٢ و٣ **بين مداخلتين
+     لنفس المتحدث**: نورة… موسيقى… نورة — فسمعها الدكتور «صارت بروحها
+     تتكلم». وفي ٣ تلاه أربع مداخلات متتالية لها.
+     الشروط الآن أربعة، والزمن آخرها لا أولها:
+       أ) تبادلٌ عبر الجسر: المتحدث قبله ≠ المتحدث بعده
+       ب) لا يليه احتكارٌ (٣ مداخلات متتالية لمتحدثٍ واحد)
+       ج) لا يقع بعد سؤالٍ معلّق ولا في آخر الحلقة
+       د) وبين النافذتين الزمنيتين، يُختار أقربها لفكرةٍ مكتملة */
   const total = projected(turns)
-  let acc = 0; const marks = []
-  turns.forEach((t, k) => { t.musicBridgeAfter = false; acc += String(t.text).length * 0.099 + (Number(t.pauseAfterMs) || 560) / 1000
-    if (marks.length === 0 && acc >= Math.min(total * 0.33, 62) && !isQ(t) && k < turns.length - 3) marks.push(k)
-    else if (marks.length === 1 && acc >= total * 0.68 && !isQ(t) && k < turns.length - 2 && k > marks[0] + 3) marks.push(k) })
+  const runAfter = (k) => { const sp = turns[k + 1]?.speaker; let n = 1
+    for (let m = k + 2; m < turns.length; m += 1) { if (turns[m].speaker === sp) n += 1; else break } return n }
+  const okBridge = (k) => k > 0 && k < turns.length - 3
+    && turns[k].speaker !== turns[k + 1]?.speaker   /* أ: تبادلٌ عبر الجسر */
+    && runAfter(k) < 3                              /* ب: لا احتكار بعده */
+    && !isQ(turns[k])                               /* ج: لا سؤال معلّق */
+  const times = []
+  let acc = 0
+  turns.forEach((t, k) => { t.musicBridgeAfter = false; acc += String(t.text).length * 0.099 + (Number(t.pauseAfterMs) || 560) / 1000; times[k] = acc })
+  const pickNear = (target, lo, hi, avoid) => {
+    let best = -1; let bestD = Infinity
+    for (let k = lo; k <= hi && k < turns.length; k += 1) {
+      if (!okBridge(k) || (avoid >= 0 && Math.abs(k - avoid) < 4)) continue
+      const d = Math.abs(times[k] - target)
+      if (d < bestD) { bestD = d; best = k }
+    }
+    return best
+  }
+  const marks = []
+  const a = pickNear(Math.min(total * 0.33, 62), 1, turns.length - 4, -1)
+  if (a >= 0) marks.push(a)
+  const b = pickNear(total * 0.68, (marks[0] ?? 0) + 4, turns.length - 3, marks[0] ?? -1)
+  if (b >= 0) marks.push(b)
   marks.forEach((k) => { turns[k].musicBridgeAfter = true })
 
   /* ١٠) ميزانية التعجّب — التدخّل الوحيد في النص، ومسجَّل */

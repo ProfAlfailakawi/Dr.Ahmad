@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { planReel, planReelWithMemory, commitReelMemory, type ReelPlan } from '../../lib/reel-scenes'
+import { auditReelPlan, planReel, planReelWithMemory, commitReelMemory, type ReelPlan } from '../../lib/reel-scenes'
 import { downloadReelBlob, exportReelVideo, playReelPreview, reelExportSupported, type ReelHandle } from '../../lib/reel-motion'
 import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
 
@@ -43,6 +43,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const handleRef = useRef<ReelHandle | null>(null)
   const supported = useMemo(() => reelExportSupported(), [])
+  const quality = useMemo(() => plan ? auditReelPlan(plan) : null, [plan])
 
   /* نص الاستوديو الحالي يصير بذرة الريل تلقائياً — بلا نسخ يدوي. */
   useEffect(() => {
@@ -96,6 +97,8 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
   const exportVideo = async (planToRecord?: ReelPlan) => {
     const active = planToRecord || plan || buildPlan()
     if (!active) return
+    const gate = auditReelPlan(active)
+    if (!gate.ready) { setNotice(`أوقفت بوابة الجودة التصدير: ${gate.warnings.join(' · ')}`); return }
     handleRef.current?.stop()
     setBusy('export')
     setProgress(0)
@@ -145,7 +148,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
             {busy === 'preview'
               ? <button type="button" className={ghost} onClick={stopPreview}>إيقاف المعاينة</button>
               : <button type="button" className={ghost} disabled={!plan || busy === 'export'} onClick={() => void preview()}>إعادة المعاينة</button>}
-            <button type="button" className={primary} disabled={!supported || busy === 'export'} onClick={() => void exportVideo()}>
+            <button type="button" className={primary} disabled={!supported || busy === 'export' || Boolean(quality && !quality.ready)} onClick={() => void exportVideo()}>
               {busy === 'export' ? `يسجّل… ${Math.round(progress * 100)}%` : 'صدّر الفيديو'}
             </button>
           </div>
@@ -163,7 +166,9 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
                 <span className="rounded-full bg-accent/10 px-3 py-1 text-accent">القالب: {TEMPLATE_LABELS[plan.templateId]}</span>
                 <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">العالم: {plan.world.label}</span>
                 <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">الموسيقى: {MOOD_LABELS[plan.mood]}</span>
+                <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">فعل الكلمة: {plan.motionVerb}</span>
                 <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">{arabicCountPhrase(plan.scenes.length, REEL_SCENE_FORMS)} · {arabicCountPhrase(plan.seconds, SECOND_FORMS)}</span>
+                {quality && <span className={`rounded-full px-3 py-1 ${quality.ready ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>بوابة الريل {quality.score}٪</span>}
                 {plan.concept && <span className="rounded-full bg-accent/10 px-3 py-1 text-accent">المعجم: {plan.concept}</span>}
                 {plan.metaphors.length > 0 && <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">استعارة: {plan.metaphors.join(' · ')}</span>}
               </div>
@@ -175,6 +180,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
                   </li>
                 ))}
               </ol>
+              {quality?.warnings.length ? <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.66rem] leading-relaxed text-amber-800">{quality.warnings.join(' · ')}</p> : <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[.66rem] leading-relaxed text-emerald-800">✓ لا بتر، لا تكرار، ولا خروج للنص من الإطار.</p>}
               <details className="text-[.7rem] text-soft">
                 <summary className="cursor-pointer font-semibold text-ink">لماذا اختار المخطِّط هذا الشكل؟</summary>
                 <ul className="mt-2 grid list-disc gap-1 pr-5">

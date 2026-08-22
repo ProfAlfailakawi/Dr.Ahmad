@@ -2614,6 +2614,18 @@ async function embeddedFontCss(): Promise<string> {
   return embeddedFontCssPromise
 }
 
+/**
+ * أصول التصدير نفسها متاحة لمحركات الحركة أيضاً؛ وإلا رُسم الفيديو بخطّ نظام
+ * بينما يخرج PNG بخطوط الهوية، فتختلف المعاينة عن الملف المنشور.
+ */
+export async function embeddedCompositionFontCss(): Promise<string> {
+  return embeddedFontCss()
+}
+
+export async function embeddedCompositionSeal(): Promise<string> {
+  return sealDataUri()
+}
+
 /* ------------------------------------------------------------------ */
 /*                        التصدير والتنزيل والطباعة                     */
 /* ------------------------------------------------------------------ */
@@ -2705,35 +2717,6 @@ async function livingIconOverlay(plan: CompositionPlan): Promise<((ctx: CanvasRe
     ctx.globalAlpha = 1
     paintMetaphor(ctx, metaphor, cx, cy, iconW * 0.6, 0.9, 1, { ink: pal.ink, dim: pal.muted, accent: pal.accent, accent2: pal.accentSoft || pal.accent, danger: pal.accent })
     ctx.restore()
-  }
-}
-
-/**
- * يرسم التصميم صورةً جاهزة (بخطوطٍ مضمّنة) — أساسٌ ثابت لتصدير الفيديو المتحرّك،
- * حيث تُرسم الأيقونة الحيّة فوقها إطاراً بعد إطار. نضمن تحميل الأوزان أولاً كي لا
- * يسقط الخط لبديل النظام.
- */
-export async function rasterizeCompositionToImage(plan: CompositionPlan): Promise<HTMLImageElement> {
-  await Promise.race([
-    Promise.allSettled([
-      '700 64px "El Messiri"', '600 48px "El Messiri"', '400 32px "El Messiri"',
-      '700 40px Tajawal', '500 32px Tajawal', '400 28px Tajawal',
-    ].map((font) => document.fonts?.load(font, 'أ') ?? Promise.resolve())),
-    new Promise((resolve) => window.setTimeout(resolve, 3500)),
-  ])
-  await document.fonts?.ready
-  const fontCss = await embeddedFontCss()
-  const svg = renderCompositionSvg(plan, { fontCss })
-  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  try {
-    const image = new Image()
-    image.decoding = 'async'
-    image.src = url
-    await image.decode()
-    return image
-  } finally {
-    window.setTimeout(() => URL.revokeObjectURL(url), 5000)
   }
 }
 

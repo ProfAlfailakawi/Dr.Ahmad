@@ -32,6 +32,12 @@ export type ReelWorldId =
   | 'sand-warm'
   | 'linen-blue'
   | 'pearl-mint'
+  | 'copper-eclipse'
+  | 'indigo-archive'
+  | 'emerald-atlas'
+  | 'desert-signal'
+  | 'porcelain-cyan'
+  | 'coral-future'
 
 export type ReelMotifId =
   | 'dust'
@@ -44,6 +50,7 @@ export type ReelMotifId =
   | 'underline'
 
 export type ReelMoodId = 'dark' | 'warm' | 'bright' | 'scholar'
+export type ReelMotionVerb = 'root' | 'connect' | 'split' | 'rise' | 'weave' | 'orbit' | 'pulse' | 'path' | 'question' | 'balance' | 'reveal'
 
 export interface ReelWorld {
   id: ReelWorldId
@@ -101,6 +108,8 @@ export interface ReelPlan {
   /** المفهوم الذي تعرّف عليه المعجم، ومشاهده البصرية — للعرض والتفسير. */
   concept: string | null
   metaphors: MetaphorId[]
+  /** الفعل البصري المستنتج من الكلمة؛ هو الذي يحرّك العالم خلف النص. */
+  motionVerb: ReelMotionVerb
   /** ترجمة محروقة أسفل الشاشة — تُطفأ بأمر المحرر إن أرادها نظيفة. */
   captions?: boolean
   /** ملخص قرارات المخطِّط — يُعرض للدكتور كي يفهم لماذا اختلف هذا الريل. */
@@ -124,6 +133,13 @@ const WORLDS: ReelWorld[] = [
   { id: 'sand-warm', label: 'رمل دافئ', scheme: 'light', bgTop: '#f7efe1', bgMid: '#efe1c9', bgBottom: '#e4d0ad', glow: '#fdf8ee', ink: '#3a2c18', dim: '#907a56', accent: '#c07316', accent2: '#5c6f4a', danger: '#ab3b25' },
   { id: 'linen-blue', label: 'كتان أزرق', scheme: 'light', bgTop: '#f2f5f8', bgMid: '#e6ecf2', bgBottom: '#d5e0ea', glow: '#fbfcfe', ink: '#1f2a36', dim: '#6c7d8e', accent: '#2f6f9e', accent2: '#b0762c', danger: '#b23a2e' },
   { id: 'pearl-mint', label: 'لؤلؤ نعناعي', scheme: 'light', bgTop: '#f3f7f4', bgMid: '#e7efe9', bgBottom: '#d6e5db', glow: '#fbfefc', ink: '#1e2a24', dim: '#6f8177', accent: '#2f8f6f', accent2: '#b08a2c', danger: '#b23a2e' },
+  // عوالم سردية جديدة: لكل واحد مادة وضوء لا مجرد لوحة لون أخرى.
+  { id: 'copper-eclipse', label: 'كسوف النحاس', scheme: 'dark', bgTop: '#35231f', bgMid: '#201511', bgBottom: '#0f0b09', glow: '#654132', ink: '#f4e9db', dim: '#ae9180', accent: '#e29a55', accent2: '#7995b2', danger: '#e25b43' },
+  { id: 'indigo-archive', label: 'أرشيف النيلي', scheme: 'dark', bgTop: '#242648', bgMid: '#15172f', bgBottom: '#0b0d1e', glow: '#3b3f70', ink: '#eff0ff', dim: '#999dc5', accent: '#d8bd72', accent2: '#8e9cff', danger: '#e25d68' },
+  { id: 'emerald-atlas', label: 'أطلس الزمرد', scheme: 'dark', bgTop: '#163a35', bgMid: '#0d2522', bgBottom: '#071512', glow: '#275f56', ink: '#e8f5ef', dim: '#8eb1a8', accent: '#e2bd69', accent2: '#74c7b6', danger: '#df5a4c' },
+  { id: 'desert-signal', label: 'إشارة الصحراء', scheme: 'light', bgTop: '#fbf1df', bgMid: '#efd9b7', bgBottom: '#dfbc89', glow: '#fff9ef', ink: '#382719', dim: '#8b6f50', accent: '#bd542b', accent2: '#2e6d72', danger: '#a9322a' },
+  { id: 'porcelain-cyan', label: 'خزف سماوي', scheme: 'light', bgTop: '#f4fafb', bgMid: '#e1f0f2', bgBottom: '#cce2e5', glow: '#ffffff', ink: '#17313a', dim: '#66838a', accent: '#176f7a', accent2: '#c17a35', danger: '#b23a36' },
+  { id: 'coral-future', label: 'مستقبل مرجاني', scheme: 'light', bgTop: '#fff3ee', bgMid: '#f7dfd5', bgBottom: '#eac7bb', glow: '#fffaf7', ink: '#382428', dim: '#8d6b70', accent: '#be4f58', accent2: '#336f78', danger: '#a82f38' },
 ]
 
 const worldById = new Map(WORLDS.map((world) => [world.id, world]))
@@ -132,15 +148,15 @@ const worldById = new Map(WORLDS.map((world) => [world.id, world]))
 /* كل موضوع يمزج داكناً وفاتحاً كي لا تخرج الريلات كلها سوداء ولا كلها بيضاء —
    والبذرة تدور على المجموعة فيتنوّع المزاج البصري بين مادةٍ وأخرى. */
 const TOPIC_WORLDS: Record<ContentTopic, ReelWorldId[]> = {
-  ai: ['sadu-night', 'graphite-dusk', 'linen-blue', 'observatory-night', 'lab-notebook', 'pearl-mint'],
-  education: ['observatory-night', 'cream-daylight', 'ink-marble', 'dawn-blush', 'sand-warm', 'lab-notebook'],
-  family: ['sand-warm', 'dawn-orchard', 'cream-daylight', 'dawn-blush', 'magazine-paper'],
-  research: ['lab-notebook', 'linen-blue', 'graphite-dusk', 'ink-marble', 'pearl-mint'],
-  media: ['majlis-velvet', 'sand-warm', 'sadu-night', 'dawn-blush', 'graphite-dusk'],
-  leadership: ['majlis-velvet', 'graphite-dusk', 'linen-blue', 'observatory-night', 'sadu-night'],
-  human: ['dawn-blush', 'cream-daylight', 'majlis-velvet', 'sand-warm', 'dawn-orchard'],
-  book: ['ink-marble', 'sand-warm', 'majlis-velvet', 'magazine-paper', 'cream-daylight'],
-  general: ['observatory-night', 'cream-daylight', 'dawn-blush', 'sadu-night', 'sand-warm', 'linen-blue'],
+  ai: ['indigo-archive', 'copper-eclipse', 'porcelain-cyan', 'sadu-night', 'graphite-dusk', 'linen-blue', 'observatory-night', 'lab-notebook', 'pearl-mint'],
+  education: ['porcelain-cyan', 'observatory-night', 'cream-daylight', 'ink-marble', 'dawn-blush', 'sand-warm', 'lab-notebook', 'coral-future'],
+  family: ['desert-signal', 'sand-warm', 'dawn-orchard', 'cream-daylight', 'dawn-blush', 'magazine-paper', 'coral-future'],
+  research: ['indigo-archive', 'lab-notebook', 'porcelain-cyan', 'linen-blue', 'graphite-dusk', 'ink-marble', 'pearl-mint'],
+  media: ['copper-eclipse', 'desert-signal', 'majlis-velvet', 'sand-warm', 'sadu-night', 'dawn-blush', 'graphite-dusk'],
+  leadership: ['emerald-atlas', 'majlis-velvet', 'graphite-dusk', 'linen-blue', 'observatory-night', 'sadu-night'],
+  human: ['coral-future', 'dawn-blush', 'cream-daylight', 'majlis-velvet', 'sand-warm', 'dawn-orchard'],
+  book: ['indigo-archive', 'ink-marble', 'sand-warm', 'majlis-velvet', 'magazine-paper', 'cream-daylight'],
+  general: ['emerald-atlas', 'desert-signal', 'observatory-night', 'cream-daylight', 'dawn-blush', 'sadu-night', 'sand-warm', 'linen-blue'],
 }
 
 const MOOD_BY_TONE: Partial<Record<ContentTone, ReelMoodId>> = {
@@ -192,17 +208,41 @@ function splitSentences(text: string): string[] {
     .filter((part) => part.length >= 6)
 }
 
-/** يقصّ السطر ليصلح مشهداً — الريل يحب الجُمل القصيرة الضاربة. */
-function tightLine(line: string, max = 46): string {
+const DANGLING_START = /^(?:لكن|لكنّ|بل|و|ف|ثم|أو|أي|حيث|الذي|التي|كما|لأن|إذ|بينما|رغم)\b/
+const DANGLING_END = /(?:و|أو|من|إلى|على|في|عن|أن|إن|مع|بين|بعد|قبل|كل|هذا|هذه|التي|الذي|بل|لكن)$/
+
+function selfContainedLine(line: string) {
+  const clean = line.replace(/[،؛:.؟!…]+$/u, '').trim()
+  const words = clean.split(/\s+/).filter(Boolean)
+  return words.length >= 2 && words.length <= 20 && !DANGLING_START.test(clean) && !DANGLING_END.test(clean)
+}
+
+/**
+ * يختار شذرة تامة من الجملة ولا يقصّها عند عدد أحرف أعمى. إن لم يجد حدّاً
+ * دلالياً صالحاً يُبقي الجملة كاملة؛ الرسّام مسؤول عن لفّها على سطرين.
+ */
+function sceneLine(line: string, max = 92): string {
   const clean = line.replace(/["«»]/g, '').replace(/\s+/g, ' ').trim()
   if (clean.length <= max) return clean
-  const words = clean.split(' ')
-  let out = ''
-  for (const word of words) {
-    if ((out + ' ' + word).trim().length > max) break
-    out = (out + ' ' + word).trim()
-  }
-  return (out || clean.slice(0, max)).replace(/[\u060C,؛:\-–—]+$/u, '').trim()
+  const clauses = clean.split(/(?:[،؛:]|\s+[—–-]\s+)/).map((part) => part.trim()).filter(Boolean)
+  const complete = clauses.filter((part) => part.length >= 14 && part.length <= max && selfContainedLine(part))
+  return complete[0] || clean
+}
+
+function reelMotionVerb(text: string): ReelMotionVerb {
+  const tests: Array<[ReelMotionVerb, RegExp]> = [
+    ['balance', /(توازن|ميزان|إنسان.*آلة|آلة.*إنسان|أخلاق|اخلاق|ضمير|عدالة)/],
+    ['root', /(جذر|جذور|بذرة|غرس|ينمو|نمو|شجرة|تربية|طفل)/],
+    ['rise', /(نسبة|٪|%|رقم|ارتفاع|يصعد|أداء|نتيجة)/],
+    ['split', /(ليس|ليست|بلا |بل |لكن|مقابل|فجوة|انقسام|بينما)/],
+    ['question', /(؟|سؤال|لماذا|كيف|ماذا|هل )/],
+    ['weave', /(نسيج|خيط|سرد|ثقافة|هوية|معنى)/],
+    ['orbit', /(مدار|كوكب|كون|دورة|منظومة|نظام)/],
+    ['path', /(طريق|مسار|رحلة|مستقبل|اتجاه|تحول|قرار)/],
+    ['connect', /(شبك|اتصال|تواصل|بيانات|مجتمع|علاقة|ربط|ذكاء)/],
+    ['pulse', /(نبض|قلب|حياة|إنسان|شعور|أثر)/],
+  ]
+  return tests.find(([, pattern]) => pattern.test(text))?.[0] || 'reveal'
 }
 
 interface MinedText {
@@ -220,21 +260,21 @@ function mineText(title: string, body: string): MinedText {
   const sentences = splitSentences(full)
 
   const rawQuestion = full.split(/[.!…]/).map((part) => part.trim()).find((part) => part.includes('؟') && part.length >= 10 && part.length <= 90)
-  const question = rawQuestion ? tightLine(rawQuestion.replace(/؟+$/, '') , 44) + '؟' : null
+  const question = rawQuestion ? sceneLine(rawQuestion.replace(/؟+$/, ''), 92) + '؟' : null
 
   let contrast: MinedText['contrast'] = null
   const contrastMatch = full.match(/(?:ليس|ليست|لم يعد|لا)\s+([^.!؟…]{6,60})(?:…|\.\.\.|،|\.)\s*(?:بل|لكن|إنما)\s+([^.!؟…]{6,60})/)
   if (contrastMatch) {
-    contrast = { first: tightLine(contrastMatch[1], 38), second: tightLine(contrastMatch[2], 38) }
+    contrast = { first: sceneLine(contrastMatch[1], 72), second: sceneLine(contrastMatch[2], 72) }
   } else {
     /* نفيٌ صريح بلا «بل» — كعنوان «الوطن ليس وجهةَ نظر» — يظل مقابلةً حيّة:
        نأخذ المنفيّ طرفاً أول، وأقوى جملة بعده طرفاً ثانياً. */
     const negation = full.match(/(?:ليس|ليست|لم يعد)\s+([^.!؟…،]{6,52})/)
-    if (negation) contrast = { first: tightLine(negation[1], 38), second: '' }
+    if (negation) contrast = { first: sceneLine(negation[1], 72), second: '' }
   }
 
   const quoteMatch = full.match(/«([^»]{14,80})»/)
-  const quoteCandidate = quoteMatch ? tightLine(quoteMatch[1], 46) : null
+  const quoteCandidate = quoteMatch ? sceneLine(quoteMatch[1], 92) : null
   const quote = quoteCandidate && quoteCandidate.split(' ').length >= 3 ? quoteCandidate : null
 
   const numberMatch = full.match(/(?:^|\s)(\d{2,3})\s*[%٪]/) || full.match(/(?:^|\s)(\d{2,3})(?=\s)/)
@@ -256,15 +296,6 @@ function mineText(title: string, body: string): MinedText {
 
   /* انتقاء الجُمل: الشذرة المبتورة تقتل المشهد. نرفض ما يبدأ بحرف عطفٍ أو
      ربطٍ معلَّق، وما ينتهي معلَّقاً، ونرجّح الجملة التامة القصيرة الحاملة لمقابلة. */
-  const DANGLING_START = /^(?:لكن|لكنّ|بل|و|ف|ثم|أو|أي|حيث|الذي|التي|كما|لأن|إذ|بينما|رغم)\b/
-  const DANGLING_END = /(?:و|أو|من|إلى|على|في|عن|أن|إن|مع|بين|بعد|قبل|كل|هذا|هذه|التي|الذي)$/
-  const selfContained = (line: string) => {
-    const words = line.split(/\s+/).filter(Boolean)
-    if (words.length < 4 || words.length > 12) return false
-    if (DANGLING_START.test(line)) return false
-    if (DANGLING_END.test(line.replace(/[،؛:.]$/, '').trim())) return false
-    return true
-  }
   const scoreLine = (line: string) => {
     let score = 0
     if (/(ليس|لا يزال|لم يعد|بل |وحده|أخطر|الحقيقة|السؤال|لأول مرة)/.test(line)) score += 3
@@ -277,8 +308,8 @@ function mineText(title: string, body: string): MinedText {
     return score
   }
   const strongLines = sentences
-    .map((sentence) => tightLine(sentence))
-    .filter((line) => line.length >= 14 && line.length <= 64 && selfContained(line))
+    .map((sentence) => sceneLine(sentence))
+    .filter((line) => line.length >= 14 && line.length <= 118 && selfContainedLine(line))
     .sort((a, b) => scoreLine(b) - scoreLine(a))
     .slice(0, 6)
 
@@ -304,6 +335,7 @@ export interface ReelSource {
   body: string
   author?: string
   site?: string
+  cta?: string
 }
 
 export function planReel(source: ReelSource, variant = 0): ReelPlan {
@@ -353,6 +385,7 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
 
   /* الموضوع المرجَّح: إشارات مفردات تسند المحلّل حين يتردد. */
   const lexicon = `${title} ${body.slice(0, 600)}`
+  const motionVerb = reelMotionVerb(`${title} ${body.slice(0, 1200)}`)
   const nudgedTopic: ContentTopic =
     /(وداع|رحيل|رحل|فقدنا|قلوب|أحبابنا)/.test(lexicon) ? 'human'
       : /(الوطن|أزمات|إنذار|صفارات)/.test(lexicon) ? 'media'
@@ -471,35 +504,53 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
 
   /* المشاهد — تُبنى من المادة الحية المنقّبة، لا من نص محفوظ. */
   const strong = mined.strongLines
-  const line = (index: number, fallback: string) => strong[index] || fallback
   const scenes: ReelScene[] = []
-  scenes.push({ kind: 'signature', slug: 'MARK / 01', line: 'الإنسان قبل الآلة', seconds: 2.2 })
+  const usedLines = new Set<string>()
+  const normalizeSceneLine = (value: string) => value.replace(/[\u064B-\u0652\u0640\p{P}\p{S}]/gu, '').replace(/\s+/g, ' ').trim().toLowerCase()
+  const takeLine = (candidates: Array<string | null | undefined>, fallback: string) => {
+    for (const candidate of [...candidates, fallback]) {
+      const clean = sceneLine(String(candidate || '').trim())
+      const key = normalizeSceneLine(clean)
+      if (!clean || key.length < 5 || usedLines.has(key)) continue
+      usedLines.add(key)
+      return clean
+    }
+    const repair = `${fallback.replace(/[؟.!…]+$/u, '')} — من زاوية أخرى`
+    usedLines.add(normalizeSceneLine(repair))
+    return repair
+  }
+  const addScene = (scene: Omit<ReelScene, 'line'>, candidates: Array<string | null | undefined>, fallback: string) => {
+    scenes.push({ ...scene, line: takeLine(candidates, fallback) })
+  }
+
+  /* أول ثانية تنطق موضوع المادة، لا شعاراً ثابتاً يتكرر في كل ريل. */
+  addScene({ kind: 'signature', slug: 'HOOK / 01', eyebrow: 'الفكرة في ومضة', seconds: 1.35 }, [title, mined.question, strong[0]], 'الفكرة التي تستحق أن نتوقف عندها')
 
   if (templateId === 'question') {
-    scenes.push({ kind: 'hook', slug: 'ASK / 02', eyebrow: 'سؤال يفتح المادة', line: mined.question || tightLine(title), accent: true, seconds: 3.4 })
-    scenes.push({ kind: 'shift', slug: 'LOOK / 03', line: line(0, tightLine(title)), seconds: 3.2 })
-    scenes.push({ kind: 'truth', slug: 'TRUTH / 04', eyebrow: 'وهنا جوهر الأمر', line: line(1, 'الجواب يبدأ من الإنسان'), accent: true, seconds: 3.4 })
+    addScene({ kind: 'hook', slug: 'ASK / 02', eyebrow: 'سؤال يفتح المادة', accent: true, seconds: 3.4 }, [mined.question, strong[0], strong[1]], 'ما الذي تغيّره هذه الفكرة فعلاً؟')
+    addScene({ kind: 'shift', slug: 'LOOK / 03', seconds: 3.2 }, [strong[0], strong[1], strong[2]], 'انظر إلى ما وراء الإجابة السريعة')
+    addScene({ kind: 'truth', slug: 'TRUTH / 04', eyebrow: 'وهنا جوهر الأمر', accent: true, seconds: 3.4 }, [strong[1], strong[2], strong[3]], 'الجواب يبدأ من الإنسان')
   } else if (templateId === 'siren') {
-    scenes.push({ kind: 'hook', slug: 'NOISE / 02', eyebrow: 'في الضجيج اليومي', line: line(0, tightLine(title)), seconds: 3.2 })
-    scenes.push({ kind: 'shift', slug: 'SIREN / 03', eyebrow: mined.contrast ? `ليس ${mined.contrast.first}` : 'حين يعلو الاختبار', line: mined.contrast ? `بل ${mined.contrast.second}` : line(1, 'يسقط ما لا يثبت'), accent: true, seconds: 3.6 })
-    scenes.push({ kind: 'truth', slug: 'HOLD / 04', line: line(2, tightLine(title)), seconds: 3.0 })
+    addScene({ kind: 'hook', slug: 'NOISE / 02', eyebrow: 'في الضجيج اليومي', seconds: 3.2 }, [strong[0], strong[1]], 'ليس كل ما يلمع جواباً')
+    addScene({ kind: 'shift', slug: 'SIREN / 03', eyebrow: mined.contrast ? `ليس ${sceneLine(mined.contrast.first, 72)}` : 'حين يعلو الاختبار', accent: true, seconds: 3.6 }, [mined.contrast?.second ? `بل ${mined.contrast.second}` : null, strong[1], strong[2]], 'بل ما يثبت أمام السؤال')
+    addScene({ kind: 'truth', slug: 'HOLD / 04', seconds: 3.0 }, [strong[2], strong[3], strong[1]], 'يبقى الجوهر حين يهدأ الضجيج')
   } else if (templateId === 'counter') {
-    scenes.push({ kind: 'hook', slug: 'COUNT / 02', eyebrow: 'الرقم يصعد…', line: `${mined.number}٪ ليست القصة كلها`, seconds: 3.2 })
-    scenes.push({ kind: 'shift', slug: 'GRAY / 03', line: line(0, 'ما الذي لا يقيسه الرقم؟'), seconds: 3.2 })
-    scenes.push({ kind: 'truth', slug: 'ASK / 04', eyebrow: 'السؤال الأصدق', line: line(1, 'ماذا بقي بعد النتيجة؟'), accent: true, seconds: 3.4 })
+    addScene({ kind: 'hook', slug: 'COUNT / 02', eyebrow: 'الرقم يصعد…', seconds: 3.2 }, [`${mined.number}٪ ليست القصة كلها`], 'الرقم ليس القصة كلها')
+    addScene({ kind: 'shift', slug: 'GRAY / 03', seconds: 3.2 }, [strong[0], strong[1]], 'ما الذي لا يقيسه الرقم؟')
+    addScene({ kind: 'truth', slug: 'ASK / 04', eyebrow: 'السؤال الأصدق', accent: true, seconds: 3.4 }, [strong[1], strong[2]], 'ماذا بقي بعد النتيجة؟')
   } else if (templateId === 'manuscript') {
-    scenes.push({ kind: 'hook', slug: 'INK / 02', eyebrow: 'من المتن', line: mined.quote || line(0, tightLine(title)), seconds: 3.6 })
-    scenes.push({ kind: 'shift', slug: 'WRITE / 03', line: line(1, tightLine(title)), seconds: 3.2 })
-    scenes.push({ kind: 'truth', slug: 'SEAL / 04', eyebrow: 'الخلاصة', line: line(2, 'المعنى قبل الأداة'), accent: true, seconds: 3.2 })
+    addScene({ kind: 'hook', slug: 'INK / 02', eyebrow: 'من المتن', seconds: 3.6 }, [mined.quote, strong[0], strong[1]], 'جملة واحدة قد تفتح المعنى كله')
+    addScene({ kind: 'shift', slug: 'WRITE / 03', seconds: 3.2 }, [strong[1], strong[2], strong[0]], 'ما بين السطور أبلغ من العنوان')
+    addScene({ kind: 'truth', slug: 'SEAL / 04', eyebrow: 'الخلاصة', accent: true, seconds: 3.2 }, [strong[2], strong[3]], 'المعنى قبل الأداة')
   } else {
-    scenes.push({ kind: 'hook', slug: 'WEAVE / 02', eyebrow: 'خيط أول', line: line(0, tightLine(title)), seconds: 3.2 })
-    scenes.push({ kind: 'idea', slug: 'CROSS / 03', line: line(1, 'الأداة وحدها لا تنسج شيئاً'), seconds: 3.2 })
-    scenes.push({ kind: 'truth', slug: 'KNOT / 04', eyebrow: 'العقدة التي تمسك النسيج', line: line(2, tightLine(title)), accent: true, seconds: 3.4 })
+    addScene({ kind: 'hook', slug: 'WEAVE / 02', eyebrow: 'خيط أول', seconds: 3.2 }, [strong[0], strong[1]], 'كل فكرة تبدأ بخيط صغير')
+    addScene({ kind: 'idea', slug: 'CROSS / 03', seconds: 3.2 }, [strong[1], strong[2]], 'الأداة وحدها لا تنسج شيئاً')
+    addScene({ kind: 'truth', slug: 'KNOT / 04', eyebrow: 'العقدة التي تمسك النسيج', accent: true, seconds: 3.4 }, [strong[2], strong[3]], 'المعنى هو ما يمسك النسيج')
   }
 
   /* مشهد إضافي للمواد الغنية — التنويع في الطول أيضاً. */
   if (body.length > 900 && strong[3]) {
-    scenes.push({ kind: 'idea', slug: 'MORE / 05', line: strong[3], seconds: 3.0 })
+    addScene({ kind: 'idea', slug: 'MORE / 05', seconds: 3.0 }, [strong[3], strong[4], strong[5]], 'ويبقى في الفكرة ما يستحق التأمل')
   }
 
   /* مشاهد الاستعارة: الفكرة تُرسم لا تُكتب. الأقوى دلالةً أولاً (المكتبة رتّبتها
@@ -507,28 +558,26 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
      باستعارتين مختلفتين، فيزداد التنويع داخل الريل لا بينه فقط. */
   if (metaphors.length) {
     const firstMetaphor = metaphors[variant % metaphors.length]
-    scenes.push({
+    addScene({
       kind: 'metaphor',
       slug: `IMAGE / ${String(scenes.length + 1).padStart(2, '0')}`,
       metaphor: firstMetaphor,
       metaphorVariation: (seed >> 3) + variant * 13,
       eyebrow: conceptName || undefined,
-      line: strong[3] || strong[0] || tightLine(title, 40),
       seconds: 3.2,
-    })
+    }, [strong[3], strong[4], strong[0], strong[5]], 'هنا تتحول الفكرة إلى صورة')
     const secondMetaphor = metaphors.find((m) => m !== firstMetaphor)
     if (secondMetaphor && body.length > 700 && strong[4]) {
-      scenes.push({
+      addScene({
         kind: 'metaphor',
         slug: `IMAGE / ${String(scenes.length + 1).padStart(2, '0')}`,
         metaphor: secondMetaphor,
         metaphorVariation: (seed >> 5) + variant * 29 + 7,
-        line: strong[4],
         seconds: 3.0,
-      })
+      }, [strong[4], strong[5], strong[2]], 'وللفكرة صورة ثانية لا تكرر الأولى')
     }
   }
-  scenes.push({ kind: 'close', slug: `FINAL / ${String(scenes.length + 1).padStart(2, '0')}`, eyebrow: title.replace(/\s+/g, ' ').trim(), line: 'المقال كاملاً في الموقع', seconds: 3.6 })
+  scenes.push({ kind: 'close', slug: `FINAL / ${String(scenes.length + 1).padStart(2, '0')}`, eyebrow: sceneLine(title, 92), line: source.cta?.trim() || 'الفكرة كاملة في الموقع', seconds: 3.6 })
 
   /* الإيقاع جزءٌ من الهوية: القالب يفرض نَفَسه (الصفارة تلهث، المخطوطة تتمهّل)،
      والبذرة تزيح الإيقاع قليلاً — فلا تخرج الريلات كلها بطولٍ واحد ممل. */
@@ -544,6 +593,7 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
   }
   const seconds = Math.round(scenes.reduce((total, scene) => total + scene.seconds, 0) * 10) / 10
   if (conceptName) rationale.push(`المعجم تعرّف على «${conceptName}» فاقترح مشاهده البصرية${metaphors.length ? ` — واخترتُ منها: ${metaphors.join(' · ')}` : ''}`)
+  rationale.push(`فهمتُ فعل العبارة بصرياً على أنه «${motionVerb}»، فبنيتُ حركة العالم عليه`)
   rationale.push(`${arabicCountPhrase(scenes.length, REEL_SCENE_FORMS)} · ${arabicCountPhrase(seconds, SECOND_FORMS)} · زخارف: ${motifs.join(' + ')}`)
 
   return {
@@ -563,11 +613,62 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
     variant,
     concept: conceptName,
     metaphors,
+    motionVerb,
     rationale,
   }
 }
 
 export const REEL_WORLDS = WORLDS
+
+export interface ReelQualityReport {
+  score: number
+  ready: boolean
+  checks: string[]
+  warnings: string[]
+  signature: string
+}
+
+export function reelPerceptualSignature(plan: ReelPlan) {
+  const metaphor = plan.scenes.find((scene) => scene.kind === 'metaphor')?.metaphor || 'none'
+  const density = plan.scenes.length >= 7 ? 'dense' : plan.scenes.length <= 5 ? 'lean' : 'balanced'
+  return [plan.templateId, plan.world.scheme, plan.world.id, plan.motionVerb, metaphor, density, [...plan.motifs].sort().join('+')].join(':')
+}
+
+/** بوابة قبل التشغيل والتصدير: تكشف التكرار والبتر والحمولة الزائدة آلياً. */
+export function auditReelPlan(plan: ReelPlan): ReelQualityReport {
+  const normalize = (value: string) => value.replace(/[\u064B-\u0652\u0640\p{P}\p{S}]/gu, '').replace(/\s+/g, ' ').trim().toLowerCase()
+  const seen = new Set<string>()
+  const warnings: string[] = []
+  let duplicates = 0
+  let dangling = 0
+  let long = 0
+  plan.scenes.forEach((scene) => {
+    const key = normalize(scene.line)
+    if (seen.has(key)) duplicates += 1
+    seen.add(key)
+    if (!selfContainedLine(scene.line) && scene.kind !== 'close') dangling += 1
+    if (scene.line.length > 126) long += 1
+  })
+  if (duplicates) warnings.push(`${duplicates} تكرار نصي بين المشاهد`)
+  if (dangling) warnings.push(`${dangling} جملة معلّقة أو غير مكتملة`)
+  if (long) warnings.push(`${long} سطر طويل سيلفّه المصيّر إلى أكثر من سطر`)
+  if (plan.scenes[0]?.line === plan.footerMark) warnings.push('الافتتاح يكرر شعار الهوية بدلاً من موضوع المادة')
+  if (plan.seconds > 31) warnings.push('الريل أطول من ٣١ ثانية؛ قد يهبط الاحتفاظ بالمشاهد')
+  const score = Math.max(0, 100 - duplicates * 20 - dangling * 18 - long * 4 - (plan.seconds > 31 ? 6 : 0))
+  return {
+    score,
+    ready: duplicates === 0 && dangling === 0 && score >= 82,
+    checks: [
+      'الافتتاح خاص بموضوع المادة',
+      'كل مشهد يحمل جملة مختلفة',
+      'اللفّ البصري يمنع خروج النص من الإطار',
+      `العالم يتحرك بفعل «${plan.motionVerb}»`,
+      'البصمة الصوتية مشتقة من بذرة المادة',
+    ],
+    warnings,
+    signature: reelPerceptualSignature(plan),
+  }
+}
 
 
 /* ------------------------------- الذاكرة ------------------------------- */
@@ -579,7 +680,7 @@ export const REEL_WORLDS = WORLDS
  */
 const MEMORY_KEY = 'reel:concept-history:v1'
 
-type ConceptHistory = Record<string, { count: number; lastTemplate?: ReelTemplateId; lastWorld?: string; lastMetaphor?: string; usedMetaphors?: string[] }>
+type ConceptHistory = Record<string, { count: number; lastTemplate?: ReelTemplateId; lastWorld?: string; lastMetaphor?: string; usedMetaphors?: string[]; lastSignature?: string; usedSignatures?: string[] }>
 
 function readHistory(): ConceptHistory {
   if (typeof localStorage === 'undefined') return {}
@@ -615,6 +716,7 @@ export function planReelWithMemory(source: ReelSource): MemoryAwarePlan {
   const record = history[key] || { count: 0 }
   const primaryMetaphor = (candidate: ReelPlan) => candidate.scenes.find((scene) => scene.kind === 'metaphor')?.metaphor
   const used = new Set(record.usedMetaphors || [])
+  const usedSignatures = new Set(record.usedSignatures || [])
   let variant = record.count
   let plan = planReel(source, variant)
   /* ضمان اختلاف القالب والصورة عن آخر مرة، وتجنّب الصور المستهلكة سابقاً
@@ -623,7 +725,9 @@ export function planReelWithMemory(source: ReelSource): MemoryAwarePlan {
     const met = primaryMetaphor(plan)
     const templateClash = plan.templateId === record.lastTemplate
     const metaphorClash = met === record.lastMetaphor || (met !== undefined && used.has(met) && used.size < plan.metaphors.length)
-    if (!templateClash && !metaphorClash) break
+    const signature = reelPerceptualSignature(plan)
+    const perceptualClash = signature === record.lastSignature || (usedSignatures.has(signature) && usedSignatures.size < 10)
+    if (!templateClash && !metaphorClash && !perceptualClash) break
     variant += 1
     plan = planReel(source, variant)
   }
@@ -637,6 +741,8 @@ export function commitReelMemory(key: string, plan: ReelPlan) {
   const metaphor = plan.scenes.find((scene) => scene.kind === 'metaphor')?.metaphor
   /* نحتفظ بآخر ثماني صورٍ مستعملة كي لا تعود إحداها قبل استنفاد التنوّع. */
   const usedMetaphors = [...(record.usedMetaphors || []), metaphor].filter(Boolean).slice(-8) as string[]
-  history[key] = { count: record.count + 1, lastTemplate: plan.templateId, lastWorld: plan.world.label, lastMetaphor: metaphor, usedMetaphors }
+  const signature = reelPerceptualSignature(plan)
+  const usedSignatures = [...(record.usedSignatures || []), signature].filter(Boolean).slice(-10)
+  history[key] = { count: record.count + 1, lastTemplate: plan.templateId, lastWorld: plan.world.label, lastMetaphor: metaphor, usedMetaphors, lastSignature: signature, usedSignatures }
   writeHistory(history)
 }

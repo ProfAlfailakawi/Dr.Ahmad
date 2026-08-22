@@ -249,8 +249,10 @@ function promptFor(turns, index, total, mode = PROMPT_MODE) {
          ثم تنجرف بعد الدقيقة الثانية. فالمرساة تعمل ويتلاشى أثرها. فصار التذكير
          **نسخةً مصغّرة من المرساة نفسها بالعربية**، وكل ستة أدوارٍ لا عشرة —
          لأن الانجراف يبدأ نحو الدور العشرين. */
-      if (mode === 'full' && index > 0 && index % 6 === 0) {
-        lines.push('[تذكير — نفس لسان مدينة الكويت الذي بدأتَ به: «شخبارك؟ شلونك اليوم؟» · خفيفٌ في الفم، لا تفخيم ولا إطالة، ونهاية الجملة تنزل هادئة. وبنفس حماس أول سطرٍ وحيويته: أنتما اثنان مهتمّان بما تقولان، لا قارئان لنصّ. الحيوية في الحوار لا في ثِقَل النطق. لا تسترخِ ولا تبرد كلما طال التسجيل.]')
+      if ((mode === 'full' || mode === 'c') && index > 0 && index % 6 === 0) {
+        lines.push(mode === 'c'
+          ? '[director reset — silently keep the exact same native urban Kuwait City accent, light mouth placement, calm falling sentence endings, two voices, room, microphones, and spontaneous chemistry established in the opening. Continue directly; never speak this note.]'
+          : '[تذكير — نفس لسان مدينة الكويت الذي بدأتَ به: «شخبارك؟ شلونك اليوم؟» · خفيفٌ في الفم، لا تفخيم ولا إطالة، ونهاية الجملة تنزل هادئة. وبنفس حماس أول سطرٍ وحيويته: أنتما اثنان مهتمّان بما تقولان، لا قارئان لنصّ. الحيوية في الحوار لا في ثِقَل النطق. لا تسترخِ ولا تبرد كلما طال التسجيل.]')
     }
     lines.push(`${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType, mode)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': ['))
   })
@@ -1030,6 +1032,7 @@ if (SELF_TEST) {
   const cPrompt = promptFor(chunks[0], 0, chunks.length, 'c')
   const cContinuation = promptFor(chunks.at(-1), 1, chunks.length, 'c')
   const cSingleCall = promptFor(turns, 0, 1, 'c')
+  const cResetProbe = promptFor(Array.from({ length: 7 }, (_, index) => turns[index % turns.length]), 0, 1, 'c')
   assert.ok(cPrompt.includes("# DIRECTOR'S NOTES") && cPrompt.trimEnd().endsWith(spokenForm(chunks[0][chunks[0].length-1].text)),
     'C ببنية Google والنص المنطوق آخر شيء في الطلب')
   assert.match(cPrompt, /# SAMPLE CONTEXT/, 'C يحمل مرساةً كويتيةً صامتة كما توصي بنية Google')
@@ -1041,7 +1044,9 @@ if (SELF_TEST) {
     'كل العائلات المجاورة ممنوعة بالأسماء فقط')
   assert.ok(!/Omani.*(cadence|rhythm|articulation|lilt|drawl)|Emirati.*(cadence|rhythm|articulation|lilt|drawl)/is.test(cPrompt),
     'لا وصف حي لصوت اللهجة الممنوعة — منعٌ لا تلقين')
-  assert.ok(!/\[تذكير/.test(cPrompt) && !cPrompt.includes(KW_LOCK), 'C بلا تذكيرات وتيجانه أداء صرف بلا قفل لهجة')
+  assert.match(cResetProbe, /\[director reset — silently keep the exact same native urban Kuwait City accent/,
+    'C يعيد المرساة الإيجابية بصمت داخل النداء الواحد كل ست مداخلات ضد الانجراف الداخلي')
+  assert.ok(!/\[تذكير/.test(cPrompt) && !cPrompt.includes(KW_LOCK), 'C بلا تذكير عربي طويل وتيجانه أداء صرف')
   assert.ok(minimalPrompt.length < transcriptOf(chunks[0]).length + 900,
     'الأدنى قصير فعلاً — رأس وذيل دون ٩٠٠ حرف فوق النص')
   function transcriptOf(group){ return group.map((t)=>spokenForm(t.text)).join('\n') }

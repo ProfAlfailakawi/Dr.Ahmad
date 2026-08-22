@@ -42,6 +42,14 @@ const HEARD_FAILURES = [
   /في شي له قيمة تحرك/u,
   /مو شي هو عليه طول عمره/u,
   /ما ناسبت فهمه/u,
+  /\bنقيس\b/u,
+  /يناطره/u,
+  /يخبي/u,
+  /بد(?:ا)?ل لا يقول/u,
+  /ننسى ليش نسوي/u,
+  /\bيشرد\b/u,
+  /فلان ياب/u,
+  /الفيل(?:ك|چ)اوي/u,
 ]
 const DIFFICULT_NAMES = /إدمندسون|ريان وديسي|بيليزا|باهاريا|كينان|بيرس ستيل|Frontiers|Moral Education|Microsoft/u
 const HUMAN_SIGNALS = /ممم|لحظة|لا عاد|ما فهمت|أوف|أنا…|إي!|صراحة|إي والله|زين هدي/u
@@ -67,6 +75,11 @@ for (const [slug, turnsRaw] of episodes) {
   assert.deepEqual([...speakers].sort(), ['female', 'male'], `${slug}: لازم صوتان`) 
   assert.ok(turns.length >= 22 && turns.length <= 34, `${slug}: عدد المداخلات ${turns.length}`)
   assert.equal(turns.filter((turn) => turn.musicBridgeAfter).length, 2, `${slug}: الجسران مونتاجيان`)
+  for (const [index, turn] of turns.entries()) {
+    if (!turn.musicBridgeAfter) continue
+    assert.notEqual(turn.deliveryType, 'question', `${slug}: الجسر قطع سؤالاً قبل جوابه عند المداخلة ${index + 1}`)
+    assert.ok(index < turns.length - 1, `${slug}: الجسر لا يقع بعد آخر مداخلة`)
+  }
   assert.ok(turns.filter((turn) => Number(turn.overlapMs) > 0).length >= 3, `${slug}: ماكو أخذ ورد كافي`)
   assert.ok(turns.some((turn) => OBJECTIONS.has(turn.deliveryType)), `${slug}: ماكو اعتراض حقيقي`)
   assert.ok((text.match(/[؟?]/gu) || []).length >= 3, `${slug}: الحوار ما يكتشف الفكرة بالسؤال`)

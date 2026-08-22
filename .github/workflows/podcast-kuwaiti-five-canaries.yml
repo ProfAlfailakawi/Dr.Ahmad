@@ -51,12 +51,12 @@ jobs:
             const hash = crypto.createHash('sha256').update(body).digest('hex');
             fs.writeFileSync(`manual-dialogues-kuwaiti/${slug}.json`, body);
             fs.writeFileSync(`podcast-audits/source-locks-kuwaiti/${slug}.json`, JSON.stringify({
-              slug, revisionId: `diwania-v2-${hash.slice(0, 24)}`, sourceVariant: 'human-diwania-dna-v2',
+              slug, revisionId: `diwania-v3-${hash.slice(0, 24)}`, sourceVariant: 'human-diwania-dna-v3-ear-corrected',
               turnCount: turns.length, bridgeCount: 2, shortContentSha256: hash,
             }, null, 2));
           }
           fs.writeFileSync('five-canary-slugs.txt', slugs.join('\n') + '\n');
-          console.log('✓ خمس محادثات ديوانية v2، كل واحدة ~2:30 وبجسرين مونتاجيين');
+          console.log('✓ خمس محادثات ديوانية v3 مصححة بالأذن، كل واحدة ~2:30 وبجسرين مونتاجيين');
           NODE
 
       - name: Preserve the new-word audition ledger
@@ -111,7 +111,7 @@ jobs:
       - name: Upload one listening package
         uses: actions/upload-artifact@v6
         with:
-          name: five-kuwaiti-diwania-v2-single-call
+          name: five-kuwaiti-diwania-v3-ear-corrected-single-call
           path: five-canaries/
           if-no-files-found: error
           retention-days: 30

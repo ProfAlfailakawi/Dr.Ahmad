@@ -146,7 +146,16 @@ const KW_LOCK = 'light, soft Kuwait-City Kuwaiti — never heavy, never emphatic
    وتيجانُ الأداء بلا نص القفل. طبقة النص (المعجم بأحكامه العشرين) لا
    تتأثر — تعمل في الوضعين. متغير تجربة واحد يُفعَّل بـ
    PODCAST_KW_PROMPT_MODE=minimal، والافتراض full حرفياً. */
-const PROMPT_MODE = ['minimal','c'].includes(process.env.PODCAST_KW_PROMPT_MODE) ? process.env.PODCAST_KW_PROMPT_MODE : 'full'
+/* [٢٢ أغسطس ٢٠٢٦ — حكم تجربة التسعة المعمّاة] الافتراض صار C:
+   ٣ برومتات × ٣ بذور، وحكم الدكتور بأذنه على المعمّى:
+     c       → «روعة · روعة · جميل»  (٣/٣ بلا سقطة)  ← الفائز
+     minimal → «الأفضل» مرة، وحساوي وبحريني مرتين     (يانصيب)
+     full    → سعودي وبحريني وضعيف                    (٠/٣)
+   وأثمن قرينة: «ظيّج» نُطقت «ضيق» في ذراع full وحده — لأن جدار القواعد
+   يدفع المحرك لتصحيح الإملاء غير المألوف إلى الفصحى، بينما سطر C
+   («النص يحمل الإملاء المقصود، اتبعه بطبيعية») يجعله يحترمه.
+   وضع full يبقى متاحاً للمقارنة التاريخية لا للإنتاج. */
+const PROMPT_MODE = ['minimal','c','full'].includes(process.env.PODCAST_KW_PROMPT_MODE) ? process.env.PODCAST_KW_PROMPT_MODE : 'c'
 const SEED = Number.isInteger(Number(process.env.PODCAST_KW_SEED)) && Number(process.env.PODCAST_KW_SEED) > 0 ? Number(process.env.PODCAST_KW_SEED) : null
 const MINIMAL_HEAD = `كويتي حضري من أهل مدينة الكويت، خفيف في الفم — يرققون الكلام وما يفخمون، ونهاية الجملة تنزل هادئة.
 اثنان من أهل الكويت يتسولفون في ديوانية بكل طبيعية ودفء وحيوية، مهتمان بما يقولان: فهد رجل هادئ دافئ عارف، ونورة امرأة ذكية فضولية غير مسرحية.
@@ -888,7 +897,9 @@ if (SELF_TEST) {
   assert.equal(bridged.length, 2, 'مفتاح القطع عند الجسر: كل جسرٍ يبدأ نداءً جديداً بروح البداية')
   assert.deepEqual(bridged.map((chunk) => chunk.length), [2, 1], 'القطع يقع عند الجسر نفسه لا قبله ولا بعده')
   assert.equal(chunkTurns(turns, { splitAtBridges: false }).length, 1, 'بلا المفتاح يبقى النداء الواحد حرفياً — لا تغيير خلسة')
-  const prompt = promptFor(chunks[0],0,chunks.length)
+  /* [٢٢ أغسطس] الافتراض صار C، فتأكيدات الجدار تُثبَّت على 'full' صراحةً —
+     تبقى حارسةً عليه إن عاد يوماً، ولا تكذب على الوضع الجاري. */
+  const prompt = promptFor(chunks[0],0,chunks.length,'full')
   /* عقد الأداء الكويتي: هذه البنود هي ما يفصل «كويتيّاً طبيعياً» عن «مقلّدٍ
      للهجة»، وحذفُ أيّها سهوٌ يعود بالأداء إلى خليجيٍّ عام. */
   assert.match(prompt,/urban Kuwait City/i, 'هدف اللهجة: حضري كويتي محدّد')
@@ -933,7 +944,7 @@ if (SELF_TEST) {
     speaker: i % 2 ? 'female' : 'male', text: `سطر رقم ${i + 1} فيه ضاد واضحة.`,
     deliveryType: 'statement', pauseAfterMs: 300, musicBridgeAfter: false,
   }))
-  const longPrompt = promptFor(longTurns, 0, 1)
+  const longPrompt = promptFor(longTurns, 0, 1, 'full')
     /* [٢١ أغسطس ٢٠٢٦] التذكير صار عربيّاً وكل ستة أدوار، فالعدد المتوقّع تغيّر.
        يُحسب من طول النصّ لا برقمٍ ثابت، حتى لا يكذب التأكيد إن تغيّرت الوتيرة. */
     const expectedReminders = Math.floor((longTurns.length - 1) / 6)
@@ -943,6 +954,9 @@ if (SELF_TEST) {
     assert.ok(expectedReminders >= 2, 'النصّ الطويل يحمل تذكيرين على الأقل')
   assert.ok(!/ض/.test(longPrompt.split('\n').filter((line) => /^(Fahad|Noura):/.test(line)).join(' ')),
     'الضاد صارت ظاءً في كل سطور الصوت')
+  /* والطبقة نفسها تعمل في الوضع الجاري C — الإملاء واحد في كل الرؤوس. */
+  assert.ok(!/ض/.test(promptFor(longTurns, 0, 1, 'c').split('\n').filter((l) => /^(Fahad|Noura):/.test(l)).join(' ')),
+    'طبقة النطق تعمل في C أيضاً — الرأس لا يمس النص المنطوق')
   assert.match(prompt,/ALWAYS the male voice/i, 'منع تبديل الأصوات: فهد ذكر دائماً ونورة أنثى دائماً')
   /* بوابة الطبقة: النطاقات لا تتلامس فلا يقع دورٌ في الجنسين معاً. */
   assert.ok(voiceSwapped(true, 180) && !voiceSwapped(true, 120) && voiceSwapped(false, 120) && !voiceSwapped(false, 180), 'بوابة الطبقة تحكم بالنطاق الصحيح')
@@ -985,7 +999,7 @@ if (SELF_TEST) {
   assert.ok(minimalPrompt.length < transcriptOf(chunks[0]).length + 900,
     'الأدنى قصير فعلاً — رأس وذيل دون ٩٠٠ حرف فوق النص')
   function transcriptOf(group){ return group.map((t)=>spokenForm(t.text)).join('\n') }
-  assert.equal(promptFor(chunks[0], 0, chunks.length), prompt, 'الافتراض full حرفياً — التجربة لا تلمس الإنتاج إلا بالمفتاح')
+  assert.equal(PROMPT_MODE, 'c', 'الافتراض C — الفائز بأذن الدكتور في تجربة التسعة المعمّاة (٣/٣)')
   assert.match(prompt,/Comedic or folkloric exaggeration/i, 'منع المبالغة الكوميدية')
   assert.match(prompt,/NOT EMIRATI/i, 'التحذير الإماراتي الصريح — أوضح علّة شكا منها الدكتور')
     /* [٢١ أغسطس ٢٠٢٦] القفلان الجديدان يُثبَّتان بتأكيدٍ لا بثقة — درس «معلقة»:

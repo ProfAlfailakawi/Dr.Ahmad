@@ -227,7 +227,11 @@ export function condenseEpisode(turns) {
   })
   let acc = 0; let bridgeAt = -1
   const total = out.reduce((s, t) => s + durOf(t), 0)
-  out.forEach((t, k) => { t.musicBridgeAfter = false; acc += durOf(t); if (bridgeAt < 0 && acc >= total * 0.48 && k < out.length - 3) bridgeAt = k })
+  /* [٢٢ أغسطس] حكمه على التسعة: «كلهم بعد دقيقة و٢٠ ثانية — بسبب عدم
+     وجود جسر — إماراتي وحساوي». فالجسر يجب أن يسبق الثانية ٨٠ دائماً،
+     لا أن يقع عند منتصفٍ نسبيّ قد يتجاوزها في الحلقات الأطول. */
+  const BRIDGE_BY = 68
+  out.forEach((t, k) => { t.musicBridgeAfter = false; acc += durOf(t); if (bridgeAt < 0 && (acc >= Math.min(total * 0.45, BRIDGE_BY)) && k < out.length - 3) bridgeAt = k })
   if (bridgeAt > 0) out[bridgeAt].musicBridgeAfter = true
 
   /* ١٠) بوابة اللهجة على المكثف. */

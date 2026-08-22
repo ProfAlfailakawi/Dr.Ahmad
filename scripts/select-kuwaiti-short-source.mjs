@@ -7,7 +7,7 @@
  */
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -16,10 +16,29 @@ const arg = (name) => process.argv.find((v) => v.startsWith(`--${name}=`))?.slic
 const slugs = arg('slugs').split(',').map((s) => s.trim()).filter(Boolean)
 assert.ok(slugs.length, 'مرّر --slugs=slug[,slug]')
 
-const shortLib = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-dialogues-short.json'), 'utf8'))
+/* [٢٢ أغسطس ٢٠٢٦] خط الاعتماد يقرأ v3 — إيقاع الديوانية بكلمات الدكتور،
+   وجسوره مصحّحة بأمره («الجسور لازم تكون في مكانها الصحيح»): كل جسر عند
+   تبادلٍ حقيقي بين المتحدثَين ولا احتكار بعده. والمكثف القديم يبقى بديلاً
+   إن غاب v3، فلا يسقط المسار على مستودعٍ قديم. */
+const V3 = resolve(ROOT, 'src/data/kuwaiti-diwania-v3.json')
+const OLD = resolve(ROOT, 'src/data/kuwaiti-dialogues-short.json')
+const SHORT_SRC = process.env.PODCAST_KW_SHORT_LIB || (existsSync(V3) ? V3 : OLD)
+const shortLib = JSON.parse(readFileSync(SHORT_SRC, 'utf8'))
+console.log('المصدر القصير: ' + SHORT_SRC.split('/').pop())
 const sha256 = (value) => createHash('sha256').update(value).digest('hex')
 const turnsOf = (value) => Array.isArray(value) ? value : Object.values(value || {})
-const sameText = (full, short) => full === short || full === `و${short}`
+/* [٢٢ أغسطس ٢٠٢٦] v3 **يقسّم** المداخلة الطويلة إلى مداخلتين بنفس
+   الكلمات (حدٌّ جديد عند نقطةٍ أو فاصلة) — فالتطابق الحرفي وحده كان
+   يرفضها ويقفل خط الاعتماد. الضمانة تبقى كما هي في جوهرها: **لا كلمة
+   من خارج متن Firestore المقفول**. فيُقبل الجزءُ المتّصل من مداخلةٍ
+   مقفولة، ويُرفض ما عداه. والواو المستأنَفة تُقتنص كما كانت. */
+const norm = (v) => String(v).replace(/\s+/g, ' ').trim()
+const sameText = (full, short) => {
+  const f = norm(full); const t = norm(short)
+  if (f === t || f === `و${t}`) return true
+  if (t.length < 8) return false
+  return f.includes(t) || f.includes(`و${t}`) || `و${f}`.includes(t)
+}
 
 for (const slug of slugs) {
   assert.match(slug, /^[a-z0-9-]+$/, `slug غير صالح: ${slug}`)
@@ -35,7 +54,13 @@ for (const slug of slugs) {
   for (const [i, turn] of selected.entries()) {
     const found = full.findIndex((candidate, j) => j >= cursor && candidate.speaker === turn.speaker && sameText(String(candidate.text), String(turn.text)))
     assert.ok(found >= 0, `${slug}: الدور القصير ${i} ليس جزءاً مرتباً من متن Firestore المقفول: ${turn.text}`)
-    cursor = found + 1
+    /* دورٌ مقفولٌ واحد قد يلد شطرين متتاليين — فلا يتقدّم المؤشر إلا
+       حين ينتقل الشطر التالي إلى مداخلةٍ أخرى. */
+    const next = selected[i + 1]
+    const stillSame = next && next.speaker === turn.speaker
+      && sameText(String(full[found].text), String(next.text))
+      && norm(full[found].text) !== norm(next.text)
+    cursor = stillSame ? found : found + 1
   }
 
   const serialized = JSON.stringify(selected, null, 2) + '\n'

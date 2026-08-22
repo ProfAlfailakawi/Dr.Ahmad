@@ -164,7 +164,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 18
    },
    "18": {
@@ -191,7 +191,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "21": {
@@ -328,7 +328,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 8
    },
    "9": {
@@ -337,7 +337,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 9
    },
    "10": {
@@ -418,7 +418,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 17
    },
    "19": {
@@ -427,7 +427,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 21
    },
    "20": {
@@ -573,7 +573,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 19
    },
    "10": {
@@ -582,7 +582,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 20
    },
    "11": {
@@ -663,7 +663,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 33
    },
    "20": {
@@ -672,7 +672,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 34
    },
    "21": {
@@ -818,7 +818,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "10": {
@@ -827,7 +827,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 8
    },
    "11": {
@@ -1171,7 +1171,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "22": {
@@ -1180,7 +1180,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 33
    },
    "23": {
@@ -1308,7 +1308,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "9": {
@@ -1317,7 +1317,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "10": {
@@ -1389,7 +1389,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 14
    },
    "18": {
@@ -1398,7 +1398,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 15
    },
    "19": {
@@ -2106,7 +2106,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 13
    },
    "19": {
@@ -2133,7 +2133,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 15
    },
    "22": {
@@ -2533,7 +2533,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 10
    },
    "10": {
@@ -2551,7 +2551,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 90,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 12
    },
    "12": {
@@ -2641,7 +2641,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 32
    },
    "22": {
@@ -2659,7 +2659,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 33
    },
    "24": {
@@ -2886,7 +2886,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 20
    },
    "20": {
@@ -2895,7 +2895,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 21
    },
    "21": {
@@ -3032,7 +3032,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "10": {
@@ -3041,7 +3041,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "11": {
@@ -3122,7 +3122,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 14
    },
    "20": {
@@ -3176,7 +3176,7 @@
     "deliveryType": "conclusion",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "26": {
@@ -3385,7 +3385,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 32
    },
    "20": {
@@ -3421,7 +3421,7 @@
     "deliveryType": "conclusion",
     "pauseAfterMs": 900,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 35
    },
    "24": {
@@ -3612,7 +3612,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 18
    },
    "18": {
@@ -3630,7 +3630,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 20
    },
    "20": {
@@ -3866,7 +3866,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "20": {
@@ -3876,7 +3876,7 @@
     "pauseAfterMs": 760,
     "overlapMs": 0,
     "_src": 31,
-    "musicBridgeAfter": true
+    "musicBridgeAfter": false
    },
    "21": {
     "speaker": "male",
@@ -3949,7 +3949,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 1
    },
    "3": {
@@ -4012,7 +4012,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "10": {
@@ -4257,7 +4257,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 16
    },
    "10": {
@@ -4266,7 +4266,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 16
    },
    "11": {
@@ -4511,7 +4511,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 6
    },
    "10": {
@@ -4520,7 +4520,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "11": {
@@ -4747,7 +4747,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "9": {
@@ -4756,7 +4756,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "10": {
@@ -4846,7 +4846,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 26
    },
    "20": {
@@ -4855,7 +4855,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 27
    },
    "21": {
@@ -5491,7 +5491,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "9": {
@@ -5500,7 +5500,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "10": {
@@ -5862,7 +5862,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 31
    },
    "21": {
@@ -5880,7 +5880,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "23": {
@@ -6017,7 +6017,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 8
    },
    "10": {
@@ -6035,7 +6035,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 10
    },
    "12": {
@@ -6388,7 +6388,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 27
    },
    "20": {
@@ -6424,7 +6424,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "24": {
@@ -6552,7 +6552,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "10": {
@@ -6561,7 +6561,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 10
    },
    "11": {
@@ -6642,7 +6642,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 32
    },
    "20": {
@@ -6651,7 +6651,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "21": {
@@ -6797,7 +6797,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 13
    },
    "9": {
@@ -6815,7 +6815,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 15
    },
    "11": {
@@ -7132,7 +7132,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 22
    },
    "19": {
@@ -7141,7 +7141,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 23
    },
    "20": {
@@ -7269,7 +7269,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "9": {
@@ -7296,7 +7296,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "12": {
@@ -7368,7 +7368,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 13
    },
    "20": {
@@ -7386,7 +7386,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 15
    },
    "22": {
@@ -7532,7 +7532,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "9": {
@@ -7550,7 +7550,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 9
    },
    "11": {
@@ -7631,7 +7631,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "20": {
@@ -7649,7 +7649,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 32
    },
    "22": {
@@ -7786,7 +7786,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 11
    },
    "10": {
@@ -7804,7 +7804,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 13
    },
    "12": {
@@ -7867,7 +7867,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 31
    },
    "19": {
@@ -7885,7 +7885,7 @@
     "deliveryType": "conclusion",
     "pauseAfterMs": 900,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "21": {
@@ -7977,7 +7977,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 5
    },
    "7": {
@@ -7995,7 +7995,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "9": {
@@ -8076,7 +8076,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 18
    },
    "18": {
@@ -8085,7 +8085,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 19
    },
    "19": {
@@ -8240,7 +8240,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "11": {
@@ -8249,7 +8249,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "12": {
@@ -8467,7 +8467,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "11": {
@@ -8476,7 +8476,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 12
    },
    "12": {
@@ -8557,7 +8557,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 23
    },
    "21": {
@@ -8566,7 +8566,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 29
    },
    "22": {
@@ -8730,7 +8730,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 11
    },
    "12": {
@@ -8739,7 +8739,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 11
    },
    "13": {
@@ -8793,7 +8793,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 16
    },
    "19": {
@@ -8802,7 +8802,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 17
    },
    "20": {
@@ -8993,7 +8993,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 20
    },
    "15": {
@@ -9020,7 +9020,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "18": {
@@ -9139,7 +9139,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -9148,7 +9148,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "9": {
@@ -9375,7 +9375,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "9": {
@@ -9393,7 +9393,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 12
    },
    "11": {
@@ -9474,7 +9474,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 28
    },
    "20": {
@@ -9483,7 +9483,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 29
    },
    "21": {
@@ -9620,7 +9620,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "9": {
@@ -9629,7 +9629,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "10": {
@@ -9701,7 +9701,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 18
    },
    "18": {
@@ -9719,7 +9719,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 29
    },
    "20": {
@@ -9838,7 +9838,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "8": {
@@ -9847,7 +9847,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "9": {
@@ -9937,7 +9937,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 17
    },
    "19": {
@@ -9946,7 +9946,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 17
    },
    "20": {
@@ -10101,7 +10101,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "11": {
@@ -10110,7 +10110,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "12": {
@@ -10209,7 +10209,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 28
    },
    "23": {
@@ -10218,7 +10218,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 28
    },
    "24": {
@@ -10346,7 +10346,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "8": {
@@ -10355,7 +10355,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "9": {
@@ -10564,7 +10564,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "9": {
@@ -10573,7 +10573,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "10": {
@@ -10800,7 +10800,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -10818,7 +10818,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "10": {
@@ -10917,7 +10917,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "21": {
@@ -10926,7 +10926,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 31
    },
    "22": {
@@ -11063,7 +11063,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 11
    },
    "9": {
@@ -11099,7 +11099,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 14
    },
    "13": {
@@ -11326,7 +11326,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 5
    },
    "8": {
@@ -11353,7 +11353,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 19
    },
    "11": {
@@ -11425,7 +11425,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "19": {
@@ -11434,7 +11434,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "20": {
@@ -11571,7 +11571,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 12
    },
    "8": {
@@ -11616,7 +11616,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 16
    },
    "13": {
@@ -11798,7 +11798,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 4
    },
    "7": {
@@ -11816,7 +11816,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 6
    },
    "9": {
@@ -11879,7 +11879,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 13
    },
    "16": {
@@ -11906,7 +11906,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 18
    },
    "19": {
@@ -12043,7 +12043,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "9": {
@@ -12052,7 +12052,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "10": {
@@ -12279,7 +12279,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 9
    },
    "9": {
@@ -12297,7 +12297,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 10
    },
    "11": {
@@ -12387,7 +12387,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 24
    },
    "21": {
@@ -12396,7 +12396,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 25
    },
    "22": {
@@ -12533,7 +12533,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "9": {
@@ -12551,7 +12551,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "11": {
@@ -12868,7 +12868,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 29
    },
    "18": {
@@ -12877,7 +12877,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 30
    },
    "19": {
@@ -13005,7 +13005,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "9": {
@@ -13023,7 +13023,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "11": {
@@ -13277,7 +13277,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "9": {
@@ -13286,7 +13286,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "10": {
@@ -13504,7 +13504,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 11
    },
    "8": {
@@ -13522,7 +13522,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 18
    },
    "10": {
@@ -13576,7 +13576,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 28
    },
    "16": {
@@ -13612,7 +13612,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 32
    },
    "20": {
@@ -13812,7 +13812,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "19": {
@@ -13857,7 +13857,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 34
    },
    "24": {
@@ -14239,7 +14239,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 14
    },
    "11": {
@@ -14248,7 +14248,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 18
    },
    "12": {
@@ -14302,7 +14302,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "18": {
@@ -14347,7 +14347,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "23": {
@@ -14466,7 +14466,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 12
    },
    "8": {
@@ -14484,7 +14484,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 14
    },
    "10": {
@@ -14574,7 +14574,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 32
    },
    "20": {
@@ -14592,7 +14592,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 34
    },
    "22": {
@@ -14756,7 +14756,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 27
    },
    "14": {
@@ -14792,7 +14792,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 34
    },
    "18": {
@@ -14929,7 +14929,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 17
    },
    "8": {
@@ -14947,7 +14947,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 19
    },
    "10": {
@@ -15037,7 +15037,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 32
    },
    "20": {
@@ -15046,7 +15046,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "21": {
@@ -15174,7 +15174,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -15192,7 +15192,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "10": {
@@ -15264,7 +15264,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "18": {
@@ -15273,7 +15273,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "19": {
@@ -15410,7 +15410,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 23
    },
    "9": {
@@ -15419,7 +15419,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 24
    },
    "10": {
@@ -15491,7 +15491,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 31
    },
    "18": {
@@ -15500,7 +15500,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 32
    },
    "19": {
@@ -15909,7 +15909,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 9
    },
    "10": {
@@ -15927,7 +15927,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 11
    },
    "12": {
@@ -16118,7 +16118,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -16127,7 +16127,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "9": {
@@ -16208,7 +16208,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 21
    },
    "18": {
@@ -16226,7 +16226,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 34
    },
    "20": {
@@ -16444,7 +16444,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 21
    },
    "18": {
@@ -16480,7 +16480,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 27
    },
    "22": {
@@ -16599,7 +16599,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "9": {
@@ -16608,7 +16608,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 80,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "10": {
@@ -16790,7 +16790,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 5
    },
    "6": {
@@ -16808,7 +16808,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "8": {
@@ -17053,7 +17053,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 9
    },
    "10": {
@@ -17062,7 +17062,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 10
    },
    "11": {
@@ -17125,7 +17125,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 18
    },
    "18": {
@@ -17143,7 +17143,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 20
    },
    "20": {
@@ -17361,7 +17361,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 19
    },
    "17": {
@@ -17370,7 +17370,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 20
    },
    "18": {
@@ -17516,7 +17516,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 16
    },
    "9": {
@@ -17525,7 +17525,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 17
    },
    "10": {
@@ -17606,7 +17606,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 24
    },
    "19": {
@@ -17624,7 +17624,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 32
    },
    "21": {
@@ -17851,7 +17851,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 20
    },
    "19": {
@@ -17860,7 +17860,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 21
    },
    "20": {
@@ -17988,7 +17988,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -18024,7 +18024,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 9
    },
    "12": {
@@ -18096,7 +18096,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 27
    },
    "20": {
@@ -18114,7 +18114,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 35
    },
    "22": {
@@ -18323,7 +18323,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 15
    },
    "17": {
@@ -18368,7 +18368,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 320,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 20
    },
    "22": {
@@ -18478,7 +18478,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -18487,7 +18487,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "9": {
@@ -18577,7 +18577,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 21
    },
    "19": {
@@ -18586,7 +18586,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "20": {
@@ -18813,7 +18813,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 16
    },
    "19": {
@@ -18822,7 +18822,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 19
    },
    "20": {
@@ -18941,7 +18941,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "7": {
@@ -18950,7 +18950,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "8": {
@@ -19049,7 +19049,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "19": {
@@ -19058,7 +19058,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "20": {
@@ -19294,7 +19294,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 26
    },
    "19": {
@@ -19312,7 +19312,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 34
    },
    "21": {
@@ -19431,7 +19431,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "8": {
@@ -19440,7 +19440,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "9": {
@@ -19667,7 +19667,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -19676,7 +19676,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "9": {
@@ -19766,7 +19766,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 29
    },
    "19": {
@@ -19775,7 +19775,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 30
    },
    "20": {
@@ -19921,7 +19921,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 10
    },
    "10": {
@@ -19930,7 +19930,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 10
    },
    "11": {
@@ -20166,7 +20166,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "9": {
@@ -20175,7 +20175,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "10": {
@@ -20247,7 +20247,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 17
    },
    "18": {
@@ -20283,7 +20283,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "22": {
@@ -20501,7 +20501,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 21
    },
    "20": {
@@ -20519,7 +20519,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 22
    },
    "22": {
@@ -20665,7 +20665,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 9
    },
    "11": {
@@ -20674,7 +20674,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 9
    },
    "12": {
@@ -20755,7 +20755,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 16
    },
    "21": {
@@ -20773,7 +20773,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 20
    },
    "23": {
@@ -20991,7 +20991,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 24
    },
    "19": {
@@ -21018,7 +21018,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 27
    },
    "22": {
@@ -21236,7 +21236,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "21": {
@@ -21254,7 +21254,7 @@
     "deliveryType": "conclusion",
     "pauseAfterMs": 900,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 37
    },
    "23": {
@@ -21355,7 +21355,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "8": {
@@ -21364,7 +21364,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "9": {
@@ -21463,7 +21463,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 16
    },
    "20": {
@@ -21481,7 +21481,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 20
    },
    "22": {
@@ -21672,7 +21672,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "16": {
@@ -21708,7 +21708,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "20": {
@@ -21827,7 +21827,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "9": {
@@ -21845,7 +21845,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 9
    },
    "11": {
@@ -22189,7 +22189,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "21": {
@@ -22198,7 +22198,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "22": {
@@ -22434,7 +22434,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 17
    },
    "20": {
@@ -22443,7 +22443,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "21": {
@@ -22825,7 +22825,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 5
    },
    "8": {
@@ -22843,7 +22843,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "10": {
@@ -23306,7 +23306,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -23315,7 +23315,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "9": {
@@ -23396,7 +23396,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 17
    },
    "18": {
@@ -23405,7 +23405,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 18
    },
    "19": {
@@ -23596,7 +23596,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 22
    },
    "16": {
@@ -23614,7 +23614,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 28
    },
    "18": {
@@ -23751,7 +23751,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -23769,7 +23769,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "10": {
@@ -24104,7 +24104,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 20
    },
    "19": {
@@ -24122,7 +24122,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 25
    },
    "21": {
@@ -24241,7 +24241,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -24250,7 +24250,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "9": {
@@ -24576,7 +24576,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 22
    },
    "18": {
@@ -24585,7 +24585,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 23
    },
    "19": {
@@ -24713,7 +24713,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "8": {
@@ -24731,7 +24731,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 9
    },
    "10": {
@@ -24785,7 +24785,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 15
    },
    "16": {
@@ -24812,7 +24812,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 19
    },
    "19": {
@@ -24949,7 +24949,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 12
    },
    "8": {
@@ -24967,7 +24967,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 14
    },
    "10": {
@@ -25030,7 +25030,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 22
    },
    "17": {
@@ -25048,7 +25048,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 24
    },
    "19": {
@@ -25176,7 +25176,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 17
    },
    "9": {
@@ -25194,7 +25194,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 19
    },
    "11": {
@@ -25248,7 +25248,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 28
    },
    "17": {
@@ -25275,7 +25275,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "20": {
@@ -25412,7 +25412,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 9
    },
    "10": {
@@ -25421,7 +25421,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 11
    },
    "11": {
@@ -25857,7 +25857,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "7": {
@@ -25875,7 +25875,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "9": {
@@ -25956,7 +25956,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "18": {
@@ -25965,7 +25965,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "19": {
@@ -26192,7 +26192,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 30
    },
    "20": {
@@ -26201,7 +26201,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 30
    },
    "21": {
@@ -26320,7 +26320,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "8": {
@@ -26329,7 +26329,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "9": {
@@ -26655,7 +26655,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 20
    },
    "20": {
@@ -26664,7 +26664,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 21
    },
    "21": {
@@ -27073,7 +27073,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "11": {
@@ -27082,7 +27082,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "12": {
@@ -27662,7 +27662,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 15
    },
    "21": {
@@ -27689,7 +27689,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 17
    },
    "24": {
@@ -27934,7 +27934,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 16
    },
    "20": {
@@ -27952,7 +27952,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 17
    },
    "22": {
@@ -28161,7 +28161,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 28
    },
    "18": {
@@ -28179,7 +28179,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 30
    },
    "20": {
@@ -28316,7 +28316,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "10": {
@@ -28325,7 +28325,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "11": {
@@ -28415,7 +28415,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 17
    },
    "21": {
@@ -28433,7 +28433,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 33
    },
    "23": {
@@ -28651,7 +28651,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 20
    },
    "18": {
@@ -28696,7 +28696,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 25
    },
    "23": {
@@ -28905,7 +28905,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 20
    },
    "20": {
@@ -28923,7 +28923,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 21
    },
    "22": {
@@ -29042,7 +29042,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 12
    },
    "7": {
@@ -29069,7 +29069,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 15
    },
    "10": {
@@ -29314,7 +29314,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "9": {
@@ -29332,7 +29332,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "11": {
@@ -29422,7 +29422,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 15
    },
    "21": {
@@ -29431,7 +29431,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 16
    },
    "22": {
@@ -29658,7 +29658,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 27
    },
    "19": {
@@ -29694,7 +29694,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "23": {
@@ -29840,7 +29840,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 11
    },
    "11": {
@@ -29849,7 +29849,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 11
    },
    "12": {
@@ -30121,7 +30121,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "11": {
@@ -30130,7 +30130,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "12": {
@@ -30193,7 +30193,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 20
    },
    "19": {
@@ -30229,7 +30229,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 22
    },
    "23": {
@@ -30638,7 +30638,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 15
    },
    "11": {
@@ -30665,7 +30665,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 18
    },
    "14": {
@@ -30728,7 +30728,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 32
    },
    "21": {
@@ -30737,7 +30737,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 33
    },
    "22": {
@@ -30874,7 +30874,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "9": {
@@ -30892,7 +30892,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "11": {
@@ -31137,7 +31137,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 6
    },
    "11": {
@@ -31146,7 +31146,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "12": {
@@ -31373,7 +31373,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 11
    },
    "10": {
@@ -31382,7 +31382,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 12
    },
    "11": {
@@ -31445,7 +31445,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 24
    },
    "18": {
@@ -31463,7 +31463,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 26
    },
    "20": {
@@ -31845,7 +31845,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "8": {
@@ -31854,7 +31854,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "9": {
@@ -32198,7 +32198,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 21
    },
    "20": {
@@ -32207,7 +32207,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 34
    },
    "21": {
@@ -32434,7 +32434,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 19
    },
    "20": {
@@ -32443,7 +32443,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 20
    },
    "21": {
@@ -32589,7 +32589,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "10": {
@@ -32598,7 +32598,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "11": {
@@ -32852,7 +32852,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 24
    },
    "10": {
@@ -32888,7 +32888,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 27
    },
    "14": {
@@ -33070,7 +33070,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 5
    },
    "7": {
@@ -33124,7 +33124,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 10
    },
    "13": {
@@ -33205,7 +33205,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 19
    },
    "22": {
@@ -33214,7 +33214,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 20
    },
    "23": {
@@ -33360,7 +33360,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "10": {
@@ -33369,7 +33369,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "11": {
@@ -33450,7 +33450,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 16
    },
    "20": {
@@ -33459,7 +33459,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 22
    },
    "21": {
@@ -33614,7 +33614,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 7
    },
    "11": {
@@ -33641,7 +33641,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 10
    },
    "14": {
@@ -33832,7 +33832,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "8": {
@@ -33841,7 +33841,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "9": {
@@ -33913,7 +33913,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 16
    },
    "17": {
@@ -33931,7 +33931,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 18
    },
    "19": {
@@ -34358,7 +34358,7 @@
     "deliveryType": "reflection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 16
    },
    "11": {
@@ -34394,7 +34394,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 21
    },
    "15": {
@@ -34457,7 +34457,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 29
    },
    "22": {
@@ -34475,7 +34475,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 31
    },
    "24": {
@@ -34594,7 +34594,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 6
    },
    "8": {
@@ -34621,7 +34621,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 12
    },
    "11": {
@@ -34693,7 +34693,7 @@
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 27
    },
    "19": {
@@ -34720,7 +34720,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 70,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 30
    },
    "22": {
@@ -34830,7 +34830,7 @@
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
-    "musicBridgeAfter": false,
+    "musicBridgeAfter": true,
     "_src": 7
    },
    "8": {
@@ -34839,7 +34839,7 @@
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
-    "musicBridgeAfter": true,
+    "musicBridgeAfter": false,
     "_src": 8
    },
    "9": {

@@ -163,9 +163,10 @@ const MINIMAL_HEAD = `كويتي حضري من أهل مدينة الكويت، 
 اقرأ كل سطر كما هو مكتوب حرفاً بحرف.`
 const MINIMAL_TAIL = 'نفس الصوتين ونفس لسان مدينة الكويت، من أول سطر إلى آخر سطر.'
 
-/* البرومت C — صياغة الصديق الخبير حرفياً (٢٢ أغسطس ٢٠٢٦): بنية Google
-   الرسمية (AUDIO PROFILE / SCENE / DIRECTOR'S NOTES / TRANSCRIPT)، النص
-   آخر شيء في الطلب، الوسوم للأداء وحده بلا قفل لهجة، ولا قائمة منع أصلاً. */
+/* البرومت C — الفائز ٣/٣ في التجربة المعماة، ببنية Google الرسمية
+   (AUDIO PROFILE / SCENE / DIRECTOR'S NOTES / SAMPLE / TRANSCRIPT).
+   بعد انزلاق المقاطع الجديدة أضيف حدٌّ مضغوط بأسماء اللهجات فقط؛ وصف
+   أصواتها ممنوع حتى لا يصير الحظر درساً غير مقصود في تقليدها. */
 const PROMPT_C_HEAD = `Synthesize speech from the TRANSCRIPT section only.
 Do not speak headings, instructions, or bracketed performance tags.
 
@@ -189,15 +190,30 @@ Style: A real conversation between two Kuwaitis, not a news bulletin, commercial
 
 Pacing: Conversational and unhurried. Pauses follow thought and meaning, not punctuation. Keep the energy alive without sounding theatrical.
 
+Turn-taking: Each person genuinely listens and reacts to the line before theirs. Brief reactions are quick and alive, questions are interested, and gentle objections have friendly chemistry rather than debate-club formality.
+
+Human texture: Allow tiny natural breaths, micro-hesitations, and a smile in the voice. A very brief spontaneous chuckle is welcome only when the actual line is genuinely witty; never paste laughter onto serious material and never turn the scene into comedy.
+
 Continuity: Keep Fahad and Noura as the same two people, in the same room and on the same microphones, from the first line to the last line of this chunk.
 
 Fidelity: Speak every labelled line exactly once and in order. Do not add, omit, repeat, paraphrase, or swap speakers. Bracketed English tags guide delivery silently and must never be spoken.
 
-# TRANSCRIPT
+# SAMPLE CONTEXT — SILENT ACCENT ANCHOR, NEVER SPEAK THIS
+
+«خوش سؤال. خل نكون واقعيين شوي — هالشي وايد أهم من اللي نتصوره.»
+«إي والله. بس ترى الموضوع أهون مما تتوقع.»
+«صج؟ عيل خل نشوفه حبة حبة.»
+«هذا اللي أقصده بالضبط. يلا نكمل.»
+
+# DIALECT BOUNDARY
+
+Only native contemporary urban Kuwait City Arabic. Do not blend it with a generic Gulf register or with any non-Kuwaiti variety.
+ممنوع بالاسم فقط: كويتي بدوي أو قبلي، عُماني (مسقط، الباطنة، ظفار)، إماراتي، قطري، بحريني أو بحراني، سعودي (نجدي، حجازي، حساوي، قطيفي، شرقاوي أو بدوي)، عراقي أو بصراوي، يمني، وعربي متأثر بالفارسية أو «عجمي خليجي»، وكذلك شامي أو مصري.
+These names are exclusions only: do not imitate, analyse, or reproduce their sound. Return immediately to the positive Kuwait City sample above.
 `
 const directionFor = (type, mode = PROMPT_MODE) => (mode === 'minimal' || mode === 'c') ? ({
-  question: '[curious]', reflection: '[reflective]', objection: '[gently skeptical]', gentleObjection: '[gently skeptical]',
-  emphasis: '[serious]', briefReaction: '[warmly]', conclusion: '[calmly]', closing: '[softly]',
+  question: '[curious and engaged]', reflection: '[thinking aloud]', objection: '[gently skeptical]', gentleObjection: '[friendly gentle objection]',
+  emphasis: '[serious]', briefReaction: '[quick natural reaction]', conclusion: '[calm and connected]', closing: '[softly]',
 }[type] || '') : ({
   question: `[curious — ${KW_LOCK}]`, reflection: `[reflective — ${KW_LOCK}]`, objection: `[gently skeptical — ${KW_LOCK}]`, gentleObjection: `[gently skeptical — ${KW_LOCK}]`,
   emphasis: `[serious — ${KW_LOCK}]`, briefReaction: `[warmly — ${KW_LOCK}]`, conclusion: `[calmly — ${KW_LOCK}]`, closing: `[softly — ${KW_LOCK}]`,
@@ -236,7 +252,20 @@ function promptFor(turns, index, total, mode = PROMPT_MODE) {
   })
   const transcript = lines.join('\n')
   if (mode === 'minimal') return `${MINIMAL_HEAD}\n\n${transcript}\n\n${MINIMAL_TAIL}`
-  if (mode === 'c') return `${PROMPT_C_HEAD}\n${transcript}`
+  if (mode === 'c') {
+    const continuity = index === 0
+      ? 'This is the opening part. Establish the exact Fahad and Noura described above; the next parts must preserve them.'
+      : 'This part starts immediately after a short music bridge. Resume the exact same Fahad and Noura, with the same native Kuwait City accent, conversational energy, microphone distance, and room. It is one continuous diwaniya conversation, not a new recording and not a fresh performance.'
+    return `${PROMPT_C_HEAD}
+
+# CONTINUITY CARD — PART ${index + 1} OF ${total}
+
+${continuity}
+
+# TRANSCRIPT
+
+${transcript}`
+  }
   return `ABSOLUTE RULE — READ FIRST, APPLY TO EVERY SINGLE WORD
 This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers are FORBIDDEN outright — every one of them has ruined real takes, and every one is an automatic hard failure:
 1. Emirati (Dubai/Abu Dhabi) — the thinned, lighter, forward articulation. FORBIDDEN.
@@ -989,12 +1018,21 @@ if (SELF_TEST) {
   assert.ok(!/\[تذكير/.test(minimalPrompt), 'الأدنى بلا تذكيرات متخللة')
   assert.ok(minimalPrompt.includes('أهل مدينة الكويت') && minimalPrompt.includes('يرققون'),
     'الجوهر الإيجابي بألفاظ الوصفة: أهل مدينة الكويت، الترقيق لا التفخيم')
-  /* [٢٢ أغسطس ٢٠٢٦] البرومت C — صياغة الصديق: النص آخر شيء، وسوم بلا
-     قفل، بلا قائمة منع، وبنية Google الرسمية. */
+  /* [٢٢ أغسطس ٢٠٢٦] البرومت C — الفائز ٣/٣. أضيفت له بعد سماع انزلاق
+     مقاطع الحلقة إلى عُماني ثم «عجمي خليجي» بطاقةُ منعٍ قصيرة بالأسماء
+     فقط؛ لا وصفَ حياً لصوت أي لهجة حتى لا نزرعها في سياق المحرك. */
   const cPrompt = promptFor(chunks[0], 0, chunks.length, 'c')
+  const cContinuation = promptFor(chunks.at(-1), 1, chunks.length, 'c')
   assert.ok(cPrompt.includes("# DIRECTOR'S NOTES") && cPrompt.trimEnd().endsWith(spokenForm(chunks[0][chunks[0].length-1].text)),
     'C ببنية Google والنص المنطوق آخر شيء في الطلب')
-  assert.ok(!/FORBIDDEN|Emirati|Saudi|Najdi|Levantine|Omani|تجنب ولا تستخدم/i.test(cPrompt), 'C بلا أي قائمة منع لهجات — إيجابي صرف')
+  assert.match(cPrompt, /# SAMPLE CONTEXT/, 'C يحمل مرساةً كويتيةً صامتة كما توصي بنية Google')
+  assert.match(cPrompt, /# DIALECT BOUNDARY/, 'C يحمل حدَّ لهجةٍ مضغوطاً')
+  assert.match(cPrompt, /This is the opening part/, 'المقطع الأول لا يدّعي وجود جسر قبله')
+  assert.match(cContinuation, /starts immediately after a short music bridge/, 'كل مقطع لاحق يستأنف الهوية بعد الجسر')
+  assert.match(cPrompt, /عُماني.*إماراتي.*قطري.*بحريني.*سعودي.*عراقي.*يمني.*الفارسية/s,
+    'كل العائلات المجاورة ممنوعة بالأسماء فقط')
+  assert.ok(!/Omani.*(cadence|rhythm|articulation|lilt|drawl)|Emirati.*(cadence|rhythm|articulation|lilt|drawl)/is.test(cPrompt),
+    'لا وصف حي لصوت اللهجة الممنوعة — منعٌ لا تلقين')
   assert.ok(!/\[تذكير/.test(cPrompt) && !cPrompt.includes(KW_LOCK), 'C بلا تذكيرات وتيجانه أداء صرف بلا قفل لهجة')
   assert.ok(minimalPrompt.length < transcriptOf(chunks[0]).length + 900,
     'الأدنى قصير فعلاً — رأس وذيل دون ٩٠٠ حرف فوق النص')

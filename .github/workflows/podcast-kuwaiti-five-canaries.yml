@@ -1,0 +1,103 @@
+name: خمس حلقات كويتية قصيرة — باقة السماع
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: podcast-kuwaiti-gemini-global
+  cancel-in-progress: false
+
+jobs:
+  five-canaries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install and verify all 144 short dialogues
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          npm run podcast:kw:self-test
+
+      - name: Prepare five distinct locked short sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs'); const crypto = require('crypto');
+          const lib = JSON.parse(fs.readFileSync('src/data/kuwaiti-dialogues-short.json', 'utf8'));
+          const slugs = [
+            'success-that-does-not-bring-joy-to-its-ownerarabic',
+            'the-classroom-that-fears-mistakesarabic',
+            'intelligence-without-a-consciencearabic',
+            'when-seriousness-becomes-a-mask-for-escapearabic',
+            'how-do-we-assess-without-breaking-the-human-beingarabic',
+          ];
+          fs.mkdirSync('manual-dialogues-kuwaiti', { recursive: true });
+          fs.mkdirSync('podcast-audits/source-locks-kuwaiti', { recursive: true });
+          for (const slug of slugs) {
+            const turns = Object.values(lib.episodes[slug] || {});
+            if (turns.length < 15 || turns.filter((t) => t.musicBridgeAfter).length !== 2) throw new Error(slug + ': مصدر قصير غير صالح');
+            const body = JSON.stringify(turns, null, 2) + '\n';
+            const hash = crypto.createHash('sha256').update(body).digest('hex');
+            fs.writeFileSync(`manual-dialogues-kuwaiti/${slug}.json`, body);
+            fs.writeFileSync(`podcast-audits/source-locks-kuwaiti/${slug}.json`, JSON.stringify({
+              slug, revisionId: `canary-${hash.slice(0, 24)}`, sourceVariant: 'condensed-2m30-v1',
+              turnCount: turns.length, bridgeCount: 2, shortContentSha256: hash,
+            }, null, 2));
+          }
+          fs.writeFileSync('five-canary-slugs.txt', slugs.join('\n') + '\n');
+          console.log('✓ خمس حلقات مختلفة، كل واحدة ~2:30 وبجسرين');
+          NODE
+
+      - name: Generate the five episodes sequentially
+        shell: bash
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
+          PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
+          PODCAST_KW_GENERATION_MODE: all
+          PODCAST_KW_PROMPT_MODE: c
+          PODCAST_KW_SPLIT_AT_BRIDGES: '1'
+          PODCAST_KW_MIN_GAP: '12'
+        run: |
+          set -uo pipefail
+          set +e
+          mkdir -p five-canaries
+          N=0
+          while IFS= read -r SLUG; do
+            N=$((N + 1)); ACCEPTED=0
+            for ATTEMPT in 1 2 3; do
+              export PODCAST_KW_PILOT_SLUG="$SLUG"
+              export PODCAST_KW_SEED=$((2100 + N + (ATTEMPT - 1) * 10))
+              echo "── حلقة $N/5 · محاولة $ATTEMPT/3 · $SLUG · seed=$PODCAST_KW_SEED"
+              node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
+              CODE=$?
+              if [ "$CODE" -eq 0 ]; then ACCEPTED=1; break; fi
+              if [ "$CODE" -ne 3 ]; then exit "$CODE"; fi
+            done
+            if [ "$ACCEPTED" -ne 1 ]; then
+              echo "::error::$SLUG: ثلاث عينات سقطت في بوابة الصوتين"
+              exit 1
+            fi
+            cp "audio/$SLUG.dialogue-kw.mp3" "five-canaries/$(printf '%02d' "$N")-$SLUG.mp3"
+            cp "audio/$SLUG.dialogue-kw.json" "five-canaries/$(printf '%02d' "$N")-$SLUG.json"
+            cp "podcast-audits/kuwaiti/$SLUG.json" "five-canaries/$(printf '%02d' "$N")-$SLUG.audit.json"
+          done < five-canary-slugs.txt
+
+      - name: Upload one listening package
+        uses: actions/upload-artifact@v6
+        with:
+          name: five-kuwaiti-2m30-canaries
+          path: five-canaries/
+          if-no-files-found: error
+          retention-days: 30

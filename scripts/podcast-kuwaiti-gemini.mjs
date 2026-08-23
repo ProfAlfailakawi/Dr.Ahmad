@@ -192,7 +192,7 @@ Daad: The audio transcript deliberately writes every ض as ظ. Respect that spel
 
 Style: Sound human before sounding polished. This is a real conversation between two Kuwaitis, not an AI assistant, audiobook, news bulletin, commercial voice-over, lecture, or performed imitation of an accent.
 
-Pacing: Vary naturally. Simple lines can move quickly; a genuinely important thought may slow slightly. Pauses follow thought, not punctuation. Do not give every sentence the same weight, timing, or solemn ending.
+Pacing: Vary naturally. Simple lines can move quickly; a genuinely important thought may slow slightly. Pauses follow thought, not punctuation. Do not give every sentence the same weight, timing, or solemn ending. Keep transitions tight — the next speaker often comes in promptly, sometimes slightly overlapping. Avoid a dramatic pause before a final or important word; never deliver a closing line like a slogan. When a research finding or statistic comes up, say it casually, as something just remembered mid-conversation — not as a prepared citation being read aloud.
 
 Turn-taking: Speak to the other person, not to an audience. Each person genuinely listens and reacts to the line before theirs. Brief reactions stay quick and effortless; questions are interested; objections have friendly chemistry rather than debate-club formality.
 

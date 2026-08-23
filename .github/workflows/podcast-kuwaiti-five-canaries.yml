@@ -126,11 +126,6 @@ jobs:
             for ATTEMPT in 1 2 3; do
               export PODCAST_KW_PILOT_SLUG="$SLUG"
               export PODCAST_KW_SEED=$((2100 + N + (ATTEMPT - 1) * 10))
-              # [٢٣ أغسطس] المحاولة الأخيرة: العتبة تُخفَّض لا تُلغى.
-              # حلقة how-do-we-assess سقطت ثلاثاً بفجوة ‑٦ و٤ — ومعها
-              # ضاعت الأربع. فبدل الفقد الكامل نقبل عيّنةً موسومة يحكم
-              # عليها الدكتور بأذنه، ويبقى الرفض ممكناً إن كانت رديئة.
-              if [ "$ATTEMPT" -eq 3 ]; then export PODCAST_KW_MIN_GAP=6; else export PODCAST_KW_MIN_GAP=12; fi
               echo "── حلقة $N/5 · محاولة $ATTEMPT/3 · $SLUG · seed=$PODCAST_KW_SEED"
               node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
               CODE=$?

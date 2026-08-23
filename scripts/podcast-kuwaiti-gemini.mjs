@@ -186,7 +186,7 @@ A relaxed evening conversation in a real diwaniya in Kuwait City. They are sitti
 
 Accent: Native contemporary urban Kuwait City Arabic (حضري). Everyday local speech with light, relaxed articulation, natural short vowels, and calm sentence endings. The transcript already contains the intended Kuwaiti words and pronunciation spellings; follow them naturally without exaggerating dialect markers.
 
-Qaf: No qalqalah at all. Never release ق with a formal echo, bounce, or recitation-like pop. Keep it light and absorbed into the surrounding Kuwait City speech, including across pauses and turn boundaries.
+Qaf — CRITICAL IDENTITY MARKER: In ordinary Urban Kuwaiti conversation, pronounce colloquial ق as a soft voiced velar [g], like the English "g" in "go" — NOT the Classical uvular [q]. قاعد = gaaʿid, أقول = aguul, قبل = gabil, حقيقة = hagiiga, وقت = wagt, نقدر = nigdar. No qalqalah, no throat pop, no aspirated or emphatic release. The transcript already spells many of these with گ — follow that spelling exactly. Use [q] ONLY for explicitly formal/religious/quoted words (القرآن, المنطق). This [g] must never carry Emirati, Omani, or generic Gulf intonation; a correct [g] inside an Emirati melody is still wrong — keep Kuwait City vowel timing and phrase endings throughout.
 
 Daad: The audio transcript deliberately writes every ض as ظ. Respect that spelling and pronounce the Kuwaiti merged sound; never correct it back to formal ض.
 
@@ -1173,22 +1173,27 @@ if (SELF_TEST) {
        ومصدرها مسجَّلٌ في heardByEar بتاريخه. الشرط يحمي نصّه من اجتهادي وحده،
        لا من إملائه هو — وهذا ما كان يقفله قبل التصحيح. */
     assert.equal(spokenForm('مو بس: جم جبت؟'), 'مو بس: جم يبت؟', 'إملاء الدكتور يُنفَّذ، و«جم» تبقى')
-    /* السابقة الملاصقة تُختبر على مدخلٍ قائمٍ (ألف الوصل) بعد حذف الهجاء المخترع. */
-    assert.equal(spokenForm('وتعرف الفرق'), 'واتعرف الفرق', 'السابقة الملاصقة لا تمنع النطق')
+    /* السابقة الملاصقة تُختبر على مدخلٍ قائمٍ (ألف الوصل). و«الفرق» صارت
+       «الفرگ» بقائمة الگاف (٢٣ أغسطس) فالتأكيد يتابعها. */
+    assert.equal(spokenForm('وتعرف الجواب'), 'واتعرف الجواب', 'السابقة الملاصقة لا تمنع النطق')
     const trap = 'المجموع والجمال وجمعنا'
     assert.equal(spokenForm(trap), trap, 'ما كانت «جم» جزءاً منه لا يُمسّ')
     /* گ كانت ممنوعةً كلياً لأنها في v3 أُدخلت قاعدةً عامّةً على كل قاف فأسقطت
        چ معها. والآن چ نفسها لم تعد تُكتب حرفاً بل صوتاً («تش»)، فزال التعارض،
-       وأذن الدكتور اعتمدت «أَصْدَگ» في موضعها. فالحارس يمنع التعميم لا الحرف:
-       تبقى گ في كلماتٍ معدودةٍ مسموعةٍ فردياً، ولا تتجاوزها. */
+       وأذن الدكتور اعتمدت «أَصْدَگ». [٢٣ أغسطس ٢٠٢٦] ثم شخّص صديقه أن
+       القاف الفصيحة [q] هي أكثر ما يفضح الصوت للإماراتي، وأعطى قائمةً
+       صريحةً بالقاف الموروثة التي تُنطق گ (قاعد/أقول/حقيقة/قرار…). فصار
+       الحارس يمنع الإفراط لا يمنع القائمة: گ تبقى ضمن كلمات المعجم
+       المقيّدة بقائمةٍ مسموعة، لا تُطبَّق على كل قاف في النص آلياً. */
     const gafWords = Object.values(PRONUNCIATION_SOURCE.words || {}).filter((value) => String(value).includes('گ'))
-    assert.ok(gafWords.length <= 5, `گ تبقى في كلماتٍ معدودةٍ بالسماع لا قاعدةً عامّة (الآن ${gafWords.length})`)
+    const totalQaf = 3059 /* مواضع القاف المميزة في المتن — قِيست */
+    assert.ok(gafWords.length < 200, `گ قائمةٌ مقيّدة لا استبدالٌ أعمى لكل قاف (الآن ${gafWords.length} كلمة من ١٣١٥ كلمة قاف)`)
     /* الچ مسموحةٌ في المفاتيح (نصّ الدكتور يكتبها) وممنوعةٌ في النواتج
        (المحرّك يبتلعها) — فتُفحص جهةُ الخرج وحدها. */
     const chehOut = Object.values(PRONUNCIATION_SOURCE.words || {}).filter((value) => String(value).includes('چ'))
     assert.equal(chehOut.length, 0, 'چ لا تصل المحرّك حرفاً — تُكتب صوتاً «تش»')
     /* حذف الأسماء اللاتينية: أوضح سبب تبدّل الصوت (Frontiers سمعها الدكتور «فلنتير»). */
-    assert.equal(spokenForm('منشور في Frontiers in Psychology عن القلق'), 'منشور في مجلة علمية عن القلق', 'الاسم اللاتيني يُحذف ويُستبدل بعربية عامة')
+    assert.equal(spokenForm('منشور في Frontiers in Psychology عن التوتر'), 'منشور في مجلة علمية عن التوتر', 'الاسم اللاتيني يُحذف ويُستبدل بعربية عامة')
     assert.ok(!/[A-Za-z]/.test(spokenForm('حسب OECD وUNICEF')), 'لا يبقى أيّ حرف لاتيني في مدخل الصوت')
   }
   const grouped = chunkTurns(Array.from({ length: 12 }, (_, i) => ({

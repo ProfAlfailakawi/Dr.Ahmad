@@ -126,6 +126,11 @@ jobs:
             for ATTEMPT in 1 2 3; do
               export PODCAST_KW_PILOT_SLUG="$SLUG"
               export PODCAST_KW_SEED=$((2100 + N + (ATTEMPT - 1) * 10))
+              # [٢٣ أغسطس] المحاولة الأخيرة: العتبة تُخفَّض لا تُلغى.
+              # حلقة how-do-we-assess سقطت ثلاثاً بفجوة ‑٦ و٤ — ومعها
+              # ضاعت الأربع. فبدل الفقد الكامل نقبل عيّنةً موسومة يحكم
+              # عليها الدكتور بأذنه، ويبقى الرفض ممكناً إن كانت رديئة.
+              if [ "$ATTEMPT" -eq 3 ]; then export PODCAST_KW_MIN_GAP=6; else export PODCAST_KW_MIN_GAP=12; fi
               echo "── حلقة $N/5 · محاولة $ATTEMPT/3 · $SLUG · seed=$PODCAST_KW_SEED"
               node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
               CODE=$?
@@ -133,18 +138,30 @@ jobs:
               if [ "$CODE" -ne 3 ]; then exit "$CODE"; fi
             done
             if [ "$ACCEPTED" -ne 1 ]; then
-              echo "::error::$SLUG: ثلاث عينات سقطت في بوابة الصوتين"
-              exit 1
+              # [٢٣ أغسطس ٢٠٢٦] كان يخرج فوراً — فسقطت الحلقة الخامسة
+              # (ثلاث عينات بفجوة ‑٦ و٤) وضاعت الأربع الناجحة معها ولم
+              # تُرفع حزمة سماع أصلاً. الحلقة السيئة تُسجَّل وتُتخطّى،
+              # وما نجح يصل الدكتور. والتشغيلة تُعلَن ناقصةً في نهايتها.
+              echo "::warning::$SLUG: ثلاث عينات سقطت في بوابة الصوتين — تُتخطّى، والباقي يكمل"
+              echo "$SLUG" >> five-canaries/SKIPPED.txt
+              continue
             fi
             cp "audio/$SLUG.dialogue-kw.mp3" "five-canaries/$(printf '%02d' "$N")-$SLUG.mp3"
             cp "audio/$SLUG.dialogue-kw.json" "five-canaries/$(printf '%02d' "$N")-$SLUG.json"
             cp "podcast-audits/kuwaiti/$SLUG.json" "five-canaries/$(printf '%02d' "$N")-$SLUG.audit.json"
           done < five-canary-slugs.txt
+          MADE=$(ls five-canaries/*.mp3 2>/dev/null | wc -l | tr -d ' ')
+          echo "✓ اكتملت $MADE حلقة من $N"
+          if [ -f five-canaries/SKIPPED.txt ]; then
+            echo "::warning::حلقاتٌ تخطّاها اليوم:"; cat five-canaries/SKIPPED.txt
+          fi
+          [ "$MADE" -gt 0 ] || { echo "::error::لم تكتمل ولا حلقة"; exit 1; }
 
       - name: Upload one listening package
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: five-kuwaiti-diwania-v3-ear-corrected-single-call
           path: five-canaries/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30

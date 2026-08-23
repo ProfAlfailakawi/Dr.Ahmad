@@ -801,9 +801,25 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
   const items = []
   /* الكلام يدخل تحت ذيل المقدّمة لا بعد صمتها، تماماً كالفصحى. */
   let cursor = hasMusic ? Math.max(0.20, MUSIC.introSec - MUSIC.introOverlapSec) : 0.20
+  /* ═══ الختام الثابت (٢٢ أغسطس ٢٠٢٦ — بإقراره) ═══
+     الجملة الختامية واحدةٌ حرفياً في ١٤٣ حلقة، ومع ذلك كان اسمه يُقال
+     صحيحاً في حلقةٍ وخطأً في أخرى **داخل التشغيلة الواحدة** — فالعلّة
+     تذبذبُ المحرّك لا الإملاء، ولا يصلحها أي تصحيحٍ كتابيّ. والعلاج
+     الوحيد المضمون: مقطعٌ واحدٌ اعتمده بأذنه (مستخرجٌ من الحلقة
+     الجبارة، تشغيلة 32508152455) يُلصق في نهاية كل حلقة.
+     وشرطُه أن تكون المداخلة الأخيرة هي جملة الإحالة نفسها — فإن غابت
+     (حلقةٌ خُتمت بغيرها) يُولَّد الصوت كالعادة ولا يُقحَم شيء. */
+  const CLOSING_CLIP = resolve(ROOT, 'music', 'kuwaiti-closing-approved.mp3')
+  const REFERRAL = /تلقى المقال الأصلي في موقع الدكتور/
+  const lastIsReferral = REFERRAL.test(String(turns.at(-1)?.text || ''))
+  const useFixedClosing = lastIsReferral && existsSync(CLOSING_CLIP)
+  if (lastIsReferral && !useFixedClosing) console.log('⚠️ الختام المعتمد مفقود من music/ — يُولَّد كالعادة')
+  if (useFixedClosing) console.log('✓ الختام الثابت: مقطعٌ معتمدٌ بأذن الدكتور يحلّ محل التوليد')
+
   for (let i = 0; i < turns.length; i += 1) {
     const turn = turns[i]
-    const file = files[i]
+    const isLast = i === turns.length - 1
+    const file = (useFixedClosing && isLast) ? CLOSING_CLIP : files[i]
     const dur = duration(file)
     if (i > 0) {
       const previous = items.at(-1)

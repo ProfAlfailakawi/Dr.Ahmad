@@ -15,31 +15,14 @@ import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
 import { chooseMetaphors, type MetaphorId } from './reel-metaphors'
 import { analyzeWorldSemantics } from './world-semantics'
 import type { SemanticVerb } from './design-worlds'
+import { ReelAudit } from './world-audits'
+import { DESIGN_WORLDS, MASTER_WORLD_ORDER } from './design-worlds'
 
 /* ------------------------------- الأنواع ------------------------------- */
 
 export type ReelTemplateId = 'question' | 'siren' | 'weave' | 'manuscript' | 'counter'
 
-export type ReelWorldId =
-  | 'observatory-night'
-  | 'majlis-velvet'
-  | 'sadu-night'
-  | 'dawn-blush'
-  | 'ink-marble'
-  | 'magazine-paper'
-  | 'lab-notebook'
-  | 'dawn-orchard'
-  | 'graphite-dusk'
-  | 'cream-daylight'
-  | 'sand-warm'
-  | 'linen-blue'
-  | 'pearl-mint'
-  | 'copper-eclipse'
-  | 'indigo-archive'
-  | 'emerald-atlas'
-  | 'desert-signal'
-  | 'porcelain-cyan'
-  | 'coral-future'
+export type ReelWorldId = string
 
 export type ReelMotifId =
   | 'dust'
@@ -120,7 +103,7 @@ export interface ReelPlan {
 
 /* ------------------------------- العوالم ------------------------------- */
 
-const WORLDS: ReelWorld[] = [
+const LEGACY_REEL_WORLDS: ReelWorld[] = [
   { id: 'observatory-night', label: 'مرصد الليل', scheme: 'dark', bgTop: '#16233a', bgMid: '#0c1320', bgBottom: '#080d16', glow: '#1e3a5f', ink: '#eaf0fb', dim: '#96a0b4', accent: '#e9c069', accent2: '#7ea6df', danger: '#e2483d' },
   { id: 'majlis-velvet', label: 'مخمل المجلس', scheme: 'dark', bgTop: '#3a1f2e', bgMid: '#241019', bgBottom: '#150a12', glow: '#5c2f43', ink: '#f3e4d6', dim: '#a98f96', accent: '#c8944e', accent2: '#e0a24a', danger: '#d5493c' },
   { id: 'sadu-night', label: 'ليل السدو', scheme: 'dark', bgTop: '#1d1f26', bgMid: '#14161c', bgBottom: '#0e1013', glow: '#2c3140', ink: '#ece9e2', dim: '#969dae', accent: '#d7a75f', accent2: '#8a3b2e', danger: '#c14435' },
@@ -144,6 +127,13 @@ const WORLDS: ReelWorld[] = [
   { id: 'coral-future', label: 'مستقبل مرجاني', scheme: 'light', bgTop: '#fff3ee', bgMid: '#f7dfd5', bgBottom: '#eac7bb', glow: '#fffaf7', ink: '#382428', dim: '#8d6b70', accent: '#be4f58', accent2: '#336f78', danger: '#a82f38' },
 ]
 
+const MASTER_REEL_WORLDS: ReelWorld[] = MASTER_WORLD_ORDER.map((id) => {
+  const world=DESIGN_WORLDS[id]
+  const palette=world.palette
+  return {id:world.id,label:world.labelAr,scheme:palette.isDark?'dark':'light',bgTop:palette.surface,bgMid:palette.background,bgBottom:palette.background,glow:palette.atmo?.glows?.[0]?.color||palette.accentSoft,ink:palette.ink,dim:palette.muted,accent:palette.accent,accent2:palette.accentSoft||palette.accent,danger:world.semanticAffinity.includes('confront')?'#C94B45':palette.accent}
+})
+/** كل الـ64 Master Worlds متاحة للريل؛ العوالم القديمة تبقى aliases بصرية للتوافق. */
+const WORLDS: ReelWorld[] = [...new Map([...LEGACY_REEL_WORLDS,...MASTER_REEL_WORLDS].map((world)=>[world.id,world])).values()]
 const worldById = new Map(WORLDS.map((world) => [world.id, world]))
 
 /** أي العوالم يليق بأي موضوع — القائمة مرتبة والأولى هي الميل الطبيعي. */
@@ -449,14 +439,17 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
   )
 
   /* العالم — من الموضوع المرجَّح أعلاه. */
-  const worldPool = TOPIC_WORLDS[nudgedTopic] || TOPIC_WORLDS.general
+  const semanticWorld = analyzeWorldSemantics(`${title} ${body}`, 'reel')
+  const semanticMasters = MASTER_WORLD_ORDER.filter((id)=>DESIGN_WORLDS[id].semanticAffinity.includes(semanticWorld.semanticMotionVerb))
+  const familyDiverseMasters = MASTER_WORLD_ORDER.filter((id,index)=>index%4===variant%4)
+  const worldPool = [...new Set([...(TOPIC_WORLDS[nudgedTopic] || TOPIC_WORLDS.general),...semanticMasters,...familyDiverseMasters])]
   /* مجرى عشوائي مستقل للعالم: لو اقتسم العالمُ مجرى القالب، لتجمّعت نصوصُ
      موضوعٍ واحد على لونٍ واحد كلما تشابه طول نصّها. */
   /* دوران حتمي بإزاحة مشتقة من العنوان: يضمن أن نصّين مختلفين على موضوع واحد
      لا يقعان على اللون نفسه إلا إذا استُنفدت المجموعة كلها. */
   const rotate = fnv(`${title}·${body.slice(0, 260)}·عالم·${templateId}·${analysis.primaryTone}·${variant}`) % worldPool.length
   const world = worldById.get(worldPool[rotate]) || WORLDS[0]
-  rationale.push(`الموضوع «${nudgedTopic}» فتح عوالم: ${worldPool.map((id) => worldById.get(id)?.label).join(' · ')} — ووقع الاختيار على «${world.label}»`)
+  rationale.push(`الموضوع «${nudgedTopic}» والفعل «${semanticWorld.semanticMotionVerb}» فتحا ${worldPool.length} عالماً مرشحاً من منظومة الـ64 — ووقع الاختيار على «${world.label}»`)
 
   /* المزاج الموسيقي: القالب يفرض طبعه أولاً، والنبرة تهذّبه. */
   /* مزاج المعجم يسبق تخمين المحلّل: هو مكتوبٌ لكل مفهوم بيد الدكتور. */
@@ -670,10 +663,12 @@ export function auditReelPlan(plan: ReelPlan): ReelQualityReport {
   if (hookBad) warnings.push('المشهد الأول يجب ألا يتجاوز 1.5 ثانية')
   if (genericOpening) warnings.push('الافتتاح عام ولا ينطق موضوع المادة')
   if (genericCta) warnings.push('CTA عام وغير خاص بالمادة')
-  const score = Math.max(0, 100 - duplicates * 20 - dangling * 18 - long * 5 - (sceneCountBad ? 18 : 0) - (durationBad ? 20 : 0) - (hookBad ? 10 : 0) - (genericOpening ? 12 : 0) - (genericCta ? 8 : 0))
+  const centralAudit = ReelAudit({ seconds:plan.seconds,sceneCount:plan.scenes.length,hookSeconds:plan.scenes[0]?.seconds||99,duplicate:duplicates>0,clipped:false,genericOpening,genericCta,safeZone:true,unfinishedSentence:dangling>0,overcrowded:long>0 })
+  const score = Math.min(centralAudit.score, Math.max(0, 100 - duplicates * 20 - dangling * 18 - long * 5 - (sceneCountBad ? 18 : 0) - (durationBad ? 20 : 0) - (hookBad ? 10 : 0) - (genericOpening ? 12 : 0) - (genericCta ? 8 : 0)))
+  centralAudit.warnings.forEach((warning)=>{if(!warnings.includes(warning))warnings.push(warning)})
   return {
     score,
-    ready: duplicates === 0 && dangling === 0 && !sceneCountBad && !durationBad && !hookBad && !genericOpening && !genericCta && score >= 82,
+    ready: centralAudit.ready && duplicates === 0 && dangling === 0 && !sceneCountBad && !durationBad && !hookBad && !genericOpening && !genericCta && score >= 82,
     checks: [
       'الافتتاح ينطق موضوع المادة خلال 1–1.5 ثانية',
       '5–8 مشاهد بوظائف سردية مختلفة',

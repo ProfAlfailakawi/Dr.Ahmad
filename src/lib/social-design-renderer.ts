@@ -2674,9 +2674,74 @@ function triggerDownload(url: string, name: string) {
   anchor.remove()
 }
 
-export async function downloadCompositionSvg(plan: CompositionPlan) {
+export interface CompositionExportAudit {
+  ready: boolean
+  score: number
+  warnings: string[]
+  checks: string[]
+  previewMatchesExport: boolean
+  fontsEmbedded: boolean
+  sealEmbedded: boolean
+}
+
+const EXPORT_IDENTITY_FONTS = [
+  '700 64px "El Messiri"', '600 48px "El Messiri"', '400 32px "El Messiri"',
+  '700 40px Tajawal', '500 32px Tajawal', '400 28px Tajawal',
+]
+function normalizeSvgForParity(svg: string) {
+  return svg
+    .replace(/<style>[\s\S]*?<\/style>/g, '')
+    .replace(/href="data:image\/png;base64,[^"]+"/g, 'href="/logo.png"')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * بوابة المنشور الثابت: لا تصدير بخط نظام بديل، لا ختم مفقود، لا أبعاد وهمية،
+ * وتتحقق بنيوياً من أن SVG التصدير هو نفس SVG المعاينة مع اختلاف تضمين الأصول فقط.
+ */
+export async function auditCompositionExportReadiness(plan: CompositionPlan): Promise<CompositionExportAudit> {
+  const warnings: string[] = []
+  const checks: string[] = []
+  if (typeof document === 'undefined') return { ready:false,score:0,warnings:['التصدير يحتاج بيئة متصفح للتحقق من الخطوط والأصول.'],checks,previewMatchesExport:false,fontsEmbedded:false,sealEmbedded:!renderPreferences.seal }
+  await Promise.race([
+    Promise.allSettled(EXPORT_IDENTITY_FONTS.map((font) => document.fonts?.load(font, 'أ') ?? Promise.resolve())),
+    new Promise((resolve) => window.setTimeout(resolve, 3500)),
+  ])
+  await document.fonts?.ready
+  const fontChecks = document.fonts ? EXPORT_IDENTITY_FONTS.map((font) => document.fonts.check(font, 'أ')) : []
+  const fontCss = await embeddedFontCss()
+  const fontsEmbedded = Boolean(fontCss && /@font-face/.test(fontCss) && /data:font\/woff2;base64,/.test(fontCss) && /El Messiri/.test(fontCss) && /Tajawal/.test(fontCss) && fontChecks.every(Boolean))
+  if (!fontsEmbedded) warnings.push('خطوط الهوية لم تُحمّل/تُضمّن بالكامل؛ مُنع fallback الصامت.')
+  else checks.push('خطوط El Messiri وTajawal محمّلة ومضمّنة داخل ملف التصدير.')
   const sealHref = renderPreferences.seal ? await sealDataUri() : ''
-  const blob = new Blob([renderCompositionSvg(plan, sealHref ? { sealHref } : {})], { type: 'image/svg+xml;charset=utf-8' })
+  const sealEmbedded = !renderPreferences.seal || /^data:image\/png;base64,/.test(sealHref)
+  if (!sealEmbedded) warnings.push('ختم الهوية مفعّل لكنه لم يُضمّن؛ منع التصدير كي لا يظهر شعار مفقود أو مشوّه.')
+  else checks.push(renderPreferences.seal ? 'ختم الهوية مضمّن بنسبة أبعاده الأصلية.' : 'الختم غير مطلوب في هذا التصميم.')
+  const previewSvg = renderCompositionSvg(plan)
+  const exportSvg = renderCompositionSvg(plan, { fontCss, ...(sealHref ? { sealHref } : {}) })
+  const previewMatchesExport = normalizeSvgForParity(previewSvg) === normalizeSvgForParity(exportSvg)
+  if (!previewMatchesExport) warnings.push('بنية SVG المصدرة لا تطابق المعاينة بعد تحييد اختلاف تضمين الأصول.')
+  else checks.push('المعاينة والتصدير متطابقان بنيوياً؛ الاختلاف الوحيد هو تضمين الخط/الختم.')
+  const titleWords = words(plan.content.title || '').length
+  const bodyWords = words(plan.content.body || '').length
+  if (plan.geometry.safeInset < .05) warnings.push('Safe inset أصغر من الحد الآمن للمنشور.')
+  if (titleWords > Math.ceil(plan.format.maxTitleWords * 1.35)) warnings.push('العنوان أطول من قدرة المقاس الآمنة وقد يهدد التسلسل البصري.')
+  if (bodyWords > Math.ceil(plan.format.maxBodyWords * 1.35)) warnings.push('المتن أطول من قدرة المقاس الآمنة وقد يسبب ازدحاماً.')
+  if (/NaN|undefined/.test(exportSvg)) warnings.push('اكتُشفت قيمة هندسية غير صالحة داخل SVG.')
+  const aspect = plan.format.width / plan.format.height
+  if (plan.format.id === 'instagram-square' && Math.abs(aspect - 1) > .001) warnings.push('مقاس 1:1 غير مطابق.')
+  if (plan.format.id === 'instagram-portrait' && Math.abs(aspect - .8) > .001) warnings.push('مقاس 4:5 غير مطابق.')
+  checks.push(`Safe zone ${(plan.geometry.safeInset * 100).toFixed(1)}٪ محفوظ لاتجاه RTL.`)
+  const score = Math.max(0, 100 - warnings.length * 22)
+  return { ready:warnings.length===0&&score>=82,score,warnings,checks,previewMatchesExport,fontsEmbedded,sealEmbedded }
+}
+
+export async function downloadCompositionSvg(plan: CompositionPlan) {
+  const audit = await auditCompositionExportReadiness(plan)
+  if (!audit.ready) throw new Error(`بوابة المنشور منعت SVG: ${audit.warnings[0] || `الدرجة ${audit.score}/100`}`)
+  const [fontCss, sealHref] = await Promise.all([embeddedFontCss(), renderPreferences.seal ? sealDataUri() : Promise.resolve('')])
+  const blob = new Blob([renderCompositionSvg(plan, { fontCss, ...(sealHref ? { sealHref } : {}) })], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   triggerDownload(url, fileName(plan, 'svg'))
   window.setTimeout(() => URL.revokeObjectURL(url), 1_000)
@@ -2751,27 +2816,19 @@ async function livingIconOverlay(plan: CompositionPlan): Promise<((ctx: CanvasRe
 
 /** يصدّر التصميم؛ وإن كان سلسلة صدّر كل شرائحها ملفاً ملفاً — كما يليق بكاروسيل حقيقي. */
 export async function downloadCompositionRaster(plan: CompositionPlan, type: 'png' | 'jpeg' = 'png') {
-  /* نفس جذر «الخطوط غير جيدة»: ctx/SVG لا يُنزّل خطاً لم تستعمله الصفحة بعد،
-     فيسقط الرسم لخطّ نظام صامتاً. نطلب الأوزان المستعملة صراحةً أولاً. */
-  await Promise.race([
-    Promise.allSettled([
-      '700 64px "El Messiri"', '600 48px "El Messiri"', '400 32px "El Messiri"',
-      '700 40px Tajawal', '500 32px Tajawal', '400 28px Tajawal',
-    ].map((font) => document.fonts?.load(font, 'أ') ?? Promise.resolve())),
-    new Promise((resolve) => window.setTimeout(resolve, 3500)),
-  ])
-  await document.fonts?.ready
-  const fontCss = await embeddedFontCss()
-  const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
-  const sealHref = renderPreferences.seal ? (await sealDataUri() || TRANSPARENT_PIXEL) : ''
+  const audit = await auditCompositionExportReadiness(plan)
+  if (!audit.ready) throw new Error(`بوابة المنشور منعت التصدير: ${audit.warnings[0] || `الدرجة ${audit.score}/100`}`)
+  const [fontCss, sealHref] = await Promise.all([embeddedFontCss(), renderPreferences.seal ? sealDataUri() : Promise.resolve('')])
   const series = renderCompositionSeries(plan, { fontCss, ...(sealHref ? { sealHref } : {}) })
   const extension = type === 'jpeg' ? 'jpg' : 'png'
   const background = resolvePalette(plan).background
   const iconOverlay = await livingIconOverlay(plan)
+  /* PNG عالي الدقة 2× من نفس SVG المتجهي؛ لا نغيّر هندسة المعاينة، فقط كثافة البكسل. */
+  const exportScale = type === 'png' ? 2 : 1
   for (const [index, svg] of series.entries()) {
     const base = fileName(plan, extension)
     const name = series.length > 1 ? base.replace(`.${extension}`, `-${index + 1}of${series.length}.${extension}`) : base
-    await rasterizeSvg(svg, plan.format.width, plan.format.height, type, background, name, iconOverlay)
+    await rasterizeSvg(svg, plan.format.width * exportScale, plan.format.height * exportScale, type, background, name, iconOverlay)
     if (index < series.length - 1) await new Promise((resolve) => window.setTimeout(resolve, 160))
   }
 }

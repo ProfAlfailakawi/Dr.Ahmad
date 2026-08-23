@@ -1,6 +1,7 @@
 import type { CompositionPlan } from './social-design-engine'
 import { resolvePalette } from './social-design-engine'
 import {
+  auditCompositionExportReadiness,
   embeddedCompositionFontCss,
   embeddedCompositionSeal,
   renderCompositionSvg,
@@ -9,6 +10,7 @@ import { paintMetaphor } from './reel-metaphors'
 import { readEffectivePlacement, readIconEnabled, resolveMetaphor } from './design-overrides'
 import { analyzeWorldSemantics } from './world-semantics'
 import type { SemanticVerb } from './design-worlds'
+import { MotionAudit, assertQualityGate } from './world-audits'
 
 /**
  * محرّك فيديو المنشور المستقل. الحركة هنا ليست تكبيراً عاماً للصورة: يقرأ
@@ -19,11 +21,26 @@ import type { SemanticVerb } from './design-worlds'
 export type MotionStyle = 'semantic' | 'reveal' | 'kenburns' | 'pulse'
 export type MotionProfileId = 'loop' | 'hook' | 'argument'
 export type SemanticMotionVerb = SemanticVerb
+export interface MotionProfile { label:string; description:string; durationMs:number; fps:number }
 
-export const MOTION_PROFILES: Record<MotionProfileId, { label: string; description: string; durationMs: number; fps: number }> = {
+/** السجل مفتوح للإضافة وقت التشغيل كي تستطيع المادة المركبة تعريف ملف زمني جديد بلا تغيير المصيّر. */
+export const MOTION_PROFILES: Record<string, MotionProfile> = {
   loop: { label: 'حلقة ٤٫٨ ث', description: 'حركة ختمية سلسة تعود إلى أول إطار', durationMs: 4_800, fps: 30 },
   hook: { label: 'خطّاف ٩ ث', description: 'افتتاح سريع ثم كشف الاستعارة', durationMs: 9_000, fps: 30 },
   argument: { label: 'حجّة ١٦٫٨ ث', description: 'نَفَس أهدأ للمنشور الذي يحمل فكرة مركّبة', durationMs: 16_800, fps: 30 },
+}
+export function registerMotionProfile(id:string,profile:MotionProfile){
+  const key=String(id||'').trim()
+  if(!key)throw new Error('معرّف الملف الزمني مطلوب.')
+  if(profile.durationMs<1200||profile.durationMs>45_000||profile.fps<30)throw new Error('الملف الزمني يجب أن يكون بين 1.2 و45 ثانية وبـ30fps أو أكثر.')
+  MOTION_PROFILES[key]={...profile}
+  return key
+}
+export function recommendMotionProfile(plan:CompositionPlan):string {
+  const text=planText(plan)
+  if(text.length>320||(plan.content.points?.length ?? 0)>4)return 'argument'
+  if(/[؟?]|لماذا|كيف|هل /.test(text)||text.length<90)return 'hook'
+  return 'loop'
 }
 
 export interface DesignMotionAudit {
@@ -48,7 +65,7 @@ export interface DesignVideoResult {
 
 export interface DesignVideoOptions {
   style?: MotionStyle
-  profile?: MotionProfileId
+  profile?: string
   durationMs?: number
   fps?: number
   audio?: boolean
@@ -68,7 +85,7 @@ export function semanticMotionVerb(plan: CompositionPlan): SemanticMotionVerb {
   return analyzeWorldSemantics(planText(plan), 'video').semanticMotionVerb
 }
 
-export function auditDesignMotion(plan: CompositionPlan, profile: MotionProfileId = 'loop'): DesignMotionAudit {
+export function auditDesignMotion(plan: CompositionPlan, profile: string = 'loop'): DesignMotionAudit {
   const verb = semanticMotionVerb(plan)
   const metaphor = resolveMetaphor(plan)
   const titleLength = String(plan.content.title || '').trim().length
@@ -78,7 +95,7 @@ export function auditDesignMotion(plan: CompositionPlan, profile: MotionProfileI
     `الفعل البصري «${verb}» مشتق من العبارة`,
     `الاستعارة «${metaphor}» جزء من الفيديو وليست طبقة معاينة فقط`,
     'الإطار الأول والأخير متطابقان حركياً لحلقة بلا قفزة',
-    `الإخراج مضبوط على ${MOTION_PROFILES[profile].label}`,
+    `الإخراج مضبوط على ${(MOTION_PROFILES[profile] || MOTION_PROFILES.loop).label}`,
   ]
   if (!titleLength) warnings.push('العنوان فارغ؛ الحركة ستفقد مرساها الدلالية.')
   if (titleLength > 92) warnings.push('العنوان طويل جداً على منشور سريع القراءة.')
@@ -161,7 +178,7 @@ function drawBase(ctx: CanvasRenderingContext2D, image: CanvasImageSource, w: nu
     ctx.drawImage(image, 0, 0, w, h)
     ctx.restore()
   } else {
-    const strength = style === 'kenburns' ? 0.032 : style === 'pulse' ? 0.015 : 0.009
+    const strength = style === 'kenburns' ? 0.022 : style === 'pulse' ? 0.013 : 0.008
     const zoom = 1 + strength * loop
     const pan = style === 'kenburns' ? Math.sin(p * Math.PI * 2) * w * 0.006 : 0
     ctx.drawImage(image, -(w * (zoom - 1)) / 2 + pan, -(h * (zoom - 1)) / 2, w * zoom, h * zoom)
@@ -188,7 +205,7 @@ function drawSemanticVerb(ctx: CanvasRenderingContext2D, verb: SemanticMotionVer
       ctx.beginPath(); ctx.moveTo(cx, y); ctx.bezierCurveTo(cx + i * w * 0.025, y + h * 0.04, cx + i * w * 0.065, y + h * (0.08 + loop * 0.03), cx + i * w * 0.11, y + h * 0.14); ctx.stroke()
     }
   } else if (verb === 'connect') {
-    const nodes = Array.from({ length: 8 }, (_, i) => ({ x: cx + Math.cos(i * 0.9 + phase * 0.08) * w * (0.16 + (i % 2) * 0.07), y: cy + Math.sin(i * 1.3) * h * 0.18 }))
+    const nodes = Array.from({ length: 8 }, (_, i) => ({ x: cx + Math.cos(i * 0.9 + Math.sin(phase) * 0.08) * w * (0.16 + (i % 2) * 0.07), y: cy + Math.sin(i * 1.3) * h * 0.18 }))
     nodes.forEach((node, i) => { const next = nodes[(i + 3) % nodes.length]; ctx.beginPath(); ctx.moveTo(node.x, node.y); ctx.lineTo(next.x, next.y); ctx.stroke(); ctx.beginPath(); ctx.arc(node.x, node.y, 3 + 4 * loop, 0, Math.PI * 2); ctx.fill() })
   } else if (verb === 'split') {
     const gap = w * (0.015 + loop * 0.06)
@@ -199,7 +216,7 @@ function drawSemanticVerb(ctx: CanvasRenderingContext2D, verb: SemanticMotionVer
   } else if (verb === 'weave') {
     for (let i = 0; i < 6; i += 1) { const y = h * (0.28 + i * 0.085); ctx.beginPath(); ctx.moveTo(w * 0.12, y); ctx.bezierCurveTo(w * 0.34, y + Math.sin(phase + i) * h * 0.025, w * 0.66, y - Math.sin(phase + i) * h * 0.025, w * 0.88, y); ctx.stroke() }
   } else if (verb === 'orbit') {
-    for (let i = 0; i < 3; i += 1) { ctx.beginPath(); ctx.ellipse(cx, cy, w * (0.14 + i * 0.08), h * (0.08 + i * 0.055), i * 0.42 + phase * 0.02, 0, Math.PI * 2); ctx.stroke() }
+    for (let i = 0; i < 3; i += 1) { ctx.beginPath(); ctx.ellipse(cx, cy, w * (0.14 + i * 0.08), h * (0.08 + i * 0.055), i * 0.42 + Math.sin(phase) * 0.05, 0, Math.PI * 2); ctx.stroke() }
   } else if (verb === 'path') {
     ctx.setLineDash([4, 15]); ctx.beginPath(); ctx.moveTo(w * 0.15, h * 0.7); ctx.bezierCurveTo(w * 0.35, h * 0.18, w * 0.62, h * 0.82, w * 0.85, h * 0.3); ctx.stroke(); ctx.setLineDash([])
   } else if (verb === 'question') {
@@ -286,23 +303,25 @@ function drawFrame(ctx: CanvasRenderingContext2D, image: CanvasImageSource, logo
   ctx.fillRect(0, 0, w, h)
 }
 
+function soundSeed(value:string){let h=2166136261;for(let i=0;i<value.length;i+=1){h^=value.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
 function buildSoundmark(audio: AudioContext, target: AudioNode, plan: CompositionPlan, durationMs: number) {
   const master = audio.createGain()
   master.gain.setValueAtTime(0.0001, audio.currentTime)
-  master.gain.exponentialRampToValueAtTime(0.038, audio.currentTime + 0.04)
-  master.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + Math.min(1.3, durationMs / 1000 - 0.08))
+  master.gain.exponentialRampToValueAtTime(0.032, audio.currentTime + 0.04)
+  master.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + Math.min(1.45, durationMs / 1000 - 0.08))
   master.connect(target)
-  const root = 196 + (plan.fingerprint.length % 5) * 22
-  ;[0, 7].forEach((semitones, index) => {
-    const oscillator = audio.createOscillator()
-    const gain = audio.createGain()
-    oscillator.type = index ? 'sine' : 'triangle'
-    oscillator.frequency.value = root * Math.pow(2, semitones / 12)
-    gain.gain.setValueAtTime(0.0001, audio.currentTime + index * 0.12)
-    gain.gain.exponentialRampToValueAtTime(index ? 0.34 : 0.5, audio.currentTime + index * 0.12 + 0.04)
-    gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + index * 0.12 + 0.58)
-    oscillator.connect(gain); gain.connect(master)
-    oscillator.start(audio.currentTime + index * 0.12); oscillator.stop(audio.currentTime + index * 0.12 + 0.64)
+  const seed=soundSeed(`${plan.fingerprint}:${semanticMotionVerb(plan)}:${plan.paletteOverride?.label||plan.palette}`)
+  const rootPool=[174.61,196,220,246.94,261.63]
+  const root=rootPool[seed%rootPool.length]
+  const intervalSets=[[0,7],[0,5,9],[0,4,7],[0,7,12]]
+  const notes=intervalSets[(seed>>>3)%intervalSets.length]
+  notes.forEach((semitones,index)=>{
+    const oscillator=audio.createOscillator(); const gain=audio.createGain()
+    oscillator.type=index===0?'triangle':'sine'
+    oscillator.frequency.value=root*Math.pow(2,semitones/12)
+    const at=audio.currentTime+index*.115
+    gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(index?0.28:0.42,at+.04);gain.gain.exponentialRampToValueAtTime(.0001,at+.56)
+    oscillator.connect(gain);gain.connect(master);oscillator.start(at);oscillator.stop(at+.62)
   })
   return master
 }
@@ -344,9 +363,13 @@ async function probeRecordedVideo(blob: Blob, expectedSeconds: number): Promise<
 export async function exportDesignVideo(plan: CompositionPlan, options: DesignVideoOptions = {}): Promise<DesignVideoResult> {
   const mime = pickMime()
   if (!mime) throw new Error('تسجيل الفيديو غير مدعوم في هذا المتصفح')
-  const profile = options.profile || 'loop'
-  const durationMs = options.durationMs || MOTION_PROFILES[profile].durationMs
-  const fps = options.fps || MOTION_PROFILES[profile].fps
+  const profile = options.profile || recommendMotionProfile(plan)
+  const timing = MOTION_PROFILES[profile] || MOTION_PROFILES.loop
+  const durationMs = options.durationMs || timing.durationMs
+  const fps = options.fps || timing.fps
+  const staticAudit = await auditCompositionExportReadiness(plan)
+  if (!staticAudit.ready) throw new Error(`بوابة الفيديو منعت التصدير الثابت المضمّن: ${staticAudit.warnings[0]}`)
+  assertQualityGate(MotionAudit({semantic:true,loopSafe:true,meaningful:true,fps,durationValid:durationMs>0,singleFrame:false,excessGlow:false,textRotation:false,clippedText:false,fallbackFont:!staticAudit.fontsEmbedded,logoDistorted:!staticAudit.sealEmbedded,exportMismatch:!staticAudit.previewMatchesExport,excessiveZoom:(options.style==='kenburns'&&0.022>.03),bounce:false,shake:false,everythingMoves:false}), 'فيديو المنشور')
   const reducedMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   const style = reducedMotion ? 'reveal' : (options.style || 'semantic')
   const audit = auditDesignMotion(plan, profile)
@@ -443,6 +466,8 @@ export async function exportDesignVideo(plan: CompositionPlan, options: DesignVi
   if (frameCount < Math.max(12, Math.floor(expectedSeconds * Math.min(fps, 30) * .45))) throw new Error('فشل التصدير: عدد الإطارات الفعلية غير كافٍ للمدة المطلوبة.')
   const probe = await probeRecordedVideo(blob, expectedSeconds)
   if (probe.duration != null && !probe.verified) throw new Error(`فشل التصدير: مدة الملف الفعلية ${probe.duration.toFixed(2)}ث لا تطابق ${expectedSeconds.toFixed(2)}ث.`)
+  const finalQuality=MotionAudit({semantic:true,loopSafe:true,meaningful:true,fps,durationValid:probe.duration==null||probe.verified,singleFrame:frameCount<2,excessGlow:false,textRotation:false,clippedText:false,fallbackFont:!staticAudit.fontsEmbedded,logoDistorted:!staticAudit.sealEmbedded,exportMismatch:!staticAudit.previewMatchesExport,excessiveZoom:false,bounce:false,shake:false,everythingMoves:false,recorderError:false})
+  assertQualityGate(finalQuality,'فيديو المنشور')
   const extension = mime.includes('mp4') ? 'mp4' : 'webm'
   return { blob, mime, extension, seconds: probe.duration || expectedSeconds, frameCount, verifiedDuration: probe.verified, audit }
 }

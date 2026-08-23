@@ -48,6 +48,14 @@ const checks = [
   ['المعرض يدعم البحث والمقارنة والاندماج والأقفال', /Controlled/.test(gallery) && /fuseWorlds/.test(gallery) && /compare/.test(gallery) && /locks/.test(gallery)],
   ['الريل 5–8 مشاهد و18–30 ثانية', /scenes\.length < 5/.test(reelScenes) && /scenes\.length > 8/.test(reelScenes) && /plan\.seconds < 18/.test(reelMotion) && /plan\.seconds > 30/.test(reelMotion)],
   ['الصوت اختياري في الريل', /audio\?: boolean/.test(reelMotion) && /options\.audio !== false/.test(reelMotion)],
+  ['Seed cache محدود وحقيقي', /PROCEDURAL_CACHE_LIMIT\s*=\s*256/.test(procedural) && /proceduralWorldCacheStats/.test(procedural) && /cacheHits/.test(procedural)],
+  ['Fusion يملك Compatibility Gate', /assessFusionCompatibility/.test(procedural) && /Fusion مرفوض/.test(procedural) && /contrast<4\.5/.test(procedural)],
+  ['Greedy Max-Min يفرض مسافة دنيا ويستبعد الذاكرة', /selectPerceptuallyDiverse/.test(diversity) && /minDistance/.test(diversity) && /excludeSignatures/.test(diversity)],
+  ['المعاينة الحية عند الطلب وتُلغى خارج الشاشة', /onMouseEnter/.test(gallery) && /حرّك المعاينة/.test(gallery) && /cancelAnimationFrame/.test(gallery) && /setVisible\(Boolean\(entry\?\.isIntersecting\)\)/.test(gallery)],
+  ['كل Master Worlds متاحة لمحرك الريل', /MASTER_WORLD_ORDER\.map/.test(reelScenes) && /MASTER_REEL_WORLDS/.test(reelScenes)],
+  ['الريل يمنع fallback font قبل التصدير', /auditReelFonts/.test(reelMotion) && /document\.fonts/.test(reelMotion) && /fallbackFont/.test(reelMotion)],
+  ['الفيديو يدعم ملفات زمنية قابلة للتوسعة', /registerMotionProfile/.test(designMotion) && /recommendMotionProfile/.test(designMotion)],
+  ['بوابات الجودة تشمل العقوبات الحرجة', ['clipped-text','duplicate-phrases','excess-glow','overcrowded','logo-distorted','meaningless-motion','generic-opening','repeated-cta','fallback-font','wrong-duration','single-frame','cheap-ornament','palette-only'].every((id)=>audits.includes(`'${id}'`))],
 ]
 
 const failed = checks.filter(([, ok]) => !ok)

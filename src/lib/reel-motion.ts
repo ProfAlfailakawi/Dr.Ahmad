@@ -11,9 +11,11 @@
 import type { ReelPlan, ReelScene, ReelMotifId, ReelWorld } from './reel-scenes'
 import { auditReelPlan, mulberry } from './reel-scenes'
 import { paintMetaphor } from './reel-metaphors'
+import { ReelAudit, assertQualityGate } from './world-audits'
 
 export const REEL_WIDTH = 1080
 export const REEL_HEIGHT = 1920
+export { sampleReelTimeline } from './reel-timeline'
 const FPS = 30
 const REEL_SAFE_LEFT = 132
 const REEL_SAFE_RIGHT = 176
@@ -74,6 +76,21 @@ async function ensureFonts(): Promise<void> {
   } catch {
     /* الخطوط المضمنة في الموقع ستُحمَّل من CSS على أي حال. */
   }
+}
+
+
+export interface ReelFontAudit { ready:boolean; warnings:string[] }
+export async function auditReelFonts():Promise<ReelFontAudit>{
+  await ensureFonts()
+  const warnings:string[]=[]
+  if(typeof document==='undefined'||!('fonts' in document))warnings.push('لا يمكن التحقق من خطوط الريل في هذه البيئة.')
+  else{
+    const display=document.fonts.check('700 90px "El Messiri"','العربية')
+    const body=document.fonts.check('700 40px "Tajawal"','العربية')
+    if(!display)warnings.push('El Messiri غير محمّل؛ منع fallback في التصدير.')
+    if(!body)warnings.push('Tajawal غير محمّل؛ منع fallback في التصدير.')
+  }
+  return {ready:warnings.length===0,warnings}
 }
 
 /* ------------------------------- عناصر الرسم ------------------------------- */
@@ -921,8 +938,10 @@ export async function exportReelVideo(plan: ReelPlan, options: { canvas?: HTMLCa
   if (!mime) throw new Error('هذا المتصفح لا يدعم تسجيل الفيديو — استخدم صيغة مدعومة من المتصفح')
   const storyGate = auditReelPlan(plan)
   if (!storyGate.ready) throw new Error(`بوابة الريل منعت التصدير: ${storyGate.warnings[0] || 'الخطة السردية لم تجتز الجودة.'}`)
-  const textFit = await auditReelTextFit(plan)
+  const [textFit,fontAudit] = await Promise.all([auditReelTextFit(plan),auditReelFonts()])
   if (!textFit.ready) throw new Error(`بوابة الريل منعت التصدير: ${textFit.warnings[0]}`)
+  if (!fontAudit.ready) throw new Error(`بوابة الريل منعت التصدير: ${fontAudit.warnings[0]}`)
+  assertQualityGate(ReelAudit({seconds:plan.seconds,sceneCount:plan.scenes.length,hookSeconds:plan.scenes[0]?.seconds||99,duplicate:false,clipped:!textFit.ready,genericOpening:false,genericCta:false,safeZone:textFit.ready,fallbackFont:!fontAudit.ready,unfinishedSentence:false,overcrowded:textFit.maxLines>4}), 'الريل')
   if (plan.seconds < 18 || plan.seconds > 30 || plan.scenes.length < 5 || plan.scenes.length > 8) throw new Error('بوابة الريل منعت التصدير: المدة أو عدد المشاهد خارج الحدود المعتمدة.')
   await ensureFonts()
   spriteCache.clear()
@@ -992,6 +1011,8 @@ export async function exportReelVideo(plan: ReelPlan, options: { canvas?: HTMLCa
   if (frameCount < Math.max(18, Math.floor(plan.seconds * FPS * .42))) throw new Error('فشل التصدير: عدد الإطارات المسجلة لا يناسب مدة الريل.')
   const probe = await probeReelVideo(blob, plan.seconds)
   if (probe.duration != null && !probe.verified) throw new Error(`فشل التصدير: مدة الملف الفعلية ${probe.duration.toFixed(2)}ث لا تطابق خطة ${plan.seconds.toFixed(2)}ث.`)
+  const finalAudit=ReelAudit({seconds:probe.duration||plan.seconds,sceneCount:plan.scenes.length,hookSeconds:plan.scenes[0]?.seconds||99,duplicate:false,clipped:!textFit.ready,genericOpening:false,genericCta:false,safeZone:textFit.ready,fallbackFont:!fontAudit.ready,unfinishedSentence:false,overcrowded:textFit.maxLines>4,singleFrame:frameCount<2,durationValid:probe.duration==null||probe.verified,soundOverpowering:false,exportMismatch:false,logoDistorted:false,excessGlow:false})
+  assertQualityGate(finalAudit,'الريل')
   return { blob, mime, seconds: probe.duration || plan.seconds, frameCount, verifiedDuration: probe.verified, textFit }
 }
 

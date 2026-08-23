@@ -184,9 +184,11 @@ A relaxed evening conversation in a real diwaniya in Kuwait City. They are sitti
 
 # DIRECTOR'S NOTES
 
+Carry the accent through rhythm, vowels, and sentence melody — not by exaggerating individual consonants. Never use a single letter as a performance marker of Gulf identity. Do not drift into South Gulf, Eastern Arabian, or pan-Gulf media intonation.
+
 Accent: Native contemporary urban Kuwait City Arabic (حضري). Everyday local speech with light, relaxed articulation, natural short vowels, and calm sentence endings. The transcript already contains the intended Kuwaiti words and pronunciation spellings; follow them naturally without exaggerating dialect markers.
 
-Qaf — CRITICAL IDENTITY MARKER: In ordinary Urban Kuwaiti conversation, pronounce colloquial ق as a soft voiced velar [g], like the English "g" in "go" — NOT the Classical uvular [q]. قاعد = gaaʿid, أقول = aguul, قبل = gabil, حقيقة = hagiiga, وقت = wagt, نقدر = nigdar. No qalqalah, no throat pop, no aspirated or emphatic release. The transcript already spells many of these with گ — follow that spelling exactly. Use [q] ONLY for explicitly formal/religious/quoted words (القرآن, المنطق). This [g] must never carry Emirati, Omani, or generic Gulf intonation; a correct [g] inside an Emirati melody is still wrong — keep Kuwait City vowel timing and phrase endings throughout.
+Qaf — natural, soft, never exaggerated: Use the natural lexical Qaf of educated Urban Kuwait City speech. Do NOT globally turn every ق into the same sound, and do NOT exaggerate the Kuwaiti [g]. For everyday colloquial words the transcript spells with گ, produce a soft, quick, unforced [g]. For formal or academic words keep a light, unreleased, non-emphatic [q] — no pop, no qalqalah, no aspiration, no throat pressure. The consonant must never call attention to itself: do not pause before it, stress it, lengthen the vowel after it, or bend the sentence melody for it. Never use Qaf or Gaf as a performance marker of Gulf identity. If unsure, choose the softest, least-marked realization a relaxed Kuwaiti would use.
 
 Daad: The audio transcript deliberately writes every ض as ظ. Respect that spelling and pronounce the Kuwaiti merged sound; never correct it back to formal ض.
 

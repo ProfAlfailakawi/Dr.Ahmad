@@ -1,140 +1,70 @@
-/**
- * معرض عوالم التصميم — شريط الدساتير المتكاملة.
- *
- * كل بطاقة ملصقٌ حيّ يُصاغ بمحرك التصميم نفسه (مرشح خفيف عبر worldPreviewPlan)
- * ويُجسَّد في عالمه كاملاً: الجوّ واللون والطباعة والعمق. البطاقة تلبس ألوان
- * عالمها هي نفسها، فيصير الشريط ذاته لوحةً تتعاقب فيها الليالي والأصباح.
- *
- * الشريط يُلَفّ يميناً ويساراً بيد الدكتور — بلا حركة ذاتية إطلاقاً.
- * الملصقات تُبنى تباعاً بعد التركيب (ملصق لكل إطار) وتُحفظ في ذاكرة الوحدة،
- * فلا يدفع الاستوديو كلفتها إلا مرة واحدة في الجلسة.
- */
-
-import { useEffect, useState } from 'react'
-import {
-  DESIGN_WORLDS,
-  WORLD_ORDER,
-  worldPreviewPlan,
-  type DesignWorld,
-  type DesignWorldId,
-} from '../../lib/design-worlds'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { DESIGN_WORLDS, MASTER_WORLD_ORDER, WORLD_FAMILY_OPTIONS, resolveWorld, type DesignWorld, type DesignWorldId } from '../../lib/design-worlds'
+import { generateProceduralWorld, fuseWorlds, type ProceduralWorldResult, type WorldLocks } from '../../lib/procedural-world-engine'
+import { greedyMaxMin, perceptualDistance, recentPerceptualSignatures, rememberPerceptualSignature, signatureNovelty, vectorFromWorld } from '../../lib/perceptual-diversity'
+import { WorldAudit } from '../../lib/world-audits'
+import { analyzeWorldSemantics } from '../../lib/world-semantics'
+import { worldPreviewPlan } from '../../lib/design-worlds'
 import { renderCompositionSvg } from '../../lib/social-design-renderer'
 
-/** ذاكرة ملصقات الجلسة: العالم لا يتبدل نصّ معاينته فلا يُرسم مرتين. */
-const posterCache = new Map<DesignWorldId, string>()
+const posterCache=new Map<string,string>()
+function posterOf(world:DesignWorld,idea:string){const key=`${world.id}:${idea.slice(0,64)}`; const cached=posterCache.get(key); if(cached)return cached; const svg=renderCompositionSvg(worldPreviewPlan(world,idea||undefined),{ariaLabel:`ملصق عالم ${world.label}`}); posterCache.set(key,svg); return svg}
+function useVisible<T extends HTMLElement>(){const ref=useRef<T|null>(null); const [visible,setVisible]=useState(false); useEffect(()=>{const node=ref.current;if(!node)return; if(typeof IntersectionObserver==='undefined'){setVisible(true);return} const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting)setVisible(true)},{rootMargin:'180px'});observer.observe(node);return()=>observer.disconnect()},[]);return {ref,visible}}
 
-function posterOf(world: DesignWorld): string {
-  const cached = posterCache.get(world.id)
-  if (cached) return cached
-  const svg = renderCompositionSvg(worldPreviewPlan(world), { ariaLabel: `ملصق عالم ${world.label}` })
-  posterCache.set(world.id, svg)
-  return svg
+export interface DesignWorldsGalleryProps { activeWorldId?:DesignWorldId|string|null; onDress:(world:DesignWorld)=>void; onGenerate?:(world:DesignWorld)=>void; onClear?:()=>void; compact?:boolean; idea?:string }
+const tiny='rounded-full border border-white/15 px-2.5 py-1 text-[.58rem] font-bold text-slate-200 transition hover:border-sky-300/60 hover:text-white disabled:opacity-40'
+const field='min-w-0 rounded-xl border border-white/10 bg-slate-950/55 px-2.5 py-2 text-[.62rem] text-slate-200 outline-none focus:border-sky-300/50'
+const labelMap:Record<string,string>={still:'ساكن',balanced:'متزن',pulsing:'نابض',rising:'متصاعد','controlled-explosive':'انفجاري محسوب',paper:'ورق',glass:'زجاج',metal:'معدن',stone:'حجر',ink:'حبر',light:'ضوء',sand:'رمل',water:'ماء',textile:'نسيج',clay:'طين',breathe:'تنفّس',grow:'نمو',connect:'اتصال',split:'انقسام',rise:'صعود',orbit:'دوران',weave:'نسج',reveal:'كشف',balance:'توازن',pulse:'نبض'}
+
+function WorldCard({world,idea,active,favorite,compare,onFavorite,onCompare,onDress,onGenerate}:{world:DesignWorld;idea:string;active:boolean;favorite:boolean;compare:boolean;onFavorite:()=>void;onCompare:()=>void;onDress:()=>void;onGenerate?:()=>void}){
+  const {ref,visible}=useVisible<HTMLElement>()
+  const wp=world.palette
+  return <article ref={ref} className={`group relative overflow-hidden rounded-xl border transition ${active?'ring-2 ring-sky-300/70':''}`} style={{background:wp.background,borderColor:active?wp.accent:wp.rule}}>
+    <div className="absolute left-2 top-2 z-10 flex gap-1"><button type="button" className={tiny} onClick={onFavorite} aria-label="حفظ المفضلة">{favorite?'★':'☆'}</button><button type="button" className={tiny} onClick={onCompare} aria-pressed={compare}>⇄</button></div>
+    <button type="button" onClick={onDress} className="block w-full text-right" title={`${world.description}\n${world.philosophy}`}>
+      <span className="relative block overflow-hidden" style={{aspectRatio:'4 / 5',background:wp.background}}>
+        {visible?<span className="absolute inset-0 block" dangerouslySetInnerHTML={{__html:posterOf(world,idea)}}/>:<span className="absolute inset-0 animate-pulse" style={{background:`linear-gradient(145deg,${wp.background},${wp.surface},${wp.background})`}}/>}
+        <span className="absolute bottom-2 right-2 rounded-full px-2 py-1 text-[.48rem] font-bold" style={{background:wp.surface,color:wp.ink,border:`1px solid ${wp.rule}`}}>{world.familyLabel}</span>
+      </span>
+      <span className="block px-3 pb-2 pt-2" style={{borderTop:`1px solid ${wp.rule}`}}><span className="block font-display text-[.78rem] font-bold" style={{color:wp.ink}}>{world.labelAr}</span><span className="block text-[.48rem] uppercase tracking-[.08em]" style={{color:wp.muted}}>{world.labelEn}</span><span className="mt-1 block text-[.55rem] leading-relaxed" style={{color:wp.muted}}>{world.tagline}</span></span>
+    </button>
+    <div className="grid gap-1 px-3 pb-2"><button type="button" className="w-full rounded-full px-2 py-1 text-[.54rem] font-bold" style={{background:wp.accent,color:wp.isDark?'#0A0D12':'#fff'}} onClick={onDress}>ألبس الفكرة هذا العالم</button>{onGenerate?<button type="button" className={tiny} onClick={onGenerate}>ولادة كاملة</button>:null}</div>
+  </article>
 }
 
-export interface DesignWorldsGalleryProps {
-  /** العالم الذي يكسو التصميم المختار الآن (للتمييز في المعرض). */
-  activeWorldId?: DesignWorldId | null
-  /** كسوة: يلبس الجوَّ واللون مع إبقاء بنية التصميم. */
-  onDress: (world: DesignWorld) => void
-  /** ولادة كاملة من داخل العالم (توليد دفعة جديدة بدستوره). */
-  onGenerate?: (world: DesignWorld) => void
-  /** إزالة الكسوة والعودة للوحات المختارة. */
-  onClear?: () => void
-  /** نسخة مضغوطة (منشور مستقل): بطاقات أصغر بلا دستور مفصل. */
-  compact?: boolean
-}
-
-export default function DesignWorldsGallery({ activeWorldId, onDress, onGenerate, onClear, compact }: DesignWorldsGalleryProps) {
-  /* الملصقات تُبنى تباعاً كي لا يقف الاستوديو لحظة الفتح: ملصق كل إطار. */
-  const [readyCount, setReadyCount] = useState(() => posterCache.size >= WORLD_ORDER.length ? WORLD_ORDER.length : 0)
-  useEffect(() => {
-    if (readyCount >= WORLD_ORDER.length) return
-    let cancelled = false
-    const frame = requestAnimationFrame(() => {
-      if (cancelled) return
-      posterOf(DESIGN_WORLDS[WORLD_ORDER[readyCount]])
-      setReadyCount((count) => count + 1)
-    })
-    return () => { cancelled = true; cancelAnimationFrame(frame) }
-  }, [readyCount])
-
-  return (
-    <section className="mt-3 overflow-hidden rounded-2xl border border-hair" style={{ background: 'linear-gradient(160deg, #0B101C 0%, #111827 55%, #16202F 100%)' }}>
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3.5">
-        <div className="min-w-0">
-          <p className="font-display text-[.95rem] font-bold" style={{ color: '#EDF2FB' }}>
-            عوالم التصميم
-            <span className="mr-2 rounded-full px-2 py-0.5 text-[.55rem] font-semibold tracking-wide" style={{ background: 'rgba(134,168,240,.14)', color: '#A9C2F5', border: '1px solid rgba(134,168,240,.3)' }}>{WORLD_ORDER.length} دستوراً متكاملاً</span>
-          </p>
-          <p className="mt-0.5 text-[.62rem]" style={{ color: '#93A3C0' }}>
-            جوٌّ ولونٌ وطباعةٌ وعمقٌ بضغطة واحدة — على نهج دساتير العلامات العالمية، مطوّعةً لهويتك لا منسوخة.
-          </p>
-        </div>
-        {activeWorldId ? (
-          <span className="flex items-center gap-1.5">
-            <span className="rounded-full px-2.5 py-1 text-[.6rem] font-bold" style={{ background: 'rgba(134,168,240,.16)', color: '#C7D7FF' }}>يلبس الآن: {DESIGN_WORLDS[activeWorldId].label}</span>
-            {onClear && (
-              <button type="button" onClick={onClear} className="rounded-full border px-2.5 py-1 text-[.6rem] font-semibold transition hover:opacity-80" style={{ borderColor: 'rgba(237,242,251,.25)', color: '#B9C6DE' }}>أزل الكسوة</button>
-            )}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="flex snap-x gap-3 overflow-x-auto px-4 pb-4 pt-3" style={{ scrollbarWidth: 'thin' }}>
-        {WORLD_ORDER.map((worldId, index) => {
-          const world = DESIGN_WORLDS[worldId]
-          const wp = world.palette
-          const ready = index < readyCount
-          const active = activeWorldId === world.id
-          return (
-            <article
-              key={world.id}
-              className={`group relative shrink-0 snap-start overflow-hidden rounded-xl transition-transform duration-300 ${compact ? 'w-40' : 'w-52'} ${active ? '' : 'hover:-translate-y-1'}`}
-              style={{
-                background: wp.background,
-                border: `1px solid ${active ? wp.accent : wp.rule}`,
-                boxShadow: active
-                  ? `0 0 0 2px ${wp.accent}55, 0 14px 30px -18px ${wp.isDark ? '#000000CC' : '#3A2E2255'}`
-                  : `0 10px 24px -20px ${wp.isDark ? '#000000B3' : '#3A2E2240'}`,
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => onDress(world)}
-                title={`${world.essence}\n\nافعل: ${world.dos.join(' · ')}\nلا تفعل: ${world.donts.join(' · ')}`}
-                className="block w-full text-right"
-                aria-label={`اكسُ التصاميم بعالم ${world.label}`}
-              >
-                <span className="relative block w-full overflow-hidden" style={{ aspectRatio: '4 / 5', background: wp.background }}>
-                  {ready ? (
-                    <span className="absolute inset-0 block" dangerouslySetInnerHTML={{ __html: posterOf(world) }} />
-                  ) : (
-                    <span className="absolute inset-0 block animate-pulse" style={{ background: `linear-gradient(150deg, ${wp.background} 30%, ${wp.surface} 60%, ${wp.background} 85%)` }} />
-                  )}
-                  {active && (
-                    <span className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-[.55rem] font-bold" style={{ background: wp.accent, color: wp.isDark ? '#10131C' : '#FFFFFF' }}>العالم الحي</span>
-                  )}
-                </span>
-                <span className="block px-3 pb-2 pt-2" style={{ borderTop: `1px solid ${wp.rule}` }}>
-                  <span className="block font-display text-[.82rem] font-bold leading-snug" style={{ color: wp.ink }}>{world.label}</span>
-                  <span className="mt-0.5 block text-[.58rem] leading-relaxed" style={{ color: wp.muted }}>{world.tagline}</span>
-                  {!compact && <span className="mt-1 block text-[.52rem] italic opacity-80" style={{ color: wp.muted }}>{world.reference}</span>}
-                </span>
-              </button>
-              {onGenerate && (
-                <div className="px-3 pb-2.5">
-                  <button
-                    type="button"
-                    onClick={() => onGenerate(world)}
-                    className="w-full rounded-full px-2 py-1 text-[.58rem] font-bold transition hover:opacity-85"
-                    style={{ background: wp.accent, color: wp.isDark ? '#10131C' : '#FFFFFF' }}
-                  >ولادة كاملة من هذا العالم</button>
-                </div>
-              )}
-            </article>
-          )
-        })}
-      </div>
-    </section>
-  )
+export default function DesignWorldsGallery({activeWorldId,onDress,onGenerate,onClear,compact,idea=''}:DesignWorldsGalleryProps){
+  const semantic=useMemo(()=>analyzeWorldSemantics(idea||'فكرة جديدة','post'),[idea])
+  const [query,setQuery]=useState(''); const [family,setFamily]=useState('all'); const [mood,setMood]=useState('all'); const [material,setMaterial]=useState('all'); const [energy,setEnergy]=useState('all'); const [motion,setMotion]=useState('all')
+  const [favorites,setFavorites]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('design-world-favorites-v2')||'[]')}catch{return[]}})
+  const [compare,setCompare]=useState<string[]>([]); const [fusionRatio,setFusionRatio]=useState(60); const [variant,setVariant]=useState<ProceduralWorldResult|null>(null); const [surpriseRound,setSurpriseRound]=useState(0)
+  const [density,setDensity]=useState(45); const [energyValue,setEnergyValue]=useState(45); const [depth,setDepth]=useState(50); const [temperature,setTemperature]=useState(45); const [speed,setSpeed]=useState(45)
+  const [locks,setLocks]=useState<WorldLocks>({})
+  const active=resolveWorld(activeWorldId)
+  const masters=useMemo(()=>MASTER_WORLD_ORDER.map((id)=>DESIGN_WORLDS[id]),[])
+  const moods=useMemo(()=>Array.from(new Set(masters.flatMap((w)=>w.emotionalTone))).sort(),[masters])
+  const materials=useMemo(()=>Array.from(new Set(masters.flatMap((w)=>w.materials))).sort(),[masters])
+  const motions=useMemo(()=>Array.from(new Set(masters.flatMap((w)=>w.motionDna))).sort(),[masters])
+  const worldEnergy=(w:DesignWorld)=>w.semanticAffinity.includes('confront')&&w.motionDna.includes('pulse')?'controlled-explosive':w.motionDna.includes('breathe')?'still':w.motionDna.some((x)=>x==='rise')?'rising':w.motionDna.some((x)=>x==='pulse' || x==='orbit')?'pulsing':'balanced'
+  const filtered=useMemo(()=>masters.filter((w)=>{const hay=`${w.labelAr} ${w.labelEn} ${w.description} ${w.semanticAffinity.join(' ')} ${w.motifs.join(' ')}`.toLowerCase(); return (!query||hay.includes(query.toLowerCase()))&&(family==='all'||w.family===family)&&(mood==='all'||w.emotionalTone.includes(mood))&&(material==='all'||w.materials.includes(material as never))&&(energy==='all'||worldEnergy(w)===energy)&&(motion==='all'||w.motionDna.includes(motion as never))}),[masters,query,family,mood,material,energy,motion])
+  useEffect(()=>{try{localStorage.setItem('design-world-favorites-v2',JSON.stringify(favorites))}catch{/* private */}},[favorites])
+  const overrides={densityValue:density/100,energyValue:energyValue/100,depthValue:depth/100,temperatureValue:temperature/100,motionSpeed:speed/100}
+  const dress=(world:DesignWorld,seedSuffix='dress')=>{const result=generateProceduralWorld(world.id,idea,`${world.id}:${idea}:${seedSuffix}:${surpriseRound}`,overrides,locks); const audit=WorldAudit(result); setVariant(result); if(audit.ready||audit.score>=82){rememberPerceptualSignature(result.perceptualSignature);onDress(result.world)}else onDress(world)}
+  const toggleFavorite=(id:string)=>setFavorites((list)=>list.includes(id)?list.filter((x)=>x!==id):[...list,id])
+  const toggleCompare=(id:string)=>setCompare((list)=>list.includes(id)?list.filter((x)=>x!==id):[...list,id].slice(-3))
+  const distant=()=>{const base=variant||generateProceduralWorld(active?.master?active.id:MASTER_WORLD_ORDER[0],idea,`base:${idea}`,overrides,locks); const id=active?.master?active.id:base.masterWorldId; const candidates=Array.from({length:18},(_,i)=>generateProceduralWorld(id,idea,`far:${idea}:${i}:${surpriseRound}`,overrides,locks)); const selected=greedyMaxMin(candidates,vectorFromWorld,3,(x)=>WorldAudit(x).score+signatureNovelty(x.perceptualSignature)*10); const next=selected.sort((a,b)=>perceptualDistance(vectorFromWorld(b),vectorFromWorld(base))-perceptualDistance(vectorFromWorld(a),vectorFromWorld(base)))[0]; if(next){setVariant(next);rememberPerceptualSignature(next.perceptualSignature);onDress(next.world)}}
+  const surprise=()=>{const round=surpriseRound+1;setSurpriseRound(round); const recent=new Set(recentPerceptualSignatures()); const candidates=masters.map((w,i)=>generateProceduralWorld(w.id,idea,`surprise:${idea}:${round}:${i}`,overrides,locks)).filter((x)=>!recent.has(x.perceptualSignature)); const ranked=candidates.sort((a,b)=>{const affinityA=a.world.semanticAffinity.includes(semantic.semanticMotionVerb)?18:0,affinityB=b.world.semanticAffinity.includes(semantic.semanticMotionVerb)?18:0; return (WorldAudit(b).score+affinityB+signatureNovelty(b.perceptualSignature)*12)-(WorldAudit(a).score+affinityA+signatureNovelty(a.perceptualSignature)*12)}); const shortlist=greedyMaxMin(ranked.slice(0,16),vectorFromWorld,3,(x)=>WorldAudit(x).score); const next=shortlist[round%Math.max(1,shortlist.length)]||ranked[0]; if(next){setVariant(next);rememberPerceptualSignature(next.perceptualSignature);onDress(next.world)}}
+  const fuse=()=>{if(compare.length!==2)return; const result=fuseWorlds(compare[0],compare[1],fusionRatio/100,idea,`fusion:${idea}:${surpriseRound}`); const audit=WorldAudit(result); setVariant(result); if(audit.ready){rememberPerceptualSignature(result.perceptualSignature);onDress(result.world)}}
+  const audit=variant?WorldAudit(variant):null
+  return <section className="mt-3 overflow-hidden rounded-2xl border border-hair bg-slate-950 text-right" dir="rtl" data-world-master-count="64" data-procedural-world-engine="true">
+    <div className="px-4 pb-3 pt-4">
+      <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-display text-base font-bold text-slate-100">عوالم التصميم</h3><span className="rounded-full border border-sky-300/25 bg-sky-300/10 px-2 py-1 text-[.55rem] font-bold text-sky-200">64 Master Worlds · 16 عائلة</span></div><p className="mt-1 max-w-3xl text-[.62rem] leading-relaxed text-slate-400">المعنى أولاً: <strong className="text-slate-200">{semantic.centralIdea}</strong> · الفعل <strong className="text-sky-200">{semantic.semanticMotionVerb}</strong> · {semantic.visualMetaphor}</p></div>
+        <div className="flex flex-wrap gap-1.5"><button type="button" className={tiny} onClick={distant}>ولّد نسخة بعيدة إدراكياً</button><button type="button" className={tiny} onClick={surprise}>فاجئني · Controlled</button>{activeWorldId&&onClear?<button type="button" className={tiny} onClick={onClear}>أزل العالم</button>:null}</div></div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"><input className={field} value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="ابحث بالاسم أو المعنى…"/><select className={field} value={family} onChange={(e)=>setFamily(e.target.value)}><option value="all">كل العائلات</option>{WORLD_FAMILY_OPTIONS.map((x)=><option key={x.id} value={x.id}>{x.label}</option>)}</select><select className={field} value={mood} onChange={(e)=>setMood(e.target.value)}><option value="all">كل المزاجات</option>{moods.map((x)=><option key={x}>{x}</option>)}</select><select className={field} value={material} onChange={(e)=>setMaterial(e.target.value)}><option value="all">كل المواد</option>{materials.map((x)=><option key={x} value={x}>{labelMap[x]||x}</option>)}</select><select className={field} value={energy} onChange={(e)=>setEnergy(e.target.value)}><option value="all">كل الطاقات</option>{['still','balanced','pulsing','rising','controlled-explosive'].map((x)=><option key={x} value={x}>{labelMap[x]}</option>)}</select><select className={field} value={motion} onChange={(e)=>setMotion(e.target.value)}><option value="all">كل الحركات</option>{motions.map((x)=><option key={x} value={x}>{labelMap[x]||x}</option>)}</select></div>
+      <div className="mt-3 grid gap-2 lg:grid-cols-5">{[['الكثافة',density,setDensity],['الطاقة',energyValue,setEnergyValue],['العمق',depth,setDepth],['الحرارة',temperature,setTemperature],['سرعة الحركة',speed,setSpeed]].map(([l,v,setter])=><label key={String(l)} className="rounded-xl border border-white/10 bg-white/[.025] px-2 py-1.5 text-[.52rem] text-slate-400"><span className="flex justify-between"><span>{String(l)}</span><span>{String(v)}%</span></span><input className="w-full" type="range" min="0" max="100" value={Number(v)} onChange={(e)=>(setter as (value:number)=>void)(Number(e.target.value))}/></label>)}</div>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-[.55rem] text-slate-400"><span>Lock:</span>{([['typography','الخط'],['palette','اللون'],['layout','التكوين']] as const).map(([key,label])=><button type="button" key={key} className={`${tiny} ${locks[key]?'border-sky-300/60 text-sky-200':''}`} onClick={()=>setLocks((x)=>({...x,[key]:!x[key]}))}>{locks[key]?'🔒':'○'} {label}</button>)}<span className="mr-auto">{filtered.length} عالم ظاهر · {favorites.length} مفضلة · Preview ثابت + IntersectionObserver</span></div>
+      {compare.length>0?<div className="mt-3 rounded-xl border border-white/10 bg-white/[.025] p-2 text-[.58rem] text-slate-300"><div className="flex flex-wrap items-center gap-2"><strong>المقارنة:</strong>{compare.map((id)=><span key={id} className="rounded-full bg-white/10 px-2 py-1">{DESIGN_WORLDS[id]?.labelAr}</span>)}{compare.length===2?<><label className="flex items-center gap-2">نسبة الأول <input type="range" min="25" max="75" value={fusionRatio} onChange={(e)=>setFusionRatio(Number(e.target.value))}/><span>{fusionRatio}%</span></label><button type="button" className={tiny} onClick={fuse}>ادمج عالمين</button></>:<span>اختر عالمين للـFusion أو ثلاثة للمقارنة.</span>}</div></div>:null}
+      {variant&&audit?<div className="mt-3 grid gap-2 rounded-xl border border-sky-300/15 bg-sky-300/[.045] p-3 text-[.57rem] text-slate-300 md:grid-cols-4"><div><strong className="text-slate-100">سبب الاختيار</strong><br/>{variant.semantic.reasons[0]}</div><div><strong className="text-slate-100">semanticVerb</strong><br/>{variant.semanticVerb}</div><div><strong className="text-slate-100">Quality Score</strong><br/>{audit.score}/100 · {audit.grade}</div><div><strong className="text-slate-100">بصمة التنويع</strong><br/><span className="break-all opacity-75">{variant.perceptualSignature.slice(0,92)}…</span></div>{[...audit.warnings,...variant.compatibilityWarnings].length?<div className="md:col-span-4 text-amber-200">تحذيرات: {[...new Set([...audit.warnings,...variant.compatibilityWarnings])].join(' · ')}</div>:null}</div>:null}
+    </div>
+    <div className={`grid gap-3 border-t border-white/10 p-4 ${compact?'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6':'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'}`}>{filtered.map((world)=><WorldCard key={world.id} world={world} idea={idea} active={activeWorldId===world.id||variant?.masterWorldId===world.id} favorite={favorites.includes(world.id)} compare={compare.includes(world.id)} onFavorite={()=>toggleFavorite(world.id)} onCompare={()=>toggleCompare(world.id)} onDress={()=>dress(world)} onGenerate={onGenerate?()=>onGenerate(world):undefined}/>)}</div>
+  </section>
 }

@@ -4213,6 +4213,7 @@ ${effectivePurpose}`,
               activeWorldId={pulseWorld ? pulseWorld.id : (pulseWorldPlans[0] ? planWorldId(pulseWorldPlans[0].plan) : null)}
               onDress={(world) => setPulseWorld(world)}
               onClear={() => setPulseWorld(null)}
+              idea={`${pulseIdea} ${pulsePurpose}`}
             />
             <div className="mt-5 grid gap-4 md:grid-cols-3" data-professional-standalone-directions="true">
               {pulseWorldPlans.map(({ plan }, index) => <ProfessionalStandaloneDesignCard key={`${plan.id}:${plan.paletteOverride?.label || 'base'}`} plan={plan} rank={index + 1} />)}

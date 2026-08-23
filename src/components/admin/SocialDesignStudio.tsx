@@ -965,6 +965,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   /* عالم التصميم الحي: دستورٌ متكامل (جوّ ولون وطباعة وعمق) يكسو الدفعة
      الحالية والقادمة حتى يُزال — درس دساتير DESIGN.md العالمية. */
   const [worldDress, setWorldDress] = useState<DesignWorld | null>(null)
+  const preWorldDressRef = useRef<{ plans: CompositionPlan[]; reserve: CompositionPlan[]; selected: CompositionPlan | null } | null>(null)
   const textRef = useRef<HTMLTextAreaElement | null>(null)
   const commitIdeaNow = () => {
     const latest = textRef.current?.value ?? text
@@ -3944,6 +3945,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       return
     }
     setDna(null)
+    if (!worldDress) preWorldDressRef.current = { plans, reserve: reservePlans, selected }
     setWorldDress(world)
     setPlans((list) => list.map((plan) => dressPlanInWorld(plan, world)))
     setReservePlans((list) => list.map((plan) => dressPlanInWorld(plan, world)))
@@ -3952,10 +3954,18 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }
   const clearWorldDress = () => {
     setWorldDress(null)
-    setPlans((list) => list.map((plan) => undressPlanFromWorld(plan)))
-    setReservePlans((list) => list.map((plan) => undressPlanFromWorld(plan)))
-    setSelected((current) => current ? undressPlanFromWorld(current) : current)
-    setNotice('أُزيلت كسوة العالم وعادت اللوحات المختارة.')
+    const snapshot = preWorldDressRef.current
+    if (snapshot) {
+      setPlans(snapshot.plans)
+      setReservePlans(snapshot.reserve)
+      setSelected(snapshot.selected)
+      preWorldDressRef.current = null
+    } else {
+      setPlans((list) => list.map((plan) => undressPlanFromWorld(plan)))
+      setReservePlans((list) => list.map((plan) => undressPlanFromWorld(plan)))
+      setSelected((current) => current ? undressPlanFromWorld(current) : current)
+    }
+    setNotice('أُزيل العالم وعادت البنية السابقة من اللقطة المحفوظة.')
   }
   const generateInsideWorld = (world: DesignWorld) => {
     setDna(null)
@@ -4282,6 +4292,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             onDress={dressAllInWorld}
             onGenerate={generateInsideWorld}
             onClear={clearWorldDress}
+            idea={text}
           />
         </section>
       )}

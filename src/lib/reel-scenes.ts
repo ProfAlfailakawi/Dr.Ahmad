@@ -13,6 +13,8 @@ import { analyzeSocialContent, type ContentTone, type ContentTopic } from './soc
 import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from './arabic-count.ts'
 import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
 import { chooseMetaphors, type MetaphorId } from './reel-metaphors'
+import { analyzeWorldSemantics } from './world-semantics'
+import type { SemanticVerb } from './design-worlds'
 
 /* ------------------------------- الأنواع ------------------------------- */
 
@@ -50,7 +52,7 @@ export type ReelMotifId =
   | 'underline'
 
 export type ReelMoodId = 'dark' | 'warm' | 'bright' | 'scholar'
-export type ReelMotionVerb = 'root' | 'connect' | 'split' | 'rise' | 'weave' | 'orbit' | 'pulse' | 'path' | 'question' | 'balance' | 'reveal'
+export type ReelMotionVerb = SemanticVerb
 
 export interface ReelWorld {
   id: ReelWorldId
@@ -229,20 +231,11 @@ function sceneLine(line: string, max = 92): string {
   return complete[0] || clean
 }
 
-function reelMotionVerb(text: string): ReelMotionVerb {
-  const tests: Array<[ReelMotionVerb, RegExp]> = [
-    ['balance', /(توازن|ميزان|إنسان.*آلة|آلة.*إنسان|أخلاق|اخلاق|ضمير|عدالة)/],
-    ['root', /(جذر|جذور|بذرة|غرس|ينمو|نمو|شجرة|تربية|طفل)/],
-    ['rise', /(نسبة|٪|%|رقم|ارتفاع|يصعد|أداء|نتيجة)/],
-    ['split', /(ليس|ليست|بلا |بل |لكن|مقابل|فجوة|انقسام|بينما)/],
-    ['question', /(؟|سؤال|لماذا|كيف|ماذا|هل )/],
-    ['weave', /(نسيج|خيط|سرد|ثقافة|هوية|معنى)/],
-    ['orbit', /(مدار|كوكب|كون|دورة|منظومة|نظام)/],
-    ['path', /(طريق|مسار|رحلة|مستقبل|اتجاه|تحول|قرار)/],
-    ['connect', /(شبك|اتصال|تواصل|بيانات|مجتمع|علاقة|ربط|ذكاء)/],
-    ['pulse', /(نبض|قلب|حياة|إنسان|شعور|أثر)/],
-  ]
-  return tests.find(([, pattern]) => pattern.test(text))?.[0] || 'reveal'
+function reelMotionVerb(title: string, body = ''): ReelMotionVerb {
+  const titleAnalysis = analyzeWorldSemantics(title, 'reel')
+  const fullAnalysis = analyzeWorldSemantics(`${title} ${body.slice(0, 1200)}`, 'reel')
+  // عنوان المادة هو العقد الدلالي الأقوى؛ لا نسمح لجملة شارحة لاحقة أن تبدّل فعل الفكرة بلا سبب.
+  return titleAnalysis.confidence >= .68 ? titleAnalysis.semanticMotionVerb : fullAnalysis.semanticMotionVerb
 }
 
 interface MinedText {
@@ -385,7 +378,7 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
 
   /* الموضوع المرجَّح: إشارات مفردات تسند المحلّل حين يتردد. */
   const lexicon = `${title} ${body.slice(0, 600)}`
-  const motionVerb = reelMotionVerb(`${title} ${body.slice(0, 1200)}`)
+  const motionVerb = reelMotionVerb(title, body)
   const nudgedTopic: ContentTopic =
     /(وداع|رحيل|رحل|فقدنا|قلوب|أحبابنا)/.test(lexicon) ? 'human'
       : /(الوطن|أزمات|إنذار|صفارات)/.test(lexicon) ? 'media'
@@ -577,7 +570,8 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
       }, [strong[4], strong[5], strong[2]], 'وللفكرة صورة ثانية لا تكرر الأولى')
     }
   }
-  scenes.push({ kind: 'close', slug: `FINAL / ${String(scenes.length + 1).padStart(2, '0')}`, eyebrow: sceneLine(title, 92), line: source.cta?.trim() || 'الفكرة كاملة في الموقع', seconds: 3.6 })
+  const contextualCta = source.cta?.trim() || `أكمل فكرة «${sceneLine(title, 58)}» في الموقع`
+  scenes.push({ kind: 'close', slug: `FINAL / ${String(scenes.length + 1).padStart(2, '0')}`, eyebrow: 'الخطوة التالية', line: contextualCta, seconds: 3.6 })
 
   /* الإيقاع جزءٌ من الهوية: القالب يفرض نَفَسه (الصفارة تلهث، المخطوطة تتمهّل)،
      والبذرة تزيح الإيقاع قليلاً — فلا تخرج الريلات كلها بطولٍ واحد ممل. */
@@ -591,6 +585,20 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
     if (scene.kind === 'signature') continue
     scene.seconds = Math.round(scene.seconds * tempo * drift * 10) / 10
   }
+  /* بوابة إيقاع: 5–8 مشاهد و18–30 ثانية. نعيد توزيع الزمن لا نضيف حشواً. */
+  if (scenes.length < 5 || scenes.length > 8) throw new Error(`Reel scene invariant failed: ${scenes.length}`)
+  const rawSeconds = scenes.reduce((total, scene) => total + scene.seconds, 0)
+  const targetSeconds = Math.max(18, Math.min(30, rawSeconds))
+  if (Math.abs(targetSeconds - rawSeconds) > .05) {
+    const fixedHook = Math.min(1.5, scenes[0]?.seconds || 1.35)
+    const scalable = Math.max(.1, rawSeconds - (scenes[0]?.seconds || 0))
+    const scale = (targetSeconds - fixedHook) / scalable
+    scenes[0].seconds = fixedHook
+    for (let i = 1; i < scenes.length; i += 1) scenes[i].seconds = Math.max(2.2, Math.round(scenes[i].seconds * scale * 10) / 10)
+  }
+  const corrected = scenes.reduce((total, scene) => total + scene.seconds, 0)
+  if (corrected < 18) scenes[scenes.length - 1].seconds = Math.round((scenes[scenes.length - 1].seconds + (18 - corrected)) * 10) / 10
+  if (corrected > 30) scenes[scenes.length - 1].seconds = Math.max(2.2, Math.round((scenes[scenes.length - 1].seconds - (corrected - 30)) * 10) / 10)
   const seconds = Math.round(scenes.reduce((total, scene) => total + scene.seconds, 0) * 10) / 10
   if (conceptName) rationale.push(`المعجم تعرّف على «${conceptName}» فاقترح مشاهده البصرية${metaphors.length ? ` — واخترتُ منها: ${metaphors.join(' · ')}` : ''}`)
   rationale.push(`فهمتُ فعل العبارة بصرياً على أنه «${motionVerb}»، فبنيتُ حركة العالم عليه`)
@@ -646,23 +654,33 @@ export function auditReelPlan(plan: ReelPlan): ReelQualityReport {
     const key = normalize(scene.line)
     if (seen.has(key)) duplicates += 1
     seen.add(key)
-    if (!selfContainedLine(scene.line) && scene.kind !== 'close') dangling += 1
-    if (scene.line.length > 126) long += 1
+    if (scene.kind !== 'close' && scene.kind !== 'signature' && !selfContainedLine(scene.line)) dangling += 1
+    if (scene.line.length > 156) long += 1
   })
+  const sceneCountBad = plan.scenes.length < 5 || plan.scenes.length > 8
+  const durationBad = plan.seconds < 18 || plan.seconds > 30
+  const hookBad = (plan.scenes[0]?.seconds || 99) > 1.5
+  const genericOpening = plan.scenes[0]?.line === plan.footerMark || /الإنسان قبل الآلة/.test(plan.scenes[0]?.line || '')
+  const genericCta = /^(?:اعرف المزيد|تابعنا|المزيد في الموقع|الفكرة كاملة في الموقع)$/i.test(plan.scenes.at(-1)?.line || '')
   if (duplicates) warnings.push(`${duplicates} تكرار نصي بين المشاهد`)
   if (dangling) warnings.push(`${dangling} جملة معلّقة أو غير مكتملة`)
-  if (long) warnings.push(`${long} سطر طويل سيلفّه المصيّر إلى أكثر من سطر`)
-  if (plan.scenes[0]?.line === plan.footerMark) warnings.push('الافتتاح يكرر شعار الهوية بدلاً من موضوع المادة')
-  if (plan.seconds > 31) warnings.push('الريل أطول من ٣١ ثانية؛ قد يهبط الاحتفاظ بالمشاهد')
-  const score = Math.max(0, 100 - duplicates * 20 - dangling * 18 - long * 4 - (plan.seconds > 31 ? 6 : 0))
+  if (long) warnings.push(`${long} سطر شديد الطول؛ يجب أن يمر من Canvas fit gate`)
+  if (sceneCountBad) warnings.push('عدد المشاهد يجب أن يكون بين 5 و8')
+  if (durationBad) warnings.push('مدة الريل يجب أن تكون بين 18 و30 ثانية')
+  if (hookBad) warnings.push('المشهد الأول يجب ألا يتجاوز 1.5 ثانية')
+  if (genericOpening) warnings.push('الافتتاح عام ولا ينطق موضوع المادة')
+  if (genericCta) warnings.push('CTA عام وغير خاص بالمادة')
+  const score = Math.max(0, 100 - duplicates * 20 - dangling * 18 - long * 5 - (sceneCountBad ? 18 : 0) - (durationBad ? 20 : 0) - (hookBad ? 10 : 0) - (genericOpening ? 12 : 0) - (genericCta ? 8 : 0))
   return {
     score,
-    ready: duplicates === 0 && dangling === 0 && score >= 82,
+    ready: duplicates === 0 && dangling === 0 && !sceneCountBad && !durationBad && !hookBad && !genericOpening && !genericCta && score >= 82,
     checks: [
-      'الافتتاح خاص بموضوع المادة',
-      'كل مشهد يحمل جملة مختلفة',
-      'اللفّ البصري يمنع خروج النص من الإطار',
+      'الافتتاح ينطق موضوع المادة خلال 1–1.5 ثانية',
+      '5–8 مشاهد بوظائف سردية مختلفة',
+      'كل مشهد يحمل جملة مختلفة ومكتملة',
+      'اللفّ البصري وCanvas metrics يمنعان خروج النص',
       `العالم يتحرك بفعل «${plan.motionVerb}»`,
+      'CTA ختامي خاص بالمادة',
       'البصمة الصوتية مشتقة من بذرة المادة',
     ],
     warnings,
@@ -726,7 +744,7 @@ export function planReelWithMemory(source: ReelSource): MemoryAwarePlan {
     const templateClash = plan.templateId === record.lastTemplate
     const metaphorClash = met === record.lastMetaphor || (met !== undefined && used.has(met) && used.size < plan.metaphors.length)
     const signature = reelPerceptualSignature(plan)
-    const perceptualClash = signature === record.lastSignature || (usedSignatures.has(signature) && usedSignatures.size < 10)
+    const perceptualClash = signature === record.lastSignature || (usedSignatures.has(signature) && usedSignatures.size < 20)
     if (!templateClash && !metaphorClash && !perceptualClash) break
     variant += 1
     plan = planReel(source, variant)
@@ -739,10 +757,10 @@ export function commitReelMemory(key: string, plan: ReelPlan) {
   const history = readHistory()
   const record = history[key] || { count: 0 }
   const metaphor = plan.scenes.find((scene) => scene.kind === 'metaphor')?.metaphor
-  /* نحتفظ بآخر ثماني صورٍ مستعملة كي لا تعود إحداها قبل استنفاد التنوّع. */
-  const usedMetaphors = [...(record.usedMetaphors || []), metaphor].filter(Boolean).slice(-8) as string[]
+  /* نحتفظ بآخر عشرين بصمة/صورة مستعملة كي لا تعود إحداها قبل استنفاد التنوّع. */
+  const usedMetaphors = [...(record.usedMetaphors || []), metaphor].filter(Boolean).slice(-20) as string[]
   const signature = reelPerceptualSignature(plan)
-  const usedSignatures = [...(record.usedSignatures || []), signature].filter(Boolean).slice(-10)
+  const usedSignatures = [...(record.usedSignatures || []), signature].filter(Boolean).slice(-20)
   history[key] = { count: record.count + 1, lastTemplate: plan.templateId, lastWorld: plan.world.label, lastMetaphor: metaphor, usedMetaphors, lastSignature: signature, usedSignatures }
   writeHistory(history)
 }

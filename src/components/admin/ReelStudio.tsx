@@ -38,6 +38,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
   const [busy, setBusy] = useState<'idle' | 'preview' | 'export'>('idle')
   const [progress, setProgress] = useState(0)
   const [notice, setNotice] = useState('')
+  const [audioEnabled, setAudioEnabled] = useState(true)
   const [memoryNote, setMemoryNote] = useState('')
   const memoryKeyRef = useRef<string>('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -82,7 +83,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
     if (!active || !canvasRef.current) return
     handleRef.current?.stop()
     setBusy('preview')
-    handleRef.current = await playReelPreview(canvasRef.current, active, { audio: true, onDone: () => setBusy('idle') })
+    handleRef.current = await playReelPreview(canvasRef.current, active, { audio: audioEnabled, onDone: () => setBusy('idle') })
   }
 
   const stopPreview = () => { handleRef.current?.stop(); setBusy('idle') }
@@ -104,7 +105,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
     setProgress(0)
     setNotice('')
     try {
-      const result = await exportReelVideo(active, { canvas: canvasRef.current || undefined, onProgress: setProgress })
+      const result = await exportReelVideo(active, { canvas: canvasRef.current || undefined, onProgress: setProgress, audio: audioEnabled })
       downloadReelBlob(result, active.title)
       if (memoryKeyRef.current) commitReelMemory(memoryKeyRef.current, active)
       setNotice(`نزل الفيديو (${result.mime.includes('mp4') ? 'MP4' : 'WebM'} · ${Math.round(result.blob.size / 1024 / 102.4) / 10} MB · ${arabicCountPhrase(active.seconds, SECOND_FORMS)}) — جاهز للنشر.`)
@@ -151,6 +152,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
             <button type="button" className={primary} disabled={!supported || busy === 'export' || Boolean(quality && !quality.ready)} onClick={() => void exportVideo()}>
               {busy === 'export' ? `يسجّل… ${Math.round(progress * 100)}%` : 'صدّر الفيديو'}
             </button>
+            <label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.68rem] font-semibold text-soft"><input type="checkbox" checked={audioEnabled} onChange={(event)=>setAudioEnabled(event.target.checked)} disabled={busy === 'export'} />Soundmark اختياري</label>
           </div>
           {busy === 'export' && (
             <div className="h-2 overflow-hidden rounded-full border border-hair bg-canvas">

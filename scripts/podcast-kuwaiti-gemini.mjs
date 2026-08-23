@@ -165,8 +165,10 @@ const MINIMAL_TAIL = 'نفس الصوتين ونفس لسان مدينة الك�
 
 /* البرومت C — الفائز ٣/٣ في التجربة المعماة، ببنية Google الرسمية
    (AUDIO PROFILE / SCENE / DIRECTOR'S NOTES / SAMPLE / TRANSCRIPT).
-   بعد انزلاق المقاطع الجديدة أضيف حدٌّ مضغوط بأسماء اللهجات فقط؛ وصف
-   أصواتها ممنوع حتى لا يصير الحظر درساً غير مقصود في تقليدها. */
+   [٢٣ أغسطس ٢٠٢٦] حدُّ اللهجة صار توجيهاً إيجابياً صرفاً: لا اسمَ لهجةٍ
+   واحدٍ فيه (توصية الصديق المؤكدة — تسميةُ اللهجة تزرعها «أثر الفيل الوردي»)؛
+   الحدُّ الوحيد أوصافٌ إقليميةٌ محايدةٌ (South/Eastern/pan-Gulf) لا تسمّي
+   لهجةً بعينها، ثم رجوعٌ فوريٌّ للمرساة الكويتية الموجبة. */
 const PROMPT_C_HEAD = `Synthesize speech from the TRANSCRIPT section only.
 Do not speak headings, instructions, or bracketed performance tags.
 
@@ -211,9 +213,7 @@ Fidelity: Speak every labelled line exactly once and in order. Do not add, omit,
 
 # DIALECT BOUNDARY
 
-Only native contemporary urban Kuwait City Arabic. Do not blend it with a generic Gulf register or with any non-Kuwaiti variety.
-ممنوع بالاسم فقط: كويتي بدوي أو قبلي، عُماني (مسقط، الباطنة، ظفار)، إماراتي، قطري، بحريني أو بحراني، سعودي (نجدي، حجازي، حساوي، قطيفي، شرقاوي أو بدوي)، عراقي أو بصراوي، يمني، وعربي متأثر بالفارسية أو «عجمي خليجي»، وكذلك شامي أو مصري.
-These names are exclusions only: do not imitate, analyse, or reproduce their sound. Return immediately to the positive Kuwait City sample above.
+Native contemporary educated urban Kuwait City speech only — relaxed and quick, light in the mouth, with calm falling sentence endings. Keep this one single voice from the first word to the last, exactly as in the Kuwait City sample above. Do not loosen into a generic South Gulf, Eastern Arabian, or pan-Gulf media intonation. The moment the delivery starts to drift, return immediately to that positive Kuwait City sample.
 `
 const directionFor = (type, mode = PROMPT_MODE) => (mode === 'minimal' || mode === 'c') ? ({
   question: '[curious and engaged]', reflection: '[thinking aloud]', objection: '[gently skeptical]', gentleObjection: '[friendly gentle objection]',
@@ -1070,14 +1070,13 @@ if (SELF_TEST) {
     'C ببنية Google والنص المنطوق آخر شيء في الطلب')
   assert.match(cPrompt, /# SAMPLE CONTEXT/, 'C يحمل مرساةً كويتيةً صامتة كما توصي بنية Google')
   assert.match(cPrompt, /# DIALECT BOUNDARY/, 'C يحمل حدَّ لهجة')
-  assert.ok(!/Emirati|Omani|Najdi|Hejazi|عُماني|إماراتي|نجدي|حساوي/.test(cPrompt), 'توجيه إيجابي صرف — لا اسم لهجةٍ في C')
+  assert.ok(!/Emirati|Omani|Najdi|Hejazi|Bahraini|Qatari|Iraqi|Persian|Egyptian|Levantine|عُماني|إماراتي|نجدي|حساوي|قطري|بحريني|عراقي|شامي|مصري/.test(cPrompt),
+    'توجيه إيجابي صرف — لا اسم لهجةٍ واحدٍ في C (توصية الصديق: نحذف كل الأسماء من برومت الصوت)')
+  assert.match(cPrompt, /South Gulf, Eastern Arabian, or pan-Gulf/,
+    'الحدُّ الوحيد المسموح: أوصافٌ إقليميةٌ محايدةٌ لا تسمّي لهجةً بعينها فتزرعها')
   assert.match(cPrompt, /This is the opening part/, 'المقطع الأول لا يدّعي وجود جسر قبله')
   assert.match(cContinuation, /starts immediately after a short music bridge/, 'كل مقطع لاحق يستأنف الهوية بعد الجسر')
   assert.match(cSingleCall, /complete episode in one continuous recording/, 'الإنتاج بنداء واحد يصرّح أن الحلقة تسجيل متصل لا أجزاء')
-  assert.match(cPrompt, /عُماني.*إماراتي.*قطري.*بحريني.*سعودي.*عراقي.*يمني.*الفارسية/s,
-    'كل العائلات المجاورة ممنوعة بالأسماء فقط')
-  assert.ok(!/Omani.*(cadence|rhythm|articulation|lilt|drawl)|Emirati.*(cadence|rhythm|articulation|lilt|drawl)/is.test(cPrompt),
-    'لا وصف حي لصوت اللهجة الممنوعة — منعٌ لا تلقين')
   assert.match(cResetProbe, /\[director reset — silently keep the exact same native urban Kuwait City accent/,
     'C يعيد المرساة الإيجابية بصمت داخل النداء الواحد كل ست مداخلات ضد الانجراف الداخلي')
   assert.ok(!/\[تذكير/.test(cPrompt) && !cPrompt.includes(KW_LOCK), 'C بلا تذكير عربي طويل وتيجانه أداء صرف')

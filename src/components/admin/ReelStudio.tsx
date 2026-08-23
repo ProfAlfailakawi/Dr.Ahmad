@@ -8,6 +8,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { auditReelPlan, planReel, planReelWithMemory, commitReelMemory, type ReelPlan } from '../../lib/reel-scenes'
+import DesignWorldsGallery from './DesignWorldsGallery'
+import type { DesignWorld } from '../../lib/design-worlds'
 import { downloadReelBlob, exportReelVideo, playReelPreview, reelExportSupported, type ReelHandle } from '../../lib/reel-motion'
 import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
 
@@ -40,6 +42,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
   const [notice, setNotice] = useState('')
   const [audioEnabled, setAudioEnabled] = useState(true)
   const [memoryNote, setMemoryNote] = useState('')
+  const [selectedWorld, setSelectedWorld] = useState<DesignWorld | null>(null)
   const memoryKeyRef = useRef<string>('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const handleRef = useRef<ReelHandle | null>(null)
@@ -59,7 +62,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
     const source = { title: cleanTitle, body: body.trim() || cleanTitle }
     if (useMemory) {
       /* أول بناءٍ للمادة يستشير الذاكرة: إن سبق تناول المفهوم، يعطي نسخةً مختلفة. */
-      const aware = planReelWithMemory(source)
+      const aware = planReelWithMemory(source, { world: selectedWorld })
       memoryKeyRef.current = aware.key
       setVariant(aware.plan.variant)
       setPlan(aware.plan)
@@ -69,7 +72,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
         : 'أول مرة تتناول هذا المفهوم — سأتذكّره وأنوّع في المرات القادمة.')
       return aware.plan
     }
-    const next = planReel(source, nextVariant)
+    const next = planReel(source, nextVariant, { world: selectedWorld })
     setPlan(next)
     setNotice('')
     return next
@@ -93,6 +96,16 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
     setVariant(nextVariant)
     const next = buildPlan(nextVariant)
     if (next) void preview(next)
+  }
+
+  const directWithWorld = (world:DesignWorld | null) => {
+    setSelectedWorld(world)
+    const cleanTitle=title.trim()||body.trim().split(/[\n.!؟…]/)[0]?.trim()||'مادة جديدة'
+    if(!title.trim()&&!body.trim()){setNotice('اختر العالم الآن، ثم اكتب المادة واضغط جهّز الريل.');return}
+    const next=planReel({title:cleanTitle,body:body.trim()||cleanTitle},variant,{world})
+    setPlan(next)
+    setNotice(world?`تم تثبيت «${world.labelAr}» كمخرج فني للريل — التكوين والمادة والحركة والإضاءة تتبع دستوره.`:'عاد الريل إلى وضع «المخرج يختار».')
+    void preview(next)
   }
 
   const exportVideo = async (planToRecord?: ReelPlan) => {
@@ -126,7 +139,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
           <p className="mt-2 text-[.82rem] leading-relaxed text-soft">
             ألصق المقال — يقرؤه المخطِّط، يختار قالباً وعالماً لونياً ومزاجاً موسيقياً من النص نفسه،
             ثم يصدّر فيديو 1080×1920 بصوت مؤلَّف في متصفحك. المادة نفسها تعطي الريل نفسه دائماً،
-            ومادتان لا تتشابهان، و«لقطة أخرى» تفتح تنويعاً شقيقاً.
+            ومادتان لا تتشابهان، و«لقطة أخرى» تفتح تنويعاً شقيقاً. ويمكنك أيضاً إخراجه يدوياً من نفس معرض الـ64 عالماً المستخدم في استوديو التصاميم.
           </p>
         </div>
         {!supported && <span className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-[.68rem] text-amber-800">هذا المتصفح لا يدعم تسجيل الفيديو — المعاينة تعمل، والتصدير يحتاج Chrome.</span>}
@@ -142,6 +155,22 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
             متن المقال أو مقاطعه الأقوى
             <textarea className={`${input} min-h-44 resize-y leading-loose`} value={body} onChange={(event) => setBody(event.target.value)} placeholder="ألصق المقال كاملاً أو فقراته الجوهرية — المخطِّط ينقّب فيه عن السؤال والمقابلة والاقتباس والرقم." />
           </label>
+
+          <div className="rounded-2xl border border-hair bg-canvas/60 p-3" data-reel-world-director="shared-design-worlds-gallery">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div><p className="text-[.72rem] font-bold text-ink">إخراج الريل · نفس منظومة عوالم التصميم</p><p className="text-[.62rem] text-soft">64 عالماً، الفلاتر نفسها، المقارنة، Fusion، النسخة البعيدة، Surprise، Sliders وLocks — واختيارك يغيّر الإخراج لا اللون فقط.</p></div>
+              <span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.62rem] font-bold text-soft">{selectedWorld ? `المخرج: ${selectedWorld.labelAr}` : 'المخرج يختار تلقائياً'}</span>
+            </div>
+            <DesignWorldsGallery
+              activeWorldId={selectedWorld?.id}
+              idea={`${title}\n${body}`.trim()}
+              semanticPlatform="reel"
+              onDress={(world)=>directWithWorld(world)}
+              onGenerate={(world)=>directWithWorld(world)}
+              onClear={()=>directWithWorld(null)}
+              compact
+            />
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" className={primary} disabled={busy === 'export'} onClick={() => { const next = buildPlan(0, true); if (next) void preview(next) }}>جهّز الريل وشغّل المعاينة</button>

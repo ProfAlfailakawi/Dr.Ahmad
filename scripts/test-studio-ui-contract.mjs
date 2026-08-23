@@ -7,6 +7,8 @@ const source = readFileSync(resolve('src/components/admin/SocialDesignStudio.tsx
 const publishingSource = readFileSync(resolve('src/components/admin/PublishingStudio.tsx'), 'utf8')
 
 const gallerySource = readFileSync(resolve('src/components/admin/DesignWorldsGallery.tsx'), 'utf8')
+const reelStudioSource = readFileSync(resolve('src/components/admin/ReelStudio.tsx'), 'utf8')
+const reelScenesSource = readFileSync(resolve('src/lib/reel-scenes.ts'), 'utf8')
 const worldsSource = readFileSync(resolve('src/lib/design-worlds.ts'), 'utf8')
 const proceduralSource = readFileSync(resolve('src/lib/procedural-world-engine.ts'), 'utf8')
 const zeroDecision = source.slice(
@@ -60,4 +62,13 @@ assert.match(worldsSource, /WORLD_SPECS\.length !== 64/)
 assert.match(proceduralSource, /deterministicSeed/)
 assert.match(proceduralSource, /perceptualSignature/)
 
-console.log('Studio UI contract: visual routes, 64-world lazy studio, deterministic procedural diversity, fusion, comparison, professional release gate, and latest-approved storage passed')
+assert.match(reelStudioSource, /import DesignWorldsGallery from '\.\/DesignWorldsGallery'/)
+assert.match(reelStudioSource, /data-reel-world-director="shared-design-worlds-gallery"/)
+assert.match(reelStudioSource, /semanticPlatform="reel"/)
+assert.match(reelStudioSource, /onDress=\{\(world\)=>directWithWorld\(world\)\}/)
+assert.match(reelStudioSource, /onClear=\{\(\)=>directWithWorld\(null\)\}/)
+assert.match(reelScenesSource, /ReelPlanOptions/)
+assert.match(reelScenesSource, /reelWorldFromDesignWorld/)
+assert.match(reelScenesSource, /اختيارك ثبّت/)
+
+console.log('Studio UI contract: shared 64-world director is identical across post and cinematic reel studios, with deterministic diversity, fusion, locks, comparison, and quality gates passed')

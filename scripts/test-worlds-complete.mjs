@@ -177,6 +177,7 @@ const sourceContracts = {
   reelMotion: await read('src/lib/reel-motion.ts'),
   reelScenes: await read('src/lib/reel-scenes.ts'),
   renderer: await read('src/lib/social-design-renderer.ts'),
+  reelStudio: await read('src/components/admin/ReelStudio.tsx'),
 }
 assert.match(sourceContracts.gallery, /IntersectionObserver/)
 assert.match(sourceContracts.gallery, /cancelAnimationFrame/)
@@ -191,6 +192,13 @@ assert.match(sourceContracts.reelMotion, /auditReelFonts/)
 assert.match(sourceContracts.reelMotion, /measureText/)
 assert.match(sourceContracts.reelMotion, /recorder\.onerror/)
 assert.match(sourceContracts.reelScenes, /MASTER_WORLD_ORDER\.map/)
+assert.match(sourceContracts.reelScenes, /reelWorldFromDesignWorld/)
+assert.match(sourceContracts.reelScenes, /worldTemplateBias/)
+assert.match(sourceContracts.reelMotion, /drawWorldAtmosphere/)
+assert.doesNotMatch(sourceContracts.reelMotion, /fillText\('؟'/)
+assert.match(sourceContracts.reelStudio, /data-reel-world-director="shared-design-worlds-gallery"/)
+assert.match(sourceContracts.reelStudio, /<DesignWorldsGallery/)
+assert.match(sourceContracts.reelStudio, /semanticPlatform="reel"/)
 assert.match(sourceContracts.renderer, /auditCompositionExportReadiness/)
 assert.match(sourceContracts.renderer, /exportScale\s*=\s*type === 'png' \? 2 : 1/)
 assert.match(sourceContracts.renderer, /document\.fonts/)
@@ -205,5 +213,5 @@ console.log(JSON.stringify({
   fusion: { primary: compatiblePair[0], secondary: compatiblePair[1], score: compatiblePair[2].score },
   diversityMinimum: Number(diversity.pairwiseMinimumDistance(chosen, diversity.vectorFromWorld).toFixed(3)),
   semanticCases: semanticCases.length,
-  gates: ['64-worlds','16-families','legacy-ids','semantic-analysis','deterministic-seed','bounded-seed-cache','procedural-metadata','fusion-rejection','fusion-third-world','greedy-max-min','recent-signature-exclusion','world-audit-penalties','motion-critical-gate','reel-critical-gate','lazy-live-preview','high-res-export-contract','font-gate','mediarecorder-error-gate'],
+  gates: ['64-worlds','16-families','legacy-ids','semantic-analysis','deterministic-seed','bounded-seed-cache','procedural-metadata','fusion-rejection','fusion-third-world','greedy-max-min','recent-signature-exclusion','world-audit-penalties','motion-critical-gate','reel-critical-gate','lazy-live-preview','high-res-export-contract','font-gate','mediarecorder-error-gate','shared-reel-world-director','world-directed-reel-material-motion-lighting'],
 }, null, 2))

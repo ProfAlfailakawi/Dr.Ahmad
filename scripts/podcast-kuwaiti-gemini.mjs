@@ -184,11 +184,9 @@ A relaxed evening conversation in a real diwaniya in Kuwait City. They are sitti
 
 # DIRECTOR'S NOTES
 
-Carry the accent through rhythm, vowels, and sentence melody — not by exaggerating individual consonants. Never use a single letter as a performance marker of Gulf identity. Do not drift into South Gulf, Eastern Arabian, or pan-Gulf media intonation.
-
 Accent: Native contemporary urban Kuwait City Arabic (حضري). Everyday local speech with light, relaxed articulation, natural short vowels, and calm sentence endings. The transcript already contains the intended Kuwaiti words and pronunciation spellings; follow them naturally without exaggerating dialect markers.
 
-Qaf — natural, soft, never exaggerated: Use the natural lexical Qaf of educated Urban Kuwait City speech. Do NOT globally turn every ق into the same sound, and do NOT exaggerate the Kuwaiti [g]. For everyday colloquial words the transcript spells with گ, produce a soft, quick, unforced [g]. For formal or academic words keep a light, unreleased, non-emphatic [q] — no pop, no qalqalah, no aspiration, no throat pressure. The consonant must never call attention to itself: do not pause before it, stress it, lengthen the vowel after it, or bend the sentence melody for it. Never use Qaf or Gaf as a performance marker of Gulf identity. If unsure, choose the softest, least-marked realization a relaxed Kuwaiti would use.
+Qaf — natural and soft, never exaggerated: use the everyday lexical Qaf of educated Kuwait City speech. Where the transcript spells a word with گ, give a soft, quick, unforced [g]; for all other words keep a light, unreleased, non-emphatic [q] — no pop, no qalqalah, no aspiration. The consonant must never call attention to itself: do not stress it, pause before it, or lengthen the vowel after it. Carry the accent through rhythm, vowels, and sentence melody — never by a single consonant. If unsure, choose the softest, least-marked realization a relaxed Kuwaiti would use.
 
 Daad: The audio transcript deliberately writes every ض as ظ. Respect that spelling and pronounce the Kuwaiti merged sound; never correct it back to formal ض.
 
@@ -1071,7 +1069,8 @@ if (SELF_TEST) {
   assert.ok(cPrompt.includes("# DIRECTOR'S NOTES") && cPrompt.trimEnd().endsWith(spokenForm(chunks[0][chunks[0].length-1].text)),
     'C ببنية Google والنص المنطوق آخر شيء في الطلب')
   assert.match(cPrompt, /# SAMPLE CONTEXT/, 'C يحمل مرساةً كويتيةً صامتة كما توصي بنية Google')
-  assert.match(cPrompt, /# DIALECT BOUNDARY/, 'C يحمل حدَّ لهجةٍ مضغوطاً')
+  assert.match(cPrompt, /# DIALECT BOUNDARY/, 'C يحمل حدَّ لهجة')
+  assert.ok(!/Emirati|Omani|Najdi|Hejazi|عُماني|إماراتي|نجدي|حساوي/.test(cPrompt), 'توجيه إيجابي صرف — لا اسم لهجةٍ في C')
   assert.match(cPrompt, /This is the opening part/, 'المقطع الأول لا يدّعي وجود جسر قبله')
   assert.match(cContinuation, /starts immediately after a short music bridge/, 'كل مقطع لاحق يستأنف الهوية بعد الجسر')
   assert.match(cSingleCall, /complete episode in one continuous recording/, 'الإنتاج بنداء واحد يصرّح أن الحلقة تسجيل متصل لا أجزاء')

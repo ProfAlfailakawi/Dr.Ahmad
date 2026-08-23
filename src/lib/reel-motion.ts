@@ -397,6 +397,26 @@ function drawMotifs(ctx: CanvasRenderingContext2D, stage: Stage, motifs: ReelMot
   }
 }
 
+/** طبقة دستور العالم: المادة والهندسة والإضاءة تتحرك بهدوء خلف السرد. */
+function drawWorldAtmosphere(ctx:CanvasRenderingContext2D, plan:ReelPlan, t:number){
+  const w=plan.world
+  if(!w.material&&!w.motion&&!w.lighting)return
+  const cx=REEL_WIDTH/2, cy=REEL_HEIGHT*.46
+  const wave=.5+.5*Math.sin(t*(w.motion==='pulse'?1.7:(w.motion==='breathe'?.8:1.05)))
+  ctx.save();ctx.lineWidth=2;ctx.strokeStyle=w.accent2;ctx.fillStyle=w.accent;ctx.globalAlpha=w.scheme==='light'?.055:.075
+  if(w.material==='water'){for(let i=0;i<7;i+=1){const y=360+i*205;ctx.beginPath();ctx.moveTo(60,y);for(let x=60;x<=1020;x+=80)ctx.lineTo(x,y+Math.sin(x*.012+t*1.2+i)*18);ctx.stroke()}}
+  else if(w.material==='glass'){for(let i=0;i<4;i+=1){ctx.save();ctx.translate((i%2)*210-80+wave*22,i*330+120);ctx.rotate((i%2?1:-1)*.06);ctx.strokeRect(110,90,720,245);ctx.restore()}}
+  else if(w.material==='paper'){for(let i=0;i<8;i+=1){ctx.beginPath();ctx.moveTo(95,300+i*185);ctx.lineTo(985,300+i*185);ctx.stroke()}}
+  else if(w.material==='ink'){for(let i=0;i<5;i+=1){ctx.beginPath();ctx.arc(cx+Math.sin(t*.4+i)*260,cy+Math.cos(t*.35+i)*360,70+i*18+wave*26,0,Math.PI*2);ctx.fill()}}
+  else if(w.material==='sand'){for(let i=0;i<120;i+=1){const x=(i*83+t*8)%REEL_WIDTH,y=(i*137+Math.sin(t+i)*24)%REEL_HEIGHT;ctx.fillRect(x,y,2.2,2.2)}}
+  else if(w.material==='textile'){for(let i=0;i<11;i+=1){ctx.beginPath();ctx.moveTo(70+i*95,250);ctx.lineTo(70+i*95,1640);ctx.stroke();ctx.beginPath();ctx.moveTo(60,320+i*120);ctx.lineTo(1020,320+i*120);ctx.stroke()}}
+  else if(w.material==='stone'||w.material==='clay'){for(let i=0;i<6;i+=1){ctx.beginPath();ctx.ellipse(cx,cy,170+i*95+wave*8,100+i*70,0,0,Math.PI*2);ctx.stroke()}}
+  else if(w.material==='metal'){const g=ctx.createLinearGradient(0,0,REEL_WIDTH,0);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,w.accent2);g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(((t*.08)%1)*REEL_WIDTH-260,0,260,REEL_HEIGHT)}
+  if(w.lighting==='side'){const g=ctx.createLinearGradient(0,0,REEL_WIDTH,0);g.addColorStop(0,w.accent+'55');g.addColorStop(.45,w.accent+'00');ctx.fillStyle=g;ctx.fillRect(0,0,REEL_WIDTH,REEL_HEIGHT)}
+  else if(w.lighting==='backlit'||w.lighting==='radial'){const g=ctx.createRadialGradient(cx,cy,0,cx,cy,620);g.addColorStop(0,w.accent+'44');g.addColorStop(1,w.accent+'00');ctx.fillStyle=g;ctx.fillRect(0,0,REEL_WIDTH,REEL_HEIGHT)}
+  ctx.restore()
+}
+
 /** حقلٌ دلالي يحرك العالم نفسه بحسب فعل الكلمة، لا بحسب اسم القالب فقط. */
 function drawSemanticField(ctx: CanvasRenderingContext2D, plan: ReelPlan, progress: number, t: number) {
   const world = plan.world
@@ -432,10 +452,19 @@ function drawSemanticField(ctx: CanvasRenderingContext2D, plan: ReelPlan, progre
   } else if (plan.motionVerb === 'path') {
     ctx.setLineDash([5, 20]); ctx.beginPath(); ctx.moveTo(120, 1400); ctx.bezierCurveTo(350, 420, 690, 1510, 950, 470); ctx.stroke(); ctx.setLineDash([])
   } else if (plan.motionVerb === 'question') {
-    ctx.font = `700 520px ${DISPLAY_FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('؟', cx, cy)
+    /* السؤال فراغ/بوابة ناقصة لا علامة استفهام عملاقة. */
+    const opening=110+progress*85
+    ctx.lineWidth=7;ctx.beginPath();ctx.arc(cx,cy,245,-Math.PI*.72,Math.PI*.62);ctx.stroke()
+    ctx.beginPath();ctx.moveTo(cx+opening,cy+175);ctx.lineTo(cx+opening+105,cy+175);ctx.stroke()
   } else if (plan.motionVerb === 'balance') {
-    ctx.beginPath(); ctx.moveTo(cx, 520); ctx.lineTo(cx, 1360); ctx.moveTo(250, 720); ctx.lineTo(830, 720); ctx.stroke()
-    ;[315, 765].forEach((x, index) => { ctx.beginPath(); ctx.arc(x, 930 + (index ? -1 : 1) * Math.sin(t) * 24, 120, 0, Math.PI); ctx.stroke() })
+    /* الاتزان يتحقق بإعادة توزيع الكتل، لا برمز الميزان التقليدي. */
+    const shift=Math.sin(t*.8)*18*(1-progress)
+    const leftW=250+progress*70,rightW=330-progress*10
+    ctx.globalAlpha*=1.25
+    ctx.fillRect(150+shift,760,leftW,150)
+    ctx.globalAlpha*=.72
+    ctx.fillRect(REEL_WIDTH-150-rightW-shift,1040,rightW,110)
+    ctx.globalAlpha*=.8;ctx.beginPath();ctx.moveTo(120,960);ctx.lineTo(960,960);ctx.stroke()
   } else if (plan.motionVerb === 'pulse') {
     for (let ring = 0; ring < 4; ring += 1) { ctx.globalAlpha = (world.scheme === 'light' ? 0.1 : 0.16) * (1 - ring * 0.16); ctx.beginPath(); ctx.arc(cx, cy, 120 + ring * 110 + breathe * 22, 0, Math.PI * 2); ctx.stroke() }
   } else {
@@ -455,6 +484,7 @@ function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene
   const progress = Math.max(0, Math.min(1, local / scene.seconds))
   const crisis = scene.kind === 'shift' ? Math.min(1, progress * 1.8) : scene.kind === 'truth' || scene.kind === 'close' ? 1 : 0
 
+  drawWorldAtmosphere(ctx, plan, t)
   drawMotifs(ctx, stage, plan.motifs, t, dt, scene.kind, crisis)
   drawSemanticField(ctx, plan, progress, t)
 

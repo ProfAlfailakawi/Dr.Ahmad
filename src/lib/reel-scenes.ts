@@ -14,7 +14,7 @@ import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from './arabic-coun
 import { interpretDrAhmadDomain } from './dr-ahmad-domain-glossary'
 import { chooseMetaphors, type MetaphorId } from './reel-metaphors'
 import { analyzeWorldSemantics } from './world-semantics'
-import type { SemanticVerb } from './design-worlds'
+import type { DesignWorld, SemanticVerb } from './design-worlds'
 import { ReelAudit } from './world-audits'
 import { DESIGN_WORLDS, MASTER_WORLD_ORDER } from './design-worlds'
 
@@ -52,6 +52,15 @@ export interface ReelWorld {
   accent: string
   accent2: string
   danger: string
+  family?: string
+  masterWorldId?: string
+  material?: string
+  motion?: string
+  lighting?: string
+  geometry?: string
+  depth?: string
+  layout?: string
+  signature?: string
 }
 
 export interface ReelScene {
@@ -127,11 +136,17 @@ const LEGACY_REEL_WORLDS: ReelWorld[] = [
   { id: 'coral-future', label: 'مستقبل مرجاني', scheme: 'light', bgTop: '#fff3ee', bgMid: '#f7dfd5', bgBottom: '#eac7bb', glow: '#fffaf7', ink: '#382428', dim: '#8d6b70', accent: '#be4f58', accent2: '#336f78', danger: '#a82f38' },
 ]
 
-const MASTER_REEL_WORLDS: ReelWorld[] = MASTER_WORLD_ORDER.map((id) => {
-  const world=DESIGN_WORLDS[id]
+export function reelWorldFromDesignWorld(world:DesignWorld): ReelWorld {
   const palette=world.palette
-  return {id:world.id,label:world.labelAr,scheme:palette.isDark?'dark':'light',bgTop:palette.surface,bgMid:palette.background,bgBottom:palette.background,glow:palette.atmo?.glows?.[0]?.color||palette.accentSoft,ink:palette.ink,dim:palette.muted,accent:palette.accent,accent2:palette.accentSoft||palette.accent,danger:world.semanticAffinity.includes('confront')?'#C94B45':palette.accent}
-})
+  const masterId=world.master?world.id:(world.id.includes('::')?world.id.split('::')[0]:world.id.startsWith('fusion:')?(world.compatibleWorlds[0]||world.id):world.id)
+  return {
+    id:world.id,label:world.labelAr,scheme:palette.isDark?'dark':'light',bgTop:palette.surface,bgMid:palette.background,bgBottom:palette.background,
+    glow:palette.atmo?.glows?.[0]?.color||palette.accentSoft,ink:palette.ink,dim:palette.muted,accent:palette.accent,accent2:palette.accentSoft||palette.accent,
+    danger:world.semanticAffinity.includes('confront')?'#C94B45':palette.accent,family:world.family,masterWorldId:masterId,material:world.materials[0],motion:world.motionDna[0],
+    lighting:world.lighting[0],geometry:world.geometry[0],depth:world.depth[0],layout:world.layoutGrammar[0]||world.layout,signature:world.signatureTokens.join('|'),
+  }
+}
+const MASTER_REEL_WORLDS: ReelWorld[] = MASTER_WORLD_ORDER.map((id) => reelWorldFromDesignWorld(DESIGN_WORLDS[id]))
 /** كل الـ64 Master Worlds متاحة للريل؛ العوالم القديمة تبقى aliases بصرية للتوافق. */
 const WORLDS: ReelWorld[] = [...new Map([...LEGACY_REEL_WORLDS,...MASTER_REEL_WORLDS].map((world)=>[world.id,world])).values()]
 const worldById = new Map(WORLDS.map((world) => [world.id, world]))
@@ -321,7 +336,27 @@ export interface ReelSource {
   cta?: string
 }
 
-export function planReel(source: ReelSource, variant = 0): ReelPlan {
+export interface ReelPlanOptions {
+  /** نفس عالم الاستوديو؛ إذا اختاره المستخدم يصبح دستور إخراج الريل. */
+  world?: DesignWorld | string | null
+}
+function resolveReelDirection(input:ReelPlanOptions['world']):DesignWorld|null {
+  if(!input)return null
+  if(typeof input==='string')return DESIGN_WORLDS[input]||null
+  return input
+}
+function worldTemplateBias(world:DesignWorld|null):ReelTemplateId|null {
+  if(!world)return null
+  const grammar=`${world.layoutGrammar.join(' ')} ${world.layout} ${world.spatial}`
+  if(/Split Contrast|Infographic Argument|dual-thesis/i.test(grammar))return 'siren'
+  if(/Data Narrative|Infographic|evidence|number/i.test(grammar))return 'counter'
+  if(/Quote Architecture|Editorial Stack|manuscript|marginalia/i.test(grammar))return 'manuscript'
+  if(/Timeline Path|knowledge-map|weave|grid/i.test(grammar))return 'weave'
+  if(/Minimal Thesis|Poster Monument|Central Emblem|hero-word/i.test(grammar))return 'question'
+  return null
+}
+
+export function planReel(source: ReelSource, variant = 0, options:ReelPlanOptions={}): ReelPlan {
   const title = source.title.trim()
   const body = source.body.trim()
   const analysis = analyzeSocialContent(`${title}\n${body}`.slice(0, 4000))
@@ -365,6 +400,7 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
   const seed = (fnv(`${title}|${body.slice(0, 400)}|لقطة${variant}`) + variant * 7919) >>> 0
   const random = mulberry(seed)
   const rationale: string[] = []
+  const forcedWorld=resolveReelDirection(options.world)
 
   /* الموضوع المرجَّح: إشارات مفردات تسند المحلّل حين يتردد. */
   const lexicon = `${title} ${body.slice(0, 600)}`
@@ -415,6 +451,8 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
     const target = solemn && id === 'siren' ? 'manuscript' : id
     for (let i = 0; i < times; i += 1) weighted.push(target)
   }
+  const directedTemplate=worldTemplateBias(forcedWorld)
+  if(directedTemplate)weigh(directedTemplate,3)
   if (mined.contrast) weigh('siren', 4)
   if (mined.number !== null) weigh('counter', 4)
   if (mined.question) weigh('question', 3)
@@ -448,8 +486,11 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
   /* دوران حتمي بإزاحة مشتقة من العنوان: يضمن أن نصّين مختلفين على موضوع واحد
      لا يقعان على اللون نفسه إلا إذا استُنفدت المجموعة كلها. */
   const rotate = fnv(`${title}·${body.slice(0, 260)}·عالم·${templateId}·${analysis.primaryTone}·${variant}`) % worldPool.length
-  const world = worldById.get(worldPool[rotate]) || WORLDS[0]
-  rationale.push(`الموضوع «${nudgedTopic}» والفعل «${semanticWorld.semanticMotionVerb}» فتحا ${worldPool.length} عالماً مرشحاً من منظومة الـ64 — ووقع الاختيار على «${world.label}»`)
+  const autoWorld = worldById.get(worldPool[rotate]) || WORLDS[0]
+  const world = forcedWorld ? reelWorldFromDesignWorld(forcedWorld) : autoWorld
+  rationale.push(forcedWorld
+    ? `اختيارك ثبّت «${world.label}» كمخرج فني للريل؛ أخذتُ منه التكوين والمادة والحركة والإضاءة لا اللون وحده.`
+    : `الموضوع «${nudgedTopic}» والفعل «${semanticWorld.semanticMotionVerb}» فتحا ${worldPool.length} عالماً مرشحاً من منظومة الـ64 — ووقع الاختيار على «${world.label}»`)
 
   /* المزاج الموسيقي: القالب يفرض طبعه أولاً، والنبرة تهذّبه. */
   /* مزاج المعجم يسبق تخمين المحلّل: هو مكتوبٌ لكل مفهوم بيد الدكتور. */
@@ -487,6 +528,12 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
   const motifs = [...baseMotifs[templateId]]
   const extra = pick(random, extras)
   if (!motifs.includes(extra)) motifs.push(extra)
+  if(forcedWorld){
+    const direction=[forcedWorld.materials[0],forcedWorld.motionDna[0],forcedWorld.geometry[0]].join(':')
+    const directed:ReelMotifId=/ink|paper/.test(direction)?'ink-nib':/textile|grid|weave/.test(direction)?'grid-weave':/orbit|circular/.test(direction)?'orbit':/pulse|radial/.test(direction)?'rings':/light|glass/.test(direction)?'dust':'underline'
+    if(!motifs.includes(directed))motifs.push(directed)
+    rationale.push(`DNA العالم وجّه المشاهد عبر ${forcedWorld.materials[0]} / ${forcedWorld.motionDna[0]} / ${forcedWorld.lighting[0]}.`)
+  }
 
   /* المشاهد — تُبنى من المادة الحية المنقّبة، لا من نص محفوظ. */
   const strong = mined.strongLines
@@ -610,7 +657,7 @@ export function planReel(source: ReelSource, variant = 0): ReelPlan {
     author: source.author || 'د. أحمد حسين الفيلكاوي',
     site: source.site || 'dr-alfailakawi.com',
     footerMark: 'الإنسان قبل الآلة',
-    seed,
+    seed: forcedWorld ? fnv(`${seed}:${forcedWorld.id}:${forcedWorld.signatureTokens.join('|')}`) : seed,
     variant,
     concept: conceptName,
     metaphors,
@@ -632,7 +679,7 @@ export interface ReelQualityReport {
 export function reelPerceptualSignature(plan: ReelPlan) {
   const metaphor = plan.scenes.find((scene) => scene.kind === 'metaphor')?.metaphor || 'none'
   const density = plan.scenes.length >= 7 ? 'dense' : plan.scenes.length <= 5 ? 'lean' : 'balanced'
-  return [plan.templateId, plan.world.scheme, plan.world.id, plan.motionVerb, metaphor, density, [...plan.motifs].sort().join('+')].join(':')
+  return [plan.templateId, plan.world.scheme, plan.world.id, plan.world.material||'material:auto', plan.world.motion||'motion:auto', plan.world.lighting||'light:auto', plan.world.layout||'layout:auto', plan.world.signature||'', plan.motionVerb, metaphor, density, [...plan.motifs].sort().join('+')].join(':')
 }
 
 /** بوابة قبل التشغيل والتصدير: تكشف التكرار والبتر والحمولة الزائدة آلياً. */
@@ -723,7 +770,7 @@ export interface MemoryAwarePlan { plan: ReelPlan; timesSeenBefore: number; key:
  * ويضمن اختلاف القالب عن آخر مرة ما أمكن. لا يكتب الذاكرة — الكتابة عند
  * الاعتماد (commit) كي لا تُستهلك النسخ بمجرّد المعاينة.
  */
-export function planReelWithMemory(source: ReelSource): MemoryAwarePlan {
+export function planReelWithMemory(source: ReelSource, options:ReelPlanOptions={}): MemoryAwarePlan {
   const key = reelMemoryKey(source)
   const history = readHistory()
   const record = history[key] || { count: 0 }
@@ -731,7 +778,7 @@ export function planReelWithMemory(source: ReelSource): MemoryAwarePlan {
   const used = new Set(record.usedMetaphors || [])
   const usedSignatures = new Set(record.usedSignatures || [])
   let variant = record.count
-  let plan = planReel(source, variant)
+  let plan = planReel(source, variant, options)
   /* ضمان اختلاف القالب والصورة عن آخر مرة، وتجنّب الصور المستهلكة سابقاً
      ما دام في البركة متسع — نجرّب حتى اثنتي عشرة نسخة. */
   for (let attempt = 0; attempt < 12 && record.count > 0; attempt += 1) {
@@ -742,7 +789,7 @@ export function planReelWithMemory(source: ReelSource): MemoryAwarePlan {
     const perceptualClash = signature === record.lastSignature || (usedSignatures.has(signature) && usedSignatures.size < 20)
     if (!templateClash && !metaphorClash && !perceptualClash) break
     variant += 1
-    plan = planReel(source, variant)
+    plan = planReel(source, variant, options)
   }
   return { plan, timesSeenBefore: record.count, key }
 }

@@ -31,7 +31,7 @@ function useVisible<T extends HTMLElement>(){
   return {ref,visible}
 }
 
-export interface DesignWorldsGalleryProps { activeWorldId?:DesignWorldId|string|null; onDress:(world:DesignWorld)=>void; onGenerate?:(world:DesignWorld)=>void; onClear?:()=>void; compact?:boolean; idea?:string }
+export interface DesignWorldsGalleryProps { activeWorldId?:DesignWorldId|string|null; onDress:(world:DesignWorld)=>void; onGenerate?:(world:DesignWorld)=>void; onClear?:()=>void; compact?:boolean; idea?:string; semanticPlatform?:'post'|'reel' }
 const tiny='rounded-full border border-white/15 px-2.5 py-1 text-[.58rem] font-bold text-slate-200 transition hover:border-sky-300/60 hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
 const field='min-w-0 rounded-xl border border-white/10 bg-slate-950/55 px-2.5 py-2 text-[.62rem] text-slate-200 outline-none focus:border-sky-300/50'
 const labelMap:Record<string,string>={still:'ساكن',balanced:'متزن',pulsing:'نابض',rising:'متصاعد','controlled-explosive':'انفجاري محسوب',paper:'ورق',glass:'زجاج',metal:'معدن',stone:'حجر',ink:'حبر',light:'ضوء',sand:'رمل',water:'ماء',textile:'نسيج',clay:'طين',breathe:'تنفّس',grow:'نمو',connect:'اتصال',split:'انقسام',rise:'صعود',orbit:'دوران',weave:'نسج',reveal:'كشف',balance:'توازن',pulse:'نبض'}
@@ -74,8 +74,8 @@ function WorldCard({world,idea,active,favorite,compare,onFavorite,onCompare,onDr
   </article>
 }
 
-export default function DesignWorldsGallery({activeWorldId,onDress,onGenerate,onClear,compact,idea=''}:DesignWorldsGalleryProps){
-  const semantic=useMemo(()=>analyzeWorldSemantics(idea||'فكرة جديدة','post'),[idea])
+export default function DesignWorldsGallery({activeWorldId,onDress,onGenerate,onClear,compact,idea='',semanticPlatform='post'}:DesignWorldsGalleryProps){
+  const semantic=useMemo(()=>analyzeWorldSemantics(idea||'فكرة جديدة',semanticPlatform),[idea,semanticPlatform])
   const [query,setQuery]=useState(''); const [family,setFamily]=useState('all'); const [mood,setMood]=useState('all'); const [material,setMaterial]=useState('all'); const [energy,setEnergy]=useState('all'); const [motion,setMotion]=useState('all')
   const [favorites,setFavorites]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('design-world-favorites-v2')||'[]')}catch{return[]}})
   const [compare,setCompare]=useState<string[]>([]); const [variant,setVariant]=useState<ProceduralWorldResult|null>(null); const [fusionRatio,setFusionRatio]=useState(60); const [surpriseRound,setSurpriseRound]=useState(0); const [notice,setNotice]=useState('')

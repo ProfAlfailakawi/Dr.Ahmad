@@ -568,7 +568,16 @@ async function geminiPcm(prompt) {
         console.log(`⏳ الحصة امتلأت — انتظار ${(quotaWaitMs / 1000).toFixed(1)} ثانية (محاولة ${attempt}/6)`)
       }
       last = new Error(message)
-    } catch (error) { last = error }
+      /* [٢٣ أغسطس ٢٠٢٦] نفادُ الرصيد ليس حصةً مؤقتة تُنتظر — إعادةُ
+         المحاولة ست مراتٍ عليه إحراقٌ للوقت بلا فائدة. يُكسَر فوراً
+         برسالةٍ واضحة تميّزه عن الحصة الدقيقية. */
+      if (/prepayment credits are depleted|credits.*depleted|billing/i.test(message)) {
+        throw new Error('نفد رصيد Gemini — التوليد متوقف حتى تجديد الرصيد من AI Studio (لا عطب في الكود)')
+      }
+    } catch (error) {
+      last = error
+      if (/نفد رصيد Gemini/.test(String(error && error.message))) throw error
+    }
     if (attempt < 6) { await sleep(quotaWaitMs || 1200 * attempt); quotaWaitMs = 0 }
   }
   throw last || new Error('فشل Gemini TTS')

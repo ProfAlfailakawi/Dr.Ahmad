@@ -7418,7 +7418,7 @@
    },
    "25": {
     "speaker": "female",
-    "text": "مو قائد.",
+    "text": "الذكاء الاصطناعي مكانه الطبيعي: أداة… مو قائد.",
     "deliveryType": "conclusion",
     "pauseAfterMs": 900,
     "overlapMs": 70,
@@ -7427,7 +7427,7 @@
    },
    "26": {
     "speaker": "male",
-    "text": "ويا آباء هالعصر: لا تخافون إن عيالكم أذكى منكم في التكنولوجيا…",
+    "text": "وأقول لكل أب وأم: لا تخافون إن عيالكم أذكى منكم في التكنولوجيا…",
     "deliveryType": "conclusion",
     "pauseAfterMs": 320,
     "overlapMs": 0,

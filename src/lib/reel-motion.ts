@@ -9,12 +9,17 @@
  */
 
 import type { ReelPlan, ReelScene, ReelMotifId, ReelWorld } from './reel-scenes'
-import { mulberry } from './reel-scenes'
+import { auditReelPlan, mulberry } from './reel-scenes'
 import { paintMetaphor } from './reel-metaphors'
 
 export const REEL_WIDTH = 1080
 export const REEL_HEIGHT = 1920
 const FPS = 30
+const REEL_SAFE_LEFT = 132
+const REEL_SAFE_RIGHT = 176
+const REEL_SAFE_TOP = 160
+const REEL_SAFE_BOTTOM = 340
+const REEL_TEXT_MAX_WIDTH = REEL_WIDTH - REEL_SAFE_LEFT - REEL_SAFE_RIGHT
 const CROSS_FADE = 0.35
 
 /* ------------------------------- دعم المتصفح ------------------------------- */
@@ -174,7 +179,7 @@ function lineSprite(text: string, px: number, color: string, weight = 700, font 
 interface TextBlockLayout { px: number; lines: string[]; lineHeight: number; height: number }
 
 /** لفّ عربي مقاس فعلياً بالخط النهائي — لا قصّ حروف ولا خروج من إطار 9:16. */
-function fitTextBlock(text: string, base: number, maxLines = 3, maxWidth = REEL_WIDTH * 0.84): TextBlockLayout {
+export function fitTextBlock(text: string, base: number, maxLines = 3, maxWidth = REEL_TEXT_MAX_WIDTH): TextBlockLayout {
   const probe = offscreen(8, 8).ctx
   const words = text.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean)
   for (let px = base; px >= 34; px -= 3) {
@@ -830,6 +835,32 @@ function buildScore(audio: AudioContext, destination: AudioNode, plan: ReelPlan)
 
 /* ------------------------------- تشغيل وتصدير ------------------------------- */
 
+
+export interface ReelTextFitAudit { ready: boolean; warnings: string[]; maxLines: number; safeZone: { left:number; right:number; top:number; bottom:number } }
+export async function auditReelTextFit(plan: ReelPlan): Promise<ReelTextFitAudit> {
+  await ensureFonts()
+  const warnings:string[]=[]
+  let maxFound=0
+  plan.scenes.forEach((scene,index)=>{
+    const allowed=scene.kind==='hook'||scene.kind==='shift'?3:scene.kind==='close'?3:4
+    const base=scene.kind==='hook'?92:scene.kind==='truth'?84:74
+    const block=fitTextBlock(scene.line,base,allowed,REEL_TEXT_MAX_WIDTH)
+    maxFound=Math.max(maxFound,block.lines.length)
+    if(block.lines.length>allowed) warnings.push(`المشهد ${index+1}: يحتاج ${block.lines.length} أسطر ويتجاوز حد ${allowed}.`)
+    if(block.height>REEL_HEIGHT-REEL_SAFE_TOP-REEL_SAFE_BOTTOM) warnings.push(`المشهد ${index+1}: كتلة النص تتجاوز الارتفاع الآمن.`)
+    if(scene.line2){const second=fitTextBlock(scene.line2,60,2,REEL_TEXT_MAX_WIDTH); if(second.lines.length>2) warnings.push(`المشهد ${index+1}: السطر الثاني مزدحم.`)}
+  })
+  return {ready:warnings.length===0,warnings,maxLines:maxFound,safeZone:{left:REEL_SAFE_LEFT,right:REEL_SAFE_RIGHT,top:REEL_SAFE_TOP,bottom:REEL_SAFE_BOTTOM}}
+}
+
+async function probeReelVideo(blob:Blob,expectedSeconds:number):Promise<{duration:number|null;verified:boolean}>{
+  const url=URL.createObjectURL(blob)
+  try{
+    const video=document.createElement('video'); video.preload='metadata'; video.muted=true
+    const duration=await new Promise<number|null>((resolve)=>{let done=false; const finish=(v:number|null)=>{if(done)return;done=true;window.clearTimeout(timer);resolve(v)}; const read=()=>{if(Number.isFinite(video.duration)&&video.duration>0)finish(video.duration);else{try{video.currentTime=1e7}catch{finish(null)}}}; video.onloadedmetadata=read; video.ondurationchange=()=>{if(Number.isFinite(video.duration)&&video.duration>0)finish(video.duration)}; video.onerror=()=>finish(null); const timer=window.setTimeout(()=>finish(null),2600); video.src=url})
+    return {duration,verified:duration!=null&&Math.abs(duration-expectedSeconds)<=Math.max(.9,expectedSeconds*.08)}
+  }finally{URL.revokeObjectURL(url)}
+}
 export interface ReelHandle { stop: () => void }
 
 export async function playReelPreview(canvas: HTMLCanvasElement, plan: ReelPlan, options: { audio?: boolean; onDone?: () => void } = {}): Promise<ReelHandle> {
@@ -843,7 +874,8 @@ export async function playReelPreview(canvas: HTMLCanvasElement, plan: ReelPlan,
   let raf = 0
   let stopped = false
   let audio: AudioContext | null = null
-  if (options.audio !== false) {
+  const reducedMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (options.audio !== false && !reducedMotion) {
     try {
       audio = new AudioContext()
       buildScore(audio, audio.destination, plan)
@@ -882,11 +914,16 @@ export async function playReelPreview(canvas: HTMLCanvasElement, plan: ReelPlan,
   }
 }
 
-export interface ReelExportResult { blob: Blob; mime: string; seconds: number }
+export interface ReelExportResult { blob: Blob; mime: string; seconds: number; frameCount: number; verifiedDuration: boolean; textFit: ReelTextFitAudit }
 
-export async function exportReelVideo(plan: ReelPlan, options: { canvas?: HTMLCanvasElement; onProgress?: (ratio: number) => void } = {}): Promise<ReelExportResult> {
+export async function exportReelVideo(plan: ReelPlan, options: { canvas?: HTMLCanvasElement; onProgress?: (ratio: number) => void; audio?: boolean } = {}): Promise<ReelExportResult> {
   const mime = pickReelMime()
-  if (!mime) throw new Error('هذا المتصفح لا يدعم تسجيل الفيديو — جرّب Chrome')
+  if (!mime) throw new Error('هذا المتصفح لا يدعم تسجيل الفيديو — استخدم صيغة مدعومة من المتصفح')
+  const storyGate = auditReelPlan(plan)
+  if (!storyGate.ready) throw new Error(`بوابة الريل منعت التصدير: ${storyGate.warnings[0] || 'الخطة السردية لم تجتز الجودة.'}`)
+  const textFit = await auditReelTextFit(plan)
+  if (!textFit.ready) throw new Error(`بوابة الريل منعت التصدير: ${textFit.warnings[0]}`)
+  if (plan.seconds < 18 || plan.seconds > 30 || plan.scenes.length < 5 || plan.scenes.length > 8) throw new Error('بوابة الريل منعت التصدير: المدة أو عدد المشاهد خارج الحدود المعتمدة.')
   await ensureFonts()
   spriteCache.clear()
   const canvas = options.canvas || document.createElement('canvas')
@@ -896,21 +933,30 @@ export async function exportReelVideo(plan: ReelPlan, options: { canvas?: HTMLCa
   if (!ctx) throw new Error('تعذّر تجهيز لوحة الرسم')
   const stage = buildStage(plan)
 
-  const audio = new AudioContext()
-  const sink = audio.createMediaStreamDestination()
-  buildScore(audio, sink, plan)
+  let audio: AudioContext | null = null
+  let audioTracks: MediaStreamTrack[] = []
+  if (options.audio !== false) {
+    try {
+      audio = new AudioContext()
+      const sink = audio.createMediaStreamDestination()
+      buildScore(audio, sink, plan)
+      audioTracks = sink.stream.getAudioTracks()
+    } catch { audio = null; audioTracks = [] }
+  }
 
   const videoStream = canvas.captureStream(FPS)
-  const mixed = new MediaStream([...videoStream.getVideoTracks(), ...sink.stream.getAudioTracks()])
+  const mixed = new MediaStream([...videoStream.getVideoTracks(), ...audioTracks])
   /* 5.2 ميغابت/ث تكفي لنصٍّ حادٍّ على تدرّجٍ هادئ عند 1080×1920، وتنزل
      بالملف إلى نحو نصف حجمه السابق بلا فرقٍ مرئي على الهاتف. */
-  const recorder = new MediaRecorder(mixed, { mimeType: mime, videoBitsPerSecond: 5_200_000, audioBitsPerSecond: 128_000 })
+  let recorder: MediaRecorder
+  try { recorder = new MediaRecorder(mixed, { mimeType: mime, videoBitsPerSecond: 5_200_000, ...(audioTracks.length ? { audioBitsPerSecond: 128_000 } : {}) }) } catch (error) { videoStream.getTracks().forEach((track)=>track.stop()); await audio?.close().catch(()=>{}); throw new Error(`تعذّر بدء MediaRecorder: ${error instanceof Error ? error.message : String(error)}`) }
   const chunks: BlobPart[] = []
   recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data) }
-  const finished = new Promise<Blob>((resolve) => { recorder.onstop = () => resolve(new Blob(chunks, { type: mime.split(';')[0] })) })
+  const finished = new Promise<Blob>((resolve,reject) => { recorder.onstop = () => resolve(new Blob(chunks, { type: mime.split(';')[0] })); recorder.onerror = () => reject(new Error('MediaRecorder أبلغ عن خطأ أثناء تسجيل الريل.')) })
 
   drawReelFrame(ctx, stage, 0, 0)
   recorder.start(250)
+  let frameCount = 1
   const startedAt = performance.now()
   let last = startedAt
   await new Promise<void>((resolve) => {
@@ -930,6 +976,7 @@ export async function exportReelVideo(plan: ReelPlan, options: { canvas?: HTMLCa
         return
       }
       drawReelFrame(ctx, stage, Math.min(t, plan.seconds - 0.001), dt)
+      frameCount += 1
       raf = requestAnimationFrame(step)
     }
     raf = requestAnimationFrame(step)
@@ -939,8 +986,13 @@ export async function exportReelVideo(plan: ReelPlan, options: { canvas?: HTMLCa
   recorder.stop()
   const blob = await finished
   videoStream.getTracks().forEach((track) => track.stop())
-  await audio.close().catch(() => { /* أُغلق مسبقاً */ })
-  return { blob, mime, seconds: plan.seconds }
+  mixed.getTracks().forEach((track) => track.stop())
+  await audio?.close().catch(() => { /* أُغلق مسبقاً */ })
+  if (!blob.size || blob.size < 24_000) throw new Error('فشل التصدير: ملف الريل فارغ أو لا يحتوي فيديو فعلياً.')
+  if (frameCount < Math.max(18, Math.floor(plan.seconds * FPS * .42))) throw new Error('فشل التصدير: عدد الإطارات المسجلة لا يناسب مدة الريل.')
+  const probe = await probeReelVideo(blob, plan.seconds)
+  if (probe.duration != null && !probe.verified) throw new Error(`فشل التصدير: مدة الملف الفعلية ${probe.duration.toFixed(2)}ث لا تطابق خطة ${plan.seconds.toFixed(2)}ث.`)
+  return { blob, mime, seconds: probe.duration || plan.seconds, frameCount, verifiedDuration: probe.verified, textFit }
 }
 
 export function downloadReelBlob(result: ReelExportResult, title: string) {

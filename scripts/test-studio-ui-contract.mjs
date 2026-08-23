@@ -5,6 +5,10 @@ import { resolve } from 'node:path'
 
 const source = readFileSync(resolve('src/components/admin/SocialDesignStudio.tsx'), 'utf8')
 const publishingSource = readFileSync(resolve('src/components/admin/PublishingStudio.tsx'), 'utf8')
+
+const gallerySource = readFileSync(resolve('src/components/admin/DesignWorldsGallery.tsx'), 'utf8')
+const worldsSource = readFileSync(resolve('src/lib/design-worlds.ts'), 'utf8')
+const proceduralSource = readFileSync(resolve('src/lib/procedural-world-engine.ts'), 'utf8')
 const zeroDecision = source.slice(
   source.indexOf('const runZeroDecisionMode'),
   source.indexOf('const runAutopilot'),
@@ -46,4 +50,14 @@ assert.doesNotMatch(zeroDecision, /requestedMode === 'library'/)
 assert.match(manualGenerator, /buildImageLedPlan/)
 assert.match(manualGenerator, /runAutopilot/)
 
-console.log('Studio UI contract: two visual routes, perceptual diversity, premium ready-image curation, automatic recovery, professional release gate, and latest-approved storage passed')
+assert.match(gallerySource, /data-world-master-count="64"/)
+assert.match(gallerySource, /IntersectionObserver/)
+assert.match(gallerySource, /fuseWorlds/)
+assert.match(gallerySource, /Controlled/)
+assert.match(gallerySource, /compare/)
+assert.match(gallerySource, /locks/)
+assert.match(worldsSource, /WORLD_SPECS\.length !== 64/)
+assert.match(proceduralSource, /deterministicSeed/)
+assert.match(proceduralSource, /perceptualSignature/)
+
+console.log('Studio UI contract: visual routes, 64-world lazy studio, deterministic procedural diversity, fusion, comparison, professional release gate, and latest-approved storage passed')

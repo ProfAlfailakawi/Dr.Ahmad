@@ -7,6 +7,8 @@ import {
 } from './social-design-renderer'
 import { paintMetaphor } from './reel-metaphors'
 import { readEffectivePlacement, readIconEnabled, resolveMetaphor } from './design-overrides'
+import { analyzeWorldSemantics } from './world-semantics'
+import type { SemanticVerb } from './design-worlds'
 
 /**
  * محرّك فيديو المنشور المستقل. الحركة هنا ليست تكبيراً عاماً للصورة: يقرأ
@@ -16,7 +18,7 @@ import { readEffectivePlacement, readIconEnabled, resolveMetaphor } from './desi
 
 export type MotionStyle = 'semantic' | 'reveal' | 'kenburns' | 'pulse'
 export type MotionProfileId = 'loop' | 'hook' | 'argument'
-export type SemanticMotionVerb = 'root' | 'connect' | 'split' | 'rise' | 'weave' | 'orbit' | 'pulse' | 'path' | 'question' | 'balance' | 'reveal'
+export type SemanticMotionVerb = SemanticVerb
 
 export const MOTION_PROFILES: Record<MotionProfileId, { label: string; description: string; durationMs: number; fps: number }> = {
   loop: { label: 'حلقة ٤٫٨ ث', description: 'حركة ختمية سلسة تعود إلى أول إطار', durationMs: 4_800, fps: 30 },
@@ -39,6 +41,8 @@ export interface DesignVideoResult {
   mime: string
   extension: 'mp4' | 'webm'
   seconds: number
+  frameCount: number
+  verifiedDuration: boolean
   audit: DesignMotionAudit
 }
 
@@ -61,20 +65,7 @@ function planText(plan: CompositionPlan) {
 }
 
 export function semanticMotionVerb(plan: CompositionPlan): SemanticMotionVerb {
-  const text = planText(plan)
-  const tests: Array<[SemanticMotionVerb, RegExp]> = [
-    ['balance', /(توازن|ميزان|إنسان.*آلة|آلة.*إنسان|أخلاق|اخلاق|ضمير|عدالة)/],
-    ['root', /(جذر|جذور|بذرة|ينمو|نمو|شجرة|غرس|تربية|طفل)/],
-    ['rise', /(نسبة|٪|%|رقم|ارتفاع|يصعد|نمو|أداء|نتيجة)/],
-    ['split', /(ليس|ليست|بلا |بل |لكن|مقابل|فجوة|انقسام|بينما|اختلاف)/],
-    ['question', /(؟|سؤال|لماذا|كيف|ماذا|هل )/],
-    ['weave', /(نسيج|خيط|حكاية|سرد|ثقافة|هوية|معنى)/],
-    ['orbit', /(مدار|كوكب|كون|دورة|حول|منظومة|نظام)/],
-    ['path', /(طريق|مسار|رحلة|مستقبل|اتجاه|تحول|قرار)/],
-    ['connect', /(شبك|اتصال|تواصل|بيانات|فريق|مجتمع|علاقة|ربط|ذكاء)/],
-    ['pulse', /(نبض|قلب|حياة|إنسان|شعور|أثر)/],
-  ]
-  return tests.find(([, pattern]) => pattern.test(text))?.[0] || 'reveal'
+  return analyzeWorldSemantics(planText(plan), 'video').semanticMotionVerb
 }
 
 export function auditDesignMotion(plan: CompositionPlan, profile: MotionProfileId = 'loop'): DesignMotionAudit {
@@ -212,10 +203,32 @@ function drawSemanticVerb(ctx: CanvasRenderingContext2D, verb: SemanticMotionVer
   } else if (verb === 'path') {
     ctx.setLineDash([4, 15]); ctx.beginPath(); ctx.moveTo(w * 0.15, h * 0.7); ctx.bezierCurveTo(w * 0.35, h * 0.18, w * 0.62, h * 0.82, w * 0.85, h * 0.3); ctx.stroke(); ctx.setLineDash([])
   } else if (verb === 'question') {
-    ctx.font = `700 ${Math.round(w * 0.32)}px Alexandria, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('؟', cx, cy)
+    // سؤال = فراغ قابل للدخول، لا أيقونة استفهام جاهزة.
+    const opening = Math.PI * (0.34 + loop * 0.08)
+    ctx.beginPath(); ctx.arc(cx, cy, w * (0.16 + loop * 0.012), opening, Math.PI * 2 - opening); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(cx + w * 0.16, cy - h * 0.05); ctx.lineTo(cx + w * (0.22 + loop * 0.018), cy - h * 0.09); ctx.stroke()
   } else if (verb === 'balance') {
-    ctx.beginPath(); ctx.moveTo(cx, h * 0.3); ctx.lineTo(cx, h * 0.7); ctx.moveTo(w * 0.28, h * 0.4); ctx.lineTo(w * 0.72, h * 0.4); ctx.stroke()
-    ;[w * 0.31, w * 0.69].forEach((x, i) => { ctx.beginPath(); ctx.arc(x, h * (0.53 + (i ? -1 : 1) * Math.sin(phase) * 0.015), w * 0.08, 0, Math.PI); ctx.stroke() })
+    // الاتزان يُرى في إعادة توزيع الكتلة والفراغ، لا في رسم ميزان تقليدي.
+    const settle = loop * w * 0.045
+    const leftW = w * (0.17 + loop * 0.025)
+    const rightW = w * (0.11 + (1 - loop) * 0.025)
+    ctx.globalAlpha *= 0.82
+    ctx.fillRect(cx - w * 0.26 + settle, cy - h * 0.045, leftW, h * 0.09)
+    ctx.globalAlpha *= 0.72
+    ctx.fillRect(cx + w * 0.09 - settle, cy - h * 0.075, rightW, h * 0.15)
+    ctx.globalAlpha = 0.16 + loop * 0.16
+    ctx.beginPath(); ctx.moveTo(w * 0.22, cy + h * 0.12); ctx.lineTo(w * 0.78, cy + h * 0.12); ctx.stroke()
+  } else if (verb === 'fracture' || verb === 'confront') {
+    const jag = w * (0.018 + loop * 0.025); ctx.beginPath(); ctx.moveTo(cx, h * .18); for (let i=1;i<=7;i+=1) ctx.lineTo(cx + (i%2?jag:-jag), h*(.18+i*.09)); ctx.stroke()
+  } else if (verb === 'gather' || verb === 'protect') {
+    for (let i=0;i<7;i+=1) { const a=i/7*Math.PI*2; const r=w*(.19-.08*loop); ctx.beginPath(); ctx.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r,3+loop*4,0,Math.PI*2); ctx.fill() }
+    if (verb === 'protect') { ctx.beginPath(); ctx.arc(cx,cy,w*(.13+.015*loop),0,Math.PI*2); ctx.stroke() }
+  } else if (verb === 'liberate') {
+    ctx.setLineDash([8,12]); ctx.strokeRect(w*.28,h*.3,w*.44,h*.4); ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(cx,h*.52); ctx.lineTo(cx+w*.17*loop,h*.31); ctx.stroke()
+  } else if (verb === 'echo' || verb === 'dissolve' || verb === 'breathe') {
+    for (let i=0;i<4;i+=1) { ctx.globalAlpha=(.18-i*.03)*(verb==='dissolve'?(1-loop*.65):1); ctx.beginPath(); ctx.ellipse(cx,cy,w*(.08+i*.065+loop*.018),h*(.045+i*.04+loop*.012),0,0,Math.PI*2); ctx.stroke() }
+  } else if (verb === 'transform') {
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(loop*Math.PI*.22); const r=w*(.11+.035*loop); ctx.strokeRect(-r,-r,r*2,r*2); ctx.beginPath(); ctx.arc(0,0,r*(.65+.2*loop),0,Math.PI*2); ctx.stroke(); ctx.restore()
   } else {
     for (let i = 0; i < 3; i += 1) { ctx.globalAlpha = (0.12 - i * 0.025) * loop; ctx.beginPath(); ctx.arc(cx, cy, w * (0.1 + i * 0.085 + loop * 0.025), 0, Math.PI * 2); ctx.stroke() }
   }
@@ -305,13 +318,37 @@ function buildSilentClock(audio: AudioContext, target: AudioNode, durationMs: nu
   oscillator.stop(audio.currentTime + durationMs / 1000 + 0.2)
 }
 
+
+async function probeRecordedVideo(blob: Blob, expectedSeconds: number): Promise<{ duration: number | null; verified: boolean }> {
+  const url = URL.createObjectURL(blob)
+  try {
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    video.muted = true
+    const duration = await new Promise<number | null>((resolve) => {
+      let done = false
+      const finish = (value: number | null) => { if (done) return; done = true; window.clearTimeout(timer); resolve(value) }
+      const read = () => {
+        if (Number.isFinite(video.duration) && video.duration > 0) return finish(video.duration)
+        try { video.currentTime = 1e7 } catch { finish(null) }
+      }
+      video.onloadedmetadata = read
+      video.ondurationchange = () => { if (Number.isFinite(video.duration) && video.duration > 0) finish(video.duration) }
+      video.onerror = () => finish(null)
+      const timer = window.setTimeout(() => finish(null), 2600)
+      video.src = url
+    })
+    return { duration, verified: duration != null && Math.abs(duration - expectedSeconds) <= Math.max(.9, expectedSeconds * .09) }
+  } finally { URL.revokeObjectURL(url) }
+}
 export async function exportDesignVideo(plan: CompositionPlan, options: DesignVideoOptions = {}): Promise<DesignVideoResult> {
   const mime = pickMime()
   if (!mime) throw new Error('تسجيل الفيديو غير مدعوم في هذا المتصفح')
   const profile = options.profile || 'loop'
   const durationMs = options.durationMs || MOTION_PROFILES[profile].durationMs
   const fps = options.fps || MOTION_PROFILES[profile].fps
-  const style = options.style || 'semantic'
+  const reducedMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  const style = reducedMotion ? 'reveal' : (options.style || 'semantic')
   const audit = auditDesignMotion(plan, profile)
   if (!audit.ready) throw new Error(audit.warnings[0] || 'لم يجتز الفيديو بوابة الجاهزية')
   const [image, logo] = await Promise.all([planToImage(plan), loadLogo()])
@@ -347,17 +384,28 @@ export async function exportDesignVideo(plan: CompositionPlan, options: DesignVi
     else buildSilentClock(audio, sink, durationMs)
     stream = new MediaStream([...videoStream.getVideoTracks(), ...sink.stream.getAudioTracks()])
   } catch { audio = null }
-  const recorder = new MediaRecorder(stream, {
-    mimeType: mime,
-    videoBitsPerSecond: Math.max(6_000_000, Math.round(plan.format.width * plan.format.height * fps * 0.14)),
-    ...(audio ? { audioBitsPerSecond: 96_000 } : {}),
-  })
+  let recorder: MediaRecorder
+  try {
+    recorder = new MediaRecorder(stream, {
+      mimeType: mime,
+      videoBitsPerSecond: Math.max(6_000_000, Math.round(plan.format.width * plan.format.height * fps * 0.14)),
+      ...(audio ? { audioBitsPerSecond: 96_000 } : {}),
+    })
+  } catch (error) {
+    stream.getTracks().forEach((track) => track.stop())
+    videoStream.getTracks().forEach((track) => track.stop())
+    await audio?.close().catch(() => { /* لم يبدأ التسجيل */ })
+    canvas.remove()
+    throw new Error(`تعذّر بدء MediaRecorder: ${error instanceof Error ? error.message : String(error)}`)
+  }
   const chunks: BlobPart[] = []
   recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data) }
-  const finished = new Promise<Blob>((resolve) => {
+  const finished = new Promise<Blob>((resolve, reject) => {
     recorder.onstop = () => resolve(new Blob(chunks, { type: mime.split(';')[0] }))
+    recorder.onerror = () => reject(new Error('MediaRecorder أبلغ عن خطأ أثناء تسجيل فيديو المنشور.'))
   })
   recorder.start(250)
+  let frameCount = 1
   const startedAt = performance.now()
   await new Promise<void>((resolve) => {
     let raf = 0
@@ -369,6 +417,7 @@ export async function exportDesignVideo(plan: CompositionPlan, options: DesignVi
       const elapsed = now - startedAt
       const ratio = clamp(elapsed / durationMs)
       drawFrame(ctx, base, logo, plan, ratio, style)
+      frameCount += 1
       videoTrack?.requestFrame?.()
       options.onProgress?.(ratio)
       if (ratio >= 1) {
@@ -389,8 +438,13 @@ export async function exportDesignVideo(plan: CompositionPlan, options: DesignVi
   if (stream !== videoStream) videoStream.getTracks().forEach((track) => track.stop())
   await audio?.close().catch(() => { /* أُغلق مسبقاً */ })
   canvas.remove()
+  const expectedSeconds = durationMs / 1000
+  if (!blob.size || blob.size < 18_000) throw new Error('فشل التصدير: ملف الفيديو فارغ أو أصغر من أن يحتوي فيديو حقيقياً.')
+  if (frameCount < Math.max(12, Math.floor(expectedSeconds * Math.min(fps, 30) * .45))) throw new Error('فشل التصدير: عدد الإطارات الفعلية غير كافٍ للمدة المطلوبة.')
+  const probe = await probeRecordedVideo(blob, expectedSeconds)
+  if (probe.duration != null && !probe.verified) throw new Error(`فشل التصدير: مدة الملف الفعلية ${probe.duration.toFixed(2)}ث لا تطابق ${expectedSeconds.toFixed(2)}ث.`)
   const extension = mime.includes('mp4') ? 'mp4' : 'webm'
-  return { blob, mime, extension, seconds: durationMs / 1000, audit }
+  return { blob, mime, extension, seconds: probe.duration || expectedSeconds, frameCount, verifiedDuration: probe.verified, audit }
 }
 
 export async function downloadDesignVideo(plan: CompositionPlan, options?: DesignVideoOptions): Promise<DesignVideoResult> {

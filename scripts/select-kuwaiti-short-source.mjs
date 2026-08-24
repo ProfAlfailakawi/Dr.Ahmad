@@ -33,10 +33,23 @@ const turnsOf = (value) => Array.isArray(value) ? value : Object.values(value ||
    من خارج متن Firestore المقفول**. فيُقبل الجزءُ المتّصل من مداخلةٍ
    مقفولة، ويُرفض ما عداه. والواو المستأنَفة تُقتنص كما كانت. */
 const norm = (v) => String(v).replace(/\s+/g, ' ').trim()
-const sameText = (full, short) => {
+/* v3 القديم كان يسمح بإضافة واحدة من إشارتين صوتيتين على رأس المداخلة
+   («إي والله.» أو «ممم…») حتى لو لم تكونا في متن Firestore. هذا يناقض
+   عقد هذه الخطوة: الصوت لا يأخذ كلمةً واحدةً من خارج النص المقفول.
+   نبقي الإشارة إذا كانت موجودة فعلاً في المتن، وإلا نجرب النسخة المنزوعة
+   فقط؛ لا يوجد هنا تعميم على أي حشو أو إعادة صياغة أخرى. */
+const SYNTHETIC_INTERJECTION = /^(?:إي والله\.|ممم…)\s+/u
+const textVariants = (value) => {
+  const original = norm(value)
+  const withoutSyntheticInterjection = original.replace(SYNTHETIC_INTERJECTION, '').trim()
+  return withoutSyntheticInterjection && withoutSyntheticInterjection !== original
+    ? [original, withoutSyntheticInterjection]
+    : [original]
+}
+const sameText = (full, short, allowShortIndexedPart = false) => {
   const f = norm(full); const t = norm(short)
   if (f === t || f === `و${t}`) return true
-  if (t.length < 8) return false
+  if (t.length < 8 && !allowShortIndexedPart) return false
   return f.includes(t) || f.includes(`و${t}`) || `و${f}`.includes(t)
 }
 
@@ -45,21 +58,33 @@ for (const slug of slugs) {
   const sourceFile = resolve(ROOT, 'manual-dialogues-kuwaiti', `${slug}.json`)
   const lockFile = resolve(ROOT, 'podcast-audits', 'source-locks-kuwaiti', `${slug}.json`)
   const full = turnsOf(JSON.parse(readFileSync(sourceFile, 'utf8')))
-  const selected = turnsOf(shortLib.episodes?.[slug])
+  const selectedRaw = turnsOf(shortLib.episodes?.[slug])
   const lock = JSON.parse(readFileSync(lockFile, 'utf8'))
-  assert.ok(full.length > selected.length && selected.length >= 15, `${slug}: المصدر القصير غير منطقي (${full.length}→${selected.length})`)
-  assert.equal(selected.filter((t) => t.musicBridgeAfter).length, 2, `${slug}: يلزم جسران في النسخة القصيرة`)
+  assert.ok(full.length > selectedRaw.length && selectedRaw.length >= 15, `${slug}: المصدر القصير غير منطقي (${full.length}→${selectedRaw.length})`)
+  assert.equal(selectedRaw.filter((t) => t.musicBridgeAfter).length, 2, `${slug}: يلزم جسران في النسخة القصيرة`)
 
+  const selected = []
+  let removedSyntheticInterjections = 0
   let cursor = 0
-  for (const [i, turn] of selected.entries()) {
-    const found = full.findIndex((candidate, j) => j >= cursor && candidate.speaker === turn.speaker && sameText(String(candidate.text), String(turn.text)))
+  for (const [i, turn] of selectedRaw.entries()) {
+    let found = -1
+    let matchedText = ''
+    for (const variant of textVariants(turn.text)) {
+      found = full.findIndex((candidate, j) => j >= cursor && candidate.speaker === turn.speaker
+        && sameText(String(candidate.text), variant, Number(turn._src) === j))
+      if (found >= 0) { matchedText = variant; break }
+    }
     assert.ok(found >= 0, `${slug}: الدور القصير ${i} ليس جزءاً مرتباً من متن Firestore المقفول: ${turn.text}`)
+    const preparedTurn = matchedText === norm(turn.text) ? turn : { ...turn, text: matchedText }
+    if (preparedTurn !== turn) removedSyntheticInterjections += 1
+    selected.push(preparedTurn)
     /* دورٌ مقفولٌ واحد قد يلد شطرين متتاليين — فلا يتقدّم المؤشر إلا
        حين ينتقل الشطر التالي إلى مداخلةٍ أخرى. */
-    const next = selected[i + 1]
-    const stillSame = next && next.speaker === turn.speaker
-      && sameText(String(full[found].text), String(next.text))
-      && norm(full[found].text) !== norm(next.text)
+    const next = selectedRaw[i + 1]
+    const nextMatchedText = next && next.speaker === turn.speaker
+      ? textVariants(next.text).find((variant) => sameText(String(full[found].text), variant, Number(next._src) === found))
+      : ''
+    const stillSame = Boolean(nextMatchedText) && norm(full[found].text) !== norm(nextMatchedText)
     cursor = stillSame ? found : found + 1
   }
 
@@ -73,5 +98,6 @@ for (const slug of slugs) {
     bridgeCount: 2,
     shortContentSha256: sha256(serialized),
   }, null, 2) + '\n')
-  console.log(`✓ ${slug}: المصدر المقفول ${full.length}→${selected.length} دوراً · جسران · بصمة ${sha256(serialized).slice(0, 12)}`)
+  const removedNote = removedSyntheticInterjections ? ` · نُزعت ${removedSyntheticInterjections} إشارة غير مقفولة` : ''
+  console.log(`✓ ${slug}: المصدر المقفول ${full.length}→${selected.length} دوراً · جسران${removedNote} · بصمة ${sha256(serialized).slice(0, 12)}`)
 }

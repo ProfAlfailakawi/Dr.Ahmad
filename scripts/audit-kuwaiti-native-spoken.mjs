@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   NATIVE_SPOKEN_VERSION,
+  PILOT_SLUG,
   auditNativeSpokenTurns,
   optimizeNativeSpokenEpisode,
 } from './lib/kuwaiti-native-spoken.mjs'
@@ -25,7 +26,16 @@ if (SELF_TEST) {
   ])
   assert.equal(fixed.turns[0].text, 'وأكو دراسة من جهة علمية، طلع فرق واضح.', 'يحوّل مدخل الدراسة إلى كلام')
   assert.equal(fixed.audit.hard.length, 0, 'النص المصقول يمر')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 3/3')
+  const pilotLibrary = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-diwania-v3.json'), 'utf8'))
+  const pilot = optimizeNativeSpokenEpisode(Object.values(pilotLibrary.episodes[PILOT_SLUG]), { slug: PILOT_SLUG })
+  const pilotText = pilot.turns.map((turn) => turn.text).join('\n')
+  assert.doesNotMatch(pilotText, /(?:ناطرها|معطين|ارتاح|شيين|حجمه|تعرّفنا|اهو|أهدى|سواه)/u,
+    'تحرير الحلقة لا يعيد الكلمات التسع التي أوقفها حارس الكلمات')
+  assert.equal(pilot.turns[20].text, 'بس مو كبرنا الموضوع وايد؟', 'الاعتراض كويتي شفهي وخفيف')
+  assert.equal(pilot.turns[25].text,
+    'ودورنا مو بس نلمّع شكل النجاح. نبي الطالب يحس إن تعبه له معنى… مو بس شكل حلو جدام الناس.',
+    'الخاتمة كلام بشري لا شعار ولا كلمة جديدة')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 6/6')
   process.exit(0)
 }
 

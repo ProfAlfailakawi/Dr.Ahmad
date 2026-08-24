@@ -48,7 +48,13 @@ if (SELF_TEST) {
     'الإعداد الذي صنع ثلاثة أصوات بعد الجسور لا يرجع')
   assert.match(pilotWorkflow, /PODCAST_KW_PROMPT_MODE:\s*c/,
     'مسار المرشح مقفول على البرومت C المعتمد لا أوضاع التجارب التاريخية')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 12/12')
+  assert.match(pilotWorkflow, /PODCAST_KW_MIN_GAP:\s*'25'/,
+    'فجوة 20Hz التي مرّت في النسخة المرفوضة لا تُقبل ثانيةً')
+  assert.match(pilotWorkflow, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
+    'انزلاق نورة يرمي الـTake كله')
+  assert.match(pilotWorkflow, /PODCAST_KW_REJECT_TIMING_SUSPECTS:\s*'1'/,
+    'الدور المقصوص أو الممدود يرمي الـTake كله')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 15/15')
   process.exit(0)
 }
 
@@ -91,6 +97,12 @@ assert.doesNotMatch(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'1'/,
   'ممنوع إعادة Voice/Accent Reset عند الجسر')
 assert.match(pilotWorkflow, /PODCAST_KW_PROMPT_MODE:\s*c/,
   'الإنتاج مقفول على البرومت C ذي الاستمرارية الصوتية المطلقة')
+assert.match(pilotWorkflow, /PODCAST_KW_MIN_GAP:\s*'25'/,
+  'مرشح الصوتين لا يقبل فجوة أقل من 25Hz')
+assert.match(pilotWorkflow, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
+  'بوابة نورة الصارمة مفعّلة في الإنتاج')
+assert.match(pilotWorkflow, /PODCAST_KW_REJECT_TIMING_SUSPECTS:\s*'1'/,
+  'بوابة القص والتمديد مفعّلة في الإنتاج')
 for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-prompt-experiment.yml']) {
   const source = readFileSync(resolve(ROOT, '.github/workflows', workflow), 'utf8')
   assert.match(source, /apply-kuwaiti-native-spoken\.mjs/, `${workflow}: التجربة تمر بالصقل نفسه`)

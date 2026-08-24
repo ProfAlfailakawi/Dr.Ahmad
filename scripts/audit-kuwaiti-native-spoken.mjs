@@ -35,10 +35,15 @@ if (SELF_TEST) {
     'المواضع الخمسة من الحكم السمعي الأخير لا ترجع إلى النص')
   assert.match(pilot.turns[4].text, /منحشر بمكان ضيّج… وبعدها طلع منه/u,
     '«ضيّج» المعتمدة مكتوبة في المصدر نفسه لا متروكة لاحتمال المعجم')
+  assert.equal(pilot.turns.length, 25, 'البحث المضغوط يقلل تبديل الصوت من غير حذف معلومة')
   assert.deepEqual(pilot.turns.slice(13, 18).map((turn) => turn.speaker),
     ['female', 'male', 'female', 'male', 'female'], 'البحث أخذ ورد بين صوتين لا فقرة مذيع')
-  assert.equal(pilot.turns[20].text, 'بس مو كبرنا الموضوع وايد؟', 'الاعتراض كويتي شفهي وخفيف')
-  assert.equal(pilot.turns[25].text,
+  assert.equal(pilot.turns[14].text, 'شلون يعني؟ وشنو طلع معاهم؟',
+    'سؤال البحث واحد طبيعي بدل تبديل صوت كل سطر')
+  assert.match(pilot.turns[15].text, /في دراسة كبيرة.*كل ما زاد التوتر، نزل مستوى الطالب/u,
+    'جواب البحث يحتفظ بالمصدر والنتيجة')
+  assert.equal(pilot.turns[18].text, 'بس مو كبرنا الموضوع وايد؟', 'الاعتراض كويتي شفهي وخفيف')
+  assert.equal(pilot.turns[23].text,
     'ودورنا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.',
     'الخاتمة كلام بشري لا شعار ولا كلمة جديدة')
   const pilotWorkflow = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-pilot.yml'), 'utf8')
@@ -48,8 +53,10 @@ if (SELF_TEST) {
     'الإعداد الذي صنع ثلاثة أصوات بعد الجسور لا يرجع')
   assert.match(pilotWorkflow, /PODCAST_KW_PROMPT_MODE:\s*c/,
     'مسار المرشح مقفول على البرومت C المعتمد لا أوضاع التجارب التاريخية')
-  assert.match(pilotWorkflow, /PODCAST_KW_MIN_GAP:\s*'12'/,
-    'الفجوة الصفرية تُرفض من غير رفض Puck+Zephyr المعتمدين بوسيط 15Hz')
+  assert.match(pilotWorkflow, /GEMINI_TTS_MODEL:\s*gemini-2\.5-pro-preview-tts/,
+    'الإنتاج يستخدم Pro الذي اجتاز ثبات الهوية بدل Flash المتذبذب')
+  assert.match(pilotWorkflow, /PODCAST_KW_MIN_GAP:\s*'25'/,
+    'الحوار المتعدد لا يقبل فجوة 20Hz التي سُمعت صوتاً واحداً')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
     'انزلاق نورة يرمي الـTake كله')
   const engine = readFileSync(resolve(ROOT, 'scripts/podcast-kuwaiti-gemini.mjs'), 'utf8')
@@ -59,8 +66,12 @@ if (SELF_TEST) {
     'القاعدة القديمة ذات الإنذارات الكاذبة لا ترجع')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_TIMING_SUSPECTS:\s*'1'/,
     'الدور المقصوص أو الممدود يرمي الـTake كله')
-  assert.match(pilotWorkflow, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'1'/,
-    'كل متحدث يولد في مسار full-context لا يستطيع حمل preset الطرف الآخر')
+  assert.match(pilotWorkflow, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'0'/,
+    'الحوار الحقيقي المتصل هو الإنتاج؛ مسارا الفقرات المرفوضان لا يرجعان')
+  assert.match(pilotWorkflow, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'1'/,
+    'أي تبديل داخل الحوار المتصل يرمي الـTake كله')
+  assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
+    'بوابة الرنين تمسك نفس preset لما يصير مو نفس الإنسان')
   console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 15/15')
   process.exit(0)
 }
@@ -104,29 +115,43 @@ assert.doesNotMatch(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'1'/,
   'ممنوع إعادة Voice/Accent Reset عند الجسر')
 assert.match(pilotWorkflow, /PODCAST_KW_PROMPT_MODE:\s*c/,
   'الإنتاج مقفول على البرومت C ذي الاستمرارية الصوتية المطلقة')
-assert.match(pilotWorkflow, /PODCAST_KW_MIN_GAP:\s*'12'/,
-  'مرشح الصوتين يرفض الانهيار دون أن يناقض قياس الزوج المعتمد')
+assert.match(pilotWorkflow, /GEMINI_TTS_MODEL:\s*gemini-2\.5-pro-preview-tts/,
+  'المحرك المقفول هو Pro المجتاز لبوابات الهوية والرنين')
+assert.match(pilotWorkflow, /PODCAST_KW_MIN_GAP:\s*'25'/,
+  'مرشح الحوار الحقيقي يفرض فرقاً مسموعاً بين الشخصين')
 assert.match(pilotWorkflow, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
   'بوابة نورة الصارمة مفعّلة في الإنتاج')
 const geminiEngine = readFileSync(resolve(ROOT, 'scripts/podcast-kuwaiti-gemini.mjs'), 'utf8')
 assert.match(geminiEngine, /femaleContinuity\.segmentSuspects\.length/,
   'انزلاق نورة يُقاس على مقطع ثابت لا دور مفرد متقلب')
-assert.match(geminiEngine, /const ISOLATE_SPEAKER_STEMS = process\.env\.PODCAST_KW_ISOLATE_SPEAKER_STEMS !== '0'/,
-  'مسارا الهوية هما الافتراض لكل حلقة حالية أو جديدة، لا للطيار وحده')
+assert.match(geminiEngine, /const ISOLATE_SPEAKER_STEMS = process\.env\.PODCAST_KW_ISOLATE_SPEAKER_STEMS === '1'/,
+  'المساران المنفصلان مختبر صريح فقط، لا fallback إنتاج')
 assert.match(pilotWorkflow, /PODCAST_KW_REJECT_TIMING_SUSPECTS:\s*'1'/,
   'بوابة القص والتمديد مفعّلة في الإنتاج')
-assert.match(pilotWorkflow, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'1'/,
-  'عزل هوية فهد ونورة مفعل في الإنتاج')
+assert.match(pilotWorkflow, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'0'/,
+  'الإنتاج يولّد الأخذ والرد الحقيقي في Take واحد')
+assert.match(pilotWorkflow, /PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT:\s*'1'/,
+  'بوابة الطبقة النسبية تعمل على فهد ونورة معاً')
+assert.match(pilotWorkflow, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'1'/,
+  'تبديل الصوت داخل الـTake ممنوع')
+assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
+  'التغير الطيفي بعد الانتقال ممنوع حتى مع طبقة ثابتة')
 for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-prompt-experiment.yml']) {
   const source = readFileSync(resolve(ROOT, '.github/workflows', workflow), 'utf8')
   assert.match(source, /apply-kuwaiti-native-spoken\.mjs/, `${workflow}: التجربة تمر بالصقل نفسه`)
   if (workflow === 'podcast-kuwaiti-five-canaries.yml') {
-    assert.match(source, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'1'/,
-      'الكناريات الخمس تستخدم مساري الهوية نفسهما قبل تعميم الحلقات')
+    assert.match(source, /GEMINI_TTS_MODEL:\s*gemini-2\.5-pro-preview-tts/,
+      'الكناريات تختبر محرك الإنتاج نفسه')
+    assert.match(source, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'0'/,
+      'الكناريات الخمس تختبر الحوار المتصل نفسه قبل التعميم')
     assert.match(source, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
       'الكناريات لا تتجاوز انزلاق نورة')
     assert.match(source, /PODCAST_KW_REJECT_TIMING_SUSPECTS:\s*'1'/,
       'الكناريات لا تتجاوز دوراً مقصوصاً')
+    assert.match(source, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'1'/,
+      'الكناريات لا تتجاوز تبديل صوت')
+    assert.match(source, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
+      'الكناريات لا تتجاوز إعادة الرنين')
   }
 }
 console.log('✓ كل مسارات Gemini الكويتية تمر بطبقة النص المنطوق')

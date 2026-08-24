@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * «مجلس الفكرة — كويتي»
- * يولّد نسخة كويتية مستقلة عبر Gemini 3.1 Flash TTS Multi-speaker.
+ * يولّد نسخة كويتية مستقلة عبر Gemini 2.5 Pro TTS Multi-speaker.
  * لا يقرأ manual-dialogues ولا يكتب .dialogue.mp3؛ الفصحى تبقى منفصلة بالكامل.
  */
 import assert from 'node:assert/strict'
@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { normalizeManualDialogueTurns } from './lib/manual-dialogue-source.mjs'
 import { buildPronunciationMap, toSpokenKuwaiti, buildForeignRedactions, redactForeignNames } from './lib/kuwaiti-pronunciation.mjs'
+import { conversationFamilyForSlug } from './lib/kuwaiti-dialogue-variety.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO = resolve(ROOT, 'audio')
@@ -24,7 +25,7 @@ const USE_VERTEX = Boolean(VERTEX_PROJECT)
 const API = USE_VERTEX
   ? `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1beta1/projects/${encodeURIComponent(VERTEX_PROJECT)}/locations/${encodeURIComponent(VERTEX_LOCATION)}/publishers/google/models`
   : 'https://generativelanguage.googleapis.com/v1beta/interactions'
-const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-3.1-flash-tts-preview'
+const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-pro-preview-tts'
 /* اعتماد الدكتور ١٤ أغسطس ٢٠٢٦ بعد سماع الجولة الثالثة: المقطع ٥ —
    فهد Puck («الرجل ممتاز») ونورة Despina. سُمع ضعفٌ في لكنة Despina وبقيت
    «الورقه» إماراتيةً في سطرها وحده بينما صمدت في سطر Puck بالإملاء نفسه —
@@ -41,13 +42,12 @@ const MALE_VOICE = process.env.GEMINI_TTS_MALE_VOICE || 'Puck'
    الأولى عن لكنتها (١٤ أغسطس: «لكنتها غير جيدة») تأكّدت بالقياس. فتُعتمد
    Callirrhoe — أنثى المقطع ٤ التي بقيت في تصفيته النهائية. */
 const FEMALE_VOICE = process.env.GEMINI_TTS_FEMALE_VOICE || 'Zephyr'
-/* Gemini 3.1 Flash TTS Preview بدّل Puck وZephyr كتلةً كاملة وسط طلبٍ واحد
-   (الأدوار 14–19 في run 32775409749)، ثم رجعهما. لا يستطيع البرومت منع
-   محرّكٍ من مخالفة speaker config دائماً. العلاج البنيوي: مسار كامل لكل
-   هوية بصوت single-speaker واحد، مع الحوار كله كسياق، ثم يأخذ المونتاج
-   أدوار كل شخص من مساره. صفر توليدٍ مفرد للأدوار وصفر فرصة لعبور Puck إلى
-   نورة أو Zephyr إلى فهد. التعطيل موجود للتجارب التاريخية فقط. */
-const ISOLATE_SPEAKER_STEMS = process.env.PODCAST_KW_ISOLATE_SPEAKER_STEMS !== '0'
+/* المساران المنفصلان منعا تبديل preset، لكن Vertex اضطر أن يحذف منهما كلام
+   الطرف الآخر: صارت نورة تقول 14 فقرة وراء بعض وفهد 13، ثم رُكّبا بالتبادل.
+   حكم الدكتور على الناتج: نفس preset تقريباً، لكن مو نفس الإنسان بعد
+   الثلثين، ونورة مالت للخليجي العام. لذلك الإنتاج يعود إلى **حوار حقيقي
+   واحد**؛ المساران يبقيان مختبراً صريحاً فقط ولا يجوز أن يكونا fallback. */
+const ISOLATE_SPEAKER_STEMS = process.env.PODCAST_KW_ISOLATE_SPEAKER_STEMS === '1'
 const PROFILE = process.env.PODCAST_KW_PROFILE || 'kuwaiti-urban-soft-v2'
 const GENERATION_MODE = String(process.env.PODCAST_KW_GENERATION_MODE || 'pilot').trim().toLowerCase()
 const PILOT_SLUG = String(process.env.PODCAST_KW_PILOT_SLUG || 'success-that-does-not-bring-joy-to-its-ownerarabic').trim()
@@ -277,14 +277,15 @@ Speak contemporary urban Kuwait City Arabic naturally and effortlessly. Identity
 
 Noura stays the exact same mature Kuwaiti woman defined by her first line: compact vowels, narrow melodic range, direct settled endings, no Emirati or Omani-style widening or trailing lilt. Fahad stays the same mature Kuwaiti man. Each target line must remain complete and unhurried enough to understand.
 
+VOICE ROUTING IS LITERAL AND IMMUTABLE. Every Fahad-labelled line uses the same clearly lower adult male voice (${MALE_VOICE}); every Noura-labelled line uses the same clearly higher adult female voice (${FEMALE_VOICE}). Never infer a speaker from who asks, answers, knows the research, objects, uses a short sentence, or leads the topic. Conversational role never determines acoustic identity. A short Fahad question must not rise into Noura; an explanatory Noura line must not drop into Fahad. Never exchange, merge, approximate, or re-cast these two voices for even one line.
+
 This is conversation, not narration, advertising, an audiobook, or a podcast presenter. Let ordinary lines pass simply. Research sounds like a knowledgeable Kuwaiti recalling evidence mid-conversation, with no formal-Arabic or documentary reset. Emotion is warm and understated; final words are never staged.
 
 Read every labelled line exactly once and in order. Add, omit, repeat, paraphrase, or recast nothing. The transcript was already rewritten upstream into approved spoken Kuwaiti; perform that version only.`
-/* الوسم استثناءٌ لا طبقةٌ على كل جملة. في النسخة السابقة كان السؤال والتأمل
-   والخاتمة كلّها تحمل أمراً أدائياً، فيصير أكثر من نصف الحوار «مهماً» قبل أن
-   ينطقه المحرّك. نُبقي فقط ما لا تقوله علامات الترقيم وحدها: الرد الخاطف
-   والاعتراض الودّي. بقية السطور تمرّ عاديةً بلا توجيه تمثيلي. */
-const directionFor = (type, mode = PROMPT_MODE) => (mode === 'minimal' || mode === 'c') ? ({
+/* وضع C بلا أي وسم داخل السطر. القياس ربط قفزات فهد إلى طبقة نورة بأدواره
+   القصيرة ذات [quick...]؛ فالوسم كان يعيد تشكيل الشخصية كل مداخلة. النص
+   والتوقيت يقولان إن الرد خاطف أو اعتراض، والرأس العام يكفي. */
+const directionFor = (type, mode = PROMPT_MODE) => mode === 'c' ? '' : mode === 'minimal' ? ({
   objection: '[mild, friendly skepticism]', gentleObjection: '[mild, friendly skepticism]',
   briefReaction: '[quick, effortless response]',
 }[type] || '') : ({
@@ -322,6 +323,7 @@ function promptFor(turns, index, total, mode = PROMPT_MODE, warmupTurns = 0, war
   const transcript = lines.join('\n')
   if (mode === 'minimal') return `${MINIMAL_HEAD}\n\n${transcript}\n\n${MINIMAL_TAIL}`
   if (mode === 'c') {
+    const conversationFamily = conversationFamilyForSlug(slug)
     const continuity = total === 1
       ? 'Generate every transcript line as one continuous dry-voice take. Keep the exact same two voices, native Kuwait City accent, room, microphones, and conversational energy from the first word to the last.'
       : index === 0
@@ -332,6 +334,11 @@ function promptFor(turns, index, total, mode = PROMPT_MODE, warmupTurns = 0, war
 # RECORDING CONTINUITY
 
 ${continuity}
+
+# THIS EPISODE'S CONVERSATION SHAPE
+
+${conversationFamily.note}
+This is a light tendency, not acting direction. Never distort a line, repeat a rhythm, or force every exchange to fit it. Preserve spontaneous listening and let the written intent lead.
 
 # TRANSCRIPT
 
@@ -836,6 +843,126 @@ export function speakerPitchContinuity (turns, pitches, speaker = 'female', { ma
   }
 }
 
+/* ═══ بصمة الرنين — الطبقة وحدها لا تساوي هوية الإنسان ═══
+   النسخة المرفوضة حافظت نورة فيها على 187→188→191Hz، ومع هذا سُمعت بعد
+   الجسر كأنها تفسيرٌ جديد للصوت: مركز رنين مختلف، مدود أوسع ونهاية أنعم.
+   لذلك نبني غلافاً طيفياً من 18 حزمة لوغاريتمية، بعد حذف الجهارة العامة؛
+   هذه البصمة ترى مكان الصوت في الفم/الحنجرة ولا تنخدع فقط بارتفاع النغمة. */
+const TIMBRE_SR = 16000
+const TIMBRE_N = 512
+const TIMBRE_HOP = 160
+const TIMBRE_BANDS = 18
+const TIMBRE_HANN = Float64Array.from({ length: TIMBRE_N }, (_, i) => 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (TIMBRE_N - 1)))
+const TIMBRE_EDGES = Array.from({ length: TIMBRE_BANDS + 1 }, (_, i) => 100 * Math.pow(7600 / 100, i / TIMBRE_BANDS))
+
+const medianNumber = (values) => {
+  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b)
+  if (!sorted.length) return null
+  const middle = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
+}
+
+function decodePcm16 (file, sampleRate = TIMBRE_SR) {
+  const decoded = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-i',file,'-f','s16le','-ac','1','-ar',String(sampleRate),'-'], { maxBuffer: 1 << 27 })
+  if (decoded.status !== 0 || !decoded.stdout?.length) return null
+  return new Int16Array(decoded.stdout.buffer, decoded.stdout.byteOffset, decoded.stdout.byteLength >> 1)
+}
+
+function fftPower (samples, offset) {
+  const re = new Float64Array(TIMBRE_N)
+  const im = new Float64Array(TIMBRE_N)
+  for (let i = 0; i < TIMBRE_N; i += 1) re[i] = Number(samples[offset + i] || 0) * TIMBRE_HANN[i]
+  for (let i = 1, j = 0; i < TIMBRE_N; i += 1) {
+    let bit = TIMBRE_N >> 1
+    for (; j & bit; bit >>= 1) j ^= bit
+    j ^= bit
+    if (i < j) { const value = re[i]; re[i] = re[j]; re[j] = value }
+  }
+  for (let length = 2; length <= TIMBRE_N; length <<= 1) {
+    const angle = -2 * Math.PI / length
+    const wLengthRe = Math.cos(angle), wLengthIm = Math.sin(angle)
+    for (let start = 0; start < TIMBRE_N; start += length) {
+      let wRe = 1; let wIm = 0
+      for (let j = 0; j < length / 2; j += 1) {
+        const even = start + j, odd = even + length / 2
+        const oddRe = re[odd] * wRe - im[odd] * wIm
+        const oddIm = re[odd] * wIm + im[odd] * wRe
+        re[odd] = re[even] - oddRe; im[odd] = im[even] - oddIm
+        re[even] += oddRe; im[even] += oddIm
+        const nextWRe = wRe * wLengthRe - wIm * wLengthIm
+        wIm = wRe * wLengthIm + wIm * wLengthRe; wRe = nextWRe
+      }
+    }
+  }
+  return Float64Array.from({ length: TIMBRE_N / 2 + 1 }, (_, i) => re[i] * re[i] + im[i] * im[i] + 1e-12)
+}
+
+export function timbreSignature (file) {
+  const pcm = decodePcm16(file)
+  if (!pcm || pcm.length < TIMBRE_N) return null
+  const frames = []
+  for (let offset = 0; offset + TIMBRE_N <= pcm.length; offset += TIMBRE_HOP) {
+    let energy = 0
+    for (let i = 0; i < TIMBRE_N; i += 1) energy += pcm[offset + i] * pcm[offset + i]
+    frames.push({ offset, rms: Math.sqrt(energy / TIMBRE_N) })
+  }
+  const rmsFloor = Math.max(160, medianNumber(frames.map((frame) => frame.rms).sort((a, b) => a - b).slice(0, Math.max(1, Math.floor(frames.length / 2)))) || 160)
+  const active = frames.filter((frame) => frame.rms > rmsFloor)
+  if (active.length < 4) return null
+  const stride = Math.max(1, Math.ceil(active.length / 600))
+  const bands = Array.from({ length: TIMBRE_BANDS }, () => [])
+  for (let frameIndex = 0; frameIndex < active.length; frameIndex += stride) {
+    const power = fftPower(pcm, active[frameIndex].offset)
+    const values = TIMBRE_EDGES.slice(0, -1).map((from, band) => {
+      const to = TIMBRE_EDGES[band + 1]
+      const firstBin = Math.max(1, Math.ceil(from * TIMBRE_N / TIMBRE_SR))
+      const lastBin = Math.min(power.length - 1, Math.floor(to * TIMBRE_N / TIMBRE_SR))
+      let sum = 0
+      for (let bin = firstBin; bin <= lastBin; bin += 1) sum += power[bin]
+      return Math.log(sum + 1e-12)
+    })
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length
+    values.forEach((value, band) => bands[band].push(value - mean))
+  }
+  return bands.map((values) => Number((medianNumber(values) || 0).toFixed(5)))
+}
+
+export function timbreDistance (a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length || !a.length) return null
+  return Math.sqrt(a.reduce((sum, value, index) => sum + Math.pow(value - b[index], 2), 0) / a.length)
+}
+
+const medianSignature = (signatures) => {
+  const valid = signatures.filter((signature) => Array.isArray(signature) && signature.length)
+  if (!valid.length) return null
+  return valid[0].map((_, dimension) => medianNumber(valid.map((signature) => signature[dimension])) || 0)
+}
+
+export function speakerTimbreContinuity (turns, signatures, speaker = 'female') {
+  const samples = turns.map((turn, index) => ({ index, speaker: turn.speaker, signature: signatures[index] }))
+    .filter((sample) => sample.speaker === speaker && Array.isArray(sample.signature))
+  if (samples.length < 4) return { speaker, centerDistanceMedian: null, boundaryThreshold: null, boundarySuspects: [], samples: [] }
+  const center = medianSignature(samples.map((sample) => sample.signature))
+  const measured = samples.map((sample) => ({ ...sample, distance: timbreDistance(sample.signature, center) }))
+  const distanceMedian = medianNumber(measured.map((sample) => sample.distance)) || 0
+  const mad = medianNumber(measured.map((sample) => Math.abs(sample.distance - distanceMedian))) || 0
+  /* 1.25 حاجز مطلق عريض، و2×MAD حاجز نسبي. النسخة المرفوضة قاست 1.87
+     لنورة بعد الجسر الأول و1.55 لفهد بعد الثاني، فتمسكهما من غير أن تعاقب
+     تغير محتوى جملةٍ عادية. */
+  const boundaryThreshold = Math.max(1.25, distanceMedian + 2 * 1.4826 * mad)
+  const boundarySuspects = measured.filter((sample) => sample.index > 0
+    && turns[sample.index - 1]?.musicBridgeAfter
+    && sample.distance > boundaryThreshold)
+  return {
+    speaker,
+    centerDistanceMedian: Number(distanceMedian.toFixed(3)),
+    centerDistanceMad: Number(mad.toFixed(3)),
+    boundaryThreshold: Number(boundaryThreshold.toFixed(3)),
+    boundarySuspects: boundarySuspects.map((sample) => ({ index: sample.index, turn: sample.index + 1, distance: Number(sample.distance.toFixed(3)) })),
+    samples: measured.map((sample) => ({ index: sample.index, turn: sample.index + 1, distance: Number(sample.distance.toFixed(3)) })),
+  }
+}
+
 function duration(file) {
   const out = spawnSync(FFPROBE, ['-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',file], { encoding:'utf8' })
   const value = Number(out.stdout?.trim())
@@ -1319,6 +1446,15 @@ if (SELF_TEST) {
   )
   assert.deepEqual(coherentDriftProbe.segmentSuspects.map((finding) => finding.segment), [2, 3],
     'انزلاق وسيط مقطعين كاملين عن نورة الأولى يُرفض')
+  const timbreProbeTurns = Array.from({ length: 8 }, (_, index) => ({
+    speaker: 'female', musicBridgeAfter: index === 3,
+  }))
+  const stableSignature = Array.from({ length: TIMBRE_BANDS }, () => 0)
+  const resetSignature = Array.from({ length: TIMBRE_BANDS }, () => 2)
+  const timbreProbe = speakerTimbreContinuity(timbreProbeTurns,
+    timbreProbeTurns.map((_, index) => index === 4 ? resetSignature : stableSignature), 'female')
+  assert.deepEqual(timbreProbe.boundarySuspects.map((finding) => finding.turn), [5],
+    'ثبات Hz لا يخفي إعادة الرنين في أول دور بعد الانتقال')
   assert.match(prompt,/FINAL CHECK — LAST INSTRUCTION/i, 'القفل الثالث: الفحص الختامي بعد النص')
   assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes(KW_LOCK)), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
   /* [٢١ أغسطس ٢٠٢٦] الانجراف المسموع إماراتيٌّ بالاسم («مرات كويتي ومرات
@@ -1405,6 +1541,10 @@ if (SELF_TEST) {
     'استمرارية الجلسة والهوية هي الأولوية المطلقة في رأس البرومت')
   assert.match(cSingleCall, /# NOURA — IMMUTABLE KUWAIT CITY PROSODY/,
     'نورة تحمل قفل prosody كويتي موجهاً بلا حشو لهجات')
+  assert.match(PROMPT_VERTEX_C_HEAD, /VOICE ROUTING IS LITERAL AND IMMUTABLE[\s\S]*Conversational role never determines acoustic identity/,
+    'رأس Vertex المختصر لا يعيد ربط السائل أو الخبير بصوتٍ بدل الاسم')
+  assert.match(cSingleCall, /# THIS EPISODE'S CONVERSATION SHAPE/,
+    'كل حلقة تحمل ميلاً حوارياً حتمياً مختلفاً بدل قالب أداء واحد')
   assert.match(nouraStemPrompt, /exactly one immutable acoustic voice/,
     'مسار نورة لا يستطيع إنشاء صوت فهد')
   assert.match(nouraStemPrompt, /keeps only Noura-labelled utterances/,
@@ -1414,7 +1554,8 @@ if (SELF_TEST) {
   const nouraStemTranscript = nouraStemPrompt.split('# TRANSCRIPT\n\n').at(-1)
   assert.equal((nouraStemTranscript.match(/\[short pause\]/g) || []).length, turns.length - 1,
     'مسار الهوية يحمل فاصلاً صامتاً موثقاً عند كل حد دور كي لا يقص البحث')
-  assert.ok(ISOLATE_SPEAKER_STEMS, 'عزل المسارين هو الافتراض لكل الحلقات الحالية والجديدة')
+  assert.equal(ISOLATE_SPEAKER_STEMS, false,
+    'الإنتاج الافتراضي حوار حقيقي متصل؛ مسارا الفقرات اللذان كسرا الأخذ والرد ليسا fallback')
   assert.match(cSingleCall, /Speaker identity is immutable/, 'الهوية الصوتية غير قابلة لإعادة التفسير في السطور المتأخرة')
   assert.match(cSingleCall, /Later speech must not merely use the same preset voice\. It must feel like the exact same human being/,
     'المطلوب نفس الإنسان لا مجرد اسم voice ثابت')
@@ -1430,7 +1571,8 @@ if (SELF_TEST) {
   assert.equal(directionFor('statement', 'c'), '', 'الجملة العادية بلا أمر أداء')
   assert.equal(directionFor('reflection', 'c'), '', 'التأمل لا يصير اقتباساً مهماً تلقائياً')
   assert.equal(directionFor('conclusion', 'c'), '', 'الخاتمة لا تُحوّل إلى شعار')
-  assert.match(directionFor('briefReaction', 'c'), /quick, effortless/, 'الرد الخاطف وحده يحتفظ بتوجيه خفيف')
+  assert.equal(directionFor('briefReaction', 'c'), '',
+    'الرد الخاطف يعتمد النص والتوقيت؛ وسمه كان يعيد تشكيل طبقة المتحدث')
   assert.ok(!cPrompt.includes(KW_LOCK), 'C بلا قفل لهجي مكرر على كل سطر')
   for (const file of ['podcast-voice-bakeoff-kw.mjs', 'podcast-voice-test.mjs', 'podcast-word-audition.mjs']) {
     const lab = readFileSync(resolve(ROOT, 'scripts', file), 'utf8')
@@ -1473,16 +1615,18 @@ if (SELF_TEST) {
     'أي تقسيم اضطراري يمر بنافذة إحماء من الحوار السابق')
   assert.match(productionGeneration, /generatedParts\.slice\(generation\.warmupTurns\)/,
     'مداخلات الإحماء تُحذف من الناتج ولا تتكرر على المستمع')
-  assert.match(productionGeneration, /fullContextStemPrompt\(prompt, plan\.target\)/,
-    'كل هوية تولد في مسار كامل يرى الحوار كله')
-  assert.match(productionGeneration, /\[\{ voice:plan\.voice \}\]/,
-    'مسار الهوية single-speaker ولا يملك preset الطرف الآخر كي يبدله')
-  assert.match(productionGeneration, /partsByPlan\[turn\.speaker\]\[turnIndex\]/,
-    'المونتاج يأخذ كل شخص من مساره الكامل لا من الدور المتعدد المنزلق')
+  assert.match(productionGeneration, /ISOLATE_SPEAKER_STEMS \? \[/,
+    'المساران المنفصلان باقيان للمختبر الصريح فقط')
+  assert.match(productionGeneration, /: \[\{ key:'dialogue'/,
+    'المسار الافتراضي يولّد الحوار المتعدد كله في Take واحد')
   assert.doesNotMatch(productionGeneration, /\bhalves\b|const rescue|promptFor\(subgroup|عاد إلى التوليد المفرد/,
     'لا إنقاذ بأنصاف أو أدوار مستقلة يعيد تفسير الصوت واللهجة')
-  assert.match(engineSource, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT[\s\S]*process\.exit\(3\)/,
-    'انزلاق نورة يرمي الـTake كله ويستدعي إعادة ببذرة جديدة')
+  assert.match(engineSource, /PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT[\s\S]*process\.exit\(3\)/,
+    'انزلاق أي واحد من المتحدثين يرمي الـTake كله ويستدعي إعادة ببذرة جديدة')
+  assert.match(engineSource, /PODCAST_KW_REJECT_SPEAKER_SWAPS[\s\S]*process\.exit\(3\)/,
+    'تبديل صوت داخل الحوار المتصل يرمي الـTake كله')
+  assert.match(engineSource, /PODCAST_KW_REJECT_ACOUSTIC_RESET[\s\S]*process\.exit\(3\)/,
+    'إعادة الرنين بعد الانتقال تُرفض حتى لو Hz بقي سليماً')
   assert.match(engineSource, /PODCAST_KW_REJECT_TIMING_SUSPECTS[\s\S]*process\.exit\(3\)/,
     'الدور المقصوص أو الممدود يرمي الـTake كله')
   assert.match(engineSource, /for \(const minDurationSec of \[0\.24, 0\.14, 0\.08\]\)/,
@@ -1731,14 +1875,14 @@ for (let i=0;i<chunks.length;i+=1) {
 
     /* كل مسارٍ Take كامل بالسياق نفسه. لو لم نجد حدوده نسقط المحاولة كلها؛
        لا يُعاد أي دور منفرد ولا تُخاط نبرات من جلسات قصيرة. */
-    const planTurns = USE_VERTEX
+    const planTurns = USE_VERTEX && ISOLATE_SPEAKER_STEMS
       ? generation.turns.filter((turn) => turn.speaker === plan.target)
       : generation.turns
     const generatedParts = splitChunk(cleanWav, planTurns, stem)
     if (!generatedParts) {
       throw new Error(`تعذّر قص مسار ${plan.label} ${i+1} إلى ${planTurns.length} مداخلة من التسجيل المتصل نفسه. أُوقف التشغيل؛ ممنوع إعادة توليد أنصاف أو أدوار مستقلة.`)
     }
-    if (USE_VERTEX) {
+    if (USE_VERTEX && ISOLATE_SPEAKER_STEMS) {
       const originalIndexes = generation.turns
         .map((turn, originalIndex) => ({ turn, originalIndex }))
         .filter(({ turn }) => turn.speaker === plan.target)
@@ -1810,8 +1954,11 @@ if (maleMid && femaleMid && femaleMid - maleMid > 12) {
   }
 }
 const femaleContinuity = speakerPitchContinuity(turns, pitchOf, 'female')
+const maleContinuity = speakerPitchContinuity(turns, pitchOf, 'male')
 const femaleSwapSuspects = swappedDetails.filter((finding) => finding.speaker === 'female')
 const femaleSwapIndexSet = new Set(femaleSwapSuspects.map((finding) => finding.index))
+const maleSwapSuspects = swappedDetails.filter((finding) => finding.speaker === 'male')
+const maleSwapIndexSet = new Set(maleSwapSuspects.map((finding) => finding.index))
 /* «أقرب إلى فهد» قياسٌ نسبي شديد الحساسية حين تتقارب الحنجرتان. لا يصبح
    دليلاً قاطعاً إلا إذا أصاب نصف أدوار مقطعٍ لاحق (ودورين على الأقل).
    المقطع، لا النبرة العابرة، هو وحدة الحكم على تبدّل الهوية. */
@@ -1819,9 +1966,13 @@ const femaleSwapSegments = femaleContinuity.segments.slice(1).map((segment) => {
   const count = segment.turnIndexes.filter((index) => femaleSwapIndexSet.has(index)).length
   return { segment: segment.segment, count, sampleCount: segment.sampleCount }
 }).filter((segment) => segment.count >= 2 && segment.count / segment.sampleCount >= 0.5)
-/* فجوة الحنجرتين تبقى حارساً مساعداً. بعد عزل preset كل شخص بنيوياً، لا
-   نساوي مركز الطبقة بهوية الصوت: Puck+Zephyr المعتمدان سماعاً قيسا منفردين
-   بوسيط 15Hz ومدى 12..23. العتبة الفعلية تأتي من البيئة وتمنع انهيار 0/2. */
+const maleSwapSegments = maleContinuity.segments.slice(1).map((segment) => {
+  const count = segment.turnIndexes.filter((index) => maleSwapIndexSet.has(index)).length
+  return { segment: segment.segment, count, sampleCount: segment.sampleCount }
+}).filter((segment) => segment.count >= 2 && segment.count / segment.sampleCount >= 0.5)
+/* فجوة الحنجرتين حارسٌ مساعد لا تعريفٌ كامل للهوية. في الحوار المتعدد
+   الحقيقي عيّنة 20Hz سُمعت صوتاً واحداً؛ الإنتاج يمرر 25 من البيئة، ثم
+   تضيف بوابة الرنين ما لا يراه F0. */
 const voiceGap = (maleMid && femaleMid) ? femaleMid - maleMid : null
 console.log(`✓ بوابة الطبقة: وسيط فهد ${maleMid ? maleMid.toFixed(0) : '—'}Hz · نورة ${femaleMid ? femaleMid.toFixed(0) : '—'}Hz${swapped.length ? ` · أدوار مشتبهة: ${swapped.join(' · ')}` : ' · لا انعكاس'}`)
 if (voiceGap !== null) {
@@ -1832,18 +1983,60 @@ if (voiceGap !== null) {
 console.log(femaleContinuity.anchorHz === null
   ? '⚠️ استمرارية نورة: تعذّر بناء مرجع طبقتها'
   : `✓ استمرارية نورة: مرجع الثلث الأول ${femaleContinuity.anchorHz.toFixed(0)}Hz · أوساط المقاطع ${femaleContinuity.segments.map((segment) => segment.medianHz.toFixed(0)).join(' ← ')}Hz · أقصى قفزة مفردة ${femaleContinuity.maxObservedDriftHz.toFixed(0)}Hz${femaleContinuity.pointSuspects.length ? ` · تنبيه سمعي للأدوار ${femaleContinuity.pointSuspects.map((finding) => finding.index + 1).join('، ')}` : ''}`)
+console.log(maleContinuity.anchorHz === null
+  ? '⚠️ استمرارية فهد: تعذّر بناء مرجع طبقته'
+  : `✓ استمرارية فهد: مرجع الثلث الأول ${maleContinuity.anchorHz.toFixed(0)}Hz · أوساط المقاطع ${maleContinuity.segments.map((segment) => segment.medianHz.toFixed(0)).join(' ← ')}Hz · أقصى قفزة مفردة ${maleContinuity.maxObservedDriftHz.toFixed(0)}Hz${maleContinuity.pointSuspects.length ? ` · تنبيه سمعي للأدوار ${maleContinuity.pointSuspects.map((finding) => finding.index + 1).join('، ')}` : ''}`)
+
+/* بوابة «نفس الإنسان» عند منطقتَي الانتقال. الموسيقى لم تدخل Gemini، لكن
+   أول سطر بعدها قد يكون شاذاً داخل الـTake نفسه؛ وهذا بالضبط ما حدث في
+   النسخة المحلية. نقرأ غلاف الرنين لكل دور ونقارن الدور التالي للعلامة
+   التحريرية بمرجع الشخص نفسه. */
+const timbreOf = chunkFiles.map((file) => timbreSignature(file))
+const femaleTimbre = speakerTimbreContinuity(turns, timbreOf, 'female')
+const maleTimbre = speakerTimbreContinuity(turns, timbreOf, 'male')
+const acousticBoundarySuspects = [...femaleTimbre.boundarySuspects, ...maleTimbre.boundarySuspects]
+  .sort((a, b) => a.index - b.index)
+const pitchBoundarySuspects = [
+  ...femaleContinuity.pointSuspects.map((finding) => ({ ...finding, speaker: 'female' })),
+  ...maleContinuity.pointSuspects.map((finding) => ({ ...finding, speaker: 'male' })),
+].filter((finding) => finding.index > 0 && turns[finding.index - 1]?.musicBridgeAfter)
+  .sort((a, b) => a.index - b.index)
+console.log(acousticBoundarySuspects.length
+  ? `⚠️ استمرارية الرنين بعد الانتقال: ${acousticBoundarySuspects.map((finding) => `الدور ${finding.turn} (${finding.distance.toFixed(2)})`).join(' · ')}`
+  : `✓ استمرارية الرنين بعد الانتقال: نورة ≤${femaleTimbre.boundaryThreshold?.toFixed(2) || '—'} · فهد ≤${maleTimbre.boundaryThreshold?.toFixed(2) || '—'}`)
+console.log(pitchBoundarySuspects.length
+  ? `⚠️ استمرارية الطبقة عند الانتقال: ${pitchBoundarySuspects.map((finding) => `الدور ${finding.index + 1} (${finding.driftHz.toFixed(0)}Hz)`).join(' · ')}`
+  : '✓ استمرارية الطبقة عند الانتقال: ماكو قفزة مفردة فوق 32Hz')
 
 /* لا نرقّع نورة بدورٍ منفرد. الانزلاق المتماسك في وسيط مقطع كامل يرمي
    الـTake كله، وكذلك تحوّل نصف مقطع لاحق إلى طبقة فهد. أما الدور المفرد
    فيُسجل للتدقيق ولا يوقف الإنتاج — وهذا بالضبط ما أنقذ عينة 26Hz الجيدة
    التي رفضها الحارس القديم بسبب كلمة واحدة عند 38Hz. */
-const REJECT_FEMALE_IDENTITY_DRIFT = process.env.PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT === '1'
-if (REJECT_FEMALE_IDENTITY_DRIFT && (femaleSwapSegments.length || femaleContinuity.segmentSuspects.length)) {
+const REJECT_SPEAKER_IDENTITY_DRIFT = process.env.PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT === '1'
+  || process.env.PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT === '1'
+if (REJECT_SPEAKER_IDENTITY_DRIFT && (femaleSwapSegments.length || maleSwapSegments.length
+  || femaleContinuity.segmentSuspects.length || maleContinuity.segmentSuspects.length)) {
   const reasons = [
     femaleSwapSegments.length ? `طبقة فهد غلبت على مقطع نورة ${femaleSwapSegments.map((segment) => segment.segment).join('، ')}` : '',
     femaleContinuity.segmentSuspects.length ? `وسيط مقطع نورة ${femaleContinuity.segmentSuspects.map((segment) => segment.segment).join('، ')} انحرف أكثر من 28Hz` : '',
+    maleSwapSegments.length ? `طبقة نورة غلبت على مقطع فهد ${maleSwapSegments.map((segment) => segment.segment).join('، ')}` : '',
+    maleContinuity.segmentSuspects.length ? `وسيط مقطع فهد ${maleContinuity.segmentSuspects.map((segment) => segment.segment).join('، ')} انحرف أكثر من 28Hz` : '',
   ].filter(Boolean).join(' · ')
-  console.error(`↻ هوية نورة الصوتية انزلقت (${reasons}) — الـTake مرفوض بالكامل ويُعاد، بلا ترقيع.`)
+  console.error(`↻ هوية أحد المتحدثين انزلقت (${reasons}) — الـTake مرفوض بالكامل ويُعاد، بلا ترقيع.`)
+  process.exit(3)
+}
+const REJECT_SPEAKER_SWAPS = process.env.PODCAST_KW_REJECT_SPEAKER_SWAPS === '1'
+if (REJECT_SPEAKER_SWAPS && swapped.length) {
+  console.error(`↻ تبديل صوتٍ داخل الحوار المتصل: ${swapped.join(' · ')} — الـTake كله مرفوض، ولا رجوع لمسارات الفقرات المنفصلة.`)
+  process.exit(3)
+}
+const REJECT_ACOUSTIC_RESET = process.env.PODCAST_KW_REJECT_ACOUSTIC_RESET === '1'
+if (REJECT_ACOUSTIC_RESET && (acousticBoundarySuspects.length || pitchBoundarySuspects.length)) {
+  const reasons = [
+    ...acousticBoundarySuspects.map((finding) => `الرنين في الدور ${finding.turn} انحرافه ${finding.distance.toFixed(2)}`),
+    ...pitchBoundarySuspects.map((finding) => `الطبقة في الدور ${finding.index + 1} قفزت ${finding.driftHz.toFixed(0)}Hz`),
+  ]
+  console.error(`↻ نفس الـpreset لكن مو نفس الإنسان عند الانتقال: ${reasons.join(' · ')} — الـTake مرفوض بالكامل.`)
   process.exit(3)
 }
 
@@ -1922,7 +2115,15 @@ const audit={
       segments:femaleContinuity.segments.map((segment) => ({ segment:segment.segment,medianHz:segment.medianHz,sampleCount:segment.sampleCount })),
       pointSuspects:femaleContinuity.pointSuspects.map((finding) => ({ turn:finding.index + 1,hz:Number(finding.hz.toFixed(1)),driftHz:Number(finding.driftHz.toFixed(1)) })),
       segmentSuspects:femaleContinuity.segmentSuspects.map((segment) => ({ segment:segment.segment,medianHz:segment.medianHz,driftHz:segment.driftHz })),
-      swapSegments:femaleSwapSegments}},
+      swapSegments:femaleSwapSegments},
+    maleContinuity:{anchorHz:maleContinuity.anchorHz,maxObservedDriftHz:maleContinuity.maxObservedDriftHz,
+      segments:maleContinuity.segments.map((segment) => ({ segment:segment.segment,medianHz:segment.medianHz,sampleCount:segment.sampleCount })),
+      pointSuspects:maleContinuity.pointSuspects.map((finding) => ({ turn:finding.index + 1,hz:Number(finding.hz.toFixed(1)),driftHz:Number(finding.driftHz.toFixed(1)) })),
+      segmentSuspects:maleContinuity.segmentSuspects.map((segment) => ({ segment:segment.segment,medianHz:segment.medianHz,driftHz:segment.driftHz })),
+      swapSegments:maleSwapSegments}},
+  acousticContinuity:{method:'18-band-log-spectral-envelope-v1',female:femaleTimbre,male:maleTimbre,
+    boundarySuspects:acousticBoundarySuspects,
+    pitchBoundarySuspects:pitchBoundarySuspects.map((finding) => ({ turn:finding.index + 1,speaker:finding.speaker,hz:Number(finding.hz.toFixed(1)),driftHz:Number(finding.driftHz.toFixed(1)) }))},
   repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,medianSecPerChar:Number(medianRate.toFixed(4))},
   mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160,nativeTurnTimingPreserved:PRESERVE_NATIVE_TURN_TIMING,
     longSilenceCompaction:{maxSilenceMs:MAX_INTERNAL_SILENCE_MS,triggerMs:LONG_SILENCE_TRIGGER_MS,calls:silenceCompaction.calls,removedSec:Number(silenceCompaction.removedSec.toFixed(3))}},

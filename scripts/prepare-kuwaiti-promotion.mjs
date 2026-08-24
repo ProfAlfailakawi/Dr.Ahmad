@@ -41,7 +41,7 @@ const statePath = resolve(ROOT, '.podcast-state.json')
 const state = existsSync(statePath) ? JSON.parse(readFileSync(statePath, 'utf8')) : { done: {} }
 state.done ||= {}
 state.done[`${slug}:kw`] = {
-  status: 'accepted_automated', provider: 'gemini', model: audit.model || 'gemini-3.1-flash-tts-preview',
+  status: 'accepted_automated', provider: 'gemini', model: audit.model || 'gemini-2.5-pro-preview-tts',
   profile: audit.profile || 'kuwaiti-urban-soft-v1', audioHash: audioSha256, transcriptHash: transcriptSha256,
   revisionId, acceptedAt: new Date().toISOString(), approval: 'explicit_admin',
 }

@@ -40,7 +40,7 @@ jobs:
         run: node scripts/podcast-voice-bakeoff-kw.mjs ${{ inputs.male_bakeoff && '--male-bakeoff' || '' }}
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
 
       - name: Upload to isolated R2 staging
         run: |

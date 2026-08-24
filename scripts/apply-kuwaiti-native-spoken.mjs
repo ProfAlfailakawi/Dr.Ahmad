@@ -39,11 +39,13 @@ for (const file of files) {
       nativeSpokenChangesSha256: sha256(JSON.stringify(prepared.changes)),
       nativeSpokenQafRiskCount: prepared.audit.qafRiskCount,
       nativeSpokenSoftWarnings: prepared.audit.soft.length,
+      dialogueVarietyVersion: prepared.conversationPlan.version,
+      dialogueVarietyFamily: prepared.conversationPlan.family,
+      dialogueVarietyCastSwapped: prepared.conversationPlan.castSwapped,
     }, null, 2) + '\n')
   }
   rewrites += prepared.changes.length
-  console.log(`✓ ${slug}: ${prepared.turns.length} مداخلة · ${prepared.changes.length} خانة مصقولة`)
+  console.log(`✓ ${slug}: ${prepared.turns.length} مداخلة · ${prepared.changes.length} خانة مصقولة · ${prepared.conversationPlan.family} · البداية ${prepared.conversationPlan.firstSpeaker === 'female' ? 'نورة' : 'فهد'}`)
 }
 
 console.log(`✓ طبقة النص الكويتي الطبيعي: ${files.length} ملفاً · ${rewrites} خانة مصقولة`)
-

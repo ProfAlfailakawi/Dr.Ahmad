@@ -29,6 +29,10 @@ assert.doesNotMatch(buildSource, /kuwaiti-closing-approved\.mp3|CLOSING_CLIP|use
 assert.match(buildSource, /const file = files\[i\]/,
   'المونتاج لا يثبت أن كل دور، ومنه الختام، مأخوذ من الـTake الحالي')
 
+const varietySource = readFileSync(resolve(ROOT, 'scripts/lib/kuwaiti-dialogue-variety.mjs'), 'utf8')
+assert.doesNotMatch(varietySource, /output\[lastIndex\]\.speaker\s*=\s*['"]female['"]|asset بصوت نورة/,
+  'طبقة التنويع ما زالت تجبر الإحالة على نورة بدل صوت الحلقة الحالي')
+
 const pronunciationPath = resolve(ROOT, 'src/data/kuwaiti-pronunciation.json')
 assert.ok(existsSync(pronunciationPath), 'دفتر النطق الكويتي مفقود')
 const pronunciation = buildPronunciationMap(JSON.parse(readFileSync(pronunciationPath, 'utf8')))

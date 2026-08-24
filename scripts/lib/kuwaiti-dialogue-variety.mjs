@@ -10,7 +10,6 @@ import { createHash } from 'node:crypto'
 export const DIALOGUE_VARIETY_VERSION = '2026-08-25-kuwaiti-variety-v1'
 
 const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
-const REFERRAL = /تلقى المقال الأصلي في موقع الدكتور/u
 
 export const CONVERSATION_FAMILIES = [
   {
@@ -84,20 +83,9 @@ export function applyConversationVariety (turns, { slug = '' } = {}) {
     }
   }
 
-  /* مقطع الإحالة معتمد كـasset بصوت نورة. تثبيته لا يغيّر الفكرة ولا ترتيب
-     الحوار، ويمنع أن يقول الـTranscript «فهد» بينما المسموع صوت نورة. */
-  const lastIndex = output.length - 1
-  if (lastIndex >= 0 && REFERRAL.test(String(output[lastIndex]?.text || ''))
-    && output[lastIndex].speaker !== 'female') {
-    changes.push({
-      index: lastIndex,
-      field: 'speaker',
-      before: output[lastIndex].speaker,
-      after: 'female',
-      reason: 'مطابقة مقطع الإحالة الصوتي المعتمد',
-    })
-    output[lastIndex].speaker = 'female'
-  }
+  /* الإحالة ليست asset منفصلاً بعد الآن. تبقى مع المتحدث الذي أسندها له
+     الحوار الحالي، فيقول فهد أو نورة الاسم داخل الـTake نفسه. المقفول هو
+     النطق في طبقة الصوت، لا جنس المتحدث ولا مقطعٌ قديم ملصوق. */
 
   const firstSpeaker = output[0]?.speaker || ''
   const wordCounts = output.reduce((counts, turn) => {

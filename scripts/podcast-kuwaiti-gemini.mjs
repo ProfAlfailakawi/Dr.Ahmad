@@ -202,9 +202,7 @@ Do not reinterpret either speaker after paragraph boundaries, topic changes, lon
 
 Later speech must not merely use the same preset voice. It must feel like the exact same human being continuing the same conversation seconds later.
 
-At every internal transition, preserve the exact pre-transition vowel length, pitch center, sentence-ending behavior, vocal weight, speaking energy, and Urban Kuwait City conversational rhythm. A transition must be acoustically invisible in the speakers. Continue the exact same humans, not a refreshed interpretation of their voices.
-
-Never soften, widen or melodically expand the accent after a transition. Keep post-transition speech as compact, direct and conversational as the opening 30 seconds.
+The opening 20 seconds establish the permanent acoustic reference for both speakers. For the entire remainder of the recording, preserve those exact speaker identities, pitch centers, vocal weights, vowel timing, sentence-ending behavior, and Urban Kuwait City cadence. Never reinterpret either speaker later in the take.
 
 # NOURA — IMMUTABLE KUWAIT CITY PROSODY
 
@@ -277,9 +275,7 @@ const PROMPT_VERTEX_C_HEAD = `Synthesize only the labelled TRANSCRIPT. Never spe
 
 One uninterrupted dry recording: the exact same two educated native Kuwait City people, in the same room, from first word to last. Never reset voice, age, timbre, pitch center, resonance, energy, accent, or personality after a label, pause, question, research line, topic change, or later section.
 
-At every internal transition, preserve the exact pre-transition vowel length, pitch center, sentence-ending behavior, vocal weight, speaking energy, and Urban Kuwait City conversational rhythm. A transition must be acoustically invisible in the speakers. Continue the exact same humans, not a refreshed interpretation of their voices.
-
-Never soften, widen or melodically expand the accent after a transition. Keep post-transition speech as compact, direct and conversational as the opening 30 seconds.
+The opening 20 seconds establish the permanent acoustic reference for both speakers. For the entire remainder of the recording, preserve those exact speaker identities, pitch centers, vocal weights, vowel timing, sentence-ending behavior, and Urban Kuwait City cadence. Never reinterpret either speaker later in the take.
 
 Speak contemporary urban Kuwait City Arabic naturally and effortlessly. Identity comes from compact vowels, short thought units, restrained sentence melody, quick acknowledgements, human timing, and relaxed light articulation—not exaggerated consonants. Qaf is lexical and understated. Respect deliberate Kuwaiti spellings such as ظيّج and never formalize them.
 
@@ -1556,12 +1552,10 @@ if (SELF_TEST) {
     'المطلوب نفس الإنسان لا مجرد اسم voice ثابت')
   assert.match(cSingleCall, /Noura's earliest utterances permanently define her acoustic and dialect reference/,
     'أول نورة مرجعٌ غير قابل لإعادة التفسير في البحث والخاتمة')
-  assert.match(cSingleCall, /At every internal transition, preserve the exact pre-transition vowel length, pitch center, sentence-ending behavior, vocal weight, speaking energy, and Urban Kuwait City conversational rhythm/,
-    'كل حد داخلي يحفظ طول الحركات والطبقة والنهاية والطاقة نفسها')
-  assert.match(cSingleCall, /Keep post-transition speech as compact, direct and conversational as the opening 30 seconds/,
-    'أول ثلاثين ثانية مرجعٌ لإيقاع ما بعد الحدود الداخلية')
-  assert.match(PROMPT_VERTEX_C_HEAD, /A transition must be acoustically invisible in the speakers/,
-    'رأس Vertex المختصر يحمل قفل الانتقال غير المسموع')
+  assert.match(cSingleCall, /The opening 20 seconds establish the permanent acoustic reference for both speakers/,
+    'أول عشرين ثانية هي المرجع الصوتي الدائم للشخصيتين')
+  assert.match(PROMPT_VERTEX_C_HEAD, /Never reinterpret either speaker later in the take/,
+    'رأس Vertex المختصر يمنع إعادة تفسير أي متحدث بعد المرجع الافتتاحي')
   assert.doesNotMatch(buildTimedMaster.toString(), /kuwaiti-closing-approved|CLOSING_CLIP|useFixedClosing/,
     'الختام لا يُستبدل بمقطعٍ قديم يغيّر هوية الصوت في آخر جملة')
   assert.match(buildTimedMaster.toString(), /const file = files\[i\]/,

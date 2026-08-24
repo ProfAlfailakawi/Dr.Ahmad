@@ -60,9 +60,10 @@ export const FOREIGN = {
    حتى تُحسم في المختبر، فلا تمرّ صامتةً مرّةً أخرى. */
 export const EAR_FLAGGED = ['الهنايا', 'يعلى', 'تنجر', 'تصنه', 'يشرد', 'منين', 'بصدق']
 
-/* القاف المفخّمة — أمره: «احنا ما نفخم القاف». الكلمات الموروثة عالية
-   التكرار التي شكا منها؛ تُحصى ويُبلَّغ عددها حتى يُحسم الهجاء بأذنه. */
-export const QAF_INHERITED = ['يقول', 'تقول', 'نقول', 'قال', 'قالت', 'قاعد', 'عقب', 'وقت', 'قبل', 'تبقى', 'يبقى', 'تقاعد', 'قرار', 'يقعد', 'فرق', 'قام']
+/* كلمات القاف المرشحة للمختبر — ليست أمراً بقلبها إلى گ. تُقرأ من البيانات
+   كي يبقى القرار معجمياً، وتُحصى للوعي وإعادة الصياغة اليدوية إن كان قفل
+   المصدر يسمح، لا لتصفيرها آلياً. */
+export const QAF_CANDIDATES = Array.isArray(SRC.qafCandidates) ? SRC.qafCandidates : []
 
 /* اسم الدكتور — المعتمد في دفتر النطق. أي خاتمةٍ تحمل اسمه يجب أن
    تصل المحرّك بالصيغة المعتمدة نفسها حرفاً بحرف. */
@@ -77,7 +78,7 @@ export function auditTurns (turns) {
       if (new RegExp('(^|[\\s،.!؟…])' + w + '($|[\\s،.!؟…])', 'u').test(say)) hard.push(`دخيلة «${w}» — ${why}`)
     }
     for (const w of EAR_FLAGGED) if (say.includes(w)) soft.push(`كلمة شكا منها بأذنه ولم تُحسم: «${w}»`)
-    for (const w of QAF_INHERITED) if (new RegExp('(^|[\\s،.!؟…])و?' + w, 'u').test(say)) qaf += 1
+    for (const w of QAF_CANDIDATES) if (new RegExp('(^|[\\s،.!؟…])و?' + w, 'u').test(say)) qaf += 1
     if (/[A-Za-z]/.test(say)) hard.push(`حرف لاتيني يصل المحرّك: «${say.match(/\S*[A-Za-z]+\S*/)[0]}»`)
     if (/[0-9٠-٩%]/.test(say)) hard.push(`رقم خام يصل المحرّك: «${say.match(/\S*[0-9٠-٩%]+\S*/)[0]}»`)
   }
@@ -95,25 +96,17 @@ if (SELF_TEST) {
   assert.ok(bad.hard.some((h) => h.includes('اسم الدكتور')), 'اسمٌ بغير الصيغة المعتمدة يُمسك')
   const good = auditTurns([{ text: 'ترى هالشي وايد مهم' }, { text: 'تلقى المقال في موقع الدكتور أحمد حسين الفيلچاوي.' }])
   assert.equal(good.hard.length, 0, 'المتن الكويتي السليم يمرّ')
-  /* [٢٣ أغسطس ٢٠٢٦] بعد طبقة الگاف، القاف الموروثة (يقول/قاعد/وقت…)
-     تصل المحرّك گ فلا تُعدّ هنا — وهذا هو المطلوب. تُحصى الآن ما بقي
-     من قافٍ فصيحة متعلَّمة (المنطق) التي لم تُقلب، تنبيهاً لا سقوطاً. */
-  /* الإحصاء تنبيهيّ: يعدّ كلمات QAF_INHERITED التي لم تُقلب گ بعد. حين
-     تدخل كلها معجم الگاف يصير صفراً — وهذا هو الهدف لا خطأ. فالاختبار
-     يتحقق أن الإحصاء **يعمل**: كلمةٌ موروثة قبل قلبها تُعدّ. */
-  const rawInherited = QAF_INHERITED.filter((w) => !spoken(w).includes('گ'))
-  if (rawInherited.length) {
-    const q = auditTurns([{ text: rawInherited[0] + ' مرة ثانية' }])
-    assert.ok(q.qaf >= 1, 'الإحصاء يعمل على القاف الموروثة التي لم تُقلب بعد')
-  } else {
-    /* كل الموروث قُلب گ — الهدف تحقّق؛ نتأكد أن الآلية سليمة برمزٍ صناعي. */
-    const q = auditTurns([{ text: 'وقتقتق' }])
-    assert.ok(q.qaf === 0, 'لا قافَ موروثةً بقيت — كلها قُلبت گ (الهدف)')
-  }
+  /* MASTER VOICE DIRECTOR: المرشح يبقى بإملائه حتى يُختبر، والگ لا تصل
+     تلقائياً إلا في صيغةٍ اختارها الدكتور سماعاً. */
+  assert.ok(QAF_CANDIDATES.length > 20, 'قائمة المرشحين محفوظة للمختبر لا مفقودة')
+  const q = auditTurns([{ text: QAF_CANDIDATES[0] + ' مرة ثانية' }])
+  assert.ok(q.qaf >= 1, 'الإحصاء يرصد مرشح القاف بلا أن يبدله')
+  assert.ok(!spoken(QAF_CANDIDATES[0]).includes('گ'), 'المرشح غير المختبر لا يُكتب گ آلياً')
+  assert.ok(spoken('يقلب').includes('گ'), 'الصيغة المسموعة المعتمدة وحدها تبقى في المعجم')
   const flagged = auditTurns([{ text: 'وبدت الهنايا من كل صوب' }])
   assert.ok(flagged.soft.length > 0, 'الكلمات التي شكا منها لا تمرّ صامتة')
   assert.ok(NAME_SPOKEN.length > 4, 'صيغة الاسم المعتمدة تُقرأ من دفتر النطق لا من الشيفرة')
-  console.log('✓ بوابة المنطوق: الفحص الذاتي 6/6')
+  console.log('✓ بوابة المنطوق: الفحص الذاتي 9/9')
   process.exit(0)
 }
 
@@ -133,6 +126,6 @@ for (const f of files) {
     for (const s of [...new Set(r.soft)]) { console.log('   ⚠ ' + s); soft += 1 }
   }
 }
-console.log(`\nفُحص ${files.length} مصدراً منطوقاً · أخطاء قاطعة ${hard} · تحذيرات ${soft} · قاف موروثة ${qaf} موضعاً`)
+console.log(`\nفُحص ${files.length} مصدراً منطوقاً · أخطاء قاطعة ${hard} · تحذيرات ${soft} · مرشحات قاف للمراجعة ${qaf} موضعاً`)
 if (!hard) console.log('✅ ما يصل المحرّك نظيفٌ من الدخيل ومن اسمٍ مغلوط.')
 process.exit(hard ? 1 : 0)

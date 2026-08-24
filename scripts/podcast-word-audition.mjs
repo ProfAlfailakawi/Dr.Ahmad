@@ -34,7 +34,6 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const MALE = process.env.PODCAST_KW_MALE_VOICE || 'Puck'
 const FEMALE = process.env.PODCAST_KW_FEMALE_VOICE || 'Zephyr'
 
-const KW = '[Kuwaiti Kuwait-City accent only]'
 const NUM = ['واحد', 'اثنين', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة', 'عشرة', 'أحد عشر', 'اثنا عشر']
 
 /* كل كلمةٍ شكا منها الدكتور (٢٠ أغسطس ٢٠٢٦) مع جملتها الحاملة من المتن.
@@ -151,12 +150,12 @@ const WORDS_ROUND_9 = [
     options: ['اسأله', 'إسِله', 'سِله'] },
 ]
 
-const PROMPT_HEAD = `ABSOLUTE RULE — APPLY TO EVERY SINGLE WORD
-This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. These registers are FORBIDDEN outright; each is an automatic hard failure: Emirati, Iraqi, Iranian/Persian, Saudi (Najdi/Hejazi), Levantine, Egyptian, and any generic pan-Gulf blend belonging to no city.
-Never heavy, never emphatic: Kuwait City speech is light and soft in the mouth. Do not thicken or darken any consonant.
-Read each numbered line exactly as written, letter for letter. The point of this take is to compare spellings — so a spelling you find unusual must still be read exactly as spelled, never "corrected" to a more familiar word.`
+const PROMPT_HEAD = `Synthesize the numbered lines only.
+This is a controlled pronunciation audition spoken by native, educated contemporary urban Kuwait City speakers. Keep one relaxed conversational city identity across every option. Carry it through compact vowels, timing, and restrained sentence melody, never by exaggerating Qaf, Gaf, or any consonant.
+Qaf is normally lexical rather than mechanical. In this audition only, each option deliberately tests a specific spelling, so read that option exactly as written without extending the spelling rule to any other word. Keep it quick, light, unforced, and integrated into the sentence.
+Read each numbered line exactly once. Do not “correct” an unusual test spelling, add fillers, or speak instructions.`
 
-const PROMPT_TAIL = `FINAL CHECK — read every line exactly as spelled, in Kuwait City Kuwaiti, light and soft.`
+const PROMPT_TAIL = `Silently check that only the tested word changes between options and that the surrounding Kuwait City rhythm stays natural and identical, then speak the numbered lines.`
 
 function wavHeader(pcmBytes, sampleRate = 24000, channels = 1, bits = 16) {
   const h = Buffer.alloc(44); const blockAlign = channels * bits / 8
@@ -233,11 +232,11 @@ async function main() {
   for (const [i, w] of WORDS.entries()) {
     const n = i + 1
     console.log(`🎙️ (${n}/${WORDS.length}) ${w.key} — ${w.options.length} بدائل`)
-    const lines = [`${w.speaker}: ${KW} كلمة رقم ${NUM[i] || n}: ${w.key}.`]
+    const lines = [`${w.speaker}: كلمة رقم ${NUM[i] || n}: ${w.key}.`]
     w.options.forEach((opt, j) => {
       /* replaceAll لا replace: جملة «كلها شغل دفع مو شغل رغبة» فيها الكلمة
          مرتين، وreplace الأولى وحدها كانت ستخلط البديل بالحالة الراهنة. */
-      lines.push(`${w.speaker}: ${KW} ${NUM[j]}. ${w.carrier.replaceAll('{W}', opt)}`)
+      lines.push(`${w.speaker}: ${NUM[j]}. ${w.carrier.replaceAll('{W}', opt)}`)
     })
     const pcm = await gen(lines.join('\n'))
     const wav = resolve(TMP, `w-${n}.wav`)

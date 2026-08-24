@@ -196,8 +196,18 @@ const looksInvented = (from, to) => {
   return to === swapped || to === `ا${swapped}` || to === swapped.replace(/^ا/, '')
 }
 const invented = Object.entries(source.words || {}).filter(([from, to]) => looksInvented(from, to))
+/* الگاف ليست بديلاً إملائياً عاماً. لا يكفي أن تكون الكلمة في قائمة مرشحين؛
+   يجب أن تكون **صيغة الخرج نفسها** مسجلة في heardByEar بعد سماعها واختيارها. */
+const untestedGaf = Object.entries(source.words || {}).filter(([, to]) =>
+  String(to).includes('گ') && !source.heardByEar?.[to])
 
 let failed = 0
+if (untestedGaf.length) {
+  console.error('❌ هجاءات گ غير مجرّبة وصلت إلى مدخل الصوت:')
+  for (const [from, to] of untestedGaf) console.error(`   ${from} → ${to}`)
+  console.error('   انقل الكلمة إلى qafCandidates، ولا تُعدها إلى words إلا بعد اعتمادها بالأذن.')
+  failed += untestedGaf.length
+}
 if (invented.length) {
   console.error('❌ مداخل تكتب القاف جيماً فتنتج كلماتٍ لا وجود لها:')
   for (const [from, to] of invented) console.error(`   ${from} → ${to}`)

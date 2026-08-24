@@ -99,6 +99,12 @@ const TURNS_PER_REQUEST = Math.max(2, Math.min(64, Number(process.env.PODCAST_KW
    عدد الإعادات بيد الدكتور: كل خانة «موسيقى» يعلّمها في اللوحة تصير
    حدَّ نداءٍ جديد. المفتاح صريحٌ كي يبقى السلوك القديم حرفياً بدونه. */
 const SPLIT_AT_BRIDGES = process.env.PODCAST_KW_SPLIT_AT_BRIDGES === '1'
+/* Gemini يولّد الأخذ والردّ داخل النداء نفسه بتوقيتٍ عضوي. النسخة السابقة
+   قصّت الصمت الطبيعي من طرفَي **كل دور** ثم أعادت بناء الحلقة بسبع وقفات
+   ثابتة وoverlap مفروض؛ أي إنها ألغت بعد التوليد ما طلبه البرومت منه.
+   الافتراض الجديد يحفظ زمن النداء كما وُلد. المفتاح 0 للمقارنة التاريخية
+   فقط، ولا يُستعمل في الإنتاج الطبيعي. */
+const PRESERVE_NATIVE_TURN_TIMING = process.env.PODCAST_KW_PRESERVE_NATIVE_TIMING !== '0'
 
 function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300, splitAtBridges = SPLIT_AT_BRIDGES } = {}) {
   const chunks = []
@@ -145,7 +151,7 @@ const KW_LOCK = 'light, soft Kuwait-City Kuwaiti — never heavy, never emphatic
    الوضع الأدنى: رأسٌ إيجابي قصير بلا اسم أي لهجة أجنبية، بلا تذكيرات،
    وتيجانُ الأداء بلا نص القفل. طبقة النص (المعجم بأحكامه العشرين) لا
    تتأثر — تعمل في الوضعين. متغير تجربة واحد يُفعَّل بـ
-   PODCAST_KW_PROMPT_MODE=minimal، والافتراض full حرفياً. */
+   PODCAST_KW_PROMPT_MODE=minimal. وبعد التجربة المعماة صار C هو الافتراض. */
 /* [٢٢ أغسطس ٢٠٢٦ — حكم تجربة التسعة المعمّاة] الافتراض صار C:
    ٣ برومتات × ٣ بذور، وحكم الدكتور بأذنه على المعمّى:
      c       → «روعة · روعة · جميل»  (٣/٣ بلا سقطة)  ← الفائز
@@ -163,46 +169,60 @@ const MINIMAL_HEAD = `كويتي حضري من أهل مدينة الكويت، 
 اقرأ كل سطر كما هو مكتوب حرفاً بحرف.`
 const MINIMAL_TAIL = 'نفس الصوتين ونفس لسان مدينة الكويت، من أول سطر إلى آخر سطر.'
 
-/* البرومت C — الفائز ٣/٣ في التجربة المعماة، ببنية Google الرسمية
-   (AUDIO PROFILE / SCENE / DIRECTOR'S NOTES / SAMPLE / TRANSCRIPT).
-   [٢٣ أغسطس ٢٠٢٦] حدُّ اللهجة صار توجيهاً إيجابياً صرفاً: لا اسمَ لهجةٍ
-   واحدٍ فيه (توصية الصديق المؤكدة — تسميةُ اللهجة تزرعها «أثر الفيل الوردي»)؛
-   الحدُّ الوحيد أوصافٌ إقليميةٌ محايدةٌ (South/Eastern/pan-Gulf) لا تسمّي
-   لهجةً بعينها، ثم رجوعٌ فوريٌّ للمرساة الكويتية الموجبة. */
+/* البرومت C — الفائز ٣/٣ في التجربة المعماة، ثم نُقّح في ٢٤ أغسطس ٢٠٢٦
+   بعقد MASTER VOICE DIRECTOR. بقي إيجابياً ومركّزاً، لكن الهوية صارت تُبنى
+   من الإيقاع والحركات ولحن الجملة لا من استعراض حرفٍ واحد. ونُزعت منه
+   الأوامر التي كانت تعطي كل جملة وزناً تمثيلياً أو تفرض قافاً ميكانيكية. */
 const PROMPT_C_HEAD = `Synthesize speech from the TRANSCRIPT section only.
 Do not speak headings, instructions, or bracketed performance tags.
 
-# AUDIO PROFILE
+# PRIMARY STANDARD
 
-Fahad is a mature male podcaster from Kuwait City. His voice is warm, thoughtful, calm, and naturally lower in pitch.
+The result is simply two real Kuwaitis talking naturally. Both are native, educated, contemporary urban Kuwait City speakers. Authenticity outranks theatrical polish. The listener should notice two Kuwaitis, not an accent performance and not synthetic TTS.
 
-Noura is a mature female podcaster from Kuwait City. Her voice is intelligent, warm, naturally curious, and clearly distinct from Fahad.
+# PEOPLE AND ROOM
 
-They are two native, educated, contemporary urban Kuwait City speakers who know each other and genuinely care about the discussion.
+Fahad is a mature Kuwaiti man: warm, thoughtful, practical, naturally lower in pitch. Noura is a mature Kuwaiti woman: intelligent, warm, responsive, naturally quicker, and clearly distinct from Fahad. They know each other and are sitting close together on microphones in a relaxed Kuwait City diwaniya.
 
-# SCENE
+These are tendencies, not fixed roles. Both can ask, answer, react, clarify, disagree, and contribute insight. Neither is a permanent interviewer or a permanent wise expert. Their difference comes from personality, never from different regional accents.
 
-A relaxed evening conversation in a real diwaniya in Kuwait City. They are sitting near each other on close microphones, discussing one idea with natural interest and quiet chemistry.
+# NATIVE ACCENT ANCHOR
 
-# DIRECTOR'S NOTES
+Lock the whole performance to contemporary educated urban Kuwait City Arabic (حضري). Let the identity come from timing, compact vowels, phrase length, conversational stress, question contours, short confirmations, hesitation patterns, turn-taking, and restrained sentence melody. Keep articulation relaxed, quick, understated, and effortless. Do not exaggerate any consonant to prove the accent.
 
-Accent: Native contemporary urban Kuwait City Arabic (حضري). Everyday local speech with light, relaxed articulation, natural short vowels, and calm sentence endings. The transcript already contains the intended Kuwaiti words and pronunciation spellings; follow them naturally without exaggerating dialect markers.
+Qaf is lexical, never mechanical. Use the natural pronunciation an educated Kuwait City speaker would use for that particular word. Never apply one global Qaf rule and never make Qaf or Gaf an accent marker. A گ already present in the audio transcript is a specifically approved pronunciation cue, not permission to convert other words. Every Qaf-containing word stays light and integrated: no pop, recited release, throat pressure, extra stress, pause, or vowel stretching around it.
 
-Qaf — natural and soft, never exaggerated: use the everyday lexical Qaf of educated Kuwait City speech. Where the transcript spells a word with گ, give a soft, quick, unforced [g]; for all other words keep a light, unreleased, non-emphatic [q] — no pop, no qalqalah, no aspiration. The consonant must never call attention to itself: do not stress it, pause before it, or lengthen the vowel after it. Carry the accent through rhythm, vowels, and sentence melody — never by a single consonant. If unsure, choose the softest, least-marked realization a relaxed Kuwaiti would use.
+The audio transcript contains approved pronunciation spellings. Respect them quietly without showcasing them. In particular, do not “correct” a deliberate ظ spelling back into formal ض. If any unfamiliar word appears, keep the wording and deliver it lightly; do not invent a pronunciation or paraphrase during synthesis.
 
-Daad: The audio transcript deliberately writes every ض as ظ. Respect that spelling and pronounce the Kuwaiti merged sound; never correct it back to formal ض.
+# CONVERSATION, NOT COPY
 
-Style: Sound human before sounding polished. This is a real conversation between two Kuwaitis, not an AI assistant, audiobook, news bulletin, commercial voice-over, lecture, or performed imitation of an accent.
+They speak to each other, not to an audience. Each turn carries local memory of the line immediately before it. A response may arrive promptly, but never force literal overlap if it would create an artifact. A one-word acknowledgement is quick and effortless. Questions sound naturally curious; friendly disagreement stays conversational.
 
-Pacing: Vary naturally. Simple lines can move quickly; a genuinely important thought may slow slightly. Pauses follow thought, not punctuation. Do not give every sentence the same weight, timing, or solemn ending. Keep transitions tight — the next speaker often comes in promptly, sometimes slightly overlapping. Avoid a dramatic pause before a final or important word; never deliver a closing line like a slogan. When a research finding or statistic comes up, say it casually, as something just remembered mid-conversation — not as a prepared citation being read aloud.
+The thought should feel as if it is being discovered while they speak, not recited from a finished essay. Let small lines stay small. Roughly 70% of the performance should feel like ordinary conversation, 20% like explanation or reflection, and only about 10% like a memorable or emotionally stronger moment. Never make every sentence sound important, polished, quotable, or profound.
 
-Turn-taking: Speak to the other person, not to an audience. Each person genuinely listens and reacts to the line before theirs. Brief reactions stay quick and effortless; questions are interested; objections have friendly chemistry rather than debate-club formality.
+# HUMAN PACING
 
-Human texture: Allow tiny natural breaths, micro-hesitations, and a smile in the voice. A very brief spontaneous chuckle is welcome only when the actual line is genuinely witty; never paste laughter onto serious material and never turn the scene into comedy.
+Vary speed, breathing, energy, and response timing subtly. Simple material can move a little quicker; explanations sit at a natural medium pace; only a genuinely important thought may slow slightly. Pauses follow meaning and human breath, not commas, periods, colons, or line breaks. Avoid identical pause lengths and repeated sentence–silence patterns.
 
-Continuity: Keep Fahad and Noura as the same two people, in the same room and on the same microphones, from the first line to the last line. A music bridge is added later in editing; it is not a new recording session.
+Do not slow down before final words, manufacture weight with silence, sing endings, stretch vowels for Gulf colour, or turn conclusions into slogans. Statement endings stay compact, relaxed, and controlled. Emotional warmth, surprise, concern, amusement, or seriousness appears only when the line supports it.
 
-Fidelity: Speak every labelled line exactly once and in order. Do not add, omit, repeat, paraphrase, or swap speakers. Bracketed English tags guide delivery silently and must never be spoken.
+Tiny natural breaths, a soft hesitation, or a slight restart are welcome only when they arise naturally from the written line. Do not manufacture filler, laughter, mouth noise, poor recording texture, or constant imperfection.
+
+# RESEARCH WITHOUT PRESENTER MODE
+
+Studies, statistics, institutions, numbers, English names, and technical phrases keep exactly the same Kuwaiti conversational rhythm before, during, and after them. Say them like a knowledgeable Kuwaiti recalling useful evidence mid-conversation. Never switch into formal Arabic prosody, newsreader rhythm, documentary pacing, slower academic articulation, or citation voice.
+
+# CONTINUITY
+
+Keep the exact same Fahad and Noura, Kuwait City identity, room, microphone distance, vocal character, and conversational relationship from the first word to the last. Do not become more formal, slow, dramatic, melodic, or narrator-like in the final third. A music bridge is added later in editing; it is not a new performance.
+
+# FIDELITY
+
+Speak every labelled line exactly once and in order. Do not add, omit, repeat, paraphrase, or swap speakers. Bracketed English tags guide delivery silently and must never be spoken.
+
+# SILENT QUALITY GATE
+
+Before each turn, silently check: does this sound like an actual educated Kuwait City speaker talking rather than reading; are vowels compact; is every consonant understated; is the response timing believable; did punctuation create a fake pause; is the final word being performed; did research trigger presenter mode; and have the voices or city identity drifted? Correct the delivery internally, never aloud.
 
 # SAMPLE CONTEXT — SILENT ACCENT ANCHOR, NEVER SPEAK THIS
 
@@ -213,11 +233,15 @@ Fidelity: Speak every labelled line exactly once and in order. Do not add, omit,
 
 # DIALECT BOUNDARY
 
-Native contemporary educated urban Kuwait City speech only — relaxed and quick, light in the mouth, with calm falling sentence endings. Keep this one single voice from the first word to the last, exactly as in the Kuwait City sample above. Do not loosen into a generic South Gulf, Eastern Arabian, or pan-Gulf media intonation. The moment the delivery starts to drift, return immediately to that positive Kuwait City sample.
+Native contemporary educated urban Kuwait City speech only — relaxed, compact, human, and direct, with calm controlled endings. Keep the same two people and the same effortless city rhythm from the first word to the last. If delivery starts to feel performed or generic, return silently to the Kuwait City sample above.
 `
+/* الوسم استثناءٌ لا طبقةٌ على كل جملة. في النسخة السابقة كان السؤال والتأمل
+   والخاتمة كلّها تحمل أمراً أدائياً، فيصير أكثر من نصف الحوار «مهماً» قبل أن
+   ينطقه المحرّك. نُبقي فقط ما لا تقوله علامات الترقيم وحدها: الرد الخاطف
+   والاعتراض الودّي. بقية السطور تمرّ عاديةً بلا توجيه تمثيلي. */
 const directionFor = (type, mode = PROMPT_MODE) => (mode === 'minimal' || mode === 'c') ? ({
-  question: '[curious and engaged]', reflection: '[thinking aloud]', objection: '[gently skeptical]', gentleObjection: '[friendly gentle objection]',
-  emphasis: '[serious]', briefReaction: '[quick natural reaction]', conclusion: '[calm and connected]', closing: '[softly]',
+  objection: '[mild, friendly skepticism]', gentleObjection: '[mild, friendly skepticism]',
+  briefReaction: '[quick, effortless response]',
 }[type] || '') : ({
   question: `[curious — ${KW_LOCK}]`, reflection: `[reflective — ${KW_LOCK}]`, objection: `[gently skeptical — ${KW_LOCK}]`, gentleObjection: `[gently skeptical — ${KW_LOCK}]`,
   emphasis: `[serious — ${KW_LOCK}]`, briefReaction: `[warmly — ${KW_LOCK}]`, conclusion: `[calmly — ${KW_LOCK}]`, closing: `[softly — ${KW_LOCK}]`,
@@ -238,21 +262,15 @@ const FOREIGN_REDACTIONS = buildForeignRedactions(PRONUNCIATION_SOURCE)
 export const spokenForm = (text) => toSpokenKuwaiti(redactForeignNames(text, FOREIGN_REDACTIONS), PRONUNCIATION)
 
 function promptFor(turns, index, total, mode = PROMPT_MODE) {
-  /* تذكيرٌ يتخلّل النصّ كل عشرة أدوار: في النداء الواحد تبتعد تعليماتُ الرأس
-     عن أواخر الحلقة فتفتر اللكنة تدريجياً — وهو ما سمعه الدكتور. السطر
-     المتخلّل يُعيد شدَّ اللكنة من داخل النصّ نفسه، ولا يُنطق لأنه تعليمةٌ
-     بين قوسين معقوفين على سطرٍ مستقلٍّ بلا اسم متحدّث. */
+  /* وضع full التاريخي وحده يحمل تذكيراً متخللاً. في الوضع المعتمد C أُلغي
+     reset كل ستة أدوار: كان يقطع الذاكرة المحلية ويعيد «توجيه» الممثلين وسط
+     السالفة. الاستمرارية الآن عقدٌ واحدٌ في الرأس، والحوار يبقى متصلاً. */
   const lines = []
   turns.forEach((turn, index) => {
-      /* [٢١ أغسطس ٢٠٢٦] كان التذكير إنجليزيّاً كل عشرة أدوار — منعٌ لا مرساة.
-         وحكم الدكتور على أول حلقةٍ بالمرساة العربية: «البداية كانت كويتية ١٠٠٠٠٠٪»
-         ثم تنجرف بعد الدقيقة الثانية. فالمرساة تعمل ويتلاشى أثرها. فصار التذكير
-         **نسخةً مصغّرة من المرساة نفسها بالعربية**، وكل ستة أدوارٍ لا عشرة —
-         لأن الانجراف يبدأ نحو الدور العشرين. */
-      if ((mode === 'full' || mode === 'c') && index > 0 && index % 6 === 0) {
-        lines.push(mode === 'c'
-          ? '[director reset — silently keep the exact same native urban Kuwait City accent, light mouth placement, calm falling sentence endings, two voices, room, microphones, and spontaneous chemistry established in the opening. Continue directly; never speak this note.]'
-          : '[تذكير — نفس لسان مدينة الكويت الذي بدأتَ به: «شخبارك؟ شلونك اليوم؟» · خفيفٌ في الفم، لا تفخيم ولا إطالة، ونهاية الجملة تنزل هادئة. وبنفس حماس أول سطرٍ وحيويته: أنتما اثنان مهتمّان بما تقولان، لا قارئان لنصّ. الحيوية في الحوار لا في ثِقَل النطق. لا تسترخِ ولا تبرد كلما طال التسجيل.]')
+      /* التذكير التاريخي محفوظ في full للمقارنة فقط؛ C لا يحمل أي reset
+         متخلل كي لا يقطع ذاكرة السالفة ولا يعيد تشغيل «وضع المذيع». */
+      if (mode === 'full' && index > 0 && index % 6 === 0) {
+        lines.push('[تذكير — نفس لسان مدينة الكويت الذي بدأتَ به: «شخبارك؟ شلونك اليوم؟» · خفيفٌ في الفم، لا تفخيم ولا إطالة، ونهاية الجملة تنزل هادئة. وبنفس حماس أول سطرٍ وحيويته: أنتما اثنان مهتمّان بما تقولان، لا قارئان لنصّ. الحيوية في الحوار لا في ثِقَل النطق. لا تسترخِ ولا تبرد كلما طال التسجيل.]')
     }
     lines.push(`${turn.speaker === 'male' ? 'Fahad' : 'Noura'}: ${directionFor(turn.deliveryType, mode)} ${spokenForm(turn.text)}`.replace(/:\s+\[/, ': ['))
   })
@@ -778,6 +796,14 @@ function tightenChunk(input, output) {
   return output
 }
 
+function speechStartAfter(previous, previousTurn, currentTurn, preserveNativeTiming = PRESERVE_NATIVE_TURN_TIMING) {
+  const end = previous.startSec + previous.durationSec
+  if (preserveNativeTiming) return end
+  const requestedOverlap = Math.max(0, Math.min(150, Number(currentTurn?.overlapMs || 0)))
+  if (requestedOverlap > 0) return Math.max(0, end - requestedOverlap / 1000)
+  return end + Math.max(80, Math.min(1200, Number(previousTurn?.pauseAfterMs || 320))) / 1000
+}
+
 /* الموسيقى تُعاير إلى مستوىً مُعلَن، لا تُضرب بمعاملٍ أعمى.
  *
  * المعامل الخطّي (volume=0.12) يفترض أن كل المقطوعات بالجهارة نفسها، وهذا
@@ -832,10 +858,7 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
     const dur = duration(file)
     if (i > 0) {
       const previous = items.at(-1)
-      const requestedOverlap = Math.max(0, Math.min(150, Number(turn.overlapMs || 0)))
-      if (requestedOverlap > 0) cursor = Math.max(0, previous.startSec + previous.durationSec - requestedOverlap / 1000)
-      else cursor = previous.startSec + previous.durationSec + Math.max(80, Math.min(1200, Number(turns[i - 1].pauseAfterMs || 320))) / 1000
-      if (turns[i - 1].musicBridgeAfter) cursor = Math.max(cursor, previous.startSec + previous.durationSec + 0.55)
+      cursor = speechStartAfter(previous, turns[i - 1], turn)
     }
     items.push({ index: i, file, startSec: cursor, durationSec: dur, isBridge: false })
   }
@@ -859,11 +882,7 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
       next.startSec = Math.max(current.startSec + current.durationSec + 0.18, bridgeStart + MUSIC.bridgeSec + 0.15)
       for (let j = i + 2; j < items.length; j += 1) {
         const prev = items[j - 1]
-        const overlap = Math.max(0, Math.min(150, Number(turns[j].overlapMs || 0)))
-        items[j].startSec = overlap > 0
-          ? Math.max(0, prev.startSec + prev.durationSec - overlap / 1000)
-          : prev.startSec + prev.durationSec + Math.max(80, Math.min(1200, Number(turns[j - 1].pauseAfterMs || 320))) / 1000
-        if (turns[j - 1].musicBridgeAfter) items[j].startSec = Math.max(items[j].startSec, prev.startSec + prev.durationSec + 0.55)
+        items[j].startSec = speechStartAfter(prev, turns[j - 1], turns[j])
       }
     }
   }
@@ -914,8 +933,12 @@ function timelineFor(turns, assembly) {
     text: turns[index].text,
     startSec: Number(item.startSec.toFixed(3)),
     endSec: Number((item.startSec + item.durationSec).toFixed(3)),
-    pauseAfterMs: Number(turns[index].pauseAfterMs || 0),
-    overlapMs: Number(turns[index].overlapMs || 0),
+    /* في الوضع الطبيعي الصمت/الدخول جزءٌ من الملف نفسه، فلا نكذب في
+       التايملاين ونسمي الخطة القديمة توقيتاً منفذاً. نحفظها كمرجع فقط. */
+    pauseAfterMs: PRESERVE_NATIVE_TURN_TIMING ? 0 : Number(turns[index].pauseAfterMs || 0),
+    overlapMs: PRESERVE_NATIVE_TURN_TIMING ? 0 : Number(turns[index].overlapMs || 0),
+    plannedPauseAfterMs: Number(turns[index].pauseAfterMs || 0),
+    plannedOverlapMs: Number(turns[index].overlapMs || 0),
     musicBridgeAfter: Boolean(turns[index].musicBridgeAfter),
     /* [٢١ أغسطس ٢٠٢٦] يُحفظ للتشخيص: غيابُه عن الوصف أوهمني أن توجيهات الأداء
        مفقودةٌ من المصدر، وهي موجودة. الوصف الناقص يُنتج تشخيصاً خاطئاً. */
@@ -930,6 +953,7 @@ function timelineFor(turns, assembly) {
   })
   chapters.forEach((chapter,index)=>{ chapter.endSec = index + 1 < chapters.length ? chapters[index + 1].startSec : Number(assembly.durationSec.toFixed(3)) })
   return { schemaVersion: 3, dialect: PROFILE, generatedBy: MODEL, preciseTiming: true,
+    nativeTurnTimingPreserved: PRESERVE_NATIVE_TURN_TIMING,
     chapters, utterances, musicBridges: assembly.bridges.map((b)=>({ startSec:Number(b.startSec.toFixed(3)), durationSec:b.durationSec })),
     musicIdentity: {
       intro: assembly.identity?.intro ? { startSec: 0, durationSec: MUSIC.introSec, targetLufs: MUSIC.introLufs } : null,
@@ -1066,20 +1090,42 @@ if (SELF_TEST) {
   const cContinuation = promptFor(chunks.at(-1), 1, chunks.length, 'c')
   const cSingleCall = promptFor(turns, 0, 1, 'c')
   const cResetProbe = promptFor(Array.from({ length: 7 }, (_, index) => turns[index % turns.length]), 0, 1, 'c')
-  assert.ok(cPrompt.includes("# DIRECTOR'S NOTES") && cPrompt.trimEnd().endsWith(spokenForm(chunks[0][chunks[0].length-1].text)),
-    'C ببنية Google والنص المنطوق آخر شيء في الطلب')
+  assert.ok(cPrompt.includes('# PRIMARY STANDARD') && cPrompt.includes('# NATIVE ACCENT ANCHOR')
+    && cPrompt.trimEnd().endsWith(spokenForm(chunks[0][chunks[0].length-1].text)),
+  'C ببنية المخرج والنص المنطوق آخر شيء في الطلب')
   assert.match(cPrompt, /# SAMPLE CONTEXT/, 'C يحمل مرساةً كويتيةً صامتة كما توصي بنية Google')
   assert.match(cPrompt, /# DIALECT BOUNDARY/, 'C يحمل حدَّ لهجة')
   assert.ok(!/Emirati|Omani|Najdi|Hejazi|Bahraini|Qatari|Iraqi|Persian|Egyptian|Levantine|عُماني|إماراتي|نجدي|حساوي|قطري|بحريني|عراقي|شامي|مصري/.test(cPrompt),
     'توجيه إيجابي صرف — لا اسم لهجةٍ واحدٍ في C (توصية الصديق: نحذف كل الأسماء من برومت الصوت)')
-  assert.match(cPrompt, /South Gulf, Eastern Arabian, or pan-Gulf/,
-    'الحدُّ الوحيد المسموح: أوصافٌ إقليميةٌ محايدةٌ لا تسمّي لهجةً بعينها فتزرعها')
+  assert.match(cPrompt, /Qaf is lexical, never mechanical/,
+    'القاف معجمية لا قاعدة [q]/[g] ميكانيكية — الهوية لا تُحمل على حرف')
+  assert.match(cPrompt, /70% of the performance.*20%.*10%/s,
+    'وزن المحتوى: أكثره محادثة عادية وقليلٌ منه لحظة قوية')
+  assert.match(cPrompt, /Pauses follow meaning and human breath, not commas, periods, colons, or line breaks/,
+    'الوقفة للمعنى والنفس لا لعلامة الترقيم')
+  assert.match(cPrompt, /Do not slow down before final words/,
+    'لا مسرحية للكلمة الأخيرة')
+  assert.match(cPrompt, /RESEARCH WITHOUT PRESENTER MODE/,
+    'البحث لا يفتح وضع المذيع')
+  assert.match(cPrompt, /Neither is a permanent interviewer or a permanent wise expert/,
+    'الشخصيتان ليستا كاريكاتير سؤال/حكمة ثابتاً')
   assert.match(cPrompt, /This is the opening part/, 'المقطع الأول لا يدّعي وجود جسر قبله')
   assert.match(cContinuation, /starts immediately after a short music bridge/, 'كل مقطع لاحق يستأنف الهوية بعد الجسر')
   assert.match(cSingleCall, /complete episode in one continuous recording/, 'الإنتاج بنداء واحد يصرّح أن الحلقة تسجيل متصل لا أجزاء')
-  assert.match(cResetProbe, /\[director reset — silently keep the exact same native urban Kuwait City accent/,
-    'C يعيد المرساة الإيجابية بصمت داخل النداء الواحد كل ست مداخلات ضد الانجراف الداخلي')
-  assert.ok(!/\[تذكير/.test(cPrompt) && !cPrompt.includes(KW_LOCK), 'C بلا تذكير عربي طويل وتيجانه أداء صرف')
+  assert.doesNotMatch(cResetProbe, /director reset|\[تذكير/u,
+    'C بلا reset متخلل يقطع ذاكرة السالفة أو يعيد وضع المذيع')
+  assert.equal(directionFor('statement', 'c'), '', 'الجملة العادية بلا أمر أداء')
+  assert.equal(directionFor('reflection', 'c'), '', 'التأمل لا يصير اقتباساً مهماً تلقائياً')
+  assert.equal(directionFor('conclusion', 'c'), '', 'الخاتمة لا تُحوّل إلى شعار')
+  assert.match(directionFor('briefReaction', 'c'), /quick, effortless/, 'الرد الخاطف وحده يحتفظ بتوجيه خفيف')
+  assert.ok(!cPrompt.includes(KW_LOCK), 'C بلا قفل لهجي مكرر على كل سطر')
+  for (const file of ['podcast-voice-bakeoff-kw.mjs', 'podcast-voice-test.mjs', 'podcast-word-audition.mjs']) {
+    const lab = readFileSync(resolve(ROOT, 'scripts', file), 'utf8')
+    assert.doesNotMatch(lab, /ABSOLUTE RULE — APPLY TO EVERY SINGLE WORD|accent only\]/,
+      `${file}: المختبر ما يرجع للتوجيه العدواني أو قفل اللهجة على كل سطر`)
+    assert.match(lab, /Qaf is (?:normally )?lexical/,
+      `${file}: المختبر يثبت القاف المعجمية لا الاستبدال الآلي`)
+  }
   assert.ok(minimalPrompt.length < transcriptOf(chunks[0]).length + 900,
     'الأدنى قصير فعلاً — رأس وذيل دون ٩٠٠ حرف فوق النص')
   function transcriptOf(group){ return group.map((t)=>spokenForm(t.text)).join('\n') }
@@ -1178,16 +1224,15 @@ if (SELF_TEST) {
     assert.equal(spokenForm('وتعرف الجواب'), 'واتعرف الجواب', 'السابقة الملاصقة لا تمنع النطق')
     const trap = 'المجموع والجمال وجمعنا'
     assert.equal(spokenForm(trap), trap, 'ما كانت «جم» جزءاً منه لا يُمسّ')
-    /* گ كانت ممنوعةً كلياً لأنها في v3 أُدخلت قاعدةً عامّةً على كل قاف فأسقطت
-       چ معها. والآن چ نفسها لم تعد تُكتب حرفاً بل صوتاً («تش»)، فزال التعارض،
-       وأذن الدكتور اعتمدت «أَصْدَگ». [٢٣ أغسطس ٢٠٢٦] ثم شخّص صديقه أن
-       القاف الفصيحة [q] هي أكثر ما يفضح الصوت للإماراتي، وأعطى قائمةً
-       صريحةً بالقاف الموروثة التي تُنطق گ (قاعد/أقول/حقيقة/قرار…). فصار
-       الحارس يمنع الإفراط لا يمنع القائمة: گ تبقى ضمن كلمات المعجم
-       المقيّدة بقائمةٍ مسموعة، لا تُطبَّق على كل قاف في النص آلياً. */
+    /* [٢٤ أغسطس ٢٠٢٦] تشخيص الحرف لا يساوي إذن هجائه آلياً. قائمة المرشحين
+       بقيت محفوظة للمختبر، لكن مدخل الصوت لا يحمل گ إلا في كلمةٍ جُرّبت
+       فعلاً واختارها الدكتور بأذنه. هذا هو الفرق بين lexical pronunciation
+       وبين قاعدة «كل ق = گ» التي تجعل اللكنة مؤدّاة. */
     const gafWords = Object.values(PRONUNCIATION_SOURCE.words || {}).filter((value) => String(value).includes('گ'))
-    const totalQaf = 3059 /* مواضع القاف المميزة في المتن — قِيست */
-    assert.ok(gafWords.length < 200, `گ قائمةٌ مقيّدة لا استبدالٌ أعمى لكل قاف (الآن ${gafWords.length} كلمة من ١٣١٥ كلمة قاف)`)
+    const untestedGaf = gafWords.filter((value) => !PRONUNCIATION_SOURCE.heardByEar?.[value])
+    assert.deepEqual(untestedGaf, [], `كل هجاء گ في مدخل الصوت لازم يكون مجرّباً ومقبولاً بالأذن: ${untestedGaf.join('، ')}`)
+    assert.ok(gafWords.length > 0 && gafWords.length <= 4,
+      `گ استثناءٌ مسموع ضيق، مو قائمة آلية (الآن ${gafWords.length})`)
     /* الچ مسموحةٌ في المفاتيح (نصّ الدكتور يكتبها) وممنوعةٌ في النواتج
        (المحرّك يبتلعها) — فتُفحص جهةُ الخرج وحدها. */
     const chehOut = Object.values(PRONUNCIATION_SOURCE.words || {}).filter((value) => String(value).includes('چ'))
@@ -1215,6 +1260,13 @@ if (SELF_TEST) {
   assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')
+  const previous = { startSec: 2, durationSec: 4 }
+  assert.equal(speechStartAfter(previous, { pauseAfterMs: 900 }, { overlapMs: 150 }, true), 6,
+    'التوقيت الطبيعي لا يضيف وقفة ثابتة ولا overlap مصطنعاً بعد تقطيع النداء')
+  assert.ok(Math.abs(speechStartAfter(previous, { pauseAfterMs: 560 }, { overlapMs: 0 }, false) - 6.56) < 1e-9,
+    'الوضع التاريخي يبقى متاحاً للمقارنة فقط')
+  assert.equal(PRESERVE_NATIVE_TURN_TIMING, true,
+    'الافتراض يحفظ الصمت وتوقيت الردود اللذين ولّدهما النداء نفسه')
 
   console.log('✓ Gemini Kuwaiti pipeline self-test: chunking + prompt + PCM/WAV + عقد الطلب والاستخراج')
   process.exit(0)
@@ -1306,24 +1358,27 @@ for (let i=0;i<chunks.length;i+=1) {
       requestHashes.push(sha256(hp))
       const hraw=`${stem}-fb${h+1}.raw.wav`
       writePcmWav(hraw, await geminiPcm(hp))
-      const hsplit=splitChunk(hraw, halves[h], `${stem}-fb${h+1}`)
-      files.push(...(hsplit || [hraw]))
+      /* ننظف حافّتَي النداء مرةً واحدةً، لا حافّتَي كل مداخلة. هكذا يبقى
+         الصمت الداخلي وتوقيت الردود كما ولّده Gemini. */
+      const hclean=tightenChunk(hraw, `${stem}-fb${h+1}.clean.wav`)
+      const hsplit=splitChunk(hclean, halves[h], `${stem}-fb${h+1}`)
+      files.push(...(hsplit || [hclean]))
     }
     if (files.length === group.length) {
-      files.forEach((part, j) => {
-        const clean=`${stem}-turn-${String(j+1).padStart(2,'0')}.wav`
-        chunkFiles.push(tightenChunk(part, clean)); durations.push(duration(chunkFiles.at(-1)))
+      files.forEach((part) => {
+        chunkFiles.push(part); durations.push(duration(part))
       })
       continue
     }
     throw new Error(`تعذّر إنقاذ المقطع ${i+1}: ${files.length} ملفاً لـ${group.length} مداخلة`)
   }
   writePcmWav(rawWav,pcm)
+  const cleanWav=tightenChunk(rawWav, `${stem}.clean.wav`)
 
   /* المقطع يحمل عدّة مداخلات بصوتٍ متّسق؛ يُقصّ إلى مداخلاته ليبقى التوقيت
      الدقيق لكل واحدةٍ منها. وإن تعذّر القصّ رجعنا لهذا المقطع وحده إلى
      مداخلةٍ لكل طلب: صوتٌ يتبدّل في أربع مداخلاتٍ خيرٌ من حلقةٍ تسقط. */
-  let parts=splitChunk(rawWav, group, stem)
+  let parts=splitChunk(cleanWav, group, stem)
   if (!parts) {
     if (group.length > 1) {
       /* الإنقاذ بالنصفين لا بالأفراد: النداء الواحد للحلقة كلها قد يتعذّر قصّه
@@ -1339,29 +1394,28 @@ for (let i=0;i<chunks.length;i+=1) {
           requestHashes.push(sha256(p))
           const raw=`${stem}-${tag}.raw.wav`
           writePcmWav(raw, await geminiPcm(p))
-          return [raw]
+          return [tightenChunk(raw, `${stem}-${tag}.clean.wav`)]
         }
         const p=promptFor(subgroup, i, chunks.length)
         requestHashes.push(sha256(p))
         const raw=`${stem}-${tag}.raw.wav`
         writePcmWav(raw, await geminiPcm(p))
-        const split=splitChunk(raw, subgroup, `${stem}-${tag}`)
+        const clean=tightenChunk(raw, `${stem}-${tag}.clean.wav`)
+        const split=splitChunk(clean, subgroup, `${stem}-${tag}`)
         if (split) return split
         const mid=Math.ceil(subgroup.length/2)
         return [...await rescue(subgroup.slice(0,mid), `${tag}a`), ...await rescue(subgroup.slice(mid), `${tag}b`)]
       }
       const mid=Math.ceil(group.length/2)
       parts=[...await rescue(group.slice(0,mid), 'h1'), ...await rescue(group.slice(mid), 'h2')]
-    } else parts=[rawWav]
+    } else parts=[cleanWav]
   }
 
-  /* Gemini يترك هواءً ميّتاً في طرفَي كل مداخلة، فيتراكم على عشرات المداخلات
-     إلى بطءٍ محسوس. يُقصّ الصمت من الطرفين فقط — لا يُمسّ صمتٌ داخل الجملة،
-     فتبقى الوقفة الطبيعية التي تصنع المعنى. */
-  parts.forEach((part, j) => {
-    const clean=`${stem}-turn-${String(j+1).padStart(2,'0')}.wav`
-    const finalFile=tightenChunk(part, clean)
-    chunkFiles.push(finalFile); durations.push(duration(finalFile))
+  /* الأجزاء قُصّت عند منتصف الصمت الداخلي. وصلها بلا trim وبلا gap مصطنع
+     يعيد نفس التوقيت الأصلي تقريباً؛ نصف الصمت في نهاية الدور ونصفه في
+     بداية التالي. هذا هو الأخذ والردّ الذي سمعه النموذج، لا جدول الوقفات. */
+  parts.forEach((part) => {
+    chunkFiles.push(part); durations.push(duration(part))
   })
 }
 if (chunkFiles.length !== turns.length) {
@@ -1461,7 +1515,7 @@ const audit={
   requestHashes, audioSha256:sha256(readFileSync(audioFile)), transcriptSha256:sha256(readFileSync(transcriptFile)),
   durationSec:duration(audioFile), pitchGate:{maleMedianHz:maleMid?Math.round(maleMid):null,femaleMedianHz:femaleMid?Math.round(femaleMid):null,voiceGapHz:voiceGap?Math.round(voiceGap):null,suspects:swapped},
   repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,medianSecPerChar:Number(medianRate.toFixed(4))},
-  mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160},
+  mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160,nativeTurnTimingPreserved:PRESERVE_NATIVE_TURN_TIMING},
   generatedAt:new Date().toISOString(),
 }
 writeFileSync(resolve(AUDITS,`${slug}.json`),`${JSON.stringify(audit,null,2)}\n`)

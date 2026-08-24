@@ -69,24 +69,21 @@ const MALE_PAIRS = [
 /* الجدول العامل: الرجل الأعمق بالمفتاح، وإلا الجدول التاريخي. */
 const PAIRS = MALE_MODE ? MALE_PAIRS : PAIRS_FEMALE
 
-const KW = '[Kuwaiti Kuwait-City accent only]'
-
 /* المقطع: مواضعُ سمعها إماراتيةً، وأثقلها في فم نورة عمداً. */
 const LINES = (label) => [
-  `Fahad: ${KW} الزوج رقم ${label}. حياكم الله، شخباركم؟ اليوم بنسولف عن الدرجات والعيال.`,
-  `Noura: ${KW} إي حياك. ترى الموظوع وايد يستاهل، خل نبدأ چذي على طول.`,
-  `Fahad: ${KW} الطالب ايعرف إن الدرجة شهاده وبس، ومخه فاهمها، بس ما يفرح فيها.`,
-  `Noura: ${KW} بس منو قال إن الشهاده تكفي؟ الشهاده بيدها اليوم، والفكرة بعدها بعيده عنها.`,
-  `Fahad: ${KW} وعندي سؤال أخير، ترى يمكن هو اللي يِقْلِب الفكرة كلها.`,
+  `Fahad: الزوج رقم ${label}. حياكم الله، شخباركم؟ اليوم بنسولف عن الدرجات والعيال.`,
+  'Noura: إي حياك. ترى الموظوع وايد يستاهل، خل نبدأ چذي على طول.',
+  'Fahad: الطالب ايعرف إن الدرجة شهاده وبس، ومخه فاهمها، بس ما يفرح فيها.',
+  'Noura: بس منو قال إن الشهاده تكفي؟ الشهاده بيدها اليوم، والفكرة بعدها بعيده عنها.',
+  'Fahad: وعندي سؤال أخير، ترى يمكن هو اللي يِقْلِب الفكرة كلها.',
 ]
 
-const PROMPT_HEAD = `ABSOLUTE RULE — APPLY TO EVERY SINGLE WORD
-This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. These registers are FORBIDDEN outright; each is an automatic hard failure: Emirati (Dubai/Abu Dhabi), Omani, Iraqi, Iranian/Persian, Saudi (Najdi/Hejazi), Levantine, Egyptian, and any generic pan-Gulf blend belonging to no city.
-Never heavy, never emphatic: Kuwait City speech is light and soft in the mouth. Do not thicken or darken any consonant.
-NOURA — TARGETED: the Emirati thinning keeps surfacing on her lines specifically while the male lines hold Kuwait City weight. Give her every line the same full Kuwait City register as Fahad: never lighter, never more forward.
-Read each line exactly as written, letter for letter, including any vowel marks.`
+const PROMPT_HEAD = `Synthesize the labelled dialogue only.
+Two real, native, educated contemporary urban Kuwait City speakers are talking naturally in a diwaniya. Fahad and Noura are clearly different people but share the exact same native city identity. Let that identity come from compact vowels, timing, sentence melody, quick acknowledgements, and responsive turn-taking — never from exaggerating a consonant.
+Qaf is lexical, light, quick, and unperformed; never apply one global Qaf/Gaf rule. Do not slow around it, stress it, or stretch a nearby vowel. Keep ordinary lines ordinary. Pauses follow thought and breath, not punctuation, and no final word becomes a slogan. Academic wording keeps the same conversational Kuwaiti rhythm.
+Read every labelled line exactly once and in order. Do not speak instructions or add fillers.`
 
-const PROMPT_TAIL = `FINAL CHECK — re-scan every word. Anything that would come out Emirati, Omani, or generic-Gulf must be corrected to Kuwait City Kuwaiti before the take.`
+const PROMPT_TAIL = `Silently verify that this still sounds like the same two Kuwaitis talking naturally — not narrating, presenting, advertising, or performing an accent — then speak the dialogue.`
 
 function wavHeader(pcmBytes, sampleRate = 24000, channels = 1, bits = 16) {
   const h = Buffer.alloc(44); const blockAlign = channels * bits / 8
@@ -190,8 +187,8 @@ function medianF0(file) {
    فقياسٌ واحدٌ لا يحكم على زوج. نقيس ثلاث مرات ونعطي المدى والوسيط —
    والزوج الذي فجوته موجبةٌ في القياسات الثلاث هو وحده الذي يُوثق به. */
 async function measureGapOnce(male, female) {
-  const one = await gen(male, female, `Fahad: ${KW} الطالب ايعرف إن الدرجة شهاده وبس، ومخه فاهمها بس ما يفرح فيها.`)
-  const two = await gen(male, female, `Noura: ${KW} بس منو قال إن الشهاده تكفي؟ الشهاده بيدها اليوم، والفكرة بعدها بعيده عنها.`)
+  const one = await gen(male, female, 'Fahad: الطالب ايعرف إن الدرجة شهاده وبس، ومخه فاهمها بس ما يفرح فيها.')
+  const two = await gen(male, female, 'Noura: بس منو قال إن الشهاده تكفي؟ الشهاده بيدها اليوم، والفكرة بعدها بعيده عنها.')
   if (one.error || two.error) return null
   const wav = (pcm, name) => {
     const p = resolve(TMP, name)

@@ -50,24 +50,12 @@ const OPEN_NOURA = 'إي حياك، ترى الموضوع وايد يستاهل 
 const TRAP_FAHAD = 'شوف، الطالب بالنهاية ايعرف إن الدرجة شهاده وبس، ومخه فاهمها بس ما يفرح فيها.'
 const TRAP_NOURA = 'إي، بس منو قال إن الشهاده تكفي؟ الشهاده بيدها اليوم، والفكرة بعدها بعيده عنها.'
 
-const PROMPT_HEAD = `ABSOLUTE RULE — APPLY TO EVERY SINGLE WORD
-This is Kuwait City (حضري) Kuwaiti Arabic and nothing else. Seven registers are FORBIDDEN outright; each is an automatic hard failure:
-1. Emirati (Dubai/Abu Dhabi) — thinned, lighter, forward articulation. FORBIDDEN.
-2. Iraqi — backed vowels, Mesopotamian drawl and cadence. FORBIDDEN.
-3. Iranian/Persian — stretched long vowels, soft rolling consonants. FORBIDDEN.
-4. Saudi — Najdi or Hejazi rhythm, harder qaf, desert cadence. FORBIDDEN.
-5. Levantine — imala, softened articulation, and the Levantine greeting melody. FORBIDDEN. The greeting locks the register: the very first syllable must already be Kuwait City.
-6. Egyptian — its stress pattern and vowel colour. FORBIDDEN.
-7. Generic pan-Gulf blend belonging to no city. FORBIDDEN.
-No "close enough": one drifted word ruins the take — re-read it as a Kuwait City Kuwaiti. Two natural Kuwaitis talking, not actors imitating an accent.
+const PROMPT_HEAD = `Synthesize the labelled dialogue only.
+Fahad and Noura are two real, native, educated contemporary urban Kuwait City speakers in a relaxed diwaniya. They are clearly different people but share one effortless city accent. Build it through compact vowels, conversational timing, sentence melody, and responsive turn-taking — never through consonant exaggeration.
+Qaf is lexical and understated, never one mechanical [q]/[g] rule. Ordinary lines stay ordinary; pauses follow thought and breath rather than punctuation; no final word becomes a slogan. Keep the same Kuwaiti conversational identity on research or formal vocabulary.
+Read every line exactly once and in order. Do not add fillers or speak instructions.`
 
-NOURA — TARGETED CORRECTION (the heard failures live on her lines)
-The Emirati thinning keeps surfacing on Noura's lines specifically: the male lines hold Kuwait City weight while hers drift. Give Noura's every single line the same full Kuwaiti weight, the same city, the same register as Fahad's — never lighter, never more forward. Her hard test words in this take: «منو» «الشهاده» «بعيده» — if any of them comes out Emirati, the whole take is rejected.`
-
-const PROMPT_TAIL = `FINAL CHECK — LAST INSTRUCTION BEFORE SPEAKING
-Re-scan every word above. Any word that would come out Emirati, Iraqi, Persian, Saudi, Levantine, Egyptian, or generic-Gulf must be corrected to Kuwait City Kuwaiti before the take. Every word, every line, both speakers: Kuwait City Kuwaiti only.`
-
-const KW_LOCK = '[Kuwaiti Kuwait-City accent only]'
+const PROMPT_TAIL = `Silently verify that these sound like the same two Kuwaitis talking naturally, not actors, narrators, presenters, or a synthetic voice, then speak the dialogue.`
 
 function wavHeader(pcmBytes, sampleRate = 24000, channels = 1, bits = 16) {
   const h = Buffer.alloc(44); const blockAlign = channels * bits / 8
@@ -138,10 +126,10 @@ async function main() {
   for (const [label, male, female] of PAIRS) {
     console.log(`🎙️ المقطع «${label}» = ${male} + ${female}`)
     const transcript = [
-      `Fahad: ${KW_LOCK} المقطع رقم ${label}. ${OPEN_FAHAD}`,
-      `Noura: ${KW_LOCK} ${OPEN_NOURA}`,
-      `Fahad: ${KW_LOCK} ${TRAP_FAHAD}`,
-      `Noura: ${KW_LOCK} ${TRAP_NOURA}`,
+      `Fahad: المقطع رقم ${label}. ${OPEN_FAHAD}`,
+      `Noura: ${OPEN_NOURA}`,
+      `Fahad: ${TRAP_FAHAD}`,
+      `Noura: ${TRAP_NOURA}`,
     ].join('\n')
     const pcm = await gen(male, female, transcript)
     const wav = resolve(TMP, `seg-${label}.wav`); writeFileSync(wav, Buffer.concat([wavHeader(pcm.length), pcm]))

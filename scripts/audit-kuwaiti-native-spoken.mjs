@@ -52,6 +52,11 @@ if (SELF_TEST) {
     'فجوة 20Hz التي مرّت في النسخة المرفوضة لا تُقبل ثانيةً')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
     'انزلاق نورة يرمي الـTake كله')
+  const engine = readFileSync(resolve(ROOT, 'scripts/podcast-kuwaiti-gemini.mjs'), 'utf8')
+  assert.match(engine, /femaleContinuity\.segmentSuspects\.length/,
+    'بوابة نورة تحكم على وسيط مقطع كامل لا قفزة دور مفرد')
+  assert.doesNotMatch(engine, /REJECT_FEMALE_IDENTITY_DRIFT && \(femaleSwapSuspects\.length \|\| femaleContinuity\.suspects\.length\)/,
+    'القاعدة القديمة ذات الإنذارات الكاذبة لا ترجع')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_TIMING_SUSPECTS:\s*'1'/,
     'الدور المقصوص أو الممدود يرمي الـTake كله')
   console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 15/15')
@@ -101,6 +106,9 @@ assert.match(pilotWorkflow, /PODCAST_KW_MIN_GAP:\s*'25'/,
   'مرشح الصوتين لا يقبل فجوة أقل من 25Hz')
 assert.match(pilotWorkflow, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
   'بوابة نورة الصارمة مفعّلة في الإنتاج')
+const geminiEngine = readFileSync(resolve(ROOT, 'scripts/podcast-kuwaiti-gemini.mjs'), 'utf8')
+assert.match(geminiEngine, /femaleContinuity\.segmentSuspects\.length/,
+  'انزلاق نورة يُقاس على مقطع ثابت لا دور مفرد متقلب')
 assert.match(pilotWorkflow, /PODCAST_KW_REJECT_TIMING_SUSPECTS:\s*'1'/,
   'بوابة القص والتمديد مفعّلة في الإنتاج')
 for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-prompt-experiment.yml']) {

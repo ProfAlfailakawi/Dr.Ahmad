@@ -216,10 +216,10 @@ jobs:
           PODCAST_KW_GENERATION_MODE: pilot
           PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
           PODCAST_KW_MIN_GAP: '12'
-          # [٢١ أغسطس ٢٠٢٦] مقترح الدكتور: كل جسرٍ موسيقيّ يبدأ نداءً جديداً
-          # فترجع «روح البداية» بعد كل موسيقى، ونقطة اللحام تختبئ خلف الجسر.
-          # عدد الإعادات بيده: خانة «موسيقى» في محرر اللوحة لكل دور.
-          PODCAST_KW_SPLIT_AT_BRIDGES: '1'
+          # [٢٤ أغسطس ٢٠٢٦] الجسر مونتاج خارجي فقط. تقسيم TTS عنده أعاد
+          # تفسير الصوت واللهجة بعد 45–47ث ثم 76–78ث (Voice/Accent Reset).
+          # المحرك يقفل هذا أيضاً، والقيمة هنا توثّق عقد الإنتاج بوضوح.
+          PODCAST_KW_SPLIT_AT_BRIDGES: '0'
           PODCAST_KW_TAKES: ${{ inputs.takes || '1' }}
           PODCAST_KW_PROMPT_MODE: ${{ inputs.prompt_mode || 'c' }}
 

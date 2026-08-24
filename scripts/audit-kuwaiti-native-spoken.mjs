@@ -41,7 +41,12 @@ if (SELF_TEST) {
   assert.equal(pilot.turns[25].text,
     'ودورنا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.',
     'الخاتمة كلام بشري لا شعار ولا كلمة جديدة')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 9/9')
+  const pilotWorkflow = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-pilot.yml'), 'utf8')
+  assert.match(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'0'/,
+    'مسار الإنتاج يثبت أن الجسر مونتاج خارجي ولا يقطع طلب TTS')
+  assert.doesNotMatch(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'1'/,
+    'الإعداد الذي صنع ثلاثة أصوات بعد الجسور لا يرجع')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 11/11')
   process.exit(0)
 }
 
@@ -78,6 +83,10 @@ console.log(`✓ الإصدار الإلزامي قبل TTS: ${NATIVE_SPOKEN_VER
    «تم الصقل» بينما الملف التجريبي لم يُصقل فعلاً. */
 const pilotWorkflow = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-pilot.yml'), 'utf8')
 assert.match(pilotWorkflow, /select-kuwaiti-short-source\.mjs/, 'مسار الإنتاج يطبق الصقل داخل select')
+assert.match(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'0'/,
+  'مسار الإنتاج يولّد الحوار متصلاً ويضيف الجسر بعد TTS')
+assert.doesNotMatch(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'1'/,
+  'ممنوع إعادة Voice/Accent Reset عند الجسر')
 for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-prompt-experiment.yml']) {
   const source = readFileSync(resolve(ROOT, '.github/workflows', workflow), 'utf8')
   assert.match(source, /apply-kuwaiti-native-spoken\.mjs/, `${workflow}: التجربة تمر بالصقل نفسه`)

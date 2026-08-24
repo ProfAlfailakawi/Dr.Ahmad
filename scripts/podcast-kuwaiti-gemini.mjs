@@ -86,19 +86,13 @@ function writePcmWav(path, pcm) { writeFileSync(path, Buffer.concat([wavHeader(p
    لكنه لم يعد مطلوباً أصلاً. */
 const TURNS_PER_REQUEST = Math.max(2, Math.min(64, Number(process.env.PODCAST_KW_TURNS_PER_REQUEST || 64)))
 
-/* ═══ الجسر يقفل النداء — مقترح الدكتور نفسه (٢١ أغسطس ٢٠٢٦ مساءً) ═══
-   حكمه على حلقة إصلاح الموسيقى: «الصوت بعد دقيقتين تبدل وقاعد يتبدل…
-   وبعدها تحول اماراتي. كان في البداية محترف بشكل فضيع». ومقترحه:
-   «بعد الجسر يرد نفس الروح اللي كان في البداية، ونزيد الجسور إذا فعلا
-   نبي نثبت الصوت».
-   وهذا يحلّ معضلة النداء الواحد من طرفها الآخر: النداء الواحد اختير لأن
-   ثلاثة عشر نداءً أخرجت ثلاث عشرة نبرةً تتبدل وسط الكلام. لكن النبرة
-   تبيّن أنها تنجرف داخل النداء الطويل نفسه بعد دقيقتين. العلاج: القطع
-   عند الجسر الموسيقي وحده — فبداية كل نداءٍ هي «روح البداية» التي
-   يحبها، ونقطة اللحام تختبئ خلف الموسيقى فلا تُسمع نقلةً وسط جملة.
-   عدد الإعادات بيد الدكتور: كل خانة «موسيقى» يعلّمها في اللوحة تصير
-   حدَّ نداءٍ جديد. المفتاح صريحٌ كي يبقى السلوك القديم حرفياً بدونه. */
-const SPLIT_AT_BRIDGES = process.env.PODCAST_KW_SPLIT_AT_BRIDGES === '1'
+/* ═══ الحوار Take واحد، والجسر مونتاج فقط (٢٤ أغسطس ٢٠٢٦) ═══
+   التدقيق السمعي وتشغيلة 32754682989 أثبتا أن القطع عند الجسر صنع ثلاثة
+   طلبات Gemini مستقلة. الـvoice preset بقي نفسه، لكن كل طلب أعاد تفسير
+   الجرس ومركز النبرة والمدّ واللهجة؛ فصار Voice/Accent Reset بعد الجسر.
+   لذلك هذا قفل أمان لا إعداد: لا موسيقى ولا خانة تحرير تقطع طلب الـTTS.
+   الحوار يولَّد متصلاً أولاً، ثم تُضاف الجسور من التسجيل نفسه في المونتاج. */
+const SPLIT_AT_BRIDGES = false
 /* Gemini يولّد الأخذ والردّ داخل النداء نفسه بتوقيتٍ عضوي. النسخة السابقة
    قصّت الصمت الطبيعي من طرفَي **كل دور** ثم أعادت بناء الحلقة بسبع وقفات
    ثابتة وoverlap مفروض؛ أي إنها ألغت بعد التوليد ما طلبه البرومت منه.
@@ -115,7 +109,7 @@ const LONG_SILENCE_TRIGGER_MS = Math.max(MAX_INTERNAL_SILENCE_MS + 80,
   Math.min(1400, Number(process.env.PODCAST_KW_LONG_SILENCE_TRIGGER_MS || 440)))
 const silenceCompaction = { calls: 0, removedSec: 0 }
 
-function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300, splitAtBridges = SPLIT_AT_BRIDGES } = {}) {
+function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {}) {
   const chunks = []
   let row = []
   let chars = 0
@@ -125,10 +119,8 @@ function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300, spli
       chunks.push(row); row = []; chars = 0
     }
     row.push(turn); chars += turn.text.length
-    /* الجسر يُركَّب في التجميع لا في التوليد، فلا يقفل النداء: إقفاله كان
-       يشطر الحلقة إلى ثلاثة نداءات = ثلاث نبرات. يبقى قافلاً حين تُطلب
-       دفعاتٌ صغيرة صراحةً (PODCAST_KW_TURNS_PER_REQUEST). */
-    if (turn.musicBridgeAfter && row.length >= 2 && (maxTurns < 16 || splitAtBridges)) { chunks.push(row); row = []; chars = 0 }
+    /* musicBridgeAfter معلومة مونتاج لا تحمل أي معنى صوتي لـGemini. وحدهما
+       سقف النص/المداخلات قد يفرضان طلباً جديداً، وعندها نستخدم الإحماء. */
   }
   if (row.length) chunks.push(row)
   return chunks
@@ -185,6 +177,20 @@ const MINIMAL_TAIL = 'نفس الصوتين ونفس لسان مدينة الك�
 const PROMPT_C_HEAD = `Synthesize speech from the TRANSCRIPT section only.
 Do not speak headings, instructions, or bracketed performance tags.
 
+# ABSOLUTE SPEAKER IDENTITY AND DIALECT CONTINUITY
+
+Treat the entire transcript as one uninterrupted conversation recorded in the same room, during the same sitting, with the same two people.
+
+Speaker identity must remain acoustically identical from the first word to the final word. For each speaker, permanently preserve the same apparent age, vocal timbre, pitch center, resonance, vocal weight, breathiness, speaking energy, articulation, Urban Kuwait City accent, vowel timing, and conversational personality.
+
+Never recast either speaker or regenerate a new interpretation of either voice. Never treat a pause, paragraph break, topic change, research section, emotional shift, or editorial transition as a new scene. There must be no acoustic, accent, character, pitch, or style reset anywhere. Later lines sound as if recorded seconds after the opening, with no interruption or change of session.
+
+The Kuwaiti dialect must not weaken or broaden into generic Gulf speech as the transcript continues. Do not become more formal after pauses, introduce a new sentence melody after topic changes, shift either speaker's natural pitch range, apparent age, vocal size, energy, or emotional baseline. The final sentence unmistakably belongs to the exact same two people heard at the beginning.
+
+# NO SCENE RESET
+
+This is not a collection of podcast segments. It is one continuous human conversation. Blank lines, speaker labels, and paragraph divisions are text formatting only and carry no acoustic meaning. Do not interpret them as chapters, acts, scenes, transitions, or new recording sessions. Continue through them with complete vocal, dialectal, and emotional continuity.
+
 # PRIMARY STANDARD
 
 The result is simply two real Kuwaitis talking naturally. Both are native, educated, contemporary urban Kuwait City speakers. Authenticity outranks theatrical polish. The listener should notice two Kuwaitis, not an accent performance and not synthetic TTS.
@@ -224,7 +230,7 @@ Studies, statistics, institutions, numbers, English names, and technical phrases
 
 # CONTINUITY
 
-Keep the exact same Fahad and Noura, Kuwait City identity, room, microphone distance, vocal character, and conversational relationship from the first word to the last. Do not become more formal, slow, dramatic, melodic, or narrator-like in the final third. A music bridge is added later in editing; it is not a new performance.
+Keep the exact same Fahad and Noura, Kuwait City identity, room, microphone distance, vocal character, and conversational relationship from the first word to the last. Do not become more formal, slow, dramatic, melodic, or narrator-like in the final third.
 
 # MANDATORY TRANSCRIPT OPTIMIZATION — ACTIVE AND COMPLETED UPSTREAM
 
@@ -275,7 +281,7 @@ const FOREIGN_REDACTIONS = buildForeignRedactions(PRONUNCIATION_SOURCE)
 /* الحذف أولاً (يمسح الاسم اللاتيني الذي يكسر الصوت) ثم قلب الإملاء الكويتي. */
 export const spokenForm = (text) => toSpokenKuwaiti(redactForeignNames(text, FOREIGN_REDACTIONS), PRONUNCIATION)
 
-function promptFor(turns, index, total, mode = PROMPT_MODE) {
+function promptFor(turns, index, total, mode = PROMPT_MODE, warmupTurns = 0) {
   /* وضع full التاريخي وحده يحمل تذكيراً متخللاً. في الوضع المعتمد C أُلغي
      reset كل ستة أدوار: كان يقطع الذاكرة المحلية ويعيد «توجيه» الممثلين وسط
      السالفة. الاستمرارية الآن عقدٌ واحدٌ في الرأس، والحوار يبقى متصلاً. */
@@ -295,7 +301,7 @@ function promptFor(turns, index, total, mode = PROMPT_MODE) {
       ? 'This is the complete episode in one continuous recording. Keep the exact same two voices, native Kuwait City accent, room, microphones, and conversational energy from the first word to the last.'
       : index === 0
       ? 'This is the opening part. Establish the exact Fahad and Noura described above; the next parts must preserve them.'
-      : 'This part starts immediately after a short music bridge. Resume the exact same Fahad and Noura, with the same native Kuwait City accent, conversational energy, microphone distance, and room. It is one continuous diwaniya conversation, not a new recording and not a fresh performance.'
+      : `This continues the same uninterrupted sitting. The first ${warmupTurns} transcript turns repeat the immediately preceding exchange as acoustic warm-up context; perform them in the identical voices, then continue without any reset. This is not a new recording, scene, or fresh interpretation.`
     return `${PROMPT_C_HEAD}
 
 # CONTINUITY CARD — PART ${index + 1} OF ${total}
@@ -445,6 +451,17 @@ ${transcript}
 FINAL CHECK — LAST INSTRUCTION BEFORE SPEAKING
 Re-scan the transcript word by word before the take. Any word that would come out Emirati, Iraqi, Persian, Saudi, Levantine, Egyptian, or generic-Gulf must be corrected to Kuwait City Kuwaiti first. Every word, every line, both speakers: Kuwait City Kuwaiti only.
 HOLD TO THE LAST SECOND — the drift happens late: the listener judged minute 3+ hardest, and Noura's register slid to Emirati exactly there after a flawless start. The final third of this take must be read with the same full Kuwait City register as the first line. Do not relax as the take progresses.`
+}
+
+/* إذا تجاوز حوارٌ مستقبلي سقف الطلب اضطراراً، يبدأ كل طلب لاحق بآخر
+   مداخلتين من سابقه. تُولَّدان كإحماءٍ صوتي ثم تُحذفان من المونتاج؛ فلا
+   يبدأ الجزء الجديد من الصفر ولا يرى المحرك أي حدٍّ موسيقي أو مشهدي. */
+export function continuityGenerationGroups (chunks, warmupCount = 2) {
+  return chunks.map((chunk, index) => {
+    if (index === 0) return { turns: chunk, warmupTurns: 0 }
+    const warmup = chunks[index - 1].slice(-Math.max(1, warmupCount))
+    return { turns: [...warmup, ...chunk], warmupTurns: warmup.length }
+  })
 }
 
 /* `output_audio` خاصيةُ راحةٍ في مكتبات Gemini، لا حقلٌ في ردّ REST الخام:
@@ -713,10 +730,11 @@ export function pickEpisodeMusic(slug, available = MUSIC_LIBRARY) {
 /* الطلب صار يحمل عدّة مداخلات، لكن الجدول الزمني (نص الإذاعة المتزامن) يحتاج
    ملفاً لكل مداخلة. فبدل أن نضحّي بأحدهما، تُقرأ مواضع الصمت داخل المقطع
    ونُقصّ عندها: النموذج يترك بين متحدّثٍ وآخر صمتاً أطول ممّا يتركه داخل
-   الجملة، فأطولُ (ن-١) صمتةً هي حدود المداخلات. وإن لم يُطابق العدد — لأي
-   سببٍ — يعود المقطع مداخلةً مداخلةً كما كان، فلا تُفقد حلقةٌ أبداً. */
-function detectSilences(file) {
-  const run = spawnSync(FFMPEG, ['-hide_banner','-nostats','-i',file,'-af','silencedetect=noise=-38dB:d=0.24','-f','null','-'], { encoding:'utf8' })
+   الجملة، فأطولُ (ن-١) صمتةً هي حدود المداخلات. وإن لم يُطابق العدد نجرب
+   حساسيةً أعلى على الأخذ نفسه؛ ولا نعيد توليد مداخلات مستقلة. */
+function detectSilences(file, minDurationSec = 0.24) {
+  const minDuration = Math.max(0.04, Math.min(1, Number(minDurationSec) || 0.24))
+  const run = spawnSync(FFMPEG, ['-hide_banner','-nostats','-i',file,'-af',`silencedetect=noise=-38dB:d=${minDuration}`,'-f','null','-'], { encoding:'utf8' })
   const log = `${run.stderr || ''}`
   const gaps = []
   const starts = [...log.matchAll(/silence_start:\s*([\d.]+)/g)].map((m) => Number(m[1]))
@@ -740,8 +758,8 @@ function detectSilences(file) {
  * الصواب أن لكل مداخلةٍ حصّةً متوقّعةً من الزمن بمقدار طول نصّها، فتُحسب
  * المواضع المتوقّعة للحدود، ويُختار لكلٍّ منها أقربُ صمتةٍ إليه — يساراً
  * فيميناً كي تبقى الحدود متزايدةً ولا تتقاطع. وإن بَعُدت صمتةٌ عن موضعها
- * بأكثر من نصف متوسّط المداخلة، فالقصّ غير موثوق: يُرَدُّ ‎null‎ فيسقط
- * التوليد إلى الشطر — نبرتان صادقتان خيرٌ من سبعٍ وثلاثين حدّاً كاذباً.
+ * بأكثر من نصف متوسّط المداخلة، فالقصّ غير موثوق: يُرَدُّ ‎null‎ ويُوقف
+ * التشغيل. ففشلٌ واضح خيرٌ من Voice/Accent Reset مخفي في ملفٍ يبدو ناجحاً.
  */
 export function chooseSplitPoints(gaps, expectedTurns, totalSec, edgeGuardSec = 0.45, weights = null) {
   if (expectedTurns <= 1) return []
@@ -781,21 +799,29 @@ function splitChunk(file, chunkTurnsList, outPrefix) {
   let total = 0
   try { total = duration(file) } catch { return null }
   const weights = chunkTurnsList.map((turn) => String(turn.text || '').length)
-  const cuts = chooseSplitPoints(detectSilences(file), expected, total, 0.45, weights)
-  if (!cuts) return null
-  const bounds = [0, ...cuts, total]
-  const parts = []
-  for (let i = 0; i < expected; i += 1) {
-    const from = bounds[i]
-    const to = bounds[i + 1]
-    if (!(to - from > 0.35)) return null
-    const part = `${outPrefix}-${String(i + 1).padStart(2, '0')}.wav`
-    const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-ss',from.toFixed(3),'-t',(to - from).toFixed(3),
-      '-i',file,'-ar','24000','-ac','1','-c:a','pcm_s16le',part], { encoding:'utf8' })
-    if (run.status !== 0 || !existsSync(part)) return null
-    parts.push(part)
+  /* إذا ما ظهرت حدودٌ كافية عند 240ms، نرخي كاشف الصمت على **نفس الأخذ**.
+     ما نعيد توليد نصفٍ أو دورٍ مستقل، لأن نجاح القص لا يساوي خسارة الهوية. */
+  for (const minDurationSec of [0.24, 0.14, 0.08]) {
+    const cuts = chooseSplitPoints(detectSilences(file, minDurationSec), expected, total, 0.45, weights)
+    if (!cuts) continue
+    const bounds = [0, ...cuts, total]
+    const parts = []
+    let valid = true
+    for (let i = 0; i < expected; i += 1) {
+      const from = bounds[i]
+      const to = bounds[i + 1]
+      if (!(to - from > 0.35)) { valid = false; break }
+      const part = `${outPrefix}-${String(i + 1).padStart(2, '0')}.wav`
+      rmSync(part, { force: true })
+      const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-ss',from.toFixed(3),'-t',(to - from).toFixed(3),
+        '-i',file,'-ar','24000','-ac','1','-c:a','pcm_s16le',part], { encoding:'utf8' })
+      if (run.status !== 0 || !existsSync(part)) { valid = false; break }
+      parts.push(part)
+    }
+    if (valid && parts.length === expected) return parts
+    for (const part of parts) rmSync(part, { force: true })
   }
-  return parts
+  return null
 }
 
 function tightenChunk(input, output) {
@@ -1045,16 +1071,15 @@ if (SELF_TEST) {
   ]
   /* الوضع المعتمد: الحلقة كلها نداءٌ واحدٌ — نبرةٌ واحدةٌ بلا تبدّل. */
   assert.equal(chunkTurns(turns).length, 1, 'الحلقة تُولَّد بنداءٍ واحدٍ فتثبت النبرة')
-  /* وحين تُطلب دفعاتٌ صغيرةٌ صراحةً يعود الجسر حدّاً طبيعياً لا يُعبر. */
-  const chunks = chunkTurns(turns, { maxTurns: 8 })
-  assert.equal(chunks.length, 2, 'الجسر الموسيقي يقفل المقطع في الدفعات الصغيرة')
+  assert.equal(SPLIT_AT_BRIDGES, false, 'قفل الجسر مطفأ داخل المحرك مهما كان إعداد workflow القديم')
+  assert.equal(chunkTurns(turns, { maxTurns: 8 }).length, 1,
+    'الجسر لا يقطع TTS حتى مع سقف مداخلات صغير يكفي الحلقة')
+  /* التقسيم الاضطراري سببه سقف الطلب وحده، لا موقع الموسيقى. */
+  const chunks = chunkTurns(turns, { maxTurns: 2 })
+  assert.equal(chunks.length, 2, 'سقف الطلب وحده يفرض جزأين عند الضرورة')
   assert.deepEqual(chunks.map((chunk) => chunk.length), [2, 1])
-  /* [٢١ أغسطس ٢٠٢٦] مقترح الدكتور: القطع عند الجسر يعيد «روح البداية»
-     بعد كل موسيقى، والمفتاح الصريح وحده يفعّله — بدونه نداءٌ واحدٌ حرفياً. */
   const bridged = chunkTurns(turns, { splitAtBridges: true })
-  assert.equal(bridged.length, 2, 'مفتاح القطع عند الجسر: كل جسرٍ يبدأ نداءً جديداً بروح البداية')
-  assert.deepEqual(bridged.map((chunk) => chunk.length), [2, 1], 'القطع يقع عند الجسر نفسه لا قبله ولا بعده')
-  assert.equal(chunkTurns(turns, { splitAtBridges: false }).length, 1, 'بلا المفتاح يبقى النداء الواحد حرفياً — لا تغيير خلسة')
+  assert.equal(bridged.length, 1, 'حتى المتغير التاريخي لا يستطيع تحويل الجسر إلى Scene Reset')
   /* [٢٢ أغسطس] الافتراض صار C، فتأكيدات الجدار تُثبَّت على 'full' صراحةً —
      تبقى حارسةً عليه إن عاد يوماً، ولا تكذب على الوضع الجاري. */
   const prompt = promptFor(chunks[0],0,chunks.length,'full')
@@ -1150,8 +1175,12 @@ if (SELF_TEST) {
   /* [٢٢ أغسطس ٢٠٢٦] البرومت C — الفائز ٣/٣. أضيفت له بعد سماع انزلاق
      مقاطع الحلقة إلى عُماني ثم «عجمي خليجي» بطاقةُ منعٍ قصيرة بالأسماء
      فقط؛ لا وصفَ حياً لصوت أي لهجة حتى لا نزرعها في سياق المحرك. */
-  const cPrompt = promptFor(chunks[0], 0, chunks.length, 'c')
-  const cContinuation = promptFor(chunks.at(-1), 1, chunks.length, 'c')
+  const continuityGroups = continuityGenerationGroups(chunks)
+  assert.equal(continuityGroups[1].warmupTurns, 2, 'كل طلب اضطراري لاحق يحمل آخر مداخلتين كإحماء')
+  assert.deepEqual(continuityGroups[1].turns.slice(0, 2), chunks[0].slice(-2),
+    'الإحماء هو التبادل السابق نفسه حرفياً')
+  const cPrompt = promptFor(continuityGroups[0].turns, 0, chunks.length, 'c', continuityGroups[0].warmupTurns)
+  const cContinuation = promptFor(continuityGroups[1].turns, 1, chunks.length, 'c', continuityGroups[1].warmupTurns)
   const cSingleCall = promptFor(turns, 0, 1, 'c')
   const cResetProbe = promptFor(Array.from({ length: 7 }, (_, index) => turns[index % turns.length]), 0, 1, 'c')
   assert.ok(cPrompt.includes('# PRIMARY STANDARD') && cPrompt.includes('# NATIVE ACCENT ANCHOR')
@@ -1178,8 +1207,14 @@ if (SELF_TEST) {
   assert.match(cPrompt, /Neither is a permanent interviewer or a permanent wise expert/,
     'الشخصيتان ليستا كاريكاتير سؤال/حكمة ثابتاً')
   assert.match(cPrompt, /This is the opening part/, 'المقطع الأول لا يدّعي وجود جسر قبله')
-  assert.match(cContinuation, /starts immediately after a short music bridge/, 'كل مقطع لاحق يستأنف الهوية بعد الجسر')
+  assert.match(cContinuation, /first 2 transcript turns repeat the immediately preceding exchange as acoustic warm-up context/,
+    'كل طلب اضطراري لاحق يسخّن الصوت بآخر مداخلتين قبل مادته الجديدة')
   assert.match(cSingleCall, /complete episode in one continuous recording/, 'الإنتاج بنداء واحد يصرّح أن الحلقة تسجيل متصل لا أجزاء')
+  assert.match(cSingleCall, /# ABSOLUTE SPEAKER IDENTITY AND DIALECT CONTINUITY/,
+    'هوية العمر والجرس ومركز النبرة واللهجة مقفولة من أول كلمة إلى آخر كلمة')
+  assert.match(cSingleCall, /# NO SCENE RESET/, 'الفواصل النصية والموضوعية لا تبدأ مشهداً صوتياً جديداً')
+  assert.doesNotMatch(`${cPrompt}\n${cContinuation}\n${cSingleCall}`, /music bridge/i,
+    'طلب الصوت لا يذكر الجسر الموسيقي ولا يزرع حدّ مشهد في سياق Gemini')
   assert.doesNotMatch(cResetProbe, /director reset|\[تذكير/u,
     'C بلا reset متخلل يقطع ذاكرة السالفة أو يعيد وضع المذيع')
   assert.equal(directionFor('statement', 'c'), '', 'الجملة العادية بلا أمر أداء')
@@ -1221,6 +1256,17 @@ if (SELF_TEST) {
   const engineSource = readFileSync(resolve(ROOT, 'scripts', 'podcast-kuwaiti-gemini.mjs'), 'utf8')
   assert.match(engineSource, /function compactLongSilences[\s\S]*atrim=start=/,
     'الوقفات الطويلة تُختصر من وسط الصمت من غير إعادة بناء توقيت الحوار')
+  const productionGenerationStart = engineSource.lastIndexOf('const chunks = chunkTurns(turns)')
+  const productionGeneration = engineSource.slice(productionGenerationStart,
+    engineSource.indexOf('/* ═══ بوابة الطبقة', productionGenerationStart))
+  assert.match(productionGeneration, /continuityGenerationGroups\(chunks\)/,
+    'أي تقسيم اضطراري يمر بإحماء آخر مداخلتين')
+  assert.match(productionGeneration, /generatedParts\.slice\(generation\.warmupTurns\)/,
+    'مداخلات الإحماء تُحذف من الناتج ولا تتكرر على المستمع')
+  assert.doesNotMatch(productionGeneration, /\bhalves\b|const rescue|promptFor\(subgroup|عاد إلى التوليد المفرد/,
+    'لا إنقاذ بأنصاف أو أدوار مستقلة يعيد تفسير الصوت واللهجة')
+  assert.match(engineSource, /for \(const minDurationSec of \[0\.24, 0\.14, 0\.08\]\)/,
+    'قص المداخلات يرخي الحساسية على Take نفسه قبل أن يسقط بوضوح')
   assert.equal(MAX_INTERNAL_SILENCE_MS, 300, 'السقف الحواري الافتراضي 0.30ث')
   assert.equal(LONG_SILENCE_TRIGGER_MS, 440, 'الضغط لا يمس أي نفس أقصر من 0.44ث')
   const pauseIntervals = silenceCompactionIntervals([
@@ -1280,7 +1326,7 @@ if (SELF_TEST) {
   assert.ok(RPM <= 10, `إيقاع ${RPM} طلباً/دقيقة يتجاوز حصة النموذج المجانية`)
 
   /* عقد تماسك الصوت: الطلب يحمل عدّة مداخلاتٍ فتقلّ حدود الانزلاق، والقصّ
-     يرفض ما لا يطابق فيعود إلى التوليد المفرد بدل أن يخترع حدوداً. */
+     يرفض ما لا يطابق ويوقف التشغيل بدل أن يخترع حدوداً أو صوتاً جديداً. */
   assert.ok(TURNS_PER_REQUEST >= 2, 'مداخلةٌ واحدةٌ لكل طلب تعيد علّة تبدّل صوت المذيع')
 
   /* معجم النطق: يمسّ المسموع ولا يمسّ المكتوب، ويستبدل الكلمة كاملةً فقط.
@@ -1329,7 +1375,7 @@ if (SELF_TEST) {
   assert.equal(grouped.flat().length, 12, 'التجميع لا يفقد مداخلةً ولا يكرّرها')
   const fakeGaps = [{ mid: 2.0, span: 0.5 }, { mid: 3.7, span: 0.5 }, { mid: 6.3, span: 0.5 }]
   assert.deepEqual(chooseSplitPoints(fakeGaps, 4, 8.1), [2.0, 3.7, 6.3], 'حدود المداخلات تُقرأ من أطول الصمتات')
-  assert.equal(chooseSplitPoints(fakeGaps, 9, 8.1), null, 'نقصُ الصمتات يعني الرجوع للتوليد المفرد لا اختراع حدود')
+  assert.equal(chooseSplitPoints(fakeGaps, 9, 8.1), null, 'نقصُ الصمتات يوقف القص ولا يختلق حدوداً أو توليداً منفصلاً')
   assert.deepEqual(chooseSplitPoints([], 1, 5), [], 'مداخلةٌ واحدةٌ لا تحتاج قصّاً')
   /* الأوزان تُرجّح الموضع المتوقّع على طول الصمتة: مداخلةٌ طويلةٌ ثم قصيرة،
      والصمتة الأطول واقعةٌ باكراً — القديم كان يقتنصها فيمنح القصيرة أكثرَ حقّها. */
@@ -1337,7 +1383,7 @@ if (SELF_TEST) {
   assert.deepEqual(chooseSplitPoints(weighted, 2, 8, 0.45, [70, 10]), [6.0],
     'الحدّ يُختار بموضعه المتوقّع لا بطول صمتته')
   assert.equal(chooseSplitPoints([{ mid: 1.0, span: 0.5 }], 2, 20, 0.45, [50, 50]), null,
-    'الصمتة البعيدة عن موضعها المتوقّع تُرَدّ فيسقط التوليد إلى الشطر')
+    'الصمتة البعيدة عن موضعها المتوقّع تُرَدّ من غير إعادة توليد للشطر')
   assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')
@@ -1415,9 +1461,11 @@ if (!DRY_RUN && !sourceLock?.nativeSpokenVersion) {
 }
 const revisionId = sourceLock?.revisionId || 'dry-run-pilot'
 const chunks = chunkTurns(turns)
-const prompts = chunks.map((chunk,index)=>promptFor(chunk,index,chunks.length))
+const generationGroups = continuityGenerationGroups(chunks)
+const prompts = generationGroups.map((group, index) =>
+  promptFor(group.turns, index, chunks.length, PROMPT_MODE, group.warmupTurns))
 if (DRY_RUN) {
-  console.log(`✓ ${slug}: ${turns.length} مداخلة → ${chunks.length} مقاطع Gemini`)
+  console.log(`✓ ${slug}: ${turns.length} مداخلة → ${chunks.length === 1 ? 'Take واحد متصل' : `${chunks.length} طلبات متداخلة بإحماء صوتي`}`)
   console.log(`✓ model=${MODEL} · male=${MALE_VOICE} · female=${FEMALE_VOICE} · profile=${PROFILE}`)
   console.log(prompts[0].slice(0,2200))
   process.exit(0)
@@ -1425,81 +1473,29 @@ if (DRY_RUN) {
 
 mkdirSync(AUDIO,{recursive:true}); rmSync(TMP,{recursive:true,force:true}); mkdirSync(TMP,{recursive:true}); mkdirSync(AUDITS,{recursive:true})
 const chunkFiles=[]; const durations=[]; const requestHashes=[]
-let rescuedChunks=0
 for (let i=0;i<chunks.length;i+=1) {
-  const group=chunks[i]
-  console.log(`🎙️ Gemini ${i+1}/${chunks.length} (${group.length} مداخلة)`)
+  const group = chunks[i]
+  const generation = generationGroups[i]
+  console.log(`🎙️ Gemini ${i+1}/${chunks.length} (${group.length} مداخلة${generation.warmupTurns ? ` + ${generation.warmupTurns} إحماء محذوف` : ''})`)
   const prompt=prompts[i]; requestHashes.push(sha256(prompt))
   const stem=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}`)
   const rawWav=`${stem}.raw.wav`
   let pcm=null
   try { pcm=await geminiPcm(prompt) }
   catch (error) {
-    /* إخفاق النداء الضخم (مهلة أو خطأ) لا يُسقط الحلقة: تُشطر المجموعة
-       نصفين ويُولَّد كلٌّ منهما — نبرتان خيرٌ من لا حلقة. */
-    if (group.length < 2) throw error
-    console.log(`↻ أخفق نداء المقطع ${i+1} (${group.length} مداخلة): ${error.message} — يُشطر نصفين`)
-    rescuedChunks += 1
-    const half=Math.ceil(group.length/2)
-    const halves=[group.slice(0,half), group.slice(half)]
-    const files=[]
-    for (let h=0;h<halves.length;h+=1) {
-      const hp=promptFor(halves[h], i, chunks.length)
-      requestHashes.push(sha256(hp))
-      const hraw=`${stem}-fb${h+1}.raw.wav`
-      writePcmWav(hraw, await geminiPcm(hp))
-      /* ننظف حافّتَي النداء مرةً واحدةً، لا حافّتَي كل مداخلة. هكذا يبقى
-         الصمت الداخلي وتوقيت الردود كما ولّده Gemini. */
-      const hclean=prepareGeneratedChunk(hraw, `${stem}-fb${h+1}`)
-      const hsplit=splitChunk(hclean, halves[h], `${stem}-fb${h+1}`)
-      files.push(...(hsplit || [hclean]))
-    }
-    if (files.length === group.length) {
-      files.forEach((part) => {
-        chunkFiles.push(part); durations.push(duration(part))
-      })
-      continue
-    }
-    throw new Error(`تعذّر إنقاذ المقطع ${i+1}: ${files.length} ملفاً لـ${group.length} مداخلة`)
+    throw new Error(`أخفق طلب الحوار المتصل ${i+1}/${chunks.length}: ${error.message}. أُوقف التشغيل؛ ممنوع إنقاذه بطلبات مستقلة تغيّر الصوت واللهجة.`, { cause: error })
   }
   writePcmWav(rawWav,pcm)
   const cleanWav=prepareGeneratedChunk(rawWav, stem)
 
-  /* المقطع يحمل عدّة مداخلات بصوتٍ متّسق؛ يُقصّ إلى مداخلاته ليبقى التوقيت
-     الدقيق لكل واحدةٍ منها. وإن تعذّر القصّ رجعنا لهذا المقطع وحده إلى
-     مداخلةٍ لكل طلب: صوتٌ يتبدّل في أربع مداخلاتٍ خيرٌ من حلقةٍ تسقط. */
-  let parts=splitChunk(cleanWav, group, stem)
-  if (!parts) {
-    if (group.length > 1) {
-      /* الإنقاذ بالنصفين لا بالأفراد: النداء الواحد للحلقة كلها قد يتعذّر قصّه
-         إلى سبعةٍ وثلاثين، فالسقوط إلى سبعةٍ وثلاثين نداءً مفرداً يعني سبعاً
-         وثلاثين نبرة — وهو أسوأ ما يكون لأثقل شكاوى الدكتور. فيُشطر المقطع
-         نصفين ويُعاد توليد كلٍّ منهما، ثم يُشطر ما يتعذّر منهما، حتى يُقصّ
-         أو يبلغ الفرد. النبرات تُعدّ باللوغاريتم لا بالعدد. */
-      console.log(`↻ تعذّر قصّ المقطع ${i+1} إلى ${group.length} مداخلة — يُشطر نصفين`)
-      rescuedChunks += 1
-      const rescue = async (subgroup, tag) => {
-        if (subgroup.length === 1) {
-          const p=promptFor(subgroup, i, chunks.length)
-          requestHashes.push(sha256(p))
-          const raw=`${stem}-${tag}.raw.wav`
-          writePcmWav(raw, await geminiPcm(p))
-          return [prepareGeneratedChunk(raw, `${stem}-${tag}`)]
-        }
-        const p=promptFor(subgroup, i, chunks.length)
-        requestHashes.push(sha256(p))
-        const raw=`${stem}-${tag}.raw.wav`
-        writePcmWav(raw, await geminiPcm(p))
-        const clean=prepareGeneratedChunk(raw, `${stem}-${tag}`)
-        const split=splitChunk(clean, subgroup, `${stem}-${tag}`)
-        if (split) return split
-        const mid=Math.ceil(subgroup.length/2)
-        return [...await rescue(subgroup.slice(0,mid), `${tag}a`), ...await rescue(subgroup.slice(mid), `${tag}b`)]
-      }
-      const mid=Math.ceil(group.length/2)
-      parts=[...await rescue(group.slice(0,mid), 'h1'), ...await rescue(group.slice(mid), 'h2')]
-    } else parts=[cleanWav]
+  /* القصّ تحليلي على الـTake نفسه. لو لم نجد حدوده حتى بعد خفض عتبة الصمت،
+     نسقط التشغيل بدل تصنيع صوتين/لهجتين جديدتين بطلبات إنقاذ مستقلة. */
+  const generatedParts = splitChunk(cleanWav, generation.turns, stem)
+  if (!generatedParts) {
+    throw new Error(`تعذّر قص Take الحوار ${i+1} إلى ${generation.turns.length} مداخلة من التسجيل نفسه. أُوقف التشغيل؛ ممنوع إعادة توليد أنصاف أو أدوار مستقلة لأنها تعيد Voice/Accent Reset.`)
   }
+  const parts = generatedParts.slice(generation.warmupTurns)
+  if (parts.length !== group.length) throw new Error(`قص الإحماء أعطى ${parts.length} ملفاً بدل ${group.length}`)
 
   /* الأجزاء قُصّت عند منتصف الصمت الداخلي. وصلها بلا trim وبلا gap مصطنع
      يعيد نفس التوقيت الأصلي تقريباً؛ نصف الصمت في نهاية الدور ونصفه في
@@ -1511,7 +1507,9 @@ for (let i=0;i<chunks.length;i+=1) {
 if (chunkFiles.length !== turns.length) {
   throw new Error(`عدد المقاطع ${chunkFiles.length} لا يطابق ${turns.length} مداخلة`)
 }
-console.log(`✓ ${chunks.length} طلباً لـ${turns.length} مداخلة${rescuedChunks ? ` · ${rescuedChunks} مقطعاً عاد إلى التوليد المفرد` : ''}`)
+console.log(chunks.length === 1
+  ? `✓ Take واحد متصل لـ${turns.length} مداخلة · صفر إعادة ضبط عند الجسور`
+  : `✓ ${chunks.length} طلبات لـ${turns.length} مداخلة · كل طلب لاحق بدأ بإحماء آخر مداخلتين وحُذف التكرار`)
 console.log(silenceCompaction.removedSec > 0.02
   ? `✓ تنفّس الحوار: اختُصر ${silenceCompaction.removedSec.toFixed(1)}ث من الوقفات الأطول من ${(LONG_SILENCE_TRIGGER_MS / 1000).toFixed(2)}ث؛ الوقفات الطبيعية الأقصر بقيت كما هي`
   : '✓ تنفّس الحوار: ماكو وقفات طويلة احتاجت اختصار')
@@ -1605,6 +1603,8 @@ const audit={
   schemaVersion:1, slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
   sourceSha256:sha256(readFileSync(source)), turnCount:turns.length, chunkCount:chunks.length,
+  oneTake:chunks.length === 1, bridgeGeneration:'external-post-tts',
+  continuityWarmupTurns:generationGroups.map((group) => group.warmupTurns),
   nativeSpoken:{version:sourceLock?.nativeSpokenVersion || '',rewriteCount:Number(sourceLock?.nativeSpokenRewriteCount || 0),
     changesSha256:sourceLock?.nativeSpokenChangesSha256 || '',qafRiskCount:Number(sourceLock?.nativeSpokenQafRiskCount || 0),
     softWarnings:Number(sourceLock?.nativeSpokenSoftWarnings || 0)},

@@ -10,6 +10,8 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { condenseV3Adaptive } from './condense-diwania-v3.mjs'
+import { optimizeNativeSpokenEpisode } from './lib/kuwaiti-native-spoken.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = (name) => process.argv.find((v) => v.startsWith(`--${name}=`))?.slice(name.length + 3) || ''
@@ -58,12 +60,16 @@ for (const slug of slugs) {
   const sourceFile = resolve(ROOT, 'manual-dialogues-kuwaiti', `${slug}.json`)
   const lockFile = resolve(ROOT, 'podcast-audits', 'source-locks-kuwaiti', `${slug}.json`)
   const full = turnsOf(JSON.parse(readFileSync(sourceFile, 'utf8')))
-  const selectedRaw = turnsOf(shortLib.episodes?.[slug])
+  /* المقالات الجديدة لن تكون موجودة داخل مكتبة الـ144 القديمة. بدل أن
+     تسقط، تُكثف بالقواعد نفسها من متن Firestore الذي اعتمده الدكتور. */
+  const predefined = shortLib.episodes?.[slug]
+  const dynamic = predefined ? null : condenseV3Adaptive(full)
+  const selectedRaw = turnsOf(predefined || dynamic?.turns)
   const lock = JSON.parse(readFileSync(lockFile, 'utf8'))
-  assert.ok(full.length > selectedRaw.length && selectedRaw.length >= 15, `${slug}: المصدر القصير غير منطقي (${full.length}→${selectedRaw.length})`)
+  assert.ok(full.length >= selectedRaw.length && selectedRaw.length >= 15, `${slug}: المصدر القصير غير منطقي (${full.length}→${selectedRaw.length})`)
   assert.equal(selectedRaw.filter((t) => t.musicBridgeAfter).length, 2, `${slug}: يلزم جسران في النسخة القصيرة`)
 
-  const selected = []
+  const verifiedSelected = []
   let removedSyntheticInterjections = 0
   let cursor = 0
   for (const [i, turn] of selectedRaw.entries()) {
@@ -77,7 +83,7 @@ for (const slug of slugs) {
     assert.ok(found >= 0, `${slug}: الدور القصير ${i} ليس جزءاً مرتباً من متن Firestore المقفول: ${turn.text}`)
     const preparedTurn = matchedText === norm(turn.text) ? turn : { ...turn, text: matchedText }
     if (preparedTurn !== turn) removedSyntheticInterjections += 1
-    selected.push(preparedTurn)
+    verifiedSelected.push(preparedTurn)
     /* دورٌ مقفولٌ واحد قد يلد شطرين متتاليين — فلا يتقدّم المؤشر إلا
        حين ينتقل الشطر التالي إلى مداخلةٍ أخرى. */
     const next = selectedRaw[i + 1]
@@ -88,16 +94,29 @@ for (const slug of slugs) {
     cursor = stillSame ? found : found + 1
   }
 
+  /* الصقل إلزامي **قبل** الصوت، لا رجاءٌ داخل البرومت. وبهذا يبقى ما
+     يسجله الـTranscript هو نفسه ما يسمعه المستمع، وكل تغيير ظاهر في القفل. */
+  const nativeSpoken = optimizeNativeSpokenEpisode(verifiedSelected, { slug })
+  assert.equal(nativeSpoken.audit.hard.length, 0,
+    `${slug}: بقيت صياغات تمنع الكلام الكويتي الطبيعي: ${nativeSpoken.audit.hard.map((f) => `${f.index + 1}:${f.label}`).join(' · ')}`)
+  const selected = nativeSpoken.turns
   const serialized = JSON.stringify(selected, null, 2) + '\n'
   writeFileSync(sourceFile, serialized)
   writeFileSync(lockFile, JSON.stringify({
     ...lock,
-    sourceVariant: 'condensed-2m30-v1',
+    sourceVariant: predefined ? 'condensed-2m30-native-v2' : 'dynamic-condensed-native-v1',
     fullTurnCount: full.length,
     turnCount: selected.length,
     bridgeCount: 2,
     shortContentSha256: sha256(serialized),
+    nativeSpokenVersion: nativeSpoken.version,
+    nativeSpokenRewriteCount: nativeSpoken.changes.length,
+    nativeSpokenChangesSha256: sha256(JSON.stringify(nativeSpoken.changes)),
+    nativeSpokenQafRiskCount: nativeSpoken.audit.qafRiskCount,
+    nativeSpokenSoftWarnings: nativeSpoken.audit.soft.length,
   }, null, 2) + '\n')
   const removedNote = removedSyntheticInterjections ? ` · نُزعت ${removedSyntheticInterjections} إشارة غير مقفولة` : ''
-  console.log(`✓ ${slug}: المصدر المقفول ${full.length}→${selected.length} دوراً · جسران${removedNote} · بصمة ${sha256(serialized).slice(0, 12)}`)
+  const rewriteNote = nativeSpoken.changes.length ? ` · صُقلت ${nativeSpoken.changes.length} خانة` : ''
+  const dynamicNote = predefined ? '' : ' · تكثيف ديناميكي لمقال جديد'
+  console.log(`✓ ${slug}: المصدر المقفول ${full.length}→${selected.length} دوراً · جسران${removedNote}${rewriteNote}${dynamicNote} · بصمة ${sha256(serialized).slice(0, 12)}`)
 }

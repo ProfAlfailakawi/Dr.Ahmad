@@ -36,6 +36,13 @@ const MALE_VOICE = process.env.GEMINI_TTS_MALE_VOICE || 'Puck'
    الأولى عن لكنتها (١٤ أغسطس: «لكنتها غير جيدة») تأكّدت بالقياس. فتُعتمد
    Callirrhoe — أنثى المقطع ٤ التي بقيت في تصفيته النهائية. */
 const FEMALE_VOICE = process.env.GEMINI_TTS_FEMALE_VOICE || 'Zephyr'
+/* Gemini 3.1 Flash TTS Preview بدّل Puck وZephyr كتلةً كاملة وسط طلبٍ واحد
+   (الأدوار 14–19 في run 32775409749)، ثم رجعهما. لا يستطيع البرومت منع
+   محرّكٍ من مخالفة speaker config دائماً. العلاج البنيوي: مسار كامل لكل
+   هوية بصوت single-speaker واحد، مع الحوار كله كسياق، ثم يأخذ المونتاج
+   أدوار كل شخص من مساره. صفر توليدٍ مفرد للأدوار وصفر فرصة لعبور Puck إلى
+   نورة أو Zephyr إلى فهد. التعطيل موجود للتجارب التاريخية فقط. */
+const ISOLATE_SPEAKER_STEMS = process.env.PODCAST_KW_ISOLATE_SPEAKER_STEMS !== '0'
 const PROFILE = process.env.PODCAST_KW_PROFILE || 'kuwaiti-urban-soft-v2'
 const GENERATION_MODE = String(process.env.PODCAST_KW_GENERATION_MODE || 'pilot').trim().toLowerCase()
 const PILOT_SLUG = String(process.env.PODCAST_KW_PILOT_SLUG || 'success-that-does-not-bring-joy-to-its-ownerarabic').trim()
@@ -200,9 +207,9 @@ The result is simply two real Kuwaitis talking naturally. Both are native, educa
 
 # PEOPLE AND ROOM
 
-Fahad is a mature Kuwaiti man: warm, thoughtful, practical, naturally lower in pitch. Noura is a mature Kuwaiti woman: intelligent, warm, responsive, naturally quicker, and clearly distinct from Fahad. They know each other and are sitting close together on microphones in a relaxed Kuwait City diwaniya.
+Fahad and Noura are equally knowledgeable, curious, warm, and capable of asking, answering, explaining research, reacting, clarifying, and disagreeing. Neither is a permanent interviewer or a permanent wise expert. A research explanation from Noura never makes her Fahad; a question from Fahad never makes him Noura. Infer identity only from the explicit speaker label, never from topic, authority, sentence length, or conversational role.
 
-These are tendencies, not fixed roles. Both can ask, answer, react, clarify, disagree, and contribute insight. Neither is a permanent interviewer or a permanent wise expert. Their difference comes from personality, never from different regional accents.
+Fahad is a mature Kuwaiti man, naturally lower in pitch. Noura is a mature Kuwaiti woman, naturally quicker and clearly distinct from Fahad. They know each other and are sitting close together on microphones in a relaxed Kuwait City diwaniya. Their difference comes from acoustic identity, never from different knowledge levels or regional accents.
 
 # NATIVE ACCENT ANCHOR
 
@@ -452,6 +459,20 @@ Re-scan the transcript word by word before the take. Any word that would come ou
 HOLD TO THE LAST SECOND — the drift happens late: the listener judged minute 3+ hardest, and Noura's register slid to Emirati exactly there after a flawless start. The final third of this take must be read with the same full Kuwait City register as the first line. Do not relax as the take progresses.`
 }
 
+/* المسار المنفرد يقرأ الحوار كله حتى تبقى ذاكرة الأخذ والرد والبحث حاضرة؛
+   لكنه يحمل preset واحداً فقط. الأدوار غير المستهدفة سياق مسموع داخل هذا
+   الـTake ثم تُهمل في المونتاج، لا طلباتٌ منفصلة ولا ترقيعٌ بعد الفشل. */
+export function fullContextStemPrompt (prompt, targetSpeaker = 'female') {
+  const target = targetSpeaker === 'male' ? 'Fahad' : 'Noura'
+  return `# SINGLE-VOICE FULL-CONTEXT STEM — ABSOLUTE ROUTING
+
+This request has exactly one immutable acoustic voice. Use that same voice for every transcript line from first to last. Speaker labels are silent context and timing markers: never read them and never create, imitate, or recast a second voice for the other label.
+
+The production mixer keeps only ${target}-labelled utterances from this full-context rehearsal. Give those utterances the natural performance directed below. Read the other labelled utterances plainly as local conversational context, still in the exact same acoustic voice. Do not change pitch, age, resonance, accent, or vocal placement when a label, topic, research section, question, or conclusion changes.
+
+${prompt}`
+}
+
 /* تقدير محافظ لزمن الحوار قبل وجود الصوت: الكلام الكويتي الطبيعي يقارب
    2.5 كلمة/ث، ونضيف جزءاً صغيراً للترقيم والتنفس. لا نستعمل هذا للمونتاج؛
    فقط لاختيار نافذة إحماء قريبة من 10–15 ثانية عند اضطرارنا لطلب جديد. */
@@ -564,7 +585,10 @@ function retryAfterMs(body, message) {
   return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds * 1000) + 750 : 0
 }
 
-async function geminiPcm(prompt) {
+async function geminiPcm(prompt, speechConfig = [
+  { speaker: 'Fahad', voice: MALE_VOICE },
+  { speaker: 'Noura', voice: FEMALE_VOICE },
+]) {
   if (!KEY) throw new Error('GEMINI_API_KEY/GOOGLE_API_KEY مفقود')
   let last = null
   let quotaWaitMs = 0
@@ -594,10 +618,7 @@ async function geminiPcm(prompt) {
           /* البذرة (مقترح الصديق ٢٢ أغسطس): موثقة لإعادة إنتاج أقرب —
              وتجعل تجارب البرومت أزواجاً متطابقة (نفس البذرة × رأسين).
              لا تضمن تطابق الطابع عبر نصوص مختلفة؛ الأرشيف يبقى التثبيت. */
-          generation_config: { ...(SEED ? { seed: SEED } : {}), speech_config: [
-            { speaker: 'Fahad', voice: MALE_VOICE },
-            { speaker: 'Noura', voice: FEMALE_VOICE },
-          ] },
+          generation_config: { ...(SEED ? { seed: SEED } : {}), speech_config: speechConfig },
         }),
       }).finally(() => clearTimeout(timer))
       /* يُقرأ نصاً أولاً: الغلاف غير المتوقّع (أو المتدفّق) ليس JSON دائماً،
@@ -1277,6 +1298,8 @@ if (SELF_TEST) {
   const cContinuation = promptFor(continuityGroups[1].turns, 1, chunks.length, 'c',
     continuityGroups[1].warmupTurns, continuityGroups[1].warmupEstimatedSec)
   const cSingleCall = promptFor(turns, 0, 1, 'c')
+  const nouraStemPrompt = fullContextStemPrompt(cSingleCall, 'female')
+  const fahadStemPrompt = fullContextStemPrompt(cSingleCall, 'male')
   const cResetProbe = promptFor(Array.from({ length: 7 }, (_, index) => turns[index % turns.length]), 0, 1, 'c')
   assert.ok(cPrompt.includes('# PRIMARY STANDARD') && cPrompt.includes('# NATIVE ACCENT ANCHOR')
     && cPrompt.trimEnd().endsWith(spokenForm(chunks[0][chunks[0].length-1].text)),
@@ -1312,6 +1335,13 @@ if (SELF_TEST) {
     'استمرارية الجلسة والهوية هي الأولوية المطلقة في رأس البرومت')
   assert.match(cSingleCall, /# NOURA — IMMUTABLE KUWAIT CITY PROSODY/,
     'نورة تحمل قفل prosody كويتي موجهاً بلا حشو لهجات')
+  assert.match(nouraStemPrompt, /exactly one immutable acoustic voice/,
+    'مسار نورة لا يستطيع إنشاء صوت فهد')
+  assert.match(nouraStemPrompt, /keeps only Noura-labelled utterances/,
+    'مسار نورة يرى الحوار كله لكن المونتاج يأخذ أدوارها وحدها')
+  assert.match(fahadStemPrompt, /keeps only Fahad-labelled utterances/,
+    'مسار فهد يرى الحوار كله لكن المونتاج يأخذ أدواره وحدها')
+  assert.ok(ISOLATE_SPEAKER_STEMS, 'عزل المسارين هو الافتراض لكل الحلقات الحالية والجديدة')
   assert.match(cSingleCall, /Speaker identity is immutable/, 'الهوية الصوتية غير قابلة لإعادة التفسير في السطور المتأخرة')
   assert.match(cSingleCall, /Later speech must not merely use the same preset voice\. It must feel like the exact same human being/,
     'المطلوب نفس الإنسان لا مجرد اسم voice ثابت')
@@ -1370,6 +1400,12 @@ if (SELF_TEST) {
     'أي تقسيم اضطراري يمر بنافذة إحماء من الحوار السابق')
   assert.match(productionGeneration, /generatedParts\.slice\(generation\.warmupTurns\)/,
     'مداخلات الإحماء تُحذف من الناتج ولا تتكرر على المستمع')
+  assert.match(productionGeneration, /fullContextStemPrompt\(prompt, plan\.target\)/,
+    'كل هوية تولد في مسار كامل يرى الحوار كله')
+  assert.match(productionGeneration, /\[\{ voice:plan\.voice \}\]/,
+    'مسار الهوية single-speaker ولا يملك preset الطرف الآخر كي يبدله')
+  assert.match(productionGeneration, /partsByPlan\[turn\.speaker\]\[turnIndex\]/,
+    'المونتاج يأخذ كل شخص من مساره الكامل لا من الدور المتعدد المنزلق')
   assert.doesNotMatch(productionGeneration, /\bhalves\b|const rescue|promptFor\(subgroup|عاد إلى التوليد المفرد/,
     'لا إنقاذ بأنصاف أو أدوار مستقلة يعيد تفسير الصوت واللهجة')
   assert.match(engineSource, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT[\s\S]*process\.exit\(3\)/,
@@ -1595,31 +1631,47 @@ const chunkFiles=[]; const durations=[]; const requestHashes=[]
 for (let i=0;i<chunks.length;i+=1) {
   const group = chunks[i]
   const generation = generationGroups[i]
-  console.log(`🎙️ Gemini ${i+1}/${chunks.length} (${group.length} مداخلة${generation.warmupTurns ? ` + إحماء ${generation.warmupEstimatedSec}ث محذوف` : ''})`)
-  const prompt=prompts[i]; requestHashes.push(sha256(prompt))
-  const stem=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}`)
-  const rawWav=`${stem}.raw.wav`
-  let pcm=null
-  try { pcm=await geminiPcm(prompt) }
-  catch (error) {
-    throw new Error(`أخفق طلب الحوار المتصل ${i+1}/${chunks.length}: ${error.message}. أُوقف التشغيل؛ ممنوع إنقاذه بطلبات مستقلة تغيّر الصوت واللهجة.`, { cause: error })
-  }
-  writePcmWav(rawWav,pcm)
-  const cleanWav=prepareGeneratedChunk(rawWav, stem)
+  console.log(`🎙️ Gemini ${i+1}/${chunks.length} (${group.length} مداخلة${generation.warmupTurns ? ` + إحماء ${generation.warmupEstimatedSec}ث محذوف` : ''}${ISOLATE_SPEAKER_STEMS ? ' · مسارا هوية كاملان' : ''})`)
+  const prompt=prompts[i]
+  const plans = ISOLATE_SPEAKER_STEMS ? [
+    { key:'male', label:'فهد', target:'male', voice:MALE_VOICE },
+    { key:'female', label:'نورة', target:'female', voice:FEMALE_VOICE },
+  ] : [{ key:'dialogue', label:'الحوار', target:'dialogue', voice:'' }]
+  const partsByPlan = {}
+  for (const plan of plans) {
+    const passPrompt = ISOLATE_SPEAKER_STEMS ? fullContextStemPrompt(prompt, plan.target) : prompt
+    /* speech_config بصوتٍ واحد موثقة رسمياً في Interactions API. لذلك لا
+       يملك هذا الطلب صوت الطرف الآخر كي يبدّله وسط البحث أو الخاتمة. */
+    const speechConfig = ISOLATE_SPEAKER_STEMS ? [{ voice:plan.voice }] : undefined
+    requestHashes.push(sha256(`${JSON.stringify(speechConfig || 'multi')}:${passPrompt}`))
+    const stem=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}-${plan.key}`)
+    const rawWav=`${stem}.raw.wav`
+    console.log(ISOLATE_SPEAKER_STEMS ? `  ↳ مسار ${plan.label}: ${plan.voice} بصوت واحد ثابت والسياق الكامل` : '  ↳ مسار الحوار المتعدد')
+    let pcm=null
+    try { pcm=await geminiPcm(passPrompt, speechConfig) }
+    catch (error) {
+      throw new Error(`أخفق مسار ${plan.label} المتصل ${i+1}/${chunks.length}: ${error.message}. أُوقف التشغيل؛ ممنوع إنقاذه بأدوار مستقلة تغيّر الصوت واللهجة.`, { cause: error })
+    }
+    writePcmWav(rawWav,pcm)
+    const cleanWav=prepareGeneratedChunk(rawWav, stem)
 
-  /* القصّ تحليلي على الـTake نفسه. لو لم نجد حدوده حتى بعد خفض عتبة الصمت،
-     نسقط التشغيل بدل تصنيع صوتين/لهجتين جديدتين بطلبات إنقاذ مستقلة. */
-  const generatedParts = splitChunk(cleanWav, generation.turns, stem)
-  if (!generatedParts) {
-    throw new Error(`تعذّر قص Take الحوار ${i+1} إلى ${generation.turns.length} مداخلة من التسجيل نفسه. أُوقف التشغيل؛ ممنوع إعادة توليد أنصاف أو أدوار مستقلة لأنها تعيد Voice/Accent Reset.`)
+    /* كل مسارٍ Take كامل بالسياق نفسه. لو لم نجد حدوده نسقط المحاولة كلها؛
+       لا يُعاد أي دور منفرد ولا تُخاط نبرات من جلسات قصيرة. */
+    const generatedParts = splitChunk(cleanWav, generation.turns, stem)
+    if (!generatedParts) {
+      throw new Error(`تعذّر قص مسار ${plan.label} ${i+1} إلى ${generation.turns.length} مداخلة من التسجيل المتصل نفسه. أُوقف التشغيل؛ ممنوع إعادة توليد أنصاف أو أدوار مستقلة.`)
+    }
+    const parts = generatedParts.slice(generation.warmupTurns)
+    if (parts.length !== group.length) throw new Error(`قص إحماء مسار ${plan.label} أعطى ${parts.length} ملفاً بدل ${group.length}`)
+    partsByPlan[plan.key] = parts
   }
-  const parts = generatedParts.slice(generation.warmupTurns)
-  if (parts.length !== group.length) throw new Error(`قص الإحماء أعطى ${parts.length} ملفاً بدل ${group.length}`)
 
-  /* الأجزاء قُصّت عند منتصف الصمت الداخلي. وصلها بلا trim وبلا gap مصطنع
-     يعيد نفس التوقيت الأصلي تقريباً؛ نصف الصمت في نهاية الدور ونصفه في
-     بداية التالي. هذا هو الأخذ والردّ الذي سمعه النموذج، لا جدول الوقفات. */
-  parts.forEach((part) => {
+  /* المونتاج يأخذ فهد من Take فهد الكامل ونورة من Take نورة الكامل. كلاهما
+     سمع كل الحوار، فتبقى الاستجابة محلية؛ ولا واحد منهما تولّد كسطر يتيم. */
+  const selectedParts = ISOLATE_SPEAKER_STEMS
+    ? group.map((turn, turnIndex) => partsByPlan[turn.speaker][turnIndex])
+    : partsByPlan.dialogue
+  selectedParts.forEach((part) => {
     chunkFiles.push(part); durations.push(duration(part))
   })
 }
@@ -1627,7 +1679,9 @@ if (chunkFiles.length !== turns.length) {
   throw new Error(`عدد المقاطع ${chunkFiles.length} لا يطابق ${turns.length} مداخلة`)
 }
 console.log(chunks.length === 1
-  ? `✓ Take واحد متصل لـ${turns.length} مداخلة · صفر إعادة ضبط عند الجسور`
+  ? ISOLATE_SPEAKER_STEMS
+    ? `✓ مسارا هوية متصلان لـ${turns.length} مداخلة · نورة لا تحمل Puck وفهد لا يحمل Zephyr · صفر ترقيع أدوار`
+    : `✓ Take واحد متصل لـ${turns.length} مداخلة · صفر إعادة ضبط عند الجسور`
   : `✓ ${chunks.length} طلبات لـ${turns.length} مداخلة · كل طلب لاحق بدأ بإحماء 10–15ث وحُذف التكرار`)
 console.log(silenceCompaction.removedSec > 0.02
   ? `✓ تنفّس الحوار: اختُصر ${silenceCompaction.removedSec.toFixed(1)}ث من الوقفات الأطول من ${(LONG_SILENCE_TRIGGER_MS / 1000).toFixed(2)}ث؛ الوقفات الطبيعية الأقصر بقيت كما هي`
@@ -1676,9 +1730,9 @@ const femaleSwapSegments = femaleContinuity.segments.slice(1).map((segment) => {
   const count = segment.turnIndexes.filter((index) => femaleSwapIndexSet.has(index)).length
   return { segment: segment.segment, count, sampleCount: segment.sampleCount }
 }).filter((segment) => segment.count >= 2 && segment.count / segment.sampleCount >= 0.5)
-/* فجوة الحنجرتين: قياسٌ يمسك «صوتٌ واحدٌ يقرأ الحوار كله» قبل أذن الدكتور.
-   المقيس على نسخةٍ أعجبته: ٣٤ هرتزاً. وعلى نسخةٍ سمعها صوتاً واحداً: ٢٢.
-   فما دون الخامس والعشرين يُرفض في مسار المرشح؛ لا يكفي التحذير بعد اليوم. */
+/* فجوة الحنجرتين تبقى حارساً مساعداً. بعد عزل preset كل شخص بنيوياً، لا
+   نساوي مركز الطبقة بهوية الصوت: Puck+Zephyr المعتمدان سماعاً قيسا منفردين
+   بوسيط 15Hz ومدى 12..23. العتبة الفعلية تأتي من البيئة وتمنع انهيار 0/2. */
 const voiceGap = (maleMid && femaleMid) ? femaleMid - maleMid : null
 console.log(`✓ بوابة الطبقة: وسيط فهد ${maleMid ? maleMid.toFixed(0) : '—'}Hz · نورة ${femaleMid ? femaleMid.toFixed(0) : '—'}Hz${swapped.length ? ` · أدوار مشتبهة: ${swapped.join(' · ')}` : ' · لا انعكاس'}`)
 if (voiceGap !== null) {
@@ -1756,7 +1810,13 @@ const audit={
   schemaVersion:1, slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
   sourceSha256:sha256(readFileSync(source)), turnCount:turns.length, chunkCount:chunks.length,
-  oneTake:chunks.length === 1, ttsInput:'dry-dialogue-only', bridgeGeneration:'external-post-tts',
+  oneTake:!ISOLATE_SPEAKER_STEMS && chunks.length === 1,
+  oneTakePerSpeaker:ISOLATE_SPEAKER_STEMS && chunks.length === 1,
+  fullDialogueContextPerSpeaker:ISOLATE_SPEAKER_STEMS,
+  speakerIsolation:ISOLATE_SPEAKER_STEMS ? 'dual-full-context-single-voice-stems' : 'multispeaker-single-take',
+  ttsRequestCount:requestHashes.length,
+  ttsInput:ISOLATE_SPEAKER_STEMS ? 'dry-dialogue-full-context-single-voice-stems' : 'dry-dialogue-only',
+  bridgeGeneration:'external-post-tts',
   continuityWarmupTurns:generationGroups.map((group) => group.warmupTurns),
   continuityWarmupEstimatedSec:generationGroups.map((group) => group.warmupEstimatedSec),
   nativeSpoken:{version:sourceLock?.nativeSpokenVersion || '',rewriteCount:Number(sourceLock?.nativeSpokenRewriteCount || 0),

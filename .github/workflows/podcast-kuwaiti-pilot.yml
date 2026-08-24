@@ -214,13 +214,18 @@ jobs:
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: pilot
           PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
-          # آخر نسخة رفضها الدكتور مرت آلياً بفجوة 20Hz؛ المريح تاريخياً
-          # يبدأ من 25–30. 25 تمنعها وتبقي العينات الجيدة مثل 27/34/37.
-          PODCAST_KW_MIN_GAP: '25'
+          # Puck+Zephyr اللذان اختارهما الدكتور بأذنه قيسا منفردين بوسيط
+          # 15Hz ومدى 12..23. بعد عزل preset كل شخص في مساره، 12 تمنع
+          # انهيار 0/2Hz ولا ترفض الزوج المعتمد لمجرد تشابه مركز الطبقة.
+          PODCAST_KW_MIN_GAP: '12'
           # نورة تحديداً: الرفض على انزلاق وسيط مقطع كامل، لا على تغيّر دور
           # مفرد طبيعي أو خطأ أوكتاف من كاشف F0. وأي دور مقصوص/ممدود يرميه.
           PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT: '1'
           PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
+          # [٢٤ أغسطس ٢٠٢٦] Gemini Preview بدّل الصوتين كتلةً كاملة في
+          # الأدوار 14–19 رغم قفل البرومت. لكل شخص الآن Take كامل بالسياق
+          # نفسه وspeech_config بصوت واحد؛ ثم تُجمع أدوارهما في المونتاج.
+          PODCAST_KW_ISOLATE_SPEAKER_STEMS: '1'
           # [٢٤ أغسطس ٢٠٢٦] الجسر مونتاج خارجي فقط. تقسيم TTS عنده أعاد
           # تفسير الصوت واللهجة بعد 45–47ث ثم 76–78ث (Voice/Accent Reset).
           # المحرك يقفل هذا أيضاً، والقيمة هنا توثّق عقد الإنتاج بوضوح.

@@ -142,13 +142,13 @@ jobs:
 
       - name: Mark Gemini generation
         if: ${{ !inputs.restore_from_run }}
-        run: node scripts/podcast-production-status.mjs --variant=kuwaiti --status=processing --stage=generating_audio --slugs="$RELEASED_SLUGS" --note="قُفل النص الكويتي وبدأ Gemini 3.1 Flash TTS متعدد المتحدثين في Staging."
+        run: node scripts/podcast-production-status.mjs --variant=kuwaiti --status=processing --stage=generating_audio --slugs="$RELEASED_SLUGS" --note="قُفل النص الكويتي وبدأ Gemini 2.5 Pro TTS متعدد المتحدثين في Staging."
         env:
           FIREBASE_SERVICE_ACCOUNT: sa.json
 
       # المحرّك يخرج بالرمز ٣ حين لا تجتاز العيّنة إحدى بوابات الصوت أو الزمن.
       # العيّنة السيئة تُرمى وتُعاد كاملةً؛ وأي رمزٍ آخر يُسقط الخطوة فوراً.
-      - name: Generate Kuwaiti candidate with Gemini 3.1 Flash TTS
+      - name: Generate Kuwaiti candidate with Gemini 2.5 Pro TTS
         if: ${{ !inputs.restore_from_run }}
         shell: bash
         run: |
@@ -213,22 +213,25 @@ jobs:
           exit 0
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: pilot
           PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
-          # Puck+Zephyr اللذان اختارهما الدكتور بأذنه قيسا منفردين بوسيط
-          # 15Hz ومدى 12..23. بعد عزل preset كل شخص في مساره، 12 تمنع
-          # انهيار 0/2Hz ولا ترفض الزوج المعتمد لمجرد تشابه مركز الطبقة.
-          PODCAST_KW_MIN_GAP: '12'
+          # عدنا إلى الحوار المتعدد الحقيقي. النسخة المرفوضة سابقاً مرت
+          # بفجوة 20Hz وسمعها الدكتور صوتاً واحداً؛ 25 أقل فصل مقبول.
+          PODCAST_KW_MIN_GAP: '25'
           # نورة تحديداً: الرفض على انزلاق وسيط مقطع كامل، لا على تغيّر دور
           # مفرد طبيعي أو خطأ أوكتاف من كاشف F0. وأي دور مقصوص/ممدود يرميه.
           PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_SWAPS: '1'
+          PODCAST_KW_REJECT_ACOUSTIC_RESET: '1'
           PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
-          # [٢٤ أغسطس ٢٠٢٦] Gemini Preview بدّل الصوتين كتلةً كاملة في
-          # الأدوار 14–19 رغم قفل البرومت. لكل شخص الآن Take كامل بالسياق
-          # نفسه وspeech_config بصوت واحد؛ ثم تُجمع أدوارهما في المونتاج.
-          PODCAST_KW_ISOLATE_SPEAKER_STEMS: '1'
+          # [٢٥ أغسطس ٢٠٢٦] فصلُ المسارين منع تبديل preset لكنه جعل نورة
+          # تقول فقراتها وراء بعض وفهد كذلك، ثم ركّبهما المونتاج. النتيجة:
+          # نفس preset، مو نفس الإنسان، وأخذ ورد أضعف. الإنتاج حوار واحد؛
+          # وإذا بدّل Preview صوتاً ترميه البوابات وتعيد الـTake كله.
+          PODCAST_KW_ISOLATE_SPEAKER_STEMS: '0'
           # [٢٤ أغسطس ٢٠٢٦] الجسر مونتاج خارجي فقط. تقسيم TTS عنده أعاد
           # تفسير الصوت واللهجة بعد 45–47ث ثم 76–78ث (Voice/Accent Reset).
           # المحرك يقفل هذا أيضاً، والقيمة هنا توثّق عقد الإنتاج بوضوح.

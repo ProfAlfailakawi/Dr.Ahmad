@@ -111,15 +111,18 @@ jobs:
         env:
           PODCAST_KW_PROMPT_MODE: ${{ inputs.prompt_mode || 'c' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_TTS_MODEL: gemini-3.1-flash-tts-preview
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
           # الجسر يبقى في المكساج، ولا يفتح نداء TTS جديداً. كل نداء جديد
           # أعاد تكوين الحنجرة واللهجة من الصفر في عينات ٢٢ أغسطس.
           PODCAST_KW_SPLIT_AT_BRIDGES: '0'
-          PODCAST_KW_MIN_GAP: '12'
-          PODCAST_KW_ISOLATE_SPEAKER_STEMS: '1'
+          PODCAST_KW_MIN_GAP: '25'
+          PODCAST_KW_ISOLATE_SPEAKER_STEMS: '0'
           PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_SWAPS: '1'
+          PODCAST_KW_REJECT_ACOUSTIC_RESET: '1'
           PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
         run: |
           set -uo pipefail

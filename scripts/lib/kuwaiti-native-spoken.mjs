@@ -11,7 +11,9 @@
  * Transcript مختلفاً؛ النص الذي يراه المحرك هو نفسه النص الذي نسجله.
  */
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-24-native-kuwaiti-v3'
+import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
+
+export const NATIVE_SPOKEN_VERSION = '2026-08-25-native-kuwaiti-v5'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 
 const cloneTurn = (turn) => ({ ...turn })
@@ -160,6 +162,33 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
         turn[field] = value
       }
     }
+    /* ثمانية تبديلات سريعة داخل البحث جعلت Gemini Preview يربط «السائل»
+       بصوتٍ لا بالاسم، فيبدّل فهد ونورة وسط الـTake. نضغطها إلى سؤال واحد
+       وجواب واحد مع حفظ المعلومتين حرفياً؛ السالفة تبقى حواراً والبحث لا
+       يصير فقرة مذيع. هذا علاجٌ للحلقة التي سُمعت فقط، لا قاعدة عامة. */
+    const beforeResearch = output.slice(14, 18).map((turn) => ({ ...turn }))
+    const mergedResearch = [
+      {
+        ...output[14],
+        text: 'شلون يعني؟ وشنو طلع معاهم؟',
+        deliveryType: 'question',
+        pauseAfterMs: 180,
+        overlapMs: 70,
+      },
+      {
+        ...output[15],
+        text: 'في دراسة كبيرة جمعت أبحاث وايد عن الموضوع. كل ما زاد التوتر، نزل مستوى الطالب.',
+        deliveryType: 'statement',
+      },
+    ]
+    output.splice(14, 4, ...mergedResearch)
+    changes.push({
+      index: 14,
+      field: 'turns',
+      before: beforeResearch,
+      after: mergedResearch,
+      reason: 'ضغط التبديل السريع في البحث لمنع إعادة ربط الصوت بالدور الحواري',
+    })
   } else if (slug === PILOT_SLUG && output.length >= 15
     && norm(output[0]?.text).startsWith('تطلع النتيجة')
     && norm(output[0]?.text).includes('بس في شي داخله ساكت')) {
@@ -174,6 +203,10 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
     }
   }
 
-  const audit = auditNativeSpokenTurns(output)
-  return { turns: output, changes, audit, version: NATIVE_SPOKEN_VERSION }
+  /* التنويع يأتي بعد العلاج النصي: لا يمس كلمةً ولا ترتيباً، ويجعل نورة
+     تقود قسماً من المكتبة بدل أن تبدأ الحلقات الـ144 كلها بفهد. */
+  const varied = applyConversationVariety(output, { slug })
+  changes.push(...varied.changes)
+  const audit = { ...auditNativeSpokenTurns(varied.turns), conversationPlan: varied.plan }
+  return { turns: varied.turns, changes, audit, conversationPlan: varied.plan, version: NATIVE_SPOKEN_VERSION }
 }

@@ -63,7 +63,7 @@ for (const slug of slugs) {
   /* المقالات الجديدة لن تكون موجودة داخل مكتبة الـ144 القديمة. بدل أن
      تسقط، تُكثف بالقواعد نفسها من متن Firestore الذي اعتمده الدكتور. */
   const predefined = shortLib.episodes?.[slug]
-  const dynamic = predefined ? null : condenseV3Adaptive(full)
+  const dynamic = predefined ? null : condenseV3Adaptive(full, { slug })
   const selectedRaw = turnsOf(predefined || dynamic?.turns)
   const lock = JSON.parse(readFileSync(lockFile, 'utf8'))
   assert.ok(full.length >= selectedRaw.length && selectedRaw.length >= 15, `${slug}: المصدر القصير غير منطقي (${full.length}→${selectedRaw.length})`)
@@ -114,6 +114,9 @@ for (const slug of slugs) {
     nativeSpokenChangesSha256: sha256(JSON.stringify(nativeSpoken.changes)),
     nativeSpokenQafRiskCount: nativeSpoken.audit.qafRiskCount,
     nativeSpokenSoftWarnings: nativeSpoken.audit.soft.length,
+    dialogueVarietyVersion: nativeSpoken.conversationPlan.version,
+    dialogueVarietyFamily: nativeSpoken.conversationPlan.family,
+    dialogueVarietyCastSwapped: nativeSpoken.conversationPlan.castSwapped,
   }, null, 2) + '\n')
   const removedNote = removedSyntheticInterjections ? ` · نُزعت ${removedSyntheticInterjections} إشارة غير مقفولة` : ''
   const rewriteNote = nativeSpoken.changes.length ? ` · صُقلت ${nativeSpoken.changes.length} خانة` : ''

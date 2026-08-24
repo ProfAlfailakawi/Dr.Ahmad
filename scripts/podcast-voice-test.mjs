@@ -23,7 +23,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const TMP = resolve(ROOT, '.voice-test-tmp')
 const OUT = resolve(ROOT, 'audio', 'voice-test.mp3')
 const API = 'https://generativelanguage.googleapis.com/v1beta/interactions'
-const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-3.1-flash-tts-preview'
+const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-pro-preview-tts'
 const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
 const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

@@ -22,6 +22,11 @@ import assert from 'node:assert/strict'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  conversationFamilyForSlug,
+  orderedQuestionIndexes,
+  stableVarietyNumber,
+} from './lib/kuwaiti-dialogue-variety.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SELF_TEST = process.argv.includes('--self-test')
@@ -59,8 +64,9 @@ function splitLong (turn, limit = SPLIT_AT) {
   return out.map((t, i) => ({ ...turn, text: t, musicBridgeAfter: false, pauseAfterMs: i === out.length - 1 ? turn.pauseAfterMs : 320 }))
 }
 
-export function condenseV3 (original, splitLimit = SPLIT_AT) {
+export function condenseV3 (original, splitLimit = SPLIT_AT, { slug = '' } = {}) {
   const log = []
+  const family = conversationFamilyForSlug(slug)
   /* ١) تفكيك الخطب الطويلة أولاً — يرفع نسبة القصير بلا اختراع */
   const pool = []
   original.forEach((t, i) => { const parts = splitLong(t, splitLimit); if (parts.length > 1) log.push(`قُسمت المداخلة ${i} إلى ${parts.length} عند حدود الجمل`); parts.forEach((p) => pool.push({ ...p, _src: i })) })
@@ -89,11 +95,17 @@ export function condenseV3 (original, splitLimit = SPLIT_AT) {
       log.push('اعتراضٌ استُنتج من نصّه: «' + String(t.text).slice(0, 34) + '…» — وسمٌ لا كلمة')
     }
   })
-  const obj = pool.findIndex((t) => ['gentleObjection', 'objection'].includes(t.deliveryType))
+  const objections = pool.map((t, i) => ({ t, i }))
+    .filter(({ t }) => ['gentleObjection', 'objection'].includes(t.deliveryType))
+  const objEntry = family.objectionOrder === 'late' ? objections.at(-1)
+    : family.objectionOrder === 'middle' ? objections[Math.floor((objections.length - 1) / 2)]
+    : objections[0]
+  const obj = objEntry?.i ?? -1
   if (obj > 0) { pick(obj); pick(obj + 1) }
   /* ٥) أسئلة: ثلاثة على الأقل */
   const qs = pool.map((t, i) => ({ t, i })).filter(({ t, i }) => isQ(t) && i > firstQ && i < tailStart)
-  qs.slice(0, 4).forEach(({ i }) => { pick(i); pick(i + 1) })
+  const orderedQuestions = orderedQuestionIndexes(qs.map(({ i }) => i), family.questionOrder)
+  orderedQuestions.slice(0, 4).forEach((i) => { pick(i); pick(i + 1) })
 
   /* ٥ب) التركيب الكويتي شرطٌ في مواصفة الصديق (مو هذا · عيل · قبل لا ·
      عقب ما · قاعد + فعل) — وهو موجود في ٩٩ من ١٤٤ حلقة من متن الدكتور
@@ -108,6 +120,13 @@ export function condenseV3 (original, splitLimit = SPLIT_AT) {
     let s = L <= SPEC.shortMax ? 3 : L <= 75 ? 1 : -1
     if (picked.has(i - 1) || picked.has(i + 1)) s += 2
     if (['reflection', 'emphasis'].includes(pool[i].deliveryType)) s += 1
+    const text = String(pool[i].text || '')
+    if (family.id === 'quick-practical' && ['briefReaction', 'response', 'statement'].includes(pool[i].deliveryType)) s += 1.2
+    if (family.id === 'curious-unfolding' && isQ(pool[i])) s += 1.4
+    if (family.id === 'warm-friction' && ['gentleObjection', 'objection'].includes(pool[i].deliveryType)) s += 1.5
+    if (family.id === 'lived-scene' && /يوم |مرة|صار|تذكّر|تخيل|شفنا|شفت/u.test(text)) s += 1.3
+    if (family.id === 'evidence-midstream' && /دراسة|بحث|أبحاث|تقرير|جامعة|باحث/u.test(text)) s += 1.3
+    if (family.id === 'quiet-reflection' && ['reflection', 'emphasis'].includes(pool[i].deliveryType)) s += 1.4
     return s
   }
   let guard = 0
@@ -139,8 +158,10 @@ export function condenseV3 (original, splitLimit = SPLIT_AT) {
   })
 
   /* ٨) الأخذ والردّ: تداخلٌ على أقصر مداخلات التصديق — بيانات لا نص */
-  const shortIdx = turns.map((t, i) => ({ t, i })).filter(({ t, i }) => i > 0 && String(t.text).length <= 45)
-    .sort((a, b) => String(a.t.text).length - String(b.t.text).length).slice(0, 4)
+  const overlapCandidates = turns.map((t, i) => ({ t, i })).filter(({ t, i }) => i > 0 && String(t.text).length <= 45)
+    .sort((a, b) => String(a.t.text).length - String(b.t.text).length).slice(0, 8)
+  const overlapOffset = overlapCandidates.length ? stableVarietyNumber(slug, 'overlap') % overlapCandidates.length : 0
+  const shortIdx = [...overlapCandidates.slice(overlapOffset), ...overlapCandidates.slice(0, overlapOffset)].slice(0, 4)
   shortIdx.forEach(({ i }) => { turns[i].overlapMs = 70 })
 
   /* ٩) الجسران — بأمره «الجسور لازم تكون في مكانها الصحيح» (٢٢ أغسطس).
@@ -172,9 +193,10 @@ export function condenseV3 (original, splitLimit = SPLIT_AT) {
     return best
   }
   const marks = []
-  const a = pickNear(Math.min(total * 0.33, 62), 1, turns.length - 4, -1)
+  const [firstBridgeRatio, secondBridgeRatio] = family.bridgeRatios
+  const a = pickNear(Math.min(total * firstBridgeRatio, 62), 1, turns.length - 4, -1)
   if (a >= 0) marks.push(a)
-  const b = pickNear(total * 0.68, (marks[0] ?? 0) + 4, turns.length - 3, marks[0] ?? -1)
+  const b = pickNear(total * secondBridgeRatio, (marks[0] ?? 0) + 4, turns.length - 3, marks[0] ?? -1)
   if (b >= 0) marks.push(b)
   marks.forEach((k) => { turns[k].musicBridgeAfter = true })
 
@@ -189,20 +211,21 @@ export function condenseV3 (original, splitLimit = SPLIT_AT) {
       log.push(`تعجّبٌ أُضيف: «${word.trim()}» على المداخلة ${at} — صوتٌ لا دعوى (شرط فاحص DNA)`)
     }
   }
-  return { turns, log }
+  log.push(`شكل المحادثة: ${family.id} — انتقاءٌ حتمي من المتن بلا إعادة ترتيب`)
+  return { turns, log, conversationFamily: family.id }
 }
 
 /* [٢٢ أغسطس مساءً] حلقتان شذّتا عن الروح الموحّدة (قصيرها دون النصف،
    وخطبةٌ طويلة باقية) لأن جملها أطول من غيرها. الحلّ: حدّ تقسيمٍ متكيّف
    يُشدّ لتلك الحلقات وحدها حتى تلتحق بالروح — بكلماته كما هي دائماً. */
-export function condenseV3Adaptive (original) {
+export function condenseV3Adaptive (original, { slug = '' } = {}) {
   for (const limit of [60, 52, 46, 40]) {
-    const r = condenseV3(original, limit)
+    const r = condenseV3(original, limit, { slug })
     const c = checkSpec(r.turns)
     const structural = c.fails.filter((f) => /^(قصير|طويلة|مداخلات|مدة|الجسران|أخذ)/.test(f))
     if (!structural.length) { if (limit !== 60) r.log.push(`حدّ التقسيم شُدّ إلى ${limit} حرفاً لتلتحق الحلقة بالروح الموحّدة`); return r }
   }
-  return condenseV3(original, 40)
+  return condenseV3(original, 40, { slug })
 }
 
 export function checkSpec (turns) {
@@ -246,7 +269,7 @@ if (RUN_MAIN) {
   const out = { schemaVersion: 1, profile: 'kuwaiti-diwania-v3', note: 'إيقاع الديوانية بكلمات الدكتور — كل سطر منتقى من متنه المدقق؛ التدخلان: تقسيم عند حدود الجمل، وتعجّب واحد عند اللزوم (مسجّل).', count: 0, episodes: {} }
   const report = []
   for (const [slug, ep] of Object.entries(lib.episodes)) {
-    const r = condenseV3Adaptive(Object.values(ep))
+    const r = condenseV3Adaptive(Object.values(ep), { slug })
     const c = checkSpec(r.turns)
     out.episodes[slug] = Object.fromEntries(r.turns.map((t, i) => [String(i), t]))
     report.push({ slug, turns: r.turns.length, sec: c.sec, shortPct: c.shortPct, fails: c.fails, log: r.log })

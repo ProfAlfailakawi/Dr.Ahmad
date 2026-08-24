@@ -23,7 +23,7 @@ on:
         required: false
         default: '1'
       prompt_mode:
-        description: 'أوضاع البرومت: c الفائز ببنية Google + مرساة كويتية ومنعٍ اسمي مضغوط · full الجدار التاريخي · minimal التجربة القديمة'
+        description: 'محجوز للتوافق مع اللوحة؛ إنتاج الحلقة مقفول على c الفائز، والتجارب لها workflow مستقل'
         required: false
         default: 'c'
 
@@ -103,7 +103,7 @@ jobs:
       # الإنتاج الصوتي لا يقرأ متن الأربع دقائق بعد اليوم. تُستبدل النسخة
       # المجلوبة بمكثف الدقيقتين والنصف فقط بعد برهان أنه ترتيبٌ فرعي من
       # الحوار المقفول نفسه؛ أي اختلاف يوقف التوليد قبل صرف حصة Gemini.
-      - name: Select the locked 2m30 dialogue with two bridges
+      - name: Select the locked 2m30 dialogue with two post-production bridge markers
         if: ${{ !inputs.restore_from_run }}
         run: node scripts/select-kuwaiti-short-source.mjs --slugs="$RELEASED_SLUGS"
 
@@ -221,7 +221,8 @@ jobs:
           # المحرك يقفل هذا أيضاً، والقيمة هنا توثّق عقد الإنتاج بوضوح.
           PODCAST_KW_SPLIT_AT_BRIDGES: '0'
           PODCAST_KW_TAKES: ${{ inputs.takes || '1' }}
-          PODCAST_KW_PROMPT_MODE: ${{ inputs.prompt_mode || 'c' }}
+          # البرومتان full/minimal تاريخيان للتجارب فقط؛ لا يدخلان مسار المرشح.
+          PODCAST_KW_PROMPT_MODE: c
 
       # [٢٢ أغسطس ٢٠٢٦ — «التثبيت الحقيقي»] المحرك احتمالي فلن يعيد نسخة
       # أحبها الدكتور أبداً؛ لكن كل تشغيلة تحفظ صوتها مرفقاً دائماً.

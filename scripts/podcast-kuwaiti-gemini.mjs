@@ -105,13 +105,14 @@ const SPLIT_AT_BRIDGES = process.env.PODCAST_KW_SPLIT_AT_BRIDGES === '1'
    الافتراض الجديد يحفظ زمن النداء كما وُلد. المفتاح 0 للمقارنة التاريخية
    فقط، ولا يُستعمل في الإنتاج الطبيعي. */
 const PRESERVE_NATIVE_TURN_TIMING = process.env.PODCAST_KW_PRESERVE_NATIVE_TIMING !== '0'
-/* نحفظ توقيت Gemini القصير والمتفاوت، لكن لا نحفظ الصمت الاستعراضي الطويل.
-   الحكم السمعي الأخير قاس متوسط وقفة 0.77ث وصمتاً يقارب 32٪. لذلك لا
-   نصنع جدول وقفات جديداً: فقط أي صمت يتجاوز 0.72ث يُختصر إلى 0.52ث، أما
-   كل ما دونه فيبقى كما ولده الحوار نفسه. */
-const MAX_INTERNAL_SILENCE_MS = Math.max(240, Math.min(900, Number(process.env.PODCAST_KW_MAX_INTERNAL_SILENCE_MS || 520)))
+/* نحفظ التوقيت العضوي، لكن القياس السمعي الثاني وجد 53–63 وقفة فوق ربع
+   ثانية ومتوسطاً يقارب 0.60ث: لم تعد المشكلة في وقفة شاذة، بل في تكرار
+   الوقفة النظيفة نفسها. نضغط ما يتجاوز 0.44ث إلى 0.30ث، ونترك الأنفاس
+   الأقصر كما وُلدت. والـoverlap المصرّح به على الردود الخاطفة يرجع 70ms
+   فقط؛ دخول أسرع من غير مقاطعة مسموعة أو إعادة بناء جدول ميكانيكي. */
+const MAX_INTERNAL_SILENCE_MS = Math.max(220, Math.min(900, Number(process.env.PODCAST_KW_MAX_INTERNAL_SILENCE_MS || 300)))
 const LONG_SILENCE_TRIGGER_MS = Math.max(MAX_INTERNAL_SILENCE_MS + 80,
-  Math.min(1400, Number(process.env.PODCAST_KW_LONG_SILENCE_TRIGGER_MS || 720)))
+  Math.min(1400, Number(process.env.PODCAST_KW_LONG_SILENCE_TRIGGER_MS || 440)))
 const silenceCompaction = { calls: 0, removedSec: 0 }
 
 function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300, splitAtBridges = SPLIT_AT_BRIDGES } = {}) {
@@ -201,6 +202,7 @@ Lock the whole performance to contemporary educated urban Kuwait City Arabic (ح
 Qaf is lexical, never mechanical. Use the natural pronunciation an educated Kuwait City speaker would use for that particular word. Never apply one global Qaf rule and never make Qaf or Gaf an accent marker. A گ already present in the audio transcript is a specifically approved pronunciation cue, not permission to convert other words. Every Qaf-containing word stays light and integrated: no pop, recited release, throat pressure, extra stress, pause, or vowel stretching around it.
 
 The audio transcript contains approved pronunciation spellings. Respect them quietly without showcasing them. In particular, do not “correct” a deliberate ظ spelling back into formal ض. If any unfamiliar word appears, keep the wording and deliver it lightly; do not invent a pronunciation or paraphrase during synthesis.
+The exact word ظيّج is deliberate native Kuwaiti input. Say ظيّج as written; never normalize it to the formal ضيق.
 
 # CONVERSATION, NOT COPY
 
@@ -224,7 +226,7 @@ Studies, statistics, institutions, numbers, English names, and technical phrases
 
 Keep the exact same Fahad and Noura, Kuwait City identity, room, microphone distance, vocal character, and conversational relationship from the first word to the last. Do not become more formal, slow, dramatic, melodic, or narrator-like in the final third. A music bridge is added later in editing; it is not a new performance.
 
-# MANDATORY SPOKEN OPTIMIZATION — ALREADY COMPLETED
+# MANDATORY TRANSCRIPT OPTIMIZATION — ACTIVE AND COMPLETED UPSTREAM
 
 Before this audio request, every utterance was mandatorily rewritten into its safest natural spoken Urban Kuwaiti form. Risky article-like syntax, avoidable Qaf wording, presenter-style research exposition, and slogan-like conclusions were removed upstream while facts, numbers, names, and meaning were preserved. The TRANSCRIPT below is that optimized spoken version. Never restore a more formal alternative and never paraphrase it again during synthesis.
 
@@ -380,7 +382,7 @@ Noura's lines drift out of Kuwait City more often than Fahad's. Give her every l
    منها. الكويتيّة تُطلب باسمها وحده، والأصوات تأتي معها. */
 LIGHT ARTICULATION — never emphatic, never «مفخّم»
 This is urban Kuwait City speech: every consonant is relaxed and lightly voiced. Do not press or thicken any letter.
-- القاف: قُلها خفيفةً غيرَ مفخّمة، لا قافاً فصيحةً ثقيلةً من أقصى الحلق. مثل: أقوى · بقاء · حقيقية · ضيق · صدق — كلها بقافٍ خفيفةٍ مرتخية.
+- القاف: قُلها خفيفةً غيرَ مفخّمة، لا قافاً فصيحةً ثقيلةً من أقصى الحلق. و«ظيّج» تبقى ظيّج كما كُتبت، ولا تُصحَّح إلى «ضيق».
   استثناءٌ واحد: تبقى القاف فصيحةً في المتعلَّم فقط: القرآن · القانون · القرار · المقال.
 - كل الحروف تُرقَّق: لا تشديدَ ولا تفخيمَ في الضاد والطاء والصاد والقاف. الكلمة تخرج خفيفةً سريعةً كما في مجلسٍ عادي.
 - **لا قلقلةَ في القاف أبداً.** هذا أهمّ سطرٍ هنا. لا تُتبِع القاف بصدىً ولا بنبرةٍ مرتدّة عند سكونها،
@@ -854,8 +856,14 @@ function prepareGeneratedChunk(input, stem) {
 
 function speechStartAfter(previous, previousTurn, currentTurn, preserveNativeTiming = PRESERVE_NATIVE_TURN_TIMING) {
   const end = previous.startSec + previous.durationSec
-  if (preserveNativeTiming) return end
   const requestedOverlap = Math.max(0, Math.min(150, Number(currentTurn?.overlapMs || 0)))
+  const quickCrossSpeakerReply = previousTurn?.speaker !== currentTurn?.speaker
+    && currentTurn?.deliveryType === 'briefReaction'
+  if (preserveNativeTiming) {
+    return quickCrossSpeakerReply && requestedOverlap > 0
+      ? Math.max(0, end - requestedOverlap / 1000)
+      : end
+  }
   if (requestedOverlap > 0) return Math.max(0, end - requestedOverlap / 1000)
   return end + Math.max(80, Math.min(1200, Number(previousTurn?.pauseAfterMs || 320))) / 1000
 }
@@ -1163,7 +1171,7 @@ if (SELF_TEST) {
     'لا مسرحية للكلمة الأخيرة')
   assert.match(cPrompt, /RESEARCH WITHOUT PRESENTER MODE/,
     'البحث لا يفتح وضع المذيع')
-  assert.match(cPrompt, /MANDATORY SPOKEN OPTIMIZATION — ALREADY COMPLETED/,
+  assert.match(cPrompt, /MANDATORY TRANSCRIPT OPTIMIZATION — ACTIVE AND COMPLETED UPSTREAM/,
     'إعادة الصياغة صارت مرحلة إلزامية قبل الصوت لا شرطاً يختاره Gemini')
   assert.match(cPrompt, /The TRANSCRIPT below is that optimized spoken version/,
     'المحرك ينطق النسخة المصقولة نفسها فلا يختلف الصوت عن الـTranscript')
@@ -1213,14 +1221,14 @@ if (SELF_TEST) {
   const engineSource = readFileSync(resolve(ROOT, 'scripts', 'podcast-kuwaiti-gemini.mjs'), 'utf8')
   assert.match(engineSource, /function compactLongSilences[\s\S]*atrim=start=/,
     'الوقفات الطويلة تُختصر من وسط الصمت من غير إعادة بناء توقيت الحوار')
-  assert.equal(MAX_INTERNAL_SILENCE_MS, 520, 'السقف الطبيعي الافتراضي 0.52ث')
-  assert.equal(LONG_SILENCE_TRIGGER_MS, 720, 'الضغط لا يمس أي وقفة أقصر من 0.72ث')
+  assert.equal(MAX_INTERNAL_SILENCE_MS, 300, 'السقف الحواري الافتراضي 0.30ث')
+  assert.equal(LONG_SILENCE_TRIGGER_MS, 440, 'الضغط لا يمس أي نفس أقصر من 0.44ث')
   const pauseIntervals = silenceCompactionIntervals([
     { from: 0.5, to: 1.7, span: 1.2 },
     { from: 2.2, to: 2.6, span: 0.4 },
-  ], 3.1, 720, 520)
+  ], 3.1, 440, 300)
   const keptSec = pauseIntervals.reduce((sum, part) => sum + part.to - part.from, 0)
-  assert.ok(Math.abs(keptSec - 2.42) < 1e-9, '1.2ث تُختصر إلى 0.52ث والوقفة 0.4ث تبقى كاملة')
+  assert.ok(Math.abs(keptSec - 2.20) < 1e-9, '1.2ث تُختصر إلى 0.30ث والوقفة 0.4ث تبقى كاملة')
   const clipSource = engineSource.slice(engineSource.indexOf('function makeMusicClip'), engineSource.indexOf('function buildTimedMaster'))
   assert.match(clipSource, /loudnorm=I=\$\{targetLufs\}/, 'المقاطع الموسيقية تُعاير بالـLUFS')
   assert.ok(!/volume=\$\{volume\}/.test(clipSource), 'المعامل الخطّي الأعمى أعاد الخاتمة مكتومة — لا يُستعاد')
@@ -1310,6 +1318,9 @@ if (SELF_TEST) {
     /* حذف الأسماء اللاتينية: أوضح سبب تبدّل الصوت (Frontiers سمعها الدكتور «فلنتير»). */
     assert.equal(spokenForm('منشور في Frontiers in Psychology عن التوتر'), 'منشور في مجلة علمية عن التوتر', 'الاسم اللاتيني يُحذف ويُستبدل بعربية عامة')
     assert.ok(!/[A-Za-z]/.test(spokenForm('حسب OECD وUNICEF')), 'لا يبقى أيّ حرف لاتيني في مدخل الصوت')
+    assert.equal(spokenForm('مثل واحد كان منحشر بمكان ضيّج… وبعدها طلع منه'),
+      'مثل واحد كان منحشر بمكان ظيّج… وبعدها طِلَع مِنّه',
+      '«ضيّج» المعتمدة تصل مدخل الصوت ظيّج ولا ترجع إلى «ضيق»')
   }
   const grouped = chunkTurns(Array.from({ length: 12 }, (_, i) => ({
     speaker: i % 2 ? 'female' : 'male', text: `مداخلة ${i}`, deliveryType: 'statement', musicBridgeAfter: false,
@@ -1331,8 +1342,14 @@ if (SELF_TEST) {
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')
   const previous = { startSec: 2, durationSec: 4 }
-  assert.equal(speechStartAfter(previous, { pauseAfterMs: 900 }, { overlapMs: 150 }, true), 6,
-    'التوقيت الطبيعي لا يضيف وقفة ثابتة ولا overlap مصطنعاً بعد تقطيع النداء')
+  assert.equal(speechStartAfter(previous,
+    { speaker: 'male', pauseAfterMs: 900 },
+    { speaker: 'female', deliveryType: 'briefReaction', overlapMs: 150 }, true), 5.85,
+    'التوقيت الطبيعي يحترم دخول الرد الخاطف وحده ولا يضيف وقفة ثابتة')
+  assert.equal(speechStartAfter(previous,
+    { speaker: 'male', pauseAfterMs: 900 },
+    { speaker: 'male', deliveryType: 'statement', overlapMs: 150 }, true), 6,
+    'لا overlap بين شطرين للمتحدث نفسه ولا على جملة عادية')
   assert.ok(Math.abs(speechStartAfter(previous, { pauseAfterMs: 560 }, { overlapMs: 0 }, false) - 6.56) < 1e-9,
     'الوضع التاريخي يبقى متاحاً للمقارنة فقط')
   assert.equal(PRESERVE_NATIVE_TURN_TIMING, true,

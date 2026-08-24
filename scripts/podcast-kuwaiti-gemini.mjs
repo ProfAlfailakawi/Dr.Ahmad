@@ -202,6 +202,10 @@ Do not reinterpret either speaker after paragraph boundaries, topic changes, lon
 
 Later speech must not merely use the same preset voice. It must feel like the exact same human being continuing the same conversation seconds later.
 
+At every internal transition, preserve the exact pre-transition vowel length, pitch center, sentence-ending behavior, vocal weight, speaking energy, and Urban Kuwait City conversational rhythm. A transition must be acoustically invisible in the speakers. Continue the exact same humans, not a refreshed interpretation of their voices.
+
+Never soften, widen or melodically expand the accent after a transition. Keep post-transition speech as compact, direct and conversational as the opening 30 seconds.
+
 # NOURA — IMMUTABLE KUWAIT CITY PROSODY
 
 Noura's earliest utterances permanently define her acoustic and dialect reference. Every later Noura line keeps that exact pitch center, resonance, vocal weight, energy, and age. Keep her vowels compact, melodic range narrow, and sentence endings quick, settled, and direct. Research, topic changes, questions, and the final third never soften, lift, widen, or recast her delivery. When several readings are possible, choose the plainest natural Kuwait City reading.
@@ -272,6 +276,10 @@ Native contemporary educated urban Kuwait City speech only — relaxed, compact,
 const PROMPT_VERTEX_C_HEAD = `Synthesize only the labelled TRANSCRIPT. Never speak headings or bracketed tags.
 
 One uninterrupted dry recording: the exact same two educated native Kuwait City people, in the same room, from first word to last. Never reset voice, age, timbre, pitch center, resonance, energy, accent, or personality after a label, pause, question, research line, topic change, or later section.
+
+At every internal transition, preserve the exact pre-transition vowel length, pitch center, sentence-ending behavior, vocal weight, speaking energy, and Urban Kuwait City conversational rhythm. A transition must be acoustically invisible in the speakers. Continue the exact same humans, not a refreshed interpretation of their voices.
+
+Never soften, widen or melodically expand the accent after a transition. Keep post-transition speech as compact, direct and conversational as the opening 30 seconds.
 
 Speak contemporary urban Kuwait City Arabic naturally and effortlessly. Identity comes from compact vowels, short thought units, restrained sentence melody, quick acknowledgements, human timing, and relaxed light articulation—not exaggerated consonants. Qaf is lexical and understated. Respect deliberate Kuwaiti spellings such as ظيّج and never formalize them.
 
@@ -1214,25 +1222,12 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
   const items = []
   /* الكلام يدخل تحت ذيل المقدّمة لا بعد صمتها، تماماً كالفصحى. */
   let cursor = hasMusic ? Math.max(0.20, MUSIC.introSec - MUSIC.introOverlapSec) : 0.20
-  /* ═══ الختام الثابت (٢٢ أغسطس ٢٠٢٦ — بإقراره) ═══
-     الجملة الختامية واحدةٌ حرفياً في ١٤٣ حلقة، ومع ذلك كان اسمه يُقال
-     صحيحاً في حلقةٍ وخطأً في أخرى **داخل التشغيلة الواحدة** — فالعلّة
-     تذبذبُ المحرّك لا الإملاء، ولا يصلحها أي تصحيحٍ كتابيّ. والعلاج
-     الوحيد المضمون: مقطعٌ واحدٌ اعتمده بأذنه (مستخرجٌ من الحلقة
-     الجبارة، تشغيلة 32508152455) يُلصق في نهاية كل حلقة.
-     وشرطُه أن تكون المداخلة الأخيرة هي جملة الإحالة نفسها — فإن غابت
-     (حلقةٌ خُتمت بغيرها) يُولَّد الصوت كالعادة ولا يُقحَم شيء. */
-  const CLOSING_CLIP = resolve(ROOT, 'music', 'kuwaiti-closing-approved.mp3')
-  const REFERRAL = /تلقى المقال الأصلي في موقع الدكتور/
-  const lastIsReferral = REFERRAL.test(String(turns.at(-1)?.text || ''))
-  const useFixedClosing = lastIsReferral && existsSync(CLOSING_CLIP)
-  if (lastIsReferral && !useFixedClosing) console.log('⚠️ الختام المعتمد مفقود من music/ — يُولَّد كالعادة')
-  if (useFixedClosing) console.log('✓ الختام الثابت: مقطعٌ معتمدٌ بأذن الدكتور يحلّ محل التوليد')
-
   for (let i = 0; i < turns.length; i += 1) {
     const turn = turns[i]
-    const isLast = i === turns.length - 1
-    const file = (useFixedClosing && isLast) ? CLOSING_CLIP : files[i]
+    /* الختام جزءٌ من الـTake الحالي مثل بقية الأدوار. نثبت نطق الاسم في
+       spokenForm/kuwaiti-pronunciation.json، ولا نلصق صوتاً قديماً يغيّر
+       جرس نورة أو فهد عند آخر جملة. */
+    const file = files[i]
     const dur = duration(file)
     if (i > 0) {
       const previous = items.at(-1)
@@ -1561,6 +1556,16 @@ if (SELF_TEST) {
     'المطلوب نفس الإنسان لا مجرد اسم voice ثابت')
   assert.match(cSingleCall, /Noura's earliest utterances permanently define her acoustic and dialect reference/,
     'أول نورة مرجعٌ غير قابل لإعادة التفسير في البحث والخاتمة')
+  assert.match(cSingleCall, /At every internal transition, preserve the exact pre-transition vowel length, pitch center, sentence-ending behavior, vocal weight, speaking energy, and Urban Kuwait City conversational rhythm/,
+    'كل حد داخلي يحفظ طول الحركات والطبقة والنهاية والطاقة نفسها')
+  assert.match(cSingleCall, /Keep post-transition speech as compact, direct and conversational as the opening 30 seconds/,
+    'أول ثلاثين ثانية مرجعٌ لإيقاع ما بعد الحدود الداخلية')
+  assert.match(PROMPT_VERTEX_C_HEAD, /A transition must be acoustically invisible in the speakers/,
+    'رأس Vertex المختصر يحمل قفل الانتقال غير المسموع')
+  assert.doesNotMatch(buildTimedMaster.toString(), /kuwaiti-closing-approved|CLOSING_CLIP|useFixedClosing/,
+    'الختام لا يُستبدل بمقطعٍ قديم يغيّر هوية الصوت في آخر جملة')
+  assert.match(buildTimedMaster.toString(), /const file = files\[i\]/,
+    'كل دور، ومنه الاسم في الختام، يأتي من الـTake الحالي نفسه')
   assert.doesNotMatch(`${cPrompt}\n${cContinuation}\n${cSingleCall}`, /\b(?:music|bridge)\b/i,
     'طلب الصوت لا يذكر الموسيقى أو الجسر إطلاقاً')
   const cTranscript = cSingleCall.split('# TRANSCRIPT\n\n')[1]

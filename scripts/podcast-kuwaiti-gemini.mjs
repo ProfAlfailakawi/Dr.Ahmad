@@ -18,7 +18,12 @@ const AUDIO = resolve(ROOT, 'audio')
 const TMP = resolve(ROOT, '.podcast-kw-tmp')
 const AUDITS = resolve(ROOT, 'podcast-audits', 'kuwaiti')
 const STATE = resolve(ROOT, '.podcast-state.json')
-const API = 'https://generativelanguage.googleapis.com/v1beta/interactions'
+const VERTEX_PROJECT = String(process.env.PODCAST_KW_VERTEX_PROJECT || '').trim()
+const VERTEX_LOCATION = String(process.env.PODCAST_KW_VERTEX_LOCATION || 'us-central1').trim()
+const USE_VERTEX = Boolean(VERTEX_PROJECT)
+const API = USE_VERTEX
+  ? `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1beta1/projects/${encodeURIComponent(VERTEX_PROJECT)}/locations/${encodeURIComponent(VERTEX_LOCATION)}/publishers/google/models`
+  : 'https://generativelanguage.googleapis.com/v1beta/interactions'
 const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-3.1-flash-tts-preview'
 /* اعتماد الدكتور ١٤ أغسطس ٢٠٢٦ بعد سماع الجولة الثالثة: المقطع ٥ —
    فهد Puck («الرجل ممتاز») ونورة Despina. سُمع ضعفٌ في لكنة Despina وبقيت
@@ -261,6 +266,20 @@ Before each turn, silently check: does this sound like an actual educated Kuwait
 
 Native contemporary educated urban Kuwait City speech only — relaxed, compact, human, and direct, with calm controlled endings. Keep the same two people and the same effortless city rhythm from the first word to the last. If delivery starts to feel performed or generic, return silently to the Kuwait City sample above.
 `
+/* Vertex TTS يرفض عملياً جسم الصوت الطويل قبل حد النموذج النظري. هذا الرأس
+   يحفظ مفاتيح C الفائز من غير الجدار التفسيري: هوية الجلسة، لسان الكويت،
+   نورة، الشفوية، البحث، والقاف المعجمية. النص نفسه لم يُختصر. */
+const PROMPT_VERTEX_C_HEAD = `Synthesize only the labelled TRANSCRIPT. Never speak headings or bracketed tags.
+
+One uninterrupted dry recording: the exact same two educated native Kuwait City people, in the same room, from first word to last. Never reset voice, age, timbre, pitch center, resonance, energy, accent, or personality after a label, pause, question, research line, topic change, or later section.
+
+Speak contemporary urban Kuwait City Arabic naturally and effortlessly. Identity comes from compact vowels, short thought units, restrained sentence melody, quick acknowledgements, human timing, and relaxed light articulation—not exaggerated consonants. Qaf is lexical and understated. Respect deliberate Kuwaiti spellings such as ظيّج and never formalize them.
+
+Noura stays the exact same mature Kuwaiti woman defined by her first line: compact vowels, narrow melodic range, direct settled endings, no Emirati or Omani-style widening or trailing lilt. Fahad stays the same mature Kuwaiti man. Each target line must remain complete and unhurried enough to understand.
+
+This is conversation, not narration, advertising, an audiobook, or a podcast presenter. Let ordinary lines pass simply. Research sounds like a knowledgeable Kuwaiti recalling evidence mid-conversation, with no formal-Arabic or documentary reset. Emotion is warm and understated; final words are never staged.
+
+Read every labelled line exactly once and in order. Add, omit, repeat, paraphrase, or recast nothing. The transcript was already rewritten upstream into approved spoken Kuwaiti; perform that version only.`
 /* الوسم استثناءٌ لا طبقةٌ على كل جملة. في النسخة السابقة كان السؤال والتأمل
    والخاتمة كلّها تحمل أمراً أدائياً، فيصير أكثر من نصف الحوار «مهماً» قبل أن
    ينطقه المحرّك. نُبقي فقط ما لا تقوله علامات الترقيم وحدها: الرد الخاطف
@@ -308,7 +327,7 @@ function promptFor(turns, index, total, mode = PROMPT_MODE, warmupTurns = 0, war
       : index === 0
       ? 'Begin the same uninterrupted dry-voice recording described above. Nothing in the transcript marks a chapter, transition, or new session.'
       : `Continue the same uninterrupted sitting. The opening ${warmupTurns} transcript turns reproduce approximately ${warmupEstimatedSec} seconds of the immediately preceding conversation as acoustic warm-up context; perform them in the identical voices, then continue without any reset. This is not a new recording, scene, or fresh interpretation.`
-    return `${PROMPT_C_HEAD}
+    return `${USE_VERTEX ? PROMPT_VERTEX_C_HEAD : PROMPT_C_HEAD}
 
 # RECORDING CONTINUITY
 
@@ -464,13 +483,32 @@ HOLD TO THE LAST SECOND — the drift happens late: the listener judged minute 3
    الـTake ثم تُهمل في المونتاج، لا طلباتٌ منفصلة ولا ترقيعٌ بعد الفشل. */
 export function fullContextStemPrompt (prompt, targetSpeaker = 'female') {
   const target = targetSpeaker === 'male' ? 'Fahad' : 'Noura'
+  const transcriptMarker = '# TRANSCRIPT\n\n'
+  const transcriptAt = prompt.lastIndexOf(transcriptMarker)
+  const transcriptLines = transcriptAt < 0 ? [] : prompt.slice(transcriptAt + transcriptMarker.length).split('\n')
+  /* Vertex يعيد الصوت كاملاً في الرد نفسه. قراءة أدوار الطرف الآخر ثم رميها
+     ضاعفت الخرج، ورفض Zephyr الطلب الطويل بعد نجاح Puck. في المسار المحلي
+     نأخذ أدوار الشخص نفسه كلها في Take واحد؛ GitHub/Interactions يحتفظ
+     بالسياق الكامل الذي ثبّتناه للإنتاج العام. */
+  const spokenLines = USE_VERTEX ? transcriptLines.filter((line) => line.startsWith(`${target}:`)) : transcriptLines
+  const boundedPrompt = transcriptAt < 0 ? prompt : `${prompt.slice(0, transcriptAt + transcriptMarker.length)}${spokenLines
+    .join('\n[short pause]\n')}`
+  if (USE_VERTEX) return `# SINGLE-VOICE CONTINUOUS IDENTITY STEM
+
+Use exactly one immutable acoustic voice for every line. Read every ${target}-labelled utterance completely in this one Take. Labels are silent timing context and never spoken. Do not imitate or create a second voice.
+
+Every [short pause] is a silent ~250ms turn boundary, never a scene change and never spoken. Do not make a pause that long inside a line.
+
+${boundedPrompt}`
   return `# SINGLE-VOICE FULL-CONTEXT STEM — ABSOLUTE ROUTING
 
 This request has exactly one immutable acoustic voice. Use that same voice for every transcript line from first to last. Speaker labels are silent context and timing markers: never read them and never create, imitate, or recast a second voice for the other label.
 
+Every [short pause] tag is a compact conversational turn boundary of about 250ms. It is silent and must never be spoken. Keep it between labelled lines, and do not insert a pause that long inside a line. This is not a scene change; it exists only so the mixer can cut complete utterances without clipping the research line or stealing words from the next turn.
+
 The production mixer keeps only ${target}-labelled utterances from this full-context rehearsal. Give those utterances the natural performance directed below. Read the other labelled utterances plainly as local conversational context, still in the exact same acoustic voice. Do not change pitch, age, resonance, accent, or vocal placement when a label, topic, research section, question, or conclusion changes.
 
-${prompt}`
+${boundedPrompt}`
 }
 
 /* تقدير محافظ لزمن الحوار قبل وجود الصوت: الكلام الكويتي الطبيعي يقارب
@@ -589,7 +627,13 @@ async function geminiPcm(prompt, speechConfig = [
   { speaker: 'Fahad', voice: MALE_VOICE },
   { speaker: 'Noura', voice: FEMALE_VOICE },
 ]) {
-  if (!KEY) throw new Error('GEMINI_API_KEY/GOOGLE_API_KEY مفقود')
+  if (!KEY && !USE_VERTEX) throw new Error('GEMINI_API_KEY/GOOGLE_API_KEY مفقود')
+  let vertexToken = ''
+  if (USE_VERTEX) {
+    const auth = spawnSync('gcloud', ['auth', 'print-access-token'], { encoding:'utf8' })
+    vertexToken = String(auth.stdout || '').trim()
+    if (auth.status !== 0 || !vertexToken) throw new Error('تعذّر أخذ Vertex access token من gcloud')
+  }
   let last = null
   let quotaWaitMs = 0
   /* الطلب الضخم يُعاد مرّتين لا ستّاً: مهلته عشر دقائق، ومهلة الوظيفة كلها
@@ -604,14 +648,38 @@ async function geminiPcm(prompt, speechConfig = [
          (تشغيلة ٣١٨٧٦١٦٧٧٥٥: AbortError بعد تسع دقائق ونصف). */
       const timeoutMs = Math.min(600_000, Math.max(90_000, prompt.length * 80))
       const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs)
-      const response = await fetch(API, {
+      const vertexSpeechConfig = speechConfig?.length === 1 && !speechConfig[0]?.speaker
+        ? {
+            languageCode: 'ar',
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: speechConfig[0].voice } },
+          }
+        : {
+            languageCode: 'ar',
+            multiSpeakerVoiceConfig: {
+              speakerVoiceConfigs: speechConfig.map((item) => ({
+                speaker: item.speaker,
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: item.voice } },
+              })),
+            },
+          }
+      const endpoint = USE_VERTEX ? `${API}/${encodeURIComponent(MODEL)}:generateContent` : API
+      const response = await fetch(endpoint, {
         method: 'POST', signal: controller.signal,
         /* بلا ترويسة Api-Revision: هي ترويسة البثّ المتدفّق (stream:true) وحدها.
            إرسالها على طلبٍ غير متدفّق يعيد 200 بغلافٍ متدفّقٍ لا يحمل
            output_audio، فيسقط التوليد ورسالته «HTTP 200» بلا سبب — وهي
            بالضبط علّة تشغيلة ١٢ أغسطس ٢٠٢٦. */
-        headers: { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        headers: USE_VERTEX
+          ? { Authorization: `Bearer ${vertexToken}`, 'x-goog-user-project': VERTEX_PROJECT, 'Content-Type': 'application/json' }
+          : { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify(USE_VERTEX ? {
+          contents: { role:'user', parts:[{ text:prompt }] },
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            ...(SEED ? { seed:SEED } : {}),
+            speechConfig: vertexSpeechConfig,
+          },
+        } : {
           model: MODEL,
           input: prompt,
           response_format: { type: 'audio' },
@@ -629,7 +697,7 @@ async function geminiPcm(prompt, speechConfig = [
       let data = extractPcmBase64(body)
       /* لو عاد الردّ إحالةً (معرّف تفاعلٍ مكتمل بلا حمولة) سُحب التفاعل نفسه
          مرّةً واحدة؛ أرخص من إسقاط التوليد كلّه على شكل غلافٍ متغيّر. */
-      if (response.ok && !data && body?.id && body?.status === 'completed') {
+      if (!USE_VERTEX && response.ok && !data && body?.id && body?.status === 'completed') {
         const followUp = await fetch(`${API}/${encodeURIComponent(body.id)}`, {
           headers: { 'x-goog-api-key': KEY },
         }).catch(() => null)
@@ -648,8 +716,10 @@ async function geminiPcm(prompt, speechConfig = [
       const shape = body && typeof body === 'object'
         ? `شكل الردّ: ${describeShape(body).join(' | ')}`
         : `ردّ غير JSON (${raw.length} حرفاً): ${raw.slice(0, 200).replace(/\s+/g, ' ')}`
-      const message = body?.error?.message || body?.message
+      const detailText = body?.error?.details?.length ? ` — ${JSON.stringify(body.error.details)}` : ''
+      const message = (body?.error?.message || body?.message
         || `HTTP ${response.status} بلا صوت — ${shape}`
+      ) + detailText
       if (response.status !== 429 && response.status < 500) throw new Error(message)
       /* 429: تُحترم مهلة الخادم نفسها، ويُفرَّغ سجلّ النافذة كي لا يُطلق
          الطلبُ التالي في دقيقةٍ ما زالت مستهلكة. */
@@ -1341,6 +1411,9 @@ if (SELF_TEST) {
     'مسار نورة يرى الحوار كله لكن المونتاج يأخذ أدوارها وحدها')
   assert.match(fahadStemPrompt, /keeps only Fahad-labelled utterances/,
     'مسار فهد يرى الحوار كله لكن المونتاج يأخذ أدواره وحدها')
+  const nouraStemTranscript = nouraStemPrompt.split('# TRANSCRIPT\n\n').at(-1)
+  assert.equal((nouraStemTranscript.match(/\[short pause\]/g) || []).length, turns.length - 1,
+    'مسار الهوية يحمل فاصلاً صامتاً موثقاً عند كل حد دور كي لا يقص البحث')
   assert.ok(ISOLATE_SPEAKER_STEMS, 'عزل المسارين هو الافتراض لكل الحلقات الحالية والجديدة')
   assert.match(cSingleCall, /Speaker identity is immutable/, 'الهوية الصوتية غير قابلة لإعادة التفسير في السطور المتأخرة')
   assert.match(cSingleCall, /Later speech must not merely use the same preset voice\. It must feel like the exact same human being/,
@@ -1447,7 +1520,7 @@ if (SELF_TEST) {
      حمل ترويسة البثّ، فعاد ٢٠٠ بغلافٍ بلا output_audio ولم تُبلّغ الرسالةُ
      شيئاً. الحارسان أدناه يمنعان عودة الوجهين معاً. */
   const source = readFileSync(resolve(ROOT,'scripts','podcast-kuwaiti-gemini.mjs'),'utf8')
-  const requestBlock = source.slice(source.indexOf('const response = await fetch(API'), source.indexOf('const raw = await response.text()'))
+  const requestBlock = source.slice(source.indexOf('const response = await fetch(endpoint'), source.indexOf('const raw = await response.text()'))
   /* يُطابَق شكل الترويسة لا اسمها، وإلا لأمسك الحارسُ شرحه المكتوب أعلاه. */
   assert.ok(!/['"]Api-Revision['"]\s*:/.test(requestBlock), 'ترويسة Api-Revision للبثّ وحده؛ وجودها على طلبٍ غير متدفّق يعيد 200 بلا صوت')
   const b64 = (seed) => seed.repeat(Math.ceil(600 / seed.length)).slice(0, 600)
@@ -1640,6 +1713,7 @@ for (let i=0;i<chunks.length;i+=1) {
   const partsByPlan = {}
   for (const plan of plans) {
     const passPrompt = ISOLATE_SPEAKER_STEMS ? fullContextStemPrompt(prompt, plan.target) : prompt
+    if (USE_VERTEX) console.log(`    Vertex input: ${Buffer.byteLength(passPrompt, 'utf8')} بايت`)
     /* speech_config بصوتٍ واحد موثقة رسمياً في Interactions API. لذلك لا
        يملك هذا الطلب صوت الطرف الآخر كي يبدّله وسط البحث أو الخاتمة. */
     const speechConfig = ISOLATE_SPEAKER_STEMS ? [{ voice:plan.voice }] : undefined
@@ -1657,19 +1731,34 @@ for (let i=0;i<chunks.length;i+=1) {
 
     /* كل مسارٍ Take كامل بالسياق نفسه. لو لم نجد حدوده نسقط المحاولة كلها؛
        لا يُعاد أي دور منفرد ولا تُخاط نبرات من جلسات قصيرة. */
-    const generatedParts = splitChunk(cleanWav, generation.turns, stem)
+    const planTurns = USE_VERTEX
+      ? generation.turns.filter((turn) => turn.speaker === plan.target)
+      : generation.turns
+    const generatedParts = splitChunk(cleanWav, planTurns, stem)
     if (!generatedParts) {
-      throw new Error(`تعذّر قص مسار ${plan.label} ${i+1} إلى ${generation.turns.length} مداخلة من التسجيل المتصل نفسه. أُوقف التشغيل؛ ممنوع إعادة توليد أنصاف أو أدوار مستقلة.`)
+      throw new Error(`تعذّر قص مسار ${plan.label} ${i+1} إلى ${planTurns.length} مداخلة من التسجيل المتصل نفسه. أُوقف التشغيل؛ ممنوع إعادة توليد أنصاف أو أدوار مستقلة.`)
     }
-    const parts = generatedParts.slice(generation.warmupTurns)
-    if (parts.length !== group.length) throw new Error(`قص إحماء مسار ${plan.label} أعطى ${parts.length} ملفاً بدل ${group.length}`)
-    partsByPlan[plan.key] = parts
+    if (USE_VERTEX) {
+      const originalIndexes = generation.turns
+        .map((turn, originalIndex) => ({ turn, originalIndex }))
+        .filter(({ turn }) => turn.speaker === plan.target)
+      const kept = originalIndexes
+        .map((entry, partIndex) => ({ ...entry, file: generatedParts[partIndex] }))
+        .filter(({ originalIndex }) => originalIndex >= generation.warmupTurns)
+      partsByPlan[plan.key] = new Map(kept.map(({ originalIndex, file }) => [originalIndex - generation.warmupTurns, file]))
+    } else {
+      const parts = generatedParts.slice(generation.warmupTurns)
+      if (parts.length !== group.length) throw new Error(`قص إحماء مسار ${plan.label} أعطى ${parts.length} ملفاً بدل ${group.length}`)
+      partsByPlan[plan.key] = parts
+    }
   }
 
   /* المونتاج يأخذ فهد من Take فهد الكامل ونورة من Take نورة الكامل. كلاهما
      سمع كل الحوار، فتبقى الاستجابة محلية؛ ولا واحد منهما تولّد كسطر يتيم. */
   const selectedParts = ISOLATE_SPEAKER_STEMS
-    ? group.map((turn, turnIndex) => partsByPlan[turn.speaker][turnIndex])
+    ? group.map((turn, turnIndex) => USE_VERTEX
+        ? partsByPlan[turn.speaker].get(turnIndex)
+        : partsByPlan[turn.speaker][turnIndex])
     : partsByPlan.dialogue
   selectedParts.forEach((part) => {
     chunkFiles.push(part); durations.push(duration(part))
@@ -1812,10 +1901,15 @@ const audit={
   sourceSha256:sha256(readFileSync(source)), turnCount:turns.length, chunkCount:chunks.length,
   oneTake:!ISOLATE_SPEAKER_STEMS && chunks.length === 1,
   oneTakePerSpeaker:ISOLATE_SPEAKER_STEMS && chunks.length === 1,
-  fullDialogueContextPerSpeaker:ISOLATE_SPEAKER_STEMS,
-  speakerIsolation:ISOLATE_SPEAKER_STEMS ? 'dual-full-context-single-voice-stems' : 'multispeaker-single-take',
+  fullDialogueContextPerSpeaker:ISOLATE_SPEAKER_STEMS && !USE_VERTEX,
+  targetTurnsContinuousPerSpeaker:ISOLATE_SPEAKER_STEMS && USE_VERTEX,
+  speakerIsolation:ISOLATE_SPEAKER_STEMS
+    ? (USE_VERTEX ? 'dual-target-continuous-single-voice-stems' : 'dual-full-context-single-voice-stems')
+    : 'multispeaker-single-take',
   ttsRequestCount:requestHashes.length,
-  ttsInput:ISOLATE_SPEAKER_STEMS ? 'dry-dialogue-full-context-single-voice-stems' : 'dry-dialogue-only',
+  ttsInput:ISOLATE_SPEAKER_STEMS
+    ? (USE_VERTEX ? 'dry-dialogue-target-turns-continuous-single-voice-stems' : 'dry-dialogue-full-context-single-voice-stems')
+    : 'dry-dialogue-only',
   bridgeGeneration:'external-post-tts',
   continuityWarmupTurns:generationGroups.map((group) => group.warmupTurns),
   continuityWarmupEstimatedSec:generationGroups.map((group) => group.warmupEstimatedSec),

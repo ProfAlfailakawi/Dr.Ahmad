@@ -160,6 +160,9 @@ jobs:
           set +e
           ATTEMPTS=3
           BASE_GAP="$PODCAST_KW_MIN_GAP"
+          # Rerun كان يعيد 1101/1111/1121 حرفياً، ومع seed ثابت رجعت
+          # العينات الثلاث نفسها وضيّعت سبع دقائق بلا فرصة جديدة.
+          SEED_BASE=$(( 1100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 ))
           # بيك أوف الحلقة (٢١ أغسطس ٢٠٢٦): العيّنة تتذبذب بين التشغيلات
           # والمدخل واحد (طبقة variance في المعجم مبرهنة). فبدل محاربة
           # التذبذب نحصده: نولّد نسخاً كاملة ويختار الدكتور أفضلها بأذنه —
@@ -177,7 +180,7 @@ jobs:
               export PODCAST_KW_MIN_GAP="$BASE_GAP"
               # بذور معلومة (مقترحه): 1101/1102/1103 للنسخ، والمحاولة
               # الفاشلة تنزاح بذرتها +10 كي لا تعيد نفس العينة المرفوضة.
-              export PODCAST_KW_SEED=$(( 1100 + t + (i - 1) * 10 ))
+              export PODCAST_KW_SEED=$(( SEED_BASE + t + (i - 1) * 10 ))
               echo "نسخة $t/$TAKES · المحاولة $i/$ATTEMPTS — العتبة $PODCAST_KW_MIN_GAP هرتزاً · البذرة $PODCAST_KW_SEED"
               node scripts/podcast-kuwaiti-gemini.mjs --slug="$RELEASED_SLUGS"
               CODE=$?

@@ -126,11 +126,13 @@ jobs:
           set +e
           mkdir -p five-canaries
           N=0
+          # لا تعِد seed نفسها عند Rerun؛ وإلا رجعت العينة المرفوضة نفسها.
+          SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 ))
           while IFS= read -r SLUG; do
             N=$((N + 1)); ACCEPTED=0
             for ATTEMPT in 1 2 3; do
               export PODCAST_KW_PILOT_SLUG="$SLUG"
-              export PODCAST_KW_SEED=$((2100 + N + (ATTEMPT - 1) * 10))
+              export PODCAST_KW_SEED=$((SEED_BASE + N + (ATTEMPT - 1) * 10))
               echo "── حلقة $N/5 · محاولة $ATTEMPT/3 · $SLUG · seed=$PODCAST_KW_SEED"
               node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
               CODE=$?

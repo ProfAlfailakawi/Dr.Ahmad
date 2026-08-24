@@ -696,28 +696,52 @@ function medianF0(file) {
 /* معكوس = تردد في نطاق الجنس الآخر صراحةً؛ الرمادي بريء. */
 const voiceSwapped = (expectMale, f0) => f0 !== null && (expectMale ? f0 >= 165 : f0 <= 150)
 
-/* مرجع المتحدث هو بدايته هو، لا متوسط preset عام. هذا يمسك الحالة التي
-   وصفها الدكتور بدقة: الاسم Zephyr ثابت، لكن نورة المتأخرة لم تعد نفس
-   الإنسان صوتياً. أول ثلاث مداخلات صالحة تثبّت مركزها، ثم نقيس الانحراف. */
-export function speakerPitchContinuity (turns, pitches, speaker = 'female', { anchorCount = 3, maxDriftHz = 32 } = {}) {
+/* مرجع المتحدث هو الثلث الأول من كلامه، لا متوسط preset عام. لا يجوز أن
+   يحرق دورٌ واحدٌ الـTake: طبقة الإنسان تتحرك مع السؤال والانفعال، وكاشف
+   F0 نفسه قد يلتقط نصف الأوكتاف. لذلك تبقى القفزة المفردة تنبيهاً سمعياً،
+   أما الرفض الآلي فلا يقع إلا حين يتحرك **وسيط ثلث كامل** في الاتجاه نفسه.
+   هكذا نمسك Voice Reset الحقيقي من غير أن نرفض نورة لأنها شددت كلمة. */
+export function speakerPitchContinuity (turns, pitches, speaker = 'female', { maxPointDriftHz = 32, maxSegmentDriftHz = 28 } = {}) {
   const samples = turns.map((turn, index) => ({ index, speaker: turn.speaker, hz: Number(pitches[index]) }))
     .filter((sample) => sample.speaker === speaker && Number.isFinite(sample.hz) && sample.hz > 0)
-  if (!samples.length) return { anchorHz: null, maxObservedDriftHz: null, suspects: [] }
+  if (!samples.length) return { anchorHz: null, maxObservedDriftHz: null, pointSuspects: [], segmentSuspects: [], segments: [] }
   const median = (values) => {
     const sorted = [...values].sort((a, b) => a - b)
-    return sorted[Math.floor(sorted.length / 2)]
+    const middle = Math.floor(sorted.length / 2)
+    return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
   }
-  const anchor = samples.slice(0, Math.max(1, anchorCount))
-  const anchorHz = median(anchor.map((sample) => sample.hz))
-  const later = samples.slice(anchor.length).map((sample) => ({
+  /* أقل من ست مداخلات لا يكفي لبناء ثلاثة مقاطع مستقرة؛ نعرض قياسها فقط
+     وتبقى بوابة الفصل بين الصوتين هي الحكم الآلي. */
+  const segmentCount = samples.length >= 6 ? 3 : 1
+  const segments = Array.from({ length: segmentCount }, (_, segment) => {
+    const start = Math.floor(segment * samples.length / segmentCount)
+    const end = Math.floor((segment + 1) * samples.length / segmentCount)
+    const members = samples.slice(start, end)
+    return {
+      segment: segment + 1,
+      medianHz: Number(median(members.map((sample) => sample.hz)).toFixed(1)),
+      sampleCount: members.length,
+      turnIndexes: members.map((sample) => sample.index),
+    }
+  })
+  const anchorHz = segments[0].medianHz
+  const later = samples.filter((sample) => !segments[0].turnIndexes.includes(sample.index)).map((sample) => ({
     ...sample,
     driftHz: Math.abs(sample.hz - anchorHz),
   }))
-  const suspects = later.filter((sample) => sample.driftHz > maxDriftHz)
+  const pointSuspects = later.filter((sample) => sample.driftHz > maxPointDriftHz)
+  const laterSegments = segments.slice(1).map((segment) => ({
+    ...segment,
+    signedDriftHz: Number((segment.medianHz - anchorHz).toFixed(1)),
+    driftHz: Number(Math.abs(segment.medianHz - anchorHz).toFixed(1)),
+  }))
+  const segmentSuspects = laterSegments.filter((segment) => segment.driftHz > maxSegmentDriftHz)
   return {
     anchorHz: Number(anchorHz.toFixed(1)),
     maxObservedDriftHz: later.length ? Number(Math.max(...later.map((sample) => sample.driftHz)).toFixed(1)) : 0,
-    suspects,
+    pointSuspects,
+    segmentSuspects,
+    segments: [segments[0], ...laterSegments],
   }
 }
 
@@ -1193,9 +1217,17 @@ if (SELF_TEST) {
   assert.ok(!voiceSwapped(true, null), 'غياب القياس لا يُنذر')
   const continuityProbeTurns = Array.from({ length: 6 }, () => ({ speaker: 'female' }))
   const continuityProbe = speakerPitchContinuity(continuityProbeTurns, [178, 180, 182, 179, 145, 181])
-  assert.equal(continuityProbe.anchorHz, 180, 'أول ثلاث مداخلات لنورة تثبّت مرجع طبقتها')
-  assert.deepEqual(continuityProbe.suspects.map((finding) => finding.index), [4],
-    'الدور الذي يبتعد أكثر من 32Hz عن نورة الأولى يُرفض')
+  assert.equal(continuityProbe.anchorHz, 179, 'الثلث الأول من مداخلات نورة يثبت مرجع طبقتها')
+  assert.deepEqual(continuityProbe.pointSuspects.map((finding) => finding.index), [4],
+    'القفزة المفردة الأكبر من 32Hz تبقى ظاهرة للتدقيق السمعي')
+  assert.equal(continuityProbe.segmentSuspects.length, 0,
+    'قفزة دور واحد لا تحرق Take كامل بصوت طبيعي')
+  const coherentDriftProbe = speakerPitchContinuity(
+    Array.from({ length: 9 }, () => ({ speaker: 'female' })),
+    [178, 180, 182, 149, 147, 151, 146, 148, 145],
+  )
+  assert.deepEqual(coherentDriftProbe.segmentSuspects.map((finding) => finding.segment), [2, 3],
+    'انزلاق وسيط مقطعين كاملين عن نورة الأولى يُرفض')
   assert.match(prompt,/FINAL CHECK — LAST INSTRUCTION/i, 'القفل الثالث: الفحص الختامي بعد النص')
   assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes(KW_LOCK)), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
   /* [٢١ أغسطس ٢٠٢٦] الانجراف المسموع إماراتيٌّ بالاسم («مرات كويتي ومرات
@@ -1636,6 +1668,14 @@ if (maleMid && femaleMid && femaleMid - maleMid > 12) {
 }
 const femaleContinuity = speakerPitchContinuity(turns, pitchOf, 'female')
 const femaleSwapSuspects = swappedDetails.filter((finding) => finding.speaker === 'female')
+const femaleSwapIndexSet = new Set(femaleSwapSuspects.map((finding) => finding.index))
+/* «أقرب إلى فهد» قياسٌ نسبي شديد الحساسية حين تتقارب الحنجرتان. لا يصبح
+   دليلاً قاطعاً إلا إذا أصاب نصف أدوار مقطعٍ لاحق (ودورين على الأقل).
+   المقطع، لا النبرة العابرة، هو وحدة الحكم على تبدّل الهوية. */
+const femaleSwapSegments = femaleContinuity.segments.slice(1).map((segment) => {
+  const count = segment.turnIndexes.filter((index) => femaleSwapIndexSet.has(index)).length
+  return { segment: segment.segment, count, sampleCount: segment.sampleCount }
+}).filter((segment) => segment.count >= 2 && segment.count / segment.sampleCount >= 0.5)
 /* فجوة الحنجرتين: قياسٌ يمسك «صوتٌ واحدٌ يقرأ الحوار كله» قبل أذن الدكتور.
    المقيس على نسخةٍ أعجبته: ٣٤ هرتزاً. وعلى نسخةٍ سمعها صوتاً واحداً: ٢٢.
    فما دون الخامس والعشرين يُرفض في مسار المرشح؛ لا يكفي التحذير بعد اليوم. */
@@ -1648,16 +1688,17 @@ if (voiceGap !== null) {
 }
 console.log(femaleContinuity.anchorHz === null
   ? '⚠️ استمرارية نورة: تعذّر بناء مرجع طبقتها'
-  : `✓ استمرارية نورة: مرجع البداية ${femaleContinuity.anchorHz.toFixed(0)}Hz · أقصى انحراف ${femaleContinuity.maxObservedDriftHz.toFixed(0)}Hz${femaleContinuity.suspects.length ? ` · أدوار مشتبهة ${femaleContinuity.suspects.map((finding) => finding.index + 1).join('، ')}` : ''}`)
+  : `✓ استمرارية نورة: مرجع الثلث الأول ${femaleContinuity.anchorHz.toFixed(0)}Hz · أوساط المقاطع ${femaleContinuity.segments.map((segment) => segment.medianHz.toFixed(0)).join(' ← ')}Hz · أقصى قفزة مفردة ${femaleContinuity.maxObservedDriftHz.toFixed(0)}Hz${femaleContinuity.pointSuspects.length ? ` · تنبيه سمعي للأدوار ${femaleContinuity.pointSuspects.map((finding) => finding.index + 1).join('، ')}` : ''}`)
 
-/* لا نرقّع نورة بدورٍ منفرد: أي انزلاق صريح يرمي الـTake كله، والـworkflow
-   يعيده ببذرة جديدة. آخر نسخة رفضها الدكتور كانت ستسقط هنا بثلاثة أدوار
-   أقرب إلى فهد وبانحراف كبير عن مرجع بدايتها. */
+/* لا نرقّع نورة بدورٍ منفرد. الانزلاق المتماسك في وسيط مقطع كامل يرمي
+   الـTake كله، وكذلك تحوّل نصف مقطع لاحق إلى طبقة فهد. أما الدور المفرد
+   فيُسجل للتدقيق ولا يوقف الإنتاج — وهذا بالضبط ما أنقذ عينة 26Hz الجيدة
+   التي رفضها الحارس القديم بسبب كلمة واحدة عند 38Hz. */
 const REJECT_FEMALE_IDENTITY_DRIFT = process.env.PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT === '1'
-if (REJECT_FEMALE_IDENTITY_DRIFT && (femaleSwapSuspects.length || femaleContinuity.suspects.length)) {
+if (REJECT_FEMALE_IDENTITY_DRIFT && (femaleSwapSegments.length || femaleContinuity.segmentSuspects.length)) {
   const reasons = [
-    femaleSwapSuspects.length ? `${femaleSwapSuspects.length} دور أقرب إلى طبقة فهد` : '',
-    femaleContinuity.suspects.length ? `${femaleContinuity.suspects.length} دور تجاوز انحراف 32Hz عن بداية نورة` : '',
+    femaleSwapSegments.length ? `طبقة فهد غلبت على مقطع نورة ${femaleSwapSegments.map((segment) => segment.segment).join('، ')}` : '',
+    femaleContinuity.segmentSuspects.length ? `وسيط مقطع نورة ${femaleContinuity.segmentSuspects.map((segment) => segment.segment).join('، ')} انحرف أكثر من 28Hz` : '',
   ].filter(Boolean).join(' · ')
   console.error(`↻ هوية نورة الصوتية انزلقت (${reasons}) — الـTake مرفوض بالكامل ويُعاد، بلا ترقيع.`)
   process.exit(3)
@@ -1724,7 +1765,10 @@ const audit={
   requestHashes, audioSha256:sha256(readFileSync(audioFile)), transcriptSha256:sha256(readFileSync(transcriptFile)),
   durationSec:duration(audioFile), pitchGate:{maleMedianHz:maleMid?Math.round(maleMid):null,femaleMedianHz:femaleMid?Math.round(femaleMid):null,voiceGapHz:voiceGap?Math.round(voiceGap):null,suspects:swapped,
     femaleContinuity:{anchorHz:femaleContinuity.anchorHz,maxObservedDriftHz:femaleContinuity.maxObservedDriftHz,
-      suspects:femaleContinuity.suspects.map((finding) => ({ turn:finding.index + 1,hz:Number(finding.hz.toFixed(1)),driftHz:Number(finding.driftHz.toFixed(1)) }))}},
+      segments:femaleContinuity.segments.map((segment) => ({ segment:segment.segment,medianHz:segment.medianHz,sampleCount:segment.sampleCount })),
+      pointSuspects:femaleContinuity.pointSuspects.map((finding) => ({ turn:finding.index + 1,hz:Number(finding.hz.toFixed(1)),driftHz:Number(finding.driftHz.toFixed(1)) })),
+      segmentSuspects:femaleContinuity.segmentSuspects.map((segment) => ({ segment:segment.segment,medianHz:segment.medianHz,driftHz:segment.driftHz })),
+      swapSegments:femaleSwapSegments}},
   repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,medianSecPerChar:Number(medianRate.toFixed(4))},
   mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160,nativeTurnTimingPreserved:PRESERVE_NATIVE_TURN_TIMING,
     longSilenceCompaction:{maxSilenceMs:MAX_INTERNAL_SILENCE_MS,triggerMs:LONG_SILENCE_TRIGGER_MS,calls:silenceCompaction.calls,removedSec:Number(silenceCompaction.removedSec.toFixed(3))}},

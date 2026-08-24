@@ -105,6 +105,14 @@ const SPLIT_AT_BRIDGES = process.env.PODCAST_KW_SPLIT_AT_BRIDGES === '1'
    الافتراض الجديد يحفظ زمن النداء كما وُلد. المفتاح 0 للمقارنة التاريخية
    فقط، ولا يُستعمل في الإنتاج الطبيعي. */
 const PRESERVE_NATIVE_TURN_TIMING = process.env.PODCAST_KW_PRESERVE_NATIVE_TIMING !== '0'
+/* نحفظ توقيت Gemini القصير والمتفاوت، لكن لا نحفظ الصمت الاستعراضي الطويل.
+   الحكم السمعي الأخير قاس متوسط وقفة 0.77ث وصمتاً يقارب 32٪. لذلك لا
+   نصنع جدول وقفات جديداً: فقط أي صمت يتجاوز 0.72ث يُختصر إلى 0.52ث، أما
+   كل ما دونه فيبقى كما ولده الحوار نفسه. */
+const MAX_INTERNAL_SILENCE_MS = Math.max(240, Math.min(900, Number(process.env.PODCAST_KW_MAX_INTERNAL_SILENCE_MS || 520)))
+const LONG_SILENCE_TRIGGER_MS = Math.max(MAX_INTERNAL_SILENCE_MS + 80,
+  Math.min(1400, Number(process.env.PODCAST_KW_LONG_SILENCE_TRIGGER_MS || 720)))
+const silenceCompaction = { calls: 0, removedSec: 0 }
 
 function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300, splitAtBridges = SPLIT_AT_BRIDGES } = {}) {
   const chunks = []
@@ -215,6 +223,10 @@ Studies, statistics, institutions, numbers, English names, and technical phrases
 # CONTINUITY
 
 Keep the exact same Fahad and Noura, Kuwait City identity, room, microphone distance, vocal character, and conversational relationship from the first word to the last. Do not become more formal, slow, dramatic, melodic, or narrator-like in the final third. A music bridge is added later in editing; it is not a new performance.
+
+# MANDATORY SPOKEN OPTIMIZATION — ALREADY COMPLETED
+
+Before this audio request, every utterance was mandatorily rewritten into its safest natural spoken Urban Kuwaiti form. Risky article-like syntax, avoidable Qaf wording, presenter-style research exposition, and slogan-like conclusions were removed upstream while facts, numbers, names, and meaning were preserved. The TRANSCRIPT below is that optimized spoken version. Never restore a more formal alternative and never paraphrase it again during synthesis.
 
 # FIDELITY
 
@@ -796,6 +808,50 @@ function tightenChunk(input, output) {
   return output
 }
 
+export function silenceCompactionIntervals(gaps, totalSec, triggerMs = LONG_SILENCE_TRIGGER_MS, capMs = MAX_INTERNAL_SILENCE_MS) {
+  const trigger = triggerMs / 1000
+  const cap = capMs / 1000
+  const long = gaps.filter((gap) => gap.span > trigger && gap.from > 0.05 && gap.to < totalSec - 0.05)
+    .sort((a, b) => a.from - b.from)
+  const intervals = []
+  let cursor = 0
+  for (const gap of long) {
+    const removeFrom = gap.from + cap / 2
+    const removeTo = gap.to - cap / 2
+    if (!(removeTo > removeFrom) || removeFrom < cursor) continue
+    intervals.push({ from: cursor, to: removeFrom })
+    cursor = removeTo
+  }
+  if (cursor < totalSec) intervals.push({ from: cursor, to: totalSec })
+  return intervals
+}
+
+function compactLongSilences(input, output) {
+  if (!(MAX_INTERNAL_SILENCE_MS > 0)) return input
+  let before = 0
+  try { before = duration(input) } catch { return input }
+  const intervals = silenceCompactionIntervals(detectSilences(input), before)
+  if (intervals.length <= 1) return input
+  const filters = intervals.map((part, index) =>
+    `[0:a]atrim=start=${part.from.toFixed(4)}:end=${part.to.toFixed(4)},asetpts=PTS-STARTPTS[p${index}]`)
+  filters.push(`${intervals.map((_, index) => `[p${index}]`).join('')}concat=n=${intervals.length}:v=0:a=1[out]`)
+  const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-i',input,
+    '-filter_complex',filters.join(';'),'-map','[out]','-ar','24000','-ac','1','-c:a','pcm_s16le',output], { encoding:'utf8' })
+  if (run.status !== 0 || !existsSync(output)) return input
+  let after = 0
+  try { after = duration(output) } catch { return input }
+  /* حاجز أمان: انكماش فوق 35٪ يعني أن العتبة التقطت كلاماً لا صمتاً. */
+  if (after < 0.35 || after < before * 0.65) return input
+  silenceCompaction.calls += 1
+  silenceCompaction.removedSec += Math.max(0, before - after)
+  return output
+}
+
+function prepareGeneratedChunk(input, stem) {
+  const edges = tightenChunk(input, `${stem}.edges.wav`)
+  return compactLongSilences(edges, `${stem}.clean.wav`)
+}
+
 function speechStartAfter(previous, previousTurn, currentTurn, preserveNativeTiming = PRESERVE_NATIVE_TURN_TIMING) {
   const end = previous.startSec + previous.durationSec
   if (preserveNativeTiming) return end
@@ -1107,6 +1163,10 @@ if (SELF_TEST) {
     'لا مسرحية للكلمة الأخيرة')
   assert.match(cPrompt, /RESEARCH WITHOUT PRESENTER MODE/,
     'البحث لا يفتح وضع المذيع')
+  assert.match(cPrompt, /MANDATORY SPOKEN OPTIMIZATION — ALREADY COMPLETED/,
+    'إعادة الصياغة صارت مرحلة إلزامية قبل الصوت لا شرطاً يختاره Gemini')
+  assert.match(cPrompt, /The TRANSCRIPT below is that optimized spoken version/,
+    'المحرك ينطق النسخة المصقولة نفسها فلا يختلف الصوت عن الـTranscript')
   assert.match(cPrompt, /Neither is a permanent interviewer or a permanent wise expert/,
     'الشخصيتان ليستا كاريكاتير سؤال/حكمة ثابتاً')
   assert.match(cPrompt, /This is the opening part/, 'المقطع الأول لا يدّعي وجود جسر قبله')
@@ -1151,6 +1211,16 @@ if (SELF_TEST) {
      تختار مقطوعةً غير الأخرى، المعامل الأعمى يجعل المستوى يتأرجح بين حلقةٍ
      وأخرى بلا سبب. */
   const engineSource = readFileSync(resolve(ROOT, 'scripts', 'podcast-kuwaiti-gemini.mjs'), 'utf8')
+  assert.match(engineSource, /function compactLongSilences[\s\S]*atrim=start=/,
+    'الوقفات الطويلة تُختصر من وسط الصمت من غير إعادة بناء توقيت الحوار')
+  assert.equal(MAX_INTERNAL_SILENCE_MS, 520, 'السقف الطبيعي الافتراضي 0.52ث')
+  assert.equal(LONG_SILENCE_TRIGGER_MS, 720, 'الضغط لا يمس أي وقفة أقصر من 0.72ث')
+  const pauseIntervals = silenceCompactionIntervals([
+    { from: 0.5, to: 1.7, span: 1.2 },
+    { from: 2.2, to: 2.6, span: 0.4 },
+  ], 3.1, 720, 520)
+  const keptSec = pauseIntervals.reduce((sum, part) => sum + part.to - part.from, 0)
+  assert.ok(Math.abs(keptSec - 2.42) < 1e-9, '1.2ث تُختصر إلى 0.52ث والوقفة 0.4ث تبقى كاملة')
   const clipSource = engineSource.slice(engineSource.indexOf('function makeMusicClip'), engineSource.indexOf('function buildTimedMaster'))
   assert.match(clipSource, /loudnorm=I=\$\{targetLufs\}/, 'المقاطع الموسيقية تُعاير بالـLUFS')
   assert.ok(!/volume=\$\{volume\}/.test(clipSource), 'المعامل الخطّي الأعمى أعاد الخاتمة مكتومة — لا يُستعاد')
@@ -1323,6 +1393,9 @@ const sourceLock = existsSync(sourceLockFile) ? JSON.parse(readFileSync(sourceLo
 if (!DRY_RUN && (!sourceLock || sourceLock.slug !== slug || !sourceLock.revisionId)) {
   throw new Error('قفل المصدر الكويتي مفقود؛ ممنوع توليد نسخة قابلة للاعتماد')
 }
+if (!DRY_RUN && !sourceLock?.nativeSpokenVersion) {
+  throw new Error('طبقة النص الكويتي الطبيعي غير مثبتة في القفل؛ ممنوع Gemini قبل الصقل الإلزامي')
+}
 const revisionId = sourceLock?.revisionId || 'dry-run-pilot'
 const chunks = chunkTurns(turns)
 const prompts = chunks.map((chunk,index)=>promptFor(chunk,index,chunks.length))
@@ -1360,7 +1433,7 @@ for (let i=0;i<chunks.length;i+=1) {
       writePcmWav(hraw, await geminiPcm(hp))
       /* ننظف حافّتَي النداء مرةً واحدةً، لا حافّتَي كل مداخلة. هكذا يبقى
          الصمت الداخلي وتوقيت الردود كما ولّده Gemini. */
-      const hclean=tightenChunk(hraw, `${stem}-fb${h+1}.clean.wav`)
+      const hclean=prepareGeneratedChunk(hraw, `${stem}-fb${h+1}`)
       const hsplit=splitChunk(hclean, halves[h], `${stem}-fb${h+1}`)
       files.push(...(hsplit || [hclean]))
     }
@@ -1373,7 +1446,7 @@ for (let i=0;i<chunks.length;i+=1) {
     throw new Error(`تعذّر إنقاذ المقطع ${i+1}: ${files.length} ملفاً لـ${group.length} مداخلة`)
   }
   writePcmWav(rawWav,pcm)
-  const cleanWav=tightenChunk(rawWav, `${stem}.clean.wav`)
+  const cleanWav=prepareGeneratedChunk(rawWav, stem)
 
   /* المقطع يحمل عدّة مداخلات بصوتٍ متّسق؛ يُقصّ إلى مداخلاته ليبقى التوقيت
      الدقيق لكل واحدةٍ منها. وإن تعذّر القصّ رجعنا لهذا المقطع وحده إلى
@@ -1394,13 +1467,13 @@ for (let i=0;i<chunks.length;i+=1) {
           requestHashes.push(sha256(p))
           const raw=`${stem}-${tag}.raw.wav`
           writePcmWav(raw, await geminiPcm(p))
-          return [tightenChunk(raw, `${stem}-${tag}.clean.wav`)]
+          return [prepareGeneratedChunk(raw, `${stem}-${tag}`)]
         }
         const p=promptFor(subgroup, i, chunks.length)
         requestHashes.push(sha256(p))
         const raw=`${stem}-${tag}.raw.wav`
         writePcmWav(raw, await geminiPcm(p))
-        const clean=tightenChunk(raw, `${stem}-${tag}.clean.wav`)
+        const clean=prepareGeneratedChunk(raw, `${stem}-${tag}`)
         const split=splitChunk(clean, subgroup, `${stem}-${tag}`)
         if (split) return split
         const mid=Math.ceil(subgroup.length/2)
@@ -1422,6 +1495,9 @@ if (chunkFiles.length !== turns.length) {
   throw new Error(`عدد المقاطع ${chunkFiles.length} لا يطابق ${turns.length} مداخلة`)
 }
 console.log(`✓ ${chunks.length} طلباً لـ${turns.length} مداخلة${rescuedChunks ? ` · ${rescuedChunks} مقطعاً عاد إلى التوليد المفرد` : ''}`)
+console.log(silenceCompaction.removedSec > 0.02
+  ? `✓ تنفّس الحوار: اختُصر ${silenceCompaction.removedSec.toFixed(1)}ث من الوقفات الأطول من ${(LONG_SILENCE_TRIGGER_MS / 1000).toFixed(2)}ث؛ الوقفات الطبيعية الأقصر بقيت كما هي`
+  : '✓ تنفّس الحوار: ماكو وقفات طويلة احتاجت اختصار')
 
 /* ═══ بوابة الطبقة — بالنسبة لا بالعتبة المطلقة ═══
    العتبتان المطلقتان (ذكر ≤١٥٠ · أنثى ≥١٦٥) كانتا خطأً فادحاً: القياس على
@@ -1512,10 +1588,14 @@ const audit={
   schemaVersion:1, slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
   sourceSha256:sha256(readFileSync(source)), turnCount:turns.length, chunkCount:chunks.length,
+  nativeSpoken:{version:sourceLock?.nativeSpokenVersion || '',rewriteCount:Number(sourceLock?.nativeSpokenRewriteCount || 0),
+    changesSha256:sourceLock?.nativeSpokenChangesSha256 || '',qafRiskCount:Number(sourceLock?.nativeSpokenQafRiskCount || 0),
+    softWarnings:Number(sourceLock?.nativeSpokenSoftWarnings || 0)},
   requestHashes, audioSha256:sha256(readFileSync(audioFile)), transcriptSha256:sha256(readFileSync(transcriptFile)),
   durationSec:duration(audioFile), pitchGate:{maleMedianHz:maleMid?Math.round(maleMid):null,femaleMedianHz:femaleMid?Math.round(femaleMid):null,voiceGapHz:voiceGap?Math.round(voiceGap):null,suspects:swapped},
   repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,medianSecPerChar:Number(medianRate.toFixed(4))},
-  mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160,nativeTurnTimingPreserved:PRESERVE_NATIVE_TURN_TIMING},
+  mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160,nativeTurnTimingPreserved:PRESERVE_NATIVE_TURN_TIMING,
+    longSilenceCompaction:{maxSilenceMs:MAX_INTERNAL_SILENCE_MS,triggerMs:LONG_SILENCE_TRIGGER_MS,calls:silenceCompaction.calls,removedSec:Number(silenceCompaction.removedSec.toFixed(3))}},
   generatedAt:new Date().toISOString(),
 }
 writeFileSync(resolve(AUDITS,`${slug}.json`),`${JSON.stringify(audit,null,2)}\n`)

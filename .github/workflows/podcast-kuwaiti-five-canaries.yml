@@ -78,6 +78,8 @@ jobs:
         env:
           CANARY_LIBRARY: ${{ inputs.library || 'v3' }}
 
+      - name: صقل النص المنطوق إلزامياً قبل Gemini
+        run: node scripts/apply-kuwaiti-native-spoken.mjs --dir=manual-dialogues-kuwaiti
 
       # [٢٢ أغسطس ٢٠٢٦ — بعد مراجعة كل الاختبارات بأمر الدكتور]
       # العطب الجذري: كل فواحص السلسلة تعمل في خطوة التثبيت، والمصدر

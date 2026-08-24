@@ -180,23 +180,19 @@ const MINIMAL_TAIL = 'نفس الصوتين ونفس لسان مدينة الك�
 const PROMPT_C_HEAD = `Synthesize speech from the TRANSCRIPT section only.
 Do not speak headings, instructions, or bracketed performance tags.
 
-# ABSOLUTE SPEAKER IDENTITY AND DIALECT CONTINUITY
+# SINGLE-SESSION ACOUSTIC CONTINUITY — ABSOLUTE PRIORITY
 
-This transcript contains no scene changes. Treat every line as part of one uninterrupted recording session. Never reinitialize either speaker's voice, pitch center, resonance, accent, age, energy, or conversational baseline at any paragraph or topic boundary.
+This entire transcript is one uninterrupted recording session. There are no chapters, segments, transitions, scene changes, or resets. Formatting and topic movement carry no acoustic meaning.
 
-Speaker identity is immutable. Later utterances must sound acoustically continuous with that speaker's earliest utterances, not merely similar in style.
+Speaker identity is immutable. Preserve for each speaker from the first word to the last the exact same vocal age, timbre, pitch center, resonance, vocal weight, energy baseline, vowel system, sentence melody, Urban Kuwait City cadence, and conversational personality.
 
-Treat the entire transcript as one uninterrupted conversation recorded in the same room, during the same sitting, with the same two people.
+Do not reinterpret either speaker after paragraph boundaries, topic changes, long pauses, research material, emotional changes, or formatting changes. Never restart the accent, character, prosody, or vocal placement.
 
-Speaker identity must remain acoustically identical from the first word to the final word. For each speaker, permanently preserve the same apparent age, vocal timbre, pitch center, resonance, vocal weight, breathiness, speaking energy, articulation, Urban Kuwait City accent, vowel timing, and conversational personality.
+Later speech must not merely use the same preset voice. It must feel like the exact same human being continuing the same conversation seconds later.
 
-Never recast either speaker or regenerate a new interpretation of either voice. Never treat a pause, paragraph break, topic change, research section, emotional shift, or editorial transition as a new scene. There must be no acoustic, accent, character, pitch, or style reset anywhere. Later lines sound as if recorded seconds after the opening, with no interruption or change of session.
+# NOURA — IMMUTABLE KUWAIT CITY PROSODY
 
-The Kuwaiti dialect must not weaken or broaden into generic Gulf speech as the transcript continues. Do not become more formal after pauses, introduce a new sentence melody after topic changes, shift either speaker's natural pitch range, apparent age, vocal size, energy, or emotional baseline. The final sentence unmistakably belongs to the exact same two people heard at the beginning.
-
-# NO SCENE RESET
-
-This is not a collection of podcast segments. It is one continuous human conversation. Blank lines, speaker labels, and paragraph divisions are text formatting only and carry no acoustic meaning. Do not interpret them as chapters, acts, scenes, transitions, or new recording sessions. Continue through them with complete vocal, dialectal, and emotional continuity.
+Noura's earliest utterances permanently define her acoustic and dialect reference. Every later Noura line keeps that exact pitch center, resonance, vocal weight, energy, and age. Keep her vowels compact, melodic range narrow, and sentence endings quick, settled, and direct. Research, topic changes, questions, and the final third never soften, lift, widen, or recast her delivery. When several readings are possible, choose the plainest natural Kuwait City reading.
 
 # PRIMARY STANDARD
 
@@ -234,10 +230,6 @@ Tiny natural breaths, a soft hesitation, or a slight restart are welcome only wh
 # RESEARCH WITHOUT PRESENTER MODE
 
 Studies, statistics, institutions, numbers, English names, and technical phrases keep exactly the same Kuwaiti conversational rhythm before, during, and after them. Say them like a knowledgeable Kuwaiti recalling useful evidence mid-conversation. Never switch into formal Arabic prosody, newsreader rhythm, documentary pacing, slower academic articulation, or citation voice.
-
-# CONTINUITY
-
-Keep the exact same Fahad and Noura, Kuwait City identity, room, microphone distance, vocal character, and conversational relationship from the first word to the last. Do not become more formal, slow, dramatic, melodic, or narrator-like in the final third.
 
 # MANDATORY TRANSCRIPT OPTIMIZATION — ACTIVE AND COMPLETED UPSTREAM
 
@@ -703,6 +695,31 @@ function medianF0(file) {
 }
 /* معكوس = تردد في نطاق الجنس الآخر صراحةً؛ الرمادي بريء. */
 const voiceSwapped = (expectMale, f0) => f0 !== null && (expectMale ? f0 >= 165 : f0 <= 150)
+
+/* مرجع المتحدث هو بدايته هو، لا متوسط preset عام. هذا يمسك الحالة التي
+   وصفها الدكتور بدقة: الاسم Zephyr ثابت، لكن نورة المتأخرة لم تعد نفس
+   الإنسان صوتياً. أول ثلاث مداخلات صالحة تثبّت مركزها، ثم نقيس الانحراف. */
+export function speakerPitchContinuity (turns, pitches, speaker = 'female', { anchorCount = 3, maxDriftHz = 32 } = {}) {
+  const samples = turns.map((turn, index) => ({ index, speaker: turn.speaker, hz: Number(pitches[index]) }))
+    .filter((sample) => sample.speaker === speaker && Number.isFinite(sample.hz) && sample.hz > 0)
+  if (!samples.length) return { anchorHz: null, maxObservedDriftHz: null, suspects: [] }
+  const median = (values) => {
+    const sorted = [...values].sort((a, b) => a - b)
+    return sorted[Math.floor(sorted.length / 2)]
+  }
+  const anchor = samples.slice(0, Math.max(1, anchorCount))
+  const anchorHz = median(anchor.map((sample) => sample.hz))
+  const later = samples.slice(anchor.length).map((sample) => ({
+    ...sample,
+    driftHz: Math.abs(sample.hz - anchorHz),
+  }))
+  const suspects = later.filter((sample) => sample.driftHz > maxDriftHz)
+  return {
+    anchorHz: Number(anchorHz.toFixed(1)),
+    maxObservedDriftHz: later.length ? Number(Math.max(...later.map((sample) => sample.driftHz)).toFixed(1)) : 0,
+    suspects,
+  }
+}
 
 function duration(file) {
   const out = spawnSync(FFPROBE, ['-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',file], { encoding:'utf8' })
@@ -1174,6 +1191,11 @@ if (SELF_TEST) {
   assert.ok(voiceSwapped(true, 180) && !voiceSwapped(true, 120) && voiceSwapped(false, 120) && !voiceSwapped(false, 180), 'بوابة الطبقة تحكم بالنطاق الصحيح')
   assert.ok(!voiceSwapped(true, 157) && !voiceSwapped(false, 157), 'المنطقة الرمادية 150-165 بريئة لا تحرق إعادات')
   assert.ok(!voiceSwapped(true, null), 'غياب القياس لا يُنذر')
+  const continuityProbeTurns = Array.from({ length: 6 }, () => ({ speaker: 'female' }))
+  const continuityProbe = speakerPitchContinuity(continuityProbeTurns, [178, 180, 182, 179, 145, 181])
+  assert.equal(continuityProbe.anchorHz, 180, 'أول ثلاث مداخلات لنورة تثبّت مرجع طبقتها')
+  assert.deepEqual(continuityProbe.suspects.map((finding) => finding.index), [4],
+    'الدور الذي يبتعد أكثر من 32Hz عن نورة الأولى يُرفض')
   assert.match(prompt,/FINAL CHECK — LAST INSTRUCTION/i, 'القفل الثالث: الفحص الختامي بعد النص')
   assert.ok(prompt.split('\n').filter(l=>/^(Fahad|Noura):/.test(l)).every(l=>l.includes(KW_LOCK)), 'القفل الثاني: تاج اللهجة يركب كل سطر حوار بلا استثناء')
   /* [٢١ أغسطس ٢٠٢٦] الانجراف المسموع إماراتيٌّ بالاسم («مرات كويتي ومرات
@@ -1254,12 +1276,15 @@ if (SELF_TEST) {
   assert.match(cContinuation, /opening 2 transcript turns reproduce approximately [\d.]+ seconds/,
     'كل طلب اضطراري لاحق يعلن سياق الإحماء القريب ثم يكمل بلا reset')
   assert.match(cSingleCall, /one continuous dry-voice take/, 'الإنتاج بنداء واحد يصرّح أن الحوار Dry Voice متصل')
-  assert.match(cSingleCall, /# ABSOLUTE SPEAKER IDENTITY AND DIALECT CONTINUITY/,
-    'هوية العمر والجرس ومركز النبرة واللهجة مقفولة من أول كلمة إلى آخر كلمة')
-  assert.match(cSingleCall, /# NO SCENE RESET/, 'الفواصل النصية والموضوعية لا تبدأ مشهداً صوتياً جديداً')
+  assert.match(cSingleCall, /# SINGLE-SESSION ACOUSTIC CONTINUITY — ABSOLUTE PRIORITY/,
+    'استمرارية الجلسة والهوية هي الأولوية المطلقة في رأس البرومت')
+  assert.match(cSingleCall, /# NOURA — IMMUTABLE KUWAIT CITY PROSODY/,
+    'نورة تحمل قفل prosody كويتي موجهاً بلا حشو لهجات')
   assert.match(cSingleCall, /Speaker identity is immutable/, 'الهوية الصوتية غير قابلة لإعادة التفسير في السطور المتأخرة')
-  assert.match(cSingleCall, /Later utterances must sound acoustically continuous/,
-    'المطلوب استمرارية صوتية لا مجرد تشابه أسلوبي')
+  assert.match(cSingleCall, /Later speech must not merely use the same preset voice\. It must feel like the exact same human being/,
+    'المطلوب نفس الإنسان لا مجرد اسم voice ثابت')
+  assert.match(cSingleCall, /Noura's earliest utterances permanently define her acoustic and dialect reference/,
+    'أول نورة مرجعٌ غير قابل لإعادة التفسير في البحث والخاتمة')
   assert.doesNotMatch(`${cPrompt}\n${cContinuation}\n${cSingleCall}`, /\b(?:music|bridge)\b/i,
     'طلب الصوت لا يذكر الموسيقى أو الجسر إطلاقاً')
   const cTranscript = cSingleCall.split('# TRANSCRIPT\n\n')[1]
@@ -1315,6 +1340,10 @@ if (SELF_TEST) {
     'مداخلات الإحماء تُحذف من الناتج ولا تتكرر على المستمع')
   assert.doesNotMatch(productionGeneration, /\bhalves\b|const rescue|promptFor\(subgroup|عاد إلى التوليد المفرد/,
     'لا إنقاذ بأنصاف أو أدوار مستقلة يعيد تفسير الصوت واللهجة')
+  assert.match(engineSource, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT[\s\S]*process\.exit\(3\)/,
+    'انزلاق نورة يرمي الـTake كله ويستدعي إعادة ببذرة جديدة')
+  assert.match(engineSource, /PODCAST_KW_REJECT_TIMING_SUSPECTS[\s\S]*process\.exit\(3\)/,
+    'الدور المقصوص أو الممدود يرمي الـTake كله')
   assert.match(engineSource, /for \(const minDurationSec of \[0\.24, 0\.14, 0\.08\]\)/,
     'قص المداخلات يرخي الحساسية على Take نفسه قبل أن يسقط بوضوح')
   assert.equal(MAX_INTERNAL_SILENCE_MS, 300, 'السقف الحواري الافتراضي 0.30ث')
@@ -1591,6 +1620,7 @@ const medianOf = (isMale) => {
 }
 const maleMid = medianOf(true), femaleMid = medianOf(false)
 const swapped = []
+const swappedDetails = []
 if (maleMid && femaleMid && femaleMid - maleMid > 12) {
   for (let t = 0; t < turns.length; t += 1) {
     const f0 = pitchOf[t]; if (!f0) continue
@@ -1600,18 +1630,37 @@ if (maleMid && femaleMid && femaleMid - maleMid > 12) {
     /* شاذٌّ صارخ: أقرب إلى الحنجرة الأخرى بفارق يتجاوز نصف المسافة بينهما. */
     if (Math.abs(f0 - other) + (femaleMid - maleMid) * 0.5 < Math.abs(f0 - own)) {
       swapped.push(`${t + 1} (${expectMale ? 'فهد' : 'نورة'} ${f0.toFixed(0)}Hz)`)
+      swappedDetails.push({ index: t, turn: t + 1, speaker: turns[t].speaker, hz: Number(f0.toFixed(1)) })
     }
   }
 }
+const femaleContinuity = speakerPitchContinuity(turns, pitchOf, 'female')
+const femaleSwapSuspects = swappedDetails.filter((finding) => finding.speaker === 'female')
 /* فجوة الحنجرتين: قياسٌ يمسك «صوتٌ واحدٌ يقرأ الحوار كله» قبل أذن الدكتور.
    المقيس على نسخةٍ أعجبته: ٣٤ هرتزاً. وعلى نسخةٍ سمعها صوتاً واحداً: ٢٢.
-   فما دون الخامس والعشرين إنذارٌ يُعلن ولا يُسقط — الحكم النهائي لأذنه. */
+   فما دون الخامس والعشرين يُرفض في مسار المرشح؛ لا يكفي التحذير بعد اليوم. */
 const voiceGap = (maleMid && femaleMid) ? femaleMid - maleMid : null
 console.log(`✓ بوابة الطبقة: وسيط فهد ${maleMid ? maleMid.toFixed(0) : '—'}Hz · نورة ${femaleMid ? femaleMid.toFixed(0) : '—'}Hz${swapped.length ? ` · أدوار مشتبهة: ${swapped.join(' · ')}` : ' · لا انعكاس'}`)
 if (voiceGap !== null) {
   console.log(voiceGap < 25
     ? `⚠️ فجوة الحنجرتين ${voiceGap.toFixed(0)} هرتزاً — الصوتان متقاربان وقد يُسمعان صوتاً واحداً (المريح ≥ ٣٠)`
     : `✓ فجوة الحنجرتين ${voiceGap.toFixed(0)} هرتزاً — صوتان متمايزان`)
+}
+console.log(femaleContinuity.anchorHz === null
+  ? '⚠️ استمرارية نورة: تعذّر بناء مرجع طبقتها'
+  : `✓ استمرارية نورة: مرجع البداية ${femaleContinuity.anchorHz.toFixed(0)}Hz · أقصى انحراف ${femaleContinuity.maxObservedDriftHz.toFixed(0)}Hz${femaleContinuity.suspects.length ? ` · أدوار مشتبهة ${femaleContinuity.suspects.map((finding) => finding.index + 1).join('، ')}` : ''}`)
+
+/* لا نرقّع نورة بدورٍ منفرد: أي انزلاق صريح يرمي الـTake كله، والـworkflow
+   يعيده ببذرة جديدة. آخر نسخة رفضها الدكتور كانت ستسقط هنا بثلاثة أدوار
+   أقرب إلى فهد وبانحراف كبير عن مرجع بدايتها. */
+const REJECT_FEMALE_IDENTITY_DRIFT = process.env.PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT === '1'
+if (REJECT_FEMALE_IDENTITY_DRIFT && (femaleSwapSuspects.length || femaleContinuity.suspects.length)) {
+  const reasons = [
+    femaleSwapSuspects.length ? `${femaleSwapSuspects.length} دور أقرب إلى طبقة فهد` : '',
+    femaleContinuity.suspects.length ? `${femaleContinuity.suspects.length} دور تجاوز انحراف 32Hz عن بداية نورة` : '',
+  ].filter(Boolean).join(' · ')
+  console.error(`↻ هوية نورة الصوتية انزلقت (${reasons}) — الـTake مرفوض بالكامل ويُعاد، بلا ترقيع.`)
+  process.exit(3)
 }
 
 /* ═══ عتبة الإعادة ═══
@@ -1622,8 +1671,8 @@ if (voiceGap !== null) {
 
    يُفعَّل بـPODCAST_KW_MIN_GAP فقط؛ صفرٌ أو غيابه = السلوك القديم حرفياً.
    والخروج بالرمز ٣ يقع **قبل** كتابة الصوت النهائي وقبل أي رفع، فلا
-   يترك أثراً نصف مكتوب. والورك-فلو يعيد، ويقبل آخر محاولةٍ كما هي
-   حتى لا نبقى بلا حلقة. */
+   يترك أثراً نصف مكتوب. والـworkflow يعيد الTake كله، وإن فشلت المحاولات
+   كلها تسقط التشغيلة بدل قبول صوتٍ يعرف الحارس أنه سيئ. */
 const MIN_GAP = Number(process.env.PODCAST_KW_MIN_GAP || 0)
 if (MIN_GAP > 0 && voiceGap !== null && voiceGap < MIN_GAP) {
   console.error(`↻ الفجوة ${voiceGap.toFixed(0)} هرتزاً دون العتبة ${MIN_GAP} — عيّنةٌ مرفوضة، تُعاد.`)
@@ -1651,6 +1700,11 @@ const repeatRegens = 0
 console.log(repeatSuspects.length
   ? `✓ بوابة الزمن: ${repeatSuspects.length} دوراً تحت السمع — ${repeatSuspects.join(' · ')}`
   : '✓ بوابة الزمن: كل الأدوار في مداها')
+const REJECT_TIMING_SUSPECTS = process.env.PODCAST_KW_REJECT_TIMING_SUSPECTS === '1'
+if (REJECT_TIMING_SUSPECTS && repeatSuspects.length) {
+  console.error(`↻ قصّ/تمديد غير طبيعي في ${repeatSuspects.length} دور — الـTake مرفوض بالكامل ويُعاد: ${repeatSuspects.join(' · ')}`)
+  process.exit(3)
+}
 
 const audioFile=resolve(AUDIO,`${slug}.dialogue-kw.mp3`)
 const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
@@ -1668,7 +1722,9 @@ const audit={
     changesSha256:sourceLock?.nativeSpokenChangesSha256 || '',qafRiskCount:Number(sourceLock?.nativeSpokenQafRiskCount || 0),
     softWarnings:Number(sourceLock?.nativeSpokenSoftWarnings || 0)},
   requestHashes, audioSha256:sha256(readFileSync(audioFile)), transcriptSha256:sha256(readFileSync(transcriptFile)),
-  durationSec:duration(audioFile), pitchGate:{maleMedianHz:maleMid?Math.round(maleMid):null,femaleMedianHz:femaleMid?Math.round(femaleMid):null,voiceGapHz:voiceGap?Math.round(voiceGap):null,suspects:swapped},
+  durationSec:duration(audioFile), pitchGate:{maleMedianHz:maleMid?Math.round(maleMid):null,femaleMedianHz:femaleMid?Math.round(femaleMid):null,voiceGapHz:voiceGap?Math.round(voiceGap):null,suspects:swapped,
+    femaleContinuity:{anchorHz:femaleContinuity.anchorHz,maxObservedDriftHz:femaleContinuity.maxObservedDriftHz,
+      suspects:femaleContinuity.suspects.map((finding) => ({ turn:finding.index + 1,hz:Number(finding.hz.toFixed(1)),driftHz:Number(finding.driftHz.toFixed(1)) }))}},
   repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,medianSecPerChar:Number(medianRate.toFixed(4))},
   mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160,nativeTurnTimingPreserved:PRESERVE_NATIVE_TURN_TIMING,
     longSilenceCompaction:{maxSilenceMs:MAX_INTERNAL_SILENCE_MS,triggerMs:LONG_SILENCE_TRIGGER_MS,calls:silenceCompaction.calls,removedSec:Number(silenceCompaction.removedSec.toFixed(3))}},

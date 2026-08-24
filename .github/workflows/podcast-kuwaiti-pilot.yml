@@ -215,7 +215,13 @@ jobs:
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: pilot
           PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
-          PODCAST_KW_MIN_GAP: '12'
+          # آخر نسخة رفضها الدكتور مرت آلياً بفجوة 20Hz؛ المريح تاريخياً
+          # يبدأ من 25–30. 25 تمنعها وتبقي العينات الجيدة مثل 27/34/37.
+          PODCAST_KW_MIN_GAP: '25'
+          # نورة تحديداً: أي دور يقترب من طبقة فهد أو يبتعد أكثر من 32Hz
+          # عن مرجع بدايتها يرمي الـTake كله. وأي دور مقصوص/ممدود يرميه كذلك.
+          PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
           # [٢٤ أغسطس ٢٠٢٦] الجسر مونتاج خارجي فقط. تقسيم TTS عنده أعاد
           # تفسير الصوت واللهجة بعد 45–47ث ثم 76–78ث (Voice/Accent Reset).
           # المحرك يقفل هذا أيضاً، والقيمة هنا توثّق عقد الإنتاج بوضوح.

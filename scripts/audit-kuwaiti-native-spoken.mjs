@@ -46,7 +46,9 @@ if (SELF_TEST) {
     'مسار الإنتاج يثبت أن الجسر مونتاج خارجي ولا يقطع طلب TTS')
   assert.doesNotMatch(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'1'/,
     'الإعداد الذي صنع ثلاثة أصوات بعد الجسور لا يرجع')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 11/11')
+  assert.match(pilotWorkflow, /PODCAST_KW_PROMPT_MODE:\s*c/,
+    'مسار المرشح مقفول على البرومت C المعتمد لا أوضاع التجارب التاريخية')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 12/12')
   process.exit(0)
 }
 
@@ -87,6 +89,8 @@ assert.match(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'0'/,
   'مسار الإنتاج يولّد الحوار متصلاً ويضيف الجسر بعد TTS')
 assert.doesNotMatch(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'1'/,
   'ممنوع إعادة Voice/Accent Reset عند الجسر')
+assert.match(pilotWorkflow, /PODCAST_KW_PROMPT_MODE:\s*c/,
+  'الإنتاج مقفول على البرومت C ذي الاستمرارية الصوتية المطلقة')
 for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-prompt-experiment.yml']) {
   const source = readFileSync(resolve(ROOT, '.github/workflows', workflow), 'utf8')
   assert.match(source, /apply-kuwaiti-native-spoken\.mjs/, `${workflow}: التجربة تمر بالصقل نفسه`)

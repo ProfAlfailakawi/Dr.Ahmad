@@ -124,6 +124,31 @@ const LONG_SILENCE_TRIGGER_MS = Math.max(MAX_INTERNAL_SILENCE_MS + 80,
   Math.min(1400, Number(process.env.PODCAST_KW_LONG_SILENCE_TRIGGER_MS || 440)))
 const silenceCompaction = { calls: 0, removedSec: 0 }
 
+/* ملف الحوار يحمل أحياناً سطرين أو أربعة متتالية للشخص نفسه. هذه وحدات
+   تحريرية وليست تبادل أدوار مسموعاً: Gemini يقولها بنفس النفس، وماكو حد
+   صوتي صادق يسمح بقصها إلى ملفات منفصلة. محاولة فرض حد لكل سطر صنعت
+   مقاطع قصيرة كاذبة، ثم اتهمت بوابات الزمن والطبقة الصوت بالانزلاق.
+
+   وحدة TTS والقياس هي لذلك «المداخلة المسموعة»: كلام متصل للشخص نفسه إلى
+   أن يتغير المتحدث أو يأتي جسر المونتاج. الكلمات وترتيبها لا يتغيران. */
+export function audibleSpeakerRuns (inputTurns = []) {
+  const runs = []
+  for (const sourceTurn of inputTurns) {
+    const turn = { ...sourceTurn }
+    const previous = runs[runs.length - 1]
+    if (previous && previous.speaker === turn.speaker && !previous.musicBridgeAfter) {
+      previous.text = `${String(previous.text || '').trim()} ${String(turn.text || '').trim()}`.trim()
+      previous.pauseAfterMs = turn.pauseAfterMs
+      previous.musicBridgeAfter = Boolean(turn.musicBridgeAfter)
+      previous._sourceTurnCount += 1
+      if (turn.deliveryType === 'conclusion') previous.deliveryType = 'conclusion'
+      continue
+    }
+    runs.push({ ...turn, _sourceTurnCount: 1 })
+  }
+  return runs
+}
+
 function chunkTurns(turns, { maxTurns = TURNS_PER_REQUEST, maxChars = 4300 } = {}) {
   const chunks = []
   let row = []
@@ -231,6 +256,8 @@ The exact word ظيّج is deliberate native Kuwaiti input. Say ظيّج as writ
 
 They speak to each other, not to an audience. Each turn carries local memory of the line immediately before it. A response may arrive promptly, but never force literal overlap if it would create an artifact. A one-word acknowledgement is quick and effortless. Questions sound naturally curious; friendly disagreement stays conversational.
 
+At each labelled speaker handoff, leave one tiny clean silence of roughly 100–180ms. Never place a silence that long inside a labelled line. This is only a natural conversational handoff for clean editing—not a dramatic pause, chapter, scene, or acoustic reset.
+
 The thought should feel as if it is being discovered while they speak, not recited from a finished essay. Let small lines stay small. Roughly 70% of the performance should feel like ordinary conversation, 20% like explanation or reflection, and only about 10% like a memorable or emotionally stronger moment. Never make every sentence sound important, polished, quotable, or profound.
 
 # HUMAN PACING
@@ -282,6 +309,8 @@ Speak contemporary urban Kuwait City Arabic naturally and effortlessly. Identity
 Noura stays the exact same mature Kuwaiti woman defined by her first line: compact vowels, narrow melodic range, direct settled endings, no Emirati or Omani-style widening or trailing lilt. Fahad stays the same mature Kuwaiti man. Each target line must remain complete and unhurried enough to understand.
 
 VOICE ROUTING IS LITERAL AND IMMUTABLE. Every Fahad-labelled line uses the same clearly lower adult male voice (${MALE_VOICE}); every Noura-labelled line uses the same clearly higher adult female voice (${FEMALE_VOICE}). Never infer a speaker from who asks, answers, knows the research, objects, uses a short sentence, or leads the topic. Conversational role never determines acoustic identity. A short Fahad question must not rise into Noura; an explanatory Noura line must not drop into Fahad. Never exchange, merge, approximate, or re-cast these two voices for even one line.
+
+At each labelled speaker handoff, leave one tiny clean silence of roughly 100–180ms. Never place a silence that long inside a labelled line. This is only natural turn timing for clean editing—not a dramatic pause, chapter, scene, or acoustic reset.
 
 This is conversation, not narration, advertising, an audiobook, or a podcast presenter. Let ordinary lines pass simply. Research sounds like a knowledgeable Kuwaiti recalling evidence mid-conversation, with no formal-Arabic or documentary reset. Emotion is warm and understated; final words are never staged.
 
@@ -1053,7 +1082,7 @@ function detectSilences(file, minDurationSec = 0.24) {
  * بأكثر من نصف متوسّط المداخلة، فالقصّ غير موثوق: يُرَدُّ ‎null‎ ويُوقف
  * التشغيل. ففشلٌ واضح خيرٌ من Voice/Accent Reset مخفي في ملفٍ يبدو ناجحاً.
  */
-export function chooseSplitPoints(gaps, expectedTurns, totalSec, edgeGuardSec = 0.45, weights = null) {
+export function chooseSplitPoints(gaps, expectedTurns, totalSec, edgeGuardSec = 0.45, weights = null, toleranceFactor = 0.5) {
   if (expectedTurns <= 1) return []
   const inner = gaps.filter((gap) => gap.mid > edgeGuardSec && gap.mid < totalSec - edgeGuardSec)
   if (inner.length < expectedTurns - 1) return null
@@ -1063,7 +1092,7 @@ export function chooseSplitPoints(gaps, expectedTurns, totalSec, edgeGuardSec = 
   }
   const totalWeight = weights.reduce((sum, w) => sum + Math.max(w, 1), 0)
   const ordered = [...inner].sort((a, b) => a.mid - b.mid)
-  const tolerance = (totalSec / expectedTurns) * 0.5
+  const tolerance = (totalSec / expectedTurns) * Math.max(0.5, Number(toleranceFactor) || 0.5)
   const cuts = []
   let acc = 0
   let from = 0
@@ -1093,8 +1122,13 @@ function splitChunk(file, chunkTurnsList, outPrefix) {
   const weights = chunkTurnsList.map((turn) => String(turn.text || '').length)
   /* إذا ما ظهرت حدودٌ كافية عند 240ms، نرخي كاشف الصمت على **نفس الأخذ**.
      ما نعيد توليد نصفٍ أو دورٍ مستقل، لأن نجاح القص لا يساوي خسارة الهوية. */
-  for (const minDurationSec of [0.24, 0.14, 0.08]) {
-    const cuts = chooseSplitPoints(detectSilences(file, minDurationSec), expected, total, 0.45, weights)
+  for (const minDurationSec of [0.24, 0.14, 0.08, 0.06, 0.04]) {
+    /* عند الأخذ السريع قد يكون حدّ المتحدثين 40–70ms فقط. هذا مو سبب
+       لتوليد دور منفرد أو رفض جلسة سليمة: نرخي كاشف الصمت على الأخذ نفسه،
+       ونوسّع نافذة الموضع قليلاً. القطع لا يحذف أي عينة؛ الأجزاء تُعاد
+       متجاورة كما كانت، وبوابتا الزمن والهوية ترفضان الاختيار الشاذ. */
+    const toleranceFactor = minDurationSec <= 0.08 ? 0.75 : 0.5
+    const cuts = chooseSplitPoints(detectSilences(file, minDurationSec), expected, total, 0.45, weights, toleranceFactor)
     if (!cuts) continue
     const bounds = [0, ...cuts, total]
     const parts = []
@@ -1348,6 +1382,17 @@ if (SELF_TEST) {
     { speaker:'female', text:'إي، خلنا نشوف الدليل أول.', deliveryType:'response', pauseAfterMs:300, musicBridgeAfter:true },
     { speaker:'male', text:'هني يبين الفرق.', deliveryType:'reflection', pauseAfterMs:300, musicBridgeAfter:false },
   ]
+  const audibleRunsProbe = audibleSpeakerRuns([
+    { speaker:'male', text:'أول فكرة.', deliveryType:'statement', pauseAfterMs:100, musicBridgeAfter:false },
+    { speaker:'male', text:'وتكملتها.', deliveryType:'reflection', pauseAfterMs:320, musicBridgeAfter:false },
+    { speaker:'female', text:'رد قبل الجسر.', deliveryType:'response', pauseAfterMs:280, musicBridgeAfter:true },
+    { speaker:'female', text:'رد عقب الجسر.', deliveryType:'conclusion', pauseAfterMs:400, musicBridgeAfter:false },
+  ])
+  assert.deepEqual(audibleRunsProbe.map((turn) => [turn.speaker, turn.text, turn.musicBridgeAfter, turn._sourceTurnCount]), [
+    ['male', 'أول فكرة. وتكملتها.', false, 2],
+    ['female', 'رد قبل الجسر.', true, 1],
+    ['female', 'رد عقب الجسر.', false, 1],
+  ], 'السطور المتجاورة للشخص نفسه تصير مداخلة مسموعة، والجسر لا يُبتلع')
   /* الوضع المعتمد: الحلقة كلها نداءٌ واحدٌ — نبرةٌ واحدةٌ بلا تبدّل. */
   assert.equal(chunkTurns(turns).length, 1, 'الحلقة تُولَّد بنداءٍ واحدٍ فتثبت النبرة')
   assert.equal(SPLIT_AT_BRIDGES, false, 'قفل الجسر مطفأ داخل المحرك مهما كان إعداد workflow القديم')
@@ -1534,6 +1579,8 @@ if (SELF_TEST) {
     'نورة تحمل قفل prosody كويتي موجهاً بلا حشو لهجات')
   assert.match(PROMPT_VERTEX_C_HEAD, /VOICE ROUTING IS LITERAL AND IMMUTABLE[\s\S]*Conversational role never determines acoustic identity/,
     'رأس Vertex المختصر لا يعيد ربط السائل أو الخبير بصوتٍ بدل الاسم')
+  assert.match(PROMPT_VERTEX_C_HEAD, /speaker handoff[\s\S]*100–180ms[\s\S]*Never place a silence that long inside a labelled line/i,
+    'حد القص الصادق يقع عند تسليم المتحدث فقط وبسكتة طبيعية صغيرة')
   assert.match(cSingleCall, /# THIS EPISODE'S CONVERSATION SHAPE/,
     'كل حلقة تحمل ميلاً حوارياً حتمياً مختلفاً بدل قالب أداء واحد')
   assert.match(nouraStemPrompt, /exactly one immutable acoustic voice/,
@@ -1628,8 +1675,10 @@ if (SELF_TEST) {
     'إعادة الرنين بعد الانتقال تُرفض حتى لو Hz بقي سليماً')
   assert.match(engineSource, /PODCAST_KW_REJECT_TIMING_SUSPECTS[\s\S]*process\.exit\(3\)/,
     'الدور المقصوص أو الممدود يرمي الـTake كله')
-  assert.match(engineSource, /for \(const minDurationSec of \[0\.24, 0\.14, 0\.08\]\)/,
+  assert.match(engineSource, /for \(const minDurationSec of \[0\.24, 0\.14, 0\.08, 0\.06, 0\.04\]\)/,
     'قص المداخلات يرخي الحساسية على Take نفسه قبل أن يسقط بوضوح')
+  assert.match(engineSource, /تعذّر قص مسار[^]*process\.exit\(3\)/,
+    'فشل فصل حدود الأدوار عينة رديئة قابلة للإعادة، لا عطل يوقف طابور الحلقات')
   assert.equal(MAX_INTERNAL_SILENCE_MS, 300, 'السقف الحواري الافتراضي 0.30ث')
   assert.equal(LONG_SILENCE_TRIGGER_MS, 440, 'الضغط لا يمس أي نفس أقصر من 0.44ث')
   const pauseIntervals = silenceCompactionIntervals([
@@ -1755,6 +1804,8 @@ if (SELF_TEST) {
     'الحدّ يُختار بموضعه المتوقّع لا بطول صمتته')
   assert.equal(chooseSplitPoints([{ mid: 1.0, span: 0.5 }], 2, 20, 0.45, [50, 50]), null,
     'الصمتة البعيدة عن موضعها المتوقّع تُرَدّ من غير إعادة توليد للشطر')
+  assert.deepEqual(chooseSplitPoints([{ mid: 4.3, span: 0.08 }], 2, 10, 0.45, [80, 20], 0.75), [4.3],
+    'النافذة الأوسع تقبل حدّاً صوتياً سريعاً على الأخذ نفسه من غير ترقيع')
   assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')
@@ -1782,7 +1833,7 @@ if (GENERATION_MODE !== 'all' && slug !== PILOT_SLUG) {
 }
 const source = resolve(ROOT, 'manual-dialogues-kuwaiti', `${slug}.json`)
 if (!existsSync(source)) throw new Error(`الحوار الكويتي غير موجود: ${slug}`)
-const turns = normalizeManualDialogueTurns(JSON.parse(readFileSync(source,'utf8')))
+const sourceTurns = normalizeManualDialogueTurns(JSON.parse(readFileSync(source,'utf8')))
 
 /* ═══ استرداد توجيهات الأداء ═══
    المحرّك يترجم deliveryType إلى توجيهٍ مسموع ([curious] · [gently skeptical] ·
@@ -1815,12 +1866,16 @@ const recoverDeliveryTypes = (kuwaitiTurns, articleSlug) => {
   })
   return { turns: merged, recovered, reason: '' }
 }
-const delivery = recoverDeliveryTypes(turns, slug)
+const delivery = recoverDeliveryTypes(sourceTurns, slug)
 if (delivery.recovered) {
-  turns.splice(0, turns.length, ...delivery.turns)
-  console.log(`✓ توجيهات الأداء: استُردّت ${delivery.recovered} من ${turns.length} من المصدر الفصيح`)
+  sourceTurns.splice(0, sourceTurns.length, ...delivery.turns)
+  console.log(`✓ توجيهات الأداء: استُردّت ${delivery.recovered} من ${sourceTurns.length} من المصدر الفصيح`)
 } else if (delivery.reason && delivery.reason !== 'المصدر يحملها أصلاً') {
   console.log(`⚠️ توجيهات الأداء لم تُستردّ (${delivery.reason}) — النبرة ستكون موحّدة`)
+}
+const turns = audibleSpeakerRuns(sourceTurns)
+if (turns.length !== sourceTurns.length) {
+  console.log(`✓ الأدوار المسموعة: ${sourceTurns.length} سطراً مقفولاً → ${turns.length} مداخلة فعلية بلا تغيير كلمة`)
 }
 const sourceLockFile = resolve(ROOT, 'podcast-audits', 'source-locks-kuwaiti', `${slug}.json`)
 const sourceLock = existsSync(sourceLockFile) ? JSON.parse(readFileSync(sourceLockFile, 'utf8')) : null
@@ -1879,7 +1934,8 @@ for (let i=0;i<chunks.length;i+=1) {
       : generation.turns
     const generatedParts = splitChunk(cleanWav, planTurns, stem)
     if (!generatedParts) {
-      throw new Error(`تعذّر قص مسار ${plan.label} ${i+1} إلى ${planTurns.length} مداخلة من التسجيل المتصل نفسه. أُوقف التشغيل؛ ممنوع إعادة توليد أنصاف أو أدوار مستقلة.`)
+      console.error(`↻ تعذّر قص مسار ${plan.label} ${i+1} إلى ${planTurns.length} مداخلة من التسجيل المتصل نفسه — الـTake مرفوض ويُعاد كاملاً؛ ممنوع إعادة توليد أنصاف أو أدوار مستقلة.`)
+      process.exit(3)
     }
     if (USE_VERTEX && ISOLATE_SPEAKER_STEMS) {
       const originalIndexes = generation.turns
@@ -2090,7 +2146,7 @@ writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
 const audit={
   schemaVersion:1, slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
-  sourceSha256:sha256(readFileSync(source)), turnCount:turns.length, chunkCount:chunks.length,
+  sourceSha256:sha256(readFileSync(source)), sourceTurnCount:sourceTurns.length, turnCount:turns.length, chunkCount:chunks.length,
   oneTake:!ISOLATE_SPEAKER_STEMS && chunks.length === 1,
   oneTakePerSpeaker:ISOLATE_SPEAKER_STEMS && chunks.length === 1,
   fullDialogueContextPerSpeaker:ISOLATE_SPEAKER_STEMS && !USE_VERTEX,

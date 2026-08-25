@@ -12,6 +12,7 @@ import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
 import { stableCanonicalJson } from './src/lib/sovereign-publishing.mjs'
 import { buildMultimodalMeaningCourt } from './src/lib/semantic-court.mjs'
+import { cleanResearchSample } from './src/lib/research-sample.mjs'
 import { getEncyclopediaTranscriptProgress, loadEncyclopediaVideoCatalog, loadEncyclopediaVideoMoment, scheduleEncyclopediaTranscriptWarmup, searchEncyclopediaVideoMoments } from './src/server/encyclopedia-videos.mjs'
 
 // Node لا يقرأ .env تلقائياً. نحمّله محلياً فقط، من دون استبدال متغيرات بيئة النشر.
@@ -672,7 +673,7 @@ export async function generateContentSuggestion(input, fetchImpl = fetch) {
 
 const paperAnalysisCache = new Map()
 const defaultResearchOrcid = 'https://orcid.org/0000-0002-1767-4963'
-const researchAnalysisVersion = '2026-07-23-nuclear-3'
+const researchAnalysisVersion = '2026-08-26-sample-integrity-4'
 
 function paperAnalysisInput(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HttpError(400, 'Expected a JSON object')
@@ -779,8 +780,10 @@ function normalizePaperAnalysis(value) {
   const parsed = parseSuggestion(value)
   const fields = ['meta', 'abstractAr', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'keywords', 'journal', 'year', 'doi', 'orcid', 'repository']
   const longFields = new Set(['abstractAr', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'methodology'])
+  const normalizedFields = Object.fromEntries(fields.map((field) => [field, optionalPaperText(parsed[field], field === 'year' ? 12 : longFields.has(field) ? 4_800 : 2_400)]))
+  normalizedFields.sample = cleanResearchSample(normalizedFields.sample)
   return {
-    ...Object.fromEntries(fields.map((field) => [field, optionalPaperText(parsed[field], field === 'year' ? 12 : longFields.has(field) ? 4_800 : 2_400)])),
+    ...normalizedFields,
     fieldEvidence: normalizedResearchJson(parsed.fieldEvidence, {}, 18_000),
     conflictReport: normalizedResearchJson(parsed.conflictReport, [], 10_000),
   }

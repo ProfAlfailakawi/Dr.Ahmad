@@ -142,7 +142,7 @@ export default function PaperDetail() {
   })
   const dataCards: ScientificCard[] = [
     { key: 'researchQuestion', label: 'السؤال العلمي', value: arabicScientific(p.researchQuestion || intelligence.researchQuestion), evidence: intelligence.fieldEvidence.researchQuestion },
-    { key: 'sample', label: 'العينة / نطاق الدراسة', value: arabicScientific(p.sample || intelligence.sample), evidence: intelligence.fieldEvidence.sample },
+    { key: 'sample', label: 'العينة / نطاق الدراسة', value: arabicScientific(intelligence.sample), evidence: intelligence.fieldEvidence.sample },
     { key: 'methodology', label: 'المنهج', value: arabicScientific(p.methodology || intelligence.methodology), evidence: intelligence.fieldEvidence.methodology },
     { key: 'studyType', label: 'نوع الدراسة', value: studyType, evidence: intelligence.fieldEvidence.studyType },
     { key: 'keyFinding', label: 'أبرز النتائج', value: arabicScientific(p.keyFinding || intelligence.keyFinding), evidence: intelligence.fieldEvidence.keyFinding },

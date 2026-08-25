@@ -1,3 +1,5 @@
+import { cleanResearchSample, inferResearchSample, splitResearchSentences } from './research-sample.mjs'
+
 export type ResearchIntelligenceInput = {
   title?: string
   titleAr?: string
@@ -105,12 +107,14 @@ export type ResearchIntelligence = {
 }
 
 export const DEFAULT_RESEARCH_ORCID = 'https://orcid.org/0000-0002-1767-4963'
-export const RESEARCH_ANALYSIS_VERSION = '2026-07-23-nuclear-3'
+export const RESEARCH_ANALYSIS_VERSION = '2026-08-26-sample-integrity-4'
 
 const clean = (value: unknown = '') => String(value ?? '').replace(/^ملخص عربي:\s*/i, '').replace(/\s+/g, ' ').trim()
 const hasArabic = (value = '') => /[\u0600-\u06ff]/.test(value)
 const clip = (value: string, max = 1_200) => value.length <= max ? value : `${value.slice(0, max).replace(/\s+\S*$/, '')}…`
 const pick = (text: string, patterns: RegExp[]) => patterns.map((pattern) => text.match(pattern)?.[1]?.trim()).find(Boolean) || ''
+const pickScientificSentence = (text: string, patterns: RegExp[]) =>
+  splitResearchSentences(text).find((sentence) => patterns.every((pattern) => pattern.test(sentence))) || ''
 const normalizeForMatch = (value = '') => clean(value).toLowerCase().replace(/[ًٌٍَُِّْـ]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ')
 const normalizeLink = (value = '') => {
   const trimmed = value.trim()
@@ -143,34 +147,26 @@ const inferStudyType = (text: string) => {
   return ''
 }
 
-const inferMethodology = (text: string) => pick(text, [
-  /((?:اعتمدت|اعتمد|استخدمت|استخدم|اتبعت|اتبع)\s+(?:الدراسة\s+|البحث\s+)?(?:على\s+)?(?:المنهج|تصميماً|تصميماً)[^.؟]{0,680})[.؟]?/i,
-  /((?:تم استخدام|جرى استخدام|طُبقت|طبقت)\s+[^.؟]{0,260}(?:استبانة|استبيان|مقابلة|تحليل محتوى|اختبار|مقياس)[^.؟]{0,360})[.؟]?/i,
+const inferMethodology = (text: string) => pickScientificSentence(text, [
+  /(?:اعتمدت?|استخدمت?|استُخدم|تم استخدام|جرى استخدام|اتبعت?|طُبقت?|طبقت)/iu,
+  /(?:المنهج|تصميم|استبانة|استبيان|مقابلة|تحليل محتوى|اختبار|مقياس)/iu,
 ])
 
-const inferSample = (text: string) => pick(text, [
-  /((?:بلغ|تكونت|تكوّنت|اشتملت|شملت|تألفت|تألّفت)\s+(?:عينة\s+)?(?:البحث|الدراسة)?\s*(?:من\s+)?\(?\s*\d{1,6}\s*\)?\s*[^.؟]{0,980})[.؟]?/i,
-  /((?:طُبقت|طبقت|وُزعت|وزعت)\s+[^.؟]{0,220}(?:على|لدى)\s+(?:عينة\s+)?(?:قوامها|بلغت)?\s*\(?\s*\d{1,6}\s*\)?\s*[^.؟]{0,780})[.؟]?/i,
-  /((?:عينة الدراسة|عينة البحث|المشاركون|المشاركات)\s*[:：،]?\s*(?:قوامها|بلغت|من)?\s*\(?\s*\d{1,6}\s*\)?\s*[^.؟]{0,980})[.؟]?/i,
-])
+const inferQuestion = (text: string) => splitResearchSentences(text).find((sentence) =>
+  /(?:سعى|يسعى|يهدف|هدفت|هدف|تتمثل مشكلة|تكمن مشكلة|يناقش البحث|تبحث الدراسة|تقصت الدراسة|استهدفت الدراسة)/iu.test(sentence),
+) || ''
 
-const inferQuestion = (text: string) => pick(text, [
-  /((?:سعى|يسعى|يهدف|هدفت|هدف)\s+(?:هذا\s+)?(?:البحث|الدراسة)[^.؟]{0,720})[.؟]?/i,
-  /((?:تتمثل مشكلة|تكمن مشكلة|يناقش البحث|تبحث الدراسة|تقصت الدراسة|استهدفت الدراسة)[^.؟]{0,720})[.؟]?/i,
-])
+const inferFinding = (text: string) => splitResearchSentences(text).find((sentence) =>
+  /(?:أظهرت النتائج|بيّنت النتائج|بينت النتائج|كشفت النتائج|أسفرت النتائج|توصلت الدراسة|خلصت الدراسة|تشير النتائج|اتضح|تبين أن|تبيّن أن|وُجد أن)/iu.test(sentence),
+) || ''
 
-const inferFinding = (text: string) => pick(text, [
-  /((?:أظهرت النتائج|بيّنت النتائج|بينت النتائج|كشفت النتائج|أسفرت النتائج|توصلت الدراسة|خلصت الدراسة)[^.؟]{0,1300})[.؟]?/i,
-  /((?:تشير النتائج|اتضح|تبين أن|تبيّن أن|وُجد أن)[^.؟]{0,1300})[.؟]?/i,
-])
+const inferApplications = (text: string) => splitResearchSentences(text).find((sentence) =>
+  /(?:أوصت الدراسة|يوصي البحث|توصي النتائج|وتوصي الدراسة|من التطبيقات|التطبيقات العملية)/iu.test(sentence),
+) || ''
 
-const inferApplications = (text: string) => pick(text, [
-  /((?:أوصت الدراسة|يوصي البحث|توصي النتائج|وتوصي الدراسة|من التطبيقات|التطبيقات العملية)[^.؟]{0,980})[.؟]?/i,
-])
-
-const inferLimitations = (text: string) => pick(text, [
-  /((?:حدود الدراسة|محددات الدراسة|قيود الدراسة|ومن قيود|اقتصرت الدراسة)[^.؟]{0,980})[.؟]?/i,
-])
+const inferLimitations = (text: string) => splitResearchSentences(text).find((sentence) =>
+  /(?:حدود الدراسة|محددات الدراسة|قيود الدراسة|ومن قيود|اقتصرت الدراسة)/iu.test(sentence),
+) || ''
 
 const inferKeywords = (text: string) => {
   const explicit = pick(text, [/(?:الكلمات المفتاحية|الكلمات الدالة|Keywords?)\s*[:：]\s*([^\n]{4,720})/i])
@@ -329,7 +325,9 @@ export function analyzeResearch(input: ResearchIntelligenceInput = {}): Research
   ].filter(Boolean).join(' ')
   const studyType = clean(input.studyType) || inferStudyType(sourceMaterial)
   const methodology = clean(input.methodology) || inferMethodology(sourceMaterial)
-  const sample = clean(input.sample) || inferSample(sourceMaterial)
+  /* لا نعرض قيمة خام لمجرد أن الحقل غير فارغ. إذا كانت شظية إحصائية أو
+     أقواسها مبتورة، نهملها ونعود إلى جملة العينة الموثقة في المادة الأصلية. */
+  const sample = cleanResearchSample(input.sample) || inferResearchSample(sourceMaterial)
   const researchQuestion = clean(input.researchQuestion) || inferQuestion(sourceMaterial)
   const keyFinding = clean(input.keyFinding) || inferFinding(sourceMaterial)
   const applications = clean(input.applications) || inferApplications(sourceMaterial)

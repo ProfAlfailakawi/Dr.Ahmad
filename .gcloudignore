@@ -43,6 +43,7 @@ src/lib/*
 !src/lib/adversarial-misunderstanding.mjs
 !src/lib/archive-scale.mjs
 !src/lib/encyclopedia-transcript-quality.mjs
+!src/lib/research-sample.mjs
 !src/server/
 src/server/*
 !src/server/whatsapp-controller.mjs

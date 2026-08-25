@@ -52,6 +52,16 @@ type AgentStatus = {
   lastCatchupAt?: string | null
   lastCatchupRecovered?: number
   lastCatchupError?: string | null
+  lastDeviceActivityPulseAt?: string | null
+  lastDeviceActivityPulseError?: string | null
+  deviceActivityPulseAgeMs?: number | null
+  nextDeviceActivityPulseAt?: string | null
+  nextDeviceActivityPulseInMs?: number | null
+  deviceActivityProtection?: {
+    state: 'protected' | 'pending' | 'warning'
+    label: string
+    detail: string
+  }
   lastRecoveryRequestedAt?: string | null
   diagnostics?: WhatsAppDiagnostics
   health?: {
@@ -216,6 +226,7 @@ export function WhatsAppAgentPanel() {
   const [restarting, setRestarting] = useState(false)
   const [repairing, setRepairing] = useState(false)
   const [recoveringAll, setRecoveringAll] = useState(false)
+  const [pulsingDevice, setPulsingDevice] = useState(false)
   const [notice, setNotice] = useState('')
   const [manualJid, setManualJid] = useState('')
   const [rules, setRules] = useState<ReplyRule[]>([])
@@ -453,6 +464,40 @@ export function WhatsAppAgentPanel() {
         : 'تعذّر الإحياء الآمن. حدّث التشخيص لمعرفة الطبقة المتوقفة.')
     } finally {
       setRecoveringAll(false)
+    }
+  }
+
+  const pulseDeviceActivityNow = async () => {
+    if (!status.health?.ready) {
+      setNotice('جلسة واتساب غير متصلة الآن؛ استخدم «إحياء آمن» أولاً.')
+      return
+    }
+    setPulsingDevice(true)
+    try {
+      const result = await request<{ command?: { id?: string } }>('/admin/device-activity-pulse', {
+        method: 'POST',
+        body: JSON.stringify({ confirm: true }),
+      })
+      const commandId = result.command?.id
+      if (commandId) {
+        let completed = false
+        for (let attempt = 0; attempt < 20; attempt += 1) {
+          await new Promise((resolveWait) => window.setTimeout(resolveWait, 1_000))
+          const command = await request<{ status?: string; error?: string | null }>(`/admin/commands/${encodeURIComponent(commandId)}`)
+          if (command.status === 'completed') {
+            completed = true
+            break
+          }
+          if (command.status === 'failed') throw new Error(command.error || 'فشلت نبضة حماية الجهاز.')
+        }
+        if (!completed) throw new Error('لم يؤكد الجسر اكتمال النبضة خلال المهلة.')
+      }
+      await refreshLiveStatus()
+      setNotice('✓ تنشّطت جلسة الجهاز المرتبط الآن من دون إرسال أي رسالة.')
+    } catch (error) {
+      setNotice(error instanceof Error ? `تعذّر تنشيط الجلسة: ${error.message}` : 'تعذّر تنشيط الجلسة.')
+    } finally {
+      setPulsingDevice(false)
     }
   }
 
@@ -864,6 +909,32 @@ export function WhatsAppAgentPanel() {
             </button>
             <button type="button" className={primary} disabled={botHealing || botChecking} onClick={() => void healBotNow(false)}>
               {botHealing ? 'يعالج…' : 'عالج البوت تلقائياً'}
+            </button>
+          </div>
+        </div>
+
+        <div
+          data-whatsapp-device-activity-protection="true"
+          className={`mt-5 rounded-2xl border p-4 ${status.deviceActivityProtection?.state === 'protected' ? 'border-emerald-500/30 bg-emerald-500/5' : status.deviceActivityProtection?.state === 'warning' ? 'border-amber-500/40 bg-amber-500/5' : 'border-hair bg-canvas'}`}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-[.84rem] font-semibold text-ink">حماية الجهاز المرتبط</h3>
+                <span className={`rounded-full border px-2.5 py-1 text-[.64rem] font-semibold ${status.deviceActivityProtection?.state === 'protected' ? 'border-emerald-500/30 text-emerald-700' : status.deviceActivityProtection?.state === 'warning' ? 'border-amber-500/40 text-amber-700' : 'border-hair text-soft'}`}>
+                  {status.deviceActivityProtection?.label || 'بانتظار الحالة'}
+                </span>
+              </div>
+              <p className="mt-2 text-[.74rem] leading-relaxed text-soft">{status.deviceActivityProtection?.detail || 'الجسر يجدّد استخدام الجهاز تلقائياً كل يوم لمنع تسجيل الخروج بسبب الخمول.'}</p>
+              <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[.68rem] text-soft">
+                <span>آخر تنشيط: <strong className="font-semibold text-ink">{activityLabel(status.lastDeviceActivityPulseAt)}</strong></span>
+                <span>التالي: <strong className="font-semibold text-ink">{status.nextDeviceActivityPulseAt ? activityLabel(status.nextDeviceActivityPulseAt) : 'بعد أول نبضة'}</strong></span>
+              </div>
+              {status.lastDeviceActivityPulseError && <p className="mt-2 text-[.66rem] text-red-700">{status.lastDeviceActivityPulseError}</p>}
+              <p className="mt-2 text-[.64rem] leading-relaxed text-soft">لا تُرسل رسالة ولا تفتح محادثة؛ تظهر الجلسة Online نحو خمس ثوانٍ ثم تعود Offline.</p>
+            </div>
+            <button type="button" className={secondary} disabled={!status.health?.ready || pulsingDevice} onClick={() => void pulseDeviceActivityNow()}>
+              {pulsingDevice ? 'ينشّط الجلسة…' : 'نشّط الجلسة الآن'}
             </button>
           </div>
         </div>

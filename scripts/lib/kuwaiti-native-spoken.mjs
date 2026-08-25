@@ -13,8 +13,9 @@
 
 import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-25-native-kuwaiti-v5'
+export const NATIVE_SPOKEN_VERSION = '2026-08-25-native-kuwaiti-v6'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
+export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 
 const cloneTurn = (turn) => ({ ...turn })
 const norm = (value) => String(value || '').replace(/\s+/g, ' ').trim()
@@ -71,6 +72,43 @@ const PILOT_FULL_OVERRIDES = new Map([
   [27, { text: 'والأهم بعد… هالتجربة شنو غيرت فيهم؟ صاروا أحسن؟ فهموا نفسهم أكثر؟ صاروا أهدأ؟' }],
   [34, { text: 'ترى في نجاح يطلع شكله وايد حلو… بس صاحبه ما حس بشي.' }],
   [35, { text: 'ودورنا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.', deliveryType: 'statement', pauseAfterMs: 320 }],
+])
+
+/* مراجعة الحلقة 04 بعد سماع الـSame-Take كاملاً (٢٥ أغسطس ٢٠٢٦): الصوتان
+   واللهجة والجسور ناجحة؛ العطب كتابي فقط. لذلك لا نلمس Master Voice Prompt
+   ولا الأصوات ولا المونتاج. نعيد بناء المواضع المقالية داخل طبقة المنطوق
+   **بعد** إثبات المصدر المقفول، حتى يظل Firestore هو مصدر المعنى والحقائق،
+   ويصل Gemini نصٌ شفهي ظاهر في الـTranscript لا إعادة كتابة سرية.
+
+   البحثان كلاهما تمهيد → سؤال → نتيجة. والجملة الأخيرة قبل الإحالة تمر
+   statement عادية، لا conclusion تجبر المحرك على التباطؤ وصناعة شعار. */
+const SERIOUSNESS_SHORT_OVERRIDES = new Map([
+  [2, { text: 'ممم… وبآخر الليل نرجع، ونكتشف إن ما تحرّك فينا شي صج.', deliveryType: 'statement' }],
+  [3, { text: 'بس الجدية مو دايم علامة نضج.', deliveryType: 'statement', pauseAfterMs: 320 }],
+  [4, { text: 'مرات ما تكون جدية أصلا… تكون طريقة مرتبة نهرب فيها.', deliveryType: 'statement', pauseAfterMs: 300, overlapMs: 0 }],
+  [5, { speaker: 'female', text: 'نهرب من شنو؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
+  [6, { speaker: 'male', text: 'من سؤال ندري إنه ثقيل علينا.', deliveryType: 'briefReaction', pauseAfterMs: 240, overlapMs: 0 }],
+  [7, { speaker: 'female', text: 'إحنا ننجز اللي المفروض… ولا بس اللي يريحنا؟', deliveryType: 'question' }],
+  [8, { speaker: 'male', text: 'وترى حتى الدراسات لاحظت هالشي.', deliveryType: 'briefReaction', pauseAfterMs: 220 }],
+  [9, { speaker: 'female', text: 'شلون يعني؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
+  [10, { speaker: 'male', text: 'طلع إن الناس تشوف الشخص المشغول أهم وأشطر.', deliveryType: 'statement', pauseAfterMs: 420, overlapMs: 0, musicBridgeAfter: true }],
+  [11, { speaker: 'female', text: 'يمكن نحضر كل اجتماع صغير…', deliveryType: 'statement' }],
+  [12, { speaker: 'male', text: 'لأننا نخاف من مهمة وحدة كبيرة تكشف قدرتنا الحقيقية.', deliveryType: 'statement' }],
+  [13, { speaker: 'female', text: 'ويمكن نتقن الانشغال الذكي…', deliveryType: 'statement' }],
+  [14, { speaker: 'female', text: 'عشان ما نقرب من علاقة تبي شجاعة وصدق.', deliveryType: 'statement' }],
+  [15, { speaker: 'male', text: 'أو من مشروع يحطنا جدام احتمال الفشل…', deliveryType: 'statement' }],
+  [16, { speaker: 'male', text: 'أو قرار مهم مأجلينه، وكل يوم نقول باجر.', deliveryType: 'statement' }],
+  [17, { speaker: 'female', text: 'ومن برّا نبان مرتبين جدام الكل…', deliveryType: 'statement' }],
+  [18, { speaker: 'female', text: 'بس من داخلنا، قاعدين نأجل الشي اللي نعرفه.', deliveryType: 'statement' }],
+  [20, { text: 'صحيح. في شغل يطلع منه شي له قيمة… وفي شغل بس يخلينا ما نفكر باللي نهرب منه.', deliveryType: 'statement' }],
+  [21, { text: 'وحتى أبحاث التسويف لاحظت هالفرق.', deliveryType: 'briefReaction', pauseAfterMs: 220 }],
+  [22, { text: 'شلون يعني؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70, musicBridgeAfter: false }],
+  [23, { text: 'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة ثقيلة عليه، أو نتيجتها بعيدة.', deliveryType: 'statement', pauseAfterMs: 420, overlapMs: 0, musicBridgeAfter: true }],
+  [24, { speaker: 'female', text: 'عيل من وين نبدي العلاج؟', deliveryType: 'question', pauseAfterMs: 260, overlapMs: 0 }],
+  [25, { speaker: 'male', text: 'نفرق بين شغل يقربنا من الشي المهم… وشغل يبعدنا عنه.', deliveryType: 'statement' }],
+  [26, { speaker: 'female', text: 'ونعطي المهمة الثقيلة موعد واضح باليوم.', deliveryType: 'statement' }],
+  [27, { speaker: 'male', text: 'المشكلة إن الواحد يركض سنة كاملة…', deliveryType: 'statement', pauseAfterMs: 260 }],
+  [28, { speaker: 'male', text: 'وبالأخير يكتشف إنه كان يهرب من نفسه.', deliveryType: 'statement', pauseAfterMs: 360 }],
 ])
 
 /* قواعد آمنة قليلة للحلقات الحالية والجديدة. لا تشمل «كل قاف»: الهوية
@@ -198,6 +236,19 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
       for (const [field, value] of Object.entries(patch)) {
         if (turn[field] === value) continue
         changes.push({ index, field, before: turn[field], after: value, reason: 'حكم الأذن على متن الحلقة الكامل' })
+        turn[field] = value
+      }
+    }
+  }
+
+  if (slug === SERIOUSNESS_SLUG && output.length === 30
+    && norm(output[0]?.text).startsWith('نركض وايد')) {
+    for (const [index, patch] of SERIOUSNESS_SHORT_OVERRIDES) {
+      const turn = output[index]
+      if (!turn) continue
+      for (const [field, value] of Object.entries(patch)) {
+        if (turn[field] === value) continue
+        changes.push({ index, field, before: turn[field], after: value, reason: 'مراجعة شفوية للحلقة 04 بعد نجاح الصوت' })
         turn[field] = value
       }
     }

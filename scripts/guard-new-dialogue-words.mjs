@@ -77,6 +77,18 @@ function scanTurns(turns, vocab, { isNewDialogue = true } = {}) {
   for (const t of turns) {
     const text = String(t.text ?? t ?? '')
     const spokenText = spoken(text)
+    /* الجذر متعدد المعاني يُفحص في **المصدر قبل المعجم**. كان الفحص
+       السابق على spokenText وحده، فإذا حوّل المعجم «بان» إلى «بيّن» أو
+       «ورقة» إلى «شهاده» اختفى الدليل قبل أن يراه الحارس. */
+    if (isNewDialogue) {
+      for (const poly of POLYSEMY.filter((root) => text.includes(root))) {
+        const key = 'poly|' + poly + '|' + text.slice(0, 30)
+        if (!seen.has(key)) {
+          seen.add(key)
+          findings.push({ word: poly, cls: 'جذر متعدد المعاني (' + poly + ') — مراجعة يدوية', ctx: text.slice(0, 90) })
+        }
+      }
+    }
     /* اللاتيني والأرقام يُفحصان على المداخلة كاملة لا الكلمة وحدها */
     for (const bad of spokenText.match(/\S*[A-Za-z0-9٠-٩%٪]+\S*/g) || []) {
       const key = 'crit|' + bad
@@ -124,6 +136,7 @@ if (SELF_TEST) {
     { text: 'هذي مسؤوليتنا التربوية تجاه المستقبل.' },
     { text: 'المقياس البرقعي يثبت النتيجة.' },
     { text: 'الورقة تعلق على لوحة الشرف.' },
+    { text: 'كل ما بان مشغول حسبناه أنجز.' },
     { text: 'شنطرة الأفكار توضح المقصود.' },
   ]
   const f = scanTurns(planted, vocab)
@@ -136,7 +149,8 @@ if (SELF_TEST) {
   assert.ok(has('36%') || has('أرقام'), 'الأرقام الخام تُرصد — لغم 36% الحقيقي في المتن')
   assert.ok(has('مسؤوليتنا'), 'الهمزة الوسطية الجديدة تُرصد')
   assert.ok(has('البرقعي'), 'القاف الجديدة تُرصد')
-  assert.ok(has('تعلق'), 'جذع علق متعدد المعاني يُعلَّم للمراجعة دائماً')
+  assert.ok(has('علق'), 'جذع علق متعدد المعاني يُعلَّم للمراجعة دائماً')
+  assert.ok(has('بان'), 'الجذر الدلالي يُرصد من المصدر قبل أن يخفيه معجم النطق')
   assert.ok(has('شنطرة'), 'الكلمة الجديدة بريئة الشكل تُرصد أيضاً — درس «بعدين» و«شغل»')
   /* والنقيض: مداخلة من المتن المعتمد نفسه تمر بلا رصد */
   const clean = scanTurns([{ text: 'وهني بالضبط السؤال اللي يهم.' }], vocab)
@@ -150,7 +164,7 @@ if (SELF_TEST) {
   const fetchBlock = wf.split(/- name: /).find((b) => b.startsWith('Lock the exact Kuwaiti admin dialogue'))
   assert.ok(fetchBlock && fetchBlock.includes('PODCAST_KW_REGENERATE'),
     'إذن الاستبدال يركب خطوة fetch نفسها — انزاح مرتين حين حُشرت خطوة بينها وبين بيئتها')
-  console.log('✓ حارس الكلمات الجديدة: الفحص الذاتي 8/8 — كل صنف مزروع يُمسك، والمعتمد يمر، وإذن الاستبدال في موضعه')
+  console.log('✓ حارس الكلمات الجديدة: الفحص الذاتي 9/9 — كل صنف مزروع يُمسك، والمعتمد يمر، وإذن الاستبدال في موضعه')
   process.exit(0)
 }
 

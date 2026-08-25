@@ -23,6 +23,10 @@ const config = Object.freeze({
   healthPort: Math.max(1024, Math.min(65535, Number(process.env.WHATSAPP_BRIDGE_HEALTH_PORT || 34322))),
   heartbeatMs: Math.max(10_000, Number(process.env.WHATSAPP_HEARTBEAT_MS || 25_000)),
   pollMs: Math.max(2_000, Number(process.env.WHATSAPP_COMMAND_POLL_MS || 5_000)),
+  deviceActivityPulseMs: Math.max(
+    6 * 60 * 60_000,
+    Math.min(7 * 24 * 60 * 60_000, Number(process.env.WHATSAPP_DEVICE_ACTIVITY_PULSE_MS || 24 * 60 * 60_000)),
+  ),
   chromePath: String(process.env.PUPPETEER_EXECUTABLE_PATH || '').trim(),
 })
 
@@ -55,6 +59,8 @@ const runtime = {
   lastSocketState: null,
   selfRecoveryRequested: false,
   ignoredBackfill: 0,
+  lastDeviceActivityPulseAt: null,
+  lastDeviceActivityPulseError: '',
 }
 
 const PROGRESSIVE_STATES = Object.freeze({
@@ -77,6 +83,9 @@ function stateSnapshot(extra = {}) {
     syncPercent: runtime.syncPercent,
     qrGeneratedAt: runtime.qrGeneratedAt,
     qrFingerprint: runtime.qrFingerprint,
+    lastDeviceActivityPulseAt: runtime.lastDeviceActivityPulseAt,
+    lastDeviceActivityPulseError: runtime.lastDeviceActivityPulseError,
+    deviceActivityPulseIntervalMs: config.deviceActivityPulseMs,
     ...extra,
   }
 }
@@ -129,7 +138,9 @@ let commandBusy = false
 let heartbeatTimer = null
 let pollTimer = null
 let connectionWatchdogTimer = null
+let deviceActivityPulseTimer = null
 let connectionProbeBusy = false
+let deviceActivityPulseBusy = false
 let readyHandled = false
 let authHandled = false
 let forcedSyncRecoveryAt = 0
@@ -370,6 +381,7 @@ function markBridgeReady(source = 'ready_event') {
   void safeEmit('status', snapshot)
   
   startHeartbeatAndPolling()
+  scheduleDeviceActivityPulse()
   if (!contactsWarmupStarted) {
     contactsWarmupStarted = true
     void warmPhoneAliasesAndContactsInBackground()
@@ -561,6 +573,39 @@ client.on('message', async (message) => {
   }
 })
 
+async function pulseDeviceActivity(source = 'daily') {
+  if (deviceActivityPulseBusy || shuttingDown || !runtime.connected) return false
+  deviceActivityPulseBusy = true
+  try {
+    await client.sendPresenceAvailable()
+    await new Promise((resolveWait) => setTimeout(resolveWait, 5_000))
+    await client.sendPresenceUnavailable()
+    runtime.lastDeviceActivityPulseAt = new Date().toISOString()
+    runtime.lastDeviceActivityPulseError = ''
+    log('info', 'device_activity_presence_pulse_completed', { source })
+    await safeEmit('heartbeat', stateSnapshot(), { retries: 1 })
+    return true
+  } catch (error) {
+    runtime.lastDeviceActivityPulseError = String(error?.message || error).slice(0, 240)
+    log('warn', 'device_activity_presence_pulse_failed', { source, error: runtime.lastDeviceActivityPulseError })
+    try { await client.sendPresenceUnavailable() } catch { /* لا نترك الحساب Online بعد فشلٍ جزئي */ }
+    return false
+  } finally {
+    deviceActivityPulseBusy = false
+  }
+}
+
+function scheduleDeviceActivityPulse() {
+  if (!deviceActivityPulseTimer) {
+    deviceActivityPulseTimer = setInterval(
+      () => void pulseDeviceActivity('daily'),
+      config.deviceActivityPulseMs,
+    )
+    deviceActivityPulseTimer.unref()
+  }
+  setTimeout(() => void pulseDeviceActivity('ready'), 20_000).unref()
+}
+
 function startHeartbeatAndPolling() {
   if (heartbeatTimer) return
   heartbeatTimer = setInterval(() => {
@@ -734,6 +779,13 @@ async function executeCommand(command) {
       await safeGracefulCloseClient()
       process.exit(76)
     }
+    if (command.type === 'pulse-device-activity') {
+      const pulsed = await pulseDeviceActivity('panel')
+      if (!pulsed) throw new Error(runtime.lastDeviceActivityPulseError || 'device-activity-pulse-failed')
+      await acknowledgeCommand(command.id, true)
+      log('info', 'command_device_activity_pulsed', { commandId: command.id })
+      return
+    }
     if (command.type === 'send-message' || command.type === 'send-self-message') {
       const text = String(command.payload?.text || '').trim()
       if (!text) throw new Error('empty-message')
@@ -783,6 +835,9 @@ const healthServer = createServer((req, res) => {
     startedAt: runtime.startedAt,
     lastWebhookAt: runtime.lastWebhookAt,
     syncPercent: runtime.syncPercent,
+    lastDeviceActivityPulseAt: runtime.lastDeviceActivityPulseAt,
+    lastDeviceActivityPulseError: runtime.lastDeviceActivityPulseError,
+    deviceActivityPulseIntervalMs: config.deviceActivityPulseMs,
   }))
   res.writeHead(runtime.status === 'auth_failure' ? 503 : 200, {
     'content-type': 'application/json',

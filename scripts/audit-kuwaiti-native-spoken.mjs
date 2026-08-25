@@ -68,8 +68,8 @@ if (SELF_TEST) {
     'الدور المقصوص أو الممدود يرمي الـTake كله')
   assert.match(pilotWorkflow, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'0'/,
     'الحوار الحقيقي المتصل هو الإنتاج؛ مسارا الفقرات المرفوضان لا يرجعان')
-  assert.match(pilotWorkflow, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'1'/,
-    'أي تبديل داخل الحوار المتصل يرمي الـTake كله')
+  assert.match(pilotWorkflow, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'0'/,
+    'قراءة أوكتاف شاذة لدور مفرد لا تحرق Take ثابت المقاطع والرنين')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
     'بوابة الرنين تمسك نفس preset لما يصير مو نفس الإنسان')
   console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 15/15')
@@ -132,8 +132,8 @@ assert.match(pilotWorkflow, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'0'/,
   'الإنتاج يولّد الأخذ والرد الحقيقي في Take واحد')
 assert.match(pilotWorkflow, /PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT:\s*'1'/,
   'بوابة الطبقة النسبية تعمل على فهد ونورة معاً')
-assert.match(pilotWorkflow, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'1'/,
-  'تبديل الصوت داخل الـTake ممنوع')
+assert.match(pilotWorkflow, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'0'/,
+  'الإنذار المفرد للطبقة سمعي؛ الرفض على انزلاق المقطع الكامل')
 assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
   'التغير الطيفي بعد الانتقال ممنوع حتى مع طبقة ثابتة')
 for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-prompt-experiment.yml']) {
@@ -148,8 +148,8 @@ for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-prompt-exp
       'الكناريات لا تتجاوز انزلاق نورة')
     assert.match(source, /PODCAST_KW_REJECT_TIMING_SUSPECTS:\s*'1'/,
       'الكناريات لا تتجاوز دوراً مقصوصاً')
-    assert.match(source, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'1'/,
-      'الكناريات لا تتجاوز تبديل صوت')
+    assert.match(source, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'0'/,
+      'الكناريات لا ترفض خطأ أوكتاف مفرداً مع ثبات المقطع')
     assert.match(source, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
       'الكناريات لا تتجاوز إعادة الرنين')
   }

@@ -224,7 +224,10 @@ jobs:
           # مفرد طبيعي أو خطأ أوكتاف من كاشف F0. وأي دور مقصوص/ممدود يرميه.
           PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT: '1'
           PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT: '1'
-          PODCAST_KW_REJECT_SPEAKER_SWAPS: '1'
+          # الدور المفرد قد يقرأه F0 على أوكتاف خاطئ؛ لا نحرق Take ثابتاً
+          # بسببه. الرفض يبقى على غلبة الصوت الآخر في نصف مقطع أو انزلاق
+          # وسيط ثلث كامل، ومعهما الرنين والزمن أدناه.
+          PODCAST_KW_REJECT_SPEAKER_SWAPS: '0'
           PODCAST_KW_REJECT_ACOUSTIC_RESET: '1'
           PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
           # [٢٥ أغسطس ٢٠٢٦] فصلُ المسارين منع تبديل preset لكنه جعل نورة

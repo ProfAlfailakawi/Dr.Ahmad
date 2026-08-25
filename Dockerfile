@@ -37,6 +37,7 @@ COPY src/data/encyclopedia-videos-fallback.json /app/src/data/encyclopedia-video
 COPY src/lib/adversarial-misunderstanding.mjs /app/src/lib/adversarial-misunderstanding.mjs
 COPY src/lib/archive-scale.mjs /app/src/lib/archive-scale.mjs
 COPY src/lib/encyclopedia-transcript-quality.mjs /app/src/lib/encyclopedia-transcript-quality.mjs
+COPY src/lib/research-sample.mjs /app/src/lib/research-sample.mjs
 COPY src/lib/semantic-court.mjs /app/src/lib/semantic-court.mjs
 COPY src/lib/sovereign-publishing.mjs /app/src/lib/sovereign-publishing.mjs
 COPY src/lib/style-dna.mjs /app/src/lib/style-dna.mjs

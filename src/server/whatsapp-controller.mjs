@@ -151,6 +151,8 @@ function helpText() {
 const BRIDGE_ONLINE_MS = Math.max(60_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 180_000))
 const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
 const REPAIR_COOLDOWN_MS = Math.max(15 * 60_000, Number(process.env.WHATSAPP_REPAIR_COOLDOWN_MS || 60 * 60_000))
+const DEVICE_ACTIVITY_PULSE_MS = 24 * 60 * 60_000
+const DEVICE_ACTIVITY_WARNING_MS = 36 * 60 * 60_000
 const MAX_BODY_BYTES = 2 * 1024 * 1024
 const WAKE_PHRASES = new Set(['موقع د احمد', 'موقع د الفيلكاوي'])
 const OWNER_CHAT_ID = String(process.env.WHATSAPP_OWNER_CHAT_ID || '').trim().toLowerCase()
@@ -2962,6 +2964,31 @@ function bridgeStatus(data = {}) {
   const repairCooldownMs = repairBlockedUntil
     ? Math.max(0, Date.parse(repairBlockedUntil) - Date.now())
     : 0
+  const lastDeviceActivityPulseAt = bounded(data.lastDeviceActivityPulseAt, 80) || null
+  const lastDeviceActivityPulseTime = lastDeviceActivityPulseAt ? Date.parse(lastDeviceActivityPulseAt) : NaN
+  const deviceActivityPulseAgeMs = Number.isFinite(lastDeviceActivityPulseTime)
+    ? Math.max(0, Date.now() - lastDeviceActivityPulseTime)
+    : null
+  const configuredDeviceActivityPulseIntervalMs = Number(data.deviceActivityPulseIntervalMs)
+  const deviceActivityPulseIntervalMs = Math.max(
+    6 * 60 * 60_000,
+    Math.min(
+      7 * DEVICE_ACTIVITY_PULSE_MS,
+      Number.isFinite(configuredDeviceActivityPulseIntervalMs) ? configuredDeviceActivityPulseIntervalMs : DEVICE_ACTIVITY_PULSE_MS,
+    ),
+  )
+  const nextDeviceActivityPulseAt = Number.isFinite(lastDeviceActivityPulseTime)
+    ? asIso(lastDeviceActivityPulseTime + deviceActivityPulseIntervalMs)
+    : null
+  const nextDeviceActivityPulseInMs = nextDeviceActivityPulseAt
+    ? Math.max(0, Date.parse(nextDeviceActivityPulseAt) - Date.now())
+    : null
+  const lastDeviceActivityPulseError = bounded(data.lastDeviceActivityPulseError, 300) || null
+  const deviceActivityProtectionState = !connected || lastDeviceActivityPulseError || (deviceActivityPulseAgeMs != null && deviceActivityPulseAgeMs > DEVICE_ACTIVITY_WARNING_MS)
+    ? 'warning'
+    : lastDeviceActivityPulseAt
+      ? 'protected'
+      : 'pending'
   return {
     status: normalizedStatus,
     bridgeOnline,
@@ -2975,6 +3002,23 @@ function bridgeStatus(data = {}) {
     lastCatchupAt: bounded(data.lastCatchupAt, 80) || null,
     lastCatchupRecovered: Math.max(0, Number(data.lastCatchupRecovered || 0)),
     lastCatchupError: bounded(data.lastCatchupError, 300) || null,
+    lastDeviceActivityPulseAt,
+    lastDeviceActivityPulseError,
+    deviceActivityPulseAgeMs,
+    deviceActivityPulseIntervalMs,
+    nextDeviceActivityPulseAt,
+    nextDeviceActivityPulseInMs,
+    deviceActivityProtection: {
+      state: deviceActivityProtectionState,
+      label: deviceActivityProtectionState === 'protected' ? 'الحماية تعمل' : deviceActivityProtectionState === 'pending' ? 'بانتظار أول نبضة' : 'تحتاج انتباهاً',
+      detail: lastDeviceActivityPulseError
+        ? `تعذّرت آخر نبضة: ${lastDeviceActivityPulseError}`
+        : deviceActivityProtectionState === 'protected'
+          ? 'الجسر يجدّد استخدام الجهاز تلقائياً من دون إرسال رسالة.'
+          : connected
+            ? 'الجلسة متصلة، وستُسجّل أول نبضة حماية تلقائياً.'
+            : 'يجب أن تتصل جلسة واتساب كي تعمل حماية الجهاز المرتبط.',
+    },
     lastRecoveryRequestedAt: bounded(data.lastRecoveryRequestedAt, 80) || null,
     updated_at: bounded(data.updatedAt, 80) || null,
     qr: hasQr ? savedQr : null,
@@ -3088,11 +3132,11 @@ export function buildWhatsAppDiagnostics({
     },
     {
       id: 'resident-bridge',
-      label: 'خدمة الماك المقيمة',
+      label: 'خدمة الجسر السحابية',
       state: bridgeOnline ? 'ok' : 'error',
       detail: bridgeOnline
         ? `النبض يصل بانتظام${status?.heartbeatAgeMs != null ? `؛ آخر نبضة قبل ${arabicCountPhrase(Math.max(1, Math.round(Number(status.heartbeatAgeMs) / 1000)), SECOND_AFTER_PREPOSITION_FORMS)}` : ''}.`
-        : 'لا تصل نبضة من الماك؛ قد يكون الجهاز مطفأً أو نائماً، الإنترنت مقطوعاً، أو خدمة التشغيل متوقفة.',
+        : 'لا تصل نبضة من الخادم السحابي؛ قد يكون الخادم متوقفاً، الإنترنت مقطوعاً، أو خدمة التشغيل متوقفة.',
     },
     {
       id: 'whatsapp-session',
@@ -3103,6 +3147,16 @@ export function buildWhatsAppDiagnostics({
         : needsAuthScan
           ? 'الخدمة تعمل لكنها تنتظر مسح رمز QR من الهاتف.'
           : (status?.last_error || status?.health?.why || 'جلسة واتساب لم تصل إلى الجاهزية.'),
+    },
+    {
+      id: 'linked-device-protection',
+      label: 'حماية الجهاز المرتبط',
+      state: status?.deviceActivityProtection?.state === 'protected'
+        ? 'ok'
+        : status?.deviceActivityProtection?.state === 'warning'
+          ? 'warning'
+          : 'info',
+      detail: status?.deviceActivityProtection?.detail || 'ستظهر حالة نبضة الاستخدام بعد اتصال الجسر.',
     },
     {
       id: 'missed-message-recovery',
@@ -3149,9 +3203,9 @@ export function buildWhatsAppDiagnostics({
   if (!bridgeOnline) {
     code = 'resident-offline'
     level = 'critical'
-    title = 'خدمة الماك لا ترسل نبضاً'
-    summary = 'العطل قبل واتساب نفسه: لوحة التحكم لا ترى الجسر المقيم على الماك.'
-    action = 'اضغط «إحياء آمن» ليُحفظ طلب التشغيل، وتأكد أن الماك يعمل ومتصل بالإنترنت. خدمة النظام تعيده تلقائياً من دون مسح الجلسة.'
+    title = 'خدمة الجسر السحابية لا ترسل نبضاً'
+    summary = 'العطل قبل واتساب نفسه: لوحة التحكم لا ترى الجسر المقيم على الخادم السحابي.'
+    action = 'اضغط «إحياء آمن» ليُحفظ طلب التشغيل، وتأكد أن الخادم يعمل ومتصل بالإنترنت. خدمة النظام تعيده تلقائياً من دون مسح الجلسة.'
   } else if (needsAuthScan) {
     code = 'scan-qr'
     level = 'warning'
@@ -3830,6 +3884,12 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         lastCatchupAt: bounded(body.lastCatchupAt, 80) || null,
         lastCatchupRecovered: Math.max(0, Number(body.lastCatchupRecovered || 0)),
         lastCatchupError: bounded(body.lastCatchupError, 300) || null,
+        lastDeviceActivityPulseAt: bounded(body.lastDeviceActivityPulseAt, 80) || null,
+        lastDeviceActivityPulseError: bounded(body.lastDeviceActivityPulseError, 300) || null,
+        deviceActivityPulseIntervalMs: (() => {
+          const value = Number(body.deviceActivityPulseIntervalMs)
+          return Math.max(6 * 60 * 60_000, Math.min(7 * DEVICE_ACTIVITY_PULSE_MS, Number.isFinite(value) ? value : DEVICE_ACTIVITY_PULSE_MS))
+        })(),
       }
 
       await db.runTransaction(async (transaction) => {
@@ -4701,6 +4761,27 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
 
     if (path === '/restart' && method === 'POST') {
       sendJson(res, 200, { ok: true, command: await enqueueCommand(db, 'restart') })
+      return
+    }
+    if (path === '/device-activity-pulse' && method === 'POST') {
+      const body = await readJson(req).catch(() => ({}))
+      if (body.confirm !== true) {
+        sendJson(res, 400, { error: 'يلزم تأكيد تنشيط الجلسة.' })
+        return
+      }
+      const bridgeSnapshot = await db.collection(COLLECTIONS.bridge).doc('primary').get()
+      const current = bridgeStatus(bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {})
+      if (!current.health?.ready) {
+        sendJson(res, 409, { error: 'جلسة واتساب غير متصلة الآن؛ أصلح الاتصال أولاً.' })
+        return
+      }
+      const requestedAt = asIso()
+      const command = await enqueueCommand(db, 'pulse-device-activity')
+      await db.collection(COLLECTIONS.bridge).doc('primary').set({
+        lastDeviceActivityPulseRequestedAt: requestedAt,
+        updatedAt: requestedAt,
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, requestedAt, command })
       return
     }
     if (path === '/recover' && method === 'POST') {

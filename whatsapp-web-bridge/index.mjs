@@ -22,6 +22,10 @@ const config = Object.freeze({
   healthPort: Math.max(1024, Math.min(65535, Number(process.env.WHATSAPP_BRIDGE_HEALTH_PORT || 34322))),
   heartbeatMs: Math.max(10_000, Number(process.env.WHATSAPP_HEARTBEAT_MS || 25_000)),
   pollMs: Math.max(2_000, Number(process.env.WHATSAPP_COMMAND_POLL_MS || 5_000)),
+  deviceActivityPulseMs: Math.max(
+    6 * 60 * 60_000,
+    Math.min(7 * 24 * 60 * 60_000, Number(process.env.WHATSAPP_DEVICE_ACTIVITY_PULSE_MS || 24 * 60 * 60_000)),
+  ),
   chromePath: String(process.env.PUPPETEER_EXECUTABLE_PATH || '').trim(),
 })
 
@@ -126,6 +130,8 @@ const runtime = {
   lastCatchupAt: null,
   lastCatchupRecovered: 0,
   lastCatchupError: '',
+  lastDeviceActivityPulseAt: null,
+  lastDeviceActivityPulseError: '',
 }
 
 function stateSnapshot(extra = {}) {
@@ -141,6 +147,9 @@ function stateSnapshot(extra = {}) {
     lastCatchupAt: runtime.lastCatchupAt,
     lastCatchupRecovered: runtime.lastCatchupRecovered,
     lastCatchupError: runtime.lastCatchupError,
+    lastDeviceActivityPulseAt: runtime.lastDeviceActivityPulseAt,
+    lastDeviceActivityPulseError: runtime.lastDeviceActivityPulseError,
+    deviceActivityPulseIntervalMs: config.deviceActivityPulseMs,
     ...extra,
   }
 }
@@ -199,8 +208,10 @@ let commandBusy = false
 let heartbeatTimer = null
 let pollTimer = null
 let catchupTimer = null
+let deviceActivityPulseTimer = null
 let catchupPromise = null
 let heartbeatBusy = false
+let deviceActivityPulseBusy = false
 let reinjectionPromise = null
 let consecutiveDetachedCatchups = 0
 const DETACHED_CONTEXT = /detached\s*Frame|Execution context (?:was )?destroyed|Target closed|webjs-reinjection-timeout|Cannot find context with specified id|Session closed|most likely because of a navigation/i
@@ -510,6 +521,7 @@ client.on('ready', () => {
   // Run warmPhoneAliases and contact sync in the BACKGROUND with a non-blocking timeout
   void warmPhoneAliasesAndContactsInBackground()
   scheduleMissedMessageCatchup()
+  scheduleDeviceActivityPulse()
 })
 
 function isIndividualJid(value) {
@@ -1113,6 +1125,48 @@ client.on('message_create', async (message) => {
   }
 })
 
+/* واتساب يفصل الجهاز المرتبط بعد طول «عدم الاستخدام» حتى لو ظل WebSocket
+   أخضر واستمر الجسر في استقبال الرسائل. هذا ما أثبتته شاشة الهاتف: الجلسة
+   رُبطت ٣٠ يوليو ٢١:٥٣ وظلّ تاريخ آخر استخدام عند لحظة الربط، مع أن الجسر
+   يعالج رسائل حية يومياً. نبضة حضور واحدة كل يوم تجعل واتساب يرى الجهاز
+   مستخدماً، ثم نعيده فوراً إلى unavailable حتى لا يبقى الحساب Online ولا
+   تتحول إشعارات الهاتف إلى الجسر. لا نرسل رسالة ولا نقرأ محادثة ولا نغيّرها. */
+async function pulseDeviceActivity(source = 'daily') {
+  if (deviceActivityPulseBusy || shuttingDown || !runtime.connected) return false
+  deviceActivityPulseBusy = true
+  try {
+    await client.sendPresenceAvailable()
+    await new Promise((resolveWait) => setTimeout(resolveWait, 5_000))
+    await client.sendPresenceUnavailable()
+    runtime.lastDeviceActivityPulseAt = new Date().toISOString()
+    runtime.lastDeviceActivityPulseError = ''
+    log('info', 'device_activity_presence_pulse_completed', { source })
+    await safeEmit('heartbeat', stateSnapshot(), { retries: 1, timeoutMs: 8_000 })
+    return true
+  } catch (error) {
+    runtime.lastDeviceActivityPulseError = String(error?.message || error).slice(0, 240)
+    log('warn', 'device_activity_presence_pulse_failed', {
+      source,
+      error: runtime.lastDeviceActivityPulseError,
+    })
+    try { await client.sendPresenceUnavailable() } catch { /* لا نترك الحساب Online بعد فشلٍ جزئي */ }
+    return false
+  } finally {
+    deviceActivityPulseBusy = false
+  }
+}
+
+function scheduleDeviceActivityPulse() {
+  if (!deviceActivityPulseTimer) {
+    deviceActivityPulseTimer = setInterval(
+      () => void pulseDeviceActivity('daily'),
+      config.deviceActivityPulseMs,
+    )
+    deviceActivityPulseTimer.unref()
+  }
+  setTimeout(() => void pulseDeviceActivity('ready'), 20_000).unref()
+}
+
 function startHeartbeatAndPolling() {
   if (heartbeatTimer) return
   heartbeatTimer = setInterval(() => {
@@ -1176,6 +1230,11 @@ async function executeCommand(command) {
       try { await client.logout() } catch { /* ignore if disconnected */ }
       await safeGracefulCloseClient()
       process.exit(76) // Exit code 76 = re-pair
+    } else if (command.type === 'pulse-device-activity') {
+      const pulsed = await pulseDeviceActivity('panel')
+      if (!pulsed) throw new Error(runtime.lastDeviceActivityPulseError || 'device-activity-pulse-failed')
+      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      log('info', 'command_device_activity_pulsed', { commandId: command.id })
     } else if (command.type === 'send-message') {
       const jid = command.payload?.jid
       const text = applyMergeFieldSafetyNet(command.payload?.text)
@@ -1263,6 +1322,9 @@ const healthServer = createServer((req, res) => {
     lastCatchupAt: runtime.lastCatchupAt,
     lastCatchupRecovered: runtime.lastCatchupRecovered,
     lastCatchupError: runtime.lastCatchupError,
+    lastDeviceActivityPulseAt: runtime.lastDeviceActivityPulseAt,
+    lastDeviceActivityPulseError: runtime.lastDeviceActivityPulseError,
+    deviceActivityPulseIntervalMs: config.deviceActivityPulseMs,
   }))
   res.writeHead(runtime.status === 'auth_failure' ? 503 : 200, {
     'content-type': 'application/json',

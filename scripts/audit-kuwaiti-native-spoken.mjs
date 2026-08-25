@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import {
   NATIVE_SPOKEN_VERSION,
   PILOT_SLUG,
+  SERIOUSNESS_SLUG,
   auditNativeSpokenTurns,
   optimizeNativeSpokenEpisode,
 } from './lib/kuwaiti-native-spoken.mjs'
@@ -46,6 +47,24 @@ if (SELF_TEST) {
   assert.equal(pilot.turns[23].text,
     'ودورنا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.',
     'الخاتمة كلام بشري لا شعار ولا كلمة جديدة')
+  const seriousness = optimizeNativeSpokenEpisode(
+    Object.values(pilotLibrary.episodes[SERIOUSNESS_SLUG]), { slug: SERIOUSNESS_SLUG })
+  const seriousnessText = seriousness.turns.map((turn) => turn.text).join('\n')
+  assert.doesNotMatch(seriousnessText,
+    /(?:ماكو شي عميق تحرك|قناع أنيق للهروب|شارة مكانة اجتماعية|بديل عن الجوهر|قلبنا من داخل يأجل الحقيقة|حركة تصنع، وحركة تخبي|ماكو أسوأ من إنسان)/u,
+    'الحلقة 04 ما ترجع إلى الجمل المقالية التي دفعت الصوت إلى Presenter Mode')
+  assert.deepEqual(seriousness.turns.filter((turn) => turn.musicBridgeAfter).map((turn) => turn.text), [
+    'طلع إن الناس تشوف الشخص المشغول أهم وأشطر.',
+    'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة ثقيلة عليه، أو نتيجتها بعيدة.',
+  ], 'الجسران بعد اكتمال الفكرة، لا بعد سؤال وقبل جوابه')
+  assert.deepEqual(seriousness.turns.slice(8, 11).map((turn) => turn.deliveryType),
+    ['briefReaction', 'question', 'statement'], 'الدليل الأول تمهيد ثم سؤال ثم نتيجة')
+  assert.deepEqual(seriousness.turns.slice(21, 24).map((turn) => turn.deliveryType),
+    ['briefReaction', 'question', 'statement'], 'دليل التسويف تمهيد ثم سؤال ثم نتيجة')
+  assert.equal(seriousness.turns[24].text, 'عيل من وين نبدي العلاج؟',
+    'أفضل لحظة حوارية في الحلقة باقية بصياغتها الكويتية')
+  assert.deepEqual(seriousness.turns.slice(27, 29).map((turn) => turn.deliveryType),
+    ['statement', 'statement'], 'الخاتمة الفكرية تمر عادية ولا تُلقى كشعار')
   const pilotWorkflow = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-pilot.yml'), 'utf8')
   assert.match(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'0'/,
     'مسار الإنتاج يثبت أن الجسر مونتاج خارجي ولا يقطع طلب TTS')

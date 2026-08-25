@@ -1114,15 +1114,83 @@ export function chooseSplitPoints(gaps, expectedTurns, totalSec, edgeGuardSec = 
   return cuts
 }
 
+/* نورة وفهد يتبادلان الكلام داخل Take واحد، لذلك حدود الصمت ليست متساوية
+   القيمة: الوقفة داخل جملة قد تكون أطول من تسليم الدور. v14 وسّع الحساسية
+   حتى 40ms لكنه كان يرجع **أول** خريطة قابلة للقص؛ فإذا سبقتها وقفات
+   تأملية، قُصّ جزءٌ من صوتين في «دور» واحد ثم اتهمته بوابات الهوية بالانزلاق.
+
+   v15 لا يغيّر الصوت ولا يعيد توليده. يبني عدة خرائط قص من الأخذ نفسه،
+   ويقيس كل خريطة على تسلسل المتحدثين المعروف، وثبات ثلثَي الطبقة، ورنين
+   أول دور بعد الجسر، ومعقولية مدد النص. تُختار أقلها كلفةً ثم تمر بالبوابات
+   الصارمة المعتادة. إن كان الانزلاق حقيقياً ستفشل الخرائط كلها ويُرفض
+   الـTake كما يجب؛ وإن كان الحد هو الخطأ، لا نحرق عينة سليمة. */
+const splitSelectionLog = []
+
+function scoreSplitCandidate(parts, turns, weights, totalSec, minDurationSec) {
+  const pitches = parts.map((part) => medianF0(part))
+  const signatures = parts.map((part) => timbreSignature(part))
+  const malePitches = pitches.filter((pitch, index) => turns[index].speaker === 'male' && Number.isFinite(pitch))
+  const femalePitches = pitches.filter((pitch, index) => turns[index].speaker === 'female' && Number.isFinite(pitch))
+  const maleMedian = medianNumber(malePitches)
+  const femaleMedian = medianNumber(femalePitches)
+  const voiceGapHz = Number.isFinite(maleMedian) && Number.isFinite(femaleMedian)
+    ? Math.abs(femaleMedian - maleMedian)
+    : 0
+  const swapCount = pitches.filter((pitch, index) => {
+    if (!Number.isFinite(pitch) || !Number.isFinite(maleMedian) || !Number.isFinite(femaleMedian)) return false
+    const own = turns[index].speaker === 'male' ? maleMedian : femaleMedian
+    const other = turns[index].speaker === 'male' ? femaleMedian : maleMedian
+    return Math.abs(pitch - other) + 8 < Math.abs(pitch - own)
+  }).length
+  const femalePitch = speakerPitchContinuity(turns, pitches, 'female')
+  const malePitch = speakerPitchContinuity(turns, pitches, 'male')
+  const femaleTimbre = speakerTimbreContinuity(turns, signatures, 'female')
+  const maleTimbre = speakerTimbreContinuity(turns, signatures, 'male')
+  const pitchSegments = femalePitch.segmentSuspects.length + malePitch.segmentSuspects.length
+  const timbreBoundaries = femaleTimbre.boundarySuspects.length + maleTimbre.boundarySuspects.length
+  const pitchBoundaries = [...femalePitch.pointSuspects, ...malePitch.pointSuspects]
+    .filter((finding) => finding.index > 0 && turns[finding.index - 1]?.musicBridgeAfter).length
+  const durations = parts.map((part) => duration(part))
+  const totalWeight = weights.reduce((sum, weight) => sum + Math.max(1, weight), 0)
+  const timingPenalty = durations.reduce((sum, value, index) => {
+    const actual = Math.max(0.001, value / totalSec)
+    const expected = Math.max(0.001, Math.max(1, weights[index]) / totalWeight)
+    return sum + Math.abs(Math.log(actual / expected))
+  }, 0) / Math.max(1, durations.length)
+  const missingPitch = pitches.filter((pitch) => !Number.isFinite(pitch)).length
+  /* الهوية أولاً، ثم التوقيت. قرب الحساسية من 120ms كاسر تعادل صغير فقط؛
+     لا يستطيع أن يغلب دليلاً صوتياً من الطبقة أو الرنين. */
+  const score = swapCount * 4000
+    + pitchSegments * 3000
+    + timbreBoundaries * 3000
+    + pitchBoundaries * 900
+    + missingPitch * 250
+    + Math.max(0, 25 - voiceGapHz) * 40
+    + timingPenalty * 80
+    + Math.abs(minDurationSec - 0.12) * 10
+  return {
+    score,
+    swapCount,
+    pitchSegments,
+    timbreBoundaries,
+    pitchBoundaries,
+    missingPitch,
+    voiceGapHz: Number(voiceGapHz.toFixed(1)),
+    timingPenalty: Number(timingPenalty.toFixed(3)),
+  }
+}
+
 function splitChunk(file, chunkTurnsList, outPrefix) {
   const expected = chunkTurnsList.length
   if (expected === 1) return [file]
   let total = 0
   try { total = duration(file) } catch { return null }
   const weights = chunkTurnsList.map((turn) => String(turn.text || '').length)
-  /* إذا ما ظهرت حدودٌ كافية عند 240ms، نرخي كاشف الصمت على **نفس الأخذ**.
-     ما نعيد توليد نصفٍ أو دورٍ مستقل، لأن نجاح القص لا يساوي خسارة الهوية. */
-  for (const minDurationSec of [0.24, 0.14, 0.08, 0.06, 0.04]) {
+  /* كل الحساسيات تُفحص على **نفس الأخذ**. لا نعيد توليد نصفٍ أو دورٍ
+     مستقل، ولا نفترض أن أول خريطة قص هي الصحيحة. */
+  const candidates = []
+  const seenCuts = new Set()
+  for (const minDurationSec of [0.14, 0.08, 0.06, 0.04, 0.24]) {
     /* عند الأخذ السريع قد يكون حدّ المتحدثين 40–70ms فقط. هذا مو سبب
        لتوليد دور منفرد أو رفض جلسة سليمة: نرخي كاشف الصمت على الأخذ نفسه،
        ونوسّع نافذة الموضع قليلاً. القطع لا يحذف أي عينة؛ الأجزاء تُعاد
@@ -1130,6 +1198,9 @@ function splitChunk(file, chunkTurnsList, outPrefix) {
     const toleranceFactor = minDurationSec <= 0.08 ? 0.75 : 0.5
     const cuts = chooseSplitPoints(detectSilences(file, minDurationSec), expected, total, 0.45, weights, toleranceFactor)
     if (!cuts) continue
+    const cutKey = cuts.map((cut) => cut.toFixed(3)).join(',')
+    if (seenCuts.has(cutKey)) continue
+    seenCuts.add(cutKey)
     const bounds = [0, ...cuts, total]
     const parts = []
     let valid = true
@@ -1137,17 +1208,34 @@ function splitChunk(file, chunkTurnsList, outPrefix) {
       const from = bounds[i]
       const to = bounds[i + 1]
       if (!(to - from > 0.35)) { valid = false; break }
-      const part = `${outPrefix}-${String(i + 1).padStart(2, '0')}.wav`
+      const label = String(Math.round(minDurationSec * 1000)).padStart(3, '0')
+      const part = `${outPrefix}-split-${label}-${String(i + 1).padStart(2, '0')}.wav`
       rmSync(part, { force: true })
       const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-ss',from.toFixed(3),'-t',(to - from).toFixed(3),
         '-i',file,'-ar','24000','-ac','1','-c:a','pcm_s16le',part], { encoding:'utf8' })
       if (run.status !== 0 || !existsSync(part)) { valid = false; break }
       parts.push(part)
     }
-    if (valid && parts.length === expected) return parts
-    for (const part of parts) rmSync(part, { force: true })
+    if (valid && parts.length === expected) {
+      candidates.push({ minDurationSec, cuts, parts,
+        metrics: scoreSplitCandidate(parts, chunkTurnsList, weights, total, minDurationSec) })
+    } else {
+      for (const part of parts) rmSync(part, { force: true })
+    }
   }
-  return null
+  if (!candidates.length) return null
+  candidates.sort((a, b) => a.metrics.score - b.metrics.score)
+  const winner = candidates[0]
+  for (const candidate of candidates.slice(1)) {
+    for (const part of candidate.parts) rmSync(part, { force: true })
+  }
+  splitSelectionLog.push({
+    candidateCount: candidates.length,
+    thresholdMs: Math.round(winner.minDurationSec * 1000),
+    ...winner.metrics,
+  })
+  console.log(`✓ قص المتحدثين: اختيرت خريطة ${Math.round(winner.minDurationSec * 1000)}ms من ${candidates.length} خرائط · فجوة ${winner.metrics.voiceGapHz}Hz · تبديل ${winner.metrics.swapCount} · انزلاق مقاطع ${winner.metrics.pitchSegments} · انزلاق جسر ${winner.metrics.timbreBoundaries}`)
+  return winner.parts
 }
 
 function tightenChunk(input, output) {
@@ -1675,8 +1763,10 @@ if (SELF_TEST) {
     'إعادة الرنين بعد الانتقال تُرفض حتى لو Hz بقي سليماً')
   assert.match(engineSource, /PODCAST_KW_REJECT_TIMING_SUSPECTS[\s\S]*process\.exit\(3\)/,
     'الدور المقصوص أو الممدود يرمي الـTake كله')
-  assert.match(engineSource, /for \(const minDurationSec of \[0\.24, 0\.14, 0\.08, 0\.06, 0\.04\]\)/,
-    'قص المداخلات يرخي الحساسية على Take نفسه قبل أن يسقط بوضوح')
+  assert.match(engineSource, /for \(const minDurationSec of \[0\.14, 0\.08, 0\.06, 0\.04, 0\.24\]\)/,
+    'قص المداخلات يفحص كل حساسيات تسليم الدور على Take نفسه')
+  assert.match(engineSource, /scoreSplitCandidate[\s\S]*candidates\.sort\(\(a, b\) => a\.metrics\.score - b\.metrics\.score\)/,
+    'خريطة القص لا تُقبل لأنها الأولى؛ هوية المتحدثين والرنين والتوقيت يختارونها')
   assert.match(engineSource, /تعذّر قص مسار[^]*process\.exit\(3\)/,
     'فشل فصل حدود الأدوار عينة رديئة قابلة للإعادة، لا عطل يوقف طابور الحلقات')
   assert.equal(MAX_INTERNAL_SILENCE_MS, 300, 'السقف الحواري الافتراضي 0.30ث')
@@ -2179,6 +2269,7 @@ const audit={
   acousticContinuity:{method:'18-band-log-spectral-envelope-v1',female:femaleTimbre,male:maleTimbre,
     boundarySuspects:acousticBoundarySuspects,
     pitchBoundarySuspects:pitchBoundarySuspects.map((finding) => ({ turn:finding.index + 1,speaker:finding.speaker,hz:Number(finding.hz.toFixed(1)),driftHz:Number(finding.driftHz.toFixed(1)) }))},
+  splitSelection:{version:'multi-map-speaker-aware-v1',chunks:splitSelectionLog},
   repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,medianSecPerChar:Number(medianRate.toFixed(4))},
   mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160,nativeTurnTimingPreserved:PRESERVE_NATIVE_TURN_TIMING,
     longSilenceCompaction:{maxSilenceMs:MAX_INTERNAL_SILENCE_MS,triggerMs:LONG_SILENCE_TRIGGER_MS,calls:silenceCompaction.calls,removedSec:Number(silenceCompaction.removedSec.toFixed(3))}},

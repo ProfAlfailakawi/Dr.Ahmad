@@ -79,6 +79,14 @@ export function buildPronunciationMap(source) {
     }))
 }
 
+/* ═══ الضاد ظاءٌ في الكويتية ═══
+ * قاعدةٌ صوتيةٌ شاملةٌ لا معجميّة، أملاها الدكتور (١٥ أغسطس ٢٠٢٦): «كل ضاد
+ * ظاد». تقع على مدخل الصوت وحده؛ النص المعروض يبقى كما كتبه الدكتور.
+ * تُطبَّق بعد المعجم كي تشمل ما استبدله أيضاً. */
+export function daadToDhaa(text) {
+  return String(text ?? '').replace(/ض/g, 'ظ')
+}
+
 export function toSpokenKuwaiti(text, entries) {
   let spoken = String(text ?? '')
   for (const entry of entries) {
@@ -86,11 +94,7 @@ export function toSpokenKuwaiti(text, entries) {
     /* السابقة تُعاد حرفياً؛ المستبدَل هو الجذع وحده. */
     spoken = spoken.replace(entry.pattern, (_m, before, proclitic) => `${before}${proclitic}${entry.to}`)
   }
-  /* لا يوجد قلبٌ حرفيٌّ شامل بعد المعجم. التعميم السابق «كل ض = ظ» غيّر
-   * كلماتٍ صحيحةً ومعانيها قبل أن تصل إلى المحرّك: نركض←نركظ،
-   * نحضر←نحظر، المفروض←المفروظ، ضمير←ظمير. التحويل الصوتي قرارٌ معجمي
-   * لكلمةٍ مجرّبةٍ وحدها، مثل ضيق←ظيّج؛ وسائر الضاد يبقى كما كُتب. */
-  return spoken
+  return daadToDhaa(spoken)
 }
 
 /* حذف الأسماء اللاتينية من مدخل الصوت.

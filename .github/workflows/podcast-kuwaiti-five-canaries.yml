@@ -143,9 +143,20 @@ jobs:
           SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 ))
           while IFS= read -r SLUG; do
             N=$((N + 1)); ACCEPTED=0
+            # الحلقة الواحدة تحتفظ بخانة بذرتها داخل الباقة الأصلية. 04 نجحت
+            # في المرجع الذهبي على 2104؛ تحويلها إلى الحلقة 1 كان يعطيها 2101
+            # ويغيّر تفسير الشخصيتين رغم بقاء النص والأصوات كما هما.
+            case "$SLUG" in
+              success-that-does-not-bring-joy-to-its-ownerarabic) SEED_SLOT=1 ;;
+              the-classroom-that-fears-mistakesarabic) SEED_SLOT=2 ;;
+              intelligence-without-a-consciencearabic) SEED_SLOT=3 ;;
+              when-seriousness-becomes-a-mask-for-escapearabic) SEED_SLOT=4 ;;
+              how-do-we-assess-without-breaking-the-human-beingarabic) SEED_SLOT=5 ;;
+              *) echo "::error::ماكو خانة بذرة معتمدة لـ$SLUG"; exit 1 ;;
+            esac
             for ATTEMPT in 1 2 3; do
               export PODCAST_KW_PILOT_SLUG="$SLUG"
-              export PODCAST_KW_SEED=$((SEED_BASE + N + (ATTEMPT - 1) * 10))
+              export PODCAST_KW_SEED=$((SEED_BASE + SEED_SLOT + (ATTEMPT - 1) * 10))
               echo "── حلقة $N/$TOTAL · محاولة $ATTEMPT/3 · $SLUG · seed=$PODCAST_KW_SEED"
               node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
               CODE=$?

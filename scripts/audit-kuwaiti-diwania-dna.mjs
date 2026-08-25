@@ -89,7 +89,8 @@ for (const [slug, turnsRaw] of episodes) {
   assert.ok(longTurns <= 2, `${slug}: خطب طويلة أكثر من اللازم (${longTurns})`)
   assert.ok(projectedSec >= 128 && projectedSec <= 155, `${slug}: المدة المتوقعة ${projectedSec.toFixed(0)}ث`)
   assert.doesNotMatch(text, DIFFICULT_NAMES, `${slug}: اسم بحثي صعب دخل الصوت`)
-  assert.doesNotMatch(spokenText, /ض/u, `${slug}: قاعدة الظاد الشاملة لم تصل إلى الصوت`)
+  assert.doesNotMatch(spokenText, /(?:نركظ|نظج|المفروظ|نحظر|منظبطين|ظمير)/u,
+    `${slug}: رجع قلب الضاد الشامل وخرّب كلمة صحيحة`)
   assert.doesNotMatch(spokenText, /[A-Za-z]/u, `${slug}: بقي اسم لاتيني في الصوت`)
   assert.doesNotMatch(spokenText, /(?:الفيلكاوي|الفيلچاوي)/u, `${slug}: اسم العائلة لم يمر بطبقة النطق`)
   if (/الفيل(?:ك|چ)اوي/u.test(text)) assert.match(spokenText, /الفيلتشاوي/u, `${slug}: نطق اسم العائلة غير المقفول`)

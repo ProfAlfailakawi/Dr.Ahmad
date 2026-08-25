@@ -106,7 +106,7 @@ const SERIOUSNESS_SHORT_OVERRIDES = new Map([
   [23, { text: 'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة ثقيلة عليه، أو نتيجتها بعيدة.', deliveryType: 'statement', pauseAfterMs: 420, overlapMs: 0, musicBridgeAfter: true }],
   [24, { speaker: 'female', text: 'عيل من وين نبدي العلاج؟', deliveryType: 'question', pauseAfterMs: 260, overlapMs: 0 }],
   [25, { speaker: 'male', text: 'نفرق بين شغل يقربنا من الشي المهم… وشغل يبعدنا عنه.', deliveryType: 'statement' }],
-  [26, { speaker: 'female', text: 'ونعطي المهمة الثقيلة موعد واضح باليوم.', deliveryType: 'statement' }],
+  [26, { speaker: 'female', text: 'ونحط للمهمة الثقيلة موعد واضح.', deliveryType: 'statement' }],
   [27, { speaker: 'male', text: 'المشكلة إن الواحد يركض سنة كاملة…', deliveryType: 'statement', pauseAfterMs: 260 }],
   [28, { speaker: 'male', text: 'وبالأخير يكتشف إنه كان يهرب من نفسه.', deliveryType: 'statement', pauseAfterMs: 360 }],
 ])

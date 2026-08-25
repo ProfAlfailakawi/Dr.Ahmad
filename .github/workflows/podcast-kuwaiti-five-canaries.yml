@@ -3,6 +3,10 @@ name: خمس حلقات كويتية قصيرة — باقة السماع
 on:
   workflow_dispatch:
     inputs:
+      single_slug:
+        description: 'حلقة واحدة من الخمس للسماع؛ اتركها فارغة لتوليد الباقة كلها'
+        required: false
+        default: ''
       prompt_mode:
         description: 'ضبط البرومت: full = جدار الحلقة الجبارة (٢١ أغسطس، محفوظ حرفياً ١٢٧٢٥ حرفاً) · c = الحالي ببنية Google'
         required: false
@@ -52,13 +56,16 @@ jobs:
             : 'src/data/kuwaiti-diwania-v3.json';
           const lib = JSON.parse(fs.readFileSync(LIB, 'utf8'));
           console.log('المصدر: ' + LIB);
-          const slugs = [
+          const allSlugs = [
             'success-that-does-not-bring-joy-to-its-ownerarabic',
             'the-classroom-that-fears-mistakesarabic',
             'intelligence-without-a-consciencearabic',
             'when-seriousness-becomes-a-mask-for-escapearabic',
             'how-do-we-assess-without-breaking-the-human-beingarabic',
           ];
+          const requested = String(process.env.SINGLE_SLUG || '').trim();
+          if (requested && !allSlugs.includes(requested)) throw new Error('single_slug غير معتمد ضمن باقة السماع: ' + requested);
+          const slugs = requested ? [requested] : allSlugs;
           fs.mkdirSync('manual-dialogues-kuwaiti', { recursive: true });
           fs.mkdirSync('podcast-audits/source-locks-kuwaiti', { recursive: true });
           for (const slug of slugs) {
@@ -73,10 +80,11 @@ jobs:
             }, null, 2));
           }
           fs.writeFileSync('five-canary-slugs.txt', slugs.join('\n') + '\n');
-          console.log('✓ خمس محادثات ديوانية v3 مصححة بالأذن، كل واحدة ~2:30 وبجسرين مونتاجيين');
+          console.log(`✓ جُهّزت ${slugs.length} محادثة ديوانية v3 مصححة بالأذن، بجسرين مونتاجيين`);
           NODE
         env:
           CANARY_LIBRARY: ${{ inputs.library || 'v3' }}
+          SINGLE_SLUG: ${{ inputs.single_slug || '' }}
 
       - name: صقل النص المنطوق إلزامياً قبل Gemini
         run: node scripts/apply-kuwaiti-native-spoken.mjs --dir=manual-dialogues-kuwaiti
@@ -130,6 +138,7 @@ jobs:
           set +e
           mkdir -p five-canaries
           N=0
+          TOTAL=$(wc -l < five-canary-slugs.txt | tr -d ' ')
           # لا تعِد seed نفسها عند Rerun؛ وإلا رجعت العينة المرفوضة نفسها.
           SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 ))
           while IFS= read -r SLUG; do
@@ -137,7 +146,7 @@ jobs:
             for ATTEMPT in 1 2 3; do
               export PODCAST_KW_PILOT_SLUG="$SLUG"
               export PODCAST_KW_SEED=$((SEED_BASE + N + (ATTEMPT - 1) * 10))
-              echo "── حلقة $N/5 · محاولة $ATTEMPT/3 · $SLUG · seed=$PODCAST_KW_SEED"
+              echo "── حلقة $N/$TOTAL · محاولة $ATTEMPT/3 · $SLUG · seed=$PODCAST_KW_SEED"
               node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
               CODE=$?
               if [ "$CODE" -eq 0 ]; then ACCEPTED=1; break; fi
@@ -167,7 +176,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: five-kuwaiti-diwania-v3-ear-corrected-single-call
+          name: kuwaiti-listening-${{ inputs.single_slug || 'five-canaries' }}
           path: five-canaries/
           if-no-files-found: warn
           retention-days: 30

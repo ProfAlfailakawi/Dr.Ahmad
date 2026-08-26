@@ -55,7 +55,7 @@ if (SELF_TEST) {
     'الحلقة 04 ما ترجع إلى الجمل المقالية التي دفعت الصوت إلى Presenter Mode')
   assert.deepEqual(seriousness.turns.filter((turn) => turn.musicBridgeAfter).map((turn) => turn.text), [
     'طلع إن الناس تشوف الشخص المشغول أهم وأشطر.',
-    'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة ثقيلة عليه، أو نتيجتها بعيدة.',
+    'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة صعبة عليه، أو نتيجتها بعيدة.',
   ], 'الجسران بعد اكتمال الفكرة، لا بعد سؤال وقبل جوابه')
   assert.deepEqual(seriousness.turns.slice(8, 11).map((turn) => turn.deliveryType),
     ['briefReaction', 'question', 'statement'], 'الدليل الأول تمهيد ثم سؤال ثم نتيجة')
@@ -63,10 +63,20 @@ if (SELF_TEST) {
     ['briefReaction', 'question', 'statement'], 'دليل التسويف تمهيد ثم سؤال ثم نتيجة')
   assert.equal(seriousness.turns[24].text, 'عيل من وين نبدي العلاج؟',
     'أفضل لحظة حوارية في الحلقة باقية بصياغتها الكويتية')
-  assert.equal(seriousness.turns[26].text, 'ونحط للمهمة الثقيلة موعد واضح.',
+  assert.equal(seriousness.turns[26].text, 'ونحط للمهمة الصعبة موعد واضح.',
     'موعد المهمة قصير وشفهي فلا يصنع رفض زمن كاذب')
   assert.doesNotMatch(seriousnessText, /ونعطي المهمة الثقيلة موعد واضح باليوم/u,
     'الصياغة الطويلة التي صنعت رفض الزمن الكاذب لا ترجع')
+  assert.doesNotMatch(seriousnessText, /ق/u,
+    'الحلقة 04 تتفادى كلمات القاف معجمياً بعد أخطاء السماع، بلا قلب آلي إلى گ')
+  assert.doesNotMatch(seriousnessText, /(?:نهرب|يهرب|الفرق|قيمة|صدق)/u,
+    'الكلمات التي أخطأ المحرك في نطقها لا ترجع إلى الحلقة 04')
+  assert.equal(seriousness.turns[20].text,
+    'صحيح. في شغل يطلع منه فايدة… وفي شغل بس يلهينا عن الشي اللي ما نبي نواجهه.',
+    'المعنى محفوظ بكلام شفهي بلا «قيمة» ولا «نهرب»')
+  assert.equal(seriousness.turns[29].text,
+    'وإذا تبي السالفة كاملة، بتحصلها بصفحة الدكتور أحمد حسين الفيلچاوي.',
+    'الإحالة والاسم بصوت فهد من نفس الـTake وبلا كلمات قاف خطرة')
   assert.deepEqual(seriousness.turns.slice(27, 29).map((turn) => turn.deliveryType),
     ['statement', 'statement'], 'الخاتمة الفكرية تمر عادية ولا تُلقى كشعار')
   const pilotWorkflow = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-pilot.yml'), 'utf8')
@@ -95,7 +105,7 @@ if (SELF_TEST) {
     'قراءة أوكتاف شاذة لدور مفرد لا تحرق Take ثابت المقاطع والرنين')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
     'بوابة الرنين تمسك نفس preset لما يصير مو نفس الإنسان')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 17/17')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 21/21')
   process.exit(0)
 }
 

@@ -53,6 +53,12 @@ function buildVocabulary() {
   const lib = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-dialogues.json'), 'utf8'))
   for (const ep of Object.values(lib.episodes)) for (const t of Object.values(ep)) { add(t.text); add(spoken(t.text)) }
   for (const [k, v] of Object.entries(SRC.words || {})) { add(k); add(v) }
+  /* تصريفات عائلات ألف الوصل أقرّ الدكتور طريقتها؛ تمرّ الحوارات القادمة
+     بهذه الصيغ من غير مختبر جديد، بينما تبقى أي عائلة أخرى كلمةً جديدة
+     يوقفها الحارس قبل الدفع إلى Gemini. */
+  for (const family of Object.values(SRC.waslFamilies || {})) {
+    for (const [k, v] of Object.entries(family?.forms || {})) { add(k); add(v) }
+  }
   for (const k of Object.keys(SRC.heardByEar || {})) add(k)
   for (const v of Object.values(SRC.foreignNames || {})) add(v)
   return vocab

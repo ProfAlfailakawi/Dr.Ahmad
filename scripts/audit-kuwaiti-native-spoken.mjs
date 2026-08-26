@@ -139,6 +139,8 @@ for (const [label, relative] of sources) {
   const hard = []
   for (const [slug, episode] of episodes) {
     const prepared = optimizeNativeSpokenEpisode(Object.values(episode), { slug })
+    assert.ok(prepared.turns.every((turn) => !/^ممم…/u.test(String(turn.text || '').trim())),
+      `${label}/${slug}: رجع الحشو الميكانيكي «ممم» إلى النص المنطوق`)
     turns += prepared.turns.length
     rewrites += prepared.changes.length
     qaf += prepared.audit.qafRiskCount
@@ -203,4 +205,21 @@ for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-prompt-exp
       'الكناريات لا تتجاوز إعادة الرنين')
   }
 }
+const productionBatch = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-production-batch.yml'), 'utf8')
+assert.match(productionBatch, /run-kuwaiti-generation-queue\.mjs/,
+  'إنتاج 143 يمر بطابور قابل للاستئناف لا بحلقة عابرة على runner')
+assert.match(productionBatch, /Restore already accepted episodes before spending again/,
+  'Rerun يسترجع الناجح قبل أي صرف جديد')
+assert.match(productionBatch, /PODCAST_KW_PROMPT_MODE:\s*c/,
+  'الدفعة الفولاذية تستعمل البرومت المعتمد نفسه بلا نسخة جديدة')
+assert.match(productionBatch, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'0'/,
+  'الدفعة الفولاذية تحفظ Same-Take والجسر الخارجي')
+assert.match(productionBatch, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
+  'الاستئناف لا يرخي بوابة تبدل الإنسان')
+assert.match(productionBatch, /Enforce complete batch after preserving its state/,
+  'الحزمة الناقصة لا تظهر خضراء بعد حفظ الناجح')
+assert.match(geminiEngine, /geminiFailureExitCode[\s\S]*return 75/,
+  'عطل Gemini المؤقت مميز عن رفض الجودة')
+assert.match(geminiEngine, /seed:SEED/,
+  'كل مرشح يحمل البذرة التي أنشأته للاسترجاع والتدقيق')
 console.log('✓ كل مسارات Gemini الكويتية تمر بطبقة النص المنطوق')

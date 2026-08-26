@@ -15,6 +15,10 @@ on:
         description: 'مكتبة المصدر: v3 = إيقاع الديوانية بكلمات الدكتور (وفاء ١٠٠٪) · v2 = النص المخترع (للمقارنة التاريخية فقط)'
         required: false
         default: 'v3'
+      seed_base:
+        description: 'اختياري: قاعدة بذور مضبوطة لاختبار مرجع محفوظ (مثال 3100 يعطي 3104 ثم 3114 للحلقة 04)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -140,7 +144,13 @@ jobs:
           N=0
           TOTAL=$(wc -l < five-canary-slugs.txt | tr -d ' ')
           # لا تعِد seed نفسها عند Rerun؛ وإلا رجعت العينة المرفوضة نفسها.
-          SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 ))
+          REQUESTED_SEED_BASE='${{ inputs.seed_base || '' }}'
+          if [ -n "$REQUESTED_SEED_BASE" ]; then
+            [[ "$REQUESTED_SEED_BASE" =~ ^[0-9]+$ ]] || { echo "::error::seed_base غير صالح"; exit 1; }
+            SEED_BASE="$REQUESTED_SEED_BASE"
+          else
+            SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 ))
+          fi
           while IFS= read -r SLUG; do
             N=$((N + 1)); ACCEPTED=0
             # الحلقة الواحدة تحتفظ بخانة بذرتها داخل الباقة الأصلية. 04 نجحت
@@ -158,10 +168,23 @@ jobs:
               export PODCAST_KW_PILOT_SLUG="$SLUG"
               export PODCAST_KW_SEED=$((SEED_BASE + SEED_SLOT + (ATTEMPT - 1) * 10))
               echo "── حلقة $N/$TOTAL · محاولة $ATTEMPT/3 · $SLUG · seed=$PODCAST_KW_SEED"
-              node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
-              CODE=$?
-              if [ "$CODE" -eq 0 ]; then ACCEPTED=1; break; fi
-              if [ "$CODE" -ne 3 ]; then exit "$CODE"; fi
+              # عطل Gemini المؤقت لا يعني أن الـTake رديء، ولا يجوز أن
+              # يستهلك محاولة جودة أو يمنعنا من الوصول إلى البذرة التالية.
+              TRANSPORT_ATTEMPT=1
+              while :; do
+                node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
+                CODE=$?
+                if [ "$CODE" -eq 0 ]; then ACCEPTED=1; break; fi
+                if [ "$CODE" -eq 3 ]; then break; fi
+                if [ "$CODE" -eq 75 ] && [ "$TRANSPORT_ATTEMPT" -lt 3 ]; then
+                  echo "↻ Gemini مؤقتاً — إعادة seed=$PODCAST_KW_SEED من غير خصم عينة جودة"
+                  sleep $((TRANSPORT_ATTEMPT * 5)); TRANSPORT_ATTEMPT=$((TRANSPORT_ATTEMPT + 1)); continue
+                fi
+                if [ "$CODE" -eq 75 ]; then echo "::error::Gemini متعطل مؤقتاً؛ أُوقف الصرف وحُفظ سبب التأجيل."; exit 75; fi
+                if [ "$CODE" -eq 78 ]; then echo "::error::الرصيد انتهى؛ ممنوع بدء حلقة أخرى."; exit 78; fi
+                exit "$CODE"
+              done
+              if [ "$ACCEPTED" -eq 1 ]; then break; fi
             done
             if [ "$ACCEPTED" -ne 1 ]; then
               # [٢٣ أغسطس ٢٠٢٦] كان يخرج فوراً — فسقطت الحلقة الخامسة
@@ -182,6 +205,9 @@ jobs:
             echo "::warning::حلقاتٌ تخطّاها اليوم:"; cat five-canaries/SKIPPED.txt
           fi
           [ "$MADE" -gt 0 ] || { echo "::error::لم تكتمل ولا حلقة"; exit 1; }
+          # النجاح الأخضر يعني اكتمال المطلوب كله. كانت تشغيلة 25 أغسطس
+          # خضراء عند 2/5، وهذا «إسقاط» صامت لا يصلح قبل إنتاج 143 حلقة.
+          [ ! -f five-canaries/SKIPPED.txt ] || { echo "::error::الحزمة ناقصة؛ الناجح مرفوع لكن المطلوب لم يكتمل."; exit 2; }
 
       - name: Upload one listening package
         if: always()

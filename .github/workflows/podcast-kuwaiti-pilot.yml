@@ -182,17 +182,26 @@ jobs:
               # الفاشلة تنزاح بذرتها +10 كي لا تعيد نفس العينة المرفوضة.
               export PODCAST_KW_SEED=$(( SEED_BASE + t + (i - 1) * 10 ))
               echo "نسخة $t/$TAKES · المحاولة $i/$ATTEMPTS — العتبة $PODCAST_KW_MIN_GAP هرتزاً · البذرة $PODCAST_KW_SEED"
-              node scripts/podcast-kuwaiti-gemini.mjs --slug="$RELEASED_SLUGS"
-              CODE=$?
-              if [ "$CODE" -eq 0 ]; then
-                echo "✓ نسخة $t: قُبلت في المحاولة $i."
-                ACCEPTED=1
-                break
-              fi
-              if [ "$CODE" -ne 3 ]; then
+              TRANSPORT_ATTEMPT=1
+              while :; do
+                node scripts/podcast-kuwaiti-gemini.mjs --slug="$RELEASED_SLUGS"
+                CODE=$?
+                if [ "$CODE" -eq 0 ]; then
+                  echo "✓ نسخة $t: قُبلت في المحاولة $i."
+                  ACCEPTED=1
+                  break
+                fi
+                if [ "$CODE" -eq 3 ]; then break; fi
+                if [ "$CODE" -eq 75 ] && [ "$TRANSPORT_ATTEMPT" -lt 3 ]; then
+                  echo "↻ Gemini مؤقتاً — إعادة البذرة نفسها بلا خصم عينة جودة"
+                  sleep $((TRANSPORT_ATTEMPT * 5)); TRANSPORT_ATTEMPT=$((TRANSPORT_ATTEMPT + 1)); continue
+                fi
+                if [ "$CODE" -eq 75 ]; then echo "::error::Gemini متعطل مؤقتاً؛ أعد التشغيلة لاحقاً."; exit 75; fi
+                if [ "$CODE" -eq 78 ]; then echo "::error::نفد الرصيد؛ أُوقف الصرف قبل الحلقة التالية."; exit 78; fi
                 echo "::error::سقط التوليد بالرمز $CODE — ليس رفضَ عيّنة."
                 exit "$CODE"
-              fi
+              done
+              if [ "$ACCEPTED" -eq 1 ]; then break; fi
             done
             if [ "$ACCEPTED" -ne 1 ]; then
               echo "::error::النسخة $t: ثلاث عينات متتالية لم تجتز بوابات الجودة — أعد التشغيلة لاحقاً بدل قبول صوتين متقاربين أو هوية منزَلقة أو دور مقصوص."

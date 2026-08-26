@@ -1,0 +1,193 @@
+name: الإنتاج الكويتي الفولاذي — دفعة قابلة للاستئناف
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: 'رقم الدفعة من مقالات الموقع الـ143 (1 يبدأ من أول القائمة)'
+        required: false
+        default: '1'
+      batch_size:
+        description: 'عدد الحلقات في الدفعة (1–10؛ الافتراض 5 للحماية من يوم محرك رديء)'
+        required: false
+        default: '5'
+      slugs:
+        description: 'اختياري: slugs محددة مفصولة بفاصلة؛ يتجاهل batch عند استعماله'
+        required: false
+        default: ''
+      resume_run:
+        description: 'اختياري: رقم تشغيلة بعينها؛ بدونه يسترجع النظام أحدث حزمة مطابقة تلقائياً'
+        required: false
+        default: ''
+      quality_attempts:
+        description: 'عينات جودة لكل حلقة في الجولة (1–6؛ الافتراض 3)'
+        required: false
+        default: '3'
+      seed_base:
+        description: 'اختياري للتجربة المضبوطة؛ اتركه فارغاً لبذور جديدة تلقائياً في كل Rerun'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: podcast-kuwaiti-gemini-global
+  cancel-in-progress: false
+
+jobs:
+  generate-batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install and lock the approved production engine
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          npm run podcast:kw:self-test
+          node scripts/run-kuwaiti-generation-queue.mjs --self-test
+
+      - name: Select a deterministic batch from all 143 site articles
+        shell: bash
+        env:
+          REQUESTED_BATCH: ${{ inputs.batch || '1' }}
+          REQUESTED_SIZE: ${{ inputs.batch_size || '5' }}
+          REQUESTED_SLUGS: ${{ inputs.slugs || '' }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs'); const crypto = require('crypto');
+          const v3 = JSON.parse(fs.readFileSync('src/data/kuwaiti-diwania-v3.json', 'utf8'));
+          const site = new Set(Object.keys(JSON.parse(fs.readFileSync('src/data/bodies.json', 'utf8'))));
+          const all = Object.keys(v3.episodes || {}).filter((slug) => site.has(slug));
+          if (all.length !== 143) throw new Error(`عقد الإنتاج يقول 143 مقالاً؛ الموجود ${all.length}`);
+          const batch = Number(process.env.REQUESTED_BATCH || 1);
+          const size = Number(process.env.REQUESTED_SIZE || 5);
+          if (!Number.isInteger(batch) || batch < 1) throw new Error('batch يجب أن يكون عدداً موجباً');
+          if (!Number.isInteger(size) || size < 1 || size > 10) throw new Error('batch_size بين 1 و10');
+          const explicit = String(process.env.REQUESTED_SLUGS || '').split(',').map((item) => item.trim()).filter(Boolean);
+          for (const slug of explicit) if (!site.has(slug) || !v3.episodes[slug]) throw new Error(`slug غير معتمد: ${slug}`);
+          const selected = explicit.length ? [...new Set(explicit)] : all.slice((batch - 1) * size, batch * size);
+          if (!selected.length) throw new Error('الدفعة خارج نطاق 143 حلقة');
+          fs.mkdirSync('manual-dialogues-kuwaiti', { recursive: true });
+          fs.mkdirSync('podcast-audits/source-locks-kuwaiti', { recursive: true });
+          const slots = {};
+          for (const slug of selected) {
+            const turns = Object.values(v3.episodes[slug] || {});
+            if (turns.length < 15 || turns.filter((turn) => turn.musicBridgeAfter).length !== 2) throw new Error(`${slug}: مصدر قصير غير صالح`);
+            const body = JSON.stringify(turns, null, 2) + '\n';
+            const hash = crypto.createHash('sha256').update(body).digest('hex');
+            fs.writeFileSync(`manual-dialogues-kuwaiti/${slug}.json`, body);
+            fs.writeFileSync(`podcast-audits/source-locks-kuwaiti/${slug}.json`, JSON.stringify({
+              slug, revisionId: `diwania-v3-${hash.slice(0, 24)}`,
+              sourceVariant: 'human-diwania-dna-v3-ear-corrected', turnCount: turns.length,
+              bridgeCount: 2, shortContentSha256: hash,
+            }, null, 2) + '\n');
+            slots[slug] = all.indexOf(slug) + 1;
+          }
+          fs.writeFileSync('kuwaiti-production-slugs.txt', selected.join('\n') + '\n');
+          fs.writeFileSync('kuwaiti-production-seed-slots.json', JSON.stringify(slots, null, 2) + '\n');
+          const identity = crypto.createHash('sha256').update(selected.join('\n')).digest('hex').slice(0, 10);
+          fs.appendFileSync(process.env.GITHUB_ENV, `PACKAGE_NAME=kuwaiti-production-${explicit.length ? 'manual' : `batch-${batch}`}-${identity}\n`);
+          console.log(`✓ الدفعة: ${selected.length} من 143 · ${selected.join(' · ')}`);
+          NODE
+
+      - name: Apply the approved native spoken text exactly once
+        run: |
+          node scripts/apply-kuwaiti-native-spoken.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-spoken-episode.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-name-pronunciation.mjs
+          node scripts/guard-new-dialogue-words.mjs --dir=manual-dialogues-kuwaiti
+
+      - name: Restore already accepted episodes before spending again
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_RESUME_RUN: ${{ inputs.resume_run || '' }}
+        run: |
+          set -euo pipefail
+          mkdir -p kuwaiti-production-package
+          RUN_TO_RESTORE="$REQUESTED_RESUME_RUN"
+          if [ -z "$RUN_TO_RESTORE" ] && [ "${GITHUB_RUN_ATTEMPT:-1}" -gt 1 ]; then RUN_TO_RESTORE="$GITHUB_RUN_ID"; fi
+          if [ -n "$RUN_TO_RESTORE" ]; then
+            ARTIFACT_ID="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_TO_RESTORE/artifacts" \
+              -f per_page=100 --jq "[.artifacts[] | select(.name == \"$PACKAGE_NAME\" and (.expired|not))] | sort_by(.created_at) | last | .id // empty")"
+          else
+            # حتى لو بدأ الدكتور New run بدل Rerun، نلقى أحدث حزمة تحمل
+            # هوية الدفعة نفسها. بصمات المصدر أدناه تمنع استرجاع نسخة قديمة
+            # بعد أي تعديل نصي؛ أي اختلاف يعيد الحلقة وحدها بأمان.
+            ARTIFACT_ID="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/artifacts" \
+              -f name="$PACKAGE_NAME" -f per_page=100 \
+              --jq '[.artifacts[] | select(.expired|not)] | sort_by(.created_at) | last | .id // empty')"
+          fi
+          if [ -z "$ARTIFACT_ID" ]; then echo 'ما لقيت حزمة مطابقة؛ تبدأ الجولة من سجل فارغ.'; exit 0; fi
+          TEMP_ZIP="${RUNNER_TEMP}/kuwaiti-resume.zip"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > "$TEMP_ZIP"
+          unzip -oq "$TEMP_ZIP" -d kuwaiti-production-package
+          echo "✓ استُرجعت الحزمة $ARTIFACT_ID؛ البصمات هي التي تقرر ما يُتخطى."
+
+      - name: Generate only missing episodes with a circuit breaker
+        id: queue
+        shell: bash
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
+          PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
+          PODCAST_KW_GENERATION_MODE: all
+          PODCAST_KW_PROMPT_MODE: c
+          PODCAST_KW_SPLIT_AT_BRIDGES: '0'
+          PODCAST_KW_MIN_GAP: '25'
+          PODCAST_KW_ISOLATE_SPEAKER_STEMS: '0'
+          PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_SWAPS: '0'
+          PODCAST_KW_REJECT_ACOUSTIC_RESET: '1'
+          PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
+          REQUESTED_SEED_BASE: ${{ inputs.seed_base || '' }}
+          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '3' }}
+        run: |
+          set +e
+          SEED_BASE="$REQUESTED_SEED_BASE"
+          if [ -z "$SEED_BASE" ]; then SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 )); fi
+          node scripts/run-kuwaiti-generation-queue.mjs \
+            --slugs-file=kuwaiti-production-slugs.txt \
+            --slot-map=kuwaiti-production-seed-slots.json \
+            --out-dir=kuwaiti-production-package \
+            --seed-base="$SEED_BASE" \
+            --quality-attempts="$REQUESTED_QUALITY_ATTEMPTS" \
+            --transient-attempts=3
+          CODE=$?
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload every accepted episode and the exact pending ledger
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ env.PACKAGE_NAME }}
+          path: kuwaiti-production-package/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Enforce complete batch after preserving its state
+        if: always()
+        shell: bash
+        env:
+          QUEUE_CODE: ${{ steps.queue.outputs.code }}
+        run: |
+          case "$QUEUE_CODE" in
+            0) echo '✓ كل حلقات الدفعة محفوظة ومجتازة.' ;;
+            2) echo '::error::بقيت حلقات جودة معلقة؛ أعد Failed jobs لاحقاً، والناجح لن يتولد مرة ثانية.'; exit 2 ;;
+            75) echo '::error::Gemini متعطل مؤقتاً؛ قاطع الحماية أوقف الصرف وحفظ الطابور.'; exit 75 ;;
+            78) echo '::error::الرصيد انتهى؛ لم تبدأ الحلقات الباقية.'; exit 78 ;;
+            *) echo "::error::عطل حقيقي في الإنتاج (code=${QUEUE_CODE:-missing})."; exit 1 ;;
+          esac

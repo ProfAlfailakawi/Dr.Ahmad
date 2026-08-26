@@ -13,7 +13,7 @@
 
 import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-26-native-kuwaiti-v7'
+export const NATIVE_SPOKEN_VERSION = '2026-08-26-native-kuwaiti-v8-minimal-ear-fix'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 
@@ -85,32 +85,30 @@ const PILOT_FULL_OVERRIDES = new Map([
 const SERIOUSNESS_SHORT_OVERRIDES = new Map([
   [2, { text: 'ممم… وبآخر الليل نرجع، ونكتشف إن ما تحرّك فينا شي صج.', deliveryType: 'statement' }],
   [3, { text: 'بس الجدية مو دايم علامة نضج.', deliveryType: 'statement', pauseAfterMs: 320 }],
-  [4, { text: 'مرات مو جدية أصلا… بس نشغل نفسنا عشان ما نواجه شي.', deliveryType: 'statement', pauseAfterMs: 300, overlapMs: 0 }],
-  [5, { speaker: 'female', text: 'شنو اللي ما نبي نواجهه؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
-  [6, { speaker: 'male', text: 'سؤال ندري إنه صعب علينا.', deliveryType: 'briefReaction', pauseAfterMs: 240, overlapMs: 0 }],
+  [4, { text: 'مرات ما تكون جدية أصلا… تكون طريقة مرتبة نتهرّب فيها.', deliveryType: 'statement', pauseAfterMs: 300, overlapMs: 0 }],
+  [5, { speaker: 'female', text: 'نتهرّب من شنو؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
+  [6, { speaker: 'male', text: 'من سؤال ندري إنه ثقيل علينا.', deliveryType: 'briefReaction', pauseAfterMs: 240, overlapMs: 0 }],
   [7, { speaker: 'female', text: 'إحنا ننجز اللي المفروض… ولا بس اللي يريحنا؟', deliveryType: 'question' }],
   [8, { speaker: 'male', text: 'وترى حتى الدراسات لاحظت هالشي.', deliveryType: 'briefReaction', pauseAfterMs: 220 }],
   [9, { speaker: 'female', text: 'شلون يعني؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
   [10, { speaker: 'male', text: 'طلع إن الناس تشوف الشخص المشغول أهم وأشطر.', deliveryType: 'statement', pauseAfterMs: 420, overlapMs: 0, musicBridgeAfter: true }],
   [11, { speaker: 'female', text: 'يمكن نحضر كل اجتماع صغير…', deliveryType: 'statement' }],
-  [12, { speaker: 'male', text: 'لأننا نخاف من مهمة وحدة كبيرة تبيّن مستوانا الصجي.', deliveryType: 'statement' }],
-  [13, { speaker: 'female', text: 'ويمكن نصير شاطرين بالانشغال الذكي…', deliveryType: 'statement' }],
-  [14, { speaker: 'female', text: 'عشان ما نواجه شخص لازم نكون صريحين معاه.', deliveryType: 'statement' }],
+  [12, { speaker: 'male', text: 'لأننا نخاف من مهمة وحدة كبيرة تكشف قدرتنا الحقيقية.', deliveryType: 'statement' }],
+  [13, { speaker: 'female', text: 'ويمكن نتقن الانشغال الذكي…', deliveryType: 'statement' }],
+  [14, { speaker: 'female', text: 'عشان ما نقرب من علاقة تبي شجاعة وصراحة.', deliveryType: 'statement' }],
   [15, { speaker: 'male', text: 'أو من مشروع يحطنا جدام احتمال الفشل…', deliveryType: 'statement' }],
-  [16, { speaker: 'male', text: 'أو شي مهم مأجلينه، وكل يوم نخليه باجر.', deliveryType: 'statement' }],
+  [16, { speaker: 'male', text: 'أو قرار مهم مأجلينه، وكل يوم نقول باجر.', deliveryType: 'statement' }],
   [17, { speaker: 'female', text: 'ومن برّا نبان مرتبين جدام الكل…', deliveryType: 'statement' }],
-  [18, { speaker: 'female', text: 'بس من داخلنا، نأجل الشي اللي نعرفه.', deliveryType: 'statement' }],
-  [19, { text: 'بس جذي نظلم اللي يشتغل بجد صج.', deliveryType: 'gentleObjection' }],
-  [20, { text: 'صحيح. في شغل يطلع منه فايدة… وفي شغل بس يلهينا عن الشي اللي ما نبي نواجهه.', deliveryType: 'statement' }],
+  [18, { speaker: 'female', text: 'بس من داخلنا، قاعدين نأجل الشي اللي نعرفه.', deliveryType: 'statement' }],
+  [20, { text: 'صحيح. في شغل يطلع منه شي له فايدة… وفي شغل بس يخلينا ما نفكر باللي نتهرّب منه.', deliveryType: 'statement' }],
   [21, { text: 'وحتى أبحاث التسويف لاحظت هالشي.', deliveryType: 'briefReaction', pauseAfterMs: 220 }],
   [22, { text: 'شلون يعني؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70, musicBridgeAfter: false }],
-  [23, { text: 'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة صعبة عليه، أو نتيجتها بعيدة.', deliveryType: 'statement', pauseAfterMs: 420, overlapMs: 0, musicBridgeAfter: true }],
+  [23, { text: 'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة ثقيلة عليه، أو نتيجتها بعيدة.', deliveryType: 'statement', pauseAfterMs: 420, overlapMs: 0, musicBridgeAfter: true }],
   [24, { speaker: 'female', text: 'عيل من وين نبدي العلاج؟', deliveryType: 'question', pauseAfterMs: 260, overlapMs: 0 }],
-  [25, { speaker: 'male', text: 'نميّز الشغل اللي يودينا للشي المهم… عن الشغل اللي يبعدنا عنه.', deliveryType: 'statement' }],
-  [26, { speaker: 'female', text: 'ونحط للمهمة الصعبة موعد واضح.', deliveryType: 'statement' }],
+  [25, { speaker: 'male', text: 'نفرق بين شغل يقربنا من الشي المهم… وشغل يبعدنا عنه.', deliveryType: 'statement' }],
+  [26, { speaker: 'female', text: 'ونحط للمهمة الثقيلة موعد واضح.', deliveryType: 'statement' }],
   [27, { speaker: 'male', text: 'المشكلة إن الواحد يركض سنة كاملة…', deliveryType: 'statement', pauseAfterMs: 260 }],
-  [28, { speaker: 'male', text: 'وبالأخير يكتشف إنه طول هالمدة مو راضي يواجه نفسه.', deliveryType: 'statement', pauseAfterMs: 360 }],
-  [29, { text: 'وإذا تبي السالفة كاملة، بتحصلها بصفحة الدكتور أحمد حسين الفيلچاوي.' }],
+  [28, { speaker: 'male', text: 'وبالأخير يكتشف إنه كان يهرب من نفسه.', deliveryType: 'statement', pauseAfterMs: 360 }],
 ])
 
 /* قواعد آمنة قليلة للحلقات الحالية والجديدة. لا تشمل «كل قاف»: الهوية

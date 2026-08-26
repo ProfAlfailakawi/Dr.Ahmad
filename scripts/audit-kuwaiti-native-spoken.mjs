@@ -55,7 +55,7 @@ if (SELF_TEST) {
     'الحلقة 04 ما ترجع إلى الجمل المقالية التي دفعت الصوت إلى Presenter Mode')
   assert.deepEqual(seriousness.turns.filter((turn) => turn.musicBridgeAfter).map((turn) => turn.text), [
     'طلع إن الناس تشوف الشخص المشغول أهم وأشطر.',
-    'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة صعبة عليه، أو نتيجتها بعيدة.',
+    'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة ثقيلة عليه، أو نتيجتها بعيدة.',
   ], 'الجسران بعد اكتمال الفكرة، لا بعد سؤال وقبل جوابه')
   assert.deepEqual(seriousness.turns.slice(8, 11).map((turn) => turn.deliveryType),
     ['briefReaction', 'question', 'statement'], 'الدليل الأول تمهيد ثم سؤال ثم نتيجة')
@@ -63,20 +63,36 @@ if (SELF_TEST) {
     ['briefReaction', 'question', 'statement'], 'دليل التسويف تمهيد ثم سؤال ثم نتيجة')
   assert.equal(seriousness.turns[24].text, 'عيل من وين نبدي العلاج؟',
     'أفضل لحظة حوارية في الحلقة باقية بصياغتها الكويتية')
-  assert.equal(seriousness.turns[26].text, 'ونحط للمهمة الصعبة موعد واضح.',
+  assert.equal(seriousness.turns[26].text, 'ونحط للمهمة الثقيلة موعد واضح.',
     'موعد المهمة قصير وشفهي فلا يصنع رفض زمن كاذب')
   assert.doesNotMatch(seriousnessText, /ونعطي المهمة الثقيلة موعد واضح باليوم/u,
     'الصياغة الطويلة التي صنعت رفض الزمن الكاذب لا ترجع')
-  assert.doesNotMatch(seriousnessText, /ق/u,
-    'الحلقة 04 تتفادى كلمات القاف معجمياً بعد أخطاء السماع، بلا قلب آلي إلى گ')
-  assert.doesNotMatch(seriousnessText, /(?:نهرب|يهرب|الفرق|قيمة|صدق)/u,
-    'الكلمات التي أخطأ المحرك في نطقها لا ترجع إلى الحلقة 04')
+  assert.equal(seriousness.turns[4].text,
+    'مرات ما تكون جدية أصلا… تكون طريقة مرتبة نتهرّب فيها.',
+    'بنية النسخة الاحترافية باقية؛ المختلف عليه وحده صار «نتهرّب»')
+  assert.equal(seriousness.turns[5].text, 'نتهرّب من شنو؟',
+    'السؤال القصير نفسه بلا إعادة كتابة للمشهد')
+  assert.equal(seriousness.turns[12].text,
+    'لأننا نخاف من مهمة وحدة كبيرة تكشف قدرتنا الحقيقية.',
+    'الجملة الاحترافية القديمة لا تُستبدل بكتابة جديدة واسعة')
+  assert.equal(seriousness.turns[14].text,
+    'عشان ما نقرب من علاقة تبي شجاعة وصراحة.',
+    '«صدق» وحدها تُعالج إلى «صراحة» مع بقاء الجملة')
   assert.equal(seriousness.turns[20].text,
-    'صحيح. في شغل يطلع منه فايدة… وفي شغل بس يلهينا عن الشي اللي ما نبي نواجهه.',
-    'المعنى محفوظ بكلام شفهي بلا «قيمة» ولا «نهرب»')
-  assert.equal(seriousness.turns[29].text,
-    'وإذا تبي السالفة كاملة، بتحصلها بصفحة الدكتور أحمد حسين الفيلچاوي.',
-    'الإحالة والاسم بصوت فهد من نفس الـTake وبلا كلمات قاف خطرة')
+    'صحيح. في شغل يطلع منه شي له فايدة… وفي شغل بس يخلينا ما نفكر باللي نتهرّب منه.',
+    '«قيمة» و«نهرب» وحدهما يتبدلان من غير تغيير منطق الحوار')
+  assert.equal(seriousness.turns[21].text, 'وحتى أبحاث التسويف لاحظت هالشي.',
+    '«الفرق» وحدها تُزال من الجملة البحثية')
+  assert.equal(seriousness.turns[25].text,
+    'نفرق بين شغل يقربنا من الشي المهم… وشغل يبعدنا عنه.',
+    'حلقة صفر قاف لا تعود؛ السطر المهني القديم محفوظ')
+  assert.equal(seriousness.turns[28].text,
+    'وبالأخير يكتشف إنه كان يهرب من نفسه.',
+    'الخاتمة القديمة محفوظة ولم تتحول إلى شرح جديد')
+  assert.doesNotMatch(seriousnessText, /(?:نهرب|له قيمة|هالفرق|شجاعة وصدق)/u,
+    'الكلمات الأربع المختلف عليها وحدها لا ترجع')
+  assert.equal((seriousnessText.match(/ق/gu) || []).length, 19,
+    'قفل الحد الأدنى للتغيير: لا نعيد كنس كل القافات أو كتابة الحلقة من جديد')
   assert.deepEqual(seriousness.turns.slice(27, 29).map((turn) => turn.deliveryType),
     ['statement', 'statement'], 'الخاتمة الفكرية تمر عادية ولا تُلقى كشعار')
   const pilotWorkflow = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-pilot.yml'), 'utf8')
@@ -105,7 +121,7 @@ if (SELF_TEST) {
     'قراءة أوكتاف شاذة لدور مفرد لا تحرق Take ثابت المقاطع والرنين')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
     'بوابة الرنين تمسك نفس preset لما يصير مو نفس الإنسان')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 21/21')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 25/25')
   process.exit(0)
 }
 

@@ -66,10 +66,18 @@ const wordPattern = (word, allowProclitics) => {
 
 export function buildPronunciationMap(source) {
   const words = source?.words && typeof source.words === 'object' ? source.words : {}
+  /* عائلات ألف الوصل المعتمدة بالأذن: الكلمات داخل العائلة تحمل القلب نفسه
+   * عند تبدل الضمير أو الجمع، لكن التشكيل الكامل لا يُشتق آلياً. قيمة words
+   * تتقدم دائماً على قيمة العائلة، حتى تبقى الصيغة التي سمعها الدكتور
+   * («انْعَرْفَه» مثلاً) أدق من الامتداد الصرفي غير المشكّل («انعرفه»). */
+  const familyForms = Object.values(source?.waslFamilies || {})
+    .flatMap((family) => Object.entries(family?.forms || {}))
+  const mergedWords = new Map(familyForms)
+  for (const [from, to] of Object.entries(words)) mergedWords.set(from, to)
   /* الجذوع الممنوعة من السوابق — تُعلن بالبيانات لا بالكود. */
   const blocked = new Set(Array.isArray(source?.noProclitic) ? source.noProclitic : [])
   /* الأطول أولاً: «الأوراق» قبل «ورق» وإلا التهم القصيرُ جزءاً من الطويل. */
-  return Object.entries(words)
+  return [...mergedWords.entries()]
     .filter(([from, to]) => from && to && from !== to)
     .sort((a, b) => b[0].length - a[0].length)
     .map(([from, to]) => ({

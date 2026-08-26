@@ -13,7 +13,7 @@
 
 import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-26-native-kuwaiti-v8-minimal-ear-fix'
+export const NATIVE_SPOKEN_VERSION = '2026-08-26-native-kuwaiti-v9-resumable-no-mechanical-fillers'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 
@@ -83,7 +83,7 @@ const PILOT_FULL_OVERRIDES = new Map([
    البحثان كلاهما تمهيد → سؤال → نتيجة. والجملة الأخيرة قبل الإحالة تمر
    statement عادية، لا conclusion تجبر المحرك على التباطؤ وصناعة شعار. */
 const SERIOUSNESS_SHORT_OVERRIDES = new Map([
-  [2, { text: 'ممم… وبآخر الليل نرجع، ونكتشف إن ما تحرّك فينا شي صج.', deliveryType: 'statement' }],
+  [2, { text: 'وبآخر الليل نرجع، ونكتشف إن ما تحرّك فينا شي صج.', deliveryType: 'statement' }],
   [3, { text: 'بس الجدية مو دايم علامة نضج.', deliveryType: 'statement', pauseAfterMs: 320 }],
   [4, { text: 'مرات ما تكون جدية أصلا… تكون طريقة مرتبة نتهرّب فيها.', deliveryType: 'statement', pauseAfterMs: 300, overlapMs: 0 }],
   [5, { speaker: 'female', text: 'نتهرّب من شنو؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
@@ -114,6 +114,10 @@ const SERIOUSNESS_SHORT_OVERRIDES = new Map([
 /* قواعد آمنة قليلة للحلقات الحالية والجديدة. لا تشمل «كل قاف»: الهوية
    الكويتية معجمية، والمعنى أهم من مطاردة حرف. */
 const SAFE_TEXT_RULES = [
+  /* «ممم…» زُرعت قالبياً في 90 حلقة. هذا مو تردد بشري نابع من السياق؛
+     تكراره نفسه يفضح الكاتب والمحرك، وحكم المراجعة يمنع تصنيع أمم وآهات.
+     نحذف العلامة وحدها من البداية ولا نمس كلمةً واحدة من المعنى. */
+  [/^ممم…\s*/u, ''],
   [/مثل واحد كان محشور بباب ضيق(?:،|…)?\s*(?:وعقب|وبعدين|وطلع)\s+منه/gu,
     'مثل واحد كان منحشر بمكان ضيّج… وبعدها طلع منه'],
   [/إن النجاح يتحول من فرحة إلى وسيلة تهد[يّي] الخوف/gu,

@@ -62,6 +62,34 @@ const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg'
 const MUSIC_OVERRIDE = process.env.PODCAST_KW_BRIDGE || ''
 const FFPROBE = process.env.FFPROBE_BIN || 'ffprobe'
 
+/* ═══ عقد الخروج من المحرك ═══
+   رفض الجودة ليس عطل مزوّد، وعطل المزوّد المؤقت ليس نفاد رصيد. كانت الحالات
+   الثلاث تخرج بالرمز 1 نفسه؛ لذلك كان خطأ Gemini داخلي مؤقت يقتل التشغيلة
+   قبل تجربة البذرة التالية، ومع 143 حلقة يصير هذا إسقاطاً عشوائياً للطابور.
+
+   3  = Take مولّد لكنه مرفوض جودةً (هوية/رنين/زمن)؛ جرّب بذرة جديدة.
+   75 = عطل Gemini مؤقت؛ أعد **البذرة نفسها** ولا تخصمه من محاولات الجودة.
+   78 = الرصيد منتهٍ؛ أوقف الصرف واحفظ الطابور كما هو.
+   1  = عطب حقيقي في النص أو الإعداد أو الشيفرة؛ لا تخفه بإعادة عمياء. */
+export function geminiFailureExitCode (error) {
+  const message = String(error?.stack || error?.message || error || '')
+  if (/نفد رصيد Gemini|prepayment credits are depleted|credits.*depleted|billing/i.test(message)) return 78
+  if (/internal error|please retry|temporar(?:y|ily)|service unavailable|resource exhausted|too many requests|HTTP\s*(?:429|5\d\d)|\b429\b|AbortError|aborted|fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up|network error/i.test(message)) return 75
+  return 1
+}
+
+let terminatingFromUnhandledFailure = false
+function terminateFromUnhandledFailure (error) {
+  if (terminatingFromUnhandledFailure) return
+  terminatingFromUnhandledFailure = true
+  const code = geminiFailureExitCode(error)
+  const label = code === 75 ? 'GEMINI_TRANSIENT' : code === 78 ? 'GEMINI_CREDIT_BLOCKED' : 'GENERATOR_FATAL'
+  console.error(`⛔ ${label}: ${String(error?.message || error || 'خطأ غير معروف')}`)
+  process.exit(code)
+}
+process.on('uncaughtException', terminateFromUnhandledFailure)
+process.on('unhandledRejection', terminateFromUnhandledFailure)
+
 const sha256 = (value) => createHash('sha256').update(value).digest('hex')
 const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms))
 const words = (text) => String(text || '').trim().split(/\s+/).filter(Boolean)
@@ -1809,6 +1837,14 @@ if (SELF_TEST) {
   assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')
+  assert.equal(geminiFailureExitCode(new Error('An internal error has occurred. Please retry')), 75,
+    'عطل Gemini المؤقت يعاد بلا أن يحرق محاولة جودة')
+  assert.equal(geminiFailureExitCode(new Error('HTTP 503 بلا صوت')), 75,
+    'أعطال 5xx مؤقتة لا تسقط الطابور')
+  assert.equal(geminiFailureExitCode(new Error('نفد رصيد Gemini — التوليد متوقف')), 78,
+    'نفاد الرصيد يوقف الصرف ويحفظ الباقي')
+  assert.equal(geminiFailureExitCode(new Error('قفل المصدر مفقود')), 1,
+    'عطب المصدر الحقيقي لا يختبئ خلف إعادة المحاولة')
   const previous = { startSec: 2, durationSec: 4 }
   assert.equal(speechStartAfter(previous,
     { speaker: 'male', pauseAfterMs: 900 },
@@ -2145,6 +2181,7 @@ const timeline=timelineFor(turns,assembly)
 writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
 const audit={
   schemaVersion:1, slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,
+  seed:SEED,
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
   sourceSha256:sha256(readFileSync(source)), sourceTurnCount:sourceTurns.length, turnCount:turns.length, chunkCount:chunks.length,
   oneTake:!ISOLATE_SPEAKER_STEMS && chunks.length === 1,

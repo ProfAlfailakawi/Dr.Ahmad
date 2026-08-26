@@ -63,6 +63,10 @@ if (SELF_TEST) {
     ['briefReaction', 'question', 'statement'], 'دليل التسويف تمهيد ثم سؤال ثم نتيجة')
   assert.equal(seriousness.turns[24].text, 'عيل من وين نبدي العلاج؟',
     'أفضل لحظة حوارية في الحلقة باقية بصياغتها الكويتية')
+  assert.equal(seriousness.turns[26].text, 'ونحط للمهمة الثقيلة موعد واضح.',
+    'موعد المهمة قصير وشفهي فلا يصنع رفض زمن كاذب')
+  assert.doesNotMatch(seriousnessText, /ونعطي المهمة الثقيلة موعد واضح باليوم/u,
+    'الصياغة الطويلة التي صنعت رفض الزمن الكاذب لا ترجع')
   assert.deepEqual(seriousness.turns.slice(27, 29).map((turn) => turn.deliveryType),
     ['statement', 'statement'], 'الخاتمة الفكرية تمر عادية ولا تُلقى كشعار')
   const pilotWorkflow = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-pilot.yml'), 'utf8')
@@ -91,7 +95,7 @@ if (SELF_TEST) {
     'قراءة أوكتاف شاذة لدور مفرد لا تحرق Take ثابت المقاطع والرنين')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
     'بوابة الرنين تمسك نفس preset لما يصير مو نفس الإنسان')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 15/15')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 17/17')
   process.exit(0)
 }
 

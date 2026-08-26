@@ -13,7 +13,7 @@
 
 import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-26-native-kuwaiti-v9-resumable-no-mechanical-fillers'
+export const NATIVE_SPOKEN_VERSION = '2026-08-26-native-kuwaiti-v10-explicit-gold-handoff'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 
@@ -92,7 +92,7 @@ const SERIOUSNESS_SHORT_OVERRIDES = new Map([
   [8, { speaker: 'male', text: 'وترى حتى الدراسات لاحظت هالشي.', deliveryType: 'briefReaction', pauseAfterMs: 220 }],
   [9, { speaker: 'female', text: 'شلون يعني؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
   [10, { speaker: 'male', text: 'طلع إن الناس تشوف الشخص المشغول أهم وأشطر.', deliveryType: 'statement', pauseAfterMs: 420, overlapMs: 0, musicBridgeAfter: true }],
-  [11, { speaker: 'female', text: 'يمكن نحضر كل اجتماع صغير…', deliveryType: 'statement' }],
+  [11, { speaker: 'female', text: 'إي، ويمكن نحضر كل اجتماع صغير…', deliveryType: 'statement' }],
   [12, { speaker: 'male', text: 'لأننا نخاف من مهمة وحدة كبيرة تكشف قدرتنا الحقيقية.', deliveryType: 'statement' }],
   [13, { speaker: 'female', text: 'ويمكن نتقن الانشغال الذكي…', deliveryType: 'statement' }],
   [14, { speaker: 'female', text: 'عشان ما نقرب من علاقة تبي شجاعة وصراحة.', deliveryType: 'statement' }],

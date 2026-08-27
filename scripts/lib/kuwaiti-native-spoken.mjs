@@ -13,7 +13,7 @@
 
 import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-27-native-kuwaiti-v11-ear-corrections'
+export const NATIVE_SPOKEN_VERSION = '2026-08-27-native-kuwaiti-v12-context-not-wasl'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 
@@ -83,11 +83,12 @@ const PILOT_FULL_OVERRIDES = new Map([
    البحثان كلاهما تمهيد → سؤال → نتيجة. والجملة الأخيرة قبل الإحالة تمر
    statement عادية، لا conclusion تجبر المحرك على التباطؤ وصناعة شعار. */
 const SERIOUSNESS_SHORT_OVERRIDES = new Map([
+  [0, { text: 'طول اليوم وإحنا نتحرك… ونسمي هالحركة التزام.', deliveryType: 'briefReaction' }],
   [2, { text: 'وبآخر الليل نرد… ونكتشف إن ما تحرّك فينا شي صج.', deliveryType: 'statement' }],
   [3, { text: 'بس الجدية مو دايم علامة نضج.', deliveryType: 'statement', pauseAfterMs: 320 }],
-  [4, { text: 'مرات ما تكون جدية أصلا… تكون طريقة مرتبة نتهرّب فيها.', deliveryType: 'statement', pauseAfterMs: 300, overlapMs: 0 }],
-  [5, { speaker: 'female', text: 'نتهرّب من شنو؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
-  [6, { speaker: 'male', text: 'من سؤال ندري إنه ثقيل علينا.', deliveryType: 'briefReaction', pauseAfterMs: 240, overlapMs: 0 }],
+  [4, { text: 'مرات ما تكون جدية أصلا… تكون طريقة مرتبة نلهي فيها نفسنا.', deliveryType: 'statement', pauseAfterMs: 300, overlapMs: 0 }],
+  [5, { speaker: 'female', text: 'نلهي نفسنا عن شنو؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
+  [6, { speaker: 'male', text: 'عن سؤال ندري إنه ثقيل علينا.', deliveryType: 'briefReaction', pauseAfterMs: 240, overlapMs: 0 }],
   [7, { speaker: 'female', text: 'إحنا ننجز اللي المفروض… ولا بس اللي يريحنا؟', deliveryType: 'question' }],
   [8, { speaker: 'male', text: 'وترى حتى الدراسات لاحظت هالشي.', deliveryType: 'briefReaction', pauseAfterMs: 220 }],
   [9, { speaker: 'female', text: 'شلون يعني؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
@@ -100,15 +101,16 @@ const SERIOUSNESS_SHORT_OVERRIDES = new Map([
   [16, { speaker: 'male', text: 'أو قرار مهم مأجلينه، وكل يوم نقول باجر.', deliveryType: 'statement' }],
   [17, { speaker: 'female', text: 'وجدام الكل شكلنا مرتب…', deliveryType: 'statement' }],
   [18, { speaker: 'female', text: 'بس من داخلنا، قاعدين نأجل الشي اللي نعرفه.', deliveryType: 'statement' }],
-  [20, { text: 'صحيح. في شغل يطلع منه شي له فايدة… وفي شغل بس يخلينا ما نفكر باللي نتهرّب منه.', deliveryType: 'statement' }],
+  [19, { text: 'بس هذا فيه قَسوة على اللي يشتغل بجد صج.', deliveryType: 'gentleObjection' }],
+  [20, { text: 'صحيح. في شغل يطلع منه شي له فايدة… وفي شغل بس يلهينا عن الشي اللي ما نبي نواجهه.', deliveryType: 'statement' }],
   [21, { text: 'وحتى أبحاث التسويف لاحظت هالشي.', deliveryType: 'briefReaction', pauseAfterMs: 220 }],
   [22, { text: 'شلون يعني؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70, musicBridgeAfter: false }],
   [23, { text: 'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة ثقيلة عليه، أو نتيجتها بعيدة.', deliveryType: 'statement', pauseAfterMs: 420, overlapMs: 0, musicBridgeAfter: true }],
   [24, { speaker: 'female', text: 'عيل من وين نبدي العلاج؟', deliveryType: 'question', pauseAfterMs: 260, overlapMs: 0 }],
-  [25, { speaker: 'male', text: 'نفرق بين شغل يقربنا من الشي المهم… وشغل يبعدنا عنه.', deliveryType: 'statement' }],
+  [25, { speaker: 'male', text: 'نفرق بين شغل يودّينا للشي المهم… وشغل يبعدنا عنه.', deliveryType: 'statement' }],
   [26, { speaker: 'female', text: 'ونحط للمهمة الثقيلة موعد واضح.', deliveryType: 'statement' }],
-  [27, { speaker: 'male', text: 'المشكلة إن الواحد يركض سنة كاملة…', deliveryType: 'statement', pauseAfterMs: 260 }],
-  [28, { speaker: 'male', text: 'وبالأخير يكتشف إنه كان يهرب من نفسه.', deliveryType: 'statement', pauseAfterMs: 360 }],
+  [27, { speaker: 'male', text: 'المشكلة إن الواحد يظل مشغول سنة كاملة…', deliveryType: 'statement', pauseAfterMs: 260 }],
+  [28, { speaker: 'male', text: 'وبالأخير يكتشف إن كل هالانشغال كان عشان ما يواجه نفسه.', deliveryType: 'statement', pauseAfterMs: 360 }],
 ])
 
 /* قواعد آمنة قليلة للحلقات الحالية والجديدة. لا تشمل «كل قاف»: الهوية

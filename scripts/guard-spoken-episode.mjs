@@ -24,7 +24,7 @@ import assert from 'node:assert/strict'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildPronunciationMap, toSpokenKuwaiti, buildForeignRedactions, redactForeignNames } from './lib/kuwaiti-pronunciation.mjs'
+import { buildPronunciationMap, toSpokenKuwaiti, buildForeignRedactions, redactForeignNames, stripTashkeel } from './lib/kuwaiti-pronunciation.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SELF_TEST = process.argv.includes('--self-test')
@@ -65,6 +65,19 @@ export const EAR_FLAGGED = ['الهنايا', 'يعلى', 'تنجر', 'تصنه'
    المصدر يسمح، لا لتصفيرها آلياً. */
 export const QAF_CANDIDATES = Array.isArray(SRC.qafCandidates) ? SRC.qafCandidates : []
 
+/* أحكام أذن سقطت داخل حلقة كاملة بعد نجاح العينة المعزولة. لا نعيد تخمين
+   حركاتها ولا نعمم همزة وصل عليها؛ أي تصريف جديد يقف قبل Gemini إلى أن
+   يختاره الدكتور في مختبر السياق الطويل. «الكهربا» فخ مقابل: فيها حروف
+   هرب متجاورة لكنها ليست من الجذر، لذلك المطابقة صرفية مقيدة لا includes. */
+export const EAR_BLOCKED = Array.isArray(SRC.earBlockedUntilAudition) ? SRC.earBlockedUntilAudition : []
+const blockedToken = (word) => {
+  const bare = stripTashkeel(String(word)).replace(/^[وفبل]?(?:ال)?/u, '')
+  if (EAR_BLOCKED.includes('ركض') && /رك[ضظ]/u.test(bare)) return 'ركض'
+  if (EAR_BLOCKED.includes('هرب') && /^(?:ا|أ|ن|ي|ت|م)?(?:تهرّ?ب|هرب)(?:ون|وا|ان|ها|ه|نا|كم|هم|ي)?$/u.test(bare)) return 'هرب'
+  if (EAR_BLOCKED.includes('يقربنا') && bare === 'يقربنا') return 'يقربنا'
+  return ''
+}
+
 /* اسم الدكتور — المعتمد في دفتر النطق. أي خاتمةٍ تحمل اسمه يجب أن
    تصل المحرّك بالصيغة المعتمدة نفسها حرفاً بحرف. */
 export const NAME_SPOKEN = spoken('الفيلكاوي')
@@ -74,6 +87,10 @@ export function auditTurns (turns) {
   for (const t of turns) {
     const raw = String(t.text ?? '')
     const say = spoken(raw)
+    for (const token of `${raw} ${say}`.match(/[ء-يچگَُِّْ]+/gu) || []) {
+      const root = blockedToken(token)
+      if (root) hard.push(`«${token}» من عائلة ${root} سقطت بأذن الدكتور — يلزم سياق مختبر معتمد قبل Gemini`)
+    }
     for (const [w, why] of Object.entries(FOREIGN)) {
       if (new RegExp('(^|[\\s،.!؟…])' + w + '($|[\\s،.!؟…])', 'u').test(say)) hard.push(`دخيلة «${w}» — ${why}`)
     }
@@ -105,8 +122,14 @@ if (SELF_TEST) {
   assert.ok(spoken('يقلب').includes('گ'), 'الصيغة المسموعة المعتمدة وحدها تبقى في المعجم')
   const flagged = auditTurns([{ text: 'وبدت الهنايا من كل صوب' }])
   assert.ok(flagged.soft.length > 0, 'الكلمات التي شكا منها لا تمرّ صامتة')
+  const blocked = auditTurns([{ text: 'انركظ وايد، ونتهرّب، وبعدين يهرب، وشغل يقربنا.' }])
+  assert.ok(blocked.hard.some((h) => h.includes('ركض')), 'عائلة ركض المرفوضة تقف قبل Gemini')
+  assert.ok(blocked.hard.some((h) => h.includes('هرب')), 'عائلة هرب/تهرّب المرفوضة تقف قبل Gemini')
+  assert.ok(blocked.hard.some((h) => h.includes('يقربنا')), 'يقرّبنا المرفوضة تقف قبل Gemini')
+  assert.equal(auditTurns([{ text: 'الكهربا منتشرة بكل مكان.' }]).hard.length, 0,
+    'الكهربا لا تُحسب خطأً من عائلة هرب')
   assert.ok(NAME_SPOKEN.length > 4, 'صيغة الاسم المعتمدة تُقرأ من دفتر النطق لا من الشيفرة')
-  console.log('✓ بوابة المنطوق: الفحص الذاتي 9/9')
+  console.log('✓ بوابة المنطوق: الفحص الذاتي 13/13')
   process.exit(0)
 }
 

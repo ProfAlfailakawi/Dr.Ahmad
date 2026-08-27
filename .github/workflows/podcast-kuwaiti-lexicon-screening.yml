@@ -50,12 +50,7 @@ jobs:
           {
             echo '## مختبر المعجم الكويتي الصلب'
             if [ -f audio/kuwaiti-lexicon-screening.mp3 ]; then
-              node - <<'NODE'
-              const x = require('./audio/kuwaiti-lexicon-screening.json')
-              console.log(`**${x.optionTests.length} كلمات بخيارات · ${x.screening.length} كلمة فحص**`)
-              console.log('')
-              console.log('الأرقام 1–6: اختر 1 أو 2 أو 3. بعد ذلك: اكتب أرقام الكلمات التي نطقها المحرك خطأ فقط.')
-              NODE
+              node -e 'const fs=require("node:fs");const x=JSON.parse(fs.readFileSync("audio/kuwaiti-lexicon-screening.json","utf8"));console.log(`**${x.optionTests.length} كلمات بخيارات · ${x.screening.length} كلمة فحص**\n\nالأرقام 1–6: اختر 1 أو 2 أو 3. بعد ذلك: اكتب أرقام الكلمات التي نطقها المحرك خطأ فقط.`)'
             else
               echo 'فشل التوليد قبل خروج الملف.'
             fi

@@ -1,0 +1,76 @@
+name: مختبر المعجم الكويتي الصلب — المتوقع وغير المتوقع
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: podcast-kuwaiti-gemini-global
+  cancel-in-progress: false
+
+jobs:
+  lexicon-screening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install and verify the fail-closed lexicon gates
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          node scripts/guard-kuwaiti-pronunciation.mjs
+          node scripts/guard-spoken-episode.mjs --self-test
+          node scripts/podcast-kuwaiti-lexicon-screening.mjs --self-test
+
+      - name: Freeze the numbered screening ledger
+        run: node scripts/build-kuwaiti-lexicon-screening.mjs
+
+      - name: Generate the long screening episode
+        run: node scripts/podcast-kuwaiti-lexicon-screening.mjs
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
+          PODCAST_KW_MALE_VOICE: Puck
+          PODCAST_KW_FEMALE_VOICE: Zephyr
+          PODCAST_KW_SCREEN_GROUP: '8'
+          PODCAST_KW_SCREEN_RPM: '9'
+
+      - name: Publish listening instructions
+        if: always()
+        run: |
+          {
+            echo '## مختبر المعجم الكويتي الصلب'
+            if [ -f audio/kuwaiti-lexicon-screening.mp3 ]; then
+              node - <<'NODE'
+              const x = require('./audio/kuwaiti-lexicon-screening.json')
+              console.log(`**${x.optionTests.length} كلمات بخيارات · ${x.screening.length} كلمة فحص**`)
+              console.log('')
+              console.log('الأرقام 1–6: اختر 1 أو 2 أو 3. بعد ذلك: اكتب أرقام الكلمات التي نطقها المحرك خطأ فقط.')
+              NODE
+            else
+              echo 'فشل التوليد قبل خروج الملف.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the long episode and its numbered ledger
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: kuwaiti-solid-lexicon-screening
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            audio/kuwaiti-lexicon-screening.mp3
+            audio/kuwaiti-lexicon-screening.json
+            audio/kuwaiti-lexicon-screening/
+            podcast-audits/kuwaiti-lexicon-screening.json
+            podcast-audits/kuwaiti-lexicon-screening.md

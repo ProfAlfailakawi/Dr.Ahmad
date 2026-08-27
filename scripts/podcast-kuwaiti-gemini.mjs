@@ -1376,8 +1376,6 @@ async function transcriptionWitness (file, turns) {
   let uploaded = null
   try {
     uploaded = await uploadForTranscription(file)
-    const vocabulary = [...new Set(turns.flatMap((turn) => alignmentTokens(spokenForm(turn.text))))]
-      .sort((a, b) => b.length - a.length).slice(0, 100)
     let last = null
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
@@ -1385,7 +1383,10 @@ async function transcriptionWitness (file, turns) {
         body: JSON.stringify({
           model: TRANSCRIBE_MODEL,
           input: [{ type: 'audio', uri: uploaded.uri, mime_type: uploaded.mimeType || uploaded.mime_type || 'audio/wav' }],
-          generation_config: { transcription_config: { language_codes: [], custom_vocabulary: vocabulary,
+          /* الواجهة الحية في 27 أغسطس رفضت custom_vocabulary مع timestamps
+             رغم اجتماعها في مثال الوثائق. المطابقة المعجمية تجري محلياً
+             بعد التفريغ، لذلك نحذف التوجيه من الطلب ولا نخسر أي بوابة. */
+          generation_config: { transcription_config: { language_codes: [],
             mode: { type: 'verbatim', diarization_mode: 'speaker', timestamp_granularities: ['word'] } } },
         }),
       })
@@ -1985,6 +1986,9 @@ if (SELF_TEST) {
      تختار مقطوعةً غير الأخرى، المعامل الأعمى يجعل المستوى يتأرجح بين حلقةٍ
      وأخرى بلا سبب. */
   const engineSource = readFileSync(resolve(ROOT, 'scripts', 'podcast-kuwaiti-gemini.mjs'), 'utf8')
+  const witnessSource = engineSource.slice(engineSource.indexOf('async function transcriptionWitness'), engineSource.indexOf('function cutChunkAt'))
+  assert.ok(!/custom_vocabulary\s*:/.test(witnessSource),
+    'واجهة 3.5 الحية ترفض custom_vocabulary مع timestamps — المطابقة تبقى محلية')
   assert.match(engineSource, /function compactLongSilences[\s\S]*atrim=start=/,
     'الوقفات الطويلة تُختصر من وسط الصمت من غير إعادة بناء توقيت الحوار')
   const productionGenerationStart = engineSource.lastIndexOf('const chunks = chunkTurns(turns)')

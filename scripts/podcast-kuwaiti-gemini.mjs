@@ -305,6 +305,8 @@ Fahad and Noura are equally knowledgeable, curious, warm, and capable of asking,
 
 Fahad is a mature Kuwaiti man, naturally lower in pitch. Noura is a mature Kuwaiti woman, naturally quicker and clearly distinct from Fahad. They know each other and are sitting close together on microphones in a relaxed Kuwait City diwaniya. Their difference comes from acoustic identity, never from different knowledge levels or regional accents.
 
+Fahad's earliest utterances permanently define his Kuwait City cadence too. Keep his vowels compact, his consonants light, and his sentence endings short and settled through research and conclusions. Never widen, harden, or recast his delivery later in the take.
+
 # NATIVE ACCENT ANCHOR
 
 Lock the whole performance to contemporary educated urban Kuwait City Arabic (حضري). Let the identity come from timing, compact vowels, phrase length, conversational stress, question contours, short confirmations, hesitation patterns, turn-taking, and restrained sentence melody. Keep articulation relaxed, quick, understated, and effortless. Do not exaggerate any consonant to prove the accent.
@@ -369,6 +371,8 @@ The opening 20 seconds establish the permanent acoustic reference for both speak
 Speak contemporary urban Kuwait City Arabic naturally and effortlessly. Identity comes from compact vowels, short thought units, restrained sentence melody, quick acknowledgements, human timing, and relaxed light articulation—not exaggerated consonants. Qaf is lexical and understated. Respect deliberate Kuwaiti spellings such as ظيّج and never formalize them.
 
 Noura stays the exact same mature Kuwaiti woman defined by her first line: compact vowels, narrow melodic range, direct settled endings, no Emirati or Omani-style widening or trailing lilt. Fahad stays the same mature Kuwaiti man. Each target line must remain complete and unhurried enough to understand.
+
+Fahad keeps the compact Kuwait City vowel timing, light consonants, and short settled endings established by his first line. Never widen, harden, or recast his cadence later in the take.
 
 VOICE ROUTING IS LITERAL AND IMMUTABLE. Every Fahad-labelled line uses the same clearly lower adult male voice (${MALE_VOICE}); every Noura-labelled line uses the same clearly higher adult female voice (${FEMALE_VOICE}). Never infer a speaker from who asks, answers, knows the research, objects, uses a short sentence, or leads the topic. Conversational role never determines acoustic identity. A short Fahad question must not rise into Noura; an explanatory Noura line must not drop into Fahad. Never exchange, merge, approximate, or re-cast these two voices for even one line.
 
@@ -1933,10 +1937,14 @@ if (SELF_TEST) {
     'المطلوب نفس الإنسان لا مجرد اسم voice ثابت')
   assert.match(cSingleCall, /Noura's earliest utterances permanently define her acoustic and dialect reference/,
     'أول نورة مرجعٌ غير قابل لإعادة التفسير في البحث والخاتمة')
+  assert.match(cSingleCall, /Fahad's earliest utterances permanently define his Kuwait City cadence too[\s\S]*Never widen, harden, or recast his delivery later in the take/,
+    'فهد يحافظ على الإيقاع الحضري الخفيف نفسه من البداية إلى الخاتمة')
   assert.match(cSingleCall, /The opening 20 seconds establish the permanent acoustic reference for both speakers/,
     'أول عشرين ثانية هي المرجع الصوتي الدائم للشخصيتين')
   assert.match(PROMPT_VERTEX_C_HEAD, /Never reinterpret either speaker later in the take/,
     'رأس Vertex المختصر يمنع إعادة تفسير أي متحدث بعد المرجع الافتتاحي')
+  assert.match(PROMPT_VERTEX_C_HEAD, /Fahad keeps the compact Kuwait City vowel timing[\s\S]*Never widen, harden, or recast his cadence later in the take/,
+    'قفل فهد نفسه حاضر في مسار Vertex الإنتاجي')
   assert.doesNotMatch(buildTimedMaster.toString(), /kuwaiti-closing-approved|CLOSING_CLIP|useFixedClosing/,
     'الختام لا يُستبدل بمقطعٍ قديم يغيّر هوية الصوت في آخر جملة')
   assert.match(buildTimedMaster.toString(), /const file = files\[i\]/,

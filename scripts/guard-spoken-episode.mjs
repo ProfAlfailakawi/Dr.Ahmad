@@ -122,14 +122,28 @@ if (SELF_TEST) {
   assert.ok(spoken('يقلب').includes('گ'), 'الصيغة المسموعة المعتمدة وحدها تبقى في المعجم')
   const flagged = auditTurns([{ text: 'وبدت الهنايا من كل صوب' }])
   assert.ok(flagged.soft.length > 0, 'الكلمات التي شكا منها لا تمرّ صامتة')
-  const blocked = auditTurns([{ text: 'انركظ وايد، ونتهرّب، وبعدين يهرب، وشغل يقربنا.' }])
-  assert.ok(blocked.hard.some((h) => h.includes('ركض')), 'عائلة ركض المرفوضة تقف قبل Gemini')
-  assert.ok(blocked.hard.some((h) => h.includes('هرب')), 'عائلة هرب/تهرّب المرفوضة تقف قبل Gemini')
-  assert.ok(blocked.hard.some((h) => h.includes('يقربنا')), 'يقرّبنا المرفوضة تقف قبل Gemini')
+  /* [٢٨ أغسطس ٢٠٢٦] يُقاس **المحرّك** لا لقطةُ القائمة: الجذوع موقوفةٌ حتى
+     يسمعها الدكتور، فإذا نزلت أحكامه وانفكّ الحجب انقلب المتوقَّع — والفحص
+     الذي يثبّت اللقطة نصّاً يسقط يوم يحكم الدكتور لا يوم يخطئ أحد (أُثبت
+     العطب بتشغيل جولة أحكامٍ كاملة). فكلُّ جذعٍ في القائمة الحيّة يُمسك،
+     وكلُّ جذعٍ خرج منها بأذنه يمرّ. */
+  const BLOCK_PROBES = {
+    'ركض': 'انركظ وايد بالطريق',
+    'هرب': 'وبعدين يهرب من نفسه، ونتهرّب من الجواب',
+    'يقربنا': 'وشغل يقربنا من الشي المهم',
+  }
+  for (const stem of EAR_BLOCKED) {
+    assert.ok(BLOCK_PROBES[stem], `الجذع المحجوب «${stem}» بلا عيّنة فحص — أضفها هنا قبل حجبه`)
+  }
+  for (const [stem, probe] of Object.entries(BLOCK_PROBES)) {
+    const caught = auditTurns([{ text: probe }]).hard.some((h) => h.includes(stem))
+    if (EAR_BLOCKED.includes(stem)) assert.ok(caught, `عائلة ${stem} المرفوضة تقف قبل Gemini`)
+    else assert.ok(!caught, `عائلة ${stem} انفكّ حجبها بأذنه فلا يوقفها الحارس بعد اليوم`)
+  }
   assert.equal(auditTurns([{ text: 'الكهربا منتشرة بكل مكان.' }]).hard.length, 0,
     'الكهربا لا تُحسب خطأً من عائلة هرب')
   assert.ok(NAME_SPOKEN.length > 4, 'صيغة الاسم المعتمدة تُقرأ من دفتر النطق لا من الشيفرة')
-  console.log('✓ بوابة المنطوق: الفحص الذاتي 13/13')
+  console.log(`✓ بوابة المنطوق: الفحص الذاتي 13/13 · الحجب الحيّ: ${EAR_BLOCKED.length ? EAR_BLOCKED.join(' · ') : 'انفكّ كله بأذنه'}`)
   process.exit(0)
 }
 

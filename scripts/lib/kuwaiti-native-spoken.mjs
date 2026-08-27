@@ -13,7 +13,7 @@
 
 import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-26-native-kuwaiti-v10-explicit-gold-handoff'
+export const NATIVE_SPOKEN_VERSION = '2026-08-27-native-kuwaiti-v11-ear-corrections'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 
@@ -83,7 +83,7 @@ const PILOT_FULL_OVERRIDES = new Map([
    البحثان كلاهما تمهيد → سؤال → نتيجة. والجملة الأخيرة قبل الإحالة تمر
    statement عادية، لا conclusion تجبر المحرك على التباطؤ وصناعة شعار. */
 const SERIOUSNESS_SHORT_OVERRIDES = new Map([
-  [2, { text: 'وبآخر الليل نرجع، ونكتشف إن ما تحرّك فينا شي صج.', deliveryType: 'statement' }],
+  [2, { text: 'وبآخر الليل نرد… ونكتشف إن ما تحرّك فينا شي صج.', deliveryType: 'statement' }],
   [3, { text: 'بس الجدية مو دايم علامة نضج.', deliveryType: 'statement', pauseAfterMs: 320 }],
   [4, { text: 'مرات ما تكون جدية أصلا… تكون طريقة مرتبة نتهرّب فيها.', deliveryType: 'statement', pauseAfterMs: 300, overlapMs: 0 }],
   [5, { speaker: 'female', text: 'نتهرّب من شنو؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
@@ -98,7 +98,7 @@ const SERIOUSNESS_SHORT_OVERRIDES = new Map([
   [14, { speaker: 'female', text: 'عشان ما نقرب من علاقة تبي شجاعة وصراحة.', deliveryType: 'statement' }],
   [15, { speaker: 'male', text: 'أو من مشروع يحطنا جدام احتمال الفشل…', deliveryType: 'statement' }],
   [16, { speaker: 'male', text: 'أو قرار مهم مأجلينه، وكل يوم نقول باجر.', deliveryType: 'statement' }],
-  [17, { speaker: 'female', text: 'ومن برّا نبان مرتبين جدام الكل…', deliveryType: 'statement' }],
+  [17, { speaker: 'female', text: 'وجدام الكل شكلنا مرتب…', deliveryType: 'statement' }],
   [18, { speaker: 'female', text: 'بس من داخلنا، قاعدين نأجل الشي اللي نعرفه.', deliveryType: 'statement' }],
   [20, { text: 'صحيح. في شغل يطلع منه شي له فايدة… وفي شغل بس يخلينا ما نفكر باللي نتهرّب منه.', deliveryType: 'statement' }],
   [21, { text: 'وحتى أبحاث التسويف لاحظت هالشي.', deliveryType: 'briefReaction', pauseAfterMs: 220 }],

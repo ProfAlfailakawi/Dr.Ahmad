@@ -70,6 +70,9 @@ if (SELF_TEST) {
   assert.equal(seriousness.turns[4].text,
     'مرات ما تكون جدية أصلا… تكون طريقة مرتبة نتهرّب فيها.',
     'بنية النسخة الاحترافية باقية؛ المختلف عليه وحده صار «نتهرّب»')
+  assert.equal(seriousness.turns[2].text,
+    'وبآخر الليل نرد… ونكتشف إن ما تحرّك فينا شي صج.',
+    '«نرجع» لا تعود إلى الموضع الذي ابتلع المحرك عينه الأخيرة')
   assert.equal(seriousness.turns[5].text, 'نتهرّب من شنو؟',
     'السؤال القصير نفسه بلا إعادة كتابة للمشهد')
   assert.equal(seriousness.turns[12].text,
@@ -80,6 +83,9 @@ if (SELF_TEST) {
   assert.equal(seriousness.turns[14].text,
     'عشان ما نقرب من علاقة تبي شجاعة وصراحة.',
     '«صدق» وحدها تُعالج إلى «صراحة» مع بقاء الجملة')
+  assert.equal(seriousness.turns[17].text,
+    'وجدام الكل شكلنا مرتب…',
+    '«نبان» غير المستعملة لا تعود إلى الحلقة')
   assert.equal(seriousness.turns[20].text,
     'صحيح. في شغل يطلع منه شي له فايدة… وفي شغل بس يخلينا ما نفكر باللي نتهرّب منه.',
     '«قيمة» و«نهرب» وحدهما يتبدلان من غير تغيير منطق الحوار')
@@ -91,8 +97,8 @@ if (SELF_TEST) {
   assert.equal(seriousness.turns[28].text,
     'وبالأخير يكتشف إنه كان يهرب من نفسه.',
     'الخاتمة القديمة محفوظة ولم تتحول إلى شرح جديد')
-  assert.doesNotMatch(seriousnessText, /(?:نهرب|له قيمة|هالفرق|شجاعة وصدق)/u,
-    'الكلمات الأربع المختلف عليها وحدها لا ترجع')
+  assert.doesNotMatch(seriousnessText, /(?:نهرب|له قيمة|هالفرق|شجاعة وصدق|\bنبان\b|\bنرجع، ونكتشف\b)/u,
+    'الكلمات المختلف عليها وحدها لا ترجع')
   assert.equal((seriousnessText.match(/ق/gu) || []).length, 19,
     'قفل الحد الأدنى للتغيير: لا نعيد كنس كل القافات أو كتابة الحلقة من جديد')
   assert.deepEqual(seriousness.turns.slice(27, 29).map((turn) => turn.deliveryType),

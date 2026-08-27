@@ -1,0 +1,256 @@
+{
+ "file": "src/data/kuwaiti-diwania-v3.json",
+ "episodes": {
+  "a-certificate-of-excellence-for-a-lifeless-doll-2": [
+   "تركيب كويتي"
+  ],
+  "a-generation-that-knows-everything-and-understands-nothing": [
+   "تركيب كويتي"
+  ],
+  "a-generation-without-rootsarabic": [
+   "تركيب كويتي"
+  ],
+  "a-new-kind-of-fatigue-in-old-expressionsarabic": [
+   "خطأ مسموع /مراي(?:ة|ا)/u"
+  ],
+  "a-society-that-fears-the-different-arabic": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "children-who-know-what-is-required-but-do-not-know-whyarabic": [
+   "اسم بحثي صعب"
+  ],
+  "children-who-know-what-is-required-but-do-not-know-whyarabic-2": [
+   "تركيب كويتي"
+  ],
+  "dr-jasem-malik-the-lesson-that-never-ends-2": [
+   "اعتراض"
+  ],
+  "e-learning-initiatives-and-solutions-2": [
+   "تركيب كويتي"
+  ],
+  "expectations-that-shape-a-studentarabic": [
+   "أسئلة"
+  ],
+  "how-do-we-assess-without-breaking-the-human-beingarabic": [
+   "خطأ مسموع /خبرناه/u",
+   "خطأ مسموع /مراي(?:ة|ا)/u",
+   "خطأ مسموع /واطي(?:ة|ه)/u"
+  ],
+  "i-write-to-awaken-you-not-to-discourage-you-2": [
+   "أسئلة"
+  ],
+  "in-farewell-to-abdullah-ismail-al-kandariarabic": [
+   "أسئلة"
+  ],
+  "intelligence-without-a-consciencearabic": [
+   "خطأ مسموع /كاد ينسى/u",
+   "خطأ مسموع /يكسب وقت/u"
+  ],
+  "laughing-while-burning-2": [
+   "تركيب كويتي"
+  ],
+  "lets-work-towards-scientific-research": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "past-mistakes-still-persist-in-the-age": [
+   "اعتراض"
+  ],
+  "qabas-201611-001": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201611-003": [
+   "أسئلة"
+  ],
+  "qabas-201611-004": [
+   "أسئلة"
+  ],
+  "qabas-201612-002": [
+   "تركيب كويتي"
+  ],
+  "qabas-201612-004": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201702-001": [
+   "أسئلة"
+  ],
+  "qabas-201702-002": [
+   "اعتراض"
+  ],
+  "qabas-201702-003": [
+   "أسئلة"
+  ],
+  "qabas-201702-004": [
+   "تركيب كويتي"
+  ],
+  "qabas-201703-002": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201703-003": [
+   "أسئلة"
+  ],
+  "qabas-201704-001": [
+   "أسئلة"
+  ],
+  "qabas-201704-002": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201704-004": [
+   "تركيب كويتي"
+  ],
+  "qabas-201706-001": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201706-002": [
+   "تركيب كويتي"
+  ],
+  "qabas-201707-003": [
+   "تركيب كويتي"
+  ],
+  "qabas-201708-001": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201708-002": [
+   "اعتراض"
+  ],
+  "qabas-201708-003": [
+   "أسئلة"
+  ],
+  "qabas-201709-002": [
+   "تركيب كويتي"
+  ],
+  "qabas-201709-003": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201709-005": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201709-006": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201709-008": [
+   "أسئلة"
+  ],
+  "qabas-201711-001": [
+   "أسئلة"
+  ],
+  "qabas-201711-004": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201712-003": [
+   "تركيب كويتي"
+  ],
+  "qabas-201802-002": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201802-003": [
+   "تركيب كويتي"
+  ],
+  "qabas-201802-004": [
+   "تركيب كويتي"
+  ],
+  "qabas-201802-005": [
+   "أسئلة",
+   "اعتراض",
+   "تركيب كويتي"
+  ],
+  "qabas-201803-001": [
+   "تركيب كويتي"
+  ],
+  "qabas-201804-001": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201805-003": [
+   "تركيب كويتي"
+  ],
+  "qabas-201805-004": [
+   "تركيب كويتي"
+  ],
+  "qabas-201806-001": [
+   "أسئلة"
+  ],
+  "qabas-201806-002": [
+   "تركيب كويتي"
+  ],
+  "qabas-201806-003": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "qabas-201806-004": [
+   "تركيب كويتي"
+  ],
+  "qabas-201806-005": [
+   "أسئلة"
+  ],
+  "qabas-201808-002": [
+   "تركيب كويتي"
+  ],
+  "qabas-201811-002": [
+   "تركيب كويتي"
+  ],
+  "qabas-201909-001": [
+   "تركيب كويتي"
+  ],
+  "qabas-201911-001": [
+   "أسئلة",
+   "تركيب كويتي"
+  ],
+  "success-that-does-not-bring-joy-to-its-ownerarabic": [
+   "اسم بحثي صعب"
+  ],
+  "the-classroom-that-fears-mistakesarabic": [
+   "اسم بحثي صعب",
+   "خطأ مسموع /اللي يعلى/u",
+   "خطأ مسموع /قبل لا يولد/u"
+  ],
+  "the-excellence-epidemic-or-the-cult-of-grades-2": [
+   "تركيب كويتي"
+  ],
+  "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic": [
+   "أسئلة"
+  ],
+  "the-media-is-a-vital-partner-in-the-educational-process": [
+   "أسئلة"
+  ],
+  "the-mind-present-in-absence-absent-in-presence-2": [
+   "تركيب كويتي"
+  ],
+  "the-republic-of-degrees-and-the-fall-of-thought-2": [
+   "تركيب كويتي"
+  ],
+  "the-return-that-fails-to-fix-what-came-before-itarabic": [
+   "أسئلة"
+  ],
+  "the-teacher-the-last-to-know-2": [
+   "تركيب كويتي"
+  ],
+  "the-year-that-doesnt-begin-with-the-calendararabic": [
+   "أسئلة"
+  ],
+  "todays-childs-confusion-between-education-and-care": [
+   "أسئلة"
+  ],
+  "we-handed-them-the-phone-so-theyd-leave-us-alone-2": [
+   "تركيب كويتي"
+  ],
+  "when-a-student-wishes-for-death-before-the-first-bell-2": [
+   "أسئلة"
+  ],
+  "when-seriousness-becomes-a-mask-for-escapearabic": [
+   "أسئلة"
+  ]
+ }
+}

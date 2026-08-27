@@ -70,6 +70,7 @@ export function verifyPackagedCandidate ({ root = ROOT, outputDir, slug, minimum
   }
   const audit = readJson(paths.audit)
   if (!audit || audit.slug !== slug || audit.status !== 'candidate') return { ok: false, reason: 'سجل المرشح غير صالح' }
+  if (audit.qualityGateVersion !== 'kuwaiti-aligned-v14') return { ok: false, reason: 'المرشح سابق لشاهد الكلمات v14' }
   if (audit.sourceSha256 !== sha256(readFileSync(paths.source))) return { ok: false, reason: 'المصدر تغيّر' }
   if (audit.audioSha256 !== sha256(readFileSync(paths.audio))) return { ok: false, reason: 'بصمة الصوت لا تطابق السجل' }
   if (audit.transcriptSha256 !== sha256(readFileSync(paths.transcript))) return { ok: false, reason: 'بصمة النص المتزامن لا تطابق السجل' }
@@ -77,9 +78,14 @@ export function verifyPackagedCandidate ({ root = ROOT, outputDir, slug, minimum
   if (audit.ttsInput !== 'dry-dialogue-only' || audit.bridgeGeneration !== 'external-post-tts') return { ok: false, reason: 'الجسر دخل مرحلة TTS' }
   const gap = Number(audit.pitchGate?.voiceGapHz)
   if (!Number.isFinite(gap) || gap < minimumVoiceGap) return { ok: false, reason: `فجوة الصوتين ${gap || 0}Hz` }
-  if ((audit.acousticContinuity?.boundarySuspects || []).length
-    || (audit.acousticContinuity?.pitchBoundarySuspects || []).length) return { ok: false, reason: 'انزلاق عند انتقال داخلي' }
-  if ((audit.repeatGate?.suspects || []).length) return { ok: false, reason: 'قص أو تمديد في دور' }
+  const witness = (audit.turnAlignment?.witnesses || []).find((entry) => !entry.rejected)
+  if (audit.turnAlignment?.mode !== 'required' || !witness
+    || Number(witness.similarity) < 0.78 || Number(witness.coverage) < 0.84
+    || witness.speakerMappingDistinct !== true || Number(witness.speakerAgreement) < 0.88) {
+    return { ok: false, reason: 'شاهد الكلمات والصوتين ناقص أو دون العتبة' }
+  }
+  if ((audit.acousticContinuity?.corroboratedBoundaryResets || []).length) return { ok: false, reason: 'انزلاق مؤكّد عند انتقال داخلي' }
+  if ((audit.repeatGate?.confirmedSuspects || []).length) return { ok: false, reason: 'قص أو تمديد مؤكّد في دور' }
   return { ok: true, audit }
 }
 
@@ -258,11 +264,14 @@ function selfTest () {
   writeFileSync(resolve(outputDir, `${slug}.mp3`), audio)
   writeFileSync(resolve(outputDir, `${slug}.json`), transcript)
   atomicJson(resolve(outputDir, `${slug}.audit.json`), {
-    slug, status: 'candidate', seed: 3114,
+    slug, status: 'candidate', seed: 3114, qualityGateVersion: 'kuwaiti-aligned-v14',
     sourceSha256: sha256(source), audioSha256: sha256(audio), transcriptSha256: sha256(transcript),
     oneTake: true, speakerIsolation: 'multispeaker-single-take', ttsInput: 'dry-dialogue-only',
     bridgeGeneration: 'external-post-tts', pitchGate: { voiceGapHz: 67 },
-    acousticContinuity: { boundarySuspects: [], pitchBoundarySuspects: [] }, repeatGate: { suspects: [] },
+    turnAlignment: { mode: 'required', witnesses: [{ method:'gemini-3.5-word-timestamps+diarization', similarity:0.96, coverage:0.98,
+      speakerMappingDistinct:true, speakerAgreement:1 }] },
+    acousticContinuity: { boundarySuspects: [], pitchBoundarySuspects: [], corroboratedBoundaryResets: [] },
+    repeatGate: { suspects: [], confirmedSuspects: [] },
   })
   assert.equal(verifyPackagedCandidate({ root, outputDir, slug }).ok, true, 'المرشح الصحيح يُستأنف بلا صرف')
   writeFileSync(resolve(outputDir, `${slug}.mp3`), Buffer.from('tampered'))

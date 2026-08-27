@@ -61,6 +61,13 @@ const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg'
    نغمتُها من المكتبة (انظر pickEpisodeMusic أدناه). */
 const MUSIC_OVERRIDE = process.env.PODCAST_KW_BRIDGE || ''
 const FFPROBE = process.env.FFPROBE_BIN || 'ffprobe'
+/* [٢٧ أغسطس ٢٠٢٦] حدود الأدوار لم تعد تُخمَّن من طول النص والصمت وحدهما.
+   Gemini 3.5 Transcribe يعطي كل كلمة وقتها وهوية المتحدث؛ نطابق الكلمات
+   بالنص المنطوق ثم نقص عند الفراغ الحقيقي بينها. بهذه الشهادة المستقلة لا
+   تُحسب آخر كلمة من فهد على نورة، ولا تتحول غلطة قص إلى Voice Drift كاذب. */
+const ALIGNMENT_MODE = String(process.env.PODCAST_KW_TRANSCRIPT_ALIGNMENT || 'off').trim().toLowerCase()
+const TRANSCRIBE_MODEL = String(process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-3.5-transcribe').trim()
+const REJECT_DIR = String(process.env.PODCAST_KW_REJECT_DIR || '').trim()
 
 /* ═══ عقد الخروج من المحرك ═══
    رفض الجودة ليس عطل مزوّد، وعطل المزوّد المؤقت ليس نفاد رصيد. كانت الحالات
@@ -151,6 +158,33 @@ const MAX_INTERNAL_SILENCE_MS = Math.max(220, Math.min(900, Number(process.env.P
 const LONG_SILENCE_TRIGGER_MS = Math.max(MAX_INTERNAL_SILENCE_MS + 80,
   Math.min(1400, Number(process.env.PODCAST_KW_LONG_SILENCE_TRIGGER_MS || 440)))
 const silenceCompaction = { calls: 0, removedSec: 0 }
+const splitAlignmentAudits = []
+const generatedTakeSources = []
+
+function preserveRejectedTake (reason, details = {}) {
+  if (!REJECT_DIR || !generatedTakeSources.length) return
+  const directory = resolve(ROOT, REJECT_DIR)
+  mkdirSync(directory, { recursive: true })
+  const base = `${slug || 'unknown'}-seed-${SEED || 'none'}`
+  const audio = resolve(directory, `${base}.dry.mp3`)
+  const source = generatedTakeSources[0]?.file
+  if (source && existsSync(source)) {
+    spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-i',source,
+      '-ar','48000','-ac','1','-c:a','libmp3lame','-b:a','128k',audio], { encoding: 'utf8' })
+  }
+  writeFileSync(resolve(directory, `${base}.rejection.json`), `${JSON.stringify({
+    schemaVersion: 1, slug, seed: SEED, model: MODEL, voices: { male: MALE_VOICE, female: FEMALE_VOICE },
+    reason, details, alignment: splitAlignmentAudits, dryAudio: existsSync(audio) ? `${base}.dry.mp3` : null,
+    generatedAt: new Date().toISOString(),
+  }, null, 2)}\n`)
+  console.error(`🧪 حُفظ الـTake المرفوض وتقريره للسماع: ${REJECT_DIR}/${base}.dry.mp3`)
+}
+
+function rejectTake (reason, details = {}) {
+  preserveRejectedTake(reason, details)
+  console.error(reason)
+  process.exit(3)
+}
 
 /* ملف الحوار يحمل أحياناً سطرين أو أربعة متتالية للشخص نفسه. هذه وحدات
    تحريرية وليست تبادل أدوار مسموعاً: Gemini يقولها بنفس النفس، وماكو حد
@@ -1121,33 +1155,318 @@ export function chooseSplitPoints(gaps, expectedTurns, totalSec, edgeGuardSec = 
   const totalWeight = weights.reduce((sum, w) => sum + Math.max(w, 1), 0)
   const ordered = [...inner].sort((a, b) => a.mid - b.mid)
   const tolerance = (totalSec / expectedTurns) * Math.max(0.5, Number(toleranceFactor) || 0.5)
-  const cuts = []
+  const targets = []
   let acc = 0
-  let from = 0
   for (let i = 0; i < expectedTurns - 1; i += 1) {
     acc += Math.max(weights[i], 1)
-    const target = totalSec * (acc / totalWeight)
-    let best = -1
-    let bestDistance = Infinity
-    /* يبقى مكانٌ لكل حدٍّ باقٍ بعد هذا الحدّ. */
-    const limit = ordered.length - (expectedTurns - 2 - i)
-    for (let k = from; k < limit; k += 1) {
-      const distance = Math.abs(ordered[k].mid - target)
-      if (distance < bestDistance) { bestDistance = distance; best = k }
-    }
-    if (best < 0 || bestDistance > tolerance) return null
-    cuts.push(ordered[best].mid)
-    from = best + 1
+    targets.push(totalSec * (acc / totalWeight))
   }
-  return cuts
+  /* الاختيار القديم كان جشعاً: حدٌّ مبكر يأخذ أفضل صمتة لنفسه ثم يزحزح
+     بقية الحلقة كلها. هنا نحل الحدود معاً بـdynamic programming. المسافة
+     هي الأساس، وطول الصمتة كاسر تعادل صغير فقط — فلا تُنتزع وقفة تأملية
+     بعيدة لمجرد أنها أطول. */
+  const maxSpan = Math.max(...ordered.map((gap) => gap.span), 0.04)
+  const rows = targets.map(() => Array(ordered.length).fill(null))
+  for (let boundary = 0; boundary < targets.length; boundary += 1) {
+    for (let gapIndex = boundary; gapIndex < ordered.length; gapIndex += 1) {
+      const distance = Math.abs(ordered[gapIndex].mid - targets[boundary])
+      if (distance > tolerance) continue
+      const local = Math.pow(distance / Math.max(tolerance, 0.01), 2)
+        + 0.08 * (1 - Math.min(1, ordered[gapIndex].span / maxSpan))
+      if (boundary === 0) {
+        rows[boundary][gapIndex] = { cost: local, previous: -1 }
+        continue
+      }
+      let best = null
+      for (let previous = boundary - 1; previous < gapIndex; previous += 1) {
+        const state = rows[boundary - 1][previous]
+        if (!state || ordered[gapIndex].mid - ordered[previous].mid <= 0.35) continue
+        const cost = state.cost + local
+        if (!best || cost < best.cost) best = { cost, previous }
+      }
+      rows[boundary][gapIndex] = best
+    }
+  }
+  const lastRow = rows.at(-1)
+  let cursor = -1
+  let bestCost = Infinity
+  for (let i = 0; i < lastRow.length; i += 1) {
+    if (lastRow[i] && lastRow[i].cost < bestCost) { bestCost = lastRow[i].cost; cursor = i }
+  }
+  if (cursor < 0) return null
+  const selected = []
+  for (let boundary = targets.length - 1; boundary >= 0; boundary -= 1) {
+    selected.push(ordered[cursor].mid)
+    cursor = rows[boundary][cursor].previous
+  }
+  return selected.reverse()
 }
 
-function splitChunk(file, chunkTurnsList, outPrefix) {
+const alignmentToken = (value) => String(value || '')
+  .normalize('NFKD').replace(/[\u064B-\u065F\u0670\u06D6-\u06EDـ]/gu, '')
+  .replace(/[أإآٱ]/gu, 'ا').replace(/[ؤئ]/gu, 'ء').replace(/ى/gu, 'ي')
+  .replace(/ة/gu, 'ه').replace(/ض/gu, 'ظ').replace(/گ/gu, 'ق')
+  .replace(/[^\p{L}\p{N}]+/gu, '').toLowerCase()
+
+const alignmentTokens = (value) => String(value || '').split(/\s+/u).map(alignmentToken).filter(Boolean)
+
+const tokenDistance = (left, right) => {
+  if (left === right) return 0
+  if (!left || !right) return 1
+  const a = [...left], b = [...right]
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i)
+  for (let i = 1; i <= a.length; i += 1) {
+    let diagonal = row[0]
+    row[0] = i
+    for (let j = 1; j <= b.length; j += 1) {
+      const above = row[j]
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1))
+      diagonal = above
+    }
+  }
+  return row[b.length] / Math.max(a.length, b.length)
+}
+
+const offsetSeconds = (value) => {
+  const match = String(value || '').match(/^([\d.]+)s$/)
+  return match ? Number(match[1]) : Number.NaN
+}
+
+export function extractWordAnnotations (interaction) {
+  const found = []
+  for (const step of interaction?.steps || []) {
+    for (const content of step?.content || []) {
+      for (const annotation of content?.annotations || []) {
+        if (annotation?.type !== 'word_info') continue
+        const startSec = offsetSeconds(annotation.start_offset)
+        const endSec = offsetSeconds(annotation.end_offset)
+        if (!Number.isFinite(startSec) || !Number.isFinite(endSec) || !(endSec > startSec)) continue
+        found.push({ text: String(annotation.text || ''), speaker: String(annotation.speaker || ''), startSec, endSec })
+      }
+    }
+  }
+  return found.sort((a, b) => a.startSec - b.startSec)
+}
+
+/* Needleman–Wunsch على كلمات النص المنطوق وكلمات الشاهد. الهدف مو تصحيح
+   الكتابة من ASR؛ الهدف معرفة أي كلمةٍ من التسجيل تقابل نهاية كل مداخلة.
+   التطابق القريب يُقبل لأن «ظيّج/ضيج» وتهجئات الهمزة لا تغيّر الحد الزمني. */
+export function alignTranscriptBoundaries (turns, annotations, totalSec) {
+  const sourceByTurn = turns.map((turn) => alignmentTokens(spokenForm(turn.text)))
+  const source = sourceByTurn.flat()
+  const heardWords = annotations.filter((word) => alignmentToken(word.text))
+  const heard = heardWords.map((word) => alignmentToken(word.text))
+  if (!source.length || !heard.length) return null
+  const n = source.length, m = heard.length
+  const dp = Array.from({ length: n + 1 }, () => new Float64Array(m + 1))
+  const back = Array.from({ length: n + 1 }, () => new Uint8Array(m + 1))
+  for (let i = 1; i <= n; i += 1) { dp[i][0] = i; back[i][0] = 1 }
+  for (let j = 1; j <= m; j += 1) { dp[0][j] = j; back[0][j] = 2 }
+  for (let i = 1; i <= n; i += 1) {
+    for (let j = 1; j <= m; j += 1) {
+      const distance = tokenDistance(source[i - 1], heard[j - 1])
+      const substitution = dp[i - 1][j - 1] + (distance === 0 ? 0 : distance <= 0.34 ? 0.35 : 1)
+      const deletion = dp[i - 1][j] + 1
+      const insertion = dp[i][j - 1] + 1
+      if (substitution <= deletion && substitution <= insertion) { dp[i][j] = substitution; back[i][j] = 0 }
+      else if (deletion <= insertion) { dp[i][j] = deletion; back[i][j] = 1 }
+      else { dp[i][j] = insertion; back[i][j] = 2 }
+    }
+  }
+  const mapping = Array(n).fill(null)
+  let matched = 0; let near = 0; let i = n; let j = m
+  while (i > 0 || j > 0) {
+    const direction = back[i][j]
+    if (i > 0 && j > 0 && direction === 0) {
+      const distance = tokenDistance(source[i - 1], heard[j - 1])
+      if (distance <= 0.34) { mapping[i - 1] = j - 1; matched += 1; if (distance > 0) near += 1 }
+      i -= 1; j -= 1
+    } else if (i > 0 && (j === 0 || direction === 1)) i -= 1
+    else j -= 1
+  }
+  const similarity = 1 - dp[n][m] / Math.max(n, m)
+  const coverage = matched / n
+  const cuts = []
+  let sourceCursor = 0
+  for (let turn = 0; turn < turns.length - 1; turn += 1) {
+    sourceCursor += sourceByTurn[turn].length
+    let leftSource = sourceCursor - 1
+    while (leftSource >= 0 && mapping[leftSource] === null) leftSource -= 1
+    let rightSource = sourceCursor
+    while (rightSource < mapping.length && mapping[rightSource] === null) rightSource += 1
+    if (leftSource < 0 || rightSource >= mapping.length) return null
+    const left = heardWords[mapping[leftSource]]
+    const right = heardWords[mapping[rightSource]]
+    if (!left || !right || !(right.startSec >= left.endSec) || right.startSec - left.endSec > 1.8) return null
+    cuts.push((left.endSec + right.startSec) / 2)
+  }
+  const speakerVotes = turns.map((turn, turnIndex) => {
+    const start = sourceByTurn.slice(0, turnIndex).reduce((sum, words) => sum + words.length, 0)
+    const indexes = mapping.slice(start, start + sourceByTurn[turnIndex].length).filter(Number.isInteger)
+    const counts = new Map()
+    for (const index of indexes) {
+      const speaker = heardWords[index]?.speaker
+      if (speaker) counts.set(speaker, (counts.get(speaker) || 0) + 1)
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || ''
+  })
+  const timeBounds = [0, ...cuts, totalSec]
+  const perTurnCoverage = []
+  const perTurnHeardRatio = []
+  let tokenCursor = 0
+  for (let turnIndex = 0; turnIndex < turns.length; turnIndex += 1) {
+    const sourceCount = sourceByTurn[turnIndex].length
+    const mappedCount = mapping.slice(tokenCursor, tokenCursor + sourceCount).filter(Number.isInteger).length
+    const heardCount = heardWords.filter((word) => {
+      const middle = (word.startSec + word.endSec) / 2
+      return middle >= timeBounds[turnIndex] && middle < timeBounds[turnIndex + 1]
+    }).length
+    perTurnCoverage.push(Number((mappedCount / Math.max(sourceCount, 1)).toFixed(4)))
+    perTurnHeardRatio.push(Number((heardCount / Math.max(sourceCount, 1)).toFixed(4)))
+    tokenCursor += sourceCount
+  }
+  const labels = [...new Set(speakerVotes.filter(Boolean))]
+  const expectedLabel = new Map()
+  let speakerMatches = 0; let speakerMeasured = 0
+  turns.forEach((turn, turnIndex) => {
+    const label = speakerVotes[turnIndex]
+    if (!label) return
+    speakerMeasured += 1
+    if (!expectedLabel.has(turn.speaker)) expectedLabel.set(turn.speaker, label)
+    if (expectedLabel.get(turn.speaker) === label) speakerMatches += 1
+  })
+  const speakerAgreement = speakerMeasured ? speakerMatches / speakerMeasured : 0
+  const speakerMappingDistinct = expectedLabel.size === 2 && new Set(expectedLabel.values()).size === 2
+  const validCuts = cuts.length === turns.length - 1
+    /* الرد الكويتي الخاطف «إي» قد يخلص خلال ربع ثانية. شهادة الكلمات تعرف
+       حدوده، فلا نفرض عليه حد الصمت التخميـني القديم (0.35ث). */
+    && cuts.every((cut, index) => cut > (index ? cuts[index - 1] : 0) + 0.18 && cut < totalSec - 0.18)
+  return {
+    cuts: validCuts ? cuts : null,
+    similarity: Number(similarity.toFixed(4)), coverage: Number(coverage.toFixed(4)),
+    nearMatches: near, sourceWordCount: n, heardWordCount: m,
+    speakerLabels: labels, speakerAgreement: Number(speakerAgreement.toFixed(4)), speakerMappingDistinct, speakerVotes,
+    perTurnCoverage, perTurnHeardRatio,
+  }
+}
+
+async function uploadForTranscription (file) {
+  const bytes = readFileSync(file)
+  const start = await fetch('https://generativelanguage.googleapis.com/upload/v1beta/files', {
+    method: 'POST',
+    headers: {
+      'x-goog-api-key': KEY, 'X-Goog-Upload-Protocol': 'resumable', 'X-Goog-Upload-Command': 'start',
+      'X-Goog-Upload-Header-Content-Length': String(bytes.length), 'X-Goog-Upload-Header-Content-Type': 'audio/wav',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ file: { display_name: `kuwaiti-alignment-${slug}-${SEED}` } }),
+  })
+  if (!start.ok) throw new Error(`رفع شاهد المحاذاة HTTP ${start.status}: ${(await start.text()).slice(0, 300)}`)
+  const uploadUrl = start.headers.get('x-goog-upload-url')
+  if (!uploadUrl) throw new Error('Files API لم يرجع رابط رفع شاهد المحاذاة')
+  const upload = await fetch(uploadUrl, {
+    method: 'POST', headers: { 'Content-Length': String(bytes.length), 'X-Goog-Upload-Offset': '0', 'X-Goog-Upload-Command': 'upload, finalize' }, body: bytes,
+  })
+  const body = await upload.json().catch(() => null)
+  if (!upload.ok || !body?.file?.uri) throw new Error(`تعذّر تثبيت شاهد المحاذاة: ${JSON.stringify(body || {}).slice(0, 300)}`)
+  return body.file
+}
+
+async function transcriptionWitness (file, turns) {
+  let uploaded = null
+  try {
+    uploaded = await uploadForTranscription(file)
+    const vocabulary = [...new Set(turns.flatMap((turn) => alignmentTokens(spokenForm(turn.text))))]
+      .sort((a, b) => b.length - a.length).slice(0, 100)
+    let last = null
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+        method: 'POST', headers: { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: TRANSCRIBE_MODEL,
+          input: [{ type: 'audio', uri: uploaded.uri, mime_type: uploaded.mimeType || uploaded.mime_type || 'audio/wav' }],
+          generation_config: { transcription_config: { language_codes: [], custom_vocabulary: vocabulary,
+            mode: { type: 'verbatim', diarization_mode: 'speaker', timestamp_granularities: ['word'] } } },
+        }),
+      })
+      const raw = await response.text()
+      let body = null
+      try { body = JSON.parse(raw) } catch { /* diagnosed below */ }
+      if (response.ok && body?.status === 'completed') return { body, words: extractWordAnnotations(body) }
+      if (response.ok && body?.id) {
+        const interactionPath = String(body.id).startsWith('interactions/')
+          ? String(body.id) : `interactions/${encodeURIComponent(body.id)}`
+        for (let poll = 1; poll <= 12; poll += 1) {
+          await sleep(Math.min(5000, 750 * poll))
+          const follow = await fetch(`https://generativelanguage.googleapis.com/v1beta/${interactionPath}`, {
+            headers: { 'x-goog-api-key': KEY },
+          })
+          const followBody = await follow.json().catch(() => null)
+          if (follow.ok && followBody?.status === 'completed') {
+            return { body: followBody, words: extractWordAnnotations(followBody) }
+          }
+          if (!follow.ok || followBody?.status === 'failed') {
+            last = new Error(followBody?.error?.message || `تعذّر سحب شاهد المحاذاة HTTP ${follow.status}`)
+            break
+          }
+        }
+        if (last) continue
+      }
+      last = new Error(body?.error?.message || `Transcribe HTTP ${response.status}: ${raw.slice(0, 300)}`)
+      if (response.status !== 429 && response.status < 500) break
+      await sleep(1000 * attempt)
+    }
+    throw last || new Error('تعذّر شاهد التفريغ الصوتي')
+  } finally {
+    if (uploaded?.name) fetch(`https://generativelanguage.googleapis.com/v1beta/${uploaded.name}`, {
+      method: 'DELETE', headers: { 'x-goog-api-key': KEY },
+    }).catch(() => {})
+  }
+}
+
+function cutChunkAt (file, cuts, expected, total, outPrefix, minSegmentSec = 0.35) {
+  const bounds = [0, ...cuts, total]
+  const parts = []
+  for (let i = 0; i < expected; i += 1) {
+    const from = bounds[i], to = bounds[i + 1]
+    if (!(to - from > minSegmentSec)) return null
+    const part = `${outPrefix}-${String(i + 1).padStart(2, '0')}.wav`
+    rmSync(part, { force: true })
+    const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-ss',from.toFixed(3),'-t',(to - from).toFixed(3),
+      '-i',file,'-ar','24000','-ac','1','-c:a','pcm_s16le',part], { encoding:'utf8' })
+    if (run.status !== 0 || !existsSync(part)) { for (const made of parts) rmSync(made, { force: true }); return null }
+    parts.push(part)
+  }
+  return parts
+}
+
+async function splitChunk(file, chunkTurnsList, outPrefix) {
   const expected = chunkTurnsList.length
   if (expected === 1) return [file]
   let total = 0
   try { total = duration(file) } catch { return null }
   const weights = chunkTurnsList.map((turn) => String(turn.text || '').length)
+  if (ALIGNMENT_MODE === 'required' || ALIGNMENT_MODE === 'prefer') {
+    try {
+      const witness = await transcriptionWitness(file, chunkTurnsList)
+      const aligned = alignTranscriptBoundaries(chunkTurnsList, witness.words, total)
+      const trustworthy = aligned?.cuts && aligned.similarity >= 0.78 && aligned.coverage >= 0.84
+        && aligned.speakerLabels.length === 2 && aligned.speakerMappingDistinct && aligned.speakerAgreement >= 0.88
+      if (trustworthy) {
+        const parts = cutChunkAt(file, aligned.cuts, expected, total, outPrefix, 0.18)
+        if (parts) {
+          splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL, ...aligned, cuts: aligned.cuts.map((cut) => Number(cut.toFixed(3))) })
+          console.log(`✓ شاهد الأدوار: ${aligned.sourceWordCount} كلمة · تطابق ${(aligned.similarity * 100).toFixed(0)}٪ · تغطية ${(aligned.coverage * 100).toFixed(0)}٪ · اتفاق الصوت ${(aligned.speakerAgreement * 100).toFixed(0)}٪`)
+          return parts
+        }
+      }
+      splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL, ...(aligned || {}), cuts: undefined, rejected: true })
+      throw new Error(`شاهد الأدوار غير حاسم (تطابق ${aligned ? (aligned.similarity * 100).toFixed(0) : '0'}٪ · تغطية ${aligned ? (aligned.coverage * 100).toFixed(0) : '0'}٪ · أصوات ${aligned?.speakerLabels?.length || 0})`)
+    } catch (error) {
+      if (ALIGNMENT_MODE === 'required') throw error
+      console.warn(`⚠️ شاهد الأدوار تعذّر؛ رجوع محافظ لمحاذاة الصمت: ${error.message}`)
+    }
+  }
   /* إذا ما ظهرت حدودٌ كافية عند 240ms، نرخي كاشف الصمت على **نفس الأخذ**.
      ما نعيد توليد نصفٍ أو دورٍ مستقل، لأن نجاح القص لا يساوي خسارة الهوية. */
   for (const minDurationSec of [0.24, 0.14, 0.08, 0.06, 0.04]) {
@@ -1158,22 +1477,8 @@ function splitChunk(file, chunkTurnsList, outPrefix) {
     const toleranceFactor = minDurationSec <= 0.08 ? 0.75 : 0.5
     const cuts = chooseSplitPoints(detectSilences(file, minDurationSec), expected, total, 0.45, weights, toleranceFactor)
     if (!cuts) continue
-    const bounds = [0, ...cuts, total]
-    const parts = []
-    let valid = true
-    for (let i = 0; i < expected; i += 1) {
-      const from = bounds[i]
-      const to = bounds[i + 1]
-      if (!(to - from > 0.35)) { valid = false; break }
-      const part = `${outPrefix}-${String(i + 1).padStart(2, '0')}.wav`
-      rmSync(part, { force: true })
-      const run = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-ss',from.toFixed(3),'-t',(to - from).toFixed(3),
-        '-i',file,'-ar','24000','-ac','1','-c:a','pcm_s16le',part], { encoding:'utf8' })
-      if (run.status !== 0 || !existsSync(part)) { valid = false; break }
-      parts.push(part)
-    }
-    if (valid && parts.length === expected) return parts
-    for (const part of parts) rmSync(part, { force: true })
+    const parts = cutChunkAt(file, cuts, expected, total, outPrefix)
+    if (parts?.length === expected) return parts
   }
   return null
 }
@@ -1695,17 +2000,17 @@ if (SELF_TEST) {
     'المسار الافتراضي يولّد الحوار المتعدد كله في Take واحد')
   assert.doesNotMatch(productionGeneration, /\bhalves\b|const rescue|promptFor\(subgroup|عاد إلى التوليد المفرد/,
     'لا إنقاذ بأنصاف أو أدوار مستقلة يعيد تفسير الصوت واللهجة')
-  assert.match(engineSource, /PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT[\s\S]*process\.exit\(3\)/,
+  assert.match(engineSource, /PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT[\s\S]*rejectTake\(/,
     'انزلاق أي واحد من المتحدثين يرمي الـTake كله ويستدعي إعادة ببذرة جديدة')
-  assert.match(engineSource, /PODCAST_KW_REJECT_SPEAKER_SWAPS[\s\S]*process\.exit\(3\)/,
+  assert.match(engineSource, /PODCAST_KW_REJECT_SPEAKER_SWAPS[\s\S]*rejectTake\(/,
     'تبديل صوت داخل الحوار المتصل يرمي الـTake كله')
-  assert.match(engineSource, /PODCAST_KW_REJECT_ACOUSTIC_RESET[\s\S]*process\.exit\(3\)/,
-    'إعادة الرنين بعد الانتقال تُرفض حتى لو Hz بقي سليماً')
-  assert.match(engineSource, /PODCAST_KW_REJECT_TIMING_SUSPECTS[\s\S]*process\.exit\(3\)/,
+  assert.match(engineSource, /PODCAST_KW_REJECT_ACOUSTIC_RESET[\s\S]*corroboratedBoundaryResets[\s\S]*rejectTake\(/,
+    'إعادة الهوية عند الانتقال تحتاج اتفاق الرنين والطبقة؛ قراءة منفردة لا تحرق Take سليماً')
+  assert.match(engineSource, /PODCAST_KW_REJECT_TIMING_SUSPECTS[\s\S]*confirmedTimingSuspects[\s\S]*rejectTake\(/,
     'الدور المقصوص أو الممدود يرمي الـTake كله')
   assert.match(engineSource, /for \(const minDurationSec of \[0\.24, 0\.14, 0\.08, 0\.06, 0\.04\]\)/,
     'قص المداخلات يرخي الحساسية على Take نفسه قبل أن يسقط بوضوح')
-  assert.match(engineSource, /تعذّر قص مسار[^]*process\.exit\(3\)/,
+  assert.match(engineSource, /تعذّر قص مسار[^]*rejectTake\(/,
     'فشل فصل حدود الأدوار عينة رديئة قابلة للإعادة، لا عطل يوقف طابور الحلقات')
   assert.equal(MAX_INTERNAL_SILENCE_MS, 300, 'السقف الحواري الافتراضي 0.30ث')
   assert.equal(LONG_SILENCE_TRIGGER_MS, 440, 'الضغط لا يمس أي نفس أقصر من 0.44ث')
@@ -1834,6 +2139,23 @@ if (SELF_TEST) {
     'الصمتة البعيدة عن موضعها المتوقّع تُرَدّ من غير إعادة توليد للشطر')
   assert.deepEqual(chooseSplitPoints([{ mid: 4.3, span: 0.08 }], 2, 10, 0.45, [80, 20], 0.75), [4.3],
     'النافذة الأوسع تقبل حدّاً صوتياً سريعاً على الأخذ نفسه من غير ترقيع')
+  const annotationEnvelope = { steps: [{ content: [{ annotations: [
+    { type:'word_info', text:'هذا', speaker:'spk_1', start_offset:'0.100s', end_offset:'0.500s' },
+    { type:'word_info', text:'فرق', speaker:'spk_1', start_offset:'0.550s', end_offset:'1.000s' },
+    { type:'word_info', text:'إي', speaker:'spk_2', start_offset:'1.100s', end_offset:'1.400s' },
+    { type:'word_info', text:'واضح', speaker:'spk_2', start_offset:'1.450s', end_offset:'2.000s' },
+    { type:'word_info', text:'هذا', speaker:'spk_1', start_offset:'2.200s', end_offset:'2.550s' },
+    { type:'word_info', text:'صح', speaker:'spk_1', start_offset:'2.600s', end_offset:'2.900s' },
+  ] }] }] }
+  const parsedAnnotations = extractWordAnnotations(annotationEnvelope)
+  assert.equal(parsedAnnotations.length, 6, 'شاهد Gemini يُقرأ من word_info لا من نص حر')
+  const alignedProbe = alignTranscriptBoundaries([
+    { speaker:'male', text:'هذا فرق' }, { speaker:'female', text:'إي واضح' }, { speaker:'male', text:'هذا صح' },
+  ], parsedAnnotations, 3.1)
+  assert.deepEqual(alignedProbe.cuts.map((cut) => Number(cut.toFixed(2))), [1.05, 2.10],
+    'حد الدور يقع بين آخر كلمة للأول وأول كلمة للثاني')
+  assert.equal(alignedProbe.speakerAgreement, 1, 'التفريغ يثبت أن فهد ونورة لم يتبادلا الأدوار')
+  assert.deepEqual(alignedProbe.perTurnCoverage, [1, 1, 1], 'كل كلمات كل دور حاضرة قبل بوابة الزمن')
   assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')
@@ -1962,16 +2284,25 @@ for (let i=0;i<chunks.length;i+=1) {
     }
     writePcmWav(rawWav,pcm)
     const cleanWav=prepareGeneratedChunk(rawWav, stem)
+    generatedTakeSources.push({ file: cleanWav, chunk: i + 1, plan: plan.key })
 
     /* كل مسارٍ Take كامل بالسياق نفسه. لو لم نجد حدوده نسقط المحاولة كلها؛
        لا يُعاد أي دور منفرد ولا تُخاط نبرات من جلسات قصيرة. */
     const planTurns = USE_VERTEX && ISOLATE_SPEAKER_STEMS
       ? generation.turns.filter((turn) => turn.speaker === plan.target)
       : generation.turns
-    const generatedParts = splitChunk(cleanWav, planTurns, stem)
+    let generatedParts = null
+    try { generatedParts = await splitChunk(cleanWav, planTurns, stem) }
+    catch (error) {
+      if (/شاهد الأدوار غير حاسم/.test(String(error?.message || error))) {
+        rejectTake(`↻ شاهد الكلمات والصوتين لم يثبت حدود الأدوار — الـTake مرفوض من غير اتهام الحنجرة ولا ترقيع: ${error.message}`,
+          { stage: 'transcript-alignment', error: error.message })
+      }
+      throw error
+    }
     if (!generatedParts) {
-      console.error(`↻ تعذّر قص مسار ${plan.label} ${i+1} إلى ${planTurns.length} مداخلة من التسجيل المتصل نفسه — الـTake مرفوض ويُعاد كاملاً؛ ممنوع إعادة توليد أنصاف أو أدوار مستقلة.`)
-      process.exit(3)
+      rejectTake(`↻ تعذّر قص مسار ${plan.label} ${i+1} إلى ${planTurns.length} مداخلة من التسجيل المتصل نفسه — الـTake مرفوض ويُعاد كاملاً؛ ممنوع إعادة توليد أنصاف أو أدوار مستقلة.`,
+        { stage: 'turn-splitting', plan: plan.key, expectedTurns: planTurns.length })
     }
     if (USE_VERTEX && ISOLATE_SPEAKER_STEMS) {
       const originalIndexes = generation.turns
@@ -2113,22 +2444,28 @@ if (REJECT_SPEAKER_IDENTITY_DRIFT && (femaleSwapSegments.length || maleSwapSegme
     maleSwapSegments.length ? `طبقة نورة غلبت على مقطع فهد ${maleSwapSegments.map((segment) => segment.segment).join('، ')}` : '',
     maleContinuity.segmentSuspects.length ? `وسيط مقطع فهد ${maleContinuity.segmentSuspects.map((segment) => segment.segment).join('، ')} انحرف أكثر من 28Hz` : '',
   ].filter(Boolean).join(' · ')
-  console.error(`↻ هوية أحد المتحدثين انزلقت (${reasons}) — الـTake مرفوض بالكامل ويُعاد، بلا ترقيع.`)
-  process.exit(3)
+  rejectTake(`↻ هوية أحد المتحدثين انزلقت (${reasons}) — الـTake مرفوض بالكامل ويُعاد، بلا ترقيع.`, {
+    stage: 'speaker-identity', femaleContinuity, maleContinuity, femaleSwapSegments, maleSwapSegments,
+  })
 }
 const REJECT_SPEAKER_SWAPS = process.env.PODCAST_KW_REJECT_SPEAKER_SWAPS === '1'
 if (REJECT_SPEAKER_SWAPS && swapped.length) {
-  console.error(`↻ تبديل صوتٍ داخل الحوار المتصل: ${swapped.join(' · ')} — الـTake كله مرفوض، ولا رجوع لمسارات الفقرات المنفصلة.`)
-  process.exit(3)
+  rejectTake(`↻ تبديل صوتٍ داخل الحوار المتصل: ${swapped.join(' · ')} — الـTake كله مرفوض، ولا رجوع لمسارات الفقرات المنفصلة.`,
+    { stage: 'speaker-swap', swapped: swappedDetails })
 }
 const REJECT_ACOUSTIC_RESET = process.env.PODCAST_KW_REJECT_ACOUSTIC_RESET === '1'
-if (REJECT_ACOUSTIC_RESET && (acousticBoundarySuspects.length || pitchBoundarySuspects.length)) {
+const corroboratedBoundaryResets = acousticBoundarySuspects.filter((acoustic) =>
+  pitchBoundarySuspects.some((pitch) => pitch.index === acoustic.index))
+if (REJECT_ACOUSTIC_RESET && corroboratedBoundaryResets.length) {
   const reasons = [
-    ...acousticBoundarySuspects.map((finding) => `الرنين في الدور ${finding.turn} انحرافه ${finding.distance.toFixed(2)}`),
-    ...pitchBoundarySuspects.map((finding) => `الطبقة في الدور ${finding.index + 1} قفزت ${finding.driftHz.toFixed(0)}Hz`),
+    ...corroboratedBoundaryResets.map((finding) => {
+      const pitch = pitchBoundarySuspects.find((candidate) => candidate.index === finding.index)
+      return `الرنين والطبقة اتفقا في الدور ${finding.turn} (${finding.distance.toFixed(2)} · ${pitch.driftHz.toFixed(0)}Hz)`
+    }),
   ]
-  console.error(`↻ نفس الـpreset لكن مو نفس الإنسان عند الانتقال: ${reasons.join(' · ')} — الـTake مرفوض بالكامل.`)
-  process.exit(3)
+  rejectTake(`↻ نفس الـpreset لكن مو نفس الإنسان عند الانتقال: ${reasons.join(' · ')} — الـTake مرفوض بالكامل.`, {
+    stage: 'acoustic-reset', corroboratedBoundaryResets, acousticBoundarySuspects, pitchBoundarySuspects,
+  })
 }
 
 /* ═══ عتبة الإعادة ═══
@@ -2143,8 +2480,9 @@ if (REJECT_ACOUSTIC_RESET && (acousticBoundarySuspects.length || pitchBoundarySu
    كلها تسقط التشغيلة بدل قبول صوتٍ يعرف الحارس أنه سيئ. */
 const MIN_GAP = Number(process.env.PODCAST_KW_MIN_GAP || 0)
 if (MIN_GAP > 0 && voiceGap !== null && voiceGap < MIN_GAP) {
-  console.error(`↻ الفجوة ${voiceGap.toFixed(0)} هرتزاً دون العتبة ${MIN_GAP} — عيّنةٌ مرفوضة، تُعاد.`)
-  process.exit(3)
+  rejectTake(`↻ الفجوة ${voiceGap.toFixed(0)} هرتزاً دون العتبة ${MIN_GAP} — عيّنةٌ مرفوضة، تُعاد.`, {
+    stage: 'voice-gap', maleMedianHz: maleMid, femaleMedianHz: femaleMid, voiceGapHz: voiceGap,
+  })
 }
 const regenerated = 0
 
@@ -2158,20 +2496,40 @@ const secPerChar = turns.map((t, i) => durations[i] / Math.max(String(t.text || 
 const sortedRates = [...secPerChar].sort((a, b) => a - b)
 const medianRate = sortedRates[Math.floor(sortedRates.length / 2)] || 0.1
 const repeatSuspects = []
+const repeatSuspectDetails = []
 for (let t = 0; t < turns.length; t += 1) {
   const expected = Math.max(String(turns[t].text || '').length, 1) * medianRate
   const tooLong = durations[t] > expected * 1.9 && durations[t] - expected > 2.5
   const tooShort = durations[t] < expected * 0.55 && expected - durations[t] > 1.5
-  if (tooLong || tooShort) repeatSuspects.push(`${t + 1}${tooLong ? '↑' : '↓'} (${durations[t].toFixed(1)}ث/${expected.toFixed(1)}ث)`)
+  if (tooLong || tooShort) {
+    repeatSuspects.push(`${t + 1}${tooLong ? '↑' : '↓'} (${durations[t].toFixed(1)}ث/${expected.toFixed(1)}ث)`)
+    repeatSuspectDetails.push({ index: t, turn: t + 1, tooLong, tooShort, durationSec: durations[t], expectedSec: expected })
+  }
 }
 const repeatRegens = 0
 console.log(repeatSuspects.length
   ? `✓ بوابة الزمن: ${repeatSuspects.length} دوراً تحت السمع — ${repeatSuspects.join(' · ')}`
   : '✓ بوابة الزمن: كل الأدوار في مداها')
 const REJECT_TIMING_SUSPECTS = process.env.PODCAST_KW_REJECT_TIMING_SUSPECTS === '1'
-if (REJECT_TIMING_SUSPECTS && repeatSuspects.length) {
-  console.error(`↻ قصّ/تمديد غير طبيعي في ${repeatSuspects.length} دور — الـTake مرفوض بالكامل ويُعاد: ${repeatSuspects.join(' · ')}`)
-  process.exit(3)
+const timingWitness = splitAlignmentAudits.find((entry) => !entry.rejected && Array.isArray(entry.perTurnCoverage))
+/* طول الحروف تقديرٌ فقط؛ إن شهد التفريغ أن كلمات الدور كلها موجودة فلا
+   نعاقب متحدثاً قال الجملة أسرع من الوسيط. القصير يُرفض عند نقص الكلمات،
+   والطويل عند سماع كلمات زائدة بوضوح. هكذا نجت عينة 3194 الصحيحة التي كان
+   صوتاها ثابتين ورفضها عدّاد 2.1/4.9 وحده. */
+const confirmedTimingSuspects = repeatSuspectDetails.filter((finding) => {
+  if (!timingWitness) return true
+  const coverage = timingWitness.perTurnCoverage[finding.index] ?? 0
+  const heardRatio = timingWitness.perTurnHeardRatio[finding.index] ?? 0
+  return finding.tooShort ? coverage < 0.80 : (coverage < 0.80 || heardRatio > 1.35)
+})
+if (repeatSuspects.length && timingWitness && !confirmedTimingSuspects.length) {
+  console.log('✓ شاهد الكلمات برّأ اختلاف السرعة: النص كامل داخل الأدوار المشتبهة، فلا رفض بتقدير الحروف وحده')
+}
+if (REJECT_TIMING_SUSPECTS && confirmedTimingSuspects.length) {
+  const confirmedLabels = confirmedTimingSuspects.map((finding) => repeatSuspects[repeatSuspectDetails.indexOf(finding)])
+  rejectTake(`↻ قصّ/تمديد مؤكّد بالكلمات في ${confirmedTimingSuspects.length} دور — الـTake مرفوض بالكامل ويُعاد: ${confirmedLabels.join(' · ')}`, {
+    stage: 'turn-timing', suspects: confirmedTimingSuspects, durations, medianSecPerChar: medianRate, witness: timingWitness,
+  })
 }
 
 const audioFile=resolve(AUDIO,`${slug}.dialogue-kw.mp3`)
@@ -2180,7 +2538,7 @@ const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)
 const timeline=timelineFor(turns,assembly)
 writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
 const audit={
-  schemaVersion:1, slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,
+  schemaVersion:1, qualityGateVersion:'kuwaiti-aligned-v14', slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,
   seed:SEED,
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
   sourceSha256:sha256(readFileSync(source)), sourceTurnCount:sourceTurns.length, turnCount:turns.length, chunkCount:chunks.length,
@@ -2215,8 +2573,12 @@ const audit={
       swapSegments:maleSwapSegments}},
   acousticContinuity:{method:'18-band-log-spectral-envelope-v1',female:femaleTimbre,male:maleTimbre,
     boundarySuspects:acousticBoundarySuspects,
+    corroboratedBoundaryResets,
     pitchBoundarySuspects:pitchBoundarySuspects.map((finding) => ({ turn:finding.index + 1,speaker:finding.speaker,hz:Number(finding.hz.toFixed(1)),driftHz:Number(finding.driftHz.toFixed(1)) }))},
-  repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,medianSecPerChar:Number(medianRate.toFixed(4))},
+  turnAlignment:{mode:ALIGNMENT_MODE,transcribeModel:TRANSCRIBE_MODEL,witnesses:splitAlignmentAudits},
+  repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,
+    confirmedSuspects:confirmedTimingSuspects.map((finding) => ({ turn:finding.turn,tooLong:finding.tooLong,tooShort:finding.tooShort })),
+    medianSecPerChar:Number(medianRate.toFixed(4))},
   mastered:{lufsTarget:-16,truePeakTarget:-1.5,sampleRate:48000,channels:1,bitrateKbps:160,nativeTurnTimingPreserved:PRESERVE_NATIVE_TURN_TIMING,
     longSilenceCompaction:{maxSilenceMs:MAX_INTERNAL_SILENCE_MS,triggerMs:LONG_SILENCE_TRIGGER_MS,calls:silenceCompaction.calls,removedSec:Number(silenceCompaction.removedSec.toFixed(3))}},
   generatedAt:new Date().toISOString(),

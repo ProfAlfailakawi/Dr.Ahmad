@@ -145,17 +145,29 @@ const lexSource = JSON.parse(lexRaw)
 
 if (SELF_TEST) {
   const date = '٢٧ أغسطس ٢٠٢٦'
+  /* [٢٨ أغسطس ٢٠٢٦] الفحص يعمل على نسخةٍ مصطنعة لا على المعجم الحيّ. أول جولة
+     أحكامٍ حقيقية تغيّر الحيّ — ينفكّ الحجب ويمتلئ طابور الإعادة — فتسقط أيّ
+     توقّعاتٍ مبنيّة على لقطته، ويقف البناء يوم يحكم الدكتور لا يوم يخطئ أحد.
+     (أُثبت العطب بتشغيل جولةٍ كاملة: انكسر الفحص على العدد المطلق للطابور.)
+     فالمقيس هنا هو المنطق: ماذا يفعل الاستقبال بمعجمٍ معلومِ الحالة. */
+  const fixture = {
+    ...JSON.parse(JSON.stringify(lexSource)),
+    words: {},
+    heardByEar: {},
+    retestQueue: [],
+    earBlockedUntilAudition: ['ركض', 'هرب', 'يقربنا'],
+  }
   const good = parseOptions('1:1,2:2,3:1,4:3,5:1,6:2', ledger.optionTests.length)
   assert.throws(() => parseOptions('1:1,2:2,3:1,4:3,5:1', ledger.optionTests.length), /الستة/, 'حكم ناقص يسقط')
   assert.throws(() => parseOptions('1:1,1:2,2:2,3:1,4:3,5:1', ledger.optionTests.length), /تكرر/, 'التكرار يسقط')
   assert.throws(() => parseOptions('1:4,2:2,3:1,4:3,5:1,6:2', ledger.optionTests.length), /غير مفهومة/, 'خيار ٤ يسقط')
   assert.throws(() => parseWrong('5', ledger), /ليس من فحوص/, 'رقم خارج الدفتر يسقط')
   assert.throws(
-    () => applyVerdicts(lexSource, ledger, { version: 'نسخة-قديمة', options: good, wrong: new Set(), date }),
+    () => applyVerdicts(fixture, ledger, { version: 'نسخة-قديمة', options: good, wrong: new Set(), date }),
     /لا يطابق الدفتر المجمّد/, 'اختلاف الإصدار يسقط قبل أي حكم')
 
   const wrong = parseWrong('7، 431', ledger)
-  const { lex, verdicts } = applyVerdicts(lexSource, ledger, { version: ledger.version, options: good, wrong, date })
+  const { lex, verdicts } = applyVerdicts(fixture, ledger, { version: ledger.version, options: good, wrong, date })
   assert.equal(lex.words['نركض'], 'نَرْكُظ', 'الخيار ١ للاختبار ١ يدخل المعجم')
   assert.equal(lex.words['يهرب من نفسه'], ledger.optionTests[5].options[1],
     'خيار العبارة يدخل بمفتاح مكتوب مركب — لا تعميم على سياق لم يُسمع')

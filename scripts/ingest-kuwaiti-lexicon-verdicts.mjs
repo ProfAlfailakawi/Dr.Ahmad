@@ -9,18 +9,23 @@
  *   node scripts/ingest-kuwaiti-lexicon-verdicts.mjs \
  *     --version=2026-08-27-kuwaiti-lexicon-screening-v2-risk-families \
  *     --options=1:2,2:1,3:1,4:3,5:2,6:1 \
- *     --wrong=12,88,105
+ *     --passed=7-17,19-38 \
+ *     --wrong=18,39 \
+ *     --pending=44-46 \
+ *     --rewrite=18,39,56-57
  *
  *  · --version  إلزامي ويطابق إصدار الدفتر المجمّد حرفاً بحرف — لو أُعيد
  *               توليد المختبر بترقيمٍ جديد سقط الاستقبال بدل ما يخربط.
  *  · --options  حكم الاختبارات الستة (اختر ١ أو ٢ أو ٣): الخيار ١ أو ٢
  *               تهجئة تدخل المعجم ويُدوَّن سماعها؛ الخيار ٣ استبدال
  *               تحريري بالمعنى ويبقى الجذع محجوباً.
- *  · --wrong    أرقام الفحوص التي نطقها المحرك خطأ (٧–٤٣١)، تدخل طابور
- *               إعادة الاختبار (retestQueue) للجولة القادمة. الباقي كله
- *               يُحسب «نجح بأذنه» ويُدوَّن في دفتر الأحكام.
- *  · فكّ الحجب: جذع earBlockedUntilAudition ينفك وحده إذا كل اختباراته
- *               اختيرت لها تهجئة (١ أو ٢) — والخيار ٣ يبقيه محجوباً.
+ *  · --passed   الأرقام التي قال الدكتور إنها صحيحة فقط. لا يوجد نجاح ضمني.
+ *  · --wrong    الأرقام التي سمعها خطأ.
+ *  · --pending  الأرقام التي لم يحكم عليها بعد؛ تبقى معلقة ولا تدخل المعجم.
+ *  · --rewrite  أرقام تُحذف أو يعاد بناء جملتها تحريرياً (قد تتقاطع مع
+ *               passed أو wrong؛ فالنطق بُعد، وشفوية النص بُعد آخر).
+ *  · الجذع العام في earBlockedUntilAudition لا ينفك من عينة أو عبارتين؛
+ *               التهجئة المسموعة تدخل للصيغة/العبارة الدقيقة وحدها.
  *  · --dry-run  معاينة بلا كتابة · --self-test فحص ذاتي بلا كتابة.
  *
  * المخرجات: تحديث src/data/kuwaiti-pronunciation.json + دفتر أحكام
@@ -57,25 +62,62 @@ export function parseOptions(raw, testCount) {
   return map
 }
 
-export function parseWrong(raw, ledger) {
+export function parseNumberSet(raw, ledger, label = 'numbers') {
   const valid = new Set(ledger.screening.map((s) => s.number))
   const digits = (s) => Number(String(s).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
   const out = new Set()
-  for (const piece of String(raw ?? '').split(/[،,\s]+/).map((p) => p.trim()).filter(Boolean)) {
-    assert.ok(/^[0-9٠-٩]+$/u.test(piece), `رقم غير مفهوم في --wrong: «${piece}»`)
-    const n = digits(piece)
-    assert.ok(valid.has(n), `الرقم ${n} ليس من فحوص الدفتر (${ledger.screening[0].number}–${ledger.screening[ledger.screening.length - 1].number})`)
-    out.add(n)
+  const normalized = String(raw ?? '').replace(/[؛;]/g, ',')
+  for (const piece of normalized.split(/[،,\n]+/).map((p) => p.trim()).filter(Boolean)) {
+    const m = piece.match(/^([0-9٠-٩]+)(?:\s*(?:-|–|—|\.\.|إلى|الى)\s*([0-9٠-٩]+))?$/u)
+    assert.ok(m, `رقم أو مدى غير مفهوم في --${label}: «${piece}»`)
+    const first = digits(m[1]); const last = m[2] ? digits(m[2]) : first
+    assert.ok(last >= first, `مدى معكوس في --${label}: «${piece}»`)
+    for (let n = first; n <= last; n += 1) {
+      assert.ok(valid.has(n), `الرقم ${n} ليس من فحوص الدفتر (${ledger.screening[0].number}–${ledger.screening[ledger.screening.length - 1].number})`)
+      out.add(n)
+    }
   }
   return out
 }
 
+export const parseWrong = (raw, ledger) => parseNumberSet(raw, ledger, 'wrong')
+
+const overlap = (a, b) => [...a].filter((n) => b.has(n))
+
+function assertAuditoryPartition (ledger, passed, wrong, pending) {
+  assert.equal(overlap(passed, wrong).length, 0, 'رقم موجود في passed وwrong معاً')
+  assert.equal(overlap(passed, pending).length, 0, 'رقم موجود في passed وpending معاً')
+  assert.equal(overlap(wrong, pending).length, 0, 'رقم موجود في wrong وpending معاً')
+  const classified = new Set([...passed, ...wrong, ...pending])
+  const expected = new Set(ledger.screening.map((s) => s.number))
+  const missing = [...expected].filter((n) => !classified.has(n))
+  assert.equal(missing.length, 0,
+    `فحوص بلا حكم صريح: ${missing.join(', ')} — ضعها في passed أو wrong أو pending؛ لا نجاح بالتخمين`)
+}
+
 /** ينزل الأحكام على نسخة من المعجم ويرجع دفتر الأحكام — نقي بلا كتابة ملفات. */
-export function applyVerdicts(lexSource, ledger, { version, options, wrong, date }) {
+export function applyVerdicts(lexSource, ledger, { version, options, passed, wrong, pending, editorial, date }) {
   assert.equal(version, ledger.version,
     `الإصدار لا يطابق الدفتر المجمّد:\n  المعطى: ${version}\n  الدفتر: ${ledger.version}\nأعد توليد المختبر أو صحح --version — الترقيم لا يُخمَّن.`)
   const lex = JSON.parse(JSON.stringify(lexSource))
   const changes = []
+  assertAuditoryPartition(ledger, passed, wrong, pending)
+  const validNumbers = new Set(ledger.screening.map((s) => s.number))
+  for (const n of editorial) assert.ok(validNumbers.has(n), `رقم rewrite خارج الدفتر: ${n}`)
+
+  /* امسح أثر أي تشغيل قديم كان يدوّن الكلمة أو نصف العبارة. الحكم الجديد
+     يملك الجملة الحاملة كاملة؛ فلا تبقى خريطة واسعة من الجولة السابقة. */
+  for (const test of ledger.optionTests) {
+    const legacyKeys = new Set([test.key])
+    for (const choice of test.options) {
+      const words = choice.split(' ')
+      legacyKeys.add([test.key, ...words.slice(1)].join(' '))
+    }
+    for (const key of legacyKeys) {
+      delete lex.words?.[key]
+      if (key !== test.key || test.key !== 'يهرب') delete lex.heardByEar?.[key]
+    }
+  }
 
   const optionVerdicts = ledger.optionTests.map((test, index) => {
     const pos = index + 1
@@ -90,11 +132,15 @@ export function applyVerdicts(lexSource, ledger, { version, options, wrong, date
       const normalizeDaad = (w) => stripTashkeel(w).replace(/ظ/g, 'ض')
       assert.ok(normalizeDaad(optionWords[0]) === normalizeDaad(test.key),
         `الاختبار ${pos}: أول كلمة في الخيار «${chosen}» لا تطابق مفتاحه «${test.key}»`)
-      const writtenKey = [test.key, ...optionWords.slice(1)].join(' ')
-      if (writtenKey !== chosen) { lex.words[writtenKey] = chosen; changes.push(`words[${writtenKey}] = ${chosen}`) }
-      lex.heardByEar[test.key] =
-        `اختارها سماعاً ${date} — مختبر «${ledger.version}»، الاختبار ${pos}، الخيار ${choice}: «${chosen}».`
-      changes.push(`heardByEar[${test.key}] ✓ تهجئة`)
+      const writtenKey = test.carrier.replace('{W}', test.key)
+      const spokenValue = test.carrier.replace('{W}', chosen)
+      if (writtenKey !== spokenValue) {
+        lex.words[writtenKey] = spokenValue
+        changes.push(`words[${writtenKey}] = ${spokenValue}`)
+      }
+      lex.heardByEar[writtenKey] =
+        `اختارها سماعاً ${date} داخل الجملة كاملة — مختبر «${ledger.version}»، الاختبار ${pos}، الخيار ${choice}: «${spokenValue}».`
+      changes.push(`heardByEar[${writtenKey}] ✓ تهجئة دقيقة بلا تعميم على الجذع`)
     } else {
       lex.heardByEar[test.key] =
         `رفض التهجئتين سماعاً ${date} — مختبر «${ledger.version}»، الاختبار ${pos}: تُستبدل تحريرياً بمعناها «${chosen}» ويبقى جذعها محجوباً حتى سماع صيغة جديدة.`
@@ -103,38 +149,40 @@ export function applyVerdicts(lexSource, ledger, { version, options, wrong, date
     return { number: pos, key: test.key, choice, chosen }
   })
 
-  /* فك الحجب: الجذع ينفك فقط إذا كل اختباراته نالت تهجئة (١ أو ٢). */
-  const blocked = Array.isArray(lex.earBlockedUntilAudition) ? lex.earBlockedUntilAudition : []
-  lex.earBlockedUntilAudition = blocked.filter((stem) => {
-    const touching = optionVerdicts.filter((v) => stripTashkeel(v.key).includes(stem))
-    if (!touching.length) return true
-    const allSpelled = touching.every((v) => v.choice <= 2)
-    if (allSpelled) changes.push(`فُكّ حجب «${stem}» — كل اختباراته نالت تهجئة مسموعة`)
-    return !allSpelled
-  })
+  /* لا نفك جذعاً عاماً من ست جمل. الصيغ المسموعة تعمل لأنها دخلت words
+     بمفتاحها الدقيق، وتظل التصريفات غير المسموعة محجوبة للمستقبل. */
+  lex.earBlockedUntilAudition = Array.isArray(lex.earBlockedUntilAudition)
+    ? [...lex.earBlockedUntilAudition]
+    : []
 
   const rejected = ledger.screening.filter((s) => wrong.has(s.number))
     .map((s) => ({ number: s.number, key: s.key, category: s.category, source: s.source }))
+  const unresolvedRejected = rejected.filter((r) => !editorial.has(r.number))
   if (!Array.isArray(lex.retestQueue)) lex.retestQueue = []
-  for (const r of rejected) {
+  for (const r of unresolvedRejected) {
     if (!lex.retestQueue.some((q) => q.key === r.key && q.version === ledger.version)) {
       lex.retestQueue.push({ key: r.key, number: r.number, category: r.category, version: ledger.version })
     }
   }
-  if (rejected.length) changes.push(`retestQueue: +${rejected.length} كلمة للجولة القادمة`)
+  if (unresolvedRejected.length) changes.push(`retestQueue: +${unresolvedRejected.length} كلمة للجولة القادمة`)
 
-  const passed = ledger.screening.length - rejected.length
+  const pendingRows = ledger.screening.filter((s) => pending.has(s.number))
+    .map((s) => ({ number: s.number, key: s.key, category: s.category, source: s.source }))
+  const editorialRows = ledger.screening.filter((s) => editorial.has(s.number))
+    .map((s) => ({ number: s.number, key: s.key, category: s.category, source: s.source, carrier: s.carrier }))
   lex.layers = lex.layers || {}
   lex.layers.lexiconScreeningV2Verdicts =
-    `أحكام الدكتور على مختبر «${ledger.version}» (${date}): ${passed} فحصاً نجح بأذنه من ${ledger.screening.length}، و${rejected.length} دخل طابور إعادة الاختبار، والاختبارات الستة حُسمت (${optionVerdicts.map((v) => `${v.key}:${v.choice}`).join(' · ')}). التفصيل: podcast-audits/kuwaiti-lexicon-verdicts.json.`
+    `أحكام الدكتور على مختبر «${ledger.version}» (${date}): ${passed.size} صحيح صراحةً، ${rejected.length} مرفوض سمعياً، ${pendingRows.length} غير محسوم، و${editorialRows.length} يعاد تحرير سياقه. لا نجاح ضمنياً ولا فك حجب لجذر كامل من عينة. الاختبارات الستة: ${optionVerdicts.map((v) => `${v.key}:${v.choice}`).join(' · ')}. التفصيل: podcast-audits/kuwaiti-lexicon-verdicts.json.`
 
   const verdicts = {
     version: ledger.version,
     decidedAt: date,
     optionVerdicts,
     rejected,
-    passedCount: passed,
-    passedNumbers: ledger.screening.map((s) => s.number).filter((n) => !wrong.has(n)),
+    pending: pendingRows,
+    editorialRewrites: editorialRows,
+    passedCount: passed.size,
+    passedNumbers: [...passed].sort((a, b) => a - b),
   }
   return { lex, verdicts, changes }
 }
@@ -145,45 +193,76 @@ const lexSource = JSON.parse(lexRaw)
 
 if (SELF_TEST) {
   const date = '٢٧ أغسطس ٢٠٢٦'
-  const good = parseOptions('1:1,2:2,3:1,4:3,5:1,6:2', ledger.optionTests.length)
+  /* [٢٨ أغسطس ٢٠٢٦] الفحص يعمل على نسخةٍ مصطنعة لا على المعجم الحيّ. أول جولة
+     أحكامٍ حقيقية تغيّر الحيّ — ينفكّ الحجب ويمتلئ طابور الإعادة — فتسقط أيّ
+     توقّعاتٍ مبنيّة على لقطته، ويقف البناء يوم يحكم الدكتور لا يوم يخطئ أحد.
+     (أُثبت العطب بتشغيل جولةٍ كاملة: انكسر الفحص على العدد المطلق للطابور.)
+     فالمقيس هنا هو المنطق: ماذا يفعل الاستقبال بمعجمٍ معلومِ الحالة. */
+  const fixture = {
+    ...JSON.parse(JSON.stringify(lexSource)),
+    words: {},
+    heardByEar: {},
+    retestQueue: [],
+    earBlockedUntilAudition: ['ركض', 'هرب', 'يقربنا'],
+  }
+  const good = parseOptions('1:2,2:2,3:1,4:2,5:2,6:3', ledger.optionTests.length)
   assert.throws(() => parseOptions('1:1,2:2,3:1,4:3,5:1', ledger.optionTests.length), /الستة/, 'حكم ناقص يسقط')
   assert.throws(() => parseOptions('1:1,1:2,2:2,3:1,4:3,5:1', ledger.optionTests.length), /تكرر/, 'التكرار يسقط')
   assert.throws(() => parseOptions('1:4,2:2,3:1,4:3,5:1,6:2', ledger.optionTests.length), /غير مفهومة/, 'خيار ٤ يسقط')
   assert.throws(() => parseWrong('5', ledger), /ليس من فحوص/, 'رقم خارج الدفتر يسقط')
+  assert.deepEqual([...parseNumberSet('٧ إلى ٩، 12-14', ledger, 'passed')], [7, 8, 9, 12, 13, 14],
+    'المدى العربي والغربي يُفهمان بلا نسخ كل رقم')
+  const all = new Set(ledger.screening.map((s) => s.number))
+  const wrong = new Set([7]); const pending = new Set([431])
+  const passed = new Set([...all].filter((n) => !wrong.has(n) && !pending.has(n)))
+  const editorial = new Set([7])
   assert.throws(
-    () => applyVerdicts(lexSource, ledger, { version: 'نسخة-قديمة', options: good, wrong: new Set(), date }),
+    () => applyVerdicts(fixture, ledger, { version: 'نسخة-قديمة', options: good, passed, wrong, pending, editorial, date }),
     /لا يطابق الدفتر المجمّد/, 'اختلاف الإصدار يسقط قبل أي حكم')
 
-  const wrong = parseWrong('7، 431', ledger)
-  const { lex, verdicts } = applyVerdicts(lexSource, ledger, { version: ledger.version, options: good, wrong, date })
-  assert.equal(lex.words['نركض'], 'نَرْكُظ', 'الخيار ١ للاختبار ١ يدخل المعجم')
-  assert.equal(lex.words['يهرب من نفسه'], ledger.optionTests[5].options[1],
-    'خيار العبارة يدخل بمفتاح مكتوب مركب — لا تعميم على سياق لم يُسمع')
+  assert.throws(() => applyVerdicts(fixture, ledger, {
+    version: ledger.version, options: good, passed: new Set(), wrong, pending, editorial, date,
+  }), /بلا حكم صريح/, 'غير المذكور لا يتحول إلى ناجح')
+  const { lex, verdicts } = applyVerdicts(fixture, ledger, {
+    version: ledger.version, options: good, passed, wrong, pending, editorial, date,
+  })
+  assert.equal(lex.words['نركض وايد… ونسمي هالحركة التزام.'],
+    'نِرْكُظ وايد… ونسمي هالحركة التزام.', 'الخيار يدخل بجملته الحاملة كاملة')
+  assert.equal(lex.words['المشكلة إن الواحد يركض.'],
+    'المشكلة إن الواحد يِرْكِظ سنة كاملة.',
+    'حتى الخيار ذو الكلمة المفردة لا يُعمم خارج الجملة التي سمعها')
+  assert.ok(!('نركض' in lex.words), 'الكلمة المفردة لا تنفك من سماع جملة واحدة')
+  assert.ok(!('يركض سنة كاملة' in lex.words), 'نصف العبارة القديم يُمسح')
   assert.ok(!('يهرب' in lex.words), 'الكلمة المفردة لا تدخل من خيار عبارة')
-  assert.ok(!('يقرّبنا' in lex.words), 'الخيار ٣ لا يخترع تهجئة')
-  assert.match(lex.heardByEar['يقرّبنا'], /محجوباً/, 'الخيار ٣ مدوَّن استبدالاً بالمعنى')
-  assert.ok(!lex.earBlockedUntilAudition.includes('ركض'), 'ركض انفك — اختباراه (١ و٥) نالا تهجئة')
-  assert.ok(!lex.earBlockedUntilAudition.includes('هرب'), 'هرب انفك — اختباراه (٢ و٦) نالا تهجئة')
-  assert.ok(lex.earBlockedUntilAudition.includes('يقربنا'), 'يقربنا باقٍ محجوباً — اختباره خيار ٣')
-  assert.equal(verdicts.rejected.length, 2, 'الرقمان المرفوضان مدوَّنان')
-  assert.equal(verdicts.passedCount, ledger.screening.length - 2, 'الباقي كله نجح بأذنه')
-  assert.equal(lex.retestQueue.length, 2, 'طابور إعادة الاختبار امتلأ')
+  assert.ok(!('يهرب من نفسه' in lex.words), 'الخيار ٣ للاختبار ٦ يعاد تحريره ولا يخترع تهجئة')
+  assert.ok(lex.earBlockedUntilAudition.includes('ركض'), 'جذر ركض يبقى محجوباً عن التصريفات غير المسموعة')
+  assert.ok(lex.earBlockedUntilAudition.includes('هرب'), 'جذر هرب يبقى محجوباً عن التصريفات غير المسموعة')
+  assert.ok(lex.earBlockedUntilAudition.includes('يقربنا'), 'يقربنا يبقى محجوباً مع أن عبارته الدقيقة سُمعت')
+  assert.equal(verdicts.rejected.length, 1, 'المرفوض الصريح مدوَّن')
+  assert.equal(verdicts.pending.length, 1, 'غير المحسوم لا يُسمى ناجحاً')
+  assert.equal(verdicts.passedCount, ledger.screening.length - 2, 'الناجح فقط ما ورد صراحةً')
+  assert.equal(lex.retestQueue.length, 0, 'المرفوض ذو البديل التحريري لا يهدر توليداً جديداً')
   assert.equal(readFileSync(LEX_PATH, 'utf8'), lexRaw, 'الفحص الذاتي لا يكتب حرفاً على القرص')
-  console.log('✓ مستقبِل أحكام المختبر: الفحص الذاتي 14/14 — الأحكام تنزل في مواضعها ولا تُخمَّن')
+  console.log('✓ مستقبِل أحكام المختبر: الفحص الذاتي 20/20 — لا نجاح ضمنياً ولا فك حجب لجذر كامل')
   process.exit(0)
 }
 
 const version = arg('version')
 assert.ok(version, 'مطلوب --version=… (إصدار الدفتر المجمّد كما في podcast-audits/kuwaiti-lexicon-screening.json)')
 const options = parseOptions(arg('options'), ledger.optionTests.length)
-const wrong = parseWrong(arg('wrong'), ledger)
+const passed = parseNumberSet(arg('passed'), ledger, 'passed')
+const wrong = parseNumberSet(arg('wrong'), ledger, 'wrong')
+const pending = parseNumberSet(arg('pending'), ledger, 'pending')
+const editorial = parseNumberSet(arg('rewrite'), ledger, 'rewrite')
 const today = new Date()
 const date = today.toISOString().slice(0, 10)
 
-const { lex, verdicts, changes } = applyVerdicts(lexSource, ledger, { version, options, wrong, date })
+const { lex, verdicts, changes } = applyVerdicts(lexSource, ledger, {
+  version, options, passed, wrong, pending, editorial, date,
+})
 console.log('أحكام مختبر «' + ledger.version + '»:')
 for (const c of changes) console.log('  · ' + c)
-console.log(`  · ${verdicts.passedCount}/${ledger.screening.length} فحصاً نجح بأذنه`)
+console.log(`  · ${verdicts.passedCount}/${ledger.screening.length} فحصاً نجح صراحةً · ${verdicts.pending.length} غير محسوم · ${verdicts.editorialRewrites.length} يعاد تحريره`)
 if (DRY_RUN) { console.log('ℹ معاينة بلا كتابة (--dry-run)'); process.exit(0) }
 
 writeFileSync(LEX_PATH, JSON.stringify(lex, null, 2) + '\n')

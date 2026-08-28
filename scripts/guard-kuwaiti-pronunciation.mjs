@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { buildPronunciationMap, toSpokenKuwaiti } from './lib/kuwaiti-pronunciation.mjs'
+import { applyApprovedRegisterRewrites } from './lib/kuwaiti-register-rewrites.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (rel) => JSON.parse(readFileSync(path.join(ROOT, rel), 'utf8'))
@@ -95,12 +96,8 @@ const CASES = [
   /* القاعدة نفسها لكل چ: تُكتب تش. */
   /* «تشان» فشلت بأذنه («غلط غلط غلط») فالكلمة تُستبدل بمعناها لا تُهجّى. */
   ['لأن النجاح عنده ما جان ثمرة فهم', 'ما كان ثمرة فهم', 'تشان'],
-  /* [٢٧ أغسطس ٢٠٢٦] إتمام الحكم نفسه: كان مطبقاً على «ما جان» و«جان مثل»
-     وحدهما بينما ١٨ موضعاً شرطياً في المتن تمرّ بإملائها — فعُمّم على
-     الكلمة المفردة و«وجان» و«چان». والفخ باقٍ: «الجان» المخلوق لا تُمس. */
-  ['جان وقف مبهور ما يصدق', 'كان وقف مبهور', 'جان وقف'],
-  ['وجان صار حال الأمم أحسن', 'وكان صار', 'وجان صار'],
-  ['عيل جان صار منهج مخرجاته ترضي الكل', 'عيل كان صار', 'عيل جان'],
+  /* «جان» الشرطية لا تُختبر هنا: قلبها العالمي إلى «كان» أنتج جملاً
+     مكسورة مثل «عيل كان صار». اختبارها السياقي يأتي بعد CASES. */
   /* الضاد ظاءٌ في الكويتية — قاعدةٌ شاملة (أمر الدكتور ١٥ أغسطس: «كل ضاد ظاد»). */
   /* كان الشرط «تبقى يظايق» يوم حسبتُ «يضايج» اختراعاً. وأملاها الدكتور بفمه
      ٢٠ أغسطس ٢٠٢٦ («يضايق .... يضايج») فانقلب الشرط: القاف تصير جيماً هنا،
@@ -262,6 +259,40 @@ for (const [input, must, mustNot] of CASES) {
   console.error(`❌ ${input} → ${got}`)
   if (!okHas) console.error(`   المتوقع أن يحوي: ${must}`)
   if (!okNot) console.error(`   ممنوع أن يحوي: ${mustNot}`)
+}
+
+/* [٢٨ أغسطس ٢٠٢٦] «تشان/جان» تُستبدل بالمعنى داخل جملتها، لا في معجم
+   النطق. هذي الحالات تحرس العلاج وتمنع رجوع التعميم الذي سقط. */
+const JAN_CONTEXT_CASES = [
+  ['جان وقف مبهور ما يصدق', 'كان راح يوقف مبهور وما يصدق'],
+  ['وجان صار حال الأمم أحسن وايد من اليوم', 'وكان حال الأمم أحسن وايد من اليوم'],
+  ['عيل جان صار منهج مخرجاته ترضي الكل… هذا اللي نبيه.', 'عيل اللي نبيه منهج مخرجاته ترضي الكل… هذا اللي نبيه.'],
+]
+for (const [input, expected] of JAN_CONTEXT_CASES) {
+  const got = applyApprovedRegisterRewrites(input).text
+  if (got === expected && !/(?:^|\s)(?:و?جان|چان)(?=\s|[،.…؟!]|$)/u.test(got)) {
+    console.log(`✅ سياق جان: ${input} → ${got}`)
+    continue
+  }
+  failed++
+  console.error(`❌ سياق جان: ${input} → ${got}\n   المتوقع: ${expected}`)
+}
+const LEXICON_CONTEXT_CASES = [
+  ['نركض وايد… ونسمي هالحركة التزام.', 'نِرْكُظ وايد… ونسمي هالحركة التزام.'],
+  ['مرات تكون طريقة مرتبة نتهرّب فيها.', 'مرات تكون طريقة مرتبة نِتْهَرَّب فيها.'],
+  ['نفرق بين شغل يقرّبنا… وشغل يبعدنا عنه.', 'نفرق بين شُغُل يِقَرِّبنا من الشي المهم… وشُغُل ايْبَعِدنا عنه.'],
+  ['المشكلة إن الواحد يركض.', 'المُشْكِلة إن الواحد يِرْكِظ سنة كاملة.'],
+]
+for (const [input, expected] of LEXICON_CONTEXT_CASES) {
+  const got = spoken(input)
+  if (got === expected) { console.log(`✅ حكم جملة كاملة: ${input} → ${got}`); continue }
+  failed++
+  console.error(`❌ حكم جملة كاملة: ${input} → ${got}\n   المتوقع: ${expected}`)
+}
+for (const forbidden of ['جان', 'وجان', 'چان']) {
+  if (!(forbidden in (source.words || {}))) continue
+  failed++
+  console.error(`❌ رجع التعميم الممنوع words[${forbidden}] — جان تُعالج بسياقها`)
 }
 
 /* لا بديلَ في المعجم يُقحم أداة التعريف على جذعٍ لا يحملها. */

@@ -12,8 +12,9 @@
  */
 
 import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
+import { applyApprovedRegisterRewrites } from './kuwaiti-register-rewrites.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-27-native-kuwaiti-v12-context-not-wasl'
+export const NATIVE_SPOKEN_VERSION = '2026-08-28-native-kuwaiti-v13-context-register'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 
@@ -185,11 +186,20 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
 
   output.forEach((turn, index) => {
     const before = norm(turn.text)
-    let after = before
+    const register = applyApprovedRegisterRewrites(before, { slug })
+    let after = register.text
     for (const [pattern, replacement] of SAFE_TEXT_RULES) after = after.replace(pattern, replacement)
     if (after !== before) {
       turn.text = after
-      changes.push({ index, field: 'text', before, after, reason: 'قاعدة منطوقة آمنة' })
+      changes.push({
+        index,
+        field: 'text',
+        before,
+        after,
+        reason: register.applied.length
+          ? `إعادة صياغة سياقية معتمدة (${register.applied.join('،')})`
+          : 'قاعدة منطوقة آمنة',
+      })
     }
   })
 

@@ -28231,7 +28231,7 @@
   "the-classroom-that-fears-mistakesarabic": {
    "0": {
     "speaker": "male",
-    "text": "توقفنا أسبوعين… انشغلنا بالحرب، وبالقلق اللي يعلى مع كل خبر.",
+    "text": "توقفنا أسبوعين… انشغلنا بالحرب، والخوف اللي يزيد مع كل خبر.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -28249,7 +28249,7 @@
    },
    "2": {
     "speaker": "female",
-    "text": "بس اليوم نرجع لجبهة ما تقل أهمية.",
+    "text": "بس اليوم نرجع لشي ما يقل أهمية.",
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -28258,7 +28258,7 @@
    },
    "3": {
     "speaker": "male",
-    "text": "جبهة الصف… هني بعد تنصنع الشجاعة، ولا ينصنع الخوف.",
+    "text": "الصف نفسه… هني بعد تنصنع الشجاعة، ولا ينصنع الخوف.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -28267,7 +28267,7 @@
    },
    "4": {
     "speaker": "female",
-    "text": "وهني يتعلم الطفل يرفع يده… ولا يبلع صوته.",
+    "text": "وهني يتعلم الطفل يرفع يده… ولا يسكت.",
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,

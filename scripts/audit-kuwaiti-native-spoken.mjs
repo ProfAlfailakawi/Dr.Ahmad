@@ -73,7 +73,7 @@ if (SELF_TEST) {
     'جواب البحث يحتفظ بالمصدر والنتيجة')
   assert.equal(pilot.turns[18].text, 'بس مو كبرنا الموضوع وايد؟', 'الاعتراض كويتي شفهي وخفيف')
   assert.equal(pilot.turns[23].text,
-    'ودورنا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.',
+    'واللي علينا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.',
     'الخاتمة كلام بشري لا شعار ولا كلمة جديدة')
   const seriousness = optimizeNativeSpokenEpisode(
     Object.values(pilotLibrary.episodes[SERIOUSNESS_SLUG]), { slug: SERIOUSNESS_SLUG })

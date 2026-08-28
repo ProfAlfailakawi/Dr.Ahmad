@@ -176,7 +176,19 @@ if (SELF_TEST) {
 }
 
 const dir = resolve(ROOT, DIR)
-if (!existsSync(dir)) { console.log('ℹ لا مجلد مصدرٍ مجهّز: ' + DIR); process.exit(0) }
+/* [٢٨ أغسطس ٢٠٢٦ — قبل إنتاج الـ١٤٣] المجلد الفارغ كان يُسقط النشر (تحت)،
+   والمجلد الغائب كان يمرّ بصمت. وهذا أخطر الحالتين لا أهونهما: بوابةٌ
+   مطلوبةٌ صراحةً بـ--dir ثم لا تجد ما تفحصه لم تعمل أصلاً، فمرورها كذبٌ
+   على من بعدها. فإن طُلبت صراحةً وجب أن تجد مصدرها أو تقف.
+   وتبقى متسامحةً حين لا يُذكر المجلد — لتشغيلةٍ محليةٍ قبل التجهيز. */
+const DIR_EXPLICIT = process.argv.some((a) => a.startsWith('--dir='))
+if (!existsSync(dir)) {
+  if (DIR_EXPLICIT) {
+    console.error(`⛔ طُلبت البوابة على «${DIR}» والمجلد غير موجود — بوابةٌ لم تفحص شيئاً لا تمرّ.`)
+    process.exit(1)
+  }
+  console.log('ℹ لا مجلد مصدرٍ مجهّز: ' + DIR); process.exit(0)
+}
 const files = readdirSync(dir).filter((f) => f.endsWith('.json'))
 if (!files.length) { console.log('⛔ مجلد المصدر فارغ — هذه البوابة يجب أن تعمل **بعد** تجهيز المصدر لا قبله.'); process.exit(1) }
 let hard = 0; let soft = 0; let qaf = 0

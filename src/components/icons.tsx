@@ -37,6 +37,58 @@ export function SocialIcon({ name, size = 20 }: { name: string; size?: number })
       </svg>
     )
   }
+  if (name === 'ORCID') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.1" stroke="currentColor" strokeWidth="1.55" />
+        <circle cx="8.5" cy="7.75" r="1.05" fill="currentColor" />
+        <rect x="7.75" y="9.9" width="1.5" height="6.35" rx=".5" fill="currentColor" />
+        <path d="M11.3 9.9h2.75c1.92 0 3.2 1.24 3.2 3.18s-1.28 3.17-3.2 3.17H11.3V9.9Zm1.55 1.45v3.45h1.1c1.09 0 1.75-.66 1.75-1.72 0-1.07-.66-1.73-1.75-1.73h-1.1Z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (name === 'Wikidata') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3.6 6.6v10.8M6.1 6.6v10.8" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+        <path d="M9 6.6v10.8M11.6 6.6v10.8M14.1 6.6v10.8" stroke="currentColor" strokeWidth="1.95" strokeLinecap="round" />
+        <path d="M17 6.6v10.8M20.4 6.6v10.8" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  if (name === 'Web of Science') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.15" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6.4 8.7 8.6 15.3 12 9.7 15.4 15.3 17.6 8.7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  if (name === 'Semantic Scholar') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3.2 5 7.3v6.1c0 4 3.05 6.4 7 7.4 3.95-1 7-3.4 7-7.4V7.3L12 3.2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M8.9 12.7c1.45 1.1 4.55 1 6-1.7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9.1 9.5c1.45-1.05 4.35-.95 5.6.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  if (name === 'Goodreads') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="10.35" cy="10.75" r="4.3" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M14.8 7.2v8.9c0 2.6-1.75 4.2-4.45 4.2-2.15 0-3.75-1-4.2-2.65" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  if (name === 'Wikipedia') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M2.6 7.4h5.1M9.4 7.4h4M15.4 7.4h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        <path d="M4.2 7.4 8.7 17.6 11.3 11.2M11 7.4l3.9 10.2 4-10.2M12.6 11l1.4-3.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
   const p: Record<string, string> = {
     LinkedIn: 'M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 110-4.13 2.06 2.06 0 010 4.13zM7.12 20.45H3.56V9h3.56v11.45z',
     WhatsApp: 'M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.23-.64.08-.3-.15-1.26-.46-2.4-1.47-.88-.79-1.48-1.77-1.65-2.07-.17-.3-.02-.46.13-.6.13-.14.3-.35.44-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.01-1.04 2.48s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.62.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35M12.05 21.79h-.01a9.87 9.87 0 01-5.03-1.38l-.36-.21-3.74.98 1-3.64-.24-.38a9.86 9.86 0 01-1.51-5.26c0-5.45 4.44-9.88 9.9-9.88a9.83 9.83 0 016.98 2.9 9.82 9.82 0 012.9 6.99c0 5.45-4.44 9.88-9.89 9.88m8.42-18.3A11.8 11.8 0 0012.05 0C5.5 0 .16 5.34.16 11.9c0 2.1.55 4.14 1.59 5.94L.06 24l6.33-1.66a11.9 11.9 0 005.65 1.44h.01c6.55 0 11.89-5.33 11.89-11.89 0-3.18-1.24-6.16-3.49-8.4',

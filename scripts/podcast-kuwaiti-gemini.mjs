@@ -21,32 +21,22 @@ const AUDITS = resolve(ROOT, 'podcast-audits', 'kuwaiti')
 const STATE = resolve(ROOT, '.podcast-state.json')
 const VERTEX_PROJECT = String(process.env.PODCAST_KW_VERTEX_PROJECT || '').trim()
 const VERTEX_LOCATION = String(process.env.PODCAST_KW_VERTEX_LOCATION || 'us-central1').trim()
-const USE_VERTEX = Boolean(VERTEX_PROJECT)
+/* AI Studio ظلّ اثنتي عشرة ساعة يعيد 500 داخلياً بينما التفريغ على المفتاح
+   نفسه يعمل. هذا يعزل العطل في مسار TTS/Interactions لا في المفتاح أو الرصيد.
+   Vertex هنا مسار إنتاج صريح إلى نموذج Cloud المستقر؛ لا fallback صامت:
+   اختلاف المزوّد أو النموذج لازم يمر بخمس حلقات سماع قبل إنتاج الـ143. */
+const REQUESTED_TTS_PROVIDER = String(process.env.PODCAST_KW_TTS_PROVIDER || '').trim().toLowerCase()
+const TTS_PROVIDER = REQUESTED_TTS_PROVIDER || (VERTEX_PROJECT ? 'vertex' : 'ai-studio')
+assert.ok(['ai-studio', 'vertex'].includes(TTS_PROVIDER),
+  `PODCAST_KW_TTS_PROVIDER غير صالح: ${TTS_PROVIDER}`)
+const USE_VERTEX = TTS_PROVIDER === 'vertex'
+if (USE_VERTEX) assert.ok(VERTEX_PROJECT, 'PODCAST_KW_VERTEX_PROJECT مطلوب لمسار Vertex')
 const API = USE_VERTEX
   ? `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1beta1/projects/${encodeURIComponent(VERTEX_PROJECT)}/locations/${encodeURIComponent(VERTEX_LOCATION)}/publishers/google/models`
   : 'https://generativelanguage.googleapis.com/v1beta/interactions'
-const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-pro-preview-tts'
-/* ═══ بابان لا بابٌ واحد ═══
-   [٢٨ أغسطس ٢٠٢٦] ثمانيةَ عشرَ ساعةً متّصلة ردَّ سطحُ interactions
-   «An internal error has occurred» على كل نداء: تسع عشرة تشغيلةً بلا
-   مقطعٍ واحد. ولم تكن العلّة في المفتاح ولا الرصيد ولا النص — الرصيد لم
-   يُمسّ أصلاً لأن الطلب يسقط قبل التوليد — بل أن للمشروع باباً واحداً.
-   ولجوجل على المفتاح نفسه بابٌ ثانٍ موثَّق (models/{model}:generateContent)
-   هو الذي يستعمله فرع Vertex منذ البداية. فإن أُغلق الأول جُرِّب الثاني
-   بالنموذج نفسه والصوتين نفسيهما والبذرة نفسها والبرومت نفسه: لا يتغيّر
-   شيءٌ مما تحكم عليه أذن الدكتور، يتغيّر الباب وحده.
-   والباب المستعمَل يُسجَّل في التدقيق — عيّنةٌ خرجت من الثاني لا تُحسب
-   على الأول، فيبقى الحكم السماعي منسوباً إلى مصدره.
-   PODCAST_KW_DEV_TRANSPORT=interactions|generate يثبّت باباً بعينه للمقارنة. */
-const DEV_MODELS_API = 'https://generativelanguage.googleapis.com/v1beta/models'
-const DEV_TRANSPORT = String(process.env.PODCAST_KW_DEV_TRANSPORT || 'auto').trim().toLowerCase()
-export const DEV_TRANSPORTS = DEV_TRANSPORT === 'interactions' ? ['interactions']
-  : DEV_TRANSPORT === 'generate' ? ['generate']
-  : ['interactions', 'generate']
-const transportsUsed = new Set()
-export const transportLabel = (transport) => transport === 'vertex' ? 'Vertex'
-  : transport === 'generate' ? 'الباب الثاني (generateContent)'
-  : 'الباب الأول (interactions)'
+const MODEL = process.env.GEMINI_TTS_MODEL || (USE_VERTEX ? 'gemini-2.5-pro-tts' : 'gemini-2.5-pro-preview-tts')
+const TTS_LANGUAGE = String(process.env.PODCAST_KW_TTS_LANGUAGE || (USE_VERTEX ? 'ar-001' : 'ar')).trim()
+const VERTEX_INPUT_LIMIT_BYTES = 8000
 /* اعتماد الدكتور ١٤ أغسطس ٢٠٢٦ بعد سماع الجولة الثالثة: المقطع ٥ —
    فهد Puck («الرجل ممتاز») ونورة Despina. سُمع ضعفٌ في لكنة Despina وبقيت
    «الورقه» إماراتيةً في سطرها وحده بينما صمدت في سطر Puck بالإملاء نفسه —
@@ -194,7 +184,8 @@ function preserveRejectedTake (reason, details = {}) {
       '-ar','48000','-ac','1','-c:a','libmp3lame','-b:a','128k',audio], { encoding: 'utf8' })
   }
   writeFileSync(resolve(directory, `${base}.rejection.json`), `${JSON.stringify({
-    schemaVersion: 1, slug, seed: SEED, model: MODEL, voices: { male: MALE_VOICE, female: FEMALE_VOICE },
+    schemaVersion: 1, slug, seed: SEED, provider: TTS_PROVIDER, model: MODEL, languageCode: TTS_LANGUAGE,
+    voices: { male: MALE_VOICE, female: FEMALE_VOICE },
     reason, details, alignment: splitAlignmentAudits, dryAudio: existsSync(audio) ? `${base}.dry.mp3` : null,
     generatedAt: new Date().toISOString(),
   }, null, 2)}\n`)
@@ -427,7 +418,8 @@ const FOREIGN_REDACTIONS = buildForeignRedactions(PRONUNCIATION_SOURCE)
 /* الحذف أولاً (يمسح الاسم اللاتيني الذي يكسر الصوت) ثم قلب الإملاء الكويتي. */
 export const spokenForm = (text) => toSpokenKuwaiti(redactForeignNames(text, FOREIGN_REDACTIONS), PRONUNCIATION)
 
-function promptFor(turns, index, total, mode = PROMPT_MODE, warmupTurns = 0, warmupEstimatedSec = 0) {
+function promptFor(turns, index, total, mode = PROMPT_MODE, warmupTurns = 0, warmupEstimatedSec = 0,
+  provider = TTS_PROVIDER) {
   /* وضع full التاريخي وحده يحمل تذكيراً متخللاً. في الوضع المعتمد C أُلغي
      reset كل ستة أدوار: كان يقطع الذاكرة المحلية ويعيد «توجيه» الممثلين وسط
      السالفة. الاستمرارية الآن عقدٌ واحدٌ في الرأس، والحوار يبقى متصلاً. */
@@ -449,7 +441,7 @@ function promptFor(turns, index, total, mode = PROMPT_MODE, warmupTurns = 0, war
       : index === 0
       ? 'Begin the same uninterrupted dry-voice recording described above. Nothing in the transcript marks a chapter, transition, or new session.'
       : `Continue the same uninterrupted sitting. The opening ${warmupTurns} transcript turns reproduce approximately ${warmupEstimatedSec} seconds of the immediately preceding conversation as acoustic warm-up context; perform them in the identical voices, then continue without any reset. This is not a new recording, scene, or fresh interpretation.`
-    return `${USE_VERTEX ? PROMPT_VERTEX_C_HEAD : PROMPT_C_HEAD}
+    return `${provider === 'vertex' ? PROMPT_VERTEX_C_HEAD : PROMPT_C_HEAD}
 
 # RECORDING CONTINUITY
 
@@ -608,7 +600,7 @@ HOLD TO THE LAST SECOND — the drift happens late: the listener judged minute 3
 /* المسار المنفرد يقرأ الحوار كله حتى تبقى ذاكرة الأخذ والرد والبحث حاضرة؛
    لكنه يحمل preset واحداً فقط. الأدوار غير المستهدفة سياق مسموع داخل هذا
    الـTake ثم تُهمل في المونتاج، لا طلباتٌ منفصلة ولا ترقيعٌ بعد الفشل. */
-export function fullContextStemPrompt (prompt, targetSpeaker = 'female') {
+export function fullContextStemPrompt (prompt, targetSpeaker = 'female', provider = TTS_PROVIDER) {
   const target = targetSpeaker === 'male' ? 'Fahad' : 'Noura'
   const transcriptMarker = '# TRANSCRIPT\n\n'
   const transcriptAt = prompt.lastIndexOf(transcriptMarker)
@@ -617,10 +609,10 @@ export function fullContextStemPrompt (prompt, targetSpeaker = 'female') {
      ضاعفت الخرج، ورفض Zephyr الطلب الطويل بعد نجاح Puck. في المسار المحلي
      نأخذ أدوار الشخص نفسه كلها في Take واحد؛ GitHub/Interactions يحتفظ
      بالسياق الكامل الذي ثبّتناه للإنتاج العام. */
-  const spokenLines = USE_VERTEX ? transcriptLines.filter((line) => line.startsWith(`${target}:`)) : transcriptLines
+  const spokenLines = provider === 'vertex' ? transcriptLines.filter((line) => line.startsWith(`${target}:`)) : transcriptLines
   const boundedPrompt = transcriptAt < 0 ? prompt : `${prompt.slice(0, transcriptAt + transcriptMarker.length)}${spokenLines
     .join('\n[short pause]\n')}`
-  if (USE_VERTEX) return `# SINGLE-VOICE CONTINUOUS IDENTITY STEM
+  if (provider === 'vertex') return `# SINGLE-VOICE CONTINUOUS IDENTITY STEM
 
 Use exactly one immutable acoustic voice for every line. Read every ${target}-labelled utterance completely in this one Take. Labels are silent timing context and never spoken. Do not imitate or create a second voice.
 
@@ -705,6 +697,51 @@ export function extractPcmBase64(body) {
   return blocks.length ? blocks[blocks.length - 1] : null
 }
 
+/* Vertex يوفّر TTS المتعدد ببث أحادي الاتجاه: طلبٌ واحد من العميل، وعدة
+   استجابات صوتية من الخادم. هذا يظل Same-Take واحداً ولا يعيد تهيئة أي
+   متحدث، لكنه يمنع اتصال generateContent المتزامن من البقاء صامتاً حتى
+   يكتمل ملفٌ كبير. كل حدث SSE يحمل كتلة PCM مستقلة؛ نجمعها بالترتيب نفسه. */
+export async function collectVertexSsePcm(response) {
+  if (!response?.body?.getReader) throw new Error('Vertex streaming response بلا جسم قابل للقراءة')
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  const pcm = []
+  let pending = ''
+  let lastShape = ''
+
+  const consumeEvent = (event) => {
+    const payload = String(event || '').split(/\r?\n/)
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.slice(5).trimStart())
+      .join('\n').trim()
+    if (!payload || payload === '[DONE]') return
+    let packet
+    try { packet = JSON.parse(payload) } catch {
+      throw new Error(`Vertex streaming أعاد حدثاً غير JSON: ${payload.slice(0, 180)}`)
+    }
+    if (packet?.error) {
+      const details = packet.error.details?.length ? ` — ${JSON.stringify(packet.error.details)}` : ''
+      throw new Error(`Vertex streaming: ${packet.error.message || 'خطأ غير معروف'}${details}`)
+    }
+    const blocks = collectAudioBlocks(packet)
+    for (const block of blocks) pcm.push(Buffer.from(block, 'base64'))
+    if (!blocks.length) lastShape = describeShape(packet).join(' | ')
+  }
+
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    pending += decoder.decode(value, { stream:true })
+    const events = pending.split(/\r?\n\r?\n/)
+    pending = events.pop() || ''
+    for (const event of events) consumeEvent(event)
+  }
+  pending += decoder.decode()
+  if (pending.trim()) consumeEvent(pending)
+  if (!pcm.length) throw new Error(`Vertex streaming اكتمل بلا صوت${lastShape ? ` — شكل الردّ: ${lastShape}` : ''}`)
+  return Buffer.concat(pcm)
+}
+
 /* خريطة مسارات الردّ بلا حمولته: لو تغيّر الغلاف مرةً أخرى ظهر الشكل كاملاً
    في السجل بدل أن نعود إلى تخمينٍ ثالث. */
 export function describeShape(node, prefix = '', depth = 0, out = []) {
@@ -750,93 +787,22 @@ function retryAfterMs(body, message) {
   return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds * 1000) + 750 : 0
 }
 
-/* بناء الطلب لكل باب. النموذج والصوتان والبذرة والبرومت واحدةٌ في الأبواب
-   الثلاثة؛ لا يختلف إلا الغلاف الذي تفهمه جوجل على ذلك السطح — ولهذا
-   استُخرجت دالةً نقيّةً تُفحص بلا شبكة: بابٌ لا يُطرق إلا في العطل يبقى
-   بلا فحصٍ حتى العطل التالي، وذاك أسوأ وقتٍ لاكتشاف خطأ فيه. */
-export function buildTtsRequest (transport, prompt, speechConfig, vertexToken = '') {
-  const generativeSpeechConfig = speechConfig?.length === 1 && !speechConfig[0]?.speaker
-    ? {
-        languageCode: 'ar',
-        voiceConfig: { prebuiltVoiceConfig: { voiceName: speechConfig[0].voice } },
-      }
-    : {
-        languageCode: 'ar',
-        multiSpeakerVoiceConfig: {
-          speakerVoiceConfigs: speechConfig.map((item) => ({
-            speaker: item.speaker,
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: item.voice } },
-          })),
-        },
-      }
-  const generateContentBody = {
-    contents: { role:'user', parts:[{ text:prompt }] },
-    generationConfig: {
-      responseModalities: ['AUDIO'],
-      ...(SEED ? { seed:SEED } : {}),
-      speechConfig: generativeSpeechConfig,
-    },
-  }
-  if (transport === 'vertex') return {
-    endpoint: `${API}/${encodeURIComponent(MODEL)}:generateContent`,
-    headers: { Authorization: `Bearer ${vertexToken}`, 'x-goog-user-project': VERTEX_PROJECT, 'Content-Type': 'application/json' },
-    body: generateContentBody,
-  }
-  if (transport === 'generate') return {
-    endpoint: `${DEV_MODELS_API}/${encodeURIComponent(MODEL)}:generateContent`,
-    headers: { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
-    body: generateContentBody,
-  }
-  return {
-    endpoint: API,
-    headers: { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
-    body: {
-      model: MODEL,
-      input: prompt,
-      response_format: { type: 'audio' },
-      /* البذرة (مقترح الصديق ٢٢ أغسطس): موثقة لإعادة إنتاج أقرب —
-         وتجعل تجارب البرومت أزواجاً متطابقة (نفس البذرة × رأسين).
-         لا تضمن تطابق الطابع عبر نصوص مختلفة؛ الأرشيف يبقى التثبيت. */
-      generation_config: { ...(SEED ? { seed: SEED } : {}), speech_config: speechConfig },
-    },
-  }
-}
-
-/* البابُ الأول يستنفد محاولاته كاملةً كما كان تماماً؛ فإن سقط جُرِّب الثاني
-   من جديد. سلوك التشغيلة السليمة لم يتغيّر بحرف: الباب الثاني لا يُطرق
-   إلا بعد أن يُغلق الأول. */
 async function geminiPcm(prompt, speechConfig = [
   { speaker: 'Fahad', voice: MALE_VOICE },
   { speaker: 'Noura', voice: FEMALE_VOICE },
 ]) {
-  const transports = USE_VERTEX ? ['vertex'] : DEV_TRANSPORTS
-  const lastTransport = transports[transports.length - 1]
-  let last = null
-  for (const transport of transports) {
-    try {
-      const pcm = await geminiPcmVia(transport, prompt, speechConfig)
-      transportsUsed.add(transport)
-      if (transport !== transports[0]) console.log(`↪ الصوت جاء من ${transportLabel(transport)} بعد سقوط ${transportLabel(transports[0])}`)
-      return pcm
-    } catch (error) {
-      last = error
-      /* الرصيد واحدٌ للبابين: لا يُجرَّب الثاني على نفادٍ أعلنه الأول. */
-      if (/نفد رصيد Gemini/.test(String(error?.message))) throw error
-      if (transport !== lastTransport) {
-        console.log(`↻ ${transportLabel(transport)} أخفق — يُطرق ${transportLabel(lastTransport)} بالنموذج والصوتين والبذرة نفسها`)
-      }
-    }
-  }
-  throw last || new Error('فشل Gemini TTS')
-}
-
-async function geminiPcmVia(transport, prompt, speechConfig) {
   if (!KEY && !USE_VERTEX) throw new Error('GEMINI_API_KEY/GOOGLE_API_KEY مفقود')
+  const inputBytes = Buffer.byteLength(prompt, 'utf8')
+  if (USE_VERTEX && inputBytes > VERTEX_INPUT_LIMIT_BYTES) {
+    throw new Error(`Vertex TTS input أكبر من السقف: ${inputBytes}/${VERTEX_INPUT_LIMIT_BYTES} بايت — ممنوع تقسيم الحلقة صامتاً`)
+  }
   let vertexToken = ''
   if (USE_VERTEX) {
     const auth = spawnSync('gcloud', ['auth', 'print-access-token'], { encoding:'utf8' })
     vertexToken = String(auth.stdout || '').trim()
-    if (auth.status !== 0 || !vertexToken) throw new Error('تعذّر أخذ Vertex access token من gcloud')
+    if (auth.status !== 0 || !vertexToken) {
+      throw new Error(`تعذّر أخذ Vertex access token من gcloud: ${String(auth.stderr || '').trim() || 'تحقق من خدمة الحساب'}`)
+    }
   }
   let last = null
   let quotaWaitMs = 0
@@ -852,27 +818,71 @@ async function geminiPcmVia(transport, prompt, speechConfig) {
          (تشغيلة ٣١٨٧٦١٦٧٧٥٥: AbortError بعد تسع دقائق ونصف). */
       const timeoutMs = Math.min(600_000, Math.max(90_000, prompt.length * 80))
       const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs)
-      /* البابان الثاني وVertex يتكلمان الغلاف الموثَّق نفسه؛ الأول وحده
-         يتكلم غلاف interactions. */
-      const request = buildTtsRequest(transport, prompt, speechConfig, vertexToken)
-      const response = await fetch(request.endpoint, {
-        method: 'POST', signal: controller.signal,
+      const vertexSpeechConfig = speechConfig?.length === 1 && !speechConfig[0]?.speaker
+        ? {
+            languageCode: TTS_LANGUAGE,
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: speechConfig[0].voice } },
+          }
+        : {
+            languageCode: TTS_LANGUAGE,
+            multiSpeakerVoiceConfig: {
+              speakerVoiceConfigs: speechConfig.map((item) => ({
+                speaker: item.speaker,
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: item.voice } },
+              })),
+            },
+          }
+      const endpoint = USE_VERTEX ? `${API}/${encodeURIComponent(MODEL)}:streamGenerateContent?alt=sse` : API
+      let response
+      let raw = ''
+      let streamedPcm = null
+      try {
+        response = await fetch(endpoint, {
+          method: 'POST', signal: controller.signal,
         /* بلا ترويسة Api-Revision: هي ترويسة البثّ المتدفّق (stream:true) وحدها.
            إرسالها على طلبٍ غير متدفّق يعيد 200 بغلافٍ متدفّقٍ لا يحمل
            output_audio، فيسقط التوليد ورسالته «HTTP 200» بلا سبب — وهي
            بالضبط علّة تشغيلة ١٢ أغسطس ٢٠٢٦. */
-        headers: request.headers,
-        body: JSON.stringify(request.body),
-      }).finally(() => clearTimeout(timer))
-      /* يُقرأ نصاً أولاً: الغلاف غير المتوقّع (أو المتدفّق) ليس JSON دائماً،
-         و.json().catch(()=>({})) كان يبتلعه فتضيع كل قرينة على سبب السقوط. */
-      const raw = await response.text()
+        headers: USE_VERTEX
+          ? { Authorization: `Bearer ${vertexToken}`, 'x-goog-user-project': VERTEX_PROJECT, 'Content-Type': 'application/json' }
+          : { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify(USE_VERTEX ? {
+            contents: { role:'user', parts:[{ text:prompt }] },
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              ...(SEED ? { seed:SEED } : {}),
+              speechConfig: vertexSpeechConfig,
+            },
+          } : {
+            model: MODEL,
+            input: prompt,
+            response_format: { type: 'audio' },
+            /* البذرة (مقترح الصديق ٢٢ أغسطس): موثقة لإعادة إنتاج أقرب —
+               وتجعل تجارب البرومت أزواجاً متطابقة (نفس البذرة × رأسين).
+               لا تضمن تطابق الطابع عبر نصوص مختلفة؛ الأرشيف يبقى التثبيت. */
+            generation_config: { ...(SEED ? { seed: SEED } : {}), speech_config: speechConfig },
+          }),
+        })
+        if (USE_VERTEX && response.ok) streamedPcm = await collectVertexSsePcm(response)
+        else raw = await response.text()
+      } finally {
+        /* لا يُلغى المؤقت عند وصول الترويسات: جسم الصوت المتدفق جزءٌ من
+           الطلب نفسه. إلغاؤه مبكراً هو ما ترك تشغيل 28 أغسطس عالقاً حتى
+           مهلة الوظيفة بدل سقف الطلب. */
+        clearTimeout(timer)
+      }
+      if (streamedPcm) {
+        if (streamedPcm.length < 4000) throw new Error('Gemini أعاد صوتاً قصيراً/فارغاً')
+        return streamedPcm
+      }
+      /* يُقرأ نصاً أولاً: الغلاف غير المتوقّع ليس JSON دائماً، و.json()
+         كان يبتلعه فتضيع كل قرينة على سبب السقوط. */
       let body = null
       try { body = JSON.parse(raw) } catch { /* غلاف غير JSON: يُشخَّص أدناه */ }
       let data = extractPcmBase64(body)
       /* لو عاد الردّ إحالةً (معرّف تفاعلٍ مكتمل بلا حمولة) سُحب التفاعل نفسه
          مرّةً واحدة؛ أرخص من إسقاط التوليد كلّه على شكل غلافٍ متغيّر. */
-      if (transport === 'interactions' && response.ok && !data && body?.id && body?.status === 'completed') {
+      if (!USE_VERTEX && response.ok && !data && body?.id && body?.status === 'completed') {
         const followUp = await fetch(`${API}/${encodeURIComponent(body.id)}`, {
           headers: { 'x-goog-api-key': KEY },
         }).catch(() => null)
@@ -892,8 +902,8 @@ async function geminiPcmVia(transport, prompt, speechConfig) {
         ? `شكل الردّ: ${describeShape(body).join(' | ')}`
         : `ردّ غير JSON (${raw.length} حرفاً): ${raw.slice(0, 200).replace(/\s+/g, ' ')}`
       const detailText = body?.error?.details?.length ? ` — ${JSON.stringify(body.error.details)}` : ''
-      /* اسم الباب في الرسالة: بلا هذا لا يُعرف أيّهما سقط في سجلٍّ فيه بابان. */
-      const message = `${transportLabel(transport)}: ` + (body?.error?.message || body?.message
+      const providerLabel = USE_VERTEX ? `Vertex/${VERTEX_LOCATION}/${MODEL}` : `AI Studio/Interactions/${MODEL}`
+      const message = `${providerLabel}: ` + (body?.error?.message || body?.message
         || `HTTP ${response.status} بلا صوت — ${shape}`
       ) + detailText
       if (response.status !== 429 && response.status < 500) throw new Error(message)
@@ -915,7 +925,7 @@ async function geminiPcmVia(transport, prompt, speechConfig) {
       last = error
       if (/نفد رصيد Gemini/.test(String(error && error.message))) throw error
     }
-    if (attempt < 6) { await sleep(quotaWaitMs || 1200 * attempt); quotaWaitMs = 0 }
+    if (attempt < maxAttempts) { await sleep(quotaWaitMs || 1200 * attempt); quotaWaitMs = 0 }
   }
   throw last || new Error('فشل Gemini TTS')
 }
@@ -1424,6 +1434,27 @@ export function alignTranscriptBoundaries (turns, annotations, totalSec) {
   }
 }
 
+/* شاهد التفريغ عنده مهمتان كانتا مختلطتين: توقيت الكلمات، وتخمين اسم
+   المتحدث. التوقيت ظلّ دقيقاً في تشغيل 28 أغسطس (تطابق 93–97٪ وتغطية
+   97–99٪)، بينما diarization اخترع أحياناً spk:2 أو قلب الملصق وسط الصوت
+   نفسه. حدود الكلمات تصلح للقص في الحالتين؛ أما هوية فهد ونورة فتحكمها
+   لاحقاً بوابات الطبقة والرنين على المقاطع المقصوصة، لا اسمٌ تخميني من ASR. */
+export function alignmentBoundaryTrustworthy (aligned) {
+  if (!aligned?.cuts || aligned.similarity < 0.78 || aligned.coverage < 0.84) return false
+  const turnCoverage = Array.isArray(aligned.perTurnCoverage) ? aligned.perTurnCoverage : []
+  const heardRatios = Array.isArray(aligned.perTurnHeardRatio) ? aligned.perTurnHeardRatio : []
+  if (!turnCoverage.length || !heardRatios.length || turnCoverage.length !== heardRatios.length) return false
+  /* الإجمالي العالي ممكن يخفي دوراً قصيراً ضاع بالكامل؛ لذلك كل دور لازم
+     يملك نصف كلماته على الأقل، وألا تبتلع نافذته كلام دورين. */
+  return turnCoverage.every((ratio) => ratio >= 0.5)
+    && heardRatios.every((ratio) => ratio >= 0.45 && ratio <= 1.8)
+}
+
+export function alignmentDiarizationConsistent (aligned) {
+  return Boolean(aligned?.speakerLabels?.length === 2
+    && aligned.speakerMappingDistinct && aligned.speakerAgreement >= 0.88)
+}
+
 async function uploadForTranscription (file) {
   const bytes = readFileSync(file)
   const start = await fetch('https://generativelanguage.googleapis.com/upload/v1beta/files', {
@@ -1525,36 +1556,22 @@ async function splitChunk(file, chunkTurnsList, outPrefix) {
     try {
       const witness = await transcriptionWitness(file, chunkTurnsList)
       const aligned = alignTranscriptBoundaries(chunkTurnsList, witness.words, total)
-      const trustworthy = aligned?.cuts && aligned.similarity >= 0.78 && aligned.coverage >= 0.84
-        && aligned.speakerLabels.length === 2 && aligned.speakerMappingDistinct && aligned.speakerAgreement >= 0.88
-      if (trustworthy) {
+      const boundaryTrustworthy = alignmentBoundaryTrustworthy(aligned)
+      const diarizationConsistent = alignmentDiarizationConsistent(aligned)
+      if (boundaryTrustworthy) {
         const parts = cutChunkAt(file, aligned.cuts, expected, total, outPrefix, 0.18)
         if (parts) {
-          splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL, ...aligned, cuts: aligned.cuts.map((cut) => Number(cut.toFixed(3))) })
-          console.log(`✓ شاهد الأدوار: ${aligned.sourceWordCount} كلمة · تطابق ${(aligned.similarity * 100).toFixed(0)}٪ · تغطية ${(aligned.coverage * 100).toFixed(0)}٪ · اتفاق الصوت ${(aligned.speakerAgreement * 100).toFixed(0)}٪`)
+          splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL,
+            ...aligned, diarizationConsistent, cuts: aligned.cuts.map((cut) => Number(cut.toFixed(3))) })
+          console.log(`✓ شاهد حدود الكلمات: ${aligned.sourceWordCount} كلمة · تطابق ${(aligned.similarity * 100).toFixed(0)}٪ · تغطية ${(aligned.coverage * 100).toFixed(0)}٪`)
+          if (diarizationConsistent) console.log(`✓ شاهد أسماء الصوتين: اتفاق ${(aligned.speakerAgreement * 100).toFixed(0)}٪`)
+          else console.log(`ℹ وسوم المتحدث من ASR غير ثابتة (${aligned.speakerLabels.length} وسوم · اتفاق ${(aligned.speakerAgreement * 100).toFixed(0)}٪)؛ لا تحكم على الحنجرة، وبوابتا الطبقة والرنين تفحصانها بعد القص`)
           return parts
         }
       }
-      splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL, ...(aligned || {}), cuts: undefined, rejected: true })
-      /* [٢٨ أغسطس ٢٠٢٦] كانت الرسالة تعرض ثلاثة من ستة شروط (التطابق والتغطية
-         وعدد الأصوات)، وتسكت عن حدود القص وتمايز الإسناد واتفاق الصوت. فحين
-         رُفضت حلقةٌ عند «تطابق ٩٧٪ · تغطية ٩٩٪ · أصوات ٢» — وكلها مجتازة —
-         لم يكن في السطر ما يدل على السبب. وأسوأ: نجاحُ الشاهد وفشلُ القص
-         بعده يقعان في هذي الرسالة نفسها، فيُتَّهم الشاهد بذنب القصّ.
-         الرسالة الآن تسمّي الشرط الساقط وحده؛ والحكم لم يتغيّر حرفاً. */
-      const failures = []
-      if (!aligned) failures.push('ما رجعت محاذاة أصلاً')
-      else {
-        if (!aligned.cuts) failures.push('ما ثبتت حدود القص')
-        if (aligned.similarity < 0.78) failures.push(`تطابق ${(aligned.similarity * 100).toFixed(0)}٪ < ٧٨٪`)
-        if (aligned.coverage < 0.84) failures.push(`تغطية ${(aligned.coverage * 100).toFixed(0)}٪ < ٨٤٪`)
-        if (aligned.speakerLabels.length !== 2) failures.push(`أصوات ${aligned.speakerLabels.length} ≠ ٢`)
-        if (!aligned.speakerMappingDistinct) failures.push('الصوتان لم يتمايزا في الإسناد')
-        if (aligned.speakerAgreement < 0.88) failures.push(`اتفاق الصوت ${(aligned.speakerAgreement * 100).toFixed(0)}٪ < ٨٨٪`)
-      }
-      /* لا شرط ساقط = الشاهد اجتاز، والقصّ عند حدوده هو الذي أخفق. */
-      if (!failures.length) failures.push('الشاهد اجتاز شروطه كلها والقصّ عند حدوده هو الذي أخفق')
-      throw new Error(`شاهد الأدوار غير حاسم (${failures.join(' · ')})`)
+      splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL,
+        ...(aligned || {}), diarizationConsistent, cuts: undefined, rejected: true })
+      throw new Error(`شاهد الأدوار غير حاسم (تطابق ${aligned ? (aligned.similarity * 100).toFixed(0) : '0'}٪ · تغطية ${aligned ? (aligned.coverage * 100).toFixed(0) : '0'}٪ · أصوات ${aligned?.speakerLabels?.length || 0})`)
     } catch (error) {
       if (ALIGNMENT_MODE === 'required') throw error
       console.warn(`⚠️ شاهد الأدوار تعذّر؛ رجوع محافظ لمحاذاة الصمت: ${error.message}`)
@@ -1795,7 +1812,8 @@ function saveState(slugValue, audioFile, transcriptFile) {
   const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE,'utf8')) : { done: {} }
   state.done ||= {}
   state.done[`${slugValue}:kw`] = {
-    status: 'accepted_automated', provider: 'gemini', model: MODEL, profile: PROFILE,
+    status: 'accepted_automated', provider: 'gemini', ttsApi: TTS_PROVIDER, model: MODEL,
+    languageCode: TTS_LANGUAGE, profile: PROFILE,
     audioHash: sha256(readFileSync(audioFile)), transcriptHash: sha256(readFileSync(transcriptFile)),
     acceptedAt: new Date().toISOString(),
   }
@@ -1934,7 +1952,7 @@ if (SELF_TEST) {
   assert.match(prompt, /خوش سؤال\. خل نكون واقعيين/, 'العيّنة بلسانه الحقيقي المقتنى من تفريغات لقاءاته')
   assert.match(prompt, /diwaniya/, 'المشهد ديوانية كويتية — اسم البودكاست وهويته')
   /* [٢٢ أغسطس ٢٠٢٦] فحوص الوضع الأدنى — تجربة صديق الدكتور: */
-  const minimalPrompt = promptFor(chunks[0], 0, chunks.length, 'minimal')
+  const minimalPrompt = promptFor(chunks[0], 0, chunks.length, 'minimal', 0, 0, 'ai-studio')
   /* وصفة الصديق كما نقلها الدكتور (٢٢ أغسطس): عربي قصير، والمنع قائمة
      أسماء مجردة في سطر واحد — الخطر ليس ذكر الاسم بل الوصف الحي لصوت
      اللهجة (rhythm/cadence/articulation) الذي يكاد يعلّمها للمحرك. */
@@ -1962,13 +1980,15 @@ if (SELF_TEST) {
   assert.deepEqual(timedWarmup.turns.slice(0, timedWarmup.warmupTurns),
     warmupFixture[0].slice(-timedWarmup.warmupTurns), 'النافذة الزمنية هي ذيل الحوار السابق بلا إعادة ترتيب')
   const cPrompt = promptFor(continuityGroups[0].turns, 0, chunks.length, 'c',
-    continuityGroups[0].warmupTurns, continuityGroups[0].warmupEstimatedSec)
+    continuityGroups[0].warmupTurns, continuityGroups[0].warmupEstimatedSec, 'ai-studio')
   const cContinuation = promptFor(continuityGroups[1].turns, 1, chunks.length, 'c',
-    continuityGroups[1].warmupTurns, continuityGroups[1].warmupEstimatedSec)
-  const cSingleCall = promptFor(turns, 0, 1, 'c')
-  const nouraStemPrompt = fullContextStemPrompt(cSingleCall, 'female')
-  const fahadStemPrompt = fullContextStemPrompt(cSingleCall, 'male')
-  const cResetProbe = promptFor(Array.from({ length: 7 }, (_, index) => turns[index % turns.length]), 0, 1, 'c')
+    continuityGroups[1].warmupTurns, continuityGroups[1].warmupEstimatedSec, 'ai-studio')
+  const cSingleCall = promptFor(turns, 0, 1, 'c', 0, 0, 'ai-studio')
+  const vertexSingleCall = promptFor(turns, 0, 1, 'c', 0, 0, 'vertex')
+  const nouraStemPrompt = fullContextStemPrompt(cSingleCall, 'female', 'ai-studio')
+  const fahadStemPrompt = fullContextStemPrompt(cSingleCall, 'male', 'ai-studio')
+  const cResetProbe = promptFor(Array.from({ length: 7 }, (_, index) => turns[index % turns.length]),
+    0, 1, 'c', 0, 0, 'ai-studio')
   assert.ok(cPrompt.includes('# PRIMARY STANDARD') && cPrompt.includes('# NATIVE ACCENT ANCHOR')
     && cPrompt.trimEnd().endsWith(spokenForm(chunks[0][chunks[0].length-1].text)),
   'C ببنية المخرج والنص المنطوق آخر شيء في الطلب')
@@ -2005,6 +2025,10 @@ if (SELF_TEST) {
     'نورة تحمل قفل prosody كويتي موجهاً بلا حشو لهجات')
   assert.match(PROMPT_VERTEX_C_HEAD, /VOICE ROUTING IS LITERAL AND IMMUTABLE[\s\S]*Conversational role never determines acoustic identity/,
     'رأس Vertex المختصر لا يعيد ربط السائل أو الخبير بصوتٍ بدل الاسم')
+  assert.match(vertexSingleCall, /One uninterrupted dry recording/,
+    'مسار Vertex نفسه يستعمل الرأس المختصر ويحفظ Same-Take')
+  assert.ok(Buffer.byteLength(vertexSingleCall, 'utf8') <= VERTEX_INPUT_LIMIT_BYTES,
+    'عينة Vertex تدخل سقف 8000 بايت بنداء واحد')
   assert.match(PROMPT_VERTEX_C_HEAD, /speaker handoff[\s\S]*100–180ms[\s\S]*Never place a silence that long inside a labelled line/i,
     'حد القص الصادق يقع عند تسليم المتحدث فقط وبسكتة طبيعية صغيرة')
   assert.match(cSingleCall, /# THIS EPISODE'S CONVERSATION SHAPE/,
@@ -2141,13 +2165,48 @@ if (SELF_TEST) {
   const header = wavHeader(100)
   assert.equal(header.toString('ascii',0,4),'RIFF'); assert.equal(header.readUInt32LE(24),24000)
 
-  /* حارس علّة «HTTP 200»: تشغيلة ١٢ أغسطس ٢٠٢٦ سقطت لأن طلباً غير متدفّق
-     حمل ترويسة البثّ، فعاد ٢٠٠ بغلافٍ بلا output_audio ولم تُبلّغ الرسالةُ
-     شيئاً. الحارسان أدناه يمنعان عودة الوجهين معاً. */
+  /* حارس مسار Vertex: تشغيلة ٢٨ أغسطس ٢٠٢٦ وصلت إلى الخدمة ثم ظلّت معلّقة
+     لأن generateContent المتزامن لا يرسل الجسم قبل اكتمال الحلقة، ولأن مؤقت
+     الطلب كان يُلغى فور وصول الترويسات. البثّ أدناه طلبٌ واحد وTake واحد،
+     لكنه يستلم كتل PCM تباعاً ويبقي المؤقت حياً حتى آخر كتلة. */
   const source = readFileSync(resolve(ROOT,'scripts','podcast-kuwaiti-gemini.mjs'),'utf8')
-  const requestBlock = source.slice(source.indexOf('const response = await fetch(endpoint'), source.indexOf('const raw = await response.text()'))
-  /* يُطابَق شكل الترويسة لا اسمها، وإلا لأمسك الحارسُ شرحه المكتوب أعلاه. */
-  assert.ok(!/['"]Api-Revision['"]\s*:/.test(requestBlock), 'ترويسة Api-Revision للبثّ وحده؛ وجودها على طلبٍ غير متدفّق يعيد 200 بلا صوت')
+  const requestStart = source.indexOf('const endpoint = USE_VERTEX')
+  const requestEnd = source.indexOf('let body = null', requestStart)
+  assert.ok(requestStart >= 0 && requestEnd > requestStart, 'تعذّر تحديد عقد طلب TTS لفحصه')
+  const requestBlock = source.slice(requestStart, requestEnd)
+  assert.match(requestBlock, /:streamGenerateContent\?alt=sse/,
+    'Vertex لازم يستلم الحلقة ببثّ أحادي الاتجاه بدل طلب متزامن صامت')
+  assert.match(requestBlock, /streamedPcm = await collectVertexSsePcm\(response\)/,
+    'كتل الصوت المتدفقة لازم تُجمع كلها قبل اعتماد الـTake')
+  assert.doesNotMatch(requestBlock, /fetch\(endpoint,[\s\S]*?\)\.finally\(\(\) => clearTimeout\(timer\)\)/,
+    'لا يُلغى مؤقت الطلب عند وصول الترويسات وقبل اكتمال جسم الصوت')
+  /* يُطابَق شكل الترويسة لا اسمها، وإلا لأمسك الحارسُ شرحها المكتوب. */
+  assert.ok(!/['"]Api-Revision['"]\s*:/.test(requestBlock), 'ترويسة Api-Revision غير مطلوبة لمسار Vertex SSE')
+
+  const pcmOne = Buffer.alloc(600, 0x2a)
+  const pcmTwo = Buffer.alloc(700, 0x6b)
+  const vertexPacket = (pcm) => ({
+    candidates: [{ content: { parts: [{ inlineData: {
+      mimeType: 'audio/pcm;rate=24000', data: pcm.toString('base64'),
+    } }] } }],
+  })
+  const syntheticSse = [
+    `data: ${JSON.stringify(vertexPacket(pcmOne))}`,
+    `data: ${JSON.stringify(vertexPacket(pcmTwo))}`,
+    'data: [DONE]',
+    '',
+  ].join('\n\n')
+  const encodedSse = new TextEncoder().encode(syntheticSse)
+  const streamedResponse = { body: new ReadableStream({
+    start (controller) {
+      /* التقسيم المتعمّد داخل JSON/Base64 يثبت أن حدود الشبكة لا تقص الصوت. */
+      for (let at = 0; at < encodedSse.length; at += 137) controller.enqueue(encodedSse.slice(at, at + 137))
+      controller.close()
+    },
+  }) }
+  const collectedPcm = await collectVertexSsePcm(streamedResponse)
+  assert.deepEqual(collectedPcm, Buffer.concat([pcmOne, pcmTwo]),
+    'SSE يجمع كل كتل PCM بالترتيب داخل الطلب الواحد')
   const b64 = (seed) => seed.repeat(Math.ceil(600 / seed.length)).slice(0, 600)
   const A = b64('QUJD'), B = b64('WFla'), C = b64('MTIz')
   assert.equal(extractPcmBase64({ output_audio:{ data:A } }), A, 'غلاف المكتبة إن وُجد')
@@ -2219,6 +2278,9 @@ if (SELF_TEST) {
   assert.ok(grouped.length < 12, `التجميع لم يحدث: ${grouped.length} مقاطع لـ12 مداخلة`)
   assert.equal(grouped.flat().length, 12, 'التجميع لا يفقد مداخلةً ولا يكرّرها')
   assert.equal(TURNS_PER_REQUEST, 96, 'السقف يحمل أطول حلقة كاملة حالية في Take واحد')
+  assert.match(engineSource, /gemini-2\.5-pro-tts/, 'مسار Vertex يحمل اسم نموذج Cloud المستقر لا alias الـPreview')
+  assert.match(engineSource, /PODCAST_KW_TTS_PROVIDER/, 'اختيار بوابة TTS صريح وقابل للتدقيق')
+  assert.match(engineSource, /Vertex TTS input أكبر من السقف/, 'Vertex يفشل قبل الصرف إذا تجاوز النص سقفه؛ لا يقسم الحلقة صامتاً')
   for (const file of ['src/data/kuwaiti-diwania-v3.json', 'src/data/kuwaiti-dialogues.json']) {
     const library = JSON.parse(readFileSync(resolve(ROOT, file), 'utf8'))
     const splitCurrent = Object.entries(library.episodes || {})
@@ -2226,6 +2288,15 @@ if (SELF_TEST) {
       .map(([episodeSlug]) => episodeSlug)
     assert.deepEqual(splitCurrent, [], `${file}: حلقات حالية انقسمت بلا ضرورة: ${splitCurrent.join('، ')}`)
   }
+  const vertexLibrary = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-diwania-v3.json'), 'utf8'))
+  const oversizedVertexPrompts = Object.entries(vertexLibrary.episodes || {})
+    .map(([episodeSlug, episode]) => ({
+      episodeSlug,
+      bytes: Buffer.byteLength(promptFor(Object.values(episode), 0, 1, 'c', 0, 0, 'vertex'), 'utf8'),
+    }))
+    .filter((row) => row.bytes > VERTEX_INPUT_LIMIT_BYTES)
+  assert.deepEqual(oversizedVertexPrompts, [],
+    `حلقات v3 تتجاوز سقف Vertex وتفرض تقسيماً ممنوعاً: ${oversizedVertexPrompts.map((row) => `${row.episodeSlug}:${row.bytes}`).join(' · ')}`)
   const fakeGaps = [{ mid: 2.0, span: 0.5 }, { mid: 3.7, span: 0.5 }, { mid: 6.3, span: 0.5 }]
   assert.deepEqual(chooseSplitPoints(fakeGaps, 4, 8.1), [2.0, 3.7, 6.3], 'حدود المداخلات تُقرأ من أطول الصمتات')
   assert.equal(chooseSplitPoints(fakeGaps, 9, 8.1), null, 'نقصُ الصمتات يوقف القص ولا يختلق حدوداً أو توليداً منفصلاً')
@@ -2256,6 +2327,16 @@ if (SELF_TEST) {
     'حد الدور يقع بين آخر كلمة للأول وأول كلمة للثاني')
   assert.equal(alignedProbe.speakerAgreement, 1, 'التفريغ يثبت أن فهد ونورة لم يتبادلا الأدوار')
   assert.deepEqual(alignedProbe.perTurnCoverage, [1, 1, 1], 'كل كلمات كل دور حاضرة قبل بوابة الزمن')
+  assert.equal(alignmentBoundaryTrustworthy(alignedProbe), true, 'توقيت الكلمات الكامل صالح لقص الـTake')
+  assert.equal(alignmentDiarizationConsistent(alignedProbe), true, 'وسما المتحدث ثابتان في العينة النظيفة')
+  const unstableDiarizationProbe = { ...alignedProbe,
+    speakerLabels: ['spk:0', 'spk:1', 'spk:2'], speakerAgreement: 0.1579, speakerMappingDistinct: true }
+  assert.equal(alignmentBoundaryTrustworthy(unstableDiarizationProbe), true,
+    'تخبّط اسم المتحدث في ASR لا يلغي حدود كلمات صحيحة؛ الهوية تقيسها الحنجرة لاحقاً')
+  assert.equal(alignmentDiarizationConsistent(unstableDiarizationProbe), false,
+    'تخبّط diarization يبقى مسجلاً للتدقيق ولا يتخفّى كنجاح')
+  assert.equal(alignmentBoundaryTrustworthy({ ...alignedProbe, perTurnCoverage: [1, 0, 1] }), false,
+    'التطابق الإجمالي لا يسمح بقص دورٍ ضاعت كلماته كلها')
   assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')
@@ -2267,33 +2348,6 @@ if (SELF_TEST) {
     'نفاد الرصيد يوقف الصرف ويحفظ الباقي')
   assert.equal(geminiFailureExitCode(new Error('قفل المصدر مفقود')), 1,
     'عطب المصدر الحقيقي لا يختبئ خلف إعادة المحاولة')
-  /* ═══ البابان ═══ الباب الثاني لا يُطرق إلا في العطل، فلولا هذا الفحص
-     لبقي بلا تجربةٍ حتى العطل التالي — وذاك أسوأ وقتٍ لاكتشاف خطأ فيه. */
-  const twoVoices = [{ speaker:'Fahad', voice:'Puck' }, { speaker:'Noura', voice:'Zephyr' }]
-  const doorOne = buildTtsRequest('interactions', 'نص', twoVoices)
-  const doorTwo = buildTtsRequest('generate', 'نص', twoVoices)
-  assert.match(doorOne.endpoint, /\/v1beta\/interactions$/, 'الباب الأول يبقى سطح interactions كما كان')
-  assert.equal(doorOne.body.input, 'نص', 'غلاف الباب الأول لم يتغيّر بحرف')
-  assert.deepEqual(doorOne.body.generation_config.speech_config, twoVoices, 'الصوتان يصلان الباب الأول كما كانا')
-  assert.equal(doorTwo.endpoint,
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-    'الباب الثاني هو السطح الموثَّق على المفتاح نفسه — لا مشروع جديد ولا مصادقة جديدة')
-  assert.equal(doorTwo.headers['x-goog-api-key'], doorOne.headers['x-goog-api-key'],
-    'البابان يفتحان بالمفتاح نفسه')
-  assert.deepEqual(doorTwo.body.generationConfig.speechConfig.multiSpeakerVoiceConfig.speakerVoiceConfigs,
-    [{ speaker:'Fahad', voiceConfig:{ prebuiltVoiceConfig:{ voiceName:'Puck' } } },
-      { speaker:'Noura', voiceConfig:{ prebuiltVoiceConfig:{ voiceName:'Zephyr' } } }],
-    'الباب الثاني يحمل الصوتين نفسيهما بحوارٍ متعدّد لا بأدوارٍ مفردة')
-  assert.equal(doorTwo.body.contents.parts[0].text, doorOne.body.input,
-    'البرومت واحدٌ على البابين — لا يتغيّر شيءٌ تحكم عليه الأذن')
-  assert.deepEqual(doorTwo.body.generationConfig.responseModalities, ['AUDIO'], 'الباب الثاني يطلب صوتاً')
-  const soloDoorTwo = buildTtsRequest('generate', 'نص', [{ voice:'Puck' }])
-  assert.equal(soloDoorTwo.body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, 'Puck',
-    'الدور المفرد على الباب الثاني يبقى صوتاً واحداً لا حواراً')
-  assert.deepEqual(DEV_TRANSPORTS, ['interactions', 'generate'],
-    'الترتيب ثابت: الأول أولاً، والثاني لا يُطرق إلا بعد سقوطه')
-  assert.notEqual(transportLabel('interactions'), transportLabel('generate'),
-    'السجل يميّز البابين بالاسم وإلا لم يُعرف أيّهما سقط')
   const previous = { startSec: 2, durationSec: 4 }
   assert.equal(speechStartAfter(previous,
     { speaker: 'male', pauseAfterMs: 900 },
@@ -2377,7 +2431,7 @@ const prompts = generationGroups.map((group, index) =>
   promptFor(group.turns, index, chunks.length, PROMPT_MODE, group.warmupTurns, group.warmupEstimatedSec))
 if (DRY_RUN) {
   console.log(`✓ ${slug}: ${turns.length} مداخلة → ${chunks.length === 1 ? 'Take واحد متصل' : `${chunks.length} طلبات متداخلة بإحماء صوتي`}`)
-  console.log(`✓ model=${MODEL} · male=${MALE_VOICE} · female=${FEMALE_VOICE} · profile=${PROFILE}`)
+  console.log(`✓ provider=${TTS_PROVIDER} · model=${MODEL} · language=${TTS_LANGUAGE} · male=${MALE_VOICE} · female=${FEMALE_VOICE} · profile=${PROFILE}`)
   console.log(prompts[0].slice(0,2200))
   process.exit(0)
 }
@@ -2665,10 +2719,9 @@ const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)
 const timeline=timelineFor(turns,assembly)
 writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
 const audit={
-  schemaVersion:1, qualityGateVersion:'kuwaiti-aligned-v14', slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,
+  schemaVersion:1, qualityGateVersion:'kuwaiti-aligned-v14', slug, revisionId, status:'candidate',
+  provider:'gemini', ttsApi:TTS_PROVIDER, model:MODEL, languageCode:TTS_LANGUAGE, profile:PROFILE,
   seed:SEED,
-  /* من أي بابٍ خرج هذا الصوت؟ عيّنةٌ من الباب الثاني لا تُحسب على الأول. */
-  transport:[...transportsUsed].sort().join('+') || 'none',
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
   sourceSha256:sha256(readFileSync(source)), sourceTurnCount:sourceTurns.length, turnCount:turns.length, chunkCount:chunks.length,
   oneTake:!ISOLATE_SPEAKER_STEMS && chunks.length === 1,

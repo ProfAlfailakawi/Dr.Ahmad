@@ -20,13 +20,26 @@ on:
         required: false
         default: ''
       quality_attempts:
-        description: 'عينات جودة لكل حلقة في الجولة (1–6؛ الافتراض 3)'
+        description: 'عينات جودة لكل حلقة (1–6؛ الافتراض 6 = موجتان مستقلتان من 3)'
         required: false
-        default: '3'
+        default: '6'
       seed_base:
         description: 'اختياري للتجربة المضبوطة؛ اتركه فارغاً لبذور جديدة تلقائياً في كل Rerun'
         required: false
         default: ''
+      tts_provider:
+        description: 'Vertex هو المسار المستقر؛ الإنتاج يظل مقفولاً حتى تعتمد باقة السماع بأذنك'
+        required: true
+        type: choice
+        options:
+          - vertex
+          - ai-studio
+        default: vertex
+      confirm_vertex_canaries:
+        description: 'أؤكد أني سمعت خمس حلقات Vertex واعتمدت أصواتها ولهجتها'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -47,6 +60,32 @@ jobs:
         with:
           node-version: 24
           cache: npm
+
+      - name: Refuse an unapproved provider for the 143-episode queue
+        if: ${{ inputs.tts_provider == 'vertex' && !inputs.confirm_vertex_canaries }}
+        run: |
+          echo '::error::ولّد باقة السماع على Vertex واسمعها أولاً، ثم فعّل confirm_vertex_canaries.'
+          exit 1
+
+      - name: Authenticate the approved stable Vertex route
+        if: ${{ inputs.tts_provider == 'vertex' && inputs.confirm_vertex_canaries }}
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+      - name: Install Google Cloud CLI for Vertex
+        if: ${{ inputs.tts_provider == 'vertex' && inputs.confirm_vertex_canaries }}
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Preflight Vertex identity without spending TTS quota
+        if: ${{ inputs.tts_provider == 'vertex' && inputs.confirm_vertex_canaries }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_ID="$(node -e "process.stdout.write(String(JSON.parse(require('fs').readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS,'utf8')).project_id||''))")"
+          test -n "$PROJECT_ID" || { echo '::error::project_id مفقود من حساب Google'; exit 1; }
+          gcloud auth print-access-token >/dev/null
+          echo "PODCAST_KW_VERTEX_PROJECT=$PROJECT_ID" >> "$GITHUB_ENV"
 
       - name: Install and lock the approved production engine
         run: |
@@ -139,8 +178,12 @@ jobs:
         id: queue
         shell: bash
         env:
+          PODCAST_KW_TTS_PROVIDER: ${{ inputs.tts_provider || 'vertex' }}
+          PODCAST_KW_VERTEX_PROJECT: ${{ env.PODCAST_KW_VERTEX_PROJECT }}
+          PODCAST_KW_VERTEX_LOCATION: us-central1
+          PODCAST_KW_TTS_LANGUAGE: ${{ inputs.tts_provider == 'vertex' && 'ar-001' || 'ar' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
+          GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
           GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
@@ -156,17 +199,21 @@ jobs:
           PODCAST_KW_TRANSCRIPT_ALIGNMENT: required
           PODCAST_KW_REJECT_DIR: kuwaiti-production-package/rejected
           REQUESTED_SEED_BASE: ${{ inputs.seed_base || '' }}
-          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '3' }}
+          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
         run: |
           set +e
           SEED_BASE="$REQUESTED_SEED_BASE"
-          if [ -z "$SEED_BASE" ]; then SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 )); fi
+          # كل جولة تملك مجالاً منفصلاً؛ لا يعيد Rerun أي عينة مرفوضة من
+          # الموجتين السابقتين. داخل الجولة: 210x/211x/212x ثم 310x/311x/312x.
+          if [ -z "$SEED_BASE" ]; then SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 10000 )); fi
           node scripts/run-kuwaiti-generation-queue.mjs \
             --slugs-file=kuwaiti-production-slugs.txt \
             --slot-map=kuwaiti-production-seed-slots.json \
             --out-dir=kuwaiti-production-package \
             --seed-base="$SEED_BASE" \
             --quality-attempts="$REQUESTED_QUALITY_ATTEMPTS" \
+            --quality-wave-size=3 \
+            --quality-wave-step=1000 \
             --transient-attempts=3
           CODE=$?
           echo "code=$CODE" >> "$GITHUB_OUTPUT"

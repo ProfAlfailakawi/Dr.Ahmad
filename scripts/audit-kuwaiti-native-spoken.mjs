@@ -27,6 +27,34 @@ if (SELF_TEST) {
   ])
   assert.equal(fixed.turns[0].text, 'وأكو دراسة من جهة علمية، طلع فرق واضح.', 'يحوّل مدخل الدراسة إلى كلام')
   assert.equal(fixed.audit.hard.length, 0, 'النص المصقول يمر')
+  const register = optimizeNativeSpokenEpisode([
+    { text: 'شنو غاية التعليم؟ نطلع واجبات ممتازة… ولا نطلع بشر يفكرون بأنفسهم؟' },
+    { text: 'ويحل محله تدريبات عملية يسويها الطلاب بأنفسهم، بمساعدة معلم مدرب.' },
+    { text: 'ولا صار الذكاء الاصطناعي أصدق منا إحنا؟' },
+  ], { slug: 'register-fixture' })
+  assert.deepEqual(register.turns.map((turn) => turn.text), [
+    'شنو غاية التعليم؟ نطلع واجبات ممتازة… ولا نطلع بشر يفكرون بروحهم؟',
+    'ويحل محله تدريبات عملية يسوونها الطلبة بروحهم، بمساعدة معلم مدرب.',
+    'ولا صرنا نصدق الذكاء الاصطناعي أكثر من بعض؟',
+  ], 'الفصحى الواضحة والرصد السمعي «بأنفسهم» يعالجان داخل الجملة لا بخريطة كلمة عمياء')
+  const friendRegression = optimizeNativeSpokenEpisode([
+    { text: 'وشنو اللي أسويه لأني خايف أطلع قدام الناس أقل حضور؟' },
+    { text: 'وأهلنا واحد.' },
+    { text: 'عيل جان صار منهج مخرجاته ترضي الكل… هذا اللي نبيه.' },
+  ], { slug: 'friend-regression-fixture' })
+  assert.deepEqual(friendRegression.turns.map((turn) => turn.text), [
+    'وشنو اللي أسويه لأني خايف أطلع جدام الناس أقل حضور؟',
+    'واللي يجمعنا واحد.',
+    'عيل اللي نبيه منهج مخرجاته ترضي الكل… هذا اللي نبيه.',
+  ], 'رفع الصديق لا يغيّر معنى الانتماء ولا يعمم جان→كان ولا يعيد قدام')
+  const obviousRegister = optimizeNativeSpokenEpisode([
+    { text: 'يتدرب القراصنة لين ما يتطورون هاكرز أخلاقيين يوقفون الخطر عن مواقعنا…' },
+    { text: 'خلونا نبني قراصنة محترفين، بس بأخلاق.' },
+  ], { slug: 'ethical-hacking-culture' })
+  assert.deepEqual(obviousRegister.turns.map((turn) => turn.text), [
+    'وندربهم عدل، لين يصيرون هاكرز أخلاقيين يحمون مواقعنا من الخطر…',
+    'خلونا نطلع هاكرز محترفين، ويكون شغلهم بأخلاق.',
+  ], 'الفصحى الواضحة تُعاد صياغة جملتها كاملة ولا تنتج تركيباً مكسوراً')
   const pilotLibrary = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-diwania-v3.json'), 'utf8'))
   const pilot = optimizeNativeSpokenEpisode(Object.values(pilotLibrary.episodes[PILOT_SLUG]), { slug: PILOT_SLUG })
   const pilotText = pilot.turns.map((turn) => turn.text).join('\n')

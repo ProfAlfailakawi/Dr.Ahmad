@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * فلتر النص الكويتي الحضري — **يوسم ولا يخترع**.
+ * فلتر النص الكويتي الحضري بعد طبقة التحويل السياقي.
  *
  * خلاصة صديق الدكتور (٢٢ أغسطس ٢٠٢٦): «أكبر قفزة من هنا راح تجي من
  * تنظيف النص، مو إضافة أسماء لهجات أخرى إلى المنع… البرومت ما يقدر
@@ -8,9 +8,9 @@
  * وحكمه على الملفين: «نهائي-١ كويتي يقدّم فكرة · نهائي-٣ مقدّم محتوى
  * خليجي يحاول يتكلم كويتي» — والفرق كله في النص لا في الصوت.
  *
- * ولماذا يوسم ولا يبدّل؟ لأن اختراعاتي الثلاثة سقطت بأذن الدكتور
- * واحداً بعد واحد (يشرد · منظرة · يتْمَحَّن). فالبدائل تأتي منه أو من
- * صديقه، وهذا الفلتر يرسم لهما **أين** تحتاج الجملة يداً، لا يكتبها.
+ * [٢٨ أغسطس ٢٠٢٦] فوّض الدكتور تحويل الفصحى الواضحة من غير الرجوع له.
+ * المعروف يعالجه kuwaiti-register-rewrites سياقياً، وهذا الفلتر يعرض فقط
+ * ما بقي بعد التحويل؛ فلا نعمّم كلمة ولا نخترع بديلاً بلا جملة.
  *
  *   node scripts/flag-written-register.mjs --file=src/data/kuwaiti-diwania-v3.json
  *   node scripts/flag-written-register.mjs --self-test
@@ -19,6 +19,7 @@ import assert from 'node:assert/strict'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { optimizeNativeSpokenEpisode } from './lib/kuwaiti-native-spoken.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SELF_TEST = process.argv.includes('--self-test')
@@ -35,7 +36,7 @@ export const SIGNALS = [
     why: 'يحوّل الأداء من سالفة إلى مذيع يقرأ مادة علمية' },
   { id: 'فعل فصيح صريح', re: /(^|[\s،])(كاد|كادت|بات|باتت|أضحى|غدا|شرع|أخذ ي|لم يعد|لن|تكمن|طغت|تناولت|تقصت|يتقصى|تتقصى|تتعمم|ترتقي|يحيدنا)(\s|$)/u,
     why: 'الفصحى الصريحة تكسر الوهم فوراً' },
-  { id: 'تركيب مقالي', re: /(^|[\s،])(إن الإنسان|إن الطالب|وبقى|وبقي|مقصور على|انسحب من المشهد|في الضوء)(\s|$)|(^|[\s،])(في ضوء|من أول وهلة|من باب أولى|باعتبار|على هالنحو|فيما وراء|وفق |اعتماد كلي|عن الإحاطة)/u,
+  { id: 'تركيب مقالي', re: /(^|[\s،])(إن الإنسان|وبقى|وبقي|مقصور على|انسحب من المشهد|في الضوء)(\s|$)|(^|[\s،])(في ضوء|من أول وهلة|من باب أولى|باعتبار|على هالنحو|فيما وراء|وفق |اعتماد كلي|عن الإحاطة)/u,
     why: 'جملة كاتب لا جملة محادثة' },
   { id: 'سؤال محايد', re: /وين الخسارة|ما الفائدة|ما الحل|ما السبب/u,
     why: 'عربية محايدة — الكويتي يقول «زين وين المشكلة»' },
@@ -102,7 +103,8 @@ let flagged = 0; let turns = 0
 for (const [slug, ep] of Object.entries(episodes)) {
   const t = Array.isArray(ep) ? ep : Object.values(ep)
   turns += t.length
-  const f = flagTurns(t)
+  const prepared = optimizeNativeSpokenEpisode(t, { slug }).turns
+  const f = flagTurns(prepared)
   if (f.length) { flagged += f.length; rows.push({ slug, count: f.length, items: f }) }
 }
 rows.sort((a, b) => b.count - a.count)
@@ -114,4 +116,4 @@ console.log('\nأثقل عشر حلقات — هذه أولى بيد الدكت�
 rows.slice(0, 10).forEach((r) => console.log(`  ${String(r.count).padStart(3)} · ${r.slug}`))
 writeFileSync(resolve(ROOT, 'podcast-audits/written-register-flags.json'), JSON.stringify(rows, null, 1) + '\n')
 console.log('\nالتفصيل الكامل: podcast-audits/written-register-flags.json')
-console.log('ملاحظة: هذا الفلتر **لا يبدّل كلمة** — البدائل من الدكتور أو صديقه وحدهما.')
+console.log('ملاحظة: الفصحى المعروفة عولجت قبل الفحص؛ الظاهر هنا يحتاج سياقاً جديداً لا تعميماً.')

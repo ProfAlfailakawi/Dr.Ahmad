@@ -78,6 +78,24 @@ const blockedToken = (word) => {
   return ''
 }
 
+/* الصيغة التي سمعها داخل جملة كاملة تمر في **الجملة نفسها فقط**. تخزين
+   السياق في words لا يكفي وحده: حارس الجذع كان يرى الكلمة بعد الاستبدال
+   ويرفضها مرة ثانية. ننزع من فحص الحجب الجزء المطابق للجملة المعتمدة،
+   ونبقي أي تصريف أو جملة ثانية مكشوفة للحارس. */
+const APPROVED_BLOCKED_CONTEXTS = Object.keys(SRC.words || {})
+  .filter((phrase) => phrase.includes(' '))
+  .filter((phrase) => (phrase.match(/[ء-يچگَُِّْ]+/gu) || []).some((token) => blockedToken(token)))
+
+const withoutApprovedBlockedContexts = (raw, say) => {
+  let rawCheck = raw; let sayCheck = say
+  for (const phrase of APPROVED_BLOCKED_CONTEXTS) {
+    if (!rawCheck.includes(phrase)) continue
+    rawCheck = rawCheck.split(phrase).join(' ')
+    sayCheck = sayCheck.split(spoken(phrase)).join(' ')
+  }
+  return `${rawCheck} ${sayCheck}`
+}
+
 /* اسم الدكتور — المعتمد في دفتر النطق. أي خاتمةٍ تحمل اسمه يجب أن
    تصل المحرّك بالصيغة المعتمدة نفسها حرفاً بحرف. */
 export const NAME_SPOKEN = spoken('الفيلكاوي')
@@ -87,7 +105,7 @@ export function auditTurns (turns) {
   for (const t of turns) {
     const raw = String(t.text ?? '')
     const say = spoken(raw)
-    for (const token of `${raw} ${say}`.match(/[ء-يچگَُِّْ]+/gu) || []) {
+    for (const token of withoutApprovedBlockedContexts(raw, say).match(/[ء-يچگَُِّْ]+/gu) || []) {
       const root = blockedToken(token)
       if (root) hard.push(`«${token}» من عائلة ${root} سقطت بأذن الدكتور — يلزم سياق مختبر معتمد قبل Gemini`)
     }
@@ -122,14 +140,34 @@ if (SELF_TEST) {
   assert.ok(spoken('يقلب').includes('گ'), 'الصيغة المسموعة المعتمدة وحدها تبقى في المعجم')
   const flagged = auditTurns([{ text: 'وبدت الهنايا من كل صوب' }])
   assert.ok(flagged.soft.length > 0, 'الكلمات التي شكا منها لا تمرّ صامتة')
-  const blocked = auditTurns([{ text: 'انركظ وايد، ونتهرّب، وبعدين يهرب، وشغل يقربنا.' }])
-  assert.ok(blocked.hard.some((h) => h.includes('ركض')), 'عائلة ركض المرفوضة تقف قبل Gemini')
-  assert.ok(blocked.hard.some((h) => h.includes('هرب')), 'عائلة هرب/تهرّب المرفوضة تقف قبل Gemini')
-  assert.ok(blocked.hard.some((h) => h.includes('يقربنا')), 'يقرّبنا المرفوضة تقف قبل Gemini')
+  /* [٢٨ أغسطس ٢٠٢٦] يُقاس **المحرّك** لا لقطةُ القائمة: الجذوع موقوفةٌ حتى
+     يسمعها الدكتور، فإذا نزلت أحكامه وانفكّ الحجب انقلب المتوقَّع — والفحص
+     الذي يثبّت اللقطة نصّاً يسقط يوم يحكم الدكتور لا يوم يخطئ أحد (أُثبت
+     العطب بتشغيل جولة أحكامٍ كاملة). فكلُّ جذعٍ في القائمة الحيّة يُمسك،
+     وكلُّ جذعٍ خرج منها بأذنه يمرّ. */
+  const BLOCK_PROBES = {
+    'ركض': 'انركظ وايد بالطريق',
+    'هرب': 'وبعدين يهرب من نفسه، ونتهرّب من الجواب',
+    'يقربنا': 'وشغل يقربنا من الشي المهم',
+  }
+  for (const stem of EAR_BLOCKED) {
+    assert.ok(BLOCK_PROBES[stem], `الجذع المحجوب «${stem}» بلا عيّنة فحص — أضفها هنا قبل حجبه`)
+  }
+  for (const [stem, probe] of Object.entries(BLOCK_PROBES)) {
+    const caught = auditTurns([{ text: probe }]).hard.some((h) => h.includes(stem))
+    if (EAR_BLOCKED.includes(stem)) assert.ok(caught, `عائلة ${stem} المرفوضة تقف قبل Gemini`)
+    else assert.ok(!caught, `عائلة ${stem} انفكّ حجبها بأذنه فلا يوقفها الحارس بعد اليوم`)
+  }
+  assert.equal(auditTurns([{ text: 'نركض وايد… ونسمي هالحركة التزام.' }]).hard.length, 0,
+    'الجملة الكاملة التي اختار فيها نِرْكُظ تمر')
+  assert.equal(auditTurns([{ text: 'المشكلة إن الواحد يركض.' }]).hard.length, 0,
+    'الجملة الكاملة التي اختار فيها يِرْكِظ تمر')
+  assert.ok(auditTurns([{ text: 'هو يركض طول السنة' }]).hard.some((h) => h.includes('ركض')),
+    'سياق ركض غير المسموع يبقى محجوباً')
   assert.equal(auditTurns([{ text: 'الكهربا منتشرة بكل مكان.' }]).hard.length, 0,
     'الكهربا لا تُحسب خطأً من عائلة هرب')
   assert.ok(NAME_SPOKEN.length > 4, 'صيغة الاسم المعتمدة تُقرأ من دفتر النطق لا من الشيفرة')
-  console.log('✓ بوابة المنطوق: الفحص الذاتي 13/13')
+  console.log(`✓ بوابة المنطوق: الفحص الذاتي 16/16 · الحجب الحيّ: ${EAR_BLOCKED.length ? EAR_BLOCKED.join(' · ') : 'لا جذور عامة محجوبة'}`)
   process.exit(0)
 }
 

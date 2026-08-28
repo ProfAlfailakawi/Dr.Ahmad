@@ -20,21 +20,21 @@ on:
         required: false
         default: ''
       quality_attempts:
-        description: 'عينات جودة لكل حلقة في الجولة (1–6؛ الافتراض 3)'
+        description: 'عينات جودة لكل حلقة (1–6؛ الافتراض 6 = موجتان مستقلتان من 3)'
         required: false
-        default: '3'
+        default: '6'
       seed_base:
         description: 'اختياري للتجربة المضبوطة؛ اتركه فارغاً لبذور جديدة تلقائياً في كل Rerun'
         required: false
         default: ''
       tts_provider:
-        description: 'بوابة الصوت؛ لا تختَر Vertex للإنتاج قبل اعتماد باقة السماع بأذنك'
+        description: 'Vertex هو المسار المستقر؛ الإنتاج يظل مقفولاً حتى تعتمد باقة السماع بأذنك'
         required: true
         type: choice
         options:
-          - ai-studio
           - vertex
-        default: ai-studio
+          - ai-studio
+        default: vertex
       confirm_vertex_canaries:
         description: 'أؤكد أني سمعت خمس حلقات Vertex واعتمدت أصواتها ولهجتها'
         required: false
@@ -178,7 +178,7 @@ jobs:
         id: queue
         shell: bash
         env:
-          PODCAST_KW_TTS_PROVIDER: ${{ inputs.tts_provider || 'ai-studio' }}
+          PODCAST_KW_TTS_PROVIDER: ${{ inputs.tts_provider || 'vertex' }}
           PODCAST_KW_VERTEX_PROJECT: ${{ env.PODCAST_KW_VERTEX_PROJECT }}
           PODCAST_KW_VERTEX_LOCATION: us-central1
           PODCAST_KW_TTS_LANGUAGE: ${{ inputs.tts_provider == 'vertex' && 'ar-001' || 'ar' }}
@@ -199,17 +199,21 @@ jobs:
           PODCAST_KW_TRANSCRIPT_ALIGNMENT: required
           PODCAST_KW_REJECT_DIR: kuwaiti-production-package/rejected
           REQUESTED_SEED_BASE: ${{ inputs.seed_base || '' }}
-          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '3' }}
+          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
         run: |
           set +e
           SEED_BASE="$REQUESTED_SEED_BASE"
-          if [ -z "$SEED_BASE" ]; then SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 )); fi
+          # كل جولة تملك مجالاً منفصلاً؛ لا يعيد Rerun أي عينة مرفوضة من
+          # الموجتين السابقتين. داخل الجولة: 210x/211x/212x ثم 310x/311x/312x.
+          if [ -z "$SEED_BASE" ]; then SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 10000 )); fi
           node scripts/run-kuwaiti-generation-queue.mjs \
             --slugs-file=kuwaiti-production-slugs.txt \
             --slot-map=kuwaiti-production-seed-slots.json \
             --out-dir=kuwaiti-production-package \
             --seed-base="$SEED_BASE" \
             --quality-attempts="$REQUESTED_QUALITY_ATTEMPTS" \
+            --quality-wave-size=3 \
+            --quality-wave-step=1000 \
             --transient-attempts=3
           CODE=$?
           echo "code=$CODE" >> "$GITHUB_OUTPUT"

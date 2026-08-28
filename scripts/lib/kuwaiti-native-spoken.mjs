@@ -258,7 +258,7 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
   }
 
   if (slug === SERIOUSNESS_SLUG && output.length === 30
-    && norm(output[0]?.text).startsWith('نركض وايد')) {
+    && norm(output[0]?.text).startsWith('نسرع وايد')) {
     for (const [index, patch] of SERIOUSNESS_SHORT_OVERRIDES) {
       const turn = output[index]
       if (!turn) continue

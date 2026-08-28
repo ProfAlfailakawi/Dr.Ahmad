@@ -28240,7 +28240,7 @@
    },
    "1": {
     "speaker": "female",
-    "text": "وبالوطن وهو ينختبر في سماه وفي داخله.",
+    "text": "وبالوطن وهو في امتحان… في سماه وفي داخله.",
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
@@ -28330,7 +28330,7 @@
    },
    "11": {
     "speaker": "male",
-    "text": "تكفي عشان الطالب يختار السكوت المرة الياية.",
+    "text": "كلها تخلي الطالب يختار السكوت المرة الياية.",
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
@@ -28375,7 +28375,7 @@
    },
    "16": {
     "speaker": "female",
-    "text": "والخوف من الغلط ما يقتل الإجابة بس… يقتل السؤال قبل لا يولد.",
+    "text": "والخوف من الغلط ما يقتل الإجابة بس… يقتل السؤال نفسه.",
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
@@ -28393,7 +28393,7 @@
    },
    "18": {
     "speaker": "male",
-    "text": "بدال ما يصير فاهم.",
+    "text": "مو إنه يصير فاهم.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,

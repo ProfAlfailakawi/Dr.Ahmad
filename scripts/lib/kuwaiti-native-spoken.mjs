@@ -35,7 +35,7 @@ const PILOT_TURN_OVERRIDES = new Map([
   [12, { text: 'بس شنو يصير بالاختبار اللي بعده؟', deliveryType: 'question' }],
   [13, { speaker: 'female', text: 'وترى حتى الدراسات تقول إن هالضغط مو بسيط.', deliveryType: 'briefReaction' }],
   [14, { speaker: 'male', text: 'شلون يعني؟', deliveryType: 'briefReaction', pauseAfterMs: 160, overlapMs: 70 }],
-  [15, { speaker: 'female', text: 'في مراجعة كبيرة، أخذوا فيها أبحاث وايد عن الموضوع.' }],
+  [15, { speaker: 'female', text: 'في مراجعة كبيرة، خذو فيها أبحاث وايد عن الموضوع.' }],
   [16, { speaker: 'male', text: 'وشنو طلع معاهم؟', deliveryType: 'briefReaction', pauseAfterMs: 160, overlapMs: 70 }],
   [17, { speaker: 'female', text: 'كل ما زاد التوتر، نزل مستوى الطالب.', deliveryType: 'statement' }],
   [18, { speaker: 'male', text: 'إي، بس تدري شنو الأسوأ؟', deliveryType: 'briefReaction', pauseAfterMs: 180, overlapMs: 70 }],
@@ -59,7 +59,7 @@ const PILOT_FULL_OVERRIDES = new Map([
   [7, { text: 'إذا الامتحان صار معركة، النجاح بس يوقف التوتر شوي… بس شنو يصير بالاختبار اللي بعده؟' }],
   [8, { speaker: 'female', text: 'وترى حتى الدراسات تقول إن هالضغط مو بسيط.', deliveryType: 'briefReaction' }],
   [9, { speaker: 'male', text: 'شلون يعني؟', deliveryType: 'briefReaction', pauseAfterMs: 160, overlapMs: 70 }],
-  [10, { speaker: 'female', text: 'في مراجعة كبيرة، أخذوا فيها أبحاث وايد عن الموضوع، وطلع معاهم إن كل ما زاد التوتر، نزل مستوى الطالب.' }],
+  [10, { speaker: 'female', text: 'في مراجعة كبيرة، خذو فيها أبحاث وايد عن الموضوع، وطلع معاهم إن كل ما زاد التوتر، نزل مستوى الطالب.' }],
   [11, { speaker: 'male', text: 'وفي دراسة ثانية؟', deliveryType: 'briefReaction', pauseAfterMs: 160, overlapMs: 70 }],
   [12, { speaker: 'female', text: 'ربطوا ضغط الدراسة بتوتر الامتحان. وقالوا بعد إن نظرة الأهل وحالة الطالب النفسية لهم دور.' }],
   [13, { speaker: 'male', text: 'إي، بس تدري شنو الأسوأ؟', deliveryType: 'briefReaction', pauseAfterMs: 180, overlapMs: 70 }],
@@ -134,7 +134,7 @@ const SAFE_TEXT_RULES = [
   [/والتربية الحقيقية مو إحنا نلمع شكل النجاح؛ التربية إحنا نرجع له روحه\./gu,
     'واللي علينا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.'],
   [/^مراجعة بحثية واسعة، لقت إن المستخدمين يقبلون توصيات الذكاء حتى وهي ناقصة\.$/u,
-    'وفي مراجعة كبيرة، أخذوا فيها أبحاث وايد، وطلع إن الناس تمشي ورا توصيات الذكاء حتى لما تكون ناقصة.'],
+    'وفي مراجعة كبيرة، خذو فيها أبحاث وايد، وطلع إن الناس تمشي ورا توصيات الذكاء حتى لما تكون ناقصة.'],
   /* [٢٨ أغسطس ٢٠٢٦] ثلاث كلمات فشلت داخل الحلقة الكاملة: «تكفي» خرجت
      بمعنى الرجاء، «بدال» حملها المحرك بقراءة دخيلة، و«ينختبر» خرجت بهمزة
      وصل. ما نعمم حركة ولا همزة؛ نعيد بناء الجملة الحالية سياقياً. وأي
@@ -286,7 +286,7 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
       },
       {
         ...output[15],
-        text: 'في مراجعة كبيرة، أخذوا فيها أبحاث وايد عن الموضوع. كل ما زاد التوتر، نزل مستوى الطالب.',
+        text: 'في مراجعة كبيرة، خذو فيها أبحاث وايد عن الموضوع. كل ما زاد التوتر، نزل مستوى الطالب.',
         deliveryType: 'statement',
       },
     ]
@@ -313,7 +313,7 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
   }
 
   if (slug === SERIOUSNESS_SLUG && output.length === 30
-    && norm(output[0]?.text).startsWith('نركض وايد')) {
+    && norm(output[0]?.text).startsWith('نسرع وايد')) {
     for (const [index, patch] of SERIOUSNESS_SHORT_OVERRIDES) {
       const turn = output[index]
       if (!turn) continue

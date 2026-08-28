@@ -697,6 +697,51 @@ export function extractPcmBase64(body) {
   return blocks.length ? blocks[blocks.length - 1] : null
 }
 
+/* Vertex يوفّر TTS المتعدد ببث أحادي الاتجاه: طلبٌ واحد من العميل، وعدة
+   استجابات صوتية من الخادم. هذا يظل Same-Take واحداً ولا يعيد تهيئة أي
+   متحدث، لكنه يمنع اتصال generateContent المتزامن من البقاء صامتاً حتى
+   يكتمل ملفٌ كبير. كل حدث SSE يحمل كتلة PCM مستقلة؛ نجمعها بالترتيب نفسه. */
+export async function collectVertexSsePcm(response) {
+  if (!response?.body?.getReader) throw new Error('Vertex streaming response بلا جسم قابل للقراءة')
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  const pcm = []
+  let pending = ''
+  let lastShape = ''
+
+  const consumeEvent = (event) => {
+    const payload = String(event || '').split(/\r?\n/)
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.slice(5).trimStart())
+      .join('\n').trim()
+    if (!payload || payload === '[DONE]') return
+    let packet
+    try { packet = JSON.parse(payload) } catch {
+      throw new Error(`Vertex streaming أعاد حدثاً غير JSON: ${payload.slice(0, 180)}`)
+    }
+    if (packet?.error) {
+      const details = packet.error.details?.length ? ` — ${JSON.stringify(packet.error.details)}` : ''
+      throw new Error(`Vertex streaming: ${packet.error.message || 'خطأ غير معروف'}${details}`)
+    }
+    const blocks = collectAudioBlocks(packet)
+    for (const block of blocks) pcm.push(Buffer.from(block, 'base64'))
+    if (!blocks.length) lastShape = describeShape(packet).join(' | ')
+  }
+
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    pending += decoder.decode(value, { stream:true })
+    const events = pending.split(/\r?\n\r?\n/)
+    pending = events.pop() || ''
+    for (const event of events) consumeEvent(event)
+  }
+  pending += decoder.decode()
+  if (pending.trim()) consumeEvent(pending)
+  if (!pcm.length) throw new Error(`Vertex streaming اكتمل بلا صوت${lastShape ? ` — شكل الردّ: ${lastShape}` : ''}`)
+  return Buffer.concat(pcm)
+}
+
 /* خريطة مسارات الردّ بلا حمولته: لو تغيّر الغلاف مرةً أخرى ظهر الشكل كاملاً
    في السجل بدل أن نعود إلى تخمينٍ ثالث. */
 export function describeShape(node, prefix = '', depth = 0, out = []) {
@@ -787,9 +832,13 @@ async function geminiPcm(prompt, speechConfig = [
               })),
             },
           }
-      const endpoint = USE_VERTEX ? `${API}/${encodeURIComponent(MODEL)}:generateContent` : API
-      const response = await fetch(endpoint, {
-        method: 'POST', signal: controller.signal,
+      const endpoint = USE_VERTEX ? `${API}/${encodeURIComponent(MODEL)}:streamGenerateContent?alt=sse` : API
+      let response
+      let raw = ''
+      let streamedPcm = null
+      try {
+        response = await fetch(endpoint, {
+          method: 'POST', signal: controller.signal,
         /* بلا ترويسة Api-Revision: هي ترويسة البثّ المتدفّق (stream:true) وحدها.
            إرسالها على طلبٍ غير متدفّق يعيد 200 بغلافٍ متدفّقٍ لا يحمل
            output_audio، فيسقط التوليد ورسالته «HTTP 200» بلا سبب — وهي
@@ -797,26 +846,37 @@ async function geminiPcm(prompt, speechConfig = [
         headers: USE_VERTEX
           ? { Authorization: `Bearer ${vertexToken}`, 'x-goog-user-project': VERTEX_PROJECT, 'Content-Type': 'application/json' }
           : { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify(USE_VERTEX ? {
-          contents: { role:'user', parts:[{ text:prompt }] },
-          generationConfig: {
-            responseModalities: ['AUDIO'],
-            ...(SEED ? { seed:SEED } : {}),
-            speechConfig: vertexSpeechConfig,
-          },
-        } : {
-          model: MODEL,
-          input: prompt,
-          response_format: { type: 'audio' },
-          /* البذرة (مقترح الصديق ٢٢ أغسطس): موثقة لإعادة إنتاج أقرب —
-             وتجعل تجارب البرومت أزواجاً متطابقة (نفس البذرة × رأسين).
-             لا تضمن تطابق الطابع عبر نصوص مختلفة؛ الأرشيف يبقى التثبيت. */
-          generation_config: { ...(SEED ? { seed: SEED } : {}), speech_config: speechConfig },
-        }),
-      }).finally(() => clearTimeout(timer))
-      /* يُقرأ نصاً أولاً: الغلاف غير المتوقّع (أو المتدفّق) ليس JSON دائماً،
-         و.json().catch(()=>({})) كان يبتلعه فتضيع كل قرينة على سبب السقوط. */
-      const raw = await response.text()
+          body: JSON.stringify(USE_VERTEX ? {
+            contents: { role:'user', parts:[{ text:prompt }] },
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              ...(SEED ? { seed:SEED } : {}),
+              speechConfig: vertexSpeechConfig,
+            },
+          } : {
+            model: MODEL,
+            input: prompt,
+            response_format: { type: 'audio' },
+            /* البذرة (مقترح الصديق ٢٢ أغسطس): موثقة لإعادة إنتاج أقرب —
+               وتجعل تجارب البرومت أزواجاً متطابقة (نفس البذرة × رأسين).
+               لا تضمن تطابق الطابع عبر نصوص مختلفة؛ الأرشيف يبقى التثبيت. */
+            generation_config: { ...(SEED ? { seed: SEED } : {}), speech_config: speechConfig },
+          }),
+        })
+        if (USE_VERTEX && response.ok) streamedPcm = await collectVertexSsePcm(response)
+        else raw = await response.text()
+      } finally {
+        /* لا يُلغى المؤقت عند وصول الترويسات: جسم الصوت المتدفق جزءٌ من
+           الطلب نفسه. إلغاؤه مبكراً هو ما ترك تشغيل 28 أغسطس عالقاً حتى
+           مهلة الوظيفة بدل سقف الطلب. */
+        clearTimeout(timer)
+      }
+      if (streamedPcm) {
+        if (streamedPcm.length < 4000) throw new Error('Gemini أعاد صوتاً قصيراً/فارغاً')
+        return streamedPcm
+      }
+      /* يُقرأ نصاً أولاً: الغلاف غير المتوقّع ليس JSON دائماً، و.json()
+         كان يبتلعه فتضيع كل قرينة على سبب السقوط. */
       let body = null
       try { body = JSON.parse(raw) } catch { /* غلاف غير JSON: يُشخَّص أدناه */ }
       let data = extractPcmBase64(body)
@@ -865,7 +925,7 @@ async function geminiPcm(prompt, speechConfig = [
       last = error
       if (/نفد رصيد Gemini/.test(String(error && error.message))) throw error
     }
-    if (attempt < 6) { await sleep(quotaWaitMs || 1200 * attempt); quotaWaitMs = 0 }
+    if (attempt < maxAttempts) { await sleep(quotaWaitMs || 1200 * attempt); quotaWaitMs = 0 }
   }
   throw last || new Error('فشل Gemini TTS')
 }
@@ -2080,13 +2140,48 @@ if (SELF_TEST) {
   const header = wavHeader(100)
   assert.equal(header.toString('ascii',0,4),'RIFF'); assert.equal(header.readUInt32LE(24),24000)
 
-  /* حارس علّة «HTTP 200»: تشغيلة ١٢ أغسطس ٢٠٢٦ سقطت لأن طلباً غير متدفّق
-     حمل ترويسة البثّ، فعاد ٢٠٠ بغلافٍ بلا output_audio ولم تُبلّغ الرسالةُ
-     شيئاً. الحارسان أدناه يمنعان عودة الوجهين معاً. */
+  /* حارس مسار Vertex: تشغيلة ٢٨ أغسطس ٢٠٢٦ وصلت إلى الخدمة ثم ظلّت معلّقة
+     لأن generateContent المتزامن لا يرسل الجسم قبل اكتمال الحلقة، ولأن مؤقت
+     الطلب كان يُلغى فور وصول الترويسات. البثّ أدناه طلبٌ واحد وTake واحد،
+     لكنه يستلم كتل PCM تباعاً ويبقي المؤقت حياً حتى آخر كتلة. */
   const source = readFileSync(resolve(ROOT,'scripts','podcast-kuwaiti-gemini.mjs'),'utf8')
-  const requestBlock = source.slice(source.indexOf('const response = await fetch(endpoint'), source.indexOf('const raw = await response.text()'))
-  /* يُطابَق شكل الترويسة لا اسمها، وإلا لأمسك الحارسُ شرحه المكتوب أعلاه. */
-  assert.ok(!/['"]Api-Revision['"]\s*:/.test(requestBlock), 'ترويسة Api-Revision للبثّ وحده؛ وجودها على طلبٍ غير متدفّق يعيد 200 بلا صوت')
+  const requestStart = source.indexOf('const endpoint = USE_VERTEX')
+  const requestEnd = source.indexOf('let body = null', requestStart)
+  assert.ok(requestStart >= 0 && requestEnd > requestStart, 'تعذّر تحديد عقد طلب TTS لفحصه')
+  const requestBlock = source.slice(requestStart, requestEnd)
+  assert.match(requestBlock, /:streamGenerateContent\?alt=sse/,
+    'Vertex لازم يستلم الحلقة ببثّ أحادي الاتجاه بدل طلب متزامن صامت')
+  assert.match(requestBlock, /streamedPcm = await collectVertexSsePcm\(response\)/,
+    'كتل الصوت المتدفقة لازم تُجمع كلها قبل اعتماد الـTake')
+  assert.doesNotMatch(requestBlock, /fetch\(endpoint,[\s\S]*?\)\.finally\(\(\) => clearTimeout\(timer\)\)/,
+    'لا يُلغى مؤقت الطلب عند وصول الترويسات وقبل اكتمال جسم الصوت')
+  /* يُطابَق شكل الترويسة لا اسمها، وإلا لأمسك الحارسُ شرحها المكتوب. */
+  assert.ok(!/['"]Api-Revision['"]\s*:/.test(requestBlock), 'ترويسة Api-Revision غير مطلوبة لمسار Vertex SSE')
+
+  const pcmOne = Buffer.alloc(600, 0x2a)
+  const pcmTwo = Buffer.alloc(700, 0x6b)
+  const vertexPacket = (pcm) => ({
+    candidates: [{ content: { parts: [{ inlineData: {
+      mimeType: 'audio/pcm;rate=24000', data: pcm.toString('base64'),
+    } }] } }],
+  })
+  const syntheticSse = [
+    `data: ${JSON.stringify(vertexPacket(pcmOne))}`,
+    `data: ${JSON.stringify(vertexPacket(pcmTwo))}`,
+    'data: [DONE]',
+    '',
+  ].join('\n\n')
+  const encodedSse = new TextEncoder().encode(syntheticSse)
+  const streamedResponse = { body: new ReadableStream({
+    start (controller) {
+      /* التقسيم المتعمّد داخل JSON/Base64 يثبت أن حدود الشبكة لا تقص الصوت. */
+      for (let at = 0; at < encodedSse.length; at += 137) controller.enqueue(encodedSse.slice(at, at + 137))
+      controller.close()
+    },
+  }) }
+  const collectedPcm = await collectVertexSsePcm(streamedResponse)
+  assert.deepEqual(collectedPcm, Buffer.concat([pcmOne, pcmTwo]),
+    'SSE يجمع كل كتل PCM بالترتيب داخل الطلب الواحد')
   const b64 = (seed) => seed.repeat(Math.ceil(600 / seed.length)).slice(0, 600)
   const A = b64('QUJD'), B = b64('WFla'), C = b64('MTIz')
   assert.equal(extractPcmBase64({ output_audio:{ data:A } }), A, 'غلاف المكتبة إن وُجد')

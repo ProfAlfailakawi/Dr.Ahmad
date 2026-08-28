@@ -317,9 +317,9 @@ export const essays = [
 
 
 export const socials = [
-  { label: 'LinkedIn', url: 'https://www.linkedin.com/in/prof-ahmad-alfailakawi-5922251a5' },
-  { label: 'X', url: 'https://twitter.com/drahmadkw' },
-  { label: 'Instagram', url: 'https://www.instagram.com/DrAhmadkw/' },
+  { label: 'LinkedIn', url: 'https://www.linkedin.com/in/dr-ahmad-alfailakawi' },
+  { label: 'X', url: 'https://x.com/drahmadkw' },
+  { label: 'Instagram', url: 'https://www.instagram.com/drahmadkw/' },
   { label: 'Facebook', url: 'https://www.facebook.com/d.ahmd.alfylkawy' },
   { label: 'YouTube', url: 'https://youtube.com/@drahmadalfailakawi' },
 ]
@@ -329,6 +329,11 @@ export const socials = [
 export const academicProfiles = [
   { label: 'Google Scholar', url: 'https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en' },
   { label: 'ResearchGate', url: 'https://www.researchgate.net/profile/Ahmad-Alfailakawi' },
+  { label: 'ORCID', url: 'https://orcid.org/0000-0002-1767-4963' },
+  { label: 'Web of Science', url: 'https://www.webofscience.com/wos/author/record/LXA-2190-2024' },
+  { label: 'Semantic Scholar', url: 'https://www.semanticscholar.org/author/Ahmad-Alfailakawi/101514397' },
+  { label: 'Wikidata', url: 'https://www.wikidata.org/wiki/Q141131823' },
+  { label: 'Goodreads', url: 'https://www.goodreads.com/user/show/203649232-dr-ahmad' },
 ]
 
 export const links = {

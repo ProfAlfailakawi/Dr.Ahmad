@@ -1434,6 +1434,27 @@ export function alignTranscriptBoundaries (turns, annotations, totalSec) {
   }
 }
 
+/* شاهد التفريغ عنده مهمتان كانتا مختلطتين: توقيت الكلمات، وتخمين اسم
+   المتحدث. التوقيت ظلّ دقيقاً في تشغيل 28 أغسطس (تطابق 93–97٪ وتغطية
+   97–99٪)، بينما diarization اخترع أحياناً spk:2 أو قلب الملصق وسط الصوت
+   نفسه. حدود الكلمات تصلح للقص في الحالتين؛ أما هوية فهد ونورة فتحكمها
+   لاحقاً بوابات الطبقة والرنين على المقاطع المقصوصة، لا اسمٌ تخميني من ASR. */
+export function alignmentBoundaryTrustworthy (aligned) {
+  if (!aligned?.cuts || aligned.similarity < 0.78 || aligned.coverage < 0.84) return false
+  const turnCoverage = Array.isArray(aligned.perTurnCoverage) ? aligned.perTurnCoverage : []
+  const heardRatios = Array.isArray(aligned.perTurnHeardRatio) ? aligned.perTurnHeardRatio : []
+  if (!turnCoverage.length || !heardRatios.length || turnCoverage.length !== heardRatios.length) return false
+  /* الإجمالي العالي ممكن يخفي دوراً قصيراً ضاع بالكامل؛ لذلك كل دور لازم
+     يملك نصف كلماته على الأقل، وألا تبتلع نافذته كلام دورين. */
+  return turnCoverage.every((ratio) => ratio >= 0.5)
+    && heardRatios.every((ratio) => ratio >= 0.45 && ratio <= 1.8)
+}
+
+export function alignmentDiarizationConsistent (aligned) {
+  return Boolean(aligned?.speakerLabels?.length === 2
+    && aligned.speakerMappingDistinct && aligned.speakerAgreement >= 0.88)
+}
+
 async function uploadForTranscription (file) {
   const bytes = readFileSync(file)
   const start = await fetch('https://generativelanguage.googleapis.com/upload/v1beta/files', {
@@ -1535,17 +1556,21 @@ async function splitChunk(file, chunkTurnsList, outPrefix) {
     try {
       const witness = await transcriptionWitness(file, chunkTurnsList)
       const aligned = alignTranscriptBoundaries(chunkTurnsList, witness.words, total)
-      const trustworthy = aligned?.cuts && aligned.similarity >= 0.78 && aligned.coverage >= 0.84
-        && aligned.speakerLabels.length === 2 && aligned.speakerMappingDistinct && aligned.speakerAgreement >= 0.88
-      if (trustworthy) {
+      const boundaryTrustworthy = alignmentBoundaryTrustworthy(aligned)
+      const diarizationConsistent = alignmentDiarizationConsistent(aligned)
+      if (boundaryTrustworthy) {
         const parts = cutChunkAt(file, aligned.cuts, expected, total, outPrefix, 0.18)
         if (parts) {
-          splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL, ...aligned, cuts: aligned.cuts.map((cut) => Number(cut.toFixed(3))) })
-          console.log(`✓ شاهد الأدوار: ${aligned.sourceWordCount} كلمة · تطابق ${(aligned.similarity * 100).toFixed(0)}٪ · تغطية ${(aligned.coverage * 100).toFixed(0)}٪ · اتفاق الصوت ${(aligned.speakerAgreement * 100).toFixed(0)}٪`)
+          splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL,
+            ...aligned, diarizationConsistent, cuts: aligned.cuts.map((cut) => Number(cut.toFixed(3))) })
+          console.log(`✓ شاهد حدود الكلمات: ${aligned.sourceWordCount} كلمة · تطابق ${(aligned.similarity * 100).toFixed(0)}٪ · تغطية ${(aligned.coverage * 100).toFixed(0)}٪`)
+          if (diarizationConsistent) console.log(`✓ شاهد أسماء الصوتين: اتفاق ${(aligned.speakerAgreement * 100).toFixed(0)}٪`)
+          else console.log(`ℹ وسوم المتحدث من ASR غير ثابتة (${aligned.speakerLabels.length} وسوم · اتفاق ${(aligned.speakerAgreement * 100).toFixed(0)}٪)؛ لا تحكم على الحنجرة، وبوابتا الطبقة والرنين تفحصانها بعد القص`)
           return parts
         }
       }
-      splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL, ...(aligned || {}), cuts: undefined, rejected: true })
+      splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL,
+        ...(aligned || {}), diarizationConsistent, cuts: undefined, rejected: true })
       throw new Error(`شاهد الأدوار غير حاسم (تطابق ${aligned ? (aligned.similarity * 100).toFixed(0) : '0'}٪ · تغطية ${aligned ? (aligned.coverage * 100).toFixed(0) : '0'}٪ · أصوات ${aligned?.speakerLabels?.length || 0})`)
     } catch (error) {
       if (ALIGNMENT_MODE === 'required') throw error
@@ -2302,6 +2327,16 @@ if (SELF_TEST) {
     'حد الدور يقع بين آخر كلمة للأول وأول كلمة للثاني')
   assert.equal(alignedProbe.speakerAgreement, 1, 'التفريغ يثبت أن فهد ونورة لم يتبادلا الأدوار')
   assert.deepEqual(alignedProbe.perTurnCoverage, [1, 1, 1], 'كل كلمات كل دور حاضرة قبل بوابة الزمن')
+  assert.equal(alignmentBoundaryTrustworthy(alignedProbe), true, 'توقيت الكلمات الكامل صالح لقص الـTake')
+  assert.equal(alignmentDiarizationConsistent(alignedProbe), true, 'وسما المتحدث ثابتان في العينة النظيفة')
+  const unstableDiarizationProbe = { ...alignedProbe,
+    speakerLabels: ['spk:0', 'spk:1', 'spk:2'], speakerAgreement: 0.1579, speakerMappingDistinct: true }
+  assert.equal(alignmentBoundaryTrustworthy(unstableDiarizationProbe), true,
+    'تخبّط اسم المتحدث في ASR لا يلغي حدود كلمات صحيحة؛ الهوية تقيسها الحنجرة لاحقاً')
+  assert.equal(alignmentDiarizationConsistent(unstableDiarizationProbe), false,
+    'تخبّط diarization يبقى مسجلاً للتدقيق ولا يتخفّى كنجاح')
+  assert.equal(alignmentBoundaryTrustworthy({ ...alignedProbe, perTurnCoverage: [1, 0, 1] }), false,
+    'التطابق الإجمالي لا يسمح بقص دورٍ ضاعت كلماته كلها')
   assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')

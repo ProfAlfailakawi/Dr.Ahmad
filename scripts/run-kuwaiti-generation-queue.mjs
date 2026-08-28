@@ -22,6 +22,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const IS_MAIN = Boolean(process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url))
 const argv = process.argv.slice(2)
 const valueArg = (name, fallback = '') => argv.find((item) => item.startsWith(`--${name}=`))?.slice(name.length + 3) ?? fallback
 const SELF_TEST = argv.includes('--self-test')
@@ -37,8 +38,22 @@ const atomicJson = (file, value) => {
 }
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms))
 
-export function seedForAttempt ({ seedBase, slot, qualityAttempt, qualityStep = 10 }) {
-  const seed = Number(seedBase) + Number(slot) + (Number(qualityAttempt) - 1) * Number(qualityStep)
+export function seedForAttempt ({
+  seedBase,
+  slot,
+  qualityAttempt,
+  qualityStep = 10,
+  qualityWaveSize = 3,
+  qualityWaveStep = 1000,
+}) {
+  const attempt = Number(qualityAttempt)
+  const waveSize = Number(qualityWaveSize)
+  if (!Number.isSafeInteger(attempt) || attempt < 1) throw new Error(`محاولة جودة غير صالحة: ${qualityAttempt}`)
+  if (!Number.isSafeInteger(waveSize) || waveSize < 1) throw new Error(`حجم موجة البذور غير صالح: ${qualityWaveSize}`)
+  const wave = Math.floor((attempt - 1) / waveSize)
+  const insideWave = (attempt - 1) % waveSize
+  const seed = Number(seedBase) + Number(slot)
+    + wave * Number(qualityWaveStep) + insideWave * Number(qualityStep)
   if (!Number.isSafeInteger(seed) || seed < 1) throw new Error(`بذرة غير صالحة: ${seed}`)
   return seed
 }
@@ -63,6 +78,32 @@ export function candidatePaths (root, outputDir, slug) {
   }
 }
 
+/* Gemini Transcribe شاهد توقيت ممتاز، لكنه قد يخترع spk:2 أو يبدّل اسم
+   الوسم مع بقاء الشخص نفسه. لذلك الاستئناف يطابق عقد المحرك v14: حدود
+   الكلمات تقرر اكتمال الأدوار، وهوية الحنجرتين تقررها بوابات الطبقة
+   والرنين أدناه. إعادة فرض speakerAgreement هنا كانت ترفض حلقة نجحت
+   فعلاً، ثم تصرف عليها من جديد في كل Rerun. */
+export function packagedAlignmentBoundaryTrustworthy (witness, turnCount) {
+  if (!witness || witness.rejected || Number(witness.similarity) < 0.78 || Number(witness.coverage) < 0.84) return false
+  const cuts = Array.isArray(witness.cuts) ? witness.cuts : null
+  const perTurnCoverage = Array.isArray(witness.perTurnCoverage) ? witness.perTurnCoverage : []
+  const perTurnHeardRatio = Array.isArray(witness.perTurnHeardRatio) ? witness.perTurnHeardRatio : []
+  if (!Number.isInteger(turnCount) || turnCount < 1 || !cuts || cuts.length !== turnCount - 1) return false
+  if (perTurnCoverage.length !== turnCount || perTurnHeardRatio.length !== turnCount) return false
+  return perTurnCoverage.every((ratio) => Number(ratio) >= 0.5)
+    && perTurnHeardRatio.every((ratio) => Number(ratio) >= 0.45 && Number(ratio) <= 1.8)
+}
+
+function packagedSpeakerIdentityTrustworthy (audit, minimumVoiceGap) {
+  const gap = Number(audit.pitchGate?.voiceGapHz)
+  if (!Number.isFinite(gap) || gap < minimumVoiceGap) return false
+  for (const speaker of ['femaleContinuity', 'maleContinuity']) {
+    const continuity = audit.pitchGate?.[speaker]
+    if (!continuity || (continuity.segmentSuspects || []).length || (continuity.swapSegments || []).length) return false
+  }
+  return !(audit.acousticContinuity?.corroboratedBoundaryResets || []).length
+}
+
 export function verifyPackagedCandidate ({ root = ROOT, outputDir, slug, minimumVoiceGap = 25 }) {
   const paths = candidatePaths(root, outputDir, slug)
   for (const key of ['source', 'audio', 'transcript', 'audit']) {
@@ -76,15 +117,15 @@ export function verifyPackagedCandidate ({ root = ROOT, outputDir, slug, minimum
   if (audit.transcriptSha256 !== sha256(readFileSync(paths.transcript))) return { ok: false, reason: 'بصمة النص المتزامن لا تطابق السجل' }
   if (!audit.oneTake || audit.speakerIsolation !== 'multispeaker-single-take') return { ok: false, reason: 'الملف ليس Same-Take الحقيقي' }
   if (audit.ttsInput !== 'dry-dialogue-only' || audit.bridgeGeneration !== 'external-post-tts') return { ok: false, reason: 'الجسر دخل مرحلة TTS' }
-  const gap = Number(audit.pitchGate?.voiceGapHz)
-  if (!Number.isFinite(gap) || gap < minimumVoiceGap) return { ok: false, reason: `فجوة الصوتين ${gap || 0}Hz` }
+  if (!packagedSpeakerIdentityTrustworthy(audit, minimumVoiceGap)) return { ok: false, reason: 'بوابات طبقة الصوت والرنين لا تثبت هوية الصوتين' }
+  /* طبقة المنطوق قد تدمج أسطراً متجاورة للمتحدث نفسه؛ شاهد الكلمات
+     يُحاذي utterances الفعلية في ملف التوقيت، لا عدد صفوف المصدر قبل الدمج. */
+  const synchronizedTranscript = readJson(paths.transcript, {})
+  const turnCount = Array.isArray(synchronizedTranscript?.utterances) ? synchronizedTranscript.utterances.length : 0
   const witness = (audit.turnAlignment?.witnesses || []).find((entry) => !entry.rejected)
-  if (audit.turnAlignment?.mode !== 'required' || !witness
-    || Number(witness.similarity) < 0.78 || Number(witness.coverage) < 0.84
-    || witness.speakerMappingDistinct !== true || Number(witness.speakerAgreement) < 0.88) {
-    return { ok: false, reason: 'شاهد الكلمات والصوتين ناقص أو دون العتبة' }
+  if (audit.turnAlignment?.mode !== 'required' || !packagedAlignmentBoundaryTrustworthy(witness, turnCount)) {
+    return { ok: false, reason: 'شاهد حدود الكلمات ناقص أو دون العتبة' }
   }
-  if ((audit.acousticContinuity?.corroboratedBoundaryResets || []).length) return { ok: false, reason: 'انزلاق مؤكّد عند انتقال داخلي' }
   if ((audit.repeatGate?.confirmedSuspects || []).length) return { ok: false, reason: 'قص أو تمديد مؤكّد في دور' }
   return { ok: true, audit }
 }
@@ -141,9 +182,11 @@ async function main () {
   const engine = resolve(ROOT, valueArg('engine', 'scripts/podcast-kuwaiti-gemini.mjs'))
   const slotMap = readJson(resolve(ROOT, valueArg('slot-map', 'kuwaiti-production-seed-slots.json')), {}) || {}
   const seedBase = Number(valueArg('seed-base', process.env.PODCAST_KW_SEED_BASE || '2100'))
-  const qualityAttempts = Number(valueArg('quality-attempts', '3'))
+  const qualityAttempts = Number(valueArg('quality-attempts', '6'))
   const transientAttempts = Number(valueArg('transient-attempts', '3'))
   const qualityStep = Math.max(1, Number(valueArg('quality-step', '10')))
+  const qualityWaveSize = Math.max(1, Number(valueArg('quality-wave-size', '3')))
+  const qualityWaveStep = Math.max(1, Number(valueArg('quality-wave-step', '1000')))
   if (!Number.isInteger(qualityAttempts) || qualityAttempts < 1 || qualityAttempts > 6) throw new Error('quality-attempts بين 1 و6')
   if (!Number.isInteger(transientAttempts) || transientAttempts < 1 || transientAttempts > 6) throw new Error('transient-attempts بين 1 و6')
   const minimumVoiceGap = Math.max(0, Number(process.env.PODCAST_KW_MIN_GAP || 25))
@@ -187,7 +230,7 @@ async function main () {
     const slot = Number(slotMap[slug] || index + 1)
     let accepted = false
     for (let qualityAttempt = 1; qualityAttempt <= qualityAttempts; qualityAttempt += 1) {
-      const seed = seedForAttempt({ seedBase, slot, qualityAttempt, qualityStep })
+      const seed = seedForAttempt({ seedBase, slot, qualityAttempt, qualityStep, qualityWaveSize, qualityWaveStep })
       for (let transportAttempt = 1; transportAttempt <= transientAttempts; transportAttempt += 1) {
         console.log(`── ${slug} · عينة ${qualityAttempt}/${qualityAttempts} · نقل ${transportAttempt}/${transientAttempts} · seed=${seed}`)
         const code = await runEngine({ engine, slug, seed })
@@ -247,6 +290,10 @@ async function main () {
 function selfTest () {
   assert.equal(seedForAttempt({ seedBase: 2100, slot: 4, qualityAttempt: 1 }), 2104)
   assert.equal(seedForAttempt({ seedBase: 2100, slot: 4, qualityAttempt: 2 }), 2114)
+  assert.equal(seedForAttempt({ seedBase: 2100, slot: 4, qualityAttempt: 3 }), 2124)
+  assert.equal(seedForAttempt({ seedBase: 2100, slot: 4, qualityAttempt: 4 }), 3104,
+    'الموجة الثانية تبدأ بعائلة بذور جديدة تلقائياً')
+  assert.equal(seedForAttempt({ seedBase: 2100, slot: 4, qualityAttempt: 6 }), 3124)
   assert.equal(queueActionForExitCode(3, 1, 3), 'next_quality_sample', 'رفض الجودة يغيّر البذرة')
   assert.equal(queueActionForExitCode(75, 1, 3), 'retry_same_seed', 'العطل المؤقت لا يغيّر البذرة')
   assert.equal(queueActionForExitCode(75, 3, 3), 'defer_provider', 'تكرر عطل المزوّد يفتح قاطع الحماية')
@@ -257,9 +304,9 @@ function selfTest () {
   const slug = 'fixture'
   mkdirSync(resolve(root, 'manual-dialogues-kuwaiti'), { recursive: true })
   mkdirSync(outputDir, { recursive: true })
-  const source = Buffer.from('[{"speaker":"male","text":"أ"}]\n')
+  const source = Buffer.from('[{"speaker":"male","text":"أ"},{"speaker":"female","text":"ب"}]\n')
   const audio = Buffer.from('fake-mp3-for-hash')
-  const transcript = Buffer.from('[]\n')
+  const transcript = Buffer.from('{"utterances":[{"speaker":"male"},{"speaker":"female"}]}\n')
   writeFileSync(resolve(root, 'manual-dialogues-kuwaiti', `${slug}.json`), source)
   writeFileSync(resolve(outputDir, `${slug}.mp3`), audio)
   writeFileSync(resolve(outputDir, `${slug}.json`), transcript)
@@ -267,18 +314,36 @@ function selfTest () {
     slug, status: 'candidate', seed: 3114, qualityGateVersion: 'kuwaiti-aligned-v14',
     sourceSha256: sha256(source), audioSha256: sha256(audio), transcriptSha256: sha256(transcript),
     oneTake: true, speakerIsolation: 'multispeaker-single-take', ttsInput: 'dry-dialogue-only',
-    bridgeGeneration: 'external-post-tts', pitchGate: { voiceGapHz: 67 },
-    turnAlignment: { mode: 'required', witnesses: [{ method:'gemini-3.5-word-timestamps+diarization', similarity:0.96, coverage:0.98,
-      speakerMappingDistinct:true, speakerAgreement:1 }] },
+    bridgeGeneration: 'external-post-tts', pitchGate: {
+      voiceGapHz: 67,
+      femaleContinuity: { segmentSuspects: [], swapSegments: [] },
+      maleContinuity: { segmentSuspects: [], swapSegments: [] },
+    },
+    turnAlignment: { mode: 'required', witnesses: [{
+      method:'gemini-3.5-word-timestamps+diarization', similarity:0.96, coverage:0.98,
+      cuts:[0.5], perTurnCoverage:[1,1], perTurnHeardRatio:[1,1],
+      speakerLabels:['spk:0','spk:1','spk:2'], speakerMappingDistinct:true,
+      speakerAgreement:0.5263, diarizationConsistent:false,
+    }] },
     acousticContinuity: { boundarySuspects: [], pitchBoundarySuspects: [], corroboratedBoundaryResets: [] },
     repeatGate: { suspects: [], confirmedSuspects: [] },
   })
-  assert.equal(verifyPackagedCandidate({ root, outputDir, slug }).ok, true, 'المرشح الصحيح يُستأنف بلا صرف')
+  assert.equal(verifyPackagedCandidate({ root, outputDir, slug }).ok, true,
+    'وسوم ASR غير الثابتة لا تلغي حدود كلمات سليمة وهوية أثبتتها البوابات الصوتية')
+  const fixtureAudit = readJson(resolve(outputDir, `${slug}.audit.json`))
+  fixtureAudit.turnAlignment.witnesses[0].perTurnCoverage = [1, 0]
+  atomicJson(resolve(outputDir, `${slug}.audit.json`), fixtureAudit)
+  assert.match(verifyPackagedCandidate({ root, outputDir, slug }).reason, /حدود الكلمات/,
+    'ضياع دور كامل يمنع الاستئناف حتى لو كان التطابق الإجمالي عالياً')
+  fixtureAudit.turnAlignment.witnesses[0].perTurnCoverage = [1, 1]
+  atomicJson(resolve(outputDir, `${slug}.audit.json`), fixtureAudit)
   writeFileSync(resolve(outputDir, `${slug}.mp3`), Buffer.from('tampered'))
   assert.match(verifyPackagedCandidate({ root, outputDir, slug }).reason, /بصمة الصوت/, 'أي تلف يمنع التخطي الكاذب')
   rmSync(root, { recursive: true, force: true })
   console.log('✓ Kuwaiti generation queue self-test: resume + hashes + seed plan')
 }
 
-if (SELF_TEST) selfTest()
-else await main()
+if (IS_MAIN) {
+  if (SELF_TEST) selfTest()
+  else await main()
+}

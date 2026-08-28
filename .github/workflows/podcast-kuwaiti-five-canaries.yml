@@ -19,6 +19,10 @@ on:
         description: 'اختياري: قاعدة بذور مضبوطة لاختبار مرجع محفوظ (مثال 3100 يعطي 3104 ثم 3114 للحلقة 04)'
         required: false
         default: ''
+      quality_attempts:
+        description: 'عينات جودة لكل حلقة (1–6؛ الافتراض 6 = موجتان مستقلتان من 3)'
+        required: false
+        default: '6'
       tts_provider:
         description: 'بوابة الصوت: Vertex = نموذج Cloud المستقر · AI Studio = المرجع Preview القديم'
         required: true
@@ -175,6 +179,7 @@ jobs:
           # قصّ الصمت وطول الحروف وحدهما قاضيين على الحنجرة أو اكتمال الدور.
           PODCAST_KW_TRANSCRIPT_ALIGNMENT: required
           PODCAST_KW_REJECT_DIR: five-canaries/rejected
+          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
         run: |
           set -uo pipefail
           set +e
@@ -183,11 +188,13 @@ jobs:
           TOTAL=$(wc -l < five-canary-slugs.txt | tr -d ' ')
           # لا تعِد seed نفسها عند Rerun؛ وإلا رجعت العينة المرفوضة نفسها.
           REQUESTED_SEED_BASE='${{ inputs.seed_base || '' }}'
+          QUALITY_ATTEMPTS="$REQUESTED_QUALITY_ATTEMPTS"
+          [[ "$QUALITY_ATTEMPTS" =~ ^[1-6]$ ]] || { echo "::error::quality_attempts يجب أن يكون بين 1 و6"; exit 1; }
           if [ -n "$REQUESTED_SEED_BASE" ]; then
             [[ "$REQUESTED_SEED_BASE" =~ ^[0-9]+$ ]] || { echo "::error::seed_base غير صالح"; exit 1; }
             SEED_BASE="$REQUESTED_SEED_BASE"
           else
-            SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 ))
+            SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 10000 ))
           fi
           while IFS= read -r SLUG; do
             N=$((N + 1)); ACCEPTED=0
@@ -202,10 +209,13 @@ jobs:
               how-do-we-assess-without-breaking-the-human-beingarabic) SEED_SLOT=5 ;;
               *) echo "::error::ماكو خانة بذرة معتمدة لـ$SLUG"; exit 1 ;;
             esac
-            for ATTEMPT in 1 2 3; do
+            for ATTEMPT in $(seq 1 "$QUALITY_ATTEMPTS"); do
               export PODCAST_KW_PILOT_SLUG="$SLUG"
-              export PODCAST_KW_SEED=$((SEED_BASE + SEED_SLOT + (ATTEMPT - 1) * 10))
-              echo "── حلقة $N/$TOTAL · محاولة $ATTEMPT/3 · $SLUG · seed=$PODCAST_KW_SEED"
+              ATTEMPT_INDEX=$((ATTEMPT - 1))
+              SEED_WAVE=$((ATTEMPT_INDEX / 3))
+              SEED_WITHIN_WAVE=$((ATTEMPT_INDEX % 3))
+              export PODCAST_KW_SEED=$((SEED_BASE + SEED_SLOT + SEED_WAVE * 1000 + SEED_WITHIN_WAVE * 10))
+              echo "── حلقة $N/$TOTAL · محاولة $ATTEMPT/$QUALITY_ATTEMPTS · $SLUG · seed=$PODCAST_KW_SEED"
               # عطل Gemini المؤقت لا يعني أن الـTake رديء، ولا يجوز أن
               # يستهلك محاولة جودة أو يمنعنا من الوصول إلى البذرة التالية.
               TRANSPORT_ATTEMPT=1
@@ -229,7 +239,7 @@ jobs:
               # (ثلاث عينات بفجوة ‑٦ و٤) وضاعت الأربع الناجحة معها ولم
               # تُرفع حزمة سماع أصلاً. الحلقة السيئة تُسجَّل وتُتخطّى،
               # وما نجح يصل الدكتور. والتشغيلة تُعلَن ناقصةً في نهايتها.
-              echo "::warning::$SLUG: ثلاث عينات سقطت في بوابة الصوتين — تُتخطّى، والباقي يكمل"
+              echo "::warning::$SLUG: $QUALITY_ATTEMPTS عينات من موجتين سقطت في بوابة الصوتين — تُتخطّى، والباقي يكمل"
               echo "$SLUG" >> five-canaries/SKIPPED.txt
               continue
             fi

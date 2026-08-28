@@ -5424,7 +5424,7 @@
    },
    "1": {
     "speaker": "female",
-    "text": "والطالب يركض من الفصل للمسرح، ومن الملعب للورشة الفنية.",
+    "text": "والطالب ينتقل من الفصل للمسرح، ومن الملعب للورشة الفنية.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -9398,7 +9398,7 @@
    },
    "11": {
     "speaker": "male",
-    "text": "وصرنا نهرب من واقعنا لواقع ثاني يستوعبنا أكثر…",
+    "text": "وصرنا نطلع من واقعنا لواقع ثاني يستوعبنا أكثر…",
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
@@ -19137,7 +19137,7 @@
    },
    "1": {
     "speaker": "female",
-    "text": "والنساء والرجال والشباب والعيال كلهم يركضون يواكبون صخب هالصيحات.",
+    "text": "والنساء والرجال والشباب والعيال كلهم يدورون ورا صخب هالصيحات.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -19191,7 +19191,7 @@
    },
    "7": {
     "speaker": "female",
-    "text": "لأنه يتابع هالصيحات ويركض وراها بسرعة الضو.",
+    "text": "لأنه يتابع هالصيحات ويطير وراها بسرعة الضو.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -28231,7 +28231,7 @@
   "the-classroom-that-fears-mistakesarabic": {
    "0": {
     "speaker": "male",
-    "text": "توقفنا أسبوعين… انشغلنا بالحرب، وبالقلق اللي يعلى مع كل خبر.",
+    "text": "توقفنا أسبوعين… انشغلنا بالحرب، والخوف اللي يزيد مع كل خبر.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -28249,7 +28249,7 @@
    },
    "2": {
     "speaker": "female",
-    "text": "بس اليوم نرجع لجبهة ما تقل أهمية.",
+    "text": "بس اليوم نرجع لشي ما يقل أهمية.",
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -28258,7 +28258,7 @@
    },
    "3": {
     "speaker": "male",
-    "text": "جبهة الصف… هني بعد تنصنع الشجاعة، ولا ينصنع الخوف.",
+    "text": "الصف نفسه… هني بعد تنصنع الشجاعة، ولا ينصنع الخوف.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -28267,7 +28267,7 @@
    },
    "4": {
     "speaker": "female",
-    "text": "وهني يتعلم الطفل يرفع يده… ولا يبلع صوته.",
+    "text": "وهني يتعلم الطفل يرفع يده… ولا يسكت.",
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
@@ -28674,7 +28674,7 @@
    },
    "20": {
     "speaker": "male",
-    "text": "وعطيتوهم لحظة تفكير وحدة، بلا توقيت يركض وراهم؟",
+    "text": "وعطيتوهم لحظة تفكير وحدة، بلا توقيت يمشي وراهم؟",
     "deliveryType": "question",
     "pauseAfterMs": 680,
     "overlapMs": 0,
@@ -29173,7 +29173,7 @@
    },
    "21": {
     "speaker": "male",
-    "text": "وإحنا مو مطالبين نهرب من العصر، ولا نكسر الشاشات.",
+    "text": "وإحنا مو مطالبين نطلع من العصر، ولا نكسر الشاشات.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -29989,7 +29989,7 @@
    },
    "27": {
     "speaker": "female",
-    "text": "بس كل شي سهل، هذولا يركضون له بسرعة ضوئية.",
+    "text": "بس كل شي سهل، هذولا يوصلون له بسرعة ضوئية.",
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -30798,7 +30798,7 @@
   "the-success-that-destroyed-us-2": {
    "0": {
     "speaker": "male",
-    "text": "ما انخلقنا نركض طول الوقت… بس حولنا الركض لطقس يومي.",
+    "text": "ما انخلقنا نسرع طول الوقت… بس حولنا السرعة لطقس يومي.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -33428,7 +33428,7 @@
    },
    "17": {
     "speaker": "male",
-    "text": "يفكرون يهربون منها.",
+    "text": "يفكرون يطلعون منها.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
@@ -33547,7 +33547,7 @@
    },
    "3": {
     "speaker": "male",
-    "text": "يصفقون للطالب الذكي اللي عرف شلون يهرب بورقة، أو يصور الإجابات، أو يتحايل على المعلم.",
+    "text": "يصفقون للطالب الذكي اللي عرف شلون يغش بورقة، أو يصور الإجابات، أو يتحايل على المعلم.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -33992,7 +33992,7 @@
   "when-seriousness-becomes-a-mask-for-escapearabic": {
    "0": {
     "speaker": "male",
-    "text": "نركض وايد… ونسمي الركض التزام.",
+    "text": "نسرع وايد… ونسمي السرعة التزام.",
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
@@ -34235,7 +34235,7 @@
    },
    "27": {
     "speaker": "male",
-    "text": "ماكو أسوأ من إنسان يركض طول السنة…",
+    "text": "ماكو أسوأ من إنسان يلهث طول السنة…",
     "deliveryType": "conclusion",
     "pauseAfterMs": 320,
     "overlapMs": 0,
@@ -34244,7 +34244,7 @@
    },
    "28": {
     "speaker": "male",
-    "text": "وبعدين يكتشف إنه كان يهرب من نفسه.",
+    "text": "وبعدين يكتشف إنه ما كان يواجه نفسه.",
     "deliveryType": "conclusion",
     "pauseAfterMs": 900,
     "overlapMs": 0,
@@ -34282,7 +34282,7 @@
    },
    "2": {
     "speaker": "female",
-    "text": "ويصير الوقت فجأة عدو يركض أسرع من الطالب، فيلهث وراه وما يلحقه.",
+    "text": "ويصير الوقت فجأة عدو يسبق الطالب، فيلهث وراه وما يلحقه.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -34426,7 +34426,7 @@
    },
    "18": {
     "speaker": "female",
-    "text": "يركضون ورا الدرجة مو ورا الفكرة…",
+    "text": "يدورون ورا الدرجة مو ورا الفكرة…",
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
@@ -34979,7 +34979,7 @@
    },
    "24": {
     "speaker": "male",
-    "text": "وفي الإعلام ياخذ شكل امتحان ضمير: نركض ورا التفاعل…",
+    "text": "وفي الإعلام ياخذ شكل امتحان ضمير: ندور ورا التفاعل…",
     "deliveryType": "question",
     "pauseAfterMs": 320,
     "overlapMs": 0,

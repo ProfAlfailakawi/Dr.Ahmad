@@ -21,11 +21,22 @@ const AUDITS = resolve(ROOT, 'podcast-audits', 'kuwaiti')
 const STATE = resolve(ROOT, '.podcast-state.json')
 const VERTEX_PROJECT = String(process.env.PODCAST_KW_VERTEX_PROJECT || '').trim()
 const VERTEX_LOCATION = String(process.env.PODCAST_KW_VERTEX_LOCATION || 'us-central1').trim()
-const USE_VERTEX = Boolean(VERTEX_PROJECT)
+/* AI Studio ظلّ اثنتي عشرة ساعة يعيد 500 داخلياً بينما التفريغ على المفتاح
+   نفسه يعمل. هذا يعزل العطل في مسار TTS/Interactions لا في المفتاح أو الرصيد.
+   Vertex هنا مسار إنتاج صريح إلى نموذج Cloud المستقر؛ لا fallback صامت:
+   اختلاف المزوّد أو النموذج لازم يمر بخمس حلقات سماع قبل إنتاج الـ143. */
+const REQUESTED_TTS_PROVIDER = String(process.env.PODCAST_KW_TTS_PROVIDER || '').trim().toLowerCase()
+const TTS_PROVIDER = REQUESTED_TTS_PROVIDER || (VERTEX_PROJECT ? 'vertex' : 'ai-studio')
+assert.ok(['ai-studio', 'vertex'].includes(TTS_PROVIDER),
+  `PODCAST_KW_TTS_PROVIDER غير صالح: ${TTS_PROVIDER}`)
+const USE_VERTEX = TTS_PROVIDER === 'vertex'
+if (USE_VERTEX) assert.ok(VERTEX_PROJECT, 'PODCAST_KW_VERTEX_PROJECT مطلوب لمسار Vertex')
 const API = USE_VERTEX
   ? `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1beta1/projects/${encodeURIComponent(VERTEX_PROJECT)}/locations/${encodeURIComponent(VERTEX_LOCATION)}/publishers/google/models`
   : 'https://generativelanguage.googleapis.com/v1beta/interactions'
-const MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-pro-preview-tts'
+const MODEL = process.env.GEMINI_TTS_MODEL || (USE_VERTEX ? 'gemini-2.5-pro-tts' : 'gemini-2.5-pro-preview-tts')
+const TTS_LANGUAGE = String(process.env.PODCAST_KW_TTS_LANGUAGE || (USE_VERTEX ? 'ar-001' : 'ar')).trim()
+const VERTEX_INPUT_LIMIT_BYTES = 8000
 /* اعتماد الدكتور ١٤ أغسطس ٢٠٢٦ بعد سماع الجولة الثالثة: المقطع ٥ —
    فهد Puck («الرجل ممتاز») ونورة Despina. سُمع ضعفٌ في لكنة Despina وبقيت
    «الورقه» إماراتيةً في سطرها وحده بينما صمدت في سطر Puck بالإملاء نفسه —
@@ -173,7 +184,8 @@ function preserveRejectedTake (reason, details = {}) {
       '-ar','48000','-ac','1','-c:a','libmp3lame','-b:a','128k',audio], { encoding: 'utf8' })
   }
   writeFileSync(resolve(directory, `${base}.rejection.json`), `${JSON.stringify({
-    schemaVersion: 1, slug, seed: SEED, model: MODEL, voices: { male: MALE_VOICE, female: FEMALE_VOICE },
+    schemaVersion: 1, slug, seed: SEED, provider: TTS_PROVIDER, model: MODEL, languageCode: TTS_LANGUAGE,
+    voices: { male: MALE_VOICE, female: FEMALE_VOICE },
     reason, details, alignment: splitAlignmentAudits, dryAudio: existsSync(audio) ? `${base}.dry.mp3` : null,
     generatedAt: new Date().toISOString(),
   }, null, 2)}\n`)
@@ -406,7 +418,8 @@ const FOREIGN_REDACTIONS = buildForeignRedactions(PRONUNCIATION_SOURCE)
 /* الحذف أولاً (يمسح الاسم اللاتيني الذي يكسر الصوت) ثم قلب الإملاء الكويتي. */
 export const spokenForm = (text) => toSpokenKuwaiti(redactForeignNames(text, FOREIGN_REDACTIONS), PRONUNCIATION)
 
-function promptFor(turns, index, total, mode = PROMPT_MODE, warmupTurns = 0, warmupEstimatedSec = 0) {
+function promptFor(turns, index, total, mode = PROMPT_MODE, warmupTurns = 0, warmupEstimatedSec = 0,
+  provider = TTS_PROVIDER) {
   /* وضع full التاريخي وحده يحمل تذكيراً متخللاً. في الوضع المعتمد C أُلغي
      reset كل ستة أدوار: كان يقطع الذاكرة المحلية ويعيد «توجيه» الممثلين وسط
      السالفة. الاستمرارية الآن عقدٌ واحدٌ في الرأس، والحوار يبقى متصلاً. */
@@ -428,7 +441,7 @@ function promptFor(turns, index, total, mode = PROMPT_MODE, warmupTurns = 0, war
       : index === 0
       ? 'Begin the same uninterrupted dry-voice recording described above. Nothing in the transcript marks a chapter, transition, or new session.'
       : `Continue the same uninterrupted sitting. The opening ${warmupTurns} transcript turns reproduce approximately ${warmupEstimatedSec} seconds of the immediately preceding conversation as acoustic warm-up context; perform them in the identical voices, then continue without any reset. This is not a new recording, scene, or fresh interpretation.`
-    return `${USE_VERTEX ? PROMPT_VERTEX_C_HEAD : PROMPT_C_HEAD}
+    return `${provider === 'vertex' ? PROMPT_VERTEX_C_HEAD : PROMPT_C_HEAD}
 
 # RECORDING CONTINUITY
 
@@ -587,7 +600,7 @@ HOLD TO THE LAST SECOND — the drift happens late: the listener judged minute 3
 /* المسار المنفرد يقرأ الحوار كله حتى تبقى ذاكرة الأخذ والرد والبحث حاضرة؛
    لكنه يحمل preset واحداً فقط. الأدوار غير المستهدفة سياق مسموع داخل هذا
    الـTake ثم تُهمل في المونتاج، لا طلباتٌ منفصلة ولا ترقيعٌ بعد الفشل. */
-export function fullContextStemPrompt (prompt, targetSpeaker = 'female') {
+export function fullContextStemPrompt (prompt, targetSpeaker = 'female', provider = TTS_PROVIDER) {
   const target = targetSpeaker === 'male' ? 'Fahad' : 'Noura'
   const transcriptMarker = '# TRANSCRIPT\n\n'
   const transcriptAt = prompt.lastIndexOf(transcriptMarker)
@@ -596,10 +609,10 @@ export function fullContextStemPrompt (prompt, targetSpeaker = 'female') {
      ضاعفت الخرج، ورفض Zephyr الطلب الطويل بعد نجاح Puck. في المسار المحلي
      نأخذ أدوار الشخص نفسه كلها في Take واحد؛ GitHub/Interactions يحتفظ
      بالسياق الكامل الذي ثبّتناه للإنتاج العام. */
-  const spokenLines = USE_VERTEX ? transcriptLines.filter((line) => line.startsWith(`${target}:`)) : transcriptLines
+  const spokenLines = provider === 'vertex' ? transcriptLines.filter((line) => line.startsWith(`${target}:`)) : transcriptLines
   const boundedPrompt = transcriptAt < 0 ? prompt : `${prompt.slice(0, transcriptAt + transcriptMarker.length)}${spokenLines
     .join('\n[short pause]\n')}`
-  if (USE_VERTEX) return `# SINGLE-VOICE CONTINUOUS IDENTITY STEM
+  if (provider === 'vertex') return `# SINGLE-VOICE CONTINUOUS IDENTITY STEM
 
 Use exactly one immutable acoustic voice for every line. Read every ${target}-labelled utterance completely in this one Take. Labels are silent timing context and never spoken. Do not imitate or create a second voice.
 
@@ -734,11 +747,17 @@ async function geminiPcm(prompt, speechConfig = [
   { speaker: 'Noura', voice: FEMALE_VOICE },
 ]) {
   if (!KEY && !USE_VERTEX) throw new Error('GEMINI_API_KEY/GOOGLE_API_KEY مفقود')
+  const inputBytes = Buffer.byteLength(prompt, 'utf8')
+  if (USE_VERTEX && inputBytes > VERTEX_INPUT_LIMIT_BYTES) {
+    throw new Error(`Vertex TTS input أكبر من السقف: ${inputBytes}/${VERTEX_INPUT_LIMIT_BYTES} بايت — ممنوع تقسيم الحلقة صامتاً`)
+  }
   let vertexToken = ''
   if (USE_VERTEX) {
     const auth = spawnSync('gcloud', ['auth', 'print-access-token'], { encoding:'utf8' })
     vertexToken = String(auth.stdout || '').trim()
-    if (auth.status !== 0 || !vertexToken) throw new Error('تعذّر أخذ Vertex access token من gcloud')
+    if (auth.status !== 0 || !vertexToken) {
+      throw new Error(`تعذّر أخذ Vertex access token من gcloud: ${String(auth.stderr || '').trim() || 'تحقق من خدمة الحساب'}`)
+    }
   }
   let last = null
   let quotaWaitMs = 0
@@ -756,11 +775,11 @@ async function geminiPcm(prompt, speechConfig = [
       const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs)
       const vertexSpeechConfig = speechConfig?.length === 1 && !speechConfig[0]?.speaker
         ? {
-            languageCode: 'ar',
+            languageCode: TTS_LANGUAGE,
             voiceConfig: { prebuiltVoiceConfig: { voiceName: speechConfig[0].voice } },
           }
         : {
-            languageCode: 'ar',
+            languageCode: TTS_LANGUAGE,
             multiSpeakerVoiceConfig: {
               speakerVoiceConfigs: speechConfig.map((item) => ({
                 speaker: item.speaker,
@@ -823,7 +842,8 @@ async function geminiPcm(prompt, speechConfig = [
         ? `شكل الردّ: ${describeShape(body).join(' | ')}`
         : `ردّ غير JSON (${raw.length} حرفاً): ${raw.slice(0, 200).replace(/\s+/g, ' ')}`
       const detailText = body?.error?.details?.length ? ` — ${JSON.stringify(body.error.details)}` : ''
-      const message = (body?.error?.message || body?.message
+      const providerLabel = USE_VERTEX ? `Vertex/${VERTEX_LOCATION}/${MODEL}` : `AI Studio/Interactions/${MODEL}`
+      const message = `${providerLabel}: ` + (body?.error?.message || body?.message
         || `HTTP ${response.status} بلا صوت — ${shape}`
       ) + detailText
       if (response.status !== 429 && response.status < 500) throw new Error(message)
@@ -1707,7 +1727,8 @@ function saveState(slugValue, audioFile, transcriptFile) {
   const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE,'utf8')) : { done: {} }
   state.done ||= {}
   state.done[`${slugValue}:kw`] = {
-    status: 'accepted_automated', provider: 'gemini', model: MODEL, profile: PROFILE,
+    status: 'accepted_automated', provider: 'gemini', ttsApi: TTS_PROVIDER, model: MODEL,
+    languageCode: TTS_LANGUAGE, profile: PROFILE,
     audioHash: sha256(readFileSync(audioFile)), transcriptHash: sha256(readFileSync(transcriptFile)),
     acceptedAt: new Date().toISOString(),
   }
@@ -1846,7 +1867,7 @@ if (SELF_TEST) {
   assert.match(prompt, /خوش سؤال\. خل نكون واقعيين/, 'العيّنة بلسانه الحقيقي المقتنى من تفريغات لقاءاته')
   assert.match(prompt, /diwaniya/, 'المشهد ديوانية كويتية — اسم البودكاست وهويته')
   /* [٢٢ أغسطس ٢٠٢٦] فحوص الوضع الأدنى — تجربة صديق الدكتور: */
-  const minimalPrompt = promptFor(chunks[0], 0, chunks.length, 'minimal')
+  const minimalPrompt = promptFor(chunks[0], 0, chunks.length, 'minimal', 0, 0, 'ai-studio')
   /* وصفة الصديق كما نقلها الدكتور (٢٢ أغسطس): عربي قصير، والمنع قائمة
      أسماء مجردة في سطر واحد — الخطر ليس ذكر الاسم بل الوصف الحي لصوت
      اللهجة (rhythm/cadence/articulation) الذي يكاد يعلّمها للمحرك. */
@@ -1874,13 +1895,15 @@ if (SELF_TEST) {
   assert.deepEqual(timedWarmup.turns.slice(0, timedWarmup.warmupTurns),
     warmupFixture[0].slice(-timedWarmup.warmupTurns), 'النافذة الزمنية هي ذيل الحوار السابق بلا إعادة ترتيب')
   const cPrompt = promptFor(continuityGroups[0].turns, 0, chunks.length, 'c',
-    continuityGroups[0].warmupTurns, continuityGroups[0].warmupEstimatedSec)
+    continuityGroups[0].warmupTurns, continuityGroups[0].warmupEstimatedSec, 'ai-studio')
   const cContinuation = promptFor(continuityGroups[1].turns, 1, chunks.length, 'c',
-    continuityGroups[1].warmupTurns, continuityGroups[1].warmupEstimatedSec)
-  const cSingleCall = promptFor(turns, 0, 1, 'c')
-  const nouraStemPrompt = fullContextStemPrompt(cSingleCall, 'female')
-  const fahadStemPrompt = fullContextStemPrompt(cSingleCall, 'male')
-  const cResetProbe = promptFor(Array.from({ length: 7 }, (_, index) => turns[index % turns.length]), 0, 1, 'c')
+    continuityGroups[1].warmupTurns, continuityGroups[1].warmupEstimatedSec, 'ai-studio')
+  const cSingleCall = promptFor(turns, 0, 1, 'c', 0, 0, 'ai-studio')
+  const vertexSingleCall = promptFor(turns, 0, 1, 'c', 0, 0, 'vertex')
+  const nouraStemPrompt = fullContextStemPrompt(cSingleCall, 'female', 'ai-studio')
+  const fahadStemPrompt = fullContextStemPrompt(cSingleCall, 'male', 'ai-studio')
+  const cResetProbe = promptFor(Array.from({ length: 7 }, (_, index) => turns[index % turns.length]),
+    0, 1, 'c', 0, 0, 'ai-studio')
   assert.ok(cPrompt.includes('# PRIMARY STANDARD') && cPrompt.includes('# NATIVE ACCENT ANCHOR')
     && cPrompt.trimEnd().endsWith(spokenForm(chunks[0][chunks[0].length-1].text)),
   'C ببنية المخرج والنص المنطوق آخر شيء في الطلب')
@@ -1917,6 +1940,10 @@ if (SELF_TEST) {
     'نورة تحمل قفل prosody كويتي موجهاً بلا حشو لهجات')
   assert.match(PROMPT_VERTEX_C_HEAD, /VOICE ROUTING IS LITERAL AND IMMUTABLE[\s\S]*Conversational role never determines acoustic identity/,
     'رأس Vertex المختصر لا يعيد ربط السائل أو الخبير بصوتٍ بدل الاسم')
+  assert.match(vertexSingleCall, /One uninterrupted dry recording/,
+    'مسار Vertex نفسه يستعمل الرأس المختصر ويحفظ Same-Take')
+  assert.ok(Buffer.byteLength(vertexSingleCall, 'utf8') <= VERTEX_INPUT_LIMIT_BYTES,
+    'عينة Vertex تدخل سقف 8000 بايت بنداء واحد')
   assert.match(PROMPT_VERTEX_C_HEAD, /speaker handoff[\s\S]*100–180ms[\s\S]*Never place a silence that long inside a labelled line/i,
     'حد القص الصادق يقع عند تسليم المتحدث فقط وبسكتة طبيعية صغيرة')
   assert.match(cSingleCall, /# THIS EPISODE'S CONVERSATION SHAPE/,
@@ -2131,6 +2158,9 @@ if (SELF_TEST) {
   assert.ok(grouped.length < 12, `التجميع لم يحدث: ${grouped.length} مقاطع لـ12 مداخلة`)
   assert.equal(grouped.flat().length, 12, 'التجميع لا يفقد مداخلةً ولا يكرّرها')
   assert.equal(TURNS_PER_REQUEST, 96, 'السقف يحمل أطول حلقة كاملة حالية في Take واحد')
+  assert.match(engineSource, /gemini-2\.5-pro-tts/, 'مسار Vertex يحمل اسم نموذج Cloud المستقر لا alias الـPreview')
+  assert.match(engineSource, /PODCAST_KW_TTS_PROVIDER/, 'اختيار بوابة TTS صريح وقابل للتدقيق')
+  assert.match(engineSource, /Vertex TTS input أكبر من السقف/, 'Vertex يفشل قبل الصرف إذا تجاوز النص سقفه؛ لا يقسم الحلقة صامتاً')
   for (const file of ['src/data/kuwaiti-diwania-v3.json', 'src/data/kuwaiti-dialogues.json']) {
     const library = JSON.parse(readFileSync(resolve(ROOT, file), 'utf8'))
     const splitCurrent = Object.entries(library.episodes || {})
@@ -2138,6 +2168,15 @@ if (SELF_TEST) {
       .map(([episodeSlug]) => episodeSlug)
     assert.deepEqual(splitCurrent, [], `${file}: حلقات حالية انقسمت بلا ضرورة: ${splitCurrent.join('، ')}`)
   }
+  const vertexLibrary = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-diwania-v3.json'), 'utf8'))
+  const oversizedVertexPrompts = Object.entries(vertexLibrary.episodes || {})
+    .map(([episodeSlug, episode]) => ({
+      episodeSlug,
+      bytes: Buffer.byteLength(promptFor(Object.values(episode), 0, 1, 'c', 0, 0, 'vertex'), 'utf8'),
+    }))
+    .filter((row) => row.bytes > VERTEX_INPUT_LIMIT_BYTES)
+  assert.deepEqual(oversizedVertexPrompts, [],
+    `حلقات v3 تتجاوز سقف Vertex وتفرض تقسيماً ممنوعاً: ${oversizedVertexPrompts.map((row) => `${row.episodeSlug}:${row.bytes}`).join(' · ')}`)
   const fakeGaps = [{ mid: 2.0, span: 0.5 }, { mid: 3.7, span: 0.5 }, { mid: 6.3, span: 0.5 }]
   assert.deepEqual(chooseSplitPoints(fakeGaps, 4, 8.1), [2.0, 3.7, 6.3], 'حدود المداخلات تُقرأ من أطول الصمتات')
   assert.equal(chooseSplitPoints(fakeGaps, 9, 8.1), null, 'نقصُ الصمتات يوقف القص ولا يختلق حدوداً أو توليداً منفصلاً')
@@ -2262,7 +2301,7 @@ const prompts = generationGroups.map((group, index) =>
   promptFor(group.turns, index, chunks.length, PROMPT_MODE, group.warmupTurns, group.warmupEstimatedSec))
 if (DRY_RUN) {
   console.log(`✓ ${slug}: ${turns.length} مداخلة → ${chunks.length === 1 ? 'Take واحد متصل' : `${chunks.length} طلبات متداخلة بإحماء صوتي`}`)
-  console.log(`✓ model=${MODEL} · male=${MALE_VOICE} · female=${FEMALE_VOICE} · profile=${PROFILE}`)
+  console.log(`✓ provider=${TTS_PROVIDER} · model=${MODEL} · language=${TTS_LANGUAGE} · male=${MALE_VOICE} · female=${FEMALE_VOICE} · profile=${PROFILE}`)
   console.log(prompts[0].slice(0,2200))
   process.exit(0)
 }
@@ -2550,7 +2589,8 @@ const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)
 const timeline=timelineFor(turns,assembly)
 writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
 const audit={
-  schemaVersion:1, qualityGateVersion:'kuwaiti-aligned-v14', slug, revisionId, status:'candidate', provider:'gemini', model:MODEL, profile:PROFILE,
+  schemaVersion:1, qualityGateVersion:'kuwaiti-aligned-v14', slug, revisionId, status:'candidate',
+  provider:'gemini', ttsApi:TTS_PROVIDER, model:MODEL, languageCode:TTS_LANGUAGE, profile:PROFILE,
   seed:SEED,
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
   sourceSha256:sha256(readFileSync(source)), sourceTurnCount:sourceTurns.length, turnCount:turns.length, chunkCount:chunks.length,

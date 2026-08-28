@@ -27,6 +27,19 @@ on:
         description: 'اختياري للتجربة المضبوطة؛ اتركه فارغاً لبذور جديدة تلقائياً في كل Rerun'
         required: false
         default: ''
+      tts_provider:
+        description: 'بوابة الصوت؛ لا تختَر Vertex للإنتاج قبل اعتماد باقة السماع بأذنك'
+        required: true
+        type: choice
+        options:
+          - ai-studio
+          - vertex
+        default: ai-studio
+      confirm_vertex_canaries:
+        description: 'أؤكد أني سمعت خمس حلقات Vertex واعتمدت أصواتها ولهجتها'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -47,6 +60,32 @@ jobs:
         with:
           node-version: 24
           cache: npm
+
+      - name: Refuse an unapproved provider for the 143-episode queue
+        if: ${{ inputs.tts_provider == 'vertex' && !inputs.confirm_vertex_canaries }}
+        run: |
+          echo '::error::ولّد باقة السماع على Vertex واسمعها أولاً، ثم فعّل confirm_vertex_canaries.'
+          exit 1
+
+      - name: Authenticate the approved stable Vertex route
+        if: ${{ inputs.tts_provider == 'vertex' && inputs.confirm_vertex_canaries }}
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+      - name: Install Google Cloud CLI for Vertex
+        if: ${{ inputs.tts_provider == 'vertex' && inputs.confirm_vertex_canaries }}
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Preflight Vertex identity without spending TTS quota
+        if: ${{ inputs.tts_provider == 'vertex' && inputs.confirm_vertex_canaries }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_ID="$(node -e "process.stdout.write(String(JSON.parse(require('fs').readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS,'utf8')).project_id||''))")"
+          test -n "$PROJECT_ID" || { echo '::error::project_id مفقود من حساب Google'; exit 1; }
+          gcloud auth print-access-token >/dev/null
+          echo "PODCAST_KW_VERTEX_PROJECT=$PROJECT_ID" >> "$GITHUB_ENV"
 
       - name: Install and lock the approved production engine
         run: |
@@ -139,8 +178,12 @@ jobs:
         id: queue
         shell: bash
         env:
+          PODCAST_KW_TTS_PROVIDER: ${{ inputs.tts_provider || 'ai-studio' }}
+          PODCAST_KW_VERTEX_PROJECT: ${{ env.PODCAST_KW_VERTEX_PROJECT }}
+          PODCAST_KW_VERTEX_LOCATION: us-central1
+          PODCAST_KW_TTS_LANGUAGE: ${{ inputs.tts_provider == 'vertex' && 'ar-001' || 'ar' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
+          GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
           GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all

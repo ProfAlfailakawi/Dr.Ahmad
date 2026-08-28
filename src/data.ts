@@ -333,7 +333,6 @@ export const academicProfiles = [
   { label: 'Web of Science', url: 'https://www.webofscience.com/wos/author/record/LXA-2190-2024' },
   { label: 'Semantic Scholar', url: 'https://www.semanticscholar.org/author/Ahmad-Alfailakawi/101514397' },
   { label: 'Wikidata', url: 'https://www.wikidata.org/wiki/Q141131823' },
-  { label: 'Goodreads', url: 'https://www.goodreads.com/user/show/203649232-dr-ahmad' },
 ]
 
 export const links = {

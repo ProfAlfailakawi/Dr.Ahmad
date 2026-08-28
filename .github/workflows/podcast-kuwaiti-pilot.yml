@@ -26,6 +26,14 @@ on:
         description: 'محجوز للتوافق مع اللوحة؛ إنتاج الحلقة مقفول على c الفائز، والتجارب لها workflow مستقل'
         required: false
         default: 'c'
+      tts_provider:
+        description: 'Vertex المستقر للاختبار أو AI Studio Preview للمقارنة المرجعية'
+        required: true
+        type: choice
+        options:
+          - vertex
+          - ai-studio
+        default: vertex
 
 permissions:
   contents: read
@@ -52,6 +60,26 @@ jobs:
         with:
           node-version: 24
           cache: npm
+
+      - name: Authenticate the stable Vertex TTS pilot
+        if: ${{ !inputs.restore_from_run && inputs.tts_provider == 'vertex' }}
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+      - name: Install Google Cloud CLI for Vertex
+        if: ${{ !inputs.restore_from_run && inputs.tts_provider == 'vertex' }}
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Preflight Vertex identity without spending TTS quota
+        if: ${{ !inputs.restore_from_run && inputs.tts_provider == 'vertex' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_ID="$(node -e "process.stdout.write(String(JSON.parse(require('fs').readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS,'utf8')).project_id||''))")"
+          test -n "$PROJECT_ID" || { echo '::error::project_id مفقود من حساب Google'; exit 1; }
+          gcloud auth print-access-token >/dev/null
+          echo "PODCAST_KW_VERTEX_PROJECT=$PROJECT_ID" >> "$GITHUB_ENV"
 
       - name: Install
         run: |
@@ -221,8 +249,12 @@ jobs:
           # مرفوعة للمفاضلة بالأذن، وحين يختار الدكتور غيرها تُرقّى.
           exit 0
         env:
+          PODCAST_KW_TTS_PROVIDER: ${{ inputs.tts_provider || 'vertex' }}
+          PODCAST_KW_VERTEX_PROJECT: ${{ env.PODCAST_KW_VERTEX_PROJECT }}
+          PODCAST_KW_VERTEX_LOCATION: us-central1
+          PODCAST_KW_TTS_LANGUAGE: ${{ inputs.tts_provider == 'vertex' && 'ar-001' || 'ar' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
+          GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: pilot
           PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic

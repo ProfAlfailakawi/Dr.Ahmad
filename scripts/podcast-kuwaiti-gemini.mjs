@@ -1466,7 +1466,25 @@ async function splitChunk(file, chunkTurnsList, outPrefix) {
         }
       }
       splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL, ...(aligned || {}), cuts: undefined, rejected: true })
-      throw new Error(`شاهد الأدوار غير حاسم (تطابق ${aligned ? (aligned.similarity * 100).toFixed(0) : '0'}٪ · تغطية ${aligned ? (aligned.coverage * 100).toFixed(0) : '0'}٪ · أصوات ${aligned?.speakerLabels?.length || 0})`)
+      /* [٢٨ أغسطس ٢٠٢٦] كانت الرسالة تعرض ثلاثة من ستة شروط (التطابق والتغطية
+         وعدد الأصوات)، وتسكت عن حدود القص وتمايز الإسناد واتفاق الصوت. فحين
+         رُفضت حلقةٌ عند «تطابق ٩٧٪ · تغطية ٩٩٪ · أصوات ٢» — وكلها مجتازة —
+         لم يكن في السطر ما يدل على السبب. وأسوأ: نجاحُ الشاهد وفشلُ القص
+         بعده يقعان في هذي الرسالة نفسها، فيُتَّهم الشاهد بذنب القصّ.
+         الرسالة الآن تسمّي الشرط الساقط وحده؛ والحكم لم يتغيّر حرفاً. */
+      const failures = []
+      if (!aligned) failures.push('ما رجعت محاذاة أصلاً')
+      else {
+        if (!aligned.cuts) failures.push('ما ثبتت حدود القص')
+        if (aligned.similarity < 0.78) failures.push(`تطابق ${(aligned.similarity * 100).toFixed(0)}٪ < ٧٨٪`)
+        if (aligned.coverage < 0.84) failures.push(`تغطية ${(aligned.coverage * 100).toFixed(0)}٪ < ٨٤٪`)
+        if (aligned.speakerLabels.length !== 2) failures.push(`أصوات ${aligned.speakerLabels.length} ≠ ٢`)
+        if (!aligned.speakerMappingDistinct) failures.push('الصوتان لم يتمايزا في الإسناد')
+        if (aligned.speakerAgreement < 0.88) failures.push(`اتفاق الصوت ${(aligned.speakerAgreement * 100).toFixed(0)}٪ < ٨٨٪`)
+      }
+      /* لا شرط ساقط = الشاهد اجتاز، والقصّ عند حدوده هو الذي أخفق. */
+      if (!failures.length) failures.push('الشاهد اجتاز شروطه كلها والقصّ عند حدوده هو الذي أخفق')
+      throw new Error(`شاهد الأدوار غير حاسم (${failures.join(' · ')})`)
     } catch (error) {
       if (ALIGNMENT_MODE === 'required') throw error
       console.warn(`⚠️ شاهد الأدوار تعذّر؛ رجوع محافظ لمحاذاة الصمت: ${error.message}`)

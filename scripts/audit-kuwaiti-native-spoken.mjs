@@ -69,7 +69,7 @@ if (SELF_TEST) {
     ['female', 'male', 'female', 'male', 'female'], 'البحث أخذ ورد بين صوتين لا فقرة مذيع')
   assert.equal(pilot.turns[14].text, 'شلون يعني؟ وشنو طلع معاهم؟',
     'سؤال البحث واحد طبيعي بدل تبديل صوت كل سطر')
-  assert.match(pilot.turns[15].text, /في دراسة كبيرة.*كل ما زاد التوتر، نزل مستوى الطالب/u,
+  assert.match(pilot.turns[15].text, /في مراجعة كبيرة.*كل ما زاد التوتر، نزل مستوى الطالب/u,
     'جواب البحث يحتفظ بالمصدر والنتيجة')
   assert.equal(pilot.turns[18].text, 'بس مو كبرنا الموضوع وايد؟', 'الاعتراض كويتي شفهي وخفيف')
   assert.equal(pilot.turns[23].text,
@@ -141,8 +141,12 @@ if (SELF_TEST) {
     'الإعداد الذي صنع ثلاثة أصوات بعد الجسور لا يرجع')
   assert.match(pilotWorkflow, /PODCAST_KW_PROMPT_MODE:\s*c/,
     'مسار المرشح مقفول على البرومت C المعتمد لا أوضاع التجارب التاريخية')
-  assert.match(pilotWorkflow, /GEMINI_TTS_MODEL:\s*gemini-2\.5-pro-preview-tts/,
-    'الإنتاج يستخدم Pro الذي اجتاز ثبات الهوية بدل Flash المتذبذب')
+  assert.match(pilotWorkflow, /PODCAST_KW_TTS_PROVIDER:/,
+    'بوابة الصوت تُختار صراحةً ولا تتبدل بصمت')
+  assert.match(pilotWorkflow, /gemini-2\.5-pro-tts/,
+    'المسار المستقر يحمل نموذج Cloud Pro المخصص للبودكاست')
+  assert.match(pilotWorkflow, /gemini-2\.5-pro-preview-tts/,
+    'مرجع AI Studio القديم باقٍ للمقارنة السمعية لا يُمحى')
   assert.match(pilotWorkflow, /PODCAST_KW_MIN_GAP:\s*'25'/,
     'الحوار المتعدد لا يقبل فجوة 20Hz التي سُمعت صوتاً واحداً')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
@@ -166,6 +170,7 @@ if (SELF_TEST) {
 
 const sources = [
   ['الكامل', 'src/data/kuwaiti-dialogues.json'],
+  ['القصير التاريخي', 'src/data/kuwaiti-dialogues-short.json'],
   ['المنطوق المختصر', 'src/data/kuwaiti-diwania-v3.json'],
 ]
 
@@ -178,8 +183,11 @@ for (const [label, relative] of sources) {
   const hard = []
   for (const [slug, episode] of episodes) {
     const prepared = optimizeNativeSpokenEpisode(Object.values(episode), { slug })
+    const optimizedText = prepared.turns.map((turn) => String(turn.text || '')).join('\n')
     assert.ok(prepared.turns.every((turn) => !/^ممم…/u.test(String(turn.text || '').trim())),
       `${label}/${slug}: رجع الحشو الميكانيكي «ممم» إلى النص المنطوق`)
+    assert.doesNotMatch(optimizedText, /(?:^|[\s،؛:.!?؟…])(?:تكفي|بدال|ينختبر)(?=$|[\s،؛:.!?؟…])/u,
+      `${label}/${slug}: بقيت كلمة صدر فيها حكم تبديل نهائي بعد الصقل`)
     turns += prepared.turns.length
     rewrites += prepared.changes.length
     qaf += prepared.audit.qafRiskCount
@@ -205,8 +213,12 @@ assert.doesNotMatch(pilotWorkflow, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'1'/,
   'ممنوع إعادة Voice/Accent Reset عند الجسر')
 assert.match(pilotWorkflow, /PODCAST_KW_PROMPT_MODE:\s*c/,
   'الإنتاج مقفول على البرومت C ذي الاستمرارية الصوتية المطلقة')
-assert.match(pilotWorkflow, /GEMINI_TTS_MODEL:\s*gemini-2\.5-pro-preview-tts/,
-  'المحرك المقفول هو Pro المجتاز لبوابات الهوية والرنين')
+assert.match(pilotWorkflow, /PODCAST_KW_TTS_PROVIDER:/,
+  'المرشح يسجل بوابة الصوت صراحةً')
+assert.match(pilotWorkflow, /gemini-2\.5-pro-tts/,
+  'Vertex يستعمل اسم Pro المستقر')
+assert.match(pilotWorkflow, /gemini-2\.5-pro-preview-tts/,
+  'AI Studio Preview يبقى مرجع A/B فقط')
 assert.match(pilotWorkflow, /PODCAST_KW_MIN_GAP:\s*'25'/,
   'مرشح الحوار الحقيقي يفرض فرقاً مسموعاً بين الشخصين')
 assert.match(pilotWorkflow, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
@@ -230,8 +242,12 @@ for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-prompt-exp
   const source = readFileSync(resolve(ROOT, '.github/workflows', workflow), 'utf8')
   assert.match(source, /apply-kuwaiti-native-spoken\.mjs/, `${workflow}: التجربة تمر بالصقل نفسه`)
   if (workflow === 'podcast-kuwaiti-five-canaries.yml') {
-    assert.match(source, /GEMINI_TTS_MODEL:\s*gemini-2\.5-pro-preview-tts/,
-      'الكناريات تختبر محرك الإنتاج نفسه')
+    assert.match(source, /default:\s*vertex/,
+      'الكناريات تختبر المسار المستقر أولاً وقت تعطل AI Studio')
+    assert.match(source, /gemini-2\.5-pro-tts/,
+      'كناري Vertex تستعمل Pro المستقر')
+    assert.match(source, /gemini-2\.5-pro-preview-tts/,
+      'خيار المرجع Preview باقٍ للمقارنة')
     assert.match(source, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'0'/,
       'الكناريات الخمس تختبر الحوار المتصل نفسه قبل التعميم')
     assert.match(source, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
@@ -251,6 +267,8 @@ assert.match(productionBatch, /Restore already accepted episodes before spending
   'Rerun يسترجع الناجح قبل أي صرف جديد')
 assert.match(productionBatch, /PODCAST_KW_PROMPT_MODE:\s*c/,
   'الدفعة الفولاذية تستعمل البرومت المعتمد نفسه بلا نسخة جديدة')
+assert.match(productionBatch, /confirm_vertex_canaries/,
+  'ممنوع نقل 143 حلقة إلى بوابة جديدة قبل اعتماد خمس حلقات بالأذن')
 assert.match(productionBatch, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'0'/,
   'الدفعة الفولاذية تحفظ Same-Take والجسر الخارجي')
 assert.match(productionBatch, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,

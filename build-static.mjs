@@ -68,9 +68,25 @@ const PERSON = {
     { '@type': 'CollegeOrUniversity', name: 'جامعة الكويت' },
   ],
   alumniOf: { '@type': 'CollegeOrUniversity', name: 'University of Northern Colorado' },
+  identifier: {
+    '@type': 'PropertyValue',
+    propertyID: 'ORCID',
+    value: 'https://orcid.org/0000-0002-1767-4963',
+  },
   sameAs: [
+    'https://orcid.org/0000-0002-1767-4963',
+    'https://www.wikidata.org/wiki/Q141131823',
     'https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en',
     'https://www.researchgate.net/profile/Ahmad-Alfailakawi',
+    'https://openalex.org/A5006467321',
+    'https://www.semanticscholar.org/author/101514397',
+    'https://www.webofscience.com/wos/author/record/LXA-2190-2024',
+    'https://medium.com/@ah.alfailakawi',
+    'https://www.linkedin.com/in/prof-ahmad-alfailakawi-5922251a5',
+    'https://twitter.com/drahmadkw',
+    'https://www.instagram.com/DrAhmadkw/',
+    'https://www.facebook.com/d.ahmd.alfylkawy',
+    'https://youtube.com/@drahmadalfailakawi',
   ],
 }
 const PUBLISHER = { '@type': 'Person', '@id': `${SITE}/#person`, name: AUTHOR, description: PERSON.description }

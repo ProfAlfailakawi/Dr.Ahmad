@@ -111,7 +111,7 @@ export function verifyPackagedCandidate ({ root = ROOT, outputDir, slug, minimum
   }
   const audit = readJson(paths.audit)
   if (!audit || audit.slug !== slug || audit.status !== 'candidate') return { ok: false, reason: 'سجل المرشح غير صالح' }
-  if (audit.qualityGateVersion !== 'kuwaiti-aligned-v14') return { ok: false, reason: 'المرشح سابق لشاهد الكلمات v14' }
+  if (audit.qualityGateVersion !== 'kuwaiti-city-audited-v15') return { ok: false, reason: 'المرشح سابق لشاهد لهجة كويت المدينة v15' }
   if (audit.sourceSha256 !== sha256(readFileSync(paths.source))) return { ok: false, reason: 'المصدر تغيّر' }
   if (audit.audioSha256 !== sha256(readFileSync(paths.audio))) return { ok: false, reason: 'بصمة الصوت لا تطابق السجل' }
   if (audit.transcriptSha256 !== sha256(readFileSync(paths.transcript))) return { ok: false, reason: 'بصمة النص المتزامن لا تطابق السجل' }
@@ -125,6 +125,9 @@ export function verifyPackagedCandidate ({ root = ROOT, outputDir, slug, minimum
   const witness = (audit.turnAlignment?.witnesses || []).find((entry) => !entry.rejected)
   if (audit.turnAlignment?.mode !== 'required' || !packagedAlignmentBoundaryTrustworthy(witness, turnCount)) {
     return { ok: false, reason: 'شاهد حدود الكلمات ناقص أو دون العتبة' }
+  }
+  if (audit.dialectAudit?.mode !== 'required' || audit.dialectAudit?.status !== 'pass') {
+    return { ok: false, reason: 'شاهد اللهجة المستقل ناقص أو لم يثبت كويت المدينة للصوتين' }
   }
   if ((audit.repeatGate?.confirmedSuspects || []).length) return { ok: false, reason: 'قص أو تمديد مؤكّد في دور' }
   return { ok: true, audit }
@@ -311,7 +314,7 @@ function selfTest () {
   writeFileSync(resolve(outputDir, `${slug}.mp3`), audio)
   writeFileSync(resolve(outputDir, `${slug}.json`), transcript)
   atomicJson(resolve(outputDir, `${slug}.audit.json`), {
-    slug, status: 'candidate', seed: 3114, qualityGateVersion: 'kuwaiti-aligned-v14',
+    slug, status: 'candidate', seed: 3114, qualityGateVersion: 'kuwaiti-city-audited-v15',
     sourceSha256: sha256(source), audioSha256: sha256(audio), transcriptSha256: sha256(transcript),
     oneTake: true, speakerIsolation: 'multispeaker-single-take', ttsInput: 'dry-dialogue-only',
     bridgeGeneration: 'external-post-tts', pitchGate: {
@@ -325,12 +328,23 @@ function selfTest () {
       speakerLabels:['spk:0','spk:1','spk:2'], speakerMappingDistinct:true,
       speakerAgreement:0.5263, diarizationConsistent:false,
     }] },
+    dialectAudit: { mode:'required', model:'gemini-3.7-flash', status:'pass', reasons:[],
+      assessment:{ overall:{ verdict:'pass', confidence:0.94, reason_codes:[], summary:'stable' },
+        speakers:{
+          fahad:{ verdict:'pass', dominant_register:'kuwait-city', confidence:0.90, presenter_mode:false, drift_windows:[], summary:'stable' },
+          noura:{ verdict:'pass', dominant_register:'kuwait-city', confidence:0.92, presenter_mode:false, drift_windows:[], summary:'stable' },
+        } } },
     acousticContinuity: { boundarySuspects: [], pitchBoundarySuspects: [], corroboratedBoundaryResets: [] },
     repeatGate: { suspects: [], confirmedSuspects: [] },
   })
   assert.equal(verifyPackagedCandidate({ root, outputDir, slug }).ok, true,
     'وسوم ASR غير الثابتة لا تلغي حدود كلمات سليمة وهوية أثبتتها البوابات الصوتية')
   const fixtureAudit = readJson(resolve(outputDir, `${slug}.audit.json`))
+  fixtureAudit.dialectAudit.status = 'reject'
+  atomicJson(resolve(outputDir, `${slug}.audit.json`), fixtureAudit)
+  assert.match(verifyPackagedCandidate({ root, outputDir, slug }).reason, /شاهد اللهجة/,
+    'الطابور لا يستأنف مرشحاً انزلقت لهجته حتى لو نجحت بقية القياسات')
+  fixtureAudit.dialectAudit.status = 'pass'
   fixtureAudit.turnAlignment.witnesses[0].perTurnCoverage = [1, 0]
   atomicJson(resolve(outputDir, `${slug}.audit.json`), fixtureAudit)
   assert.match(verifyPackagedCandidate({ root, outputDir, slug }).reason, /حدود الكلمات/,

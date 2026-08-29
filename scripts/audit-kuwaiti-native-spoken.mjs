@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  CLASSROOM_SLUG,
+  INTELLIGENCE_SLUG,
   NATIVE_SPOKEN_VERSION,
   PILOT_SLUG,
   SERIOUSNESS_SLUG,
@@ -71,6 +73,10 @@ if (SELF_TEST) {
     'سؤال البحث واحد طبيعي بدل تبديل صوت كل سطر')
   assert.match(pilot.turns[15].text, /في مراجعة كبيرة.*كل ما زاد التوتر، نزل مستوى الطالب/u,
     'جواب البحث يحتفظ بالمصدر والنتيجة')
+  assert.match(pilot.turns[15].text, /خذو فيها أبحاث/u,
+    'حكم الأذن «خذو فيها» مثبت في النص الذي يصل المحرك')
+  assert.doesNotMatch(pilotText, /(?:أخذوا|اخذوا) فيها أبحاث/u,
+    'الصيغة التي سُمعت خطأ لا ترجع إلى الحلقة 01 المرجعية')
   assert.equal(pilot.turns[18].text, 'بس مو كبرنا الموضوع وايد؟', 'الاعتراض كويتي شفهي وخفيف')
   assert.equal(pilot.turns[23].text,
     'واللي علينا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.',
@@ -132,6 +138,33 @@ if (SELF_TEST) {
     'الخاتمة تحفظ المعنى من غير يهرب المعيبة')
   assert.doesNotMatch(seriousnessText, /(?:ركض|هرب|يقربنا|له قيمة|هالفرق|شجاعة وصدق|\bنبان\b|\bنرجع، ونكتشف\b)/u,
     'الكلمات المختلف عليها وحدها لا ترجع')
+  const classroom = optimizeNativeSpokenEpisode(
+    Object.values(pilotLibrary.episodes[CLASSROOM_SLUG]), { slug: CLASSROOM_SLUG })
+  const classroomText = classroom.turns.map((turn) => turn.text).join('\n')
+  assert.equal(classroom.turns[0].text,
+    'توقفنا أسبوعين… انشغلنا بالحرب، وبالتوتر اللي يزيد مع كل خبر.',
+    'القلق/الخوف الملتبس يُستبدل داخل الجملة نفسها')
+  assert.equal(classroom.turns[2].text, 'بس اليوم عندنا موضوع مهم بعد.',
+    '«نرجع لجبهة» لا يملك أصلاً كلمةً قريبة يرجع إليها')
+  assert.match(classroom.turns[3].text, /يا يتعلم الطالب يتكلم، يا يخاف ويسكت/u,
+    'الصف يصير كلاماً يومياً، من غير صورة «يبلع صوته»')
+  assert.doesNotMatch(classroomText, /(?:القلق اللي يعلى|نرجع لجبهة|يبلع صوته)/u,
+    'الأخطاء الثلاثة التي أسقطت الحلقة 02 لا ترجع')
+  const intelligence = optimizeNativeSpokenEpisode(
+    Object.values(pilotLibrary.episodes[INTELLIGENCE_SLUG]), { slug: INTELLIGENCE_SLUG })
+  const intelligenceText = intelligence.turns.map((turn) => turn.text).join('\n')
+  assert.equal(intelligence.turns[4].text, 'لحظة… خلنا ناخذها وحدة وحدة.',
+    'لحظة الاعتراض تبقى كويتية مباشرة ولا تحمل «نوقف» التي خرجت عُمانية')
+  assert.doesNotMatch(intelligenceText, /خلنا نوقف هني/u,
+    'الصياغة المرفوضة في الحلقة 03 لا تصل TTS')
+  const genericCorrections = optimizeNativeSpokenEpisode([
+    { text: 'أخذوا فيها أبحاث وايد.' },
+    { text: 'فيها شي يستاهل نوقف عنده.' },
+  ], { slug: 'future-safe-rules' })
+  assert.deepEqual(genericCorrections.turns.map((turn) => turn.text), [
+    'خذو فيها أبحاث وايد.',
+    'فيها شي لازم نفهمه عدل.',
+  ], 'نفس الخطأ إذا ظهر في مقالة مستقبلية يتعالج قبل الصوت')
   assert.deepEqual(seriousness.turns.slice(27, 29).map((turn) => turn.deliveryType),
     ['statement', 'statement'], 'الخاتمة الفكرية تمر عادية ولا تُلقى كشعار')
   const pilotWorkflow = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-pilot.yml'), 'utf8')
@@ -164,7 +197,7 @@ if (SELF_TEST) {
     'قراءة أوكتاف شاذة لدور مفرد لا تحرق Take ثابت المقاطع والرنين')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
     'بوابة الرنين تمسك نفس preset لما يصير مو نفس الإنسان')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 26/26')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 34/34')
   process.exit(0)
 }
 

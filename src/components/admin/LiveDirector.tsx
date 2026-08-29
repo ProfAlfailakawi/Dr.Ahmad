@@ -36,7 +36,7 @@ import {
 import { extractVideoFrame, measureImageSharpness } from '../../lib/live-director-frames'
 import { buildTweets, verifiedLineOf, type TweetSource } from '../../lib/tweet-forge'
 import { resolveResonantQuotes, resonanceBySlug, type ResonanceRow } from '../../lib/resonance-quotes'
-import { arabicCountPhrase, DAY_FORMS, SAVED_PROMPT_COPY_FORMS, SECOND_AFTER_PREPOSITION_FORMS, SECOND_FORMS, SHOT_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
+import { arabicCountPhrase, DAY_FORMS, REEL_SCENE_FORMS, SAVED_PROMPT_COPY_FORMS, SECOND_AFTER_PREPOSITION_FORMS, SECOND_FORMS, SHOT_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
 
 type DirectorPath = 'article' | 'public' | 'reel' | null
 type StoredProject = LiveDirectorProject & { userId?: string }
@@ -659,7 +659,7 @@ function SymbolicReelsPanel({ clipSeconds, setClipSeconds, onNotice }: { clipSec
       const scenes: InventedReel[] = Array.isArray(data?.scenes) ? data.scenes : []
       setInvented(scenes)
       setSources(Array.isArray(data?.sources) ? data.sources : [])
-      onNotice(scenes.length ? `ابتُكرت ${scenes.length} مشاهد من أرشيفك.` : 'لم يخرج مشهد مطابق — أعد المحاولة.')
+      onNotice(scenes.length ? `ابتُكرت ${arabicCountPhrase(scenes.length, REEL_SCENE_FORMS)} من أرشيفك.` : 'لم يخرج مشهد مطابق — أعد المحاولة.')
     } catch (error) {
       onNotice(error instanceof Error ? error.message : 'تعذّر الابتكار')
     } finally { setInventing(false) }

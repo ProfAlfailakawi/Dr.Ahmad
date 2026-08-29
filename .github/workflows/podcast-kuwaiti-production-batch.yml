@@ -185,6 +185,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
           GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
+          GEMINI_DIALECT_AUDIT_MODEL: gemini-3.7-flash
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
           PODCAST_KW_PROMPT_MODE: c
@@ -197,6 +198,7 @@ jobs:
           PODCAST_KW_REJECT_ACOUSTIC_RESET: '1'
           PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
           PODCAST_KW_TRANSCRIPT_ALIGNMENT: required
+          PODCAST_KW_DIALECT_AUDIT: required
           PODCAST_KW_REJECT_DIR: kuwaiti-production-package/rejected
           REQUESTED_SEED_BASE: ${{ inputs.seed_base || '' }}
           REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}

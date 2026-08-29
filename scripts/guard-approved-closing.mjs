@@ -43,6 +43,30 @@ assert.match(spokenClosing, new RegExp(APPROVED_SPOKEN_FAMILY_NAME),
 assert.doesNotMatch(spokenClosing, /الفيل(?:ك|چ)اوي/,
   'الإملاء المعروض وصل إلى الصوت بدل النطق المعتمد')
 
+/* الإملاء وحده ليس ضمانة.
+   اللصق القديم كان يضمن الاسم فعلاً — يخرج من مقطعٍ سمعه الدكتور واعتمده.
+   وحين حُذف (٢٥ أغسطس ٢٠٢٦) بقي الإملاء وحده، وهو نيّةٌ لا نتيجة: المحرك
+   قد يقرأ «الفيلتشاوي» مسطّحةً، وشاهد الحدود يمرّرها لأن مسافتها ٠٫٢ ودون
+   حدّ القبول ٠٫٣٤. فسمعها الدكتور في ٢٩ أغسطس وسمّاها «الكارثة».
+   فصارت الضمانة شاهداً يسمع الاسم داخل الـTake نفسه ويرفض الأخذ كلّه إن
+   سُطّح — يحفظ النطق بلا أن يخسر جرس الشخصية الذي حُذف اللصق لأجله.
+   وهذي الأسطر تمنع أن يُحذف الشاهد كما حُذف اللصق: ضمانةٌ لا تُرفع إلا
+   بضمانةٍ تحلّ محلّها. */
+assert.match(engine, /export function familyNameVerdict/,
+  'شاهد اسم العائلة اختفى من المولّد — لا شيء يسمع الاسم بعد حذف اللصق القديم')
+assert.match(engine, /aligned\?\.familyName\?\.verdict === 'wrong'/,
+  'المولّد ما عاد يرفض الـTake حين يسمع الشاهد الاسم مسطّحاً')
+assert.match(engine, /failure\.familyNameFailure = true/,
+  'رفض الاسم يجب أن ينفذ من وضع المحاذاة المتساهل، لا أن يُبتلع تحذيراً')
+
+/* والشاهد لا يعمل إلا ومحاذاة التفريغ مشغّلة، فتُثبَّت في مسارَي الإنتاج. */
+for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-kuwaiti-production-batch.yml']) {
+  const path = resolve(ROOT, '.github/workflows', workflow)
+  if (!existsSync(path)) continue
+  assert.match(readFileSync(path, 'utf8'), /PODCAST_KW_TRANSCRIPT_ALIGNMENT:\s*required/,
+    `${workflow}: أُطفئت محاذاة التفريغ، فلا شاهد يسمع الاسم في هذا المسار`)
+}
+
 /* نصّ الإحالة يبقى موحداً، لكن الصوت يتجدد مع شخصية الحلقة الحالية. */
 const libPath = resolve(ROOT, 'src/data/kuwaiti-diwania-v3.json')
 if (existsSync(libPath)) {

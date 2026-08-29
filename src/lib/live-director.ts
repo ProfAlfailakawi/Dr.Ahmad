@@ -3,6 +3,7 @@ import { genuineAdditionMeter } from './editorial-foresight.ts'
 import { strongestQuote, suggestStrongTitle } from './intelligence.ts'
 import { polishTypography } from './style-dna.mjs'
 import { arabicCountPhrase, DAY_FORMS, PASSAGE_AFTER_PREPOSITION_FORMS, PUBLISHED_PROJECT_FORMS, SECOND_FORMS, WORD_FORMS } from './arabic-count.ts'
+import { cinematographyBlock, flowLook, type FlowLookId } from './flow-cinema.ts'
 
 /**
  * مخرجات مسبك التغريدات ورنين القرّاء تُحقن حقناً ولا تُستورد هنا.
@@ -144,6 +145,10 @@ export type LiveDirectorProject = {
   seriesPlan: string[]
   duration: 8 | 24 | 48 | 64
   durationReason: string
+  /** النمط البصري: عدسة وإضاءة وتدرّج ونسيج. اختياريٌّ فالمشاريع المحفوظة تبقى صالحة. */
+  look?: FlowLookId
+  /** مدة المقطع الواحد؛ ثمانٍ افتراضاً، وأطول متاحٌ لمن له اشتراك Flow. */
+  clipSeconds?: number
   segmentCount: number
   days: number
   narration: string
@@ -660,8 +665,14 @@ function buildFlowPrompt(input: {
   platform: LiveDirectorPlatform
   palette: string
   mode: FlowPromptMode
+  /** النمط البصري المختار؛ يغيّر العدسة والإضاءة والتدرّج والنسيج. */
+  look?: FlowLookId
+  /** مدة المقطع؛ الثماني ثوانٍ افتراضٌ لا حتم (اشتراك Flow يسمح بأطول). */
+  clipSeconds?: number
 }) {
   const { segment, mode } = input
+  const look = flowLook(input.look)
+  const clipSeconds = input.clipSeconds || 8
   const avatar = segment.appearance !== 'visual_only'
   const spokenLanguage = mode === 'speech_ar' ? 'Arabic' : mode === 'speech_en' ? 'English' : ''
   const shotText = segment.shotPlan.map((shot, index) => `Shot ${index + 1} (${shot.from.toFixed(1)}-${shot.to.toFixed(1)}s): ${shot.framing}.`).join(' ')
@@ -683,7 +694,7 @@ function buildFlowPrompt(input: {
     ? `Editorial overlay: all text is added later in editing, never generated inside Flow. Reserve clean space at ${unique(segment.overlayPlan.map((cue) => `${OVERLAY_POSITION_EN[cue.position]} (${cue.from.toFixed(1)}-${cue.to.toFixed(1)}s)`)).join(', ')}.`
     : 'Editorial overlay: none required for this clip.'
   const body = [
-    'Duration: exactly 8 seconds.',
+    `Duration: exactly ${clipSeconds} seconds.`,
     `Aspect ratio: 9:16 vertical for ${PLATFORM_EN[input.platform] || 'multi-platform vertical distribution'}.`,
     `Prompt option: ${flowModeLabel(mode)}.`,
     'VISIBLE-TEXT RULE — Generate absolutely no on-screen text of any kind in any language: no titles, captions, subtitles, labels, letters, numbers, signs, interface text, logos, or watermarks.',
@@ -694,8 +705,7 @@ function buildFlowPrompt(input: {
     'Location: one calm, premium educational environment; keep the same location, background, time of day and visual moment throughout this clip.',
     `Primary action: ${segment.purpose}. One main action only.`,
     `Shot construction: ${segment.shotCount} ${segment.shotCount === 1 ? 'continuous shot' : 'connected shots'} in the same context. ${shotText}`,
-    'Camera movement: one restrained motion per shot, either a slow push-in or a locked camera; no competing movements.',
-    'Lighting: soft cinematic daylight with consistent direction and exposure across all cuts.',
+    cinematographyBlock({ look, seconds: clipSeconds, order: segment.order, shotCount: segment.shotCount, role: segment.role, avatar }),
     `Visual mood: ${TONE_EN[input.tone] || 'reflective and intellectual'}, realistic, quiet, refined. Color palette: ${input.palette}.`,
     `Sound design: ${sound}`,
     speech,
@@ -733,8 +743,8 @@ export function getFlowPrompt(segment: LiveDirectorSegment, mode: FlowPromptMode
 type SegmentDraft = Omit<LiveDirectorSegment, 'prompt' | 'promptVersions' | 'flowPrompts'>
 
 /** يعيد بناء مسارات برومبت المقطع الثلاثة بعد تغيير الترابط أو المرجع أو النص. */
-function rebuiltFlowPrompts(segment: SegmentDraft, project: Pick<LiveDirectorProject, 'title' | 'tone' | 'platform'>) {
-  return buildFlowPrompts({ segment, title: project.title, tone: project.tone, platform: project.platform, palette: PALETTE })
+function rebuiltFlowPrompts(segment: SegmentDraft, project: Pick<LiveDirectorProject, 'title' | 'tone' | 'platform'> & { look?: FlowLookId; clipSeconds?: number }) {
+  return buildFlowPrompts({ segment, title: project.title, tone: project.tone, platform: project.platform, palette: PALETTE, look: project.look, clipSeconds: project.clipSeconds })
 }
 
 function rebuiltPrompt(segment: SegmentDraft, project: Pick<LiveDirectorProject, 'title' | 'tone' | 'platform'>) {

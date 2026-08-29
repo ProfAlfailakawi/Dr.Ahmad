@@ -46,6 +46,7 @@ const NextBookCard = lazy(() => import('../components/admin/NextBookCard').then(
 const PublishingStudio = lazy(() => import('../components/admin/PublishingStudio').then((module) => ({ default: module.PublishingStudio })))
 const SocialDesignStudio = lazy(() => import('../components/admin/SocialDesignStudio').then((module) => ({ default: module.SocialDesignStudio })))
 const TweetStudio = lazy(() => import('../components/admin/TweetStudio').then((module) => ({ default: module.TweetStudio })))
+const StoryboardAtlas = lazy(() => import('../components/admin/StoryboardAtlas').then((module) => ({ default: module.StoryboardAtlas })))
 const ImageLab = lazy(() => import('../components/admin/ImageLab').then((module) => ({ default: module.ImageLab })))
 const VoiceBakeoffCard = lazy(() => import('../components/admin/VoiceBakeoff').then((module) => ({ default: module.VoiceBakeoffCard })))
 const ManualDialogueEditor = lazy(() => import('../components/admin/ManualDialogueEditor').then((module) => ({ default: module.ManualDialogueEditor })))
@@ -367,6 +368,7 @@ function Panel({ email }: { email: string }) {
     'social-posts': <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} initialView="pulse" />,
     design: <SocialDesignStudio />,
     tweets: <TweetStudio />,
+    'storyboard-atlas': <StoryboardAtlas articles={cms.articles} papers={cms.papers} books={cms.books} />,
     'image-lab': <ImageLab />,
     launch: <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />,
     lab: (

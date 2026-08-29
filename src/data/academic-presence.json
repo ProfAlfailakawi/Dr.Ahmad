@@ -1,0 +1,36 @@
+{
+  "_note": "عدد الأعمال المنشورة في كل ملف أكاديمي. تُحدَّث آلياً أسبوعياً عبر GitHub Action (scripts/refresh-academic-presence.mjs) بلا أي تدخّل. أيّ ملف عدده أقل من minItems تختفي أيقونته تلقائياً، وتعود فور تجاوزه العتبة. المصادر التي لا API مجاني لها (Web of Science / ResearchGate) رقمها يدوي ويُحفَظ كما هو.",
+  "minItems": 10,
+  "profiles": {
+    "google-scholar": {
+      "count": 29,
+      "measured": true,
+      "auto": true
+    },
+    "orcid": {
+      "count": 37,
+      "measured": true,
+      "auto": true
+    },
+    "semantic-scholar": {
+      "count": 4,
+      "measured": true,
+      "auto": true
+    },
+    "wikidata": {
+      "count": 20,
+      "measured": true,
+      "auto": true
+    },
+    "web-of-science": {
+      "count": 0,
+      "measured": false,
+      "auto": false
+    },
+    "researchgate": {
+      "count": null,
+      "measured": false,
+      "auto": false
+    }
+  }
+}

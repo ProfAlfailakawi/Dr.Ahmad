@@ -1,0 +1,37 @@
+name: تحديث حضور الملفات الأكاديمية
+
+# يقيس عدد الأعمال في كل ملف أكاديمي أسبوعياً (مجاناً) ويحدّث academic-presence.json.
+# الأيقونة الضعيفة (< minItems) تختفي تلقائياً، وتعود فور امتلائها — بلا تدخّل.
+on:
+  schedule:
+    - cron: '17 4 * * 1' # كل اثنين ٤:١٧ UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: academic-presence
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: قياس الأعداد وتحديث الملف
+        run: node scripts/refresh-academic-presence.mjs
+      - name: حفظ التغيير إن وُجد
+        run: |
+          if [ -n "$(git status --porcelain src/data/academic-presence.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add src/data/academic-presence.json
+            git commit -m "تحديث آلي: حضور الملفات الأكاديمية"
+            git push
+          else
+            echo "لا تغيير."
+          fi

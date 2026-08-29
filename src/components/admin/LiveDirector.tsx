@@ -681,6 +681,9 @@ function SymbolicReelsPanel({ clipSeconds, setClipSeconds, onNotice }: { clipSec
         </label>
         <span className="text-[.7rem] text-soft">بلا أفتار · بلا نص داخل الفيديو — جملتك تُركَّب بعد التوليد</span>
       </div>
+      <div className="rounded-xl border border-hair bg-wash px-4 py-3 text-[.7rem] leading-relaxed text-soft">
+        <b className="font-semibold text-ink">أطول من ثماني ثوانٍ؟</b> ولّد المقطع الأول بالبرومبت، ثم اضغط <b className="text-ink">Extend</b> داخل Flow والصق «برومبت التمديد» — يضيف سبع ثوانٍ متصلة تكمل الاستعارة ولا تعيدها. كرّرها لما تشاء (٨ ← ١٥ ← ٢٢…).
+      </div>
       {invented.length > 0 && <section className="grid gap-3">
         <div className="flex flex-wrap items-baseline gap-3">
           <h3 className="font-display text-lg font-semibold text-ink">مشاهد ابتُكرت لفكرتك</h3>
@@ -737,6 +740,9 @@ function SymbolicReelsPanel({ clipSeconds, setClipSeconds, onNotice }: { clipSec
               <div className="mt-3 flex flex-wrap gap-2">
                 <button type="button" onClick={() => copy(concept.flowPrompt, `برومبت «${concept.scene.labelAr}»`)} className={ghost}>نسخ البرومبت</button>
                 <button type="button" onClick={() => copy(`${concept.captionAr}\n\n${concept.hashtags.join(' ')}`, 'الكابشن والهاشتاقات')} className={ghost}>نسخ الكابشن</button>
+                {/* «مرات أبي أكثر من ٨ ثواني»: التمديد داخل Flow يضيف سبعاً،
+                    وبرومبته يكمل من الإطار الأخير ولا يعيد المشهد. */}
+                <button type="button" onClick={() => copy(concept.extendPrompt, `تمديد «${concept.scene.labelAr}»`)} className={ghost}>نسخ التمديد ‎+٧ث</button>
               </div>
               <p className="mt-2 text-[.62rem] leading-relaxed text-soft">الغلاف: {concept.scene.coverIdeaAr} — من استوديو التصاميم.</p>
             </article>

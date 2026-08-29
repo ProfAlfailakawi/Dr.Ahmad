@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { SYMBOLIC_SCENES, forgeSymbolicReels } from '../src/lib/symbolic-reels.ts'
+import { SYMBOLIC_SCENES, forgeSymbolicReels, reelExtendPrompt, FLOW_EXTEND_SECONDS } from '../src/lib/symbolic-reels.ts'
 import { FLOW_LOOKS } from '../src/lib/flow-cinema.ts'
 
 let checks = 0
@@ -37,23 +37,38 @@ check(other[0].scene.id !== running[0].scene.id, 'فكرة أخرى ← طيف �
 for (const concept of running) {
   const prompt = concept.flowPrompt
   check(!arabic.test(prompt), `${concept.scene.id}: بلا تسريب عربي`)
-  for (const needle of ['SYMBOLIC REEL', '9:16', 'Cinematography', 'Lighting plan', 'Colour grade', 'VISIBLE-TEXT RULE', 'no recognizable faces', 'Negative constraints']) {
-    check(prompt.includes(needle), `${concept.scene.id}: يحمل ${needle}`)
+  /* البرومبت صار على صيغة Veo الرسمية: تصوير + موضوع + فعل + سياق + أجواء.
+     فالحارس يفحص المعنى لا الشعارات: نسبة الوصف إلى المنع، وحضور القرارات
+     التصويرية، وبقاء القيود الجوهرية في ذيلٍ واحد مضغوط. */
+  for (const [label, pattern] of [
+    ['نسبة عمودية', /9:16/],
+    ['لقطة واحدة متصلة', /single continuous take/],
+    ['عدسة وفتحة', /Shot on a .*mm equivalent at f\//],
+    ['إضاءة', /Lighting: /],
+    ['تدرّج لوني', /Colour: /],
+    ['نسيج', /Texture: /],
+    ['فيزياء تحمل المعنى', /Physics carry the meaning/],
+    ['واقعية ملموسة', /Photoreal and tactile/],
+    ['المفاجأة في الثانية الأولى', /within the first second/],
+    ['مساحة للكابشن', /negative space kept clear/],
+    ['ذيل القيود', /^Constraints: /m],
+  ]) {
+    check(pattern.test(prompt), `${concept.scene.id}: ${label}`)
   }
-  check(/no presenter, no avatar/.test(prompt), `${concept.scene.id}: بلا أفتار صراحةً`)
-  /* حكم الدكتور على أول فيديو (٢٩ أغسطس ٢٠٢٦): «ضيّعني ١٦ ثانية في مشهد بايخ
-     جداً… ماله أي معنى». العلّة كانت لغة الهدوء التحريرية مسكوبةً في الريل،
-     فصار الحارس معكوساً: الريل يُمنع من السكون ويُلزم بالحدث. */
-  check(prompt.includes('OPENING RULE'), `${concept.scene.id}: أول إطار داخل الحدث`)
-  check(prompt.includes('SCROLL-STOP RULE'), `${concept.scene.id}: المفاجأة في الثانية الأولى`)
-  check(/kinetic and arresting/.test(prompt), `${concept.scene.id}: طاقة حركية`)
+  check(/no presenter, no talking, no recognizable face/.test(prompt), `${concept.scene.id}: بلا مقدّم ولا وجه`)
+  check(/no on-screen text/.test(prompt), `${concept.scene.id}: بلا نص داخل الصورة`)
   check(!/one restrained motion per shot/.test(prompt), `${concept.scene.id}: بلا لغة الكبح التحريرية`)
-  check(!/Never open on a still[\s\S]*held beauty shots/.test(prompt) || /No idling/.test(prompt), `${concept.scene.id}: منع اللقطات الجامدة`)
+  check(/never drifting and never idle/.test(prompt), `${concept.scene.id}: كاميرا حاسمة لا سائبة`)
+  /* النسبة المقلوبة كانت العلّة: عشرة أسطر منعٍ وسطران وصفاً. الحارس يثبّتها. */
+  const constraintLines = prompt.split('\n').filter((line) => /^Constraints: /.test(line)).length
+  check(constraintLines === 1, `${concept.scene.id}: سطر قيودٍ واحد لا خمسة`)
+  check(prompt.split('\n').length <= 8, `${concept.scene.id}: البرومبت مركّز لا مترهّل`)
 }
 
 // 5) المدة والعدد والتركيب
-const long = forgeSymbolicReels({ idea: 'فكرة', seconds: 16, count: 5 })
-check(long.length === 5 && long.every((c) => c.seconds === 16 && c.flowPrompt.includes('exactly 16 seconds')), 'المدة والعدد يُحترمان')
+/* ثمانٍ هي الحدّ الحقيقي لـVeo 3.1، فالاختبار يستعملها بدل ١٦ التي أبطلناها. */
+const long = forgeSymbolicReels({ idea: 'فكرة', seconds: 8, count: 5 })
+check(long.length === 5 && long.every((c) => c.seconds === 8 && /8 seconds, single continuous take/.test(c.flowPrompt)), 'المدة والعدد يُحترمان')
 check(forgeSymbolicReels({ idea: 'فكرة', count: 99 }).length === 5, 'السقف خمسة')
 check(forgeSymbolicReels({ idea: 'فكرة', count: 1 }).length === 3, 'الأرضية ثلاثة')
 for (const concept of running) {
@@ -71,6 +86,25 @@ for (const scene of SYMBOLIC_SCENES) {
   const text = `${scene.sceneEn} ${scene.arcEn.start} ${scene.arcEn.end}`
   check(!STATIC_WORDS.test(text), `${scene.id}: بلا لغة سكون في المشهد`)
   check(/\balready\b|bursts?|erupt|rips?|races?|surges?|explod|whip|slams?|storm|drives?|tears?|hammers?|launch/i.test(text), `${scene.id}: المشهد يبدأ داخل الحدث`)
+}
+
+
+/* التمديد: «مرات أبي أكثر من ٨ ثواني» (٢٩ أغسطس ٢٠٢٦). Flow يضيف سبعاً لا
+   ثماني، والتمديد يكمل من الإطار الأخير — فالبرومبت يجب ألا يعيد المشهد. */
+check(FLOW_EXTEND_SECONDS === 7, 'التمديد سبع ثوانٍ موثّقة')
+for (const scene of SYMBOLIC_SCENES) {
+  check(typeof scene.extendEn === 'string' && scene.extendEn.split(/\s+/).length >= 12, `${scene.id}: فصلٌ ثانٍ مكتوب`)
+  const ext = reelExtendPrompt(scene)
+  check(!arabic.test(ext), `${scene.id}: التمديد إنجليزي خالص`)
+  check(ext.includes('CONTINUATION'), `${scene.id}: التمديد يكمل لا يبدأ`)
+  check(ext.includes('ESCALATION RULE'), `${scene.id}: التمديد يصعّد`)
+  check(ext.includes('exactly 7 seconds'), `${scene.id}: سبع ثوانٍ في نص التمديد`)
+  check(ext.includes(scene.extendEn), `${scene.id}: الفصل الثاني داخل البرومبت`)
+  check(/scene reset, new location/.test(ext), `${scene.id}: يمنع إعادة المشهد`)
+}
+for (const concept of running) {
+  check(concept.extendPrompt.includes('CONTINUATION'), `${concept.scene.id}: المفهوم يحمل برومبت تمديد`)
+  check(concept.extendPrompt !== concept.flowPrompt, `${concept.scene.id}: التمديد غير الأصل`)
 }
 
 console.log(`✓ اجتاز مصنع الريلز الرمزية ${checks} فحصاً`)

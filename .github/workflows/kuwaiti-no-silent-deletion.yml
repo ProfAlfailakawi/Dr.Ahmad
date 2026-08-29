@@ -1,0 +1,43 @@
+name: لا يزول شيء صامتاً — فحص كل رفعٍ إلى main
+
+# العلّة (٢٩ أغسطس ٢٠٢٦): رأى الدكتور بعينه ملفَّين معروضَين «Deleted»
+# في AI Studio، أحدهما سقّافة أحكام الأذن نفسها. ونسخة AI Studio أقدم من
+# GitHub، فما ليس عندها تعرضه محذوفاً — ولو رُفع كما هو لحُذف فعلاً. هذي
+# آلية a805db6 التي أضاعت يوم أحكامٍ كامل قبل يومين.
+#
+# وكل فواحص الخطّ كانت تعمل عند التوليد وحده، فالخطأ لا ينكشف إلا حين
+# تُشغَّل باقة — بعد ساعات أو يوم. فصار الفحص يقع على الرفع نفسه: سبع
+# ثوانٍ من العمل تكشف ما كان يُكتشف بأذنه بعد يومين.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: kuwaiti-no-silent-deletion-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ratchets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online
+
+      # سقّافة الملفات أولاً: إن زال ملفُّ فاحصٍ فالفواحص التالية تسقط
+      # بـ«Cannot find module» ويضيع السبب الحقيقي في ضجيج الانهيار.
+      - name: Nothing that guards the pipeline has vanished
+        run: node scripts/guard-file-ratchet.mjs
+
+      - name: No approved ear ruling has vanished, and every gate still passes
+        run: npm run podcast:kw:self-test

@@ -6,6 +6,7 @@
  * جديد. الخطة حتمية من slug، لذلك لا تتبدل هوية الحلقة عند إعادة التشغيل.
  */
 import { createHash } from 'node:crypto'
+import { castSwapIntroducesGenderFault } from './kuwaiti-gender-address.mjs'
 
 export const DIALOGUE_VARIETY_VERSION = '2026-08-25-kuwaiti-variety-v1'
 
@@ -63,9 +64,14 @@ export function shouldSwapConversationCast (slug) {
 
 export function applyConversationVariety (turns, { slug = '' } = {}) {
   const family = conversationFamilyForSlug(slug)
-  const swapCast = shouldSwapConversationCast(slug)
   const output = turns.map((turn) => ({ ...turn }))
   const changes = []
+  /* [٢٩ أغسطس ٢٠٢٦ — بأذن الدكتور على الحلقة الخامسة] القلب كان يبدّل
+     الوسم وحده، والنص يبقى كما كُتب. فورثت نورة سطراً مكتوباً لفهد فقالت
+     لرجلٍ «تدرين شنو» — وهي مخاطبةُ امرأة. ثلاث حلقاتٍ من خمسٍ خرجت هكذا
+     وما أوقفها فاحص. التنويع يبقى، لكنه يتنحّى عن الحلقة التي يُفسدها. */
+  const castSwapBlocked = shouldSwapConversationCast(slug) && castSwapIntroducesGenderFault(output)
+  const swapCast = shouldSwapConversationCast(slug) && !castSwapBlocked
   const desiredFirstSpeaker = swapCast ? 'female' : 'male'
   const castNeedsChange = ['male', 'female'].includes(output[0]?.speaker)
     && output[0].speaker !== desiredFirstSpeaker
@@ -107,6 +113,7 @@ export function applyConversationVariety (turns, { slug = '' } = {}) {
       bridgeRatios: family.bridgeRatios,
       castSwapped: swapCast,
       castApplied: castNeedsChange,
+      castSwapBlockedByGenderedAddress: castSwapBlocked,
       firstSpeaker,
       leadSpeaker,
     },

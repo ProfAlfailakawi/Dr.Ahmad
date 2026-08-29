@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
+import { resolve, dirname, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { normalizeManualDialogueTurns } from './lib/manual-dialogue-source.mjs'
@@ -78,6 +78,10 @@ const FFPROBE = process.env.FFPROBE_BIN || 'ffprobe'
    تُحسب آخر كلمة من فهد على نورة، ولا تتحول غلطة قص إلى Voice Drift كاذب. */
 const ALIGNMENT_MODE = String(process.env.PODCAST_KW_TRANSCRIPT_ALIGNMENT || 'off').trim().toLowerCase()
 const TRANSCRIBE_MODEL = String(process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-3.5-transcribe').trim()
+const DIALECT_AUDIT_MODE = String(process.env.PODCAST_KW_DIALECT_AUDIT || 'off').trim().toLowerCase()
+const DIALECT_AUDIT_MODEL = String(process.env.GEMINI_DIALECT_AUDIT_MODEL || 'gemini-3.7-flash').trim()
+assert.ok(['off', 'prefer', 'required'].includes(DIALECT_AUDIT_MODE),
+  `PODCAST_KW_DIALECT_AUDIT غير صالح: ${DIALECT_AUDIT_MODE}`)
 const REJECT_DIR = String(process.env.PODCAST_KW_REJECT_DIR || '').trim()
 
 /* ═══ عقد الخروج من المحرك ═══
@@ -92,7 +96,7 @@ const REJECT_DIR = String(process.env.PODCAST_KW_REJECT_DIR || '').trim()
 export function geminiFailureExitCode (error) {
   const message = String(error?.stack || error?.message || error || '')
   if (/نفد رصيد Gemini|prepayment credits are depleted|credits.*depleted|billing/i.test(message)) return 78
-  if (/internal error|please retry|temporar(?:y|ily)|service unavailable|resource exhausted|too many requests|HTTP\s*(?:429|5\d\d)|\b429\b|AbortError|aborted|fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up|network error/i.test(message)) return 75
+  if (/DIALECT_AUDIT_TRANSIENT|internal error|please retry|temporar(?:y|ily)|service unavailable|resource exhausted|too many requests|HTTP\s*(?:429|5\d\d)|\b429\b|AbortError|aborted|fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up|network error/i.test(message)) return 75
   return 1
 }
 
@@ -382,7 +386,7 @@ The opening 20 seconds establish the permanent acoustic reference for both speak
 
 Speak contemporary urban Kuwait City Arabic naturally and effortlessly. Identity comes from compact vowels, short thought units, restrained sentence melody, quick acknowledgements, human timing, and relaxed light articulation—not exaggerated consonants. Qaf is lexical and understated. Respect deliberate Kuwaiti spellings such as ظيّج and never formalize them.
 
-Noura stays the exact same mature Kuwaiti woman defined by her first line: compact vowels, narrow melodic range, direct settled endings, no Emirati or Omani-style widening or trailing lilt. Fahad stays the same mature Kuwaiti man. Each target line must remain complete and unhurried enough to understand.
+Noura stays the exact same mature Kuwaiti woman defined by her first line: compact vowels, narrow melodic range, direct settled endings, and no widening or trailing lilt. Fahad stays the same mature Kuwaiti man. Each target line must remain complete and unhurried enough to understand.
 
 Fahad keeps the compact Kuwait City vowel timing, light consonants, and short settled endings established by his first line. Never widen, harden, or recast his cadence later in the take.
 
@@ -391,6 +395,14 @@ VOICE ROUTING IS LITERAL AND IMMUTABLE. Every Fahad-labelled line uses the same 
 At each labelled speaker handoff, leave one tiny clean silence of roughly 100–180ms. Never place a silence that long inside a labelled line. This is only natural turn timing for clean editing—not a dramatic pause, chapter, scene, or acoustic reset.
 
 This is conversation, not narration, advertising, an audiobook, or a podcast presenter. Let ordinary lines pass simply. Research sounds like a knowledgeable Kuwaiti recalling evidence mid-conversation, with no formal-Arabic or documentary reset. Emotion is warm and understated; final words are never staged.
+
+SILENT KUWAIT CITY RHYTHM ANCHOR — NEVER SPEAK THESE SAMPLE LINES:
+«لا، مو هذا قصدي.»
+«عيل شنو تقصد؟»
+«خلنا ناخذها من صوب ثاني.»
+«إي بس مو لهالدرجة… كمل.»
+
+If any later line starts to feel broader, polished, or generic, return silently to this exact compact Kuwait City rhythm. Never announce or read the sample.
 
 Read every labelled line exactly once and in order. Add, omit, repeat, paraphrase, or recast nothing. The transcript was already rewritten upstream into approved spoken Kuwaiti; perform that version only.`
 /* وضع C بلا أي وسم داخل السطر. القياس ربط قفزات فهد إلى طبقة نورة بأدواره
@@ -1486,16 +1498,131 @@ export function alignmentDiarizationConsistent (aligned) {
     && aligned.speakerMappingDistinct && aligned.speakerAgreement >= 0.88)
 }
 
-async function uploadForTranscription (file) {
+export const DIALECT_AUDIT_RESPONSE_FORMAT = {
+  type: 'text',
+  mime_type: 'application/json',
+  schema: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['overall', 'speakers'],
+    properties: {
+      overall: {
+        type: 'object', additionalProperties: false,
+        required: ['verdict', 'confidence', 'reason_codes', 'summary'],
+        properties: {
+          verdict: { type: 'string', enum: ['pass', 'reject', 'uncertain'] },
+          confidence: { type: 'number', minimum: 0, maximum: 1 },
+          reason_codes: { type: 'array', items: { type: 'string' } },
+          summary: { type: 'string' },
+        },
+      },
+      speakers: {
+        type: 'object', additionalProperties: false, required: ['fahad', 'noura'],
+        properties: {
+          fahad: { $ref: '#/$defs/speaker' },
+          noura: { $ref: '#/$defs/speaker' },
+        },
+      },
+    },
+    $defs: {
+      speaker: {
+        type: 'object', additionalProperties: false,
+        required: ['verdict', 'dominant_register', 'confidence', 'presenter_mode', 'drift_windows', 'summary'],
+        properties: {
+          verdict: { type: 'string', enum: ['pass', 'reject', 'uncertain'] },
+          dominant_register: { type: 'string', enum: ['kuwait-city', 'saudi', 'omani', 'emirati', 'generic-gulf', 'other', 'uncertain'] },
+          confidence: { type: 'number', minimum: 0, maximum: 1 },
+          presenter_mode: { type: 'boolean' },
+          drift_windows: {
+            type: 'array',
+            items: {
+              type: 'object', additionalProperties: false,
+              required: ['section', 'detected_register', 'confidence', 'acoustic_evidence'],
+              properties: {
+                section: { type: 'string', enum: ['opening', 'middle', 'ending'] },
+                detected_register: { type: 'string', enum: ['kuwait-city', 'saudi', 'omani', 'emirati', 'generic-gulf', 'other', 'uncertain'] },
+                confidence: { type: 'number', minimum: 0, maximum: 1 },
+                acoustic_evidence: { type: 'string' },
+              },
+            },
+          },
+          summary: { type: 'string' },
+        },
+      },
+    },
+  },
+}
+
+export const DIALECT_AUDIT_PROMPT = `You are an independent acoustic dialect adjudicator. Listen to the complete two-speaker Arabic recording before deciding.
+
+The transcript was deliberately written with Kuwaiti words and spellings. Vocabulary, word choice, orthography, names, topic, and semantic content are NOT evidence of dialect and must be ignored. Judge only what is acoustically heard: vowel timing and colour, sentence-final melody, rhythm, pitch placement, consonant weight, cadence, and whether a research passage triggers presenter delivery.
+
+Fahad is the adult male voice. Noura is the adult female voice. Judge each one separately across the opening, middle, and ending. The only passing target is natural contemporary educated urban Kuwait City conversation: compact vowels, narrow melodic movement, direct settled endings, light consonants, ordinary human timing, and no presenter reset.
+
+Reject the whole take if either speaker is predominantly Saudi, Omani, Emirati, generic Gulf, other, or uncertain; if either speaker drifts away from Kuwait City in any later section; or if either enters presenter mode. Do not reward a take merely because the words are Kuwaiti. drift_windows must list every non-Kuwait-City or uncertain section; leave it empty only when that speaker remains Kuwait City throughout.
+
+Return only the required JSON assessment.`
+
+export function extractInteractionOutputText (body) {
+  if (typeof body?.output_text === 'string' && body.output_text.trim()) return body.output_text.trim()
+  if (typeof body?.response?.output_text === 'string' && body.response.output_text.trim()) return body.response.output_text.trim()
+  const pieces = []
+  for (const step of body?.steps || []) {
+    if (step?.type !== 'model_output') continue
+    for (const item of step?.content || []) {
+      if (item?.type === 'text' && typeof item.text === 'string') pieces.push(item.text)
+    }
+  }
+  return pieces.join('').trim()
+}
+
+export function parseDialectAuditInteraction (body) {
+  const raw = extractInteractionOutputText(body)
+  if (!raw) throw new Error('DIALECT_AUDIT_TRANSIENT: شاهد اللهجة اكتمل بلا JSON')
+  const cleaned = raw.replace(/^```(?:json)?\s*/iu, '').replace(/\s*```$/u, '').trim()
+  const start = cleaned.indexOf('{'); const end = cleaned.lastIndexOf('}')
+  if (start < 0 || end <= start) throw new Error('DIALECT_AUDIT_TRANSIENT: شاهد اللهجة رجع نصاً غير مفهوم')
+  let parsed = null
+  try { parsed = JSON.parse(cleaned.slice(start, end + 1)) }
+  catch (error) { throw new Error(`DIALECT_AUDIT_TRANSIENT: JSON شاهد اللهجة مكسور — ${error.message}`) }
+  if (!parsed?.overall || !parsed?.speakers?.fahad || !parsed?.speakers?.noura) {
+    throw new Error('DIALECT_AUDIT_TRANSIENT: شاهد اللهجة ناقص فهد أو نورة')
+  }
+  return parsed
+}
+
+export function dialectAuditPasses (assessment) {
+  const reasons = []
+  if (assessment?.overall?.verdict !== 'pass') reasons.push(`overall:${assessment?.overall?.verdict || 'missing'}`)
+  if (Number(assessment?.overall?.confidence || 0) < 0.82) reasons.push('overall-confidence')
+  if ((assessment?.overall?.reason_codes || []).length) reasons.push(...assessment.overall.reason_codes)
+  for (const key of ['fahad', 'noura']) {
+    const speaker = assessment?.speakers?.[key]
+    if (speaker?.verdict !== 'pass') reasons.push(`${key}:${speaker?.verdict || 'missing'}`)
+    if (speaker?.dominant_register !== 'kuwait-city') reasons.push(`${key}:${speaker?.dominant_register || 'missing'}`)
+    if (Number(speaker?.confidence || 0) < 0.75) reasons.push(`${key}:confidence`)
+    if (speaker?.presenter_mode) reasons.push(`${key}:presenter-mode`)
+    for (const window of speaker?.drift_windows || []) {
+      if (window?.detected_register !== 'kuwait-city') {
+        reasons.push(`${key}:${window?.section || 'unknown'}:${window?.detected_register || 'uncertain'}`)
+      }
+    }
+  }
+  return { pass: reasons.length === 0, reasons: [...new Set(reasons)] }
+}
+
+async function uploadForTranscription (file, purpose = 'alignment') {
   const bytes = readFileSync(file)
+  const extension = extname(file).toLowerCase()
+  const mimeType = extension === '.mp3' ? 'audio/mpeg' : extension === '.flac' ? 'audio/flac' : 'audio/wav'
   const start = await fetch('https://generativelanguage.googleapis.com/upload/v1beta/files', {
     method: 'POST',
     headers: {
       'x-goog-api-key': KEY, 'X-Goog-Upload-Protocol': 'resumable', 'X-Goog-Upload-Command': 'start',
-      'X-Goog-Upload-Header-Content-Length': String(bytes.length), 'X-Goog-Upload-Header-Content-Type': 'audio/wav',
+      'X-Goog-Upload-Header-Content-Length': String(bytes.length), 'X-Goog-Upload-Header-Content-Type': mimeType,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ file: { display_name: `kuwaiti-alignment-${slug}-${SEED}` } }),
+    body: JSON.stringify({ file: { display_name: `kuwaiti-${purpose}-${slug}-${SEED}` } }),
   })
   if (!start.ok) throw new Error(`رفع شاهد المحاذاة HTTP ${start.status}: ${(await start.text()).slice(0, 300)}`)
   const uploadUrl = start.headers.get('x-goog-upload-url')
@@ -1506,6 +1633,64 @@ async function uploadForTranscription (file) {
   const body = await upload.json().catch(() => null)
   if (!upload.ok || !body?.file?.uri) throw new Error(`تعذّر تثبيت شاهد المحاذاة: ${JSON.stringify(body || {}).slice(0, 300)}`)
   return body.file
+}
+
+async function completedInteraction (requestBody, label) {
+  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+    method: 'POST', headers: { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  })
+  const raw = await response.text(); let body = null
+  try { body = JSON.parse(raw) } catch { /* diagnosed below */ }
+  if (!response.ok) {
+    const message = body?.error?.message || `${label} HTTP ${response.status}: ${raw.slice(0, 300)}`
+    if (response.status === 429 || response.status >= 500) throw new Error(`DIALECT_AUDIT_TRANSIENT: ${message}`)
+    throw new Error(`DIALECT_AUDIT_FATAL: ${message}`)
+  }
+  if (body?.status === 'completed') return body
+  if (!body?.id) throw new Error(`DIALECT_AUDIT_TRANSIENT: ${label} بلا id ولا نتيجة مكتملة`)
+  const interactionPath = String(body.id).startsWith('interactions/')
+    ? String(body.id) : `interactions/${encodeURIComponent(body.id)}`
+  for (let poll = 1; poll <= 24; poll += 1) {
+    await sleep(Math.min(5000, 750 * poll))
+    const follow = await fetch(`https://generativelanguage.googleapis.com/v1beta/${interactionPath}`, {
+      headers: { 'x-goog-api-key': KEY },
+    })
+    const followBody = await follow.json().catch(() => null)
+    if (follow.ok && followBody?.status === 'completed') return followBody
+    if (!follow.ok || ['failed', 'cancelled', 'incomplete'].includes(followBody?.status)) {
+      const message = followBody?.error?.message || `${label} poll HTTP ${follow.status} (${followBody?.status || 'unknown'})`
+      if (follow.status === 429 || follow.status >= 500 || follow.ok) throw new Error(`DIALECT_AUDIT_TRANSIENT: ${message}`)
+      throw new Error(`DIALECT_AUDIT_FATAL: ${message}`)
+    }
+  }
+  throw new Error(`DIALECT_AUDIT_TRANSIENT: انتهت مهلة ${label}`)
+}
+
+async function dialectAuditWitness (file) {
+  if (!KEY) throw new Error('DIALECT_AUDIT_FATAL: GEMINI_API_KEY مطلوب لشاهد اللهجة المستقل')
+  let uploaded = null
+  try {
+    uploaded = await uploadForTranscription(file, 'dialect-audit')
+    const body = await completedInteraction({
+      model: DIALECT_AUDIT_MODEL,
+      input: [
+        { type: 'text', text: DIALECT_AUDIT_PROMPT },
+        { type: 'audio', uri: uploaded.uri, mime_type: uploaded.mimeType || uploaded.mime_type || 'audio/wav' },
+      ],
+      response_format: DIALECT_AUDIT_RESPONSE_FORMAT,
+      generation_config: { thinking_level: 'low', max_output_tokens: 2200 },
+      store: false,
+    }, 'شاهد اللهجة')
+    const assessment = parseDialectAuditInteraction(body)
+    const decision = dialectAuditPasses(assessment)
+    return { mode: DIALECT_AUDIT_MODE, model: DIALECT_AUDIT_MODEL,
+      status: decision.pass ? 'pass' : 'reject', reasons: decision.reasons, assessment }
+  } finally {
+    if (uploaded?.name) fetch(`https://generativelanguage.googleapis.com/v1beta/${uploaded.name}`, {
+      method: 'DELETE', headers: { 'x-goog-api-key': KEY },
+    }).catch(() => {})
+  }
 }
 
 async function transcriptionWitness (file, turns) {
@@ -2104,6 +2289,11 @@ if (SELF_TEST) {
     'رأس Vertex المختصر يمنع إعادة تفسير أي متحدث بعد المرجع الافتتاحي')
   assert.match(PROMPT_VERTEX_C_HEAD, /Fahad keeps the compact Kuwait City vowel timing[\s\S]*Never widen, harden, or recast his cadence later in the take/,
     'قفل فهد نفسه حاضر في مسار Vertex الإنتاجي')
+  assert.match(PROMPT_VERTEX_C_HEAD, /SILENT KUWAIT CITY RHYTHM ANCHOR[\s\S]*خلنا ناخذها من صوب ثاني/,
+    'Vertex يحمل مرساة إيقاع كويتية إيجابية صامتة لا مجرد نفي')
+  assert.doesNotMatch(PROMPT_VERTEX_C_HEAD,
+    /Emirati|Omani|Saudi|Najdi|Hejazi|Bahraini|Qatari|Iraqi|Egyptian|Levantine|عُماني|إماراتي|سعودي|نجدي|قطري|بحريني|عراقي|شامي|مصري/i,
+    'برومت الممثل نفسه لا يزرع أسماء اللهجات المرفوضة في ذاكرة الصوت')
   assert.doesNotMatch(buildTimedMaster.toString(), /kuwaiti-closing-approved|CLOSING_CLIP|useFixedClosing/,
     'الختام لا يُستبدل بمقطعٍ قديم يغيّر هوية الصوت في آخر جملة')
   assert.match(buildTimedMaster.toString(), /const file = files\[i\]/,
@@ -2385,6 +2575,37 @@ if (SELF_TEST) {
   assert.equal(alignmentBoundaryTrustworthy({ ...alignedProbe, perTurnCoverage: [1, 0, 1] }), false,
     'التطابق الإجمالي لا يسمح بقص دورٍ ضاعت كلماته كلها')
 
+  const dialectPassFixture = {
+    overall: { verdict:'pass', confidence:0.94, reason_codes:[], summary:'stable' },
+    speakers: {
+      fahad: { verdict:'pass', dominant_register:'kuwait-city', confidence:0.90,
+        presenter_mode:false, drift_windows:[], summary:'stable' },
+      noura: { verdict:'pass', dominant_register:'kuwait-city', confidence:0.92,
+        presenter_mode:false, drift_windows:[], summary:'stable' },
+    },
+  }
+  const parsedDialectPass = parseDialectAuditInteraction({ output_text:JSON.stringify(dialectPassFixture) })
+  assert.equal(dialectAuditPasses(parsedDialectPass).pass, true,
+    'الحكم الكويتي الثابت للصوتين يمر من output_text الرسمي')
+  const dialectDriftFixture = structuredClone(dialectPassFixture)
+  dialectDriftFixture.overall = { verdict:'reject', confidence:0.96,
+    reason_codes:['noura-non-kuwait-drift'], summary:'female drift' }
+  dialectDriftFixture.speakers.noura = { verdict:'reject', dominant_register:'saudi', confidence:0.91,
+    presenter_mode:false, drift_windows:[{
+      section:'middle', detected_register:'saudi', confidence:0.91, acoustic_evidence:'wider endings',
+    }], summary:'drift' }
+  const parsedDialectDrift = parseDialectAuditInteraction({ steps:[{
+    type:'model_output', content:[{ type:'text', text:JSON.stringify(dialectDriftFixture) }],
+  }] })
+  const dialectDriftDecision = dialectAuditPasses(parsedDialectDrift)
+  assert.equal(dialectDriftDecision.pass, false, 'انزلاق نورة السعودي يرمي الـTake ولو الكلمات كويتية')
+  assert.ok(dialectDriftDecision.reasons.some((reason) => /noura:middle:saudi/.test(reason)),
+    'سجل الرفض يسمّي المتحدث والثلث واللهجة المسموعة')
+  assert.match(DIALECT_AUDIT_PROMPT, /Vocabulary, word choice, orthography, names, topic, and semantic content are NOT evidence/,
+    'شاهد اللهجة ممنوع يحكم من قاموس النص الكويتي')
+  assert.match(DIALECT_AUDIT_PROMPT, /opening, middle, and ending/,
+    'الحكم يسمع بداية كل شخص ووسطه ونهايته ولا يكتفي بالافتتاح')
+
   /* شاهد اسم العائلة. العلّة التي بُني لها: «الفيلكاوي» تعبر شاهد الحدود
      لأن مسافتها ٠٫٢ ودون حدّ القبول ٠٫٣٤ — فلا بد من شاهدٍ لا يقارب. */
   assert.ok(tokenDistance(alignmentToken('الفيلتشاوي'), alignmentToken('الفيلكاوي')) <= 0.34,
@@ -2411,6 +2632,8 @@ if (SELF_TEST) {
     'عطل Gemini المؤقت يعاد بلا أن يحرق محاولة جودة')
   assert.equal(geminiFailureExitCode(new Error('HTTP 503 بلا صوت')), 75,
     'أعطال 5xx مؤقتة لا تسقط الطابور')
+  assert.equal(geminiFailureExitCode(new Error('DIALECT_AUDIT_TRANSIENT: witness unavailable')), 75,
+    'تعطل الحكم الصوتي يعيد البذرة نفسها ولا يقبل الحلقة بلا شاهد')
   assert.equal(geminiFailureExitCode(new Error('نفد رصيد Gemini — التوليد متوقف')), 78,
     'نفاد الرصيد يوقف الصرف ويحفظ الباقي')
   assert.equal(geminiFailureExitCode(new Error('قفل المصدر مفقود')), 1,
@@ -2785,8 +3008,34 @@ const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
 const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)
 const timeline=timelineFor(turns,assembly)
 writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
+let dialectAudit = { mode:DIALECT_AUDIT_MODE, model:DIALECT_AUDIT_MODEL,
+  status:DIALECT_AUDIT_MODE === 'off' ? 'skipped' : 'pending', reasons:[] }
+if (DIALECT_AUDIT_MODE !== 'off') {
+  /* نحكم على الـDry Take المتصل نفسه إذا كان واحداً؛ الموسيقى الخارجية لا
+     تدخل أذن الحكم ولا تستطيع ستر انزلاقٍ بعد موضع الجسر. وإن اضطررنا يوماً
+     لأكثر من Take، يُفحص الماستر الكامل بدل إسقاط أي جزء. */
+  const dialectSource = generatedTakeSources.length === 1
+    ? generatedTakeSources[0].file : audioFile
+  console.log(`👂 شاهد اللهجة المستقل: ${DIALECT_AUDIT_MODEL} · فهد ونورة · بداية/وسط/نهاية`)
+  try {
+    dialectAudit = await dialectAuditWitness(dialectSource)
+    if (dialectAudit.status !== 'pass') {
+      rejectTake(`↻ شاهد اللهجة رفض الـTake — ${dialectAudit.reasons.join(' · ') || 'الحكم غير حاسم'}`, {
+        stage:'independent-dialect-audit', dialectAudit,
+      })
+    }
+    console.log('✓ شاهد اللهجة: فهد ونورة كويت مدينة ثابتان من البداية إلى النهاية')
+  } catch (error) {
+    if (/DIALECT_AUDIT_FATAL/.test(String(error?.message || error))) throw error
+    dialectAudit = { ...dialectAudit, status:'unavailable', error:String(error?.message || error) }
+    if (DIALECT_AUDIT_MODE === 'required') {
+      throw new Error(`DIALECT_AUDIT_TRANSIENT: تعذّر الحكم المستقل؛ ممنوع قبول الحلقة بلا أذن ثانية — ${error.message}`)
+    }
+    console.warn(`⚠️ شاهد اللهجة غير متاح (prefer): ${error.message}`)
+  }
+}
 const audit={
-  schemaVersion:1, qualityGateVersion:'kuwaiti-aligned-v14', slug, revisionId, status:'candidate',
+  schemaVersion:1, qualityGateVersion:'kuwaiti-city-audited-v15', slug, revisionId, status:'candidate',
   provider:'gemini', ttsApi:TTS_PROVIDER, model:MODEL, languageCode:TTS_LANGUAGE, profile:PROFILE,
   seed:SEED,
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
@@ -2825,6 +3074,7 @@ const audit={
     corroboratedBoundaryResets,
     pitchBoundarySuspects:pitchBoundarySuspects.map((finding) => ({ turn:finding.index + 1,speaker:finding.speaker,hz:Number(finding.hz.toFixed(1)),driftHz:Number(finding.driftHz.toFixed(1)) }))},
   turnAlignment:{mode:ALIGNMENT_MODE,transcribeModel:TRANSCRIBE_MODEL,witnesses:splitAlignmentAudits},
+  dialectAudit,
   repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,
     confirmedSuspects:confirmedTimingSuspects.map((finding) => ({ turn:finding.turn,tooLong:finding.tooLong,tooShort:finding.tooShort })),
     medianSecPerChar:Number(medianRate.toFixed(4))},

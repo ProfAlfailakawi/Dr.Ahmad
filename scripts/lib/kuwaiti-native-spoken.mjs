@@ -14,9 +14,11 @@
 import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 import { applyApprovedRegisterRewrites } from './kuwaiti-register-rewrites.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-28-native-kuwaiti-v14-ear-rewrite-gate'
+export const NATIVE_SPOKEN_VERSION = '2026-08-29-native-kuwaiti-v15-city-ear-gate'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
+export const CLASSROOM_SLUG = 'the-classroom-that-fears-mistakesarabic'
+export const INTELLIGENCE_SLUG = 'intelligence-without-a-consciencearabic'
 
 const cloneTurn = (turn) => ({ ...turn })
 const norm = (value) => String(value || '').replace(/\s+/g, ' ').trim()
@@ -114,6 +116,21 @@ const SERIOUSNESS_SHORT_OVERRIDES = new Map([
   [28, { speaker: 'male', text: 'وبالأخير يكتشف إن كل هالانشغال كان عشان ما يواجه نفسه.', deliveryType: 'statement', pauseAfterMs: 360 }],
 ])
 
+/* جولة السماع ذات الخمس حلقات (٢٩ أغسطس): الحلقة 01 هي المرجع الصوتي.
+   02 و03 لم تفشلا من الجسر أو الـSame-Take؛ فشلتا في كلمات محددة، ثم
+   انزلق الأداء إلى خليجي غير كويتي. نعالج الكلمات هنا، أما اللهجة نفسها
+   فتحكمها بوابة الصوت v15 بعد التوليد ولا نحاول تخمينها من الإملاء. */
+const CLASSROOM_SHORT_OVERRIDES = new Map([
+  [0, { text: 'توقفنا أسبوعين… انشغلنا بالحرب، وبالتوتر اللي يزيد مع كل خبر.' }],
+  [2, { text: 'بس اليوم عندنا موضوع مهم بعد.' }],
+  [3, { text: 'الصف… هني بعد يا يتعلم الطالب يتكلم، يا يخاف ويسكت.' }],
+  [4, { text: 'إي… ومن أول مرة يرفع إيده، يبين شلون إحنا نتعامل مع الغلط.' }],
+])
+
+const INTELLIGENCE_SHORT_OVERRIDES = new Map([
+  [4, { text: 'لحظة… خلنا ناخذها وحدة وحدة.', deliveryType: 'briefReaction', pauseAfterMs: 200 }],
+])
+
 /* قواعد آمنة قليلة للحلقات الحالية والجديدة. لا تشمل «كل قاف»: الهوية
    الكويتية معجمية، والمعنى أهم من مطاردة حرف. */
 const SAFE_TEXT_RULES = [
@@ -121,6 +138,19 @@ const SAFE_TEXT_RULES = [
      تكراره نفسه يفضح الكاتب والمحرك، وحكم المراجعة يمنع تصنيع أمم وآهات.
      نحذف العلامة وحدها من البداية ولا نمس كلمةً واحدة من المعنى. */
   [/^ممم…\s*/u, ''],
+  [/(?:أخذوا|اخذوا) فيها أبحاث/gu, 'خذو فيها أبحاث'],
+  [/معنى القلق بصوت أبوه/gu, 'معنى الخوف بصوت أبوه'],
+  [/وشنو وجه القلق في معلومات تعريفية دقيقة؟/gu, 'وشنو اللي يخوف في معلومات تعريفية دقيقة؟'],
+  [/وهو مبين عليه القلق/gu, 'وهو مبين عليه متوتر'],
+  [/لزيادة القلق والتوتر النفسي/gu, 'لزيادة الخوف والتوتر النفسي'],
+  [/خلنا نوقف هني/gu, 'خلنا ناخذها وحدة وحدة'],
+  [/لازم نوقف بوجه الحصار/gu, 'لازم نتصدى للحصار'],
+  [/خل نوقف مع نفسنا وقفة تثقيفية/gu, 'خل نراجع نفسنا شوي'],
+  [/فيها شي يستاهل نوقف عنده/gu, 'فيها شي لازم نفهمه عدل'],
+  [/عشان نوقف حالة الغليان/gu, 'عشان نهدي حالة الغليان'],
+  [/خلنا نوقف أسلوب قمع العيال/gu, 'خلنا ننهي أسلوب قمع العيال'],
+  [/نوقف وياها ونآزرها/gu, 'نكون معاها ونساندها'],
+  [/خلونا نوقف شوي عند هالصرخات/gu, 'خلونا نسمع عدل هالصرخات'],
   [/مثل واحد كان محشور بباب ضيق(?:،|…)?\s*(?:وعقب|وبعدين|وطلع)\s+منه/gu,
     'مثل واحد كان محشور بمكان ضيّج… وبعدها طلع منه'],
   [/إن النجاح يتحول من فرحة إلى وسيلة تهد[يّي] الخوف/gu,
@@ -320,6 +350,30 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
       for (const [field, value] of Object.entries(patch)) {
         if (turn[field] === value) continue
         changes.push({ index, field, before: turn[field], after: value, reason: 'مراجعة شفوية للحلقة 04 بعد نجاح الصوت' })
+        turn[field] = value
+      }
+    }
+  }
+
+  if (slug === CLASSROOM_SLUG && output.length === 29) {
+    for (const [index, patch] of CLASSROOM_SHORT_OVERRIDES) {
+      const turn = output[index]
+      if (!turn) continue
+      for (const [field, value] of Object.entries(patch)) {
+        if (turn[field] === value) continue
+        changes.push({ index, field, before: turn[field], after: value, reason: 'حكم أذن الدكتور على الحلقة 02 من باقة السماع' })
+        turn[field] = value
+      }
+    }
+  }
+
+  if (slug === INTELLIGENCE_SLUG && output.length === 29) {
+    for (const [index, patch] of INTELLIGENCE_SHORT_OVERRIDES) {
+      const turn = output[index]
+      if (!turn) continue
+      for (const [field, value] of Object.entries(patch)) {
+        if (turn[field] === value) continue
+        changes.push({ index, field, before: turn[field], after: value, reason: 'حكم أذن الدكتور على الحلقة 03 من باقة السماع' })
         turn[field] = value
       }
     }

@@ -18,12 +18,12 @@
  * غائب يأخذها، فهي مخاطبةٌ لفهد بجنسٍ ليس جنسه. هذه وحدها تُسقِط.
  */
 
-export const GENDER_ADDRESS_VERSION = '2026-08-29-kuwaiti-gender-address-v1'
+export const GENDER_ADDRESS_VERSION = '2026-08-30-kuwaiti-gender-address-v2-no-mechanical-swap'
 
 /* صيغٌ لا تُقرأ إلا مخاطبةً لمؤنث. */
 const FEMALE_ADDRESS_HARD = [
   'تدرين', 'تشوفين', 'تعرفين', 'تقصدين', 'تتذكرين', 'تذكرين', 'تحسين', 'تفهمين',
-  'تسمعين', 'تلاحظين', 'تتخيلين', 'تصدقين', 'تقولين', 'تتوقعين', 'تلقين',
+  'تسمعين', 'تلاحظين', 'تتخيلين', 'تصدقين', 'تقولين', 'تتوقعين',
   'تعتقدين', 'ترين', 'تبغين', 'تحبين', 'تشوفينه', 'تدرينه', 'تشوفينها',
   'شفتي', 'قلتي', 'سمعتي', 'عرفتي', 'لاحظتي', 'صدقتي', 'تذكرتي', 'درتي',
   'تخيلي', 'شوفي', 'قولي', 'اسمعي', 'لاحظي', 'صدقيني', 'انتبهي', 'تعالي',
@@ -82,15 +82,9 @@ export function scanEpisodeGenderAddress (turns) {
   return { violations, suspects }
 }
 
-/* هل يُدخِل قلبُ الكاست مخاطبةً بجنسٍ خاطئ لم تكن موجودة؟ نقيس الحلقة
-   بوسومها الحالية وبوسومها مقلوبةً، ونقارن. لا تخمين: إما أن القلب يزيد
-   الخطأ فيُمنَع، أو لا يزيده فيمضي والتنويع محفوظ. */
+/* يبقى الاسم القديم للتوافق مع أي مستهلك قديم، لكن الحكم فولاذي: ما دام
+   التحويل يقلب الوسم ولا يعيد صرف **كل** كلمة داخل سياقها، فلا توجد حلقة
+   آمنة للقلب الميكانيكي. تنويع البداية يُكتب من الأصل أو لا يحدث. */
 export function castSwapIntroducesGenderFault (turns) {
-  const flipped = (turns || []).map((turn) => ({
-    ...turn,
-    speaker: turn?.speaker === 'male' ? 'female' : turn?.speaker === 'female' ? 'male' : turn?.speaker,
-  }))
-  const before = scanEpisodeGenderAddress(turns).violations.length
-  const after = scanEpisodeGenderAddress(flipped).violations.length
-  return after > before
+  return Array.isArray(turns) && turns.length > 0
 }

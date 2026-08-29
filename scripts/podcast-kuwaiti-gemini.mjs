@@ -67,6 +67,10 @@ const args = process.argv.slice(2)
 const SELF_TEST = args.includes('--self-test')
 const DRY_RUN = args.includes('--dry-run')
 const slug = (args.find((item) => item.startsWith('--slug=')) || '').slice(7)
+const GOLD_AUDIT_AUDIO = (args.find((item) => item.startsWith('--gold-audit-audio=')) || '')
+  .slice('--gold-audit-audio='.length)
+const GOLD_AUDIT_TIMELINE = (args.find((item) => item.startsWith('--gold-audit-timeline=')) || '')
+  .slice('--gold-audit-timeline='.length)
 const FFMPEG = process.env.FFMPEG_BIN || 'ffmpeg'
 /* PODCAST_KW_BRIDGE يثبّت المقطوعة يدوياً إن أردت؛ وإلا اختيرت لكل حلقةٍ
    نغمتُها من المكتبة (انظر pickEpisodeMusic أدناه). */
@@ -88,6 +92,23 @@ const DIALECT_AUDIT_HTTP_TIMEOUT_MS = Math.max(15_000,
   Math.min(120_000, Number(process.env.PODCAST_KW_DIALECT_AUDIT_HTTP_TIMEOUT_MS || 45_000)))
 assert.ok(['off', 'prefer', 'required'].includes(DIALECT_AUDIT_MODE),
   `PODCAST_KW_DIALECT_AUDIT غير صالح: ${DIALECT_AUDIT_MODE}`)
+/* شاهد اللهجة اللغوي مرّر 8/8 من الحلقات التي ردّتها أذن الدكتور، ومنها
+   تسجيل وُصف بأن فهد فيه من جدة/مصر. لذلك لا يعود حكم النموذج وحده بوابة
+   اعتماد. المرجع الحقيقي هو الحلقة 01 التي اعتمدها الدكتور «رووووعة جداً»:
+   نقيس غلاف رنين فهد ونورة في كل Take جديد، ونرفض أي تفسير صوتي يبتعد عن
+   الشخصين نفسيهما حتى لو كتب الشاهد اللغوي pass بثقة 0.95. */
+const GOLD_ACOUSTIC_MODE = String(process.env.PODCAST_KW_GOLD_ACOUSTIC_GATE || 'off').trim().toLowerCase()
+assert.ok(['off', 'required'].includes(GOLD_ACOUSTIC_MODE),
+  `PODCAST_KW_GOLD_ACOUSTIC_GATE غير صالح: ${GOLD_ACOUSTIC_MODE}`)
+const GOLD_ACOUSTIC_REFERENCE_FILE = resolve(ROOT, 'scripts', 'data', 'kuwaiti-gold-acoustic-reference.json')
+const GOLD_ACOUSTIC_REFERENCE = JSON.parse(readFileSync(GOLD_ACOUSTIC_REFERENCE_FILE, 'utf8'))
+assert.equal(Number(GOLD_ACOUSTIC_REFERENCE.schemaVersion), 1, 'صيغة مرجع الأذن غير معتمدة')
+assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance) > 0,
+  'عتبة مرجع الأذن مفقودة')
+for (const speaker of ['male', 'female']) {
+  assert.equal(GOLD_ACOUSTIC_REFERENCE.speakers?.[speaker]?.timbreCenter?.length, 18,
+    `بصمة ${speaker} الذهبية ناقصة`)
+}
 const REJECT_DIR = String(process.env.PODCAST_KW_REJECT_DIR || '').trim()
 
 /* ═══ عقد الخروج من المحرك ═══
@@ -1063,8 +1084,13 @@ const medianNumber = (values) => {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
 }
 
-function decodePcm16 (file, sampleRate = TIMBRE_SR) {
-  const decoded = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-i',file,'-f','s16le','-ac','1','-ar',String(sampleRate),'-'], { maxBuffer: 1 << 27 })
+function decodePcm16 (file, sampleRate = TIMBRE_SR, { startSec = null, endSec = null } = {}) {
+  const range = []
+  if (Number.isFinite(startSec) && startSec >= 0) range.push('-ss', Number(startSec).toFixed(3))
+  if (Number.isFinite(startSec) && Number.isFinite(endSec) && endSec > startSec) {
+    range.push('-t', Number(endSec - startSec).toFixed(3))
+  }
+  const decoded = spawnSync(FFMPEG, ['-hide_banner','-loglevel','error',...range,'-i',file,'-f','s16le','-ac','1','-ar',String(sampleRate),'-'], { maxBuffer: 1 << 27 })
   if (decoded.status !== 0 || !decoded.stdout?.length) return null
   return new Int16Array(decoded.stdout.buffer, decoded.stdout.byteOffset, decoded.stdout.byteLength >> 1)
 }
@@ -1098,8 +1124,8 @@ function fftPower (samples, offset) {
   return Float64Array.from({ length: TIMBRE_N / 2 + 1 }, (_, i) => re[i] * re[i] + im[i] * im[i] + 1e-12)
 }
 
-export function timbreSignature (file) {
-  const pcm = decodePcm16(file)
+export function timbreSignature (file, range = {}) {
+  const pcm = decodePcm16(file, TIMBRE_SR, range)
   if (!pcm || pcm.length < TIMBRE_N) return null
   const frames = []
   for (let offset = 0; offset + TIMBRE_N <= pcm.length; offset += TIMBRE_HOP) {
@@ -1137,6 +1163,62 @@ const medianSignature = (signatures) => {
   const valid = signatures.filter((signature) => Array.isArray(signature) && signature.length)
   if (!valid.length) return null
   return valid[0].map((_, dimension) => medianNumber(valid.map((signature) => signature[dimension])) || 0)
+}
+
+const SPEAKER_TIMELINE_LABELS = { male: 'فهد', female: 'نورة' }
+
+export function measuredSpeakerTimbreCenter (file, timeline, speaker) {
+  const label = SPEAKER_TIMELINE_LABELS[speaker]
+  const utterances = Array.isArray(timeline?.utterances) ? timeline.utterances : []
+  const samples = utterances
+    .filter((utterance) => utterance?.speaker === label
+      && Number.isFinite(Number(utterance.startSec))
+      && Number.isFinite(Number(utterance.endSec))
+      && Number(utterance.endSec) - Number(utterance.startSec) >= 0.70)
+    .map((utterance) => ({
+      index: utterance.index,
+      signature: timbreSignature(file, {
+        startSec: Number(utterance.startSec),
+        endSec: Number(utterance.endSec),
+      }),
+    }))
+    .filter((sample) => Array.isArray(sample.signature))
+  return {
+    speaker,
+    sampleCount: samples.length,
+    center: medianSignature(samples.map((sample) => sample.signature)),
+  }
+}
+
+export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOUSTIC_REFERENCE) {
+  const maximum = Number(reference?.maximumTimbreDistance)
+  const minimum = Number(reference?.minimumUtterancesPerSpeaker || 4)
+  const speakers = {}
+  const failures = []
+  for (const speaker of ['male', 'female']) {
+    const measured = measuredSpeakerTimbreCenter(file, timeline, speaker)
+    const target = reference?.speakers?.[speaker]?.timbreCenter
+    const distance = timbreDistance(measured.center, target)
+    const pass = measured.sampleCount >= minimum && Number.isFinite(distance) && distance <= maximum
+    speakers[speaker] = {
+      sampleCount: measured.sampleCount,
+      distance: Number.isFinite(distance) ? Number(distance.toFixed(4)) : null,
+      maximumDistance: maximum,
+      pass,
+    }
+    if (!pass) failures.push(`${speaker === 'male' ? 'فهد' : 'نورة'}:${Number.isFinite(distance) ? distance.toFixed(3) : 'لا بصمة'}`)
+  }
+  return {
+    mode: GOLD_ACOUSTIC_MODE,
+    status: failures.length ? 'reject' : 'pass',
+    referenceVersion: reference?.referenceVersion || '',
+    referenceSlug: reference?.source?.slug || '',
+    referenceSeed: reference?.source?.seed ?? null,
+    method: reference?.method || '',
+    maximumTimbreDistance: maximum,
+    speakers,
+    failures,
+  }
 }
 
 export function speakerTimbreContinuity (turns, signatures, speaker = 'female') {
@@ -2087,6 +2169,17 @@ function saveState(slugValue, audioFile, transcriptFile) {
   writeFileSync(STATE, `${JSON.stringify(state,null,2)}\n`)
 }
 
+if (GOLD_AUDIT_AUDIO || GOLD_AUDIT_TIMELINE) {
+  assert.ok(GOLD_AUDIT_AUDIO && GOLD_AUDIT_TIMELINE,
+    'التدقيق المرجعي يحتاج --gold-audit-audio و--gold-audit-timeline معاً')
+  const result = goldAcousticReferenceGate(
+    resolve(ROOT, GOLD_AUDIT_AUDIO),
+    JSON.parse(readFileSync(resolve(ROOT, GOLD_AUDIT_TIMELINE), 'utf8')),
+  )
+  console.log(JSON.stringify(result, null, 2))
+  process.exit(result.status === 'pass' ? 0 : 3)
+}
+
 if (SELF_TEST) {
   const turns = [
     { speaker:'male', text:'شلون نعرف إن الفكرة تستاهل؟', deliveryType:'question', pauseAfterMs:300, musicBridgeAfter:false },
@@ -2691,6 +2784,17 @@ if (SELF_TEST) {
     'الوضع التاريخي يبقى متاحاً للمقارنة فقط')
   assert.equal(PRESERVE_NATIVE_TURN_TIMING, true,
     'الافتراض يحفظ الصمت وتوقيت الردود اللذين ولّدهما النداء نفسه')
+  assert.equal(GOLD_ACOUSTIC_REFERENCE.source.audioSha256,
+    '7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1',
+    'مرجع الأذن الذهبي مثبت ببصمة ملف الحلقة الأولى، لا باسمٍ قابل للتبديل')
+  assert.equal(timbreDistance(
+    GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter,
+    GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter,
+  ), 0, 'البصمة الذهبية تطابق نفسها')
+  const shiftedGold = GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter.map((value) => value + 0.4)
+  assert.ok(timbreDistance(shiftedGold, GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter)
+    > GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance,
+  'تفسير حنجرة مختلف لا يمر لمجرد أن اسم الـpreset نفسه')
 
   console.log('✓ Gemini Kuwaiti pipeline self-test: chunking + prompt + PCM/WAV + عقد الطلب والاستخراج')
   process.exit(0)
@@ -3048,6 +3152,21 @@ const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
 const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)
 const timeline=timelineFor(turns,assembly)
 writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
+let goldAcousticReference = {
+  mode:GOLD_ACOUSTIC_MODE,
+  status:GOLD_ACOUSTIC_MODE === 'off' ? 'skipped' : 'pending',
+  referenceVersion:GOLD_ACOUSTIC_REFERENCE.referenceVersion,
+}
+if (GOLD_ACOUSTIC_MODE === 'required') {
+  console.log(`🔒 مرجع الأذن الذهبي: ${GOLD_ACOUSTIC_REFERENCE.referenceVersion} · فهد ونورة`)
+  goldAcousticReference = goldAcousticReferenceGate(audioFile, timeline)
+  if (goldAcousticReference.status !== 'pass') {
+    rejectTake(`↻ نفس أسماء الأصوات، لكن مو فهد ونورة المعتمدين: ${goldAcousticReference.failures.join(' · ')} (الحد ${goldAcousticReference.maximumTimbreDistance}) — الـTake مرفوض بالكامل.`, {
+      stage:'gold-acoustic-reference', goldAcousticReference,
+    })
+  }
+  console.log(`✓ مرجع الأذن: فهد ${goldAcousticReference.speakers.male.distance.toFixed(3)} · نورة ${goldAcousticReference.speakers.female.distance.toFixed(3)}`)
+}
 let dialectAudit = { mode:DIALECT_AUDIT_MODE, model:DIALECT_AUDIT_MODEL,
   status:DIALECT_AUDIT_MODE === 'off' ? 'skipped' : 'pending', reasons:[] }
 if (DIALECT_AUDIT_MODE !== 'off') {
@@ -3078,7 +3197,7 @@ if (DIALECT_AUDIT_MODE !== 'off') {
   }
 }
 const audit={
-  schemaVersion:1, qualityGateVersion:'kuwaiti-city-audited-v16', slug, revisionId, status:'candidate',
+  schemaVersion:1, qualityGateVersion:'kuwaiti-city-gold-locked-v17', slug, revisionId, status:'candidate',
   provider:'gemini', ttsApi:TTS_PROVIDER, model:MODEL, languageCode:TTS_LANGUAGE, profile:PROFILE,
   seed:SEED,
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,
@@ -3116,6 +3235,7 @@ const audit={
     boundarySuspects:acousticBoundarySuspects,
     corroboratedBoundaryResets,
     pitchBoundarySuspects:pitchBoundarySuspects.map((finding) => ({ turn:finding.index + 1,speaker:finding.speaker,hz:Number(finding.hz.toFixed(1)),driftHz:Number(finding.driftHz.toFixed(1)) }))},
+  goldAcousticReference,
   turnAlignment:{mode:ALIGNMENT_MODE,transcribeModel:TRANSCRIBE_MODEL,witnesses:splitAlignmentAudits},
   dialectAudit,
   repeatGate:{regenerated:repeatRegens,suspects:repeatSuspects,

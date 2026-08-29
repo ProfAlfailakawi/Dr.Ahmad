@@ -6,11 +6,8 @@
  * جديد. الخطة حتمية من slug، لذلك لا تتبدل هوية الحلقة عند إعادة التشغيل.
  */
 import { createHash } from 'node:crypto'
-import { castSwapIntroducesGenderFault } from './kuwaiti-gender-address.mjs'
 
-export const DIALOGUE_VARIETY_VERSION = '2026-08-25-kuwaiti-variety-v1'
-
-const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
+export const DIALOGUE_VARIETY_VERSION = '2026-08-30-kuwaiti-variety-v2-no-posthoc-cast-swap'
 
 export const CONVERSATION_FAMILIES = [
   {
@@ -54,24 +51,21 @@ export function conversationFamilyForSlug (slug) {
   return CONVERSATION_FAMILIES[stableVarietyNumber(slug, 'family') % CONVERSATION_FAMILIES.length]
 }
 
-/* الحلقة التجريبية مقفولة بأذن الدكتور ولا نبدّل كاستها. ما عداها يتوزع
-   50/50 تقريباً: نفس الحوار ونفس ترتيب الردود، لكن نورة تقود بعض المجالس
-   وفهد يقود بعضها. لا توجد قاعدة «الرجل يسأل والمرأة تشرح» أو العكس. */
+/* ممنوع قلب الكاست بعد كتابة الحوار. وسمُ المتحدث ليس لوناً: «تدرين»
+   و«تدري» و«تخيلي» و«تخيل» جزءٌ من النص نفسه. قلب الوسم وحده أخرج نورة
+   تخاطب فهد بصيغة المؤنث، والعكس أصعب أن يمسكه حارس بلا فهم السياق.
+   تنويع مَن يبدأ يجب أن يحدث وقت **كتابة** الحوار القادم، بصرفٍ صحيح، لا
+   كتحويل آلي بعد اعتماد الكلمات. الـ144 الحالية تبقى على كاست مؤلفها. */
 export function shouldSwapConversationCast (slug) {
-  if (!slug || slug === PILOT_SLUG) return false
-  return stableVarietyNumber(slug, 'cast') % 2 === 1
+  return false
 }
 
 export function applyConversationVariety (turns, { slug = '' } = {}) {
   const family = conversationFamilyForSlug(slug)
   const output = turns.map((turn) => ({ ...turn }))
   const changes = []
-  /* [٢٩ أغسطس ٢٠٢٦ — بأذن الدكتور على الحلقة الخامسة] القلب كان يبدّل
-     الوسم وحده، والنص يبقى كما كُتب. فورثت نورة سطراً مكتوباً لفهد فقالت
-     لرجلٍ «تدرين شنو» — وهي مخاطبةُ امرأة. ثلاث حلقاتٍ من خمسٍ خرجت هكذا
-     وما أوقفها فاحص. التنويع يبقى، لكنه يتنحّى عن الحلقة التي يُفسدها. */
-  const castSwapBlocked = shouldSwapConversationCast(slug) && castSwapIntroducesGenderFault(output)
-  const swapCast = shouldSwapConversationCast(slug) && !castSwapBlocked
+  const castSwapBlocked = false
+  const swapCast = false
   const desiredFirstSpeaker = swapCast ? 'female' : 'male'
   const castNeedsChange = ['male', 'female'].includes(output[0]?.speaker)
     && output[0].speaker !== desiredFirstSpeaker

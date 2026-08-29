@@ -113,7 +113,7 @@ export function verifyPackagedCandidate ({ root = ROOT, outputDir, slug, minimum
   }
   const audit = readJson(paths.audit)
   if (!audit || audit.slug !== slug || audit.status !== 'candidate') return { ok: false, reason: 'سجل المرشح غير صالح' }
-  if (audit.qualityGateVersion !== 'kuwaiti-city-audited-v16') return { ok: false, reason: 'المرشح سابق لشاهد لهجة كويت المدينة v16' }
+  if (audit.qualityGateVersion !== 'kuwaiti-city-gold-locked-v17') return { ok: false, reason: 'المرشح سابق لقفل الحلقة الذهبية v17' }
   if (audit.sourceSha256 !== sha256(readFileSync(paths.source))) return { ok: false, reason: 'المصدر تغيّر' }
   if (audit.audioSha256 !== sha256(readFileSync(paths.audio))) return { ok: false, reason: 'بصمة الصوت لا تطابق السجل' }
   if (audit.transcriptSha256 !== sha256(readFileSync(paths.transcript))) return { ok: false, reason: 'بصمة النص المتزامن لا تطابق السجل' }
@@ -128,8 +128,8 @@ export function verifyPackagedCandidate ({ root = ROOT, outputDir, slug, minimum
   if (audit.turnAlignment?.mode !== 'required' || !packagedAlignmentBoundaryTrustworthy(witness, turnCount)) {
     return { ok: false, reason: 'شاهد حدود الكلمات ناقص أو دون العتبة' }
   }
-  if (audit.dialectAudit?.mode !== 'required' || audit.dialectAudit?.status !== 'pass') {
-    return { ok: false, reason: 'شاهد اللهجة المستقل ناقص أو لم يثبت كويت المدينة للصوتين' }
+  if (audit.goldAcousticReference?.mode !== 'required' || audit.goldAcousticReference?.status !== 'pass') {
+    return { ok: false, reason: 'فهد ونورة لا يطابقان مرجع الأذن الذهبي' }
   }
   if ((audit.repeatGate?.confirmedSuspects || []).length) return { ok: false, reason: 'قص أو تمديد مؤكّد في دور' }
   return { ok: true, audit }
@@ -193,11 +193,18 @@ async function main () {
   const qualityStep = Math.max(1, Number(valueArg('quality-step', '10')))
   const qualityWaveSize = Math.max(1, Number(valueArg('quality-wave-size', '3')))
   const qualityWaveStep = Math.max(1, Number(valueArg('quality-wave-step', '1000')))
+  const lockedSeedSlot = Number(process.env.PODCAST_KW_LOCKED_SEED_SLOT || 0)
+  if (lockedSeedSlot && (!Number.isSafeInteger(lockedSeedSlot) || lockedSeedSlot < 1)) {
+    throw new Error('PODCAST_KW_LOCKED_SEED_SLOT يجب أن يكون عدداً موجباً')
+  }
   if (!Number.isInteger(qualityAttempts) || qualityAttempts < 1 || qualityAttempts > 6) throw new Error('quality-attempts بين 1 و6')
   if (!Number.isInteger(transientAttempts) || transientAttempts < 1 || transientAttempts > 6) throw new Error('transient-attempts بين 1 و6')
   const minimumVoiceGap = Math.max(0, Number(process.env.PODCAST_KW_MIN_GAP || 25))
   const slugs = readFileSync(slugsFile, 'utf8').split(/\r?\n/).map((item) => item.trim()).filter(Boolean)
   if (!slugs.length || new Set(slugs).size !== slugs.length) throw new Error('قائمة الحلقات فارغة أو مكررة')
+  if (process.env.PODCAST_KW_REQUIRE_SINGLE_EPISODE === '1' && slugs.length !== 1) {
+    throw new Error(`قفل الإنتاج الفردي: المطلوب حلقة واحدة، لا ${slugs.length}`)
+  }
   mkdirSync(outputDir, { recursive: true })
   const old = readJson(resolve(outputDir, 'manifest.json'), {}) || {}
   const manifest = {
@@ -233,7 +240,11 @@ async function main () {
       continue
     }
 
-    const slot = Number(slotMap[slug] || index + 1)
+    /* أذن الدكتور اعتمدت الشخصيتين على خانة 1 (seed 2101). اختلاف الخانة
+       وحده صنع 2102–2105 التي مرّرها الشاهد ثم ردّتها الأذن. لذلك تبدأ كل
+       حلقة مستقلة من خانة المرجع، ويأتي التنويع من نصها لا من إعادة صب
+       الحنجرتين. الرفض ينتقل 2101→2111→2121… للحلقة نفسها فقط. */
+    const slot = lockedSeedSlot || Number(slotMap[slug] || index + 1)
     let accepted = false
     for (let qualityAttempt = 1; qualityAttempt <= qualityAttempts; qualityAttempt += 1) {
       const seed = seedForAttempt({ seedBase, slot, qualityAttempt, qualityStep, qualityWaveSize, qualityWaveStep })
@@ -300,6 +311,10 @@ async function main () {
 }
 
 function selfTest () {
+  assert.equal(seedForAttempt({ seedBase: 2100, slot: 1, qualityAttempt: 1 }), 2101)
+  assert.equal(seedForAttempt({ seedBase: 2100, slot: 1, qualityAttempt: 2 }), 2111)
+  assert.equal(seedForAttempt({ seedBase: 2100, slot: 1, qualityAttempt: 4 }), 3101,
+    'الحلقة المستقلة تبدأ من مرجع 2101 ثم تنتقل إلى موجة آمنة جديدة')
   assert.equal(seedForAttempt({ seedBase: 2100, slot: 4, qualityAttempt: 1 }), 2104)
   assert.equal(seedForAttempt({ seedBase: 2100, slot: 4, qualityAttempt: 2 }), 2114)
   assert.equal(seedForAttempt({ seedBase: 2100, slot: 4, qualityAttempt: 3 }), 2124)
@@ -324,7 +339,7 @@ function selfTest () {
   writeFileSync(resolve(outputDir, `${slug}.mp3`), audio)
   writeFileSync(resolve(outputDir, `${slug}.json`), transcript)
   atomicJson(resolve(outputDir, `${slug}.audit.json`), {
-    slug, status: 'candidate', seed: 3114, qualityGateVersion: 'kuwaiti-city-audited-v16',
+    slug, status: 'candidate', seed: 3111, qualityGateVersion: 'kuwaiti-city-gold-locked-v17',
     sourceSha256: sha256(source), audioSha256: sha256(audio), transcriptSha256: sha256(transcript),
     oneTake: true, speakerIsolation: 'multispeaker-single-take', ttsInput: 'dry-dialogue-only',
     bridgeGeneration: 'external-post-tts', pitchGate: {
@@ -344,17 +359,21 @@ function selfTest () {
           fahad:{ verdict:'pass', dominant_register:'kuwait-city', confidence:0.90, presenter_mode:false, drift_windows:[], summary:'stable' },
           noura:{ verdict:'pass', dominant_register:'kuwait-city', confidence:0.92, presenter_mode:false, drift_windows:[], summary:'stable' },
         } } },
+    goldAcousticReference: {
+      mode:'required', status:'pass', referenceVersion:'fixture-gold', maximumTimbreDistance:0.3,
+      speakers:{ male:{ distance:0.12, pass:true }, female:{ distance:0.14, pass:true } },
+    },
     acousticContinuity: { boundarySuspects: [], pitchBoundarySuspects: [], corroboratedBoundaryResets: [] },
     repeatGate: { suspects: [], confirmedSuspects: [] },
   })
   assert.equal(verifyPackagedCandidate({ root, outputDir, slug }).ok, true,
     'وسوم ASR غير الثابتة لا تلغي حدود كلمات سليمة وهوية أثبتتها البوابات الصوتية')
   const fixtureAudit = readJson(resolve(outputDir, `${slug}.audit.json`))
-  fixtureAudit.dialectAudit.status = 'reject'
+  fixtureAudit.goldAcousticReference.status = 'reject'
   atomicJson(resolve(outputDir, `${slug}.audit.json`), fixtureAudit)
-  assert.match(verifyPackagedCandidate({ root, outputDir, slug }).reason, /شاهد اللهجة/,
-    'الطابور لا يستأنف مرشحاً انزلقت لهجته حتى لو نجحت بقية القياسات')
-  fixtureAudit.dialectAudit.status = 'pass'
+  assert.match(verifyPackagedCandidate({ root, outputDir, slug }).reason, /مرجع الأذن الذهبي/,
+    'الطابور لا يستأنف صوتاً مختلفاً حتى لو مرّره شاهد اللهجة')
+  fixtureAudit.goldAcousticReference.status = 'pass'
   fixtureAudit.turnAlignment.witnesses[0].perTurnCoverage = [1, 0]
   atomicJson(resolve(outputDir, `${slug}.audit.json`), fixtureAudit)
   assert.match(verifyPackagedCandidate({ root, outputDir, slug }).reason, /حدود الكلمات/,

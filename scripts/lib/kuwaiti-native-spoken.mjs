@@ -14,11 +14,12 @@
 import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 import { applyApprovedRegisterRewrites } from './kuwaiti-register-rewrites.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-29-native-kuwaiti-v15-city-ear-gate'
+export const NATIVE_SPOKEN_VERSION = '2026-08-30-native-kuwaiti-v17-gold-locked'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 export const CLASSROOM_SLUG = 'the-classroom-that-fears-mistakesarabic'
 export const INTELLIGENCE_SLUG = 'intelligence-without-a-consciencearabic'
+export const ASSESSMENT_SLUG = 'how-do-we-assess-without-breaking-the-human-beingarabic'
 
 const cloneTurn = (turn) => ({ ...turn })
 const norm = (value) => String(value || '').replace(/\s+/g, ' ').trim()
@@ -129,6 +130,14 @@ const CLASSROOM_SHORT_OVERRIDES = new Map([
 
 const INTELLIGENCE_SHORT_OVERRIDES = new Map([
   [4, { text: 'لحظة… خلنا ناخذها وحدة وحدة.', deliveryType: 'briefReaction', pauseAfterMs: 200 }],
+])
+
+/* حكم الأذن على الحلقة 05: اللهجة شيء، والكلمة المسموعة شيء ثانٍ. «بالضبط»
+   خرجت «بالزبط»، و«حكم» خرجت خطأ. ما نطارد الحرف بتشكيلٍ مصطنع؛ نعيد
+   الجملتين بكلام شفهي يؤدي المعنى نفسه من غير الكلمتين الخطرتين. */
+const ASSESSMENT_SHORT_OVERRIDES = new Map([
+  [4, { text: 'إي، هذا اللي أقصده. ما يقول: غلطت في الاختبار. يقول من داخله: أنا فاشل.' }],
+  [5, { text: 'وهني النتيجة ما تعود بس نتيجة… كأنها صارت كل شي فيه.' }],
 ])
 
 /* قواعد آمنة قليلة للحلقات الحالية والجديدة. لا تشمل «كل قاف»: الهوية
@@ -379,8 +388,20 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
     }
   }
 
-  /* التنويع يأتي بعد العلاج النصي: لا يمس كلمةً ولا ترتيباً، ويجعل نورة
-     تقود قسماً من المكتبة بدل أن تبدأ الحلقات الـ144 كلها بفهد. */
+  if (slug === ASSESSMENT_SLUG && output.length === 31) {
+    for (const [index, patch] of ASSESSMENT_SHORT_OVERRIDES) {
+      const turn = output[index]
+      if (!turn) continue
+      for (const [field, value] of Object.entries(patch)) {
+        if (turn[field] === value) continue
+        changes.push({ index, field, before: turn[field], after: value, reason: 'حكم أذن الدكتور على كلمتي الحلقة 05' })
+        turn[field] = value
+      }
+    }
+  }
+
+  /* التنويع الأدائي يأتي بعد العلاج النصي: لا يمس كلمةً ولا ترتيباً ولا
+     يقلب الكاست. مَن يبدأ يُحسم وقت كتابة الحوار، مو بعد اعتماد صرفه. */
   const varied = applyConversationVariety(output, { slug })
   changes.push(...varied.changes)
   const audit = { ...auditNativeSpokenTurns(varied.turns), conversationPlan: varied.plan }

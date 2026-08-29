@@ -8,7 +8,7 @@
  * لا يمسّ محتوى تحريرياً، ولا يتصل بخدمةٍ مدفوعة، ولا بشبكةٍ أصلاً.
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync, writeFileSync, appendFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -89,6 +89,9 @@ const status = `# حالة المشروع
 
 > ملفٌ **مولَّد آلياً** — لا يُحرَّر يدوياً. أعِد توليده بـ \`npm run project:status\`.
 
+تاريخ التوليد: ${new Date().toISOString()}
+Commit: ${commit}
+
 ## المنصّة
 | البند | القيمة |
 | --- | --- |
@@ -134,7 +137,3 @@ ${line('تفريغات زمنية محفوظة', transcribed)}
 writeFileSync(at('PROJECT-STATUS.md'), status)
 console.log(`✓ PROJECT-STATUS.md — React ${reactMajor} · ${routes.length} مساراً · ${countFiles('src/components/admin', /\.tsx$/)} مكوّن إدارة · ${testCommands.length} أمر اختبار`)
 if (nodeConflicts.length) console.warn(`⚠︎ تعارض إصدار Node بين package.json وworkflows: ${nodeConflicts.join('، ')}`)
-
-if (process.env.GITHUB_STEP_SUMMARY) {
-  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n## Project Status Generation\n- **Timestamp:** ${new Date().toISOString()}\n- **Commit:** ${commit}\n`)
-}

@@ -564,7 +564,11 @@ function constraintsFor(appearance: FlowAppearance, count: number) {
   return [...common, 'face changes', 'identity drift', 'voice changes', 'wardrobe changes', 'age changes', 'lookalike replacement', 'distorted hands', 'extra fingers', 'unnatural mouth movement', 'poor lip synchronization', 'exaggerated gestures', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
 }
 
-const AVATAR_LOCK = 'Use Dr. Ahmad’s pre-saved avatar already available in Google Flow. Never create, describe, or substitute a new or similar person. Preserve the approved avatar identity, voice, appearance, wardrobe, realism, and performance continuity across every shot and every clip.'
+/* العطب الذي كشفه الدكتور (٢٩ أغسطس ٢٠٢٦): كان القفل يقول «استخدم الأفتار
+   المحفوظ في Flow»، والنموذج لا يرى أي أفتار محفوظ ما لم تُرفَق صورةٌ مرجعية
+   في «Ingredients» داخل Flow — فاخترع رجلاً أوروبياً مسنّاً في مكتبة فيكتورية.
+   الأمانة أولى: القفل يصف الشرط صراحةً بدل أن يفترض المستحيل. */
+const AVATAR_LOCK = 'IDENTITY — Use Dr. Ahmad’s pre-saved avatar from the creator’s own Flow library as the only person in frame; it is selected once in Flow and reused, never described here. Keep his face, age, skin tone, hair, beard and build exactly as that saved avatar. Never invent, age, westernise, or substitute a different or similar-looking person, and never fall back to a generic professor, scholar, or presenter figure. If the saved avatar is not selected for this generation, keep every human face out of the frame entirely and carry the meaning through hands, silhouette, and the environment instead.'
 
 const ARABIC_SCRIPT = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]+/g
 

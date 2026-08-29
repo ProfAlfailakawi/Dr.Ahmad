@@ -139,7 +139,7 @@ export type FlowClipSeconds = (typeof FLOW_CLIP_SECONDS)[number]
 export const FLOW_SECONDS_NOTE: Record<number, string> = {
   4: 'متاحة في كل نماذج Veo 3.1.',
   6: 'متاحة في كل نماذج Veo 3.1.',
-  8: 'الحدّ الأقصى لـVeo 3.1 — وكل مقطع بثماني ثوانٍ قابل للتمديد بـExtend.',
+  8: 'الحدّ الأقصى لـVeo 3.1، وأنسب مدة لريل واحد مركّز. والتمديد بـExtend يضيف سبع ثوانٍ لا ثماني — فلا تتوقع مضاعفة.',
   10: 'تحتاج نموذج Gemini Omni Flash 1.1 داخل Flow؛ Veo 3.1 يقف عند الثماني.',
 }
 
@@ -166,6 +166,30 @@ export function cameraMove(input: { order: number; shotIndex: number; shotCount:
       : 'slow lateral track across the same environment, parallel to the main lines'
   }
   return 'settle to a locked frame; end on a stable, composed image with no residual movement'
+}
+
+/**
+ * كتلة التصوير للريل — لغةٌ حركية لا هادئة.
+ *
+ * العلّة (٢٩ أغسطس ٢٠٢٦، بحكم عين الدكتور على أول فيديو): الكتلة التحريرية
+ * تكرّر «هادئ · مكبوح · بطيء · ناعم» لأنها هوية الموقع، فأنتجت على إنستغرام
+ * بطاقةً بريديةً متحركة: أربعةَ عشرَ ثانيةً بلا حدث. والريل قانونه معاكس —
+ * الحدث يبدأ قبل أن يقرّر الإبهام التمرير، والسكون موتٌ لا وقار.
+ */
+export function reelCinematographyBlock(input: { look: FlowLook; seconds: number }): string {
+  const { look, seconds } = input
+  return [
+    `Cinematography — lens: ${look.lens}, aperture ${look.aperture}. Depth of field: ${look.depthOfField}.`,
+    `Lighting plan: ${look.lighting}.`,
+    `Colour grade: ${look.grade}.`,
+    `Texture and finish: ${look.texture}.`,
+    // القاعدة الأولى: لا إطارَ ساكنٍ في البداية.
+    'OPENING RULE — the very first frame is already mid-event: the transformation is visibly underway before the viewer can scroll. Never open on a still, settled, or establishing frame.',
+    `Pacing: the single transformation runs across the whole ${seconds} seconds with visible, continuous change — something is different in every second. No idling, no held beauty shots, no waiting.`,
+    'Camera: one committed move that serves the event — push, track, crane, orbit, or rack focus — executed with intent, not drift. Motion may be brisk; it must never be shaky, random, or aimless.',
+    'Energy: kinetic and arresting. Physical forces are visible — weight, momentum, collapse, spill, growth, fracture. The frame should feel alive, not composed and still.',
+    'Composition: honour the rule of thirds with intentional negative space for the caption; keep verticals true; fill the 9:16 frame edge to edge.',
+  ].join('\n')
 }
 
 /** كتلة التصوير الكاملة للقطة واحدة — تُحقن في البرومبت. */

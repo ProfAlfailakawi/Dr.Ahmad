@@ -72,6 +72,11 @@ check(new Set([articleProject.social.x, articleProject.social.instagram, article
 check(articleProject.segments.some((segment) => segment.appearance !== 'visual_only'), 'فيديو بأفتار')
 const withoutAvatar = createPublicVideoProject({ topic: 'سؤال تربوي واحد', message: 'كيف نبني الفهم؟', useAvatar: false })
 check(withoutAvatar.segments.every((segment) => segment.appearance === 'visual_only'), 'فيديو من دون أفتار')
+/* أول فيديو حقيقي (٢٩ أغسطس ٢٠٢٦) أخرج رجلاً أوروبياً مسنّاً في مكتبة
+   فيكتورية: القفل كان يفترض أفتاراً يراه النموذج، فلمّا لم يجده اخترع بديلاً.
+   القفل الآن يمنع البديل صراحةً ويأمر بإخراج الوجه من الكادر عند غيابه. */
+check(/never fall back to a generic professor|never invent/i.test(articleProject.identityLock), 'القفل يمنع اختراع شخص بديل')
+check(/keep every human face out of the frame/i.test(articleProject.identityLock), 'غياب الأفتار يعني إخراج الوجه لا اختراعه')
 check(articleProject.identityLock.includes('pre-saved avatar') && !articleProject.identityLock.includes('upload'), 'قفل الأفتار الجاهز بلا طلب رفع')
 check(articleProject.segments.filter((segment) => segment.appearance !== 'visual_only').length <= 3, 'الأفتار لا يتحدث في المقاطع الستة')
 check(articleProject.segments.every((segment) => segment.narration.split(/\s+/).length <= (segment.appearance === 'visual_only' ? 14 : 11)), 'منع جملة طويلة داخل مقطع')

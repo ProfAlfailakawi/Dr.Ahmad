@@ -125,9 +125,23 @@ export const DEFAULT_FLOW_LOOK: FlowLookId = 'editorial-daylight'
 export const flowLook = (id?: FlowLookId | null): FlowLook =>
   FLOW_LOOKS.find((look) => look.id === id) || FLOW_LOOKS[0]
 
-/** مددٌ يسمح بها Flow المدفوع؛ الثماني تبقى خياراً لا حتماً. */
-export const FLOW_CLIP_SECONDS = [8, 16, 24] as const
+/**
+ * المدد التي يقبلها Flow فعلاً للتوليدة الواحدة (وثائق Google الرسمية،
+ * ٢٩ أغسطس ٢٠٢٦): Veo 3.1 بنسخه الثلاث ٤ و٦ و٨ ثوانٍ، وGemini Omni Flash 1.1
+ * يزيد العاشرة. وكان هذا الملف يعرض ٨ و١٦ و٢٤ — ورقمٌ فوق الحدّ لا يطيل
+ * المقطع، وإنما يكتب في البرومبت مدةً يتجاهلها المحرّك وتفسد توقيت اللقطات.
+ * الأطول يكون بخاصية Extend داخل Flow لا برقمٍ في النص.
+ */
+export const FLOW_CLIP_SECONDS = [4, 6, 8, 10] as const
 export type FlowClipSeconds = (typeof FLOW_CLIP_SECONDS)[number]
+
+/** العاشرة متاحة بنموذج واحد؛ تُعرض ملاحظتها في اللوحة كي لا يختارها بلا علم. */
+export const FLOW_SECONDS_NOTE: Record<number, string> = {
+  4: 'متاحة في كل نماذج Veo 3.1.',
+  6: 'متاحة في كل نماذج Veo 3.1.',
+  8: 'الحدّ الأقصى لـVeo 3.1 — وكل مقطع بثماني ثوانٍ قابل للتمديد بـExtend.',
+  10: 'تحتاج نموذج Gemini Omni Flash 1.1 داخل Flow؛ Veo 3.1 يقف عند الثماني.',
+}
 
 /**
  * حركة الكاميرا: قرارٌ مركّب (حامل + اتجاه + إيقاع) بدل «دفع بطيء أو ثبات».

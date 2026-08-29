@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {
-  FLOW_LOOKS, FLOW_CLIP_SECONDS, DEFAULT_FLOW_LOOK,
+  FLOW_LOOKS, FLOW_CLIP_SECONDS, FLOW_SECONDS_NOTE, DEFAULT_FLOW_LOOK,
   flowLook, cameraMove, cinematographyBlock, shotPlanForSeconds,
 } from '../src/lib/flow-cinema.ts'
 import { createArticleVideoProject, getFlowPrompt } from '../src/lib/live-director.ts'
@@ -79,5 +79,17 @@ for (const needle of ['Cinematography', 'Lighting plan', 'Colour grade', 'Compos
 check(/lens: \d+mm equivalent, aperture f\//.test(prompt), 'البرومبت يحدّد عدسةً وفتحة')
 check(prompt.includes('Duration: exactly 8 seconds.'), 'المدة الافتراضية ثمانٍ (توافق رجعي)')
 check(!/[؀-ۿ]/.test(prompt), 'البرومبت إنجليزيٌّ خالص بلا تسريب عربي')
+
+
+/* حدود Flow الحقيقية (وثائق Google الرسمية ٢٩ أغسطس ٢٠٢٦): Veo 3.1 يقف عند
+   الثماني، وGemini Omni Flash 1.1 يبلغ العاشرة. كان الملف يعرض ١٦ و٢٤ فيكتب
+   في البرومبت مدةً يتجاهلها المحرّك — فصار الحدّ محروساً لا منسياً. */
+for (const seconds of FLOW_CLIP_SECONDS) {
+  check(seconds <= 10, `المدة ${seconds} داخل حدّ Flow`)
+  check(typeof FLOW_SECONDS_NOTE[seconds] === 'string' && FLOW_SECONDS_NOTE[seconds].length > 0, `المدة ${seconds} لها ملاحظة`)
+}
+check(FLOW_CLIP_SECONDS.includes(8), 'الثماني متاحة — حدّ Veo 3.1')
+check(FLOW_SECONDS_NOTE[10].includes('Omni Flash'), 'العاشرة تُنسب إلى نموذجها')
+check(!FLOW_CLIP_SECONDS.some((seconds) => seconds > 10), 'لا مدة فوق الحدّ الموثّق')
 
 console.log(`✓ اجتازت الطبقة السينمائية ${checks} فحصاً`)

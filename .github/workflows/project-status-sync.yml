@@ -40,16 +40,9 @@ jobs:
       - name: Generate PROJECT-STATUS.md
         run: npm run project:status
 
-      - name: Commit if changed
+      - name: Fail if PROJECT-STATUS.md is stale
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add PROJECT-STATUS.md
-          if git diff --cached --quiet; then
-            echo "No changes to PROJECT-STATUS.md"
-          else
-            git commit -m "chore: keep PROJECT-STATUS.md fresh [skip ci]"
-            # Use GitHub CLI to create a PR or push if we had token.
-            # Using standard CI auto-commit flow.
-            git push origin HEAD:main
+          if ! git diff --quiet PROJECT-STATUS.md; then
+            echo "::error::PROJECT-STATUS.md is out of date! Run 'npm run project:status' locally and commit the changes."
+            exit 1
           fi

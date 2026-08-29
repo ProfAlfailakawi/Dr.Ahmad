@@ -81,7 +81,7 @@ check(articleProject.identityLock.includes('pre-saved avatar') && !articleProjec
 check(articleProject.segments.filter((segment) => segment.appearance !== 'visual_only').length <= 3, 'الأفتار لا يتحدث في المقاطع الستة')
 check(articleProject.segments.every((segment) => segment.narration.split(/\s+/).length <= (segment.appearance === 'visual_only' ? 14 : 11)), 'منع جملة طويلة داخل مقطع')
 check(articleProject.segments.every((segment) => segment.shotCount >= 1 && segment.shotCount <= 3), 'من لقطة إلى ثلاث لقطات')
-check(articleProject.segments.every((segment) => /Camera movement: one restrained motion per shot/.test(segment.prompt)), 'منع حركات كاميرا متنافسة')
+check(articleProject.segments.every((segment) => /Camera movement: one committed motion per shot[\s\S]*never combine competing moves/.test(segment.prompt)), 'منع حركات كاميرا متنافسة')
 check(articleProject.segments.every((segment) => segment.negativeConstraints.includes('Arabic text inside the scene')), 'منع النص العربي المولّد')
 check(articleProject.segments.every((segment) => Boolean(segment.flowPrompts?.speech_ar && segment.flowPrompts?.speech_en && segment.flowPrompts?.silent)), 'كل مقطع يملك كلاماً عربياً وكلاماً إنجليزياً ومساراً صامتاً')
 const arabicScript = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/

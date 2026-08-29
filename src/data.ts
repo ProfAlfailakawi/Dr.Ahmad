@@ -1,5 +1,8 @@
 import { researchPapers } from './data/research-papers.ts'
-import academicPresence from './data/academic-presence.json'
+/* سمةُ الاستيراد إلزامية: Vite يبلع الاستيراد المجرّد، لكن سكربتات البناء
+   تقرأ هذا الملف بـNode ESM مباشرةً (build-article-caution وأخواتها) فيسقط
+   البناء كله بـERR_IMPORT_ATTRIBUTE_MISSING. */
+import academicPresence from './data/academic-presence.json' with { type: 'json' }
 
 // الروابط الخارجية معطّلة؛ التنقل المعتمد داخلي عبر React Router.
 export const LINK_OUT = false

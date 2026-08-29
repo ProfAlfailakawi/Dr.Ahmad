@@ -37,12 +37,14 @@ COPY src/data/encyclopedia-videos-fallback.json /app/src/data/encyclopedia-video
 COPY src/lib/adversarial-misunderstanding.mjs /app/src/lib/adversarial-misunderstanding.mjs
 COPY src/lib/archive-scale.mjs /app/src/lib/archive-scale.mjs
 COPY src/lib/encyclopedia-transcript-quality.mjs /app/src/lib/encyclopedia-transcript-quality.mjs
+COPY src/lib/reel-invention.mjs /app/src/lib/reel-invention.mjs
 COPY src/lib/research-sample.mjs /app/src/lib/research-sample.mjs
 COPY src/lib/semantic-court.mjs /app/src/lib/semantic-court.mjs
 COPY src/lib/sovereign-publishing.mjs /app/src/lib/sovereign-publishing.mjs
 COPY src/lib/style-dna.mjs /app/src/lib/style-dna.mjs
 COPY src/server/admin-communications.mjs /app/src/server/admin-communications.mjs
 COPY src/server/encyclopedia-videos.mjs /app/src/server/encyclopedia-videos.mjs
+COPY src/server/reel-corpus.mjs /app/src/server/reel-corpus.mjs
 COPY src/server/whatsapp-controller.mjs /app/src/server/whatsapp-controller.mjs
 COPY whatsapp-agent/book-quotes.mjs /app/whatsapp-agent/book-quotes.mjs
 COPY whatsapp-agent/bot-messages.mjs /app/whatsapp-agent/bot-messages.mjs

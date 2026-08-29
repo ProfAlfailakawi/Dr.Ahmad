@@ -41,7 +41,14 @@ for (const concept of running) {
     check(prompt.includes(needle), `${concept.scene.id}: يحمل ${needle}`)
   }
   check(/no presenter, no avatar/.test(prompt), `${concept.scene.id}: بلا أفتار صراحةً`)
-  check(prompt.includes('one restrained motion per shot'), `${concept.scene.id}: العبارة الحارسة للحركة`)
+  /* حكم الدكتور على أول فيديو (٢٩ أغسطس ٢٠٢٦): «ضيّعني ١٦ ثانية في مشهد بايخ
+     جداً… ماله أي معنى». العلّة كانت لغة الهدوء التحريرية مسكوبةً في الريل،
+     فصار الحارس معكوساً: الريل يُمنع من السكون ويُلزم بالحدث. */
+  check(prompt.includes('OPENING RULE'), `${concept.scene.id}: أول إطار داخل الحدث`)
+  check(prompt.includes('SCROLL-STOP RULE'), `${concept.scene.id}: المفاجأة في الثانية الأولى`)
+  check(/kinetic and arresting/.test(prompt), `${concept.scene.id}: طاقة حركية`)
+  check(!/one restrained motion per shot/.test(prompt), `${concept.scene.id}: بلا لغة الكبح التحريرية`)
+  check(!/Never open on a still[\s\S]*held beauty shots/.test(prompt) || /No idling/.test(prompt), `${concept.scene.id}: منع اللقطات الجامدة`)
 }
 
 // 5) المدة والعدد والتركيب
@@ -54,6 +61,16 @@ for (const concept of running) {
   check(concept.overlay.from < concept.overlay.to && concept.overlay.to <= concept.seconds, `${concept.scene.id}: توقيت تركيب سليم`)
   check(concept.captionAr.includes(concept.overlay.text), `${concept.scene.id}: الكابشن يبدأ بالجملة`)
   check(concept.hashtags.length >= 3 && concept.hashtags.every((tag) => tag.startsWith('#')), `${concept.scene.id}: هاشتاقات`)
+}
+
+
+/* حارس السكون: أول فيديو خرج «بايخاً» لأن المشاهد نفسها كانت تُفتتح بالهدوء
+   («يُفتح ببطء»، «حركة بطيئة»). الريل لا يحتمل ذلك — الحارس يمنع عودته. */
+const STATIC_WORDS = /\b(slow|slowly|gently|gentle|softly|drifts|waiting|idle)\b/i
+for (const scene of SYMBOLIC_SCENES) {
+  const text = `${scene.sceneEn} ${scene.arcEn.start} ${scene.arcEn.end}`
+  check(!STATIC_WORDS.test(text), `${scene.id}: بلا لغة سكون في المشهد`)
+  check(/\balready\b|bursts?|erupt|rips?|races?|surges?|explod|whip|slams?|storm|drives?|tears?|hammers?|launch/i.test(text), `${scene.id}: المشهد يبدأ داخل الحدث`)
 }
 
 console.log(`✓ اجتاز مصنع الريلز الرمزية ${checks} فحصاً`)

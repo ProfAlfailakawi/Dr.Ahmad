@@ -7,6 +7,7 @@
  *   - النجاح المثبت بالبصمات لا يُولّد مرة ثانية عند Rerun.
  *   - رفض الجودة (3) ينتقل إلى بذرة جديدة.
  *   - عطل Gemini المؤقت (75) يعيد البذرة نفسها ولا يحرق محاولة جودة.
+ *   - تعطل شهود اللهجة (76) يؤجل الـTake المحفوظ ولا يعيد TTS.
  *   - نفاد الرصيد (78) يوقف القافلة ويحفظ كل ما سبق وما بقي.
  *   - كل حالة تُكتب ذرياً في manifest وPENDING؛ فلا توجد حلقة «سقطت».
  */
@@ -62,6 +63,7 @@ export function queueActionForExitCode (code, transportAttempt, transientAttempt
   if (code === 0) return 'accept'
   if (code === 3) return 'next_quality_sample'
   if (code === 75) return transportAttempt < transientAttempts ? 'retry_same_seed' : 'defer_provider'
+  if (code === 76) return 'defer_dialect_audit'
   if (code === 78) return 'stop_for_credit'
   return 'fatal'
 }
@@ -111,7 +113,7 @@ export function verifyPackagedCandidate ({ root = ROOT, outputDir, slug, minimum
   }
   const audit = readJson(paths.audit)
   if (!audit || audit.slug !== slug || audit.status !== 'candidate') return { ok: false, reason: 'سجل المرشح غير صالح' }
-  if (audit.qualityGateVersion !== 'kuwaiti-city-audited-v15') return { ok: false, reason: 'المرشح سابق لشاهد لهجة كويت المدينة v15' }
+  if (audit.qualityGateVersion !== 'kuwaiti-city-audited-v16') return { ok: false, reason: 'المرشح سابق لشاهد لهجة كويت المدينة v16' }
   if (audit.sourceSha256 !== sha256(readFileSync(paths.source))) return { ok: false, reason: 'المصدر تغيّر' }
   if (audit.audioSha256 !== sha256(readFileSync(paths.audio))) return { ok: false, reason: 'بصمة الصوت لا تطابق السجل' }
   if (audit.transcriptSha256 !== sha256(readFileSync(paths.transcript))) return { ok: false, reason: 'بصمة النص المتزامن لا تطابق السجل' }
@@ -162,6 +164,7 @@ function summarize (manifest, outputDir) {
     accepted: entries.filter((entry) => entry.status === 'accepted').length,
     qualityPending: entries.filter((entry) => entry.status === 'quality_pending').length,
     providerDeferred: entries.filter((entry) => entry.status === 'provider_deferred').length,
+    dialectAuditDeferred: entries.filter((entry) => entry.status === 'dialect_audit_deferred').length,
     creditBlocked: entries.filter((entry) => entry.status === 'credit_blocked').length,
     fatal: entries.filter((entry) => entry.status === 'fatal').length,
     untouched: entries.filter((entry) => entry.status === 'pending').length,
@@ -175,7 +178,7 @@ function summarize (manifest, outputDir) {
   else rmSync(pendingFile, { force: true })
   if (process.env.GITHUB_STEP_SUMMARY) {
     writeFileSync(process.env.GITHUB_STEP_SUMMARY,
-      `\n## طابور الصوت الكويتي\n\n- ناجح ومحفوظ: **${manifest.counts.accepted}/${manifest.counts.total}**\n- ينتظر Take أفضل: **${manifest.counts.qualityPending}**\n- مؤجل بسبب المحرك: **${manifest.counts.providerDeferred}**\n- متوقف للرصيد: **${manifest.counts.creditBlocked}**\n- عطل حقيقي: **${manifest.counts.fatal}**\n`, { flag: 'a' })
+      `\n## طابور الصوت الكويتي\n\n- ناجح ومحفوظ: **${manifest.counts.accepted}/${manifest.counts.total}**\n- ينتظر Take أفضل: **${manifest.counts.qualityPending}**\n- مؤجل بسبب المحرك: **${manifest.counts.providerDeferred}**\n- صوته محفوظ وينتظر شاهد اللهجة: **${manifest.counts.dialectAuditDeferred}**\n- متوقف للرصيد: **${manifest.counts.creditBlocked}**\n- عطل حقيقي: **${manifest.counts.fatal}**\n`, { flag: 'a' })
   }
 }
 
@@ -266,6 +269,12 @@ async function main () {
           circuitCode = 75
           break
         }
+        if (action === 'defer_dialect_audit') {
+          entry.status = 'dialect_audit_deferred'
+          entry.lastReason = `الـTake على seed=${seed} محفوظ في rejected وينتظر شاهد اللهجة؛ ممنوع إعادة TTS`
+          circuitCode = 76
+          break
+        }
         if (action === 'stop_for_credit') {
           entry.status = 'credit_blocked'; entry.lastReason = 'نفد رصيد Gemini؛ لم تُمس الحلقات الباقية'
           circuitCode = 78
@@ -285,7 +294,7 @@ async function main () {
   }
   summarize(manifest, outputDir)
   const { counts } = manifest
-  console.log(`✓ الجولة: ${counts.accepted}/${counts.total} محفوظة · جودة مؤجلة ${counts.qualityPending} · محرك ${counts.providerDeferred} · رصيد ${counts.creditBlocked} · عطل ${counts.fatal}`)
+  console.log(`✓ الجولة: ${counts.accepted}/${counts.total} محفوظة · جودة مؤجلة ${counts.qualityPending} · محرك ${counts.providerDeferred} · شاهد لهجة ${counts.dialectAuditDeferred} · رصيد ${counts.creditBlocked} · عطل ${counts.fatal}`)
   if (circuitCode) process.exit(circuitCode)
   if (counts.accepted !== counts.total) process.exit(2)
 }
@@ -300,6 +309,7 @@ function selfTest () {
   assert.equal(queueActionForExitCode(3, 1, 3), 'next_quality_sample', 'رفض الجودة يغيّر البذرة')
   assert.equal(queueActionForExitCode(75, 1, 3), 'retry_same_seed', 'العطل المؤقت لا يغيّر البذرة')
   assert.equal(queueActionForExitCode(75, 3, 3), 'defer_provider', 'تكرر عطل المزوّد يفتح قاطع الحماية')
+  assert.equal(queueActionForExitCode(76, 1, 3), 'defer_dialect_audit', 'تعطل الأذن الثانية لا يعيد TTS')
   assert.equal(queueActionForExitCode(78, 1, 3), 'stop_for_credit', 'نفاد الرصيد يوقف القافلة')
   assert.equal(queueActionForExitCode(1, 1, 3), 'fatal', 'عطب الكود لا يختبئ كرفض جودة')
   const root = mkdtempSync(resolve(tmpdir(), 'kw-queue-test-'))
@@ -314,7 +324,7 @@ function selfTest () {
   writeFileSync(resolve(outputDir, `${slug}.mp3`), audio)
   writeFileSync(resolve(outputDir, `${slug}.json`), transcript)
   atomicJson(resolve(outputDir, `${slug}.audit.json`), {
-    slug, status: 'candidate', seed: 3114, qualityGateVersion: 'kuwaiti-city-audited-v15',
+    slug, status: 'candidate', seed: 3114, qualityGateVersion: 'kuwaiti-city-audited-v16',
     sourceSha256: sha256(source), audioSha256: sha256(audio), transcriptSha256: sha256(transcript),
     oneTake: true, speakerIsolation: 'multispeaker-single-take', ttsInput: 'dry-dialogue-only',
     bridgeGeneration: 'external-post-tts', pitchGate: {

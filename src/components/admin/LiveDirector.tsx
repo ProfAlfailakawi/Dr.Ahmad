@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ArticleRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
+import { DEFAULT_FLOW_LOOK, FLOW_CLIP_SECONDS, FLOW_LOOKS, flowLook, type FlowLookId } from '../../lib/flow-cinema.ts'
+import { forgeSymbolicReels, reelPromptFromScene, type ReelConcept } from '../../lib/symbolic-reels.ts'
+import type { InventedScene as InventedReel } from '../../lib/reel-invention.mjs'
 import {
   CONTINUITY_LABELS,
   LIVE_DIRECTOR_REPAIR_ISSUES,
@@ -35,7 +38,7 @@ import { buildTweets, verifiedLineOf, type TweetSource } from '../../lib/tweet-f
 import { resolveResonantQuotes, resonanceBySlug, type ResonanceRow } from '../../lib/resonance-quotes'
 import { arabicCountPhrase, DAY_FORMS, SAVED_PROMPT_COPY_FORMS, SECOND_AFTER_PREPOSITION_FORMS, SECOND_FORMS, SHOT_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
 
-type DirectorPath = 'article' | 'public' | null
+type DirectorPath = 'article' | 'public' | 'reel' | null
 type StoredProject = LiveDirectorProject & { userId?: string }
 
 const card = 'min-w-0 rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
@@ -102,6 +105,10 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
   const [platform, setPlatform] = useState<LiveDirectorPlatform>('متعدد المنصات')
   const [tone, setTone] = useState<LiveDirectorTone>('فكرية')
   const [useAvatar, setUseAvatar] = useState(true)
+  /* النمط البصري ومدة المقطع: بُني المخرج أيام Flow المجاني فكانت المدة مثبتة
+     بثماني ثوانٍ والشكل واحداً. الاشتراك يتيح أطول وأدقّ، فصارا اختياراً. */
+  const [look, setLook] = useState<FlowLookId>(DEFAULT_FLOW_LOOK)
+  const [clipSeconds, setClipSeconds] = useState<number>(8)
   const [wantsSeries, setWantsSeries] = useState(false)
   const [linkedArticleSlug, setLinkedArticleSlug] = useState('')
   const [source, setSource] = useState('')
@@ -196,7 +203,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
           words: body.trim().split(/\s+/).filter(Boolean).length, year: String(new Date().getFullYear()), hasAudio: false, missing: false,
           _cms: { kind: 'article', origin: 'added', modified: true, hidden: true, deleted: false, docId: String(draft.slug || slug || 'room-draft'), baseSlug: String(draft.slug || slug || 'room-draft') },
         }
-        setProject(createArticleVideoProject({ article: temporary, audience, platform, tone, useAvatar, forge: forgeFor({ kind: 'article', id: temporary.slug, title: temporary.title, text: [temporary.excerpt, body].filter(Boolean).join(' '), url: '' }, temporary.slug), source: seededSource, sourceSessionId: seededSessionId, linkedEditorialDecisionId: seededDecisionId, linkedCampaignId: seededCampaignId }))
+        setProject({ ...createArticleVideoProject({ article: temporary, audience, platform, tone, useAvatar, forge: forgeFor({ kind: 'article', id: temporary.slug, title: temporary.title, text: [temporary.excerpt, body].filter(Boolean).join(' '), url: '' }, temporary.slug), source: seededSource, sourceSessionId: seededSessionId, linkedEditorialDecisionId: seededDecisionId, linkedCampaignId: seededCampaignId }), look, clipSeconds })
       }
     } else {
       setPath('public')
@@ -222,13 +229,13 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
     if (path === 'article') {
       if (!selectedArticle) { setNotice('اختر المقالة أولاً.'); return }
       const forge = forgeFor({ kind: 'article', id: selectedArticle.slug, title: selectedArticle.title, text: [selectedArticle.excerpt, selectedArticle.body].filter(Boolean).join(' '), url: `${SITE}/articles/${selectedArticle.slug}`, date: selectedArticle.iso }, selectedArticle.slug)
-      setProject(createArticleVideoProject({ article: selectedArticle, audience, platform, tone, useAvatar, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }))
+      setProject({ ...createArticleVideoProject({ article: selectedArticle, audience, platform, tone, useAvatar, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }), look, clipSeconds })
       return
     }
     if (path === 'public') {
       if (topic.trim().length < 4) { setNotice('اكتب موضوع الفيديو أولاً.'); return }
       const forge = forgeFor({ kind: linkedArticle ? 'article' : 'free', id: linkedArticle?.slug || 'topic', title: linkedArticle?.title || topic, text: [message, topic, linkedArticle?.body].filter(Boolean).join(' '), url: linkedArticle ? `${SITE}/articles/${linkedArticle.slug}` : '' }, linkedArticle?.slug || '')
-      setProject(createPublicVideoProject({ topic, message, audience, platform, tone, useAvatar, wantsSeries, linkedArticle, archive: articles, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }))
+      setProject({ ...createPublicVideoProject({ topic, message, audience, platform, tone, useAvatar, wantsSeries, linkedArticle, archive: articles, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }), look, clipSeconds })
     }
   }
 
@@ -352,9 +359,10 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
           <p className="text-[.72rem] font-semibold text-accent">المخرج الحي</p>
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اختر نقطة البداية.</h2>
           <p className="mt-2 max-w-3xl text-[.8rem] leading-relaxed text-soft">الموقع يحلل ويكتب خطة ومقاطع وبرومبتات Flow؛ التوليد يدوي داخل حسابك، بلا Flow API أو Veo أو خدمة فيديو مدفوعة.</p>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
             <button type="button" onClick={() => setPath('article')} className="rounded-3xl border border-hair bg-canvas p-6 text-right transition hover:-translate-y-0.5 hover:border-accent"><span className="text-[.68rem] font-semibold text-accent">المسار الأول</span><strong className="mt-2 block font-display text-xl text-ink">فيديو من مقال</strong><span className="mt-2 block text-[.78rem] leading-relaxed text-soft">حوّل مقالة موجودة إلى شرح بصري مختصر يجذب الناس إلى قراءتها.</span></button>
             <button type="button" onClick={() => setPath('public')} className="rounded-3xl border border-hair bg-canvas p-6 text-right transition hover:-translate-y-0.5 hover:border-accent"><span className="text-[.68rem] font-semibold text-accent">المسار الثاني</span><strong className="mt-2 block font-display text-xl text-ink">فيديو للجمهور</strong><span className="mt-2 block text-[.78rem] leading-relaxed text-soft">أنشئ فيديو مستقلاً في موضوع جديد، مع تغريدة ومنشورات جاهزة للنشر.</span></button>
+            <button type="button" onClick={() => setPath('reel')} className="rounded-3xl border border-hair bg-canvas p-6 text-right transition hover:-translate-y-0.5 hover:border-accent"><span className="text-[.68rem] font-semibold text-accent">المسار الثالث</span><strong className="mt-2 block font-display text-xl text-ink">ريل رمزي مبهر</strong><span className="mt-2 block text-[.78rem] leading-relaxed text-soft">مشهد سينمائي رمزي يوقف السكرول — فكرتك صورةً مدهشة وجملتك فوقها.</span></button>
           </div>
         </section>
         {projects.length > 0 && <RecentProjects projects={projects} onOpen={(item) => { setProject(item); setPath(item.type === 'article_video' ? 'article' : 'public'); setYoutubeDraft(item.youtubeUrl || '') }} />}
@@ -370,11 +378,13 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
           <button type="button" onClick={() => { setPath(null); setProject(null); setNotice('') }} className={ghost}>بدّل المسار</button>
         </div>
 
-        {!project && path === 'article' && <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">المقالة المنشورة أو المسودة</span><select className={input} value={articleSlug} onChange={(event) => setArticleSlug(event.target.value)}>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.status === 'draft' ? 'مسودة — ' : ''}{article.title}</option>)}</select></label><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} /><label className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.72rem] font-semibold text-ink">الأفتار المحفوظ في Flow</span><span className="mt-1 block text-[.68rem] leading-relaxed text-soft">لا رفع صور ولا إنشاء شخصية جديدة.</span><input className="mt-3" type="checkbox" checked={useAvatar} onChange={(event) => setUseAvatar(event.target.checked)} /> <span className="text-[.72rem] text-ink">استخدمه عند خدمة الفكرة</span></label></div>}
+        {!project && path === 'reel' && <SymbolicReelsPanel clipSeconds={clipSeconds} setClipSeconds={setClipSeconds} onNotice={setNotice} />}
 
-        {!project && path === 'public' && <div className="mt-6 grid gap-4"><div className="grid gap-4 lg:grid-cols-2"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الموضوع؟</span><textarea className={`${input} min-h-28`} value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="فكرة، سؤال، موقف، دراسة أو حدث…" /></label><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الرسالة التي تريد إيصالها؟</span><textarea className={`${input} min-h-28`} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="اختياري؛ إن تركته يختصر المحرك جوهر الموضوع." /></label></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">الجمهور</span><input className={input} value={audience} onChange={(event) => setAudience(event.target.value)} /></label><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} /><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ربط اختياري بمقال</span><select className={input} value={linkedArticleSlug} onChange={(event) => setLinkedArticleSlug(event.target.value)}><option value="">بلا ربط</option>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.title}</option>)}</select></label></div><details className="rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-soft">خيارات متقدمة عند الحاجة</summary><div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]"><label><span className="mb-2 block text-[.7rem] font-semibold text-ink">مصدر أو دراسة مرتبطة</span><input className={input} value={source} onChange={(event) => setSource(event.target.value)} placeholder="رابط أو مرجع مختصر — اختياري" /></label><div className="flex flex-wrap items-center gap-5"><label className="text-[.74rem] text-ink"><input type="checkbox" checked={useAvatar} onChange={(event) => setUseAvatar(event.target.checked)} /> استخدم أفتار د. أحمد المحفوظ</label><label className="text-[.74rem] text-ink"><input type="checkbox" checked={wantsSeries} onChange={(event) => setWantsSeries(event.target.checked)} /> الموضوع يحتاج سلسلة</label></div></div></details></div>}
+        {!project && path === 'article' && <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">المقالة المنشورة أو المسودة</span><select className={input} value={articleSlug} onChange={(event) => setArticleSlug(event.target.value)}>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.status === 'draft' ? 'مسودة — ' : ''}{article.title}</option>)}</select></label><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} look={look} setLook={setLook} clipSeconds={clipSeconds} setClipSeconds={setClipSeconds} /><label className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.72rem] font-semibold text-ink">الأفتار المحفوظ في Flow</span><span className="mt-1 block text-[.68rem] leading-relaxed text-soft">لا رفع صور ولا إنشاء شخصية جديدة.</span><input className="mt-3" type="checkbox" checked={useAvatar} onChange={(event) => setUseAvatar(event.target.checked)} /> <span className="text-[.72rem] text-ink">استخدمه عند خدمة الفكرة</span></label></div>}
 
-        {!project && <div className="mt-5 flex flex-wrap items-center gap-3"><button type="button" onClick={buildProject} className={primary}>حلّل وابنِ خطة Flow</button><span className="text-[.7rem] text-soft">3 مقاطع يومياً · 8 ثوانٍ لكل مقطع · لا توليد فيديو داخل الموقع</span></div>}
+        {!project && path === 'public' && <div className="mt-6 grid gap-4"><div className="grid gap-4 lg:grid-cols-2"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الموضوع؟</span><textarea className={`${input} min-h-28`} value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="فكرة، سؤال، موقف، دراسة أو حدث…" /></label><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الرسالة التي تريد إيصالها؟</span><textarea className={`${input} min-h-28`} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="اختياري؛ إن تركته يختصر المحرك جوهر الموضوع." /></label></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">الجمهور</span><input className={input} value={audience} onChange={(event) => setAudience(event.target.value)} /></label><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} look={look} setLook={setLook} clipSeconds={clipSeconds} setClipSeconds={setClipSeconds} /><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ربط اختياري بمقال</span><select className={input} value={linkedArticleSlug} onChange={(event) => setLinkedArticleSlug(event.target.value)}><option value="">بلا ربط</option>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.title}</option>)}</select></label></div><details className="rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-soft">خيارات متقدمة عند الحاجة</summary><div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]"><label><span className="mb-2 block text-[.7rem] font-semibold text-ink">مصدر أو دراسة مرتبطة</span><input className={input} value={source} onChange={(event) => setSource(event.target.value)} placeholder="رابط أو مرجع مختصر — اختياري" /></label><div className="flex flex-wrap items-center gap-5"><label className="text-[.74rem] text-ink"><input type="checkbox" checked={useAvatar} onChange={(event) => setUseAvatar(event.target.checked)} /> استخدم أفتار د. أحمد المحفوظ</label><label className="text-[.74rem] text-ink"><input type="checkbox" checked={wantsSeries} onChange={(event) => setWantsSeries(event.target.checked)} /> الموضوع يحتاج سلسلة</label></div></div></details></div>}
+
+        {!project && path !== 'reel' && <div className="mt-5 flex flex-wrap items-center gap-3"><button type="button" onClick={buildProject} className={primary}>حلّل وابنِ خطة Flow</button><span className="text-[.7rem] text-soft">3 مقاطع يومياً · 8 ثوانٍ لكل مقطع · لا توليد فيديو داخل الموقع</span></div>}
         {notice && <p className="mt-4 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.76rem] leading-relaxed text-accent">{notice}</p>}
       </section>
 
@@ -547,8 +557,194 @@ function ClipCard(props: ClipCardProps) {
   )
 }
 
-function CommonSelects({ platform, tone, setPlatform, setTone }: { platform: LiveDirectorPlatform; tone: LiveDirectorTone; setPlatform: (value: LiveDirectorPlatform) => void; setTone: (value: LiveDirectorTone) => void }) {
-  return <><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">المنصة الأساسية</span><select className={input} value={platform} onChange={(event) => setPlatform(event.target.value as LiveDirectorPlatform)}>{PLATFORMS.map((item) => <option key={item}>{item}</option>)}</select></label><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">النبرة</span><select className={input} value={tone} onChange={(event) => setTone(event.target.value as LiveDirectorTone)}>{TONES.map((item) => <option key={item}>{item}</option>)}</select></label></>
+function CommonSelects({ platform, tone, setPlatform, setTone, look, setLook, clipSeconds, setClipSeconds }: { platform: LiveDirectorPlatform; tone: LiveDirectorTone; setPlatform: (value: LiveDirectorPlatform) => void; setTone: (value: LiveDirectorTone) => void; look: FlowLookId; setLook: (value: FlowLookId) => void; clipSeconds: number; setClipSeconds: (value: number) => void }) {
+  const chosen = flowLook(look)
+  return <>
+    <label><span className="mb-2 block text-[.72rem] font-semibold text-ink">المنصة الأساسية</span><select className={input} value={platform} onChange={(event) => setPlatform(event.target.value as LiveDirectorPlatform)}>{PLATFORMS.map((item) => <option key={item}>{item}</option>)}</select></label>
+    <label><span className="mb-2 block text-[.72rem] font-semibold text-ink">النبرة</span><select className={input} value={tone} onChange={(event) => setTone(event.target.value as LiveDirectorTone)}>{TONES.map((item) => <option key={item}>{item}</option>)}</select></label>
+    {/* النمط البصري يحمل العدسة والإضاءة والتدرّج والنسيج — لا اللون وحده. */}
+    <label><span className="mb-2 block text-[.72rem] font-semibold text-ink">النمط البصري</span>
+      <select className={input} value={look} onChange={(event) => setLook(event.target.value as FlowLookId)}>
+        {FLOW_LOOKS.map((item) => <option key={item.id} value={item.id}>{item.labelAr}</option>)}
+      </select>
+      <span className="mt-1 block text-[.65rem] leading-relaxed text-soft">{chosen.noteAr}</span>
+      <span className="mt-1 block text-[.62rem] text-soft" dir="ltr">{chosen.lens} · {chosen.aperture}</span>
+    </label>
+    <label><span className="mb-2 block text-[.72rem] font-semibold text-ink">مدة المقطع الواحد</span>
+      <select className={input} value={clipSeconds} onChange={(event) => setClipSeconds(Number(event.target.value))}>
+        {FLOW_CLIP_SECONDS.map((item) => <option key={item} value={item}>{arabicCountPhrase(item, SECOND_FORMS)}</option>)}
+      </select>
+      <span className="mt-1 block text-[.65rem] leading-relaxed text-soft">الثماني كانت حدّ النسخة المجانية؛ الاشتراك يتيح أطول.</span>
+    </label>
+  </>
+}
+
+/* الإطار الأول: صورة من وصف المشهد نفسه، تُحكَم بالعين قبل صرف رصيد Flow.
+   المجانية تكفي للحكم على المزاج والتكوين؛ والفاخرة للمرشّح الذي وقع عليه الاختيار. */
+function FramePreview({ frame, busy, onPreview }: { frame?: string; busy: boolean; onPreview: (premium: boolean) => void }) {
+  return (
+    <div className="mt-3">
+      {frame
+        ? <img src={frame} alt="الإطار الأول للمشهد" loading="lazy" className="mb-2 w-full rounded-xl border border-hair object-cover" />
+        : <p className="mb-2 rounded-xl border border-dashed border-hair px-3 py-4 text-center text-[.66rem] leading-relaxed text-soft">لم تُولَّد معاينة بعد — شاهد الإطار الأول قبل أن تصرف من رصيد Flow.</p>}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" disabled={busy} onClick={() => onPreview(false)} className={ghost}>{busy ? 'أولّد…' : frame ? 'معاينة أخرى' : 'شاهد الإطار الأول'}</button>
+        <button type="button" disabled={busy} onClick={() => onPreview(true)} className={ghost}>معاينة فاخرة</button>
+      </div>
+    </div>
+  )
+}
+
+/* مصنع الريلز الرمزية: فكرة الدكتور × مكتبة مشاهد سينمائية = مفاهيم إنستغرام
+   جاهزة. حتميٌّ بلا نموذج لغوي؛ التوليد داخل حساب Flow المدفوع يدوياً. */
+function SymbolicReelsPanel({ clipSeconds, setClipSeconds, onNotice }: { clipSeconds: number; setClipSeconds: (value: number) => void; onNotice: (value: string) => void }) {
+  const [idea, setIdea] = useState('')
+  const [sentence, setSentence] = useState('')
+  const [concepts, setConcepts] = useState<ReelConcept[]>([])
+  const [invented, setInvented] = useState<InventedReel[]>([])
+  const [inventing, setInventing] = useState(false)
+  const [sources, setSources] = useState<string[]>([])
+  /* الإطار الأول: صورة ثابتة من وصف المشهد نفسه، تُرى قبل صرف رصيد Flow.
+     مجانية عبر مولّد الموقع، ولها خيار فاخر بمفتاح Gemini للمرشّح النهائي. */
+  const [frames, setFrames] = useState<Record<string, string>>({})
+  const [framing, setFraming] = useState('')
+
+  const previewFrame = async (key: string, sceneEn: string, premium: boolean) => {
+    setFraming(key); onNotice(premium ? 'أولّد معاينة فاخرة…' : 'أولّد الإطار الأول…')
+    try {
+      const app = await getFirebaseApp()
+      if (!app) throw new Error('Firebase غير متاح')
+      const { getAuth } = await import('firebase/auth')
+      const user = getAuth(app).currentUser
+      if (!user) throw new Error('الدخول كمشرف مطلوب')
+      const token = await user.getIdToken()
+      const response = await fetch('/api/ai/studio-image', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ idea: sceneEn, orientation: 'portrait', generationMode: premium ? 'masterpiece' : 'daily' }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(String(data?.error || 'تعذّرت المعاينة'))
+      const image = String(data?.imageUrl || '')
+      if (!image) throw new Error('لم تصل صورة')
+      setFrames((previous) => ({ ...previous, [key]: image }))
+      onNotice('جاهزة — احكم عليها قبل Flow.')
+    } catch (error) {
+      onNotice(error instanceof Error ? error.message : 'تعذّرت المعاينة')
+    } finally { setFraming('') }
+  }
+  const forge = () => {
+    if (idea.trim().length < 4) { onNotice('اكتب الفكرة أولاً.'); return }
+    setConcepts(forgeSymbolicReels({ idea, sentence, seconds: clipSeconds, count: 4 }))
+  }
+  /* الابتكار: النموذج يخترع مشهداً لم يُكتب من قبل، مغذّى بمعجم الدكتور
+     وبمقاطع من أرشيفه كله — الكتب والمقالات واللقاءات والأبحاث. */
+  const invent = async () => {
+    if (idea.trim().length < 4) { onNotice('اكتب الفكرة أولاً.'); return }
+    setInventing(true); onNotice('أبتكر مشاهد من أرشيفك…')
+    try {
+      const app = await getFirebaseApp()
+      if (!app) throw new Error('Firebase غير متاح')
+      const { getAuth } = await import('firebase/auth')
+      const user = getAuth(app).currentUser
+      if (!user) throw new Error('الدخول كمشرف مطلوب')
+      const token = await user.getIdToken()
+      const response = await fetch('/api/ai/reel-invention', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ idea, sentence, seconds: clipSeconds, count: 4 }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(String(data?.error || 'تعذّر الابتكار'))
+      const scenes: InventedReel[] = Array.isArray(data?.scenes) ? data.scenes : []
+      setInvented(scenes)
+      setSources(Array.isArray(data?.sources) ? data.sources : [])
+      onNotice(scenes.length ? `ابتُكرت ${scenes.length} مشاهد من أرشيفك.` : 'لم يخرج مشهد مطابق — أعد المحاولة.')
+    } catch (error) {
+      onNotice(error instanceof Error ? error.message : 'تعذّر الابتكار')
+    } finally { setInventing(false) }
+  }
+  const copy = (value: string, label: string) => void navigator.clipboard.writeText(value).then(() => onNotice(`نُسخ ${label}.`))
+  return (
+    <div className="mt-6 grid gap-4">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الفكرة؟</span><textarea className={`${input} min-h-24`} value={idea} onChange={(event) => setIdea(event.target.value)} placeholder="فكرة أو موضوع بكلماتك — الركض الدائم، سؤال معلّق، عادة تتجذّر…" /></label>
+        <label><span className="mb-2 block text-[.72rem] font-semibold text-ink">الجملة التي ستظهر فوق الفيديو</span><textarea className={`${input} min-h-24`} value={sentence} onChange={(event) => setSentence(event.target.value)} placeholder="اختياري؛ إن تركتها تُستعمل الفكرة نفسها." /></label>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={() => void invent()} disabled={inventing} className={primary}>{inventing ? 'أبتكر…' : 'ابتكر من أرشيفي'}</button>
+        <button type="button" onClick={forge} className={ghost}>مشاهد جاهزة (بلا انتظار)</button>
+        <label className="flex items-center gap-2 text-[.7rem] text-soft">المدة
+          <select className="rounded-lg border border-hair bg-canvas px-2 py-1.5 text-[.7rem] text-ink" value={clipSeconds} onChange={(event) => setClipSeconds(Number(event.target.value))}>
+            {FLOW_CLIP_SECONDS.map((item) => <option key={item} value={item}>{arabicCountPhrase(item, SECOND_FORMS)}</option>)}
+          </select>
+        </label>
+        <span className="text-[.7rem] text-soft">بلا أفتار · بلا نص داخل الفيديو — جملتك تُركَّب بعد التوليد</span>
+      </div>
+      {invented.length > 0 && <section className="grid gap-3">
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h3 className="font-display text-lg font-semibold text-ink">مشاهد ابتُكرت لفكرتك</h3>
+          {sources.length > 0 && <span className="text-[.64rem] leading-relaxed text-soft">من أرشيفك: {sources.slice(0, 4).join(' · ')}</span>}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {invented.map((scene, index) => {
+            const prompt = reelPromptFromScene({ ...scene, lookId: DEFAULT_FLOW_LOOK }, clipSeconds)
+            const line = sentence.trim() || idea.trim()
+            return (
+              <article key={`${scene.labelAr}-${index}`} className="rounded-2xl border border-accent/25 bg-canvas p-5">
+                <span className="text-[.66rem] font-semibold text-accent">مبتكَر · {arabicCountPhrase(clipSeconds, SECOND_FORMS)}</span>
+                <strong className="mt-1 block font-display text-lg text-ink">{scene.labelAr}</strong>
+                <p className="mt-2 text-[.78rem] leading-relaxed text-soft">{scene.sceneAr}</p>
+                <p className="mt-2 text-[.7rem] leading-relaxed text-soft"><span className="font-semibold text-ink">لماذا:</span> {scene.whyAr}</p>
+                {line && <p className="mt-2 rounded-xl bg-wash px-3 py-2 font-display text-[.85rem] leading-loose text-ink">«{line}»</p>}
+                <details className="mt-3 rounded-xl border border-hair p-3">
+                  <summary className="cursor-pointer list-none text-[.68rem] font-semibold text-accent">برومبت Flow</summary>
+                  <pre dir="ltr" className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-left font-mono text-[.62rem] leading-relaxed text-soft">{prompt}</pre>
+                </details>
+                <FramePreview
+                  frame={frames[`inv:${index}`]}
+                  busy={framing === `inv:${index}`}
+                  onPreview={(premium) => void previewFrame(`inv:${index}`, scene.sceneEn, premium)}
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => copy(prompt, `برومبت «${scene.labelAr}»`)} className={ghost}>نسخ البرومبت</button>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </section>}
+
+      {concepts.length > 0 && <div className="grid gap-4 md:grid-cols-2">
+        {concepts.map((concept) => {
+          const look = flowLook(concept.scene.lookId)
+          return (
+            <article key={concept.scene.id} className="rounded-2xl border border-hair bg-canvas p-5">
+              <span className="text-[.66rem] font-semibold text-accent">{look.labelAr} · {arabicCountPhrase(concept.seconds, SECOND_FORMS)}</span>
+              <strong className="mt-1 block font-display text-lg text-ink">{concept.scene.labelAr}</strong>
+              <p className="mt-2 text-[.78rem] leading-relaxed text-soft">{concept.scene.sceneAr}</p>
+              <p className="mt-2 rounded-xl bg-wash px-3 py-2 font-display text-[.85rem] leading-loose text-ink">«{concept.overlay.text}»</p>
+              <p className="mt-1 text-[.64rem] text-soft">تُركَّب {concept.overlay.positionAr} · من {concept.overlay.from.toFixed(1)} إلى {concept.overlay.to.toFixed(1)}ث</p>
+              <details className="mt-3 rounded-xl border border-hair p-3">
+                <summary className="cursor-pointer list-none text-[.68rem] font-semibold text-accent">برومبت Flow</summary>
+                <pre dir="ltr" className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-left font-mono text-[.62rem] leading-relaxed text-soft">{concept.flowPrompt}</pre>
+              </details>
+              <FramePreview
+                frame={frames[`lib:${concept.scene.id}`]}
+                busy={framing === `lib:${concept.scene.id}`}
+                onPreview={(premium) => void previewFrame(`lib:${concept.scene.id}`, concept.scene.sceneEn, premium)}
+              />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={() => copy(concept.flowPrompt, `برومبت «${concept.scene.labelAr}»`)} className={ghost}>نسخ البرومبت</button>
+                <button type="button" onClick={() => copy(`${concept.captionAr}\n\n${concept.hashtags.join(' ')}`, 'الكابشن والهاشتاقات')} className={ghost}>نسخ الكابشن</button>
+              </div>
+              <p className="mt-2 text-[.62rem] leading-relaxed text-soft">الغلاف: {concept.scene.coverIdeaAr} — من استوديو التصاميم.</p>
+            </article>
+          )
+        })}
+      </div>}
+    </div>
+  )
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

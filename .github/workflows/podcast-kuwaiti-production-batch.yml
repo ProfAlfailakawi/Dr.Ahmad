@@ -186,6 +186,8 @@ jobs:
           GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
           GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
           GEMINI_DIALECT_AUDIT_MODEL: gemini-3.7-flash
+          GEMINI_DIALECT_AUDIT_FALLBACK_MODELS: gemini-3.6-flash,gemini-3.5-flash
+          PODCAST_KW_DIALECT_AUDIT_HTTP_TIMEOUT_MS: '45000'
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
           PODCAST_KW_PROMPT_MODE: c
@@ -240,6 +242,7 @@ jobs:
             0) echo '✓ كل حلقات الدفعة محفوظة ومجتازة.' ;;
             2) echo '::error::بقيت حلقات جودة معلقة؛ أعد Failed jobs لاحقاً، والناجح لن يتولد مرة ثانية.'; exit 2 ;;
             75) echo '::error::Gemini متعطل مؤقتاً؛ قاطع الحماية أوقف الصرف وحفظ الطابور.'; exit 75 ;;
+            76) echo '::error::الصوت محفوظ وينتظر شاهد اللهجة؛ ممنوع إعادة TTS.'; exit 76 ;;
             78) echo '::error::الرصيد انتهى؛ لم تبدأ الحلقات الباقية.'; exit 78 ;;
             *) echo "::error::عطل حقيقي في الإنتاج (code=${QUEUE_CODE:-missing})."; exit 1 ;;
           esac

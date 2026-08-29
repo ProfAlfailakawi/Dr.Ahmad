@@ -80,6 +80,12 @@ const ALIGNMENT_MODE = String(process.env.PODCAST_KW_TRANSCRIPT_ALIGNMENT || 'of
 const TRANSCRIBE_MODEL = String(process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-3.5-transcribe').trim()
 const DIALECT_AUDIT_MODE = String(process.env.PODCAST_KW_DIALECT_AUDIT || 'off').trim().toLowerCase()
 const DIALECT_AUDIT_MODEL = String(process.env.GEMINI_DIALECT_AUDIT_MODEL || 'gemini-3.7-flash').trim()
+const DIALECT_AUDIT_FALLBACK_MODELS = String(process.env.GEMINI_DIALECT_AUDIT_FALLBACK_MODELS
+  || 'gemini-3.6-flash,gemini-3.5-flash')
+  .split(',').map((model) => model.trim()).filter(Boolean)
+const DIALECT_AUDIT_MODELS = [...new Set([DIALECT_AUDIT_MODEL, ...DIALECT_AUDIT_FALLBACK_MODELS])]
+const DIALECT_AUDIT_HTTP_TIMEOUT_MS = Math.max(15_000,
+  Math.min(120_000, Number(process.env.PODCAST_KW_DIALECT_AUDIT_HTTP_TIMEOUT_MS || 45_000)))
 assert.ok(['off', 'prefer', 'required'].includes(DIALECT_AUDIT_MODE),
   `PODCAST_KW_DIALECT_AUDIT غير صالح: ${DIALECT_AUDIT_MODE}`)
 const REJECT_DIR = String(process.env.PODCAST_KW_REJECT_DIR || '').trim()
@@ -90,12 +96,14 @@ const REJECT_DIR = String(process.env.PODCAST_KW_REJECT_DIR || '').trim()
    قبل تجربة البذرة التالية، ومع 143 حلقة يصير هذا إسقاطاً عشوائياً للطابور.
 
    3  = Take مولّد لكنه مرفوض جودةً (هوية/رنين/زمن)؛ جرّب بذرة جديدة.
-   75 = عطل Gemini مؤقت؛ أعد **البذرة نفسها** ولا تخصمه من محاولات الجودة.
+   75 = عطل TTS/المحاذاة مؤقت؛ أعد **البذرة نفسها** ولا تخصمه من الجودة.
+   76 = الـTake سليم لكن شهود اللهجة كلهم مشغولون؛ لا تعِد TTS أبداً.
    78 = الرصيد منتهٍ؛ أوقف الصرف واحفظ الطابور كما هو.
    1  = عطب حقيقي في النص أو الإعداد أو الشيفرة؛ لا تخفه بإعادة عمياء. */
 export function geminiFailureExitCode (error) {
   const message = String(error?.stack || error?.message || error || '')
   if (/نفد رصيد Gemini|prepayment credits are depleted|credits.*depleted|billing/i.test(message)) return 78
+  if (/DIALECT_AUDIT_DEFERRED/.test(message)) return 76
   if (/DIALECT_AUDIT_TRANSIENT|internal error|please retry|temporar(?:y|ily)|service unavailable|resource exhausted|too many requests|HTTP\s*(?:429|5\d\d)|\b429\b|AbortError|aborted|fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up|network error/i.test(message)) return 75
   return 1
 }
@@ -105,7 +113,9 @@ function terminateFromUnhandledFailure (error) {
   if (terminatingFromUnhandledFailure) return
   terminatingFromUnhandledFailure = true
   const code = geminiFailureExitCode(error)
-  const label = code === 75 ? 'GEMINI_TRANSIENT' : code === 78 ? 'GEMINI_CREDIT_BLOCKED' : 'GENERATOR_FATAL'
+  const label = code === 75 ? 'GEMINI_TRANSIENT'
+    : code === 76 ? 'DIALECT_AUDIT_DEFERRED'
+      : code === 78 ? 'GEMINI_CREDIT_BLOCKED' : 'GENERATOR_FATAL'
   console.error(`⛔ ${label}: ${String(error?.message || error || 'خطأ غير معروف')}`)
   process.exit(code)
 }
@@ -1636,10 +1646,15 @@ async function uploadForTranscription (file, purpose = 'alignment') {
 }
 
 async function completedInteraction (requestBody, label) {
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
-    method: 'POST', headers: { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify(requestBody),
-  })
+  let response = null
+  try {
+    response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+      method: 'POST', headers: { 'x-goog-api-key': KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody), signal: AbortSignal.timeout(DIALECT_AUDIT_HTTP_TIMEOUT_MS),
+    })
+  } catch (error) {
+    throw new Error(`DIALECT_AUDIT_TRANSIENT: ${label} تعذّر اتصاله — ${error.message}`)
+  }
   const raw = await response.text(); let body = null
   try { body = JSON.parse(raw) } catch { /* diagnosed below */ }
   if (!response.ok) {
@@ -1653,9 +1668,14 @@ async function completedInteraction (requestBody, label) {
     ? String(body.id) : `interactions/${encodeURIComponent(body.id)}`
   for (let poll = 1; poll <= 24; poll += 1) {
     await sleep(Math.min(5000, 750 * poll))
-    const follow = await fetch(`https://generativelanguage.googleapis.com/v1beta/${interactionPath}`, {
-      headers: { 'x-goog-api-key': KEY },
-    })
+    let follow = null
+    try {
+      follow = await fetch(`https://generativelanguage.googleapis.com/v1beta/${interactionPath}`, {
+        headers: { 'x-goog-api-key': KEY }, signal: AbortSignal.timeout(DIALECT_AUDIT_HTTP_TIMEOUT_MS),
+      })
+    } catch (error) {
+      throw new Error(`DIALECT_AUDIT_TRANSIENT: ${label} تعذّر سحبه — ${error.message}`)
+    }
     const followBody = await follow.json().catch(() => null)
     if (follow.ok && followBody?.status === 'completed') return followBody
     if (!follow.ok || ['failed', 'cancelled', 'incomplete'].includes(followBody?.status)) {
@@ -1672,20 +1692,35 @@ async function dialectAuditWitness (file) {
   let uploaded = null
   try {
     uploaded = await uploadForTranscription(file, 'dialect-audit')
-    const body = await completedInteraction({
-      model: DIALECT_AUDIT_MODEL,
-      input: [
-        { type: 'text', text: DIALECT_AUDIT_PROMPT },
-        { type: 'audio', uri: uploaded.uri, mime_type: uploaded.mimeType || uploaded.mime_type || 'audio/wav' },
-      ],
-      response_format: DIALECT_AUDIT_RESPONSE_FORMAT,
-      generation_config: { thinking_level: 'low', max_output_tokens: 2200 },
-      store: false,
-    }, 'شاهد اللهجة')
-    const assessment = parseDialectAuditInteraction(body)
-    const decision = dialectAuditPasses(assessment)
-    return { mode: DIALECT_AUDIT_MODE, model: DIALECT_AUDIT_MODEL,
-      status: decision.pass ? 'pass' : 'reject', reasons: decision.reasons, assessment }
+    const failures = []
+    for (let index = 0; index < DIALECT_AUDIT_MODELS.length; index += 1) {
+      const model = DIALECT_AUDIT_MODELS[index]
+      if (index) console.log(`↻ شاهد اللهجة البديل ${model} يفحص الـTake نفسه — صفر إعادة TTS`)
+      try {
+        const body = await completedInteraction({
+          model,
+          input: [
+            { type: 'text', text: DIALECT_AUDIT_PROMPT },
+            { type: 'audio', uri: uploaded.uri, mime_type: uploaded.mimeType || uploaded.mime_type || 'audio/wav' },
+          ],
+          response_format: DIALECT_AUDIT_RESPONSE_FORMAT,
+          generation_config: { thinking_level: 'low', max_output_tokens: 2200 },
+          store: false,
+        }, `شاهد اللهجة ${model}`)
+        const assessment = parseDialectAuditInteraction(body)
+        const decision = dialectAuditPasses(assessment)
+        return { mode: DIALECT_AUDIT_MODE, model, requestedModel: DIALECT_AUDIT_MODEL,
+          fallbackUsed: model !== DIALECT_AUDIT_MODEL, modelsTried: [...failures.map((item) => item.model), model],
+          status: decision.pass ? 'pass' : 'reject', reasons: decision.reasons, assessment }
+      } catch (error) {
+        const message = String(error?.message || error)
+        /* فشل نموذج واحد — حتى لو كان 400 بسبب إتاحة المنطقة — لا يلغي
+           الـTake ولا يعيد الصوت. ننتقل لشاهد مستقل آخر على الملف نفسه. */
+        failures.push({ model, error: message.slice(0, 500) })
+        console.warn(`⚠️ شاهد ${model} غير متاح؛ الصوت محفوظ وننتقل للبديل: ${message}`)
+      }
+    }
+    throw new Error(`DIALECT_AUDIT_DEFERRED: كل شهود اللهجة تعذروا على الـTake المحفوظ — ${failures.map((item) => item.model).join('، ')}`)
   } finally {
     if (uploaded?.name) fetch(`https://generativelanguage.googleapis.com/v1beta/${uploaded.name}`, {
       method: 'DELETE', headers: { 'x-goog-api-key': KEY },
@@ -2633,7 +2668,12 @@ if (SELF_TEST) {
   assert.equal(geminiFailureExitCode(new Error('HTTP 503 بلا صوت')), 75,
     'أعطال 5xx مؤقتة لا تسقط الطابور')
   assert.equal(geminiFailureExitCode(new Error('DIALECT_AUDIT_TRANSIENT: witness unavailable')), 75,
-    'تعطل الحكم الصوتي يعيد البذرة نفسها ولا يقبل الحلقة بلا شاهد')
+    'تعطل شاهد واحد مؤقت قبل استنفاد البدائل يبقى عطلاً قابلاً للمحاولة')
+  assert.equal(geminiFailureExitCode(new Error('DIALECT_AUDIT_DEFERRED: witnesses busy')), 76,
+    'تعطل كل شهود اللهجة يوقف عند الـTake المحفوظ ولا يعيد TTS')
+  assert.deepEqual(DIALECT_AUDIT_MODELS.slice(0, 3),
+    ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'],
+    'شاهد اللهجة يملك بديلين مستقرين ولا يعتمد على سعة نموذج واحد')
   assert.equal(geminiFailureExitCode(new Error('نفد رصيد Gemini — التوليد متوقف')), 78,
     'نفاد الرصيد يوقف الصرف ويحفظ الباقي')
   assert.equal(geminiFailureExitCode(new Error('قفل المصدر مفقود')), 1,
@@ -3016,7 +3056,7 @@ if (DIALECT_AUDIT_MODE !== 'off') {
      لأكثر من Take، يُفحص الماستر الكامل بدل إسقاط أي جزء. */
   const dialectSource = generatedTakeSources.length === 1
     ? generatedTakeSources[0].file : audioFile
-  console.log(`👂 شاهد اللهجة المستقل: ${DIALECT_AUDIT_MODEL} · فهد ونورة · بداية/وسط/نهاية`)
+  console.log(`👂 شاهد اللهجة المستقل: ${DIALECT_AUDIT_MODELS.join(' ← ')} · فهد ونورة · بداية/وسط/نهاية`)
   try {
     dialectAudit = await dialectAuditWitness(dialectSource)
     if (dialectAudit.status !== 'pass') {
@@ -3029,13 +3069,16 @@ if (DIALECT_AUDIT_MODE !== 'off') {
     if (/DIALECT_AUDIT_FATAL/.test(String(error?.message || error))) throw error
     dialectAudit = { ...dialectAudit, status:'unavailable', error:String(error?.message || error) }
     if (DIALECT_AUDIT_MODE === 'required') {
-      throw new Error(`DIALECT_AUDIT_TRANSIENT: تعذّر الحكم المستقل؛ ممنوع قبول الحلقة بلا أذن ثانية — ${error.message}`)
+      preserveRejectedTake('الـTake اجتاز بوابات الصوت وبقي معلقاً عند شهود اللهجة؛ ممنوع إعادة TTS', {
+        stage:'dialect-audit-deferred', dialectAudit,
+      })
+      throw new Error(`DIALECT_AUDIT_DEFERRED: تعذّر الحكم المستقل؛ حُفظ الـTake وممنوع إعادة توليده — ${error.message}`)
     }
     console.warn(`⚠️ شاهد اللهجة غير متاح (prefer): ${error.message}`)
   }
 }
 const audit={
-  schemaVersion:1, qualityGateVersion:'kuwaiti-city-audited-v15', slug, revisionId, status:'candidate',
+  schemaVersion:1, qualityGateVersion:'kuwaiti-city-audited-v16', slug, revisionId, status:'candidate',
   provider:'gemini', ttsApi:TTS_PROVIDER, model:MODEL, languageCode:TTS_LANGUAGE, profile:PROFILE,
   seed:SEED,
   voices:{male:MALE_VOICE,female:FEMALE_VOICE}, sourceFile:`manual-dialogues-kuwaiti/${slug}.json`,

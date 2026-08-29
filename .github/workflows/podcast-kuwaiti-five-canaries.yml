@@ -163,6 +163,8 @@ jobs:
           GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
           GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
           GEMINI_DIALECT_AUDIT_MODEL: gemini-3.7-flash
+          GEMINI_DIALECT_AUDIT_FALLBACK_MODELS: gemini-3.6-flash,gemini-3.5-flash
+          PODCAST_KW_DIALECT_AUDIT_HTTP_TIMEOUT_MS: '45000'
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
           # الجسر يبقى في المكساج، ولا يفتح نداء TTS جديداً. كل نداء جديد
@@ -231,6 +233,7 @@ jobs:
                   sleep $((TRANSPORT_ATTEMPT * 5)); TRANSPORT_ATTEMPT=$((TRANSPORT_ATTEMPT + 1)); continue
                 fi
                 if [ "$CODE" -eq 75 ]; then echo "::error::Gemini متعطل مؤقتاً؛ أُوقف الصرف وحُفظ سبب التأجيل."; exit 75; fi
+                if [ "$CODE" -eq 76 ]; then echo "::error::الصوت محفوظ لكن شهود اللهجة مشغولون؛ ممنوع إعادة TTS."; exit 76; fi
                 if [ "$CODE" -eq 78 ]; then echo "::error::الرصيد انتهى؛ ممنوع بدء حلقة أخرى."; exit 78; fi
                 exit "$CODE"
               done

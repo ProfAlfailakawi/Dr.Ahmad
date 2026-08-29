@@ -1,84 +1,170 @@
 {
  "note": "أحكام أذن الدكتور على الحلقات نفسها — لا على الكلمات. مرجعٌ تُعايَر عليه شهود اللهجة: شاهدٌ لا يفرّق بين ما قَبِلَته أذنه وما ردّته ليس أذناً، ولا يجوز أن يمنح «pass».",
- "updated": "2026-08-29",
- "runId": 33271180413,
- "batch": "خمس حلقات كويتية قصيرة — باقة السماع · ٢٩ أغسطس ٢٠٢٦",
- "episodes": [
+ "updated": "2026-08-30",
+ "finding": "ولا take واحد رُفض للهجة في الجولتين — كل الرفض طبقةٌ وانزلاق هوية. اللهجة قرعةُ بذرةٍ لا يحكمها فاحص: الحلقة ١ حالفها الحظ عند 2101، والأربع لم يحالفها، ولم يعترض أحد.",
+ "rounds": [
   {
-   "slot": 1,
-   "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
-   "seed": 2101,
-   "audioSha256": "7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1",
-   "durationSec": 109.968,
-   "earVerdict": "approved",
-   "doctorQuote": "روووووعه جدا جدا جدا",
-   "earReasons": [],
-   "witnessVerdict": "pass",
-   "witnessModel": "gemini-3.6-flash",
-   "witnessConfidence": 0.95
+   "runId": 33271180413,
+   "batch": "خمس حلقات كويتية قصيرة — باقة السماع · ٢٩ أغسطس ٢٠٢٦",
+   "episodes": [
+    {
+     "slot": 1,
+     "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+     "seed": 2101,
+     "audioSha256": "7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1",
+     "durationSec": 109.968,
+     "earVerdict": "approved",
+     "doctorQuote": "روووووعه جدا جدا جدا",
+     "earReasons": [],
+     "witnessVerdict": "pass",
+     "witnessModel": "gemini-3.6-flash",
+     "witnessConfidence": 0.95
+    },
+    {
+     "slot": 2,
+     "slug": "the-classroom-that-fears-mistakesarabic",
+     "seed": 2112,
+     "audioSha256": "bd4cf0ae2ca835102331bd32aa1552e2d48d16e83197edca775750eff89a6b43",
+     "durationSec": 116.256,
+     "earVerdict": "rejected",
+     "doctorQuote": "فاشلة جدا جدا",
+     "earReasons": [
+      "غير محدد بالأذن"
+     ],
+     "witnessVerdict": "pass",
+     "witnessModel": "gemini-3.6-flash",
+     "witnessConfidence": 0.95
+    },
+    {
+     "slot": 3,
+     "slug": "intelligence-without-a-consciencearabic",
+     "seed": 2103,
+     "audioSha256": "447cbf33e07ac42d831cfbebcdc4ef9fea8f20ccdb68a627d719ea6f18835f7d",
+     "durationSec": 123.24,
+     "earVerdict": "rejected",
+     "doctorQuote": "الرجل نفس شي من جدة مصري · الحلقة فاشلة",
+     "earReasons": [
+      "لهجة الرجل تميل إلى جدة/مصر"
+     ],
+     "witnessVerdict": "pass",
+     "witnessModel": "gemini-3.7-flash",
+     "witnessConfidence": 0.95
+    },
+    {
+     "slot": 4,
+     "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+     "seed": 2114,
+     "audioSha256": "f56065c2801cf6336008089fdae50b3de99f2478f57a0b33bb578b17d0330c74",
+     "durationSec": 112.968,
+     "earVerdict": "rejected",
+     "doctorQuote": "فاشلة جدا",
+     "earReasons": [
+      "غير محدد بالأذن"
+     ],
+     "witnessVerdict": "pass",
+     "witnessModel": "gemini-3.6-flash",
+     "witnessConfidence": 0.95
+    },
+    {
+     "slot": 5,
+     "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+     "seed": 2105,
+     "audioSha256": "7e2ff8478f13c1c908aee3c455c942c407eb9e3c3a3c6ab0934fd70477f916cd",
+     "durationSec": 109.032,
+     "earVerdict": "rejected",
+     "doctorQuote": "قالت تدرين منو وهو رجل · بالزبط قالت وهذا خطأ · حكم قالها خطأ · كأنهم من جدة وقريب من مصر خاصة الرجل",
+     "earReasons": [
+      "مخاطبة بجنس خاطئ: نورة تقول «تدرين» لفهد",
+      "نطق «بالضبط» مسموعاً «بالزبط»",
+      "نطق «حكم» خطأ",
+      "لهجة تميل إلى جدة/مصر خاصة الرجل"
+     ],
+     "witnessVerdict": "pass",
+     "witnessModel": "gemini-3.6-flash",
+     "witnessConfidence": 0.95
+    }
+   ]
   },
   {
-   "slot": 2,
-   "slug": "the-classroom-that-fears-mistakesarabic",
-   "seed": 2112,
-   "audioSha256": "bd4cf0ae2ca835102331bd32aa1552e2d48d16e83197edca775750eff89a6b43",
-   "durationSec": 116.256,
-   "earVerdict": "rejected",
-   "doctorQuote": "فاشلة جدا جدا",
-   "earReasons": [
-    "غير محدد بالأذن"
-   ],
-   "witnessVerdict": "pass",
-   "witnessModel": "gemini-3.6-flash",
-   "witnessConfidence": 0.95
-  },
-  {
-   "slot": 3,
-   "slug": "intelligence-without-a-consciencearabic",
-   "seed": 2103,
-   "audioSha256": "447cbf33e07ac42d831cfbebcdc4ef9fea8f20ccdb68a627d719ea6f18835f7d",
-   "durationSec": 123.24,
-   "earVerdict": "rejected",
-   "doctorQuote": "الرجل نفس شي من جدة مصري · الحلقة فاشلة",
-   "earReasons": [
-    "لهجة الرجل تميل إلى جدة/مصر"
-   ],
-   "witnessVerdict": "pass",
-   "witnessModel": "gemini-3.7-flash",
-   "witnessConfidence": 0.95
-  },
-  {
-   "slot": 4,
-   "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
-   "seed": 2114,
-   "audioSha256": "f56065c2801cf6336008089fdae50b3de99f2478f57a0b33bb578b17d0330c74",
-   "durationSec": 112.968,
-   "earVerdict": "rejected",
-   "doctorQuote": "فاشلة جدا",
-   "earReasons": [
-    "غير محدد بالأذن"
-   ],
-   "witnessVerdict": "pass",
-   "witnessModel": "gemini-3.6-flash",
-   "witnessConfidence": 0.95
-  },
-  {
-   "slot": 5,
-   "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
-   "seed": 2105,
-   "audioSha256": "7e2ff8478f13c1c908aee3c455c942c407eb9e3c3a3c6ab0934fd70477f916cd",
-   "durationSec": 109.032,
-   "earVerdict": "rejected",
-   "doctorQuote": "قالت تدرين منو وهو رجل · بالزبط قالت وهذا خطأ · حكم قالها خطأ · كأنهم من جدة وقريب من مصر خاصة الرجل",
-   "earReasons": [
-    "مخاطبة بجنس خاطئ: نورة تقول «تدرين» لفهد",
-    "نطق «بالضبط» مسموعاً «بالزبط»",
-    "نطق «حكم» خطأ",
-    "لهجة تميل إلى جدة/مصر خاصة الرجل"
-   ],
-   "witnessVerdict": "pass",
-   "witnessModel": "gemini-3.6-flash",
-   "witnessConfidence": 0.95
+   "runId": 33275506078,
+   "batch": "باقة السماع الثانية · ٣٠ أغسطس ٢٠٢٦ — أول تشغيلة بعد إصلاح قلب الكاست",
+   "note": "صوت الحلقات ١–٤ مطابقٌ بالبصمة للجولة الأولى (البذور حتمية والنص لم يتغير)؛ الخامسة وحدها جديدة. فحكم الأذن عليها تأكيدٌ مستقلٌّ لا تكرار.",
+   "episodes": [
+    {
+     "slot": 1,
+     "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+     "seed": 2101,
+     "audioSha256": "7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1",
+     "durationSec": 109.968,
+     "earVerdict": "approved",
+     "doctorQuote": "رووووعه بدون اخطاء بكل شي",
+     "earReasons": [],
+     "witnessVerdict": "pass",
+     "witnessModel": "gemini-3.6-flash",
+     "witnessConfidence": 0.95
+    },
+    {
+     "slot": 2,
+     "slug": "the-classroom-that-fears-mistakesarabic",
+     "seed": 2112,
+     "audioSha256": "bd4cf0ae2ca835102331bd32aa1552e2d48d16e83197edca775750eff89a6b43",
+     "durationSec": 116.256,
+     "earVerdict": "rejected",
+     "doctorQuote": "نفس المشكلة … كثير اخطاء واللهجة خطأ",
+     "earReasons": [
+      "اللهجة خطأ",
+      "أخطاء كثيرة"
+     ],
+     "witnessVerdict": "pass",
+     "witnessModel": "gemini-3.6-flash",
+     "witnessConfidence": 0.95
+    },
+    {
+     "slot": 3,
+     "slug": "intelligence-without-a-consciencearabic",
+     "seed": 2103,
+     "audioSha256": "447cbf33e07ac42d831cfbebcdc4ef9fea8f20ccdb68a627d719ea6f18835f7d",
+     "durationSec": 123.24,
+     "earVerdict": "rejected",
+     "doctorQuote": "خطأ باللهجة",
+     "earReasons": [
+      "اللهجة خطأ"
+     ],
+     "witnessVerdict": "pass",
+     "witnessModel": "gemini-3.7-flash",
+     "witnessConfidence": 0.95
+    },
+    {
+     "slot": 4,
+     "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+     "seed": 2114,
+     "audioSha256": "f56065c2801cf6336008089fdae50b3de99f2478f57a0b33bb578b17d0330c74",
+     "durationSec": 112.968,
+     "earVerdict": "rejected",
+     "doctorQuote": "خطأ باللهجة",
+     "earReasons": [
+      "اللهجة خطأ"
+     ],
+     "witnessVerdict": "pass",
+     "witnessModel": "gemini-3.6-flash",
+     "witnessConfidence": 0.95
+    },
+    {
+     "slot": 5,
+     "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+     "seed": 2105,
+     "audioSha256": "0909723297a8ed8357ec390f35e5f19fe4fd22034683826732d46066ebb271e9",
+     "durationSec": 116.856,
+     "earVerdict": "rejected",
+     "doctorQuote": "خطأ باللهجة",
+     "earReasons": [
+      "اللهجة خطأ"
+     ],
+     "witnessVerdict": "pass",
+     "witnessModel": "gemini-3.7-flash",
+     "witnessConfidence": 0.95
+    }
+   ]
   }
  ]
 }

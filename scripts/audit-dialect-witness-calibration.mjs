@@ -31,7 +31,12 @@ if (!existsSync(ledgerPath)) {
   process.exit(2)
 }
 const ledger = JSON.parse(readFileSync(ledgerPath, 'utf8'))
-const episodes = Array.isArray(ledger.episodes) ? ledger.episodes : []
+/* السجل صار جولاتٍ بعد ٣٠ أغسطس؛ والشكل القديم (episodes في الجذر) يبقى
+   مقروءاً كي لا يسقط أحدٌ على تغيير شكل. */
+const rounds = Array.isArray(ledger.rounds) ? ledger.rounds
+  : [{ batch: ledger.batch, runId: ledger.runId, episodes: ledger.episodes || [] }]
+const episodes = rounds.flatMap((round) =>
+  (round.episodes || []).map((episode) => ({ ...episode, _round: round.batch || round.runId })))
 if (!episodes.length) {
   console.error('✗ السجل بلا حلقات؛ لا معايرة على فراغ')
   process.exit(2)
@@ -53,7 +58,9 @@ let rejectedTotal = 0; let rejectedCaught = 0
 const confidences = new Set()
 const verdicts = new Set()
 
+let currentRound = ''
 for (const episode of episodes) {
+  if (episode._round !== currentRound) { currentRound = episode._round; rows.push(`  ── ${currentRound}`) }
   const witness = freshWitness.get(episode.slug) || {
     status: episode.witnessVerdict,
     assessment: { overall: { confidence: episode.witnessConfidence } },
@@ -78,7 +85,7 @@ for (const episode of episodes) {
   if (episode.earReasons?.length) rows.push(`       سبب الأذن: ${episode.earReasons.join(' · ')}`)
 }
 
-console.log(`معايرة شاهد اللهجة — ${ledger.batch || ''}`)
+console.log(`معايرة شاهد اللهجة — ${rounds.length} جولة · ${episodes.length} حكماً`)
 console.log(rows.join('\n'))
 
 const catchRate = rejectedTotal ? rejectedCaught / rejectedTotal : 0

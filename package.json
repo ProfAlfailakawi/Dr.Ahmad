@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "prepare": "cp scripts/git-pre-commit.sh .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit || true",
     "dev": "vite",
     "lint": "tsc --noEmit",
     "guard:critical": "node scripts/guard-critical-bridges.mjs",

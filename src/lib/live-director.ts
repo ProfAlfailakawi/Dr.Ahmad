@@ -697,30 +697,27 @@ function buildFlowPrompt(input: {
   const overlay = segment.overlayPlan.length
     ? `Editorial overlay: all text is added later in editing, never generated inside Flow. Reserve clean space at ${unique(segment.overlayPlan.map((cue) => `${OVERLAY_POSITION_EN[cue.position]} (${cue.from.toFixed(1)}-${cue.to.toFixed(1)}s)`)).join(', ')}.`
     : 'Editorial overlay: none required for this clip.'
+  /* أُعيد بناؤه على صيغة Veo الرسمية (تصوير + موضوع + فعل + سياق + أجواء)
+     بعد حكم الدكتور على أول فيديو: كان ثلاثين سطراً متناثرة، إحدى عشرة كلمة
+     هدوء، وأربعة أسطر منعٍ متفرّقة — فأنتج رجلاً جالساً في مكتبة بلا حدث.
+     الوصف الآن أولاً وأغنى، والقيود ذيلٌ واحد. */
   const body = [
-    `Duration: exactly ${clipSeconds} seconds.`,
-    `Aspect ratio: 9:16 vertical for ${PLATFORM_EN[input.platform] || 'multi-platform vertical distribution'}.`,
-    `Prompt option: ${flowModeLabel(mode)}.`,
-    'VISIBLE-TEXT RULE — Generate absolutely no on-screen text of any kind in any language: no titles, captions, subtitles, labels, letters, numbers, signs, interface text, logos, or watermarks.',
-    `Avatar usage: ${avatar ? 'yes — use only the pre-saved Dr. Ahmad avatar already stored in Google Flow' : 'no avatar in this clip'}.`,
-    `Clip function: ${roleInEnglish(segment.role)}.`,
-    subject,
-    `Scene concept: ${visualBrief}`,
-    'Location: one calm, premium educational environment; keep the same location, background, time of day and visual moment throughout this clip.',
-    `Primary action: ${segment.purpose}. One main action only.`,
-    `Shot construction: ${segment.shotCount} ${segment.shotCount === 1 ? 'continuous shot' : 'connected shots'} in the same context. ${shotText}`,
+    `Duration: exactly ${clipSeconds} seconds. Vertical 9:16 cinematic film for ${PLATFORM_EN[input.platform] || 'multi-platform vertical distribution'}. Shot on a ${look.lens} at ${look.aperture}; ${look.depthOfField}. ${segment.shotCount === 1 ? 'One continuous shot' : `${segment.shotCount} connected shots in the same unbroken context`}. ${shotText}`,
     cinematographyBlock({ look, seconds: clipSeconds, order: segment.order, shotCount: segment.shotCount, role: segment.role, avatar }),
-    `Visual mood: ${TONE_EN[input.tone] || 'reflective and intellectual'}, realistic, quiet, refined. Color palette: ${input.palette}.`,
-    `Sound design: ${sound}`,
-    speech,
+    `Prompt option: ${flowModeLabel(mode)}.`,
+    subject,
+    `This clip's job: ${roleInEnglish(segment.role)}. Primary action: ${segment.purpose}. One main action only, carried through without pause.`,
+    `Scene: ${visualBrief}`,
     `Clip start state: ${segment.startState}`,
     `Clip end state: ${segment.endState}`,
-    `Continuity with the previous clip: ${segment.continuityMode}.`,
-    referenceInstruction(segment.continuityMode, segment.referenceStrategy, Boolean(segment.selectedReferenceFrame)),
+    'One premium educational environment held throughout — same location, background, time of day and visual moment. Keep it alive rather than static: light shifting across surfaces, dust drifting through a beam, fabric and paper responding to movement, shallow focus breathing with the subject. Something in the frame changes every second.',
+    `Look: ${TONE_EN[input.tone] || 'reflective and intellectual'} in feeling, photoreal and tactile, never illustrative or synthetic. Colour palette: ${input.palette}.`,
+    `Sound design: ${sound}`,
+    speech,
+    `Continuity with the previous clip: ${segment.continuityMode}. ${segment.continuity} ${referenceInstruction(segment.continuityMode, segment.referenceStrategy, Boolean(segment.selectedReferenceFrame))}`,
     overlay,
-    avatar ? `Identity lock: ${AVATAR_LOCK}` : '',
-    `Continuity notes: ${segment.continuity}`,
-    `Negative constraints: ${unique([...segment.negativeConstraints, 'visible writing in any language', 'Arabic writing', 'English writing', 'subtitles', 'captions', 'generated dialogue wording']).join(', ')}.`,
+    avatar ? AVATAR_LOCK : '',
+    `Constraints — VISIBLE-TEXT RULE: generate absolutely no on-screen text of any kind in any language — no titles, captions, subtitles, labels, letters, numbers, signs, interface text, logos or watermarks; ${unique([...segment.negativeConstraints, 'generated dialogue wording', 'cartoon or plastic CGI look', 'morphing artifacts']).join(', ')}.`,
   ].filter(Boolean).join('\n')
   return englishOnly(`${continuationOpening(segment)}\n\n${body}`)
 }

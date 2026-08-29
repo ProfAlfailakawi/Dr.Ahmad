@@ -56,7 +56,7 @@ export const FLOW_LOOKS: FlowLook[] = [
     lighting: 'large soft key from a north-facing window at 45°, gentle bounce fill on the shadow side, subtle hair separation; overall ratio about 3:1',
     grade: 'neutral daylight white balance near 5600K, deep slate blue shadows, warm ivory highlights, restrained muted gold accent; no teal-orange push',
     texture: 'clean digital capture, very fine grain, natural highlight roll-off, no bloom',
-    motionBias: 'a single restrained move: slow push-in or a locked frame',
+    motionBias: 'one decisive push-in that closes distance with intent, or a locked frame the action moves through',
   },
   {
     id: 'golden-study',
@@ -68,7 +68,7 @@ export const FLOW_LOOKS: FlowLook[] = [
     lighting: 'low warm key raking from a side window in late afternoon, long soft shadows, weak negative fill to keep contrast alive, faint warm rim on the shoulder',
     grade: 'warm amber key light against cool slate shadows, ivory midtones, gentle golden accent; keep skin natural and never orange',
     texture: 'soft organic contrast, fine grain, restrained atmospheric haze in the light path',
-    motionBias: 'a very slow drift-in or a gentle handheld-stabilised float',
+    motionBias: 'a steady drift-in that keeps closing, or a stabilised float that follows the moment',
   },
   {
     id: 'quiet-architecture',
@@ -80,7 +80,7 @@ export const FLOW_LOOKS: FlowLook[] = [
     lighting: 'broad ambient daylight with clear directional intent, controlled falloff across walls, no visible fixtures, quiet luminance gradient',
     grade: 'cool neutral base, deep slate blue structure, warm ivory surfaces, a single muted gold accent used sparingly',
     texture: 'crisp and clean, minimal grain, matte surfaces, no glare',
-    motionBias: 'a locked frame, or one slow lateral track parallel to the architecture',
+    motionBias: 'a locked frame with strong movement inside it, or one committed lateral track along the architecture',
   },
   {
     id: 'documentary-honest',
@@ -92,7 +92,7 @@ export const FLOW_LOOKS: FlowLook[] = [
     lighting: 'available light shaped only lightly, honest direction, mild practical sources allowed in frame, ratio about 4:1',
     grade: 'true-to-life colour, slightly desaturated, slate blue shadows, ivory highlights, no stylised push',
     texture: 'authentic sensor texture, visible fine grain, natural imperfection preserved',
-    motionBias: 'subtle stabilised handheld breathing, or a slow reframe that follows the subject',
+    motionBias: 'stabilised handheld that breathes with the subject, or an active reframe that chases the action',
   },
   {
     id: 'night-desk',
@@ -104,7 +104,7 @@ export const FLOW_LOOKS: FlowLook[] = [
     lighting: 'a single warm practical as key, deep controlled shadows, faint cool ambient fill from an off-frame window, soft rim to lift the silhouette',
     grade: 'deep slate blue night base, warm ivory pool of lamp light, muted gold reflections; protect shadow detail and avoid crushing to pure black',
     texture: 'rich low-light texture, fine luminance grain, soft highlight bloom around the practical only',
-    motionBias: 'a locked frame, or an almost imperceptible push-in',
+    motionBias: 'a locked frame where light and motion carry the change, or a continuous push-in',
   },
   {
     id: 'archival-grain',
@@ -116,7 +116,7 @@ export const FLOW_LOOKS: FlowLook[] = [
     lighting: 'soft frontal-diagonal key with wide fill, low contrast, no modern specular highlights',
     grade: 'slightly faded contrast, ivory-leaning highlights, desaturated slate blue, aged gold warmth; gentle halation',
     texture: 'organic film grain, mild gate weave, soft edges, subtle vignette',
-    motionBias: 'a locked frame, or one slow deliberate tilt',
+    motionBias: 'a locked frame with period texture alive in it, or one deliberate tilt that reveals',
   },
 ]
 
@@ -209,9 +209,9 @@ export function cinematographyBlock(input: {
     `Lighting plan: ${look.lighting}.`,
     `Colour grade: ${look.grade}.`,
     `Texture and finish: ${look.texture}.`,
-    /* تُفتتح بالعبارة الحارسة نفسها التي يفتّش عنها الفاحص: القاعدة (نيّةٌ واحدة
-       لكل لقطة) لم تتغيّر، وإنما صار لها تفصيلٌ تنفيذيٌّ بعدها. */
-    `Camera movement: one restrained motion per shot; never combine competing moves. ${moves}`,
+    /* «نيّةٌ واحدة لكل لقطة» قاعدةٌ سليمة تمنع الحركات المتضاربة — لكن «مكبوحة»
+       وحدها كانت تُقرأ سكوناً فتُنتج مشهداً جامداً. النيّة تبقى، والتنفيذ يلتزم. */
+    `Camera movement: one committed motion per shot, executed with intent; never combine competing moves and never let the frame drift aimlessly. ${moves}`,
     `Frame rate and timing: 24fps cinematic cadence across the full ${seconds} seconds; motion must feel deliberate, never rushed.`,
     'Composition: honour the rule of thirds with intentional negative space; keep the horizon level and verticals true; leave the subject clean headroom.',
   ].join('\n')

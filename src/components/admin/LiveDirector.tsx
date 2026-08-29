@@ -359,10 +359,11 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
           <p className="text-[.72rem] font-semibold text-accent">المخرج الحي</p>
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اختر نقطة البداية.</h2>
           <p className="mt-2 max-w-3xl text-[.8rem] leading-relaxed text-soft">الموقع يحلل ويكتب خطة ومقاطع وبرومبتات Flow؛ التوليد يدوي داخل حسابك، بلا Flow API أو Veo أو خدمة فيديو مدفوعة.</p>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
             <button type="button" onClick={() => setPath('article')} className="rounded-3xl border border-hair bg-canvas p-6 text-right transition hover:-translate-y-0.5 hover:border-accent"><span className="text-[.68rem] font-semibold text-accent">المسار الأول</span><strong className="mt-2 block font-display text-xl text-ink">فيديو من مقال</strong><span className="mt-2 block text-[.78rem] leading-relaxed text-soft">حوّل مقالة موجودة إلى شرح بصري مختصر يجذب الناس إلى قراءتها.</span></button>
-            <button type="button" onClick={() => setPath('public')} className="rounded-3xl border border-hair bg-canvas p-6 text-right transition hover:-translate-y-0.5 hover:border-accent"><span className="text-[.68rem] font-semibold text-accent">المسار الثاني</span><strong className="mt-2 block font-display text-xl text-ink">فيديو للجمهور</strong><span className="mt-2 block text-[.78rem] leading-relaxed text-soft">أنشئ فيديو مستقلاً في موضوع جديد، مع تغريدة ومنشورات جاهزة للنشر.</span></button>
-            <button type="button" onClick={() => setPath('reel')} className="rounded-3xl border border-hair bg-canvas p-6 text-right transition hover:-translate-y-0.5 hover:border-accent"><span className="text-[.68rem] font-semibold text-accent">المسار الثالث</span><strong className="mt-2 block font-display text-xl text-ink">ريل رمزي مبهر</strong><span className="mt-2 block text-[.78rem] leading-relaxed text-soft">مشهد سينمائي رمزي يوقف السكرول — فكرتك صورةً مدهشة وجملتك فوقها.</span></button>
+            {/* دُمج «فيديو للجمهور» و«الريل الرمزي» في باب واحد بأمر الدكتور:
+                كلاهما يبدأ من موضوعٍ يكتبه، فلا داعي لبابين وأيقونتين. */}
+            <button type="button" onClick={() => setPath('reel')} className="rounded-3xl border border-hair bg-canvas p-6 text-right transition hover:-translate-y-0.5 hover:border-accent"><span className="text-[.68rem] font-semibold text-accent">المسار الثاني</span><strong className="mt-2 block font-display text-xl text-ink">من فكرة إلى ريل</strong><span className="mt-2 block text-[.78rem] leading-relaxed text-soft">اكتب فكرتك فتخرج مشاهد رمزية توقف السكرول — ومعها الكابشن والمنشورات جاهزة.</span></button>
           </div>
         </section>
         {projects.length > 0 && <RecentProjects projects={projects} onOpen={(item) => { setProject(item); setPath(item.type === 'article_video' ? 'article' : 'public'); setYoutubeDraft(item.youtubeUrl || '') }} />}
@@ -378,7 +379,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
           <button type="button" onClick={() => { setPath(null); setProject(null); setNotice('') }} className={ghost}>بدّل المسار</button>
         </div>
 
-        {!project && path === 'reel' && <SymbolicReelsPanel clipSeconds={clipSeconds} setClipSeconds={setClipSeconds} onNotice={setNotice} />}
+        {!project && path === 'reel' && <SymbolicReelsPanel clipSeconds={clipSeconds} setClipSeconds={setClipSeconds} onNotice={setNotice} onPublicVideo={() => setPath('public')} />}
 
         {!project && path === 'article' && <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">المقالة المنشورة أو المسودة</span><select className={input} value={articleSlug} onChange={(event) => setArticleSlug(event.target.value)}>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.status === 'draft' ? 'مسودة — ' : ''}{article.title}</option>)}</select></label><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} look={look} setLook={setLook} clipSeconds={clipSeconds} setClipSeconds={setClipSeconds} /><label className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.72rem] font-semibold text-ink">الأفتار المحفوظ في Flow</span><span className="mt-1 block text-[.68rem] leading-relaxed text-soft">لا رفع صور ولا إنشاء شخصية جديدة.</span><input className="mt-3" type="checkbox" checked={useAvatar} onChange={(event) => setUseAvatar(event.target.checked)} /> <span className="text-[.72rem] text-ink">استخدمه عند خدمة الفكرة</span></label></div>}
 
@@ -597,7 +598,7 @@ function FramePreview({ frame, busy, onPreview }: { frame?: string; busy: boolea
 
 /* مصنع الريلز الرمزية: فكرة الدكتور × مكتبة مشاهد سينمائية = مفاهيم إنستغرام
    جاهزة. حتميٌّ بلا نموذج لغوي؛ التوليد داخل حساب Flow المدفوع يدوياً. */
-function SymbolicReelsPanel({ clipSeconds, setClipSeconds, onNotice }: { clipSeconds: number; setClipSeconds: (value: number) => void; onNotice: (value: string) => void }) {
+function SymbolicReelsPanel({ clipSeconds, setClipSeconds, onNotice, onPublicVideo }: { clipSeconds: number; setClipSeconds: (value: number) => void; onNotice: (value: string) => void; onPublicVideo: () => void }) {
   const [idea, setIdea] = useState('')
   const [sentence, setSentence] = useState('')
   const [concepts, setConcepts] = useState<ReelConcept[]>([])
@@ -674,6 +675,9 @@ function SymbolicReelsPanel({ clipSeconds, setClipSeconds, onNotice }: { clipSec
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" onClick={() => void invent()} disabled={inventing} className={primary}>{inventing ? 'أبتكر…' : 'ابتكر من أرشيفي'}</button>
         <button type="button" onClick={forge} className={ghost}>مشاهد جاهزة (بلا انتظار)</button>
+        {/* الباب القديم «فيديو للجمهور» لم يُحذف: صار خياراً داخل هذا المسار
+            لمن أراد فيديو أفتار يشرح بدل المشهد الرمزي. */}
+        <button type="button" onClick={onPublicVideo} className={ghost}>أريده فيديو شرح بدل المشهد</button>
         <label className="flex items-center gap-2 text-[.7rem] text-soft">المدة
           <select className="rounded-lg border border-hair bg-canvas px-2 py-1.5 text-[.7rem] text-ink" value={clipSeconds} onChange={(event) => setClipSeconds(Number(event.target.value))}>
             {FLOW_CLIP_SECONDS.map((item) => <option key={item} value={item}>{arabicCountPhrase(item, SECOND_FORMS)}</option>)}

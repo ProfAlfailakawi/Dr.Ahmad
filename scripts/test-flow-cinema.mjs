@@ -48,7 +48,7 @@ const block = cinematographyBlock({ look, seconds: 16, order: 2, shotCount: 2, r
 for (const needle of ['lens', 'aperture', 'Depth of field', 'Lighting plan', 'Colour grade', 'Texture', 'Camera movement', 'Composition', '24fps']) {
   check(block.includes(needle), `الكتلة تذكر ${needle}`)
 }
-check(block.includes('one restrained motion per shot; never combine competing moves'), 'العبارة الحارسة محفوظة نصاً')
+check(/one committed motion per shot, executed with intent; never combine competing moves/.test(block), 'العبارة الحارسة محفوظة نصاً')
 check(block.includes('16 seconds'), 'المدة المختارة تظهر في الكتلة')
 check(/Shot 1 camera:/.test(block) && /Shot 2 camera:/.test(block), 'حركة مستقلة لكل لقطة')
 

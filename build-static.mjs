@@ -87,6 +87,10 @@ const PERSON = {
     'https://www.instagram.com/DrAhmadkw/',
     'https://www.facebook.com/d.ahmd.alfylkawy',
     'https://youtube.com/@drahmadalfailakawi',
+    'https://www.growkudos.com/profile/dr._ahmad_alfailakawi',
+    'https://independent.academia.edu/DrAhmadAlfailakawi',
+    'https://openlibrary.org/people/drahmadalfailakawi',
+    'https://loop.frontiersin.org/people/3675789/overview',
   ],
 }
 const PUBLISHER = { '@type': 'Person', '@id': `${SITE}/#person`, name: AUTHOR, description: PERSON.description }

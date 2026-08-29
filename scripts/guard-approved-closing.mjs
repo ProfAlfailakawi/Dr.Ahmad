@@ -56,8 +56,13 @@ assert.match(engine, /export function familyNameVerdict/,
   'شاهد اسم العائلة اختفى من المولّد — لا شيء يسمع الاسم بعد حذف اللصق القديم')
 assert.match(engine, /aligned\?\.familyName\?\.verdict === 'wrong'/,
   'المولّد ما عاد يرفض الـTake حين يسمع الشاهد الاسم مسطّحاً')
-assert.match(engine, /failure\.familyNameFailure = true/,
-  'رفض الاسم يجب أن ينفذ من وضع المحاذاة المتساهل، لا أن يُبتلع تحذيراً')
+/* الرفض لا بد أن يكون رفضَ جودة (rejectTake ← الرمز ٣) لا خطأَ مولِّد
+   (الرمز ١). في تشغيلة ٢٩ أغسطس ٠٣:٠٤ رمى الشاهدُ خطأً بدل أن يرفض أخذاً،
+   فسقطت الباقة كلها على أول اسمٍ مسطّح ومعها الحلقة الناجحة قبلها — والمراد
+   إعادةُ ذلك الأخذ ببذرة ثانية لا إسقاط التشغيلة. */
+const familyGate = engine.slice(engine.indexOf("aligned?.familyName?.verdict === 'wrong'"))
+assert.match(familyGate.slice(0, 600), /rejectTake\(/,
+  'رفض الاسم يجب أن يمرّ بـrejectTake كي يُعاد الأخذ ببذرة ثانية، لا أن يقتل التشغيلة')
 
 /* والشاهد لا يعمل إلا ومحاذاة التفريغ مشغّلة، فتُثبَّت في مسارَي الإنتاج. */
 for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-kuwaiti-production-batch.yml']) {

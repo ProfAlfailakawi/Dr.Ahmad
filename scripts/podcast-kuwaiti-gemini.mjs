@@ -1591,14 +1591,17 @@ async function splitChunk(file, chunkTurnsList, outPrefix) {
       const diarizationConsistent = alignmentDiarizationConsistent(aligned)
       /* حكم الاسم يسبق حكم الحدود: تطابق الحدود يمرّ «الفيلكاوي» لأن
          مسافتها ٠٫٢ ودون حدّ القبول ٠٫٣٤، فلا ينفع شاهداً على الاسم. */
+      /* رفضُ جودةٍ لا خطأُ مولِّد. الفرق ليس تجميلياً: الرفض (٣) يُستهلك
+         عيّنةً ويُعاد ببذرة ثانية، والخطأ (١) يقتل التشغيلة كلها ومعها
+         الحلقات الناجحة قبلها — وهذا ما وقع في تشغيلة ٢٩ أغسطس ٠٣:٠٤،
+         فأُسقطت الباقة على أول اسمٍ مسطّح بدل أن يُعاد ذلك الأخذ وحده. */
       if (aligned?.familyName?.verdict === 'wrong') {
         splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL,
           ...aligned, cuts: undefined, rejected: true, familyNameRejected: true })
-        const failure = new Error(`اسم العائلة وصل مسطّحاً: سمعه الشاهد «${aligned.familyName.heard}» `
-          + `بدل «${FAMILY_NAME_SPOKEN}» — الـTake مرفوض كاملاً ويُعاد ببذرة ثانية، `
-          + 'بلا لصق مقطعٍ قديم يغيّر جرس الشخصية في آخر جملة.')
-        failure.familyNameFailure = true
-        throw failure
+        rejectTake(`↻ اسم العائلة وصل مسطّحاً: سمعه الشاهد «${aligned.familyName.heard}» `
+          + `بدل «${FAMILY_NAME_SPOKEN}» — الـTake مرفوض بالكامل ويُعاد ببذرة ثانية، `
+          + 'بلا لصق مقطعٍ قديم يغيّر جرس الشخصية في آخر جملة.',
+        { familyName: aligned.familyName })
       }
       if (boundaryTrustworthy) {
         const parts = cutChunkAt(file, aligned.cuts, expected, total, outPrefix, 0.18)
@@ -1617,7 +1620,7 @@ async function splitChunk(file, chunkTurnsList, outPrefix) {
         ...(aligned || {}), diarizationConsistent, cuts: undefined, rejected: true })
       throw new Error(`شاهد الأدوار غير حاسم (تطابق ${aligned ? (aligned.similarity * 100).toFixed(0) : '0'}٪ · تغطية ${aligned ? (aligned.coverage * 100).toFixed(0) : '0'}٪ · أصوات ${aligned?.speakerLabels?.length || 0})`)
     } catch (error) {
-      if (ALIGNMENT_MODE === 'required' || error.familyNameFailure) throw error
+      if (ALIGNMENT_MODE === 'required') throw error
       console.warn(`⚠️ شاهد الأدوار تعذّر؛ رجوع محافظ لمحاذاة الصمت: ${error.message}`)
     }
   }

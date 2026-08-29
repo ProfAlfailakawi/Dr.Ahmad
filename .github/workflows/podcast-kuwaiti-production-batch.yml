@@ -1,4 +1,4 @@
-name: الإنتاج الكويتي الفولاذي — دفعة قابلة للاستئناف
+name: الإنتاج الكويتي الفولاذي — حلقة واحدة قابلة للاستئناف
 
 on:
   workflow_dispatch:
@@ -8,9 +8,9 @@ on:
         required: false
         default: '1'
       batch_size:
-        description: 'عدد الحلقات في الدفعة (1–10؛ الافتراض 5 للحماية من يوم محرك رديء)'
+        description: 'مقفول على 1: كل حلقة تشغيلة مستقلة حتى لا تسقط غيرها'
         required: false
-        default: '5'
+        default: '1'
       slugs:
         description: 'اختياري: slugs محددة مفصولة بفاصلة؛ يتجاهل batch عند استعماله'
         required: false
@@ -36,7 +36,7 @@ on:
           - ai-studio
         default: vertex
       confirm_vertex_canaries:
-        description: 'أؤكد أني سمعت خمس حلقات Vertex واعتمدت أصواتها ولهجتها'
+        description: 'أؤكد أني سمعت تجارب Vertex الفردية واعتمدت أصواتها ولهجتها'
         required: false
         type: boolean
         default: false
@@ -110,10 +110,11 @@ jobs:
           const all = Object.keys(v3.episodes || {}).filter((slug) => site.has(slug));
           if (all.length !== 143) throw new Error(`عقد الإنتاج يقول 143 مقالاً؛ الموجود ${all.length}`);
           const batch = Number(process.env.REQUESTED_BATCH || 1);
-          const size = Number(process.env.REQUESTED_SIZE || 5);
+          const size = Number(process.env.REQUESTED_SIZE || 1);
           if (!Number.isInteger(batch) || batch < 1) throw new Error('batch يجب أن يكون عدداً موجباً');
-          if (!Number.isInteger(size) || size < 1 || size > 10) throw new Error('batch_size بين 1 و10');
+          if (size !== 1) throw new Error('batch_size مقفول على 1: كل حلقة لازم تكون تشغيلة مستقلة');
           const explicit = String(process.env.REQUESTED_SLUGS || '').split(',').map((item) => item.trim()).filter(Boolean);
+          if (new Set(explicit).size > 1) throw new Error('اختر slug واحدة فقط؛ ممنوع جمع حلقات في تشغيلة إنتاج واحدة');
           for (const slug of explicit) if (!site.has(slug) || !v3.episodes[slug]) throw new Error(`slug غير معتمد: ${slug}`);
           const selected = explicit.length ? [...new Set(explicit)] : all.slice((batch - 1) * size, batch * size);
           if (!selected.length) throw new Error('الدفعة خارج نطاق 143 حلقة');
@@ -131,7 +132,7 @@ jobs:
               sourceVariant: 'human-diwania-dna-v3-ear-corrected', turnCount: turns.length,
               bridgeCount: 2, shortContentSha256: hash,
             }, null, 2) + '\n');
-            slots[slug] = all.indexOf(slug) + 1;
+            slots[slug] = 1;
           }
           fs.writeFileSync('kuwaiti-production-slugs.txt', selected.join('\n') + '\n');
           fs.writeFileSync('kuwaiti-production-seed-slots.json', JSON.stringify(slots, null, 2) + '\n');
@@ -186,9 +187,6 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
           GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
-          GEMINI_DIALECT_AUDIT_MODEL: gemini-3.7-flash
-          GEMINI_DIALECT_AUDIT_FALLBACK_MODELS: gemini-3.6-flash,gemini-3.5-flash
-          PODCAST_KW_DIALECT_AUDIT_HTTP_TIMEOUT_MS: '45000'
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
           PODCAST_KW_PROMPT_MODE: c
@@ -201,7 +199,10 @@ jobs:
           PODCAST_KW_REJECT_ACOUSTIC_RESET: '1'
           PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
           PODCAST_KW_TRANSCRIPT_ALIGNMENT: required
-          PODCAST_KW_DIALECT_AUDIT: required
+          PODCAST_KW_DIALECT_AUDIT: off
+          PODCAST_KW_GOLD_ACOUSTIC_GATE: required
+          PODCAST_KW_LOCKED_SEED_SLOT: '1'
+          PODCAST_KW_REQUIRE_SINGLE_EPISODE: '1'
           PODCAST_KW_REJECT_DIR: kuwaiti-production-package/rejected
           REQUESTED_SEED_BASE: ${{ inputs.seed_base || '' }}
           REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}

@@ -58,9 +58,10 @@ for (const [slug, episode] of episodes) {
 }
 
 const total = episodes.length
-const femaleOpeningRatio = firstSpeakerCounts.female / total
-assert.ok(femaleOpeningRatio >= 0.40 && femaleOpeningRatio <= 0.60,
-  `قيادة البداية غير متوازنة: نورة ${Math.round(femaleOpeningRatio * 100)}٪`)
+/* لا نصنع توازناً شكلياً بقلب الكاست بعد الكتابة؛ هذا هو العطب الذي جعل
+   نورة تقول لفهد «تدرين». الحلقة الجديدة تستطيع أن تبدأ بنورة إذا كُتبت
+   لها من الأصل، أما المكتبة المعتمدة فلا نغيّر جنس كلماتها آلياً. */
+assert.equal(castSwapped, 0, 'ممنوع قلب الكاست بعد اعتماد النص')
 for (const [family, count] of Object.entries(familyCounts)) {
   assert.ok(count >= Math.max(10, Math.floor(total * 0.07)), `${family}: ${count} حلقات فقط`)
 }
@@ -71,7 +72,7 @@ assert.equal(dynamicStructuralFailures, 0, 'خطة التنويع للحلقات
 assert.ok(dynamicSoftWarnings <= baselineSoftWarnings,
   `التنويع زاد تنبيهات المتن: ${dynamicSoftWarnings} بدل ${baselineSoftWarnings}`)
 
-console.log(`✓ تنويع كل المكتبة: ${total} حلقة · البداية نورة ${firstSpeakerCounts.female}/فهد ${firstSpeakerCounts.male} · تبديل كاست حتمي ${castSwapped}`)
+console.log(`✓ تنويع كل المكتبة: ${total} حلقة · البداية الأصلية نورة ${firstSpeakerCounts.female}/فهد ${firstSpeakerCounts.male} · صفر قلب كاست بعد الكتابة`)
 console.log(`✓ ست عائلات محادثة: ${Object.entries(familyCounts).map(([family, count]) => `${family}=${count}`).join(' · ')}`)
 console.log(`✓ ${topology.size} بصمة أخذ ورد مختلفة · صفر تغيير كلمة · صفر إعادة ترتيب · المقالات الجديدة: صفر عطب بنيوي`)
 console.log(`ℹ️ ${dynamicSoftWarnings} متناً تاريخياً ما فيه من الأصل سؤال/اعتراض/تركيب كافي؛ ما اخترعنا له كلاماً، والتنويع ما زادها عن خط الأساس`)

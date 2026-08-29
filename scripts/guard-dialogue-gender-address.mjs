@@ -40,10 +40,12 @@ if (process.argv.includes('--self-test')) {
     { speaker: 'male', text: 'هو سؤال يطق عليك فجأة عن الأمان، وعن باجر.' },
     { speaker: 'male', text: 'الفرق إن الحاسبة تحسب لك، وهذي تفكر عنك.' },
     { speaker: 'female', text: 'المدرسة تبي قياس، والمعلم يبي يعرف مستوى طلابه.' },
+    { speaker: 'female', text: 'والموهبة ما تنمو في جدول محشو تلقين.' },
   ]
   assert.equal(scanEpisodeGenderAddress(generic).violations.length, 0,
     'الخطاب العام والغائبة لا يُسقطان حلقة — لا يقف فاحصٌ على ظنٍّ')
-  assert.equal(castSwapIntroducesGenderFault(generic), false, 'ما لا يتأثر بالقلب يبقى تنويعه')
+  assert.equal(castSwapIntroducesGenderFault(generic), true,
+    'حتى النص الظاهر محايداً لا يُقلب آلياً؛ ماكو محلل سياق يضمن كل كلمة مستقبلية')
 
   console.log('✓ فاحص حارس مخاطبة الجنس: يمسك العطب المسموع ولا يوقف الخطاب العام')
   process.exit(0)

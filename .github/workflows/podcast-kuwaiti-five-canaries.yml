@@ -1,12 +1,19 @@
-name: خمس حلقات كويتية قصيرة — باقة السماع
+name: حلقة كويتية واحدة — مختبر المرجع الذهبي
 
 on:
   workflow_dispatch:
     inputs:
       single_slug:
-        description: 'حلقة واحدة من الخمس للسماع؛ اتركها فارغة لتوليد الباقة كلها'
-        required: false
-        default: ''
+        description: 'اختر حلقة واحدة؛ كل حلقة لها تشغيلة وملفات وحكم مستقل'
+        required: true
+        type: choice
+        options:
+          - success-that-does-not-bring-joy-to-its-ownerarabic
+          - the-classroom-that-fears-mistakesarabic
+          - intelligence-without-a-consciencearabic
+          - when-seriousness-becomes-a-mask-for-escapearabic
+          - how-do-we-assess-without-breaking-the-human-beingarabic
+        default: success-that-does-not-bring-joy-to-its-ownerarabic
       prompt_mode:
         description: 'ضبط البرومت: full = جدار الحلقة الجبارة (٢١ أغسطس، محفوظ حرفياً ١٢٧٢٥ حرفاً) · c = الحالي ببنية Google'
         required: false
@@ -78,7 +85,7 @@ jobs:
           sudo apt-get install -y ffmpeg
           npm run podcast:kw:self-test
 
-      - name: Prepare five distinct locked short sources
+      - name: Prepare one locked short source
         shell: bash
         run: |
           set -euo pipefail
@@ -102,7 +109,8 @@ jobs:
           ];
           const requested = String(process.env.SINGLE_SLUG || '').trim();
           if (requested && !allSlugs.includes(requested)) throw new Error('single_slug غير معتمد ضمن باقة السماع: ' + requested);
-          const slugs = requested ? [requested] : allSlugs;
+          if (!requested) throw new Error('اختر single_slug واحداً؛ التوليد الجماعي مقفول');
+          const slugs = [requested];
           fs.mkdirSync('manual-dialogues-kuwaiti', { recursive: true });
           fs.mkdirSync('podcast-audits/source-locks-kuwaiti', { recursive: true });
           for (const slug of slugs) {
@@ -157,7 +165,7 @@ jobs:
             --library=src/data/kuwaiti-diwania-v3.json \
             | tee five-canaries/new-word-audition-ledger.txt
 
-      - name: Generate the five episodes sequentially
+      - name: Generate this episode as one uninterrupted take
         shell: bash
         env:
           PODCAST_KW_PROMPT_MODE: ${{ inputs.prompt_mode || 'c' }}
@@ -168,9 +176,6 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
           GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
-          GEMINI_DIALECT_AUDIT_MODEL: gemini-3.7-flash
-          GEMINI_DIALECT_AUDIT_FALLBACK_MODELS: gemini-3.6-flash,gemini-3.5-flash
-          PODCAST_KW_DIALECT_AUDIT_HTTP_TIMEOUT_MS: '45000'
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
           # الجسر يبقى في المكساج، ولا يفتح نداء TTS جديداً. كل نداء جديد
@@ -187,7 +192,10 @@ jobs:
           # شاهدٌ مستقلٌّ بعد التوليد: كلمة بكلمة + هوية المتحدث. لا يعود
           # قصّ الصمت وطول الحروف وحدهما قاضيين على الحنجرة أو اكتمال الدور.
           PODCAST_KW_TRANSCRIPT_ALIGNMENT: required
-          PODCAST_KW_DIALECT_AUDIT: required
+          # شاهد اللهجة الآلي مرّر 8/8 مما ردّته الأذن. يبقى مختبراً
+          # للمعايرة فقط، ولا يستهلك وقتاً أو يمنح اعتماداً كاذباً.
+          PODCAST_KW_DIALECT_AUDIT: off
+          PODCAST_KW_GOLD_ACOUSTIC_GATE: required
           PODCAST_KW_REJECT_DIR: five-canaries/rejected
           REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
         run: |
@@ -208,15 +216,10 @@ jobs:
           fi
           while IFS= read -r SLUG; do
             N=$((N + 1)); ACCEPTED=0
-            # الحلقة الواحدة تحتفظ بخانة بذرتها داخل الباقة الأصلية. 04 نجحت
-            # في المرجع الذهبي على 2104؛ تحويلها إلى الحلقة 1 كان يعطيها 2101
-            # ويغيّر تفسير الشخصيتين رغم بقاء النص والأصوات كما هما.
+            # كل حلقة مستقلة تبدأ من خانة المرجع 1. اختلاف 2102–2105 هو
+            # بالضبط ما صنع الأصوات التي ردّتها الأذن مع بقاء preset نفسه.
             case "$SLUG" in
-              success-that-does-not-bring-joy-to-its-ownerarabic) SEED_SLOT=1 ;;
-              the-classroom-that-fears-mistakesarabic) SEED_SLOT=2 ;;
-              intelligence-without-a-consciencearabic) SEED_SLOT=3 ;;
-              when-seriousness-becomes-a-mask-for-escapearabic) SEED_SLOT=4 ;;
-              how-do-we-assess-without-breaking-the-human-beingarabic) SEED_SLOT=5 ;;
+              success-that-does-not-bring-joy-to-its-ownerarabic|the-classroom-that-fears-mistakesarabic|intelligence-without-a-consciencearabic|when-seriousness-becomes-a-mask-for-escapearabic|how-do-we-assess-without-breaking-the-human-beingarabic) SEED_SLOT=1 ;;
               *) echo "::error::ماكو خانة بذرة معتمدة لـ$SLUG"; exit 1 ;;
             esac
             for ATTEMPT in $(seq 1 "$QUALITY_ATTEMPTS"); do

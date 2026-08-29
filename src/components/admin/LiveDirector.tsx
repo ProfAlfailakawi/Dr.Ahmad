@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ArticleRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
+import { DEFAULT_FLOW_LOOK, FLOW_CLIP_SECONDS, FLOW_LOOKS, flowLook, type FlowLookId } from '../../lib/flow-cinema.ts'
 import {
   CONTINUITY_LABELS,
   LIVE_DIRECTOR_REPAIR_ISSUES,
@@ -102,6 +103,10 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
   const [platform, setPlatform] = useState<LiveDirectorPlatform>('متعدد المنصات')
   const [tone, setTone] = useState<LiveDirectorTone>('فكرية')
   const [useAvatar, setUseAvatar] = useState(true)
+  /* النمط البصري ومدة المقطع: بُني المخرج أيام Flow المجاني فكانت المدة مثبتة
+     بثماني ثوانٍ والشكل واحداً. الاشتراك يتيح أطول وأدقّ، فصارا اختياراً. */
+  const [look, setLook] = useState<FlowLookId>(DEFAULT_FLOW_LOOK)
+  const [clipSeconds, setClipSeconds] = useState<number>(8)
   const [wantsSeries, setWantsSeries] = useState(false)
   const [linkedArticleSlug, setLinkedArticleSlug] = useState('')
   const [source, setSource] = useState('')
@@ -196,7 +201,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
           words: body.trim().split(/\s+/).filter(Boolean).length, year: String(new Date().getFullYear()), hasAudio: false, missing: false,
           _cms: { kind: 'article', origin: 'added', modified: true, hidden: true, deleted: false, docId: String(draft.slug || slug || 'room-draft'), baseSlug: String(draft.slug || slug || 'room-draft') },
         }
-        setProject(createArticleVideoProject({ article: temporary, audience, platform, tone, useAvatar, forge: forgeFor({ kind: 'article', id: temporary.slug, title: temporary.title, text: [temporary.excerpt, body].filter(Boolean).join(' '), url: '' }, temporary.slug), source: seededSource, sourceSessionId: seededSessionId, linkedEditorialDecisionId: seededDecisionId, linkedCampaignId: seededCampaignId }))
+        setProject({ ...createArticleVideoProject({ article: temporary, audience, platform, tone, useAvatar, forge: forgeFor({ kind: 'article', id: temporary.slug, title: temporary.title, text: [temporary.excerpt, body].filter(Boolean).join(' '), url: '' }, temporary.slug), source: seededSource, sourceSessionId: seededSessionId, linkedEditorialDecisionId: seededDecisionId, linkedCampaignId: seededCampaignId }), look, clipSeconds })
       }
     } else {
       setPath('public')
@@ -222,13 +227,13 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
     if (path === 'article') {
       if (!selectedArticle) { setNotice('اختر المقالة أولاً.'); return }
       const forge = forgeFor({ kind: 'article', id: selectedArticle.slug, title: selectedArticle.title, text: [selectedArticle.excerpt, selectedArticle.body].filter(Boolean).join(' '), url: `${SITE}/articles/${selectedArticle.slug}`, date: selectedArticle.iso }, selectedArticle.slug)
-      setProject(createArticleVideoProject({ article: selectedArticle, audience, platform, tone, useAvatar, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }))
+      setProject({ ...createArticleVideoProject({ article: selectedArticle, audience, platform, tone, useAvatar, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }), look, clipSeconds })
       return
     }
     if (path === 'public') {
       if (topic.trim().length < 4) { setNotice('اكتب موضوع الفيديو أولاً.'); return }
       const forge = forgeFor({ kind: linkedArticle ? 'article' : 'free', id: linkedArticle?.slug || 'topic', title: linkedArticle?.title || topic, text: [message, topic, linkedArticle?.body].filter(Boolean).join(' '), url: linkedArticle ? `${SITE}/articles/${linkedArticle.slug}` : '' }, linkedArticle?.slug || '')
-      setProject(createPublicVideoProject({ topic, message, audience, platform, tone, useAvatar, wantsSeries, linkedArticle, archive: articles, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }))
+      setProject({ ...createPublicVideoProject({ topic, message, audience, platform, tone, useAvatar, wantsSeries, linkedArticle, archive: articles, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }), look, clipSeconds })
     }
   }
 
@@ -370,9 +375,9 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
           <button type="button" onClick={() => { setPath(null); setProject(null); setNotice('') }} className={ghost}>بدّل المسار</button>
         </div>
 
-        {!project && path === 'article' && <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">المقالة المنشورة أو المسودة</span><select className={input} value={articleSlug} onChange={(event) => setArticleSlug(event.target.value)}>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.status === 'draft' ? 'مسودة — ' : ''}{article.title}</option>)}</select></label><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} /><label className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.72rem] font-semibold text-ink">الأفتار المحفوظ في Flow</span><span className="mt-1 block text-[.68rem] leading-relaxed text-soft">لا رفع صور ولا إنشاء شخصية جديدة.</span><input className="mt-3" type="checkbox" checked={useAvatar} onChange={(event) => setUseAvatar(event.target.checked)} /> <span className="text-[.72rem] text-ink">استخدمه عند خدمة الفكرة</span></label></div>}
+        {!project && path === 'article' && <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">المقالة المنشورة أو المسودة</span><select className={input} value={articleSlug} onChange={(event) => setArticleSlug(event.target.value)}>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.status === 'draft' ? 'مسودة — ' : ''}{article.title}</option>)}</select></label><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} look={look} setLook={setLook} clipSeconds={clipSeconds} setClipSeconds={setClipSeconds} /><label className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.72rem] font-semibold text-ink">الأفتار المحفوظ في Flow</span><span className="mt-1 block text-[.68rem] leading-relaxed text-soft">لا رفع صور ولا إنشاء شخصية جديدة.</span><input className="mt-3" type="checkbox" checked={useAvatar} onChange={(event) => setUseAvatar(event.target.checked)} /> <span className="text-[.72rem] text-ink">استخدمه عند خدمة الفكرة</span></label></div>}
 
-        {!project && path === 'public' && <div className="mt-6 grid gap-4"><div className="grid gap-4 lg:grid-cols-2"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الموضوع؟</span><textarea className={`${input} min-h-28`} value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="فكرة، سؤال، موقف، دراسة أو حدث…" /></label><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الرسالة التي تريد إيصالها؟</span><textarea className={`${input} min-h-28`} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="اختياري؛ إن تركته يختصر المحرك جوهر الموضوع." /></label></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">الجمهور</span><input className={input} value={audience} onChange={(event) => setAudience(event.target.value)} /></label><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} /><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ربط اختياري بمقال</span><select className={input} value={linkedArticleSlug} onChange={(event) => setLinkedArticleSlug(event.target.value)}><option value="">بلا ربط</option>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.title}</option>)}</select></label></div><details className="rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-soft">خيارات متقدمة عند الحاجة</summary><div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]"><label><span className="mb-2 block text-[.7rem] font-semibold text-ink">مصدر أو دراسة مرتبطة</span><input className={input} value={source} onChange={(event) => setSource(event.target.value)} placeholder="رابط أو مرجع مختصر — اختياري" /></label><div className="flex flex-wrap items-center gap-5"><label className="text-[.74rem] text-ink"><input type="checkbox" checked={useAvatar} onChange={(event) => setUseAvatar(event.target.checked)} /> استخدم أفتار د. أحمد المحفوظ</label><label className="text-[.74rem] text-ink"><input type="checkbox" checked={wantsSeries} onChange={(event) => setWantsSeries(event.target.checked)} /> الموضوع يحتاج سلسلة</label></div></div></details></div>}
+        {!project && path === 'public' && <div className="mt-6 grid gap-4"><div className="grid gap-4 lg:grid-cols-2"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الموضوع؟</span><textarea className={`${input} min-h-28`} value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="فكرة، سؤال، موقف، دراسة أو حدث…" /></label><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الرسالة التي تريد إيصالها؟</span><textarea className={`${input} min-h-28`} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="اختياري؛ إن تركته يختصر المحرك جوهر الموضوع." /></label></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">الجمهور</span><input className={input} value={audience} onChange={(event) => setAudience(event.target.value)} /></label><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} look={look} setLook={setLook} clipSeconds={clipSeconds} setClipSeconds={setClipSeconds} /><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ربط اختياري بمقال</span><select className={input} value={linkedArticleSlug} onChange={(event) => setLinkedArticleSlug(event.target.value)}><option value="">بلا ربط</option>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.title}</option>)}</select></label></div><details className="rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-soft">خيارات متقدمة عند الحاجة</summary><div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]"><label><span className="mb-2 block text-[.7rem] font-semibold text-ink">مصدر أو دراسة مرتبطة</span><input className={input} value={source} onChange={(event) => setSource(event.target.value)} placeholder="رابط أو مرجع مختصر — اختياري" /></label><div className="flex flex-wrap items-center gap-5"><label className="text-[.74rem] text-ink"><input type="checkbox" checked={useAvatar} onChange={(event) => setUseAvatar(event.target.checked)} /> استخدم أفتار د. أحمد المحفوظ</label><label className="text-[.74rem] text-ink"><input type="checkbox" checked={wantsSeries} onChange={(event) => setWantsSeries(event.target.checked)} /> الموضوع يحتاج سلسلة</label></div></div></details></div>}
 
         {!project && <div className="mt-5 flex flex-wrap items-center gap-3"><button type="button" onClick={buildProject} className={primary}>حلّل وابنِ خطة Flow</button><span className="text-[.7rem] text-soft">3 مقاطع يومياً · 8 ثوانٍ لكل مقطع · لا توليد فيديو داخل الموقع</span></div>}
         {notice && <p className="mt-4 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.76rem] leading-relaxed text-accent">{notice}</p>}
@@ -547,8 +552,26 @@ function ClipCard(props: ClipCardProps) {
   )
 }
 
-function CommonSelects({ platform, tone, setPlatform, setTone }: { platform: LiveDirectorPlatform; tone: LiveDirectorTone; setPlatform: (value: LiveDirectorPlatform) => void; setTone: (value: LiveDirectorTone) => void }) {
-  return <><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">المنصة الأساسية</span><select className={input} value={platform} onChange={(event) => setPlatform(event.target.value as LiveDirectorPlatform)}>{PLATFORMS.map((item) => <option key={item}>{item}</option>)}</select></label><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">النبرة</span><select className={input} value={tone} onChange={(event) => setTone(event.target.value as LiveDirectorTone)}>{TONES.map((item) => <option key={item}>{item}</option>)}</select></label></>
+function CommonSelects({ platform, tone, setPlatform, setTone, look, setLook, clipSeconds, setClipSeconds }: { platform: LiveDirectorPlatform; tone: LiveDirectorTone; setPlatform: (value: LiveDirectorPlatform) => void; setTone: (value: LiveDirectorTone) => void; look: FlowLookId; setLook: (value: FlowLookId) => void; clipSeconds: number; setClipSeconds: (value: number) => void }) {
+  const chosen = flowLook(look)
+  return <>
+    <label><span className="mb-2 block text-[.72rem] font-semibold text-ink">المنصة الأساسية</span><select className={input} value={platform} onChange={(event) => setPlatform(event.target.value as LiveDirectorPlatform)}>{PLATFORMS.map((item) => <option key={item}>{item}</option>)}</select></label>
+    <label><span className="mb-2 block text-[.72rem] font-semibold text-ink">النبرة</span><select className={input} value={tone} onChange={(event) => setTone(event.target.value as LiveDirectorTone)}>{TONES.map((item) => <option key={item}>{item}</option>)}</select></label>
+    {/* النمط البصري يحمل العدسة والإضاءة والتدرّج والنسيج — لا اللون وحده. */}
+    <label><span className="mb-2 block text-[.72rem] font-semibold text-ink">النمط البصري</span>
+      <select className={input} value={look} onChange={(event) => setLook(event.target.value as FlowLookId)}>
+        {FLOW_LOOKS.map((item) => <option key={item.id} value={item.id}>{item.labelAr}</option>)}
+      </select>
+      <span className="mt-1 block text-[.65rem] leading-relaxed text-soft">{chosen.noteAr}</span>
+      <span className="mt-1 block text-[.62rem] text-soft" dir="ltr">{chosen.lens} · {chosen.aperture}</span>
+    </label>
+    <label><span className="mb-2 block text-[.72rem] font-semibold text-ink">مدة المقطع الواحد</span>
+      <select className={input} value={clipSeconds} onChange={(event) => setClipSeconds(Number(event.target.value))}>
+        {FLOW_CLIP_SECONDS.map((item) => <option key={item} value={item}>{arabicCountPhrase(item, SECOND_FORMS)}</option>)}
+      </select>
+      <span className="mt-1 block text-[.65rem] leading-relaxed text-soft">الثماني كانت حدّ النسخة المجانية؛ الاشتراك يتيح أطول.</span>
+    </label>
+  </>
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

@@ -12,7 +12,7 @@ on:
       - '.github/workflows/**'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: project-status-sync
@@ -44,5 +44,13 @@ jobs:
         run: |
           if ! git diff --quiet PROJECT-STATUS.md; then
             echo "::error::PROJECT-STATUS.md is out of date! Run 'npm run project:status' locally and commit the changes."
+            exit 1
+          fi
+
+      - name: Verify generator idempotency
+        run: |
+          npm run project:status
+          if ! git diff --quiet PROJECT-STATUS.md; then
+            echo "::error::Generator is not idempotent! Running it twice produces different outputs."
             exit 1
           fi

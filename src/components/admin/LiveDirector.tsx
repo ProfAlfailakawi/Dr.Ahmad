@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ArticleRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb, getFirebaseApp } from '../../lib/firebase'
-import { DEFAULT_FLOW_LOOK, FLOW_CLIP_SECONDS, FLOW_LOOKS, flowLook, type FlowLookId } from '../../lib/flow-cinema.ts'
+import { DEFAULT_FLOW_LOOK, FLOW_CLIP_SECONDS, FLOW_LOOKS, FLOW_SECONDS_NOTE, flowLook, type FlowLookId } from '../../lib/flow-cinema.ts'
 import { forgeSymbolicReels, reelPromptFromScene, type ReelConcept } from '../../lib/symbolic-reels.ts'
 import type { InventedScene as InventedReel } from '../../lib/reel-invention.mjs'
 import {
@@ -574,7 +574,7 @@ function CommonSelects({ platform, tone, setPlatform, setTone, look, setLook, cl
       <select className={input} value={clipSeconds} onChange={(event) => setClipSeconds(Number(event.target.value))}>
         {FLOW_CLIP_SECONDS.map((item) => <option key={item} value={item}>{arabicCountPhrase(item, SECOND_FORMS)}</option>)}
       </select>
-      <span className="mt-1 block text-[.65rem] leading-relaxed text-soft">الثماني كانت حدّ النسخة المجانية؛ الاشتراك يتيح أطول.</span>
+      <span className="mt-1 block text-[.65rem] leading-relaxed text-soft">{FLOW_SECONDS_NOTE[clipSeconds] || ''}</span>
     </label>
   </>
 }
@@ -659,7 +659,7 @@ function SymbolicReelsPanel({ clipSeconds, setClipSeconds, onNotice }: { clipSec
       const scenes: InventedReel[] = Array.isArray(data?.scenes) ? data.scenes : []
       setInvented(scenes)
       setSources(Array.isArray(data?.sources) ? data.sources : [])
-      onNotice(scenes.length ? `ابتُكرت ${arabicCountPhrase(scenes.length, REEL_SCENE_FORMS)} من أرشيفك.` : 'لم يخرج مشهد مطابق — أعد المحاولة.')
+      onNotice(scenes.length ? `ابتُكر ${arabicCountPhrase(scenes.length, REEL_SCENE_FORMS)} من أرشيفك.` : 'لم يخرج مشهد مطابق — أعد المحاولة.')
     } catch (error) {
       onNotice(error instanceof Error ? error.message : 'تعذّر الابتكار')
     } finally { setInventing(false) }

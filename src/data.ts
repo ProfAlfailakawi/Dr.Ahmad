@@ -1,4 +1,5 @@
 import { researchPapers } from './data/research-papers.ts'
+import academicPresence from './data/academic-presence.json'
 
 // الروابط الخارجية معطّلة؛ التنقل المعتمد داخلي عبر React Router.
 export const LINK_OUT = false
@@ -325,15 +326,31 @@ export const socials = [
 ]
 
 /* الملفات الأكاديمية تُعرض كأيقونات مستقلة بجوار شبكات التواصل، مع فاصل
-   بصري خفيف حتى لا تُفهم بوصفها شبكات اجتماعية عادية. */
-export const academicProfiles = [
-  { label: 'Google Scholar', url: 'https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en' },
-  { label: 'ResearchGate', url: 'https://www.researchgate.net/profile/Ahmad-Alfailakawi' },
-  { label: 'ORCID', url: 'https://orcid.org/0000-0002-1767-4963' },
-  { label: 'Web of Science', url: 'https://www.webofscience.com/wos/author/record/LXA-2190-2024' },
-  { label: 'Semantic Scholar', url: 'https://www.semanticscholar.org/author/Ahmad-Alfailakawi/101514397' },
-  { label: 'Wikidata', url: 'https://www.wikidata.org/wiki/Q141131823' },
+   بصري خفيف حتى لا تُفهم بوصفها شبكات اجتماعية عادية.
+
+   الإخفاء التلقائي: أيّ ملف عدد أعماله فيه أقل من العتبة (academic-presence.json →
+   minItems) تختفي أيقونته من الموقع كله، وتعود فور تجاوزه العتبة — بلا تدخّل.
+   الأعداد تُحدَّث آلياً أسبوعياً عبر GitHub Action (scripts/refresh-academic-presence.mjs). */
+const allAcademicProfiles = [
+  { id: 'google-scholar', label: 'Google Scholar', url: 'https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en' },
+  { id: 'researchgate', label: 'ResearchGate', url: 'https://www.researchgate.net/profile/Ahmad-Alfailakawi' },
+  { id: 'orcid', label: 'ORCID', url: 'https://orcid.org/0000-0002-1767-4963' },
+  { id: 'web-of-science', label: 'Web of Science', url: 'https://www.webofscience.com/wos/author/record/LXA-2190-2024' },
+  { id: 'semantic-scholar', label: 'Semantic Scholar', url: 'https://www.semanticscholar.org/author/Ahmad-Alfailakawi/101514397' },
+  { id: 'wikidata', label: 'Wikidata', url: 'https://www.wikidata.org/wiki/Q141131823' },
 ]
+
+const academicMinItems = academicPresence.minItems ?? 10
+type AcademicPresence = { count: number | null }
+const academicPresenceMap = academicPresence.profiles as Record<string, AcademicPresence>
+
+/** يُخفى الملف فقط حين نملك عدداً مؤكّداً أقل من العتبة؛ وإن جُهل العدد يبقى ظاهراً
+    (fail-open) حتى لا نُخفي ملفاً عامراً بالخطأ. */
+export const academicProfiles = allAcademicProfiles.filter((item) => {
+  const rec = academicPresenceMap[item.id]
+  if (!rec || rec.count == null) return true
+  return rec.count >= academicMinItems
+})
 
 export const links = {
   booking: 'https://schedule.dr-alfailakawi.com/',

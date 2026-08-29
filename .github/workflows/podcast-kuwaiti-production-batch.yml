@@ -144,6 +144,7 @@ jobs:
         run: |
           node scripts/apply-kuwaiti-native-spoken.mjs --dir=manual-dialogues-kuwaiti
           node scripts/guard-spoken-episode.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-dialogue-gender-address.mjs --dir=manual-dialogues-kuwaiti
           node scripts/guard-name-pronunciation.mjs
           node scripts/guard-new-dialogue-words.mjs --dir=manual-dialogues-kuwaiti
 

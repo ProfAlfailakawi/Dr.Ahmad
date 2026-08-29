@@ -13,6 +13,8 @@ import { communicationsHealth, createAdminCommunications } from './src/server/ad
 import { stableCanonicalJson } from './src/lib/sovereign-publishing.mjs'
 import { buildMultimodalMeaningCourt } from './src/lib/semantic-court.mjs'
 import { cleanResearchSample } from './src/lib/research-sample.mjs'
+import { labelPassages, pickCorpusPassages, reelCorpus } from './src/server/reel-corpus.mjs'
+import { INVENTION_PROPERTIES, INVENTION_REQUIRED, acceptInventedScenes, conceptsInText, inventionInstruction, inventionPrompt } from './src/lib/reel-invention.mjs'
 import { getEncyclopediaTranscriptProgress, loadEncyclopediaVideoCatalog, loadEncyclopediaVideoMoment, scheduleEncyclopediaTranscriptWarmup, searchEncyclopediaVideoMoments } from './src/server/encyclopedia-videos.mjs'
 
 // Node لا يقرأ .env تلقائياً. نحمّله محلياً فقط، من دون استبدال متغيرات بيئة النشر.
@@ -167,6 +169,7 @@ const socialIdeasPath = '/api/ai/social-ideas'
    حصةٍ يومية محدودة — وخسر السبع التي أحبّها. هذا نداءٌ واحد لفقرةٍ واحدة. */
 const articleParagraphPath = '/api/ai/article-paragraph'
 const currentContextPath = '/api/ai/current-context'
+const reelInventionPath = '/api/ai/reel-invention'
 const studioImagePath = '/api/ai/studio-image'
 const studioImageAliases = Object.freeze(['/api/studio-image', '/api/generate-studio-image'])
 const studioImageHealthPath = '/api/ai/studio-image/health'
@@ -1674,6 +1677,9 @@ function studioImageInput(value) {
     recentVisualWorlds: boundedArray(value.recentVisualWorlds, 12, (item) => boundedString(item, 80)),
     regenerationId: boundedString(value.regenerationId, 160),
     variation: boundedString(value.variation, 1_100),
+    /* «الإطار الأول»: المعاينة اليومية مجانية، والفاخرة تُطلب للمرشّح النهائي
+       وحده. المولّد يقرأ generationMode أصلاً، وكان المُدخل يُسقطه فلا تصل. */
+    generationMode: value.generationMode === 'masterpiece' ? 'masterpiece' : 'daily',
   }
 }
 
@@ -5937,7 +5943,7 @@ export function createRequestHandler({
       return
     }
 
-    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, articleParagraphPath, socialPackPath, socialIdeasPath, currentContextPath, studioImagePath, ...studioImageAliases].includes(url.pathname)) {
+    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, articleParagraphPath, socialPackPath, socialIdeasPath, currentContextPath, studioImagePath, reelInventionPath, ...studioImageAliases].includes(url.pathname)) {
       if (method !== 'POST') {
         sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
         return
@@ -5981,6 +5987,37 @@ export function createRequestHandler({
       }
       if (url.pathname === articleParagraphPath) {
         sendJson(res, 200, await reviseArticleParagraph(articleParagraphInput(body)))
+        return
+      }
+      if (url.pathname === reelInventionPath) {
+        /* ابتكار مشاهد رمزية أصلية: النموذج يبتكر، لكن مغذّى بمعجم الدكتور
+           وبمقاطع من أرشيفه كله (مقال · كتاب · لقاء · بحث · مختارات)، فيخرج
+           المشهد من عالمه هو. وما يخالف العقد يُرفض قبل أن يصل إليه. */
+        const idea = boundedString(body?.idea, 1_000)
+        if (idea.trim().length < 4) throw new HttpError(400, 'اكتب الفكرة أولاً')
+        const sentence = boundedString(body?.sentence, 400)
+        const seconds = [8, 16, 24].includes(Number(body?.seconds)) ? Number(body.seconds) : 8
+        const count = Math.min(5, Math.max(2, Number(body?.count) || 4))
+        const glossary = drAhmadDomainGlossary
+        const rows = await reelCorpus()
+        const passages = labelPassages(pickCorpusPassages(`${idea} ${sentence}`, rows, 6))
+        const request = { idea, sentence, seconds, count, concepts: conceptsInText(`${idea} ${sentence}`, glossary), passages }
+        const raw = await callGeminiStructured({
+          instruction: inventionInstruction(),
+          prompt: inventionPrompt(request),
+          properties: INVENTION_PROPERTIES,
+          required: INVENTION_REQUIRED,
+          maxOutputTokens: 4_096,
+          temperature: .95,
+        })
+        const scenes = acceptInventedScenes(raw, count)
+        if (!scenes.length) throw new HttpError(502, 'لم يخرج مشهد يطابق الشروط — أعد المحاولة أو غيّر صياغة الفكرة')
+        sendJson(res, 200, {
+          scenes,
+          seconds,
+          concepts: request.concepts,
+          sources: passages.map((passage) => passage.title),
+        })
         return
       }
       if (url.pathname === socialIdeasPath) {

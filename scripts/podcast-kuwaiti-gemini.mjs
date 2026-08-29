@@ -1294,6 +1294,33 @@ const alignmentToken = (value) => String(value || '')
 
 const alignmentTokens = (value) => String(value || '').split(/\s+/u).map(alignmentToken).filter(Boolean)
 
+/* شاهد اسم العائلة.
+   كان المونتاج يضمن نطق الاسم بلصق مقطعٍ قديم معتمد. حُذف اللصق في
+   ٢٥ أغسطس ٢٠٢٦ لسببٍ صحيح: كان يغيّر جرس الشخصية في آخر جملة. لكن
+   الضمانة حُذفت معه ولم يخلفها شيء — بقي الاسم معلّقاً على إملاء طبقة
+   الصوت وحدها، بلا أذنٍ تتحقق أنه خرج كما كُتب. فسمعه الدكتور مسطّحاً
+   في ٢٩ أغسطس وسمّاها «الكارثة».
+   وشاهد الحدود لا يمسكها: مسافة «الفيلكاوي» عن «الفيلتشاوي» ٠٫٢ وحدّ
+   القبول ٠٫٣٤، فتُحسب الكلمة نفسها ويمرّ الـTake بتطابق ٩٦٪.
+   فأُفرد للاسم شاهدٌ صريح لا يقبل المقاربة.
+   ويرفض على المسموع لا على المظنون: إن سمع الشاهد الكاف المسطّحة رُفض
+   الـTake كاملاً وأُعيد ببذرة ثانية. وإن لم يسمع الاسم أصلاً لم يحكم —
+   صمت ASR ليس حكماً على الحنجرة، والرفض على الشك يحرق المحاولات الست. */
+const FAMILY_NAME_SPOKEN = 'الفيلتشاوي'
+const FAMILY_NAME_RIGHT = /فيل(?:تش|چ|ج|ش)+اوي/u
+const FAMILY_NAME_WRONG = /فيل[كق]+اوي/u
+
+export function familyNameVerdict (spokenByTurn, heardByTurn) {
+  for (let index = 0; index < spokenByTurn.length; index += 1) {
+    if (!FAMILY_NAME_RIGHT.test(spokenByTurn[index] || '')) continue
+    const heard = heardByTurn[index] || ''
+    if (FAMILY_NAME_RIGHT.test(heard)) return { verdict: 'ok', turn: index }
+    if (FAMILY_NAME_WRONG.test(heard)) return { verdict: 'wrong', turn: index, heard: heard.match(FAMILY_NAME_WRONG)[0] }
+    return { verdict: 'unheard', turn: index }
+  }
+  return { verdict: 'absent' }
+}
+
 const tokenDistance = (left, right) => {
   if (left === right) return 0
   if (!left || !right) return 1
@@ -1397,14 +1424,17 @@ export function alignTranscriptBoundaries (turns, annotations, totalSec) {
   const timeBounds = [0, ...cuts, totalSec]
   const perTurnCoverage = []
   const perTurnHeardRatio = []
+  const heardByTurn = []
   let tokenCursor = 0
   for (let turnIndex = 0; turnIndex < turns.length; turnIndex += 1) {
     const sourceCount = sourceByTurn[turnIndex].length
     const mappedCount = mapping.slice(tokenCursor, tokenCursor + sourceCount).filter(Number.isInteger).length
-    const heardCount = heardWords.filter((word) => {
+    const heardHere = heardWords.filter((word) => {
       const middle = (word.startSec + word.endSec) / 2
       return middle >= timeBounds[turnIndex] && middle < timeBounds[turnIndex + 1]
-    }).length
+    })
+    const heardCount = heardHere.length
+    heardByTurn.push(heardHere.map((word) => alignmentToken(word.text)).join(''))
     perTurnCoverage.push(Number((mappedCount / Math.max(sourceCount, 1)).toFixed(4)))
     perTurnHeardRatio.push(Number((heardCount / Math.max(sourceCount, 1)).toFixed(4)))
     tokenCursor += sourceCount
@@ -1431,6 +1461,7 @@ export function alignTranscriptBoundaries (turns, annotations, totalSec) {
     nearMatches: near, sourceWordCount: n, heardWordCount: m,
     speakerLabels: labels, speakerAgreement: Number(speakerAgreement.toFixed(4)), speakerMappingDistinct, speakerVotes,
     perTurnCoverage, perTurnHeardRatio,
+    familyName: familyNameVerdict(sourceByTurn.map((words) => words.join('')), heardByTurn),
   }
 }
 
@@ -1558,12 +1589,25 @@ async function splitChunk(file, chunkTurnsList, outPrefix) {
       const aligned = alignTranscriptBoundaries(chunkTurnsList, witness.words, total)
       const boundaryTrustworthy = alignmentBoundaryTrustworthy(aligned)
       const diarizationConsistent = alignmentDiarizationConsistent(aligned)
+      /* حكم الاسم يسبق حكم الحدود: تطابق الحدود يمرّ «الفيلكاوي» لأن
+         مسافتها ٠٫٢ ودون حدّ القبول ٠٫٣٤، فلا ينفع شاهداً على الاسم. */
+      if (aligned?.familyName?.verdict === 'wrong') {
+        splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL,
+          ...aligned, cuts: undefined, rejected: true, familyNameRejected: true })
+        const failure = new Error(`اسم العائلة وصل مسطّحاً: سمعه الشاهد «${aligned.familyName.heard}» `
+          + `بدل «${FAMILY_NAME_SPOKEN}» — الـTake مرفوض كاملاً ويُعاد ببذرة ثانية، `
+          + 'بلا لصق مقطعٍ قديم يغيّر جرس الشخصية في آخر جملة.')
+        failure.familyNameFailure = true
+        throw failure
+      }
       if (boundaryTrustworthy) {
         const parts = cutChunkAt(file, aligned.cuts, expected, total, outPrefix, 0.18)
         if (parts) {
           splitAlignmentAudits.push({ method: 'gemini-3.5-word-timestamps+diarization', model: TRANSCRIBE_MODEL,
             ...aligned, diarizationConsistent, cuts: aligned.cuts.map((cut) => Number(cut.toFixed(3))) })
           console.log(`✓ شاهد حدود الكلمات: ${aligned.sourceWordCount} كلمة · تطابق ${(aligned.similarity * 100).toFixed(0)}٪ · تغطية ${(aligned.coverage * 100).toFixed(0)}٪`)
+          if (aligned.familyName?.verdict === 'ok') console.log(`✓ شاهد اسم العائلة: سُمع «${FAMILY_NAME_SPOKEN}»`)
+          else if (aligned.familyName?.verdict === 'unheard') console.log('ℹ شاهد اسم العائلة: ما التقطه ASR في موضعه — لا حكم على الحنجرة')
           if (diarizationConsistent) console.log(`✓ شاهد أسماء الصوتين: اتفاق ${(aligned.speakerAgreement * 100).toFixed(0)}٪`)
           else console.log(`ℹ وسوم المتحدث من ASR غير ثابتة (${aligned.speakerLabels.length} وسوم · اتفاق ${(aligned.speakerAgreement * 100).toFixed(0)}٪)؛ لا تحكم على الحنجرة، وبوابتا الطبقة والرنين تفحصانها بعد القص`)
           return parts
@@ -1573,7 +1617,7 @@ async function splitChunk(file, chunkTurnsList, outPrefix) {
         ...(aligned || {}), diarizationConsistent, cuts: undefined, rejected: true })
       throw new Error(`شاهد الأدوار غير حاسم (تطابق ${aligned ? (aligned.similarity * 100).toFixed(0) : '0'}٪ · تغطية ${aligned ? (aligned.coverage * 100).toFixed(0) : '0'}٪ · أصوات ${aligned?.speakerLabels?.length || 0})`)
     } catch (error) {
-      if (ALIGNMENT_MODE === 'required') throw error
+      if (ALIGNMENT_MODE === 'required' || error.familyNameFailure) throw error
       console.warn(`⚠️ شاهد الأدوار تعذّر؛ رجوع محافظ لمحاذاة الصمت: ${error.message}`)
     }
   }
@@ -2337,6 +2381,26 @@ if (SELF_TEST) {
     'تخبّط diarization يبقى مسجلاً للتدقيق ولا يتخفّى كنجاح')
   assert.equal(alignmentBoundaryTrustworthy({ ...alignedProbe, perTurnCoverage: [1, 0, 1] }), false,
     'التطابق الإجمالي لا يسمح بقص دورٍ ضاعت كلماته كلها')
+
+  /* شاهد اسم العائلة. العلّة التي بُني لها: «الفيلكاوي» تعبر شاهد الحدود
+     لأن مسافتها ٠٫٢ ودون حدّ القبول ٠٫٣٤ — فلا بد من شاهدٍ لا يقارب. */
+  assert.ok(tokenDistance(alignmentToken('الفيلتشاوي'), alignmentToken('الفيلكاوي')) <= 0.34,
+    'شاهد الحدود وحده يمرّ الاسم المسطّح — وهذي علّة وجود شاهد الاسم')
+  const closing = alignmentTokens(toSpokenKuwaiti(
+    'تلقى المقال الأصلي في موقع الدكتور أحمد حسين الفيلچاوي.', PRONUNCIATION)).join('')
+  assert.match(closing, FAMILY_NAME_RIGHT, 'الاسم يصل مدخل الصوت بالنطق المعتمد')
+  assert.equal(familyNameVerdict([closing], ['فيالموقعالفيلتشاوي']).verdict, 'ok',
+    'النطق الصحيح يُقبل')
+  assert.equal(familyNameVerdict([closing], ['فيالموقعالفيلچاوي']).verdict, 'ok',
+    'الچ في تفريغ ASR هي الصوت نفسه ولا تُرفض')
+  const flat = familyNameVerdict([closing], ['فيالموقعالفيلكاوي'])
+  assert.equal(flat.verdict, 'wrong', 'الكاف المسطّحة تُرفض — وهي التي سمعها الدكتور')
+  assert.equal(flat.heard, 'فيلكاوي', 'سبب الرفض يُسمّى بما سمعه الشاهد لا بالظن')
+  assert.equal(familyNameVerdict([closing], ['فيالموقع']).verdict, 'unheard',
+    'صمت ASR ليس حكماً على الحنجرة — لا يُحرق الـTake على الشك')
+  assert.equal(familyNameVerdict(['هذاصح'], ['هذاصح']).verdict, 'absent',
+    'دفعة بلا سطر إحالة لا تُحاكم على اسمٍ غير موجود')
+  assert.equal(alignedProbe.familyName.verdict, 'absent', 'الحكم جزءٌ ثابت مما يرجعه الشاهد')
   assert.equal(retryAfterMs({ error:{ details:[{ retryDelay:'1.875496542s' }] } }, ''), 2626, 'مهلة الخادم من details')
   assert.equal(retryAfterMs(null, 'Please retry in 12.5s'), 13250, 'مهلة الخادم من نصّ الرسالة')
   assert.equal(retryAfterMs(null, 'boom'), 0, 'بلا مهلةٍ معلنة يعود إلى التراجع الأسّي')

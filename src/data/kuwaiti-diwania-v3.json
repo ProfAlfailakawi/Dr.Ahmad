@@ -28330,7 +28330,7 @@
    },
    "11": {
     "speaker": "male",
-    "text": "كلها تخلي الطالب يختار السكوت المرة الياية.",
+    "text": "كلها تخلي الطالب يختار السكوت مرة ثانية.",
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
@@ -28402,7 +28402,7 @@
    },
    "19": {
     "speaker": "female",
-    "text": "وترى هذي جملة تستاهل إن كل مدرسة توقف عندها وقفة طويلة.",
+    "text": "وترى هذي جملة تستاهل وقفة طويلة من كل مدرسة.",
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,

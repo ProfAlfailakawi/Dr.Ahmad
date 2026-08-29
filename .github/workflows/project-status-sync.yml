@@ -1,0 +1,48 @@
+name: Keep PROJECT-STATUS.md fresh
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: project-status-sync
+  cancel-in-progress: true
+
+jobs:
+  sync-status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Force public npm registry
+        run: npm config set registry https://registry.npmjs.org/
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate PROJECT-STATUS.md
+        run: npm run project:status
+
+      - name: Fail if PROJECT-STATUS.md is stale
+        run: |
+          if ! git diff --quiet PROJECT-STATUS.md; then
+            echo "::error::PROJECT-STATUS.md is out of date! Run 'npm run project:status' locally and commit the changes."
+            exit 1
+          fi

@@ -109,12 +109,16 @@ assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.minimumOwnSpeakerAdvantage) >= 0,
   'هامش فصل فهد عن نورة مفقود')
 assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.maximumPitchDistanceHz) > 0,
   'عتبة طبقة المرجع الذهبي مفقودة')
+assert.ok(Array.isArray(GOLD_ACOUSTIC_REFERENCE.approvedSources)
+  && GOLD_ACOUSTIC_REFERENCE.approvedSources.length >= 1
+  && GOLD_ACOUSTIC_REFERENCE.approvedSources.every((source) => source.explicitlyApproved === true),
+'كل مرجع ذهبي يحتاج اعتماد الدكتور الصريح وبصمة الملف')
 for (const speaker of ['male', 'female']) {
   assert.equal(GOLD_ACOUSTIC_REFERENCE.speakers?.[speaker]?.timbreCenter?.length, 18,
     `بصمة ${speaker} الذهبية ناقصة`)
   assert.ok(Array.isArray(GOLD_ACOUSTIC_REFERENCE.speakers?.[speaker]?.approvedTimbreReferences)
-    && GOLD_ACOUSTIC_REFERENCE.speakers[speaker].approvedTimbreReferences.length >= 2,
-  `مرجعا ${speaker} المعتمدان ناقصان`)
+    && GOLD_ACOUSTIC_REFERENCE.speakers[speaker].approvedTimbreReferences.length >= 1,
+  `مرجع ${speaker} المعتمد ناقص`)
   for (const approved of GOLD_ACOUSTIC_REFERENCE.speakers[speaker].approvedTimbreReferences) {
     assert.equal(approved?.timbreCenter?.length, 18, `بصمة ${speaker} المعتمدة ${approved?.id || 'بلا اسم'} ناقصة`)
     assert.ok(Number(approved?.pitchMedianHz) > 0, `طبقة ${speaker} المعتمدة ${approved?.id || 'بلا اسم'} ناقصة`)
@@ -1227,10 +1231,10 @@ const nearestTimbreReference = (center, references) => references
   .filter((candidate) => Number.isFinite(candidate.distance))
   .sort((a, b) => a.distance - b.distance)[0] || null
 
-/* بصمة الغلاف الطيفي تتأثر بالنص نفسه؛ حدٌّ حول تسجيل واحد رفض Take 3111
-   الذي اعتمده الدكتور، مع أنه نفس الحلقة ونفس فهد ونورة. العلاج مو توسيع
-   العتبة على الحلقات الفاشلة: نخزّن فقط Takes من الحلقة الأولى سمعها
-   الدكتور واعتمدها، ونقيس إلى **أقرب مرجع معتمد**. ويظل الفصل عن صوت الطرف
+/* نخزّن فقط Takes قال الدكتور صراحةً إنها معتمدة، مرتبطةً ببصمة بايتاتها؛
+   «نفس رايي، فقط الحلقة الأولى» ليست اعتماداً لملف جديد. لا تتعلم البوابة
+   من نتيجة خضراء ولا من اسم seed ولا من استنتاج آلي. القياس يكون إلى
+   **أقرب مرجع صريح**، ويظل الفصل عن صوت الطرف
    الثاني والطبقة الصوتية حارسين مستقلين؛ فلا تمر بصمة قريبة من نورة على أنها
    فهد، ولا يمر تفسير جديد بعيد في الرنين والطبقة معاً. */
 export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOUSTIC_REFERENCE, pitchMedians = {}) {
@@ -2866,12 +2870,16 @@ if (SELF_TEST) {
     '7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1',
     'مرجع الأذن الذهبي مثبت ببصمة ملف الحلقة الأولى، لا باسمٍ قابل للتبديل')
   assert.deepEqual(GOLD_ACOUSTIC_REFERENCE.approvedSources.map((source) => source.slug),
-    [PILOT_SLUG, PILOT_SLUG],
+    [PILOT_SLUG],
     'مرجع الأذن لا يتعلم من الحلقات ٢–٥ التي رفضها الدكتور')
   assert.deepEqual(GOLD_ACOUSTIC_REFERENCE.approvedSources.map((source) => source.audioSha256), [
     '7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1',
-    '048097c1e206bea66358b46a91ed23b9488b9ab4b43e78b8536f1998b679de32',
-  ], 'كل مرجع معتمد مربوط ببايتات الصوت التي سمعها الدكتور')
+  ], 'الذهب الوحيد هو بايتات الحلقة الأولى التي اعتمدها الدكتور صراحةً')
+  assert.ok(GOLD_ACOUSTIC_REFERENCE.approvedSources.every((source) => source.explicitlyApproved === true),
+    'لا تدخل أي عينة المرجع الذهبي باستنتاجٍ من كلام الدكتور')
+  assert.ok(!GOLD_ACOUSTIC_REFERENCE.approvedSources.some((source) => source.audioSha256
+    === '048097c1e206bea66358b46a91ed23b9488b9ab4b43e78b8536f1998b679de32'),
+  'Take 3111 السعودي مسحوب نهائياً من التعلم والاعتماد')
   assert.equal(timbreDistance(
     GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter,
     GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter,
@@ -2879,12 +2887,12 @@ if (SELF_TEST) {
   for (const speaker of ['male', 'female']) {
     const own = approvedTimbreReferencesFor(GOLD_ACOUSTIC_REFERENCE, speaker)
     const other = approvedTimbreReferencesFor(GOLD_ACOUSTIC_REFERENCE, speaker === 'male' ? 'female' : 'male')
-    assert.equal(nearestTimbreReference(own[1].timbreCenter, own).id,
-      'run-33296947431-seed-3111', `المرجع الثاني المعتمد لـ${speaker} يطابق نفسه`)
-    const ownDistance = nearestTimbreReference(own[1].timbreCenter, own).distance
-    const crossDistance = nearestTimbreReference(own[1].timbreCenter, other).distance
+    assert.equal(nearestTimbreReference(own[0].timbreCenter, own).id,
+      'run-33271180413-seed-2101', `مرجع الحلقة الأولى المعتمد لـ${speaker} يطابق نفسه`)
+    const ownDistance = nearestTimbreReference(own[0].timbreCenter, own).distance
+    const crossDistance = nearestTimbreReference(own[0].timbreCenter, other).distance
     assert.ok(crossDistance - ownDistance >= GOLD_ACOUSTIC_REFERENCE.minimumOwnSpeakerAdvantage,
-      `المرجع الثاني لـ${speaker} يبقى أقرب إلى صاحبه من الصوت المقابل`)
+      `مرجع الحلقة الأولى لـ${speaker} يبقى أقرب إلى صاحبه من الصوت المقابل`)
     const shiftedGold = own[0].timbreCenter.map((value) => value + 0.4)
     assert.ok(nearestTimbreReference(shiftedGold, own).distance
       > GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance,

@@ -15,7 +15,7 @@ import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 import { applyApprovedRegisterRewrites } from './kuwaiti-register-rewrites.mjs'
 import { applySpokenClosing } from './kuwaiti-closing-variants.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-30-native-kuwaiti-v19-gold-request-anchor'
+export const NATIVE_SPOKEN_VERSION = '2026-08-30-native-kuwaiti-v20-professional-five-word-fixes-only'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 export const CLASSROOM_SLUG = 'the-classroom-that-fears-mistakesarabic'
@@ -28,10 +28,10 @@ const norm = (value) => String(value || '').replace(/\s+/g, ' ').trim()
 /* الحكم السمعي الأخير على الحلقة التجريبية سمّى هذه المواضع واحداً واحداً.
    التعديل هنا على الحلقة وحدها؛ لا نعمّم عبارةً سياقيةً على ١٤٤ موضوعاً. */
 const PILOT_TURN_OVERRIDES = new Map([
-  [0, { text: 'تطلع النتيجة، والتهاني من كل صوب، والطالب يبتسم… مثل ما الناس متوقعة منه.' }],
+  [0, { text: 'تطلع النتيجة، وتبدي التهاني من كل صوب، والطالب يبتسم… مثل ما الناس متوقعة منه.' }],
   [2, { deliveryType: 'briefReaction', pauseAfterMs: 160, overlapMs: 70 }],
   [3, { text: 'ما حس بالفرحة اللي كان يبيها.' }],
-  [4, { text: 'بس كل اللي حس فيه كان راحة شوي… وبس. مثل واحد كان محشور بمكان ضيّج… وبعدها طلع منه.' }],
+  [4, { text: 'بس كل اللي حس فيه كان راحة شوي… وبس. مثل واحد كان منحشر بمكان ضيّج… وبعدها طلع منه.' }],
   [5, { text: 'بس مو النجاح بروحه يستاهل الفرحة؟' }],
   [7, { text: 'إي، بس هني الفرق.', deliveryType: 'briefReaction', pauseAfterMs: 160, overlapMs: 70 }],
   [8, { text: 'الطالب ما يفرح بالنجاح… بس يحس إن التوتر خف شوي.' }],
@@ -39,7 +39,7 @@ const PILOT_TURN_OVERRIDES = new Map([
   [12, { text: 'بس شنو يصير بالاختبار اللي بعده؟', deliveryType: 'question' }],
   [13, { speaker: 'female', text: 'وترى حتى الدراسات تقول إن هالضغط مو بسيط.', deliveryType: 'briefReaction' }],
   [14, { speaker: 'male', text: 'شلون يعني؟', deliveryType: 'briefReaction', pauseAfterMs: 160, overlapMs: 70 }],
-  [15, { speaker: 'female', text: 'في مراجعة كبيرة، خذو فيها أبحاث وايد عن الموضوع.' }],
+  [15, { speaker: 'female', text: 'في دراسة كبيرة جمعت أبحاث وايد عن الموضوع.' }],
   [16, { speaker: 'male', text: 'وشنو طلع معاهم؟', deliveryType: 'briefReaction', pauseAfterMs: 160, overlapMs: 70 }],
   [17, { speaker: 'female', text: 'كل ما زاد التوتر، نزل مستوى الطالب.', deliveryType: 'statement' }],
   [18, { speaker: 'male', text: 'إي، بس تدري شنو الأسوأ؟', deliveryType: 'briefReaction', pauseAfterMs: 180, overlapMs: 70 }],
@@ -49,21 +49,21 @@ const PILOT_TURN_OVERRIDES = new Map([
   [22, { text: 'والأهم بعد… هالتجربة شنو غيّرت فيهم؟ صاروا أحسن؟' }],
   [23, { speaker: 'female', text: 'فهموا نفسهم أكثر؟ صاروا أهدأ؟' }],
   [24, { text: 'ترى في نجاح يطلع شكله وايد حلو… بس صاحبه ما حس بشي.', deliveryType: 'statement', pauseAfterMs: 320 }],
-  [25, { text: 'واللي علينا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.', deliveryType: 'statement', pauseAfterMs: 320 }],
+  [25, { text: 'ودورنا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.', deliveryType: 'statement', pauseAfterMs: 320 }],
 ])
 
 /* النسخة الكاملة تبقى قاعدة التحرير وإعادة التكثيف، لذلك تحمل العلاج نفسه
    حتى لو تبدّل المختصر مستقبلاً أو طُلبت الحلقة الكاملة. */
 const PILOT_FULL_OVERRIDES = new Map([
-  [0, { text: 'تطلع النتيجة، والتهاني من كل صوب، والطالب يبتسم… مثل ما الناس متوقعة منه. بس في شي داخله ساكت.' }],
+  [0, { text: 'تطلع النتيجة، وتبدي التهاني من كل صوب، والطالب يبتسم… مثل ما الناس متوقعة منه. بس في شي داخله ساكت.' }],
   [1, { text: 'إي، بالضبط. الكل حواليه فرحان ويبارك له، بس هو من داخله؟ ما حس بالفرحة اللي كان يبيها.' }],
-  [2, { text: 'مو فرحة من قلب، ولا ذاك الإحساس اللي يي لما تنجز شي يعني لك. بس كل اللي حس فيه كان راحة شوي… وبس. مثل واحد كان محشور بمكان ضيّج… وبعدها طلع منه.' }],
+  [2, { text: 'مو فرحة من قلب، ولا ذاك الإحساس اللي يي لما تنجز شي يعني لك. بس كل اللي حس فيه كان راحة شوي… وبس. مثل واحد كان منحشر بمكان ضيّج… وبعدها طلع منه.' }],
   [3, { text: 'بس مو النجاح بروحه يستاهل الفرحة؟ إذا الواحد عدى شي كان خايف منه، طبيعي يرتاح.' }],
   [4, { text: 'إي، بس هني الفرق. الطالب ما يفرح بالنجاح… بس يحس إن التوتر خف شوي. وترى مو كل نجاح يفرّح صاحبه؛ مرات الواحد بس يرتاح لأنه عدى اللي كان خايف منه.' }],
   [7, { text: 'إذا الامتحان صار معركة، النجاح بس يوقف التوتر شوي… بس شنو يصير بالاختبار اللي بعده؟' }],
   [8, { speaker: 'female', text: 'وترى حتى الدراسات تقول إن هالضغط مو بسيط.', deliveryType: 'briefReaction' }],
   [9, { speaker: 'male', text: 'شلون يعني؟', deliveryType: 'briefReaction', pauseAfterMs: 160, overlapMs: 70 }],
-  [10, { speaker: 'female', text: 'في مراجعة كبيرة، خذو فيها أبحاث وايد عن الموضوع، وطلع معاهم إن كل ما زاد التوتر، نزل مستوى الطالب.' }],
+  [10, { speaker: 'female', text: 'في دراسة كبيرة جمعت أبحاث وايد عن الموضوع، وطلع معاهم إن كل ما زاد التوتر، نزل مستوى الطالب.' }],
   [11, { speaker: 'male', text: 'وفي دراسة ثانية؟', deliveryType: 'briefReaction', pauseAfterMs: 160, overlapMs: 70 }],
   [12, { speaker: 'female', text: 'ربطوا ضغط الدراسة بتوتر الامتحان. وقالوا بعد إن نظرة الأهل وحالة الطالب النفسية لهم دور.' }],
   [13, { speaker: 'male', text: 'إي، بس تدري شنو الأسوأ؟', deliveryType: 'briefReaction', pauseAfterMs: 180, overlapMs: 70 }],
@@ -76,7 +76,7 @@ const PILOT_FULL_OVERRIDES = new Map([
   [20, { text: 'ويي معاه ضغط أكثر، وتوتر بالامتحان، وتصير دافعيته كلها خوف مو رغبة.' }],
   [27, { text: 'والأهم بعد… هالتجربة شنو غيرت فيهم؟ صاروا أحسن؟ فهموا نفسهم أكثر؟ صاروا أهدأ؟' }],
   [34, { text: 'ترى في نجاح يطلع شكله وايد حلو… بس صاحبه ما حس بشي.' }],
-  [35, { text: 'واللي علينا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.', deliveryType: 'statement', pauseAfterMs: 320 }],
+  [35, { text: 'ودورنا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.', deliveryType: 'statement', pauseAfterMs: 320 }],
 ])
 
 /* مراجعة الحلقة 04 بعد سماع الـSame-Take كاملاً (٢٥ أغسطس ٢٠٢٦): الصوتان
@@ -89,11 +89,11 @@ const PILOT_FULL_OVERRIDES = new Map([
    statement عادية، لا conclusion تجبر المحرك على التباطؤ وصناعة شعار. */
 const SERIOUSNESS_SHORT_OVERRIDES = new Map([
   [0, { text: 'طول اليوم وإحنا نتحرك… ونسمي هالحركة التزام.', deliveryType: 'briefReaction' }],
-  [2, { text: 'وبآخر الليل نرد… ونكتشف إن ما تحرّك فينا شي صج.', deliveryType: 'statement' }],
+  [2, { text: 'وبآخر الليل نكتشف إن ما تحرّك فينا شي صج.', deliveryType: 'statement' }],
   [3, { text: 'بس الجدية مو دايم علامة نضج.', deliveryType: 'statement', pauseAfterMs: 320 }],
   [4, { text: 'مرات ما تكون جدية أصلا… تكون طريقة مرتبة نلهي فيها نفسنا.', deliveryType: 'statement', pauseAfterMs: 300, overlapMs: 0 }],
   [5, { speaker: 'female', text: 'نلهي نفسنا عن شنو؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
-  [6, { speaker: 'male', text: 'عن سؤال ندري إنه ثقيل علينا.', deliveryType: 'briefReaction', pauseAfterMs: 240, overlapMs: 0 }],
+  [6, { speaker: 'male', text: 'عن سؤال نَدري إنه ثقيل علينا.', deliveryType: 'briefReaction', pauseAfterMs: 240, overlapMs: 0 }],
   [7, { speaker: 'female', text: 'إحنا ننجز اللي المفروض… ولا بس اللي يريحنا؟', deliveryType: 'question' }],
   [8, { speaker: 'male', text: 'وترى حتى الدراسات لاحظت هالشي.', deliveryType: 'briefReaction', pauseAfterMs: 220 }],
   [9, { speaker: 'female', text: 'شلون يعني؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70 }],
@@ -112,7 +112,7 @@ const SERIOUSNESS_SHORT_OVERRIDES = new Map([
   [22, { text: 'شلون يعني؟', deliveryType: 'question', pauseAfterMs: 180, overlapMs: 70, musicBridgeAfter: false }],
   [23, { text: 'إن الواحد مرات يأجل مو لأنه ما يفهم… لأن المهمة ثقيلة عليه، أو نتيجتها بعيدة.', deliveryType: 'statement', pauseAfterMs: 420, overlapMs: 0, musicBridgeAfter: true }],
   [24, { speaker: 'female', text: 'عيل من وين نبدي العلاج؟', deliveryType: 'question', pauseAfterMs: 260, overlapMs: 0 }],
-  [25, { speaker: 'male', text: 'نفرق بين شغل يودّينا للشي المهم… وشغل يبعدنا عنه.', deliveryType: 'statement' }],
+  [25, { speaker: 'male', text: 'نميّز بين شغل يودّينا للشي المهم… وشغل يبعدنا عنه.', deliveryType: 'statement' }],
   [26, { speaker: 'female', text: 'ونحط للمهمة الثقيلة موعد واضح.', deliveryType: 'statement' }],
   [27, { speaker: 'male', text: 'المشكلة إن الواحد يظل مشغول سنة كاملة…', deliveryType: 'statement', pauseAfterMs: 260 }],
   [28, { speaker: 'male', text: 'وبالأخير يكتشف إن كل هالانشغال كان عشان ما يواجه نفسه.', deliveryType: 'statement', pauseAfterMs: 360 }],
@@ -137,8 +137,10 @@ const INTELLIGENCE_SHORT_OVERRIDES = new Map([
    خرجت «بالزبط»، و«حكم» خرجت خطأ. ما نطارد الحرف بتشكيلٍ مصطنع؛ نعيد
    الجملتين بكلام شفهي يؤدي المعنى نفسه من غير الكلمتين الخطرتين. */
 const ASSESSMENT_SHORT_OVERRIDES = new Map([
+  [0, { text: 'تدري شنو اللي يخوفني في بعض الاختبارات؟' }],
   [4, { text: 'إي، هذا اللي أقصده. ما يقول: غلطت في الاختبار. يقول من داخله: أنا فاشل.' }],
   [5, { text: 'وهني النتيجة ما تعود بس نتيجة… كأنها صارت كل شي فيه.' }],
+  [14, { text: 'تخيل طالب راجع البيت بهالدرجة الواطية.' }],
 ])
 
 /* قواعد آمنة قليلة للحلقات الحالية والجديدة. لا تشمل «كل قاف»: الهوية
@@ -326,7 +328,7 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
       },
       {
         ...output[15],
-        text: 'في مراجعة كبيرة، خذو فيها أبحاث وايد عن الموضوع. كل ما زاد التوتر، نزل مستوى الطالب.',
+        text: 'في دراسة كبيرة جمعت أبحاث وايد عن الموضوع. كل ما زاد التوتر، نزل مستوى الطالب.',
         deliveryType: 'statement',
       },
     ]
@@ -409,7 +411,12 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
 
   /* التنويع الأدائي يأتي بعد العلاج النصي: لا يمس كلمةً ولا ترتيباً ولا
      يقلب الكاست. مَن يبدأ يُحسم وقت كتابة الحوار، مو بعد اعتماد صرفه. */
-  const varied = applyConversationVariety(closed.turns, { slug })
+  const varied = applyConversationVariety(closed.turns, {
+    slug,
+    /* لا تعميم: فقط الخمس التي قال الدكتور عنها «كلهم روووووعه» تعود
+       إلى توزيع فهد ونورة في تشغيلة 33132655399. */
+    preserveDoctorApprovedGoldCast: [PILOT_SLUG, CLASSROOM_SLUG, INTELLIGENCE_SLUG, SERIOUSNESS_SLUG, ASSESSMENT_SLUG].includes(slug),
+  })
   changes.push(...varied.changes)
   const audit = { ...auditNativeSpokenTurns(varied.turns), conversationPlan: varied.plan }
   return { turns: varied.turns, changes, audit, conversationPlan: varied.plan, version: NATIVE_SPOKEN_VERSION }

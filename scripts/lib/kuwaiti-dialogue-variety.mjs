@@ -7,7 +7,17 @@
  */
 import { createHash } from 'node:crypto'
 
-export const DIALOGUE_VARIETY_VERSION = '2026-08-30-kuwaiti-variety-v2-no-posthoc-cast-swap'
+export const DIALOGUE_VARIETY_VERSION = '2026-08-30-kuwaiti-variety-v3-professional-gold-cast'
+
+/* هذه الثلاث ليست تنويعاً متوقعاً ولا قلباً عاماً للكاست. هي توزيع
+   الشخصيتين نفسه الذي سمعه الدكتور واعتمده صراحةً في تشغيلة 33132655399.
+   نبقيه فقط للخمس الذهبية، بينما كل حلقة أخرى تُكتب بأدوارها الصحيحة من
+   البداية ولا تُقلب آلياً. أخطاء «تدرين/تدري» تُصلح في النص الذهبي نفسه. */
+export const DOCTOR_APPROVED_GOLD_CAST_SWAPS = new Set([
+  'the-classroom-that-fears-mistakesarabic',
+  'when-seriousness-becomes-a-mask-for-escapearabic',
+  'how-do-we-assess-without-breaking-the-human-beingarabic',
+])
 
 export const CONVERSATION_FAMILIES = [
   {
@@ -60,14 +70,14 @@ export function shouldSwapConversationCast (slug) {
   return false
 }
 
-export function applyConversationVariety (turns, { slug = '' } = {}) {
+export function applyConversationVariety (turns, { slug = '', preserveDoctorApprovedGoldCast = false } = {}) {
   const family = conversationFamilyForSlug(slug)
   const output = turns.map((turn) => ({ ...turn }))
   const changes = []
   const castSwapBlocked = false
-  const swapCast = false
-  const desiredFirstSpeaker = swapCast ? 'female' : 'male'
-  const castNeedsChange = ['male', 'female'].includes(output[0]?.speaker)
+  const swapCast = preserveDoctorApprovedGoldCast && DOCTOR_APPROVED_GOLD_CAST_SWAPS.has(slug)
+  const desiredFirstSpeaker = 'female'
+  const castNeedsChange = swapCast && ['male', 'female'].includes(output[0]?.speaker)
     && output[0].speaker !== desiredFirstSpeaker
 
   /* الحكم على أول متحدث يجعل العملية idempotent: تشغيل طبقة الصقل مرتين لا
@@ -78,7 +88,7 @@ export function applyConversationVariety (turns, { slug = '' } = {}) {
       const after = before === 'male' ? 'female' : before === 'female' ? 'male' : before
       if (after !== before) {
         turn.speaker = after
-        changes.push({ index, field: 'speaker', before, after, reason: 'تنويع حتمي لقيادة المجلس بلا تغيير النص' })
+        changes.push({ index, field: 'speaker', before, after, reason: 'استعادة توزيع فهد ونورة في المرجع الاحترافي المعتمد' })
       }
     }
   }

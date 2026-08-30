@@ -102,8 +102,16 @@ assert.ok(['off', 'required'].includes(GOLD_ACOUSTIC_MODE),
   `PODCAST_KW_GOLD_ACOUSTIC_GATE غير صالح: ${GOLD_ACOUSTIC_MODE}`)
 const GOLD_ACOUSTIC_REFERENCE_FILE = resolve(ROOT, 'scripts', 'data', 'kuwaiti-gold-acoustic-reference.json')
 const GOLD_ACOUSTIC_REFERENCE = JSON.parse(readFileSync(GOLD_ACOUSTIC_REFERENCE_FILE, 'utf8'))
-const GOLD_REFERENCE_REQUEST_SHA256 = '5325ae90e5f97ea67e09c805594b55a4c03d531c814afd8366875be8578bc55a'
+const PROFESSIONAL_GOLD_FILE = resolve(ROOT, 'scripts', 'data', 'kuwaiti-professional-gold-v13.json')
+const PROFESSIONAL_GOLD = JSON.parse(readFileSync(PROFESSIONAL_GOLD_FILE, 'utf8'))
+const PROFESSIONAL_GOLD_MODE = process.env.PODCAST_KW_PROFESSIONAL_GOLD === '1'
+const PROFESSIONAL_GOLD_BY_SLUG = new Map(PROFESSIONAL_GOLD.episodes.map((episode) => [episode.slug, episode]))
+const PROFESSIONAL_GOLD_EPISODE = PROFESSIONAL_GOLD_BY_SLUG.get(slug) || null
 assert.equal(Number(GOLD_ACOUSTIC_REFERENCE.schemaVersion), 1, 'صيغة مرجع الأذن غير معتمدة')
+assert.equal(Number(PROFESSIONAL_GOLD.schemaVersion), 1, 'صيغة قفل الخمس الاحترافية غير معتمدة')
+assert.equal(PROFESSIONAL_GOLD.episodes.length, 5, 'قفل الخمس الاحترافية ناقص')
+if (PROFESSIONAL_GOLD_MODE) assert.ok(PROFESSIONAL_GOLD_EPISODE,
+  `وضع المرجع الاحترافي لا يقبل حلقة خارج الخمس: ${slug || 'بلا slug'}`)
 assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance) > 0,
   'عتبة مرجع الأذن مفقودة')
 assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.minimumOwnSpeakerAdvantage) >= 0,
@@ -435,7 +443,7 @@ The opening 20 seconds establish the permanent acoustic reference for both speak
 
 Speak contemporary urban Kuwait City Arabic naturally and effortlessly. Identity comes from compact vowels, short thought units, restrained sentence melody, quick acknowledgements, human timing, and relaxed light articulation—not exaggerated consonants. Qaf is lexical and understated. Respect deliberate Kuwaiti spellings such as ظيّج and never formalize them.
 
-Noura stays the exact same mature Kuwaiti woman defined by her first line: compact vowels, narrow melodic range, direct settled endings, and no widening or trailing lilt. Fahad stays the same mature Kuwaiti man. Each target line must remain complete and unhurried enough to understand.
+Noura stays the exact same mature Kuwaiti woman defined by her first line: compact vowels, narrow melodic range, direct settled endings, no Emirati or Omani-style widening or trailing lilt. Fahad stays the same mature Kuwaiti man. Each target line must remain complete and unhurried enough to understand.
 
 Fahad keeps the compact Kuwait City vowel timing, light consonants, and short settled endings established by his first line. Never widen, harden, or recast his cadence later in the take.
 
@@ -444,14 +452,6 @@ VOICE ROUTING IS LITERAL AND IMMUTABLE. Every Fahad-labelled line uses the same 
 At each labelled speaker handoff, leave one tiny clean silence of roughly 100–180ms. Never place a silence that long inside a labelled line. This is only natural turn timing for clean editing—not a dramatic pause, chapter, scene, or acoustic reset.
 
 This is conversation, not narration, advertising, an audiobook, or a podcast presenter. Let ordinary lines pass simply. Research sounds like a knowledgeable Kuwaiti recalling evidence mid-conversation, with no formal-Arabic or documentary reset. Emotion is warm and understated; final words are never staged.
-
-SILENT KUWAIT CITY RHYTHM ANCHOR — NEVER SPEAK THESE SAMPLE LINES:
-«لا، مو هذا قصدي.»
-«عيل شنو تقصد؟»
-«خلنا ناخذها من صوب ثاني.»
-«إي بس مو لهالدرجة… كمل.»
-
-If any later line starts to feel broader, polished, or generic, return silently to this exact compact Kuwait City rhythm. Never announce or read the sample.
 
 Read every labelled line exactly once and in order. Add, omit, repeat, paraphrase, or recast nothing. The transcript was already rewritten upstream into approved spoken Kuwaiti; perform that version only.`
 /* وضع C بلا أي وسم داخل السطر. القياس ربط قفزات فهد إلى طبقة نورة بأدواره
@@ -1240,7 +1240,7 @@ const nearestTimbreReference = (center, references) => references
    **أقرب مرجع صريح**، ويظل الفصل عن صوت الطرف
    الثاني والطبقة الصوتية حارسين مستقلين؛ فلا تمر بصمة قريبة من نورة على أنها
    فهد، ولا يمر تفسير جديد بعيد في الرنين والطبقة معاً. */
-export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOUSTIC_REFERENCE, pitchMedians = {}) {
+export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOUSTIC_REFERENCE, pitchMedians = {}, options = {}) {
   const maximum = Number(reference?.maximumTimbreDistance)
   const minimum = Number(reference?.minimumUtterancesPerSpeaker || 4)
   const minimumAdvantage = Number(reference?.minimumOwnSpeakerAdvantage || 0)
@@ -1268,6 +1268,9 @@ export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOU
     const pass = enoughSamples && timbrePass && separationPass && pitchPass
     speakers[speaker] = {
       sampleCount: measured.sampleCount,
+      ...(options.includeMeasurements === true
+        ? { measuredTimbreCenter: measured.center?.map((value) => Number(value.toFixed(5))) || null }
+        : {}),
       nearestApprovedReference: nearest?.id || null,
       distance: Number.isFinite(distance) ? Number(distance.toFixed(4)) : null,
       crossDistance: Number.isFinite(crossDistance) ? Number(crossDistance.toFixed(4)) : null,
@@ -2254,6 +2257,9 @@ if (GOLD_AUDIT_AUDIO || GOLD_AUDIT_TIMELINE) {
   const result = goldAcousticReferenceGate(
     resolve(ROOT, GOLD_AUDIT_AUDIO),
     JSON.parse(readFileSync(resolve(ROOT, GOLD_AUDIT_TIMELINE), 'utf8')),
+    GOLD_ACOUSTIC_REFERENCE,
+    {},
+    { includeMeasurements: true },
   )
   console.log(JSON.stringify(result, null, 2))
   process.exit(result.status === 'pass' ? 0 : 3)
@@ -2502,11 +2508,11 @@ if (SELF_TEST) {
     'رأس Vertex المختصر يمنع إعادة تفسير أي متحدث بعد المرجع الافتتاحي')
   assert.match(PROMPT_VERTEX_C_HEAD, /Fahad keeps the compact Kuwait City vowel timing[\s\S]*Never widen, harden, or recast his cadence later in the take/,
     'قفل فهد نفسه حاضر في مسار Vertex الإنتاجي')
-  assert.match(PROMPT_VERTEX_C_HEAD, /SILENT KUWAIT CITY RHYTHM ANCHOR[\s\S]*خلنا ناخذها من صوب ثاني/,
-    'Vertex يحمل مرساة إيقاع كويتية إيجابية صامتة لا مجرد نفي')
+  assert.match(PROMPT_VERTEX_C_HEAD, /no Emirati or Omani-style widening or trailing lilt/,
+    'رأس Vertex التاريخي يحمل القفل الصريح الذي كان موجوداً في النسخة الاحترافية')
   assert.doesNotMatch(PROMPT_VERTEX_C_HEAD,
-    /Emirati|Omani|Saudi|Najdi|Hejazi|Bahraini|Qatari|Iraqi|Egyptian|Levantine|عُماني|إماراتي|سعودي|نجدي|قطري|بحريني|عراقي|شامي|مصري/i,
-    'برومت الممثل نفسه لا يزرع أسماء اللهجات المرفوضة في ذاكرة الصوت')
+    /Saudi|Najdi|Hejazi|Bahraini|Qatari|Iraqi|Egyptian|Levantine|سعودي|نجدي|قطري|بحريني|عراقي|شامي|مصري/i,
+    'لا تدخل أسماء لهجات جديدة إلى رأس Vertex التاريخي')
   assert.doesNotMatch(buildTimedMaster.toString(), /kuwaiti-closing-approved|CLOSING_CLIP|useFixedClosing/,
     'الختام لا يُستبدل بمقطعٍ قديم يغيّر هوية الصوت في آخر جملة')
   assert.match(buildTimedMaster.toString(), /const file = files\[i\]/,
@@ -2870,19 +2876,44 @@ if (SELF_TEST) {
   assert.equal(PRESERVE_NATIVE_TURN_TIMING, true,
     'الافتراض يحفظ الصمت وتوقيت الردود اللذين ولّدهما النداء نفسه')
   assert.equal(GOLD_ACOUSTIC_REFERENCE.source.audioSha256,
-    '7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1',
-    'مرجع الأذن الذهبي مثبت ببصمة ملف الحلقة الأولى، لا باسمٍ قابل للتبديل')
+    '19edb926f84c909b088fcdc505ec64d00fb2ba86f9f06a11b8bdb8fd1c914c7d',
+    'مرجع الأذن مثبت ببصمة الحلقة الأولى من الخمس الاحترافية')
   assert.deepEqual(GOLD_ACOUSTIC_REFERENCE.approvedSources.map((source) => source.slug),
-    [PILOT_SLUG],
-    'مرجع الأذن لا يتعلم من الحلقات ٢–٥ التي رفضها الدكتور')
+    PROFESSIONAL_GOLD.episodes.map((episode) => episode.slug),
+    'مرجع الأذن يحمل الخمس التي اعتمدها الدكتور، بنفس الترتيب')
   assert.deepEqual(GOLD_ACOUSTIC_REFERENCE.approvedSources.map((source) => source.audioSha256), [
-    '7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1',
-  ], 'الذهب الوحيد هو بايتات الحلقة الأولى التي اعتمدها الدكتور صراحةً')
+    '19edb926f84c909b088fcdc505ec64d00fb2ba86f9f06a11b8bdb8fd1c914c7d',
+    'bbbb4596100a9112d5df06db15692859224c27a08d5761c9f7c179000dad9e7d',
+    '37fe8583c622ac2ebc8bdc82a3ef7bf8a49d89e27657b1a3242fbb58b7c50edd',
+    'c09754cbeba753c2584ec6a67f718344874baa164fae87623dc243b294bfee19',
+    '9bd0990ec53130f99e54b2be276ddd6cbf93a8b37d1771802bc0774cac2c0924',
+  ], 'بصمات الخمس هي الملفات التي سمعها الدكتور واعتمدها صراحةً')
   assert.ok(GOLD_ACOUSTIC_REFERENCE.approvedSources.every((source) => source.explicitlyApproved === true),
     'لا تدخل أي عينة المرجع الذهبي باستنتاجٍ من كلام الدكتور')
   assert.ok(!GOLD_ACOUSTIC_REFERENCE.approvedSources.some((source) => source.audioSha256
     === '048097c1e206bea66358b46a91ed23b9488b9ab4b43e78b8536f1998b679de32'),
   'Take 3111 السعودي مسحوب نهائياً من التعلم والاعتماد')
+  assert.equal(PROFESSIONAL_GOLD.approvedRunId, 33132655399,
+    'قفل الأداء يرجع إلى التشغيلة التي قال عنها الدكتور إن الخمس كلها رائعة')
+  assert.deepEqual(PROFESSIONAL_GOLD.episodes.map((episode) => episode.seed), [2101, 2102, 2103, 2114, 2115],
+    'كل حلقة تحتفظ ببذرتها الناجحة؛ 04 و05 لا ترجعان إلى البذرتين المرفوضتين 2104 و2105')
+  assert.deepEqual(PROFESSIONAL_GOLD.immutablePerformance, {
+    provider: 'ai-studio',
+    model: 'gemini-2.5-pro-preview-tts',
+    language: 'ar',
+    profile: 'kuwaiti-urban-soft-v2',
+    promptMode: 'c',
+    maleVoice: 'Puck',
+    femaleVoice: 'Zephyr',
+    oneTake: true,
+    splitAtBridges: false,
+    speakerIsolation: false,
+    nativeSpokenBase: '2026-08-28-native-kuwaiti-v13-context-register',
+    policy: 'Freeze accent, cast, cadence, provider, prompt and approved seed. Only explicit word-level corrections may change the transcript.',
+  }, 'عقد الأداء الاحترافي تغيّر')
+  assert.ok(PROFESSIONAL_GOLD.episodes.every((episode) => /^[a-f0-9]{64}$/.test(episode.correctedSourceSha256)
+    && /^[a-f0-9]{64}$/.test(episode.correctedRequestSha256)),
+  'كل حلقة تحتاج بصمة نص مصحح وبصمة طلب TTS مصحح قبل الصرف')
   assert.equal(timbreDistance(
     GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter,
     GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter,
@@ -2890,13 +2921,16 @@ if (SELF_TEST) {
   for (const speaker of ['male', 'female']) {
     const own = approvedTimbreReferencesFor(GOLD_ACOUSTIC_REFERENCE, speaker)
     const other = approvedTimbreReferencesFor(GOLD_ACOUSTIC_REFERENCE, speaker === 'male' ? 'female' : 'male')
-    assert.equal(nearestTimbreReference(own[0].timbreCenter, own).id,
-      'run-33271180413-seed-2101', `مرجع الحلقة الأولى المعتمد لـ${speaker} يطابق نفسه`)
-    const ownDistance = nearestTimbreReference(own[0].timbreCenter, own).distance
-    const crossDistance = nearestTimbreReference(own[0].timbreCenter, other).distance
-    assert.ok(crossDistance - ownDistance >= GOLD_ACOUSTIC_REFERENCE.minimumOwnSpeakerAdvantage,
-      `مرجع الحلقة الأولى لـ${speaker} يبقى أقرب إلى صاحبه من الصوت المقابل`)
-    const shiftedGold = own[0].timbreCenter.map((value) => value + 0.4)
+    assert.equal(own.length, 5, `كل حلقة معتمدة تعطي مرجعاً مستقلاً لـ${speaker}`)
+    for (const approved of own) {
+      assert.equal(nearestTimbreReference(approved.timbreCenter, own).id, approved.id,
+        `مرجع ${approved.id} لـ${speaker} يطابق نفسه`)
+      const ownDistance = nearestTimbreReference(approved.timbreCenter, own).distance
+      const crossDistance = nearestTimbreReference(approved.timbreCenter, other).distance
+      assert.ok(crossDistance - ownDistance >= GOLD_ACOUSTIC_REFERENCE.minimumOwnSpeakerAdvantage,
+        `مرجع ${approved.id} يبقى أقرب إلى صاحبه من الصوت المقابل`)
+    }
+    const shiftedGold = own[0].timbreCenter.map((value) => value + 1.2)
     assert.ok(nearestTimbreReference(shiftedGold, own).distance
       > GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance,
     `تفسير حنجرة بعيد عن كل مراجع ${speaker} لا يمر لمجرد اسم الـpreset`)
@@ -2972,17 +3006,25 @@ const chunks = chunkTurns(turns)
 const generationGroups = continuityGenerationGroups(chunks)
 const prompts = generationGroups.map((group, index) =>
   promptFor(group.turns, index, chunks.length, PROMPT_MODE, group.warmupTurns, group.warmupEstimatedSec))
-const locksDoctorApprovedGoldRequest = slug === GOLD_ACOUSTIC_REFERENCE.source.slug
-  && PROMPT_MODE === 'c'
-  && USE_VERTEX
-  && MALE_VOICE === 'Puck'
-  && FEMALE_VOICE === 'Zephyr'
-  && !ISOLATE_SPEAKER_STEMS
-  && chunks.length === 1
-if (locksDoctorApprovedGoldRequest) {
-  assert.equal(ttsRequestHash(prompts[0]), GOLD_REFERENCE_REQUEST_SHA256,
-    'طلب الحلقة المرجعية تغيّر عن البايتات التي أنشأت التسجيل الذهبي؛ ممنوع صرف TTS')
-  console.log(`🔐 طلب الحلقة المرجعية مطابق للذهبي حرفياً: ${GOLD_REFERENCE_REQUEST_SHA256}`)
+if (PROFESSIONAL_GOLD_MODE) {
+  const contract = PROFESSIONAL_GOLD.immutablePerformance
+  assert.equal(TTS_PROVIDER, contract.provider, 'الخمس الاحترافية مقفولة على AI Studio؛ Vertex غيّر اللهجة والشخصيات')
+  assert.equal(MODEL, contract.model, 'نموذج الخمس الاحترافية تغيّر')
+  assert.equal(TTS_LANGUAGE, contract.language, 'لغة طلب الخمس الاحترافية تغيّرت')
+  assert.equal(PROFILE, contract.profile, 'بروفايل الخمس الاحترافية تغيّر')
+  assert.equal(PROMPT_MODE, contract.promptMode, 'برومت الخمس الاحترافية تغيّر')
+  assert.equal(MALE_VOICE, contract.maleVoice, 'صوت فهد الاحترافي تغيّر')
+  assert.equal(FEMALE_VOICE, contract.femaleVoice, 'صوت نورة الاحترافي تغيّر')
+  assert.equal(ISOLATE_SPEAKER_STEMS, false, 'الخمس الاحترافية حوار واحد، مو مسارين مركبين')
+  assert.equal(chunks.length, 1, 'الخمس الاحترافية لازم تتولد Take واحداً بلا تقسيم')
+  assert.equal(SEED, PROFESSIONAL_GOLD_EPISODE.seed, 'بذرة الحلقة تغيّرت عن النسخة التي اعتمدها الدكتور')
+  assert.equal(sourceLock?.shortContentSha256, PROFESSIONAL_GOLD_EPISODE.correctedSourceSha256,
+    'النص المنطوق خرج عن المرجع الاحترافي وتصحيحات الكلمات المعتمدة')
+  assert.equal(sourceLock?.professionalGoldRunId, PROFESSIONAL_GOLD.approvedRunId,
+    'قفل المصدر ليس من تشغيلة المرجع الاحترافي')
+  assert.equal(ttsRequestHash(prompts[0]), PROFESSIONAL_GOLD_EPISODE.correctedRequestSha256,
+    'طلب TTS تغيّر عن البرومت الاحترافي + تصحيحات الكلمات فقط؛ ممنوع صرف TTS')
+  console.log(`🔐 المرجع الاحترافي مقفول: run ${PROFESSIONAL_GOLD.approvedRunId} · seed ${SEED} · request ${PROFESSIONAL_GOLD_EPISODE.correctedRequestSha256}`)
 }
 if (DRY_RUN) {
   console.log(`✓ ${slug}: ${turns.length} مداخلة → ${chunks.length === 1 ? 'Take واحد متصل' : `${chunks.length} طلبات متداخلة بإحماء صوتي`}`)

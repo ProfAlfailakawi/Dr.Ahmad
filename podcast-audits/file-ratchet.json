@@ -1,6 +1,6 @@
 {
  "note": "خط أساس أعضاء الخطّ. النقصان فيه يعني أن ملفاً زال — والحذف المقصود يُعتمد هنا صراحةً، فلا يمرّ حذفٌ لم يره أحد.",
- "updated": "2026-08-29",
+ "updated": "2026-08-31",
  "guarded": [
   "scripts",
   "src/data/kuwaiti-*",
@@ -234,6 +234,7 @@
   "scripts/daily-radar-review-queue.mjs",
   "scripts/daily-radar.mjs",
   "scripts/data/kuwaiti-gold-acoustic-reference.json",
+  "scripts/data/kuwaiti-professional-gold-v13.json",
   "scripts/deploy-firestore-rules-admin.mjs",
   "scripts/dialogue-studio.mjs",
   "scripts/editorial-board-calibration.mjs",
@@ -293,6 +294,7 @@
   "scripts/lib/encyclopedia-auto-transcribe.mjs",
   "scripts/lib/encyclopedia-buzz-transcripts.mjs",
   "scripts/lib/human-reading-pipeline.mjs",
+  "scripts/lib/kuwaiti-closing-variants.mjs",
   "scripts/lib/kuwaiti-dialogue-variety.mjs",
   "scripts/lib/kuwaiti-gender-address.mjs",
   "scripts/lib/kuwaiti-lexicon-screening.mjs",
@@ -340,6 +342,7 @@
   "scripts/polish-encyclopedia-transcripts.mjs",
   "scripts/polish-kuwaiti-conversational-flow.mjs",
   "scripts/polish-kuwaiti-spoken-style.mjs",
+  "scripts/prepare-kuwaiti-professional-gold.mjs",
   "scripts/prepare-kuwaiti-promotion.mjs",
   "scripts/private-books-memory.mjs",
   "scripts/prompts/dialogue-ar.txt",

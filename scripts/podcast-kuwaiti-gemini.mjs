@@ -2122,6 +2122,12 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
   const chosen = MUSIC_OVERRIDE ? { track: MUSIC_OVERRIDE, offset: 0 } : pickEpisodeMusic(episodeSlug, library)
   const musicPath = chosen ? (MUSIC_OVERRIDE || resolve(ROOT, 'music', chosen.track)) : ''
   const hasMusic = Boolean(musicPath) && existsSync(musicPath)
+  /* الموسيقى جزءٌ إلزامي من النسخة المنشورة، لكنها تبقى خارج طلب Gemini.
+     إذا ضاعت المكتبة من سياق GitHub نفشل بوضوح بدل تسليم ملف جاف يوهم
+     الدكتور أن الحلقة النهائية اكتملت. */
+  assert.ok(hasMusic, `${episodeSlug}: موسيقى المقدمة والخاتمة والجسور مفقودة من سياق البناء`)
+  assert.equal(turns.slice(0, -1).filter((turn) => turn.musicBridgeAfter).length, 2,
+    `${episodeSlug}: النسخة المنشورة تحتاج جسرين موسيقيين بالضبط`)
   if (hasMusic) console.log(`♪ نغمة الحلقة: ${chosen.track}${chosen.offset ? ` (من الثانية ${chosen.offset})` : ''}`)
   const items = []
   /* الكلام يدخل تحت ذيل المقدّمة لا بعد صمتها، تماماً كالفصحى. */
@@ -2182,6 +2188,9 @@ function buildTimedMaster(turns, files, output, episodeSlug = '') {
   }
 
   const musicItems = [identity.intro, identity.outro].filter(Boolean)
+  assert.equal(bridgeItems.length, 2, `${episodeSlug}: فشل تركيب الجسرين الموسيقيين`)
+  assert.ok(identity.intro && identity.outro,
+    `${episodeSlug}: فشل تركيب موسيقى البداية أو النهاية`)
   const all = [...items, ...bridgeItems, ...musicItems].sort((a,b)=>a.startSec-b.startSec)
   const ffInputs = []; const filters = []
   all.forEach((item, idx) => {
@@ -2517,6 +2526,10 @@ if (SELF_TEST) {
     'الختام لا يُستبدل بمقطعٍ قديم يغيّر هوية الصوت في آخر جملة')
   assert.match(buildTimedMaster.toString(), /const file = files\[i\]/,
     'كل دور، ومنه الاسم في الختام، يأتي من الـTake الحالي نفسه')
+  assert.match(buildTimedMaster.toString(), /assert\.ok\(hasMusic/,
+    'الماستر يفشل ولا يسلّم ملفاً جافاً إذا ضاعت مكتبة الموسيقى')
+  assert.match(buildTimedMaster.toString(), /assert\.equal\(bridgeItems\.length, 2/,
+    'الماستر لا يُقبل إلا بمقدمة وخاتمة وجسرين مركبين خارج Gemini')
   assert.doesNotMatch(`${cPrompt}\n${cContinuation}\n${cSingleCall}`, /\b(?:music|bridge)\b/i,
     'طلب الصوت لا يذكر الموسيقى أو الجسر إطلاقاً')
   const cTranscript = cSingleCall.split('# TRANSCRIPT\n\n')[1]
@@ -2878,7 +2891,7 @@ if (SELF_TEST) {
   assert.equal(GOLD_ACOUSTIC_REFERENCE.source.audioSha256,
     '19edb926f84c909b088fcdc505ec64d00fb2ba86f9f06a11b8bdb8fd1c914c7d',
     'مرجع الأذن مثبت ببصمة الحلقة الأولى من الخمس الاحترافية')
-  assert.deepEqual(GOLD_ACOUSTIC_REFERENCE.approvedSources.map((source) => source.slug),
+  assert.deepEqual(GOLD_ACOUSTIC_REFERENCE.approvedSources.slice(0, 5).map((source) => source.slug),
     PROFESSIONAL_GOLD.episodes.map((episode) => episode.slug),
     'مرجع الأذن يحمل الخمس التي اعتمدها الدكتور، بنفس الترتيب')
   assert.deepEqual(GOLD_ACOUSTIC_REFERENCE.approvedSources.map((source) => source.audioSha256), [
@@ -2887,7 +2900,11 @@ if (SELF_TEST) {
     '37fe8583c622ac2ebc8bdc82a3ef7bf8a49d89e27657b1a3242fbb58b7c50edd',
     'c09754cbeba753c2584ec6a67f718344874baa164fae87623dc243b294bfee19',
     '9bd0990ec53130f99e54b2be276ddd6cbf93a8b37d1771802bc0774cac2c0924',
-  ], 'بصمات الخمس هي الملفات التي سمعها الدكتور واعتمدها صراحةً')
+    '2c20bffe8009dffda296e45add5991e9818d414e91ff461cc716028bcdf30e2e',
+  ], 'بصمات الخمس ومعها هوية الحلقة 02 الجديدة هي الملفات التي حكم عليها الدكتور')
+  assert.equal(GOLD_ACOUSTIC_REFERENCE.approvedSources.at(-1).approvalScope,
+    'speaker-identity-and-kuwaiti-dialect-only',
+    'Take الحلقة 02 الجديد مرجع للصوت واللهجة فقط؛ أخطاء كلماته لا تُعتمد')
   assert.ok(GOLD_ACOUSTIC_REFERENCE.approvedSources.every((source) => source.explicitlyApproved === true),
     'لا تدخل أي عينة المرجع الذهبي باستنتاجٍ من كلام الدكتور')
   assert.ok(!GOLD_ACOUSTIC_REFERENCE.approvedSources.some((source) => source.audioSha256
@@ -2921,7 +2938,7 @@ if (SELF_TEST) {
   for (const speaker of ['male', 'female']) {
     const own = approvedTimbreReferencesFor(GOLD_ACOUSTIC_REFERENCE, speaker)
     const other = approvedTimbreReferencesFor(GOLD_ACOUSTIC_REFERENCE, speaker === 'male' ? 'female' : 'male')
-    assert.equal(own.length, 5, `كل حلقة معتمدة تعطي مرجعاً مستقلاً لـ${speaker}`)
+    assert.equal(own.length, 6, `الخمس وهوية الحلقة 02 الجديدة تعطينا ستة مراجع مستقلة لـ${speaker}`)
     for (const approved of own) {
       assert.equal(nearestTimbreReference(approved.timbreCenter, own).id, approved.id,
         `مرجع ${approved.id} لـ${speaker} يطابق نفسه`)

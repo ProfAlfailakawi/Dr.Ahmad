@@ -12,6 +12,24 @@ const kindLabel: Record<string, string> = {
   youtube: 'يوتيوب', television: 'تلفزيون', radio: 'إذاعة', audio: 'إذاعة', podcast: 'بودكاست',
 }
 
+/* حين لا صورة للظهور (لقاء إذاعي/صوتي، أو صورة يوتيوب سقطت)، لا نترك مربّعاً
+   رمادياً فارغاً — بل هويةً بصريةً مصمَّمة: موجةٌ صوتية بلون العلامة على تدرّج
+   هادئ، فيقرأ الكرت مقصوداً لا ناقصاً. مبنيّة كلها من SVG/CSS بلا أي أصلٍ خارجي. */
+const POSTER_BARS = [14, 26, 40, 28, 52, 34, 60, 42, 66, 48, 66, 42, 60, 34, 52, 28, 40, 26, 14]
+function MediaPoster({ hidden = false, compact = false }: { hidden?: boolean; compact?: boolean }) {
+  return <div className={`media-poster${compact ? ' media-poster--compact' : ''}`} hidden={hidden} aria-hidden="true">
+    <svg className="media-poster__wave" viewBox="0 0 240 120" preserveAspectRatio="xMidYMid meet" role="presentation" focusable="false">
+      {POSTER_BARS.map((height, index) => <rect key={index} x={12 + index * 12} y={(120 - height) / 2} width={5} height={height} rx={2.5} style={{ opacity: 0.32 + (height / 66) * 0.5 }} />)}
+    </svg>
+  </div>
+}
+/* عند فشل صورة الفيديو: أخفِ الصورة واكشف البديل المصمَّم بدل مربّعٍ فارغ. */
+const revealPoster = (img: HTMLImageElement) => {
+  img.style.display = 'none'
+  const poster = img.closest('.spatial-media, .media-editorial-row__visual')?.querySelector<HTMLElement>('.media-poster')
+  if (poster) poster.hidden = false
+}
+
 const mediaYear = (item: { iso?: string; date?: string }) => {
   const match = String(item.iso || item.date || '').match(/(?:19|20)\d{2}/)
   return match?.[0] || ''
@@ -134,7 +152,9 @@ export default function Media() {
                   return <article key={item.slug} className={`media-feature-card spatial-card group relative overflow-hidden border border-hair bg-canvas ${mediaIndex === 0 ? 'is-lead' : 'is-secondary'}`}>
                     <Link to={`/media/${item.slug}`} viewTransition className="block h-full">
                       <div className={`spatial-media relative overflow-hidden bg-wash ${video ? 'complete-media-frame' : ''}`} style={{ aspectRatio: '16 / 9', viewTransitionName: sharedViewName('media-visual', item.slug), ['--spatial-image' as string]: thumbnail ? `url(${thumbnail})` : 'none', ...(video ? ({ '--media-thumb': `url(${thumbnail})` } as CSSProperties) : {}) }}>
-                        {video ? <><img decoding="async" src={thumbnail} alt="" loading={mediaIndex === 0 ? 'eager' : 'lazy'} onLoad={(event) => { const img = event.currentTarget; if (!item.thumbnail && img.naturalWidth <= 120 && img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; }} onError={(event) => { const img = event.currentTarget; if (img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; else img.style.display = 'none'; }} className="complete-media-image h-full w-full" /><span className="cinematic-play" aria-hidden><SocialIcon name="Play" size={16} /></span></> : <div className="flex h-full items-center justify-center"><div className="text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-accent/25 bg-canvas text-accent"><SocialIcon name="Play" size={18} /></span></div></div>}
+                        <MediaPoster hidden={video} />
+                        {video && <img decoding="async" src={thumbnail} alt="" loading={mediaIndex === 0 ? 'eager' : 'lazy'} onLoad={(event) => { const img = event.currentTarget; if (!item.thumbnail && img.naturalWidth <= 120 && img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; }} onError={(event) => { const img = event.currentTarget; if (img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`; else revealPoster(img); }} className="complete-media-image h-full w-full" />}
+                        <span className="cinematic-play" aria-hidden><SocialIcon name="Play" size={16} /></span>
                       </div>
                       <div className="p-5 md:p-6">
                         <div className="flex items-center gap-2 text-[.66rem] text-soft"><span className="font-semibold text-accent">{kindLabel[item.kind] || 'ظهور إعلامي'}</span>{available && <><span>·</span><span>مفهرس زمنياً</span></>}</div>
@@ -173,7 +193,8 @@ export default function Media() {
                       return <article key={item.slug} className="media-editorial-row group relative">
                         <Link to={`/media/${item.slug}`} viewTransition className="media-editorial-row__link">
                           <div className="media-editorial-row__visual" style={{ ['--spatial-image' as string]: thumbnail ? `url(${thumbnail})` : 'none' }}>
-                            {video && thumbnail ? <img src={thumbnail} alt="" loading="lazy" decoding="async" /> : <span aria-hidden><SocialIcon name="Play" size={15} /></span>}
+                            <MediaPoster hidden={Boolean(video && thumbnail)} compact />
+                            {video && thumbnail && <img src={thumbnail} alt="" loading="lazy" decoding="async" onError={(event) => revealPoster(event.currentTarget)} />}
                           </div>
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2 text-[.62rem] text-soft"><span className="font-semibold text-accent">{kindLabel[item.kind] || 'ظهور إعلامي'}</span><span>·</span><span>{item.outlet || item.program}</span>{item.date && <><span>·</span><time>{item.date}</time></>}</div>

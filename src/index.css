@@ -4869,6 +4869,34 @@ html.dark .spatial-hero {
 }
 .spatial-media { background-color: rgb(var(--c-wash)); }
 
+/* بديلٌ مصمَّم للظهور بلا صورة: هويةٌ بصرية بدل مربّعٍ رمادي فارغ.
+   يقبع خلف الصورة (z:0) فإن سقطت صورةُ الفيديو ظهر تلقائياً، ويملأ كامل
+   الإطار في اللقاءات الصوتية والإذاعية. `display:grid` يُبطِل [hidden]
+   الافتراضي، فنُعيد الإخفاء صراحةً كي لا يظهر خلف الصور السليمة. */
+.media-poster {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: rgb(var(--c-accent));
+  background:
+    radial-gradient(130% 120% at 50% 6%, rgb(var(--c-accent) / .14), transparent 62%),
+    linear-gradient(155deg, rgb(var(--c-wash)), rgb(var(--c-canvas)));
+}
+.media-poster[hidden] { display: none; }
+.media-poster::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgb(var(--c-accent) / .08);
+}
+.media-poster__wave { inline-size: 62%; max-inline-size: 15rem; block-size: auto; }
+.media-poster__wave rect { fill: currentColor; }
+.media-poster--compact .media-poster__wave { inline-size: 76%; max-inline-size: 4.4rem; }
+
 /* التركيز السينمائي: لا نكبر البطاقة ولا نزاحم التخطيط؛ فقط يهدأ ما حولها.
    يعمل على أجهزة المؤشر فقط كي تبقى الهواتف ساكنة وسريعة. */
 @media (hover: hover) and (pointer: fine) {

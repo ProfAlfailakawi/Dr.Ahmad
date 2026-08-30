@@ -392,12 +392,31 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
 
         {!project && path === 'public' && <div className="mt-6 grid gap-4"><div className="grid gap-4 lg:grid-cols-2"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الموضوع؟</span><textarea className={`${input} min-h-28`} value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="فكرة، سؤال، موقف، دراسة أو حدث…" /></label><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الرسالة التي تريد إيصالها؟</span><textarea className={`${input} min-h-28`} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="اختياري؛ إن تركته يختصر المحرك جوهر الموضوع." /></label></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">الجمهور</span><input className={input} value={audience} onChange={(event) => setAudience(event.target.value)} /></label><CastPicker castMode={castMode} setCastMode={setCastMode} /><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} look={look} setLook={setLook} clipSeconds={clipSeconds} setClipSeconds={setClipSeconds} /><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ربط اختياري بمقال</span><select className={input} value={linkedArticleSlug} onChange={(event) => setLinkedArticleSlug(event.target.value)}><option value="">بلا ربط</option>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.title}</option>)}</select></label></div><details className="rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-soft">خيارات متقدمة عند الحاجة</summary><div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]"><label><span className="mb-2 block text-[.7rem] font-semibold text-ink">مصدر أو دراسة مرتبطة</span><input className={input} value={source} onChange={(event) => setSource(event.target.value)} placeholder="رابط أو مرجع مختصر — اختياري" /></label><div className="flex flex-wrap items-center gap-5"><label className="text-[.74rem] text-ink"><input type="checkbox" checked={wantsSeries} onChange={(event) => setWantsSeries(event.target.checked)} /> الموضوع يحتاج سلسلة</label></div></div></details></div>}
 
-        {!project && path !== 'reel' && <div className="mt-5 flex flex-wrap items-center gap-3"><button type="button" onClick={buildProject} className={primary}>حلّل وابنِ خطة Flow</button><span className="text-[.7rem] text-soft">3 مقاطع يومياً · 8 ثوانٍ لكل مقطع · لا توليد فيديو داخل الموقع</span></div>}
+        {!project && path !== 'reel' && <div className="mt-5 flex flex-wrap items-center gap-3"><button type="button" onClick={buildProject} className={primary}>حلّل وابنِ خطة Flow</button><span className="text-[.7rem] text-soft">3 مقاطع يومياً · {arabicCountPhrase(clipSeconds, SECOND_FORMS)} لكل مقطع · لا توليد فيديو داخل الموقع</span></div>}
         {notice && <p className="mt-4 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.76rem] leading-relaxed text-accent">{notice}</p>}
       </section>
 
       {project && <>
-        <section className={card} data-live-director-recommendation="true"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Metric label="المدة المقترحة" value={arabicCountPhrase(project.duration, SECOND_FORMS)} /><Metric label="المقاطع" value={`${project.segmentCount} × 8 ثوانٍ`} /><Metric label="خطة التوليد" value={arabicCountPhrase(project.days, DAY_FORMS)} /><Metric label="الحالة" value={project.status} /></div><p className="mt-4 border-t border-hair pt-4 text-[.78rem] leading-relaxed text-soft">{project.durationReason}</p>{project.series && <div className="mt-4 rounded-xl border border-accent/20 bg-canvas p-4"><strong className="text-[.76rem] text-accent">الموضوع يستحق سلسلة بدل الحشر</strong><ol className="mt-2 grid gap-1 text-[.72rem] text-soft">{project.seriesPlan.map((item) => <li key={item}>{item}</li>)}</ol></div>}</section>
+        {/* العلّة: منتقيا «من يظهر» و«مدة المقطع» كانا في النموذج وحده، فيختفيان
+            بمجرد بناء المشروع — فلا يراهما الدكتور ولا يستطيع تبديلهما إلا
+            بهدم المشروع من أوله. صارا حاضرين هنا مع إعادة بناءٍ بنقرة. */}
+        <section className={card} data-live-director-rebuild="true">
+          <p className="text-[.72rem] font-semibold text-accent">بدّل القرار وأعد البناء</p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
+            <CastPicker castMode={castMode} setCastMode={setCastMode} />
+            <label className="rounded-xl border border-hair bg-canvas p-3">
+              <span className="text-[.72rem] font-semibold text-ink">مدة المقطع الواحد</span>
+              <select className={`${input} mt-2`} value={clipSeconds} onChange={(event) => setClipSeconds(Number(event.target.value))}>
+                {FLOW_CLIP_SECONDS.map((item) => <option key={item} value={item}>{arabicCountPhrase(item, SECOND_FORMS)}</option>)}
+              </select>
+              <span className="mt-2 block text-[.66rem] leading-relaxed text-soft">{FLOW_SECONDS_NOTE[clipSeconds] || ''}</span>
+            </label>
+            <button type="button" onClick={buildProject} className={primary}>أعد بناء البرومبتات</button>
+          </div>
+          <p className="mt-3 text-[.68rem] leading-relaxed text-soft">إعادة البناء تكتب البرومبتات من جديد بالقرار الجديد؛ ما ولّدتَه في Flow لا يتأثر.</p>
+        </section>
+
+        <section className={card} data-live-director-recommendation="true"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"><Metric label="المدة المقترحة" value={arabicCountPhrase(project.duration, SECOND_FORMS)} /><Metric label="المقاطع" value={`${project.segmentCount} × ${arabicCountPhrase(project.segments[0]?.duration || project.clipSeconds || clipSeconds, SECOND_FORMS)}`} /><Metric label="خطة التوليد" value={arabicCountPhrase(project.days, DAY_FORMS)} /><Metric label="من يظهر" value={CAST_LABELS[project.castMode || (project.useAvatar ? 'avatar' : 'people')]} /><Metric label="الحالة" value={project.status} /></div><p className="mt-4 border-t border-hair pt-4 text-[.78rem] leading-relaxed text-soft">{project.durationReason}</p>{project.series && <div className="mt-4 rounded-xl border border-accent/20 bg-canvas p-4"><strong className="text-[.76rem] text-accent">الموضوع يستحق سلسلة بدل الحشر</strong><ol className="mt-2 grid gap-1 text-[.72rem] text-soft">{project.seriesPlan.map((item) => <li key={item}>{item}</li>)}</ol></div>}</section>
 
         <section className={card}><p className="text-[.72rem] font-semibold text-accent">السيناريو المختصر</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">{project.title}</h3><p className="mt-2 text-[.78rem] leading-relaxed text-soft">{project.centralMessage}</p><div className="mt-4 rounded-xl border border-hair bg-canvas p-4"><span className="text-[.66rem] font-semibold text-accent">النص المنطوق · {arabicCountPhrase(project.narration.split(/\s+/).filter(Boolean).length, WORD_PLAIN_FORMS)}</span><p className="mt-2 text-[.8rem] leading-loose text-ink">{project.narration}</p></div><details className="mt-4 rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-ink">قفل الهوية وملاحظات الاستمرارية</summary><p className="mt-3 text-[.72rem] leading-relaxed text-soft">{project.identityLock}</p><ul className="mt-3 grid gap-1 text-[.7rem] text-soft">{project.continuityNotes.map((item) => <li key={item}>— {item}</li>)}</ul></details></section>
 
@@ -464,7 +483,7 @@ function ClipCard(props: ClipCardProps) {
       <div className="flex items-start justify-between gap-3">
         <span>
           <span className="block text-[.62rem] font-semibold text-accent">المقطع {segment.order} · {segment.role}</span>
-          <strong className="mt-1 block text-[.78rem] text-ink">{arabicCountPhrase(segment.shotCount, SHOT_FORMS)} · 8 ثوانٍ · {VOICE_MODE_LABELS[segment.voiceMode]}</strong>
+          <strong className="mt-1 block text-[.78rem] text-ink">{arabicCountPhrase(segment.shotCount, SHOT_FORMS)} · {arabicCountPhrase(segment.duration, SECOND_FORMS)} · {VOICE_MODE_LABELS[segment.voiceMode]}</strong>
         </span>
         <select aria-label={`حالة المقطع ${segment.order}`} className="rounded-full border border-hair bg-wash px-2 py-1 text-[.62rem] text-soft" value={segment.status} onChange={(event) => props.onStatus(event.target.value as LiveDirectorClipStatus)}>
           {Object.entries(props.status).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -707,7 +726,7 @@ function SymbolicReelsPanel({ clipSeconds, setClipSeconds, onNotice, onPublicVid
         <span className="text-[.7rem] text-soft">بلا أفتار · بلا نص داخل الفيديو — جملتك تُركَّب بعد التوليد</span>
       </div>
       <div className="rounded-xl border border-hair bg-wash px-4 py-3 text-[.7rem] leading-relaxed text-soft">
-        <b className="font-semibold text-ink">أطول من ثماني ثوانٍ؟</b> ولّد المقطع الأول بالبرومبت، ثم اضغط <b className="text-ink">Extend</b> داخل Flow والصق «برومبت التمديد» — يضيف سبع ثوانٍ متصلة تكمل الاستعارة ولا تعيدها. كرّرها لما تشاء (٨ ← ١٥ ← ٢٢…).
+        <b className="font-semibold text-ink">أطول من مقطعٍ واحد؟</b> اختر المدة التي تريدها في «مدة المقطع الواحد» (تصل إلى خمس عشرة ثانية في التوليدة الواحدة). فإن أردتَ أطول من ذلك: ولّد المقطع الأول بالبرومبت، ثم اضغط <b className="text-ink">Extend</b> داخل Flow والصق «برومبت التمديد» — يضيف سبع ثوانٍ متصلة تكمل الاستعارة ولا تعيدها.
       </div>
       {invented.length > 0 && <section className="grid gap-3">
         <div className="flex flex-wrap items-baseline gap-3">

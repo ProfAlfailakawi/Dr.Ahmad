@@ -79,7 +79,7 @@ check(withoutAvatar.segments.every((segment) => segment.appearance === 'visual_o
    القفل الآن يمنع البديل صراحةً ويأمر بإخراج الوجه من الكادر عند غيابه. */
 check(/never fall back to a generic professor|never invent/i.test(articleProject.identityLock), 'القفل يمنع اختراع شخص بديل')
 check(/keep every human face out of the frame/i.test(articleProject.identityLock), 'غياب الأفتار يعني إخراج الوجه لا اختراعه')
-check(articleProject.identityLock.includes('pre-saved avatar') && !articleProject.identityLock.includes('upload'), 'قفل الأفتار الجاهز بلا طلب رفع')
+check(articleProject.identityLock.includes('already selected in this generation') && !articleProject.identityLock.includes('upload'), 'قفل الأفتار الجاهز بلا طلب رفع')
 check(articleProject.segments.filter((segment) => segment.appearance !== 'visual_only').length <= 3, 'الأفتار لا يتحدث في المقاطع الستة')
 check(articleProject.segments.every((segment) => segment.narration.split(/\s+/).length <= (segment.appearance === 'visual_only' ? 14 : 11)), 'منع جملة طويلة داخل مقطع')
 check(articleProject.segments.every((segment) => segment.shotCount >= 1 && segment.shotCount <= 3), 'من لقطة إلى ثلاث لقطات')
@@ -195,7 +195,7 @@ const withPeople = createArticleVideoProject({ article: published, castMode: 'av
 const withPeoplePrompts = withPeople.segments.map((segment) => Object.values(segment.flowPrompts).join(' ')).join(' ')
 check(withPeople.useAvatar === true && withPeople.castMode === 'avatar_and_people', 'أنا ومعي ناس: نسخته تظهر')
 check(/Other people may appear in the scene/.test(withPeoplePrompts), 'أنا ومعي ناس: الآخرون مسموحون نصاً')
-check(/none of them may resemble him/.test(withPeoplePrompts), 'أنا ومعي ناس: منع الشبيه')
+check(/none of them may resemble that figure/.test(withPeoplePrompts), 'أنا ومعي ناس: منع الشبيه')
 check(withPeople.segments.every((segment) => !segment.negativeConstraints.includes('extra characters')), 'أنا ومعي ناس: لا منع للشخصيات الإضافية')
 check(avatarCast.segments.every((segment) => segment.negativeConstraints.includes('extra characters')), 'أنا وحدي: منع أي شخص آخر')
 check(!/Other people may appear in the scene/.test(avatarCast.segments.map((segment) => segment.prompt).join(' ')), 'أنا وحدي: لا يُسرَّب إذن الآخرين')
@@ -204,9 +204,16 @@ const noPeoplePrompts = noPeople.segments.map((segment) => Object.values(segment
 check(noPeople.segments.every((segment) => segment.cast === 'no_people' && segment.appearance === 'visual_only'), 'بلا ناس: لا أفتار في أي مقطع')
 check(noPeople.segments.every((segment) => ['people', 'faces', 'hands', 'human silhouettes'].every((ban) => segment.negativeConstraints.includes(ban))), 'بلا ناس: منع بشري صريح في القيود')
 check(/Not a face, not a hand/.test(noPeoplePrompts) && /NO-PEOPLE LOCK/.test(noPeoplePrompts), 'بلا ناس: قفل صريح داخل البرومبت')
-check(!/AVATAR_LOCK|pre-saved Dr\. Ahmad avatar/.test(noPeoplePrompts), 'بلا ناس: لا قفل أفتار مسرَّب')
+check(!/IDENTITY —/.test(noPeoplePrompts), 'بلا ناس: لا قفل أفتار مسرَّب')
 // الحيوية: العلة كانت «بطاقة بريدية متحركة»؛ القانون الآن مكتوب في كل برومبت.
 const kinetic = avatarCast.segments.map((segment) => segment.prompt).join(' ')
+/* رفض Flow التوليد: «policies about generating prominent people» — لأن الاسم
+   كان مكتوباً في القفل. الأفتار يُختار في اللوحة، فالاسم لا يفيد المولّد. */
+const nameLeak = /ahmad|failakawi|أحمد الفيلكاوي/i
+const allPrompts = [articleProject, avatarCast, withPeople, noPeople, scenePeople]
+  .flatMap((item) => item.segments.flatMap((segment) => [segment.prompt, ...Object.values(segment.flowPrompts)]))
+check(allPrompts.every((text) => !nameLeak.test(text)), 'لا اسم حقيقي في أي برومبت يذهب إلى Flow')
+check([articleProject, avatarCast, withPeople].every((item) => !nameLeak.test(item.identityLock)), 'لا اسم حقيقي في قفل الهوية')
 check(/OPENING RULE/.test(kinetic) && /already mid-event/.test(kinetic), 'قانون الافتتاح: الحدث بدأ قبل الإطار الأول')
 check(/Required transformation/.test(kinetic), 'كل مشهد يلزمه تحوّل مرئي لا حالة ساكنة')
 
@@ -219,6 +226,13 @@ check(!/8 ثوانٍ/.test(navUi), 'لا مدة مكتوبة باليد في ش�
 check(/arabicCountPhrase\(segment\.duration, SECOND_FORMS\)/.test(liveUi), 'سطر المقطع يقرأ مدته الحقيقية')
 check(/CAST_LABELS\[project\.castMode/.test(liveUi), 'بطاقة المشروع تعرض من يظهر فيه')
 
+/* الزر كان يستدعي buildProject فيبني من النموذج لا من المشروع المعروض،
+   فيموت صامتاً على كل مشروعٍ قادم من الأطلس أو من المحفوظات. */
+check(/onClick=\{rebuildProject\}/.test(liveUi), 'زر إعادة البناء يستدعي دالته لا بناء النموذج')
+check(/const rebuildProject = \(\) => \{[\s\S]{0,400}if \(!project\) return/.test(liveUi), 'إعادة البناء تنطلق من المشروع نفسه')
+check(/setRebuildNote\(`أُعيد بناء البرومبتات/.test(liveUi), 'إعادة البناء تُعلن نتيجتها عند الزر')
+check(/videoUrl: old\.videoUrl/.test(liveUi), 'ما وُلّد في Flow يُحمل إلى المقطع المقابل')
+check(/setCastMode\(item\.castMode/.test(liveUi), 'فتح مشروع محفوظ يضبط منتقي من يظهر على قراره')
 check(/data-live-director-rebuild/.test(liveUi), 'شريط تبديل القرار حاضر داخل المشروع لا في النموذج وحده')
 check((liveUi.match(/<CastPicker /g) || []).length >= 3, 'منتقي من يظهر في المسارين وداخل المشروع')
 

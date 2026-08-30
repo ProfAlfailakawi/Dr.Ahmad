@@ -579,7 +579,7 @@ function roleInEnglish(role: string) {
   return ROLE_EN.find(([pattern]) => pattern.test(role))?.[1] || 'carry one clear idea forward'
 }
 
-const REFERENCE_HEADER ='Continue from the provided reference frame. Use it as the visual starting point of the new 8-second clip. Preserve the selected Dr. Ahmad avatar, wardrobe, lighting, environment, color palette, background details, time of day and cinematic tone. Continue the motion naturally instead of restarting or redesigning the scene from scratch.'
+const REFERENCE_HEADER ='Continue from the provided reference frame. Use it as the visual starting point of the new 8-second clip. Preserve the selected saved character reference, wardrobe, lighting, environment, color palette, background details, time of day and cinematic tone. Continue the motion naturally instead of restarting or redesigning the scene from scratch.'
 
 function referenceInstruction(mode: ContinuityMode, strategy: ReferenceStrategy, hasFrame: boolean) {
   if (strategy === 'none' || mode === 'independent') return 'Reference handling: no uploaded frame is required. Build the opening state from the written sequence instructions.'
@@ -642,12 +642,16 @@ function constraintsFor(appearance: FlowAppearance, count: number, cast: CastMod
    المحفوظ في Flow»، والنموذج لا يرى أي أفتار محفوظ ما لم تُرفَق صورةٌ مرجعية
    في «Ingredients» داخل Flow — فاخترع رجلاً أوروبياً مسنّاً في مكتبة فيكتورية.
    الأمانة أولى: القفل يصف الشرط صراحةً بدل أن يفترض المستحيل. */
-const AVATAR_LOCK = 'IDENTITY — Use Dr. Ahmad’s pre-saved avatar from the creator’s own Flow library as the only person in frame; it is selected once in Flow and reused, never described here. Keep his face, age, skin tone, hair, beard and build exactly as that saved avatar. Never invent, age, westernise, or substitute a different or similar-looking person, and never fall back to a generic professor, scholar, or presenter figure. If the saved avatar is not selected for this generation, keep every human face out of the frame entirely and carry the meaning through hands, silhouette, and the environment instead.'
+/* رفض Flow التوليد: «This prompt might violate our policies about generating
+   prominent people». العلّة أن القفل كان يذكر الاسم صراحةً، فقُرئ طلباً لتوليد
+   شخصٍ حقيقي معروف. والأفتار يُختار في «Ingredients» داخل اللوحة، فذكر الاسم
+   لا يفيد المولّد أصلاً — إنما يوقظ فلتر المشاهير. لا اسم في البرومبت أبداً. */
+const AVATAR_LOCK = 'IDENTITY — The only person in frame is the character reference the creator has already selected in this generation. It is chosen in the interface, never described here, and it must be reproduced exactly: same face, age, skin tone, hair, beard and build as that saved reference. Never invent, age, westernise, or substitute a different or similar-looking person, and never fall back to a generic professor, scholar, or presenter figure. If no character reference is attached to this generation, keep every human face out of the frame entirely and carry the meaning through hands, silhouette, and the environment instead.'
 
 /* «أنا ومعي ناس» يحتاج قفلاً مختلفاً: القفل الأصلي يقول «الشخص الوحيد في
    الإطار»، فيمنع الآخرين نصّاً. الهوية تبقى مقفلة عليه وحده، والآخرون
    مسموحون بشرط ألّا يشبهه أحدهم — وهو أخطر ما يفعله المولّد هنا. */
-const AVATAR_WITH_PEOPLE_LOCK = 'IDENTITY — One figure in this scene is Dr. Ahmad: use his pre-saved avatar from the creator’s own Flow library, selected once in Flow and reused, never described here. Keep his face, age, skin tone, hair, beard and build exactly as that saved avatar, and never age, westernise or substitute him. Other people may appear in the scene as participants in the action, but none of them may resemble him, share his features, wardrobe or build, or be mistaken for him; they are clearly different individuals, and none of them addresses the camera. If the saved avatar is not selected for this generation, keep every human face out of the frame entirely and carry the meaning through hands, silhouette, and the environment instead.'
+const AVATAR_WITH_PEOPLE_LOCK = 'IDENTITY — One figure in this scene is the character reference the creator has already selected in this generation. It is chosen in the interface, never described here, and must be reproduced exactly: same face, age, skin tone, hair, beard and build as that saved reference, never aged, westernised or substituted. Other people may appear in the scene as participants in the action, but none of them may resemble that figure, share its features, wardrobe or build, or be mistaken for it; they are clearly different individuals, and none of them addresses the camera. If no character reference is attached to this generation, keep every human face out of the frame entirely and carry the meaning through hands, silhouette, and the environment instead.'
 
 const avatarLock = (cast: CastMode) => cast === 'avatar_and_people' ? AVATAR_WITH_PEOPLE_LOCK : AVATAR_LOCK
 
@@ -794,13 +798,30 @@ function visualBriefFor(source: string, role: string, order: number, cast: CastM
     : cast === 'people'
       ? ' People are present in the scene and take part in the action, but never as a presenter or spokesperson: nobody addresses the camera, and posture, hands and what they are doing carry the meaning rather than a performance to camera.'
       : cast === 'avatar_and_people'
-        ? ' Dr. Ahmad’s saved avatar is one figure in the scene and other people take part in the action around him; none of them resembles him and none of them addresses the camera.'
+        ? ' The selected character reference is one figure in the scene and other people take part in the action around that figure; none of them resembles it and none of them addresses the camera.'
         : ''
   return `${scene}${castRule} The visual beat must serve this function: ${roleInEnglish(role)}. Required transformation: the frame must not end the way it began — one thing must visibly change state, not merely change position.`
 }
 
-function englishOnly(value: string) {
+/**
+ * حارس الاسم — آخر مصفاة قبل Flow.
+ *
+ * رفض Flow التوليد بحجّة «توليد شخصٍ معروف» لأن الاسم كان مكتوباً في القفل.
+ * أزلتُه من كل نصٍّ ثابت، لكن الاسم قد يتسرّب من عنوان مقالٍ أو من وصف مشهدٍ
+ * يبتكره نموذجٌ لغوي. فالمسح هنا حتميٌّ لا يعتمد على انضباط ما قبله: الأفتار
+ * المختار داخل اللوحة هو الهوية، والنص لا يحتاج أن يسمّي أحداً.
+ */
+const REAL_NAME = /\b(?:dr\.?|prof\.?|professor)?\s*ahmad(?:\s+(?:hussain|husain|hussein))?(?:\s+al[-\s]?failakawi|\s+alfailakawi|\s+el[-\s]?failakawi)?\b/gi
+
+function stripRealNames(value: string) {
   return value
+    .replace(REAL_NAME, 'the selected character reference')
+    .replace(/\bthe selected character reference’s\b/gi, 'the selected character reference’s')
+    .replace(/ {2,}/g, ' ')
+}
+
+function englishOnly(value: string) {
+  return stripRealNames(value)
     .replace(ARABIC_SCRIPT, ' ')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/ {2,}/g, ' ')
@@ -846,7 +867,7 @@ function buildFlowPrompt(input: {
     : cast === 'no_people'
       ? 'CAST — There is no person in this clip and no avatar is used. Not a face, not a hand, not an arm, not a silhouette, not a shadow or reflection of a person, and nobody entering or leaving the frame at any moment. The subject is an object, a material, a place, or a physical phenomenon, and it alone carries the meaning through what visibly happens to it.'
       : cast === 'avatar_and_people'
-        ? 'CAST — Dr. Ahmad does not appear in this particular clip, but other people from the same scene may. Nobody addresses the camera and nobody stands in as a presenter or as a stand-in for him. One clear action carries the meaning.'
+        ? 'CAST — The selected character reference does not appear in this particular clip, but other people from the same scene may. Nobody addresses the camera and nobody stands in as a presenter or as a substitute for that figure. One clear action carries the meaning.'
         : 'CAST — No avatar and no presenter in this clip. People are present in the scene and may be seen fully, but never as a spokesperson: nobody addresses the camera and no single face is the subject. The action they are engaged in carries the meaning.'
   const sound = mode === 'silent'
     ? 'Environmental sound only. No dialogue, no voice-over, no narration, no spoken words, and no vocal reactions.'
@@ -1179,7 +1200,7 @@ export const LIVE_DIRECTOR_REPAIR_ISSUES = [
 export type LiveDirectorRepairIssue = (typeof LIVE_DIRECTOR_REPAIR_ISSUES)[number]
 
 const REPAIR_HINTS: Record<LiveDirectorRepairIssue, string> = {
-  'تغير الأفتار': 'Use strictly the pre-saved Dr. Ahmad avatar selected inside Flow. Never substitute a similar-looking person; keep one continuous front-facing shot to hold identity.',
+  'تغير الأفتار': 'Use strictly the character reference already selected in this generation. Never substitute a similar-looking person; keep one continuous front-facing shot to hold identity.',
   'تغير الوجه أو المظهر': 'Lock facial identity, age and skin tone across every shot; prefer one continuous front-facing shot over angle changes.',
   'تغيرت الملابس': 'Lock the approved saved-avatar wardrobe; do not reinterpret fabric, colour, ghutra or agal between shots.',
   'الحركة غير طبيعية': 'Reduce motion to one natural breath, one small head movement and still hands.',

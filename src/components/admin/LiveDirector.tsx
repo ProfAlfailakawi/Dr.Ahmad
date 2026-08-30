@@ -125,6 +125,8 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
   const [project, setProject] = useState<LiveDirectorProject | null>(null)
   const [projects, setProjects] = useState<StoredProject[]>([])
   const [notice, setNotice] = useState('')
+  /* رسالة إعادة البناء تُطبع عند الزر نفسه؛ رسالة الرأس بعيدةٌ عنه فلا تُرى. */
+  const [rebuildNote, setRebuildNote] = useState('')
   const [busy, setBusy] = useState('')
   const [repairIssue, setRepairIssue] = useState<Record<string, LiveDirectorRepairIssue>>({})
   const [youtubeDraft, setYoutubeDraft] = useState('')
@@ -244,6 +246,53 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
       const forge = forgeFor({ kind: linkedArticle ? 'article' : 'free', id: linkedArticle?.slug || 'topic', title: linkedArticle?.title || topic, text: [message, topic, linkedArticle?.body].filter(Boolean).join(' '), url: linkedArticle ? `${SITE}/articles/${linkedArticle.slug}` : '' }, linkedArticle?.slug || '')
       setProject({ ...createPublicVideoProject({ topic, message, audience, platform, tone, castMode, clipSeconds, wantsSeries, linkedArticle, archive: articles, forge, source, sourceSessionId, linkedEditorialDecisionId, linkedCampaignId }), look, clipSeconds })
     }
+  }
+
+  /* العلّة (٣٠ أغسطس ٢٠٢٦، بحكم الدكتور «ما يضغط ولا له أي تأثير»): زر «أعد بناء
+     البرومبتات» كان يستدعي buildProject، وهو يبني من **حقول النموذج** لا من
+     المشروع المعروض. فحين يأتي المشروع من أطلس القصص البصرية أو من مشروع محفوظ
+     تكون تلك الحقول فارغة، فيتوقف البناء ويكتب رسالته في رأس الصفحة بعيداً عن
+     الزر — فيبدو الزر ميتاً وهو يعمل. الإعادة الآن تُبنى من المشروع نفسه. */
+  const rebuildProject = () => {
+    if (!project) return
+    const carried = {
+      audience: project.audience, platform: project.platform, tone: project.tone,
+      source: project.source, sourceSessionId: project.sourceSessionId,
+      linkedEditorialDecisionId: project.linkedEditorialDecisionId, linkedCampaignId: project.linkedCampaignId,
+    }
+    let next: LiveDirectorProject
+    if (project.type === 'article_video') {
+      const known = articles.find((item) => item.slug === project.articleId)
+      // المقالة الأصلية إن وُجدت؛ وإلا فمسودةٌ مكافئة من متن المشروع، فلا تُهدر الإعادة.
+      const article: ArticleRecord = known || {
+        slug: project.articleId || `rebuilt-${project.id}`, title: project.title, date: '',
+        iso: new Date().toISOString().slice(0, 10), cat: 'التعليم',
+        excerpt: project.idea, body: project.narration || project.idea, status: 'draft',
+        words: (project.narration || project.idea).trim().split(/\s+/).filter(Boolean).length,
+        year: String(new Date().getFullYear()), hasAudio: false, missing: false,
+        _cms: { kind: 'article', origin: 'added', modified: true, hidden: true, deleted: false, docId: project.articleId || 'rebuilt', baseSlug: project.articleId || 'rebuilt' },
+      }
+      const forge = forgeFor({ kind: 'article', id: article.slug, title: article.title, text: [article.excerpt, article.body].filter(Boolean).join(' '), url: `${SITE}/articles/${article.slug}`, date: article.iso }, article.slug)
+      next = createArticleVideoProject({ article, castMode, clipSeconds, forge, ...carried })
+    } else {
+      const linked = articles.find((item) => item.slug === project.articleId) || null
+      const forge = forgeFor({ kind: linked ? 'article' : 'free', id: linked?.slug || 'topic', title: linked?.title || project.title, text: [project.centralMessage, project.title, linked?.body].filter(Boolean).join(' '), url: linked ? `${SITE}/articles/${linked.slug}` : '' }, linked?.slug || '')
+      next = createPublicVideoProject({ topic: project.title, message: project.centralMessage || project.idea, castMode, clipSeconds, wantsSeries: project.series, linkedArticle: linked, archive: articles, forge, ...carried })
+    }
+    // ما ولّدتَه في Flow يُحمل إلى المقطع المقابل بالترتيب؛ والفائض يُذكر صراحةً لا يُبتلع.
+    const previous = project.segments
+    const segments = next.segments.map((segment, index) => {
+      const old = previous[index]
+      return old ? { ...segment, videoUrl: old.videoUrl, status: old.status, lastFrameImage: old.lastFrameImage, selectedReferenceFrame: old.selectedReferenceFrame } : segment
+    })
+    const orphaned = previous.filter((item) => item.videoUrl).length - segments.filter((item) => item.videoUrl).length
+    setProject({
+      ...next, id: project.id, segments, look, clipSeconds,
+      status: project.status, metrics: project.metrics, youtubeUrl: project.youtubeUrl,
+      finalVideoUrl: project.finalVideoUrl, coverUrl: project.coverUrl,
+      createdAtClient: project.createdAtClient, updatedAtClient: new Date().toISOString(),
+    })
+    setRebuildNote(`أُعيد بناء البرومبتات: ${CAST_LABELS[castMode]} · ${arabicCountPhrase(clipSeconds, SECOND_FORMS)} لكل مقطع.${orphaned > 0 ? ' وتنبيه: عدد المقاطع تغيّر، فلم يجد بعض ما ولّدتَه مقطعاً مقابلاً.' : ''}`)
   }
 
   const saveProject = async (status = project?.status || 'draft') => {
@@ -373,7 +422,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
             <button type="button" onClick={() => setPath('reel')} className="rounded-3xl border border-hair bg-canvas p-6 text-right transition hover:-translate-y-0.5 hover:border-accent"><span className="text-[.68rem] font-semibold text-accent">المسار الثاني</span><strong className="mt-2 block font-display text-xl text-ink">من فكرة إلى ريل</strong><span className="mt-2 block text-[.78rem] leading-relaxed text-soft">اكتب فكرتك فتخرج مشاهد رمزية توقف السكرول — ومعها الكابشن والمنشورات جاهزة.</span></button>
           </div>
         </section>
-        {projects.length > 0 && <RecentProjects projects={projects} onOpen={(item) => { setProject(item); setPath(item.type === 'article_video' ? 'article' : 'public'); setYoutubeDraft(item.youtubeUrl || '') }} />}
+        {projects.length > 0 && <RecentProjects projects={projects} onOpen={(item) => { setProject(item); setPath(item.type === 'article_video' ? 'article' : 'public'); setCastMode(item.castMode || (item.useAvatar ? 'avatar' : 'people')); setClipSeconds(item.clipSeconds || item.segments[0]?.duration || DEFAULT_FLOW_CLIP_SECONDS); setRebuildNote(''); setYoutubeDraft(item.youtubeUrl || '') }} />}
       </div>
     )
   }
@@ -411,9 +460,11 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
               </select>
               <span className="mt-2 block text-[.66rem] leading-relaxed text-soft">{FLOW_SECONDS_NOTE[clipSeconds] || ''}</span>
             </label>
-            <button type="button" onClick={buildProject} className={primary}>أعد بناء البرومبتات</button>
+            <button type="button" onClick={rebuildProject} className={primary}>أعد بناء البرومبتات</button>
           </div>
-          <p className="mt-3 text-[.68rem] leading-relaxed text-soft">إعادة البناء تكتب البرومبتات من جديد بالقرار الجديد؛ ما ولّدتَه في Flow لا يتأثر.</p>
+          {rebuildNote
+            ? <p className="mt-3 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.72rem] leading-relaxed text-accent">{rebuildNote}</p>
+            : <p className="mt-3 text-[.68rem] leading-relaxed text-soft">إعادة البناء تكتب البرومبتات من جديد بالقرار الجديد؛ ما ولّدتَه في Flow يُحمل إلى مقاطعه المقابلة.</p>}
         </section>
 
         <section className={card} data-live-director-recommendation="true"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"><Metric label="المدة المقترحة" value={arabicCountPhrase(project.duration, SECOND_FORMS)} /><Metric label="المقاطع" value={`${project.segmentCount} × ${arabicCountPhrase(project.segments[0]?.duration || project.clipSeconds || clipSeconds, SECOND_FORMS)}`} /><Metric label="خطة التوليد" value={arabicCountPhrase(project.days, DAY_FORMS)} /><Metric label="من يظهر" value={CAST_LABELS[project.castMode || (project.useAvatar ? 'avatar' : 'people')]} /><Metric label="الحالة" value={project.status} /></div><p className="mt-4 border-t border-hair pt-4 text-[.78rem] leading-relaxed text-soft">{project.durationReason}</p>{project.series && <div className="mt-4 rounded-xl border border-accent/20 bg-canvas p-4"><strong className="text-[.76rem] text-accent">الموضوع يستحق سلسلة بدل الحشر</strong><ol className="mt-2 grid gap-1 text-[.72rem] text-soft">{project.seriesPlan.map((item) => <li key={item}>{item}</li>)}</ol></div>}</section>
@@ -450,7 +501,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
         <section className={card}><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.72rem] font-semibold text-accent">حفظ المشروع</p><p className="mt-1 text-[.72rem] text-soft">المشروع والبرومبتات والنسخ والحالات خاصة بالمشرف.</p></div><div className="flex flex-wrap gap-2"><button type="button" disabled={Boolean(busy)} onClick={() => void saveProject()} className={primary}>{busy === 'save' ? 'أحفظ…' : 'احفظ المشروع'}</button><button type="button" disabled={Boolean(busy)} onClick={() => void saveProject('ready_to_publish')} className={ghost}>جاهز للنشر</button></div></div></section>
       </>}
 
-      {projects.length > 0 && <RecentProjects projects={projects.filter((item) => item.id !== project?.id)} onOpen={(item) => { setProject(item); setPath(item.type === 'article_video' ? 'article' : 'public'); setYoutubeDraft(item.youtubeUrl || ''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />}
+      {projects.length > 0 && <RecentProjects projects={projects.filter((item) => item.id !== project?.id)} onOpen={(item) => { setProject(item); setPath(item.type === 'article_video' ? 'article' : 'public'); setCastMode(item.castMode || (item.useAvatar ? 'avatar' : 'people')); setClipSeconds(item.clipSeconds || item.segments[0]?.duration || DEFAULT_FLOW_CLIP_SECONDS); setRebuildNote(''); setYoutubeDraft(item.youtubeUrl || ''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />}
     </div>
   )
 }

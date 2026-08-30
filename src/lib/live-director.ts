@@ -633,7 +633,8 @@ function constraintsFor(appearance: FlowAppearance, count: number, cast: CastMod
   /* «بلا ناس» لا يكفي أن يُقال في الوصف: النموذج يدسّ يداً أو ظلاً أو انعكاس
      وجه ما لم يُمنع صراحةً. المنع هنا شاملٌ لكل أثرٍ بشريٍّ مرئي. */
   if (cast === 'no_people') return [...common, 'people', 'any human being', 'human figures', 'faces', 'hands', 'fingers', 'arms', 'human silhouettes', 'shadows of people', 'reflections of people', 'crowds', 'body parts', 'mannequins', 'portraits or photographs of people', 'anyone entering or leaving the frame', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
-  if (appearance === 'visual_only') return [...common, ...(cast === 'avatar_and_people' ? [] : ['extra characters']), 'recognisable celebrity faces', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
+  // «extra characters» يناقض «ناسٌ حاضرون»؛ فلا يُمنع إلا حيث لا ناس أصلاً أو حيث هو وحده.
+  if (appearance === 'visual_only') return [...common, ...(cast === 'people' || cast === 'avatar_and_people' ? [] : ['extra characters']), 'recognisable celebrity faces', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
   return [...common, ...(cast === 'avatar_and_people' ? ['anyone resembling the main figure', 'body doubles'] : ['extra characters']), 'face changes', 'identity drift', 'voice changes', 'wardrobe changes', 'age changes', 'lookalike replacement', 'distorted hands', 'extra fingers', 'unnatural mouth movement', 'poor lip synchronization', 'exaggerated gestures', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
 }
 

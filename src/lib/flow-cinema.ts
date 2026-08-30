@@ -162,17 +162,17 @@ export function cameraMove(input: { order: number; shotIndex: number; shotCount:
      ثلاث مرات في مقطعٍ واحد يقتل أثره ويجعل المشهد آلياً. */
   if (hook && shotIndex === 0) {
     return avatar
-      ? 'slow dolly push-in on a fixed axis, starting a touch wide and settling on the subject; ease in and ease out, no snap'
-      : 'slow crane-down onto the subject, or a deliberate rack focus that lands the eye on the key detail'
+      ? 'committed dolly push-in on a fixed axis that closes distance decisively, starting a touch wide and landing on the subject; ease in and ease out, no snap'
+      : 'committed crane-down that lands on the subject exactly as the event peaks, closing distance with intent'
   }
   if (close && shotIndex === 0) return 'gentle pull-back on a stabilised dolly, opening breathing room around the subject as the moment resolves'
   if (shotIndex === 0) return look.motionBias
   if (shotIndex === 1) {
     return avatar
       ? 'locked frame with the subject re-composed to a tighter angle; let the performance carry the motion'
-      : 'slow lateral track across the same environment, parallel to the main lines'
+      : 'lateral track across the same environment, moving with the action and parallel to the main lines'
   }
-  return 'settle to a locked frame; end on a stable, composed image with no residual movement'
+  return 'settle to a locked frame as the action completes; the motion resolves inside the frame rather than stopping dead'
 }
 
 /**

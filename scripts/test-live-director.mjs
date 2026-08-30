@@ -187,6 +187,9 @@ check(defaultCast.castMode === 'people' && defaultCast.useAvatar === false, 'ا�
 check(defaultCast.segments.every((segment) => segment.appearance === 'visual_only'), 'لا ظهور للأفتار بلا طلب صريح')
 const avatarCast = createArticleVideoProject({ article: published, castMode: 'avatar' })
 check(avatarCast.useAvatar === true && avatarCast.segments.some((segment) => segment.appearance !== 'visual_only'), 'الأفتار يعمل حين يُطلب')
+// «ناس في المشهد»: لا يجوز أن يمنع الذيلُ ما أذن به المتن.
+const scenePeople = createArticleVideoProject({ article: published, castMode: 'people' })
+check(scenePeople.segments.every((segment) => !segment.negativeConstraints.includes('extra characters')), 'ناس في المشهد: لا تناقض بين المتن والقيود')
 // «أنا ومعي ناس»: هويته مقفلة، والآخرون مسموحون بشرط ألّا يشبهه أحدهم.
 const withPeople = createArticleVideoProject({ article: published, castMode: 'avatar_and_people' })
 const withPeoplePrompts = withPeople.segments.map((segment) => Object.values(segment.flowPrompts).join(' ')).join(' ')

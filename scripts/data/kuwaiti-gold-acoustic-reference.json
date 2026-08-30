@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "referenceVersion": "2026-08-30-professional-five-v13-doctor-approved",
+  "referenceVersion": "2026-08-31-professional-five-plus-episode2-voice-approved",
   "source": {
     "runId": 33132655399,
     "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
@@ -53,6 +53,16 @@
       "audioSha256": "9bd0990ec53130f99e54b2be276ddd6cbf93a8b37d1771802bc0774cac2c0924",
       "doctorVerdict": "كلهم روووووعه — اللهجة مضبوطة ١٠٠٠٪",
       "explicitlyApproved": true
+    },
+    {
+      "runId": 33340104975,
+      "order": 2,
+      "slug": "the-classroom-that-fears-mistakesarabic",
+      "seed": 2102,
+      "audioSha256": "2c20bffe8009dffda296e45add5991e9818d414e91ff461cc716028bcdf30e2e",
+      "doctorVerdict": "الموسيقى والجسور مفقودة، وعبارة ما قصد والقاف سيئة؛ عدا ذلك الحلقة جيدة",
+      "approvalScope": "speaker-identity-and-kuwaiti-dialect-only",
+      "explicitlyApproved": true
     }
   ],
   "method": "nearest-doctor-approved-median-of-utterance-18-band-log-spectral-envelope-v2",
@@ -89,6 +99,11 @@
           "id": "run-33132655399-05-seed-2115",
           "pitchMedianHz": 107,
           "timbreCenter": [2.41001, 1.74248, 1.25104, 1.71961, 1.39379, 1.64772, 1.19463, -0.11116, -0.55245, -0.15968, -0.5084, 0.22387, -0.8933, -0.13724, -1.51963, -2.02591, -3.294, -2.82001]
+        },
+        {
+          "id": "run-33340104975-02-seed-2102-voice-approved",
+          "pitchMedianHz": 113.5,
+          "timbreCenter": [2.40219, 2.3133, 1.20412, 1.57605, 1.8821, 2.62314, 1.78581, 0.57618, 0.00198, 0.15081, -0.49346, -0.35972, -1.04931, -0.70718, -1.43278, -2.44503, -4.35563, -3.31556]
         }
       ],
       "timbreCenter": [2.01658, 1.94872, 1.25104, 2.21549, 1.62583, 2.04267, 1.46687, -0.11116, -0.51794, -0.32229, -0.61108, -0.38659, -0.8933, -0.1818, -1.21682, -2.23759, -3.53357, -2.82001]
@@ -121,6 +136,11 @@
           "id": "run-33132655399-05-seed-2115",
           "pitchMedianHz": 180,
           "timbreCenter": [-1.61443, 0.52787, 1.80499, 2.76032, 1.48532, 2.35712, 2.29275, 0.94074, 0.51587, 0.50231, -0.57508, -1.12889, -0.69273, -1.51632, -0.23724, -0.9217, -4.1138, -2.28695]
+        },
+        {
+          "id": "run-33340104975-02-seed-2102-voice-approved",
+          "pitchMedianHz": 173.9,
+          "timbreCenter": [-1.73027, -0.50542, 1.83129, 2.85561, 2.24857, 2.15357, 2.36596, 0.93848, 0.852, 0.22563, -0.52298, -0.89965, -0.71622, -1.9177, -0.56455, -1.09466, -4.03175, -2.65925]
         }
       ],
       "timbreCenter": [-1.61443, 0.79631, 2.50824, 2.76032, 1.63838, 2.62727, 2.551, 0.94074, 0.69996, 0.21218, -0.57508, -1.12889, -0.69273, -1.51632, -0.23724, -0.98111, -4.10879, -2.76071]

@@ -31,6 +31,7 @@ assert.deepEqual(manifest.episodes.map((episode) => episode.seed), [2101, 2102, 
 const forbiddenBySlug = new Map([
   ['the-classroom-that-fears-mistakesarabic', [
     /القلق/u, /ينختبر/u, /نرجع لجبهة/u, /يبلع صوته/u, /\bتكفي\b/u, /\bبدال\b/u,
+    /توقفنا/u, /معقد/u, /تعليق/u, /قصد/u, /يقتل/u, /وقفة/u, /تلقاه/u, /موقع/u, /وقالوا/u,
   ]],
   ['intelligence-without-a-consciencearabic', [/خلنا نوقف هني/u]],
   ['when-seriousness-becomes-a-mask-for-escapearabic', [
@@ -55,6 +56,10 @@ function prepare (episode) {
   const fullText = result.turns.map((turn) => turn.text).join('\n')
   for (const pattern of forbiddenBySlug.get(episode.slug) || []) {
     assert.doesNotMatch(fullText, pattern, `${episode.slug}: رجعت كلمة سبق أن رفضها الدكتور: ${pattern}`)
+  }
+  if (episode.slug === 'the-classroom-that-fears-mistakesarabic') {
+    assert.doesNotMatch(fullText, /ق/u,
+      `${episode.slug}: الحلقة 02 مقفولة على صياغة بلا قاف بعد حكم الأذن الأخير`)
   }
   return { ...result, serialized, sourceHash }
 }

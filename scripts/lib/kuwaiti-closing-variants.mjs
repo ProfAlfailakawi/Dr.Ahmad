@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 
-export const KUWAITI_CLOSING_VERSION = '2026-08-30-kuwaiti-closing-variety-v2-gold-request-anchor'
+export const KUWAITI_CLOSING_VERSION = '2026-08-31-kuwaiti-closing-variety-v3-classroom-qaf-safe'
 
 export const KUWAITI_GOLD_REQUEST_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const KUWAITI_GOLD_REQUEST_CLOSING =
@@ -22,12 +22,21 @@ export const KUWAITI_CLOSING_VARIANTS = Object.freeze([
   'والشرح الكامل موجود بالمقال الأصلي في موقع الدكتور أحمد.',
 ])
 
+/* الحلقة 02 وحدها خرجت قافها سيئة بأذن الدكتور، لذلك إحالتها تعطي المعنى
+   نفسه من غير «تلقى/موقع». ما نعمّم هالصياغة على بقية الحلقات. */
+export const KUWAITI_SPECIAL_CLOSINGS = Object.freeze({
+  'the-classroom-that-fears-mistakesarabic':
+    'والفكرة كاملة مكتوبة على صفحة الدكتور أحمد.',
+})
+
 const norm = (value) => String(value || '').replace(/\s+/g, ' ').trim()
 const stableIndex = (slug) => createHash('sha256').update(String(slug || 'episode')).digest().readUInt32BE(0) % KUWAITI_CLOSING_VARIANTS.length
 
-export const closingForSlug = (slug) => KUWAITI_CLOSING_VARIANTS[stableIndex(slug)]
+export const closingForSlug = (slug) => KUWAITI_SPECIAL_CLOSINGS[slug]
+  || KUWAITI_CLOSING_VARIANTS[stableIndex(slug)]
 
 export const isApprovedSpokenClosing = (text) => KUWAITI_CLOSING_VARIANTS.includes(norm(text))
+  || Object.values(KUWAITI_SPECIAL_CLOSINGS).includes(norm(text))
 
 const looksLikeReferral = (text) => /(?:المقال|الموقع|موقع الدكتور|الفكرة كاملة|التفاصيل كلها)/u.test(norm(text))
 

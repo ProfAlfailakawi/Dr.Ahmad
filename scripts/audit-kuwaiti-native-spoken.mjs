@@ -154,14 +154,23 @@ if (SELF_TEST) {
     Object.values(pilotLibrary.episodes[CLASSROOM_SLUG]), { slug: CLASSROOM_SLUG })
   const classroomText = classroom.turns.map((turn) => turn.text).join('\n')
   assert.equal(classroom.turns[0].text,
-    'توقفنا أسبوعين… انشغلنا بالحرب، وبالتوتر اللي يزيد مع كل خبر.',
-    'القلق/الخوف الملتبس يُستبدل داخل الجملة نفسها')
+    'صار لنا أسبوعين… انشغلنا بالحرب، وبالتوتر اللي يزيد مع كل خبر.',
+    'توقفنا/القلق الملتبستان تُستبدلان داخل الجملة نفسها')
   assert.equal(classroom.turns[2].text, 'بس اليوم عندنا موضوع مهم بعد.',
     '«نرجع لجبهة» لا يملك أصلاً كلمةً قريبة يرجع إليها')
   assert.match(classroom.turns[3].text, /يا يتعلم الطالب يتكلم، يا يخاف ويسكت/u,
     'الصف يصير كلاماً يومياً، من غير صورة «يبلع صوته»')
-  assert.doesNotMatch(classroomText, /(?:القلق اللي يعلى|نرجع لجبهة|يبلع صوته)/u,
-    'الأخطاء الثلاثة التي أسقطت الحلقة 02 لا ترجع')
+  assert.equal(classroom.turns[12].text, 'بس المعلم بالغالب ما كان يبي يجرح أحد.',
+    'ما قصد تُعاد صياغتها من غير القاف المرفوضة')
+  assert.equal(classroom.turns[13].text, 'أكيد مو هذا اللي يبيه. بس المشكلة مو في ضعف الفهم…',
+    'الرد لا يكرر قصد ولا يصنع «وقالوا ما قصد» سمعياً')
+  assert.equal(classroom.turns.at(-1).text, 'والفكرة كاملة مكتوبة على صفحة الدكتور أحمد.',
+    'إحالة الحلقة 02 بلا تلقى/موقع')
+  assert.doesNotMatch(classroomText,
+    /(?:القلق اللي يعلى|نرجع لجبهة|يبلع صوته|وقالوا|قصد|توقفنا|معقد|تعليق|يقتل|وقفة|تلقاه|موقع)/u,
+    'كل الكلمات التي أسقطت الحلقة 02 لا ترجع')
+  assert.doesNotMatch(classroomText, /ق/u,
+    'الحلقة 02 خالية من القاف بالكامل بعد حكم الأذن')
   const intelligence = optimizeNativeSpokenEpisode(
     Object.values(pilotLibrary.episodes[INTELLIGENCE_SLUG]), { slug: INTELLIGENCE_SLUG })
   const intelligenceText = intelligence.turns.map((turn) => turn.text).join('\n')

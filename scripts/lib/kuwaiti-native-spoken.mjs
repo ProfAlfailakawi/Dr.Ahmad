@@ -15,7 +15,7 @@ import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 import { applyApprovedRegisterRewrites } from './kuwaiti-register-rewrites.mjs'
 import { applySpokenClosing } from './kuwaiti-closing-variants.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-30-native-kuwaiti-v20-professional-five-word-fixes-only'
+export const NATIVE_SPOKEN_VERSION = '2026-08-31-native-kuwaiti-v21-episode2-qaf-safe'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 export const CLASSROOM_SLUG = 'the-classroom-that-fears-mistakesarabic'
@@ -123,10 +123,18 @@ const SERIOUSNESS_SHORT_OVERRIDES = new Map([
    انزلق الأداء إلى خليجي غير كويتي. نعالج الكلمات هنا، أما اللهجة نفسها
    فتحكمها بوابة الصوت v15 بعد التوليد ولا نحاول تخمينها من الإملاء. */
 const CLASSROOM_SHORT_OVERRIDES = new Map([
-  [0, { text: 'توقفنا أسبوعين… انشغلنا بالحرب، وبالتوتر اللي يزيد مع كل خبر.' }],
+  [0, { text: 'صار لنا أسبوعين… انشغلنا بالحرب، وبالتوتر اللي يزيد مع كل خبر.' }],
   [2, { text: 'بس اليوم عندنا موضوع مهم بعد.' }],
   [3, { text: 'الصف… هني بعد يا يتعلم الطالب يتكلم، يا يخاف ويسكت.' }],
   [4, { text: 'إي… ومن أول مرة يرفع إيده، يبين شلون إحنا نتعامل مع الغلط.' }],
+  [8, { text: 'السؤال كان عادي… بس الخوف كان أكبر من الجهل.' }],
+  [10, { text: 'ضحكة خفيفة… كلمة عابرة… ونظرة استغراب.' }],
+  [12, { text: 'بس المعلم بالغالب ما كان يبي يجرح أحد.' }],
+  [13, { text: 'أكيد مو هذا اللي يبيه. بس المشكلة مو في ضعف الفهم…' }],
+  [16, { text: 'والخوف من الغلط مو بس يضيّع الإجابة… حتى السؤال نفسه يضيع.' }],
+  [17, { text: 'ومع الأيام، يتعلم الطالب مهارة خطيرة: إنه يبين فاهم…' }],
+  [19, { text: 'وترى هالكلام لازم كل مدرسة تراجع نفسها عنده.' }],
+  [26, { text: 'يمكن التغيير يبدي يوم نفهم إن الغلط مو عدو التعلم…' }],
 ])
 
 const INTELLIGENCE_SHORT_OVERRIDES = new Map([

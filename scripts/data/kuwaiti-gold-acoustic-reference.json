@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "referenceVersion": "2026-08-30-doctor-approved-gold-v1",
+  "referenceVersion": "2026-08-30-doctor-approved-gold-v2",
   "source": {
     "runId": 33271180413,
     "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
@@ -8,13 +8,81 @@
     "audioSha256": "7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1",
     "doctorVerdict": "روووووعه جدا جدا جدا"
   },
-  "method": "median-of-utterance-18-band-log-spectral-envelope-v1",
+  "approvedSources": [
+    {
+      "runId": 33271180413,
+      "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+      "seed": 2101,
+      "audioSha256": "7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1",
+      "doctorVerdict": "روووووعه جدا جدا جدا"
+    },
+    {
+      "runId": 33296947431,
+      "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+      "seed": 3111,
+      "audioSha256": "048097c1e206bea66358b46a91ed23b9488b9ab4b43e78b8536f1998b679de32",
+      "doctorVerdict": "نفس رايي — فقط الحلقة الأولى"
+    }
+  ],
+  "method": "nearest-doctor-approved-median-of-utterance-18-band-log-spectral-envelope-v2",
   "minimumUtterancesPerSpeaker": 4,
   "maximumTimbreDistance": 0.3,
+  "minimumOwnSpeakerAdvantage": 0.2,
+  "maximumPitchDistanceHz": 35,
   "speakers": {
     "male": {
       "name": "فهد",
       "pitchMedianHz": 137,
+      "approvedTimbreReferences": [
+        {
+          "id": "run-33271180413-seed-2101",
+          "pitchMedianHz": 137,
+          "timbreCenter": [
+            1.85702,
+            1.96905,
+            1.40224,
+            1.60926,
+            1.89596,
+            1.75202,
+            1.54458,
+            0.05591,
+            -0.39447,
+            -0.63171,
+            -0.54995,
+            -0.34,
+            -1.07492,
+            -0.04779,
+            -1.00952,
+            -1.59858,
+            -4.04999,
+            -2.26978
+          ]
+        },
+        {
+          "id": "run-33296947431-seed-3111",
+          "pitchMedianHz": 128,
+          "timbreCenter": [
+            2.187,
+            1.64239,
+            0.56031,
+            1.69739,
+            1.38891,
+            1.70412,
+            1.35986,
+            -0.06897,
+            -0.35376,
+            -0.33779,
+            -0.64607,
+            -0.59467,
+            -1.31904,
+            -0.513,
+            -0.72841,
+            -1.03518,
+            -3.19562,
+            -2.001
+          ]
+        }
+      ],
       "timbreCenter": [
         1.85702,
         1.96905,
@@ -39,6 +107,56 @@
     "female": {
       "name": "نورة",
       "pitchMedianHz": 208,
+      "approvedTimbreReferences": [
+        {
+          "id": "run-33271180413-seed-2101",
+          "pitchMedianHz": 208,
+          "timbreCenter": [
+            -4.12164,
+            -3.16618,
+            -1.44823,
+            2.47673,
+            2.80307,
+            2.04634,
+            1.95442,
+            1.15613,
+            1.23147,
+            0.83992,
+            0.05422,
+            -0.36775,
+            0.03522,
+            -0.71879,
+            0.46002,
+            -0.07303,
+            -2.56615,
+            -1.53154
+          ]
+        },
+        {
+          "id": "run-33296947431-seed-3111",
+          "pitchMedianHz": 184,
+          "timbreCenter": [
+            -2.56358,
+            -0.51609,
+            1.043515,
+            2.981675,
+            1.62965,
+            1.51531,
+            2.08015,
+            0.65766,
+            1.1133,
+            0.51978,
+            -0.192465,
+            -0.5263,
+            -0.30892,
+            -1.39165,
+            -0.093395,
+            -0.735275,
+            -3.501505,
+            -1.983245
+          ]
+        }
+      ],
       "timbreCenter": [
         -4.12164,
         -3.16618,

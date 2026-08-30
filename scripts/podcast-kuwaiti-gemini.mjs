@@ -105,9 +105,20 @@ const GOLD_ACOUSTIC_REFERENCE = JSON.parse(readFileSync(GOLD_ACOUSTIC_REFERENCE_
 assert.equal(Number(GOLD_ACOUSTIC_REFERENCE.schemaVersion), 1, 'صيغة مرجع الأذن غير معتمدة')
 assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance) > 0,
   'عتبة مرجع الأذن مفقودة')
+assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.minimumOwnSpeakerAdvantage) >= 0,
+  'هامش فصل فهد عن نورة مفقود')
+assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.maximumPitchDistanceHz) > 0,
+  'عتبة طبقة المرجع الذهبي مفقودة')
 for (const speaker of ['male', 'female']) {
   assert.equal(GOLD_ACOUSTIC_REFERENCE.speakers?.[speaker]?.timbreCenter?.length, 18,
     `بصمة ${speaker} الذهبية ناقصة`)
+  assert.ok(Array.isArray(GOLD_ACOUSTIC_REFERENCE.speakers?.[speaker]?.approvedTimbreReferences)
+    && GOLD_ACOUSTIC_REFERENCE.speakers[speaker].approvedTimbreReferences.length >= 2,
+  `مرجعا ${speaker} المعتمدان ناقصان`)
+  for (const approved of GOLD_ACOUSTIC_REFERENCE.speakers[speaker].approvedTimbreReferences) {
+    assert.equal(approved?.timbreCenter?.length, 18, `بصمة ${speaker} المعتمدة ${approved?.id || 'بلا اسم'} ناقصة`)
+    assert.ok(Number(approved?.pitchMedianHz) > 0, `طبقة ${speaker} المعتمدة ${approved?.id || 'بلا اسم'} ناقصة`)
+  }
 }
 const REJECT_DIR = String(process.env.PODCAST_KW_REJECT_DIR || '').trim()
 
@@ -1198,23 +1209,74 @@ export function measuredSpeakerTimbreCenter (file, timeline, speaker) {
   }
 }
 
-export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOUSTIC_REFERENCE) {
+const approvedTimbreReferencesFor = (reference, speaker) => {
+  const configured = reference?.speakers?.[speaker]?.approvedTimbreReferences
+  if (Array.isArray(configured) && configured.length) return configured
+  const legacy = reference?.speakers?.[speaker]
+  return Array.isArray(legacy?.timbreCenter)
+    ? [{ id: 'legacy-gold', pitchMedianHz: legacy.pitchMedianHz, timbreCenter: legacy.timbreCenter }]
+    : []
+}
+
+const nearestTimbreReference = (center, references) => references
+  .map((approved) => ({
+    id: approved.id || '',
+    pitchMedianHz: Number(approved.pitchMedianHz),
+    distance: timbreDistance(center, approved.timbreCenter),
+  }))
+  .filter((candidate) => Number.isFinite(candidate.distance))
+  .sort((a, b) => a.distance - b.distance)[0] || null
+
+/* بصمة الغلاف الطيفي تتأثر بالنص نفسه؛ حدٌّ حول تسجيل واحد رفض Take 3111
+   الذي اعتمده الدكتور، مع أنه نفس الحلقة ونفس فهد ونورة. العلاج مو توسيع
+   العتبة على الحلقات الفاشلة: نخزّن فقط Takes من الحلقة الأولى سمعها
+   الدكتور واعتمدها، ونقيس إلى **أقرب مرجع معتمد**. ويظل الفصل عن صوت الطرف
+   الثاني والطبقة الصوتية حارسين مستقلين؛ فلا تمر بصمة قريبة من نورة على أنها
+   فهد، ولا يمر تفسير جديد بعيد في الرنين والطبقة معاً. */
+export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOUSTIC_REFERENCE, pitchMedians = {}) {
   const maximum = Number(reference?.maximumTimbreDistance)
   const minimum = Number(reference?.minimumUtterancesPerSpeaker || 4)
+  const minimumAdvantage = Number(reference?.minimumOwnSpeakerAdvantage || 0)
+  const maximumPitchDistanceHz = Number(reference?.maximumPitchDistanceHz || Infinity)
   const speakers = {}
   const failures = []
   for (const speaker of ['male', 'female']) {
     const measured = measuredSpeakerTimbreCenter(file, timeline, speaker)
-    const target = reference?.speakers?.[speaker]?.timbreCenter
-    const distance = timbreDistance(measured.center, target)
-    const pass = measured.sampleCount >= minimum && Number.isFinite(distance) && distance <= maximum
+    const otherSpeaker = speaker === 'male' ? 'female' : 'male'
+    const nearest = nearestTimbreReference(measured.center, approvedTimbreReferencesFor(reference, speaker))
+    const nearestOther = nearestTimbreReference(measured.center, approvedTimbreReferencesFor(reference, otherSpeaker))
+    const distance = nearest?.distance
+    const crossDistance = nearestOther?.distance
+    const ownSpeakerAdvantage = Number.isFinite(distance) && Number.isFinite(crossDistance)
+      ? crossDistance - distance : null
+    const measuredPitchHz = Number(pitchMedians?.[speaker])
+    const pitchDistanceHz = Number.isFinite(measuredPitchHz) && Number.isFinite(nearest?.pitchMedianHz)
+      ? Math.abs(measuredPitchHz - nearest.pitchMedianHz) : null
+    const enoughSamples = measured.sampleCount >= minimum
+    const timbrePass = Number.isFinite(distance) && distance <= maximum
+    const separationPass = Number.isFinite(ownSpeakerAdvantage) && ownSpeakerAdvantage >= minimumAdvantage
+    /* CLI التدقيق التاريخي قد لا يملك ملف كل دور كي يحسب F0؛ وقت الإنتاج
+       نمرر وسيطي فهد ونورة المحسوبين أصلاً، وهناك تصبح الطبقة إلزامية. */
+    const pitchPass = pitchDistanceHz === null || pitchDistanceHz <= maximumPitchDistanceHz
+    const pass = enoughSamples && timbrePass && separationPass && pitchPass
     speakers[speaker] = {
       sampleCount: measured.sampleCount,
+      nearestApprovedReference: nearest?.id || null,
       distance: Number.isFinite(distance) ? Number(distance.toFixed(4)) : null,
+      crossDistance: Number.isFinite(crossDistance) ? Number(crossDistance.toFixed(4)) : null,
+      ownSpeakerAdvantage: Number.isFinite(ownSpeakerAdvantage) ? Number(ownSpeakerAdvantage.toFixed(4)) : null,
+      measuredPitchHz: Number.isFinite(measuredPitchHz) ? Number(measuredPitchHz.toFixed(1)) : null,
+      pitchDistanceHz: Number.isFinite(pitchDistanceHz) ? Number(pitchDistanceHz.toFixed(1)) : null,
       maximumDistance: maximum,
+      minimumOwnSpeakerAdvantage: minimumAdvantage,
+      maximumPitchDistanceHz,
       pass,
     }
-    if (!pass) failures.push(`${speaker === 'male' ? 'فهد' : 'نورة'}:${Number.isFinite(distance) ? distance.toFixed(3) : 'لا بصمة'}`)
+    const name = speaker === 'male' ? 'فهد' : 'نورة'
+    if (!enoughSamples) failures.push(`${name}:عينات ${measured.sampleCount}/${minimum}`)
+    if (!timbrePass) failures.push(`${name}:بعد ${Number.isFinite(distance) ? distance.toFixed(3) : 'لا بصمة'}`)
+    if (!separationPass) failures.push(`${name}:قريب من ${speaker === 'male' ? 'نورة' : 'فهد'} (${Number.isFinite(ownSpeakerAdvantage) ? ownSpeakerAdvantage.toFixed(3) : '—'})`)
+    if (!pitchPass) failures.push(`${name}:طبقة ${pitchDistanceHz.toFixed(0)}Hz`)
   }
   return {
     mode: GOLD_ACOUSTIC_MODE,
@@ -1224,6 +1286,8 @@ export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOU
     referenceSeed: reference?.source?.seed ?? null,
     method: reference?.method || '',
     maximumTimbreDistance: maximum,
+    minimumOwnSpeakerAdvantage: minimumAdvantage,
+    maximumPitchDistanceHz,
     speakers,
     failures,
   }
@@ -2801,14 +2865,34 @@ if (SELF_TEST) {
   assert.equal(GOLD_ACOUSTIC_REFERENCE.source.audioSha256,
     '7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1',
     'مرجع الأذن الذهبي مثبت ببصمة ملف الحلقة الأولى، لا باسمٍ قابل للتبديل')
+  assert.deepEqual(GOLD_ACOUSTIC_REFERENCE.approvedSources.map((source) => source.slug),
+    [PILOT_SLUG, PILOT_SLUG],
+    'مرجع الأذن لا يتعلم من الحلقات ٢–٥ التي رفضها الدكتور')
+  assert.deepEqual(GOLD_ACOUSTIC_REFERENCE.approvedSources.map((source) => source.audioSha256), [
+    '7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1',
+    '048097c1e206bea66358b46a91ed23b9488b9ab4b43e78b8536f1998b679de32',
+  ], 'كل مرجع معتمد مربوط ببايتات الصوت التي سمعها الدكتور')
   assert.equal(timbreDistance(
     GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter,
     GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter,
   ), 0, 'البصمة الذهبية تطابق نفسها')
-  const shiftedGold = GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter.map((value) => value + 0.4)
-  assert.ok(timbreDistance(shiftedGold, GOLD_ACOUSTIC_REFERENCE.speakers.male.timbreCenter)
-    > GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance,
-  'تفسير حنجرة مختلف لا يمر لمجرد أن اسم الـpreset نفسه')
+  for (const speaker of ['male', 'female']) {
+    const own = approvedTimbreReferencesFor(GOLD_ACOUSTIC_REFERENCE, speaker)
+    const other = approvedTimbreReferencesFor(GOLD_ACOUSTIC_REFERENCE, speaker === 'male' ? 'female' : 'male')
+    assert.equal(nearestTimbreReference(own[1].timbreCenter, own).id,
+      'run-33296947431-seed-3111', `المرجع الثاني المعتمد لـ${speaker} يطابق نفسه`)
+    const ownDistance = nearestTimbreReference(own[1].timbreCenter, own).distance
+    const crossDistance = nearestTimbreReference(own[1].timbreCenter, other).distance
+    assert.ok(crossDistance - ownDistance >= GOLD_ACOUSTIC_REFERENCE.minimumOwnSpeakerAdvantage,
+      `المرجع الثاني لـ${speaker} يبقى أقرب إلى صاحبه من الصوت المقابل`)
+    const shiftedGold = own[0].timbreCenter.map((value) => value + 0.4)
+    assert.ok(nearestTimbreReference(shiftedGold, own).distance
+      > GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance,
+    `تفسير حنجرة بعيد عن كل مراجع ${speaker} لا يمر لمجرد اسم الـpreset`)
+    assert.ok(nearestTimbreReference(other[0].timbreCenter, own).distance
+      > nearestTimbreReference(other[0].timbreCenter, other).distance,
+    `بصمة الصوت المقابل لا تُنسب إلى ${speaker}`)
+  }
 
   console.log('✓ Gemini Kuwaiti pipeline self-test: chunking + prompt + PCM/WAV + عقد الطلب والاستخراج')
   process.exit(0)
@@ -3174,13 +3258,16 @@ let goldAcousticReference = {
 }
 if (GOLD_ACOUSTIC_MODE === 'required') {
   console.log(`🔒 مرجع الأذن الذهبي: ${GOLD_ACOUSTIC_REFERENCE.referenceVersion} · فهد ونورة`)
-  goldAcousticReference = goldAcousticReferenceGate(audioFile, timeline)
+  goldAcousticReference = goldAcousticReferenceGate(audioFile, timeline, GOLD_ACOUSTIC_REFERENCE, {
+    male: maleMid,
+    female: femaleMid,
+  })
   if (goldAcousticReference.status !== 'pass') {
     rejectTake(`↻ نفس أسماء الأصوات، لكن مو فهد ونورة المعتمدين: ${goldAcousticReference.failures.join(' · ')} (الحد ${goldAcousticReference.maximumTimbreDistance}) — الـTake مرفوض بالكامل.`, {
       stage:'gold-acoustic-reference', goldAcousticReference,
     })
   }
-  console.log(`✓ مرجع الأذن: فهد ${goldAcousticReference.speakers.male.distance.toFixed(3)} · نورة ${goldAcousticReference.speakers.female.distance.toFixed(3)}`)
+  console.log(`✓ مرجع الأذن: فهد ${goldAcousticReference.speakers.male.distance.toFixed(3)} (${goldAcousticReference.speakers.male.nearestApprovedReference}) · نورة ${goldAcousticReference.speakers.female.distance.toFixed(3)} (${goldAcousticReference.speakers.female.nearestApprovedReference})`)
 }
 let dialectAudit = { mode:DIALECT_AUDIT_MODE, model:DIALECT_AUDIT_MODEL,
   status:DIALECT_AUDIT_MODE === 'off' ? 'skipped' : 'pending', reasons:[] }

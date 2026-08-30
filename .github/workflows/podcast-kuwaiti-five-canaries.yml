@@ -176,6 +176,9 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
           GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
+          GEMINI_DIALECT_AUDIT_MODEL: gemini-3.7-flash
+          GEMINI_DIALECT_AUDIT_FALLBACK_MODELS: gemini-3.6-flash,gemini-3.5-flash
+          PODCAST_KW_DIALECT_AUDIT_HTTP_TIMEOUT_MS: '45000'
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
           # الجسر يبقى في المكساج، ولا يفتح نداء TTS جديداً. كل نداء جديد
@@ -192,9 +195,9 @@ jobs:
           # شاهدٌ مستقلٌّ بعد التوليد: كلمة بكلمة + هوية المتحدث. لا يعود
           # قصّ الصمت وطول الحروف وحدهما قاضيين على الحنجرة أو اكتمال الدور.
           PODCAST_KW_TRANSCRIPT_ALIGNMENT: required
-          # شاهد اللهجة الآلي مرّر 8/8 مما ردّته الأذن. يبقى مختبراً
-          # للمعايرة فقط، ولا يستهلك وقتاً أو يمنح اعتماداً كاذباً.
-          PODCAST_KW_DIALECT_AUDIT: off
+          # الشاهد الآلي مو كافي وحده، لكنه طبقة رفض إضافية ولا يجوز إطفاؤه.
+          # الاعتماد النهائي يبقى لأذن الدكتور + المرجع الذهبي الصريح.
+          PODCAST_KW_DIALECT_AUDIT: required
           PODCAST_KW_GOLD_ACOUSTIC_GATE: required
           PODCAST_KW_REJECT_DIR: five-canaries/rejected
           REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}

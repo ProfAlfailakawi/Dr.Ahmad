@@ -4,7 +4,11 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { applyConversationVariety, CONVERSATION_FAMILIES } from './lib/kuwaiti-dialogue-variety.mjs'
+import {
+  applyConversationVariety,
+  CONVERSATION_FAMILIES,
+  DOCTOR_APPROVED_GOLD_CAST_SWAPS,
+} from './lib/kuwaiti-dialogue-variety.mjs'
 import { checkSpec, condenseV3Adaptive } from './condense-diwania-v3.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -18,7 +22,7 @@ const firstSpeakerCounts = { male: 0, female: 0 }
 const leadCounts = { male: 0, female: 0, balanced: 0 }
 const exactOpenings = new Map()
 const topology = new Set()
-let castSwapped = 0
+const goldCastSlugs = []
 let dynamicStructuralFailures = 0
 let dynamicSoftWarnings = 0
 let baselineSoftWarnings = 0
@@ -27,19 +31,29 @@ for (const [slug, episode] of episodes) {
   const original = Object.values(episode)
   const prepared = applyConversationVariety(original, { slug })
   const preparedTwice = applyConversationVariety(prepared.turns, { slug })
+  const goldPrepared = applyConversationVariety(original, { slug, preserveDoctorApprovedGoldCast: true })
+  const goldPreparedTwice = applyConversationVariety(goldPrepared.turns, {
+    slug,
+    preserveDoctorApprovedGoldCast: true,
+  })
 
   /* أهم قفل: التنويع لا يعيد كتابة الحلقات الممتازة ولا يعيد ترتيبها. */
   assert.deepEqual(prepared.turns.map((turn) => turn.text), original.map((turn) => turn.text),
     `${slug}: التنويع مسّ كلمات الحلقة`)
   assert.deepEqual(prepared.turns.map((turn) => turn.deliveryType), original.map((turn) => turn.deliveryType),
     `${slug}: التنويع غيّر أدوار الجمل`)
+  assert.deepEqual(prepared.turns.map((turn) => turn.speaker), original.map((turn) => turn.speaker),
+    `${slug}: التنويع العام قلب الكاست بعد اعتماد النص`)
+  assert.equal(prepared.plan.castApplied, false, `${slug}: التنويع العام طبّق قلب كاست صامتاً`)
   assert.deepEqual(preparedTwice.turns.map((turn) => turn.speaker), prepared.turns.map((turn) => turn.speaker),
     `${slug}: طبقة التنويع غير idempotent`)
+  assert.deepEqual(goldPreparedTwice.turns.map((turn) => turn.speaker), goldPrepared.turns.map((turn) => turn.speaker),
+    `${slug}: استعادة الكاست الذهبي غير idempotent`)
 
   familyCounts[prepared.plan.family] += 1
   firstSpeakerCounts[prepared.plan.firstSpeaker] += 1
   leadCounts[prepared.plan.leadSpeaker] += 1
-  if (prepared.plan.castSwapped) castSwapped += 1
+  if (goldPrepared.plan.castSwapped) goldCastSlugs.push(slug)
   const opening = String(prepared.turns[0]?.text || '').replace(/\s+/g, ' ').trim()
   exactOpenings.set(opening, (exactOpenings.get(opening) || 0) + 1)
   topology.add(prepared.turns.slice(0, 7).map((turn) => `${turn.speaker[0]}:${turn.deliveryType || 'plain'}`).join('|'))
@@ -61,7 +75,8 @@ const total = episodes.length
 /* لا نصنع توازناً شكلياً بقلب الكاست بعد الكتابة؛ هذا هو العطب الذي جعل
    نورة تقول لفهد «تدرين». الحلقة الجديدة تستطيع أن تبدأ بنورة إذا كُتبت
    لها من الأصل، أما المكتبة المعتمدة فلا نغيّر جنس كلماتها آلياً. */
-assert.equal(castSwapped, 0, 'ممنوع قلب الكاست بعد اعتماد النص')
+assert.deepEqual(goldCastSlugs.sort(), [...DOCTOR_APPROVED_GOLD_CAST_SWAPS].sort(),
+  'استثناء الكاست يجب أن يبقى محصوراً في الحلقات الثلاث التي اعتمدها الدكتور')
 for (const [family, count] of Object.entries(familyCounts)) {
   assert.ok(count >= Math.max(10, Math.floor(total * 0.07)), `${family}: ${count} حلقات فقط`)
 }
@@ -72,7 +87,8 @@ assert.equal(dynamicStructuralFailures, 0, 'خطة التنويع للحلقات
 assert.ok(dynamicSoftWarnings <= baselineSoftWarnings,
   `التنويع زاد تنبيهات المتن: ${dynamicSoftWarnings} بدل ${baselineSoftWarnings}`)
 
-console.log(`✓ تنويع كل المكتبة: ${total} حلقة · البداية الأصلية نورة ${firstSpeakerCounts.female}/فهد ${firstSpeakerCounts.male} · صفر قلب كاست بعد الكتابة`)
+console.log(`✓ تنويع كل المكتبة: ${total} حلقة · البداية الأصلية نورة ${firstSpeakerCounts.female}/فهد ${firstSpeakerCounts.male} · صفر قلب كاست عام`)
+console.log(`✓ الكاست الاحترافي المقفول محصور في ${goldCastSlugs.length} حلقات اعتمدها الدكتور؛ ولا يمتد إلى أي حلقة ثانية`)
 console.log(`✓ ست عائلات محادثة: ${Object.entries(familyCounts).map(([family, count]) => `${family}=${count}`).join(' · ')}`)
 console.log(`✓ ${topology.size} بصمة أخذ ورد مختلفة · صفر تغيير كلمة · صفر إعادة ترتيب · المقالات الجديدة: صفر عطب بنيوي`)
 console.log(`ℹ️ ${dynamicSoftWarnings} متناً تاريخياً ما فيه من الأصل سؤال/اعتراض/تركيب كافي؛ ما اخترعنا له كلاماً، والتنويع ما زادها عن خط الأساس`)

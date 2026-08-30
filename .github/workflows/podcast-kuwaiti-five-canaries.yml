@@ -1,10 +1,10 @@
-name: حلقة كويتية واحدة — مختبر المرجع الذهبي
+name: حلقة كويتية واحدة — المرجع الاحترافي المعتمد
 
 on:
   workflow_dispatch:
     inputs:
       single_slug:
-        description: 'اختر حلقة واحدة؛ كل حلقة لها تشغيلة وملفات وحكم مستقل'
+        description: 'اختر حلقة واحدة؛ اللهجة والكاست والبذرة مقفولة على النسخة التي اعتمدها الدكتور'
         required: true
         type: choice
         options:
@@ -14,30 +14,6 @@ on:
           - when-seriousness-becomes-a-mask-for-escapearabic
           - how-do-we-assess-without-breaking-the-human-beingarabic
         default: success-that-does-not-bring-joy-to-its-ownerarabic
-      prompt_mode:
-        description: 'ضبط البرومت: full = جدار الحلقة الجبارة (٢١ أغسطس، محفوظ حرفياً ١٢٧٢٥ حرفاً) · c = الحالي ببنية Google'
-        required: false
-        default: 'c'
-      library:
-        description: 'مكتبة المصدر: v3 = إيقاع الديوانية بكلمات الدكتور (وفاء ١٠٠٪) · v2 = النص المخترع (للمقارنة التاريخية فقط)'
-        required: false
-        default: 'v3'
-      seed_base:
-        description: 'اختياري: قاعدة بذور مضبوطة لاختبار مرجع محفوظ (مثال 3100 يعطي 3104 ثم 3114 للحلقة 04)'
-        required: false
-        default: ''
-      quality_attempts:
-        description: 'عينات جودة لكل حلقة (1–6؛ الافتراض 6 = موجتان مستقلتان من 3)'
-        required: false
-        default: '6'
-      tts_provider:
-        description: 'بوابة الصوت: Vertex = نموذج Cloud المستقر · AI Studio = المرجع Preview القديم'
-        required: true
-        type: choice
-        options:
-          - vertex
-          - ai-studio
-        default: vertex
 
 permissions:
   contents: read
@@ -47,238 +23,93 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  five-canaries:
+  professional-gold:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
+
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
 
-      - name: Authenticate the stable Vertex TTS canary
-        if: ${{ inputs.tts_provider == 'vertex' }}
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
-
-      - name: Install Google Cloud CLI for Vertex
-        if: ${{ inputs.tts_provider == 'vertex' }}
-        uses: google-github-actions/setup-gcloud@v3
-
-      - name: Preflight Vertex identity without spending TTS quota
-        if: ${{ inputs.tts_provider == 'vertex' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          PROJECT_ID="$(node -e "process.stdout.write(String(JSON.parse(require('fs').readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS,'utf8')).project_id||''))")"
-          test -n "$PROJECT_ID" || { echo '::error::project_id مفقود من حساب Google'; exit 1; }
-          gcloud auth print-access-token >/dev/null
-          echo "PODCAST_KW_VERTEX_PROJECT=$PROJECT_ID" >> "$GITHUB_ENV"
-          echo '✓ هوية Vertex جاهزة؛ التوليد نفسه يبقى نداءً واحداً للحلقة.'
-
-      - name: Install and verify all 144 short dialogues
+      - name: Install and verify the frozen professional engine
         run: |
           npm ci --registry=https://registry.npmjs.org/ --prefer-online
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           npm run podcast:kw:self-test
+          node scripts/prepare-kuwaiti-professional-gold.mjs --self-test
 
-      - name: Prepare one locked short source
-        shell: bash
+      - name: Prepare exactly one approved dialogue with word fixes only
+        run: node scripts/prepare-kuwaiti-professional-gold.mjs --slug="${{ inputs.single_slug }}"
+
+      - name: Guard the exact words, cast and pronunciation input
         run: |
-          set -euo pipefail
-          node - <<'NODE'
-          const fs = require('fs'); const crypto = require('crypto');
-          /* [٢٢ أغسطس مساءً — بحكم الدكتور] كانت الورشة تقرأ v2 المخترع
-             («مو كويتي إطلاقاً» بأذنه: وفاء المصدر ٠٪ · حشو ١٤–٣١٪ ·
-             اسمه مفقود من الختام). الافتراض صار v3: نفس إيقاع الديوانية
-             لكن كل سطر منتقىً من متن الدكتور المدقق. */
-          const LIB = process.env.CANARY_LIBRARY === 'v2'
-            ? 'src/data/kuwaiti-diwania-v2-canaries.json'
-            : 'src/data/kuwaiti-diwania-v3.json';
-          const lib = JSON.parse(fs.readFileSync(LIB, 'utf8'));
-          console.log('المصدر: ' + LIB);
-          const allSlugs = [
-            'success-that-does-not-bring-joy-to-its-ownerarabic',
-            'the-classroom-that-fears-mistakesarabic',
-            'intelligence-without-a-consciencearabic',
-            'when-seriousness-becomes-a-mask-for-escapearabic',
-            'how-do-we-assess-without-breaking-the-human-beingarabic',
-          ];
-          const requested = String(process.env.SINGLE_SLUG || '').trim();
-          if (requested && !allSlugs.includes(requested)) throw new Error('single_slug غير معتمد ضمن باقة السماع: ' + requested);
-          if (!requested) throw new Error('اختر single_slug واحداً؛ التوليد الجماعي مقفول');
-          const slugs = [requested];
-          fs.mkdirSync('manual-dialogues-kuwaiti', { recursive: true });
-          fs.mkdirSync('podcast-audits/source-locks-kuwaiti', { recursive: true });
-          for (const slug of slugs) {
-            const turns = Object.values(lib.episodes[slug] || {});
-            if (turns.length < 15 || turns.filter((t) => t.musicBridgeAfter).length !== 2) throw new Error(slug + ': مصدر قصير غير صالح');
-            const body = JSON.stringify(turns, null, 2) + '\n';
-            const hash = crypto.createHash('sha256').update(body).digest('hex');
-            fs.writeFileSync(`manual-dialogues-kuwaiti/${slug}.json`, body);
-            fs.writeFileSync(`podcast-audits/source-locks-kuwaiti/${slug}.json`, JSON.stringify({
-              slug, revisionId: `diwania-v3-${hash.slice(0, 24)}`, sourceVariant: 'human-diwania-dna-v3-ear-corrected',
-              turnCount: turns.length, bridgeCount: 2, shortContentSha256: hash,
-            }, null, 2));
-          }
-          fs.writeFileSync('five-canary-slugs.txt', slugs.join('\n') + '\n');
-          console.log(`✓ جُهّزت ${slugs.length} محادثة ديوانية v3 مصححة بالأذن، بجسرين مونتاجيين`);
-          NODE
-        env:
-          CANARY_LIBRARY: ${{ inputs.library || 'v3' }}
-          SINGLE_SLUG: ${{ inputs.single_slug || '' }}
-
-      - name: صقل النص المنطوق إلزامياً قبل Gemini
-        run: node scripts/apply-kuwaiti-native-spoken.mjs --dir=manual-dialogues-kuwaiti
-
-      # [٢٢ أغسطس ٢٠٢٦ — بعد مراجعة كل الاختبارات بأمر الدكتور]
-      # العطب الجذري: كل فواحص السلسلة تعمل في خطوة التثبيت، والمصدر
-      # الحقيقي يُكتب في الخطوة التالية — فكانت كلها تحكم على ملفٍّ ليس
-      # هو المنطوق، وتخرج خضراء بينما الأذن تسمع خطأً. هذه البوابة تقف
-      # حيث يجب: على المصدر المجهَّز، وتفحص الصيغة التي تصل المحرّك.
-      - name: بوابة المنطوق — تفحص ما سيُقال فعلاً
-        run: node scripts/guard-spoken-episode.mjs --dir=manual-dialogues-kuwaiti
-
-      # [٢٩ أغسطس ٢٠٢٦ — بأذن الدكتور] قلبُ الكاست كان يبدّل الوسم وحده،
-      # فورثت نورة سطراً مكتوباً لفهد وقالت لرجلٍ «تدرين شنو». يقف هنا
-      # لأن ما قبل هذه النقطة ليس هو المنطوق.
-      - name: حارس مخاطبة الجنس — نورة لا تخاطب فهد بصيغة المؤنث
-        run: node scripts/guard-dialogue-gender-address.mjs --dir=manual-dialogues-kuwaiti
-
-      # واسم الدكتور كان بلا حارسٍ في كل توليدٍ كويتي (موصولٌ بورشة
-      # الفصحى وحدها) — وقد قيل خطأً في أربع حلقاتٍ من خمس.
-      - name: حارس نطق الاسم
-        run: node scripts/guard-name-pronunciation.mjs
+          node scripts/guard-spoken-episode.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-dialogue-gender-address.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-name-pronunciation.mjs
 
       - name: Preserve the new-word audition ledger
         shell: bash
         env:
-          # هذه الخمس نفسها مختبر سياقي؛ التحذير يُحفظ ولا يمنح أي كلمة
-          # اعتماد heardByEar تلقائياً. إنتاج الـ144 يبقى خلف الحارس الصارم.
           PODCAST_KW_ALLOW_NEW_WORDS: '1'
         run: |
-          mkdir -p five-canaries
+          mkdir -p professional-gold
           node scripts/guard-new-dialogue-words.mjs \
             --library=src/data/kuwaiti-diwania-v3.json \
-            | tee five-canaries/new-word-audition-ledger.txt
+            | tee professional-gold/new-word-audition-ledger.txt
 
-      - name: Generate this episode as one uninterrupted take
+      - name: Generate one take through the exact approved AI Studio route
         shell: bash
         env:
-          PODCAST_KW_PROMPT_MODE: ${{ inputs.prompt_mode || 'c' }}
-          PODCAST_KW_TTS_PROVIDER: ${{ inputs.tts_provider || 'vertex' }}
-          PODCAST_KW_VERTEX_PROJECT: ${{ env.PODCAST_KW_VERTEX_PROJECT }}
-          PODCAST_KW_VERTEX_LOCATION: us-central1
-          PODCAST_KW_TTS_LANGUAGE: ${{ inputs.tts_provider == 'vertex' && 'ar-001' || 'ar' }}
+          PODCAST_KW_PROFESSIONAL_GOLD: '1'
+          PODCAST_KW_TTS_PROVIDER: ai-studio
+          PODCAST_KW_TTS_LANGUAGE: ar
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
           GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
           GEMINI_DIALECT_AUDIT_MODEL: gemini-3.7-flash
           GEMINI_DIALECT_AUDIT_FALLBACK_MODELS: gemini-3.6-flash,gemini-3.5-flash
           PODCAST_KW_DIALECT_AUDIT_HTTP_TIMEOUT_MS: '45000'
           PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
           PODCAST_KW_GENERATION_MODE: all
-          # الجسر يبقى في المكساج، ولا يفتح نداء TTS جديداً. كل نداء جديد
-          # أعاد تكوين الحنجرة واللهجة من الصفر في عينات ٢٢ أغسطس.
+          PODCAST_KW_PROMPT_MODE: c
           PODCAST_KW_SPLIT_AT_BRIDGES: '0'
           PODCAST_KW_MIN_GAP: '25'
           PODCAST_KW_ISOLATE_SPEAKER_STEMS: '0'
           PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT: '1'
           PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT: '1'
-          # لا رفض على قراءة Hz شاذة لدور مفرد؛ المقاطع والرنين هما الحكم.
           PODCAST_KW_REJECT_SPEAKER_SWAPS: '0'
           PODCAST_KW_REJECT_ACOUSTIC_RESET: '1'
           PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
-          # شاهدٌ مستقلٌّ بعد التوليد: كلمة بكلمة + هوية المتحدث. لا يعود
-          # قصّ الصمت وطول الحروف وحدهما قاضيين على الحنجرة أو اكتمال الدور.
           PODCAST_KW_TRANSCRIPT_ALIGNMENT: required
-          # الشاهد الآلي مو كافي وحده، لكنه طبقة رفض إضافية ولا يجوز إطفاؤه.
-          # الاعتماد النهائي يبقى لأذن الدكتور + المرجع الذهبي الصريح.
           PODCAST_KW_DIALECT_AUDIT: required
           PODCAST_KW_GOLD_ACOUSTIC_GATE: required
-          PODCAST_KW_REJECT_DIR: five-canaries/rejected
-          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
+          PODCAST_KW_REJECT_DIR: professional-gold/rejected
         run: |
-          set -uo pipefail
-          set +e
-          mkdir -p five-canaries
-          N=0
-          TOTAL=$(wc -l < five-canary-slugs.txt | tr -d ' ')
-          # لا تعِد seed نفسها عند Rerun؛ وإلا رجعت العينة المرفوضة نفسها.
-          REQUESTED_SEED_BASE='${{ inputs.seed_base || '' }}'
-          QUALITY_ATTEMPTS="$REQUESTED_QUALITY_ATTEMPTS"
-          [[ "$QUALITY_ATTEMPTS" =~ ^[1-6]$ ]] || { echo "::error::quality_attempts يجب أن يكون بين 1 و6"; exit 1; }
-          if [ -n "$REQUESTED_SEED_BASE" ]; then
-            [[ "$REQUESTED_SEED_BASE" =~ ^[0-9]+$ ]] || { echo "::error::seed_base غير صالح"; exit 1; }
-            SEED_BASE="$REQUESTED_SEED_BASE"
-          else
-            SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 10000 ))
-          fi
-          while IFS= read -r SLUG; do
-            N=$((N + 1)); ACCEPTED=0
-            # كل حلقة مستقلة تبدأ من خانة المرجع 1. اختلاف 2102–2105 هو
-            # بالضبط ما صنع الأصوات التي ردّتها الأذن مع بقاء preset نفسه.
-            case "$SLUG" in
-              success-that-does-not-bring-joy-to-its-ownerarabic|the-classroom-that-fears-mistakesarabic|intelligence-without-a-consciencearabic|when-seriousness-becomes-a-mask-for-escapearabic|how-do-we-assess-without-breaking-the-human-beingarabic) SEED_SLOT=1 ;;
-              *) echo "::error::ماكو خانة بذرة معتمدة لـ$SLUG"; exit 1 ;;
-            esac
-            for ATTEMPT in $(seq 1 "$QUALITY_ATTEMPTS"); do
-              export PODCAST_KW_PILOT_SLUG="$SLUG"
-              ATTEMPT_INDEX=$((ATTEMPT - 1))
-              SEED_WAVE=$((ATTEMPT_INDEX / 3))
-              SEED_WITHIN_WAVE=$((ATTEMPT_INDEX % 3))
-              export PODCAST_KW_SEED=$((SEED_BASE + SEED_SLOT + SEED_WAVE * 1000 + SEED_WITHIN_WAVE * 10))
-              echo "── حلقة $N/$TOTAL · محاولة $ATTEMPT/$QUALITY_ATTEMPTS · $SLUG · seed=$PODCAST_KW_SEED"
-              # عطل Gemini المؤقت لا يعني أن الـTake رديء، ولا يجوز أن
-              # يستهلك محاولة جودة أو يمنعنا من الوصول إلى البذرة التالية.
-              TRANSPORT_ATTEMPT=1
-              while :; do
-                node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
-                CODE=$?
-                if [ "$CODE" -eq 0 ]; then ACCEPTED=1; break; fi
-                if [ "$CODE" -eq 3 ]; then break; fi
-                if [ "$CODE" -eq 75 ] && [ "$TRANSPORT_ATTEMPT" -lt 3 ]; then
-                  echo "↻ Gemini مؤقتاً — إعادة seed=$PODCAST_KW_SEED من غير خصم عينة جودة"
-                  sleep $((TRANSPORT_ATTEMPT * 5)); TRANSPORT_ATTEMPT=$((TRANSPORT_ATTEMPT + 1)); continue
-                fi
-                if [ "$CODE" -eq 75 ]; then echo "::error::Gemini متعطل مؤقتاً؛ أُوقف الصرف وحُفظ سبب التأجيل."; exit 75; fi
-                if [ "$CODE" -eq 76 ]; then echo "::error::الصوت محفوظ لكن شهود اللهجة مشغولون؛ ممنوع إعادة TTS."; exit 76; fi
-                if [ "$CODE" -eq 78 ]; then echo "::error::الرصيد انتهى؛ ممنوع بدء حلقة أخرى."; exit 78; fi
-                exit "$CODE"
-              done
-              if [ "$ACCEPTED" -eq 1 ]; then break; fi
-            done
-            if [ "$ACCEPTED" -ne 1 ]; then
-              # [٢٣ أغسطس ٢٠٢٦] كان يخرج فوراً — فسقطت الحلقة الخامسة
-              # (ثلاث عينات بفجوة ‑٦ و٤) وضاعت الأربع الناجحة معها ولم
-              # تُرفع حزمة سماع أصلاً. الحلقة السيئة تُسجَّل وتُتخطّى،
-              # وما نجح يصل الدكتور. والتشغيلة تُعلَن ناقصةً في نهايتها.
-              echo "::warning::$SLUG: $QUALITY_ATTEMPTS عينات من موجتين سقطت في بوابة الصوتين — تُتخطّى، والباقي يكمل"
-              echo "$SLUG" >> five-canaries/SKIPPED.txt
-              continue
-            fi
-            cp "audio/$SLUG.dialogue-kw.mp3" "five-canaries/$(printf '%02d' "$N")-$SLUG.mp3"
-            cp "audio/$SLUG.dialogue-kw.json" "five-canaries/$(printf '%02d' "$N")-$SLUG.json"
-            cp "podcast-audits/kuwaiti/$SLUG.json" "five-canaries/$(printf '%02d' "$N")-$SLUG.audit.json"
-          done < five-canary-slugs.txt
-          MADE=$(ls five-canaries/*.mp3 2>/dev/null | wc -l | tr -d ' ')
-          echo "✓ اكتملت $MADE حلقة من $N"
-          if [ -f five-canaries/SKIPPED.txt ]; then
-            echo "::warning::حلقاتٌ تخطّاها اليوم:"; cat five-canaries/SKIPPED.txt
-          fi
-          [ "$MADE" -gt 0 ] || { echo "::error::لم تكتمل ولا حلقة"; exit 1; }
-          # النجاح الأخضر يعني اكتمال المطلوب كله. كانت تشغيلة 25 أغسطس
-          # خضراء عند 2/5، وهذا «إسقاط» صامت لا يصلح قبل إنتاج 143 حلقة.
-          [ ! -f five-canaries/SKIPPED.txt ] || { echo "::error::الحزمة ناقصة؛ الناجح مرفوع لكن المطلوب لم يكتمل."; exit 2; }
+          set -euo pipefail
+          SLUG='${{ inputs.single_slug }}'
+          case "$SLUG" in
+            success-that-does-not-bring-joy-to-its-ownerarabic) export PODCAST_KW_SEED=2101 ;;
+            the-classroom-that-fears-mistakesarabic) export PODCAST_KW_SEED=2102 ;;
+            intelligence-without-a-consciencearabic) export PODCAST_KW_SEED=2103 ;;
+            when-seriousness-becomes-a-mask-for-escapearabic) export PODCAST_KW_SEED=2114 ;;
+            how-do-we-assess-without-breaking-the-human-beingarabic) export PODCAST_KW_SEED=2115 ;;
+            *) echo "::error::الحلقة مو من الخمس الاحترافية"; exit 1 ;;
+          esac
+          node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
+          mkdir -p professional-gold
+          cp "audio/$SLUG.dialogue-kw.mp3" "professional-gold/$SLUG.mp3"
+          cp "audio/$SLUG.dialogue-kw.json" "professional-gold/$SLUG.json"
+          cp "podcast-audits/kuwaiti/$SLUG.json" "professional-gold/$SLUG.audit.json"
 
-      - name: Upload one listening package
+      - name: Upload the one listening package
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: kuwaiti-listening-${{ inputs.single_slug || 'five-canaries' }}
-          path: five-canaries/
+          name: professional-kuwaiti-${{ inputs.single_slug }}
+          path: professional-gold/
           if-no-files-found: warn
           retention-days: 30

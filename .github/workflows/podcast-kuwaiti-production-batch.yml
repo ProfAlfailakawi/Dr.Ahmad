@@ -27,19 +27,6 @@ on:
         description: 'اختياري للتجربة المضبوطة؛ اتركه فارغاً لبذور جديدة تلقائياً في كل Rerun'
         required: false
         default: ''
-      tts_provider:
-        description: 'Vertex هو المسار المستقر؛ الإنتاج يظل مقفولاً حتى تعتمد باقة السماع بأذنك'
-        required: true
-        type: choice
-        options:
-          - vertex
-          - ai-studio
-        default: vertex
-      confirm_vertex_canaries:
-        description: 'أؤكد أني سمعت تجارب Vertex الفردية واعتمدت أصواتها ولهجتها'
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -61,51 +48,27 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Refuse an unapproved provider for the 143-episode queue
-        if: ${{ inputs.tts_provider == 'vertex' && !inputs.confirm_vertex_canaries }}
-        run: |
-          echo '::error::ولّد باقة السماع على Vertex واسمعها أولاً، ثم فعّل confirm_vertex_canaries.'
-          exit 1
-
-      - name: Authenticate the approved stable Vertex route
-        if: ${{ inputs.tts_provider == 'vertex' && inputs.confirm_vertex_canaries }}
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
-
-      - name: Install Google Cloud CLI for Vertex
-        if: ${{ inputs.tts_provider == 'vertex' && inputs.confirm_vertex_canaries }}
-        uses: google-github-actions/setup-gcloud@v3
-
-      - name: Preflight Vertex identity without spending TTS quota
-        if: ${{ inputs.tts_provider == 'vertex' && inputs.confirm_vertex_canaries }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          PROJECT_ID="$(node -e "process.stdout.write(String(JSON.parse(require('fs').readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS,'utf8')).project_id||''))")"
-          test -n "$PROJECT_ID" || { echo '::error::project_id مفقود من حساب Google'; exit 1; }
-          gcloud auth print-access-token >/dev/null
-          echo "PODCAST_KW_VERTEX_PROJECT=$PROJECT_ID" >> "$GITHUB_ENV"
-
       - name: Install and lock the approved production engine
         run: |
           npm ci --registry=https://registry.npmjs.org/ --prefer-online
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           npm run podcast:kw:self-test
+          node scripts/prepare-kuwaiti-professional-gold.mjs --self-test
           node scripts/run-kuwaiti-generation-queue.mjs --self-test
 
       - name: Select a deterministic batch from all 143 site articles
         shell: bash
         env:
           REQUESTED_BATCH: ${{ inputs.batch || '1' }}
-          REQUESTED_SIZE: ${{ inputs.batch_size || '5' }}
+          REQUESTED_SIZE: ${{ inputs.batch_size || '1' }}
           REQUESTED_SLUGS: ${{ inputs.slugs || '' }}
         run: |
           set -euo pipefail
           node - <<'NODE'
           const fs = require('fs'); const crypto = require('crypto');
           const v3 = JSON.parse(fs.readFileSync('src/data/kuwaiti-diwania-v3.json', 'utf8'));
+          const gold = new Set(JSON.parse(fs.readFileSync('scripts/data/kuwaiti-professional-gold-v13.json', 'utf8')).episodes.map((episode) => episode.slug));
           const site = new Set(Object.keys(JSON.parse(fs.readFileSync('src/data/bodies.json', 'utf8'))));
           const all = Object.keys(v3.episodes || {}).filter((slug) => site.has(slug));
           if (all.length !== 143) throw new Error(`عقد الإنتاج يقول 143 مقالاً؛ الموجود ${all.length}`);
@@ -118,6 +81,7 @@ jobs:
           for (const slug of explicit) if (!site.has(slug) || !v3.episodes[slug]) throw new Error(`slug غير معتمد: ${slug}`);
           const selected = explicit.length ? [...new Set(explicit)] : all.slice((batch - 1) * size, batch * size);
           if (!selected.length) throw new Error('الدفعة خارج نطاق 143 حلقة');
+          for (const slug of selected) if (gold.has(slug)) throw new Error(`${slug}: هذه من الخمس الذهبية؛ ولّدها من مختبر المرجع الاحترافي ببذرتها المقفولة`);
           fs.mkdirSync('manual-dialogues-kuwaiti', { recursive: true });
           fs.mkdirSync('podcast-audits/source-locks-kuwaiti', { recursive: true });
           const slots = {};
@@ -180,12 +144,10 @@ jobs:
         id: queue
         shell: bash
         env:
-          PODCAST_KW_TTS_PROVIDER: ${{ inputs.tts_provider || 'vertex' }}
-          PODCAST_KW_VERTEX_PROJECT: ${{ env.PODCAST_KW_VERTEX_PROJECT }}
-          PODCAST_KW_VERTEX_LOCATION: us-central1
-          PODCAST_KW_TTS_LANGUAGE: ${{ inputs.tts_provider == 'vertex' && 'ar-001' || 'ar' }}
+          PODCAST_KW_TTS_PROVIDER: ai-studio
+          PODCAST_KW_TTS_LANGUAGE: ar
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
           GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
           GEMINI_DIALECT_AUDIT_MODEL: gemini-3.7-flash
           GEMINI_DIALECT_AUDIT_FALLBACK_MODELS: gemini-3.6-flash,gemini-3.5-flash

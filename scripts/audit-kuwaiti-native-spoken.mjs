@@ -78,23 +78,21 @@ if (SELF_TEST) {
     'تحرير الحلقة لا يعيد الكلمات التسع التي أوقفها حارس الكلمات')
   assert.doesNotMatch(pilotText, /(?:باب ضيق|وعقب|وسيلة تهد[يّي] الخوف|الدراسة تصير محطة بعد محطة|أوضح مع نفسهم|نلمّع شكل النجاح)/u,
     'المواضع الخمسة من الحكم السمعي الأخير لا ترجع إلى النص')
-  assert.match(pilot.turns[4].text, /محشور بمكان ضيّج… وبعدها طلع منه/u,
+  assert.match(pilot.turns[4].text, /منحشر بمكان ضيّج… وبعدها طلع منه/u,
     '«ضيّج» المعتمدة مكتوبة في المصدر نفسه لا متروكة لاحتمال المعجم')
   assert.equal(pilot.turns.length, 25, 'البحث المضغوط يقلل تبديل الصوت من غير حذف معلومة')
   assert.deepEqual(pilot.turns.slice(13, 18).map((turn) => turn.speaker),
     ['female', 'male', 'female', 'male', 'female'], 'البحث أخذ ورد بين صوتين لا فقرة مذيع')
   assert.equal(pilot.turns[14].text, 'شلون يعني؟ وشنو طلع معاهم؟',
     'سؤال البحث واحد طبيعي بدل تبديل صوت كل سطر')
-  assert.match(pilot.turns[15].text, /في مراجعة كبيرة.*كل ما زاد التوتر، نزل مستوى الطالب/u,
+  assert.match(pilot.turns[15].text, /في دراسة كبيرة جمعت أبحاث وايد.*كل ما زاد التوتر، نزل مستوى الطالب/u,
     'جواب البحث يحتفظ بالمصدر والنتيجة')
-  assert.match(pilot.turns[15].text, /خذو فيها أبحاث/u,
-    'حكم الأذن «خذو فيها» مثبت في النص الذي يصل المحرك')
   assert.doesNotMatch(pilotText, /(?:أخذوا|اخذوا) فيها أبحاث/u,
-    'الصيغة التي سُمعت خطأ لا ترجع إلى الحلقة 01 المرجعية')
+    'الصيغة التي سُمعت خطأ لا ترجع؛ الحلقة الذهبية تقول «جمعت أبحاث»')
   assert.equal(pilot.turns[18].text, 'بس مو كبرنا الموضوع وايد؟', 'الاعتراض كويتي شفهي وخفيف')
   assert.equal(pilot.turns[23].text,
-    'واللي علينا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.',
-    'الخاتمة كلام بشري لا شعار ولا كلمة جديدة')
+    'ودورنا مو بس نفرح بالنتيجة جدام الناس. الأهم إن الطالب نفسه يحس إن تعبه كان له معنى.',
+    'الخاتمة ترجع حرفياً إلى الحلقة الاحترافية التي اعتمدها الدكتور')
   const seriousness = optimizeNativeSpokenEpisode(
     Object.values(pilotLibrary.episodes[SERIOUSNESS_SLUG]), { slug: SERIOUSNESS_SLUG })
   const seriousnessText = seriousness.turns.map((turn) => turn.text).join('\n')
@@ -122,8 +120,8 @@ if (SELF_TEST) {
     'مرات ما تكون جدية أصلا… تكون طريقة مرتبة نلهي فيها نفسنا.',
     'نتهرّب المعيبة تُزال من السياق نفسه بلا ألف وصل مخترعة')
   assert.equal(seriousness.turns[2].text,
-    'وبآخر الليل نرد… ونكتشف إن ما تحرّك فينا شي صج.',
-    '«نرجع» لا تعود إلى الموضع الذي ابتلع المحرك عينه الأخيرة')
+    'وبآخر الليل نكتشف إن ما تحرّك فينا شي صج.',
+    'الكلمة التي سُمعت «نرج» حُذفت من تركيبها من غير تغيير الفكرة')
   assert.equal(seriousness.turns[5].text, 'نلهي نفسنا عن شنو؟',
     'السؤال القصير يظل أخذاً ورداً طبيعياً')
   assert.equal(seriousness.turns[12].text,
@@ -145,8 +143,8 @@ if (SELF_TEST) {
   assert.equal(seriousness.turns[21].text, 'وحتى أبحاث التسويف لاحظت هالشي.',
     '«الفرق» وحدها تُزال من الجملة البحثية')
   assert.equal(seriousness.turns[25].text,
-    'نفرق بين شغل يودّينا للشي المهم… وشغل يبعدنا عنه.',
-    'يقرّبنا المعيبة لا تصل المحرك')
+    'نميّز بين شغل يودّينا للشي المهم… وشغل يبعدنا عنه.',
+    'الفرق/يقرّبنا المعيبتان لا تصلان المحرك')
   assert.equal(seriousness.turns[28].text,
     'وبالأخير يكتشف إن كل هالانشغال كان عشان ما يواجه نفسه.',
     'الخاتمة تحفظ المعنى من غير يهرب المعيبة')
@@ -293,28 +291,28 @@ assert.match(pilotWorkflow, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'0'/,
   'الإنذار المفرد للطبقة سمعي؛ الرفض على انزلاق المقطع الكامل')
 assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
   'التغير الطيفي بعد الانتقال ممنوع حتى مع طبقة ثابتة')
-for (const workflow of ['podcast-kuwaiti-five-canaries.yml', 'podcast-prompt-experiment.yml']) {
-  const source = readFileSync(resolve(ROOT, '.github/workflows', workflow), 'utf8')
-  assert.match(source, /apply-kuwaiti-native-spoken\.mjs/, `${workflow}: التجربة تمر بالصقل نفسه`)
-  if (workflow === 'podcast-kuwaiti-five-canaries.yml') {
-    assert.match(source, /default:\s*vertex/,
-      'الكناريات تختبر المسار المستقر أولاً وقت تعطل AI Studio')
-    assert.match(source, /gemini-2\.5-pro-tts/,
-      'كناري Vertex تستعمل Pro المستقر')
-    assert.match(source, /gemini-2\.5-pro-preview-tts/,
-      'خيار المرجع Preview باقٍ للمقارنة')
-    assert.match(source, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'0'/,
-      'الكناريات الخمس تختبر الحوار المتصل نفسه قبل التعميم')
-    assert.match(source, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
-      'الكناريات لا تتجاوز انزلاق نورة')
-    assert.match(source, /PODCAST_KW_REJECT_TIMING_SUSPECTS:\s*'1'/,
-      'الكناريات لا تتجاوز دوراً مقصوصاً')
-    assert.match(source, /PODCAST_KW_REJECT_SPEAKER_SWAPS:\s*'0'/,
-      'الكناريات لا ترفض خطأ أوكتاف مفرداً مع ثبات المقطع')
-    assert.match(source, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
-      'الكناريات لا تتجاوز إعادة الرنين')
-  }
-}
+const goldWorkflow = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-five-canaries.yml'), 'utf8')
+assert.match(goldWorkflow, /prepare-kuwaiti-professional-gold\.mjs/,
+  'الخمس الذهبية تمر بمحضرها المقفول، لا بصقل عام قد يغيّرها')
+assert.match(goldWorkflow, /PODCAST_KW_PROFESSIONAL_GOLD:\s*'1'/,
+  'عقد المرجع الاحترافي الصارم مفعّل قبل صرف TTS')
+assert.match(goldWorkflow, /PODCAST_KW_TTS_PROVIDER:\s*ai-studio/,
+  'الخمس الذهبية تستعيد بوابة AI Studio التي أنشأت الأداء المعتمد')
+assert.match(goldWorkflow, /GEMINI_TTS_MODEL:\s*gemini-2\.5-pro-preview-tts/,
+  'الخمس الذهبية تستعيد نموذج Preview الذي أنشأ الأداء المعتمد')
+assert.doesNotMatch(goldWorkflow, /gemini-2\.5-pro-tts(?:\s|$)/m,
+  'نموذج Vertex المختلف ممنوع داخل مسار الخمس الذهبية')
+assert.match(goldWorkflow, /PODCAST_KW_ISOLATE_SPEAKER_STEMS:\s*'0'/,
+  'الخمس الذهبية تولّد الحوار المتصل نفسه')
+assert.match(goldWorkflow, /PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT:\s*'1'/,
+  'الخمس الذهبية لا تتجاوز انزلاق نورة')
+assert.match(goldWorkflow, /PODCAST_KW_REJECT_TIMING_SUSPECTS:\s*'1'/,
+  'الخمس الذهبية لا تتجاوز دوراً مقصوصاً')
+assert.match(goldWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
+  'الخمس الذهبية لا تتجاوز إعادة الرنين')
+const promptExperiment = readFileSync(resolve(ROOT, '.github/workflows/podcast-prompt-experiment.yml'), 'utf8')
+assert.match(promptExperiment, /apply-kuwaiti-native-spoken\.mjs/,
+  'مختبر البرومت العام يمر بالصقل المنطوق')
 const productionBatch = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-production-batch.yml'), 'utf8')
 assert.match(productionBatch, /run-kuwaiti-generation-queue\.mjs/,
   'إنتاج 143 يمر بطابور قابل للاستئناف لا بحلقة عابرة على runner')
@@ -322,8 +320,14 @@ assert.match(productionBatch, /Restore already accepted episodes before spending
   'Rerun يسترجع الناجح قبل أي صرف جديد')
 assert.match(productionBatch, /PODCAST_KW_PROMPT_MODE:\s*c/,
   'الدفعة الفولاذية تستعمل البرومت المعتمد نفسه بلا نسخة جديدة')
-assert.match(productionBatch, /confirm_vertex_canaries/,
-  'ممنوع نقل 143 حلقة إلى بوابة جديدة قبل اعتماد خمس حلقات بالأذن')
+assert.match(productionBatch, /PODCAST_KW_TTS_PROVIDER:\s*ai-studio/,
+  'الإنتاج القادم يستعمل البوابة التي اعتمد الدكتور لهجتها')
+assert.match(productionBatch, /GEMINI_TTS_MODEL:\s*gemini-2\.5-pro-preview-tts/,
+  'الإنتاج القادم يستعمل عائلة الصوت المعتمدة ولا ينتقل إلى Vertex بصمت')
+assert.match(productionBatch, /if \(size !== 1\)/,
+  'كل حلقة مستقبلية تشغيلة مستقلة؛ فشلها لا يطيح الباقي')
+assert.match(productionBatch, /هذه من الخمس الذهبية/,
+  'الخمس المقفولة لا تدخل مسار الإنتاج العام ببذرة مختلفة')
 assert.match(productionBatch, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'0'/,
   'الدفعة الفولاذية تحفظ Same-Take والجسر الخارجي')
 assert.match(productionBatch, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,

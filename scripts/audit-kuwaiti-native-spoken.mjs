@@ -15,6 +15,7 @@ import {
 } from './lib/kuwaiti-native-spoken.mjs'
 import {
   KUWAITI_CLOSING_VARIANTS,
+  KUWAITI_GOLD_REQUEST_CLOSING,
   closingForSlug,
   isApprovedSpokenClosing,
 } from './lib/kuwaiti-closing-variants.mjs'
@@ -65,12 +66,13 @@ if (SELF_TEST) {
   const pilotLibrary = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-diwania-v3.json'), 'utf8'))
   const pilot = optimizeNativeSpokenEpisode(Object.values(pilotLibrary.episodes[PILOT_SLUG]), { slug: PILOT_SLUG })
   const pilotText = pilot.turns.map((turn) => turn.text).join('\n')
-  assert.equal(pilot.turns.at(-1).text, closingForSlug(PILOT_SLUG),
-    'الحلقة المرجعية تأخذ إحالتها الحتمية من الـslug')
-  assert.ok(isApprovedSpokenClosing(pilot.turns.at(-1).text), 'إحالة الحلقة المرجعية معتمدة')
-  assert.equal(pilot.turns.at(-1).deliveryType, 'statement', 'الإحالة تمر ككلام عادي مو إعلان')
-  assert.equal(pilot.turns.at(-1).pauseAfterMs, 260, 'وقفة الإحالة قصيرة')
-  assert.doesNotMatch(pilot.turns.at(-1).text, /حسين|الفيل/u, 'اسم العائلة لا يصل الصوت')
+  assert.equal(pilot.turns.at(-1).text, KUWAITI_GOLD_REQUEST_CLOSING,
+    'الحلقة المرجعية تستعيد ختام الطلب الذي أنشأ الصوت الذهبي حرفياً')
+  assert.equal(pilot.turns.at(-1).deliveryType, 'conclusion', 'وسم الطلب المرجعي لا يتغير')
+  assert.equal(pilot.turns.at(-1).pauseAfterMs, 900, 'توقيت الطلب المرجعي لا يتغير')
+  assert.match(pilot.turns.at(-1).text, /أحمد حسين الفيلچاوي/u,
+    'الاسم الكامل مقصود في مدخل المرجع وحده لحفظ request hash')
+  assert.ok(isApprovedSpokenClosing(closingForSlug('ordinary-episode')), 'إحالات الحلقات الأخرى تبقى معتمدة')
   assert.equal(KUWAITI_CLOSING_VARIANTS.length, 8, 'ثماني إحالات تمنع الخاتمة المكررة')
   assert.doesNotMatch(pilotText, /(?:ناطرها|معطين|ارتاح|شيين|حجمه|تعرّفنا|اهو|أهدى|سواه)/u,
     'تحرير الحلقة لا يعيد الكلمات التسع التي أوقفها حارس الكلمات')
@@ -229,10 +231,14 @@ for (const [label, relative] of sources) {
   for (const [slug, episode] of episodes) {
     const prepared = optimizeNativeSpokenEpisode(Object.values(episode), { slug })
     const optimizedText = prepared.turns.map((turn) => String(turn.text || '')).join('\n')
-    assert.ok(isApprovedSpokenClosing(prepared.turns.at(-1)?.text),
+    const closing = String(prepared.turns.at(-1)?.text || '')
+    const exactGoldRequestClosing = slug === PILOT_SLUG && closing === KUWAITI_GOLD_REQUEST_CLOSING
+    assert.ok(exactGoldRequestClosing || isApprovedSpokenClosing(closing),
       `${label}/${slug}: الخاتمة المنطوقة ليست من الصيغ المعتمدة`)
-    assert.doesNotMatch(String(prepared.turns.at(-1)?.text || ''), /حسين|الفيل/u,
-      `${label}/${slug}: اسم العائلة دخل مدخل الصوت`)
+    if (!exactGoldRequestClosing) {
+      assert.doesNotMatch(closing, /حسين|الفيل/u,
+        `${label}/${slug}: اسم العائلة دخل مدخل الصوت`)
+    }
     assert.ok(prepared.turns.every((turn) => !/^ممم…/u.test(String(turn.text || '').trim())),
       `${label}/${slug}: رجع الحشو الميكانيكي «ممم» إلى النص المنطوق`)
     assert.doesNotMatch(optimizedText, /(?:^|[\s،؛:.!?؟…])(?:تكفي|بدال|ينختبر)(?=$|[\s،؛:.!?؟…])/u,

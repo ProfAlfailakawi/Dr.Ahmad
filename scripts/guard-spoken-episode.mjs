@@ -25,7 +25,12 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildPronunciationMap, toSpokenKuwaiti, buildForeignRedactions, redactForeignNames, stripTashkeel } from './lib/kuwaiti-pronunciation.mjs'
-import { isApprovedSpokenClosing, KUWAITI_CLOSING_VARIANTS } from './lib/kuwaiti-closing-variants.mjs'
+import {
+  isApprovedSpokenClosing,
+  KUWAITI_CLOSING_VARIANTS,
+  KUWAITI_GOLD_REQUEST_CLOSING,
+  KUWAITI_GOLD_REQUEST_SLUG,
+} from './lib/kuwaiti-closing-variants.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SELF_TEST = process.argv.includes('--self-test')
@@ -102,7 +107,7 @@ const withoutApprovedBlockedContexts = (raw, say) => {
   return `${rawCheck} ${sayCheck}`
 }
 
-export function auditTurns (turns, { requireClosing = false } = {}) {
+export function auditTurns (turns, { requireClosing = false, slug = '' } = {}) {
   const hard = []; const soft = []; let qaf = 0
   for (const t of turns) {
     const raw = String(t.text ?? '')
@@ -126,10 +131,12 @@ export function auditTurns (turns, { requireClosing = false } = {}) {
      أصلاً، ويجب أن ينتهي بإحدى الإحالات الثماني المعتمدة. */
   const closingRaw = String(turns[turns.length - 1]?.text ?? '')
   const closing = spoken(closingRaw)
-  if (/الفيل|حسين/u.test(closingRaw) || /الفيل|حسين/u.test(closing)) {
+  const exactGoldRequestClosing = slug === KUWAITI_GOLD_REQUEST_SLUG
+    && closingRaw === KUWAITI_GOLD_REQUEST_CLOSING
+  if (!exactGoldRequestClosing && (/الفيل|حسين/u.test(closingRaw) || /الفيل|حسين/u.test(closing))) {
     hard.push('اسم العائلة/الاسم الكامل وصل إلى الخاتمة المنطوقة — الإحالة الصوتية تقول «موقع الدكتور أحمد» فقط')
   }
-  if (requireClosing && !isApprovedSpokenClosing(closingRaw)) {
+  if (requireClosing && !exactGoldRequestClosing && !isApprovedSpokenClosing(closingRaw)) {
     hard.push('الخاتمة المنطوقة ليست إحدى صيغ الإحالة الكويتية الثماني المعتمدة')
   }
   return { hard, soft, qaf }
@@ -141,6 +148,16 @@ if (SELF_TEST) {
   assert.ok(bad.hard.some((h) => h.includes('اسم العائلة')), 'اسم العائلة لا يصل مدخل الصوت')
   const good = auditTurns([{ text: 'ترى هالشي وايد مهم' }, { text: KUWAITI_CLOSING_VARIANTS[0] }], { requireClosing: true })
   assert.equal(good.hard.length, 0, 'المتن الكويتي السليم يمرّ')
+  const goldRequest = auditTurns([{ text: 'ترى هالشي وايد مهم' }, { text: KUWAITI_GOLD_REQUEST_CLOSING }], {
+    requireClosing: true,
+    slug: KUWAITI_GOLD_REQUEST_SLUG,
+  })
+  assert.equal(goldRequest.hard.length, 0, 'ختام الطلب الذهبي يمر للحلقة المرجعية وحدها')
+  assert.ok(auditTurns([{ text: KUWAITI_GOLD_REQUEST_CLOSING }], {
+    requireClosing: true,
+    slug: 'ordinary-episode',
+  }).hard.some((finding) => finding.includes('اسم العائلة')),
+  'الاسم الكامل يظل ممنوعاً في أي حلقة غير المرجع الذهبي')
   /* MASTER VOICE DIRECTOR: المرشح يبقى بإملائه حتى يُختبر، والگ لا تصل
      تلقائياً إلا في صيغةٍ اختارها الدكتور سماعاً. */
   assert.ok(QAF_CANDIDATES.length > 20, 'قائمة المرشحين محفوظة للمختبر لا مفقودة')
@@ -202,9 +219,10 @@ const files = readdirSync(dir).filter((f) => f.endsWith('.json'))
 if (!files.length) { console.log('⛔ مجلد المصدر فارغ — هذه البوابة يجب أن تعمل **بعد** تجهيز المصدر لا قبله.'); process.exit(1) }
 let hard = 0; let soft = 0; let qaf = 0
 for (const f of files) {
+  const slug = f.replace(/\.json$/, '')
   const data = JSON.parse(readFileSync(resolve(dir, f), 'utf8'))
   const turns = Array.isArray(data) ? data : Object.values(data.turns || data)
-  const r = auditTurns(turns, { requireClosing: true })
+  const r = auditTurns(turns, { requireClosing: true, slug })
   qaf += r.qaf
   if (r.hard.length || r.soft.length) {
     console.log('── ' + f.replace('.json', ''))

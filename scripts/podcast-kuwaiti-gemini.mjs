@@ -102,6 +102,7 @@ assert.ok(['off', 'required'].includes(GOLD_ACOUSTIC_MODE),
   `PODCAST_KW_GOLD_ACOUSTIC_GATE غير صالح: ${GOLD_ACOUSTIC_MODE}`)
 const GOLD_ACOUSTIC_REFERENCE_FILE = resolve(ROOT, 'scripts', 'data', 'kuwaiti-gold-acoustic-reference.json')
 const GOLD_ACOUSTIC_REFERENCE = JSON.parse(readFileSync(GOLD_ACOUSTIC_REFERENCE_FILE, 'utf8'))
+const GOLD_REFERENCE_REQUEST_SHA256 = '5325ae90e5f97ea67e09c805594b55a4c03d531c814afd8366875be8578bc55a'
 assert.equal(Number(GOLD_ACOUSTIC_REFERENCE.schemaVersion), 1, 'صيغة مرجع الأذن غير معتمدة')
 assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance) > 0,
   'عتبة مرجع الأذن مفقودة')
@@ -159,6 +160,8 @@ process.on('uncaughtException', terminateFromUnhandledFailure)
 process.on('unhandledRejection', terminateFromUnhandledFailure)
 
 const sha256 = (value) => createHash('sha256').update(value).digest('hex')
+const ttsRequestHash = (prompt, speechConfig) =>
+  sha256(`${JSON.stringify(speechConfig || 'multi')}:${prompt}`)
 const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms))
 const words = (text) => String(text || '').trim().split(/\s+/).filter(Boolean)
 
@@ -2969,9 +2972,23 @@ const chunks = chunkTurns(turns)
 const generationGroups = continuityGenerationGroups(chunks)
 const prompts = generationGroups.map((group, index) =>
   promptFor(group.turns, index, chunks.length, PROMPT_MODE, group.warmupTurns, group.warmupEstimatedSec))
+const locksDoctorApprovedGoldRequest = slug === GOLD_ACOUSTIC_REFERENCE.source.slug
+  && PROMPT_MODE === 'c'
+  && USE_VERTEX
+  && MALE_VOICE === 'Puck'
+  && FEMALE_VOICE === 'Zephyr'
+  && !ISOLATE_SPEAKER_STEMS
+  && chunks.length === 1
+if (locksDoctorApprovedGoldRequest) {
+  assert.equal(ttsRequestHash(prompts[0]), GOLD_REFERENCE_REQUEST_SHA256,
+    'طلب الحلقة المرجعية تغيّر عن البايتات التي أنشأت التسجيل الذهبي؛ ممنوع صرف TTS')
+  console.log(`🔐 طلب الحلقة المرجعية مطابق للذهبي حرفياً: ${GOLD_REFERENCE_REQUEST_SHA256}`)
+}
 if (DRY_RUN) {
   console.log(`✓ ${slug}: ${turns.length} مداخلة → ${chunks.length === 1 ? 'Take واحد متصل' : `${chunks.length} طلبات متداخلة بإحماء صوتي`}`)
   console.log(`✓ provider=${TTS_PROVIDER} · model=${MODEL} · language=${TTS_LANGUAGE} · male=${MALE_VOICE} · female=${FEMALE_VOICE} · profile=${PROFILE}`)
+  const dryRunSpeechConfig = ISOLATE_SPEAKER_STEMS ? [{ voice: MALE_VOICE }] : undefined
+  console.log(`✓ request-sha256=${ttsRequestHash(prompts[0], dryRunSpeechConfig)}`)
   console.log(prompts[0].slice(0,2200))
   process.exit(0)
 }
@@ -2994,7 +3011,7 @@ for (let i=0;i<chunks.length;i+=1) {
     /* speech_config بصوتٍ واحد موثقة رسمياً في Interactions API. لذلك لا
        يملك هذا الطلب صوت الطرف الآخر كي يبدّله وسط البحث أو الخاتمة. */
     const speechConfig = ISOLATE_SPEAKER_STEMS ? [{ voice:plan.voice }] : undefined
-    requestHashes.push(sha256(`${JSON.stringify(speechConfig || 'multi')}:${passPrompt}`))
+    requestHashes.push(ttsRequestHash(passPrompt, speechConfig))
     const stem=resolve(TMP,`chunk-${String(i+1).padStart(2,'0')}-${plan.key}`)
     const rawWav=`${stem}.raw.wav`
     console.log(ISOLATE_SPEAKER_STEMS ? `  ↳ مسار ${plan.label}: ${plan.voice} بصوت واحد ثابت والسياق الكامل` : '  ↳ مسار الحوار المتعدد')

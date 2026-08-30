@@ -210,6 +210,18 @@ const kinetic = avatarCast.segments.map((segment) => segment.prompt).join(' ')
 check(/OPENING RULE/.test(kinetic) && /already mid-event/.test(kinetic), 'قانون الافتتاح: الحدث بدأ قبل الإطار الأول')
 check(/Required transformation/.test(kinetic), 'كل مشهد يلزمه تحوّل مرئي لا حالة ساكنة')
 
+/* حارس: اللوحة كانت تطبع «8 ثوانٍ» نصاً مكتوباً باليد بينما المحرك يبني
+   مقاطع خمس عشرة — فرأى الدكتور «3 × 8 ثوانٍ» تحت «45 ثانية». الرقم يُقرأ
+   من المشروع لا يُكتب. */
+const navUi = readFileSync(resolve(ROOT, 'src/components/admin/PublishingStudioNavigation.tsx'), 'utf8')
+check(!/8 ثوانٍ/.test(liveUi) && !/× 8 ثوان/.test(liveUi), 'لا مدة مكتوبة باليد في لوحة المخرج الحي')
+check(!/8 ثوانٍ/.test(navUi), 'لا مدة مكتوبة باليد في شريط استوديو النشر')
+check(/arabicCountPhrase\(segment\.duration, SECOND_FORMS\)/.test(liveUi), 'سطر المقطع يقرأ مدته الحقيقية')
+check(/CAST_LABELS\[project\.castMode/.test(liveUi), 'بطاقة المشروع تعرض من يظهر فيه')
+
+check(/data-live-director-rebuild/.test(liveUi), 'شريط تبديل القرار حاضر داخل المشروع لا في النموذج وحده')
+check((liveUi.match(/<CastPicker /g) || []).length >= 3, 'منتقي من يظهر في المسارين وداخل المشروع')
+
 check(liveDirectorPerformanceInsights([]).notes[0] === 'لا توجد بيانات كافية بعد.', 'لا استنتاج قبل عينة كافية')
 check(/live-director-frames/.test(liveUi) && !/ffmpeg|api\/video|cloudinary/i.test(liveUi), 'استخراج الإطار داخل المتصفح بلا خدمة خارجية')
 check(/بلا Flow API|لا Flow API|بلا Flow/.test(liveUi) || !/flow\.google|veo/i.test(liveUi), 'لا استدعاء إلى Flow أو Veo')

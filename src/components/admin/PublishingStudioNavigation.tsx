@@ -32,7 +32,7 @@ export function PublishingStudioNavigation({ view, onSelect }: { view: Publishin
         <button type="button" onClick={() => onSelect('director')} className={`rounded-2xl border p-4 text-right transition-colors ${view === 'director' ? 'border-ink bg-ink text-white' : 'border-hair bg-canvas text-ink hover:border-accent'}`}>
           <span className={`text-[.62rem] font-semibold ${view === 'director' ? 'text-white/65' : 'text-accent'}`}>استوديو Flow اليدوي</span>
           <strong className="mt-1 block font-display text-[.92rem]">المخرج الحي</strong>
-          <span className={`mt-1 block text-[.62rem] leading-relaxed ${view === 'director' ? 'text-white/65' : 'text-soft'}`}>مقال أو فكرة · مقاطع 8 ثوانٍ.</span>
+          <span className={`mt-1 block text-[.62rem] leading-relaxed ${view === 'director' ? 'text-white/65' : 'text-soft'}`}>مقال أو فكرة · مقاطع حتى خمس عشرة ثانية.</span>
         </button>
       </div>
     </div>

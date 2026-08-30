@@ -6,7 +6,12 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { optimizeNativeSpokenEpisode } from './lib/kuwaiti-native-spoken.mjs'
-import { KUWAITI_CLOSING_VERSION, KUWAITI_CLOSING_VARIANTS } from './lib/kuwaiti-closing-variants.mjs'
+import {
+  KUWAITI_CLOSING_VERSION,
+  KUWAITI_CLOSING_VARIANTS,
+  KUWAITI_GOLD_REQUEST_CLOSING,
+  KUWAITI_GOLD_REQUEST_SLUG,
+} from './lib/kuwaiti-closing-variants.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = (name, fallback = '') => process.argv.find((value) => value.startsWith(`--${name}=`))?.slice(name.length + 3) || fallback
@@ -41,7 +46,10 @@ for (const file of files) {
       nativeSpokenQafRiskCount: prepared.audit.qafRiskCount,
       nativeSpokenSoftWarnings: prepared.audit.soft.length,
       spokenClosingVersion: KUWAITI_CLOSING_VERSION,
-      spokenClosingSha256: sha256(JSON.stringify(KUWAITI_CLOSING_VARIANTS)),
+      spokenClosingSha256: sha256(JSON.stringify({
+        variants: KUWAITI_CLOSING_VARIANTS,
+        goldRequest: { slug: KUWAITI_GOLD_REQUEST_SLUG, closing: KUWAITI_GOLD_REQUEST_CLOSING },
+      })),
       dialogueVarietyVersion: prepared.conversationPlan.version,
       dialogueVarietyFamily: prepared.conversationPlan.family,
       dialogueVarietyCastSwapped: prepared.conversationPlan.castSwapped,

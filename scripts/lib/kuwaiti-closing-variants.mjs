@@ -1,6 +1,10 @@
 import { createHash } from 'node:crypto'
 
-export const KUWAITI_CLOSING_VERSION = '2026-08-30-kuwaiti-closing-variety-v1-first-name-only'
+export const KUWAITI_CLOSING_VERSION = '2026-08-30-kuwaiti-closing-variety-v2-gold-request-anchor'
+
+export const KUWAITI_GOLD_REQUEST_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
+export const KUWAITI_GOLD_REQUEST_CLOSING =
+  'وإذا تبي الفكرة كاملة، تلقى المقال الأصلي في موقع الدكتور أحمد حسين الفيلچاوي.'
 
 /*
  * الإحالة المنطوقة قصيرة ومتنوعة، واسم العائلة يبقى في البيانات المكتوبة
@@ -33,6 +37,31 @@ export function applySpokenClosing (turns, { slug = '' } = {}) {
   if (lastIndex < 0) return { turns: output, changes: [] }
 
   const before = norm(output[lastIndex].text)
+  /* الحلقة المرجعية ليست مادةً جديدة: بايتات طلبها الأصلي هي التجربة
+     الوحيدة التي اعتمدها الدكتور صراحةً. تغيير آخر جملة إلى صيغة أقصر غيّر
+     request hash، فصار Gemini يعيد تفسير الشخصيتين من أول التسجيل. نحفظ
+     الطلب المرجعي حرفياً هنا؛ معالجة اسم العائلة، إن لزمت، تكون لاحقاً في
+     المونتاج ولا تُغيّر مدخل TTS الذهبي. */
+  if (slug === KUWAITI_GOLD_REQUEST_SLUG) {
+    output[lastIndex] = {
+      ...output[lastIndex],
+      text: KUWAITI_GOLD_REQUEST_CLOSING,
+      deliveryType: 'conclusion',
+      pauseAfterMs: 900,
+      overlapMs: 0,
+      musicBridgeAfter: false,
+    }
+    return {
+      turns: output,
+      changes: before === KUWAITI_GOLD_REQUEST_CLOSING ? [] : [{
+        index: lastIndex,
+        field: 'text',
+        before,
+        after: KUWAITI_GOLD_REQUEST_CLOSING,
+        reason: `استعادة بايتات طلب المرجع الذهبي (${KUWAITI_CLOSING_VERSION})`,
+      }],
+    }
+  }
   const after = closingForSlug(slug)
   /* حوار الإنتاج 24–32 دوراً. إذا وصل مصدر تاريخي كامل بلا إحالة (حالة
      واحدة في v3)، نضيفها في طبقة المنطوق بدل العبث بمتن Firestore المقفول.

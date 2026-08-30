@@ -15,7 +15,7 @@ import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 import { applyApprovedRegisterRewrites } from './kuwaiti-register-rewrites.mjs'
 import { applySpokenClosing } from './kuwaiti-closing-variants.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-30-native-kuwaiti-v18-varied-first-name-closing'
+export const NATIVE_SPOKEN_VERSION = '2026-08-30-native-kuwaiti-v19-gold-request-anchor'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 export const CLASSROOM_SLUG = 'the-classroom-that-fears-mistakesarabic'

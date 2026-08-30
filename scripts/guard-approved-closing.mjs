@@ -2,9 +2,10 @@
 /**
  * حارس الإحالة المنطوقة.
  *
- * الاسم الكامل جزء من السجل المكتوب، لا من الصوت. آخر دور يصل Gemini هو
- * إحالة كويتية قصيرة إلى «موقع الدكتور أحمد»، مختارة حتمياً من ثماني صيغ.
- * جذي ما نعيد فحص اسم العائلة في كل Take، وما نختم ١٤٤ حلقة بنفس الإعلان.
+ * الاسم الكامل جزء من السجل المكتوب، لا من الصوت في الإنتاج العادي. آخر دور
+ * يصل Gemini هو إحالة كويتية قصيرة إلى «موقع الدكتور أحمد»، مختارة حتمياً من
+ * ثماني صيغ. الاستثناء الوحيد هو الحلقة الذهبية: نحفظ طلب TTS التاريخي نفسه
+ * حرفياً كي لا تتغير بصمته، ثم يمكن قص اسم العائلة لاحقاً في المونتاج.
  */
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
@@ -12,6 +13,9 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   KUWAITI_CLOSING_VARIANTS,
+  KUWAITI_GOLD_REQUEST_CLOSING,
+  KUWAITI_GOLD_REQUEST_SLUG,
+  applySpokenClosing,
   closingForSlug,
   isApprovedSpokenClosing,
 } from './lib/kuwaiti-closing-variants.mjs'
@@ -40,6 +44,16 @@ for (const closing of KUWAITI_CLOSING_VARIANTS) {
   assert.doesNotMatch(closing, /حسين|الفيل/u, `اسم العائلة تسرب إلى الصوت: ${closing}`)
   assert.ok(isApprovedSpokenClosing(closing), `الخاتمة غير معتمدة: ${closing}`)
 }
+assert.match(KUWAITI_GOLD_REQUEST_CLOSING, /أحمد حسين الفيلچاوي/u,
+  'اختفى الختام التاريخي من قفل الطلب الذهبي')
+assert.ok(!isApprovedSpokenClosing(KUWAITI_GOLD_REQUEST_CLOSING),
+  'لا يجوز تعميم ختام الحلقة الذهبية على بقية الإنتاج')
+const goldClosingProbe = applySpokenClosing([
+  { speaker: 'male', text: 'بداية اختبار.' },
+  { speaker: 'female', text: 'وإذا تبي الفكرة كاملة، تلقى المقال الأصلي في موقع الدكتور أحمد.' },
+], { slug: KUWAITI_GOLD_REQUEST_SLUG })
+assert.equal(goldClosingProbe.turns.at(-1)?.text, KUWAITI_GOLD_REQUEST_CLOSING,
+  'الحلقة المرجعية لم تستعد الختام الذي يثبت بصمة طلبها الذهبي')
 
 /* المصدر الأرشيفي لا يتغير: يبقى الاسم الكامل مرئياً في النص والبيانات.
    التحويل يحصل فقط في طبقة المنطوق، فلا نخسر النسبة أو حق المؤلف المكتوب. */
@@ -58,12 +72,21 @@ if (existsSync(libPath)) {
     assert.ok(isApprovedSpokenClosing(spokenClosing), `${slug}: إحالة الصوت غير معتمدة`)
     assert.doesNotMatch(spokenClosing, /حسين|الفيل/u, `${slug}: اسم العائلة دخل الصوت`)
     counts[KUWAITI_CLOSING_VARIANTS.indexOf(spokenClosing)] += 1
+    const appliedClosing = applySpokenClosing(turns, { slug }).turns.at(-1)?.text
+    if (slug === KUWAITI_GOLD_REQUEST_SLUG) {
+      assert.equal(appliedClosing, KUWAITI_GOLD_REQUEST_CLOSING,
+        `${slug}: تغيرت بايتات الختام المرجعي الذهبي`)
+    } else {
+      assert.equal(appliedClosing, spokenClosing,
+        `${slug}: الختام الفعلي لا يطابق التوزيع المعتمد`)
+      assert.doesNotMatch(appliedClosing, /حسين|الفيل/u, `${slug}: اسم العائلة دخل إنتاجاً جديداً`)
+    }
   }
   assert.ok(counts.every((count) => count > 0), `التوزيع لم يستخدم كل الختامات: ${counts.join('، ')}`)
   assert.ok(Math.max(...counts) <= 30, `صيغة ختامية تكررت أكثر من اللازم: ${counts.join('، ')}`)
   assert.deepEqual(archiveWithoutFullName, ['how-do-we-assess-without-breaking-the-human-beingarabic'],
     'تغيرت قائمة المصادر التاريخية الناقصة للإحالة؛ راجع المصدر قبل السماح')
-  console.log(`✓ الإحالة المنطوقة: ${archivedFullName} اسماً كاملاً محفوظاً بالأرشيف · مصدر تاريخي واحد تكمله طبقة الصوت · 8 صيغ بلا اسم عائلة · التوزيع ${counts.join('، ')}`)
+  console.log(`✓ الإحالة المنطوقة: ${archivedFullName} اسماً كاملاً محفوظاً بالأرشيف · طلب ذهبي واحد مقفول حرفياً · بقية الإنتاج 8 صيغ بلا اسم عائلة · التوزيع ${counts.join('، ')}`)
 } else {
   console.log('✓ الإحالة المنطوقة: 8 صيغ معتمدة إلى موقع الدكتور أحمد بلا اسم عائلة')
 }

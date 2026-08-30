@@ -126,21 +126,28 @@ export const flowLook = (id?: FlowLookId | null): FlowLook =>
   FLOW_LOOKS.find((look) => look.id === id) || FLOW_LOOKS[0]
 
 /**
- * المدد التي يقبلها Flow فعلاً للتوليدة الواحدة (وثائق Google الرسمية،
- * ٢٩ أغسطس ٢٠٢٦): Veo 3.1 بنسخه الثلاث ٤ و٦ و٨ ثوانٍ، وGemini Omni Flash 1.1
- * يزيد العاشرة. وكان هذا الملف يعرض ٨ و١٦ و٢٤ — ورقمٌ فوق الحدّ لا يطيل
- * المقطع، وإنما يكتب في البرومبت مدةً يتجاهلها المحرّك وتفسد توقيت اللقطات.
- * الأطول يكون بخاصية Extend داخل Flow لا برقمٍ في النص.
+ * المدد التي يقبلها Flow للتوليدة الواحدة.
+ *
+ * كان السقف ثماني ثوانٍ (Veo 3.1)، والأطول يُبنى بـExtend. ثم صارت لوحة Flow
+ * تعرض ٤ و٦ و٨ و١٠ و١٥ في التوليدة الواحدة (لقطة شاشة من لوحة الدكتور،
+ * ٣٠ أغسطس ٢٠٢٦)، فصارت القائمة هنا مطابقةً لها والخمس عشرة هي الافتراض. والقاعدة الحاكمة لم تتغيّر: **الرقم المكتوب في البرومبت يجب أن
+ * يساوي ما تختاره في Flow فعلاً** — رقمٌ فوق ما يقبله النموذج المختار لا يطيل
+ * المقطع، وإنما يفسد توقيت اللقطات لأن المحرّك يضغط خطةً لخمس عشرة في ثمانٍ.
+ * فإن كان النموذج المختار في لوحتك يقف عند الثماني، اختر الثماني هنا.
  */
-export const FLOW_CLIP_SECONDS = [4, 6, 8, 10] as const
+export const FLOW_CLIP_SECONDS = [4, 6, 8, 10, 15] as const
 export type FlowClipSeconds = (typeof FLOW_CLIP_SECONDS)[number]
 
-/** العاشرة متاحة بنموذج واحد؛ تُعرض ملاحظتها في اللوحة كي لا يختارها بلا علم. */
+/** أطول مقطعٍ في توليدةٍ واحدة؛ هو الافتراض لأنه يقلّل عدد المقاطع ويطيل النَّفَس. */
+export const DEFAULT_FLOW_CLIP_SECONDS = 15
+
+/** ملاحظةٌ تحت كل مدة كي لا تُختار بلا علم. */
 export const FLOW_SECONDS_NOTE: Record<number, string> = {
-  4: 'متاحة في كل نماذج Veo 3.1.',
-  6: 'متاحة في كل نماذج Veo 3.1.',
-  8: 'الحدّ الأقصى لـVeo 3.1، وأنسب مدة لريل واحد مركّز. والتمديد بـExtend يضيف سبع ثوانٍ لا ثماني — فلا تتوقع مضاعفة.',
-  10: 'تحتاج نموذج Gemini Omni Flash 1.1 داخل Flow؛ Veo 3.1 يقف عند الثماني.',
+  4: 'ومضة واحدة: صورة واحدة وحدث واحد. تصلح للاقتباس لا للشرح.',
+  6: 'مدة قصيرة مركّزة؛ حركة واحدة تكتمل بلا حشو.',
+  8: 'الحدّ القديم لـVeo 3.1. اخترها إن كان النموذج في لوحتك يقف عندها.',
+  10: 'مدة وسطى؛ تصلح حين تريد نَفَساً أطول من الثماني بلا الالتزام بخمس عشرة.',
+  15: 'الافتراضي: أطول توليدة في المرة الواحدة. مقاطع أقل لنفس الطول، ونَفَسٌ يكفي لحدثٍ يبدأ ويتطوّر وينتهي داخل المقطع الواحد — لا لقطةٍ ممطوطة.',
 }
 
 /**
@@ -204,16 +211,28 @@ export function cinematographyBlock(input: {
   const { look, seconds, shotCount, role, order, avatar } = input
   const moves = Array.from({ length: Math.max(1, shotCount) }, (_, index) =>
     `Shot ${index + 1} camera: ${cameraMove({ order, shotIndex: index, shotCount, role, look, avatar })}.`).join(' ')
+  /* المقطع الطويل (خمس عشرة ثانية) ينهار إلى لقطةٍ ممطوطة إن لم يُعطَ بناءً
+     داخلياً. الثلث الأول يفتح الحدث، والأوسط يطوّره، والأخير يحسمه. */
+  const beats = seconds >= 12
+    ? `Internal structure for a long clip: first third — the event is already underway and the viewer understands the situation. Middle third — the situation visibly develops or complicates; something changes state, not just position. Final third — it resolves into one held, readable image. Each third must look different from the one before it.`
+    : `Internal structure: one single development that begins, deepens and lands inside the ${seconds} seconds.`
   return [
     `Cinematography — lens: ${look.lens}, aperture ${look.aperture}. Depth of field: ${look.depthOfField}.`,
     `Lighting plan: ${look.lighting}.`,
     `Colour grade: ${look.grade}.`,
     `Texture and finish: ${look.texture}.`,
-    /* «نيّةٌ واحدة لكل لقطة» قاعدةٌ سليمة تمنع الحركات المتضاربة — لكن «مكبوحة»
-       وحدها كانت تُقرأ سكوناً فتُنتج مشهداً جامداً. النيّة تبقى، والتنفيذ يلتزم. */
-    `Camera movement: one committed motion per shot, executed with intent; never combine competing moves and never let the frame drift aimlessly. ${moves}`,
-    `Frame rate and timing: 24fps cinematic cadence across the full ${seconds} seconds; motion must feel deliberate, never rushed.`,
-    'Composition: honour the rule of thirds with intentional negative space; keep the horizon level and verticals true; leave the subject clean headroom.',
+    /* العلّة التي حكم عليها الدكتور (٣٠ أغسطس ٢٠٢٦): «ما زال غير جميل وغير
+       مشوّق». اللغة هنا كانت «متأنّية، غير متعجّلة» فأنتجت بطاقةً بريديةً
+       متحركة. قانون الريل مطبَّقٌ في ملفٍ مجاور منذ يوم، ولم يكن مطبقاً هنا.
+       يُنقل الآن: أول إطارٍ داخل الحدث، وتغيُّرٌ مرئيٌّ في كل ثانية. */
+    'OPENING RULE — the very first frame is already mid-event. Something is already moving, changing, falling, opening, pouring, igniting, or being decided at frame one. Never open on a still, settled, or establishing frame, and never open on someone about to begin.',
+    `Pacing: visible continuous change across the whole ${seconds} seconds — something in the frame is measurably different in every single second. No idling, no held beauty shots, no waiting for the line to finish.`,
+    beats,
+    'Energy: cinematic and arresting rather than calm and composed. Physical forces must be visible — weight, momentum, light travelling, material yielding, distance closing. Beauty here comes from motion and light, never from stillness.',
+    `Camera movement: one committed motion per shot, executed with intent and carried to completion; never combine competing moves and never let the frame drift aimlessly. Motion may be brisk and confident; it must never be shaky, random, or handheld-nervous. ${moves}`,
+    `Frame rate and timing: 24fps cinematic cadence across the full ${seconds} seconds. Deliberate, never sluggish.`,
+    'Composition: honour the rule of thirds with intentional negative space for the caption added later; keep the horizon level and verticals true; fill the 9:16 frame edge to edge and leave the subject clean headroom.',
+    'Production value: this must read as a funded commercial or festival short — depth in the frame with a clear foreground, midground and background, atmosphere in the light path, and materials that respond to it. Never a stock-footage look, never a screensaver, never a moving postcard.',
   ].join('\n')
 }
 

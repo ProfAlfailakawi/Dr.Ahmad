@@ -39,28 +39,30 @@ const published = buildArticle(400)
 const articleProject = createArticleVideoProject({ article: published, useAvatar: true })
 
 // 1–11: مسار المقال.
-check(recommendArticleVideoDuration(published).duration === 48, 'مقالة 350–450 كلمة يجب أن توصى بـ48 ثانية')
+// المدة صارت تابعة لمدة المقطع في Flow: خمس عشرة افتراضاً، فثلاثة مقاطع لا ستة.
+check(recommendArticleVideoDuration(published).duration === 45 && recommendArticleVideoDuration(published).segments === 3, 'مقالة 350–450 كلمة: ثلاثة مقاطع من خمس عشرة ثانية')
+check(recommendArticleVideoDuration(published, 8).duration === 48 && recommendArticleVideoDuration(published, 8).segments === 6, 'المقاس القديم يبقى صحيحاً عند اختيار ثماني ثوانٍ')
 check(articleProject.type === 'article_video', 'نوع مشروع المقال')
 check(articleProject.articleId === published.slug, 'نقل معرف المقال الصحيح')
-check(articleProject.duration === 48, 'مدة مشروع المقال الافتراضية')
-check(articleProject.segmentCount === 6, 'ستة مقاطع للمقال')
-check(articleProject.days === 2, 'تقسيم يومين')
-check(articleProject.segments.every((segment) => segment.duration === 8), 'كل مقطع 8 ثوانٍ')
+check(articleProject.duration === 45, 'مدة مشروع المقال الافتراضية')
+check(articleProject.segmentCount === 3, 'ثلاثة مقاطع للمقال')
+check(articleProject.days === 1, 'يوم واحد يكفي لثلاثة مقاطع')
+check(articleProject.segments.every((segment) => segment.duration === 15), 'كل مقطع خمس عشرة ثانية')
 check(liveDirectorDailyPlan(articleProject).every((day) => day.clips.length <= 3), 'ثلاثة مقاطع يومياً')
 check(articleProject.narration.split(/\s+/).length < published.body.split(/\s+/).length / 3, 'لا يقرأ المقال كاملاً')
 check(articleProject.segments.some((segment) => segment.role.includes('رأي د. أحمد')), 'استخراج موضع رأي د. أحمد')
-check(articleProject.segments.length === 6 && articleProject.segments.every((segment) => segment.prompt.length > 200), 'ستة برومبتات مستقلة')
+check(articleProject.segments.length === 3 && articleProject.segments.every((segment) => segment.prompt.length > 200), 'ثلاثة برومبتات مستقلة')
 
 // 12–17: المقال البسيط والمسودة والمحتوى العام والسلسلة.
-check(recommendArticleVideoDuration(buildArticle(180)).duration === 24, 'مقال بسيط يوصى بـ24 ثانية')
+check(recommendArticleVideoDuration(buildArticle(180)).duration === 30, 'مقال بسيط: مقطعان من خمس عشرة')
 const draftProject = createArticleVideoProject({ article: buildArticle(380, 'draft') })
 check(draftProject.articleId === 'draft-article', 'تحويل مسودة إلى مشروع')
 const publicSimple = createPublicVideoProject({ topic: 'كيف نحافظ على معنى التعلم؟', message: 'ابدأ من الإنسان قبل الأداة', archive: [published], source: 'دراسة تربوية محكمة', sourceSessionId: 'session-1', linkedEditorialDecisionId: 'decision-1' })
 check(publicSimple.type === 'public_topic_video', 'إنشاء فيديو عام')
-check(publicSimple.duration === 24 && publicSimple.segmentCount === 3, '24 ثانية لموضوع عام بسيط')
+check(publicSimple.duration === 30 && publicSimple.segmentCount === 2, 'ثلاثون ثانية لموضوع عام بسيط')
 check(publicSimple.source === 'دراسة تربوية محكمة' && publicSimple.sourceSessionId === 'session-1' && publicSimple.linkedEditorialDecisionId === 'decision-1', 'حفظ مصدر المشروع وروابط منشئه')
 const publicComplex = createPublicVideoProject({ topic: 'دراسة ومقارنة أثر الذكاء الاصطناعي', message: Array(70).fill('تحليل').join(' '), archive: [published] })
-check(publicComplex.duration === 48 && publicComplex.segmentCount === 6, '48 ثانية لموضوع يحتاج شرحاً')
+check(publicComplex.duration === 45 && publicComplex.segmentCount === 3, 'خمس وأربعون ثانية لموضوع يحتاج شرحاً')
 const publicSeries = createPublicVideoProject({ topic: 'كل ما يتعلق بمستقبل التعليم وأسبابه ونتائجه وحلوله', wantsSeries: true, archive: [published] })
 check(publicSeries.series && publicSeries.seriesPlan.length >= 5, 'تحويل الموضوع الكبير إلى سلسلة')
 
@@ -113,11 +115,12 @@ check(studioUi.includes('PublishingStudioNavigation') && studioUi.includes("view
 check(!/generateVideo|veo:generate|flow:generate|api\/ai\/video|fetch\([^)]*(?:flow|veo)/i.test(liveUi), 'عدم إضافة خدمة فيديو مدفوعة')
 check(/admin-live-director/.test(storageRules) && /220 \* 1024 \* 1024/.test(storageRules), 'حد النوع والحجم في Storage')
 check(/ماذا تريد أن تنجز اليوم يا د\. أحمد/.test(roomUi), 'غرفة د. أحمد تعرض السؤال الرئيسي')
-check(recommendPublicVideoDuration({ topic: 'اقتباس: التعليم معنى' }).duration === 8, 'دعم ومضة 8 ثوانٍ')
+check(recommendPublicVideoDuration({ topic: 'اقتباس: التعليم معنى' }).segments === 1, 'دعم الومضة بمقطع واحد')
 check(publicSimple.social.articleDecision != null, 'قرار تحويل الفيديو العام إلى مقال')
 
 // 44–71: سلسلة الترابط البصري وخطة النصوص المضافة وإصلاح المقطع الواحد.
-const chain = createArticleVideoProject({ article: published, useAvatar: true })
+// سلسلة الترابط تُختبر على ثماني ثوانٍ: ستة مقاطع تُبقي كل ضمانات التوقيت والأصوات مقيسةً حرفياً.
+const chain = createArticleVideoProject({ article: published, useAvatar: true, clipSeconds: 8 })
 check(chain.segments[0].continuityMode === 'independent' && chain.segments[0].referenceStrategy === 'none', 'المقطع الأول مشهد مؤسس بلا مرجع')
 check(chain.segments.slice(1).every((segment) => segment.referenceSourceClipId === `clip-${segment.order - 1}`), 'كل مقطع يرث مرجعه من سابقه')
 const modes = new Set(chain.segments.map((segment) => segment.continuityMode))
@@ -178,6 +181,32 @@ check(chain.quality.continuity === 'ممتاز' || chain.quality.continuity === 
 const near = nearMinuteEditPlan(chain)
 check(near.generated === 48 && near.finalTo <= 60 && near.finalFrom >= 55, 'النسخة القريبة من دقيقة: 48 مولدة والباقي تحرير')
 check(/المادة المولدة من Flow 48 ثانية/.test(near.statement), 'تصريح صادق بأن الدقيقة ليست كلها من Flow')
+// الطاقم: الأفتار لم يعد مفروضاً، و«بلا ناس» منعٌ صريح لا مجرد وصف.
+const defaultCast = createArticleVideoProject({ article: published })
+check(defaultCast.castMode === 'people' && defaultCast.useAvatar === false, 'الأفتار ليس الافتراض')
+check(defaultCast.segments.every((segment) => segment.appearance === 'visual_only'), 'لا ظهور للأفتار بلا طلب صريح')
+const avatarCast = createArticleVideoProject({ article: published, castMode: 'avatar' })
+check(avatarCast.useAvatar === true && avatarCast.segments.some((segment) => segment.appearance !== 'visual_only'), 'الأفتار يعمل حين يُطلب')
+// «أنا ومعي ناس»: هويته مقفلة، والآخرون مسموحون بشرط ألّا يشبهه أحدهم.
+const withPeople = createArticleVideoProject({ article: published, castMode: 'avatar_and_people' })
+const withPeoplePrompts = withPeople.segments.map((segment) => Object.values(segment.flowPrompts).join(' ')).join(' ')
+check(withPeople.useAvatar === true && withPeople.castMode === 'avatar_and_people', 'أنا ومعي ناس: نسخته تظهر')
+check(/Other people may appear in the scene/.test(withPeoplePrompts), 'أنا ومعي ناس: الآخرون مسموحون نصاً')
+check(/none of them may resemble him/.test(withPeoplePrompts), 'أنا ومعي ناس: منع الشبيه')
+check(withPeople.segments.every((segment) => !segment.negativeConstraints.includes('extra characters')), 'أنا ومعي ناس: لا منع للشخصيات الإضافية')
+check(avatarCast.segments.every((segment) => segment.negativeConstraints.includes('extra characters')), 'أنا وحدي: منع أي شخص آخر')
+check(!/Other people may appear in the scene/.test(avatarCast.segments.map((segment) => segment.prompt).join(' ')), 'أنا وحدي: لا يُسرَّب إذن الآخرين')
+const noPeople = createArticleVideoProject({ article: published, castMode: 'no_people' })
+const noPeoplePrompts = noPeople.segments.map((segment) => Object.values(segment.flowPrompts).join(' ')).join(' ')
+check(noPeople.segments.every((segment) => segment.cast === 'no_people' && segment.appearance === 'visual_only'), 'بلا ناس: لا أفتار في أي مقطع')
+check(noPeople.segments.every((segment) => ['people', 'faces', 'hands', 'human silhouettes'].every((ban) => segment.negativeConstraints.includes(ban))), 'بلا ناس: منع بشري صريح في القيود')
+check(/Not a face, not a hand/.test(noPeoplePrompts) && /NO-PEOPLE LOCK/.test(noPeoplePrompts), 'بلا ناس: قفل صريح داخل البرومبت')
+check(!/AVATAR_LOCK|pre-saved Dr\. Ahmad avatar/.test(noPeoplePrompts), 'بلا ناس: لا قفل أفتار مسرَّب')
+// الحيوية: العلة كانت «بطاقة بريدية متحركة»؛ القانون الآن مكتوب في كل برومبت.
+const kinetic = avatarCast.segments.map((segment) => segment.prompt).join(' ')
+check(/OPENING RULE/.test(kinetic) && /already mid-event/.test(kinetic), 'قانون الافتتاح: الحدث بدأ قبل الإطار الأول')
+check(/Required transformation/.test(kinetic), 'كل مشهد يلزمه تحوّل مرئي لا حالة ساكنة')
+
 check(liveDirectorPerformanceInsights([]).notes[0] === 'لا توجد بيانات كافية بعد.', 'لا استنتاج قبل عينة كافية')
 check(/live-director-frames/.test(liveUi) && !/ffmpeg|api\/video|cloudinary/i.test(liveUi), 'استخراج الإطار داخل المتصفح بلا خدمة خارجية')
 check(/بلا Flow API|لا Flow API|بلا Flow/.test(liveUi) || !/flow\.google|veo/i.test(liveUi), 'لا استدعاء إلى Flow أو Veo')
@@ -216,7 +245,7 @@ check(canned.every((phrase) => !engineSource.includes(phrase)), 'حذف الجم
 
 // المشروع بلا رنين ولا مسبك يجب أن يبقى عاملاً — الغياب لا يُفرغ المخرجات.
 const bare = createArticleVideoProject({ article: richArticle, useAvatar: true })
-check(bare.segments.every((segment) => segment.narrationSource !== 'resonance') && bare.segments.filter((segment) => segment.narration).length >= 4, 'غياب الرنين لا يوقف المشروع')
+check(bare.segments.every((segment) => segment.narrationSource !== 'resonance') && bare.segments.filter((segment) => segment.narration).length === bare.segments.filter((segment) => segment.voiceMode !== 'ambient').length && bare.segments.length >= 3, 'غياب الرنين لا يوقف المشروع')
 check(Boolean(bare.social.x && bare.social.instagram && bare.social.linkedin) && new Set([bare.social.x, bare.social.instagram, bare.social.linkedin]).size === 3, 'غياب المسبك يُبقي مواد النشر متمايزة')
 
 // وصلٌ حقيقي بالمسبك نفسه — لا نكتفي بمسودات مصطنعة.

@@ -48,7 +48,10 @@ const block = cinematographyBlock({ look, seconds: 16, order: 2, shotCount: 2, r
 for (const needle of ['lens', 'aperture', 'Depth of field', 'Lighting plan', 'Colour grade', 'Texture', 'Camera movement', 'Composition', '24fps']) {
   check(block.includes(needle), `الكتلة تذكر ${needle}`)
 }
-check(/one committed motion per shot, executed with intent; never combine competing moves/.test(block), 'العبارة الحارسة محفوظة نصاً')
+check(/one committed motion per shot, executed with intent and carried to completion; never combine competing moves/.test(block), 'العبارة الحارسة محفوظة نصاً')
+// قانون الحيوية: نُقل من كتلة الريل بعد حكم الدكتور «غير مشوّق».
+check(/OPENING RULE/.test(block) && /already mid-event/.test(block), 'الكتلة تفرض حدثاً قبل الإطار الأول')
+check(/measurably different in every single second/.test(block), 'الكتلة تفرض تغيّراً في كل ثانية')
 check(block.includes('16 seconds'), 'المدة المختارة تظهر في الكتلة')
 check(/Shot 1 camera:/.test(block) && /Shot 2 camera:/.test(block), 'حركة مستقلة لكل لقطة')
 
@@ -77,19 +80,19 @@ for (const needle of ['Cinematography', 'Lighting plan', 'Colour grade', 'Compos
   check(prompt.includes(needle), `برومبت المحرك يحمل ${needle}`)
 }
 check(/lens: \d+mm equivalent, aperture f\//.test(prompt), 'البرومبت يحدّد عدسةً وفتحة')
-check(prompt.includes('Duration: exactly 8 seconds.'), 'المدة الافتراضية ثمانٍ (توافق رجعي)')
+check(prompt.includes('Duration: exactly 15 seconds.'), 'المدة الافتراضية خمس عشرة ثانية')
 check(!/[؀-ۿ]/.test(prompt), 'البرومبت إنجليزيٌّ خالص بلا تسريب عربي')
 
 
-/* حدود Flow الحقيقية (وثائق Google الرسمية ٢٩ أغسطس ٢٠٢٦): Veo 3.1 يقف عند
-   الثماني، وGemini Omni Flash 1.1 يبلغ العاشرة. كان الملف يعرض ١٦ و٢٤ فيكتب
-   في البرومبت مدةً يتجاهلها المحرّك — فصار الحدّ محروساً لا منسياً. */
+/* حدود Flow المعروضة في لوحة الدكتور (لقطة شاشة، ٣٠ أغسطس ٢٠٢٦): ٤ و٦ و٨ و١٠
+   و١٥ ثانية في التوليدة الواحدة. والحدّ يبقى محروساً: رقمٌ فوق ما تعرضه اللوحة
+   يكتب في البرومبت مدةً يتجاهلها المحرّك فيفسد توقيت اللقطات. */
 for (const seconds of FLOW_CLIP_SECONDS) {
-  check(seconds <= 10, `المدة ${seconds} داخل حدّ Flow`)
+  check(seconds <= 15, `المدة ${seconds} داخل حدّ Flow`)
   check(typeof FLOW_SECONDS_NOTE[seconds] === 'string' && FLOW_SECONDS_NOTE[seconds].length > 0, `المدة ${seconds} لها ملاحظة`)
 }
 check(FLOW_CLIP_SECONDS.includes(8), 'الثماني متاحة — حدّ Veo 3.1')
-check(FLOW_SECONDS_NOTE[10].includes('Omni Flash'), 'العاشرة تُنسب إلى نموذجها')
-check(!FLOW_CLIP_SECONDS.some((seconds) => seconds > 10), 'لا مدة فوق الحدّ الموثّق')
+check(FLOW_SECONDS_NOTE[15].includes('أطول توليدة'), 'الخمس عشرة تُعرَّف بأنها أطول توليدة في المرة الواحدة')
+check(FLOW_CLIP_SECONDS.includes(15) && !FLOW_CLIP_SECONDS.some((seconds) => seconds > 15), 'الخمس عشرة متاحة وهي السقف المعروض في Flow')
 
 console.log(`✓ اجتازت الطبقة السينمائية ${checks} فحصاً`)

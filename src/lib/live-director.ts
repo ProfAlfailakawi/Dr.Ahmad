@@ -3,7 +3,7 @@ import { genuineAdditionMeter } from './editorial-foresight.ts'
 import { strongestQuote, suggestStrongTitle } from './intelligence.ts'
 import { polishTypography } from './style-dna.mjs'
 import { arabicCountPhrase, DAY_FORMS, PASSAGE_AFTER_PREPOSITION_FORMS, PUBLISHED_PROJECT_FORMS, SECOND_FORMS, WORD_FORMS } from './arabic-count.ts'
-import { cinematographyBlock, flowLook, type FlowLookId } from './flow-cinema.ts'
+import { cinematographyBlock, DEFAULT_FLOW_CLIP_SECONDS, flowLook, shotPlanForSeconds, type FlowLookId } from './flow-cinema.ts'
 
 /**
  * مخرجات مسبك التغريدات ورنين القرّاء تُحقن حقناً ولا تُستورد هنا.
@@ -38,6 +38,38 @@ export type LiveDirectorClipStatus = 'not_generated' | 'generated' | 'needs_revi
 export type LiveDirectorTone = 'فكرية' | 'تربوية' | 'إنسانية' | 'صادمة' | 'إعلامية' | 'أكاديمية مبسطة' | 'مستقبلية' | 'ساخرة بذكاء'
 export type LiveDirectorPlatform = 'Instagram Reels' | 'X' | 'YouTube Shorts' | 'LinkedIn' | 'TikTok' | 'متعدد المنصات'
 export type FlowAppearance = 'avatar_direct' | 'avatar_voiceover' | 'visual_only' | 'avatar_with_object'
+/**
+ * من يظهر في الإطار — أربعة خيارات صريحة، لا مربّع «أفتار» واحد.
+ *
+ * «الأفتار» يعني **د. أحمد نفسه**: نسخته المحفوظة داخل Flow. و«ناس المشهد»
+ * شيءٌ آخر تماماً: أشخاصٌ في الحدث ليسوا هو ولا يشبهونه. وقد كان الخياران
+ * مخلوطين في مفتاحٍ واحد، فلم يكن ممكناً أن يظهر هو **ومعه** ناس.
+ *
+ * `avatar`: هو وحده في الإطار.
+ * `avatar_and_people`: هو، ومعه ناسٌ في المشهد.
+ * `people`: ناسٌ في المشهد بلا ظهوره — الافتراضي.
+ * `no_people`: بلا أي إنسان إطلاقاً؛ المعنى في الأشياء والضوء والمكان والمادة.
+ */
+export type CastMode = 'avatar' | 'avatar_and_people' | 'people' | 'no_people'
+
+export const CAST_MODES: CastMode[] = ['people', 'no_people', 'avatar', 'avatar_and_people']
+
+export const CAST_LABELS: Record<CastMode, string> = {
+  avatar: 'أنا وحدي — أفتار د. أحمد المحفوظ في Flow',
+  avatar_and_people: 'أنا ومعي ناس في المشهد',
+  people: 'ناس في المشهد بلا ظهوري',
+  no_people: 'بلا ناس إطلاقاً — أشياء ومكان وضوء',
+}
+
+export const CAST_NOTES: Record<CastMode, string> = {
+  avatar: 'يتطلب اختيار الأفتار داخل Flow قبل التوليد؛ وإلا اخترع النموذج شخصاً آخر. ولا يظهر معك أحد.',
+  avatar_and_people: 'تظهر أنت بهويتك المحفوظة، ويظهر معك آخرون في الحدث — ممنوعٌ أن يشبهك أحدهم أو يخاطب الكاميرا.',
+  people: 'الافتراضي: أشخاصٌ في المشهد بلا هوية محددة ولا مذيع — لا يحتاج أفتاراً ولا صورة مرجعية.',
+  no_people: 'لا وجه ولا يد ولا ظل إنسان. المشهد كله أشياء ومواد وضوء وحركة فيزيائية.',
+}
+
+/** هل تظهر نسخة د. أحمد المحفوظة في هذا الطاقم؟ */
+const usesAvatar = (cast: CastMode) => cast === 'avatar' || cast === 'avatar_and_people'
 /** نمط الترابط بين المقطع والمقطع الذي يسبقه. */
 export type ContinuityMode = 'direct' | 'soft' | 'thematic' | 'independent'
 /** استراتيجية الصورة المرجعية القادمة من المقطع السابق. */
@@ -61,12 +93,14 @@ export type LiveDirectorSegment = {
   id: string
   order: number
   day: number
-  duration: 8
+  duration: number
   role: string
   purpose: string
   /** المعنى الوحيد الذي يجب أن يصل من هذا المقطع. */
   message: string
   appearance: FlowAppearance
+  /** من يظهر في هذا المقطع؛ يُحفظ مع المقطع فتبقى إعادة البناء أمينة. */
+  cast: CastMode
   voiceMode: VoiceMode
   narration: string
   /** مصدر الجملة — يظهر في اللوحة كي لا تختلط صياغة المحرك بكلامه. */
@@ -141,9 +175,12 @@ export type LiveDirectorProject = {
   platform: LiveDirectorPlatform
   tone: LiveDirectorTone
   useAvatar: boolean
+  /** الطاقم المختار للمشروع كله. */
+  castMode: CastMode
   series: boolean
   seriesPlan: string[]
-  duration: 8 | 24 | 48 | 64
+  /** المدة الكاملة = عدد المقاطع × مدة المقطع الواحد. */
+  duration: number
   durationReason: string
   /** النمط البصري: عدسة وإضاءة وتدرّج ونسيج. اختياريٌّ فالمشاريع المحفوظة تبقى صالحة. */
   look?: FlowLookId
@@ -176,7 +213,11 @@ export type ArticleVideoInput = {
   platform?: LiveDirectorPlatform
   tone?: LiveDirectorTone
   useAvatar?: boolean
-  preferredDuration?: 24 | 48 | 64
+  castMode?: CastMode
+  /** مدة المقطع الواحد في Flow؛ خمس عشرة افتراضاً. */
+  clipSeconds?: number
+  /** عدد المقاطع المطلوب يدوياً بدل توصية المحرك. */
+  preferredSegments?: 3 | 6 | 8
   forge?: ForgeInput
   source?: string
   sourceSessionId?: string
@@ -191,6 +232,8 @@ export type PublicVideoInput = {
   platform?: LiveDirectorPlatform
   tone?: LiveDirectorTone
   useAvatar?: boolean
+  castMode?: CastMode
+  clipSeconds?: number
   wantsSeries?: boolean
   forge?: ForgeInput
   source?: string
@@ -243,34 +286,59 @@ function projectId(type: LiveDirectorProjectType, seed: string) {
   return `live-${type === 'article_video' ? 'article' : 'public'}-${Date.now().toString(36)}-${(hash >>> 0).toString(36)}`
 }
 
-export function recommendArticleVideoDuration(article: Pick<ArticleRecord, 'title' | 'excerpt' | 'body'>) {
+/**
+ * أعداد المقاطع التي لها أدوار سردية مكتوبة. لا يُولَّد عددٌ بلا أدوار.
+ */
+const SUPPORTED_SEGMENTS = [1, 2, 3, 4, 6, 8] as const
+
+/**
+ * يترجم «المدة المستهدفة» إلى عدد مقاطع بحسب مدة المقطع الواحد في Flow.
+ *
+ * قبل الخمس عشرة ثانية كان العدد يُحسب بقسمةٍ على ثمانٍ حتماً، فصار تغيير مدة
+ * المقطع يضاعف طول الفيديو بدل أن يقلّل عدد التوليدات. القاعدة الآن: الطول
+ * المستهدف ثابتٌ يخدم المنصة، وعدد المقاطع تابعٌ له — فالخمس عشرة تعني
+ * توليداتٍ أقل لنفس الفيديو، لا فيديو أطول بلا سبب.
+ */
+function planFor(targetSeconds: number, clipSeconds: number) {
+  const seconds = clipSeconds > 0 ? clipSeconds : DEFAULT_FLOW_CLIP_SECONDS
+  const raw = Math.max(1, Math.round(targetSeconds / seconds))
+  const segments = SUPPORTED_SEGMENTS.reduce((best, option) => Math.abs(option - raw) < Math.abs(best - raw) ? option : best, SUPPORTED_SEGMENTS[0])
+  return { segments, duration: segments * seconds, days: Math.ceil(segments / 3) }
+}
+
+export function recommendArticleVideoDuration(article: Pick<ArticleRecord, 'title' | 'excerpt' | 'body'>, clipSeconds = DEFAULT_FLOW_CLIP_SECONDS) {
   const text = article.body || article.excerpt || ''
   const count = wordCount(text)
   const complex = /دراسة|نتيجة|مقارنة|قصة|حكاية|تجربة|من جهة|في المقابل|أولاً|ثانياً/i.test(text)
-  if (count <= 260 && !complex) return { duration: 24 as const, segments: 3, days: 1, reason: 'المقالة قصيرة وتدور حول سؤال واحد؛ الإعلان المركز يخدمها أكثر من شرح مطوّل.' }
-  if (count >= 600 && complex) return { duration: 64 as const, segments: 8, days: 3, reason: 'المادة تحمل قصة أو مقارنة ودليلاً يحتاجان مقطعين إضافيين؛ 64 ثانية استثناء مبرر لا استهلاك للرصيد.' }
-  return { duration: 48 as const, segments: 6, days: 2, reason: count >= 350 && count <= 450 ? 'هذه المدة هي الأنسب لمقالة بين 350 و450 كلمة: تشرح الجوهر ولا تحاول قراءة المقال كاملاً.' : 'الفكرة تحتاج خطافاً ومشكلة ونقطتين ورأي د. أحمد وخاتمة؛ ستة مقاطع تكفي بلا حشو.' }
+  if (count <= 260 && !complex) return { ...planFor(24, clipSeconds), reason: 'المقالة قصيرة وتدور حول سؤال واحد؛ الإعلان المركز يخدمها أكثر من شرح مطوّل.' }
+  if (count >= 600 && complex) return { ...planFor(64, clipSeconds), reason: 'المادة تحمل قصة أو مقارنة ودليلاً يحتاجان مساحة إضافية؛ الدقيقة استثناء مبرر لا استهلاك للرصيد.' }
+  return { ...planFor(48, clipSeconds), reason: count >= 350 && count <= 450 ? 'هذه المدة هي الأنسب لمقالة بين 350 و450 كلمة: تشرح الجوهر ولا تحاول قراءة المقال كاملاً.' : 'الفكرة تحتاج خطافاً ومشكلة ونقطتين ورأي د. أحمد وخاتمة، بلا حشو.' }
 }
 
-export function recommendPublicVideoDuration(input: Pick<PublicVideoInput, 'topic' | 'message' | 'wantsSeries'>) {
+export function recommendPublicVideoDuration(input: Pick<PublicVideoInput, 'topic' | 'message' | 'wantsSeries'>, clipSeconds = DEFAULT_FLOW_CLIP_SECONDS) {
   const text = `${input.topic} ${input.message || ''}`.trim()
   const count = wordCount(text)
   const manyAxes = input.wantsSeries || count > 180 || /سلسلة|محاور|أجزاء|أسباب.*نتائج.*حلول|كل ما يتعلق/i.test(text)
   const complex = count > 55 || /دراسة|إحصائي|مقارنة|مشكلة.*حل|لماذا.*كيف|موقف.*توضيح|أكثر من جانب/i.test(text)
-  if (manyAxes) return { duration: 24 as const, segments: 3, days: 1, series: true, reason: 'الموضوع أكبر من فيديو واحد؛ سيُقسّم إلى سلسلة مستقلة بدل حشره في 48 ثانية.' }
-  if (count <= 14 && /[؟?]$|اقتباس|ومضة|جملة/i.test(text)) return { duration: 8 as const, segments: 1, days: 1, series: false, reason: 'الفكرة جملة واحدة أو سؤال؛ لقطة واحدة تحافظ على قوتها.' }
-  if (complex) return { duration: 48 as const, segments: 6, days: 2, series: false, reason: 'الموضوع يحتاج تفسيراً ومثالاً ورأياً واضحاً؛ ستة مقاطع تمنع الاختزال المخل.' }
-  return { duration: 24 as const, segments: 3, days: 1, series: false, reason: 'موضوع عام واحد؛ 24 ثانية تكفي للخطاف والتفسير والخاتمة في رصيد يوم واحد.' }
+  if (manyAxes) return { ...planFor(24, clipSeconds), series: true, reason: 'الموضوع أكبر من فيديو واحد؛ سيُقسّم إلى سلسلة مستقلة بدل حشره في فيديو واحد.' }
+  if (count <= 14 && /[؟?]$|اقتباس|ومضة|جملة/i.test(text)) return { ...planFor(8, clipSeconds), series: false, reason: 'الفكرة جملة واحدة أو سؤال؛ مقطع واحد يحافظ على قوتها.' }
+  if (complex) return { ...planFor(48, clipSeconds), series: false, reason: 'الموضوع يحتاج تفسيراً ومثالاً ورأياً واضحاً؛ الاختزال هنا مخلّ.' }
+  return { ...planFor(24, clipSeconds), series: false, reason: 'موضوع عام واحد؛ الخطاف والتفسير والخاتمة تكفي في رصيد يوم واحد.' }
 }
 
 const ARTICLE_ROLES: Record<number, string[]> = {
-  3: ['الخطاف', 'جوهر الفكرة', 'الدعوة إلى قراءة المقال'],
+  1: ['الومضة'],
+  2: ['الخطاف وجوهر الفكرة', 'رأي د. أحمد والدعوة إلى القراءة'],
+  4: ['الخطاف', 'المشكلة', 'رأي د. أحمد', 'الخاتمة والدعوة'],
+  3: ['الخطاف', 'رأي د. أحمد وجوهر الفكرة', 'الخاتمة والدعوة'],
   6: ['الخطاف', 'المشكلة', 'الفكرة الأولى', 'الفكرة الثانية أو المثال', 'رأي د. أحمد', 'الخاتمة والدعوة'],
   8: ['الخطاف', 'المشهد أو المشكلة', 'السؤال المركزي', 'الفكرة الأولى', 'المقارنة أو الدليل', 'الفكرة الثانية', 'رأي د. أحمد', 'الخاتمة والدعوة'],
 }
 
 const PUBLIC_ROLES: Record<number, string[]> = {
   1: ['الومضة'],
+  2: ['الخطاف', 'الفكرة والخاتمة'],
+  4: ['الخطاف', 'التفسير', 'المثال أو الدليل', 'الخاتمة والدعوة'],
   3: ['الخطاف', 'الفكرة أو التفسير', 'الخاتمة أو السؤال'],
   6: ['الخطاف', 'المشكلة', 'التفسير', 'المثال أو الدليل', 'رأي د. أحمد', 'الخاتمة والدعوة'],
 }
@@ -344,7 +412,10 @@ function articleNarration(article: ArticleRecord, count: number, forge?: ForgeIn
   const second: SourcedLine = rest[2] ? sourced(clipToClause(rest[2], 11, central), 'derived') : first
   const closing: SourcedLine = sourced('الفكرة كاملة في المقال؛ اقرأها ثم اختبرها في واقعك.', 'scaffold')
 
-  if (count === 3) return [hook, sourced(clipWords(central, 10, central), 'derived'), closing]
+  if (count === 1) return [hook]
+  if (count === 2) return [hook, verdict]
+  if (count === 3) return [hook, verdict, closing]
+  if (count === 4) return [hook, problem, verdict, closing]
   if (count === 8) return [hook, problem, sourced(clipWords(central, 9, central), 'derived'), first, sourced(clipToClause(rest[3] || second.text, 11, central), 'derived'), second, verdict, closing]
   return [hook, problem, first, second, verdict, closing]
 }
@@ -367,6 +438,8 @@ function publicNarration(topic: string, message: string, count: number, forge?: 
     : sourced(clipToClause(message || sentences[0] || central, 11, central), 'derived')
 
   if (count === 1) return [resonant[0] ? hook : one]
+  if (count === 2) return [hook, verdict]
+  if (count === 4) return [hook, core, verdict, closing]
   if (count === 6) return [
     hook,
     sourced(clipToClause(sentences[0] || central, 12, central), 'derived'),
@@ -378,10 +451,12 @@ function publicNarration(topic: string, message: string, count: number, forge?: 
   return [hook, core, closing]
 }
 
-function appearanceFor(index: number, count: number, useAvatar: boolean): FlowAppearance {
-  if (!useAvatar) return 'visual_only'
-  if (count === 1) return 'avatar_direct'
+function appearanceFor(index: number, count: number, cast: CastMode): FlowAppearance {
+  // بلا أفتار (ناس المشهد أو بلا ناس) يعني ألّا تظهر نسخته في أي مقطع.
+  if (!usesAvatar(cast)) return 'visual_only'
+  if (count <= 2) return index === 0 ? 'avatar_direct' : 'avatar_with_object'
   if (count === 3) return index === 0 ? 'avatar_direct' : index === 2 ? 'avatar_with_object' : 'visual_only'
+  if (count === 4) return index === 0 ? 'avatar_direct' : index === 2 ? 'avatar_with_object' : 'visual_only'
   const map: FlowAppearance[] = ['avatar_direct', 'visual_only', 'visual_only', 'visual_only', 'avatar_direct', 'avatar_with_object', 'visual_only', 'avatar_direct']
   return map[index] || 'visual_only'
 }
@@ -514,7 +589,8 @@ function referenceInstruction(mode: ContinuityMode, strategy: ReferenceStrategy,
 }
 
 function startStateFor(mode: ContinuityMode) {
-  if (mode === 'independent') return 'Open on a settled composed frame that establishes environment, light direction and palette for the whole project.'
+  // كان «إطاراً مستقراً» فيناقض قانون الافتتاح سطراً بسطر داخل البرومبت الواحد.
+  if (mode === 'independent') return 'Open on the first frame of an action already in progress; the environment, light direction and palette for the whole project are established through that motion, not through a static establishing shot.'
   if (mode === 'direct') return 'Open exactly on the visual state of the reference frame: same pose, same gaze direction, same light.'
   if (mode === 'soft') return 'Open inside the same environment as the previous clip, seen from the newly requested angle.'
   return 'Open on the shared visual link — colour, object, motion or sound — carried over from the previous clip.'
@@ -526,13 +602,16 @@ function endStateFor(role: string) {
   return 'End on a stable handoff: one clear object or gaze direction that the next clip can start from.'
 }
 
-function overlayFor(input: { role: string; order: number; count: number; voiceMode: VoiceMode; title: string; message: string; articleUrl: string }): OverlayCue[] {
+function overlayFor(input: { role: string; order: number; count: number; voiceMode: VoiceMode; title: string; message: string; articleUrl: string; seconds?: number }): OverlayCue[] {
   const cues: OverlayCue[] = []
-  if (input.voiceMode === 'ambient') cues.push({ kind: 'عنوان', text: clipWords(input.message, 8, input.title), from: 1, to: 5.5, position: 'وسط الإطار', space: 'اترك ثلث الإطار الأوسط نظيفاً بلا عناصر.' })
-  if (input.role.includes('رأي')) cues.push({ kind: 'اقتباس', text: clipWords(input.message, 10, input.title), from: 2, to: 6.5, position: 'أسفل الإطار', space: 'اترك الثلث السفلي هادئاً بلا تفاصيل متحركة.' })
+  // التوقيتات كانت مثبتة على ثماني ثوانٍ؛ صارت نِسَباً فتصحّ على أي مدة.
+  const total = input.seconds && input.seconds > 0 ? input.seconds : DEFAULT_FLOW_CLIP_SECONDS
+  const at = (ratio: number) => Math.round(total * ratio * 10) / 10
+  if (input.voiceMode === 'ambient') cues.push({ kind: 'عنوان', text: clipWords(input.message, 8, input.title), from: at(0.125), to: at(0.6875), position: 'وسط الإطار', space: 'اترك ثلث الإطار الأوسط نظيفاً بلا عناصر.' })
+  if (input.role.includes('رأي')) cues.push({ kind: 'اقتباس', text: clipWords(input.message, 10, input.title), from: at(0.25), to: at(0.8125), position: 'أسفل الإطار', space: 'اترك الثلث السفلي هادئاً بلا تفاصيل متحركة.' })
   if (input.order === input.count) {
-    cues.push({ kind: 'عنوان', text: clipWords(input.title, 7, input.title), from: 0.5, to: 3.5, position: 'أعلى الإطار', space: 'اترك الثلث العلوي فارغاً.' })
-    cues.push({ kind: input.articleUrl ? 'رابط' : 'دعوة', text: input.articleUrl || 'اكتب رأيك في التعليقات', from: 4.5, to: 8, position: 'أسفل الإطار', space: 'اترك الثلث السفلي فارغاً ومستقراً.' })
+    cues.push({ kind: 'عنوان', text: clipWords(input.title, 7, input.title), from: at(0.0625), to: at(0.4375), position: 'أعلى الإطار', space: 'اترك الثلث العلوي فارغاً.' })
+    cues.push({ kind: input.articleUrl ? 'رابط' : 'دعوة', text: input.articleUrl || 'اكتب رأيك في التعليقات', from: at(0.5625), to: total, position: 'أسفل الإطار', space: 'اترك الثلث السفلي فارغاً ومستقراً.' })
   }
   return cues
 }
@@ -544,24 +623,18 @@ function shotsFor(index: number, role: string, appearance: FlowAppearance): 1 | 
   return index % 3 === 0 ? 1 : 2
 }
 
-function shotPlan(count: 1 | 2 | 3, appearance: FlowAppearance) {
-  const avatar = appearance !== 'visual_only'
-  if (count === 1) return [{ from: 0, to: 8, framing: avatar ? 'calm medium close-up, front-facing' : 'single controlled cinematic composition' }]
-  if (count === 2) return [
-    { from: 0, to: 4.2, framing: avatar ? 'front medium shot' : 'close detail of the symbolic object' },
-    { from: 4.2, to: 8, framing: avatar ? 'gentle cut to a three-quarter close-up' : 'wider reveal in the same environment' },
-  ]
-  return [
-    { from: 0, to: 2.5, framing: avatar ? 'brief medium opening shot' : 'close visual hook' },
-    { from: 2.5, to: 5.5, framing: avatar ? 'close three-quarter angle, continuous speech' : 'second angle on the same subject' },
-    { from: 5.5, to: 8, framing: avatar ? 'return to a slightly wider front shot' : 'clean wider closing shot' },
-  ]
+/** خطة اللقطات تتبع مدة المقطع المختارة؛ الثماني لم تعد مفروضة. */
+function shotPlan(count: 1 | 2 | 3, appearance: FlowAppearance, seconds = DEFAULT_FLOW_CLIP_SECONDS) {
+  return shotPlanForSeconds(count, seconds, appearance !== 'visual_only')
 }
 
-function constraintsFor(appearance: FlowAppearance, count: number) {
-  const common = ['generated text', 'visible text in any language', 'Arabic text inside the scene', 'English text inside the scene', 'letters', 'numbers', 'captions', 'subtitles generated inside Flow', 'labels', 'signage', 'interface text', 'logos', 'watermarks', 'multiple locations', 'fast cuts', 'shaky camera', 'visual clutter', 'sudden lighting changes']
-  if (appearance === 'visual_only') return [...common, 'extra characters', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
-  return [...common, 'face changes', 'identity drift', 'voice changes', 'wardrobe changes', 'age changes', 'lookalike replacement', 'distorted hands', 'extra fingers', 'unnatural mouth movement', 'poor lip synchronization', 'exaggerated gestures', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
+function constraintsFor(appearance: FlowAppearance, count: number, cast: CastMode = 'people') {
+  const common = ['generated text', 'visible text in any language', 'Arabic text inside the scene', 'English text inside the scene', 'letters', 'numbers', 'captions', 'subtitles generated inside Flow', 'labels', 'signage', 'interface text', 'logos', 'watermarks', 'multiple locations', 'shaky camera', 'visual clutter', 'sudden lighting changes']
+  /* «بلا ناس» لا يكفي أن يُقال في الوصف: النموذج يدسّ يداً أو ظلاً أو انعكاس
+     وجه ما لم يُمنع صراحةً. المنع هنا شاملٌ لكل أثرٍ بشريٍّ مرئي. */
+  if (cast === 'no_people') return [...common, 'people', 'any human being', 'human figures', 'faces', 'hands', 'fingers', 'arms', 'human silhouettes', 'shadows of people', 'reflections of people', 'crowds', 'body parts', 'mannequins', 'portraits or photographs of people', 'anyone entering or leaving the frame', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
+  if (appearance === 'visual_only') return [...common, ...(cast === 'avatar_and_people' ? [] : ['extra characters']), 'recognisable celebrity faces', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
+  return [...common, ...(cast === 'avatar_and_people' ? ['anyone resembling the main figure', 'body doubles'] : ['extra characters']), 'face changes', 'identity drift', 'voice changes', 'wardrobe changes', 'age changes', 'lookalike replacement', 'distorted hands', 'extra fingers', 'unnatural mouth movement', 'poor lip synchronization', 'exaggerated gestures', count <= 2 ? 'multiple camera movements' : 'more than three cuts']
 }
 
 /* العطب الذي كشفه الدكتور (٢٩ أغسطس ٢٠٢٦): كان القفل يقول «استخدم الأفتار
@@ -570,75 +643,159 @@ function constraintsFor(appearance: FlowAppearance, count: number) {
    الأمانة أولى: القفل يصف الشرط صراحةً بدل أن يفترض المستحيل. */
 const AVATAR_LOCK = 'IDENTITY — Use Dr. Ahmad’s pre-saved avatar from the creator’s own Flow library as the only person in frame; it is selected once in Flow and reused, never described here. Keep his face, age, skin tone, hair, beard and build exactly as that saved avatar. Never invent, age, westernise, or substitute a different or similar-looking person, and never fall back to a generic professor, scholar, or presenter figure. If the saved avatar is not selected for this generation, keep every human face out of the frame entirely and carry the meaning through hands, silhouette, and the environment instead.'
 
+/* «أنا ومعي ناس» يحتاج قفلاً مختلفاً: القفل الأصلي يقول «الشخص الوحيد في
+   الإطار»، فيمنع الآخرين نصّاً. الهوية تبقى مقفلة عليه وحده، والآخرون
+   مسموحون بشرط ألّا يشبهه أحدهم — وهو أخطر ما يفعله المولّد هنا. */
+const AVATAR_WITH_PEOPLE_LOCK = 'IDENTITY — One figure in this scene is Dr. Ahmad: use his pre-saved avatar from the creator’s own Flow library, selected once in Flow and reused, never described here. Keep his face, age, skin tone, hair, beard and build exactly as that saved avatar, and never age, westernise or substitute him. Other people may appear in the scene as participants in the action, but none of them may resemble him, share his features, wardrobe or build, or be mistaken for him; they are clearly different individuals, and none of them addresses the camera. If the saved avatar is not selected for this generation, keep every human face out of the frame entirely and carry the meaning through hands, silhouette, and the environment instead.'
+
+const avatarLock = (cast: CastMode) => cast === 'avatar_and_people' ? AVATAR_WITH_PEOPLE_LOCK : AVATAR_LOCK
+
 const ARABIC_SCRIPT = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]+/g
 
-const VISUAL_CONCEPTS: Array<{ pattern: RegExp; scenes: string[] }> = [
-  { pattern: /ذكاء اصطناعي|خوارزم|تقني|رقمي|هاتف|شاشة|منصات|إنترنت|بيانات/, scenes: [
-    'A thoughtful educator studies a restrained digital interface while keeping a real notebook and human conversation visibly central.',
-    'A calm human-scale technology scene contrasts automated suggestions with a deliberate human decision.',
-    'A clean desk scene shows one digital tool being paused, questioned, and used with visible judgment rather than passive dependence.',
+/*
+ * بنك المشاهد.
+ *
+ * العلّة التي حكم عليها الدكتور (٣٠ أغسطس ٢٠٢٦): «غير جميل وغير مشوّق». كانت
+ * كل جملةٍ هنا تصف **حالة** لا **حدثاً**: «معلّمٌ متأمّل يدرس واجهةً رقمية».
+ * الحالة تُنتج صورةً ثابتة تتحرك قليلاً — بطاقةً بريدية. والقاعدة الجديدة:
+ * كل مشهدٍ فعلٌ مرئيٌّ له قبلٌ وبعد، يُرى فيه شيءٌ **يتغيّر حاله** لا موضعه.
+ *
+ * ولكل مفهومٍ مساران: `scenes` حين يُسمح بالبشر، و`objects` حين يختار الدكتور
+ * «بلا ناس» — فلا يُترك النموذج يترجم مشهداً بشرياً إلى «بلا ناس» بنفسه.
+ */
+const VISUAL_CONCEPTS: Array<{ pattern: RegExp; scenes: string[]; objects: string[] }> = [
+  { pattern: /ذكاء اصطناعي|خوارزم|تكنولوجيا|تقني|رقمي|هاتف|شاشة|منصات|إنترنت|بيانات/, scenes: [
+    'A hand stops mid-air over a glowing interface, then deliberately closes it; the room light shifts from cold screen-blue to warm daylight as the decision lands.',
+    'Automated suggestions cascade across a surface faster and faster until a single human hand presses one down and the cascade halts.',
+    'A screen dims while a paper notebook is pulled into the light; the beam physically travels from one to the other.',
+  ], objects: [
+    'A dense stream of glowing particles races through a dark space, accelerating, until a single physical object drops into its path and the whole stream reorganises around it.',
+    'Cold blue screen light drains out of a room as warm daylight floods in from the side, revealing dust, paper texture and depth that the screen light had flattened.',
+    'A tangle of cables and reflected light untangles itself in one continuous motion, resolving into a single clean line that runs to a single lamp.',
   ] },
   { pattern: /طفل|ابن|ابنة|أبناء|أسرة|بيت|والد|أم|أب/, scenes: [
-    'A warm domestic learning moment shows careful listening, emotional safety, and one clear boundary without confrontation.',
-    'A quiet family scene centers on eye contact, patience, and a small shared action rather than a lecture.',
-    'A human close-up captures hesitation turning into trust through calm presence and respectful distance.',
+    'A raised hand lowers and opens; the physical distance between two people closes across the shot as tension visibly drains from the frame.',
+    'A door held half-shut is pushed slowly open by warm light spilling through, widening across the floor until the room changes character.',
+    'A small object is passed between two pairs of hands; the exchange completes and the light warms as it settles.',
+  ], objects: [
+    'A small chair and a large chair sit apart; light travels across the floor and closes the gap between their shadows until the two shadows touch.',
+    'A closed door edges open on its own weight and warm light floods across a cold floor, revealing texture, dust and depth as it advances.',
+    'A stack of small worn objects is disturbed and resettles into a stable arrangement, each piece finding its place under a warming light.',
   ] },
   { pattern: /مدرسة|صف|طالب|معلم|تعليم|درس|تعلّم|منهج/, scenes: [
-    'A premium classroom moment shows one learner moving from passive compliance to active understanding through a visible question.',
-    'A quiet educational environment contrasts completing a task with genuinely making sense of it.',
-    'A single classroom object becomes a visual cause-and-effect metaphor for attention, understanding, and agency.',
+    'A pen stops copying, lifts, and instead circles one word; the whole page reorganises around that mark as focus pulls in.',
+    'Rows of identical shapes on a surface begin to break formation until one stands apart and everything else falls out of focus.',
+    'A hand sweeps a cluttered desk clear in one motion, leaving one object in a shaft of light.',
+  ], objects: [
+    'A row of identical objects sits in rigid formation; one shifts out of line and the light immediately reorganises around it while the rest fall into shadow.',
+    'Chalk dust drifts through a hard beam of light and slowly reveals a shape that was invisible a second earlier.',
+    'A sheet of paper covered in dense marks is lifted into the light; the marks resolve from noise into one legible pattern as the angle changes.',
   ] },
   { pattern: /بحث|دراسة|دراسات|سؤال|أكاديم|مصدر|دليل/, scenes: [
-    'A refined research desk shows many scattered possibilities narrowing into one precise question and one credible source.',
-    'A researcher compares evidence calmly, removing noise until one defensible line of inquiry remains.',
-    'A close visual sequence moves from a crowded field of notes to one clear, testable question.',
+    'Scattered notes are swept and narrowed by a pair of hands until a single page remains lit and everything else falls to shadow.',
+    'A magnifier moves across a dense surface, and the moment it stops, one line snaps into sharp focus while the rest blurs away.',
+    'A wall of pinned material is stripped down piece by piece until one thread of connection remains taut across the frame.',
+  ], objects: [
+    'A drift of loose pages is caught by moving air, swirls upward, then settles until a single page remains standing in a shaft of light.',
+    'A dense field of small objects contracts inward, tightening, until only one sits at the centre with clean space around it.',
+    'Threads stretched across a dark space slacken and fall away one by one until a single taut line remains, catching the light.',
   ] },
   { pattern: /درجة|اختبار|تقييم|تفوق|نجاح|رسوب/, scenes: [
-    'A single score on paper is visually placed beside richer evidence of understanding, judgment, and growth.',
-    'A calm assessment scene shifts attention from the final number to the thinking process that produced it.',
-    'A restrained educational metaphor shows a grade shrinking to its proper size while human capability remains larger in frame.',
+    'A single mark on paper is set beside a growing arrangement of richer evidence; the mark shrinks in the frame as the arrangement expands past it.',
+    'A hand covers a number, and everything the number was hiding becomes visible around it.',
+    'A stamped page is slid away and what is underneath keeps unfolding well beyond its edge.',
+  ] , objects: [
+    'A small rigid card sits alone under a hard light; a wider warm light rises around it and the card visibly shrinks in importance as the frame reveals what surrounds it.',
+    'A single mark on a surface is overtaken by an expanding pattern of texture and detail that keeps growing past the edge of frame.',
+    'A measuring tool is laid over an object it cannot span; the object keeps extending beyond the tool as the camera pulls back.',
   ] },
   { pattern: /غضب|صراخ|خلاف|حدود|سلوك|عقاب|حزم/, scenes: [
-    'A tense moment slows down before reaction, showing one breath, one pause, and one clear boundary delivered without aggression.',
-    'A quiet visual beat contrasts impulsive escalation with a composed, respectful response.',
-    'A close human moment shows repair after tension through accountability, calm tone, and restored connection.',
+    'Fast, agitated motion in the frame decelerates to a full stop on one held breath, and the light steadies with it.',
+    'A hand grips hard, then deliberately releases; the object it held settles and stops rattling.',
+    'Two moving elements converge on a collision, then one halts a fraction short and the frame stills.',
+  ], objects: [
+    'A surface vibrating hard with agitated objects slows and settles until every object is perfectly still and one line of light steadies across them.',
+    'A door slams toward its frame and stops a hair short, and everything disturbed in the room settles back into stillness behind it.',
+    'A taut cord under visible strain slackens in one controlled release without snapping, and the whole frame stops shaking.',
   ] },
   { pattern: /مقارنة|شهرة|متابع|محتوى|إعلان|منصات/, scenes: [
-    'A person steps back from a stream of polished public images and returns attention to one authentic, ordinary moment.',
-    'A restrained creator-economy scene contrasts rising metrics with the need to protect identity, privacy, and inner measure.',
-    'A calm cinematic composition shows public numbers fading while real human value stays physically present and stable.',
+    'A rush of polished images streams past a figure and blows out into overexposure; when it clears, one ordinary object remains lit and still.',
+    'Rising figures climb across a surface until they overshoot the frame, and attention falls back to a single physical thing on the table.',
+    'A bright display is switched off and the room reveals its real texture and depth for the first time.',
+  ], objects: [
+    'A blizzard of bright reflective fragments races across the frame, overwhelming it, then thins out and clears to leave one plain object still lit.',
+    'A wall of flickering light peaks, blows out to white, then falls away to reveal one matte, ordinary surface with real texture.',
+    'Glossy surfaces multiply reflections until the frame is unreadable, then all but one reflection extinguishes.',
   ] },
   { pattern: /قراءة|كتاب|كتب|مقال|معرفة/, scenes: [
-    'A quiet reading ritual begins with one inviting page, one marked idea, and no visual pressure to finish quickly.',
-    'A book moves from decorative background to active conversation through a small, deliberate reading habit.',
-    'A close tactile scene shows depth winning over distraction through one page, one pause, and one reflected thought.',
+    'A book falls open and its pages riffle to a stop on one spread; light lands across it and holds.',
+    'A hand marks one line and the surrounding page recedes into soft shadow around the mark.',
+    'A closed book is drawn out of a crowded shelf and the gap it leaves fills with light.',
+  ], objects: [
+    'A closed book opens under its own weight, pages riffling in a wave until they settle on one spread struck by hard side light.',
+    'Dust lifts off a stacked spine as it slides out of a shelf, and the gap left behind fills with a shaft of warm light.',
+    'A page curls, catches the light along its edge, and flattens; the texture of the paper becomes fully legible as it settles.',
   ] },
   { pattern: /قياد|فريق|مبادرة|إدارة|قرار|مؤسسة/, scenes: [
-    'A leadership scene shows a written directive becoming a shared action through listening, ownership, and visible participation.',
-    'A small team aligns around one clear purpose rather than another decorative initiative.',
-    'A composed meeting moment turns silent resistance into an honest, constructive contribution.',
+    'A written directive is set down and, one after another, hands enter the frame and take a piece of it away until only the empty surface remains.',
+    'Scattered elements converge and lock into one aligned formation in a single continuous motion.',
+    'A single chair is turned to face the others and the whole geometry of the room resolves.',
+  ], objects: [
+    'Scattered geometric pieces slide across a surface and lock into one aligned formation in a single continuous motion, and the light straightens with them.',
+    'A single heavy object is set down at the centre and everything loose on the surface reorients toward it.',
+    'A crooked line of objects self-corrects piece by piece until it runs perfectly true and one shaft of light runs along it.',
   ] },
   { pattern: /إرهاق|تعب|نوم|راحة|ضغط|قلق|تركيز|انتباه/, scenes: [
-    'A demanding routine visibly slows into a healthier rhythm through rest, reduced clutter, and one protected focus period.',
-    'A close human moment distinguishes exhaustion from avoidance without judgment or melodrama.',
-    'A calm environment shows attention returning after noise, notifications, and competing demands are deliberately removed.',
+    'A frantically busy frame empties as clutter is lifted away piece by piece until one lit object and clean space remain.',
+    'Blinking, competing light sources extinguish one by one until a single steady lamp is left burning.',
+    'Rapid overlapping motion decays into one slow, even, breathing rhythm.',
+  ], objects: [
+    'A dozen small light sources blink and compete, then extinguish one after another until a single steady warm lamp holds the frame alone.',
+    'A cluttered surface is progressively cleared by moving air until one object remains in clean space, and the room quietens visibly.',
+    'Fast, overlapping ripples across a liquid surface decay into one slow, even, breathing rhythm that finally stills.',
   ] },
   { pattern: /مستقبل|مهارة|وظائف|تغيير|تطور/, scenes: [
-    'A future-facing educational scene keeps human judgment, adaptability, and meaning in the foreground while tools change around them.',
-    'A clean visual transition shows temporary technologies moving past while durable human capabilities remain stable.',
-    'A learner faces an uncertain path with a small set of enduring skills rather than a crowded wall of predictions.',
+    'A stream of objects rushes past a still figure and disintegrates; what the figure is holding stays intact and lit.',
+    'A crowded wall of predictions peels away layer by layer until a small, solid set of tools remains.',
+    'A path ahead reconfigures itself repeatedly while a single held object never changes.',
+  ], objects: [
+    'A stream of shifting, temporary forms rushes through the frame and dissolves, while one solid, weathered object at the centre stays completely intact and lit.',
+    'A dense wall of layered material peels away sheet by sheet until a small, solid, unchanged core remains.',
+    'A surface reconfigures itself repeatedly beneath one heavy object that never moves, and the light on that object never changes.',
   ] },
 ]
 
-function visualBriefFor(source: string, role: string, order: number) {
+/* المسار الافتراضي حين لا ينطبق أي مفهوم — أحداثٌ لا حالات، وبمسارين. */
+const FALLBACK_SCENES = [
+  'An abstract idea is made physical by one visible cause-and-effect action that completes on camera: something is set in motion, meets resistance, and resolves.',
+  'A cluttered, uncertain frame is reduced by one decisive action until a single clear subject stands in generous negative space.',
+  'Two opposing forces meet in frame; one gives way and the balance visibly settles.',
+]
+
+const FALLBACK_OBJECTS = [
+  'One object is set in motion, meets resistance, and resolves into a new stable state — the whole cause-and-effect visible on camera with no person present.',
+  'A crowded field of material is reduced by moving air and light until a single object stands alone in clean space.',
+  'Two opposing physical forces meet on a surface; one gives way and the balance visibly settles into stillness.',
+]
+
+/**
+ * وصف المشهد الإنجليزي — حدثٌ لا حالة، ومسارٌ لكل طاقم.
+ * وسطر «التحوّل» في آخره يمنع النموذج من الاكتفاء بلقطةٍ جميلةٍ بلا حكاية.
+ */
+function visualBriefFor(source: string, role: string, order: number, cast: CastMode = 'people') {
   const concept = VISUAL_CONCEPTS.find((item) => item.pattern.test(source))
-  const scenes = concept?.scenes || [
-    'A refined human-scale educational moment turns an abstract idea into one visible cause-and-effect action.',
-    'A calm cinematic scene gives one idea physical clarity through a single subject, one action, and generous negative space.',
-    'A thoughtful human moment moves from uncertainty to clearer judgment without spectacle or visual clutter.',
-  ]
-  const scene = scenes[Math.abs(order - 1) % scenes.length]
-  return `${scene} The visual beat must serve this function: ${roleInEnglish(role)}.`
+  const bank = cast === 'no_people'
+    ? (concept?.objects || FALLBACK_OBJECTS)
+    : (concept?.scenes || FALLBACK_SCENES)
+  const scene = bank[Math.abs(order - 1) % bank.length]
+  const castRule = cast === 'no_people'
+    ? ' Absolutely no human being appears: no face, no hand, no arm, no silhouette, no shadow or reflection of a person, and nobody entering or leaving frame. The objects, the material, the light and the space carry the entire meaning.'
+    : cast === 'people'
+      ? ' People are present in the scene and take part in the action, but never as a presenter or spokesperson: nobody addresses the camera, and posture, hands and what they are doing carry the meaning rather than a performance to camera.'
+      : cast === 'avatar_and_people'
+        ? ' Dr. Ahmad’s saved avatar is one figure in the scene and other people take part in the action around him; none of them resembles him and none of them addresses the camera.'
+        : ''
+  return `${scene}${castRule} The visual beat must serve this function: ${roleInEnglish(role)}. Required transformation: the frame must not end the way it began — one thing must visibly change state, not merely change position.`
 }
 
 function englishOnly(value: string) {
@@ -649,9 +806,10 @@ function englishOnly(value: string) {
     .trim()
 }
 
-function continuationOpening(segment: Pick<LiveDirectorSegment, 'order' | 'continuityMode'>) {
+function continuationOpening(segment: Pick<LiveDirectorSegment, 'order' | 'continuityMode' | 'cast'>) {
   if (segment.order <= 1) {
-    return 'OPENING CLIP — This is the first clip in the sequence. Establish the exact visual world, identity, wardrobe, location, lighting direction, camera logic, motion rhythm, sound texture, and emotional tone that every following clip must inherit.'
+    const people = segment.cast !== 'no_people'
+    return `OPENING CLIP — This is the first clip in the sequence. Establish the exact visual world, ${people ? 'identity, wardrobe, ' : 'materials, '}location, lighting direction, camera logic, motion rhythm, sound texture, and emotional tone that every following clip must inherit.`
   }
   return `CONTINUATION CLIP ${segment.order} — This clip is a continuation of clip ${segment.order - 1} in the same uninterrupted video sequence. Begin from the exact visual, emotional, spatial, lighting, wardrobe, identity, camera-direction, motion, and sound state established at the end of the immediately previous clip. Do not restart, reintroduce, redesign, or treat this as a separate video. No reference image upload is required; preserve continuity from the previous generated clip and from the written handoff instructions below.`
 }
@@ -676,21 +834,28 @@ function buildFlowPrompt(input: {
 }) {
   const { segment, mode } = input
   const look = flowLook(input.look)
-  const clipSeconds = input.clipSeconds || 8
+  const clipSeconds = input.clipSeconds || DEFAULT_FLOW_CLIP_SECONDS
   const avatar = segment.appearance !== 'visual_only'
   const spokenLanguage = mode === 'speech_ar' ? 'Arabic' : mode === 'speech_en' ? 'English' : ''
   const shotText = segment.shotPlan.map((shot, index) => `Shot ${index + 1} (${shot.from.toFixed(1)}-${shot.to.toFixed(1)}s): ${shot.framing}.`).join(' ')
-  const visualBrief = segment.visualBrief || visualBriefFor(`${input.title} ${segment.message}`, segment.role, segment.order)
+  const cast: CastMode = segment.cast || (avatar ? 'avatar' : 'people')
+  const visualBrief = segment.visualBrief || visualBriefFor(`${input.title} ${segment.message}`, segment.role, segment.order, cast)
   const subject = avatar
-    ? `${AVATAR_LOCK} Keep body movement simple and natural; avoid complex hand choreography.`
-    : 'No avatar is required in this clip. Use one clear symbolic object or one human-scale educational moment as the main subject.'
+    ? `${avatarLock(cast)} Keep body movement simple and natural; avoid complex hand choreography.`
+    : cast === 'no_people'
+      ? 'CAST — There is no person in this clip and no avatar is used. Not a face, not a hand, not an arm, not a silhouette, not a shadow or reflection of a person, and nobody entering or leaving the frame at any moment. The subject is an object, a material, a place, or a physical phenomenon, and it alone carries the meaning through what visibly happens to it.'
+      : cast === 'avatar_and_people'
+        ? 'CAST — Dr. Ahmad does not appear in this particular clip, but other people from the same scene may. Nobody addresses the camera and nobody stands in as a presenter or as a stand-in for him. One clear action carries the meaning.'
+        : 'CAST — No avatar and no presenter in this clip. People are present in the scene and may be seen fully, but never as a spokesperson: nobody addresses the camera and no single face is the subject. The action they are engaged in carries the meaning.'
   const sound = mode === 'silent'
     ? 'Environmental sound only. No dialogue, no voice-over, no narration, no spoken words, and no vocal reactions.'
     : avatar
       ? `Natural room ambience under the approved avatar performance. Spoken language: ${spokenLanguage}. Use only the exact creator-supplied ${spokenLanguage} line entered separately in Flow. Do not translate, paraphrase, add, omit, or invent any words. Preserve precise lip synchronization through every angle change.`
       : `Subtle natural environmental sound. Spoken language for the separately supplied voice-over: ${spokenLanguage}. Use only the exact creator-supplied line; do not translate, paraphrase, add, omit, or invent any words.`
   const speech = mode === 'silent'
-    ? 'Performance mode: completely silent visual performance. The avatar, if present, must keep the mouth naturally closed and must not move the lips as if speaking.'
+    ? cast === 'no_people'
+      ? 'Performance mode: completely silent visual scene with no performer of any kind. The material, the light and the motion carry it alone.'
+      : 'Performance mode: completely silent visual performance. Anyone in frame must keep the mouth naturally closed and must not move the lips as if speaking.'
     : avatar
       ? `Performance mode: speaking avatar in ${spokenLanguage}. Deliver one short creator-supplied line with calm, natural pacing and authentic pronunciation. The exact wording is supplied separately in Flow. Never generate subtitles, captions, or visible text.`
       : `Performance mode: ${spokenLanguage} voice-over-ready visual. Keep the scene visually complete while the creator adds one exact short ${spokenLanguage} line separately. Never generate subtitles, captions, or visible text.`
@@ -716,7 +881,7 @@ function buildFlowPrompt(input: {
     speech,
     `Continuity with the previous clip: ${segment.continuityMode}. ${segment.continuity} ${referenceInstruction(segment.continuityMode, segment.referenceStrategy, Boolean(segment.selectedReferenceFrame))}`,
     overlay,
-    avatar ? AVATAR_LOCK : '',
+    avatar ? avatarLock(cast) : cast === 'no_people' ? 'NO-PEOPLE LOCK — If the scene as described would normally contain a person, solve it without one. Never insert a human being to complete the composition.' : '',
     `Constraints — VISIBLE-TEXT RULE: generate absolutely no on-screen text of any kind in any language — no titles, captions, subtitles, labels, letters, numbers, signs, interface text, logos or watermarks; ${unique([...segment.negativeConstraints, 'generated dialogue wording', 'cartoon or plastic CGI look', 'morphing artifacts']).join(', ')}.`,
   ].filter(Boolean).join('\n')
   return englishOnly(`${continuationOpening(segment)}\n\n${body}`)
@@ -755,46 +920,67 @@ function rebuiltPrompt(segment: SegmentDraft, project: Pick<LiveDirectorProject,
 
 const PALETTE = 'deep slate blue, warm ivory, restrained muted gold accents'
 
+/**
+ * الطاقم الافتراضي **ليس** الأفتار.
+ *
+ * كان `useAvatar: input.useAvatar !== false` — أي أن كل مشروعٍ يُفتح بالأفتار
+ * مفروضاً ما لم يُطفأ صراحةً، وهو خطأ: الأفتار يتطلب اختياره داخل Flow، وحين
+ * لا يُختار يخترع النموذج شخصاً آخر. صار الافتراض «بشر بلا أفتار»، والأفتار
+ * قراراً يُتّخذ لا حالةً تُورَث. و`useAvatar` القديم يبقى مقروءاً للتوافق.
+ */
+function castFor(input: { castMode?: CastMode; useAvatar?: boolean }): CastMode {
+  if (input.castMode) return input.castMode
+  return input.useAvatar === true ? 'avatar' : 'people'
+}
+
+/** يبقى `useAvatar` صادقاً للمشاريع القديمة واللوحات: هل تظهر نسخته أصلاً؟ */
+const avatarFlag = (cast: CastMode) => usesAvatar(cast)
+
 function buildSegments(input: {
   type: LiveDirectorProjectType
   title: string
   narrations: SourcedLine[]
-  useAvatar: boolean
+  cast: CastMode
   tone: LiveDirectorTone
   platform: LiveDirectorPlatform
   articleUrl?: string
+  look?: FlowLookId
+  clipSeconds?: number
 }) {
   const count = input.narrations.length
+  const clipSeconds = input.clipSeconds && input.clipSeconds > 0 ? input.clipSeconds : DEFAULT_FLOW_CLIP_SECONDS
+  const cast = input.cast
   const roles = (input.type === 'article_video' ? ARTICLE_ROLES : PUBLIC_ROLES)[count] || PUBLIC_ROLES[3]
-  const appearances = input.narrations.map((_, index) => appearanceFor(index, count, input.useAvatar))
+  const appearances = input.narrations.map((_, index) => appearanceFor(index, count, cast))
   return input.narrations.map((line, index) => {
     const narration = line.text
     const role = roles[index] || `المقطع ${index + 1}`
     const appearance = appearances[index]
     const voiceMode = voiceModeFor(appearance, role, count)
     const shotCount = shotsFor(index, role, appearance)
-    const negativeConstraints = constraintsFor(appearance, shotCount)
+    const negativeConstraints = constraintsFor(appearance, shotCount, cast)
     const continuityMode = continuityModeFor(index, appearances, role)
     const message = clipToClause(narration, 12, role)
     const base: SegmentDraft = {
       id: `clip-${index + 1}`,
       order: index + 1,
       day: Math.floor(index / 3) + 1,
-      duration: 8,
+      duration: clipSeconds,
       role,
       purpose: role.includes('الخطاف') ? 'create an immediate visual question without a greeting' : role.includes('الخاتمة') ? 'resolve the visual idea and leave a memorable final beat' : `communicate the ${roleInEnglish(role)} with one visible cause-and-effect action`,
       message,
-      visualBrief: visualBriefFor(`${input.title} ${message}`, role, index + 1),
+      visualBrief: visualBriefFor(`${input.title} ${message}`, role, index + 1, cast),
       appearance,
+      cast,
       voiceMode,
       // المقطع الصامت يحمل معناه في الصورة وفي خطة النصوص المضافة، لا في جملة منطوقة.
       narration: voiceMode === 'ambient' ? '' : clipToClause(narration, voiceMode === 'voice_over' ? 14 : 11, narration),
       narrationSource: voiceMode === 'ambient' ? 'derived' : line.source,
       resonanceCount: line.resonanceCount,
       shotCount,
-      shotPlan: shotPlan(shotCount, appearance),
+      shotPlan: shotPlan(shotCount, appearance, clipSeconds),
       negativeConstraints,
-      continuity: `Same ${PALETTE} palette, soft daylight, 50mm-equivalent realism, consistent background logic, and a visual handoff from clip ${Math.max(1, index)} to clip ${index + 2}.`,
+      continuity: `Same ${PALETTE} palette, the same lighting plan and the same lens character as the rest of the project, consistent background logic, and a visual handoff from clip ${Math.max(1, index)} to clip ${index + 2}.`,
       continuityMode,
       referenceStrategy: DEFAULT_REFERENCE[continuityMode],
       referenceSourceClipId: index === 0 ? '' : `clip-${index}`,
@@ -802,12 +988,12 @@ function buildSegments(input: {
       lastFrameImage: '',
       startState: startStateFor(continuityMode),
       endState: endStateFor(role),
-      overlayPlan: overlayFor({ role, order: index + 1, count, voiceMode, title: input.title, message, articleUrl: input.articleUrl || '' }),
+      overlayPlan: overlayFor({ role, order: index + 1, count, voiceMode, title: input.title, message, articleUrl: input.articleUrl || '', seconds: clipSeconds }),
       status: 'not_generated',
       videoUrl: '',
       revisionReason: '',
     }
-    const flowPrompts = rebuiltFlowPrompts(base, { title: input.title, tone: input.tone, platform: input.platform })
+    const flowPrompts = rebuiltFlowPrompts(base, { title: input.title, tone: input.tone, platform: input.platform, look: input.look, clipSeconds })
     const prompt = flowPrompts[preferredPromptMode(base)]
     return { ...base, prompt, flowPrompts, promptVersions: [{ prompt, reason: 'النسخة الأولى', createdAt: now() }] }
   })
@@ -864,7 +1050,7 @@ function socialPack(input: { type: LiveDirectorProjectType; title: string; idea:
   }
 }
 
-function quality(project: Pick<LiveDirectorProject, 'idea' | 'duration' | 'durationReason' | 'segments' | 'useAvatar' | 'social'>): LiveDirectorQuality {
+function quality(project: Pick<LiveDirectorProject, 'idea' | 'duration' | 'durationReason' | 'segments' | 'useAvatar' | 'social'> & { clipSeconds?: number; castMode?: CastMode }): LiveDirectorQuality {
   const speechTooLong = project.segments.some((segment) => wordCount(segment.narration) > (segment.appearance === 'visual_only' ? 14 : 11))
   const avatarCount = project.segments.filter((segment) => segment.appearance !== 'visual_only').length
   const repeatedAppearances = new Set(project.segments.map((segment) => `${segment.appearance}:${segment.shotCount}`)).size < Math.min(3, project.segments.length)
@@ -876,7 +1062,8 @@ function quality(project: Pick<LiveDirectorProject, 'idea' | 'duration' | 'durat
   const chainSound = project.segments.slice(1).every((segment) => segment.referenceStrategy === 'none' || Boolean(segment.referenceSourceClipId))
   const sameShotCount = new Set(project.segments.map((segment) => segment.shotCount)).size === 1 && project.segments.length > 2
   const notes: string[] = []
-  if (speechTooLong) notes.push('اختصر جملة أحد المقاطع لتبقى طبيعية خلال ثماني ثوانٍ.')
+  const clipSeconds = project.clipSeconds && project.clipSeconds > 0 ? project.clipSeconds : DEFAULT_FLOW_CLIP_SECONDS
+  if (speechTooLong) notes.push(`اختصر جملة أحد المقاطع لتبقى طبيعية خلال ${arabicCountPhrase(clipSeconds, SECOND_FORMS)}.`)
   if (project.useAvatar && avatarCount === project.segments.length && project.segments.length > 1) notes.push('خفّف ظهور الأفتار؛ ليس مطلوباً في كل المقاطع.')
   if (repeatedAppearances) notes.push('نوّع بناء اللقطات أو وظيفة المشهد لمنع الإيقاع المتوقع.')
   if (sameShotCount) notes.push('عدد اللقطات متكرر في كل المقاطع؛ نوّع بين لقطة ولقطتين وثلاث.')
@@ -889,9 +1076,10 @@ function quality(project: Pick<LiveDirectorProject, 'idea' | 'duration' | 'durat
   return {
     continuity: !foundingScene || !chainSound ? 'يحتاج مراجعة' : allDirect ? 'يحتاج تبسيطاً' : unique(modes).length >= 3 ? 'ممتاز' : 'جيد',
     idea: wordCount(project.idea) >= 5 ? 'ممتاز' : 'يحتاج مراجعة',
-    duration: project.durationReason && [8, 24, 48, 64].includes(project.duration) ? 'ممتاز' : 'يحتاج مراجعة',
+    // كانت قائمةً مثبتة [8,24,48,64] فتُحمّر كل مشروعٍ بمقاطع خمس عشرة ثانية.
+    duration: project.durationReason && project.segments.length > 0 && project.duration === project.segments.length * clipSeconds ? 'ممتاز' : 'يحتاج مراجعة',
     clips: speechTooLong ? 'يحتاج تبسيطاً' : repeatedAppearances ? 'جيد' : 'ممتاز',
-    avatar: !project.useAvatar || (avatarCount < project.segments.length && avatarCount <= Math.ceil(project.segments.length / 2)) ? 'ممتاز' : 'يحتاج تبسيطاً',
+    avatar: !project.useAvatar || project.segments.length <= 2 || (avatarCount < project.segments.length && avatarCount <= Math.ceil(project.segments.length / 2)) ? 'ممتاز' : 'يحتاج تبسيطاً',
     publishing: socialDistinct ? 'ممتاز' : 'يحتاج مراجعة',
     notes: notes.length ? notes : ['الرسالة والمدة والمقاطع والهوية ومواد النشر متسقة وجاهزة للمراجعة البشرية.'],
   }
@@ -908,22 +1096,22 @@ function seriesPlan(topic: string) {
 }
 
 export function createArticleVideoProject(input: ArticleVideoInput): LiveDirectorProject {
-  const recommended = recommendArticleVideoDuration(input.article)
-  const duration = input.preferredDuration || recommended.duration
-  const segmentCount = duration / 8
-  const recommendation = input.preferredDuration
-    ? { duration, segments: segmentCount, days: Math.ceil(segmentCount / 3), reason: `اختيار يدوي: ${arabicCountPhrase(duration, SECOND_FORMS)}، مع بقاء حد ثلاثة مقاطع يومياً.` }
+  const clipSeconds = input.clipSeconds && input.clipSeconds > 0 ? input.clipSeconds : DEFAULT_FLOW_CLIP_SECONDS
+  const cast = castFor(input)
+  const recommended = recommendArticleVideoDuration(input.article, clipSeconds)
+  const recommendation = input.preferredSegments
+    ? { segments: input.preferredSegments, duration: input.preferredSegments * clipSeconds, days: Math.ceil(input.preferredSegments / 3), reason: `اختيار يدوي: ${arabicCountPhrase(input.preferredSegments * clipSeconds, SECOND_FORMS)}، مع بقاء حد ثلاثة مقاطع يومياً.` }
     : recommended
   const title = input.article.title
   const idea = input.article.excerpt || clipWords(input.article.body || '', 30, title)
   const narrations = articleNarration(input.article, recommendation.segments, input.forge)
-  const segments = buildSegments({ type: 'article_video', title, narrations, useAvatar: input.useAvatar !== false, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: `/articles/${input.article.slug}` })
+  const segments = buildSegments({ type: 'article_video', title, narrations, cast, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: `/articles/${input.article.slug}`, clipSeconds })
   const social = socialPack({ type: 'article_video', title, idea, articleUrl: `/articles/${input.article.slug}`, forge: input.forge })
   const base: LiveDirectorProject = {
     id: projectId('article_video', input.article.slug), type: 'article_video', articleId: input.article.slug, articleUrl: `/articles/${input.article.slug}`,
-    title, idea, centralMessage: idea, audience: input.audience || 'الجمهور العام والمهتمون بالتعليم', platform: input.platform || 'متعدد المنصات', tone: input.tone || 'فكرية', useAvatar: input.useAvatar !== false,
+    title, idea, centralMessage: idea, audience: input.audience || 'الجمهور العام والمهتمون بالتعليم', platform: input.platform || 'متعدد المنصات', tone: input.tone || 'فكرية', useAvatar: avatarFlag(cast), castMode: cast, clipSeconds,
     series: false, seriesPlan: [], duration: recommendation.duration, durationReason: recommendation.reason, segmentCount: recommendation.segments, days: recommendation.days,
-    narration: narrations.map((line) => line.text).join(' '), identityLock: AVATAR_LOCK, continuityNotes: [
+    narration: narrations.map((line) => line.text).join(' '), identityLock: avatarLock(cast), continuityNotes: [
       'استخدم أفتار د. أحمد المحفوظ داخل Flow فقط؛ لا تطلب صورة مرجعية جديدة.',
       'الملابس والصوت والهوية المعتمدة ثابتة في كل ظهور.',
       'إضاءة نهارية ناعمة ولوحة أزرق داكن وعاجي ولمسة ذهبية هادئة.',
@@ -935,17 +1123,19 @@ export function createArticleVideoProject(input: ArticleVideoInput): LiveDirecto
 }
 
 export function createPublicVideoProject(input: PublicVideoInput): LiveDirectorProject {
-  const recommended = recommendPublicVideoDuration(input)
+  const clipSeconds = input.clipSeconds && input.clipSeconds > 0 ? input.clipSeconds : DEFAULT_FLOW_CLIP_SECONDS
+  const cast = castFor(input)
+  const recommended = recommendPublicVideoDuration(input, clipSeconds)
   const title = suggestStrongTitle(input.topic)
   const idea = input.message?.trim() || input.topic.trim()
   const narrations = publicNarration(input.topic, idea, recommended.segments, input.forge)
-  const segments = buildSegments({ type: 'public_topic_video', title, narrations, useAvatar: input.useAvatar !== false, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '' })
+  const segments = buildSegments({ type: 'public_topic_video', title, narrations, cast, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '', clipSeconds })
   const social = socialPack({ type: 'public_topic_video', title, idea, linkedArticle: input.linkedArticle, articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '', archive: input.archive, forge: input.forge })
   const base: LiveDirectorProject = {
     id: projectId('public_topic_video', input.topic), type: 'public_topic_video', articleId: input.linkedArticle?.slug || '', articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '',
-    title, idea, centralMessage: clipWords(idea, 30, title), audience: input.audience || 'الجمهور العام', platform: input.platform || 'متعدد المنصات', tone: input.tone || 'فكرية', useAvatar: input.useAvatar !== false,
+    title, idea, centralMessage: clipWords(idea, 30, title), audience: input.audience || 'الجمهور العام', platform: input.platform || 'متعدد المنصات', tone: input.tone || 'فكرية', useAvatar: avatarFlag(cast), castMode: cast, clipSeconds,
     series: recommended.series, seriesPlan: recommended.series ? seriesPlan(input.topic) : [], duration: recommended.duration, durationReason: recommended.reason, segmentCount: recommended.segments, days: recommended.days,
-    narration: narrations.map((line) => line.text).join(' '), identityLock: AVATAR_LOCK, continuityNotes: [
+    narration: narrations.map((line) => line.text).join(' '), identityLock: avatarLock(cast), continuityNotes: [
       'إذا ظهر الأفتار، استخدم النسخة المحفوظة داخل Flow بلا رفع أو وصف جديد.',
       'المكان واللحظة والإضاءة ثابتة داخل كل مقطع، مع رابط بصري بين المقاطع.',
       'غيّر حجم اللقطة أو الزاوية فقط؛ لا تغيّر الشخصية أو الملابس أو الخلفية.',
@@ -962,7 +1152,10 @@ export function ensureLiveDirectorPromptVariants(project: LiveDirectorProject): 
     const { prompt: _legacyPrompt, promptVersions, flowPrompts: _legacyVariants, ...rest } = segment
     const draft: SegmentDraft = {
       ...rest,
-      visualBrief: segment.visualBrief || visualBriefFor(`${project.title} ${segment.message}`, segment.role, segment.order),
+      // المشاريع القديمة بلا حقل طاقم؛ تُشتقّ من ظهور الأفتار فيها كما كانت.
+      cast: segment.cast || (segment.appearance !== 'visual_only' ? 'avatar' : project.castMode || (project.useAvatar ? 'avatar' : 'people')),
+      duration: segment.duration || project.clipSeconds || DEFAULT_FLOW_CLIP_SECONDS,
+      visualBrief: segment.visualBrief || visualBriefFor(`${project.title} ${segment.message}`, segment.role, segment.order, segment.cast || (segment.appearance !== 'visual_only' ? 'avatar' : 'people')),
     }
     const variants = rebuiltFlowPrompts(draft, project)
     const prompt = variants[preferredPromptMode(draft)]
@@ -1015,7 +1208,7 @@ function repairedDraft(segment: LiveDirectorSegment, issue: LiveDirectorRepairIs
   if (issue === 'الزوايا كثيرة' && draft.shotCount > 1) draft.shotCount = (draft.shotCount - 1) as 1 | 2
   if (issue === 'الزوايا قليلة والمشهد جامد' && draft.shotCount < 3) draft.shotCount = (draft.shotCount + 1) as 2 | 3
   if (issue === 'الانتقال بين الزوايا غير طبيعي' && draft.shotCount > 1) draft.shotCount = 1
-  if (['الزوايا كثيرة', 'الزوايا قليلة والمشهد جامد', 'الانتقال بين الزوايا غير طبيعي'].includes(issue)) draft.shotPlan = shotPlan(draft.shotCount, draft.appearance)
+  if (['الزوايا كثيرة', 'الزوايا قليلة والمشهد جامد', 'الانتقال بين الزوايا غير طبيعي'].includes(issue)) draft.shotPlan = shotPlan(draft.shotCount, draft.appearance, draft.duration)
   // مزامنة الفم الضعيفة تُعالج بتحويل الحديث إلى تعليق صوتي، لا بإعادة المشروع.
   if (issue === 'مزامنة الفم سيئة' && draft.voiceMode === 'avatar_speech') draft.voiceMode = 'voice_over'
   if (issue === 'النص طويل') draft.narration = clipWords(draft.narration, draft.voiceMode === 'voice_over' ? 10 : 8, draft.narration)
@@ -1033,7 +1226,7 @@ function repairedDraft(segment: LiveDirectorSegment, issue: LiveDirectorRepairIs
     draft.referenceStrategy = draft.continuityMode === 'independent' ? 'none' : 'style_only'
   }
   draft.startState = startStateFor(draft.continuityMode)
-  draft.negativeConstraints = unique([...constraintsFor(draft.appearance, draft.shotCount), ...(issue.includes('الأفتار') || issue.includes('الوجه') ? ['avatar replacement', 'pose reset'] : []), ...(issue === 'الخلفية تغيرت' ? ['inconsistent background'] : []), ...(issue === 'الانتقال بين الزوايا غير طبيعي' ? ['abrupt motion discontinuity'] : [])])
+  draft.negativeConstraints = unique([...constraintsFor(draft.appearance, draft.shotCount, draft.cast || 'people'), ...(issue.includes('الأفتار') || issue.includes('الوجه') ? ['avatar replacement', 'pose reset'] : []), ...(issue === 'الخلفية تغيرت' ? ['inconsistent background'] : []), ...(issue === 'الانتقال بين الزوايا غير طبيعي' ? ['abrupt motion discontinuity'] : [])])
   return draft
 }
 
@@ -1122,7 +1315,7 @@ export function applyReferenceFrame(project: LiveDirectorProject, sourceSegmentI
   return { project: { ...next, quality: quality(next) }, applied: true, note: `${assessment.note} ورُبط المقطع ${target.order} بالإطار.` }
 }
 
-/** النسخة القريبة من دقيقة: مادة Flow تبقى 48 ثانية، والفارق تحرير خارجي. */
+/** النسخة القريبة من دقيقة: مادة Flow تبقى بمدتها المولّدة، والفارق تحرير خارجي. */
 export function nearMinuteEditPlan(project: Pick<LiveDirectorProject, 'duration' | 'title' | 'articleUrl'>) {
   const generated = project.duration
   return {

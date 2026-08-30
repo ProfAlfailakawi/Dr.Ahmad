@@ -1021,10 +1021,17 @@ const voiceSwapped = (expectMale, f0) => f0 !== null && (expectMale ? f0 >= 165 
    F0 نفسه قد يلتقط نصف الأوكتاف. لذلك تبقى القفزة المفردة تنبيهاً سمعياً،
    أما الرفض الآلي فلا يقع إلا حين يتحرك **وسيط ثلث كامل** في الاتجاه نفسه.
    هكذا نمسك Voice Reset الحقيقي من غير أن نرفض نورة لأنها شددت كلمة. */
-export function speakerPitchContinuity (turns, pitches, speaker = 'female', { maxPointDriftHz = 32, maxSegmentDriftHz = 28 } = {}) {
+/* [٣٠ أغسطس ٢٠٢٦ — تشغيل 33295804643]
+   حد 28Hz أسقط seed 3111 مع أن نورة بقيت متمايزة عن فهد بـ56Hz، ولم تؤكد
+   بصمة الرنين Reset عند الانتقال: 182 ← 152 ← 187Hz. هذا تغيّر طاقة داخل
+   الثلث الأوسط، مو تبدّل إنسان. الحد القاطع صار 40Hz؛ الاتجاه إلى طبقة
+   الطرف الثاني يبقى له حارسه النسبي المستقل، واتفاق الرنين+الطبقة عند
+   الانتقال يبقى قاطعاً. أما 171 ← 110 ← 176Hz ونظائره فيظلون مرفوضين. */
+export const MAX_SEGMENT_IDENTITY_DRIFT_HZ = 40
+export function speakerPitchContinuity (turns, pitches, speaker = 'female', { maxPointDriftHz = 32, maxSegmentDriftHz = MAX_SEGMENT_IDENTITY_DRIFT_HZ } = {}) {
   const samples = turns.map((turn, index) => ({ index, speaker: turn.speaker, hz: Number(pitches[index]) }))
     .filter((sample) => sample.speaker === speaker && Number.isFinite(sample.hz) && sample.hz > 0)
-  if (!samples.length) return { anchorHz: null, maxObservedDriftHz: null, pointSuspects: [], segmentSuspects: [], segments: [] }
+  if (!samples.length) return { anchorHz: null, maxObservedDriftHz: null, pointSuspects: [], segmentSuspects: [], segments: [], maxSegmentDriftHz }
   const median = (values) => {
     const sorted = [...values].sort((a, b) => a - b)
     const middle = Math.floor(sorted.length / 2)
@@ -1062,6 +1069,7 @@ export function speakerPitchContinuity (turns, pitches, speaker = 'female', { ma
     pointSuspects,
     segmentSuspects,
     segments: [segments[0], ...laterSegments],
+    maxSegmentDriftHz,
   }
 }
 
@@ -2280,9 +2288,15 @@ if (SELF_TEST) {
     'القفزة المفردة الأكبر من 32Hz تبقى ظاهرة للتدقيق السمعي')
   assert.equal(continuityProbe.segmentSuspects.length, 0,
     'قفزة دور واحد لا تحرق Take كامل بصوت طبيعي')
+  const naturalEnergyShiftProbe = speakerPitchContinuity(
+    Array.from({ length: 9 }, () => ({ speaker: 'female' })),
+    [178, 180, 182, 149, 147, 151, 178, 180, 181],
+  )
+  assert.equal(naturalEnergyShiftProbe.segmentSuspects.length, 0,
+    'انحراف 30Hz في ثلث واحد، مع رجوع الصوت لمرجعه، لا يُسمى تبدل إنسان وحده')
   const coherentDriftProbe = speakerPitchContinuity(
     Array.from({ length: 9 }, () => ({ speaker: 'female' })),
-    [178, 180, 182, 149, 147, 151, 146, 148, 145],
+    [178, 180, 182, 135, 133, 137, 132, 134, 130],
   )
   assert.deepEqual(coherentDriftProbe.segmentSuspects.map((finding) => finding.segment), [2, 3],
     'انزلاق وسيط مقطعين كاملين عن نورة الأولى يُرفض')
@@ -3045,7 +3059,8 @@ console.log(pitchBoundarySuspects.length
   ? `⚠️ استمرارية الطبقة عند الانتقال: ${pitchBoundarySuspects.map((finding) => `الدور ${finding.index + 1} (${finding.driftHz.toFixed(0)}Hz)`).join(' · ')}`
   : '✓ استمرارية الطبقة عند الانتقال: ماكو قفزة مفردة فوق 32Hz')
 
-/* لا نرقّع نورة بدورٍ منفرد. الانزلاق المتماسك في وسيط مقطع كامل يرمي
+/* لا نرقّع نورة بدورٍ منفرد. الانزلاق المتماسك والكبير في وسيط مقطع كامل
+   يرمي
    الـTake كله، وكذلك تحوّل نصف مقطع لاحق إلى طبقة فهد. أما الدور المفرد
    فيُسجل للتدقيق ولا يوقف الإنتاج — وهذا بالضبط ما أنقذ عينة 26Hz الجيدة
    التي رفضها الحارس القديم بسبب كلمة واحدة عند 38Hz. */
@@ -3055,9 +3070,9 @@ if (REJECT_SPEAKER_IDENTITY_DRIFT && (femaleSwapSegments.length || maleSwapSegme
   || femaleContinuity.segmentSuspects.length || maleContinuity.segmentSuspects.length)) {
   const reasons = [
     femaleSwapSegments.length ? `طبقة فهد غلبت على مقطع نورة ${femaleSwapSegments.map((segment) => segment.segment).join('، ')}` : '',
-    femaleContinuity.segmentSuspects.length ? `وسيط مقطع نورة ${femaleContinuity.segmentSuspects.map((segment) => segment.segment).join('، ')} انحرف أكثر من 28Hz` : '',
+    femaleContinuity.segmentSuspects.length ? `وسيط مقطع نورة ${femaleContinuity.segmentSuspects.map((segment) => segment.segment).join('، ')} انحرف أكثر من ${femaleContinuity.maxSegmentDriftHz}Hz` : '',
     maleSwapSegments.length ? `طبقة نورة غلبت على مقطع فهد ${maleSwapSegments.map((segment) => segment.segment).join('، ')}` : '',
-    maleContinuity.segmentSuspects.length ? `وسيط مقطع فهد ${maleContinuity.segmentSuspects.map((segment) => segment.segment).join('، ')} انحرف أكثر من 28Hz` : '',
+    maleContinuity.segmentSuspects.length ? `وسيط مقطع فهد ${maleContinuity.segmentSuspects.map((segment) => segment.segment).join('، ')} انحرف أكثر من ${maleContinuity.maxSegmentDriftHz}Hz` : '',
   ].filter(Boolean).join(' · ')
   rejectTake(`↻ هوية أحد المتحدثين انزلقت (${reasons}) — الـTake مرفوض بالكامل ويُعاد، بلا ترقيع.`, {
     stage: 'speaker-identity', femaleContinuity, maleContinuity, femaleSwapSegments, maleSwapSegments,

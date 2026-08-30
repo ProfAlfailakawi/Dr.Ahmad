@@ -13,8 +13,9 @@
 
 import { applyConversationVariety } from './kuwaiti-dialogue-variety.mjs'
 import { applyApprovedRegisterRewrites } from './kuwaiti-register-rewrites.mjs'
+import { applySpokenClosing } from './kuwaiti-closing-variants.mjs'
 
-export const NATIVE_SPOKEN_VERSION = '2026-08-30-native-kuwaiti-v17-gold-locked'
+export const NATIVE_SPOKEN_VERSION = '2026-08-30-native-kuwaiti-v18-varied-first-name-closing'
 export const PILOT_SLUG = 'success-that-does-not-bring-joy-to-its-ownerarabic'
 export const SERIOUSNESS_SLUG = 'when-seriousness-becomes-a-mask-for-escapearabic'
 export const CLASSROOM_SLUG = 'the-classroom-that-fears-mistakesarabic'
@@ -400,9 +401,15 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
     }
   }
 
+  /* الاسم الكامل يبقى في المصدر المكتوب، لكن مدخل الصوت يأخذ إحالة قصيرة
+     ومتنوعة إلى موقع الدكتور أحمد. هذا يلغي عنق زجاجة اسم العائلة من كل
+     Take ويحفظ نهايةً بشرية لا إعلاناً محفوظاً. */
+  const closed = applySpokenClosing(output, { slug })
+  changes.push(...closed.changes)
+
   /* التنويع الأدائي يأتي بعد العلاج النصي: لا يمس كلمةً ولا ترتيباً ولا
      يقلب الكاست. مَن يبدأ يُحسم وقت كتابة الحوار، مو بعد اعتماد صرفه. */
-  const varied = applyConversationVariety(output, { slug })
+  const varied = applyConversationVariety(closed.turns, { slug })
   changes.push(...varied.changes)
   const audit = { ...auditNativeSpokenTurns(varied.turns), conversationPlan: varied.plan }
   return { turns: varied.turns, changes, audit, conversationPlan: varied.plan, version: NATIVE_SPOKEN_VERSION }

@@ -25,6 +25,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildPronunciationMap, toSpokenKuwaiti, buildForeignRedactions, redactForeignNames, stripTashkeel } from './lib/kuwaiti-pronunciation.mjs'
+import { isApprovedSpokenClosing, KUWAITI_CLOSING_VARIANTS } from './lib/kuwaiti-closing-variants.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SELF_TEST = process.argv.includes('--self-test')
@@ -101,11 +102,7 @@ const withoutApprovedBlockedContexts = (raw, say) => {
   return `${rawCheck} ${sayCheck}`
 }
 
-/* اسم الدكتور — المعتمد في دفتر النطق. أي خاتمةٍ تحمل اسمه يجب أن
-   تصل المحرّك بالصيغة المعتمدة نفسها حرفاً بحرف. */
-export const NAME_SPOKEN = spoken('الفيلكاوي')
-
-export function auditTurns (turns) {
+export function auditTurns (turns, { requireClosing = false } = {}) {
   const hard = []; const soft = []; let qaf = 0
   for (const t of turns) {
     const raw = String(t.text ?? '')
@@ -125,19 +122,24 @@ export function auditTurns (turns) {
     if (/[A-Za-z]/.test(say)) hard.push(`حرف لاتيني يصل المحرّك: «${say.match(/\S*[A-Za-z]+\S*/)[0]}»`)
     if (/[0-9٠-٩%]/.test(say)) hard.push(`رقم خام يصل المحرّك: «${say.match(/\S*[0-9٠-٩%]+\S*/)[0]}»`)
   }
-  /* الاسم: إن ذُكر فبالصيغة المعتمدة، وإلا فهو خطأٌ صامت. */
-  const closing = spoken(String(turns[turns.length - 1]?.text ?? ''))
-  if (/الفيل/.test(closing) && !closing.includes(NAME_SPOKEN)) {
-    hard.push(`اسم الدكتور بغير الصيغة المعتمدة (${NAME_SPOKEN}) في الخاتمة`)
+  /* الاسم الكامل يبقى في المصدر المكتوب. مدخل الصوت لا يحمل اسم العائلة
+     أصلاً، ويجب أن ينتهي بإحدى الإحالات الثماني المعتمدة. */
+  const closingRaw = String(turns[turns.length - 1]?.text ?? '')
+  const closing = spoken(closingRaw)
+  if (/الفيل|حسين/u.test(closingRaw) || /الفيل|حسين/u.test(closing)) {
+    hard.push('اسم العائلة/الاسم الكامل وصل إلى الخاتمة المنطوقة — الإحالة الصوتية تقول «موقع الدكتور أحمد» فقط')
+  }
+  if (requireClosing && !isApprovedSpokenClosing(closingRaw)) {
+    hard.push('الخاتمة المنطوقة ليست إحدى صيغ الإحالة الكويتية الثماني المعتمدة')
   }
   return { hard, soft, qaf }
 }
 
 if (SELF_TEST) {
-  const bad = auditTurns([{ text: 'نحنا نقول جذي' }, { text: 'المقال في موقع الدكتور أحمد الفيلباوي.' }])
+  const bad = auditTurns([{ text: 'نحنا نقول جذي' }, { text: 'المقال في موقع الدكتور أحمد الفيلباوي.' }], { requireClosing: true })
   assert.ok(bad.hard.some((h) => h.includes('نحنا')), 'الدخيلة الإماراتية تُمسك — القائمة القديمة كانت تُمررها')
-  assert.ok(bad.hard.some((h) => h.includes('اسم الدكتور')), 'اسمٌ بغير الصيغة المعتمدة يُمسك')
-  const good = auditTurns([{ text: 'ترى هالشي وايد مهم' }, { text: 'تلقى المقال في موقع الدكتور أحمد حسين الفيلچاوي.' }])
+  assert.ok(bad.hard.some((h) => h.includes('اسم العائلة')), 'اسم العائلة لا يصل مدخل الصوت')
+  const good = auditTurns([{ text: 'ترى هالشي وايد مهم' }, { text: KUWAITI_CLOSING_VARIANTS[0] }], { requireClosing: true })
   assert.equal(good.hard.length, 0, 'المتن الكويتي السليم يمرّ')
   /* MASTER VOICE DIRECTOR: المرشح يبقى بإملائه حتى يُختبر، والگ لا تصل
      تلقائياً إلا في صيغةٍ اختارها الدكتور سماعاً. */
@@ -180,7 +182,6 @@ if (SELF_TEST) {
     'سياق ركض غير المسموع يبقى محجوباً')
   assert.equal(auditTurns([{ text: 'الكهربا منتشرة بكل مكان.' }]).hard.length, 0,
     'الكهربا لا تُحسب خطأً من عائلة هرب')
-  assert.ok(NAME_SPOKEN.length > 4, 'صيغة الاسم المعتمدة تُقرأ من دفتر النطق لا من الشيفرة')
   console.log(`✓ بوابة المنطوق: الفحص الذاتي 16/16 · الحجب الحيّ: ${EAR_BLOCKED.length ? EAR_BLOCKED.join(' · ') : 'لا جذور عامة محجوبة'}`)
   process.exit(0)
 }
@@ -203,7 +204,7 @@ let hard = 0; let soft = 0; let qaf = 0
 for (const f of files) {
   const data = JSON.parse(readFileSync(resolve(dir, f), 'utf8'))
   const turns = Array.isArray(data) ? data : Object.values(data.turns || data)
-  const r = auditTurns(turns)
+  const r = auditTurns(turns, { requireClosing: true })
   qaf += r.qaf
   if (r.hard.length || r.soft.length) {
     console.log('── ' + f.replace('.json', ''))

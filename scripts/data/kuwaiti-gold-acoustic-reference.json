@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "referenceVersion": "2026-08-31-professional-five-plus-episode2-content-aware-v2",
+  "referenceVersion": "2026-08-31-professional-five-plus-episode2-final-doctor-approved-v3",
   "source": {
     "runId": 33132655399,
     "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
@@ -63,6 +63,24 @@
       "doctorVerdict": "الموسيقى والجسور مفقودة، وعبارة ما قصد والقاف سيئة؛ عدا ذلك الحلقة جيدة",
       "approvalScope": "speaker-identity-and-kuwaiti-dialect-only",
       "explicitlyApproved": true
+    },
+    {
+      "runId": 33358937601,
+      "order": 2,
+      "slug": "the-classroom-that-fears-mistakesarabic",
+      "seed": 2102,
+      "audioSha256": "5e644d0182413dfb5f30bc82028340aad60bb6d76534e40f5e16e4290ee36511",
+      "timelineSha256": "4be145bf62f11d984ee74d50dad45c7f602279a7d35824405daaac2514e68fe6",
+      "auditSha256": "ac9a275362c7098431c136a3fee2214d13e4cbfd6d927994edfeb2be7dd7c5c6",
+      "doctorVerdict": "روووعه جدا بنفس مستوى الأولى",
+      "approvalScope": "full-production-gold",
+      "music": {
+        "track": "open-horizon.mp3",
+        "introSec": 2.8,
+        "bridgeCount": 2,
+        "outroSec": 2.9
+      },
+      "explicitlyApproved": true
     }
   ],
   "method": "nearest-doctor-approved-spectral-envelope-plus-pitch-and-cross-speaker-v3",
@@ -107,6 +125,11 @@
           "id": "run-33340104975-02-seed-2102-voice-approved",
           "pitchMedianHz": 113.5,
           "timbreCenter": [2.40219, 2.3133, 1.20412, 1.57605, 1.8821, 2.62314, 1.78581, 0.57618, 0.00198, 0.15081, -0.49346, -0.35972, -1.04931, -0.70718, -1.43278, -2.44503, -4.35563, -3.31556]
+        },
+        {
+          "id": "run-33358937601-02-seed-2102-qaf-safe-final",
+          "pitchMedianHz": 115.9,
+          "timbreCenter": [3.42983, 2.80318, 1.22337, 1.8438, 1.82289, 2.07681, 1.6886, 0.40352, -0.48563, 0.00203, -0.48053, -0.54716, -1.38881, -0.72727, -1.63974, -2.41842, -4.77482, -2.60937]
         }
       ],
       "timbreCenter": [2.01658, 1.94872, 1.25104, 2.21549, 1.62583, 2.04267, 1.46687, -0.11116, -0.51794, -0.32229, -0.61108, -0.38659, -0.8933, -0.1818, -1.21682, -2.23759, -3.53357, -2.82001]
@@ -144,6 +167,11 @@
           "id": "run-33340104975-02-seed-2102-voice-approved",
           "pitchMedianHz": 173.9,
           "timbreCenter": [-1.73027, -0.50542, 1.83129, 2.85561, 2.24857, 2.15357, 2.36596, 0.93848, 0.852, 0.22563, -0.52298, -0.89965, -0.71622, -1.9177, -0.56455, -1.09466, -4.03175, -2.65925]
+        },
+        {
+          "id": "run-33358937601-02-seed-2102-qaf-safe-final",
+          "pitchMedianHz": 172,
+          "timbreCenter": [-1.68233, 1.70762, 2.76234, 3.17307, 1.71771, 2.55772, 2.79739, 0.65252, 0.05572, 0.24422, -0.54393, -0.89862, -0.70909, -2.00831, -0.44816, -0.99046, -4.39668, -2.4862]
         }
       ],
       "timbreCenter": [-1.61443, 0.79631, 2.50824, 2.76032, 1.63838, 2.62727, 2.551, 0.94074, 0.69996, 0.21218, -0.57508, -1.12889, -0.69273, -1.51632, -0.23724, -0.98111, -4.10879, -2.76071]

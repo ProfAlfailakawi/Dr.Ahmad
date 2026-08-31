@@ -429,6 +429,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T14:45:00.000Z"
   },
+  "children-who-know-what-is-required-but-do-not-know-whyarabic.dialogue-kw.json": {
+    "bytes": 7376,
+    "sha256": "8af22441f35fa77d48f329e43037dd397fe433b30ac32c375ee9deab802a20fc",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-08-31T22:02:28.251Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T22:02:28.251Z"
+  },
+  "children-who-know-what-is-required-but-do-not-know-whyarabic.dialogue-kw.mp3": {
+    "bytes": 2080365,
+    "sha256": "c534e9068981b378803e45468f55cc640ad73e8c17261605eaf05f5106d97dbd",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-08-31T22:02:28.252Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T22:02:28.252Z",
+    "durationSeconds": 104
+  },
   "children-who-know-what-is-required-but-do-not-know-whyarabic.dialogue.json": {
     "bytes": 9281,
     "sha256": "42f9a7ee7eacdd9890666b63d545626765952af9d09247ef32e3050ff8cfd5e7",

@@ -42,12 +42,14 @@ export function decideEntry({ name, recordedBytes, status, remoteBytes }) {
 /** الحقيقة المرشّحة: نحافظ على كل ما في السجل، ونستعيد من R2 كل ما يمكن
  * أن يكون قد ضاع من metadata بعد تشغيلةٍ منقطعة: قراءة المقال + الحوار + نص الحوار. */
 export function discoveryCandidates(knownNames = [], slugs = []) {
-  const candidates = new Set(knownNames.filter((name) => name.endsWith('.mp3') || name.endsWith('.dialogue.json')))
+  const candidates = new Set(knownNames.filter((name) => name.endsWith('.mp3') || /\.dialogue(?:-kw)?\.json$/u.test(name)))
   for (const slug of slugs.filter(Boolean)) {
     candidates.add(`${slug}.mp3`)
     candidates.add(`${slug}.noura.mp3`)
     candidates.add(`${slug}.dialogue.mp3`)
     candidates.add(`${slug}.dialogue.json`)
+    candidates.add(`${slug}.dialogue-kw.mp3`)
+    candidates.add(`${slug}.dialogue-kw.json`)
   }
   return [...candidates]
 }
@@ -71,8 +73,9 @@ if (SELF_TEST) {
   assert(candidates.includes('b.noura.mp3'), '★ كل مقال يدخل اكتشاف صوت نورة؛ وجوده في R2 يكفي لاستعادته ولو ضاع من metadata')
   assert(candidates.includes('a.dialogue.mp3') && candidates.includes('b.dialogue.mp3'), '★ كل مقال يدخل اكتشاف ملف الحوار حتى لو ضاع من metadata')
   assert(candidates.includes('a.dialogue.json') && candidates.includes('b.dialogue.json'), '★ نص الحوار يُستعاد من R2 أيضاً كي لا يختفي الحوار من اللوحة')
+  assert(candidates.includes('a.dialogue-kw.mp3') && candidates.includes('b.dialogue-kw.json'), '★ النسخة الكويتية وصوتها يدخلان الاكتشاف المستقل')
 
-  console.log('✓ اختبارات مصالحة سجلّ الصوت: 11/11')
+  console.log('✓ اختبارات مصالحة سجلّ الصوت: 12/12')
   process.exit(0)
 }
 
@@ -141,7 +144,7 @@ for (const name of candidates) {
       /* ملفٌ حيٌّ على R2 غائبٌ عن السجلّ ⇐ يُضاف. للصوت عتبة كبيرة، ولـJSON
          عتبة صغيرة معقولة. بهذا تستعيد المصالحة الحوار ونصه معاً ولا يبقى
          R2 صحيحاً بينما لوحة التحكم ترى عدداً قديماً. */
-      const isDialogueJson = name.endsWith('.dialogue.json')
+      const isDialogueJson = /\.dialogue(?:-kw)?\.json$/u.test(name)
       const minimumBytes = isDialogueJson ? 100 : 200_000
       if (bytes > minimumBytes) {
         const seconds = isDialogueJson ? 0 : await probeSeconds(`${base}/${encodeURIComponent(name)}`)

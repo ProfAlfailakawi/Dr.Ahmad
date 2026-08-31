@@ -27,10 +27,20 @@ on:
         description: 'اختياري للتجربة المضبوطة؛ اتركه فارغاً لبذور جديدة تلقائياً في كل Rerun'
         required: false
         default: ''
+      publish_to_site:
+        description: 'انشر الحلقة تلقائياً فقط إذا اجتازت كل بوابات المرجع واللهجة والكلمات'
+        type: boolean
+        required: false
+        default: true
+      chain_remaining:
+        description: 'بعد نجاح الحلقة، ابدأ الحلقة الناقصة التالية في تشغيلة مستقلة'
+        type: boolean
+        required: false
+        default: true
 
 permissions:
-  contents: read
-  actions: read
+  contents: write
+  actions: write
 
 concurrency:
   group: podcast-kuwaiti-gemini-global
@@ -53,9 +63,12 @@ jobs:
           npm ci --registry=https://registry.npmjs.org/ --prefer-online
           sudo apt-get update
           sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           npm run podcast:kw:self-test
           node scripts/prepare-kuwaiti-professional-gold.mjs --self-test
           node scripts/run-kuwaiti-generation-queue.mjs --self-test
+          node scripts/prepare-kuwaiti-delegated-release.mjs --self-test
 
       - name: Select a deterministic batch from all 143 site articles
         shell: bash
@@ -69,8 +82,10 @@ jobs:
           const fs = require('fs'); const crypto = require('crypto');
           const v3 = JSON.parse(fs.readFileSync('src/data/kuwaiti-diwania-v3.json', 'utf8'));
           const gold = new Set(JSON.parse(fs.readFileSync('scripts/data/kuwaiti-professional-gold-v13.json', 'utf8')).episodes.map((episode) => episode.slug));
+          const audioMeta = JSON.parse(fs.readFileSync('src/data/audio-meta.json', 'utf8'));
           const site = new Set(Object.keys(JSON.parse(fs.readFileSync('src/data/bodies.json', 'utf8'))));
           const all = Object.keys(v3.episodes || {}).filter((slug) => site.has(slug));
+          const unpublished = all.filter((slug) => audioMeta[`${slug}.dialogue-kw.mp3`]?.validationStatus !== 'verified-r2');
           if (all.length !== 143) throw new Error(`عقد الإنتاج يقول 143 مقالاً؛ الموجود ${all.length}`);
           const batch = Number(process.env.REQUESTED_BATCH || 1);
           const size = Number(process.env.REQUESTED_SIZE || 1);
@@ -79,7 +94,8 @@ jobs:
           const explicit = String(process.env.REQUESTED_SLUGS || '').split(',').map((item) => item.trim()).filter(Boolean);
           if (new Set(explicit).size > 1) throw new Error('اختر slug واحدة فقط؛ ممنوع جمع حلقات في تشغيلة إنتاج واحدة');
           for (const slug of explicit) if (!site.has(slug) || !v3.episodes[slug]) throw new Error(`slug غير معتمد: ${slug}`);
-          const selected = explicit.length ? [...new Set(explicit)] : all.slice((batch - 1) * size, batch * size);
+          for (const slug of explicit) if (!unpublished.includes(slug)) throw new Error(`${slug}: النسخة الكويتية منشورة ومتحققة؛ ممنوع صرفها مرة ثانية`);
+          const selected = explicit.length ? [...new Set(explicit)] : unpublished.slice((batch - 1) * size, batch * size);
           if (!selected.length) throw new Error('الدفعة خارج نطاق 143 حلقة');
           for (const slug of selected) if (gold.has(slug)) throw new Error(`${slug}: هذه من الخمس الذهبية؛ ولّدها من مختبر المرجع الاحترافي ببذرتها المقفولة`);
           fs.mkdirSync('manual-dialogues-kuwaiti', { recursive: true });
@@ -198,6 +214,109 @@ jobs:
           path: kuwaiti-production-package/
           if-no-files-found: error
           retention-days: 90
+
+      - name: Convert the passing package to the independent Kuwaiti public names
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASED_SLUG="$(tr -d '[:space:]' < kuwaiti-production-slugs.txt)"
+          [ -n "$RELEASED_SLUG" ] || { echo '::error::slug الحلقة الناجحة مفقود'; exit 1; }
+          node scripts/prepare-kuwaiti-delegated-release.mjs \
+            --slug="$RELEASED_SLUG" --package-dir=kuwaiti-production-package
+          echo "RELEASED_SLUG=$RELEASED_SLUG" >> "$GITHUB_ENV"
+
+      - name: Publish the passing episode atomically to Cloudflare R2
+        id: r2_publish
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        run: npm run audio:r2:publish
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Keep the verified Kuwaiti suffix alive through the site gate
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        shell: bash
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const meta = require('./src/data/audio-meta.json')
+          const slug = process.env.RELEASED_SLUG
+          const audio = meta[`${slug}.dialogue-kw.mp3`]
+          const transcript = meta[`${slug}.dialogue-kw.json`]
+          if (audio?.sha256 !== process.env.RELEASE_AUDIO_SHA256 || audio?.validationStatus !== 'verified-r2') {
+            throw new Error(`${slug}: R2 لا يحمل نفس Take الذي اجتاز البوابات`)
+          }
+          if (!transcript?.sha256 || transcript.validationStatus !== 'verified-r2') {
+            throw new Error(`${slug}: Transcript الكويتي لم يُوثق`)
+          }
+          console.log(`✓ نفس Take صار عاماً: ${slug}`)
+          NODE
+          node scripts/prune-orphan-audio.mjs
+          node scripts/sync-audio.mjs
+          npm run listen:index
+          npm run project:status
+          npm run lint
+          node scripts/guard-no-generated-audio-in-git.mjs
+          npx vite build
+
+      - name: Finalize the R2 transaction after the local site gate
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        run: npm run audio:r2:commit
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Commit only the lightweight public ledger
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        env:
+          KUWAITI_LEDGER_COMMIT_MESSAGE: 'chore: publish verified Kuwaiti dialogue'
+        run: bash scripts/commit-kuwaiti-public-ledger.sh
+
+      - name: Start the next missing episode in its own run
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true && inputs.chain_remaining == true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          NEXT="$(git show origin/main:src/data/kuwaiti-diwania-v3.json | node -e '
+            let source=""; process.stdin.on("data", d => source += d).on("end", () => {
+              const v3=JSON.parse(source)
+              const meta=JSON.parse(require("child_process").execFileSync("git", ["show", "origin/main:src/data/audio-meta.json"], {encoding:"utf8"}))
+              const next=Object.keys(v3.episodes||{}).find(slug => meta[`${slug}.dialogue-kw.mp3`]?.validationStatus !== "verified-r2")
+              if (next) process.stdout.write(next)
+            })
+          ')"
+          if [ -z "$NEXT" ]; then
+            echo '✓ اكتمل إنتاج كل الحلقات الكويتية الموثقة؛ نبدأ النشر النهائي للموقع.'
+            gh workflow run firebase-hosting-live.yml --ref main
+            exit 0
+          fi
+          gh workflow run podcast-kuwaiti-production-batch.yml --ref main \
+            -f slugs="$NEXT" -f batch_size=1 -f quality_attempts=6 \
+            -f publish_to_site=true -f chain_remaining=true
+          echo "✓ الحلقة التالية في طابور مستقل: $NEXT"
+
+      - name: Roll back public names when a pre-commit gate fails
+        if: failure() && steps.r2_publish.outcome == 'success'
+        continue-on-error: true
+        run: npm run audio:r2:rollback
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
 
       - name: Enforce complete batch after preserving its state
         if: always()

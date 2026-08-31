@@ -1,0 +1,168 @@
+name: نشر الخمس الكويتية المعتمدة إلى الموقع
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'اكتب بالضبط: انشر-الخمس-المعتمدة'
+        required: true
+      start_remaining:
+        description: 'بعد تثبيت الخمس، ابدأ بقية الإنتاج حلقةً واحدةً في كل تشغيلة'
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: podcast-kuwaiti-gemini-global
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Prove the explicit owner instruction
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ '${{ inputs.confirmation }}' = 'انشر-الخمس-المعتمدة' ] || {
+            echo '::error::عبارة التأكيد غير مطابقة؛ لم يُنشر شيء.'
+            exit 1
+          }
+
+      - name: Install the locked release tools
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          npm run audio:quality:self-test
+          node scripts/prepare-kuwaiti-approved-five-release.mjs --self-test
+
+      - name: Download the exact five takes the owner heard
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          INPUT="$RUNNER_TEMP/approved-kuwaiti-five"
+          mkdir -p "$INPUT"
+          node - <<'NODE' > "$RUNNER_TEMP/approved-kuwaiti-five.tsv"
+          const manifest = require('./scripts/data/kuwaiti-approved-site-five-v1.json')
+          for (const episode of manifest.episodes) {
+            console.log(`${episode.runId}\t${episode.artifactName}`)
+          }
+          NODE
+          while IFS=$'\t' read -r run_id artifact_name; do
+            target="$INPUT/$run_id"
+            mkdir -p "$target"
+            echo "تنزيل التشغيلة $run_id · $artifact_name"
+            gh run download "$run_id" --name "$artifact_name" --dir "$target"
+          done < "$RUNNER_TEMP/approved-kuwaiti-five.tsv"
+          echo "APPROVED_FIVE_INPUT=$INPUT" >> "$GITHUB_ENV"
+
+      - name: Rebuild only the release evidence, never the voices
+        run: node scripts/prepare-kuwaiti-approved-five-release.mjs --input-dir="$APPROVED_FIVE_INPUT"
+
+      - name: Publish the five pairs atomically to Cloudflare R2
+        id: r2_publish
+        run: npm run audio:r2:publish
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Prove public hashes and keep the Kuwaiti suffix alive through build
+        shell: bash
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs')
+          const manifest = require('./scripts/data/kuwaiti-approved-site-five-v1.json')
+          const meta = require('./src/data/audio-meta.json')
+          for (const episode of manifest.episodes) {
+            const audio = meta[`${episode.slug}.dialogue-kw.mp3`]
+            const transcript = meta[`${episode.slug}.dialogue-kw.json`]
+            if (audio?.sha256 !== episode.audioSha256 || audio?.validationStatus !== 'verified-r2') {
+              throw new Error(`${episode.slug}: الملف العام ليس نفس الملف المعتمد`)
+            }
+            if (!transcript?.sha256 || transcript.validationStatus !== 'verified-r2') {
+              throw new Error(`${episode.slug}: Transcript الكويتي غير موثق`)
+            }
+          }
+          console.log('✓ الخمس نفسها موثقة علناً ببصماتها.')
+          NODE
+          node scripts/prune-orphan-audio.mjs
+          node scripts/sync-audio.mjs
+          npm run listen:index
+          npm run project:status
+          npm run lint
+          node scripts/guard-no-generated-audio-in-git.mjs
+          npx vite build
+
+      - name: Finalize the R2 transaction after the local site gate
+        run: npm run audio:r2:commit
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Commit only the lightweight public ledger
+        env:
+          KUWAITI_LEDGER_COMMIT_MESSAGE: 'chore: publish five owner-approved Kuwaiti dialogues'
+        run: bash scripts/commit-kuwaiti-public-ledger.sh
+
+      - name: Start the next missing episode as an independent run
+        if: inputs.start_remaining == true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          NEXT="$(git show origin/main:src/data/kuwaiti-diwania-v3.json | node -e '
+            let source=""; process.stdin.on("data", d => source += d).on("end", () => {
+              const v3=JSON.parse(source)
+              const meta=JSON.parse(require("child_process").execFileSync("git", ["show", "origin/main:src/data/audio-meta.json"], {encoding:"utf8"}))
+              const next=Object.keys(v3.episodes||{}).find(slug => meta[`${slug}.dialogue-kw.mp3`]?.validationStatus !== "verified-r2")
+              if (next) process.stdout.write(next)
+            })
+          ')"
+          if [ -z "$NEXT" ]; then
+            echo '✓ كل الحلقات الكويتية موجودة ومتحققة على R2.'
+            exit 0
+          fi
+          gh workflow run podcast-kuwaiti-production-batch.yml --ref main \
+            -f slugs="$NEXT" -f batch_size=1 -f quality_attempts=6
+          echo "✓ بدأت الحلقة التالية وحدها: $NEXT"
+
+      - name: Roll back public names if a pre-commit gate fails
+        if: failure() && steps.r2_publish.outcome == 'success'
+        continue-on-error: true
+        run: npm run audio:r2:rollback
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}

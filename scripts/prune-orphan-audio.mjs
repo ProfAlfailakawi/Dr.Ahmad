@@ -45,6 +45,8 @@ if (removed.length) {
 
 function slugFromAudioMetaName(name) {
   if (name.endsWith('.dialogue-en.mp3')) return name.slice(0, -'.dialogue-en.mp3'.length)
+  if (name.endsWith('.dialogue-kw.mp3')) return name.slice(0, -'.dialogue-kw.mp3'.length)
+  if (name.endsWith('.dialogue-kw.json')) return name.slice(0, -'.dialogue-kw.json'.length)
   if (name.endsWith('.dialogue.mp3')) return name.slice(0, -'.dialogue.mp3'.length)
   if (name.endsWith('.dialogue.json')) return name.slice(0, -'.dialogue.json'.length)
   if (name.endsWith('.noura.mp3')) return name.slice(0, -'.noura.mp3'.length)

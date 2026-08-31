@@ -28,18 +28,25 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildPronunciationMap, toSpokenKuwaiti, buildForeignRedactions, redactForeignNames, stripTashkeel } from './lib/kuwaiti-pronunciation.mjs'
+import {
+  spokenTurnsSha256,
+  verifyKuwaitiProductionCorpusCertificate,
+} from './lib/kuwaiti-production-corpus-certificate.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SELF_TEST = process.argv.includes('--self-test')
 const DIR = process.argv.find((a) => a.startsWith('--dir='))?.slice(6) || 'manual-dialogues-kuwaiti'
 const LIBRARY = process.argv.find((a) => a.startsWith('--library='))?.slice(10) || ''
 const ALLOW = process.env.PODCAST_KW_ALLOW_NEW_WORDS === '1'
+const REQUIRE_PRODUCTION_CERTIFICATE = process.argv.includes('--production-certificate')
+const PREFLIGHT_PRODUCTION_CORPUS = process.argv.includes('--production-corpus')
 
 const SRC = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-pronunciation.json'), 'utf8'))
 const MAP = buildPronunciationMap(SRC)
 const RED = buildForeignRedactions(SRC)
 const spoken = (t) => toSpokenKuwaiti(redactForeignNames(String(t ?? ''), RED), MAP)
 const norm = (w) => stripTashkeel(w).replace(/^[وفبل]?ال/, '').replace(/^[وف]/, '')
+const PRODUCTION = verifyKuwaitiProductionCorpusCertificate(ROOT)
 
 /* مفردات خط الأساس: متن الحلقات الـ١٤٤ (المكتوب والمنطوق معاً) + مفاتيح
    المعجم وقيمه + ما أملاه بأذنه. وجود الكلمة في المتن يعني «معروفة»، لا
@@ -53,6 +60,12 @@ function buildVocabulary() {
   }
   const lib = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-dialogues.json'), 'utf8'))
   for (const ep of Object.values(lib.episodes)) for (const t of Object.values(ep)) { add(t.text); add(spoken(t.text)) }
+  /* متن الإنتاج الحالي كله اعتمده الدكتور دفعة واحدة. ندخل النسخة التي
+     تصل فعليا إلى TTS بعد الصقل، لا المصدر الخام فقط. الشهادة أعلاه
+     تجعل أي تغيير لاحق يوقف المنظومة قبل أن يتحول إلى سماح صامت. */
+  for (const turns of PRODUCTION.corpus.values()) {
+    for (const turn of turns) { add(turn.text); add(spoken(turn.text)) }
+  }
   for (const [k, v] of Object.entries(SRC.words || {})) { add(k); add(v) }
   /* تصريفات عائلات ألف الوصل أقرّ الدكتور طريقتها؛ تمرّ الحوارات القادمة
      بهذه الصيغ من غير مختبر جديد، بينما تبقى أي عائلة أخرى كلمةً جديدة
@@ -176,6 +189,16 @@ if (SELF_TEST) {
 }
 
 const vocab = buildVocabulary()
+if (PREFLIGHT_PRODUCTION_CORPUS) {
+  let findings = []
+  for (const [slug, turns] of PRODUCTION.corpus) {
+    findings = findings.concat(scanTurns(turns, vocab, { isNewDialogue: false })
+      .map((finding) => ({ ...finding, ctx: `${slug} — ${finding.ctx}` })))
+  }
+  report(findings)
+  if (!findings.length) console.log(`✓ متن الإنتاج كله مفحوص قبل TTS: ${PRODUCTION.certificate.episodeCount} حلقة`)
+  process.exit(findings.length && !ALLOW ? 1 : 0)
+}
 if (LIBRARY) {
   const library = JSON.parse(readFileSync(resolve(ROOT, LIBRARY), 'utf8'))
   let findings = []
@@ -194,11 +217,18 @@ if (!existsSync(dir)) {
 const seedSlugs = new Set(Object.keys(JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-dialogues.json'), 'utf8')).episodes))
 let all = []
 for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+  const slug = file.replace(/\.json$/, '')
   const data = JSON.parse(readFileSync(resolve(dir, file), 'utf8'))
   const turns = Array.isArray(data) ? data : Object.values(data.turns || data)
+  const certified = PRODUCTION.certificate.episodes[slug]
+  if (REQUIRE_PRODUCTION_CERTIFICATE) {
+    assert.ok(certified, `${slug}: الحلقة ليست ضمن شهادة متن الـ143 المقفولة`)
+    assert.equal(spokenTurnsSha256(turns), certified.spokenSha256,
+      `${slug}: النص بعد الصقل لا يطابق شهادته؛ ممنوع TTS أو الانتقال للحلقة التالية`)
+  }
   /* حوار من المتن المعتمد: مواضع المعاني المتعددة فيه رُوجعت يدوياً؛
      الحوار الجديد وحده يخضع للفحص الكامل. */
-  const isNewDialogue = !seedSlugs.has(file.replace(/\.json$/, ''))
+  const isNewDialogue = !certified && !seedSlugs.has(slug)
   all = all.concat(scanTurns(turns, vocab, { isNewDialogue }))
 }
 report(all)

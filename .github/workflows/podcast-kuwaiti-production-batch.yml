@@ -96,7 +96,7 @@ jobs:
           node scripts/guard-spoken-episode.mjs --dir=manual-dialogues-kuwaiti
           node scripts/guard-dialogue-gender-address.mjs --dir=manual-dialogues-kuwaiti
           node scripts/guard-name-pronunciation.mjs
-          node scripts/guard-new-dialogue-words.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-new-dialogue-words.mjs --dir=manual-dialogues-kuwaiti --production-certificate
 
       - name: Restore already accepted episodes before spending again
         shell: bash
@@ -185,7 +185,8 @@ jobs:
           exit 0
 
       - name: Upload every accepted episode and the exact pending ledger
-        if: always()
+        id: package_upload
+        if: always() && steps.queue.conclusion == 'success'
         uses: actions/upload-artifact@v6
         with:
           name: ${{ env.PACKAGE_NAME }}
@@ -195,7 +196,7 @@ jobs:
 
       - name: Retry a rejected episode automatically, then defer it without blocking the queue
         id: quality_recovery
-        if: always() && steps.queue.outputs.code == '2' && inputs.chain_remaining == true
+        if: always() && steps.queue.conclusion == 'success' && steps.package_upload.conclusion == 'success' && steps.queue.outputs.code == '2' && inputs.chain_remaining == true
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -295,13 +296,14 @@ jobs:
         run: node scripts/manage-kuwaiti-production-quality-holds.mjs release --slug="$RELEASED_SLUG"
 
       - name: Commit only the lightweight public ledger
+        id: ledger_commit
         if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
         env:
           KUWAITI_LEDGER_COMMIT_MESSAGE: 'chore: publish verified Kuwaiti dialogue'
         run: bash scripts/commit-kuwaiti-public-ledger.sh
 
       - name: Start the next missing episode in its own run
-        if: always() && inputs.chain_remaining == true && ((steps.queue.outputs.code == '0' && inputs.publish_to_site == true) || steps.quality_recovery.outputs.deferred == '1')
+        if: always() && inputs.chain_remaining == true && ((steps.queue.conclusion == 'success' && steps.queue.outputs.code == '0' && steps.ledger_commit.conclusion == 'success' && inputs.publish_to_site == true) || (steps.quality_recovery.conclusion == 'success' && steps.quality_recovery.outputs.deferred == '1'))
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

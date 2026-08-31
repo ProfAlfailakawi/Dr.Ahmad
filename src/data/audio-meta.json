@@ -500,6 +500,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T19:37:48.351Z"
   },
+  "coming-soon-a-certificate-without-a-mind-2.dialogue-kw.json": {
+    "bytes": 8043,
+    "sha256": "a3c4076064b2a6f7a1d1da7fefcda7fd6cb5982943bd41ddd6940894c9c88c52",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-08-31T22:16:08.057Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T22:16:08.057Z"
+  },
+  "coming-soon-a-certificate-without-a-mind-2.dialogue-kw.mp3": {
+    "bytes": 2201805,
+    "sha256": "b06398ee7019d1760158069a037cdad8615e05563a720b1a86fece9a3db6083c",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-08-31T22:16:08.057Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T22:16:08.057Z",
+    "durationSeconds": 110
+  },
   "coming-soon-a-certificate-without-a-mind-2.dialogue.json": {
     "bytes": 9681,
     "sha256": "b85d4e25f727a6679171db81fc6473c886195185b6b0b694d621e43533faa6c1",
@@ -544,6 +561,23 @@
     "bytes": 3750391,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:28.802Z"
+  },
+  "competency-based-approach-to-the-trash.dialogue-kw.json": {
+    "bytes": 7957,
+    "sha256": "d028ad5940b4a231099361f721afd17f6f3865953edd883f599d551580db3fb5",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-08-31T22:25:53.536Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T22:25:53.536Z"
+  },
+  "competency-based-approach-to-the-trash.dialogue-kw.mp3": {
+    "bytes": 2112525,
+    "sha256": "fe4172a681d91f8a772c09b21c7b8f1a7e620b4d0894c81125f0775fdf9f9a32",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-08-31T22:25:53.536Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T22:25:53.536Z",
+    "durationSeconds": 106
   },
   "competency-based-approach-to-the-trash.dialogue.json": {
     "bytes": 9387,

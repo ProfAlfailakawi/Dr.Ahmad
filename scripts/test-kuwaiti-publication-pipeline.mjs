@@ -8,6 +8,7 @@ import {
   selectKuwaitiProductionSlug,
   validateKuwaitiQualityHolds,
 } from './lib/kuwaiti-production-progress.mjs'
+import { verifyKuwaitiProductionCorpusCertificate } from './lib/kuwaiti-production-corpus-certificate.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (path) => readFileSync(resolve(ROOT, path), 'utf8')
@@ -58,6 +59,8 @@ for (const required of [
   'quality_round="$NEXT_ROUND"',
   'resume_run="$GITHUB_RUN_ID"',
   "steps.quality_recovery.outputs.retried",
+  '--production-certificate',
+  "steps.queue.conclusion == 'success'",
   'kuwaiti-production-progress.mjs --git-ref=origin/main',
   'include_quality_holds',
   '-f slugs="$NEXT"',
@@ -65,6 +68,16 @@ for (const required of [
 assert.ok(!production.includes('batch_size مقفول على 5'), 'ممنوع رجوع توليد خمس حلقات في نداء واحد')
 assert.ok(production.includes('if [ "$MISSING" -eq 0 ]'),
   'ممنوع إعلان 143/143 أو النشر النهائي وفي القائمة حلقات مؤجلة')
+assert.match(production,
+  /Start the next missing episode[\s\S]*steps\.queue\.conclusion == 'success'[\s\S]*steps\.ledger_commit\.conclusion == 'success'[\s\S]*steps\.quality_recovery\.conclusion == 'success'/u,
+  'غياب queue code لا يجوز أن يتحول رقميا إلى نجاح ويطلق قطار فشل')
+assert.match(production,
+  /quality_recovery[\s\S]*steps\.package_upload\.conclusion == 'success'/u,
+  'الجولة التالية لا تبدأ قبل حفظ Artifact الجولة الحالية')
+
+const certifiedCorpus = verifyKuwaitiProductionCorpusCertificate(ROOT)
+assert.equal(certifiedCorpus.certificate.episodeCount, 143, 'شهادة الكلمات لا تغطي مقالات الموقع كلها')
+assert.equal(certifiedCorpus.corpus.size, 143, 'متن الصقل الفعلي ناقص عن شهادة الـ143')
 
 const qualityHolds = JSON.parse(read('scripts/data/kuwaiti-production-quality-holds-v1.json'))
 validateKuwaitiQualityHolds(qualityHolds, ['a-generation-without-rootsarabic'])

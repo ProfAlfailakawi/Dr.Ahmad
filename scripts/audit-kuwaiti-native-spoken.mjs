@@ -357,6 +357,12 @@ assert.match(productionBatch, /EFFECTIVE_ROUND.*GITHUB_RUN_ATTEMPT/,
   'حتى Rerun اليدوي لا يعيد بذور عينة مرفوضة')
 assert.match(productionBatch, /kuwaiti-production-progress\.mjs --git-ref=origin\/main/,
   'الحلقة المؤجلة لا تحبس بقية الإنتاج ولا تختفي من حساب 143')
+assert.match(productionBatch, /guard-new-dialogue-words\.mjs --dir=manual-dialogues-kuwaiti --production-certificate/,
+  'كل حلقة من الـ143 تطابق شهادة نصها بعد الصقل قبل أي صرف TTS')
+assert.match(productionBatch, /steps\.queue\.conclusion == 'success'/,
+  'فشل مرحلة قبل queue لا يجوز أن يشغل الحلقة التالية بسبب تحويل الفراغ إلى صفر')
+assert.match(productionBatch, /steps\.ledger_commit\.conclusion == 'success'/,
+  'نجاح TTS وحده لا يشغل التالية قبل اكتمال نشر الحلقة وتثبيت سجلها')
 assert.match(productionBatch, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'0'/,
   'الدفعة الفولاذية تحفظ Same-Take والجسر الخارجي')
 assert.match(productionBatch, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,

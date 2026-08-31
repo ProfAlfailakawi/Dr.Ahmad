@@ -1,4 +1,21 @@
 {
+  "a-certificate-of-excellence-for-a-lifeless-doll-2.dialogue-kw.json": {
+    "bytes": 7928,
+    "sha256": "947435542be0e0d6ad197bfbb2620e2a5a67fc5a280dbd1657c41959ad24dcfc",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-08-31T16:00:53.551Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T16:00:53.551Z"
+  },
+  "a-certificate-of-excellence-for-a-lifeless-doll-2.dialogue-kw.mp3": {
+    "bytes": 2089965,
+    "sha256": "912f038f79600dd25d1fdb4e5f12fe519aa52cba7bec014dc4178f1eee3894b5",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-08-31T16:00:53.551Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T16:00:53.551Z",
+    "durationSeconds": 104
+  },
   "a-certificate-of-excellence-for-a-lifeless-doll-2.dialogue.json": {
     "bytes": 9449,
     "sha256": "962e6c23bc949ecd6705102690c69a5b03f4533e30459154d8b3a6189e6e9f8b",

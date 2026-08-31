@@ -30,6 +30,12 @@ if (SELF_TEST) {
   ])
   assert.ok(bad.hard.some((finding) => finding.label === 'بحث بصوت مذيع'), 'يمسك وضع المذيع')
   assert.ok(bad.hard.some((finding) => finding.label === 'خاتمة شعارية'), 'يمسك الخاتمة الشعارية')
+  const earUnsafe = auditNativeSpokenTurns([
+    { text: 'بس الحقيقة إنهم ما نختبرو بشي.', deliveryType: 'statement' },
+    { text: 'وفي الحفل نصفق طويل.', deliveryType: 'statement' },
+  ])
+  assert.equal(earUnsafe.hard.filter((finding) => finding.label === 'تركيب سمعي مرفوض').length, 2,
+    '«ما نختبرو» و«نصفق طويل» يسقطان قبل أي صرف صوتي')
   const fixed = optimizeNativeSpokenEpisode([
     { text: 'وفي دراسة نشرتها جهة علمية، طلع فرق واضح.', deliveryType: 'statement' },
   ])
@@ -181,10 +187,14 @@ if (SELF_TEST) {
   const genericCorrections = optimizeNativeSpokenEpisode([
     { text: 'أخذوا فيها أبحاث وايد.' },
     { text: 'فيها شي يستاهل نوقف عنده.' },
+    { text: 'بس الحقيقة إنهم ما انختبروا بشي أبدا.' },
+    { text: 'في حفلات التخرج نقعد نصفق طويل لصاحب الامتياز.' },
   ], { slug: 'future-safe-rules' })
   assert.deepEqual(genericCorrections.turns.map((turn) => turn.text), [
     'خذو فيها أبحاث وايد.',
     'فيها شي لازم نفهمه عدل.',
+    'بس الحقيقة إنهم ما مرّوا بتجربة فعلية أبد.',
+    'في حفلات التخرج نحتفل بصاحب الامتياز وايد.',
   ], 'نفس الخطأ إذا ظهر في مقالة مستقبلية يتعالج قبل الصوت')
   assert.deepEqual(seriousness.turns.slice(27, 29).map((turn) => turn.deliveryType),
     ['statement', 'statement'], 'الخاتمة الفكرية تمر عادية ولا تُلقى كشعار')
@@ -218,7 +228,7 @@ if (SELF_TEST) {
     'قراءة أوكتاف شاذة لدور مفرد لا تحرق Take ثابت المقاطع والرنين')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
     'بوابة الرنين تمسك نفس preset لما يصير مو نفس الإنسان')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 34/34')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 36/36')
   process.exit(0)
 }
 
@@ -248,7 +258,8 @@ for (const [label, relative] of sources) {
     }
     assert.ok(prepared.turns.every((turn) => !/^ممم…/u.test(String(turn.text || '').trim())),
       `${label}/${slug}: رجع الحشو الميكانيكي «ممم» إلى النص المنطوق`)
-    assert.doesNotMatch(optimizedText, /(?:^|[\s،؛:.!?؟…])(?:تكفي|بدال|ينختبر)(?=$|[\s،؛:.!?؟…])/u,
+    assert.doesNotMatch(optimizedText,
+      /(?:نصفّ?ق|يصفّ?ق(?:ون)?|تصفّ?ق|صفّ?قوا|نختبر(?:ه|هم|ها|وا|و)?|ينختبر|تنختبر|انختبروا?|(?:^|[\s،؛:.!?؟…])(?:تكفي|بدال)(?=$|[\s،؛:.!?؟…]))/u,
       `${label}/${slug}: بقيت كلمة صدر فيها حكم تبديل نهائي بعد الصقل`)
     turns += prepared.turns.length
     rewrites += prepared.changes.length

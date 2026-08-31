@@ -158,6 +158,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:27.601Z"
   },
+  "a-new-kind-of-fatigue-in-old-expressionsarabic.dialogue-kw.json": {
+    "bytes": 7987,
+    "sha256": "13a5e6e0ad95ca15b10a486534cd42e38013dd25eff4c10e1a26c50748f839de",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-08-31T20:09:26.327Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T20:09:26.327Z"
+  },
+  "a-new-kind-of-fatigue-in-old-expressionsarabic.dialogue-kw.mp3": {
+    "bytes": 1985805,
+    "sha256": "d5bb254493b77e2ee331994345558a6630452763678961d66640e331527c8340",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-08-31T20:09:26.327Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T20:09:26.327Z",
+    "durationSeconds": 99
+  },
   "a-new-kind-of-fatigue-in-old-expressionsarabic.dialogue.json": {
     "bytes": 9354,
     "sha256": "14c15b70e97544fafb15e420c8274c0e14027a6111410cf49146b6b295caa9bd",

@@ -6,7 +6,7 @@
  */
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve, dirname, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
@@ -114,6 +114,15 @@ if (PROFESSIONAL_GOLD_MODE) assert.ok(PROFESSIONAL_GOLD_EPISODE,
   `وضع المرجع الاحترافي لا يقبل حلقة خارج الخمس: ${slug || 'بلا slug'}`)
 assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance) > 0,
   'عتبة مرجع الأذن مفقودة')
+assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.maximumCorroboratedTimbreDistance)
+  > Number(GOLD_ACOUSTIC_REFERENCE.maximumTimbreDistance)
+  && Number(GOLD_ACOUSTIC_REFERENCE.maximumCorroboratedTimbreDistance) <= 0.4,
+  'شريط اختلاف محتوى الكلمات لازم يبقى ضيقاً وفوق الحد الصارم فقط')
+assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.maximumCorroboratedPitchDistanceHz) > 0
+  && Number(GOLD_ACOUSTIC_REFERENCE.maximumCorroboratedPitchDistanceHz) <= 12,
+  'اختلاف الطيف لا يُبرَّأ إلا بطبقة قريبة جداً من المرجع')
+assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.minimumCorroboratedOwnSpeakerAdvantage) >= 0.6,
+  'اختلاف الطيف لا يُبرَّأ إذا اقترب الصوت من الطرف المقابل')
 assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.minimumOwnSpeakerAdvantage) >= 0,
   'هامش فصل فهد عن نورة مفقود')
 assert.ok(Number(GOLD_ACOUSTIC_REFERENCE.maximumPitchDistanceHz) > 0,
@@ -232,6 +241,7 @@ const LONG_SILENCE_TRIGGER_MS = Math.max(MAX_INTERNAL_SILENCE_MS + 80,
 const silenceCompaction = { calls: 0, removedSec: 0 }
 const splitAlignmentAudits = []
 const generatedTakeSources = []
+let masteredCandidateAudio = ''
 
 function preserveRejectedTake (reason, details = {}) {
   if (!REJECT_DIR || !generatedTakeSources.length) return
@@ -244,13 +254,20 @@ function preserveRejectedTake (reason, details = {}) {
     spawnSync(FFMPEG, ['-hide_banner','-loglevel','error','-y','-i',source,
       '-ar','48000','-ac','1','-c:a','libmp3lame','-b:a','128k',audio], { encoding: 'utf8' })
   }
+  let candidateAudio = null
+  if (masteredCandidateAudio && existsSync(masteredCandidateAudio)) {
+    const candidate = resolve(directory, `${base}.candidate.mp3`)
+    copyFileSync(masteredCandidateAudio, candidate)
+    candidateAudio = `${base}.candidate.mp3`
+  }
   writeFileSync(resolve(directory, `${base}.rejection.json`), `${JSON.stringify({
     schemaVersion: 1, slug, seed: SEED, provider: TTS_PROVIDER, model: MODEL, languageCode: TTS_LANGUAGE,
     voices: { male: MALE_VOICE, female: FEMALE_VOICE },
     reason, details, alignment: splitAlignmentAudits, dryAudio: existsSync(audio) ? `${base}.dry.mp3` : null,
+    candidateAudio,
     generatedAt: new Date().toISOString(),
   }, null, 2)}\n`)
-  console.error(`🧪 حُفظ الـTake المرفوض وتقريره للسماع: ${REJECT_DIR}/${base}.dry.mp3`)
+  console.error(`🧪 حُفظ الـTake المرفوض وتقريره للسماع: ${REJECT_DIR}/${candidateAudio || `${base}.dry.mp3`}`)
 }
 
 function rejectTake (reason, details = {}) {
@@ -1216,6 +1233,16 @@ export function measuredSpeakerTimbreCenter (file, timeline, speaker) {
   }
 }
 
+export function measuredSpeakerTimbreFromTurnSignatures (turns, signatures, speaker) {
+  const samples = turns.map((turn, index) => ({ turn, signature: signatures[index] }))
+    .filter((sample) => sample.turn?.speaker === speaker && Array.isArray(sample.signature))
+  return {
+    speaker,
+    sampleCount: samples.length,
+    center: medianSignature(samples.map((sample) => sample.signature)),
+  }
+}
+
 const approvedTimbreReferencesFor = (reference, speaker) => {
   const configured = reference?.speakers?.[speaker]?.approvedTimbreReferences
   if (Array.isArray(configured) && configured.length) return configured
@@ -1234,6 +1261,32 @@ const nearestTimbreReference = (center, references) => references
   .filter((candidate) => Number.isFinite(candidate.distance))
   .sort((a, b) => a.distance - b.distance)[0] || null
 
+/* بصمة الطيف تتغيّر قليلاً بتغيّر الحروف نفسها؛ حذف القاف من الحلقة 02
+   غيّر توزيع الطاقة مع بقاء Puck وZephyr والطبقة والفصل ثابتة. لذلك يبقى
+   حد 0.30 هو المرور المباشر، ويُسمح بالشريط الضيق 0.30–0.40 فقط إذا اتفقت
+   معه شهادتان مستقلتان: طبقة قريبة جداً من المرجع، وبعدٌ واضح عن صوت الطرف
+   الثاني. أي شاهد ناقص أو متناقض يُبقي الرفض كما هو. */
+export function referenceIdentityEvidence (distance, pitchDistanceHz, ownSpeakerAdvantage, reference = {}) {
+  const strictMaximum = Number(reference?.maximumTimbreDistance)
+  const corroboratedMaximum = Number(reference?.maximumCorroboratedTimbreDistance ?? strictMaximum)
+  const corroboratedPitchMaximum = Number(reference?.maximumCorroboratedPitchDistanceHz ?? -1)
+  const corroboratedAdvantageMinimum = Number(reference?.minimumCorroboratedOwnSpeakerAdvantage ?? Infinity)
+  const strictTimbrePass = Number.isFinite(distance) && distance <= strictMaximum
+  const corroboratedTimbrePass = !strictTimbrePass
+    && Number.isFinite(distance) && distance <= corroboratedMaximum
+    && Number.isFinite(pitchDistanceHz) && pitchDistanceHz <= corroboratedPitchMaximum
+    && Number.isFinite(ownSpeakerAdvantage) && ownSpeakerAdvantage >= corroboratedAdvantageMinimum
+  return {
+    strictTimbrePass,
+    corroboratedTimbrePass,
+    identityPass: strictTimbrePass || corroboratedTimbrePass,
+    strictMaximum,
+    corroboratedMaximum,
+    corroboratedPitchMaximum,
+    corroboratedAdvantageMinimum,
+  }
+}
+
 /* نخزّن فقط Takes قال الدكتور صراحةً إنها معتمدة، مرتبطةً ببصمة بايتاتها؛
    «نفس رايي، فقط الحلقة الأولى» ليست اعتماداً لملف جديد. لا تتعلم البوابة
    من نتيجة خضراء ولا من اسم seed ولا من استنتاج آلي. القياس يكون إلى
@@ -1248,7 +1301,13 @@ export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOU
   const speakers = {}
   const failures = []
   for (const speaker of ['male', 'female']) {
-    const measured = measuredSpeakerTimbreCenter(file, timeline, speaker)
+    /* الإنتاج يمرر بصمات ملفات الأدوار الجافة قبل الماستر؛ فلا تستطيع
+       المقدمة أو الجسر أو اختلاف المقطوعة تلوين حكم الهوية. CLI التاريخي
+       يبقى قادراً على القياس من ملف + timeline عند عدم وجودها. */
+    const precomputed = options?.precomputedSpeakerMeasurements?.[speaker]
+    const measured = precomputed && Array.isArray(precomputed.center)
+      ? precomputed
+      : measuredSpeakerTimbreCenter(file, timeline, speaker)
     const otherSpeaker = speaker === 'male' ? 'female' : 'male'
     const nearest = nearestTimbreReference(measured.center, approvedTimbreReferencesFor(reference, speaker))
     const nearestOther = nearestTimbreReference(measured.center, approvedTimbreReferencesFor(reference, otherSpeaker))
@@ -1260,7 +1319,8 @@ export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOU
     const pitchDistanceHz = Number.isFinite(measuredPitchHz) && Number.isFinite(nearest?.pitchMedianHz)
       ? Math.abs(measuredPitchHz - nearest.pitchMedianHz) : null
     const enoughSamples = measured.sampleCount >= minimum
-    const timbrePass = Number.isFinite(distance) && distance <= maximum
+    const identityEvidence = referenceIdentityEvidence(distance, pitchDistanceHz, ownSpeakerAdvantage, reference)
+    const timbrePass = identityEvidence.identityPass
     const separationPass = Number.isFinite(ownSpeakerAdvantage) && ownSpeakerAdvantage >= minimumAdvantage
     /* CLI التدقيق التاريخي قد لا يملك ملف كل دور كي يحسب F0؛ وقت الإنتاج
        نمرر وسيطي فهد ونورة المحسوبين أصلاً، وهناك تصبح الطبقة إلزامية. */
@@ -1278,6 +1338,9 @@ export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOU
       measuredPitchHz: Number.isFinite(measuredPitchHz) ? Number(measuredPitchHz.toFixed(1)) : null,
       pitchDistanceHz: Number.isFinite(pitchDistanceHz) ? Number(pitchDistanceHz.toFixed(1)) : null,
       maximumDistance: maximum,
+      maximumCorroboratedDistance: identityEvidence.corroboratedMaximum,
+      strictTimbrePass: identityEvidence.strictTimbrePass,
+      corroboratedTimbrePass: identityEvidence.corroboratedTimbrePass,
       minimumOwnSpeakerAdvantage: minimumAdvantage,
       maximumPitchDistanceHz,
       pass,
@@ -1295,7 +1358,12 @@ export function goldAcousticReferenceGate (file, timeline, reference = GOLD_ACOU
     referenceSlug: reference?.source?.slug || '',
     referenceSeed: reference?.source?.seed ?? null,
     method: reference?.method || '',
+    measurementSource: options?.precomputedSpeakerMeasurements
+      ? 'dry-per-turn-before-music' : 'timeline-audio',
     maximumTimbreDistance: maximum,
+    maximumCorroboratedTimbreDistance: Number(reference?.maximumCorroboratedTimbreDistance ?? maximum),
+    maximumCorroboratedPitchDistanceHz: Number(reference?.maximumCorroboratedPitchDistanceHz ?? -1),
+    minimumCorroboratedOwnSpeakerAdvantage: Number(reference?.minimumCorroboratedOwnSpeakerAdvantage ?? Infinity),
     minimumOwnSpeakerAdvantage: minimumAdvantage,
     maximumPitchDistanceHz,
     speakers,
@@ -2530,6 +2598,8 @@ if (SELF_TEST) {
     'الماستر يفشل ولا يسلّم ملفاً جافاً إذا ضاعت مكتبة الموسيقى')
   assert.match(buildTimedMaster.toString(), /assert\.equal\(bridgeItems\.length, 2/,
     'الماستر لا يُقبل إلا بمقدمة وخاتمة وجسرين مركبين خارج Gemini')
+  assert.match(preserveRejectedTake.toString(), /candidate\.mp3/,
+    'أي رفض بعد الماستر يحفظ نسخة الموسيقى والجسرين للسماع، من غير اعتمادها')
   assert.doesNotMatch(`${cPrompt}\n${cContinuation}\n${cSingleCall}`, /\b(?:music|bridge)\b/i,
     'طلب الصوت لا يذكر الموسيقى أو الجسر إطلاقاً')
   const cTranscript = cSingleCall.split('# TRANSCRIPT\n\n')[1]
@@ -2599,6 +2669,8 @@ if (SELF_TEST) {
     'تبديل صوت داخل الحوار المتصل يرمي الـTake كله')
   assert.match(engineSource, /PODCAST_KW_REJECT_ACOUSTIC_RESET[\s\S]*corroboratedBoundaryResets[\s\S]*rejectTake\(/,
     'إعادة الهوية عند الانتقال تحتاج اتفاق الرنين والطبقة؛ قراءة منفردة لا تحرق Take سليماً')
+  assert.match(engineSource, /dryReferenceMeasurements[\s\S]*precomputedSpeakerMeasurements:\s*dryReferenceMeasurements/,
+    'مرجع فهد ونورة يقيس ملفات الكلام الجافة قبل الموسيقى والجسرين')
   assert.match(engineSource, /PODCAST_KW_REJECT_TIMING_SUSPECTS[\s\S]*confirmedTimingSuspects[\s\S]*rejectTake\(/,
     'الدور المقصوص أو الممدود يرمي الـTake كله')
   assert.match(engineSource, /for \(const minDurationSec of \[0\.24, 0\.14, 0\.08, 0\.06, 0\.04\]\)/,
@@ -2910,6 +2982,22 @@ if (SELF_TEST) {
   assert.ok(!GOLD_ACOUSTIC_REFERENCE.approvedSources.some((source) => source.audioSha256
     === '048097c1e206bea66358b46a91ed23b9488b9ab4b43e78b8536f1998b679de32'),
   'Take 3111 السعودي مسحوب نهائياً من التعلم والاعتماد')
+  const contentShiftMale = referenceIdentityEvidence(0.3971, 2.4, 0.989, GOLD_ACOUSTIC_REFERENCE)
+  const contentShiftFemale = referenceIdentityEvidence(0.362, 8, 0.777, GOLD_ACOUSTIC_REFERENCE)
+  assert.equal(contentShiftMale.strictTimbrePass, false,
+    'تغيير كلمات الحلقة 02 لا يزوّر أنه اجتاز حد الطيف الصارم')
+  assert.equal(contentShiftMale.corroboratedTimbrePass, true,
+    'فهد يمر بالشريط الضيق فقط لأن الطبقة والفصل يؤكدان هويته')
+  assert.equal(contentShiftFemale.corroboratedTimbrePass, true,
+    'نورة تمر بالشريط الضيق فقط لأن الطبقة والفصل يؤكدان هويتها')
+  assert.equal(referenceIdentityEvidence(0.401, 2, 0.9, GOLD_ACOUSTIC_REFERENCE).identityPass, false,
+    'ما يتجاوز 0.40 يظل مرفوضاً حتى لو وافقت الطبقة')
+  assert.equal(referenceIdentityEvidence(0.35, 12.1, 0.9, GOLD_ACOUSTIC_REFERENCE).identityPass, false,
+    'الطبقة البعيدة لا تبرئ اختلاف الطيف')
+  assert.equal(referenceIdentityEvidence(0.35, 2, 0.59, GOLD_ACOUSTIC_REFERENCE).identityPass, false,
+    'الصوت القريب من الطرف المقابل لا يبرئه اختلاف الطبقة وحده')
+  assert.equal(referenceIdentityEvidence(0.35, null, 0.9, GOLD_ACOUSTIC_REFERENCE).identityPass, false,
+    'غياب شاهد الطبقة يبقي اختلاف الطيف مرفوضاً')
   assert.equal(PROFESSIONAL_GOLD.approvedRunId, 33132655399,
     'قفل الأداء يرجع إلى التشغيلة التي قال عنها الدكتور إن الخمس كلها رائعة')
   assert.deepEqual(PROFESSIONAL_GOLD.episodes.map((episode) => episode.seed), [2101, 2102, 2103, 2114, 2115],
@@ -3211,6 +3299,10 @@ console.log(maleContinuity.anchorHz === null
    النسخة المحلية. نقرأ غلاف الرنين لكل دور ونقارن الدور التالي للعلامة
    التحريرية بمرجع الشخص نفسه. */
 const timbreOf = chunkFiles.map((file) => timbreSignature(file))
+const dryReferenceMeasurements = {
+  male: measuredSpeakerTimbreFromTurnSignatures(turns, timbreOf, 'male'),
+  female: measuredSpeakerTimbreFromTurnSignatures(turns, timbreOf, 'female'),
+}
 const femaleTimbre = speakerTimbreContinuity(turns, timbreOf, 'female')
 const maleTimbre = speakerTimbreContinuity(turns, timbreOf, 'male')
 const acousticBoundarySuspects = [...femaleTimbre.boundarySuspects, ...maleTimbre.boundarySuspects]
@@ -3333,6 +3425,7 @@ if (REJECT_TIMING_SUSPECTS && confirmedTimingSuspects.length) {
 const audioFile=resolve(AUDIO,`${slug}.dialogue-kw.mp3`)
 const transcriptFile=resolve(AUDIO,`${slug}.dialogue-kw.json`)
 const assembly=buildTimedMaster(turns,chunkFiles,audioFile,slug)
+masteredCandidateAudio = audioFile
 const timeline=timelineFor(turns,assembly)
 writeFileSync(transcriptFile,`${JSON.stringify(timeline,null,2)}\n`)
 let goldAcousticReference = {
@@ -3345,11 +3438,20 @@ if (GOLD_ACOUSTIC_MODE === 'required') {
   goldAcousticReference = goldAcousticReferenceGate(audioFile, timeline, GOLD_ACOUSTIC_REFERENCE, {
     male: maleMid,
     female: femaleMid,
+  }, {
+    precomputedSpeakerMeasurements: dryReferenceMeasurements,
   })
   if (goldAcousticReference.status !== 'pass') {
-    rejectTake(`↻ نفس أسماء الأصوات، لكن مو فهد ونورة المعتمدين: ${goldAcousticReference.failures.join(' · ')} (الحد ${goldAcousticReference.maximumTimbreDistance}) — الـTake مرفوض بالكامل.`, {
+    rejectTake(`↻ نفس أسماء الأصوات، لكن مو فهد ونورة المعتمدين: ${goldAcousticReference.failures.join(' · ')} `
+      + `(الحد الصارم ${goldAcousticReference.maximumTimbreDistance}؛ والتثليث لا يتجاوز ${goldAcousticReference.maximumCorroboratedTimbreDistance}) — الـTake مرفوض بالكامل.`, {
       stage:'gold-acoustic-reference', goldAcousticReference,
     })
+  }
+  const corroboratedSpeakers = ['male', 'female']
+    .filter((speaker) => goldAcousticReference.speakers[speaker].corroboratedTimbrePass)
+    .map((speaker) => speaker === 'male' ? 'فهد' : 'نورة')
+  if (corroboratedSpeakers.length) {
+    console.log(`✓ تثليث هوية ${corroboratedSpeakers.join(' و')}: الطيف داخل 0.40، والطبقة وفصل الصوتين شهدا معاه`)
   }
   console.log(`✓ مرجع الأذن: فهد ${goldAcousticReference.speakers.male.distance.toFixed(3)} (${goldAcousticReference.speakers.male.nearestApprovedReference}) · نورة ${goldAcousticReference.speakers.female.distance.toFixed(3)} (${goldAcousticReference.speakers.female.nearestApprovedReference})`)
 }

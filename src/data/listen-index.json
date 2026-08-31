@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-12",
+  "generatedAt": "2026-08-31",
   "episodes": [
     {
       "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
@@ -11,7 +11,8 @@
       "question": "هل تعلموا كيف يفهمون، لا فقط كيف يتذكرون؟",
       "speaker": "نورة",
       "turn": 28,
-      "durationSec": 219
+      "durationSec": 219,
+      "startSec": 167.36
     },
     {
       "slug": "when-the-exam-becomes-the-goalarabic",
@@ -22,7 +23,8 @@
       "question": "هل نستعد لامتحان، أم نستعد لمعركة تثبت من نحن؟",
       "speaker": "نورة",
       "turn": 3,
-      "durationSec": 228
+      "durationSec": 228,
+      "startSec": 23.64
     },
     {
       "slug": "expectations-that-shape-a-studentarabic",
@@ -33,7 +35,8 @@
       "question": "أليست هذه مبالغة أدبية؟",
       "speaker": "نورة",
       "turn": 8,
-      "durationSec": 226
+      "durationSec": 226,
+      "startSec": 52.85
     },
     {
       "slug": "the-classroom-that-fears-mistakesarabic",
@@ -44,7 +47,8 @@
       "question": "هل يصحح الفكرة أم يصحح الشخص؟",
       "speaker": "فهد",
       "turn": 34,
-      "durationSec": 229
+      "durationSec": 229,
+      "startSec": 197.74
     },
     {
       "slug": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic",
@@ -55,7 +59,8 @@
       "question": "لماذا نحاسب الناس على كلامهم في لحظة كهذه؟",
       "speaker": "نورة",
       "turn": 19,
-      "durationSec": 215
+      "durationSec": 215,
+      "startSec": 99.18
     },
     {
       "slug": "aggression-in-the-sky-and-steadfastness-withinarabic",
@@ -66,7 +71,8 @@
       "question": "هل نصبح فوضى مع كل إشاعة تنتشر؟",
       "speaker": "فهد",
       "turn": 25,
-      "durationSec": 224
+      "durationSec": 224,
+      "startSec": 145.18
     },
     {
       "slug": "when-the-teacher-knows-why-he-teachesarabic",
@@ -77,7 +83,8 @@
       "question": "هل أعلم لأن المنهج يطلب مني، أم لأن أمامي إنسانا يتشكل؟",
       "speaker": "فهد",
       "turn": 34,
-      "durationSec": 225
+      "durationSec": 225,
+      "startSec": 196.5
     },
     {
       "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
@@ -88,7 +95,8 @@
       "question": "هل المكافأة نفسها خطأ؟",
       "speaker": "فهد",
       "turn": 25,
-      "durationSec": 232
+      "durationSec": 232,
+      "startSec": 154.67
     },
     {
       "slug": "a-new-kind-of-fatigue-in-old-expressionsarabic",
@@ -99,7 +107,8 @@
       "question": "ما الذي أفعله لأنني أخشى أن أبدو أمام الناس أقل حضورا؟",
       "speaker": "فهد",
       "turn": 29,
-      "durationSec": 230
+      "durationSec": 230,
+      "startSec": 175.19
     },
     {
       "slug": "in-farewell-to-abdullah-ismail-al-kandariarabic",
@@ -110,7 +119,8 @@
       "question": "هل نحتاج بحثا لنعرف قيمة رجل عرفناه؟",
       "speaker": "فهد",
       "turn": 14,
-      "durationSec": 227
+      "durationSec": 227,
+      "startSec": 91.35
     },
     {
       "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
@@ -121,7 +131,8 @@
       "question": "هل نلغي المكافآت إذن؟",
       "speaker": "فهد",
       "turn": 23,
-      "durationSec": 228
+      "durationSec": 228,
+      "startSec": 139.66
     },
     {
       "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
@@ -132,7 +143,8 @@
       "question": "هل نحن ننجز ما ينبغي، أم ننجز ما يريحنا من مواجهة أنفسنا؟",
       "speaker": "نورة",
       "turn": 6,
-      "durationSec": 221
+      "durationSec": 221,
+      "startSec": 26.92
     },
     {
       "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
@@ -143,7 +155,8 @@
       "question": "",
       "speaker": "",
       "turn": -1,
-      "durationSec": 214
+      "durationSec": 214,
+      "startSec": 4
     },
     {
       "slug": "the-year-that-doesnt-begin-with-the-calendararabic",
@@ -154,7 +167,8 @@
       "question": "لماذا نلوم أنفسنا إذن في الأسبوع الأول؟",
       "speaker": "نورة",
       "turn": 22,
-      "durationSec": 211
+      "durationSec": 211,
+      "startSec": 118.27
     },
     {
       "slug": "when-truth-died-and-the-narrative-survivedarabic",
@@ -187,7 +201,8 @@
       "question": "هل ما زالت صالحة اليوم؟",
       "speaker": "فهد",
       "turn": 9,
-      "durationSec": 226
+      "durationSec": 226,
+      "startSec": 48.77
     },
     {
       "slug": "the-human-who-forgot-himselfarabic",
@@ -198,7 +213,8 @@
       "question": "من أنا عندما تطفأ الشاشة ولا يبقى معي إلا صوت ضميري؟",
       "speaker": "نورة",
       "turn": 33,
-      "durationSec": 230
+      "durationSec": 230,
+      "startSec": 188.38
     },
     {
       "slug": "intelligence-without-a-consciencearabic",
@@ -209,7 +225,8 @@
       "question": "من يعلمهم لماذا يفترض أن يفعلوا ذلك؟",
       "speaker": "فهد",
       "turn": 7,
-      "durationSec": 225
+      "durationSec": 225,
+      "startSec": 41.29
     },
     {
       "slug": "the-success-that-destroyed-us-2",
@@ -220,7 +237,8 @@
       "question": "هل ننسف فكرة النجاح إذن؟",
       "speaker": "نورة",
       "turn": 32,
-      "durationSec": 233
+      "durationSec": 233,
+      "startSec": 185.26
     },
     {
       "slug": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
@@ -231,7 +249,8 @@
       "question": "لماذا نسلم أبناءنا لمدارس لا نعرفها إلا من الإعلانات؟",
       "speaker": "فهد",
       "turn": 0,
-      "durationSec": 236
+      "durationSec": 236,
+      "startSec": 4
     },
     {
       "slug": "laughing-while-burning-2",
@@ -242,7 +261,8 @@
       "question": "ما الحلول العملية بعيدا عن الشعارات؟",
       "speaker": "نورة",
       "turn": 31,
-      "durationSec": 231
+      "durationSec": 231,
+      "startSec": 172.55
     },
     {
       "slug": "the-excellence-epidemic-or-the-cult-of-grades-2",
@@ -253,7 +273,8 @@
       "question": "هل سمحتم لطفل واحد أن يخطئ دون أن يحبط أمام زملائه؟",
       "speaker": "نورة",
       "turn": 24,
-      "durationSec": 237
+      "durationSec": 237,
+      "startSec": 148.62
     },
     {
       "slug": "the-blackboard-that-no-longer-sees-anyone-2",
@@ -264,7 +285,8 @@
       "question": "هل جرب أحد العودة إلى الوراء فعلا؟",
       "speaker": "نورة",
       "turn": 29,
-      "durationSec": 234
+      "durationSec": 234,
+      "startSec": 176.61
     },
     {
       "slug": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
@@ -275,7 +297,8 @@
       "question": "هل نخرج من يجيد استخدام اللغة، أم من يفكر بها؟",
       "speaker": "نورة",
       "turn": 30,
-      "durationSec": 255
+      "durationSec": 255,
+      "startSec": 195.25
     },
     {
       "slug": "the-teacher-the-last-to-know-2",
@@ -286,7 +309,8 @@
       "question": "هل نلوم الشمعة إذا ذابت، أم الغرفة التي لا نافذة فيها؟",
       "speaker": "نورة",
       "turn": 28,
-      "durationSec": 245
+      "durationSec": 245,
+      "startSec": 174.33
     },
     {
       "slug": "dr-jasem-malik-the-lesson-that-never-ends-2",
@@ -297,7 +321,8 @@
       "question": "لماذا يتمنى بعض أبنائنا الموت بدلا من العودة للمدرسة؟",
       "speaker": "نورة",
       "turn": 25,
-      "durationSec": 213
+      "durationSec": 213,
+      "startSec": 121.89
     },
     {
       "slug": "the-mind-present-in-absence-absent-in-presence-2",
@@ -308,7 +333,8 @@
       "question": "كم طالبا تفوق بدرجة، وغاب بفكره طوال العام؟",
       "speaker": "نورة",
       "turn": 30,
-      "durationSec": 243
+      "durationSec": 243,
+      "startSec": 181.77
     },
     {
       "slug": "when-a-student-wishes-for-death-before-the-first-bell-2",
@@ -319,7 +345,8 @@
       "question": "كيف بكلمة طالب في القرن الحادي والعشرين؟",
       "speaker": "نورة",
       "turn": 12,
-      "durationSec": 239
+      "durationSec": 239,
+      "startSec": 70.31
     },
     {
       "slug": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
@@ -330,7 +357,8 @@
       "question": "هل ندرك أننا نشكل أدمغة أبنائنا على الإدمان البصري؟",
       "speaker": "فهد",
       "turn": 25,
-      "durationSec": 245
+      "durationSec": 245,
+      "startSec": 146.82
     },
     {
       "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
@@ -341,7 +369,8 @@
       "question": "ما الفكرة المركزية التي تدافع عنها؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 226
+      "durationSec": 226,
+      "startSec": 96.98
     },
     {
       "slug": "freedom-without-thinking-and-openness-without-awareness-2",
@@ -352,7 +381,8 @@
       "question": "هل حقا نعيش حرية، أم نعيش فوضى مقنعة باسمها؟",
       "speaker": "نورة",
       "turn": 6,
-      "durationSec": 226
+      "durationSec": 226,
+      "startSec": 29.25
     },
     {
       "slug": "do-we-contain-or-raise-2",
@@ -363,7 +393,8 @@
       "question": "أين الجهد النفسي في تعليم الصبر؟",
       "speaker": "نورة",
       "turn": 29,
-      "durationSec": 247
+      "durationSec": 247,
+      "startSec": 181.48
     },
     {
       "slug": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
@@ -374,7 +405,8 @@
       "question": "هل نحكم على الطالب من جمال النص، أم من حضور عقله فيه؟",
       "speaker": "فهد",
       "turn": 34,
-      "durationSec": 234
+      "durationSec": 234,
+      "startSec": 201.69
     },
     {
       "slug": "i-write-to-awaken-you-not-to-discourage-you-2",
@@ -385,7 +417,8 @@
       "question": "ألا يحتاج الناس إلى بعض الأمل أيضا؟",
       "speaker": "فهد",
       "turn": 30,
-      "durationSec": 218
+      "durationSec": 218,
+      "startSec": 159.05
     },
     {
       "slug": "he-passed-the-exam-but-failed-the-question-2",
@@ -396,7 +429,8 @@
       "question": "كم من طفل خرج من المدرسة بظهر مستقيم وعقل مكسور؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 226
+      "durationSec": 226,
+      "startSec": 99.66
     },
     {
       "slug": "from-the-schoolyard-to-the-food-court-2",
@@ -407,7 +441,8 @@
       "question": "هل نلوم الطالب على أنه بحث عن مكان؟",
       "speaker": "نورة",
       "turn": 8,
-      "durationSec": 233
+      "durationSec": 233,
+      "startSec": 55.13
     },
     {
       "slug": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
@@ -418,7 +453,8 @@
       "question": "هل من دليل على أن الحماية المفرطة تضر فعلا؟",
       "speaker": "فهد",
       "turn": 30,
-      "durationSec": 227
+      "durationSec": 227,
+      "startSec": 163.55
     },
     {
       "slug": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
@@ -429,7 +465,8 @@
       "question": "هل تواطأنا، بوعي أو دون وعي، على خيانة المعرفة؟",
       "speaker": "نورة",
       "turn": 29,
-      "durationSec": 228
+      "durationSec": 228,
+      "startSec": 152.8
     },
     {
       "slug": "excellent-in-grades-lost-in-decision",
@@ -440,7 +477,8 @@
       "question": "كم من خريج لا يشبه تخصصه، ولا يجرؤ أن يبدأ من جديد؟",
       "speaker": "نورة",
       "turn": 24,
-      "durationSec": 233
+      "durationSec": 233,
+      "startSec": 139.07
     },
     {
       "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
@@ -451,7 +489,8 @@
       "question": "هل نسلمهم أوراقا ونترك عقولهم مشردة لغويا؟",
       "speaker": "نورة",
       "turn": 22,
-      "durationSec": 232
+      "durationSec": 232,
+      "startSec": 113.89
     },
     {
       "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
@@ -462,7 +501,8 @@
       "question": "هل الطالب، أم المجتمع الذي كرم الشهادة ونسي التجربة؟",
       "speaker": "فهد",
       "turn": 16,
-      "durationSec": 225
+      "durationSec": 225,
+      "startSec": 78.22
     },
     {
       "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
@@ -473,7 +513,8 @@
       "question": "هل فكرتم يوما أن الراحة المفرطة لا تنتج شيئا؟",
       "speaker": "نورة",
       "turn": 20,
-      "durationSec": 252
+      "durationSec": 252,
+      "startSec": 123
     },
     {
       "slug": "coming-soon-a-certificate-without-a-mind-2",
@@ -484,7 +525,8 @@
       "question": "هل العقل يقاس بورقة، أم بقدرة صاحبها على طرح سؤال حقيقي؟",
       "speaker": "نورة",
       "turn": 13,
-      "durationSec": 240
+      "durationSec": 240,
+      "startSec": 62.1
     },
     {
       "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
@@ -495,7 +537,8 @@
       "question": "هل نربي أدمغة متفوقة، أم نسخا ناجحة في طاعة النظام؟",
       "speaker": "نورة",
       "turn": 15,
-      "durationSec": 238
+      "durationSec": 238,
+      "startSec": 93.83
     },
     {
       "slug": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
@@ -506,7 +549,8 @@
       "question": "هل تحولنا من مؤسسات تربية إلى مصانع درجات؟",
       "speaker": "نورة",
       "turn": 25,
-      "durationSec": 230
+      "durationSec": 230,
+      "startSec": 137.53
     },
     {
       "slug": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2",
@@ -517,7 +561,8 @@
       "question": "هل نريد أبناءنا ناجحين، أم فقط جاهزين للإخراج المدرسي؟",
       "speaker": "فهد",
       "turn": 7,
-      "durationSec": 237
+      "durationSec": 237,
+      "startSec": 38.91
     },
     {
       "slug": "a-generation-that-knows-everything-and-understands-nothing",
@@ -528,7 +573,8 @@
       "question": "هل نريد جيلا يعرف كل شيء، أم جيلا يفهم شيئا ويغير العالم به؟",
       "speaker": "فهد",
       "turn": 36,
-      "durationSec": 239
+      "durationSec": 239,
+      "startSec": 219.85
     },
     {
       "slug": "ethical-hacking-culture",
@@ -539,7 +585,8 @@
       "question": "كيف نأمن من نعلمه الاختراق؟",
       "speaker": "نورة",
       "turn": 29,
-      "durationSec": 258
+      "durationSec": 258,
+      "startSec": 181.23
     },
     {
       "slug": "turning-video-game-obsession-into-creative-meditation-2",
@@ -550,7 +597,8 @@
       "question": "أين الدافع الذي يجعلهم يصنعون بدل أن يكونوا مهووسين؟",
       "speaker": "نورة",
       "turn": 27,
-      "durationSec": 230
+      "durationSec": 230,
+      "startSec": 150.44
     },
     {
       "slug": "past-mistakes-still-persist-in-the-age",
@@ -561,7 +609,8 @@
       "question": "ما الحاجة إلى مدرس خصوصي؟",
       "speaker": "نورة",
       "turn": 4,
-      "durationSec": 240
+      "durationSec": 240,
+      "startSec": 26.64
     },
     {
       "slug": "the-media-is-a-vital-partner-in-the-educational-process",
@@ -572,7 +621,8 @@
       "question": "كيف لو كان هناك تعاون مشترك بين الإعلام والتربية والتعليم؟",
       "speaker": "فهد",
       "turn": 12,
-      "durationSec": 247
+      "durationSec": 247,
+      "startSec": 73.68
     },
     {
       "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
@@ -583,7 +633,8 @@
       "question": "ماذا عن قواعد السلامة والتباعد وغيرها التي فرضت علينا؟",
       "speaker": "نورة",
       "turn": 22,
-      "durationSec": 233
+      "durationSec": 233,
+      "startSec": 124.9
     },
     {
       "slug": "e-learning-culture-2",
@@ -594,7 +645,8 @@
       "question": "أين نحن اليوم من التعليم عن بعد؟",
       "speaker": "نورة",
       "turn": 8,
-      "durationSec": 217
+      "durationSec": 217,
+      "startSec": 38.43
     },
     {
       "slug": "lets-work-towards-scientific-research",
@@ -605,7 +657,8 @@
       "question": "ما الذي يوقظنا إن لم يوقظنا وباء؟",
       "speaker": "فهد",
       "turn": 30,
-      "durationSec": 236
+      "durationSec": 236,
+      "startSec": 190.78
     },
     {
       "slug": "e-learning-initiatives-and-solutions-2",
@@ -616,7 +669,8 @@
       "question": "هل الأدوات متوفرة فعلا؟",
       "speaker": "فهد",
       "turn": 23,
-      "durationSec": 246
+      "durationSec": 246,
+      "startSec": 149.14
     },
     {
       "slug": "alternative-plans-for-distance-education",
@@ -627,7 +681,8 @@
       "question": "من أجل ماذا كل هذا الاستعداد المبكر؟",
       "speaker": "فهد",
       "turn": 32,
-      "durationSec": 222
+      "durationSec": 222,
+      "startSec": 167.25
     },
     {
       "slug": "eliminating-the-education-epidemic",
@@ -638,7 +693,8 @@
       "question": "هل سألنا أنفسنا كيف أصبح وباء الكورونا حديث الساعة؟",
       "speaker": "نورة",
       "turn": 4,
-      "durationSec": 225
+      "durationSec": 225,
+      "startSec": 25.63
     },
     {
       "slug": "competency-based-approach-to-the-trash",
@@ -649,7 +705,8 @@
       "question": "هل سوق المعايير التربوية للمناهج أصبح كسلعة تباع في السوق المفتوح؟",
       "speaker": "فهد",
       "turn": 10,
-      "durationSec": 232
+      "durationSec": 232,
+      "startSec": 59.61
     },
     {
       "slug": "smartphone-child-a-creative-mind-or-a-child-being-driven",
@@ -660,7 +717,8 @@
       "question": "لماذا لا نرى هذا الذكاء والعقول الخلاقة في دروسهم؟",
       "speaker": "فهد",
       "turn": 16,
-      "durationSec": 227
+      "durationSec": 227,
+      "startSec": 91.74
     },
     {
       "slug": "the-social-media-swamp-and-plastic-surgery-addiction-2",
@@ -682,7 +740,8 @@
       "question": "ماذا ينقصنا ليكون لدينا مستوى جودة تعليم عال كما الدول الأخرى؟",
       "speaker": "فهد",
       "turn": 30,
-      "durationSec": 232
+      "durationSec": 232,
+      "startSec": 181.32
     },
     {
       "slug": "the-teacher-what-do-you-know-about-the-teacher",
@@ -693,7 +752,8 @@
       "question": "كيف يقوم معلم بالضرب والشتم في مدارسنا؟",
       "speaker": "نورة",
       "turn": 15,
-      "durationSec": 225
+      "durationSec": 225,
+      "startSec": 83.96
     },
     {
       "slug": "qabas-201911-001",
@@ -704,7 +764,8 @@
       "question": "أين ترتيب دول الخليج الأخرى؟",
       "speaker": "فهد",
       "turn": 32,
-      "durationSec": 220
+      "durationSec": 220,
+      "startSec": 161.37
     },
     {
       "slug": "qabas-201909-001",
@@ -715,7 +776,8 @@
       "question": "هل المشاهدات العالية مصدر ثراء فاحش؟",
       "speaker": "فهد",
       "turn": 32,
-      "durationSec": 217
+      "durationSec": 217,
+      "startSec": 160.77
     },
     {
       "slug": "todays-childs-confusion-between-education-and-care",
@@ -726,7 +788,8 @@
       "question": "هل القيم مطلوبة من الأبناء وحدهم؟",
       "speaker": "نورة",
       "turn": 29,
-      "durationSec": 232
+      "durationSec": 232,
+      "startSec": 168.73
     },
     {
       "slug": "in-their-opinion-surgery-is-a-male-specialty-2",
@@ -737,7 +800,8 @@
       "question": "من أين جئت بهذا النفي الذي لا يبت إلا عن ضعف المصادر؟",
       "speaker": "نورة",
       "turn": 4,
-      "durationSec": 236
+      "durationSec": 236,
+      "startSec": 25.53
     },
     {
       "slug": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
@@ -748,7 +812,8 @@
       "question": "هل الحل في اللوم وحده؟",
       "speaker": "نورة",
       "turn": 31,
-      "durationSec": 221
+      "durationSec": 221,
+      "startSec": 180.55
     },
     {
       "slug": "qabas-201811-001",
@@ -759,7 +824,8 @@
       "question": "لماذا لم يتم تسليط الضوء عليها عبر وسائل الإعلام كما الكويت؟",
       "speaker": "نورة",
       "turn": 18,
-      "durationSec": 219
+      "durationSec": 219,
+      "startSec": 90.84
     },
     {
       "slug": "qabas-201811-002",
@@ -770,7 +836,8 @@
       "question": "هل يا ترى أحقا هي كانت إنجازات حقيقية؟",
       "speaker": "نورة",
       "turn": 11,
-      "durationSec": 218
+      "durationSec": 218,
+      "startSec": 53.39
     },
     {
       "slug": "qabas-201810-001",
@@ -781,7 +848,8 @@
       "question": "أين التربية والتعليم التي ترعرعنا نحن في كنفها؟",
       "speaker": "نورة",
       "turn": 27,
-      "durationSec": 219
+      "durationSec": 219,
+      "startSec": 141.51
     },
     {
       "slug": "qabas-201810-002",
@@ -792,7 +860,8 @@
       "question": "كيف يمكن أن يعلموا ما في عقولنا نحن من أفكار؟",
       "speaker": "فهد",
       "turn": 28,
-      "durationSec": 205
+      "durationSec": 205,
+      "startSec": 137.7
     },
     {
       "slug": "qabas-201810-003",
@@ -803,7 +872,8 @@
       "question": "هل ستبقى العيون موصدة حتى يدخل الإلحاد بيوتنا؟",
       "speaker": "فهد",
       "turn": 38,
-      "durationSec": 215
+      "durationSec": 215,
+      "startSec": 195.68
     },
     {
       "slug": "qabas-201810-004",
@@ -814,7 +884,8 @@
       "question": "ما المطلوب من الطالب في هذا الموقف كله؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 223
+      "durationSec": 223,
+      "startSec": 99.3
     },
     {
       "slug": "qabas-201808-001",
@@ -825,7 +896,8 @@
       "question": "أين الرقابة لرصف الطريق من أجل عبور سليم؟",
       "speaker": "فهد",
       "turn": 38,
-      "durationSec": 222
+      "durationSec": 222,
+      "startSec": 203.18
     },
     {
       "slug": "qabas-201808-002",
@@ -836,7 +908,8 @@
       "question": "من أين تبدأ المعالجة في رأيك؟",
       "speaker": "فهد",
       "turn": 32,
-      "durationSec": 223
+      "durationSec": 223,
+      "startSec": 167.39
     },
     {
       "slug": "qabas-201807-001",
@@ -847,7 +920,8 @@
       "question": "ما فائدة أن يأتي الإنسان أو الطالب ليسأل عن شيء في أصل التخصص؟",
       "speaker": "فهد",
       "turn": 30,
-      "durationSec": 224
+      "durationSec": 224,
+      "startSec": 149.94
     },
     {
       "slug": "qabas-201806-003",
@@ -858,7 +932,8 @@
       "question": "ماذا لو كنت أنت الشخص المتجاهل؟",
       "speaker": "فهد",
       "turn": 32,
-      "durationSec": 222
+      "durationSec": 222,
+      "startSec": 166.73
     },
     {
       "slug": "qabas-201806-004",
@@ -869,7 +944,8 @@
       "question": "ما أثر ذلك كله على القيم الأخلاقية؟",
       "speaker": "نورة",
       "turn": 31,
-      "durationSec": 229
+      "durationSec": 229,
+      "startSec": 162.73
     },
     {
       "slug": "qabas-201806-005",
@@ -880,7 +956,8 @@
       "question": "ما معنى هذا المصطلح بدقة؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 225
+      "durationSec": 225,
+      "startSec": 101.15
     },
     {
       "slug": "qabas-201806-001",
@@ -891,7 +968,8 @@
       "question": "هل يستوي سوق العمل وينتج بدون خريجي كليات التربية؟",
       "speaker": "فهد",
       "turn": 12,
-      "durationSec": 233
+      "durationSec": 233,
+      "startSec": 66.8
     },
     {
       "slug": "qabas-201806-002",
@@ -902,7 +980,8 @@
       "question": "ما نسب الأعوام السابقة تحديدا؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 213
+      "durationSec": 213,
+      "startSec": 89.97
     },
     {
       "slug": "qabas-201805-003",
@@ -913,7 +992,8 @@
       "question": "هل يعد المعلمون على التعامل مع الطلبة أصلا؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 222
+      "durationSec": 222,
+      "startSec": 92.87
     },
     {
       "slug": "qabas-201805-004",
@@ -924,7 +1004,8 @@
       "question": "ما الذي جعل كشف الغش أصعب من قبل؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 215
+      "durationSec": 215,
+      "startSec": 92.88
     },
     {
       "slug": "qabas-201805-002",
@@ -935,7 +1016,8 @@
       "question": "هل مجتمعنا وبيئتنا لا تحتاج إلا للطبيب والمهندس وغيرهم؟",
       "speaker": "فهد",
       "turn": 10,
-      "durationSec": 224
+      "durationSec": 224,
+      "startSec": 48.37
     },
     {
       "slug": "qabas-201805-001",
@@ -946,7 +1028,8 @@
       "question": "ما الذي سيجده الطالب فيه أكثر من اليوم؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 218
+      "durationSec": 218,
+      "startSec": 87.81
     },
     {
       "slug": "qabas-201804-001",
@@ -957,7 +1040,8 @@
       "question": "كيف استيقظ أهل الغابة على الحقيقة؟",
       "speaker": "فهد",
       "turn": 33,
-      "durationSec": 219
+      "durationSec": 219,
+      "startSec": 171.89
     },
     {
       "slug": "qabas-201803-003",
@@ -968,7 +1052,8 @@
       "question": "ألا يكفي انحدار التعليم ومستوى أبنائنا في المدارس؟",
       "speaker": "نورة",
       "turn": 6,
-      "durationSec": 218
+      "durationSec": 218,
+      "startSec": 28.49
     },
     {
       "slug": "qabas-201803-001",
@@ -979,7 +1064,8 @@
       "question": "ما النتاجات التي ننتظرها من هذا المنهج؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 229
+      "durationSec": 229,
+      "startSec": 93.71
     },
     {
       "slug": "qabas-201802-005",
@@ -990,7 +1076,8 @@
       "question": "كم يحتاج الطالب من الوقت لذلك؟",
       "speaker": "فهد",
       "turn": 30,
-      "durationSec": 242
+      "durationSec": 242,
+      "startSec": 166.06
     },
     {
       "slug": "qabas-201802-004",
@@ -1001,7 +1088,8 @@
       "question": "هل القصور من وزارة التربية، أو من التعليم العالي، أو من الحكومة؟",
       "speaker": "فهد",
       "turn": 5,
-      "durationSec": 227
+      "durationSec": 227,
+      "startSec": 23.45
     },
     {
       "slug": "qabas-201802-003",
@@ -1012,7 +1100,8 @@
       "question": "هل يعقل أن يقبل بكليات التربية من لا يملك معدلا ممتازا ومهارات يتقنها؟",
       "speaker": "فهد",
       "turn": 22,
-      "durationSec": 221
+      "durationSec": 221,
+      "startSec": 103.22
     },
     {
       "slug": "qabas-201802-001",
@@ -1023,7 +1112,8 @@
       "question": "هل تم تطبيقه كتجربة على مدارس عامة وخاصة محددة؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 226
+      "durationSec": 226,
+      "startSec": 81.29
     },
     {
       "slug": "qabas-201802-002",
@@ -1034,7 +1124,8 @@
       "question": "ما وصف المنظمة العربية لهذه المخدرات؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 222
+      "durationSec": 222,
+      "startSec": 94.35
     },
     {
       "slug": "qabas-201712-004",
@@ -1045,7 +1136,8 @@
       "question": "ما مصيرنا نحن بعد التكنولوجيا التي نعيش فيها اليوم؟",
       "speaker": "فهد",
       "turn": 10,
-      "durationSec": 220
+      "durationSec": 220,
+      "startSec": 48.5
     },
     {
       "slug": "qabas-201712-001",
@@ -1056,7 +1148,8 @@
       "question": "ما الذي حصل في عصرنا الحالي؟",
       "speaker": "نورة",
       "turn": 25,
-      "durationSec": 219
+      "durationSec": 219,
+      "startSec": 120.73
     },
     {
       "slug": "qabas-201712-002",
@@ -1067,7 +1160,8 @@
       "question": "هل نحتفل بانتصارات العقول البشرية؟",
       "speaker": "فهد",
       "turn": 5,
-      "durationSec": 239
+      "durationSec": 239,
+      "startSec": 24.96
     },
     {
       "slug": "qabas-201712-003",
@@ -1078,7 +1172,8 @@
       "question": "ماذا سيصنع البشر عندما يفقدون وظائفهم ويخسرون آمالهم؟",
       "speaker": "فهد",
       "turn": 37,
-      "durationSec": 218
+      "durationSec": 218,
+      "startSec": 194.35
     },
     {
       "slug": "qabas-201711-004",
@@ -1089,7 +1184,8 @@
       "question": "ماذا عن هواة السيارات في هذه الصيحات؟",
       "speaker": "نورة",
       "turn": 25,
-      "durationSec": 229
+      "durationSec": 229,
+      "startSec": 128.78
     },
     {
       "slug": "qabas-201711-001",
@@ -1100,7 +1196,8 @@
       "question": "هل تتشابه عقود نقل التكنولوجيا كلها؟",
       "speaker": "فهد",
       "turn": 32,
-      "durationSec": 242
+      "durationSec": 242,
+      "startSec": 185.13
     },
     {
       "slug": "qabas-201711-002",
@@ -1111,7 +1208,8 @@
       "question": "كيف سيكون الحال مع المعلومات في عالم المعرفة؟",
       "speaker": "فهد",
       "turn": 12,
-      "durationSec": 221
+      "durationSec": 221,
+      "startSec": 66.83
     },
     {
       "slug": "qabas-201711-003",
@@ -1122,7 +1220,8 @@
       "question": "هل هذا وحده ما ينهي عصر الهواتف؟",
       "speaker": "نورة",
       "turn": 20,
-      "durationSec": 242
+      "durationSec": 242,
+      "startSec": 110.2
     },
     {
       "slug": "qabas-201709-006",
@@ -1133,7 +1232,8 @@
       "question": "هل يعبر هؤلاء عن الخليج كله؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 219
+      "durationSec": 219,
+      "startSec": 92.81
     },
     {
       "slug": "qabas-201709-007",
@@ -1144,7 +1244,8 @@
       "question": "هل ما نراه عبر وسائل التواصل الاجتماعي انهيار قيم؟",
       "speaker": "فهد",
       "turn": 17,
-      "durationSec": 216
+      "durationSec": 216,
+      "startSec": 81.2
     },
     {
       "slug": "qabas-201709-008",
@@ -1155,7 +1256,8 @@
       "question": "ما خطورة ذلك على الخليج تحديدا؟",
       "speaker": "نورة",
       "turn": 25,
-      "durationSec": 226
+      "durationSec": 226,
+      "startSec": 121.31
     },
     {
       "slug": "qabas-201709-009",
@@ -1166,7 +1268,8 @@
       "question": "هل من حق أحد أن يخضع الآخر وهو صاحب سيادة واستقرار مطلق؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 223
+      "durationSec": 223,
+      "startSec": 95.72
     },
     {
       "slug": "qabas-201709-002",
@@ -1177,7 +1280,8 @@
       "question": "متى ستصبح التجربة واقعا ينتشر على مستوى مؤسسات التعليم؟",
       "speaker": "فهد",
       "turn": 37,
-      "durationSec": 231
+      "durationSec": 231,
+      "startSec": 207.58
     },
     {
       "slug": "qabas-201709-003",
@@ -1188,7 +1292,8 @@
       "question": "أين الحكمة في حوار رواد المواقع؟",
       "speaker": "نورة",
       "turn": 20,
-      "durationSec": 223
+      "durationSec": 223,
+      "startSec": 105.47
     },
     {
       "slug": "qabas-201709-004",
@@ -1199,7 +1304,8 @@
       "question": "لماذا لا نكون عنصر إصلاح، وتهذيب، وخط دفاع عن خليجنا؟",
       "speaker": "فهد",
       "turn": 26,
-      "durationSec": 230
+      "durationSec": 230,
+      "startSec": 135.62
     },
     {
       "slug": "qabas-201709-005",
@@ -1210,7 +1316,8 @@
       "question": "هل المسؤولية على الشركات وحدها إذا؟",
       "speaker": "فهد",
       "turn": 30,
-      "durationSec": 224
+      "durationSec": 224,
+      "startSec": 160.03
     },
     {
       "slug": "qabas-201709-001",
@@ -1221,7 +1328,8 @@
       "question": "لماذا نفتح الباب لمن يتصيدون المواقف أن يدخلوا بيننا؟",
       "speaker": "فهد",
       "turn": 24,
-      "durationSec": 227
+      "durationSec": 227,
+      "startSec": 124.71
     },
     {
       "slug": "qabas-201708-001",
@@ -1232,7 +1340,8 @@
       "question": "ما الذي جعل تلك الجلسة تختلف عن كل ما قبلها؟",
       "speaker": "نورة",
       "turn": 23,
-      "durationSec": 231
+      "durationSec": 231,
+      "startSec": 121.86
     },
     {
       "slug": "qabas-201708-002",
@@ -1243,7 +1352,8 @@
       "question": "هل هناك تسونامي قادم إلينا؟",
       "speaker": "فهد",
       "turn": 10,
-      "durationSec": 229
+      "durationSec": 229,
+      "startSec": 46.19
     },
     {
       "slug": "qabas-201708-003",
@@ -1254,7 +1364,8 @@
       "question": "هل من تفسير آخر غير الجينات؟",
       "speaker": "نورة",
       "turn": 20,
-      "durationSec": 229
+      "durationSec": 229,
+      "startSec": 100.83
     },
     {
       "slug": "qabas-201707-001",
@@ -1265,7 +1376,8 @@
       "question": "أليس من الضروري أن نجعل من جامعاتنا بيئة تعليمية آمنة؟",
       "speaker": "نورة",
       "turn": 29,
-      "durationSec": 231
+      "durationSec": 231,
+      "startSec": 161.01
     },
     {
       "slug": "qabas-201707-002",
@@ -1276,7 +1388,8 @@
       "question": "لماذا تأخرت المؤسسات الرقمية عندنا؟",
       "speaker": "نورة",
       "turn": 29,
-      "durationSec": 224
+      "durationSec": 224,
+      "startSec": 167.37
     },
     {
       "slug": "qabas-201707-003",
@@ -1287,7 +1400,8 @@
       "question": "ما وجه القلق في معلومات تعريفية دقيقة؟",
       "speaker": "نورة",
       "turn": 18,
-      "durationSec": 234
+      "durationSec": 234,
+      "startSec": 101.31
     },
     {
       "slug": "qabas-201707-004",
@@ -1298,7 +1412,8 @@
       "question": "ما فائدة التطور التكنولوجي الذي يعجز عن سد احتياجاتنا؟",
       "speaker": "نورة",
       "turn": 29,
-      "durationSec": 224
+      "durationSec": 224,
+      "startSec": 157.55
     },
     {
       "slug": "qabas-201706-001",
@@ -1309,7 +1424,8 @@
       "question": "لماذا لم تكن الأقنعة تدوم في الواقع الحقيقي؟",
       "speaker": "نورة",
       "turn": 18,
-      "durationSec": 237
+      "durationSec": 237,
+      "startSec": 100.68
     },
     {
       "slug": "qabas-201706-002",
@@ -1320,7 +1436,8 @@
       "question": "هل الخلل في التلفاز، أم في طريقة تقييمنا له؟",
       "speaker": "فهد",
       "turn": 28,
-      "durationSec": 229
+      "durationSec": 229,
+      "startSec": 158.82
     },
     {
       "slug": "qabas-201706-003",
@@ -1331,7 +1448,8 @@
       "question": "هل يعقل أن تختفي الكهرباء من حياتنا؟",
       "speaker": "نورة",
       "turn": 18,
-      "durationSec": 220
+      "durationSec": 220,
+      "startSec": 95.78
     },
     {
       "slug": "qabas-201706-004",
@@ -1342,7 +1460,8 @@
       "question": "هل سنخرج من دوامة الراحة والعمل التي دخلنا فيها؟",
       "speaker": "نورة",
       "turn": 37,
-      "durationSec": 222
+      "durationSec": 222,
+      "startSec": 200.78
     },
     {
       "slug": "qabas-201704-001",
@@ -1353,7 +1472,8 @@
       "question": "هل من مثال يقرب الفكرة أكثر؟",
       "speaker": "فهد",
       "turn": 28,
-      "durationSec": 238
+      "durationSec": 238,
+      "startSec": 177.02
     },
     {
       "slug": "qabas-201704-002",
@@ -1364,7 +1484,8 @@
       "question": "لماذا يعجز الإنسان عن ضبط ما يصنعه بيده؟",
       "speaker": "نورة",
       "turn": 18,
-      "durationSec": 238
+      "durationSec": 238,
+      "startSec": 96.81
     },
     {
       "slug": "qabas-201704-003",
@@ -1375,7 +1496,8 @@
       "question": "هل سيبدأ يوما عصر الكائن السيبراني؟",
       "speaker": "فهد",
       "turn": 12,
-      "durationSec": 228
+      "durationSec": 228,
+      "startSec": 64.5
     },
     {
       "slug": "qabas-201704-004",
@@ -1386,7 +1508,8 @@
       "question": "هل سنرى في يوم من الأيام أن خطيب الجمعة سيستعين بجهاز العرض؟",
       "speaker": "فهد",
       "turn": 30,
-      "durationSec": 231
+      "durationSec": 231,
+      "startSec": 178.63
     },
     {
       "slug": "qabas-201703-001",
@@ -1397,7 +1520,8 @@
       "question": "لماذا تتجه التكنولوجيا نحو قطاع التسلح، على حساب قطاعات الحياة الأخرى؟",
       "speaker": "نورة",
       "turn": 9,
-      "durationSec": 238
+      "durationSec": 238,
+      "startSec": 50.51
     },
     {
       "slug": "qabas-201703-002",
@@ -1408,7 +1532,8 @@
       "question": "هل من أمثلة تجعل الصورة أوضح؟",
       "speaker": "فهد",
       "turn": 26,
-      "durationSec": 246
+      "durationSec": 246,
+      "startSec": 154.89
     },
     {
       "slug": "qabas-201703-003",
@@ -1419,7 +1544,8 @@
       "question": "هل هذه الدول واقتصادياتها لا تحتاج إلى حماية في إطار تشريعات دولية؟",
       "speaker": "نورة",
       "turn": 16,
-      "durationSec": 233
+      "durationSec": 233,
+      "startSec": 92.82
     },
     {
       "slug": "qabas-201703-004",
@@ -1430,7 +1556,8 @@
       "question": "هل الفكرة العلمية تكفي لتوليد واقع تكنولوجي؟",
       "speaker": "نورة",
       "turn": 27,
-      "durationSec": 233
+      "durationSec": 233,
+      "startSec": 151.8
     },
     {
       "slug": "qabas-201702-001",
@@ -1441,7 +1568,8 @@
       "question": "هل الراحة هي عدم القيام بأي عمل على الإطلاق؟",
       "speaker": "نورة",
       "turn": 13,
-      "durationSec": 220
+      "durationSec": 220,
+      "startSec": 68.02
     },
     {
       "slug": "qabas-201702-002",
@@ -1452,7 +1580,8 @@
       "question": "متى سيكون هناك مركز لمعالجة الإدمان على الهاتف؟",
       "speaker": "فهد",
       "turn": 32,
-      "durationSec": 226
+      "durationSec": 226,
+      "startSec": 190.56
     },
     {
       "slug": "qabas-201702-003",
@@ -1463,7 +1592,8 @@
       "question": "أين كانت الحكومات في أثناء هذا التطور الخطير؟",
       "speaker": "نورة",
       "turn": 18,
-      "durationSec": 234
+      "durationSec": 234,
+      "startSec": 106.42
     },
     {
       "slug": "qabas-201702-004",
@@ -1474,7 +1604,8 @@
       "question": "هل أحس بالأمان فعلا مع التقدم التكنولوجي أم ماذا؟",
       "speaker": "فهد",
       "turn": 15,
-      "durationSec": 230
+      "durationSec": 230,
+      "startSec": 84.02
     },
     {
       "slug": "qabas-201612-001",
@@ -1485,7 +1616,8 @@
       "question": "ألا تكون الكثرة نعمة، فنقارن ونتحرى الصحيح؟",
       "speaker": "فهد",
       "turn": 19,
-      "durationSec": 227
+      "durationSec": 227,
+      "startSec": 108.38
     },
     {
       "slug": "qabas-201612-002",
@@ -1496,7 +1628,8 @@
       "question": "من يعلم إلى أي مدى يمكن أن تذهب التكنولوجيا بالتعليم؟",
       "speaker": "فهد",
       "turn": 34,
-      "durationSec": 230
+      "durationSec": 230,
+      "startSec": 209.85
     },
     {
       "slug": "qabas-201612-003",
@@ -1507,7 +1640,8 @@
       "question": "ما علاقة الأجهزة بالنوم تحديدا؟",
       "speaker": "فهد",
       "turn": 26,
-      "durationSec": 232
+      "durationSec": 232,
+      "startSec": 161.06
     },
     {
       "slug": "qabas-201612-004",
@@ -1518,7 +1652,8 @@
       "question": "لماذا نقول إن أجهزة الأمس كانت أخف أثرا في الأفراد؟",
       "speaker": "نورة",
       "turn": 18,
-      "durationSec": 235
+      "durationSec": 235,
+      "startSec": 104.69
     },
     {
       "slug": "qabas-201611-002",
@@ -1529,7 +1664,8 @@
       "question": "هل ثقافة الفرد تولد من الأجهزة الحديثة وحدها؟",
       "speaker": "نورة",
       "turn": 13,
-      "durationSec": 234
+      "durationSec": 234,
+      "startSec": 81.1
     },
     {
       "slug": "qabas-201611-003",
@@ -1540,7 +1676,8 @@
       "question": "ما ضرر ثقافة يرتاح إليها الناس؟",
       "speaker": "فهد",
       "turn": 28,
-      "durationSec": 232
+      "durationSec": 232,
+      "startSec": 172.12
     },
     {
       "slug": "qabas-201611-004",
@@ -1551,7 +1688,8 @@
       "question": "لماذا أصبحنا نفضل العالم الافتراضي عن عالمنا الحقيقي؟",
       "speaker": "نورة",
       "turn": 13,
-      "durationSec": 229
+      "durationSec": 229,
+      "startSec": 74.74
     },
     {
       "slug": "qabas-201611-005",
@@ -1562,7 +1700,8 @@
       "question": "هل الشارع أخطر على أبنائنا، أم العالم الافتراضي؟",
       "speaker": "فهد",
       "turn": 0,
-      "durationSec": 229
+      "durationSec": 229,
+      "startSec": 4
     },
     {
       "slug": "qabas-201611-001",
@@ -1573,7 +1712,8 @@
       "question": "لماذا نقارنها بغزو فضائي؟",
       "speaker": "نورة",
       "turn": 11,
-      "durationSec": 234
+      "durationSec": 234,
+      "startSec": 81.42
     }
   ]
 }

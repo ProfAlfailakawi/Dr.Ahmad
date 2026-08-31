@@ -1846,9 +1846,17 @@ export function parseDialectAuditInteraction (body) {
 
 export function dialectAuditPasses (assessment) {
   const reasons = []
-  if (assessment?.overall?.verdict !== 'pass') reasons.push(`overall:${assessment?.overall?.verdict || 'missing'}`)
+  const overallPass = assessment?.overall?.verdict === 'pass'
+  if (!overallPass) reasons.push(`overall:${assessment?.overall?.verdict || 'missing'}`)
   if (Number(assessment?.overall?.confidence || 0) < 0.82) reasons.push('overall-confidence')
-  if ((assessment?.overall?.reason_codes || []).length) reasons.push(...assessment.overall.reason_codes)
+  /* reason_codes تشرح الحكم وليست قائمة أخطاء بالضرورة. شاهد 3.7 أعاد
+     overall=pass للصوتين ثم كتب رموزاً إيجابية مثل
+     authentic_kuwait_city_prosody؛ اعتبار أي رمز رفضاً قلب نجاحاً موثقاً
+     إلى reject. عند الرفض فقط نحتفظ بها في السجل، أما المرور فتحسمه حقول
+     verdict/register/confidence/presenter/drift الصريحة أدناه. */
+  if (!overallPass && (assessment?.overall?.reason_codes || []).length) {
+    reasons.push(...assessment.overall.reason_codes)
+  }
   for (const key of ['fahad', 'noura']) {
     const speaker = assessment?.speakers?.[key]
     if (speaker?.verdict !== 'pass') reasons.push(`${key}:${speaker?.verdict || 'missing'}`)
@@ -2902,6 +2910,14 @@ if (SELF_TEST) {
   const parsedDialectPass = parseDialectAuditInteraction({ output_text:JSON.stringify(dialectPassFixture) })
   assert.equal(dialectAuditPasses(parsedDialectPass).pass, true,
     'الحكم الكويتي الثابت للصوتين يمر من output_text الرسمي')
+  const positiveReasonCodesFixture = structuredClone(dialectPassFixture)
+  positiveReasonCodesFixture.overall.reason_codes = [
+    'authentic_kuwait_city_prosody',
+    'natural_conversational_cadence',
+    'consistent_phonology',
+  ]
+  assert.equal(dialectAuditPasses(positiveReasonCodesFixture).pass, true,
+    'أكواد تفسير النجاح الإيجابية لا تنقلب إلى أسباب رفض')
   const dialectDriftFixture = structuredClone(dialectPassFixture)
   dialectDriftFixture.overall = { verdict:'reject', confidence:0.96,
     reason_codes:['noura-non-kuwait-drift'], summary:'female drift' }

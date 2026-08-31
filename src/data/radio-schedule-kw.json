@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 581,
+ "loop": 698,
  "gap": 8,
  "items": [
   {
@@ -11,31 +11,38 @@
    "dur": 104
   },
   {
+   "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+   "title": "خرّيج «كورونا»… وحسابه في التعليم لم يُغلق بعد!",
+   "cat": "التعليم",
+   "at": 112,
+   "dur": 109
+  },
+  {
    "slug": "intelligence-without-a-consciencearabic",
    "title": "ذكاءٌ بلا ضمير",
    "cat": "تقنية",
-   "at": 112,
+   "at": 229,
    "dur": 104
   },
   {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 224,
+   "at": 341,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 342,
+   "at": 459,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 462,
+   "at": 579,
    "dur": 111
   }
  ]

@@ -500,23 +500,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T19:37:48.351Z"
   },
-  "coming-soon-a-certificate-without-a-mind-2.dialogue-kw.json": {
-    "bytes": 8043,
-    "sha256": "a3c4076064b2a6f7a1d1da7fefcda7fd6cb5982943bd41ddd6940894c9c88c52",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-08-31T22:16:08.057Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-31T22:16:08.057Z"
-  },
-  "coming-soon-a-certificate-without-a-mind-2.dialogue-kw.mp3": {
-    "bytes": 2201805,
-    "sha256": "b06398ee7019d1760158069a037cdad8615e05563a720b1a86fece9a3db6083c",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-08-31T22:16:08.057Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-31T22:16:08.057Z",
-    "durationSeconds": 110
-  },
   "coming-soon-a-certificate-without-a-mind-2.dialogue.json": {
     "bytes": 9681,
     "sha256": "b85d4e25f727a6679171db81fc6473c886195185b6b0b694d621e43533faa6c1",

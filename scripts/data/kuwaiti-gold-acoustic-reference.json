@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "referenceVersion": "2026-08-31-professional-five-plus-episode2-voice-approved",
+  "referenceVersion": "2026-08-31-professional-five-plus-episode2-content-aware-v2",
   "source": {
     "runId": 33132655399,
     "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
@@ -65,9 +65,12 @@
       "explicitlyApproved": true
     }
   ],
-  "method": "nearest-doctor-approved-median-of-utterance-18-band-log-spectral-envelope-v2",
+  "method": "nearest-doctor-approved-spectral-envelope-plus-pitch-and-cross-speaker-v3",
   "minimumUtterancesPerSpeaker": 4,
   "maximumTimbreDistance": 0.3,
+  "maximumCorroboratedTimbreDistance": 0.4,
+  "maximumCorroboratedPitchDistanceHz": 12,
+  "minimumCorroboratedOwnSpeakerAdvantage": 0.6,
   "minimumOwnSpeakerAdvantage": 0.2,
   "maximumPitchDistanceHz": 35,
   "speakers": {

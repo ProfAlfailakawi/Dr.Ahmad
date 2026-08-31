@@ -11,6 +11,7 @@ MANAGED=(
   src/data/listen-index.json
   src/data/spoken-index-kw.json
   src/data/radio-schedule-kw.json
+  scripts/data/kuwaiti-production-quality-holds-v1.json
   PROJECT-STATUS.md
 )
 

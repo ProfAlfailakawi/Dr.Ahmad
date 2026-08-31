@@ -349,8 +349,12 @@ assert.match(productionSelector, /assert\.equal\(size, 1/,
   'كل حلقة مستقبلية تشغيلة مستقلة؛ فشلها لا يطيح الباقي')
 assert.match(productionSelector, /هذه من الخمس الذهبية/,
   'الخمس المقفولة لا تدخل مسار الإنتاج العام ببذرة مختلفة')
-assert.match(productionBatch, /github\.run_attempt >= 3/,
-  'لا تؤجل الحلقة قبل ثلاث جولات جودة كاملة')
+assert.match(productionBatch, /CURRENT_ROUND" -lt 3/,
+  'رفض الجودة يعيد الحلقة تلقائيا قبل تأجيلها')
+assert.match(productionBatch, /quality_round="\$NEXT_ROUND"/,
+  'الجولة التالية تبدأ آليا ببذور مستقلة من دون انتظار الدكتور')
+assert.match(productionBatch, /EFFECTIVE_ROUND.*GITHUB_RUN_ATTEMPT/,
+  'حتى Rerun اليدوي لا يعيد بذور عينة مرفوضة')
 assert.match(productionBatch, /kuwaiti-production-progress\.mjs --git-ref=origin\/main/,
   'الحلقة المؤجلة لا تحبس بقية الإنتاج ولا تختفي من حساب 143')
 assert.match(productionBatch, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'0'/,

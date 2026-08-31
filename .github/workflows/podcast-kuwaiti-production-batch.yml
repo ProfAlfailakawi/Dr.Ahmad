@@ -23,6 +23,10 @@ on:
         description: 'عينات جودة لكل حلقة (1–6؛ الافتراض 6 = موجتان مستقلتان من 3)'
         required: false
         default: '6'
+      quality_round:
+        description: 'داخلي: جولة الجودة المستقلة لهذه الحلقة (1–3)'
+        required: false
+        default: '1'
       seed_base:
         description: 'اختياري للتجربة المضبوطة؛ اتركه فارغاً لبذور جديدة تلقائياً في كل Rerun'
         required: false
@@ -152,12 +156,20 @@ jobs:
           PODCAST_KW_REJECT_DIR: kuwaiti-production-package/rejected
           REQUESTED_SEED_BASE: ${{ inputs.seed_base || '' }}
           REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
+          REQUESTED_QUALITY_ROUND: ${{ inputs.quality_round || '1' }}
         run: |
           set +e
           SEED_BASE="$REQUESTED_SEED_BASE"
-          # كل جولة تملك مجالاً منفصلاً؛ لا يعيد Rerun أي عينة مرفوضة من
-          # الموجتين السابقتين. داخل الجولة: 210x/211x/212x ثم 310x/311x/312x.
-          if [ -z "$SEED_BASE" ]; then SEED_BASE=$(( 2100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 10000 )); fi
+          BASE_ROUND="$REQUESTED_QUALITY_ROUND"
+          if ! [[ "$BASE_ROUND" =~ ^[1-3]$ ]]; then
+            echo '::error::quality_round يجب أن يكون بين 1 و3'
+            echo 'code=1' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # التشغيل الجديد هو المسار الطبيعي. وإذا أعاد أحدهم نفس التشغيل
+          # يدوياً، GITHUB_RUN_ATTEMPT ينقله أيضا إلى مجال بذور جديد.
+          EFFECTIVE_ROUND=$(( BASE_ROUND + ${GITHUB_RUN_ATTEMPT:-1} - 1 ))
+          if [ -z "$SEED_BASE" ]; then SEED_BASE=$(( 2100 + (EFFECTIVE_ROUND - 1) * 10000 )); fi
           node scripts/run-kuwaiti-generation-queue.mjs \
             --slugs-file=kuwaiti-production-slugs.txt \
             --slot-map=kuwaiti-production-seed-slots.json \
@@ -169,6 +181,7 @@ jobs:
             --transient-attempts=3
           CODE=$?
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "round=$EFFECTIVE_ROUND" >> "$GITHUB_OUTPUT"
           exit 0
 
       - name: Upload every accepted episode and the exact pending ledger
@@ -180,18 +193,38 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Defer an episode only after three exhausted quality rounds
-        id: quality_hold
-        if: always() && steps.queue.outputs.code == '2' && github.run_attempt >= 3 && inputs.chain_remaining == true
+      - name: Retry a rejected episode automatically, then defer it without blocking the queue
+        id: quality_recovery
+        if: always() && steps.queue.outputs.code == '2' && inputs.chain_remaining == true
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
+          REQUESTED_INCLUDE_QUALITY_HOLDS: ${{ inputs.include_quality_holds }}
+          REQUESTED_PUBLISH_TO_SITE: ${{ inputs.publish_to_site }}
+          EFFECTIVE_QUALITY_ROUND: ${{ steps.queue.outputs.round }}
         run: |
           set -euo pipefail
           HELD_SLUG="$(tr -d '[:space:]' < kuwaiti-production-slugs.txt)"
-          FAILED_TAKES=$(( REQUESTED_QUALITY_ATTEMPTS * GITHUB_RUN_ATTEMPT ))
+          CURRENT_ROUND="$EFFECTIVE_QUALITY_ROUND"
+          if ! [[ "$CURRENT_ROUND" =~ ^[0-9]+$ ]] || [ "$CURRENT_ROUND" -lt 1 ]; then
+            echo '::error::رقم جولة الجودة مفقود؛ ممنوع تخمين البذرة أو القفز للحلقة التالية.'
+            exit 1
+          fi
+          if [ "$CURRENT_ROUND" -lt 3 ]; then
+            NEXT_ROUND=$(( CURRENT_ROUND + 1 ))
+            gh workflow run podcast-kuwaiti-production-batch.yml --ref main \
+              -f slugs="$HELD_SLUG" -f batch_size=1 -f quality_attempts="$REQUESTED_QUALITY_ATTEMPTS" \
+              -f quality_round="$NEXT_ROUND" -f resume_run="$GITHUB_RUN_ID" \
+              -f publish_to_site="$REQUESTED_PUBLISH_TO_SITE" -f chain_remaining=true \
+              -f include_quality_holds="$REQUESTED_INCLUDE_QUALITY_HOLDS"
+            echo 'retried=1' >> "$GITHUB_OUTPUT"
+            echo "✓ رفضت الجولة $CURRENT_ROUND؛ بدأت الجولة $NEXT_ROUND تلقائيا ببذور جديدة."
+            exit 0
+          fi
+          FAILED_TAKES=$(( REQUESTED_QUALITY_ATTEMPTS * CURRENT_ROUND ))
           bash scripts/defer-kuwaiti-production-quality-hold.sh \
-            "$HELD_SLUG" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$FAILED_TAKES" \
+            "$HELD_SLUG" "$GITHUB_RUN_ID" "$CURRENT_ROUND" "$FAILED_TAKES" \
             'استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.'
           echo 'deferred=1' >> "$GITHUB_OUTPUT"
           echo "slug=$HELD_SLUG" >> "$GITHUB_OUTPUT"
@@ -268,7 +301,7 @@ jobs:
         run: bash scripts/commit-kuwaiti-public-ledger.sh
 
       - name: Start the next missing episode in its own run
-        if: always() && inputs.chain_remaining == true && ((steps.queue.outputs.code == '0' && inputs.publish_to_site == true) || steps.quality_hold.outputs.deferred == '1')
+        if: always() && inputs.chain_remaining == true && ((steps.queue.outputs.code == '0' && inputs.publish_to_site == true) || steps.quality_recovery.outputs.deferred == '1')
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -308,11 +341,14 @@ jobs:
         shell: bash
         env:
           QUEUE_CODE: ${{ steps.queue.outputs.code }}
-          QUALITY_DEFERRED: ${{ steps.quality_hold.outputs.deferred || '0' }}
+          QUALITY_RETRIED: ${{ steps.quality_recovery.outputs.retried || '0' }}
+          QUALITY_DEFERRED: ${{ steps.quality_recovery.outputs.deferred || '0' }}
         run: |
           case "$QUEUE_CODE" in
             0) echo '✓ كل حلقات الدفعة محفوظة ومجتازة.' ;;
-            2) if [ "$QUALITY_DEFERRED" = '1' ]; then
+            2) if [ "$QUALITY_RETRIED" = '1' ]; then
+                 echo '✓ رفضت الحلقة؛ الجولة التالية بدأت تلقائيا ولا يلزم تدخل الدكتور.'
+               elif [ "$QUALITY_DEFERRED" = '1' ]; then
                  echo '✓ استنفدت الحلقة ثلاث جولات فأجلت بأمان، وبدأت التالية من دون نشر نسخة مرفوضة.'
                else
                  echo '::error::بقيت حلقة جودة معلقة؛ أعد Failed jobs لاحقاً ببذور جديدة.'; exit 2

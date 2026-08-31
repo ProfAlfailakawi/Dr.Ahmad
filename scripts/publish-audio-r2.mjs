@@ -277,6 +277,12 @@ try {
       sha256: entry.sha256,
       contentType: isMp3 ? 'audio/mpeg' : 'application/json; charset=utf-8',
       publishedAt: new Date().toISOString(),
+      /* verifyPublicObject above has already proved the public object, including
+         Range support for MP3 and parseability/length for JSON.  Mark it here,
+         in the same transaction, so the site can expose a newly published
+         Kuwaiti episode immediately instead of waiting for a later reconciler. */
+      validationStatus: 'verified-r2',
+      verifiedAt: new Date().toISOString(),
       ...(isMp3 ? { durationSeconds: durationSeconds(file) || meta[entry.name]?.durationSeconds || null } : {}),
       ...(readingAudit ? {
         sourceHash: readingAudit.sourceHash,

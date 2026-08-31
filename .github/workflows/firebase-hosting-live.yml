@@ -7,7 +7,7 @@ on:
   # التزام GitHub الذي يصنعه Workflow الصوت لا يطلق حدث push جديداً لأسباب
   # أمنية في GitHub. لذلك كان R2 وmain يتقدمان بينما يبقى الموقع عند 56.
   workflow_run:
-    workflows: ["توليد الصوت تلقائياً إلى R2"]
+    workflows: ["توليد الصوت تلقائياً إلى R2", "نشر الخمس الكويتية المعتمدة إلى الموقع"]
     types: [completed]
 
 permissions:

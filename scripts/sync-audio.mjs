@@ -166,7 +166,9 @@ if (USE_AUDIO_META) {
   let totalDuration = 0
 
   for (const [name, info] of Object.entries(meta).sort(([a], [b]) => a.localeCompare(b))) {
-    if (!name.endsWith('.mp3') || name.endsWith('.dialogue-en.mp3')) continue
+    /* الكويتي Variant مستقل تقرؤه الواجهة من audio-meta مباشرة؛ إدخاله في
+       audio.json القديم يحوّل slug إلى "*.dialogue-kw" فيبدو مقالاً وهمياً. */
+    if (!name.endsWith('.mp3') || name.endsWith('.dialogue-en.mp3') || name.endsWith('.dialogue-kw.mp3')) continue
     const dialogue = name.endsWith('.dialogue.mp3')
     const noura = name.endsWith('.noura.mp3')
     const slug = dialogue ? name.slice(0, -'.dialogue.mp3'.length) : noura ? name.slice(0, -'.noura.mp3'.length) : name.slice(0, -'.mp3'.length)
@@ -254,7 +256,8 @@ if (!existsSync(AUDIO_DIR)) {
   process.exit(1)
 }
 // القراءة العادية والحلقة الحوارية العربية تدخلان الفهرس؛ الإنجليزية لها قناة مستقلة.
-const files = readdirSync(AUDIO_DIR).filter((name) => name.endsWith('.mp3') && !name.endsWith('.dialogue-en.mp3')).sort()
+const files = readdirSync(AUDIO_DIR).filter((name) => name.endsWith('.mp3')
+  && !name.endsWith('.dialogue-en.mp3') && !name.endsWith('.dialogue-kw.mp3')).sort()
 const next = {}
 const invalid = []
 let totalBytes = 0

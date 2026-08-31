@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "2026-08-31-owner-approved-site-five-v1",
+  "ownerVerdict": "وصلنا لمرحلة عظيمة جدا جدا جدا — روعة بصراحة، والأخطاء الموجودة طبيعية جدا حق اللي يركز بس",
+  "policy": "These exact five audio hashes were heard and approved by the site owner. Never regenerate or substitute them during first Kuwaiti publication.",
+  "episodes": [
+    {
+      "order": 1,
+      "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+      "runId": 33316242564,
+      "artifactName": "kuwaiti-listening-success-that-does-not-bring-joy-to-its-ownerarabic",
+      "layout": "complete-prefixed",
+      "prefix": "01-",
+      "audioSha256": "7144262bfa44f6fdc260c7afeb2ccfd064b28c014d4a7084188f36146fc6f4d1",
+      "transcriptSha256": "d56d32fa79e1f29545e1b4565092ad9857f81d50d55ebe1340e12902b0a17d81",
+      "auditSha256": "6cadc0ffeede5571d9d3fa6e073f4dabb1a184b80d2e8ad01cc520eae999633c"
+    },
+    {
+      "order": 2,
+      "slug": "the-classroom-that-fears-mistakesarabic",
+      "runId": 33358937601,
+      "artifactName": "professional-kuwaiti-the-classroom-that-fears-mistakesarabic",
+      "layout": "complete",
+      "prefix": "",
+      "audioSha256": "5e644d0182413dfb5f30bc82028340aad60bb6d76534e40f5e16e4290ee36511",
+      "transcriptSha256": "4be145bf62f11d984ee74d50dad45c7f602279a7d35824405daaac2514e68fe6",
+      "auditSha256": "ac9a275362c7098431c136a3fee2214d13e4cbfd6d927994edfeb2be7dd7c5c6"
+    },
+    {
+      "order": 3,
+      "slug": "intelligence-without-a-consciencearabic",
+      "runId": 33362709805,
+      "artifactName": "professional-kuwaiti-intelligence-without-a-consciencearabic",
+      "layout": "complete",
+      "prefix": "",
+      "audioSha256": "8852a2bca3cd06aa5402ea7e3b140bd625e9b30136aa1bacc6f0ad7b4b73a578",
+      "transcriptSha256": "1a173093aafe45295903a78f7b81bd4480a6e1713977d4c4f665cb161f41c4d1",
+      "auditSha256": "e6a0da0b2d3ea0cefe7b8251a2c19bc0af44384fdfea76c9277ed28e3c25dd92"
+    },
+    {
+      "order": 4,
+      "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+      "runId": 33363098845,
+      "artifactName": "professional-kuwaiti-when-seriousness-becomes-a-mask-for-escapearabic",
+      "layout": "owner-approved-rejection",
+      "seed": 2114,
+      "audioSha256": "7b733c89a0156806addc89715076afd14e540805ee1c624b4fa4887c245671bc",
+      "dryAudioSha256": "dfd99083fbda24353c8091eb1b2dec7c531d82612481f92dbb63e78305c280f4",
+      "rejectionSha256": "ebaf97044ebe7a30a8a523a9961346d5f466d0d7d237f0e9c8d29208f0ec1940",
+      "correctedSourceSha256": "deaa73f745c775b7d7189a67252fe58b8686895973b4bf9c907c07524eac280d"
+    },
+    {
+      "order": 5,
+      "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+      "runId": 33363815873,
+      "artifactName": "professional-kuwaiti-how-do-we-assess-without-breaking-the-human-beingarabic",
+      "layout": "owner-approved-rejection",
+      "seed": 2125,
+      "audioSha256": "80e95882f29d1978e1f8dd1ce55e6e2a55ecee7a1490c8dd519d903d573ec555",
+      "dryAudioSha256": "7c8755ad05af8eedebf954695a7d5eb9a2e2e18f26c17b845f49475a89547011",
+      "rejectionSha256": "b26e1ac6f79d7af69b64e4e5d0732ee64db542e21cd78175b74567c267090c38",
+      "correctedSourceSha256": "d131259f25b3a6838e02b1ed9a65267e1d116f11a8bb7e8dbb7f41391ff3d45c"
+    }
+  ]
+}

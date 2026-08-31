@@ -2973,10 +2973,22 @@ if (SELF_TEST) {
     'c09754cbeba753c2584ec6a67f718344874baa164fae87623dc243b294bfee19',
     '9bd0990ec53130f99e54b2be276ddd6cbf93a8b37d1771802bc0774cac2c0924',
     '2c20bffe8009dffda296e45add5991e9818d414e91ff461cc716028bcdf30e2e',
-  ], 'بصمات الخمس ومعها هوية الحلقة 02 الجديدة هي الملفات التي حكم عليها الدكتور')
-  assert.equal(GOLD_ACOUSTIC_REFERENCE.approvedSources.at(-1).approvalScope,
+    '5e644d0182413dfb5f30bc82028340aad60bb6d76534e40f5e16e4290ee36511',
+  ], 'بصمات الخمس ومعها نسختا الحلقة 02 هي الملفات التي حكم عليها الدكتور')
+  const episode2VoiceOnly = GOLD_ACOUSTIC_REFERENCE.approvedSources
+    .find((source) => source.runId === 33340104975)
+  const episode2Final = GOLD_ACOUSTIC_REFERENCE.approvedSources
+    .find((source) => source.runId === 33358937601)
+  assert.equal(episode2VoiceOnly?.approvalScope,
     'speaker-identity-and-kuwaiti-dialect-only',
-    'Take الحلقة 02 الجديد مرجع للصوت واللهجة فقط؛ أخطاء كلماته لا تُعتمد')
+    'Take الحلقة 02 السابق مرجع للصوت واللهجة فقط؛ أخطاء كلماته لا تُعتمد')
+  assert.equal(episode2Final?.approvalScope, 'full-production-gold',
+    'الحلقة 02 المصححة صارت Gold كاملة بعد حكم الدكتور')
+  assert.equal(episode2Final?.doctorVerdict, 'روووعه جدا بنفس مستوى الأولى',
+    'حكم أذن الدكتور على الحلقة 02 المصححة محفوظ حرفياً')
+  assert.deepEqual(episode2Final?.music, {
+    track: 'open-horizon.mp3', introSec: 2.8, bridgeCount: 2, outroSec: 2.9,
+  }, 'Gold الحلقة 02 تشمل المقدمة والجسرين والخاتمة التي سمعها الدكتور')
   assert.ok(GOLD_ACOUSTIC_REFERENCE.approvedSources.every((source) => source.explicitlyApproved === true),
     'لا تدخل أي عينة المرجع الذهبي باستنتاجٍ من كلام الدكتور')
   assert.ok(!GOLD_ACOUSTIC_REFERENCE.approvedSources.some((source) => source.audioSha256
@@ -3026,7 +3038,7 @@ if (SELF_TEST) {
   for (const speaker of ['male', 'female']) {
     const own = approvedTimbreReferencesFor(GOLD_ACOUSTIC_REFERENCE, speaker)
     const other = approvedTimbreReferencesFor(GOLD_ACOUSTIC_REFERENCE, speaker === 'male' ? 'female' : 'male')
-    assert.equal(own.length, 6, `الخمس وهوية الحلقة 02 الجديدة تعطينا ستة مراجع مستقلة لـ${speaker}`)
+    assert.equal(own.length, 7, `الخمس ونسختا الحلقة 02 تعطينا سبعة مراجع مستقلة لـ${speaker}`)
     for (const approved of own) {
       assert.equal(nearestTimbreReference(approved.timbreCenter, own).id, approved.id,
         `مرجع ${approved.id} لـ${speaker} يطابق نفسه`)

@@ -282,6 +282,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:28.388Z"
   },
+  "aggression-in-the-sky-and-steadfastness-withinarabic.dialogue-kw.json": {
+    "bytes": 9185,
+    "sha256": "e284612979dfe43c46ee6ce3bc935228fffbb95495eda09fe058012fe6faf68a",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-08-31T21:16:33.789Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T21:16:33.789Z"
+  },
+  "aggression-in-the-sky-and-steadfastness-withinarabic.dialogue-kw.mp3": {
+    "bytes": 1980525,
+    "sha256": "b6b3a9baf3f1372153fd901f15885227c8ea937fb40f602cf8f6663c1efb1d42",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-08-31T21:16:33.789Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T21:16:33.789Z",
+    "durationSeconds": 99
+  },
   "aggression-in-the-sky-and-steadfastness-withinarabic.dialogue.json": {
     "bytes": 9298,
     "sha256": "55e1b9f5f7a5a04540a2bf5b5a61e422fd58fd62654170866721f8865d1cd714",

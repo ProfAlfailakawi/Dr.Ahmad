@@ -95,6 +95,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:26.956Z"
   },
+  "a-generation-that-knows-everything-and-understands-nothing.dialogue-kw.json": {
+    "bytes": 7416,
+    "sha256": "3d9e7884a82c6751469746c794a36734d42ec7f4c1a1b8eaec73308539ab40f8",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-08-31T16:13:14.140Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T16:13:14.140Z"
+  },
+  "a-generation-that-knows-everything-and-understands-nothing.dialogue-kw.mp3": {
+    "bytes": 2218125,
+    "sha256": "c26e4c7b4df1a0e11a7b68c9f2b5120c7de1b845888a6c6c2127eeec6b4cc7e2",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-08-31T16:13:14.140Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T16:13:14.140Z",
+    "durationSeconds": 111
+  },
   "a-generation-that-knows-everything-and-understands-nothing.dialogue.json": {
     "bytes": 9433,
     "sha256": "089df943edeecbcea3f0039e8586ccc8803128ad0fc6ea310c5eb58851cccdef",

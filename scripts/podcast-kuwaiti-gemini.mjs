@@ -105,6 +105,7 @@ const GOLD_ACOUSTIC_REFERENCE = JSON.parse(readFileSync(GOLD_ACOUSTIC_REFERENCE_
 const PROFESSIONAL_GOLD_FILE = resolve(ROOT, 'scripts', 'data', 'kuwaiti-professional-gold-v13.json')
 const PROFESSIONAL_GOLD = JSON.parse(readFileSync(PROFESSIONAL_GOLD_FILE, 'utf8'))
 const PROFESSIONAL_GOLD_MODE = process.env.PODCAST_KW_PROFESSIONAL_GOLD === '1'
+const PROFESSIONAL_GOLD_SEED_VARIANTS = process.env.PODCAST_KW_PROFESSIONAL_GOLD_SEED_VARIANTS === '1'
 const PROFESSIONAL_GOLD_BY_SLUG = new Map(PROFESSIONAL_GOLD.episodes.map((episode) => [episode.slug, episode]))
 const PROFESSIONAL_GOLD_EPISODE = PROFESSIONAL_GOLD_BY_SLUG.get(slug) || null
 assert.equal(Number(GOLD_ACOUSTIC_REFERENCE.schemaVersion), 1, 'صيغة مرجع الأذن غير معتمدة')
@@ -356,6 +357,16 @@ const KW_LOCK = 'light, soft Kuwait-City Kuwaiti — never heavy, never emphatic
    وضع full يبقى متاحاً للمقارنة التاريخية لا للإنتاج. */
 const PROMPT_MODE = ['minimal','c','full'].includes(process.env.PODCAST_KW_PROMPT_MODE) ? process.env.PODCAST_KW_PROMPT_MODE : 'c'
 const SEED = Number.isInteger(Number(process.env.PODCAST_KW_SEED)) && Number(process.env.PODCAST_KW_SEED) > 0 ? Number(process.env.PODCAST_KW_SEED) : null
+/* البذرة التي نجحت تاريخياً تبقى المحاولة الأولى دائماً. لكن Gemini TTS
+   Preview لا يعيد البصمة نفسها كل مرة حتى مع البذرة نفسها؛ تعليق حلقة كاملة
+   على Take واحد جعل مسار Gold يتوقف بعد رفض جودة صحيح. الخطة أدناه لا تغيّر
+   النص أو البرومت أو الكاست أو الـSame-Take: هي ست محاولات كاملة مستقلة فقط،
+   على موجتين، ولا ينجو منها إلا أول Take يجتاز مرجع أذن الدكتور. */
+export function professionalGoldSeedPlan (anchorSeed) {
+  const anchor = Number(anchorSeed)
+  assert.ok(Number.isInteger(anchor) && anchor > 0, 'بذرة مرساة Gold غير صالحة')
+  return [anchor, anchor + 10, anchor + 20, anchor + 1000, anchor + 1010, anchor + 1020]
+}
 const MINIMAL_HEAD = `كويتي حضري من أهل مدينة الكويت، خفيف في الفم — يرققون الكلام وما يفخمون، ونهاية الجملة تنزل هادئة.
 اثنان من أهل الكويت يتسولفون في ديوانية بكل طبيعية ودفء وحيوية، مهتمان بما يقولان: فهد رجل هادئ دافئ عارف، ونورة امرأة ذكية فضولية غير مسرحية.
 تجنب ولا تستخدم: سوري، شامي، مصري، عراقي، إيراني، إماراتي، عماني، سعودي بكل تفاصيله (نجدي، حساوي، حجازي)، ولا أي خليجي عام.
@@ -3014,6 +3025,8 @@ if (SELF_TEST) {
     'قفل الأداء يرجع إلى التشغيلة التي قال عنها الدكتور إن الخمس كلها رائعة')
   assert.deepEqual(PROFESSIONAL_GOLD.episodes.map((episode) => episode.seed), [2101, 2102, 2103, 2114, 2115],
     'كل حلقة تحتفظ ببذرتها الناجحة؛ 04 و05 لا ترجعان إلى البذرتين المرفوضتين 2104 و2105')
+  assert.deepEqual(professionalGoldSeedPlan(2103), [2103, 2113, 2123, 3103, 3113, 3123],
+    'مسار Gold يبدأ بالبذرة المسموعة ثم يجرب موجتين محدودتين فقط')
   assert.deepEqual(PROFESSIONAL_GOLD.immutablePerformance, {
     provider: 'ai-studio',
     model: 'gemini-2.5-pro-preview-tts',
@@ -3134,14 +3147,20 @@ if (PROFESSIONAL_GOLD_MODE) {
   assert.equal(FEMALE_VOICE, contract.femaleVoice, 'صوت نورة الاحترافي تغيّر')
   assert.equal(ISOLATE_SPEAKER_STEMS, false, 'الخمس الاحترافية حوار واحد، مو مسارين مركبين')
   assert.equal(chunks.length, 1, 'الخمس الاحترافية لازم تتولد Take واحداً بلا تقسيم')
-  assert.equal(SEED, PROFESSIONAL_GOLD_EPISODE.seed, 'بذرة الحلقة تغيّرت عن النسخة التي اعتمدها الدكتور')
+  const allowedSeeds = PROFESSIONAL_GOLD_SEED_VARIANTS
+    ? professionalGoldSeedPlan(PROFESSIONAL_GOLD_EPISODE.seed)
+    : [PROFESSIONAL_GOLD_EPISODE.seed]
+  assert.ok(allowedSeeds.includes(SEED),
+    `بذرة الحلقة خرجت عن خطة Gold المقفولة: ${SEED || 'بلا بذرة'}`)
   assert.equal(sourceLock?.shortContentSha256, PROFESSIONAL_GOLD_EPISODE.correctedSourceSha256,
     'النص المنطوق خرج عن المرجع الاحترافي وتصحيحات الكلمات المعتمدة')
   assert.equal(sourceLock?.professionalGoldRunId, PROFESSIONAL_GOLD.approvedRunId,
     'قفل المصدر ليس من تشغيلة المرجع الاحترافي')
+  assert.equal(sourceLock?.professionalGoldSeed, PROFESSIONAL_GOLD_EPISODE.seed,
+    'بذرة مرساة Gold تغيّرت داخل قفل المصدر')
   assert.equal(ttsRequestHash(prompts[0]), PROFESSIONAL_GOLD_EPISODE.correctedRequestSha256,
     'طلب TTS تغيّر عن البرومت الاحترافي + تصحيحات الكلمات فقط؛ ممنوع صرف TTS')
-  console.log(`🔐 المرجع الاحترافي مقفول: run ${PROFESSIONAL_GOLD.approvedRunId} · seed ${SEED} · request ${PROFESSIONAL_GOLD_EPISODE.correctedRequestSha256}`)
+  console.log(`🔐 المرجع الاحترافي مقفول: run ${PROFESSIONAL_GOLD.approvedRunId} · مرساة ${PROFESSIONAL_GOLD_EPISODE.seed} · محاولة ${SEED} · request ${PROFESSIONAL_GOLD_EPISODE.correctedRequestSha256}`)
 }
 if (DRY_RUN) {
   console.log(`✓ ${slug}: ${turns.length} مداخلة → ${chunks.length === 1 ? 'Take واحد متصل' : `${chunks.length} طلبات متداخلة بإحماء صوتي`}`)

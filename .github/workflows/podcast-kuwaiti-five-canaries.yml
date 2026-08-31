@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       single_slug:
-        description: 'اختر حلقة واحدة؛ اللهجة والكاست والبذرة مقفولة على النسخة التي اعتمدها الدكتور'
+        description: 'اختر حلقة واحدة؛ اللهجة والكاست مقفولان، وبذرة المرجع هي المحاولة الأولى'
         required: true
         type: choice
         options:
@@ -14,6 +14,10 @@ on:
           - when-seriousness-becomes-a-mask-for-escapearabic
           - how-do-we-assess-without-breaking-the-human-beingarabic
         default: success-that-does-not-bring-joy-to-its-ownerarabic
+      quality_attempts:
+        description: 'عدد الـTakes الكاملة (1–6)؛ يتوقف عند أول نسخة تجتاز مرجع أذن الدكتور'
+        required: false
+        default: '6'
 
 permissions:
   contents: read
@@ -65,6 +69,7 @@ jobs:
         shell: bash
         env:
           PODCAST_KW_PROFESSIONAL_GOLD: '1'
+          PODCAST_KW_PROFESSIONAL_GOLD_SEED_VARIANTS: '1'
           PODCAST_KW_TTS_PROVIDER: ai-studio
           PODCAST_KW_TTS_LANGUAGE: ar
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -88,18 +93,39 @@ jobs:
           PODCAST_KW_DIALECT_AUDIT: required
           PODCAST_KW_GOLD_ACOUSTIC_GATE: required
           PODCAST_KW_REJECT_DIR: professional-gold/rejected
+          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
         run: |
           set -euo pipefail
           SLUG='${{ inputs.single_slug }}'
           case "$SLUG" in
-            success-that-does-not-bring-joy-to-its-ownerarabic) export PODCAST_KW_SEED=2101 ;;
-            the-classroom-that-fears-mistakesarabic) export PODCAST_KW_SEED=2102 ;;
-            intelligence-without-a-consciencearabic) export PODCAST_KW_SEED=2103 ;;
-            when-seriousness-becomes-a-mask-for-escapearabic) export PODCAST_KW_SEED=2114 ;;
-            how-do-we-assess-without-breaking-the-human-beingarabic) export PODCAST_KW_SEED=2115 ;;
+            success-that-does-not-bring-joy-to-its-ownerarabic) ANCHOR_SEED=2101 ;;
+            the-classroom-that-fears-mistakesarabic) ANCHOR_SEED=2102 ;;
+            intelligence-without-a-consciencearabic) ANCHOR_SEED=2103 ;;
+            when-seriousness-becomes-a-mask-for-escapearabic) ANCHOR_SEED=2114 ;;
+            how-do-we-assess-without-breaking-the-human-beingarabic) ANCHOR_SEED=2115 ;;
             *) echo "::error::الحلقة مو من الخمس الاحترافية"; exit 1 ;;
           esac
-          node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
+          ATTEMPTS="$REQUESTED_QUALITY_ATTEMPTS"
+          if ! [[ "$ATTEMPTS" =~ ^[1-6]$ ]]; then
+            echo '::error::quality_attempts لازم يكون بين 1 و6'; exit 1
+          fi
+          OFFSETS=(0 10 20 1000 1010 1020)
+          PASSED=0
+          for ((INDEX=0; INDEX<ATTEMPTS; INDEX++)); do
+            export PODCAST_KW_SEED=$((ANCHOR_SEED + OFFSETS[INDEX]))
+            echo "🎧 Gold Take $((INDEX + 1))/$ATTEMPTS · seed=$PODCAST_KW_SEED"
+            set +e
+            node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
+            CODE=$?
+            set -e
+            if [ "$CODE" -eq 0 ]; then PASSED=1; break; fi
+            if [ "$CODE" -ne 3 ]; then exit "$CODE"; fi
+            echo "↻ الـTake ما اجتاز الجودة؛ ننتقل للبذرة المقفولة التالية."
+          done
+          if [ "$PASSED" -ne 1 ]; then
+            echo '::error::كل Takes الجودة رُفضت؛ المحرك ما عطانا فهد ونورة المعتمدين اليوم.'
+            exit 3
+          fi
           mkdir -p professional-gold
           cp "audio/$SLUG.dialogue-kw.mp3" "professional-gold/$SLUG.mp3"
           cp "audio/$SLUG.dialogue-kw.json" "professional-gold/$SLUG.json"

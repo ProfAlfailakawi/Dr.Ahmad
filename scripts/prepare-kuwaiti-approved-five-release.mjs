@@ -96,7 +96,7 @@ export function timelineFromAlignment ({ turns, cuts, dryDurationSec, finalDurat
   const outroStart = utterances.at(-1).endSec + 0.25
   const assemblyDuration = outroStart + 2.9 + 0.35
   /* ffmpeg يكتب -t قبل ذيل الحماية الأخير بنحو 0.35ث في ملفات المرجع.
-     نحرس أن الملف المسموع هو فعلًا الماستر الذي أنتج هذه الحدود. */
+     نحرس أن الملف المسموع هو فعلاً الماستر الذي أنتج هذه الحدود. */
   /* MP3 encoder padding in the preserved takes varies by roughly 0.14s.  This
      tolerance proves the assembly shape without pretending container duration
      is sample-exact; exact SHA-256 still locks the file the owner heard. */

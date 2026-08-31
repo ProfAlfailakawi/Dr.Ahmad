@@ -60,7 +60,7 @@ export function prepareDelegatedRelease ({ slug, packageDir, outputRoot = ROOT, 
   const publicMeta = readJson(resolve(outputRoot, 'src/data/audio-meta.json'), {}) || {}
   const existing = publicMeta[`${slug}.dialogue-kw.mp3`]
   if (existing?.validationStatus === 'verified-r2') {
-    throw new Error(`${slug}: النسخة الكويتية منشورة أصلًا؛ ممنوع الكتابة فوقها بلا أمر استبدال مستقل`)
+    throw new Error(`${slug}: النسخة الكويتية منشورة أصلاً؛ ممنوع الكتابة فوقها بلا أمر استبدال مستقل`)
   }
 
   const audioDir = resolve(outputRoot, 'audio')

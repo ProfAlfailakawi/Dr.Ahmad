@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "maxFullRoundsBeforeDeferral": 3,
+    "takesPerRound": 6,
+    "automaticSelectionExcludesHeldEpisodes": true,
+    "heldEpisodesStillCountAsMissing": true
+  },
+  "episodes": [
+    {
+      "slug": "a-generation-without-rootsarabic",
+      "status": "quality-hold",
+      "failedRunId": 33412947922,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "لم يجتز مرجع هوية فهد ونورة وتدقيق اللهجة بعد ثلاث جولات مستقلة؛ لم ينشر ولم يرقع.",
+      "deferredAt": "2026-08-31T16:05:03.141Z"
+    }
+  ]
+}

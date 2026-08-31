@@ -334,6 +334,7 @@ const promptExperiment = readFileSync(resolve(ROOT, '.github/workflows/podcast-p
 assert.match(promptExperiment, /apply-kuwaiti-native-spoken\.mjs/,
   'مختبر البرومت العام يمر بالصقل المنطوق')
 const productionBatch = readFileSync(resolve(ROOT, '.github/workflows/podcast-kuwaiti-production-batch.yml'), 'utf8')
+const productionSelector = readFileSync(resolve(ROOT, 'scripts/select-kuwaiti-production-episode.mjs'), 'utf8')
 assert.match(productionBatch, /run-kuwaiti-generation-queue\.mjs/,
   'إنتاج 143 يمر بطابور قابل للاستئناف لا بحلقة عابرة على runner')
 assert.match(productionBatch, /Restore already accepted episodes before spending again/,
@@ -344,10 +345,14 @@ assert.match(productionBatch, /PODCAST_KW_TTS_PROVIDER:\s*ai-studio/,
   'الإنتاج القادم يستعمل البوابة التي اعتمد الدكتور لهجتها')
 assert.match(productionBatch, /GEMINI_TTS_MODEL:\s*gemini-2\.5-pro-preview-tts/,
   'الإنتاج القادم يستعمل عائلة الصوت المعتمدة ولا ينتقل إلى Vertex بصمت')
-assert.match(productionBatch, /if \(size !== 1\)/,
+assert.match(productionSelector, /assert\.equal\(size, 1/,
   'كل حلقة مستقبلية تشغيلة مستقلة؛ فشلها لا يطيح الباقي')
-assert.match(productionBatch, /هذه من الخمس الذهبية/,
+assert.match(productionSelector, /هذه من الخمس الذهبية/,
   'الخمس المقفولة لا تدخل مسار الإنتاج العام ببذرة مختلفة')
+assert.match(productionBatch, /github\.run_attempt >= 3/,
+  'لا تؤجل الحلقة قبل ثلاث جولات جودة كاملة')
+assert.match(productionBatch, /kuwaiti-production-progress\.mjs --git-ref=origin\/main/,
+  'الحلقة المؤجلة لا تحبس بقية الإنتاج ولا تختفي من حساب 143')
 assert.match(productionBatch, /PODCAST_KW_SPLIT_AT_BRIDGES:\s*'0'/,
   'الدفعة الفولاذية تحفظ Same-Take والجسر الخارجي')
 assert.match(productionBatch, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,

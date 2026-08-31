@@ -220,6 +220,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:28.127Z"
   },
+  "a-society-that-fears-the-different-arabic.dialogue-kw.json": {
+    "bytes": 8127,
+    "sha256": "872cfdf470853ede38119f16546d60efbc5e49735409a1b7fa0c21a3083510e2",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-08-31T20:17:14.434Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T20:17:14.434Z"
+  },
+  "a-society-that-fears-the-different-arabic.dialogue-kw.mp3": {
+    "bytes": 2087085,
+    "sha256": "bb6b094e493a06edf168d290654e570c94aa52eefcbbaa7a5e1a96ee454c0cfb",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-08-31T20:17:14.434Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T20:17:14.434Z",
+    "durationSeconds": 104
+  },
   "a-society-that-fears-the-different-arabic.dialogue.json": {
     "bytes": 9701,
     "sha256": "ea5bbd7208e3240e45aae4fe3633ea2bb507520d1c7c5c30cfa5d27f5cb6b012",

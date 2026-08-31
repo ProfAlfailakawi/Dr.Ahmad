@@ -33,6 +33,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T14:45:00.000Z"
   },
+  "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2.dialogue-kw.json": {
+    "bytes": 8640,
+    "sha256": "c2d51b1faa4d58df08ca1d761d6259499e80396487de9800dcf1f04edde4e806",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-08-31T16:07:55.483Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T16:07:55.483Z"
+  },
+  "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2.dialogue-kw.mp3": {
+    "bytes": 2173965,
+    "sha256": "dc53444f610340eebcdec6562756b71e64a71016eed9e6e3a9be8847c7520eab",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-08-31T16:07:55.483Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-08-31T16:07:55.483Z",
+    "durationSeconds": 109
+  },
   "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2.dialogue.json": {
     "bytes": 9060,
     "sha256": "dd1f7a5502efe234d7c655e898533031e4039cbb6980857feecef35940edad20",

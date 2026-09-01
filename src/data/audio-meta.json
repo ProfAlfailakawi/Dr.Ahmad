@@ -906,6 +906,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:30.885Z"
   },
+  "excellent-in-grades-lost-in-decision.dialogue-kw.json": {
+    "bytes": 8663,
+    "sha256": "5709f6a1c9cd5d54f553ad70c8044a9fdbbb5d2dbfbb88909091a8ffa2fe71eb",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T09:18:45.600Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:18:45.600Z"
+  },
+  "excellent-in-grades-lost-in-decision.dialogue-kw.mp3": {
+    "bytes": 2251725,
+    "sha256": "485736d8f5a490e2a1be2111cf3e92cfcca98c408dd154277c44d6235807e7b3",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T09:18:45.600Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:18:45.600Z",
+    "durationSeconds": 113
+  },
   "excellent-in-grades-lost-in-decision.dialogue.json": {
     "bytes": 9298,
     "sha256": "e40b735bb39954c987af9d0172756d8db5368a9abd9046c16eb7c00071dad708",

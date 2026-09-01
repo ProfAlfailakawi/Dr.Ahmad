@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 2252,
+ "loop": 2373,
  "gap": 8,
  "items": [
   {
@@ -116,31 +116,38 @@
    "dur": 103
   },
   {
+   "slug": "excellent-in-grades-lost-in-decision",
+   "title": "ممتاز في الدرجات… ضائع في القرار!",
+   "cat": "التعليم",
+   "at": 1783,
+   "dur": 113
+  },
+  {
    "slug": "intelligence-without-a-consciencearabic",
    "title": "ذكاءٌ بلا ضمير",
    "cat": "تقنية",
-   "at": 1783,
+   "at": 1904,
    "dur": 104
   },
   {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 1895,
+   "at": 2016,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 2013,
+   "at": 2134,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 2133,
+   "at": 2254,
    "dur": 111
   }
  ]

@@ -1251,6 +1251,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T14:45:00.000Z"
   },
+  "i-write-to-awaken-you-not-to-discourage-you-2.dialogue-kw.json": {
+    "bytes": 9207,
+    "sha256": "bee31d1d238aa59854dff5ec81c0ed8cb2592d8923571290addc493871acdbe8",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T10:04:46.379Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T10:04:46.379Z"
+  },
+  "i-write-to-awaken-you-not-to-discourage-you-2.dialogue-kw.mp3": {
+    "bytes": 2121645,
+    "sha256": "25472ba3bf6029ef434c2a0418b660922f49d06ecfff7d47d0688f1b4740e0c0",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T10:04:46.379Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T10:04:46.379Z",
+    "durationSeconds": 106
+  },
   "i-write-to-awaken-you-not-to-discourage-you-2.dialogue.json": {
     "bytes": 9006,
     "sha256": "ea2e82a1aee81df4ccac81cd0282be3da8621f42493f1500212a4269536dd4c9",

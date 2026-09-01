@@ -1217,6 +1217,23 @@
     "verifiedAt": "2026-08-31T15:54:08.485Z",
     "durationSeconds": 119
   },
+  "i-earned-more-than-harvard-but-it-doesnt-teach-brains.dialogue-kw.json": {
+    "bytes": 8698,
+    "sha256": "aa86e8053875b3fe9736984d55c11e8b2e23ae889b43d4af60b834c14d8b9917",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T09:53:22.392Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:53:22.392Z"
+  },
+  "i-earned-more-than-harvard-but-it-doesnt-teach-brains.dialogue-kw.mp3": {
+    "bytes": 2237325,
+    "sha256": "afe54626519094063b126e71fc2c7e37a7aef16e3475a41985fed8994b2fed9c",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T09:53:22.392Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:53:22.392Z",
+    "durationSeconds": 112
+  },
   "i-earned-more-than-harvard-but-it-doesnt-teach-brains.dialogue.json": {
     "bytes": 9248,
     "sha256": "d7073451455bb314868bb39219590287d58c4d339c76a646c1a82115aee9a4dd",

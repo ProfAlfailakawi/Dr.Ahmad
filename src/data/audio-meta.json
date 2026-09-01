@@ -560,6 +560,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T19:37:48.351Z"
   },
+  "coming-soon-a-certificate-without-a-mind-2.dialogue-kw.json": {
+    "sha256": "253079a8ebba00f187c0a2990bbdb2b27dfed1f6a8efe65c1dd5fbc2026f2de8",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T16:00:10.904Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T16:00:10.904Z",
+    "bytes": 8027
+  },
+  "coming-soon-a-certificate-without-a-mind-2.dialogue-kw.mp3": {
+    "sha256": "c5eb55fa0655ab88fbea4b3bacfdcadebafb42d9fc5b54ed84420391cd4702ea",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T16:00:10.904Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T16:00:10.904Z",
+    "durationSeconds": 99,
+    "bytes": 1978125
+  },
   "coming-soon-a-certificate-without-a-mind-2.dialogue.json": {
     "bytes": 9681,
     "sha256": "b85d4e25f727a6679171db81fc6473c886195185b6b0b694d621e43533faa6c1",
@@ -2525,6 +2542,23 @@
     "acceptedAt": "2026-07-27T19:15:06.160Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T19:37:59.660Z"
+  },
+  "qabas-201703-002.dialogue-kw.json": {
+    "bytes": 8595,
+    "sha256": "0ee4ad379302e657a1dbb58d2d9863fc8b1b4e4e07886a3242e1ad1c9857d532",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T21:53:25.422Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T21:53:25.422Z"
+  },
+  "qabas-201703-002.dialogue-kw.mp3": {
+    "bytes": 1905165,
+    "sha256": "806afda0f53132d30ec796e8d2c4495af93c6fe4f35b60ec7f7a2380dd942c5f",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T21:53:25.423Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T21:53:25.423Z",
+    "durationSeconds": 95
   },
   "qabas-201703-002.dialogue.json": {
     "bytes": 9945,

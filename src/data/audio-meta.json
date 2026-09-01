@@ -1440,6 +1440,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:34.756Z"
   },
+  "laughing-while-burning-2.dialogue-kw.json": {
+    "bytes": 8512,
+    "sha256": "e1aeddbe3c4fe5490d8b65b5b2ee7831fe41fc562719d05d136454a4158b3b92",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T11:27:59.169Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T11:27:59.169Z"
+  },
+  "laughing-while-burning-2.dialogue-kw.mp3": {
+    "bytes": 2341005,
+    "sha256": "b528b33b3a20e6d522a1bef6c23a560d513389f94be5d7a4cf11558268ae7a8e",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T11:27:59.169Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T11:27:59.169Z",
+    "durationSeconds": 117
+  },
   "laughing-while-burning-2.dialogue.json": {
     "bytes": 9430,
     "sha256": "09241b492a8e92c73ffce1d6167a802970ee5583e091d109a34525de74592374",

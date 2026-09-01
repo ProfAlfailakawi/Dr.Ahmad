@@ -501,21 +501,21 @@
     "verifiedAt": "2026-07-27T19:37:48.351Z"
   },
   "coming-soon-a-certificate-without-a-mind-2.dialogue-kw.json": {
-    "bytes": 8043,
-    "sha256": "a3c4076064b2a6f7a1d1da7fefcda7fd6cb5982943bd41ddd6940894c9c88c52",
+    "bytes": 8027,
+    "sha256": "253079a8ebba00f187c0a2990bbdb2b27dfed1f6a8efe65c1dd5fbc2026f2de8",
     "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-08-31T22:16:08.057Z",
+    "publishedAt": "2026-09-01T16:00:10.904Z",
     "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-31T22:16:08.057Z"
+    "verifiedAt": "2026-09-01T16:00:10.904Z"
   },
   "coming-soon-a-certificate-without-a-mind-2.dialogue-kw.mp3": {
-    "bytes": 2201805,
-    "sha256": "b06398ee7019d1760158069a037cdad8615e05563a720b1a86fece9a3db6083c",
+    "bytes": 1978125,
+    "sha256": "c5eb55fa0655ab88fbea4b3bacfdcadebafb42d9fc5b54ed84420391cd4702ea",
     "contentType": "audio/mpeg",
-    "publishedAt": "2026-08-31T22:16:08.057Z",
+    "publishedAt": "2026-09-01T16:00:10.904Z",
     "validationStatus": "verified-r2",
-    "verifiedAt": "2026-08-31T22:16:08.057Z",
-    "durationSeconds": 110
+    "verifiedAt": "2026-09-01T16:00:10.904Z",
+    "durationSeconds": 99
   },
   "coming-soon-a-certificate-without-a-mind-2.dialogue.json": {
     "bytes": 9681,

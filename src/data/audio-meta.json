@@ -968,6 +968,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:31.443Z"
   },
+  "expectations-that-shape-a-studentarabic.dialogue-kw.json": {
+    "bytes": 8543,
+    "sha256": "45a0acfb598b4e245e43a1588a9d2501cf1b820c560c0606ed73f686b135a0cb",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T09:22:07.935Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:22:07.935Z"
+  },
+  "expectations-that-shape-a-studentarabic.dialogue-kw.mp3": {
+    "bytes": 2162925,
+    "sha256": "7e75a03a3a535bcc5a4d3586ce716d78add705f081ffb75149eb24acbe63cb34",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T09:22:07.935Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:22:07.935Z",
+    "durationSeconds": 108
+  },
   "expectations-that-shape-a-studentarabic.dialogue.json": {
     "bytes": 9121,
     "sha256": "cff3546e97771b08eaa8822e11a0b8f22d46090c0b83c656749926b613ad40d0",

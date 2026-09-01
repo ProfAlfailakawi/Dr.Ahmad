@@ -1564,6 +1564,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:35.824Z"
   },
+  "lets-work-towards-scientific-research.dialogue-kw.json": {
+    "bytes": 7492,
+    "sha256": "8d6a83023a64efd961b2f11466bd2be33d377bb82a68cfdab40848763bf748f8",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T11:41:58.099Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T11:41:58.099Z"
+  },
+  "lets-work-towards-scientific-research.dialogue-kw.mp3": {
+    "bytes": 2034765,
+    "sha256": "05259cab44da60f1edf4cb4344edfba68b04d150ca7413f986285cf27e69c2ae",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T11:41:58.099Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T11:41:58.099Z",
+    "durationSeconds": 102
+  },
   "lets-work-towards-scientific-research.dialogue.json": {
     "bytes": 9403,
     "sha256": "7485027cb6bd1fe78e33df991fcc903eec9d1d477ff1326041c59927397ccf53",

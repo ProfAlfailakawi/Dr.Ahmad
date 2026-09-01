@@ -39,6 +39,15 @@ const reconcile = read('scripts/reconcile-audio-meta.mjs')
 assert.match(reconcile, /`\$\{slug\}\.dialogue-kw\.mp3`/u, 'مصالحة R2 لا تستعيد الصوت الكويتي')
 assert.match(reconcile, /`\$\{slug\}\.dialogue-kw\.json`/u, 'مصالحة R2 لا تستعيد Transcript الكويتي')
 
+const audioRegressionGuard = read('scripts/guard-audio-meta-regression.mjs')
+assert.match(audioRegressionGuard, /publish verified Kuwaiti dialogue/u,
+  'حارس الصوت لا يرى دفعات الإنتاج الكويتي الموثقة')
+assert.match(audioRegressionGuard, /github-actions\\\[bot\\\]/u,
+  'حارس الصوت يقبل تاريخاً بشرياً بدل شهادة GitHub Actions')
+const holdRegressionGuard = read('scripts/guard-kuwaiti-quality-holds-regression.mjs')
+assert.match(holdRegressionGuard, /isVerifiedKuwaitiEpisode/u,
+  'حارس التأجيل لا يفرق بين الحلقة المنشورة والحلقة الممحوة من رفع قديم')
+
 const firstRelease = read('.github/workflows/podcast-kuwaiti-publish-approved-five.yml')
 for (const required of [
   'prepare-kuwaiti-approved-five-release.mjs',
@@ -66,6 +75,11 @@ for (const required of [
   'include_quality_holds',
   '-f slugs="$NEXT"',
 ]) assert.ok(production.includes(required), `مسار الـ143 ناقصه: ${required}`)
+assert.match(production,
+  /Rebuild the immutable Kuwaiti ledgers[\s\S]*guard-audio-meta-regression\.mjs --apply[\s\S]*reconcile-audio-meta\.mjs --apply --kuwaiti-only[\s\S]*guard-kuwaiti-quality-holds-regression\.mjs --apply[\s\S]*Select a deterministic batch/u,
+  'اختيار الحلقة يحدث قبل استعادة الصوت والتأجيل؛ هذا يعيد صرف حلقة منشورة أو مستنفدة')
+assert.match(production, /actions\/checkout@v6[\s\S]{0,240}fetch-depth:\s*0/u,
+  'حراس التاريخ يعملون على checkout ضحل فلا يرون شهادات البوت')
 assert.ok(!production.includes('batch_size مقفول على 5'), 'ممنوع رجوع توليد خمس حلقات في نداء واحد')
 assert.ok(production.includes('if [ "$MISSING" -eq 0 ]'),
   'ممنوع إعلان 143/143 أو النشر النهائي وفي القائمة حلقات مؤجلة')

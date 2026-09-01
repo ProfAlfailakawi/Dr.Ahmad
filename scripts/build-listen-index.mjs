@@ -195,6 +195,25 @@ export function buildIndex({ articles, audioMeta, dialogueOf }) {
   return episodes.sort((left, right) => (right.iso || '').localeCompare(left.iso || ''))
 }
 
+export function preserveKnownStarts(episodes, previousEpisodes = []) {
+  const previousBySlug = new Map(previousEpisodes.map((episode) => [episode.slug, episode]))
+  return episodes.map((episode) => {
+    const previous = previousBySlug.get(episode.slug)
+    return previous?.question === episode.question && typeof previous?.startSec === 'number'
+      ? { ...episode, startSec: previous.startSec }
+      : episode
+  })
+}
+
+export function mergeSpokenRecords(previous, fresh, allowedSlugs) {
+  const allowed = new Set(allowedSlugs)
+  const rows = new Map((Array.isArray(previous) ? previous : [])
+    .filter((item) => allowed.has(item?.slug))
+    .map((item) => [item.slug, item]))
+  for (const item of fresh) if (allowed.has(item?.slug)) rows.set(item.slug, item)
+  return [...rows.values()]
+}
+
 if (SELF_TEST) {
   const assert = (await import('node:assert/strict')).default
   assert.equal(questionSentence('النص لا يسأل عنه، بل يسأل عن النظام: هل نربّي عقولاً أم نسخاً؟'),
@@ -230,7 +249,16 @@ if (SELF_TEST) {
   })
   assert.equal(built.length, 1, 'ما لم يُوثَّق على R2 لا يدخل الفهرس — لا سطر يقود إلى صمت')
   assert.equal(built[0].durationSec, 204, 'المدة تُؤخذ من سجلّ R2 لا من تقدير')
-  console.log("✓ اختبارات فهرس مجلس الفكرة: 10/10")
+  assert.equal(preserveKnownStarts(
+    [{ slug: 'a', question: 'هل نبدأ؟' }],
+    [{ slug: 'a', question: 'هل نبدأ؟', startSec: 18.4 }],
+  )[0].startSec, 18.4, 'البناء بلا R2 لا يمحو ثانية سؤال موثقة')
+  assert.deepEqual(mergeSpokenRecords(
+    [{ slug: 'a', lines: [[1, 0, 'قديم']] }, { slug: 'removed', lines: [] }],
+    [{ slug: 'b', lines: [[2, 1, 'جديد']] }],
+    ['a', 'b'],
+  ).map((item) => item.slug).sort(), ['a', 'b'], 'الفشل العابر يحفظ القديم ولا يبقي حلقة خرجت من السجل')
+  console.log("✓ اختبارات فهرس مجلس الفكرة: 12/12")
   process.exit(0)
 }
 
@@ -243,9 +271,18 @@ const dialogueOf = (slug) => {
   try { return JSON.parse(readFileSync(file, 'utf8')) } catch { return null }
 }
 
-const episodes = buildIndex({ articles, audioMeta, dialogueOf })
-const spoken = []
-await fetchTimings(episodes, spoken)
+/* البناء المحلي أو عطل R2 العابر لا يجوز أن يمحو توقيتاتٍ موثقة من بناءٍ
+   سابق. نبدأ من آخر فهرس، ثم تستبدل الاستجابة الحية الحلقة التي نجح جلبها
+   وحدها. وبهذا يظل البناء deterministic ومفيداً حتى بلا مفاتيح أو شبكة. */
+const readExisting = (path) => {
+  if (!existsSync(path)) return { episodes: [] }
+  try { return JSON.parse(readFileSync(path, 'utf8')) } catch { return { episodes: [] } }
+}
+const previousListen = readExisting(OUT)
+const episodes = preserveKnownStarts(buildIndex({ articles, audioMeta, dialogueOf }), previousListen.episodes || [])
+const freshSpoken = []
+await fetchTimings(episodes, freshSpoken)
+const spoken = mergeSpokenRecords(readExisting(SPOKEN_OUT).episodes, freshSpoken, episodes.map((episode) => episode.slug))
 
 /* الكويتي هوية صوتية مستقلة: لا يدخل هذا الفهرس إلا ملف كويتي موثّق على R2،
    ثم يُقرأ Transcript الكويتي نفسه وتُؤخذ ثوانيه الحقيقية. */
@@ -257,8 +294,13 @@ const kuwaitiEpisodes = articles
     durationSec: Number(published.durationSeconds || 0),
   }))
   .sort((left, right) => left.slug.localeCompare(right.slug, 'en'))
-const spokenKuwaiti = []
-await fetchVariantSpoken(kuwaitiEpisodes, '.dialogue-kw.json', spokenKuwaiti)
+const freshSpokenKuwaiti = []
+await fetchVariantSpoken(kuwaitiEpisodes, '.dialogue-kw.json', freshSpokenKuwaiti)
+const spokenKuwaiti = mergeSpokenRecords(
+  readExisting(SPOKEN_KW_OUT).episodes,
+  freshSpokenKuwaiti,
+  kuwaitiEpisodes.map((episode) => episode.slug),
+)
 
 mkdirSync(dirname(OUT), { recursive: true })
 writeFileSync(OUT, `${JSON.stringify({

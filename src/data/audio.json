@@ -1,6 +1,8 @@
 {
   "a-certificate-of-excellence-for-a-lifeless-doll-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2": {
     "dialogue": true,
@@ -8,7 +10,9 @@
     "noura": true
   },
   "a-generation-that-knows-everything-and-understands-nothing": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "a-generation-without-rootsarabic": {
     "dialogue": true,
@@ -26,7 +30,9 @@
     "noura": true
   },
   "aggression-in-the-sky-and-steadfastness-withinarabic": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "alternative-plans-for-distance-education": {
     "dialogue": true,
@@ -34,7 +40,9 @@
     "noura": true
   },
   "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "children-who-know-what-is-required-but-do-not-know-whyarabic": {
     "dialogue": true,
@@ -42,7 +50,9 @@
     "noura": true
   },
   "children-who-know-what-is-required-but-do-not-know-whyarabic-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "coming-soon-a-certificate-without-a-mind-2": {
     "dialogue": true,
@@ -55,7 +65,9 @@
     "noura": true
   },
   "do-we-contain-or-raise-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "dr-jasem-malik-the-lesson-that-never-ends-2": {
     "dialogue": true,
@@ -68,7 +80,9 @@
     "noura": true
   },
   "e-learning-initiatives-and-solutions-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "eliminating-the-education-epidemic": {
     "dialogue": true,
@@ -106,11 +120,14 @@
     "noura": true
   },
   "i-earned-more-than-harvard-but-it-doesnt-teach-brains": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "i-write-to-awaken-you-not-to-discourage-you-2": {
     "dialogue": true,
-    "fahed": true
+    "fahed": true,
+    "noura": true
   },
   "in-farewell-to-abdullah-ismail-al-kandariarabic": {
     "dialogue": true,
@@ -118,7 +135,9 @@
     "noura": true
   },
   "in-their-opinion-surgery-is-a-male-specialty-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "intelligence-without-a-consciencearabic": {
     "dialogue": true,
@@ -161,7 +180,9 @@
     "noura": true
   },
   "qabas-201611-003": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201611-004": {
     "dialogue": true,
@@ -175,10 +196,13 @@
   },
   "qabas-201612-001": {
     "dialogue": true,
+    "fahed": true,
     "noura": true
   },
   "qabas-201612-002": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201612-003": {
     "dialogue": true,
@@ -191,14 +215,19 @@
     "noura": true
   },
   "qabas-201702-001": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201702-002": {
     "dialogue": true,
-    "fahed": true
+    "fahed": true,
+    "noura": true
   },
   "qabas-201702-003": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201702-004": {
     "dialogue": true,
@@ -207,6 +236,7 @@
   },
   "qabas-201703-001": {
     "dialogue": true,
+    "fahed": true,
     "noura": true
   },
   "qabas-201703-002": {
@@ -220,7 +250,9 @@
     "noura": true
   },
   "qabas-201703-004": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201704-001": {
     "dialogue": true,
@@ -263,7 +295,9 @@
     "noura": true
   },
   "qabas-201707-001": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201707-002": {
     "dialogue": true,
@@ -271,10 +305,14 @@
     "noura": true
   },
   "qabas-201707-003": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201707-004": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201708-001": {
     "dialogue": true,
@@ -293,10 +331,13 @@
   },
   "qabas-201709-001": {
     "dialogue": true,
-    "fahed": true
+    "fahed": true,
+    "noura": true
   },
   "qabas-201709-002": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201709-003": {
     "dialogue": true,
@@ -310,10 +351,13 @@
   },
   "qabas-201709-005": {
     "dialogue": true,
+    "fahed": true,
     "noura": true
   },
   "qabas-201709-006": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201709-007": {
     "dialogue": true,
@@ -337,10 +381,13 @@
   },
   "qabas-201711-002": {
     "dialogue": true,
+    "fahed": true,
     "noura": true
   },
   "qabas-201711-003": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201711-004": {
     "dialogue": true,
@@ -348,13 +395,19 @@
     "noura": true
   },
   "qabas-201712-001": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201712-002": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201712-003": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201712-004": {
     "dialogue": true,
@@ -402,13 +455,19 @@
     "noura": true
   },
   "qabas-201805-001": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201805-002": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201805-003": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201805-004": {
     "dialogue": true,
@@ -416,7 +475,9 @@
     "noura": true
   },
   "qabas-201806-001": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201806-002": {
     "dialogue": true,
@@ -429,13 +490,19 @@
     "noura": true
   },
   "qabas-201806-004": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201806-005": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201807-001": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201808-001": {
     "dialogue": true,
@@ -448,10 +515,14 @@
     "noura": true
   },
   "qabas-201810-001": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201810-002": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "qabas-201810-003": {
     "dialogue": true,
@@ -484,13 +555,19 @@
     "noura": true
   },
   "rest-is-taught-and-the-mind-is-on-permanent-vacation-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "smartphone-child-a-creative-mind-or-a-child-being-driven": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "students-minds-are-on-vacation-while-chatgpt-works-full-time-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "success-that-does-not-bring-joy-to-its-ownerarabic": {
     "dialogue": true,
@@ -508,7 +585,9 @@
     "noura": true
   },
   "the-excellence-epidemic-or-the-cult-of-grades-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic": {
     "dialogue": true,
@@ -531,10 +610,14 @@
     "noura": true
   },
   "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "the-republic-of-degrees-and-the-fall-of-thought-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "the-return-that-fails-to-fix-what-came-before-itarabic": {
     "dialogue": true,
@@ -577,7 +660,9 @@
     "noura": true
   },
   "we-breastfeed-them-with-tenderness-and-deprive-them-of-education": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "we-graduated-with-a-degree-but-the-language-was-lost-2": {
     "dialogue": true,
@@ -590,7 +675,9 @@
     "noura": true
   },
   "we-prepare-our-children-for-success-and-leave-them-empty-handed-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "when-a-student-wishes-for-death-before-the-first-bell-2": {
     "dialogue": true,
@@ -598,7 +685,9 @@
     "noura": true
   },
   "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2": {
-    "dialogue": true
+    "dialogue": true,
+    "fahed": true,
+    "noura": true
   },
   "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m": {
     "dialogue": true,

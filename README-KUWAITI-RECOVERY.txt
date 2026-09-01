@@ -1,57 +1,33 @@
-KUWAITI RECOVERY — db52193 continuation
-===========================================
+KUWAITI PRODUCTION RECOVERY — 299d8f5+
+======================================
 
-Purpose
--------
-This bundle continues the exact recovery direction described before the cancelled account/session.
-It does NOT roll the site back and does NOT contain the full project.
+The protection is now part of the real production workflow; this is not an
+unapplied patch bundle.
 
-What it protects
-----------------
-1) StyleChecker:
-   The completed StyleChecker was uploaded at repository root while Admin imports
-   src/components/admin/StyleChecker. APPLY-LOCAL-FIXES.sh copies the completed file
-   byte-for-byte into the live path. No visual redesign is performed.
+Before any paid TTS request, the workflow:
 
-2) Published Kuwaiti dialogue ledger:
-   Git bot commits with the exact message:
-     "chore: publish verified Kuwaiti dialogue"
-   are treated as the publication certificate.
+1. checks out full Git history;
+2. restores only entries certified by GitHub Actions and still present on R2;
+3. quarantines a Kuwaiti MP3/JSON pair if R2 differs from its certificate;
+4. restores quality holds erased by a stale Google Studio upload;
+5. selects exactly one genuinely missing, non-held episode.
 
-   R2 is NOT a quality certificate.
-   R2 is used only to verify that the object still exists with the same byte count
-   as the certified bot entry.
+Manual local recovery (optional):
 
-   If R2 differs from the bot certificate, the entry is quarantined and is not
-   silently replaced or announced as published.
+  AUDIO_PUBLIC_BASE_URL='https://…r2.dev' bash APPLY-LOCAL-FIXES.sh
 
-3) Quality holds:
-   Holds erased by a stale human/Studio push are recovered from bot-owned history,
-   unless a newer verified publication exists for that slug.
+AI Studio may run `bash APPLY-LOCAL-FIXES.sh` without the URL: it will remove
+the two root shadows and run the offline self-tests, while keeping the repaired
+ledger files already included in this ZIP.
 
-4) Workflow history:
-   The production workflow is changed to checkout full git history (fetch-depth: 0)
-   because the historical certificate guard cannot work in a shallow clone.
+This command never commits or pushes. The doctor still uploads the reviewed
+ZIP through AI Studio.
 
-5) No paid generation first:
-   State recovery runs before episode selection, so previously completed or exhausted
-   episodes cannot be selected merely because an old ledger erased them.
+Repository cleanup included in the reviewed ZIP:
 
-Files in this ZIP
------------------
-APPLY-LOCAL-FIXES.sh
-scripts/repair-kuwaiti-production-state.mjs
-patches/podcast-kuwaiti-production-batch.patch
-README-KUWAITI-RECOVERY.txt
+- delete root Admin.tsx (the live file is src/pages/Admin.tsx)
+- delete root admin-navigation.ts (the live file is
+  src/components/admin/admin-navigation.ts)
 
-Important
----------
-- No GitHub write was performed while producing this bundle.
-- No commit and no push are performed by APPLY-LOCAL-FIXES.sh.
-- The repair script defaults to DRY RUN.
-- --apply writes only:
-    src/data/audio-meta.json
-    scripts/data/kuwaiti-production-quality-holds-v1.json
-    reports/kuwaiti-ledger-quarantine.json
-  and only after certificate/R2 checks.
-- Do not resume e-learning-culture-2 until the recovery dry-run is clean.
+scripts/clean-obsolete-root-files.mjs enforces the same rule before every build,
+so a future Studio upload cannot make the root shadows authoritative again.

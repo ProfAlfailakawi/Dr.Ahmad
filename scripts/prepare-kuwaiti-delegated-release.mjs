@@ -11,6 +11,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { verifyPackagedCandidate } from './run-kuwaiti-generation-queue.mjs'
+import { validateKuwaitiHumanVetoes } from './lib/kuwaiti-production-progress.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const IS_MAIN = Boolean(process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url))
@@ -50,6 +51,19 @@ export function delegatedDialectPolicy (audit) {
   return { ok: true, reason: '' }
 }
 
+export function delegatedReplacementPolicy ({ slug, existing, candidateAudioSha256, humanVetoes }) {
+  if (existing?.validationStatus !== 'verified-r2') return { ok: true, replacingHumanVeto: false, reason: '' }
+  validateKuwaitiHumanVetoes(humanVetoes)
+  const veto = humanVetoes.episodes.find((episode) => episode.slug === slug)
+  if (!veto || existing.sha256 !== veto.rejectedAudioSha256) {
+    return { ok: false, replacingHumanVeto: false, reason: 'النسخة المنشورة ليست بصمة رفض بشري معتمدة' }
+  }
+  if (candidateAudioSha256 === veto.rejectedAudioSha256) {
+    return { ok: false, replacingHumanVeto: false, reason: 'المرشح أعاد نفس الصوت الذي رفضه الدكتور' }
+  }
+  return { ok: true, replacingHumanVeto: true, reason: '' }
+}
+
 export function prepareDelegatedRelease ({ slug, packageDir, outputRoot = ROOT, minimumVoiceGap = 25 }) {
   if (!/^[a-z0-9-]+$/.test(slug)) throw new Error('slug غير صالح')
   const verified = verifyPackagedCandidate({ root: outputRoot, outputDir: packageDir, slug, minimumVoiceGap })
@@ -59,8 +73,18 @@ export function prepareDelegatedRelease ({ slug, packageDir, outputRoot = ROOT, 
 
   const publicMeta = readJson(resolve(outputRoot, 'src/data/audio-meta.json'), {}) || {}
   const existing = publicMeta[`${slug}.dialogue-kw.mp3`]
-  if (existing?.validationStatus === 'verified-r2') {
-    throw new Error(`${slug}: النسخة الكويتية منشورة أصلاً؛ ممنوع الكتابة فوقها بلا أمر استبدال مستقل`)
+  const humanVetoes = readJson(resolve(outputRoot, 'scripts/data/kuwaiti-production-human-vetoes-v1.json'), {
+    schemaVersion: 1, episodes: [],
+  })
+  const replacement = delegatedReplacementPolicy({
+    slug,
+    existing,
+    candidateAudioSha256: verified.audit.audioSha256,
+    humanVetoes,
+  })
+  if (!replacement.ok) throw new Error(`${slug}: النسخة الكويتية منشورة أصلاً؛ ${replacement.reason}`)
+  if (replacement.replacingHumanVeto) {
+    console.log(`✓ استبدال آمن: بصمة النسخة الحالية مرفوضة من الدكتور والمرشح الجديد مختلف`)
   }
 
   const audioDir = resolve(outputRoot, 'audio')
@@ -146,6 +170,27 @@ function selfTest () {
     mutate(audit)
     assert.equal(delegatedDialectPolicy(audit).ok, false, 'أي انزلاق لازم يوقف التفويض')
   }
+  const slug = 'human-veto-test'
+  const rejected = 'b'.repeat(64)
+  const humanVetoes = {
+    schemaVersion: 1,
+    episodes: [{
+      slug, status: 'human-veto', rejectedAudioSha256: rejected,
+      runId: 1, reason: 'test', rejectedAt: '2026-01-01T00:00:00.000Z',
+    }],
+  }
+  assert.equal(delegatedReplacementPolicy({
+    slug, existing: { validationStatus: 'verified-r2', sha256: rejected },
+    candidateAudioSha256: 'a'.repeat(64), humanVetoes,
+  }).replacingHumanVeto, true, 'رفض الدكتور يجب أن يفتح استبدالاً واحداً ببصمة جديدة')
+  assert.equal(delegatedReplacementPolicy({
+    slug, existing: { validationStatus: 'verified-r2', sha256: rejected },
+    candidateAudioSha256: rejected, humanVetoes,
+  }).ok, false, 'ممنوع إعادة نفس الصوت المرفوض')
+  assert.equal(delegatedReplacementPolicy({
+    slug, existing: { validationStatus: 'verified-r2', sha256: 'c'.repeat(64) },
+    candidateAudioSha256: 'a'.repeat(64), humanVetoes,
+  }).ok, false, 'ممنوع الكتابة فوق حلقة منشورة ليست المرفوضة')
   console.log('✓ التفويض الآلي محافظ: Same-Take + فهد ونورة + كويت مدينة + صفر drift/presenter')
 }
 

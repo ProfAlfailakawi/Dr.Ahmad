@@ -147,6 +147,8 @@ for (const lock of [
   "speaker?.dominant_register !== 'kuwait-city'",
   'speaker?.presenter_mode !== false',
   '(speaker?.drift_windows || []).length',
+  'rejectedAudioSha256',
+  'المرشح أعاد نفس الصوت الذي رفضه الدكتور',
 ]) assert.ok(delegated.includes(lock), `تفويض النشر فقد قفلاً: ${lock}`)
 
 const hosting = read('.github/workflows/firebase-hosting-live.yml')

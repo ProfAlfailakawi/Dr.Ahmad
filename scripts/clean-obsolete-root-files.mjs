@@ -5,6 +5,12 @@ import { basename, join, resolve } from 'node:path'
 // حذفها قبل كل بناء يلغي ازدواجية مصدر التطبيق ويمنع أدوات المزامنة من اختيار شجرة قديمة خارج src/.
 const obsolete = [
   'App.tsx',
+  // نسخٌ وضعتها Google Studio في الجذر مع أن TypeScript لا يبني إلا src/.
+  // التعديلات الحية نُقلت إلى مساراتها الصحيحة؛ إبقاء هذه النسخ يعيد تضليل
+  // أداة المزامنة في الرفع التالي فتعدل الشبح وتترك لوحة الإدارة الفعلية.
+  'Admin.tsx',
+  'StyleChecker.tsx',
+  'admin-navigation.ts',
   'ArticleDetail.tsx',
   'PaperDetail.tsx',
   'IdeaFeatures.tsx',

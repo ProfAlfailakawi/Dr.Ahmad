@@ -61,6 +61,10 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v6
+        with:
+          # حراس السجلّ يستعيدون شهادات النشر والتأجيل من تاريخ البوت. النسخة
+          # الضحلة ترى HEAD وحده، فتفشل الحماية بالضبط بعد رفع Google Studio قديم.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v6
         with:
@@ -75,9 +79,24 @@ jobs:
           python -m pip install --user awscli
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           npm run podcast:kw:self-test
+          node scripts/guard-kuwaiti-quality-holds-regression.mjs --self-test
           node scripts/prepare-kuwaiti-professional-gold.mjs --self-test
           node scripts/run-kuwaiti-generation-queue.mjs --self-test
           node scripts/prepare-kuwaiti-delegated-release.mjs --self-test
+
+      - name: Rebuild the immutable Kuwaiti ledgers before choosing or spending
+        shell: bash
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+        run: |
+          set -euo pipefail
+          [ -n "${AUDIO_PUBLIC_BASE_URL:-}" ] || { echo '::error::AUDIO_PUBLIC_BASE_URL مفقود؛ ممنوع اختيار حلقة من سجل غير مثبت.'; exit 1; }
+          # الترتيب مقصود: أولاً نعيد شهادات البوت مع بصماتها، ثم نلتقط أي
+          # نشرٍ انقطع قبل commit من R2، وبعدها نعيد التأجيل فقط لما بقي ناقصاً.
+          node scripts/guard-audio-meta-regression.mjs --apply
+          node scripts/reconcile-audio-meta.mjs --apply --kuwaiti-only
+          node scripts/guard-kuwaiti-quality-holds-regression.mjs --apply
 
       - name: Select a deterministic batch from all 143 site articles
         shell: bash

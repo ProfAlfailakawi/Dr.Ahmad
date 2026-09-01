@@ -26,9 +26,25 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const META = resolve(ROOT, 'src/data/audio-meta.json')
 const SELF_TEST = process.argv.includes('--self-test')
 const APPLY = process.argv.includes('--apply')
-/* كم دفعةً نرجع في تاريخ الملف. الارتداد يُكتشف خلال ساعات لا شهور، والنافذة
- * الضيّقة تمنع بعثَ صوتٍ صُفِّر عن قصدٍ قبل أسابيع وبقيت له بقيّةٌ على R2. */
-const LOOKBACK = Number(process.env.AUDIO_META_LOOKBACK || 40)
+/* نحتاج تاريخاً يغطي دورة الإنتاج كاملة، لا آخر بضعة أيام فقط. في أغسطس
+ * وحده تجاوزت دفعات الصوت الأربعين؛ نافذة 40 أخفت أقدم الحلقات عند رفع
+ * نسخة Google Studio قديمة. 240 تبقى صغيرة على Git، لكنها تغطي كل دفعات
+ * الصوت الحالية بهامش آمن. ولا يبعث الحارس شيئاً من التاريخ لمجرد وجوده:
+ * لا يقبل إلا شهادة بوت موثوقة، ثم يثبت أن الملف ما زال حياً على R2. */
+const LOOKBACK = Number(process.env.AUDIO_META_LOOKBACK || 240)
+
+const TRUSTED_LEDGER_SUBJECTS = new Set([
+  'chore: auto-publish verified audio ledger',
+  'chore: publish five owner-approved Kuwaiti dialogues',
+  'chore: publish locked manual podcast dialogue',
+  'chore: publish verified Kuwaiti dialogue',
+  'chore: نشر سجلّ حلقات مصنع الروح',
+])
+
+export function isTrustedLedgerCommit({ email = '', subject = '' } = {}) {
+  return /github-actions\[bot\]@users\.noreply\.github\.com$/u.test(String(email))
+    && TRUSTED_LEDGER_SUBJECTS.has(String(subject))
+}
 
 /** قرارُ مدخلٍ غاب عن السجلّ الحاليّ، بعد سؤال R2 عنه */
 export function decideMissing({ status, remoteBytes }) {
@@ -69,6 +85,18 @@ if (SELF_TEST) {
   t('والبصمة كذلك', built.sha256 === 'abc' && built.contentType === 'audio/mpeg')
   t('ولا يخترع حقولاً', Object.keys(rebuildEntry({ bytes: 1 }, 9)).join() === 'bytes')
   t('ويحتمل تاريخاً فارغاً', rebuildEntry(null, 9).bytes === 9)
+  t('★ دفعة النشر الكويتية الموثقة تدخل التاريخ', isTrustedLedgerCommit({
+    email: '41898282+github-actions[bot]@users.noreply.github.com',
+    subject: 'chore: publish verified Kuwaiti dialogue',
+  }))
+  t('★ رفع الإنسان لا يصير شهادة جودة ولو حمل نفس الملف', !isTrustedLedgerCommit({
+    email: 'owner@example.com',
+    subject: 'chore: publish verified Kuwaiti dialogue',
+  }))
+  t('★ دفعة بشرية عامة لا تُبعث منها أصوات محذوفة', !isTrustedLedgerCommit({
+    email: '41898282+github-actions[bot]@users.noreply.github.com',
+    subject: 'feat: add StoryboardAtlas to admin panel',
+  }))
 
   console.log(`✓ اختبارات حارس ارتداد سجلّ الصوت: ${pass}/${pass}`)
   process.exit(0)
@@ -98,10 +126,13 @@ const meta = JSON.parse(readFileSync(META, 'utf8'))
  */
 function historicalEntries() {
   const log = spawnSync('git', [
-    'log', `-n${LOOKBACK}`, '--format=%H', '--grep=auto-publish new audio to R2',
+    'log', `-n${LOOKBACK}`, '--format=%H%x09%ae%x09%s',
     '--', 'src/data/audio-meta.json',
   ], { cwd: ROOT, encoding: 'utf8' })
-  const shas = (log.stdout || '').split('\n').filter(Boolean)
+  const shas = (log.stdout || '').split('\n').filter(Boolean).map((line) => {
+    const [sha, email, ...subjectParts] = line.split('\t')
+    return { sha, email, subject: subjectParts.join('\t') }
+  }).filter(isTrustedLedgerCommit).map((row) => row.sha)
   const seen = new Map()
   for (const sha of shas) {
     // الأحدث أولاً، فأوّل وصفٍ نصادفه لاسمٍ هو آخر ما سُجِّل عنه.

@@ -1,6 +1,6 @@
 {
  "note": "خط أساس أعضاء الخطّ. النقصان فيه يعني أن ملفاً زال — والحذف المقصود يُعتمد هنا صراحةً، فلا يمرّ حذفٌ لم يره أحد.",
- "updated": "2026-08-31",
+ "updated": "2026-09-01",
  "guarded": [
   "scripts",
   "src/data/kuwaiti-*",
@@ -239,6 +239,7 @@
   "scripts/data/kuwaiti-approved-site-five-v1.json",
   "scripts/data/kuwaiti-gold-acoustic-reference.json",
   "scripts/data/kuwaiti-production-corpus-certificate-v1.json",
+  "scripts/data/kuwaiti-production-human-vetoes-v1.json",
   "scripts/data/kuwaiti-production-quality-holds-v1.json",
   "scripts/data/kuwaiti-professional-gold-v13.json",
   "scripts/defer-kuwaiti-production-quality-hold.sh",
@@ -375,6 +376,7 @@
   "scripts/record-kuwaiti-candidate.mjs",
   "scripts/refresh-academic-presence.mjs",
   "scripts/release-scheduled-content.mjs",
+  "scripts/repair-kuwaiti-production-state.mjs",
   "scripts/report-dialogue-status.mjs",
   "scripts/report-encyclopedia-gold-pass.mjs",
   "scripts/report-encyclopedia-transcripts.mjs",

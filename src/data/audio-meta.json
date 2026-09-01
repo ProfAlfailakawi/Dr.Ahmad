@@ -782,6 +782,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T14:45:00.000Z"
   },
+  "eliminating-the-education-epidemic.dialogue-kw.json": {
+    "bytes": 7995,
+    "sha256": "a43fc89ccf33543449ad82416e1d68a7b74fd1875d81ef165624a5bf202eeab8",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T09:09:42.720Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:09:42.720Z"
+  },
+  "eliminating-the-education-epidemic.dialogue-kw.mp3": {
+    "bytes": 1988685,
+    "sha256": "f880eabd9bf297621dc109ec284c8ba8541c928b39649d5b26a030281ab199e2",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T09:09:42.720Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:09:42.720Z",
+    "durationSeconds": 99
+  },
   "eliminating-the-education-epidemic.dialogue.json": {
     "bytes": 9433,
     "sha256": "41a5d5d07cf220f397c84192d53dc726f12421d2ab65f1599103f0957c079651",

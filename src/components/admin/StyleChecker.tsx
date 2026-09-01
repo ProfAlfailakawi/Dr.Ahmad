@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ArticleRecord } from '../../lib/cms'
+import { arabicCountPhrase, WORD_PLAIN_FORMS } from '../../lib/arabic-count'
 import {
   articleMetrics,
   buildOrthographyIndex,
@@ -56,7 +57,7 @@ function naturalnessOf(verdict: StyleVerdict | null) {
     + (1 - grade('longSentences')) * 7
     + Math.min(12, verdict.metrics.duplicateGramRate * 2)
   const score = clamp(100 - penalty)
-  if (score >= 86) return { score, label: 'طبيعي أسلوبيًا', note: 'لا تظهر في البنية علامات آلية بارزة.' }
+  if (score >= 86) return { score, label: 'طبيعي أسلوبياً', note: 'لا تظهر في البنية علامات آلية بارزة.' }
   if (score >= 68) return { score, label: 'يحتاج لمسة بشرية', note: 'هناك انتظام أو صياغات تستحق المراجعة.' }
   return { score, label: 'آثار صياغة آلية', note: 'العبارات أو التكرار أو القالب أوضح من صوتك.' }
 }
@@ -133,7 +134,7 @@ function buildGeminiPrompt(title: string, body: string, verdict: StyleVerdict, i
     'نتيجة الفحص الحالي:',
     report,
     '',
-    'المواضع التي تحتاج تعديلًا:',
+    'المواضع التي تحتاج تعديلاً:',
     located,
     '',
     `العنوان: ${title.trim() || 'بلا عنوان'}`,
@@ -202,7 +203,7 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
       .slice(0, 3)
       .map((item) => ({
         sentence: sentencesOf(item.paragraph)[0] || item.paragraph.slice(0, 180),
-        reason: `${item.words} كلمة في فقرة واحدة؛ قسّمها عند انتقال الفكرة، والمعتاد ألا تتجاوز ${paragraphCeiling} تقريبًا.`,
+        reason: `${arabicCountPhrase(item.words, WORD_PLAIN_FORMS, (v) => v.toLocaleString('ar-EG'))} في فقرة واحدة؛ قسّمها عند انتقال الفكرة، والمعتاد ألا تتجاوز ${paragraphCeiling} تقريباً.`,
         kind: 'paragraph',
         paragraph: item.index + 1,
       }))
@@ -239,7 +240,7 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
     if (!body.trim()) return
     const polished = refineToStyle(body, dna)
     setBody(polished)
-    setNotice(polished === body ? 'النص مضبوط ترقيميًا بالفعل.' : 'صُقلت العلامات والإيقاع محليًا من دون إضافة أفكار.')
+    setNotice(polished === body ? 'النص مضبوط ترقيمياً بالفعل.' : 'صُقلت العلامات والإيقاع محلياً من دون إضافة أفكار.')
   }
 
   const clearDraft = () => {
@@ -267,11 +268,11 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
         <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="max-w-3xl">
             <p className="text-[.7rem] font-semibold text-white/60">فاحص الأسلوب الشخصي</p>
-            <h2 className="mt-2 font-display text-2xl font-semibold leading-snug sm:text-3xl">هل يبدو هذا المقال منك فعلًا؟</h2>
-            <p className="mt-3 max-w-2xl text-[.82rem] leading-[1.9] text-white/70">مسطرة محلية تقارن الإيقاع والجمل والفقرات واللغة ببصمة أرشيفك، ثم تشير إلى موضع التعديل بدل أن تعطيك رقمًا مبهمًا.</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold leading-snug sm:text-3xl">هل يبدو هذا المقال منك فعلاً؟</h2>
+            <p className="mt-3 max-w-2xl text-[.82rem] leading-[1.9] text-white/70">مسطرة محلية تقارن الإيقاع والجمل والفقرات واللغة ببصمة أرشيفك، ثم تشير إلى موضع التعديل بدل أن تعطيك رقماً مبهماً.</p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="border-r border-white/15 pr-3"><strong className="block font-display text-2xl">{dna?.sampleSize || archive.length}</strong><span className="text-[.62rem] text-white/55">مقالًا في البصمة</span></div>
+            <div className="border-r border-white/15 pr-3"><strong className="block font-display text-2xl">{dna?.sampleSize || archive.length}</strong><span className="text-[.62rem] text-white/55">مقالاً في البصمة</span></div>
             <div className="border-r border-white/15 pr-3"><strong className="block font-display text-2xl">{dna?.totalWords.toLocaleString('ar-EG') || '—'}</strong><span className="text-[.62rem] text-white/55">كلمة مرجعية</span></div>
             <div className="pr-3"><strong className="block font-display text-2xl">محلي</strong><span className="text-[.62rem] text-white/55">بلا إرسال النص</span></div>
           </div>
@@ -297,12 +298,12 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
             <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="اكتب العنوان هنا" className="w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/50 focus:border-accent" />
           </label>
           <label className="mt-4 block">
-            <span className="mb-2 flex items-center justify-between gap-3 text-[.7rem] font-semibold text-soft"><span>نص المقال</span><span>{words.toLocaleString('ar-EG')} كلمة</span></span>
+            <span className="mb-2 flex items-center justify-between gap-3 text-[.7rem] font-semibold text-soft"><span>نص المقال</span><span>{arabicCountPhrase(words, WORD_PLAIN_FORMS, (v) => v.toLocaleString('ar-EG'))}</span></span>
             <textarea
               value={body}
               onChange={(event) => setBody(event.target.value)}
               placeholder="الصق المقال هنا… يبدأ القياس بعد 40 كلمة."
-              className="min-h-[520px] w-full resize-y rounded-xl border border-hair bg-canvas px-4 py-4 text-[.94rem] leading-[2.05] text-ink outline-none transition-colors placeholder:text-soft/45 focus:border-accent"
+              className="min-h-[520px] w-full resize-y rounded-xl border border-hair bg-canvas px-4 py-4 text-[.94rem] leading-[2.05] text-ink outline-none transition-colors placeholder:text-soft/[.45] focus:border-accent"
             />
           </label>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -350,7 +351,7 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
             <section className={card}>
               <p className="text-[.7rem] font-semibold text-accent">نسخ وتسليم</p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                <button type="button" className={primary} onClick={() => void copy(buildGeminiPrompt(title, body, verdict, issues, dna), 'نُسخ طلب جيمناي كاملًا.')}>نسخ طلب جيمناي</button>
+                <button type="button" className={primary} onClick={() => void copy(buildGeminiPrompt(title, body, verdict, issues, dna), 'نُسخ طلب جيمناي كاملاً.')}>نسخ طلب جيمناي</button>
                 <button type="button" className={ghost} onClick={() => void copy(reportText, 'نُسخ تقرير الفحص.')}>نسخ التقرير فقط</button>
               </div>
             </section>
@@ -403,7 +404,7 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
           <section className={card}>
             <div className="flex items-end justify-between gap-3">
               <div><p className="text-[.7rem] font-semibold text-accent">الأولوية</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">ابدأ بأضعف الفروق.</h3></div>
-              <span className="text-[.65rem] text-soft">الأكثر أثرًا أولًا</span>
+              <span className="text-[.65rem] text-soft">الأكثر أثراً أولاً</span>
             </div>
             <div className="mt-4 grid gap-3">
               {weakest.length ? weakest.map((check) => <CheckRow key={check.key} check={check} />) : <div className={`${inset} px-4 py-8 text-center text-[.78rem] text-soft`}>كل المقاييس الأساسية داخل مداك.</div>}

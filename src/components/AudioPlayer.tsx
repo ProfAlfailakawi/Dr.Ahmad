@@ -233,10 +233,11 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
         if (remembered && sources.some((item) => item.key === remembered)) return remembered
       } catch { /* التخزين اختياري */ }
     }
-    if (sources.length > 0 && sources.every((item) => item.avatar === 'dialogue')) {
-      const dialoguePreferred = dialogueVariantKey(dialogueVariantPreference())
-      if (sources.some((item) => item.key === dialoguePreferred)) return dialoguePreferred
-    }
+    const dialoguePreferred = dialogueVariantKey(dialogueVariantPreference())
+    if (dialoguePreferred === 'dialogue-kuwaiti'
+      && sources.some((item) => item.key === dialoguePreferred)) return dialoguePreferred
+    if (sources.length > 0 && sources.every((item) => item.avatar === 'dialogue')
+      && sources.some((item) => item.key === dialoguePreferred)) return dialoguePreferred
     return sources.find((item) => item.avatar === 'man')?.key ?? sources[0]?.key ?? ''
   })
   const [expanded, setExpanded] = useState(false)
@@ -544,21 +545,24 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
               </button>
             )}
             {/* مصدرٌ واحد لا يُختار: شارةٌ وحيدة تُضغط فلا يتغيّر شيء زحمةٌ لا خيار. */}
-            {sources.length > 1 && sources.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => choose(item.key)}
-                aria-pressed={source.key === item.key}
-                aria-label={item.key === 'dialogue' ? item.label : ((item as { avatar?: string }).avatar === 'woman' ? 'القراءة بالصوت النسائي' : 'القراءة بالصوت الرجالي')}
-                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[.72rem] font-semibold transition-colors ${source.key === item.key ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
-              >
-                <AudioWave dialogue={item.key === 'dialogue'} size={16} />
-                {item.key === 'dialogue'
-                  ? null
-                  : <VoiceFigure kind={(item as { avatar?: 'man' | 'woman' }).avatar === 'woman' ? 'woman' : 'man'} size={17} />}
-              </button>
-            ))}
+            {sources.length > 1 && sources.map((item) => {
+              const dialogueChoice = item.avatar === 'dialogue'
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => choose(item.key)}
+                  aria-pressed={source.key === item.key}
+                  aria-label={dialogueChoice ? item.label : ((item as { avatar?: string }).avatar === 'woman' ? 'القراءة بالصوت النسائي' : 'القراءة بالصوت الرجالي')}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[.72rem] font-semibold transition-colors ${source.key === item.key ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+                >
+                  <AudioWave dialogue={dialogueChoice} size={16} />
+                  {dialogueChoice
+                    ? <span>{item.label}</span>
+                    : <VoiceFigure kind={(item as { avatar?: 'man' | 'woman' }).avatar === 'woman' ? 'woman' : 'man'} size={17} />}
+                </button>
+              )
+            })}
           </div>
 
 

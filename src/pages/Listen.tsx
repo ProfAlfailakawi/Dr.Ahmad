@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
@@ -12,6 +12,8 @@ import { PodcastPlatforms } from '../components/PodcastPlatforms'
 import { type ListenEpisode } from '../lib/listen-catalog'
 import { listenEpisodes } from '../lib/listen-episodes'
 import { SocialIcon } from '../components/icons'
+import kuwaitiSchedule from '../data/radio-schedule-kw.json'
+import { dialogueVariantKey, dialogueVariantPreference, rememberDialogueVariant, type DialogueAudioVariant } from '../lib/dialogue-variant'
 
 /* ═══════════ مجلس الفكرة ═══════════
    الأرشيف المسموع لا يُفهرَس بعناوينه. كلُّ حلقةٍ هنا يمثّلها سؤالٌ نطقه فهد أو
@@ -21,6 +23,10 @@ import { SocialIcon } from '../components/icons'
 type Episode = ListenEpisode
 
 const EPISODES = listenEpisodes
+const KUWAITI_ITEMS = (kuwaitiSchedule as { items: { slug: string; dur: number }[] }).items
+const KUWAITI_SLUGS = new Set(KUWAITI_ITEMS.map((item) => item.slug))
+const KUWAITI_DURATIONS = new Map(KUWAITI_ITEMS.map((item) => [item.slug, item.dur]))
+const KUWAITI_AVAILABLE = KUWAITI_SLUGS.size > 0
 
 /* أرقامٌ غربية عمداً: قانون الموقع كلّه (WesternDigitsGuard في App.tsx) يحوّل
    الأرقام الهندية إلى غربية في كل نصّ، فكتابتها هندية هنا تعني تحويلاً في كل
@@ -31,19 +37,6 @@ const clock = (seconds: number) => {
 }
 const episodeSrc = (slug: string) => versionedAudioUrl(`/audio/${slug}.dialogue.mp3`)
 const episodeKwSrc = (slug: string) => versionedAudioUrl(`/audio/${slug}.dialogue-kw.mp3`)
-
-async function hasKuwaitiEpisode(slug: string) {
-  const url = episodeKwSrc(slug)
-  try {
-    const response = await fetch(url, { method: 'HEAD', cache: 'no-store' })
-    const type = (response.headers.get('content-type') || '').toLowerCase()
-    if (response.ok && !type.includes('text/html')) return true
-  } catch { /* Range fallback */ }
-  try {
-    const response = await fetch(url, { headers: { Range: 'bytes=0-0' }, cache: 'no-store' })
-    return response.ok && !(response.headers.get('content-type') || '').toLowerCase().includes('text/html')
-  } catch { return false }
-}
 
 /* العصور تُشتقّ من الأرشيف نفسه لا من قائمةٍ مكتوبة بيدنا: نقطة الانقسام هي
    أوسع فجوةٍ بين سنتين متتاليتين. فإن كتب الدكتور بلا انقطاع لم ينقسم شيء. */
@@ -73,20 +66,14 @@ function splitEras(episodes: Episode[]) {
   ].filter((era) => era.items.length)
 }
 
-function QuestionRow({ episode, playing, expanded, onOpen }: {
+function QuestionRow({ episode, playing, expanded, kuwaitiReady, onOpen }: {
   episode: Episode
   playing: boolean
   expanded: boolean
+  kuwaitiReady: boolean
   onOpen: (episode: Episode) => void
 }) {
   const reduce = useReducedMotion()
-  const [kuwaitiReady, setKuwaitiReady] = useState(false)
-  useEffect(() => {
-    let alive = true
-    if (!expanded) return () => { alive = false }
-    void hasKuwaitiEpisode(episode.slug).then((ready) => { if (alive) setKuwaitiReady(ready) })
-    return () => { alive = false }
-  }, [episode.slug, expanded])
   return (
     <li
       data-majlis-slug={episode.slug}
@@ -165,23 +152,31 @@ export default function Listen() {
     description: 'حلقات حوارية مسموعة من مقالات د. أحمد حسين الفيلكاوي.',
   })
   const player = usePersistentAudio()
+  const [variant, setVariant] = useState<DialogueAudioVariant>(() =>
+    KUWAITI_AVAILABLE ? dialogueVariantPreference() : 'standard')
   const [term, setTerm] = useState('')
   const [cat, setCat] = useState('الكل')
   /* صفٌّ واحد مفتوح لا أكثر: مشغّلان مفتوحان في صفحةٍ واحدة زحمة. */
   const [openSlug, setOpenSlug] = useState('')
 
+  const catalog = useMemo(() => variant === 'kuwaiti'
+    ? EPISODES
+      .filter((episode) => KUWAITI_SLUGS.has(episode.slug))
+      .map((episode) => ({ ...episode, durationSec: KUWAITI_DURATIONS.get(episode.slug) || episode.durationSec }))
+    : EPISODES, [variant])
+
   const categories = useMemo(() => {
-    const found = [...new Set(EPISODES.map((episode) => episode.cat).filter(Boolean))]
+    const found = [...new Set(catalog.map((episode) => episode.cat).filter(Boolean))]
       .sort((left, right) => left.localeCompare(right, 'ar'))
     return ['الكل', ...found]
-  }, [])
+  }, [catalog])
 
   const filtered = useMemo(() => {
     const needle = term.trim()
-    return EPISODES
+    return catalog
       .filter((episode) => (cat === 'الكل' ? true : episode.cat === cat))
       .filter((episode) => (needle ? `${episode.question} ${episode.title}`.includes(needle) : true))
-  }, [cat, term])
+  }, [cat, catalog, term])
 
   const paged = usePagedList(filtered, 20, `${cat}|${term}`)
   const eras = useMemo(() => splitEras(paged.pageItems), [paged.pageItems])
@@ -192,12 +187,12 @@ export default function Listen() {
   const chainFrom = (start: number, resumeFirst = false): PersistentTrack | undefined => {
     const episode = filtered[start]
     if (!episode) return undefined
-    const src = episodeSrc(episode.slug)
+    const src = variant === 'kuwaiti' ? episodeKwSrc(episode.slug) : episodeSrc(episode.slug)
     return {
       id: src,
       src,
       title: episode.title,
-      label: 'مجلس الفكرة',
+      label: variant === 'kuwaiti' ? 'مجلس الفكرة · كويتي' : 'مجلس الفكرة · العربية الفصحى',
       path: `/articles/${episode.slug}`,
       /* كل حلقةٍ تالية تبدأ من الصفر. الاستئناف استثناءٌ للحلقة الأولى فقط
          عندما يضغط الزائر «افتح المجلس» ليستكمل ما تركه. */
@@ -220,7 +215,7 @@ export default function Listen() {
     void player.playTrack(track)
     /* المشغّل يُركَّب من الصف نفسه ثم يتمدّد؛ لا قفزة إلى سطح منفصل. */
     window.requestAnimationFrame(() => {
-      openAudioPlayer(`majlis-${episode.slug}`, 'dialogue')
+      openAudioPlayer(`majlis-${episode.slug}`, dialogueVariantKey(variant))
       const row = document.querySelector<HTMLElement>(`[data-majlis-slug="${CSS.escape(episode.slug)}"]`)
       if (!row) return
       const rect = row.getBoundingClientRect()
@@ -230,22 +225,29 @@ export default function Listen() {
 
   /* «افتح المجلس»: يستأنف آخر حلقةٍ سمعها من موضعها المحفوظ، وإلا بدأ بأحدثها.
      بلا اختيارٍ ولا قرار — يضغط فيمشي الأرشيف. */
-  const resumeRef = useRef<Episode | null>(null)
-  if (!resumeRef.current) {
+  const resume = useMemo(() => {
     let candidate: Episode | null = null
     if (typeof window !== 'undefined') {
-      for (const episode of EPISODES) {
+      for (const episode of catalog) {
         try {
-          const saved = Number(window.localStorage.getItem(`audio:pos:${episodeSrc(episode.slug)}`) || 0)
+          const src = variant === 'kuwaiti' ? episodeKwSrc(episode.slug) : episodeSrc(episode.slug)
+          const saved = Number(window.localStorage.getItem(`audio:pos:${src}`) || 0)
           if (saved > 20 && saved < episode.durationSec - 15) { candidate = episode; break }
         } catch { /* التخزين اختياري */ }
       }
     }
-    resumeRef.current = candidate || EPISODES[0] || null
-  }
-  const resume = resumeRef.current
+    return candidate || catalog[0] || null
+  }, [catalog, variant])
   const resumeIsContinuation = Boolean(resume && typeof window !== 'undefined'
-    && Number(window.localStorage.getItem(`audio:pos:${episodeSrc(resume.slug)}`) || 0) > 20)
+    && Number(window.localStorage.getItem(`audio:pos:${variant === 'kuwaiti' ? episodeKwSrc(resume.slug) : episodeSrc(resume.slug)}`) || 0) > 20)
+
+  const chooseVariant = (next: DialogueAudioVariant) => {
+    if (next === 'kuwaiti' && !KUWAITI_AVAILABLE) return
+    rememberDialogueVariant(next)
+    setVariant(next)
+    setCat('الكل')
+    setOpenSlug('')
+  }
 
   if (!EPISODES.length) {
     return (
@@ -298,7 +300,14 @@ export default function Listen() {
             />
             <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft"><SocialIcon name="Search" size={17} /></span>
           </div>
-          <div className="listen-filter-tabs flex flex-wrap items-center gap-2 pb-1 lg:pb-0" role="group" aria-label="تصفية أسئلة المجلس">
+          <div className="listen-filter-tabs flex flex-wrap items-center gap-2 pb-1 lg:pb-0">
+            {KUWAITI_AVAILABLE && (
+              <div className="me-1 flex items-center gap-1 rounded-full border border-accent/[.28] bg-accent/[.04] p-1" role="group" aria-label="لهجة مجلس الفكرة">
+                <button type="button" onClick={() => chooseVariant('kuwaiti')} aria-pressed={variant === 'kuwaiti'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'kuwaiti' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>كويتي · {KUWAITI_SLUGS.size}</button>
+                <button type="button" onClick={() => chooseVariant('standard')} aria-pressed={variant === 'standard'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'standard' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>فصحى</button>
+              </div>
+            )}
+            <div className="contents" role="group" aria-label="تصفية أسئلة المجلس">
             {categories.map((item) => (
               <button
                 key={item}
@@ -310,6 +319,7 @@ export default function Listen() {
                 {item === 'الكل' ? 'الكل' : categoryLabel(item)}
               </button>
             ))}
+            </div>
           </div>
         </div>
       </section>
@@ -333,6 +343,7 @@ export default function Listen() {
                   episode={episode}
                   playing={player.isActive(episodeSrc(episode.slug)) || player.isActive(episodeKwSrc(episode.slug))}
                   expanded={openSlug === episode.slug}
+                  kuwaitiReady={KUWAITI_SLUGS.has(episode.slug)}
                   onOpen={open}
                 />
               ))}

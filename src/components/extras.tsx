@@ -568,9 +568,15 @@ const audioUrl = (path: string) => audioBase ? `${audioBase}/${path.replace(/^\/
    المؤقت. واستيرادها ثابتاً كان يُركِبها حزمةَ الدخول كاملةً فتتجاوز السقف.
    تُجلب الآن كسولاً: الرابط الأول قد يخرج بلا بصمة — والملف يعمل كما هو —
    ثم تكتمل. ولا يرى الزائر فرقاً. */
-let audioMetaMap: Record<string, { sha256?: string }> = {}
-void import('../data/audio-meta.json').then((loaded) => {
-  audioMetaMap = ((loaded as { default?: unknown }).default ?? loaded) as Record<string, { sha256?: string }>
+type AudioMetaEntry = {
+  sha256?: string
+  bytes?: number
+  validationStatus?: string
+}
+let audioMetaMap: Record<string, AudioMetaEntry> = {}
+const audioMetaReady = import('../data/audio-meta.json').then((loaded) => {
+  audioMetaMap = ((loaded as { default?: unknown }).default ?? loaded) as Record<string, AudioMetaEntry>
+  return audioMetaMap
 })
 /* مُصدَّرة كي يستعملها «مجلس الفكرة» بالقانون نفسه: عنوانٌ واحد للصوت في
    الموقع كله، وبصمةٌ واحدة تكسر التخزين المؤقت عند تغيّر الملف. */
@@ -582,9 +588,18 @@ export const versionedAudioUrl = (path: string) => {
   return `${raw}${raw.includes('?') ? '&' : '?'}v=${version}`
 }
 
-async function hasDialogueAudio(slug: string, disabled = false, variant: 'standard' | 'kuwaiti' = 'standard') {
+export async function hasDialogueAudio(slug: string, disabled = false, variant: 'standard' | 'kuwaiti' = 'standard') {
   if (disabled) return false
   const suffix = variant === 'kuwaiti' ? '.dialogue-kw.mp3' : '.dialogue.mp3'
+  const file = `${slug}${suffix}`
+  /* سجل النشر هو الإثبات الأساسي. كانت الواجهة تفحص R2 بـ HEAD/Range من
+     المتصفح، لكن نطاق R2 العام لا يعلن CORS؛ فيفشل الفحص بصمت رغم أن الملف
+     منشور وسليم. لا نربط ظهور النسخة الكويتية بطلبٍ شبكيٍّ عابر بعد اليوم. */
+  const meta = (await audioMetaReady)[file]
+  if (meta?.validationStatus === 'verified-r2'
+    && /^[a-f0-9]{64}$/i.test(meta.sha256 || '')
+    && Number(meta.bytes || 0) > 0) return true
+
   const path = versionedAudioUrl(`/audio/${slug}${suffix}`)
   try {
     const response = await fetch(path, { method: 'HEAD', cache: 'no-store' })
@@ -648,7 +663,7 @@ export function Listen({ slug, title, text, audio, audioControl, compact = false
   const sources = [
     ...readingSources,
     // نصّ الحلقة يسير مع صوتها: منه المحاور القابلة للنقر والسطر المتوهّج.
-    ...(dialogueOk ? [{ key: 'dialogue', label: 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue.json`), startAt: momentSeconds || undefined }] : []),
+    ...(dialogueOk ? [{ key: 'dialogue', label: kuwaitiDialogueOk ? 'فصحى' : 'استمع', avatar: 'dialogue' as const, src: versionedAudioUrl(typeof voices.dialogue === 'string' ? voices.dialogue : `/audio/${slug}.dialogue.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue.json`), startAt: momentSeconds || undefined }] : []),
     ...(kuwaitiDialogueOk ? [{ key: 'dialogue-kuwaiti', label: 'كويتي', avatar: 'dialogue' as const, src: versionedAudioUrl(`/audio/${slug}.dialogue-kw.mp3`), transcript: versionedAudioUrl(`/audio/${slug}.dialogue-kw.json`) }] : []),
   ]
   const [ttsOn, setTtsOn] = useState(false)

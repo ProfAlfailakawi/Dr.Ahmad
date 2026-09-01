@@ -3,9 +3,9 @@ export type DialogueAudioVariant = 'standard' | 'kuwaiti'
 const KEY = 'dialogue-audio-variant-v1'
 
 export function dialogueVariantPreference(): DialogueAudioVariant {
-  if (typeof window === 'undefined') return 'standard'
-  try { return window.localStorage.getItem(KEY) === 'kuwaiti' ? 'kuwaiti' : 'standard' }
-  catch { return 'standard' }
+  if (typeof window === 'undefined') return 'kuwaiti'
+  try { return window.localStorage.getItem(KEY) === 'standard' ? 'standard' : 'kuwaiti' }
+  catch { return 'kuwaiti' }
 }
 
 export function rememberDialogueVariant(variant: DialogueAudioVariant) {

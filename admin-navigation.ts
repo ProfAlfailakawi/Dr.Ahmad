@@ -8,6 +8,7 @@ export type AdminTab =
   | 'social-posts'
   | 'design'
   | 'tweets'
+  | 'storyboard-atlas'
   | 'image-lab'
   | 'launch'
   | 'event'
@@ -85,6 +86,9 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
           { tab: 'social-posts', label: 'تغريدات ومنشورات', note: 'اكتب الموضوع فقط — وتخرج لك صيغ كل منصة' },
           { tab: 'design', label: 'استوديو التصاميم', note: 'التصميم والتوليد ومكتبة الأصول' },
           { tab: 'tweets', label: 'استوديو التغريدات', note: 'تغريداتٌ من أرشيفك، ثم تصميمها بنقرة' },
+          /* أطلس القصص البصرية: يرتّب كامل الأرشيف حسب إمكانيته البصرية ويفتح كل
+             مادةٍ في «المخرج الحي» الموجود — طبقةٌ فوقه لا تكرارٌ له. */
+          { tab: 'storyboard-atlas', label: 'أطلس القصص البصرية', note: 'رتّب أرشيفك بصرياً، وافتح أي مادة في المخرج الحي بنقرة' },
         ],
       },
       {

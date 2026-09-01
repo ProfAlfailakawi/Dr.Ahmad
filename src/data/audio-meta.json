@@ -501,21 +501,21 @@
     "verifiedAt": "2026-07-27T19:37:48.351Z"
   },
   "coming-soon-a-certificate-without-a-mind-2.dialogue-kw.json": {
-    "bytes": 8027,
-    "sha256": "253079a8ebba00f187c0a2990bbdb2b27dfed1f6a8efe65c1dd5fbc2026f2de8",
+    "bytes": 8043,
+    "sha256": "a3c4076064b2a6f7a1d1da7fefcda7fd6cb5982943bd41ddd6940894c9c88c52",
     "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-01T16:00:10.904Z",
+    "publishedAt": "2026-08-31T22:16:08.057Z",
     "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-01T16:00:10.904Z"
+    "verifiedAt": "2026-08-31T22:16:08.057Z"
   },
   "coming-soon-a-certificate-without-a-mind-2.dialogue-kw.mp3": {
-    "bytes": 1978125,
-    "sha256": "c5eb55fa0655ab88fbea4b3bacfdcadebafb42d9fc5b54ed84420391cd4702ea",
+    "bytes": 2201805,
+    "sha256": "b06398ee7019d1760158069a037cdad8615e05563a720b1a86fece9a3db6083c",
     "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-01T16:00:10.904Z",
+    "publishedAt": "2026-08-31T22:16:08.057Z",
     "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-01T16:00:10.904Z",
-    "durationSeconds": 99
+    "verifiedAt": "2026-08-31T22:16:08.057Z",
+    "durationSeconds": 110
   },
   "coming-soon-a-certificate-without-a-mind-2.dialogue.json": {
     "bytes": 9681,
@@ -640,23 +640,6 @@
     "publishedAt": "2026-08-07T14:45:00.000Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T14:45:00.000Z"
-  },
-  "dr-jasem-malik-the-lesson-that-never-ends-2.dialogue-kw.json": {
-    "bytes": 8648,
-    "sha256": "4425cf630d2c9487f0482c557a10f648fea7e41a92ab6a637a64c1e125896a3d",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-01T16:02:11.827Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-01T16:02:11.827Z"
-  },
-  "dr-jasem-malik-the-lesson-that-never-ends-2.dialogue-kw.mp3": {
-    "bytes": 2032365,
-    "sha256": "903c13097afcab5c5533f53f12fe8e989ce7645f2e03285c1543d14ecd2793f4",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-01T16:02:11.827Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-01T16:02:11.827Z",
-    "durationSeconds": 102
   },
   "dr-jasem-malik-the-lesson-that-never-ends-2.dialogue.json": {
     "bytes": 9196,

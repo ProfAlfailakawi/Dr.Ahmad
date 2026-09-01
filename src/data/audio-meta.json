@@ -2188,6 +2188,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T14:45:00.000Z"
   },
+  "qabas-201702-002.dialogue-kw.json": {
+    "bytes": 9221,
+    "sha256": "f5b28d37a47bf04d7afb6ee94a11c80963de3458c817df922057c1eee3b899bd",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T15:08:59.242Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T15:08:59.242Z"
+  },
+  "qabas-201702-002.dialogue-kw.mp3": {
+    "bytes": 1948845,
+    "sha256": "56cb799566323e171cf71fd50a54668fe1a79d87f8f3d42d27f5381b801bd6ad",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T15:08:59.242Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T15:08:59.242Z",
+    "durationSeconds": 97
+  },
   "qabas-201702-002.dialogue.json": {
     "bytes": 9100,
     "sha256": "5eeead25d8fc369d0622866e3d8f6f3bda53c04b99ddfab2768452730d5472e2",

@@ -21,9 +21,10 @@ function buildProgress() {
   const audioMeta = JSON.parse(read('src/data/audio-meta.json'))
   const site = new Set(Object.keys(JSON.parse(read('src/data/bodies.json'))))
   const qualityHolds = JSON.parse(read('scripts/data/kuwaiti-production-quality-holds-v1.json'))
+  const humanVetoes = JSON.parse(read('scripts/data/kuwaiti-production-human-vetoes-v1.json'))
   const slugs = Object.keys(v3.episodes || {}).filter((slug) => site.has(slug))
   assert.equal(slugs.length, 143, `عقد الإنتاج يقول 143 مقالا؛ الموجود ${slugs.length}`)
-  return getKuwaitiProductionProgress({ slugs, audioMeta, qualityHolds })
+  return getKuwaitiProductionProgress({ slugs, audioMeta, qualityHolds, humanVetoes })
 }
 
 if (argv.includes('--self-test')) {

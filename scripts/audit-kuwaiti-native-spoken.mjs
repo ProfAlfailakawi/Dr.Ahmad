@@ -36,6 +36,13 @@ if (SELF_TEST) {
   ])
   assert.equal(earUnsafe.hard.filter((finding) => finding.label === 'تركيب سمعي مرفوض').length, 2,
     '«ما نختبرو» و«نصفق طويل» يسقطان قبل أي صرف صوتي')
+  const articleSplitAcrossVoices = auditNativeSpokenTurns([
+    { text: 'والنص يقترح اختبار بسيط.', deliveryType: 'statement' },
+    { text: 'إحنا نكرر أوراق مطبوعة.', deliveryType: 'conclusion' },
+    { text: 'والمقال يذكر شاهد على هالشي.', deliveryType: 'statement' },
+  ])
+  assert.equal(articleSplitAcrossVoices.hard.filter((finding) => finding.label === 'لغة مقالة موزعة على صوتين').length, 3,
+    'المقال المقسوم على صوتين لا يمر لمجرد أن الكلمات خليجية')
   const fixed = optimizeNativeSpokenEpisode([
     { text: 'وفي دراسة نشرتها جهة علمية، طلع فرق واضح.', deliveryType: 'statement' },
   ])
@@ -228,7 +235,7 @@ if (SELF_TEST) {
     'قراءة أوكتاف شاذة لدور مفرد لا تحرق Take ثابت المقاطع والرنين')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
     'بوابة الرنين تمسك نفس preset لما يصير مو نفس الإنسان')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 36/36')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 38/38')
   process.exit(0)
 }
 

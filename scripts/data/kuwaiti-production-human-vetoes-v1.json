@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "episodes": [
+    {
+      "slug": "coming-soon-a-certificate-without-a-mind-2",
+      "status": "human-veto",
+      "rejectedAudioSha256": "b06398ee7019d1760158069a037cdad8615e05563a720b1a86fece9a3db6083c",
+      "runId": 33444823235,
+      "runNumber": 39,
+      "reason": "لغة مقالية موزعة على صوتين؛ اللهجة والصوت ناجحان لكن الكلام غير طبيعي",
+      "rejectedAt": "2026-09-01T00:00:00.000Z"
+    }
+  ]
+}

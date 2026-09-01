@@ -11,6 +11,7 @@ const readJson = (path) => JSON.parse(readFileSync(resolve(ROOT, path), 'utf8'))
 const v3 = readJson('src/data/kuwaiti-diwania-v3.json')
 const audioMeta = readJson('src/data/audio-meta.json')
 const qualityHolds = readJson('scripts/data/kuwaiti-production-quality-holds-v1.json')
+const humanVetoes = readJson('scripts/data/kuwaiti-production-human-vetoes-v1.json')
 const gold = new Set(readJson('scripts/data/kuwaiti-professional-gold-v13.json').episodes.map((episode) => episode.slug))
 const site = new Set(Object.keys(readJson('src/data/bodies.json')))
 const all = Object.keys(v3.episodes || {}).filter((slug) => site.has(slug))
@@ -26,6 +27,7 @@ const selectedSlug = selectKuwaitiProductionSlug({
   slugs: all,
   audioMeta,
   qualityHolds,
+  humanVetoes,
   explicitSlug: explicit[0] || '',
   includeQualityHolds,
   batch,

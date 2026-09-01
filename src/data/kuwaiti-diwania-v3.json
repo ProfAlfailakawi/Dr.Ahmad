@@ -333,7 +333,7 @@
    },
    "9": {
     "speaker": "male",
-    "text": "والمقال سابقك بالجواب: هذا مو اتهام لهم، هذا سؤال عن إحنا وين كنا.",
+    "text": "لا، مو اتهام لهم. السؤال: إحنا وين كنا عنهم؟",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -1095,7 +1095,7 @@
    },
    "13": {
     "speaker": "male",
-    "text": "المقال يقول: جملة حلوة… بس ناقصة.",
+    "text": "حلوة كجملة… بس فيها شي ناقص.",
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
@@ -2711,7 +2711,7 @@
   "coming-soon-a-certificate-without-a-mind-2": {
    "0": {
     "speaker": "male",
-    "text": "قريبا: شهادة بلا عقل. الورقة تتخرج… والعقل غايب.",
+        "text": "حلقتنا اليوم عن شهادة بلا عقل. الشهادة موجودة… بس الفهم وينه؟",
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
@@ -2720,7 +2720,7 @@
    },
    "1": {
     "speaker": "female",
-    "text": "في زمن الشهادات، ما أحد يوقف يسأل عن اللي تعلمه هالخريج فعلا.",
+        "text": "إي، الحين أول شي نسأل عنه: من وين تخرج؟ وجم معدله؟ بس شنو تعلم؟ محد يسأل.",
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
@@ -2729,7 +2729,7 @@
    },
    "2": {
     "speaker": "male",
-    "text": "السؤال صار: من وين تخرجت؟ وجم معدلك؟ والورقة مختومة ولا لا؟",
+        "text": "بالضبط. من وين تخرجت؟ جم معدلك؟ وشهادتك معتمدة؟",
     "deliveryType": "question",
     "pauseAfterMs": 680,
     "overlapMs": 0,
@@ -2738,7 +2738,7 @@
    },
    "3": {
     "speaker": "female",
-    "text": "ممم… وجذي الشهادة تحولت.",
+        "text": "إي… وهني المشكلة.",
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
@@ -2747,7 +2747,7 @@
    },
    "4": {
     "speaker": "female",
-    "text": "تحولت من دليل على نضج العقل… إلى بطاقة دخول لوظيفة.",
+        "text": "الشهادة قامت تصير بس مفتاح لوظيفة، مو دليل إن الواحد فاهم.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -2756,7 +2756,7 @@
    },
    "5": {
     "speaker": "female",
-    "text": "عيل شنو قيمة الشهادة إذا العقل ما اشتغل؟",
+        "text": "عيل إذا ما تعلم يفكر، شنو استفاد؟",
     "deliveryType": "question",
     "pauseAfterMs": 680,
     "overlapMs": 0,
@@ -2765,7 +2765,7 @@
    },
    "6": {
     "speaker": "male",
-    "text": "وشنو فايدة الألقاب إذا كانت تغلف فراغ من داخل؟",
+        "text": "وشفايدة اللقب إذا اللي وراه ما عنده شي يقوله؟",
     "deliveryType": "question",
     "pauseAfterMs": 680,
     "overlapMs": 0,
@@ -2774,7 +2774,7 @@
    },
    "7": {
     "speaker": "female",
-    "text": "وباقي سؤال أخير… وهو الأصعب.",
+        "text": "إي، بس لحظة… خلني أسألك شي.",
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 0,
@@ -2783,7 +2783,7 @@
    },
    "8": {
     "speaker": "female",
-    "text": "العقل يتقاس بورقة… ولا بقدرة صاحبه إنه يطرح سؤال حقيقي؟",
+        "text": "إنت تحكم على عقل الواحد من شهادته… ولا من طريقة تفكيره؟",
     "deliveryType": "question",
     "pauseAfterMs": 680,
     "overlapMs": 0,
@@ -2792,7 +2792,7 @@
    },
    "9": {
     "speaker": "male",
-    "text": "وفي المشهد الرمزي، طالب واقف بحفل التخرج، والشهادة بيده.",
+        "text": "تخيل طالب واقف بحفل التخرج، وشهادته بإيده.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -2801,7 +2801,7 @@
    },
    "10": {
     "speaker": "female",
-    "text": "بس ما يذكر من سنينه بالجامعة غير امتحانات منقولة، وعروض جاهزة، ومشاريع منسوخة.",
+        "text": "بس إذا سألته عن سنينه بالجامعة، ما يذكر إلا امتحانات حفظها، وعروض جاهزة، ومشاريع نقلها.",
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -2810,7 +2810,7 @@
    },
    "11": {
     "speaker": "male",
-    "text": "بس ترى في جامعات وايد تتعب على طلابها…",
+        "text": "بس مو كل الجامعات جذي.",
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 320,
     "overlapMs": 0,
@@ -2819,7 +2819,7 @@
    },
    "12": {
     "speaker": "male",
-    "text": "حرام نظلمها كلها بحكم واحد.",
+        "text": "في جامعات تتعب على طلبتها، وما يصير نظلم الكل.",
     "deliveryType": "gentleObjection",
     "pauseAfterMs": 620,
     "overlapMs": 0,
@@ -2828,7 +2828,7 @@
    },
    "13": {
     "speaker": "female",
-    "text": "والنص ما يعمم، يوصف نمط بس.",
+        "text": "أكيد، محد قال الكل.",
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
@@ -2837,7 +2837,7 @@
    },
    "14": {
     "speaker": "female",
-    "text": "ومع جذي، في جامعات تحولت لمصانع ألقاب.",
+        "text": "بس في أماكن همها اللقب أكثر من اللي تعلمه الطالب.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -2846,7 +2846,7 @@
    },
    "15": {
     "speaker": "male",
-    "text": "والمجتمع شريك، مو بريء.",
+        "text": "وإحنا بعد لنا دور.",
     "deliveryType": "briefReaction",
     "pauseAfterMs": 240,
     "overlapMs": 70,
@@ -2855,7 +2855,7 @@
    },
    "16": {
     "speaker": "male",
-    "text": "تحول لمهرجان ألقاب بلا مضمون.",
+        "text": "صرنا نفرح باللقب أكثر من الشخص نفسه.",
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
@@ -2864,7 +2864,7 @@
    },
    "17": {
     "speaker": "male",
-    "text": "كل شي يتقاس ببكالوريوس، وماجستير، ودكتوراه.",
+        "text": "بكالوريوس، وماجستير، ودكتوراه… بس شنو يعرف يسوي؟",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -2873,7 +2873,7 @@
    },
    "18": {
     "speaker": "female",
-    "text": "وما أحد يسأل عن اللي بعدها. إحنا ما ننتج خريجين…",
+        "text": "إي، هذا السؤال اللي يضيع.",
     "deliveryType": "statement",
     "pauseAfterMs": 320,
     "overlapMs": 0,
@@ -2882,7 +2882,7 @@
    },
    "19": {
     "speaker": "female",
-    "text": "إحنا نكرر أوراق مطبوعة.",
+        "text": "مرات نطلع خريج عنده شهادة، بس مو قادر يكتب فكرة من عنده.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 70,
@@ -2891,7 +2891,7 @@
    },
    "20": {
     "speaker": "male",
-    "text": "والخطر مو في عدد الشهادات… الخطر في غياب السؤال وراها.",
+        "text": "المشكلة مو بكثرة الشهادات… المشكلة إذا ماكو فهم وراها.",
     "deliveryType": "reflection",
     "pauseAfterMs": 760,
     "overlapMs": 0,
@@ -2900,7 +2900,7 @@
    },
    "21": {
     "speaker": "male",
-    "text": "والنص يقترح اختبار بسيط: شنو راح يسوي هالخريج لو انقطع عنه الإنترنت يوم كامل؟",
+        "text": "خل نسأله سؤال بسيط: لو انقطع الإنترنت يوم، شيسوي؟",
     "deliveryType": "question",
     "pauseAfterMs": 680,
     "overlapMs": 0,
@@ -2909,7 +2909,7 @@
    },
    "22": {
     "speaker": "female",
-    "text": "يقدر يكتب فكرة من راسه؟",
+        "text": "يقدر يكتب شي من راسه؟ يحل مشكلة بروحه؟",
     "deliveryType": "question",
     "pauseAfterMs": 320,
     "overlapMs": 70,
@@ -2918,7 +2918,7 @@
    },
    "23": {
     "speaker": "female",
-    "text": "إحنا ندافع عن العقل اللي انغيب تحتها.",
+        "text": "إحنا مو ضد الشهادة. إحنا نبيها تعني شي صدج.",
     "deliveryType": "conclusion",
     "pauseAfterMs": 900,
     "overlapMs": 0,
@@ -2927,7 +2927,7 @@
    },
    "24": {
     "speaker": "male",
-    "text": "عشان ما نصحى يوم على جمهورية شهادات، فيها كل شي مذكور إلا الفكر.",
+        "text": "يعني لا نكتفي بالورقة… نبي نشوف شنو صار بعقل صاحبها.",
     "deliveryType": "conclusion",
     "pauseAfterMs": 900,
     "overlapMs": 0,
@@ -7328,7 +7328,7 @@
    },
    "15": {
     "speaker": "female",
-    "text": "والمقال يذكر شاهد على هالشي من فريق في مايكروسوفت.",
+    "text": "وترى في مثال واضح على هالشي من فريق في مايكروسوفت.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -27440,7 +27440,7 @@
    },
    "22": {
     "speaker": "female",
-    "text": "المقال ينصفهم: لو تفكرنا شوي، بنلقى إن هالجهاز سرق وقت وعقل الكبار بعد.",
+    "text": "بس ترى مو العيال بروحهم. هالجهاز سرق وقت الكبار وتركيزهم بعد.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,
@@ -34826,7 +34826,7 @@
    },
    "7": {
     "speaker": "male",
-    "text": "والنص ينصفهم: مو لأنهم يكرهونها… لأنهم يتعبون من تعقيدها.",
+    "text": "مو سالفة إنهم يكرهونها… الناس تتعب من تعقيدها.",
     "deliveryType": "statement",
     "pauseAfterMs": 560,
     "overlapMs": 0,

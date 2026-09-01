@@ -1014,6 +1014,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:31.943Z"
   },
+  "freedom-without-thinking-and-openness-without-awareness-2.dialogue-kw.json": {
+    "bytes": 9739,
+    "sha256": "984a3f15dfe1f44aaa334407d9bc00752091c7cab56348f5f89f2a55a8ae3a39",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T09:29:08.066Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:29:08.066Z"
+  },
+  "freedom-without-thinking-and-openness-without-awareness-2.dialogue-kw.mp3": {
+    "bytes": 2209005,
+    "sha256": "5b8d20bd2926b62ffac852be86c9099497dbf0470043715d4de4f17c30b3f8f6",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T09:29:08.066Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:29:08.066Z",
+    "durationSeconds": 110
+  },
   "freedom-without-thinking-and-openness-without-awareness-2.dialogue.json": {
     "bytes": 9058,
     "sha256": "4eadb8c9ec42e32e906c562f37af13e30979a7d08dc290091bdd1c5bf1a3f7fb",

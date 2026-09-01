@@ -748,6 +748,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T19:37:50.101Z"
   },
+  "e-learning-initiatives-and-solutions-2.dialogue-kw.json": {
+    "bytes": 6830,
+    "sha256": "e35dceec19d7b73cd59a1d3268bda003668fba230b6a4e227d29d37988cfe6df",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T08:51:41.817Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T08:51:41.817Z"
+  },
+  "e-learning-initiatives-and-solutions-2.dialogue-kw.mp3": {
+    "bytes": 2099085,
+    "sha256": "cc78726e1a65c1d1c965ee8ad98446564bd9c5c94530e39a0a376f49c1de12aa",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T08:51:41.817Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T08:51:41.817Z",
+    "durationSeconds": 105
+  },
   "e-learning-initiatives-and-solutions-2.dialogue.json": {
     "bytes": 9997,
     "sha256": "cfc2794a27520ad73ff55b039b8e34e9be5564a36211c28ee0bb41ba8b433375",

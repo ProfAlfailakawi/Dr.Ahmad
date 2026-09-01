@@ -153,15 +153,15 @@ ok(ideaLife.includes('من البدايات الأولى للفكرة إلى ا�
 ok(thoughtOverview.includes('هنا تتجاور المواد التي تدور حول فكرةٍ واحدة'), 'شرح العلاقات الدلالية في خريطة الفكر أصبح موجهاً للزائر')
 ok(extras.includes('contextUrl === undefined ? citationUrl : safeLink(contextUrl)') && articleDetail.includes("contextUrl={liveLink(article.source) || ''}"), 'زر فتح المصدر يظهر فقط عند وجود مصدر أصلي حقيقي ولا يعيد المستخدم إلى المقال نفسه')
 /* المقصد المحروس هنا: ألّا يزحم الحوارُ جسدَ المقال ببطاقةٍ أو نصٍّ خارج
-   المشغّل. نصُّ الحلقة ومحاورها يسكنان داخل المشغّل المفتوح وحده، فالعنوان
-   يمرّر مسار النصّ ولا يرسم منه شيئاً. لذلك نحرس الموضع لا مجرّد اسم الملف. */
+   المشغّل. داخل المشغّل نفسه يجب أن تُسمّى النسختان «فصحى» و«كويتي» بوضوح؛
+   الأيقونة وحدها أخفت النسخة الكويتية عن الزائر. */
 ok(!extras.includes('بين صوتين')
-  && extras.includes("key: 'dialogue', label: 'استمع'")
+  && extras.includes("key: 'dialogue', label: kuwaitiDialogueOk ? 'فصحى' : 'استمع'")
   && !extras.includes('dialogue-promo')
-  && audioPlayer.includes("item.key === 'dialogue'")
-  && audioPlayer.includes('? null')
+  && audioPlayer.includes("const dialogueChoice = item.avatar === 'dialogue'")
+  && audioPlayer.includes('<span>{item.label}</span>')
   && !audioPlayer.includes('transcriptOpen')
-  && !extras.includes('نص الحلقة') && !extras.includes('محاور الحلقة'), 'الحوار داخل مشغل «استمع» نفسه بأيقونة فقط، بلا بطاقة أو نص إضافي يزحم المقال')
+  && !extras.includes('نص الحلقة') && !extras.includes('محاور الحلقة'), 'الحوار داخل المشغّل بلا بطاقةٍ زائدة، وخيارا فصحى وكويتي ظاهران باسميهما')
 ok(extras.includes(`transcript: versionedAudioUrl(\`/audio/\${slug}.dialogue.json\`)`)
   && audioPlayer.includes('aria-label="نص الحلقة"') && audioPlayer.includes('محاور الحلقة')
   && audioPlayer.includes('followSuspendedUntil') && audioPlayer.includes('list.scrollTo({ top: target')

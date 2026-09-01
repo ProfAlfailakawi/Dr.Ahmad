@@ -1,0 +1,17 @@
+--- a/.github/workflows/podcast-kuwaiti-production-batch.yml
++++ b/.github/workflows/podcast-kuwaiti-production-batch.yml
+@@
+-      - uses: actions/checkout@v6
++      - uses: actions/checkout@v6
++        with:
++          fetch-depth: 0
+@@
++      - name: Restore certified Kuwaiti state before any paid generation
++        shell: bash
++        env:
++          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
++        run: |
++          set -euo pipefail
++          node scripts/repair-kuwaiti-production-state.mjs --apply --strict-r2
++
+       - name: Select a deterministic batch from all 143 site articles

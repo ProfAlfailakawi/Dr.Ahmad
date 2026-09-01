@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import {
   getKuwaitiProductionProgress,
   selectKuwaitiProductionSlug,
+  validateKuwaitiHumanVetoes,
   validateKuwaitiQualityHolds,
 } from './lib/kuwaiti-production-progress.mjs'
 import { verifyKuwaitiProductionCorpusCertificate } from './lib/kuwaiti-production-corpus-certificate.mjs'
@@ -80,9 +81,28 @@ assert.equal(certifiedCorpus.certificate.episodeCount, 143, 'شهادة الكل
 assert.equal(certifiedCorpus.corpus.size, 143, 'متن الصقل الفعلي ناقص عن شهادة الـ143')
 
 const qualityHolds = JSON.parse(read('scripts/data/kuwaiti-production-quality-holds-v1.json'))
-validateKuwaitiQualityHolds(qualityHolds, ['a-generation-without-rootsarabic'])
-assert.equal(qualityHolds.episodes[0]?.slug, 'a-generation-without-rootsarabic',
+validateKuwaitiQualityHolds(qualityHolds, Object.keys(certifiedCorpus.certificate.episodes))
+assert.ok(qualityHolds.episodes.some((episode) => episode.slug === 'a-generation-without-rootsarabic'),
   'الحلقة التي استنفدت 18 Take يجب ألا تحبس بقية الإنتاج')
+const humanVetoes = JSON.parse(read('scripts/data/kuwaiti-production-human-vetoes-v1.json'))
+validateKuwaitiHumanVetoes(humanVetoes, ['coming-soon-a-certificate-without-a-mind-2'])
+assert.equal(isFinite(humanVetoes.episodes[0]?.runId), true, 'رفض الدكتور بلا run id')
+const vetoSlug = 'coming-soon-a-certificate-without-a-mind-2'
+const vetoSha = humanVetoes.episodes[0].rejectedAudioSha256
+const vetoProgress = getKuwaitiProductionProgress({
+  slugs: [vetoSlug],
+  audioMeta: { [`${vetoSlug}.dialogue-kw.mp3`]: { validationStatus: 'verified-r2', sha256: vetoSha } },
+  qualityHolds: { schemaVersion: 1, episodes: [] },
+  humanVetoes,
+})
+assert.equal(vetoProgress.nextSlug, vetoSlug, 'الصوت الذي رفضه الدكتور بقي محسوبا منشورا')
+const replacementProgress = getKuwaitiProductionProgress({
+  slugs: [vetoSlug],
+  audioMeta: { [`${vetoSlug}.dialogue-kw.mp3`]: { validationStatus: 'verified-r2', sha256: 'a'.repeat(64) } },
+  qualityHolds: { schemaVersion: 1, episodes: [] },
+  humanVetoes,
+})
+assert.equal(replacementProgress.complete, true, 'الرفض حبس النسخة الجديدة السليمة بعد تغير بصمتها')
 const syntheticProgress = getKuwaitiProductionProgress({
   slugs: ['held', 'next', 'done'],
   audioMeta: { 'done.dialogue-kw.mp3': { validationStatus: 'verified-r2' } },

@@ -3,7 +3,7 @@
   "certificateVersion": "2026-08-31-kuwaiti-production-corpus-v1",
   "nativeSpokenVersion": "2026-08-31-native-kuwaiti-v22-ear-safe-verbs",
   "episodeCount": 143,
-  "corpusSha256": "ecb4c0747865b65db2ab0103ac4521825f1dde18b1d365ef3014aae92d59e8cb",
+  "corpusSha256": "2b8f6e568c6b037d0fb848a4fb91d47619e11ae07d4b47e7aa66ae2d537da5e2",
   "episodes": {
     "a-certificate-of-excellence-for-a-lifeless-doll-2": {
       "sourceSha256": "f2e200474cb914bd2db5df4fa496b22d09785521b82631eedc65670cafc94231",
@@ -13,8 +13,8 @@
       "rewriteCount": 2
     },
     "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2": {
-      "sourceSha256": "0cf84d493e7aaeb3168a1195f9a54ce025c28d59c037b1d65fe06fe2af01120f",
-      "spokenSha256": "f65047e9e542088bca409905d74d4cb45fa726fb36809cfc2f35d173bb6db290",
+      "sourceSha256": "026e253ff31fed4001261114dd9395124b74b2dd6c180237b77bbba4301a3f7a",
+      "spokenSha256": "04fd12d88aaefe8fa023de9174413ad365c401c263675441153a89ccfcb5d7ee",
       "turnCount": 26,
       "bridgeCount": 2,
       "rewriteCount": 3
@@ -34,8 +34,8 @@
       "rewriteCount": 3
     },
     "a-new-kind-of-fatigue-in-old-expressionsarabic": {
-      "sourceSha256": "1b82cf8a09b3905ff262c7d563abefb90a3be04c3e4c742bad5fef695a1ddcf8",
-      "spokenSha256": "e9f094ddbaaf806b570d15bc98e492c992f0e6ed383918d3a31cec9025aa0ada",
+      "sourceSha256": "63031fec1173e83dcb776f4177dcc2264af9446a59d79d5b58b8b7d1d706d475",
+      "spokenSha256": "80b2f11720b236b2843930038d2040f29571469161df3092c6b4161ab62f10c0",
       "turnCount": 28,
       "bridgeCount": 2,
       "rewriteCount": 5
@@ -83,11 +83,11 @@
       "rewriteCount": 2
     },
     "coming-soon-a-certificate-without-a-mind-2": {
-      "sourceSha256": "ca41108f367fddd929b62af02480594fc1308d578c36a35b69725a1806662246",
-      "spokenSha256": "d1053af89617f9d01dc4bf329246931eeddef530efc0cc7d2e8ccc5215a99cfd",
+      "sourceSha256": "03906b850c4ea7b04bc66393fdc850c75748d85f9b21f1017c4bf73b6ddca05d",
+      "spokenSha256": "aebb937ab6a46a139ec04f47fcfcda588f0a54e63644933285696bf4a716c90b",
       "turnCount": 26,
       "bridgeCount": 2,
-      "rewriteCount": 2
+      "rewriteCount": 1
     },
     "competency-based-approach-to-the-trash": {
       "sourceSha256": "005c4c2f38f28e9ab1a79aa2c3ea8a5b0ecc0a8380bb12a355b41a82361b68bf",
@@ -202,8 +202,8 @@
       "rewriteCount": 2
     },
     "intelligence-without-a-consciencearabic": {
-      "sourceSha256": "38769af988a538117b9d1510151187c307d4d3cc40a4cc8a5989dde4c228eef6",
-      "spokenSha256": "249505784e3d8e8277ad2de08b3d807228ba872e27ba4d8c9e55ff012d352ad4",
+      "sourceSha256": "03ad9b81eda53a162ebb73eeac4c889d90161b2e6edf0d48b3d8cd5ddf7a02e6",
+      "spokenSha256": "09ad64a5b796de17d6f1c696009b65e18f39d8801d1d82da2a48e26500905235",
       "turnCount": 29,
       "bridgeCount": 2,
       "rewriteCount": 8
@@ -790,8 +790,8 @@
       "rewriteCount": 4
     },
     "smartphone-child-a-creative-mind-or-a-child-being-driven": {
-      "sourceSha256": "f83967f0f5896f9cc07d481406f12a9f74e36277c47120039909710df59d2b06",
-      "spokenSha256": "9d90c4782f60449f68888cf9161074d1596c0f39b0f99f3fa96c265457834e65",
+      "sourceSha256": "e8ed83b2e2c85b444a7c1972db8067a0310510c873834fb672272b6ca89eb8f7",
+      "spokenSha256": "a35952541f23c24919d7d273be8971638935dc9201a3b4843592196f33025184",
       "turnCount": 26,
       "bridgeCount": 2,
       "rewriteCount": 3
@@ -1000,8 +1000,8 @@
       "rewriteCount": 3
     },
     "when-truth-died-and-the-narrative-survivedarabic": {
-      "sourceSha256": "25eebd18a2e0cfc5760a31dd597520faf57e6d3517da0d82adeba1917fe76cce",
-      "spokenSha256": "0053ce2fc0f5d1ea0fcd77e0aa8b1c76a6e91e5a514dd1a7c228328763fd3f15",
+      "sourceSha256": "061112f822cf00b5f27016b74ada27d4d761145f87ec65d799696925ef79c64b",
+      "spokenSha256": "41637bf0f3a862c41cf2dc64ee8172644eaf036c543a7c42420336c82bb6db8f",
       "turnCount": 28,
       "bridgeCount": 2,
       "rewriteCount": 6

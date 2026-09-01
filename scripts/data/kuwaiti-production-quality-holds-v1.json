@@ -56,6 +56,16 @@
       "failedTakes": 18,
       "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
       "deferredAt": "2026-09-01T12:11:38.712Z"
+    },
+    {
+      "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
+      "status": "quality-hold",
+      "failedRunId": 33509411012,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T12:54:30.607Z"
     }
   ]
 }

@@ -1344,6 +1344,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:34.336Z"
   },
+  "in-their-opinion-surgery-is-a-male-specialty-2.dialogue-kw.json": {
+    "bytes": 7972,
+    "sha256": "9016a8728f4b70826d4ecc8ff9ca02bc1669c276d1903ee90d77f61c5a7d737e",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T11:02:22.256Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T11:02:22.256Z"
+  },
+  "in-their-opinion-surgery-is-a-male-specialty-2.dialogue-kw.mp3": {
+    "bytes": 2039085,
+    "sha256": "92ee1ef4b504b9a0bb0db74efcef88cd170098aa2b79add0a4794e669e64675a",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T11:02:22.256Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T11:02:22.257Z",
+    "durationSeconds": 102
+  },
   "in-their-opinion-surgery-is-a-male-specialty-2.dialogue.json": {
     "bytes": 9448,
     "sha256": "a4ebe0b1d9a2f6040a6393f3754f2693e5222e16caf0a442d5ec6830a6eb381e",

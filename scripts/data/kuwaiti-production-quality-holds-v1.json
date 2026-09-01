@@ -46,6 +46,16 @@
       "failedTakes": 18,
       "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
       "deferredAt": "2026-09-01T10:39:46.261Z"
+    },
+    {
+      "slug": "past-mistakes-still-persist-in-the-age",
+      "status": "quality-hold",
+      "failedRunId": 33505563177,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T12:11:38.712Z"
     }
   ]
 }

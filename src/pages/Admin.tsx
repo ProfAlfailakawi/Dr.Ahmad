@@ -44,6 +44,7 @@ const Indicators = lazy(() => import('../components/admin/Indicators').then((mod
 const IntelligenceLab = lazy(() => import('../components/admin/IntelligenceLab').then((module) => ({ default: module.IntelligenceLab })))
 const NextBookCard = lazy(() => import('../components/admin/NextBookCard').then((module) => ({ default: module.NextBookCard })))
 const PublishingStudio = lazy(() => import('../components/admin/PublishingStudio').then((module) => ({ default: module.PublishingStudio })))
+const StyleChecker = lazy(() => import('../components/admin/StyleChecker').then((module) => ({ default: module.StyleChecker })))
 const SocialDesignStudio = lazy(() => import('../components/admin/SocialDesignStudio').then((module) => ({ default: module.SocialDesignStudio })))
 const TweetStudio = lazy(() => import('../components/admin/TweetStudio').then((module) => ({ default: module.TweetStudio })))
 const StoryboardAtlas = lazy(() => import('../components/admin/StoryboardAtlas').then((module) => ({ default: module.StoryboardAtlas })))
@@ -96,7 +97,6 @@ export default function Admin() {
   return <Panel email={user.email || ''} />
 }
 
-/* ---------- 1) دليل الإعداد — يظهر قبل تفعيل Firebase ---------- */
 function SetupGuide() {
   return (
     <Page>
@@ -126,7 +126,6 @@ function SetupGuide() {
   )
 }
 
-/* ---------- 2) الدخول ---------- */
 function Login({ blockedEmail = '' }: { blockedEmail?: string }) {
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
@@ -169,11 +168,6 @@ function Login({ blockedEmail = '' }: { blockedEmail?: string }) {
   )
 }
 
-/* ---------- 3) اللوحة ---------- */
-// السؤال الأسبوعي والمختارة اليومية يتولّدان تلقائياً (بنك دوّار) فلا لزوم لهما في اللوحة
-
-/* رفع السيرة الذاتية PDF (عربي + إنجليزي) — يحفظ الرابط في site_settings/cv
-   فيتحدث زر التحميل في الموقع فوراً، بلا أي بناء أو رفع ملفات يدوي. */
 function CvPdfCard() {
   const [links, setLinks] = useState<{ url?: string; urlEn?: string }>({})
   const [saved, setSaved] = useState('')
@@ -185,7 +179,7 @@ function CvPdfCard() {
         const { doc, getDoc } = await import('firebase/firestore')
         const snap = await getDoc(doc(db, 'site_settings', 'cv'))
         if (snap.exists()) setLinks(snap.data() as { url?: string; urlEn?: string })
-      } catch { /* noop */ }
+      } catch { }
     })()
   }, [])
   const save = async (patch: { url?: string; urlEn?: string }) => {
@@ -217,10 +211,6 @@ function CvPdfCard() {
   )
 }
 
-/* بوابة الإشعارات: زرّ التفعيل كان مدفوناً داخل تبويب الوارد، فبقي الدكتور
-   بلا إشعارٍ وهو يظن القناة معطلة (31 يوليو). الشريط هنا في رأس اللوحة — لا
-   يُرى إلا حين تكون القناة مغلقة فعلاً، ويختفي فور ربط الجهاز. ومعه اختبارٌ
-   فوري: لا ينتظر رسالة قارئ ليتأكد أن الإشعار يصل جهازه. */
 function PushGateBanner() {
   const { user } = useAdminAuth()
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>(() => (
@@ -296,11 +286,11 @@ function Panel({ email }: { email: string }) {
   const previousTab = useRef<AdminTab>(initialTab)
   const cms = useCmsContent({ includeHidden: true })
   useAdminInboxNotifications()
+
   useEffect(() => {
     void trackAdminUsage('admin_tool_opened', { tool: initialTab, from: 'admin-entry' })
-    // فتح الشاشة وحده لا يعني بدء مهمة أو تركها؛ أحداث الدورة تُسجّل عند الإجراءات الدلالية فقط.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -327,17 +317,13 @@ function Panel({ email }: { email: string }) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // «حملة من مقال بنقرة»: زر المقالات يطلق هذا الحدث فتقفز اللوحة إلى
-  // استوديو التصاميم مباشرة (تبويبه المستقل الجديد — يستهلك البذرة بنفسه).
   useEffect(() => {
     const toDesign = () => chooseTab('design')
     const toLiveDirector = () => chooseTab('studio')
     window.addEventListener('studio:campaign-seed', toDesign)
-    // البصمة البصرية القادمة من مختبر الصور تقفز باللوحة إلى الاستوديو ليلتقطها
     window.addEventListener('studio:dna-palette', toDesign)
     window.addEventListener('studio:live-director-seed', toLiveDirector)
     return () => { window.removeEventListener('studio:campaign-seed', toDesign); window.removeEventListener('studio:dna-palette', toDesign); window.removeEventListener('studio:live-director-seed', toLiveDirector) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const openTransferredArticle = async (slug: string) => {
@@ -356,8 +342,6 @@ function Panel({ email }: { email: string }) {
     await so(getAuth(app!))
   }
 
-  /* سجل الـrender مطابق لسجل التنقل: إضافة أي تبويب جديد تصبح خطأ TypeScript
-     ما لم يحصل على شاشة فعلية، فلا تتكرر مشكلة رابط موجود بلا محتوى أو العكس. */
   const tabContent: Record<AdminTab, ReactNode> = {
     dashboard: <TodayDashboard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} onOpen={chooseTab} />,
     monitor: <ProductionMonitor articles={cms.articles} onOpen={chooseTab} />,
@@ -365,6 +349,7 @@ function Panel({ email }: { email: string }) {
     production: <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
     analytics: <div className="grid gap-4"><UsageAnalytics /><ReaderPulse /><VisitorJourneySuggestion articles={cms.articles} /><Indicators articles={cms.articles} /></div>,
     studio: <div className="grid gap-5"><PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} /><AtlasEditorialSettings articles={cms.articles} /></div>,
+    'style-checker': <StyleChecker articles={cms.articles} />,
     'social-posts': <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} initialView="pulse" />,
     design: <SocialDesignStudio />,
     tweets: <TweetStudio />,
@@ -373,7 +358,6 @@ function Panel({ email }: { email: string }) {
     launch: <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />,
     lab: (
       <div className="grid gap-5">
-        {/* الكتاب العاشر أولاً: هو الخلاصة، وما تحته أدواتُ التحليل. */}
         <NextBookCard />
         <IntelligenceLab articles={cms.articles} onOpen={chooseTab} />
       </div>
@@ -408,13 +392,7 @@ function Panel({ email }: { email: string }) {
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <AdminTaskIndicator />
-            <button
-              type="button"
-              onClick={() => setCommandsOpen(true)}
-              aria-label="فتح لوحة الأوامر"
-              title="لوحة الأوامر — ⌘K"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-all duration-300 hover:-translate-y-0.5 hover:border-accent hover:text-accent"
-            >
+            <button type="button" onClick={() => setCommandsOpen(true)} aria-label="فتح لوحة الأوامر" title="لوحة الأوامر — ⌘K" className="flex h-10 w-10 items-center justify-center rounded-full border border-hair text-soft transition-all duration-300 hover:-translate-y-0.5 hover:border-accent hover:text-accent">
               <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 6V4a2 2 0 1 0-2 2h10a2 2 0 1 0-2-2v16a2 2 0 1 0 2-2H7a2 2 0 1 0 2 2V4"/>
               </svg>
@@ -444,7 +422,6 @@ function Panel({ email }: { email: string }) {
   )
 }
 
-/* ── صندوق الرسائل الواردة — استشاراتك وطلبات التعاون ── */
 type Message = {
   id: string
   name?: string
@@ -506,8 +483,8 @@ async function showAdminInboxNotification(title: string, body: string, tag: stri
       await registration.showNotification(title, options)
       return
     }
-  } catch { /* fallback below */ }
-  try { new Notification(title, options) } catch { /* unsupported browser */ }
+  } catch { }
+  try { new Notification(title, options) } catch { }
 }
 
 async function showIncomingMessageNotification(message: Message) {
@@ -817,7 +794,6 @@ function InboxPanel() {
   )
 }
 
-/* حفظ مستند + قائمة الموجود مع حذف */
 function useCollection(name: string) {
   const [items, setItems] = useState<{ id: string; title?: string; ar?: string }[]>([])
   const [msg, setMsg] = useState('')
@@ -829,7 +805,7 @@ function useCollection(name: string) {
     const snap = await getDocs(query(collection(db, name), orderBy('createdAt', 'desc')))
     setItems(snap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })))
   }
-  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [])
 
   const save = async (data: Record<string, unknown>) => {
     const db = await getDb()

@@ -1076,6 +1076,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:32.553Z"
   },
+  "from-the-schoolyard-to-the-food-court-2.dialogue-kw.json": {
+    "bytes": 8493,
+    "sha256": "c4592f8ea61decfca1761cf71aed575ec05068050bf632de42c45a4bb7ca0c6f",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T09:34:27.379Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:34:27.379Z"
+  },
+  "from-the-schoolyard-to-the-food-court-2.dialogue-kw.mp3": {
+    "bytes": 2216685,
+    "sha256": "fdcafcdc99489fbb49735e8a5b294d500d83a1c5ab37d2e9c042f2eb81f5b55b",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T09:34:27.379Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:34:27.379Z",
+    "durationSeconds": 111
+  },
   "from-the-schoolyard-to-the-food-court-2.dialogue.json": {
     "bytes": 9376,
     "sha256": "423ccc77d0ecb7875027c6b56ade63cc85b610dfb3b645ef6625e61e746d997e",

@@ -4,6 +4,7 @@ export type AdminTab =
   | 'production'
   | 'analytics'
   | 'studio'
+  | 'style-checker'
   | 'social-posts'
   | 'design'
   | 'tweets'
@@ -78,6 +79,7 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
         note: 'من الفكرة إلى المادة والصورة',
         items: [
           { tab: 'studio', label: 'استوديو النشر', note: 'من الفكرة إلى الحزمة التحريرية' },
+          { tab: 'style-checker', label: 'فاحص الأسلوب', note: 'الصق المقال واعرف مواضع التعديل قبل النشر' },
           /* «اكتب الموضوع فتجهز التغريدات» (طلب الدكتور ٣١ يوليو): المسار كان
              يعمل كاملاً لكنه مخبوء داخل استوديو النشر كخطوةٍ جانبية، فلم يجده.
              صار باباً مستقلاً بلغته هو — يفتح الاستوديو على المسار السريع رأساً. */

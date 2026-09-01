@@ -36,6 +36,16 @@
       "failedTakes": 18,
       "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
       "deferredAt": "2026-09-01T08:42:46.895Z"
+    },
+    {
+      "slug": "in-farewell-to-abdullah-ismail-al-kandariarabic",
+      "status": "quality-hold",
+      "failedRunId": 33497326993,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T10:39:46.261Z"
     }
   ]
 }

@@ -641,6 +641,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T14:45:00.000Z"
   },
+  "dr-jasem-malik-the-lesson-that-never-ends-2.dialogue-kw.json": {
+    "bytes": 8648,
+    "sha256": "4425cf630d2c9487f0482c557a10f648fea7e41a92ab6a637a64c1e125896a3d",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T16:02:11.827Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T16:02:11.827Z"
+  },
+  "dr-jasem-malik-the-lesson-that-never-ends-2.dialogue-kw.mp3": {
+    "bytes": 2032365,
+    "sha256": "903c13097afcab5c5533f53f12fe8e989ce7645f2e03285c1543d14ecd2793f4",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T16:02:11.827Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T16:02:11.827Z",
+    "durationSeconds": 102
+  },
   "dr-jasem-malik-the-lesson-that-never-ends-2.dialogue.json": {
     "bytes": 9196,
     "sha256": "057fd53cfe0adc351ef2937191ee2437ae1f19988851c46802ed156b1f6f5c89",

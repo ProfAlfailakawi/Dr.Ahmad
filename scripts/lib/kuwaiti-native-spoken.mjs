@@ -281,7 +281,13 @@ export const RISK_PATTERNS = [
 
 const QAF_RISK_WORDS = /(?:^|[\s،؛:.!?؟…])(متوقع\S*|مؤقت\S*|فجأة|القلق|الأخطر|قاعدين|أقوى|أصدق|الحقيقية)(?=$|[\s،؛:.!?؟…])/gu
 
-export function auditNativeSpokenTurns (turns) {
+const DOCTOR_APPROVED_GOLD_ARTICLE_LINES = new Map([
+  [INTELLIGENCE_SLUG, new Set([
+    'والمقال يذكر شاهد على هالشي من فريق في مايكروسوفت.',
+  ])],
+])
+
+export function auditNativeSpokenTurns (turns, { slug = '' } = {}) {
   const hard = []
   const soft = []
   let qafRiskCount = 0
@@ -290,6 +296,8 @@ export function auditNativeSpokenTurns (turns) {
   for (const [index, turn] of turns.entries()) {
     const text = norm(turn.text)
     for (const [label, pattern] of RISK_PATTERNS) {
+      if (label === 'لغة مقالة موزعة على صوتين'
+        && DOCTOR_APPROVED_GOLD_ARTICLE_LINES.get(slug)?.has(text)) continue
       if (pattern.test(text)) hard.push({ index, label, text })
     }
     qafRiskCount += [...text.matchAll(QAF_RISK_WORDS)].length
@@ -447,6 +455,6 @@ export function optimizeNativeSpokenEpisode (turns, { slug = '' } = {}) {
     preserveDoctorApprovedGoldCast: [PILOT_SLUG, CLASSROOM_SLUG, INTELLIGENCE_SLUG, SERIOUSNESS_SLUG, ASSESSMENT_SLUG].includes(slug),
   })
   changes.push(...varied.changes)
-  const audit = { ...auditNativeSpokenTurns(varied.turns), conversationPlan: varied.plan }
+  const audit = { ...auditNativeSpokenTurns(varied.turns, { slug }), conversationPlan: varied.plan }
   return { turns: varied.turns, changes, audit, conversationPlan: varied.plan, version: NATIVE_SPOKEN_VERSION }
 }

@@ -26,6 +26,16 @@
       "failedTakes": 18,
       "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
       "deferredAt": "2026-08-31T22:59:13.957Z"
+    },
+    {
+      "slug": "e-learning-culture-2",
+      "status": "quality-hold",
+      "failedRunId": 33487491179,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T08:42:46.895Z"
     }
   ]
 }

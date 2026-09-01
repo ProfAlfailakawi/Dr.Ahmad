@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 4204,
+ "loop": 4319,
  "gap": 8,
  "items": [
   {
@@ -242,24 +242,31 @@
    "dur": 102
   },
   {
+   "slug": "qabas-201612-004",
+   "title": "توليد الثقافة –ما بين الأمس والحاضر",
+   "cat": "مجتمع",
+   "at": 3847,
+   "dur": 107
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 3847,
+   "at": 3962,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 3965,
+   "at": 4080,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 4085,
+   "at": 4200,
    "dur": 111
   }
  ]

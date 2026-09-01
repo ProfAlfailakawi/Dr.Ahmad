@@ -844,6 +844,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:30.756Z"
   },
+  "ethical-hacking-culture.dialogue-kw.json": {
+    "bytes": 7449,
+    "sha256": "e732fc654241b46c69df58c6f00927b571c271b49c1a5c46a51c117a8dc818be",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T09:14:28.030Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:14:28.030Z"
+  },
+  "ethical-hacking-culture.dialogue-kw.mp3": {
+    "bytes": 2067885,
+    "sha256": "e5d35cd5f946ac5ce426e6f6fb95c6fdabb03fd1d6d654a5efa89014b56f1a7e",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T09:14:28.031Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:14:28.031Z",
+    "durationSeconds": 103
+  },
   "ethical-hacking-culture.dialogue.json": {
     "bytes": 10354,
     "sha256": "c0321c7e63bd9cfc94534d1e0e3facb2496b023422efa10ef17c1d50e87fbb05",

@@ -106,6 +106,16 @@
       "failedTakes": 18,
       "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
       "deferredAt": "2026-09-01T23:04:52.291Z"
+    },
+    {
+      "slug": "qabas-201704-002",
+      "status": "quality-hold",
+      "failedRunId": 33571225565,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T23:39:14.092Z"
     }
   ]
 }

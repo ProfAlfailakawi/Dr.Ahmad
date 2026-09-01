@@ -43,6 +43,11 @@ if (SELF_TEST) {
   ])
   assert.equal(articleSplitAcrossVoices.hard.filter((finding) => finding.label === 'لغة مقالة موزعة على صوتين').length, 3,
     'المقال المقسوم على صوتين لا يمر لمجرد أن الكلمات خليجية')
+  const approvedGoldLine = auditNativeSpokenTurns([
+    { text: 'والمقال يذكر شاهد على هالشي من فريق في مايكروسوفت.', deliveryType: 'statement' },
+  ], { slug: INTELLIGENCE_SLUG })
+  assert.equal(approvedGoldLine.hard.length, 0,
+    'السطر الذي اعتمده الدكتور صوتيا ضمن الخمس الذهبية لا يجوز تغييره بحارس لاحق')
   const fixed = optimizeNativeSpokenEpisode([
     { text: 'وفي دراسة نشرتها جهة علمية، طلع فرق واضح.', deliveryType: 'statement' },
   ])
@@ -235,7 +240,7 @@ if (SELF_TEST) {
     'قراءة أوكتاف شاذة لدور مفرد لا تحرق Take ثابت المقاطع والرنين')
   assert.match(pilotWorkflow, /PODCAST_KW_REJECT_ACOUSTIC_RESET:\s*'1'/,
     'بوابة الرنين تمسك نفس preset لما يصير مو نفس الإنسان')
-  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 38/38')
+  console.log('✓ بوابة النص الكويتي الطبيعي: الفحص الذاتي 39/39')
   process.exit(0)
 }
 

@@ -3,7 +3,7 @@
   "certificateVersion": "2026-08-31-kuwaiti-production-corpus-v1",
   "nativeSpokenVersion": "2026-08-31-native-kuwaiti-v22-ear-safe-verbs",
   "episodeCount": 143,
-  "corpusSha256": "2b8f6e568c6b037d0fb848a4fb91d47619e11ae07d4b47e7aa66ae2d537da5e2",
+  "corpusSha256": "48d91d69fd6f484ecd027ce822ca9d84170952c2408a5f2ccd981428f66840eb",
   "episodes": {
     "a-certificate-of-excellence-for-a-lifeless-doll-2": {
       "sourceSha256": "f2e200474cb914bd2db5df4fa496b22d09785521b82631eedc65670cafc94231",
@@ -202,8 +202,8 @@
       "rewriteCount": 2
     },
     "intelligence-without-a-consciencearabic": {
-      "sourceSha256": "03ad9b81eda53a162ebb73eeac4c889d90161b2e6edf0d48b3d8cd5ddf7a02e6",
-      "spokenSha256": "09ad64a5b796de17d6f1c696009b65e18f39d8801d1d82da2a48e26500905235",
+      "sourceSha256": "38769af988a538117b9d1510151187c307d4d3cc40a4cc8a5989dde4c228eef6",
+      "spokenSha256": "249505784e3d8e8277ad2de08b3d807228ba872e27ba4d8c9e55ff012d352ad4",
       "turnCount": 29,
       "bridgeCount": 2,
       "rewriteCount": 8

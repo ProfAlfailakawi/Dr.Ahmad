@@ -1138,6 +1138,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:33.015Z"
   },
+  "he-passed-the-exam-but-failed-the-question-2.dialogue-kw.json": {
+    "bytes": 8698,
+    "sha256": "fec36cce41a6e2bec5c1f102ed0c6cd68f9619f4a38ec5fadf149fcd2420548a",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-01T09:44:18.267Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:44:18.267Z"
+  },
+  "he-passed-the-exam-but-failed-the-question-2.dialogue-kw.mp3": {
+    "bytes": 2124045,
+    "sha256": "4c6df17726283535e3f71f1dc003d21cd68dc75d0c40421660cafd909fc0926d",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-01T09:44:18.268Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-01T09:44:18.268Z",
+    "durationSeconds": 106
+  },
   "he-passed-the-exam-but-failed-the-question-2.dialogue.json": {
     "bytes": 9167,
     "sha256": "ae7c76e5b9609dedd79382372485d37ccdfd9abd5c04edd17691e9377b0fcc76",

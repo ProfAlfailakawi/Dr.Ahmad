@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 4971,
+ "loop": 5086,
  "gap": 8,
  "items": [
   {
@@ -291,24 +291,31 @@
    "dur": 99
   },
   {
+   "slug": "qabas-201703-004",
+   "title": "ماذا سيحدث لو تحررت التكنولوجيا من الرأسمالية؟",
+   "cat": "تقنية",
+   "at": 4614,
+   "dur": 107
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 4614,
+   "at": 4729,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 4732,
+   "at": 4847,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 4852,
+   "at": 4967,
    "dur": 111
   }
  ]

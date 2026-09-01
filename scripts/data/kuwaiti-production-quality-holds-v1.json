@@ -16,6 +16,16 @@
       "failedTakes": 18,
       "reason": "لم يجتز مرجع هوية فهد ونورة وتدقيق اللهجة بعد ثلاث جولات مستقلة؛ لم ينشر ولم يرقع.",
       "deferredAt": "2026-08-31T16:05:03.141Z"
+    },
+    {
+      "slug": "do-we-contain-or-raise-2",
+      "status": "quality-hold",
+      "failedRunId": 33447995728,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-08-31T22:59:13.957Z"
     }
   ]
 }

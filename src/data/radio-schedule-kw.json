@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 2489,
+ "loop": 2607,
  "gap": 8,
  "items": [
   {
@@ -130,31 +130,38 @@
    "dur": 108
   },
   {
+   "slug": "freedom-without-thinking-and-openness-without-awareness-2",
+   "title": "حُرية بلا تفكير… وانفتاح بلا وعي!",
+   "cat": "مجتمع",
+   "at": 2020,
+   "dur": 110
+  },
+  {
    "slug": "intelligence-without-a-consciencearabic",
    "title": "ذكاءٌ بلا ضمير",
    "cat": "تقنية",
-   "at": 2020,
+   "at": 2138,
    "dur": 104
   },
   {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 2132,
+   "at": 2250,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 2250,
+   "at": 2368,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 2370,
+   "at": 2488,
    "dur": 111
   }
  ]

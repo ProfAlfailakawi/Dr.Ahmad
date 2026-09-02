@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 6733,
+ "loop": 6845,
  "gap": 8,
  "items": [
   {
@@ -403,24 +403,31 @@
    "dur": 97
   },
   {
+   "slug": "qabas-201709-007",
+   "title": "انهيار قيم … أم استنفاذ همم…",
+   "cat": "التربية",
+   "at": 6376,
+   "dur": 104
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 6376,
+   "at": 6488,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 6494,
+   "at": 6606,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 6614,
+   "at": 6726,
    "dur": 111
   }
  ]

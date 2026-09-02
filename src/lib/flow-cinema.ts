@@ -228,7 +228,9 @@ export function cinematographyBlock(input: {
     'OPENING RULE — the very first frame is already mid-event. Something is already moving, changing, falling, opening, pouring, igniting, or being decided at frame one. Never open on a still, settled, or establishing frame, and never open on someone about to begin.',
     `Pacing: visible continuous change across the whole ${seconds} seconds — something in the frame is measurably different in every single second. No idling, no held beauty shots, no waiting for the line to finish.`,
     beats,
-    'Energy: cinematic and arresting rather than calm and composed. Physical forces must be visible — weight, momentum, light travelling, material yielding, distance closing. Beauty here comes from motion and light, never from stillness.',
+    avatar
+      ? 'Energy: alive but composed — the camera, the travelling light and the responsive environment carry the motion while the speaker stays natural and unhurried; never frozen, never chaotic, never gesturing theatrically.'
+      : 'Energy: cinematic and arresting rather than calm and composed. Physical forces must be visible — weight, momentum, light travelling, material yielding, distance closing. Beauty here comes from motion and light, never from stillness.',
     `Camera movement: one committed motion per shot, executed with intent and carried to completion; never combine competing moves and never let the frame drift aimlessly. Motion may be brisk and confident; it must never be shaky, random, or handheld-nervous. ${moves}`,
     `Frame rate and timing: 24fps cinematic cadence across the full ${seconds} seconds. Deliberate, never sluggish.`,
     'Composition: honour the rule of thirds with intentional negative space for the caption added later; keep the horizon level and verticals true; fill the 9:16 frame edge to edge and leave the subject clean headroom.',

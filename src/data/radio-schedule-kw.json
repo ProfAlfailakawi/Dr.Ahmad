@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 6517,
+ "loop": 6628,
  "gap": 8,
  "items": [
   {
@@ -389,24 +389,31 @@
    "dur": 103
   },
   {
+   "slug": "qabas-201709-004",
+   "title": "شبكات التواصل الاجتماعي تجمعنا… خط الدفاع",
+   "cat": "مجتمع",
+   "at": 6160,
+   "dur": 103
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 6160,
+   "at": 6271,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 6278,
+   "at": 6389,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 6398,
+   "at": 6509,
    "dur": 111
   }
  ]

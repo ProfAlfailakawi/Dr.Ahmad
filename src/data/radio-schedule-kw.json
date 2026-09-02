@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 5195,
+ "loop": 5315,
  "gap": 8,
  "items": [
   {
@@ -305,24 +305,31 @@
    "dur": 101
   },
   {
+   "slug": "qabas-201706-001",
+   "title": "الواقع الافتراضي يميط اللثام عن الوجه الحقيقي للبشر",
+   "cat": "تقنية",
+   "at": 4838,
+   "dur": 112
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 4838,
+   "at": 4958,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 4956,
+   "at": 5076,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 5076,
+   "at": 5196,
    "dur": 111
   }
  ]

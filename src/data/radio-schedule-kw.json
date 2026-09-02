@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 5315,
+ "loop": 5426,
  "gap": 8,
  "items": [
   {
@@ -312,24 +312,31 @@
    "dur": 112
   },
   {
+   "slug": "qabas-201706-003",
+   "title": "هل وضعت البشرية بيضها في سلة واحدة عندما رهنت التكنولوجيا بالكهرباء",
+   "cat": "تقنية",
+   "at": 4958,
+   "dur": 103
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 4958,
+   "at": 5069,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 5076,
+   "at": 5187,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 5196,
+   "at": 5307,
    "dur": 111
   }
  ]

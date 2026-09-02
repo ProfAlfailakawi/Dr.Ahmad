@@ -579,7 +579,7 @@ function roleInEnglish(role: string) {
   return ROLE_EN.find(([pattern]) => pattern.test(role))?.[1] || 'carry one clear idea forward'
 }
 
-const REFERENCE_HEADER ='Continue from the provided reference frame. Use it as the visual starting point of the new 8-second clip. Preserve the selected saved character reference, wardrobe, lighting, environment, color palette, background details, time of day and cinematic tone. Continue the motion naturally instead of restarting or redesigning the scene from scratch.'
+const REFERENCE_HEADER ='Continue from the provided reference frame. Use it as the visual starting point of the new clip. Preserve the selected saved character reference, wardrobe, lighting, environment, color palette, background details, time of day and cinematic tone. Continue the motion naturally instead of restarting or redesigning the scene from scratch.'
 
 function referenceInstruction(mode: ContinuityMode, strategy: ReferenceStrategy, hasFrame: boolean) {
   if (strategy === 'none' || mode === 'independent') return 'Reference handling: no uploaded frame is required. Build the opening state from the written sequence instructions.'
@@ -879,7 +879,7 @@ function buildFlowPrompt(input: {
       ? 'Performance mode: completely silent visual scene with no performer of any kind. The material, the light and the motion carry it alone.'
       : 'Performance mode: completely silent visual performance. Anyone in frame must keep the mouth naturally closed and must not move the lips as if speaking.'
     : avatar
-      ? `Performance mode: speaking avatar in ${spokenLanguage}. Deliver one short creator-supplied line with calm, natural pacing and authentic pronunciation. The exact wording is supplied separately in Flow. Never generate subtitles, captions, or visible text.`
+      ? `Performance mode: speaking figure in ${spokenLanguage}. Deliver one short creator-supplied line with calm, natural pacing and authentic pronunciation. The exact wording is supplied separately in Flow. Never generate subtitles, captions, or visible text.${clipSeconds >= 12 ? ' The spoken line occupies only part of the clip: before and after it the figure keeps acting naturally inside the scene — looking, handling, moving, reacting — and is never frozen waiting for or after the line.' : ''}`
       : `Performance mode: ${spokenLanguage} voice-over-ready visual. Keep the scene visually complete while the creator adds one exact short ${spokenLanguage} line separately. Never generate subtitles, captions, or visible text.`
   const overlay = segment.overlayPlan.length
     ? `Editorial overlay: all text is added later in editing, never generated inside Flow. Reserve clean space at ${unique(segment.overlayPlan.map((cue) => `${OVERLAY_POSITION_EN[cue.position]} (${cue.from.toFixed(1)}-${cue.to.toFixed(1)}s)`)).join(', ')}.`
@@ -903,7 +903,7 @@ function buildFlowPrompt(input: {
     speech,
     `Continuity with the previous clip: ${segment.continuityMode}. ${segment.continuity} ${referenceInstruction(segment.continuityMode, segment.referenceStrategy, Boolean(segment.selectedReferenceFrame))}`,
     overlay,
-    avatar ? avatarLock(cast) : cast === 'no_people' ? 'NO-PEOPLE LOCK — If the scene as described would normally contain a person, solve it without one. Never insert a human being to complete the composition.' : '',
+    avatar ? '' : cast === 'no_people' ? 'NO-PEOPLE LOCK — If the scene as described would normally contain a person, solve it without one. Never insert a human being to complete the composition.' : '',
     `Constraints — VISIBLE-TEXT RULE: generate absolutely no on-screen text of any kind in any language — no titles, captions, subtitles, labels, letters, numbers, signs, interface text, logos or watermarks; ${unique([...segment.negativeConstraints, 'generated dialogue wording', 'cartoon or plastic CGI look', 'morphing artifacts']).join(', ')}.`,
   ].filter(Boolean).join('\n')
   return englishOnly(`${continuationOpening(segment)}\n\n${body}`)
@@ -932,7 +932,8 @@ type SegmentDraft = Omit<LiveDirectorSegment, 'prompt' | 'promptVersions' | 'flo
 
 /** يعيد بناء مسارات برومبت المقطع الثلاثة بعد تغيير الترابط أو المرجع أو النص. */
 function rebuiltFlowPrompts(segment: SegmentDraft, project: Pick<LiveDirectorProject, 'title' | 'tone' | 'platform'> & { look?: FlowLookId; clipSeconds?: number }) {
-  return buildFlowPrompts({ segment, title: project.title, tone: project.tone, platform: project.platform, palette: PALETTE, look: project.look, clipSeconds: project.clipSeconds })
+  // مدة المقطع نفسه أولاً: المشروع القديم بمقاطع ثمانٍ لا يُكتب له «خمس عشرة».
+  return buildFlowPrompts({ segment, title: project.title, tone: project.tone, platform: project.platform, palette: PALETTE, look: project.look, clipSeconds: segment.duration || project.clipSeconds })
 }
 
 function rebuiltPrompt(segment: SegmentDraft, project: Pick<LiveDirectorProject, 'title' | 'tone' | 'platform'>) {
@@ -1099,7 +1100,7 @@ function quality(project: Pick<LiveDirectorProject, 'idea' | 'duration' | 'durat
     continuity: !foundingScene || !chainSound ? 'يحتاج مراجعة' : allDirect ? 'يحتاج تبسيطاً' : unique(modes).length >= 3 ? 'ممتاز' : 'جيد',
     idea: wordCount(project.idea) >= 5 ? 'ممتاز' : 'يحتاج مراجعة',
     // كانت قائمةً مثبتة [8,24,48,64] فتُحمّر كل مشروعٍ بمقاطع خمس عشرة ثانية.
-    duration: project.durationReason && project.segments.length > 0 && project.duration === project.segments.length * clipSeconds ? 'ممتاز' : 'يحتاج مراجعة',
+    duration: project.durationReason && project.segments.length > 0 && project.duration === project.segments.reduce((total, segment) => total + (segment.duration || clipSeconds), 0) ? 'ممتاز' : 'يحتاج مراجعة',
     clips: speechTooLong ? 'يحتاج تبسيطاً' : repeatedAppearances ? 'جيد' : 'ممتاز',
     avatar: !project.useAvatar || project.segments.length <= 2 || (avatarCount < project.segments.length && avatarCount <= Math.ceil(project.segments.length / 2)) ? 'ممتاز' : 'يحتاج تبسيطاً',
     publishing: socialDistinct ? 'ممتاز' : 'يحتاج مراجعة',
@@ -1220,7 +1221,7 @@ const REPAIR_HINTS: Record<LiveDirectorRepairIssue, string> = {
   'المقطع لا يجهز لما بعده': 'End on a stable visual handoff object and gaze direction that the next clip can inherit.',
   'الإطار المرجعي غير مناسب': 'Ignore the previous reference frame and rebuild continuity from the written notes: same world, same light, same palette.',
   'النتيجة تبدو كفيديو مختلف': 'Restore the established visual identity: same palette, same light direction, same lens character and same environment logic as the approved clips.',
-  'النص طويل': 'Shorten the spoken line so it lands comfortably inside eight seconds with a natural pause before the final cut.',
+  'النص طويل': 'Shorten the spoken line so it lands comfortably inside the clip duration with a natural pause before the final cut.',
   'المقطع غير احترافي': 'Simplify to one subject, one action and one restrained camera move, with cinematic exposure and clean composition.',
 }
 

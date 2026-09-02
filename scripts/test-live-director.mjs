@@ -214,6 +214,20 @@ const allPrompts = [articleProject, avatarCast, withPeople, noPeople, scenePeopl
   .flatMap((item) => item.segments.flatMap((segment) => [segment.prompt, ...Object.values(segment.flowPrompts)]))
 check(allPrompts.every((text) => !nameLeak.test(text)), 'لا اسم حقيقي في أي برومبت يذهب إلى Flow')
 check([articleProject, avatarCast, withPeople].every((item) => !nameLeak.test(item.identityLock)), 'لا اسم حقيقي في قفل الهوية')
+/* جولة الكمال (٣ سبتمبر ٢٠٢٦): ستة عيوب وُجدت بقراءة الحكم، ولكلٍّ حارس. */
+// المشروع القديم بمقاطع ثمانٍ: الإصلاح الموضعي لا يكتب له «خمس عشرة»، والبوابة لا تُحمّره.
+check(chain.quality.duration === 'ممتاز', 'بوابة المدة تقيس جمع مدد المقاطع لا مضاعفة الافتراض')
+const repairedOld = repairLiveDirectorSegment(chain, 'clip-2', 'المشهد مزدحم')
+check(repairedOld.segments[1].flowPrompts.speech_ar.includes('exactly 8 seconds'), 'إصلاح مقطع قديم يحفظ مدته لا مدة الافتراض')
+// رأس الإطار المرجعي لم يعد يثبّت الثماني فيناقض سطر المدة.
+check(!allPrompts.some((text) => text.includes('8-second clip')), 'لا مدة مثبتة في رأس الإطار المرجعي')
+// الأفتار الناطق في مقطع طويل لا يقف جامداً بعد جملته.
+const longAvatarPrompt = avatarCast.segments.find((segment) => segment.voiceMode === 'avatar_speech')?.flowPrompts.speech_ar || ''
+check(longAvatarPrompt.includes('occupies only part of the clip'), 'المقطع الطويل: الجملة جزء من الحدث لا كله')
+// طاقة المشهد بحسب ساكنه: الأفتار حي بلا فوضى، والرمزي حر بقواه.
+check((longAvatarPrompt.match(/IDENTITY —/g) || []).length === 1, 'قفل الهوية مرة واحدة لا مرتين — التكرار يخفف وزن البقية')
+check(longAvatarPrompt.includes('alive but composed'), 'طاقة الأفتار: حياة بلا فوضى')
+check(noPeoplePrompts.includes('weight, momentum'), 'طاقة المشهد الرمزي: قوى فيزيائية مرئية')
 check(/OPENING RULE/.test(kinetic) && /already mid-event/.test(kinetic), 'قانون الافتتاح: الحدث بدأ قبل الإطار الأول')
 check(/Required transformation/.test(kinetic), 'كل مشهد يلزمه تحوّل مرئي لا حالة ساكنة')
 

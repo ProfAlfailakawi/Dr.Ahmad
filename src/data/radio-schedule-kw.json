@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 6628,
+ "loop": 6733,
  "gap": 8,
  "items": [
   {
@@ -396,24 +396,31 @@
    "dur": 103
   },
   {
+   "slug": "qabas-201709-005",
+   "title": "كثرة التطبيقات التعليمية… وعدم الجدوى في الواقع التربوي",
+   "cat": "التعليم",
+   "at": 6271,
+   "dur": 97
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 6271,
+   "at": 6376,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 6389,
+   "at": 6494,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 6509,
+   "at": 6614,
    "dur": 111
   }
  ]

@@ -236,6 +236,16 @@
       "failedTakes": 18,
       "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
       "deferredAt": "2026-09-03T20:00:34.051Z"
+    },
+    {
+      "slug": "the-success-that-destroyed-us-2",
+      "status": "quality-hold",
+      "failedRunId": 33806351015,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-03T21:21:55.676Z"
     }
   ]
 }

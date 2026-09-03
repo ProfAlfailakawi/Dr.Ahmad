@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 12834,
+ "loop": 12960,
  "gap": 8,
  "items": [
   {
@@ -795,10 +795,17 @@
    "dur": 102
   },
   {
+   "slug": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+   "title": "حين يصبح الغش ذكاءً… والصدق غباءً",
+   "cat": "التعليم",
+   "at": 12715,
+   "dur": 118
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 12715,
+   "at": 12841,
    "dur": 111
   }
  ]

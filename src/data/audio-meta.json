@@ -7222,6 +7222,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:00.463Z"
   },
+  "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.dialogue-kw.json": {
+    "bytes": 8069,
+    "sha256": "b6148eed084a2b3cf2037c520f2a08ec7851bc2d85051f5792bc67b796ed0a59",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T23:48:02.076Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:48:02.076Z"
+  },
+  "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.dialogue-kw.mp3": {
+    "bytes": 2353965,
+    "sha256": "856a927226feff262736ff7721b0fafda63643c5fda6efa356e99d630f3a23d5",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T23:48:02.076Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:48:02.076Z",
+    "durationSeconds": 118
+  },
   "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.dialogue.json": {
     "bytes": 9183,
     "sha256": "b1760a6bfe0a6d6f0083a93192f2df7e62d2d218be3d112ca5dc628da23e111b",

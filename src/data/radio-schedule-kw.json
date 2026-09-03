@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 10877,
+ "loop": 10986,
  "gap": 8,
  "items": [
   {
@@ -676,10 +676,17 @@
    "dur": 114
   },
   {
+   "slug": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic",
+   "title": "الوطن ليس وجهةَ نظرٍ وقتَ الأزمات",
+   "cat": "مجتمع",
+   "at": 10758,
+   "dur": 101
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 10758,
+   "at": 10867,
    "dur": 111
   }
  ]

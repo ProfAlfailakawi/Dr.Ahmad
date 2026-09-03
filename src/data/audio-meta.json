@@ -6238,6 +6238,23 @@
     "verifiedAt": "2026-08-07T21:58:49.494Z",
     "bytes": 3780484
   },
+  "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.dialogue-kw.json": {
+    "bytes": 8503,
+    "sha256": "a3e731bfac69f8d1c18195002c82e2369b41cb06a6d81ae9be084779d7477126",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T19:11:09.018Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:11:09.018Z"
+  },
+  "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.dialogue-kw.mp3": {
+    "bytes": 2022285,
+    "sha256": "2c90cb3606b08d64b252d8303f7eedfcbb9934bdcb563036ebfc68684576319b",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T19:11:09.018Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:11:09.018Z",
+    "durationSeconds": 101
+  },
   "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.dialogue.json": {
     "bytes": 9364,
     "sha256": "7ac71e95f8d7852658723573f0eb78b5ad09139d3b883924b2778b18036aaf35",

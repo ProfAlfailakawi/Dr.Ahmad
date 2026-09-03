@@ -1,0 +1,57 @@
+name: نقل صوت الأرشيف الإعلامي إلى R2
+
+# الصوت لا يسكن المستودع: استضافة Firebase المجانية تعطي ٣٦٠ م.ب نقلاً يومياً،
+# وR2 يعطي نقلاً مجانياً بلا سقف وهو بيت صوت المقالات أصلاً. هذه التشغيلة تُطلب
+# يدوياً مرةً بعد إضافة أي مادة إذاعية، ولا تكرّر رفع ما هو حيٌّ هناك.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: media-audio-r2
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online
+
+      - name: Self-test the carrier before it touches R2
+        run: npm run media:audio:r2:self-test
+
+      - name: Install R2 tools
+        # رانر أوبنتو يأتي بـAWS CLI مثبّتاً؛ لا نُنزّله إلا إن غاب فعلاً،
+        # كي لا تسقط التشغيلة على قيود pip في الصور الحديثة بلا سبب.
+        run: |
+          set -euo pipefail
+          if command -v aws >/dev/null 2>&1; then
+            aws --version
+          else
+            python3 -m pip install --user awscli
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+
+      - name: Carry the archive audio to R2
+        run: npm run media:audio:r2
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          MEDIA_AUDIO_SOURCE_BASE: ${{ vars.MEDIA_AUDIO_SOURCE_BASE }}

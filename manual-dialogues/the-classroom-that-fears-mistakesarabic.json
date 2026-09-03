@@ -1,0 +1,306 @@
+[
+  {
+    "speaker": "male",
+    "text": "توقفنا أسبوعين، وانشغلنا بالحرب، وبالقلق الذي يعلو مع الأخبار.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وبالوطن حين يختبر في سمائه وداخله. لكننا نعود اليوم إلى جبهة لا تقل أهمية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "جبهة الصف. فهناك أيضا تصنع الشجاعة أو يصنع الخوف.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهناك يتعلم الطفل أن يرفع يده، أو أن يبتلع صوته.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي أحد الاختبارات رفع طالب يده مترددا، ثم أنزلها بسرعة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهل كان السؤال صعبا؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لم يكن السؤال معقدا. لكن الخوف كان أكبر من الجهل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ففي بعض الصفوف الخطأ ليس جزءا من التعلم. هو لحظة انكشاف.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "ضحكة خفيفة، وتعليق عابر، ونظرة استغراب.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "تكفي ليختار الطالب الصمت في المرة القادمة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن المعلم لم يقصد شيئا من ذلك غالبا.",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لم يقصد. والمشكلة ليست في ضعف الفهم، بل في ثقافة تشعر الطالب أن قيمته تهتز كلما أخطأ.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "نطالب أبناءنا بالشجاعة الفكرية، لكننا لا نمنحهم أمان المحاولة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نطلب منهم التفكير بصوت عال، ثم نحاسبهم إن أخطأ صوتهم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والخوف من الخطأ لا يقتل الإجابة فقط. يقتل السؤال قبل أن يولد.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ومع الوقت يتعلم الطالب مهارة خطيرة: أن يبدو فاهما بدل أن يصبح فاهما.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "جملة تستحق أن تتوقف عندها كل مدرسة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وقد تحدثت إيمي إدمندسون عن مفهوم الأمان النفسي.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وبينت أن الأفراد أكثر تعلما ومبادرة حين يشعرون أن بيئتهم لا تعاقبهم على الخطأ غير المقصود.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن ألا يعني هذا خفض المعايير؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "النص يجيب صراحة: البيئة الآمنة لا تعني انخفاض المعايير.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بل تعني أن الخطأ يعامل كبيانات للتطوير، لا كدليل على فشل الشخص.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهذا يقودنا إلى دويك.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فعندما ينظر إلى القدرات باعتبارها قابلة للتطور، يصبح الخطأ خطوة طبيعية في مسار التعلم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أما حين تختزل القدرة في ذكاء ثابت، يتحول الخطأ إلى تهديد للهوية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويصبح الدفاع عن الصورة أهم من البحث عن الحقيقة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وإذا أضفنا منظور ريان وديسي في نظرية الدافعية الذاتية، تتضح الصورة أكثر.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "الطالب يحتاج أن يشعر بالكفاءة، وبالانتماء، وبأن له صوتا مسموعا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والخوف يضعف الشعور بالكفاءة، ويكسر الإحساس بالانتماء، ويغلق باب المشاركة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "male",
+    "text": "ومع الزمن يتحول الصف إلى مساحة أداء لا مساحة نمو.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالصف الذي يخاف من الخطأ ليس صفا منضبطا. هو صف حذر.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والحذر قد يبدو هدوءا، لكنه أحيانا انسحاب طويل الأمد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأين يبدأ العلاج إذن؟",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "المعلم لا يصنع الأمان بشعار مكتوب على السبورة، بل بطريقة تعامله مع أول إجابة غير دقيقة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "هل يصحح الفكرة أم يصحح الشخص؟ هل يمنح فرصة ثانية أم يغلق الباب؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالطالب قد ينسى تفاصيل الدرس، لكنه لن ينسى شعوره حين أخطأ.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وربما يبدأ التحول الحقيقي يوم ندرك أن الخطأ ليس عدو التعلم، بل بوابته الأولى.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

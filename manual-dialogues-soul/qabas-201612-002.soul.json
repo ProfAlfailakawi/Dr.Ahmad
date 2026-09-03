@@ -1,0 +1,250 @@
+{
+  "slug": "qabas-201612-002",
+  "bridgeAfter": [
+    17,
+    29
+  ],
+  "breathAfter": [
+    31
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "أجلس كثيرا أمام القناة الوثائقية، أتقلب معها في وثائقياتها المثيرة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أجد فيها العديد من التساؤلات التي تخالج نفسي، وقد تخالج أنفسكم أنتم أيضا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتضع لنا مبررات للعديد من النظريات أو الأحداث الحاصلة، التي ليس لها أسباب أو حل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بالإضافة إلى دخولها إلى الخيال العلمي، والتقدم الذي كان،⏸ ولا نعلم ما حصل به.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا، إذا كان فعلا، عدنا إلى الصفر؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حتى وصلنا من التقدم والتكنولوجيا في عصرنا الحالي، بعد عصور طويلة غابرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وخاصة التعليم وبداياته، حتى وصل إلى تكنولوجيا التعليم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والبداية كانت بسيطة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "التعليم بدأ بخطوات بسيطة جدا، وأخذ وقتا طويلا في مراحل تطوره.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فحتى بداية القرن العشرين لم يكن للتكنولوجيا مكان في التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لأن التعليم وصل إلى مرحلة الكيانات المنظمة المرتبطة بمجلس المعارف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ثم إلى تربية وتعليم ضمن إمكانيات أعلى وأكثر تنظيما.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن في إطار طرق التدريس التقليدية، مع ما قدمته التكنولوجيا وقتها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "واستمرت التكنولوجيا في العطاء، والتعليم يحاول أن يواكب التقدم التكنولوجي ويتطور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولن نقول أننا واكبناه فعلا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حتى وصلنا إلى نهاية القرن،⏸ وما زالت التكنولوجيا في التعليم بسيطة، وفي الغالب معدومة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما الآن، وفي القرن الواحد والعشرين، الألفية الجديدة، بدأت المواكبة الفعلية للتكنولوجيا في التعليم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وبخطى بطيئة في نسبة كبيرة من دول العالم النامي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا تتباطأ الخطى إن كانت الإرادة موجودة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تباطؤ الخطى نتيجة للثورة التكنولوجية التي لا تقف عند حد معين.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالإمكانيات لا تسمح لهذه المواكبة المتسارعة الهائلة، وتطوير التعليم ضمن الحدود المتاحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا المنعطف.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هناك منعطف واضح في التعليم رافق التطور التكنولوجي، أمر بات بالضرورة وليس خياريا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتكنولوجيا تسوق التعليم نحو ذاتية التعلم، والحصول عليها في أي زمان ومكان وبجهد أقل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مميزات فاقت التصور، وهذا يقفز بالتكنولوجيا في التعليم إلى حدود بعيدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويحدد مدى التقدم بالتعلم مدى فهم المصمم التكنولوجي لعقلية التعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولو جاء أحد جهابذة التعليم والعلم في الأزمنة الماضية، لوقف مبهورا غير مصدق.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "لما وصلنا به من تطور في التعليم، في إطار التكنولوجيا التي لم يسمعوا عنها بالأصل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكل ما نمضي أكثر نحو الأمام، تصبح التطورات أكثر تعقيدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فارتباط تكنولوجيا التعليم بالتشريح للجهاز العصبي جعل من التطورات أكثر تعقيدا، وفكرة التعلم أكثر بساطة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل هناك حد معين سيتوقف عنده التطور التكنولوجي؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "عملية التطور مستمرة، إلا إذا تدخلت الطبيعة ووضعت حدا للتكنولوجيا على الكوكب بشكل عام، إذا ما نفدت مصادر الطاقة للتشغيل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فمن يعلم إلى أي مدى يمكن أن تذهب التكنولوجيا بالتعليم؟⏸ الله أعلم. وأترك أنوار أفكاركم للإبحار.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

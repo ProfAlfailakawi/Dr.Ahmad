@@ -1,0 +1,257 @@
+{
+  "slug": "lets-achieve-a-higher-level-of-quality-education",
+  "bridgeAfter": [
+    10,
+    29
+  ],
+  "breathAfter": [
+    32
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "سعدنا كثيرا عندما بدأ العمل في الجامعة الجديدة، الشدادية.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبهرنا بالفخامة المعمارية التي جاد بها أبدع المهندسين والمعماريين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وكانت الفرحة عارمة بأن تحقق الحلم، ورأينا أفواجا من طلبتنا يلتحقون بكلياتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن فرحتنا بحق عندما يجودون حقا في التعليم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالجميع يعلم أن التعليم العالي ينقصه جودة التعليم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا ما نحتاجه من تطور في الجامعات، أكثر من التطور المعماري.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لنصبو إلى مستوى الجامعات العالمية المرموقة، التي فخرها يكمن في تحقيقها لمعايير جودة التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولو نظرنا إلى ترتيب الكويت في مؤشر جودة التعليم في نشرة المنتدى الاقتصادي العالمي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "مؤشر التعليم والتدريب، الذي ينشر في كل عام، ويضم مئة وسبعا وثلاثين دولة حول العالم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فماذا نجد؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لوجدنا في إطار المنافسة أن الكويت غائبة، مثلها مثل بعض الدول العربية الغائبة عن التصنيفات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وعلى أي أساس يقيس هذا المؤشر أصلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يستند إلى سلسلة من المعايير:⏸ التعليم الذي يقيس معدل الالتحاق بالتعليم العالي والثانوي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونوعية التعليم، الذي يقيس جودة نظام التعليم، ونوعية التعليم الرياضي والعلمي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وجودة إدارة المدارس والمؤسسات التعليمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بالإضافة إلى التدريب الوظيفي الذي يقيس توافر خدمات التدريب المتخصصة المحلية وحجم تدريب الموظفين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما مستوانا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أما مستوى الكويت في مجال التعليم، فقد كشف تقرير التنافسية العالمية رقما موجعا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن جودة التعليم العالي والتدريب في الكويت تم تخفيضها إلى المرتبة الخامسة والتسعين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من بين مئة وسبع وثلاثين دولة، بعد احتلالها المركز الرابع والتسعين في العام الذي سبقه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبقيت في المركز الأخير في الخليج.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "في حين تم تصنيف دولة الإمارات العربية المتحدة في المرتبة السادسة والثلاثين عالميا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتحتل قطر المرتبة السابعة والثلاثين، والمملكة العربية السعودية المرتبة الثالثة والأربعين، وعمان الحادية والسبعين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والأخطر في التخصصات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في حين تعتمد الدولة على كليات إدارة الأعمال لتحقيق رؤية الكويت، وتحول البلاد إلى مركز مالي جذاب للاستثمار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "سجلت الكويت انخفاضا في جودة كليات إدارة الأعمال، حيث وصلت إلى المركز مئة وأحد عشر عالميا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في حين أن المراكز احتلت اثنين وتسعين وستة وثمانين وسبعة وثمانين في السنوات الثلاث الماضية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي الحقيقة، مستوى جودة تعليم صادم يثير الجدل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ويجعلنا أمام الكثير من التساؤلات، وتحديات أكبر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ماذا ينقصنا ليكون لدينا مستوى جودة تعليم عال كما الدول الأخرى؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأين التعليم العالي عن هذا الانخفاض؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هذا سؤال المقال نفسه:⏸ أين التعليم العالي عن هذا المستوى الذي يلحق العار بجامعاتنا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونحن في صدد بداية العمل في الجامعة الجديدة، التي تتميز بفخامة معمارية يطول وصفها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن نحتاج إلى جودة تعليم أيها المسؤولون في التعليم العالي، فجودوا علينا بها كما تجودون في الإنفاق على المعمار الفخم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

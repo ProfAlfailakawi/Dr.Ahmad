@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "maxFullRoundsBeforeDeferral": 3,
+    "takesPerRound": 6,
+    "automaticSelectionExcludesHeldEpisodes": true,
+    "heldEpisodesStillCountAsMissing": true
+  },
+  "episodes": [
+    {
+      "slug": "a-generation-without-rootsarabic",
+      "status": "quality-hold",
+      "failedRunId": 33412947922,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "لم يجتز مرجع هوية فهد ونورة وتدقيق اللهجة بعد ثلاث جولات مستقلة؛ لم ينشر ولم يرقع.",
+      "deferredAt": "2026-08-31T16:05:03.141Z"
+    },
+    {
+      "slug": "do-we-contain-or-raise-2",
+      "status": "quality-hold",
+      "failedRunId": 33447995728,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-08-31T22:59:13.957Z"
+    },
+    {
+      "slug": "e-learning-culture-2",
+      "status": "quality-hold",
+      "failedRunId": 33487491179,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T08:42:46.895Z"
+    },
+    {
+      "slug": "in-farewell-to-abdullah-ismail-al-kandariarabic",
+      "status": "quality-hold",
+      "failedRunId": 33497326993,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T10:39:46.261Z"
+    },
+    {
+      "slug": "past-mistakes-still-persist-in-the-age",
+      "status": "quality-hold",
+      "failedRunId": 33505563177,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T12:11:38.712Z"
+    },
+    {
+      "slug": "private-lesson-in-the-age-of-digital-educational-intelligence",
+      "status": "quality-hold",
+      "failedRunId": 33509411012,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T12:54:30.607Z"
+    },
+    {
+      "slug": "qabas-201611-005",
+      "status": "quality-hold",
+      "failedRunId": 33515607060,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T13:58:56.746Z"
+    },
+    {
+      "slug": "qabas-201612-003",
+      "status": "quality-hold",
+      "failedRunId": 33520056252,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T14:41:53.838Z"
+    },
+    {
+      "slug": "qabas-201703-001",
+      "status": "quality-hold",
+      "failedRunId": 33528066316,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T15:59:00.728Z"
+    },
+    {
+      "slug": "qabas-201704-001",
+      "status": "quality-hold",
+      "failedRunId": 33568558711,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T23:04:52.291Z"
+    },
+    {
+      "slug": "qabas-201704-002",
+      "status": "quality-hold",
+      "failedRunId": 33571225565,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-01T23:39:14.092Z"
+    },
+    {
+      "slug": "qabas-201704-004",
+      "status": "quality-hold",
+      "failedRunId": 33574123505,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-02T00:18:53.500Z"
+    },
+    {
+      "slug": "qabas-201706-002",
+      "status": "quality-hold",
+      "failedRunId": 33577031495,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-02T01:02:14.284Z"
+    },
+    {
+      "slug": "qabas-201706-004",
+      "status": "quality-hold",
+      "failedRunId": 33579763131,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-02T01:43:17.886Z"
+    },
+    {
+      "slug": "qabas-201709-006",
+      "status": "quality-hold",
+      "failedRunId": 33694062865,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-02T23:25:20.548Z"
+    },
+    {
+      "slug": "qabas-201711-001",
+      "status": "quality-hold",
+      "failedRunId": 33700336808,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-03T00:48:55.410Z"
+    },
+    {
+      "slug": "qabas-201712-001",
+      "status": "quality-hold",
+      "failedRunId": 33705702348,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-03T02:10:45.329Z"
+    },
+    {
+      "slug": "qabas-201712-004",
+      "status": "quality-hold",
+      "failedRunId": 33733051636,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-03T08:35:34.900Z"
+    },
+    {
+      "slug": "qabas-201804-001",
+      "status": "quality-hold",
+      "failedRunId": 33743844298,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-03T10:32:41.461Z"
+    },
+    {
+      "slug": "qabas-201805-003",
+      "status": "quality-hold",
+      "failedRunId": 33749029100,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
+      "deferredAt": "2026-09-03T11:30:55.918Z"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "checkedAt": "2026-09-01T18:40:08.884Z",
+  "status": "healthy",
+  "counts": {
+    "articles": 143,
+    "missingAudio": 0,
+    "missingImages": 0,
+    "brokenInternal": 0,
+    "orphans": 0,
+    "inconsistent": 0
+  },
+  "issues": [],
+  "repairs": []
+}

@@ -1,0 +1,265 @@
+{
+  "slug": "qabas-201706-001",
+  "bridgeAfter": [
+    14,
+    27
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "أتذكر أول ظهور الوسائط المتعددة، والألوان والصور والكتابة النصية المتقدمة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن ثم العروض التقديمية، في خضم التطور والتقدم التكنولوجي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وكانت بالنسبة لنا ولمن قبلنا في الأكثر ضربا من الخيال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكنا نلثم قيمنا وفكرنا ممن حولنا وبيئتنا الجميلة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حتى وصلنا إلى يقين التكنولوجيا، ~~ ودخول الإنترنت إلى كل بيت.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما وصلت إليه من واقع افتراضي وواقع معزز، وغيرها من العالم الافتراضي المذهل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والذي أثر بشكل كبير على المستخدم وسلوكياته، وأصبح هو موجهنا ومعلمنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومع قليل من الاستشراق السلوكي، تشير النظرية السلوكية أن المثيرات الخارجية تحفز ظهور استجابات بشرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تنبع من داخلهم وتكشف نواياهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمنذ فجر التاريخ كانت سلوكيات البشر محكومة بتأثرهم بالواقع والبيئة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والسلوكيات البشرية منضبطة بالرقابة البيئية، بما فيها من عادات وقيم واتجاهات وأفكار بشرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وسيطرة هذه الرقابة جعلت السلوكيات منضبطة، حتى أصبحت معه تسير وفق الذوق العام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فما يحسنه المجتمع المحيط هو حسن، والقبيح ما قبحه المجتمع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إذن هناك ذوق عام يحكم الجميع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولهذا كانت الأفكار والسلوكيات الغريبة تعتبر شاذة، لا تجدها إلا عند قلة من الناس.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا لم تكن الأقنعة تدوم في الواقع الحقيقي؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في الواقع الحقيقي، لبس قناع يمكن أن ينكشف بسرعة، لوجود رقابة حية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم ظهر واقع جديد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وعند ظهور التقنيات الحديثة، ظهر نوع جديد من الواقع، هو الواقع الافتراضي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا الواقع سمح للإنسان أن يعيش وفق أنماط متعددة من الشخصيات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والسبب غياب الرقابة البشرية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكذلك التقدم في التقنيات التي منحت الشخصية البشرية امتيازات تسمح بتسترها تحت أنماط مختلفة من الشخصيات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبقاء الإنسان داخل واقع افتراضي، جعله يفكر كيف ستكون ردود أفعال من حوله إذا كان بشخصية أخرى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وبعد فترة وجد الإنسان نفسه أمام شخصيات متعددة، يمكن أن يتقمصها ويسكنها ويتقنها.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ووجد أن ردود أفعال الآخرين داخل الواقع الافتراضي كانت مرضية له.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن هنا استوطنت نفسه لعب الأدوار، وفي لحظة كاد أن يصاب بالفصام في الشخصية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومع التقدم في تقنيات الواقع الافتراضي، شاعت وتزايدت نسبة الجريمة الإلكترونية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وخاصة في مجال النصب والاحتيال، وأيضا في مجال اقتحام الخصوصية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل الشخصية البشرية شريرة بطبعها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هذا هو التساؤل الذي يضعنا المقال أمامه.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهل سمح الواقع الافتراضي بكل تقنياته أن تخرج هذه الشخصية الشريرة إلى حيز الوجود؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالمثيرات الخارجية تحفز ظهور استجابات بشرية، تنبع من داخلهم وتكشف نواياهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والذوق العام الذي كان يحكم الجميع، غاب في هذا الواقع الجديد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تبقى الإجابة مفتوحة، وتحتاج للتحليل السلوكي، ولوجهات النظر المستنيرة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فالرقابة الحية كانت تضبط السلوك، وغيابها في الواقع الافتراضي فتح الباب واسعا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

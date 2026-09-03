@@ -1,0 +1,271 @@
+{
+  "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+  "bridgeAfter": [
+    16,
+    26
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "تظهر النتيجة، ترتفع الزغاريد أو تنهال التهاني، ويبتسم الطالب كما ينبغي أن يبتسم.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن شيئا في داخله لا يتحرك.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لا فرح حقيقي، ولا اتساع في الروح. فقط راحة مؤقتة تشبه من نجا من باب ضيق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أليست النجاة فرحا في ذاتها؟⏸ من نجا يستحق أن يرتاح.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يستحق. لكن المقال يفرق بين فرح وراحة. بعض النجاحات لا تبهج صاحبها لأنها لم تبن على معنى.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل على نجاة. وهذا هو الفرق كله.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا السؤال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حين يتحول الامتحان إلى معركة بقاء، يصبح النجاح نهاية توتر أكثر من كونه بداية وعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا ليس انطباعا عابرا. المقال يسنده ببحث محكم.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ميتا-تحليل في Frontiers in Psychology وجد ارتباطا سلبيا بين القلق والتحصيل الأكاديمي.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أي أن القلق لا يكتفي بإزعاج الطالب نفسيا،⏸ بل يهبط معه إلى قلب الأداء نفسه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ودراسة أخرى في المجلة نفسها ربطت الضغط الأكاديمي بقلق الاختبار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "مع حضور واضح لتوقعات الوالدين والعوامل الانفعالية في هذه العلاقة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا يبدأ الأخطر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "الأخطر من القلق هو المعنى الذي نعلقه على النتيجة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حين يشعر الطالب أن قيمته كلها معلقة بدرجته، يصبح النجاح نفسه هشا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأنه لا يطمئن النفس،⏸ بل يؤجل خوفها فقط إلى الاختبار التالي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن ألا نبالغ؟⏸ الطالب يعرف أن الدرجة ورقة لا أكثر.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يعرف بعقله. لكن أبحاث الجدارة الذاتية المشروطة تقول غير ذلك عن شعوره.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ربط احترام الذات بالأداء الدراسي يرتبط بضعف تقدير الذات لاحقا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبارتفاع الضغط وقلق الاختبار والدافعية المضغوطة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فتصير الدرجة حكما.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهكذا نرى طالبا ينجح،⏸ لكنه لا يفرح. يحصل على الدرجة التي أرادها ولا يشعر أنه صار أعمق أو أهدأ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأن النجاح في وعيه لم يكن ثمرة فهم،⏸ بل وثيقة قبول مؤقت من العالم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وثيقة قبول مؤقت. عبارة تصف جيلا كاملا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والمشكلة ليست في أن نفرح بالنتائج،⏸ بل في أن نختزل الرحلة كلها في لحظة إعلانها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلنرب أبناءنا على أن الفرح لا يقاس فقط بما كتبته الورقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بل بما تركته التجربة فيهم. هل صاروا أصلب؟⏸ أصدق؟⏸ أهدأ؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل تعلموا كيف يفهمون، لا فقط كيف يتذكرون؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وسؤال أخير يغير كل شيء.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهل خرجوا من التجربة أكثر قربا من أنفسهم، أم أكثر خوفا من الجولة القادمة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولهذا يقترح المقال أن يبدأ الإصلاح من سؤال صغير بعد كل نجاح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ليس كم جبت فقط،⏸ بل ماذا تعلمت عن نفسك؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وليس هل سبقت غيرك،⏸ بل هل نضجت قليلا عما كنت؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فبعض النجاحات جميلة في الصورة،⏸ لكنها فارغة من الداخل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "والتربية الحقيقية أن نعيد إلى النجاح روحه، لا شكله فقط.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

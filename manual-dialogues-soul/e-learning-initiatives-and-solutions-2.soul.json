@@ -1,0 +1,271 @@
+{
+  "slug": "e-learning-initiatives-and-solutions-2",
+  "bridgeAfter": [
+    4,
+    21
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في هذا الوقت العصيب وغير المسبوق من انتشار فيروس كورونا حول العالم، وإغلاق المدارس والجامعات.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أجبر أعدادا كبيرة من الطلاب على البقاء في المنازل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ونظرا للعزل على مستوى الدولة، وقد يطول الأمر والتعليم متوقف تماما في بلادنا الحبيبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلا بد من مبادرات وحلول للخروج من أزمة التعليم، والحل الناجع هو التعليم الإلكتروني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتفعيل منظومة التعليم عن بعد، وهي أساس مطلوب وقائم عليه التعليم الإلكتروني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هل الحلول سهلة إلى هذا الحد؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال منصف:⏸ الحلول ليست بالصعبة ولا بالسهولة المطلقة.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن يمكن أن يتم إنجازها بسرعة، فالخيارات متاحة وكثيرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حيث يمكن لوزارة التربية إطلاق منصتها الإلكترونية، وبث المواد التعليمية تلفزيونيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "على الرغم أن آلية التعليم عن بعد يجب أن تطبق وفق أفضل المعايير.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والعمل على تطويرها وتقييمها لضمان استمرارية العملية التعليمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد نتنازل قليلا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن قد نقدم القليل من التنازلات لإنجاز العمل بأقصى طاقة وأقل وقت، لاستئناف التعليم المتوقف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي هذه المرحلة أصبحت استمرارية التعليم أكثر تحديا للطلاب والمعلمين والمؤسسات التربوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أعني أن لا أحد يعرف حقا ما سيحدث غدا، وكيف ستكون الأمور في الأسبوع القادم أو الذي يليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلنجرب ونتكيف.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فقيامنا بالتجربة لنحاول جميعا التكيف معها.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "علينا فقط تكريس الكثير من الجهود لتعزيز أساليب العمل والتواصل بين الطلاب والمعلمين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يمكننا توقع نتائج مثالية إذا ما جربنا التعليم الإلكتروني.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "نظرا للسرعة الفائقة التي اضطرت فيها المدارس إلى الانتقال إلى هذه الاستراتيجية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "دون أن يكون هناك أي تحضير أو تدريب مسبق، سواء للإدارة المدرسية أو للمعلمين أو لأولياء الأمور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونعلم أن هناك بعض الإيجابيات والسلبيات التي ينطوي عليها اعتماد هذه الاستراتيجية، ولكن تعتبر أفضل الحلول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل الأدوات متوفرة فعلا؟⏸ أم أن الكلام نظري؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يعدد الأدوات بأسمائها. فإن جوجل سمحت مجانا لاستخدام أدوات اللقاء المرئي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكذلك الوزارة لديها منصة مفعلة، وبكل سهولة ممكن التعامل مع الطلبة وتدريسهم بغرف صفية ودردشة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويمكن أن ينشئ المُعلِّم فيديو فيه شرح للمواد الأساسية، ومنها المواد العلمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو أي موقع تعليمي يمكن استخدامه بيسر ومرونة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهي شبه جاهزة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهي تكاد تكون سهلة ولا تحتاج إلى وقت في تجهيزها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويتم تحميل الدروس والنشاطات والتدريبات وغيرها للطلبة، كذلك استخدام تطبيقات على الجوال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفيديوهات لشرح المواد التي تحتاج إلى شرح، وهذا يتطلب مساعدة التربية والإعلام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونشرها عبر التلفزيون أو مواقع التواصل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فدعونا نخرج من هذه الأزمة وقد حققنا إنجازا في التعليم ككل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وللطلبة الذين يجلسون في المنازل بسبب العزل، ويتعلموا عن بعد من خلال منظومة التعليم الإلكتروني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فقد قدمنا الكثير من الحلول البديلة في التعليم، ويمكن للوزارة أو المُعلِّم القيام بها في أضيق الظروف.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ولنأخذ قاعدة أرددها دائما:⏸ المدارس تقف والتعليم مستمر مدى الحياة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,285 @@
+{
+  "slug": "qabas-201711-003",
+  "bridgeAfter": [
+    10,
+    30
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "دخلت المنزل بعد يوم عمل طويل، ووجدت ابني الصغير يتصفح على اللابتوب.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتفت إليه بلهفة سائلا:⏸ بابا، هل ستنتهي الهواتف الذكية يوما من الأيام؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فجلست أنظر له طويلا، فقد أثارني ذكاء السؤال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والإجابة جاءت سريعة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والإجابة التي جاءتني بسرعة:⏸ نعم يا حبيبي، كل شيء له نهاية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والله أعلم. أراد المزيد، ولكن انصرفت عنه أتفكر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي طريق بحثه المستمر، قرأ الكثير عن انتهاء عصر الهواتف الذكية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي ذلك الوقت ستختلف الحياة بشكل كامل عما هي عليه في الوقت الراهن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتوصل في قراءاته أن أسباب زوال الهواتف الذكية هو الذكاء الصناعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "التي تقودها مايكروسوفت وفيسبوك وإيلون ماسك وأمازون وغيرهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إن الهواتف الذكية لا تتعدى كونها تحديثا اعتياديا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولم تأت بشيء ثوري على الإطلاق. قد تتساءلون: كيف ذلك؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ببساطة هي تصغير.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فببساطة، الهواتف الذكية تصغير لأجهزة اللابتوب وسطح المكتب في الحواسيب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكل الأدوات والوسائل من كاميرا وماوس وكيبورد وشاشة والتطبيقات متوفرة في الحواسيب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بالتالي فهو تصغير لها لا أكثر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا ينطبق على جلاكسي إس ثمانية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "لكن المميز فيه أنه أتى بنظارات واقع افتراضي جديدة، إلى جانب المساعد الرقمي الجديد بيكسبي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الذي تعد سامسونج أنه سيمكن المستخدمين مستقبلا من التحكم بكافة المميزات عبر الأوامر الصوتية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل هذا وحده ما ينهي عصر الهواتف؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل النظارات القادمة.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمايكروسوفت وفيسبوك وجوجل وآبل جميعهم يقومون بصنع نظارات للواقع المعزز.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بإمكانها تجسيد الصور ثلاثية الأبعاد مباشرة بأعينك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وترى مايكروسوفت أن الواقع المعزز مستقبلا قد يستبدل الهواتف الذكية والتلفاز وأي شيء يحتوي على شاشة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حيث أنه لن يكون هنالك داع لكل هذه الأجهزة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فسيكون بإمكان إجراء المكالمات والتواصل النصي ومشاهدة الأفلام ولعب الألعاب عبر الأعين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إن تلك الشركات تعد بأن المستقبل سيجمع بين الواقع المادي والرقمي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وسيكونان نفس الشيء، ولن يشعر بأي فارق بينهما.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا تصبح الأمور جنونية،⏸ فكل التكنولوجيات التي ذكرناها قابلة للارتداء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حتى ولو أنها مجرد نظارات نلبسها على أعيننا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وليس من السهل التنبؤ بما سيحويه المستقبل، ولكن ربما بعد عدة عقود سنراها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما أخطر ما وصل إليه هذا الطريق؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "خاصة بعد إطلاق شركة نيورالينك بواسطة إيلون ماسك، زرع كمبيوترات عبر شرائح ذكية بأدمغة البشر.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "عبر ما يسمى بالرباط العصبي، حيث يصبح الإنسان والآلة واحدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في الواقع، إن فكرة الذكاء الاصطناعي مخيفة، ولكن اندماج الآلة مع البشر جنون من مستوى جديد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن إيلون ماسك يرى أن تطور الذكاء الاصطناعي سيفرض على البشر دمج أنفسهم بالكمبيوتر لمواكبة الآلات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالعلم يتقدم يوما بعد يوم، وتمهيد مستقبل الاندماج مع الآلات كان من الهواتف الذكية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وأصدقكم أن هذه الفكرة بحد ذاتها تفقدني الصواب، فليس من المعقول أن نصبح نصف بشر ونصف آلة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

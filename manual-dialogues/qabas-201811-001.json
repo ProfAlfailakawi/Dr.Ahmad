@@ -1,0 +1,314 @@
+[
+  {
+    "speaker": "male",
+    "text": "منذ أن جاءت السيول وما أحدثته من مضار على بلادنا الحبيبة الكويت.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لم نجتمع مع أصدقائنا والمقربين منا في تلك الأيام.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وجاءت جمعتنا منذ كم يوم بالصدفة لا بموعد بيننا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وقد لاحظت أمرا عجيبا فيهم.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وقد لاحظت أن الكثيرين منهم يشعر بالضيق من الأخبار عبر وسائل الإعلام.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وما ينشر في السوشيل ميديا من تهكمات لمواضيع عديدة تخص الشأن الكويتي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "كالسيول والفساد وغيرها، وكأن راية الآخرين بيضاء ناصعة تماما.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فمن رأى الفيديوهات التي على اليوتيوب عن السيول في الكويت يجد أمرا عجيبا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فيجد الكويتي وهو يضرب النكت.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يجد أن الكويتي يجلس فوق سيارته بصبر وهو يضرب النكت.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ومن حولهم غارقون بسياراتهم في السيول يتمازحون رغم الصعوبات التي يواجهونها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وتجد من هو كشرطي المرور يوجه السائقين بالطرق الخطرة والمفتوحة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بطرق مضحكة ومحذرة طوال طريقه الغارق، كم أنت عظيم يا كويتي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولكن إعلامنا كان غائبا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولا أعلم لماذا وسائل الإعلام بأنواعها تقف وراء الخبر المضلل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والقائم على الفتن، فالكويت ليست الوحيدة التي جاءتها السيول.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "فهناك دول جوار غرقت في السيول أيضا في تلك الأيام.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وأحدثت أضرارا كبيرة وإصابات ووفيات، وكان وضعها كارثيا.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فلماذا لم يتم تسليط الضوء عليها عبر وسائل الإعلام كما الكويت؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولماذا لم يتهكموا على أوضاعها كما فعلوا معنا؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهي أزمات لا بد من الوقوف معها ومؤازرتها لا التهكم عليها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وكذلك حال إعلامنا المحلي.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وكذلك وسائل الإعلام المحلي في العادة بين المجاملة والتمثيل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فإعلامنا وقف موقف المجامل لهؤلاء، وكان غائبا في التمثيل لكويتنا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نعم، تجامل وسائل الإعلام دولة على حساب دولة أخرى.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وتقف مع أزمة وتتهكم بأزمة أخرى في الوقت نفسه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويغيب الإعلام المحلي الذي يمثل شعبه في مثل هذه المواقف.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهذا تمثيل على حساب الواقع، وأسلوب ممنهج يكسر ويعاضد.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فلا ينفع المجاملة ولا التمثيل الخارجي للآخرين الغائب.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وإن حضر يبقى ضمن المجاملة أو المراءاة، فكلاهما كذب بكذب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ومعادلة المجاملة والتمثيل الغائب معادلة خاسرة لا تنفع ولا تسمن من جوع.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فماذا كان على الإعلام المحلي أن يفعل؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وكان على وسائل الإعلام المحلي أن يقف رادا على هؤلاء كممثل عنا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وألا يكون غائبا مجاملة للآخرين على حسابنا نحن.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فهذا الغياب ليس على مستوى السيول فقط، بل قد يصل كافة المجالات.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالكويت لها حسادها، والحسد خبيث، يضرنا ولا ينفعنا أبدا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وعلى الإعلام المحلي أن يقف مع وطنه وشعبه وقفة تردع من يتخطى الخطوط الحمراء.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن يكون حاضرا بكل المواقف، ولتكن يا إعلامنا على قدر المسؤولية كسلطة خامسة ضمنها الدستور.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

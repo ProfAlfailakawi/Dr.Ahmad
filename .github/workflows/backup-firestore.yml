@@ -1,0 +1,99 @@
+name: درع النسخ الاحتياطي — نسخ عودي وبروفة استرجاع
+
+on:
+  schedule:
+    # يومياً 03:00 UTC = 06:00 صباح الكويت (RPO ≈ ٢٤ ساعة). النسخة صغيرة فالكلفة صفر.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: backup-firestore
+  cancel-in-progress: false   # لا نلغي نسخةً جارية بأخرى — النسخة السليمة أهمّ
+
+permissions:
+  contents: read
+
+jobs:
+  backup-and-drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+            !/audio-meta-*.json
+            !/bodies-vocalized-*.json
+            !/podcast-state-*.json
+            !/whatsapp-agent/*.command
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: حارس تغطية الجرد (يفشل على مصدر بيانات غير مُدرج)
+        run: node scripts/guard-backup-inventory.mjs
+
+      - name: تحضير حساب الخدمة
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}' > sa.json
+
+      - name: النسخ العودي + Manifest + بروفة استرجاع معزولة مبرهنة
+        run: node scripts/backup-firestore.mjs --drill
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: تحقّق سلامة النسخة داخل الأنبوب (SHA-256 + الأعداد + الفساد)
+        run: |
+          FILE=$(ls build/firestore-backup-*.json.gz | head -1)
+          node scripts/backup-restore.mjs verify "$FILE"
+
+      # ═══ 3-2-1: نسخة ١ في R2 (المزوّد أ) ═══
+      - name: إيداع النسخة + Manifest في باكت R2 الخاصّ بالنسخ (مؤرخة + الأحدث)
+        run: |
+          FILE=$(ls build/firestore-backup-*.json.gz | head -1)
+          MAN=$(ls build/firestore-backup-*.manifest.json | head -1)
+          BUCKET="${{ vars.CLOUDFLARE_R2_BACKUP_BUCKET }}"
+          EP="${{ secrets.CLOUDFLARE_R2_BACKUP_ENDPOINT }}"
+          aws s3 cp "$FILE" "s3://$BUCKET/backups/$(basename $FILE)" --endpoint-url "$EP" --no-progress
+          aws s3 cp "$MAN"  "s3://$BUCKET/backups/$(basename $MAN)"  --endpoint-url "$EP" --no-progress
+          aws s3 cp "$FILE" "s3://$BUCKET/backups/firestore-latest.json.gz" --endpoint-url "$EP" --no-progress
+          aws s3 cp "$MAN"  "s3://$BUCKET/backups/firestore-latest.manifest.json" --endpoint-url "$EP" --no-progress
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_BACKUP_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'
+
+      # ═══ 3-2-1: نسخة ٢ مستقلة عن R2 تماماً — أثر GitHub (المزوّد ب، مجاني، ٩٠ يوماً) ═══
+      # هذه هي «النسخة المستقلة عن مزوّد الإنتاج»: لو ضاع باكت R2 كاملاً تبقى هنا.
+      - name: نسخة مستقلة عن R2 (أثر GitHub، احتفاظ ٩٠ يوماً)
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestore-backup-${{ github.run_id }}
+          path: |
+            build/firestore-backup-*.json.gz
+            build/firestore-backup-*.manifest.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: ملخّص (ماذا نُسخ، أين، وهل تحقّق)
+        if: always()
+        continue-on-error: true
+        run: |
+          {
+            echo "## درع النسخ الاحتياطي"
+            if [ -f build/firestore-backup-*.manifest.json ]; then
+              MAN=$(ls build/firestore-backup-*.manifest.json | head -1)
+              echo "- **الحالة:** ✅ نسخة عودية + تحقّق SHA-256 + بروفة استرجاع معزولة نجحت"
+              echo "- **المجموعات:** $(node -pe 'require("./"+process.argv[1]).collectionCount' "$MAN")"
+              echo "- **المستندات:** $(node -pe 'require("./"+process.argv[1]).documentCount' "$MAN")"
+              echo "- **مسارات فرعية:** $(node -pe 'require("./"+process.argv[1]).subcollectionPaths.join(", ")||"—"' "$MAN")"
+              echo "- **SHA-256:** \`$(node -pe 'require("./"+process.argv[1]).sha256' "$MAN")\`"
+              echo "- **الوجهات:** R2 (backups/) + أثر GitHub مستقل (٩٠ يوماً)"
+            else
+              echo "- **الحالة:** ❌ فشل — لم تُنتَج نسخة. النسخة السليمة السابقة في R2 وأثر GitHub لم تُمَسّ."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

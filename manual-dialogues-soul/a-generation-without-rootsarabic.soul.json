@@ -1,0 +1,204 @@
+{
+  "slug": "a-generation-without-rootsarabic",
+  "bridgeAfter": [
+    10,
+    20
+  ],
+  "breathAfter": [
+    24
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "هذا جيلٌ يعرف كثيراً عن العالم، وقليلاً عن نفسه.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يتنقّل بإصبعه بين قاراتٍ لا يعيش فيها، ويحفظ سِيَر نجومٍ لا يعرفونه.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكنه قد يتلعثم⏸ حين يُسأل عن أول حكايةٍ في عائلته، أو عن اسم المنطقة الأولى التي خرجت منها أسرته.",
+      "feeling": "shockbeat",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "شاشةٌ فتحت له الكوكب،⏸ لكنها في الطريق أغلقت عليه باب الجذور.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وماذا يقول علم النفس في جيلٍ كهذا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "منذ إريك إريكسون يخبرنا علم نفس النموّ أن من أهم مهام المراهقة بناء هويةٍ واضحةٍ: أن تكون للشاب قصةٌ متماسكةٌ عن نفسه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من أنا؟⏸ ماذا أؤمن؟⏸ أين أنتمي؟",
+      "feeling": "intimate",
+      "deliveryType": "question",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمراجعات الحديثة لتطور الهوية في المراهقة تُظهر نتيجةً واضحةً: من يملك هويةً أوضح وسرداً متماسكاً لحياته وقيمه، يكون أفضل حالاً في التحصيل والعلاقات والصحة النفسية، مقارنةً بمن يعيش في هويةٍ مبعثرةٍ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "قصةٌ متماسكة…⏸ ليست ترفاً إذن.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأبحاث الهوية السردية عند دان ماك آدمز ومدرسته وجدت أمراً لافتاً:⏸ من يستطيع أن يروي قصةً أكثر ترابطاً عن حياته، يتمتع بتوافقٍ نفسيٍّ أعلى ودرجاتٍ أقل من أعراض القلق والاكتئاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كأن القدرة على حَكْي الحكاية بوضوح، تعني أن الداخل ليس مفكَّكاً تماماً.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لكن، أليست الهوية الثقافية مجرد تفصيلٍ تراثي؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ليست تفصيلاً، بل عاملُ حمايةٍ حقيقيٌّ. ~~ تحليلٌ جامعٌ لعشرات الدراسات نُشر في مجلة تطور الطفل وجد أن الشعور الإيجابي بالانتماء الثقافي يرتبط بتقدير ذاتٍ أعلى، ومستوياتٍ أقل من الاكتئاب لدى اليافعين.",
+      "feeling": "firm",
+      "feeling2": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فمن يعرف من هو…⏸ يصعب أن يضيع.",
+      "feeling": "resolve",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "لكن ماذا لو تربّى هذا الجيل في بيوتٍ مشغولةٍ دائماً؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومدارسَ تدرّس التاريخ كصفحاتٍ للحفظ لا كحكايةٍ تُعاش، وإعلامٍ لا يرى في الماضي إلا مادةً للجدل أو الاستهلاك.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "سيجد المراهق نفسه محاطاً بسِيَر الآخرين، دون أن يُمنح فرصةً ليفهم سيرته هو.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "يعرف تاريخ الفرق العالمية ولا يعرف تاريخ حارته،⏸ ~~ ويحفظ شعارات العلامات التجارية… ولا يحفظ دعاء جدته قبل النوم.",
+      "feeling": "lively",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهل الانتماء وحده يحمي من كل هذا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هو من أقوى عوامل الحماية التي نعرفها. ~~ منذ بحث الحاجة إلى الانتماء لباوميستر وليري، والدراسات الوطنية الكبرى على المراهقين تؤكد: حين يشعر اليافع بالانتماء لأسرته ومدرسته وأقرانه، تنخفض لديه معدلات الاكتئاب والسلوكيات الخطرة.",
+      "feeling": "firm",
+      "feeling2": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن يشعر أنه من أهل المكان، يكون أكثر تماسكاً وأقدر على عبور الأزمات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فمن أين تنبت الجذور؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ربما من أشياءَ تبدو عاديةً:⏸ مائدةٍ يُذكر عليها اسم الجَدّ لأول مرة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ودرسِ تاريخٍ يربط بين خريطة الوطن ووجوه الناس، ونزهةٍ قصيرةٍ إلى الحيّ القديم.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في مثل هذه اللحظات الصغيرة يتعلم الشاب أن حياته حلقةٌ في سلسلة، لا صفحةٌ وحيدةٌ معزولةٌ.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فإن أردنا شباباً ينفتحون على العالم دون أن يضيعوا فيه، فلنردّ إليهم أن يعرف كلٌّ منهم من أين جاء…⏸ ليُحسِنَ اختيار الطريق.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، فليقرأ المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 560
+    }
+  ]
+}

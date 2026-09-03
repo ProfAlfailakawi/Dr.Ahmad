@@ -1,0 +1,92 @@
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { EASE, FadeUp, Page, Reveal, sharedViewName } from '../components/ui'
+import { BranchGrove, useBranches } from '../components/ComposeScene'
+import { useSeo } from '../components/seo'
+import { useCmsContent } from '../lib/content'
+import { MediaSaveButton } from '../components/MySpace'
+import { SocialIcon } from '../components/icons'
+import { mergeMediaArchive, formatMediaTime, useArchiveTranscripts } from '../lib/media-archive'
+import { arabicCountPhrase, PASSAGE_FORMS, TIMED_SEGMENT_FORMS } from '../lib/arabic-count.ts'
+
+const normalize = (value = '') => value.normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g, '').replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').toLowerCase()
+
+export default function MediaDetail() {
+  const { slug = '' } = useParams()
+  const [params] = useSearchParams()
+  const { media: cmsMedia, articles, books, papers, loading } = useCmsContent()
+  const media = useMemo(() => mergeMediaArchive(cmsMedia), [cmsMedia])
+  const item = media.find((entry) => entry.slug === slug)
+  /* الأغصان: من خريطة المعرفة، بالقانون نفسه الذي في «اسأل المكتبة». */
+  const branches = useBranches({ seedTitle: item?.title || '', seedText: item?.topics || '', seedKind: 'media', excludeSlug: slug, articles, books, papers, media: cmsMedia })
+  const [start, setStart] = useState(() => Math.max(0, Number(params.get('t')) || 0))
+  const [query, setQuery] = useState('')
+  const [transcriptOpen, setTranscriptOpen] = useState(false)
+  const reduce = useReducedMotion()
+  /* صفحة اللقاء تعرض المقاطع، فتُطلب فور فتحها — ويعيد رقم الإصدار الحسابَ حين تصل. */
+  const transcriptsRevision = useArchiveTranscripts(true)
+  const transcript = useMemo(() => item?.transcript || null, [item, transcriptsRevision])
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const related = useMemo(() => item ? media.filter((entry) => entry.slug !== item.slug).slice(0, 8) : [], [item, media])
+  const matches = useMemo(() => {
+    const q = normalize(query.trim())
+    if (!q || !transcript?.segments) return transcript?.segments || []
+    return transcript.segments.filter((segment) => normalize(segment.searchText || segment.displayText || segment.text).includes(q))
+  }, [query, transcript])
+  const isAudio = item?.kind === 'audio' || item?.kind === 'radio'
+  const audioBase = (import.meta.env.VITE_MEDIA_AUDIO_BASE_URL || import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+  /* الرابط المحفوظ في اللوحة (وهو رابط تنزيل موقّع من Firebase Storage) يعلو دائماً؛
+     ومجلد الاستضافة الخارجي لا يُستعمل إلا حين يُعرَّف متغيره فعلاً. */
+  const hostedAudio = item?.audioFile && audioBase ? `${audioBase}/${item.audioFile.split('/').map(encodeURIComponent).join('/')}` : ''
+  const audioSource = isAudio ? (item?.audioUrl || hostedAudio || item?.url || '').trim() : ''
+  const player = !isAudio && item?.id ? `https://www.youtube-nocookie.com/embed/${item.id}?rel=0&start=${Math.floor(start)}` : ''
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio || !audioSource) return
+    const seek = () => { audio.currentTime = Math.min(Math.max(0, start), Number.isFinite(audio.duration) ? audio.duration : start) }
+    if (audio.readyState >= 1) seek()
+    else audio.addEventListener('loadedmetadata', seek, { once: true })
+    return () => audio.removeEventListener('loadedmetadata', seek)
+  }, [audioSource, start])
+  useSeo({ title: item?.title || 'ظهور إعلامي', path: `/media/${slug}`, description: item?.topics || 'مادة من الأرشيف الإعلامي.' })
+  if (!item && loading) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
+  if (!item) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على المادة.</div></Page>
+
+  return <Page className="content-media page-journey">
+    <article className="px-6 pb-16 pt-32 md:px-11 md:pt-40">
+      <div className="mx-auto max-w-[1080px]">
+        <FadeUp><Link to="/media" viewTransition className="text-[.8rem] text-soft hover:text-accent">← الأرشيف الإعلامي</Link></FadeUp>
+        <FadeUp delay={.04}><header className="mt-6 border-b border-hair pb-8"><div className="flex flex-wrap items-center gap-2 text-[.72rem] text-soft"><span className="font-semibold text-accent">{item.program || 'ظهور إعلامي'}</span><span>·</span><span>{item.outlet}</span>{item.date && <><span>·</span><time>{item.date}</time></>}{item.duration && <><span>·</span><span dir="ltr">{item.duration}</span></>}</div><h1 style={{ viewTransitionName: sharedViewName('media-title', item.slug) }} className="mt-4 font-display text-[clamp(2rem,5vw,3.4rem)] font-bold leading-[1.25] text-ink"><Reveal>{item.title}</Reveal></h1>{item.topics && <p className="mt-4 max-w-3xl text-[.86rem] leading-[1.9] text-soft">{item.topics}</p>}<div className="mt-5"><MediaSaveButton slug={item.slug} /></div></header></FadeUp>
+
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,.75fr)]">
+          <FadeUp delay={.08}><section>
+            {player ? <div className="spatial-hero spatial-media overflow-hidden rounded-[1.4rem] border border-hair bg-ink shadow-[0_24px_60px_rgba(20,31,45,.12)]" style={{ aspectRatio: '16 / 9', viewTransitionName: sharedViewName('media-visual', item.slug), ['--spatial-image' as string]: item.thumbnail || item.id ? `url(${item.thumbnail || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`})` : 'none' }}><iframe key={`${item.id}-${start}`} src={player} title={item.title} allow="encrypted-media; picture-in-picture" allowFullScreen className="h-full w-full border-0" /></div> : audioSource ? <div className="spatial-hero rounded-[1.4rem] border border-hair bg-wash p-6 shadow-[0_18px_48px_rgba(20,31,45,.08)]" style={{ viewTransitionName: sharedViewName('media-visual', item.slug) }}><span className="text-[.68rem] font-semibold text-accent">التسجيل الصوتي</span><audio ref={audioRef} controls preload="metadata" className="mt-4 w-full" src={audioSource}>متصفحك لا يدعم تشغيل الصوت.</audio></div> : <div className="rounded-[1.4rem] border border-hair bg-wash p-6 text-center"><p className="text-[.78rem] text-soft">لم يُضف ملف صوت صالح لهذه المادة بعد.</p></div>}
+            {start > 0 && <div className="mt-3 flex items-center justify-between rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-[.72rem]"><span className="text-ink">يبدأ العرض من <strong className="text-accent">{formatMediaTime(start)}</strong></span><button type="button" onClick={() => setStart(0)} className="text-soft hover:text-accent">من البداية</button></div>}
+          </section></FadeUp>
+
+          <FadeUp delay={.12}><aside className="rounded-[1.4rem] border border-hair bg-wash p-5"><span className="text-[.68rem] font-semibold text-accent">تفاصيل الظهور</span><dl className="mt-4 grid gap-4 text-[.76rem]"><div><dt className="text-soft">النوع</dt><dd className="mt-1 font-semibold text-ink">{item.kind === 'audio' || item.kind === 'radio' ? 'مادة إذاعية' : 'لقاء مرئي'}</dd></div><div><dt className="text-soft">المصدر</dt><dd className="mt-1 font-semibold text-ink">{item.outlet}</dd></div>{transcript?.available && <div><dt className="text-soft">الفهرسة</dt><dd className="mt-1 font-semibold text-ink">{arabicCountPhrase(transcript.segmentCount, TIMED_SEGMENT_FORMS)}</dd></div>}</dl></aside></FadeUp>
+        </div>
+
+        {transcript?.available && <FadeUp delay={.16}><section className="mt-10 rounded-[1.5rem] border border-hair bg-canvas p-5 md:p-7"><button type="button" onClick={() => setTranscriptOpen((open) => !open)} aria-expanded={transcriptOpen} className="flex w-full flex-wrap items-end justify-between gap-4 text-right"><div><span className="text-[.68rem] font-semibold text-accent">النص الزمني</span><h2 className="mt-1 font-display text-2xl font-semibold text-ink">ابحث وانتقل إلى اللحظة</h2></div><span className="flex items-center gap-3 text-[.7rem] text-soft"><span>{arabicCountPhrase(transcript.segmentCount, PASSAGE_FORMS)}</span><span aria-hidden className={`text-accent transition-transform duration-300 ${transcriptOpen ? 'rotate-180' : ''}`}><SocialIcon name="ChevronDown" size={14} /></span></span></button><AnimatePresence initial={false}>{transcriptOpen && <motion.div initial={reduce ? false : { height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={reduce ? undefined : { height: 0, opacity: 0 }} transition={{ duration: reduce ? 0 : .2, ease: EASE }} className="overflow-hidden"><div className="mt-5 rounded-xl border border-hair bg-wash px-4 py-3"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث داخل كلام اللقاء…" className="w-full bg-transparent text-[.82rem] text-ink outline-none placeholder:text-soft/70" /></div><div className="mt-5 max-h-[42rem] space-y-2 overflow-y-auto pr-1">{matches.map((segment) => <button key={`${segment.start}-${segment.end}`} type="button" onClick={() => { setStart(segment.start); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="group grid w-full gap-3 rounded-xl border border-transparent p-3 text-right transition hover:border-accent/30 hover:bg-wash md:grid-cols-[5rem_minmax(0,1fr)]"><span className="font-mono text-[.72rem] font-bold text-accent">{formatMediaTime(segment.start)}</span><span className="text-[.8rem] leading-[1.9] text-ink/[.85]">{segment.displayText || segment.text}</span></button>)}{!matches.length && <p className="py-8 text-center text-[.78rem] text-soft">لا توجد عبارة مطابقة داخل هذا اللقاء.</p>}</div></motion.div>}</AnimatePresence></section></FadeUp>}
+
+        {related.length > 0 && <FadeUp delay={.2}><section className="mt-12 border-t border-hair pt-8" aria-labelledby="media-related-title">
+          <div className="flex items-end justify-between gap-4"><div><span className="text-[.68rem] font-semibold text-accent">امتداد اللقاء</span><h2 id="media-related-title" className="mt-1 font-display text-2xl font-semibold text-ink">مواد أخرى من الأرشيف</h2></div><Link to="/media" className="text-[.72rem] font-semibold text-accent">شاهد الكل ←</Link></div>
+          <div dir="rtl" className="spatial-collection media-related-rail mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [touch-action:pan-x]">
+            {related.map((entry) => <Link key={entry.slug} to={`/media/${entry.slug}`} viewTransition className="spatial-card w-[min(82vw,19rem)] shrink-0 snap-start overflow-hidden rounded-2xl border border-hair bg-canvas transition hover:border-accent">
+              <div className={`spatial-media aspect-video overflow-hidden bg-wash ${entry.id && entry.kind !== 'audio' && entry.kind !== 'radio' ? 'complete-media-frame' : ''}`} style={{ viewTransitionName: sharedViewName('media-visual', entry.slug), ['--spatial-image' as string]: entry.thumbnail || entry.id ? `url(${entry.thumbnail || `https://i.ytimg.com/vi/${entry.id}/hqdefault.jpg`})` : 'none', ...(entry.id && entry.kind !== 'audio' && entry.kind !== 'radio' ? ({ '--media-thumb': `url(${entry.thumbnail || `https://i.ytimg.com/vi/${entry.id}/hqdefault.jpg`})` } as CSSProperties) : {}) }}>{entry.id && entry.kind !== 'audio' && entry.kind !== 'radio' ? <><img decoding="async" src={entry.thumbnail || `https://i.ytimg.com/vi/${entry.id}/hqdefault.jpg`} alt="" loading="lazy" onLoad={(event) => { const img = event.currentTarget; if (!entry.thumbnail && img.naturalWidth <= 120 && img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${entry.id}/mqdefault.jpg`; }} onError={(event) => { const img = event.currentTarget; if (img.src.includes('/hqdefault.')) img.src = `https://i.ytimg.com/vi/${entry.id}/mqdefault.jpg`; else img.style.display = 'none'; }} className="complete-media-image h-full w-full" /><span className="cinematic-play cinematic-play--small" aria-hidden><SocialIcon name="Play" size={14} /></span></> : <div className="flex h-full items-center justify-center text-accent"><span className="flex h-14 w-14 items-center justify-center rounded-full border border-accent/[.22] bg-canvas/[.72]"><SocialIcon name="Play" size={17} /></span></div>}</div>
+              <div className="p-4"><span className="text-[.65rem] font-semibold text-accent">{entry.program || entry.outlet}</span><strong style={{ viewTransitionName: sharedViewName('media-title', entry.slug) }} className="mt-1 line-clamp-2 block text-[.82rem] leading-[1.7] text-ink">{entry.title}</strong></div>
+            </Link>)}
+          </div>
+        </section></FadeUp>}
+      </div>
+    </article>
+    {branches.length > 0 && (
+      <section className="px-6 pb-16 md:px-11 md:pb-20">
+        <div className="mx-auto max-w-3xl">
+          <BranchGrove items={branches} variant="rail" />
+        </div>
+      </section>
+    )}
+  </Page>
+}

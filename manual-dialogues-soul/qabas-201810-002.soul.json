@@ -1,0 +1,285 @@
+{
+  "slug": "qabas-201810-002",
+  "bridgeAfter": [
+    17,
+    26
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كنت أجلس مع عدد ممن لديهم اهتمامات ومتابعات كثيرة على اليوتيوب.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فأخبرتهم أني أرى شيئا غريبا في اليوتيوب نفسه هذه الأيام.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وأن المحتوى الذي يتم تنزيله لي يبدو فيه الغموض في بعض الأحيان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فسألوني جميعا:⏸ وكيف يكون ذلك يا دكتور؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فأخبرتهم أني كثيرا ما أفكر في موضوع ما بيني وبين نفسي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو يحدث أن يدور في عقلي تساؤلات كثيرة عن أمر ما.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والغريب أني في وقت الفراغ أتصفح اليوتيوب كعادتي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فيذهلني ما أراه أمامي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فيذهلني أن ما كنت أفكر فيه أو أتساءل عنه أجده أمامي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولم أجر أي عملية بحث على اليوتيوب إطلاقا بتلك الأمور من قبل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أجد أن هناك محتوى قد نزل فيه، وبشكل محدد وحصري.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وفي البداية كنت أظن أن هذا كله صدفة لا أكثر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن مع تكرار ذلك كثيرا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن مع تكرار ذلك، بدأت أراقب الأمر عن قرب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فكنت أفكر يوما بأحد أقربائي وحال ابنه من ذوي الاحتياجات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهو طفل صغير، ونسبة الذكاء لديه عالية جدا.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولديه تصرفات تبدو غريبة على كل من يراه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وعند تصفحي لليوتيوب أتفاجأ بأن هناك فيديو يتحدث عن نفس حالة ذلك الطفل.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ووصفه بشكل دقيق، وكأنهم يقرؤون ما في عقلي؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، ترى كيف يمكن أن نفسر هذا الأمر يا سادة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهي ليست صدفة كما ظننت.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فهي ليست صدفة كما كنت أعتقد في البداية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد مر بي هذا الأمر نفسه عشرات المرات في السنوات الأخيرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهناك من لاحظ هذا الأمر ولكن لم يتابعه كما تابعته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نعم يا سادة يا كرام، هناك سر خفي في محتوى اليوتيوب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وغموض عجيب لا يمكن تغافله أو تجاهله أبدا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وقد أكده الكثيرون ممن مرت بهم التجربة نفسها.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فكيف يمكن أن يعلموا ما في عقولنا نحن من أفكار؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويعطونا أجوبة لها عن طريق تنزيل محتوى فيديوهات لنفس المواضيع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل من تفسير علمي لهذا الأمر كله؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تشاورت مع الكثيرين أصحاب الاختصاص في السوشل ميديا ومجال التكنولوجيا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فوضعوا بعض الفرضيات، والكثير من التفسيرات المختلفة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والتي لم تخرج من نطاق الاعتقاد إلى نطاق اليقين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فارتأيت أن نضع هذا الموضوع الغامض للمناقشة فيما بيننا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وطرح تجارب القراء في هذه المسألة الغريبة التي مرت بهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأترك لكم يا سادة يا كرام الباب مفتوحا للتوصل إلى نتيجة مقنعة ترضي عقولنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن ثم البحث عن أسرار اليوتيوب في محتوياته الغامضة التي تقرأ ما في العقول.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فالمسألة هامة وخطيرة،⏸ ولا بد أن نجد سببا لمثل هذه الظاهرة الغامضة بيننا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

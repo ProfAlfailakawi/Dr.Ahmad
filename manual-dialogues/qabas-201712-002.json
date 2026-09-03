@@ -1,0 +1,322 @@
+[
+  {
+    "speaker": "male",
+    "text": "وأنا في طريقي إلى المنزل، جاءتني مجموعة من الفيديوهات عن تكنولوجيا الواقع المعزز.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "من طلبته الجامعيين ومن الزملاء الذين يعرفهم.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وعند وصولي جلست أشاهدها واحدا بعد الآخر.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "منها إنجاز علمي.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فمنها ما هو إنجاز علمي وتعليمي، ومنها من وجهة نظره كارثي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "هل نحتفل بانتصارات العقول البشرية؟ أم ننصب بيوت العزاء لما سيؤول عليه الحال؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "وقد يستغرب البعض من سوداوية الطرح في هذا المقال.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فأنا من أنصار التكنولوجيا بأشكالها وثورتها التي لم ولن تنتهي، فهي مجالي وتخصصي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولكن ما رآه أقلقه.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولكن ما رآه وما يحدث جعل الكثير من القلق يختلج نفسه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فالواقع المعزز من المصطلحات الجديدة، كتقنية تعمل على إضافة الكائنات الافتراضية لمشاهدة حقيقية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "من خلال تمكين إضافة المعلومات الناقصة في الحياة الحقيقية.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويمكن أن تقوم هذه التقنية من حل مشاكل نقص الموارد في الكثير من المجالات، ومنها مجال التعليم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فهي تولد عرضا مركبا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن تكنولوجيا الواقع المعزز تولد عرضا مركبا للمستخدم.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "يمزج بين المشهد الحقيقي الذي ينظر إليه المستخدم، والمشهد الظاهري الذي تم إنشاؤه بواسطة الحاسوب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "والذي يعزز المشهد الحقيقي بمعلومات إضافية جديدة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نعم هو كذلك، وهي ثورة حقيقية في عالم التكنولوجيا.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويختلف نوعا ما عن الواقع الافتراضي المعروف.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فأين يكمن الخطر في تقنية بهذه الفائدة؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "عندما نشاهد استخدام الواقع المعزز لتضليل الفكر البشري.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "واستخدامه لأغراض تحارب الواقع.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "واستخدامه لأغراض تحارب واقع البشر، وتبعدهم عن الواقع.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وتضعهم أمام تصديق ما يرون وتكذيبه، وقد يكون حربا فكريا دينيا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "على سبيل المثال، في أحد الفيديوهات، هناك بدول عربية وغربية شوهدت ظواهر غريبة في السماء.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ومركبات غريبة، والكثير من المجسدات التي ظهرت في السماء.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وكان لها تأثير خطير على الناس، فالكثير منهم صدق ما رأى.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأنها تجسد الحقيقة، عداك عن الأصوات التي تظهر في السماء بنغمة معينة مخيفة نوعا ما.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويقول في هذا الأمر: إن ما نشاهده هو من نقمات تكنولوجيا الواقع المعزز.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فهو كما ذكرنا يجسد شخصية معينة وكأنها حقيقية.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لا يمكن أن تفرق إن كانت سرابا أو واقعا أمامك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولا بد من أن نثقف أنفسنا من أجل ألا نقع في شباك هذه التكنولوجيا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "العظيمة والخطرة بنفس الوقت، أليس كذلك؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فليس كل ما نشاهده حقيقة، وعصر المعجزات قد انتهى.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فلنحترم عقولنا نحن، ونواجه من يحاول أن يسلبها ويغرس أفكارا بالية فينا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهنا يبرز خطر الواقع المعزز على الفكر البشري.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "رغم إنجازاته التدريجية في التعليم، وفي التدريب العسكري، والتصميم الهندسي، والروبوتات، والصناعة التحويلية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فدعونا لا نصدق كل ما نشاهده، فالواقع المعزز ثورة تكنولوجية بحد ذاتها، وهي تكنولوجيا واعدة.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فلنقف مع أنفسنا وقفة تثقيفية حتى نخرج من زوبعات التكنولوجيا الثورية، ونعيش الواقع ولندع الأحلام والخيال.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

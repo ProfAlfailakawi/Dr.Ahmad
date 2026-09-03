@@ -1,0 +1,314 @@
+[
+  {
+    "speaker": "male",
+    "text": "في زمن صارت فيه بعض الجامعات الخاصة تحقق أرباحا تفوق ما تحققه جامعة هارفرد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لم تعد المفارقة مضحكة، بل مؤلمة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولا مبالغة هنا. فالربح مشروع، لكن عندما يتحول التعليم إلى بورصة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "تصبح الشهادة سهما.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "تصبح الشهادة سهما، والعقل فائضا لا يحاسب عليه أحد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي الكويت تنتشر جامعات خاصة تفتقر للحد الأدنى من البحث العلمي، وتخلو من التراكم المعرفي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "وتخرج آلافا من الطلبة الذين لا يكتبون فقرة من أنفسهم، لكنهم يمنحون شهادات بدرجات عليا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وقد شارك الأستاذ الدكتور عماد خورشيد تقريرا جريئا، كتب باستخدام الذكاء الاصطناعي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "التقرير صاغه الذكاء، لكنه نطق بما لا يجرؤ كثير من البشر على قوله.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "قال حرفيا إن هذه المؤسسات تدرس لكنها لا تعلم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "تمنح لكنها لا تربي، وتخرج لكنها لا تفكر.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ونحن من نمولها.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نمولها من المال العام، وندعمها بالبعثات.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ثم نصدر إلى سوق العمل خريجا لا يجيد إلا الاستذكار المؤقت، والبحث اللحظي، والنجاح الورقي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن أليس في هذا ظلم لمؤسسات تجتهد فعلا؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "النص يتحدث عن نمط لا عن الجميع. وأخطر ما فيه أن حتى النقد صار مزيفا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "يكتب بالذكاء الاصطناعي، وينشر باسم بشر.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فتفوق التسويق.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فقد وصلت المؤسسات الأكاديمية إلى مرحلة تفوق فيها خطاب التسويق على خطاب التكوين.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وصار الإنجاز يقاس بعدد الخريجين، لا بنوع المعرفة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وصارت اللغة الإنجليزية تلقن دون فهم حقيقي.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والبحوث تنجز على الورق، لكنها لا تلامس الواقع ولا تقدم للمجتمع.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وفي المقابل، جامعات كبرى في العالم تنفق الملايين على البحث العلمي فقط.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتحاسب طلبتها على كل فقرة، وتعلي من قيمة النقاش لا الحفظ، والنقد لا الانقياد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "أما هنا فنشتري اسم الجامعة، ونسوقه كمنتج راق، بينما الداخل خاو.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "كل شيء متوفر: القبول مضمون، والجداول مرنة، والتخرج سهل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إلا العقل.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إلا العقل، فهو الغائب الأكبر.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فهل فقدنا القدرة على أن نواجه تعليما هشا؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهل تواطأنا، بوعي أو دون وعي، على خيانة المعرفة؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهل أصبح الذكاء الاصطناعي أكثر صدقا منا؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "سؤال يطرحه النص نفسه، ولا يجيب عنه بسهولة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي واحدة من الإحصائيات الصادمة، تشير التقارير المالية إلى رقم يوقفك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أن إحدى الجامعات الخاصة في الكويت تحقق صافي أرباح يتجاوز أربعين مليون دينار كويتي سنويا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "رقم يكاد يقارب ميزانيات دول، لكنه لا يترجم إلى جودة أكاديمية أو إنجاز علمي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فلا نرى أبحاثا منشورة عالميا، ولا مراكز فكرية تسهم في السياسات التعليمية.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بل نجد صمتا أكاديميا، ورضا تجاريا، ومخرجات تقدم كأرقام نجاح بلا مضمون حقيقي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فلم يعد السؤال: كيف نطور التعليم؟ بل: كيف نعيد تعريف التعليم من الأساس؟",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

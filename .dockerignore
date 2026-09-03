@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.*
+sa.json
+*service-account*.json
+*firebase-adminsdk*.json
+.DS_Store
+*.zip
+tsconfig.tsbuildinfo

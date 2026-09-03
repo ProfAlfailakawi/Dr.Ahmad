@@ -1,0 +1,298 @@
+[
+  {
+    "speaker": "male",
+    "text": "بعض الناس حين يرحلون لا يطفئون ضوءا واحدا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بل يغيرون شكل العتمة في قلوب من عرفوهم.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "هكذا بدا لي خبر رحيل المربي الفاضل الدكتور عبد الله إسماعيل الكندري.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولم يكن اسما عابرا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لم يكن اسما يمر في الأخبار فقط، بل رجلا قابله الكاتب وعرف أبناءه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وعرف أبناء أخيه وأخواته، فرأى في وجوههم امتدادا هادئا لأخلاقه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "ومن يعرف تاريخ التعليم في الكويت يعرف أنه لم يكن وجها عابرا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فقد تولى رئاسة جمعية المعلمين الكويتية في زمن كانت فيه قضايا المعلم في قلب النقاش العام.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وحمل هم المهنة في المحافل الرسمية، من ندوات محلية إلى تمثيل الكويت في لقاءات تربوية دولية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وكان من النوع الذي يفضل أن تعرف قناعاته من مواقفه لا من شعاراته.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهذا أندر مما نظن اليوم.",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والبحوث الدولية تذكرنا أن معلما واحدا حاضرا بصدق يترك أثرا يتجاوز حدود الصف.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "تقارير صادرة عن منظمات مثل OECD تؤكد أن ما يفعله المعلم في صفه يرتبط بتحصيل طلبته.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وبرفاههم النفسي على المدى البعيد.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن هل نحتاج بحثا لنعرف قيمة رجل عرفناه؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لا نحتاجه لنعرف، بل لنقرأ سيرته قراءة أخرى.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لا كاسم في منصب، بل كمثال حي على ما يستطيع أن يفعله مرب واحد حين يأخذ رسالته بجد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن الأقرب للقلب.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن الصورة الأقرب إلى قلب الكاتب لم تكن في المنصات، بل في البيت.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وأبحاث بناء الشخصية لدى اليافعين تذكرنا أن حضور الوالد ليس تفصيلا ثانويا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فدراسات طولية بينت أن أسلوب الوالدين ودفء العلاقة مع الأب يرتبطان بنمو المرونة النفسية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وبسلوكيات أكثر اتزانا في المراهقة وبداية الرشد.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وحين ننظر إلى أبنائه وأولاد العائلة، نرى ترجمة هادئة لهذه النتائج.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أخلاق سمحة، وخدمة للناس، وحس مسؤولية لا يحتاج إعلانا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهذا إرث لا يكتب في السيرة الذاتية، بل يقرأ في سلوك الجيل الذي يخرج من بيت الرجل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وأما الفقد نفسه.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فإنه وإن بدا في لحظته انقطاعا حادا، إلا أن دراسات الحزن الحديثة تقدمه بطريقة أعمق.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فلسفة الروابط المستمرة في أدبيات التعلق والحداد تقول إن العلاقة لا تنتهي بالموت.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بل تعيد تشكيل نفسها في الذاكرة والسلوك والدعاء.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "فنحن لا نتجاوز أحبابنا، بل نتعلم كيف نحملهم معنا بصورة أخرى.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولعل أجمل ما يقال في رثاء مرب مثله أن أثره لم يدفن معه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ما زال يتحرك في درس يشرحه معلم تأثر بكلماته.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي طالب أحب مهنته لأن أحدا احترم عقله.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وفي بيت يخرج منه أبناء وبنات يحملون خلقه في تعاملهم اليومي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نسأل الله أن يرحمه رحمة واسعة، وأن يجزيه عن تعبه في خدمة التعليم والإنسان خير الجزاء.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن يجعل ما غرسه من علم وخلق في أبنائه وطلابه صدقة جارية لا تنقطع.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

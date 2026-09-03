@@ -1,0 +1,278 @@
+{
+  "slug": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic",
+  "bridgeAfter": [
+    18,
+    28
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في الأيام العادية يستطيع كثيرون أن يخلطوا بين الرأي والانتماء.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبين التحليل والولاء، وبين الحضور في النقاش والحضور في الوطن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أما في الأزمات فتسقط الزينة اللفظية سريعا، ويظهر السؤال الحقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أين تقف؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والكويت لا تعيش لحظة نظرية. الهجمات الإيرانية على البلاد لم تعد خبرا بعيدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل صارت أرقاما.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وزارة الصحة أعلنت في الأول من مارس سقوط قتيل واثنين وثلاثين مصابا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ثم تأكد لاحقا مقتل طفلة في الحادية عشرة من عمرها بشظايا متساقطة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "طفلة في الحادية عشرة. عند هذا الرقم يتوقف كل تحليل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "كما نعت الكويت أربعة من رجال الواجب خلال الأيام الماضية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "اثنان من القوات البحرية، واثنان من وزارة الداخلية أثناء أداء الواجب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحين تحدث سمو الأمير كان واضحا في المعنى قبل العبارة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ما جرى اعتداء وحشي من دولة نعتبرها صديقة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "رغم أن الكويت لم تسمح باستخدام أرضها أو أجوائها أو سواحلها لأي عمل عسكري ضدها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأكد سموه حق الكويت الكامل في الدفاع عن نفسها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي الجهة الأخرى صوت آخر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كان ترامب يرفع السقف أكثر وهو يقول إن الحرب على إيران شبه مكتملة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبين هذين الصوتين لم تعد المسألة مادة للجدل البارد.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل اختبارا صريحا لوعي الناس واتجاههم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن لماذا نحاسب الناس على كلامهم في لحظة كهذه؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لأن في الأزمات لا يظهر الشهداء وحدهم. يظهر أيضا من يظن أن الدم مناسبة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن الخوف موسم ظهور، وأن الوطن يمكن أن يتحول إلى ترند.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا أقساها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بعض المشاهير لا يحسنون قراءة اللحظة إلا بوصفها فرصة لزيادة الضوء على وجوههم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يرفعون أصواتهم أكثر مما يرفعون مسؤوليتهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا يصبح الضجيج أخف أخلاقا من الصمت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لأن الوطن في لحظات الخطر لا يحتاج من يمثل الانفعال،⏸ بل من يحترم وجع الناس ويزن كلمته.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهناك صوت آخر أكثر إرباكا. صوت من يبرر العدوان أو يهون من شأنه.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو يختبئ خلف لغة التحليل ليخفف جرم الاعتداء على البلد الذي يعيش في أمانه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولنكن منصفين:⏸ ليس كل اختلاف في الرأي مشكلة. فالرأي يناقش.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لكن حين يتقدم التعاطف مع المعتدي على وضوح الانتماء، لا يعود الأمر اختلافا معرفيا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بقدر ما يصبح اختلالا في البوصلة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهذه الجملة تلخص المقال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالوطن ليس منصة نعتليها وقت الراحة، ثم نتنصل منه وقت الامتحان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يطلب من الجميع أن يتشابهوا،⏸ لكن ينتظر منهم أن يعرفوا أين يقفون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن يفهموا أن حرية التعبير لا تعني حرية تمييع الحقيقة،⏸ ولا حرية تحويل الألم العام إلى فرصة شخصية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ففي الأزمات لا نعرف بما نشعر به فقط،⏸ بل بما نعلن الانحياز إليه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

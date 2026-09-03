@@ -1,0 +1,292 @@
+{
+  "slug": "qabas-201811-002",
+  "bridgeAfter": [
+    16,
+    25
+  ],
+  "breathAfter": [
+    37
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "مضت أيام بغيماتها السوداء على وطننا الكويت، ساد فيها الغرق.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وليال خائفة من سيول جرفت بطريقها كل من كان بوجهها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وألحقت أضرارا كبيرة بممتلكات المواطنين والمقيمين في هذه البلاد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبان للعيان غزارة تلك الأمطار كلها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبان للعيان غزارة الأمطار وغضب البحر وأمواجه المتلاطمة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما أنتج عن غضبه من سيول أغرقت الكثير من بيوت الناس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ودخلتها كضيف ثقيل، فأخافت ودمرت كل ما فيها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وها قد ذهبت الإنجازات وغرقت كلها في تلك الأيام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبقي الفساد وحده يعوم فوقها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبقي الفساد يعوم على سطحها أمام الجميع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بأسوأ مشهد استيقظت عليه الكويت وشعبها في ذلك الصباح.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهل يا ترى أحقا هي كانت إنجازات حقيقية؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أم هي شعارات نافذة غرقت عند سيول جلبتها السماء وطرحها البحر؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد يكون ذلك فعلا كذلك.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "قد يكون ذلك، لكي نكتشف مدى كذب الإنجازات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأنها قشور ما أن لاحت الرياح في الأفق حتى ظهر ضعفها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكشف المستور منها، هذا إن كانت في الأصل موجودة أصلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يا مسؤولين، فأين هي تلك الإنجازات كلها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكيف نمشي على بنى تحتية متهالكة كهذه؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهي لم تحتمل تلك السيول.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لم تحتمل السيول، ولم تستطع على تصريفها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فلو كانت تصرف تساقط المطر وما ترميه الأمواج أولا بأول، ما وقعت الكارثة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد يقول البعض:⏸ لا تبالغ، وأقول له: ليتني كنت كذلك.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فالواقع يرى للعيان أمام الجميع، وليس في ناظري وحدي فقط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فقد تعطلت بالكامل الحركة في الكويت في تلك الأيام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتسببت في تعطيلها، وفي إيقاف الملاحة الجوية بمطار البلاد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وروعت البشر جميعا، فماذا بعد؟⏸ وما خفي كان أعظم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي الحقيقة، لا نستطيع أن نلوم وزير الأشغال وحده بعد تساقط الأمطار الغزيرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهذا الأمر نلوم عليه من مر على هذه الوزارة من سنوات طويلة، ومسؤولين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلو كان هناك تهيئة وتجهيزات لمثل هذه الأزمات والكوارث الكبيرة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لتم استيعابها بأقل الخسائر الممكنة التي وقعت علينا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن الفساد قديم عندنا منذ أن تم تأسيس البنى التحتية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذه الأمطار الغزيرة والسيول هي التي أظهرت المخفي منها للناس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل هي أزمة إدارة، أم هي أزمة أخلاق؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فإن المسألة مسألة ضمير وأزمة أخلاق قبل كل شيء آخر.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولو فتحنا أبواب المحاسبة اليوم، لذهب الكثير من أصحاب المسؤوليات في البلاد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأدينوا على هذا القصور الواضح الفاضح أمام الجميع اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فتلك الأمطار الغزيرة وما تبعها جاءت لتسقط العمامات عن رؤوس كثيرة توارت تحتها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فلا بد أن نبحث عن الصادق الأمين، وتفعيل إدارة الأزمات التي كنا بأمس الحاجة لها، حفظ الله الكويت وشعبها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

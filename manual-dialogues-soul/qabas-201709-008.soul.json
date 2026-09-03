@@ -1,0 +1,272 @@
+{
+  "slug": "qabas-201709-008",
+  "bridgeAfter": [
+    21,
+    30
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كبرنا على مدى أجيال، ونحن ندرك أن لنا وطنين اثنين.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وطننا الأم الذي ولدنا ونشأنا فيه، يستحق منا الحب والولاء والانتماء.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والوطن المتجسد بالخليج العربي، ~~ الحضن الكبير لنا جميعا.",
+      "feeling": "lively",
+      "feeling2": "hush",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن انتماؤنا واحد، وشعبنا واحد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ونشترك بالعادات والتقاليد، والأفراح والأتراح.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يحيدنا عن مصيرنا المشترك أحد مهما حصل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أدركنا ذلك، وسنبقى ندركه رغم العثرات في بعض الأحيان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولو عمدنا إلى مقارنة بسيطة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لو عمدنا إلى مقارنة بسيطة لوعي المواطن الخليجي في الماضي والحاضر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لوجدنا أن المواطن الخليجي في الماضي كان يأخذ معلوماته من الجرائد والتلفزيون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما يحدث من أزمات ومشاكل في الخليج والعالم العربي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولم يكن هناك مواقع تواصل اجتماعي، والتكنولوجيا المعاصرة كما الآن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكان المواطن الخليجي يعبر عن رأيه من الأزمات في إطار مجتمعه الداخلي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وعبر الديوانيات، ويكون هناك الرأي المؤيد والمعارض.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكل يعبر عن رأيه ويتحاورون ويتجادلون في إطار ضيق عبر الديوانيات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكذلك كتابة المقالات في الجرائد والمجلات وقتها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أما المواطن الخليجي الآن في عصر التكنولوجيا، فقد أصبح يعبر عن رأيه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ويستسقي معلوماته وأخباره من خلال مواقع وشبكات التواصل الاجتماعي بكل سهولة ويسر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويصل رأيه لكافة المعمورة دون قيود تذكر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويبدؤون بتداول الأخبار والآراء وتشكيل الرأي العام بينهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتكوين مجموعات مؤيدة ومعارضة، وتبدأ بعدها الحرب الافتراضية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويكثر الهرج والمرج بينهم في كل مكان.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما خطورة ذلك على الخليج تحديدا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لقد أصبح وعي المواطن الخليجي في دفة ميزان من جهة، والدفة الأخرى من مواطني العالم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالخليج العربي مسلط عليه الضوء من العالم كله.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وقد يأتي الضرب من كل جانب لتفتيت سيادتنا، والمساس بكياننا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما نحتاجه في ظل الحرب الافتراضية، وعي المواطن الخليجي السياسي والاجتماعي وكافة المجالات.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لنتصدى معا لمحاولات الكثيرين من أجل زعزعة الأمن والاستقرار الخليجي كله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن لسنا مع ما حدث في محاولة زعزعة أمن وطننا الكبير السعودية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولسنا مع الذهاب بلا عودة، وفج قعر النسيج المجتمعي، سواء للمملكة أو لأي دولة خليجية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فإن غرقت إحداهن غرق الخليج كله في ظلام لا نعلم حسابه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولسنا أيضا مع حصار قطر، أليس كذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فكلنا يعلم أن بداية النهاية بالتنازل، فواحدة من التنازلات تذهب بنا إلى قبول كافة التنازلات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حتى تنهار المنظومة والسيادة، ونبدأ في حالة من عدم الاستقرار وضياع الكيان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ففخرنا أننا شعوب واعية، فلنتدارك الحروب الافتراضية التي باتت مشاعا للجميع.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالحرب الافتراضية أقوى من الحروب العسكرية،⏸ لأنها تستهدف درة الدول، وهم أنتم، مواطنو الخليج العربي.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

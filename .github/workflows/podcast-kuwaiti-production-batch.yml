@@ -1,0 +1,381 @@
+name: الإنتاج الكويتي الفولاذي — حلقة واحدة قابلة للاستئناف
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: 'رقم الدفعة من مقالات الموقع الـ143 (1 يبدأ من أول القائمة)'
+        required: false
+        default: '1'
+      batch_size:
+        description: 'مقفول على 1: كل حلقة تشغيلة مستقلة حتى لا تسقط غيرها'
+        required: false
+        default: '1'
+      slugs:
+        description: 'اختياري: slugs محددة مفصولة بفاصلة؛ يتجاهل batch عند استعماله'
+        required: false
+        default: ''
+      resume_run:
+        description: 'اختياري: رقم تشغيلة بعينها؛ بدونه يسترجع النظام أحدث حزمة مطابقة تلقائياً'
+        required: false
+        default: ''
+      quality_attempts:
+        description: 'عينات جودة لكل حلقة (1–6؛ الافتراض 6 = موجتان مستقلتان من 3)'
+        required: false
+        default: '6'
+      quality_round:
+        description: 'داخلي: جولة الجودة المستقلة لهذه الحلقة (1–3)'
+        required: false
+        default: '1'
+      seed_base:
+        description: 'اختياري للتجربة المضبوطة؛ اتركه فارغاً لبذور جديدة تلقائياً في كل Rerun'
+        required: false
+        default: ''
+      publish_to_site:
+        description: 'انشر الحلقة تلقائياً فقط إذا اجتازت كل بوابات المرجع واللهجة والكلمات'
+        type: boolean
+        required: false
+        default: true
+      chain_remaining:
+        description: 'بعد نجاح الحلقة، ابدأ الحلقة الناقصة التالية في تشغيلة مستقلة'
+        type: boolean
+        required: false
+        default: true
+      include_quality_holds:
+        description: 'للمراجعة اللاحقة فقط: اسمح بتوليد slug مؤجلة بعد ثلاث جولات'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: podcast-kuwaiti-gemini-global
+  cancel-in-progress: false
+
+jobs:
+  generate-batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # حراس السجلّ يستعيدون شهادات النشر والتأجيل من تاريخ البوت. النسخة
+          # الضحلة ترى HEAD وحده، فتفشل الحماية بالضبط بعد رفع Google Studio قديم.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install and lock the approved production engine
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          npm run podcast:kw:self-test
+          node scripts/guard-kuwaiti-quality-holds-regression.mjs --self-test
+          node scripts/prepare-kuwaiti-professional-gold.mjs --self-test
+          node scripts/run-kuwaiti-generation-queue.mjs --self-test
+          node scripts/prepare-kuwaiti-delegated-release.mjs --self-test
+
+      - name: Rebuild the immutable Kuwaiti ledgers before choosing or spending
+        shell: bash
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+        run: |
+          set -euo pipefail
+          [ -n "${AUDIO_PUBLIC_BASE_URL:-}" ] || { echo '::error::AUDIO_PUBLIC_BASE_URL مفقود؛ ممنوع اختيار حلقة من سجل غير مثبت.'; exit 1; }
+          # الترتيب مقصود: أولاً نعيد شهادات البوت مع بصماتها، ثم نلتقط أي
+          # نشرٍ انقطع قبل commit من R2، وبعدها نعيد التأجيل فقط لما بقي ناقصاً.
+          node scripts/guard-audio-meta-regression.mjs --apply
+          node scripts/reconcile-audio-meta.mjs --apply --kuwaiti-only
+          node scripts/guard-kuwaiti-quality-holds-regression.mjs --apply
+
+      - name: Select a deterministic batch from all 143 site articles
+        shell: bash
+        env:
+          REQUESTED_BATCH: ${{ inputs.batch || '1' }}
+          REQUESTED_SIZE: ${{ inputs.batch_size || '1' }}
+          REQUESTED_SLUGS: ${{ inputs.slugs || '' }}
+          REQUESTED_INCLUDE_QUALITY_HOLDS: ${{ inputs.include_quality_holds || false }}
+        run: |
+          set -euo pipefail
+          node scripts/select-kuwaiti-production-episode.mjs
+
+      - name: Apply the approved native spoken text exactly once
+        run: |
+          node scripts/apply-kuwaiti-native-spoken.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-spoken-episode.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-dialogue-gender-address.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-name-pronunciation.mjs
+          node scripts/guard-new-dialogue-words.mjs --dir=manual-dialogues-kuwaiti --production-certificate
+
+      - name: Restore already accepted episodes before spending again
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_RESUME_RUN: ${{ inputs.resume_run || '' }}
+        run: |
+          set -euo pipefail
+          mkdir -p kuwaiti-production-package
+          RUN_TO_RESTORE="$REQUESTED_RESUME_RUN"
+          if [ -z "$RUN_TO_RESTORE" ] && [ "${GITHUB_RUN_ATTEMPT:-1}" -gt 1 ]; then RUN_TO_RESTORE="$GITHUB_RUN_ID"; fi
+          if [ -n "$RUN_TO_RESTORE" ]; then
+            ARTIFACT_ID="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_TO_RESTORE/artifacts" \
+              -f per_page=100 --jq "[.artifacts[] | select(.name == \"$PACKAGE_NAME\" and (.expired|not))] | sort_by(.created_at) | last | .id // empty")"
+          else
+            # حتى لو بدأ الدكتور New run بدل Rerun، نلقى أحدث حزمة تحمل
+            # هوية الدفعة نفسها. بصمات المصدر أدناه تمنع استرجاع نسخة قديمة
+            # بعد أي تعديل نصي؛ أي اختلاف يعيد الحلقة وحدها بأمان.
+            ARTIFACT_ID="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/artifacts" \
+              -f name="$PACKAGE_NAME" -f per_page=100 \
+              --jq '[.artifacts[] | select(.expired|not)] | sort_by(.created_at) | last | .id // empty')"
+          fi
+          if [ -z "$ARTIFACT_ID" ]; then echo 'ما لقيت حزمة مطابقة؛ تبدأ الجولة من سجل فارغ.'; exit 0; fi
+          TEMP_ZIP="${RUNNER_TEMP}/kuwaiti-resume.zip"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > "$TEMP_ZIP"
+          unzip -oq "$TEMP_ZIP" -d kuwaiti-production-package
+          echo "✓ استُرجعت الحزمة $ARTIFACT_ID؛ البصمات هي التي تقرر ما يُتخطى."
+
+      - name: Generate only missing episodes with a circuit breaker
+        id: queue
+        shell: bash
+        env:
+          PODCAST_KW_TTS_PROVIDER: ai-studio
+          PODCAST_KW_TTS_LANGUAGE: ar
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
+          GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
+          GEMINI_DIALECT_AUDIT_MODEL: gemini-3.7-flash
+          GEMINI_DIALECT_AUDIT_FALLBACK_MODELS: gemini-3.6-flash,gemini-3.5-flash
+          PODCAST_KW_DIALECT_AUDIT_HTTP_TIMEOUT_MS: '45000'
+          PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
+          PODCAST_KW_GENERATION_MODE: all
+          PODCAST_KW_PROMPT_MODE: c
+          PODCAST_KW_SPLIT_AT_BRIDGES: '0'
+          PODCAST_KW_MIN_GAP: '25'
+          PODCAST_KW_ISOLATE_SPEAKER_STEMS: '0'
+          PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_SWAPS: '0'
+          PODCAST_KW_REJECT_ACOUSTIC_RESET: '1'
+          PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
+          PODCAST_KW_TRANSCRIPT_ALIGNMENT: required
+          PODCAST_KW_DIALECT_AUDIT: required
+          PODCAST_KW_GOLD_ACOUSTIC_GATE: required
+          PODCAST_KW_LOCKED_SEED_SLOT: '1'
+          PODCAST_KW_REQUIRE_SINGLE_EPISODE: '1'
+          PODCAST_KW_REJECT_DIR: kuwaiti-production-package/rejected
+          REQUESTED_SEED_BASE: ${{ inputs.seed_base || '' }}
+          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
+          REQUESTED_QUALITY_ROUND: ${{ inputs.quality_round || '1' }}
+        run: |
+          set +e
+          SEED_BASE="$REQUESTED_SEED_BASE"
+          BASE_ROUND="$REQUESTED_QUALITY_ROUND"
+          if ! [[ "$BASE_ROUND" =~ ^[1-3]$ ]]; then
+            echo '::error::quality_round يجب أن يكون بين 1 و3'
+            echo 'code=1' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # التشغيل الجديد هو المسار الطبيعي. وإذا أعاد أحدهم نفس التشغيل
+          # يدوياً، GITHUB_RUN_ATTEMPT ينقله أيضا إلى مجال بذور جديد.
+          EFFECTIVE_ROUND=$(( BASE_ROUND + ${GITHUB_RUN_ATTEMPT:-1} - 1 ))
+          if [ -z "$SEED_BASE" ]; then SEED_BASE=$(( 2100 + (EFFECTIVE_ROUND - 1) * 10000 )); fi
+          node scripts/run-kuwaiti-generation-queue.mjs \
+            --slugs-file=kuwaiti-production-slugs.txt \
+            --slot-map=kuwaiti-production-seed-slots.json \
+            --out-dir=kuwaiti-production-package \
+            --seed-base="$SEED_BASE" \
+            --quality-attempts="$REQUESTED_QUALITY_ATTEMPTS" \
+            --quality-wave-size=3 \
+            --quality-wave-step=1000 \
+            --transient-attempts=3
+          CODE=$?
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "round=$EFFECTIVE_ROUND" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload every accepted episode and the exact pending ledger
+        id: package_upload
+        if: always() && steps.queue.conclusion == 'success'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ env.PACKAGE_NAME }}
+          path: kuwaiti-production-package/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Retry a rejected episode automatically, then defer it without blocking the queue
+        id: quality_recovery
+        if: always() && steps.queue.conclusion == 'success' && steps.package_upload.conclusion == 'success' && steps.queue.outputs.code == '2' && inputs.chain_remaining == true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
+          REQUESTED_INCLUDE_QUALITY_HOLDS: ${{ inputs.include_quality_holds }}
+          REQUESTED_PUBLISH_TO_SITE: ${{ inputs.publish_to_site }}
+          EFFECTIVE_QUALITY_ROUND: ${{ steps.queue.outputs.round }}
+        run: |
+          set -euo pipefail
+          HELD_SLUG="$(tr -d '[:space:]' < kuwaiti-production-slugs.txt)"
+          CURRENT_ROUND="$EFFECTIVE_QUALITY_ROUND"
+          if ! [[ "$CURRENT_ROUND" =~ ^[0-9]+$ ]] || [ "$CURRENT_ROUND" -lt 1 ]; then
+            echo '::error::رقم جولة الجودة مفقود؛ ممنوع تخمين البذرة أو القفز للحلقة التالية.'
+            exit 1
+          fi
+          if [ "$CURRENT_ROUND" -lt 3 ]; then
+            NEXT_ROUND=$(( CURRENT_ROUND + 1 ))
+            gh workflow run podcast-kuwaiti-production-batch.yml --ref main \
+              -f slugs="$HELD_SLUG" -f batch_size=1 -f quality_attempts="$REQUESTED_QUALITY_ATTEMPTS" \
+              -f quality_round="$NEXT_ROUND" -f resume_run="$GITHUB_RUN_ID" \
+              -f publish_to_site="$REQUESTED_PUBLISH_TO_SITE" -f chain_remaining=true \
+              -f include_quality_holds="$REQUESTED_INCLUDE_QUALITY_HOLDS"
+            echo 'retried=1' >> "$GITHUB_OUTPUT"
+            echo "✓ رفضت الجولة $CURRENT_ROUND؛ بدأت الجولة $NEXT_ROUND تلقائيا ببذور جديدة."
+            exit 0
+          fi
+          FAILED_TAKES=$(( REQUESTED_QUALITY_ATTEMPTS * CURRENT_ROUND ))
+          bash scripts/defer-kuwaiti-production-quality-hold.sh \
+            "$HELD_SLUG" "$GITHUB_RUN_ID" "$CURRENT_ROUND" "$FAILED_TAKES" \
+            'استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.'
+          echo 'deferred=1' >> "$GITHUB_OUTPUT"
+          echo "slug=$HELD_SLUG" >> "$GITHUB_OUTPUT"
+
+      - name: Convert the passing package to the independent Kuwaiti public names
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASED_SLUG="$(tr -d '[:space:]' < kuwaiti-production-slugs.txt)"
+          [ -n "$RELEASED_SLUG" ] || { echo '::error::slug الحلقة الناجحة مفقود'; exit 1; }
+          node scripts/prepare-kuwaiti-delegated-release.mjs \
+            --slug="$RELEASED_SLUG" --package-dir=kuwaiti-production-package
+          echo "RELEASED_SLUG=$RELEASED_SLUG" >> "$GITHUB_ENV"
+
+      - name: Publish the passing episode atomically to Cloudflare R2
+        id: r2_publish
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        run: npm run audio:r2:publish
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Keep the verified Kuwaiti suffix alive through the site gate
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        shell: bash
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const meta = require('./src/data/audio-meta.json')
+          const slug = process.env.RELEASED_SLUG
+          const audio = meta[`${slug}.dialogue-kw.mp3`]
+          const transcript = meta[`${slug}.dialogue-kw.json`]
+          if (audio?.sha256 !== process.env.RELEASE_AUDIO_SHA256 || audio?.validationStatus !== 'verified-r2') {
+            throw new Error(`${slug}: R2 لا يحمل نفس Take الذي اجتاز البوابات`)
+          }
+          if (!transcript?.sha256 || transcript.validationStatus !== 'verified-r2') {
+            throw new Error(`${slug}: Transcript الكويتي لم يُوثق`)
+          }
+          console.log(`✓ نفس Take صار عاماً: ${slug}`)
+          NODE
+          node scripts/prune-orphan-audio.mjs
+          node scripts/sync-audio.mjs
+          npm run listen:index
+          npm run project:status
+          npm run lint
+          node scripts/guard-no-generated-audio-in-git.mjs
+          npx vite build
+
+      - name: Finalize the R2 transaction after the local site gate
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        run: npm run audio:r2:commit
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Release a reviewed quality hold only after its verified Take is public
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        run: node scripts/manage-kuwaiti-production-quality-holds.mjs release --slug="$RELEASED_SLUG"
+
+      - name: Commit only the lightweight public ledger
+        id: ledger_commit
+        if: steps.queue.outputs.code == '0' && inputs.publish_to_site == true
+        env:
+          KUWAITI_LEDGER_COMMIT_MESSAGE: 'chore: publish verified Kuwaiti dialogue'
+        run: bash scripts/commit-kuwaiti-public-ledger.sh
+
+      - name: Start the next missing episode in its own run
+        if: always() && inputs.chain_remaining == true && ((steps.queue.conclusion == 'success' && steps.queue.outputs.code == '0' && steps.ledger_commit.conclusion == 'success' && inputs.publish_to_site == true) || (steps.quality_recovery.conclusion == 'success' && steps.quality_recovery.outputs.deferred == '1'))
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          PROGRESS="$(node scripts/kuwaiti-production-progress.mjs --git-ref=origin/main)"
+          NEXT="$(printf '%s' "$PROGRESS" | node -e 'let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).nextSlug||""))')"
+          MISSING="$(printf '%s' "$PROGRESS" | node -e 'let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(String(JSON.parse(s).missing)))')"
+          HELD="$(printf '%s' "$PROGRESS" | node -e 'let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(String(JSON.parse(s).heldMissing)))')"
+          if [ -z "$NEXT" ]; then
+            if [ "$MISSING" -eq 0 ]; then
+              echo '✓ اكتمل إنتاج كل الحلقات الكويتية الموثقة؛ نبدأ النشر النهائي للموقع.'
+              gh workflow run firebase-hosting-live.yml --ref main
+            else
+              echo "::notice::اكتمل كل المتاح وبقيت $HELD حلقة مؤجلة للجولة النهائية؛ لا إعلان 143/143 قبل نجاحها."
+            fi
+            exit 0
+          fi
+          gh workflow run podcast-kuwaiti-production-batch.yml --ref main \
+            -f slugs="$NEXT" -f batch_size=1 -f quality_attempts=6 \
+            -f publish_to_site=true -f chain_remaining=true
+          echo "✓ الحلقة التالية في طابور مستقل: $NEXT"
+
+      - name: Roll back public names when a pre-commit gate fails
+        if: failure() && steps.r2_publish.outcome == 'success'
+        continue-on-error: true
+        run: npm run audio:r2:rollback
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Enforce complete batch after preserving its state
+        if: always()
+        shell: bash
+        env:
+          QUEUE_CODE: ${{ steps.queue.outputs.code }}
+          QUALITY_RETRIED: ${{ steps.quality_recovery.outputs.retried || '0' }}
+          QUALITY_DEFERRED: ${{ steps.quality_recovery.outputs.deferred || '0' }}
+        run: |
+          case "$QUEUE_CODE" in
+            0) echo '✓ كل حلقات الدفعة محفوظة ومجتازة.' ;;
+            2) if [ "$QUALITY_RETRIED" = '1' ]; then
+                 echo '✓ رفضت الحلقة؛ الجولة التالية بدأت تلقائيا ولا يلزم تدخل الدكتور.'
+               elif [ "$QUALITY_DEFERRED" = '1' ]; then
+                 echo '✓ استنفدت الحلقة ثلاث جولات فأجلت بأمان، وبدأت التالية من دون نشر نسخة مرفوضة.'
+               else
+                 echo '::error::بقيت حلقة جودة معلقة؛ أعد Failed jobs لاحقاً ببذور جديدة.'; exit 2
+               fi ;;
+            75) echo '::error::Gemini متعطل مؤقتاً؛ قاطع الحماية أوقف الصرف وحفظ الطابور.'; exit 75 ;;
+            76) echo '::error::الصوت محفوظ وينتظر شاهد اللهجة؛ ممنوع إعادة TTS.'; exit 76 ;;
+            78) echo '::error::الرصيد انتهى؛ لم تبدأ الحلقات الباقية.'; exit 78 ;;
+            *) echo "::error::عطل حقيقي في الإنتاج (code=${QUEUE_CODE:-missing})."; exit 1 ;;
+          esac

@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201909-001",
+  "bridgeAfter": [
+    15,
+    29
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "هراء هراء هراء، نعم هراء، هذا ردي لكل من يتحدث عن ثراء الفاشينستات.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذا الثراء الفاحش الذي يتحدثون عنه في كل مجلس نجلسه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "كلما جالسنا أحدا يتحدث عن السوشيل ميديا بأشكاله المختلفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وما يدره من أموال طائلة، وأصبح الفاشينستات حديث الساعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأحاول إقناع رواد المواقع والقنوات أن هذا كله هراء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فأجدهم يردون قائلين:⏸ انظر إلى فلان وقناة فلانة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما أصبحوا به من ثراء بعد أن كانوا أناسا عاديين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وانظر إلى فيلا فلان أيضا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وانظر إلى فيلا فلان، والسيارة التي أهدتها فلانة لزوجها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وغير ذلك من الهراء الذي نسمعه في كل يوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يا سادة يا كرام، هل يعقل أن الذي يعرض من إعلانات أو طبخ؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أو عروض بكافة المجالات والميادين تحدث ذلك الثراء؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد ظهر عليهم الثراء الظاهر غير المعلوم بالدليل.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وحقا أن الكثيرين من الفاشينستات يعرضون ما أحدثوه من ديكورات وتعديلات ببيوتهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وشراءهم السيارات الفارهة، ومنهم من اشترى الفلل الكبيرة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وسفرهم للتنزه والاحتفال بزواجهم أو مناسبة خاصة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نعم رأينا ذلك كله، ولكن هل حقا يملكونها؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل حقا هذا كله من السوشيل ميديا وحدها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بالطبع لا وألف لا، والشاهد على ذلك كثير أمامنا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالكثيرون منهم تم حبسهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أن الكثيرين تم حبسهم بسبب الشيكات، أو الهروب من دفع الالتزامات التي عليهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك من رفعت عليهم قضايا تضليل، وتقديم عروض كاذبة وضارة في بعض الأحيان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتلك السيارات الفارهة ما هي إلا إعلان لمعارض السيارات كتسويق لها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما الفلل فهي قد تكون مستأجرة، أو اتفاق مع صاحب العقار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وذلك من أجل التسويق لها لا أكثر من ذلك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما السفر فقد يكون إعلانا لشركة سياحية وسفر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وبالكاد يأخذون منها نسبة لا توصل إلى الثراء.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل بالكاد أرقام رمزية لا تذكر أمام ما يعرضونه علينا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهناك فاشينستات اختفوا فجأة بسبب فضائحهم وأكاذيبهم كلها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "التي ينصبون بها على عقول الناس المساكين التي تشاهد دون دليل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل المشاهدات العالية مصدر ثراء فاحش؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالمشاهدات العالية، والمشتركون الكثر، واللايكات الأكثر، ليست مصدر ثراء فاحش.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا تدر ما يعلن عنه من هؤلاء الذين يحفزون رواد السوشيل ميديا للمشاهدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إنما هم مضللون فقط، يربحون القليل لا أكثر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فكم من فضيحة ظهرت على السوشيل ميديا تعرض مشاكلهم مع المحلات والمعارض.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهؤلاء الفاشينستات يلعبون بأحلام الناس خاصة الشباب، ويعيشونهم بأوهام خيالية لا وجود لها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فلو كان هذا حقا، ما بقي بين الناس فقير ولا محتاج، يكفي لعبا بأحلام الناس وحاجاتهم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

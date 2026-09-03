@@ -1,0 +1,157 @@
+name: مصنع الروح — توليد الحلقات الحوارية
+
+on:
+  workflow_dispatch:
+    inputs:
+      slugs:
+        description: 'أسماء الحلقات مفصولة بمسافة (اتركه فارغاً لتوليد دفعة تلقائية)'
+        required: false
+        default: ''
+      batch:
+        description: 'رقم الدفعة — اتركه ٠ ليولّد الأرشيف كلّه في تشغيلةٍ واحدة'
+        required: false
+        default: '0'
+      limit:
+        description: 'عدد الحلقات في الدفعة (٠ = بلا حدّ)'
+        required: false
+        default: '0'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: podcast-soul-forge
+  cancel-in-progress: false
+
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      # ناشر R2 يستدعي أداة aws — بلا تثبيتها ينجح التوليد ويفشل الرفع،
+      # فتُعاد التشغيلة وتُستهلك حصة الصوت مرّتين.
+      - name: تثبيت أدوات الوسائط وR2
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: التحقق من المفتاح
+        run: |
+          if [ -z "$AZURE_SPEECH_KEY" ]; then
+            echo "::error::مفتاح Azure مفقود — أضِف AZURE_SPEECH_KEY في أسرار المستودع"
+            exit 1
+          fi
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+
+      # اللفظ اعتُمد بأذن الدكتور، وقد سرى الخطأ شهوراً على كل صوتٍ منشور
+      # قبل أن يُسمع. فلا يبدأ توليدٌ قبل أن يُتحقّق منه.
+      - name: حارس نطق الاسم
+        run: node scripts/guard-name-pronunciation.mjs
+
+      - name: توليد الحلقات
+        # الحلقة تُطلب على مقاطعَ بين الجسور لا جملةً جملة، فتنزل من ثلاث دقائق
+        # إلى نحو أربعين ثانية — والأرشيف كلّه (١٤٤) في ساعةٍ ونصف داخل المهلة.
+        run: |
+          if [ -n "${{ github.event.inputs.slugs }}" ]; then
+            node scripts/podcast-soul-forge.mjs ${{ github.event.inputs.slugs }}
+          else
+            node scripts/podcast-soul-forge.mjs --all --limit ${{ github.event.inputs.limit }} --batch ${{ github.event.inputs.batch }} --skip-done
+          fi
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+
+      # الحلقة لا تبلغ لوحة الدكتور إلا بثلاث خطوات: تُرفع إلى R2، ثم يُحرَس
+      # السجلّ ويُصالَح مع الواقع، ثم تُبلَّغ Firestore فتتغيّر حالتها في اللوحة.
+      - name: رفع الحلقات إلى R2
+        run: node scripts/publish-audio-r2.mjs
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+
+      - name: حراسة السجلّ ومصالحته مع R2
+        run: |
+          node scripts/guard-audio-meta-regression.mjs --apply
+          node scripts/reconcile-audio-meta.mjs --apply
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+
+      # الرفع يُبقي نسخاً احتياطية على R2 حتى تُثبَّت المعاملة. وهي لا تضرّ
+      # الصحّة (ملفُّ المعاملة يموت مع التشغيلة ولا يعيش بينها)، لكنّ تثبيتها
+      # ينظّف الدلو فلا يتراكم فيه ما لا يُقرأ.
+      - name: تثبيت معاملة R2
+        if: success()
+        run: node scripts/publish-audio-r2.mjs --commit-last
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+
+      # الصوت يكون قد وصل R2 قبل هذه الخطوة، فلا يجوز أن يُسقط تعثّرُها
+      # التشغيلةَ كلَّها. وجلسةٌ أخرى قد تدفع أثناء التوليد (ساعتان) فيُرفض
+      # الدفع بـ«fetch first» — فنسحب أولاً ونعيد المحاولة، والسجلّ يبقى
+      # قابلاً لإعادة البناء من R2 بـreconcile-audio-meta على أي حال.
+      - name: تثبيت السجلّ في المستودع
+        continue-on-error: true
+        run: |
+          if git diff --quiet -- src/data/audio-meta.json; then
+            echo "لا تغييرات في السجلّ."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/data/audio-meta.json
+          git commit -m "chore: نشر سجلّ حلقات مصنع الروح"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "ثُبّت السجلّ (محاولة ${attempt})."
+              exit 0
+            fi
+            echo "::warning::تقدّم main أثناء النشر (محاولة ${attempt}/5) — أسحب وأعيد."
+            git pull --rebase --autostash origin main || git rebase --abort || true
+            sleep $((attempt * 5))
+          done
+          echo "::warning::تعذّر تثبيت السجلّ بعد خمس محاولات — الصوت على R2 سليم، ويُعاد بناء السجلّ بـreconcile-audio-meta."
+          exit 1
+
+      - name: تقرير التشغيلة
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: soul-episodes-report
+          path: .soul-forge-work/last-run.json
+          if-no-files-found: warn
+          retention-days: 14

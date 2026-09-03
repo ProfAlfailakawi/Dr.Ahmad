@@ -1,0 +1,264 @@
+{
+  "slug": "qabas-201806-003",
+  "bridgeAfter": [
+    15,
+    27
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "جاءني عدد كبير من التفاعل في موضوع الفوبنج، من الطلبة أو الزملاء ومن القراء الكرام.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأعجبوا في المصطلح، ومنهم من أصبح يستخدمه بدلا من الإدمان على الهواتف.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فلو نظرنا إلى المصطلح، سنجد أنه بلفظه فوبيا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهو الواقع للأسف، وأصبح مشهد كل مجلس في الديوانيات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو على طاولة الطعام، أو في العمل، أو في التجمعات العائلية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحتى في الأماكن العامة وغيرها من الأماكن.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا السلوك أصبح مزعجا للكثيرين من الناس.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وصانعا للإحباطات والاكتئاب، والشعور بأنك مفروض على هؤلاء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فمن المفارقات أن الفوبنج يهدف إلى ربطك مع شخص ما عبر وسائل التواصل الاجتماعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكنه في الواقع يمكن أن يعطل بشدة علاقاتك الشخصية الحالية.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتجعل التفاعل وجها لوجه أقل أهمية عندك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وإذا كان شريك حياتك بوجودك يطالع ويتواصل مع الهاتف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فذلك يعني أنه يعطي الأولوية لشيء آخر فوقك في لحظات التآزر هذه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا مؤلم، ويكون احتمال تعرضهما للاكتئاب وانخفاض رضا الزوجين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد يضر هذا الأمر بسمعتك بين الناس.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "حيث ينظر إلى مستخدمي الهاتف عموما على أنهم أقل تهذيبا وانتباها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الحاجات التي يهددها هذا السلوك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويهدد الفوبنج أربعة من الاحتياجات الأساسية، وهي الانتماء، واحترام الذات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والوجود، ومراقبة السيطرة، من خلال جعل الناس يشعرون بالإقصاء والنبذ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبطبيعة الحال،⏸ فإن الشخص الذي يتم تجاهله هو الأكثر تضررا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويرى العديد من الخبراء أنه أمر مثير للقلق عندما يبدأ في التداخل مع الحياة اليومية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تفقد التأثيرات الحرجة للحظات البشرية التي تشكل في الواقع ما هي الحياة البشرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن المخيف حقا أننا نستبدل ذلك بالنظر إلى الشاشة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فإذا كنت يا عزيزي القارئ من المزمنين المزعجين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فإن إنشاء قواعد تقنية صارمة واتباعها ليس بالأمر الصعب عليك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "مثل وضع هاتفك بعيدا أثناء تناول العشاء، يمكن أن يساعدك على تكوين عادات جديدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد تساعد الممارسات الأخرى القائمة على الاهتمام، مثل التأمل والوعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتي تساعد على إعادة تدريب قدراتك على الانتباه لمن حولك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وماذا لو كنت أنت الشخص المتجاهل؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ينصح أولا بتحويل وجهة نظرك، وذلك بأن تكون صبورا ورحيما ولا تتهاون.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأن من حولك يتبعون الدافع، وتشير الأبحاث إلى أن النساء وكبار السن لديهم ردود فعل أقوى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وربما لا يكون هدفهم استبعادك، إنهم يبحثون عن التضمين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وربما كان هذا هو السبب في أنهم يبحثون عن هواتفهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فإن مجرد وجود الهاتف الخلوي أثناء المحادثة كان كافيا لجعل الناس يشعرون بأنهم أقل ارتباطا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فكر كيف تستغل وجودك مع الآخرين بالتحدث أو الاستماع، فهذا يبهج من حولك ويشعرهم بالاهتمام.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

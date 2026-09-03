@@ -1,0 +1,66 @@
+{
+  "name": "د. أحمد حسين الفيلكاوي",
+  "short_name": "الفيلكاوي",
+  "description": "أستاذ تكنولوجيا التعليم والذكاء الاصطناعي — مقالات وكتب وأبحاث.",
+  "start_url": "/launch?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "lang": "ar",
+  "dir": "rtl",
+  "background_color": "#FCFCFA",
+  "theme_color": "#FCFCFA",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "/",
+  "display_override": [
+    "standalone"
+  ],
+  "orientation": "any",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "غرفة القيادة",
+      "short_name": "الإدارة",
+      "description": "فتح لوحة التحكم المحمية",
+      "url": "/admin?source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "غرفة الإنتاج",
+      "short_name": "الإنتاج",
+      "description": "فتح طابور إنتاج البودكاست",
+      "url": "/admin?tab=production&source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

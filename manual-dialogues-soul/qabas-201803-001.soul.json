@@ -1,0 +1,264 @@
+{
+  "slug": "qabas-201803-001",
+  "bridgeAfter": [
+    15,
+    27
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "تصاعدت ردود الأفعال بعد المقال السابق:⏸ ملاحظات في منهج الكفايات.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكنت أخشى أن تكون تلك الردود نابعة من شعور الخيبة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لانحدار مخرجاتنا التعليمية بين أبنائنا الطلبة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وارتعدت أصوات أولياء الأمور، وبدأت الشكوى تتوالى عبر وسائل التواصل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "واستوقفني عدد كبير من الناس، راجين أن ننقذ أبناءهم من فشل قد يكون محققا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكنت أقف ما بين الحائر،⏸ وما بين المطمئن.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فنحن أمام ورطة المنهج الوطني في هذه المرحلة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تلك الورطة التي يمكن اختصارها بسوء التخطيط السليم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلو درب المعلمين والمشرفين والكادر التعليمي ورؤساءهم على هذا المنهج بشكل صحيح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لأصبح إنجازا وطنيا كبيرا يحسب لنا لا علينا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فتدريبهم يحتاج إلى خبراء ومتخصصين في المناهج، لكي يحققوا الهدف الأسمى من التدريب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حيث يمكن المعلمين وغيرهم من التدريس باستيعاب وأكثر طمأنينة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا بد من دليل معلم يساعد المعلمين على التدريس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وذلك بوضع الكفايات على شكل أمثلة تبسط النتاجات التي يراد تحقيقها لدى الطلبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وما سيكسبونه من مهارات يتم قياسها من خلال الاختبارات المطورة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "لمهارات التفكير العليا لدى الطلبة في المدارس.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما النتاجات التي ننتظرها من هذا المنهج؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والتي ترفع مستوى الطلبة كنتاجات مكتسبة من الإبداع والابتكار وصنع القرار والثقة بالنفس.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والعمل التشاركي التعاوني بين زملائه ومجتمعه، وغيرها من المهارات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن خلال وضع أمثلة من الأسئلة تبسط وضع الاختبارات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالهدف من المنهج تحقيق الأهداف التعليمية التعلمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونتاجات ضمن احتياجات ومطالب سوق العمل، وطالب يعي مستقبله واتجاهاته مهنيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لذلك،⏸ فإن منهج الكفايات يحتاج إلى تقييم من خبراء مختصين بالمناهج والمعايير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكي يضعوا يدهم على الخلل، والحاجات، من خلال خطة طوارئ.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لحل انحدار مخرجاتنا التعليمية في هذه المرحلة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فلا يمكن أن نعيب على المنهج بالكامل،⏸ بل هو إنجاز وطني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكن من خلال التقييم يمكن أن نحدد إذا ما كان يتناسب مع بيئتنا الكويتية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أي هل تم تقنينه للمواءمة، ومن ثم وضع الحلول لإجراء التعديل المناسب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أو التطوير الذي يحتاجه على يد المختصين؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولا بد أن نحدد الحاجات التدريبية من خلال وضع خطة تدريبية لمنهج الكفايات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "توضع بين أيدي متخصصين لديهم خبرات في صنع المناهج ووضع المعايير الوطنية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهؤلاء الأقدر على تدريب الكادر التعليمي، وإعداد دليل معلم ضمن المقاييس الصحيحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتحديد طرق ووسائل التعليم، وكيفية تقويم الطلبة من أجل قياس النتاجات والأهداف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وإن زادت التكلفة على وزارة التربية في التدريب وتقييم منهج الكفايات،⏸ إلا أن العائد سينهي حالة التخوف الشديد.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فنحن مستعدون للمساهمة بأسماء مدربين بخبرات طويلة وصانعي مناهج ومقيمين لها،⏸ لنوقف حالة الغليان وحيرة المعلمين.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

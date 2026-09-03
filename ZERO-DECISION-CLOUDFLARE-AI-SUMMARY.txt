@@ -1,0 +1,34 @@
+الترقية النهائية لاستوديو التصاميم
+
+الواجهة:
+- أربع تبويبات فقط: الفكرة، النتيجة، التحرير، النشر.
+- زر رئيسي واحد: «صمّم لي — واتخذ القرار كاملًا».
+- لا تظهر الاتجاهات أو الطيار الآلي أو Final / Safer / Viral للمستخدم؛ كلها تعمل خلف الكواليس.
+- تعرض نتيجة واحدة معتمدة، ثم يبدأ تدخل المستخدم فقط داخل التحرير.
+
+المخرج الإبداعي:
+- توجيه بصري غير حرفي قائم على استعارة بصرية وإنسانية.
+- منع الكليشيهات التقنية والتعليمية والصور المخزنية المصطنعة.
+- مساحة محسوبة للخط العربي، وطبقات عمق وإضاءة تحريرية فاخرة.
+- توليد Cloudflare أولًا، ثم مصادر مجانية موثقة، ثم تصميم طباعي كمسار أخير قوي.
+
+المعمارية والأمان:
+- المسار /api/ai/studio-image داخل dr-api.
+- Firebase Hosting يمرر /api/** إلى Cloud Run.
+- التوكن يبقى في Secret Manager/Cloud Run ولا يدخل الواجهة أو ZIP.
+- حماية بحساب Firebase إداري، Rate limit، مهلة زمنية، وفشل آمن.
+- سكربت إعداد آمن يربط Secret Manager وCloud Run بلا طباعة التوكن.
+- اختبار ذاتي مستقل يفحص البرومبت، مسار Cloudflare، التفويض، وصيغة الصورة من دون استهلاك API حقيقي.
+
+الملفات المعدلة:
+- src/components/admin/SocialDesignStudio.tsx
+- src/lib/external-visual-sources.ts
+- server.mjs
+- .env.example
+- package.json
+
+الملفات الجديدة:
+- scripts/configure-cloudflare-workers-ai.sh
+- scripts/test-studio-image-generation.mjs
+- CLOUDFLARE-WORKERS-AI-SETUP.md
+- ZERO-DECISION-CLOUDFLARE-AI-SUMMARY.txt

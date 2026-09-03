@@ -1,0 +1,516 @@
+name: توليد الصوت تلقائياً إلى R2
+
+on:
+  # حدثيّ لا زمني: النشر من لوحة التحكم يرسل workflow_dispatch للمقال نفسه،
+  # وهذه الحراسة تلتقط فقط تغيّر مصادر المقالات التي تُحرَّر مباشرةً في المستودع.
+  # الحوارات لها مسار dispatch فوري مستقل من محرر «مجلس الفكرة».
+  push:
+    branches: [main]
+    paths:
+      - 'src/data.ts'
+      - 'src/data/bodies.json'
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'توليد مقال واحد فقط (slug) — اتركه فارغاً للقافلة المعتادة'
+        required: false
+        default: ''
+      limit:
+        description: 'حد عدد الملفات في التشغيل الواحد'
+        required: false
+        default: '8'
+      force:
+        description: 'إعادة توليد المقال المحدد حتى لو كان صوته موجوداً'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-audio-r2
+  cancel-in-progress: false
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+            !/audio-meta-*.json
+            !/bodies-vocalized-*.json
+            !/podcast-state-*.json
+            !/whatsapp-agent/*.command
+          sparse-checkout-cone-mode: false
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Plan work before starting heavy production
+        id: supervisor_before
+        run: node scripts/audio-supervisor.mjs --write --github-output --summary
+
+      - name: Production is already complete
+        if: steps.supervisor_before.outputs.has_work != 'true' && github.event_name != 'workflow_dispatch'
+        run: echo "لا توجد قراءة أو حلقة ناقصة؛ تنتهي الجولة بلا تثبيت أو بناء أو استهلاك إضافي."
+
+      - name: Force public npm registry
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node scripts/normalize-npm-registry.mjs
+
+      - name: Install dependencies
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+      # بوابة رخيصة ومبكرة: لا نثبّت أدوات الوسائط، ولا نستهلك Azure، ولا نفتح
+      # معاملة R2 إذا كان المستودع نفسه لن يجتاز البناء النهائي.
+      - name: Repository preflight before audio production
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          npm run guard:critical
+          npm run architecture:self-test
+          npm run typography:tanween:guard
+          npm run lint
+
+      - name: Install media and R2 tools
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Rebuild the ledger from live R2 before spending on Azure
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          set -euo pipefail
+          node scripts/guard-audio-meta-regression.mjs --apply
+          node scripts/reconcile-audio-meta.mjs --apply
+          AUDIO_PUBLIC_BASE_URL="$AUDIO_PUBLIC_BASE_URL" VITE_AUDIO_BASE_URL="$AUDIO_PUBLIC_BASE_URL" node scripts/sync-audio.mjs
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Re-plan from the reconciled live truth
+        id: supervisor_live
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: node scripts/audio-supervisor.mjs --write --github-output --summary
+
+      - name: Restore private pronunciation memory
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/cache/restore@v6
+        with:
+          path: ArabicPronunciationMemory.sqlite*
+          key: pronunciation-memory-v1-${{ github.run_id }}
+          restore-keys: |
+            pronunciation-memory-v1-
+
+      - name: Restore resumable audio checkpoints
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            .audio-human-work
+            audio-audits
+            .audio-last-known-good
+            .audio-failures.json
+            .audio-site-patches.json
+          key: audio-production-v2-${{ github.run_id }}
+          restore-keys: |
+            audio-production-v2-
+
+      - name: Verify podcast safety engines
+        if: steps.supervisor_before.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          npm run podcast:ar:self-test
+          npm run podcast:release:self-test
+          npm run audio:r2:self-test
+
+      - name: Write Firebase service account
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            if [ "${{ github.event.inputs.force }}" = "true" ]; then
+              echo "::error::Firebase service account is required for manual regeneration."
+              exit 1
+            fi
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; audio generation from Firestore will be skipped."
+            touch sa.missing
+            exit 0
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Refresh external idea-life evidence for new published articles
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          if [ -f sa.missing ]; then
+            echo "Firebase service account is missing; skipping idea-life refresh."
+            exit 0
+          fi
+          node scripts/idea-life-sync.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          IDEA_LIFE_MAX_ARTICLES: '12'
+          IDEA_LIFE_MAX_PAPERS: '1'
+          IDEA_LIFE_STALE_DAYS: '7'
+
+      - name: Generate article readings — Noura and Fahd — and publish to R2
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          if [ -f sa.missing ]; then
+            if [ "${{ github.event.inputs.force }}" = "true" ]; then
+              echo "::error::Firebase service account is missing; manual regeneration cannot continue."
+              exit 1
+            fi
+            echo "Firebase service account is missing; skipping automatic audio generation."
+            exit 0
+          fi
+          if [ -z "$AZURE_SPEECH_KEY" ]; then
+            if [ "${{ github.event.inputs.force }}" = "true" ]; then
+              echo "::error::Azure Speech secret is required for manual regeneration."
+              exit 1
+            fi
+            echo "Azure Speech secret is missing; skipping article readings."
+            exit 0
+          fi
+          npm run audio:human:self-test
+          LIMIT="${{ github.event.inputs.limit }}"
+          SLUG="${{ github.event.inputs.slug }}"
+          # حدُّ التشغيلة المجدولة ٤٠ لا ٨ بأمر الدكتور (٢١-٠٧: «ولّد كل الصوت
+          # بالكامل»). الحدُّ الحقيقيُّ زمنُ التشغيلة لا هذا الرقم: قِيست
+          # الإنتاجية ١٣ ملفاً في ٧٤ دقيقة، فالرقم سقفٌ لا هدف.
+          ARGS="--limit=${LIMIT:-40} --technical-only"
+          if [ -n "$SLUG" ]; then ARGS="$ARGS --slug=$SLUG"; fi
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          # المحرك يولّد المسارين المعتمدين: صوت نورة وصوت فهد؛ صفحة المقال وحدها تعرضهما باسم «قراءة المقال».
+          echo "audio args: $ARGS"
+          npm run audio -- $ARGS
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_STORAGE_BUCKET: drahmad-8e9e2.firebasestorage.app
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Generate approved dialogue podcast if gate is ready
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        run: |
+          if [ -f sa.missing ]; then
+            echo "Firebase service account is missing; skipping dialogue podcast generation."
+            exit 0
+          fi
+          # مصدر الحوار واحدٌ لا شريك له: ما كتبه الدكتور بيده في manual-dialogues/
+          # (١٤٤ حواراً). لا كاتبَ آلياً ولا خدمةً مدفوعة — المحرك «بلا Gemini»
+          # افتراضاً، والبوابات التقنية وأذن Azure STT هي الفحص كاملاً.
+          if [ -z "$AZURE_SPEECH_KEY" ]; then
+            echo "Azure secret is missing; skipping dialogue podcast generation."
+            exit 0
+          fi
+          # الحلقة المفقودة: الدكتور يكتب الحوار في اللوحة فيُحفظ في Firestore،
+          # ولم يكن أحد يجلبه — فيبقى في السحابة ولا يبلغ المحرك أبداً. يُكتشف
+          # الآن كل حوارٍ أُرسل للتوليد ويُسحب تلقائياً قبل أن يبدأ.
+          # قاموس الدكتور أولاً: ما أضافه من اللوحة يجب أن يبلغ المحرك قبل أن
+          # ينطق حرفاً، وإلا وُلِّدت الحلقة بالنطق القديم ثم احتاجت إعادة توليد.
+          node scripts/fetch-lexicon.mjs || echo "::warning::تعذّر سحب قاموس اللوحة؛ نمضي بالقاموس الدائم."
+          node scripts/fetch-queued-dialogues.mjs || echo "::warning::تعذّر سحب الحوارات المنتظرة؛ نمضي بما هو موجود."
+          # كان هنا شرطٌ يقيس وجود مفتاح Gemini لا رصيده: فالمفتاح موجود ورصيده
+          # منتهٍ، فيُختار المسار المدفوع ويموت المحرك بالرمز ٤ قبل أن يُنطق حرف،
+          # كل ساعة، ثلاثة أيام، والخطوة continue-on-error فتبدو التشغيلة ناجحة.
+          # لا شرط بعد اليوم: نداءٌ واحد بلا أي مزوّد مدفوع.
+          npm run podcast:ar:nightly
+          # الحلقة تُولَّد وتُرفع وتُسجَّل… ثم تبقى لوحةُ الدكتور تقول «مسودة» و«غير
+          # مولَّد» إلى الأبد، لأن أحداً لا يُبلّغ Firestore بما جرى: fetch-manual-
+          # dialogues يكتب «generating» ولا كاتبَ للنجاح. فيظنّ الدكتور أن التوليد
+          # فشل ويعيد الإرسال بلا داعٍ. نُبلّغ اللوحة بما يقوله سجلّ المحرك نفسه.
+          # فكرة الدكتور: بعد التوليد، قل له أيّ لفظٍ نطقتَه تخميناً — فيضبطه
+          # من اللوحة قبل الحلقة التالية بدل أن يكتشفه بأذنه بعد النشر.
+          SLUGS=$(node -e "const s=require('./.podcast-state.json');console.log(Object.keys(s.done||{}).map(k=>k.split(':')[0]).filter((v,i,a)=>a.indexOf(v)===i).join(','))" 2>/dev/null || echo "")
+          [ -n "$SLUGS" ] && (node scripts/report-unknown-words.mjs --slugs="$SLUGS" || echo "::warning::تعذّر الإبلاغ عن الألفاظ المجهولة.")
+          node scripts/report-dialogue-status.mjs || echo "::warning::تعذّر تحديث حالة الإنتاج في اللوحة."
+        env:
+          # لا مفاتيح Gemini هنا إطلاقاً: القافلة لا تعرف مزوّداً مدفوعاً.
+          # حلقاتُ الحوار كانت واحدةً في التشغيلة (افتراض المحرّك حين لا يُضبط
+          # المتغيّر)، فالـ١٤٣ تحتاج ١٤٣ ساعة. ٥ هو أقصى ما يقبله المحرّك
+          # (Math.min(5,…) في podcast-dialogue.mjs) — فيصير المدى ٢٩ تشغيلة.
+          PODCAST_NIGHTLY_LIMIT: '5'
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Strict local podcast release gate
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          set -o pipefail
+          npm run podcast:release:local -- --allow-empty 2>&1 | tee -a ci-log.txt
+        env:
+          PODCAST_RELEASE_MIN_SCORE: '94'
+
+      - name: Publish generated local audio/transcripts to R2 atomically
+        id: r2_publish
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          set -o pipefail
+          npm run audio:r2:publish 2>&1 | tee -a ci-log.txt
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      # يصالح السجلّ مع R2 قبل التحقّق: مدخلٌ متخلّفٌ عن الواقع (حجمٌ قديم أو ملفٌ
+      # لم يعد موجوداً) كان يُسقط كلّ تشغيلة وإن نجح التوليد والرفع كاملين.
+      # يستردّ ما شهد له البوت ثم أسقطته دفعةٌ بشرية وملفُّه ما زال حيّاً على
+      # R2. يسبق المصالح لأن المصالح لا يرى إلا ما في السجلّ، ولا يضيف مدخلاً.
+      - name: Guard the audio manifest against regression
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          set -o pipefail
+          node scripts/guard-audio-meta-regression.mjs --apply 2>&1 | tee -a ci-log.txt
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Reconcile audio manifest with R2
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          set -o pipefail
+          node scripts/reconcile-audio-meta.mjs --apply 2>&1 | tee -a ci-log.txt
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      # المخرجات تُنسخ إلى ci-log.txt ليقرأها مُفسِّر التعثُّر عند الفشل.
+      # pipefail ضروريٌّ وإلّا ابتلع الأنبوبُ رمزَ الخروج ومرّ الفشل صامتاً.
+      - name: Verify manifests and build
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          set -o pipefail
+          npm run audio:external:verify 2>&1 | tee -a ci-log.txt
+          npm run build 2>&1 | tee -a ci-log.txt
+        env:
+          VITE_SITE_URL: https://dr-alfailakawi.com
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Validate final podcast RSS and public audio ranges
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: npm run podcast:release:dist
+        env:
+          PODCAST_RELEASE_MIN_SCORE: '94'
+          PODCAST_VERIFY_REMOTE_AUDIO: 'true'
+
+      - name: Finalize R2 transaction after successful gates
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: npm run audio:r2:commit
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Attach verified site article audio in Firestore
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: npm run audio:site:finalize
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Sync verified audio to realtime CMS
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          if [ ! -f sa.json ]; then
+            echo "::error::ملفات الصوت موجودة في R2 لكن حساب Firebase غير متاح؛ نرفض نجاحاً وهمياً لأن عدّاد اللوحة لن يتحدّث."
+            exit 1
+          fi
+          npm run audio:firestore:sync -- --from-r2
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Refresh the living production ledger
+        if: always()
+        run: node scripts/audio-supervisor.mjs --write --summary
+
+      - name: Save resumable audio checkpoints
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            .audio-human-work
+            audio-audits
+            .audio-last-known-good
+            .audio-failures.json
+            .audio-site-patches.json
+          key: audio-production-v2-${{ github.run_id }}
+
+      - name: Save accepted pronunciation memory privately
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/cache/save@v6
+        with:
+          path: ArabicPronunciationMemory.sqlite*
+          key: pronunciation-memory-v1-${{ github.run_id }}
+
+      - name: Commit generated manifests only after R2 is durable
+        if: steps.supervisor_live.outputs.has_work == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          set -euo pipefail
+          npm run audio:guard
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          MANAGED=(
+            src/data/audio.json
+            src/data/audio-meta.json
+            src/data/site-articles-feed.json
+            src/data/podcast-admin.json
+            src/data/audio-supervisor.json
+            .podcast-state.json
+            .audio-failures.json
+          )
+          SNAPSHOT="$(mktemp -d)"
+          WORKTREE=""
+          cleanup_audio_publish() {
+            cd "$GITHUB_WORKSPACE"
+            if [ -n "$WORKTREE" ] && [ -d "$WORKTREE" ]; then
+              git worktree remove --force "$WORKTREE" >/dev/null 2>&1 || true
+            fi
+            rm -rf "$SNAPSHOT"
+          }
+          trap cleanup_audio_publish EXIT
+
+          # نلتقط النتيجة الموثقة بعد R2 بوصفها لقطةً غير قابلة للدهس. لا نعيد
+          # rebase لمساحة البناء المتسخة، ولا نستعمل reset --hard الذي كان يمحو
+          # السجلّ ثم يعلن نجاحاً كاذباً.
+          for managed in "${MANAGED[@]}"; do
+            if [ -f "$managed" ]; then
+              mkdir -p "$SNAPSHOT/$(dirname "$managed")"
+              cp -p "$managed" "$SNAPSHOT/$managed"
+            fi
+          done
+
+          pushed=""
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            WORKTREE="$(mktemp -d)"
+            rmdir "$WORKTREE"
+            git worktree add --detach "$WORKTREE" origin/main >/dev/null
+            for managed in "${MANAGED[@]}"; do
+              if [ -f "$SNAPSHOT/$managed" ]; then
+                mkdir -p "$WORKTREE/$(dirname "$managed")"
+                cp -p "$SNAPSHOT/$managed" "$WORKTREE/$managed"
+              fi
+            done
+            (
+              cd "$WORKTREE"
+              PRESENT=()
+              for managed in "${MANAGED[@]}"; do
+                [ -f "$managed" ] && PRESENT+=("$managed")
+              done
+              if [ "${#PRESENT[@]}" -eq 0 ]; then exit 20; fi
+              git add -f -- "${PRESENT[@]}"
+              if git diff --cached --quiet; then
+                echo "No audio ledger changes to publish."
+                exit 20
+              fi
+              git commit -m "chore: auto-publish verified audio ledger"
+              git push origin HEAD:main
+            ) && pushed="نعم" || status=$?
+            if [ "${status:-0}" -eq 20 ]; then pushed="لا تغييرات"; fi
+            if [ -n "$pushed" ]; then break; fi
+            echo "تقدّم main أثناء النشر (محاولة ${attempt}/5) — أبني لقطةً جديدة فوق أحدث main من دون مسّ ملفات الصوت."
+            git worktree remove --force "$WORKTREE" >/dev/null 2>&1 || true
+            WORKTREE=""
+            unset status
+            sleep $((attempt * 4))
+          done
+          if [ -z "$pushed" ]; then
+            echo "::error::تعذّر تثبيت سجل الصوت بعد خمس محاولات آمنة. الملفات في R2 لم تُحذف."
+            exit 1
+          fi
+      - name: Re-enable the manually regenerated reading
+        if: success() && github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true' && github.event.inputs.slug != ''
+        shell: bash
+        run: |
+          MODE="reading"
+          node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=published --disabled=false --message="اكتملت إعادة توليد صوتي نورة وفهد واجتازا بوابات الجودة."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Keep the failed manually regenerated reading hidden
+        continue-on-error: true
+        if: failure() && github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true' && github.event.inputs.slug != ''
+        shell: bash
+        run: |
+          MODE="reading"
+          node scripts/audio-control-status.mjs --slug="${{ github.event.inputs.slug }}" --mode="$MODE" --status=failed --disabled=true --message="تعذّرت إعادة التوليد؛ بقي مسار القراءة (نورة وفهد) ملغى ولم يعد للظهور."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f sa.json
+
+      - name: Roll back R2 transaction on any failure
+        if: failure() && steps.r2_publish.outcome == 'success'
+        run: npm run audio:r2:rollback
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      # عند أيّ فشل: بدل أن يفتح الدكتور سجلّاً بألف سطرٍ بالإنجليزية، يقرأ في
+      # ملخّص التشغيلة سطرين بالعربي: ما الذي انكسر، ولماذا، والأمر الذي يُصلحه.
+      - name: Explain the failure in Arabic
+        if: failure()
+        continue-on-error: true
+        shell: bash
+        run: node scripts/explain-failure.mjs ci-log.txt >> "$GITHUB_STEP_SUMMARY"
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Keep the failure log for download
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-log
+          path: |
+            ci-log.txt
+            .audio-failures.json
+            src/data/audio-supervisor.json
+          retention-days: 7

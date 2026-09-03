@@ -1,0 +1,306 @@
+[
+  {
+    "speaker": "male",
+    "text": "في زمن تسكن فيه المعلومة طرف الإبهام، وتستدعى باللمس لا بالكد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "نشأ جيل يعرف كل شيء، ولا يفهم شيئا.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "جيل لا يجهل جوابا، لكنه يفتقر للسؤال.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يحفظ ولا يحاكم.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يحفظ المعلومة، لكنه لا يحاكمها. ويتقن الوصول، لكنه لا يدرك الطريق.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهذا التناقض لم يأت من فراغ، بل من فائض المعرفة وسطحية المعنى.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "حيث تتحول الثقافة من عمق يبنى، إلى سرعة تستهلك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي دراسة أجرتها منظمة OECD تبين رقمان متقابلان.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أن أكثر من خمسة وستين بالمئة من الطلبة في الدول المتقدمة يستطيعون الوصول إلى المعلومة الرقمية بسرعة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن أقل من عشرين بالمئة يمتلكون القدرة على تحليلها نقديا أو تطبيقها في مواقف حياتية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إنها كارثة تربوية مغلفة بالتكنولوجيا.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن هل نلوم الجيل؟ هذا اتهام قاس.",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "النص ينصفه صراحة: هذا الجيل ليس غبيا، بل ضحية تسطيح.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "سرقت منه متعة البحث، وتلاشت فيه دهشة الاكتشاف.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والأمثلة تتوالى.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يعرف تاريخ الحرب العالمية، لكنه لا يدرك لماذا اندلعت.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويحفظ أعراض الاكتئاب، لكنه لا يشعر بغيره.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويتحدث عن الذكاء العاطفي، ولا يجيد الإصغاء حتى لذاته.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "يعرف كل شيء، لأنه لم يدرب على الشك، ولا على التأمل، ولا على البناء المعرفي المتدرج.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والمدارس تحولت.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ومدارسنا تحولت إلى منصات تحميل.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "المعلم يشرح، والطالب يصور، والجهاز يخزن، ثم تنسى كل تلك المعارف عند أول امتحان.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فيتخرج الطالب بتقدير امتياز، لكنه لا يعرف كيف يكتب خطابا، أو يجري حوارا، أو يحلل فكرة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نحن نمنحهم شهادات، لا فهما.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "نخرج أدمغة تحفظ لكنها لا تنتج، وتنفذ لكنها لا تبدع، وتتلقى لكنها لا تبادر.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فما المطلوب عمليا؟ منهج جديد؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "النص يطلب أعمق من ذلك: إعادة بناء المفهوم التربوي من جذوره.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "إلى تعليم يراهن على الإنسان لا على الآلة، وعلى العمق لا الكم، وعلى الإبداع لا التقليد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "تعليم يعيد للتلميذ هويته، ويعيد للمدرسة هيبتها كمكان للحوار والتفكير لا للحفظ والتلقين.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهنا عبارة مفتاحية.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لسنا بحاجة إلى تعليم يضيف إلى عقولهم معلومة جديدة، بل إلى تعليم ينقي العقول مما علق بها من أوهام.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "نحتاج إلى تعليم يدرب على التفكير التحليلي، وعلى الجرأة في الطرح.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وعلى مهارات الحياة الحقيقية: النقاش، والتفاوض، وحل المشكلات، والإقناع، والتعاطف.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فجيل اليوم لا يلام. هو أذكى مما نظن، لكنه يعيش في بيئة تشبعه معلومات وتحرمه فهما.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بيئة تسوق الذكاء الاصطناعي على أنه بديل للإنسان، بينما المطلوب أن يكون مساعدا للإنسان المفكر.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وإذا لم نتدارك هذا الخلل، فإننا نبني جيلا هشا، مبرمجا على الجواب، غير مدرب على السؤال.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهنا بيت القصيد: هل نريد جيلا يعرف كل شيء، أم جيلا يفهم شيئا ويغير العالم به؟",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

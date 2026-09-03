@@ -1,0 +1,298 @@
+[
+  {
+    "speaker": "male",
+    "text": "في السابق كانت ساحات المدارس تنبض بالحياة بعد الدوام الرسمي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والطالب يركض من الفصل إلى المسرح، ومن الملعب إلى الورشة الفنية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أنشطة مسائية، ومناظرات، ومسابقات، وهوايات تكتشف، وشخصيات تتكون على مهل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "كان التعليم يبدأ في الصف، لكنه لا ينتهي عند الجرس.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "واليوم؟ أغلقت الأبواب. وتحولت المدرسة إلى بناية صامتة بعد الثانية ظهرا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأين ذهب الطالب بعدها؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "خرج يبحث عن ساحة بديلة: المجمعات، والكافيهات، والألعاب الإلكترونية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أو الفراغ الرقمي. وهو أخطرها لأنه لا يبدو مكانا أصلا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن هل نلوم الطالب على أنه بحث عن مكان؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لا نلومه أبدا. نحن نقلنا أبناءنا من ساحات التربية إلى ساحات الاستهلاك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "من ميدان القيم إلى مسرح الموضة. والفرق بينهما ليس في المكان بل في الأثر.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "جيل كان يجب أن يصنع شيئا، فصار يشاهد فقط.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وجيل كان يجب أن يتدرب، صار ينتظر الخصومات في المول.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والفرق بين أن تصنع وأن تنتظر هو الفرق بين إنسانين لا بين عادتين.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والنص يسند هذا برقم لا بانطباع. تقرير أصدرته منظمة UNICEF لعام 2024.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "تبين فيه أن الأنشطة اللاصفية تقلل من خطر الانحراف السلوكي بنسبة 36%.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وليس هذا كل شيء.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وتزيد من مهارات التعاون والابتكار بنسبة 42%. رقمان يكفيان لإعادة فتح الأبواب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن ماذا فعلنا؟ أغلقنا المساحات التربوية، وتركنا الجيل أمام الشاشات.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فهل المشكلة في الجيل إذن؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لا، بل مشكلة مؤسسة قررت أن تختصر التربية في الحصة الدراسية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ونسيت أن صناعة الإنسان لا تحدث فقط في الصف، بل تبدأ خارجه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن هنا بشرى تستحق الوقوف.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "النص يحيي خطوة وزارة التربية في فتح الأنشطة الصيفية من جديد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "مبادرة جميلة تعيد الروح للساحة المدرسية. لكن المبادرة وحدها لا تكفي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نحتاج إلى تنظيم، وإلى رؤية واضحة، وإلى استدامة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالأنشطة ليست موسما صيفيا، بل فلسفة تكمل المنهج.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي فنلندا تظل المدارس مفتوحة حتى السادسة مساء.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "مشاريع مجتمعية، وورش تطوير، وأنشطة فنية ورياضية.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لأنهم يعرفون أن الطفل لا يربى فقط داخل الدرس، بل في كيفية قضاء وقته بعده.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "جملة واحدة تختصر الموضوع كله.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فجيل اليوم لا يفتقر إلى الذكاء، بل إلى مساحة حضارية يمارس فيها إنسانيته.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولهذا يقترح النص في الكويت برامج ثابتة مستمرة طوال العام، لا موسما صيفيا فقط.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وإشراك أولياء الأمور في تخطيط الأنشطة لا في متابعتها وحدها، وربطها بمشاريع مجتمعية حقيقية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فحين نفرغ المدرسة من دورها المجتمعي، لا نخسر التعليم فقط، بل نفرغ المجتمع نفسه من مضمونه.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وربما حان الوقت أن نعيد تعريف معنى دوام المدرسة، فالتربية لا تنتهي بالجرس بل تبدأ بعده.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

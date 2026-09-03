@@ -1,0 +1,416 @@
+name: نشر الموقع على Firebase Hosting
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  # التزام GitHub الذي يصنعه Workflow الصوت لا يطلق حدث push جديداً لأسباب
+  # أمنية في GitHub. لذلك كان R2 وmain يتقدمان بينما يبقى الموقع عند 56.
+  workflow_run:
+    workflows: ["توليد الصوت تلقائياً إلى R2", "نشر الخمس الكويتية المعتمدة إلى الموقع"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  # تشغيلةُ workflow_run التي مصدرها فاشل تتخطّى نفسها (انظر شرط gate أدناه). فإن
+  # شاركت مجموعةَ النشر ألغت دفعةً حقيقيةً جارية ثم لم تنشر شيئاً — وهذا ما حدث في
+  # ٧ أغسطس ٢٠٢٦: أُلغيت دفعةُ c33ff1f فبقي أحدثُ التزامٍ بلا نشر. نعزلها وحدها.
+  group: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success') && format('firebase-hosting-noop-{0}', github.run_id) || 'firebase-hosting-live' }}
+  cancel-in-progress: true
+
+jobs:
+  # بوّابةٌ تسبق النشر. أربعة أعطابٍ بلغت الموقع في يومٍ واحد (٢٠ يوليو)
+  # وكان لدينا اختبارٌ يمسك كلَّ واحدٍ منها — لكنّ أحداً لا يشغّلها عند الرفع.
+  # فوجودُ الاختبار بلا مُشغِّلٍ كعدمه. تُشغَّل هنا كلُّها، وإن احمرّ واحدٌ
+  # منها لم تبدأ خطوةُ النشر أصلاً (needs) — لا نشرَ فوق فحصٍ أحمر.
+  gate:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+            !/audio-meta-*.json
+            !/bodies-vocalized-*.json
+            !/podcast-state-*.json
+            !/whatsapp-agent/*.command
+          sparse-checkout-cone-mode: false
+          fetch-depth: 0
+
+      - name: حصانة الصوت — فحص غير متلف لنسخة الالتزام الحالية
+        run: |
+          set -euo pipefail
+          # بوابة الاختبار يجب أن تفحص HEAD كما رُفع تماماً. الاستعادة القسرية من
+          # التزامٍ تاريخي كانت تُدخل ملفات صوت قديمة في مساحة العمل، وقد تعيد
+          # مداخل لمواد حُذفت عمداً؛ فتفشل اختبارات الفهرس رغم أن الكود سليم.
+          # الحماية الحقيقية تتم لاحقاً بمصالحة R2 الانتقائية، لا بـ git checkout.
+          node scripts/guard-audio-meta-regression.mjs --self-test
+          node scripts/reconcile-audio-meta.mjs --self-test
+          if ! git diff --quiet -- src/data/audio-meta.json src/data/audio.json src/data/audio-supervisor.json; then
+            echo "::error title=Audio gate mutated source::بوابة الفحص غيّرت ملفات الصوت، وهذا ممنوع."
+            git diff -- src/data/audio-meta.json src/data/audio.json src/data/audio-supervisor.json
+            exit 1
+          fi
+          echo "✓ فُحصت ملفات الصوت الحالية دون استبدالها بنسخة تاريخية."
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24.18.0'
+          cache: npm
+
+      - name: Force and verify public npm registries
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node --version
+          npm --version
+          node scripts/normalize-npm-registry.mjs
+          node scripts/normalize-npm-registry.mjs --check
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+      - name: WhatsApp agent
+        run: |
+          set -euo pipefail
+          check() {
+            local label="$1"; shift
+            echo "::group::${label}"
+            if ! "$@"; then
+              echo "::endgroup::"
+              echo "::error title=Gate failed::${label}"
+              exit 1
+            fi
+            echo "::endgroup::"
+          }
+          check "WhatsApp agent self-test" node whatsapp-agent/self-test.mjs
+          check "WhatsApp scholar self-test" node whatsapp-agent/scholar.mjs --self-test
+
+      - name: Radar, FAQ and site content
+        run: |
+          set -euo pipefail
+          check() {
+            local label="$1"; shift
+            echo "::group::${label}"
+            if ! "$@"; then
+              echo "::endgroup::"
+              echo "::error title=Gate failed::${label}"
+              exit 1
+            fi
+            echo "::endgroup::"
+          }
+          check "Daily radar self-test" node scripts/daily-radar.mjs --self-test
+          check "Radar repair self-test" node scripts/radar-repair.mjs --self-test
+          check "FAQ repair self-test" node scripts/faq-repair.mjs --self-test
+          check "Automatic site content self-test" node scripts/auto-site-content.mjs --self-test
+          check "Idea life self-test" node scripts/idea-life-sync.mjs --self-test
+          check "Editorial source policy" node scripts/test-editorial-policy.mjs
+          check "Personal editorial intelligence" node scripts/test-editorial-memory.mjs
+          check "Canonical publishing pipeline" node scripts/test-canonical-publishing-pipeline.mjs
+          check "Live CMS refresh" node scripts/test-live-cms-refresh.mjs
+          check "Source desk watch self-test" node scripts/source-desk-watch.mjs --self-test
+          check "Cascade correction protocol" npm run cascade-correction:self-test
+          check "Editorial foresight, Dr Ahmad room and live director" npm run smart-command-room:self-test
+          check "Social design engine self-test" node scripts/test-social-design-engine.mjs
+          check "Social templates self-test" node scripts/test-social-templates.mjs
+          check "Studio image backend self-test" node scripts/test-studio-image-generation.mjs
+          check "Studio UI contract" node scripts/test-studio-ui-contract.mjs
+          check "Site polish 2026 regression" node scripts/test-site-polish-2026.mjs
+          # الأرشيف الإعلامي كان بلا حارسٍ في النشر، فبقي شهراً بلا فهرسةٍ وبصوتٍ ميت والبناء أخضر.
+          check "Media archive integrity" node scripts/test-media-archive.mjs
+          check "Arabic tanween policy" node scripts/guard-arabic-tanween.mjs
+          check "Realtime audio sync self-test" node scripts/sync-audio-firestore.mjs --self-test
+
+      # حرّاسُ ما أُصلح مؤخّراً: لولاها لعاد كلُّ عطبٍ منها صامتاً كما عاد أوّل مرّة.
+      - name: Content, audio and dialogue guards
+        run: |
+          set -euo pipefail
+          check() {
+            local label="$1"; shift
+            echo "::group::${label}"
+            if ! "$@"; then
+              echo "::endgroup::"
+              echo "::error title=Gate failed::${label}"
+              exit 1
+            fi
+            echo "::endgroup::"
+          }
+          check "Deleted content purge self-test" node scripts/purge-deleted-content.mjs --self-test
+          check "Audio regression guard self-test" node scripts/guard-audio-meta-regression.mjs --self-test
+          check "Audio reconciliation self-test" node scripts/reconcile-audio-meta.mjs --self-test
+          check "Failure explainer self-test" node scripts/explain-failure.mjs --self-test
+          check "Dialogue staging self-test" node scripts/stage-dialogues-local.mjs --self-test
+          check "Majlis index self-test" node scripts/build-listen-index.mjs --self-test
+          check "Dialogue upload self-test" node scripts/upload-dialogues.mjs --self-test
+          # الـ144 الكويتية كانت بلا حارسٍ في النشر: انزلاقٌ لهجيٌّ واحد أو تنوينٌ
+          # ناجٍ كان يمرّ والبناء أخضر. البوابة نفسها موجودة منذ أول يوم؛ ما كان
+          # ينقصها إلا أن تُوصَل.
+          check "Kuwaiti dialogue dialect gate" node scripts/verify-kuwaiti-dialogues.mjs
+          # ومحرّك الصوت الكويتي معه: عقد الطلب (بلا ترويسة بثّ) واستخراج الصوت.
+          check "Kuwaiti Gemini engine self-test" node scripts/podcast-kuwaiti-gemini.mjs --self-test
+          check "Article body audit self-test" node scripts/audit-article-bodies.mjs --self-test
+
+      - name: TypeScript
+        run: |
+          set -euo pipefail
+          if ! npx tsc --noEmit; then
+            echo "::error title=Gate failed::TypeScript validation failed"
+            exit 1
+          fi
+
+  build-and-deploy:
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+            !/audio-meta-*.json
+            !/bodies-vocalized-*.json
+            !/podcast-state-*.json
+            !/whatsapp-agent/*.command
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24.18.0'
+          cache: npm
+
+      - name: Force public npm registry
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node --version
+          npm --version
+          node scripts/normalize-npm-registry.mjs
+          node scripts/normalize-npm-registry.mjs --check
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+      # بناء الموقع يشغّل self-tests الصوت (audio:quality:self-test) وهي تتحقق من وجود
+      # ffmpeg/ffprobe — أزالته دفعة سابقة عن هذا الـworkflow فتعطل النشر كله.
+      - name: Install media tools required by build self-tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      # بلا هذا المفتاح يبني الموقعُ أعمى عن قرارات اللوحة، فتُنشر الصفحات
+      # التي حذفها الدكتور بيده وتُفهرَس. المشروع هنا مشروع البيانات
+      # (drahmad-8e9e2) لأنه صاحب مجموعة content_overrides.
+      - name: Write Firestore key so panel deletions are honored
+        run: |
+          if [ -z "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 غير مضبوط — لا يمكن بناء نشرٍ يحترم الحذف."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      # الحذف نهائيّ: يُمحى المحذوف من الملفات الأساسية نفسها لا من البناء
+      # وحده، فلا تُعيده لقطةٌ ولا دفعةٌ قديمة كما أُعيدت ورقةُ السبورة.
+      - name: Purge panel-deleted content from the source files
+        run: node scripts/purge-deleted-content.mjs --apply
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Repair audio manifests safely from live R2
+        run: |
+          set -euo pipefail
+          if [ -z "${AUDIO_PUBLIC_BASE_URL:-}" ]; then
+            echo "::error::AUDIO_PUBLIC_BASE_URL غير مضبوط؛ لا يمكن إثبات عدّاد الصوت الحي."
+            exit 1
+          fi
+          # استعادة انتقائية فقط: الملف يُعاد إن كان موجوداً فعلاً على R2،
+          # والمحذوف عمداً (404) لا يُبعث. يشمل الاكتشاف فهد ونورة والحوار،
+          # ثم يُبنى السجلّ وتُحدّث لوحة التحكم من الحقيقة نفسها قبل النشر.
+          node scripts/guard-audio-meta-regression.mjs --apply
+          node scripts/reconcile-audio-meta.mjs --apply
+          # يعيد بناء اعتماد الحوارات الفصحى من audio-meta قبل البناء: سجل
+          # الاعتماد .podcast-state.json مُستبعَدٌ من المستودع فلا يصل هنا،
+          # فكانت الخلاصة تخدم القراءة المفردة على كل المنصات. اعتمدها
+          # الدكتور كلَّها (١٦ أغسطس). لا يمسّ الكويتي (:ar وحدها).
+          node scripts/restore-dialogue-approvals.mjs
+          node scripts/sync-audio.mjs
+          npm run audio:firestore:sync -- --from-r2
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Build static site
+        run: npm run build
+        env:
+          VITE_SITE_URL: https://dr-alfailakawi.com
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          REQUIRE_PANEL_DECISIONS: '1'
+
+      - name: Remove the Firestore key
+        if: always()
+        run: rm -f sa.json
+
+      - name: Verify Firebase service account secret
+        run: |
+          if [ -z '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}' ]; then
+            echo 'Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670'
+            echo 'Add a Firebase service-account JSON with Hosting Admin permissions to this repository secret.'
+            exit 1
+          fi
+
+      - name: Verify official-domain build
+        run: npm run verify:domain -- --dist
+
+      - name: Deploy Firestore and Storage rules to the data project
+        run: |
+          cleanup() {
+            rm -f "$RUNNER_TEMP/firebase-data-service-account.json"
+          }
+          trap cleanup EXIT
+          if [ -z "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing; skipping Firestore and Storage rules deploy for the data project."
+            echo "::warning::Hosting deploy will continue. Add the secret later to update Inbox/Questions/CMS rules automatically."
+            exit 0
+          fi
+          printf '%s' "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-data-service-account.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-data-service-account.json"
+          # نشر Firestore مباشرة عبر Admin SDK. حساب GitHub مخصص للبيانات ويستطيع
+          # نشر Security Rules، لكنه لا يملك serviceusage.services.get؛ Firebase CLI
+          # يفشل في فحص API قبل أن يصل إلى نشر القواعد نفسه. المسار المباشر يتجاوز
+          # فحص Service Usage فقط، ولا يغيّر القواعد ولا المشروع المستهدف.
+          FIREBASE_SERVICE_ACCOUNT="$RUNNER_TEMP/firebase-data-service-account.json" \
+          FIREBASE_PROJECT_ID=drahmad-8e9e2 \
+          node scripts/deploy-firestore-rules-admin.mjs
+          # Storage يخدم مكتبة التوليد، لكنه ليس شرطاً لإتاحة الموقع العام.
+          # إذا كانت الخدمة غير مفعلة أو حساب النشر لا يستطيع تفعيلها، نُبقي Hosting يعمل
+          # ونُظهر تحذيراً واضحاً؛ الاستوديو نفسه يعرض حالة Storage ولا يدّعي نجاح الحفظ.
+          STORAGE_READY=0
+          if npx --yes firebase-tools@latest deploy \
+            --config firebase.data.json \
+            --only storage \
+            --project drahmad-8e9e2 \
+            --non-interactive; then
+            echo "✓ Generation Library Storage rules deployed successfully."
+            if FIREBASE_PROJECT_ID=drahmad-8e9e2 \
+              FIREBASE_STORAGE_BUCKET=drahmad-8e9e2.firebasestorage.app \
+              node scripts/verify-generation-library-storage.mjs; then
+              STORAGE_READY=1
+            else
+              echo "::warning title=Generation Library Storage verification failed::نُشرت قواعد Storage لكن فشل اختبار الكتابة/القراءة/الحذف. سيستمر نشر الموقع، وستظهر المكتبة حالتها الفعلية داخل الاستوديو."
+            fi
+          else
+            echo "::warning title=Generation Library Storage unavailable::Firebase Storage غير مفعّل أو أن حساب GitHub لا يملك صلاحية تفعيله في drahmad-8e9e2. سيستمر نشر الموقع العام؛ مكتبة التوليد لن تحفظ أصولاً جديدة إلى أن تُفعّل Storage مرة واحدة بحساب مالك المشروع."
+          fi
+          if [ "$STORAGE_READY" != "1" ]; then
+            echo "::notice title=Hosting deployment will continue::تعطل Storage الإداري لا يمنع نشر الموقع أو Firestore."
+          fi
+        env:
+          FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      # الواجهة و /api/** يجب أن يُنشرا من الالتزام نفسه. سابقاً كان Hosting
+      # يتقدم بينما تبقى dr-api على إصدار أقدم، فتظهر أزرار جديدة أمام API لا يعرفها.
+      # نوقف النشر إذا لم نستطع مزامنة الخادم بدلاً من شحن نسخة نصف محدثة.
+      - name: Authenticate Google Cloud for synchronized API deploy
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.CLOUD_RUN_DEPLOY_SERVICE_ACCOUNT_JSON || secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+      - name: Setup Google Cloud SDK for synchronized API deploy
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Deploy matching dr-api revision before Hosting
+        run: |
+          set -euo pipefail
+          gcloud config set project gen-lang-client-0200723670 --quiet
+          gcloud run deploy dr-api \
+            --source=. \
+            --project=gen-lang-client-0200723670 \
+            --region=europe-west1 \
+            --allow-unauthenticated \
+            --port=8080 \
+            --timeout=300 \
+            --memory=1Gi \
+            --max-instances=3 \
+            --quiet
+          # إعدادات الاتصال اختيارية في GitHub: إن كانت موجودة نزامنها مع الخدمة،
+          # وإن لم تكن موجودة نحافظ على قيم Cloud Run الحالية ولا نمسها.
+          ENV_PAIRS=()
+          [ -n "${FIREBASE_WEB_PUSH_VAPID_KEY:-}" ] && ENV_PAIRS+=("FIREBASE_WEB_PUSH_VAPID_KEY=${FIREBASE_WEB_PUSH_VAPID_KEY}")
+          [ -n "${NEWSLETTER_FROM_EMAIL:-}" ] && ENV_PAIRS+=("NEWSLETTER_FROM_EMAIL=${NEWSLETTER_FROM_EMAIL}")
+          [ -n "${RESEND_API_KEY:-}" ] && ENV_PAIRS+=("RESEND_API_KEY=${RESEND_API_KEY}")
+          [ -n "${NEWSLETTER_UNSUBSCRIBE_SECRET:-}" ] && ENV_PAIRS+=("NEWSLETTER_UNSUBSCRIBE_SECRET=${NEWSLETTER_UNSUBSCRIBE_SECRET}")
+          if [ "${#ENV_PAIRS[@]}" -gt 0 ]; then
+            ENV_JOINED="$(IFS=,; echo "${ENV_PAIRS[*]}")"
+            gcloud run services update dr-api \
+              --project=gen-lang-client-0200723670 \
+              --region=europe-west1 \
+              --update-env-vars="$ENV_JOINED" \
+              --quiet
+          fi
+          API_URL="$(gcloud run services describe dr-api --project=gen-lang-client-0200723670 --region=europe-west1 --format='value(status.url)')"
+          if [ -z "$API_URL" ]; then
+            echo "::error::تم النشر لكن تعذّر استخراج رابط dr-api."
+            exit 1
+          fi
+          curl --fail --silent --show-error --retry 5 --retry-delay 4 "$API_URL/api/ai/studio-image/health" >/dev/null
+          echo "✓ dr-api and Hosting are now pinned to the same commit: $GITHUB_SHA"
+        env:
+          FIREBASE_WEB_PUSH_VAPID_KEY: ${{ vars.FIREBASE_WEB_PUSH_VAPID_KEY }}
+          NEWSLETTER_FROM_EMAIL: ${{ vars.NEWSLETTER_FROM_EMAIL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NEWSLETTER_UNSUBSCRIBE_SECRET: ${{ secrets.NEWSLETTER_UNSUBSCRIBE_SECRET }}
+
+      - name: Deploy to Firebase Hosting live
+        run: |
+          printf '%s' "$FIREBASE_HOSTING_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-hosting-service-account.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-hosting-service-account.json"
+          npx --yes firebase-tools@latest deploy \
+            --only hosting \
+            --project gen-lang-client-0200723670 \
+            --non-interactive
+          rm -f "$RUNNER_TEMP/firebase-hosting-service-account.json"
+        env:
+          FIREBASE_HOSTING_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+      # إشعار محركات البحث بالجديد بدل انتظار زحفها (Bing وYandex وNaver).
+      # بعد النشر لا قبله: الروابط يجب أن تكون حيّةً قبل أن نطرق الباب.
+      # `|| true` مقصود: خدمة خارجية متعثّرة لا توقف نشر الموقع.
+      - name: Notify search engines (IndexNow)
+        continue-on-error: true
+        run: node scripts/indexnow-ping.mjs || true
+
+
+      - name: Mark canonical content jobs deployed
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is required to close publication jobs."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/content-pipeline-sa.json"
+          FIREBASE_SERVICE_ACCOUNT="$RUNNER_TEMP/content-pipeline-sa.json" \
+          FIREBASE_PROJECT_ID=drahmad-8e9e2 \
+          node scripts/mark-content-pipeline-deployed.mjs
+          rm -f "$RUNNER_TEMP/content-pipeline-sa.json"
+        env:
+          FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}

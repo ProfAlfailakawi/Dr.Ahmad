@@ -1,0 +1,39 @@
+{
+  "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "12aa91f63064c2a2998f72500ba42909f0f7b95a172137d23f57179c0ba6aa70",
+  "bytes": 4561005,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 227.981,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160048,
+      "peakDb": -1.42,
+      "lufs": -16.47,
+      "lra": 2.9,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

@@ -1,0 +1,428 @@
+{
+  "hosting": {
+    "site": "dr-alfailakawi",
+    "public": "dist",
+    "cleanUrls": true,
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/ar",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/home-2",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/ar/home-2",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/en/home",
+        "destination": "/en",
+        "type": 301
+      },
+      {
+        "source": "/academic-biography",
+        "destination": "/cv",
+        "type": 301
+      },
+      {
+        "source": "/academic-biography-2",
+        "destination": "/cv",
+        "type": 301
+      },
+      {
+        "source": "/ar/academic-biography",
+        "destination": "/cv",
+        "type": 301
+      },
+      {
+        "source": "/ar/academic-biography-2",
+        "destination": "/cv",
+        "type": 301
+      },
+      {
+        "source": "/en/academic-biography",
+        "destination": "/en/cv",
+        "type": 301
+      },
+      {
+        "source": "/en/academic-biography-2",
+        "destination": "/en/cv",
+        "type": 301
+      },
+      {
+        "source": "/scholarly-contributions",
+        "destination": "/research",
+        "type": 301
+      },
+      {
+        "source": "/scholarly-contributions-2",
+        "destination": "/research",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly-contributions",
+        "destination": "/research",
+        "type": 301
+      },
+      {
+        "source": "/ar/scholarly-contributions-2",
+        "destination": "/research",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly-contributions",
+        "destination": "/en/research",
+        "type": 301
+      },
+      {
+        "source": "/en/scholarly-contributions-2",
+        "destination": "/en/research",
+        "type": 301
+      },
+      {
+        "source": "/published-books",
+        "destination": "/publications",
+        "type": 301
+      },
+      {
+        "source": "/published-books-2",
+        "destination": "/publications",
+        "type": 301
+      },
+      {
+        "source": "/ar/published-books",
+        "destination": "/publications",
+        "type": 301
+      },
+      {
+        "source": "/ar/published-books-2",
+        "destination": "/publications",
+        "type": 301
+      },
+      {
+        "source": "/signature-thought-articles",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/signature-thought-articles-2",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/ar/signature-thought-articles",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/ar/signature-thought-articles-2",
+        "destination": "/articles",
+        "type": 301
+      },
+      {
+        "source": "/recorded-interviews-media-appearances",
+        "destination": "/media",
+        "type": 301
+      },
+      {
+        "source": "/recorded-interviews-media-appearances-2",
+        "destination": "/media",
+        "type": 301
+      },
+      {
+        "source": "/ar/recorded-interviews-media-appearances",
+        "destination": "/media",
+        "type": 301
+      },
+      {
+        "source": "/ar/recorded-interviews-media-appearances-2",
+        "destination": "/media",
+        "type": 301
+      },
+      {
+        "source": "/upcoming-speaking-engagements",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "source": "/upcoming-speaking-engagements-2",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "source": "/ar/upcoming-speaking-engagements",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "source": "/ar/upcoming-speaking-engagements-2",
+        "destination": "/upcoming",
+        "type": 301
+      },
+      {
+        "source": "/from-my-inbox",
+        "destination": "/inbox",
+        "type": 301
+      },
+      {
+        "source": "/ar/from-my-inbox",
+        "destination": "/inbox",
+        "type": 301
+      },
+      {
+        "source": "/about-the-website",
+        "destination": "/about",
+        "type": 301
+      },
+      {
+        "source": "/about-the-website-2",
+        "destination": "/about",
+        "type": 301
+      },
+      {
+        "source": "/ar/about-the-website",
+        "destination": "/about",
+        "type": 301
+      },
+      {
+        "source": "/ar/about-the-website-2",
+        "destination": "/about",
+        "type": 301
+      },
+      {
+        "source": "/contact-consultation",
+        "destination": "/contact",
+        "type": 301
+      },
+      {
+        "source": "/contact-consultation-2",
+        "destination": "/contact",
+        "type": 301
+      },
+      {
+        "source": "/ar/contact-consultation",
+        "destination": "/contact",
+        "type": 301
+      },
+      {
+        "source": "/ar/contact-consultation-2",
+        "destination": "/contact",
+        "type": 301
+      },
+      {
+        "source": "/signature_articles/a-society-that-fears-the-different-scheduledarabbic",
+        "destination": "/articles/a-society-that-fears-the-different-arabic",
+        "type": 301
+      },
+      {
+        "source": "/now",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/rss",
+        "destination": "/feed.xml",
+        "type": 301
+      },
+      {
+        "source": "/podcast",
+        "destination": "/podcast.xml",
+        "type": 301
+      },
+      {
+        "source": "/articles/a-society-that-fears-the-different-scheduledarabbic",
+        "destination": "/articles/a-society-that-fears-the-different-arabic",
+        "type": 301
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "dr-api",
+          "region": "europe-west1"
+        }
+      }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=0, must-revalidate, s-maxage=600, stale-while-revalidate=86400"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "X-Frame-Options",
+            "value": "SAMEORIGIN"
+          },
+          {
+            "key": "Permissions-Policy",
+            "value": "camera=(), microphone=(), geolocation=(), browsing-topics=()"
+          },
+          {
+            "key": "Strict-Transport-Security",
+            "value": "max-age=31536000; includeSubDomains; preload"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://www.google.com https://www.gstatic.com https://plausible.io; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; media-src 'self' https:; connect-src 'self' http://127.0.0.1:34321 http://localhost:34321 https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app https://www.google.com https://plausible.io https://api.pexels.com https://images.pexels.com https://api.openverse.org https://commons.wikimedia.org https://upload.wikimedia.org wss://*.firebaseio.com; frame-src https://www.google.com https://maps.google.com https://www.youtube-nocookie.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
+          }
+        ]
+      },
+      {
+        "source": "/assets/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "/archive/bodies/v1/shards/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "/fonts/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "/audio/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "/covers/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "/files/encyclopedia.pdf",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
+          },
+          {
+            "key": "Content-Disposition",
+            "value": "attachment"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          }
+        ]
+      },
+      {
+        "source": "/files/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "/og/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "/portrait.@(webp|jpg)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "/@(logo|favicon|podcast-cover|tebyan-icon).png",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "/icon-@(192|512).png",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "/@(og|og-dark).png",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "/sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/@(manifest.webmanifest|robots.txt)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ],
+    "trailingSlash": false
+  }
+}

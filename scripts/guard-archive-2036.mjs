@@ -1,0 +1,57 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8')
+const checks = []
+const check = (name, ok, detail = '') => checks.push({ name, ok: Boolean(ok), detail })
+
+const pkg = JSON.parse(read('package.json'))
+const articleBodies = read('src/lib/article-bodies.ts')
+const content = read('src/lib/content.ts')
+const search = read('src/pages/Search.tsx')
+const atlas = read('src/pages/Atlas.tsx')
+const research = read('src/pages/Research.tsx')
+const graphBuild = read('scripts/build-knowledge-graph.mjs')
+const graphRuntime = read('src/lib/knowledge-graph.ts')
+const conceptWeave = read('src/lib/concept-weave.ts')
+const mediaArchive = read('src/lib/media-archive.ts')
+const shardBuilder = read('scripts/build-archive-shards.mjs')
+const server = read('server.mjs')
+const firebase = read('firebase.json')
+const whatsappIndex = read('whatsapp-agent/content-index.mjs')
+const staticBuild = read('scripts/build-static.mjs')
+const sitemapScale = read('scripts/archive-sitemap.mjs')
+const intelligence = read('src/lib/intelligence.ts')
+const archiveTypes = read('src/lib/archive-scale.d.mts')
+
+check('build يولّد شرائح المتون قبل Vite', pkg.scripts?.build?.includes('node scripts/build-archive-shards.mjs && vite build'))
+check('اختبار 100k مسجّل كأمر مستقل', pkg.scripts?.['archive:scale:self-test'] === 'node scripts/test-archive-scale-100k.mjs')
+check('واجهات Archive 2036 المعيارية typed ولا تسقط المشروع إلى any', archiveTypes.includes('selectTopK<T>') && archiveTypes.includes('sampleVisualArchive<T>') && archiveTypes.includes('buildSearchPostings<T>'))
+check('قارئ المقال يستخدم shard ثابت بدلاً من تنزيل bodies كاملة أولاً', articleBodies.includes("/archive/bodies/v1/") && articleBodies.indexOf('bodyFromShard') < articleBodies.indexOf('loadArticleBodies()'))
+check('شرائح المتون content-addressed فلا يعلق القارئ على نسخة قديمة', shardBuilder.includes("slice(0, 16)") && shardBuilder.includes("'shards', revision") && articleBodies.includes('meta.revision'))
+check('شرائح revision فقط تحصل على immutable caching', server.includes("/archive/bodies/v1/shards/") && firebase.includes("/archive/bodies/v1/shards/**"))
+check('الخادم يقرأ متن المقال من shard ولا يثبت الأرشيف الكامل في الذاكرة', server.includes('archiveBodyFromShard') && server.includes('archiveBodyShardCache.size > 24') && server.includes('archiveBodyForSlug(slug)'))
+check('نافذة Firestore العامة محدودة', /PUBLIC_REMOTE_WINDOW\s*=\s*320/.test(content) && content.includes('limit(PUBLIC_REMOTE_WINDOW)'))
+check('صفحة البحث لا تكرر المقالات داخل Knowledge Graph', search.includes('buildKnowledgeGraph({ articles: [], books, papers, media }') && search.includes('{ edges: false, tokenize: false }'))
+check('بحث المقالات يضيّق المرشحين عبر postings قبل التقييم', search.includes('buildSearchPostings(articles') && search.includes('searchPostingCandidates(articleSearchPostings'))
+check('بناء Knowledge Graph يستخدم candidate graph محدود', graphBuild.includes('buildSimilarityGraph(') && !/for \(let i = 0; i < nodes\.length; i\+\+\)[\s\S]{0,220}for \(let j = i \+ 1; j < nodes\.length; j\+\+\)/.test(graphBuild))
+check('البحث في Knowledge Graph يملك postings cache', graphRuntime.includes('WeakMap<KnowledgeGraph') && graphRuntime.includes('buildSearchPostings'))
+check('سيرة المفهوم/صدى الفكرة يملكان posting caches', conceptWeave.includes('articleConceptCache') && conceptWeave.includes('conceptCandidateIndexes'))
+check('بصمة الأسلوب والتحرير لا تجمع 100k متن في كتلة واحدة', intelligence.includes('representativeArchiveSample') && intelligence.includes('selectTopK'))
+check('بحث اللحظات الإعلامية مفهرس ومخبأ', mediaArchive.includes('momentIndexCache') && mediaArchive.includes('postings'))
+check('فهرس واتساب لا يبني تشابه all-pairs', whatsappIndex.includes('buildSimilarityGraph(') && !/items\.filter\([^\n]*candidate/.test(whatsappIndex))
+check('JSON-LD للأبحاث لا يضخ كامل الأرشيف', research.includes('papers.slice(0, 100)'))
+check('sitemap يتجزأ تلقائياً لأرشيف 100k', staticBuild.includes('buildSitemapDocuments') && sitemapScale.includes('45_000') && sitemapScale.includes('<sitemapindex'))
+check('سماء المقالات تحد التفاعل المجمع القادم من Firestore', atlas.includes('firestore.limit(1200)'))
+check('سماء كبيرة تستخدم LOD ثابتاً بدل آلاف عقد DOM', atlas.includes('sampleVisualArchive(articles, ATLAS_STAR_BUDGET') && /ATLAS_STAR_BUDGET\s*=\s*1600/.test(atlas))
+check('سماء كبيرة توقف الحركة الفردية وتحميل شبكة العلاقات الكاملة', atlas.includes('articles.length > ATLAS_STAR_BUDGET') && atlas.includes('articles.length <= ATLAS_FULL_GRAPH_LIMIT'))
+
+const failed = checks.filter((item) => !item.ok)
+for (const item of checks) console.log(`${item.ok ? '✓' : '✗'} ${item.name}${item.detail ? ` — ${item.detail}` : ''}`)
+if (failed.length) {
+  console.error(`\nArchive 2036 guard failed: ${failed.length}/${checks.length}`)
+  process.exit(1)
+}
+console.log(`\nArchive 2036 guard: ${checks.length}/${checks.length} checks passed.`)

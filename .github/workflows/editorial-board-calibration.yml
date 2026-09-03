@@ -1,0 +1,41 @@
+name: معايرة مجلس التحرير — 7 و30 يوماً
+
+on:
+  schedule:
+    # يومياً 05:10 UTC = 08:10 صباح الكويت. القياس يومي لا لحظي.
+    - cron: '10 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: editorial-board-calibration
+  cancel-in-progress: true
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # العلاج الجذري: كان الجلب يعدّد ملفاتٍ مفردة، فتفشل السلسلة دائماً حين
+      # يحتاج ملفٌ استيراداً غير مُدرَج (style-dna.mjs) بـERR_MODULE_NOT_FOUND.
+      # نجلب الآن مجلدَي src/lib وsrc/data كاملَين فيُحلّ أيّ استيرادٍ حالي أو
+      # مستقبلي بلا صيانةِ قائمةٍ هشّة. لا تبعيات node_modules في السلسلة كلها،
+      # وحجم المجلدين معاً (~18MB) يُجلب في ثوانٍ ضمن مهلة العشر دقائق.
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts/editorial-board-calibration.mjs
+            src/lib
+            src/data
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: اختبار منطق المعايرة بلا شبكة
+        run: node scripts/editorial-board-calibration.mjs --self-test
+      - name: تحضير حساب الخدمة
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}' > sa.json
+      - name: قياس أداء 7 و30 يوماً وتحديث مرآة الأثر
+        run: node scripts/editorial-board-calibration.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2

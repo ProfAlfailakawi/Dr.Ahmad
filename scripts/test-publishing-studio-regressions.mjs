@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+const root = resolve(new URL('..', import.meta.url).pathname)
+const studio = readFileSync(resolve(root, 'src/components/admin/PublishingStudio.tsx'), 'utf8')
+const contentManager = readFileSync(resolve(root, 'src/components/admin/ContentManager.tsx'), 'utf8')
+const cms = readFileSync(resolve(root, 'src/lib/cms.ts'), 'utf8')
+const calibrationWorkflow = readFileSync(resolve(root, '.github/workflows/editorial-board-calibration.yml'), 'utf8')
+
+assert.doesNotMatch(studio, /setEditorialProgress\(\s*\[\s*\]\s*\)/, 'EditorialProgress is a state union, never an array')
+assert.match(studio, /setEditorialProgress\('idle'\)/, 'reset must return EditorialProgress to idle')
+
+const paperMapping = studio.match(/const item = papers\.find\([\s\S]*?return item \? \[\{[\s\S]*?\}\] : \[\]/)?.[0] || ''
+assert.ok(paperMapping, 'research paper mapping must exist')
+assert.match(paperMapping, /date: item\.year \|\| ''/, 'ResearchPaper exposes year, not date/iso')
+assert.doesNotMatch(paperMapping, /item\.(?:date|iso)/, 'do not read undeclared ResearchPaper.date/iso fields')
+
+assert.match(studio, /useState<EditorialProgress>\('idle'\)/)
+assert.match(studio, /type EditorialProgress = 'idle' \| 'archive' \| 'graph' \| 'current' \| 'portfolio' \| 'decision' \| 'done'/)
+assert.match(studio, /dir="rtl"/)
+
+assert.match(studio, /personalMode: true/, 'Editorial Board must run in personal mode')
+assert.match(studio, /personalAudienceEvidence\(\)/, 'personal mode must explicitly provide no audience evidence')
+assert.match(studio, /buildEditorialPortfolioEvidence/, 'portfolio awareness must be derived from the real archive')
+assert.doesNotMatch(studio, /buildAudienceSignals|buildReaderRows/, 'personal Editorial Board must not depend on audience intelligence')
+assert.match(studio, /data-editorial-evidence-trace="true"/)
+assert.match(studio, /data-editorial-portfolio="true"/)
+assert.match(studio, /data-editorial-scenarios="true"/)
+assert.match(studio, /data-editorial-evidence-gate="needs-evidence"/, 'evidence gate stays silent unless evidence is actually missing')
+assert.doesNotMatch(studio, /setEditorialEvidenceHold|ابدأ المسودة مع تسجيل النقص/, 'missing evidence must not turn Start article into a second-click dead end')
+assert.match(studio, /void launchEditorialArticle\(decision, !decision\.evidenceGate\.ready\)/, 'one click must start writing while recording any evidence note')
+const launchFlow = studio.match(/const launchEditorialArticle = async[\s\S]*?const startEditorialArticle/)?.[0] || ''
+assert.match(launchFlow, /const written = await rebuild/, 'the studio must await a successful article before moving the viewport')
+assert.doesNotMatch(launchFlow, /window\.scrollTo\(\{ top: 0/, 'Start article must never jump to the top before generation finishes')
+assert.ok(launchFlow.indexOf("setView('write')") < launchFlow.indexOf('await rebuild'), 'the writing workspace must open immediately instead of waiting for the network')
+assert.match(studio, /data-article-generation-state="working"/, 'the editor must explain that article generation is running')
+assert.match(studio, /data-article-generation-state="error"/, 'generation failures must appear beside the preserved draft')
+assert.match(studio, /id="article-writing-workspace"/, 'successful generation must have a stable editor destination')
+assert.match(studio, /busy=\{editorialBusy \|\| generating\}/, 'Start article must stay disabled with a truthful writing state until generation finishes')
+assert.match(cms, /publishedAt\?: string/,'ArticleRecord must preserve the real publication timestamp')
+assert.match(contentManager, /firstPublication[\s\S]*?publishedAt: serverTimestamp\(\)/, 'manual publish must stamp first real publication')
+assert.match(contentManager, /status: 'draft'/, 'a new article must start as a draft')
+assert.match(contentManager, /data-publication-override="required"/, 'an incomplete publication requires an explicit recorded override')
+assert.match(contentManager, /publicationGate: publicationGateAudit/, 'the publication decision must be persisted with the article')
+assert.match(contentManager, /overrideReason\.length < 12/, 'a manual override must carry an auditable reason')
+assert.match(studio, /data-quality-gate-state="empty"/, 'an empty draft must not receive a quality score')
+assert.match(studio, /data-editorial-decision-state="empty"/, 'the editorial room must stay empty until a real draft exists')
+assert.match(studio, /data-standalone-design-state="empty"/, 'standalone placeholders must not expose downloadable designs')
+assert.match(studio, /function withHashtagsOnce/, 'Instagram hashtags must be deduplicated before display')
+assert.match(calibrationWorkflow, /cron: '10 5 \* \* \*'/, '7/30 calibration must run automatically every day')
+assert.match(calibrationWorkflow, /editorial-board-calibration\.mjs --self-test/, 'scheduled calibration must self-test before touching Firestore')
+assert.match(calibrationWorkflow, /sparse-checkout:[\s\S]*^\s*src\/lib\s*$[\s\S]*^\s*src\/data\s*$/m, 'the scheduled checkout must pull whole src/lib and src/data so every import (impact-mirror, adversarial-misunderstanding, style-dna, and transitive deps) resolves')
+assert.match(studio, /data-adversarial-misunderstanding=/, 'the adversarial simulator must stay inside the sovereign passport surface')
+assert.match(studio, /data-impact-mirror=/, 'the impact mirror must stay inside Editorial Board history')
+assert.match(studio, /الانتشار لا يساوي الفهم/, 'impact analytics must never be presented as proof of understanding')
+
+console.log('PublishingStudio TypeScript regression guard: passed')

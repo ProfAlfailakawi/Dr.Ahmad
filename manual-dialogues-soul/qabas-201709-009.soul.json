@@ -1,0 +1,265 @@
+{
+  "slug": "qabas-201709-009",
+  "bridgeAfter": [
+    9,
+    26
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كنت أجلس مساء يومي الحافل بالعمل، أتصفح آخر الأخبار لأزمة الحصار.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهمومنا الداخلية التي ذابت في الهموم الكبيرة من حولنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فوجدت أن الخطاب السياسي في مواقع التواصل قد تعالى كثيرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وضاقت السبل لديهم، فلم يجدوا في خطابهم إلا عنصرية المكان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والتطاول على سيادة الدولة المحاصرة من جهة، وطريق اللاعودة في الردود عليها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بأبشع أشكال التنكيل الذي نراه كل يوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فذهب تفكيري في لحظة، أن بعض وسائل التواصل أصبحت كسجون التعذيب في العهود المستبدة الغابرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالكل من خلال تغريداتهم ومقالهم وغيرها ينكلون ببعضهم البعض.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويشككون بوجود الآخر، وأهميته وسيادة دولته، فأصبحت كحرب الأعصاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يا ترى من المستفيد من هذا الخطاب المتصاعد بيننا؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا هذا الحقد الدفين؟⏸ وكيف خرج فجأة لمجرد أزمة عهدها جديد؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ألسنا أخوة في رحم المكان والزمان والنسب؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فبدأت أحاصر الفكرة الضائعة في غيابات الأزمة الحاصلة.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ورأيت أن الحصار يقوم على الإملاءات الخارجية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وتوجيه الأوامر للدولة المحاصرة، ~~ وكأنها طفل لم يبلغ الحلم.",
+      "feeling": "intimate",
+      "feeling2": "hush",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والتعمد في فرض الوصاية على السيادة، وتصعيد الخطاب السياسي من أجل إخضاع الآخر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل من حق أحد أن يخضع الآخر وهو صاحب سيادة واستقرار مطلق؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بالطبع لا، فلسنا في صراع اجتماعي داخلي،⏸ بل نحن نتحدث عن سيادة دول.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لا تقبل الإخضاع ولا الإملاءات الخارجية على حساب الكيان واستقلاليته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلا وصاية لكيان سائد معترف فيه بين الأمم، واستقلاليته محفوظة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولن نعود إلى عهد الاستعمار من أجل تحقيق مآرب خاصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفرض أجندات من أجل تطويق الخناق للإخضاع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلن نوقع على وثيقة الاستعباد، كما فعلت دول الحصار.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فلو فعلناها يوما، سيأتي علينا وعلى باقي الدول الدور، وهذا ما لا نسلم به.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وسنبقى وسيط خير ضاغط على وسيط الشر من أجل الصحوة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فاليوم قطر، وغدا تتساقط باقي المسبحة، التي كانت في يوم من الأيام وحدة وتعاون.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لتصبح بلا سيادة، وينطبق عليها:⏸ كما تدين تدان.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فما الذي نملكه نحن أمام هذا كله؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "دعونا من الإملاءات الخارجية، ولنمعن العقل في حالنا.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونراعي الله في الخطاب السياسي، سواء لدى أولي الأمر، أو أصحاب التوجهات السياسية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو مغردي مواقع التواصل الاجتماعي، فالوضع خطير.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والإملاءات الخارجية لفرض الوصاية من الأخوة الأشقاء أصابها العمى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلم تعد ترى إلا مصالحها الخاصة، وتنفيذ أجندات مغلقة ليس لها حبيب ولا صديق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتجييش مواقع التواصل الاجتماعي من أجل حرب نكراء، بدايتها التجريح والاختراقات، ونهايتها لا ينفع فيها التطبيب.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فدعونا نلتزم بخطة الدفاع التي أعلناها من قبل، ونضيف عليها رفضنا للإملاءات الخارجية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

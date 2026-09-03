@@ -1,0 +1,271 @@
+{
+  "slug": "eliminating-the-education-epidemic",
+  "bridgeAfter": [
+    9,
+    28
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "يعيش العالم كابوس فايروس الكورونا، وليس للناس حديث إلا بهذا الوباء القاتل.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نجلس في كل مكان، نجد المتخوف ونجد الواعي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والدولة الحبيبة اتخذت إجراءات طبية وتوعوية على مستوى عال من الاستعدادات من أجل احتواء الوضع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن سؤالا يلح علينا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل سألنا أنفسنا كيف أصبح وباء الكورونا حديث الساعة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والوباء المتفشي في التعليم لا يعلم عنه أحد من المسؤولين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو يعلمون، ولكن عاجزون عن وضع الحلول الفائقة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والحل ببساطة واضح.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "الحل ببساطة هو الحزم، وأن يبدأوا في مواجهة كورونا التعليم المتفشي منذ عقود.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويتخذوا الإجراءات على مستوى عال من الاستعدادات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نقارن وباء يقتل الناس بأزمة تعليمية؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يقارن الأثر لا الشكل:⏸ لا بد من تسليط الضوء على هذا الوباء التعليمي الذي نخر جسد التعليم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأصبح يفوق وباء الكورونا الذي يخشاه العالم، فأبناؤنا في خطر حقيقي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكما الحزم ينفع في الحروب،⏸ فإن الحزم في التربية والتعليم لا بد أن يكون أكثر نفعا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فجميعنا نعيش التهالك الذي يعانيه التعليم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمنذ التحرير لم يستقر التعليم على منهج يوائم بيئتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولم يتم تنفيذ التعليم التكنولوجي بشكله المناسب. ولم، ولم، ولم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فمتى نقود التعليم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "متى سنقود التعليم إلى المنصات التعليمية العالمية ونصبح كما التعليم في الدول المتقدمة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فماذا ينقصنا لنكون؟⏸ والقضية أصبحت إما أن نكون أو لا نكون أبدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يكفي ترنحا ودوارا في هذا الطريق. فدولتنا قوية بقدراتها وإمكاناتها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والتعليم يحتاج إلى دعم مادي، وهذا الجانب المهم وحده لا ينقصنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نحتاج إلى خبرات، ونحن لها،⏸ ولا نحتاج إلى الآخرين ليقرروا لنا ما نريد وما لا نريد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لدينا خبرات وطنية رائدة، ولكنها مهمشة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم مهمشة تماما اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم مهمشة،⏸ ولا يمكن أن نقول غير ذلك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلو استخدمنا قدراتنا وعقولنا لأصبحنا في ركاب الدول المتقدمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولأصبح التعليم في دولتنا الحبيبة على أعلى مستوى من الرقي والتقدم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وننهض بأبنائنا الذين ينتظرون منا المزيد والمزيد من العمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الذي يعوق الانطلاق؟⏸ المال متوفر والخبرات موجودة.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يسميها بأسمائها:⏸ الواسطة، والمحسوبية، وأصحاب النفوذ.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فقط دعونا ننطلق دون عثرات، وسيشهد لنا العالم بأننا أصبحنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "انهض بنا يا وزير التربية، لننهض بدورنا من أجل تقدم تعليمنا وأبنائنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا نداء إلى أصحاب القرار في تقديم التمويل الكافي لتعليم منافس عالميا، يشهد له رواد التعليم في العالم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهذه صرخة من كل مواطن يريد أن يكون. ونحن في زمن لا يجوز أن لا نكون.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فقط نريد مصلا قويا نجابه فيه كورونا التعليم، والدواء في عزم صناع القرار. وتعليمنا أمانة في أعناقنا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

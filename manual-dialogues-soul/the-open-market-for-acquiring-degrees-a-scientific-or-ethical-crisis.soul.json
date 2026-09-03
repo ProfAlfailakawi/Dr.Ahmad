@@ -1,0 +1,264 @@
+{
+  "slug": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
+  "bridgeAfter": [
+    11,
+    29
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "عدنا والعود أحمد. بعد الغياب نعود لنرصد أهم الموضوعات التي نتبادل فيها الآراء ووجهات النظر.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وارتأى الكاتب ذلك بعد أن صادفه الكثير من الجدل مع الزملاء والناس.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "جدل طال في أزمة الشهادات، وكثر الكلام فيها دون الوصول إلى أصل المشكلة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فأين أصلها؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالمشكلة ليست في كونها مزورة، أو غشا وتدليسا في اعتبار الشهادات الفخرية شهادات كالدراسات العليا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو اعتبار شهادات الدورات شهادة تؤهل صاحبها بأن يكون صاحب خبرة ومهنة مهمة في سوق العمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكأنه صاحب شهادة من أرقى الجامعات. فدعونا نذهب إلى عمق المشكلة وأصلها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الأصل أن التزوير جاء من السوق المفتوح لاقتناء الشهادات.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "سوق يمكن شراء أكبر الشهادات فيه من جامعات مختلفة حول العالم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نعم، هذه الحقيقة التي أغفل عنها الكثيرون.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كما تشتري سلعة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فكما تذهب إلى السوق المفتوح لشراء سلعة تعجبك، فالشهادات كذلك. وإذا عرف السبب بطل العجب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل هي أزمة علمية إذن؟⏸ هذا ما يظنه الناس.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يقلبها:⏸ إن الأزمة الحقيقية ليست بعلمية. فهم ليسوا بحاجة إلى علم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "هم بحاجة إلى وجاهة واعتبار في داخل المجتمع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والأزمة أن من يشتري شهادة من السوق المفتوح هو شخص يتصف بالفشل وعدم تحمل المسؤولية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يعمد إلى الخطأ من أجل سمعة علمية ومنصب وظيفي، ليتظاهر أمام الناس فقط لا غير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والسوق هدفه الثراء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أما من يحاول أن يأخذ دورة ليكون فيما بعد صاحب مسمى مهني.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ويبدأ في العمل بها وكأنه ذو خبرة ومسيرة علمية طويلة بذل فيها السبل والجهد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهو شخص متسلق أصولي، يعمل على امتهان علم ليس هو بعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كمن يعملون فيما يسمونه علم الطاقة والريكي وغيرها. حقا صدقتم أنه علم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "الله المستعان.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأما عن الشهادات الفخرية فحدث بلا حرج.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إذن الأزمة في الأصل أزمة أخلاقية وليست علمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لأننا اتفقنا على أنه شخص فاشل وأصولي متسلق لا غير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يبدو سعيدا، ولكنه بالداخل يعيش في صراع كالسارق الذي يتلفت حوله خوفا أن ينكشف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ما هذه الحياة بربكم؟⏸ وماذا استفاد هؤلاء الذين كشفوا غير العار والخزي؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "لو اجتهدت لأصبحت. ولكن كل شيء سهل يجري إليه هؤلاء بسرعة ضوئية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يعلمون أن ما يأتي بسرعة يذهب بسهولة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل الحل في اللوم وحده؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يطلب أكثر:⏸ أزمة تدخل من الدولة لوضع قوانين ورقابة صارمة على الشهادات ونوعيتها وأصلها.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فقد أصبحت بعض الشهادات كالطفل المجهول النسب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والحقيقة أن كل مجتهد ضاق به الخناق من هؤلاء المتسلقين.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولا عزاء للسوق المفتوح لاقتناء الشهادات، في واقع لا بد فيه من تدخل صارم من الدولة والجهات المختصة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+{
+  "slug": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
+  "bridgeAfter": [
+    14,
+    31
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "سلمناه الهاتف ليستريح منا. أو بالأصح:⏸ لنستريح نحن منه.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "في زاوية من البيت يجلس الطفل مشدوها أمام شاشة صغيرة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "عيناه مشدودتان، وفمه نصف مفتوح، وجسده لا يتحرك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تناديه فلا يسمعك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تناديه، يحاول أن يلتفت،⏸ لكنه لا يسمعك فعلا. إنه في عالم آخر تماما.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ذلك البرنامج الملون السريع الذي يبرمج انتباه الطفل على الإثارة الدائمة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالطفل لم يعد يحتاج إلى من يعلمه، فقط إلى من يشغله.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نعطيه الهاتف ليهدأ، وليصمت، وليكف عن الإزعاج. فنرتاح.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لكن من الذي يربيه في هذه اللحظة؟⏸ ليس الأب ولا الأم،⏸ بل الشاشة.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وفي دراسة نشرت في مجلة Pediatrics رقم يستحق التوقف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن الأطفال الذين يستخدمون الأجهزة الذكية لأكثر من ساعتين يوميا قبل سن الخامسة يظهرون تأخرا في المهارات اللغوية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وانخفاضا في التفاعل الاجتماعي بنسبة تصل إلى اثنين وأربعين بالمئة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن لا نسكته وحده.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نحن لا نسكت الطفل فقط،⏸ بل نسكت قدرته على التخيل، وعلى التجاوب، وعلى بناء جملة كاملة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كأننا نطفئ جهازه العقلي بالتدريج، ونشحن جهازه اللوحي بدلا منه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن الجهاز فيه برامج تعليمية. أليس كذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال ينصف الأداة:⏸ الهاتف قد يكون أداة تعليم، نعم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن حين يستخدم بعد الوعي لا قبله، وحين يضبط لا يطلق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحين يرافقه أب حي، لا أب مشغول.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقارن بين زمنين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في الماضي كان الطفل إذا جلس مع الكبار يسمع لغة، ويشاهد نقاشا، ويلتقط مفردات الحياة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أما اليوم فهو يقضي ساعات يومه مع شاشة تكرر أنشودة واحدة عشرين مرة.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتبدل المشهد كل ثانيتين، وتضحكه بلا سياق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلا عجب أن الطفل يمل من الكتاب خلال دقيقة، ويصرخ إذا لم يتحرك المشهد فورا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يستطيع أن يكمل جملة واحدة دون أن يقلد صوت شخصية كرتونية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل ندرك أننا نشكل أدمغة أبنائنا على الإدمان البصري؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نلاحظ أن التركيز يقل، والانتباه يتشظى، واللغة تذبل، ونحن نصفق لأنه ساكت؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي تقرير صدر عن منظمة Common Sense Media نتيجة أوضح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن الأطفال دون سن الخامسة في البيوت التي تستخدم فيها الأجهزة كأداة تهدئة يظهرون سلوكا أكثر تهيجا.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وانخفاضا في مهارات التواصل لاحقا بنسبة إحدى وستين بالمئة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتربية ليست إخمادا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالتربية ليست إخماد صوت الطفل،⏸ بل إطلاق عقله ليعبر. وليست ملء الوقت، بل صناعة الفكرة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نلوم أما متعبة تحتاج نصف ساعة راحة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يلوم التعب،⏸ بل ينبه إلى ثمنه. الراحة اللحظية قد تكلفكم تعبا طويلا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكل مرة تفتك فيها من طفلك بجهاز، قد تكون أنت من يفتك بذكائه وعفويته ولغته.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فحين نعطي الهاتف لنريح أنفسنا، نخسرهم بالتقسيط. وكل لحظة صمت مزيف تسحب من رصيد الطفولة الحقيقية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فتذكروا أن الطفل الذي لا يزعجكم اليوم قد لا يعرف كيف يتفاعل معكم غدا، وأن أسهل قرارات اليوم هي أصعب مشكلات الغد.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

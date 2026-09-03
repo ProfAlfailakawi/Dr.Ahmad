@@ -1,0 +1,39 @@
+{
+  "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+  "language": "ar",
+  "method": {
+    "source": "الملفّ المنشور على R2 نفسه",
+    "measured": [
+      "المدّة",
+      "تردّد العيّنة",
+      "القنوات",
+      "الحجم",
+      "الذروة",
+      "علوّ LUFS",
+      "الصمت الميت",
+      "مطابقة بصمة السجلّ"
+    ],
+    "notMeasured": [
+      "مطابقة المنطوق للنصّ عبر تحويلٍ صوتيّ إلى نصّ — خارج الحصّة المجانية"
+    ],
+    "tool": "ffmpeg/ffprobe"
+  },
+  "audioSha256": "b0d4074c2edb6d4035c7cdf52a6a10c0fb54421d3dfdd7cf1115f703d36799bc",
+  "bytes": 4495245,
+  "finalGate": {
+    "pass": true,
+    "failedChecks": [],
+    "technicalAudit": {
+      "dur": 224.711,
+      "sampleRate": 48000,
+      "channels": 1,
+      "codec": "mp3",
+      "bitRate": 160036,
+      "peakDb": -1.74,
+      "lufs": -16.47,
+      "lra": 3.5,
+      "unexpectedLongSilences": [],
+      "longSilences": []
+    }
+  }
+}

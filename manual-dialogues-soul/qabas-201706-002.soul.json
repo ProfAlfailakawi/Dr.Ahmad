@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201706-002",
+  "bridgeAfter": [
+    16,
+    25
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "التلفاز قصة جميلة نستذكر فيها، جمعت الأهل والأصدقاء والجيران.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحياتنا التعليمية من خلال التلفاز قصة طويلة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فقد كانت من ضمن التطور التعليمي، أقصد طرق التدريس في ذلك الزمن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "من منا لا يتذكر عندما كنا نجتمع في قاعة لمشاهدة درس في العلوم أو الأحياء؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أو غيرها من الدروس خلال التلفاز، وعالم الحيوان والأحياء والأرض وغيرها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أيام جميلة تبقى في ذاكرة زماننا، ونتداولها مع الإخوة والأصدقاء في كل لقاء.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولحظات الأنس، وهفواتنا وقت الدرس الشيق الذي كنا ننتظره.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي ظل ما ذكر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعود إلى أواسط السبعينيات من القرن الماضي، وكاستطلاع لأهمية التلفاز في التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حيث تزايدت الأبحاث التربوية حول استخدام التلفاز كوسيلة تعليمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وجميع الأبحاث أكدت أهميته في مجال التعليم، رغم ضعف إمكانياته.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فقد اقتصر استخدامه كناقل للحصص المصورة، والتي كانت عبارة عن تلقين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومع هذا أثبتوا نجاحه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومع هذا أثبت الباحثون نجاحه كوسيلة تعليمية، وكان يعتبر ثورة في مجال التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومع تقدم الزمن، وظهور تقنيات جديدة تسمح باستخدامات متعددة للتلفاز.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وظهور برامج تعليمية متخصصة وعلى نطاق واسع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أصبح يواجه هجمة شرسة من قبل الباحثين في مجال علم النفس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف انقلب الحكم عليه بهذه السرعة كلها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم،⏸ فكل ما قدمه التلفاز لنا من تسلية ومساهمة في التعليم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "أصبحنا نسمع عن ارتباط مشاهدة التلفاز، حتى للبرامج التعليمية، بالتوحد والانطوائية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والعته والبله، وغيرها من المسميات التي نسمعها اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "التي تقف أمامها، إذا كنت صاحب تجربة تعليمية عبر التلفاز، أو في لحظات التسلية، مذعورا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كيف كانت نتائج البحوث إيجابية في استخدام التلفاز كوسيلة تعليمية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف أصبح الآن مسببا للأمراض النفسية بعد كل ذلك؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ترى ما الذي اختلف؟⏸ فمع تقدم برامجه تمت مهاجمته.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ويوم أن كان بسيطا عظم دوره في مجال التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل الخلل في التلفاز، أم في طريقة تقييمنا له؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "قد يبدو ذلك لعدم الواقعية في التقييم من قبل الباحثين.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وربما عدم الإنصاف هو ما دفعنا إلى المهاجمة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والخلاصة نجدها في تغريدة للباحث التربوي النصرات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حيث قال:⏸ التلفاز لا يحفز ظهور طيف التوحد والانطوائية وتأخر الكلام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل هو جليس متواضع في ظل غياب الوالدين عن أبنائهم.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالتلفاز جمع الأهل والأصدقاء والجيران، وكان وسيلة تعليمية ناجحة في زمانه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم تقدمت برامجه وتنوعت، فانقلبت عليه الأبحاث في مجال علم النفس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبين التقييمين مسافة طويلة، لا يفسرها إلا غياب الإنصاف والواقعية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وعلى لسان التلفاز:⏸ لا تلوموني، ولوموا أنفسكم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فالوسيلة بقيت وسيلة، وغياب الوالدين هو الذي صنع الداء،⏸ لا الشاشة وحدها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

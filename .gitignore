@@ -1,0 +1,121 @@
+# اعتماديات ومخرجات
+node_modules
+dist
+
+# أسرار — لا تُرفع أبداً
+.env
+.env.local
+.env.*.local
+sa.json
+*service-account*.json
+*firebase-adminsdk*.json
+scripts/cloud-radar.gs
+
+# أصول مكرّرة (المصدر المعتمد للبناء هو مجلدات الجذر audio/ covers/ files/)
+public/audio
+public/covers
+public/files
+
+# بقايا بناء قديمة في الجذر
+/assets/*.js
+/assets/.aistudio
+
+# نظام
+.DS_Store
+whatsapp-agent/node_modules/
+whatsapp-agent/*.sqlite
+whatsapp-agent/*.sqlite-*
+whatsapp-agent/session/
+whatsapp-agent/auth/
+whatsapp-agent/logs/
+Library/Application Support/DrAhmadWhatsAppAgent/
+.whatsapp-agent/
+*.log
+
+# مخرجات بناء لا تُلتزم في الجذر (الناتج الرسمي dist/ فقط)
+/about/ /admin/ /articles/ /atlas/ /contact/ /curated/ /cv/ /inbox/ /media/
+/publications/ /questions/ /radar/ /research/ /search/ /upcoming/ /assets/ /og/
+/*.html
+!/index.html
+/sitemap.xml
+/feed.xml
+.notify-state.json
+.cron-secret.local
+.podcast-state.json
+.podcast-dialogue.lock
+.podcast-bakeoff-public.backup/
+podcast-audits/voice-bakeoff.private.json
+podcast-rejected/
+.podcast-tmp/
+.audio-human-work/
+.audio-last-known-good/
+.audio-site-patches.json
+.audio-failures.json
+audio-audits/quarantine/
+audio-audits/**/*.mp3
+ArabicPronunciationMemory.sqlite*
+.private-memory/
+PrivateBooks/
+.firebase/hosting.ZGlzdA.cache
+
+# الصوت الجديد لا يضاف إلى Git بعد الانتقال إلى R2
+audio/**/*.mp3
+audio/**/*.json
+!audio/.gitkeep
+public/audio/**/*.mp3
+public/audio/**/*.json
+podcast-finalist-retest-samples/
+podcast-dialogue-samples/
+podcast-voice-bakeoff-samples/
+.audio-r2-plan.json
+ci-log.txt
+
+# مخلفات أرشفة بترميز مكسور — لا تدخل Git ولا بوابات النشر
+.codex-backups/
+/agent-*.sqlite
+/audio-meta-*.json
+/bodies-vocalized-*.json
+/podcast-state-*.json
+/PROMPT-*.txt
+/*#U*
+/*Ã*
+/*Ø*
+/*Ù*
+/*Â*
+/whatsapp-agent/*.command
+
+
+# متن الكتب الكامل — يبقى على جهاز الدكتور ولا يدخل مستودعاً عاماً
+src/data/book-evidence.json
+
+# Local Buzz / Whisper transcription workspace
+local-data/encyclopedia-buzz-transcripts/*
+!local-data/encyclopedia-buzz-transcripts/README.md
+**/.buzz-cache/
+**/buzz-cache/
+**/whisper-models/
+**/.cache/whisper/
+local-data/**/*.mp3
+local-data/**/*.wav
+local-data/**/*.m4a
+local-data/**/*.aac
+local-data/**/*.ogg
+local-data/**/*.flac
+local-data/**/*.mp4
+local-data/**/*.mov
+local-data/**/*.mkv
+local-data/**/*.webm
+
+# Encyclopedia automatic local transcription
+local-data/encyclopedia-audio-temp/
+local-data/encyclopedia-auto-transcribe-state.json
+*.info.json
+
+# generated at build time — Archive 2036 body shards
+public/archive/bodies/
+
+# generated at build time — per-book passage shards
+public/books/passages/
+
+# build-time canonical CMS snapshot (contains public Firestore content + deletion decisions)
+.cache/canonical-cms.json

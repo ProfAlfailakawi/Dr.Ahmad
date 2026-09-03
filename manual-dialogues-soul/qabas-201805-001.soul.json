@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201805-001",
+  "bridgeAfter": [
+    16,
+    28
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "توقفوا عن الهرج والمرج، دعونا نرتقي لتعليم أفضل.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يكفي تدني في مستوى التعليم الذي نراه اليوم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "هذا ما وقفت أقوله لعدد من الحضور في تجمع كنا نجلس فيه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونتحدث عن موضوع خصخصة التعليم في الكويت.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهناك من كان رافضا وبشدة، وهناك من كان راضيا وبشدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك من لا يعلم الفائدة من الخصخصة والهدف منها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلماذا هذا الرفض؟⏸ أتعجب من ذلك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالمستوى وصل للتدني.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمستوى التعليم بالكويت وصل إلى درجة من التدني لا يمكن السكوت عنه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد احتل فيه مراتب متأخرة جدا بين دول الشرق الأوسط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تريدون أن تعرفوا كم هي رتبتنا بينهم؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وصلنا إلى سبعة وأربعين من بين خمسين دولة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أيعقل ما آل إليه حال التعليم في الكويت؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم للخصخصة، هو الحل الوحيد لانتشال التعليم العام من الوهن الذي هو فيه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلننظر للأمور من منظور المصلحة العامة، ولندع العواطف جانبا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالمسألة خطيرة، ونحتاج إلى تنفيذ الخطة القديمة الجديدة، وهي خصخصة التعليم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والذي سيتحقق من خلاله الأفضل في مستواه، وراقيا في خدماته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الذي سيجده الطالب فيه أكثر من اليوم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويقدم للطلبة ما لا يقدمه التعليم الخاص.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويجد فيه الطالب كل سبل التفوق والتميز والاستمتاع بالأنشطة وتنمية الموهبة والإبداع العلمي والفكري.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وقد يتساءل البعض:⏸ من أين أتيت بالثقة الكبيرة في تحقيق ذلك بعد الخصخصة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ببساطة، الإجابة تكمن في إحصائيات تجارب الدول الأخرى بعد أن خصخصوا التعليم العام لديهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهي نتائج مرضية فاقت التصور في تلك الدول.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالتعليم المخصخص في تلك الدول حقق المستوى الأرقى في الخدمات وسبل التفوق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكافة مهارات الحياة وتنميتها التي تمكن الطالب.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتحقيق مخرجات عالية المستوى لتواكب حاجات السوق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومن قبلها تحديد اتجاه التعليم العالي بشكل صحيح ومفيد لسوق العمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بالإضافة إلى أننا لو نظرنا إلى المدارس الخاصة، نجد أنها مدارس ناجحة وتحقق المستوى الراقي.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لذلك، من الضرورة خصخصة قطاع التعليم، للرقي في مستوى التعليم ومخرجاته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل من فائدة أخرى غير مستوى التعليم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومن جهة أخرى، ستوفر على الدولة الكثير من الأعباء المالية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فضلا عن تحسين مستوى الخدمات التعليمية المقدمة للطلاب، وتحسب للمجتمع ككل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهي نظرة إصلاحية لمستقبل أفضل وأجمل في ظل التطورات العالمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وإن خصخصة التعليم لن يكون عملا عشوائيا،⏸ بل سيكون ضمن خطة ممنهجة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ففي ظل عدم وجود منهج وطني، سيكون الأمر كارثيا، وستنتج فوضى في التعليم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ورغم التعارض الحاصل لمسألة الخصخصة،⏸ إلا أن الحكومة تتجه بشكل جدي إليها، من أجل إصلاح ما أفسده الدهر في التعليم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+name: إطلاق المحتوى المجدول تلقائياً
+
+on:
+  schedule:
+    - cron: '7,27,47 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: scheduled-content-release
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5
+      - name: Write data-service credential
+        run: |
+          if [ -z "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is required for scheduled publishing."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_DATA_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/data-sa.json"
+        env:
+          FIREBASE_DATA_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+      - name: Find due or stale publication jobs
+        id: due
+        run: node scripts/release-scheduled-content.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ runner.temp }}/data-sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+      - name: Dispatch the guarded production pipeline
+        if: steps.due.outputs.due == 'true'
+        run: gh workflow run firebase-hosting-live.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Mark dispatch only after GitHub accepted it
+        if: steps.due.outputs.due == 'true'
+        run: node scripts/release-scheduled-content.mjs --mark-dispatched
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ runner.temp }}/data-sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          CONTENT_PIPELINE_JOB_IDS: ${{ steps.due.outputs.ids }}
+      - name: Remove credential
+        if: always()
+        run: rm -f "$RUNNER_TEMP/data-sa.json"

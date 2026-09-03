@@ -1,0 +1,611 @@
+#!/usr/bin/env node
+/**
+ * فاحص المصادر الشامل — كل رابط في الموقع، لا المختارات وحدها.
+ *
+ * الفاحص السابق كان يرى ٣٧ رابطاً من ٢٣٢: الرادار وبنك المختارات فقط، ويحذف
+ * الميّت بصمتٍ بلا تقرير. فكان الدكتور يسأل «أي مصدر تالف ولماذا؟» فلا جواب.
+ *
+ * هذا يفحص كل مصدرٍ في الموقع (مقالات، أبحاث، كتب، إعلام، مختارات، رادار،
+ * لقاءات، ومجموعات Firestore)، ويكتب تقريراً تفصيلياً في `site_health/latest`
+ * تقرؤه اللوحة: أين الرابط، ولماذا سقط، ومتى فُحص، وما اقتراح العلاج.
+ *
+ * يفصل ملكية الدكتور عن المصادر الخارجية: مكتبته تُعرض له دون أي تعديل،
+ * أما المختارات والرادار فيُستبدل رابطها ببديل مؤكد أو تُحذف بعد تأكيد الموت.
+ */
+import { readFileSync, existsSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const env = process.env
+const SELF_TEST = process.argv.includes('--self-test')
+const TIMEOUT_MS = Number(env.SOURCE_CHECK_TIMEOUT_MS || 12000)
+const CONCURRENCY = Number(env.SOURCE_CHECK_CONCURRENCY || 6)
+
+/* ═══ جمع الروابط من كل مصادر الموقع ═══ */
+/* أي حقلٍ يحمل رابطاً — تسمية الحقول لا تُفترض: كان النمط الضيق يفوّت
+   researchgate (١٢ رابطاً لأبحاث الدكتور) وscholar وbooking وغيرها. */
+const linkPattern = /(\w+):\s*'(https?:\/\/[^']+)'/g
+/* أطرٌ مضمّنة لا روابط تصفّح: خريطة الموقع تُحمَّل داخل iframe وتردّ على الفاحص
+   بما لا يعني شيئاً. فحصها يولّد إنذاراً كاذباً عن «رابط ميت» في السيرة. */
+const EMBED_FIELDS = new Set(['mapEmbed', 'embed', 'iframe', 'cover', 'image', 'og'])
+
+function harvestFromFile(file, kind) {
+  const path = resolve(ROOT, file)
+  if (!existsSync(path)) return []
+  const text = readFileSync(path, 'utf8')
+  const found = []
+  for (const match of text.matchAll(linkPattern)) {
+    const field = match[1]
+    const url = match[2]
+    /* عنوان المادة الحاضنة — ويجب أن يكون من العنصر نفسه لا مما قبله.
+       كانت النافذة تمتد أربعة آلاف حرف إلى الوراء بلا حدّ، فينسب رابطَ
+       لينكدإن في socials إلى «جيلٌ بلا جذور» لأنها آخر عنوانٍ سبقه في
+       الملف — فيظهر للدكتور عطبٌ في مقالٍ مصدرُه سليم. نحصر البحث في
+       العنصر الحاضن: من آخر «{» لم يُغلق قبل الرابط. */
+    const window = text.slice(Math.max(0, match.index - 4000), match.index)
+    const opened = window.lastIndexOf('{')
+    const before = opened >= 0 ? window.slice(opened) : window
+    const title = [...before.matchAll(/(?:title|ar|label|name):\s*'((?:[^'\\]|\\.)*)'/g)].at(-1)?.[1] || ''
+    const slug = [...before.matchAll(/slug:\s*'([^']+)'/g)].at(-1)?.[1] || ''
+    if (EMBED_FIELDS.has(field)) continue
+    found.push({ url, kind, field, title: title.slice(0, 90), slug, where: file })
+  }
+  return found
+}
+
+async function harvestFirestore() {
+  if (!env.FIREBASE_SERVICE_ACCOUNT && !env.GOOGLE_APPLICATION_CREDENTIALS) return []
+  const saPath = resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
+  if (!existsSync(saPath)) return []
+  const { initializeApp, cert, getApps } = await import('firebase-admin/app')
+  const { getFirestore } = await import('firebase-admin/firestore')
+  const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
+  const db = getFirestore(app)
+  const collections = [
+    ['site_radar', 'رادار'], ['site_picks', 'مختارات'], ['site_media', 'إعلام'],
+    ['site_papers', 'بحث'], ['site_articles', 'مقال'], ['site_upcoming', 'لقاء'],
+  ]
+  const found = []
+  for (const [name, kind] of collections) {
+    const snapshot = await db.collection(name).get().catch(() => null)
+    if (!snapshot) continue
+    snapshot.forEach((document) => {
+      const data = document.data()
+      const url = String(data.url || data.source || data.link || '')
+      if (/^https?:\/\//.test(url)) {
+        found.push({ url, kind, title: String(data.title || data.ar || '').slice(0, 90), slug: document.id, where: name })
+      }
+    })
+  }
+
+  /* «حياة الفكرة» تحمل الروابط داخل مصفوفتين متداخلتين، ولذلك لم يرها
+     الفاحص الشامل سابقاً. النتيجة: بطاقةٌ تبدو موثقة ثم تقود إلى صفحة ميتة.
+     نجمع كل إشارة ودليل مع مساره الدقيق كي نستبدله بيقين أو نحذف البطاقة
+     وحدها من غير أن نمسّ المقال أو بقية السجل. */
+  const ideaLife = await db.collection('site_idea_life').get().catch(() => null)
+  ideaLife?.forEach((document) => {
+    const data = document.data()
+    const title = String(data.title || document.id).slice(0, 120)
+    for (const [index, signal] of (Array.isArray(data.signals) ? data.signals : []).entries()) {
+      const url = String(signal?.url || '')
+      if (!/^https?:\/\//.test(url)) continue
+      found.push({
+        url, kind: 'أثر خارجي', title: String(signal?.title || title).slice(0, 120),
+        slug: document.id, where: 'site_idea_life', fieldPath: `signals.${index}`,
+        signalType: String(signal?.type || ''),
+      })
+    }
+    for (const [predictionIndex, prediction] of (Array.isArray(data.predictions) ? data.predictions : []).entries()) {
+      for (const [evidenceIndex, evidence] of (Array.isArray(prediction?.evidence) ? prediction.evidence : []).entries()) {
+        const url = String(evidence?.url || '')
+        if (!/^https?:\/\//.test(url)) continue
+        found.push({
+          url, kind: 'أثر خارجي', title: String(evidence?.title || title).slice(0, 120),
+          slug: document.id, where: 'site_idea_life',
+          fieldPath: `predictions.${predictionIndex}.evidence.${evidenceIndex}`,
+          signalType: String(evidence?.type || 'academic'),
+        })
+      }
+    }
+    for (const [updateIndex, update] of (Array.isArray(data.updates) ? data.updates : []).entries()) {
+      const url = String(update?.url || '')
+      if (!/^https?:\/\//.test(url)) continue
+      found.push({
+        url, kind: 'مستجد فكرة', title: String(update?.title || title).slice(0, 120),
+        slug: document.id, where: 'site_idea_life', fieldPath: `updates.${updateIndex}`,
+        signalType: String(update?.kind || 'field'),
+      })
+    }
+  })
+  return found
+}
+
+const hostOfUrl = (value) => { try { return new URL(value).host } catch { return 'المقصد' } }
+
+/* ═══ فحص رابط واحد: نميّز الميت الحقيقي من العطل العابر ═══ */
+async function probe(url) {
+  /* لا نتبع التحويل تلقائياً: رابط DOI يردّ 302 سليماً إلى ناشرٍ قد يكون محجوباً
+     عنّا، فكان الاتّباع التلقائي يُسقط الرابط السليم بذنب مقصده. نتبع يدوياً
+     ثلاث قفزات، وإن تعثّرت قفزةٌ بعطبٍ شبكي حكمنا للرابط نفسه لا لمقصده. */
+  const attempt = async (method) => {
+    let current = url
+    let lastStatus = 0
+    for (let hop = 0; hop < 4; hop++) {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+      let response
+      try {
+        response = await fetch(current, {
+          method,
+          redirect: 'manual',
+          signal: controller.signal,
+          headers: { 'user-agent': 'Mozilla/5.0 (compatible; AlfailakawiSourceCheck/1.0)' },
+        })
+      } catch (error) {
+        if (hop === 0) throw error
+        /* الرابط نفسه ردّ تحويلاً صحيحاً؛ العطب في المقصد */
+        return { status: lastStatus || 302, finalUrl: current, hopFailed: true }
+      } finally {
+        clearTimeout(timer)
+      }
+      lastStatus = response.status
+      const location = response.headers.get('location')
+      if (response.status >= 300 && response.status < 400 && location) {
+        current = new URL(location, current).toString()
+        continue
+      }
+      return { status: response.status, finalUrl: current }
+    }
+    return { status: lastStatus, finalUrl: current, hopFailed: true }
+  }
+  try {
+    let result = await attempt('HEAD')
+    /* كثير من الخوادم ترفض HEAD أو تعيد له 404 رغم أن صفحة GET حيّة؛ لا نحكم
+       على الرابط قبل طلب الصفحة الفعلي. */
+    if ([403, 404, 405, 410, 501].includes(result.status)) {
+      result = await attempt('GET')
+    }
+    const { status, finalUrl } = result
+    const { hopFailed } = result
+    if (hopFailed) return { state: 'ok', status, note: `الرابط سليم؛ مقصده (${hostOfUrl(finalUrl)}) لا يستجيب للفاحص`, finalUrl }
+    if (status >= 200 && status < 400) {
+      const redirected = finalUrl && new URL(finalUrl).host !== new URL(url).host
+      return { state: 'ok', status, note: redirected ? `يحوّل إلى ${new URL(finalUrl).host}` : '', finalUrl }
+    }
+    if (status === 404 || status === 410) return { state: 'dead', status, note: 'الصفحة غير موجودة عند المصدر' }
+    if (status === 401 || status === 403) return { state: 'blocked', status, note: 'المصدر يمنع الفحص الآلي — قد يعمل في المتصفح' }
+    if (status === 429) return { state: 'throttled', status, note: 'المصدر يحدّ الطلبات — يُعاد فحصه لاحقاً' }
+    if (status >= 500) return { state: 'server', status, note: 'عطل مؤقت في خادم المصدر' }
+    return { state: 'suspect', status, note: `استجابة غير متوقعة (${status})` }
+  } catch (error) {
+    const message = String(error?.message || error)
+    if (/abort|timeout/i.test(message)) return { state: 'timeout', status: 0, note: `تجاوز ${Math.round(TIMEOUT_MS / 1000)} ثوانٍ بلا رد` }
+    return { state: 'unreachable', status: 0, note: `تعذّر الوصول: ${message.slice(0, 80)}` }
+  }
+}
+
+/* لا نسمّي الرابط تالفاً إلا بعد 404/410 مؤكد بطلب GET مرتين. تعذّر الوصول،
+   والمهلة، والحجب، والاستجابة الغريبة: «تعذّر التحقق» وليست حكماً على الرابط. */
+const NEEDS_ATTENTION = new Set(['dead'])
+const ADVICE = {
+  dead: 'الرابط ميت فعلاً — استبدله أو احذف المادة.',
+  unreachable: 'تعذّر على الفاحص الوصول؛ هذا لا يعني أن الرابط خاطئ.',
+  suspect: 'استجابة غير مألوفة للفاحص؛ لا تُعد دليلاً على عطل الرابط.',
+  blocked: 'المصدر يحجب الفاحص الآلي؛ غالباً يعمل عندك في المتصفح.',
+  throttled: 'المصدر حدّ الطلبات مؤقتاً — سيُفحص في الجولة القادمة.',
+  server: 'عطل مؤقت عند المصدر — لا تتسرع بالحذف.',
+  timeout: 'بطء شديد أو حجب — يُعاد فحصه في الجولة القادمة.',
+  'host-blocked': 'النطاق كله محجوب عن الفاحص — الأرجح أنه سليم عند القرّاء.',
+}
+
+async function mapWithLimit(items, limit, worker) {
+  const results = new Array(items.length)
+  let index = 0
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (index < items.length) {
+      const current = index++
+      results[current] = await worker(items[current], current)
+    }
+  }))
+  return results
+}
+
+if (SELF_TEST) {
+  const cases = [
+    [{ state: 'dead' }, true], [{ state: 'blocked' }, false],
+    [{ state: 'throttled' }, false], [{ state: 'server' }, false],
+    [{ state: 'unreachable' }, false], [{ state: 'suspect' }, false],
+    [{ state: 'timeout' }, false], [{ state: 'ok' }, false],
+  ]
+  for (const [probeResult, shouldFlag] of cases) {
+    if (NEEDS_ATTENTION.has(probeResult.state) !== shouldFlag) {
+      console.error(`✘ تصنيف خاطئ لحالة ${probeResult.state}`)
+      process.exit(1)
+    }
+  }
+  console.log('✓ اختبار الفاحص الشامل: 404/410 المؤكد فقط → تالف · الحجب/تعذّر الوصول/429/5xx/المهلة → تعذّر تحقق لا عطب')
+  process.exit(0)
+}
+
+/* ═══ التشغيل ═══ */
+/* تفريقٌ جوهري بأمر الدكتور:
+   «مادة الغير» (مختارات ورادار) روابط خارجية لا سلطة له عليها — تُنظَّف آلياً
+   فور موتها فلا يبقى في الموقع رابطٌ ميت.
+   «إصداراته» (كتبه ومقالاته وأبحاثه) لا تُمسّ أبداً مهما مات رابطها — تُعرض
+   له ليصلحها بنفسه، فحذف أثر عمله قرارٌ لا يملكه إلا هو. */
+/* ═══ قاعدة الملكية — أمر الدكتور الصريح ═══
+   ستةٌ له وحده لا تُمسّ أبداً مهما مات رابطها، لأنها أثر عمله:
+     المقالات · الكتب · الأبحاث · الإعلام · اللقاءات القادمة · السيرة والهوية
+   تُعرض له في التقرير ليصلح رابطها بنفسه من اللوحة (وهي تسمح بذلك أصلاً).
+   وما عداها مادةُ غيره (مختارات ورادار) — يُنظَّف ميتها آلياً بلا سؤال. */
+const OWNED_BY_DOCTOR = new Set(['مقال', 'كتاب', 'بحث', 'إعلام', 'لقاء', 'سيرة', 'محتوى', 'إنجليزي'])
+
+const harvested = [
+  ...harvestFromFile('src/data.ts', 'محتوى'),
+  ...harvestFromFile('src/data/research-papers.ts', 'بحث'),
+  ...harvestFromFile('src/data-curated.ts', 'مختارات'),
+  ...harvestFromFile('src/data-en.ts', 'إنجليزي'),
+  ...(await harvestFirestore()),
+]
+
+/* رابط واحد قد يتكرر في مواضع — نفحصه مرة ونذكر كل مواضعه */
+const byUrl = new Map()
+for (const item of harvested) {
+  const entry = byUrl.get(item.url) || { url: item.url, places: [] }
+  entry.places.push({
+    kind: item.kind,
+    title: item.title,
+    slug: item.slug,
+    where: item.where,
+    fieldPath: item.fieldPath || '',
+    signalType: item.signalType || '',
+  })
+  byUrl.set(item.url, entry)
+}
+const unique = [...byUrl.values()]
+console.log(`فحص ${unique.length} رابطاً فريداً من ${harvested.length} موضعاً في الموقع…`)
+
+let done = 0
+const checked = await mapWithLimit(unique, CONCURRENCY, async (entry) => {
+  let result = await probe(entry.url)
+  /* لا يُحذف مصدر بسبب لقطة واحدة: الميت الحقيقي (404/410) يُعاد فحصه
+     بطلب مستقل قبل تسجيله ميتاً. إن اختلفت النتيجة يؤجَّل القرار. */
+  if (result.state === 'dead') {
+    await new Promise((resolve) => setTimeout(resolve, 350))
+    const confirmation = await probe(entry.url)
+    if (confirmation.state !== 'dead') result = { ...confirmation, note: `اختلف الفحص الثاني؛ أُجّل الحذف. ${confirmation.note || ''}`.trim() }
+    else result.note = `${result.note} · تأكد بفحصين مستقلين`
+  }
+  done += 1
+  if (done % 25 === 0) console.log(`  … ${done}/${unique.length}`)
+  return { ...entry, ...result, advice: ADVICE[result.state] || '' }
+})
+
+/* رابطٌ يقع في مادة الدكتور ولو مرةً واحدة يُعامل معاملتها: لا يُمسّ */
+const isOwned = (item) => (item.places || []).some((place) => OWNED_BY_DOCTOR.has(place.kind))
+
+/* ═══ حارس الإنذار الكاذب ═══
+   نطاقٌ كامل لا يستجيب (حتى صفحته الرئيسية) ليس سبعةَ عشرَ رابطاً ميتاً، بل
+   حجبٌ شبكي أو جغرافي أمام الفاحص — بنك المعرفة المصري (ekb.eg) مثالٌ حيّ:
+   يستجيب للقرّاء ولا يستجيب لنا. إعلانُ أبحاث الدكتور «ميتة» بسببه إنذارٌ
+   كاذب يدفعه لتغيير روابط سليمة. نُنزّل هذه الحالة إلى تنبيهٍ صريح. */
+/* التجميع بالنطاق المسجَّل لا المضيف الكامل: journals.ekb.eg وssj.journals.ekb.eg
+   وjsrep.journals.ekb.eg خادمٌ واحد محجوب، لا ثلاثة مواقع ميتة. */
+const hostOf = (url) => {
+  try {
+    const host = new URL(url).host
+    const parts = host.split('.')
+    if (parts.length <= 2) return host
+    /* نطاقات البلد المركّبة (co.uk، ekb.eg…): نأخذ ثلاث تسميات */
+    const twoLevelTld = /^(co|com|org|net|gov|edu|ac)\.[a-z]{2}$/.test(parts.slice(-2).join('.'))
+    return parts.slice(twoLevelTld ? -3 : -2).join('.')
+  } catch { return '' }
+}
+const hostStats = new Map()
+for (const item of checked) {
+  const host = hostOf(item.url)
+  if (!host) continue
+  const stat = hostStats.get(host) || { total: 0, unreachable: 0 }
+  stat.total += 1
+  if (item.state === 'unreachable' || item.state === 'timeout') stat.unreachable += 1
+  hostStats.set(host, stat)
+}
+for (const item of checked) {
+  const stat = hostStats.get(hostOf(item.url))
+  if (!stat) continue
+  /* كل روابط النطاق سقطت، وهي أكثر من واحد → النطاق نفسه محجوب عنّا */
+  if ((item.state === 'unreachable' || item.state === 'timeout') && stat.total >= 2 && stat.unreachable === stat.total) {
+    item.state = 'host-blocked'
+    item.note = `النطاق كله لا يستجيب للفاحص (${stat.total} روابط) — غالباً حجب شبكي أو جغرافي`
+    item.advice = 'افتحه بنفسك للتأكد؛ الأرجح أنه يعمل عند القرّاء ولا يحتاج تغييراً.'
+  }
+}
+
+let summaryExtra = { hidden: 0, replaced: 0, revived: 0 }
+const problems = checked.filter((item) => NEEDS_ATTENTION.has(item.state))
+const warnings = checked.filter((item) => !NEEDS_ATTENTION.has(item.state) && item.state !== 'ok')
+const mine = problems.filter(isOwned)
+const foreign = problems.filter((item) => !isOwned(item))
+
+for (const item of problems) {
+  item.owned = isOwned(item)
+  item.replacement = await findCertainReplacement(item.url, item).catch(() => '')
+  item.action = item.owned
+    ? (item.replacement ? 'بديل مقترح — لم يُطبّق' : 'بانتظار قرارك')
+    : (item.replacement ? 'بديل مؤكد — سيُطبّق تلقائياً' : item.state === 'dead' ? 'سيُحذف من الموقع بالكامل' : 'إعادة فحص قبل القرار')
+}
+
+const summary = {
+  checkedAt: new Date().toISOString(),
+  total: unique.length,
+  places: harvested.length,
+  ok: checked.filter((item) => item.state === 'ok').length,
+  problems: problems.length,
+  warnings: warnings.length,
+  /* عدّادان منفصلان: ما ينتظر قرار الدكتور، وما نظّفه النظام عنه */
+  mine: mine.length,
+  cleaned: foreign.length,
+
+  items: [...mine, ...foreign, ...warnings].slice(0, 200).map((item) => ({
+    url: item.url,
+    state: item.state,
+    status: item.status,
+    note: item.note,
+    advice: item.advice,
+    owned: isOwned(item),
+    replacement: item.replacement || '',
+    action: item.action || '',
+    places: item.places.slice(0, 3).map((place) => ({ ...place, fieldPath: place.fieldPath || '', signalType: place.signalType || '' })),
+  })),
+}
+
+console.log(`\n✔ سليمة: ${summary.ok} · إصداراتك التي تحتاج قرارك: ${mine.length} · مادة خارجية للتنظيف: ${foreign.length} · تنبيهات عابرة: ${warnings.length}`)
+if (mine.length) {
+  console.log('\n══ إصداراتك — لا يمسّها النظام، أنت تصلح رابطها من اللوحة ══')
+  for (const item of mine.slice(0, 20)) {
+    const place = item.places[0] || {}
+    console.log(`  ✘ [${item.state}] ${place.kind || ''} «${(place.title || place.slug || '').slice(0, 55)}»\n     ${item.url}\n     ${item.note}`)
+  }
+}
+if (foreign.length) {
+  console.log('\n══ مادة خارجية — يُنظّفها النظام تلقائياً ══')
+  for (const item of foreign.slice(0, 20)) {
+    const place = item.places[0] || {}
+    console.log(`  ✘ [${item.state}] ${place.kind || ''} «${(place.title || place.slug || '').slice(0, 55)}»\n     ${item.url}`)
+  }
+}
+
+/* ═══ التنظيف الآلي: المادة الخارجية وحدها ═══
+   بأمر الدكتور: ما ليس من إصداراته يُنظَّف فور موته بلا سؤال، فلا يبقى في
+   الموقع رابطٌ ميت. وإصداراته لا تُمسّ مهما كان. */
+if (foreign.length && !process.argv.includes('--report-only')) {
+  const deadStorePath = resolve(ROOT, 'src/data/curated-dead-links.json')
+  let deadStore = {}
+  try { deadStore = JSON.parse(readFileSync(deadStorePath, 'utf8')) } catch { /* أول مرة */ }
+  let addedBank = 0
+  for (const item of foreign) {
+    if (item.state !== 'dead') continue
+    const fromBank = (item.places || []).some((place) => String(place.where || '').includes('data-curated'))
+    if (fromBank && !deadStore[item.url]) { deadStore[item.url] = new Date().toISOString(); addedBank += 1 }
+  }
+  if (addedBank) {
+    const { writeFileSync } = await import('node:fs')
+    writeFileSync(deadStorePath, `${JSON.stringify(deadStore, null, 2)}\n`, 'utf8')
+    console.log(`\n🧹 نُظّف ${addedBank} رابطاً خارجياً ميتاً من المختارات (يُصفّى وقت العرض).`)
+  }
+
+  /* الميت في Firestore يُصلَح إن وُجد بديل يقيني، وإلا يُزال الكرت نفسه.
+     «حياة الفكرة» مصفوفات متداخلة، فلا نحذف الوثيقة كلها بسبب رابطٍ واحد. */
+  const saCleanup = resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
+  if (existsSync(saCleanup)) {
+    const { initializeApp, cert, getApps } = await import('firebase-admin/app')
+    const { getFirestore } = await import('firebase-admin/firestore')
+    const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saCleanup, 'utf8'))) })
+    const db = getFirestore(app)
+    let removed = 0
+    let updated = 0
+    const ideaLifeActions = new Map()
+
+    for (const item of foreign) {
+      if (item.state !== 'dead') continue
+      for (const place of item.places || []) {
+        if (['site_radar', 'site_picks'].includes(place.where)) {
+          const ref = db.collection(place.where).doc(place.slug)
+          if (item.replacement) {
+            await ref.set({
+              url: item.replacement,
+              previousUrl: item.url,
+              sourceHealthRepairedAt: new Date().toISOString(),
+            }, { merge: true }).catch(() => undefined)
+            console.log(`  🔁 استُبدل رابط ${place.where}: ${(place.title || place.slug).slice(0, 50)}`)
+            updated += 1
+          } else {
+            await ref.delete().catch(() => undefined)
+            console.log(`  🧹 حُذف من ${place.where}: ${(place.title || place.slug).slice(0, 50)}`)
+            removed += 1
+          }
+          continue
+        }
+
+        if (place.where === 'site_idea_life' && place.slug) {
+          const actions = ideaLifeActions.get(place.slug) || new Map()
+          actions.set(item.url, item.replacement || '')
+          ideaLifeActions.set(place.slug, actions)
+        }
+      }
+    }
+
+    /* نقرأ كل وثيقة مرة واحدة، ثم نحدّث الروابط أو نحذف الدليل/المحطة فقط.
+       المطابقة بالرابط لا بالترتيب، لأن حذف عنصر يغيّر الفهارس أثناء الجولة. */
+    for (const [slug, actions] of ideaLifeActions) {
+      const ref = db.collection('site_idea_life').doc(slug)
+      const snapshot = await ref.get().catch(() => null)
+      if (!snapshot?.exists) continue
+      const data = snapshot.data() || {}
+      let changed = false
+
+      const signals = (Array.isArray(data.signals) ? data.signals : []).flatMap((signal) => {
+        const url = String(signal?.url || '')
+        if (!actions.has(url)) return [signal]
+        const replacement = actions.get(url)
+        changed = true
+        if (!replacement) { removed += 1; return [] }
+        updated += 1
+        return [{ ...signal, url: replacement, previousUrl: url, sourceHealthRepairedAt: new Date().toISOString() }]
+      })
+
+      const predictions = (Array.isArray(data.predictions) ? data.predictions : []).map((prediction) => {
+        let predictionChanged = false
+        const evidence = (Array.isArray(prediction?.evidence) ? prediction.evidence : []).flatMap((item) => {
+          const url = String(item?.url || '')
+          if (!actions.has(url)) return [item]
+          const replacement = actions.get(url)
+          changed = true
+          predictionChanged = true
+          if (!replacement) { removed += 1; return [] }
+          updated += 1
+          return [{ ...item, url: replacement, previousUrl: url, sourceHealthRepairedAt: new Date().toISOString() }]
+        })
+        return predictionChanged ? { ...prediction, evidence } : prediction
+      })
+
+      const updates = (Array.isArray(data.updates) ? data.updates : []).flatMap((item) => {
+        const url = String(item?.url || '')
+        if (!actions.has(url)) return [item]
+        const replacement = actions.get(url)
+        changed = true
+        if (!replacement) { removed += 1; return [] }
+        updated += 1
+        return [{ ...item, url: replacement, previousUrl: url, sourceHealthRepairedAt: new Date().toISOString() }]
+      })
+
+      if (changed) {
+        await ref.set({
+          signals,
+          predictions,
+          updates,
+          sourceHealthUpdatedAt: new Date().toISOString(),
+        }, { merge: true }).catch(() => undefined)
+        console.log(`  🧭 نُقّحت مصادر «حياة الفكرة»: ${slug}`)
+      }
+    }
+
+    if (updated) console.log(`✓ استُبدل ${updated} رابطاً خارجياً ببديل مؤكد.`)
+    if (removed) console.log(`✓ حُذف ${removed} كرتاً/دليلاً خارجياً ميتاً بلا بديل.`)
+  }
+}
+
+/* ═══ سجلّ الروابط الميتة: تُخفى أيقونتها فوراً، ويُبحث لها عن بديلٍ مؤكد ═══
+   بأمر الدكتور: أي رابط بحثٍ أو مقالةٍ أو لقاءٍ يموت تختفي أيقونته مباشرةً —
+   لا يبقى للزائر رابطٌ مكسور. والمادة نفسها لا تُمسّ.
+   ثم نبحث عن بديل: لا يُقبل إلا إن كان يقيناً لا اجتهاداً — أن يستجيب فعلاً،
+   وأن يكون المعرّف نفسه (DOI/الملف) على نطاقٍ رسميٍّ بديل. وما دون ذلك تنبيه. */
+const comparableTitle = (value = '') => String(value)
+  .normalize('NFKD').toLowerCase()
+  .replace(/[\u064B-\u065F\u0670]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+  .replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim()
+
+const titleMatch = (left, right) => {
+  const a = new Set(comparableTitle(left).split(' ').filter((word) => word.length > 2))
+  const b = new Set(comparableTitle(right).split(' ').filter((word) => word.length > 2))
+  if (!a.size || !b.size) return 0
+  let common = 0
+  for (const word of a) if (b.has(word)) common += 1
+  return common / Math.max(a.size, b.size)
+}
+
+async function crossrefReplacement(item) {
+  const place = item?.places?.find((candidate) => candidate.signalType === 'academic') || item?.places?.[0]
+  const title = String(place?.title || '').trim()
+  if (title.length < 16 || place?.signalType && place.signalType !== 'academic') return ''
+  try {
+    const endpoint = `https://api.crossref.org/works?query.title=${encodeURIComponent(title)}&rows=5&select=DOI,title,URL&mailto=site@dr-alfailakawi.com`
+    const response = await fetch(endpoint, {
+      headers: { 'user-agent': 'DrAlfailakawiSourceRepair/1.0 (mailto:site@dr-alfailakawi.com)' },
+      signal: AbortSignal.timeout(Math.min(TIMEOUT_MS, 10_000)),
+    })
+    if (!response.ok) return ''
+    const works = (await response.json())?.message?.items || []
+    for (const work of works) {
+      const candidateTitle = Array.isArray(work.title) ? work.title[0] : work.title
+      if (titleMatch(title, candidateTitle) < .78) continue
+      const candidate = String(work.URL || (work.DOI ? `https://doi.org/${work.DOI}` : ''))
+      if (!candidate) continue
+      const verdict = await probe(candidate)
+      if (verdict.state === 'ok') return verdict.finalUrl || candidate
+    }
+  } catch { /* لا بديل يقيني */ }
+  return ''
+}
+
+async function findCertainReplacement(url, item = null) {
+  /* DOI ميت عند doi.org: نجرّب المُحوّل الرسمي البديل بالمعرّف نفسه حرفياً */
+  const doiMatch = url.match(/doi\.org\/(10\.[^\s?#]+)/i)
+  if (doiMatch) {
+    for (const base of ['https://dx.doi.org/', 'https://doi.org/api/handles/']) {
+      const candidate = `${base}${doiMatch[1]}`
+      const verdict = await probe(candidate)
+      /* البديل لا يُقبل إلا إن ردّ ٢٠٠ فعلاً وبنفس المعرّف — لا تخمين */
+      if (verdict.state === 'ok' && base !== 'https://doi.org/api/handles/') return verdict.finalUrl || candidate
+    }
+  }
+  /* http→https على النطاق نفسه: تحسينٌ يقيني لا تخمين فيه */
+  if (url.startsWith('http://')) {
+    const secure = url.replace(/^http:\/\//, 'https://')
+    const verdict = await probe(secure)
+    if (verdict.state === 'ok') return verdict.finalUrl || secure
+  }
+  /* بطاقةٌ علمية مات رابطها: نبحث بعنوانها في Crossref ونقبل فقط تطابقاً
+     مرتفعاً ورابطاً حياً. وما عدا ذلك يُحذف؛ لا نخمن رابطاً عاماً. */
+  return crossrefReplacement(item)
+}
+
+
+{
+  const deadPath = resolve(ROOT, 'src/data/dead-links.json')
+  let registry = { note: '', updatedAt: '', items: [] }
+  try { registry = JSON.parse(readFileSync(deadPath, 'utf8')) } catch { /* أول مرة */ }
+  const previous = new Map((registry.items || []).map((item) => [item.url, item]))
+  const nextItems = []
+  let hidden = 0, replaced = 0, revived = 0
+
+  for (const item of checked) {
+    if (isOwned(item)) continue
+    const wasDead = previous.get(item.url)
+    if (item.state === 'dead') {
+      const existing = wasDead || { url: item.url, state: item.state, since: new Date().toISOString() }
+      if (!existing.replacement) {
+        const replacement = await findCertainReplacement(item.url, item)
+        if (replacement) { existing.replacement = replacement; replaced += 1 }
+        else hidden += 1
+      }
+      existing.state = item.state
+      nextItems.push(existing)
+    } else if (wasDead) {
+      revived += 1  /* عاد للحياة → يُرفع من السجل فتعود أيقونته */
+    }
+  }
+
+  registry.updatedAt = new Date().toISOString()
+  registry.items = nextItems
+  const { writeFileSync } = await import('node:fs')
+  writeFileSync(deadPath, `${JSON.stringify(registry, null, 2)}\n`, 'utf8')
+  if (hidden || replaced || revived) {
+    console.log(`\n🔗 سجلّ الروابط: أُخفيت ${hidden} · استُبدلت بيقين ${replaced} · عادت للحياة ${revived}`)
+  }
+  summaryExtra = { hidden, replaced, revived }
+}
+
+/* التقرير إلى Firestore كي تقرأه اللوحة وتعرضه مفصّلاً */
+const saPath = resolve(ROOT, env.FIREBASE_SERVICE_ACCOUNT || 'sa.json')
+if (existsSync(saPath)) {
+  const { initializeApp, cert, getApps } = await import('firebase-admin/app')
+  const { getFirestore } = await import('firebase-admin/firestore')
+  const app = getApps()[0] || initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
+  await getFirestore(app).collection('site_health').doc('sources').set({ ...summary, links: summaryExtra })
+  console.log('\n✓ كُتب التقرير التفصيلي في site_health/sources — تقرؤه اللوحة.')
+}
+
+process.exit(0)

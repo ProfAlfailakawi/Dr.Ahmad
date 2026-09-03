@@ -1,0 +1,293 @@
+{
+  "slug": "qabas-201808-002",
+  "bridgeAfter": [
+    27,
+    31
+  ],
+  "breathAfter": [
+    37
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "السوشيل ميديا،⏸ وما أدراك ما السوشيل ميديا في زماننا.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي فترة الاستراحة بين المحاضرات، جلست أتصفح في جوالي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ومع فنجان قهوتي، أتصفح بعض المواقع ومنها اليوتيوب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكما العادة في الفترة الأخيرة كلها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكما العادة في الفترة الأخيرة، أتصفحه باستياء شديد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حيث تعج فيديوهات أخذت اليوتيوب وغيره من مواقع السوشيل ميديا مرتعا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "للتعريف عن أنفسهم، وكسب تعاطف الآخرين معهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بالإضافة إلى قنوات الطعام، واستعراض المهارات المطبخية بأشكالها المختلفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ورغم ذلك فهو أمر حسن منها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ورغم ذلك فهو أمر حسن، ~~ على كثرة قنوات الاستعراض لربة البيت.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأصحاب المطاعم وغيرهم من أصحاب تلك القنوات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن مستغربا أقول:⏸ هل اليوتيوب تحول إلى هذا كله؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فهذه الفيديوهات لا تهمني، حتى قنوات الطعام وغيرها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تعب من كثرة الإبلاغات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تعبت من كثرة الإبلاغات والضغط على لا يهمني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن دون جدوى تذكر في نهاية الأمر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وليس الأمر يقف على اليوتيوب فقط،⏸ بل على كافة مواقع السوشيل ميديا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلا يخلو التصفح من هذه الفيديوهات في كل موقع منها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فعلى الأقل ما طاب نجد المتعة فيها عندما نكون في حالة جوع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الذي يوجع القلوب في هذا الأمر كله؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نكاد نجزم أن كل بيت أصبح يخاف على أبنائه من تلك الفيديوهات والقنوات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والمواقع التي كثرت في زماننا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والمواقع التي كثرت وفاحت في مواقع السوشيل ميديا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما الهدف من زخم تنزيل هذه الفيديوهات على اليوتيوب وغيره؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تعبنا من كثرة إثبات أهمية وفاعلية المواقع الإلكترونية المختلفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وإيجابيتها، ولكن هيهات من عجب ما نرى فيها من سلبيات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إن نسبة كبيرة من متصفحي السوشيل ميديا هم من الأطفال والمراهقين.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا الأمر مخيف، لأنه متفش للأسف بيننا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كيف يمكن أن نمنع أبناءنا وإخوتنا وأخواتنا من مشاهدة هؤلاء ومتابعتهم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف نوجههم بحيث يدركون أن هذا الأمر خطير على المجتمع؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "قد يكون الحل بتسليط الإعلام المرئي والورقي وغيره على هذه الظواهر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "التي تفشت في السوشيل ميديا، وهي متداولة للأسف ولهم متابعوهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فمن أين تبدأ المعالجة في رأيك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لذلك يبدأ الحل من الإعلام والعمل التوعوي لأطفالنا وشبابنا بمختلف الأشكال الإعلامية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يقتصر الأمر على الإعلام وحده، إنما البداية لهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والبيت يجب أن يكون على بينة بما يتصفحه أبناؤهم واهتماماتهم، ومراقبتهم عن كثب.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونحن التربويون علينا ثقل العمل على توعية طلابنا وكل من حولنا، كبيرا أم صغيرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من أجل النجاة بهم، وعدم السقوط في هاوية هؤلاء.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ولا ننكر أننا نستفيد كثيرا من معرفة ومعلومات وأخبار العالم، وأترك لكم مناقشة الحلول ورؤيتكم الثاقبة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

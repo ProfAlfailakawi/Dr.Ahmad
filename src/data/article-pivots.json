@@ -1,0 +1,341 @@
+{
+  "version": 1,
+  "policy": "جملة المقال التي ينعطف عندها المعنى، منقولةً حرفياً. لا تُعرض إلا عند وضوحها؛ ولا تُختلق عند غيابها.",
+  "coverage": {
+    "articles": 143,
+    "withPivot": 43
+  },
+  "pivots": {
+    "success-that-does-not-bring-joy-to-its-ownerarabic": {
+      "text": "المشكلة ليست في أن نفرح بالنتائج، بل في أن نختزل الرحلة كلها في لحظة إعلانها.",
+      "paragraph": 4,
+      "marks": [
+        "نقض المشكلة",
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "when-the-exam-becomes-the-goalarabic": {
+      "text": "المشكلة ليست في وجود الامتحان، بل في المعنى الذي ألصقناه به.",
+      "paragraph": 5,
+      "marks": [
+        "نقض المشكلة",
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "the-classroom-that-fears-mistakesarabic": {
+      "text": "المشكلة ليست في ضعف الفهم، بل في ثقافةٍ تُشعر الطالب أن قيمته تهتزّ كلما أخطأ.",
+      "paragraph": 2,
+      "marks": [
+        "نقض المشكلة",
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic": {
+      "text": "بين هذين الصوتين، لم تعد المسألة مادةً للجدل البارد، بل اختباراً صريحاً لوعي الناس واتجاههم.",
+      "paragraph": 2,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "aggression-in-the-sky-and-steadfastness-withinarabic": {
+      "text": "هذه الحقيقة وحدها كافية لأن نعلّم أبناءنا درساً مختلفاً: أن القوة ليست صراخاً…بل اتزان.",
+      "paragraph": 11,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "when-the-teacher-knows-why-he-teachesarabic": {
+      "text": "ليس المحتوى وحده ما يصنع الفرق، بل المناخ الذي يُقدَّم فيه المحتوى.",
+      "paragraph": 5,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "children-who-know-what-is-required-but-do-not-know-whyarabic-2": {
+      "text": "الفرق ليس في «قوة التحفيز»، بل في مصدره.",
+      "paragraph": 5,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "a-new-kind-of-fatigue-in-old-expressionsarabic": {
+      "text": "هذه ليست رفاهية تعريف، بل مرآة لما نراه حولنا: أناسٌ لا يكرهون وظائفهم بقدر ما يكرهون النسخة المتعبة منهم داخلها.",
+      "paragraph": 1,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "in-farewell-to-abdullah-ismail-al-kandariarabic": {
+      "text": "عبد الله الكندري لا كأسماء في مناصب، بل كأمثلة حيّة على ما يستطيع أن يفعله مربٍّ واحد حين يأخذ رسالته بجدّ.",
+      "paragraph": 2,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "children-who-know-what-is-required-but-do-not-know-whyarabic": {
+      "text": "هذا ليس كسل جيلٍ جديد، بل نمط تربيةٍ قديم: تربية الأداء قبل المعنى.",
+      "paragraph": 1,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "when-seriousness-becomes-a-mask-for-escapearabic": {
+      "text": "نحن لا نؤجل لأننا لا نفهم، بل لأن النفس أحياناً تفضّل ضجيجاً «مفيداً» على خطوةٍ قد تكشف مستوانا الحقيقي.",
+      "paragraph": 3,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "the-return-that-fails-to-fix-what-came-before-itarabic": {
+      "text": "ليست المشكلة في العودة…بل في الوهم الذي نعلّقه عليها.",
+      "paragraph": 0,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "the-year-that-doesnt-begin-with-the-calendararabic": {
+      "text": "عيناً ترى أن كثيراً من تعبنا ليس قدراً، بل تأجيلٌ متقن.",
+      "paragraph": 5,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "when-truth-died-and-the-narrative-survivedarabic": {
+      "text": "ليس لأن الناس يكرهون الحقيقة، بل لأنهم يتعبون من تعقيدها، ويستريحون إلى قصةٍ قصيرة تشبه مزاجهم وتُشبه جماعتهم.",
+      "paragraph": 2,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "a-generation-without-rootsarabic": {
+      "text": "أما الهوية الثقافية والعرقية فليست «تفصيلاً تراثياً»؛ بل عامل حماية حقيقي.",
+      "paragraph": 3,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "a-society-that-fears-the-different-arabic": {
+      "text": "المختلف هنا لا يُهاجَم لأنه مخطئ، بل لأنه يذكّر الجماعة بما تحاول إخفاءه عن نفسها.",
+      "paragraph": 3,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "the-human-who-forgot-himselfarabic": {
+      "text": "الرسالة ليست في الرقم وحده، بل في الاتجاه: كلما ابتعدنا عن أنفسنا، دفعَت النفس ثمن ذلك في صمت.",
+      "paragraph": 2,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "the-success-that-destroyed-us-2": {
+      "text": "هذا ليس ذوق عصرٍ عابر، بل اتجاهٌ تاريخي مُوثَّق.",
+      "paragraph": 2,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m": {
+      "text": "هذه ليست شاعرية تربوية، بل خلاصة دلائل رصدٍ وطنيّ حديث.",
+      "paragraph": 5,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "the-teacher-the-last-to-know-2": {
+      "text": "المعلم ليس جهاز تنفيذ، بل عقلٌ تربوي يحتاج أن يُصغى له، ويُحتضن فكره، ويُستثمر رأيه.",
+      "paragraph": 16,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "when-a-student-wishes-for-death-before-the-first-bell-2": {
+      "text": "الحل ليس في فرض العودة بالقوة…بل في إعادة تعريف العودة ذاتها.",
+      "paragraph": 7,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "do-we-contain-or-raise-2": {
+      "text": "> بل أن تزرع في داخله عقلاً يُرشده عندما لا تكون معه.",
+      "paragraph": 16,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2": {
+      "text": "لأن الفكرة الأهم ليست في «كم أنجز الطالب»، بل «كم فكّر وهو يُنجز».",
+      "paragraph": 10,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "i-write-to-awaken-you-not-to-discourage-you-2": {
+      "text": "حين أقول إن التعليم مريض، فأنا لا أحتقر المعلمين، بل أستنجد بهم.",
+      "paragraph": 9,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "he-passed-the-exam-but-failed-the-question-2": {
+      "text": "المشكلة ليست في ضعف الطفل…بل في شدة الضغط عليه ليُرضينا.",
+      "paragraph": 15,
+      "marks": [
+        "نقض المشكلة",
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "excellent-in-grades-lost-in-decision": {
+      "text": "ليس الجهل…بل الغياب العميق للتوجيه، والفهم المتأخر للذات.",
+      "paragraph": 16,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "we-graduated-with-a-degree-but-the-language-was-lost-2": {
+      "text": "نصحح الأخطاء الإملائية، لكن لا نعلّم صناعة الجمل.",
+      "paragraph": 35,
+      "marks": [
+        "«لكن»"
+      ]
+    },
+    "rest-is-taught-and-the-mind-is-on-permanent-vacation-2": {
+      "text": "نعم، نحتاج بيئة داعمة، ومناهج ذكية، لكن الذكاء لا يعني التبسيط المفرط.",
+      "paragraph": 31,
+      "marks": [
+        "«لكن»"
+      ]
+    },
+    "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2": {
+      "text": "هل نُرجع للصدق قيمته، لا فقط في السلوك…بل في الوعي؟",
+      "paragraph": 19,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "we-prepare-our-children-for-success-and-leave-them-empty-handed-2": {
+      "text": "إننا لا نمنح أبناءنا فرصة الاحتراق الذات، لا بمعنى الهلاك، بل بمعنى التحوّل!",
+      "paragraph": 25,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "a-generation-that-knows-everything-and-understands-nothing": {
+      "text": "هذا التناقض لم يأتِ من فراغ، بل من فائض المعرفة وسطحيّة المعنى، حيث تتحوّل الثقافة من عمقٍ يُبنى، إلى سرعةٍ تُستهلك.",
+      "paragraph": 0,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "past-mistakes-still-persist-in-the-age": {
+      "text": "رغم التطور التعليمي إلا أنه مازال المدرس الخصوصي حاضراً بل أكثر من الماضي…",
+      "paragraph": 2,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "smartphone-child-a-creative-mind-or-a-child-being-driven": {
+      "text": "أكاد أقسم أن لمسات الغباء والبلاهة تبدو عليهم بل مرسومة بطريقة فنية يعجز عنها رسام محترف…",
+      "paragraph": 2,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2": {
+      "text": "الخطر الحقيقي ليس في من تخرّج، بل في من بدأ يُعلّم!",
+      "paragraph": 18,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "qabas-201611-005": {
+      "text": "نقاش دار بيني وبين أحد الأصدقاء حين سألته على ابنه، فأجابني أنه يقضي معظم وقته أمام شاشة الكمبيوتر، ولا نكاد نراه، فأخبرته أن هذا ليس جيداً، فقال لي: بل ذلك أفضل من قضاء الوقت في الشارع ورفقة أصدقاء السوء…",
+      "paragraph": 0,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "qabas-201612-001": {
+      "text": "دعونا نقول أن العبرة ليست بالدرجة الأولى صحة الخبر، فالناشر لا يعنيه في كثير من الأحيان صحة الخبر من عدمه، بل الغاية من ذلك هو كثرة المتابعين، نعم هنا العبرة…",
+      "paragraph": 3,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "qabas-201702-002": {
+      "text": "لم نعد نشعر بالوقت بل نحتاج أضعاف أضعاف هذا الوقت لكي نستطيع تصفح المزيد…",
+      "paragraph": 2,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "qabas-201708-001": {
+      "text": "حديث طويل لكن لذة الطعام أنسانى الإرهاق والتعب…",
+      "paragraph": 3,
+      "marks": [
+        "«لكن»"
+      ]
+    },
+    "qabas-201709-002": {
+      "text": "ذهبنا قليلاً إلى بداية التطور التكنولوجي بل الثورة الهائلة للتكنولوجيا…",
+      "paragraph": 1,
+      "marks": [
+        "«بل»"
+      ]
+    },
+    "qabas-201805-002": {
+      "text": "إن مخرجات كليات العلوم الإنسانية ليست تكميلية بل هي أساسية تدخل صفاً بصف بجانب الكليات العلمية…",
+      "paragraph": 4,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "intelligence-without-a-consciencearabic": {
+      "text": "ليست المشكلة في الذكاء الاصطناعي نفسه، بل في إنسانٍ يريد أن يترك له القيادة ويكتفي بدور الراكب.",
+      "paragraph": 5,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "laughing-while-burning-2": {
+      "text": "ليست المشكلة في الأداة، بل في كيف وكم نستخدمها، وما الذي تسرقه من النوم والرياضة والرفقة الحقيقية.",
+      "paragraph": 3,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    },
+    "dr-jasem-malik-the-lesson-that-never-ends-2": {
+      "text": "لقد رأيت بأمّ عيني بعض معلميه وتلامذته وقد تأثروا به، ليس بما قاله لهم بل بما مثّله أمامهم: قدوة حيّة تُدرّس الأخلاق قبل المنهج.",
+      "paragraph": 6,
+      "marks": [
+        "«بل»",
+        "نفي"
+      ]
+    }
+  }
+}

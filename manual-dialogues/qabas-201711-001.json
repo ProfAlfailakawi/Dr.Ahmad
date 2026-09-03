@@ -1,0 +1,322 @@
+[
+  {
+    "speaker": "male",
+    "text": "أتمعن كثيرا في موضوع الاستثمار في الدول النامية كأحد العوامل الأساسية في تطور المؤسسات.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وكذا الاقتصاد العام، وكيف أنه يسمح بخلق مناصب عمل جديدة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ومواكبة العصر بما جاء معه من تطور تكنولوجي وتقدم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فمناخ الاستثمار وعاء.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فمناخ الاستثمار هو الوعاء الحقيقي للحياة الاقتصادية كلها.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويشير تعبير نقل التكنولوجيا إلى التقنيات المتقدمة، وإلى الأهداف من نقلها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "في إطار تطلع الدول النامية لبلوغ ذلك المقصد التكنولوجي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "سعيا للتخلص من مشكلاتها الاقتصادية، في ظل افتقارها للمعارف والخبرات والوسائل الفنية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إلا أن هناك تحديات.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إلا أن هناك التحديات ومعيقات الاستثمار ونقل التكنولوجيا في الدول النامية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والمتمثلة في ضعف التناغم بين السياسات الاقتصادية والسياسة الاستثمارية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وتعدد التشريعات الناظمة والأطر المؤسسية المعنية بالاستثمار.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتراجع تنافسية الدول وبيئة الأعمال في تلك البلدان.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويوجد تضارب في القوانين.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويوجد تضارب في بعض القوانين الاقتصادية التي تحكم منظومة الاستثمار في الدول النامية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بالإضافة إلى تقييد المنافسة في عقود نقل التكنولوجيا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "بسبب عدم وجود أدوات تشريعية سابقة أو أحكام قضائية تتصل به.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويأتي ذلك نتيجة لحقوق الملكية الفكرية التي تقف عائقا في نقل التكنولوجيا.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "من الدولة المتقدمة إلى الدول النامية، لاحتكارها مواردها البشرية وخبراتها والفنيين.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وما أثر ذلك على منتجات تلك الدول؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "مما يؤدي إلى عدم قدرة المنتجات في الدول النامية على المنافسة المحلية والخارجية، والمستثمرين في الداخل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فالإشكالية ما زالت قائمة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فعملية نقل التكنولوجيا من البلدان الصناعية إلى البلدان النامية لا تزال إحدى الإشكاليات الرئيسة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "التي تواجه الأقطار النامية في عملية التنمية.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لأنها وإن كانت قضية تهم الطرفين، المصدر للتكنولوجيا، والمستورد لها في نفس الوقت.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "حيث يسعى الطرفان لتحقيق أكبر قدر من العائد، وأعلى مستوى انتفاع ممكن.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "إلا أن القوة التفاوضية لا زالت تميل بشكل واضح لصالح المصدر.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لأسباب تقنية واقتصادية، إضافة إلى مسألة الاحتكار، وخاصة للتقنيات المتطورة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وقصور التشريعات على تحقيق الاستثمار ونقل التكنولوجيا العائد على الطرفين.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "دون أحكام طرف على آخر في هذه العقود.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أما القيود المفروضة في بعض اتفاقيات نقل التكنولوجيا وتراخيص الملكية الفكرية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "سيكون لها أثر سلبي على التجارة العالمية، وستؤدي لعرقلة نقل ونشر التكنولوجيا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهل تتشابه عقود نقل التكنولوجيا كلها؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وتتنوع عقود نقل التكنولوجيا، وتتباين أنواعها موضوعا والتزامات.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فبعضها عقد تسليم مفتاح، كعقد إنشاء مصنع وتركيب معداته والتدريب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وبعضها تراخيص بالاستغلال، وبعضها مجرد مساعدة فنية، وأخرى عقود بحث وتبادل معلومات.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويبدو واضحا أن هناك ظلما واقعا على الدول المنقول لها التكنولوجيا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "تحرمها من الاستفادة من عملية نقل التكنولوجيا واستثمارها، فنيا أو تدريبيا أو بالمعدات.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فمتى سنتمتع بالحرية المطلقة في نقل وتبادل التكنولوجيا بين الدول المتقدمة المصدرة والدول النامية؟",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

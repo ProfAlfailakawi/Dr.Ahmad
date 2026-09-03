@@ -1,0 +1,93 @@
+name: مختبر الكلمات — عيّنات مرقّمة بأذن الدكتور
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: podcast-word-audition
+  cancel-in-progress: false
+
+jobs:
+  audition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Generate word auditions
+        run: node scripts/podcast-word-audition.mjs
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
+
+      - name: Upload to isolated R2 staging
+        run: |
+          set -euo pipefail
+          PREFIX="staging/word-audition"
+          AWS=(aws --endpoint-url "$CLOUDFLARE_R2_ENDPOINT" s3api)
+          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" \
+            --key "$PREFIX/word-audition.mp3" --body "audio/word-audition.mp3" \
+            --content-type audio/mpeg --cache-control no-store
+          for f in audio/word-audition/*.mp3; do
+            "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" \
+              --key "$PREFIX/$(basename "$f")" --body "$f" \
+              --content-type audio/mpeg --cache-control no-store
+          done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+
+      - name: Publish a readable summary
+        if: always()
+        run: |
+          {
+            echo "## مختبر الكلمات"
+            if [ -f audio/word-audition.mp3 ]; then
+              echo "**الملف الجامع:**"
+              echo '```'
+              echo "$AUDIO_PUBLIC_BASE_URL/staging/word-audition/word-audition.mp3"
+              echo '```'
+              echo ""
+              echo "| # | الكلمة | البدائل |"
+              echo "|---|---|---|"
+              node -e "
+                const l=require('./audio/word-audition-legend.json');
+                for (const w of l.words) console.log('| '+w.n+' | '+w.word+' | '+w.options.join(' · ')+' |');
+              "
+            else
+              echo "**لم تُولَّد عيّنات** — العطب قبل التوليد."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: word-audition
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            audio/word-audition.mp3
+            audio/word-audition/
+            audio/word-audition-legend.json

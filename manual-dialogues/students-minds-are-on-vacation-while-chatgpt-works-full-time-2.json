@@ -1,0 +1,314 @@
+[
+  {
+    "speaker": "male",
+    "text": "في زمن الواجبات الذكية، لم يعد السؤال: هل كتب الطالب؟ بل: من كتب؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يقضي الطالب نصف ساعة في ترتيب سؤاله للآلة، وخمس دقائق في تسليم الواجب.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "الإجابات مثالية، واللغة أكاديمية، والاقتباسات مضبوطة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن لا أحد يعرف.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لا أحد يعرف: هل هذا فكر طالب؟ أم مجرد استدعاء إلكتروني جاء جاهزا؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي دراسة أعدتها جامعة هارفارد وجد أن أكثر من واحد وستين بالمئة من الطلاب الجامعيين اعتمدوا على أدوات الذكاء الاصطناعي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "بشكل جزئي أو كامل في إعداد واجباتهم. لكن الأخطر رقم آخر.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أن تسعة وثلاثين بالمئة من أعضاء هيئة التدريس لم يستطيعوا التمييز بين الواجب البشري والآلي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالذكاء يشتغل بدوام كامل، والعقل البشري في إجازة مفتوحة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والأستاذ يصحح النموذج لا الطالب، والإدارة تدون الدرجة لا القدرة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والمؤسسة تحتفل بالامتياز دون أن تكتشف أن المقال لم يكتب داخليا، بل استخرج خارجيا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن هل نسمي هذا غشا؟ الطالب لم يزور شيئا.",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "النص أدق من ذلك. يقول إننا لا نواجه غشا ذكيا، بل نشهد ولادة جيل من اللاوعي الأكاديمي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "طالب يتقن التسليم ويجهل ما سلمه، ويحصد الدرجة ولا يعرف ماذا كتب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويفتضح في اللجنة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يجلس في لجنة الامتحان الشفهي، فيتلعثم أمام محتوى هو من أرسله.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فالخطورة ليست في الأداة نفسها، بل في استخدامها كذراع بديل عن العقل، بدل أن تكون امتدادا له.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالأدوات لا تقتل الفكر، لكن الاستسلام لها يقتل الشخصية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي أحد الفصول سأل المعلم الطالب عن رأيه في موضوع الواجب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فجاء الجواب صادما.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "نظر إليه الطالب باستغراب، ثم قال ببراءة: الرأي؟ ما فهمت قصدك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لأن الواجب لم يكن ناتجا عن فكرة داخلية، بل عن أمر خارجي جاء جاهزا ومتقنا وبلا أثر في الذاكرة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وتدريجيا يتحول الطالب إلى مدير حسابات ذكاء اصطناعي، لا إلى عقل ناضج.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "يعرف كيف يعد الصيغة، ويطلب المصادر، ويضيف المراجع، وينسق الملف.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكنه لا يمتلك رأيا، ولا يحفظ جملة واحدة مما كتب.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي تقرير صادر عن اليونسكو حذرت المنظمة من اعتياد الطلاب على الاعتماد غير النقدي على أدوات الكتابة الذكية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأشارت إلى أن ضعف المهارات التعبيرية الفردية بات يرتبط مباشرة بازدهار الإنتاج الآلي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "male",
+    "text": "فهل نمنع الأدوات ونعود إلى الورقة والقلم؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "النص لا يطلب المنع. يطرح ثلاثة أسئلة على المنظومة نفسها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "هل أصبحنا نقيم قدرة الطالب على استخدام أدوات ذكية بدل أن نختبر نضجه الفكري؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهل نخرج من يجيد استخدام اللغة، أم من يفكر بها؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهل الامتياز الآن يمنح على المحتوى، أم على المهارة في التجميل والإخفاء؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والوصف الأدق مؤلم.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالطالب اليوم لا يغش، لكنه لا يفكر أيضا. لا يزور، لكنه يستعير عقلا آخر دون أن يدري.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والأخطر أن الجميع، من المعلم إلى المؤسسة، يشارك في هذه المسرحية الصامتة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إما بالصمت، أو بالإعجاب بالنتائج السريعة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فالتعليم لا يقاس بجودة النص بل بمدى صدقه، ولا بعدد الكلمات بل بكم منها خرج من عقل الطالب نفسه.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فيا منظومة التعليم، ابحثوا عن سؤال واحد: هل صاحب الواجب كان حاضرا وهو يكتب؟ أم اكتفى بالإرسال؟",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

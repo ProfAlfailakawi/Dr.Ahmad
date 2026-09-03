@@ -1,0 +1,272 @@
+{
+  "slug": "he-passed-the-exam-but-failed-the-question-2",
+  "bridgeAfter": [
+    13,
+    30
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كل يوم يدخل الطفل فصله بابتسامة عفوية، ويخرج بورقة تقييم.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "الابتسامة تذبل تدريجيا، والورقة تكبر.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن لا أحد يسأل:⏸ هل يكبر عقله كما تكبر درجاته؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعلمه كيف يجاوب لا كيف يسأل، ونزرع فيه الطاعة لا الجرأة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ندربه على كتابة الجواب النموذجي، ثم نتساءل لماذا لا يملك رأيا خاصا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي دراسة نشرتها مجلة Childhood Education وجد رقمان مقلقان.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أن أربعة وستين بالمئة من الأطفال في المرحلة الابتدائية يشعرون بالقلق أثناء الحصة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "واثنان وخمسون بالمئة لا يطرحون أسئلة خوفا من الخطأ أو السخرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالطفل يتفوق في الصمت لا في التعبير.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "يتعلم أن الهدوء أدب، وأن الجرأة مشكلة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويصبح المثالي حين ينسجم مع القالب، لا حين يحاول كسره.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والبيت يكمل الدور.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي البيت نواصل النسخة ذاتها:⏸ لا تسأل، لا تعاند، لا تتفلسف.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ثم نقول له لاحقا:⏸ كن مبدعا، وقياديا، ومتحدثا لبقا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن الانضباط ضروري في الصف. أليس كذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ضروري،⏸ لكن الطفل ليس سطرا نراجع عليه الصح والخطأ.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل إنسانا صغيرا يبحث عن مساحة ليتكلم، وليتردد، وليخطئ دون أن يقصى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وسؤال يوجع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كم من طفل خرج من المدرسة بظهر مستقيم وعقل مكسور؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فيا مؤسسة التربية، نريد طفلا يفكر لا يكرر، ويسأل لا يحفظ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويفرح بالمدرسة لا يخاف من السؤال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالخطر ليس في انخفاض مستواه،⏸ بل في اختفاء صوته وذوبان فكرته.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتعلمه المبكر كيف يرضي دون أن يعبر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي الفصل، ~~ الطفل المثالي هو الذي لا يقاطع ولا يجادل ولا يثير الأسئلة.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكنه في الحقيقة يبطئ عقله، ويقاطع فكرته، ويحذف من صياغة ذاته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنتعامل مع الأطفال وكأنهم أجهزة استقبال لا يسمح لها بالبث.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحتى كلمة لم أفهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالمعلم يشرح والطفل يهز رأسه،⏸ لكنه لا يفهم لماذا، ولا يسمح له أن يقول: أنا لا أتفق.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حتى كلمة لم أفهم صارت جريمة تهدد سمعته في الفصل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي دراسة لليونيسيف إشارة مهمة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أن الأطفال في البيئات التي تقيد الأسئلة وتكافئ السلوك الخاضع يظهرون تراجعا مبكرا في مهارات التفكير النقدي والخيال.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل المشكلة في ضعف الطفل إذن؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يقلب السؤال: المشكلة ليست في ضعف الطفل،⏸ بل في شدة الضغط عليه ليرضينا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "في توقعنا منه أن يكون نسخة مصغرة من الطفل المثالي النموذجي الذي لا يخطئ ولا يسأل ولا يعترض.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالطفل الذي لا يمنح حق السؤال سيتعلم لاحقا أن يصمت حتى عن رأيه ومشاعره وحلمه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فلا نريد أطفالا مطيعين،⏸ بل عقولا حرة تحب الحياة وتخطئ وتجرب. وأخطر ما نفعله أن نخرج طفلا بلا فكرة ثم نصفق له لأنه لم يزعجنا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

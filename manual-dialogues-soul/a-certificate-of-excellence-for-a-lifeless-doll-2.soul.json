@@ -1,0 +1,271 @@
+{
+  "slug": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+  "bridgeAfter": [
+    13,
+    27
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "شهادة امتياز لدمية بلا وعي. تفوق شكلي، وبرمجة صامتة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في حفلات التخرج نصفق طويلا لصاحب الامتياز، ونهديه شهادة مطرزة وميدالية براقة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ونلتقط معه الصورة المثالية. لكنه في الداخل يجهل من يكون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولم يسأل قط.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لم يسأل قط: ما فكرتك؟⏸ ما قضيتك؟⏸ ما الشيء الذي استيقظت لأجله اليوم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل الامتياز أن تحفظ كل شيء دون أن تفهم شيئا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل النجاح أن تجيب بسرعة وتفكر ببطء؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهل التفوق أن تقول الإجابات الصحيحة بصوت مستعار لا يشبهك؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي مشهد رمزي تقف دمية ناجحة على منصة المسرح.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "تبتسم كما طلب منها، وتلوح كما دربت، وتكرر جملة النجاح المعتمدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أشكر معلمي وأحلم بالمزيد. لكنها لا تعرف: المزيد من ماذا؟⏸ ولماذا؟⏸ ولمن؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والرقم يسند المشهد.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "في دراسة نشرتها The Learning Agency تبين أن أكثر من ستين بالمئة من الطلاب ذوي الأداء العالي لا يمتلكون أي رؤية مستقبلية واضحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن قرابة خمسين بالمئة لا يعرفون كيف يصفون أنفسهم سوى بجملة: أنا شاطر في المدرسة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هل نلوم المتفوق على تفوقه؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يلومه،⏸ بل يسأل عن النظام: هل نربي أدمغة متفوقة، أم نسخا ناجحة في طاعة النظام؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "الدمية لا تخطئ،⏸ لكنها لا تبدع. ولا تسأل، لكنها لا تتعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا تزعج أحدا،⏸ لكنها لا تغير شيئا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهكذا نصنع متفوقين بنسخة السوق، لا بنسخة الحياة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "نعلمهم أن يجيبوا لا أن يحلموا، وأن يرضوا المُعلِّم لا أن يكتشفوا أنفسهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن يتفوقوا في السباق دون أن يعرفوا إلى أين يركضون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فكم من شهادة امتياز كانت مكافأة على الطاعة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكم من عقل حر ركن جانبا لأنه لا يحفظ، ولا يكرر، ولا يجامل؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نمدح الإجابات ونخاف من الأسئلة، ونكرم الأداء ونتجاهل الوعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فإننا لا نخرج مفكرين،⏸ بل نبرمج مكررين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نسلمهم وثيقة التميز دون أن نسأل: هل فكر هذا المتفوق يوما بفكرة تخصه؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالدمية قد تكون الأولى على دفعتها،⏸ لكنها لا تجرؤ على الخروج من نص مكتوب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هي بارعة في تكرار العبارات،⏸ لكنها لا تعرف كيف تصوغ جملة تخصها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أليست القواعد لازمة قبل الحرية؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لازمة،⏸ لكنها لم تمنح وقتا لارتكاب خطأ مفيد. فما قيمة الامتياز إن لم يكن عميقا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما فائدة التفوق إن لم يكن إنسانيا؟⏸ وهل النجاح يقاس بالشهادة، أم بقدرة صاحبها على تغيير شيء في هذا العالم؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي كل عام نعلق أسماء المتفوقين على لوحات الشرف.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن لا نعلق لحظة لنسألهم: هل فكرتم؟ هل شككتم؟ هل قلتم يوما لا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالمدارس التي تخشى الأسئلة تخرج متفوقين في الصمت، والمناهج التي لا تسمح بالاعتراض تنجب عقولا تعتذر من الوعي.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "وأخطر ما في شهادة الامتياز أن تخدر بها الذات.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلا تحكموا على الدمية من بريق شهادتها، بل من سؤالها الأول حين تترك وحدها: من أنا بدون أن يقال لي؟",
+      "feeling": "intimate",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,250 @@
+#!/usr/bin/env node
+/**
+ * مُصالِح سجلّ الصوت — يفكّ الحلقة المفرغة بين السجلّ و R2.
+ *
+ * الحال قبله: التشغيلة تولّد الصوت وترفعه، ثم تتحقّق من أن كل مدخلٍ في
+ * `audio-meta.json` موجودٌ على R2 بحجمه المسجّل. فإن فشل التحقّق تراجعت
+ * ولم تُثبّت السجلّ. وهنا مقتلٌ صامت:
+ *
+ *   • ملفٌ حُذف في التصفير الشامل بقي مدخلُه في السجلّ ⇐ 404 أبداً ⇐ كل
+ *     تشغيلةٍ تفشل، وإلى الأبد.
+ *   • ملفٌ أُعيد توليده ورُفع بحجمٍ جديد، لكن تثبيت السجلّ سقط مع التشغيلة
+ *     ⇐ السجلّ يحمل الحجم القديم ⇐ فشلٌ دائم.
+ *
+ * فيولّد الصوت كل ساعة ويُرفض، ويُستهلك رصيد Azure بلا ثمرة.
+ *
+ * وهذا يُصالح السجلّ مع الواقع قبل التحقّق، بقاعدتين لا ثالثة لهما:
+ *   ١) مدخلٌ لا وجود لملفه على R2 (404) ⇐ يُحذف. غيابُ الصوت أصدق من رابطٍ
+ *      مكسور، والمقال يظهر بلا صوت حتى يُولَّد.
+ *   ٢) مدخلٌ ملفُه موجود بحجمٍ مختلف ⇐ يُؤخذ حجم R2. فالموجود على الخادم هو
+ *      ما يسمعه الناس، والسجلّ وصفٌ له لا حَكَمٌ عليه.
+ *
+ * ولا يخترع شيئاً: لا يضيف مدخلاً، ولا يلمس ما طابق، ويطبع كل تغييرٍ باسمه.
+ */
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { spawnSync } from 'node:child_process'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const SELF_TEST = process.argv.includes('--self-test')
+const KUWAITI_ONLY = process.argv.includes('--kuwaiti-only')
+
+/** قرارُ مدخلٍ واحد بعد سؤال R2 عنه */
+export function decideEntry({ name, recordedBytes, status, remoteBytes, certifiedImmutable = false }) {
+  if (status === 404) return { action: 'drop', why: 'لا وجود له على R2' }
+  if (status !== 200 && status !== 206) return { action: 'keep', why: `حالة عابرة ${status} — لا نحكم` }
+  if (!remoteBytes || !recordedBytes) return { action: 'keep', why: 'حجمٌ ناقص — لا نحكم' }
+  if (remoteBytes === recordedBytes) return { action: 'verify', why: 'مطابق ومتحقق على R2' }
+  if (certifiedImmutable) return {
+    action: 'quarantine',
+    why: `شهادة البوت ${recordedBytes} بايت لكن R2 يحمل ${remoteBytes} — ممنوع اعتماد البديل من الحجم وحده`,
+  }
+  return { action: 'refresh', why: `${recordedBytes} ← ${remoteBytes}`, bytes: remoteBytes }
+}
+
+/** الحقيقة المرشّحة: نحافظ على كل ما في السجل، ونستعيد من R2 كل ما يمكن
+ * أن يكون قد ضاع من metadata بعد تشغيلةٍ منقطعة: قراءة المقال + الحوار + نص الحوار. */
+export function discoveryCandidates(knownNames = [], slugs = [], { kuwaitiOnly = false } = {}) {
+  const candidates = new Set(knownNames.filter((name) => kuwaitiOnly
+    ? /\.dialogue-kw\.(?:mp3|json)$/u.test(name)
+    : name.endsWith('.mp3') || /\.dialogue(?:-kw)?\.json$/u.test(name)))
+  for (const slug of slugs.filter(Boolean)) {
+    if (kuwaitiOnly) {
+      candidates.add(`${slug}.dialogue-kw.mp3`)
+      candidates.add(`${slug}.dialogue-kw.json`)
+      continue
+    }
+    candidates.add(`${slug}.mp3`)
+    candidates.add(`${slug}.noura.mp3`)
+    candidates.add(`${slug}.dialogue.mp3`)
+    candidates.add(`${slug}.dialogue.json`)
+    candidates.add(`${slug}.dialogue-kw.mp3`)
+    candidates.add(`${slug}.dialogue-kw.json`)
+  }
+  return [...candidates]
+}
+
+/* ═══ الاختبارات ═══ */
+
+if (SELF_TEST) {
+  const assert = (c, m) => { if (!c) throw new Error(`✘ ${m}`) }
+
+  assert(decideEntry({ status: 404 }).action === 'drop', '★ المحذوف يُحذف من السجلّ — وإلا فشلت كل تشغيلةٍ أبداً')
+  assert(decideEntry({ status: 200, recordedBytes: 100, remoteBytes: 100 }).action === 'verify', 'المطابق يُوسم متحققاً بلا إعادة توليد')
+  const refreshed = decideEntry({ status: 200, recordedBytes: 100, remoteBytes: 300 })
+  assert(refreshed.action === 'refresh' && refreshed.bytes === 300, '★ المختلف يأخذ حجم R2 — فالخادم هو ما يسمعه الناس')
+  assert(decideEntry({ status: 200, recordedBytes: 100, remoteBytes: 300, certifiedImmutable: true }).action === 'quarantine',
+    '★ الصوت الكويتي المختلف لا يُعتمد من الحجم وحده؛ شهادة الجودة غير قابلة للتخمين')
+  /* ★ العارض لا يُحذف: 429 من R2 عند الضغط لا يعني أن الملف ذهب */
+  assert(decideEntry({ status: 429, recordedBytes: 100 }).action === 'keep', '★ الحدّ العابر لا يُسقط مدخلاً سليماً')
+  assert(decideEntry({ status: 503 }).action === 'keep', 'ولا عطلُ الخادم')
+  assert(decideEntry({ status: 200, recordedBytes: 0, remoteBytes: 0 }).action === 'keep', 'وبلا حجمٍ لا حكم')
+  const candidates = discoveryCandidates(['a.noura.mp3', 'legacy.dialogue.mp3'], ['a', 'b'])
+  assert(candidates.includes('a.noura.mp3'), 'الملف القديم المحفوظ لا يُحذف من السجل')
+  assert(candidates.includes('a.mp3') && candidates.includes('b.mp3'), 'كل مقالات المصدر تدخل اكتشاف قراءة المقال')
+  assert(candidates.includes('b.noura.mp3'), '★ كل مقال يدخل اكتشاف صوت نورة؛ وجوده في R2 يكفي لاستعادته ولو ضاع من metadata')
+  assert(candidates.includes('a.dialogue.mp3') && candidates.includes('b.dialogue.mp3'), '★ كل مقال يدخل اكتشاف ملف الحوار حتى لو ضاع من metadata')
+  assert(candidates.includes('a.dialogue.json') && candidates.includes('b.dialogue.json'), '★ نص الحوار يُستعاد من R2 أيضاً كي لا يختفي الحوار من اللوحة')
+  assert(candidates.includes('a.dialogue-kw.mp3') && candidates.includes('b.dialogue-kw.json'), '★ النسخة الكويتية وصوتها يدخلان الاكتشاف المستقل')
+  const kuwaiti = discoveryCandidates(['a.mp3', 'a.dialogue-kw.mp3'], ['a', 'b'], { kuwaitiOnly: true })
+  assert(JSON.stringify(kuwaiti.sort()) === JSON.stringify([
+    'a.dialogue-kw.json', 'a.dialogue-kw.mp3', 'b.dialogue-kw.json', 'b.dialogue-kw.mp3',
+  ].sort()), '★ فحص ما قبل الإنتاج لا يهدر الوقت على غير النسخة الكويتية')
+
+  console.log('✓ اختبارات مصالحة سجلّ الصوت: 14/14')
+  process.exit(0)
+}
+
+/* ═══ التشغيل ═══ */
+
+const apply = process.argv.includes('--apply')
+const base = (process.env.AUDIO_PUBLIC_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
+if (!base) { console.error('✘ AUDIO_PUBLIC_BASE_URL غير مضبوط.'); process.exit(1) }
+
+const metaPath = resolve(ROOT, 'src/data/audio-meta.json')
+if (!existsSync(metaPath)) { console.error('✘ audio-meta.json غير موجود.'); process.exit(1) }
+const meta = JSON.parse(readFileSync(metaPath, 'utf8'))
+
+const TRANSIENT = new Set([408, 425, 429, 500, 502, 503, 504])
+const sleep = (ms) => new Promise((done) => setTimeout(done, ms))
+/* الحدّ العابر يُعاد لا يُحكم عليه — وإلا حذفنا ملفاتٍ سليمةً لأن R2 ازدحم */
+async function head(url, attempts = 4) {
+  let last = { status: 0 }
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(url, { method: 'HEAD' })
+      if (!TRANSIENT.has(response.status)) return { status: response.status, bytes: Number(response.headers.get('content-length') || 0) }
+      last = { status: response.status }
+    } catch { last = { status: 0 } }
+    if (attempt < attempts) await sleep(400 * attempt * attempt)
+  }
+  return last
+}
+
+/** قياس المدّة من الملف الحيّ — يُنزَّل مؤقتاً ويُمسح، ولا يُستدعى إلا للمختلف */
+async function probeSeconds(url) {
+  const temp = resolve(tmpdir(), `audio-probe-${Date.now()}.mp3`)
+  try {
+    const response = await fetch(url)
+    if (!response.ok) return 0
+    writeFileSync(temp, Buffer.from(await response.arrayBuffer()))
+    const probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', temp], { encoding: 'utf8' })
+    const seconds = Math.round(Number(String(probe.stdout || '').trim()))
+    return Number.isFinite(seconds) && seconds > 0 ? seconds : 0
+  } catch { return 0 } finally { try { unlinkSync(temp) } catch { /* مؤقتٌ ذهب */ } }
+}
+
+/* اكتشافٌ من R2 (العلاج الجذري): المُصالِح القديم كان يتحقّق فقط من مداخل السجلّ
+   الموجودة، فإن فقد السجلُّ مداخلَ — تشغيلةٌ ملغاة تكتب سجلاً جزئياً، أو دهسٌ من
+   جلسةٍ متزامنة، أو حسم تعارضٍ يأخذ نسخةً أصغر — لم يستطع استعادتها، فتنهار الخلاصة
+   (شوهد: ١٠٤→٢٥، والخلاصة نزلت ٥٦→١٣). الآن نسأل R2 عن كل ملفٍ ممكن
+   (فهد + نورة + الحوار + نص الحوار لكل مقال)
+   ونضيف ما وُجِد وغاب عن السجلّ. فيصير السجلّ دائماً ⩾ ما في R2 ولا يُحذف إلا ما
+   غاب فعلاً (404) — فالدهس يصير غير مؤذٍ: أيّ تشغيلةٍ تعيد بناءه من الحقيقة. */
+const bodiesPath = resolve(ROOT, 'src/data/bodies.json')
+let slugs = []
+try { slugs = Object.keys(JSON.parse(readFileSync(bodiesPath, 'utf8'))) }
+catch { console.warn('  ⚠ تعذّر قراءة نصوص المقالات — نكتفي بمداخل السجلّ.') }
+const candidates = new Set(discoveryCandidates(Object.keys(meta), slugs, { kuwaitiOnly: KUWAITI_ONLY }))
+console.log(`═══ مصالحة ${candidates.size} ملفاً محتملاً${KUWAITI_ONLY ? ' للنسخة الكويتية' : ''} مع R2 (السجلّ يحمل ${Object.keys(meta).length}) ═══\n`)
+
+const dropped = []
+const refreshed = []
+const added = []
+const verified = []
+const quarantinedKuwaiti = new Set()
+const uncommittedKuwaiti = []
+for (const name of candidates) {
+  const entry = meta[name]
+  const kuwaitiMatch = name.match(/^(.*)\.dialogue-kw\.(?:mp3|json)$/u)
+  const kuwaitiSlug = kuwaitiMatch?.[1] || ''
+  const { status, bytes } = await head(`${base}/${encodeURIComponent(name)}`)
+  if (status === 200 || status === 206) {
+    if (!entry) {
+      /* وجود object كويتي وحده ليس شهادة جودة: قد يكون Take رُفع ثم فشلت
+         بوابة لاحقة أو ملفاً بدّلته أداة خارج خط الإنتاج. الحارس التاريخي
+         يعيد ما شهد له البوت؛ وما لا شهادة له يبقى خارج الموقع والطابور يعيده
+         من المصدر المقفول. لا نخمن sha ولا نحرر human veto من حجم الملف. */
+      if (kuwaitiSlug) {
+        uncommittedKuwaiti.push(name)
+        console.log(`  ⏸ غير معتمد · ${name} · موجود على R2 بلا شهادة بوت؛ لا يُضاف`)
+        continue
+      }
+      /* ملفٌ حيٌّ على R2 غائبٌ عن السجلّ ⇐ يُضاف. للصوت عتبة كبيرة، ولـJSON
+         عتبة صغيرة معقولة. بهذا تستعيد المصالحة الحوار ونصه معاً ولا يبقى
+         R2 صحيحاً بينما لوحة التحكم ترى عدداً قديماً. */
+      const isDialogueJson = /\.dialogue(?:-kw)?\.json$/u.test(name)
+      const minimumBytes = isDialogueJson ? 100 : 200_000
+      if (bytes > minimumBytes) {
+        const seconds = isDialogueJson ? 0 : await probeSeconds(`${base}/${encodeURIComponent(name)}`)
+        meta[name] = {
+          ...(seconds ? { durationSeconds: seconds } : {}),
+          bytes,
+          validationStatus: 'verified-r2',
+          verifiedAt: new Date().toISOString(),
+        }
+        added.push(name)
+        console.log(`  ＋ يُضاف · ${name} · ${bytes} بايت${seconds ? ` · ${seconds} ثانية` : ''}`)
+      }
+    } else {
+      const verdict = decideEntry({
+        name,
+        recordedBytes: Number(entry?.bytes || 0),
+        status,
+        remoteBytes: bytes,
+        certifiedImmutable: Boolean(kuwaitiSlug),
+      })
+      if (verdict.action === 'refresh') {
+        refreshed.push(name)
+        const seconds = name.endsWith('.json') ? 0 : await probeSeconds(`${base}/${encodeURIComponent(name)}`)
+        meta[name] = {
+          ...entry,
+          bytes: verdict.bytes,
+          ...(seconds ? { durationSeconds: seconds } : {}),
+          validationStatus: 'verified-r2',
+          verifiedAt: entry.verifiedAt || new Date().toISOString(),
+        }
+        console.log(`  ↻ يُحدَّث · ${name} · ${verdict.why} بايت`)
+      } else if (verdict.action === 'quarantine') {
+        quarantinedKuwaiti.add(kuwaitiSlug)
+        console.log(`  ⛔ يُحجر · ${name} · ${verdict.why}`)
+      } else if (verdict.action === 'verify' && (entry.validationStatus !== 'verified-r2' || !entry.verifiedAt)) {
+        verified.push(name)
+        const seconds = name.endsWith('.json')
+          ? 0
+          : Number(entry.durationSeconds || 0) > 0
+            ? Number(entry.durationSeconds)
+            : await probeSeconds(`${base}/${encodeURIComponent(name)}`)
+        meta[name] = {
+          ...entry,
+          ...(seconds ? { durationSeconds: seconds } : {}),
+          validationStatus: 'verified-r2',
+          verifiedAt: entry.verifiedAt || new Date().toISOString(),
+        }
+        console.log(`  ✓ موثّق · ${name} · موجود على R2 بالحجم نفسه`)
+      }
+    }
+  } else if (status === 404 && entry) {
+    if (kuwaitiSlug) {
+      quarantinedKuwaiti.add(kuwaitiSlug)
+      console.log(`  ⛔ يُحجر الزوج · ${name} · لا وجود لأحد ملفي الحلقة على R2`)
+    } else {
+      dropped.push(name)
+      console.log(`  ✘ يُحذف · ${name} · لا وجود له على R2`)
+    }
+  }
+}
+for (const name of dropped) delete meta[name]
+for (const slug of quarantinedKuwaiti) {
+  delete meta[`${slug}.dialogue-kw.mp3`]
+  delete meta[`${slug}.dialogue-kw.json`]
+}
+
+console.log(`\n── مضاف: ${added.length} · موثّق: ${verified.length} · محدَّث: ${refreshed.length} · محذوف: ${dropped.length} · محجور كويتي: ${quarantinedKuwaiti.size} · بلا شهادة: ${uncommittedKuwaiti.length} ──`)
+if (!added.length && !verified.length && !refreshed.length && !dropped.length && !quarantinedKuwaiti.size) { console.log('\n✓ السجلّ يطابق R2 — لا شيء يُفعل.'); process.exit(0) }
+
+if (!apply) { console.log('\nⓘ تشغيلةٌ جافّة: لم يُكتب شيء. أضف --apply للحفظ.'); process.exit(0) }
+writeFileSync(metaPath, `${JSON.stringify(meta, null, 2)}\n`)
+console.log('\n✓ حُفظ السجلّ مصالَحاً مع R2؛ والنسخة الكويتية بقيت محكومة بشهادة البوت لا بوجود الملف وحده.')

@@ -1,0 +1,306 @@
+[
+  {
+    "speaker": "male",
+    "text": "تهميش ناعم، لإقصاء صامت. هكذا يبدأ النص وهكذا ينتهي الأمر.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "في زمن توزع فيه المناهج بالتوصيل السريع، وتطبخ السياسات التعليمية خلف الأبواب المغلقة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "يستبعد صاحب الرسالة ليصبح موظف تنفيذ، لا شريك بناء.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يستدعى ثم يقصى.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يستدعى عند التنفيذ، ويقصى عند التخطيط. وهذا وحده يلخص المأساة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أيها القلم، هل تكتب دون أن تستأذن الورقة؟ هكذا يرسم مستقبل أبنائنا بلا مشورة من حامل الطباشير.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "تعقد المؤتمرات، وتطلق المبادرات، وتصاغ استراتيجيات التغيير، والمعلم غائب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "هل أخبروه أن المناهج تغيرت؟ وهل شاركوه في اختيار الأدوات؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أم أبلغوه لاحقا بصفته آخر من يعلم؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن هذا انطباع. هل من رقم يسنده؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "في دراسة نشرت في Teaching and Teacher Education أقر اثنان وسبعون بالمئة من معلمي الشرق الأوسط.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بأنهم لم يستشاروا إطلاقا عند تغيير المناهج.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بينما أجبر خمسة وستون بالمئة منهم على تطبيق أدوات تكنولوجية لم يدربوا عليها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فأي عدالة هذه؟ أن يزج بالمعلم إلى الميدان عاريا من المشاركة، مثقلا باللوم؟",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والتشبيه يوقفك.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "تخيل طبيبا يدخل غرفة العمليات ليكتشف أن الفريق تغير، وأن البروتوكول أعيدت كتابته دون علمه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ثم يحاسب إن فشل. والمعلم يحاسب كل يوم لأنه الواجهة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن من كتب السيناريو؟ ومن وضع النص؟ ومن اختار المعدات وحدد الوقت؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ومن قرر أن النجاح مسؤولية فردية؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ونطالبه بكل شيء.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "نطالبه أن يكون مربيا، ومحفزا، وإداريا، وتقنيا، وقانونيا، ونفسيا، ورقميا. ثم لا يسأل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "كأننا نقول له: كن كل شيء، إلا أنت.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "نجبره على الحضور الجسدي وننكر وجوده المعنوي.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ونحمله فشل منظومة ثم نقصيه عن إصلاحها، ثم نتساءل ببراءة: لماذا انطفأ الشغف في عينيه؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالمعلم ليس جهاز تنفيذ، بل عقل تربوي يحتاج أن يصغى له، ويحتضن فكره، ويستثمر رأيه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ومع ذلك، هناك معلمون مقصرون فعلا. أليس كذلك؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "النص يعترف بهذا صراحة، ثم يسأل: من الذي قص أجنحتهم؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "male",
+    "text": "ومن الذي قزم أحلامهم؟ ومن الذي وضعهم على الهامش؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهل نلوم الشمعة إذا ذابت، أم الغرفة التي لا نافذة فيها؟",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فكم من فكرة تعليمية رائعة أجهضت لأنها خرجت من فم معلم ميداني لا يحمل لقبا وظيفيا رفيعا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وكم من إصلاح وهمي انهار لأنه أسس من فوق رؤوس من في الميدان.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفي نظام كهذا تموت الجودة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "في نظام يقصي المعلم، تموت الجودة اختناقا داخل شعاراتها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فالتعليم الحقيقي لا يدار من المكاتب العليا فقط، بل من القلوب التي تعلم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "من الحصص، ومن الفصول، ومن الطباشير الذي خفت صوته لكنه لم يخفت أثره.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فيا صانع القرار، لا تطالب المعلم بالمثالية ثم تعزله، ولا تحاسبه على منهج لم يكتبه.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وإن أردت أن تصلح التعليم فلا تصلحه فوق رأسه، بل من داخله. أعد إليه صوته وكرامته ومكانه في الحكاية.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

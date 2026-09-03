@@ -1,0 +1,28 @@
+[Unit]
+Description=Dr Alfailakawi WhatsApp Bridge
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=whatsapp
+Group=whatsapp
+WorkingDirectory=/opt/whatsapp-bridge
+EnvironmentFile=/etc/whatsapp-bridge.env
+ExecStart=/usr/bin/node /opt/whatsapp-bridge/service-runner.mjs
+Restart=always
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/whatsapp-bridge /var/log/whatsapp-bridge
+StandardOutput=append:/var/log/whatsapp-bridge/bridge.log
+StandardError=append:/var/log/whatsapp-bridge/bridge.log
+
+[Install]
+WantedBy=multi-user.target

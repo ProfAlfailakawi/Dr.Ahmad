@@ -1,0 +1,135 @@
+name: تجربة البرومت — ثلاثة رؤوس × ثلاث بذور على حلقة قصيرة
+
+# [٢٢ أغسطس ٢٠٢٦ — تجربة صديق الدكتور] فرضيته: مع Gemini «كل ما زدت
+# القيود تتعب»، والقصر يسبق الانجراف. التجربة المنضبطة: أول ١٩ دوراً من
+# حلقة التجربة (≈ دقيقتان ونصف) تُولَّد مرتين — برومت أدنى إيجابي ضد
+# البرومت الكامل — نفس النص حرفاً بحرف، نداء واحد بلا قطع في الحالين.
+# وبتعمية: تخرجان «س» و«ص» بترتيب عشوائي (زوجية رقم التشغيلة)، والمفتاح
+# في ملف مغلق لا يُفتح إلا بعد حكم الأذن. إذا ما نفع الأدنى نرجع للأصل
+# بلا أي أثر — الإنتاج لم يُمس.
+
+on:
+  workflow_dispatch:
+    inputs:
+      turns:
+        description: 'عدد الأدوار من بداية حلقة التجربة (الافتراض ١٩ ≈ دقيقتان ونصف)'
+        required: false
+        default: '19'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: podcast-prompt-experiment
+  cancel-in-progress: false
+
+jobs:
+  experiment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: تجهيز الحلقة القصيرة من متن التجربة المعتمد
+        shell: bash
+        run: |
+          set -euo pipefail
+          N="${{ inputs.turns }}"
+          [[ "$N" =~ ^[0-9]{1,2}$ ]] || N=19
+          node -e "
+            const fs = require('fs');
+            const slug = 'success-that-does-not-bring-joy-to-its-ownerarabic';
+            const lib = JSON.parse(fs.readFileSync('src/data/kuwaiti-dialogues.json','utf8'));
+            const turns = Object.values(lib.episodes[slug]).slice(0, Number('$N'));
+            // لا جسر في آخر دور، ولا قطع أصلاً — نداء واحد في الحالين
+            turns.forEach((t) => { t.musicBridgeAfter = false });
+            fs.mkdirSync('manual-dialogues-kuwaiti', { recursive: true });
+            fs.mkdirSync('podcast-audits/source-locks-kuwaiti', { recursive: true });
+            fs.writeFileSync('manual-dialogues-kuwaiti/' + slug + '.json', JSON.stringify(turns, null, 2));
+            fs.writeFileSync('podcast-audits/source-locks-kuwaiti/' + slug + '.json',
+              JSON.stringify({ slug, revisionId: 'prompt-experiment-short' }, null, 2));
+            console.log('✓ حلقة قصيرة: ' + turns.length + ' دوراً');
+          "
+
+      - name: صقل النص المنطوق إلزامياً قبل تجربة البرومت
+        run: node scripts/apply-kuwaiti-native-spoken.mjs --dir=manual-dialogues-kuwaiti
+
+      - name: حارس مخاطبة الجنس
+        run: node scripts/guard-dialogue-gender-address.mjs --dir=manual-dialogues-kuwaiti
+
+      # [نسخة ٢ — بمنهج الصديق] عيّنة واحدة لكل ذراع لا تكفي والتذبذب
+      # مبرهن؛ ثلاث بذور متطابقة عبر الأذرع الثلاثة = تسعة مقاطع قصيرة،
+      # كل بذرة تقارن نفسها عبر الرؤوس الثلاثة. التعمية بأسماء مخلوطة
+      # (خلطة ثابتة مشتقة من رقم التشغيلة) والمفتاح مغلق حتى حكم الأذن.
+      - name: توليد الأذرع التسعة — ٣ برومتات × ٣ بذور متطابقة
+        shell: bash
+        run: |
+          set -euo pipefail
+          SLUG="success-that-does-not-bring-joy-to-its-ownerarabic"
+          mkdir -p exp
+          for MODE in minimal full c; do
+            for SEED in 1101 1102 1103; do
+              echo "── ذراع $MODE · بذرة $SEED"
+              PODCAST_KW_PROMPT_MODE="$MODE" PODCAST_KW_SEED="$SEED" \
+                node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
+              mv "audio/$SLUG.dialogue-kw.mp3" "exp/$MODE-$SEED.mp3"
+            done
+          done
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
+          PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
+          PODCAST_KW_GENERATION_MODE: pilot
+          PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
+          # [٢٢ أغسطس] كان صفراً «لأنها تجربة» فخرجت التسعة كلها بصوت
+          # واحد («كلهم صوت واحد مو ٢» — حكمه). البوابة تصدق هنا أيضاً.
+          PODCAST_KW_MIN_GAP: '12'
+
+      - name: التعمية والرفع — تسعة مقاطع بأسماء مخلوطة ومفتاح مغلق
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "
+            const fs = require('fs');
+            const files = fs.readdirSync('exp').filter((f) => f.endsWith('.mp3')).sort();
+            // خلطة حتمية مشتقة من رقم التشغيلة — لا عشوائية وقت التنفيذ
+            let x = Number(process.env.GITHUB_RUN_ID) % 2147483647;
+            const rnd = () => (x = (x * 48271) % 2147483647) / 2147483647;
+            const order = files.map((f) => ({ f, r: rnd() })).sort((a, b) => a.r - b.r).map((o) => o.f);
+            const key = {};
+            order.forEach((f, i) => {
+              const name = 'مقطع-' + String(i + 1).padStart(2, '0') + '.mp3';
+              fs.copyFileSync('exp/' + f, 'exp/' + name);
+              key[name] = f.replace('.mp3', '');
+            });
+            fs.writeFileSync('exp/experiment-key.json', JSON.stringify(key, null, 2));
+            console.log('✓ تسعة مقاطع معماة والمفتاح مغلق');
+          "
+          AWS=(aws --endpoint-url "$CLOUDFLARE_R2_ENDPOINT" s3api)
+          P="staging/prompt-experiment"
+          for i in 01 02 03 04 05 06 07 08 09; do
+            "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$P/clip-$i.mp3" --body "exp/مقطع-$i.mp3" --content-type audio/mpeg --cache-control no-store
+          done
+          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$P/experiment-key.json" --body exp/experiment-key.json --content-type application/json --cache-control no-store
+          echo "✓ رفعت clip-01..09 — المفتاح مغلق حتى حكم الأذنين"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}

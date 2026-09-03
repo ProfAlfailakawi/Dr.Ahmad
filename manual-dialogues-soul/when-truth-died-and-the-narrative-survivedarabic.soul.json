@@ -1,0 +1,278 @@
+{
+  "slug": "when-truth-died-and-the-narrative-survivedarabic",
+  "bridgeAfter": [
+    5,
+    23
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نحن لا نعيش أزمة معلومات. نحن نعيش أزمة ثقة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي زمن صار فيه الدليل متعبا، والرواية خفيفة كزر مشاركة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "أصبحت الحقيقة تمشي ببطء في شارع مزدحم بالانطباعات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأكسفورد التقطت ذلك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حين أعلنت أكسفورد ما بعد الحقيقة كلمة العام، كانت تلتقط نبض مرحلة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لا يعلو فيها صوت الوقائع بقدر ما يعلو صوت ما نريد أن نصدقه.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل الناس يكرهون الحقيقة إلى هذا الحد؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال ينصفهم: ليس لأنهم يكرهونها،⏸ بل لأنهم يتعبون من تعقيدها.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويستريحون إلى قصة قصيرة تشبه مزاجهم وتشبه جماعتهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولأن الرواية أسرع من الحقيقة، جاءت الأرقام لتقول ما نراه كل يوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "دراسة ساينس الشهيرة لفوسوغي وروي وأرال على تويتر بين ألفين وستة وألفين وسبعة عشر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وجدت أن الأخبار الكاذبة تنتشر أوسع وأعمق وأسرع من الأخبار الصحيحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمحرك ليس الروبوتات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأن البشر، لا الروبوتات، كانوا المحرك الأكبر لهذا التسارع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بمعنى آخر:⏸ نحن نسرع الرواية عندما توافق عاطفتنا، ثم نستغرب لماذا تتأخر الحقيقة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والمنصات لا تكذب بالضرورة،⏸ لكنها تكافئ ما يثير الانفعال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن هنا تصبح الحكاية التي تغضب أو تبكي أو تضحك أكثر قابلية للانتشار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من حقيقة تحتاج سياقا وهدوءا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا بالضبط يصعد حكم خطير.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وحين تتحول العاطفة إلى معيار للصدق، تتراجع مهارة السؤال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويصعد حكم خطير:⏸ أشعر أنها صحيحة، إذن هي صحيحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحتى طلابنا، وهم الأكثر حياة داخل هذه الشاشات، ليسوا بمنأى عن هذا المزاج أبدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تقارير مجموعة ستانفورد للتربية التاريخية أظهرت صعوبة عند كثير من اليافعين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "في تقييم مصادر المعلومات الرقمية وتمييز الموثوق من المضلل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هذا شأن إعلامي. ما علاقته بنا نحن؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل هو شأن صحة مجتمعية. منظمة الصحة العالمية عرفت الإنفوديميا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بوصفها فيضا من المعلومات، بعضها صحيح وبعضها مضلل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يمكن أن يصنع ارتباكا، ويقوض الثقة بالخبراء، ويربك سلوك الناس عند الأزمات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي البيت يتخذ الأمر شكل سؤال صغير لا يبدو سياسيا ولا كبيرا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ماذا نشارك؟⏸ ولماذا نشاركه أصلا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي المدرسة يتخذ شكل سؤال أعمق:⏸ هل نُعلِّم أبناءنا ماذا يقرأون أم كيف يفكرون فيما يقرأون؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي الإعلام يتخذ شكل امتحان ضمير:⏸ هل نركض خلف التفاعل، أم نحرس الحد الأدنى من الصدق؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فكيف تعود الحقيقة إذن؟",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ربما لا تعود بصرخة واحدة،⏸ بل بعادات هادئة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أن نتريث قبل المشاركة، وأن نسأل دائما عن المصدر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن نقبل فكرة أن بعض القضايا لا تختصر في مقطع واحد. فالحقيقة لا تحتاج جمهورا يصفق،⏸ بل عقولا تصبر.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وحين نصبر، ستعود الرواية إلى مكانها الجميل:⏸ أداة فهم لا بديلا عن الدليل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+/* ═══════════════════════════════════════════════════════════════════
+   2026-08-13 — تلميع الواجهة: هيكل الانتظار وتتابع الظهور
+   ملفٌ مستقلّ عن index.css عمداً: الأخير أكثر ملفات المستودع تعديلاً
+   (١٠ التزامات منذ ١٠ أغسطس)، وفصلُ هذه الأنماط يمنع دهس عمل الجلسات
+   الأخرى عند التسليم. المنطق كلّه في InterfacePolish.tsx.
+   الحركة بمنحنى الموقع الموحّد --E لا بمنحنى غريب عنه.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── ١) هيكل الانتظار ─────────────────────────────────────────────────
+   إطار الصورة عنده نسبةٌ ثابتة وخلفية wash مسطّحة، فاللحظة قبل وصول
+   الصورة رمادٌ ميت — وفي الأرشيف الإعلامي عشرات الأطر معاً.
+   اللمعة تجعل الانتظار حياً، ولا تُزيح بكسلاً واحداً لأن النسبة محجوزة.
+
+   عنصرٌ حقيقي لا ::after عمداً: الإطار نفسه يحمل .complete-media-frame
+   وله ::before و::after مشغولان في index.css، فأيّ pseudo هنا يدهسهما
+   صامتاً. */
+.polish-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-color: rgb(var(--c-wash));
+  background-image: linear-gradient(
+    100deg,
+    rgb(var(--c-wash)) 24%,
+    rgb(var(--c-canvas)) 46%,
+    rgb(var(--c-wash)) 68%
+  );
+  background-size: 260% 100%;
+  background-repeat: no-repeat;
+  animation: polish-shimmer 1.5s linear infinite;
+  transition: opacity .34s var(--E);
+}
+
+/* الخروج ناعم: الصورة لا تنطّ فوق اللمعة بل تحلّ محلّها. */
+.polish-skeleton.is-leaving { opacity: 0; }
+
+@keyframes polish-shimmer {
+  from { background-position: 180% 0; }
+  to { background-position: -80% 0; }
+}
+
+/* الليل: الرمادان أقرب، فاللمعة همسٌ لا وميض. */
+html.dark .polish-skeleton {
+  background-color: rgb(var(--c-wash));
+  background-image: linear-gradient(
+    100deg,
+    rgb(var(--c-wash)) 24%,
+    rgb(var(--c-canvas)) 46%,
+    rgb(var(--c-wash)) 68%
+  );
+  opacity: .72;
+}
+
+/* ── ٢) تتابع الظهور ──────────────────────────────────────────────────
+   .spatial-collection هي الحاضنة المشتركة لخمس صفحات (المقالات ·
+   الأرشيف · تفاصيل الأرشيف · الأبحاث · الإصدارات)، فالتتابع يُضبط من
+   محلٍّ واحد بلا لمس متن أيّ صفحة.
+
+   ★★ لا حالةَ إخفاءٍ هنا إطلاقاً — وهذا قرارُ تصميمٍ لا تفصيلَ كتابة.
+   الصيغة الأولى كانت حالتين (مخفيّ ثم ظاهر) وعلقت في الفحص مرتين عند
+   opacity:0 حين تعذّر التمرير، أي: بطاقاتٌ لا يراها أحد. فصار الكشف
+   **حركةً** تبدأ من العدم وتنتهي عند الظهور بـboth: العنصر الذي لا
+   تلمسه حركةٌ مرئيٌّ بطبعه، فأسوأ ما يقع عند تعطّل المنطق كلّه أن
+   يظهر المحتوى بلا تتابع. لا صفحةَ بيضاء بحالٍ.
+   (سابقة محطّات «مسار الفكرة» التي بقيت opacity:0 للأبد.) */
+.spatial-collection[data-polish-stagger='in'] > * {
+  animation: polish-rise .52s var(--E) both;
+  animation-delay: calc(var(--polish-i, 0) * 68ms);
+}
+
+@keyframes polish-rise {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* من طلب تقليل الحركة في جهازه لا يُخفى عنه شيء ولا يُؤخَّر. */
+@media (prefers-reduced-motion: reduce) {
+  .polish-skeleton {
+    animation: none;
+    background-image: none;
+  }
+  .spatial-collection[data-polish-stagger='in'] > * {
+    animation: none;
+  }
+}
+
+/* ── ٣) إشارة الشريط على الحاسوب ──────────────────────────────────────
+   الشريط يُسحب بالماوس فعلاً (ensureDesktopDrag في App.tsx)، لكن لا شيء
+   يقول ذلك للزائر: مؤشّر «اليد القابضة» لا يظهر إلا بعد أن يجرّب.
+
+   والعلاج بلغته هو لا بلغةٍ جديدة: **النقطتان نفسهما** اللتان يستعملهما
+   على الجوال (background-image بتدرّجين شعاعيين في زاويتي الشريط)، لا
+   زرّ ولا سهم — فيبقى قانون «لا أزرار ولا click» المكتوب في index.css
+   قائماً كما هو.
+
+   ولا تُضاء نقطةٌ إلا إذا كان في جهتها مادةٌ فعلاً: `data-can-left`
+   و`data-can-right` يكتبهما حارس الأشرطة ويحدّثهما مع كل تمرير، فالنقطة
+   تخفت وحدها عند بلوغ الطرف. ولا شيء يظهر قبل أن يقترب المؤشّر. */
+
+/* التدرّج الشعاعي لا يقبل transition على لونٍ داخل متغيّر إلا بتسجيله. */
+@property --polish-cue-start {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+@property --polish-cue-end {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* الجوال له معالجته الكاملة أصلاً؛ هذه للحاسوب وحده. */
+  [data-swipe-rail='true']:not([data-mobile-card-rail='true']) {
+    background-image:
+      radial-gradient(circle, var(--polish-cue-start) 0 2.1px, transparent 2.25px),
+      radial-gradient(circle, var(--polish-cue-end) 0 2.1px, transparent 2.25px);
+    background-repeat: no-repeat;
+    background-size: 4.2px 4.2px, 4.2px 4.2px;
+    background-position: left 2px bottom 2px, right 2px bottom 2px;
+    transition:
+      --polish-cue-start .42s var(--E),
+      --polish-cue-end .42s var(--E);
+  }
+
+  /* ★ الظهور فوريّ والاختفاء وحده ناعم (transition: none هنا، والانتقال
+     في القاعدة الأساس فوق يعمل عند المغادرة وحدها).
+
+     ليست زخرفة: القيمة المتحرّكة تبقى عند بدايتها ما دامت الساعة واقفة
+     (تبويبٌ في الخلفية، إطارٌ مخفي). فلو كان الظهور بانتقال، لبقيت
+     النقطة شفافةً هناك ولم يرَ الزائر شيئاً — رأيتُها كذلك في الفحص.
+     أما هكذا فالإشارة تصل دائماً، والنعومة تبقى حيث لا تضرّ. */
+  [data-swipe-rail='true']:not([data-mobile-card-rail='true']):is(:hover, :focus-within)[data-can-left='true'] {
+    --polish-cue-start: rgb(var(--c-accent) / .5);
+    transition: none;
+  }
+  [data-swipe-rail='true']:not([data-mobile-card-rail='true']):is(:hover, :focus-within)[data-can-right='true'] {
+    --polish-cue-end: rgb(var(--c-accent) / .5);
+    transition: none;
+  }
+
+  /* الليل: الورق أغمق فالنقطة تحتاج حضوراً أوضح قليلاً. */
+  html.dark [data-swipe-rail='true']:not([data-mobile-card-rail='true']):is(:hover, :focus-within)[data-can-left='true'] {
+    --polish-cue-start: rgb(var(--c-accent) / .72);
+  }
+  html.dark [data-swipe-rail='true']:not([data-mobile-card-rail='true']):is(:hover, :focus-within)[data-can-right='true'] {
+    --polish-cue-end: rgb(var(--c-accent) / .72);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-swipe-rail='true']:not([data-mobile-card-rail='true']) {
+    transition: none;
+  }
+}
+
+/* ── ٤) قفزة التذييل عند تحميل صفحة ─────────────────────────────────
+   مقيسة لا مقدَّرة: CLS = 0.1919 على /media و/articles و/research —
+   ومصدرها واحد في الثلاث: <footer class="site-footer">.
+
+   السبب: الصفحات الداخلية كسولة (lazy + Suspense)، وبديل التحميل خطٌّ
+   `position: fixed` بارتفاع بكسلين لا يشغل حيّزاً. فيجلس التذييل تحت
+   الترويسة مباشرةً، ثم يصل المحتوى فيدفعه مسافة شاشةٍ كاملة. هذه هي
+   «النقزة» بعينها، وGoogle تحسبها 0.19 (الحدّ المقبول 0.1).
+
+   العلاج: لا يُرسم التذييل ما دام بديل التحميل قائماً. عنصرٌ لم يوجد
+   لا يتحرّك، فالقفزة تسقط من أصلها — لا تُخفَّف. والزائر في أعلى
+   الصفحة حينها فلا يرى شيئاً ناقصاً. */
+body:has(.route-loading-line) .site-footer {
+  display: none;
+}

@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201703-002",
+  "bridgeAfter": [
+    10,
+    24
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كنت أتصفح بعض الصفحات الإلكترونية، وأقرأ موضوعات مختلفة في بعض المدونات.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "شعرت أنني أغرق في مستنقع التدليس على ما جاء به إسلامنا الحنيف.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "من قبل العديد من الجهلة والمتسلقين على حساب المعرفة، سواء الدينية أو العامة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومواضيع مدلسة كثيرة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقرأت مواضيع وأخبارا مدلسة وتشوه الواقع، وأخبارا مزورة لمجرد النشر فقط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فأصابني الذهول من هول ما يكتب وينشر على مواقع التواصل الاجتماعي، بلا حسيب ولا رقيب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "واستخدام التكنولوجيا في هذا الإسفاف الكبير.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وتحسفت على زمن الكتاب بشتى المجالات، الذي كنا نقرأه بكل ثقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لأن أهل الاختصاص قرأوه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونعلم أن هناك من قرأه قبلنا من أهل الاختصاص، حتى أجاز له الخروج للعوام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أيام الصدق والمعرفة بإدراكها على أكمل وجه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن التكنولوجيا قربت القراءة للناس جميعا، أليست حسنة تحسب لها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بلى، لقد ساهمت التكنولوجيا في جعل القراءة في متناول الجميع.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وجعلت منها سهلة الوصول، في أي مكان وزمان، وهذه حقيقة تحمد التكنولوجيا عليها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن هناك تحول واضح نحو الكتاب الإلكتروني، وعزوف واضح عن رفوف المكتبة العربية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك انتشار كبير لمواقع التواصل الاجتماعي والمدونات والصفحات الخاصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والتي ساهمت في نشر المعرفة على نطاق واسع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إلا أن الصفحات والمدونات ذات الطابع الشخصي لا تخضع للرقابة على المحتوى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الأمر الذي جعل المعرفة بين أيدي غير أمينة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فأغلب ما يعدل أو ينشر ويشوه الحقيقة، يكون بدوافع عدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أهمها تزوير التاريخ، أو الجهل والتسلية، وليس من باب النقد العلمي الذي يطور المعرفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والنتيجة معرفة مشوهة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبالتالي أصبح القارئ العربي أمام معرفة مشوهة، تكاد تضع البشرية على أعتاب جاهلية معاصرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والمتتبع للصفحات العلمية وما ينشر هنا وهناك، يدرك أن المعرفة البشرية أمام سرطان الجهل والتدليس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "الذي ينشره ضعاف القلوب وأصحاب الأغراض الرخيصة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل من أمثلة تجعل الصورة أوضح؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فإن أبرز أمثلة التدليس والتزوير والتشويه، هو نشر مصاحف مزورة تحت مسمى مواقع إسلامية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتشويه محتوى أمهات الكتب من المصادر والمخطوطات العالمية، وهذا خطر يهدد أمة بأكملها.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فأمهات الكتب هي مصادر شرعنا، وأحكامنا التي اجتمع عليها جمهور العلماء القدامى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد وصل الأمر إلى التدليس على أحاديث النبي صلى الله عليه وسلم، وغيرهم من رموز الإسلام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأمثلة الأخبار التي بثت الأحداث المزورة، والتي جعلت منا لا نصدق ما نقرأ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولوضع حد لهؤلاء أصحاب الأقلام الإلكترونية المشوهة والمزورة، اقترح المقال بعضا من الحلول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "منها تشديد إجراءات النقل، وخاصة في الأبحاث العلمية ورسائل الدكتوراه والماجستير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتوسيع نطاق العمل فيما يسمى مراكز قياس كمية الاقتباس، التي تكشف كمية النقل ونوعه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وسن القوانين التي تنظم الواقع الافتراضي، وخاصة المتعلق بالجانب المعرفي، وتشديد الرقابة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فرغم انتشار المعرفة،⏸ ليس هناك قيود عليها تمنع تشويها أو تحريفها، فسهلت التكنولوجيا دس السم في الدسم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+name: حلقة كويتية واحدة — المرجع الاحترافي المعتمد
+
+on:
+  workflow_dispatch:
+    inputs:
+      single_slug:
+        description: 'اختر حلقة واحدة؛ اللهجة والكاست مقفولان، وبذرة المرجع هي المحاولة الأولى'
+        required: true
+        type: choice
+        options:
+          - success-that-does-not-bring-joy-to-its-ownerarabic
+          - the-classroom-that-fears-mistakesarabic
+          - intelligence-without-a-consciencearabic
+          - when-seriousness-becomes-a-mask-for-escapearabic
+          - how-do-we-assess-without-breaking-the-human-beingarabic
+        default: success-that-does-not-bring-joy-to-its-ownerarabic
+      quality_attempts:
+        description: 'عدد الـTakes الكاملة (1–6)؛ يتوقف عند أول نسخة تجتاز مرجع أذن الدكتور'
+        required: false
+        default: '6'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: podcast-kuwaiti-gemini-global
+  cancel-in-progress: false
+
+jobs:
+  professional-gold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install and verify the frozen professional engine
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          npm run podcast:kw:self-test
+          node scripts/prepare-kuwaiti-professional-gold.mjs --self-test
+
+      - name: Prepare exactly one approved dialogue with word fixes only
+        run: node scripts/prepare-kuwaiti-professional-gold.mjs --slug="${{ inputs.single_slug }}"
+
+      - name: Guard the exact words, cast and pronunciation input
+        run: |
+          node scripts/guard-spoken-episode.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-dialogue-gender-address.mjs --dir=manual-dialogues-kuwaiti
+          node scripts/guard-name-pronunciation.mjs
+
+      - name: Preserve the new-word audition ledger
+        shell: bash
+        env:
+          PODCAST_KW_ALLOW_NEW_WORDS: '1'
+        run: |
+          mkdir -p professional-gold
+          node scripts/guard-new-dialogue-words.mjs \
+            --library=src/data/kuwaiti-diwania-v3.json \
+            | tee professional-gold/new-word-audition-ledger.txt
+
+      - name: Generate one take through the exact approved AI Studio route
+        shell: bash
+        env:
+          PODCAST_KW_PROFESSIONAL_GOLD: '1'
+          PODCAST_KW_PROFESSIONAL_GOLD_SEED_VARIANTS: '1'
+          PODCAST_KW_TTS_PROVIDER: ai-studio
+          PODCAST_KW_TTS_LANGUAGE: ar
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_MODEL: gemini-2.5-pro-preview-tts
+          GEMINI_TRANSCRIBE_MODEL: gemini-3.5-transcribe
+          GEMINI_DIALECT_AUDIT_MODEL: gemini-3.7-flash
+          GEMINI_DIALECT_AUDIT_FALLBACK_MODELS: gemini-3.6-flash,gemini-3.5-flash
+          PODCAST_KW_DIALECT_AUDIT_HTTP_TIMEOUT_MS: '45000'
+          PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
+          PODCAST_KW_GENERATION_MODE: all
+          PODCAST_KW_PROMPT_MODE: c
+          PODCAST_KW_SPLIT_AT_BRIDGES: '0'
+          PODCAST_KW_MIN_GAP: '25'
+          PODCAST_KW_ISOLATE_SPEAKER_STEMS: '0'
+          PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_SWAPS: '0'
+          PODCAST_KW_REJECT_ACOUSTIC_RESET: '1'
+          PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
+          PODCAST_KW_TRANSCRIPT_ALIGNMENT: required
+          PODCAST_KW_DIALECT_AUDIT: required
+          PODCAST_KW_GOLD_ACOUSTIC_GATE: required
+          PODCAST_KW_REJECT_DIR: professional-gold/rejected
+          REQUESTED_QUALITY_ATTEMPTS: ${{ inputs.quality_attempts || '6' }}
+        run: |
+          set -euo pipefail
+          SLUG='${{ inputs.single_slug }}'
+          case "$SLUG" in
+            success-that-does-not-bring-joy-to-its-ownerarabic) ANCHOR_SEED=2101 ;;
+            the-classroom-that-fears-mistakesarabic) ANCHOR_SEED=2102 ;;
+            intelligence-without-a-consciencearabic) ANCHOR_SEED=2103 ;;
+            when-seriousness-becomes-a-mask-for-escapearabic) ANCHOR_SEED=2114 ;;
+            how-do-we-assess-without-breaking-the-human-beingarabic) ANCHOR_SEED=2115 ;;
+            *) echo "::error::الحلقة مو من الخمس الاحترافية"; exit 1 ;;
+          esac
+          ATTEMPTS="$REQUESTED_QUALITY_ATTEMPTS"
+          if ! [[ "$ATTEMPTS" =~ ^[1-6]$ ]]; then
+            echo '::error::quality_attempts لازم يكون بين 1 و6'; exit 1
+          fi
+          OFFSETS=(0 10 20 1000 1010 1020)
+          PASSED=0
+          for ((INDEX=0; INDEX<ATTEMPTS; INDEX++)); do
+            export PODCAST_KW_SEED=$((ANCHOR_SEED + OFFSETS[INDEX]))
+            echo "🎧 Gold Take $((INDEX + 1))/$ATTEMPTS · seed=$PODCAST_KW_SEED"
+            set +e
+            node scripts/podcast-kuwaiti-gemini.mjs --slug="$SLUG"
+            CODE=$?
+            set -e
+            if [ "$CODE" -eq 0 ]; then PASSED=1; break; fi
+            if [ "$CODE" -ne 3 ]; then exit "$CODE"; fi
+            echo "↻ الـTake ما اجتاز الجودة؛ ننتقل للبذرة المقفولة التالية."
+          done
+          if [ "$PASSED" -ne 1 ]; then
+            echo '::error::كل Takes الجودة رُفضت؛ المحرك ما عطانا فهد ونورة المعتمدين اليوم.'
+            exit 3
+          fi
+          mkdir -p professional-gold
+          cp "audio/$SLUG.dialogue-kw.mp3" "professional-gold/$SLUG.mp3"
+          cp "audio/$SLUG.dialogue-kw.json" "professional-gold/$SLUG.json"
+          cp "podcast-audits/kuwaiti/$SLUG.json" "professional-gold/$SLUG.audit.json"
+
+      - name: Upload the one listening package
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: professional-kuwaiti-${{ inputs.single_slug }}
+          path: professional-gold/
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,100 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // أصول الموقع عامة القراءة، ولا يرفعها أو يستبدلها أو يحذفها إلا المشرف.
+    // حصر الأنواع والحجم يمنع تحويل مساحة الرفع إلى مخزن ملفات عام أو تنفيذي.
+    match /site-content/covers/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidFileName(fileName)
+        && request.resource.size > 0
+        && request.resource.size <= 12 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if isAdmin();
+    }
+
+    match /site-content/files/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidFileName(fileName)
+        && fileName.matches('^.+[.]pdf$')
+        && request.resource.size > 0
+        && request.resource.size <= 100 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow delete: if isAdmin();
+    }
+
+    match /site-content/audio/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidFileName(fileName)
+        && fileName.matches('^.+[.]mp3$')
+        && request.resource.size > 0
+        && request.resource.size <= 250 * 1024 * 1024
+        && request.resource.contentType == 'audio/mpeg';
+      allow delete: if isAdmin();
+    }
+
+
+    // ملفات مكتب المصادر الشخصي: PDF خاص للمشرف وحده، ولا يحصل على رابط قراءة عام.
+    match /admin-source-desk/{fileName} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidFileName(fileName)
+        && fileName.matches('^.+[.]pdf$')
+        && request.resource.size > 0
+        && request.resource.size <= 24 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow delete: if isAdmin();
+    }
+
+    // مكتبة التوليد الخاصة بالاستوديو: لا يقرأها ولا يكتبها إلا المشرف.
+    // تحفظ المخرجات الأصلية لإعادة الاستخدام والتحرير مستقبلاً، من دون نشرها للعامة.
+    match /admin-generated/{fileName} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidFileName(fileName)
+        && request.resource.size > 0
+        && request.resource.size <= 16 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif)');
+      allow delete: if isAdmin();
+    }
+
+    // التصاميم الكاملة المولدة: JSON خاص يحفظ التكوين والطبقات لإعادة الفتح والتحرير لاحقًا.
+    match /admin-generated-designs/{fileName} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidFileName(fileName)
+        && fileName.matches('^.+[.]json$')
+        && request.resource.size > 0
+        && request.resource.size <= 18 * 1024 * 1024
+        && request.resource.contentType == 'application/json';
+      allow delete: if isAdmin();
+    }
+
+    // مقاطع ونسخ المخرج الحي: ملفات خاصة بالمالك، لا يقرأها زائر ولا مشروع عام.
+    // الفيديو حتى 220MB، والغلاف حتى 12MB. لا ملفات تنفيذية ولا أنواع مجهولة.
+    match /admin-live-director/{userId}/{projectId}/{fileName} {
+      allow read: if isAdmin() && request.auth.uid == userId;
+      allow create, update: if isAdmin() && request.auth.uid == userId
+        && projectId.size() >= 8 && projectId.size() <= 160
+        && isValidFileName(fileName)
+        && request.resource.size > 0
+        && ((request.resource.size <= 220 * 1024 * 1024
+              && request.resource.contentType.matches('video/(mp4|webm|quicktime)')
+              && fileName.matches('^.+[.](mp4|webm|mov)$'))
+          || (request.resource.size <= 12 * 1024 * 1024
+              && request.resource.contentType.matches('image/(jpeg|png|webp)')
+              && fileName.matches('^.+[.](jpg|jpeg|png|webp)$')));
+      allow delete: if isAdmin() && request.auth.uid == userId;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+
+  function isAdmin() {
+    return request.auth != null && request.auth.token.admin == true;
+  }
+
+  function isValidFileName(fileName) {
+    return fileName.size() > 0 && fileName.size() <= 200
+      && fileName.matches('^[A-Za-z0-9][A-Za-z0-9._-]*$');
+  }
+}

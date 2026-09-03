@@ -1,0 +1,287 @@
+{
+  "slug": "qabas-201810-004",
+  "bridgeAfter": [
+    17,
+    30
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "بدأ منذ فترة العام الدراسي الجديد في مدارسنا كلها.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبدأت المخاوف لدى الطلبة في تحديد مصيرهم ومستقبلهم كله.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وينبع هذا الخوف كله من مقاومة الآخرين لرغباتهم الوظيفية المستقبلية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فطالب الثانوية العامة اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فطالب الثانوية العامة يريد تخصصا معينا يحبه هو، ويرى نفسه فيه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والآخرون يريدون التباهي بين الناس بأبنائهم فقط.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويجعلون لهم حقا في تحديد مصير أبنائهم ومستقبلهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فإلى متى تبقى السيطرة الخانقة على أبنائنا الطلبة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ورسم طريق الفشل لديهم أنفسهم.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ورسم طريق الفشل لديهم، والذي بنظر الآخرين هو الطريق الصحيح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلتعيدوا حساباتكم أيها الآخرون جميعا قبل فوات الأوان.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وتمعنوا عقولكم وضمائركم جيدا، من أجل مستقبل مزهر سعيد لأبنائكم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وعزيزي طالب الثانوية، فلتعمل من أجل نفسك وخياراتك أنت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "التي تمتلك فيها كامل الحرية، وصمم على هدفك الذي تريده.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكن مؤثرا ومقنعا للآخرين من حولك في البيت كله.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتحدث بطرح رغباتك دون تهور في اتخاذ تلك القرارات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "التي قد تخلق الصراعات، ~~ فتعكر صفو بيت كامل بأهله.",
+      "feeling": "intimate",
+      "feeling2": "hush",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وتحبط فيها آمالك، التي قد تضطر إلى التقهقر عنها من أجل إرضاء الآخرين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما المطلوب من الطالب في هذا الموقف كله؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكن صبورا في إقناع الآخرين بمستقبلك الذي تريده لنفسك.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلا داعي لتلك الصراعات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نعم، ~~ لا داعي للصراعات التي تحدث بداخل كل بيت طالب ثانوية.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كما يحدث في كل نهاية سنة دراسية عندنا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولا داعي لقلب الفرحة إلى تعاسة، لمجرد أن الطالب يريد تحقيق رغباته.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتي من خلالها يريد أن يحقق أهدافه المستقبلية كلها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فدعوا يا أولياء الأمور أبناءكم يعملون من أجل أنفسهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فأنتم اخترتم طريقكم من قبل، فدعوهم يرسمون طريقهم بأنفسهم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "دون قيود وحدود، التي قد تخلق لديهم التعثر والفشل معا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا داعي أن تحملوهم فشلكم في إقناع الآخرين من أهلكم أنتم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالذي لم تستطع أن تحققه أنت، اترك الفرصة لابنك أن يحققه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وستشعر بالسعادة حقا حين تراه ينجح في طريقه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلا داعي للأنانية وقهر الآخرين هنا، أليس كذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لمجرد أنك لم تحقق هدفك أنت، ولم تدرس ما كنت تحب.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ففكر في مصلحة ابنك، وفي نفسيته التي سيبني من خلالها حياته القادمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالذي تغرسه بداخله الآن في سن المراهقة، سيكون عونا أو فرعونا له أو عليه في البلوغ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلنخف الله في أبنائنا يا سادة، رحمكم الله.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وليكن شعارنا مدى الحياة:⏸ لنعمل من أجل أنفسنا لا من أجل الآخرين، فإرضاء الناس غاية لا ترجى.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ولا نجعل الأعراف والتباهي يحرم أبناءنا من حرية الاختيار وفرحة النجاح والانتصار.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

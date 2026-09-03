@@ -1,0 +1,278 @@
+{
+  "slug": "e-learning-culture-2",
+  "bridgeAfter": [
+    7,
+    29
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "أينما جلست ضمن قواعد السلامة المعتادة، أجد من يتحدث عن مواقف التربية والتعليم.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "عن التعليم الإلكتروني وفشل التعلم عن بعد في بلادنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وأنه لن يحقق النتائج المرجوة منه أبدا.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونجد من يتألم لمثل هذه المواقف، ويشعر بالإحباط لمستقبل التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وينظرون إلى التحديات التي فرضتها علينا أزمة كورونا بأنها كذلك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فإلى أين هؤلاء ذاهبون بنا في التعليم؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا هذه المواقف السلبية في ضوء أزمة عالمية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأين نحن اليوم من التعليم عن بعد؟",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأين نحن من التعليم عن بعد الذي أصبح نظاما تعليميا تقليديا في أنحاء العالم؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما زالوا يقاومونه عندنا حتى هذه اللحظة.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن في أزمة عقول غير مبررة ترفض ثقافة التعليم الإلكتروني.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ونعلم جميعا أننا مررنا وما زلنا ضمن تحديات كورونا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وشل تماما التعليم في بلادنا منذ بداية الأزمة العالمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ورفعنا أصواتنا وما زلنا على تفعيل التعليم الإلكتروني عن بعد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهو الحل الأمثل في مثل هذه الأزمات التي تمر بنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد أصبح التعليم الإلكتروني تقليديا منذ زمن تأسيسه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ودول كثيرة قامت بتوظيفه ضمن إطار معين لديها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل هيأت له بنى تحتية في أنظمتها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، وقامت بتأسيس بنى تحتية له في أنظمتها التعليمية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد تدرب طلبتها عليه أيضا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وتدرب طلبتها على استخدامه واعتادوا عليه في دراستهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وعند حدوث الأزمة العالمية لم تقع في أزمة التعليم،⏸ بل تفاعلت مع الأزمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والتعليم لم يتوقف، ولكنه تحول من النظام التقليدي والحضور إلى المؤسسات التعليمية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولو جزئيا، إلى التعلم عن بعد في بيوتهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولم تشعر هذه الدول بأي تغيير جذري في نظام تعليمها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لأنها مهيأة لمثل هذا التعليم، وتعمل ضمن بوتقة متكاملة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فهي لا تحتاج إلى إعداد أو تطوير في وقت الأزمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما نحن، فلم نسر مع الركب من الأساس ووقعنا في الأزمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولم نعد العدة لمثل هذا الوباء كأزمة قد تعطل عملية تعليمية تعلمية،⏸ بل تشلها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كما رأينا في تجربتنا المريرة في بداية هذه الأزمة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولكننا بدأنا فعلا، أليس كذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم بدأنا،⏸ لكن لم نكن مجهزين ببنى تحتية تعمل بسرعة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولم نوظف التعليم الإلكتروني في مؤسساتنا التعليمية كما فعل غيرنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وطلابنا بعيدون عن الممارسة والمران الذي كان لا بد أن يكونوا متدربين عليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فدخلوا وأولياء أمورهم بعالم تعليمي تقني لم يعتادوا عليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلا داعي لاتخاذ مواقف سلبية، فهذا نظام تعليمي جديد يحتاج إلى وقت لضبطه وتوظيفه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وسنستمر بالتعلم عن بعد حتى بعد الوباء، فلنعترف بثقافة التعليم الإلكتروني كمنظومة متكاملة لا جزءا منه.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

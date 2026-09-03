@@ -1,0 +1,130 @@
+/* أيقونات SVG أحادية اللون تتبع لون النص — ملف مستقل يمنع الاستيراد الدائري */
+export function SocialIcon({ name, size = 20 }: { name: string; size?: number }) {
+  if (name === 'Tebyan') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5 4.5h9.4A3.6 3.6 0 0 1 18 8.1V19H8.6A3.6 3.6 0 0 1 5 15.4V4.5Z" stroke="currentColor" strokeWidth="1.55" strokeLinejoin="round" />
+        <path d="M8.3 8.2h6.5M8.3 11.5h6.5M8.3 14.8h4.2" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M18 7.6c.9-.55 1.45-1.35 1.7-2.4" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  if (name === 'Schedule') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3.5" y="5.2" width="17" height="15" rx="2.4" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M7.5 3.5v3.3M16.5 3.5v3.3M3.7 9.2h16.6" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M8 13h2M14 13h2M8 16.5h2M14 16.5h2" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  if (name === 'Google Scholar') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M2.7 9.1 12 4l9.3 5.1L12 14.2 2.7 9.1Z" fill="currentColor" />
+        <path d="M6.3 11.2v4.1c0 1.55 2.55 3.2 5.7 3.2s5.7-1.65 5.7-3.2v-4.1L12 14.35l-5.7-3.15Z" fill="currentColor" opacity=".78" />
+        <path d="M20.2 10.15v5.25" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="20.2" cy="16.9" r="1.15" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (name === 'ResearchGate') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.15" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M7.2 16.9V7.1h4.1c2.18 0 3.56 1.13 3.56 3.02 0 1.34-.72 2.3-1.92 2.73l2.38 4.05h-2.18l-2.1-3.72H9.18v3.72H7.2Zm1.98-5.4h1.94c1.1 0 1.72-.47 1.72-1.3 0-.85-.62-1.31-1.72-1.31H9.18v2.61Z" fill="currentColor" />
+        <path d="M16.45 7.5h2.8M17.85 6.1v2.8" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  if (name === 'ORCID') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.1" stroke="currentColor" strokeWidth="1.55" />
+        <circle cx="8.5" cy="7.75" r="1.05" fill="currentColor" />
+        <rect x="7.75" y="9.9" width="1.5" height="6.35" rx=".5" fill="currentColor" />
+        <path d="M11.3 9.9h2.75c1.92 0 3.2 1.24 3.2 3.18s-1.28 3.17-3.2 3.17H11.3V9.9Zm1.55 1.45v3.45h1.1c1.09 0 1.75-.66 1.75-1.72 0-1.07-.66-1.73-1.75-1.73h-1.1Z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (name === 'Wikidata') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3.6 6.6v10.8M6.1 6.6v10.8" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+        <path d="M9 6.6v10.8M11.6 6.6v10.8M14.1 6.6v10.8" stroke="currentColor" strokeWidth="1.95" strokeLinecap="round" />
+        <path d="M17 6.6v10.8M20.4 6.6v10.8" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  if (name === 'Web of Science') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.15" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6.4 8.7 8.6 15.3 12 9.7 15.4 15.3 17.6 8.7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  if (name === 'Semantic Scholar') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3.2 5 7.3v6.1c0 4 3.05 6.4 7 7.4 3.95-1 7-3.4 7-7.4V7.3L12 3.2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M8.9 12.7c1.45 1.1 4.55 1 6-1.7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9.1 9.5c1.45-1.05 4.35-.95 5.6.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  if (name === 'Goodreads') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="10.35" cy="10.75" r="4.3" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M14.8 7.2v8.9c0 2.6-1.75 4.2-4.45 4.2-2.15 0-3.75-1-4.2-2.65" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  if (name === 'Wikipedia') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M2.6 7.4h5.1M9.4 7.4h4M15.4 7.4h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        <path d="M4.2 7.4 8.7 17.6 11.3 11.2M11 7.4l3.9 10.2 4-10.2M12.6 11l1.4-3.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  const p: Record<string, string> = {
+    LinkedIn: 'M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 110-4.13 2.06 2.06 0 010 4.13zM7.12 20.45H3.56V9h3.56v11.45z',
+    WhatsApp: 'M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.23-.64.08-.3-.15-1.26-.46-2.4-1.47-.88-.79-1.48-1.77-1.65-2.07-.17-.3-.02-.46.13-.6.13-.14.3-.35.44-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.01-1.04 2.48s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.62.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35M12.05 21.79h-.01a9.87 9.87 0 01-5.03-1.38l-.36-.21-3.74.98 1-3.64-.24-.38a9.86 9.86 0 01-1.51-5.26c0-5.45 4.44-9.88 9.9-9.88a9.83 9.83 0 016.98 2.9 9.82 9.82 0 012.9 6.99c0 5.45-4.44 9.88-9.89 9.88m8.42-18.3A11.8 11.8 0 0012.05 0C5.5 0 .16 5.34.16 11.9c0 2.1.55 4.14 1.59 5.94L.06 24l6.33-1.66a11.9 11.9 0 005.65 1.44h.01c6.55 0 11.89-5.33 11.89-11.89 0-3.18-1.24-6.16-3.49-8.4',
+    Link: 'M3.9 12a5 5 0 015-5h3v2h-3a3 3 0 000 6h3v2h-3a5 5 0 01-5-5zm4.1-1h8v2H8v-2zm7.1-4h-3v2h3a3 3 0 010 6h-3v2h3a5 5 0 000-10z',
+    Check: 'M9 16.17l-3.5-3.5L4 14.17l5 5 11-11-1.41-1.41z',
+    Calendar: 'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5zm3 5h3v3H8v-3z',
+    Search: 'M10.5 4a6.5 6.5 0 104.03 11.6l3.94 3.94 1.41-1.41-3.94-3.94A6.5 6.5 0 0010.5 4zm0 2a4.5 4.5 0 110 9 4.5 4.5 0 010-9z',
+    Spark: 'M12 2l1.55 4.45L18 8l-4.45 1.55L12 14l-1.55-4.45L6 8l4.45-1.55L12 2zm6.25 11.5l.85 2.4 2.4.85-2.4.85-.85 2.4-.85-2.4-2.4-.85 2.4-.85.85-2.4zM5.25 14l.65 1.85 1.85.65-1.85.65L5.25 19l-.65-1.85-1.85-.65 1.85-.65L5.25 14z',
+    Mail: 'M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4.24l-8 5-8-5V6l8 5 8-5v2.24z',
+    Bookmark: 'M6 3.5A2.5 2.5 0 018.5 1h7A2.5 2.5 0 0118 3.5V22l-6-3.45L6 22V3.5zm2.5-.5a.5.5 0 00-.5.5v15.05l4-2.3 4 2.3V3.5a.5.5 0 00-.5-.5h-7z',
+    Copy: 'M8 7a2 2 0 00-2 2v10a2 2 0 002 2h9a2 2 0 002-2V9a2 2 0 00-2-2H8zm0 2h9v10H8V9zm1-6a2 2 0 00-1.73 1H9a1 1 0 011-1h7a1 1 0 011 1v11a1 1 0 01-1 1v2a3 3 0 003-3V4a3 3 0 00-3-3h-7a3 3 0 00-3 2z',
+
+    Image: 'M4 5.5A2.5 2.5 0 016.5 3h11A2.5 2.5 0 0120 5.5v13a2.5 2.5 0 01-2.5 2.5h-11A2.5 2.5 0 014 18.5v-13zm2.5-.5a.5.5 0 00-.5.5v13a.5.5 0 00.5.5h11a.5.5 0 00.5-.5v-13a.5.5 0 00-.5-.5h-11zm1.7 10.8 2.55-3.15 2.1 2.45 1.75-2.15 2.2 2.85H8.2zm2.1-6.15a1.55 1.55 0 110-3.1 1.55 1.55 0 010 3.1z',
+    Cite: 'M8.2 5.1h8.2A2.6 2.6 0 0119 7.7v8.6a2.6 2.6 0 01-2.6 2.6H8.2a2.6 2.6 0 01-2.6-2.6V7.7a2.6 2.6 0 012.6-2.6zm1.25 3.15c-1.32 0-2.15.77-2.15 1.97 0 1.12.7 1.76 1.82 2.1l-.78 1.55h1.7l.65-1.3h1.1v1.3h1.55v-1.3h.22c1.62 0 2.62-.91 2.62-2.34 0-1.3-.95-1.98-2.7-1.98H9.45zm1.55 1.45h2.34c.78 0 1.18.24 1.18.74 0 .55-.45.83-1.3.83H11v-1.57z',
+    Close: 'M6.7 5.3 12 10.6l5.3-5.3 1.4 1.4-5.3 5.3 5.3 5.3-1.4 1.4-5.3-5.3-5.3 5.3-1.4-1.4 5.3-5.3-5.3-5.3 1.4-1.4z',
+    Download: 'M11 3h2v10.17l3.59-3.58L18 11l-6 6-6-6 1.41-1.41L11 13.17V3zm-6 16h14v2H5v-2z',
+    Print: 'M7 3h10v4H7V3zm0 14h10v4H7v-4zM5 8h14a3 3 0 013 3v5h-4v-2H6v2H2v-5a3 3 0 013-3zm13 3.2a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4z',
+    Play: 'M8 5.3v13.4L19 12 8 5.3z',
+    History: 'M12 3a9 9 0 109 9h-2a7 7 0 11-2.05-4.95L14 10h7V3l-2.63 2.63A8.95 8.95 0 0012 3zm-1 4h2v5.17l3.25 1.88-1 1.73L11 13.33V7z',
+    ArrowUp: 'M12 4l-7 7 1.42 1.42L11 7.84V20h2V7.84l4.58 4.58L19 11l-7-7z',
+    Edit: 'M4 16.8V20h3.2L17.65 9.55l-3.2-3.2L4 16.8zm15.7-9.3a1.2 1.2 0 000-1.7l-1.5-1.5a1.2 1.2 0 00-1.7 0l-1.2 1.2 3.2 3.2 1.2-1.2z',
+    ChevronDown: 'M6.7 8.7 12 14l5.3-5.3 1.4 1.4-6.7 6.7-6.7-6.7 1.4-1.4z',
+    Trash: 'M7 7h10l-.7 14H7.7L7 7zm2-4h6l1 2h4v2H4V5h4l1-2zm1.9 6 .3 9h1.6l.3-9h-2.2z',
+    Share: 'M18 16a3 3 0 00-2.39 1.19L8.91 13.5a3.07 3.07 0 000-3l6.7-3.69A3 3 0 1015 5c0 .2.02.39.06.58l-6.7 3.69a3 3 0 100 5.46l6.7 3.69A3 3 0 1018 16z',
+    ArrowBack: 'M14.7 5.3 8 12l6.7 6.7 1.4-1.4-5.3-5.3 5.3-5.3-1.4-1.4z',
+    Question: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm-.1-5.2h2v2h-2v-2zm.15-8.2c2.2 0 3.7 1.18 3.7 3 0 1.35-.72 2.16-1.8 2.82-.9.55-1.05.83-1.05 1.58h-1.85c0-1.42.45-2.02 1.55-2.72.83-.53 1.2-.94 1.2-1.62 0-.82-.65-1.35-1.75-1.35-1.02 0-1.75.43-2.45 1.2L8.3 8.25c.93-1.08 2.15-1.65 3.75-1.65z',
+    CV: 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 12.5h8V14H8v-1.5zm0 3.5h8v1.5H8V16z',
+    X: 'M17.6 3h3.1l-6.78 7.74L22 21h-6.2l-4.86-6.36L5.4 21H2.3l7.25-8.29L2 3h6.36l4.4 5.82L17.6 3zm-1.09 16.1h1.72L7.6 4.8H5.75l10.76 14.3z',
+    Instagram: 'M12 2.2c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 01-1.38-.9 3.7 3.7 0 01-.9-1.38c-.16-.42-.36-1.06-.41-2.23C2.21 15.58 2.2 15.2 2.2 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.21 8.8 2.2 12 2.2zm0 1.8c-3.15 0-3.5.01-4.74.07-.9.04-1.38.19-1.71.32-.43.17-.74.37-1.06.69-.32.32-.52.63-.69 1.06-.13.33-.28.81-.32 1.71C3.21 8.5 3.2 8.85 3.2 12s.01 3.5.07 4.74c.04.9.19 1.38.32 1.71.17.43.37.74.69 1.06.32.32.63.52 1.06.69.33.13.81.28 1.71.32 1.24.06 1.59.07 4.74.07s3.5-.01 4.74-.07c.9-.04 1.38-.19 1.71-.32.43-.17.74-.37 1.06-.69.32-.32.52-.63.69-1.06.13-.33.28-.81.32-1.71.06-1.24.07-1.59.07-4.74s-.01-3.5-.07-4.74c-.04-.9-.19-1.38-.32-1.71a2.85 2.85 0 00-.69-1.06 2.85 2.85 0 00-1.06-.69c-.33-.13-.81-.28-1.71-.32C15.5 4.01 15.15 4 12 4zm0 3.06A4.94 4.94 0 1112 17a4.94 4.94 0 010-9.88zm0 1.8a3.14 3.14 0 100 6.28 3.14 3.14 0 000-6.28zm5.14-.66a1.15 1.15 0 110 2.3 1.15 1.15 0 010-2.3z',
+    Facebook: 'M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z',
+    YouTube: 'M23.5 6.5a3 3 0 00-2.1-2.12C19.5 3.87 12 3.87 12 3.87s-7.5 0-9.4.51A3 3 0 00.5 6.5 31 31 0 000 12a31 31 0 00.5 5.5 3 3 0 002.1 2.12c1.9.51 9.4.51 9.4.51s7.5 0 9.4-.51a3 3 0 002.1-2.12A31 31 0 0024 12a31 31 0 00-.5-5.5zM9.6 15.5v-7l6.3 3.5-6.3 3.5z',
+  }
+  const d = p[name] || p.LinkedIn
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  )
+}

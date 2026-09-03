@@ -1,0 +1,285 @@
+{
+  "slug": "qabas-201806-004",
+  "bridgeAfter": [
+    18,
+    29
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نتحاور كثيرا مع أصحاب الضمائر الحية في هذا المجتمع.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتي تنبذ السلوكيات الخطيرة الخاطئة التي تفشت في مجتمعاتنا اليوم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد وصلنا إلى أن هؤلاء مافيات مجتمعية خطيرة على مجتمعنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهي تكسب الشباب تلك السلوكيات الخاطئة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تكسب الشباب والأجيال القادمة تلك السلوكيات وكأنها حق متكسب لهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يجوز أن يعترضها أحد،⏸ ولا أن يحاول أحد محاربتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهي سلوكيات فرضت نفسها على الوضع العام في كل مكان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وباتت مافيات مجتمعية سيطرت،⏸ ولا نبالغ إذا قلنا بأنها مسيطرة تماما.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهم سلطة خفية تعمل بيننا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فهم سلطة خفية تعمل فيما وراء الظلال في صمت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن الحال أصبح بالعلن أمام الجميع دون خجل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إن الواسطات الأكاديمية والتعليمية والخدمية أصبح يترنح بها مجتمعنا كله.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتعيين مناصب لأشخاص غير كفوئين،⏸ ولا تتناسب معهم إطلاقا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتدخل برفع موظف إلى درجة كاملة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والتدخل برفع موظف درجة، أو تسجيل المواد له.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أو أخذ العطاءات لأفراد من العائلة أو بالواسطة بينهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذه الواسطات والمحسوبيات دارت بمجتمعنا في كل اتجاه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حتى أصبحنا نفتقد للشفافية والموضوعية وللمصداقية والأمانة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والغش الذي تفشى في كل مكان من حولنا اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حتى وصل إلى داخل قاعات الامتحانات نفسها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، وذلك بمساعدة بعض المدراء والمراقبين على الغش.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لمجرد أنهم يعرفون أولياء أمور الطلبة، أو تبادل المصالح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو كما يدعون أنهم يشفقون على الطلبة في الامتحان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "إلى أين تريدون أن تصلوا بنا؟⏸ فالهاوية أصبحت قريبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "رفقا بمجتمعنا المتهاوي الذي نعيش فيه جميعا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لقد اختلط الحابل بالنابل، واختلطت الأوراق، فلا نستطيع أن نحدد الفاسد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في ظل غياب الرقابة الحكومية، وغفوة المواطن، وسطوة عصابة الفساد.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فقد شكلت خطرا كبيرا على النمو الاقتصادي والأمن الاجتماعي والأداء كله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالفساد المجتمعي المتمثل بالمافيا المجتمعية هو بداية السقوط.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا ما لا نرضاه على مجتمعنا الكريم أبدا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما أثر ذلك كله على القيم الأخلاقية؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إن تلك السلوكيات الفاسدة التي تنبع من المافيا المجتمعية تعمل على خلخلة القيم الأخلاقية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتهز أركان المجتمع وثباته القائم على الشفافية والمبادئ الراسخة فيه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلا بد أن يتم محاربة الفساد بأنواعه وأشكاله المختلفة المتعددة كلها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لا نريد أن نستيقظ يوما فنجد أجيالنا القادمة لا يستطيعون العيش دون واسطات ومحسوبيات وغش.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يكترثون إلا لمصالحهم الخاصة التي تطغى على المصلحة العامة،⏸ فيصبح سلوك حياة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالمافيا المجتمعية بداية السقوط،⏸ ولا بد من محاربتها بكل أشكالها المتعددة قبل فوات الأوان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يختلط فيها الحابل بالنابل،⏸ ولا يفرق فيها بين الفساد والنزاهة، فنقع بمستنقع الخراب بلا عودة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

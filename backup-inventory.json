@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedNote": "مصدر الحقيقة الوحيد لسياسة النسخ الاحتياطي. أي مصدر بيانات دائم جديد يجب أن يُضاف هنا وإلا يفشل الحارس (scripts/guard-backup-inventory.mjs). لا تنقل أسراراً هنا — أسماء فقط.",
+  "dataProject": "drahmad-8e9e2",
+  "hostingProject": "gen-lang-client-0200723670",
+  "rpoTarget": "24h (يومي) — الأثمن (site_cv_files/chunks, site_articles/books/papers, admin_publication_signing_keys) هدفه 1h عبر PITR متى فُعّل",
+  "rtoTarget": "الموقع الثابت + Firestore: أقل من 4h من نسخة سليمة. الصوت (R2): بحسب الحجم. البوت: إعادة إقران QR يدوية.",
+  "firestore": {
+    "note": "قائمة النسخ = اتحاد firestore.rules + شيفرة الخادم/السكربتات. لا تبنِها من القواعد وحدها — ٨ مجموعات تعيش في الشيفرة فقط.",
+    "topLevelCollections": [
+      "admin_book_architecture", "admin_command_sessions", "admin_content_intelligence",
+      "admin_content_pipeline", "admin_control_backups", "admin_control_probes",
+      "admin_correction_cases", "admin_editorial_board", "admin_generated_assets",
+      "admin_generated_designs", "admin_intellectual_agenda", "admin_live_director_projects",
+      "admin_publication_passport_heads", "admin_publication_passport_links",
+      "admin_publication_passports", "admin_publication_signing_keys", "admin_push_tokens",
+      "admin_reports", "admin_source_desk", "admin_style_memory", "admin_tool_events",
+      "analytics_events", "article_highlight_members", "article_highlights",
+      "article_quote_counts", "article_quote_votes", "automation_state", "bot_messages",
+      "content_history", "content_overrides", "control_center_incidents", "cv_overrides",
+      "journeys", "messages", "myspace_sync", "newsletter_deliveries", "newsletter_sends",
+      "passage_highlights", "podcast_dialogues", "podcast_dialogues_kw", "podcast_production",
+      "podcast_production_kw", "pronunciation_lexicon",
+      "pronunciation_pending", "site_articles", "site_books", "site_cv_files", "site_faqs",
+      "site_health", "site_idea_life", "site_inbox", "site_media", "site_now", "site_papers",
+      "site_picks", "site_questions", "site_radar", "site_settings", "site_testimonials",
+      "site_upcoming", "social_queue", "subscribers", "views",
+      "whatsapp_attention_events", "whatsapp_audience_contacts", "whatsapp_audience_lists",
+      "whatsapp_audience_members", "whatsapp_bridge_commands", "whatsapp_bridge_state",
+      "whatsapp_broadcast_campaigns", "whatsapp_conversations", "whatsapp_learning_patterns",
+      "whatsapp_quality_daily", "whatsapp_reply_rules", "whatsapp_settings"
+    ],
+    "liveDiscoveredNote": "المجموعات whatsapp_* اكتُشفت بنسخة عودية حيّة على drahmad-8e9e2 (٢٠٢٦-٠٨-١٠) لأن أسماءها تُبنى ديناميكياً في الخادم فتفوت التحليل الثابت. الدرس: الحارس الثابت لا يكفي وحده — شغّل مصالحة حيّة دورية (backup:reconcile).",
+    "subcollections": [
+      { "path": "site_cv_files/{docId}/chunks", "criticality": "critical", "note": "بايتات ملفات السيرة المجزّأة base64 — أعلى قيمة، تفوتها النسخة العليا" },
+      { "path": "article_highlight_members/{highlightKey}/readers", "criticality": "medium", "note": "عضوية القرّاء لكل تظليل — إشارة الرنين" }
+    ],
+    "sensitive": ["admin_publication_signing_keys", "subscribers", "messages", "admin_push_tokens", "myspace_sync"],
+    "codeOnlyNotInRules": ["admin_control_backups", "admin_control_probes", "control_center_incidents", "whatsapp_reply_rules", "pronunciation_lexicon", "pronunciation_pending", "site_idea_life", "site_health"]
+  },
+  "firebaseStorage": {
+    "bucket": "drahmad-8e9e2.firebasestorage.app",
+    "versioning": "none (غير متحقق حيّاً — لا صلاحية)",
+    "prefixes": [
+      { "path": "site-content/covers/", "access": "public", "backup": "required" },
+      { "path": "site-content/files/", "access": "public", "backup": "required" },
+      { "path": "site-content/audio/", "access": "public", "backup": "legacy-audio-now-on-r2" },
+      { "path": "admin-source-desk/", "access": "private", "backup": "required-sensitive" },
+      { "path": "admin-generated/", "access": "private", "backup": "required" },
+      { "path": "admin-generated-designs/", "access": "private", "backup": "required" },
+      { "path": "admin-live-director/", "access": "owner", "backup": "required-large-video" }
+    ]
+  },
+  "cloudflareR2": {
+    "bucketVar": "CLOUDFLARE_R2_BUCKET",
+    "publicHost": "https://pub-e2ce7a54469544ecab38d55cd80787aa.r2.dev",
+    "versioning": "none",
+    "prefixes": [
+      { "path": "/", "content": "audio: {slug}.mp3 / .noura.mp3 / .dialogue.mp3 / .dialogue.json / .dialogue-en.mp3", "backup": "required-source-of-truth" },
+      { "path": "reports/", "content": "daily-inbox-latest.json", "backup": "rebuildable" },
+      { "path": "backups/", "content": "firestore-backup-*.json.gz + firestore-latest.json.gz", "backup": "MUST-ALSO-live-off-r2 (3-2-1)" }
+    ]
+  },
+  "localState": [
+    { "path": "~/Library/Application Support/DrAhmadWhatsAppAgent/agent.sqlite", "rebuildable": false, "criticality": "critical", "note": "ذاكرة البوت وتاريخه — لا مصدر يعيده" },
+    { "path": "whatsapp-web-bridge/session/", "rebuildable": false, "criticality": "critical", "note": "جلسة الإقران — فقدها = إعادة QR يدوية على هاتف الدكتور" },
+    { "path": "src/data/audio-meta.json", "rebuildable": "reconcile-from-r2-only", "criticality": "high" }
+  ],
+  "secretsCatalog": {
+    "note": "أسماء فقط — لا قيم. موثّقة للاستعادة. مصادرها: GitHub secrets/vars، sa.json خارج Git، لوحات المزوّدين.",
+    "restoreBlockers": [
+      "FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2",
+      "CLOUDFLARE_R2_ENDPOINT", "CLOUDFLARE_R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_BUCKET", "AUDIO_PUBLIC_BASE_URL",
+      "WHATSAPP_BRIDGE_SECRET",
+      "AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION"
+    ],
+    "byProvider": {
+      "firebase": ["FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2", "FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670", "FIREBASE_PROJECT_ID", "FIREBASE_STORAGE_BUCKET", "FIREBASE_WEB_PUSH_VAPID_KEY"],
+      "cloudflare": ["CLOUDFLARE_R2_ENDPOINT", "CLOUDFLARE_R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_BUCKET", "AUDIO_PUBLIC_BASE_URL", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
+      "azure": ["AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION"],
+      "gcp": ["CLOUD_RUN_DEPLOY_SERVICE_ACCOUNT_JSON", "GEMINI_API_KEY", "GOOGLE_API_KEY"],
+      "github": ["GH_TOKEN", "PAT", "GITHUB_WORKFLOW_TOKEN", "PODCAST_GITHUB_TOKEN"],
+      "whatsapp": ["WHATSAPP_BRIDGE_SECRET", "WHATSAPP_OWNER_CHAT_ID", "WHATSAPP_MAIN_SERVER_URL"],
+      "email": ["RESEND_API_KEY", "NEWSLETTER_UNSUBSCRIBE_SECRET"]
+    }
+  }
+}

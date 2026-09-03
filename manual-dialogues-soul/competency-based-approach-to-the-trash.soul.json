@@ -1,0 +1,257 @@
+{
+  "slug": "competency-based-approach-to-the-trash",
+  "bridgeAfter": [
+    18,
+    27
+  ],
+  "breathAfter": [
+    32
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نعيش في دولتنا مع وزارة التربية والتعليم نتخبط بالمناهج. عثرة وراء عثرة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وعمليات التغيير التي ما تلبث في عقول أبنائنا حتى جاؤوا بمناهج أخرى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فبتنا في سباق تغيير المناهج فيما يسمى التطوير. والأسباب ليست مقنعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وها هو منهاج الكفايات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فهذا منهاج الكفايات ينعى المسؤولون أيامه الأخيرة، غير آسفين على المال الذي يهدر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من قوت المواطن والمال العام، تحت مسمى مصلحة الطلبة وهم أغلى ما نملك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن هذه المرة وصل السيل الزبى.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فعندما قلنا إن مناهج الكفايات لا تتناسب مع بيئتنا الكويتية، صمتت الأذن.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وعندما قلنا لا يجوز أن يتدخل البنك الدولي ويفرض علينا مناهج ضمن معايير تتناسب مع بيئاتهم، لم نجد من يستوعبنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهل صارت سلعة؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل سوق المعايير التربوية للمناهج أصبح كسلعة تباع في السوق المفتوح؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أم هي سياسة المخاجلة وليس الاقتناع؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والحقيقة أصبحت واضحة بالنسبة للمناهج التي نكاد ندخل موسوعة غينيس بعدد تغييرها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نلوم الوزارة وحدها؟⏸ التطوير مطلوب في كل نظام.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "مطلوب،⏸ لكن التطوير غير التخبط. فضلا عن عدد وزراء التربية والتعليم الذي تفوقنا فيه على الدول منذ التحرير.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نكاد نصل إلى العشرين وزيرا إن أسعفنا الرقم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل تعليمهم عرض وطلب؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل من المعقول أن يصبح تعليم أبنائنا عرضا وطلبا، ويصل حد الإجبار دون مناقشة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهل أصبح الآن منهاج الكفايات لا يتناسب مع بيئتنا وثقافتنا ومنقوصا من القيم؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فأين القائمون على المناهج والخبراء؟⏸ ولماذا لم يقيموا المنهاج قبل تطبيقه؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أصبح اليوم لدينا أياد وخبرات كويتية قادرة على وضع معايير جديدة أفضل وأكثر دراية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويقولها بلا مواربة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أقولها ولن أخشى لومة لائم:⏸ المسؤولون غير مسؤولين، والبلاد تحتاج إلى صحوة ضمير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لا تجعلونا أضحوكة البلاد، وتجار المناهج يدركون أن مناهجهم لا تتناسب مع بيئاتنا ولا ثقافتنا ولا قيمنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن ما زال مسؤولنا غير مدرك، وينساق لاختياراتهم ورغباتهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فكان أحرى أن تقيموا قبل أن تقبلوا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولا يجوز أن تفرض علينا رغبات الآخرين للانتفاع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالبنك الدولي وغيره لم يعطنا المناهج صدقة، دفعت فيها آلاف مؤلفة دون تقييم ونحن راضخون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن المناهج الجديدة قد تكون أفضل. لماذا التشاؤم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لأن الهدر سيبدأ من جديد:⏸ لواضعي المعايير الخبراء، وإعداد برامج تدريبية على المناهج الجديدة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "للموجهين ورؤساء الأقسام والمعلمين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بالإضافة إلى الأرقام التي ستدفع لتلك اللقاءات مع جهات عالمية وخبراء من أمريكا وبريطانيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فدعنا يا وزير التربية من حجة الخوف على المواطنين من الابتزاز، ومن تخفيف وزن الحقيبة وحوسبة المناهج.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فقصة المناهج أصبحت خرافة، والجميع يدرك أنها سلسلة انتفاعية أكثر منها مصلحة الوطن والمواطن، وقد امتلأت سلة المهملات.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,264 @@
+{
+  "slug": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+  "bridgeAfter": [
+    6,
+    26
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في زمن كانت الشهادة تطبع قبل أن يطرح السؤال.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتعلم يحدث عبر كاميرا مغلقة وميكروفون صامت.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولد لنا جيل كامل، يعرف اليوم باسم: خريج كورونا.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "جيل اجتاز سنوات دراسية كاملة من خلف الشاشة، دون مختبر، ودون حوار، ودون موقف تربوي حي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نال الشهادة،⏸ لكنه لم يلمس التجربة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "خريج طب لم يشرف على مريض. وخريج تربية لم يقف يوما في صف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وخريج هندسة لم يلمس موقعا ميدانيا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أليس في هذا اتهام لجيل لا ذنب له؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يسبقك: ليس هذا اتهاما لهم،⏸ بل تساؤلا عنا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هل نأتمن هذا الخريج على حياتنا، وعلى تعليمنا، وعلى مؤسساتنا؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وصديق أكاديمي كان يروي بانكسار كيف تسلل بعضهم إلى سوق العمل كأنهم اجتازوا كل شيء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بينما الحقيقة أنهم لم يختبروا في شيء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كانوا ناجحين رقميا، غائبين واقعيا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والسؤال الأكبر: من المسؤول؟⏸ هل الجائحة، أم النظام الذي لم يعد تقييم المرحلة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل الطالب، أم المجتمع الذي كرم الشهادة ونسي التجربة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبلاد واجهت الأمر.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بلاد عديدة حول العالم واجهت الواقع بشجاعة:⏸ أعادت تقييم بعض الشهادات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ورفضت اعتماد تدريب غير مكتمل، ووضعت شروطا لإثبات الجدارة قبل منح الثقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أما نحن ففتحنا لهم الأبواب، وقلنا:⏸ مرحبا بالشهادة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ونسينا أن الوطن لا يبنى بلقب،⏸ بل بعقل مجرب، ويد تدربت، ووعي عاش الموقف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والخطر الحقيقي ليس في من تخرج،⏸ بل في من بدأ يعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "جيل يعلم جيلا، والخبرة غائبة، والنقد نائم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وإن لم نراجع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إن لم نراجع، سنستيقظ لاحقا،⏸ لكن بعد أن نكون قد سلمنا الأمانة لمن لم يجرب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فبعض الشهادات ليست عبئا على الورق،⏸ بل عبئا على الوطن.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وندرك أن كورونا كانت ظرفا استثنائيا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن ما لا يغتفر هو أن يستمر الاستثناء حتى بعد زوال الخطر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل من رقم يقيس حجم الفجوة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفقا لتقرير أصدرته منظمة الصحة العالمية، فإن أكثر من خمسة وأربعين بالمئة من طلاب التخصصات الصحية حول العالم فقدوا تدريبهم العملي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبعض الدول تعاملت مع هذه الحقيقة بجرأة:⏸ أعادت التأهيل، وفرضت اختبارات جديدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ورفضت ترخيص أي مهنة إلا بعد التدريب الكامل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أما نحن، فلا زلنا نراكم شهادات على جدران المؤسسات، دون أن نتساءل:⏸ هل العقل حاضر خلفها؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بل الأسوأ من ذلك أننا بدأنا نطبع مع السطحية. صار كافيا أن تحمل لقبا حتى لو لم تجرب مسؤولية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن نحتاج وقفة دولة لا شكوى فرد، وسياسات تضع معيارا لما بعد الجائحة لا مجاملات تبرر الخلل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فنحن لا نحاكم خريجي كورونا،⏸ بل نحاكم غياب الرؤية بعد الجائحة، في وطن يراكم الألقاب ويفرغ العقول.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

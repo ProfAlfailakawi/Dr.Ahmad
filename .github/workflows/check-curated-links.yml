@@ -1,0 +1,122 @@
+name: فحص المصادر يومياً
+
+on:
+  schedule:
+    # يومياً 05:00 بتوقيت الكويت (02:00 UTC): يصلح الرابط المؤكد، وإلا يحذف
+    # الكرت الخارجي وحده. لا تُمس إصدارات الدكتور ولا تُحذف بسبب عطل عابر.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: check-curated-links
+  cancel-in-progress: false
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+            !/audio-meta-*.json
+            !/bodies-vocalized-*.json
+            !/podcast-state-*.json
+            !/whatsapp-agent/*.command
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Force public npm registry
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node scripts/normalize-npm-registry.mjs
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+      - name: Self-test link classifiers
+        run: |
+          node scripts/check-curated-links.mjs --self-test
+          node scripts/check-all-sources.mjs --self-test
+
+      - name: Write Firebase service account
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Check curated links
+        run: node scripts/check-curated-links.mjs
+        env:
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Check every source and repair or remove dead cards
+        run: node scripts/check-all-sources.mjs
+        env:
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          SOURCE_CHECK_CONCURRENCY: '6'
+
+      # بعد حذف رابطٍ ميت من «حياة الفكرة»، نبحث فوراً من المصادر المفتوحة
+      # عن دليلٍ جديد. إذا لم يوجد، يبقى الكرت محذوفاً ولا يُعرض رابطٌ مكسور.
+      - name: Refresh idea-life sources after cleanup
+        run: node scripts/idea-life-sync.mjs
+        env:
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          IDEA_LIFE_MAX_ARTICLES: '8'
+          IDEA_LIFE_MAX_PAPERS: '3'
+          IDEA_LIFE_STALE_DAYS: '0'
+
+      - name: Remove temporary credentials
+        if: always()
+        run: rm -f sa.json
+
+      - name: Commit link registries if changed
+        run: |
+          if ! git diff --quiet -- src/data/curated-dead-links.json src/data/dead-links.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/data/curated-dead-links.json src/data/dead-links.json
+            git commit -m "chore: repair or hide dead source cards"
+            # main يتحرّك تحت أقدامنا: الدكتور يرفع، وورشٌ أخرى تكتب سجلاتها.
+            # الدفع العاري كان يُرفض عند أول تصادم فيحمرّ الفحص بلا عطلٍ حقيقي
+            # (تشغيلة ٣١ يوليو ٢١:٣٠). نعيد المحاولة فوق أحدث main، وإن عجزنا
+            # فعلاً صرّحنا بالفشل ولم نبتلعه.
+            bot_commit="$(git rev-parse HEAD)"
+            pushed=0
+            for attempt in 1 2 3; do
+              # لا نترك rebase متعارضاً بين المحاولات. نبدأ كل محاولة من أحدث
+              # main ثم نعيد تطبيق سجل الروابط، مع ترجيح سجل الفحص الحالي فقط
+              # عند اصطدام تحديثين آليين متزامنين للملف نفسه.
+              git rebase --abort >/dev/null 2>&1 || true
+              git cherry-pick --abort >/dev/null 2>&1 || true
+              git fetch origin main
+              git reset --hard origin/main
+              if git cherry-pick -X theirs "$bot_commit" && git push origin HEAD:main; then
+                pushed=1
+                break
+              fi
+              sleep $((attempt * 5))
+            done
+            if [ "$pushed" != 1 ]; then
+              git cherry-pick --abort >/dev/null 2>&1 || true
+              echo "::error::تعذّر تثبيت سجل الروابط بعد ثلاث محاولات نظيفة."
+              exit 1
+            fi
+          else
+            echo "لا تغييرات جديدة في سجلات الروابط."
+          fi

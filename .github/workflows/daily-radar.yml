@@ -1,0 +1,91 @@
+name: رادار المختارات من الإنترنت
+
+on:
+  schedule:
+    # أربع محاولات يومية بتوقيت الكويت: 07:20، 12:20، 17:20، 22:20.
+    # السكربت ينشر عنصراً واحداً فقط في اليوم ويمنع التكرار تلقائياً.
+    - cron: '20 4,9,14,19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-curated-radar
+  cancel-in-progress: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+            !/audio-meta-*.json
+            !/bodies-vocalized-*.json
+            !/podcast-state-*.json
+            !/whatsapp-agent/*.command
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Force public npm registry
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node scripts/normalize-npm-registry.mjs
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+      - name: Test RSS parser, trusted sources and idea-life engine
+        run: |
+          node scripts/daily-radar.mjs --self-test
+          node scripts/idea-life-sync.mjs --self-test
+
+      - name: Validate publishing credentials
+        shell: bash
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing. Radar cannot publish to Firestore."
+            exit 1
+          fi
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Write Firebase service account
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Fetch trusted internet sources and publish today's pick
+        run: npm run radar
+        env:
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+
+      - name: Update idea life from open evidence
+        if: always()
+        run: node scripts/idea-life-sync.mjs
+        env:
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          IDEA_LIFE_MAX_ARTICLES: '6'
+          IDEA_LIFE_MAX_PAPERS: '1'
+          IDEA_LIFE_STALE_DAYS: '7'
+
+      - name: Remove temporary credentials
+        if: always()
+        run: rm -f sa.json

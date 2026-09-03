@@ -1,0 +1,371 @@
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { openDatabase } from './db.mjs'
+import { buildContentIndex, latestAudioContent, searchContent } from './content-index.mjs'
+import { classifyIntent, classifyIntentWithLearning, confirmPendingLearning, handleIncoming, recordUnresolvedLearning, setSuppression, shouldRespondToMessage } from './intent-engine.mjs'
+import { MockTransport, canonicalChatJid, hasMediaPayload, resolveSelfJid } from './transport.mjs'
+import { createAgent } from './agent.mjs'
+import { quoteCardPayload } from './quote-card.mjs'
+import { runCostAudit } from './cost-audit.mjs'
+import { flags } from './config.mjs'
+import { isQuietHour, repliesInWindow } from './bot-rules.mjs'
+import { parseReminderTime } from './reminders.mjs'
+import { hashOpaque } from './crypto.mjs'
+import { runNuclearSelfTest } from './nuclear-self-test.mjs'
+
+export async function runSelfTest(root) {
+  process.env.WHATSAPP_AGENT_KEY ||= Buffer.alloc(32, 7).toString('base64')
+  const daytime = new Date('2026-07-21T12:00:00+03:00')
+  const should = (args) => shouldRespondToMessage({ ...args, at: args?.at || daytime })
+  const handle = (args) => handleIncoming({ ...args, at: args?.at || daytime })
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'dr-ahmad-wa-'))
+  const db = openDatabase(':memory:', { cryptoOptions: { allowEphemeral: true } })
+  assert.equal(resolveSelfJid({ credsMe: { id: '96512345678:17@s.whatsapp.net' } }), '96512345678@s.whatsapp.net', '★ المعاينة تُرسل إلى PN الحقيقي للحساب لا إلى self الوهمي')
+  assert.equal(resolveSelfJid({ socketUser: { id: '12345:9@lid' } }), '12345@lid', '★ LID المنظّف احتياطٌ حين يغيب PN')
+  assert.equal(resolveSelfJid({ socketUser: { id: 'self@s.whatsapp.net' } }), '', '★ العنوان الوهمي self مرفوض صراحةً')
+  const items = buildContentIndex(root)
+  assert.ok(items.length >= 10, 'content index should discover public records')
+  const agent = createAgent({ db, transport: new MockTransport(), root, mock: true })
+  const onMessage = (args) => agent.onMessage({ ...args, at: args?.at || daytime })
+  const stats = agent.index()
+  assert.equal(stats.count, items.length)
+  assert.ok(agent.bridgeSecret().length >= 64, 'bridge secret must be at least 64 chars')
+  assert.equal(classifyIntent('شنو آخر مقالة؟').intent, 'LATEST_ARTICLE')
+  assert.equal(classifyIntent('شنو آخر مقالاته؟').intent, 'LATEST_ARTICLES')
+  assert.equal(classifyIntent('شنو جديد الدكتور؟').intent, 'LATEST_CONTENT')
+  assert.equal(classifyIntent('شنو أكثر مقالة مشاهدة؟').intent, 'MOST_VIEWED_ARTICLE')
+  assert.equal(classifyIntent('شنو أكثر موضوع يكتب عنه؟').intent, 'TOP_ARTICLE_TOPIC')
+  assert.equal(classifyIntent('آخر بودكاست').intent, 'LATEST_PODCAST')
+  assert.equal(classifyIntent('حوار مسموع').intent, 'DIALOGUE_LIBRARY')
+  assert.equal(classifyIntent('ابي ابحث داخل الكتاب').intent, 'BOOK_SEARCH')
+  assert.equal(classifyIntent('ابحث داخل كتاب المدارس الذكية').intent, 'BOOK_SEARCH')
+  assert.equal(classifyIntent('فصول الكتاب').intent, 'BOOK_CHAPTERS')
+  assert.equal(classifyIntent('فصول كتاب المدارس الذكية').intent, 'BOOK_CHAPTERS')
+  assert.equal(classifyIntent('فيديوهات داخل الكتاب').intent, 'BOOK_VIDEOS')
+  assert.equal(classifyIntent('الظهور الإعلامي').intent, 'MEDIA_LIBRARY')
+  assert.equal(classifyIntent('الراديو').intent, 'RADIO')
+  assert.equal(classifyIntent('في شي ثاني؟').intent, 'MORE_LIKE_THIS')
+  assert.equal(classifyIntent('عندي دقيقة').intent, 'ONE_MINUTE')
+  assert.equal(classifyIntent('فاجئني').intent, 'SURPRISE_ME')
+  /* الذاكرة المحلية لا تتعلم جواباً ولا تتعلم من مرة واحدة، ولا تسمح لشخص
+     واحد أن يدرّبها بثلاث نقرات متتالية. تعتمد النية فقط بعد ثلاث قرائن عالية
+     الثقة من مصدرين مستقلين على الأقل. */
+  const dialectPhrase = 'يمعود شنو توه طالع من جيسه؟'
+  const dialectJids = ['96550000001@s.whatsapp.net', '96550000002@s.whatsapp.net', '96550000003@s.whatsapp.net']
+  assert.equal(classifyIntentWithLearning(db, dialectPhrase).learned, undefined, 'الصياغة الجديدة غير متعلمة أولاً')
+
+  recordUnresolvedLearning(db, dialectJids[0], dialectPhrase)
+  const firstEvidence = confirmPendingLearning(db, dialectJids[0], 'LATEST_CONTENT', new Date(daytime.getTime() + 1000), .97)
+  assert.equal(firstEvidence?.confirmations, 1)
+  assert.equal(Boolean(firstEvidence?.learned), false)
+
+  recordUnresolvedLearning(db, dialectJids[0], dialectPhrase)
+  const duplicateEvidence = confirmPendingLearning(db, dialectJids[0], 'LATEST_CONTENT', new Date(daytime.getTime() + 2000), .97)
+  assert.equal(duplicateEvidence?.confirmations, 1, 'تكرار الشخص نفسه في اليوم نفسه لا يضيف قرينة')
+  assert.equal(duplicateEvidence?.duplicateEvidence, true)
+
+  for (let attempt = 1; attempt < dialectJids.length; attempt += 1) {
+    recordUnresolvedLearning(db, dialectJids[attempt], dialectPhrase)
+    const learned = confirmPendingLearning(db, dialectJids[attempt], 'LATEST_CONTENT', new Date(daytime.getTime() + 3000 + attempt * 1000), .97)
+    assert.equal(Boolean(learned?.learned), attempt === 2, 'لا تعتمد الصياغة قبل ثلاث قرائن مستقلة')
+  }
+  const learnedDialect = classifyIntentWithLearning(db, dialectPhrase)
+  assert.equal(learnedDialect.intent, 'LATEST_CONTENT')
+  assert.equal(learnedDialect.learned, true)
+  assert.equal(searchContent(db, 'الذكاء الاصطناعي', { limit: 3 }).length >= 0, true)
+  const started = await agent.start()
+  assert.equal(started.status, 'connected')
+  assert.equal((await agent.status()).bridgeOnline, true)
+  /* كشفُ المجموعات معطَّلٌ عمداً في الوكيل (group-discovery-disabled)، وظلّ
+     الاختبار يتوقّع مجموعةً واحدة فبقي أحمر لا يقرؤه أحد. نُثبّت التعطيل
+     المقصود بدل أن نطالب بسلوكٍ أُزيل. */
+  const groups = await agent.discoverGroups()
+  assert.equal(groups.groups.length, 0, 'كشف المجموعات معطَّل عمداً')
+  assert.equal(groups.reason, 'group-discovery-disabled')
+  const blocked = should({ db, jid: '12345@s.whatsapp.net', text: 'شلونك' })
+  assert.equal(blocked.allowed, false)
+  const personalContent = handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو آخر مقالة؟' })
+  assert.equal(personalContent.shouldRespond, false)
+  assert.equal(handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو جديد الدكتور؟' }).shouldRespond, false, '★ الجديد لا يعمل قبل الإيقاظ')
+  assert.equal(handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو أكثر مقالة مشاهدة؟' }).shouldRespond, false, '★ الترتيب لا يعمل قبل الإيقاظ')
+  /* ★ «سؤال:» و«اسأل الدكتور» أُغلقتا بأمر الدكتور، وحُصر الإيقاظ في جملته
+     المنشورة وحدها. وظلّ الاختبار يطالب بالسلوك القديم فبقي أحمر — ولهذا لم
+     يمسك أحدٌ ثغرتَي المجموعة والصوت: الفحص لم يكن يُشغَّل. */
+  assert.equal(handle({ db, jid: '12345@s.whatsapp.net', text: 'سؤال: شنو آخر مقالة؟' }).shouldRespond, false, '★ «سؤال:» لم تعد توقظ')
+  const result = handle({ db, jid: '12345@s.whatsapp.net', text: 'موقع د. أحمد' })
+  assert.equal(result.shouldRespond, true, '★ والجملة المنشورة وحدها توقظ')
+  const naturalNew = handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو جديد الدكتور؟' })
+  assert.equal(naturalNew.shouldRespond, true, '★ وبعد الإيقاظ يفهم سؤال الجديد الطبيعي')
+  assert.match(naturalNew.text || '', /الجديد الآن|مكتبة الدكتور/, '★ ويرد من فهرس الموقع')
+  const naturalArticles = handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو آخر مقالاته؟' })
+  assert.equal(naturalArticles.shouldRespond, true, '★ ويفهم جمع المقالات')
+  assert.match(naturalArticles.text || '', /أحدث .*مقالات|أحدث مقالة/, '★ ويعرض أكثر من خيار عند طلب الجمع')
+  const naturalPopular = handle({ db, jid: '12345@s.whatsapp.net', text: 'شنو أكثر مقالة مشاهدة؟' })
+  assert.equal(naturalPopular.shouldRespond, true, '★ ويفهم الأكثر مشاهدة')
+  assert.match(naturalPopular.text || '', /لا أملك.*موثق/u, '★ يصرّح بغياب لقطة العدّاد الموثقة')
+  assert.equal(naturalPopular.contentId || null, null, '★ ولا يختار فائزاً مصنوعاً عند غياب البيانات الموثقة')
+  assert.equal(/مؤشر المشاهدة الداخلي|تقدير داخلي/u.test(naturalPopular.text || ''), false, '★ لا يعرض مؤشراً اصطناعياً')
+  const naturalPodcast = handle({ db, jid: '12345@s.whatsapp.net', text: 'آخر بودكاست' })
+  assert.equal(naturalPodcast.shouldRespond, true, '★ ويفهم أحدث بودكاست داخل الجلسة')
+  const indexedDialogue = latestAudioContent(db, 'dialogue', 1)
+  if (indexedDialogue.length) {
+    assert.match(naturalPodcast.text || '', /أحدث حلقة|أحدث حلقة حوارية/, '★ لا يعلن الفشل مع وجود صوت حواري منشور')
+    assert.ok(!/لا توجد حلقة/.test(naturalPodcast.text || ''), '★ وجود الصوت يمنع رسالة الغياب')
+  } else {
+    assert.match(naturalPodcast.text || '', /لا توجد حلقة حوارية منشورة/u, '★ عند غياب الصوت يصرّح بالحقيقة ولا يؤلف حلقة')
+    assert.equal(naturalPodcast.contentId || null, null, '★ لا يربط حلقة وهمية عند غياب البيانات')
+  }
+  const quickMinute = handle({ db, jid: '12345@s.whatsapp.net', text: 'عندي دقيقة' })
+  assert.equal(quickMinute.shouldRespond, true, '★ ويفهم طلب المادة القصيرة')
+  assert.match(quickMinute.text || '', /قراءة حرفية.*دقيقة/u, '★ الدقيقة تقدّم نصاً حرفياً لا تلخيصاً مؤلفاً')
+  assert.ok(quickMinute.evidenceQuotes?.length, '★ ويحفظ النص الحرفي بوصفه دليلاً')
+  const quickMinuteSource = db.get('SELECT body,excerpt FROM content_items WHERE id=?', quickMinute.contentId)
+  const normalizedSource = String(quickMinuteSource?.body || quickMinuteSource?.excerpt || '').replace(/\s+/g, ' ').trim()
+  const normalizedQuote = String(quickMinute.evidenceQuotes?.[0] || '').replace(/\s+/g, ' ').trim()
+  assert.ok(normalizedSource.includes(normalizedQuote), '★ النص المعروض مقتطع حرفياً من المادة المنشورة')
+  assert.equal((quickMinute.text || '').match(/https:\/\/dr-alfailakawi\.com\/articles\//g)?.length, 1, '★ لا يكرر رابط/متن المقال كما ظهر في واتساب')
+  const libraryJid = '12346@s.whatsapp.net'
+  handle({ db, jid: libraryJid, text: 'موقع د. أحمد' })
+  const bookSearch = handle({ db, jid: libraryJid, text: 'ابي ابحث داخل الكتاب' })
+  assert.match(bookSearch.text || '', /\/search\?tab=askbook/u, '★ بحث الكتاب يفتح أداة الكتاب نفسها')
+  assert.equal(/\/articles\//u.test(bookSearch.text || ''), false, '★ ولا يخلطه ببحث المقالات')
+  assert.match(handle({ db, jid: libraryJid, text: 'حوار مسموع' }).text || '', /\.dialogue\.mp3|\/listen/u, '★ الحوار المسموع يصل إلى صوت منشور أو مجلس الفكرة')
+  assert.match(handle({ db, jid: libraryJid, text: 'فيديوهات داخل الكتاب' }).text || '', /\/publications\/encyclopedia\?tab=video#encyclopedia-map/u, '★ فيديوهات الكتاب تصل إلى خريطتها المرئية')
+  assert.match(handle({ db, jid: libraryJid, text: 'الظهور الإعلامي' }).text || '', /\/media/u, '★ الظهور الإعلامي يصل إلى أرشيفه')
+  assert.match(handle({ db, jid: libraryJid, text: 'الراديو' }).text || '', /\/radio/u, '★ الراديو يصل إلى مشغله')
+  const transferRule = agent.saveReplyRule({ name: 'تحويل وسائط', keywords: ['صورة'], actionType: 'transfer', responseText: 'سأحوّلها لمراجعة بشرية.' })
+  assert.equal(agent.listReplyRules().some((rule) => rule.id === transferRule.id), true)
+  const transferSimulation = agent.simulateReply({ text: 'صورة من اللقاء', inSession: true })
+  assert.equal(transferSimulation.ruleId, transferRule.id)
+  /* لا ندّعي أن فريقاً أو الدكتور سيكمل تلقائياً؛ نصرّح بالحد بلا وعد كاذب. */
+  assert.equal(transferSimulation.preview, 'أفهم أنك تريد التواصل مع الدكتور مباشرة. اكتب رسالتك كاملة هنا؛ لا أستطيع أن أعدك بموعد رد.', '★ التحويل صادق ولا يَعِد بمتابعة بشرية تلقائية')
+  assert.equal(transferSimulation.needsHuman, true, '★ وتصل الرسالة للدكتور نفسه')
+  assert.equal(agent.replyRuleVersions(transferRule.id).length, 0)
+  agent.saveReplyRule({ ...transferRule, responseText: 'نسخة جديدة' })
+  assert.equal(agent.replyRuleVersions(transferRule.id).length, 1)
+  agent.rollbackReplyRule(transferRule.id, agent.replyRuleVersions(transferRule.id)[0].id)
+  agent.deleteReplyRule(transferRule.id)
+  assert.equal(agent.listReplyRules().some((rule) => rule.id === transferRule.id), false)
+  const groundedRule = agent.saveReplyRule({ name: 'بحث الموقع', keywords: ['التقييم'], actionType: 'site-content', contentQuery: 'التقييم', responseText: 'نص حر لا ينبغي أن يظهر' })
+  const grounded = handle({ db, jid: '12345@s.whatsapp.net', text: 'التقييم', explicitContentSession: true })
+  assert.equal(grounded.ruleId, groundedRule.id)
+  assert.match(grounded.text || '', /https:\/\/dr-alfailakawi\.com\//, '★ الرد الموضوعي يحمل رابطاً من الموقع')
+  assert.ok(!(grounded.text || '').includes('نص حر لا ينبغي أن يظهر'), '★ لا يسرّب النص الحر إلى الرد')
+  agent.deleteReplyRule(groundedRule.id)
+  agent.manualTakeover('12345@s.whatsapp.net', 1)
+  /* الرقم شخصي: تدخّل الدكتور أعلى سلطة، حتى جملة الإيقاظ لا تتجاوزه. */
+  assert.equal(should({ db, jid: '12345@s.whatsapp.net', text: 'موقع د. أحمد' }).allowed, false, '★ الجملة لا تتجاوز يد الدكتور')
+  assert.equal(should({ db, jid: '12345@s.whatsapp.net', text: 'عندك شي عن التقييم؟' }).allowed, false, '★ وكل ما عداها يبقى صامتاً')
+  agent.returnToBot('12345@s.whatsapp.net')
+  assert.equal(should({ db, jid: '12345@s.whatsapp.net', text: 'موقع د. أحمد' }).allowed, true)
+  assert.equal(onMessage({ jid: '12345@s.whatsapp.net', text: 'https://example.com', message: {} }).reason, 'media-or-link-human')
+  agent.returnToBot('12345@s.whatsapp.net')
+  const session = db.get('SELECT * FROM chat_sessions WHERE jid=?', db.jidKey('12345@s.whatsapp.net'))
+  assert.ok(session, 'chat session must use an opaque jid key')
+
+  /* ═══ ★ الاقتباس لا يفتح الباب ═══
+   *
+   * كان الشرط «فيها اقتباسٌ لأيّ رسالة» لا «اقتباسٌ لكلام البوت». فمن اقتبس
+   * رسالةَ نفسه — وهو أكثر ما يفعله الناس — ردّ عليه البوت بلا جملة إيقاظ.
+   * وقع هذا فعلاً: أرسل صديق الدكتور قائمةَ مجلات مقتبساً رسالته، فردّ البوت.
+   */
+  const quoter = '88888@s.whatsapp.net'
+  /* شكلُ رسالة واتساب متداخل: الغلاف فيه `message` وداخله أنواع المحتوى.
+     وهو ما يمرّره الناقل حرفياً (transport.mjs) — فنحاكيه كما هو لا كما نظن. */
+  const quoting = (id) => ({ message: { message: { extendedTextMessage: { contextInfo: { stanzaId: id, quotedMessage: { conversation: 'أي كلام' } } } } } })
+
+  const strangerQuote = onMessage({ jid: quoter, text: 'International journal of business', ...quoting('NOT-FROM-BOT-123') })
+  assert.equal(strangerQuote.shouldRespond, false, '★ اقتباسُ رسالةٍ ليست من البوت لا يفتح الباب')
+
+  /* حتى اقتباسُ كلام البوت نفسه لا يفتح الباب: جملة الإيقاظ وحدها تفعل ذلك. */
+  db.run('INSERT OR IGNORE INTO outbox_messages(message_id,jid,source,created_at) VALUES(?,?,?,?)',
+    'FROM-BOT-999', db.jidKey(quoter), 'bot', new Date().toISOString())
+  /* نصٌّ يُنتج جواباً حقيقياً: «وش قصدك؟» لا يطابق شيئاً في الأرشيف، وقد صار
+     ما لا جواب له يُقابَل بالصمت — فيختلط علينا سببُ الصمت بسبب الباب. */
+  const botQuote = onMessage({ jid: quoter, text: 'آخر مقالة', ...quoting('FROM-BOT-999') })
+  assert.equal(botQuote.shouldRespond, false, '★ لا اقتباسٌ ولا معرّف رسالة يتجاوز جملة الإيقاظ')
+
+  /* وبلا اقتباسٍ أصلاً: صمت */
+  assert.equal(onMessage({ jid: quoter, text: 'كلام عابر', message: {} }).shouldRespond, false, 'وبلا اقتباس يبقى صامتاً')
+
+  /* ═══ بلا سقف عددي ولا ساعات صمت ═══ */
+  const unlimited = '95555@s.whatsapp.net'
+  for (let i = 0; i < 60; i += 1) db.addAudit('auto-reply-sent', db.jidKey(unlimited), 'اختبار')
+  assert.ok(repliesInWindow(db, unlimited) >= 60, 'العدّاد التشخيصي يقرأ الردود المُرسلة')
+  assert.equal(onMessage({ jid: unlimited, text: 'موقع د. أحمد', message: {} }).shouldRespond, true,
+    '★ كثرة الردود لا تمنع جملة الإيقاظ')
+
+  /* والعدّاد لا يخلط المحاولة بالردّ؛ بقي للتشخيص فقط. */
+  const tried = '95556@s.whatsapp.net'
+  for (let i = 0; i < 20; i += 1) {
+    db.run('INSERT INTO intent_logs(jid,input_hash,intent,confidence,created_at) VALUES(?,?,?,?,?)',
+      db.jidKey(tried), 'h', 'SEARCH_TOPIC', 0.7, new Date().toISOString())
+  }
+  assert.equal(repliesInWindow(db, tried), 0, 'محاولاتٌ لم يُردّ عليها لا تُحسب ردوداً')
+
+  assert.equal(isQuietHour(daytime), false, 'يعمل نهاراً')
+  assert.equal(isQuietHour(new Date('2026-07-21T03:00:00+03:00')), false, 'ويعمل في الثالثة فجراً بلا نافذة صمت')
+
+  /* ═══ تدخّل الدكتور يمنع أي رد آلي ═══ */
+  const handled = '96009@s.whatsapp.net'
+  agent.manualTakeover(handled, 30)
+  assert.equal(onMessage({ jid: handled, text: 'موقع د. أحمد', message: {} }).shouldRespond, false,
+    '★ جملة الإيقاظ لا تعمل أثناء تدخل الدكتور')
+  assert.equal(onMessage({ jid: handled, text: 'عندك شي عن التقييم؟', message: {} }).shouldRespond, false,
+    '★ وبقية الرسائل تبقى صامتة أيضاً')
+  assert.equal(db.get("SELECT COUNT(*) c FROM audit_log WHERE action='wake-overrides-takeover'").c, 0,
+    'لا يوجد مسار يتجاوز تدخل الدكتور')
+  assert.equal(onMessage({ jid: '120399@g.us', text: 'موقع د. أحمد', message: {} }).shouldRespond, false, '★ ولا تفتح مجموعة')
+  assert.equal(onMessage({ jid: handled, text: 'موقع د. أحمد', message: {}, media: true }).shouldRespond, false, '★ ولا تُبيح وسائط')
+  agent.returnToBot(handled)
+  assert.equal(onMessage({ jid: handled, text: 'عندك شي عن التقييم؟', message: {} }).shouldRespond, false,
+    '★ إتاحة الإيقاظ لا تعيد الجلسة القديمة')
+  assert.equal(onMessage({ jid: handled, text: 'موقع د. أحمد', message: {} }).shouldRespond, true,
+    '★ جملة الإيقاظ وحدها تعيد البوت بعد تدخل الدكتور')
+
+  /* بأمر الدكتور (٢٠٢٦-٠٧-٢٣): مهلة تدخله صمتٌ مؤقت لا هدمٌ للجلسة —
+     بعد انقضائها يستأنف البوت وحده بلا إيقاظ جديد (كان الإزعاج المشكو). */
+  const cooled = '96010@s.whatsapp.net'
+  onMessage({ jid: cooled, text: 'موقع د. أحمد', message: {} })
+  agent.manualTakeover(cooled, 1)
+  assert.equal(onMessage({ jid: cooled, text: 'آخر مقالة', message: {} }).shouldRespond, false,
+    '★ أثناء مهلة الدكتور صمتٌ تام')
+  db.run("UPDATE chat_sessions SET manual_until=? WHERE jid=?", new Date(daytime.getTime() - 1000).toISOString(), db.jidKey(cooled))
+  assert.equal(onMessage({ jid: cooled, text: 'آخر مقالة', message: {} }).shouldRespond, true,
+    '★ بعد انقضاء المهلة يستأنف البوت وحده — الجلسة لم تُهدم')
+  assert.equal(onMessage({ jid: cooled, text: 'موقع د. الفيلكاوي', message: {} }).shouldRespond, true,
+    '★ وبعدها تفتح جملة الإيقاظ جلسة جديدة')
+
+  /* الجلسة المفتوحة لا تنتهي بمرور الزمن. */
+  const persistent = '96011@s.whatsapp.net'
+  onMessage({ jid: persistent, text: 'موقع د. أحمد', message: {} })
+  db.run("UPDATE chat_sessions SET opened_at=?,last_user_at=?,updated_at=? WHERE jid=?",
+    '2020-01-01T00:00:00.000Z', '2020-01-01T00:00:00.000Z', '2020-01-01T00:00:00.000Z', db.jidKey(persistent))
+  assert.equal(onMessage({ jid: persistent, text: 'آخر مقالة', message: {} }).shouldRespond, true,
+    '★ الجلسة تبقى حيّة بلا مؤقّت حتى يتدخل الدكتور')
+
+  /* ═══ ★ لا يصمت ولا يعلن فشل بحثٍ في وجه إنسان ═══ */
+  const griever = '97007@s.whatsapp.net'
+  onMessage({ jid: griever, text: 'موقع د. أحمد', message: {} })   // جلسة مفتوحة
+  const grief = onMessage({ jid: griever, text: 'I have tried to find a job but they rejected me because of my identity. Im fed up. poverty. my salary is very low.', message: {} })
+  assert.equal(grief.shouldRespond, true, '★ الجلسة المستيقظة ترد حتى على كلام غير مصنف')
+  assert.ok(String(grief.text || '').length > 20, '★ الرد يطلب توضيحاً أو يفتح مسار مساعدة')
+  assert.ok(!/ما لقيت تطابق/.test(grief.text || ''), '★ ولا يُعلن فشل بحثٍ في وجهها')
+  /* والسؤال الحقيقي يبقى مُجاباً */
+  agent.returnToBot(griever)
+  onMessage({ jid: griever, text: 'موقع د. أحمد', message: {} })
+  assert.equal(onMessage({ jid: griever, text: 'عندك شي عن التقييم؟', message: {} }).shouldRespond, true, 'والسؤال عن المحتوى يُجاب')
+
+  /* ═══ «زدني» — وعدٌ يُوفى ═══
+   *
+   * كان البوت يقول «وله في هذا نصٌّ آخر — اكتب زدني»، فإذا كتبها السائل ردّ
+   * «ما عندي شيءٌ قريبٌ منه الآن». السبب: محرك المكتبة يجد النصوص ويرمي ما لا
+   * يعرضه، ثم يُطالَب بها محرّكٌ آخر لا يعلم عنها شيئاً. الآن تُحفظ البقية في
+   * الجلسة وتُسلَّم من المحرك نفسه. وهذا الاختبار يمنع عودة الخُلف.
+   */
+  const seeker = '77777@s.whatsapp.net'
+  const askAbout = handle({ db, jid: seeker, text: 'عندك شي عن التعليم؟', explicitContentSession: true })
+  if (/زدني/.test(askAbout.text || '')) {
+    const saved = db.get('SELECT followup_json FROM chat_sessions WHERE jid=?', db.jidKey(seeker))
+    assert.ok(saved?.followup_json, 'البقية الموعودة يجب أن تُحفظ في الجلسة')
+    const promisedSlugs = JSON.parse(saved.followup_json).seen
+    const more = handle({ db, jid: seeker, text: 'زدني', explicitContentSession: true })
+    assert.ok(!/ما عندي شيءٌ قريبٌ منه/.test(more.text || ''),
+      '★ «زدني» بعد وعدٍ صريح لا يجوز أن تُقابَل بـ«ما عندي شيءٌ قريبٌ منه»')
+    for (const slug of promisedSlugs) {
+      assert.ok(!(more.text || '').includes(`/articles/${slug}`), '★ «زدني» لا تُعيد ما عُرض')
+    }
+  }
+  setSuppression(db, '12345@s.whatsapp.net', false)
+  assert.equal(db.get('SELECT jid FROM contacts WHERE id=?', hashOpaque('12345@s.whatsapp.net')).jid.startsWith('v1:'), true)
+  assert.equal(parseReminderTime('ذكرني بعد ساعتين').source, 'relative')
+  assert.equal(parseReminderTime('الجمعة الساعة 7 مساءً').source, 'friday')
+  const reminderSeed = handle({ db, jid: '12345@s.whatsapp.net', text: 'آخر مقالة', explicitContentSession: true })
+  assert.ok(reminderSeed.contentId, '★ التذكير لا يعمل إلا على مادة موثقة اختارها المستخدم')
+  const reminderResult = handle({ db, jid: '12345@s.whatsapp.net', text: 'ذكرني بها بعد ساعتين', explicitContentSession: true })
+  assert.ok(reminderResult.reminderId)
+  const reminderRow = db.get('SELECT jid,original_text FROM reminders WHERE id=?', reminderResult.reminderId)
+  assert.equal(reminderRow.jid.startsWith('v1:'), true)
+  assert.notEqual(reminderRow.original_text, 'موعد قراءة المادة المنشورة.', '★ نص التذكير لا يُحفظ مكشوفاً')
+  assert.match(reminderRow.original_text, /^v1:/, '★ نص التذكير مخزّن بتشفير الإصدار الحالي')
+  assert.equal(db.decryptText(reminderRow.original_text), 'موعد قراءة المادة المنشورة.', '★ ويستعيد نصاً ثابتاً موثقاً لا كلاماً حراً')
+  /* مفتاح طوارئ المالك: يوقف الردود فوراً من اللوحة من دون قطع الربط. */
+  const emergencyJid = '96666@s.whatsapp.net'
+  agent.pauseAutoReplies()
+  assert.equal((await agent.status()).runtimePaused, true, 'حالة الإيقاف الفوري تظهر في اللوحة')
+  assert.equal(onMessage({ jid: emergencyJid, text: 'موقع د. أحمد', message: {} }).shouldRespond, false, '★ الإيقاف الفوري يمنع حتى جملة الإيقاظ')
+  agent.resumeAutoReplies()
+  assert.equal((await agent.status()).runtimePaused, false, 'تشغيل الردود يلغي الإيقاف الفوري')
+
+  /* البث اليدوي جزء مستقل عن الرد الآلي: يعمل حتى مع وضع الرقم الشخصي،
+     لكنه لا يرسل إلا بأمر المالك وبعد اعتماد وتأكيدين صريحين. */
+  const campaignId = agent.queueCampaign({ name: 'اختبار محلي', message: 'رسالة اختبار', targets: [{ jid: '67890@s.whatsapp.net', kind: 'contact' }] })
+  assert.equal(db.get('SELECT state FROM campaigns WHERE id=?', campaignId).state, 'draft')
+  agent.approveCampaign(campaignId, { confirm: true })
+  if (!flags.send) {
+    await assert.rejects(() => agent.sendCampaign(campaignId, { confirm: true, confirmAgain: true }), /الإرسال معطّل/)
+    assert.throws(
+      () => agent.sendQuietCampaign(campaignId, { confirm: true, confirmAgain: true, intervalSeconds: 45 }),
+      /الإرسال معطّل/,
+      'البث الهادئ متاح في وضع الرقم الشخصي، ويقف فقط عند مفتاح الإرسال المحلي',
+    )
+  } else await agent.sendCampaign(campaignId, { confirm: true, confirmAgain: true })
+  await agent.stop()
+  setSuppression(db, '12345@s.whatsapp.net', true)
+  assert.equal(should({ db, jid: '12345@s.whatsapp.net', text: 'فاجئني' }).allowed, false)
+  assert.equal(handle({ db, jid: '99999@s.whatsapp.net', text: 'اسأل الدكتور: عندك شيء عن التعليم؟' }).shouldRespond, false, '★ «اسأل الدكتور» لم تعد تفتح باباً')
+  assert.equal(handle({ db, jid: '99999@s.whatsapp.net', text: 'موقع د. الفيلكاوي' }).shouldRespond, true, 'والصيغة الثانية من جملته توقظ')
+  /* ═══ ★ المنعان المطلقان: المجموعة والوسائط ═══
+     وقعا معاً ليلة ٢٠ يوليو: أحدهم كتب جملة الإيقاظ في مجموعة ففُتحت جلسة
+     ستّ ساعات، ثم ردّ البوت على رسالةٍ صوتية فيها. وحارس الوسائط كان يقرأ
+     العَلَم من `message.media` ولا وجود له هناك، فلم يعمل ولا مرّة. */
+  const groupJid = '120363000000000000@g.us'
+  assert.equal(should({ db, jid: groupJid, text: 'موقع د. أحمد' }).allowed, false, '★ جملة الإيقاظ لا تفتح باباً في مجموعة')
+  assert.equal(should({ db, jid: groupJid, text: 'أي كلام', explicitContentSession: true }).allowed, false, '★ ولا الجلسة المفتوحة تُبيح الردّ في مجموعة')
+  /* السبب صار جملةً عربيةً تُعرض في المحاكي («مجموعة — لا ردّ فيها إطلاقاً»)
+     بدل الرمز 'group-never'، وهو تحسينٌ مقصود لا عطب. فنختبر السلوك ونوعَ
+     المحادثة المذكور فيه، لا نصّ الرمز — فالاختبار يحرس القاعدة لا الصياغة. */
+  const groupGate = onMessage({ jid: groupJid, text: 'موقع د. أحمد', message: {} })
+  assert.equal(groupGate.shouldRespond, false, '★ والناقل نفسه يصمت عن المجموعات')
+  assert.match(String(groupGate.reason || ''), /مجموعة/, '★ وسببُ الصمت يسمّي المجموعة صراحةً')
+  assert.equal(handle({ db, jid: groupJid, text: 'موقع د. أحمد' }).shouldRespond, false, 'ولا يُنتج ردّاً')
+
+  /* ★ وما جرى مجرى المجموعة: الحالات والقنوات وقوائم البثّ — قائمةُ سماحٍ مغلقة */
+  for (const stranger of ['status@broadcast', '120363000000000000@newsletter', '96500000000@broadcast', 'شيء@غريب']) {
+    assert.equal(should({ db, jid: stranger, text: 'موقع د. أحمد' }).allowed, false, `★ لا ردّ في ${stranger}`)
+    assert.equal(onMessage({ jid: stranger, text: 'موقع د. أحمد', message: {} }).shouldRespond, false, `★ ولا من المدخل: ${stranger}`)
+  }
+  /* والمحادثة الفردية تبقى تعمل — وإلا صار الإصلاح تعطيلاً */
+  assert.equal(should({ db, jid: '77777@s.whatsapp.net', text: 'موقع د. أحمد' }).allowed, true, '★ والفردية تُوقظه كما كانت')
+  assert.equal(should({ db, jid: '77777@lid', text: 'موقع د. أحمد' }).allowed, true, 'وصيغة lid فردية أيضاً')
+  assert.equal(canonicalChatJid({ key: { remoteJid: '77777@lid', remoteJidAlt: '96577777@s.whatsapp.net' } }), '96577777@s.whatsapp.net', '★ LID ورقم الهاتف يصيران جلسة واحدة')
+  assert.equal(canonicalChatJid({ key: { remoteJid: '120363000@g.us', remoteJidAlt: '96577777@s.whatsapp.net' } }), '120363000@g.us', '★ المجموعة لا تتحول إلى محادثة فردية')
+
+  /* ★ الوسائط: العَلَم يصل من المستوى الأعلى `media` لا من داخل `message` */
+  assert.equal(onMessage({ jid: '55555@s.whatsapp.net', text: '[وسائط]', message: {}, media: true }).reason, 'media-or-link-human', '★ الصوت والصورة يوقفان الردّ')
+  assert.equal(should({ db, jid: '55555@s.whatsapp.net', text: 'موقع د. أحمد', hasMedia: true }).allowed, false, '★ ولا تُبيحها جملة الإيقاظ')
+  assert.equal(should({ db, jid: '55555@s.whatsapp.net', text: 'أي كلام', hasMedia: true, explicitContentSession: true }).allowed, false, '★ ولا جلسةٌ مفتوحة')
+
+  /* ★ كشف الوسائط في الناقل: «ما ليس نصّاً محضاً فوسائط» — لا قائمةُ منعٍ ناقصة */
+  assert.equal(hasMediaPayload({ audioMessage: { ptt: true } }), true, '★ البصمة الصوتية وسائط')
+  assert.equal(hasMediaPayload({ locationMessage: {} }), true, '★ والموقع وسائط — لم يكن في القائمة القديمة')
+  assert.equal(hasMediaPayload({ pollCreationMessage: {} }), true, '★ والاستطلاع كذلك')
+  assert.equal(hasMediaPayload({ viewOnceMessage: {} }), true, '★ ورسالة المرّة الواحدة كذلك')
+  assert.equal(hasMediaPayload({ conversation: 'موقع د. أحمد' }), false, 'والنصّ المحض يبقى نصّاً')
+  assert.equal(hasMediaPayload({ extendedTextMessage: { text: 'مرحبا' }, messageContextInfo: {} }), false, 'والنصّ المقتبس نصٌّ أيضاً')
+
+  const first = db.get('SELECT * FROM content_items LIMIT 1')
+  assert.ok(quoteCardPayload(first))
+  const cost = runCostAudit(root)
+  assert.equal(cost.zeroCostMode, true)
+  db.close()
+  fs.rmSync(temp, { recursive: true, force: true })
+  const nuclear = await runNuclearSelfTest(root)
+  return { ok: true, indexed: stats, cost, nuclear }
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runSelfTest(path.resolve(process.argv[2] || process.cwd())).then((result) => console.log(JSON.stringify(result, null, 2))).catch((error) => { console.error(error); process.exitCode = 1 })
+}

@@ -1,0 +1,278 @@
+{
+  "slug": "dr-jasem-malik-the-lesson-that-never-ends-2",
+  "bridgeAfter": [
+    17,
+    29
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "ليس كل من يقف أمام السبورة مُعلِّماً، بعضهم ناقل للمعلومة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبعضهم صانع للإنسان قبل أن يكون ناقلا للدرس نفسه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "رحل الدكتور جاسم ملك قبل أيام، فشعرت أن الكويت لم تفقد شخصا واحدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل فقدت مؤسسة تربوية كاملة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل فقدت مؤسسة تربوية تمشي على قدمين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كان ملك مختلفا، لم يكتف بإلقاء الدروس،⏸ بل صنع أدواتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "مفكرة صناع النجاح، والمعلم الأسطورة، ومفكرة الأسرة أيضا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكان يدرب المُعلِّم ليكون رساليا لا موظفا فقط.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويعلم الطالب أن الفضول أهم من الحفظ في التعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولقد كان يسأل دائما سؤالا واحدا لا يفارقه أبدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هل نريد جيلا يحفظ الدروس فقط، أم جيلا يصنع الدروس؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولم تكن تدريباته عابرة كغيرها من التدريبات الأخرى.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وكان يشعل شغف المُعلِّم برسالته.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كان يحرص على إشعال شغف المُعلِّم برسالته قبل أن يعطيه مهارات التدريس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مؤمنا أن المُعلِّم إذا استعاد المعنى، فسيستعيد معه احترام الطلاب وثقتهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ورحيله فتح في ذهني سؤالا مرا لم أجد له جوابا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "هل أعدت مدارسنا معلمين حقا، أم مكررين؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فجيل كامل من الطلبة اليوم يدخل الصف ولا يجد إلا مُعلِّماً متعبا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "منهكا بالروتين، خائفا من الخطأ أكثر من حماسه للصواب؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، والأنظمة التعليمية التي تصنع معلمين من طراز ملك نادرة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأن صناعة المُعلِّم أصعب من صناعة المنهج نفسه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن نبدل الكتب كل عام، لكننا نترك المُعلِّم بلا تدريب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بلا رسالة،⏸ ولا معنى، ثم نتساءل بعد ذلك عن السبب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لماذا يتمنى بعض أبنائنا الموت بدلا من العودة للمدرسة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولقد رأيت بأم عيني بعض معلميه وتلامذته وقد تأثروا به كثيرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ليس بما قاله لهم،⏸ بل بما مثله أمامهم.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فهو قدوة حية تدرس الأخلاق قبل المنهج في كل موقف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كان يرى في كل طالب مشروع إنسان، وفي كل معلم مشروع نهضة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولقد علمني رحيله درسا شخصيا لن أنساه أبدا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أن أعظم استثمار في التعليم هو زرع المعنى في قلب المُعلِّم أولا.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا يسبق المعنى كل شيء آخر؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لأن المُعلِّم الذي يكتشف رسالته يصبح أقوى من أي جهاز ذكي.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأعمق من أي منهج مكتوب بين أيدينا اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن بحاجة إلى برامج وطنية تعيد للمعلم مكانته كقدوة وصانع هوية أجيال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وإلا فسنظل نبدل الكتب ونتجاهل الإنسان الذي يدرسها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمات الأستاذ، ولكن بقي السؤال:⏸ كم دكتور جاسم ملك نحتاج لإنقاذ التعليم في الكويت؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالمعلم الحق لا يدرس مادة،⏸ بل يدرس معنى، ولنكرمه بأن نصنع من كل معلم مشروعا للنهضة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

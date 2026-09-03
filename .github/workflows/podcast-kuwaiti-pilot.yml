@@ -1,0 +1,405 @@
+name: مجلس الفكرة — تجربة كويتية Gemini
+
+on:
+  workflow_dispatch:
+    inputs:
+      slugs:
+        description: 'slug الحلقة الكويتية التجريبية'
+        required: true
+      revision_id:
+        description: 'بصمة مراجعة الحوار المقفول من لوحة التحكم'
+        required: true
+      regenerate:
+        description: 'استبدال مرشّحٍ ينتظر الاعتماد (يلزم فقط بعد تشغيلةٍ ناجحة)'
+        required: false
+        type: boolean
+        default: false
+      restore_from_run:
+        description: 'التثبيت الحقيقي: رقم تشغيلة سابقة — تُسترجع نسختها من الأرشيف وتُنصب مرشحاً كما هي، بلا توليد ولا مقامرة عينات (جواب «ليش ما نولد نفس المعتمدة»: لا نولدها، نرجعها هي نفسها)'
+        required: false
+        default: ''
+      takes:
+        description: 'بيك أوف الحلقة: عدد النسخ الكاملة (1-3) — العينة تتذبذب بين التشغيلات، فبدل محاربة التذبذب نحصده: يولّد نسخاً ويختار الدكتور أفضلها بأذنه'
+        required: false
+        default: '1'
+      prompt_mode:
+        description: 'محجوز للتوافق مع اللوحة؛ إنتاج الحلقة مقفول على c الفائز، والتجارب لها workflow مستقل'
+        required: false
+        default: 'c'
+      tts_provider:
+        description: 'Vertex المستقر للاختبار أو AI Studio Preview للمقارنة المرجعية'
+        required: true
+        type: choice
+        options:
+          - vertex
+          - ai-studio
+        default: vertex
+
+permissions:
+  contents: read
+  # [٢٢ أغسطس ٢٠٢٦] مسار «التثبيت الحقيقي» يقرأ مرفقات تشغيلة سابقة
+  actions: read
+
+# [٢٢ أغسطس — مقترح الصديق] القفل كان لكل slug فتتوازى عشر حلقات ويدعس
+# مجموعُ عملياتها حصةَ RPM المشتركة وكل عملية تظن نفسها ملتزمة.
+# قفل عام واحد لكل توليد كويتي = طابور طبيعي يحمي الحصة.
+concurrency:
+  group: podcast-kuwaiti-gemini-global
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Authenticate the stable Vertex TTS pilot
+        if: ${{ !inputs.restore_from_run && inputs.tts_provider == 'vertex' }}
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+      - name: Install Google Cloud CLI for Vertex
+        if: ${{ !inputs.restore_from_run && inputs.tts_provider == 'vertex' }}
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Preflight Vertex identity without spending TTS quota
+        if: ${{ !inputs.restore_from_run && inputs.tts_provider == 'vertex' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_ID="$(node -e "process.stdout.write(String(JSON.parse(require('fs').readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS,'utf8')).project_id||''))")"
+          test -n "$PROJECT_ID" || { echo '::error::project_id مفقود من حساب Google'; exit 1; }
+          gcloud auth print-access-token >/dev/null
+          echo "PODCAST_KW_VERTEX_PROJECT=$PROJECT_ID" >> "$GITHUB_ENV"
+
+      - name: Install
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Resolve locked pilot identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          SLUG="$(echo '${{ inputs.slugs }}' | tr -d '[:space:]')"
+          REVISION="$(echo '${{ inputs.revision_id }}' | tr -d '[:space:]')"
+          [[ "$SLUG" =~ ^[a-z0-9-]+$ ]] || { echo "::error::slug غير صالح"; exit 1; }
+          [[ "$REVISION" =~ ^[A-Za-z0-9._:-]{8,128}$ ]] || { echo "::error::revision غير صالح"; exit 1; }
+          [[ "$SLUG" == "success-that-does-not-bring-joy-to-its-ownerarabic" ]] || { echo "::error::التجربة الأولى مقفولة على الحلقة المعتمدة فقط"; exit 1; }
+          echo "RELEASED_SLUGS=$SLUG" >> "$GITHUB_ENV"
+          echo "DIALOGUE_REVISION=$REVISION" >> "$GITHUB_ENV"
+
+      - name: Write Firebase service account
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || { echo "::error::Firebase service account missing"; exit 1; }
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Validate the complete Kuwaiti library
+        if: ${{ !inputs.restore_from_run }}
+        run: npm run podcast:kw:self-test
+
+      # المتغيّران يركبان هذه الخطوة نفسها: fetch هو مَن يقرأ حالة الإنتاج
+      # ويحتاج إذن الاستبدال. كانا على الخطوة التالية — انزاحا حين أُدرجت
+      # خطوةُ قراءة البصمة بينهما، فصار fetch يسقط عند «awaiting_approval»
+      # مهما مرّرتَ regenerate. عطبٌ من صنعي، وهذا موضعه الصحيح.
+      # [٢١ أغسطس ٢٠٢٦ متأخراً — العطب الموثق أعلاه وقع ثالثةً!] إدراج خطوة
+      # حارس الكلمات بين fetch وكتلة بيئته أزاح PODCAST_KW_REGENERATE إلى
+      # الحارس، فسقطت تشغيلة 32521445188 عند «awaiting_approval» مع أن
+      # regenerate=true مُمرَّر. الكتلة أعيدت لموضعها على fetch نفسه،
+      # والحارس بعده بلا بيئة — لا يحتاجها: يقرأ الملفات المجلوبة فقط.
+      - name: Lock the exact Kuwaiti admin dialogue
+        if: ${{ !inputs.restore_from_run }}
+        run: node scripts/fetch-kuwaiti-dialogues.mjs --slugs="$RELEASED_SLUGS"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          PODCAST_KW_REGENERATE: ${{ inputs.regenerate && '1' || '' }}
+
+      # الإنتاج الصوتي لا يقرأ متن الأربع دقائق بعد اليوم. تُستبدل النسخة
+      # المجلوبة بمكثف الدقيقتين والنصف فقط بعد برهان أنه ترتيبٌ فرعي من
+      # الحوار المقفول نفسه؛ أي اختلاف يوقف التوليد قبل صرف حصة Gemini.
+      - name: Select the locked 2m30 dialogue with two post-production bridge markers
+        if: ${{ !inputs.restore_from_run }}
+        run: node scripts/select-kuwaiti-short-source.mjs --slugs="$RELEASED_SLUGS"
+
+      # [٢١ أغسطس ٢٠٢٦ — قفل «الكمال» للمقالات القادمة] لا كلمة تصل
+      # المحرك قبل أذن الدكتور: أي مفردة في الحوار المجلوب ليست من المتن
+      # المعتمد أو المعجم توقف التوليد وتُعرض بجملتها ليحسمها المختبر.
+      # الكلمة لا تعتمد إلا لما تثبت في معجمه — هذا الباب الوحيد.
+      - name: حارس الكلمات الجديدة — لا جديد قبل أذن الدكتور
+        if: ${{ !inputs.restore_from_run }}
+        run: node scripts/guard-new-dialogue-words.mjs --dir=manual-dialogues-kuwaiti
+
+      # بصمة الحوار تُقرأ من القفل الذي كتبه fetch من Firestore نفسه، لا من
+      # قيمةٍ تُكتب باليد. العلّة التي أنتجت هذه الخطوة: بصمة Firestore تُحسب
+      # على مستند الحوار بحقوله كاملةً، وبصمة ملف المستودع تُحسب على المتن
+      # وحده — فتختلفان وإن كان النصّ متطابقاً حرفاً بحرف (تحقّقنا: ٣٧ دوراً
+      # متطابقة تماماً). فكانت كل تشغيلةٍ تسقط في خطوتها الأخيرة بعد أن يكون
+      # الصوت قد وُلد وسُلّم إلى R2 — يضيع الوقت والحصة، ولا يصل المرشّح إلى
+      # بوابة الاعتماد. ومع ١٤٣ حلقة كان هذا سيعني ١٤٣ سقطة.
+      - name: Read the revision the generator will actually use
+        if: ${{ !inputs.restore_from_run }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOCK="podcast-audits/source-locks-kuwaiti/$RELEASED_SLUGS.json"
+          test -f "$LOCK" || { echo "::error::قفل المصدر مفقود: $LOCK"; exit 1; }
+          LOCKED="$(node -e "process.stdout.write(String(JSON.parse(require('fs').readFileSync('$LOCK','utf8')).revisionId||''))")"
+          [[ "$LOCKED" =~ ^[A-Za-z0-9._:-]{8,128}$ ]] || { echo "::error::معرّف المراجعة في القفل غير صالح"; exit 1; }
+          if [ "$LOCKED" != "$DIALOGUE_REVISION" ]; then
+            echo "::notice::بصمة القفل ($LOCKED) تخالف المُمرَّرة ($DIALOGUE_REVISION) — تُعتمد بصمة القفل لأنها ما يولّد عنه المحرّك."
+          fi
+          echo "DIALOGUE_REVISION=$LOCKED" >> "$GITHUB_ENV"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          # لا يُستبدل مرشّحٌ ينتظر الاعتماد إلا بطلبٍ صريح من مُطلِق التشغيلة.
+          PODCAST_KW_REGENERATE: ${{ inputs.regenerate && '1' || '' }}
+
+      - name: Mark Gemini generation
+        if: ${{ !inputs.restore_from_run }}
+        run: node scripts/podcast-production-status.mjs --variant=kuwaiti --status=processing --stage=generating_audio --slugs="$RELEASED_SLUGS" --note="قُفل النص الكويتي وبدأ Gemini 2.5 Pro TTS متعدد المتحدثين في Staging."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      # المحرّك يخرج بالرمز ٣ حين لا تجتاز العيّنة إحدى بوابات الصوت أو الزمن.
+      # العيّنة السيئة تُرمى وتُعاد كاملةً؛ وأي رمزٍ آخر يُسقط الخطوة فوراً.
+      - name: Generate Kuwaiti candidate with Gemini 2.5 Pro TTS
+        if: ${{ !inputs.restore_from_run }}
+        shell: bash
+        run: |
+          set -uo pipefail
+          # GitHub يشغّل الخطوة بـ«bash -e»، و«set -uo pipefail» لا يُطفئ الـ-e.
+          # فحين خرج المحرّك بالرمز ٣ (رفضُ عيّنة) قتل الـ-e السكربت قبل فحص
+          # الرمز، فسقطت التشغيلة بدل أن تُعيد — ٢٠ أغسطس ٢٠٢٦، run 32412429765.
+          # «set +e» صريحةً هي العلاج: نحن نفحص كل رمزٍ بأنفسنا هنا.
+          set +e
+          ATTEMPTS=3
+          BASE_GAP="$PODCAST_KW_MIN_GAP"
+          # Rerun كان يعيد 1101/1111/1121 حرفياً، ومع seed ثابت رجعت
+          # العينات الثلاث نفسها وضيّعت سبع دقائق بلا فرصة جديدة.
+          SEED_BASE=$(( 1100 + (${GITHUB_RUN_ATTEMPT:-1} - 1) * 1000 ))
+          # بيك أوف الحلقة (٢١ أغسطس ٢٠٢٦): العيّنة تتذبذب بين التشغيلات
+          # والمدخل واحد (طبقة variance في المعجم مبرهنة). فبدل محاربة
+          # التذبذب نحصده: نولّد نسخاً كاملة ويختار الدكتور أفضلها بأذنه —
+          # نفس نمط بيك أوف الأصوات الذي اختار Zephyr.
+          TAKES="${PODCAST_KW_TAKES:-1}"
+          case "$TAKES" in 1|2|3) ;; *) TAKES=1 ;; esac
+          for t in $(seq 1 "$TAKES"); do
+            ACCEPTED=0
+            for i in $(seq 1 $ATTEMPTS); do
+              # [٢٢ أغسطس ٢٠٢٦ — مقترح الصديق] كانت المحاولة الأخيرة تصفّر
+              # العتبة وتقبل أي شيء «حتى لا نبقى بلا حلقة» — وهذا عكس مفهوم
+              # البوابة، ودليله بأذن الدكتور: عيّنتا التجربة بلا عتبة خرجتا
+              # «صوت واحد بدون شخص ثاني». البوابة تصدق دائماً: ثلاث سقطات
+              # = تشغيلة فاشلة تُعاد، لا حلقة رديئة تمر.
+              export PODCAST_KW_MIN_GAP="$BASE_GAP"
+              # بذور معلومة (مقترحه): 1101/1102/1103 للنسخ، والمحاولة
+              # الفاشلة تنزاح بذرتها +10 كي لا تعيد نفس العينة المرفوضة.
+              export PODCAST_KW_SEED=$(( SEED_BASE + t + (i - 1) * 10 ))
+              echo "نسخة $t/$TAKES · المحاولة $i/$ATTEMPTS — العتبة $PODCAST_KW_MIN_GAP هرتزاً · البذرة $PODCAST_KW_SEED"
+              TRANSPORT_ATTEMPT=1
+              while :; do
+                node scripts/podcast-kuwaiti-gemini.mjs --slug="$RELEASED_SLUGS"
+                CODE=$?
+                if [ "$CODE" -eq 0 ]; then
+                  echo "✓ نسخة $t: قُبلت في المحاولة $i."
+                  ACCEPTED=1
+                  break
+                fi
+                if [ "$CODE" -eq 3 ]; then break; fi
+                if [ "$CODE" -eq 75 ] && [ "$TRANSPORT_ATTEMPT" -lt 3 ]; then
+                  echo "↻ Gemini مؤقتاً — إعادة البذرة نفسها بلا خصم عينة جودة"
+                  sleep $((TRANSPORT_ATTEMPT * 5)); TRANSPORT_ATTEMPT=$((TRANSPORT_ATTEMPT + 1)); continue
+                fi
+                if [ "$CODE" -eq 75 ]; then echo "::error::Gemini متعطل مؤقتاً؛ أعد التشغيلة لاحقاً."; exit 75; fi
+                if [ "$CODE" -eq 78 ]; then echo "::error::نفد الرصيد؛ أُوقف الصرف قبل الحلقة التالية."; exit 78; fi
+                echo "::error::سقط التوليد بالرمز $CODE — ليس رفضَ عيّنة."
+                exit "$CODE"
+              done
+              if [ "$ACCEPTED" -eq 1 ]; then break; fi
+            done
+            if [ "$ACCEPTED" -ne 1 ]; then
+              echo "::error::النسخة $t: ثلاث عينات متتالية لم تجتز بوابات الجودة — أعد التشغيلة لاحقاً بدل قبول صوتين متقاربين أو هوية منزَلقة أو دور مقصوص."
+              exit 1
+            fi
+            if [ "$TAKES" -gt 1 ]; then
+              cp "audio/$RELEASED_SLUGS.dialogue-kw.mp3" "audio/$RELEASED_SLUGS.dialogue-kw.take$t.mp3"
+              cp "audio/$RELEASED_SLUGS.dialogue-kw.json" "audio/$RELEASED_SLUGS.dialogue-kw.take$t.json"
+            fi
+          done
+          # [٢١ أغسطس ٢٠٢٦ ليلاً — علاج «رفض ينزلها»] كان الملف المعتمد
+          # يُرجَّع للنسخة الأولى، بينما سجل البصمات (audit) يحمل بصمة
+          # النسخة الأخيرة التي ولّدها المحرك — فتعارضت البصمتان وسقط
+          # record-kuwaiti-candidate بـ«مرشح لا يطابق قفل المصدر/بصماته»
+          # (تشغيلة 32513812990). الصواب: الملف المعتمد يبقى النسخة
+          # الأخيرة كما تركها المحرك (بصمتها هي المسجلة)، والنسخ كلها
+          # مرفوعة للمفاضلة بالأذن، وحين يختار الدكتور غيرها تُرقّى.
+          exit 0
+        env:
+          PODCAST_KW_TTS_PROVIDER: ${{ inputs.tts_provider || 'vertex' }}
+          PODCAST_KW_VERTEX_PROJECT: ${{ env.PODCAST_KW_VERTEX_PROJECT }}
+          PODCAST_KW_VERTEX_LOCATION: us-central1
+          PODCAST_KW_TTS_LANGUAGE: ${{ inputs.tts_provider == 'vertex' && 'ar-001' || 'ar' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TTS_MODEL: ${{ inputs.tts_provider == 'vertex' && 'gemini-2.5-pro-tts' || 'gemini-2.5-pro-preview-tts' }}
+          PODCAST_KW_PROFILE: kuwaiti-urban-soft-v2
+          PODCAST_KW_GENERATION_MODE: pilot
+          PODCAST_KW_PILOT_SLUG: success-that-does-not-bring-joy-to-its-ownerarabic
+          # عدنا إلى الحوار المتعدد الحقيقي. النسخة المرفوضة سابقاً مرت
+          # بفجوة 20Hz وسمعها الدكتور صوتاً واحداً؛ 25 أقل فصل مقبول.
+          PODCAST_KW_MIN_GAP: '25'
+          # نورة تحديداً: الرفض على انزلاق وسيط مقطع كامل، لا على تغيّر دور
+          # مفرد طبيعي أو خطأ أوكتاف من كاشف F0. وأي دور مقصوص/ممدود يرميه.
+          PODCAST_KW_REJECT_FEMALE_IDENTITY_DRIFT: '1'
+          PODCAST_KW_REJECT_SPEAKER_IDENTITY_DRIFT: '1'
+          # الدور المفرد قد يقرأه F0 على أوكتاف خاطئ؛ لا نحرق Take ثابتاً
+          # بسببه. الرفض يبقى على غلبة الصوت الآخر في نصف مقطع أو انزلاق
+          # وسيط ثلث كامل، ومعهما الرنين والزمن أدناه.
+          PODCAST_KW_REJECT_SPEAKER_SWAPS: '0'
+          PODCAST_KW_REJECT_ACOUSTIC_RESET: '1'
+          PODCAST_KW_REJECT_TIMING_SUSPECTS: '1'
+          # [٢٥ أغسطس ٢٠٢٦] فصلُ المسارين منع تبديل preset لكنه جعل نورة
+          # تقول فقراتها وراء بعض وفهد كذلك، ثم ركّبهما المونتاج. النتيجة:
+          # نفس preset، مو نفس الإنسان، وأخذ ورد أضعف. الإنتاج حوار واحد؛
+          # وإذا بدّل Preview صوتاً ترميه البوابات وتعيد الـTake كله.
+          PODCAST_KW_ISOLATE_SPEAKER_STEMS: '0'
+          # [٢٤ أغسطس ٢٠٢٦] الجسر مونتاج خارجي فقط. تقسيم TTS عنده أعاد
+          # تفسير الصوت واللهجة بعد 45–47ث ثم 76–78ث (Voice/Accent Reset).
+          # المحرك يقفل هذا أيضاً، والقيمة هنا توثّق عقد الإنتاج بوضوح.
+          PODCAST_KW_SPLIT_AT_BRIDGES: '0'
+          PODCAST_KW_TAKES: ${{ inputs.takes || '1' }}
+          # البرومتان full/minimal تاريخيان للتجارب فقط؛ لا يدخلان مسار المرشح.
+          PODCAST_KW_PROMPT_MODE: c
+
+      # [٢٢ أغسطس ٢٠٢٦ — «التثبيت الحقيقي»] المحرك احتمالي فلن يعيد نسخة
+      # أحبها الدكتور أبداً؛ لكن كل تشغيلة تحفظ صوتها مرفقاً دائماً.
+      # هذا المسار يسترجع نسخة تشغيلة بعينها من الأرشيف ويعيد حساب بصماتها
+      # وينصبها مرشحاً — صفر توليد، صفر حصة، صفر مقامرة.
+      - name: استرجاع نسخة محفوظة من أرشيف تشغيلة سابقة
+        if: ${{ inputs.restore_from_run }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${{ inputs.restore_from_run }}" =~ ^[0-9]{6,}$ ]] || { echo "::error::رقم التشغيلة غير صالح"; exit 1; }
+          gh run download "${{ inputs.restore_from_run }}" -R "$GITHUB_REPOSITORY" -n "kuwaiti-pilot-$RELEASED_SLUGS" -D restored
+          mkdir -p audio "podcast-audits/kuwaiti"
+          cp "restored/audio/$RELEASED_SLUGS.dialogue-kw.mp3" "audio/"
+          cp "restored/audio/$RELEASED_SLUGS.dialogue-kw.json" "audio/"
+          node -e '
+            const { createHash } = require("crypto"); const fs = require("fs");
+            const slug = process.env.RELEASED_SLUGS, rev = process.env.DIALOGUE_REVISION;
+            const sha = (f) => createHash("sha256").update(fs.readFileSync(f)).digest("hex");
+            const audit = {
+              slug, revisionId: rev,
+              audioSha256: sha(`audio/${slug}.dialogue-kw.mp3`),
+              transcriptSha256: sha(`audio/${slug}.dialogue-kw.json`),
+              restoredFromRun: "${{ inputs.restore_from_run }}",
+              restoredAt: new Date().toISOString(),
+              note: "نسخة مسترجعة من الأرشيف بطلب الدكتور — لا توليد جديد",
+            };
+            fs.writeFileSync(`podcast-audits/kuwaiti/${slug}.json`, JSON.stringify(audit, null, 2));
+          '
+          echo "✓ استُرجعت نسخة التشغيلة ${{ inputs.restore_from_run }} وبُصمت — جاهزة للرفع والتنصيب"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Upload candidate to isolated R2 staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREFIX="staging/kuwaiti/$RELEASED_SLUGS/$DIALOGUE_REVISION"
+          AWS=(aws --endpoint-url "$CLOUDFLARE_R2_ENDPOINT" s3api)
+          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$RELEASED_SLUGS.dialogue-kw.mp3" --body "audio/$RELEASED_SLUGS.dialogue-kw.mp3" --content-type audio/mpeg --cache-control no-store
+          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$RELEASED_SLUGS.dialogue-kw.json" --body "audio/$RELEASED_SLUGS.dialogue-kw.json" --content-type application/json --cache-control no-store
+          "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$RELEASED_SLUGS.audit.json" --body "podcast-audits/kuwaiti/$RELEASED_SLUGS.json" --content-type application/json --cache-control no-store
+          # نسخ البيك أوف إن وُجدت — تُرفع للمفاضلة بالأذن ولا تمس الملف المعتمد
+          for f in audio/"$RELEASED_SLUGS".dialogue-kw.take*.mp3; do
+            [ -f "$f" ] || continue
+            "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$(basename "$f")" --body "$f" --content-type audio/mpeg --cache-control no-store
+            echo "⬆ نسخة بيك أوف: $PREFIX/$(basename "$f")"
+          done
+          # توقيتات كل نسخة — بدونها لا يُبنى شريط الفحص السريع إلا للأخيرة
+          for f in audio/"$RELEASED_SLUGS".dialogue-kw.take*.json; do
+            [ -f "$f" ] || continue
+            "${AWS[@]}" put-object --bucket "$CLOUDFLARE_R2_BUCKET" --key "$PREFIX/$(basename "$f")" --body "$f" --content-type application/json --cache-control no-store
+          done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+
+      # ملخّصٌ يُقرأ من صفحة التشغيلة بلا فتح سجل: الدكتور يسأل «ليش يفشل وما
+      # يظهر لي شي؟» — فيظهر هنا رابط الصوت وقراءة البوابتين مهما كانت النتيجة.
+      - name: Publish a readable summary
+        if: always()
+        shell: bash
+        run: |
+          AUDIT="podcast-audits/kuwaiti/$RELEASED_SLUGS.json"
+          {
+            echo "## الحلقة الكويتية — $RELEASED_SLUGS"
+            if [ -f "audio/$RELEASED_SLUGS.dialogue-kw.mp3" ]; then
+              SIZE=$(du -h "audio/$RELEASED_SLUGS.dialogue-kw.mp3" | cut -f1)
+              echo "**الصوت وُلد بنجاح** ($SIZE) — وهو على R2 حتى لو سقطت خطوةٌ بعده:"
+              echo '```'
+              echo "$AUDIO_PUBLIC_BASE_URL/staging/kuwaiti/$RELEASED_SLUGS/$DIALOGUE_REVISION/$RELEASED_SLUGS.dialogue-kw.mp3"
+              echo '```'
+            else
+              echo "**لم يُولَّد صوت** — العطب قبل التوليد."
+            fi
+            if [ -f "$AUDIT" ]; then
+              echo ""
+              echo "| القياس | القيمة |"
+              echo "|---|---|"
+              node -e "
+                const a=require('./$AUDIT');
+                const p=a.pitchGate||{}, r=a.repeatGate||{};
+                console.log('| المدة | '+Math.round(a.durationSec||0)+' ثانية |');
+                console.log('| الأدوار | '+(a.turnCount||0)+' |');
+                console.log('| النداءات | '+(a.chunkCount||0)+' |');
+                console.log('| وسيط فهد / نورة | '+(p.maleMedianHz||'—')+' / '+(p.femaleMedianHz||'—')+' هرتز |');
+                console.log('| أدوار مشتبهة بالنبرة | '+((p.suspects||[]).length)+' |');
+                console.log('| أدوار شاذة زمنياً | '+((r.suspects||[]).length)+' |');
+              " || echo "| — | تعذّرت قراءة السجل |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Expose candidate only to the admin review state
+        run: node scripts/record-kuwaiti-candidate.mjs --slug="$RELEASED_SLUGS" --revision="$DIALOGUE_REVISION"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+
+      - name: Mark failed for review
+        if: failure()
+        continue-on-error: true
+        run: node scripts/podcast-production-status.mjs --variant=kuwaiti --status=needs_review --stage=failed --slugs="$RELEASED_SLUGS" --note="توقف توليد Gemini الكويتي أو رفع Staging؛ بقيت الفصحى والنسخة المنشورة السابقة بلا تغيير."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Preserve pilot files for audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kuwaiti-pilot-${{ inputs.slugs }}
+          if-no-files-found: warn
+          path: |
+            audio/${{ inputs.slugs }}.dialogue-kw.mp3
+            audio/${{ inputs.slugs }}.dialogue-kw.json
+            podcast-audits/kuwaiti/${{ inputs.slugs }}.json

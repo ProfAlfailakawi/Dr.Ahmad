@@ -1,0 +1,4 @@
+# Historical note only.
+# The full-history checkout and immutable-ledger preflight are already applied
+# directly in .github/workflows/podcast-kuwaiti-production-batch.yml.
+# Do not apply a second patch.

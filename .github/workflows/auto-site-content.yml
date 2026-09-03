@@ -1,0 +1,131 @@
+name: نشر الرسائل والأسئلة تلقائياً
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/auto-site-content.mjs'
+      - '.github/workflows/auto-site-content.yml'
+      - 'data.ts'
+      - 'src/data.ts'
+      - 'src/data/bodies.json'
+  schedule:
+    # الموعد الأساسي ثم محاولة تعافٍ بعد 20 دقيقة. السكربت متعافي ومانع للتكرار،
+    # لذلك المحاولة الثانية لا تنشر شيئاً إذا نجحت الأولى، لكنها تلتقط أعطال GitHub المؤقتة.
+    - cron: '35 4,9,14,19 * * *'
+    - cron: '55 4,9,14,19 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'توليد عنصر جديد من كل قسم الآن'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-site-content
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+            !/audio-meta-*.json
+            !/bodies-vocalized-*.json
+            !/podcast-state-*.json
+            !/whatsapp-agent/*.command
+          sparse-checkout-cone-mode: false
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Force public npm registry
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node scripts/normalize-npm-registry.mjs
+
+      - name: Install dependencies with retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::تعذّر تثبيت الاعتمادات بعد ثلاث محاولات."
+              exit 1
+            fi
+            sleep $((attempt * 20))
+          done
+
+      - name: Validate archive sources
+        run: npm run content:auto:self-test
+        env:
+          AUTO_CONTENT_MIN_LETTERS: '4'
+          AUTO_CONTENT_MIN_FAQS: '10'
+
+      - name: Validate publishing access
+        shell: bash
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing. Firestore publishing cannot run."
+            exit 1
+          fi
+          if [ -z "$GEMINI_API_KEY" ] && [ -z "$GOOGLE_API_KEY" ]; then
+            echo "::warning::Gemini key is missing. Messages and questions will still publish automatically using the built-in editorial fallback."
+          fi
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Write Firebase service account
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Generate and publish due content with retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXTRA_ARGS=""
+          if [ "${{ inputs.force }}" = "true" ]; then EXTRA_ARGS="--force"; fi
+          for attempt in 1 2 3; do
+            if npm run content:auto -- $EXTRA_ARGS; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::تعذّر النشر بعد ثلاث محاولات؛ ستلتقطه محاولة التعافي المجدولة من دون تكرار."
+              exit 1
+            fi
+            sleep $((attempt * 30))
+          done
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          AUTO_CONTENT_MIN_LETTERS: '4'
+          AUTO_CONTENT_MIN_FAQS: '10'
+          AUTO_CONTENT_MAX_PER_KIND: '10'
+
+      - name: Remove temporary credentials
+        if: always()
+        run: rm -f sa.json

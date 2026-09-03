@@ -1,0 +1,271 @@
+{
+  "slug": "turning-video-game-obsession-into-creative-meditation-2",
+  "bridgeAfter": [
+    25,
+    30
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "يخبرني الكثير من المعارف والأصدقاء أن أبناءهم الصغار والكبار لديهم هوس في لعب الفيديو.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "منهم من تعلو صرخاته من هذا الهوس.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ومنهم من يمدح ابنه ويراه مبدعا في حل عقد تلك الألعاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومنهم من يتمنى أن يتحول هوس ابنه الخلاق إلى أن يكون صانعا لها، ليرضي غروره وذكاءه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهو يريد أن يكون من صناع الألعاب الإلكترونية، ليصبح في صفوف رواد صناع التكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلم لا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ودعونا نتوقف قليلا لتلك الصرخات الخائفة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "فلمجرد أن أبناءنا لديهم هوس في لعب الفيديو، هذا مؤشر خطر يراه الكثيرون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأنه في طريق الإدمان، وهذا الإدمان يؤدي إلى الهوس.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نعم هو كذلك.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فيصبحون غير قادرين على التوقف عن اللعب، ووضع اللعب كأولوية قصوى أكثر من الأولويات الأخرى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتبدأ تظهر من كثرة الحماس أثناء مواصلة اللعب مؤشرات سلبية عليهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "سواء كانت صحية أو نفسية أو اجتماعية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل ننكر هذا الخطر؟⏸ لا يبدو أن المقال ينكره.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا ينكره أبدا. يقول:⏸ هو كذلك، ولكن لماذا هذا الخوف؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فلننظر إلى الأسباب التي تعتبر الهاتف الذكي كأنه هاتف ذكي بجرعة كوكايين، من شدة الهوس على تلك الألعاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن انظر للممتلئ.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن لو قمنا بتوجيه قدرات أبنائنا في نفس المجال ليكونوا صناع تكنولوجيا خلاقين، لاختلفت الرؤيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وذهب الخوف ليكون أمانا. إذن دعونا ننظر للجزء الممتلئ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونظرة إلى الواقع:⏸ لم لا يتم إضافة مادة أو تخصص جامعي لصناع الألعاب الإلكترونية؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ليصبح أبناؤنا صناع الألعاب ومحتوى تعليمي فيها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمجتمعنا العربي مجتمع فقير بهذا المجال، وجامعاتنا خالية من هذا التخصص.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فلو كان هناك تخصص أو مواد تدريس بهذا المجال، لأصبح هذا الهوس دافعا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من أجل أن يتخصص أبناؤنا بمثل هذا التخصص، ويصبح من صناع الألعاب الإلكترونية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فأين الدافع؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فحماس أبنائنا في اللعب قاتل، وحماس مهووس لخلو الهدف والسعي للإنجاز.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فأين الدافع الذي يجعلهم يصنعون بدل أن يكونوا مهووسين؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "دعونا نرتقي لفكر الصناع في عهد الصناعة التكنولوجية.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ليكن نشاطا لأبنائنا في المدرسة، أو تخصصا في الجامعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ليكون الهدف القادم الارتقاء في العملية التعليمية التعلمية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ولنضع أنشطة في المدارس تدربهم على صنع محتوى أو ألعاب إلكترونية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل يكفي النشاط المدرسي وحده؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يوسع الدائرة:⏸ ويشاركوا في مسابقات إبداعية خلاقة محليا ودوليا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونجعل من شبابنا في الجامعات يبدعون ويصنعون من أجل مستقبل أجمل. صانعا لا مهووسا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهي رسالة للقائمين على التربية والتعليم، وللإعلام، وللمسؤولين القائمين على الفعاليات والمؤتمرات.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "لتحقيق حلم كل شاب عربي،⏸ فيصبح لعب الفيديو للتعلم والتأمل، أكثر منه للعب لتعبئة الفراغ فنرميهم في أحضان الهوس.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

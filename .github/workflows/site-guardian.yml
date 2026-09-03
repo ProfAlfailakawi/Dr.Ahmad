@@ -1,0 +1,69 @@
+name: Site Guardian
+on:
+  schedule:
+    - cron: '17 1 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: site-guardian
+  cancel-in-progress: false
+jobs:
+  guardian:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+            !/audio-meta-*.json
+            !/bodies-vocalized-*.json
+            !/podcast-state-*.json
+            !/whatsapp-agent/*.command
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - run: npm ci
+      - name: Repair verifiable external links
+        run: node scripts/check-all-sources.mjs
+        continue-on-error: true
+      - name: Prune provable audio orphans
+        run: node scripts/prune-orphan-audio.mjs && node scripts/prune-missing-audio.mjs
+      - run: npm run guardian:write
+      - run: npm run knowledge:build
+      - run: npm run lint
+      - name: Commit verified repairs and report
+        run: |
+          git config user.name "site-guardian[bot]"
+          git config user.email "site-guardian[bot]@users.noreply.github.com"
+          git add src/data/site-guardian.json src/data/knowledge-graph.json src/data/curated-dead-links.json src/data/dead-links.json src/data/audio.json src/data/audio-meta.json || true
+          git diff --cached --quiet || git commit -m "chore: refresh site guardian report"
+          # `git push || true` كان يبتلع الرفض بصمت: يوم يتصادم مع دفعةٍ أخرى
+          # يضيع تقرير الحارس ولا يعلم أحد. نعيد المحاولة فوق أحدث main، فإن
+          # عجزنا صرّحنا — سكوتُ الحارس أخطر من احمرار سطر.
+          bot_commit="$(git rev-parse HEAD)"
+          pushed=0
+          for attempt in 1 2 3; do
+            # لا نترك rebase متعارضاً بين المحاولات. نبدأ كل محاولة من أحدث
+            # main ثم نعيد تطبيق تحديث الحارس، مع ترجيح ملفات التحديث الآلي
+            # وحدها عند اصطدامها بتحديث آلي متزامن للملف نفسه.
+            git rebase --abort >/dev/null 2>&1 || true
+            git cherry-pick --abort >/dev/null 2>&1 || true
+            git fetch origin main
+            git reset --hard origin/main
+            if git cherry-pick -X theirs "$bot_commit" && git push origin HEAD:main; then
+              pushed=1
+              break
+            fi
+            sleep $((attempt * 5))
+          done
+          if [ "$pushed" != 1 ]; then
+            git cherry-pick --abort >/dev/null 2>&1 || true
+            echo "::error::تعذّر رفع تقرير الحارس بعد ثلاث محاولات نظيفة."
+            exit 1
+          fi

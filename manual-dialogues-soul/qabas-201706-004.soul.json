@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201706-004",
+  "bridgeAfter": [
+    14,
+    26
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نمر كثيرا بضغوطات الحياة والعمل، فنبحث عن مجددات للطاقة والنفسية.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي السياق نبحث أيضا عن مجدد لحركة أبداننا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فنهرول إلى النوادي الرياضية، من أجل البحث عن حلول لما نعاني منه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وفي إحدى التدريبات التي يمارسها في النادي، التقى بصديق الدراسة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتفاجأ لحاله، لا أبالغ إن قلت أنه يكاد يمشي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأنه يعاني أثناء التمرين من التنفس السليم كما ينبغي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "جلسا بعد التمرين، وأنبه نوعا ما لما آل إليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فكان رده صادما، معللا وزنه بالجلوس، وعمله الذي لا يكاد يتحرك فيه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فمجال عمله على الحاسوب، وجلوسه على السنابات والواتس، وغيرها من الأسباب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتكنولوجيا قدمت الراحة على حساب الصحة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وفي ختام كلامه، أنه قرأ على اليوتيوب بممارسة الرياضة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فقال في نفسه:⏸ حقا ما تقول! وهذا هو حالنا جميعا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نعم، هذا حالنا، والنسبة أصبحت مؤشرا خطيرا للداء الذي جاء مع التكنولوجيا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فمع ظهور التكنولوجيا بدأت أمراض العصر بالظهور في حياتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكلما تقدمت التكنولوجيا زادت تلك الأمراض، وظهرت أمراض جديدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما السبب في ذلك تحديدا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "السبب أن التكنولوجيا قدمت بديلا مريحا من حيث العمل والحركة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذا البديل عطل نشاطات أساسية كانت تمنع ظهور أمراض معينة، ومن أهمها السمنة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والعجيب في الأمر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والعجيب أن هذا التقدم رافقه البحث عن وسائل تعويض لهذا العطل في الحركة والعمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فجاءت التكنولوجيا مرة أخرى تقدم حلولا بديلة للإنسان، كي يتخلص من هذا العطل عن العمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من خلال أجهزة الحركة والأدوية وغيرها من الوسائل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ومن جديد يدخل الإنسان في دوامة الراحة والعمل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كما أن التكنولوجيا حاولت أن تقدم البديل الطبي أيضا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "للحصول على علاجات تقاوم نتائج التقدم في مجالات الراحة والعمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحلولها ذهبت بعيدا عن الطبيعة التي نعيش فيها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والحلول المثلى التي هي حولنا، وبالمجان، ودون الحاجة إلى أجهزة وتقنيات حديثة تداوينا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل صرنا نحتمي بالتكنولوجيا مما صنعته بنا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أصبحنا نرتمي في حضن التكنولوجيا لتحمينا بوسائلها من خطر ما تسببت به من راحة لنا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالتكنولوجيا قدمت الراحة على حساب الصحة، ودفعنا نحن ثمنها من حركتنا وأبداننا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن أمراض العصر التي ظهرت مع التكنولوجيا وتقدمها:⏸ السمنة وقلة الحركة والجلوس الطويل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم عادت التكنولوجيا مرة أخرى تقدم لنا الحل، بعد أن كانت هي سبب الداء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والحلول المثلى هي حولنا وبالمجان، لا تحتاج إلى أجهزة ولا تقنيات حديثة تداوينا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والسؤال:⏸ لو أننا قمنا بسحب التكنولوجيا من حياتنا، وعدنا إلى الطبيعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هل سنخرج من دوامة الراحة والعمل التي دخلنا فيها؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "لم يخطئ من قال:⏸ وداوني بالتي كانت هي الداء.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

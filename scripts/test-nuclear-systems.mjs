@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict'; import fs from 'node:fs'
+const read=(p)=>fs.readFileSync(p,'utf8'); const json=(p)=>JSON.parse(read(p))
+const graph=json('src/data/knowledge-graph.json'); assert.ok(graph.nodes.length>=190); assert.ok(graph.edges.length>1000); assert.ok([1,2].includes(graph.version))
+const guardian=json('src/data/site-guardian.json'); assert.ok(guardian.counts.articles>=140); assert.ok(typeof guardian.status==='string')
+const engine=read('src/lib/social-design-engine.ts'); assert.match(engine,/fingerprintDesign/); assert.match(engine,/critiqueCompositionPlan/); assert.match(engine,/requestedCount = 8/); assert.match(engine,/visibleCount = 4/); assert.match(engine,/generateSocialCampaign/)
+const studio=read('src/components/admin/SocialDesignStudio.tsx'); assert.match(studio,/QUALITY_THRESHOLD_KEY/); assert.match(studio,/منع محرك الجودة التصدير/); assert.match(studio,/الخط الزمني المقترح للحملة/)
+const whatsapp=read('whatsapp-agent/content-index.mjs'); assert.match(whatsapp,/رسم معرفة خفيف داخل الفهرس/); assert.match(whatsapp,/item\.related/)
+const admin=read('src/pages/Admin.tsx'); assert.match(admin,/ProductionMonitor/); assert.match(admin,/(tab === 'monitor'|monitor:\s*<ProductionMonitor)/)
+const control=read('src/components/admin/ProductionMonitor.tsx'); assert.match(control,/data-autopilot-control-center="true"/); assert.match(control,/data-safe-repair-all="true"/); assert.match(control,/data-continuous-whatsapp-proof="true"/); assert.match(control,/data-weekly-operations-report="true"/); assert.match(control,/data-admin-settings-backup="true"/); assert.match(control,/data-incident-history="true"/); assert.match(control,/\/api\/admin\/control-center/); assert.match(control,/\/api\/admin\/whatsapp\/recover/); assert.match(control,/\/api\/admin\/whatsapp\/simulate-sequence/)
+const server=read('server.mjs'); assert.match(server,/controlCenterPath/); assert.match(server,/'repair-safe'/); assert.match(server,/preservesWhatsAppSession: true/); assert.match(server,/action === 'verify-all'/); assert.match(server,/action === 'backup-settings'/); assert.match(server,/control_center_incidents/)
+console.log(JSON.stringify({ok:true,systems:12,knowledgeNodes:graph.nodes.length,knowledgeEdges:graph.edges.length,guardianArticles:guardian.counts.articles},null,2))

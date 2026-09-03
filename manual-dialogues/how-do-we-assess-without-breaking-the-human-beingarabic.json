@@ -1,0 +1,594 @@
+[
+  {
+    "speaker": "male",
+    "text": "أتعرفين ما الذي يخيفني في بعض الاختبارات؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 360,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "صعوبة الأسئلة؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 190,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لا. أن يخرج الطالب منها وهو يظن أنه عرف حقيقته.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 520,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "تقصد أن يرى الدرجة كأنها تعريف له؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 280,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بالضبط. لا يقول: أخطأت في الاختبار. يقول في داخله: أنا فاشل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 440,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهنا لا تعود الورقة مجرد ورقة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 250,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "تصبح مرآة. والمشكلة أن المرآة قد تكون مشوهة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 470,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن دعنا نكون منصفين. المدرسة تحتاج إلى القياس، والمعلم يحتاج أن يعرف مستوى طلابه.",
+    "deliveryType": "objection",
+    "pauseAfterMs": 310,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بالتأكيد. أنا لا أعترض على القياس.",
+    "deliveryType": "response",
+    "pauseAfterMs": 180,
+    "overlapMs": 100,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إذن أين تبدأ المشكلة؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 320,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "حين ننسى أننا نقيس تعلما عند إنسان، لا أداء آلة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 480,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "هذه الجملة وحدها تغيّر معنى التقييم كله.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 310,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لأن الإنسان قد يفهم اليوم ويتعثر غدا. قد يعرف الفكرة، ثم يربكه الوقت أو الخوف أو طريقة السؤال.",
+    "deliveryType": "explanation",
+    "pauseAfterMs": 420,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وقد تكون الدرجة دقيقة في قياس لحظة واحدة، لكنها غير عادلة حين تتحول إلى حكم دائم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 460,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "تخيلي طالبا عاد إلى البيت بدرجة منخفضة.",
+    "deliveryType": "setup",
+    "pauseAfterMs": 230,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأول سؤال يسمعه: لماذا نقصت درجتك؟",
+    "deliveryType": "example",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ثم تبدأ المقارنة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 170,
+    "overlapMs": 70,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فلان حصل على تسعين، وأنت؟",
+    "deliveryType": "example",
+    "pauseAfterMs": 330,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "في تلك اللحظة، هل سنعرف لماذا أخطأ؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 280,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لا. نحن فقط أخبرناه أن مكانه أقل من غيره.",
+    "deliveryType": "response",
+    "pauseAfterMs": 460,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهذا هو الفرق بين تقييم يكشف موضع التعثر، وتقييم يصنع جرحا جديدا.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 520,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "حسنًا، كيف يكون التقييم إنسانيا من دون أن يصبح متساهلا؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 330,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "هذا سؤال مهم. لأن احترام الطالب لا يعني تجميل الحقيقة.",
+    "deliveryType": "response",
+    "pauseAfterMs": 300,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولا يعني منحه درجة لا يستحقها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 220,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أبدا. بل يعني أن نقول له الحقيقة بطريقة تساعده على التحرك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 370,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بدلا من أن نقول: إجابتك ضعيفة؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 230,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نقول: فهمت الفكرة الأساسية، لكن دليلك لم يكن واضحا. أعد المحاولة من هذه النقطة.",
+    "deliveryType": "example",
+    "pauseAfterMs": 430,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "الفرق كبير. الأولى تصفه، والثانية توجهه.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 360,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهذه هي روح التقييم من أجل التعلم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 310,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أي أن الاختبار لا يكون نهاية الطريق.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 180,
+    "overlapMs": 100,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بل يعطيك إشارة لما يجب أن يحدث بعده.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 420,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أين يقف الطالب؟ إلى أين نريده أن يصل؟ وما الخطوة التالية؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 420,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ثلاثة أسئلة بسيطة، لكنها تنقلنا من التصنيف إلى التعليم.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 410,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لحظة. هذا جميل نظريا، لكن المعلم أمامه ثلاثون طالبا وربما أكثر. هل يستطيع أن يقدم تغذية راجعة دقيقة لكل واحد؟",
+    "deliveryType": "objection",
+    "pauseAfterMs": 350,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ليس مطلوبا منه أن يكتب مقالا على كل ورقة.",
+    "deliveryType": "response",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إذن ماذا يفعل؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 200,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "يختار ملاحظة واحدة قابلة للتنفيذ. سؤالا يفتح التفكير. فرصة لتصحيح الخطأ. أحيانا هذا يكفي.",
+    "deliveryType": "explanation",
+    "pauseAfterMs": 440,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "يعني ليست العبرة بطول الملاحظة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 190,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بل بما تفعله في عقل الطالب.",
+    "deliveryType": "emphasis",
+    "pauseAfterMs": 480,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهذا يفسر لماذا قد تكون كلمة قصيرة مؤثرة أكثر من صفحة كاملة من التصحيح.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 390,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "نعم، خصوصا إذا شعر الطالب أن الخطأ ما زال قابلا للإصلاح.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 360,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "هذه نقطة حساسة. بعض الطلاب يتلقون النتيجة وكأن الباب أغلق.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 410,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لأننا نعطيهم رقما، ثم ننتقل إلى الدرس التالي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 330,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "من دون أن نسأل: ماذا سنفعل بهذه النتيجة؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 420,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والرقم الذي لا يغيّر شيئا في التعلم، ما فائدته؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 470,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "قد يرتب الطلاب، لكنه لا يساعدهم بالضرورة.",
+    "deliveryType": "response",
+    "pauseAfterMs": 350,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهنا تأتي التغذية الراجعة. لا باعتبارها مجاملة، بل باعتبارها خريطة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 440,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "خريطة تقول: هذا ما نجحت فيه، وهذا ما يحتاج إلى مراجعة، ومن هنا تبدأ.",
+    "deliveryType": "explanation",
+    "pauseAfterMs": 430,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وعندما تكون واضحة، يتغير شعور الطالب تجاه الخطأ.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 340,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لا يعود الخطأ فضيحة.",
+    "deliveryType": "emphasis",
+    "pauseAfterMs": 290,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "يصبح معلومة.",
+    "deliveryType": "emphasis",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "أفكر الآن في دور الأسرة. أحيانا تكون المدرسة هادئة، لكن البيت يحول الدرجة إلى أزمة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 390,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "صحيح. وقد يبدأ كل شيء من أول جملة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 250,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "مثلا؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 180,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بدلا من: كيف حصلت على هذه الدرجة؟ نسأل: أي جزء كان أصعب عليك؟",
+    "deliveryType": "example",
+    "pauseAfterMs": 390,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ثم: ما الذي يمكن أن نغيره في المرة القادمة؟",
+    "deliveryType": "example",
+    "pauseAfterMs": 300,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بالضبط. فجأة لا يعود الطفل في قفص الاتهام.",
+    "deliveryType": "response",
+    "pauseAfterMs": 350,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بل يصبح شريكا في الفهم.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 380,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وأحيانا هو لا يحتاج إلى محاضرة. يحتاج فقط أن يعرف أن هذه الدرجة ليست نهايته.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 460,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن مستواه الحالي ليس هويته.",
+    "deliveryType": "emphasis",
+    "pauseAfterMs": 430,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "تعرفين ما العبارة التي أتمنى أن يسمعها كل طالب بعد تعثره؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 360,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ما هي؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "هذه النتيجة تخبرنا من أين نبدأ، لا أين تنتهي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "جميلة. لأنها لا تنكر التعثر، ولا تسجن الطالب داخله.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 430,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهذا هو التوازن الصعب: أن نكون صادقين من دون أن نكون قساة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 420,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأن نحاسب الأداء من دون أن نهين الإنسان.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 500,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "في النهاية، السؤال ليس فقط: كم حصل الطالب؟",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 340,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بل: ماذا فهم عن نفسه بعد أن حصل على هذه الدرجة؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 530,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "هل خرج وهو يعرف خطوته التالية؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 300,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أم خرج وهو أكثر شكا في قدرته؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 580,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "المدرسة التي تعرف كيف تقيس، لا تكتفي بإعلان النتيجة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 410,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بل تعرف ماذا تفعل بها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 440,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتتذكر، في كل مرة، أن وراء كل درجة…",
+    "deliveryType": "statement",
+    "pauseAfterMs": 720,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "إنسانا.",
+    "deliveryType": "closing",
+    "pauseAfterMs": 1200,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  }
+]

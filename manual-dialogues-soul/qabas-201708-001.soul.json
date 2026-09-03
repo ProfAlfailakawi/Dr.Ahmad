@@ -1,0 +1,288 @@
+{
+  "slug": "qabas-201708-001",
+  "bridgeAfter": [
+    21,
+    30
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "عدت من العمل وطرقت الباب، ~~ ودخلت البيت دون أن أدق جرس الباب.",
+      "feeling": "gravitas",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "استقبلني طفلي الصغير، وتعلق كعادته بي وحضنني بكل شوق.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وحملته وضحكاتنا تتعالى، وقد نسيت في تلك اللحظة كل تعب اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كانت زوجتي في المطبخ، وأطلت برأسها مبتسمة من بابه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقالت:⏸ هلا وغلا، يعطيك العافية، لحظات ويجهز الغداء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ثم بدلت دشداشتي، وجهزت نفسي للغداء مع العائلة كلها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "جلست وتجمعت عائلتي من حولي، وبدأنا حوارا عن يومهم كيف كان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبدأت الشكاوى والمطالب تتوالى.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبدأت أسمع الشكاوى والمطالب، مختلطة ببعض الضحكات والمزاح الجميل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبدأنا في تناول الطعام، وزوجتي تخبرني عن زيارتها لجارتها في ذلك اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأخبرتها عن ضغط العمل، وعن حرارة الجو في هذا اليوم الطويل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حديث طويل،⏸ لكن لذة الطعام أنستني الإرهاق والتعب الذي حملته معي.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ثم قررت أن أسترخي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "قررت الاسترخاء قليلا، ثم بعدها تجهزنا جميعا لصلاة العصر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتوجهت أنا وابني للصلاة في المسجد، ~~ واستمعنا بعدها لدرس عن حقوق الوالدين.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم عدنا للمنزل، والدرس ما زال حاضرا في أذهاننا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وكانت عندي بعض الأعمال الورقية أنهيتها في ذلك المساء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم جلست في الصالة، وأحضرت زوجتي القهوة كعادتها.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وابني قد زاره رفاقه، وبدأوا اللعب في غرفة الألعاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولم نشعر بالوقت أبدا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لم نشعر في الوقت، فالأحاديث شيقة، والجلسة هادئة دافئة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبعض الذكريات، حتى وإن كانت مؤلمة، إلا أنها مضت وانتهت.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وما الذي جعل تلك الجلسة تختلف عن كل ما قبلها؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كنت أنظر إلى زوجتي وابتسامتها عندما حدثتني، وتمنيت أن تطول جلستنا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "صوت طفلي، وحديث زوجتي، وهذه الجلسة كلها مجتمعة في مكان واحد.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أحسست بسعادة في داخلي لم ألمسها من قبل في حياتي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "واقترب أذان المغرب، وكنت أنظر إلى قرص الشمس أمامي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ينثني وراء أفق البحر، وكأن خيوطها الذهبية نسجت وشاحا عليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأحسست أنني أشاهد هذا المنظر لأول مرة في عمري كله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "شعرت بارتباك في داخلي، وسعادة وسكينة، وكأنني في الجنة تماما.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نعمة ما بعدها نعمة، وسط هذه السعادة التي غمرتني.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ثم ماذا؟⏸ هل اكتمل المشهد كما بدأ؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "انتظرت صوت الأذان، وبقيت منتظرا، ولكن فجأة حدث ما لم أتوقعه.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "سمعت صوتا حادا اخترق أذني، ~~ وانتفضت لأجد صوت جرس هاتفي يرن.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ورسائل مكدسة على تويتر، وبرامج التواصل الاجتماعي، والواتس أب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وعدد كبير من الاتصالات الفائتة من أصدقائي وأهلي جميعا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبدأ صوت المنبه يذكرني بموعد تأخرت عليه، أتدرون بماذا كنت أفكر في تلك اللحظة؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "أن أضرب هاتفي في الحائط، وأعود إلى زوجتي وطفلي وبيتي، وأكمل حلمي السعيد.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

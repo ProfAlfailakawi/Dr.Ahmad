@@ -1,0 +1,264 @@
+{
+  "slug": "intelligence-without-a-consciencearabic",
+  "bridgeAfter": [
+    7,
+    22
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كان الناس قديما يخافون من جهلهم. اليوم صرنا نخاف من ذكائنا.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولماذا الخوف؟⏸ الآلة لم تفعل شيئا سوى أنها أتقنت ما نطلبه منها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لأن المشكلة ليست في الآلة. الإنسان بدأ يتنازل عن ضميره كلما ازدادت أدواته ذكاء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لحظة واحدة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "التقنية تنجز عنه، فيكسب وقتا. أين الخسارة في هذا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "الخسارة أنه كاد ينسى لماذا يفعل ما يفعل. الإنجاز بقي، والسبب غاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأطفالنا يعرفون كيف يطلبون منها أن تكتب وترسم وتقترح.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يعرفون كيف. لكن من يعلمهم لماذا يفترض أن يفعلوا ذلك؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هذا تحميل كبير على طفل. السؤال الأخلاقي ليس مسؤوليته وحده.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أتفق. لكنه انسحب من المشهد كله، وبقي السؤال التقني وحده في الضوء.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمقال يذكر شاهدا على ذلك من فريق في مايكروسوفت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "مراجعة بحثية واسعة، وجدت أن المستخدمين يقبلون توصيات الذكاء حتى وهي ناقصة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو مشكوكا فيها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ما دامت تبدو واثقة وسريعة. الثقة في النبرة لا في الدليل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا العبارة التي أوجعتني:⏸ الإنسان يبقى خط الدفاع الأخير، ثم يتقاعد بلا إعلان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تقاعد بلا قرار ولا إعلان ولا حتى شعور. وهذا أخطر أنواع الانسحاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهناك خط بحثي آخر يكشف ما يحدث لأرواح أبنائنا في عالم الشاشات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "دراسة من جامعة UCLA. أطفال ابتعدوا عن الشاشات خمسة أيام فقط.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأمضوا وقتهم في تفاعل وجها لوجه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فصاروا أفضل بكثير في قراءة تعابير الوجوه وفهم مشاعر الآخرين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "خمسة أيام فقط. هذا ما احتاجه الطفل ليستعيد ما ظنناه ضائعا إلى الأبد.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا يريحني كثيرا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالشاشة إذن لا تسرق الوقت فقط،⏸ بل تسرق مهارة قراءة الإنسان أيضا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ومع ذلك، لنكن منصفين:⏸ المشكلة ليست في الذكاء الاصطناعي نفسه.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل في إنسان يريد أن يترك له القيادة ويكتفي بدور الراكب.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومقالات في Harvard Business Review تحذر أنه مهما تطور يعجز عن التقاط العوامل الإنسانية غير المحسوسة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "النية، والرحمة، والحدس الأخلاقي. ثلاثة لا تقاس ولا تبرمج ولا تشترى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وترك القرارات الحساسة له وحده مقامرة بالقيم قبل أن تكون مقامرة بالنتائج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكن المقال لا يتركنا في الخوف. يقول إن تربية الضمير ممكنة في عصر رقمي.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "أوراق في Moral Education تشير إلى إدماج التربية الأخلاقية والمواطنة الرقمية في المناهج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بوصفها تدريبا على التفكير قبل الضغط على الزر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "جملة تستحق أن تعلق على جدار كل مدرسة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالفكرة ليست أن نطفئ الأجهزة،⏸ بل أن نوقظ الإنسان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "جيل لا يخشى الذكاء الاصطناعي،⏸ بل يضعه في مكانه الطبيعي: أداة لا قائدا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ويا آباء هذا العصر،⏸ لا تخافوا أن يكون أبناؤكم أذكى منكم تقنيا. خافوا اليوم الذي تصبح فيه أجهزتهم أسرع من ضمائرهم.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

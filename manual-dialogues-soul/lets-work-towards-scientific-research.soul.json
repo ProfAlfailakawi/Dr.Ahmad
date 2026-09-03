@@ -1,0 +1,250 @@
+{
+  "slug": "lets-work-towards-scientific-research",
+  "bridgeAfter": [
+    12,
+    27
+  ],
+  "breathAfter": [
+    31
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "البحث العلمي في سبات، والوباء يتصدر الساحة العربية.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يتفعل في وقتنا الراهن، في ظل أزمة وباء الكورونا، مراكز ومختبرات البحوث للتصدي لهذا الوباء القاتل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتعمل الدول المتقدمة للبحث عن حل لهذا الوباء على قدم وساق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونسمع عن بعض الجهود العربية تسعى لإيجاد الحلول الطبية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن لم نر إنجازات، لأن غالبية الدول لا تجتهد في إبراز نتائج البحوث.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومن المعلوم أن معظم دول العالم تهتم بالبحث العلمي، وتخصص له قسطا من موازناتها السنوية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتغدق على الباحثين في شتى الجامعات ومراكز البحث دعما لجهودهم، فضلا عن الدعم المعنوي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "حيث أدركت أن وجودها واستمرارها وتطورها وقوتها مرهونة بما تنجزه في مجال البحث العلمي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وأدركت أن الاستثمار في البحث العلمي هو من أكثر أنواع الاستثمار ريعية ونفعية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهو أداة التنمية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالبحث العلمي من أهم الأدوات لتحقيق التنمية المستدامة في عالمنا المعاصر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهو محاولة علمية منظمة، توظف لتقصي مشكلات المجتمع، وتوصيفها، واقتراح الحلول لها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد أصبح مطلبا رئيسا ومهما، يؤثر تأثيرا قويا في تطوير المجتمعات الإنسانية المعاصرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن جامعاتنا مليئة بالبحوث. أليس كذلك؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والجواب عند الباحثين:بدقة:⏸ نرى أن البحث العلمي برز في الجامعات بشكل أكبر من أي مكان آخر.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولو تمعنا جيدا، فإن هذه البحوث لأخذ الرتب العلمية،⏸ ولا يؤخذ بنتائجها وتوصياتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فيكد الباحث بلا أثر.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يكد الباحث من أجل نهضة التعليم وبمختلف التخصصات،⏸ ولا يؤخذ له بال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فنريد بحثا علميا نشهد بإنجازاته في المجال الطبي والأمراض الوبائية والسموم.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وغيرها من التي تشكل خطرا على المجتمعات. فوباء الكورونا يطحن في العالم بشكل كبير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتحاول الدول المتقدمة إيجاد المصل الذي ينقذهم من هذا الوباء، والعرب في سبات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نسمع في بعض الدول العربية التي تعزز البحث العلمي، ولكن لا نعلم أين تلك الإنجازات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لدينا عقول وعلم، ولكن في الخفاء، لا يتم تعزيزه ودعمه ماديا ومعنويا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالبحث العلمي العربي في حالة اكتئاب بسبب طول السبات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالبحوث العلمية والابتكار والاختراعات والعقول الخلاقة، أطر نظرية لم تخرج للميدان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولم تهيأ لها بيئة علمية من أجل الإنجاز والتطوير والعمل الجاد في مجال البحث العلمي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نسمع عن الريادة على مستوى الدولة والعالم، وعن البحث العلمي ومراكز البحوث.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ولكنها تبقى حروفا تفقد الروح.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما الذي يوقظنا إن لم يوقظنا وباء؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "هذا سؤال المقال:⏸ كورونا تكتسح البشرية، والبحث العلمي متجمد في مكانه.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ماذا نريد أكثر من وباء قاتل من أجل أن نتحرك في اتجاه البحث العلمي وتفعيل دور العقول المغيبة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالبحث العلمي شأن الدولة،⏸ ولا بد من تحفيز الباحثين من أجل الابتكار والإبداع.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "وكلنا ثقة أن هناك عقولا عالمة، ولكنها تحتاج إلى الفرصة، والدولة تستطيع أن تفعل دورهم خاصة في ظل الأزمة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

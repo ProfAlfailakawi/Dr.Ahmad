@@ -1,0 +1,278 @@
+{
+  "slug": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
+  "bridgeAfter": [
+    13,
+    20
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "الراحة تدرس، والفكر في إجازة دائمة. جيل مريح،⏸ لكنه لا يتحمل وزن فكرة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "في زمن أصبحت فيه الراحة شعارا تربويا، بات السؤال الأخطر: هل نحن نعلم؟⏸ أم ندلك؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "اختزل التعليم إلى بيئة ممتعة، وسهلة، وخالية من الضغط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن ما النتيجة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "طلاب لا يحتملون مشقة التعمق،⏸ ولا يقاومون ملل الصمت، ولا يجرؤون على الخروج من منطقة الراحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي دراسة نشرتها الجمعية الأميركية لعلم النفس تبين أمر مهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن المبالغة في تسهيل المحتوى الدراسي ترتبط بانخفاض قدرة الطالب على التفكير التحليلي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن الطلاب الذين وضعوا أمام تحديات ذهنية معتدلة أظهروا أداء أعلى بنسبة أربعين بالمئة في فهم المفاهيم طويلة المدى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لكننا في نظامنا نربي أبناءنا على الحواف.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لا امتحان صعب،⏸ ولا فكرة معقدة، ولا جهد زائد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالكل ناجح، والكل مرتاح، والكل يمل من التفكير بعد خمس دقائق.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فهل صارت منتجعات؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل أصبحت المدارس منتجعات؟⏸ ففي كل حصة نبحث عن لعبة، ونشاط، وتطبيق، ومعلومة سريعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونخاف من الصمت، ومن التأمل، ومن فكرة تأخذ وقتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن أليس التبسيط مهارة تربوية محمودة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يفرق: نحن لا نريح عقولهم،⏸ بل نخدرها.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نعلمهم أن الفهم السريع أفضل من العمق، وأن من يتعب في التفكير مخطئ في الأسلوب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فتنشأ هشاشة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهكذا صرنا نخرج جيلا بارعا في الانطباع الأول،⏸ لكنه ضعيف في المتابعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "متوتر من أي سؤال خارج المقرر، ويطلب دائما: أبسط، أبسط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهل فكرتم يوما أن الراحة المفرطة لا تنتج شيئا؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأن الفكر الحقيقي لا يسكن في وسادة،⏸ بل في تحد؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي فصل دراسي مثالي، يطلب المُعلِّم من الطلبة أن يفتحوا أجهزتهم ويشاهدوا فيديو مدته دقيقتان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ثم يجيبوا على اختبار اختياري لا يحاسب عليه أحد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ينتهي الدرس بابتسامة،⏸ لكن لا أحد تذكر الفكرة، ولا أحد تساءل: ماذا بعد؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فصار خفيفا يستهلك.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لقد تحول التعليم إلى محتوى خفيف، سريع الهضم، يستهلك ثم ينسى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كل شيء يجب أن يكون قصيرا وممتعا وبلا ضغط. لكن السؤال:⏸ هل هذه راحة أم استقالة فكرية جماعية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالطلاب باتوا يتضايقون من القراءة، ويكرهون الجدل، ويتوترون من كلمة ناقش.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يريدون ملخصا، وشرحا سريعا، ثم راحة. ومع الوقت يتعود الدماغ على الكسل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي تقرير نشرته Education Week وجد أن أكثر من سبعين بالمئة من الطلبة يفضلون المصادر السهلة على القراءة الأصلية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويظهرون أداء أقل في الاختبارات التي تتطلب تحليلا نقديا أو تركيبا مفاهيميا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل الراحة عدوة العلم إذن؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال ينصفها: الراحة ليست عدوة العلم،⏸ لكن الإفراط فيها ينتج هشاشة معرفية.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فكما أن الجسم الذي لا يتحرك يضمر، فإن العقل الذي لا يتعب يفرغ من محتواه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن نحتاج بيئة داعمة ومناهج ذكية،⏸ لكن الذكاء لا يعني التبسيط المفرط، بل أن ندرب أبناءنا على احتمال الفكرة لا استهلاكها.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ففكر مرتاح لا ينهض وطنا، ووعي بلا جهد لا يبني حضارة. والفكر نفسه يرتاح حين يتعب.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

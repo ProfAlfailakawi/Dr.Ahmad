@@ -1,0 +1,1010 @@
+{
+  "schemaVersion": 1,
+  "certificateVersion": "2026-08-31-kuwaiti-production-corpus-v1",
+  "nativeSpokenVersion": "2026-08-31-native-kuwaiti-v22-ear-safe-verbs",
+  "episodeCount": 143,
+  "corpusSha256": "48d91d69fd6f484ecd027ce822ca9d84170952c2408a5f2ccd981428f66840eb",
+  "episodes": {
+    "a-certificate-of-excellence-for-a-lifeless-doll-2": {
+      "sourceSha256": "f2e200474cb914bd2db5df4fa496b22d09785521b82631eedc65670cafc94231",
+      "spokenSha256": "956f1773d274e38993e955cd51c8646f4d4ee3fdb365054f57397f7e0e043093",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2": {
+      "sourceSha256": "026e253ff31fed4001261114dd9395124b74b2dd6c180237b77bbba4301a3f7a",
+      "spokenSha256": "04fd12d88aaefe8fa023de9174413ad365c401c263675441153a89ccfcb5d7ee",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "a-generation-that-knows-everything-and-understands-nothing": {
+      "sourceSha256": "0e7826fb7ebc61d272a21b941a2cd0372f5f40468a59ff8d04d2d05a55b98025",
+      "spokenSha256": "febeedb348dff824e6105d2e969b0f26da9402e6152fb7340b805c7930578875",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "a-generation-without-rootsarabic": {
+      "sourceSha256": "3485fc7d64b76c6d9720b9486b9f27b897d20ff4bce86c97fa65f0b1dd5077f4",
+      "spokenSha256": "2f30deab6488730d1c1379a8f1aca97b3831e76610695fcc4f44f2d4d5819421",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "a-new-kind-of-fatigue-in-old-expressionsarabic": {
+      "sourceSha256": "63031fec1173e83dcb776f4177dcc2264af9446a59d79d5b58b8b7d1d706d475",
+      "spokenSha256": "80b2f11720b236b2843930038d2040f29571469161df3092c6b4161ab62f10c0",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 5
+    },
+    "a-society-that-fears-the-different-arabic": {
+      "sourceSha256": "5872c708ceba4a97420818478e2be5d99a97f943d4919c9333d11b8bc2da81eb",
+      "spokenSha256": "56f81efb54851f51bede3fa36bdb4168e298e6ed1e16e8018f0c9f0c040f0f84",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "aggression-in-the-sky-and-steadfastness-withinarabic": {
+      "sourceSha256": "a1f08ce2d7655d1c83a5d34b4c95c710d0cd8a8c355f9b45d64e66d4fbc05f39",
+      "spokenSha256": "fe81eea4ffd32f5109501cc86f23ca9b91cdcd165b496dbff31c2ed1ca134205",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 5
+    },
+    "alternative-plans-for-distance-education": {
+      "sourceSha256": "5994287503995f1810f108ac6246a37643584752cdf2c975fa5ad5d6f7eb2bcf",
+      "spokenSha256": "575308d4c534b36476e359019b6e817634efae2cf9bec66b0fe23679f1c9f7f1",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2": {
+      "sourceSha256": "c313c9d75a5a608cf5c0e15bf2cebddde870cada210f31bd4051efffd1b63caa",
+      "spokenSha256": "87a28e8da6115b4932dbebd226152295de39901a601e928c6fb2cc817a1066c5",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "children-who-know-what-is-required-but-do-not-know-whyarabic": {
+      "sourceSha256": "4e3400ab176cd59b0af85c8978cb4f699a31862e73b537db81171bdc3f1c9159",
+      "spokenSha256": "27c6931fe7e18c749199508b4d70e26c2cc2757b86a75b24b02908444f120fdf",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "children-who-know-what-is-required-but-do-not-know-whyarabic-2": {
+      "sourceSha256": "d435fa50e2d16093e0df7854bbe1d4b3615c7ee08152f01743d791c719bacaa9",
+      "spokenSha256": "a1ccf697df634c9f80e5aea4743dc65d3b3105f8b813e81d1146b6f45ad0d636",
+      "turnCount": 29,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "coming-soon-a-certificate-without-a-mind-2": {
+      "sourceSha256": "03906b850c4ea7b04bc66393fdc850c75748d85f9b21f1017c4bf73b6ddca05d",
+      "spokenSha256": "aebb937ab6a46a139ec04f47fcfcda588f0a54e63644933285696bf4a716c90b",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "competency-based-approach-to-the-trash": {
+      "sourceSha256": "005c4c2f38f28e9ab1a79aa2c3ea8a5b0ecc0a8380bb12a355b41a82361b68bf",
+      "spokenSha256": "775ac5ee6f37c3033afb1299c10757366c3e68db4c60e8ce847a65006d6cd7ff",
+      "turnCount": 29,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "do-we-contain-or-raise-2": {
+      "sourceSha256": "82119b135ab47699142c1b69261edf33078c4028560d5081e133fe8b51654a69",
+      "spokenSha256": "0ed7896293c75850de2d52f06ecdaa7a38c269adf249f4eafb5ee25e0e74a5de",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "dr-jasem-malik-the-lesson-that-never-ends-2": {
+      "sourceSha256": "a7542e54fcf0dc9fda59a7ea4d0a6ded8a3c918b5496b9e7b3736df4b6f68680",
+      "spokenSha256": "3889a05b9cf973f5c71e75d7e82675b231dce0c6ddbb1ce8b1e35c85cd86ff5e",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "e-learning-culture-2": {
+      "sourceSha256": "7715b108a81daf7dab4fbd45abcb41bf6b12b5b99812f216b646d43f6982c2fc",
+      "spokenSha256": "7bcb7353bd29b18ec42aca5a31430c1ccd44e6ab7c81cbceab835f101747c64e",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "e-learning-initiatives-and-solutions-2": {
+      "sourceSha256": "a6f39f98c96b26a9c8133082d9b459460463153faf928d705a7dc756285e15b7",
+      "spokenSha256": "e25b67888ef3b35f81fc44494876d35d38f5f0a8cb114596e3681b601837ce85",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "eliminating-the-education-epidemic": {
+      "sourceSha256": "4bc9719d76356d2d5658bce2bfd7d9ad9b5fd8a35a6f3083b20ac8438f3e4bed",
+      "spokenSha256": "e18db633116611d9b484ee5568a3f1e9f89e00aa54834d4fdca9822ffee99379",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "ethical-hacking-culture": {
+      "sourceSha256": "dd5a1e6931116c062511a9b17560b7010bc60137fa8029a03f9c1198e20a1bc8",
+      "spokenSha256": "bbc07514e374f7f6d78f476941d727de97f249c1d5e33facc17ed30f7c355620",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "excellent-in-grades-lost-in-decision": {
+      "sourceSha256": "96a2b574789766feb093ee6157c6c91564cd6442418b762c6e5e2889f0664dc6",
+      "spokenSha256": "cd822170a34c73fc31ddaafa02baf28193036c12c989fc1af21161323194f907",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 5
+    },
+    "expectations-that-shape-a-studentarabic": {
+      "sourceSha256": "e33f1b345a6c0b99f2b1642817065eef3a1ec9bd24ac3941bc28d20356a5fae1",
+      "spokenSha256": "2244674df9dad104325502cdee376588882e7eb177966e8e0a0e08e952ecc892",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "freedom-without-thinking-and-openness-without-awareness-2": {
+      "sourceSha256": "90ddcd33d83c9d077d5db395f0a4b26b407cfd7c122f260847c50fe5a9926501",
+      "spokenSha256": "481bfd86992c29f811af6f60a761c085862943857d5b2652a07f6026eaaae003",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "from-the-schoolyard-to-the-food-court-2": {
+      "sourceSha256": "3524a7da9a8f869c36611011223c3342ea8cd6e8f16c31b68156b1a3f5873137",
+      "spokenSha256": "a2a274345d1668ff5a01e4a9068c7099c0cf2228547fab8916ebfcf31fb3d18e",
+      "turnCount": 29,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "he-passed-the-exam-but-failed-the-question-2": {
+      "sourceSha256": "7f027295a385263b9f8ec40d8b1bf46aa71a6e95ed264a7b5d6bcffb0583d531",
+      "spokenSha256": "80b0ffdf644a7f087dff8699c58226e435c9a9cd387c343e8fd71d72a62c0071",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "i-earned-more-than-harvard-but-it-doesnt-teach-brains": {
+      "sourceSha256": "d61fccc0a7cab967b4ee4e63521e0590e58f4ca4e428dc951a6f1c2b1deb1c97",
+      "spokenSha256": "bf72a1d58729e75e07aa0e11f96eccb02c35eaa84225e2c1416867ac693d9eb1",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 5
+    },
+    "i-write-to-awaken-you-not-to-discourage-you-2": {
+      "sourceSha256": "47994667e7142b6a0ce0a15de69035a2cf98d43e70da326fdb07abd5d7afce25",
+      "spokenSha256": "8ced56e09f1998a176d87f278e22a626a0a07387eca889702afc9c57ad957275",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 5
+    },
+    "in-farewell-to-abdullah-ismail-al-kandariarabic": {
+      "sourceSha256": "46cf30813dc0b28df92c6d1f9e593683a48f6dbeea4b066578e755a49142d851",
+      "spokenSha256": "941c7af34d1d46f17dd747eb84b744435d09dbed638b205e8600f1d1b5673937",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "in-their-opinion-surgery-is-a-male-specialty-2": {
+      "sourceSha256": "23304ca2cd5d6d744feb6d3db4338af44a9e6b5366503369ecaee6f5a930c1f7",
+      "spokenSha256": "a889eeb0d2246434139814d7d2ddd639e4860225d98dbf6bfbb1809805d5aa3d",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "intelligence-without-a-consciencearabic": {
+      "sourceSha256": "38769af988a538117b9d1510151187c307d4d3cc40a4cc8a5989dde4c228eef6",
+      "spokenSha256": "249505784e3d8e8277ad2de08b3d807228ba872e27ba4d8c9e55ff012d352ad4",
+      "turnCount": 29,
+      "bridgeCount": 2,
+      "rewriteCount": 8
+    },
+    "laughing-while-burning-2": {
+      "sourceSha256": "cbd63100a0dc78c2f6154c1b12c8f2b3f6afd254b692d75e91efa5150c948847",
+      "spokenSha256": "b21a3f5a1ada0181c4e0cf0decffd63d35bb0bbb1aad67a3f3ad6e147262105b",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "lets-achieve-a-higher-level-of-quality-education": {
+      "sourceSha256": "fbd692867013f68401f4dad0df9bed48928a6045f25b7399bf4beb3120510516",
+      "spokenSha256": "1bc297085b14abfa120142a7efb51a4e7cb9536f6414d8b982507786c3f0422a",
+      "turnCount": 24,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "lets-work-towards-scientific-research": {
+      "sourceSha256": "924b2b154916843c3ca7336296419f79af5bfb55393c53c2f6c43daa0edac250",
+      "spokenSha256": "b9aa23754cc72ab0258ffff50daef31a91eaca30fdca6c156b17d9caa9a3d2a8",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "past-mistakes-still-persist-in-the-age": {
+      "sourceSha256": "da2af54c2d3e699adf9b1430c366034b5e2ed0cea438b27babffea5f541c0d6e",
+      "spokenSha256": "92f7368b89daceb8318b77be9c73afdff1a8143398a911d456dd2ca8248afbda",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "private-lesson-in-the-age-of-digital-educational-intelligence": {
+      "sourceSha256": "573280296bdd4c7fc22d0b4cc2bdf634d33f7fe09719e8cba674d98dac02e2e8",
+      "spokenSha256": "e397d36bda19094af86f7744a97a2396e4b1b5e0b50e7ea31029fbd47c031fcf",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201611-001": {
+      "sourceSha256": "d5a5a337667c1dc8f3b326dfe7ce2d9b850579e601f2fd2682ee2ce8940cc2c3",
+      "spokenSha256": "b3e326c72ce82ff7f24649deb7b126264052ebfbd153004a35a48624eccb77ff",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201611-002": {
+      "sourceSha256": "737c3e39428ac1741e8525a0670433c6d2cb3f15e287c8b6c60350b7317440ce",
+      "spokenSha256": "31f72ce1aa5fbe44f21303b5f570d76fecf4e22802388427bf55d1bcdf1163ab",
+      "turnCount": 23,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201611-003": {
+      "sourceSha256": "550a87b65c82ca3a4b14074f6d5910f8f5844b26d9888ca077dbc0c878b68242",
+      "spokenSha256": "6e86d43b826aa556a1368a4e2ff88bc120537e591ccc84f8fc554ea8301ad934",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201611-004": {
+      "sourceSha256": "d57aeeb1b270e2d9fa914d388278227bd0e410f4690368d1a29abf276ea6a8ec",
+      "spokenSha256": "f10a98460bbe17fc4d3fd7b4abb48ae25f20ca1b8287de6ab7becb223cbbbd2d",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "qabas-201611-005": {
+      "sourceSha256": "b4a7684258058e5ad8031e51cd706cfa86910c51c6326b104c9098e4473055e7",
+      "spokenSha256": "b29f359f11c0e50b869d7a638ebc7585d89256d7197f05ab8d9c82ce4b17fa92",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201612-001": {
+      "sourceSha256": "a6add7418b4ece0450da0ec737bef37146298f8dec8ced77278ffde10883fb16",
+      "spokenSha256": "b79d81444390df7fd1bbf12bab530c8c409e9116ad48ba220eb79bdd9605628d",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201612-002": {
+      "sourceSha256": "636a6c3a81e2462ea820c5d3080ede1dd7292798469257810af5f4a58f29341f",
+      "spokenSha256": "b0bb25c0ebb2e97cc180a2cd2bee8f44f40089454bd9d057bfcde34f1b55f915",
+      "turnCount": 30,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201612-003": {
+      "sourceSha256": "2fff1b4d7a7354cdf580a290655ea32190ace6f7a2456a8a82e65c619da58c7d",
+      "spokenSha256": "ea7ec31ae1a2ce259f0b88279c8fadb2de97ad1e7888eb2a16894d9b959969a2",
+      "turnCount": 23,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201612-004": {
+      "sourceSha256": "a0e9f3fdf8b55aeef4d3611b806033a674abed713f861105b7c76d2d1af3acf5",
+      "spokenSha256": "7fb506f5ea408aef2979a11727d723a139f296e11eb4e900311df73ad0ad57d1",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201702-001": {
+      "sourceSha256": "20e5d9a9843259962a07747139fcdd6173182db29ea8f369c77588de1d988295",
+      "spokenSha256": "45b2bc6958440b803e083b7bd1f4affed62ddc9d416fd49d886581e9e638e539",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201702-002": {
+      "sourceSha256": "2c9aba68153f1d417dcbeda3c3a0ea41d92afd109a96556bca73c337aeb8d092",
+      "spokenSha256": "28e32557a79d82eeffbd18abb2502062036f0b8fc7d54d3d558981d3a6597dd7",
+      "turnCount": 30,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201702-003": {
+      "sourceSha256": "af56317de19b60202b713effae6eb4dfcb7ff840affcf19d28a3912e456a5524",
+      "spokenSha256": "fa6462154e720c23d7f94f5024ccfc50d0dc805b441dab560ea4f8870fa1eafc",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201702-004": {
+      "sourceSha256": "6431ae8ff975ffa465d2d7cd23ec9e012536d6d5e33a434165607e6eb66a5894",
+      "spokenSha256": "80fbe9cba2b2bf7ad2ed4259345091fb4f37b2f88befca4da2ff6d4ef36ecf4f",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201703-001": {
+      "sourceSha256": "1aa1635d733519e4a09e7f7fa4f8b4d76030f9cd1f3fb19d1b624c38b8f42485",
+      "spokenSha256": "946ddbadfab9c61770d294b0da2b1b6bbc18bc7b8950dfa67096c81d8ba780be",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 6
+    },
+    "qabas-201703-002": {
+      "sourceSha256": "31542057c0b0a3cc6febd61ac87ecf258f587ca3283c565e50cff45070ea4a66",
+      "spokenSha256": "3c8db500a7881abc963b6e08cc92b894000c2ed8e1ecda70bb604af22bd6e123",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201703-003": {
+      "sourceSha256": "28450ebb0f0f260acd5f47ad1a4cc898adab975f702d3218c7c48f45cb6a8443",
+      "spokenSha256": "408e4bbef13cf277830f6a139a75d9b96bb897888f704221d32fb12faa4cea3f",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201703-004": {
+      "sourceSha256": "0ade388b4396749671d812f10f7a333354d62067adcd00bcffcb294334c300b0",
+      "spokenSha256": "69935305d15cfd521d6829eb31f3030b44228efd24ac2085509884c71c409387",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "qabas-201704-001": {
+      "sourceSha256": "281e3826c07a427bf352a3bdf0780c2fecb7c866da50fb49d3941a82ba1793cc",
+      "spokenSha256": "9a2cecad30e3dcccca4afe23a876b024c1a84a8c13151e75f4aacbd0d257760e",
+      "turnCount": 24,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201704-002": {
+      "sourceSha256": "66223f9d97648fc6400c2396f85b48c1cea0404d0211e279ee503d50810ec436",
+      "spokenSha256": "d877f9c7248a0866b68ef526abd61b77cb3635680dd0c92d20cd417c19fd7d23",
+      "turnCount": 30,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201704-003": {
+      "sourceSha256": "7d742bd7c3a7a4ad154c20e6d335ec145d364291fa8287ad19ebb1e68e4aab23",
+      "spokenSha256": "50ba16206aa09f544558dbb85f17d882971b7a9f393a1193555b8e0c00f53542",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201704-004": {
+      "sourceSha256": "407d3995f12f7e6a2ba9adc30e5f5939c8b367a8aeb9b9026cc1972cec300751",
+      "spokenSha256": "808991952667eb8682fb4bb9c6b2263f2199b211d60e75f39383068480214a2d",
+      "turnCount": 23,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201706-001": {
+      "sourceSha256": "1a10664af1a47152fbc0c3881940d092d07cc8aab7b977a04adf9106a390aee2",
+      "spokenSha256": "6502487dc5827c59ca6e19a63efa82772a2f6e582241ce4d09024433bbfe2f42",
+      "turnCount": 29,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201706-002": {
+      "sourceSha256": "8ce0687cc4aa139f8e261f2a41000a1b58912399082ada8f739193e63c3fb86b",
+      "spokenSha256": "e5c0581fb5866be0dfc91c92e36abbebbfdad595255f00018f81a6b238e12314",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201706-003": {
+      "sourceSha256": "5521e1ec48cbb252dd9f6355d5e3a9109c9692b83763473b7783ba155a25b218",
+      "spokenSha256": "825fe8129cc9a6460bfe66f9a0c439f8d594f3e3440a30d0117bdfbba156ccc1",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201706-004": {
+      "sourceSha256": "e694c2c43f84d1875593a0f554c56490a23a9574dbc72261eb979b9d21cda942",
+      "spokenSha256": "0a0fed0e4f6f1f38cd88fface3ada24d18ca2ca522c72d73d7cc557e2ee5481a",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201707-001": {
+      "sourceSha256": "6414ef8d455904230a934df3de91d4bf7a675a07d29f199fa96445c8c2555cdb",
+      "spokenSha256": "6a6b60a56653532d082f29699e21bb9ec9064b09d9093b80e8badf855e9b7d50",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201707-002": {
+      "sourceSha256": "5090ebff5b8cfe86cd5184d2213b132053d275dda238146c1b975a63325f8419",
+      "spokenSha256": "a7416772deae3811453bcad16f1e319a3e2dccff9f3e60ed9076366a6dfbe55d",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201707-003": {
+      "sourceSha256": "63980800ec638207d60b53558caf3c6f11caddf07f8e9ef0382cf55645c4ea6c",
+      "spokenSha256": "3d3579ec75b75063dafc78cc865f7eb811b0545b8807feccf2e8fa9069a88a11",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201707-004": {
+      "sourceSha256": "3675e71d349bcd3662ea22c5bc8c4e55f564d1630cf823396640ead60ff9eec2",
+      "spokenSha256": "b9c7a91387ce55bb49edc40ed310b982793ce1d3128f081c2fc36b1adf19f725",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201708-001": {
+      "sourceSha256": "9fb4abdb4dd26c4281402ec769d368e098b81cf99a664470411a763cec133ae1",
+      "spokenSha256": "21f55a3fca70f21b4fd0fa9c512f9af584be654f89be496b83f93984494fc965",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201708-002": {
+      "sourceSha256": "5c29aab66bbefc5696b3472fb3ef86537d15ad47d04811c287d54b9fc53b311a",
+      "spokenSha256": "f820f1de6122fd727db22593a71dc91ec7e7e8dd68a59423c6ba2497292aeb59",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201708-003": {
+      "sourceSha256": "4cf42ce969dc6055d94abe2a171331435dbcc9d8be164ab4f4a872be291588ba",
+      "spokenSha256": "d51812d14264ac9da5bd57913c71cb374d8ecec5cb7d25bbf554833ee65d32b5",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201709-001": {
+      "sourceSha256": "90ed46cde0ba4407af6cf609ae87602bedd1e4f2e6ced62284b7f454e27c45dd",
+      "spokenSha256": "56c7442f9688e4ae5b0cf9fc3238348ba4aeeebce3abafd93a14b2df3ce126c5",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201709-002": {
+      "sourceSha256": "c79802b0a31b8c39878f0bc223807df1204736256b6236ae700d49b268e30650",
+      "spokenSha256": "6819de2432d3fa7538fc6186b7ceb63436038ca380ee91213f2d2602c7f7a935",
+      "turnCount": 24,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201709-003": {
+      "sourceSha256": "a8cc5826d13ae2c630074c35dc1efb28def3cf750e23df163398881d73fbb4e2",
+      "spokenSha256": "7f3de252e188daf3b71be11658481ef413e4ecb0eeb9a29dd55ccdbb7aedc012",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201709-004": {
+      "sourceSha256": "b32f66695bf435b72fb31a66e882297652b0725b71c336a5d5d232adcf643dd0",
+      "spokenSha256": "e7431702bcb3d7bfa791f915fa3fcf7ce280f0e14c9c2e870880e601a6748c4b",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201709-005": {
+      "sourceSha256": "90798a4121b6e7ef37f5f40356b02f22633166b57d420653c28c05ebd22af633",
+      "spokenSha256": "095b891b7068ace7f69d5bece2ca66c4028fbe671bf42d31fce3d47cc5afdd76",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201709-006": {
+      "sourceSha256": "61285ed9740635513f0e92d2886d871e872f3cf19bb52116edc1119577fd1845",
+      "spokenSha256": "3074b51a1ea7b5b6cff06521ccc66f2c82645847de1c2dff8db481932d74be16",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201709-007": {
+      "sourceSha256": "98ab9995c8e45f7f200839e68ef8eb32ec17284e2d872396378381e193e27261",
+      "spokenSha256": "85b7f60c1e570a6e08c4cc60cf3d136020d17e6ba84a5c4b9c8e1da4f9224d16",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201709-008": {
+      "sourceSha256": "10724ee09fcc8cb97dfe5f274ba690cf93d2add4a091348dd360507420e3ee93",
+      "spokenSha256": "991bbce57e65ca46b9e451197fedecb6e14a6e7876f700ac26daeb228d5f345e",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "qabas-201709-009": {
+      "sourceSha256": "3507bb6d08a95ad0901c8704a450c0df46e226d93217b1002442cd1c1d05d5a5",
+      "spokenSha256": "500eb21d02d817ccb5f3f9318d710335246e8ab7ec4ffcf2991ed7808fb7a393",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201711-001": {
+      "sourceSha256": "bb4ed4d60e525076762ac100dc8a6c39347f1bad035d6bebf8611d9a84d9ed98",
+      "spokenSha256": "167234c34e73b803a2f09a099b59d3c090f3bb1f7f38a32cd46026647cfca7c3",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201711-002": {
+      "sourceSha256": "831af8a98d36675bcda729bf59b2ab1518efc12f0407770674883dfcb774326e",
+      "spokenSha256": "b860214e104fa9130d6aedefcf3e25492ba4a3e2aeec073bf042eb760b469afa",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201711-003": {
+      "sourceSha256": "5b55d2827c2b8167695f57df82ce3d095bf19e0c58f22a72d010d15ae14de2da",
+      "spokenSha256": "cd48c10cf1bcfa03254965e43f43ed8b9a0b71b0ee9db75b7bf02580811a4531",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "qabas-201711-004": {
+      "sourceSha256": "031e1db597f205106e7477a8cf741f216ee2ea458e23c5d9407faa1b21c38750",
+      "spokenSha256": "518cf4f720aecddfda970a0c0d248b21dfea82abe8a0ae5fdaf8fb09a1132b23",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201712-001": {
+      "sourceSha256": "bcf1f234c2bea4071c9042ddefa27d1bb6f7f2282c6862a0d20560caebc63d8b",
+      "spokenSha256": "d237177cbe9ec4077a0f50be9c9705b6411fedb9dc4e2f66195c8d97516386d0",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201712-002": {
+      "sourceSha256": "b81e530c196451d1b6f56d121f4cdd2b235e64877e420167949257c2b2a9089d",
+      "spokenSha256": "c2f227899b07e81b0c826a2a3dfefbfd3e97d459f61d370351c23a6a26c4ffcf",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201712-003": {
+      "sourceSha256": "826fc148025dbed6cfa634368ca93d90f3f4bd8fbbc063f7b314889bb0d785aa",
+      "spokenSha256": "40c4d31abd9376443bc906c2e6d75f1a34c90987eb0389d73883e66d454f973c",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201712-004": {
+      "sourceSha256": "0cc89d5cb49fc8afb179ca9290fba73d9ba1b7b81faff8a021142998992b9dd3",
+      "spokenSha256": "0ee37c71def71439b3fafa8a333f10ca3a0485d760c401f204c5ad22a04be766",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201802-001": {
+      "sourceSha256": "516b0351136f7de86ea7d7cbc8eb65a3f6a1d91d5e6856288a7d545cae20899f",
+      "spokenSha256": "6f6aaa9b664d3597630b01b87eaab30d0b68a87bfb5fb5d78a60eee15dde0b6c",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "qabas-201802-002": {
+      "sourceSha256": "fafe6cad4a6cdd1e4807300019d0ee20f950ab98e8f43e66ed70be93b67dcf07",
+      "spokenSha256": "106149379c82d71629947e8e4b2c79b40bb4640239798c112c2752f014720e35",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201802-003": {
+      "sourceSha256": "a8255691ca67419a785d117c864dc2155dd5279bb78f05a952e596ca85438236",
+      "spokenSha256": "bcab746382d8c8c543dceb568e4d3d71032d79913876efbeb220c584ad00892e",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201802-004": {
+      "sourceSha256": "c8d0c32dfa525d8b96b4d7b94462eb6d50004cafda3c8310a9ad411333c90aef",
+      "spokenSha256": "8b3273961f7ba213df0cb019e063230765b584a373695238059dd403109e369e",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201802-005": {
+      "sourceSha256": "f26c499308f792e0624364c4bc006dbe0c871837ac30527217417e114a84a019",
+      "spokenSha256": "8c81049996bf763df524b3f88669c883a7506aab8a664f86642c54fdb1cd22f3",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201803-001": {
+      "sourceSha256": "468f6f36403050d30d8577eaa67dec2465788c26a43aae7428721c6d7a899ba4",
+      "spokenSha256": "752ee1d5ef8b59775d3660ebed44d266d44c405d40c5f07fada19026b298d6e7",
+      "turnCount": 24,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201803-003": {
+      "sourceSha256": "6dbd9e802259c668d48c3a6170d175019857a129be00e7bce679409043e56ceb",
+      "spokenSha256": "2c132c0c211b34c9d34cbe32ac5d62e1c291b06c9ce34ac14cf0affbbe8f2420",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201804-001": {
+      "sourceSha256": "73780704b99602126e63ffc4328d038c8b313ab52d170bf352d89e9adf1e0b23",
+      "spokenSha256": "ae6b0a63c16001980fdcc3a35e8a3badf5ade050802cba4df372ba9db9972712",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201805-001": {
+      "sourceSha256": "d0679cbdce82201be0c86f6bf4719673367a173a430772ae690aebb7593cc0e9",
+      "spokenSha256": "2a5cfbe91f4caad3678bb08a3777d0ee44915a2856f5106301450b7d6af06fbd",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201805-002": {
+      "sourceSha256": "ddc8fdcea40259bd6f45128555e2b3b62e9a463549ab35411ce469022750b9e8",
+      "spokenSha256": "84b79af66486e09a790b7f53ad941c59522d9b59c8e42951749fe5af6aab10f1",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201805-003": {
+      "sourceSha256": "9defeb829f6f26fcf8e74f90ac3acbd6f8164b5c84b07d5325b5106f99776564",
+      "spokenSha256": "9a2a547647b200610c029055add7bc0b6a929f74cdddd069fc6ef62891046476",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "qabas-201805-004": {
+      "sourceSha256": "e447b6e9f17d15f57f4e2d1717c12f38432b12a3a45812f76f5aab278bd6e9e7",
+      "spokenSha256": "43e1080a472500a44279798523b7978422123343ddb0ddea15a43a3caa7ab055",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201806-001": {
+      "sourceSha256": "bf6cbcd0c9116635195919860bc511d1a23d2e38c0914242ac6231f5c1ceee50",
+      "spokenSha256": "fceb4f22a7c77175788a24d343fced2e1993fb576e4b0c7ba7f8a49bf779bc0b",
+      "turnCount": 24,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "qabas-201806-002": {
+      "sourceSha256": "bb9948266e95896a759ecf54aac139ad5e198d91be84bc42fbd76fb9f3c4edf3",
+      "spokenSha256": "a7acb75e4c1426d2cf7a3d22232d46f902d84a0af25d63bfb0ba54a12e229525",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201806-003": {
+      "sourceSha256": "5dddef8876d558397987144ff9c1ae138b098bff0da6647ebb20cea9b16e3701",
+      "spokenSha256": "fde6f4c0938114f4aff8b90527775d224e82d16aaad298ec120648cd6f3a1a3c",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201806-004": {
+      "sourceSha256": "44dbfe37a72cbd2eff387dac9da7a5484910e2c7118e962e9fcc05fef2000d23",
+      "spokenSha256": "b8221841957d91a7da0ca4bf29704878ea89393db33c9b296bb5d5f6a124126c",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201806-005": {
+      "sourceSha256": "6e117fc8b1adcf5f4a424536901cc2ea24a6648fadaeb3912151e444c2c20c05",
+      "spokenSha256": "a3647a39feb821d8bd50082b24e304461e305613b7d63cdc5ef84efa7e7e5fb1",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "qabas-201807-001": {
+      "sourceSha256": "526880674a7757e36bd75cd318703d9aa34fce1f291d1698e8871a5684f6736b",
+      "spokenSha256": "302ce019ef4daa080752f5e355ce8bcaa57ce084bd14250d30ed735f89648e86",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201808-001": {
+      "sourceSha256": "3c62fed21d066fa0cbaf50dd76f1e3f7b5e3fe228616d87d636d11245339979e",
+      "spokenSha256": "b0ebd7628fa5ff0c749970fabc62ad622ee08e5caab28995e50ef9f66d0d6ab0",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201808-002": {
+      "sourceSha256": "aef331ecf21d856d03023de51d706677cecbbc25d3c4e678c1782822429c9324",
+      "spokenSha256": "a399fa350ed1ffdaa054026a52aeeb8c58247831f4579bcafb8c804ab33a0fb4",
+      "turnCount": 24,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201810-001": {
+      "sourceSha256": "c02531e794b86d9ccfb00245fa3a27f4bde2b915026fed885bd2e8c59c072098",
+      "spokenSha256": "c8f60e6c46571abeaade65f6659a24664b1944771944cef2670f926d44bb2c19",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201810-002": {
+      "sourceSha256": "b18691db057937f8efcf7aaeeec8ba11eb000b2446283adb3a661e7d1b7f1136",
+      "spokenSha256": "ffc66b365a7f628941714a7dabb92b4eaca463faae9414de0afc79e358f597e8",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "qabas-201810-003": {
+      "sourceSha256": "ef455528f1c3a2bd3ddb9c00d1090163c8828289195946d052325a5832147aef",
+      "spokenSha256": "87d114e9725c152ad330998ea0697e09c0bb86ab6589bd64fa1cc9a5820347bf",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201810-004": {
+      "sourceSha256": "9d715d0743fa12ed8f4c96841d8d4ac8f6be99ea1f5df54da2d095ea3f2021c7",
+      "spokenSha256": "f5e4cc2231bc31def0a6d17d8b10aab3d60a0626014a41f2b887a401c10addb3",
+      "turnCount": 24,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201811-001": {
+      "sourceSha256": "c520843ef9744d15c198965269e5ce5edba58b23cb7d228f988b155da6d20b25",
+      "spokenSha256": "5ea10705ca536a20e9655804a333d8bd6d9201fd26007d5c4f71d4157915ad11",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201811-002": {
+      "sourceSha256": "94734dad94fe93894bf2df270bc57750495f715b8398d2544f1b015364df175d",
+      "spokenSha256": "2f8f7cba8e73b00ff820c831d25074eab1c72f0473ce1e02bbf9817785ac4ffb",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 5
+    },
+    "qabas-201909-001": {
+      "sourceSha256": "187937f6867b2126f86ed7528722530c30373e4b5c78b1e8601f5d8869ca0d4e",
+      "spokenSha256": "f7ad3e46e07ff8ab93bcd4282cb01c6674415a9c3cbd17ceaea8b0d9b4c8b3af",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "qabas-201911-001": {
+      "sourceSha256": "07b8c35cb98a936c37ed9dfd50d1e377fed99f7372bc358bb45f9731b830a6fa",
+      "spokenSha256": "1e427877ca71c8ec8fad090311fa25d3ec6a09ae589a88141c94a0aa31877cc8",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "rest-is-taught-and-the-mind-is-on-permanent-vacation-2": {
+      "sourceSha256": "e770a086813935196a69e81416da84e1c4a5cfa3336983b9291d7d64c136089f",
+      "spokenSha256": "a60cb14f2f82c11ee586f0e1904e0cff812a1e43a2f5fe0838f269c041556869",
+      "turnCount": 29,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "smartphone-child-a-creative-mind-or-a-child-being-driven": {
+      "sourceSha256": "e8ed83b2e2c85b444a7c1972db8067a0310510c873834fb672272b6ca89eb8f7",
+      "spokenSha256": "a35952541f23c24919d7d273be8971638935dc9201a3b4843592196f33025184",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "students-minds-are-on-vacation-while-chatgpt-works-full-time-2": {
+      "sourceSha256": "fad7ce401fdae01091a89d381c5dd13c37301ef0d110c7be81a1e14f99f177af",
+      "spokenSha256": "58d8585962bbc9ec7c64f8f2489805a7bf98fcd4b785c908a7af1cb5c27d6e0e",
+      "turnCount": 31,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "success-that-does-not-bring-joy-to-its-ownerarabic": {
+      "sourceSha256": "7c3a26cd4c12349f5556a0e920f952e98f9b299b3830682f7487496df29f1098",
+      "spokenSha256": "cb13d5a9e37c4e1fccbdd0649f1ecc989c9a110bb85f83e6f9c717b66c60ca9e",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 51
+    },
+    "the-blackboard-that-no-longer-sees-anyone-2": {
+      "sourceSha256": "1bc5d65a2fff0edd5d68c80018c42e175acdd56e8e4623bcbb21f33b7944015a",
+      "spokenSha256": "2b3314a73c0511fcae926fd02a5cdcab7089ae0c93f2a3585d9ed70cb36875c9",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "the-classroom-that-fears-mistakesarabic": {
+      "sourceSha256": "013a6fdb788ac4006fb34d6013800a44d759df3377fa43dff5f2b030fec6fe08",
+      "spokenSha256": "e54cafa745a503d5073a78f1a631c295e0f39872c05f364331acebf6aec0830f",
+      "turnCount": 29,
+      "bridgeCount": 2,
+      "rewriteCount": 42
+    },
+    "the-excellence-epidemic-or-the-cult-of-grades-2": {
+      "sourceSha256": "03eb5a2ba7a95f300b53bc03387fab126e780d4264bc8c011ca7c9bcadf139c3",
+      "spokenSha256": "928b094cc53f0b3e4e9a918bf4880c62dfcf3de3fbadd1142f845eecc59e9de0",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic": {
+      "sourceSha256": "a83421688dc2f45457f3a929f94cc2e31d9c126f31a44848b291eb4cc56b5a18",
+      "spokenSha256": "4128cfb3b6315fac589121a1624fa775e4c60fc976a4723af9ecffaa46f5fa33",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "the-human-who-forgot-himselfarabic": {
+      "sourceSha256": "8c0ccd915760f0d192ec4f5b51d34865841fc7548610dffe740c8015e5048ed0",
+      "spokenSha256": "6fdd82efbee0ce575ce5715ecb9cac0c80756492d987fee3b0b73ba99a5d7958",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "the-media-is-a-vital-partner-in-the-educational-process": {
+      "sourceSha256": "35de1a788a8ec28105f861162196e7a36b1675b97272e2929989b9bc54842379",
+      "spokenSha256": "c2e2ebe7dbc7c881c85c9a8de5b672510f62df03649bd2450735f87ae3d4aa6b",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "the-mind-present-in-absence-absent-in-presence-2": {
+      "sourceSha256": "b52b760f3f27f7f9bda2dd7cc062da36ec9d196a9a2afac30664b6a4db9cffc0",
+      "spokenSha256": "4bc69015ac52996b1b7f5947e90bab17c6b107b1709d77f2c9076f0b34ba3c9d",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis": {
+      "sourceSha256": "4c8bb54c09cfe633106a6d4e13c23d2e8bd353194a91fe6d12ad780b225ec37b",
+      "spokenSha256": "3f1ac5212887fb81b08a05931e44a285c784513709b77f37d8d174746b80ec41",
+      "turnCount": 31,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "the-republic-of-degrees-and-the-fall-of-thought-2": {
+      "sourceSha256": "be7a37b9743840d80f1437438beef3b7ec8441e3d2f1be67e35ec62d5041b18d",
+      "spokenSha256": "f9bca33cbd471e10adea8978dcd9d48fe2d365a3102f7e82a18626173aa89311",
+      "turnCount": 30,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "the-return-that-fails-to-fix-what-came-before-itarabic": {
+      "sourceSha256": "d3bdba27f060de2e2795182f20d06e535c0129fe9bc6df1df8023ea03f4f2200",
+      "spokenSha256": "d923da876b3900788db959c65b28d18115524864303fbb7cec50a29ce239e6b8",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "the-social-media-swamp-and-plastic-surgery-addiction-2": {
+      "sourceSha256": "b422deb33183fbbccae4f27b9fe2d5ac1740ab2abde6a02e783ab6010d3997d7",
+      "spokenSha256": "d723b646047e8656f43034a61de908356949abcf19a700bb5485856be6b414a4",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "the-success-that-destroyed-us-2": {
+      "sourceSha256": "6365ca6abbb0148d1385a93297599324a00efef361f752ecaf3905c05cb25142",
+      "spokenSha256": "03071b45b27584eefd986815221f087952580f63927faca4ea573845429ba326",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "the-teacher-the-last-to-know-2": {
+      "sourceSha256": "bdb4335abffddcde96b48e764b3f5d69f18b1d1d2d4d5ca2511c55c81c3333b6",
+      "spokenSha256": "530a9d92e951d255657b95f3338c50c98398c4beface6faa39f45ad9313ca605",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 5
+    },
+    "the-teacher-what-do-you-know-about-the-teacher": {
+      "sourceSha256": "5eb562ff8a23a9cc3b8a1780fcd9e28b988298d4625dd85d02112ba4aa278b1e",
+      "spokenSha256": "11fd7d76e66a4982f1b7143434d3e86de776d062fa611b8c9ed3361304872401",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "the-year-that-doesnt-begin-with-the-calendararabic": {
+      "sourceSha256": "c334e6b20916aebf02ca30094445321b301d0c7001d64dbc6133dd61d8beafad",
+      "spokenSha256": "fbc273a65740c1cc41a28b2fc8582604fa6dd6cb0dbded3ef52e1a0550923c60",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "todays-childs-confusion-between-education-and-care": {
+      "sourceSha256": "215d4fe06e484a8c10cffa62681a00bd4490e580c59fbe67f09bc083e4016979",
+      "spokenSha256": "e0cf82d5507739a32d79640304a4740f6c2a4f51956748ca382677b77f3131fc",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 1
+    },
+    "turning-video-game-obsession-into-creative-meditation-2": {
+      "sourceSha256": "32912b6dd0aaf46ea5a4331628c7a76f9a3001b8f3bdc2d8e701609aa67e0a94",
+      "spokenSha256": "6126cfdc0d63f8ecfb6e478b375a3bf0c24267ecc061113538d224947d5ead89",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "we-breastfeed-them-with-tenderness-and-deprive-them-of-education": {
+      "sourceSha256": "b1cf0ed9d30ddb6761fd89ec2d516cca91689aa844962eae36de9dea0b2a69ca",
+      "spokenSha256": "76300d3220850384afa4e7d268ae64ea7df3f3c45e26efa0d9715afa992e99bf",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "we-graduated-with-a-degree-but-the-language-was-lost-2": {
+      "sourceSha256": "c2d3e16cd3ad5a335fd7330e66d1c4b3479935e2d311ac147da01ed387569d4d",
+      "spokenSha256": "1e7d73cb9b020d84f01f9c89a17b983257072e8f2b5cbd8b92411abaef2db489",
+      "turnCount": 29,
+      "bridgeCount": 2,
+      "rewriteCount": 6
+    },
+    "we-handed-them-the-phone-so-theyd-leave-us-alone-2": {
+      "sourceSha256": "ba318ee730877bea07de56f8089350958d309ce402cd9e2023422646abf02b7e",
+      "spokenSha256": "263f4a25fc599b7e1d0d7042b8eb9a6597bf1f05c622afceed4f4182ac28d1a5",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "we-prepare-our-children-for-success-and-leave-them-empty-handed-2": {
+      "sourceSha256": "b9f7d3bc8e2623af754e12ebb866ca9c35fe549480bc02f88f81a6e2276de6f5",
+      "spokenSha256": "28c0d5c93babdb4e5dec3dc98352e97e9e9c41fc09f5c4e2353eaf1d1dbb57ed",
+      "turnCount": 29,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "when-a-student-wishes-for-death-before-the-first-bell-2": {
+      "sourceSha256": "786e6958b3a1868cb8e4479a949cb58bb4a79369ecce1b87d9f6a8578eed94e9",
+      "spokenSha256": "6829f1debafab282fda1f6bb3fa727e598c93d23a435970082ab39c1f8b59cf7",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2": {
+      "sourceSha256": "fa5073a8357e8efe6b782c04e07e18f9eba871c63d483b8f3c0eea2503b093d6",
+      "spokenSha256": "a923bea5fe87ff50029bf168d6b2919bf0294cc1de056ae10fbfe7dc4b8b45a5",
+      "turnCount": 27,
+      "bridgeCount": 2,
+      "rewriteCount": 5
+    },
+    "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m": {
+      "sourceSha256": "20b930726c506821d223eb0e5dacc7bbe4a12a4b6d594942ee0728b0f5cc1204",
+      "spokenSha256": "d3efc6ed4a1f947894ccb0af12c53d6bbe1223fd507782fce506b0f18fdb97e5",
+      "turnCount": 25,
+      "bridgeCount": 2,
+      "rewriteCount": 4
+    },
+    "when-seriousness-becomes-a-mask-for-escapearabic": {
+      "sourceSha256": "34160b9cc95c684ad10d8a91f2f9446a7c7243faacea43e8b48ceff7e39e68e7",
+      "spokenSha256": "deaa73f745c775b7d7189a67252fe58b8686895973b4bf9c907c07524eac280d",
+      "turnCount": 30,
+      "bridgeCount": 2,
+      "rewriteCount": 96
+    },
+    "when-the-exam-becomes-the-goalarabic": {
+      "sourceSha256": "4d9c73e65412702ed62f6e3718aec0eb4bed6d8c28997810273f3066ba3da4c7",
+      "spokenSha256": "deb9979a3651d8de301f959918e3af7148513fa9a2888fb703043f1f6b48c5f8",
+      "turnCount": 29,
+      "bridgeCount": 2,
+      "rewriteCount": 2
+    },
+    "when-the-teacher-knows-why-he-teachesarabic": {
+      "sourceSha256": "2606b98014109a163da414f6559c91e9394cdeabada8cc8e290f31face1c63d2",
+      "spokenSha256": "4d47067e416648784d7f495bd01fdb9faeef071dcc8136bb0d58d8cc784c3aa9",
+      "turnCount": 26,
+      "bridgeCount": 2,
+      "rewriteCount": 3
+    },
+    "when-truth-died-and-the-narrative-survivedarabic": {
+      "sourceSha256": "061112f822cf00b5f27016b74ada27d4d761145f87ec65d799696925ef79c64b",
+      "spokenSha256": "41637bf0f3a862c41cf2dc64ee8172644eaf036c543a7c42420336c82bb6db8f",
+      "turnCount": 28,
+      "bridgeCount": 2,
+      "rewriteCount": 6
+    }
+  }
+}

@@ -1,0 +1,306 @@
+[
+  {
+    "speaker": "male",
+    "text": "كنت أتصفح بعض الصفحات الإلكترونية، وأقرأ موضوعات مختلفة في بعض المدونات.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "شعرت أنني أغرق في مستنقع التدليس على ما جاء به إسلامنا الحنيف.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "من قبل العديد من الجهلة والمتسلقين على حساب المعرفة، سواء الدينية أو العامة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ومواضيع مدلسة كثيرة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وقرأت مواضيع وأخبارا مدلسة وتشوه الواقع، وأخبارا مزورة لمجرد النشر فقط.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فأصابني الذهول من هول ما يكتب وينشر على مواقع التواصل الاجتماعي، بلا حسيب ولا رقيب.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "واستخدام التكنولوجيا في هذا الإسفاف الكبير.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتحسفت على زمن الكتاب بشتى المجالات، الذي كنا نقرأه بكل ثقة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لأن أهل الاختصاص قرأوه.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ونعلم أن هناك من قرأه قبلنا من أهل الاختصاص، حتى أجاز له الخروج للعوام.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أيام الصدق والمعرفة بإدراكها على أكمل وجه.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لكن التكنولوجيا قربت القراءة للناس جميعا، أليست حسنة تحسب لها؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بلى، لقد ساهمت التكنولوجيا في جعل القراءة في متناول الجميع.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وجعلت منها سهلة الوصول، في أي مكان وزمان، وهذه حقيقة تحمد التكنولوجيا عليها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولكن هناك تحول واضح نحو الكتاب الإلكتروني، وعزوف واضح عن رفوف المكتبة العربية.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهناك انتشار كبير.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهناك انتشار كبير لمواقع التواصل الاجتماعي والمدونات والصفحات الخاصة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والتي ساهمت في نشر المعرفة على نطاق واسع.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "إلا أن الصفحات والمدونات ذات الطابع الشخصي لا تخضع للرقابة على المحتوى.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "الأمر الذي جعل المعرفة بين أيدي غير أمينة.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فأغلب ما يعدل أو ينشر ويشوه الحقيقة، يكون بدوافع عدة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "أهمها تزوير التاريخ، أو الجهل والتسلية، وليس من باب النقد العلمي الذي يطور المعرفة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والنتيجة معرفة مشوهة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وبالتالي أصبح القارئ العربي أمام معرفة مشوهة، تكاد تضع البشرية على أعتاب جاهلية معاصرة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والمتتبع للصفحات العلمية وما ينشر هنا وهناك، يدرك أن المعرفة البشرية أمام سرطان الجهل والتدليس.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "الذي ينشره ضعاف القلوب وأصحاب الأغراض الرخيصة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وهل من أمثلة تجعل الصورة أوضح؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فإن أبرز أمثلة التدليس والتزوير والتشويه، هو نشر مصاحف مزورة تحت مسمى مواقع إسلامية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتشويه محتوى أمهات الكتب من المصادر والمخطوطات العالمية، وهذا خطر يهدد أمة بأكملها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "فأمهات الكتب هي مصادر شرعنا، وأحكامنا التي اجتمع عليها جمهور العلماء القدامى.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وقد وصل الأمر إلى التدليس على أحاديث النبي صلى الله عليه وسلم، وغيرهم من رموز الإسلام.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وأمثلة الأخبار التي بثت الأحداث المزورة، والتي جعلت منا لا نصدق ما نقرأ.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولوضع حد لهؤلاء أصحاب الأقلام الإلكترونية المشوهة والمزورة، اقترح المقال بعضا من الحلول.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "منها تشديد إجراءات النقل، وخاصة في الأبحاث العلمية ورسائل الدكتوراه والماجستير.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتوسيع نطاق العمل فيما يسمى مراكز قياس كمية الاقتباس، التي تكشف كمية النقل ونوعه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وسن القوانين التي تنظم الواقع الافتراضي، وخاصة المتعلق بالجانب المعرفي، وتشديد الرقابة.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فرغم انتشار المعرفة، ليس هناك قيود عليها تمنع تشويها أو تحريفها، فسهلت التكنولوجيا دس السم في الدسم.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

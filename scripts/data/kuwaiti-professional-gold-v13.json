@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "referenceVersion": "2026-08-30-professional-five-v13-word-fixes-only",
+  "doctorVerdict": "كلهم روووووعه — اللهجة مضبوطة ١٠٠٠٪",
+  "approvedRunId": 33132655399,
+  "immutablePerformance": {
+    "provider": "ai-studio",
+    "model": "gemini-2.5-pro-preview-tts",
+    "language": "ar",
+    "profile": "kuwaiti-urban-soft-v2",
+    "promptMode": "c",
+    "maleVoice": "Puck",
+    "femaleVoice": "Zephyr",
+    "oneTake": true,
+    "splitAtBridges": false,
+    "speakerIsolation": false,
+    "nativeSpokenBase": "2026-08-28-native-kuwaiti-v13-context-register",
+    "policy": "Freeze accent, cast, cadence, provider, prompt and approved seed. Only explicit word-level corrections may change the transcript."
+  },
+  "episodes": [
+    {
+      "order": 1,
+      "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
+      "seed": 2101,
+      "historicalRequestSha256": "8a88a470c4f62e74dbafd36985f5f690319c6795c09ca0634eba4b723c03e7f4",
+      "correctedRequestSha256": "4762309eddcd340c2b81a85e8f48fc427839b51e20b778824a823627bbeeedbd",
+      "correctedSourceSha256": "cb13d5a9e37c4e1fccbdd0649f1ecc989c9a110bb85f83e6f9c717b66c60ca9e",
+      "audioSha256": "19edb926f84c909b088fcdc505ec64d00fb2ba86f9f06a11b8bdb8fd1c914c7d",
+      "sourceSha256": "cb13d5a9e37c4e1fccbdd0649f1ecc989c9a110bb85f83e6f9c717b66c60ca9e",
+      "transcriptSha256": "7868b5bdb34ef909644223919f5b3866be4f165ea8bb6abda0f6825a2842be61",
+      "durationSec": 106.32,
+      "turnCount": 19
+    },
+    {
+      "order": 2,
+      "slug": "the-classroom-that-fears-mistakesarabic",
+      "seed": 2102,
+      "historicalRequestSha256": "ce527a88c42f4822ac9d8023e5260ea07d2a4560052356764422849a90cab547",
+      "correctedRequestSha256": "c33e873bbb444a2b9912d8e82e7477c7798613429129404f389b66a23393b483",
+      "correctedSourceSha256": "e54cafa745a503d5073a78f1a631c295e0f39872c05f364331acebf6aec0830f",
+      "audioSha256": "bbbb4596100a9112d5df06db15692859224c27a08d5761c9f7c179000dad9e7d",
+      "sourceSha256": "cc3ead8e978a21710759b31603bf23e7735b9a31d748e8f8ea3de1ec933b38be",
+      "transcriptSha256": "5e00299afca4a194877adc66c164a2d62a302bf7f12d35e4041716759fbcf20f",
+      "durationSec": 110.304,
+      "turnCount": 18
+    },
+    {
+      "order": 3,
+      "slug": "intelligence-without-a-consciencearabic",
+      "seed": 2103,
+      "historicalRequestSha256": "8a9b9ff30b987f8a25a0628ada981c42a80b8e8142c4e3ebed21a0e762fc9db5",
+      "correctedRequestSha256": "d7dd02e223b05ffbe55c713ba6492fa3777f6a346d63f3b67e478a1c2f289b87",
+      "correctedSourceSha256": "249505784e3d8e8277ad2de08b3d807228ba872e27ba4d8c9e55ff012d352ad4",
+      "audioSha256": "37fe8583c622ac2ebc8bdc82a3ef7bf8a49d89e27657b1a3242fbb58b7c50edd",
+      "sourceSha256": "d7ca5881e6a4657e00f02c0bfd12bc3e1a846e10fce9e832d6c2d8b34b3f3d43",
+      "transcriptSha256": "6ebe6d6ef486d6905dd4402a0c975f40ffc65ec093f9147370fb0a12fc95f869",
+      "durationSec": 109.872,
+      "turnCount": 16
+    },
+    {
+      "order": 4,
+      "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
+      "seed": 2114,
+      "historicalRequestSha256": "9338568e01629142bbdc754b4f92d183b10ab7b0f5fda7dbe3d309e409790885",
+      "correctedRequestSha256": "aea3ece7e5498603adbb36024073f3e2ca103fbc17bc064f94586a2a1a59a563",
+      "correctedSourceSha256": "deaa73f745c775b7d7189a67252fe58b8686895973b4bf9c907c07524eac280d",
+      "audioSha256": "c09754cbeba753c2584ec6a67f718344874baa164fae87623dc243b294bfee19",
+      "sourceSha256": "c5ce8227de25e25b55ab05fc644d6ceb8ac2effe6acebed5afbaeb1f8406a887",
+      "transcriptSha256": "069b0dec11e8cbebeb63a6174905f680ad85af05e0dc9edc612c9c7f68c6294d",
+      "durationSec": 117.432,
+      "turnCount": 26
+    },
+    {
+      "order": 5,
+      "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+      "seed": 2115,
+      "historicalRequestSha256": "586ad4b42bf5e89c11c25778624c4377740b7fa6bea166b7833dfca623d07ff7",
+      "correctedRequestSha256": "6ecdf96a2f6d06f93e6978d47796536f38d61496ad571a5c499f02bf0c6893c4",
+      "correctedSourceSha256": "d131259f25b3a6838e02b1ed9a65267e1d116f11a8bb7e8dbb7f41391ff3d45c",
+      "audioSha256": "9bd0990ec53130f99e54b2be276ddd6cbf93a8b37d1771802bc0774cac2c0924",
+      "sourceSha256": "da2096582c0ae202b50fe8fad11f32ed70e341dac08582e024564a36375e0a9d",
+      "transcriptSha256": "f10de8209b0cb58783c79250fd0fcd80bc90f1ae8a4ad3bcb8c82e420700810c",
+      "durationSec": 107.256,
+      "turnCount": 28
+    }
+  ]
+}

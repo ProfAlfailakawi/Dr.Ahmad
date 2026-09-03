@@ -1,0 +1,570 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // رسائل التواصل: يُسمح بالإرسال فقط.
+    // القراءة والتعديل والحذف للمشرف المصادَق عليه حصراً.
+    match /messages/{messageId} {
+      allow create: if isValidMessage();
+      allow read, update, delete: if isAdmin();
+    }
+
+    // المشتركون في النشرة: إضافة فقط.
+    match /subscribers/{email} {
+      allow create: if request.resource.data.keys().hasOnly(['email', 'createdAt'])
+        && request.resource.data.email == email
+        && isValidEmail(request.resource.data.email)
+        && request.resource.data.createdAt is timestamp;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // أجهزة المشرف المسجلة لاستقبال Push الحقيقي — خاصة بالمشرف والخادم فقط.
+    match /admin_push_tokens/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // سجل النشرات وحالة كل مستلم. لا يظهر للعامة ولا يُكتب من واجهة الزائر.
+    match /newsletter_sends/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /newsletter_deliveries/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // محتوى لوحة التحكم /admin: قراءة عامة (يعرضه الموقع)،
+    // والكتابة والتعديل والحذف للمشرف المصادَق عليه حصراً.
+    match /site_articles/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /content_overrides/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    // قوالب رسائل بوت الواتساب: قراءةٌ عامة (يجلبها البوت عبر REST بلا مصادقة)،
+    // والتحرير للمشرف من اللوحة حصراً. البدائل المضمّنة في الكود تحمي من الانقطاع.
+    match /bot_messages/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_books/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_papers/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_media/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /cv_overrides/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_questions/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    // «رسائل على الهامش» و«أسئلة تصلني»: يكتبها نظام النشر المجدول
+    // بحساب الخدمة (يتجاوز القواعد). القراءة عامة، والتعديل اليدوي للمشرف فقط.
+    match /site_inbox/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_faqs/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    // شهادات حقيقية ومجهولة الهوية: لا تُنشأ إلا بعد اعتماد المشرف،
+    // ولا تعرض أي اسم أو بريد للزوار.
+    match /site_testimonials/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    // حالة الجدولة الداخلية للنشر الذاتي — لا تظهر للزوار ولا يكتبها المتصفح.
+    match /automation_state/{id} {
+      allow read, write: if false;
+    }
+    match /site_upcoming/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_picks/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /site_now/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /social_queue/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    // مسودات الحوار اليدوي للبودكاست: خاصة بالمشرف، وتُحفظ سحابياً بين الأجهزة.
+    match /podcast_dialogues/{slug} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    // قرارات غرفة إنتاج البودكاست (اعتماد/إعادة للمراجعة) — خاصة بالمشرف.
+    match /podcast_production/{slug} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    // نسخة كويتية موازية تماماً؛ لا تشارك مستندات الفصحى ولا طابور إنتاجها.
+    // بلا هاتين القاعدتين تُرفض كتابات اللوحة الكويتية بـ PERMISSION_DENIED
+    // بينما server.mjs و upload-kuwaiti-dialogues.mjs ما زالا يقصدان المجموعتين.
+    match /podcast_dialogues_kw/{slug} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /podcast_production_kw/{slug} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    // رادار الشبكة: يكتبه سكربت الالتقاط اليومي بحساب الخدمة
+    // (حساب الخدمة يتجاوز القواعد) — للزوار قراءة فقط.
+    match /site_radar/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // تقرير شهري تنشئه المهمة المجدولة بحساب الخدمة (يتجاوز القواعد).
+    // يظهر داخل لوحة المؤشرات للمشرف فقط، ولا يستطيع عميل المتصفح كتابته.
+    match /admin_reports/{month} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // إعدادات عامة يحررها المشرف من اللوحة (روابط السيرة PDF ونحوها) — قراءة عامة.
+    match /site_settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // إعدادات شخصية وكيل واتساب: خاصة بالمشرف، وتقرأها خدمة الوكيل من الخادم.
+    match /whatsapp_settings/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // ملفات السيرة البديلة: تُجزّأ داخل Firestore حتى لا يعتمد رفع السيرة
+    // على تفعيل Firebase Storage. القراءة عامة للملف المنشور، والكتابة للمشرف فقط.
+    match /site_cv_files/{kind} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+      match /chunks/{chunkId} {
+        allow read: if true;
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+    // مكتبة صور التوليد داخل استوديو التصاميم — خاصة بالمشرف وحده.
+    match /admin_generated_assets/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // سجل قرارات مجلس التحرير: بيانات داخلية للمشرف فقط، ولا تعرض على الموقع العام.
+    match /admin_editorial_board/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // ذاكرة الصوت: ما أشار إليه الدكتور بنفسه وقال «هذه ليست أنا».
+    // تعمل محلياً بلا هذه القاعدة، وتُزامَن بين أجهزته معها.
+    match /admin_style_memory/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // الذاكرة التحريرية الشخصية: مصادر خاصة، أجندة فكرية، سلسلة الدليل، ومعمار الكتب.
+    // كلها admin-only ولا تدخل أي استعلام عام للموقع.
+    match /admin_source_desk/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /admin_intellectual_agenda/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    match /admin_content_intelligence/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    // حالة خط النشر التلقائي: يكتبها الخادم/مهام GitHub فقط؛ القراءة للمشرف للمراجعة.
+    match /admin_content_pipeline/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    // جلسات غرفة د. أحمد: أوامر، مراجع ومخرجات تنفيذية خاصة بالمالك وحده.
+    // لا تستعلم عنها الواجهة العامة ولا تنسخ نصوص الأرشيف؛ تحفظ المعرفات والروابط.
+    // قياس دلالي خاص بسير عمل المالك الواحد؛ لا نصوص مقالات أو أفكار كاملة.
+    match /admin_tool_events/{id} {
+      allow read, create, delete: if isAdmin();
+      allow update: if false;
+    }
+    // أحداث الاستخدام العامة وRUM يكتبها الخادم فقط، ويقرأها المشرف وحده.
+    match /analytics_events/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /admin_command_sessions/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+    }
+    // مشاريع «المخرج الحي»: البرومبتات ونسخ الإصلاح وروابط المقاطع خاصة بالمشرف.
+    match /admin_live_director_projects/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+    }
+    // بروتوكول التصحيح المتسلسل وسجل انتقالاته؛ خاص بالمشرف ولا يظهر للعامة.
+    match /admin_correction_cases/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+    // جوازات النشر الموقّعة: سجل إثبات خاص لا يظهر في الموقع العام.
+    // يكتبها الخادم بحساب الخدمة؛ وتبقى القراءة للمشرف للمراجعة والتدقيق.
+    match /admin_publication_passports/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    // رأس السلسلة ورابط التعاقب يكتبهما خادم التوقيع فقط. الجواز القديم يبقى
+    // غير قابل للتعديل، وهذه الوثيقة المنفصلة تثبت من حل محله.
+    match /admin_publication_passport_heads/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    match /admin_publication_passport_links/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    // المفتاح الخاص للجواز لا يخرج إلى أي عميل، حتى حساب المشرف؛ الخادم فقط
+    // يصل إليه عبر Admin SDK. المفتاح العام موجود داخل كل جواز للتحقق المستقل.
+    match /admin_publication_signing_keys/{id} {
+      allow read, write: if false;
+    }
+    match /admin_book_architecture/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // فهرس خاص بالتصاميم الكاملة المولدة؛ لا يظهر للعامة ولا يملكه إلا المشرف.
+    match /admin_generated_designs/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // تقرير حارس الجودة الأسبوعي — يكتبه السكربت المجدول بحساب الخدمة، للمشرف قراءةً.
+    match /site_health/{date} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // عدادات المشاهدة في مجموعة واحدة:
+    //   total:<encoded-path>             إجمالي الصفحة
+    //   day:YYYY-MM-DD:<encoded-path>    عداد يومي لاتجاه آخر 7 أيام
+    // القراءة للمشرف فقط. الزائر لا يستطيع إلا إنشاء العداد من 1 أو زيادته 1.
+    match /views/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if isAdmin() || isValidViewCreate(id);
+      allow update: if isAdmin() || isValidViewUpdate(id);
+    }
+    match /journeys/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if isValidJourneyCreate();
+      allow update: if isValidJourneyUpdate();
+    }
+
+    // «الاقتباسات الشائعة» — إشارة مجهولة لا تحتوي اقتباساً شخصياً أو ملاحظة.
+    // لا يكتب العميل العداد إلا ضمن Transaction تنشئ عضوية Anonymous واحدة
+    // مرتبطة بالعبارة نفسها. قراءة العضويات ممنوعة حتى على القارئ المجهول.
+    /* رنين مقاطع الكتب: عدّادٌ صرف بلا نصٍّ ولا هويّة قارئ. الزائر المجهول
+       يزيده واحداً فقط، ولا يملك تنقيصه ولا كتابة أي حقلٍ آخر. */
+    match /passage_highlights/{id} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create: if isAdmin() || (isAnonymous()
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == 1);
+      allow update: if isAdmin() || (isAnonymous()
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count == resource.data.count + 1);
+    }
+
+    match /article_highlights/{id} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create: if isAdmin() || (isAnonymous() && isValidPopularHighlightCreate(id));
+      allow update: if isAdmin() || (isAnonymous() && isValidPopularHighlightUpdate(id));
+    }
+    match /article_highlight_members/{highlightKey}/readers/{readerId} {
+      // معاملة الزيادة تقرأ عضوية القارئ نفسه أولاً — منع القراءة كلياً كان يُسقطها
+      // للجميع فلا يرتفع أي عدّاد أبداً. كل قارئ يرى وثيقته وحدها، والسرد ممنوع.
+      allow get: if request.auth != null && readerId == request.auth.uid;
+      allow list: if false;
+      // المشرف قارئ أيضاً: حصرها بالمجهول كانت تمنع اقتباس الدكتور نفسه
+      allow create: if (isAnonymous() || isAdmin()) && isValidPopularMembershipCreate(highlightKey, readerId);
+      allow delete: if isValidPopularMembershipDelete(highlightKey, readerId);
+      allow update: if false;
+    }
+
+    // دفتر الاقتباسات العام: لا يُرسل اسم أو بريد أو موقع. كل جهاز يملك
+    // معرّفاً عشوائياً مُجزّأً، ويُنشئ صوتاً واحداً فقط لكل عبارة.
+    match /article_quote_votes/{id} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isAdmin() || isValidQuoteVoteCreate(id);
+      allow update, delete: if isAdmin();
+    }
+    match /article_quote_counts/{id} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create: if isAdmin() || isValidQuoteCountCreate(id);
+      allow update: if isAdmin() || isValidQuoteCountUpdate(id);
+    }
+
+    // سجل تغييرات المحتوى: لقطات النسخ السابقة لكل تعديل — خاصةٌ بالمشرف حصراً.
+    match /content_history/{id} {
+      allow read, create, delete: if isAdmin();
+      allow update: if false;
+    }
+
+    // «مساحتي» عبر الأجهزة: مزامنة اختيارية بلا حساب. معرّف الوثيقة رمزٌ سرّي،
+    // وحقل data حمولة AES-GCM مشفّرة داخل المتصفح؛ لا اسم ولا بريد ولا هوية.
+    // نتحقق من الشكل والحجم فقط، ولا نسمح بالحذف المباشر.
+    match /myspace_sync/{code} {
+      allow read: if code.size() >= 6 && code.size() <= 64;
+      allow create, update: if code.size() >= 6 && code.size() <= 64
+        && request.resource.data.keys().hasOnly(['data', 'updatedAt'])
+        && request.resource.data.data is string
+        && request.resource.data.data.size() <= 200000
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
+    }
+
+    // كل ما عدا ذلك: مغلق.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+
+    function isValidEmail(e) {
+      return e is string && e.size() <= 200 && e.matches('^[^@]+@[^@]+\\.[^@]+$');
+    }
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function isAnonymous() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    function isValidViewId(id) {
+      return id.size() <= 512
+        && (id.matches('^total:.+$')
+          || id.matches('^day:[0-9]{4}-[0-9]{2}-[0-9]{2}:.+$'));
+    }
+
+    function hasValidViewFields(d) {
+      return d.keys().hasOnly(['count', 'title', 'updatedAt'])
+        && d.count is int
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 300
+        && d.updatedAt == request.time;
+    }
+
+    function isValidViewCreate(id) {
+      return isValidViewId(id)
+        && hasValidViewFields(request.resource.data)
+        && request.resource.data.count == 1;
+    }
+
+    function isValidViewUpdate(id) {
+      return isValidViewId(id)
+        && hasValidViewFields(request.resource.data)
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['count', 'updatedAt']);
+    }
+
+    function hasValidHighlightFields(d) {
+      return d.keys().hasOnly(['slug', 'paragraph', 'count', 'updatedAt'])
+        && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+        && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
+        && d.count is int && d.count > 0
+        && d.updatedAt == request.time;
+    }
+
+    function hasValidPopularHighlightFields(id, d) {
+      return d.keys().hasOnly(['slug', 'articleVersion', 'paragraph', 'paragraphId', 'startOffset', 'endOffset', 'quoteHash', 'count', 'updatedAt'])
+        && id.size() >= 8 && id.size() <= 80
+        && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+        && d.articleVersion is string && d.articleVersion.size() >= 4 && d.articleVersion.size() <= 80
+        && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
+        && d.paragraphId is string && d.paragraphId.matches('^[0-9]{1,3}$')
+        && d.startOffset is int && d.startOffset >= 0 && d.startOffset <= 200000
+        && d.endOffset is int && d.endOffset > d.startOffset && d.endOffset <= 200000
+        && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
+        && d.count is int && d.count >= 0 && d.count <= 1000000
+        && d.updatedAt is timestamp; // كانت == request.time فترفض طوابع الخادم
+    }
+
+    function hasValidPopularMembershipFields(d) {
+      return d.keys().hasOnly(['uid', 'highlightKey', 'createdAt'])
+        && d.uid == request.auth.uid
+        && d.uid is string && d.uid.size() >= 8 && d.uid.size() <= 128
+        && d.highlightKey is string && d.highlightKey.size() >= 8 && d.highlightKey.size() <= 80
+        && d.createdAt is timestamp; // كانت == request.time فترفض طوابع الخادم
+    }
+
+    function isValidPopularMembershipCreate(highlightKey, readerId) {
+      return readerId == request.auth.uid
+        && request.resource.data.highlightKey == highlightKey
+        && hasValidPopularMembershipFields(request.resource.data)
+        && !exists(/databases/$(database)/documents/article_highlight_members/$(highlightKey)/readers/$(readerId));
+    }
+
+    function popularMembershipSupports(id) {
+      return existsAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.highlightKey == id
+        && getAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.uid == request.auth.uid;
+    }
+
+    function popularMembershipRemoved(id) {
+      return exists(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
+        && !existsAfter(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/article_highlight_members/$(id)/readers/$(request.auth.uid)).data.uid == request.auth.uid;
+    }
+
+    function isValidPopularMembershipDelete(highlightKey, readerId) {
+      return isAnonymous()
+        && readerId == request.auth.uid
+        && resource.data.uid == request.auth.uid
+        && existsAfter(/databases/$(database)/documents/article_highlights/$(highlightKey))
+        && getAfter(/databases/$(database)/documents/article_highlights/$(highlightKey)).data.count
+          == get(/databases/$(database)/documents/article_highlights/$(highlightKey)).data.count - 1
+        && popularMembershipRemoved(highlightKey);
+    }
+
+    function isValidPopularHighlightCreate(id) {
+      return hasValidPopularHighlightFields(id, request.resource.data)
+        && request.resource.data.count == 1
+        && popularMembershipSupports(id);
+    }
+
+    function isValidPopularHighlightUpdate(id) {
+      return hasValidPopularHighlightFields(id, request.resource.data)
+        && request.resource.data.slug == resource.data.slug
+        && request.resource.data.articleVersion == resource.data.articleVersion
+        && request.resource.data.paragraphId == resource.data.paragraphId
+        && request.resource.data.startOffset == resource.data.startOffset
+        && request.resource.data.endOffset == resource.data.endOffset
+        && request.resource.data.quoteHash == resource.data.quoteHash
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'updatedAt'])
+        && (
+          (request.resource.data.count == resource.data.count + 1
+            && popularMembershipSupports(id))
+          ||
+          (resource.data.count > 0
+            && request.resource.data.count == resource.data.count - 1
+            && popularMembershipRemoved(id))
+        );
+    }
+
+    function isValidHighlightCreate() {
+      return hasValidHighlightFields(request.resource.data)
+        && request.resource.data.count == 1;
+    }
+
+    function isValidHighlightUpdate() {
+      return hasValidHighlightFields(request.resource.data)
+        && request.resource.data.slug == resource.data.slug
+        && request.resource.data.paragraph == resource.data.paragraph
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['count', 'updatedAt']);
+    }
+
+    function hasValidQuoteVoteFields(d) {
+      return d.keys().hasOnly(['slug', 'quoteHash', 'deviceHash', 'createdAt'])
+        && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+        && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
+        && d.deviceHash is string && d.deviceHash.size() >= 8 && d.deviceHash.size() <= 80
+        && d.createdAt == request.time;
+    }
+
+    function isValidQuoteVoteCreate(id) {
+      return id.size() >= 8 && id.size() <= 80
+        && hasValidQuoteVoteFields(request.resource.data);
+    }
+
+    function hasValidQuoteCountFields(id, d) {
+      return d.keys().hasOnly(['slug', 'quoteHash', 'quote', 'paragraph', 'count', 'lastVote', 'updatedAt'])
+        && d.slug is string && d.slug.size() > 0 && d.slug.size() <= 220
+        && d.quoteHash == id
+        && d.quoteHash is string && d.quoteHash.size() >= 8 && d.quoteHash.size() <= 80
+        && d.quote is string && d.quote.size() >= 8 && d.quote.size() <= 600
+        && d.paragraph is int && d.paragraph >= 0 && d.paragraph <= 250
+        && d.count is int && d.count > 0
+        && d.lastVote is string && d.lastVote.size() >= 8 && d.lastVote.size() <= 80
+        && d.updatedAt == request.time;
+    }
+
+    function quoteVoteSupports(d) {
+      return existsAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote))
+        && getAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote)).data.slug == d.slug
+        && getAfter(/databases/$(database)/documents/article_quote_votes/$(d.lastVote)).data.quoteHash == d.quoteHash;
+    }
+
+    function isValidQuoteCountCreate(id) {
+      return hasValidQuoteCountFields(id, request.resource.data)
+        && request.resource.data.count == 1
+        && quoteVoteSupports(request.resource.data);
+    }
+
+    function isValidQuoteCountUpdate(id) {
+      return hasValidQuoteCountFields(id, request.resource.data)
+        && request.resource.data.slug == resource.data.slug
+        && request.resource.data.quoteHash == resource.data.quoteHash
+        && request.resource.data.quote == resource.data.quote
+        && request.resource.data.paragraph == resource.data.paragraph
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.lastVote != resource.data.lastVote
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['count', 'lastVote', 'updatedAt'])
+        && quoteVoteSupports(request.resource.data);
+    }
+
+    function isValidMessage() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'email', 'topic', 'message', 'intent', 'quality', 'reference', 'createdAt'])
+        && d.name is string && d.name.size() > 1 && d.name.size() <= 80
+        && isValidEmail(d.email)
+        && d.topic in ['استشارة', 'محاضرة أو ورشة', 'لقاء إعلامي', 'أخرى']
+        && (!('intent' in d) || (d.intent is string && d.intent.size() <= 80))
+        && (!('quality' in d) || (d.quality is string && d.quality.size() <= 80))
+        && d.reference is string && d.reference.matches('^AH-[0-9]{6}-[0-9]{4}$')
+        && d.message is string && d.message.size() > 10 && d.message.size() <= 3000
+        && d.createdAt == request.time;
+    }
+
+    function hasValidJourneyFields(d) {
+      return d.keys().hasOnly(['from', 'to', 'count', 'updatedAt'])
+        && d.from is string && d.from.size() > 0 && d.from.size() <= 300
+        && d.to is string && d.to.size() > 0 && d.to.size() <= 300
+        && d.from != d.to
+        && d.count is int
+        && d.updatedAt == request.time;
+    }
+
+    function isValidJourneyCreate() {
+      return hasValidJourneyFields(request.resource.data)
+        && request.resource.data.count == 1;
+    }
+
+    function isValidJourneyUpdate() {
+      return hasValidJourneyFields(request.resource.data)
+        && request.resource.data.from == resource.data.from
+        && request.resource.data.to == resource.data.to
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['count', 'updatedAt']);
+    }
+  }
+}

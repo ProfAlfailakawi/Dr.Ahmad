@@ -1,0 +1,5745 @@
+import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
+import { bookAnswerReply, bookChaptersReply, bookQuoteReply, encyclopediaVideoReply, usefulBookQuoteReply } from '../../whatsapp-agent/book-quotes.mjs'
+import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
+import { collapseElongation, foldArabicLetters, looksArabizi, repairMessage, stripInvisible } from '../../whatsapp-agent/comprehension.mjs'
+import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
+import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
+import { distillItem, extractVerbatimAtSpeed } from '../../whatsapp-agent/daily-experience.mjs'
+import { conceptDefinition, conceptQueryFor, glossarySize } from '../../whatsapp-agent/domain-concepts.mjs'
+import { sovereignAnswer, sovereignFollowup } from '../../whatsapp-agent/sovereign-brain.mjs'
+import { arabicCountPhrase, ARTICLE_FORMS, CONVERSATION_AFTER_PREPOSITION_FORMS, MUTED_CONVERSATION_FORMS, DAY_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS, MINUTE_FORMS, PASSAGE_AFTER_PREPOSITION_FORMS, RECOVERED_MESSAGE_OBJECT_FORMS, REPLY_AFTER_PREPOSITION_FORMS, SECOND_AFTER_PREPOSITION_FORMS, VERIFIED_MATERIAL_FORMS, WEEK_AFTER_PREPOSITION_FORMS } from '../lib/style-dna.mjs'
+
+const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
+/* ── الصوت يرجع للمتصفح (أمر الدكتور، ٧ أغسطس) ──
+   إرسال الملف داخل واتساب كان يصل فقاعةً لا تُحمَّل: «Couldn't download
+   audio». وما لا يُسمع لا قيمةَ له، بل هو أسوأ من لا شيء: يشغل مكان الردّ
+   ويوهم أنّ ثمّة صوتاً. فالاستماع الآن في الموقع — حيث المشغّل والتصميم —
+   والآلة باقيةٌ كما هي لا مهدومة: أمر `send-audio` وفرعُه في الجسر في
+   مكانهما، ولا يُصفّ إلا إذا شُغّل صراحةً بمتغيّرٍ واحد. */
+const AUDIO_IN_CHAT = String(process.env.WHATSAPP_AUDIO_IN_CHAT || '').trim() === '1'
+const OWNER_ALERT_FALLBACK = 'طلب صاحب هذه الرسالة التواصل معك مباشرة. افتح محادثات واتساب من جهازك المرتبط.'
+const HUMAN_ACK = 'أفهم أنك تريد التواصل مع الدكتور مباشرة. اكتب رسالتك كاملة هنا؛ لا أستطيع أن أعدك بموعد رد، وبإمكاني الآن مساعدتك في محتوى الموقع أو البحث عن موضوع محدد.'
+const MEDIA_CLARIFY = 'وصلتني الصورة أو الملف. حتى ما أخمّن محتواه أو مقصدك، اكتب المطلوب بجملة واحدة: «لخّصها» · «ابحث عن موضوعها» · «أعطني المادة الأصلية».'
+/* القوالب حيّة لا مسبوكة: كانت تُبنى مرةً واحدة عند تحميل الملف من البدائل
+   المضمّنة، فتحرير الدكتور لها في لوحة «رسائل البوت» يصل Firestore ولا يصل
+   الردود أبداً. الآن كلُّ بناءِ ردٍّ يقرأ القوالب الحاضرة (getBotMessages —
+   قراءةٌ متزامنة من الذاكرة، والتحديث خلفيٌّ من مدخل الويبهوك)، فتسري تعديلات
+   اللوحة خلال دقائق وبلا أي طلبٍ شبكيٍّ في مسار الرد أو في الاختبار الوهمي. */
+const KUWAIT_TZ = 'Asia/Kuwait'
+function botMessagesNow() {
+  return { ...DEFAULT_BOT_MESSAGES, ...getBotMessages() }
+}
+function kuwaitHour(at = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: KUWAIT_TZ }).format(at))
+  return Number.isFinite(hour) ? hour % 24 : 12
+}
+/* التحية نفسها المصرّفة في حملات المكتبة (personalizeAudienceText) حتى يبقى
+   صوت البوت واحداً صباحاً ومساءً، مع سطرٍ لطيفٍ لساهر الليل. */
+function timeGreeting(at = new Date()) {
+  const hour = kuwaitHour(at)
+  if (hour < 4) return 'أسعد الله ليلك'
+  if (hour < 12) return 'صباح الخير'
+  return 'مساء الخير'
+}
+function botSignature(messages = botMessagesNow()) {
+  return messages.signature || 'رد آلي من موقع د. أحمد حسين الفيلكاوي'
+}
+/* بوابة اليوم: مادةُ يومٍ واحدة تُختار حتمياً من تاريخ الكويت، وتُحفظ في سياق
+   المحادثة لحظة الترحيب — فيصير «٣٠ ثانية» و«لخصها» بعد الترحيب مباشرةً
+   عملاً على مادةٍ حاضرة لا سؤالاً معلقاً في الفراغ (عطب ٣٠ يوليو ٠٨:٤١). */
+function dailyGateItem(at = new Date()) {
+  const pool = siteIndex().filter((item) => item.kind === 'article' && normalizeWhitespace(item.excerpt || item.body || '').length >= 40)
+  if (!pool.length) return null
+  const dayKey = new Intl.DateTimeFormat('en-CA', { timeZone: KUWAIT_TZ }).format(at)
+  return pool[Number.parseInt(hash(`daily-gate:${dayKey}`).slice(0, 8), 16) % pool.length]
+}
+/* ترقية ١ — ذاكرة عبر الأيام: من عاد بعد غياب يستحق أن يُعرَف، لا أن يبدأ من
+   الصفر كأن شيئاً لم يكن. سطرٌ واحد يذكّره بآخر ما وقفنا عنده — بلا حشو،
+   وبلا أن يعرض بياناتٍ عن نفسه لم يطلبها. */
+const RETURNING_READER_GAP_MS = 20 * 60 * 60_000
+export function returningReaderLine(conversation = {}, at = Date.now()) {
+  const lastSeen = Date.parse(conversation.lastInboundAt || conversation.updatedAt || '')
+  if (!Number.isFinite(lastSeen)) return ''
+  const gap = at - lastSeen
+  if (gap < RETURNING_READER_GAP_MS) return ''
+  const days = Math.floor(gap / 86_400_000)
+  const when = days >= 30 ? 'بعد غيبة' : days >= 7 ? `بعد ${arabicCountPhrase(Math.floor(days / 7), WEEK_AFTER_PREPOSITION_FORMS, arabicNumber)}` : days >= 1 ? `بعد ${arabicCountPhrase(days, DAY_AFTER_PREPOSITION_FORMS, arabicNumber)}` : 'اليوم'
+  const current = currentConversationItem(conversation)
+  const topic = current?.title || bounded(conversation.lastTopic, 90)
+  if (topic) return `أهلاً بعودتك ${when}. آخر مرة وقفنا عند «${topic}» — نكمل منها أم نفتح جديداً؟`
+  /* ذاكرةٌ تتراكم: من لم نحفظ له موضوعاً بعينه قد نكون عرفنا ما يشغله عبر
+     جلساتٍ متفرّقة. سطرٌ واحد يثبت أننا نعرفه، بلا عرضِ بياناتٍ لم يطلبها. */
+  const interests = readerInterests(conversation, 2)
+  if (interests.length) return `أهلاً بعودتك ${when}. أذكر أن ${interests.length > 1 ? 'اهتمامك دار حول' : 'اهتمامك دار حول'} ${interests.join(' و')} — نكمل من هناك أم نفتح جديداً؟`
+  return `أهلاً بعودتك ${when}.`
+}
+
+/* ═══ الأرشيف الذي ينتبه لك ═══
+   الفكرة الأصلية كانت أن يبادر البوت برسالةٍ إلى من سأل قبل شهر — وهي تلمس
+   الناس بلا استدعاء وتخرق قانون الإيقاظ. **اقتراح الدكتور أفضل منها**: تظهر
+   عند الإيقاظ نفسه، حين يفتح هو الباب بيده — فلا رسالةَ لم تُطلب، ولا حارسَ
+   مواعيدَ نحتاجه، ويصل الخبر في اللحظة التي هو منتبهٌ فيها أصلاً.
+   الشرطان اللذان يمنعان الادّعاء: أن يكون الاهتمام **متكرّراً** (إشارتان في
+   ذاكرته لا كلمةً عابرة)، وأن تكون المادة **منشورةً بعد آخر زيارته فعلاً**
+   وبتاريخٍ موثّق — فلا نقول «جديد» لقديم، ولا نُلحّ بما رآه من قبل. */
+function attentiveGateItem(conversation = {}, at = new Date()) {
+  const interests = readerInterests(conversation, 3)
+  if (!interests.length) return null
+  const lastSeen = Date.parse(conversation.lastInboundAt || conversation.updatedAt || '')
+  if (!Number.isFinite(lastSeen)) return null
+  const seen = new Set(Array.isArray(conversation.seenContentIds) ? conversation.seenContentIds : [])
+  const nowMs = at instanceof Date ? at.getTime() : Number(at) || Date.now()
+  const candidates = siteIndex()
+    .filter((item) => !seen.has(item.id))
+    .filter((item) => {
+      const published = Date.parse(String(item.date || ''))
+      return Number.isFinite(published) && published > lastSeen && published <= nowMs
+    })
+    .map((item) => ({ item, ...scoreContent(item, interests) }))
+    .filter((row) => row.matched > 0 && row.score >= 8)
+    .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
+  if (!candidates.length) return null
+  return { item: candidates[0].item, interest: interests[0] }
+}
+
+function buildWakeWelcome(messages = botMessagesNow(), at = new Date(), conversation = {}) {
+  const header = `${timeGreeting(at)} · ${messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'}.`
+  const options = messages.optionsPrompt || 'شنو يناسب وقتك؟ ٣٠ ثانية · دقيقتان · تعمّق · اختبرني'
+  const intelligence = 'اسألني بطريقتك؛ أقدر أجمع لك جواباً واحداً من الكتب والمقالات والأبحاث والفيديو والصوت، مع الصفحة أو التوقيت الدقيق.'
+  /* بوابةٌ تخصّه تسبق بوابة اليوم العامة — فما نُشر بعد زيارته في موضوعه هو
+     أولى بوقته مما اخترناه للناس جميعاً. */
+  const attentive = attentiveGateItem(conversation, at)
+  const gate = attentive?.item || dailyGateItem(at)
+  if (!gate) return { text: `${header}\n\n${intelligence}\n\n${options}`, contextItemIds: [], evidence: [], attentive: false }
+  const quote = normalizeWhitespace(gate.excerpt || gate.body || '').split(/\s+/).slice(0, 26).join(' ')
+  const label = attentive
+    ? `تسأل عن ${attentive.interest}، ونشر الدكتور بعد آخر زيارتك:`
+    : (messages.dailyGateLabel || 'بوابة اليوم:')
+  const text = `${header}\n\n${label}\n*${gate.title}*\n${quote ? `«${verbatim(quote)}…»\n` : ''}${gate.url}\n\n${intelligence}\n\n${options}`
+  return { text, contextItemIds: [gate.id], evidence: [gate.id], lastTopic: gate.title, attentive: Boolean(attentive) }
+}
+function welcomeText(messages = botMessagesNow(), at = new Date()) {
+  const line = messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'
+  return `${timeGreeting(at)}. ${line}.\n\nأفهم سؤالك باللهجة الكويتية أو بالعربية الطبيعية، وأبحث لك في مقالات الدكتور وكتبه وأبحاثه والبودكاست.\n\nجرّب مثلاً: «شنو جديد الدكتور؟» · «عندك شي عن الذكاء الاصطناعي؟» · «لخّصها» · «عطني غيرها»\n\n${SITE_URL}`
+}
+/* ترقية ٥ — سؤالٌ مرتدّ بدل القائمة: القائمة تشبه الآلة، والسؤال يشبه الإنسان.
+   حين تكون بين يدينا مادة حاضرة نسأل عنها سؤالاً واحداً مباشراً؛ وحين لا يكون
+   شيء نسأل عن الوجهة بجملةٍ واحدة. تبقى القائمة الكاملة تحت «شنو تقدر تسوي». */
+function clarifyText(messages = botMessagesNow(), conversation = {}) {
+  const current = currentConversationItem(conversation)
+  if (current) {
+    return `${messages.clarify || 'لم يتضح المقصود بدقة.'}\n\nتقصد «${current.title}»؟ قل «نعم» وأكمل معك عليها، أو اكتب موضوعك الجديد مباشرة.`
+  }
+  const lastTopic = bounded(conversation.lastTopic, 120)
+  if (lastTopic) {
+    return `${messages.clarify || 'لم يتضح المقصود بدقة.'}\n\nنكمل في «${lastTopic}»، أو تفتح موضوعاً جديداً؟ اكتبه مباشرة.`
+  }
+  return `${messages.clarify || 'لم يتضح المقصود بدقة.'}\n\nاكتب الموضوع الذي في بالك بكلمة واحدة، وأبحث لك عنه في كل ما نشره الدكتور.`
+}
+function noMatchText(messages = botMessagesNow()) {
+  return `${messages.noMatch || 'ما لقيت مادة منشورة مطابقة الآن.'}\n\nجرّب كلمة أقرب للموضوع، أو قل لي: مقالة، كتاب، بحث، أو بودكاست.`
+}
+/* سلّم المدّة صار حقيقياً، فحقُّه أن يُذكر: كان يعمل ولا يعرفه أحد لأن
+   القائمة لا تسمّيه إلا في الترحيب وحده. والمدّة تُكتب كما تُقال — أيّ مدّة. */
+function helpText() {
+  return `أقدر أبحث لك في كل ما نشره د. أحمد، وأفهم المتابعة الطبيعية من غير أوامر جامدة.\n\n• اسأل: «شنو يقول الدكتور عن…؟» وأجمع لك الجواب من أكثر من باب مع الصفحة والتوقيت\n• آخر مقالة / كتاب / بحث / بودكاست\n• ابحث داخل الكتاب / فصول الكتاب / فيديوهات الكتاب\n• الظهور الإعلامي / حوار مسموع / الراديو\n• لخّصها / وين قالها؟ / افتح الفيديو / عطني المصدر\n• اقرأ لي بالمدّة اللي تناسبك: ٣٠ ثانية · دقيقة · دقيقتين · تعمّق\n• كمل / زدني / عطني غيرها / اللي بعدها / الأولى\n• فاجئني / اختبرني\n\n${SITE_URL}`
+}
+const BRIDGE_ONLINE_MS = Math.max(60_000, Number(process.env.WHATSAPP_BRIDGE_ONLINE_MS || 180_000))
+const QR_FRESH_MS = Math.max(30_000, Number(process.env.WHATSAPP_QR_FRESH_MS || 75_000))
+const REPAIR_COOLDOWN_MS = Math.max(15 * 60_000, Number(process.env.WHATSAPP_REPAIR_COOLDOWN_MS || 60 * 60_000))
+const DEVICE_ACTIVITY_PULSE_MS = 24 * 60 * 60_000
+const DEVICE_ACTIVITY_WARNING_MS = 36 * 60 * 60_000
+const MAX_BODY_BYTES = 2 * 1024 * 1024
+const WAKE_PHRASES = new Set(['موقع د احمد', 'موقع د الفيلكاوي'])
+const OWNER_CHAT_ID = String(process.env.WHATSAPP_OWNER_CHAT_ID || '').trim().toLowerCase()
+
+const COLLECTIONS = Object.freeze({
+  bridge: 'whatsapp_bridge_state',
+  conversations: 'whatsapp_conversations',
+  rules: 'whatsapp_reply_rules',
+  ruleVersions: 'whatsapp_rule_versions',
+  commands: 'whatsapp_bridge_commands',
+  events: 'whatsapp_attention_events',
+  settings: 'whatsapp_settings',
+  quality: 'whatsapp_quality_daily',
+  audienceContacts: 'whatsapp_audience_contacts',
+  audienceLists: 'whatsapp_audience_lists',
+  audienceMembers: 'whatsapp_audience_members',
+  campaigns: 'whatsapp_broadcast_campaigns',
+  learning: 'whatsapp_learning_patterns',
+})
+
+const GREETINGS = [
+  'السلام عليكم ورحمة الله وبركاته', 'السلام عليكم ورحمه الله وبركاته',
+  'السلام عليكم', 'سلام عليكم', 'وعليكم السلام', 'هلا والله', 'هلا', 'مرحبا',
+  'مرحبا بك', 'صباح الخير', 'مساء الخير', 'شلونك', 'كيف حالك', 'لو سمحت',
+  /* التحية بالإنجليزية كانت تسقط إلى البحث الأعمى: من كتب «hello» عاد إليه
+     «ما لقيت مادة منشورة مطابقة» — وهو أبردُ ما يُقال لمن سلّم. والموقع له
+     مرآةٌ إنجليزية منشورة، فمن يخاطبه بالإنجليزية ليس غريباً عنه. */
+  'hello', 'hi', 'hey', 'good morning', 'good evening', 'good afternoon',
+  'greetings', 'salam', 'salaam', 'assalamu alaikum', 'asalamu alaikum',
+]
+
+const NOISE_WORDS = new Set([
+  'ابي', 'ابغى', 'اريد', 'ممكن', 'لو', 'سمحت', 'عندك', 'عن', 'حول', 'شي',
+  'شيء', 'شنو', 'ماهو', 'ماهي', 'هل', 'في', 'من', 'الى', 'على', 'مع', 'هذا',
+  'هذه', 'ذلك', 'اللي', 'الذي', 'التي', 'لي', 'لنا', 'فضلا', 'رجاء',
+])
+
+const HUMAN_PATTERNS = [
+  /(?:ابي|اريد|ابغى|ممكن)\s+(?:موظف|انسان|شخص|الدكتور|احد)/,
+  /(?:حولني|وصلني|كلمني|اكلم)\s+(?:موظف|الدكتور|شخص|انسان)/,
+  /(?:تواصل|اتصال)\s+(?:بشري|مع الدكتور|مع موظف)/,
+]
+
+/* ── سؤال الثمن يُجاب، ولا يبتلع كلمةً عابرة ──
+   كان النمط يلتقط لفظ «سعر» أو «تكلفه» أو «قائمه» **في أي موضع** ثم يردّ
+   برسالة الترحيب. فحدث أمران: «تكلفة التعليم في الكويت» — وهو من صميم ما
+   يكتب فيه الدكتور — كان يُبتلع فيضيع سؤال صاحبه؛ ومن سأل «بكم الاشتراك؟»
+   لم يُجَب أصلاً، بل عُرضت عليه بوابة اليوم فبقي لا يدري: أمجّانيٌّ هو أم لا.
+   الآن يُشترط أن يكون الثمن مسؤولاً عنه هو (اشتراك · دخول · محتوى · موقع)،
+   ويُقال الجواب صريحاً: كل المنشور مجاني. */
+const PRICE_PATTERNS = [
+  /(?:بكم|كم سعر|كم تكلفه|شقد|جم سعر|ما (?:هو )?السعر|اسعار|الاسعار|رسوم|اشتراك مدفوع|في اشتراك|فيه اشتراك|هل هو مجاني|مجاني و?لا|مدفوع و?لا)\s*(?:ال)?(?:اشتراك|عضويه|دخول|محتوي|موقع|الموقع|كتاب|الكتاب|كتب|مقاله|المقالات|البودكاست|القراءه|الخدمه)?/,
+]
+const PRICE_ANSWER = 'كل ما يُنشر في موقع الدكتور مجاني ومفتوح: المقالات والأبحاث والكتب والقراءات الصوتية — بلا اشتراك ولا رسوم ولا تسجيل. اكتب لي أي موضوع وأفتح لك ما كتبه فيه.'
+/* سؤال العدد: «كم مقالة عندك» · «كم عدد المقالات» · «شكم بحث له».
+   ولا تُكتب `\b` بعد حرفٍ عربي: حدودُ الكلمة في جافاسكربت مبنيّةٌ على حروف
+   ASCII وحدها، فالنمط لا يطابق شيئاً أبداً وينهار الباب صامتاً. */
+const COUNT_QUESTION = /(?:^|\s)(?:كم|شكم|جم|عدد|كم عدد)\s+(?:ال)?(?:مقاله|مقالات|مقال|كتاب|كتب|بحث|ابحاث|بحوث|مختاره|مختارات|ماده|مواد)(?:\s|$)/
+const PAPER_COUNT_FORMS = { one: 'بحث', two: 'بحثان', few: 'أبحاث', many: 'بحثاً' }
+const BOOK_COUNT_FORMS = { one: 'كتاب', two: 'كتابان', few: 'كتب', many: 'كتاباً' }
+const CURATED_COUNT_FORMS = { one: 'مختارة', two: 'مختارتان', few: 'مختارات', many: 'مختارة' }
+
+const ARABIC_DIGITS = Object.freeze({
+  '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+  '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+  '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+  '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+})
+
+function asIso(value = Date.now()) {
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isFinite(date.getTime()) ? date.toISOString() : new Date().toISOString()
+}
+
+function bounded(value, max = 2_000) {
+  return String(value ?? '').trim().slice(0, max)
+}
+
+function hash(value) {
+  return createHash('sha256').update(String(value || '')).digest('hex')
+}
+
+function conversationId(jid) {
+  return hash(`whatsapp:${bounded(jid, 180)}`).slice(0, 40)
+}
+
+function maskJid(jid) {
+  const value = bounded(jid, 180)
+  const number = value.split('@', 1)[0].replace(/\D/g, '')
+  return number.length > 4 ? `${'*'.repeat(Math.max(4, number.length - 4))}${number.slice(-4)}` : '****'
+}
+
+function privateRecipientDigits(value) {
+  const digits = bounded(value, 180).split('@', 1)[0].replace(/\D/g, '')
+  return /^\d{7,15}$/.test(digits) ? digits : ''
+}
+
+function outboundRecipientFingerprint(value) {
+  const digits = privateRecipientDigits(value)
+  return digits ? hash(`wa-recipient:${digits}`) : ''
+}
+
+function normalizeConversationJid(value) {
+  /* إصدارات Multi-Device الحديثة قد تضيف رقم الجهاز قبل @c.us/@lid،
+     أو تستخدم s.whatsapp.net. لا نحوّل LID إلى رقم هاتف؛ نحفظ العنوان الحي
+     نفسه، لكن نرفض المجموعات والنشرات وأي محارف غير متوقعة. */
+  const jid = bounded(value, 180).toLowerCase()
+  return /^\d{5,30}(?::\d{1,8})?@(?:c\.us|lid|s\.whatsapp\.net)$/.test(jid) ? jid : ''
+}
+
+function isOwnerPrivateChat(value) {
+  const jid = String(value || '').trim().toLowerCase()
+  if (!OWNER_CHAT_ID || !jid) return false
+  if (jid === OWNER_CHAT_ID) return true
+  const jidNumber = jid.split('@', 1)[0].replace(/\D/g, '')
+  const ownerNumber = OWNER_CHAT_ID.split('@', 1)[0].replace(/\D/g, '')
+  return Boolean(jidNumber && ownerNumber && jidNumber === ownerNumber)
+}
+
+function normalizeWhitespace(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim()
+}
+
+/* التطبيع أوّل ما يمسّ رسالة المتابع، ومنه تُقرأ نيّتُه وتُطابَق قواعدُ الردّ.
+   رُفع إلى ما يكتبه الناس فعلاً لا إلى الفصحى المصحّحة: المطُّ («شلوووونك»)
+   يُردّ، والعلاماتُ غير المرئية الآتية مع اللصق تُحذف قبل أن تشطر الكلمة،
+   والهمزةُ تُردّ إلى كرسيّها فيلتقي «سؤال» و«سوال». */
+export function normalizeArabicMessage(value) {
+  const base = String(stripInvisible(value))
+    .normalize('NFKD')
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+  return normalizeWhitespace(foldArabicLetters(collapseElongation(base))
+    .replace(/\u0649/g, '\u064A')
+    .replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (digit) => ARABIC_DIGITS[digit] || digit)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' '))
+}
+
+/* ── مفردات الموقع ──
+   ما يُقاس عليه خطأُ الكتابة: عناوين المواد وكلماتها المفتاحية. يُبنى مرةً
+   واحدة مع الفهرس فلا كلفةَ على كل رسالة. */
+let messageVocabularyCache = null
+function messageVocabulary() {
+  if (messageVocabularyCache) return messageVocabularyCache
+  const words = new Set()
+  const add = (value) => {
+    for (const word of normalizeArabicMessage(value).split(' ')) {
+      if (word.length >= 4 && word.length <= 24) words.add(word)
+    }
+  }
+  for (const item of siteIndex()) {
+    add(item?.title)
+    add(String(item?.keywords || '').split('\u2016').join(' '))
+  }
+  messageVocabularyCache = words
+  return words
+}
+
+/* ── ما قصده المتابع ──
+   لا تُعاد كتابة رسالةٍ إلا حين تكون كما هي بلا معنى: لا نيّةَ تُقرأ منها ولا
+   مادةَ تجدها. حينئذٍ تُقرأ حروفُها اللاتينية عربيةً ويُصحَّح ما انقلب — بشرط
+   أن يفتح ذلك باباً كان مغلقاً، وإلا فالأصلُ أولى. */
+export function understandInboundMessage(text) {
+  const original = String(text || '')
+  const normalized = normalizeArabicMessage(original)
+  if (!normalized) return { text: original, changed: false, repairs: [] }
+  const carriesArabizi = normalized.split(' ').some((word) => looksArabizi(word))
+  const understoodAlready = classifyIntent(original).intent !== INTENTS.UNKNOWN
+  if (understoodAlready && !carriesArabizi) return { text: original, changed: false, repairs: [] }
+  if (!carriesArabizi && scoredSiteResults(normalized, { limit: 1 }).length > 0) return { text: original, changed: false, repairs: [] }
+  const repaired = repairMessage(normalized, messageVocabulary())
+  if (!repaired.changed) return { text: original, changed: false, repairs: [] }
+  const opensIntent = classifyIntent(repaired.text).intent !== INTENTS.UNKNOWN
+  const findsContent = scoredSiteResults(repaired.text, { limit: 1 }).length > 0
+  if (!opensIntent && !findsContent) return { text: original, changed: false, repairs: [] }
+  return { text: repaired.text, changed: true, repairs: repaired.repairs }
+}
+
+export function stripArabicGreetings(value) {
+  let text = normalizeArabicMessage(value)
+  const normalizedGreetings = GREETINGS.map(normalizeArabicMessage).sort((a, b) => b.length - a.length)
+  let changed = true
+  while (changed && text) {
+    changed = false
+    for (const greeting of normalizedGreetings) {
+      if (text === greeting || text.startsWith(`${greeting} `)) {
+        text = text.slice(greeting.length).trim()
+        changed = true
+        break
+      }
+    }
+  }
+  return text
+}
+
+export function isWhatsAppWakePhrase(value) {
+  return WAKE_PHRASES.has(normalizeArabicMessage(value))
+}
+
+export function isDuplicateInboundDelivery({
+  messageIdHash = '',
+  recentMessageIds = [],
+  incomingHash = '',
+  previousIncomingHash = '',
+  previousInboundAt = '',
+  now = Date.now(),
+} = {}) {
+  if (messageIdHash) return Array.isArray(recentMessageIds) && recentMessageIds.includes(messageIdHash)
+  const previousAt = Date.parse(previousInboundAt || '')
+  return Boolean(incomingHash
+    && previousIncomingHash === incomingHash
+    && Number.isFinite(previousAt)
+    && Number(now) - previousAt < 15_000)
+}
+
+function sharedPrefix(left, right) {
+  const limit = Math.min(left.length, right.length)
+  let index = 0
+  while (index < limit && left[index] === right[index]) index += 1
+  return index
+}
+
+function conservativeTokenMatch(inputToken, keywordToken) {
+  if (!inputToken || !keywordToken) return false
+  if (inputToken === keywordToken) return true
+  if (keywordToken.length >= 4 && inputToken.includes(keywordToken)) return true
+  if (inputToken.length < 4 || keywordToken.length < 4) return false
+  if (Math.abs(inputToken.length - keywordToken.length) > 2) return false
+  return sharedPrefix(inputToken, keywordToken) >= 4
+}
+
+function keywordMatches(message, keyword) {
+  const query = stripArabicGreetings(message)
+  const key = normalizeArabicMessage(keyword)
+  if (!query || !key) return false
+  if (query === key || query.includes(key)) return true
+  const queryTokens = query.split(' ')
+  const keyTokens = key.split(' ')
+  return keyTokens.every((needle) => queryTokens.some((token) => conservativeTokenMatch(token, needle)))
+}
+
+export function findRuleMatch(message, rules = []) {
+  const enabled = [...rules]
+    .filter((rule) => rule && rule.enabled !== false && Array.isArray(rule.keywords) && rule.keywords.length)
+    .sort((a, b) => Number(b.priority || 0) - Number(a.priority || 0))
+  for (const rule of enabled) {
+    const results = rule.keywords.map((keyword) => keywordMatches(message, keyword))
+    const type = rule.matchType || 'any'
+    const matched = type === 'all'
+      ? results.every(Boolean)
+      : type === 'exact'
+        ? rule.keywords.some((keyword) => stripArabicGreetings(message) === normalizeArabicMessage(keyword))
+        : results.some(Boolean)
+    if (matched) return rule
+  }
+  return null
+}
+
+function isGreetingOnly(text) {
+  return Boolean(normalizeArabicMessage(text)) && !stripArabicGreetings(text)
+}
+
+/* مصطلح الواجهة الموحّد (أمر الدكتور ٣١ يوليو، تبعاً لما نُفّذ في الموقع):
+   يقول «تكنولوجيا» لا «تقنية». يُطبَّق على ما يكتبه البوت من عنده — التصنيفات
+   وأبواب الأرشيف والجُمل — دون المساس بعناوين المقالات ونصوصها المنشورة،
+   فتلك كلماته هو في مادةٍ صدرت باسمه ولا تُحرَّر من خلف ظهره. */
+/* ── لفظ الموقع، ونصّ الدكتور ──
+   قاعدة الدار: نكتب «تكنولوجيا» لا «تقنية» في **كلامنا نحن**. وكان المبدّل
+   يمرّ على الردّ كلِّه فيصيب المقتطف المنقول من مادةٍ منشورة: كتب الدكتور
+   «التقنيات المساعِدة» فوصل القارئ «التكنولوجيات المساعِدة» — تحريفٌ في
+   نصٍّ نقدّمه على أنه نصّه، وهو نقضٌ للبوابة المقدّسة نفسها (وقد نصّ الدكتور
+   صراحةً على منع الاستبدال الشامل على متونه). فما يُقتبس منه يُلفّ بعلامتين
+   لا تُطبعان، والمبدّل يقفز فوقهما. */
+const VERBATIM_OPEN = '\u0001'
+const VERBATIM_CLOSE = '\u0002'
+function verbatim(value) {
+  const text = String(value || '')
+  return text ? `${VERBATIM_OPEN}${text}${VERBATIM_CLOSE}` : text
+}
+function houseTerminology(value) {
+  return String(value || '')
+    .replace(/التقنيات/g, 'التكنولوجيات')
+    .replace(/تقنيات/g, 'تكنولوجيات')
+    .replace(/للتقنية|للتقنيه/g, 'للتكنولوجيا')
+    .replace(/بالتقنية|بالتقنيه/g, 'بالتكنولوجيا')
+    .replace(/والتقنية|والتقنيه/g, 'والتكنولوجيا')
+    .replace(/التقنية|التقنيه/g, 'التكنولوجيا')
+    .replace(/تقنية|تقنيه/g, 'تكنولوجيا')
+}
+function systemTerminology(value) {
+  const text = String(value || '')
+  if (!text.includes(VERBATIM_OPEN)) return houseTerminology(text).replace(/[\u0001\u0002]/g, '')
+  return text
+    .split(VERBATIM_OPEN)
+    .map((chunk, index) => {
+      if (index === 0) return houseTerminology(chunk)
+      const close = chunk.indexOf(VERBATIM_CLOSE)
+      /* اقتباسٌ بلا إغلاق يعني أن القصّ عند حدّ الإرسال بتره — يبقى كما هو،
+         فالأصل في نصّه ألّا يُمسّ عند الشكّ. */
+      if (close < 0) return chunk
+      return chunk.slice(0, close) + houseTerminology(chunk.slice(close + 1))
+    })
+    .join('')
+    .replace(/[\u0001\u0002]/g, '')
+}
+
+/* ترقية ٧ — خفض التوقيع: «رد آلي من موقع د. أحمد» تحت كل رسالة يثقل المحادثة
+   الطويلة ويجعلها تبدو آلةً تكرر نفسها. القاعدة: يُوقَّع أول ردٍّ في كل جلسة،
+   والجلسة تنتهي بصمتٍ ثلاثين دقيقة فيعود التوقيع. الحدود الإنسانية (طلب
+   التواصل مع الدكتور) تبقى موقّعةً دائماً لأن مصدر الكلام يجب أن يكون بيّناً.
+   يُطبَّق عند حافة الإرسال لا داخل العقل، فيبقى العقل واختباراته كما هما. */
+const SESSION_SIGNATURE_GAP_MS = 30 * 60_000
+function shouldSignReply(conversation = {}, at = Date.now()) {
+  const lastSignedAt = Date.parse(conversation.lastSignedAt || '')
+  if (!Number.isFinite(lastSignedAt)) return true
+  return at - lastSignedAt >= SESSION_SIGNATURE_GAP_MS
+}
+
+export function trimSessionSignature(reply, conversation = {}, at = Date.now()) {
+  const text = String(reply || '')
+  if (!text) return text
+  const signature = botSignature()
+  if (!signature || !text.includes(signature)) return text
+  if (shouldSignReply(conversation, at)) return text
+  if (/تريد التواصل مع الدكتور مباشرة|لا أستطيع أن أعدك بموعد رد/.test(text)) return text
+  return text.replace(new RegExp(`\\n*${signature.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`), '').trimEnd()
+}
+
+function signReply(value, messages = botMessagesNow()) {
+  const signature = botSignature(messages)
+  const text = systemTerminology(bounded(value, 2_000))
+  if (!text || text.includes(signature)) return text
+  const humanBoundary = /تريد التواصل مع الدكتور مباشرة|لا أستطيع أن أعدك بموعد رد/.test(text)
+  const alreadyInteractive = /قل لي|جرّب|اكتب|شنو يناسب|وش تحب|إذا تحب|وإن أحببت|وأكمل معك|في أمان الله|وإياك|حيّاك/.test(text)
+  const nudge = humanBoundary || alreadyInteractive
+    ? ''
+    : '\n\nشنو تحب أسوي بعدها: ألخّصها، أعطيك المصدر، أو أطلع لك غيرها؟'
+  return `${text}${nudge}\n\n${signature}`
+}
+
+function semanticWord(value) {
+  const normalized = normalizeArabicMessage(value)
+  return toRoot(normalized) || normalized
+}
+
+function contentTokens(text) {
+  const tokens = stripArabicGreetings(text).split(' ')
+    .filter((token) => token.length >= 2 && !NOISE_WORDS.has(token))
+  return [...new Set(tokens.flatMap((token) => {
+    const root = semanticWord(token)
+    return root && root !== token ? [token, root] : [token]
+  }))]
+}
+
+function scoreContent(item, queryTokens) {
+  if (!queryTokens.length) return { score: 0, matched: 0, headingMatches: 0 }
+  const semanticText = (value, limit = 20_000) => {
+    const normalized = normalizeArabicMessage(value).slice(0, limit)
+    const roots = normalized.split(' ').map(semanticWord).filter(Boolean)
+    return `${normalized} ${roots.join(' ')}`
+  }
+  const title = semanticText(item.title, 2_000)
+  const excerpt = semanticText(item.excerpt, 6_000)
+  const keywords = semanticText(item.keywords, 4_000)
+  const body = semanticText(item.body, 20_000)
+  let score = 0
+  let matched = 0
+  let headingMatches = 0
+  for (const token of queryTokens) {
+    const inTitle = title.includes(token)
+    const inKeywords = keywords.includes(token)
+    const inExcerpt = excerpt.includes(token)
+    const inBody = body.includes(token)
+    if (inTitle || inKeywords || inExcerpt || inBody) matched += 1
+    if (inTitle || inKeywords) headingMatches += 1
+    if (inTitle) score += 8
+    else if (inKeywords) score += 5
+    else if (inExcerpt) score += 3
+    else if (inBody) score += 1
+  }
+  if (matched === queryTokens.length && queryTokens.length > 1) score += 6
+  return { score, matched, headingMatches }
+}
+
+let contentIndexCache = null
+function siteIndex() {
+  if (contentIndexCache) return contentIndexCache
+  try {
+    contentIndexCache = buildContentIndex(process.cwd(), SITE_URL)
+  } catch {
+    contentIndexCache = []
+  }
+  return contentIndexCache
+}
+
+/* ترقية ٣ — السؤال المركّب: «عندك بحث محكّم عن التعلم عن بُعد بعد ٢٠٢٠؟» فيه
+   ثلاثة شروط: موضوع ونوع وزمن. كان البوت يفهم الموضوع وحده فيعود بمقالٍ من
+   ٢٠١٤. نستخرج النوع والزمن من نص السؤال نفسه ونطبّقهما مرشِّحَين حقيقيين،
+   ونعلن في الرد أننا فهمنا الشرطين — بلا اختلاق مادةٍ غير موجودة. */
+const KIND_HINTS = [
+  [/(?:^|\s)(?:بحث|ابحاث|بحوث|محكم|محكمه|دراسه|دراسات|ورقه علميه)(?=\s|$)/, 'paper'],
+  [/(?:^|\s)(?:كتاب|كتب|مولف|مولفات)(?=\s|$)/, 'book'],
+  [/(?:^|\s)(?:بودكاست|حلقه|حلقات|بودكاستات)(?=\s|$)/, 'podcast'],
+  [/(?:^|\s)(?:مقال|مقاله|مقالات)(?=\s|$)/, 'article'],
+  [/(?:^|\s)(?:مختارات|مختاره)(?=\s|$)/, 'curated'],
+]
+export function parseCompoundFilters(text = '') {
+  const clean = normalizeArabicMessage(text)
+  const kinds = KIND_HINTS.filter(([pattern]) => pattern.test(clean)).map(([, kind]) => kind)
+  let after = null
+  let before = null
+  let exact = null
+  const yearOf = (value) => {
+    const year = Number(String(value).replace(/[٠-٩]/g, (digit) => String(AR_DIGITS.indexOf(digit))))
+    return Number.isFinite(year) && year >= 1980 && year <= 2100 ? year : null
+  }
+  const afterMatch = clean.match(/(?:بعد|من بعد|منذ|ابتداء من|من)\s*(?:عام|سنه|سنة)?\s*([٠-٩0-9]{4})/)
+  const beforeMatch = clean.match(/(?:قبل|حتى|لغايه|الى)\s*(?:عام|سنه|سنة)?\s*([٠-٩0-9]{4})/)
+  const exactMatch = clean.match(/(?:في|سنه|سنة|عام)\s*([٠-٩0-9]{4})/)
+  if (afterMatch) after = yearOf(afterMatch[1])
+  if (beforeMatch) before = yearOf(beforeMatch[1])
+  if (!after && !before && exactMatch) exact = yearOf(exactMatch[1])
+  const recent = /الاحدث|الاجدد|الجديده|حديثه|هالسنه|هذه السنه|مؤخرا/.test(clean) && !after && !before && !exact
+  return { kinds, after, before, exact, recent, active: Boolean(kinds.length || after || before || exact || recent) }
+}
+
+function itemYear(item) {
+  return Number(String(item?.date || item?.iso || item?.year || '').match(/(?:19|20)\d{2}/)?.[0] || 0)
+}
+
+function matchesCompoundFilters(item, filters) {
+  if (!filters?.active) return true
+  if (filters.kinds.length && !filters.kinds.includes(item.kind)) return false
+  const year = itemYear(item)
+  if (filters.after && (!year || year < filters.after)) return false
+  if (filters.before && (!year || year > filters.before)) return false
+  if (filters.exact && year !== filters.exact) return false
+  if (filters.recent && year && year < new Date().getFullYear() - 2) return false
+  return true
+}
+
+export function describeCompoundFilters(filters) {
+  if (!filters?.active) return ''
+  const parts = []
+  if (filters.kinds.length) parts.push(filters.kinds.map((kind) => ({ paper: 'أبحاث', book: 'كتب', podcast: 'بودكاست', article: 'مقالات', curated: 'مختارات' })[kind] || kind).join(' و'))
+  if (filters.after) parts.push(`بعد ${arabicNumber(filters.after)}`)
+  if (filters.before) parts.push(`قبل ${arabicNumber(filters.before)}`)
+  if (filters.exact) parts.push(`في ${arabicNumber(filters.exact)}`)
+  if (filters.recent) parts.push('الأحدث')
+  return parts.join(' · ')
+}
+
+function exactSiteResults(query, overrideQuery = '', options = {}) {
+  const tokens = contentTokens(overrideQuery || query).slice(0, 8)
+  if (!tokens.length) return []
+  const excluded = new Set(Array.isArray(options.excludeIds) ? options.excludeIds : [])
+  const kinds = new Set(Array.isArray(options.kinds) ? options.kinds : [])
+  const filters = options.filters || null
+  const rows = siteIndex()
+    .filter((item) => matchesCompoundFilters(item, filters))
+    .filter((item) => !excluded.has(item.id) && (!kinds.size || kinds.has(item.kind)))
+    .map((item) => ({ item, ...scoreContent(item, tokens) }))
+    .filter((row) => {
+      if (tokens.length === 1) return row.score >= 5
+      const neededMatches = Math.min(tokens.length, Math.max(1, Math.ceil(tokens.length * .38)))
+      return row.score >= 7 && row.matched >= neededMatches
+    })
+    .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
+    .slice(0, Math.max(1, Math.min(5, Number(options.limit || 3))))
+  return rows.map((row) => row.item)
+}
+
+function itemLabel(item) {
+  return ({
+    article: 'مقالة',
+    book: 'كتاب',
+    paper: 'بحث',
+    podcast: 'بودكاست',
+    curated: 'مختارة',
+  })[item?.kind] || 'مادة'
+}
+
+/* «لهذه كتاب» عربيةٌ مكسورة. الإشارة تتبع جنس المسمّى لا جنس «المادة». */
+function itemDemonstrative(item) {
+  return ['book', 'paper', 'podcast'].includes(item?.kind) ? 'لهذا' : 'لهذه'
+}
+
+const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+function arabicNumber(value) {
+  return String(value).replace(/\d/g, (digit) => AR_DIGITS[Number(digit)])
+}
+
+/* اختيارٌ حتميّ لا عشوائي: نفس البذرة تعطي نفس الصياغة (قابل للاختبار)،
+   وبذرةُ كل دورٍ مختلفة فتتنوّع الصياغات بين الرسائل تنوّعاً طبيعياً. */
+function variantOf(seed, options) {
+  if (!Array.isArray(options) || !options.length) return ''
+  const number = Number.parseInt(hash(String(seed)).slice(0, 8), 16)
+  return options[number % options.length]
+}
+
+function readingMinutes(item) {
+  const words = Number(item?.words || 0)
+  return words ? Math.max(1, Math.round(words / 200)) : 0
+}
+
+function itemMetaLine(item) {
+  const parts = [itemLabel(item)]
+  const minutes = readingMinutes(item)
+  if (minutes) parts.push(`قراءة ~${arabicCountPhrase(minutes, MINUTE_FORMS, arabicNumber)}`)
+  const audio = item?.audio || null
+  if (audio?.dialogue) parts.push('فيها حوار مسموع')
+  else if (audio?.fahed || audio?.noura) parts.push('فيها قراءة صوتية')
+  return parts.join(' · ')
+}
+
+function siteResultReply(items, intro = 'وجدت لك من موقع الدكتور:', tail = '') {
+  /* الذيل يسبق سطر «اختر رقماً»: موضع اللقاء جزءٌ من النتيجة لا حاشيةٌ بعد الدعوة. */
+  const body = tail ? `${tail}\n` : ''
+  if (items.length === 1) {
+    const item = items[0]
+    const source = normalizeWhitespace(item.excerpt || item.body || '')
+    const preview = source.split(/\s+/).filter(Boolean).slice(0, 30).join(' ')
+    return `${intro}\n\n*${item.title}*\n${itemMetaLine(item)}${preview ? `\n\n${verbatim(preview)}${source.split(/\s+/).filter(Boolean).length > 30 ? '…' : ''}` : ''}\n\n${item.url}\n${body}\nماذا تريد بعدها؟ لخّصها · أعطني المصدر · أطلع لي غيرها.`
+  }
+  const lines = items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${itemMetaLine(item)}\n${item.url}`)
+  return `${intro}\n\n${lines.join('\n\n')}\n${body}\nاختر رقماً، أو اكتب: لخّص الأولى · أعطني غيرها.`
+}
+
+/* حين لا يطابق البحثُ الدقيق شيئاً، لا نكتفي بـ«ما لقيت»: نعرض أقرب المواد
+   بعتبةٍ متساهلة، فإن غابت عرضنا أبواب الأرشيف الفعلية (من عناوين المقالات
+   المنشورة نفسها) — كله مؤرّضٌ بالموقع، ولا اختلاق. */
+/* ── «أقرب المواد» يجب أن تكون قريبةً فعلاً ──
+   كانت العتبة `score >= 3`، وهي تُستوفى بكلمةٍ واحدة تظهر في مقتطف، أو بثلاث
+   كلماتٍ شائعة في متنٍ طويل. فمن سأل عن «كرة القدم» — ولا شيء عنها في
+   أرشيفه — عادت إليه ثلاثة عناوين عن اللغة والتربية بوصفها «أقرب المواد
+   لفكرتك»، وهي ليست قريبةً من فكرته في شيء. وذلك أسوأ من الصمت: يوهمه أنّ
+   البوت فهم ثم أخفق، والصواب أن يُقال «ليس عنده في هذا» وتُفتح أبواب أرشيفه.
+   الشرط الآن: مطابقةٌ في العنوان أو الكلمات المفتاحية (دلالةٌ صريحة)، أو
+   كلمتان مختلفتان من سؤاله على الأقل. */
+function nearestSuggestions(query, excludeIds = [], limit = 3) {
+  const tokens = contentTokens(query).slice(0, 8)
+  if (!tokens.length) return []
+  const excluded = new Set(excludeIds)
+  return siteIndex()
+    .filter((item) => !excluded.has(item.id))
+    .map((item) => ({ item, ...scoreContent(item, tokens) }))
+    .filter((row) => row.score >= 3 && (row.headingMatches >= 1 || row.matched >= 2))
+    .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
+    .slice(0, limit)
+    .map((row) => row.item)
+}
+
+function archiveDoors(limit = 4) {
+  const counts = new Map()
+  for (const item of siteIndex()) {
+    if (item.kind !== 'article') continue
+    for (const token of normalizeArabicMessage(item.title).split(' ')) {
+      if (token.length < 4 || NOISE_WORDS.has(token)) continue
+      const root = semanticWord(token)
+      const row = counts.get(root) || { count: 0, display: token }
+      row.count += 1
+      if (token.length < row.display.length) row.display = token
+      counts.set(root, row)
+    }
+  }
+  return [...counts.values()]
+    .filter((row) => row.count >= 2)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+    .map((row) => `ال${row.display}`.replace(/^الال/, 'ال'))
+}
+
+function requestedListCount(cleanText) {
+  const match = cleanText.match(/(?:^|\s)(\d{1,2})(?:\s|$)/)
+  const count = match ? Number(match[1]) : 0
+  return count >= 2 && count <= 5 ? count : 0
+}
+
+/* مجاملاتُ الناس ليست موضوع بحث. كانت «شكراً» و«تمام» و«مع السلامة» تسقط
+   في محرك البحث فيجيب «ما لقيت مادة» — جفاءٌ في موضع الدفء. */
+const THANKS_PATTERN = /^(?:شكرا(?: جزيلا| لك)?|مشكور(?:ين)?(?: وايد)?|تسلم(?:ون)?|يعطيك العافيه|الله يعطيك العافيه|جزاك الله خير(?:ا)?|جزاكم الله خير(?:ا)?|بارك الله فيك(?:م)?|ما قصرت(?:وا)?|يزاك الله خير|شكرا وايد|thanks|thank you)\s*$/
+const FAREWELL_PATTERN = /^(?:مع السلامه|في امان الله|الله يحفظك|تصبح على خير|تصبحون على خير|باي|وداعا|الى اللقاء|سلامات|استودعك الله)\s*$/
+const ACK_PATTERN = /^(?:تمام|اوكي|اوك|ok|okay|زين|طيب|ممتاز|جميل|رائع|واضح|فهمت|اها|ايه|نعم|ان شاء الله|خلاص|ماشي|تم)\s*$/
+const WHO_ARE_YOU_PATTERN = /^(?:من انت|منو انت|انت منو|شنو انت|وش انت|مين انت|هل انت روبوت|هل انت بوت|انت بوت|انت روبوت|انت انسان|معاي انسان او روبوت)\s*$/
+/* صوتا القراءة المنشورة — اسماهما ظاهران على كل مادةٍ لها صوت، فالسؤال عنهما
+   متوقّع. القيد أن يكون السؤال عنهما هما، لا أن يرد الاسم في كلامٍ آخر. */
+const NARRATOR_QUESTION = /^(?:من|منو|مين|من هو|من هي|منهو|منهي|وش|شنو)\s*(?:هو|هي|هم|هما)?\s*(?:فهد|نوره|نورا|فهد ونوره|نوره وفهد)\s*(?:منو|مين)?\s*[؟?]?$/
+const PRAISE_PATTERN = /^(?:ما شاء الله|ماشاء الله|كفو|ابدعت|مبدع|وايد حلو|حلو وايد|روعه|يا سلام|احسنت|برافو|عجيب)\s*$/
+
+const MOOD_MAP = [
+  [/(ضايق|متضايق|حزين|مهموم|زعلان|مكتئب|طفران|مقهور)/, 'أحس بثقل كلمتك. اخترت لك من مكتبة الدكتور ما يفتح نافذة:', ['طمانينه سعاده راحه', 'صبر امل', 'حزن تجاوز']],
+  [/(خايف|قلقان|متوتر|مرعوب|وسواس|مرتبك)/, 'للقلق دواء من فكرة هادئة. هذه أقرب مواد الدكتور لحالك:', ['خوف قلق طمانينه', 'ثقه نفس', 'هدوء توازن']],
+  [/(متحمس|منجز|نشيط|متفائل|مبسوط|فرحان)/, 'حماسك يستاهل فكرة توازيه:', ['نجاح تفوق انجاز', 'ابداع موهبه', 'مستقبل طموح']],
+  [/(تعبان|مرهق|مضغوط|مخنوق|ملل|طفشان)/, 'خذ نفساً عميقاً، وهذه مادة تريّح البال:', ['ضغط ارهاق راحه', 'توازن حياه', 'سكينه']],
+]
+
+function compareSides(cleanText) {
+  /* واو العطف تلتصق بالكلمة عربياً («المعلم والتقنية»)، فالفاصل يقبل الواو
+     الملتصقة والمنفصلة و«أو» معاً. */
+  const match = cleanText.match(/(?:الفرق بين|قارن(?: لي)?(?: بين)?|مقارنه بين|ايهما افضل)\s+(.+?)\s+(?:او\s+|و\s*)(.+)$/)
+  if (!match) return null
+  const sides = [match[1], match[2]].map((side) => side.trim()).filter((side) => side.length >= 2)
+  return sides.length === 2 ? sides : null
+}
+
+/* تحدي ١٥ ثانية: سؤالٌ مبنيّ من اقتباسٍ حرفيّ من مقالٍ منشور وثلاثة عناوين
+   حقيقية — لا توليد ولا اختلاق، والإجابة تُحفظ في وثيقة المحادثة. */
+function buildChallenge(conversation = {}, seedText = '') {
+  const pool = siteIndex().filter((item) => item.kind === 'article'
+    && normalizeWhitespace(item.excerpt || item.body || '').split(/\s+/).filter(Boolean).length >= 14)
+  if (pool.length < 3) return null
+  const seed = Number.parseInt(hash(`challenge:${seedText}:${conversation.lastInboundAt || ''}:${(conversation.seenContentIds || []).length}`).slice(0, 8), 16)
+  const correct = pool[seed % pool.length]
+  const others = pool.filter((item) => item.id !== correct.id)
+  const second = others[seed % others.length]
+  const rest = others.filter((item) => item.id !== second.id)
+  const third = rest[(seed >>> 3) % rest.length]
+  const rotation = seed % 3
+  const base = [correct, second, third]
+  const arranged = [...base.slice(rotation), ...base.slice(0, rotation)]
+  const answerIndex = arranged.findIndex((item) => item.id === correct.id)
+  const fragment = normalizeWhitespace(correct.excerpt || correct.body).split(/\s+/).slice(0, 18).join(' ')
+  const lines = arranged.map((item, index) => `${arabicNumber(index + 1)}) ${item.title}`)
+  return {
+    reply: `تحدي ١٥ ثانية — من أي مادة أُخذت هذه العبارة؟\n\n«${verbatim(fragment)}…»\n\n${lines.join('\n')}\n\nاكتب رقم إجابتك: ١ أو ٢ أو ٣.`,
+    state: { answerIndex, itemIds: arranged.map((item) => item.id), askedAt: asIso() },
+    evidence: [correct.id],
+  }
+}
+
+function latestSiteItems(kinds = [], limit = 1) {
+  const allowed = new Set(kinds)
+  return siteIndex()
+    .filter((item) => !allowed.size || allowed.has(item.kind))
+    .sort((left, right) => String(right.date || '').localeCompare(String(left.date || '')) || String(right.id).localeCompare(String(left.id)))
+    .slice(0, limit)
+}
+
+function conversationContextItems(conversation = {}) {
+  const ids = Array.isArray(conversation.contextItemIds) ? conversation.contextItemIds : []
+  const byId = new Map(siteIndex().map((item) => [item.id, item]))
+  return ids.map((id) => byId.get(id)).filter(Boolean)
+}
+
+function currentConversationItem(conversation = {}) {
+  const items = conversationContextItems(conversation)
+  const index = Math.max(0, Math.min(items.length - 1, Number(conversation.contextIndex || 0)))
+  return items[index] || null
+}
+
+/* ── الكتاب يبقى حاضراً في المجلس ──
+   كانت نيات «ابحث داخل الكتاب» و«فصول الكتاب» و«فيديوهات الكتاب» صحيحة في
+   المصنّف، لكن متحكم الإنتاج لم يمنحها مساراً متخصصاً؛ فسقطت إلى بحث الموقع
+   العام. هنا نربطها بالكتاب المذكور صراحةً أو بالكتاب الحالي في ذاكرة
+   المحادثة، ونجيب من المتن/الفهرس الموثّق فقط. */
+function namedBookInText(text = '') {
+  const cleanText = normalizeArabicMessage(text)
+  const books = siteIndex().filter((item) => item.kind === 'book')
+  const named = books
+    .map((book) => ({ book, title: normalizeArabicMessage(book.title || '') }))
+    .filter(({ title }) => title && cleanText.includes(title))
+    .sort((left, right) => right.title.length - left.title.length)[0]?.book
+  if (named) return named
+  if (/(?:^|\s)(?:الموسوعه|موسوعه تكنولوجيا التعليم)(?:\s|$)/.test(cleanText)) return books.find((book) => book.slug === 'encyclopedia') || null
+
+  /* الناس تختصر: «كتاب التلعيب» لا «التلعيب Gamification وعالم الألعاب».
+     فنطابق كلمةً مميّزة من العنوان — بشرط أن تكون طويلةً (٤ أحرف فأكثر) وألّا
+     تكون مشتركةً بين كتابين، فلا نخمّن كتاباً على كلمةٍ عامة مثل «التعليم». */
+  const NOISE = new Set(['كتاب', 'كتب', 'الكتاب', 'فصول', 'ابواب', 'محتويات', 'فهرس', 'عن', 'في', 'من', 'التعليم', 'تكنولوجيا', 'العصر', 'عالم', 'وعالم'])
+  const words = cleanText.split(/\s+/).filter((word) => word.length >= 4 && !NOISE.has(word))
+  if (!words.length) return null
+  const scored = books.map((book) => {
+    const title = normalizeArabicMessage(book.title || '')
+    const titleWords = new Set(title.split(/\s+/).filter((word) => word.length >= 4 && !NOISE.has(word)))
+    return { book, hits: words.filter((word) => titleWords.has(word)).length }
+  }).filter((item) => item.hits > 0).sort((left, right) => right.hits - left.hits)
+  if (scored.length === 1 || (scored[0] && scored[0].hits > (scored[1]?.hits || 0))) return scored[0].book
+  return null
+}
+
+function contextualBook(text = '', conversation = {}) {
+  return namedBookInText(text) || (() => {
+    const current = currentConversationItem(conversation)
+    return current?.kind === 'book' ? current : null
+  })()
+}
+
+function bookSearchTopic(text = '', book = null) {
+  let topic = normalizeArabicMessage(text)
+    .replace(/^(?:(?:ابي|اريد|ابغي|ابغى|ممكن)\s+)?(?:(?:ابحث|بحث|دور|فتش)\s*(?:لي\s*)?(?:داخل|في)\s*(?:ال)?كتاب|(?:اسال|اسأل)\s*(?:ال)?كتاب)\s*/, '')
+  if (book) topic = topic.replace(normalizeArabicMessage(book.title || ''), '')
+  return topic.replace(/^(?:عن|حول|بخصوص)\s+/, '').trim()
+}
+
+/* ── جلسة الكتاب ──
+   العطب الذي رآه الدكتور: البوت يقول «أنا داخل كتاب كذا الآن، اكتب سؤالك
+   وأبحث لك في متنه»، ثم يأتي السؤال التالي فيذهب إلى البحث العام ويردّ
+   ببودكاست. الوعد كان بلا ذاكرة: السياق يحمل الكتاب، لكن لا شيء يقول
+   «نحن داخله». `bookSession` هي تلك الذاكرة، وتُمحى بكلمةٍ صريحة أو ببابٍ آخر. */
+const LEAVE_BOOK_PATTERN = /(?:اخرج|اطلع|خلصنا|كفى|بس)\s*(?:من)?\s*(?:ال)?كتاب|خارج\s*(?:ال)?كتاب|ابحث\s*في\s*الموقع|بحث\s*عام|المقالات\s*بدل/u
+
+/* طلب المرئي بأي صياغة: «فيديو»، «مقطع»، «يوتيوب»، «أبي أشوف». و«لقاء/مقابلة»
+   مقصودةٌ خارج النمط لأن لها باب الأرشيف الإعلامي. */
+const VIDEO_REQUEST_PATTERN = /(?:^|\s)(?:فيديو|فيديوهات|فديو|مقطع|مقاطع|يوتيوب)(?:\s|$)/u
+const VIDEO_TOPIC_STRIP = /(?:^|\s)(?:ابي|ابغي|ابغى|اريد|ودي|ممكن|عطني|اعطني|وريني|شوف|اشوف|شاهد|في|من|هل|عندك|عندكم|لك|لي|الدكتور|فيديو|فيديوهات|فديو|مقطع|مقاطع|يوتيوب|الموسوعه|الكتاب|عن|حول|بخصوص)(?=\s|$)/gu
+
+function videoRequestTopic(cleanText = '') {
+  return String(cleanText).replace(VIDEO_TOPIC_STRIP, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function bookSessionSlug(conversation = {}) {
+  return String(conversation.bookSession || '').trim()
+}
+
+function bookSessionAnswer(topic, book, slug) {
+  const answer = bookAnswerReply(topic, slug ? { bookSlug: slug } : {})
+  const id = book?.id || (slug ? `book:${slug}` : '')
+  const deeper = `\n\nوللبحث أكثر داخل متن الكتاب:\n${SITE_URL}/search?tab=askbook${slug ? `&book=${encodeURIComponent(slug)}` : ''}`
+  if (answer) {
+    return {
+      reason: answer.grounded ? 'book-search-grounded' : 'book-search-concept',
+      reply: `${answer.text}${deeper}`,
+      ...(id ? { evidence: [id], contextItemIds: [id], contextIndex: 0 } : {}),
+      lastTopic: topic,
+      patch: { bookSession: answer.found?.bookSlug || slug || null },
+    }
+  }
+  return {
+    reason: 'book-search-no-quote',
+    reply: `دوّرت في متن ${book ? `«${book.title}»` : 'الكتب'} عن «${topic}» وما لقيت موضعاً يتناوله، وما أنسب للدكتور كلاماً ما كتبه.\n\nتبي أدوّر عنه في بقية الموقع (مقالات وأبحاث ولقاءات)؟ اكتب «ابحث في الموقع». أو اسألني عن محورٍ ثانٍ داخل الكتاب — واكتب «فصول الكتاب» لتشوف محاوره.${deeper}`,
+    ...(id ? { evidence: [id], contextItemIds: [id], contextIndex: 0, lastTopic: book?.title || topic } : {}),
+    patch: { bookSession: slug || null },
+  }
+}
+
+/** يُستدعى قبل البحث العام: السؤال العادي داخل جلسة كتابٍ يبقى داخل الكتاب. */
+function bookSessionDecision(text = '', conversation = {}) {
+  const slug = bookSessionSlug(conversation)
+  if (!slug) return null
+  const topic = normalizeArabicMessage(text).replace(/^(?:عن|حول|بخصوص)\s+/, '').trim()
+  if (topic.length < 2) return null
+  const book = siteIndex().find((item) => item.id === `book:${slug}`) || null
+  return bookSessionAnswer(topic, book, slug)
+}
+
+function bookSearchDecision(text = '', conversation = {}) {
+  const book = contextualBook(text, conversation)
+  const slug = book?.slug || String(book?.id || '').replace(/^book:/, '')
+  const topic = bookSearchTopic(text, book)
+  if (topic) return bookSessionAnswer(topic, book, slug)
+  if (book) return {
+    reason: 'book-search-ready',
+    reply: `أنا داخل كتاب «${book.title}» الآن. اكتب سؤالك بطريقتك — مثلاً: «ماذا يقول عن المعلم؟» — وأبحث لك في متنه الموثّق، لا في المقالات.\n\n${SITE_URL}/search?tab=askbook&book=${encodeURIComponent(slug)}`,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+    patch: { bookSession: slug },
+  }
+  const books = siteIndex().filter((item) => item.kind === 'book')
+  return {
+    reason: 'book-search-gateway',
+    reply: `أكيد — هذا بحث داخل متون الكتب نفسها، لا داخل المقالات. اختر الكتاب ثم اكتب سؤالك بطريقتك:\n\n${SITE_URL}/search?tab=askbook\n\nالكتب المتاحة: ${books.map((item) => `«${item.title}»`).join(' · ')}`,
+  }
+}
+
+function bookChaptersDecision(text = '', conversation = {}) {
+  const book = contextualBook(text, conversation)
+  /* «فصول <اسم>» صار مقبولاً في المصنّف. فإن لم يكن الاسمُ كتاباً ولم تُذكر
+     كلمة «كتاب» أصلاً، فالسؤال ليس عن كتاب («فصول السنة») — نعيده إلى البحث
+     العام بدل أن نسأل «أي كتاب تقصد؟» عن شيءٍ لا كتاب فيه. */
+  if (!book && !/(?:^|\s)كتاب/.test(normalizeArabicMessage(text))) return null
+  if (!book) return {
+    reason: 'book-chapters-clarify',
+    reply: `أي كتاب تقصد؟ اكتب اسمه، مثل: «فصول المدارس الذكية».\n\n${SITE_URL}/publications`,
+  }
+  const slug = book.slug || String(book.id || '').replace(/^book:/, '')
+  const chapters = bookChaptersReply(slug)
+  if (!chapters) return {
+    reason: 'book-chapters-missing',
+    reply: `لم أجد فهرساً موثقاً لهذا الكتاب الآن، لذلك لن أخمّن فصوله.\n\n${book.url}`,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+  return {
+    reason: 'book-chapters', reply: chapters.text,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+}
+
+function bookInsightDecision(text = '', conversation = {}) {
+  const book = contextualBook(text, conversation)
+  if (!book) return {
+    reason: 'book-insight-clarify',
+    reply: `من أي كتاب تبي الفكرة؟ اكتب اسمه، وأنا أختار لك مقطعاً حقيقياً من متنه مع الصفحة.\n\n${SITE_URL}/publications`,
+  }
+  const slug = book.slug || String(book.id || '').replace(/^book:/, '')
+  const grounded = usefulBookQuoteReply(slug, normalizeArabicMessage(text))
+  if (!grounded) return {
+    reason: 'book-insight-missing',
+    reply: `ما لقيت مقطعاً مناسباً أقدر أنسبه بأمان إلى «${book.title}» الآن؛ لذلك ما راح أخمّن.\n\n${book.url}`,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+  return {
+    reason: 'book-insight', reply: grounded.text,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+}
+
+function bookVideosDecision(text = '', conversation = {}) {
+  const book = contextualBook(text, conversation)
+  const encyclopedia = siteIndex().find((item) => item.id === 'book:encyclopedia')
+  const topic = normalizeArabicMessage(text).match(/(?:عن|حول|بخصوص)\s+(.+)$/)?.[1]?.trim() || ''
+  const query = topic ? `?q=${encodeURIComponent(topic)}&tab=video` : '?tab=video'
+
+  /* التفريغات المفهرسة بالثانية كانت حاضرةً في الخادم بلا استعمال، فكان الجواب
+     رابطاً يقول «ابحث بنفسك». الآن نبحث نحن ونعيد اللحظة التي قيلت فيها الفكرة. */
+  if (topic) {
+    const moments = encyclopediaVideoReply(topic, 3)
+    if (moments) return {
+      reason: 'book-videos-moments',
+      reply: moments.text,
+      ...(encyclopedia ? { evidence: [encyclopedia.id], contextItemIds: [encyclopedia.id], contextIndex: 0 } : {}),
+      lastTopic: topic,
+    }
+  }
+  if (book && book.slug !== 'encyclopedia') return {
+    reason: 'book-videos-unavailable',
+    reply: `لا توجد في الموقع الآن خريطة فيديو موثقة مرتبطة بكتاب «${book.title}»، لذلك لن أعرض مقاطع على أنها منه.\n\nالخريطة المرئية الموثقة موجودة داخل «موسوعة تكنولوجيا التعليم»:\n${SITE_URL}/publications/encyclopedia${query}#encyclopedia-map\n\nوالظهور الإعلامي الكامل:\n${SITE_URL}/media`,
+    evidence: [book.id], contextItemIds: [book.id], contextIndex: 0, lastTopic: book.title,
+  }
+  return {
+    reason: 'book-videos',
+    reply: `فيديوهات الكتاب موجودة داخل الخريطة المرئية للموسوعة؛ ابحث بالمفهوم وشاهد المقطع المرتبط به مباشرة:\n\n${SITE_URL}/publications/encyclopedia${query}#encyclopedia-map`,
+    ...(encyclopedia ? { evidence: [encyclopedia.id], contextItemIds: [encyclopedia.id], contextIndex: 0, lastTopic: encyclopedia.title } : {}),
+  }
+}
+
+/* ── اللقاء بالثانية لا بالعنوان ──
+   تفريغات الأرشيف مفهرسة زمنياً وتُستعمل في البحث، لكن الردّ كان عنواناً ورابطاً
+   فقط: «موجود في هذا اللقاء» — ثم يبحث السائل عن الجملة في عشرين دقيقة. الآن
+   نعيد الموضع ونصّه ورابطاً يفتح على الثانية نفسها. */
+const CONTROLLER_DIR = dirname(fileURLToPath(import.meta.url))
+let mediaTranscriptRecords = null
+function loadMediaTranscripts() {
+  if (mediaTranscriptRecords) return mediaTranscriptRecords
+  const candidates = [
+    resolve(CONTROLLER_DIR, '../data/media-archive-transcripts.json'),
+    resolve(process.cwd(), 'src/data/media-archive-transcripts.json'),
+  ]
+  try {
+    const path = candidates.find((item) => existsSync(item))
+    mediaTranscriptRecords = path ? JSON.parse(readFileSync(path, 'utf8')) : {}
+  } catch {
+    mediaTranscriptRecords = {}
+  }
+  return mediaTranscriptRecords
+}
+
+function mediaMomentFor(slug = '', topic = '') {
+  const sourceId = String(slug).replace(/^media-/, '')
+  const record = loadMediaTranscripts()[sourceId]
+  if (!record?.available || !Array.isArray(record.segments)) return null
+  const words = normalizeArabicMessage(topic).split(/\s+/).filter((word) => word.length > 2)
+  if (!words.length) return null
+  let best = null
+  for (const segment of record.segments) {
+    const spoken = normalizeArabicMessage(segment.searchText || segment.displayText || segment.text || '')
+    if (!spoken) continue
+    const score = words.reduce((sum, word) => sum + (spoken.includes(word) ? 1 : 0), 0)
+    if (!score) continue
+    if (!best || score > best.score) best = { score, segment }
+  }
+  if (!best || best.score < Math.min(2, words.length)) return null
+  const total = Math.max(0, Math.floor(Number(best.segment.start) || 0))
+  /* التفريغات القديمة مقاطعها طويلة جداً، فالمقطع الأول يبتلع دقائق ويعطي «0:00»
+     — وهي إشارةٌ لا تفيد وتوهم بدقّةٍ لا نملكها. فلا نعرض موضعاً إلا إذا كان
+     موضعاً فعلاً. والواجهة تقول «نحو» صراحةً كما في محاور الموقع. */
+  if (total < 5) return null
+  return {
+    seconds: total,
+    stamp: `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`,
+    text: String(best.segment.displayText || best.segment.text || '').replace(/\s+/g, ' ').trim().slice(0, 180),
+  }
+}
+
+function mediaLibraryDecision(text = '') {
+  const cleanText = normalizeArabicMessage(text)
+  const topic = cleanText.match(/(?:عن|حول|بخصوص)\s+(.+)$/)?.[1]?.trim() || ''
+  const items = topic
+    ? scoredSiteResults(topic, { kinds: ['media'], limit: 3 }).map((row) => row.item)
+    : latestSiteItems(['media'], 3)
+
+  if (topic && items.length) {
+    const withMoments = items
+      .map((item) => ({ item, moment: mediaMomentFor(item.slug, topic) }))
+      .filter((row) => row.moment)
+    if (withMoments.length) return {
+      reason: 'media-library-moments',
+      reply: `لقيت «${topic}» مقولاً في هذي اللقاءات، وهذي المواضع:\n\n${withMoments.map((row, index) => `${arabicNumber(index + 1)}) *${row.item.title}* — الدقيقة ${row.moment.stamp}\n«${row.moment.text}…»\n${row.item.url}?t=${row.moment.seconds}`).join('\n\n')}\n\nوالأرشيف كاملاً:\n${SITE_URL}/media`,
+      evidence: withMoments.map((row) => row.item.id), contextItemIds: withMoments.map((row) => row.item.id), contextIndex: 0, lastTopic: topic,
+    }
+  }
+  if (!items.length) return {
+    reason: 'media-library',
+    reply: `${topic ? `لم أجد ظهوراً إعلامياً موثقاً مطابقاً لـ«${topic}» الآن.` : 'الظهور الإعلامي المرئي والمسموع'}\n\nافتح الأرشيف وابحث داخل الكلام نفسه:\n${SITE_URL}/media`,
+  }
+  return {
+    reason: 'media-library',
+    reply: `${topic ? `هذه أقرب اللقاءات التي ورد فيها «${topic}»:` : 'هذه أحدث محطات الظهور الإعلامي:'}\n\n${items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${item.url}`).join('\n\n')}\n\nوالأرشيف الكامل والبحث داخل ما قيل:\n${SITE_URL}/media`,
+    evidence: items.map((item) => item.id), contextItemIds: items.map((item) => item.id), contextIndex: 0, lastTopic: topic || 'الظهور الإعلامي',
+  }
+}
+
+function dialogueLibraryDecision() {
+  const items = siteIndex()
+    .filter((item) => item.kind === 'article' && item.audio?.dialogue)
+    .sort((left, right) => String(right.date || '').localeCompare(String(left.date || '')))
+    .slice(0, 3)
+  if (!items.length) return { reason: 'dialogue-library', reply: `مجلس الفكرة والحوارات المسموعة هنا:\n${SITE_URL}/listen` }
+  return {
+    reason: 'dialogue-library',
+    reply: `هذه أحدث الحوارات المسموعة الجاهزة الآن:\n\n${items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${item.url}#article-audio`).join('\n\n')}\n\nولكل القراءات والحوارات:\n${SITE_URL}/listen`,
+    evidence: items.map((item) => item.id), contextItemIds: items.map((item) => item.id), contextIndex: 0, lastTopic: 'الحوارات المسموعة',
+  }
+}
+
+function radioDecision() {
+  const recordings = siteIndex()
+    .filter((item) => item.kind === 'media' && /(?:اذاعه|راديو|تسجيل صوتي)/.test(normalizeArabicMessage(`${item.title || ''} ${item.keywords || ''}`)))
+    .sort((left, right) => String(right.date || '').localeCompare(String(left.date || '')))
+    .slice(0, 2)
+  return {
+    reason: 'radio-library',
+    reply: `راديو د. أحمد جاهز للاستماع المتواصل من هنا:\n${SITE_URL}/radio${recordings.length ? `\n\nومن اللقاءات الإذاعية المحفوظة:\n${recordings.map((item) => `• *${item.title}*\n${item.url}`).join('\n\n')}` : ''}\n\nأما الحوارات المقالية:\n${SITE_URL}/listen`,
+    ...(recordings.length ? { evidence: recordings.map((item) => item.id), contextItemIds: recordings.map((item) => item.id), contextIndex: 0, lastTopic: 'الراديو' } : {}),
+  }
+}
+
+/* أبواب الموقع العامة التي لا تمثل «مادة» داخل الفهرس. حصرها هنا يجعل
+   البوت دليلاً للموقع كله — لا للمقالات والكتب وحدها — مع مطابقة قصيرة
+   وصريحة حتى لا نخطف سؤالاً موضوعياً فيه الكلمة عرضاً. */
+const SITE_DOORS = [
+  { reason: 'ask-library-door', pattern: /^(?:اسال المكتبه|العقل الحي|اسال الموقع|سوال للمكتبه)$/, title: 'اسأل المكتبة', note: 'جواب موثّق يجمع ما نشره الدكتور فقط', path: '/ask' },
+  { reason: 'search-door', pattern: /^(?:ابحث في الموقع|مركز البحث|بحث الموقع|البحث الشامل)$/, title: 'البحث الشامل', note: 'بحث في المقالات والكتب والأبحاث والإعلام', path: '/search' },
+  { reason: 'decade-door', pattern: /^(?:عبر السنين|عشر سنوات|مسيره عشر سنوات|الارشيف الزمني)$/, title: 'عبر السنين', note: 'رحلة الأفكار زمنياً', path: '/decade' },
+  { reason: 'thought-paths-door', pattern: /^(?:مسارات الفكر|مسارات الافكار|خيوط الفكر|شبكه الافكار)$/, title: 'مسارات الفكر', note: 'الروابط بين الأفكار والمواد', path: '/thought-paths' },
+  { reason: 'atlas-door', pattern: /^(?:اطلس الافكار|الاطلس|اطلس الدكتور)$/, title: 'أطلس الأفكار', note: 'خريطة موضوعات الدكتور ومفاهيمها', path: '/atlas' },
+  { reason: 'questions-door', pattern: /^(?:اسئله التعليم|الاسئله|سوال اليوم|اسئله تقلق التعليم)$/, title: 'أسئلة تُقلق التعليم', note: 'أسئلة فكرية متجددة', path: '/questions' },
+  { reason: 'radar-door', pattern: /^(?:الرادار|رادار التعليم|الرادار اليومي)$/, title: 'الرادار', note: 'ما يستحق الانتباه في المشهد التعليمي', path: '/radar' },
+  { reason: 'cv-door', pattern: /^(?:السيره الذاتيه|سيره الدكتور|السيره الاكاديميه|cv)$/, title: 'السيرة الأكاديمية', note: 'المؤهلات والخبرة والإنتاج العلمي', path: '/cv' },
+  { reason: 'impact-door', pattern: /^(?:الاثر|اثر الدكتور|ارقام الاثر|اثر الموقع)$/, title: 'الأثر', note: 'أثر المسيرة والمحتوى بالأرقام والشواهد', path: '/impact' },
+  { reason: 'contact-door', pattern: /^(?:صفحه التواصل|بيانات التواصل|تواصل الموقع)$/, title: 'التواصل', note: 'القنوات الرسمية ونموذج التواصل', path: '/contact' },
+  { reason: 'english-door', pattern: /^(?:الموقع الانجليزي|النسخه الانجليزيه|english)$/, title: 'English', note: 'السيرة والأبحاث والتواصل باللغة الإنجليزية', path: '/en' },
+  { reason: 'app-door', pattern: /^(?:تطبيق الموقع|ثبت الموقع|تثبيت الموقع|نسخه الجوال)$/, title: 'تطبيق الموقع', note: 'تثبيت الموقع كتطبيق على الجهاز', path: '/launch' },
+  /* أبوابٌ كان الموقع يملكها والبوت لا يعرفها، فكان يردّ عنها بمقالات. */
+  { reason: 'articles-door', pattern: /^(?:مقالات|المقالات|كل المقالات|ارشيف المقالات)$/, title: 'المقالات', note: 'أرشيف مقالات الدكتور كاملاً', path: '/articles' },
+  { reason: 'publications-door', pattern: /^(?:الكتب|كتب الدكتور|المولفات|الاصدارات|المطبوعات)$/, title: 'الكتب', note: 'الكتب التسعة وموسوعة تكنولوجيا التعليم', path: '/publications' },
+  { reason: 'research-door', pattern: /^(?:الابحاث|البحوث|الاوراق العلميه|النشر العلمي)$/, title: 'الأبحاث', note: 'الأوراق العلمية المحكّمة وملخصاتها', path: '/research' },
+  { reason: 'curated-door', pattern: /^(?:المختارات|مختارات|المختارات المعرفيه)$/, title: 'المختارات', note: 'ما يختاره الدكتور من كتب العالم وأفكاره', path: '/curated' },
+  { reason: 'listen-door', pattern: /^(?:الاستماع|صفحه الاستماع|المسموع|الحوارات المسموعه)$/, title: 'الاستماع', note: 'حوارات وقراءات مسموعة لمواد الموقع', path: '/listen' },
+  { reason: 'media-door', pattern: /^(?:الظهور الاعلامي|الاعلام|الارشيف الاعلامي|اللقاءات|المقابلات)$/, title: 'الظهور الإعلامي', note: 'اللقاءات التلفزيونية والإذاعية مفرّغةً ومفهرسة', path: '/media' },
+  { reason: 'upcoming-door', pattern: /^(?:القادم|اللقاءات القادمه|الفعاليات|المواعيد)$/, title: 'القادم', note: 'اللقاءات والفعاليات القادمة', path: '/upcoming' },
+  { reason: 'about-door', pattern: /^(?:عن الموقع|عن هذا الموقع|فكره الموقع|قصه الموقع)$/, title: 'عن الموقع', note: 'فكرة الموقع ومنهجه وطريقة بنائه', path: '/about' },
+  { reason: 'thought-door', pattern: /^(?:الفكر|مشروع الفكر|نظره عامه على الفكر|خلاصه الفكر)$/, title: 'الفكر', note: 'نظرة جامعة على مشروع الدكتور الفكري', path: '/thought' },
+]
+
+/* ── أبواب الموقع تُفهم بصياغة الناس ──
+   كانت أنماط الأبواب مقفلةً على المطابقة التامة (`^…$`)، فـ«الأطلس» وحدها
+   تعمل و«شنو في صفحة الأطلس» أو «ودّني على الأطلس» تسقط إلى بحث المقالات.
+   هذه القشرة تنزع سقالة السؤال — أفعال الطلب وكلمة «صفحة» وأدوات الاستفهام —
+   ثم تُطابق ما بقي على النمط نفسه. فلا نوسّع النمط (ولا نخطف سؤالاً موضوعياً)
+   بل ننظّف السؤال قبله. */
+const DOOR_SCAFFOLD = new RegExp(
+  '^(?:'
+  + '(?:من فضلك|لو سمحت|ممكن|ابي|ابغي|ابغى|اريد|ودي|عطني|اعطني|ورني|وريني|افتح|افتحلي|ودني|خذني|روح|شوف|اشوف|اعرض|اعرضلي)\\s+'
+  + '|(?:شنو|وش|ايش|شو|ماذا|ما|هل|وين|اين)\\s+(?:هو|هي|في|فيه|فيها|موجود|يوجد|عندك|عندكم|يعني)?\\s*'
+  /* التطبيع يحوّل «على» إلى «علي»، فتُذكر الصيغتان. */
+  + '|(?:علي|على|الي|الى|في|عن)\\s+'
+  + ')*'
+  + '(?:صفحه|صفحة|قسم|باب|رابط|وصله)?\\s*'
+  , 'u')
+
+/* الأنماط مكتوبةٌ بالتعريف («الاطلس»)، فلا نجرّد «ال» — بل نجرّب الصيغتين. */
+function doorCandidates(cleanText = '') {
+  let phrase = String(cleanText).trim()
+  for (let pass = 0; pass < 4; pass += 1) {
+    const next = phrase.replace(DOOR_SCAFFOLD, '').trim()
+    if (next === phrase || !next) break
+    phrase = next
+  }
+  phrase = phrase.replace(/[؟?!.،]+$/u, '').trim()
+  if (!phrase) return []
+  const bare = phrase.replace(/^ال/u, '')
+  return [...new Set([phrase, `ال${bare}`, bare])].filter(Boolean)
+}
+
+function siteDoorDecision(text = '') {
+  const cleanText = normalizeArabicMessage(text)
+  if (/^(?:خريطه الموقع|كل اقسام الموقع|ابواب الموقع|شنو في الموقع|وش في الموقع)$/.test(cleanText)
+    || /(?:خريطه|اقسام|ابواب|محتويات|صفحات)\s+(?:ال)?موقع|(?:شنو|وش|ايش|شو)\s+(?:في|فيه|عندك|عندكم|موجود)\s+(?:في\s+)?(?:ال)?موقع/u.test(cleanText)) {
+    return {
+      reason: 'site-map',
+      reply: `هذه خريطة موقع الدكتور كاملة:\n\n• القراءة: المقالات ${SITE_URL}/articles · الكتب ${SITE_URL}/publications · الأبحاث ${SITE_URL}/research · المختارات ${SITE_URL}/curated\n\n• الصوت والصورة: الاستماع ${SITE_URL}/listen · الراديو ${SITE_URL}/radio · الظهور الإعلامي ${SITE_URL}/media\n\n• المعرفة: البحث ${SITE_URL}/search · اسأل المكتبة ${SITE_URL}/ask · عبر السنين ${SITE_URL}/decade · مسارات الفكر ${SITE_URL}/thought-paths · الأطلس ${SITE_URL}/atlas · الأسئلة ${SITE_URL}/questions · الرادار ${SITE_URL}/radar\n\n• الدكتور: السيرة ${SITE_URL}/cv · الأثر ${SITE_URL}/impact · القادم ${SITE_URL}/upcoming · التواصل ${SITE_URL}/contact · English ${SITE_URL}/en`,
+    }
+  }
+  const candidates = doorCandidates(cleanText)
+  const door = SITE_DOORS.find((item) => item.pattern.test(cleanText))
+    || SITE_DOORS.find((item) => candidates.some((candidate) => item.pattern.test(candidate)))
+  if (!door) return null
+  return { reason: door.reason, reply: `تفضّل — *${door.title}*:\n${door.note}.\n\n${SITE_URL}${door.path}` }
+}
+
+function excerptReply(item, short = false) {
+  if (!item) return clarifyText()
+  const source = normalizeWhitespace(item.excerpt || item.body || '')
+  const words = source.split(/\s+/).filter(Boolean)
+  const limit = short ? 42 : 85
+  const excerpt = words.slice(0, limit).join(' ')
+  /* أناقة «بوابة اليوم» نفسها (طلب الدكتور ٣١ يوليو): المقتطف اقتباسٌ يتنفس
+     بين «…»، بلا سطر البيانات الوصفية الذي كان يزاحم العنوان. */
+  return `*${item.title}*\n\n${excerpt ? `«${verbatim(excerpt)}${words.length > limit ? '…' : ''}»` : 'هذه المادة متاحة كاملة في موقع الدكتور.'}\n\n${item.url}`
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   عقلٌ يفهم ويحلّل، لا يطابق أنماطاً (أمر الدكتور — أول أغسطس ٢٠٢٦)
+   أربعة أبواب: السؤال المركّب والمضمر · الشكّ الذي يسأل بدل أن يخمّن ·
+   ذاكرةٌ تتراكم عبر الجلسات · تحليلٌ ومقارنةٌ لا استرجاعٌ لقائمة.
+   والحدّ المقدّس باقٍ فوقها كلّها: لا يُنسب للدكتور إلا ما نشره حرفاً بحرف،
+   وما لا نجده نصارح به ولا نخترعه.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── التلخيص: زبدةٌ من متنه، لا مقدّمته ──
+   `excerptReply(item, true)` كان يقصّ أوّل ٤٢ كلمة، وأوّلُ المتن هو بعينه ما
+   تفتح به بطاقةُ المادة — فبدا «لخّص» إعادةً للمادة نفسها (شكوى الدكتور).
+   الزبدة الآن أكثفُ عبارةٍ دلالةً في المتن، منسوخةً حرفاً بحرف. */
+function distilledReply(item) {
+  const distilled = distillItem(item)
+  if (!distilled?.text) return excerptReply(item, true)
+  const words = normalizeWhitespace(distilled.text).split(/\s+/).filter(Boolean)
+  const clipped = words.length > 60 ? `${words.slice(0, 60).join(' ')}…` : words.join(' ')
+  const note = distilled.whole
+    ? 'المادة مختصرةٌ أصلاً، وهذا لبّها بنصّه:'
+    : 'زبدتها في جملةٍ من نصّ الدكتور:'
+  return `*${item.title}*\n\n${note}\n«${verbatim(clipped)}»\n\n${item.url}`
+}
+
+/* ── سلّم الوقت: «٣٠ ثانية» ليست «لخّص» ──
+   شكوى الدكتور (٧ أغسطس، بصورتين): كتب «لخّص» فوصلته الزبدة، ثم كتب «٣٠
+   ثانية» فوصله **الردّ نفسه حرفاً بحرف**. والجذر أن READ_SPEED وONE_MINUTE
+   كانتا مربوطتين بـSUMMARY في شرطٍ واحد يستدعي distilledReply — فالمدّة
+   المطلوبة لم تكن تُقرأ أصلاً، ولا وجود لفرقٍ بين ثلاثين ثانيةً ودقيقتين
+   وتعمّق. الآن لكلّ مدّةٍ قدرُها من متنه:
+     لخّص    → جملةٌ واحدة (الزبدة)
+     ٣٠ ثانية → مقطعٌ حرفيّ ٤٠-٨٥ كلمة
+     دقيقة    → الزبدة ثم مقطع الثلاثين ثانية
+     دقيقتان  → مقطعٌ حرفيّ ١٨٠-٢٨٠ كلمة
+     تعمّق    → الزبدة ثم مقطع الدقيقتين ثم ما بقي وأين يُكمل
+   والمقاطع كلّها من `extractVerbatimAtSpeed` — المستخرِج المعاير نفسه الذي
+   يقطع عند نهاية جملةٍ لا في وسطها، وتحرسه الاختبارات النووية على ٣٦ مقالة.
+   لا توليد ولا إعادة صياغة: نصّه كما نشره. */
+const READING_LADDER = Object.freeze({
+  '30s': { extract: '30s', cap: 0, words: 60, path: false, label: 'قراءة في نحو ٣٠ ثانية من نصّه' },
+  '1min': { extract: '2min', cap: 150, words: 150, path: false, label: 'قراءة في نحو دقيقة من نصّه' },
+  '2min': { extract: '2min', cap: 0, words: 220, path: false, label: 'قراءة في نحو دقيقتين من نصّه' },
+  deep: { extract: '2min', cap: 0, words: 220, path: true, label: 'تعمّقٌ في نصّه' },
+})
+/* حدُّ الإرسال ٢٠٠٠ حرف (bounded عند حافة الإرسال)، والتوقيع وسطر المتابعة
+   يُضافان بعد البناء — فنبني تحت السقف لا عنده، حتى لا يصل المقطع مبتوراً. */
+const READING_REPLY_LIMIT = 1_780
+
+/* أسماء الأعداد كما يكتبها الناس، مطبَّعةً (ة→ه). لا نستقصي العربية كلها —
+   نستقصي ما يُكتب فعلاً في محادثةٍ عن مدّة قراءة. */
+const SPOKEN_COUNTS = new Map([
+  ['واحده', 1], ['وحده', 1], ['اثنتين', 2], ['ثنتين', 2], ['ثنتان', 2],
+  ['ثلاث', 3], ['ثلاثه', 3], ['اربع', 4], ['اربعه', 4], ['خمس', 5], ['خمسه', 5],
+  ['ست', 6], ['سته', 6], ['سبع', 7], ['سبعه', 7], ['ثمان', 8], ['ثمانيه', 8],
+  ['تسع', 9], ['تسعه', 9], ['عشر', 10], ['عشره', 10],
+])
+const FRACTIONS = new Map([['نص', .5], ['نصف', .5], ['ربع', .25], ['ثلث', 1 / 3]])
+
+/* المدّة تُقرأ ثوانيَ واحدة ثم تُترجم إلى درجةٍ في السلّم. الترجمة بالثواني
+   لا بالألفاظ، فتستوي «٤٥ ثانية» و«نص دقيقة» و«دقيقة ونص» على ميزانٍ واحد. */
+/* الرقم يصل كما كتبه صاحبه: هنديّاً (٤٥) أو فارسيّاً (۴۵)، و`\d` في جافاسكربت
+   لا يرى إلا الغربيّ. فمن كتب «٩٠ ثانية» بأرقامه كان عددُه يُقرأ صفراً فيُحسب
+   ثانيةً واحدة — أي أدنى السلّم: طلب دقيقةً ونصفاً فوصلته ثلاثون ثانية، بلا
+   خطأٍ ظاهرٍ يُشتكى منه. والتحويل قبل القياس يجعل الصيغتين سواء. */
+const EASTERN_DIGITS = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9', '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9' }
+const westernDigits = (value) => String(value || '').replace(/[٠-٩۰-۹]/g, (digit) => EASTERN_DIGITS[digit] || digit)
+
+function requestedSeconds(value) {
+  const text = westernDigits(value)
+  /* «دقايق» جمعٌ لا يحوي «دقيق» — كان يسقط الوحدةَ فتُقرأ «خمس دقائق» ثلاثين ثانية. */
+  const unit = /ثاني|ثواني/.test(text) ? 1 : /ساعه/.test(text) ? 3_600 : /دقيق|دقاي/.test(text) ? 60 : 0
+  if (!unit) return 0
+  /* «دقيقتان/دقيقتين» مثنّى: عددُه في صيغته لا قبله. */
+  const dual = /دقيقتين|دقيقتان/.test(text) ? 2 : 0
+  const digits = Number((text.match(/(\d{1,3})\s*(?:ثاني|ثواني|دقيق|دقاي|ساعه)/) || [])[1] || 0)
+  let count = digits || dual
+  if (!count) {
+    for (const [word, number] of SPOKEN_COUNTS) {
+      if (new RegExp(`(?:^|\\s)${word}\\s*(?:ثانيه|ثواني|دقيقه|دقايق|ساعه)`).test(text)) { count = number; break }
+    }
+  }
+  if (!count) {
+    for (const [word, ratio] of FRACTIONS) {
+      if (new RegExp(`(?:^|\\s)${word}\\s*(?:ثانيه|دقيقه|ساعه)`).test(text)) { count = ratio; break }
+    }
+  }
+  if (!count) count = 1
+  /* «ونص/وربع» كسرٌ يُضاف بعد العدد: «دقيقة ونص» تسعون ثانية لا ستون. */
+  const tail = (text.match(/و\s*(نص|نصف|ربع)\s*$/) || [])[1]
+  if (tail) count += FRACTIONS.get(tail) || 0
+  return Math.round(count * unit)
+}
+
+function readingSpeedOf(cleanText, intent) {
+  const value = String(cleanText || '')
+  if (/(?:تعمق|اتعمق|عمقها|عميق|المطول|النص الكامل|كامل النص)/.test(value)) return 'deep'
+  const seconds = requestedSeconds(value)
+  if (seconds > 0) {
+    /* الحدود عند منتصف المسافة بين درجتين، و«دقيقتان ونصف» آخر ما يُعدّ
+       دقيقتين — وما فوقها طلبُ تعمّقٍ لا طلبُ مدّةٍ أطول (السقف واحد). */
+    if (seconds <= 45) return '30s'
+    if (seconds <= 95) return '1min'
+    if (seconds <= 150) return '2min'
+    return 'deep'
+  }
+  /* «ما عندي وقت» ليست «عندي دقيقة»: من يعتذر عن الوقت لا يُعطى مئةً وخمسين
+     كلمة. الاستعجال الصريح ينزل درجةً إلى أقصر ما في السلّم. */
+  if (/(?:ما عندي وقت|وقت قصير|مستعجل|بسرعه|بسرعة|شي سريع|سريع|قصيره|قصير)/.test(value)) return '30s'
+  if (intent === INTENTS.ONE_MINUTE) return '1min'
+  return '30s'
+}
+
+/* ── من أين تبدأ القراءة؟ ──
+   من أوّل المقالة في الأصل. إلا أن يكون الدورُ السابق قراءةً على المادة
+   نفسها — فطلبُ مدّةٍ بعد قراءةٍ هو استئنافٌ لا إعادة: من قال «٣٠ ثانية»
+   مرتين يريد الثلاثين التالية، لا الأولى مكرّرة. أما بعد «لخّص» أو بعد فتح
+   المادة فنبدأ من أوّلها، لأن الافتتاح لم يُقرأ بعد. */
+const RESUMING_REASONS = /^(?:timed-reading-|implied-deepen$|continue-reading$)/
+function readingStartOf(conversation = {}, item = null) {
+  if (!item) return 0
+  if (!RESUMING_REASONS.test(String(conversation.lastDecisionReason || ''))) return 0
+  if (String(conversation.readCursorItemId || '') !== String(item.id)) return 0
+  return Math.max(0, Number(conversation.readCursor || 0))
+}
+
+function deepCompanion(item, previousIds = []) {
+  if (!item?.title) return null
+  return exactSiteResults(item.title, item.title, { excludeIds: [item.id, ...previousIds], limit: 1 })[0] || null
+}
+
+/* ── جسر الإنجليزية ──
+   ألفاظ ميدان الدكتور وحدها، مكتوبةً بيدٍ لا مولَّدة، فلا خدمة ترجمة ولا
+   مفتاح ولا مقابل — والقاعدة عنده: لا شيء يُدفع عليه. وهو **إنقاذٌ متأخّر**:
+   لا يُشغَّل إلا بعد أن يقصُر البحث الحرفيّ والمعجم معاً. */
+const ENGLISH_TOPIC_BRIDGE = Object.freeze({
+  education: 'التعليم', educational: 'التعليم', teaching: 'التدريس', learning: 'التعلم',
+  school: 'المدرسة', schools: 'المدارس', university: 'الجامعة', college: 'الكلية',
+  student: 'الطالب', students: 'الطلاب', pupil: 'الطالب', teacher: 'المعلم', teachers: 'المعلمون',
+  professor: 'الأستاذ', faculty: 'الهيئة التدريسية', curriculum: 'المنهج', curricula: 'المناهج',
+  classroom: 'الصف', lesson: 'الدرس', homework: 'الواجبات', exam: 'الامتحان', exams: 'الامتحانات',
+  test: 'الاختبار', grades: 'الدرجات', cheating: 'الغش', cheat: 'الغش', plagiarism: 'الغش',
+  evaluation: 'التقويم', assessment: 'التقويم', literacy: 'محو الأمية',
+  technology: 'التكنولوجيا', digital: 'الرقمي', internet: 'الإنترنت', online: 'الإلكتروني',
+  smartphone: 'الهاتف', phone: 'الهاتف', screen: 'الشاشة', screens: 'الشاشات',
+  robot: 'الروبوت', robots: 'الروبوت', chatgpt: 'الذكاء الاصطناعي', ai: 'الذكاء الاصطناعي',
+  data: 'البيانات', privacy: 'الخصوصية', security: 'الأمن', innovation: 'الابتكار',
+  media: 'الإعلام', news: 'الأخبار', press: 'الصحافة', journalism: 'الصحافة',
+  social: 'السوشيال ميديا', instagram: 'السوشيال ميديا', tiktok: 'السوشيال ميديا',
+  youtube: 'اليوتيوب', influencer: 'المشاهير', advertising: 'الإعلان',
+  family: 'الأسرة', parents: 'الأهل', parenting: 'التربية', children: 'الأطفال', child: 'الطفل',
+  youth: 'الشباب', generation: 'الجيل', society: 'المجتمع', community: 'المجتمع',
+  culture: 'الثقافة', identity: 'الهوية', language: 'اللغة', arabic: 'اللغة العربية',
+  values: 'القيم', ethics: 'الأخلاق', morals: 'الأخلاق', religion: 'الدين',
+  reading: 'القراءة', books: 'الكتب', book: 'الكتاب', knowledge: 'المعرفة', thinking: 'التفكير',
+  creativity: 'الإبداع', memory: 'الذاكرة', attention: 'الانتباه', focus: 'التركيز',
+  motivation: 'الدافعية', addiction: 'الإدمان', bullying: 'التنمر', violence: 'العنف',
+  health: 'الصحة', psychology: 'النفسية', stress: 'الضغط', burnout: 'الإرهاق',
+  leadership: 'القيادة', management: 'الإدارة', training: 'التدريب', skills: 'المهارات',
+  work: 'العمل', jobs: 'الوظائف', employment: 'التوظيف', economy: 'الاقتصاد',
+  kuwait: 'الكويت', gulf: 'الخليج', future: 'المستقبل', reform: 'الإصلاح',
+  research: 'بحث', science: 'العلم', development: 'التطوير', quality: 'الجودة',
+})
+/* حشو السؤال لا يُترجم: «what do you have about …» تُرمى كلماتها الأولى. */
+const ENGLISH_STOPWORDS = new Set(['what', 'whats', 'do', 'does', 'you', 'your', 'have', 'has', 'any', 'about', 'on', 'of', 'the', 'a', 'an', 'is', 'are', 'in', 'for', 'me', 'i', 'we', 'to', 'and', 'or', 'with', 'can', 'could', 'give', 'show', 'tell', 'find', 'search', 'looking', 'look', 'want', 'need', 'please', 'there', 'here', 'something', 'anything', 'more', 'some', 'his', 'he', 'dr', 'doctor', 'ahmad', 'ahmed', 'alfailakawi'])
+
+/** ألفاظٌ عربية تُبحث بها رسالةٌ لاتينية، أو null إن لم يُعرف منها شيء. */
+function englishTopicQuery(value) {
+  const latin = String(value || '').match(/[a-z]+/g) || []
+  if (latin.length < 1) return null
+  const terms = []
+  for (const word of latin) {
+    if (ENGLISH_STOPWORDS.has(word)) continue
+    const hit = ENGLISH_TOPIC_BRIDGE[word] || ENGLISH_TOPIC_BRIDGE[word.replace(/s$/, '')]
+    if (hit && !terms.includes(hit)) terms.push(hit)
+  }
+  return terms.length ? terms.slice(0, 4).join(' ') : null
+}
+
+/* موضع «كمل» بعد القراءة: المقطع قد يبدأ بعد عنوانٍ داخليّ (bodyStart)، فلا
+   يصحّ أن يكون المؤشر عدد كلماته وحدها — نحسب أين انتهى فعلاً داخل المتن. */
+function cursorAfterPassage(item, passage) {
+  const full = normalizeWhitespace(item?.body || item?.excerpt || '')
+  const needle = normalizeWhitespace(passage || '')
+  if (!full || !needle) return 0
+  const at = full.indexOf(needle)
+  const consumed = at < 0 ? needle : full.slice(0, at + needle.length)
+  return consumed.split(/\s+/).filter(Boolean).length
+}
+
+/* الدقيقة ليست عند المستخرِج المعاير (عنده ٣٠ ثانية ودقيقتان فقط)، فنبنيها
+   بقصّ مقطع الدقيقتين عند آخر جملةٍ تامّة تقع تحت السقف — لا في وسط كلام.
+   والقصّ **باقتطاعٍ من الأصل** لا بتفكيكٍ وإعادةِ وصلٍ بمسافة: الوصلُ كان
+   يسحق فواصل فقراته فيصل نصّه كتلةً واحدة، ويكفّ المقطع عن كونه منقولاً من
+   المتن حرفاً بحرف — وهو شرط البوابة المقدّسة. */
+function trimVerbatimToWords(text, maxWords) {
+  const source = String(text || '')
+  if (!maxWords) return source
+  const total = normalizeWhitespace(source).split(/\s+/).filter(Boolean).length
+  if (total <= maxWords) return source
+  const stops = /[.؟!…]+(?=\s|$)/g
+  let cut = -1
+  let counted = 0
+  let scanned = 0
+  let match = null
+  while ((match = stops.exec(source))) {
+    const end = match.index + match[0].length
+    const size = counted + normalizeWhitespace(source.slice(scanned, end)).split(/\s+/).filter(Boolean).length
+    if (size > maxWords) break
+    cut = end
+    counted = size
+    scanned = end
+  }
+  /* بلا وقفةٍ داخل النافذة نقطع عند حدّ الكلمة — أضعف الحلّين، ولا يقع إلا
+     في نصٍّ بلا علامات وقفٍ أصلاً. */
+  if (cut <= 0) return source.slice(0, rawOffsetOfWord(source, maxWords)).trim()
+  return source.slice(0, cut).replace(/[،,؛]+$/, '').trim()
+}
+
+/* القطع عند الكلمة رقم N **في النصّ الخام**، لا في نسخةٍ مسحوقة المسافات:
+   فقرات الدكتور جزءٌ من كلامه، وكانت تُفقد في الاستئناف فيصل نصّه كتلةً
+   واحدة بينما وصلته القراءةُ الأولى مفقَّرة. */
+function rawOffsetOfWord(raw, wordIndex) {
+  if (wordIndex <= 0) return 0
+  let count = 0
+  for (let i = 0; i < raw.length; i += 1) {
+    if (!/\s/.test(raw[i])) continue
+    if (i > 0 && /\s/.test(raw[i - 1])) continue
+    count += 1
+    if (count === wordIndex) return i + 1
+  }
+  return raw.length
+}
+
+/* الاستئناف من موضعٍ داخل المتن: المستخرِج المعاير يبدأ من أوّل المقالة
+   دائماً، فلا يصلح للدور الثاني. نأخذ ما بعد المؤشر ونقتطع منه جملاً تامّة
+   بقدر المدّة — القاعدة نفسها (نهاية جملةٍ لا وسطها) بمَبدَإٍ آخر. */
+function resumedPassage(item, startWords, targetWords) {
+  const raw = String(item?.body || item?.excerpt || '')
+  if (!raw.trim()) return ''
+  const totalWords = normalizeWhitespace(raw).split(/\s+/).filter(Boolean).length
+  if (startWords >= totalWords) return ''
+  return trimVerbatimToWords(raw.slice(rawOffsetOfWord(raw, startWords)).trim(), targetWords)
+}
+
+function timedReadingReply(item, speed = '30s', related = null, startWords = 0) {
+  const plan = READING_LADDER[speed] || READING_LADDER['30s']
+  const total = normalizeWhitespace(item?.body || item?.excerpt || '').split(/\s+/).filter(Boolean).length
+  /* الاستئناف طريقٌ مغلقٌ على نفسه: إن نفد النصّ فلا نسقط إلى المستخرِج —
+     السقوط كان يُعيد افتتاح المقالة وكأنّ شيئاً لم يُقرأ، وهو أسوأ من الصمت. */
+  let extract = null
+  if (startWords > 0) {
+    const resumed = resumedPassage(item, startWords, plan.words)
+    if (!resumed) {
+      return {
+        text: `*${item.title}*\n\nوصلنا آخر ما عندي من نصّها. تقرأها كاملة في صفحتها:\n\n${item.url}\n\nوقل لي «لخّصها» أعطيك زبدتها في جملة، أو «عطني غيرها» أفتح لك مادةً قريبة منها.`,
+        cursor: total,
+      }
+    }
+    extract = { text: resumed }
+  } else {
+    extract = extractVerbatimAtSpeed(item, plan.extract)
+      || (plan.extract === '2min' ? extractVerbatimAtSpeed(item, '30s') : null)
+  }
+  if (!extract?.text) {
+    /* المواد بلا متنٍ منشور (كتاب · بحث · مختارة): لا نخترع لها قراءةً ولا
+       نعيد بطاقتها صامتين — نصارح ونحيل إلى صفحتها. */
+    return {
+      text: `*${item.title}*\n\nما عندي متنٌ منشورٌ ${itemDemonstrative(item)} ${itemLabel(item)} أقرأه لك هنا بنصّه. تجده كاملاً في صفحتها:\n\n${item.url}`,
+      cursor: 0,
+    }
+  }
+  /* «تعمّق» لا يعني كلماتٍ أكثر: سقف الرسالة لا يتّسع لأكثر من الدقيقتين
+     أصلاً، ولو زدنا لبُتر آخرُ كلامه. التعمّق أن يمتدّ الطريق — أين يُكمل،
+     وأين يسمعه بصوته المنشور، وأيُّ مادةٍ من أرشيفه تمدّ الفكرة نفسها. */
+  const deepLines = plan.path
+    ? [
+      item?.audio?.dialogue || item?.audio?.fahed || item?.audio?.noura
+        ? 'وإن أردت أن تسمعها بدل أن تقرأها، فالقراءة الصوتية منشورة في صفحتها — المشغّل أعلى الصفحة.'
+        : '',
+      related?.title && related?.url ? `ومن أرشيفه مادةٌ تمدّ الفكرة نفسها:\n«${related.title}»\n${related.url}` : '',
+    ].filter(Boolean)
+    : []
+  /* «تعمّق» بلا صوتٍ ولا مادةٍ مجاورة كان يصير دقيقتين بلافتةٍ أخرى. لا يخرج
+     التعمّق أبداً بلا طريقٍ يمتدّ: شبكة الأفكار حاضرةٌ لكل مادةٍ في الفهرس. */
+  if (plan.path && !deepLines.length) deepLines.push('وقل لي «شبكة الأفكار» أفتح لك تقاطعات هذه الفكرة في أرشيفه.')
+  const resumedLabel = startWords > 0 ? `${plan.label} — تكملة` : plan.label
+  const build = (body) => {
+    /* عند الاستئناف المؤشر حسابٌ صريح (البداية + كلمات المقطع)، لا بحثٌ عن
+       المقطع في المتن — فقد تتكرّر عبارةٌ فيُصاب موضعٌ سابق. */
+    const cursor = startWords > 0
+      ? Math.min(total, startWords + body.split(/\s+/).filter(Boolean).length)
+      : cursorAfterPassage(item, body)
+    const remaining = Math.max(0, total - cursor)
+    const tail = remaining > 0
+      ? `بقي نحو ${arabicCountPhrase(Math.ceil(remaining / 90), PASSAGE_AFTER_PREPOSITION_FORMS, arabicNumber)} من نصّها. قل لي «كمل» أكمل من هنا، أو «لخّصها» أعطيك زبدتها في جملة.`
+      : 'وبهذا اكتمل نصّها عندي — وقل لي «عطني غيرها» أفتح لك مادةً قريبة منها.'
+    return {
+      cursor,
+      text: `*${item.title}*\n${resumedLabel}:\n\n${verbatim(body)}${remaining > 0 ? '…' : ''}\n\n${tail}\n\n${item.url}${deepLines.length ? `\n\n${deepLines.join('\n\n')}` : ''}`,
+    }
+  }
+  const passage = trimVerbatimToWords(extract.text, plan.cap)
+  let built = build(passage)
+  /* حارس السقف: نضيّق النافذة تدريجياً — بالمقصّ نفسه لا بتفكيكٍ وإعادة وصل —
+     حتى يتّسع الردّ تحت حدّ الإرسال. القصّ الأعمى عند ٢٠٠٠ كان سيبتر آخر
+     جملةٍ للدكتور، والمؤشر يُعاد حسابه في كل تضييق فتبدأ «كمل» من حيث انتهت
+     القراءة فعلاً. */
+  let budget = normalizeWhitespace(passage).split(/\s+/).filter(Boolean).length
+  while (built.text.length > READING_REPLY_LIMIT && budget > 30) {
+    budget = Math.max(30, Math.floor(budget * .85))
+    built = build(trimVerbatimToWords(passage, budget))
+  }
+  return built
+}
+
+/* ── المضمر: ما يقوله الناس ولا يصوغونه أمراً ──
+   «ما فهمت» ليست بحثاً عن مادةٍ عنوانها «ما فهمت» — هي طلبُ تبسيطٍ لما بين
+   أيدينا. وكان البحث الأعمى يبتلعها فيعود بأقرب العناوين لفظاً، وهو ردٌّ
+   يشبه الآلة. شرطان يمنعان التوسّع: أن تكون بين أيدينا مادةٌ حاضرة، وأن
+   تكون الجملة قصيرة (إيماءةً لا طلباً صريحاً له نمطه الخاص). */
+const IMPLIED_READINGS = [
+  ['simplify', /(?:^|\s)(?:ما|مو|مب|مهوب)\s*(?:فهمت|فاهم|فاهمه|واضح|واضحه)|(?:^|\s)(?:غير|مو)\s*(?:واضح|مفهوم)|ما\s*وضح|(?:^|\s)(?:صعب|صعبه|معقد|معقده|ثقيل|ثقيله|طويل|طويله|طولت|كثير|كثيره)(?:\s|$)|بسطها|بسطه|سهلها|وضحها/],
+  ['deepen', /(?:^|\s)(?:زدني|زد|عمقها|اتعمق|قليل|قليله|ناقص|ما يكفي|ابي اكثر|اكثر من كذا)(?:\s|$)/],
+  ['whyMatters', /^(?:ليش|لماذا|وليش|طيب ليش|ليه)(?:\s+(?:مهم|مهمه|يهمني|تهمني))?\s*[؟?]?$/],
+  /* مدّةٌ مجرّدة على مادةٍ حاضرة: «دقيقة» وحدها بعد قائمةٍ تعرض «٣٠ ثانية ·
+     دقيقتان» اختيارُ مدّةٍ لا موضوعُ بحث — وكانت تصل إلى «ما لقيت مادة».
+     نشترط حضور المادة وقِصَر الجملة كشرطَي المضمر كلّه، فلا تتوسّع. */
+  ['timedRead', /^(?:دقيقه|الدقيقه|بسرعه|بسرعة)$/],
+]
+function impliedReading(cleanText) {
+  const words = String(cleanText || '').split(/\s+/).filter(Boolean)
+  if (!words.length || words.length > 4) return ''
+  for (const [reading, pattern] of IMPLIED_READINGS) if (pattern.test(cleanText)) return reading
+  return ''
+}
+
+/* ── الشكّ الذي يسأل ──
+   حين يكون الطلب تخميناً (fallback) وكلمتُه واحدةً أو كلمتين، ويتقارب أعلى
+   مرشَّحَين تقارباً حقيقياً، فالصوابُ سؤالٌ واحد لا ثلاثةُ روابطَ تُلقى على
+   القارئ. الشكّ يُصرَّح به ولا يُخفى خلف قائمة. */
+export function scoredSiteResults(query, options = {}) {
+  const tokens = contentTokens(options.overrideQuery || query).slice(0, 8)
+  if (!tokens.length) return []
+  const excluded = new Set(Array.isArray(options.excludeIds) ? options.excludeIds : [])
+  const kinds = new Set(Array.isArray(options.kinds) ? options.kinds : [])
+  return siteIndex()
+    .filter((item) => matchesCompoundFilters(item, options.filters || null))
+    .filter((item) => !excluded.has(item.id) && (!kinds.size || kinds.has(item.kind)))
+    .map((item) => ({ item, ...scoreContent(item, tokens) }))
+    .filter((row) => {
+      if (tokens.length === 1) return row.score >= 5
+      const neededMatches = Math.min(tokens.length, Math.max(1, Math.ceil(tokens.length * .38)))
+      return row.score >= 7 && row.matched >= neededMatches
+    })
+    /* درجةٌ منسوبة إلى أقصى ما يمكن لهذا السؤال: الدرجة الخام تكبر بكثرة
+       الألفاظ، فلا تصلح للموازنة بين بحثين مختلفَي الألفاظ (اللفظي والمفهومي).
+       النسبة تجعلهما قابلَين للمقارنة بإنصاف. */
+    .map((row) => ({ ...row, norm: row.score / Math.max(1, tokens.length * 8) }))
+    .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
+    .slice(0, Math.max(1, Math.min(5, Number(options.limit || 3))))
+}
+/* حدُّ الشكّ الحقيقي — درسٌ من التجربة الأولى:
+   «قرابة الدرجات» ليست شكّاً. الكلمة الواسعة («الحفظ»، «الخوف») تتقارب فيها
+   عشراتُ الموادّ لأن الأرشيف غنيّ لا لأن المعنى ملتبس — والسؤال عندها يُخفي
+   البقيّة ويبدو ارتباكاً. الالتباس الصادق أن **يحمل عنوانان اثنان** الكلمةَ
+   نفسها ولا ثالثَ لهما: «النجاح الذي لا يفرح صاحبه» و«النجاح الذي دمّرنا» —
+   هنا السؤال إنصافٌ للقارئ. فإن كان الأقوياء ثلاثةً فأكثر فالقائمة أصدق،
+   وإن لم يكن فيهم قويٌّ فالمسار المُصارِح القائم (أقرب المواد) هو الصواب. */
+const STRONG_TITLE_SCORE = 20
+function ambiguousRivals(rows, query, isGuess) {
+  if (!isGuess) return null
+  if (contentTokens(query).length > 2) return null
+  /* المقال والحوار الصوتي قد يحملان العنوان نفسه؛ هما طريقان للمادة نفسها
+     لا وجهان مختلفان للسؤال. نحسب العنوان مرة واحدة، ونفضّل المادة المقروءة
+     ممثلاً للسياق كي لا تتحول نسخة البودكاست إلى «التباس» زائف. */
+  const byTitle = new Map()
+  for (const row of rows.filter((candidate) => candidate.score >= STRONG_TITLE_SCORE)) {
+    const titleKey = normalizeArabicMessage(row.item.title || '')
+    const previous = byTitle.get(titleKey)
+    if (!previous || (previous.item.kind === 'podcast' && row.item.kind !== 'podcast')) byTitle.set(titleKey, row)
+  }
+  const strong = [...byTitle.values()].sort((a, b) => b.score - a.score)
+  if (strong.length !== 2) return null
+  const [top, next] = strong
+  if (next.score / top.score < .85) return null
+  return [top.item, next.item]
+}
+
+/* ── السؤال المركّب: طلبان في نفَسٍ واحد ──
+   «عطني آخر مقالة وبحث عن التقويم» كان يذهب كلّه بحثاً واحداً فيضيع أحد
+   الطلبين بلا اعتذار. الفصل محافظ: لا نقطع إلا على فاصلةٍ صريحة أو واوٍ
+   يتبعها فعلُ طلب — وإلا فالجملة واحدة كما هي.
+   **يُقرأ من النصّ الخام لا من المطبَّع:** `normalizeArabicMessage` يمسح
+   الترقيم، فالفاصلة — وهي أوضح علامةٍ على طلبين — تختفي قبل أن نراها. */
+/* `\b` بعد حرفٍ عربي لا يطابق شيئاً (حدود الكلمة في جافاسكربت على ASCII
+   وحدها)، فكان فصلُ الطلبين بواو العطف ميتاً: «ابي مقالة وعن التعليم»
+   تُقرأ طلباً واحداً. البديل حدُّ مسافةٍ أو نهايةِ نص. */
+const COMPOUND_SPLIT = /\s*[،؛,]\s*|\s+ثم\s+|\s*\+\s*|\s+و(?=(?:أبي|ابي|أبغي|ابغي|أبغى|ابغى|أريد|اريد|عطني|أعطني|اعطني|ورني|شنو|وش|ايش|أيش|كذلك|أيضا|ايضا|بعدين|عن)(?:\s|$))/u
+function splitCompoundAsks(rawText) {
+  const parts = normalizeWhitespace(rawText).split(COMPOUND_SPLIT)
+    .map((part) => normalizeArabicMessage(part).trim())
+    .filter((part) => part.length >= 3)
+  return parts.length === 2 ? parts : null
+}
+
+/* ── ذاكرةٌ تتراكم عبر الجلسات ──
+   `seenContentIds` تحفظ ما عُرض، لا ما يشغل القارئ. هنا نراكم جذور ما يسأل
+   عنه فعلاً — أرقامٌ ولغةٌ فقط، بلا اسمٍ ولا رقمٍ ولا شيءٍ يخصّ شخصه —
+   فيصير الترحيب بعد الغياب معرفةً لا تكراراً، والاختيارُ على مقاسه.
+   **لماذا مصفوفة لا خريطة؟** وثيقة المحادثة تُكتب بـ`merge: true`، وهو يدمج
+   الخرائط المتداخلة مفتاحاً مفتاحاً — فخريطةٌ «مقصوصة» لا تُنقص شيئاً أبداً
+   وتتضخّم مع الشهور. المصفوفة تُستبدل كاملةً عند الدمج، فالسقف سقفٌ حقيقي.
+   والتكرار في المصفوفة هو الوزن: ما يسأل عنه مراراً يتقدّم. */
+const INTEREST_MEMORY_CAP = 40
+function interestMemory(conversation = {}) {
+  return Array.isArray(conversation.topicMemory) ? conversation.topicMemory.filter((token) => typeof token === 'string') : []
+}
+/* نحفظ الصورة الظاهرة للكلمة لا جذرها: `contentTokens` يعيد الاثنين معاً
+   («الذكاء» و«ذكاء») فكان الترحيب يقول «اهتمامك دار حول الذكاء وذكاء». */
+function interestPatch(conversation = {}, query = '') {
+  const tokens = [...new Set(stripArabicGreetings(query).split(' ')
+    .filter((token) => token.length >= 4 && !NOISE_WORDS.has(token)))].slice(0, 3)
+  if (!tokens.length) return null
+  return { topicMemory: [...interestMemory(conversation), ...tokens].slice(-INTEREST_MEMORY_CAP) }
+}
+function readerInterests(conversation = {}, limit = 2) {
+  /* التجميع على الجذر ثم العرض بأشهر صورةٍ ظاهرة: «التعليم» و«تعلم» اهتمامٌ
+     واحد لا اثنان، فلا يُعَدّ مرّتين ولا يظهر مكرّراً في سطر الترحيب. */
+  const byRoot = new Map()
+  for (const token of interestMemory(conversation)) {
+    const root = semanticWord(token) || token
+    const row = byRoot.get(root) || { count: 0, forms: new Map() }
+    row.count += 1
+    row.forms.set(token, (row.forms.get(token) || 0) + 1)
+    byRoot.set(root, row)
+  }
+  return [...byRoot.values()]
+    .filter((row) => row.count >= 2)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+    .map((row) => [...row.forms.entries()].sort((a, b) => b[1] - a[1] || a[0].length - b[0].length)[0][0])
+}
+
+/* ── تحليلٌ لا استرجاع ──
+   المقارنة كانت قائمتين متجاورتين و«الحكم لقراءتك» — وهذا استرجاع. التحليل
+   أن نقول: ما الخيط الجامع بين الطرفين في كلام الدكتور، وما الذي ينفرد به
+   كلٌّ منهما. والمفردات كلّها مستخرجةٌ من عناوينه ومتونه لا من عندنا. */
+function analyticalTokens(items) {
+  const counts = new Map()
+  for (const item of items) {
+    const seen = new Set(contentTokens(`${item.title} ${item.keywords || ''} ${item.excerpt || ''}`)
+      .filter((token) => token.length >= 4))
+    for (const token of seen) counts.set(token, (counts.get(token) || 0) + 1)
+  }
+  return counts
+}
+function compareAnalysis(leftItems, rightItems) {
+  if (!leftItems.length || !rightItems.length) return null
+  const left = analyticalTokens(leftItems)
+  const right = analyticalTokens(rightItems)
+  const shared = [...left.keys()].filter((token) => right.has(token))
+    .sort((a, b) => (right.get(b) + left.get(b)) - (right.get(a) + left.get(a)))
+    .slice(0, 3)
+  const only = (source, other) => [...source.keys()].filter((token) => !other.has(token))
+    .sort((a, b) => source.get(b) - source.get(a))
+    .slice(0, 3)
+  return { shared, leftOnly: only(left, right), rightOnly: only(right, left) }
+}
+
+/* ── مبادرةٌ منضبطة ──
+   المبادرة بلا انضباط ثرثرة. الشرط: أن توجد مادةٌ مرتبطةٌ حقيقةً بما بين
+   أيدينا (من `related` المبنيّة في الفهرس لا من تخميننا)، وألّا تكون قد
+   عُرضت من قبل، وألّا نبادر مرّتين متتاليتين. سطرٌ واحد، وسؤالٌ يُجاب بنعم. */
+/* ═══ البوت يعرف أنه أخطأ — ويتعلّم منك وحدك ═══
+   الصياغات التي لم تُفهم كانت تُرصد للمراقبة فقط، فيبقى الخطأ يتكرّر إلى
+   الأبد. الآن يعرضها عليك، وتُسنِد أنت الصياغة إلى موضوعٍ من موادّك بنقرة،
+   فتُجاب في المرة القادمة. **لا تعلّمَ آليّاً**: لا شيء يدخل هنا إلا بإسنادك
+   الصريح، والجواب يبقى بحثاً في المنشور لا كلاماً مولَّداً — فالبوّابة
+   المقدّسة (لا يُنسب للدكتور إلا ما نشره) لم تُخترق. */
+const taughtPhrases = new Map()
+let taughtPhrasesAt = 0
+const TAUGHT_TTL_MS = 5 * 60_000
+/* الجزء الخالص مفصولٌ عن الجلب كي يُختبر بلا قاعدة بيانات. */
+export function applyTaughtPhrases(rows = []) {
+  taughtPhrases.clear()
+  for (const row of rows) {
+    const phrase = normalizeArabicMessage(row?.phrase || '')
+    const query = bounded(row?.teachQuery, 160)
+    if (phrase.length >= 2 && query) taughtPhrases.set(phrase, query)
+  }
+  return taughtPhrases.size
+}
+async function primeTaughtPhrases(db, force = false) {
+  const now = Date.now()
+  if (!force && now - taughtPhrasesAt < TAUGHT_TTL_MS) return
+  taughtPhrasesAt = now
+  const snapshot = await db.collection(COLLECTIONS.learning).where('status', '==', 'taught').limit(300).get()
+  applyTaughtPhrases(snapshot.docs.map((doc) => doc.data() || {}))
+}
+function taughtQueryFor(cleanText) {
+  const phrase = String(cleanText || '').trim()
+  if (!phrase) return ''
+  const direct = taughtPhrases.get(phrase)
+  if (direct) return direct
+  /* مطابقةُ الاحتواء للصياغات الطويلة: من علّمتَه «الدمج» يُجيب على «شنو رأيه
+     في الدمج» أيضاً — بشرط أن تكون العبارة المُعلَّمة كلمةً قائمة لا جزءَ كلمة. */
+  for (const [known, query] of taughtPhrases) {
+    if (known.length >= 4 && new RegExp(`(?:^|\\s)${known.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s|$)`).test(phrase)) return query
+  }
+  return ''
+}
+
+/* ═══ من يسأل؟ ═══
+   الذاكرة كانت تعرف الموضوع ولا تعرف صاحبه — مع أن أسلوب السؤال يفضحه.
+   نستنتج صفته من مفرداته هو (لا نسأله عنها أبداً، ولا نعلنها في وجهه)،
+   ونستعملها في **ترتيب ما نقدّمه** لا في تغيير الحقائق: الباحث تُقدَّم له
+   الورقة المحكّمة، وولي الأمر يُقدَّم له المقال. إشارتان على الأقل قبل الحكم،
+   فلا تُصنَّف كلمةٌ عابرة إنساناً. */
+const READER_KINDS = [
+  ['teacher', /(?:^|\s)(?:طلابي|طلبتي|صفي|حصتي|حصه|المنهج|منهجي|تلاميذي|ادرس|تدريسي|مدرستي|الوزاره|الاداره المدرسيه|زملائي المعلمين)(?:\s|$)/],
+  ['parent', /(?:^|\s)(?:ابني|بنتي|ولدي|عيالي|اولادي|بنتي|طفلي|ابنتي|ولد ي|مدرسه ابني|ولي امر)(?:\s|$)/],
+  ['researcher', /(?:^|\s)(?:دراسه|الدراسات|منهجيه|عينه|المراجع|مرجع|اطروحتي|رسالتي|بحثي|الادبيات|استبانه|احصائيا)(?:\s|$)/],
+]
+function readerKindSignal(cleanText) {
+  for (const [kind, pattern] of READER_KINDS) if (pattern.test(cleanText)) return kind
+  return ''
+}
+export function readerKindOf(conversation = {}) {
+  const signals = Array.isArray(conversation.readerSignals) ? conversation.readerSignals : []
+  if (signals.length < 2) return ''
+  const counts = new Map()
+  for (const signal of signals) counts.set(signal, (counts.get(signal) || 0) + 1)
+  const [top] = [...counts.entries()].sort((a, b) => b[1] - a[1])
+  return top && top[1] >= 2 ? top[0] : ''
+}
+/* الترتيب وحده يتغيّر — لا المحتوى ولا الصدق. */
+function kindsForReader(kind) {
+  if (kind === 'researcher') return ['paper', 'book', 'article']
+  if (kind === 'parent') return ['article', 'curated', 'podcast']
+  if (kind === 'teacher') return ['article', 'paper', 'podcast']
+  return []
+}
+
+/* ═══ حضور الدكتور ═══
+   كان البوت يقول «وصلت رسالتك للدكتور» بصيغةٍ واحدة سواءٌ كان الدكتور متابعاً
+   اليوم أم غائباً أسبوعاً — وعدٌ متساوٍ في حالتين مختلفتين. الآن يعرف: كل
+   رسالةٍ يكتبها الدكتور بيده في أي محادثة تُثبِت حضوره. فيصدُق في الحالين،
+   ولا يَعِد بموعدٍ قط. */
+let ownerLastActiveAt = 0
+const OWNER_PRESENT_MS = 12 * 60 * 60_000
+export function markOwnerActive(at = Date.now()) {
+  const stamp = typeof at === 'number' ? at : Date.parse(at) || Date.now()
+  if (stamp > ownerLastActiveAt) ownerLastActiveAt = stamp
+}
+export function ownerPresenceLine(at = Date.now()) {
+  if (!ownerLastActiveAt) return ''
+  return at - ownerLastActiveAt <= OWNER_PRESENT_MS
+    ? '\n\nوالدكتور متابعٌ لرسائله اليوم — لكنّي لا أعدك بموعد رد.'
+    : ''
+}
+
+/* ═══ الجودة تُقاس لا تُدّعى ═══
+   كل ترقيةٍ بعد اليوم يجب أن تُقاس بأثرها لا بذوق من بناها: كم سؤالاً أُجيب
+   من المنشور، وكم انتهى بـ«ما لقيت»، وكم أنقذه المفهوم أو تعليمُ الدكتور.
+   عدّادٌ يوميّ واحد لكل محادثة — بلا حفظ نصوص الناس ولا أرقامهم. */
+const QUALITY_BUCKETS = new Map([
+  ['no-grounded-answer', 'missed'], ['near-suggestions', 'missed'],
+  ['active-clarify', 'clarified'], ['doubt-clarify', 'clarified'],
+  ['context-missing', 'clarified'], ['correction-clarify', 'clarified'],
+  ['human-request', 'escalated'],
+  ['concept-search', 'concept'], ['taught-phrase', 'taught'],
+])
+export function qualityBucketFor(reason) {
+  const key = String(reason || '')
+  if (QUALITY_BUCKETS.has(key)) return QUALITY_BUCKETS.get(key)
+  if (key.startsWith('rule-no-grounding')) return 'missed'
+  return 'answered'
+}
+
+const INITIATIVE_COOLDOWN_MS = 30 * 60_000
+function initiativeLine(conversation = {}, item = null, previousIds = [], at = Date.now()) {
+  if (!item) return ''
+  const lastOffered = Date.parse(conversation.lastInitiativeAt || '')
+  if (Number.isFinite(lastOffered) && at - lastOffered < INITIATIVE_COOLDOWN_MS) return ''
+  const related = Array.isArray(item.related) ? item.related : []
+  if (!related.length) return ''
+  const byId = new Map(siteIndex().map((row) => [row.id, row]))
+  const seen = new Set([...previousIds, item.id])
+  const next = related.map((id) => byId.get(id)).find((row) => row && !seen.has(row.id))
+  if (!next) return ''
+  return `\n\nولاحظت أن للدكتور مادةً تمدّ هذه الفكرة: «${next.title}» — أفتحها لك؟`
+}
+
+function intentKinds(intent) {
+  if ([INTENTS.LATEST_ARTICLE, INTENTS.LATEST_ARTICLES, INTENTS.MOST_VIEWED_ARTICLE].includes(intent)) return ['article']
+  if (intent === INTENTS.LATEST_BOOK) return ['book']
+  if (intent === INTENTS.LATEST_PAPER) return ['paper']
+  if (intent === INTENTS.LATEST_PODCAST) return ['podcast']
+  if (intent === INTENTS.LATEST_SELECTION || intent === INTENTS.CURATED_PICKS) return ['curated']
+  return []
+}
+
+export function decideGroundedResponse({ text: inboundText, hasMedia = false, rules = [], priorReplyHash = '', conversation = {} } = {}) {
+  /* قبل كل شيء: أن يُقرأ ما كُتب كما قُصد. لا يتغيّر النصّ إلا إذا كان تغييرُه
+     هو الفارق بين جوابٍ وصمت — والرسالةُ المفهومة أصلاً لا تُمسّ. */
+  const understood = understandInboundMessage(inboundText)
+  const text = understood.changed ? understood.text : inboundText
+  const clean = normalizeArabicMessage(text)
+  const messages = botMessagesNow()
+  if (hasMedia) {
+    const now = Date.now()
+    const previousMediaReplyAt = Date.parse(conversation.lastMediaReplyAt || '')
+    if (Number.isFinite(previousMediaReplyAt) && now - previousMediaReplyAt < 5 * 60_000) {
+      /* ترقية ٢ — رشقة الصور: الصمت التام أمام أربع صورٍ متتالية يبدو عطلاً.
+         نعترف بالرشقة مرةً واحدة (عند ثانيةِ صورةٍ في النافذة) ثم نصمت عن
+         بقيتها، فلا فيضان ولا تجاهل. */
+      const burst = Math.max(1, Number(conversation.mediaBurstCount || 1)) + 1
+      if (burst === 2) {
+        return {
+          kind: 'reply',
+          reason: 'media-burst-acknowledged',
+          reply: signReply('وصلتني بقية الصور. اكتب لي بجملة واحدة ماذا تريد منها — تلخيصاً، بحثاً عن موضوعها، أو المادة الأصلية — وأتصرف على أساسها.', messages),
+          patch: { lastMediaSeenAt: asIso(now), mediaBurstCount: burst },
+        }
+      }
+      return { kind: 'no-reply', reason: 'media-burst-suppressed', patch: { lastMediaSeenAt: asIso(now), mediaBurstCount: burst } }
+    }
+    return {
+      kind: 'reply',
+      reason: 'media-description-needed',
+      reply: signReply(MEDIA_CLARIFY, messages),
+      patch: { lastMediaReplyAt: asIso(now), lastMediaSeenAt: asIso(now), mediaBurstCount: 1 },
+    }
+  }
+  if (!clean) return { kind: 'reply', reason: 'empty-after-normalization', reply: signReply(clarifyText(messages, conversation), messages) }
+  if (HUMAN_PATTERNS.some((pattern) => pattern.test(clean))) {
+    return { kind: 'escalate', reason: 'human-request', reply: signReply(`${HUMAN_ACK}${ownerPresenceLine()}`, messages) }
+  }
+
+  const rule = findRuleMatch(text, rules)
+  if (rule) {
+    if (rule.actionType === 'transfer') return { kind: 'escalate', reason: `rule:${rule.id}`, reply: signReply(bounded(rule.responseText, 1_500) || HUMAN_ACK, messages), rule }
+    if (rule.actionType === 'site-content') {
+      const found = exactSiteResults(text, rule.contentQuery)
+      if (!found.length) return { kind: 'reply', reason: `rule-no-grounding:${rule.id}`, reply: signReply(noMatchText(messages), messages), rule }
+      return { kind: 'reply', reason: `rule:${rule.id}`, reply: signReply(siteResultReply(found), messages), rule, evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0 }
+    }
+    const response = bounded(rule.responseText, 2_000)
+    if (response) return { kind: 'reply', reason: `rule:${rule.id}`, reply: signReply(response, messages), rule }
+  }
+
+  const classification = classifyIntent(text)
+  const intent = classification.intent
+  const current = currentConversationItem(conversation)
+  const previousIds = Array.isArray(conversation.seenContentIds) ? conversation.seenContentIds.slice(-40) : []
+  const stripped = stripArabicGreetings(text)
+  const politeSeed = `${conversation.lastInboundAt || ''}:${clean}`
+
+  /* ─── دفء المجاملة قبل آلة البحث ─── */
+  if (THANKS_PATTERN.test(stripped || clean)) {
+    return { kind: 'reply', reason: 'thanks', intent, reply: signReply(variantOf(politeSeed, [
+      'العفو، حيّاك الله. وإن احتجت مادة أو فكرة من مكتبة الدكتور فأنا حاضر.',
+      'وإياك، أسعدني أن أفيدك. اكتب لي أي موضوع يشغلك وأدوّر لك عنه.',
+      'على الرحب والسعة. متى ما خطر ببالك سؤال عن مقالات الدكتور فأنا هنا.',
+    ]), messages) }
+  }
+  if (FAREWELL_PATTERN.test(stripped || clean)) {
+    return { kind: 'reply', reason: 'farewell', intent, reply: signReply(variantOf(politeSeed, [
+      'في أمان الله، وأهلاً بك متى ما رجعت.',
+      'الله يحفظك. مكتبة الدكتور تبقى مفتوحة لك في أي وقت.',
+    ]), messages) }
+  }
+  if (WHO_ARE_YOU_PATTERN.test(stripped || clean)) {
+    return { kind: 'reply', reason: 'who-are-you', intent, reply: signReply(`أنا المساعد الآلي لمكتبة د. أحمد الفيلكاوي — أجيب من محتوى الموقع المنشور فقط، ولا أدّعي علماً خارجه. اكتب أي موضوع وأبحث لك عنه، أو قل «آخر مقالة».\n\n${SITE_URL}`, messages) }
+  }
+  if (PRAISE_PATTERN.test(stripped || clean)) {
+    return { kind: 'reply', reason: 'praise', intent, reply: signReply(variantOf(politeSeed, [
+      'الفضل لمحتوى الدكتور، أنا مجرد دليل عليه. تحب أختار لك مادة تعجبك؟ قل «فاجئني».',
+      'كلامك يسرّ، والجمال جمال الفكرة. عندي غيرها كثير — قل «عطني غيرها».',
+    ]), messages) }
+  }
+  if (ACK_PATTERN.test(stripped || clean)) {
+    return { kind: 'reply', reason: 'acknowledged', intent, reply: signReply(variantOf(politeSeed, [
+      'تمام. إذا حبيت نكمل: «لخّصها» أو «عطني غيرها» أو اكتب موضوعاً جديداً.',
+      'زين. أنا حاضر متى ما أردت — موضوع جديد أو «فاجئني».',
+    ]), messages) }
+  }
+
+  /* «أوقف الرسائل» حُذفت نهائياً بأمر الدكتور (٣٠ يوليو): البوت لا يعرض
+     إيقاف الحملات ولا ينفذه؛ من كتبها تُعامل رسالته كأي نصٍّ عادي.
+     أما مسح التفضيلات فباقٍ — خصوصية المحادثة شأن آخر. */
+  if (intent === INTENTS.DELETE_PREFERENCES) {
+    return {
+      kind: 'reply', reason: 'delete-preferences', intent,
+      reply: signReply('تم. مسحت ما احتفظت به لهذه المحادثة من سياق وتفضيلات ومحفوظات. نبدأ من صفحة بيضاء متى ما أردت.', messages),
+      patch: { contextItemIds: [], contextIndex: 0, seenContentIds: [], savedItemIds: [], lastTopic: null, challenge: null, topicMemory: [], lastInitiativeAt: null, sovereignTrail: [], sovereignDigest: null, sovereignTopic: null, sovereignIndex: 0 },
+    }
+  }
+
+  if (PRICE_PATTERNS.some((pattern) => pattern.test(clean))) {
+    return { kind: 'reply', reason: 'price-free', intent, reply: signReply(`${PRICE_ANSWER}\n\n${SITE_URL}`, messages) }
+  }
+  /* «كم مقالة عندك؟» سؤالٌ عن عددٍ، وجوابُه عددٌ — وكان يُقابَل بقائمةِ ثلاث
+     مقالات، أي بجوابٍ عن سؤالٍ آخر. والعدد محسوبٌ من الفهرس المنشور نفسه لا
+     مكتوباً بيدٍ تتقادم. */
+  if (COUNT_QUESTION.test(clean)) {
+    const counts = siteIndex().reduce((tally, item) => ({ ...tally, [item.kind]: (tally[item.kind] || 0) + 1 }), {})
+    const rows = [
+      [counts.article || 0, ARTICLE_FORMS, '/articles'],
+      [counts.paper || 0, PAPER_COUNT_FORMS, '/research'],
+      [counts.book || 0, BOOK_COUNT_FORMS, '/publications'],
+      [counts.curated || 0, CURATED_COUNT_FORMS, '/curated'],
+    ].filter(([count]) => count > 0)
+    return {
+      kind: 'reply', reason: 'content-count', intent,
+      reply: signReply(`المنشور في موقع الدكتور الآن:\n\n${rows.map(([count, forms, path]) => `• ${arabicCountPhrase(count, forms, arabicNumber)}\n  ${SITE_URL}${path}`).join('\n')}\n\nاكتب لي أي موضوع وأدلّك على ما كتبه فيه.`, messages),
+    }
+  }
+  if (isGreetingOnly(text) || intent === INTENTS.WELCOME) {
+    const welcome = buildWakeWelcome(messages, new Date(), conversation)
+    return {
+      kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'welcome', intent,
+      reply: signReply(welcome.text, messages),
+      ...(welcome.contextItemIds.length ? { contextItemIds: welcome.contextItemIds, contextIndex: 0, evidence: welcome.evidence, lastTopic: welcome.lastTopic } : {}),
+    }
+  }
+  /* الخروج من جلسة الكتاب بكلمةٍ صريحة — قبل أبواب الموقع، وإلا ابتلع الباب
+     العبارةَ وبقيت الجلسة قائمة فيعود السؤال التالي إلى الكتاب رغم طلبه الخروج. */
+  if (bookSessionSlug(conversation) && LEAVE_BOOK_PATTERN.test(clean)) {
+    return {
+      kind: 'reply', reason: 'book-session-left', intent,
+      reply: signReply(`تمام، خرجنا من الكتاب. اكتب الموضوع وأدوّر لك في الموقع كلّه — مقالات وأبحاث ولقاءات.\n\n${SITE_URL}/search`, messages),
+      patch: { bookSession: null },
+    }
+  }
+
+  const siteDoor = siteDoorDecision(text)
+  /* أيّ بابٍ آخر يُنهي جلسة الكتاب: الزائر غادره بفعله لا بكلمته. */
+  if (siteDoor) return { kind: 'reply', intent, ...siteDoor, reply: signReply(siteDoor.reply, messages), ...(bookSessionSlug(conversation) ? { patch: { ...(siteDoor.patch || {}), bookSession: null } } : {}) }
+  if ([INTENTS.HELP, INTENTS.SHOW_OPTIONS, INTENTS.CONTENT_OVERVIEW].includes(intent)) {
+    return { kind: 'reply', reason: 'help', intent, reply: signReply(helpText(), messages) }
+  }
+  if (intent === INTENTS.ABOUT_DOCTOR) {
+    return { kind: 'reply', reason: 'about-doctor', intent, reply: signReply(`هذه السيرة الرسمية للدكتور أحمد حسين الفيلكاوي، ومؤلفاته وأبحاثه وخبراته:\n\nنبذة المسيرة: ${SITE_URL}/about\nالسيرة الأكاديمية: ${SITE_URL}/cv\nالأثر والشواهد: ${SITE_URL}/impact`, messages) }
+  }
+  /* «منو نورة؟» سؤالٌ يتكرّر لأن الاسمين منشوران على كل مادةٍ لها صوت. وكان
+     يُجاب بسيرة الدكتور — جوابٌ عن غير سؤال. والصدق هنا واجب: هما صوتا قراءةٍ
+     لا شخصان يُنسب إليهما رأي. */
+  if (NARRATOR_QUESTION.test(stripped || clean)) {
+    return {
+      kind: 'reply', reason: 'about-narrators', intent,
+      reply: signReply('فهد ونورة صوتا القراءة في الموقع: يقرآن نصّ الدكتور كما نُشر، حرفاً بحرف، فيُسمَع ما كُتب. وبعض المواد لها حوارٌ مسموع بينهما يشرح فكرتها.\n\nتلقى القراءات كلها هنا:\n' + `${SITE_URL}/listen`, messages),
+    }
+  }
+
+  /* هذه الأبواب ليست «بحثاً عاماً»: لكل واحد منها أداةٌ وبياناتٌ وسياقٌ
+     منشور في الموقع. تشغيلها قبل البحث يمنع الردود الآلية التي ظهرت في صور
+     الدكتور: «ابحث داخل الكتاب» لا يعود (أبحاث وكتب)، و«فصول الكتاب» لا
+     يعود قائمة مؤلفات. */
+  if (intent === INTENTS.BOOK_SEARCH) {
+    const decision = bookSearchDecision(text, conversation)
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  /* ثم السؤال العاديّ داخل جلسة كتاب: يُجاب من متن الكتاب لا من الموقع كله.
+     محصورٌ في نيّة «موضوع» أو غير المفهوم، فلا يخطف «لخّصها» ولا «عطني غيرها»
+     ولا التصحيح ولا أبواب الموقع — لكلٍّ منها مسارها الذي يسبق هذا السطر. */
+  if (bookSessionSlug(conversation) && (intent === INTENTS.SEARCH_TOPIC || intent === INTENTS.UNKNOWN || classification.fallback)) {
+    const decision = bookSessionDecision(text, conversation)
+    if (decision) return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.BOOK_CHAPTERS) {
+    const decision = bookChaptersDecision(text, conversation)
+    /* لا قرار = الاسم ليس كتاباً ولا ذُكر كتاب؛ يكمل إلى البحث العام. */
+    if (decision) return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.BOOK_INSIGHT) {
+    const decision = bookInsightDecision(text, conversation)
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.BOOK_VIDEOS) {
+    const decision = bookVideosDecision(text, conversation)
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  /* «أبي فيديو عن كذا» لم يكن يُصنَّف فيديوهات كتاب، فيسقط إلى البحث العام
+     ويردّ بمقالات — بينما التفريغ المفهرس يعرف الثانية التي قيلت فيها الفكرة.
+     هذا الباب يلتقط طلب المرئي بأي صياغة، ولا يمسّ «لقاء/مقابلة» فلها بابها. */
+  if (VIDEO_REQUEST_PATTERN.test(clean)) {
+    const topic = videoRequestTopic(clean)
+    const moments = topic ? encyclopediaVideoReply(topic, 3) : null
+    if (moments) {
+      const encyclopedia = siteIndex().find((item) => item.id === 'book:encyclopedia')
+      return {
+        kind: 'reply', reason: 'video-moments', intent,
+        reply: signReply(moments.text, messages),
+        ...(encyclopedia ? { evidence: [encyclopedia.id], contextItemIds: [encyclopedia.id], contextIndex: 0 } : {}),
+        lastTopic: topic,
+      }
+    }
+  }
+  if (intent === INTENTS.MEDIA_LIBRARY) {
+    const decision = mediaLibraryDecision(text)
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.DIALOGUE_LIBRARY) {
+    const decision = dialogueLibraryDecision()
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+  if (intent === INTENTS.RADIO) {
+    const decision = radioDecision()
+    return { kind: 'reply', intent, ...decision, reply: signReply(decision.reply, messages) }
+  }
+
+  /* ─── التصحيح: «مو صح» أو «مو عن هذا» اعتذارٌ وبحثٌ من زاوية أخرى ─── */
+  if (intent === INTENTS.CORRECTION) {
+    const notAbout = clean.match(/(?:مو|مب|ليس|مهوب)\s+(?:عن|قصدي|اقصد)\s+(.{2,60})$/)?.[1]
+      || clean.match(/قصدي\s+(.{2,60})$/)?.[1] || ''
+    const retryQuery = bounded(notAbout, 120) || bounded(conversation.lastTopic, 200) || stripped
+    const excluded = [...previousIds, ...(current ? [current.id] : [])]
+    const found = retryQuery ? exactSiteResults(retryQuery, retryQuery, { excludeIds: excluded, limit: 3 }) : []
+    if (found.length) return {
+      kind: 'reply', reason: 'correction-retry', intent,
+      reply: signReply(siteResultReply(found, 'واضح، فهمي الأول ما أصاب. جربت زاوية ثانية:'), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: retryQuery,
+    }
+    return { kind: 'reply', reason: 'correction-clarify', intent, reply: signReply('معك حق، وأعتذر عن سوء الفهم. اكتب المقصود بكلمة أو زاوية أوضح وأبحث من جديد — ولا أدّعي ما لا أجده منشوراً.', messages) }
+  }
+
+  /* ─── تحدي المعرفة ───
+     رقمُ الإجابة يُحكم من حالة المحادثة لا من تصنيف النية: «٢» قد يصنّفها
+     محلل المراجع تنقّلاً بين النتائج، لكن وجود تحدٍّ معلّق يجعلها إجابته. */
+  const pureDigitAnswer = /^[1-3]$/.test(clean) ? Number(clean) : 0
+  if ((pureDigitAnswer || intent === INTENTS.CHALLENGE_ANSWER) && conversation.challenge && Array.isArray(conversation.challenge.itemIds)) {
+    const answer = (pureDigitAnswer || Number(clean.replace(/[^0-9]/g, ''))) - 1
+    const stateIds = conversation.challenge.itemIds
+    const byId = new Map(siteIndex().map((item) => [item.id, item]))
+    const correctItem = byId.get(stateIds[Number(conversation.challenge.answerIndex) || 0])
+    const wasRight = answer === Number(conversation.challenge.answerIndex)
+    if (correctItem) {
+      const opener = wasRight
+        ? variantOf(politeSeed, ['أحسنت، إجابة صحيحة!', 'كفو، أصبت!'])
+        : `قريبة! الإجابة الصحيحة: ${arabicNumber(Number(conversation.challenge.answerIndex) + 1)}.`
+      return {
+        kind: 'reply', reason: wasRight ? 'challenge-correct' : 'challenge-missed', intent,
+        reply: signReply(`${opener}\n\nالعبارة من:\n*${correctItem.title}*\n${correctItem.url}\n\nتحب تحدياً ثانياً؟ اكتب «اختبرني».`, messages),
+        evidence: [correctItem.id], contextItemIds: [correctItem.id], contextIndex: 0,
+        patch: { challenge: null }, lastTopic: correctItem.title,
+      }
+    }
+  }
+  if (intent === INTENTS.CHALLENGE || (intent === INTENTS.CHALLENGE_ANSWER && !conversation.challenge)) {
+    const challenge = buildChallenge(conversation, clean)
+    if (challenge) return {
+      kind: 'reply', reason: 'challenge-question', intent, reply: signReply(challenge.reply, messages),
+      evidence: challenge.evidence, patch: { challenge: challenge.state },
+    }
+  }
+
+  /* ─── رفّ المحفوظات ─── */
+  const savedIds = Array.isArray(conversation.savedItemIds) ? conversation.savedItemIds : []
+  if (intent === INTENTS.SAVE_CONTENT) {
+    if (!current) return { kind: 'reply', reason: 'save-context-missing', intent, reply: signReply('افتح مادة أولاً — قل «آخر مقالة» أو اكتب موضوعاً — وبعدها قل «احفظها» وأضمها لرفّك.', messages) }
+    const nextSaved = [...new Set([...savedIds, current.id])].slice(-20)
+    return {
+      kind: 'reply', reason: 'saved-to-shelf', intent,
+      reply: signReply(`حفظتها لك في رفّك:\n*${current.title}*\n\nرفّك فيه الآن ${arabicCountPhrase(nextSaved.length, MATERIAL_FORMS, arabicNumber)}. قل «رفي» متى ما أردت استعراضه.`, messages),
+      evidence: [current.id], patch: { savedItemIds: nextSaved },
+    }
+  }
+  if (intent === INTENTS.LIST_SAVED) {
+    if (!savedIds.length) return { kind: 'reply', reason: 'shelf-empty', intent, reply: signReply('رفّك فاضي حالياً. افتح أي مادة ثم قل «احفظها» وأضمها لك هنا.', messages) }
+    const byId = new Map(siteIndex().map((item) => [item.id, item]))
+    const items = savedIds.map((id) => byId.get(id)).filter(Boolean)
+    const lines = items.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${item.url}`)
+    return {
+      kind: 'reply', reason: 'shelf-list', intent,
+      reply: signReply(`رفّك المحفوظ (${arabicNumber(items.length)}):\n\n${lines.join('\n\n')}\n\nقل «شيلها من رفي» وأنت واقف على مادة لحذفها.`, messages),
+      contextItemIds: items.map((item) => item.id).slice(0, 12), contextIndex: 0,
+    }
+  }
+  if (intent === INTENTS.REMOVE_SAVED) {
+    if (!current || !savedIds.includes(current.id)) return { kind: 'reply', reason: 'shelf-remove-missing', intent, reply: signReply('حدد المادة أولاً: قل «رفي» ثم «الأولى» أو «الثانية»، وبعدها «شيلها من رفي».', messages) }
+    const nextSaved = savedIds.filter((id) => id !== current.id)
+    return {
+      kind: 'reply', reason: 'shelf-removed', intent,
+      reply: signReply(`شلتها من رفّك:\n*${current.title}*\n\nباقي في الرف ${arabicNumber(nextSaved.length)}.`, messages),
+      patch: { savedItemIds: nextSaved },
+    }
+  }
+
+  /* ─── اقتباس من المختارات المنشورة ─── */
+  if ([INTENTS.QUOTE, INTENTS.QUOTE_CARD].includes(intent)) {
+    const pool = siteIndex().filter((item) => item.kind === 'curated' && !previousIds.includes(item.id))
+    const fallbackPool = pool.length ? pool : siteIndex().filter((item) => item.kind === 'curated')
+    if (fallbackPool.length) {
+      const pick = fallbackPool[Number.parseInt(hash(`quote:${politeSeed}`).slice(0, 8), 16) % fallbackPool.length]
+      const note = normalizeWhitespace(pick.excerpt || '')
+      const cardHint = intent === INTENTS.QUOTE_CARD ? '\n\nوبطاقات الاقتباس المصمّمة تجدها في صفحة المختارات نفسها.' : ''
+      return {
+        kind: 'reply', reason: 'curated-quote', intent,
+        reply: signReply(`«${pick.title}»${note ? `\n\n${verbatim(note)}` : ''}${cardHint}\n\n${pick.url}`, messages),
+        evidence: [pick.id], contextItemIds: [pick.id], contextIndex: 0,
+      }
+    }
+  }
+
+  /* المتابعة على جوابٍ متعدد المصادر تسبق البحث العام: «الثاني» و«وين قالها»
+     تشيران إلى خريطة الدليل التي شاهدها القارئ، لا إلى كلمةٍ نبحث عنها من
+     جديد. ولا تعمل الخريطة إلا بعد رد سيادي مباشرةً، فلا تخطف سياقاً قديماً. */
+  const sovereignContinuation = sovereignFollowup({ text, conversation })
+  if (sovereignContinuation) return {
+    kind: 'reply', intent, ...sovereignContinuation,
+    reply: signReply(sovereignContinuation.reply, messages),
+  }
+
+  /* ─── المضمر: إيماءةٌ قصيرة على مادةٍ حاضرة ───
+     تُقرأ قبل آلة البحث لأن البحث كان يبتلعها: «ما فهمت» تعود بأقرب عنوانٍ
+     يشبهها لفظاً، وهو ردٌّ يفضح أن أحداً لم يقرأ ما قيل. */
+  const implied = current ? impliedReading(clean) : ''
+  if (implied === 'simplify') {
+    return {
+      kind: 'reply', reason: 'implied-simplify', intent,
+      reply: signReply(`واضح، أثقلتك المادة. خذها في سطر:\n\n${distilledReply(current)}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: 42, readCursorItemId: current.id },
+    }
+  }
+  /* «زدني» و«اتعمق» كانتا تقصّان ١٢٠ كلمةً من أوّل المتن أينما وقع القطع —
+     في وسط جملةٍ غالباً — وتبدآن من الصفر مهما قرأ السائل قبلها. فمن قرأ
+     «٣٠ ثانية» ثم قال «زدني» كان يُعاد عليه ما قرأه للتوّ: هو العطب نفسه
+     الذي اشتكى منه الدكتور في «٣٠ ثانية». الآن تمرّان على السلّم نفسه،
+     وتكملان من حيث وقف لا من أوّل المقالة. */
+  if (implied === 'deepen') {
+    const reading = timedReadingReply(current, 'deep', deepCompanion(current, previousIds), readingStartOf(conversation, current))
+    return {
+      kind: 'reply', reason: 'implied-deepen', intent,
+      reply: signReply(`فهمت، تبي أعمق.\n\n${reading.text}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: reading.cursor, readCursorItemId: current.id },
+    }
+  }
+  if (implied === 'timedRead') {
+    const speed = readingSpeedOf(clean, intent)
+    const reading = timedReadingReply(current, speed, speed === 'deep' ? deepCompanion(current, previousIds) : null, readingStartOf(conversation, current))
+    return {
+      kind: 'reply', reason: `timed-reading-${speed}`, intent,
+      reply: signReply(reading.text, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: reading.cursor, readCursorItemId: current.id },
+    }
+  }
+  if (implied === 'whyMatters') {
+    return {
+      kind: 'reply', reason: 'implied-why', intent,
+      reply: signReply(`لأن هذا لبّها بكلام الدكتور نفسه — والحكم لك بعده:\n\n${distilledReply(current)}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+    }
+  }
+
+  /* ─── مقارنة بين فكرتين من المنشور ───
+     البنية أصدق من التصنيف هنا: «قارن بين المعلم والتقنية» كان يخطفها نمط
+     «لمعلم» في محرك الشرح، فنُحكِم صيغة المقارنة الصريحة قبل النيات الأخرى.
+     وترقية أول أغسطس: قائمتان متجاورتان استرجاعٌ لا مقارنة. نقرأ الطرفين
+     فنقول ما يجمعهما وما ينفرد به كلٌّ منهما — بمفرداتٍ مأخوذةٍ من عناوين
+     الدكتور ومتونه، لا من عندنا، ولا حكمَ ننسبه إليه لم يقله. */
+  if (intent === INTENTS.COMPARE || /(?:قارن|الفرق بين|مقارنه بين|ايهما افضل)/.test(clean)) {
+    const sides = compareSides(stripped || clean)
+    if (sides) {
+      const [leftItems, rightItems] = sides.map((side) => exactSiteResults(side, side, { limit: 2 }))
+      if (leftItems.length || rightItems.length) {
+        const block = (label, items) => items.length
+          ? `*${label}:*\n${items.map((item) => `• ${item.title}\n${item.url}`).join('\n')}`
+          : `*${label}:* ما لقيت مادة منشورة مباشرة عنها.`
+        const all = [...leftItems, ...rightItems]
+        const analysis = compareAnalysis(leftItems, rightItems)
+        const readingLines = []
+        if (analysis?.shared.length) readingLines.push(`• الخيط الجامع بينهما في كتابته: ${analysis.shared.join(' · ')}.`)
+        if (analysis?.leftOnly.length) readingLines.push(`• ما ينفرد به «${sides[0]}»: ${analysis.leftOnly.join(' · ')}.`)
+        if (analysis?.rightOnly.length) readingLines.push(`• ما ينفرد به «${sides[1]}»: ${analysis.rightOnly.join(' · ')}.`)
+        const reading = readingLines.length
+          ? `\n\n*قراءتي في الطرفين* (من مفردات الدكتور نفسها):\n${readingLines.join('\n')}\n\nوالحكم النهائي لقراءتك — لا أنسب للدكتور رأياً لم يكتبه.`
+          : '\n\nوالحكم لقراءتك.'
+        return {
+          kind: 'reply', reason: 'compare-topics', intent,
+          reply: signReply(`جمعت لك طرفي المقارنة من منشورات الدكتور:\n\n${block(sides[0], leftItems)}\n\n${block(sides[1], rightItems)}${reading}`, messages),
+          evidence: all.map((item) => item.id), contextItemIds: all.map((item) => item.id).slice(0, 12), contextIndex: 0, lastTopic: `${sides[0]} و${sides[1]}`,
+        }
+      }
+    }
+  }
+
+  /* السؤال الذي يطلب رأياً/جواباً لا يُجاب بقائمة روابط. العقل السيادي يجمع
+     الشواهد المتطابقة من متن المقال والبحث وصفحة الكتاب وثانية الفيديو أو
+     الحوار، ويعود null إن لم يجد دليلاً كافياً؛ عندها يكمل المحرك القديم
+     مساره كما كان بلا أي تغيير. */
+  /* تعليم الدكتور لعبارةٍ أخطأ فيها المحرك أسبق من أي استدلال جديد؛ فلا
+     تنسى الآلة تصحيحاً صريحاً لمجرد أن السؤال صار صالحاً للجمع السيادي. */
+  const taughtBeforeSovereign = (classification.fallback || intent === INTENTS.UNKNOWN) ? taughtQueryFor(clean) : ''
+  const sovereign = taughtBeforeSovereign ? null : sovereignAnswer({ text, items: siteIndex(), conversation, siteUrl: SITE_URL })
+  if (sovereign) return {
+    kind: 'reply', intent, ...sovereign,
+    reply: signReply(sovereign.reply, messages),
+  }
+
+  /* ─── مزاج القارئ ─── */
+  const mood = MOOD_MAP.find(([pattern]) => pattern.test(clean))
+  if (mood && (intent === INTENTS.CONTENT_BY_MOOD || intent === INTENTS.SEARCH_TOPIC || classification.fallback)) {
+    const [, intro, seeds] = mood
+    for (const seedQuery of seeds) {
+      const found = exactSiteResults(seedQuery, seedQuery, { excludeIds: previousIds, limit: 2 })
+      if (found.length) return {
+        kind: 'reply', reason: 'mood-match', intent, reply: signReply(siteResultReply(found, intro), messages),
+        evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0,
+      }
+    }
+  }
+
+  /* ─── شبكة الفكرة: الامتدادات الحقيقية للمادة الحالية ─── */
+  if (intent === INTENTS.IDEA_NETWORK) {
+    if (current && Array.isArray(current.related) && current.related.length) {
+      const byId = new Map(siteIndex().map((item) => [item.id, item]))
+      const related = current.related.map((id) => byId.get(id)).filter(Boolean).slice(0, 4)
+      if (related.length) {
+        const lines = related.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}* (${itemLabel(item)})\n${item.url}`)
+        return {
+          kind: 'reply', reason: 'idea-network', intent,
+          reply: signReply(`خيوط الفكرة الممتدة من *${current.title}*:\n\n${lines.join('\n\n')}`, messages),
+          evidence: related.map((item) => item.id), contextItemIds: related.map((item) => item.id), contextIndex: 0,
+        }
+      }
+    }
+    return { kind: 'reply', reason: 'idea-network-missing', intent, reply: signReply('افتح مادة أولاً وبعدها قل «شبكة الأفكار» وأمد لك خيوطها من بقية المنشور.', messages) }
+  }
+
+  /* ─── شرح وحوار مؤرّضان بالمادة ─── */
+  if (intent === INTENTS.EXPLAIN_MODE) {
+    const target = current || exactSiteResults(classification.request?.topic || stripped, '', { limit: 1 })[0]
+    if (target) {
+      const audience = clean.match(/(لطالب|لولي امر|لمعلم|لباحث)/)?.[1] || ''
+      const intro = audience ? `على قدر ${audience.replace('ل', '')} — ` : ''
+      const source = normalizeWhitespace(target.excerpt || target.body || '')
+      const sentences = source.split(/(?<=[.!؟])/u).map((part) => part.trim()).filter(Boolean).slice(0, 3).join(' ')
+      return {
+        kind: 'reply', reason: 'explain-grounded', intent,
+        reply: signReply(`${intro}هذا جوهر المادة بكلام الدكتور نفسه:\n\n*${target.title}*\n\n${sentences ? verbatim(sentences) : 'التفصيل الكامل في الصفحة.'}\n\nوالسياق الكامل هنا:\n${target.url}`, messages),
+        evidence: [target.id], contextItemIds: [target.id], contextIndex: 0, lastTopic: target.title,
+      }
+    }
+    return { kind: 'reply', reason: 'context-missing', intent, reply: signReply(clarifyText(messages, conversation), messages) }
+  }
+  if (intent === INTENTS.DIALOGUE_MODE) {
+    const target = current || latestSiteItems(['article'], 1)[0]
+    if (target) {
+      const source = normalizeWhitespace(target.excerpt || target.body || '')
+      const firstSentence = source.split(/(?<=[.!؟])/u).map((part) => part.trim()).filter(Boolean)[0] || target.title
+      return {
+        kind: 'reply', reason: 'dialogue-opener', intent,
+        reply: signReply(`خذ هذه من *${target.title}*:\n\n«${verbatim(firstSentence)}»\n\nشرايك — توافق الدكتور أم عندك زاوية أخرى؟ اكتب رأيك، وأنا أقابل رأيك بما كتبه في بقية المادة:\n${target.url}`, messages),
+        evidence: [target.id], contextItemIds: [target.id], contextIndex: 0, lastTopic: target.title,
+      }
+    }
+  }
+
+  /* ─── الصدق فيما لا نملكه، مع بديلٍ نافع ─── */
+  if (intent === INTENTS.REMIND_ME) {
+    return { kind: 'reply', reason: 'reminder-honest', intent, reply: signReply('ما عندي جدولة تذكير هنا — أصدقك القول. البديل الأقرب: قل «احفظها» وأضم المادة لرفّك، فترجع لها متى شئت بكلمة «رفي».', messages) }
+  }
+  if (intent === INTENTS.WEEKLY_DIGEST) {
+    const found = latestSiteItems([], 3)
+    return {
+      kind: 'reply', reason: 'digest-now', intent,
+      reply: signReply(siteResultReply(found, 'النشرات تصل حين يبثها فريق المكتبة، وهذه خلاصة الأحدث الآن:'), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0,
+    }
+  }
+  if (intent === INTENTS.CONTINUE_LISTENING) {
+    const target = current || latestSiteItems(['article'], 1)[0]
+    if (target) {
+      const audioNote = target.audio?.dialogue || target.audio?.fahed || target.audio?.noura
+        ? 'التشغيل يكمل من داخل الصفحة نفسها — المشغّل يحفظ موضعك على نفس الجهاز.'
+        : 'هذه المادة نصية؛ قراءتها تكمل من حيث وقفت في الصفحة.'
+      return {
+        kind: 'reply', reason: 'continue-listening', intent,
+        reply: signReply(`آخر مادة كنا عندها:\n*${target.title}*\n${itemMetaLine(target)}\n\n${audioNote}\n${target.url}`, messages),
+        evidence: [target.id], contextItemIds: [target.id], contextIndex: 0,
+      }
+    }
+  }
+  if (intent === INTENTS.UPCOMING_EVENTS) {
+    return { kind: 'reply', reason: 'upcoming-events', intent, reply: signReply(`اللقاءات والمشاركات القادمة المعلنة تجدها محدّثة هنا — والصفحة لا تعرض إلا ما أُعلن فعلاً:\n\n${SITE_URL}/upcoming`, messages) }
+  }
+  if (intent === INTENTS.TOP_ARTICLE_TOPIC) {
+    const doors = archiveDoors(3)
+    if (doors.length) return { kind: 'reply', reason: 'top-topics', intent, reply: signReply(`أكثر المحاور حضوراً في عناوين مقالات الدكتور: ${doors.join(' · ')}.\n\nاكتب أي محور منها وأفتح لك موادّه.`, messages) }
+  }
+  if (intent === INTENTS.MOST_VIEWED_ARTICLE) {
+    const found = latestSiteItems(['article'], 3)
+    return {
+      kind: 'reply', reason: 'most-viewed-honest', intent,
+      reply: signReply(siteResultReply(found, 'ما أملك عدّاد مشاهدات موثقاً أستند إليه هنا — فلا أخترع ترتيباً. هذه أحدث المقالات، وكلها مما يُقبل عليه القراء:'), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0,
+    }
+  }
+  if (intent === INTENTS.VERIFIED_RESEARCH) {
+    const found = latestSiteItems(['paper'], 3)
+    if (found.length) return {
+      kind: 'reply', reason: 'verified-research', intent,
+      reply: signReply(siteResultReply(found, 'أوثق ما أقدمه لك أبحاث الدكتور المحكّمة المنشورة — لا أستشهد بمصادر خارج الموقع:'), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0,
+    }
+  }
+
+  if ([INTENTS.SUMMARY, INTENTS.ONE_MINUTE, INTENTS.READ_SPEED].includes(intent)) {
+    /* الاعتذار يصف ما سيفعله بالضبط: من طلب قراءةً بمدّة لا يُوعَد باختصار. */
+    if (!current) return {
+      kind: 'reply', reason: 'context-missing', intent,
+      reply: signReply(intent === INTENTS.SUMMARY
+        ? 'أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أختصرها لك.'
+        : 'أرسل لك مادة أولاً: قل «آخر مقالة» أو اكتب الموضوع، وبعدها أقرأ لك منها بالمدّة التي تناسبك.', messages),
+    }
+    /* ONE_MINUTE خليطٌ في المحرك: فيها تعبيرُ وقتٍ («عندي دقيقة» · «وقت
+       قصير») وفيها طلبُ زبدةٍ صريح («الزبدة» · «اختصرها» · «ملخص سريع» ·
+       «الفكرة بس»). ربطُها كلِّها بالقراءة الموقوتة جعل «اختصرها» تُجيب بمئةٍ
+       وخمسين كلمة — نقيضَ ما طُلب. اللفظ الصريح يحكم قبل المدّة. */
+    const asksForGist = /(?:الزبده|زبده|اختصر|ملخص|لخص|الفكره بس|باختصار|الخلاصه|نبذه)/.test(clean)
+    if (intent === INTENTS.SUMMARY || asksForGist) {
+      return {
+        kind: 'reply', reason: 'context-summary', intent,
+        reply: signReply(distilledReply(current), messages),
+        evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+        /* التلخيص يبدأ رحلة القراءة من أولها: «كمل» بعده تُعطي ما بعد الملخص. */
+        patch: { readCursor: 42, readCursorItemId: current.id },
+      }
+    }
+    const speed = readingSpeedOf(clean, intent)
+    const companion = speed === 'deep' ? deepCompanion(current, previousIds) : null
+    const reading = timedReadingReply(current, speed, companion, readingStartOf(conversation, current))
+    return {
+      kind: 'reply', reason: `timed-reading-${speed}`, intent,
+      reply: signReply(reading.text, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: reading.cursor, readCursorItemId: current.id },
+    }
+  }
+
+  /* «كمل»: يواصل المادة الحاضرة من حيث وقف لا يبحث عن كلمة جديدة (شكوى
+     الدكتور ٣١ يوليو: كتبها بعد الملخص فردّ عليه «ما لقيت مادة مطابقة»). */
+  if (intent === INTENTS.CONTINUE_READING) {
+    if (!current) {
+      return {
+        kind: 'reply', reason: 'continue-without-context', intent,
+        reply: signReply('ما عندي مادة مفتوحة الآن لأكمل منها. قل «آخر مقالة» أو اكتب الموضوع، وبعدها أكمل معك فقرة فقرة.', messages),
+      }
+    }
+    /* «كمل» تتبع قاعدة السلّم نفسها بعد تدقيق ٧ أغسطس: القطع من النصّ الخام
+       بفقراته (كان `join(' ')` يسحقها فيصل كلامه كتلةً واحدة، ويكفّ المقطع عن
+       كونه منقولاً حرفاً بحرف)، والوقوف عند نهاية جملة لا في وسطها، والمؤشر
+       لا يتجاوز طول النصّ (كان يقفز ٩٠ فيتخطّى النهاية ثم يرتدّ). */
+    const raw = String(current.body || current.excerpt || '')
+    const totalWords = normalizeWhitespace(raw).split(/\s+/).filter(Boolean).length
+    const sameItem = String(conversation.readCursorItemId || '') === String(current.id)
+    const cursor = sameItem ? Math.max(0, Number(conversation.readCursor || 0)) : 0
+    if (!totalWords || cursor >= totalWords) {
+      return {
+        kind: 'reply', reason: 'continue-finished', intent,
+        reply: signReply(`وصلنا آخر ما عندي من نص «${current.title}» هنا. تقرأها كاملة في صفحتها:\n\n${current.url}\n\nأو قل «عطني غيرها» وأفتح لك مادة قريبة.`, messages),
+        evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+        patch: { readCursor: totalWords, readCursorItemId: current.id },
+      }
+    }
+    const step = 90
+    const chunk = trimVerbatimToWords(raw.slice(rawOffsetOfWord(raw, cursor)).trim(), step)
+    const nextCursor = Math.min(totalWords, cursor + normalizeWhitespace(chunk).split(/\s+/).filter(Boolean).length)
+    const remaining = Math.max(0, totalWords - nextCursor)
+    const tail = remaining > 0
+      ? `\n\nبقي نحو ${arabicCountPhrase(Math.ceil(remaining / 90), PASSAGE_AFTER_PREPOSITION_FORMS, arabicNumber)}. قل لي «كمل» أكمل، أو «المصدر» أعطيك الرابط.`
+      : `\n\nوبهذا اكتمل النص عندي. الصفحة الكاملة:\n${current.url}`
+    return {
+      kind: 'reply', reason: 'continue-reading', intent,
+      reply: signReply(`*${current.title}* — تكملة\n\n${verbatim(chunk)}${remaining > 0 ? '…' : ''}${tail}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: nextCursor, readCursorItemId: current.id },
+    }
+  }
+  if ([INTENTS.SOURCE_PROOF, INTENTS.READ_ARTICLE, INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA, INTENTS.LISTEN_DIALOGUE].includes(intent)) {
+    if (!current) return { kind: 'reply', reason: 'context-missing', intent, reply: signReply(clarifyText(messages, conversation), messages) }
+    const listenIntents = [INTENTS.LISTEN_FAHED, INTENTS.LISTEN_NOURA, INTENTS.LISTEN_DIALOGUE]
+    const hasReading = Boolean(current.audio?.fahed || current.audio?.noura)
+    const hasDialogue = Boolean(current.audio?.dialogue)
+    const audioLine = listenIntents.includes(intent)
+      ? (hasReading || hasDialogue
+        ? `\n\n${hasDialogue && !hasReading ? 'الحوار المسموع منشور' : 'القراءة الصوتية منشورة'} في صفحة المادة — افتح الرابط والمشغّل أعلى الصفحة مباشرة.`
+        : '\n\nهذه المادة لم تصدر لها نسخة صوتية بعد؛ النص كامل في الصفحة.')
+      : ''
+    /* ترقية ٤ — الصوت داخل واتساب: من طلب الاستماع يستحق أن يسمع في مكانه،
+       لا أن يُدفع إلى المتصفح. الملف يُرسَل خلف الرد النصي كأمرٍ مستقل، فإن
+       تعذّر بقي الرابط في يده ولم يخسر شيئاً. */
+    const audioFile = listenIntents.includes(intent)
+      ? (intent === INTENTS.LISTEN_DIALOGUE ? current.audio?.files?.dialogue
+        : intent === INTENTS.LISTEN_NOURA ? current.audio?.files?.noura
+          : current.audio?.files?.fahed) || current.audio?.files?.fahed || current.audio?.files?.dialogue || current.audio?.files?.noura || ''
+      : ''
+    return {
+      kind: 'reply', reason: 'context-source', intent,
+      reply: signReply(`هذا رابط ${itemLabel(current)} في موقع الدكتور:\n\n*${current.title}*\n${current.url}${audioLine}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      ...(AUDIO_IN_CHAT && audioFile ? { audioAttachment: { url: audioFile, title: bounded(current.title, 120) } } : {}),
+    }
+  }
+  if ([INTENTS.MORE_LIKE_THIS, INTENTS.SIMILAR_CONTENT].includes(intent)) {
+    const topic = bounded(conversation.lastTopic, 500) || current?.title || text
+    const found = exactSiteResults(topic, topic, { excludeIds: previousIds, limit: 3 })
+    if (found.length) return {
+      kind: 'reply', reason: 'more-like-this', intent, reply: signReply(siteResultReply(found, 'أكيد، هذه مواد ثانية قريبة من الفكرة:'), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: topic,
+    }
+    return { kind: 'reply', reason: 'no-more-results', intent, reply: signReply('خلصت المواد الأقرب لهذه الفكرة عندي. اكتب موضوعاً جديداً وأفتح لك مساراً مختلفاً.', messages) }
+  }
+  const contextItems = conversationContextItems(conversation)
+  if ((intent === INTENTS.CONTEXT_REFERENCE || (intent === INTENTS.CHALLENGE_ANSWER && contextItems.length)) && contextItems.length) {
+    const items = contextItems
+    const request = classification.request || {}
+    let index = Number(conversation.contextIndex || 0)
+    const numericPick = intent === INTENTS.CHALLENGE_ANSWER ? Number(clean.replace(/[^0-9]/g, '')) : 0
+    if (Number.isInteger(request.ordinal) && request.ordinal > 0) index = request.ordinal - 1
+    else if (numericPick > 0) index = numericPick - 1
+    else if (request.reference === 'next') index += 1
+    else if (request.reference === 'previous') index -= 1
+    index = Math.max(0, Math.min(items.length - 1, index))
+    const item = items[index]
+    return { kind: 'reply', reason: 'context-reference', intent, reply: signReply(excerptReply(item), messages), evidence: [item.id], contextItemIds: conversation.contextItemIds, contextIndex: index }
+  }
+
+  /* ── إشارةٌ إلى «الحالي» ولا حاضرَ في المجلس ──
+     «قائمة المقالات» و«عطني المقالات» و«وين ألقى المقالات» تُقرأ كلها إشارةً
+     إلى المادة الحالية (reference: current)، فإذا لم تكن هناك مادةٌ حاضرة
+     سقطت إلى «ما لقيت مادة» أو إلى استيضاحٍ يسأل الرجلَ عمّا قاله للتوّ.
+     والنوع مذكورٌ في طلبه صراحةً (مقالات · كتب · أبحاث)، فيُعطى أحدثَ ما فيه
+     بدل أن يُردّ خالياً. */
+  if (intent === INTENTS.CONTEXT_REFERENCE && !contextItems.length) {
+    const referenceKind = classification.request?.kind
+    const referenceItems = referenceKind ? latestSiteItems([referenceKind], 3) : []
+    if (referenceItems.length) return {
+      kind: 'reply', reason: 'kind-listing', intent,
+      reply: signReply(siteResultReply(referenceItems, 'هذه أحدث المواد المنشورة من هذا النوع:'), messages),
+      evidence: referenceItems.map((item) => item.id),
+      contextItemIds: referenceItems.map((item) => item.id), contextIndex: 0, lastTopic: referenceItems[0].title,
+    }
+  }
+
+  /* «عطني ٤ مقالات» — عددٌ ونوعٌ صريحان يستحقان قائمة، لا استيضاحاً. */
+  const countedKind = clean.match(/(?:عطني|اعطني|ابي|اريد|ابغي|ورني|وريني|اعرض|هات)\s+(\d{1,2})\s*(مقالات|مقاله|مقال|ابحاث|بحوث|بحث|كتب|كتاب|بودكاست|حلقات|مختارات)/)
+  if (countedKind) {
+    const kindMap = { مقالات: 'article', مقاله: 'article', مقال: 'article', ابحاث: 'paper', بحوث: 'paper', بحث: 'paper', كتب: 'book', كتاب: 'book', بودكاست: 'podcast', حلقات: 'podcast', مختارات: 'curated' }
+    const count = Math.max(1, Math.min(5, Number(countedKind[1]) || 3))
+    const found = latestSiteItems([kindMap[countedKind[2]] || 'article'], count)
+    if (found.length) return {
+      kind: 'reply', reason: 'latest-content', intent,
+      reply: signReply(siteResultReply(found, found.length > 1 ? 'هذه أحدث المواد المنشورة:' : `هذا أحدث ${itemLabel(found[0])} منشور:`), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
+    }
+  }
+
+  const latestKinds = intentKinds(intent)
+  if (latestKinds.length || [INTENTS.LATEST_CONTENT, INTENTS.MISSED_CONTENT].includes(intent)) {
+    const requested = requestedListCount(clean)
+    const count = requested || ([INTENTS.LATEST_ARTICLES, INTENTS.MISSED_CONTENT].includes(intent) ? 3 : 1)
+    const found = latestSiteItems(latestKinds, count)
+    if (found.length) return {
+      kind: 'reply', reason: 'latest-content', intent,
+      reply: signReply(siteResultReply(found, count > 1 ? 'هذه أحدث المواد المنشورة:' : `هذا أحدث ${itemLabel(found[0])} منشور:`), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
+    }
+  }
+  if ([INTENTS.SURPRISE_ME, INTENTS.CONTENT_BY_MOOD, INTENTS.CURATED_PICKS].includes(intent)) {
+    const pool = siteIndex().filter((item) => !previousIds.includes(item.id) && ['article', 'curated', 'podcast'].includes(item.kind))
+    const signature = Number.parseInt(hash(`${conversation.lastInboundAt || ''}:${text}:${previousIds.join('|')}`).slice(0, 8), 16)
+    /* «فاجئني» على مقاس القارئ: من تراكم اهتمامه عبر الجلسات نختار له من
+       داخل اهتمامه أولاً — ومن لا ذاكرة له يبقى الاختيار كما كان. */
+    const interests = readerInterests(conversation, 2)
+    const tailored = interests.length
+      ? pool.filter((item) => scoreContent(item, interests).matched > 0)
+      : []
+    const source = tailored.length ? tailored : pool
+    const intro = tailored.length
+      ? `اخترتها لك من داخل ما تتابعه (${interests.join(' · ')}):`
+      : 'اخترت لك هذه؛ فيها فكرة تستحق الوقوف عندها:'
+    const found = source.length ? [source[signature % source.length]] : latestSiteItems([], 1)
+    if (found.length) return {
+      kind: 'reply', reason: 'surprise', intent, reply: signReply(siteResultReply(found, intro), messages),
+      evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
+    }
+  }
+
+  const query = classification.request?.topic || text
+  const kinds = classification.request?.kind
+    ? [classification.request.kind === 'research' ? 'paper' : classification.request.kind]
+    : []
+  /* ترقية ٣: شرطا النوع والزمن يُقرآن من نص السؤال نفسه ويُطبَّقان مرشِّحَين. */
+  const filters = parseCompoundFilters(text)
+  const filterLabel = describeCompoundFilters(filters)
+
+  /* ─── طلبان في نفَسٍ واحد ───
+     يُجرَّب قبل البحث الواحد، ولا يُعتمد إلا إذا أثمر الطرفان معاً مادةً
+     منشورة — وإلا فالجملة واحدةٌ كما وردت، بلا تقطيعٍ يشوّه المعنى. */
+  const compoundAsks = splitCompoundAsks(text)
+  if (compoundAsks) {
+    const answered = compoundAsks.map((ask) => ({ ask, items: exactSiteResults(ask, ask, { limit: 2 }) }))
+    if (answered.every((row) => row.items.length)) {
+      const blocks = answered.map(({ ask, items }) => `*${ask}:*\n${items.map((item) => `• ${item.title}\n${item.url}`).join('\n')}`)
+      const all = answered.flatMap((row) => row.items)
+      return {
+        kind: 'reply', reason: 'compound-two-asks', intent,
+        reply: signReply(`فهمت منك طلبين، وهذا جواب كلٍّ منهما من منشور الدكتور:\n\n${blocks.join('\n\n')}`, messages),
+        evidence: all.map((item) => item.id),
+        contextItemIds: all.map((item) => item.id).slice(0, 12), contextIndex: 0, lastTopic: compoundAsks.join(' و'),
+        ...(interestPatch(conversation, `${compoundAsks[0]} ${compoundAsks[1]}`) ? { patch: interestPatch(conversation, `${compoundAsks[0]} ${compoundAsks[1]}`) } : {}),
+      }
+    }
+  }
+
+  /* ما علّمتَه إيّاه: صياغةٌ أخطأ فيها من قبل، وأسندتَها أنت إلى موضوع.
+     تُقرأ قبل التخمين الأعمى — فالخطأ الذي صُحّح مرّةً لا يتكرّر. */
+  const taught = classification.fallback || intent === INTENTS.UNKNOWN ? taughtQueryFor(clean) : ''
+  if (taught) {
+    const learnedRows = scoredSiteResults(taught, { limit: 3 })
+    if (learnedRows.length) {
+      const learned = learnedRows.map((row) => row.item)
+      return {
+        kind: 'reply', reason: 'taught-phrase', intent,
+        reply: signReply(siteResultReply(learned, 'فهمتها من تصحيح الدكتور لي سابقاً — وهذا ما عنده فيها:'), messages),
+        evidence: learned.map((item) => item.id),
+        contextItemIds: learned.map((item) => item.id), contextIndex: 0, lastTopic: taught,
+      }
+    }
+  }
+
+  /* ترتيبٌ على مقاس من يسأل: الباحث تُقدَّم له الورقة المحكّمة، وولي الأمر
+     المقال. الترتيب وحده يتغيّر — لا المحتوى ولا الصدق ولا ما هو منشور. */
+  const readerKind = readerKindOf(conversation)
+  const readerOrder = kinds.length ? [] : kindsForReader(readerKind)
+  /* **ترتيبٌ لا ترشيح، وأفضلُ مطابقةٍ لا تُزاح.**
+     لو رشّحنا بالنوع لأخفينا عن الباحث مقالاً يفيده. ولو اكتفينا بترتيب
+     الثلاثة الأولى لما رأى الباحثُ ورقةً محكّمةً جاءت رابعةً في الدرجات.
+     فنوسّع النظر إلى خمسةٍ، ونُثبّت أعلى مطابقةٍ في مكانها مهما كان نوعها
+     (فالصلة أصدق من الصفة)، ثم نرتّب البقيّة على مقاسه ونأخذ ثلاثة. */
+  const rows = scoredSiteResults(query, { kinds, limit: readerOrder.length ? 5 : 3, filters })
+  const orderedRows = readerOrder.length && rows.length > 1
+    ? [rows[0], ...rows.slice(1)
+      .map((row, index) => ({ row, index }))
+      .sort((a, b) => {
+        const rank = (item) => { const i = readerOrder.indexOf(item.kind); return i === -1 ? readerOrder.length : i }
+        return rank(a.row.item) - rank(b.row.item) || a.index - b.index
+      })
+      .map((entry) => entry.row)]
+    : rows
+  let found = orderedRows.slice(0, 3).map((row) => row.item)
+
+  /* ═══ المعنى قبل اللفظ ═══
+     «تقييم الطلاب بلا درجات» لا تطابق «التقويم التربوي» حرفاً، وهما الشيء
+     نفسه عند الدكتور. نردّ لفظ السائل إلى مفهومه من معجمه (٢٩٠ مفهوماً و١٣٢٢
+     اسماً) ونبحث بأسماء المفهوم كلها. **زيادةُ إدراكٍ لا استبدال**: لا نُشغّله
+     إلا حين يقصُر البحث الحرفي، ولا نُزيح ما وجده — فما كان يعمل يبقى كما هو،
+     وما كان يسقط صار يُدرَك. */
+  const conceptHit = conceptQueryFor(query)
+  let conceptUsed = false
+  if (conceptHit) {
+    const conceptRows = scoredSiteResults(conceptHit.query, { kinds, limit: 5, filters })
+    const literalBest = orderedRows[0]?.norm || 0
+    const conceptBest = conceptRows[0]?.norm || 0
+    /* ثلاث حالاتٍ فقط يتدخّل فيها المفهوم — وفي غيرها يبقى البحث الحرفي كما
+       هو، فما كان يعمل لا يُمسّ:
+       (١) لم يجد اللفظُ شيئاً       → إنقاذٌ كامل
+       (٢) وجد أقلّ من ثلاث        → إكمالٌ بلا إزاحة
+       (٣) وجد، والمفهوم أوضح منه بفارقٍ بيّن (≥١٫٢٥×) → إعادة ترتيبٍ بالنسبة */
+    if (!found.length && conceptRows.length) {
+      conceptUsed = true
+      found = conceptRows.slice(0, 3).map((row) => row.item)
+    } else if (found.length < 3 && conceptRows.length) {
+      const known = new Set(found.map((item) => item.id))
+      found = [...found, ...conceptRows.map((row) => row.item).filter((item) => !known.has(item.id))].slice(0, 3)
+    } else if (conceptBest >= literalBest * 1.25 && conceptRows.length) {
+      const merged = new Map()
+      for (const row of [...orderedRows, ...conceptRows]) {
+        const previous = merged.get(row.item.id)
+        if (!previous || row.norm > previous.norm) merged.set(row.item.id, row)
+      }
+      const reranked = [...merged.values()].sort((a, b) => b.norm - a.norm).slice(0, 3)
+      /* لا نُعلن «فهمت مقصدك» إلا إذا غيّر المفهومُ الصدارة فعلاً. */
+      conceptUsed = reranked[0]?.item?.id !== found[0]?.id
+      found = reranked.map((row) => row.item)
+    }
+  }
+
+  /* ═══ من سأل بالإنجليزية ═══
+     المعجم يعرف المصطلحات المركّبة («artificial intelligence» · «e-learning»)
+     ولا يعرف كلام الناس اليومي: من كتب «what do you have about education»
+     أو «cheating in exams» عاد إليه «ما لقيت مادة» ومعه أقربُ العناوين —
+     وهي عناوين لا صلة لها بسؤاله. وللموقع مرآةٌ إنجليزية منشورة، فمن خاطبه
+     بالإنجليزية ليس غريباً عنه. هذا جسرٌ يدويٌّ مجاني (لا خدمة ترجمة ولا
+     مفتاح): ألفاظ الميدان وحده، ويعمل **بعد** أن يقصُر اللفظ والمفهوم معاً،
+     فلا يُزيح نتيجةً صحيحة أبداً. */
+  if (found.length < 3) {
+    const bridged = englishTopicQuery(clean)
+    if (bridged) {
+      const bridgedRows = scoredSiteResults(bridged, { kinds, limit: 5, filters })
+      if (bridgedRows.length) {
+        const known = new Set(found.map((item) => item.id))
+        const additions = bridgedRows.map((row) => row.item).filter((item) => !known.has(item.id))
+        if (!found.length) conceptUsed = false
+        found = [...found, ...additions].slice(0, 3)
+      }
+    }
+  }
+
+  /* سؤال المعنى يُجاب بالمعنى — من معجم الدكتور نفسه (٢٩٠ مفهوماً بمعانيها)،
+     لا بأقرب مقالٍ صامتٍ عن التعريف. والقيد أن يُطلب المعنى صراحةً، فلا
+     يُقحَم التعريف على من سأل عن مادة. نفس التصريف في الوكيل المقيم. */
+  const definitionHit = conceptDefinition(query)
+  if (definitionHit) {
+    const definitionRows = found.slice(0, 2)
+    const tail = definitionRows.length
+      ? `\n\nوله في هذا من الموقع:\n${definitionRows.map((item) => `• *${item.title}*\n  ${item.url}`).join('\n')}`
+      : ''
+    return {
+      kind: 'reply', reason: 'concept-definition', intent,
+      reply: signReply(`من معجم الدكتور:\n${definitionHit.text}${tail}`, messages),
+      evidence: definitionRows.map((item) => item.id),
+      contextItemIds: definitionRows.map((item) => item.id), contextIndex: 0, lastTopic: query,
+    }
+  }
+
+  /* ─── الشكّ يُسأل عنه، ولا يُخمَّن ───
+     كلمةٌ واحدة تخميناً + مرشَّحان متقاربان = سؤالٌ واحد. والجواب بـ«الأولى»
+     أو «الثانية» يمشي على مسار التنقّل المثبت (لا برقمٍ مجرّد، فالرقم
+     المفرد لغةُ التحدّي في هذه المحادثة). */
+  const rivals = ambiguousRivals(rows, query, Boolean(classification.fallback))
+  if (rivals) {
+    return {
+      kind: 'reply', reason: 'doubt-clarify', intent,
+      reply: signReply(`كلمتك تحتمل وجهين عند الدكتور، وما أحب أخمّن عليك:\n\n١) *${rivals[0].title}*\n٢) *${rivals[1].title}*\n\nأيّهما تقصد؟ قل «الأولى» أو «الثانية»، أو وضّح بكلمةٍ ثانية.`, messages),
+      evidence: rivals.map((item) => item.id),
+      contextItemIds: rivals.map((item) => item.id), contextIndex: 0, lastTopic: query,
+    }
+  }
+
+  if (found.length) {
+    const offer = found.length === 1 ? initiativeLine(conversation, found[0], previousIds) : ''
+    const signal = readerKindSignal(clean)
+    const patch = {
+      ...(interestPatch(conversation, query) || {}),
+      ...(offer ? { lastInitiativeAt: asIso() } : {}),
+      /* إشاراتٌ لا أحكام: نجمع ما يقوله عن نفسه ضمناً، ولا نصنّفه إلا بإشارتين.
+         مصفوفة محدودة السقف — كذاكرة الاهتمام، ولنفس سبب `merge:true`. */
+      ...(signal ? { readerSignals: [...(Array.isArray(conversation.readerSignals) ? conversation.readerSignals : []), signal].slice(-12) } : {}),
+    }
+    /* حين يكون الإدراكُ من المفهوم لا من اللفظ، نُصرّح به: هذه أمانةٌ مع
+       السائل (عرفتُ مقصدك لا لفظك)، وهي أيضاً أجملُ ما في الردّ. */
+    const intro = filterLabel
+      ? `فهمت شرطك (${filterLabel}). هذا ما يطابقه من موقع الدكتور:`
+      : conceptUsed && conceptHit
+        ? `فهمت أنك تقصد «${conceptHit.concept.canonicalAr}» — وهذا ما كتبه الدكتور فيه:`
+        : undefined
+    /* اللقاء الذي قيلت فيه الكلمة يستحق ثانيته: نضيف الموضع ورابطاً يفتح عليه،
+       فيصل السائل إلى الجملة بدل أن يمسح عشرين دقيقة بحثاً عنها. */
+    const spokenMoments = found
+      .filter((item) => item.kind === 'media')
+      .map((item) => ({ item, moment: mediaMomentFor(item.slug, query) }))
+      .filter((row) => row.moment)
+      .slice(0, 2)
+    const momentsTail = spokenMoments.length
+      ? `\nوقيلت فيها هنا:\n${spokenMoments.map((row) => `• *${row.item.title}* — نحو الدقيقة ${row.moment.stamp}\n  ${row.item.url}?t=${row.moment.seconds}`).join('\n')}`
+      : ''
+    return {
+      kind: 'reply', reason: conceptUsed ? 'concept-search' : classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
+      reply: signReply(`${siteResultReply(found, intro, momentsTail)}${offer}`, messages),
+      evidence: found.map((item) => item.id),
+      contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: query,
+      ...(Object.keys(patch).length ? { patch } : {}),
+    }
+  }
+  /* الشرط مفهوم لكن لا مادة تطابقه: نصارح بالشرط ونعرض ما يطابق الموضوع
+     وحده — أصدق من الصمت، وأنظف من تقديم مادةٍ تخالف شرطه بلا تنبيه. */
+  if (filters.active) {
+    const withoutFilters = exactSiteResults(query, '', { kinds, limit: 3 })
+    if (withoutFilters.length) return {
+      kind: 'reply', reason: 'compound-filter-empty', intent,
+      reply: signReply(siteResultReply(withoutFilters, `ما عندي مادة تجمع شرطك كاملاً (${filterLabel}). هذا أقرب ما نشره الدكتور في الموضوع نفسه:`), messages),
+      evidence: withoutFilters.map((item) => item.id),
+      contextItemIds: withoutFilters.map((item) => item.id), contextIndex: 0, lastTopic: query,
+    }
+  }
+
+  const asksQuestion = /[؟?]\s*$|(?:^|\s)(?:شنو|وش|ايش|كيف|متى|وين|هل|ليش|منو|كم|شلون|عطني|اعطني|ورني|ابي|ابغى|ودي|ممكن)(?:\s|$)/.test(clean)
+  if (asksQuestion) {
+    return { kind: 'reply', reason: 'active-clarify', intent, reply: signReply(clarifyText(messages, conversation), messages), priorReplyHash }
+  }
+  /* لا مطابقة دقيقة: نعرض الأقرب بعتبة متساهلة، فإن غاب فأبواب الأرشيف الحقيقية. */
+  const near = nearestSuggestions(query, previousIds, 3)
+  if (near.length) {
+    const lines = near.map((item, index) => `${arabicNumber(index + 1)}) *${item.title}*\n${item.url}`)
+    return {
+      kind: 'reply', reason: 'near-suggestions', intent,
+      reply: signReply(`${messages.noMatch || 'ما لقيت مادة منشورة مطابقة الآن.'}\n\nلكن هذه أقرب المواد المنشورة لفكرتك — جرّب كلمة أقرب للموضوع إن لم تصب:\n\n${lines.join('\n\n')}`, messages),
+      evidence: near.map((item) => item.id), contextItemIds: near.map((item) => item.id), contextIndex: 0,
+      priorReplyHash,
+    }
+  }
+  const doors = archiveDoors(4)
+  const doorsLine = doors.length ? `\n\n${messages.doorsPrefix || 'أبواب الأرشيف الحاضرة: '}${doors.join(' · ')}` : ''
+  return {
+    kind: 'reply',
+    reason: 'no-grounded-answer',
+    intent,
+    reply: signReply(`${noMatchText(messages)}${doorsLine}`, messages),
+    priorReplyHash,
+  }
+}
+
+function safeEqualSecret(actual, expected) {
+  const left = Buffer.from(String(actual || ''))
+  const right = Buffer.from(String(expected || ''))
+  if (!left.length || !right.length || left.length !== right.length) return false
+  return timingSafeEqual(left, right)
+}
+
+async function readJson(req, limit = MAX_BODY_BYTES) {
+  const chunks = []
+  let size = 0
+  for await (const chunk of req) {
+    size += chunk.length
+    if (size > limit) throw Object.assign(new Error('Payload too large'), { status: 413 })
+    chunks.push(chunk)
+  }
+  if (!chunks.length) return {}
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+  } catch {
+    throw Object.assign(new Error('Invalid JSON'), { status: 400 })
+  }
+}
+
+function sendJson(res, status, body) {
+  const data = Buffer.from(JSON.stringify(body))
+  res.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': data.length,
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+  })
+  res.end(data)
+}
+
+function serializeDoc(snapshot) {
+  return snapshot?.exists ? { id: snapshot.id, ...(snapshot.data() || {}) } : null
+}
+
+function normalizeAudienceDigits(value) {
+  let digits = String(value || '')
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+    .replace(/\D/g, '')
+    .replace(/^00+/, '')
+  if (digits.length === 8) digits = `965${digits}`
+  return /^\d{10,15}$/.test(digits) ? digits : ''
+}
+
+function audienceJid(value) {
+  const digits = normalizeAudienceDigits(String(value || '').split('@', 1)[0])
+  return digits ? `${digits}@c.us` : ''
+}
+
+function audienceContactId(jid) {
+  return hash(`audience:${audienceJid(jid)}`).slice(0, 32)
+}
+
+function normalizeAudienceSearch(value) {
+  return normalizeArabicMessage(value).replace(/\s+/g, ' ').trim()
+}
+
+function cleanAudienceName(value = '') {
+  const raw = bounded(value, 120).replace(/[‎‏]/g, '').replace(/\s+/g, ' ').trim()
+  if (!raw) return ''
+  // أسماء WhatsApp المزامنة قد تحتوي معرفاً تقنياً أو صفراً أو JID. لا نمسح
+  // القيمة الأصلية من Firestore؛ نخفيها فقط من العرض حتى لا تتشوّه القوائم.
+  if (/^(?:0+|undefined|null|unknown|none|blank)$/i.test(raw)) return ''
+  if (/@(?:c\.us|s\.whatsapp\.net)$/i.test(raw) || /^BLINK@/i.test(raw)) return ''
+  if (/^[+\d٠-٩۰-۹ .()_-]{5,}$/.test(raw)) return ''
+  return raw
+}
+
+function audienceDisplayName(row = {}) {
+  return cleanAudienceName(row.nickname)
+    || cleanAudienceName(row.waName)
+    || cleanAudienceName(row.displayName)
+    || `••${bounded(row.tail, 4)}`
+}
+
+function audienceVocative(row = {}) {
+  const raw = audienceDisplayName(row).replace(/[‎‏]/g, '').replace(/\s+/g, ' ').trim()
+  if (!raw || /^••\d{4}$/.test(raw)) return ''
+  const title = raw.match(/^(?:(?:د|أ|ا|م)\s*\.|الدكتور(?:ة)?|دكتور(?:ة)?|الأستاذ(?:ة)?|استاذ(?:ة)?|الشيخ(?:ة)?)\s*/u)?.[0] || ''
+  const rest = raw.slice(title.length).trim()
+  const words = rest.split(/\s+/).filter(Boolean)
+  const compound = /^(?:عبد|عبدال|أبو|ابو|أبا|ابا|أم|ام|ابن|بن|ذو|أبي|ابي|بو)$/u.test(words[0] || '')
+  const first = compound && words[1] ? `${words[0]} ${words[1]}` : words[0] || ''
+  return [title.trim(), first].filter(Boolean).join(' ')
+}
+
+/* لوحة غرفة البث تعِد نصاً: «{الأخ} تصير الأخ خالد أو الأخت مريم أو السادة في
+   مركز أعيان للتدريب، و{عزيزي} تتصرف كذلك» — وكان المحرك يعرف {الاسم} وحدها،
+   فوصلت الناسَ الأقواسُ حرفيةً (لقطة ٣١ يوليو: «test test {عزيزي}»). التصريف
+   هنا يفي بالوعد كاملاً، ومن لا نعرف اسمه تصله الصيغة المحايدة بلا فراغ. */
+/* حدود الكلمة تحمي من فخٍّ حقيقي التقطته نسخة الوكيل المقيم: «مركزي خالد»
+   اسم شخصٍ لا جهة، وكان اللفظ الحرّ يبتلعه فيُنادى «الأعزاء في مركزي خالد».
+   نسمح بأداة التعريف وحرف الجر الملتصقين، ونشترط انتهاء الكلمة بعدها. */
+const AUDIENCE_ENTITY_HINT = /(?:^|\s|ب|ل)(?:ال)?(?:مركز|مؤسسة|شركة|معهد|جمعية|فريق|إدارة|مدرسة|جامعة|كلية|قسم|مكتب|ديوان|أكاديمية|مجموعة|لجنة|نادي|وزارة|هيئة|منصة|مبرة|رابطة)(?=\s|$|ة\s|ة$)/u
+const AUDIENCE_FEMALE_NAMES = new Set([
+  'مريم', 'فاطمة', 'نورة', 'نوره', 'سارة', 'ساره', 'عائشة', 'خديجة', 'أمل', 'هند', 'لطيفة', 'منيرة',
+  'شيخة', 'بدرية', 'عبير', 'أسماء', 'زينب', 'حصة', 'دلال', 'منى', 'هدى', 'نوف', 'ريم', 'غدير',
+  'عهود', 'شهد', 'جواهر', 'عذاري', 'طيبة', 'إيمان', 'ايمان', 'أفراح', 'بشاير', 'دانة', 'دانه',
+  'لولوة', 'لولوه', 'أنفال', 'انفال', 'رتاج', 'غلا', 'وضحة', 'موضي', 'سعاد', 'نجاة', 'كوثر',
+  'رقية', 'صفية', 'حفصة', 'سمية', 'ليلى', 'سلمى', 'جميلة', 'كريمة', 'نادية', 'سميرة', 'فوزية',
+])
+const AUDIENCE_MALE_TA_NAMES = new Set(['حمزة', 'أسامة', 'اسامة', 'معاوية', 'عبادة', 'عطية', 'طلحة', 'عبيدة', 'عقبة', 'قتادة', 'حذيفة', 'زكريا'])
+function audienceGender(vocative) {
+  const clean = String(vocative || '').trim()
+  /* الألقاب كانت لا تُقرأ أبداً لنفس علّة `\b` مع العربية، فتُصرَّف مخاطبةُ
+     «الدكتورة سارة» بصيغة المذكّر حتى يلتقطها فحصُ الاسم بعدها — وقد لا يلتقطه. */
+  if (/^(?:الدكتورة|دكتورة|الأستاذة|استاذة|الأستاذه|الشيخة|أم|ام)(?:\s|$)/u.test(clean)) return 'female'
+  if (/^(?:أبو|ابو|بن|ابن)(?:\s|$)/u.test(clean)) return 'male'
+  const first = clean.replace(/^(?:(?:د|أ|ا|م)\s*\.|الدكتور|دكتور|الأستاذ|استاذ|الشيخ)\s*/u, '').split(/\s+/)[0] || ''
+  if (AUDIENCE_FEMALE_NAMES.has(first)) return 'female'
+  if (/[ةه]$/u.test(first) && first.length >= 4 && !AUDIENCE_MALE_TA_NAMES.has(first)) return 'female'
+  return 'male'
+}
+function audienceVocativeForms(contact) {
+  const fullName = audienceDisplayName(contact)
+  const nameless = !fullName || /^••\d{0,4}$/.test(fullName)
+  /* «الأعزاء في د. عبد اللطيف الهيئة العامة للشباب» (لقطة الدكتور): الاسم
+     المحفوظ إنسانٌ أُلحقت به جهته، وكان يكفي ظهورُ لفظ «الهيئة» في أي موضع
+     ليُحسب الاسمُ كلّه جهةً. الشخص يسبق الجهة: من بدأ اسمه بلقبٍ إنساني
+     (د./الأستاذ/الشيخ…) يُنادى باسمه الأول مهما لحقته جهة. */
+  const personTitled = /^(?:(?:د|أ|ا|م)\s*\.|الدكتور(?:ة)?|دكتور(?:ة)?|الأستاذ(?:ة)?|استاذ(?:ة)?|الشيخ(?:ة)?)\s*\S/u.test(String(fullName || '').trim())
+  if (!nameless && !personTitled && AUDIENCE_ENTITY_HINT.test(fullName)) {
+    return { name: fullName, dear: `الأعزاء في ${fullName}`, brother: `السادة في ${fullName}` }
+  }
+  const vocative = audienceVocative(contact)
+  if (nameless || !vocative) return { name: '', dear: 'عزيزي', brother: 'أخي الكريم' }
+  return audienceGender(vocative) === 'female'
+    ? { name: vocative, dear: `عزيزتي ${vocative}`, brother: `الأخت ${vocative}` }
+    : { name: vocative, dear: `عزيزي ${vocative}`, brother: `الأخ ${vocative}` }
+}
+
+function personalizeAudienceText(text, contact, at = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric', hour12: false, timeZone: 'Asia/Kuwait',
+  }).format(at))
+  const forms = audienceVocativeForms(contact)
+  return bounded(text, 4_000)
+    .replace(/\{تحية\}/g, hour < 12 ? 'صباح الخير' : 'مساء الخير')
+    .replace(/\{ترحيب\}/g, 'أهلاً')
+    .replace(/\{عزيزي\}/g, forms.dear)
+    .replace(/\{الأخ\}/g, forms.brother)
+    .replace(/\{الاسم\}/g, forms.name)
+    .replace(/\{[^{}\n]{1,24}\}/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+([،,.؛:!?؟])/g, '$1')
+    .replace(/^[ \t]*[،,؛:]\s*$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function parseAudienceImport(text) {
+  const source = String(text || '').slice(0, MAX_BODY_BYTES)
+    .replace(/\r\n[ \t]/g, '')
+    .replace(/\n[ \t]/g, '')
+    .replace(/^(PHOTO|LOGO|SOUND|KEY)[^:]*:.*$/gim, '')
+  const rows = []
+  if (/BEGIN:VCARD/i.test(source)) {
+    for (const card of source.split(/BEGIN:VCARD/i).slice(1)) {
+      const name = bounded(/^FN(?:;[^:]*)?:(.*)$/im.exec(card)?.[1], 120)
+      const numbers = [...card.matchAll(/^TEL(?:;[^:]*)?:(.*)$/gim)]
+      for (const match of numbers) rows.push({ name, phone: match[1] })
+    }
+  } else {
+    for (const line of source.split(/\r?\n/).filter((item) => item.trim())) {
+      const phoneMatch = line.match(/(?:\+|00)?[\d٠-٩۰-۹][\d٠-٩۰-۹\s().-]{6,}[\d٠-٩۰-۹]/)
+      if (!phoneMatch) {
+        rows.push({ name: '', phone: '' })
+        continue
+      }
+      const name = bounded(line.replace(phoneMatch[0], '').replace(/^[\s,،;:|\-–—]+|[\s,،;:|\-–—]+$/g, ''), 120)
+      rows.push({ name, phone: phoneMatch[0] })
+    }
+  }
+  return rows
+}
+
+async function getAudienceContactsByIds(db, ids) {
+  const unique = [...new Set(ids.filter(Boolean))]
+  const contacts = []
+  for (let offset = 0; offset < unique.length; offset += 250) {
+    const refs = unique.slice(offset, offset + 250)
+      .map((id) => db.collection(COLLECTIONS.audienceContacts).doc(id))
+    if (!refs.length) continue
+    const snapshots = await db.getAll(...refs)
+    contacts.push(...snapshots.map(serializeDoc).filter(Boolean))
+  }
+  return contacts
+}
+
+async function listAudienceMembers(db, listId) {
+  const memberships = await db.collection(COLLECTIONS.audienceMembers)
+    .where('listId', '==', bounded(listId, 100)).limit(5_000).get()
+  const contacts = await getAudienceContactsByIds(db, memberships.docs.map((doc) => doc.data()?.contactId))
+  return contacts.sort((left, right) => audienceDisplayName(left).localeCompare(audienceDisplayName(right), 'ar'))
+}
+
+export function isStaleBridgeState(current = {}, incomingInstanceId = '', incomingSeq = null) {
+  const currentSeq = Number(current?.stateSeq)
+  const nextSeq = Number(incomingSeq)
+  return Boolean(
+    incomingInstanceId
+    && current?.instanceId === incomingInstanceId
+    && Number.isSafeInteger(currentSeq)
+    && Number.isSafeInteger(nextSeq)
+    && nextSeq >= 0
+    && nextSeq < currentSeq
+  )
+}
+
+export function isStaleInboundMessage({ timestamp = 0, bridgeReadyAt = '', bridgeStartedAt = '', graceMs = 1_500, now = Date.now() } = {}) {
+  const raw = Number(timestamp)
+  if (!Number.isFinite(raw) || raw <= 0) return false
+  const messageAt = raw < 10_000_000_000 ? raw * 1_000 : raw
+  const readyAt = Date.parse(bridgeReadyAt || '')
+  const startedAt = Date.parse(bridgeStartedAt || '')
+  const boundary = Number.isFinite(readyAt) ? readyAt : startedAt
+  if (!Number.isFinite(boundary)) return false
+  // cutover حازم: الرسالة التي وصلت قبل جاهزية العملية تخص فترة التوقف ولا
+  // يجوز أن توقظ البوت عند استعادة الجسر. السماح فقط بهامش 0–2 ثانية لدقة timestamp.
+  const safeGrace = Math.max(0, Math.min(2_000, Number(graceMs) || 0))
+  return messageAt < Math.min(boundary - safeGrace, Number(now) + safeGrace)
+}
+
+export function isInvalidBridgeRegression(current = {}, incomingInstanceId = '', nextStatus = '') {
+  if (!incomingInstanceId || current?.instanceId !== incomingInstanceId) return false
+  const currentStatus = bounded(current?.status, 40)
+  const incomingStatus = bounded(nextStatus, 40)
+  const progressed = current?.connected === true || ['syncing', 'authenticated', 'connected'].includes(currentStatus)
+  return progressed && (
+    ['starting', 'pairing'].includes(incomingStatus)
+    || (current?.connected === true && ['authenticated', 'syncing'].includes(incomingStatus))
+  )
+}
+
+function bridgeStatus(data = {}) {
+  const heartbeatAt = bounded(data.lastHeartbeatAt || data.updatedAt, 80)
+  const heartbeatTime = heartbeatAt ? Date.parse(heartbeatAt) : NaN
+  const heartbeatAgeMs = Number.isFinite(heartbeatTime) ? Math.max(0, Date.now() - heartbeatTime) : null
+  const bridgeOnline = Number.isFinite(heartbeatAgeMs) && heartbeatAgeMs <= BRIDGE_ONLINE_MS
+  const rawStatus = bounded(data.status, 40) || 'disconnected'
+  const lastError = bounded(data.lastError, 600) || null
+  const savedQr = bounded(data.qr, 8_000) || null
+  const savedQrImage = bounded(data.qrImage, 500_000) || null
+  const qrUpdatedAt = bounded(data.qrUpdatedAt || data.stateAt, 80) || null
+  const qrUpdatedTime = qrUpdatedAt ? Date.parse(qrUpdatedAt) : NaN
+  const qrAgeMs = Number.isFinite(qrUpdatedTime) ? Math.max(0, Date.now() - qrUpdatedTime) : null
+  const qrFresh = qrAgeMs == null || qrAgeMs <= QR_FRESH_MS
+  const connected = bridgeOnline && (data.connected === true || rawStatus === 'connected')
+  const hasQrPayload = Boolean(savedQr || savedQrImage)
+  const hasQr = bridgeOnline && !connected && rawStatus === 'pairing' && hasQrPayload && qrFresh
+  const staleQr = bridgeOnline && !connected && rawStatus === 'pairing' && hasQrPayload && !qrFresh
+  const normalizedStatus = !bridgeOnline
+    ? 'disconnected'
+    : connected
+      ? 'connected'
+      : hasQr
+        ? 'pairing'
+        : rawStatus
+  const syncing = bridgeOnline && !connected && normalizedStatus === 'syncing'
+  const finishing = bridgeOnline && !connected && ['authenticated', 'syncing'].includes(normalizedStatus)
+  const failed = normalizedStatus === 'error'
+  const syncPercent = Number(data.syncPercent || 0)
+  const lastRepairRequestedAt = bounded(data.lastRepairRequestedAt, 80) || null
+  const lastRepairTime = lastRepairRequestedAt ? Date.parse(lastRepairRequestedAt) : NaN
+  const repairBlockedUntil = Number.isFinite(lastRepairTime)
+    ? asIso(lastRepairTime + REPAIR_COOLDOWN_MS)
+    : null
+  const repairCooldownMs = repairBlockedUntil
+    ? Math.max(0, Date.parse(repairBlockedUntil) - Date.now())
+    : 0
+  const lastDeviceActivityPulseAt = bounded(data.lastDeviceActivityPulseAt, 80) || null
+  const lastDeviceActivityPulseTime = lastDeviceActivityPulseAt ? Date.parse(lastDeviceActivityPulseAt) : NaN
+  const deviceActivityPulseAgeMs = Number.isFinite(lastDeviceActivityPulseTime)
+    ? Math.max(0, Date.now() - lastDeviceActivityPulseTime)
+    : null
+  const configuredDeviceActivityPulseIntervalMs = Number(data.deviceActivityPulseIntervalMs)
+  const deviceActivityPulseIntervalMs = Math.max(
+    6 * 60 * 60_000,
+    Math.min(
+      7 * DEVICE_ACTIVITY_PULSE_MS,
+      Number.isFinite(configuredDeviceActivityPulseIntervalMs) ? configuredDeviceActivityPulseIntervalMs : DEVICE_ACTIVITY_PULSE_MS,
+    ),
+  )
+  const nextDeviceActivityPulseAt = Number.isFinite(lastDeviceActivityPulseTime)
+    ? asIso(lastDeviceActivityPulseTime + deviceActivityPulseIntervalMs)
+    : null
+  const nextDeviceActivityPulseInMs = nextDeviceActivityPulseAt
+    ? Math.max(0, Date.parse(nextDeviceActivityPulseAt) - Date.now())
+    : null
+  const lastDeviceActivityPulseError = bounded(data.lastDeviceActivityPulseError, 300) || null
+  const deviceActivityProtectionState = !connected || lastDeviceActivityPulseError || (deviceActivityPulseAgeMs != null && deviceActivityPulseAgeMs > DEVICE_ACTIVITY_WARNING_MS)
+    ? 'warning'
+    : lastDeviceActivityPulseAt
+      ? 'protected'
+      : 'pending'
+  return {
+    status: normalizedStatus,
+    bridgeOnline,
+    lastHeartbeatAt: heartbeatAt || null,
+    heartbeatAgeMs,
+    last_error: lastError,
+    device_name: bounded(data.deviceName, 120) || 'جسر واتساب المركزي',
+    bridgeVersion: bounded(data.version, 80) || null,
+    bridgeInstanceId: bounded(data.instanceId, 100) || null,
+    bridgeStateAt: bounded(data.stateAt, 80) || null,
+    lastCatchupAt: bounded(data.lastCatchupAt, 80) || null,
+    lastCatchupRecovered: Math.max(0, Number(data.lastCatchupRecovered || 0)),
+    lastCatchupError: bounded(data.lastCatchupError, 300) || null,
+    lastDeviceActivityPulseAt,
+    lastDeviceActivityPulseError,
+    deviceActivityPulseAgeMs,
+    deviceActivityPulseIntervalMs,
+    nextDeviceActivityPulseAt,
+    nextDeviceActivityPulseInMs,
+    deviceActivityProtection: {
+      state: deviceActivityProtectionState,
+      label: deviceActivityProtectionState === 'protected' ? 'الحماية تعمل' : deviceActivityProtectionState === 'pending' ? 'بانتظار أول نبضة' : 'تحتاج انتباهاً',
+      detail: lastDeviceActivityPulseError
+        ? `تعذّرت آخر نبضة: ${lastDeviceActivityPulseError}`
+        : deviceActivityProtectionState === 'protected'
+          ? 'الجسر يجدّد استخدام الجهاز تلقائياً من دون إرسال رسالة.'
+          : connected
+            ? 'الجلسة متصلة، وستُسجّل أول نبضة حماية تلقائياً.'
+            : 'يجب أن تتصل جلسة واتساب كي تعمل حماية الجهاز المرتبط.',
+    },
+    lastRecoveryRequestedAt: bounded(data.lastRecoveryRequestedAt, 80) || null,
+    updated_at: bounded(data.updatedAt, 80) || null,
+    qr: hasQr ? savedQr : null,
+    qrImage: hasQr ? savedQrImage : null,
+    qrUpdatedAt: hasQr ? qrUpdatedAt : null,
+    qrAgeMs: hasQr ? qrAgeMs : null,
+    qrFingerprint: hasQr ? (bounded(data.qrFingerprint, 80) || null) : null,
+    lastRepairRequestedAt,
+    repairBlockedUntil: repairCooldownMs > 0 ? repairBlockedUntil : null,
+    repairCooldownMs,
+    repairAllowed: !connected && repairCooldownMs <= 0,
+    pairing_code: null,
+    runtimePaused: Boolean(data.runtimePaused),
+    indexed: siteIndex().length,
+    timeZone: 'Asia/Kuwait',
+    health: {
+      code: connected ? 'ready' : hasQr ? 'scan-qr' : staleQr ? 'refreshing-qr' : syncing ? 'syncing' : finishing ? 'finishing' : failed ? 'error' : bridgeOnline ? 'connecting' : 'offline',
+      label: connected ? 'جاهز' : hasQr ? 'امسح رمز QR' : staleQr ? 'يجري إنشاء رمز جديد' : syncing ? `جاري مزامنة المحادثات${syncPercent > 0 ? ` (${syncPercent}%)` : ''}` : finishing ? 'تم المسح — يجري إكمال الاتصال' : failed ? 'يحتاج مراجعة' : bridgeOnline ? 'يجري الاتصال' : 'الجسر غير متصل',
+      why: connected
+        ? 'جلسة واتساب متصلة والجسر يرسل نبضاته بانتظام.'
+        : hasQr
+          ? 'هذا هو أحدث رمز وصل من الجسر، واللوحة تتابع تغيّره لحظياً.'
+          : staleQr
+            ? 'أُخفي الرمز السابق لأنه لم يعد حديثاً؛ سيظهر الرمز الجديد تلقائياً.'
+            : syncing
+              ? `تم ربط الهاتف بنجاح وجاري مزامنة سجل المحادثات (${syncPercent}%).`
+              : finishing
+                ? 'استلم واتساب عملية المسح، وينتظر اكتمال تهيئة الجلسة.'
+                : failed
+                  ? (lastError || 'تعذر إكمال الاتصال بواتساب.')
+                  : bridgeOnline
+                    ? 'الجسر يعمل، لكن جلسة واتساب لم تصل إلى حالة الجاهزية بعد.'
+                    : 'لم تصل نبضة حديثة من خدمة واتساب.',
+      fix: hasQr
+        ? 'ارفع سطوع الشاشة، وافتح من واتساب: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم امسح الرمز كاملاً داخل الإطار الأبيض.'
+        : staleQr
+          ? 'لا تمسح الرمز القديم. انتظر ثوانٍ قليلة حتى يظهر الرمز الجديد.'
+          : syncing
+            ? 'لا تحتاج لمسح رمز QR جديد. انتظر اكتمال مزامنة المحادثات على الهاتف والجسر تلقائياً.'
+            : finishing
+              ? 'انتظر لحظات؛ تتحدث اللوحة تلقائياً عند اكتمال الاتصال.'
+              : failed
+                ? 'راجع سجل خدمة whatsapp-bridge، ثم أعد تشغيلها بعد معالجة الخطأ.'
+                : bridgeOnline
+                  ? 'انتظر التهيئة، أو أعد تشغيل خدمة واتساب إذا استمرت الحالة أكثر من دقيقتين.'
+                  : 'شغّل خدمة whatsapp-bridge على الخادم وتحقق من اتصالها بالإنترنت.',
+      ready: connected,
+      needsAuthScan: hasQr,
+      connected,
+      quietNow: Boolean(data.runtimePaused),
+      silenced: 0,
+      pollFailures: 0,
+    },
+  }
+}
+
+function diagnosticTimestamp(value) {
+  if (value && typeof value.toDate === 'function') return value.toDate().getTime()
+  const parsed = value instanceof Date ? value.getTime() : Date.parse(String(value || ''))
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function newestDiagnosticTime(rows, keys) {
+  let latest = null
+  for (const row of rows) {
+    for (const key of keys) {
+      const value = diagnosticTimestamp(row?.[key])
+      if (value != null && (latest == null || value > latest)) latest = value
+    }
+  }
+  return latest == null ? null : asIso(latest)
+}
+
+export function buildWhatsAppDiagnostics({
+  status = {},
+  conversations = [],
+  commands = [],
+  now = Date.now(),
+} = {}) {
+  const rows = Array.isArray(conversations) ? conversations : []
+  const queueRows = Array.isArray(commands) ? commands : []
+  const silenced = rows.filter((row) => row?.mode === 'human').length
+  const pending = queueRows.filter((row) => row?.status === 'pending').length
+  const leased = queueRows.filter((row) => row?.status === 'leased').length
+  const held = queueRows.filter((row) => row?.status === 'held').length
+  const failed = queueRows.filter((row) => row?.status === 'failed').length
+  const staleLeased = queueRows.filter((row) => {
+    if (row?.status !== 'leased') return false
+    const leasedAt = diagnosticTimestamp(row?.leasedAt || row?.updatedAt)
+    return leasedAt != null && now - leasedAt > 90_000
+  }).length
+  const active = pending + leased + held
+  const lastInboundAt = newestDiagnosticTime(rows, ['lastInboundAt'])
+  const lastReplyAt = newestDiagnosticTime(rows, ['lastReplyAt'])
+  const lastManualAt = newestDiagnosticTime(rows, ['lastManualAt'])
+  const lastFailed = queueRows
+    .filter((row) => row?.status === 'failed')
+    .sort((left, right) => (diagnosticTimestamp(right?.updatedAt) || 0) - (diagnosticTimestamp(left?.updatedAt) || 0))[0]
+  const connected = status?.health?.ready === true || (status?.bridgeOnline === true && status?.status === 'connected')
+  const indexed = Number(status?.indexed || 0)
+  const runtimePaused = status?.runtimePaused === true
+  const needsAuthScan = status?.health?.needsAuthScan === true
+  const bridgeOnline = status?.bridgeOnline === true
+
+  const checks = [
+    {
+      id: 'control-plane',
+      label: 'لوحة التحكم',
+      state: 'ok',
+      detail: 'الخادم استجاب للفحص وصلاحية المشرف سليمة.',
+    },
+    {
+      id: 'resident-bridge',
+      label: 'خدمة الجسر السحابية',
+      state: bridgeOnline ? 'ok' : 'error',
+      detail: bridgeOnline
+        ? `النبض يصل بانتظام${status?.heartbeatAgeMs != null ? `؛ آخر نبضة قبل ${arabicCountPhrase(Math.max(1, Math.round(Number(status.heartbeatAgeMs) / 1000)), SECOND_AFTER_PREPOSITION_FORMS)}` : ''}.`
+        : 'لا تصل نبضة من الخادم السحابي؛ قد يكون الخادم متوقفاً، الإنترنت مقطوعاً، أو خدمة التشغيل متوقفة.',
+    },
+    {
+      id: 'whatsapp-session',
+      label: 'جلسة واتساب',
+      state: connected ? 'ok' : needsAuthScan ? 'warning' : 'error',
+      detail: connected
+        ? 'واتساب موثّق ومتصل.'
+        : needsAuthScan
+          ? 'الخدمة تعمل لكنها تنتظر مسح رمز QR من الهاتف.'
+          : (status?.last_error || status?.health?.why || 'جلسة واتساب لم تصل إلى الجاهزية.'),
+    },
+    {
+      id: 'linked-device-protection',
+      label: 'حماية الجهاز المرتبط',
+      state: status?.deviceActivityProtection?.state === 'protected'
+        ? 'ok'
+        : status?.deviceActivityProtection?.state === 'warning'
+          ? 'warning'
+          : 'info',
+      detail: status?.deviceActivityProtection?.detail || 'ستظهر حالة نبضة الاستخدام بعد اتصال الجسر.',
+    },
+    {
+      id: 'missed-message-recovery',
+      label: 'استرجاع الرسائل المتأخرة',
+      state: status?.lastCatchupError ? 'warning' : status?.lastCatchupAt ? 'ok' : 'info',
+      detail: status?.lastCatchupError
+        ? `تعذّر آخر فحص استرجاع: ${bounded(status.lastCatchupError, 180)}`
+        : status?.lastCatchupAt
+          ? `آخر فحص ${status.lastCatchupAt}؛ استعاد ${arabicCountPhrase(Math.max(0, Number(status.lastCatchupRecovered || 0)), RECOVERED_MESSAGE_OBJECT_FORMS)}.`
+          : 'يعمل الفحص بعد اكتمال اتصال الجسر ثم كل خمس دقائق.',
+    },
+    {
+      id: 'reply-engine',
+      label: 'محرك الرد',
+      state: runtimePaused ? 'error' : indexed > 0 ? (silenced > 0 ? 'warning' : 'ok') : 'error',
+      detail: runtimePaused
+        ? 'الردود الآلية موقوفة من لوحة التحكم.'
+        : indexed <= 0
+          ? 'فهرس الموقع فارغ؛ لا توجد مادة موثقة يبني عليها الرد.'
+          : silenced > 0
+            ? `المحرك يعمل، لكن ${arabicCountPhrase(silenced, CONVERSATION_AFTER_PREPOSITION_FORMS)} تحت الاستلام اليدوي ولن تعود إلا بعد إتاحة الإيقاظ.`
+            : `المحرك يعمل ومعه ${arabicCountPhrase(indexed, VERIFIED_MATERIAL_FORMS)}.`,
+    },
+    {
+      id: 'command-queue',
+      label: 'طابور الأوامر',
+      state: staleLeased > 0 ? 'error' : failed > 0 ? 'warning' : active > 0 ? 'info' : 'ok',
+      detail: staleLeased > 0
+        ? `${staleLeased} أمر عالق بعد استلامه من الجسر.`
+        : failed > 0
+          ? `${failed} أمر فشل مؤخراً${lastFailed?.error ? `: ${bounded(lastFailed.error, 180)}` : '.'}`
+          : active > 0
+            ? `${active} أمر قيد الانتظار أو التنفيذ.`
+            : 'لا توجد أوامر عالقة.',
+    },
+  ]
+
+  let code = 'healthy'
+  let level = 'healthy'
+  let title = 'كل الأنظمة جاهزة'
+  let summary = 'الجسر متصل، جلسة واتساب جاهزة، ومحرك الرد يعمل من فهرس الموقع.'
+  let action = 'لا يلزم تدخل. استخدم «فحص شامل» متى أردت التأكد.'
+
+  if (!bridgeOnline) {
+    code = 'resident-offline'
+    level = 'critical'
+    title = 'خدمة الجسر السحابية لا ترسل نبضاً'
+    summary = 'العطل قبل واتساب نفسه: لوحة التحكم لا ترى الجسر المقيم على الخادم السحابي.'
+    action = 'اضغط «إحياء آمن» ليُحفظ طلب التشغيل، وتأكد أن الخادم يعمل ومتصل بالإنترنت. خدمة النظام تعيده تلقائياً من دون مسح الجلسة.'
+  } else if (needsAuthScan) {
+    code = 'scan-qr'
+    level = 'warning'
+    title = 'واتساب ينتظر ربط الهاتف'
+    summary = 'الجسر سليم، لكن جلسة واتساب تحتاج مصادقة من الأجهزة المرتبطة.'
+    action = 'امسح رمز QR الظاهر في اللوحة مرة واحدة وانتظر حتى تظهر «جاهز».'
+  } else if (!connected) {
+    code = 'session-not-ready'
+    level = 'critical'
+    title = 'الجسر يعمل لكن واتساب غير جاهز'
+    summary = status?.last_error || status?.health?.why || 'الاتصال متوقف في مرحلة التهيئة.'
+    action = 'اضغط «إحياء آمن». إذا ظهر «فشل التوثيق» فقط، استخدم «إعادة ربط من الصفر».'
+  } else if (runtimePaused) {
+    code = 'replies-paused'
+    level = 'warning'
+    title = 'الاتصال سليم والردود موقوفة'
+    summary = 'واتساب متصل، لكن مفتاح الإيقاف العام يمنع البوت من الرد.'
+    action = 'اضغط «إحياء آمن» أو «تشغيل الردود» لإعادته فوراً.'
+  } else if (staleLeased > 0) {
+    code = 'queue-stalled'
+    level = 'warning'
+    title = 'هناك أمر عالق'
+    summary = 'الجسر متصل، لكن أمراً بقي مستلماً من دون إكمال.'
+    action = 'اضغط «إحياء آمن» لإعادة الأمر إلى الطابور وإعادة تشغيل الجسر مع إبقاء الجلسة.'
+  } else if (indexed <= 0) {
+    code = 'knowledge-empty'
+    level = 'critical'
+    title = 'محرك الرد بلا فهرس'
+    summary = 'الاتصال سليم، لكن فهرس الموقع الذي يمنع التخمين فارغ.'
+    action = 'حدّث الموقع ثم شغّل «فحص شامل». لا تستخدم إعادة ربط واتساب لهذا العطل.'
+  } else if (failed > 0) {
+    code = 'recent-command-failures'
+    level = 'warning'
+    title = 'الاتصال سليم مع فشل أوامر سابقة'
+    summary = 'البوت جاهز الآن، لكن توجد أوامر فشلت ويظهر سبب آخر فشل في طابور الأوامر.'
+    action = 'شغّل «إحياء آمن» إذا استمر الفشل؛ لا تمسح جلسة واتساب.'
+  } else if (silenced > 0) {
+    code = 'manual-takeover'
+    level = 'attention'
+    title = 'البوت حي مع محادثات مستلمة يدوياً'
+    summary = `الاتصال سليم، لكن ${arabicCountPhrase(silenced, CONVERSATION_AFTER_PREPOSITION_FORMS)} أُغلقت فيها جلسة البوت بعد رد بشري.`
+    action = 'استخدم «اسمح بالإيقاظ»؛ بعدها يعود فقط عندما يكتب الشخص جملة الإيقاظ.'
+  }
+
+  return {
+    code,
+    level,
+    title,
+    summary,
+    action,
+    checkedAt: asIso(now),
+    checks,
+    queue: { active, pending, leased, held, failed, staleLeased },
+    activity: { lastInboundAt, lastReplyAt, lastManualAt },
+    privacy: 'التشخيص يعرض الحالة والتوقيت والعدادات فقط؛ لا يعرض نصوص الناس أو أرقامهم.',
+  }
+}
+
+async function getConversation(db, jid) {
+  const ref = db.collection(COLLECTIONS.conversations).doc(conversationId(jid))
+  const snapshot = await ref.get()
+  return { ref, data: snapshot.exists ? snapshot.data() || {} : {} }
+}
+
+let rulesCache = { expiresAt: 0, rows: [], pending: null }
+let runtimeCache = { expiresAt: 0, paused: false, pending: null }
+
+function invalidateRulesCache() {
+  rulesCache = { expiresAt: 0, rows: [], pending: null }
+}
+
+async function listRules(db) {
+  if (rulesCache.expiresAt > Date.now()) return rulesCache.rows
+  if (rulesCache.pending) return rulesCache.pending
+  rulesCache.pending = db.collection(COLLECTIONS.rules).limit(250).get().then((snapshot) => {
+    const rows = snapshot.docs.map(serializeDoc).filter(Boolean)
+      .sort((a, b) => Number(b.priority || 0) - Number(a.priority || 0) || String(a.name || '').localeCompare(String(b.name || ''), 'ar'))
+    rulesCache = { expiresAt: Date.now() + 30_000, rows, pending: null }
+    return rows
+  }).catch((error) => {
+    rulesCache.pending = null
+    throw error
+  })
+  return rulesCache.pending
+}
+
+async function runtimePaused(db) {
+  if (runtimeCache.expiresAt > Date.now()) return runtimeCache.paused
+  if (runtimeCache.pending) return runtimeCache.pending
+  runtimeCache.pending = db.collection(COLLECTIONS.settings).doc('runtime').get().then((snapshot) => {
+    const paused = Boolean(snapshot.exists && snapshot.data()?.paused)
+    runtimeCache = { expiresAt: Date.now() + 10_000, paused, pending: null }
+    return paused
+  }).catch((error) => {
+    runtimeCache.pending = null
+    throw error
+  })
+  return runtimeCache.pending
+}
+
+async function enqueueCommand(db, type, payload = {}, metadata = {}) {
+  const idempotencyKey = bounded(metadata.idempotencyKey, 240)
+  const id = idempotencyKey ? hash(`whatsapp-command:${idempotencyKey}`).slice(0, 40) : randomUUID()
+  const ref = db.collection(COLLECTIONS.commands).doc(id)
+  if (idempotencyKey) {
+    const existing = await ref.get()
+    if (existing.exists) return { id, type: bounded(existing.data()?.type, 80) || type, reused: true, status: bounded(existing.data()?.status, 40) || 'pending' }
+  }
+  const now = asIso()
+  await ref.set({
+    id, type, payload, status: 'pending', attempts: 0, accountingVersion: 2, createdAt: now, updatedAt: now,
+    availableAt: bounded(metadata.availableAt, 80) || now,
+    campaignId: bounded(metadata.campaignId, 100) || null,
+    campaignIndex: Number.isFinite(Number(metadata.campaignIndex)) ? Number(metadata.campaignIndex) : null,
+    recipientFingerprint: bounded(metadata.recipientFingerprint, 80) || bounded(payload.recipientFingerprint, 80) || null,
+    idempotencyKey: idempotencyKey || null,
+    retryFailure: metadata.retryFailure === true,
+  })
+  return { id, type, reused: false, status: 'pending' }
+}
+
+async function queueNextCampaignMessage(db, campaignId, delayMs = 0) {
+  const ref = db.collection(COLLECTIONS.campaigns).doc(bounded(campaignId, 100))
+  const snapshot = await ref.get()
+  if (!snapshot.exists) return null
+  const campaign = snapshot.data() || {}
+  if (campaign.state !== 'sending' || campaign.pendingCommandId) return null
+  const targets = Array.isArray(campaign.targetIds) ? campaign.targetIds.slice(0, 5_000) : []
+  let cursor = Math.max(0, Number(campaign.cursor || 0))
+  let contact = null
+  while (cursor < targets.length && !contact) {
+    const candidate = await db.collection(COLLECTIONS.audienceContacts).doc(bounded(targets[cursor], 100)).get()
+    const data = serializeDoc(candidate)
+    if (data && !data.suppressed && audienceJid(data.jid)) contact = data
+    else cursor += 1
+  }
+  if (!contact) {
+    await ref.set({
+      state: Number(campaign.failed || 0) > 0 ? 'partial' : 'completed',
+      cursor: targets.length,
+      pendingCommandId: null,
+      nextAt: null,
+      completedAt: asIso(),
+      updatedAt: asIso(),
+    }, { merge: true })
+    return null
+  }
+  const availableAt = asIso(Date.now() + Math.max(0, Number(delayMs || 0)))
+  const recipientFingerprint = outboundRecipientFingerprint(contact.jid)
+  if (!recipientFingerprint) {
+    await ref.set({ failed: Number(campaign.failed || 0) + 1, cursor: cursor + 1, lastError: 'رقم غير صالح للإرسال.', updatedAt: asIso() }, { merge: true })
+    return queueNextCampaignMessage(db, campaignId, delayMs)
+  }
+  const command = await enqueueCommand(db, 'send-message', {
+    jid: contact.jid,
+    text: personalizeAudienceText(campaign.message, contact),
+    recipientFingerprint,
+  }, {
+    campaignId: ref.id,
+    campaignIndex: cursor,
+    availableAt,
+    recipientFingerprint,
+    idempotencyKey: `broadcast:${ref.id}:${cursor}:${recipientFingerprint}`,
+  })
+  await ref.set({
+    cursor: cursor + 1,
+    pendingCommandId: command.id,
+    nextAt: availableAt,
+    updatedAt: asIso(),
+  }, { merge: true })
+  return command
+}
+
+let lastBroadcastReconcileAt = 0
+let broadcastReconcilePending = null
+
+async function settleRetryCampaignState(db, campaignId) {
+  const id = bounded(campaignId, 100)
+  if (!id) return
+  const campaignRef = db.collection(COLLECTIONS.campaigns).doc(id)
+  const [campaignSnapshot, commandRows] = await Promise.all([
+    campaignRef.get(),
+    db.collection(COLLECTIONS.commands).where('campaignId', '==', id).limit(5000).get(),
+  ])
+  if (!campaignSnapshot.exists) return
+  const campaign = campaignSnapshot.data() || {}
+  const retryCommands = commandRows.docs.map(serializeDoc).filter((item) => item?.retryFailure === true)
+  const pendingRetries = retryCommands.filter((item) => ['pending', 'leased', 'held'].includes(item.status))
+  const nextAt = pendingRetries
+    .filter((item) => item.status === 'pending')
+    .map((item) => bounded(item.availableAt, 80))
+    .filter(Boolean)
+    .sort()[0] || null
+
+  // إذا أوقف الدكتور الحملة مؤقتاً لا نغيّر قرار الوقف بسبب ACK متأخر.
+  if (campaign.state === 'paused') {
+    await campaignRef.set({ nextAt: null, updatedAt: asIso() }, { merge: true })
+    return
+  }
+  if (campaign.state !== 'retrying') return
+  if (!pendingRetries.length) {
+    await campaignRef.set({
+      state: Number(campaign.failed || 0) > 0 ? 'partial' : 'completed',
+      nextAt: null,
+      retryCompletedAt: asIso(),
+      updatedAt: asIso(),
+    }, { merge: true })
+  } else {
+    await campaignRef.set({ nextAt, updatedAt: asIso() }, { merge: true })
+  }
+}
+
+async function accountCampaignCommand(db, commandId) {
+  const id = bounded(commandId, 80)
+  if (!id) return { accounted: false, reason: 'missing-command-id' }
+  const commandRef = db.collection(COLLECTIONS.commands).doc(id)
+  let outcome = { accounted: false, reason: 'not-terminal' }
+
+  await db.runTransaction(async (transaction) => {
+    const commandSnapshot = await transaction.get(commandRef)
+    if (!commandSnapshot.exists) {
+      outcome = { accounted: false, reason: 'missing-command' }
+      return
+    }
+    const command = { id: commandSnapshot.id, ...(commandSnapshot.data() || {}) }
+    if (!command.campaignId || !['completed', 'failed'].includes(command.status)) {
+      outcome = { accounted: false, reason: 'not-terminal', command }
+      return
+    }
+    if (command.campaignAccountedAt) {
+      outcome = { accounted: false, alreadyAccounted: true, reason: 'already-accounted', command }
+      return
+    }
+
+    const campaignRef = db.collection(COLLECTIONS.campaigns).doc(bounded(command.campaignId, 100))
+    const campaignSnapshot = await transaction.get(campaignRef)
+    if (!campaignSnapshot.exists) {
+      transaction.set(commandRef, { campaignAccountedAt: asIso(), campaignAccountingError: 'campaign-missing', updatedAt: asIso() }, { merge: true })
+      outcome = { accounted: false, reason: 'campaign-missing', command }
+      return
+    }
+
+    const campaign = campaignSnapshot.data() || {}
+    const retryFailure = command.retryFailure === true
+    const accountingVersion = Number(command.accountingVersion || 0)
+    if (accountingVersion < 2 && retryFailure) {
+      // حملات retry القديمة كانت تعدّل العدادات قبل وجود marker ذري؛ إعادة
+      // احتسابها هنا قد تضاعف الأرقام. لا نخاطر بأثر رجعي، وكل retry جديد
+      // يُرقّى إلى accountingVersion:2 أدناه.
+      transaction.set(commandRef, { legacyAccountingSkippedAt: asIso(), updatedAt: asIso() }, { merge: true })
+      outcome = { accounted: false, reason: 'legacy-retry-accounting-unknown', command }
+      return
+    }
+    if (accountingVersion < 2 && !retryFailure) {
+      const campaignIndex = Number(command.campaignIndex)
+      const alreadyReflected = Number.isFinite(campaignIndex)
+        && (Number(campaign.sent || 0) + Number(campaign.failed || 0)) > campaignIndex
+      if (alreadyReflected) {
+        const inferredAt = asIso()
+        transaction.set(commandRef, { campaignAccountedAt: inferredAt, legacyAccountingInferred: true, updatedAt: inferredAt }, { merge: true })
+        outcome = { accounted: false, alreadyAccounted: true, reason: 'legacy-accounting-inferred', command }
+        return
+      }
+    }
+    const succeeded = command.status === 'completed'
+    const sent = Number(campaign.sent || 0) + (succeeded ? 1 : 0)
+    const failed = retryFailure
+      ? Math.max(0, Number(campaign.failed || 0) - (succeeded ? 1 : 0))
+      : Number(campaign.failed || 0) + (succeeded ? 0 : 1)
+    const accountedAt = asIso()
+
+    transaction.set(campaignRef, {
+      ...(retryFailure ? {} : { pendingCommandId: null }),
+      sent,
+      failed,
+      lastError: succeeded ? null : bounded(command.error, 600) || 'تعذّر تسليم الرسالة.',
+      lastDeliveredAt: succeeded ? (bounded(command.deliveredAt, 80) || accountedAt) : campaign.lastDeliveredAt || null,
+      updatedAt: accountedAt,
+    }, { merge: true })
+    transaction.set(commandRef, {
+      campaignAccountedAt: accountedAt,
+      campaignAccountingError: null,
+      updatedAt: accountedAt,
+    }, { merge: true })
+
+    outcome = {
+      accounted: true,
+      campaignId: bounded(command.campaignId, 100),
+      retryFailure,
+      succeeded,
+      sent,
+      failed,
+      intervalSeconds: Number(campaign.intervalSeconds || 45),
+      campaignState: bounded(campaign.state, 40),
+    }
+  })
+
+  if (!outcome.accounted) return outcome
+  if (outcome.retryFailure) {
+    await settleRetryCampaignState(db, outcome.campaignId)
+  } else if (outcome.campaignState === 'sending') {
+    const intervalMs = Math.max(20_000, Math.min(15 * 60_000, Number(outcome.intervalSeconds || 45) * 1_000))
+    await queueNextCampaignMessage(db, outcome.campaignId, intervalMs)
+  }
+  return outcome
+}
+
+function broadcastReconcileDelayMs(campaign = {}, command = {}) {
+  const intervalMs = Math.max(20_000, Math.min(15 * 60_000, Number(campaign.intervalSeconds || 45) * 1_000))
+  const deliveredAt = Date.parse(command.deliveredAt || campaign.lastDeliveredAt || '')
+  if (!Number.isFinite(deliveredAt)) return Number(campaign.sent || 0) > 0 ? intervalMs : 0
+  return Math.max(0, intervalMs - Math.max(0, Date.now() - deliveredAt))
+}
+
+async function reconcileBroadcastState(db, { force = false } = {}) {
+  const now = Date.now()
+  if (!force && now - lastBroadcastReconcileAt < 30_000) return { skipped: true }
+  if (broadcastReconcilePending) return broadcastReconcilePending
+  lastBroadcastReconcileAt = now
+
+  broadcastReconcilePending = (async () => {
+    const campaignsSnapshot = await db.collection(COLLECTIONS.campaigns).limit(100).get()
+    const active = campaignsSnapshot.docs
+      .map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+      .filter((campaign) => ['sending', 'retrying'].includes(campaign.state))
+
+    let repaired = 0
+    for (const campaign of active) {
+      if (campaign.state === 'sending') {
+        const campaignRef = db.collection(COLLECTIONS.campaigns).doc(campaign.id)
+        const pendingId = bounded(campaign.pendingCommandId, 80)
+        if (!pendingId) {
+          await queueNextCampaignMessage(db, campaign.id, broadcastReconcileDelayMs(campaign))
+          repaired += 1
+          continue
+        }
+        const commandRef = db.collection(COLLECTIONS.commands).doc(pendingId)
+        const commandSnapshot = await commandRef.get()
+        if (!commandSnapshot.exists) {
+          await campaignRef.set({ pendingCommandId: null, nextAt: null, lastError: 'تم إصلاح مؤشر إرسال مفقود.', updatedAt: asIso() }, { merge: true })
+          await queueNextCampaignMessage(db, campaign.id, 0)
+          repaired += 1
+          continue
+        }
+        const command = { id: commandSnapshot.id, ...(commandSnapshot.data() || {}) }
+        if (['completed', 'failed'].includes(command.status)) {
+          if (command.campaignAccountedAt) {
+            await campaignRef.set({ pendingCommandId: null, updatedAt: asIso() }, { merge: true })
+            await queueNextCampaignMessage(db, campaign.id, broadcastReconcileDelayMs(campaign, command))
+          } else {
+            await accountCampaignCommand(db, command.id)
+          }
+          repaired += 1
+        }
+      } else if (campaign.state === 'retrying') {
+        const rows = await db.collection(COLLECTIONS.commands).where('campaignId', '==', campaign.id).limit(5000).get()
+        for (const doc of rows.docs) {
+          const command = { id: doc.id, ...(doc.data() || {}) }
+          if (command.retryFailure === true && Number(command.accountingVersion || 0) >= 2 && ['completed', 'failed'].includes(command.status) && !command.campaignAccountedAt) {
+            await accountCampaignCommand(db, command.id)
+            repaired += 1
+          }
+        }
+        await settleRetryCampaignState(db, campaign.id)
+      }
+    }
+    return { skipped: false, repaired }
+  })().finally(() => { broadcastReconcilePending = null })
+
+  return broadcastReconcilePending
+}
+
+function campaignPublicState(snapshot) {
+  const row = snapshot?.exists ? (snapshot.data() || {}) : (snapshot || {})
+  const id = snapshot?.id || bounded(row.id, 100)
+  const total = Math.max(0, Number(row.total || 0))
+  const sent = Math.max(0, Number(row.sent || 0))
+  const failed = Math.max(0, Number(row.failed || 0))
+  const completed = Math.min(total, sent + failed)
+  return {
+    id,
+    name: bounded(row.name, 180) || 'حملة واتساب',
+    state: bounded(row.state, 40) || 'draft',
+    total,
+    sent,
+    failed,
+    completed,
+    remaining: Math.max(0, total - completed),
+    cursor: Math.max(0, Number(row.cursor || 0)),
+    intervalSeconds: Math.max(0, Number(row.intervalSeconds || 0)),
+    nextAt: bounded(row.nextAt, 80) || null,
+    lastError: bounded(row.lastError, 260) || null,
+    /* «الرسالة التالية» في اللوحة كانت تعرض القالب خاماً بأقواسه فيقرأ
+       الدكتور «{عزيزي} أهلاً وسهلاً» ويظن الحقل معطوباً (٣١ يوليو). تُعرض
+       الآن مصرَّفةً بصيغة محايدة — نفس ما يصل من لا نعرف اسمه فعلاً. */
+    messagePreview: bounded(personalizeAudienceText(row.message, {}), 500),
+    createdAt: bounded(row.createdAt, 80) || null,
+    approvedAt: bounded(row.approvedAt, 80) || null,
+    startedAt: bounded(row.startedAt, 80) || null,
+    pausedAt: bounded(row.pausedAt, 80) || null,
+    completedAt: bounded(row.completedAt, 80) || null,
+    updatedAt: bounded(row.updatedAt, 80) || null,
+  }
+}
+
+function decisionLabel(reason = '') {
+  const value = bounded(reason, 180)
+  if (!value) return 'غير مصنّف'
+  if (value.startsWith('rule-no-grounding:')) return 'قاعدة لم تجد مادة موثقة'
+  if (value.startsWith('rule:')) return 'قاعدة معتمدة'
+  const labels = {
+    'site-index': 'مادة موثقة من الموقع',
+    'site-is-source': 'سؤال عن معلومات الموقع',
+    greeting: 'تحية',
+    'wake-phrase': 'تفعيل المساعد',
+    duplicate: 'رسالة مكررة',
+    'human-request': 'طلب تدخل بشري',
+    'no-grounded-answer': 'لا توجد إجابة موثقة',
+    media: 'وسائط تحتاج مراجعة',
+    'empty-after-normalization': 'رسالة بلا محتوى قابل للمعالجة',
+    'awaiting-wake-phrase': 'بانتظار جملة الإيقاظ',
+    'runtime-paused': 'التشغيل متوقف مؤقتاً',
+    thanks: 'شكر ومجاملة',
+    farewell: 'وداع',
+    acknowledged: 'إقرار قصير',
+    'who-are-you': 'سؤال عن هوية المساعد',
+    praise: 'ثناء',
+    'delete-preferences': 'مسح التفضيلات',
+    'correction-retry': 'تصحيح وبحث من زاوية ثانية',
+    'correction-clarify': 'تصحيح يحتاج توضيحاً',
+    'challenge-question': 'تحدي معرفي',
+    'challenge-correct': 'إجابة تحدٍ صحيحة',
+    'challenge-missed': 'إجابة تحدٍ غير مصيبة',
+    'saved-to-shelf': 'حفظ في الرف',
+    'shelf-list': 'استعراض الرف',
+    'shelf-removed': 'حذف من الرف',
+    'curated-quote': 'اقتباس من المختارات',
+    'compare-topics': 'مقارنة موضوعين',
+    'mood-match': 'مواساة بمادة مناسبة',
+    'idea-network': 'شبكة الفكرة',
+    'explain-grounded': 'شرح مؤرّض بالمادة',
+    'dialogue-opener': 'فتح حوار حول مادة',
+    'reminder-honest': 'اعتذار صادق عن التذكير',
+    'digest-now': 'خلاصة الأحدث',
+    'continue-listening': 'مواصلة الاستماع',
+    'upcoming-events': 'اللقاءات القادمة',
+    'top-topics': 'أبرز المحاور',
+    'most-viewed-honest': 'الأكثر مشاهدة (بصدق الحدود)',
+    'verified-research': 'أبحاث محكّمة',
+    'near-suggestions': 'أقرب المواد المنشورة',
+    'context-reference': 'تنقّل داخل النتائج',
+    'context-summary': 'تلخيص المادة الحالية',
+    'timed-reading-30s': 'قراءة في ٣٠ ثانية',
+    'timed-reading-1min': 'قراءة في دقيقة',
+    'timed-reading-2min': 'قراءة في دقيقتين',
+    'timed-reading-deep': 'تعمّق في المادة',
+    'context-source': 'رابط المصدر',
+    'more-like-this': 'المزيد من المشابه',
+    'latest-content': 'أحدث المنشور',
+    surprise: 'اختيار مفاجئ',
+  }
+  return labels[value] || value.replace(/[-_:]+/g, ' ')
+}
+
+function aggregateCounts(rows, keyOf, valueOf = (key) => key) {
+  const counts = new Map()
+  for (const row of rows) {
+    const key = keyOf(row)
+    if (!key) continue
+    counts.set(key, (counts.get(key) || 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([key, total]) => ({ key, label: valueOf(key), total }))
+    .sort((left, right) => right.total - left.total || String(left.label).localeCompare(String(right.label), 'ar'))
+}
+
+/* ═══ المعالجة الذاتية (٧ أغسطس، بأمر الدكتور: «مو بس فحص — أبي المعالجة») ═══
+   التشخيص وحده يترك العطب قائماً حتى ينتبه إنسان. هذه تُصلح ما يُصلَح آلياً،
+   وتصف ما لا يُصلَح إلا بيده. تُستدعى من زرّ اللوحة، ومن نبضة الجسر نفسها كل
+   ربع ساعة فتعمل بلا ضغطة أصلاً.
+
+   ما لا تفعله عمداً: لا تُرجع محادثةً أسكتها الدكتور بيده — فقد يكون يتولّاها
+   بنفسه الآن، والقرار قراره. تُحصيها له ويُرجعها بضغطةٍ إن شاء. */
+const AUTO_HEAL_MIN_GAP_MS = 15 * 60_000
+let lastAutoHealAt = 0
+
+export async function autoHealWhatsApp(db, { trigger = 'manual', allowBridgeRestart = true } = {}) {
+  const actions = []
+  const now = Date.now()
+
+  /* ١) حالات الاستلام اليدوي المنتهية: ترقيةٌ آمنة قائمة أصلاً، نُجريها هنا
+        أيضاً فلا تنتظر فتح اللوحة. */
+  try {
+    const swept = await sweepExpiredManualStates(db)
+    if (swept) actions.push({ id: 'manual-states', done: true, detail: `رُقّيت ${swept} محادثة من حقبة الاستئناف التلقائي.` })
+  } catch (error) {
+    actions.push({ id: 'manual-states', done: false, detail: `تعذّر كنس حالات الاستلام: ${String(error?.message || error).slice(0, 120)}` })
+  }
+
+  /* ٢) أوامر عالقة في الطابور: أمرٌ استلمه الجسر ولم يُنهه خلال ٩٠ ثانية يعني
+        أن الجسر تعثّر أثناءه. نُعيده إلى الانتظار ليُنفَّذ من جديد بدل أن يبقى
+        الطابور مقفلاً إلى الأبد. */
+  try {
+    const commands = await db.collection(COLLECTIONS.commands).limit(250).get()
+    const stale = commands.docs.filter((doc) => {
+      const row = doc.data() || {}
+      if (row.status !== 'leased') return false
+      const leasedAt = Date.parse(row.leasedAt || row.updatedAt || '')
+      return Number.isFinite(leasedAt) && now - leasedAt > 90_000
+    })
+    if (stale.length) {
+      await Promise.all(stale.map((doc) => doc.ref.set({ status: 'pending', leasedAt: null, updatedAt: asIso() }, { merge: true })))
+      actions.push({ id: 'stale-commands', done: true, detail: `أُعيد ${stale.length} أمراً عالقاً إلى الطابور.` })
+    }
+  } catch (error) {
+    actions.push({ id: 'stale-commands', done: false, detail: `تعذّرت معالجة الطابور: ${String(error?.message || error).slice(0, 120)}` })
+  }
+
+  /* ٣) الجسر ميّت أو نبضته قديمة: نطلب إعادة تشغيله بأمرٍ في الطابور. وحارس
+        الخادم يعيده كذلك كل دقيقتين — فهذان طريقان لا طريق واحد. */
+  let bridgeHealed = null
+  try {
+    const bridgeSnapshot = await db.collection(COLLECTIONS.bridge).doc('primary').get()
+    const bridgeData = bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {}
+    const current = bridgeStatus(bridgeData)
+    const bridgeDown = !(current.bridgeOnline === true && current.status === 'connected')
+    if (bridgeDown && !current.health?.needsAuthScan && allowBridgeRestart) {
+      /* النوع 'restart' هو ما يفهمه الجسر (تحقّقتُ من مُصرِّف أوامره على
+         الخادم). ومفتاح التكرار يمنع تراكم أوامر إعادةٍ متطابقة حين تتوالى
+         المعالجات: أمرٌ واحد لكل عشر دقائق. */
+      await enqueueCommand(db, 'restart', {}, { idempotencyKey: `auto-heal-restart:${Math.floor(now / 600_000)}` })
+      bridgeHealed = true
+      actions.push({ id: 'bridge', done: true, detail: `الجسر كان (${current.status}) فأُرسل أمر إعادة تشغيلٍ يحفظ الجلسة.` })
+    } else if (bridgeDown && current.health?.needsAuthScan) {
+      bridgeHealed = false
+      actions.push({ id: 'bridge', done: false, detail: 'الجسر ينتظر مسح رمز QR من هاتفك — لا يُصلَح آلياً.' })
+    }
+  } catch (error) {
+    actions.push({ id: 'bridge', done: false, detail: `تعذّر فحص الجسر: ${String(error?.message || error).slice(0, 120)}` })
+  }
+
+  /* ٤) قوالب اللوحة والفهرس: تحديثٌ رخيص يمنع أن يردّ البوت بقوالب قديمة. */
+  try {
+    await refreshBotMessages()
+    actions.push({ id: 'templates', done: true, detail: 'حُدّثت قوالب الردود من اللوحة.' })
+  } catch { /* التحديث تحسينٌ لا شرط */ }
+
+  lastAutoHealAt = now
+  return { trigger, healedAt: asIso(), actions, bridgeHealed }
+}
+
+async function sweepExpiredManualStates(db) {
+  /* ترقيةٌ آمنة لحالات النسخ القديمة فقط: انتهاء مؤقت الاستلام اليدوي لا
+     يعيد البوت. يحوّل المحادثة إلى الصمت الأساسي، ولا يفتحها بعد ذلك إلا
+     أن يكتب الطرف الآخر جملة الإيقاظ الدقيقة. */
+  const snapshot = await db.collection(COLLECTIONS.conversations).limit(250).get()
+  const writes = []
+  for (const doc of snapshot.docs) {
+    const data = doc.data() || {}
+    if (data.mode === 'human' && data.needsHuman !== true && (data.manualUntil || data.autoResumeAt)) {
+      writes.push(doc.ref.set({
+        mode: 'human',
+        wakeActive: false,
+        wakeVersion: 1,
+        manualUntil: null,
+        autoResumeAt: null,
+        notificationMutedUntil: null,
+        updatedAt: asIso(),
+        automaticResumeDisabledAt: asIso(),
+      }, { merge: true }))
+    }
+  }
+  await Promise.all(writes)
+  return writes.length
+}
+
+function adminPath(url) {
+  return url.pathname.slice('/api/admin/whatsapp'.length) || '/'
+}
+
+function bridgePath(url) {
+  return url.pathname.slice('/api/whatsapp'.length) || '/'
+}
+
+export function createWhatsAppController({ getFirestore, verifyAdminRequest } = {}) {
+  if (typeof getFirestore !== 'function') throw new Error('getFirestore is required')
+  if (typeof verifyAdminRequest !== 'function') throw new Error('verifyAdminRequest is required')
+
+  const bridgeSecret = String(process.env.WHATSAPP_BRIDGE_SECRET || '').trim()
+
+  async function requireAdmin(req, res) {
+    try {
+      if (await verifyAdminRequest(req)) return true
+    } catch {
+      // الرد الموحد أدناه لا يكشف سبب فشل التوثيق.
+    }
+    sendJson(res, 403, { error: 'Admin access required' })
+    return false
+  }
+
+  function requireBridge(req, res) {
+    const supplied = req.headers['x-whatsapp-bridge-secret']
+    if (bridgeSecret && safeEqualSecret(supplied, bridgeSecret)) return true
+    sendJson(res, 401, { error: 'Invalid bridge secret' })
+    return false
+  }
+
+  async function stopAllSending(db) {
+    const [commands, campaigns] = await Promise.all([
+      db.collection(COLLECTIONS.commands).limit(500).get(),
+      db.collection(COLLECTIONS.campaigns).limit(500).get(),
+    ])
+    const activeCommands = commands.docs.filter((doc) => {
+      const value = doc.data() || {}
+      return ['pending', 'leased', 'held'].includes(value.status)
+        && ['send-message', 'send-self-message'].includes(value.type)
+    })
+    const activeCampaigns = campaigns.docs.filter((doc) =>
+      ['approved', 'paused', 'sending', 'retrying'].includes(doc.data()?.state))
+    let batch = db.batch()
+    let writes = 0
+    const commitIfNeeded = async (force = false) => {
+      if (!writes || (!force && writes < 400)) return
+      await batch.commit()
+      batch = db.batch()
+      writes = 0
+    }
+    for (const command of activeCommands) {
+      batch.set(command.ref, {
+        status: 'cancelled',
+        error: 'أوقفها الدكتور من زر الطوارئ قبل التسليم.',
+        cancelledAt: asIso(),
+        updatedAt: asIso(),
+      }, { merge: true })
+      writes += 1
+      await commitIfNeeded()
+    }
+    for (const campaign of activeCampaigns) {
+      batch.set(campaign.ref, {
+        state: 'stopped',
+        pendingCommandId: null,
+        stoppedAt: asIso(),
+        updatedAt: asIso(),
+      }, { merge: true })
+      writes += 1
+      await commitIfNeeded()
+    }
+    await commitIfNeeded(true)
+    return {
+      commandsStopped: activeCommands.length,
+      campaignsStopped: activeCampaigns.length,
+    }
+  }
+
+  async function handleWebhook(req, res) {
+    if (!requireBridge(req, res)) return
+    const body = await readJson(req)
+    const event = bounded(body.event, 40)
+    const { db } = await getFirestore()
+    const now = asIso()
+
+    if (event === 'heartbeat' || event === 'status' || event === 'qr') {
+      const ref = db.collection(COLLECTIONS.bridge).doc('primary')
+      const incomingInstanceId = bounded(body.instanceId, 100)
+      const incomingSeq = Number(body.stateSeq)
+      const validIncomingSeq = Number.isSafeInteger(incomingSeq) && incomingSeq >= 0 ? incomingSeq : null
+      const incomingStateAt = bounded(body.stateAt, 80) || now
+      const nextStatus = event === 'qr'
+        ? 'pairing'
+        : bounded(body.status, 40) || (body.connected === true ? 'connected' : '')
+      const heartbeatPatch = {
+        lastHeartbeatAt: now,
+        updatedAt: now,
+        deviceName: bounded(body.deviceName, 120),
+        version: bounded(body.version, 80),
+        lastCatchupAt: bounded(body.lastCatchupAt, 80) || null,
+        lastCatchupRecovered: Math.max(0, Number(body.lastCatchupRecovered || 0)),
+        lastCatchupError: bounded(body.lastCatchupError, 300) || null,
+        lastDeviceActivityPulseAt: bounded(body.lastDeviceActivityPulseAt, 80) || null,
+        lastDeviceActivityPulseError: bounded(body.lastDeviceActivityPulseError, 300) || null,
+        deviceActivityPulseIntervalMs: (() => {
+          const value = Number(body.deviceActivityPulseIntervalMs)
+          return Math.max(6 * 60 * 60_000, Math.min(7 * DEVICE_ACTIVITY_PULSE_MS, Number.isFinite(value) ? value : DEVICE_ACTIVITY_PULSE_MS))
+        })(),
+      }
+
+      await db.runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(ref)
+        const current = snapshot.exists ? snapshot.data() || {} : {}
+        const staleState = isStaleBridgeState(current, incomingInstanceId, validIncomingSeq)
+        const invalidRegression = isInvalidBridgeRegression(current, incomingInstanceId, nextStatus)
+
+        /* تبقى النبضة حديثة حتى لو وصل حدث حالة قديم، لكن لا نسمح لرمز QR
+           متأخر — حتى لو حمل رقماً تسلسلياً أحدث — بأن يطغى على جلسة قبلها
+           الهاتف بالفعل. بدء عملية جديدة له instanceId جديد فيُقبل طبيعياً. */
+        if (staleState || invalidRegression) {
+          transaction.set(ref, heartbeatPatch, { merge: true })
+          return
+        }
+
+        const patch = {
+          ...heartbeatPatch,
+          lastError: bounded(body.error, 600) || null,
+          ...(incomingInstanceId ? { instanceId: incomingInstanceId } : {}),
+          ...(validIncomingSeq != null ? { stateSeq: validIncomingSeq } : {}),
+          stateAt: incomingStateAt,
+        }
+        if (nextStatus) patch.status = nextStatus
+        if (event === 'qr') patch.connected = false
+        else if (body.connected === true || nextStatus === 'connected') patch.connected = true
+        else if (body.connected === false) patch.connected = false
+
+        if (event === 'qr') {
+          patch.qr = bounded(body.qr, 8_000)
+          patch.qrImage = bounded(body.qrImage, 500_000)
+          patch.qrUpdatedAt = bounded(body.qrGeneratedAt, 80) || incomingStateAt
+          patch.qrFingerprint = bounded(body.qrFingerprint, 80) || hash(body.qr).slice(0, 16)
+        } else if (['authenticated', 'connected', 'syncing'].includes(nextStatus) || body.connected === true || event === 'loading_screen') {
+          patch.qr = null
+          patch.qrImage = null
+          patch.qrUpdatedAt = null
+          patch.qrFingerprint = null
+          if (body.percent != null) patch.syncPercent = Number(body.percent)
+          else if (body.syncPercent != null) patch.syncPercent = Number(body.syncPercent)
+        }
+        transaction.set(ref, patch, { merge: true })
+      })
+
+      if (event === 'heartbeat') await sweepExpiredManualStates(db)
+      /* المعالجة بلا ضغطة: نبضة الجسر تصل كل نصف دقيقة، فنجعلها تُشغّل
+         المعالجة الذاتية مرةً كل ربع ساعة على الأكثر — خلفيّةً لا تؤخّر
+         الردّ على النبضة، وبلا مسٍّ لما قرّره الدكتور بيده. */
+      if (event === 'heartbeat' && Date.now() - lastAutoHealAt > AUTO_HEAL_MIN_GAP_MS) {
+        lastAutoHealAt = Date.now()
+        void autoHealWhatsApp(db, { trigger: 'heartbeat' }).catch(() => {})
+      }
+      sendJson(res, 200, { ok: true })
+      return
+    }
+
+    if (event === 'contacts-sync') {
+      const contacts = Array.isArray(body.contacts) ? body.contacts.slice(0, 5_000) : []
+      let accepted = 0
+      let batch = db.batch()
+      let batchSize = 0
+      const flush = async () => {
+        if (!batchSize) return
+        await batch.commit()
+        batch = db.batch()
+        batchSize = 0
+      }
+      for (const item of contacts) {
+        const jid = audienceJid(item?.jid || item?.id)
+        if (!jid) continue
+        const id = audienceContactId(jid)
+        const digits = jid.split('@', 1)[0]
+        const ref = db.collection(COLLECTIONS.audienceContacts).doc(id)
+        const waName = bounded(item?.name || item?.pushname || item?.shortName, 120)
+        const displayName = bounded(item?.displayName, 120)
+        /* شكوى ٣١ يوليو: «ضاف من كيفه أرقام مجهولين الاسم». المزامنة صارت
+           تُثري الأسماء فقط ولا تُنشئ سكاناً جدداً بلا اسم في دفتر الدكتور؛
+           كما توقفت عن دهس حقل source الذي كان يطمس أصل المستوردين يدوياً. */
+        if (!waName && !displayName) continue
+        batch.set(ref, {
+          id,
+          jid,
+          tail: digits.slice(-4),
+          ...(waName ? { waName } : {}),
+          ...(displayName ? { displayName } : {}),
+          syncedAt: now,
+          lastSeenAt: now,
+          updatedAt: now,
+        }, { merge: true })
+        accepted += 1
+        batchSize += 1
+        if (batchSize >= 400) await flush()
+      }
+      await flush()
+      sendJson(res, 200, { ok: true, accepted })
+      return
+    }
+
+    const jid = normalizeConversationJid(body.jid)
+    if (!jid) {
+      sendJson(res, 400, { error: 'Invalid conversation id' })
+      return
+    }
+    const { ref, data } = await getConversation(db, jid)
+
+    if (event === 'manual') {
+      await ref.set({
+        jid,
+        masked: maskJid(jid),
+        mode: 'human',
+        wakeActive: false,
+        wakeVersion: 1,
+        needsHuman: false,
+        manualUntil: null,
+        autoResumeAt: null,
+        notificationMutedUntil: null,
+        lastManualAt: now,
+        updatedAt: now,
+      }, { merge: true })
+      /* كتابةُ الدكتور بيده في أي محادثة دليلُ حضوره — يُستفاد منها في صدق
+         وعد التحويل البشري، ولا تُحفظ عنها أي بيانات أخرى. */
+      markOwnerActive(now)
+      void db.collection(COLLECTIONS.settings).doc('owner-presence')
+        .set({ lastActiveAt: now, updatedAt: now }, { merge: true }).catch(() => {})
+      sendJson(res, 200, { ok: true, wakeActive: false })
+      return
+    }
+
+    if (event === 'delivery-failed') {
+      await ref.set({ lastDeliveryError: bounded(body.error, 600), lastDeliveryFailedAt: now, updatedAt: now }, { merge: true })
+      sendJson(res, 200, { ok: true })
+      return
+    }
+
+    if (event !== 'incoming') {
+      sendJson(res, 400, { error: 'Unsupported webhook event' })
+      return
+    }
+
+    if (isOwnerPrivateChat(jid)) {
+      await ref.set({ jid, masked: maskJid(jid), mode: 'human', wakeActive: false, lastInboundAt: now, updatedAt: now }, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'owner-private-chat' })
+      return
+    }
+
+    // دفاع ثانٍ خلف الجسر: WhatsApp Web قد يعيد بث تاريخ المحادثة بعد مزامنة
+    // جلسة جديدة. الرسالة الأقدم من جاهزية *هذه العملية* لا تفتح بوابة الإيقاظ
+    // ولا تغيّر سياق المحادثة ولا تستحق رداً، مهما كان نوعها أو محتواها.
+    if (isStaleInboundMessage({
+      timestamp: body.timestamp,
+      bridgeReadyAt: bounded(body.bridgeReadyAt, 80),
+      bridgeStartedAt: bounded(body.bridgeStartedAt, 80),
+    })) {
+      await ref.set({
+        jid,
+        masked: maskJid(jid),
+        lastIgnoredBackfillAt: now,
+        lastIgnoredBackfillType: bounded(body.mediaType, 80) || 'text',
+        lastQuarantineReason: 'pre-ready-backfill',
+        quarantinedBackfillCount: Math.max(0, Number(data.quarantinedBackfillCount || 0)) + 1,
+        updatedAt: now,
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'stale-after-bridge-start' })
+      return
+    }
+
+    const text = bounded(body.text, 12_000)
+    const incomingHash = hash(normalizeArabicMessage(text) || `media:${bounded(body.mediaType, 80)}`)
+    const incomingMessageId = bounded(body.messageId, 240)
+    const incomingMessageIdHash = incomingMessageId ? hash(`message-id:${incomingMessageId}`) : ''
+    const recentIncomingMessageIds = Array.isArray(data.recentIncomingMessageIds)
+      ? data.recentIncomingMessageIds.filter((value) => typeof value === 'string' && value).slice(-99)
+      : []
+    const recentInboundResponses = data.recentInboundResponses && typeof data.recentInboundResponses === 'object' && !Array.isArray(data.recentInboundResponses)
+      ? data.recentInboundResponses
+      : {}
+    const deliveryResponsePatch = (action, reason, replyText = '') => {
+      if (!incomingMessageIdHash) return {}
+      const recentResponses = Object.fromEntries(Object.entries(recentInboundResponses).slice(-23))
+      recentResponses[incomingMessageIdHash] = {
+        action: bounded(action, 40),
+        reason: bounded(reason, 100),
+        replyText: bounded(replyText, 2_000),
+        createdAt: now,
+      }
+      return { recentInboundResponses: recentResponses }
+    }
+    /* التكرار التقني يُعرف من معرّف تسليم واتساب، لا من نص الرسالة. كان
+       تكرار «آخر المقالات» برسالة جديدة يُعامَل كإعادة تسليم فيسكت أو يرسل
+       fallback بشرياً. كل messageId جديد هو دور حوار جديد ولو كان النص نفسه. */
+    const duplicate = isDuplicateInboundDelivery({
+      messageIdHash: incomingMessageIdHash,
+      recentMessageIds: recentIncomingMessageIds,
+      incomingHash,
+      previousIncomingHash: data.lastIncomingHash,
+      previousInboundAt: data.lastInboundAt,
+    })
+    /* تحديث قوالب اللوحة خلفيّ لا يؤخر رداً: يجلب bot_messages/templates ضمن
+       TTL داخلي، فيسري تحرير الدكتور من لوحة «رسائل البوت» خلال دقائق. */
+    void refreshBotMessages().catch(() => {})
+    void primeTaughtPhrases(db).catch(() => {})
+    void (async () => {
+      if (ownerLastActiveAt) return
+      const snapshot = await db.collection(COLLECTIONS.settings).doc('owner-presence').get()
+      if (snapshot.exists) markOwnerActive(snapshot.data()?.lastActiveAt || 0)
+    })().catch(() => {})
+    const wakePhrase = isWhatsAppWakePhrase(text)
+    const manualTakeoverActive = data.mode === 'human'
+      || (data.mode === 'silent' && Boolean(data.lastManualAt) && data.wakeActive !== true)
+
+    const basePatch = {
+      jid,
+      masked: maskJid(jid),
+      lastInboundAt: now,
+      lastIncomingHash: incomingHash,
+      ...(incomingMessageIdHash ? {
+        lastIncomingMessageIdHash: incomingMessageIdHash,
+        recentIncomingMessageIds: [...new Set([...recentIncomingMessageIds, incomingMessageIdHash])].slice(-100),
+      } : {}),
+      lastMessageType: bounded(body.mediaType, 80) || 'text',
+      updatedAt: now,
+    }
+
+    if (manualTakeoverActive && !wakePhrase) {
+      await ref.set(basePatch, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'human-takeover' })
+      return
+    }
+
+    /* البوابة المطلقة (أمر الدكتور بعد كارثة ٣٠ يوليو): كل رسالة جديدة في
+       الوضع الطبيعي تُقابل بالصمت التام — لا ردّ لأحدٍ إطلاقاً إلا داخل جلسةٍ
+       فتحها صاحبها بكتابة «موقع د. أحمد» بنفسه. wakeVersion=2 هي نسخة
+       الإيقاظ المعتمدة؛ ما فتحه الوضع القديم تلقائياً (نسخة ١) لاغٍ. */
+    if (wakePhrase) {
+      const welcome = buildWakeWelcome(botMessagesNow(), new Date(), data)
+      /* ترقية ١: العائد بعد غياب يُستقبل باسم ما وقفنا عنده، لا كزائرٍ أول
+         مرة. البوابة نفسها لم تُمس — هذا سطرٌ فوق ترحيبٍ استحقه بإيقاظه.
+         وحين تحمل البوابةُ خبرَه هو، يُختصر السطر إلى تحيّةٍ ولا يُسأل
+         «نكمل من هناك؟» — فالجواب أمامه، والتكرار ثرثرة. */
+      const returningLine = welcome.attentive
+        ? returningReaderLine(data).split('.')[0] + (returningReaderLine(data) ? '.' : '')
+        : returningReaderLine(data)
+      const signedWelcome = signReply(returningLine ? `${returningLine}\n\n${welcome.text}` : welcome.text)
+      await ref.set({
+        ...basePatch,
+        mode: 'bot',
+        wakeActive: true,
+        wakeVersion: 2,
+        wakeOpenedAt: now,
+        needsHuman: false,
+        manualUntil: null,
+        autoResumeAt: null,
+        lastReplyHash: hash(signedWelcome),
+        lastReplyAt: now,
+        /* بوابة اليوم تدخل السياق لحظة الإيقاظ: «٣٠ ثانية/لخصها/المصدر» بعد
+           الترحيب مباشرة تعمل على مادة البوابة نفسها. */
+        ...(welcome.contextItemIds.length ? {
+          contextItemIds: welcome.contextItemIds,
+          contextIndex: 0,
+          lastTopic: bounded(welcome.lastTopic, 500),
+          seenContentIds: [...new Set([...(Array.isArray(data.seenContentIds) ? data.seenContentIds : []), ...welcome.evidence])].slice(-40),
+        } : {}),
+        lastSignedAt: now,
+        ...deliveryResponsePatch('reply', 'wake-phrase', signedWelcome),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'reply', reason: 'wake-phrase', reply: { text: signedWelcome } })
+      return
+    }
+
+    /* ═══ البوابة المقدسة — قبل أي مسارٍ آخر حتى إعادة التسليم ═══
+       جلسة غير مفتوحة بنسخة الإيقاظ المعتمدة (٢) = صمتٌ مطبق، ولا يُعاد بثّ
+       أي ردٍّ مخزونٍ من حقبة «دائم التفاعل» الملغاة. */
+    const wakeGateOpen = data.mode !== 'human'
+      && data.wakeActive === true
+      && Number(data.wakeVersion || 0) >= 2
+    if (!wakeGateOpen) {
+      await ref.set(basePatch, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'awaiting-wake-phrase' })
+      return
+    }
+
+    if (duplicate) {
+      /* إن وصل رد الخادم ثم انقطع الجسر قبل إرسال واتساب، يعيد الاسترجاع
+         messageId نفسه. نعيد الرد المخزن حتى لا تضيع الرسالة؛ أما إعادة
+         التسليم بعد إرسال ناجح فيوقفها checkpoint المحلي قبل بلوغ الخادم. */
+      const cached = incomingMessageIdHash ? recentInboundResponses[incomingMessageIdHash] : null
+      await ref.set(basePatch, { merge: true })
+      if (cached?.replyText) {
+        sendJson(res, 200, {
+          ok: true,
+          action: ['reply', 'reply-and-escalate'].includes(cached.action) ? cached.action : 'reply',
+          reason: 'duplicate-delivery-replay',
+          reply: { text: bounded(cached.replyText, 2_000) },
+          replayed: true,
+        })
+        return
+      }
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'duplicate-delivery' })
+      return
+    }
+
+    const [paused, rules] = await Promise.all([runtimePaused(db), listRules(db)])
+    if (paused) {
+      await ref.set(basePatch, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: 'runtime-paused' })
+      return
+    }
+
+    const decision = decideGroundedResponse({
+      text,
+      hasMedia: Boolean(body.hasMedia),
+      rules,
+      priorReplyHash: bounded(data.lastReplyHash, 80),
+      conversation: data,
+    })
+    /* ترقية ٧: التوقيع يُحذف من ردود الجلسة الواحدة بعد أوّله — عند حافة
+       الإرسال حصراً، فيبقى العقل واختباراته كما هما. */
+    const signedNow = shouldSignReply(data)
+    const replyText = bounded(trimSessionSignature(decision.reply, data), 2_000)
+    /* إذا كرر الشخص الطلب في رسالة جديدة نجيبه من جديد. تشابه الرد ليس دليلاً
+       على إعادة تسليم، ولا مبرراً لاستبداله برسالة متابعة بشرية أو رد عام. */
+    const safeReply = replyText
+
+    /* ترقية ٤: مرفق صوتي خلف الرد النصي — أمرٌ مستقل في الطابور، فشله لا
+       يمس الرد الذي وصل، ونجاحه يجعل القراءة تُسمع داخل واتساب. */
+    if (decision.audioAttachment?.url) {
+      try {
+        await enqueueCommand(db, 'send-audio', {
+          jid,
+          url: bounded(decision.audioAttachment.url, 600),
+          caption: bounded(decision.audioAttachment.title, 120),
+        }, { idempotencyKey: `audio:${hash(`${jid}:${decision.audioAttachment.url}`)}` })
+      } catch (error) {
+        console.warn('[whatsapp-audio-attachment]', error instanceof Error ? error.message : error)
+      }
+    }
+
+    if (decision.kind === 'no-reply') {
+      await ref.set({
+        ...basePatch,
+        mode: 'bot',
+        wakeActive: true,
+        wakeVersion: 2,
+        ...(decision.patch && typeof decision.patch === 'object' ? decision.patch : {}),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, action: 'none', reason: decision.reason })
+      return
+    }
+
+    if (decision.kind === 'silent') {
+      const eventId = randomUUID()
+      await Promise.all([
+        ref.set({
+          ...basePatch,
+          mode: 'bot',
+          wakeActive: true,
+          wakeVersion: 2,
+          needsHuman: true,
+          escalationReason: decision.reason,
+          escalatedAt: now,
+        }, { merge: true }),
+        db.collection(COLLECTIONS.events).doc(eventId).set({
+          id: eventId,
+          conversationId: ref.id,
+          masked: maskJid(jid),
+          reason: decision.reason,
+          status: 'open',
+          silent: true,
+          createdAt: now,
+          updatedAt: now,
+        }),
+      ])
+      sendJson(res, 200, { ok: true, action: 'none', reason: decision.reason, needsHuman: true })
+      return
+    }
+
+    if (decision.kind === 'escalate') {
+      const eventId = randomUUID()
+      await Promise.all([
+        ref.set({
+          ...basePatch,
+          mode: 'bot',
+          wakeActive: true,
+          wakeVersion: 2,
+          needsHuman: true,
+          manualUntil: null,
+          autoResumeAt: null,
+          notificationMutedUntil: null,
+          escalationReason: decision.reason,
+          escalatedAt: now,
+          lastReplyHash: hash(safeReply),
+          lastReplyAt: now,
+          ...deliveryResponsePatch('reply-and-escalate', decision.reason, safeReply),
+        }, { merge: true }),
+        db.collection(COLLECTIONS.events).doc(eventId).set({
+          id: eventId,
+          conversationId: ref.id,
+          masked: maskJid(jid),
+          reason: decision.reason,
+          status: 'open',
+          createdAt: now,
+          updatedAt: now,
+        }),
+      ])
+      sendJson(res, 200, {
+        ok: true,
+        action: 'reply-and-escalate',
+        reason: decision.reason,
+        reply: { text: safeReply },
+        notifyOwner: {
+          text: `${OWNER_ALERT_FALLBACK}\nالمحادثة: ${maskJid(jid)}\nالسبب: ${decision.reason}`,
+          conversationId: jid,
+        },
+      })
+      return
+    }
+
+    await ref.set({
+      ...basePatch,
+      mode: 'bot',
+      wakeActive: true,
+      wakeVersion: 2,
+      needsHuman: false,
+      manualUntil: null,
+      autoResumeAt: null,
+      lastReplyHash: hash(safeReply),
+      lastReplyAt: now,
+      lastEvidence: decision.evidence || [],
+      lastDecisionReason: decision.reason,
+      ...(Array.isArray(decision.contextItemIds) ? { contextItemIds: decision.contextItemIds.slice(0, 12) } : {}),
+      ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
+      ...(decision.lastTopic ? { lastTopic: bounded(decision.lastTopic, 500) } : {}),
+      ...(Array.isArray(decision.evidence) && decision.evidence.length ? {
+        seenContentIds: [...new Set([...(Array.isArray(data.seenContentIds) ? data.seenContentIds : []), ...decision.evidence])].slice(-40),
+      } : {}),
+      ...(decision.patch && typeof decision.patch === 'object' ? decision.patch : {}),
+      ...(signedNow ? { lastSignedAt: now } : {}),
+      ...deliveryResponsePatch('reply', decision.reason, safeReply),
+    }, { merge: true })
+    /* ذاكرة اللهجة الحيّة: الصياغة التي لم تُفهم بثقة تُرصد للمراقبة في اللوحة
+       (كما كانت أيام الوكيل المحلي). رصدٌ خلفي لا يؤخر الرد، ولا يتعلم البوت
+       منها جواباً — الاعتماد يبقى للدكتور صراحةً. */
+    /* عدّاد الجودة اليومي: رقمٌ واحد لكل ردّ، بلا نصٍّ ولا رقم هاتف. */
+    void (async () => {
+      /* `FieldValue` يُستورد هنا لا في رأس الملف: العقل يُختبر بلا firebase،
+         واستيرادُه ساكناً كان يجرّ حزمة الخادم كاملةً إلى الاختبارات. */
+      const { FieldValue } = await import('firebase-admin/firestore')
+      const day = new Intl.DateTimeFormat('en-CA', { timeZone: KUWAIT_TZ }).format(new Date())
+      const bucket = qualityBucketFor(decision.reason)
+      await db.collection(COLLECTIONS.quality).doc(day).set({
+        day,
+        total: FieldValue.increment(1),
+        [bucket]: FieldValue.increment(1),
+        updatedAt: now,
+      }, { merge: true })
+    })().catch(() => {})
+
+    if (['active-clarify', 'no-grounded-answer', 'near-suggestions', 'correction-clarify'].includes(decision.reason)) {
+      const phrase = bounded(stripArabicGreetings(text) || normalizeArabicMessage(text), 160)
+      if (phrase.length >= 2) {
+        const patternId = hash(`learn:${phrase}`).slice(0, 32)
+        void (async () => {
+          const patternRef = db.collection(COLLECTIONS.learning).doc(patternId)
+          const snapshot = await patternRef.get()
+          const previous = snapshot.exists ? (snapshot.data() || {}) : {}
+          if (previous.status === 'ignored') return
+          await patternRef.set({
+            id: patternId,
+            phrase,
+            /* الصياغة التي علّمتَها لا تعود «قيد المراقبة» لمجرّد تكرارها —
+               وإلا محا التكرارُ تعليمك. المعتمد والمُعلَّم يبقيان. */
+            status: ['learned', 'taught'].includes(previous.status) ? previous.status : 'observing',
+            reason: bounded(decision.reason, 60),
+            hits: Number(previous.hits || 0) + 1,
+            firstSeenAt: previous.firstSeenAt || now,
+            lastSeenAt: now,
+            updatedAt: now,
+          }, { merge: true })
+        })().catch(() => {})
+      }
+    }
+    sendJson(res, 200, { ok: true, action: 'reply', reason: decision.reason, reply: { text: safeReply } })
+  }
+
+  async function handleBridgeCommand(req, res, url, method) {
+    if (!requireBridge(req, res)) return
+    const { db } = await getFirestore()
+    if (bridgePath(url) === '/emergency-stop' && method === 'POST') {
+      const result = await stopAllSending(db)
+      sendJson(res, 200, { ok: true, ...result })
+      return
+    }
+    if (bridgePath(url) === '/runtime-resume' && method === 'POST') {
+      await db.collection(COLLECTIONS.settings).doc('runtime').set({
+        paused: false,
+        resumedAt: asIso(),
+        updatedAt: asIso(),
+      }, { merge: true })
+      runtimeCache = { expiresAt: Date.now() + 10_000, paused: false, pending: null }
+      sendJson(res, 200, { ok: true, paused: false })
+      return
+    }
+    if (method === 'GET') {
+      // كل poll يصلح أي حالة بث بقيت بين ACK وFirestore بسبب restart/انقطاع شبك.
+      // الفحص throttled ولا يلمس القوائم أو جهات الاتصال.
+      await reconcileBroadcastState(db).catch(() => {})
+      const snapshot = await db.collection(COLLECTIONS.commands).limit(100).get()
+      const now = Date.now()
+      const pending = snapshot.docs.map(serializeDoc).filter((command) => {
+        const availableAt = Date.parse(command.availableAt || command.createdAt || '')
+        if (command.status === 'pending') return !Number.isFinite(availableAt) || availableAt <= now
+        const lease = Date.parse(command.leasedAt || '')
+        return command.status === 'leased' && Number.isFinite(lease) && now - lease > 90_000
+      }).sort((a, b) => String(a.availableAt || a.createdAt || '').localeCompare(String(b.availableAt || b.createdAt || '')))[0]
+      if (!pending) {
+        sendJson(res, 200, { command: null })
+        return
+      }
+      await db.collection(COLLECTIONS.commands).doc(pending.id).set({
+        status: 'leased', leasedAt: asIso(), updatedAt: asIso(), attempts: Number(pending.attempts || 0) + 1,
+      }, { merge: true })
+      sendJson(res, 200, { command: pending })
+      return
+    }
+    if (method === 'POST') {
+      const body = await readJson(req)
+      const id = bounded(body.commandId, 80)
+      if (!id) {
+        sendJson(res, 400, { error: 'commandId is required' })
+        return
+      }
+      const commandRef = db.collection(COLLECTIONS.commands).doc(id)
+      const commandSnapshot = await commandRef.get()
+      const command = serializeDoc(commandSnapshot)
+      if (!command) {
+        sendJson(res, 404, { error: 'command not found' })
+        return
+      }
+
+      // إذا وصل ACK ثانٍ بعد أن ثبتنا حالة الأمر، لا نسمح له بقلب النجاح
+      // إلى فشل أو العكس. وإن حدث restart بين تثبيت الأمر واحتساب الحملة، نكمل
+      // الاحتساب مرة واحدة فقط من الحالة المثبتة.
+      if (['completed', 'failed'].includes(command.status)) {
+        if (command.campaignId && !command.campaignAccountedAt) await accountCampaignCommand(db, id)
+        sendJson(res, 200, { ok: true, duplicateAck: true, status: command.status })
+        return
+      }
+
+      const rawBridgeError = bounded(body.error, 600)
+      const transientBridgeError = /detached\s+frame|execution context (?:was )?destroyed|target closed|session closed|most likely because of a navigation/i.test(rawBridgeError)
+      const retryableBridgeFailure = body.retry === true
+        || (body.ok === false && transientBridgeError && Number(command?.attempts || 0) < 4)
+      if (retryableBridgeFailure) {
+        await commandRef.set({
+          status: 'pending',
+          leasedAt: null,
+          completedAt: null,
+          availableAt: new Date(Date.now() + 3_500).toISOString(),
+          error: 'bridge-session-refresh',
+          updatedAt: asIso(),
+        }, { merge: true })
+        sendJson(res, 200, { ok: true, requeued: true })
+        return
+      }
+
+      const expectedFingerprint = bounded(command.recipientFingerprint, 80)
+        || outboundRecipientFingerprint(command.payload?.jid)
+      const deliveredFingerprint = bounded(body.delivery?.recipientFingerprint, 80)
+      const isSendCommand = ['send-message', 'send-self-message'].includes(command.type)
+      const deliveryMismatch = body.ok !== false && isSendCommand && expectedFingerprint
+        && deliveredFingerprint !== expectedFingerprint
+      const safeBridgeError = deliveryMismatch
+        ? 'recipient-delivery-verification-failed'
+        : transientBridgeError
+          ? 'أعاد واتساب تهيئة الجلسة ولم يكتمل التسليم بعد عدة محاولات.'
+          : rawBridgeError
+      const succeeded = body.ok !== false && !deliveryMismatch
+      const completedAt = asIso()
+
+      await commandRef.set({
+        status: succeeded ? 'completed' : 'failed',
+        error: safeBridgeError || null,
+        completedAt,
+        updatedAt: completedAt,
+        ...(isSendCommand ? {
+          deliveryVerification: succeeded ? 'verified' : (deliveryMismatch ? 'mismatch' : 'failed'),
+          deliveryMessageId: bounded(body.delivery?.messageId, 240) || null,
+          deliveryRecipientFingerprint: deliveredFingerprint || null,
+          deliveredAt: succeeded ? (bounded(body.delivery?.at, 80) || completedAt) : null,
+        } : {}),
+      }, { merge: true })
+
+      if (command.campaignId) await accountCampaignCommand(db, id)
+
+      // لا نطلب من الجسر إعادة إرسال رسالة وصلت لرقم غير متطابق. نسجلها فشلاً
+      // تشغيلياً واضحاً؛ طبقة الجسر نفسها تمنع هذا قبل sendMessage أيضاً.
+      sendJson(res, 200, {
+        ok: true,
+        accepted: succeeded,
+        ...(deliveryMismatch ? { warning: 'recipient-delivery-verification-failed' } : {}),
+      })
+      return
+    }
+    sendJson(res, 405, { error: 'Method Not Allowed' })
+  }
+
+  async function handleAdmin(req, res, url, method) {
+    if (!(await requireAdmin(req, res))) return
+    const { db } = await getFirestore()
+    const path = adminPath(url)
+
+    if (path === '/status' && method === 'GET') {
+      await sweepExpiredManualStates(db)
+      const [bridgeSnapshot, runtimeSnapshot, conversations, commands] = await Promise.all([
+        db.collection(COLLECTIONS.bridge).doc('primary').get(),
+        db.collection(COLLECTIONS.settings).doc('runtime').get(),
+        db.collection(COLLECTIONS.conversations).limit(250).get(),
+        db.collection(COLLECTIONS.commands).limit(250).get(),
+      ])
+      const data = bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {}
+      const status = bridgeStatus({ ...data, runtimePaused: Boolean(runtimeSnapshot.data()?.paused) })
+      const conversationRows = conversations.docs.map((doc) => doc.data() || {})
+      const commandRows = commands.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }))
+      const silenced = conversationRows.filter((row) => row.mode === 'human').length
+      status.health.silenced = silenced
+      status.health.quietNow = status.runtimePaused || silenced > 0
+      status.diagnostics = buildWhatsAppDiagnostics({
+        status,
+        conversations: conversationRows,
+        commands: commandRows,
+      })
+      res.setHeader('Cache-Control', 'no-store, max-age=0')
+      sendJson(res, 200, status)
+      return
+    }
+
+    /* ═══ فحص البوت بضغطة (٧ أغسطس، بطلب الدكتور: «ما أبي المشكلة ترجع») ═══
+       يوم صمت البوت لم يكن في اللوحة ما يقول أين العطب: الجسر أم العقل أم
+       حالة المحادثة. فكان الجواب يحتاج قراءة سجلّات خادم. هذا المسار يجيب
+       بالعربية عن الأسئلة الثلاثة، ويعرض ما يُصلح كلاً منها بضغطة.
+       ولا يرسل رسالةً إلى أحد: يبني ردّ الإيقاظ في الذاكرة ويقيسه. */
+    if (path === '/self-heal' && method === 'POST') {
+      const body = await readJson(req).catch(() => ({}))
+      const report = await autoHealWhatsApp(db, { trigger: 'panel' })
+      /* إرجاع المحادثات المُسكتة لا يجري تلقائياً أبداً — قد يكون الدكتور
+         يتولّاها بنفسه. يجري هنا فقط حين يطلبه صراحةً بالضغطة. */
+      if (body?.returnMutedChats === true) {
+        const snapshot = await db.collection(COLLECTIONS.conversations).limit(500).get()
+        const rows = snapshot.docs.filter((doc) => (doc.data() || {}).mode === 'human')
+        await Promise.all(rows.map((doc) => doc.ref.set({
+          mode: 'silent', wakeActive: false, wakeVersion: 1, needsHuman: false,
+          manualUntil: null, autoResumeAt: null, notificationMutedUntil: null, updatedAt: asIso(),
+        }, { merge: true })))
+        report.actions.push({
+          id: 'muted-chats',
+          done: true,
+          detail: rows.length
+            ? `أُتيح الإيقاظ في ${arabicCountPhrase(rows.length, CONVERSATION_AFTER_PREPOSITION_FORMS, arabicNumber)} — ولن يردّ البوت فيها إلا بعد جملة الإيقاظ.`
+            : 'لا توجد محادثة مُسكتة.',
+        })
+      }
+      const healed = report.actions.filter((row) => row.done).length
+      const blocked = report.actions.filter((row) => row.done === false)
+      res.setHeader('Cache-Control', 'no-store, max-age=0')
+      sendJson(res, 200, {
+        ok: blocked.length === 0,
+        healed,
+        summary: healed
+          ? `عولج ${healed} أمراً تلقائياً.${blocked.length ? ' ويبقى ما لا يُصلَح آلياً.' : ''}`
+          : blocked.length
+            ? 'لم يكن هناك ما يُصلَح آلياً، وبقي ما يحتاج يدك.'
+            : 'لم أجد عطباً يحتاج معالجة — المنظومة سليمة.',
+        ...report,
+      })
+      return
+    }
+
+    if (path === '/self-check' && method === 'POST') {
+      const [bridgeSnapshot, runtimeSnapshot, conversations] = await Promise.all([
+        db.collection(COLLECTIONS.bridge).doc('primary').get(),
+        db.collection(COLLECTIONS.settings).doc('runtime').get(),
+        db.collection(COLLECTIONS.conversations).limit(250).get(),
+      ])
+      const bridgeData = bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {}
+      const status = bridgeStatus({ ...bridgeData, runtimePaused: Boolean(runtimeSnapshot.data()?.paused) })
+      const rows = conversations.docs.map((doc) => doc.data() || {})
+      const mutedRows = rows.filter((row) => row?.mode === 'human')
+      const now = new Date()
+
+      /* ١) هل يصل الصوت من واتساب إلى العقل؟ */
+      const bridgeOk = status.bridgeOnline === true && status.status === 'connected'
+
+      /* ٢) هل يبني العقل ردّ الإيقاظ كاملاً وجميلاً؟ نقيسه لا نفترضه:
+            عنوانٌ ورابطٌ واقتباسٌ وخيارات. */
+      const welcome = buildWakeWelcome(botMessagesNow(), now, {})
+      const welcomeText = String(welcome?.text || '')
+      const welcomeHasLink = /https?:\/\//.test(welcomeText)
+      const welcomeHasQuote = /«[^»]{20,}»/.test(welcomeText)
+      const welcomeOk = welcomeText.length > 80 && welcomeHasLink && welcomeHasQuote
+
+      /* ٣) هل تعمل جملة الإيقاظ نفسها بكل صيغها الشائعة؟ */
+      const wakeSamples = ['موقع د. أحمد', 'موقع د احمد', 'موقع د. الفيلكاوي', 'موقع د الفيلكاوي']
+      const wakeFailures = wakeSamples.filter((sample) => !isWhatsAppWakePhrase(sample))
+
+      /* ٤) هل وصل فهرس الموقع إلى الخادم أصلاً؟ */
+      const indexRows = siteIndex()
+      const indexTotal = indexRows.length
+      const indexArticles = indexRows.filter((row) => row?.kind === 'article').length
+
+      /* ٥) كم محادثة مُسكتة لأن الدكتور كتب فيها بيده؟ */
+      const mutedCount = mutedRows.length
+
+      const checks = [
+        {
+          id: 'bridge',
+          label: 'الجسر (واتساب ← الخادم)',
+          state: bridgeOk ? 'ok' : 'fail',
+          detail: bridgeOk
+            ? 'الجسر متصل ويستلم الرسائل.'
+            : `الجسر غير متصل الآن (${status.status}). الرسائل لا تصل العقل أصلاً.`,
+          fix: bridgeOk ? null : { action: 'restart-bridge', label: 'أعد تشغيل الجسر' },
+        },
+        {
+          id: 'brain-welcome',
+          label: 'ردّ الإيقاظ (جماله واكتماله)',
+          state: welcomeOk ? 'ok' : 'fail',
+          detail: welcomeOk
+            ? 'العقل يبني الترحيب كاملاً: بوابة اليوم وعنوانها واقتباسها ورابطها والخيارات.'
+            : 'ردّ الإيقاظ ناقص: ' + [!welcomeHasLink ? 'بلا رابط' : '', !welcomeHasQuote ? 'بلا اقتباس' : ''].filter(Boolean).join(' و'),
+          preview: welcomeText.slice(0, 700),
+        },
+        {
+          id: 'wake-phrase',
+          label: 'جملة الإيقاظ بكل صيغها',
+          state: wakeFailures.length ? 'fail' : 'ok',
+          detail: wakeFailures.length
+            ? `صيغٌ لا يعرفها البوت: ${wakeFailures.join(' · ')}`
+            : 'كل صيغ «موقع د. أحمد» و«موقع د. الفيلكاوي» معروفة (بهمزة وبدونها، بنقطة وبدونها).',
+        },
+        {
+          /* الفهرس الفارغ كارثةٌ وقعت من قبل: تسعة موارد لم ينسخها Dockerfile
+             فصار البوت يقول «ما لقيت مادة» على كل سؤال، والفاحصات خضراء.
+             العلامة الصادقة هي عدد المواد نفسه. */
+          id: 'content-index',
+          label: 'فهرس الموقع داخل الخادم',
+          state: indexArticles >= 100 ? 'ok' : indexArticles > 0 ? 'warn' : 'fail',
+          detail: indexArticles >= 100
+            ? `الفهرس حاضر: ${arabicCountPhrase(indexTotal, MATERIAL_FORMS, arabicNumber)} منها ${arabicCountPhrase(indexArticles, ARTICLE_FORMS, arabicNumber)}.`
+            : indexArticles > 0
+              ? `الفهرس ناقص: ${indexArticles} مقالاً فقط (المتوقّع ١٤٣ فأكثر). تحقّق من نسخ ملفات البيانات إلى الخادم.`
+              : 'الفهرس فارغ داخل الخادم — سيقول البوت «ما لقيت مادة» على كل سؤال. ملفات البيانات لم تصل الصورة.',
+        },
+        {
+          id: 'muted-chats',
+          label: 'محادثات مُسكتة باستلامك اليدوي',
+          state: mutedCount ? 'warn' : 'ok',
+          detail: mutedCount
+            ? `${arabicCountPhrase(mutedCount, MUTED_CONVERSATION_FORMS, arabicNumber)} لن يردّ فيها البوت لأنك كتبت فيها بيدك. تعود بكتابة «موقع د. أحمد» فيها — أو بضغطة هنا.`
+            : 'لا توجد محادثة مُسكتة.',
+          fix: mutedCount ? { action: 'bot-return-all', label: 'أرجع البوت لكل المحادثات' } : null,
+        },
+        {
+          id: 'owner-test',
+          label: 'تجربتك أنت من جهازك',
+          state: 'ok',
+          detail: 'اكتب «موقع د. أحمد» من جهازك في أي محادثة — حتى محادثتك مع نفسك — فيردّ عليك البوت. (قبل ٧ أغسطس كانت رسالتك بخطّ يدك تُسكته بدل أن توقظه.)',
+        },
+      ]
+
+      const failed = checks.filter((row) => row.state === 'fail')
+      const warned = checks.filter((row) => row.state === 'warn')
+      const verdict = failed.length
+        ? `المنظومة متعثّرة: ${failed.map((row) => row.label).join(' · ')}`
+        : warned.length
+          ? `البوت سليم، وهناك ما ينبغي أن تعرفه: ${warned.map((row) => row.label).join(' · ')}`
+          : 'البوت سليمٌ تماماً: الجسر متصل، وردّ الإيقاظ كامل، ولا محادثة مُسكتة.'
+
+      res.setHeader('Cache-Control', 'no-store, max-age=0')
+      sendJson(res, 200, { ok: failed.length === 0, verdict, checks, mutedCount, checkedAt: asIso() })
+      return
+    }
+
+    if (path === '/silence' && method === 'GET') {
+      const snapshot = await db.collection(COLLECTIONS.conversations).limit(250).get()
+      const active = snapshot.docs.map((doc) => doc.data() || {}).filter((row) => row.mode === 'human')
+      sendJson(res, 200, { silenced: active.length, until: null })
+      return
+    }
+
+    if (path === '/rules' && method === 'GET') {
+      sendJson(res, 200, await listRules(db))
+      return
+    }
+
+    if (path === '/rules' && ['POST', 'PATCH'].includes(method)) {
+      const body = await readJson(req, 64 * 1024)
+      const id = method === 'PATCH' ? bounded(body.id, 100) : randomUUID()
+      if (!id || !bounded(body.name, 120) || !Array.isArray(body.keywords) || !body.keywords.length) {
+        sendJson(res, 400, { error: 'الاسم وكلمة مطابقة واحدة على الأقل مطلوبان.' })
+        return
+      }
+      const existing = await db.collection(COLLECTIONS.rules).doc(id).get()
+      if (existing.exists) {
+        const versionId = Date.now()
+        await db.collection(COLLECTIONS.ruleVersions).doc(`${id}:${versionId}`).set({
+          id: versionId, ruleId: id, snapshot: existing.data(), createdAt: asIso(),
+        })
+      }
+      const rule = {
+        id,
+        name: bounded(body.name, 120),
+        keywords: body.keywords.map((value) => bounded(value, 100)).filter(Boolean).slice(0, 40),
+        priority: Math.max(-100, Math.min(1_000, Number(body.priority || 0))),
+        matchType: ['any', 'all', 'exact'].includes(body.matchType) ? body.matchType : 'any',
+        actionType: ['text', 'site-content', 'transfer'].includes(body.actionType) ? body.actionType : 'text',
+        responseText: bounded(body.responseText, 2_000),
+        contentQuery: bounded(body.contentQuery, 500),
+        enabled: body.enabled !== false,
+        updatedAt: asIso(),
+      }
+      await db.collection(COLLECTIONS.rules).doc(id).set(rule)
+      invalidateRulesCache()
+      sendJson(res, 200, rule)
+      return
+    }
+
+    const ruleDelete = /^\/rules\/([^/]+)$/.exec(path)
+    if (ruleDelete && method === 'DELETE') {
+      const id = decodeURIComponent(ruleDelete[1])
+      const ref = db.collection(COLLECTIONS.rules).doc(id)
+      const current = await ref.get()
+      if (current.exists) {
+        const versionId = Date.now()
+        await db.collection(COLLECTIONS.ruleVersions).doc(`${id}:${versionId}`).set({
+          id: versionId, ruleId: id, snapshot: current.data(), createdAt: asIso(),
+        })
+        await ref.delete()
+        invalidateRulesCache()
+      }
+      sendJson(res, 200, { ok: true })
+      return
+    }
+
+    const versionsMatch = /^\/rules\/([^/]+)\/versions$/.exec(path)
+    if (versionsMatch && method === 'GET') {
+      const id = decodeURIComponent(versionsMatch[1])
+      const snapshot = await db.collection(COLLECTIONS.ruleVersions).limit(250).get()
+      const versions = snapshot.docs.map(serializeDoc).filter((row) => row.ruleId === id)
+        .sort((a, b) => Number(b.id || 0) - Number(a.id || 0))
+        .map(({ id: docId, ...row }) => ({ ...row, id: Number(row.id || String(docId).split(':').at(-1)) }))
+      sendJson(res, 200, versions)
+      return
+    }
+
+    const rollbackMatch = /^\/rules\/([^/]+)\/rollback\/(\d+)$/.exec(path)
+    if (rollbackMatch && method === 'POST') {
+      const id = decodeURIComponent(rollbackMatch[1])
+      const versionId = rollbackMatch[2]
+      const snapshot = await db.collection(COLLECTIONS.ruleVersions).doc(`${id}:${versionId}`).get()
+      if (!snapshot.exists || !snapshot.data()?.snapshot) {
+        sendJson(res, 404, { error: 'Version not found' })
+        return
+      }
+      await db.collection(COLLECTIONS.rules).doc(id).set({ ...snapshot.data().snapshot, id, updatedAt: asIso() })
+      invalidateRulesCache()
+      sendJson(res, 200, { ok: true })
+      return
+    }
+
+    if (path === '/restart' && method === 'POST') {
+      sendJson(res, 200, { ok: true, command: await enqueueCommand(db, 'restart') })
+      return
+    }
+    if (path === '/device-activity-pulse' && method === 'POST') {
+      const body = await readJson(req).catch(() => ({}))
+      if (body.confirm !== true) {
+        sendJson(res, 400, { error: 'يلزم تأكيد تنشيط الجلسة.' })
+        return
+      }
+      const bridgeSnapshot = await db.collection(COLLECTIONS.bridge).doc('primary').get()
+      const current = bridgeStatus(bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {})
+      if (!current.health?.ready) {
+        sendJson(res, 409, { error: 'جلسة واتساب غير متصلة الآن؛ أصلح الاتصال أولاً.' })
+        return
+      }
+      const requestedAt = asIso()
+      const command = await enqueueCommand(db, 'pulse-device-activity')
+      await db.collection(COLLECTIONS.bridge).doc('primary').set({
+        lastDeviceActivityPulseRequestedAt: requestedAt,
+        updatedAt: requestedAt,
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, requestedAt, command })
+      return
+    }
+    if (path === '/recover' && method === 'POST') {
+      const body = await readJson(req)
+      if (body.confirm !== true) {
+        sendJson(res, 400, { error: 'يلزم تأكيد الإحياء الآمن.' })
+        return
+      }
+      const requestedAt = asIso()
+      const commandSnapshot = await db.collection(COLLECTIONS.commands).limit(250).get()
+      let requeued = 0
+      let batch = db.batch()
+      for (const doc of commandSnapshot.docs) {
+        const command = doc.data() || {}
+        const leasedAt = diagnosticTimestamp(command.leasedAt || command.updatedAt)
+        if (command.status !== 'leased' || leasedAt == null || Date.now() - leasedAt <= 90_000) continue
+        batch.set(doc.ref, {
+          status: 'pending',
+          leasedAt: null,
+          availableAt: requestedAt,
+          updatedAt: requestedAt,
+          error: null,
+        }, { merge: true })
+        requeued += 1
+      }
+      batch.set(db.collection(COLLECTIONS.settings).doc('runtime'), {
+        paused: false,
+        lastRecoveryRequestedAt: requestedAt,
+        updatedAt: requestedAt,
+      }, { merge: true })
+      batch.set(db.collection(COLLECTIONS.bridge).doc('primary'), {
+        lastRecoveryRequestedAt: requestedAt,
+        updatedAt: requestedAt,
+      }, { merge: true })
+      await batch.commit()
+      runtimeCache = { expiresAt: Date.now() + 10_000, paused: false, pending: null }
+      const command = await enqueueCommand(db, 'restart', { recovery: true })
+      sendJson(res, 200, {
+        ok: true,
+        requestedAt,
+        requeued,
+        command,
+        message: 'أُعيد تشغيل الردود وحُفظ طلب إعادة تشغيل آمن للجسر من دون مسح جلسة واتساب.',
+      })
+      return
+    }
+    if (path === '/repair' && method === 'POST') {
+      const bridgeRef = db.collection(COLLECTIONS.bridge).doc('primary')
+      const bridgeSnapshot = await bridgeRef.get()
+      const bridgeData = bridgeSnapshot.exists ? bridgeSnapshot.data() || {} : {}
+      const current = bridgeStatus(bridgeData)
+      if (current.health?.ready) {
+        sendJson(res, 409, { error: 'الجلسة متصلة وسليمة؛ رفضت اللوحة مسحها.' })
+        return
+      }
+      if (current.repairCooldownMs > 0) {
+        sendJson(res, 429, {
+          error: 'أوقفت اللوحة تكرار إعادة الربط حتى لا يفرض واتساب حظراً مؤقتاً جديداً.',
+          retryAfterMs: current.repairCooldownMs,
+          retryAt: current.repairBlockedUntil,
+        })
+        return
+      }
+      await bridgeRef.set({ lastRepairRequestedAt: asIso(), updatedAt: asIso() }, { merge: true })
+      sendJson(res, 200, { ok: true, command: await enqueueCommand(db, 'repair-session'), message: 'أُرسل طلب إعادة الربط إلى الجسر المركزي.' })
+      return
+    }
+    if (path === '/agent/pause' && method === 'POST') {
+      await db.collection(COLLECTIONS.settings).doc('runtime').set({ paused: true, updatedAt: asIso() }, { merge: true })
+      runtimeCache = { expiresAt: Date.now() + 10_000, paused: true, pending: null }
+      sendJson(res, 200, { ok: true })
+      return
+    }
+    if (path === '/agent/resume' && method === 'POST') {
+      await db.collection(COLLECTIONS.settings).doc('runtime').set({ paused: false, updatedAt: asIso() }, { merge: true })
+      runtimeCache = { expiresAt: Date.now() + 10_000, paused: false, pending: null }
+      sendJson(res, 200, { ok: true })
+      return
+    }
+    if (path === '/manual-takeover' && method === 'POST') {
+      const body = await readJson(req)
+      const jid = bounded(body.jid, 180)
+      const { ref } = await getConversation(db, jid)
+      await ref.set({
+        jid,
+        masked: maskJid(jid),
+        mode: 'human',
+        wakeActive: false,
+        wakeVersion: 1,
+        needsHuman: false,
+        manualUntil: null,
+        autoResumeAt: null,
+        notificationMutedUntil: null,
+        lastManualAt: asIso(),
+        updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, until: null, resumes: 'wake-phrase-only' })
+      return
+    }
+    if (path === '/bot-return' && method === 'POST') {
+      const body = await readJson(req)
+      const { ref } = await getConversation(db, bounded(body.jid, 180))
+      await ref.set({ mode: 'silent', wakeActive: false, wakeVersion: 1, needsHuman: false, manualUntil: null, autoResumeAt: null, notificationMutedUntil: null, updatedAt: asIso() }, { merge: true })
+      sendJson(res, 200, { ok: true, resumes: 'wake-phrase-only' })
+      return
+    }
+    if (path === '/bot-return-all' && method === 'POST') {
+      const snapshot = await db.collection(COLLECTIONS.conversations).limit(500).get()
+      const rows = snapshot.docs.filter((doc) => doc.data()?.mode === 'human')
+      await Promise.all(rows.map((doc) => doc.ref.set({ mode: 'silent', wakeActive: false, wakeVersion: 1, needsHuman: false, manualUntil: null, autoResumeAt: null, notificationMutedUntil: null, updatedAt: asIso() }, { merge: true })))
+      sendJson(res, 200, { returned: rows.length })
+      return
+    }
+
+    if (path === '/audience/contacts' && method === 'GET') {
+      const term = normalizeAudienceSearch(url.searchParams.get('q') || '')
+      const limit = Math.max(1, Math.min(500, Number(url.searchParams.get('limit') || 200)))
+      const offset = Math.max(0, Number(url.searchParams.get('offset') || 0))
+      const [contactSnapshot, membershipSnapshot] = await Promise.all([
+        db.collection(COLLECTIONS.audienceContacts).limit(5_000).get(),
+        db.collection(COLLECTIONS.audienceMembers).limit(10_000).get(),
+      ])
+      const listCounts = new Map()
+      for (const membership of membershipSnapshot.docs) {
+        const id = bounded(membership.data()?.contactId, 100)
+        if (id) listCounts.set(id, Number(listCounts.get(id) || 0) + 1)
+      }
+      const bucket = url.searchParams.get('bucket') === 'auto' ? 'auto' : 'book'
+      const allContacts = contactSnapshot.docs.map(serializeDoc).filter(Boolean)
+        .map((contact) => ({
+          id: contact.id,
+          name: audienceDisplayName(contact),
+          nickname: bounded(contact.nickname, 120),
+          waName: bounded(contact.waName || contact.displayName, 120),
+          tail: bounded(contact.tail, 4),
+          suppressed: Boolean(contact.suppressed),
+          lists: Number(listCounts.get(contact.id) || 0),
+          /* التقطته المزامنة لا يدُ الدكتور: بلا اسم إطلاقاً، وبلا createdAt
+             (الاستيراد واليدوي يكتبانه دائماً والمزامنة لا تكتبه أبداً)،
+             وليس في أي قائمة. هؤلاء يُعزلون عن الدفتر الافتراضي بلا حذف. */
+          autoCaptured: !contact.nickname && !contact.waName && !contact.displayName
+            && !contact.createdAt && !Number(listCounts.get(contact.id) || 0),
+        }))
+      const autoHidden = allContacts.filter((contact) => contact.autoCaptured).length
+      const contacts = allContacts
+        .filter((contact) => bucket === 'auto' ? contact.autoCaptured : !contact.autoCaptured)
+        .filter((contact) => !term
+          || normalizeAudienceSearch(contact.name).includes(term)
+          || contact.tail.includes(term))
+        /* أصحاب الأسماء أولاً أبجدياً، ومجهولو الاسم في ذيل الدفتر مرتبين
+           بأرقامهم — كانت المقارنة الأبجدية تقدم «••0007» على الحروف فتفتح
+           الصفحة الأولى على ٢٠٠ رقاقة مبهمة (لقطة ٣١ يوليو). */
+        .sort((left, right) => {
+          const leftNamed = !left.name.startsWith('••')
+          const rightNamed = !right.name.startsWith('••')
+          if (leftNamed !== rightNamed) return leftNamed ? -1 : 1
+          return leftNamed
+            ? left.name.localeCompare(right.name, 'ar')
+            : left.tail.localeCompare(right.tail)
+        })
+      sendJson(res, 200, {
+        contacts: contacts.slice(offset, offset + limit),
+        total: contacts.length,
+        offset,
+        limit,
+        autoHidden,
+      })
+      return
+    }
+
+    if (path === '/audience/contacts' && method === 'POST') {
+      const body = await readJson(req)
+      const digits = normalizeAudienceDigits(body.phone)
+      if (!digits) {
+        sendJson(res, 400, { error: 'الرقم غير مكتمل.' })
+        return
+      }
+      const jid = `${digits}@c.us`
+      const id = audienceContactId(jid)
+      const nickname = bounded(body.nickname, 120)
+      await db.collection(COLLECTIONS.audienceContacts).doc(id).set({
+        id,
+        jid,
+        tail: digits.slice(-4),
+        ...(nickname ? { nickname, displayName: nickname } : {}),
+        source: 'manual',
+        updatedAt: asIso(),
+        createdAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, id })
+      return
+    }
+
+    if (path === '/audience/import' && method === 'POST') {
+      const body = await readJson(req, MAX_BODY_BYTES)
+      const parsed = parseAudienceImport(body.text)
+      const normalized = new Map()
+      const skipped = []
+      for (const [index, item] of parsed.entries()) {
+        const digits = normalizeAudienceDigits(item.phone)
+        if (!digits) {
+          skipped.push(index)
+          continue
+        }
+        const jid = `${digits}@c.us`
+        const id = audienceContactId(jid)
+        if (!normalized.has(id)) normalized.set(id, {
+          id, jid, tail: digits.slice(-4), name: bounded(item.name, 120),
+        })
+      }
+      const rows = [...normalized.values()]
+      const knownSnapshots = await getAudienceContactsByIds(db, rows.map((row) => row.id))
+      const knownIds = new Set(knownSnapshots.map((row) => row.id))
+      const newcomers = []
+      let batch = db.batch()
+      let writes = 0
+      const commit = async () => {
+        if (!writes) return
+        await batch.commit()
+        batch = db.batch()
+        writes = 0
+      }
+      for (const row of rows) {
+        const isKnown = knownIds.has(row.id)
+        const ref = db.collection(COLLECTIONS.audienceContacts).doc(row.id)
+        batch.set(ref, {
+          id: row.id,
+          jid: row.jid,
+          tail: row.tail,
+          ...(row.name ? { displayName: row.name } : {}),
+          source: isKnown ? 'import-refresh' : 'import',
+          updatedAt: asIso(),
+          ...(!isKnown ? { createdAt: asIso() } : {}),
+        }, { merge: true })
+        writes += 1
+        if (!isKnown) newcomers.push({ id: row.id, name: row.name || `••${row.tail}`, tail: row.tail })
+        if (body.listId) {
+          const memberId = `${bounded(body.listId, 100)}:${row.id}`
+          batch.set(db.collection(COLLECTIONS.audienceMembers).doc(memberId), {
+            id: memberId, listId: bounded(body.listId, 100), contactId: row.id, createdAt: asIso(),
+          }, { merge: true })
+          writes += 1
+        }
+        if (writes >= 390) await commit()
+      }
+      await commit()
+      sendJson(res, 200, {
+        ok: true,
+        added: newcomers.length,
+        known: rows.length - newcomers.length,
+        skipped,
+        newcomers: newcomers.slice(0, 60),
+      })
+      return
+    }
+
+    if (path === '/audience/nickname' && method === 'POST') {
+      const body = await readJson(req)
+      const id = bounded(body.contactId, 100)
+      if (!id) {
+        sendJson(res, 400, { error: 'جهة الاتصال مطلوبة.' })
+        return
+      }
+      await db.collection(COLLECTIONS.audienceContacts).doc(id).set({
+        nickname: bounded(body.nickname, 120) || null,
+        updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true })
+      return
+    }
+
+    if (path === '/audience/lists' && method === 'GET') {
+      const snapshot = await db.collection(COLLECTIONS.audienceLists).limit(500).get()
+      const lists = snapshot.docs.map(serializeDoc).filter(Boolean)
+        .map((list) => ({
+          id: list.id,
+          name: bounded(list.name, 120) || 'قائمة بلا اسم',
+          note: bounded(list.note, 300),
+          kind: bounded(list.kind, 40) || 'manual',
+          count: Number(list.count || 0),
+        }))
+        .sort((left, right) => left.name.localeCompare(right.name, 'ar'))
+      sendJson(res, 200, { lists })
+      return
+    }
+
+    if (path === '/audience/lists' && method === 'POST') {
+      const body = await readJson(req)
+      if (body.action === 'delete') {
+        const id = bounded(body.id, 100)
+        const members = await db.collection(COLLECTIONS.audienceMembers).where('listId', '==', id).limit(5_000).get()
+        let batch = db.batch()
+        let writes = 0
+        for (const member of members.docs) {
+          batch.delete(member.ref)
+          writes += 1
+          if (writes >= 400) {
+            await batch.commit()
+            batch = db.batch()
+            writes = 0
+          }
+        }
+        batch.delete(db.collection(COLLECTIONS.audienceLists).doc(id))
+        await batch.commit()
+        sendJson(res, 200, { ok: true })
+        return
+      }
+      const name = bounded(body.name, 120)
+      if (!name) {
+        sendJson(res, 400, { error: 'اسم القائمة مطلوب.' })
+        return
+      }
+      const id = body.action === 'rename' ? bounded(body.id, 100) : randomUUID()
+      await db.collection(COLLECTIONS.audienceLists).doc(id).set({
+        id,
+        name,
+        note: bounded(body.note, 300),
+        kind: 'manual',
+        ...(body.action === 'rename' ? {} : { count: 0, createdAt: asIso() }),
+        updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { ok: true, id })
+      return
+    }
+
+    if (path === '/audience/members' && method === 'GET') {
+      const members = await listAudienceMembers(db, url.searchParams.get('list') || '')
+      sendJson(res, 200, {
+        members: members.map((contact) => ({
+          id: contact.id,
+          name: audienceDisplayName(contact),
+          vocative: audienceVocative(contact),
+          nickname: bounded(contact.nickname, 120),
+          tail: bounded(contact.tail, 4),
+          suppressed: Boolean(contact.suppressed),
+        })),
+      })
+      return
+    }
+
+    if (path === '/audience/members' && method === 'POST') {
+      const body = await readJson(req)
+      const listId = bounded(body.listId, 100)
+      if (!listId) {
+        sendJson(res, 400, { error: 'القائمة مطلوبة.' })
+        return
+      }
+      if (body.action === 'remove') {
+        const contactId = bounded(body.contactId, 100)
+        await db.collection(COLLECTIONS.audienceMembers).doc(`${listId}:${contactId}`).delete()
+      } else {
+        const contactIds = [...new Set((Array.isArray(body.contactIds) ? body.contactIds : [])
+          .map((id) => bounded(id, 100)).filter(Boolean))].slice(0, 5_000)
+        let batch = db.batch()
+        let writes = 0
+        for (const contactId of contactIds) {
+          const memberId = `${listId}:${contactId}`
+          batch.set(db.collection(COLLECTIONS.audienceMembers).doc(memberId), {
+            id: memberId, listId, contactId, createdAt: asIso(),
+          }, { merge: true })
+          writes += 1
+          if (writes >= 400) {
+            await batch.commit()
+            batch = db.batch()
+            writes = 0
+          }
+        }
+        if (writes) await batch.commit()
+      }
+      const countSnapshot = await db.collection(COLLECTIONS.audienceMembers).where('listId', '==', listId).count().get()
+      const count = Number(countSnapshot.data()?.count || 0)
+      await db.collection(COLLECTIONS.audienceLists).doc(listId).set({ count, updatedAt: asIso() }, { merge: true })
+      sendJson(res, 200, { ok: true, count })
+      return
+    }
+
+    if (path === '/audience/preview' && method === 'POST') {
+      const body = await readJson(req)
+      const members = await listAudienceMembers(db, bounded(body.listId, 100))
+      const send = members.filter((contact) => !contact.suppressed)
+      sendJson(res, 200, {
+        samples: send.slice(0, 3).map((contact) => ({
+          name: audienceDisplayName(contact),
+          body: personalizeAudienceText(body.text, contact),
+        })),
+        willSend: send.length,
+        suppressed: members.length - send.length,
+      })
+      return
+    }
+
+    if (path === '/send-self-preview' && method === 'POST') {
+      const body = await readJson(req)
+      const text = bounded(body.message || body.text, 4_000)
+      if (!text) {
+        sendJson(res, 400, { error: 'نص المعاينة مطلوب.' })
+        return
+      }
+      const command = await enqueueCommand(db, 'send-self-message', { text })
+      sendJson(res, 200, { ok: true, queued: true, messageId: command.id })
+      return
+    }
+    if (path === '/emergency-stop' && method === 'POST') {
+      const body = await readJson(req)
+      if (body.confirm !== true) {
+        sendJson(res, 400, { error: 'يلزم تأكيد إيقاف الإرسال.' })
+        return
+      }
+      const result = await stopAllSending(db)
+      sendJson(res, 200, {
+        ok: true,
+        ...result,
+      })
+      return
+    }
+    const commandStatus = /^\/commands\/([^/]+)$/.exec(path)
+    if (commandStatus && method === 'GET') {
+      const id = bounded(decodeURIComponent(commandStatus[1]), 80)
+      const snapshot = await db.collection(COLLECTIONS.commands).doc(id).get()
+      if (!snapshot.exists) {
+        sendJson(res, 404, { error: 'أمر الإرسال غير موجود.' })
+        return
+      }
+      const command = snapshot.data() || {}
+      sendJson(res, 200, {
+        id,
+        type: bounded(command.type, 80),
+        status: bounded(command.status, 40) || 'pending',
+        error: bounded(command.error, 300) || null,
+        updatedAt: bounded(command.updatedAt, 80) || null,
+      })
+      return
+    }
+
+    if (path === '/audience/draft' && method === 'POST') {
+      const body = await readJson(req)
+      const listId = bounded(body.listId, 100)
+      const message = bounded(body.message, 4_000)
+      if (!listId || !message) {
+        sendJson(res, 400, { error: 'القائمة والرسالة مطلوبتان.' })
+        return
+      }
+      const list = await db.collection(COLLECTIONS.audienceLists).doc(listId).get()
+      if (!list.exists) {
+        sendJson(res, 404, { error: 'القائمة غير موجودة.' })
+        return
+      }
+      const members = await listAudienceMembers(db, listId)
+      const seenRecipients = new Set()
+      const targetIds = members.filter((contact) => {
+        if (contact.suppressed) return false
+        const fingerprint = outboundRecipientFingerprint(contact.jid)
+        if (!fingerprint || seenRecipients.has(fingerprint)) return false
+        seenRecipients.add(fingerprint)
+        return true
+      }).map((contact) => contact.id)
+      const id = randomUUID()
+      await db.collection(COLLECTIONS.campaigns).doc(id).set({
+        id,
+        listId,
+        name: bounded(body.name, 180) || bounded(list.data()?.name, 120) || 'بث واتساب',
+        message,
+        targetIds,
+        total: targetIds.length,
+        sent: 0,
+        failed: 0,
+        cursor: 0,
+        state: 'draft',
+        createdAt: asIso(),
+        updatedAt: asIso(),
+      })
+      sendJson(res, 200, { id, state: 'draft', total: targetIds.length })
+      return
+    }
+
+    if (path === '/campaigns' && method === 'GET') {
+      const snapshot = await db.collection(COLLECTIONS.campaigns).limit(100).get()
+      const campaigns = snapshot.docs
+        .map((doc) => campaignPublicState(doc))
+        .sort((left, right) => String(right.createdAt || '').localeCompare(String(left.createdAt || '')))
+      sendJson(res, 200, { campaigns })
+      return
+    }
+
+    const campaignDetail = /^\/campaigns\/([^/]+)$/.exec(path)
+    if (campaignDetail && method === 'GET') {
+      const id = bounded(decodeURIComponent(campaignDetail[1]), 100)
+      const snapshot = await db.collection(COLLECTIONS.campaigns).doc(id).get()
+      if (!snapshot.exists) {
+        sendJson(res, 404, { error: 'الحملة غير موجودة.' })
+        return
+      }
+      const commands = await db.collection(COLLECTIONS.commands).where('campaignId', '==', id).limit(5000).get()
+      const failures = commands.docs.map(serializeDoc)
+        .filter((item) => item?.status === 'failed' && Number.isFinite(Number(item.campaignIndex)))
+        .sort((left, right) => Number(left.campaignIndex) - Number(right.campaignIndex))
+        .map((item) => ({
+          index: Number(item.campaignIndex),
+          recipient: `الجهة ${Number(item.campaignIndex) + 1}`,
+          reason: bounded(item.error, 240) || 'تعذّر التسليم من واتساب.',
+        }))
+      sendJson(res, 200, { ...campaignPublicState(snapshot), failures })
+      return
+    }
+
+    const campaignPause = /^\/campaigns\/([^/]+)\/pause$/.exec(path)
+    if (campaignPause && method === 'POST') {
+      const id = bounded(decodeURIComponent(campaignPause[1]), 100)
+      const ref = db.collection(COLLECTIONS.campaigns).doc(id)
+      const snapshot = await ref.get()
+      if (!snapshot.exists) {
+        sendJson(res, 404, { error: 'الحملة غير موجودة.' })
+        return
+      }
+      const campaign = snapshot.data() || {}
+      if (!['sending', 'retrying', 'approved'].includes(campaign.state)) {
+        sendJson(res, 409, { error: 'هذه الحملة ليست في حالة إرسال قابلة للإيقاف المؤقت.' })
+        return
+      }
+      const commands = await db.collection(COLLECTIONS.commands).where('campaignId', '==', id).limit(5000).get()
+      const pending = commands.docs.filter((doc) => (doc.data() || {}).status === 'pending')
+      let batch = db.batch()
+      let writes = 0
+      for (const doc of pending) {
+        batch.set(doc.ref, { status: 'held', heldAt: asIso(), updatedAt: asIso() }, { merge: true })
+        writes += 1
+        if (writes >= 400) { await batch.commit(); batch = db.batch(); writes = 0 }
+      }
+      if (writes) await batch.commit()
+      await ref.set({ state: 'paused', pausedFromState: campaign.state, pausedAt: asIso(), nextAt: null, updatedAt: asIso() }, { merge: true })
+      sendJson(res, 200, { id, state: 'paused' })
+      return
+    }
+
+    const campaignResume = /^\/campaigns\/([^/]+)\/resume$/.exec(path)
+    if (campaignResume && method === 'POST') {
+      const id = bounded(decodeURIComponent(campaignResume[1]), 100)
+      const ref = db.collection(COLLECTIONS.campaigns).doc(id)
+      const snapshot = await ref.get()
+      if (!snapshot.exists || snapshot.data()?.state !== 'paused') {
+        sendJson(res, 409, { error: 'الحملة ليست متوقفة مؤقتاً.' })
+        return
+      }
+      const campaign = snapshot.data() || {}
+      const previous = campaign.pausedFromState === 'retrying' ? 'retrying' : 'sending'
+      const commands = await db.collection(COLLECTIONS.commands).where('campaignId', '==', id).limit(5000).get()
+      const held = commands.docs.filter((doc) => (doc.data() || {}).status === 'held')
+      const intervalMs = Math.max(20_000, Math.min(15 * 60_000, Number(campaign.intervalSeconds || 45) * 1_000))
+      let batch = db.batch()
+      let writes = 0
+      for (let index = 0; index < held.length; index += 1) {
+        const doc = held[index]
+        batch.set(doc.ref, { status: 'pending', heldAt: null, availableAt: asIso(Date.now() + index * intervalMs), updatedAt: asIso() }, { merge: true })
+        writes += 1
+        if (writes >= 400) { await batch.commit(); batch = db.batch(); writes = 0 }
+      }
+      if (writes) await batch.commit()
+      await ref.set({ state: previous, resumedAt: asIso(), nextAt: held.length ? asIso() : null, updatedAt: asIso() }, { merge: true })
+      if (previous === 'sending' && !campaign.pendingCommandId) await queueNextCampaignMessage(db, id, 0)
+      sendJson(res, 200, { id, state: previous })
+      return
+    }
+
+    const campaignRetryFailed = /^\/campaigns\/([^/]+)\/retry-failed$/.exec(path)
+    if (campaignRetryFailed && method === 'POST') {
+      const body = await readJson(req)
+      if (body.confirm !== true) {
+        sendJson(res, 400, { error: 'يلزم تأكيد إعادة محاولة الفاشل فقط.' })
+        return
+      }
+      const id = bounded(decodeURIComponent(campaignRetryFailed[1]), 100)
+      const ref = db.collection(COLLECTIONS.campaigns).doc(id)
+      const snapshot = await ref.get()
+      if (!snapshot.exists) {
+        sendJson(res, 404, { error: 'الحملة غير موجودة.' })
+        return
+      }
+      const campaign = snapshot.data() || {}
+      if (['sending', 'retrying', 'paused'].includes(campaign.state)) {
+        sendJson(res, 409, { error: 'أوقف الحملة أو انتظر اكتمال الإرسال الحالي أولاً.' })
+        return
+      }
+      const commands = await db.collection(COLLECTIONS.commands).where('campaignId', '==', id).limit(5000).get()
+      const failed = commands.docs.filter((doc) => {
+        const item = doc.data() || {}
+        return item.status === 'failed' && Number.isFinite(Number(item.campaignIndex))
+      }).sort((left, right) => Number(left.data()?.campaignIndex || 0) - Number(right.data()?.campaignIndex || 0))
+      if (!failed.length) {
+        sendJson(res, 409, { error: 'لا توجد رسائل فاشلة لإعادة المحاولة.' })
+        return
+      }
+      const intervalSeconds = Math.max(20, Math.min(15 * 60, Number(campaign.intervalSeconds || body.intervalSeconds || 45)))
+      const intervalMs = intervalSeconds * 1000
+      let batch = db.batch()
+      let writes = 0
+      for (let index = 0; index < failed.length; index += 1) {
+        const doc = failed[index]
+        batch.set(doc.ref, {
+          status: 'pending', attempts: 0, retryFailure: true, accountingVersion: 2, leasedAt: null, completedAt: null,
+          campaignAccountedAt: null, campaignAccountingError: null, legacyAccountingSkippedAt: null, deliveryVerification: null,
+          deliveryMessageId: null, deliveryRecipientFingerprint: null, deliveredAt: null,
+          error: null, availableAt: asIso(Date.now() + index * intervalMs), updatedAt: asIso(),
+        }, { merge: true })
+        writes += 1
+        if (writes >= 400) { await batch.commit(); batch = db.batch(); writes = 0 }
+      }
+      if (writes) await batch.commit()
+      await ref.set({
+        state: 'retrying', intervalSeconds, retryStartedAt: asIso(), nextAt: asIso(), lastError: null, updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 202, { id, state: 'retrying', retrying: failed.length })
+      return
+    }
+
+    const campaignApprove = /^\/campaigns\/([^/]+)\/approve$/.exec(path)
+    if (campaignApprove && method === 'POST') {
+      const body = await readJson(req)
+      if (body.confirm !== true) {
+        sendJson(res, 400, { error: 'التأكيد مطلوب.' })
+        return
+      }
+      const id = decodeURIComponent(campaignApprove[1])
+      await db.collection(COLLECTIONS.campaigns).doc(id).set({
+        state: 'approved', approvedAt: asIso(), updatedAt: asIso(),
+      }, { merge: true })
+      sendJson(res, 200, { id, state: 'approved' })
+      return
+    }
+
+    const campaignSend = /^\/campaigns\/([^/]+)\/send-quiet$/.exec(path)
+    if (campaignSend && method === 'POST') {
+      const body = await readJson(req)
+      if (body.confirm !== true || body.confirmAgain !== true) {
+        sendJson(res, 400, { error: 'يلزم التأكيد مرتين قبل البث.' })
+        return
+      }
+      const id = decodeURIComponent(campaignSend[1])
+      const ref = db.collection(COLLECTIONS.campaigns).doc(id)
+      const snapshot = await ref.get()
+      if (!snapshot.exists || !['approved', 'paused'].includes(snapshot.data()?.state)) {
+        sendJson(res, 409, { error: 'المسودة غير معتمدة أو بدأ إرسالها بالفعل.' })
+        return
+      }
+      const intervalSeconds = Math.max(20, Math.min(15 * 60, Number(body.intervalSeconds || 45)))
+      await ref.set({
+        state: 'sending',
+        intervalSeconds,
+        startedAt: snapshot.data()?.startedAt || asIso(),
+        updatedAt: asIso(),
+      }, { merge: true })
+      const command = await queueNextCampaignMessage(db, id, 0)
+      sendJson(res, 202, { id, state: command ? 'sending' : 'completed', total: Number(snapshot.data()?.total || 0) })
+      return
+    }
+
+    if (path === '/simulate-sequence' && method === 'POST') {
+      const body = await readJson(req)
+      const messages = Array.isArray(body.messages)
+        ? body.messages.slice(0, 8).map((message) => bounded(message, 2_000)).filter(Boolean)
+        : []
+      if (messages.length < 2) {
+        sendJson(res, 400, { error: 'يلزم سؤالان متتاليان على الأقل.' })
+        return
+      }
+      const rules = await listRules(db)
+      let conversation = {}
+      const turns = messages.map((text, index) => {
+        const startedAt = Date.now()
+        const decision = decideGroundedResponse({ text, rules, conversation })
+        const preview = bounded(decision.reply, 2_000)
+        conversation = {
+          ...conversation,
+          mode: 'bot',
+          wakeActive: true,
+          lastInboundAt: asIso(),
+          lastReplyAt: asIso(),
+          lastReplyHash: hash(preview),
+          lastDecisionReason: decision.reason,
+          ...(Array.isArray(decision.contextItemIds) ? { contextItemIds: decision.contextItemIds.slice(0, 12) } : {}),
+          ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
+          ...(decision.lastTopic ? { lastTopic: bounded(decision.lastTopic, 500) } : {}),
+          ...(Array.isArray(decision.evidence) ? { seenContentIds: [...new Set([...(conversation.seenContentIds || []), ...decision.evidence])].slice(-40) } : {}),
+          ...(decision.patch && typeof decision.patch === 'object' ? decision.patch : {}),
+        }
+        return {
+          turn: index + 1,
+          text,
+          willReply: decision.kind !== 'silent' && Boolean(preview),
+          action: decision.kind === 'escalate' ? 'reply-and-escalate' : 'reply',
+          reason: decision.reason,
+          durationMs: Date.now() - startedAt,
+          preview,
+        }
+      })
+      sendJson(res, 200, {
+        ok: turns.every((turn) => turn.willReply),
+        continuous: turns.every((turn) => turn.willReply),
+        sentToWhatsApp: false,
+        policy: 'كل رسالة جديدة في الوضع الطبيعي تحصل على رد؛ لا تتوقف المحادثة إلا بعد رد يدوي من المالك.',
+        turns,
+      })
+      return
+    }
+
+    if (path === '/simulate' && method === 'POST') {
+      const body = await readJson(req)
+      const rules = await listRules(db)
+      const decision = decideGroundedResponse({ text: body.text, rules })
+      sendJson(res, 200, {
+        willReply: true,
+        why: decision.reason,
+        quietNow: false,
+        intent: decision.reason,
+        mode: decision.kind === 'escalate' ? 'human' : 'bot',
+        confidence: decision.kind === 'escalate' ? 0 : 1,
+        needsHuman: decision.kind === 'escalate',
+        ruleId: decision.rule?.id || null,
+        ruleName: decision.rule?.name || null,
+        preview: decision.reply,
+      })
+      return
+    }
+    if (path === '/personality' && method === 'GET') {
+      const snapshot = await db.collection(COLLECTIONS.settings).doc('personality').get()
+      sendJson(res, 200, snapshot.exists ? snapshot.data() || {} : {
+        verbosity: 'layered',
+        dialect: 'kuwaiti-light',
+        initiative: 'guided',
+        signature: 'always',
+        memoryConsent: 'explicit',
+      })
+      return
+    }
+    if (path === '/personality' && method === 'POST') {
+      const body = await readJson(req)
+      const personality = {
+        verbosity: ['brief', 'layered', 'detailed'].includes(body.verbosity) ? body.verbosity : 'layered',
+        dialect: ['formal-arabic', 'kuwaiti-light', 'neutral-arabic'].includes(body.dialect) ? body.dialect : 'kuwaiti-light',
+        initiative: ['none', 'one-question', 'guided'].includes(body.initiative) ? body.initiative : 'guided',
+        signature: 'always',
+        memoryConsent: 'explicit',
+        updatedAt: asIso(),
+      }
+      await db.collection(COLLECTIONS.settings).doc('personality').set(personality, { merge: true })
+      sendJson(res, 200, personality)
+      return
+    }
+
+    /* ترقية ٦ — تقرير الدكتور الأسبوعي: ما سأل عنه الناس هذا الأسبوع، وما
+       طلبوه ولم يجده البوت. الثاني أثمن من الأول: كل عبارة لم تُطابق مادةً
+       منشورة هي فكرة مقالٍ ينتظر — تُقرأ من الرصد نفسه بلا تتبّعٍ لأحد،
+       وبلا أسماء ولا أرقام. */
+    if (path === '/weekly-report' && method === 'GET') {
+      const days = Math.max(1, Math.min(30, Number(url.searchParams.get('days') || 7)))
+      const since = Date.now() - days * 86_400_000
+      const [observedSnapshot, conversationsSnapshot] = await Promise.all([
+        db.collection(COLLECTIONS.learning).orderBy('lastSeenAt', 'desc').limit(300).get().catch(() => ({ docs: [] })),
+        db.collection(COLLECTIONS.conversations).orderBy('updatedAt', 'desc').limit(300).get().catch(() => ({ docs: [] })),
+      ])
+      const inWindow = (value) => {
+        const at = Date.parse(String(value || ''))
+        return Number.isFinite(at) && at >= since
+      }
+      const observed = observedSnapshot.docs.map(serializeDoc).filter(Boolean).filter((row) => inWindow(row.lastSeenAt))
+      const conversations = conversationsSnapshot.docs.map(serializeDoc).filter(Boolean).filter((row) => inWindow(row.updatedAt))
+      const topicCounts = new Map()
+      for (const row of conversations) {
+        const topic = bounded(row.lastTopic, 120)
+        if (topic) topicCounts.set(topic, Number(topicCounts.get(topic) || 0) + 1)
+      }
+      const gapCounts = new Map()
+      for (const row of observed) {
+        const phrase = bounded(row.phrase, 160)
+        if (phrase) gapCounts.set(phrase, Number(gapCounts.get(phrase) || 0) + Number(row.hits || 1))
+      }
+      const rank = (map) => [...map.entries()]
+        .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'ar'))
+        .slice(0, 10)
+        .map(([label, count]) => ({ label, count }))
+      const awakened = conversations.filter((row) => row.wakeActive === true).length
+      sendJson(res, 200, {
+        days,
+        generatedAt: asIso(),
+        conversations: conversations.length,
+        awakened,
+        askedAbout: rank(topicCounts),
+        notFound: rank(gapCounts),
+        note: 'يُبنى من الرصد المجهول: لا أسماء ولا أرقام. «ما لم يجده» قائمة أفكارٍ تنتظر الكتابة — اعرضها على مجلس التحرير.',
+      })
+      return
+    }
+
+    /* ═══ الجودة مقيسة ═══
+       سبعة أرقامٍ عن أسبوع: كم سؤالاً أُجيب من المنشور، وكم انتهى بـ«ما
+       لقيت»، وكم أنقذه المعجم أو تعليم الدكتور. بلا هذه الأرقام يبقى كل
+       تحسينٍ تخميناً — ومنها يُعرف هل الترقيات تنفع فعلاً. */
+    if (path === '/quality' && method === 'GET') {
+      const snapshot = await db.collection(COLLECTIONS.quality).orderBy('day', 'desc').limit(14).get().catch(() => ({ docs: [] }))
+      const days = snapshot.docs.map(serializeDoc).filter(Boolean)
+      const week = days.slice(0, 7)
+      const sum = (key) => week.reduce((total, row) => total + Number(row[key] || 0), 0)
+      const total = sum('total')
+      const missed = sum('missed')
+      const pct = (value) => (total ? Math.round((value / total) * 100) : 0)
+      sendJson(res, 200, {
+        days,
+        week: {
+          total,
+          answered: sum('answered'),
+          clarified: sum('clarified'),
+          missed,
+          escalated: sum('escalated'),
+          concept: sum('concept'),
+          taught: sum('taught'),
+          missedPercent: pct(missed),
+          answeredPercent: pct(sum('answered')),
+        },
+        glossary: glossarySize(),
+        note: total
+          ? `من ${arabicCountPhrase(total, REPLY_AFTER_PREPOSITION_FORMS)} هذا الأسبوع: ${pct(sum('answered'))}٪ أُجيب من المنشور، و${pct(missed)}٪ انتهى بلا مادة. كلما نزلت نسبة «بلا مادة» صار الفهم أعمق.`
+          : 'لم تُسجَّل ردود بعد. الأرقام تبدأ من أول محادثة بعد هذا التحديث.',
+      })
+      return
+    }
+    if (path === '/learning' && method === 'GET') {
+      /* الذاكرة الحيّة تعرض الصياغات المرصودة فعلاً (ما لم يُفهم بثقة) —
+         كانت اللوحة تقرأ أصفاراً لأن العقل المركزي لم يكن يرصد شيئاً. */
+      const [rules, observedSnapshot] = await Promise.all([
+        listRules(db),
+        db.collection(COLLECTIONS.learning).orderBy('lastSeenAt', 'desc').limit(120).get().catch(() => ({ docs: [] })),
+      ])
+      const observed = observedSnapshot.docs.map(serializeDoc).filter(Boolean)
+      const observing = observed.filter((row) => row.status === 'observing')
+      const ignored = observed.filter((row) => row.status === 'ignored')
+      const taught = observed.filter((row) => row.status === 'taught')
+      sendJson(res, 200, {
+        total: LEXICON_SIZE + rules.length + observed.length,
+        learned: LEXICON_SIZE,
+        observing: observing.length,
+        ignored: ignored.length,
+        taught: taught.length,
+        policy: 'القاموس الكويتي والمصطلحات المعتمدة مفعّلة في الفهم الدلالي. الصياغات غير المفهومة تُرصد هنا، ولا يتعلم البوت منها شيئاً إلا بإسنادك الصريح — وحين تُسنِدها يبحث عن موضوعك في المنشور، ولا يولّد جواباً.',
+        items: [
+          ...observed.slice(0, 80).map((row) => ({
+            id: String(row.id),
+            phrase: bounded(row.phrase, 160),
+            status: row.status === 'ignored' ? 'ignored' : row.status === 'taught' ? 'taught' : 'observing',
+            kind: 'observed-phrase',
+            hits: Number(row.hits || 1),
+            lastSeenAt: row.lastSeenAt || null,
+            teachQuery: bounded(row.teachQuery, 160) || null,
+          })),
+          ...rules.slice(0, 40).map((rule) => ({
+            id: String(rule.id),
+            phrase: rule.name,
+            status: rule.enabled === false ? 'ignored' : 'learned',
+            kind: 'approved-rule',
+          })),
+        ],
+      })
+      return
+    }
+    {
+      const learningAction = path.match(/^\/learning\/([A-Za-z0-9_-]{4,64})\/(observing|ignored)$/)
+      if (learningAction && method === 'POST') {
+        await db.collection(COLLECTIONS.learning).doc(learningAction[1])
+          .set({ status: learningAction[2], updatedAt: asIso(), teachQuery: null }, { merge: true })
+        await primeTaughtPhrases(db, true).catch(() => {})
+        return handleAdmin(req, res, new URL('/api/whatsapp/admin/learning', 'http://localhost'), 'GET')
+      }
+      /* التعليم: تُسنِد الصياغة التي أخطأ فيها إلى موضوعٍ من موادّك، فيجيب
+         عنها في المرة القادمة بحثاً في المنشور — لا جواباً مولَّداً. */
+      const teachAction = path.match(/^\/learning\/([A-Za-z0-9_-]{4,64})\/teach$/)
+      if (teachAction && method === 'POST') {
+        const body = await readJson(req)
+        const teachQuery = bounded(body.query, 160).trim()
+        if (!teachQuery) { sendJson(res, 400, { ok: false, error: 'اكتب الموضوع الذي تُسنِد إليه هذه الصياغة.' }); return }
+        await db.collection(COLLECTIONS.learning).doc(teachAction[1])
+          .set({ status: 'taught', teachQuery, taughtAt: asIso(), updatedAt: asIso() }, { merge: true })
+        await primeTaughtPhrases(db, true).catch(() => {})
+        return handleAdmin(req, res, new URL('/api/whatsapp/admin/learning', 'http://localhost'), 'GET')
+      }
+    }
+    if (path === '/knowledge' && method === 'GET') {
+      const index = siteIndex()
+      const [conversationSnapshot, eventSnapshot, personalitySnapshot] = await Promise.all([
+        db.collection(COLLECTIONS.conversations).limit(1000).get(),
+        db.collection(COLLECTIONS.events).limit(1000).get(),
+        db.collection(COLLECTIONS.settings).doc('personality').get(),
+      ])
+      const conversations = conversationSnapshot.docs.map(serializeDoc).filter(Boolean)
+      const events = eventSnapshot.docs.map(serializeDoc).filter(Boolean)
+      const active = conversations.filter((row) => row.wakeActive === true || row.needsHuman === true || row.mode === 'human').length
+      const human = conversations.filter((row) => row.mode === 'human' || row.needsHuman === true).length
+      const intentRows = aggregateCounts(conversations, (row) => bounded(row.lastDecisionReason || row.escalationReason, 180), decisionLabel)
+      const answerRows = aggregateCounts(conversations.filter((row) => row.lastReplyAt), (row) => bounded(row.lastDecisionReason || 'reply', 180), decisionLabel)
+      const gapRows = aggregateCounts(events.filter((row) => row.status === 'open'), (row) => bounded(row.reason, 180), decisionLabel)
+      sendJson(res, 200, {
+        modes: [
+          { id: 'site-only', label: 'الموقع فقط', boundary: 'لا إجابة بلا رابط أو قاعدة معتمدة.' },
+          { id: 'human', label: 'تصعيد بشري', boundary: 'الصورة والملف والسؤال غير الموثق تتحول للبشر.' },
+        ],
+        sourcePolicies: { site: ['المقالات', 'الكتب', 'الأبحاث', 'المواد المنشورة'], customRules: ['قواعد تعتمدها من اللوحة'] },
+        evidence: { total: index.length, enabled: index.length, lastUpdatedAt: asIso(), domains: [{ domain: new URL(SITE_URL).hostname, total: index.length, enabled: index.length }] },
+        conversations: {
+          active,
+          human,
+          intents: intentRows.slice(0, 20).map((item) => ({ intent: item.label, total: item.total })),
+          gaps: gapRows.slice(0, 20).map((item) => ({ topic: item.label, reason: item.label, total: item.total })),
+          answers: answerRows.slice(0, 20).map((item) => ({ intent: item.label, total: item.total })),
+        },
+        personality: personalitySnapshot.exists ? personalitySnapshot.data() || {} : { verbosity: 'layered', dialect: 'kuwaiti-light', initiative: 'guided', signature: 'always', memoryConsent: 'explicit' },
+        privacy: 'هذه المؤشرات مجاميع فعلية من سجلات التشغيل الحالية فقط؛ لا تعرض نصوص الناس أو أرقامهم، ولا يتعلم البوت من كلامهم تلقائياً.',
+      })
+      return
+    }
+    if (path.startsWith('/trusted-evidence') && method === 'GET') {
+      sendJson(res, 200, [])
+      return
+    }
+
+    sendJson(res, 404, { error: 'WhatsApp admin endpoint not found' })
+  }
+
+  return async function handleWhatsAppRequest(req, res, url, method = req.method || 'GET') {
+    try {
+      if (url.pathname.startsWith('/api/whatsapp/')) {
+        const path = bridgePath(url)
+        if (path === '/webhook' && method === 'POST') await handleWebhook(req, res)
+        else if (path === '/commands' || path === '/emergency-stop' || path === '/runtime-resume') await handleBridgeCommand(req, res, url, method)
+        else sendJson(res, 404, { error: 'WhatsApp bridge endpoint not found' })
+        return true
+      }
+      if (url.pathname.startsWith('/api/admin/whatsapp')) {
+        await handleAdmin(req, res, url, method)
+        return true
+      }
+      return false
+    } catch (error) {
+      sendJson(res, Number(error?.status || 500), {
+        error: Number(error?.status || 500) >= 500 ? 'WhatsApp service error' : bounded(error?.message, 300),
+      })
+      return true
+    }
+  }
+}
+
+export const whatsappPolicy = Object.freeze({
+  siteUrl: SITE_URL,
+  /* قاعدة الدكتور المطلقة (كارثة ٣٠ يوليو: البوت ردّ على بثٍّ إعلاني لمدرسة):
+     لا ردّ على أي رسالة إطلاقاً إلا داخل جلسةٍ فتحها صاحبها بكتابة جملة
+     الإيقاظ بنفسه. wakeEpoch=2 يُبطل كل الجلسات التي فتحها وضع «دائم
+     التفاعل» القديم دون كتابة الجملة. */
+  defaultReplyMode: 'wake-phrase-only',
+  wakeEpoch: 2,
+  manualTakeoverMinutes: null,
+  manualTakeoverAutoResume: false,
+  resumeMode: 'manual-takeover-wake-only',
+  zeroHallucination: true,
+  paidAiApis: false,
+})

@@ -1,0 +1,922 @@
+import assert from 'node:assert/strict'
+import {
+  decideGroundedResponse,
+  findRuleMatch,
+  returningReaderLine,
+  applyTaughtPhrases,
+  readerKindOf,
+  qualityBucketFor,
+  scoredSiteResults,
+  markOwnerActive,
+  buildWhatsAppDiagnostics,
+  normalizeArabicMessage,
+  isWhatsAppWakePhrase,
+  isDuplicateInboundDelivery,
+  isInvalidBridgeRegression,
+  isStaleInboundMessage,
+  parseCompoundFilters,
+  stripArabicGreetings,
+  whatsappPolicy,
+} from '../src/server/whatsapp-controller.mjs'
+
+assert.equal(normalizeArabicMessage('إلى مدرسةٍ ١٢ — جميلة'), 'الي مدرسه 12 جميله')
+assert.equal(stripArabicGreetings('السلام عليكم ورحمة الله وبركاته، أبي الذكاء الاصطناعي'), 'ابي الذكاء الاصطناعي')
+assert.equal(whatsappPolicy.manualTakeoverMinutes, null)
+assert.equal(whatsappPolicy.manualTakeoverAutoResume, false)
+/* قاعدة الدكتور المطلقة بعد كارثة ٣٠ يوليو (ردّ آلي على بثّ مدرسة إعلاني):
+   لا ردّ لأحد إطلاقاً إلا بجملة الإيقاظ، ونسخة الإيقاظ المعتمدة هي ٢ —
+   فكل جلسةٍ فتحها وضع «دائم التفاعل» القديم دون الجملة لاغية. */
+assert.equal(whatsappPolicy.defaultReplyMode, 'wake-phrase-only')
+assert.equal(whatsappPolicy.wakeEpoch, 2)
+assert.equal(whatsappPolicy.resumeMode, 'manual-takeover-wake-only')
+assert.equal(whatsappPolicy.zeroHallucination, true)
+assert.equal(whatsappPolicy.paidAiApis, false)
+assert.equal(isWhatsAppWakePhrase('موقع د. أحمد'), true)
+assert.equal(isWhatsAppWakePhrase('مَوْقِع د. الفيلكاوي؟'), true)
+for (const phrase of ['السلام عليكم', 'آخر مقالة', 'اسأل الدكتور', 'موقع أحمد', 'لا تفتح موقع د أحمد']) {
+  assert.equal(isWhatsAppWakePhrase(phrase), false, `${phrase} must not wake the bot`)
+}
+assert.equal(isInvalidBridgeRegression({ instanceId: 'one', connected: true, status: 'connected' }, 'one', 'syncing'), true)
+assert.equal(isInvalidBridgeRegression({ instanceId: 'one', connected: true, status: 'connected' }, 'two', 'syncing'), false)
+assert.equal(isStaleInboundMessage({
+  timestamp: Date.parse('2026-07-30T18:00:00.000Z') / 1000,
+  bridgeReadyAt: '2026-07-30T18:10:00.000Z',
+  now: Date.parse('2026-07-30T18:10:05.000Z'),
+}), true, 'messages from before this bridge runtime must never wake/reply after sync')
+assert.equal(isStaleInboundMessage({
+  timestamp: Date.parse('2026-07-30T18:09:30.000Z') / 1000,
+  bridgeReadyAt: '2026-07-30T18:10:00.000Z',
+  now: Date.parse('2026-07-30T18:10:05.000Z'),
+}), true, 'even a message only 30 seconds before ready belongs to downtime and must be quarantined')
+assert.equal(isStaleInboundMessage({
+  timestamp: Date.parse('2026-07-30T18:09:59.000Z') / 1000,
+  bridgeReadyAt: '2026-07-30T18:10:00.000Z',
+  now: Date.parse('2026-07-30T18:10:05.000Z'),
+}), false, 'only the bounded clock/timestamp grace may cross the ready cutover')
+
+const controllerSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/server/whatsapp-controller.mjs', import.meta.url), 'utf8'))
+const sovereignBrainSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../whatsapp-agent/sovereign-brain.mjs', import.meta.url), 'utf8'))
+assert.match(controllerSource, /runtime-resume/)
+assert.match(controllerSource, /\\d\{5,30\}.*s\\\.whatsapp\\\.net/)
+assert.doesNotMatch(controllerSource, /resumedAutomaticallyAt/)
+assert.match(controllerSource, /mode: 'silent', wakeActive: false, wakeVersion: 1/)
+assert.match(controllerSource, /resumes: 'wake-phrase-only'/)
+assert.match(controllerSource, /reason: 'owner-private-chat'/)
+assert.match(controllerSource, /reason: 'duplicate-delivery'/)
+assert.match(controllerSource, /reason: 'duplicate-delivery-replay'/)
+assert.match(controllerSource, /recentInboundResponses/)
+assert.doesNotMatch(controllerSource, /احتاجت متابعة بشرية|سيكمل معك الفريق|سيكمل معك الدكتور أو أحد الفريق/)
+assert.match(controllerSource, /path === '\/recover'/)
+assert.match(controllerSource, /path === '\/simulate-sequence'/)
+assert.match(controllerSource, /الوضع الطبيعي تُقابل بالصمت التام/)
+assert.match(controllerSource, /reason: 'awaiting-wake-phrase'/)
+assert.match(controllerSource, /Number\(data\.wakeVersion \|\| 0\) >= 2/)
+assert.match(controllerSource, /reason: 'stale-after-bridge-start'/)
+assert.match(controllerSource, /media-burst-suppressed/)
+assert.match(controllerSource, /cleanAudienceName/)
+assert.doesNotMatch(controllerSource, /wakeActive: true,\s*\n\s*wakeVersion: 1,/, 'لا فتح جلسات بنسخة الإيقاظ الملغاة')
+assert.match(controllerSource, /sovereignAnswer/)
+assert.match(controllerSource, /sovereignFollowup/)
+assert.match(sovereignBrainSource, /externalAi: false/)
+assert.match(sovereignBrainSource, /productionWrites: false/)
+assert.doesNotMatch(sovereignBrainSource, /\bfetch\s*\(/, 'العقل السيادي محلي ولا يرسل محتوى الناس أو الموقع إلى خدمة خارجية')
+
+const now = Date.parse('2026-07-29T18:30:00.000Z')
+const healthyDiagnostics = buildWhatsAppDiagnostics({
+  now,
+  status: {
+    status: 'connected',
+    bridgeOnline: true,
+    heartbeatAgeMs: 4_000,
+    indexed: 196,
+    runtimePaused: false,
+    health: { ready: true, needsAuthScan: false, why: '' },
+  },
+  conversations: [{ lastInboundAt: '2026-07-29T18:29:50.000Z', lastReplyAt: '2026-07-29T18:29:52.000Z' }],
+  commands: [],
+})
+assert.equal(healthyDiagnostics.code, 'healthy')
+assert.equal(healthyDiagnostics.level, 'healthy')
+assert.equal(healthyDiagnostics.checks.length, 7)
+assert.equal(healthyDiagnostics.checks.some((check) => check.id === 'missed-message-recovery'), true)
+assert.equal(healthyDiagnostics.checks.some((check) => check.id === 'linked-device-protection'), true)
+assert.equal(healthyDiagnostics.queue.staleLeased, 0)
+
+const offlineDiagnostics = buildWhatsAppDiagnostics({
+  now,
+  status: { status: 'disconnected', bridgeOnline: false, indexed: 196, health: { ready: false, needsAuthScan: false, why: 'لا توجد نبضة' } },
+})
+assert.equal(offlineDiagnostics.code, 'resident-offline')
+assert.equal(offlineDiagnostics.level, 'critical')
+
+const pausedDiagnostics = buildWhatsAppDiagnostics({
+  now,
+  status: { status: 'connected', bridgeOnline: true, indexed: 196, runtimePaused: true, health: { ready: true, needsAuthScan: false } },
+})
+assert.equal(pausedDiagnostics.code, 'replies-paused')
+
+const stalledDiagnostics = buildWhatsAppDiagnostics({
+  now,
+  status: { status: 'connected', bridgeOnline: true, indexed: 196, runtimePaused: false, health: { ready: true, needsAuthScan: false } },
+  commands: [{ status: 'leased', leasedAt: '2026-07-29T18:20:00.000Z' }],
+})
+assert.equal(stalledDiagnostics.code, 'queue-stalled')
+assert.equal(stalledDiagnostics.queue.staleLeased, 1)
+
+const panelSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../src/components/admin/WhatsAppAgentPanel.tsx', import.meta.url), 'utf8'))
+assert.match(panelSource, /data-whatsapp-recovery-center="true"/)
+assert.match(panelSource, /\/admin\/recover/)
+assert.match(panelSource, /مركز التشخيص والإحياء/)
+assert.match(panelSource, /data-whatsapp-catchup-status="true"/)
+assert.match(panelSource, /data-whatsapp-device-activity-protection="true"/)
+assert.match(panelSource, /نشّط الجلسة الآن/)
+assert.match(controllerSource, /path === '\/device-activity-pulse'/)
+
+const bridgeSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../whatsapp-web-bridge/index.mjs', import.meta.url), 'utf8'))
+assert.match(bridgeSource, /catchUpMissedMessages/)
+assert.match(bridgeSource, /inbound-checkpoint\.json/)
+assert.match(bridgeSource, /setInterval\(\(\) => void catchUpMissedMessages\(\), 5 \* 60_000\)/)
+assert.match(bridgeSource, /retries: 2, timeoutMs: 8_000/)
+assert.match(bridgeSource, /sanitizeServerReply/)
+assert.match(bridgeSource, /legacy_duplicate_decision_retrying_as_distinct_turn/)
+assert.match(bridgeSource, /SAFE_CLARIFY_REPLY/)
+assert.match(bridgeSource, /client\.sendPresenceAvailable\(\)/, 'الجسر ينبّه واتساب يومياً أن الجهاز المرتبط ما زال مستخدماً')
+assert.match(bridgeSource, /client\.sendPresenceUnavailable\(\)/, 'نبضة النشاط لا تترك الحساب ظاهراً Online')
+assert.match(bridgeSource, /device_activity_presence_pulse_completed/, 'نجاح نبضة منع الخروج التلقائي قابل للرصد')
+assert.match(bridgeSource, /WHATSAPP_DEVICE_ACTIVITY_PULSE_MS/, 'دورية نبضة الجهاز قابلة للضبط من بيئة التشغيل')
+assert.match(bridgeSource, /command\.type === 'pulse-device-activity'/, 'لوحة التحكم تستطيع تشغيل النبضة فوراً')
+
+/* ═══ عقد البصمة: نصفان لا يفترقان ═══
+   الخادم يرفض إقرار النجاح الذي لا تصحبه بصمةُ المستلَم
+   (`recipient-delivery-verification-failed`). فإن نُشر نصفُ الخادم وحده
+   **عُدّت كلُّ رسالةٍ وصلت فاشلةً في لوحة الحملات** — وهو ما وقع فعلاً.
+   يُقفل النصفان هنا معاً: الصيغة واحدة، وكلّ إقرار نجاحٍ يحمل بصمته. */
+assert.match(controllerSource, /recipientFingerprint/, 'الخادم يفحص بصمة المستلَم')
+assert.match(bridgeSource, /delivery: \{ recipientFingerprint:/, 'الجسر يرسل البصمة مع كل إقرار نجاح')
+assert.match(bridgeSource, /wa-recipient:\$\{digits\}/, 'صيغة البصمة في الجسر تطابق الخادم')
+assert.match(controllerSource, /`wa-recipient:\$\{digits\}`/, 'صيغة البصمة في الخادم تطابق الجسر')
+/* كل مسارات إقرار النجاح الثلاثة (إرسال، ذاتية، إقرار متأخّر) تحمل البصمة */
+assert.equal(
+  (bridgeSource.match(/ok: true, delivery: \{ recipientFingerprint:/g) || []).length,
+  3,
+  'المسارات الثلاثة لإقرار النجاح تحمل البصمة — وإلا حُسبت رسائل واصلة فاشلة',
+)
+
+const cloudBridgeSource = await import('node:fs').then(({ readFileSync }) => readFileSync(new URL('../whatsapp-bridge/bridge.mjs', import.meta.url), 'utf8'))
+assert.match(cloudBridgeSource, /backfilled_message_quarantined/)
+assert.match(cloudBridgeSource, /bridgeReadyAt: runtime\.readyAt/)
+assert.match(cloudBridgeSource, /client\.getNumberId\(digits\)/)
+assert.match(cloudBridgeSource, /command\.type === 'send-self-message'/)
+assert.match(cloudBridgeSource, /command\.type === 'pulse-device-activity'/)
+assert.match(cloudBridgeSource, /await acknowledgeCommand\(command\.id, true\)/)
+assert.match(cloudBridgeSource, /delivery-checkpoints\.json/, 'successful sends must survive bridge restart without resend')
+assert.match(cloudBridgeSource, /outbound_delivery_checkpoint_replayed/)
+assert.match(cloudBridgeSource, /recipient-fingerprint-mismatch/)
+assert.match(cloudBridgeSource, /recipient-resolution-mismatch/)
+assert.match(cloudBridgeSource, /inboundReplyCheckpoints/)
+assert.match(cloudBridgeSource, /inboundInFlight/)
+assert.match(cloudBridgeSource, /client\.sendPresenceAvailable\(\)/)
+assert.match(cloudBridgeSource, /client\.sendPresenceUnavailable\(\)/)
+assert.doesNotMatch(cloudBridgeSource, /join\(config\.sessionDir[^\n]*delivery-checkpoints/, 'delivery state must remain outside the live WhatsApp session directory')
+assert.doesNotMatch(cloudBridgeSource, /\.getChat\(/, 'broadcast delivery must not depend on an undefined chat object')
+
+assert.match(controllerSource, /idempotencyKey: `broadcast:\$\{ref\.id\}:\$\{cursor\}:\$\{recipientFingerprint\}`/)
+assert.match(controllerSource, /campaignAccountedAt/, 'campaign counts must be idempotent across duplicate ACKs')
+assert.match(controllerSource, /reconcileBroadcastState/, 'active campaigns must reconcile after restart')
+assert.match(controllerSource, /broadcastReconcileDelayMs/, 'restart repair must preserve the quiet-send interval instead of bursting')
+assert.match(controllerSource, /recipient-delivery-verification-failed/, 'server must independently verify exact broadcast recipient')
+assert.match(controllerSource, /outboundRecipientFingerprint/, 'broadcast recipients must use a non-reversible fingerprint')
+assert.match(controllerSource, /const seenRecipients = new Set\(\)/, 'campaign target construction must suppress duplicate numbers without deleting saved contacts')
+assert.match(controllerSource, /campaignAccountedAt: null/, 'retry-failed must open a fresh accounting cycle instead of reusing the old failure count')
+assert.match(controllerSource, /accountingVersion: 2/, 'new commands must opt into atomic campaign accounting explicitly')
+assert.match(controllerSource, /legacy-retry-accounting-unknown/, 'legacy retries must never be double-counted during reconciliation')
+assert.match(controllerSource, /legacyAccountingInferred/, 'legacy normal sends use safe count inference instead of blind re-accounting')
+assert.match(controllerSource, /تم إصلاح مؤشر إرسال مفقود/, 'reconciliation must repair orphaned pending pointers')
+
+const rules = [{
+  id: 'hours',
+  name: 'الدوام',
+  keywords: ['مواعيد الدوام'],
+  priority: 100,
+  matchType: 'any',
+  actionType: 'text',
+  responseText: 'المواعيد المعتمدة هي: الأحد إلى الخميس.',
+  enabled: true,
+}]
+
+assert.equal(findRuleMatch('هلا، مواعيد الدوم شنو؟', rules)?.id, 'hours')
+assert.match(decideGroundedResponse({ text: 'مواعيد الدوام', rules }).reply, /المواعيد المعتمدة هي: الأحد إلى الخميس/)
+assert.match(decideGroundedResponse({ text: 'مواعيد الدوام', rules }).reply, /رد آلي من موقع/)
+
+const media = decideGroundedResponse({ text: 'شوف الملف', hasMedia: true })
+assert.equal(media.kind, 'reply')
+assert.equal(media.reason, 'media-description-needed')
+assert.match(media.reply, /اكتب المطلوب بجملة واحدة/)
+assert.doesNotMatch(media.reply, /متابعة بشرية|الفريق/)
+/* رشقة الصور (ترقية ٣١ يوليو): الصمت التام كان يبدو عطلاً. الصورة الثانية
+   في النافذة تُقابَل باعترافٍ واحد، وما بعدها يصمت فعلاً — لا فيضان ولا تجاهل. */
+const mediaBurst = decideGroundedResponse({ text: '', hasMedia: true, conversation: { lastMediaReplyAt: new Date().toISOString() } })
+assert.equal(mediaBurst.kind, 'reply')
+assert.equal(mediaBurst.reason, 'media-burst-acknowledged')
+assert.match(mediaBurst.reply, /وصلتني بقية الصور/)
+const mediaBurstTail = decideGroundedResponse({ text: '', hasMedia: true, conversation: { lastMediaReplyAt: new Date().toISOString(), mediaBurstCount: 2 } })
+assert.equal(mediaBurstTail.kind, 'no-reply')
+assert.equal(mediaBurstTail.reason, 'media-burst-suppressed')
+
+const human = decideGroundedResponse({ text: 'أبي أكلم موظف' })
+assert.equal(human.kind, 'escalate')
+assert.equal(human.reason, 'human-request')
+assert.doesNotMatch(human.reply, /سيكمل معك الفريق|سيرد عليك الدكتور/)
+
+assert.equal(isDuplicateInboundDelivery({
+  messageIdHash: 'message-b',
+  recentMessageIds: ['message-a'],
+  incomingHash: 'same-text',
+  previousIncomingHash: 'same-text',
+  previousInboundAt: '2026-07-29T20:10:00.000Z',
+  now: Date.parse('2026-07-29T20:10:03.000Z'),
+}), false, 'same text in a new WhatsApp message is a new conversation turn')
+assert.equal(isDuplicateInboundDelivery({
+  messageIdHash: 'message-a',
+  recentMessageIds: ['message-a'],
+}), true, 'the exact WhatsApp delivery id is deduplicated')
+
+const price = decideGroundedResponse({ text: 'أبي قائمة الأسعار' })
+assert.equal(price.kind, 'reply')
+assert.match(price.reply, /dr-alfailakawi\.com/)
+assert.doesNotMatch(price.reply, /\d+\s*(?:د\.ك|دينار)/)
+
+const unknown = decideGroundedResponse({ text: 'شنو طقس كوكب نبتون باچر؟' })
+assert.equal(unknown.kind, 'reply')
+assert.ok(['active-clarify', 'no-grounded-answer'].includes(unknown.reason))
+assert.match(unknown.reply, /اكتب الفكرة|اكتب الموضوع|كلمة أقرب/)
+
+const archive = decideGroundedResponse({ text: 'الذكاء الاصطناعي في التعليم' })
+assert.equal(archive.kind, 'reply')
+assert.match(archive.reply, /https:\/\/dr-alfailakawi\.com\//)
+assert.match(archive.reply, /لخّصها|لخّص الأولى|غيرها/)
+assert.match(archive.reply, /رد آلي من موقع/)
+
+/* العبارتان اللتان أثبتتهما صور واتساب (٨ أغسطس): لا تُقرآن بحثاً عاماً،
+   ولا تُخلط «ابحث» مع الاسم «بحث». والكتاب الحالي يبقى حاضراً للفهرس
+   والسؤال اللاحق، بينما الصوت والفيديو والإعلام والراديو تفتح أبوابها الفعلية. */
+assert.deepEqual(parseCompoundFilters('ابحث داخل الكتاب').kinds, [], 'الفعل «ابحث» ليس نوع المحتوى «بحث»')
+const bookGateway = decideGroundedResponse({ text: 'ابحث داخل الكتاب' })
+assert.equal(bookGateway.reason, 'book-search-gateway')
+assert.match(bookGateway.reply, /search\?tab=askbook/)
+assert.doesNotMatch(bookGateway.reply, /أبحاث وكتب|articles\//)
+const smartSchoolConversation = { contextItemIds: ['book:smart-school'], contextIndex: 0 }
+const bookReady = decideGroundedResponse({ text: 'ابحث داخل الكتاب', conversation: smartSchoolConversation })
+assert.equal(bookReady.reason, 'book-search-ready')
+assert.match(bookReady.reply, /أنا داخل كتاب «المدارس الذكية» الآن/)
+const bookSearch = decideGroundedResponse({ text: 'ابحث داخل الكتاب عن مساحة الصانع', conversation: smartSchoolConversation })
+assert.equal(bookSearch.reason, 'book-search-grounded')
+assert.match(bookSearch.reply, /من كتابه «المدارس الذكية» \(ص ٥١\)|من كتابه «المدارس الذكية» \(ص 51\)/)
+assert.deepEqual(bookSearch.contextItemIds, ['book:smart-school'])
+const chapters = decideGroundedResponse({ text: 'فصول الكتاب', conversation: smartSchoolConversation })
+assert.equal(chapters.reason, 'book-chapters')
+assert.match(chapters.reply, /فصول ومحاور «المدارس الذكية»/)
+assert.match(chapters.reply, /مساحة الصانع.*ص ٤٧–٨٠|مساحة الصانع.*ص 47–80/)
+const namedChapters = decideGroundedResponse({ text: 'فصول كتاب المدارس الذكية' })
+assert.equal(namedChapters.reason, 'book-chapters')
+assert.deepEqual(namedChapters.contextItemIds, ['book:smart-school'])
+const browseBook = decideGroundedResponse({ text: 'أتصفح الكتاب', conversation: smartSchoolConversation })
+assert.equal(browseBook.reason, 'book-chapters')
+assert.match(browseBook.reply, /فصول ومحاور «المدارس الذكية»/)
+assert.doesNotMatch(browseBook.reply, /articles\//)
+const usefulBookIdea = decideGroundedResponse({ text: 'معلومة مفيدة من الكتاب', conversation: smartSchoolConversation })
+assert.equal(usefulBookIdea.reason, 'book-insight')
+assert.match(usefulBookIdea.reply, /فكرة موثّقة من «المدارس الذكية» \(ص [0-9٠-٩]+\)/)
+assert.match(usefulBookIdea.reply, /publications\/smart-school#book-knowledge/)
+assert.doesNotMatch(usefulBookIdea.reply, /ما لقيت مادة منشورة|curated/)
+const bookVideos = decideGroundedResponse({ text: 'فيديوهات داخل الكتاب', conversation: smartSchoolConversation })
+assert.equal(bookVideos.reason, 'book-videos-unavailable')
+assert.match(bookVideos.reply, /publications\/encyclopedia\?tab=video#encyclopedia-map/)
+assert.equal(decideGroundedResponse({ text: 'حوار مسموع' }).reason, 'dialogue-library')
+assert.match(decideGroundedResponse({ text: 'حوار مسموع' }).reply, /#article-audio/)
+assert.equal(decideGroundedResponse({ text: 'الظهور الإعلامي' }).reason, 'media-library')
+assert.match(decideGroundedResponse({ text: 'الظهور الإعلامي' }).reply, /\/media/)
+assert.equal(decideGroundedResponse({ text: 'الراديو' }).reason, 'radio-library')
+assert.match(decideGroundedResponse({ text: 'الراديو' }).reply, /\/radio/)
+const siteMap = decideGroundedResponse({ text: 'شنو في الموقع' })
+assert.equal(siteMap.reason, 'site-map')
+for (const path of ['/articles', '/publications', '/research', '/listen', '/radio', '/media', '/search', '/ask', '/decade', '/thought-paths', '/atlas', '/questions', '/radar', '/cv', '/impact', '/upcoming', '/contact', '/en']) {
+  assert.match(siteMap.reply, new RegExp(path.replace('/', '\\/')), `خريطة البوت يجب أن تعرف ${path}`)
+}
+assert.equal(decideGroundedResponse({ text: 'عبر السنين' }).reason, 'decade-door')
+assert.match(decideGroundedResponse({ text: 'عبر السنين' }).reply, /\/decade/)
+assert.equal(decideGroundedResponse({ text: 'العقل الحي' }).reason, 'ask-library-door')
+assert.match(decideGroundedResponse({ text: 'العقل الحي' }).reply, /\/ask/)
+assert.equal(decideGroundedResponse({ text: 'أطلس الأفكار' }).reason, 'atlas-door')
+assert.equal(decideGroundedResponse({ text: 'السيرة الذاتية' }).reason, 'cv-door')
+
+/* ═══ العقل السيادي: جواب واحد من الموقع كله لا قائمة عمياء ═══
+   السؤال المركّب يجمع نصاً حرفياً من مصادر مختلفة مع الصفحة أو الثانية، ثم
+   تحمل المحادثة خريطة الدليل نفسها إلى «وين قالها؟» و«الفيديو» و«لخصها». */
+const sovereignStartedAt = Date.now()
+const sovereign = decideGroundedResponse({ text: 'جاوبني من كل الموقع: شنو يقول الدكتور عن دمج التكنولوجيا في التعليم؟' })
+assert.equal(sovereign.reason, 'sovereign-synthesis')
+assert.ok((sovereign.evidence || []).length >= 3)
+assert.ok(Array.isArray(sovereign.patch?.sovereignTrail))
+assert.ok(sovereign.patch.sovereignTrail.length >= 3)
+const sovereignKinds = new Set(sovereign.patch.sovereignTrail.map((row) => row.kind))
+assert.equal(sovereignKinds.has('book'), true, 'الجواب المركب يستشهد بصفحة كتاب حين يجدها')
+assert.equal([...sovereignKinds].some((kind) => ['video', 'media', 'dialogue'].includes(kind)), true, 'الجواب المركب يصل إلى الصوت أو الصورة بتوقيتهما')
+assert.match(sovereign.reply, /الزبدة من نصوص الدكتور نفسها/)
+assert.match(sovereign.reply, /الشواهد الدقيقة/)
+assert.match(sovereign.reply, /ص [٠-٩0-9]+/)
+assert.match(sovereign.reply, /عند [٠-٩0-9]+:[٠-٩0-9]+/)
+assert.ok(String(sovereign.reply).length <= 2_000, 'جواب واتساب المركب يبقى داخل حد الرسالة')
+assert.ok(Date.now() - sovereignStartedAt < 3_000, 'العقل السيادي محلي وسريع بلا API مدفوع')
+
+let sovereignConversation = {
+  lastDecisionReason: sovereign.reason,
+  ...(sovereign.patch || {}),
+  contextItemIds: sovereign.contextItemIds,
+  contextIndex: sovereign.contextIndex,
+  lastTopic: sovereign.lastTopic,
+}
+const proof = decideGroundedResponse({ text: 'وين قالها بالضبط؟', conversation: sovereignConversation })
+assert.equal(proof.reason, 'sovereign-proof')
+assert.match(proof.reply, /هذا التوثيق بلا اختصار/)
+assert.match(proof.reply, /youtube\.com\/watch\?v=.*&t=\d+s/)
+sovereignConversation = { ...sovereignConversation, lastDecisionReason: proof.reason, ...(proof.patch || {}) }
+const videoProof = decideGroundedResponse({ text: 'الفيديو', conversation: sovereignConversation })
+assert.equal(videoProof.reason, 'sovereign-select-evidence')
+assert.match(videoProof.reply, /فيديو عند|ظهور إعلامي عند/)
+assert.match(videoProof.reply, /youtube\.com\/watch\?v=.*&t=\d+s/)
+sovereignConversation = { ...sovereignConversation, lastDecisionReason: videoProof.reason, ...(videoProof.patch || {}) }
+const openProof = decideGroundedResponse({ text: 'شغله', conversation: sovereignConversation })
+assert.equal(openProof.reason, 'sovereign-open-evidence')
+assert.match(openProof.reply, /هذا هو الدليل المطلوب مباشرة/)
+sovereignConversation = { ...sovereignConversation, lastDecisionReason: openProof.reason, ...(openProof.patch || {}) }
+const sovereignSummary = decideGroundedResponse({ text: 'لخصها', conversation: sovereignConversation })
+assert.equal(sovereignSummary.reason, 'sovereign-summary')
+assert.match(sovereignSummary.reply, /الزبدة من الشواهد/)
+sovereignConversation = { ...sovereignConversation, lastDecisionReason: sovereignSummary.reason, ...(sovereignSummary.patch || {}) }
+const contextBridge = decideGroundedResponse({ text: 'وش علاقته بالمعلم؟', conversation: sovereignConversation })
+assert.equal(contextBridge.reason, 'sovereign-context-bridge')
+assert.match(contextBridge.reply, /ربطت سؤالك الجديد/)
+
+const directVideoProof = decideGroundedResponse({ text: 'أبي فيديو عن الواقع الافتراضي' })
+assert.equal(directVideoProof.reason, 'sovereign-synthesis')
+assert.equal(directVideoProof.patch.sovereignTrail.some((row) => row.kind === 'video' || row.kind === 'media'), true)
+assert.match(directVideoProof.reply, /&t=\d+s/)
+
+/* الطلب الكويتي القصير لا يسقط في قائمة نتائج عامة، والمقتطفات المعروضة
+   يجب أن تكون متنوّعة فعلاً لا نسختين من المقال نفسه بصوتٍ ونص. */
+const directAudioProof = decideGroundedResponse({ text: 'ابي اسمع حوار عن الخوف' })
+assert.equal(directAudioProof.reason, 'sovereign-synthesis')
+assert.equal(directAudioProof.patch.sovereignTrail.some((row) => row.kind === 'dialogue'), true)
+assert.match(directAudioProof.reply, /حوار مسموع (?:عند [٠-٩0-9]+:[٠-٩0-9]+|كامل)/)
+const evidenceSignatures = directAudioProof.patch.sovereignTrail.map((row) => String(row.excerpt || '')
+  .normalize('NFKD').replace(/\p{M}/gu, '').replace(/[^\p{L}\p{N}]/gu, ''))
+assert.equal(new Set(evidenceSignatures).size, evidenceSignatures.length, 'الدليل السيادي كرر المقتطف نفسه كأنه شاهد جديد')
+
+const singleWordSovereign = decideGroundedResponse({ text: 'شنو يقول الدكتور عن التقويم؟' })
+assert.equal(singleWordSovereign.reason, 'sovereign-synthesis')
+assert.equal(singleWordSovereign.patch.sovereignTrail.every((row) => /التقويم/.test(`${row.title} ${row.excerpt} ${row.locator}`)), true,
+  'السؤال الدلالي من كلمة واحدة عرض دليلاً لا يذكر الكلمة في العنوان أو النص أو الموضع')
+assert.notEqual(decideGroundedResponse({ text: 'جاوبني من كل الموقع عن كيمياء المريخ' }).reason, 'sovereign-synthesis',
+  'العقل السيادي يجب أن يمتنع عن موضوع غير موجود بدلاً من اختلاق جواب')
+
+const clearedSovereign = decideGroundedResponse({ text: 'امسح بياناتي' })
+assert.deepEqual(clearedSovereign.patch.sovereignTrail, [])
+assert.equal(clearedSovereign.patch.sovereignTopic, null)
+
+/* محادثة واحدة لا ثلاثة اختبارات منفصلة: يفتح مادة، يتذكرها عند «لخصها»،
+   ثم ينتقل إلى مادة أخرى من دون أن يسكت بعد الرد الأول. */
+let continuousConversation = {}
+const continuousInputs = ['آخر مقالة', 'لخصها', 'عطني غيرها']
+const continuousTurns = []
+const continuousStartedAt = Date.now()
+for (const text of continuousInputs) {
+  const decision = decideGroundedResponse({ text, conversation: continuousConversation })
+  continuousTurns.push(decision)
+  assert.equal(decision.kind === 'reply' || decision.kind === 'escalate', true, `${text} must receive a reply`)
+  assert.ok(String(decision.reply || '').length > 20, `${text} reply must not be empty`)
+  continuousConversation = {
+    ...continuousConversation,
+    mode: 'bot',
+    wakeActive: true,
+    lastReplyHash: 'test',
+    lastDecisionReason: decision.reason,
+    ...(Array.isArray(decision.contextItemIds) ? { contextItemIds: decision.contextItemIds } : {}),
+    ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
+    ...(decision.lastTopic ? { lastTopic: decision.lastTopic } : {}),
+    ...(Array.isArray(decision.evidence) ? { seenContentIds: [...new Set([...(continuousConversation.seenContentIds || []), ...decision.evidence])] } : {}),
+  }
+}
+assert.equal(continuousTurns.length, 3)
+assert.equal(continuousTurns[1].reason, 'context-summary')
+assert.equal(['more-like-this', 'no-more-results'].includes(continuousTurns[2].reason), true)
+assert.ok(Date.now() - continuousStartedAt < 5_000, 'three-turn local reasoning must remain fast')
+assert.match(decideGroundedResponse({ text: 'من هو الدكتور أحمد؟' }).reply, /ماذا تريد بعدها|شنو تحب أسوي بعدها/)
+
+/* التسلسل الظاهر في صور الدكتور: اختيار ٣٠ ثانية ثم طلب أحدث المقالات
+   مرتين. كل ضغطة/رسالة مستقلة يجب أن تحصل على رد، ولا تتحول إلى duplicate
+   نصي أو وعد بمتابعة بشرية. */
+let screenshotConversation = {}
+for (const text of ['آخر مقالة', '٣٠ ثانية', 'آخر المقالات', 'آخر المقالات']) {
+  const decision = decideGroundedResponse({ text, conversation: screenshotConversation })
+  assert.equal(decision.kind, 'reply', `${text} must receive a useful reply`)
+  assert.ok(String(decision.reply || '').length > 20)
+  assert.doesNotMatch(decision.reply, /متابعة بشرية|سيكمل معك الفريق|سيرد عليك الدكتور/)
+  screenshotConversation = {
+    ...screenshotConversation,
+    ...(Array.isArray(decision.contextItemIds) ? { contextItemIds: decision.contextItemIds } : {}),
+    ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
+    ...(decision.lastTopic ? { lastTopic: decision.lastTopic } : {}),
+    ...(Array.isArray(decision.evidence) ? { seenContentIds: [...new Set([...(screenshotConversation.seenContentIds || []), ...decision.evidence])] } : {}),
+  }
+}
+
+let navigationConversation = {}
+const navigationReasons = []
+for (const text of ['آخر مقالاته', 'الثانية', 'لخصها', 'المصدر', 'عطني غيرها']) {
+  const decision = decideGroundedResponse({ text, conversation: navigationConversation })
+  navigationReasons.push(decision.reason)
+  assert.ok(decision.reply, `${text} must keep the five-turn conversation alive`)
+  navigationConversation = {
+    ...navigationConversation,
+    ...(Array.isArray(decision.contextItemIds) ? { contextItemIds: decision.contextItemIds } : {}),
+    ...(Number.isInteger(decision.contextIndex) ? { contextIndex: decision.contextIndex } : {}),
+    ...(decision.lastTopic ? { lastTopic: decision.lastTopic } : {}),
+    ...(Array.isArray(decision.evidence) ? { seenContentIds: [...new Set([...(navigationConversation.seenContentIds || []), ...decision.evidence])] } : {}),
+  }
+}
+assert.deepEqual(navigationReasons.slice(0, 4), ['latest-content', 'context-reference', 'context-summary', 'context-source'])
+assert.ok(['more-like-this', 'no-more-results'].includes(navigationReasons[4]))
+
+/* ─── الذكاء الموسّع (٣٠ يوليو): مجاملات، تحكم بالرسائل، تحدي، رف، تصحيح، مقارنة، صدق الحدود ─── */
+const thanks = decideGroundedResponse({ text: 'مشكور وايد' })
+assert.equal(thanks.reason, 'thanks')
+assert.doesNotMatch(thanks.reply, /ما لقيت|ما فهمت/)
+assert.equal(decideGroundedResponse({ text: 'مع السلامة' }).reason, 'farewell')
+assert.equal(decideGroundedResponse({ text: 'منو انت؟' }).reason, 'who-are-you')
+assert.equal(decideGroundedResponse({ text: 'تمام' }).reason, 'acknowledged')
+
+/* «أوقف الرسائل» محذوفة نهائياً بأمر الدكتور: لا وسم إيقاف، ولا تأكيد إيقاف،
+   والرسالة تُعامل كأي نص عادي. مسح التفضيلات (خصوصية) باقٍ. */
+const stop = decideGroundedResponse({ text: 'أوقف الرسائل' })
+assert.notEqual(stop.reason, 'stop-messages')
+assert.equal(stop.audienceSuppressed, undefined)
+assert.doesNotMatch(String(stop.reply), /لن تصلك رسائل/)
+assert.equal(decideGroundedResponse({ text: 'رجع الرسائل' }).audienceSuppressed, undefined)
+assert.equal(decideGroundedResponse({ text: 'امسح بياناتي' }).reason, 'delete-preferences')
+
+let quizConversation = {}
+const quiz = decideGroundedResponse({ text: 'اختبرني', conversation: quizConversation })
+assert.equal(quiz.reason, 'challenge-question')
+assert.equal(quiz.patch.challenge.itemIds.length, 3)
+assert.match(quiz.reply, /«/)
+quizConversation = { challenge: quiz.patch.challenge }
+const graded = decideGroundedResponse({ text: '٢', conversation: quizConversation })
+assert.ok(['challenge-correct', 'challenge-missed'].includes(graded.reason), 'الرقم بعد تحدٍّ معلق يُحكم إجابةً لا تنقلاً')
+assert.equal(graded.patch.challenge, null)
+assert.match(graded.reply, /dr-alfailakawi\.com/)
+
+assert.equal(decideGroundedResponse({ text: 'قارن بين المعلم والتقنية' }).reason, 'compare-topics')
+assert.equal(decideGroundedResponse({ text: 'الفرق بين الحفظ والفهم' }).reason, 'compare-topics')
+
+const corrected = decideGroundedResponse({ text: 'مو صح قصدي الذكاء الاصطناعي', conversation: { lastTopic: 'الحفظ' } })
+assert.ok(['correction-retry', 'correction-clarify'].includes(corrected.reason))
+
+const counted = decideGroundedResponse({ text: 'عطني ٤ مقالات' })
+assert.equal(counted.reason, 'latest-content')
+assert.ok((counted.reply.match(/dr-alfailakawi\.com/g) || []).length >= 4, 'أربع مواد كما طلب')
+
+const honest = decideGroundedResponse({ text: 'أكثر مقالة مشاهدة' })
+assert.equal(honest.reason, 'most-viewed-honest')
+assert.match(honest.reply, /لا أخترع/)
+
+assert.equal(decideGroundedResponse({ text: 'عطني اقتباس' }).reason, 'curated-quote')
+assert.equal(decideGroundedResponse({ text: 'احفظها' }).reason, 'save-context-missing')
+assert.equal(decideGroundedResponse({ text: 'ذكرني بكرة' }).reason, 'reminder-honest')
+assert.equal(decideGroundedResponse({ text: 'أنا اليوم متضايق' }).reason, 'mood-match')
+
+/* ─── عقلٌ يفهم ويحلّل لا يطابق أنماطاً (أول أغسطس ٢٠٢٦) ─── */
+
+/* ١) «لخّص» يجب أن يقصّر فعلاً: كان يعيد أوّل ٤٢ كلمة — وهي بعينها فاتحة
+   المادة التي عُرضت قبل سطرين — فبدا أنه أعاد المادة نفسها بدل تلخيصها. */
+let distillConversation = {}
+const opened = decideGroundedResponse({ text: 'آخر مقالة', conversation: distillConversation })
+distillConversation = { contextItemIds: opened.contextItemIds, contextIndex: 0, seenContentIds: opened.evidence || [] }
+const distilled = decideGroundedResponse({ text: 'لخصها', conversation: distillConversation })
+assert.equal(distilled.reason, 'context-summary')
+const openingRun = String(opened.reply).replace(/[*«»]/g, '').split(/\s+/).slice(3, 13).join(' ')
+assert.ok(openingRun.length > 10, 'the opened card must carry a quotable opening')
+assert.ok(
+  !String(distilled.reply).includes(openingRun),
+  'التلخيص لا يجوز أن يكون فاتحة المادة نفسها — هذا هو العطب الذي شكا منه الدكتور',
+)
+
+/* ٢) المضمر: إيماءةٌ قصيرة على مادةٍ حاضرة تُقرأ طلباً لا بحثاً عن عنوان. */
+assert.equal(decideGroundedResponse({ text: 'ما فهمت', conversation: distillConversation }).reason, 'implied-simplify')
+assert.equal(decideGroundedResponse({ text: 'زدني', conversation: distillConversation }).reason, 'implied-deepen')
+/* وبلا مادةٍ حاضرة لا تُقرأ إيماءةً — فلا تبتلع كلاماً ليس لها. */
+assert.notEqual(decideGroundedResponse({ text: 'ما فهمت' }).reason, 'implied-simplify')
+
+/* ٣) طلبان في نفَسٍ واحد: الفاصلة تُقرأ من النصّ الخام (المطبَّع يمسح الترقيم). */
+const twoAsks = decideGroundedResponse({ text: 'عطني شي عن التقويم، وعن الذكاء الاصطناعي' })
+assert.equal(twoAsks.reason, 'compound-two-asks')
+assert.ok((twoAsks.reply.match(/dr-alfailakawi\.com/g) || []).length >= 2, 'الطلبان يُجابان معاً')
+
+/* ٤) الشكّ يُسأل عنه — وبمقدار: كلمةٌ يحملها عنوانان اثنان لا ثالثَ لهما.
+   والكلمة الواسعة ليست شكّاً: الأرشيف غنيٌّ بها، والقائمة أصدق من سؤال. */
+assert.equal(decideGroundedResponse({ text: 'النجاح' }).reason, 'doubt-clarify')
+for (const broad of ['الحفظ', 'الخوف', 'الوقت', 'التقويم']) {
+  assert.notEqual(decideGroundedResponse({ text: broad }).reason, 'doubt-clarify', `«${broad}» سعةٌ لا التباس`)
+}
+/* وجواب الشكّ يمشي على مسار التنقّل المثبت لا على رقمٍ مجرّد (الرقم لغةُ التحدّي) */
+const doubtTurn = decideGroundedResponse({ text: 'النجاح' })
+assert.match(doubtTurn.reply, /الأولى|الثانية/)
+assert.doesNotMatch(doubtTurn.reply, /اكتب ١ أو ٢/)
+assert.equal(
+  decideGroundedResponse({ text: 'الثانية', conversation: { contextItemIds: doubtTurn.contextItemIds, contextIndex: 0 } }).reason,
+  'context-reference',
+)
+
+/* ٥) ذاكرةٌ تتراكم عبر الجلسات — بلا اسمٍ ولا رقم، ومحدودةُ السقف،
+   ومصفوفةً لا خريطة (merge:true يدمج الخرائط فلا يُنقصها أبداً). */
+let memoryConversation = {}
+for (const ask of ['الذكاء الاصطناعي', 'الذكاء الاصطناعي في التعليم']) {
+  const step = decideGroundedResponse({ text: ask, conversation: memoryConversation })
+  memoryConversation = { ...memoryConversation, ...(step.patch || {}) }
+}
+assert.ok(Array.isArray(memoryConversation.topicMemory), 'الذاكرة مصفوفة تُستبدل لا خريطة تتضخّم')
+const remembered = returningReaderLine({ ...memoryConversation, lastInboundAt: new Date(Date.now() - 3 * 86_400_000).toISOString() })
+assert.match(remembered, /أهلاً بعودتك/)
+assert.match(remembered, /الذكاء/)
+/* ولا يتكرّر الاهتمام الواحد بصورتين («الذكاء وذكاء») */
+assert.doesNotMatch(remembered, /الذكاء وذكاء/)
+/* ومسح البيانات يمسحها فعلاً — خصوصيةٌ لا تُستثنى */
+assert.deepEqual(decideGroundedResponse({ text: 'امسح بياناتي' }).patch.topicMemory, [])
+
+/* ٦) تحليلٌ لا استرجاع: المقارنة تقول ما يجمع الطرفين وما ينفرد به كلٌّ منهما */
+const analysed = decideGroundedResponse({ text: 'قارن بين المعلم والتقنية' })
+assert.equal(analysed.reason, 'compare-topics')
+assert.match(analysed.reply, /الخيط الجامع|ينفرد به/)
+assert.match(analysed.reply, /لا أنسب للدكتور رأياً لم يكتبه/)
+
+/* ٧) مبادرةٌ منضبطة: تُعرض مرّةً ثم تسكت في مهلتها — لا تتحوّل ثرثرة */
+const offered = decideGroundedResponse({ text: 'التقويم' })
+if (/أفتحها لك؟/.test(offered.reply)) {
+  assert.ok(offered.patch?.lastInitiativeAt, 'المبادرة تُؤرَّخ لتنضبط')
+  const again = decideGroundedResponse({ text: 'التقويم', conversation: { lastInitiativeAt: offered.patch.lastInitiativeAt } })
+  assert.doesNotMatch(again.reply, /أفتحها لك؟/, 'لا تتكرّر المبادرة داخل مهلتها')
+}
+
+/* ٨) القراءة الصوتية: «قراءة صوتية للمقالة ما يعمل» (شكوى ١ أغسطس).
+   الجذر أن الصيغة كانت تشترط أداة التعريف، فتسقط «قراءه صوتيه» — وهي ما
+   يكتبه الناس وما يظهر في الموقع — إلى بحثٍ أعمى بلا صوت. */
+const { classifyIntent: classify, INTENTS: I } = await import('../whatsapp-agent/intent-engine.mjs')
+for (const ask of ['قراءة صوتية', 'القراءة الصوتية', 'قراءة صوتية للمقالة', 'اقرأ لي المقالة',
+  'اقرأ لي', 'سمعني', 'اسمعها', 'ابي اسمعها', 'شغلها', 'استماع', 'اقرأها لي', 'ابغى قراءة صوتية']) {
+  assert.equal(classify(ask).intent, I.LISTEN_FAHED, `«${ask}» يجب أن تُفهم طلبَ قراءةٍ صوتية`)
+}
+/* ولا تخطف ما ليس طلبَ صوت */
+assert.notEqual(classify('عندك شي عن القراءة').intent, I.LISTEN_FAHED)
+assert.notEqual(classify('لخصها').intent, I.LISTEN_FAHED)
+assert.equal(classify('الحوار').intent, I.LISTEN_DIALOGUE, 'الحوار يبقى للحوار')
+
+/* ٩) البوت يتعلّم من الدكتور وحده: الصياغة التي أخطأ فيها تُسنَد إلى موضوع،
+   فيُجيب عنها بحثاً في المنشور — ولا يتعلّم شيئاً بلا إسناد صريح. */
+assert.notEqual(decideGroundedResponse({ text: 'شنو رايه في الدمج' }).reason, 'taught-phrase', 'بلا تعليم لا يدّعي فهماً')
+applyTaughtPhrases([{ phrase: 'شنو رايه في الدمج', teachQuery: 'التعليم الدامج' }])
+const taughtReply = decideGroundedResponse({ text: 'شنو رايه في الدمج' })
+assert.equal(taughtReply.reason, 'taught-phrase')
+assert.match(taughtReply.reply, /https:\/\/dr-alfailakawi\.com\//, 'الجواب مادةٌ منشورة لا كلامٌ مولَّد')
+/* العبارة المُعلَّمة تُفهم داخل جملةٍ أطول، ولا تخطف نيةً واضحة */
+applyTaughtPhrases([{ phrase: 'الدمج', teachQuery: 'التعليم الدامج' }])
+assert.equal(decideGroundedResponse({ text: 'ابي اعرف عن الدمج' }).reason, 'taught-phrase')
+assert.equal(decideGroundedResponse({ text: 'آخر مقالة' }).reason, 'latest-content', 'التعليم لا يخطف النيات الواضحة')
+applyTaughtPhrases([])
+assert.notEqual(decideGroundedResponse({ text: 'ابي اعرف عن الدمج' }).reason, 'taught-phrase', 'إلغاء التعليم يُلغي أثره')
+
+/* ١٠) من يسأل؟ الصفة تُستنتج من مفرداته، وتغيّر **الترتيب** لا المحتوى،
+   ولا تُزيح أفضل مطابقةٍ عن مكانها. */
+const kindsOf = (decision) => (decision.evidence || []).map((id) => String(id).split(':')[0])
+const plainAsk = decideGroundedResponse({ text: 'التعلم عن بعد' })
+const scholarAsk = decideGroundedResponse({ text: 'التعلم عن بعد', conversation: { readerSignals: ['researcher', 'researcher'] } })
+assert.equal(kindsOf(scholarAsk)[0], kindsOf(plainAsk)[0], 'أفضل مطابقة لا تُزاح مهما كانت صفة السائل')
+assert.ok(
+  kindsOf(scholarAsk).filter((k) => k === 'paper').length >= kindsOf(plainAsk).filter((k) => k === 'paper').length,
+  'الباحث تُقدَّم له الأوراق المحكّمة ولا تُخفى عنه',
+)
+/* الإشارة تُلتقط من كلامه ولا تُصنّفه من كلمةٍ واحدة */
+assert.deepEqual(decideGroundedResponse({ text: 'عندك شي عن التقويم يفيد طلابي' }).patch?.readerSignals, ['teacher'])
+assert.equal(readerKindOf({ readerSignals: ['teacher'] }), '', 'إشارةٌ واحدة لا تكفي للحكم')
+assert.equal(readerKindOf({ readerSignals: ['teacher', 'teacher'] }), 'teacher')
+
+/* ١١) الأرشيف الذي ينتبه — عند الإيقاظ لا قبله (اقتراح الدكتور):
+   بوابةٌ تخصّه بدل بوابة اليوم، **بشرط** اهتمامٍ متكرّر ومادةٍ نُشرت بعد آخر
+   زيارته فعلاً. ولا رسالة تُرسل بلا استدعاء — قانون الإيقاظ لم يُمسّ. */
+{
+  const { buildContentIndex } = await import('../whatsapp-agent/content-index.mjs')
+  const dated = buildContentIndex(process.cwd(), 'https://dr-alfailakawi.com')
+    .filter((item) => /^\d{4}-\d{2}-\d{2}/.test(String(item.date || '')))
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+  assert.ok(dated.length, 'الفهرس فيه موادّ مؤرّخة')
+  const newest = dated[0]
+  const interest = String(newest.title).split(/\s+/).filter((word) => word.length >= 4)[0]
+  const justBefore = new Date(Date.parse(newest.date) - 5 * 86_400_000).toISOString()
+
+  const attentive = decideGroundedResponse({
+    text: 'موقع د. أحمد',
+    conversation: { topicMemory: [interest, interest], lastInboundAt: justBefore, seenContentIds: [] },
+  })
+  assert.match(attentive.reply, /نشر الدكتور بعد آخر زيارتك/, 'من له اهتمامٌ متكرّر وجديدٌ بعده يُستقبل بخبره')
+  assert.match(attentive.reply, /https:\/\/dr-alfailakawi\.com\//)
+
+  /* زائرٌ بلا ذاكرة يبقى على بوابة اليوم — لا ادّعاء بمعرفةٍ لا نملكها */
+  assert.doesNotMatch(decideGroundedResponse({ text: 'موقع د. أحمد' }).reply, /بعد آخر زيارتك/)
+  /* اهتمامٌ بلا جديدٍ بعد زيارته: لا نسمّي القديم جديداً */
+  assert.doesNotMatch(
+    decideGroundedResponse({
+      text: 'موقع د. أحمد',
+      conversation: { topicMemory: [interest, interest], lastInboundAt: new Date().toISOString(), seenContentIds: [] },
+    }).reply,
+    /بعد آخر زيارتك/,
+  )
+  /* وما رآه من قبل لا يُعاد عليه بوصفه جديداً */
+  assert.doesNotMatch(
+    decideGroundedResponse({
+      text: 'موقع د. أحمد',
+      conversation: { topicMemory: [interest, interest], lastInboundAt: justBefore, seenContentIds: [newest.id] },
+    }).reply,
+    new RegExp(String(newest.title).slice(0, 18).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+  )
+}
+
+/* ١٢) المعنى قبل اللفظ: معجم الدكتور (٢٩٠ مفهوماً/١٣٢٢ اسماً) صار يُفتح. */
+{
+  const { conceptQueryFor, glossarySize } = await import('../whatsapp-agent/domain-concepts.mjs')
+  const size = glossarySize()
+  assert.ok(size.concepts >= 250 && size.aliases >= 1_000, `المعجم يُقرأ فعلاً (${size.concepts}/${size.aliases})`)
+  assert.equal(conceptQueryFor('تقييم الطلاب بلا درجات')?.concept.canonicalAr, 'التقويم التربوي')
+  assert.equal(conceptQueryFor('edtech')?.concept.canonicalAr, 'تكنولوجيا التعليم', 'الإنجليزية تُفهم أيضاً')
+  assert.equal(conceptQueryFor('كيف حالك'), null, 'الكلام العادي لا يُقحم في المفاهيم')
+  /* الإنجليزية كانت تعجز تماماً قبل المعجم — والآن تُجيب من المنشور */
+  const english = decideGroundedResponse({ text: 'edtech' })
+  assert.equal(english.reason, 'concept-search')
+  assert.match(english.reply, /فهمت أنك تقصد «تكنولوجيا التعليم»/)
+  assert.match(english.reply, /https:\/\/dr-alfailakawi\.com\//)
+  /* ولا يُقحم المفهوم على سؤالٍ وجد جوابه الحرفي القويّ */
+  assert.notEqual(decideGroundedResponse({ text: 'آخر مقالة' }).reason, 'concept-search')
+}
+
+/* ١٣) الجودة مقيسة: كل ردٍّ يقع في خانةٍ واحدة، والخانة الافتراضية «أُجيب». */
+assert.equal(qualityBucketFor('no-grounded-answer'), 'missed')
+assert.equal(qualityBucketFor('near-suggestions'), 'missed')
+assert.equal(qualityBucketFor('active-clarify'), 'clarified')
+assert.equal(qualityBucketFor('doubt-clarify'), 'clarified')
+assert.equal(qualityBucketFor('human-request'), 'escalated')
+assert.equal(qualityBucketFor('concept-search'), 'concept')
+assert.equal(qualityBucketFor('taught-phrase'), 'taught')
+assert.equal(qualityBucketFor('site-index'), 'answered')
+assert.equal(qualityBucketFor('context-summary'), 'answered')
+
+/* ١٤) حضور الدكتور: الوعد يصدُق في الحالين ولا يَعِد بموعدٍ قط. */
+markOwnerActive(0)
+const awayAck = decideGroundedResponse({ text: 'أبي أكلم موظف' })
+assert.equal(awayAck.kind, 'escalate')
+assert.doesNotMatch(awayAck.reply, /متابعٌ لرسائله اليوم/)
+markOwnerActive(Date.now() - 60_000)
+const presentAck = decideGroundedResponse({ text: 'أبي أكلم موظف' })
+assert.match(presentAck.reply, /متابعٌ لرسائله اليوم/)
+assert.doesNotMatch(presentAck.reply, /خلال ساعة|خلال يوم|سيرد عليك خلال/, 'لا وعد بموعد رد أبداً')
+markOwnerActive(0)
+
+/* القوالب الحية: تحرير اللوحة يجب أن يصل الردود (كان مسبوكاً عند التحميل) */
+const controllerNow = controllerSource
+assert.match(controllerNow, /getBotMessages/)
+assert.match(controllerNow, /refreshBotMessages/)
+assert.doesNotMatch(controllerNow, /^const WELCOME = /m)
+
+/* ١٥) سلّم الوقت والصوت في المتصفح (شكوى الدكتور بصورتين، ٧ أغسطس ٢٠٢٦):
+   كتب «لخّص» ثم «٣٠ ثانية» فوصله الردّ نفسه حرفاً بحرف — لأن READ_SPEED
+   وONE_MINUTE كانتا مربوطتين بـSUMMARY في شرطٍ واحد. وفي الطلب نفسه وصلته
+   فقاعةُ صوتٍ لا تُحمَّل («Couldn't download audio»)، فأمر أن يرجع الاستماع
+   إلى المتصفح. هذا الاختبار يمنع رجوع العطبين. */
+const ladderConversation = { contextItemIds: ['article:qabas-201811-001'], contextIndex: 0 }
+const ladder = new Map()
+for (const [phrase, expectedReason] of [
+  ['لخص', 'context-summary'],
+  ['٣٠ ثانية', 'timed-reading-30s'],
+  ['عندي دقيقة', 'timed-reading-1min'],
+  ['دقيقتان', 'timed-reading-2min'],
+  ['تعمق', 'timed-reading-deep'],
+]) {
+  const decision = decideGroundedResponse({ text: phrase, conversation: ladderConversation })
+  assert.equal(decision.reason, expectedReason, `«${phrase}» يجب أن تُصنَّف ${expectedReason}`)
+  assert.ok(String(decision.reply || '').length > 40, `«${phrase}» ردّ فارغ`)
+  /* حدّ الإرسال ٢٠٠٠ حرف: ما فوقه يصل مبتوراً في وسط كلام الدكتور. */
+  assert.ok(String(decision.reply).length <= 2_000, `«${phrase}» تجاوز سقف الإرسال: ${String(decision.reply).length}`)
+  assert.equal(qualityBucketFor(decision.reason), 'answered', `«${phrase}» يجب أن تُحسب ردّاً مُجاباً`)
+  ladder.set(phrase, String(decision.reply))
+}
+const ladderPhrases = [...ladder.keys()]
+for (let i = 0; i < ladderPhrases.length; i += 1) {
+  for (let j = i + 1; j < ladderPhrases.length; j += 1) {
+    assert.notEqual(
+      ladder.get(ladderPhrases[i]),
+      ladder.get(ladderPhrases[j]),
+      `«${ladderPhrases[i]}» و«${ladderPhrases[j]}» تعطيان الردّ نفسه حرفاً بحرف — العطب الذي اشتكى منه الدكتور`,
+    )
+  }
+}
+/* السلّم يتصاعد فعلاً: الزبدة أقصر من ٣٠ ثانية، وهي أقصر من الدقيقة، وهي
+   أقصر من الدقيقتين. تفاوت الطول وحده لا يكفي لكنه شرطٌ لا يُتنازل عنه. */
+assert.ok(ladder.get('لخص').length < ladder.get('٣٠ ثانية').length, 'الزبدة يجب أن تكون أقصر من قراءة ٣٠ ثانية')
+assert.ok(ladder.get('٣٠ ثانية').length < ladder.get('عندي دقيقة').length, 'قراءة الدقيقة يجب أن تزيد على الثلاثين ثانية')
+assert.ok(ladder.get('عندي دقيقة').length < ladder.get('دقيقتان').length, 'قراءة الدقيقتين يجب أن تزيد على الدقيقة')
+assert.match(ladder.get('تعمق'), /كمل/, 'التعمّق يدلّ على طريق الإكمال')
+/* المقاطع من نصّه حرفاً بحرف — لا توليد ولا إعادة صياغة. */
+const ladderItem = scoredSiteResults('وسائل الإعلام بين المجاملة والتمثيل')
+  .map((row) => row.item).find((item) => item.id === 'article:qabas-201811-001')
+assert.ok(ladderItem?.body, 'نحتاج متن المقالة لقياس الحرفية')
+const ladderBody = String(ladderItem.body).replace(/\s+/g, ' ').trim()
+for (const phrase of ['٣٠ ثانية', 'عندي دقيقة', 'دقيقتان']) {
+  const passage = String(ladder.get(phrase)).split('\n\n')[1].replace(/\s+/g, ' ').replace(/…$/, '').trim()
+  assert.ok(ladderBody.includes(passage), `مقطع «${phrase}» ليس منقولاً من متن الدكتور حرفاً بحرف`)
+}
+/* «كمل» بعد القراءة تُكمل من حيث وقفت، لا تعيد ما قُرئ. */
+const afterThirty = decideGroundedResponse({ text: '٣٠ ثانية', conversation: ladderConversation })
+const continued = decideGroundedResponse({
+  text: 'كمل',
+  conversation: { ...ladderConversation, ...afterThirty.patch },
+})
+assert.equal(continued.reason, 'continue-reading')
+assert.ok(
+  !String(continued.reply).includes(String(afterThirty.reply).split('\n\n')[1].slice(0, 60)),
+  '«كمل» بعد القراءة تعيد المقطع نفسه بدل أن تكمله',
+)
+/* الاستماع يرجع للمتصفح: لا مرفق صوتي في واتساب، والردّ يدلّ على المشغّل. */
+for (const phrase of ['اقرا لي', 'صوت نورة', 'الحوار']) {
+  const listen = decideGroundedResponse({ text: phrase, conversation: ladderConversation })
+  assert.equal(listen.audioAttachment, undefined, `«${phrase}» ما زالت ترسل ملفاً صوتياً داخل واتساب`)
+}
+assert.match(
+  decideGroundedResponse({ text: 'اقرا لي', conversation: ladderConversation }).reply,
+  /المشغّل أعلى الصفحة/,
+  'ردّ الاستماع يجب أن يدلّ على مشغّل الموقع',
+)
+/* الآلة باقية لا مهدومة: أمر الصوت وفرعه في الجسر في مكانهما خلف مفتاحٍ واحد. */
+assert.match(controllerSource, /WHATSAPP_AUDIO_IN_CHAT/, 'مفتاح إعادة الصوت داخل واتساب يجب أن يبقى')
+assert.match(controllerSource, /AUDIO_IN_CHAT && audioFile/, 'المرفق الصوتي يجب أن يبقى خلف المفتاح لا محذوفاً')
+
+/* ١٦) المدّة نيّةٌ لا موضوع (تدقيق ٧ أغسطس بعد أمر الدكتور «شوف في نقص»):
+   «١٥ ثانية» و«٤٥ ثانية» و«خمس دقائق» كانت تسقط إلى البحث الأعمى فيفتّش
+   الأرشيف عن مادةٍ عنوانها «١٥ ثانية»؛ و«دقيقة ونص» و«٣ دقايق» تصلان إلى
+   «ما لقيت». كلّ مدّةٍ يكتبها إنسان تُترجَم الآن إلى درجةٍ في السلّم. */
+const speedExpectations = [
+  ['٣٠ ثانية', 'timed-reading-30s'], ['15 ثانية', 'timed-reading-30s'],
+  ['٢٠ ثانية', 'timed-reading-30s'], ['٤٥ ثانية', 'timed-reading-30s'],
+  ['نص دقيقة', 'timed-reading-30s'], ['نصف دقيقة', 'timed-reading-30s'],
+  ['دقيقة ونص', 'timed-reading-1min'], ['90 ثانية', 'timed-reading-1min'],
+  ['عندي دقيقة', 'timed-reading-1min'],
+  ['دقيقتان', 'timed-reading-2min'], ['دقيقتين', 'timed-reading-2min'],
+  ['٣ دقايق', 'timed-reading-deep'], ['خمس دقائق', 'timed-reading-deep'],
+  ['ربع ساعة', 'timed-reading-deep'], ['تعمق', 'timed-reading-deep'],
+]
+for (const [phrase, expected] of speedExpectations) {
+  const decision = decideGroundedResponse({ text: phrase, conversation: ladderConversation })
+  assert.equal(decision.reason, expected, `«${phrase}» يجب أن تُقرأ مدّةً (${expected}) لا موضوعَ بحث`)
+  assert.ok(String(decision.reply).length <= 2_000, `«${phrase}» تجاوز سقف الإرسال`)
+}
+
+/* «زدني» و«اتعمق» تمرّان على السلّم نفسه، لا على قصٍّ خاصٍّ في وسط الجملة. */
+for (const phrase of ['زدني', 'اتعمق', 'عمقها']) {
+  const decision = decideGroundedResponse({ text: phrase, conversation: ladderConversation })
+  assert.equal(decision.reason, 'implied-deepen')
+  assert.match(decision.reply, /تعمّقٌ في نصّه/, `«${phrase}» يجب أن تمرّ على سلّم القراءة`)
+}
+
+/* الاستئناف: طلبُ المدّة بعد قراءةٍ استئنافٌ لا إعادة. المؤشر يتقدّم في كل
+   دور، ولا يعود مقطعٌ قُرئ مرّتين — وهو جوهر شكوى الدكتور. */
+let walkConversation = { contextItemIds: ['article:qabas-201811-001'], contextIndex: 0 }
+const walkPassages = []
+const walkCursors = []
+for (let turn = 0; turn < 5; turn += 1) {
+  const decision = decideGroundedResponse({ text: '٣٠ ثانية', conversation: walkConversation })
+  const parts = String(decision.reply).split('\n\n')
+  const tailAt = parts.findIndex((part) => part.startsWith('بقي نحو') || part.startsWith('وبهذا اكتمل'))
+  if (tailAt > 1) walkPassages.push(parts.slice(1, tailAt).join('\n\n').replace(/…$/, ''))
+  walkCursors.push(Number(decision.patch?.readCursor ?? 0))
+  walkConversation = { ...walkConversation, lastDecisionReason: decision.reason, ...(decision.patch || {}) }
+}
+assert.ok(walkPassages.length >= 3, 'القراءة المتكرّرة يجب أن تُنتج مقاطع')
+assert.equal(new Set(walkPassages).size, walkPassages.length, 'تكرار «٣٠ ثانية» أعاد مقطعاً قُرئ — هو العطب نفسه بثوبٍ آخر')
+for (let i = 1; i < walkCursors.length; i += 1) {
+  assert.ok(walkCursors[i] >= walkCursors[i - 1], `المؤشر رجع للوراء: ${walkCursors[i - 1]}→${walkCursors[i]}`)
+}
+/* الحرفية بفقراتها: المقطع قطعةٌ من المتن **الخام** لا من نسخةٍ مسحوقة المسافات. */
+for (const passage of walkPassages) {
+  assert.ok(String(ladderItem.body).includes(passage), 'مقطعٌ ليس منقولاً من متن الدكتور بفقراته')
+}
+/* بلوغ النهاية يُعلَن، ولا يُعاد افتتاح المقالة خِفيةً. */
+let endConversation = walkConversation
+let endReply = ''
+for (let turn = 0; turn < 8; turn += 1) {
+  const decision = decideGroundedResponse({ text: 'دقيقتان', conversation: endConversation })
+  endReply = String(decision.reply)
+  endConversation = { ...endConversation, lastDecisionReason: decision.reason, ...(decision.patch || {}) }
+}
+assert.match(endReply, /وصلنا آخر ما عندي|اكتمل نصّها/, 'بعد استنفاد النصّ يجب أن يُصارح لا أن يعيد الافتتاح')
+assert.ok(!endReply.includes(walkPassages[0]), 'رجع إلى افتتاح المقالة بعد أن قرأها كلها')
+
+/* «لخّص» ليست قراءة: ما بعدها يبدأ من أوّل المتن لأن الافتتاح لم يُقرأ بعد. */
+const afterSummary = decideGroundedResponse({ text: 'لخص', conversation: ladderConversation })
+const readingAfterSummary = decideGroundedResponse({
+  text: '٣٠ ثانية',
+  conversation: { ...ladderConversation, lastDecisionReason: afterSummary.reason, ...(afterSummary.patch || {}) },
+})
+assert.equal(readingAfterSummary.reply, ladder.get('٣٠ ثانية'), 'القراءة بعد التلخيص يجب أن تبدأ من أوّل النصّ')
+
+/* لا سطرَ متابعةٍ عامّاً فوق ذيلٍ يقول ما يُفعل بالضبط — كان يعرض «ألخّصها» مرّتين. */
+for (const phrase of ['٣٠ ثانية', 'دقيقتان', 'تعمق']) {
+  const reply = String(decideGroundedResponse({ text: phrase, conversation: ladderConversation }).reply)
+  assert.ok(!reply.includes('شنو تحب أسوي بعدها'), `«${phrase}» تُذيَّل بسطر متابعةٍ عامّ يكرّر ما قاله ذيلها`)
+}
+
+/* الاعتذار بلا مادةٍ حاضرة يصف ما سيفعله: قراءةً لا اختصاراً. */
+assert.match(decideGroundedResponse({ text: '٣٠ ثانية' }).reply, /أقرأ لك منها/, 'اعتذار القراءة يجب ألا يَعِد باختصار')
+assert.match(decideGroundedResponse({ text: 'لخص' }).reply, /أختصرها لك/)
+
+/* عربيةٌ سليمة للمواد بلا متن: «لهذا كتاب» لا «لهذه كتاب». */
+assert.match(controllerSource, /itemDemonstrative/, 'الإشارة يجب أن تتبع جنس المسمّى')
+assert.doesNotMatch(controllerSource, /لهذه \$\{itemLabel/, 'إشارةٌ مؤنّثة ثابتة أمام مسمًّى قد يكون مذكّراً')
+
+/* السلّم يُذكر في قائمة «شنو تقدر تسوي»: كان يعمل ولا يعرفه أحد. */
+assert.match(decideGroundedResponse({ text: 'شنو تقدر تسوي؟' }).reply, /٣٠ ثانية.*دقيقتين|بالمدّة اللي تناسبك/, 'قائمة القدرات يجب أن تعلن سلّم المدّة')
+
+/* الفصل بين طلب الزبدة وطلب المدّة: ONE_MINUTE في المحرك خليطٌ من الاثنين،
+   وربطُها كلِّها بالقراءة الموقوتة جعل «اختصرها» تُجيب بمئةٍ وخمسين كلمة. */
+for (const phrase of ['اختصرها', 'الزبدة', 'ملخص سريع', 'باختصار', 'الفكرة بس', 'نبذة', 'الخلاصة']) {
+  assert.equal(decideGroundedResponse({ text: phrase, conversation: ladderConversation }).reason, 'context-summary',
+    `«${phrase}» طلبُ زبدةٍ صريح، لا مدّة قراءة`)
+}
+for (const [phrase, expected] of [['عندي دقيقة', 'timed-reading-1min'], ['دقيقة وحدة', 'timed-reading-1min'],
+  ['ما عندي وقت', 'timed-reading-30s'], ['وقت قصير', 'timed-reading-30s'], ['شي سريع', 'timed-reading-30s']]) {
+  assert.equal(decideGroundedResponse({ text: phrase, conversation: ladderConversation }).reason, expected,
+    `«${phrase}» يجب أن تُقرأ مدّةً بقدرها`)
+}
+
+/* «دقيقة» وحدها على مادةٍ حاضرة مدّةٌ لا موضوع — كانت تصل إلى «ما لقيت». */
+assert.equal(decideGroundedResponse({ text: 'دقيقة', conversation: ladderConversation }).reason, 'timed-reading-1min')
+assert.equal(decideGroundedResponse({ text: 'بسرعة', conversation: ladderConversation }).reason, 'timed-reading-30s')
+/* ولا تتوسّع بلا مادةٍ حاضرة: تبقى بحثاً كما كانت. */
+assert.notEqual(decideGroundedResponse({ text: 'دقيقة' }).reason, 'timed-reading-1min')
+
+/* ١٧) لفظ الدار لا يمسّ نصّ الدكتور (كشفه المسح الشامل، ٧ أغسطس):
+   `systemTerminology` كان يمرّ على الردّ كلِّه فيبدّل «التقنيات» بـ«التكنولوجيات»
+   داخل مقتطفٍ منقولٍ من مادةٍ منشورة — تحريفٌ في نصٍّ نُقدّمه على أنه نصّه.
+   القاعدة: اللفظ لكلامنا نحن، والاقتباس يُلفّ بعلامتين لا تُطبعان. */
+const siteIndexForTest = [...new Set(["تقنيات","التقنيه","التعليم","تكنولوجيا"].flatMap((seed) => scoredSiteResults(seed, { limit: 8 }).map((row) => row.item)))]
+const termItem = siteIndexForTest.find((item) => /التقنيات|التقنية|تقنية/.test(`${item.excerpt || ''}${item.body || ''}`))
+if (termItem) {
+  const termReply = String(decideGroundedResponse({
+    text: '٣٠ ثانية',
+    conversation: { contextItemIds: [termItem.id], contextIndex: 0 },
+  }).reply)
+  const termPassage = termReply.split('\n\n')[1].replace(/…$/, '')
+  assert.ok(
+    `${termItem.body || ''}\n${termItem.excerpt || ''}`.includes(termPassage),
+    'لفظ الدار بدّل كلمةً داخل نصّ الدكتور المنقول — نقضٌ للبوابة المقدّسة',
+  )
+}
+/* ولا تتسرّب العلامتان إلى الرسالة أبداً. */
+for (const phrase of ['٣٠ ثانية', 'لخص', 'كمل', 'اقتباس', 'اشرح لي']) {
+  const reply = String(decideGroundedResponse({ text: phrase, conversation: ladderConversation }).reply)
+  assert.doesNotMatch(reply, /[]/, `«${phrase}» سرّبت علامة الاقتباس الداخلية إلى الرسالة`)
+}
+/* واللفظ المعتمد باقٍ في صياغتنا نحن. */
+assert.match(controllerSource, /function houseTerminology/, 'قاعدة «تكنولوجيا لا تقنية» يجب أن تبقى على كلامنا')
+assert.match(controllerSource, /systemTerminology\(bounded\(value, 2_000\)\)/, 'اللفظ يُطبَّق على كل رد موقّع')
+
+/* «كمل» تتبع قاعدة السلّم: نقلٌ حرفيّ من المتن الخام بفقراته، ووقوفٌ عند
+   نهاية جملة، ومؤشرٌ لا يتخطّى طول النصّ ثم يرتدّ. */
+let continueConversation = { contextItemIds: ['article:qabas-201811-001'], contextIndex: 0 }
+const continueCursors = []
+for (let turn = 0; turn < 8; turn += 1) {
+  const decision = decideGroundedResponse({ text: 'كمل', conversation: continueConversation })
+  const parts = String(decision.reply).split('\n\n')
+  const titleAt = parts.findIndex((part) => part.trimStart().startsWith('*'))
+  const tailAt = parts.findIndex((part) => part.startsWith('بقي نحو') || part.startsWith('وبهذا اكتمل'))
+  if (titleAt >= 0 && tailAt > titleAt + 1) {
+    const chunk = parts.slice(titleAt + 1, tailAt).join('\n\n').replace(/…$/, '')
+    assert.ok(String(ladderItem.body).includes(chunk), '«كمل» تُسلّم نصّاً مسحوق الفقرات لا منقولاً من متنه')
+  }
+  continueCursors.push(Number(decision.patch?.readCursor ?? 0))
+  continueConversation = { ...continueConversation, lastDecisionReason: decision.reason, ...(decision.patch || {}) }
+}
+const bodyWords = String(ladderItem.body).replace(/\s+/g, ' ').trim().split(' ').length
+for (const cursor of continueCursors) {
+  assert.ok(cursor <= bodyWords, `مؤشر «كمل» تخطّى طول النصّ: ${cursor} > ${bodyWords}`)
+}
+for (let i = 1; i < continueCursors.length; i += 1) {
+  assert.ok(continueCursors[i] >= continueCursors[i - 1], `مؤشر «كمل» ارتدّ للوراء: ${continueCursors[i - 1]}→${continueCursors[i]}`)
+}
+
+console.log('WhatsApp central policy: passed')

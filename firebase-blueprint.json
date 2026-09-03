@@ -1,0 +1,33 @@
+{
+  "collections": {
+    "messages": {
+      "description": "Store academic inquiries, consultation requests, and contact messages sent to Dr. Ahmad Alfailakawi",
+      "fields": {
+        "name": {
+          "type": "string",
+          "description": "The sender's full name"
+        },
+        "email": {
+          "type": "string",
+          "description": "The sender's email address"
+        },
+        "subject": {
+          "type": "string",
+          "description": "The subject of the inquiry or consultation"
+        },
+        "message": {
+          "type": "string",
+          "description": "The detailed content of the inquiry"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "description": "The timestamp when the inquiry was submitted"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the message: 'new', 'read', 'replied'"
+        }
+      }
+    }
+  }
+}

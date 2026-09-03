@@ -1,0 +1,290 @@
+[
+  {
+    "speaker": "male",
+    "text": "وأنا أقف على الإشارة أمسك الجوال، كلما سمعت صوت إشعارات أصدقاء الفيس بوك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولما التفت جانبا تفاجأت بصديق الطفولة، وهو يمسك جواله أيضا.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وفتحت الإشارة وانطلقنا. للأسف، هذا أصبح واقع أصدقاء العمر.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولنعد إلى مارك.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 90,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "انتهينا بالجزء الأول من المقال السابق بإعلان مارك في مؤتمر برشلونة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ولنذكركم أنه قال: الواقع الافتراضي هو مستقبل الفيس بوك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "female",
+    "text": "وأنه آن الأوان لصناعة تطبيق للواقع الافتراضي على هذا النهج.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وتساءلنا وقتها، في ظل المتاهة التي وضع مجتمع الفيس بوك فيه.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "موقع يضم مجتمعا كاملا من الناس، متعدد الثقافات والجنسيات والأجناس والأعمار.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فكيف سيكون في بيئة افتراضية؟",
+    "deliveryType": "question",
+    "pauseAfterMs": 680,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ببساطة، عملت الشركة.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ببساطة عملت شركة الفيس بوك حديثا على توفير الفرق الخاصة لصناعة تطبيقات الواقع الافتراضي الاجتماعي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وقد سعى المصممان دانيال جيمس ومايكل بوث، اللذان يعملان على الواقع الافتراضي الاجتماعي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "على صناعة أدوات تسمح لأصدقاء في أماكن مختلفة في هذا العالم بالاجتماع مع بعضهم في مكان واحد.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "وكأنهم في غرفة واحدة. وهذان المصممان هما من يقومان بصناعة ألعاب متعددة اللاعبين.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويلعب المجتمع كله.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 80,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويستطيع مجتمع الفيس بوك اللعب مع مجموعة من المجتمع الفيسبوكي ككل.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "بالإضافة إلى السماح بمشاهدة الفيديوهات التي يختارها المستخدم على الفيس بوك والعالم الافتراضي.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "بكل سهولة من خلال نظارة جير في آر، والمشاركة ووضع لايك مع متابعيه عبر حسابه.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": true
+  },
+  {
+    "speaker": "male",
+    "text": "ويبدو أن هدف مارك الرئيسي هو الوصول إلى مليار شخص يستخدم الواقع الافتراضي على الفيس بوك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وهل هذا وعد قريب التحقق، أم حلم مؤجل؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "النص يجيب: سيبقى في إطار المستقبل القريب حتى تثبت الرؤية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "وسيغرق الكثيرون في مستنقع أكثر افتراضية من الواقع الافتراضي في الفيس بوك.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فلنتحاور قليلا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "فلنتحاور قليلا عن واقع صفحات الفيس بوك التي جعلت ثقافة الجميع موحدة.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "في ظل اختلاف البيئات المنتجة للثقافة، وهذه حقيقة لا يمكن أن نختلف عليها.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والأمر الذي يؤول على الجميع أن الإنسان في واقع الفيس بوك يأخذ راحته بدون قيود.",
+    "deliveryType": "reflection",
+    "pauseAfterMs": 760,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "والدليل أنه يقضي ساعات في الواقع الافتراضي للفيس بوك على حساب الواقع الحقيقي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "لكن ما ضرر ثقافة يرتاح إليها الناس؟",
+    "deliveryType": "gentleObjection",
+    "pauseAfterMs": 620,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "أن واقع الفيس بوك فرض ثقافة لا يمكن تطبيقها في الواقع، والذي قد يؤدي إلى اختلال في الشخصية.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "ويمكن أن نلخص الفكرة بأن الذي نعيشه في الواقع الافتراضي للفيس بوك يروق لنا أكثر من الواقع الحقيقي.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "لذلك سنبقى نعيش حالة من ازدواجية الشخصية، التي في الغالب ستوصلنا إلى نوع من الانفصام.",
+    "deliveryType": "statement",
+    "pauseAfterMs": 560,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "مع الشعور بتعذيب الضمير للقصور نحو مجتمعنا.",
+    "deliveryType": "briefReaction",
+    "pauseAfterMs": 240,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ويبقى إمعان العقل للعودة إلى الواقع الحقيقي، وعدم الاعتماد على الواقع الافتراضي في الفيس بوك.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "male",
+    "text": "والحقيقة التي اكتشفناها جميعا أننا نشتاق إلى صديق الأمس، الظل الدافئ. فإلى أين ستذهبين بنا يا تكنولوجيا؟",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  },
+  {
+    "speaker": "female",
+    "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أحمد حسين الفيلكاوي.",
+    "deliveryType": "conclusion",
+    "pauseAfterMs": 900,
+    "overlapMs": 0,
+    "musicBridgeAfter": false
+  }
+]

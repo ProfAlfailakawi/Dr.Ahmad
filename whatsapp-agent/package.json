@@ -1,0 +1,28 @@
+{
+  "name": "dr-ahmad-whatsapp-agent",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Local, approval-first WhatsApp assistant for Dr Ahmad Alfailakawi",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "start": "node cli.mjs start",
+    "status": "node cli.mjs status",
+    "self-test": "node cli.mjs self-test",
+    "cost-audit": "node cli.mjs cost-audit",
+    "index": "node cli.mjs index",
+    "bridge-secret": "node cli.mjs bridge-secret",
+    "install": "node cli.mjs install",
+    "uninstall": "node cli.mjs uninstall",
+    "stop": "node cli.mjs stop",
+    "logout": "node cli.mjs logout",
+    "send-campaign": "node cli.mjs send-campaign",
+    "stop-campaign": "node cli.mjs stop-campaign"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "7.0.0-rc13",
+    "qrcode-terminal": "0.12.0"
+  }
+}

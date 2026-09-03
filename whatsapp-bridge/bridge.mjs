@@ -1,0 +1,877 @@
+import { createHash, randomUUID } from 'node:crypto'
+import { createServer } from 'node:http'
+import { mkdirSync, existsSync, rmSync, readFileSync, writeFileSync, renameSync } from 'node:fs'
+import { resolve, join } from 'node:path'
+import process from 'node:process'
+import qrcode from 'qrcode'
+import whatsappWeb from 'whatsapp-web.js'
+
+const { Client, LocalAuth } = whatsappWeb
+
+const deviceId = String(process.env.WHATSAPP_BRIDGE_DEVICE_ID || process.env.WHATSAPP_CLIENT_ID || 'primary')
+  .replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48) || 'primary'
+
+const config = Object.freeze({
+  serverUrl: String(process.env.WHATSAPP_MAIN_SERVER_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, ''),
+  secret: String(process.env.WHATSAPP_BRIDGE_SECRET || ''),
+  sessionDir: resolve(String(process.env.WHATSAPP_SESSION_DIR || './session')),
+  stateDir: resolve(String(process.env.WHATSAPP_BRIDGE_STATE_DIR || './runtime-state')),
+  deviceId,
+  clientId: deviceId,
+  ownerChatId: String(process.env.WHATSAPP_OWNER_CHAT_ID || '').trim(),
+  deviceName: String(process.env.WHATSAPP_BRIDGE_DEVICE_NAME || 'dr-alfailakawi-mac-bridge').slice(0, 100),
+  healthPort: Math.max(1024, Math.min(65535, Number(process.env.WHATSAPP_BRIDGE_HEALTH_PORT || 34322))),
+  heartbeatMs: Math.max(10_000, Number(process.env.WHATSAPP_HEARTBEAT_MS || 25_000)),
+  pollMs: Math.max(2_000, Number(process.env.WHATSAPP_COMMAND_POLL_MS || 5_000)),
+  deviceActivityPulseMs: Math.max(
+    6 * 60 * 60_000,
+    Math.min(7 * 24 * 60 * 60_000, Number(process.env.WHATSAPP_DEVICE_ACTIVITY_PULSE_MS || 24 * 60 * 60_000)),
+  ),
+  chromePath: String(process.env.PUPPETEER_EXECUTABLE_PATH || '').trim(),
+})
+
+if (!config.serverUrl || !/^https?:\/\//.test(config.serverUrl)) {
+  throw new Error('WHATSAPP_MAIN_SERVER_URL is required and must start with http:// or https://')
+}
+if (config.secret.length < 24) {
+  throw new Error('WHATSAPP_BRIDGE_SECRET must contain at least 24 characters')
+}
+
+mkdirSync(config.sessionDir, { recursive: true, mode: 0o700 })
+mkdirSync(config.stateDir, { recursive: true, mode: 0o700 })
+
+const runtime = {
+  status: 'starting',
+  connected: false,
+  lastError: '',
+  lastWebhookAt: null,
+  startedAt: new Date().toISOString(),
+  qrAt: null,
+  qrGeneratedAt: null,
+  qrFingerprint: '',
+  instanceId: randomUUID(),
+  stateSeq: 0,
+  stateAt: new Date().toISOString(),
+  syncPercent: 0,
+  lastActivityAt: Date.now(),
+  authAcceptedAt: null,
+  readyAt: null,
+  lastSocketState: null,
+  selfRecoveryRequested: false,
+  ignoredBackfill: 0,
+  lastDeviceActivityPulseAt: null,
+  lastDeviceActivityPulseError: '',
+}
+
+const PROGRESSIVE_STATES = Object.freeze({
+  starting: 0,
+  pairing: 1,
+  syncing: 2,
+  authenticated: 3,
+  connected: 4,
+})
+
+function stateSnapshot(extra = {}) {
+  return {
+    status: runtime.status,
+    connected: runtime.connected,
+    error: runtime.lastError,
+    instanceId: runtime.instanceId,
+    deviceId: config.deviceId,
+    stateSeq: runtime.stateSeq,
+    stateAt: runtime.stateAt,
+    syncPercent: runtime.syncPercent,
+    qrGeneratedAt: runtime.qrGeneratedAt,
+    qrFingerprint: runtime.qrFingerprint,
+    lastDeviceActivityPulseAt: runtime.lastDeviceActivityPulseAt,
+    lastDeviceActivityPulseError: runtime.lastDeviceActivityPulseError,
+    deviceActivityPulseIntervalMs: config.deviceActivityPulseMs,
+    ...extra,
+  }
+}
+
+function transitionState(status, connected, error = '', extra = {}) {
+  const nextStatus = String(status || 'disconnected')
+  const currentProgress = PROGRESSIVE_STATES[runtime.status]
+  const nextProgress = PROGRESSIVE_STATES[nextStatus]
+
+  /* WhatsApp Web may emit a fresh QR after the phone has already accepted the
+     link while chat-history sync is paused. That late event is not a real
+     logout. Never let it push the same live process backwards to pairing. */
+  if (
+    Number.isInteger(currentProgress)
+    && Number.isInteger(nextProgress)
+    && currentProgress >= PROGRESSIVE_STATES.syncing
+    && nextProgress < currentProgress
+  ) {
+    return stateSnapshot({ ...extra, transitionApplied: false, rejectedStatus: nextStatus })
+  }
+
+  runtime.status = nextStatus
+  runtime.connected = Boolean(connected)
+  runtime.lastError = String(error || '').slice(0, 400)
+  if (nextStatus === 'authenticated' || nextStatus === 'connected') {
+    runtime.authAcceptedAt ||= new Date().toISOString()
+  }
+  if (nextStatus === 'connected') runtime.readyAt ||= new Date().toISOString()
+  runtime.stateSeq += 1
+  runtime.stateAt = new Date().toISOString()
+  runtime.lastActivityAt = Date.now()
+  return stateSnapshot({ ...extra, transitionApplied: true })
+}
+
+function log(level, message, fields = {}) {
+  const safe = { ...fields }
+  for (const key of ['jid', 'from', 'to', 'conversationId']) {
+    if (safe[key]) safe[key] = maskAddress(safe[key])
+  }
+  process.stdout.write(`${JSON.stringify({ at: new Date().toISOString(), level, event: message, deviceId: config.deviceId, ...safe })}\n`)
+}
+
+function maskAddress(value) {
+  const digits = String(value || '').split('@', 1)[0].replace(/\D/g, '')
+  return digits.length > 4 ? `${'*'.repeat(Math.max(4, digits.length - 4))}${digits.slice(-4)}` : '****'
+}
+
+let shuttingDown = false
+let commandBusy = false
+let heartbeatTimer = null
+let pollTimer = null
+let connectionWatchdogTimer = null
+let deviceActivityPulseTimer = null
+let connectionProbeBusy = false
+let deviceActivityPulseBusy = false
+let readyHandled = false
+let authHandled = false
+let forcedSyncRecoveryAt = 0
+let contactsWarmupStarted = false
+
+const deliveryCheckpointPath = join(config.stateDir, 'delivery-checkpoints.json')
+const sentCommandCheckpoints = new Map()
+const inboundReplyCheckpoints = new Map()
+const inboundInFlight = new Set()
+
+function loadDeliveryCheckpoints() {
+  try {
+    const rows = JSON.parse(readFileSync(deliveryCheckpointPath, 'utf8'))
+    if (!Array.isArray(rows)) return
+    for (const row of rows.slice(-500)) {
+      if (!row?.commandId) continue
+      sentCommandCheckpoints.set(String(row.commandId), {
+        messageId: String(row.messageId || ''),
+        recipientFingerprint: String(row.recipientFingerprint || ''),
+        at: String(row.at || ''),
+      })
+    }
+  } catch {
+    /* أول تشغيل أو ملف غير صالح: لا نخاطر بإيقاف الجسر. */
+  }
+}
+
+function persistDeliveryCheckpoints() {
+  const rows = [...sentCommandCheckpoints.entries()].slice(-500).map(([commandId, value]) => ({ commandId, ...value }))
+  const temporary = `${deliveryCheckpointPath}.tmp`
+  writeFileSync(temporary, JSON.stringify(rows), { mode: 0o600 })
+  renameSync(temporary, deliveryCheckpointPath)
+}
+
+function recipientFingerprint(jid) {
+  const digits = digitsFromPrivateJid(jid)
+  return digits ? createHash('sha256').update(`wa-recipient:${digits}`).digest('hex') : ''
+}
+
+function inboundDeliveryKey(message) {
+  const id = String(message?.id?._serialized || '').trim()
+  if (id) return `id:${id}`
+  const fallback = `${String(message?.from || '')}|${messageTimestampMs(message)}|${String(message?.type || '')}|${String(message?.body || '').slice(0, 500)}`
+  return `fallback:${createHash('sha256').update(fallback).digest('hex')}`
+}
+
+function rememberInboundReply(key) {
+  inboundReplyCheckpoints.set(key, Date.now())
+  while (inboundReplyCheckpoints.size > 500) inboundReplyCheckpoints.delete(inboundReplyCheckpoints.keys().next().value)
+}
+
+loadDeliveryCheckpoints()
+
+async function serverRequest(path, { method = 'POST', body, timeoutMs = 15_000, retries = 2 } = {}) {
+  let lastError
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const response = await fetch(`${config.serverUrl}${path}`, {
+        method,
+        signal: controller.signal,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-WhatsApp-Bridge-Secret': config.secret,
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      })
+      if (!response.ok) throw new Error(`server-${response.status}`)
+      runtime.lastWebhookAt = new Date().toISOString()
+      return await response.json()
+    } catch (error) {
+      lastError = error
+      if (attempt < retries) await new Promise((resolveWait) => setTimeout(resolveWait, 600 * 2 ** attempt))
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+  throw lastError
+}
+
+async function emit(event, payload = {}, options = {}) {
+  return serverRequest('/api/whatsapp/webhook', { body: { event, deviceName: config.deviceName, deviceId: config.deviceId, version: '1.0.0', ...payload }, ...options })
+}
+
+async function safeEmit(event, payload = {}, options = {}) {
+  try {
+    return await emit(event, payload, options)
+  } catch (error) {
+    runtime.lastError = error instanceof Error ? error.message : String(error)
+    log('error', 'webhook_failed', { event, error: runtime.lastError })
+    return null
+  }
+}
+
+function clearRuntimeQr() {
+  runtime.qrAt = null
+  runtime.qrGeneratedAt = null
+  runtime.qrFingerprint = ''
+}
+
+async function renderQrImage(qr) {
+  /* A WhatsApp QR is unusually dense. The previous image had a one-module
+     quiet zone and was then shrunk to a non-integer size in the dashboard,
+     which makes phone cameras intermittently see blurred/merged modules.
+     SVG keeps every module mathematically sharp at any display size, and the
+     four-module quiet zone follows the QR standard. */
+  try {
+    const svg = await qrcode.toString(qr, {
+      type: 'svg',
+      margin: 4,
+      errorCorrectionLevel: 'L',
+      color: { dark: '#000000', light: '#ffffff' },
+    })
+    return `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`
+  } catch (svgError) {
+    log('warn', 'qr_svg_render_failed', { error: String(svgError?.message || svgError) })
+    return qrcode.toDataURL(qr, {
+      type: 'image/png',
+      margin: 4,
+      scale: 10,
+      errorCorrectionLevel: 'L',
+      color: { dark: '#000000ff', light: '#ffffffff' },
+    })
+  }
+}
+
+const puppeteer = {
+  headless: true,
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--disable-background-timer-throttling',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+    '--disable-ipc-flooding-protection',
+    '--no-zygote',
+    '--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+    '--disable-features=CalculatePageVisibility',
+    '--disable-features=IntensiveWakeUpThrottling',
+    '--disable-features=TurnOffStreamingMediaWithBackgroundTab',
+    '--disable-features=LogLeastRecentlyUsedLimit',
+    '--disable-features=Prerender2',
+  ],
+  ...(config.chromePath ? { executablePath: config.chromePath } : {}),
+}
+
+const client = new Client({
+  authStrategy: new LocalAuth({ clientId: config.deviceId, dataPath: config.sessionDir }),
+  puppeteer,
+  deviceName: config.deviceName,
+  browserName: 'Dr Ahmad Assistant',
+  takeoverOnConflict: true,
+  authTimeoutMs: 0,
+  qrMaxRetries: 0,
+})
+
+client.on('loading_screen', async (percent, message) => {
+  clearRuntimeQr();
+  runtime.syncPercent = percent
+  runtime.lastActivityAt = Date.now()
+  const snapshot = transitionState('syncing', false, '', { percent, message })
+  if (!snapshot.transitionApplied) {
+    log('warn', 'late_loading_state_ignored', { percent, rejectedStatus: snapshot.rejectedStatus, stateSeq: snapshot.stateSeq })
+    return
+  }
+  log('info', 'loading_screen', { percent, message, stateSeq: snapshot.stateSeq })
+  await safeEmit('status', snapshot)
+})
+
+client.on('qr', async (qr) => {
+  const snapshot = transitionState('pairing', false, '')
+  if (!snapshot.transitionApplied) {
+    log('warn', 'late_qr_ignored', { currentStatus: runtime.status, stateSeq: snapshot.stateSeq })
+    await safeEmit('status', stateSnapshot({ ignoredLateQr: true }), { retries: 0 })
+    return
+  }
+
+  const qrGeneratedAt = snapshot.stateAt
+  const qrFingerprint = createHash('sha256').update(String(qr)).digest('hex').slice(0, 16)
+  runtime.qrAt = qrGeneratedAt
+  runtime.qrGeneratedAt = qrGeneratedAt
+  runtime.qrFingerprint = qrFingerprint
+
+  try {
+    const qrImage = await renderQrImage(qr)
+    await safeEmit('qr', {
+      ...snapshot,
+      qr,
+      qrImage,
+      qrGeneratedAt,
+      qrFingerprint,
+    })
+  } catch (error) {
+    log('error', 'qr_render_failed', { error: String(error?.message || error), stateSeq: snapshot.stateSeq })
+    await safeEmit('qr', {
+      ...snapshot,
+      qr,
+      qrImage: null,
+      qrGeneratedAt,
+      qrFingerprint,
+    })
+  }
+  log('info', 'qr_generated', { stateSeq: snapshot.stateSeq, qrFingerprint })
+})
+
+client.on('authenticated', () => {
+  clearRuntimeQr()
+  if (authHandled) {
+    log('info', 'duplicate_authenticated_ignored', { stateSeq: runtime.stateSeq })
+    return
+  }
+  authHandled = true
+  const snapshot = transitionState('authenticated', false, '')
+  if (!snapshot.transitionApplied) return
+  log('info', 'authenticated', { stateSeq: snapshot.stateSeq })
+  void safeEmit('status', snapshot)
+  
+  startHeartbeatAndPolling()
+})
+
+function markBridgeReady(source = 'ready_event') {
+  if (readyHandled) {
+    log('info', 'duplicate_ready_ignored', { source, stateSeq: runtime.stateSeq })
+    return
+  }
+  readyHandled = true
+  authHandled = true
+  clearRuntimeQr()
+  const snapshot = transitionState('connected', true, '')
+  if (!snapshot.transitionApplied) return
+  log('info', 'ready', { source, stateSeq: snapshot.stateSeq })
+  void safeEmit('status', snapshot)
+  
+  startHeartbeatAndPolling()
+  scheduleDeviceActivityPulse()
+  if (!contactsWarmupStarted) {
+    contactsWarmupStarted = true
+    void warmPhoneAliasesAndContactsInBackground()
+  }
+}
+
+client.on('ready', () => {
+  markBridgeReady('ready_event')
+})
+
+async function warmPhoneAliasesAndContactsInBackground() {
+  try {
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('warmup-timeout')), 15_000))
+    const task = (async () => {
+      let contacts = []
+      try {
+        contacts = await client.getContacts()
+      } catch (e) {
+        log('warn', 'get_contacts_failed', { error: String(e?.message || e) })
+      }
+      const compact = contacts.flatMap((contact) => {
+        const jid = String(contact?.id?._serialized || '')
+        if (!jid.endsWith('@c.us') || !/^\d{7,15}@c\.us$/.test(jid)) return []
+        return [{
+          jid,
+          name: String(contact.name || contact.pushname || contact.shortName || '').slice(0, 120),
+        }]
+      })
+      if (compact.length > 0) {
+        let accepted = 0
+        for (let offset = 0; offset < compact.length; offset += 350) {
+          const response = await safeEmit('contacts-sync', { contacts: compact.slice(offset, offset + 350) })
+          accepted += Number(response?.accepted || 0)
+        }
+        log('info', 'contacts_synced', { accepted })
+      }
+    })()
+    await Promise.race([task, timeout])
+  } catch (err) {
+    log('warn', 'warmup_background_completed_with_notice', { notice: String(err?.message || err) })
+  }
+}
+
+client.on('change_state', (state) => {
+  const value = String(state || '').toUpperCase()
+  log('info', 'change_state', { state: value })
+  
+  if (value === 'CONNECTED' && (!runtime.connected || runtime.status !== 'connected')) {
+    markBridgeReady('change_state')
+    return
+  }
+  if (runtime.connected && ['CONFLICT', 'UNPAIRED_IDLE', 'TIMEOUT'].includes(value)) {
+    const snapshot = transitionState('reconnecting', false, value.toLowerCase())
+    if (snapshot.transitionApplied) void safeEmit('status', snapshot)
+  }
+})
+
+client.on('auth_failure', async (message) => {
+  const snapshot = transitionState('auth_failure', false, String(message || 'authentication_failed'))
+  log('error', 'auth_failure', { error: runtime.lastError, stateSeq: snapshot.stateSeq })
+  await safeEmit('status', snapshot)
+  
+  if (!shuttingDown) {
+    shuttingDown = true
+    await safeGracefulCloseClient()
+    process.exit(76)
+  }
+})
+
+client.on('disconnected', async (reason) => {
+  const reasonStr = String(reason || 'disconnected').toUpperCase()
+  log('warn', 'disconnected', { reason: reasonStr, stateSeq: runtime.stateSeq })
+  
+  const isExplicitLogout = ['LOGOUT', 'UNPAIRED', 'LOGGED_OUT'].includes(reasonStr)
+  
+  if (isExplicitLogout) {
+    const snapshot = transitionState('disconnected', false, `explicit_logout:${reasonStr}`)
+    await safeEmit('status', snapshot)
+    if (!shuttingDown) {
+      shuttingDown = true
+      await safeGracefulCloseClient()
+      process.exit(76)
+    }
+  } else {
+    const snapshot = transitionState('reconnecting', false, `temporary_disconnect:${reasonStr}`)
+    await safeEmit('status', snapshot)
+    if (!shuttingDown) {
+      shuttingDown = true
+      await safeGracefulCloseClient()
+      process.exit(75)
+    }
+  }
+})
+
+async function safeGracefulCloseClient() {
+  try {
+    await client.destroy()
+  } catch {
+    /* ignore */
+  }
+  await new Promise((r) => setTimeout(r, 1000))
+}
+
+function messageTimestampMs(message) {
+  const raw = Number(message?.timestamp || 0)
+  if (!Number.isFinite(raw) || raw <= 0) return 0
+  return raw < 10_000_000_000 ? raw * 1_000 : raw
+}
+
+function isFreshInboundForCurrentRuntime(message, graceMs = 1_500) {
+  if (!readyHandled || !runtime.connected) return false
+  const readyAt = Date.parse(runtime.readyAt || '')
+  if (!Number.isFinite(readyAt)) return false
+  const messageAt = messageTimestampMs(message)
+  // الرسائل بلا timestamp أثناء أول 30 ثانية تُعامل كـ backfill مشكوك فيه؛
+  // WhatsApp العادي يوفّر timestamp، لذلك هذا الحاجز يحمي التشغيل ولا يضر المسار الطبيعي.
+  if (!messageAt) return Date.now() - readyAt >= 30_000
+  const safeGrace = Math.max(0, Math.min(2_000, Number(graceMs) || 0))
+  return messageAt >= readyAt - safeGrace
+}
+
+function digitsFromPrivateJid(value) {
+  const raw = String(value || '').trim()
+  const head = raw.split('@', 1)[0].replace(/\D/g, '')
+  return /^\d{7,15}$/.test(head) ? head : ''
+}
+
+async function resolvePrivateRecipient(value) {
+  const digits = digitsFromPrivateJid(value)
+  if (!digits) throw new Error('invalid-private-recipient')
+  const resolved = await client.getNumberId(digits)
+  const jid = String(resolved?._serialized || '')
+  if (!jid) throw new Error('number-not-registered-on-whatsapp')
+  const resolvedDigits = digitsFromPrivateJid(jid)
+  if (!resolvedDigits || resolvedDigits !== digits) throw new Error('recipient-resolution-mismatch')
+  return jid
+}
+
+async function acknowledgeCommand(commandId, ok, error = '', delivery = null) {
+  return serverRequest('/api/whatsapp/commands', {
+    body: { commandId, ok, ...(error ? { error } : {}), ...(delivery ? { delivery } : {}) },
+    retries: 2,
+  })
+}
+
+client.on('message', async (message) => {
+  runtime.lastActivityAt = Date.now()
+  if (message.fromMe || message.from === 'status@broadcast' || !message.from?.endsWith('@c.us')) return
+  const deliveryKey = inboundDeliveryKey(message)
+  if (inboundReplyCheckpoints.has(deliveryKey) || inboundInFlight.has(deliveryKey)) {
+    log('info', 'inbound_delivery_checkpoint_hit', { from: message.from })
+    return
+  }
+  if (!isFreshInboundForCurrentRuntime(message)) {
+    runtime.ignoredBackfill += 1
+    log('info', 'backfilled_message_quarantined', {
+      from: message.from,
+      messageAt: messageTimestampMs(message) || null,
+      bridgeReadyAt: runtime.readyAt,
+      ignoredBackfill: runtime.ignoredBackfill,
+    })
+    return
+  }
+  inboundInFlight.add(deliveryKey)
+  try {
+    const result = await emit('incoming', {
+      jid: message.from,
+      text: String(message.body || '').slice(0, 12_000),
+      hasMedia: Boolean(message.hasMedia),
+      mediaType: String(message.type || 'text').slice(0, 80),
+      messageId: String(message.id?._serialized || '').slice(0, 240),
+      timestamp: Number(message.timestamp || 0),
+      bridgeStartedAt: runtime.startedAt,
+      bridgeReadyAt: runtime.readyAt,
+    })
+    if (result?.reply?.text && ['reply', 'reply-and-escalate'].includes(result.action)) {
+      await client.sendMessage(message.from, String(result.reply.text))
+      // checkpoint بعد نجاح واتساب نفسه، قبل أي دورة event جديدة.
+      rememberInboundReply(deliveryKey)
+    } else if (result?.action === 'none') {
+      // لا نعيد نفس delivery إلى الخادم مراراً؛ الرسائل الجديدة لها messageId مختلف.
+      rememberInboundReply(deliveryKey)
+    }
+  } catch (error) {
+    runtime.lastError = error instanceof Error ? error.message : String(error)
+    log('error', 'incoming_message_failed', { from: message.from, error: runtime.lastError })
+  } finally {
+    inboundInFlight.delete(deliveryKey)
+  }
+})
+
+async function pulseDeviceActivity(source = 'daily') {
+  if (deviceActivityPulseBusy || shuttingDown || !runtime.connected) return false
+  deviceActivityPulseBusy = true
+  try {
+    await client.sendPresenceAvailable()
+    await new Promise((resolveWait) => setTimeout(resolveWait, 5_000))
+    await client.sendPresenceUnavailable()
+    runtime.lastDeviceActivityPulseAt = new Date().toISOString()
+    runtime.lastDeviceActivityPulseError = ''
+    log('info', 'device_activity_presence_pulse_completed', { source })
+    await safeEmit('heartbeat', stateSnapshot(), { retries: 1 })
+    return true
+  } catch (error) {
+    runtime.lastDeviceActivityPulseError = String(error?.message || error).slice(0, 240)
+    log('warn', 'device_activity_presence_pulse_failed', { source, error: runtime.lastDeviceActivityPulseError })
+    try { await client.sendPresenceUnavailable() } catch { /* لا نترك الحساب Online بعد فشلٍ جزئي */ }
+    return false
+  } finally {
+    deviceActivityPulseBusy = false
+  }
+}
+
+function scheduleDeviceActivityPulse() {
+  if (!deviceActivityPulseTimer) {
+    deviceActivityPulseTimer = setInterval(
+      () => void pulseDeviceActivity('daily'),
+      config.deviceActivityPulseMs,
+    )
+    deviceActivityPulseTimer.unref()
+  }
+  setTimeout(() => void pulseDeviceActivity('ready'), 20_000).unref()
+}
+
+function startHeartbeatAndPolling() {
+  if (heartbeatTimer) return
+  heartbeatTimer = setInterval(() => {
+    void (async () => {
+      await safeEmit('heartbeat', stateSnapshot(), { retries: 0 })
+    })()
+  }, config.heartbeatMs)
+  heartbeatTimer.unref()
+
+  if (!pollTimer) {
+    pollTimer = setInterval(() => void pollCommands(), config.pollMs)
+    pollTimer.unref()
+  }
+}
+
+function withTimeout(promise, timeoutMs, label) {
+  let timer
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(label)), timeoutMs)
+      timer.unref?.()
+    }),
+  ]).finally(() => clearTimeout(timer))
+}
+
+async function readBrowserConnectionState() {
+  if (!client.pupPage || client.pupPage.isClosed()) return null
+  return withTimeout(client.pupPage.evaluate(() => {
+    try {
+      const Socket = window.require('WAWebSocketModel').Socket
+      return {
+        state: String(Socket?.state || ''),
+        hasSynced: Boolean(Socket?.hasSynced),
+        recoveryCallbackReady: typeof window.onAppStateHasSyncedEvent === 'function',
+        wwebjsInjected: typeof window.WWebJS !== 'undefined',
+      }
+    } catch (error) {
+      return { state: '', hasSynced: false, recoveryCallbackReady: false, wwebjsInjected: false, error: String(error?.message || error) }
+    }
+  }), 5_000, 'browser-state-timeout')
+}
+
+async function forceReadyRecovery() {
+  if (!client.pupPage || client.pupPage.isClosed()) return false
+  return withTimeout(client.pupPage.evaluate(() => {
+    if (typeof window.onAppStateHasSyncedEvent !== 'function') return false
+    /* Do not await the exposed callback here. Its Node handler evaluates the
+       same page while completing WWebJS injection; awaiting it would create a
+       page/Node circular wait. */
+    Promise.resolve(window.onAppStateHasSyncedEvent()).catch(() => {})
+    return true
+  }), 5_000, 'ready-recovery-trigger-timeout')
+}
+
+async function probeConnectionState() {
+  if (connectionProbeBusy || shuttingDown) return
+  connectionProbeBusy = true
+  try {
+    const browserState = await readBrowserConnectionState()
+    if (!browserState) return
+    const socketState = String(browserState.state || '').toUpperCase()
+    runtime.lastSocketState = socketState || null
+
+    if (socketState === 'CONNECTED') {
+      if (!authHandled) {
+        authHandled = true
+        const snapshot = transitionState('authenticated', false, '', { recovery: 'socket-connected' })
+        if (snapshot.transitionApplied) {
+          log('info', 'authenticated_recovered_from_socket', { stateSeq: snapshot.stateSeq })
+          await safeEmit('status', snapshot, { retries: 0 })
+        }
+        startHeartbeatAndPolling()
+      }
+
+      if (!readyHandled && browserState.recoveryCallbackReady) {
+        const authAt = Date.parse(runtime.authAcceptedAt || '')
+        const authenticatedForMs = Number.isFinite(authAt) ? Date.now() - authAt : 0
+        const retryDue = Date.now() - forcedSyncRecoveryAt >= 30_000
+        if (authenticatedForMs >= 5_000 && retryDue) {
+          forcedSyncRecoveryAt = Date.now()
+          log('warn', 'ready_event_recovery_started', {
+            hasSynced: browserState.hasSynced,
+            wwebjsInjected: browserState.wwebjsInjected,
+          })
+          const triggered = await forceReadyRecovery()
+          if (!triggered) log('warn', 'ready_event_recovery_callback_missing')
+        }
+      }
+
+      /* If the recovery callback completed the library injection but the
+         public ready event itself was lost, client.info is populated and the
+         message listeners have already been attached. Promote that proven
+         state rather than leaving the dashboard stuck forever. */
+      if (!readyHandled && browserState.wwebjsInjected && client.info?.wid) {
+        markBridgeReady('watchdog_verified_injection')
+      }
+      const authenticatedAt = Date.parse(runtime.authAcceptedAt || runtime.stateAt || '')
+      const stuckAuthenticatedMs = Number.isFinite(authenticatedAt) ? Date.now() - authenticatedAt : 0
+      if (!readyHandled && stuckAuthenticatedMs >= 4 * 60_000 && !runtime.selfRecoveryRequested) {
+        runtime.selfRecoveryRequested = true
+        shuttingDown = true
+        log('warn', 'watchdog_restart_stuck_authenticated', { stuckAuthenticatedMs, socketState })
+        await safeEmit('status', transitionState('restarting', false, 'watchdog_stuck_authenticated'), { retries: 0 })
+        await safeGracefulCloseClient()
+        process.exit(75)
+      }
+      return
+    }
+
+    if (runtime.connected && ['CONFLICT', 'UNPAIRED_IDLE', 'TIMEOUT'].includes(socketState)) {
+      const snapshot = transitionState('reconnecting', false, socketState.toLowerCase())
+      if (snapshot.transitionApplied) await safeEmit('status', snapshot, { retries: 0 })
+    }
+    const stalledAt = Date.parse(runtime.stateAt || '')
+    const stalledMs = Number.isFinite(stalledAt) ? Date.now() - stalledAt : 0
+    if (
+      ['reconnecting', 'syncing', 'authenticated'].includes(runtime.status)
+      && stalledMs >= 4 * 60_000
+      && !runtime.selfRecoveryRequested
+    ) {
+      runtime.selfRecoveryRequested = true
+      shuttingDown = true
+      log('warn', 'watchdog_restart_stalled_connection', { stalledMs, socketState, status: runtime.status })
+      await safeEmit('status', transitionState('restarting', false, 'watchdog_stalled_connection'), { retries: 0 })
+      await safeGracefulCloseClient()
+      process.exit(75)
+    }
+  } catch (error) {
+    log('warn', 'connection_watchdog_probe_failed', { error: String(error?.message || error) })
+  } finally {
+    connectionProbeBusy = false
+  }
+}
+
+function startConnectionWatchdog() {
+  if (connectionWatchdogTimer) return
+  connectionWatchdogTimer = setInterval(() => { void probeConnectionState() }, 5_000)
+  connectionWatchdogTimer.unref()
+  void probeConnectionState()
+}
+
+async function pollCommands() {
+  if (commandBusy || shuttingDown) return
+  commandBusy = true
+  try {
+    const response = await serverRequest('/api/whatsapp/commands', { method: 'GET', retries: 1 })
+    if (response?.command) await executeCommand(response.command)
+  } catch (error) {
+    runtime.lastError = error instanceof Error ? error.message : String(error)
+  } finally {
+    commandBusy = false
+  }
+}
+
+async function executeCommand(command) {
+  if (!command?.id || !command.type) return
+  try {
+    if (command.type === 'restart') {
+      shuttingDown = true
+      await safeEmit('status', transitionState('restarting', false, 'command_restart'))
+      await acknowledgeCommand(command.id, true)
+      await safeGracefulCloseClient()
+      process.exit(75)
+    }
+    if (command.type === 'repair-session' || command.type === 'repair') {
+      shuttingDown = true
+      await safeEmit('status', transitionState('pairing', false, 'command_repair'))
+      await acknowledgeCommand(command.id, true)
+      try { await client.logout() } catch { /* ignore */ }
+      await safeGracefulCloseClient()
+      process.exit(76)
+    }
+    if (command.type === 'pulse-device-activity') {
+      const pulsed = await pulseDeviceActivity('panel')
+      if (!pulsed) throw new Error(runtime.lastDeviceActivityPulseError || 'device-activity-pulse-failed')
+      await acknowledgeCommand(command.id, true)
+      log('info', 'command_device_activity_pulsed', { commandId: command.id })
+      return
+    }
+    if (command.type === 'send-message' || command.type === 'send-self-message') {
+      const text = String(command.payload?.text || '').trim()
+      if (!text) throw new Error('empty-message')
+      const prior = sentCommandCheckpoints.get(String(command.id))
+      if (prior) {
+        await acknowledgeCommand(command.id, true, '', prior)
+        log('info', 'outbound_delivery_checkpoint_replayed', { commandId: command.id })
+        return
+      }
+      const candidate = command.type === 'send-self-message'
+        ? (config.ownerChatId || String(client.info?.wid?._serialized || ''))
+        : command.payload?.jid
+      const jid = await resolvePrivateRecipient(candidate)
+      const expectedFingerprint = String(command.recipientFingerprint || command.payload?.recipientFingerprint || '')
+      const actualFingerprint = recipientFingerprint(jid)
+      if (expectedFingerprint && expectedFingerprint !== actualFingerprint) throw new Error('recipient-fingerprint-mismatch')
+      const sent = await client.sendMessage(jid, text)
+      const delivery = {
+        messageId: String(sent?.id?._serialized || '').slice(0, 240),
+        recipientFingerprint: actualFingerprint,
+        at: new Date().toISOString(),
+      }
+      // نثبت النجاح محلياً على قرص منفصل عن session قبل ACK. إذا انقطع الشبك
+      // بعد إرسال واتساب، يعاد ACK فقط ولا يعاد إرسال الرسالة.
+      sentCommandCheckpoints.set(String(command.id), delivery)
+      while (sentCommandCheckpoints.size > 500) sentCommandCheckpoints.delete(sentCommandCheckpoints.keys().next().value)
+      persistDeliveryCheckpoints()
+      await acknowledgeCommand(command.id, true, '', delivery)
+      return
+    }
+    throw new Error(`unsupported-command:${command.type}`)
+  } catch (caught) {
+    const error = caught instanceof Error ? caught.message : String(caught)
+    await acknowledgeCommand(command.id, false, error)
+  }
+}
+
+const healthServer = createServer((req, res) => {
+  if (req.url !== '/healthz' && req.url !== '/health') {
+    res.writeHead(404).end()
+    return
+  }
+  const body = Buffer.from(JSON.stringify({
+    status: runtime.status,
+    connected: runtime.connected,
+    deviceId: config.deviceId,
+    startedAt: runtime.startedAt,
+    lastWebhookAt: runtime.lastWebhookAt,
+    syncPercent: runtime.syncPercent,
+    lastDeviceActivityPulseAt: runtime.lastDeviceActivityPulseAt,
+    lastDeviceActivityPulseError: runtime.lastDeviceActivityPulseError,
+    deviceActivityPulseIntervalMs: config.deviceActivityPulseMs,
+  }))
+  res.writeHead(runtime.status === 'auth_failure' ? 503 : 200, {
+    'content-type': 'application/json',
+    'content-length': body.length,
+    'cache-control': 'no-store',
+  })
+  res.end(body)
+})
+
+healthServer.listen(config.healthPort, '127.0.0.1')
+
+async function shutdown(signal) {
+  if (shuttingDown) return
+  shuttingDown = true
+  log('info', 'shutdown_initiated', { signal })
+  await safeEmit('status', transitionState('disconnected', false, `signal:${signal}`), { retries: 0 })
+  await safeGracefulCloseClient()
+  healthServer.close(() => process.exit(0))
+  setTimeout(() => process.exit(0), 3_000).unref()
+}
+
+process.on('SIGTERM', () => void shutdown('SIGTERM'))
+process.on('SIGINT', () => void shutdown('SIGINT'))
+process.on('uncaughtException', (error) => {
+  log('error', 'uncaught_exception', { error: error?.stack || error?.message || String(error) })
+  process.exit(70)
+})
+process.on('unhandledRejection', (error) => {
+  log('error', 'unhandled_rejection', { error: error?.stack || error?.message || String(error) })
+  process.exit(71)
+})
+
+log('info', 'bridge_starting', { deviceId: config.deviceId, sessionDir: config.sessionDir, instanceId: runtime.instanceId })
+await safeEmit('status', transitionState('starting', false, ''), { retries: 0 })
+await client.initialize()
+startHeartbeatAndPolling()
+startConnectionWatchdog()

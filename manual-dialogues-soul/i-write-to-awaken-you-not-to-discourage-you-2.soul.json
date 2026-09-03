@@ -1,0 +1,264 @@
+{
+  "slug": "i-write-to-awaken-you-not-to-discourage-you-2",
+  "bridgeAfter": [
+    4,
+    27
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "قد تبدو كلماتي قاسية، وقد يساء فهمها. لكنني لا أكتب لأعجبك،⏸ بل لأوقظك.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لا أكتب لتربت على كتفك،⏸ بل لأضع مرآة أمامك.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ففي زمن المجاملات يصبح الصدق تهمة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي عصر التصفيق الأجوف، يصبح من ينبهك هو العدو.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هل هناك تربية بلا مواجهة؟⏸ وهل نصنع وعيا دون أن نهز الجدران؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نسمي هذه القسوة تربية؟⏸ بعضهم يسميها تنمرا.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والجواب عند الباحثين: ما أكتبه ليس تنمرا،⏸ بل حب قاس.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هو ذات المفهوم الذي تدرسه جامعات التربية في الغرب تحت عنوان Tough Love.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أي أن تحب أبناءك بما يكفي لتصححهم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن نغرق في تلطيف الواقع حتى لم نعد نراه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "نغطي فشل التعليم بكلمات منمقة، ونبرر ضعف القيم باسم التطور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونطوب الرداءة على أنها حرية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا يرفض الكاتب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأنا لا أطيق هذا النوع من المجاملة المؤذية، لأن الأمة لا تنهض بالمكياج بل بالجرأة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحين يقول إن التعليم مريض، فهو لا يحتقر المعلمين بل يستنجد بهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحين يصرخ ضد الجامعات، فذلك لأنه يخاف على الوطن من خريج لا يملك عقلا مستقلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فليست المجاملة حلا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لسنا بحاجة إلى المزيد من كلمات المجاملة،⏸ بل إلى وقفة صدق مع الذات، حتى لو جرحت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولذلك سأستمر في الكتابة، وإن صرخ البعض: أحبطتنا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فبعض الإحباط المؤقت أفضل من الوهم المزمن.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويذكر معلمه في المرحلة الثانوية. لم يكن محبوبا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "كان صارما، وصوته حاد،⏸ ولا يعرف المجاملات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكنهم كانوا ينجحون بسببه. لا بفضله فقط،⏸ بل بخوفهم من أن يخيبوا أمله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومرت السنوات، واليوم حين يتحدثون عنه يذكرونه باحترام لم يحملوه لكثيرين بعده.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لم يكن يبتسم كثيرا،⏸ لكنه بنى فيهم العمود الفقري.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذا هو الفرق بين المربي والمدلل. الأول يشكلك، والثاني يريحك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وفي عصرنا الحالي أصبحنا نخلط بين النقد والعداء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمن يشير إلى الخطأ يتهم بأنه محبط، ومتشائم، وسلبي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ألا يحتاج الناس إلى بعض الأمل أيضا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "يحتاجون،⏸ لكن التاريخ لا يكتب بالمجاملين.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالنهضة لم يصنعها الذين قالوا كل شيء جميل،⏸ بل الذين تجرأوا على الجدار وكتبوا عليه: هنا الخلل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالنقد التربوي ليس هدما بل تشخيص، وليس ازدراء بل بحث عن علاج.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وإذا صمتنا جميعا بحجة الإيجابية، فلن يبقى في الوطن إلا الصدى، وواجهة زجاجية لا تصمد في العاصفة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فاسمحوا له أن يكتب بحدة أحيانا، لأن النوم العميق لا يوقظه الهمس بل الصدمة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فما يكتبه ليس لعينيك بل لعقلك، وليس لراحتك بل لمستقبلك. وهو لا يكتب ليحبطك،⏸ بل ليوقظ فيك إنسانا كاد أن ينام.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

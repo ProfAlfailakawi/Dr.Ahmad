@@ -1,0 +1,1452 @@
+{
+  "version": "2026-08-27-kuwaiti-lexicon-screening-v2-risk-families",
+  "decidedAt": "2026-08-28",
+  "optionVerdicts": [
+    {
+      "number": 1,
+      "key": "نركض",
+      "choice": 2,
+      "chosen": "نِرْكُظ"
+    },
+    {
+      "number": 2,
+      "key": "نتهرّب",
+      "choice": 2,
+      "chosen": "نِتْهَرَّب"
+    },
+    {
+      "number": 3,
+      "key": "قَسوة",
+      "choice": 1,
+      "chosen": "قَسوة"
+    },
+    {
+      "number": 4,
+      "key": "يقرّبنا",
+      "choice": 2,
+      "chosen": "يِقَرِّبنا من الشي المهم"
+    },
+    {
+      "number": 5,
+      "key": "يركض",
+      "choice": 2,
+      "chosen": "يِرْكِظ سنة كاملة"
+    },
+    {
+      "number": 6,
+      "key": "يهرب",
+      "choice": 3,
+      "chosen": "ما يواجه نفسه"
+    }
+  ],
+  "rejected": [
+    {
+      "number": 18,
+      "key": "العقل",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-earned-more-than-harvard-but-it-doesnt-teach-brains"
+    },
+    {
+      "number": 39,
+      "key": "أصدق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-earned-more-than-harvard-but-it-doesnt-teach-brains"
+    },
+    {
+      "number": 43,
+      "key": "باقي",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201709-006"
+    },
+    {
+      "number": 47,
+      "key": "الورقة",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "how-do-we-assess-without-breaking-the-human-beingarabic"
+    },
+    {
+      "number": 55,
+      "key": "أضيق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "e-learning-initiatives-and-solutions-2"
+    },
+    {
+      "number": 56,
+      "key": "أوقظك",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2"
+    },
+    {
+      "number": 57,
+      "key": "إطلاق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "we-handed-them-the-phone-so-theyd-leave-us-alone-2"
+    },
+    {
+      "number": 58,
+      "key": "ينقصنا",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "excellent-in-grades-lost-in-decision"
+    },
+    {
+      "number": 59,
+      "key": "يصفق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "excellent-in-grades-lost-in-decision"
+    },
+    {
+      "number": 60,
+      "key": "تطبيق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-003"
+    },
+    {
+      "number": 63,
+      "key": "يوقظ",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2"
+    },
+    {
+      "number": 64,
+      "key": "يقضي",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2"
+    },
+    {
+      "number": 65,
+      "key": "القلق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201703-001"
+    },
+    {
+      "number": 69,
+      "key": "يلتقط",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "expectations-that-shape-a-studentarabic"
+    },
+    {
+      "number": 93,
+      "key": "أصدقكم",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201711-003"
+    },
+    {
+      "number": 104,
+      "key": "أغرق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201703-002"
+    },
+    {
+      "number": 106,
+      "key": "ينقصى",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-teacher-the-last-to-know-2"
+    },
+    {
+      "number": 114,
+      "key": "يلتقطون",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "aggression-in-the-sky-and-steadfastness-withinarabic"
+    },
+    {
+      "number": 116,
+      "key": "ينقصه",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201911-001"
+    },
+    {
+      "number": 123,
+      "key": "تنطاق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "laughing-while-burning-2"
+    },
+    {
+      "number": 129,
+      "key": "يصفقون",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2"
+    },
+    {
+      "number": 140,
+      "key": "والصدق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2"
+    },
+    {
+      "number": 150,
+      "key": "بهالطريق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2"
+    },
+    {
+      "number": 159,
+      "key": "ألقى",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201612-002"
+    },
+    {
+      "number": 167,
+      "key": "ونغرقهم",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education"
+    },
+    {
+      "number": 175,
+      "key": "وأقدر",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m"
+    },
+    {
+      "number": 183,
+      "key": "والغارقات",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-social-media-swamp-and-plastic-surgery-addiction-2"
+    },
+    {
+      "number": 189,
+      "key": "تضيق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-005"
+    },
+    {
+      "number": 192,
+      "key": "يقرون",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-truth-died-and-the-narrative-survivedarabic"
+    },
+    {
+      "number": 195,
+      "key": "لأوقظك",
+      "category": "غير متوقع من متن المقالات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2"
+    },
+    {
+      "number": 196,
+      "key": "يقرؤون",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201810-002"
+    },
+    {
+      "number": 200,
+      "key": "أصدقائنا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201811-001"
+    },
+    {
+      "number": 202,
+      "key": "أغرقنا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201811-002"
+    },
+    {
+      "number": 203,
+      "key": "أغلقت",
+      "category": "غير متوقع من متن المقالات",
+      "source": "a-generation-without-rootsarabic"
+    },
+    {
+      "number": 204,
+      "key": "أطيق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2"
+    },
+    {
+      "number": 205,
+      "key": "وأصدقكم",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201711-003"
+    },
+    {
+      "number": 211,
+      "key": "ألصقناه",
+      "category": "غير متوقع من متن المقالات",
+      "source": "when-the-exam-becomes-the-goalarabic"
+    },
+    {
+      "number": 233,
+      "key": "ننطلق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "eliminating-the-education-epidemic"
+    },
+    {
+      "number": 235,
+      "key": "قائمة",
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-republic-of-degrees-and-the-fall-of-thought-2"
+    },
+    {
+      "number": 242,
+      "key": "وأقلها",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-002"
+    },
+    {
+      "number": 259,
+      "key": "يقصرها",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201704-004"
+    }
+  ],
+  "pending": [
+    {
+      "number": 44,
+      "key": "قاعدة",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201704-002"
+    },
+    {
+      "number": 45,
+      "key": "توقف",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-002"
+    },
+    {
+      "number": 46,
+      "key": "القديمة",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "expectations-that-shape-a-studentarabic"
+    },
+    {
+      "number": 66,
+      "key": "القرار",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-teacher-what-do-you-know-about-the-teacher"
+    },
+    {
+      "number": 67,
+      "key": "ثقافة",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-004"
+    },
+    {
+      "number": 68,
+      "key": "يقصدون",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201708-002"
+    }
+  ],
+  "editorialRewrites": [
+    {
+      "number": 18,
+      "key": "العقل",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+      "carrier": "إلا العقل."
+    },
+    {
+      "number": 39,
+      "key": "أصدق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+      "carrier": "ولا صار الذكاء الاصطناعي أصدق منا إحنا؟"
+    },
+    {
+      "number": 43,
+      "key": "باقي",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201709-006",
+      "carrier": "ومع هذا، الحزن باقي بالقلب."
+    },
+    {
+      "number": 44,
+      "key": "قاعدة",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201704-002",
+      "carrier": "والناس أصلا قاعدة تدرك هالتغيير؟"
+    },
+    {
+      "number": 46,
+      "key": "القديمة",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "expectations-that-shape-a-studentarabic",
+      "carrier": "يبدأ يتحرر من صورته القديمة."
+    },
+    {
+      "number": 47,
+      "key": "الورقة",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "how-do-we-assess-without-breaking-the-human-beingarabic",
+      "carrier": "وهني الورقة ما تبقى ورقة."
+    },
+    {
+      "number": 55,
+      "key": "أضيق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "e-learning-initiatives-and-solutions-2",
+      "carrier": "تقدر الوزارة أو المعلم يطبقها حتى في أضيق الظروف."
+    },
+    {
+      "number": 56,
+      "key": "أوقظك",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "carrier": "بس أنا ما أكتب عشان أعجبك… أكتب عشان أوقظك."
+    },
+    {
+      "number": 57,
+      "key": "إطلاق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
+      "carrier": "فالتربية مو إخماد صوت الطفل؛ هي إطلاق عقله عشان يعبر."
+    },
+    {
+      "number": 58,
+      "key": "ينقصنا",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "excellent-in-grades-lost-in-decision",
+      "carrier": "إحنا ما ينقصنا منهج يديد بس…"
+    },
+    {
+      "number": 59,
+      "key": "يصفق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "excellent-in-grades-lost-in-decision",
+      "carrier": "والمجتمع يصفق للطب والهندسة…"
+    },
+    {
+      "number": 60,
+      "key": "تطبيق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-003",
+      "carrier": "وإن الوقت حان عشان يصنعون تطبيق للواقع الافتراضي على هالنهج."
+    },
+    {
+      "number": 63,
+      "key": "يوقظ",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "carrier": "وهو ما يكتب عشان يحبطك، يكتب عشان يوقظ فيك إنسان كان بيرقد."
+    },
+    {
+      "number": 64,
+      "key": "يقضي",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
+      "carrier": "الطالب يقضي نص ساعة يرتب سؤاله للآلة…"
+    },
+    {
+      "number": 65,
+      "key": "القلق",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201703-001",
+      "carrier": "فحسيت بشي من القلق، وبشي من الغبطة بعد."
+    },
+    {
+      "number": 66,
+      "key": "القرار",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-teacher-what-do-you-know-about-the-teacher",
+      "carrier": "وهالصوت يوصل لمن بيده القرار؟"
+    },
+    {
+      "number": 67,
+      "key": "ثقافة",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-004",
+      "carrier": "لا قيود ثقافة العيب."
+    },
+    {
+      "number": 69,
+      "key": "يلتقط",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "expectations-that-shape-a-studentarabic",
+      "carrier": "ولما يلتقط رسالة خفية معناها: منك ما يي شي…"
+    },
+    {
+      "number": 74,
+      "key": "القراصنة",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "ethical-hacking-culture",
+      "carrier": "يتدرب القراصنة لين ما يتطورون هاكرز أخلاقيين يوقفون الخطر عن مواقعنا…"
+    },
+    {
+      "number": 87,
+      "key": "يبدأ",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "a-new-kind-of-fatigue-in-old-expressionsarabic",
+      "carrier": "ومن هني يمكن يبدأ التعافي."
+    },
+    {
+      "number": 92,
+      "key": "أيقظها",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-the-teacher-knows-why-he-teachesarabic",
+      "carrier": "يتقاس بعدد المعاني اللي أيقظها."
+    },
+    {
+      "number": 93,
+      "key": "أصدقكم",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201711-003",
+      "carrier": "أصدقكم: هالفكرة بروحها تفقدني صوابي…"
+    },
+    {
+      "number": 96,
+      "key": "أتقصى",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201802-001",
+      "carrier": "فرحت أتقصى أسباب هالتذمر بين المعلمين."
+    },
+    {
+      "number": 98,
+      "key": "بنقائضه",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-004",
+      "carrier": "مع إن في رؤى مجازية تقول إن الواقع مشبع بنقائضه."
+    },
+    {
+      "number": 100,
+      "key": "أطلقها",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201711-003",
+      "carrier": "خصوصا بعد ما شركة نيورالينك، اللي أطلقها إيلون ماسك،"
+    },
+    {
+      "number": 104,
+      "key": "أغرق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201703-002",
+      "carrier": "وحسيت إني أغرق في مستنقع تدليس على اللي جاء فيه إسلامنا الحنيف."
+    },
+    {
+      "number": 105,
+      "key": "يتقاس",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-excellence-epidemic-or-the-cult-of-grades-2",
+      "carrier": "وبعدها كل شي يتقاس بدرجة."
+    },
+    {
+      "number": 106,
+      "key": "ينقصى",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-teacher-the-last-to-know-2",
+      "carrier": "ينستدعى… وبعدها ينقصى. جذي بالضبط."
+    },
+    {
+      "number": 108,
+      "key": "نقصيه",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-teacher-the-last-to-know-2",
+      "carrier": "ونحمله فشل منظومة، وبعدها نقصيه عن إصلاحها…"
+    },
+    {
+      "number": 110,
+      "key": "تصقله",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-a-student-wishes-for-death-before-the-first-bell-2",
+      "carrier": "والمدرسة اللي تصقله، والمجتمع اللي يحتفي فيه."
+    },
+    {
+      "number": 111,
+      "key": "يوقظه",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "carrier": "لأن النوم الثقيل ما يوقظه الهمس، يوقظه الصدمة."
+    },
+    {
+      "number": 114,
+      "key": "يلتقطون",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "aggression-in-the-sky-and-steadfastness-withinarabic",
+      "carrier": "الكبار يتابعون التحليلات… والصغار يلتقطون النبرة."
+    },
+    {
+      "number": 116,
+      "key": "ينقصه",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201911-001",
+      "carrier": "وترى الكل يدري إن التعليم العالي ينقصه جودة التعليم."
+    },
+    {
+      "number": 117,
+      "key": "يلتقطونها",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201806-005",
+      "carrier": "بدال الرسائل النصية اللي يلتقطونها ويرسلونها طول الليل."
+    },
+    {
+      "number": 118,
+      "key": "تنطلق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-media-is-a-vital-partner-in-the-educational-process",
+      "carrier": "ومنه تنطلق الأحداث وهموم الناس… ومنه يوصل صوت كل مواطن."
+    },
+    {
+      "number": 122,
+      "key": "تطرقنا",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201806-005",
+      "carrier": "وأكو ناس راح تقول إحنا تطرقنا قبل لإدمان التلفونات الذكية."
+    },
+    {
+      "number": 123,
+      "key": "تنطاق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "laughing-while-burning-2",
+      "carrier": "وإحنا مو قدام جيل هش… إحنا قدام جيل تعبناه بمعايير ما تنطاق."
+    },
+    {
+      "number": 125,
+      "key": "نتطرق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201806-005",
+      "carrier": "وبالمقال الياي راح نتطرق لحلول مشكلة التعلق باستخدام التلفون."
+    },
+    {
+      "number": 126,
+      "key": "تلتقط",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-truth-died-and-the-narrative-survivedarabic",
+      "carrier": "لما أعلنت أكسفورد ما بعد الحقيقة كلمة العام، كانت تلتقط نبض مرحلة."
+    },
+    {
+      "number": 128,
+      "key": "تساقط",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201811-002",
+      "carrier": "بالحقيقة، ما نقدر نلوم وزير الأشغال بروحه بعد تساقط الأمطار الغزيرة."
+    },
+    {
+      "number": 129,
+      "key": "يصفقون",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+      "carrier": "يصفقون للطالب الذكي اللي عرف شلون يهرب بورقة، …"
+    },
+    {
+      "number": 140,
+      "key": "والصدق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+      "carrier": "والصدق ضعف بالتعامل مع الواقع؟"
+    },
+    {
+      "number": 145,
+      "key": "قسط",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-004",
+      "carrier": "ويكفي إن حلمنا واحد، ومعاه قسط من الخيال."
+    },
+    {
+      "number": 147,
+      "key": "بصدق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-year-that-doesnt-begin-with-the-calendararabic",
+      "carrier": "والاحتفال ما يرمم إنسان ما راجع نفسه بصدق."
+    },
+    {
+      "number": 149,
+      "key": "وضاقت",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201709-009",
+      "carrier": "وضاقت فيهم السبل."
+    },
+    {
+      "number": 150,
+      "key": "بهالطريق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
+      "carrier": "عيل وين رحنا بهالطريق؟"
+    },
+    {
+      "number": 159,
+      "key": "ألقى",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201612-002",
+      "carrier": "ألقى فيها أسئلة وايدة تدور في نفسي…"
+    },
+    {
+      "number": 161,
+      "key": "قراصنة",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "ethical-hacking-culture",
+      "carrier": "خلونا نبني قراصنة محترفين، بس بأخلاق."
+    },
+    {
+      "number": 167,
+      "key": "ونغرقهم",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
+      "carrier": "ونغرقهم بالموافقة… وبعدين نستغرب ليش ما يقدرون."
+    },
+    {
+      "number": 175,
+      "key": "وأقدر",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+      "carrier": "وأقدر يعبر بسلام."
+    },
+    {
+      "number": 183,
+      "key": "والغارقات",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-social-media-swamp-and-plastic-surgery-addiction-2",
+      "carrier": "والغارقات في المستنقع…"
+    },
+    {
+      "number": 184,
+      "key": "التقطت",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-truth-died-and-the-narrative-survivedarabic",
+      "carrier": "وأكسفورد التقطت هالشي."
+    },
+    {
+      "number": 187,
+      "key": "المنقرضة",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-001",
+      "carrier": "صارت من الأمور المنقرضة."
+    },
+    {
+      "number": 189,
+      "key": "تضيق",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-005",
+      "carrier": "وبس يوم تضيق… يبين كل شي."
+    },
+    {
+      "number": 191,
+      "key": "وينقضه",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "smartphone-child-a-creative-mind-or-a-child-being-driven",
+      "carrier": "المقال يعرض هالرأي وينقضه."
+    },
+    {
+      "number": 192,
+      "key": "يقرون",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-truth-died-and-the-narrative-survivedarabic",
+      "carrier": "ولا شلون يفكرون فيما يقرون؟"
+    },
+    {
+      "number": 195,
+      "key": "لأوقظك",
+      "category": "غير متوقع من متن المقالات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "carrier": "بل لأوقظك."
+    },
+    {
+      "number": 196,
+      "key": "يقرؤون",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201810-002",
+      "carrier": "وكأنهم يقرؤون ما في عقلي…"
+    },
+    {
+      "number": 197,
+      "key": "قضاء",
+      "category": "غير متوقع من متن المقالات",
+      "source": "from-the-schoolyard-to-the-food-court-2",
+      "carrier": "بل في كيفية قضاء وقته بعده."
+    },
+    {
+      "number": 198,
+      "key": "إطلاقا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201810-002",
+      "carrier": "ولم أجري أي عملية بحث على اليويتوب إطلاقاً بتلك الأمور…"
+    },
+    {
+      "number": 200,
+      "key": "أصدقائنا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201811-001",
+      "carrier": "لم نجتمع مع أصدقائنا والمقربين…"
+    },
+    {
+      "number": 201,
+      "key": "وقضاؤنا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-002",
+      "carrier": "وقضاؤنا نزيه ما عليه غبار بلا شك…"
+    },
+    {
+      "number": 202,
+      "key": "أغرقنا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201811-002",
+      "carrier": "نحن لا نغرق بل سيغرق كل مسؤول أغرقنا…"
+    },
+    {
+      "number": 203,
+      "key": "أغلقت",
+      "category": "غير متوقع من متن المقالات",
+      "source": "a-generation-without-rootsarabic",
+      "carrier": "لكنها في الطريق أغلقت عليه باب الجذور."
+    },
+    {
+      "number": 204,
+      "key": "أطيق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "carrier": "لا أطيق هذا النوع من المجاملة المؤذية."
+    },
+    {
+      "number": 205,
+      "key": "وأصدقكم",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201711-003",
+      "carrier": "وأصدقكم أن هذه الفكرة بحد ذاتها تفقدني الصواب…"
+    },
+    {
+      "number": 208,
+      "key": "إطلاقها",
+      "category": "غير متوقع من متن المقالات",
+      "source": "freedom-without-thinking-and-openness-without-awareness-2",
+      "carrier": "ألا يمنع الحرية، بل يُربّي على التفكير قبل إطلاقها."
+    },
+    {
+      "number": 209,
+      "key": "أغلقنا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "from-the-schoolyard-to-the-food-court-2",
+      "carrier": "أغلقنا المساحات التربوية، وتركنا الجيل أمام الشاشات."
+    },
+    {
+      "number": 210,
+      "key": "لأوقظ",
+      "category": "غير متوقع من متن المقالات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "carrier": "وأنا لا أكتب لأحبطك، بل لأوقظ فيك إنساناً كاد أن ينام…"
+    },
+    {
+      "number": 211,
+      "key": "ألصقناه",
+      "category": "غير متوقع من متن المقالات",
+      "source": "when-the-exam-becomes-the-goalarabic",
+      "carrier": "المشكلة ليست في وجود الامتحان، بل في المعنى الذي ألصقناه به."
+    },
+    {
+      "number": 213,
+      "key": "والاستقصاء",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201804-001",
+      "carrier": "… اختراع أو إبداع يقابل بالصد والاستقصاء…"
+    },
+    {
+      "number": 216,
+      "key": "إغلاق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "a-new-kind-of-fatigue-in-old-expressionsarabic",
+      "carrier": "… التوقف القصير دون ذنب، وحقّ إغلاق نافذة رقمية واحدة لا نحتاجها، وحقّ يومٍ …"
+    },
+    {
+      "number": 224,
+      "key": "طرائق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201805-003",
+      "carrier": "… المعلمين في الغالب لا يتضمن طرائق التعامل مع الطلبة، وإنما تجعل ذلك وفقاً …"
+    },
+    {
+      "number": 233,
+      "key": "ننطلق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "eliminating-the-education-epidemic",
+      "carrier": "فقط دعونا ننطلق…"
+    },
+    {
+      "number": 235,
+      "key": "قائمة",
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "carrier": "خطة، اقتباسات، قائمة مراجع، نموذج جاهز."
+    },
+    {
+      "number": 238,
+      "key": "يقتصر",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201808-002",
+      "carrier": "ولا يقتصر الأمر على الإعلام إنما البداية لهم…"
+    },
+    {
+      "number": 240,
+      "key": "يستغرق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-year-that-doesnt-begin-with-the-calendararabic",
+      "carrier": "… مستوى عالٍ من تلقائية السلوك يستغرق في المتوسط 66 يوماً، وبمدى واسع من …"
+    },
+    {
+      "number": 242,
+      "key": "وأقلها",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-002",
+      "carrier": "وأقلها الأدبي 86."
+    },
+    {
+      "number": 246,
+      "key": "تتساقط",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-009",
+      "carrier": "وغداً تتساقط باقي المسبحة…"
+    },
+    {
+      "number": 247,
+      "key": "تضييق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201612-001",
+      "carrier": "الحل يكمن في تضييق إطار الخبر…"
+    },
+    {
+      "number": 249,
+      "key": "تصديق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201712-002",
+      "carrier": "وتضعهم أمام تصديق ما يرون وتكذيبه…"
+    },
+    {
+      "number": 250,
+      "key": "تطويق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-009",
+      "carrier": "وفرض أجندات من أجل تطويق الخناق للإخضاع…"
+    },
+    {
+      "number": 252,
+      "key": "تطبيقا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+      "carrier": "فصار يُراجع المقالات كما يُراجع تطبيقاً إلكترونياً."
+    },
+    {
+      "number": 253,
+      "key": "يقضية",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201708-003",
+      "carrier": "وبخصوص الوقت الذي كان يقضية الطفل مع الألعاب الالكترونية…"
+    },
+    {
+      "number": 256,
+      "key": "يتقمصها",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201706-001",
+      "carrier": "‏بعد فترة وجد الإنسان نفسه أمام شخصيات متعددة يمكن أن يتقمصها ‏ويسكنها ويتقنها…"
+    },
+    {
+      "number": 257,
+      "key": "تقليص",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201707-002",
+      "carrier": "إن أكثر قطاع حاول تقليص الفجوة بين مخرجات التعليم ومتطلبات سوق العمل …"
+    },
+    {
+      "number": 258,
+      "key": "نستيقظ",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-004",
+      "carrier": "لا نريد أن نستيقظ يوماً فنجد أجيالنا القادمة لا يستطيعون العيش …"
+    },
+    {
+      "number": 259,
+      "key": "يقصرها",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201704-004",
+      "carrier": "جعلت البعض يقصرها على المجالس وحلقات الدين والمشافهة والنقل المباشر …"
+    },
+    {
+      "number": 261,
+      "key": "تقتضي",
+      "category": "غير متوقع من متن المقالات",
+      "source": "in-their-opinion-surgery-is-a-male-specialty-2",
+      "carrier": "… العمل في غرفة العمليات التي تقتضي أحياناً استدعاء اختصاصية الجراحة في أي وقت …"
+    },
+    {
+      "number": 263,
+      "key": "الإخفاق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "when-the-exam-becomes-the-goalarabic",
+      "carrier": "… فقط، يصبح أكثر هشاشة أمام الإخفاق، وأكثر عرضةً لقلق الاختبار وتقلّب تقديره لذاته."
+    },
+    {
+      "number": 264,
+      "key": "يصادق",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201612-004",
+      "carrier": "… ضروريات التكنولوجيا، بالإضافة إلى مجتمع يصادق عليها وقد فاق ذلك احتياجات الزمن الماضي، …"
+    },
+    {
+      "number": 265,
+      "key": "قرائي",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201810-002",
+      "carrier": "قرائي…"
+    },
+    {
+      "number": 267,
+      "key": "أوراقا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "we-graduated-with-a-degree-but-the-language-was-lost-2",
+      "carrier": "هل نُسلّمهم أوراقاً…"
+    },
+    {
+      "number": 273,
+      "key": "الفائقة",
+      "category": "غير متوقع من متن المقالات",
+      "source": "eliminating-the-education-epidemic",
+      "carrier": "أو يعلمون ولكن عاجزين عن وضع الحلول الفائقة…"
+    },
+    {
+      "number": 274,
+      "key": "تحقيقها",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-005",
+      "carrier": "ومدى تحقيقها للهدف التعليمي في ضوء التطور التكنولوجي…"
+    },
+    {
+      "number": 275,
+      "key": "سأقوم",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-005",
+      "carrier": "وهو ليس غريب علينا ولكن كمصطلح سأقوم بتعريبه وتعريفه…"
+    },
+    {
+      "number": 276,
+      "key": "القائم",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201703-004",
+      "carrier": "هذا في الاستثمار القائم على المنفعة العامة وليست الخاصة…"
+    },
+    {
+      "number": 279,
+      "key": "والقائمين",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-001",
+      "carrier": "الأكاديميين والقائمين عليها والجهود المبذولة من أجل مخرجات تلائم حاجة السوق ومتطلباته…"
+    },
+    {
+      "number": 282,
+      "key": "عائقا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201702-002",
+      "carrier": "… نجد متطفلاً اسمه الهاتف يقف عائقاً بين الموظف وعمله، وبينه وبين زملائه…"
+    },
+    {
+      "number": 285,
+      "key": "أنظر",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-001",
+      "carrier": "أنظر!"
+    },
+    {
+      "number": 287,
+      "key": "قليلا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "when-the-exam-becomes-the-goalarabic",
+      "carrier": "ويفهمون قليلاً."
+    },
+    {
+      "number": 289,
+      "key": "لاحقا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-teacher-the-last-to-know-2",
+      "carrier": "أم أبلغوه لاحقاً…"
+    },
+    {
+      "number": 290,
+      "key": "أصبح",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201805-004",
+      "carrier": "فالحال أصبح مزري…"
+    },
+    {
+      "number": 291,
+      "key": "أيضا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201702-004",
+      "carrier": "والسؤال لكم أيضاً…"
+    },
+    {
+      "number": 292,
+      "key": "عقلا",
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "carrier": "إن لم تُحرك عقلاً."
+    }
+  ],
+  "passedCount": 378,
+  "passedNumbers": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    40,
+    41,
+    42,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    61,
+    62,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103,
+    105,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    115,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    124,
+    125,
+    126,
+    127,
+    128,
+    130,
+    131,
+    132,
+    133,
+    134,
+    135,
+    136,
+    137,
+    138,
+    139,
+    141,
+    142,
+    143,
+    144,
+    145,
+    146,
+    147,
+    148,
+    149,
+    151,
+    152,
+    153,
+    154,
+    155,
+    156,
+    157,
+    158,
+    160,
+    161,
+    162,
+    163,
+    164,
+    165,
+    166,
+    168,
+    169,
+    170,
+    171,
+    172,
+    173,
+    174,
+    176,
+    177,
+    178,
+    179,
+    180,
+    181,
+    182,
+    184,
+    185,
+    186,
+    187,
+    188,
+    190,
+    191,
+    193,
+    194,
+    197,
+    198,
+    199,
+    201,
+    206,
+    207,
+    208,
+    209,
+    210,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    234,
+    236,
+    237,
+    238,
+    239,
+    240,
+    241,
+    243,
+    244,
+    245,
+    246,
+    247,
+    248,
+    249,
+    250,
+    251,
+    252,
+    253,
+    254,
+    255,
+    256,
+    257,
+    258,
+    260,
+    261,
+    262,
+    263,
+    264,
+    265,
+    266,
+    267,
+    268,
+    269,
+    270,
+    271,
+    272,
+    273,
+    274,
+    275,
+    276,
+    277,
+    278,
+    279,
+    280,
+    281,
+    282,
+    283,
+    284,
+    285,
+    286,
+    287,
+    288,
+    289,
+    290,
+    291,
+    292,
+    293,
+    294,
+    295,
+    296,
+    297,
+    298,
+    299,
+    300,
+    301,
+    302,
+    303,
+    304,
+    305,
+    306,
+    307,
+    308,
+    309,
+    310,
+    311,
+    312,
+    313,
+    314,
+    315,
+    316,
+    317,
+    318,
+    319,
+    320,
+    321,
+    322,
+    323,
+    324,
+    325,
+    326,
+    327,
+    328,
+    329,
+    330,
+    331,
+    332,
+    333,
+    334,
+    335,
+    336,
+    337,
+    338,
+    339,
+    340,
+    341,
+    342,
+    343,
+    344,
+    345,
+    346,
+    347,
+    348,
+    349,
+    350,
+    351,
+    352,
+    353,
+    354,
+    355,
+    356,
+    357,
+    358,
+    359,
+    360,
+    361,
+    362,
+    363,
+    364,
+    365,
+    366,
+    367,
+    368,
+    369,
+    370,
+    371,
+    372,
+    373,
+    374,
+    375,
+    376,
+    377,
+    378,
+    379,
+    380,
+    381,
+    382,
+    383,
+    384,
+    385,
+    386,
+    387,
+    388,
+    389,
+    390,
+    391,
+    392,
+    393,
+    394,
+    395,
+    396,
+    397,
+    398,
+    399,
+    400,
+    401,
+    402,
+    403,
+    404,
+    405,
+    406,
+    407,
+    408,
+    409,
+    410,
+    411,
+    412,
+    413,
+    414,
+    415,
+    416,
+    417,
+    418,
+    419,
+    420,
+    421,
+    422,
+    423,
+    424,
+    425,
+    426,
+    427,
+    428,
+    429,
+    430,
+    431
+  ],
+  "rejectionScope": {
+    "note": "المرفوض أدناه سقط في **العينة المعزولة** لا في الإنتاج. وبعد سماع الحلقات كاملة حكم الدكتور (٢٨ أغسطس ٢٠٢٦): «القاف تقريباً ضبط» — فهذي الرفوضات لا تُعامل معاملة عيبٍ إنتاجيّ ولا تُبنى عليها جولة مختبر جديدة. التفصيل في layers.isolatedSampleVsFullEpisode.",
+    "rejectedTotal": 41,
+    "rejectedContainingQaf": 41,
+    "productionEarVerdict": "القاف تقريباً ضبط — ٢٨ أغسطس ٢٠٢٦، من الحلقات الكاملة"
+  }
+}

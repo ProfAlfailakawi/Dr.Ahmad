@@ -1,0 +1,79 @@
+name: مختبر اسم العائلة — جولة قصيرة للأذن
+
+# العلّة (٢٩ أغسطس ٢٠٢٦): التشغيلة ٧٠ رفضت الحلقة الثانية على ست بذورٍ
+# من ست، كلها لأن الاسم خرج «فيلكاوي». ولا حلقة حتى الآن ثبت أن الاسم
+# خرج فيها صحيحاً. ومعدّلٌ كهذا لا يُهرب منه بإعادةٍ ببذرةٍ ثانية —
+# فالحكم يعود إلى أذن الدكتور، وهذي الجولة تُسمعه الاسم في جملة الإحالة
+# الحقيقية بأخذٍ واحد متصل، مرة بفهد ومرة بنورة، على Vertex الإنتاج نفسه.
+#
+# الجولة لا تمسّ المعجم. تُخرج صوتاً ودفتراً مرقّماً؛ ولا يدخل المعجم
+# شيءٌ قبل أن يسمعه ويختاره بنفسه.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: podcast-kuwaiti-gemini-global
+  cancel-in-progress: false
+
+jobs:
+  name-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Authenticate the production Vertex route
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0200723670 }}
+
+      - name: Install Google Cloud CLI for Vertex
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Lock the exact production project
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_ID="$(node -e "process.stdout.write(String(JSON.parse(require('fs').readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS,'utf8')).project_id||''))")"
+          test -n "$PROJECT_ID" || { echo '::error::project_id مفقود من حساب Google'; exit 1; }
+          gcloud auth print-access-token >/dev/null
+          echo "PODCAST_KW_VERTEX_PROJECT=$PROJECT_ID" >> "$GITHUB_ENV"
+
+      - name: Install and verify the gates still hold
+        run: |
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          node scripts/guard-file-ratchet.mjs
+          node scripts/guard-ear-rulings-ratchet.mjs
+          node scripts/guard-approved-closing.mjs
+          node scripts/podcast-kuwaiti-name-lab.mjs --self-test
+
+      - name: Generate the one continuous two-voice name round on Vertex
+        run: node scripts/podcast-kuwaiti-name-lab.mjs
+        env:
+          PODCAST_KW_VERTEX_PROJECT: ${{ env.PODCAST_KW_VERTEX_PROJECT }}
+          PODCAST_KW_VERTEX_LOCATION: us-central1
+          PODCAST_KW_TTS_LANGUAGE: ar-001
+          GEMINI_TTS_MODEL: gemini-2.5-pro-tts
+          PODCAST_KW_MALE_VOICE: Puck
+          PODCAST_KW_FEMALE_VOICE: Zephyr
+
+      - name: Upload the round for his ear
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: kuwaiti-name-lab
+          path: |
+            audio/kuwaiti-name-lab.mp3
+            audio/kuwaiti-name-lab.json
+          if-no-files-found: warn
+          retention-days: 30

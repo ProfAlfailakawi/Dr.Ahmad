@@ -1,0 +1,287 @@
+{
+  "slug": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+  "bridgeAfter": [
+    16,
+    29
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "لماذا نسلم أبناءنا لمدارس لا نعرفها إلا من الإعلانات؟",
+      "feeling": "gravitas",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولماذا نجعل القبول امتحانا للطفل،⏸ ولا نجعل المدرسة تمتحن نفسها أمام أسئلتنا؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "يوم قرر الكاتب اختيار مدرسة لبناته، ~~ كتب ما في قلبه من هواجس وأسئلة.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم استعان بالذكاء. ثم عاد إلى أدوات الذكاء الاصطناعي ليحولها إلى مصفوفة دقيقة لا تساوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ميزان أسئلة صاغه الذكاء، ~~ ونقحه القلب.",
+      "feeling": "lively",
+      "feeling2": "hush",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبدأ من البديهي الذي نتغافل عنه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ماذا تريد هذه المدرسة أن يصير عليه أطفالي بعد اثني عشر عاما؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وإن كان الجواب درجات مرتفعة، فقد فشلنا في أول سؤال.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لأن الإنسان لا يقاس بسطر في شهادة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ثم سأل عن المُعلِّم قبل الجدران.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فالمعلم هو العامل الأثقل أثرا بين العوامل المدرسية كلها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كما تظهر تقارير منظمة التعاون الاقتصادي والتنمية.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وبرقم يوقف القارئ.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أثره في التحصيل الدراسي يساوي ضعفي أثر أي عامل آخر تقريبا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ثم سأل عن مناخ المدرسة:⏸ هل يشعر الطالب أنه من أهل المكان؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالإحساس بالانتماء المدرسي عامل حماية طويل الأمد للصحة النفسية والسلوك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والطالب المتصل بمدرسته أقل عرضة للمخاطر وأكثر قدرة على العبور بسلام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أليست هذه شاعرية تربوية أكثر منها دليلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يسبقك: هذه ليست شاعرية،⏸ بل خلاصة دلائل رصد وطني حديث.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكانت المصفوفة بسيطة في شكلها، عميقة في روحها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "كل سؤال فيها يطلب برهانا لا وعدا. حين أجابوا عن الأكاديمي، سأل عن الأثر في الصف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ثم سأل عن الشراكة مع الأسرة. لا يريد مدرسة تخبرنا،⏸ بل مدرسة تشركنا.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونصف قرن من الأبحاث يلخص حقيقة بسيطة.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حين تتحالف المدرسة مع البيت، تتضاعف فرص تعلم أعمق وأهدأ.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويتحول الاجتماع الأسبوعي إلى تربية تتنفس في الاتجاهين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وسأل عن المنهج الذي يدرب على التفكير لا على التكرار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وعن لغة الصف نفسها: هل فيها حق السؤال والاعتراض؟⏸ وهل الخطأ جزء من التعلم لا وصمة تخفى؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وسأل عن الأندية بعد الدوام. وهي ليست ترفا.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فبرامج ما بعد المدرسة المصممة على أسس علمية ترفع الانضباط الداخلي والارتباط بالمدرسة.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وترفع التحصيل، وتقلل السلوكيات المقلقة، كما أظهر تحليل تجميعي ضخم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وماذا عن القيم؟⏸ هل تسأل عنها مدرسة أصلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "سأل عنها بلا مواربة: ما صورتكم للإنسان الجيد؟⏸ وكيف يصنع ضمير في هذه القاعات؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكيف تحل الخلافات بين الطلبة؟⏸ وكيف تحترم الخصوصيات الدينية والثقافية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وحكم واحد يلخص كل شيء.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمدرسة ترفع العلامات ولا ترفع الإنسان، تخرج مظهرا يلمع وداخلا يصدأ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وحين تفاخروا بالجوائز، لم يطلب كؤوسا تلمع على الرف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل حكاية طالب تغير لأن أحدا آمن به. واختار المدرسة التي أجابت بهدوء لا برواية استعراضية.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فمدرسة تعلم الإنسان قبل المنهج هي التي تستحق أن تختبر طفلا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201711-004",
+  "bridgeAfter": [
+    22,
+    30
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "تعج حياتنا بأحدث صيحات الموضة في كل مكان حولنا.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتركض النساء والرجال والشباب والأطفال لمواكبة صخب تلك الصيحات.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "التي أصبحت نموذج العصر، وركيزة في أغلب المجتمعات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "كنوع من التحضر والرقي والمشي مع الركاب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وجاءني هذا المقال وأنا مع ابني في السوق، وقد شاب شعري من طلباته التي لا تنتهي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهو يتابع تلك الصيحات ويركض وراءها بسرعة الضوء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وليس بيدي غير تحقيق طلباته وطلبات البيت،⏸ فهي حق من حقوقهم.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأتوقع الأغلبية معه في هذا الحال الذي نعيشه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وفي الحقيقة ليس بيدنا حيلة مع هذا الجيل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فقد فاقوا رغباتنا، ونحن أول من واكب التكنولوجيا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فتفكر في مقاله هذا أن يعرض أحدث صيحات الموضة التكنولوجية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وينتظر منا المزيد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وينتظر منكم صيحات أخرى، فالمساحة لا تحتمل أن يذكر الكثير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وقد وصلت هذه الصيحات التكنولوجية ذوي الاحتياجات الخاصة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والمرضى الذين يحتاجون لمثل هذه الاختراعات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نبدأ بالحذاء التكنولوجي المصمم للأشخاص ذوي الإعاقة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ففي عام ألفين واثني عشر، قام ماثيو المصاب بشلل دماغي، بكتابة رسالة إلى شركة نايك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يطلب منهم إنشاء أحذية رياضية يمكن للأشخاص ذوي الإعاقة لبسها وإزالتها بسهولة دون مساعدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبعد ثلاث سنوات.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وفي سنة ألفين وخمسة عشر، أعلنت الشركة عن آخر اختراعاتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهو نوع جديد من الأحذية، التي تحتوي على حزام يمتد حول الجانب الخلفي من الحذاء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فبدلا من الأربطة، والتي من الصعب ربطها بالنسبة للأشخاص الذين يعانون من اضطرابات الحركة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو السكتة الدماغية ومبتوري الأطراف، يمكن استعمال هذا الحذاء التكنولوجي المطور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وماذا عن هواة السيارات في هذه الصيحات؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأحدث صيحات هواة السيارات:⏸ سيارة تسلا إكس.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فهي أول سيارة كهربائية فاخرة في العالم يمكن أن تقطع مسافة مئتين وخمسين ميلا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويمكن أن تحمل ما يصل إلى سبعة ركاب،⏸ فهي صديقة للبيئة وسريعة أيضا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهناك اختراع آخر، كاميرا صغيرة هي لعشاق التصوير.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "حيث تمكن صاحبها من توفير الصور الجيدة في المكان المناسب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتحتوي هذه الكاميرا على عامل صغير جدا يشبه كاشف الألغام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كما يمكنها البحث على الإنترنت لتوفير كل الصور الجديدة وغير التقليدية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وللنساء ربات البيوت حصة في هذه الموضة؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، فالمكنسة الكهربائية الذكية روبوتية ذكية أنتجت من قبل إحدى الشركات.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتحتوي المكنسة الروبوتية على حساسات وأجهزة استشعار تساعدها على القيام بمهامها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهي المكنسة التي طالما حلمت بها ربة البيت، وقد أصبحت متوفرة في الأسواق العالمية.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأكثر شيء أعجبه هو الحذاء التكنولوجي المصمم للأشخاص ذوي الإعاقة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فتلك الفئة يستحقون مثل هذه الصرعات التي تسهل عليهم حياتهم، وتساعدهم على الاستمرار بكل تفاؤل وأمل.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

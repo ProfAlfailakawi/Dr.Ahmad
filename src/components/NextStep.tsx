@@ -1,0 +1,80 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import type { ArticleRecord, MediaRecord, PaperRecord } from '../lib/cms'
+import { loadBookPassages } from '../lib/book-quotes'
+import { pickNextStep, rememberStep, type NextStep as Step } from '../lib/next-step'
+import { useRevealOnView } from './ComposeScene'
+
+/**
+ * الفصل التالي — سطرٌ واحد في نهاية الصفحة.
+ *
+ * قصداً بلا بطاقة ولا صورة ولا عنوان قسم: عنصرٌ واحد، ومكانه بعد كل شيء.
+ * القارئ الذي أنهى المادة يجد أمامه باباً واحداً مفتوحاً، لا عشرة أبواب.
+ */
+export function NextStep({
+  seed,
+  from,
+  articles,
+  papers,
+  media,
+  excludeKey,
+}: {
+  seed: string
+  from: Step['kind']
+  articles: ArticleRecord[]
+  papers: PaperRecord[]
+  media: MediaRecord[]
+  excludeKey?: string
+}) {
+  const [step, setStep] = useState<Step | null>(null)
+  /* الخيط يُرسم حين يصل القارئ إليه — بلا بطاقة ولا عنوان، كما أراده. */
+  const { ref: lineRef, shown: lineShown } = useRevealOnView<HTMLAnchorElement>()
+
+  useEffect(() => {
+    let on = true
+    /* المختارات محمّلة أصلاً فتظهر الخطوة فوراً؛ ثم يُجلب فهرس المتون في
+       الخلفية فترتقي الخطوة إن وجد ما هو أقرب. */
+    const decide = (deepReady: boolean) => {
+      if (!on) return
+      const next = pickNextStep({ seed, from, articles, papers, media, excludeKey, deepReady })
+      if (next) setStep(next)
+    }
+    decide(false)
+    /* الخطوة تظهر فوراً من الاقتباسات المقيسة. ترقيتها من متون الكتب تحسينٌ
+       لسطرٍ واحد في ذيل الصفحة — فلا تُزاحم قراءة المقال. كانت تُجلب فور
+       التركيب فتحمّل كلَّ قارئ مقالٍ متونَ الكتب؛ الآن تنتظر خمول المتصفّح. */
+    const win = window as unknown as {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (handle: number) => void
+    }
+    const upgrade = () => { void loadBookPassages().then(() => decide(true)) }
+    const idle = win.requestIdleCallback
+    const handle = idle ? idle.call(window, upgrade, { timeout: 4_000 }) : window.setTimeout(upgrade, 2_000)
+    return () => {
+      on = false
+      if (idle && win.cancelIdleCallback) win.cancelIdleCallback.call(window, handle)
+      else window.clearTimeout(handle)
+    }
+  }, [articles, excludeKey, from, media, papers, seed])
+
+  if (!step) return null
+
+  return (
+    <div className="mx-auto max-w-shell px-6 pb-8 md:px-11 md:pb-10">
+      <Link
+        ref={lineRef}
+        to={step.to}
+        onClick={() => rememberStep(step.key)}
+        className={`next-step-thread group flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-hair pt-6 transition-colors${lineShown ? ' next-step-thread--drawn' : ''}`}
+      >
+        <span className="next-step-node" aria-hidden="true" />
+        {/* بلا عنوان «التالي»: الصفحة فيها تنقّل مقالات يحمل الاسم نفسه،
+            وتكراره زحمة. الدعوة وحدها تكفي وتقول أكثر. */}
+        <span className="text-[.68rem] font-light leading-relaxed text-soft/80 md:text-[.72rem]">{step.invite}</span>
+        <strong className="text-[.78rem] font-normal leading-relaxed text-accent/90 transition-colors group-hover:text-accent md:text-[.84rem]">
+          {step.title} ←
+        </strong>
+      </Link>
+    </div>
+  )
+}

@@ -1,0 +1,329 @@
+name: إطلاق البودكاست من الحوار المرفوع فقط
+
+on:
+  workflow_dispatch:
+    inputs:
+      slugs:
+        description: 'اتركه فارغاً لاستخدام قائمة اللوحة، أو أدخل slug مقفولاً واحداً/أكثر'
+        required: false
+        default: ''
+      regenerate:
+        description: 'إعادة توليد يدوية تلغي النسخة الحالية حتى لو لم يتغير الحوار'
+        required: false
+        default: 'false'
+  schedule:
+    - cron: '30 2 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: podcast-pilot-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            /*
+            !/.codex-backups/
+            !/*.txt
+            !/agent-*.sqlite
+            !/audio-meta-*.json
+            !/bodies-vocalized-*.json
+            !/podcast-state-*.json
+            !/whatsapp-agent/*.command
+          sparse-checkout-cone-mode: false
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies and media tools
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          node scripts/normalize-npm-registry.mjs
+          npm ci --registry=https://registry.npmjs.org/ --prefer-online --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-timeout=120000
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --user awscli
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Write Firebase service account
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || { echo "::error::Firebase service account missing"; exit 1; }
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+
+      - name: Run engine and release-gate self tests
+        run: |
+          npm run podcast:ar:self-test
+          npm run podcast:release:self-test
+
+      - name: Resolve queue and lock uploaded dialogue
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          REQUESTED="${{ inputs.slugs }}"
+          if [ -z "$(echo "$REQUESTED" | xargs)" ]; then
+            REQUESTED="$(node scripts/podcast-queue-next.mjs)"
+          fi
+          REQUESTED="$(echo "$REQUESTED" | tr -d '[:space:]')"
+          if [ -z "$REQUESTED" ]; then
+            echo "لا يوجد حوار مقفول في قائمة الانتظار."
+            echo "has_work=false" >> "$GITHUB_OUTPUT"
+            echo "HAS_RELEASE_WORK=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          IFS=',' read -ra ITEMS <<< "$REQUESTED"
+          if [ "${#ITEMS[@]}" -lt 1 ] || [ "${#ITEMS[@]}" -gt 3 ]; then
+            echo "::error::أدخل من حلقة واحدة إلى ثلاث حلقات"
+            exit 1
+          fi
+          for slug in "${ITEMS[@]}"; do
+            [[ "$slug" =~ ^[a-z0-9-]+$ ]] || { echo "::error::slug غير صالح: $slug"; exit 1; }
+          done
+          echo "has_work=true" >> "$GITHUB_OUTPUT"
+          echo "slugs=$REQUESTED" >> "$GITHUB_OUTPUT"
+          echo "HAS_RELEASE_WORK=true" >> "$GITHUB_ENV"
+          echo "RELEASED_SLUGS=$REQUESTED" >> "$GITHUB_ENV"
+          mkdir -p podcast-audits/source-locks
+          node scripts/fetch-manual-dialogues.mjs \
+            --slugs="$REQUESTED" \
+            --requeue="${{ inputs.regenerate }}"
+          node scripts/verify-manual-dialogue-lock.mjs --phase=source --slugs="$REQUESTED"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Mark workflow started
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/podcast-production-status.mjs --status=processing --stage=workflow_started --slugs="$RELEASED_SLUGS" --note="بدأ GitHub Actions وجرى تثبيت نسخة الحوار المقفولة."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Verify production secrets
+        if: steps.prepare.outputs.has_work == 'true'
+        run: |
+          test -n "$AZURE_SPEECH_KEY" || { echo "::error::AZURE_SPEECH_KEY missing"; exit 1; }
+          test -n "$CLOUDFLARE_R2_BUCKET" || { echo "::error::R2 bucket missing"; exit 1; }
+          test -n "$CLOUDFLARE_R2_ENDPOINT" || { echo "::error::R2 endpoint missing"; exit 1; }
+          test -n "$CLOUDFLARE_R2_ACCESS_KEY_ID" || { echo "::error::R2 access key missing"; exit 1; }
+          test -n "$CLOUDFLARE_R2_SECRET_ACCESS_KEY" || { echo "::error::R2 secret missing"; exit 1; }
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Mark speech generation started
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/podcast-production-status.mjs --status=processing --stage=generating_audio --slugs="$RELEASED_SLUGS" --note="جارٍ تحويل المداخلات المقفولة إلى صوت مع استئناف المقاطع المكتملة."
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Generate from locked uploaded dialogue only
+        if: steps.prepare.outputs.has_work == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p podcast-audits
+          : > podcast-audits/workflow-generation.log
+          IFS=',' read -ra ITEMS <<< "$RELEASED_SLUGS"
+          for slug in "${ITEMS[@]}"; do
+            echo "Generating locked dialogue: $slug" | tee -a podcast-audits/workflow-generation.log
+            node scripts/podcast-dialogue.mjs \
+              --slug="$slug" --lang=ar --force --manual-exact --no-gemini \
+              2>&1 | tee -a podcast-audits/workflow-generation.log
+          done
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+          PODCAST_RELEASE_MIN_SCORE: '94'
+          PODCAST_MANUAL_EXACT: '1'
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Mark quality verification started
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/podcast-production-status.mjs --status=processing --stage=quality_checks --slugs="$RELEASED_SLUGS" --note="اكتمل التوليد وبدأ إثبات التطابق وفحوص الجودة." --merge-started=true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Prove exact dialogue output
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/verify-manual-dialogue-lock.mjs --phase=output --slugs="$RELEASED_SLUGS"
+
+      - name: Validate requested local episodes
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/podcast-release-gate.mjs --local --slugs="$RELEASED_SLUGS"
+        env:
+          PODCAST_RELEASE_MIN_SCORE: '94'
+
+      - name: Mark upload started
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/podcast-production-status.mjs --status=processing --stage=uploading --slugs="$RELEASED_SLUGS" --note="اجتازت الحلقة البوابة وبدأ الرفع الذري." --merge-started=true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Publish accepted files to R2 atomically
+        if: steps.prepare.outputs.has_work == 'true'
+        run: npm run audio:r2:publish
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Build and validate final RSS
+        if: steps.prepare.outputs.has_work == 'true'
+        run: |
+          # مصالحة السجلّ قبل التحقّق — وإلا أسقطت ملفاتٌ قديمة تشغيلةً نجحت.
+          # ملفٌ أُعيد توليده ورُفع بحجمٍ جديد، ثم سقطت التشغيلة لسببٍ آخر
+          # فلم يُثبَّت السجلّ، فبقي يحمل الحجم القديم ويُفشل كل تشغيلةٍ بعده.
+          # سقط ٣٠ ملفاً بهذا في ٢ أغسطس بعد أن وُلِّدت الحلقتان واجتازتا البوابة.
+          # القافلة الساعية تصالح قبل التحقّق منذ زمن؛ مسار الإطلاق لم يكن.
+          node scripts/guard-audio-meta-regression.mjs --apply
+          node scripts/reconcile-audio-meta.mjs --apply
+          npm run audio:external:verify
+          npm run build
+          npm run podcast:release:dist
+        env:
+          VITE_SITE_URL: https://dr-alfailakawi.com
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          PODCAST_RELEASE_MIN_SCORE: '94'
+
+      - name: Commit release manifests
+        if: steps.prepare.outputs.has_work == 'true'
+        run: |
+          npm run audio:guard
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # ‎.podcast-state.json مستبعَدٌ في .gitignore، و«git add» العادي يخرج
+          # بحالة فشل حين يُطلب منه ملفٌ مستبعَد — و‎bash -e يُسقط الخطوة كلها،
+          # فيرتدّ نشرٌ نجح فيه كل شيء قبله. القافلة الساعية تستعمل ‎-f على
+          # الموجود وحده منذ زمن؛ هذا المسار لم يكن. ونتجاوز الغائب لأن بعض
+          # الملفات لا تُكتب إلا في مساراتٍ بعينها.
+          # ‎.podcast-state.json مستبعَدٌ في .gitignore عمداً — حالة المحرك لا
+          # تُتتبَّع. القافلة الساعية لا تذكره في قائمتها أصلاً، وأنا أضفتُه
+          # بـ‎-f فتتبَّع خطأً ثم أزالته جلسةٌ أخرى محقّةً في ‎67cae40. نحذفه
+          # من القائمة بدل إجباره، ويبقى ‎-f للسجلّات التي قد تُستبعَد.
+          MANAGED=(src/data/audio.json src/data/audio-meta.json src/data/podcast-admin.json)
+          PRESENT=()
+          for managed in "${MANAGED[@]}"; do [ -f "$managed" ] && PRESENT+=("$managed"); done
+          if [ "${#PRESENT[@]}" -eq 0 ]; then echo "لا سجلّات لتثبيتها."; exit 0; fi
+          git add -f -- "${PRESENT[@]}"
+          if git diff --cached --quiet; then
+            echo "No manifest changes to commit."
+          else
+            git commit -m "chore: publish locked manual podcast dialogue"
+            # إعادةُ محاولةٍ فوق أحدث main: التصادم مع دفعةٍ متزامنة عارضٌ لا عطل.
+            pushed=0
+            for attempt in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then pushed=1; break; fi
+              sleep $((attempt * 5))
+            done
+            if [ "$pushed" != 1 ]; then echo "::error::تعذّر نشر الحلقة بعد ثلاث محاولات."; exit 1; fi
+          fi
+
+      - name: Finalize R2 transaction
+        if: steps.prepare.outputs.has_work == 'true'
+        run: npm run audio:r2:commit
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Sync published dialogue to realtime CMS
+        if: steps.prepare.outputs.has_work == 'true'
+        run: npm run audio:firestore:sync -- --from-r2
+        env:
+          AUDIO_PUBLIC_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          VITE_AUDIO_BASE_URL: ${{ vars.AUDIO_PUBLIC_BASE_URL }}
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Mark episodes published
+        if: steps.prepare.outputs.has_work == 'true'
+        run: node scripts/podcast-production-status.mjs --status=published --stage=completed --slugs="$RELEASED_SLUGS" --note="نُشر الحوار المرفوع نفسه بعد إثبات التطابق الحرفي." --merge-started=true --uploaded=true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Roll back R2 transaction on any failure
+        if: failure() && env.HAS_RELEASE_WORK == 'true'
+        run: npm run audio:r2:rollback
+        env:
+          CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+      - name: Record exact failure reason
+        if: failure() && env.HAS_RELEASE_WORK == 'true'
+        run: node scripts/podcast-production-status.mjs --status=needs_review --stage=failed --slugs="$RELEASED_SLUGS" --error-code=WORKFLOW_FAILED
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+
+      - name: Re-enable manually regenerated dialogue
+        if: success() && github.event_name == 'workflow_dispatch' && github.event.inputs.regenerate == 'true' && steps.prepare.outputs.has_work == 'true'
+        run: |
+          IFS=',' read -ra ITEMS <<< "$RELEASED_SLUGS"
+          for slug in "${ITEMS[@]}"; do
+            node scripts/audio-control-status.mjs --slug="$slug" --mode=dialogue --status=published --disabled=false --message="اكتملت إعادة توليد الحوار واجتاز بوابات الجودة والتطابق."
+          done
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Keep failed manual dialogue hidden with a clear status
+        if: failure() && github.event_name == 'workflow_dispatch' && github.event.inputs.regenerate == 'true' && env.HAS_RELEASE_WORK == 'true'
+        continue-on-error: true
+        run: |
+          IFS=',' read -ra ITEMS <<< "$RELEASED_SLUGS"
+          for slug in "${ITEMS[@]}"; do
+            node scripts/audio-control-status.mjs --slug="$slug" --mode=dialogue --status=failed --disabled=true --message="تعذّرت إعادة توليد الحوار؛ بقيت النسخة السابقة ملغاة وغير ظاهرة."
+          done
+        env:
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f sa.json
+
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: podcast-pilot-release-evidence-${{ github.run_id }}
+          path: |
+            podcast-audits
+            .podcast-state.json
+            src/data/audio-meta.json
+            dist/podcast.xml
+          if-no-files-found: warn
+          retention-days: 30
+          include-hidden-files: true

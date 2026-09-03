@@ -1,0 +1,272 @@
+{
+  "slug": "qabas-201709-003",
+  "bridgeAfter": [
+    17,
+    27
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "أصبح شغلنا الشاغل عبر المواقع الإلكترونية والإعلام التقليدي متابعة المستجدات كلها.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ومساعي كويتنا الحبيب لحل الأزمة الخليجية القائمة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وتطبيق خط الدفاع الذي أثاره في المقال السابق عن بيتنا الكبير.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأمنه واستقراره في حكمة سيد الحكمة، أميرنا حفظه الله الشيخ صباح الأحمد الصباح.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولن نحيد عن المسار، ~~ فالأمر جد خطير علينا جميعا.",
+      "feeling": "warm",
+      "feeling2": "hush",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أين المنظومة القائمة على مبدأ الأمن الجماعي والتحالف المشترك في وجه أي استهداف خارجي؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "تساؤل أثاره أمير الحكمة، سمو الشيخ صباح الأحمد الصباح.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حقا يستحق هذا اللقب.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "حفظه الله وأدامه ذخرا لنا، وللمساعي التي يقوم بها من أجل الحوار البناء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "الذي لا يمس سيادة الدول في شيء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا السعي يأتي من أجل ضمان الوحدة واستقرار دول مجلس التعاون الخليجي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والحد من الخلاف بين الأعضاء، والجلوس على طاولة حوار.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونبذ الرعونة في التعاطي السياسي الحاصل بيننا اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "واتخاذ مسلك أمير الحكمة في حوار حكيم، عبر الطرق الدبلوماسية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إن المسعى الكويتي يأتي لإقامة آلية حوار غير مشروط مع الدوحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذه تصريحات سمو الأمير حفظه الله، ولم تختلف معه الدوحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ورعت ذلك واشنطن بقبول حوار الحكمة، والتصدي للحصار.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وقد تناقلت المحطات الإخبارية ومواقع التواصل الاجتماعي كافة المساعي من الكويت.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن أين الحكمة في حوار رواد المواقع؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا بد من الوقوف بوجه الحصار الظالم على الأشقاء.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أصبحنا كمن يشهر إصبعه بالتهديد بوجه أخيه.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فإما أن ينفذ ما يريد قهرا وقصرا، وإما ينتقل إلى المرحلة الأخرى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فيشهر بوجهه السلاح، يا لسخرية القدر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لقد جاء اليوم الذي نجلس نتداول خيباتنا عبر مواقع التواصل، ويهدد كل منا الآخر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وانقسم خليجنا عبر التدوينات، ما بين مشجع بالعمل العسكري خلال الأزمة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وما بين شاجب ورافض، وفئة أخرى تبكي بصمت لما آل حالنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونحن مع خط الدفاع أمام الفتن والثرثرة والمهاترات، والأجندات السوداء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فالعالم العربي يجتمع في كل لحظة عبر شبكات التواصل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فبدلا من شق الصف، ما البديل أمامنا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "دعونا مع حوار الحكمة في وجه الحصار الذي دعا له سمو الأمير صباح.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهي خط الدفاع الذي سيحمي السيادة والأمن والاستقرار في خليجنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ونحن مع التهدئة مع الأشقاء، لخطورة استمرار الخلاف وانعكاساته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونحن مع سرعة رأب الصدع، نرفض التصعيد ونقبل الحوار البناء بدلا من القطيعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والأمل ما زال موجودا من خلال جهوده الحكيمة الواعية، المنبثقة عن خبرة وحنكة سياسية دبلوماسية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وسنبقى نقف خلفه خط دفاع لكل من يحاول نشر الفتنة والتدخل في شؤوننا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "ولمن يقوم بتجييش شبكات التواصل من أجل تفتيت وحدتنا، ونحن متفائلون بوساطته الرشيدة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

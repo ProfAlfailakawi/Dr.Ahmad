@@ -1,0 +1,1362 @@
+import { createHash, randomUUID } from 'node:crypto'
+import { createServer } from 'node:http'
+import { mkdirSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { resolve, join } from 'node:path'
+import process from 'node:process'
+import qrcode from 'qrcode'
+import whatsappWeb from 'whatsapp-web.js'
+
+const { Client, LocalAuth, MessageMedia } = whatsappWeb
+
+const deviceId = String(process.env.WHATSAPP_BRIDGE_DEVICE_ID || process.env.WHATSAPP_CLIENT_ID || 'primary')
+  .replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48) || 'primary'
+
+const config = Object.freeze({
+  serverUrl: String(process.env.WHATSAPP_MAIN_SERVER_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, ''),
+  secret: String(process.env.WHATSAPP_BRIDGE_SECRET || ''),
+  sessionDir: resolve(String(process.env.WHATSAPP_SESSION_DIR || './session')),
+  deviceId,
+  clientId: deviceId,
+  ownerChatId: String(process.env.WHATSAPP_OWNER_CHAT_ID || '').trim(),
+  deviceName: String(process.env.WHATSAPP_BRIDGE_DEVICE_NAME || 'dr-alfailakawi-mac-bridge').slice(0, 100),
+  healthPort: Math.max(1024, Math.min(65535, Number(process.env.WHATSAPP_BRIDGE_HEALTH_PORT || 34322))),
+  heartbeatMs: Math.max(10_000, Number(process.env.WHATSAPP_HEARTBEAT_MS || 25_000)),
+  pollMs: Math.max(2_000, Number(process.env.WHATSAPP_COMMAND_POLL_MS || 5_000)),
+  deviceActivityPulseMs: Math.max(
+    6 * 60 * 60_000,
+    Math.min(7 * 24 * 60 * 60_000, Number(process.env.WHATSAPP_DEVICE_ACTIVITY_PULSE_MS || 24 * 60 * 60_000)),
+  ),
+  chromePath: String(process.env.PUPPETEER_EXECUTABLE_PATH || '').trim(),
+})
+
+if (!config.serverUrl || !/^https?:\/\//.test(config.serverUrl)) {
+  throw new Error('WHATSAPP_MAIN_SERVER_URL is required and must start with http:// or https://')
+}
+if (config.secret.length < 24) {
+  throw new Error('WHATSAPP_BRIDGE_SECRET must contain at least 24 characters')
+}
+
+mkdirSync(config.sessionDir, { recursive: true, mode: 0o700 })
+const deliveredCommandsPath = join(config.sessionDir, 'delivered-command-ids.json')
+const inboundCheckpointPath = join(config.sessionDir, 'inbound-checkpoint.json')
+const deliveredCommandIds = new Set((() => {
+  try {
+    const value = JSON.parse(readFileSync(deliveredCommandsPath, 'utf8'))
+    return Array.isArray(value) ? value.filter((id) => typeof id === 'string').slice(-500) : []
+  } catch {
+    return []
+  }
+})())
+const inboundCheckpoint = (() => {
+  try {
+    const value = JSON.parse(readFileSync(inboundCheckpointPath, 'utf8'))
+    return {
+      lastTimestamp: Math.max(0, Number(value?.lastTimestamp || 0)),
+      messageIds: Array.isArray(value?.messageIds) ? value.messageIds.filter((id) => typeof id === 'string' && id).slice(-2_000) : [],
+      contentKeys: Array.isArray(value?.contentKeys) ? value.contentKeys.filter((key) => typeof key === 'string' && key).slice(-2_000) : [],
+    }
+  } catch {
+    // أول تركيب لا يعود إلى محادثات قديمة؛ من هذه اللحظة يصبح الاسترجاع دائماً.
+    return { lastTimestamp: Math.floor(Date.now() / 1000) - 90, messageIds: [], contentKeys: [] }
+  }
+})()
+const processedInboundIds = new Set(inboundCheckpoint.messageIds)
+/* واتساب ويب صار يسلّم الرسائل الحية أحياناً بلا معرّف مسلسل (id فارغ خصوصاً
+   في محادثات @lid). حينها لا يُثبَّت المعرف، فيأتي الاسترجاع الدوري بنفس
+   الرسالة بمعرّفها الحقيقي فتُعالج من جديد ويُرسل الرد مكرراً خمس مرات
+   (حادثة ٣٠ يوليو ٠٨:٤٥). مفتاح المحتوى (المرسل+الطابع الزمني+بصمة النص)
+   يطابق الرسالة نفسها بين التسليمين فيمنع التكرار مهما غاب المعرف. */
+const processedContentKeys = new Set(inboundCheckpoint.contentKeys)
+function contentKeyOf(message) {
+  const from = String(message?.from || '').trim()
+  const timestamp = Number(message?.timestamp || 0)
+  const bodyDigest = createHash('sha256').update(String(message?.body || '').slice(0, 500)).digest('hex').slice(0, 16)
+  return `${from}|${timestamp}|${bodyDigest}`
+}
+const startupCatchupFloor = Math.max(0, inboundCheckpoint.lastTimestamp - 5 * 60)
+
+function rememberDeliveredCommand(id) {
+  deliveredCommandIds.add(String(id))
+  const recent = [...deliveredCommandIds].slice(-500)
+  deliveredCommandIds.clear()
+  recent.forEach((value) => deliveredCommandIds.add(value))
+  const temp = `${deliveredCommandsPath}.tmp-${process.pid}`
+  writeFileSync(temp, `${JSON.stringify(recent)}\n`, { mode: 0o600 })
+  renameSync(temp, deliveredCommandsPath)
+}
+
+function messageIdOf(message) {
+  return String(message?.id?._serialized || '').slice(0, 240)
+}
+
+function persistInboundCheckpoint() {
+  const recent = [...processedInboundIds].slice(-2_000)
+  processedInboundIds.clear()
+  recent.forEach((value) => processedInboundIds.add(value))
+  const recentKeys = [...processedContentKeys].slice(-2_000)
+  processedContentKeys.clear()
+  recentKeys.forEach((value) => processedContentKeys.add(value))
+  const temp = `${inboundCheckpointPath}.tmp-${process.pid}`
+  writeFileSync(temp, `${JSON.stringify({
+    lastTimestamp: inboundCheckpoint.lastTimestamp,
+    messageIds: recent,
+    contentKeys: recentKeys,
+    updatedAt: new Date().toISOString(),
+  })}\n`, { mode: 0o600 })
+  renameSync(temp, inboundCheckpointPath)
+}
+
+function rememberProcessedInbound(message) {
+  const id = messageIdOf(message)
+  if (id) processedInboundIds.add(id)
+  processedContentKeys.add(contentKeyOf(message))
+  const timestamp = Number(message?.timestamp || 0)
+  if (Number.isFinite(timestamp) && timestamp > 0) inboundCheckpoint.lastTimestamp = Math.max(inboundCheckpoint.lastTimestamp, timestamp)
+  persistInboundCheckpoint()
+}
+
+const runtime = {
+  status: 'starting',
+  connected: false,
+  lastError: '',
+  lastWebhookAt: null,
+  startedAt: new Date().toISOString(),
+  qrAt: null,
+  instanceId: randomUUID(),
+  stateSeq: 0,
+  stateAt: new Date().toISOString(),
+  syncPercent: 0,
+  lastActivityAt: Date.now(),
+  lastCatchupAt: null,
+  lastCatchupRecovered: 0,
+  lastCatchupError: '',
+  lastDeviceActivityPulseAt: null,
+  lastDeviceActivityPulseError: '',
+}
+
+function stateSnapshot(extra = {}) {
+  return {
+    status: runtime.status,
+    connected: runtime.connected,
+    error: runtime.lastError,
+    instanceId: runtime.instanceId,
+    deviceId: config.deviceId,
+    stateSeq: runtime.stateSeq,
+    stateAt: runtime.stateAt,
+    syncPercent: runtime.syncPercent,
+    lastCatchupAt: runtime.lastCatchupAt,
+    lastCatchupRecovered: runtime.lastCatchupRecovered,
+    lastCatchupError: runtime.lastCatchupError,
+    lastDeviceActivityPulseAt: runtime.lastDeviceActivityPulseAt,
+    lastDeviceActivityPulseError: runtime.lastDeviceActivityPulseError,
+    deviceActivityPulseIntervalMs: config.deviceActivityPulseMs,
+    ...extra,
+  }
+}
+
+function transitionState(status, connected, error = '', extra = {}) {
+  runtime.status = String(status || 'disconnected')
+  runtime.connected = Boolean(connected)
+  runtime.lastError = String(error || '').slice(0, 400)
+  runtime.stateSeq += 1
+  runtime.stateAt = new Date().toISOString()
+  runtime.lastActivityAt = Date.now()
+  return stateSnapshot(extra)
+}
+
+function log(level, message, fields = {}) {
+  const safe = { ...fields }
+  for (const key of ['jid', 'from', 'to', 'conversationId']) {
+    if (safe[key]) safe[key] = maskAddress(safe[key])
+  }
+  process.stdout.write(`${JSON.stringify({ at: new Date().toISOString(), level, event: message, deviceId: config.deviceId, ...safe })}\n`)
+}
+
+function maskAddress(value) {
+  const digits = String(value || '').split('@', 1)[0].replace(/\D/g, '')
+  return digits.length > 4 ? `${'*'.repeat(Math.max(4, digits.length - 4))}${digits.slice(-4)}` : '****'
+}
+
+/* ═══ بصمة المستلَم: شاهدُ الجسر على أنه سلّم للشخص الذي سُمّي له ═══
+   الخادم صار يفحص (`recipient-delivery-verification-failed`) أن يعود مع كل
+   إقرارِ نجاحٍ بصمةُ من وصلته الرسالة، فإن غابت **عُدّت كلُّ رسالةٍ وصلت
+   فاشلةً في لوحة الحملات**. الصيغة يجب أن تطابق `outboundRecipientFingerprint`
+   في src/server/whatsapp-controller.mjs حرفاً بحرف — أرقام العنوان وحدها،
+   ثم sha256 لـ«wa-recipient:الأرقام». ولا يُرسَل الرقم نفسه قط: البصمة
+   تُثبت المطابقة ولا تُفشي عنواناً. */
+function recipientFingerprint(value) {
+  const digits = String(value || '').split('@', 1)[0].replace(/\D/g, '')
+  if (!/^\d{7,15}$/.test(digits)) return ''
+  return createHash('sha256').update(`wa-recipient:${digits}`).digest('hex')
+}
+
+/* البصمة تُؤخذ من العنوان الذي سُلّم إليه فعلاً — وهو الشاهد الحقيقي. وإن
+   كان العنوان لقباً (‎@lid) لا أرقامَ هاتفٍ فيه، رجعنا إلى العنوان المطلوب:
+   المحادثة بيدنا أصلاً وصاحبها هو المقصود، والبديل أن يُعلن نجاحٌ صادق
+   فشلاً — وهو الضرر الذي نعالجه لا ضرراً نستبدله بآخر. */
+async function deliveredFingerprint(requestedJid) {
+  try {
+    const delivered = await resolveSendJid(requestedJid)
+    return recipientFingerprint(delivered) || recipientFingerprint(requestedJid)
+  } catch {
+    return recipientFingerprint(requestedJid)
+  }
+}
+
+let shuttingDown = false
+let commandBusy = false
+let heartbeatTimer = null
+let pollTimer = null
+let catchupTimer = null
+let deviceActivityPulseTimer = null
+let catchupPromise = null
+let heartbeatBusy = false
+let deviceActivityPulseBusy = false
+let reinjectionPromise = null
+let consecutiveDetachedCatchups = 0
+const DETACHED_CONTEXT = /detached\s*Frame|Execution context (?:was )?destroyed|Target closed|webjs-reinjection-timeout|Cannot find context with specified id|Session closed|most likely because of a navigation/i
+
+/* حارس الرد المطابق — نسخة ٣١ يوليو الثانية بعد جريمته الأولى.
+   قصد الحارس: أربع صورٍ متتالية لا تُقابَل بالرد الجاهز نفسه أربع مرات.
+   لكنه بلغ عن حسن نية إلى ما لم يُخلق له: الدكتور كتب «لخّصها» فوصله ملخّصٌ
+   مطابقٌ لما رآه قبل ٢١ ثانية — فابتلعه الحارس وصمت البوت في وجه سؤالٍ صريح.
+   القاعدة الصحيحة: **السؤال المكتوب بيدٍ إنسانية يُجاب دائماً**. الكتم يبقى
+   للردود التي لم يطلبها أحد: دفعة الاسترجاع بعد الانقطاع (نافذة ١٠ دقائق)،
+   والردود المولّدة عن وسائط بلا نص (نافذة ٩٠ ثانية). حملات البث خارج هذا كله. */
+const recentBotReplies = new Map()
+function repeatedReplySuppressed(jid, text, source, { userTyped = false } = {}) {
+  const now = Date.now()
+  for (const [candidate, seenAt] of recentBotReplies) {
+    if (now - seenAt > 10 * 60_000) recentBotReplies.delete(candidate)
+  }
+  const key = `${String(jid || '').trim()}\n${String(text || '').replace(/\s+/g, ' ').trim()}`
+  /* رسالةٌ نصية حيّة كتبها إنسان: تُسجَّل ولا تُكتم أبداً. */
+  if (userTyped && source !== 'catchup') {
+    recentBotReplies.set(key, now)
+    return false
+  }
+  const windowMs = source === 'catchup' ? 10 * 60_000 : 90_000
+  const seenAt = recentBotReplies.get(key) || 0
+  if (now - seenAt < windowMs) return true
+  recentBotReplies.set(key, now)
+  return false
+}
+
+/* شبكة أمان الحقول: لو وصل الجسرَ نصٌّ ما زال يحمل {عزيزي} أو أي حقل دمجٍ
+   لم يصرّفه الخادم (لقطة الدكتور: وصلت «test test {عزيزي}» حرفياً)، تُصرَّف
+   هنا بصيغتها المحايدة ولا يصل قوسٌ معقوفٌ أي إنسانٍ أبداً. */
+function applyMergeFieldSafetyNet(rawText) {
+  const kuwaitHour = Number(new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric', hour12: false, timeZone: 'Asia/Kuwait',
+  }).format(new Date()))
+  return String(rawText || '')
+    .replace(/\{تحية\}/g, kuwaitHour < 12 ? 'صباح الخير' : 'مساء الخير')
+    .replace(/\{ترحيب\}/g, 'أهلاً')
+    .replace(/\{عزيزي\}/g, 'عزيزي')
+    .replace(/\{الأخ\}/g, 'أخي الكريم')
+    .replace(/\{الاسم\}/g, '')
+    .replace(/\{[^{}\n]{1,24}\}/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+([،,.؛:!?؟])/g, '$1')
+    .trim()
+}
+
+/* عطب «الإطار المنفصل» كان يُشفى ذاتياً في مسار أوامر اللوحة فقط، بينما بقي
+   مساران أعزلان: ردُّ الرسالة الواردة الحية، واسترجاعُ الفائت كل خمس دقائق.
+   فيبدو الجسر متصلاً ونبضُه أخضر وهو أخرس فعلياً. الخروج بالرمز 75 يعيد
+   التشغيل نظيفاً عبر launchd بلا مساسٍ بالجلسة؛ والرسالة التي لم يكتمل ردُّها
+   لا تُثبَّت في checkpoint، فيعيدها الاسترجاع بعد الإقلاع ويعيد الخادم ردَّها
+   المخزون لنفس messageId بلا فقدٍ ولا تكرار. */
+async function selfHealDetachedContext(source, error) {
+  if (shuttingDown) return
+  const uptimeMs = Date.now() - Date.parse(runtime.startedAt)
+  if (!Number.isFinite(uptimeMs) || uptimeMs < 120_000) return
+  shuttingDown = true
+  log('warn', 'detached_context_selfheal_restart', { source, error: String(error).slice(0, 200) })
+  await safeEmit('status', transitionState('restarting', false, `detached_context:${source}`), { retries: 0 })
+  await safeGracefulCloseClient()
+  process.exit(75)
+}
+const recentAutomatedSends = new Map()
+const recentAutomatedBodies = new Map()
+const inboundQueues = new Map()
+const inboundInFlight = new Set()
+const LEGACY_HUMAN_PROMISE = /(?:احتاجت|تحتاج)\s+متابعه\s+بشريه|سيكمل\s+معك\s+(?:الفريق|الدكتور)|سيرد\s+عليك\s+الدكتور|وصلت?\s+رسالتك\s+(?:للدكتور|للفريق)/i
+const SAFE_BOUNDARY_REPLY = 'فهمت أنك تريد تواصلاً مباشراً. اكتب رسالتك كاملة هنا. أستطيع الآن مساعدتك في مواد الموقع أو معلومة عامة موثقة ضمن حدودي.'
+const SAFE_CLARIFY_REPLY = 'أنا حاضر. ما قدرت أربط الطلب بمادة منشورة بثقة. اكتب الفكرة بكلمة أو زاوية ثانية، أو اختر: آخر مقالة · آخر المقالات · ٣٠ ثانية · دقيقتان · تعمّق.'
+
+function sanitizeServerReply(value) {
+  const text = String(value || '').trim()
+  if (!text) return ''
+  const normalized = text.normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g, '').replace(/ة/g, 'ه')
+  return LEGACY_HUMAN_PROMISE.test(normalized) ? SAFE_BOUNDARY_REPLY : text
+}
+
+async function recoverLegacySilentDecision(message, result, source) {
+  const reason = String(result?.reason || '').toLowerCase()
+  if (!['duplicate', 'duplicate-delivery'].includes(reason)) return result
+  const messageId = messageIdOf(message)
+  log('warn', 'legacy_duplicate_decision_retrying_as_distinct_turn', { from: message.from, messageId, source })
+  try {
+    return await emit('incoming', {
+      jid: message.from,
+      text: `${String(message.body || '').slice(0, 11_950)}\nمن فضلك نفّذ هذا الطلب كدور جديد.`,
+      hasMedia: Boolean(message.hasMedia),
+      mediaType: String(message.type || 'text').slice(0, 80),
+      messageId: messageId ? `${messageId}:distinct-turn` : `distinct-${Date.now()}`,
+      timestamp: Number(message.timestamp || 0),
+      deliverySource: `${source}-distinct-retry`,
+    })
+  } catch {
+    return result
+  }
+}
+
+function automatedSendKey(jid, text) {
+  return `${String(jid || '').trim()}\n${String(text || '').replace(/\s+/g, ' ').trim()}`
+}
+
+function rememberAutomatedSend(jid, text) {
+  const key = automatedSendKey(jid, text)
+  const expiresAt = Date.now() + 45_000
+  const bodyKey = String(text || '').replace(/\s+/g, ' ').trim()
+  recentAutomatedSends.set(key, expiresAt)
+  recentAutomatedBodies.set(bodyKey, expiresAt)
+  for (const [candidate, expiresAt] of recentAutomatedSends) {
+    if (expiresAt <= Date.now()) recentAutomatedSends.delete(candidate)
+  }
+  for (const [candidate, bodyExpiresAt] of recentAutomatedBodies) {
+    if (bodyExpiresAt <= Date.now()) recentAutomatedBodies.delete(candidate)
+  }
+  return key
+}
+
+function consumeAutomatedSend(jid, text) {
+  const key = automatedSendKey(jid, text)
+  const expiresAt = recentAutomatedSends.get(key) || 0
+  const bodyKey = String(text || '').replace(/\s+/g, ' ').trim()
+  const bodyExpiresAt = recentAutomatedBodies.get(bodyKey) || 0
+  recentAutomatedSends.delete(key)
+  return expiresAt > Date.now() || bodyExpiresAt > Date.now()
+}
+
+async function serverRequest(path, { method = 'POST', body, timeoutMs = 15_000, retries = 2 } = {}) {
+  let lastError
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const response = await fetch(`${config.serverUrl}${path}`, {
+        method,
+        signal: controller.signal,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-WhatsApp-Bridge-Secret': config.secret,
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      })
+      if (!response.ok) {
+        // Keep the HTTP status and the server's short diagnostic. The bridge
+        // logs mask phone addresses, and this detail is what lets the control
+        // panel distinguish an invalid modern JID from a paused bot or outage.
+        let detail = ''
+        try {
+          const payload = await response.json()
+          detail = String(payload?.error || '').replace(/\s+/g, ' ').slice(0, 240)
+        } catch { /* response may not be JSON */ }
+        throw new Error(`server-${response.status}${detail ? `:${detail}` : ''}`)
+      }
+      runtime.lastWebhookAt = new Date().toISOString()
+      return await response.json()
+    } catch (error) {
+      lastError = error
+      if (attempt < retries) await new Promise((resolveWait) => setTimeout(resolveWait, 600 * 2 ** attempt))
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+  throw lastError
+}
+
+async function emit(event, payload = {}, options = {}) {
+  return serverRequest('/api/whatsapp/webhook', { body: { event, deviceName: config.deviceName, deviceId: config.deviceId, version: '1.0.0', ...payload }, ...options })
+}
+
+async function safeEmit(event, payload = {}, options = {}) {
+  try {
+    return await emit(event, payload, options)
+  } catch (error) {
+    runtime.lastError = error instanceof Error ? error.message : String(error)
+    log('error', 'webhook_failed', { event, error: runtime.lastError })
+    return null
+  }
+}
+
+// Optimization for WhatsApp Web Multi-Device sync:
+// 1. DO NOT use --disable-background-networking (it blocks background message syncing and IndexedDB updates!)
+// 2. Disable background timer & tab throttling so Chrome doesn't pause sync when headless
+// 3. Set realistic macOS User-Agent so WhatsApp MD doesn't flag or pause the headless client
+const puppeteer = {
+  headless: true,
+  /* ٧ أغسطس: أربع رسائل زوّار سقطت صمتاً في يومٍ واحد بخطأ
+     «Runtime.callFunctionOn timed out» — مهلة بروتوكول Chrome الافتراضية
+     (١٨٠ ثانية) تنتهي حين يثقُل واتساب ويب بمزامنةٍ كبيرة، فتفشل معالجة
+     الرسالة ولا يصل الزائر ردٌّ ولا يعرف أحد. الخطأ نفسه يطلب رفع المهلة.
+     خمس دقائق تسع أثقل مزامنة، ولا تُبقي عمليةً معلّقةً إلى الأبد. */
+  protocolTimeout: Math.max(180_000, Number(process.env.WHATSAPP_PROTOCOL_TIMEOUT_MS || 300_000)),
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--disable-background-timer-throttling',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+    '--disable-ipc-flooding-protection',
+    '--no-zygote',
+    '--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+    '--disable-features=CalculatePageVisibility',
+    '--disable-features=IntensiveWakeUpThrottling',
+    '--disable-features=TurnOffStreamingMediaWithBackgroundTab',
+    '--disable-features=LogLeastRecentlyUsedLimit',
+    '--disable-features=Prerender2',
+  ],
+  ...(config.chromePath ? { executablePath: config.chromePath } : {}),
+}
+
+/* نسخة واتساب ويب التي نُقلع بها: «الحالية» من أرشيف wa-version المجاني.
+   القاعدة المستخلصة بالدم (٣١ يوليو): اللقطة المجمّدة تنجح ثم تُرفض بعد ساعات،
+   والبثّ الحي يقدّم أحياناً بناءً يكسر حدث ready. المتابعة اليومية للأرشيف هي
+   المنطقة الآمنة بينهما. المهلة قصيرة، والفشل يرجع للاحتياطي ثم للبث الحي. */
+const FALLBACK_WEB_VERSION = '2.3000.1044221688-alpha'
+async function resolveWebVersionUrl() {
+  const manual = String(process.env.WHATSAPP_WEB_VERSION_HTML || '').trim()
+  if (manual) return manual
+  const snapshot = (version) => `https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/${version}.html`
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 8_000)
+    const response = await fetch('https://raw.githubusercontent.com/wppconnect-team/wa-version/main/versions.json', { signal: controller.signal })
+      .finally(() => clearTimeout(timer))
+    if (response.ok) {
+      const payload = await response.json()
+      const current = String(payload?.currentVersion || '').trim()
+      if (/^\d+\.\d+\.\d+(?:-\w+)?$/.test(current)) {
+        log('info', 'web_version_resolved', { version: current })
+        return snapshot(current)
+      }
+    }
+  } catch (error) {
+    log('warn', 'web_version_lookup_failed', { error: String(error?.message || error).slice(0, 160) })
+  }
+  return snapshot(FALLBACK_WEB_VERSION)
+}
+const WEB_VERSION_URL = await resolveWebVersionUrl()
+
+const client = new Client({
+  authStrategy: new LocalAuth({ clientId: config.deviceId, dataPath: config.sessionDir }),
+  puppeteer,
+  deviceName: config.deviceName,
+  browserName: 'Dr Ahmad Assistant',
+  takeoverOnConflict: true,
+  authTimeoutMs: 0, // 0 disables auth timeout during long initial message syncs
+  qrMaxRetries: 0,
+  /* ٣١ يوليو: أحدث بناء يقدمه واتساب ويب للإقلاعات الطازجة عطّل حدث ready
+     في 1.34.7 (authenticated + 100٪ ثم صمت أبدي — ثبت بالتجربة على نسختين).
+     والتثبيت على لقطة ثابتة يشفي يوماً ويعطب غداً: اللقطة نفسها رفضها واتساب
+     بعد تسع ساعات فعاد الصمت. لذلك نتبع «النسخة الحالية» من أرشيف wa-version
+     المجاني عند كل إقلاع (resolveWebVersionUrl أعلاه)، فيبقى الجسر محاذياً
+     لواتساب بلا تدخل بشري — ومن أراد تثبيتاً يدوياً يضبط المتغير. */
+  webVersionCache: { type: 'remote', remotePath: WEB_VERSION_URL },
+})
+
+// Event: loading_screen (WhatsApp Web loading chats and sync)
+client.on('loading_screen', async (percent, message) => {
+  runtime.syncPercent = percent
+  runtime.lastActivityAt = Date.now()
+  /* WhatsApp Web 2026 may emit loading_screen(99) after ready. Downgrading the
+     already-ready client to syncing=false made the panel show a false outage
+     and encouraged destructive re-pairing. Preserve connected once ready. */
+  const snapshot = runtime.connected
+    ? stateSnapshot({ percent, message })
+    : transitionState('syncing', false, '', { percent, message })
+  log('info', runtime.connected ? 'late_loading_screen_ignored' : 'loading_screen', { percent, message, stateSeq: snapshot.stateSeq })
+  await safeEmit('status', snapshot)
+})
+
+// Event: qr
+client.on('qr', async (qr) => {
+  const snapshot = transitionState('pairing', false, '')
+  runtime.qrAt = snapshot.stateAt
+  try {
+    const qrImage = await qrcode.toDataURL(qr, { margin: 1, width: 520, errorCorrectionLevel: 'M' })
+    await safeEmit('qr', { ...snapshot, qr, qrImage })
+  } catch {
+    await safeEmit('qr', { ...snapshot, qr, qrImage: null })
+  }
+  log('info', 'qr_generated', { stateSeq: snapshot.stateSeq })
+})
+
+// Event: authenticated
+client.on('authenticated', () => {
+  const snapshot = transitionState('authenticated', false, '')
+  log('info', 'authenticated', { stateSeq: snapshot.stateSeq })
+  void safeEmit('status', snapshot)
+  
+  // Immediately start heartbeat & polling so server knows auth succeeded!
+  startHeartbeatAndPolling()
+})
+
+// Event: ready
+client.on('ready', () => {
+  const snapshot = transitionState('connected', true, '')
+  log('info', 'ready', { stateSeq: snapshot.stateSeq })
+  void safeEmit('status', snapshot)
+  
+  startHeartbeatAndPolling()
+
+  // Run warmPhoneAliases and contact sync in the BACKGROUND with a non-blocking timeout
+  void warmPhoneAliasesAndContactsInBackground()
+  scheduleMissedMessageCatchup()
+  scheduleDeviceActivityPulse()
+})
+
+function isIndividualJid(value) {
+  return /@(?:c\.us|lid)$/.test(String(value || ''))
+}
+
+async function bridgeFunctionsReady() {
+  if (!client.pupPage || client.pupPage.isClosed()) return false
+  try {
+    return await client.pupPage.evaluate(() => Boolean(
+      window.WWebJS
+      && typeof window.WWebJS.getChat === 'function'
+      && typeof window.WWebJS.sendMessage === 'function',
+    ))
+  } catch {
+    return false
+  }
+}
+
+/*
+ * WhatsApp Web may reload its main frame after the QR has already reached
+ * "ready". During that narrow window whatsapp-web.js keeps the session green
+ * but loses window.WWebJS, so every send fails at getChat and inbound events
+ * stop. Re-inject once, serialize concurrent repairs, then prove the helpers
+ * are present before allowing a delivery.
+ */
+async function ensureBridgeFunctions() {
+  if (await bridgeFunctionsReady()) return
+  if (!reinjectionPromise) {
+    reinjectionPromise = (async () => {
+      log('warn', 'webjs_helpers_missing_reinjecting')
+      await client.inject()
+      const deadline = Date.now() + 30_000
+      while (Date.now() < deadline) {
+        if (await bridgeFunctionsReady()) return
+        await new Promise((resolveWait) => setTimeout(resolveWait, 400))
+      }
+      throw new Error('webjs-reinjection-timeout')
+    })().finally(() => { reinjectionPromise = null })
+  }
+  await reinjectionPromise
+}
+
+/* برهان ٣١ يوليو ١٥:٢٣: الإرسال إلى رقمٍ من القائمة انتهى بـ
+   send_completed_without_serialized_message — أي أن واتساب أنهى العملية محلياً
+   ولم يُنشئ رسالةً حقيقية، فبدت الحملة ناجحة ولم يصل أحداً شيء، بينما وصلت
+   محادثة الدكتور نفسه لأنها قائمة أصلاً. السبب: معرّف ‎@c.us مركّبٌ من الأرقام
+   لا تعرفه خريطة واتساب الحديثة، وهي لا تخطئ صراحةً بل تبتلع الرسالة.
+   العلاج: نسأل واتساب نفسه عن المعرّف المعتمد لهذا الرقم (getNumberId) ونرسل
+   إليه هو — أياً كانت صيغته — ولا نقبل إرسالاً بلا رسالةٍ مُسلسَلة. */
+const resolvedJidCache = new Map()
+async function resolveSendJid(rawJid) {
+  const jid = String(rawJid || '').trim()
+  if (!isIndividualJid(jid)) throw new Error('invalid-individual-jid')
+  // محادثة واردة بعنوان @lid حيّ: عنوانها الصحيح بيدنا أصلاً، لا نترجمها.
+  if (jid.endsWith('@lid')) return jid
+  const cached = resolvedJidCache.get(jid)
+  if (cached) return cached
+  const digits = jid.split('@', 1)[0].replace(/\D/g, '')
+  if (!digits) throw new Error('invalid-individual-jid')
+  let resolved = jid
+  try {
+    const numberId = await client.getNumberId(digits)
+    const serialized = String(numberId?._serialized || '').trim()
+    if (serialized) resolved = serialized
+    else throw new Error('recipient-not-on-whatsapp')
+  } catch (error) {
+    if (String(error?.message || '') === 'recipient-not-on-whatsapp') throw error
+    log('warn', 'number_resolution_failed_using_raw', { jid: maskAddress(jid), error: String(error?.message || error).slice(0, 160) })
+  }
+  resolvedJidCache.set(jid, resolved)
+  if (resolvedJidCache.size > 4_000) resolvedJidCache.delete(resolvedJidCache.keys().next().value)
+  return resolved
+}
+
+/* جذر «Cannot read properties of undefined (reading 'getChat')» في حملات
+   البث (٣١ يوليو): رقمٌ لا محادثة سابقة معه يمر على findOrCreateLatestChat
+   وخريطةُ معرفات واتساب ويب لا تعرفه بعد، فينفجر عمق المكتبة. التمهيد هنا:
+   إن كانت المحادثة قائمة فلا شيء يُفعل؛ وإلا نحاول إنشاءها، فإن أبى نستعلم
+   وجودَ الرقم (getNumberId يملأ الخريطة الداخلية) ثم نعيد الإنشاء على معرف
+   ‎@c.us الأصلي — ولا نرسل أبداً إلى أي لقب ‎@lid يعيده الاستعلام (درس
+   الثقب الأسود المحلي). رقمٌ ليس على واتساب يفشل بسببٍ عربيٍّ مفهوم. */
+async function ensureIndividualChatExists(jid) {
+  if (!jid.endsWith('@c.us')) return 'exists'
+  const materialize = (wanted) => client.pupPage.evaluate(async (target) => {
+    try {
+      const wid = window.require('WAWebWidFactory').createWid(target)
+      if (window.require('WAWebCollections').Chat.get(wid)) return 'exists'
+      const found = await window.require('WAWebFindChatAction').findOrCreateLatestChat(wid)
+      return found?.chat ? 'created' : 'missing'
+    } catch (error) {
+      return `error:${String(error?.message || error).slice(0, 160)}`
+    }
+  }, wanted)
+  const first = await materialize(jid)
+  if (first === 'exists' || first === 'created') return first
+  log('warn', 'chat_materialize_first_attempt_failed', { jid: maskAddress(jid), state: first })
+  let numberId = null
+  try {
+    numberId = await client.getNumberId(jid.split('@', 1)[0])
+  } catch (error) {
+    log('warn', 'number_lookup_failed', { jid: maskAddress(jid), error: String(error?.message || error).slice(0, 160) })
+  }
+  if (!numberId) throw new Error('recipient-not-on-whatsapp')
+  const second = await materialize(jid)
+  if (second === 'exists' || second === 'created') return second
+  throw new Error(`chat-create-failed:${second}`)
+}
+
+/* شاهدُ الإرسال حين يعجز واتساب عن تسليم نموذج الرسالة: نقرأ آخر رسائل
+   المحادثة (بنفس مسار الاسترجاع القائم) ونبحث عن رسالةٍ منّا بنفس النص خلال
+   ٩٠ ثانية. لا استدعاء جديد للصفحة ولا مسار موازٍ. */
+async function confirmSentByBody(jid, text, since) {
+  const wanted = String(text || '').trim()
+  if (!wanted) return null
+  /* **نافذة الشاهد تبدأ من لحظة هذا الإرسال بالذات** (بسماحٍ ثانيتين لفارق
+     ساعة الجهاز). النافذة الثابتة (٩٠ ثانية للخلف) كانت تلتقط **الرسالة
+     السابقة نفسها** حين تُرسل الحملة مرتين بنصٍّ واحد، فتُعلَن الثانية ناجحة
+     ولم يصل أحداً شيء — وهو بالضبط ما رآه الدكتور: «أول مرة يوصل، والثانية
+     ما توصل» (سجلّ ١٩:٠٢ و١٩:٠٣ لنفس الرقم، كلاهما confirmed). */
+  const cutoff = Math.floor((Number(since) || Date.now()) / 1000) - 2
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt) await new Promise((wait) => setTimeout(wait, 700))
+    try {
+      const rows = await cachedMessagesForCatchup(jid, 8)
+      const hit = (rows || []).find((row) => row?.fromMe
+        && String(row?.body || '').trim() === wanted
+        && Number(row?.timestamp || 0) >= cutoff)
+      if (hit) return hit
+    } catch {
+      // فشل الفحص ليس دليل وصول — نُكمل إلى الحكم بالفشل.
+    }
+  }
+  return null
+}
+
+async function sendTextWithRecovery(rawJid, rawText) {
+  const text = String(rawText || '').trim()
+  if (!text) throw new Error('empty-message')
+  const jid = await resolveSendJid(rawJid)
+  await ensureBridgeFunctions()
+  await ensureIndividualChatExists(jid)
+  rememberAutomatedSend(jid, text)
+  let lastError = null
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await ensureBridgeFunctions()
+      // New WhatsApp Web builds can complete the underlying send but fail to
+      // serialize the resulting message model back to whatsapp-web.js. Waiting
+      // for the page send action is authoritative; an empty wrapper result is
+      // then a compatibility notice, not a false delivery failure.
+      const startedAt = Date.now()
+      const sent = await client.sendMessage(jid, text, {
+        sendSeen: false,
+        waitUntilMsgSent: true,
+      })
+      /* لا نُصدّق نجاحاً بلا رسالة — ولا نُصدّق فشلاً بلا فحص.
+         الغلاف الفارغ كان يُحسب «ملاحظة توافق» فتُعلَن الحملة ناجحةً ولم تصل
+         أحداً؛ ثم صار فشلاً صريحاً فوقع الضرر المعاكس: بناء واتساب الحالي
+         يُسلّم الرسالة ولا يُسلسِل نموذجها، فأُعلن التعثّر مرتين **وأُعيد
+         الإرسال فوصل الدكتورَ نصّان متطابقان** (لقطته ٧:٣٦ م).
+         الحكم الآن من المحادثة نفسها لا من قيمة الإرجاع: نفتّش آخر رسائل
+         المحادثة عن رسالةٍ منّا بنفس النص خلال ثوانٍ. وُجدت = وصلت فعلاً،
+         لم توجد = فشلٌ حقيقي. لا نجاحَ كاذب ولا تكرارَ على القارئ. */
+      if (!sent) {
+        const proof = await confirmSentByBody(jid, text, startedAt)
+        if (proof) {
+          log('warn', 'send_completed_without_serialized_message', { jid, confirmed: true })
+          return proof
+        }
+        throw new Error('send-not-serialized')
+      }
+      return sent
+    } catch (error) {
+      lastError = error
+      const message = String(error?.message || error)
+      /* عادت `send-not-serialized` إلى إعادة المحاولة — وصارت **آمنة** الآن:
+         الشاهد مقيَّدٌ بلحظة هذا الإرسال، فلو كانت الرسالة قد وصلت فعلاً
+         لعُثر عليها ولما وصلنا إلى هنا أصلاً. أي أن إعادة المحاولة لا تقع إلا
+         حين لم تُنشأ رسالةٌ قط — فلا تكرار على القارئ ولا صمتٌ على الحملة. */
+      if (attempt > 0 || !/getChat|Execution context|detached|WWebJS|evaluate|reinjection|send-not-serialized/i.test(message)) break
+      log('warn', 'send_recovering_webjs_helpers', { jid, error: message })
+      try { await client.inject() } catch { /* the serialized preflight retries below */ }
+      await new Promise((resolveWait) => setTimeout(resolveWait, 900))
+    }
+  }
+  throw lastError || new Error('whatsapp-send-failed')
+}
+
+function selfChatJid() {
+  const configured = String(config.ownerChatId || '').trim()
+  if (configured) return configured
+  return String(client.info?.wid?._serialized || '').trim()
+}
+
+/* جملة الإيقاظ بخطّ يد الدكتور — نفس تطبيع العقل حرفاً بحرف (WAKE_PHRASES).
+   حتى ٧ أغسطس كان الدكتور إن كتبها بيده أُغلقت جلسة البوت في تلك المحادثة:
+   الجسر يقرأ كل ما يكتبه بيده «تدخّلاً بشرياً» فيُنحّي البوت. فكان يجرّب
+   البوت من جهازه فلا يردّ أبداً — لا لعطبٍ في العقل، بل لأن رسالته لا تُقرأ
+   إيقاظاً أصلاً. وهي في الحقيقة أوضح ما يكون: «ارجع يا بوت». */
+const OWNER_WAKE_PHRASES = new Set(['موقع د احمد', 'موقع د الفيلكاوي'])
+function normalizeWakeText(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+    .replace(/[إأآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/[ؤئ]/g, 'ء')
+    .replace(/ـ/g, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+function isOwnerWakePhrase(value) {
+  return OWNER_WAKE_PHRASES.has(normalizeWakeText(value))
+}
+
+function isOwnerPrivateChat(value) {
+  const jid = String(value || '').trim().toLowerCase()
+  const candidates = [
+    String(config.ownerChatId || '').trim().toLowerCase(),
+    String(client.info?.wid?._serialized || '').trim().toLowerCase(),
+  ].filter(Boolean)
+  if (candidates.includes(jid)) return true
+  const number = jid.split('@', 1)[0].replace(/\D/g, '')
+  return Boolean(number && candidates.some((candidate) => candidate.split('@', 1)[0].replace(/\D/g, '') === number))
+}
+
+async function warmPhoneAliasesAndContactsInBackground() {
+  try {
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('warmup-timeout')), 15_000))
+    const task = (async () => {
+      let contacts = []
+      try {
+        contacts = await client.getContacts()
+      } catch (e) {
+        log('warn', 'get_contacts_failed', { error: String(e?.message || e) })
+      }
+      const compact = contacts.flatMap((contact) => {
+        const jid = String(contact?.id?._serialized || '')
+        if (!jid.endsWith('@c.us') || !/^\d{7,15}@c\.us$/.test(jid)) return []
+        /* دفتر هاتف الدكتور الحقيقي فقط (شكوى ٣١ يوليو: امتلأ دفتر الأسماء
+           بمجهولين «ضافهم من كيفه»): جهة محفوظة عنده فعلاً وباسمٍ حقيقي —
+           لا كل من راسله يوماً باسمه الذي سمّى به نفسه. */
+        if (contact?.isMyContact !== true) return []
+        const name = String(contact.name || contact.shortName || '').trim().slice(0, 120)
+        if (!name) return []
+        return [{ jid, name }]
+      })
+      if (compact.length > 0) {
+        let accepted = 0
+        for (let offset = 0; offset < compact.length; offset += 350) {
+          const response = await safeEmit('contacts-sync', { contacts: compact.slice(offset, offset + 350) })
+          accepted += Number(response?.accepted || 0)
+        }
+        log('info', 'contacts_synced', { accepted })
+      }
+    })()
+    await Promise.race([task, timeout])
+  } catch (err) {
+    log('warn', 'warmup_background_completed_with_notice', { notice: String(err?.message || err) })
+  }
+}
+
+// Event: change_state
+client.on('change_state', (state) => {
+  const value = String(state || '').toUpperCase()
+  log('info', 'change_state', { state: value })
+  
+  if (value === 'CONNECTED' && (!runtime.connected || runtime.status !== 'connected')) {
+    const snapshot = transitionState('connected', true, '')
+    void safeEmit('status', snapshot)
+    scheduleMissedMessageCatchup(2_000)
+    return
+  }
+  if (runtime.connected && ['CONFLICT', 'UNPAIRED_IDLE', 'TIMEOUT'].includes(value)) {
+    const snapshot = transitionState('reconnecting', false, value.toLowerCase())
+    void safeEmit('status', snapshot)
+  }
+})
+
+// Event: auth_failure
+client.on('auth_failure', async (message) => {
+  const snapshot = transitionState('auth_failure', false, String(message || 'authentication_failed'))
+  log('error', 'auth_failure', { error: runtime.lastError, stateSeq: snapshot.stateSeq })
+  await safeEmit('status', snapshot)
+  
+  if (!shuttingDown) {
+    shuttingDown = true
+    await safeGracefulCloseClient()
+    process.exit(76)
+  }
+})
+
+// Event: disconnected
+client.on('disconnected', async (reason) => {
+  const reasonStr = String(reason || 'disconnected').toUpperCase()
+  log('warn', 'disconnected', { reason: reasonStr, stateSeq: runtime.stateSeq })
+  
+  const isExplicitLogout = ['LOGOUT', 'UNPAIRED', 'LOGGED_OUT'].includes(reasonStr)
+  
+  if (isExplicitLogout) {
+    const snapshot = transitionState('disconnected', false, `explicit_logout:${reasonStr}`)
+    await safeEmit('status', snapshot)
+    if (!shuttingDown) {
+      shuttingDown = true
+      await safeGracefulCloseClient()
+      process.exit(76) // Exit code 76 = clear session and re-pair
+    }
+  } else {
+    const snapshot = transitionState('reconnecting', false, `temporary_disconnect:${reasonStr}`)
+    await safeEmit('status', snapshot)
+    if (!shuttingDown) {
+      shuttingDown = true
+      await safeGracefulCloseClient()
+      process.exit(75) // Exit code 75 = soft restart without removing session
+    }
+  }
+})
+
+async function safeGracefulCloseClient() {
+  try {
+    await client.destroy()
+  } catch {
+    /* ignore close errors */
+  }
+  await new Promise((r) => setTimeout(r, 1000))
+}
+
+async function processIncomingMessage(message, source = 'live', allowReply = true) {
+  runtime.lastActivityAt = Date.now()
+  if (message.fromMe || message.from === 'status@broadcast' || !isIndividualJid(message.from)) return
+  if (isOwnerPrivateChat(message.from)) {
+    log('info', 'owner_private_chat_ignored', { from: message.from })
+    return
+  }
+  const messageId = messageIdOf(message)
+  const contentKey = contentKeyOf(message)
+  if (messageId && processedInboundIds.has(messageId)) {
+    if (source === 'catchup') log('info', 'catchup_message_already_processed', { from: message.from, messageId })
+    return
+  }
+  if (processedContentKeys.has(contentKey)) {
+    log('info', 'inbound_skipped_by_content_key', { from: message.from, messageId, source })
+    return
+  }
+  const flightKey = messageId || contentKey
+  if (inboundInFlight.has(flightKey)) return
+  inboundInFlight.add(flightKey)
+  try {
+    let result = await emit('incoming', {
+      jid: message.from,
+      text: String(message.body || '').slice(0, 12_000),
+      hasMedia: Boolean(message.hasMedia),
+      mediaType: String(message.type || 'text').slice(0, 80),
+      messageId,
+      timestamp: Number(message.timestamp || 0),
+      deliverySource: source,
+    })
+    result = await recoverLegacySilentDecision(message, result, source)
+    const serverReply = sanitizeServerReply(result?.reply?.text)
+    const reason = String(result?.reason || '').toLowerCase()
+    const localFallback = !serverReply && ['no-grounded-answer', 'duplicate', 'duplicate-delivery'].includes(reason)
+      ? SAFE_CLARIFY_REPLY
+      : ''
+    const outgoingReply = serverReply || localFallback
+    if (outgoingReply && (localFallback || ['reply', 'reply-and-escalate'].includes(result?.action))) {
+      /* دفعة الانقطاع تُغذّى للعقل كلها (سياقاً وذاكرةً)، لكن الإنسان يستلم
+         رداً واحداً عن آخر رسائله لا وابلاً بعدد ما أرسل أثناء الغياب. */
+      if (!allowReply) {
+        log('info', 'catchup_backlog_reply_collapsed', { from: message.from, messageId })
+      } else if (repeatedReplySuppressed(message.from, outgoingReply, source, {
+        userTyped: String(message.body || '').trim().length > 0,
+      })) {
+        log('info', 'duplicate_reply_suppressed', { from: message.from, source, messageId })
+      } else {
+        await sendTextWithRecovery(message.from, outgoingReply)
+        log('info', source === 'catchup' ? 'catchup_reply_sent' : 'incoming_reply_sent', { from: message.from, action: result.action, reason: result.reason || '', messageId })
+      }
+    } else {
+      log('info', source === 'catchup' ? 'catchup_processed_without_reply' : 'incoming_processed_without_reply', { from: message.from, action: result?.action || 'none', reason: result?.reason || '', messageId })
+    }
+    // لا نثبت الرسالة إلا بعد اكتمال ردها فعلياً؛ إن فشل الإرسال تبقى قابلة
+    // للاسترجاع، ويعيد الخادم الرد المخزن لنفس messageId بلا فقد.
+    rememberProcessedInbound(message)
+  } catch (error) {
+    runtime.lastError = error instanceof Error ? error.message : String(error)
+    log('error', source === 'catchup' ? 'catchup_message_failed' : 'incoming_message_failed', { from: message.from, error: runtime.lastError, messageId })
+    if (DETACHED_CONTEXT.test(runtime.lastError)) await selfHealDetachedContext('incoming-reply', runtime.lastError)
+  } finally {
+    inboundInFlight.delete(flightKey)
+  }
+}
+
+function enqueueIncomingMessage(message, source = 'live', allowReply = true) {
+  const jid = String(message?.from || '').trim()
+  const previous = inboundQueues.get(jid) || Promise.resolve()
+  const queued = previous.catch(() => {}).then(() => processIncomingMessage(message, source, allowReply))
+  inboundQueues.set(jid, queued)
+  void queued.finally(() => {
+    if (inboundQueues.get(jid) === queued) inboundQueues.delete(jid)
+  })
+  return queued
+}
+
+async function catchupChatSummaries() {
+  return client.pupPage.evaluate(() => {
+    const models = window.require('WAWebCollections').Chat.getModelsArray()
+    return models.flatMap((chat) => {
+      try {
+        const jid = String(chat?.id?._serialized || chat?.id?.toString?.() || '')
+        if (!jid) return []
+        return [{
+          jid,
+          unreadCount: Number(chat?.unreadCount || 0),
+          timestamp: Number(chat?.timestamp || chat?.t || chat?.lastMessage?.t || 0),
+        }]
+      } catch {
+        // نموذج تالف واحد لا يجوز أن يُسقط استرجاع كل المحادثات.
+        return []
+      }
+    })
+  })
+}
+
+async function cachedMessagesForCatchup(chatJid, limit) {
+  return client.pupPage.evaluate((wantedJid, wantedLimit) => {
+    const chats = window.require('WAWebCollections').Chat
+    const chat = chats.get(wantedJid) || chats.getModelsArray().find((candidate) => {
+      try { return String(candidate?.id?._serialized || candidate?.id?.toString?.() || '') === wantedJid } catch { return false }
+    })
+    if (!chat) return []
+    const rows = chat.msgs.getModelsArray().slice(-Math.max(1, wantedLimit))
+    return rows.flatMap((message) => {
+      try {
+        if (message?.isNotification) return []
+        const id = String(message?.id?._serialized || message?.id?.toString?.() || '')
+        const remote = String(message?.from?._serialized || message?.id?.remote?._serialized || message?.id?.remote || wantedJid)
+        return [{
+          id: { _serialized: id },
+          fromMe: Boolean(message?.id?.fromMe),
+          from: remote,
+          body: String(message?.body || message?.caption || ''),
+          hasMedia: Boolean(message?.isMedia || message?.mediaObject),
+          type: String(message?.type || 'text'),
+          timestamp: Number(message?.t || message?.timestamp || 0),
+        }]
+      } catch {
+        return []
+      }
+    })
+  }, chatJid, limit)
+}
+
+async function catchUpMissedMessages() {
+  if (catchupPromise || shuttingDown || !runtime.connected) return catchupPromise
+  catchupPromise = (async () => {
+    let recovered = 0
+    let stage = 'prepare'
+    try {
+      await ensureBridgeFunctions()
+      stage = 'get-chats'
+      let chats = []
+      try {
+        chats = await catchupChatSummaries()
+      } catch (firstError) {
+        // WhatsApp Web قد يعلن ready قبل اكتمال جميع serializers. نعيد الحقن
+        // مرة واحدة داخل نفس الجولة بدلاً من تأجيل الرسائل خمس دقائق.
+        log('warn', 'catchup_get_chats_reinjecting', { error: String(firstError?.message || firstError) })
+        await client.inject()
+        await new Promise((resolveWait) => setTimeout(resolveWait, 900))
+        chats = await catchupChatSummaries()
+      }
+      stage = 'scan-chats'
+      const since = Math.max(startupCatchupFloor, inboundCheckpoint.lastTimestamp - 5 * 60)
+      const recentChats = chats
+        .filter((chat) => isIndividualJid(chat?.jid)
+          && !isOwnerPrivateChat(chat.jid)
+          && (Number(chat.unreadCount || 0) > 0 || Number(chat.timestamp || 0) >= since))
+        .sort((left, right) => Number(left.timestamp || 0) - Number(right.timestamp || 0))
+        .slice(-100)
+      const candidates = []
+      for (const summary of recentChats) {
+        stage = 'fetch-chat-messages'
+        const limit = Math.max(12, Math.min(50, Number(summary.unreadCount || 0) + 8))
+        let messages = []
+        try {
+          messages = await cachedMessagesForCatchup(summary.jid, limit)
+        } catch (error) {
+          log('warn', 'catchup_chat_fetch_failed', { jid: summary.jid, error: String(error?.message || error) })
+          continue
+        }
+        for (const message of messages) {
+          const id = messageIdOf(message)
+          const timestamp = Number(message?.timestamp || 0)
+          if (message?.fromMe || !isIndividualJid(message?.from) || isOwnerPrivateChat(message.from)) continue
+          if (id && processedInboundIds.has(id)) continue
+          if (timestamp > 0 && timestamp < since) continue
+          candidates.push(message)
+        }
+      }
+      stage = 'process-candidates'
+      candidates.sort((left, right) => Number(left.timestamp || 0) - Number(right.timestamp || 0))
+      /* آخر رسالة لكل محادثة هي وحدها التي يحق لها الرد؛ ما قبلها يدخل
+         ذاكرة العقل صامتاً. (شكوى ٣١ يوليو: «مليون رد» بعد عودة الجسر.) */
+      const lastReplyEligible = new Map()
+      for (const message of candidates) {
+        const key = String(message?.from || '')
+        lastReplyEligible.set(key, messageIdOf(message) || `${key}:${Number(message?.timestamp || 0)}`)
+      }
+      for (const message of candidates) {
+        const key = String(message?.from || '')
+        const marker = messageIdOf(message) || `${key}:${Number(message?.timestamp || 0)}`
+        const before = processedInboundIds.has(messageIdOf(message))
+        await enqueueIncomingMessage(message, 'catchup', lastReplyEligible.get(key) === marker)
+        if (!before && processedInboundIds.has(messageIdOf(message))) recovered += 1
+      }
+      inboundCheckpoint.lastTimestamp = Math.max(inboundCheckpoint.lastTimestamp, Math.floor(Date.now() / 1000) - 60)
+      persistInboundCheckpoint()
+      runtime.lastCatchupAt = new Date().toISOString()
+      runtime.lastCatchupRecovered = recovered
+      runtime.lastCatchupError = ''
+      consecutiveDetachedCatchups = 0
+      log('info', 'missed_message_catchup_completed', { recovered, chats: recentChats.length, candidates: candidates.length })
+    } catch (error) {
+      runtime.lastCatchupAt = new Date().toISOString()
+      const detail = String(error?.stack || error?.message || error || 'unknown')
+      runtime.lastCatchupError = `${stage}: ${detail}`.slice(0, 300)
+      log('warn', 'missed_message_catchup_failed', { error: runtime.lastCatchupError })
+      if (DETACHED_CONTEXT.test(runtime.lastCatchupError)) {
+        consecutiveDetachedCatchups += 1
+        if (consecutiveDetachedCatchups >= 2) await selfHealDetachedContext('catchup', runtime.lastCatchupError)
+      } else {
+        consecutiveDetachedCatchups = 0
+      }
+    } finally {
+      catchupPromise = null
+    }
+  })()
+  return catchupPromise
+}
+
+function scheduleMissedMessageCatchup(delayMs = 4_000) {
+  setTimeout(() => void catchUpMissedMessages(), delayMs).unref()
+}
+
+// أحداث واتساب الحية تُسلسل لكل محادثة حتى لا تتجاوز رسالةٌ سابقتها.
+client.on('message', (message) => {
+  void enqueueIncomingMessage(message, 'live')
+})
+
+/* أي رسالة يكتبها الدكتور بيده تغلق جلسة البوت في تلك المحادثة. رسائل
+   البوت والحملات تمر من sendTextWithRecovery فتُعلَّم محلياً قبل أن يطلق
+   WhatsApp حدث message_create، فلا تُحسب تدخلاً يدوياً ولا تعيد فتح إرسال. */
+client.on('message_create', async (message) => {
+  if (!message.fromMe) return
+  const jid = String(message.to || '').trim()
+  const text = String(message.body || '')
+  if (!isIndividualJid(jid) || consumeAutomatedSend(jid, text)) return
+  /* الاستثناء الوحيد: أن يكتب الدكتور جملة الإيقاظ بنفسه. حينها لا يُنحّى
+     البوت بل يُستدعى — في محادثة الزائر تعني «تولَّ أنت»، وفي محادثته مع
+     نفسه تعني «أرني كيف تردّ». والردّ يمرّ من مسار الإرسال المعتمد فيُعلَّم
+     آلياً، فلا يعود إلينا تدخّلاً يدوياً ولا تدور حلقة. */
+  if (isOwnerWakePhrase(text)) {
+    try {
+      const result = await emit('incoming', {
+        jid,
+        text: text.slice(0, 12_000),
+        hasMedia: false,
+        mediaType: 'text',
+        messageId: String(message.id?._serialized || '').slice(0, 240),
+        timestamp: Number(message.timestamp || 0),
+        deliverySource: 'owner-wake',
+      })
+      const reply = sanitizeServerReply(result?.reply?.text)
+      if (reply && ['reply', 'reply-and-escalate'].includes(result?.action)) {
+        await sendTextWithRecovery(jid, reply)
+        log('info', 'owner_wake_reopened_bot', { jid, self: isOwnerPrivateChat(jid) })
+      } else {
+        log('info', 'owner_wake_without_reply', { jid, reason: String(result?.reason || 'none') })
+      }
+    } catch (error) {
+      runtime.lastError = error instanceof Error ? error.message : String(error)
+      log('error', 'owner_wake_failed', { jid, error: runtime.lastError })
+    }
+    return
+  }
+  if (isOwnerPrivateChat(jid)) return
+  try {
+    await emit('manual', {
+      jid,
+      messageId: String(message.id?._serialized || '').slice(0, 240),
+      timestamp: Number(message.timestamp || 0),
+    })
+    log('info', 'manual_message_closed_bot_session', { jid })
+  } catch (error) {
+    runtime.lastError = error instanceof Error ? error.message : String(error)
+    log('error', 'manual_takeover_signal_failed', { jid, error: runtime.lastError })
+  }
+})
+
+/* واتساب يفصل الجهاز المرتبط بعد طول «عدم الاستخدام» حتى لو ظل WebSocket
+   أخضر واستمر الجسر في استقبال الرسائل. هذا ما أثبتته شاشة الهاتف: الجلسة
+   رُبطت ٣٠ يوليو ٢١:٥٣ وظلّ تاريخ آخر استخدام عند لحظة الربط، مع أن الجسر
+   يعالج رسائل حية يومياً. نبضة حضور واحدة كل يوم تجعل واتساب يرى الجهاز
+   مستخدماً، ثم نعيده فوراً إلى unavailable حتى لا يبقى الحساب Online ولا
+   تتحول إشعارات الهاتف إلى الجسر. لا نرسل رسالة ولا نقرأ محادثة ولا نغيّرها. */
+async function pulseDeviceActivity(source = 'daily') {
+  if (deviceActivityPulseBusy || shuttingDown || !runtime.connected) return false
+  deviceActivityPulseBusy = true
+  try {
+    await client.sendPresenceAvailable()
+    await new Promise((resolveWait) => setTimeout(resolveWait, 5_000))
+    await client.sendPresenceUnavailable()
+    runtime.lastDeviceActivityPulseAt = new Date().toISOString()
+    runtime.lastDeviceActivityPulseError = ''
+    log('info', 'device_activity_presence_pulse_completed', { source })
+    await safeEmit('heartbeat', stateSnapshot(), { retries: 1, timeoutMs: 8_000 })
+    return true
+  } catch (error) {
+    runtime.lastDeviceActivityPulseError = String(error?.message || error).slice(0, 240)
+    log('warn', 'device_activity_presence_pulse_failed', {
+      source,
+      error: runtime.lastDeviceActivityPulseError,
+    })
+    try { await client.sendPresenceUnavailable() } catch { /* لا نترك الحساب Online بعد فشلٍ جزئي */ }
+    return false
+  } finally {
+    deviceActivityPulseBusy = false
+  }
+}
+
+function scheduleDeviceActivityPulse() {
+  if (!deviceActivityPulseTimer) {
+    deviceActivityPulseTimer = setInterval(
+      () => void pulseDeviceActivity('daily'),
+      config.deviceActivityPulseMs,
+    )
+    deviceActivityPulseTimer.unref()
+  }
+  setTimeout(() => void pulseDeviceActivity('ready'), 20_000).unref()
+}
+
+function startHeartbeatAndPolling() {
+  if (heartbeatTimer) return
+  heartbeatTimer = setInterval(() => {
+    if (heartbeatBusy) return
+    heartbeatBusy = true
+    void (async () => {
+      await safeEmit('heartbeat', stateSnapshot(), { retries: 2, timeoutMs: 8_000 })
+    })().finally(() => { heartbeatBusy = false })
+  }, config.heartbeatMs)
+  heartbeatTimer.unref()
+
+  if (!pollTimer) {
+    pollTimer = setInterval(() => void pollCommands(), config.pollMs)
+    pollTimer.unref()
+  }
+  if (!catchupTimer) {
+    // شبكة أمان دورية لأحداث WhatsApp Web التي قد تضيع أثناء تحديث الإطار
+    // من دون أن يطلق المكتبة حدث disconnected صريحاً.
+    catchupTimer = setInterval(() => void catchUpMissedMessages(), 5 * 60_000)
+    catchupTimer.unref()
+  }
+}
+
+async function pollCommands() {
+  if (commandBusy || shuttingDown) return
+  commandBusy = true
+  try {
+    const response = await serverRequest('/api/whatsapp/commands', { method: 'GET', retries: 1 })
+    if (response?.command) await executeCommand(response.command)
+  } catch (error) {
+    runtime.lastError = error instanceof Error ? error.message : String(error)
+  } finally {
+    commandBusy = false
+  }
+}
+
+async function executeCommand(command) {
+  if (!command?.id || !command.type) return
+  try {
+    if (deliveredCommandIds.has(String(command.id)) && ['send-message', 'send-self-message'].includes(command.type)) {
+      /* الإقرار المتأخّر لأمرٍ سُلّم فعلاً يحتاج البصمة كإقرار الأصل تماماً —
+         وإلا حُسبت رسالةٌ وصلت مرّتين: مرّةً ناجحة ومرّةً «فاشلة». */
+      const deliveredJid = command.type === 'send-self-message' ? selfChatJid() : command.payload?.jid
+      await serverRequest('/api/whatsapp/commands', {
+        body: { commandId: command.id, ok: true, delivery: { recipientFingerprint: await deliveredFingerprint(deliveredJid) } },
+        retries: 2,
+      })
+      log('info', 'duplicate_command_acknowledged_without_resend', { commandId: command.id, commandType: command.type })
+      return
+    }
+    if (command.type === 'restart') {
+      shuttingDown = true
+      await safeEmit('status', transitionState('restarting', false, 'command_restart'))
+      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      await safeGracefulCloseClient()
+      process.exit(75) // Exit code 75 = soft restart
+    } else if (command.type === 'repair-session' || command.type === 'repair') {
+      shuttingDown = true
+      await safeEmit('status', transitionState('pairing', false, 'command_repair'))
+      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      try { await client.logout() } catch { /* ignore if disconnected */ }
+      await safeGracefulCloseClient()
+      process.exit(76) // Exit code 76 = re-pair
+    } else if (command.type === 'pulse-device-activity') {
+      const pulsed = await pulseDeviceActivity('panel')
+      if (!pulsed) throw new Error(runtime.lastDeviceActivityPulseError || 'device-activity-pulse-failed')
+      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      log('info', 'command_device_activity_pulsed', { commandId: command.id })
+    } else if (command.type === 'send-message') {
+      const jid = command.payload?.jid
+      const text = applyMergeFieldSafetyNet(command.payload?.text)
+      if (!jid || !text) throw new Error('invalid-send-message-command')
+      await sendTextWithRecovery(jid, text)
+      rememberDeliveredCommand(command.id)
+      await serverRequest('/api/whatsapp/commands', {
+        body: { commandId: command.id, ok: true, delivery: { recipientFingerprint: await deliveredFingerprint(jid) } },
+        retries: 1,
+      })
+      log('info', 'command_message_sent', { jid, commandId: command.id })
+    } else if (command.type === 'send-audio') {
+      /* ترقية ٣١ يوليو — القراءة تُسمع داخل واتساب: فرعٌ جديد تماماً لا يمس
+         مسار الرسائل النصية المثبت. الملف يُجلب من قاعدة النشر نفسها ويُرسل
+         تسجيلاً صوتياً؛ وفشله يُعلَن أمراً فاشلاً وحده — الرد النصي بلينكه
+         وصل قبله، فلا يخسر المستخدم شيئاً. */
+      const jid = command.payload?.jid
+      const url = String(command.payload?.url || '').trim()
+      if (!jid || !/^https:\/\/[\w.-]+\/\S+$/.test(url)) throw new Error('invalid-send-audio-command')
+      await ensureBridgeFunctions()
+      await ensureIndividualChatExists(await resolveSendJid(jid))
+      const media = await MessageMedia.fromUrl(url, { unsafeMime: true })
+      await client.sendMessage(jid, media, { sendAudioAsVoice: false, sendSeen: false })
+      rememberDeliveredCommand(command.id)
+      await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: true }, retries: 1 })
+      log('info', 'command_audio_sent', { jid: maskAddress(jid), commandId: command.id })
+    } else if (command.type === 'send-self-message') {
+      const jid = selfChatJid()
+      const text = applyMergeFieldSafetyNet(command.payload?.text)
+      if (!jid) throw new Error('self-chat-unavailable')
+      if (!text) throw new Error('invalid-self-message-command')
+      await sendTextWithRecovery(jid, text)
+      rememberDeliveredCommand(command.id)
+      await serverRequest('/api/whatsapp/commands', {
+        body: { commandId: command.id, ok: true, delivery: { recipientFingerprint: await deliveredFingerprint(jid) } },
+        retries: 1,
+      })
+      log('info', 'command_self_message_sent', { jid, commandId: command.id })
+    } else {
+      throw new Error(`unsupported-command:${String(command.type).slice(0, 80)}`)
+    }
+  } catch (caught) {
+    const rawError = caught instanceof Error ? caught.message : String(caught)
+    /* سبب التعثر يظهر للدكتور في «أسباب الفشل» بلوحة البث — فليكن عربياً
+       مفهوماً لا حطامَ مكتبةٍ داخلية. */
+    const error = rawError.includes('recipient-not-on-whatsapp')
+      ? 'الرقم ليس مسجلاً في واتساب.'
+      : rawError.includes('chat-create-failed')
+        ? 'تعذّر فتح محادثة مع هذا الرقم رغم أنه على واتساب — أعد المحاولة.'
+        : /getChat/i.test(rawError)
+          ? 'واتساب ويب لم يجهّز هذه المحادثة بعد — أعد محاولة الفاشل.'
+          : rawError
+    const sendCommand = ['send-message', 'send-self-message'].includes(command.type)
+    const detachedContext = /detached\s*Frame|Execution context.*destroyed|Target closed|webjs-reinjection-timeout|Cannot find context with specified id/i.test(rawError)
+    const attempts = Number(command.attempts || 0)
+    if (sendCommand && detachedContext && attempts < 3) {
+      await serverRequest('/api/whatsapp/commands', {
+        body: { commandId: command.id, retry: true, error: 'bridge-session-refresh' },
+        retries: 2,
+      })
+      log('warn', 'command_requeued_after_detached_frame', { commandId: command.id, commandType: command.type, attempts })
+      shuttingDown = true
+      await safeEmit('status', transitionState('restarting', false, 'detached_frame_refresh'))
+      await safeGracefulCloseClient()
+      process.exit(75)
+      return
+    }
+    await serverRequest('/api/whatsapp/commands', { body: { commandId: command.id, ok: false, error }, retries: 1 })
+    log('error', 'command_failed', { commandId: command.id, commandType: command.type, error })
+  }
+}
+
+const healthServer = createServer((req, res) => {
+  if (req.url !== '/healthz' && req.url !== '/health') {
+    res.writeHead(404).end()
+    return
+  }
+  const body = Buffer.from(JSON.stringify({
+    status: runtime.status,
+    connected: runtime.connected,
+    deviceId: config.deviceId,
+    startedAt: runtime.startedAt,
+    lastWebhookAt: runtime.lastWebhookAt,
+    syncPercent: runtime.syncPercent,
+    lastCatchupAt: runtime.lastCatchupAt,
+    lastCatchupRecovered: runtime.lastCatchupRecovered,
+    lastCatchupError: runtime.lastCatchupError,
+    lastDeviceActivityPulseAt: runtime.lastDeviceActivityPulseAt,
+    lastDeviceActivityPulseError: runtime.lastDeviceActivityPulseError,
+    deviceActivityPulseIntervalMs: config.deviceActivityPulseMs,
+  }))
+  res.writeHead(runtime.status === 'auth_failure' ? 503 : 200, {
+    'content-type': 'application/json',
+    'content-length': body.length,
+    'cache-control': 'no-store',
+  })
+  res.end(body)
+})
+
+healthServer.listen(config.healthPort, '127.0.0.1')
+
+async function shutdown(signal) {
+  if (shuttingDown) return
+  shuttingDown = true
+  log('info', 'shutdown_initiated', { signal })
+  await safeEmit('status', transitionState('disconnected', false, `signal:${signal}`), { retries: 0 })
+  await safeGracefulCloseClient()
+  healthServer.close(() => process.exit(0))
+  setTimeout(() => process.exit(0), 3_000).unref()
+}
+
+process.on('SIGTERM', () => void shutdown('SIGTERM'))
+process.on('SIGINT', () => void shutdown('SIGINT'))
+process.on('uncaughtException', (error) => {
+  log('error', 'uncaught_exception', { error: error?.stack || error?.message || String(error) })
+  process.exit(70)
+})
+process.on('unhandledRejection', (error) => {
+  log('error', 'unhandled_rejection', { error: error?.stack || error?.message || String(error) })
+  process.exit(71)
+})
+
+log('info', 'bridge_starting', { deviceId: config.deviceId, sessionDir: config.sessionDir, instanceId: runtime.instanceId })
+await safeEmit('status', transitionState('starting', false, ''), { retries: 0 })
+await client.initialize()

@@ -1,0 +1,264 @@
+{
+  "slug": "past-mistakes-still-persist-in-the-age",
+  "bridgeAfter": [
+    10,
+    27
+  ],
+  "breathAfter": [
+    33
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "نجتمع متباعدين في مجالس عديدة، وأسمع العجب. ويا للعجب.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "منهم من يتحدث عن مستوى أبنائه بعد تفعيل مدرس خصوصي لهم، سواء في المنزل أو أونلاين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ومنهم من يبحث لأبنائه مدرسا لأنه لا يفهم كيف يستخدم المنصة والتعلم عن بعد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويا لهول ما نسمع.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "عفوا، نحن في زمن التعليم الإلكتروني وعن بعد. ما الحاجة إلى مدرس خصوصي؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ألا يكفي المُعلِّم الذي يحضر إلى المدرسة ويعرض نفسه للعدوى من أجل تدريس أبنائكم أونلاين؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فإذا كان هناك مدرس خصوصي أونلاين، ومنهم من يحضر إلى المنزل، فلماذا المُعلِّم والمدرسة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أخطاء الماضي ما زالت. فرغم التطور التعليمي، ما زال المدرس الخصوصي حاضرا،⏸ بل أكثر من الماضي.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "نحتاج إلى هكر يدخل على المنظومة التعليمية المنزلية ويصلحها بشكل جذري.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يكفي استسخافا في العملية التعليمية الإلكترونية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فلا بد أن نغرس فكر التعليم الإلكتروني في عقول أولياء الأمور قبل أبنائهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا الأهل أولا؟⏸ أليس الطالب هو المعني؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لأنهم العامل المؤثر، والذي قد يؤثر على فكر أبنائهم.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويزرعون في عقولهم أن التعليم الإلكتروني وعن بعد مسار حياة لا بد أن يعتادوا عليه.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن يتحدوا أنفسهم، ويدخلوا المجتمع الرقمي، ليكونوا عناصر رقمية فعالة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والمسؤولية موزعة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولا بد أن نقول إن التربية والتعليم مسؤولة في محاربة ظاهرة الدروس الخصوصية المنزلية والأونلاين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن يكون هناك مراقبة إلكترونية، وتحميل أولياء الأمور المسؤولية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كما أن المسؤولية الأولى تقع على وزارة التربية والتعليم، والعمل على توعية وتطوير الفكر المجتمعي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فالقناعة كنز. وإن لم يقتنع مجتمعنا بتوظيف التعليم الإلكتروني وعن بعد.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بأنه تعليم فعال ومؤثر في العملية التعليمية التعلمية، فلن نحقق الأهداف المرجوة من هذا التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ودعونا نقف وقفة تأمل للوضع الحاصل:⏸ الدروس الخصوصية لا تسمن من جوع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وما هي إلا عنصر استهلاكي لميزانية بيوتنا، وعبء كبير على أولياء الأمور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "خاصة إذا كان هناك عدد من الأبناء والجميع يحتاج إلى مدرسين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والضرر ليس ماديا فقط.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فللدروس الخصوصية سلبيات كثيرة غير المادية، قد تصل إلى فكر أبنائنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أو سلوكيات قد تضر بأبنائنا، وأفعال خطيرة قد تقع عليهم ونحن في غفلة عنها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا تقع الكارثة على الأسرة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فما البديل العملي؟⏸ الأهل يخافون على مستوى أبنائهم.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال يقترح:⏸ أن نشجع أولياء الأمور على الاعتماد على أنفسهم في مراقبة أبنائهم أثناء الدروس أونلاين.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتشجيعهم بشتى السبل على أن التعليم الحديث أفضل، ليستمروا دون تذمر أو تنمر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن نبعدهم عن الآراء السلبية الخاصة بالتعليم الإلكتروني وعن بعد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهو الخيار الأمثل والوحيد في هذه الظروف العالمية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ولننبذ عادات الدروس الخصوصية، ونحفز بعضنا البعض للاستمرار في هذا التعليم الإلكتروني المميز.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا يقع جزء من المسؤولية على وسائل الإعلام،⏸ ولا بد أن تكون حاضرة باستمرار لمحاربة هذه الظاهرة البغيضة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

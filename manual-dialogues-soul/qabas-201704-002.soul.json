@@ -1,0 +1,271 @@
+{
+  "slug": "qabas-201704-002",
+  "bridgeAfter": [
+    15,
+    29
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "جلست طويلا في أحد أسفاري للدول الأوروبية، أنظر إلى الطبيعة الجميلة.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من الزهور والورود الهجينة التي لا يكاد بها رائحة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "والأشجار التي بدأت تثمر ثمارا اختلفت عما قبل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والفراش يتطاير حولنا، وأسمع تغريد العصافير الذي لا نكاد نسمعه كما قبل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تفكرت بخلق الله وقدرته، في إطار حياتنا ما بين السابق والحاضر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن كل شيء خلق بتدبر وتوازن رباني لا دخل لنا به.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ولكن عندما نظرت إلى الجانب الآخر من تلك الطبيعة الجميلة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نجد أن أشكالا عديدة من التطور التكنولوجي من حولنا، أحدثت الكثير من الخلل في تلك الطبيعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فحديقتنا في بيت والدي كانت في حضن الطبيعة، ولم يكن هناك تدخل منا.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إلا أن نسقيها الماء بالهوز، ونسمدها من الطبيعة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكان يفوح عبير الزهور، وأهازيج الطير حولنا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "وتشعر أنها تحيا متصالحة مع نفسها في ظل الطبيعة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فكل شيء بقدر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إن موجودات الطبيعة من حولنا خلقها الله بقدر، هذا القدر محدد وموزون.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وتستطيع الطبيعة أن تعيد اتزانها بشكل طبيعي إذا اختل هذا التوازن، ولم يتدخل فيه الإنسان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتدخل الإنسان لخلق نظام بيئي محيط به وفق ما يشتهيه، أدى عبر الأزمان إلى نشوء كوارث طبيعية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا يعجز الإنسان عن ضبط ما يصنعه بيده؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لأن تقديرات الإنسان محدودة، ومعرفته بدقائق الأمور وعلل الأشياء من حوله مرهونة بمعرفته.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والتي بطبعها تكون معرفة قاصرة على ما تمر به حواسه،⏸ وما يستنبطه عقله.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "طور الإنسان التكنولوجيا، واستطاع من خلالها أن ينتخب صفات محددة من الطبيعة، ويستثني أخرى.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والمثال واضح جدا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالألوان والروائح في الطبيعة معروفة وكبيرة، وقد خلقها الله وفق ما يناسب الطبيعة البشرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "على اختلاف البيئات، ولكن الإنسان بمساعدة التكنولوجيا استطاع توليد ألوان وروائح جديدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "غير موجودة في الطبيعة بحالتها الجديدة.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهذه الروائح والألوان، حسب القواعد الفيزيائية، تتمتع بها أطوال موجية تتناسب مع البيئة والطبيعة البشرية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولكن الألوان التي طورتها التكنولوجيا، وكذلك الروائح، تختلف بأطوالها الموجية وخصائصها الفيزيائية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبالتالي ظهرت هذه الروائح والألوان مخالفة للطبيعة البشرية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فالصوت الذي أنتجته التكنولوجيا يضر بالسمع، رغم عذوبته.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وغير ذوق السمع لدى جيل التكنولوجيا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والألوان والصور التي أوجدتها التكنولوجيا غيرت منظور العين لدى الإنسان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل يدرك الناس هذا التغيير أصلا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والزهور أصبحت منظرا وألوانا بلا رائحة، وهي من إنتاجات التكنولوجيا التي خالفت الطبيعة، والناس غير مدركين التغيير.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لقد أصبحنا الآن أمام ثورة غيرت الذوق العام.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولا نستغرب أن نجد معايير الموضة والجمال قد اختلفت عند البشرية، وأصبحت تقاس بمقاييس غريبة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فقدرات التكنولوجيا على فرز دقائق الأمور في الطبيعة، وقدرتها على دمج تلك الدقائق في أشكال جديدة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "وطرحها أمام الذوق العام، أدى إلى فساد الذوق العام وتغيير معاييره.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,271 @@
+{
+  "slug": "children-who-know-what-is-required-but-do-not-know-whyarabic",
+  "bridgeAfter": [
+    14,
+    22
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في المدارس والبيوت نرى مشهدا يتكرر بهدوء مخيف.",
+      "feeling": "gravitas",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أبناء يحفظون المطلوب، وينجزون الواجب، ويعرفون كيف ينجحون في الامتحان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكنهم يتلعثمون إذا سئلوا: لماذا تتعلم؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وماذا تريد أن تصير؟⏸ وما معنى هذا كله لك أنت؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وليس هذا كسلا.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ليس كسل جيل جديد،⏸ بل نمط تربية قديم: تربية الأداء قبل المعنى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نحن بارعون في صناعة طالب يرضي النظام.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وأقل براعة في صناعة إنسان يفهم نفسه داخل هذا النظام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحين يتحول التعليم إلى سباق على الدرجة، تصبح الحياة المدرسية لعبة نجاة لا رحلة اكتشاف.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ويصير المطلوب سقفا منخفضا نقنع أبناءنا أنه سماء.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وصف موجع ودقيق.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونظرية الدافعية الذاتية كما عرضها ريان وديسي تذكرنا بأن الإنسان لا يتحرك فقط بالجزاء والعقاب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل يحتاج إلى ثلاث حاجات نفسية عميقة:⏸ الاستقلالية، والكفاءة، والارتباط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحين تدعم هذه الحاجات الثلاث تنمو الدافعية الداخلية عنده.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ويصبح التعلم أقرب إلى حياة يعيشها الطالب لا مهمة ينجو منها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن هذا تنظير تربوي. أين نراه في الواقع؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ووالجواب عند الباحثين:⏸ بل هذا تفسير دقيق لما نراه يوميا أمامنا.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "طالب يلمع لأن الفكرة تخصه، وآخر يذبل لأن التعلم صار عبئا اجتماعيا لا علاقة له بذاته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "والمراجعات تؤكد.",
+      "feeling": "realization",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فمراجعات واسعة مثل هوارد وبيرو تشير إلى أن أشكال الدافعية الأكثر ذاتية ترتبط بمثابرة أعلى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبتجربة مدرسية أهدأ، وبنتائج تعليمية أفضل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بينما ترتبط الدافعية المدفوعة بالضغط أو الخوف بعلاقة أضعف بالتعلم ورفاه أقل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وكأن السؤال الحقيقي ليس: هل ينجح الطالب؟⏸ بل: بأي نفس ينجح؟",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهل نلغي المكافآت إذن؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "المقال لا يقول ذلك. لا يعني هذا أن المكافآت شر مطلق.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لكن الإفراط في المكافآت الملموسة والمتوقعة قد يسرق من الطالب متعة المعنى.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والمراجعة التحليلية لديسي وكوستنر وريان راجعت مئة وثمانيا وعشرين دراسة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ووجدت أن أنواعا من المكافآت المادية قد تضعف الدافعية الداخلية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "عندما يشعر المتعلم أن دافعه صار خارجيا أكثر مما هو ذاتي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ومن هنا بالضبط يبدأ الخلل.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لهذا قد ترى طالبا يركض خلف الدرجة لا خلف الفكرة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويخاف من الخطأ أكثر من حماسه للسؤال الجديد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ويقيس قيمته بما يراه الآخرون في ورقة النتائج، لا بما يشعر به تجاه ذاته هو.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وحين يتخرج يحمل شهادة ممتازة،⏸ لكنه يحمل معها فراغ السبب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وربما يبدأ ترميم هذا الفراغ من لغتنا معه: ماذا فهمت؟⏸ ما الذي أثار فضولك؟⏸ أين شعرت أنك صرت أقوى؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "فالطالب الذي يعرف المطلوب فقط قد ينجح،⏸ لكنه يتعثر أمام أول سؤال حياة. أما من يعرف لماذا يتعلم، فحتى إذا تعثر يعرف كيف يعود.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

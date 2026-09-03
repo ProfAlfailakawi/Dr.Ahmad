@@ -1,0 +1,235 @@
+#!/usr/bin/env node
+/**
+ * بوابة المنطوق — تفحص ما سيصل المحرّك فعلاً، بعد تجهيز المصدر.
+ *
+ * حكم الدكتور (٢٢ أغسطس ٢٠٢٦): «كانت كل الاختبارات مجتازة — راجع كل
+ * الاختبارات». وكان محقّاً: مراجعةُ السلسلة كشفت أربعة أعطاب تجعل
+ * الخُضرة كذباً:
+ *   ١) الفواحص كلها تعمل في الخطوة ٣ من ورشة الكناريا، والمصدر الحقيقي
+ *      يُكتب في الخطوة ٤ — فكل فاحصٍ يحكم على ملفٍّ ليس هو المنطوق.
+ *   ٢) قائمة المنع في verify-kuwaiti-dialogues فيها ١٥ كلمة مصرية
+ *      وشامية و**صفر إماراتية** — فلا تمسك «نحنا» ولا أخواتها.
+ *   ٣) guard-diwania-kuwaitiness مربوطٌ بـ--self-test وحده: يختبر نفسه
+ *      على بيانات مصطنعة ولا يفحص حلقةً واحدة.
+ *   ٤) guard-name-pronunciation موصولٌ بورشة الفصحى لا بالكويتية —
+ *      فاسم الدكتور بلا حارسٍ في كل توليدٍ كويتي (قيل خطأً ٤ من ٥).
+ *
+ * وهذا الحارس يقف حيث يجب: على `manual-dialogues-kuwaiti/` بعد كتابتها،
+ * ويفحص **الصيغة المنطوقة** (بعد المعجم والقلب) لا النص المعروض.
+ *
+ *   node scripts/guard-spoken-episode.mjs --dir=manual-dialogues-kuwaiti
+ *   node scripts/guard-spoken-episode.mjs --self-test
+ */
+import assert from 'node:assert/strict'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { buildPronunciationMap, toSpokenKuwaiti, buildForeignRedactions, redactForeignNames, stripTashkeel } from './lib/kuwaiti-pronunciation.mjs'
+import {
+  isApprovedSpokenClosing,
+  KUWAITI_CLOSING_VARIANTS,
+  KUWAITI_GOLD_REQUEST_CLOSING,
+  KUWAITI_GOLD_REQUEST_SLUG,
+} from './lib/kuwaiti-closing-variants.mjs'
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const SELF_TEST = process.argv.includes('--self-test')
+const DIR = process.argv.find((a) => a.startsWith('--dir='))?.slice(6) || 'manual-dialogues-kuwaiti'
+
+const SRC = JSON.parse(readFileSync(resolve(ROOT, 'src/data/kuwaiti-pronunciation.json'), 'utf8'))
+const MAP = buildPronunciationMap(SRC)
+const RED = buildForeignRedactions(SRC)
+export const spoken = (t) => toSpokenKuwaiti(redactForeignNames(String(t ?? ''), RED), MAP)
+
+/* ═══ قائمة المنع الموسّعة — الإماراتي والعماني أولاً ═══
+   القائمة القديمة كانت تحرس من المصري والشامي، وهما لم يكونا المشكلة
+   قط. وكل ما شكا منه الدكتور مرّ بلا مانع. هذه مبنيّة من شكاواه هو. */
+export const FOREIGN = {
+  'نحنا': 'إماراتية/شامية — الكويتي «احنا»',
+  'اشحالك': 'إماراتية — الكويتي «شلونك»',
+  'شحالك': 'إماراتية — الكويتي «شلونك»',
+  'شحال': 'إماراتية — الكويتي «شلون/جم»',
+  'يبا': 'إماراتية — الكويتي «يبه/أبوي»',
+  'حياك': 'خليجية عامة في موضع التحية الكويتية «حيا الله»',
+  'وايدين': 'إماراتية — الكويتي «وايد»',
+  'مب': 'إماراتية — الكويتي «مو»',
+  'ماكوش': 'مسخ — الكويتي «ماكو»',
+  'شفيك': 'مقبولة لكن تُراقب — الكويتي «شفيه/شبك»',
+  'عاد شو': 'شامية',
+  'هيه': 'إماراتية في موضع «إي»',
+  'زين انت': 'تركيب غير كويتي',
+  'چذيه': 'إماراتية — الكويتي «جذي»',
+  'الحين شو': 'خليط',
+}
+
+/* الكلمات التي شكا منها بأذنه ولم تُعالَج بعد — تُوسم تحذيراً لا سقوطاً
+   حتى تُحسم في المختبر، فلا تمرّ صامتةً مرّةً أخرى. */
+export const EAR_FLAGGED = ['الهنايا', 'يعلى', 'تنجر', 'تصنه', 'يشرد', 'منين', 'بصدق']
+/* هذي مو كلمات «تحت السمع» بعد اليوم. الدكتور سمعها خطأً وأمر بتبديلها؛
+   لذلك التحذير غير كافي. طبقة الصقل تعيد الجمل الحالية سياقياً، وأي جملة
+   جديدة تحملها توقف التوليد إلى أن يُكتب لها بديل طبيعي واضح. */
+export const EAR_REWRITE_REQUIRED = ['تكفي', 'بدال', 'ينختبر']
+const wholeWord = (text, word) => new RegExp(`(^|[\\s،؛:.!?؟…])${word}(?=$|[\\s،؛:.!?؟…])`, 'u').test(text)
+
+/* كلمات القاف المرشحة للمختبر — ليست أمراً بقلبها إلى گ. تُقرأ من البيانات
+   كي يبقى القرار معجمياً، وتُحصى للوعي وإعادة الصياغة اليدوية إن كان قفل
+   المصدر يسمح، لا لتصفيرها آلياً. */
+export const QAF_CANDIDATES = Array.isArray(SRC.qafCandidates) ? SRC.qafCandidates : []
+
+/* أحكام أذن سقطت داخل حلقة كاملة بعد نجاح العينة المعزولة. لا نعيد تخمين
+   حركاتها ولا نعمم همزة وصل عليها؛ أي تصريف جديد يقف قبل Gemini إلى أن
+   يختاره الدكتور في مختبر السياق الطويل. «الكهربا» فخ مقابل: فيها حروف
+   هرب متجاورة لكنها ليست من الجذر، لذلك المطابقة صرفية مقيدة لا includes. */
+export const EAR_BLOCKED = Array.isArray(SRC.earBlockedUntilAudition) ? SRC.earBlockedUntilAudition : []
+const blockedToken = (word) => {
+  const bare = stripTashkeel(String(word)).replace(/^[وفبل]?(?:ال)?/u, '')
+  if (EAR_BLOCKED.includes('ركض') && /رك[ضظ]/u.test(bare)) return 'ركض'
+  if (EAR_BLOCKED.includes('هرب') && /^(?:ا|أ|ن|ي|ت|م)?(?:تهرّ?ب|هرب)(?:ون|وا|ان|ها|ه|نا|كم|هم|ي)?$/u.test(bare)) return 'هرب'
+  if (EAR_BLOCKED.includes('يقربنا') && bare === 'يقربنا') return 'يقربنا'
+  return ''
+}
+
+/* الصيغة التي سمعها داخل جملة كاملة تمر في **الجملة نفسها فقط**. تخزين
+   السياق في words لا يكفي وحده: حارس الجذع كان يرى الكلمة بعد الاستبدال
+   ويرفضها مرة ثانية. ننزع من فحص الحجب الجزء المطابق للجملة المعتمدة،
+   ونبقي أي تصريف أو جملة ثانية مكشوفة للحارس. */
+const APPROVED_BLOCKED_CONTEXTS = Object.keys(SRC.words || {})
+  .filter((phrase) => phrase.includes(' '))
+  .filter((phrase) => (phrase.match(/[ء-يچگَُِّْ]+/gu) || []).some((token) => blockedToken(token)))
+
+const withoutApprovedBlockedContexts = (raw, say) => {
+  let rawCheck = raw; let sayCheck = say
+  for (const phrase of APPROVED_BLOCKED_CONTEXTS) {
+    if (!rawCheck.includes(phrase)) continue
+    rawCheck = rawCheck.split(phrase).join(' ')
+    sayCheck = sayCheck.split(spoken(phrase)).join(' ')
+  }
+  return `${rawCheck} ${sayCheck}`
+}
+
+export function auditTurns (turns, { requireClosing = false, slug = '' } = {}) {
+  const hard = []; const soft = []; let qaf = 0
+  for (const t of turns) {
+    const raw = String(t.text ?? '')
+    const say = spoken(raw)
+    for (const token of withoutApprovedBlockedContexts(raw, say).match(/[ء-يچگَُِّْ]+/gu) || []) {
+      const root = blockedToken(token)
+      if (root) hard.push(`«${token}» من عائلة ${root} سقطت بأذن الدكتور — يلزم سياق مختبر معتمد قبل Gemini`)
+    }
+    for (const [w, why] of Object.entries(FOREIGN)) {
+      if (new RegExp('(^|[\\s،.!؟…])' + w + '($|[\\s،.!؟…])', 'u').test(say)) hard.push(`دخيلة «${w}» — ${why}`)
+    }
+    for (const w of EAR_REWRITE_REQUIRED) {
+      if (wholeWord(say, w)) hard.push(`«${w}» فشلت داخل حلقة كاملة — يلزم تبديل الجملة سياقياً قبل Gemini`)
+    }
+    for (const w of EAR_FLAGGED) if (say.includes(w)) soft.push(`كلمة شكا منها بأذنه ولم تُحسم: «${w}»`)
+    for (const w of QAF_CANDIDATES) if (new RegExp('(^|[\\s،.!؟…])و?' + w, 'u').test(say)) qaf += 1
+    if (/[A-Za-z]/.test(say)) hard.push(`حرف لاتيني يصل المحرّك: «${say.match(/\S*[A-Za-z]+\S*/)[0]}»`)
+    if (/[0-9٠-٩%]/.test(say)) hard.push(`رقم خام يصل المحرّك: «${say.match(/\S*[0-9٠-٩%]+\S*/)[0]}»`)
+  }
+  /* الاسم الكامل يبقى في المصدر المكتوب. مدخل الصوت لا يحمل اسم العائلة
+     أصلاً، ويجب أن ينتهي بإحدى الإحالات الثماني المعتمدة. */
+  const closingRaw = String(turns[turns.length - 1]?.text ?? '')
+  const closing = spoken(closingRaw)
+  const exactGoldRequestClosing = slug === KUWAITI_GOLD_REQUEST_SLUG
+    && closingRaw === KUWAITI_GOLD_REQUEST_CLOSING
+  if (!exactGoldRequestClosing && (/الفيل|حسين/u.test(closingRaw) || /الفيل|حسين/u.test(closing))) {
+    hard.push('اسم العائلة/الاسم الكامل وصل إلى الخاتمة المنطوقة — الإحالة الصوتية تقول «موقع الدكتور أحمد» فقط')
+  }
+  if (requireClosing && !exactGoldRequestClosing && !isApprovedSpokenClosing(closingRaw)) {
+    hard.push('الخاتمة المنطوقة ليست إحدى صيغ الإحالة الكويتية الثماني المعتمدة')
+  }
+  return { hard, soft, qaf }
+}
+
+if (SELF_TEST) {
+  const bad = auditTurns([{ text: 'نحنا نقول جذي' }, { text: 'المقال في موقع الدكتور أحمد الفيلباوي.' }], { requireClosing: true })
+  assert.ok(bad.hard.some((h) => h.includes('نحنا')), 'الدخيلة الإماراتية تُمسك — القائمة القديمة كانت تُمررها')
+  assert.ok(bad.hard.some((h) => h.includes('اسم العائلة')), 'اسم العائلة لا يصل مدخل الصوت')
+  const good = auditTurns([{ text: 'ترى هالشي وايد مهم' }, { text: KUWAITI_CLOSING_VARIANTS[0] }], { requireClosing: true })
+  assert.equal(good.hard.length, 0, 'المتن الكويتي السليم يمرّ')
+  const goldRequest = auditTurns([{ text: 'ترى هالشي وايد مهم' }, { text: KUWAITI_GOLD_REQUEST_CLOSING }], {
+    requireClosing: true,
+    slug: KUWAITI_GOLD_REQUEST_SLUG,
+  })
+  assert.equal(goldRequest.hard.length, 0, 'ختام الطلب الذهبي يمر للحلقة المرجعية وحدها')
+  assert.ok(auditTurns([{ text: KUWAITI_GOLD_REQUEST_CLOSING }], {
+    requireClosing: true,
+    slug: 'ordinary-episode',
+  }).hard.some((finding) => finding.includes('اسم العائلة')),
+  'الاسم الكامل يظل ممنوعاً في أي حلقة غير المرجع الذهبي')
+  /* MASTER VOICE DIRECTOR: المرشح يبقى بإملائه حتى يُختبر، والگ لا تصل
+     تلقائياً إلا في صيغةٍ اختارها الدكتور سماعاً. */
+  assert.ok(QAF_CANDIDATES.length > 20, 'قائمة المرشحين محفوظة للمختبر لا مفقودة')
+  const q = auditTurns([{ text: QAF_CANDIDATES[0] + ' مرة ثانية' }])
+  assert.ok(q.qaf >= 1, 'الإحصاء يرصد مرشح القاف بلا أن يبدله')
+  assert.ok(!spoken(QAF_CANDIDATES[0]).includes('گ'), 'المرشح غير المختبر لا يُكتب گ آلياً')
+  assert.ok(spoken('يقلب').includes('گ'), 'الصيغة المسموعة المعتمدة وحدها تبقى في المعجم')
+  const flagged = auditTurns([{ text: 'وبدت الهنايا من كل صوب' }])
+  assert.ok(flagged.soft.length > 0, 'الكلمات التي شكا منها لا تمرّ صامتة')
+  for (const word of EAR_REWRITE_REQUIRED) {
+    assert.ok(auditTurns([{ text: `هذي ${word} داخل جملة جديدة` }]).hard.some((finding) => finding.includes(word)),
+      `${word} قرار تبديل نهائي، مو تحذير لين الحلقة تطيح`)
+  }
+  assert.ok(!auditTurns([{ text: 'ونشحن جهازه اللوحي بداله.' }]).hard.some((finding) => finding.includes('بدال')),
+    'بداله كلمة ثانية، وحدود الكلمة تمنع إنذاراً كاذباً')
+  /* [٢٨ أغسطس ٢٠٢٦] يُقاس **المحرّك** لا لقطةُ القائمة: الجذوع موقوفةٌ حتى
+     يسمعها الدكتور، فإذا نزلت أحكامه وانفكّ الحجب انقلب المتوقَّع — والفحص
+     الذي يثبّت اللقطة نصّاً يسقط يوم يحكم الدكتور لا يوم يخطئ أحد (أُثبت
+     العطب بتشغيل جولة أحكامٍ كاملة). فكلُّ جذعٍ في القائمة الحيّة يُمسك،
+     وكلُّ جذعٍ خرج منها بأذنه يمرّ. */
+  const BLOCK_PROBES = {
+    'ركض': 'انركظ وايد بالطريق',
+    'هرب': 'وبعدين يهرب من نفسه، ونتهرّب من الجواب',
+    'يقربنا': 'وشغل يقربنا من الشي المهم',
+  }
+  for (const stem of EAR_BLOCKED) {
+    assert.ok(BLOCK_PROBES[stem], `الجذع المحجوب «${stem}» بلا عيّنة فحص — أضفها هنا قبل حجبه`)
+  }
+  for (const [stem, probe] of Object.entries(BLOCK_PROBES)) {
+    const caught = auditTurns([{ text: probe }]).hard.some((h) => h.includes(stem))
+    if (EAR_BLOCKED.includes(stem)) assert.ok(caught, `عائلة ${stem} المرفوضة تقف قبل Gemini`)
+    else assert.ok(!caught, `عائلة ${stem} انفكّ حجبها بأذنه فلا يوقفها الحارس بعد اليوم`)
+  }
+  assert.equal(auditTurns([{ text: 'نركض وايد… ونسمي هالحركة التزام.' }]).hard.length, 0,
+    'الجملة الكاملة التي اختار فيها نِرْكُظ تمر')
+  assert.equal(auditTurns([{ text: 'المشكلة إن الواحد يركض.' }]).hard.length, 0,
+    'الجملة الكاملة التي اختار فيها يِرْكِظ تمر')
+  assert.ok(auditTurns([{ text: 'هو يركض طول السنة' }]).hard.some((h) => h.includes('ركض')),
+    'سياق ركض غير المسموع يبقى محجوباً')
+  assert.equal(auditTurns([{ text: 'الكهربا منتشرة بكل مكان.' }]).hard.length, 0,
+    'الكهربا لا تُحسب خطأً من عائلة هرب')
+  console.log(`✓ بوابة المنطوق: الفحص الذاتي 16/16 · الحجب الحيّ: ${EAR_BLOCKED.length ? EAR_BLOCKED.join(' · ') : 'لا جذور عامة محجوبة'}`)
+  process.exit(0)
+}
+
+const dir = resolve(ROOT, DIR)
+/* [٢٨ أغسطس ٢٠٢٦] المجلد الفارغ يُسقط النشر (تحت)، والغائب كان يمرّ بصمت —
+   وهذا أخطر الحالتين: بوابةٌ طُلبت صراحةً بـ--dir ثم لم تجد ما تفحصه لم
+   تعمل أصلاً، فمرورها كذبٌ على من بعدها. وتبقى متسامحةً بلا --dir. */
+const DIR_EXPLICIT = process.argv.some((a) => a.startsWith('--dir='))
+if (!existsSync(dir)) {
+  if (DIR_EXPLICIT) {
+    console.error(`⛔ طُلبت البوابة على «${DIR}» والمجلد غير موجود — بوابةٌ لم تفحص شيئاً لا تمرّ.`)
+    process.exit(1)
+  }
+  console.log('ℹ لا مجلد مصدرٍ مجهّز: ' + DIR); process.exit(0)
+}
+const files = readdirSync(dir).filter((f) => f.endsWith('.json'))
+if (!files.length) { console.log('⛔ مجلد المصدر فارغ — هذه البوابة يجب أن تعمل **بعد** تجهيز المصدر لا قبله.'); process.exit(1) }
+let hard = 0; let soft = 0; let qaf = 0
+for (const f of files) {
+  const slug = f.replace(/\.json$/, '')
+  const data = JSON.parse(readFileSync(resolve(dir, f), 'utf8'))
+  const turns = Array.isArray(data) ? data : Object.values(data.turns || data)
+  const r = auditTurns(turns, { requireClosing: true, slug })
+  qaf += r.qaf
+  if (r.hard.length || r.soft.length) {
+    console.log('── ' + f.replace('.json', ''))
+    for (const h of [...new Set(r.hard)]) { console.log('   ⛔ ' + h); hard += 1 }
+    for (const s of [...new Set(r.soft)]) { console.log('   ⚠ ' + s); soft += 1 }
+  }
+}
+console.log(`\nفُحص ${files.length} مصدراً منطوقاً · أخطاء قاطعة ${hard} · تحذيرات ${soft} · مرشحات قاف للمراجعة ${qaf} موضعاً`)
+if (!hard) console.log('✅ ما يصل المحرّك نظيفٌ من الدخيل ومن اسمٍ مغلوط.')
+process.exit(hard ? 1 : 0)

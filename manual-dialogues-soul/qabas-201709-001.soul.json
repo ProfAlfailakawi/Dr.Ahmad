@@ -1,0 +1,285 @@
+{
+  "slug": "qabas-201709-001",
+  "bridgeAfter": [
+    15,
+    30
+  ],
+  "breathAfter": [
+    36
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "كنا في الماضي ننتظر نشرة الأخبار لكي نعرف أخبار العالم.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولم تكن مصادرنا بالأخبار كثيرة التنوع في ذلك الزمن.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "فهي مكونة من موجز نشرة الأخبار في الصباح وساعات الظهر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونشرة الأخبار المسائية، بالإضافة إلى الصحف والمجلات، فقط لا غير.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبالمجمل هي مصادر للمعلومات لدى الجميع، وكنا نصدقها ونثق بمعلوماتها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأي شائعة أو خبر كاذب كان يموت بأرضه على الفور.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فليس هناك شيء نتساوم عليه، ولم نكن يوما طرفا في إشعال الفتن والتأزيم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأجمل ما فينا وقتها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وأجمل ما فينا أننا نتأثر بهموم الجيران والوطن العربي في كافة المجالات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نتعايش بمحبة وانتماء لعروبتنا وأخوتنا وجيرتنا التي لا يختلف عليها اثنان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذا في الأمس،⏸ أما الآن فحدث بلا حرج، وقد اختلط الحابل بالنابل.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "اليوم أصبح السوشل ميديا طرفا حصريا في التدخل بشؤون الآخرين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "دون احترام للخصوصية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "دون احترام لخصوصية، أو رابط الأخوة الذي يجمعنا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فلمجرد أن يحصل موقف بين دولتين أو أكثر، يبدأ المغردون تداول وتبادل الاتهامات والشتائم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وتبدأ معها الفرقة بيننا. ترى، لماذا هذا الاحتقان كله؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "نعم، احتقان، فكيف نفسر تلك الحالة بيننا؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "في الأمس كنا نجلس نتسامر مع أخي وجاري في الحدود والدم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبمجرد حصول تأزيم، تتصاعد الألسن عبر السوشل ميديا، ويبدأ العمل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وبذل الجهد للانتقاد.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وبذل الجهد من أجل الانتقاد، وإخراج ما في جعبتهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وكأن أخي بالأمس أصبح عدوي. متى نكبر عقولنا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ولماذا لا يكف السوشل ميديا عن الثرثرة والتطبيل؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ولماذا نفتح الباب لمن يتصيدون المواقف أن يدخلوا بيننا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ويفسدوا علاقة الأخوة والروابط الجميلة بيننا في السراء والضراء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يا معشر السوشل ميديا، يكفي هترات، والمساومات على أخوتنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لم يعد هناك حسيب ورقيب على من يندس بيننا.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ويغرس السم في تعاوننا وخليجنا، الذي طالما نادينا بأنه واحد.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بنينا جدارا عازلا بعزيمتنا وانتمائنا لهذه البقعة المميزة من الأرض.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فدعونا لا نترك شائعات السوشل ميديا والمغترين في إشعال نار الفتن بيننا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ينخرون جدارنا الذي بنيناه، ويفرقون وحدتنا التي نعتز بها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ألا يوجد بيننا من يردعهم إذا؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فهناك شرفاء يردعونهم، ويصدون كل من يستخدم مواقع التواصل للتفرقة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وإهانة أخوة لنا في الأمس والحاضر والمستقبل، فرباطنا أقوى من أن يفضه هؤلاء.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "فمن كان أخا بالأمس، أصبحوا يقذفونه اليوم ويهاجمونه بأقسى العبارات.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والسوشل ميديا تركت المجال للسفاهة أن تأخذ مكانها في الحوار الجاد الأخوي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فهيا،⏸ لا ترخوا السمع لهؤلاء، وأمعنوا العقل، وفضوا تلك المجالس.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فالسوشل ميديا ما هي إلا باغية في سوق عبيد الفتنة، ونحن أحوج اليوم إلى الوحدة.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

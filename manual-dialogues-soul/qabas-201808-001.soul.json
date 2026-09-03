@@ -1,0 +1,278 @@
+{
+  "slug": "qabas-201808-001",
+  "bridgeAfter": [
+    17,
+    29
+  ],
+  "breathAfter": [
+    35
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "في الماضي كان الأهل يدعون أبناءهم والعائلة للتجمع حول التلفاز.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا واقع عشناه، ومن قبلنا من جيل الطيبين.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "كنا نجتمع لنشاهد أعمالا درامية قمة في الروعة والإبداع.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وإبداع في المحتوى والمضمون في تلك الأعمال.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ونجمع منها القيم والمبادئ، ونتعلم الخير، ونرفض الشر.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فترانا نخبر البطل بأن الشرير وأعوانه يريد الغدر به دائما.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "هذا هو الحال، نتحدث معهم ونحذرهم من الأشرار وأعوانهم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ونشجع الخير والبطل الشجاع فيها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ونشجع الخير والبطل الشجاع، وليس الحال كما هو اليوم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نجلس اليوم لنشاهد عملا دراميا، لا نكمل حلقة حتى ترانا ننفر.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وينفر معنا أبناؤنا من تكملته، ليس للشعور بالملل فقط.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بل لافتقار المضمون والأهداف في تلك الأعمال الدرامية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا هو حال الدراما اليوم.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا هو حال الدراما في وقتنا الحالي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فمضمون والمحتوى الدرامي يكاد يكون تعليم فنون الشر بتفاصيلها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "والخدع والخبث بأقرب المقربين للشخصيات في العمل الدرامي.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وسهولة القتل والتعذيب والاضطهاد والعنصرية بين الشخصيات.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "والذي قد يسهل على الجيل تلك الأمور في حال استعداد أحدهم ليكون سلوكه شريرا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أوليس الأجدر أن تظهر صعوبة هذه الأمور؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فبدلا من إشعارهم أن هذه الأمور صعبة وليست من السهولة حدوثها.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بل العكس هو الذي يحدث للأسف في هذه الأعمال الدرامية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا ننسى الفكرة الخاطئة عن الحرية الشخصية في هذه الأعمال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا أخطر ما يكون في مضمون الدراما في أيامنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "حيث تأتي مشاهد لحالات مليئة بالفجور وسلوكيات سلبية وخاطئة، ويبرر الأمر بأنه حرية شخصية.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبالطبع يؤيد هذا الرأي من أكثر الشخصيات التي تجسد في العمل الدرامي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ويتمثل للمشاهد، وخاصة المشاهد القابل للوقوع بالخطأ، بأنها حقا حرية شخصية.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "ويقتنع بشكل يغرس بداخله مفهوما خاطئا للحرية الشخصية.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وعجب ما يمكن أن يشكل هذا المفهوم الخاطئ للمشاهد السلبي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يا صناع الدراما، سواء محليا أو عربيا، نحن بحاجة إلى مضمون درامي وإنمي كويتي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يعيدنا إلى الطريق، ويعود بنا إلى الهدف من التمثيل والعمل الدرامي بشكل عام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فهل الهدف مجرد مشاهدات وأموال؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "فليس الهدف هو صنع مسلسل أو فلم للمشاهدة فقط، وحصد الأموال.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "لمجرد أن هذا الممثل وغيره من المحبوبين لدى الكثيرين من المشاهدين والمتابعين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فتحصدوا بالمقابل أعدادا كبيرة من المشاهدات في كل موسم درامي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأصبحت الخلاعة والتعري والألفاظ السوقية في العمل الفني هي سيد الموقف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لقد انحرفت الأهداف عن الطريق، وغابت القيم، وأصبحت الغايات تبيح المحظورات.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "فأين الرقابة لرصف الطريق من أجل عبور سليم؟⏸ وهل هي أزمة فكر، أم أزمة قيم؟",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

@@ -1,0 +1,537 @@
+{
+  "slug": "how-do-we-assess-without-breaking-the-human-beingarabic",
+  "bridgeAfter": [
+    6,
+    30
+  ],
+  "breathAfter": [
+    72
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "أتعرفين ما الذي يخيفني في بعض الاختبارات؟",
+      "feeling": "gravitas",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "صعوبة الأسئلة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لا. أن يخرج الطالب منها وهو يظن أنه عرف حقيقته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "تقصد أن يرى الدرجة كأنها تعريف له؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بالضبط. لا يقول: أخطأت في الاختبار. يقول في داخله: أنا فاشل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا لا تعود الورقة مجرد ورقة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "تصبح مرآة. والمشكلة أن المرآة قد تكون مشوهة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "لكن دعنا نكون منصفين. المدرسة تحتاج إلى القياس، والمعلم يحتاج أن يعرف مستوى طلابه.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بالتأكيد. أنا لا أعترض على القياس.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "إذن أين تبدأ المشكلة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حين ننسى أننا نقيس تعلما عند إنسان، لا أداء آلة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذه الجملة وحدها تغيّر معنى التقييم كله.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لأن الإنسان قد يفهم اليوم ويتعثر غدا. قد يعرف الفكرة، ثم يربكه الوقت أو الخوف أو طريقة السؤال.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وقد تكون الدرجة دقيقة في قياس لحظة واحدة،⏸ لكنها غير عادلة حين تتحول إلى حكم دائم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تخيلي طالبا عاد إلى البيت بدرجة منخفضة.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأول سؤال يسمعه: لماذا نقصت درجتك؟",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ثم تبدأ المقارنة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فلان حصل على تسعين، وأنت؟",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "في تلك اللحظة، هل سنعرف لماذا أخطأ؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لا. نحن فقط أخبرناه أن مكانه أقل من غيره.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا هو الفرق بين تقييم يكشف موضع التعثر، وتقييم يصنع جرحا جديدا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "حسنًا، كيف يكون التقييم إنسانيا من دون أن يصبح متساهلا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هذا سؤال مهم. لأن احترام الطالب لا يعني تجميل الحقيقة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ولا يعني منحه درجة لا يستحقها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أبدا. بل يعني أن نقول له الحقيقة بطريقة تساعده على التحرك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بدلا من أن نقول: إجابتك ضعيفة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نقول: فهمت الفكرة الأساسية،⏸ لكن دليلك لم يكن واضحا. أعد المحاولة من هذه النقطة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "الفرق كبير. الأولى تصفه، والثانية توجهه.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهذه هي روح التقييم من أجل التعلم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أي أن الاختبار لا يكون نهاية الطريق.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بل يعطيك إشارة لما يجب أن يحدث بعده.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "أين يقف الطالب؟⏸ إلى أين نريده أن يصل؟⏸ وما الخطوة التالية؟",
+      "feeling": "wonder",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ثلاثة أسئلة بسيطة،⏸ لكنها تنقلنا من التصنيف إلى التعليم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لحظة. هذا جميل نظريا،⏸ لكن المُعلِّم أمامه ثلاثون طالبا وربما أكثر. هل يستطيع أن يقدم تغذية راجعة دقيقة لكل واحد؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ليس مطلوبا منه أن يكتب مقالا على كل ورقة.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إذن ماذا يفعل؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "يختار ملاحظة واحدة قابلة للتنفيذ. سؤالا يفتح التفكير. فرصة لتصحيح الخطأ. أحيانا هذا يكفي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "يعني ليست العبرة بطول الملاحظة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "بل بما تفعله في عقل الطالب.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهذا يفسر لماذا قد تكون كلمة قصيرة مؤثرة أكثر من صفحة كاملة من التصحيح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "نعم، خصوصا إذا شعر الطالب أن الخطأ ما زال قابلا للإصلاح.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "هذه نقطة حساسة. بعض الطلاب يتلقون النتيجة وكأن الباب أغلق.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "لأننا نعطيهم رقما، ثم ننتقل إلى الدرس التالي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "من دون أن نسأل: ماذا سنفعل بهذه النتيجة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "والرقم الذي لا يغيّر شيئا في التعلم، ما فائدته؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "قد يرتب الطلاب،⏸ لكنه لا يساعدهم بالضرورة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا تأتي التغذية الراجعة. لا باعتبارها مجاملة،⏸ بل باعتبارها خريطة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "خريطة تقول: هذا ما نجحت فيه، وهذا ما يحتاج إلى مراجعة، ومن هنا تبدأ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وعندما تكون واضحة، يتغير شعور الطالب تجاه الخطأ.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لا يعود الخطأ فضيحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "يصبح معلومة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أفكر الآن في دور الأسرة. أحيانا تكون المدرسة هادئة،⏸ لكن البيت يحول الدرجة إلى أزمة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "صحيح. وقد يبدأ كل شيء من أول جملة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "مثلا؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "بدلا من: كيف حصلت على هذه الدرجة؟⏸ نسأل: أي جزء كان أصعب عليك؟",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "ثم: ما الذي يمكن أن نغيره في المرة القادمة؟",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "بالضبط. فجأة لا يعود الطفل في قفص الاتهام.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل يصبح شريكا في الفهم.",
+      "feeling": "aphorism",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وأحيانا هو لا يحتاج إلى محاضرة. يحتاج فقط أن يعرف أن هذه الدرجة ليست نهايته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن مستواه الحالي ليس هويته.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "تعرفين ما العبارة التي أتمنى أن يسمعها كل طالب بعد تعثره؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "ما هي؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هذه النتيجة تخبرنا من أين نبدأ، لا أين تنتهي.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "جميلة. لأنها لا تنكر التعثر،⏸ ولا تسجن الطالب داخله.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا هو التوازن الصعب: أن نكون صادقين من دون أن نكون قساة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن نحاسب الأداء من دون أن نهين الإنسان.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "في النهاية، السؤال ليس فقط: كم حصل الطالب؟",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "بل: ماذا فهم عن نفسه بعد أن حصل على هذه الدرجة؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "هل خرج وهو يعرف خطوته التالية؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "أم خرج وهو أكثر شكا في قدرته؟",
+      "feeling": "curious",
+      "deliveryType": "question",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "المدرسة التي تعرف كيف تقيس، لا تكتفي بإعلان النتيجة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بل تعرف ماذا تفعل بها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وتتذكر، في كل مرة، أن وراء كل درجة…⏸ ",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "إنسانا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، فليقرأ المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

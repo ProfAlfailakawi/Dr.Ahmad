@@ -1,0 +1,271 @@
+{
+  "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
+  "bridgeAfter": [
+    8,
+    27
+  ],
+  "breathAfter": [
+    34
+  ],
+  "utterances": [
+    {
+      "speaker": "male",
+      "text": "ليست المشكلة في العودة،⏸ بل في الوهم الذي نعلقه عليها.",
+      "feeling": "gravitas",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "نعود بعد الإجازة بوجوه أكثر نشاطا، ونرتب الحقيبة والجدول.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "ثم نفاجأ أن ما أرهقنا قبل التوقف ما زال في مكانه ينتظرنا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "كأننا نريد من بداية الأسبوع أن تفعل ما لم نجرؤ نحن على فعله.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "male",
+      "text": "أن تنقذ المعنى من العادة. وهذا حمل أثقل من أن يحمله تقويم.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأبحاث أثر البداية الجديدة تقول إن العلامات الزمنية تمنح دفعة نفسية مؤقتة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كبداية أسبوع أو شهر أو سنة، نحو سلوكيات طموحة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "لأن الناس يشعرون أنهم فصلوا ذواتهم القديمة عن ذواتهم الجديدة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وهذا ما وثقته دراسة داي وميلكمان وريس عبر دلائل سلوكية متعددة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "إذن العودة تنفع فعلا. فأين الوهم؟",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "الوهم أن الدفعة وحدها تكفي. إنها شرارة.",
+      "feeling": "firm",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "والشرارة لا تتحول نارا دافئة إذا عدنا إلى تفاصيل اليوم نفسه، وبعاداتنا القديمة نفسها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "ثم تأتي الحقيقة الصعبة.",
+      "feeling": "challenge",
+      "deliveryType": "gentleObjection",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "التغيير يحتكم للزمن، وهذه حقيقة لا يحبها الحماس السريع.",
+      "feeling": "firm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "بحث تكوين العادات في الحياة اليومية وجد أن الوصول إلى تلقائية سلوك جديد يستغرق نحو ستة وستين يوما.",
+      "feeling": "warm",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وبمدى واسع قد يمتد من ثمانية عشر يوما إلى مئتين وأربعة وخمسين.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وهنا ينهار البرنامج.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "لهذا ينهار كثير من برنامج العودة في أسبوعين.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "نحن نطالب النفس بحصاد موسم كامل ونحن لم نزرع إلا أياما.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ثم نحملها فشلا ليس فشلها أصلا.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "وهنا يجيء درس صغير ومهم حول لغة الهدف نفسها.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "تجربة واسعة على قرارات السنة بينت فرقا بين نوعين من الأهداف.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "من اختاروا أهدافا اقترابية تعرف بما سيبنى كانوا أكثر نجاحا.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "من أصحاب الأهداف التجنبية التي تقوم على المنع فقط.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "تسعة وخمسون بالمئة مقابل سبعة وأربعين بالمئة فقط.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "female",
+      "text": "وقال نحو خمسة وخمسين بالمئة إنهم حافظوا على قراراتهم بعد عام.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "كأن العودة تحتاج هدفا يشبه البناء لا المطاردة.",
+      "feeling": "intimate",
+      "deliveryType": "reflection",
+      "pauseAfterMs": 760
+    },
+    {
+      "speaker": "female",
+      "text": "ويشبه الرحمة لا جلد الذات ولا لومها.",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "فمن أين تبدأ إذن؟",
+      "feeling": "lively",
+      "deliveryType": "briefReaction",
+      "pauseAfterMs": 480
+    },
+    {
+      "speaker": "male",
+      "text": "العودة التي تصلح ما قبلها لا تبدأ من الباب،⏸ بل من الداخل.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "أن تختار عادة واحدة قابلة للحياة، بدل خمسة وعود كبيرة ترهقك.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "وأن تسكنها في توقيت ثابت من يومك حتى لا تتحول إلى نقاش يومي مع الإرادة.",
+      "feeling": "lively",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "وأن تخفف شيئا كان يسرق نومك وهدوءك باسم الضرورة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "male",
+      "text": "أو أن تعيد ترتيب علاقة تستنزفك باسم الذوق والمجاملة.",
+      "feeling": "plain",
+      "deliveryType": "statement",
+      "pauseAfterMs": 560
+    },
+    {
+      "speaker": "female",
+      "text": "فنحن لا نحتاج عودة أنيقة في المظهر ونفس النسخة القديمة في الجوهر.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "male",
+      "text": "نحتاج عودة تتواضع في البداية، وتصر في الاستمرار، وتدرك أن الإصلاح لا يتم بخطاب كبير⏸ بل بخطوة تكرر بصدق حتى تصبح طريقا.",
+      "feeling": "resolve",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    },
+    {
+      "speaker": "female",
+      "text": "ولمن أراد الفكرة كاملة، يمكنه قراءة المقال الأصلي في موقع الدكتور أَحْمَدْ حُسَيْنْ الفَيْلَكَاوِي.",
+      "feeling": "cta",
+      "deliveryType": "conclusion",
+      "pauseAfterMs": 900
+    }
+  ]
+}

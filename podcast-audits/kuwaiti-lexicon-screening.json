@@ -1,0 +1,3575 @@
+{
+  "version": "2026-08-27-kuwaiti-lexicon-screening-v2-risk-families",
+  "methodology": "current-dialogue-frequency + article-only-risk + attested-kuwaiti-coverage + future-domain-forecast + fail-closed-new-word-guard",
+  "references": [
+    "https://alarabi.nccal.gov.kw/Home/Article/6036",
+    "https://sites.dlib.nyu.edu/viewer/books/nyu_aco000276/1?embed=1&lang=ar",
+    "https://www.lahjah.com/web/index.php?show=1",
+    "https://www.kalmasoft.com/KLEX/dccolkw.htm",
+    "https://etheses.durham.ac.uk/id/eprint/935/1/Shamlan_al-Qenaie.._Final_Draft_%28PhD%29.pdf?DDD36="
+  ],
+  "optionTests": [
+    {
+      "key": "نركض",
+      "speaker": "Noura",
+      "carrier": "{W} وايد… ونسمي هالحركة التزام.",
+      "options": [
+        "نَرْكُظ",
+        "نِرْكُظ",
+        "نظل نتحرك"
+      ]
+    },
+    {
+      "key": "نتهرّب",
+      "speaker": "Fahad",
+      "carrier": "مرات تكون طريقة مرتبة {W} فيها.",
+      "options": [
+        "نَتْهَرَّب",
+        "نِتْهَرَّب",
+        "نلهّي نفسنا"
+      ]
+    },
+    {
+      "key": "قَسوة",
+      "speaker": "Noura",
+      "carrier": "بس هذا فيه {W} على اللي يشتغل بجد.",
+      "options": [
+        "قَسوة",
+        "قِسوة",
+        "شدّة"
+      ]
+    },
+    {
+      "key": "يقرّبنا",
+      "speaker": "Fahad",
+      "carrier": "نفرق بين شغل {W}… وشغل يبعدنا عنه.",
+      "options": [
+        "يَقَرِّبنا من الشي المهم",
+        "يِقَرِّبنا من الشي المهم",
+        "يودّينا للشي المهم"
+      ]
+    },
+    {
+      "key": "يركض",
+      "speaker": "Noura",
+      "carrier": "المشكلة إن الواحد {W}.",
+      "options": [
+        "يَرْكُظ سنة كاملة",
+        "يِرْكِظ سنة كاملة",
+        "يظل مشغول سنة كاملة"
+      ]
+    },
+    {
+      "key": "يهرب",
+      "speaker": "Fahad",
+      "carrier": "وبالأخير يكتشف إنه كان {W}.",
+      "options": [
+        "يَهْرُب من نفسه",
+        "يِهْرِب من نفسه",
+        "ما يواجه نفسه"
+      ]
+    }
+  ],
+  "screening": [
+    {
+      "number": 7,
+      "key": "أقل",
+      "carrier": "قلقه واكتئابه أقل.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "a-generation-without-rootsarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 8,
+      "key": "طريق",
+      "carrier": "ورسم طريق الفشل لهم بنفسهم.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201810-004",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 9,
+      "key": "الواقع",
+      "carrier": "هذا هو الواقع للأسف…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201806-003",
+      "speaker": "Noura"
+    },
+    {
+      "number": 10,
+      "key": "الوقت",
+      "carrier": "الوقت يداهمنا، والله المستعان.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "alternative-plans-for-distance-education",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 11,
+      "key": "يقول",
+      "carrier": "من غير ما أحد يقول لي؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "a-certificate-of-excellence-for-a-lifeless-doll-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 12,
+      "key": "نقدر",
+      "carrier": "مهمشة، وما نقدر نقول غير جذي.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "eliminating-the-education-epidemic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 13,
+      "key": "الحقيقي",
+      "carrier": "ويطلع السؤال الحقيقي.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 14,
+      "key": "تقول",
+      "carrier": "بس أنت تقول: كانت.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "alternative-plans-for-distance-education",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 15,
+      "key": "نقول",
+      "carrier": "نكاد نقول إن الكل نسخ مكررة…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-social-media-swamp-and-plastic-surgery-addiction-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 16,
+      "key": "يقدر",
+      "carrier": "والقالب يقدر ينتج وعي؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 17,
+      "key": "تقدر",
+      "carrier": "ولا راح تقدر تحط لها حد.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201702-003",
+      "speaker": "Noura"
+    },
+    {
+      "number": 18,
+      "key": "العقل",
+      "carrier": "إلا العقل.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 19,
+      "key": "الفرق",
+      "carrier": "بس هني الفرق.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-005",
+      "speaker": "Noura"
+    },
+    {
+      "number": 20,
+      "key": "نلقى",
+      "carrier": "عيل شنو نلقى؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "lets-achieve-a-higher-level-of-quality-education",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 21,
+      "key": "الحقيقة",
+      "carrier": "ولأن الرواية أسرع من الحقيقة…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "when-truth-died-and-the-narrative-survivedarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 22,
+      "key": "المواقع",
+      "carrier": "المواقع وايد بالإنترنت…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201612-001",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 23,
+      "key": "قبل",
+      "carrier": "قبل لا يفوت الأوان.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201703-001",
+      "speaker": "Noura"
+    },
+    {
+      "number": 24,
+      "key": "قاعد",
+      "carrier": "كل شي قاعد يخطفك.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-human-who-forgot-himselfarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 25,
+      "key": "قدام",
+      "carrier": "يضحك قدام الكل.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "laughing-while-burning-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 26,
+      "key": "قال",
+      "carrier": "وربع السوء… جذي قال.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-005",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 27,
+      "key": "واقع",
+      "carrier": "وبعدين ظهر واقع يديد.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201706-001",
+      "speaker": "Noura"
+    },
+    {
+      "number": 28,
+      "key": "نقعد",
+      "carrier": "وقت نقعد فيه وية نفسنا، مثل ضيف كريم طال غيابه.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-human-who-forgot-himselfarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 29,
+      "key": "يقدرون",
+      "carrier": "يقدرون يستخدمون هالحذاء التكنولوجي المطور.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201711-004",
+      "speaker": "Noura"
+    },
+    {
+      "number": 30,
+      "key": "الرقابة",
+      "carrier": "تشديد الرقابة.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201703-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 31,
+      "key": "أعمق",
+      "carrier": "المشكلة أعمق وايد. التعليم في وعيهم تحول لوسيلة عبور…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 32,
+      "key": "طريقة",
+      "carrier": "اللي اختلف هو طريقة اللعب…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201708-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 33,
+      "key": "قصة",
+      "carrier": "وهذي مو قصة خيالية…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "when-a-student-wishes-for-death-before-the-first-bell-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 34,
+      "key": "ناقصة",
+      "carrier": "المقال يقول: جملة حلوة… بس ناقصة.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "a-new-kind-of-fatigue-in-old-expressionsarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 35,
+      "key": "الصادق",
+      "carrier": "أما الطالب الصادق؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 36,
+      "key": "الأرقام",
+      "carrier": "يت الأرقام تقول اللي نشوفه كل يوم.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "when-truth-died-and-the-narrative-survivedarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 37,
+      "key": "القرصنة",
+      "carrier": "واقف عند القرصنة السلبية وبس.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "ethical-hacking-culture",
+      "speaker": "Noura"
+    },
+    {
+      "number": 38,
+      "key": "القصور",
+      "carrier": "ونقعد نتساءل: القصور من وين يي؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201802-004",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 39,
+      "key": "أصدق",
+      "carrier": "ولا صار الذكاء الاصطناعي أصدق منا إحنا؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+      "speaker": "Noura"
+    },
+    {
+      "number": 40,
+      "key": "التطبيقات",
+      "carrier": "لين تيي التطبيقات أكلها في الميدان التربوي.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201709-005",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 41,
+      "key": "أصلا",
+      "carrier": "وهم أصلا مو محتاجين علم.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
+      "speaker": "Noura"
+    },
+    {
+      "number": 42,
+      "key": "أخطر",
+      "carrier": "أخطر من الشارع.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-005",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 43,
+      "key": "باقي",
+      "carrier": "ومع هذا، الحزن باقي بالقلب.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201709-006",
+      "speaker": "Noura"
+    },
+    {
+      "number": 44,
+      "key": "قاعدة",
+      "carrier": "والناس أصلا قاعدة تدرك هالتغيير؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201704-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 45,
+      "key": "توقف",
+      "carrier": "وغيره من الأدوات التكنولوجية اللي ما توقف،",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-002",
+      "speaker": "Noura"
+    },
+    {
+      "number": 46,
+      "key": "القديمة",
+      "carrier": "يبدأ يتحرر من صورته القديمة.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "expectations-that-shape-a-studentarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 47,
+      "key": "الورقة",
+      "carrier": "وهني الورقة ما تبقى ورقة.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "how-do-we-assess-without-breaking-the-human-beingarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 48,
+      "key": "تفوق",
+      "carrier": "تفوق بكل شي.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "excellent-in-grades-lost-in-decision",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 49,
+      "key": "القيم",
+      "carrier": "شنو أثر هذا كله على القيم الأخلاقية؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201806-004",
+      "speaker": "Noura"
+    },
+    {
+      "number": 50,
+      "key": "أدق",
+      "carrier": "ويوم نملك لغة أدق، نملك شجاعة أدق…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "a-new-kind-of-fatigue-in-old-expressionsarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 51,
+      "key": "الذوق",
+      "carrier": "وطرحها قدام الذوق العام…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201704-002",
+      "speaker": "Noura"
+    },
+    {
+      "number": 52,
+      "key": "الطاقة",
+      "carrier": "وين إحنا فيما وراء الكهربا… ومصادر الطاقة ما راح تدوم.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201706-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 53,
+      "key": "الإرهاق",
+      "carrier": "بس لذة الأكل نستني الإرهاق والتعب اللي شايله وياي.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201708-001",
+      "speaker": "Noura"
+    },
+    {
+      "number": 54,
+      "key": "القراءة",
+      "carrier": "بس التكنولوجيا قربت القراءة للناس كلهم… وهذي حسنة تنحسب لها.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201703-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 55,
+      "key": "أضيق",
+      "carrier": "تقدر الوزارة أو المعلم يطبقها حتى في أضيق الظروف.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "e-learning-initiatives-and-solutions-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 56,
+      "key": "أوقظك",
+      "carrier": "بس أنا ما أكتب عشان أعجبك… أكتب عشان أوقظك.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 57,
+      "key": "إطلاق",
+      "carrier": "فالتربية مو إخماد صوت الطفل؛ هي إطلاق عقله عشان يعبر.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 58,
+      "key": "ينقصنا",
+      "carrier": "إحنا ما ينقصنا منهج يديد بس…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "excellent-in-grades-lost-in-decision",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 59,
+      "key": "يصفق",
+      "carrier": "والمجتمع يصفق للطب والهندسة…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "excellent-in-grades-lost-in-decision",
+      "speaker": "Noura"
+    },
+    {
+      "number": 60,
+      "key": "تطبيق",
+      "carrier": "وإن الوقت حان عشان يصنعون تطبيق للواقع الافتراضي على هالنهج.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 61,
+      "key": "يطبقونها",
+      "carrier": "… يعرفون يحللونها تحليل نقدي، أو يطبقونها في موقف من حياتهم.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "a-generation-that-knows-everything-and-understands-nothing",
+      "speaker": "Noura"
+    },
+    {
+      "number": 62,
+      "key": "نقصت",
+      "carrier": "وأول سؤال يسمعه: ليش نقصت درجتك؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "how-do-we-assess-without-breaking-the-human-beingarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 63,
+      "key": "يوقظ",
+      "carrier": "وهو ما يكتب عشان يحبطك، يكتب عشان يوقظ فيك إنسان كان بيرقد.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 64,
+      "key": "يقضي",
+      "carrier": "الطالب يقضي نص ساعة يرتب سؤاله للآلة…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "students-minds-are-on-vacation-while-chatgpt-works-full-time-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 65,
+      "key": "القلق",
+      "carrier": "فحسيت بشي من القلق، وبشي من الغبطة بعد.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201703-001",
+      "speaker": "Noura"
+    },
+    {
+      "number": 66,
+      "key": "القرار",
+      "carrier": "وهالصوت يوصل لمن بيده القرار؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-teacher-what-do-you-know-about-the-teacher",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 67,
+      "key": "ثقافة",
+      "carrier": "لا قيود ثقافة العيب.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201611-004",
+      "speaker": "Noura"
+    },
+    {
+      "number": 68,
+      "key": "يقصدون",
+      "carrier": "وهو فهم شنو يقصدون.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201708-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 69,
+      "key": "يلتقط",
+      "carrier": "ولما يلتقط رسالة خفية معناها: منك ما يي شي…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "expectations-that-shape-a-studentarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 70,
+      "key": "قاعدين",
+      "carrier": "وهم قاعدين يأدون واجبهم.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 71,
+      "key": "حقيقة",
+      "carrier": "من حقيقة تبي سياق وهدوء.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "when-truth-died-and-the-narrative-survivedarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 72,
+      "key": "رقابة",
+      "carrier": "والسبب إن ماكو رقابة بشرية.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201706-001",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 73,
+      "key": "القضية",
+      "carrier": "شنو اللي ناقصنا عشان نكون؟ القضية صارت: يا نكون…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "eliminating-the-education-epidemic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 74,
+      "key": "القراصنة",
+      "carrier": "يتدرب القراصنة لين ما يتطورون هاكرز أخلاقيين يوقفون الخطر عن مواقعنا…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "ethical-hacking-culture",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 75,
+      "key": "تنقطع",
+      "carrier": "ويخلي اللي غرسه من علم وخلق بعياله وطلابه صدقة جارية ما تنقطع.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "in-farewell-to-abdullah-ismail-al-kandariarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 76,
+      "key": "المشكلة",
+      "carrier": "عيل المشكلة بالجيل؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "from-the-schoolyard-to-the-food-court-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 77,
+      "key": "الطالب",
+      "carrier": "أما الطالب الصادق؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 78,
+      "key": "الطلبة",
+      "carrier": "تسألهم: شنو مشكلتكم ويا الطلبة؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 79,
+      "key": "الإنسان",
+      "carrier": "لأن تقديرات الإنسان محدودة…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201704-002",
+      "speaker": "Noura"
+    },
+    {
+      "number": 80,
+      "key": "الإنترنت",
+      "carrier": "وعزز وجودها انتشار الإنترنت.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201709-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 81,
+      "key": "الذكاء",
+      "carrier": "التقرير صاغه الذكاء…",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+      "speaker": "Noura"
+    },
+    {
+      "number": 82,
+      "key": "التواصل",
+      "carrier": "صج، شبكات التواصل جمعتنا، وما ننكر هالشي.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201709-004",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 83,
+      "key": "الموضوع",
+      "carrier": "وأكو دول واجهت الموضوع.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "a-corona-graduate-and-his-education-account-hasnt-been-closed-yet-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 84,
+      "key": "المفروض",
+      "carrier": "صح، جذي المفروض.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201612-001",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 85,
+      "key": "يسأل",
+      "carrier": "بس محد يسأل الخريج: شنو تعلمت صج؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 86,
+      "key": "نسأل",
+      "carrier": "نسأل: وبعدين شنو؟",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "qabas-201706-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 87,
+      "key": "يبدأ",
+      "carrier": "ومن هني يمكن يبدأ التعافي.",
+      "category": "متوقع من حوارات الدكتور",
+      "source": "a-new-kind-of-fatigue-in-old-expressionsarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 88,
+      "key": "أصدقاء",
+      "carrier": "وفتحت الإشارة وانطلقنا… وللأسف، هذا صار واقع أصدقاء العمر.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 89,
+      "key": "تنطبق",
+      "carrier": "جملة تنطبق على وايد منا اليوم.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "a-new-kind-of-fatigue-in-old-expressionsarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 90,
+      "key": "والأصدقاء",
+      "carrier": "ونتداولها مع الإخوان والأصدقاء بكل لقاء.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201706-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 91,
+      "key": "لإقصاء",
+      "carrier": "تهميش ناعم… يودي لإقصاء صامت.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-teacher-the-last-to-know-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 92,
+      "key": "أيقظها",
+      "carrier": "يتقاس بعدد المعاني اللي أيقظها.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-the-teacher-knows-why-he-teachesarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 93,
+      "key": "أصدقكم",
+      "carrier": "أصدقكم: هالفكرة بروحها تفقدني صوابي…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201711-003",
+      "speaker": "Noura"
+    },
+    {
+      "number": 94,
+      "key": "بالإقصاء",
+      "carrier": "لأنه يخلي الناس تحس بالإقصاء والنبذ.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201806-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 95,
+      "key": "أقصد",
+      "carrier": "أقصد طرق التدريس اللي كانت بذاك الزمن.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201706-002",
+      "speaker": "Noura"
+    },
+    {
+      "number": 96,
+      "key": "أتقصى",
+      "carrier": "فرحت أتقصى أسباب هالتذمر بين المعلمين.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201802-001",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 97,
+      "key": "ناقصنا",
+      "carrier": "شنو اللي ناقصنا عشان نكون؟ القضية صارت: يا نكون…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "eliminating-the-education-epidemic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 98,
+      "key": "بنقائضه",
+      "carrier": "مع إن في رؤى مجازية تقول إن الواقع مشبع بنقائضه.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-004",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 99,
+      "key": "وأصدقائي",
+      "carrier": "وخفت وايد على مستقبل ناس أعرفهم، من أهلي وأصدقائي.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201712-003",
+      "speaker": "Noura"
+    },
+    {
+      "number": 100,
+      "key": "أطلقها",
+      "carrier": "خصوصا بعد ما شركة نيورالينك، اللي أطلقها إيلون ماسك،",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201711-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 101,
+      "key": "بأقصى",
+      "carrier": "نقدم شوية تنازلات، بس ننجز الشغل بأقصى طاقة وأقل وقت…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "e-learning-initiatives-and-solutions-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 102,
+      "key": "أغرقت",
+      "carrier": "وشنو اللي طلع من غضبه: سيول أغرقت وايد من بيوت الناس.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201811-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 103,
+      "key": "أصدقائه",
+      "carrier": "كنت قاعد مع والدي يوم من الأيام، وكان وياه عدد من أصدقائه.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201707-004",
+      "speaker": "Noura"
+    },
+    {
+      "number": 104,
+      "key": "أغرق",
+      "carrier": "وحسيت إني أغرق في مستنقع تدليس على اللي جاء فيه إسلامنا الحنيف.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201703-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 105,
+      "key": "يتقاس",
+      "carrier": "وبعدها كل شي يتقاس بدرجة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-excellence-epidemic-or-the-cult-of-grades-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 106,
+      "key": "ينقصى",
+      "carrier": "ينستدعى… وبعدها ينقصى. جذي بالضبط.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-teacher-the-last-to-know-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 107,
+      "key": "يطبقونه",
+      "carrier": "وليش ما قيموا المنهاج قبل لا يطبقونه؟",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "competency-based-approach-to-the-trash",
+      "speaker": "Noura"
+    },
+    {
+      "number": 108,
+      "key": "نقصيه",
+      "carrier": "ونحمله فشل منظومة، وبعدها نقصيه عن إصلاحها…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-teacher-the-last-to-know-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 109,
+      "key": "تقصيرنا",
+      "carrier": "ومعاها ضمير يعذبنا على تقصيرنا في حق مجتمعنا.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-003",
+      "speaker": "Noura"
+    },
+    {
+      "number": 110,
+      "key": "تصقله",
+      "carrier": "والمدرسة اللي تصقله، والمجتمع اللي يحتفي فيه.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-a-student-wishes-for-death-before-the-first-bell-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 111,
+      "key": "يوقظه",
+      "carrier": "لأن النوم الثقيل ما يوقظه الهمس، يوقظه الصدمة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 112,
+      "key": "ناقصه",
+      "carrier": "والكل يدري إن التعليم العالي ناقصه جودة التعليم.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "lets-achieve-a-higher-level-of-quality-education",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 113,
+      "key": "تطبيقات",
+      "carrier": "هي اللي تصنع تطبيقات الواقع الافتراضي الاجتماعي.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-003",
+      "speaker": "Noura"
+    },
+    {
+      "number": 114,
+      "key": "يلتقطون",
+      "carrier": "الكبار يتابعون التحليلات… والصغار يلتقطون النبرة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "aggression-in-the-sky-and-steadfastness-withinarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 115,
+      "key": "يطبقها",
+      "carrier": "تقدر الوزارة أو المعلم يطبقها حتى في أضيق الظروف.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "e-learning-initiatives-and-solutions-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 116,
+      "key": "ينقصه",
+      "carrier": "وترى الكل يدري إن التعليم العالي ينقصه جودة التعليم.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201911-001",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 117,
+      "key": "يلتقطونها",
+      "carrier": "بدال الرسائل النصية اللي يلتقطونها ويرسلونها طول الليل.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201806-005",
+      "speaker": "Noura"
+    },
+    {
+      "number": 118,
+      "key": "تنطلق",
+      "carrier": "ومنه تنطلق الأحداث وهموم الناس… ومنه يوصل صوت كل مواطن.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-media-is-a-vital-partner-in-the-educational-process",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 119,
+      "key": "نصدقه",
+      "carrier": "ما يعلو فيها صوت الوقائع قد ما يعلو صوت اللي نبي نصدقه.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-truth-died-and-the-narrative-survivedarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 120,
+      "key": "تنلقط",
+      "carrier": "الشهادات مرفوعة، والدرجات تتوزع، والصور تنلقط من كل جهة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 121,
+      "key": "نطبقها",
+      "carrier": "ونكثف الدراسات لين نوصل لنتيجة نقدر نطبقها على أرض الواقع.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201709-005",
+      "speaker": "Noura"
+    },
+    {
+      "number": 122,
+      "key": "تطرقنا",
+      "carrier": "وأكو ناس راح تقول إحنا تطرقنا قبل لإدمان التلفونات الذكية.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201806-005",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 123,
+      "key": "تنطاق",
+      "carrier": "وإحنا مو قدام جيل هش… إحنا قدام جيل تعبناه بمعايير ما تنطاق.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "laughing-while-burning-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 124,
+      "key": "نصدقها",
+      "carrier": "وبالمجمل هذي مصادر المعلومات عند الكل، وكنا نصدقها ونثق فيها.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201709-001",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 125,
+      "key": "نتطرق",
+      "carrier": "وبالمقال الياي راح نتطرق لحلول مشكلة التعلق باستخدام التلفون.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201806-005",
+      "speaker": "Noura"
+    },
+    {
+      "number": 126,
+      "key": "تلتقط",
+      "carrier": "لما أعلنت أكسفورد ما بعد الحقيقة كلمة العام، كانت تلتقط نبض مرحلة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-truth-died-and-the-narrative-survivedarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 127,
+      "key": "يقضون",
+      "carrier": "يقضون وقت حافل في إرسال الدعاوى وفي الاتصالات عن طريق الهاتف النقال.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-002",
+      "speaker": "Noura"
+    },
+    {
+      "number": 128,
+      "key": "تساقط",
+      "carrier": "بالحقيقة، ما نقدر نلوم وزير الأشغال بروحه بعد تساقط الأمطار الغزيرة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201811-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 129,
+      "key": "يصفقون",
+      "carrier": "يصفقون للطالب الذكي اللي عرف شلون يهرب بورقة، …",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 130,
+      "key": "يقولون",
+      "carrier": "ونعلمهم يقولون…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "freedom-without-thinking-and-openness-without-awareness-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 131,
+      "key": "الصندوق",
+      "carrier": "ونخفف الأسلوب… بس الصندوق هو هو.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-excellence-epidemic-or-the-cult-of-grades-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 132,
+      "key": "الطريق",
+      "carrier": "بس في الطريق، سكرت عليه باب الجذور.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "a-generation-without-rootsarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 133,
+      "key": "هالطريق",
+      "carrier": "وليش اخترت هالطريق؟",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "excellent-in-grades-lost-in-decision",
+      "speaker": "Noura"
+    },
+    {
+      "number": 134,
+      "key": "الأخلاقي",
+      "carrier": "أو الهاكر الأخلاقي.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "ethical-hacking-culture",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 135,
+      "key": "نصفق",
+      "carrier": "وإحنا نصفق لأنه ساكت؟",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 136,
+      "key": "الصدق",
+      "carrier": "وفي زمن المجاملات، الصدق يصير تهمة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 137,
+      "key": "المقال",
+      "carrier": "المقال ما يلومه…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
+      "speaker": "Noura"
+    },
+    {
+      "number": 138,
+      "key": "تلقى",
+      "carrier": "تلقى أشكال وايدة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201704-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 139,
+      "key": "قصور",
+      "carrier": "أكو قصور كبير عند المعلمين.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201802-003",
+      "speaker": "Noura"
+    },
+    {
+      "number": 140,
+      "key": "والصدق",
+      "carrier": "والصدق ضعف بالتعامل مع الواقع؟",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 141,
+      "key": "موقع",
+      "carrier": "بس وين موقع الكويت من هالمنافسة؟",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201911-001",
+      "speaker": "Noura"
+    },
+    {
+      "number": 142,
+      "key": "الأقل",
+      "carrier": "أو على الأقل… يتزعزع اللي عندهم.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201810-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 143,
+      "key": "قطاع",
+      "carrier": "عشان جذي، لازم نخصخص قطاع التعليم…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201805-001",
+      "speaker": "Noura"
+    },
+    {
+      "number": 144,
+      "key": "يقوله",
+      "carrier": "بس قال اللي وايد من البشر ما يجرؤ يقوله.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "i-earned-more-than-harvard-but-it-doesnt-teach-brains",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 145,
+      "key": "قسط",
+      "carrier": "ويكفي إن حلمنا واحد، ومعاه قسط من الخيال.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-004",
+      "speaker": "Noura"
+    },
+    {
+      "number": 146,
+      "key": "مواقع",
+      "carrier": "وصار انتشار مواقع الإلحاد ملحوظ بين الناس.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201810-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 147,
+      "key": "بصدق",
+      "carrier": "والاحتفال ما يرمم إنسان ما راجع نفسه بصدق.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-year-that-doesnt-begin-with-the-calendararabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 148,
+      "key": "التصفيق",
+      "carrier": "وفي عصر التصفيق.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 149,
+      "key": "وضاقت",
+      "carrier": "وضاقت فيهم السبل.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201709-009",
+      "speaker": "Noura"
+    },
+    {
+      "number": 150,
+      "key": "بهالطريق",
+      "carrier": "عيل وين رحنا بهالطريق؟",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 151,
+      "key": "والمقال",
+      "carrier": "والمقال ما يرفض النظام…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 152,
+      "key": "المتقدمة",
+      "carrier": "مقارنة بالدول المتقدمة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201703-001",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 153,
+      "key": "الصداقة",
+      "carrier": "عكس الصداقة الافتراضية.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-005",
+      "speaker": "Noura"
+    },
+    {
+      "number": 154,
+      "key": "هالتطبيقات",
+      "carrier": "ليش ما تنفع كل هالتطبيقات؟",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201709-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 155,
+      "key": "أعتقد",
+      "carrier": "قال: نسيت… بس أعتقد كتبتها عدل.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 156,
+      "key": "مطلق",
+      "carrier": "لا، مو جذي. المكافأة مو شر مطلق.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "children-who-know-what-is-required-but-do-not-know-whyarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 157,
+      "key": "الاقتصادية",
+      "carrier": "عشان تتخلص من مشاكلها الاقتصادية…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201711-001",
+      "speaker": "Noura"
+    },
+    {
+      "number": 158,
+      "key": "بطريقة",
+      "carrier": "والتدريب عليه كان بطريقة مو متمكنة…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201802-001",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 159,
+      "key": "ألقى",
+      "carrier": "ألقى فيها أسئلة وايدة تدور في نفسي…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201612-002",
+      "speaker": "Noura"
+    },
+    {
+      "number": 160,
+      "key": "قصد",
+      "carrier": "بس المعلم بالغالب ما قصد شي من هذا.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-classroom-that-fears-mistakesarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 161,
+      "key": "قراصنة",
+      "carrier": "خلونا نبني قراصنة محترفين، بس بأخلاق.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "ethical-hacking-culture",
+      "speaker": "Noura"
+    },
+    {
+      "number": 162,
+      "key": "طرق",
+      "carrier": "أقصد طرق التدريس اللي كانت بذاك الزمن.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201706-002",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 163,
+      "key": "أقوى",
+      "carrier": "والحرب الافتراضية أقوى من الحروب العسكرية…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201709-008",
+      "speaker": "Noura"
+    },
+    {
+      "number": 164,
+      "key": "قطر",
+      "carrier": "إحنا بعد مو مع حصار قطر… هذا موقفنا الواضح.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201709-008",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 165,
+      "key": "قضية",
+      "carrier": "هي قضية مجتمعية معاصرة لازم نسلط عليها الضو…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-social-media-swamp-and-plastic-surgery-addiction-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 166,
+      "key": "نقص",
+      "carrier": "ترى ما ننكر إن تواصلهم وينا نقص… ومع أي جليس.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "smartphone-child-a-creative-mind-or-a-child-being-driven",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 167,
+      "key": "ونغرقهم",
+      "carrier": "ونغرقهم بالموافقة… وبعدين نستغرب ليش ما يقدرون.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
+      "speaker": "Noura"
+    },
+    {
+      "number": 168,
+      "key": "وتطبيق",
+      "carrier": "بكل حصة ندور لعبة، ونشاط، وتطبيق، ومعلومة سريعة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 169,
+      "key": "صديقي",
+      "carrier": "قلت له: بس يا صديقي، يمكن الوفاة لها أسباب ثانية.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201802-002",
+      "speaker": "Noura"
+    },
+    {
+      "number": 170,
+      "key": "قطاعات",
+      "carrier": "يمكن لو قدرنا نوجه التكنولوجيا صوب قطاعات حيوية ثانية.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201703-001",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 171,
+      "key": "هالقطاعات",
+      "carrier": "فبدال ما نستخدمها في هالقطاعات، وفي السلم وخدمة الناس.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201703-001",
+      "speaker": "Noura"
+    },
+    {
+      "number": 172,
+      "key": "أتفق",
+      "carrier": "أتفق وياك.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "intelligence-without-a-consciencearabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 173,
+      "key": "أرقام",
+      "carrier": "صارت أرقام.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 174,
+      "key": "تتقدم",
+      "carrier": "تتقدم وهي مرهقة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201703-004",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 175,
+      "key": "وأقدر",
+      "carrier": "وأقدر يعبر بسلام.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
+      "speaker": "Noura"
+    },
+    {
+      "number": 176,
+      "key": "يوقف",
+      "carrier": "مو لأنه يوقف فهمه.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "children-who-know-what-is-required-but-do-not-know-whyarabic-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 177,
+      "key": "صدقتوا",
+      "carrier": "صج صدقتوا إنه علم؟",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
+      "speaker": "Noura"
+    },
+    {
+      "number": 178,
+      "key": "نوقف",
+      "carrier": "لحظة… خلنا نوقف هني.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "intelligence-without-a-consciencearabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 179,
+      "key": "وأتوقع",
+      "carrier": "وأتوقع الأغلبية وياه.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201711-004",
+      "speaker": "Noura"
+    },
+    {
+      "number": 180,
+      "key": "هالقصة",
+      "carrier": "والأرقام تسند هالقصة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-a-student-wishes-for-death-before-the-first-bell-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 181,
+      "key": "يصدق",
+      "carrier": "جان وقف مبهور ما يصدق.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201612-002",
+      "speaker": "Noura"
+    },
+    {
+      "number": 182,
+      "key": "الديمقراطية",
+      "carrier": "ترسيخ قيم الديمقراطية…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201810-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 183,
+      "key": "والغارقات",
+      "carrier": "والغارقات في المستنقع…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "the-social-media-swamp-and-plastic-surgery-addiction-2",
+      "speaker": "Noura"
+    },
+    {
+      "number": 184,
+      "key": "التقطت",
+      "carrier": "وأكسفورد التقطت هالشي.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-truth-died-and-the-narrative-survivedarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 185,
+      "key": "طريقه",
+      "carrier": "عشان يحسن اختيار طريقه.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "a-generation-without-rootsarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 186,
+      "key": "أوراق",
+      "carrier": "إحنا نكرر أوراق مطبوعة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "coming-soon-a-certificate-without-a-mind-2",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 187,
+      "key": "المنقرضة",
+      "carrier": "صارت من الأمور المنقرضة.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-001",
+      "speaker": "Noura"
+    },
+    {
+      "number": 188,
+      "key": "والمقصود",
+      "carrier": "والمقصود فيه واحد بيننا…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201806-005",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 189,
+      "key": "تضيق",
+      "carrier": "وبس يوم تضيق… يبين كل شي.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201611-005",
+      "speaker": "Noura"
+    },
+    {
+      "number": 190,
+      "key": "واقتصاديات",
+      "carrier": "بس دول واقتصاديات بهالحجم…",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "qabas-201703-003",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 191,
+      "key": "وينقضه",
+      "carrier": "المقال يعرض هالرأي وينقضه.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "smartphone-child-a-creative-mind-or-a-child-being-driven",
+      "speaker": "Noura"
+    },
+    {
+      "number": 192,
+      "key": "يقرون",
+      "carrier": "ولا شلون يفكرون فيما يقرون؟",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "when-truth-died-and-the-narrative-survivedarabic",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 193,
+      "key": "قصته",
+      "carrier": "ومحد عطاه فرصة يفهم قصته هو.",
+      "category": "عائلة نطق عالية الخطورة من الحوارات",
+      "source": "a-generation-without-rootsarabic",
+      "speaker": "Noura"
+    },
+    {
+      "number": 194,
+      "key": "الأصدقاء",
+      "count": 9,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201708-003",
+      "carrier": "في إحدى جمعاتنا بين الأصدقاء…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 195,
+      "key": "لأوقظك",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "carrier": "بل لأوقظك.",
+      "speaker": "Noura"
+    },
+    {
+      "number": 196,
+      "key": "يقرؤون",
+      "count": 3,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201810-002",
+      "carrier": "وكأنهم يقرؤون ما في عقلي…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 197,
+      "key": "قضاء",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "from-the-schoolyard-to-the-food-court-2",
+      "carrier": "بل في كيفية قضاء وقته بعده.",
+      "speaker": "Noura"
+    },
+    {
+      "number": 198,
+      "key": "إطلاقا",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201810-002",
+      "carrier": "ولم أجري أي عملية بحث على اليويتوب إطلاقاً بتلك الأمور…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 199,
+      "key": "وأغرق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201708-002",
+      "carrier": "وأغرق بين الأوراق…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 200,
+      "key": "أصدقائنا",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201811-001",
+      "carrier": "لم نجتمع مع أصدقائنا والمقربين…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 201,
+      "key": "وقضاؤنا",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-002",
+      "carrier": "وقضاؤنا نزيه ما عليه غبار بلا شك…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 202,
+      "key": "أغرقنا",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201811-002",
+      "carrier": "نحن لا نغرق بل سيغرق كل مسؤول أغرقنا…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 203,
+      "key": "أغلقت",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "a-generation-without-rootsarabic",
+      "carrier": "لكنها في الطريق أغلقت عليه باب الجذور.",
+      "speaker": "Noura"
+    },
+    {
+      "number": 204,
+      "key": "أطيق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "carrier": "لا أطيق هذا النوع من المجاملة المؤذية.",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 205,
+      "key": "وأصدقكم",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201711-003",
+      "carrier": "وأصدقكم أن هذه الفكرة بحد ذاتها تفقدني الصواب…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 206,
+      "key": "بالإنقراض",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201712-003",
+      "carrier": "ويطرق على فكري سؤال: هل وظيفتك مهددة بالإنقراض؟",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 207,
+      "key": "القائمة",
+      "count": 6,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201802-001",
+      "carrier": "من الاختبارات القائمة على مهارات التفكير العليا…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 208,
+      "key": "إطلاقها",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "freedom-without-thinking-and-openness-without-awareness-2",
+      "carrier": "ألا يمنع الحرية، بل يُربّي على التفكير قبل إطلاقها.",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 209,
+      "key": "أغلقنا",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "from-the-schoolyard-to-the-food-court-2",
+      "carrier": "أغلقنا المساحات التربوية، وتركنا الجيل أمام الشاشات.",
+      "speaker": "Noura"
+    },
+    {
+      "number": 210,
+      "key": "لأوقظ",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "carrier": "وأنا لا أكتب لأحبطك، بل لأوقظ فيك إنساناً كاد أن ينام…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 211,
+      "key": "ألصقناه",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "when-the-exam-becomes-the-goalarabic",
+      "carrier": "المشكلة ليست في وجود الامتحان، بل في المعنى الذي ألصقناه به.",
+      "speaker": "Noura"
+    },
+    {
+      "number": 212,
+      "key": "الإسقاطات",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-social-media-swamp-and-plastic-surgery-addiction-2",
+      "carrier": "… بجانب الحقيقة وليس الوهم أو الإسقاطات التي تقع بها النساء والرجال أيضاً…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 213,
+      "key": "والاستقصاء",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201804-001",
+      "carrier": "… اختراع أو إبداع يقابل بالصد والاستقصاء…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 214,
+      "key": "أصدقائي",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201708-001",
+      "carrier": "… كبير من الاتصالات الفائته من أصدقائي واهلي وبدأ صوت المنبه يذكرني بموعد تأخرت …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 215,
+      "key": "تلقائية",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-year-that-doesnt-begin-with-the-calendararabic",
+      "carrier": "… الوصول إلى مستوى عالٍ من تلقائية السلوك يستغرق في المتوسط 66 يوماً، وبمدى …",
+      "speaker": "Noura"
+    },
+    {
+      "number": 216,
+      "key": "إغلاق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "a-new-kind-of-fatigue-in-old-expressionsarabic",
+      "carrier": "… التوقف القصير دون ذنب، وحقّ إغلاق نافذة رقمية واحدة لا نحتاجها، وحقّ يومٍ …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 217,
+      "key": "إقتصاد",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201611-001",
+      "carrier": "أظهر تقرير إقتصاد المعرفة العربي 2015-2016، الذي أعدّته «أورينت بلانيت …",
+      "speaker": "Noura"
+    },
+    {
+      "number": 218,
+      "key": "الإقتصاد",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201711-001",
+      "carrier": "… تدخل في تطور المؤسسات وكذا الإقتصاد العام، وكيف أنه يسمح بخلق مناصب عمل …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 219,
+      "key": "لأصدقاء",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201611-003",
+      "carrier": "… الاجتماعي على صناعة أدوات تسمح لأصدقاء في أماكن مختلفة في هذا العالم بالاجتماع …",
+      "speaker": "Noura"
+    },
+    {
+      "number": 220,
+      "key": "أصدقائك",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201611-005",
+      "carrier": "… مهما وجدت من متعة مع أصدقائك عبر العالم الافتراضي فمتعتك في العالم الحقيقي …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 221,
+      "key": "وأصدقاء",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201611-005",
+      "carrier": "… وليس هناك مثل الرفقة الطيبة وأصدقاء الطفولة، ومراقبة الحي لأبناء الحي.",
+      "speaker": "Noura"
+    },
+    {
+      "number": 222,
+      "key": "أقطاب",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201704-003",
+      "carrier": "… نانيانغ للتكنولوجيا بسنغافورة من تركيب أقطاب كهربائية في نوع معين من الخنافس، معروف …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 223,
+      "key": "وإغلاق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "e-learning-initiatives-and-solutions-2",
+      "carrier": "… انتشار فيروس كورونا حول العالم وإغلاق المدارس والجامعات وفقاً للتدابير الوقائية والاحتياطية للسيطرة …",
+      "speaker": "Noura"
+    },
+    {
+      "number": 224,
+      "key": "طرائق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201805-003",
+      "carrier": "… المعلمين في الغالب لا يتضمن طرائق التعامل مع الطلبة، وإنما تجعل ذلك وفقاً …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 225,
+      "key": "قضائية",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201711-001",
+      "carrier": "… أدوات تشريعية سابقة أو أحكام قضائية تتصل به، ويأتي ذلك نتيجة لحقوق الملكية …",
+      "speaker": "Noura"
+    },
+    {
+      "number": 226,
+      "key": "تقنية",
+      "count": 9,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201704-003",
+      "carrier": "فهي تقنية تهتم بخواص المواد…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 227,
+      "key": "تطبيقه",
+      "count": 3,
+      "category": "غير متوقع من متن المقالات",
+      "source": "competency-based-approach-to-the-trash",
+      "carrier": "لماذا لم يقيموا المنهاج قبل تطبيقه؟",
+      "speaker": "Noura"
+    },
+    {
+      "number": 228,
+      "key": "نطاق",
+      "count": 7,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201706-002",
+      "carrier": "وظهور برامج تعليمية متخصصة وعلى نطاق واسع…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 229,
+      "key": "تقديم",
+      "count": 8,
+      "category": "غير متوقع من متن المقالات",
+      "source": "ethical-hacking-culture",
+      "carrier": "بهدف تقديم تقرير يُقيّم المخاطر التي يحتويها النظام…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 230,
+      "key": "تطبيقها",
+      "count": 3,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-005",
+      "carrier": "وتكثيف الدراسات لنصل إلى نتيجة يمكن تطبيقها بشكل فعلي…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 231,
+      "key": "نقرأه",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201703-002",
+      "carrier": "وتحسفت على زمن الكتاب بشتى المجالات الذي كنا نقرأه بكل ثقة…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 232,
+      "key": "تلقائيا",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "when-a-student-wishes-for-death-before-the-first-bell-2",
+      "carrier": "… أطفاله شغف السؤال والاكتشاف، يصنع تلقائياً طالباً يرى المدرسة سجناً مؤقتاً ينتظر الفرج …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 233,
+      "key": "ننطلق",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "eliminating-the-education-epidemic",
+      "carrier": "فقط دعونا ننطلق…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 234,
+      "key": "نقرأ",
+      "count": 4,
+      "category": "غير متوقع من متن المقالات",
+      "source": "in-their-opinion-surgery-is-a-male-specialty-2",
+      "carrier": "ولا يمكن أن نأخذ كل ما نقرأ…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 235,
+      "key": "قائمة",
+      "count": 4,
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "carrier": "خطة، اقتباسات، قائمة مراجع، نموذج جاهز.",
+      "speaker": "Noura"
+    },
+    {
+      "number": 236,
+      "key": "تقنيات",
+      "count": 7,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201706-001",
+      "carrier": "‏ومع التقدم في تقنيات الواقع الافتراضي…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 237,
+      "key": "مؤقتة",
+      "count": 4,
+      "category": "غير متوقع من متن المقالات",
+      "source": "do-we-contain-or-raise-2",
+      "carrier": "الاحتواء بدون تربية = راحة مؤقتة للوالدين…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 238,
+      "key": "يقتصر",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201808-002",
+      "carrier": "ولا يقتصر الأمر على الإعلام إنما البداية لهم…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 239,
+      "key": "تطبيقية",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-005",
+      "carrier": "وبناء البرمجيات التربوية كبرمجية تطبيقية دون مراعاة الأسس التربوية…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 240,
+      "key": "يستغرق",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-year-that-doesnt-begin-with-the-calendararabic",
+      "carrier": "… مستوى عالٍ من تلقائية السلوك يستغرق في المتوسط 66 يوماً، وبمدى واسع من …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 241,
+      "key": "يقرأ",
+      "count": 3,
+      "category": "غير متوقع من متن المقالات",
+      "source": "freedom-without-thinking-and-openness-without-awareness-2",
+      "carrier": "فسألته: «هل يقرأ؟",
+      "speaker": "Noura"
+    },
+    {
+      "number": 242,
+      "key": "وأقلها",
+      "count": 3,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-002",
+      "carrier": "وأقلها الأدبي 86.",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 243,
+      "key": "المؤقت",
+      "count": 3,
+      "category": "غير متوقع من متن المقالات",
+      "source": "i-write-to-awaken-you-not-to-discourage-you-2",
+      "carrier": "» فبعض الإحباط المؤقت…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 244,
+      "key": "القطاعات",
+      "count": 5,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201703-001",
+      "carrier": "وعلى حساب باقي القطاعات…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 245,
+      "key": "ينطبق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201711-003",
+      "carrier": "وهذا ينطبق على جلاكسي S8…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 246,
+      "key": "تتساقط",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-009",
+      "carrier": "وغداً تتساقط باقي المسبحة…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 247,
+      "key": "تضييق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201612-001",
+      "carrier": "الحل يكمن في تضييق إطار الخبر…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 248,
+      "key": "يسقطون",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "expectations-that-shape-a-studentarabic",
+      "carrier": "بعض الطلاب لا يسقطون لأنهم عاجزون…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 249,
+      "key": "تصديق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201712-002",
+      "carrier": "وتضعهم أمام تصديق ما يرون وتكذيبه…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 250,
+      "key": "تطويق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-009",
+      "carrier": "وفرض أجندات من أجل تطويق الخناق للإخضاع…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 251,
+      "key": "تصفيق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-success-that-destroyed-us-2",
+      "carrier": "عندها فقط، لن نحتاج إلى تصفيقٍ لنشعر أننا وصلنا.",
+      "speaker": "Noura"
+    },
+    {
+      "number": 252,
+      "key": "تطبيقا",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2",
+      "carrier": "فصار يُراجع المقالات كما يُراجع تطبيقاً إلكترونياً.",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 253,
+      "key": "يقضية",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201708-003",
+      "carrier": "وبخصوص الوقت الذي كان يقضية الطفل مع الألعاب الالكترونية…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 254,
+      "key": "يطابق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-human-who-forgot-himselfarabic",
+      "carrier": "هكذا ينسى الإنسان نفسه وهو يحاول أن يطابق قالباً رقمياً لا يُشبهه.",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 255,
+      "key": "يتضايقون",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "rest-is-taught-and-the-mind-is-on-permanent-vacation-2",
+      "carrier": "الطلاب باتوا يتضايقون من القراءة، يكرهون الجدل، يتوترون من كلمة «ناقش».",
+      "speaker": "Noura"
+    },
+    {
+      "number": 256,
+      "key": "يتقمصها",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201706-001",
+      "carrier": "‏بعد فترة وجد الإنسان نفسه أمام شخصيات متعددة يمكن أن يتقمصها ‏ويسكنها ويتقنها…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 257,
+      "key": "تقليص",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201707-002",
+      "carrier": "إن أكثر قطاع حاول تقليص الفجوة بين مخرجات التعليم ومتطلبات سوق العمل …",
+      "speaker": "Noura"
+    },
+    {
+      "number": 258,
+      "key": "نستيقظ",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-004",
+      "carrier": "لا نريد أن نستيقظ يوماً فنجد أجيالنا القادمة لا يستطيعون العيش …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 259,
+      "key": "يقصرها",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201704-004",
+      "carrier": "جعلت البعض يقصرها على المجالس وحلقات الدين والمشافهة والنقل المباشر …",
+      "speaker": "Noura"
+    },
+    {
+      "number": 260,
+      "key": "يضايقك",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-003",
+      "carrier": "… خاصة إذا كان الشخص لا يضايقك السلوك كما أنت…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 261,
+      "key": "تقتضي",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "in-their-opinion-surgery-is-a-male-specialty-2",
+      "carrier": "… العمل في غرفة العمليات التي تقتضي أحياناً استدعاء اختصاصية الجراحة في أي وقت …",
+      "speaker": "Noura"
+    },
+    {
+      "number": 262,
+      "key": "أسواق",
+      "count": 3,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201703-003",
+      "carrier": "… للشركات العابرة للقارات بأن تغزو أسواق الشرق والغرب…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 263,
+      "key": "الإخفاق",
+      "count": 3,
+      "category": "غير متوقع من متن المقالات",
+      "source": "when-the-exam-becomes-the-goalarabic",
+      "carrier": "… فقط، يصبح أكثر هشاشة أمام الإخفاق، وأكثر عرضةً لقلق الاختبار وتقلّب تقديره لذاته.",
+      "speaker": "Noura"
+    },
+    {
+      "number": 264,
+      "key": "يصادق",
+      "count": 1,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201612-004",
+      "carrier": "… ضروريات التكنولوجيا، بالإضافة إلى مجتمع يصادق عليها وقد فاق ذلك احتياجات الزمن الماضي، …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 265,
+      "key": "قرائي",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201810-002",
+      "carrier": "قرائي…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 266,
+      "key": "والأخلاق",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-007",
+      "carrier": "والأخلاق…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 267,
+      "key": "أوراقا",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "we-graduated-with-a-degree-but-the-language-was-lost-2",
+      "carrier": "هل نُسلّمهم أوراقاً…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 268,
+      "key": "مؤقت",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "excellent-in-grades-lost-in-decision",
+      "carrier": "وكأن الشهادة سجن مؤقت.",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 269,
+      "key": "الطرق",
+      "count": 4,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-003",
+      "carrier": "عبر الطرق الدبلوماسية…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 270,
+      "key": "أخلاقي",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic",
+      "carrier": "وهل الوطن عندك موقفٌ أخلاقي ثابت…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 271,
+      "key": "أنيق",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "do-we-contain-or-raise-2",
+      "carrier": "طفل نظيف، أنيق، مبرمج على الطاعة…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 272,
+      "key": "قرأت",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201711-003",
+      "carrier": "قرأت الكثير عن انتهاء عصر الهواتف الذكية…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 273,
+      "key": "الفائقة",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "eliminating-the-education-epidemic",
+      "carrier": "أو يعلمون ولكن عاجزين عن وضع الحلول الفائقة…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 274,
+      "key": "تحقيقها",
+      "count": 5,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-005",
+      "carrier": "ومدى تحقيقها للهدف التعليمي في ضوء التطور التكنولوجي…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 275,
+      "key": "سأقوم",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-005",
+      "carrier": "وهو ليس غريب علينا ولكن كمصطلح سأقوم بتعريبه وتعريفه…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 276,
+      "key": "القائم",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201703-004",
+      "carrier": "هذا في الاستثمار القائم على المنفعة العامة وليست الخاصة…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 277,
+      "key": "الأخلاقيين",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "ethical-hacking-culture",
+      "carrier": "لننظر إلى تجربة الهكرز الأخلاقيين التي تبنتها المملكة العربية السعودية…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 278,
+      "key": "بدقائق",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-human-who-forgot-himselfarabic",
+      "carrier": "… في هذا الزمن السريع، فليبدأ بدقائق من الصمت الصادق…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 279,
+      "key": "والقائمين",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201806-001",
+      "carrier": "الأكاديميين والقائمين عليها والجهود المبذولة من أجل مخرجات تلائم حاجة السوق ومتطلباته…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 280,
+      "key": "القاريء",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201703-002",
+      "carrier": "وبالتالي أصبح القاريء العربي أمام معرفة مشوهة تكاد تضع البشرية …",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 281,
+      "key": "الإلقاء",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201707-002",
+      "carrier": "… «ستيم» تقل المحاضرات وينتهي أسلوب الإلقاء ليحل محله التدريبات العملية التي يقوم بها …",
+      "speaker": "Noura"
+    },
+    {
+      "number": 282,
+      "key": "عائقا",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201702-002",
+      "carrier": "… نجد متطفلاً اسمه الهاتف يقف عائقاً بين الموظف وعمله، وبينه وبين زملائه…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 283,
+      "key": "الأقران",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "a-society-that-fears-the-different-arabic",
+      "carrier": "وتُظهر دراسة عن ضغط الأقران واستخدام الهواتف (Xu, 2023) أن بعض المراهقين …",
+      "speaker": "Noura"
+    },
+    {
+      "number": 284,
+      "key": "وأعمق",
+      "count": 2,
+      "category": "غير متوقع من متن المقالات",
+      "source": "dr-jasem-malik-the-lesson-that-never-ends-2",
+      "carrier": "… أقوى من أي جهاز ذكي، وأعمق من أي منهج مكتوب.",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 285,
+      "key": "أنظر",
+      "count": 8,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-001",
+      "carrier": "أنظر!",
+      "speaker": "Noura"
+    },
+    {
+      "number": 286,
+      "key": "السابق",
+      "count": 11,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201702-001",
+      "carrier": "هذا في السابق…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 287,
+      "key": "قليلا",
+      "count": 19,
+      "category": "غير متوقع من متن المقالات",
+      "source": "when-the-exam-becomes-the-goalarabic",
+      "carrier": "ويفهمون قليلاً.",
+      "speaker": "Noura"
+    },
+    {
+      "number": 288,
+      "key": "الخطأ",
+      "count": 29,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201709-007",
+      "carrier": "والصح من الخطأ…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 289,
+      "key": "لاحقا",
+      "count": 16,
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-teacher-the-last-to-know-2",
+      "carrier": "أم أبلغوه لاحقاً…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 290,
+      "key": "أصبح",
+      "count": 46,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201805-004",
+      "carrier": "فالحال أصبح مزري…",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 291,
+      "key": "أيضا",
+      "count": 34,
+      "category": "غير متوقع من متن المقالات",
+      "source": "qabas-201702-004",
+      "carrier": "والسؤال لكم أيضاً…",
+      "speaker": "Noura"
+    },
+    {
+      "number": 292,
+      "key": "عقلا",
+      "count": 10,
+      "category": "غير متوقع من متن المقالات",
+      "source": "the-republic-of-degrees-and-the-fall-of-thought-2",
+      "carrier": "إن لم تُحرك عقلاً.",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 293,
+      "key": "التناقض",
+      "count": 3,
+      "category": "غير متوقع من متن المقالات",
+      "source": "coming-soon-a-certificate-without-a-mind-2",
+      "carrier": "هكذا يظهر التناقض:",
+      "speaker": "Noura"
+    },
+    {
+      "number": 294,
+      "key": "ابتلش",
+      "carrier": "إذا ابتلش الواحد بمشكلة، يسأل قبل لا يتصرف.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 295,
+      "key": "أبخص",
+      "carrier": "إنت أبخص بتفاصيل شغلك.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 296,
+      "key": "أتونس",
+      "carrier": "أتونس يوم تكون السالفة خفيفة وطبيعية.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 297,
+      "key": "أدز",
+      "carrier": "أدز لك الرابط عقب ما أتأكد منه.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 298,
+      "key": "أدعم",
+      "carrier": "مرات بالغلط أدعم السيارة اللي جدامي.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 299,
+      "key": "دريشة",
+      "carrier": "فتح الدريشة وخلى الهوا يدخل.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 300,
+      "key": "فريج",
+      "carrier": "كل أهل الفريج كانوا يعرفون بعض.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 301,
+      "key": "حوش",
+      "carrier": "اليهال قاعدين يلعبون بالحوش.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 302,
+      "key": "يزهب",
+      "carrier": "قاعد يزهب أغراضه حق باچر.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 303,
+      "key": "ناطر",
+      "carrier": "أنا ناطر الرد من الصبح.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 304,
+      "key": "طرش",
+      "carrier": "طرش لي الملف يوم تخلص.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 305,
+      "key": "دز",
+      "carrier": "دز الرسالة ولا تأجلها.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 306,
+      "key": "طاف",
+      "carrier": "الموعد طاف وإحنا للحين ننطر.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 307,
+      "key": "هقوتي",
+      "carrier": "هقوتي إن الموضوع أبسط من جذي.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 308,
+      "key": "عبالي",
+      "carrier": "عبالي إن الاجتماع باچر.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 309,
+      "key": "حزة",
+      "carrier": "بهالحزة عادة يكون الشارع زحمة.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 310,
+      "key": "عفسة",
+      "carrier": "الغرفة صارت عفسة بعد الشغل.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 311,
+      "key": "خوش",
+      "carrier": "خوش سؤال، ويستاهل نفكر فيه.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 312,
+      "key": "يخرع",
+      "carrier": "الخبر يخرع إذا سمعته من غير سياق.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 313,
+      "key": "يطنش",
+      "carrier": "مو كل مرة يقدر يطنش المشكلة.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 314,
+      "key": "ينحاش",
+      "carrier": "بدل لا ينحاش من السؤال، يواجهه.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 315,
+      "key": "شالسالفة",
+      "carrier": "شالسالفة؟ ليش الكل ساكت؟",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 316,
+      "key": "شكو",
+      "carrier": "شكو هالموضوع باللي قاعدين نقوله؟",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 317,
+      "key": "شكثر",
+      "carrier": "شكثر نحتاج وقت عشان نشوف النتيجة؟",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 318,
+      "key": "توه",
+      "carrier": "توه واصل وما لحق يرتاح.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 319,
+      "key": "للحين",
+      "carrier": "للحين ما وصلنا للقرار النهائي.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 320,
+      "key": "يمعود",
+      "carrier": "يمعود، خلنا نفهم السالفة أول.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 321,
+      "key": "يبه",
+      "carrier": "يبه، الموضوع ما يحتاج كل هالتعقيد.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 322,
+      "key": "أكو",
+      "carrier": "أكو فرق بين السرعة والاستعجال.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 323,
+      "key": "ماكو",
+      "carrier": "ماكو مشكلة إذا اعترفنا بالغلط.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 324,
+      "key": "جذي",
+      "carrier": "جذي الصورة تصير أوضح.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 325,
+      "key": "چم",
+      "carrier": "چم مرة قلنا إن الإنسان أهم من الرقم؟",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 326,
+      "key": "أبي",
+      "carrier": "أبي أفهم الفكرة قبل لا أحكم عليها.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 327,
+      "key": "نبي",
+      "carrier": "نبي نتيجة تنفع الناس مو مجرد رقم.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 328,
+      "key": "تبي",
+      "carrier": "إذا تبي الصج، لازم تسمع الطرفين.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 329,
+      "key": "يبي",
+      "carrier": "الطالب يبي أحد يسمعه قبل لا يحاسبه.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 330,
+      "key": "شلون",
+      "carrier": "شلون نعرف إن القرار كان صح؟",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 331,
+      "key": "شنو",
+      "carrier": "شنو اللي تغير فعلاً بعد هالتجربة؟",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 332,
+      "key": "منو",
+      "carrier": "منو يتحمل المسؤولية إذا صار خطأ؟",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 333,
+      "key": "ليش",
+      "carrier": "ليش نستعجل الجواب قبل ما نفهم السؤال؟",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 334,
+      "key": "عيل",
+      "carrier": "عيل شنو الخطوة اللي بعدها؟",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 335,
+      "key": "مادري",
+      "carrier": "مادري إذا هالحل يناسب الكل.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 336,
+      "key": "أدري",
+      "carrier": "أدري إن الموضوع مو سهل.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 337,
+      "key": "تدري",
+      "carrier": "تدري شنو أكثر شي لفت نظري؟",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 338,
+      "key": "ندري",
+      "carrier": "إحنا نَدري إن الخوف يأثر على القرار.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 339,
+      "key": "ينطر",
+      "carrier": "ما يصير الطالب ينطر لين آخر السنة.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 340,
+      "key": "ننطر",
+      "carrier": "إذا بننطر الكمال، ما راح نبدي.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 341,
+      "key": "توني",
+      "carrier": "توني منتبه لهالنقطة.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 342,
+      "key": "توك",
+      "carrier": "توك قلت إن المشكلة مو بالنتيجة.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 343,
+      "key": "مبجر",
+      "carrier": "وصل مبجر عشان يراجع كل شي.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 344,
+      "key": "متوهق",
+      "carrier": "صار متوهق بين قرارين.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 345,
+      "key": "باچر",
+      "carrier": "باچر نقدر نراجع النتيجة بهدوء.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 346,
+      "key": "جدام",
+      "carrier": "حط الدليل جدامك وبعدين احكم.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 347,
+      "key": "ورا",
+      "carrier": "لازم نفهم شنو ورا هالقرار.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 348,
+      "key": "بره",
+      "carrier": "المشكلة مو بس بره المدرسة.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 349,
+      "key": "ديوانية",
+      "carrier": "السالفة بالديوانية تمشي من سؤال لسؤال.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 350,
+      "key": "يهال",
+      "carrier": "اليهال يلاحظون التناقض بسرعة.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 351,
+      "key": "ريال",
+      "carrier": "كل ريال ينصرف لازم نعرف أثره.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 352,
+      "key": "شغلة",
+      "carrier": "هذي شغلة ثانية وتحتاج شرح بروحها.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 353,
+      "key": "ينرفز",
+      "carrier": "الرد الجاهز ينرفز أكثر مما يقنع.",
+      "category": "تغطية معجم كويتي",
+      "source": "external-kuwaiti-lexicons",
+      "speaker": "Noura"
+    },
+    {
+      "number": 354,
+      "key": "الخوارزمية",
+      "carrier": "الخوارزمية مو دايما تعرف شنو الأنسب للإنسان.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 355,
+      "key": "الخوارزميات",
+      "carrier": "الخوارزميات تأثر على اللي نشوفه كل يوم.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 356,
+      "key": "الخصوصية",
+      "carrier": "الخصوصية مو تفصيل صغير بالعالم الرقمي.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 357,
+      "key": "التحيز",
+      "carrier": "التحيز ممكن يدخل بالقرار من غير ما ننتبه.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 358,
+      "key": "الشفافية",
+      "carrier": "الشفافية تبدأ يوم نفهم شلون طلع القرار.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 359,
+      "key": "المساءلة",
+      "carrier": "المساءلة ضرورية إذا نبي ثقة حقيقية.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 360,
+      "key": "الحوكمة",
+      "carrier": "الحوكمة تحدد منو مسؤول عن القرار.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 361,
+      "key": "الاستدامة",
+      "carrier": "الاستدامة مو شعار؛ هي قرار طويل المدى.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 362,
+      "key": "الأتمتة",
+      "carrier": "الأتمتة توفر وقت، بس ما تلغي دور الإنسان.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 363,
+      "key": "الهلوسة",
+      "carrier": "الهلوسة بالذكاء الاصطناعي ممكن تطلع جواب واثق وغلط.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 364,
+      "key": "التوليدي",
+      "carrier": "الذكاء التوليدي يكتب بسرعة، بس يحتاج مراجعة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 365,
+      "key": "السيبراني",
+      "carrier": "الأمن السيبراني صار جزء من التربية الرقمية.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 366,
+      "key": "المنصة",
+      "carrier": "المنصة تجمع البيانات، بس منو يحميها؟",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 367,
+      "key": "البيانات",
+      "carrier": "البيانات بروحها ما تشرح كل شي.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 368,
+      "key": "المؤشرات",
+      "carrier": "المؤشرات تساعدنا، بس ما تختصر الإنسان.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 369,
+      "key": "المنهجية",
+      "carrier": "المنهجية الواضحة تفرق بين الرأي والنتيجة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 370,
+      "key": "السببية",
+      "carrier": "السببية ما تثبت لمجرد إن شيين صاروا مع بعض.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 371,
+      "key": "العينة",
+      "carrier": "إذا العينة صغيرة، ما نعمم النتيجة بسرعة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 372,
+      "key": "المتوسط",
+      "carrier": "المتوسط يخفي فروق مهمة بين الناس.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 373,
+      "key": "التقييم",
+      "carrier": "التقييم المفروض يساعد الطالب يفهم نفسه.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 374,
+      "key": "التكويني",
+      "carrier": "التقييم التكويني يصير أثناء التعلم، مو بعده بس.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 375,
+      "key": "الدافعية",
+      "carrier": "الدافعية تقل إذا صار التعلم كله خوف.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 376,
+      "key": "الاحتراق",
+      "carrier": "الاحتراق النفسي مو مجرد تعب يومين.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 377,
+      "key": "المرونة",
+      "carrier": "المرونة مو إنك تسكت عن كل ضغط.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 378,
+      "key": "الصمود",
+      "carrier": "الصمود يحتاج دعم، مو أوامر وبس.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 379,
+      "key": "الجدارة",
+      "carrier": "الجدارة ما تنقاس بورقة وحدة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 380,
+      "key": "الكفاءة",
+      "carrier": "الكفاءة تبين بالموقف، مو بالشعار.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 381,
+      "key": "العدالة",
+      "carrier": "العدالة مو إننا نعامل الكل بنفس الطريقة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 382,
+      "key": "المساواة",
+      "carrier": "المساواة مهمة، بس الاحتياج يختلف من شخص للثاني.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 383,
+      "key": "الهوية",
+      "carrier": "الهوية الرقمية ما تختصر هوية الإنسان.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 384,
+      "key": "الانتماء",
+      "carrier": "الانتماء يكبر يوم الواحد يحس إن صوته مسموع.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 385,
+      "key": "الأخلاقيات",
+      "carrier": "الأخلاقيات بالتقنية تبدأ قبل إطلاق المنتج.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 386,
+      "key": "المسؤولية",
+      "carrier": "المسؤولية ما تضيع لمجرد إن القرار آلي.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 387,
+      "key": "النقدي",
+      "carrier": "التفكير النقدي يسأل عن الدليل قبل التصديق.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 388,
+      "key": "الهجين",
+      "carrier": "التعليم الهجين يحتاج تصميم، مو بس شاشة وصف.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 389,
+      "key": "الذاتي",
+      "carrier": "التعلم الذاتي يحتاج هدف واضح وتغذية راجعة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 390,
+      "key": "المصداقية",
+      "carrier": "المصداقية تنبني على الدقة والوضوح.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 391,
+      "key": "الاستقطاب",
+      "carrier": "الاستقطاب يخلي كل طرف يسمع نفسه وبس.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 392,
+      "key": "التضليل",
+      "carrier": "التضليل ينتشر أسرع يوم تكون الرواية جذابة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 393,
+      "key": "التحقق",
+      "carrier": "التحقق من المصدر يسبق المشاركة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 394,
+      "key": "النمذجة",
+      "carrier": "النمذجة تساعدنا نفهم الاحتمالات قبل القرار.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 395,
+      "key": "المحاكاة",
+      "carrier": "المحاكاة تقرب الفكرة، بس مو بديل عن الواقع.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 396,
+      "key": "الاستدلال",
+      "carrier": "الاستدلال السليم يبدأ من دليل واضح.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 397,
+      "key": "الترابط",
+      "carrier": "الترابط بين متغيرين ما يثبت إن واحد سبب الثاني.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 398,
+      "key": "الانحدار",
+      "carrier": "تحليل الانحدار يفيد، بس تفسيره يحتاج حذر.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 399,
+      "key": "الانحياز",
+      "carrier": "الانحياز بالعينة ممكن يغير النتيجة كلها.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 400,
+      "key": "الموثوقية",
+      "carrier": "الموثوقية تعني إن القياس ثابت بظروف متشابهة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 401,
+      "key": "التكرار",
+      "carrier": "التكرار بنفس النتيجة يقوي ثقتنا فيها.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 402,
+      "key": "الاحتمالية",
+      "carrier": "النتيجة الاحتمالية مو وعد أكيد.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 403,
+      "key": "السحابة",
+      "carrier": "السحابة تحفظ البيانات، بس تحتاج حماية واضحة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 404,
+      "key": "التشفير",
+      "carrier": "التشفير يحمي المعلومة وهي تنتقل.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 405,
+      "key": "المصادقة",
+      "carrier": "المصادقة بخطوتين تقلل خطر اختراق الحساب.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 406,
+      "key": "الاختراق",
+      "carrier": "الاختراق مو دايما يبدأ بهجوم معقد.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 407,
+      "key": "الابتزاز",
+      "carrier": "الابتزاز الرقمي يحتاج تصرف هادي وسريع.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 408,
+      "key": "الخوارزمي",
+      "carrier": "القرار الخوارزمي لازم يكون قابل للمراجعة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 409,
+      "key": "الروبوتات",
+      "carrier": "الروبوتات تغير بعض المهام، مو قيمة الإنسان.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 410,
+      "key": "الافتراضي",
+      "carrier": "العالم الافتراضي يوسع التواصل، بس مو بديل كامل.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 411,
+      "key": "المعزز",
+      "carrier": "الواقع المعزز يضيف معلومة فوق المشهد الحقيقي.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 412,
+      "key": "التحليلات",
+      "carrier": "التحليلات بالتعلم تساعد المعلم إذا فهم سياقها.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 413,
+      "key": "الاستباقي",
+      "carrier": "الدعم الاستباقي يوصل قبل ما تكبر المشكلة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 414,
+      "key": "التشخيص",
+      "carrier": "التشخيص التربوي مو حكم نهائي على الطالب.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 415,
+      "key": "التدخل",
+      "carrier": "التدخل المبكر يفرق إذا كان مبني على دليل.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 416,
+      "key": "الإدماج",
+      "carrier": "الإدماج الحقيقي يحتاج بيئة تسمع احتياج كل طالب.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 417,
+      "key": "الدمج",
+      "carrier": "الدمج مو مجرد وجود الطلبة بنفس الصف.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 418,
+      "key": "الإعاقة",
+      "carrier": "الإعاقة ما تختصر الإنسان ولا قدراته.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 419,
+      "key": "العسر",
+      "carrier": "العسر بالقراءة يحتاج دعم متخصص مو لوم.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 420,
+      "key": "الانتباه",
+      "carrier": "الانتباه يتأثر بالنوم والضغط وطريقة الشرح.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 421,
+      "key": "الذاكرة",
+      "carrier": "الذاكرة مو مخزن ثابت؛ تتأثر بالسياق.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 422,
+      "key": "الإدراك",
+      "carrier": "الإدراك يتغير حسب الخبرة والتوقع.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 423,
+      "key": "التعاطف",
+      "carrier": "التعاطف يبدأ يوم نسمع من غير استعجال.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 424,
+      "key": "الوصمة",
+      "carrier": "الوصمة تمنع وايد ناس من طلب المساعدة.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 425,
+      "key": "العزلة",
+      "carrier": "العزلة الطويلة تأثر على النفس والعلاقات.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 426,
+      "key": "التنمر",
+      "carrier": "التنمر مو مزحة إذا الطرف الثاني قاعد يتأذى.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 427,
+      "key": "المواطنة",
+      "carrier": "المواطنة الرقمية فيها حقوق ومسؤوليات.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 428,
+      "key": "الاستثمار",
+      "carrier": "الاستثمار بالتعليم أثره يبين على مدى طويل.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 429,
+      "key": "التنافسية",
+      "carrier": "التنافسية ما تنبني على السرعة بروحها.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    },
+    {
+      "number": 430,
+      "key": "الإنتاجية",
+      "carrier": "الإنتاجية مو عدد ساعات الدوام وبس.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Fahad"
+    },
+    {
+      "number": 431,
+      "key": "التمويل",
+      "carrier": "التمويل لازم يرتبط بهدف وأثر واضح.",
+      "category": "مصطلح مرجح لمقال قادم",
+      "source": "editorial-domain-forecast",
+      "speaker": "Noura"
+    }
+  ]
+}

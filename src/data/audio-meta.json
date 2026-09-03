@@ -4231,23 +4231,6 @@
     "verifiedAt": "2026-08-07T21:59:33.178Z",
     "bytes": 2887724
   },
-  "qabas-201712-002.dialogue-kw.json": {
-    "bytes": 9300,
-    "sha256": "bd51dafbcd25077303a116b886bb0ce6b22da5b44b92e6d38d7b33b6f38af098",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T07:41:34.870Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T07:41:34.870Z"
-  },
-  "qabas-201712-002.dialogue-kw.mp3": {
-    "bytes": 2228685,
-    "sha256": "6d1520ff0fe674dd0efcff3344bf6a09699c548d0697f8c45ff1b55b6fc00911",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T07:41:34.871Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T07:41:34.871Z",
-    "durationSeconds": 111
-  },
   "qabas-201712-002.dialogue.json": {
     "bytes": 9822,
     "sha256": "2e0e541af445eb57082da7cfd3148192bb7143c6886df115a222a9bf5b8f64f9",
@@ -4276,23 +4259,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:59:34.614Z",
     "bytes": 3749555
-  },
-  "qabas-201712-003.dialogue-kw.json": {
-    "bytes": 9309,
-    "sha256": "e6b84a4689ec6f406a90183366cd848f9271ef5b4f83169dc6df730d800f70ab",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T07:58:44.472Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T07:58:44.472Z"
-  },
-  "qabas-201712-003.dialogue-kw.mp3": {
-    "bytes": 2069325,
-    "sha256": "10d0c7521201492a822cd699ca15dcca2ea1b80387f862b8df5d072a658a5cce",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T07:58:44.472Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T07:58:44.472Z",
-    "durationSeconds": 103
   },
   "qabas-201712-003.dialogue.json": {
     "bytes": 9270,
@@ -4368,23 +4334,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:37.705Z"
   },
-  "qabas-201802-001.dialogue-kw.json": {
-    "bytes": 9359,
-    "sha256": "7f56637d8783e8736d4b6fb6e55be0f1e7ff2b27a7c00df3d127979f6dd3e947",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T08:39:51.923Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T08:39:51.923Z"
-  },
-  "qabas-201802-001.dialogue-kw.mp3": {
-    "bytes": 2107725,
-    "sha256": "a3de0ccd97783c25150b764f2855986b9febb02d2b015565a8ec0d43fb06d51c",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T08:39:51.923Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T08:39:51.923Z",
-    "durationSeconds": 105
-  },
   "qabas-201802-001.dialogue.json": {
     "bytes": 9731,
     "sha256": "ceb1f7bdb568a45e4ca1774703b86b81a1d2e1c146c65f93c3ee8931831316a4",
@@ -4429,23 +4378,6 @@
     "acceptedAt": "2026-07-24T23:53:18.963Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:38.698Z"
-  },
-  "qabas-201802-002.dialogue-kw.json": {
-    "bytes": 9209,
-    "sha256": "87701a3871988e2649156714b395cb92049ff48bef450b512d942edb3e91bd92",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T08:44:05.761Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T08:44:05.761Z"
-  },
-  "qabas-201802-002.dialogue-kw.mp3": {
-    "bytes": 2070285,
-    "sha256": "0c4800444359db8acb35eb3f7d31323b38b49d79dd240b63d5d12eccdd67320c",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T08:44:05.761Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T08:44:05.761Z",
-    "durationSeconds": 103
   },
   "qabas-201802-002.dialogue.json": {
     "bytes": 9355,
@@ -4492,23 +4424,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T21:09:25.985Z"
   },
-  "qabas-201802-003.dialogue-kw.json": {
-    "bytes": 9168,
-    "sha256": "b711e764f6cf1dc72a0a18d8b49d862ed4177b5a919843be8c657ad3721e1184",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T08:58:33.974Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T08:58:33.974Z"
-  },
-  "qabas-201802-003.dialogue-kw.mp3": {
-    "bytes": 1942605,
-    "sha256": "1a4a83fff227635079824b2f09ebf436371f5683921a0ce30793c1c903f03af7",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T08:58:33.974Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T08:58:33.974Z",
-    "durationSeconds": 97
-  },
   "qabas-201802-003.dialogue.json": {
     "bytes": 9461,
     "sha256": "588730ef14e951a6591c912b7f7951ce767d9ff48e17ab4d67026cf229e0bfc1",
@@ -4553,23 +4468,6 @@
     "acceptedAt": "2026-07-24T23:58:54.542Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:39.226Z"
-  },
-  "qabas-201802-004.dialogue-kw.json": {
-    "bytes": 7507,
-    "sha256": "aa449ebde50e045172c277a310ab899783b126579ef1b3c6d149d2c9c0f16020",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T09:18:37.442Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T09:18:37.442Z"
-  },
-  "qabas-201802-004.dialogue-kw.mp3": {
-    "bytes": 2043405,
-    "sha256": "2f4bcaee13f57ff65607aa17a77bbcfa9dd1ed9894d62a90ab1469f44fa50d6b",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T09:18:37.442Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T09:18:37.442Z",
-    "durationSeconds": 102
   },
   "qabas-201802-004.dialogue.json": {
     "bytes": 9570,
@@ -4616,23 +4514,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:40.157Z"
   },
-  "qabas-201802-005.dialogue-kw.json": {
-    "bytes": 9233,
-    "sha256": "7d0da29de936d4212b9cea76be0bb28e423d0d0742ea3595889addd2c888e7e9",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T09:36:11.335Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T09:36:11.335Z"
-  },
-  "qabas-201802-005.dialogue-kw.mp3": {
-    "bytes": 2059725,
-    "sha256": "7489c07b25b80d45c94b3447e4bf32afb03c7055445d3911124577808901d6d8",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T09:36:11.335Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T09:36:11.335Z",
-    "durationSeconds": 103
-  },
   "qabas-201802-005.dialogue.json": {
     "bytes": 9786,
     "sha256": "bd0b8b8a8778c4fa0a74075e17c4d9941b9d0a504a8ac0316066e3e9ea2f8587",
@@ -4678,23 +4559,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:40.689Z"
   },
-  "qabas-201803-001.dialogue-kw.json": {
-    "bytes": 8653,
-    "sha256": "a1251735d18861fb6c97900b67442cb5b832e4853accd5c8df127b21fce3ff48",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T09:43:35.626Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T09:43:35.626Z"
-  },
-  "qabas-201803-001.dialogue-kw.mp3": {
-    "bytes": 2001165,
-    "sha256": "d709f71cc4f32f821ae2a42116462d4bbb16c6813f532607d7eeb02754bb26bb",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T09:43:35.626Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T09:43:35.626Z",
-    "durationSeconds": 100
-  },
   "qabas-201803-001.dialogue.json": {
     "bytes": 9511,
     "sha256": "8659f52bfc9f479e10f6321e273612e7136b42e85ab98bd02213bc6c296b4db3",
@@ -4739,23 +4603,6 @@
     "acceptedAt": "2026-07-25T00:19:03.976Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:41.646Z"
-  },
-  "qabas-201803-003.dialogue-kw.json": {
-    "bytes": 9203,
-    "sha256": "c81d68d5862c1b62eec3269b5fc76b19bd202547e2b183dc8e9fd11334ed21eb",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T09:58:07.260Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T09:58:07.260Z"
-  },
-  "qabas-201803-003.dialogue-kw.mp3": {
-    "bytes": 2086605,
-    "sha256": "ab716c148ee63c3b3b056afb60c5561a35c929b4def40acb8386a3e99b313902",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T09:58:07.260Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T09:58:07.260Z",
-    "durationSeconds": 104
   },
   "qabas-201803-003.dialogue.json": {
     "bytes": 9248,
@@ -4847,23 +4694,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:43.471Z"
   },
-  "qabas-201805-001.dialogue-kw.json": {
-    "bytes": 9172,
-    "sha256": "65bca1e2ec3c08170ce039f25882a156411cb85a1670f302c367a0b8a8ed26de",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T10:37:54.554Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T10:37:54.554Z"
-  },
-  "qabas-201805-001.dialogue-kw.mp3": {
-    "bytes": 1923405,
-    "sha256": "c6206384844aa1cd09ef78b3a9d343ebbda83f6bc07957156f2ac6d788507454",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T10:37:54.554Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T10:37:54.554Z",
-    "durationSeconds": 96
-  },
   "qabas-201805-001.dialogue.json": {
     "bytes": 9309,
     "sha256": "89f5bba63817baeda8623b50d86c5a8511afbbb271212f8de6939eeb42ec3601",
@@ -4892,23 +4722,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:59:37.405Z",
     "bytes": 3535560
-  },
-  "qabas-201805-002.dialogue-kw.json": {
-    "bytes": 9236,
-    "sha256": "1655478621bf08d90a21e090359de2d07dfa468dd2fb68e790aea036e2f353e9",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T10:56:14.031Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T10:56:14.031Z"
-  },
-  "qabas-201805-002.dialogue-kw.mp3": {
-    "bytes": 2070285,
-    "sha256": "db11a1b4391a20aeeb16a91b8cd3714939625470221b987b858e7ddf9f3d782c",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T10:56:14.031Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T10:56:14.031Z",
-    "durationSeconds": 103
   },
   "qabas-201805-002.dialogue.json": {
     "bytes": 9453,
@@ -4968,23 +4781,6 @@
     "verifiedAt": "2026-08-07T21:59:40.104Z",
     "bytes": 3668471
   },
-  "qabas-201805-004.dialogue-kw.json": {
-    "bytes": 9266,
-    "sha256": "722c609fda5f1e947efb9d8ed466ddabcad4f47706d54a3579d10001a966d62d",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T11:34:46.566Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T11:34:46.566Z"
-  },
-  "qabas-201805-004.dialogue-kw.mp3": {
-    "bytes": 1990125,
-    "sha256": "a66ba72b4c949a07c6ecdaaba9132e178f0c6477657cc037c05902aadbf0c817",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T11:34:46.566Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T11:34:46.566Z",
-    "durationSeconds": 99
-  },
   "qabas-201805-004.dialogue.json": {
     "bytes": 9357,
     "sha256": "45e24abe6a1bf8c31af1ab4acc5f0ddeeca8b3ec82c8ea38852a80d65adcafc5",
@@ -5030,23 +4826,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:44.558Z"
   },
-  "qabas-201806-001.dialogue-kw.json": {
-    "bytes": 8665,
-    "sha256": "f3d9699b5ccaf60e53d1a1e1658dafcb3d9328025557d55ef8340442bcf709f6",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T11:45:26.814Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T11:45:26.814Z"
-  },
-  "qabas-201806-001.dialogue-kw.mp3": {
-    "bytes": 2050125,
-    "sha256": "a3ccad583c29860e6794b619f36c95442ecfe400fb2612f5de2e6488a77c84ee",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T11:45:26.814Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T11:45:26.814Z",
-    "durationSeconds": 102
-  },
   "qabas-201806-001.dialogue.json": {
     "bytes": 9714,
     "sha256": "33e64d94c925dd52cc6789c767649080e72f69483b635e81260041b42fc9fcff",
@@ -5075,23 +4854,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:59:41.638Z",
     "bytes": 3525529
-  },
-  "qabas-201806-002.dialogue-kw.json": {
-    "bytes": 8690,
-    "sha256": "f093aff8bd6b3eb84ee0aa1dd46416c059a586f01bcc460b834065a38d6b80cf",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T11:56:52.157Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T11:56:52.157Z"
-  },
-  "qabas-201806-002.dialogue-kw.mp3": {
-    "bytes": 2088045,
-    "sha256": "313702537fa4c22ac622c205723c0d38fabc786f7fc1e06cf6f6dd4f9fd337cb",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T11:56:52.158Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T11:56:52.158Z",
-    "durationSeconds": 104
   },
   "qabas-201806-002.dialogue.json": {
     "bytes": 9246,
@@ -5138,23 +4900,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:45.560Z"
   },
-  "qabas-201806-003.dialogue-kw.json": {
-    "bytes": 8595,
-    "sha256": "5a40b4e7c36f825eae243949d6d7d9d4e59e04570986c52a84bc8b56608dc31f",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T12:03:33.950Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T12:03:33.950Z"
-  },
-  "qabas-201806-003.dialogue-kw.mp3": {
-    "bytes": 2164845,
-    "sha256": "a9cf5fcb5483aee4b764d07268ad375c1d4a1cfc305658379b118b8f9117d6d3",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T12:03:33.950Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T12:03:33.950Z",
-    "durationSeconds": 108
-  },
   "qabas-201806-003.dialogue.json": {
     "bytes": 9314,
     "sha256": "058e66e57d86d08e34f26356516b4e5bfd58af44f61a2450131fa88d46afbdf6",
@@ -5200,23 +4945,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:47.105Z"
   },
-  "qabas-201806-004.dialogue-kw.json": {
-    "bytes": 8642,
-    "sha256": "ba1bc263737de69a632edb6c30f162eb6545138cf8bbc5be691696630d480e94",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T12:09:42.687Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T12:09:42.687Z"
-  },
-  "qabas-201806-004.dialogue-kw.mp3": {
-    "bytes": 2071725,
-    "sha256": "4a5a0261b5135a0a2376800b2c1d9ab06dbcce8e665a8e5747a1f2b3b27cfa65",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T12:09:42.687Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T12:09:42.687Z",
-    "durationSeconds": 104
-  },
   "qabas-201806-004.dialogue.json": {
     "bytes": 9717,
     "sha256": "2be7d0b92cb9b0e9418b8b6dfa2e8d1070ca4225f97a97dd2e5a85e49c138761",
@@ -5245,23 +4973,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:59:43.294Z",
     "bytes": 2830045
-  },
-  "qabas-201806-005.dialogue-kw.json": {
-    "bytes": 8076,
-    "sha256": "cb6fc9524f0e69f6639714a296f06bb79993d33ad0ee81e6d4d8fd1a87e4dd04",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T12:40:07.448Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T12:40:07.448Z"
-  },
-  "qabas-201806-005.dialogue-kw.mp3": {
-    "bytes": 2046765,
-    "sha256": "7df5e87f6b2f0bb1b24bc98b928087cfb7fb04b111e08d2e2f03b135384bb2ac",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T12:40:07.448Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T12:40:07.448Z",
-    "durationSeconds": 102
   },
   "qabas-201806-005.dialogue.json": {
     "bytes": 9571,
@@ -5292,23 +5003,6 @@
     "verifiedAt": "2026-08-07T21:59:44.678Z",
     "bytes": 3421875
   },
-  "qabas-201807-001.dialogue-kw.json": {
-    "bytes": 8641,
-    "sha256": "4ce5c440a15bec881a0fcd46bf47c0f288c9cf2cc7ffaff5ebb21828314f9d04",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T12:59:23.777Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T12:59:23.777Z"
-  },
-  "qabas-201807-001.dialogue-kw.mp3": {
-    "bytes": 2065005,
-    "sha256": "3156dd8da951bd1b5f17d91e0863dc61aea66c3a42930874190bd8a58ff9687e",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T12:59:23.777Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T12:59:23.777Z",
-    "durationSeconds": 103
-  },
   "qabas-201807-001.dialogue.json": {
     "bytes": 9505,
     "sha256": "c2ea40326cca30fd39468a8086c7349ba0fe0bdd259b5512f607beb65baa7cb4",
@@ -5337,23 +5031,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:59:46.168Z",
     "bytes": 4109000
-  },
-  "qabas-201808-001.dialogue-kw.json": {
-    "bytes": 8617,
-    "sha256": "6a3f7b1ae67e782d1d4381591282b761a4b0fd2296c0109990c264f4add08e06",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T13:21:08.954Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T13:21:08.954Z"
-  },
-  "qabas-201808-001.dialogue-kw.mp3": {
-    "bytes": 2013165,
-    "sha256": "afec702c60f56c7113aa750f2d5957f505079a7b41ba650a38b4aa288f603d6d",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T13:21:08.954Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T13:21:08.954Z",
-    "durationSeconds": 101
   },
   "qabas-201808-001.dialogue.json": {
     "bytes": 9498,
@@ -5474,23 +5151,6 @@
     "verifiedAt": "2026-08-07T21:59:47.657Z",
     "bytes": 2560044
   },
-  "qabas-201810-002.dialogue-kw.json": {
-    "bytes": 9318,
-    "sha256": "f9a6cd88d5cbeb598f5b0c1f1f86c778ad373470aaab0f7b177f7ce170ee5f24",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T14:40:58.384Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T14:40:58.384Z"
-  },
-  "qabas-201810-002.dialogue-kw.mp3": {
-    "bytes": 2140845,
-    "sha256": "2a804ceee8bff6753f568c3de256a91bdbfffbef97e134f15858dc27121d6503",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T14:40:58.384Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T14:40:58.384Z",
-    "durationSeconds": 107
-  },
   "qabas-201810-002.dialogue.json": {
     "bytes": 9217,
     "sha256": "da4fa891c9d2d5fbfec04908ab38e0303d52ecb4a8e1602a4a58f3006ddd35a2",
@@ -5519,23 +5179,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:59:48.995Z",
     "bytes": 2520337
-  },
-  "qabas-201810-003.dialogue-kw.json": {
-    "bytes": 9212,
-    "sha256": "ab271393934e8945d6c6b6c1694e544a131687434850c9794d351db79a20aa84",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T14:58:41.454Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T14:58:41.454Z"
-  },
-  "qabas-201810-003.dialogue-kw.mp3": {
-    "bytes": 2028045,
-    "sha256": "ed923cb9ec757f4f72c11f2e17c19a41f6d79c5b9fc18e045b997fb39bfea08a",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T14:58:41.455Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T14:58:41.455Z",
-    "durationSeconds": 101
   },
   "qabas-201810-003.dialogue.json": {
     "bytes": 9316,
@@ -5582,23 +5225,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:49.801Z"
   },
-  "qabas-201810-004.dialogue-kw.json": {
-    "bytes": 9196,
-    "sha256": "db25f7337306975d48e26a71e4f2061822dab67e5f13a16cd59b0f2723a42dd8",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T15:06:51.220Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T15:06:51.220Z"
-  },
-  "qabas-201810-004.dialogue-kw.mp3": {
-    "bytes": 2081805,
-    "sha256": "eb3adb0e5f774ae6cd2f27d4bf9dc9c9d24db94d7d20e43a5f995d553b1eb608",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T15:06:51.220Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T15:06:51.220Z",
-    "durationSeconds": 104
-  },
   "qabas-201810-004.dialogue.json": {
     "bytes": 9478,
     "sha256": "58d426c322a89179d230a6e5d84201eeac0d01294b5389f14e0cb3ba96688a38",
@@ -5644,23 +5270,6 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:51.153Z"
   },
-  "qabas-201811-001.dialogue-kw.json": {
-    "bytes": 7494,
-    "sha256": "65ca5d5456e9eb10a2bd13c39d73adbdb68edd6c3e0a16ab7618ded03635d44f",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T15:16:01.513Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T15:16:01.513Z"
-  },
-  "qabas-201811-001.dialogue-kw.mp3": {
-    "bytes": 2142765,
-    "sha256": "8dd01e46d727fa165713d80639f8b1b3b02a3cacb11f9a133eb2c0e20b763147",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T15:16:01.513Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T15:16:01.513Z",
-    "durationSeconds": 107
-  },
   "qabas-201811-001.dialogue.json": {
     "bytes": 9454,
     "sha256": "449c66622dc19fd7115e813c487cea0d2552669907cebe5f8050c08facc0e9a0",
@@ -5697,23 +5306,6 @@
     "acceptedAt": "2026-07-28T23:33:28.500Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T21:50:50.428Z"
-  },
-  "qabas-201811-002.dialogue-kw.json": {
-    "bytes": 9212,
-    "sha256": "1b9d9ec222bd4539fe17f535c6310591997963e00924aa267687bd9abea751f1",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T15:37:31.380Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T15:37:31.380Z"
-  },
-  "qabas-201811-002.dialogue-kw.mp3": {
-    "bytes": 2224845,
-    "sha256": "2536e5336f4aee229eed725eaa8fbc3b0d5940a3779e3dc2ac7e55c34fc55fbc",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T15:37:31.380Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T15:37:31.380Z",
-    "durationSeconds": 111
   },
   "qabas-201811-002.dialogue.json": {
     "bytes": 9584,
@@ -5759,23 +5351,6 @@
     "acceptedAt": "2026-07-28T23:36:38.654Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:52.313Z"
-  },
-  "qabas-201909-001.dialogue-kw.json": {
-    "bytes": 9155,
-    "sha256": "24b417b0d21037bd6211ed454d7e63226e0f7bce6245ef3e54f7e77d02169958",
-    "contentType": "application/json; charset=utf-8",
-    "publishedAt": "2026-09-03T15:58:43.283Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T15:58:43.283Z"
-  },
-  "qabas-201909-001.dialogue-kw.mp3": {
-    "bytes": 2146605,
-    "sha256": "1222f4ee742b6d4a48ede0c874dfa174e2e791d1371fb14302a59fe64c465a41",
-    "contentType": "audio/mpeg",
-    "publishedAt": "2026-09-03T15:58:43.283Z",
-    "validationStatus": "verified-r2",
-    "verifiedAt": "2026-09-03T15:58:43.283Z",
-    "durationSeconds": 107
   },
   "qabas-201909-001.dialogue.json": {
     "bytes": 9327,

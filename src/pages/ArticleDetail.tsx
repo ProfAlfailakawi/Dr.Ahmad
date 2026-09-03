@@ -29,6 +29,7 @@ import { arabicCountPhrase, SHARE_FORMS, VIEW_FORMS, YEAR_AFTER_PREPOSITION_FORM
 import { printSiteContent } from '../lib/print'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { ConceptEchoMarker } from '../components/ConceptEcho'
+import KuficMark from '../components/KuficMark'
 import { buildConceptEchoes } from '../lib/concept-weave'
 
 const canUseDropCap = (paragraph: string) =>
@@ -55,7 +56,7 @@ function ClosingSignature() {
   return (
     <div ref={ref} className={`closing-signature mt-14 text-center ${visible ? 'is-visible' : ''}`} aria-hidden="true">
       <span className="closing-signature__rule mx-auto block h-px w-14 bg-accent/50" />
-      <img src="/logo.png" alt="" width={63} height={44} className="closing-signature__mark mx-auto mt-5 h-11 w-[63px] object-contain opacity-85 dark:invert" loading="lazy" decoding="async" />
+      <KuficMark framed className="closing-signature__mark mx-auto mt-5 h-11 w-[63px] text-ink opacity-85" />
       <span className="closing-signature__name mt-3 block font-display text-[1.02rem] font-semibold text-ink/[.85]">{'\u062F. \u0623\u062D\u0645\u062F \u062D\u0633\u064A\u0646 \u0627\u0644\u0641\u064A\u0644\u0643\u0627\u0648\u064A'}</span>
     </div>
   )

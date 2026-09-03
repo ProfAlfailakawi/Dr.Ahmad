@@ -2629,7 +2629,6 @@ html.site-silent .site-reveal > span {
   /* لا يُخطّ شيء: العلامة كاملةٌ من أول رسمة. */
   .kufic-mark.is-drawing rect { opacity: 1; animation: none; }
 }
-}
 
 
 /* الأزرار العائمة لا تصطدم بشريط Safari السفلي، وتعود إلى الحافة داخل PWA.

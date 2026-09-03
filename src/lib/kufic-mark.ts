@@ -95,3 +95,6 @@ export const KUFIC_RECTS: ReadonlyArray<readonly [number, number, number, number
 
 /** عدد المستطيلات — به يُوزَّع تأخير الكشف على مدّة الرسم. */
 export const KUFIC_STEPS = 79
+
+/** إطارٌ يشمل هامش `logo.png` الشفاف، ليكون بديلاً مطابقاً له في الحجم. */
+export const KUFIC_FRAMED_BOX = '-3.423 -3.828 31.120 21.621'

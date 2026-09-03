@@ -17,6 +17,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router'
 import { EASE } from '../motion'
+import KuficMark from '../KuficMark'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, BOOK_PLAIN_FORMS, PAPER_FORMS } from '../../lib/arabic-count.ts'
 
 const STORAGE_KEY = 'visitor:threshold-overture:v1'
@@ -441,7 +442,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
                 ))}
               </div>
             )}
-            <span className="tho-mark"><img src="/logo.png" alt="د. أحمد الفيلكاوي" /></span>
+            <span className="tho-mark"><KuficMark framed /></span>
           </header>
 
           {/* المسرح */}
@@ -593,9 +594,9 @@ const THEATRE_CSS = `
   transition:color .25s,border-color .25s,background .25s;
 }
 .tho-skip:hover{ color:var(--ivory); border-color:rgb(var(--glow)/.55); background:rgb(var(--glow)/.1); }
-/* المسرح ليلٌ ثابت، والشعار خطٌّ معتمٌ على شفافية: invert يجعله عاجياً على العتمة. */
-.tho-mark{ flex:none; display:flex; align-items:center; }
-.tho-mark img{ display:block; height:20px; width:auto; filter:invert(1); opacity:.78; }
+/* العلامة SVG تأخذ لونها من currentColor، فلا حاجة إلى invert. */
+.tho-mark{ flex:none; display:flex; align-items:center; color:var(--ivory); opacity:.78; }
+.tho-mark svg{ display:block; height:20px; width:auto; }
 .tho-reel{ flex:1; display:flex; gap:4px; min-width:0; }
 .tho-reel-seg{
   flex:1; min-width:0; padding:9px 0; border:0; background:none; cursor:pointer;

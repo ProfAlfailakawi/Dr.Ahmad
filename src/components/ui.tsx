@@ -10,6 +10,7 @@ import { MySpace } from './MySpace'
 import { useCvLinks } from '../lib/settings'
 import { SocialIcon } from './icons'
 import { ClarifiedIconAction } from './ClarifiedIconAction'
+import KuficMark from './KuficMark'
 
 export { EASE } from './motion'
 export { SocialIcon } from './icons'
@@ -971,7 +972,7 @@ export function Nav() {
               )}
             </AnimatePresence>
             <Link to="/en" aria-label="Ahmad H. Alfailakawi" className={`pwa-owner-logo relative ${ownerPressActive ? 'is-holding' : ''}`} onContextMenu={ownerLogoContextMenu} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
-              <img decoding="async" src="/logo.png" alt="" className="h-[36px] w-[52px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
+              <KuficMark framed className="h-[36px] w-[52px] text-ink opacity-90" title="Ahmad H. Alfailakawi" />
               <span aria-hidden className="pwa-owner-progress" />
             </Link>
             <div className="flex items-center gap-3">
@@ -1007,7 +1008,7 @@ export function Nav() {
             )}
           </AnimatePresence>
           <Link to="/" aria-label={profile.name} className={`pwa-owner-logo relative ${ownerPressActive ? 'is-holding' : ''}`} onContextMenu={ownerLogoContextMenu} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
-            <img decoding="async" src="/logo.png" alt="" className="h-[36px] w-[52px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'right' }} />
+            <KuficMark framed className="h-[36px] w-[52px] text-ink opacity-90" title={profile.name} />
             <span aria-hidden className="pwa-owner-progress" />
           </Link>
 
@@ -1108,7 +1109,7 @@ export function Footer() {
         <div className="mx-auto max-w-shell">
           <div className="site-footer__main">
             <Link to="/en" className="site-footer__mark">
-              <img decoding="async" src="/logo.png" alt="Ahmad H. Alfailakawi" className="h-9 w-[52px] object-contain dark:invert" />
+              <KuficMark framed className="h-9 w-[52px] text-ink" title="Ahmad H. Alfailakawi" />
             </Link>
             <SocialDock english />
             <nav className="site-footer__utility" aria-label="Site links">
@@ -1131,7 +1132,7 @@ export function Footer() {
       <div className="mx-auto max-w-shell">
         <div className="site-footer__main">
           <Link to="/" className="site-footer__mark">
-            <img decoding="async" src="/logo.png" alt={profile.name} className="h-9 w-[52px] object-contain dark:invert" />
+            <KuficMark framed className="h-9 w-[52px] text-ink" title={profile.name} />
           </Link>
           <SocialDock />
           <nav className="site-footer__utility" aria-label="روابط الموقع المختصرة">

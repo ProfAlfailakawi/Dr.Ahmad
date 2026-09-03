@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 7275,
+ "loop": 7386,
  "gap": 8,
  "items": [
   {
@@ -438,24 +438,31 @@
    "dur": 99
   },
   {
+   "slug": "qabas-201711-004",
+   "title": "أحدث صيحات الموضة التكنولوجية",
+   "cat": "تقنية",
+   "at": 6918,
+   "dur": 103
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 6918,
+   "at": 7029,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 7036,
+   "at": 7147,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 7156,
+   "at": 7267,
    "dur": 111
   }
  ]

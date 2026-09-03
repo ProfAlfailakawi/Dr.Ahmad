@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 7945,
+ "loop": 8055,
  "gap": 8,
  "items": [
   {
@@ -480,24 +480,31 @@
    "dur": 97
   },
   {
+   "slug": "qabas-201802-004",
+   "title": "كليات التربية ومتطلبات العصر",
+   "cat": "التعليم",
+   "at": 7588,
+   "dur": 102
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 7588,
+   "at": 7698,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 7706,
+   "at": 7816,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 7826,
+   "at": 7936,
    "dur": 111
   }
  ]

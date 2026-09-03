@@ -969,6 +969,8 @@ function buildSegments(input: {
   articleUrl?: string
   look?: FlowLookId
   clipSeconds?: number
+  /** فكرة المادة أو مقتطفها — يثري مطابقة بنك المشاهد ولا يظهر في البرومبت. */
+  conceptSource?: string
 }) {
   const count = input.narrations.length
   const clipSeconds = input.clipSeconds && input.clipSeconds > 0 ? input.clipSeconds : DEFAULT_FLOW_CLIP_SECONDS
@@ -992,7 +994,7 @@ function buildSegments(input: {
       role,
       purpose: role.includes('الخطاف') ? 'create an immediate visual question without a greeting' : role.includes('الخاتمة') ? 'resolve the visual idea and leave a memorable final beat' : `communicate the ${roleInEnglish(role)} with one visible cause-and-effect action`,
       message,
-      visualBrief: visualBriefFor(`${input.title} ${message}`, role, index + 1, cast),
+      visualBrief: visualBriefFor(`${input.title} ${input.conceptSource || ''} ${message}`, role, index + 1, cast),
       appearance,
       cast,
       voiceMode,
@@ -1128,7 +1130,7 @@ export function createArticleVideoProject(input: ArticleVideoInput): LiveDirecto
   const title = input.article.title
   const idea = input.article.excerpt || clipWords(input.article.body || '', 30, title)
   const narrations = articleNarration(input.article, recommendation.segments, input.forge)
-  const segments = buildSegments({ type: 'article_video', title, narrations, cast, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: `/articles/${input.article.slug}`, clipSeconds })
+  const segments = buildSegments({ type: 'article_video', title, narrations, cast, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: `/articles/${input.article.slug}`, clipSeconds, conceptSource: clipWords(`${input.article.excerpt || ''} ${input.article.body || ''}`, 80, '') })
   const social = socialPack({ type: 'article_video', title, idea, articleUrl: `/articles/${input.article.slug}`, forge: input.forge })
   const base: LiveDirectorProject = {
     id: projectId('article_video', input.article.slug), type: 'article_video', articleId: input.article.slug, articleUrl: `/articles/${input.article.slug}`,
@@ -1152,7 +1154,7 @@ export function createPublicVideoProject(input: PublicVideoInput): LiveDirectorP
   const title = suggestStrongTitle(input.topic)
   const idea = input.message?.trim() || input.topic.trim()
   const narrations = publicNarration(input.topic, idea, recommended.segments, input.forge)
-  const segments = buildSegments({ type: 'public_topic_video', title, narrations, cast, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '', clipSeconds })
+  const segments = buildSegments({ type: 'public_topic_video', title, narrations, cast, tone: input.tone || 'فكرية', platform: input.platform || 'متعدد المنصات', articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '', clipSeconds, conceptSource: clipWords(idea, 80, '') })
   const social = socialPack({ type: 'public_topic_video', title, idea, linkedArticle: input.linkedArticle, articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '', archive: input.archive, forge: input.forge })
   const base: LiveDirectorProject = {
     id: projectId('public_topic_video', input.topic), type: 'public_topic_video', articleId: input.linkedArticle?.slug || '', articleUrl: input.linkedArticle ? `/articles/${input.linkedArticle.slug}` : '',

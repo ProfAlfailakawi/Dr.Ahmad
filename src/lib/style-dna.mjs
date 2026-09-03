@@ -172,6 +172,47 @@ export const BANNED_VOICE = [
 /* ---------- القياس ---------- */
 
 /* يقبل مصفوفة نصوص أو كائنات {title, body, iso}. */
+/* بذرةُ الصوت الجمعي: ضمائرُ وأدواتٌ لا تُشتقّ صرفياً. أما الأفعال فتُستخرج
+   من متنه لا من ذاكرتي — انظر deriveCollectiveVerbs. */
+export const COLLECTIVE_SEED = ['نحن', 'علينا', 'دعونا', 'لنا', 'إلينا', 'منا', 'بنا', 'فينا']
+
+/* الأربعون الأكثر وروداً في متنه من مخرجات deriveCollectiveVerbs على أرشيفه
+   (٢٤٠ فعلاً). تُستعمل حين يتعذّر تمرير الأرشيف، لا بدلاً عن القياس. */
+export const COLLECTIVE_VERBS_FALLBACK = [
+  ...COLLECTIVE_SEED,
+  'نحتاج', 'نريد', 'نجد', 'نعلم', 'نخرج', 'نعيش', 'نقول', 'نستطيع', 'نعيد', 'نكون',
+  'نسأل', 'نرى', 'ندرك', 'نجلس', 'نربي', 'نعود', 'نسمع', 'نتحدث', 'نشعر', 'نبدأ',
+  'نزرع', 'نفهم', 'نعرف', 'ننسى', 'نبحث', 'نكاد', 'نفكر', 'نصنع', 'نطلب', 'نرفع',
+  'نقرأ', 'نتساءل', 'نحتفل', 'نجتمع', 'نعمل', 'ننظر', 'ننتظر', 'نتعامل', 'نواجه', 'نخاف',
+]
+
+/* ★ العطبُ الذي كشفه التشغيل: الصوت الجمعي كان يُقاس بعشرة أفعالٍ مكتوبةٍ
+   باليد (نعيش · نحتاج · نقول…)، فنصٌّ يقول «نتعامل» و«نعمل» و«نتساءل» يُقرأ
+   صفراً — أي أن المسطرة تعاقب الصوت الجمعي لأنه اختار فعلاً آخر.
+
+   البديل صرفيّ ومقيس: الكلمة التي تبدأ بنون المتكلمين تُعدّ فعلاً إن ورد
+   نظيرها بالياء أو التاء في أرشيفه نفسه («نريد»←«يريد» ✓ · «نظام»←«يظام» ✗).
+   على متنه: ٢٤٠ فعلاً صحيحاً وثلاث شواردَ فقط. المعجم من متنه، والقاعدة
+   صرفٌ لا ذوق. */
+export function deriveCollectiveVerbs(corpus = '') {
+  const tokens = bareText(String(corpus)).replace(/[^\p{L}\s]+/gu, ' ').split(/\s+/).filter(Boolean)
+  const present = new Set(tokens)
+  const verbs = new Set(COLLECTIVE_SEED)
+  for (const token of tokens) {
+    if (!/^ن\p{L}{2,6}$/u.test(token)) continue
+    const stem = token.slice(1)
+    if (present.has(`ي${stem}`) || present.has(`ت${stem}`)) verbs.add(token)
+  }
+  return [...verbs]
+}
+
+const collectivePattern = (verbs) => {
+  const list = (Array.isArray(verbs) && verbs.length ? verbs : COLLECTIVE_VERBS_FALLBACK)
+    .filter((word) => /^[\p{L}\p{M}]{2,}$/u.test(word))
+    .sort((left, right) => right.length - left.length)
+  return new RegExp(`(?<!\\p{L})(?:${list.join('|')})(?!\\p{L})`, 'gu')
+}
+
 const bodiesOf = (articles) => (Array.isArray(articles) ? articles : [])
   .map((item) => typeof item === 'string' ? item : String(item?.body || ''))
   .map((body) => body.trim())
@@ -229,7 +270,8 @@ export function measureStyleDna(articles) {
 
   const sentences = texts.flatMap(sentencesOf)
   const sentenceWords = sentences.map(countWords).filter(Boolean).sort((a, b) => a - b)
-  const rows = texts.map(articleMetrics)
+  const collectiveVerbs = deriveCollectiveVerbs(texts.join('\n\n'))
+  const rows = texts.map((text) => articleMetrics(text, { collective: collectiveVerbs }))
 
   const corpus = texts.join('\n\n')
   const bareCorpus = bareText(corpus)
@@ -286,13 +328,16 @@ export function measureStyleDna(articles) {
     moves: {
       antithesisPer100: round1(wMean(rows.map((row) => row.antithesisPer100), weights)),
       negationAntithesisPer100: per100(occurrences(bareCorpus, /(?<!\p{L})(?:ليست?|لا)(?!\p{L})[^.!؟…]{0,90}(?<!\p{L})بل(?!\p{L})/gu)),
-      collectivePer100: per100(occurrences(bareCorpus, /(?<!\p{L})(?:نحن|نعيش|نحتاج|دعونا|نقول|علينا)(?!\p{L})/gu)),
+      collectivePer100: per100(occurrences(bareCorpus, collectivePattern(collectiveVerbs))),
       articlesWithEllipsis: withAny(/…/u),
       articlesWithAntithesis: withAny(/(?<!\p{L})بل(?!\p{L})/u),
       articlesWithQuestion: withAny(/؟/u),
       articlesWithGuillemets: withAny(/«/u),
     },
     openers: topOpeners(paragraphs),
+    /* المفاصل: أين يقطع هو جملته فعلاً — تُقاس بعد الفاصلة لا تُخمَّن. */
+    hinges: measureHinges(texts),
+    collectiveVerbs,
     closings: closingTaxonomy(texts),
     /* توزيعات المقال الواحد: هذه هي مسطرة الحَكَم. المقياس ليس «هل يطابق
        الوسيط» بل «هل يقع داخل المدى الذي تعيش فيه مقالاته». بلا هذه
@@ -357,7 +402,66 @@ const repetitionShape = (text) => {
   }
 }
 
-export function articleMetrics(body) {
+/* ---------- سلامة التركيب: هل الجملة عربية أصلاً؟ ----------
+
+   ★ الثغرة التي فتحها التشغيل الحيّ: نصٌّ مسخته «المحاكاة» — «ليس الحديث عن
+   التعليم كمجرد ا… بل عن لتحولات» و«وأن هذا التحول قد أحدث» — نال **٨٧٪** من
+   هذا الحَكَم. لأن الحَكَم كان يسأل عن الإيقاع والوقفات والتكرار، ولا يسأل
+   ولا مرةً واحدة: هل بقيت الجملة عربية؟
+
+   الأعراض الأربعة كلها مقيسةٌ على أرشيفه أولاً، فليست ذوقاً:
+     • جملةٌ تبدأ بـ«أنّ/بأن»      صفر من ٥٣٨٨ جملة
+     • حرف جرٍّ مكرر «في في»        صفر في ٥٣ ألف كلمة
+     • كلمةٌ مكررة ملاصقة           ١٩ موضعاً (٠٫٠٤٪) وكلها مقصودة
+     • رابطان مرصوصان «ثم فإن»      صفر
+   ولذلك عتباتها مطلقةٌ لا نسبية — كتوزيع التكرار عنده تماماً. */
+/* بالهمزة فوق الألف حصراً. لو قيست على النص المُعيَّر لالتبست «أنّ» بـ«إنّ»
+   (والتعيير يوحّد أ/إ/آ في ألفٍ واحدة)، و«فإنّ سهولةَ…» افتتاحٌ عربيٌّ سليم
+   يفتتح به هو، فكان الحارس يمنع حذفاً صحيحاً بحجّةٍ لا وجود لها. */
+export const SUBORDINATOR_STARTS = ['أن', 'أنه', 'أنها', 'بأن', 'وأن', 'بأنه', 'وأنه']
+const PREPOSITIONS_FOR_SHAPE = ['في', 'من', 'على', 'إلى', 'عن', 'مع', 'عند']
+
+const shapeTokens = (text) => bareText(String(text)).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean)
+/* الصورة السطحية (تُنزع الحركات ولا تُوحَّد الهمزات) — تحتاجها فحوصٌ تفرّق
+   بين «أنّ» و«إنّ». */
+const surfaceTokens = (text) => stripTashkeel(String(text)).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean)
+
+export function wellFormedness(text) {
+  const value = String(text || '')
+  const bare = bareText(value)
+  const starts = new Set(SUBORDINATOR_STARTS)
+  let dangling = 0
+  for (const sentence of sentencesOf(value)) {
+    const first = surfaceTokens(sentence)[0]
+    if (first && starts.has(first)) dangling += 1
+  }
+  const tokens = shapeTokens(value)
+  let doubled = 0
+  for (let index = 1; index < tokens.length; index += 1) {
+    if (tokens[index] === tokens[index - 1] && [...tokens[index]].length > 1) doubled += 1
+  }
+  let doubledPreposition = 0
+  for (const preposition of PREPOSITIONS_FOR_SHAPE) {
+    doubledPreposition += occurrences(bare, new RegExp(`(?<![\\p{L}\\p{M}])${bareText(preposition)}\\s+${bareText(preposition)}(?![\\p{L}\\p{M}])`, 'gu'))
+  }
+  const orphans = tokens.filter((token) => [...token].length === 1 && /\p{L}/u.test(token)).length
+  const stackedConnectives = occurrences(bare, /(?<![\p{L}\p{M}])(?:ثم|لكن|بل|ايضا)[،؛]?\s+(?:فان|وان|وقد|فقد|ثم|بل)(?![\p{L}\p{M}])/gu)
+  const total = Math.max(1, tokens.length)
+  return {
+    dangling,
+    doubled,
+    doubledPreposition,
+    orphans,
+    stackedConnectives,
+    /* `breaks` للمقارنة النسبية داخل المحاكاة (هل زاد العطب بتعديلي؟) لا
+       للحكم المطلق على نصٍّ لم أكتبه. */
+    breaks: dangling + doubledPreposition + stackedConnectives,
+    doubledRate: round1(doubled / total * 100),
+    orphanRate: round1(orphans / total * 100),
+  }
+}
+
+export function articleMetrics(body, options = {}) {
   const text = String(body || '')
   const words = countWords(text)
   const sentences = sentencesOf(text)
@@ -375,7 +479,8 @@ export function articleMetrics(body) {
     antithesis: occurrences(bare, arabicWord('بل')),
     antithesisPer100: round1(occurrences(bare, arabicWord('بل')) / Math.max(1, words) * 100),
     questions: occurrences(text, /؟/g),
-    collective: occurrences(bare, /(?<!\p{L})(?:نحن|نعيش|نحتاج|دعونا|نقول|علينا|نربي|نصنع|نخاف|نحتفل)(?!\p{L})/gu),
+    /* المعجم يأتي من بصمته حين تكون حاضرة؛ وإلا فالبذرةُ والأفعالُ الشائعة. */
+    collective: occurrences(bare, collectivePattern(options.collective)),
     guillemets: occurrences(text, /«/g),
     medianSentence: percentile(sentenceWords, .5),
     longSentenceRate: Math.round(sentenceWords.filter((value) => value >= 26).length / Math.max(1, sentenceWords.length) * 100),
@@ -431,6 +536,31 @@ function topOpeners(paragraphs) {
     }))
 }
 
+/* ★ المفصل الحقيقي لا المفصل المفترض: كانت الجمل تُكسر عند قائمةٍ من ثماني
+   عشرة كلمةً كتبتها اليد، فبقيت جمل النموذج الطويلة كما هي لأنها تُوصل بـ«حيث»
+   و«وهو ما» و«كما» — وهي مفاصله هو بالقياس. نقيس ما يلي الفاصلة في أرشيفه،
+   ونأخذ ما بلغ ثماني مراتٍ فأكثر، بالصورة السطحية كما كتبها (لا المعيارية،
+   وإلا علّمنا النص أن يكتب «ان» بلا همزة). */
+function measureHinges(texts, floor = 8, limit = 26) {
+  const counts = new Map()
+  for (const text of texts) {
+    for (const match of String(text).matchAll(/[،؛]\s+([^\s،؛.؟!…«»]{2,})/gu)) {
+      const surface = stripTashkeel(match[1]).replace(/[«»…،.؟!:]/g, '')
+      if (surface.length < 2) continue
+      const key = bareText(surface)
+      const entry = counts.get(key) || { count: 0, forms: new Map() }
+      entry.count += 1
+      entry.forms.set(surface, (entry.forms.get(surface) || 0) + 1)
+      counts.set(key, entry)
+    }
+  }
+  return [...counts.values()]
+    .filter((entry) => entry.count >= floor)
+    .sort((left, right) => right.count - left.count)
+    .slice(0, limit)
+    .map((entry) => [...entry.forms.entries()].sort((left, right) => right[1] - left[1])[0][0])
+}
+
 function closingTaxonomy(texts) {
   let question = 0
   let antithesis = 0
@@ -462,7 +592,7 @@ export const FALLBACK_STYLE_DNA = {
   paragraph: { mean: 33, median: 45, p25: 9, p75: 62, p90: 73, singleSentenceRate: 24, twoSentenceRate: 29, perArticle: 16, perArticleMedian: 8, perArticleP75: 19 },
   marks: { ellipsisPer100: 5.3, ellipsisPerArticle: 20, questionsPerArticle: 4.4, guillemetsPer100: .5, semicolonPer100: .3, emDashPer100: 0, shaddaPer100: 1.7, commaPer100: 3.5 },
   moves: {
-    antithesisPer100: .9, negationAntithesisPer100: .2, collectivePer100: .4,
+    antithesisPer100: .9, negationAntithesisPer100: .2, collectivePer100: 1.7,
     articlesWithEllipsis: 94, articlesWithAntithesis: 60, articlesWithQuestion: 79, articlesWithGuillemets: 43,
   },
   openers: [
@@ -471,6 +601,9 @@ export const FALLBACK_STYLE_DNA = {
     { word: 'نعم', count: 24 }, { word: 'لكن', count: 22 }, { word: 'دعونا', count: 18 },
   ],
   closings: { questionRate: 8, antithesisRate: 8, appealRate: 4 },
+  /* مفاصله بعد الفاصلة، مقيسةً على أرشيفه (measureHinges). */
+  hinges: ['بل', 'لا', 'وأن', 'ولا', 'أو', 'لكنه', 'ثم', 'من', 'لكن', 'أن', 'حتى', 'تبين', 'حيث', 'لأن', 'وهذا', 'وفي', 'لم', 'كما', 'الذي', 'وقد', 'فإن', 'بينما', 'يصبح', 'وهي', 'لكنها', 'دون'],
+  collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: 3, weightedSample: 266, recentArticles: 27 },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته الـ١٤٣ منفردة، **مرجَّحةً
      بالحقبة** (نصف عمرٍ ثلاث سنوات) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
@@ -480,7 +613,7 @@ export const FALLBACK_STYLE_DNA = {
     antithesis: { p03: 0, p15: 0, p35: 2, p50: 3, p65: 5, p85: 6, p97: 11 },
     antithesisPer100: { p03: 0, p15: 0, p35: .5, p50: .9, p65: 1.2, p85: 1.7, p97: 2.7 },
     questions: { p03: 0, p15: 0, p35: 2, p50: 3, p65: 4, p85: 10, p97: 13 },
-    collective: { p03: 0, p15: 0, p35: 1, p50: 1, p65: 2, p85: 4, p97: 5 },
+    collective: { p03: 0, p15: 1, p35: 4, p50: 5, p65: 8, p85: 11, p97: 16 },
     medianSentence: { p03: 5, p15: 6, p35: 7, p50: 9, p65: 11, p85: 17, p97: 25 },
     shortRate: { p03: 11, p15: 20, p35: 40, p50: 54, p65: 68, p85: 76, p97: 85 },
     medianParagraph: { p03: 8, p15: 10, p35: 26, p50: 45, p65: 54, p85: 69, p97: 86 },
@@ -513,6 +646,10 @@ export const resolveStyleDna = (dna) => {
     }
   }
   merged.openers = Array.isArray(dna.openers) && dna.openers.length ? dna.openers : FALLBACK_STYLE_DNA.openers
+  merged.hinges = Array.isArray(dna.hinges) && dna.hinges.length ? dna.hinges : FALLBACK_STYLE_DNA.hinges
+  merged.collectiveVerbs = Array.isArray(dna.collectiveVerbs) && dna.collectiveVerbs.length
+    ? dna.collectiveVerbs
+    : FALLBACK_STYLE_DNA.collectiveVerbs
   merged.banned = Array.isArray(dna.banned) && dna.banned.length ? dna.banned : BANNED_PHRASES
   merged.bannedVoice = Array.isArray(dna.bannedVoice) && dna.bannedVoice.length ? dna.bannedVoice : BANNED_VOICE
   merged.sampleSize = Number(dna.sampleSize) > 0 ? Number(dna.sampleSize) : FALLBACK_STYLE_DNA.sampleSize
@@ -797,7 +934,7 @@ export function judgeStyle(body, rawDna, options = {}) {
   const dna = resolveStyleDna(rawDna)
   const bands = dna.perArticle || FALLBACK_STYLE_DNA.perArticle
   const text = String(body || '')
-  const metrics = articleMetrics(text)
+  const metrics = articleMetrics(text, { collective: dna.collectiveVerbs })
   /* لا درجةَ لنصٍّ لا وجود له: بلا هذا الحارس كان الفراغ يُمنح ٥٥٪ لأن نصف
      المقاييس «لا تُخالَف» حين لا يوجد ما يُقاس. */
   if (metrics.words < 40) {
@@ -952,6 +1089,27 @@ export function judgeStyle(body, rawDna, options = {}) {
       : '')
   if (orphanClaims.length) fatal.push(`رقمٌ أو دراسةٌ بلا سند: ${orphanClaims[0].value}`)
 
+  /* ١٧ — سلامة التركيب العربي (قاطع). بلا هذا الفحص كان النصّ الممسوخ ينال
+     ٨٧٪: إيقاعٌ سليم فوق جُملٍ مكسورة. والعتبات أصفار أرشيفه لا ذوقي. */
+  /* ولماذا ليست «الجملة التي تبدأ بأنّ» من هذه الأعراض؟ لأنها ٩٦ جملةً في
+     أرشيفه («وأن الهاتف الذي يُسكت الطفل الآن…») — وهي وصلته المعلّقة المقصودة
+     لا كسراً. أي عرضٍ يقع في نصّه هو ليس عرضاً: هذه قاعدة البيت.
+     الباقية أصفارٌ قاطعة عنده: حرف الجر المكرر صفر، والرابطان المرصوصان صفر،
+     وأقصى تكرارٍ ملاصق ٠٫٧٪، وأقصى رمزٍ يتيم ١٪ — فالعتبات فوق أقصاه. */
+  const shape = wellFormedness(text)
+  const shapeFaults = []
+  if (shape.doubledPreposition) shapeFaults.push('حرف جرٍّ مكرر')
+  if (shape.stackedConnectives) shapeFaults.push('رابطان مرصوصان')
+  if (shape.doubledRate > .8) shapeFaults.push(`كلماتٌ مكررة ملاصقة ${shape.doubledRate}٪`)
+  if (shape.orphanRate > 1.1) shapeFaults.push(`حروفٌ يتيمة من كلماتٍ مقطوعة ${shape.orphanRate}٪`)
+  const shapeGrade = shapeFaults.length ? clampNumber(1 - shapeFaults.length * .5, 0, 1) : 1
+  add('wellFormed', 'سلامة التركيب', shapeGrade, 14,
+    shapeFaults.join(' · ') || 'سليم', 'صفر',
+    shapeFaults.length
+      ? `أعد قراءة الجمل المكسورة: ${shapeFaults.join(' · ')}. هذه صيغٌ لا ترد في أرشيفك ولا مرة، وغالباً أثرُ حذفٍ آليٍّ نصفيّ.`
+      : '')
+  if (shapeFaults.length) fatal.push(`تركيبٌ مكسور: ${shapeFaults.join(' · ')}`)
+
   /* ١٦ — منع النقل الحرفي من أرشيفه (قاطع). */
   const overlap = options.archive ? verbatimOverlap(text, options.archive) : []
   if (overlap.length) {
@@ -970,6 +1128,10 @@ export function judgeStyle(body, rawDna, options = {}) {
 
   return {
     score,
+    /* الدرجة قبل السقف: بلا هذا الرقم يرى الدكتور «٥٥ ← ٥٥» بعد ثلاثة عشر
+       تعديلاً ناجحاً، فيظنّ أن شيئاً لم يحدث — والحقيقة أن التحفّظ القاطع
+       يسقف الدرجة وحده. الرقمان معاً يقولان الحقيقة كاملة. */
+    raw,
     ready: score >= (options.threshold || 80) && !fatal.length,
     checks,
     corrections: fixes.filter(Boolean),
@@ -1042,17 +1204,22 @@ export function liftPauses(value = '', rawDna) {
   let text = String(value)
   for (const juncture of PAUSE_JUNCTURES) {
     if (current >= target) break
-    /* المفاصل المحوَّلة سابقاً تُحسب ضمن الكل، وإلا حوّل كل تمريرٍ نصيباً
-       جديداً من الباقين حتى تبلغ النسبة ١٠٠٪ — والدالة تُستدعى مرتين في
-       المسار الحقيقي (خادمٌ ثم واجهة). */
-    const already = occurrences(text, new RegExp(`…[ \\t]*${juncture.word}(?![\\p{L}\\p{M}])`, 'gu'))
-    let seen = already
-    let lifted = already
-    text = text.replace(new RegExp(`،[ \\t]+(?=${juncture.word}(?![\\p{L}\\p{M}]))`, 'gu'), () => {
-      seen += 1
-      if (current >= target || lifted >= Math.ceil(seen * juncture.share)) return '، '
+    /* ★ الحصّة تُحسب على **كل** مفاصل هذا الرابط في النص — المحوَّلة سابقاً
+       والباقية معاً — لا على ما تراه هذه التمريرة وحدها. وإلا رفع كل تمريرٍ
+       نصيباً جديداً من الباقين فلا تستقر الدالة أبداً: كانت أربعة عشر مقالاً
+       تتغيّر بين تمريرٍ وتمرير، والدالة تُستدعى مرتين في المسار الحقيقي
+       (خادمٌ ثم واجهة) وثلاثاً مع المحاكاة. الآن الحصّة ثابتةٌ فالنتيجة ثابتة. */
+    const liftedPattern = new RegExp(`…[ \\t]*${juncture.word}(?![\\p{L}\\p{M}])`, 'gu')
+    const pendingPattern = new RegExp(`،[ \\t]+(?=${juncture.word}(?![\\p{L}\\p{M}]))`, 'gu')
+    const already = occurrences(text, liftedPattern)
+    const pending = occurrences(text, pendingPattern)
+    const quota = Math.ceil((already + pending) * juncture.share)
+    let budget = Math.max(0, quota - already)
+    if (!budget) continue
+    text = text.replace(pendingPattern, () => {
+      if (current >= target || budget <= 0) return '، '
       current += 1
-      lifted += 1
+      budget -= 1
       return '… '
     })
   }
@@ -1068,7 +1235,13 @@ const SENTENCE_STARTERS = ['بل', 'ولكن', 'لكن', 'ولا', 'لا', 'وق
 export function breakLongSentences(value = '', rawDna) {
   const dna = resolveStyleDna(rawDna)
   const ceiling = Math.max(16, (dna.perArticle?.medianSentence?.p85 ?? 15) + 4)
-  const pattern = new RegExp(`،[ \\t]+(?=(?:${SENTENCE_STARTERS.join('|')})(?![\\p{L}\\p{M}]))`, 'u')
+  /* المفاصل المقيسة أولاً (dna.hinges)، والقائمة المكتوبة احتياطاً. بلا هذا
+     كانت جملة النموذج الموصولة بـ«حيث» و«كما» تنجو كاملةً، فيبقى وسيط الجملة
+     عشرين كلمة بينما وسيطه ثمان. */
+  const hinges = [...new Set([...(dna.hinges || []), ...SENTENCE_STARTERS])]
+    .filter((word) => /^[\p{L}\p{M}]{2,}$/u.test(word))
+    .sort((left, right) => right.length - left.length)
+  const pattern = new RegExp(`،[ \\t]+(?=(?:${hinges.join('|')})(?![\\p{L}\\p{M}]))`, 'u')
   const rebuild = (sentence) => {
     if (countWords(sentence) <= ceiling) return sentence
     /* نختار المفصل الأقرب إلى المنتصف كي لا نُخلّف جملةً يتيمة. */
@@ -1085,7 +1258,10 @@ export function breakLongSentences(value = '', rawDna) {
     const head = sentence.slice(0, best).trim()
     const tail = sentence.slice(best + 1).trim()
     if (countWords(head) < 4 || countWords(tail) < 4) return sentence
-    return `${head}… ${rebuild(tail)}`
+    /* الرأس يُعاد فحصه كالذيل: كان يُترك بلا مراجعة، فإن بقي فوق السقف كسرته
+       التمريرةُ التالية — أحد عشر مقالاً كان يتغيّر بين تمريرٍ وتمرير لهذا
+       وحده. الآن الكسر يبلغ نقطته الثابتة في تمريرةٍ واحدة. */
+    return `${rebuild(head)}… ${rebuild(tail)}`
   }
   return paragraphsOf(String(value))
     .map((paragraph) => sentencesOf(paragraph).map(rebuild).join(' '))
@@ -1138,7 +1314,19 @@ export function applyRhythm(value = '', rawDna) {
 /* الخط الأخير قبل العرض: طباعةٌ، ثم كسرُ الجمل المتضخّمة، ثم رفعُ الوقفات،
    ثم إيقاعُ الفقرات. أربع خطواتٍ لا تلمس حرفاً واحداً من كلماته. */
 export function refineToStyle(value = '', rawDna) {
-  return applyRhythm(liftPauses(breakLongSentences(polishTypography(value), rawDna), rawDna), rawDna)
+  const pass = (input) => applyRhythm(liftPauses(breakLongSentences(polishTypography(input), rawDna), rawDna), rawDna)
+  /* دورةٌ حتى النقطة الثابتة: إيقاعُ الفقرات يغيّر حدودها، فتظهر للتمريرة
+     التالية جملٌ طويلة ومفاصل لم تكن ظاهرة. كانت الدالة تُستدعى مرتين في
+     المسار الحقيقي (خادمٌ ثم واجهة) فيرى الدكتور نصّين مختلفين للنص الواحد.
+     تستقرّ في دورتين على أرشيفه كله، والحدّ ثلاث. ولا حرف يُضاف أو يُحذف
+     في أيٍّ منها. */
+  let text = String(value)
+  for (let round = 0; round < 3; round += 1) {
+    const next = pass(text)
+    if (next === text) break
+    text = next
+  }
+  return text
 }
 
 /* ---------- ذاكرة الصوت: ما يقوله الدكتور بنفسه «هذه ليست أنا» ----------

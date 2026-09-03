@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 12256,
+ "loop": 12373,
  "gap": 8,
  "items": [
   {
@@ -760,10 +760,17 @@
    "dur": 103
   },
   {
+   "slug": "we-breastfeed-them-with-tenderness-and-deprive-them-of-education",
+   "title": "نُرضعهم حناناً… ونحرمهم تربية!",
+   "cat": "التربية",
+   "at": 12137,
+   "dur": 109
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 12137,
+   "at": 12254,
    "dur": 111
   }
  ]

@@ -6944,6 +6944,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:59.382Z"
   },
+  "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.dialogue-kw.json": {
+    "bytes": 9181,
+    "sha256": "136c556d4f849e9e9aa222340c62d276c2318e93a860954e9ec9c760dd758158",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T22:48:00.175Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:48:00.175Z"
+  },
+  "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.dialogue-kw.mp3": {
+    "bytes": 2184525,
+    "sha256": "61d16839b66918cb92de450134aedb41474f4af40ec32419072db4c7aa9b9ce0",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T22:48:00.175Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:48:00.175Z",
+    "durationSeconds": 109
+  },
   "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.dialogue.json": {
     "bytes": 9113,
     "sha256": "11ca6673ea8fb3b0f079e11a94e1985932d0321b18f7bca606a5234f86d0fd7f",

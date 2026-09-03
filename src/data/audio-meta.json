@@ -5922,6 +5922,23 @@
     "verifiedAt": "2026-08-07T21:59:00.543Z",
     "bytes": 3913395
   },
+  "smartphone-child-a-creative-mind-or-a-child-being-driven.dialogue-kw.json": {
+    "bytes": 8645,
+    "sha256": "465eadf92d16edb035da82bb18aae071d202d74e54709e177e1e8e93219cead0",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T18:28:55.460Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:28:55.460Z"
+  },
+  "smartphone-child-a-creative-mind-or-a-child-being-driven.dialogue-kw.mp3": {
+    "bytes": 2221485,
+    "sha256": "40799f14776d2214cfe7820d0e54e4f1b61ee7757e6829d7843117935686c192",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T18:28:55.460Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:28:55.460Z",
+    "durationSeconds": 111
+  },
   "smartphone-child-a-creative-mind-or-a-child-being-driven.dialogue.json": {
     "bytes": 8941,
     "sha256": "85a8af6e4bdd5e7a0751b2e06b24323e7f3ebb6f00d57c3236c46a2564fc2263",

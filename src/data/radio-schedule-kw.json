@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 11097,
+ "loop": 11220,
  "gap": 8,
  "items": [
   {
@@ -690,10 +690,17 @@
    "dur": 103
   },
   {
+   "slug": "the-mind-present-in-absence-absent-in-presence-2",
+   "title": "العقل حاضر في الغياب… وغائب في الحضور!",
+   "cat": "التعليم",
+   "at": 10978,
+   "dur": 115
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 10978,
+   "at": 11101,
    "dur": 111
   }
  ]

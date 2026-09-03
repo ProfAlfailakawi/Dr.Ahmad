@@ -6391,6 +6391,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:53.120Z"
   },
+  "the-mind-present-in-absence-absent-in-presence-2.dialogue-kw.json": {
+    "bytes": 8587,
+    "sha256": "7cb74463941606ea5f6e388595774779333bf5889469fc4140ce28aace78c37d",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T20:06:42.439Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:06:42.439Z"
+  },
+  "the-mind-present-in-absence-absent-in-presence-2.dialogue-kw.mp3": {
+    "bytes": 2303565,
+    "sha256": "78ce5bbc8e1c5cd8ab59e377c1663725c4a43225cd7312ef620dc4389f031834",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T20:06:42.439Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:06:42.439Z",
+    "durationSeconds": 115
+  },
   "the-mind-present-in-absence-absent-in-presence-2.dialogue.json": {
     "bytes": 9770,
     "sha256": "6a840fc2de81b989c5a017b50c61a69a7784bcaacbc66d33a62617be95eed3ab",

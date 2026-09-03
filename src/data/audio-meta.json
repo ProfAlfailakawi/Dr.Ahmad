@@ -6545,6 +6545,23 @@
     "verifiedAt": "2026-08-07T21:58:52.832Z",
     "bytes": 3366287
   },
+  "the-return-that-fails-to-fix-what-came-before-itarabic.dialogue-kw.json": {
+    "bytes": 8596,
+    "sha256": "1ac76127a9c55f1c5be6d6f15807e96c60a93a7fd06715ae7ae1501cb975168d",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T20:31:14.378Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:31:14.378Z"
+  },
+  "the-return-that-fails-to-fix-what-came-before-itarabic.dialogue-kw.mp3": {
+    "bytes": 2121165,
+    "sha256": "9225ea56ab413a1c8970dbfd7cacd5cd9d942296623a7d23a3150b7d9624f5e0",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T20:31:14.378Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:31:14.378Z",
+    "durationSeconds": 106
+  },
   "the-return-that-fails-to-fix-what-came-before-itarabic.dialogue.json": {
     "bytes": 9090,
     "sha256": "42775936341bcc8a34ac3c1a34b70ed1245b253d3c01345fdd7c5292809010ea",

@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 11453,
+ "loop": 11567,
  "gap": 8,
  "items": [
   {
@@ -711,10 +711,17 @@
    "dur": 111
   },
   {
+   "slug": "the-return-that-fails-to-fix-what-came-before-itarabic",
+   "title": "العودة التي لا تُصلِح ما قبلها",
+   "cat": "مجتمع",
+   "at": 11334,
+   "dur": 106
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 11334,
+   "at": 11448,
    "dur": 111
   }
  ]

@@ -441,7 +441,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
                 ))}
               </div>
             )}
-            <span className="tho-mark">د. أحمد الفيلكاوي</span>
+            <span className="tho-mark"><img src="/logo.png" alt="د. أحمد الفيلكاوي" /></span>
           </header>
 
           {/* المسرح */}
@@ -556,8 +556,10 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
 
 const THEATRE_CSS = `
 .tho-root{
-  --night:#0b0d12; --night-2:#141922; --glow:132 169 202; --ember:214 183 143;
-  --ivory:#efece4; --soft:#9aa4b2; --line:rgba(239,236,228,.13);
+  /* القيم من :root في index.css. */
+  --night:var(--stage-night); --night-2:var(--stage-night-2);
+  --glow:var(--stage-glow); --ember:var(--stage-ember);
+  --ivory:var(--stage-ivory); --soft:var(--stage-soft); --line:rgb(var(--c-ember) / .13);
   position:fixed; top:0; right:0; bottom:0; left:0; inset:0; z-index:1200; display:flex; flex-direction:column;
   background:var(--night); color:var(--ivory);
   font-family:"Tajawal",system-ui,sans-serif; overflow:hidden;
@@ -591,7 +593,9 @@ const THEATRE_CSS = `
   transition:color .25s,border-color .25s,background .25s;
 }
 .tho-skip:hover{ color:var(--ivory); border-color:rgb(var(--glow)/.55); background:rgb(var(--glow)/.1); }
-.tho-mark{ flex:none; font-family:"El Messiri",serif; font-size:.74rem; color:var(--soft); opacity:.72; }
+/* المسرح ليلٌ ثابت، والشعار خطٌّ معتمٌ على شفافية: invert يجعله عاجياً على العتمة. */
+.tho-mark{ flex:none; display:flex; align-items:center; }
+.tho-mark img{ display:block; height:20px; width:auto; filter:invert(1); opacity:.78; }
 .tho-reel{ flex:1; display:flex; gap:4px; min-width:0; }
 .tho-reel-seg{
   flex:1; min-width:0; padding:9px 0; border:0; background:none; cursor:pointer;

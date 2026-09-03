@@ -971,7 +971,7 @@ export function Nav() {
               )}
             </AnimatePresence>
             <Link to="/en" aria-label="Ahmad H. Alfailakawi" className={`pwa-owner-logo relative ${ownerPressActive ? 'is-holding' : ''}`} onContextMenu={ownerLogoContextMenu} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
-              <img decoding="async" src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
+              <img decoding="async" src="/logo.png" alt="" className="h-[36px] w-[52px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'left' }} />
               <span aria-hidden className="pwa-owner-progress" />
             </Link>
             <div className="flex items-center gap-3">
@@ -1007,7 +1007,7 @@ export function Nav() {
             )}
           </AnimatePresence>
           <Link to="/" aria-label={profile.name} className={`pwa-owner-logo relative ${ownerPressActive ? 'is-holding' : ''}`} onContextMenu={ownerLogoContextMenu} onPointerDown={ownerPressStart} onPointerUp={ownerPressEnd} onPointerCancel={ownerPressEnd} onPointerLeave={ownerPressEnd} onClick={ownerLogoClick}>
-            <img decoding="async" src="/logo.png" alt="" className="h-[36px] w-[60px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'right' }} />
+            <img decoding="async" src="/logo.png" alt="" className="h-[36px] w-[52px] object-contain opacity-90 dark:invert" style={{ objectPosition: 'right' }} />
             <span aria-hidden className="pwa-owner-progress" />
           </Link>
 
@@ -1108,7 +1108,7 @@ export function Footer() {
         <div className="mx-auto max-w-shell">
           <div className="site-footer__main">
             <Link to="/en" className="site-footer__mark">
-              <img decoding="async" src="/logo.png" alt="Ahmad H. Alfailakawi" className="h-9 w-14 object-contain dark:invert" />
+              <img decoding="async" src="/logo.png" alt="Ahmad H. Alfailakawi" className="h-9 w-[52px] object-contain dark:invert" />
             </Link>
             <SocialDock english />
             <nav className="site-footer__utility" aria-label="Site links">
@@ -1131,7 +1131,7 @@ export function Footer() {
       <div className="mx-auto max-w-shell">
         <div className="site-footer__main">
           <Link to="/" className="site-footer__mark">
-            <img decoding="async" src="/logo.png" alt={profile.name} className="h-9 w-14 object-contain dark:invert" />
+            <img decoding="async" src="/logo.png" alt={profile.name} className="h-9 w-[52px] object-contain dark:invert" />
           </Link>
           <SocialDock />
           <nav className="site-footer__utility" aria-label="روابط الموقع المختصرة">
@@ -1143,7 +1143,12 @@ export function Footer() {
             <ScheduleProjectLink label="الجدول" iconOnly className="site-footer__project" />
           </nav>
         </div>
-        <div className="site-footer__rights">© {year} {profile.fullName} · جميع الحقوق محفوظة</div>
+        <div className="site-footer__rights">
+          © {year} {profile.fullName} · جميع الحقوق محفوظة
+          {/* تحميلٌ كامل لا تنقّلٌ داخلي: «العتبة» تقرأ ?intro=1 عند التركيب وحده. */}
+          <span aria-hidden="true"> · </span>
+          <a href="/?intro=1" className="site-footer__text-link">شاهد تقديم الموقع</a>
+        </div>
       </div>
     </footer>
   )

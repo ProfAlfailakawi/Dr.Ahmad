@@ -13,6 +13,7 @@ export default {
         accent: v('--c-accent'),
         'accent-deep': v('--c-accent-deep'),
         wash: v('--c-wash'),
+        ember: v('--c-ember'),
         hair: 'var(--c-hair)',
       },
       fontFamily: {

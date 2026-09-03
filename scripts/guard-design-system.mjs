@@ -52,8 +52,8 @@ function cssVar(block, name) {
   return match ? match[1].trim() : ''
 }
 
-const TOKENS = ['canvas', 'ink', 'soft', 'accent', 'accent-deep', 'wash']
-const SYSTEM_KEYS = { canvas: 'canvas', ink: 'ink', soft: 'soft', accent: 'accent', 'accent-deep': 'accentDeep', wash: 'wash' }
+const TOKENS = ['canvas', 'ink', 'soft', 'accent', 'accent-deep', 'wash', 'ember']
+const SYSTEM_KEYS = { canvas: 'canvas', ink: 'ink', soft: 'soft', accent: 'accent', 'accent-deep': 'accentDeep', wash: 'wash', ember: 'ember' }
 
 function systemRaw(constName) {
   const match = system.match(new RegExp(`const ${constName} = \\{([^}]+)\\}`))

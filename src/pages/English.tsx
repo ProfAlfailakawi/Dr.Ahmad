@@ -3,7 +3,7 @@
    نفس الجماليات (أحادية اللون + لون واحد)، اتجاه LTR كامل.
    المحتوى من data-en.ts (صياغة تحريرية، لا ترجمة حرفية).
    ============================================================ */
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Link } from 'react-router'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
@@ -18,6 +18,8 @@ import {
 import { useCvLinks } from '../lib/settings'
 import { useTrackView } from '../lib/views'
 import { PROJECT_START_YEAR } from '../lib/project-meta'
+/* تُعرض مرّةً واحدة، فتُحمَّل كسولاً خارج حزمة الدخول. */
+const EnglishThreshold = lazy(() => import('../components/EnglishThreshold'))
 
 /* يقلب المستند إلى الإنجليزية (اتجاه + لغة + عنوان) ويعيده عربياً عند المغادرة */
 function useEnglish(title: string, path: string, description: string) {
@@ -72,6 +74,7 @@ export function EnglishHome() {
 
   return (
     <Page>
+      <Suspense fallback={null}><EnglishThreshold /></Suspense>
       {/* المشهد الأول — الهوية */}
       <section className="flex min-h-[92svh] flex-col justify-center border-b border-hair px-6 pt-24 md:px-11">
         <div className="mx-auto w-full max-w-shell">

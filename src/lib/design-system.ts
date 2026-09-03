@@ -24,6 +24,8 @@ export type ThemeTokens = {
   hair: string
   /** تخفيفةُ التمييز: خلفيةُ الشارات واللوحات الهادئة. */
   accentSoft: string
+  /** الجمرة: تمييزُ ما يُسمع (المشغّل، المجلس، الإذاعة) مقابل أزرقِ ما يُقرأ. */
+  ember: string
 }
 
 /* ── أدوات لونية صغيرة: التخفيفات تُحسب ولا تُخمَّن ── */
@@ -48,8 +50,8 @@ export function mix(base: string, top: string, ratio: number): string {
 }
 
 /* ── القيم الخام — هي عينها التي في :root و html.dark ── */
-const LIGHT_RAW = { canvas: '#FCFCFA', ink: '#15161A', soft: '#5E6570', accent: '#3E5C78', accentDeep: '#33506B', wash: '#F4F5F3' }
-const DARK_RAW = { canvas: '#0F1115', ink: '#ECEAE4', soft: '#B5B8BE', accent: '#84A9CA', accentDeep: '#A4C2DC', wash: '#171A1F' }
+const LIGHT_RAW = { canvas: '#FCFCFA', ink: '#15161A', soft: '#5E6570', accent: '#3E5C78', accentDeep: '#33506B', wash: '#F4F5F3', ember: '#8F5A28' }
+const DARK_RAW = { canvas: '#0F1115', ink: '#ECEAE4', soft: '#B5B8BE', accent: '#84A9CA', accentDeep: '#A4C2DC', wash: '#171A1F', ember: '#D6B78F' }
 
 /** شفافية الحدّ الشعريّ في كلّ وضع (‎--c-hair‎). */
 export const HAIR_ALPHA = { light: 0.09, dark: 0.11 } as const

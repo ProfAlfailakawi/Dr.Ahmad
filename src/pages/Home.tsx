@@ -1004,7 +1004,7 @@ function HomeSocialFooter() {
     <section className="home-social-footer border-t border-hair px-6 py-7 md:px-11 md:py-9">
       <div className="mx-auto max-w-shell">
         <div className="grid justify-items-center gap-4 text-center">
-          <img src="/logo.png" alt="" aria-hidden="true" decoding="async" className="h-9 w-14 object-contain opacity-90 dark:invert" />
+          <img src="/logo.png" alt="" aria-hidden="true" decoding="async" className="h-9 w-[52px] object-contain opacity-90 dark:invert" />
           <SocialDock centered />
           <div className="home-footer-tools" aria-label="أدوات الموقع">
             <button

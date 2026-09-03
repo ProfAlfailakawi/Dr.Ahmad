@@ -19,6 +19,9 @@ html {
   --c-accent: 62 92 120;        /* #3E5C78 */
   --c-accent-deep: 51 80 107;   /* #33506B */
   --c-wash: 244 245 243;        /* #F4F5F3 */
+  /* تمييز ما يُسمع (المشغّل والمجلس والإذاعة)، مقابل accent لما يُقرأ.
+     معمَّق نهاراً كي يبلغ عتبة التباين: 5.58 على القماشة. */
+  --c-ember: 143 90 40;         /* #8F5A28 */
   --c-hair: rgba(21, 22, 26, 0.09);
 
   /* سلّم العمق يُعرَّف مرّةً واحدة — وهي الكتلة الأدنى في هذا الملف (قرب
@@ -35,6 +38,7 @@ html.dark {
   --c-accent: 132 169 202;      /* أزرق مسائي */
   --c-accent-deep: 164 194 220;
   --c-wash: 23 26 31;           /* سطح داكن بطبقة مختلفة */
+  --c-ember: 214 183 143;       /* #D6B78F */
   --c-hair: rgba(234, 234, 231, 0.11);
 
   /* المكرَّر المدهوس نفسه — التعريف العامل في الأسفل. */
@@ -221,6 +225,17 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
    ولا يظهر للتدرّج أثر.
    `.edge-fade` صنفٌ يدويّ للأشرطة المكتوبة سطرياً بلا صنفٍ خاصّ بها. */
 :root { --rail-fade: 40px; }
+
+/* لوحة المسرح — ليلٌ ثابتٌ في الوضعين لأنها لحظةُ إظلامٍ مقصودة، فلا تُشتقّ
+   من رموز الوضع الحالي. مصدرٌ واحد: تقرؤها «العتبة» العربية والإنجليزية معاً. */
+:root {
+  --stage-night: #0B0D12;
+  --stage-night-2: #141922;
+  --stage-ivory: #ECEAE4;      /* = حبر الليل --c-ink */
+  --stage-soft: #9AA4B2;
+  --stage-glow: 132 169 202;   /* = تمييز الليل #84A9CA */
+  --stage-ember: 214 183 143;  /* = جمرة الليل --c-ember #D6B78F */
+}
 
 :is(
   .rail,
@@ -2465,6 +2480,114 @@ html.site-silent .site-reveal > span {
   .pwa-owner-logo.is-holding .pwa-owner-progress { animation-timing-function: steps(2, end); }
 }
 
+/* ═══ عتبة الزائر الإنجليزي ═══
+   نفس المسرح: ليلٌ ثابتٌ من رموز --stage-*، ولوحة الأبواب وحدها. */
+.ent-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--stage-night);
+  color: var(--stage-ivory);
+  font-family: "Tajawal", system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.ent-sky {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(78% 52% at 50% 6%, rgb(var(--stage-glow) / .16), transparent 66%),
+    radial-gradient(58% 44% at 12% 96%, rgb(var(--stage-ember) / .07), transparent 70%),
+    linear-gradient(180deg, var(--stage-night-2), var(--stage-night) 62%);
+}
+.ent-top {
+  position: relative;
+  z-index: 2;
+  padding: max(1.6rem, env(safe-area-inset-top)) clamp(1rem, 4vw, 2rem) 0;
+}
+.ent-skip {
+  border: 1px solid rgb(var(--stage-ember) / .22);
+  background: rgba(236, 234, 228, .04);
+  color: var(--stage-soft);
+  border-radius: 999px;
+  padding: .44rem .95rem;
+  font: inherit;
+  font-size: .72rem;
+  cursor: pointer;
+  transition: color .25s, border-color .25s, background-color .25s;
+}
+.ent-skip:hover { color: var(--stage-ivory); border-color: rgb(var(--stage-glow) / .55); background: rgb(var(--stage-glow) / .1); }
+.ent-stage {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  width: min(92vw, 44rem);
+  margin: 0 auto;
+  padding: 1rem 0 max(2rem, env(safe-area-inset-bottom));
+  text-align: left;
+}
+.ent-mark { width: 7.5rem; height: auto; color: var(--stage-ivory); opacity: .9; }
+.ent-kicker {
+  margin: 1.6rem 0 0;
+  color: rgb(var(--stage-glow));
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .09em; /* latin */
+  text-transform: uppercase;
+}
+.ent-root h2 {
+  margin: .5rem 0 0;
+  font-family: "El Messiri", serif;
+  font-size: clamp(2rem, 7vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.18;
+  text-wrap: balance;
+}
+.ent-line { margin: .85rem 0 0; max-width: 46ch; color: var(--stage-soft); font-size: .96rem; font-weight: 300; line-height: 1.85; }
+.ent-doors {
+  margin-top: 2.2rem;
+  display: grid;
+  gap: 1px;
+  background: rgb(var(--stage-ember) / .16);
+  border-block: 1px solid rgb(var(--stage-ember) / .16);
+}
+.ent-door {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: var(--stage-night);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  padding: 1.05rem .2rem;
+  cursor: pointer;
+  transition: background-color .28s var(--E), padding-inline-start .28s var(--E);
+}
+.ent-door:hover, .ent-door:focus-visible { background: rgba(236, 234, 228, .045); padding-inline-start: .9rem; }
+.ent-door-title { display: block; font-family: "El Messiri", serif; font-size: 1.08rem; font-weight: 600; }
+.ent-door-line { display: block; margin-top: .2rem; color: var(--stage-soft); font-size: .85rem; font-weight: 300; line-height: 1.7; }
+.ent-browse {
+  margin-top: 1.6rem;
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  color: var(--stage-soft);
+  font: inherit;
+  font-size: .82rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgb(var(--stage-ember) / .3);
+  padding-bottom: .15rem;
+  transition: color .25s;
+}
+.ent-browse:hover { color: var(--stage-ivory); }
+.ent-root :focus-visible { outline: 2px solid rgb(var(--stage-glow)); outline-offset: 3px; }
+
 /* افتتاح PWA: لا تمرّ النسخة المثبّتة بالرئيسية؛ تعود بهدوء إلى آخر موضع قرأه المستخدم. */
 .pwa-launch {
   position: fixed;
@@ -2477,28 +2600,35 @@ html.site-silent .site-reveal > span {
   padding: max(2rem, env(safe-area-inset-top)) 1.5rem max(2rem, env(safe-area-inset-bottom));
   background: rgb(var(--c-canvas));
 }
-.pwa-launch__halo {
-  position: absolute;
-  width: min(78vw, 680px);
-  aspect-ratio: 1;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgb(var(--c-accent) / .10), transparent 66%);
-  filter: blur(3px);
-  animation: pwa-launch-breathe 2.8s var(--E) infinite alternate;
-}
+/* العلامة تُخطّ خليةً خليةً من اليمين خلال مدّة الانتظار، فالرسمُ نفسه هو
+   مؤشّر التقدّم ولا حاجة إلى شريطٍ منفصل. */
 .pwa-launch__content { position: relative; width: min(88vw, 520px); text-align: center; }
-.pwa-launch__logo { margin-inline: auto; height: 3.25rem; width: 5.4rem; object-fit: contain; }
-/* نصّه عربي («مكتبة د. أحمد الفيلكاوي») فلا تباعد — التقطه حارس الطباعة العربية */
-.pwa-launch__eyebrow { margin-top: 1.4rem; color: rgb(var(--c-accent)); font-size: .72rem; font-weight: 700; letter-spacing: 0; }
+.pwa-launch__mark {
+  display: block;
+  margin-inline: auto;
+  width: min(58vw, 15rem);
+  height: auto;
+  color: rgb(var(--c-ink));
+}
+.kufic-mark { display: block; }
+/* transform-box: fill-box — بدونه يكون مبدأ التحويل زاوية الـviewBox لا الخليّة. */
+.kufic-mark.is-drawing rect {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: kufic-cell var(--kufic-cell, 240ms) var(--E) forwards;
+}
+@keyframes kufic-cell {
+  from { opacity: 0; transform: scale(.55); }
+  to { opacity: 1; transform: none; }
+}
+.pwa-launch__eyebrow { margin-top: 1.6rem; color: rgb(var(--c-accent)); font-size: .72rem; font-weight: 700; letter-spacing: 0; }
 .pwa-launch h1 { margin-top: .65rem; color: rgb(var(--c-ink)); font-family: "El Messiri", serif; font-size: clamp(2rem, 9vw, 3.5rem); font-weight: 700; line-height: 1.25; }
 .pwa-launch p:not(.pwa-launch__eyebrow) { margin-top: .7rem; color: rgb(var(--c-soft)); font-size: .92rem; font-weight: 300; }
-.pwa-launch__line { margin: 2rem auto 0; height: 2px; width: min(52vw, 210px); overflow: hidden; border-radius: 999px; background: rgb(var(--c-ink) / .08); }
-.pwa-launch__line span { display: block; height: 100%; width: 100%; border-radius: inherit; background: rgb(var(--c-accent)); transform: scaleX(0); transform-origin: right; animation: pwa-launch-progress .92s var(--E) forwards; }
-@keyframes pwa-launch-progress { to { transform: scaleX(1); } }
-@keyframes pwa-launch-breathe { from { transform: scale(.92); opacity: .55; } to { transform: scale(1.05); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  .pwa-launch__halo { animation: none; }
-  .pwa-launch__line span { animation-timing-function: steps(2, end); }
+  /* لا يُخطّ شيء: العلامة كاملةٌ من أول رسمة. */
+  .kufic-mark.is-drawing rect { opacity: 1; animation: none; }
+}
 }
 
 
@@ -4785,10 +4915,11 @@ img[loading="lazy"],
   pointer-events: none;
   background: rgb(var(--c-soft) / .22);
 }
+/* موجة الصوت بالجمرة: هنا الصوتُ هو الموضوع لا النصّ. */
 .audio-wave-fill {
   position: relative;
   z-index: 1;
-  background: rgb(var(--c-accent));
+  background: rgb(var(--c-ember));
   opacity: 1 !important;
   transition: width .14s linear, opacity .3s ease, filter .3s ease;
 }
@@ -5492,7 +5623,7 @@ html.dark .content-book-detail .book-detail-cover {
   display: inline-flex;
   align-items: center;
   gap: .5rem;
-  border: 1px solid rgb(var(--c-accent) / .18);
+  border: 1px solid rgb(var(--c-ember) / .28);
   border-radius: 999px;
   padding: .45rem .78rem;
   background: rgb(var(--c-canvas) / .94);
@@ -5508,8 +5639,8 @@ html.dark .content-book-detail .book-detail-cover {
   inline-size: .42rem;
   block-size: .42rem;
   border-radius: 50%;
-  background: rgb(var(--c-accent));
-  box-shadow: 0 0 0 4px rgb(var(--c-accent) / .09);
+  background: rgb(var(--c-ember));
+  box-shadow: 0 0 0 4px rgb(var(--c-ember) / .14);
 }
 @keyframes audio-sync-whisper-in {
   from { opacity: 0; transform: translateY(-5px); }
@@ -6482,14 +6613,22 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   text-wrap: balance;
   letter-spacing: -.026em;
 }
+/* فاصل بإيقاع الشبكة الكوفية: خطّ أساسٍ بوحدة، وأسنانٌ متبادلة.
+   القناع يمرّ على العنصر وأبنائه، فيسري الوميض داخل الشبكة لا فوقها. */
 .scene-heading__rule {
   display: block;
   position: relative;
   width: min(28rem, 62vw);
-  height: 1px;
+  height: 6px;
   margin-top: 1.35rem;
   overflow: hidden;
-  background: rgb(var(--c-ink) / .07);
+  background: rgb(var(--c-ink) / .09);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2012%203%27%3E%3Crect%20x%3D%270%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%271%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%272%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%273%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%274%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%275%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%276%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%277%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%278%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%279%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%2710%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%2711%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%271%27%20y%3D%270%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%277%27%20y%3D%270%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%274%27%20y%3D%272%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%2710%27%20y%3D%272%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2012%203%27%3E%3Crect%20x%3D%270%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%271%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%272%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%273%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%274%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%275%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%276%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%277%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%278%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%279%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%2710%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%2711%27%20y%3D%271%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%271%27%20y%3D%270%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%277%27%20y%3D%270%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%274%27%20y%3D%272%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3Crect%20x%3D%2710%27%20y%3D%272%27%20width%3D%271%27%20height%3D%271%27%20fill%3D%27%23000%27%2F%3E%3C%2Fsvg%3E");
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+  -webkit-mask-size: 24px 6px;
+  mask-size: 24px 6px;
 }
 .scene-heading__rule > i {
   position: absolute;
